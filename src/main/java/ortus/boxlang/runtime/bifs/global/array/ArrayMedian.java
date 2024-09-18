@@ -21,8 +21,10 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
+import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
 import ortus.boxlang.runtime.operators.Compare;
+import ortus.boxlang.runtime.operators.Divide;
+import ortus.boxlang.runtime.operators.Plus;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -53,7 +55,7 @@ public class ArrayMedian extends BIF {
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array			actualArray	= arguments.getAsArray( Key.array );
-		List<Double>	vals		= actualArray.stream().map( ( x ) -> DoubleCaster.cast( x ) ).collect( Collectors.toList() );
+		List<Number>	vals		= actualArray.stream().map( ( x ) -> NumberCaster.cast( x ) ).collect( Collectors.toList() );
 		int				size		= actualArray.size();
 
 		vals.sort( Compare::invoke );
@@ -65,7 +67,7 @@ public class ArrayMedian extends BIF {
 
 		int median = size / 2;
 
-		return ( vals.get( median - 1 ) + vals.get( median ) ) / 2;
+		return Divide.invoke( Plus.invoke( vals.get( median - 1 ), vals.get( median ) ), 2 );
 	}
 
 }

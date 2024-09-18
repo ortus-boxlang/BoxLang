@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.application;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,16 +33,22 @@ import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.context.SessionBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.events.InterceptorPool;
+import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.loader.DynamicClassLoader;
+import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.SessionScope;
 import ortus.boxlang.runtime.services.ApplicationService;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.BLCollector;
 import ortus.boxlang.runtime.util.EncryptionUtil;
 import ortus.boxlang.runtime.util.FileSystemUtil;
@@ -544,10 +551,8 @@ public abstract class BaseApplicationListener {
 	 *
 	 * @param context The context
 	 * @param args    The arguments
-	 *
-	 * @return true if the request should continue, false otherwise
 	 */
-	public boolean onClassRequest( IBoxContext context, Object[] args ) {
+	public void onClassRequest( IBoxContext context, Object[] args ) {
 		logger.trace( "Fired onClassRequest ...................." );
 
 		this.interceptorPool.announce(
@@ -560,7 +565,123 @@ public abstract class BaseApplicationListener {
 		    ),
 		    context
 		);
-		return true;
+	}
+
+	/**
+	 * Handle the invocation of a class request
+	 *
+	 * @param context               The context
+	 * @param possibleClassInstance The possible class instance to execute
+	 * @param methodName            The method name to execute on the class
+	 * @param namedParams           The named parameters to the class
+	 * @param positionalParams      The positional parameters to the class
+	 * @param returnFormat          The return format for the class: json, wddx, xml, plain
+	 * @param mustBeRemote          If the method must be remote or not
+	 */
+	protected void invokeClassRequest(
+	    IBoxContext context,
+	    Object possibleClassInstance,
+	    String methodName,
+	    Struct namedParams,
+	    Object[] positionalParams,
+	    String returnFormat,
+	    boolean mustBeRemote ) {
+		// Test the class instance
+		IClassRunnable classInstance = null;
+		if ( possibleClassInstance instanceof IClassRunnable icr ) {
+			classInstance = icr;
+		} else {
+			throw new BoxRuntimeException( "The path must be a class and not an interface." );
+		}
+		Object result = null;
+
+		// Check method is marked as remote
+		if ( mustBeRemote
+		    && ! ( classInstance.getThisScope().get( Key.of( methodName ) ) instanceof Function func && func.getAccess().equals( Function.Access.REMOTE ) ) ) {
+			throw new BoxRuntimeException( "[" + methodName + "] is not marked as remote method on the class." );
+		}
+
+		// Direct invocation of a remote method will use named args, but invocation of the listener's onClassRequest method will use positional args
+		if ( namedParams != null ) {
+			result = classInstance.dereferenceAndInvoke( context, Key.of( methodName ), namedParams, false );
+		} else {
+			result = classInstance.dereferenceAndInvoke( context, Key.of( methodName ), positionalParams, false );
+		}
+
+		// If there was no override, see if a remote method set it via annotation
+		if ( returnFormat == null ) {
+			returnFormat = Optional.ofNullable( context.getParentOfType( RequestBoxContext.class ).getAttachment( Key.returnFormat ) )
+			    .map( Object::toString )
+			    .orElse( null );
+		}
+
+		// If there was still no override, default to the config, which by default in BoxLang is JSON
+		if ( returnFormat == null ) {
+			returnFormat = context.getRuntime().getConfiguration().defaultRemoteMethodReturnFormat;
+		}
+
+		if ( result != null ) {
+			String stringResult;
+			// switch on returnFormat
+			switch ( returnFormat ) {
+				case "json" :
+					stringResult = ( String ) context.invokeFunction( Key.JSONSerialize, new Object[] { result } );
+					break;
+				case "wddx" :
+				case "xml" :
+					if ( context.getRuntime().getModuleService().hasModule( Key.wddx ) ) {
+						DynamicObject WDDXUtil = ClassLocator.getInstance()
+						    .load(
+						        context,
+						        "ortus.boxlang.modules.wddx.util.WDDXUtil@wddx",
+						        ClassLocator.JAVA_PREFIX
+						    );
+						stringResult = ( String ) WDDXUtil.invoke( context, "serializeObject", result );
+					} else {
+						throw new BoxRuntimeException( "WDDX module is not installed.  Cannot serialize to WDDX." );
+					}
+					break;
+				case "plain" :
+					CastAttempt<String> stringAttempt = StringCaster.attempt( result );
+					if ( stringAttempt.wasSuccessful() ) {
+						stringResult = stringAttempt.get();
+					} else {
+						throw new BoxRuntimeException(
+						    "Could not cast return value of type [" + result.getClass().getSimpleName() + "] to string for returnFormat 'plain'" );
+					}
+					break;
+				default :
+					throw new BoxRuntimeException( "Unsupported returnFormat [" + returnFormat + "]. Valid options are 'json', 'wddx', 'xml', and 'plain'" );
+			}
+			context.writeToBuffer( stringResult );
+			// If this is a web request, we'll set the default content type in the web-support runtime since this code is core and technically runtime-agnostic, even though
+			// the only place we're actually firing the onClassRequest listener right now is in the web-support runtime
+		}
+	}
+
+	/**
+	 * Handle the onClassRequest event when no method is specified.
+	 * This will try to dump the class metadata document if debug is enabled.
+	 * Else it will return a message that the method was not specified.
+	 *
+	 * @param context   The context
+	 * @param className The class name
+	 */
+	protected void classRequestNoMethod( IBoxContext context, String className ) {
+		// If there is no method and we're in debug mode, dump the CFC
+		if ( context.getRuntime().inDebugMode() ) {
+			context.invokeFunction(
+			    Key.dump,
+			    new Object[] {
+			        context.invokeFunction(
+			            Key.createObject,
+			            new Object[] { className }
+			        )
+			    }
+			);
+		} else {
+			context.writeToBuffer( "Method not specified, enable debug to see class details." );
+		}
 	}
 
 	/**

@@ -89,11 +89,11 @@ public class InstanceOf implements IOperator {
 					return true;
 				}
 				// For each super class, check if implements an interface of that type
-				if ( checkInterfaces( _super, type ) ) {
+				if ( checkInterfaces( _super.getInterfaces(), type ) ) {
 					return true;
 				}
 			}
-			if ( checkInterfaces( boxClass, type ) ) {
+			if ( checkInterfaces( boxClass.getInterfaces(), type ) ) {
 				return true;
 			}
 
@@ -109,17 +109,31 @@ public class InstanceOf implements IOperator {
 		return false;
 	}
 
-	private static Boolean checkInterfaces( IClassRunnable boxClass, String type ) {
-		List<BoxInterface> interfaces = boxClass.getInterfaces();
+	// I check a list of interfaces for a specific type
+	private static Boolean checkInterfaces( List<BoxInterface> interfaces, String type ) {
 		for ( BoxInterface boxInterface : interfaces ) {
-			BoxInterface _super = boxInterface;
-			do {
-				if ( _super.getName().getName().equalsIgnoreCase( type )
-				    || _super.getName().getName().toLowerCase().endsWith( "." + type.toLowerCase() ) ) {
-					return true;
-				}
-			} while ( ( _super = _super.getSuper() ) != null );
+			if ( checkInterface( type, boxInterface ) ) {
+				return true;
+			}
 		}
 		return false;
 	}
+
+	// I check a single interface for a specific type and recurse into its super interfaces
+	private static Boolean checkInterface( String type, BoxInterface boxInterface ) {
+		// If we match, quit
+		if ( boxInterface.getName().getName().equalsIgnoreCase( type )
+		    || boxInterface.getName().getName().toLowerCase().endsWith( "." + type.toLowerCase() ) ) {
+			return true;
+		}
+		// If one of the super interfaces matches, quit
+		if ( boxInterface.getSupers().size() > 0 ) {
+			if ( checkInterfaces( boxInterface.getSupers(), type ) ) {
+				return true;
+			}
+		}
+		// We give up
+		return false;
+	}
+
 }

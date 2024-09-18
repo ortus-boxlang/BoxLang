@@ -41,7 +41,7 @@ public class Throw extends Component {
 		    new Attribute( Key.detail, "String" ),
 		    new Attribute( Key.errorcode, "String" ),
 		    new Attribute( Key.extendedinfo, "any" ),
-		    new Attribute( Key.object, "any" )
+		    new Attribute( Key.object, "Throwable" )
 		};
 	}
 

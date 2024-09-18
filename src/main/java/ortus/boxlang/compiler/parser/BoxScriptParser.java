@@ -17,6 +17,7 @@ package ortus.boxlang.compiler.parser;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
@@ -24,6 +25,10 @@ import java.util.Optional;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.atn.AmbiguityInfo;
+import org.antlr.v4.runtime.atn.DecisionInfo;
+import org.antlr.v4.runtime.atn.DecisionState;
+import org.antlr.v4.runtime.misc.Interval;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BOMInputStream;
 
@@ -112,13 +117,13 @@ public class BoxScriptParser extends AbstractParser {
 	 * @see BoxScript
 	 * @see ParsingResult
 	 */
-	public ParsingResult parse( File file ) throws IOException {
+	public ParsingResult parse( File file, boolean isScript ) throws IOException {
 		this.file = file;
 		setSource( new SourceFile( file ) );
 		BOMInputStream		inputStream			= getInputStream( file );
 		Optional<String>	ext					= Parser.getFileExtension( file.getAbsolutePath() );
 		Boolean				classOrInterface	= ext.isPresent() && ext.get().equalsIgnoreCase( "bx" );
-		BoxNode				ast					= parserFirstStage( inputStream, classOrInterface );
+		BoxNode				ast					= parserFirstStage( inputStream, classOrInterface, isScript );
 
 		if ( issues.isEmpty() ) {
 			return new ParsingResult( ast, issues, comments );
@@ -138,8 +143,12 @@ public class BoxScriptParser extends AbstractParser {
 	 * @see BoxScript
 	 * @see ParsingResult
 	 */
+	public ParsingResult parse( String code, boolean isScript ) throws IOException {
+		return parse( code, false, isScript );
+	}
+
 	public ParsingResult parse( String code ) throws IOException {
-		return parse( code, false );
+		return parse( code, false, true );
 	}
 
 	/**
@@ -154,12 +163,12 @@ public class BoxScriptParser extends AbstractParser {
 	 * @see BoxScript
 	 * @see ParsingResult
 	 */
-	public ParsingResult parse( String code, Boolean classOrInterface ) throws IOException {
+	public ParsingResult parse( String code, boolean classOrInterface, boolean isScript ) throws IOException {
 		this.sourceCode = code;
 		setSource( new SourceCode( code ) );
 		InputStream	inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
 
-		BoxNode		ast			= parserFirstStage( inputStream, classOrInterface );
+		BoxNode		ast			= parserFirstStage( inputStream, classOrInterface, isScript );
 		return new ParsingResult( ast, issues, comments );
 	}
 
@@ -266,7 +275,7 @@ public class BoxScriptParser extends AbstractParser {
 	 * @throws IOException io error
 	 */
 	@Override
-	protected BoxNode parserFirstStage( InputStream stream, Boolean classOrInterface ) throws IOException {
+	protected BoxNode parserFirstStage( InputStream stream, boolean classOrInterface, boolean isScript ) throws IOException {
 		BoxScriptLexerCustom	lexer	= new BoxScriptLexerCustom( CharStreams.fromStream( stream, StandardCharsets.UTF_8 ) );
 		BoxScriptGrammar		parser	= new BoxScriptGrammar( new CommonTokenStream( lexer ) );
 
@@ -274,6 +283,9 @@ public class BoxScriptParser extends AbstractParser {
 		// boxParser.setTrace( true );
 		addErrorListeners( lexer, parser );
 		parser.setErrorHandler( new BoxParserErrorStrategy() );
+
+		// activating profiling
+		// parser.setProfile( true );
 
 		BoxScriptGrammar.ClassOrInterfaceContext	classOrInterfaceContext	= null;
 		BoxScriptGrammar.ScriptContext				scriptContext			= null;
@@ -302,6 +314,7 @@ public class BoxScriptParser extends AbstractParser {
 			} else {
 				rootNode = scriptContext.accept( visitor );
 			}
+			// profileParser( parser );
 		} catch ( Exception e ) {
 			// Ignore issues creating AST if the parsing already had failures
 			if ( issues.isEmpty() ) {
@@ -320,13 +333,66 @@ public class BoxScriptParser extends AbstractParser {
 		return rootNode.associateComments( this.comments );
 	}
 
+	public void profileParser( BoxScriptGrammar parser ) {
+		PrintStream out = System.out;
+
+		out.printf( "%-35s", "rule" );
+		out.printf( "%-15s", "time" );
+		out.printf( "%-15s", "invocations" );
+		out.printf( "%-15s", "lookahead" );
+		out.printf( "%-15s", "lookahead(max)" );
+		out.printf( "%-15s%n", "errors" );
+
+		for ( DecisionInfo decisionInfo : parser.getParseInfo().getDecisionInfo() ) {
+			DecisionState	ds		= parser.getATN().getDecisionState( decisionInfo.decision );
+			String			rule	= parser.getRuleNames()[ ds.ruleIndex ];
+			if ( decisionInfo.timeInPrediction > 0 ) {
+				out.printf( "%-35s", rule );
+				out.printf( "%-15s", decisionInfo.timeInPrediction / 1_000_000D + "ms" );
+				out.printf( "%-15s", decisionInfo.invocations );
+				out.printf( "%-15s", decisionInfo.SLL_TotalLook );
+				out.printf( "%-15s", decisionInfo.SLL_MaxLook );
+				out.printf( "%-15s%n", decisionInfo.errors );
+
+				// out.printf( "%-15s", decisionInfo.ambiguities );
+				for ( AmbiguityInfo ambiguity : decisionInfo.ambiguities ) {
+					out.println();
+
+					out.println( "		**** Ambiguity ****" );
+					DecisionState	dsa					= parser.getATN().getDecisionState( ambiguity.decision );
+					String			rulea				= parser.getRuleNames()[ dsa.ruleIndex ];
+					// out.println( " rule:" + rulea );
+					// out.println( " fullCtx:" + ambiguity.fullCtx );
+
+					String			ambiguousSubstring	= ambiguity.input.getText( Interval.of( ambiguity.startIndex, ambiguity.stopIndex ) );
+					out.println( "		ambiguous text: [" + ambiguousSubstring + "]" );
+
+					out.println( "		ambigAlts:" + ambiguity.ambigAlts );
+
+					// Iterate over the configurations and print only those that match the ambiguous alternatives
+					/*
+					 * out.println( "    Configurations:" );
+					 * for ( ATNConfig config : ambiguity.configs ) {
+					 * if ( ambiguity.ambigAlts.get( config.alt ) ) {
+					 * out.println( "        State: " + config.state.stateNumber );
+					 * out.println( "        Context: " + Arrays.toString( config.context.toStrings( parser, config.state.stateNumber ) ) );
+					 * out.println( "        Alt: " + config.alt );
+					 * }
+					 * }
+					 */
+					out.println();
+				}
+			}
+		}
+	}
+
 	public List<BoxStatement> parseBoxTemplateStatements( String code, Position position ) {
 		try {
 			if ( inOutputBlock ) {
 				code = "<bx:output>" + code + "</bx:output>";
 			}
 			ParsingResult result = new BoxTemplateParser( position.getStart().getLine(), position.getStart().getColumn() ).setSource( sourceToParse )
-			    .setSubParser( true ).parse( code );
+			    .setSubParser( true ).parse( code, false );
 			this.comments.addAll( result.getComments() );
 			if ( result.getIssues().isEmpty() ) {
 				BoxNode root = result.getRoot();
@@ -603,7 +669,6 @@ public class BoxScriptParser extends AbstractParser {
 			case BoxMethodInvocation ignored -> {
 			}
 			case BoxParenthesis ignored -> {
-				// TODO: Brad - Should we allow this always, or check what is inside the parenthesis?
 			}
 			default -> errorListener.semanticError( object.getDescription() + " is not a valid construct for array access ", getPosition( ctx ) );
 		}

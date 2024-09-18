@@ -17,16 +17,15 @@
  */
 package ortus.boxlang.runtime.validation.dynamic;
 
-import ortus.boxlang.runtime.components.Attribute;
-import ortus.boxlang.runtime.components.Component;
-import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.validation.Validatable;
-import ortus.boxlang.runtime.validation.Validator;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
+import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.operators.GreaterThan;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
+import ortus.boxlang.runtime.validation.Validatable;
+import ortus.boxlang.runtime.validation.Validator;
 
 /**
  * I require a numeric record that cannot be greater than the number I'm instantiated with
@@ -43,7 +42,7 @@ public class Max implements Validator {
 		// If it was passed...
 		if ( records.get( record.name() ) != null ) {
 			// then make sure it's not greater than our threshold
-			if ( DoubleCaster.cast( records.get( record.name() ) ) > this.max.doubleValue() ) {
+			if ( GreaterThan.invoke( NumberCaster.cast( records.get( record.name() ) ), this.max ) ) {
 				throw new BoxValidationException( caller, record, "cannot be greater than [" + StringCaster.cast( this.max ) + "]." );
 			}
 		}

@@ -17,12 +17,15 @@
  */
 package ortus.boxlang.runtime.runnables;
 
+import java.util.Set;
+
 import ortus.boxlang.compiler.IBoxpiler;
 import ortus.boxlang.compiler.asmboxpiler.ASMBoxpiler;
 import ortus.boxlang.compiler.javaboxpiler.JavaBoxpiler;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 import ortus.boxlang.runtime.types.exceptions.MissingIncludeException;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
@@ -42,8 +45,10 @@ public class RunnableLoader {
 	/**
 	 * Singleton instance
 	 */
-	private static RunnableLoader	instance;
-	private IBoxpiler				boxpiler;
+	private static RunnableLoader		instance;
+	private IBoxpiler					boxpiler;
+	// TODO: make this configurable and move cf extensions to compat
+	private static final Set<String>	VALID_TEMPLATE_EXTENSIONS	= Set.of( "cfm", "cfml", "cfs", "bxs", "bxm", "bxml" );
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -79,14 +84,23 @@ public class RunnableLoader {
 	/**
 	 * Select the Boxpiler implementation to use when generating bytecode
 	 *
-	 * @param clazz
+	 * @param clazz The class of the Boxpiler to use
 	 */
-	public void selectBoxPiler( Class clazz ) {
+	public void selectBoxPiler( Class<?> clazz ) {
 		if ( JavaBoxpiler.class.isAssignableFrom( clazz ) ) {
 			this.boxpiler = JavaBoxpiler.getInstance();
 		} else if ( ASMBoxpiler.class.isAssignableFrom( clazz ) ) {
 			this.boxpiler = ASMBoxpiler.getInstance();
 		}
+	}
+
+	/**
+	 * Get the current BoxPiler
+	 *
+	 * @return The current Boxpiler
+	 */
+	public IBoxpiler getBoxpiler() {
+		return this.boxpiler;
 	}
 
 	/**
@@ -103,17 +117,27 @@ public class RunnableLoader {
 			throw new MissingIncludeException( "The template path [" + resolvedFilePath.absolutePath().toString() + "] could not be found.",
 			    resolvedFilePath.absolutePath().toString() );
 		}
-		// TODO: enforce valid include extensions (.cfm, .cfs, .bxs, .bxm, .bx)
-		Class<IBoxRunnable> clazz = this.boxpiler.compileTemplate( resolvedFilePath );
-		return ( BoxTemplate ) DynamicObject.of( clazz ).invokeStatic( context, "getInstance" );
+
+		String	ext			= "";
+		String	fileName	= resolvedFilePath.absolutePath().getFileName().toString().toLowerCase();
+		if ( fileName.contains( "." ) ) {
+			ext = fileName.substring( fileName.lastIndexOf( "." ) + 1 );
+		}
+		if ( ext.equals( "*" ) || VALID_TEMPLATE_EXTENSIONS.contains( ext ) ) {
+			Class<IBoxRunnable> clazz = this.boxpiler.compileTemplate( resolvedFilePath );
+			return ( BoxTemplate ) DynamicObject.of( clazz ).invokeStatic( context, "getInstance" );
+		} else {
+			throw new BoxValidationException(
+			    "The template path [" + resolvedFilePath.absolutePath().toString() + "] has an invalid extension to be executed [" + ext + "]." );
+		}
 	}
 
 	/**
-	 * * Load the class for a template, JIT compiling if needed
+	 * Load the class for a template, JIT compiling if needed
 	 *
 	 * @param path Relative path on disk to the template
 	 *
-	 * @return
+	 * @return The BoxTemplate instance
 	 */
 	public BoxTemplate loadTemplateRelative( IBoxContext context, String path ) {
 		// Make absolute
@@ -127,7 +151,7 @@ public class RunnableLoader {
 	 * @param source  The BoxLang or CFML source to compile
 	 * @param type    The type of source to parse
 	 *
-	 * @return
+	 * @return The BoxScript instance
 	 */
 	public BoxScript loadSource( IBoxContext context, String source, BoxSourceType type ) {
 		Class<IBoxRunnable> clazz = this.boxpiler.compileScript( source, type );
@@ -143,7 +167,7 @@ public class RunnableLoader {
 	 * @param context The context to use
 	 * @param source  The BoxLang or CFML source to compile
 	 *
-	 * @return
+	 * @return The BoxScript instance
 	 */
 	public BoxScript loadSource( IBoxContext context, String source ) {
 		return loadSource( context, source, BoxSourceType.BOXSCRIPT );
@@ -155,10 +179,10 @@ public class RunnableLoader {
 	 * @param context The context to use
 	 * @param source  The source to load
 	 *
-	 * @return
+	 * @return The BoxScript instance
 	 */
-	public BoxScript loadStatement( IBoxContext context, String source ) {
-		Class<IBoxRunnable> clazz = this.boxpiler.compileStatement( source, BoxSourceType.BOXSCRIPT );
+	public BoxScript loadStatement( IBoxContext context, String source, BoxSourceType type ) {
+		Class<IBoxRunnable> clazz = this.boxpiler.compileStatement( source, type );
 		return ( BoxScript ) DynamicObject.of( clazz ).invokeStatic( context, "getInstance" );
 	}
 
@@ -170,7 +194,7 @@ public class RunnableLoader {
 	 * @param context The context to use
 	 * @param type    The type of source to parse
 	 *
-	 * @return
+	 * @return The BoxLang class
 	 */
 	public Class<IBoxRunnable> loadClass( String source, IBoxContext context, BoxSourceType type ) {
 		return this.boxpiler.compileClass( source, type );
@@ -183,7 +207,7 @@ public class RunnableLoader {
 	 * @param resolvedFilePath The path to the source to load
 	 * @param context          The context to use
 	 *
-	 * @return The class
+	 * @return The BoxLang class
 	 */
 	public Class<IBoxRunnable> loadClass( ResolvedFilePath resolvedFilePath, IBoxContext context ) {
 		return this.boxpiler.compileClass( resolvedFilePath );

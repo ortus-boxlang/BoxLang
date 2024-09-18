@@ -19,14 +19,12 @@ package ortus.boxlang.runtime.validation.dynamic;
 
 import java.util.Set;
 
-import ortus.boxlang.runtime.components.Attribute;
-import ortus.boxlang.runtime.components.Component;
-import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.validation.Validatable;
-import ortus.boxlang.runtime.validation.Validator;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
+import ortus.boxlang.runtime.validation.Validatable;
+import ortus.boxlang.runtime.validation.Validator;
 
 /**
  * If this record is present, ensure it is one of the valid string values (case insensitive)
@@ -42,7 +40,7 @@ public class ValueOneOf implements Validator {
 	public void validate( IBoxContext context, Key caller, Validatable record, IStruct records ) {
 		if ( records.containsKey( record.name() ) ) {
 			String value = records.getAsString( record.name() );
-			if ( !validValues.stream().map( String::toLowerCase ).anyMatch( value.toLowerCase()::equals ) ) {
+			if ( value != null && !validValues.stream().map( String::toLowerCase ).anyMatch( value.toLowerCase()::equals ) ) {
 				throw new BoxValidationException( caller, record, "must be one of the following values: " + String.join( ", ", validValues ) );
 			}
 		}

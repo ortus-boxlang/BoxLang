@@ -43,7 +43,7 @@ public class BoxReturnTransformer extends AbstractTransformer {
 		if ( boxReturn.getExpression() == null ) {
 			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
 		} else {
-			nodes.addAll( transpiler.transform( boxReturn.getExpression(), TransformerContext.NONE, returnContext ) );
+			nodes.addAll( transpiler.transform( boxReturn.getExpression(), TransformerContext.NONE, ReturnValueContext.VALUE_OR_NULL ) );
 		}
 		nodes.add( new InsnNode( Opcodes.ARETURN ) );
 		return nodes;

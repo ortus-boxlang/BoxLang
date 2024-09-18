@@ -31,7 +31,6 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.IType;
 
 @BoxBIF
-@BoxMember( type = BoxLangType.XML )
 @BoxMember( type = BoxLangType.STRING )
 public class ToString extends BIF {
 
@@ -53,7 +52,7 @@ public class ToString extends BIF {
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.value Value to convert to a string; can be a simple value such as an integer, a binary object, or an XML document object.
-	 * 
+	 *
 	 * @argument.encoding The character encoding (character set) of the string, used with binary data.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {

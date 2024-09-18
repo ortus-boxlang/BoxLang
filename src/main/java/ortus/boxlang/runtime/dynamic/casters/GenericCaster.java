@@ -125,7 +125,7 @@ public class GenericCaster implements IBoxCaster {
 			return null;
 		}
 
-		if ( type.equals( "any" ) ) {
+		if ( type.equals( "any" ) || type.equals( "object" ) ) {
 			return object;
 		}
 
@@ -169,7 +169,10 @@ public class GenericCaster implements IBoxCaster {
 		if ( type.equals( "boolean" ) ) {
 			return BooleanCaster.cast( object, fail );
 		}
-		if ( type.equals( "bigdecimal" ) ) {
+		if ( type.equals( "bit" ) ) {
+			return Boolean.TRUE.equals( BooleanCaster.cast( object, fail ) ) ? 1 : 0;
+		}
+		if ( type.equals( "bigdecimal" ) || type.equals( "decimal" ) ) {
 			return BigDecimalCaster.cast( object, fail );
 		}
 		if ( type.equals( "biginteger" ) ) {
@@ -220,6 +223,10 @@ public class GenericCaster implements IBoxCaster {
 
 		if ( type.equals( "function" ) ) {
 			return FunctionCaster.cast( object, fail );
+		}
+
+		if ( type.equals( "throwable" ) ) {
+			return ThrowableCaster.cast( object, fail );
 		}
 
 		if ( type.startsWith( "function:" ) && type.length() > 9 ) {

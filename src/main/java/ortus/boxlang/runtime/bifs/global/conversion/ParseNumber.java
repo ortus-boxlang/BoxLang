@@ -21,7 +21,7 @@ import org.apache.commons.lang3.math.NumberUtils;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
+import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -59,7 +59,7 @@ public class ParseNumber extends BIF {
 	 *
 	 * @argument.radix The numeral system to use for conversion (e.g., "bin", "oct", "dec", "hex"). If not provided, the number is parsed as locale-sensitive
 	 */
-	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Number _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String number = arguments.getAsString( Key.number );
 		if ( RADIX_VALUES.contains( arguments.getAsString( Key.locale ).toLowerCase() ) ) {
 			arguments.put( Key.radix, arguments.getAsString( Key.locale ) );
@@ -78,8 +78,8 @@ public class ParseNumber extends BIF {
 			String	value	= arguments.getAsString( Key.number );
 			Locale	locale	= LocalizationUtil.parseLocaleFromContext( context, arguments );
 
-			Double	parsed	= NumberUtils.isCreatable( value )
-			    ? DoubleCaster.cast( value )
+			Number	parsed	= NumberUtils.isCreatable( value )
+			    ? NumberCaster.cast( value )
 			    : LocalizationUtil.parseLocalizedNumber( arguments.get( Key.number ), locale );
 			if ( parsed == null ) {
 				throw new BoxRuntimeException(

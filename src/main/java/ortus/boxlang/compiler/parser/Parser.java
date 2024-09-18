@@ -56,18 +56,23 @@ public class Parser {
 	public ParsingResult parse( File file ) {
 		BoxSourceType	fileType	= detectFile( file );
 		AbstractParser	parser;
+		boolean			isScript	= true;
 		switch ( fileType ) {
 			case CFSCRIPT -> {
-				parser = new CFScriptParser();
+				parser		= new CFParser();
+				isScript	= true;
 			}
 			case CFTEMPLATE -> {
-				parser = new CFTemplateParser();
+				parser		= new CFParser();
+				isScript	= false;
 			}
 			case BOXSCRIPT -> {
-				parser = new BoxScriptParser();
+				parser		= new BoxScriptParser();
+				isScript	= true;
 			}
 			case BOXTEMPLATE -> {
-				parser = new BoxTemplateParser();
+				parser		= new BoxTemplateParser();
+				isScript	= false;
 			}
 			default -> {
 				throw new RuntimeException( "Unsupported file: " + file.getAbsolutePath() );
@@ -75,7 +80,7 @@ public class Parser {
 		}
 		ParsingResult result;
 		try {
-			result = parser.parse( file );
+			result = parser.parse( file, isScript );
 		} catch ( IOException e ) {
 			throw new BoxIOException( e );
 		}
@@ -118,25 +123,30 @@ public class Parser {
 	 * @see BoxExpression
 	 */
 	public ParsingResult parse( String code, BoxSourceType sourceType, Boolean classOrInterface ) throws IOException {
-		AbstractParser parser;
+		AbstractParser	parser;
+		boolean			isScript	= true;
 		switch ( sourceType ) {
 			case CFSCRIPT -> {
-				parser = new CFScriptParser();
+				parser		= new CFParser();
+				isScript	= true;
 			}
 			case CFTEMPLATE -> {
-				parser = new CFTemplateParser();
+				parser		= new CFParser();
+				isScript	= false;
 			}
 			case BOXSCRIPT -> {
-				parser = new BoxScriptParser();
+				parser		= new BoxScriptParser();
+				isScript	= true;
 			}
 			case BOXTEMPLATE -> {
-				parser = new BoxTemplateParser();
+				parser		= new BoxTemplateParser();
+				isScript	= false;
 			}
 			default -> {
 				throw new RuntimeException( "Unsupported language" );
 			}
 		}
-		ParsingResult	result	= parser.parse( code, classOrInterface );
+		ParsingResult	result	= parser.parse( code, classOrInterface, isScript );
 
 		IStruct			data	= Struct.of(
 		    "code", code,
@@ -267,6 +277,12 @@ public class Parser {
 					continue;
 				}
 				if ( line.startsWith( "component" ) || line.startsWith( "interface" ) ) {
+					return BoxSourceType.CFSCRIPT;
+				}
+				if ( line.startsWith( "abstract" ) && line.contains( "component" ) ) {
+					return BoxSourceType.CFSCRIPT;
+				}
+				if ( line.startsWith( "final" ) && line.contains( "component" ) ) {
 					return BoxSourceType.CFSCRIPT;
 				}
 				if ( line.startsWith( "<cfcomponent" ) || line.startsWith( "<cfinterface" ) || line.startsWith( "<cfscript" ) ) {

@@ -27,4 +27,11 @@ public interface IBoxSimpleLiteral extends IBoxLiteral {
 	default String removeUnderscores( String value ) {
 		return value.replace( "_", "" );
 	}
+
+	/**
+	 * Helper method to remove leading zeros from a string
+	 */
+	default String removeLeadingZeros( String value ) {
+		return value.replaceFirst( "^0+(?!$)", "" );
+	}
 }

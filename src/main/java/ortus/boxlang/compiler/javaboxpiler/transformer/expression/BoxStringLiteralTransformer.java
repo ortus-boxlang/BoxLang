@@ -14,7 +14,15 @@
  */
 package ortus.boxlang.compiler.javaboxpiler.transformer.expression;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.NodeList;
+import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.MethodCallExpr;
+import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.StringLiteralExpr;
 
 import ortus.boxlang.compiler.ast.BoxNode;
@@ -28,6 +36,8 @@ import ortus.boxlang.compiler.javaboxpiler.transformer.TransformerContext;
  */
 public class BoxStringLiteralTransformer extends AbstractTransformer {
 
+	private static final int MAX_LITERAL_LENGTH = 30000; // 64KB limit
+
 	public BoxStringLiteralTransformer( JavaTranspiler transpiler ) {
 		super( transpiler );
 	}
@@ -38,15 +48,55 @@ public class BoxStringLiteralTransformer extends AbstractTransformer {
 	 * @param node    a BoxStringLiteral instance
 	 * @param context transformation context
 	 *
-	 * @return generates a Java Parser string Literal
+	 * @return generates a Java Parser string Literal or concatenation expression
 	 */
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxStringLiteral	literal	= ( BoxStringLiteral ) node;
-		StringLiteralExpr	expr	= new StringLiteralExpr( escape( literal.getValue() ) );
-		String				side	= context == TransformerContext.NONE ? "" : "(" + context.toString() + ") ";
-		// logger.trace( side + node.getSourceText() + " -> " + expr );
-		return expr;
+		String				value	= escape( literal.getValue() );
+
+		if ( value.length() > MAX_LITERAL_LENGTH ) {
+			List<String> parts = splitStringIntoParts( value );
+			return createArrayJoinMethodCall( parts );
+		} else {
+			return new StringLiteralExpr( value );
+		}
+	}
+
+	/**
+	 * Split a large string into parts
+	 *
+	 * @param str The input string.
+	 * 
+	 * @return A list of StringLiteralExpr parts.
+	 **/
+	private List<String> splitStringIntoParts( String str ) {
+		List<String>	parts	= new ArrayList<>();
+		int				length	= str.length();
+		for ( int i = 0; i < length; i += MAX_LITERAL_LENGTH ) {
+			int		end		= Math.min( length, i + MAX_LITERAL_LENGTH );
+			String	part	= str.substring( i, end );
+			parts.add( part );
+		}
+		return parts;
+	}
+
+	/**
+	 * Create a BinaryExpr that concatenates all the StringLiteralExpr parts
+	 *
+	 * @param parts List of StringLiteralExpr parts.
+	 * 
+	 * @return A BinaryExpr representing the concatenation of all parts.
+	 **/
+	private Expression createArrayJoinMethodCall( List<String> parts ) {
+		// Create a MethodCallExpr for String.join with an array of strings
+		var args = parts.stream()
+		    .map( part -> ( Expression ) new StringLiteralExpr( escape( part ) ) ) // Escape quotes and create StringLiteralExpr
+		    .collect( Collectors.toCollection( NodeList::new ) ); // Collect into NodeList
+		args.add( 0, new StringLiteralExpr( "" ) ); // Delimiter
+		MethodCallExpr joinMethodCall = new MethodCallExpr( new NameExpr( "String" ), "join", args );
+
+		return joinMethodCall;
 	}
 
 	/**

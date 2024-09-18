@@ -165,8 +165,8 @@ public class BIFDocumentationGenerator {
 		String			samplesPath				= "workbench/samples/bifs";
 
 		if ( !FileSystemUtil.exists( bifFile ) ) {
-			Key		bifKey				= Key.of( name );
-			Element	javadocElement		= docElements.stream()
+			Key		bifKey			= Key.of( name );
+			Element	javadocElement	= docElements.stream()
 			    .filter( elem -> bifKey.equals( Key.of( elem.getSimpleName() ) )
 			        ||
 			        Stream.of( elem.getAnnotationsByType( BoxBIF.class ) )
@@ -174,6 +174,20 @@ public class BIFDocumentationGenerator {
 			                annotation -> bifKey.equals( Key.of( annotation.alias() ) )
 			            ).count() > 0
 			    ).findFirst().orElse( null );
+
+			if ( javadocElement != null ) {
+				if ( Stream.of( javadocElement.getAnnotationsByType( BoxBIF.class ) )
+				    .filter(
+				        annotation -> bifKey.equals( Key.of( javadocElement.getSimpleName() ) ) ? annotation.alias().equals( "" )
+				            : bifKey.equals( Key.of( annotation.alias() ) )
+				    )
+				    .filter(
+				        annotation -> annotation.documented()
+				    )
+				    .count() == 0 ) {
+					return new HashMap<String, String>();
+				}
+			}
 
 			Array	bifArgs				= new Array( bif.getBIF().getDeclaredArguments() );
 			Struct	argComments			= new Struct( TYPES.LINKED );

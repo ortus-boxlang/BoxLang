@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.runnables;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import ortus.boxlang.runtime.context.FunctionBoxContext;
@@ -57,32 +58,36 @@ public abstract class BoxInterface implements ITemplateRunnable, IReferenceable,
 		// First, we load an super interface
 		Object superInterfaceObject = getAnnotations().get( Key._EXTENDS );
 		if ( superInterfaceObject != null ) {
-			String superInterfaceName = StringCaster.cast( superInterfaceObject );
-			if ( superInterfaceName != null && superInterfaceName.length() > 0 ) {
-				if ( superInterfaceName.toLowerCase().startsWith( "java:" ) ) {
-					throw new BoxRuntimeException( "BoxLang Interaces cannot extend Java interfaces" );
-				}
-				// Recursivley load the super interface
-				BoxInterface _super = ( BoxInterface ) ClassLocator.getInstance().load( context,
-				    superInterfaceName,
-				    context.getCurrentImports()
-				)
-				    .unWrapBoxLangClass();
+			String superInterfaceNames = StringCaster.cast( superInterfaceObject );
+			if ( superInterfaceNames != null && superInterfaceNames.length() > 0 ) {
+				String[] superInterfaceNameArray = superInterfaceNames.split( "," );
+				for ( String superInterfaceName : superInterfaceNameArray ) {
+					superInterfaceName = superInterfaceName.trim();
+					if ( superInterfaceName.toLowerCase().startsWith( "java:" ) ) {
+						throw new BoxRuntimeException( "BoxLang Interaces cannot extend Java interfaces" );
+					}
+					// Recursively load the super interface
+					BoxInterface _super = ( BoxInterface ) ClassLocator.getInstance().load( context,
+					    superInterfaceName,
+					    context.getCurrentImports()
+					)
+					    .unWrapBoxLangClass();
 
-				// Set in our super interface
-				setSuper( _super );
+					// Set in our super interface
+					addSuper( _super );
+				}
 			}
 		}
 	}
 
 	/**
-	 * Set the super interface.
+	 * Add a super interface.
 	 *
 	 * @param _super The super class
 	 */
-	public void setSuper( BoxInterface _super ) {
-		// Set the actual super referene
-		_setSuper( _super );
+	public void addSuper( BoxInterface _super ) {
+		// Add the actual super referene
+		_addSuper( _super );
 
 		// merge annotations
 		for ( var entry : _super.getAnnotations().entrySet() ) {
@@ -135,14 +140,14 @@ public abstract class BoxInterface implements ITemplateRunnable, IReferenceable,
 	 *
 	 * @param _super The super interface
 	 */
-	public abstract void _setSuper( BoxInterface _super );
+	public abstract void _addSuper( BoxInterface _super );
 
 	/**
 	 * Get the super interface. Null if not exists
 	 *
 	 * @return The super interface
 	 */
-	public abstract BoxInterface getSuper();
+	public abstract List<BoxInterface> getSupers();
 
 	/**
 	 * Represent as string, or throw exception if not possible
@@ -320,8 +325,13 @@ public abstract class BoxInterface implements ITemplateRunnable, IReferenceable,
 		if ( getAnnotations() != null ) {
 			meta.putAll( getAnnotations() );
 		}
-		if ( getSuper() != null ) {
-			meta.put( "extends", getSuper().getMetaData() );
+		if ( getSupers().size() > 0 ) {
+			IStruct supersMeta = new Struct( IStruct.TYPES.LINKED );
+			for ( BoxInterface _super : getSupers() ) {
+				supersMeta.put( _super.getName().getName(), _super.getMetaData() );
+			}
+
+			meta.put( "extends", supersMeta );
 		}
 		return meta;
 	}
@@ -343,8 +353,10 @@ public abstract class BoxInterface implements ITemplateRunnable, IReferenceable,
 	 */
 	public Map<Key, AbstractFunction> getAllAbstractMethods() {
 		Map<Key, AbstractFunction> methods = new LinkedHashMap<>();
-		if ( getSuper() != null ) {
-			methods.putAll( getSuper().getAllAbstractMethods() );
+		if ( getSupers().size() > 0 ) {
+			for ( BoxInterface _super : getSupers() ) {
+				methods.putAll( _super.getAllAbstractMethods() );
+			}
 		}
 		// I override my super interface
 		methods.putAll( getAbstractMethods() );
@@ -353,8 +365,10 @@ public abstract class BoxInterface implements ITemplateRunnable, IReferenceable,
 
 	public Map<Key, Function> getAllDefaultMethods() {
 		Map<Key, Function> methods = new LinkedHashMap<>();
-		if ( getSuper() != null ) {
-			methods.putAll( getSuper().getAllDefaultMethods() );
+		if ( getSupers().size() > 0 ) {
+			for ( BoxInterface _super : getSupers() ) {
+				methods.putAll( _super.getAllDefaultMethods() );
+			}
 		}
 		// I override my super interface
 		methods.putAll( getDefaultMethods() );

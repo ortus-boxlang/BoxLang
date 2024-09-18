@@ -83,10 +83,6 @@ public class BoxTryTransformer extends AbstractTransformer {
 			var eVar = tracker.storeNewVariable( Opcodes.ASTORE );
 			nodes.addAll( eVar.nodes() );
 
-			if ( returnValueContext == ReturnValueContext.VALUE_OR_NULL && boxTry.getCatches().size() == 0 ) {
-				nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
-			}
-
 			for ( BoxTryCatch catchNode : boxTry.getCatches() ) {
 				nodes.addAll(
 				    generateCatchBodyNodes( context, returnValueContext, tracker, boxTry, catchNode, finallyStartLabel, finallyEndLabel, eVar.index() )
@@ -97,9 +93,15 @@ public class BoxTryTransformer extends AbstractTransformer {
 			    null );
 			transpiler.addTryCatchBlock( catchHandler );
 
-			// if we are here none of our catch handlers matched the error so we jump to the finally block
-			nodes.add( new VarInsnNode( Opcodes.ALOAD, eVar.index() ) );
-			nodes.add( new JumpInsnNode( Opcodes.GOTO, finallyStartLabel ) );
+			// if we are here none of our catch handlers matched the error so we inline another finally block
+			if ( boxTry.getFinallyBody().size() == 0 ) {
+				nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+				if ( returnValueContext != ReturnValueContext.VALUE_OR_NULL ) {
+					nodes.add( new InsnNode( Opcodes.POP ) );
+				}
+			}
+			nodes.addAll( AsmHelper.transformBodyExpressions( transpiler, boxTry.getFinallyBody(), context, returnValueContext ) );
+			nodes.add( new JumpInsnNode( Opcodes.GOTO, finallyEndLabel ) );
 		}
 
 		TryCatchBlockNode catchHandler = new TryCatchBlockNode( tryStartLabel, tryEndLabel, finallyStartLabel,
@@ -133,8 +135,11 @@ public class BoxTryTransformer extends AbstractTransformer {
 	    Supplier<AbstractInsnNode> inBetween ) {
 		List<AbstractInsnNode> nodes = new ArrayList<AbstractInsnNode>();
 
-		if ( returnValueContext == ReturnValueContext.VALUE_OR_NULL && codeBody.size() == 0 && finallyBody.size() == 0 ) {
+		if ( codeBody.size() == 0 && finallyBody.size() == 0 ) {
 			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+			if ( returnValueContext != ReturnValueContext.VALUE_OR_NULL ) {
+				nodes.add( new InsnNode( Opcodes.POP ) );
+			}
 		}
 
 		nodes.addAll( AsmHelper.transformBodyExpressions(

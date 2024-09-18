@@ -19,6 +19,8 @@ package ortus.boxlang.runtime.types.meta;
 
 import java.util.ArrayList;
 
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -48,25 +50,18 @@ public class ClassMeta extends BoxMeta {
 		this.target	= target;
 		this.$class	= target.getClass();
 		// Assemble the metadata
-		var	functions		= new ArrayList<Object>();
+		var	functions				= new ArrayList<Object>();
 
 		// Functions are done depending on the size of the scope
-		var	variablesScope	= target.getVariablesScope();
-		if ( variablesScope.size() > 50 ) {
-			// use a stream
-			variablesScope.entrySet()
-			    .stream()
-			    .filter( entry -> entry.getValue() instanceof Function )
-			    .forEach( entry -> {
-				    functions.add( ( ( FunctionMeta ) ( ( Function ) entry.getValue() ).getBoxMeta() ).meta );
-			    } );
-		} else {
-			for ( var entry : variablesScope.entrySet() ) {
-				if ( entry.getValue() instanceof Function fun ) {
-					functions.add( ( ( FunctionMeta ) fun.getBoxMeta() ).meta );
-				}
-			}
-		}
+		var	variablesScope			= target.getVariablesScope();
+		var	compileTimeMethodNames	= target.getCompileTimeMethodNames();
+		compileTimeMethodNames
+		    .stream()
+		    .map( variablesScope::get )
+		    .filter( entry -> entry instanceof Function )
+		    .forEach( entry -> {
+			    functions.add( ( ( FunctionMeta ) ( ( Function ) entry ).getBoxMeta() ).meta );
+		    } );
 
 		this.meta = ImmutableStruct.of(
 		    Key._NAME, target.getName().getName(),
@@ -107,6 +102,20 @@ public class ClassMeta extends BoxMeta {
 	 */
 	public IClassRunnable getTarget() {
 		return target;
+	}
+
+	/**
+	 * Direct invoke a Java method on the target bypassing the referencable methods
+	 */
+	public Object invokeTargetMethod( IBoxContext context, String methodName, Object[] args ) {
+		return DynamicObject.of( target ).invoke( context, methodName, args );
+	}
+
+	/**
+	 * Direct invoke a static Java method on the target's class bypassing the referencable methods
+	 */
+	public Object invokeTargetMethodStatic( IBoxContext context, String methodName, Object[] args ) {
+		return DynamicObject.of( target ).invokeStatic( context, methodName, args );
 	}
 
 	/**

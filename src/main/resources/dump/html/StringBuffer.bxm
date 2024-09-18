@@ -4,7 +4,7 @@
 		<span class="bx-dwSv">
 			<span class="bx-dhSv">
 				<bx:if label.len() >#label# - </bx:if>
-				String Buffer:
+				String Buffer/Builder:
 			</span>
 			<span> #encodeForHTML( var.toString() )#</span>
 		</span>

@@ -76,6 +76,10 @@ public class BoxComparisonOperationTransformer extends AbstractTransformer {
 			template = "!EqualsEquals.invoke(${left},${right})";
 		} else if ( operation.getOperator() == BoxComparisonOperator.TEqual ) {
 			template = "EqualsEqualsEquals.invoke(${left},${right})";
+		} else if ( operation.getOperator() == BoxComparisonOperator.TNotEqual ) {
+			template = "!EqualsEqualsEquals.invoke(${left},${right})";
+		} else if ( operation.getOperator() == BoxComparisonOperator.Contains ) {
+			template = "Contains.invoke(${left},${right})";
 		} else if ( operation.getOperator() == BoxComparisonOperator.GreaterThan ) {
 			template = "GreaterThan.invoke(${left},${right})";
 		} else if ( operation.getOperator() == BoxComparisonOperator.GreaterThanEquals ) {

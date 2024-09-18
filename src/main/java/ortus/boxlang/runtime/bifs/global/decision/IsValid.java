@@ -19,8 +19,8 @@ import java.util.Arrays;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
+import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -109,8 +109,8 @@ public class IsValid extends BIF {
 			case NUMERIC -> ValidationUtil.isValidNumeric( arguments.get( Key.value ) );
 			case RANGE -> ValidationUtil.isValidRange(
 			    arguments.get( Key.value ),
-			    DoubleCaster.cast( arguments.get( Key.min ) ),
-			    DoubleCaster.cast( arguments.get( Key.max ) )
+			    NumberCaster.cast( arguments.get( Key.min ) ),
+			    NumberCaster.cast( arguments.get( Key.max ) )
 			);
 			case REGEX, REGULAR_EXPRESSION -> ValidationUtil.isValidPattern(
 			    castAsStringOrNull( arguments.get( Key.value ) ),
@@ -123,7 +123,7 @@ public class IsValid extends BIF {
 			case UUID -> ValidationUtil.isValidUUID( castAsStringOrNull( arguments.get( Key.value ) ) )
 			    || ValidationUtil.isValidGUID( castAsStringOrNull( arguments.get( Key.value ) ) );
 			case VARIABLENAME -> ValidationUtil.isValidVariableName( castAsStringOrNull( arguments.get( Key.value ) ) );
-			case USDATE -> context.invokeFunction( Key.of( "LSIsDate" ),
+			case USDATE -> context.invokeFunction( Key.of( "IsDate" ),
 			    java.util.Map.of( Key.date, arguments.get( Key.value ), Key.locale, "en_US" ) );
 			case ZIPCODE -> ValidationUtil.isValidZipCode( castAsStringOrNull( arguments.get( Key.value ) ) );
 

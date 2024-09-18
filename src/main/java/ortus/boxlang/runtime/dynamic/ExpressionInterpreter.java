@@ -23,7 +23,7 @@ import java.util.Set;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext.ScopeSearchResult;
-import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
+import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.RequestScope;
@@ -69,7 +69,7 @@ public class ExpressionInterpreter {
 		}
 		// If expression is a number, return it directly
 		if ( expression.matches( "^-?\\d+(\\.\\d+)?$" ) ) {
-			return DoubleCaster.cast( expression );
+			return NumberCaster.cast( expression );
 		}
 		// Check for true/false
 		if ( expression.equalsIgnoreCase( "true" ) ) {

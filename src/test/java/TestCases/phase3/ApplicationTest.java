@@ -100,6 +100,35 @@ public class ApplicationTest {
 		assertThat( differenceInSeconds ).isAtMost( 1L );
 	}
 
+	@Test
+	public void testGetAppMeta() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		        application name="myAppsdfsdf2" sessionmanagement="true";
+				result = GetApplicationMetadata();
+			""", context );
+		// @formatter:on
+
+		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
+		assertThat( variables.getAsStruct( result ).get( "name" ) ).isEqualTo( "myAppsdfsdf2" );
+		assertThat( variables.getAsStruct( result ).get( "sessionmanagement" ).toString() ).isEqualTo( "true" );
+	}
+
+	@Test
+	public void testGetDefaultAppMeta() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				result = GetApplicationMetadata();
+			""", context );
+		// @formatter:on
+
+		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
+		assertThat( variables.getAsStruct( result ).get( "name" ) ).isEqualTo( "" );
+		assertThat( variables.getAsStruct( result ).get( "sessionmanagement" ).toString() ).isEqualTo( "false" );
+	}
+
 	@DisplayName( "java settings setup" )
 	@Test
 	public void testJavaSettings() {

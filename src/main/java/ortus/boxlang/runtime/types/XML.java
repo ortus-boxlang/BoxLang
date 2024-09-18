@@ -54,8 +54,8 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
-import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.dynamic.casters.KeyCaster;
+import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
 import ortus.boxlang.runtime.interop.DynamicInteropService;
 import ortus.boxlang.runtime.scopes.IntKey;
 import ortus.boxlang.runtime.scopes.Key;
@@ -550,14 +550,14 @@ public class XML implements Serializable, IStruct {
 			index = intKey.getIntValue();
 		} else {
 			// If key is not an int, we must attempt to cast it
-			CastAttempt<Double> indexAtt = DoubleCaster.attempt( key.getName() );
+			CastAttempt<Number> indexAtt = NumberCaster.attempt( key.getName() );
 			if ( !indexAtt.wasSuccessful() ) {
 				return -1;
 			}
-			Double dIndex = indexAtt.get();
+			Number dIndex = indexAtt.get();
 			index = dIndex.intValue();
 			// Dissallow non-integer indexes foo[1.5]
-			if ( index.doubleValue() != dIndex ) {
+			if ( index.doubleValue() != dIndex.doubleValue() ) {
 				return -1;
 			}
 		}

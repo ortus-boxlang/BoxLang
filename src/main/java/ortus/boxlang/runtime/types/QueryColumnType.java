@@ -19,21 +19,24 @@ package ortus.boxlang.runtime.types;
 
 import java.sql.Types;
 
+/**
+ * Represents a column type in a Query object.
+ */
 public enum QueryColumnType {
 
-	INTEGER( Types.INTEGER ),
 	BIGINT( Types.BIGINT ),
-	DOUBLE( Types.DOUBLE ),
-	DECIMAL( Types.DECIMAL ),
-	VARCHAR( Types.VARCHAR ),
 	BINARY( Types.BINARY ),
 	BIT( Types.BIT ),
-	TIME( Types.TIME ),
 	DATE( Types.DATE ),
-	TIMESTAMP( Types.TIMESTAMP ),
+	DECIMAL( Types.DECIMAL ),
+	DOUBLE( Types.DOUBLE ),
+	INTEGER( Types.INTEGER ),
+	NULL( Types.NULL ),
 	OBJECT( Types.JAVA_OBJECT ),
 	OTHER( Types.OTHER ),
-	NULL( Types.NULL );
+	TIME( Types.TIME ),
+	TIMESTAMP( Types.TIMESTAMP ),
+	VARCHAR( Types.VARCHAR );
 
 	public final int sqlType;
 
@@ -41,6 +44,9 @@ public enum QueryColumnType {
 		this.sqlType = sqlType;
 	}
 
+	/**
+	 * Create a new QueryColumnType from a string value.
+	 */
 	public static QueryColumnType fromString( String type ) {
 		type = type.toLowerCase();
 		// TODO: handle other types
@@ -75,6 +81,42 @@ public enum QueryColumnType {
 				return NULL;
 			default :
 				throw new IllegalArgumentException( "Unknown QueryColumnType: " + type );
+		}
+	}
+
+	/**
+	 * Retrieve this QueryColumnType as a string value.
+	 */
+	public String toString() {
+		switch ( this ) {
+			case INTEGER :
+				return "integer";
+			case BIGINT :
+				return "bigint";
+			case DOUBLE :
+				return "numeric";
+			case DECIMAL :
+				return "decimal";
+			case VARCHAR :
+				return "string";
+			case BINARY :
+				return "binary";
+			case BIT :
+				return "bit";
+			case TIME :
+				return "time";
+			case DATE :
+				return "date";
+			case TIMESTAMP :
+				return "timestamp";
+			case OBJECT :
+				return "object";
+			case OTHER :
+				return "other";
+			case NULL :
+				return "null";
+			default :
+				throw new IllegalArgumentException( "Unknown QueryColumnType: " + this );
 		}
 	}
 

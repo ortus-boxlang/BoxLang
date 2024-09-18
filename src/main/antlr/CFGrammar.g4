@@ -1,4 +1,4 @@
-parser grammar CFScriptGrammar;
+parser grammar CFGrammar;
 
 // Please note that this is still a WIP, but is essentially complete
 
@@ -7,7 +7,7 @@ parser grammar CFScriptGrammar;
 // $antlr-format alignColons hanging, allowShortRulesOnASingleLine on, alignFirstTokens on
 
 options {
-    tokenVocab = CFScriptLexer;
+    tokenVocab = CFLexer;
     superClass = CFParserControl;
 }
 
@@ -129,7 +129,7 @@ classOrInterface: SEMICOLON* (boxClass | interface)
     ;
 
 // This is the top level rule for a script of statements.
-script: SEMICOLON* functionOrStatement* EOF
+script: SEMICOLON* functionOrStatement*
     ;
 
 // Used for tests, to force the parser to look at all tokens and not just stop at the first expression
@@ -148,14 +148,13 @@ include: INCLUDE expression
     ;
 
 // class {}
-boxClass
-    : importStatement* ABSTRACT? FINAL? COMPONENT postAnnotation* LBRACE property* classBody RBRACE
+boxClass: importStatement* ABSTRACT? FINAL? COMPONENT postAnnotation* LBRACE classBody RBRACE
     ;
 
 classBody: classBodyStatement*
     ;
 
-classBodyStatement: staticInitializer | functionOrStatement
+classBodyStatement: property | staticInitializer | functionOrStatement
     ;
 
 staticInitializer: STATIC normalStatementBlock
@@ -226,7 +225,7 @@ functionOrStatement: function | statement
 
 // property name="foo" type="string" default="bar" inject="something";
 // Because a property is not seen as a normal statement, we have to add SEMICOLON here :(
-property: PROPERTY postAnnotation* SEMICOLON*
+property: PROPERTY postAnnotation* SEMICOLON+
     ;
 
 // function() {} or () => {} or () -> {}
@@ -392,7 +391,7 @@ rethrow: RETHROW
     ;
 
 // throw Exception;
-throw: THROW expression
+throw: { isThrow(_input) }? THROW expression
     ;
 
 /*
@@ -421,10 +420,7 @@ case: (CASE expression | DEFAULT) COLON statementOrBlock*
  <bx:set components="here">
  ```
  */
-componentIsland: COMPONENT_ISLAND_START componentIslandBody COMPONENT_ISLAND_END
-    ;
-
-componentIslandBody: COMPONENT_ISLAND_BODY*
+componentIsland: COMPONENT_ISLAND_START template COMPONENT_ISLAND_END
     ;
 
 /*
@@ -588,6 +584,7 @@ relOps
     | GE
     | GTESIGN
     | TEQ
+    | TENQ
     | LTE
     | LE
     | LTESIGN
@@ -604,4 +601,349 @@ binOps: EQV | IMP | CONTAINS | NOT CONTAINS
     ;
 
 preFix: identifier COLON
+    ;
+
+// ##################################
+// ###      TEMPLATE RULES        ###
+// ##################################
+
+// Top-level template rule.  Consists of imports and other statements.
+template: template_statements EOF?
+    ;
+
+// Top-level class or interface rule.
+template_classOrInterface
+    :
+    // Leading text will be ignored
+    template_textContent* (
+        template_component
+        | template_interface
+        | ( template_whitespace? template_script template_whitespace?)
+    ) EOF?
+    ;
+
+// <b>My Name is #qry.name#.</b> We can match as much non interpolated text but we need each
+// interpolated expression to be its own rule to ensure they output in the right order.
+template_textContent
+    : (template_nonInterpolatedText | template_comment)+
+    | ( template_comment* template_interpolatedExpression template_comment*)
+    ;
+
+// <!--- comment ---> or <!--- comment <!--- nested comment ---> comment --->
+template_comment: COMMENT_START (COMMENT_TEXT | COMMENT_START)* COMMENT_END
+    ;
+
+// ANYTHING
+template_componentName: COMPONENT_NAME
+    ;
+
+// <cfANYTHING ... >
+template_genericOpenComponent
+    : COMPONENT_OPEN PREFIX template_componentName template_attribute* COMPONENT_CLOSE
+    ;
+
+// <cfANYTHING />
+template_genericOpenCloseComponent
+    : COMPONENT_OPEN PREFIX template_componentName template_attribute* COMPONENT_SLASH_CLOSE
+    ;
+
+// </cfANYTHING>
+template_genericCloseComponent
+    : COMPONENT_OPEN SLASH_PREFIX template_componentName COMPONENT_CLOSE
+    ;
+
+template_interpolatedExpression: ICHAR expression ICHAR
+    ;
+
+// Any text to be directly output
+template_nonInterpolatedText: ( COMPONENT_OPEN | CONTENT_TEXT | template_whitespace)+
+    ;
+
+template_whitespace: TEMPLATE_WS+
+    ;
+
+template_attribute
+    :
+    // foo="bar" foo=bar
+    template_attributeName COMPONENT_EQUALS template_attributeValue?
+    // foo (value will default to empty string)
+    | template_attributeName
+    ;
+
+// any attributes once we've gotten past the component name
+template_attributeName: ATTRIBUTE_NAME
+    ;
+
+// foo or.... "foo" or... 'foo' or... "#foo#" or... #foo#
+template_attributeValue: template_unquotedValue | ICHAR el2 ICHAR | stringLiteral
+    ;
+
+// foo
+template_unquotedValue: UNQUOTED_VALUE_PART+
+    ;
+
+// Normal set of statements that can be anywhere.  Doesn't include imports.
+template_statements: ( template_statement | template_script | template_textContent)*
+    ;
+
+template_statement
+    : template_boxImport
+    | template_function
+    // <cfANYTHING />
+    | template_genericOpenCloseComponent
+    // <cfANYTHING ... >
+    | template_genericOpenComponent
+    // </cfANYTHING>
+    | template_genericCloseComponent
+    | template_set
+    | template_return
+    | template_if
+    | template_try
+    | template_output
+    | template_while
+    | template_break
+    | template_continue
+    | template_include
+    | template_rethrow
+    | template_throw
+    | template_switch
+    ;
+
+template_component
+    : (template_whitespace | template_comment)* (
+        template_boxImport ( template_whitespace | template_comment)*
+    )*
+    // <cfcomponent ... >
+    COMPONENT_OPEN PREFIX TEMPLATE_COMPONENT template_attribute* COMPONENT_CLOSE
+    // <cfproperty name="..."> (zero or more)
+    ((template_whitespace | template_comment)* template_property)*
+    // code in pseudo-constructor
+    template_statements
+    // </cfcomponent>
+    COMPONENT_OPEN SLASH_PREFIX TEMPLATE_COMPONENT COMPONENT_CLOSE template_textContent*
+    ;
+
+// <cfproperty name="..."> or... <cfproperty name="..." />
+template_property
+    : COMPONENT_OPEN PREFIX TEMPLATE_PROPERTY template_attribute* (
+        COMPONENT_CLOSE
+        | COMPONENT_SLASH_CLOSE
+    )
+    ;
+
+template_interface
+    : template_whitespace? (template_boxImport template_whitespace?)*
+    // <cfinterface ... >
+    COMPONENT_OPEN PREFIX TEMPLATE_INTERFACE template_attribute* COMPONENT_CLOSE
+    // Code in interface
+    (template_whitespace | template_function | template_comment)*
+    // </cfinterface>
+    COMPONENT_OPEN SLASH_PREFIX TEMPLATE_INTERFACE COMPONENT_CLOSE template_textContent*
+    ;
+
+template_function
+    :
+    // <cffunction name="foo" >
+    COMPONENT_OPEN PREFIX TEMPLATE_FUNCTION template_attribute* COMPONENT_CLOSE
+    // zero or more <cfargument ... >
+    ((template_nonInterpolatedText | template_comment)* template_argument)* template_whitespace?
+    // code inside function
+    body = template_statements
+    // </cffunction>
+    COMPONENT_OPEN SLASH_PREFIX TEMPLATE_FUNCTION COMPONENT_CLOSE
+    ;
+
+template_argument
+    :
+    // <cfargument name="param">
+    COMPONENT_OPEN PREFIX TEMPLATE_ARGUMENT template_attribute* (
+        COMPONENT_SLASH_CLOSE
+        | COMPONENT_CLOSE
+    )
+    ;
+
+template_set
+    :
+    // <cfset expression> <cfset expression />
+    COMPONENT_OPEN PREFIX TEMPLATE_SET expression (COMPONENT_SLASH_CLOSE | COMPONENT_CLOSE)
+    ;
+
+// <cfscript> statements... </cfscript>
+template_script: SCRIPT_OPEN (classOrInterface | script) SCRIPT_END_BODY
+    ;
+
+/*
+ <cfreturn>
+ <cfreturn />
+ <cfreturn expression>
+ <cfreturn expression />
+ <cfreturn 10/5 >
+ <cfreturn 20 / 7 />
+ */
+template_return
+    : COMPONENT_OPEN PREFIX TEMPLATE_RETURN expression? (COMPONENT_SLASH_CLOSE | COMPONENT_CLOSE)
+    ;
+
+template_if
+    :
+    // <cfif ... >`
+    COMPONENT_OPEN PREFIX TEMPLATE_IF ifCondition = expression COMPONENT_CLOSE thenBody = template_statements
+    // Any number of <cfelseif ... >
+    (
+        COMPONENT_OPEN PREFIX TEMPLATE_ELSEIF elseIfCondition += expression elseIfComponentClose += COMPONENT_CLOSE elseThenBody +=
+            template_statements
+    )*
+    // One optional <cfelse>
+    (
+        COMPONENT_OPEN PREFIX TEMPLATE_ELSE (COMPONENT_CLOSE | COMPONENT_SLASH_CLOSE) elseBody = template_statements
+    )?
+    // Closing </cfif>
+    COMPONENT_OPEN SLASH_PREFIX TEMPLATE_IF COMPONENT_CLOSE
+    ;
+
+template_try
+    :
+    // <cftry>
+    COMPONENT_OPEN PREFIX TEMPLATE_TRY COMPONENT_CLOSE
+    // code inside try
+    template_statements
+    // <cfcatch> (zero or more)
+    (template_catchBlock template_statements)*
+    // <cffinally> (zero or one)
+    template_finallyBlock? template_statements
+    // </cftry>
+    COMPONENT_OPEN SLASH_PREFIX TEMPLATE_TRY COMPONENT_CLOSE
+    ;
+
+/*
+ <cfcatch type="..."> ... </cfcatch>
+ <cfcatch type="..." />
+ */
+template_catchBlock
+    : (
+        // <cfcatch type="...">
+        COMPONENT_OPEN PREFIX TEMPLATE_CATCH template_attribute* COMPONENT_CLOSE
+        // code in catch
+        template_statements
+        // </cfcatch>
+        COMPONENT_OPEN SLASH_PREFIX TEMPLATE_CATCH COMPONENT_CLOSE
+    )
+    | COMPONENT_OPEN PREFIX TEMPLATE_CATCH template_attribute* COMPONENT_SLASH_CLOSE
+    ;
+
+template_finallyBlock
+    :
+    // <cffinally>
+    COMPONENT_OPEN PREFIX TEMPLATE_FINALLY COMPONENT_CLOSE
+    // code in finally
+    template_statements
+    // </cffinally>
+    COMPONENT_OPEN SLASH_PREFIX TEMPLATE_FINALLY COMPONENT_CLOSE
+    ;
+
+template_output
+    :
+    // <cfoutput> ...
+    OUTPUT_START template_attribute* COMPONENT_CLOSE
+    // code in output
+    template_statements
+    // </cfoutput>
+    COMPONENT_OPEN SLASH_PREFIX OUTPUT_END
+    |
+    // <cfoutput />
+    OUTPUT_START template_attribute* COMPONENT_SLASH_CLOSE
+    ;
+
+/*
+ <cfimport componentlib="..." prefix="...">
+ <cfimport name="com.foo.Bar">
+ <cfimport prefix="java"
+ name="com.foo.*">
+ <cfimport prefix="java" name="com.foo.Bar" alias="bradLib">
+ */
+template_boxImport
+    : COMPONENT_OPEN PREFIX TEMPLATE_IMPORT template_attribute* (
+        COMPONENT_CLOSE
+        | COMPONENT_SLASH_CLOSE
+    )
+    ;
+
+template_while
+    :
+    // <cfwhile condition="" >
+    COMPONENT_OPEN PREFIX TEMPLATE_WHILE template_attribute* COMPONENT_CLOSE
+    // code inside while
+    template_statements
+    // </cfwhile>
+    COMPONENT_OPEN SLASH_PREFIX TEMPLATE_WHILE COMPONENT_CLOSE
+    ;
+
+// <cfbreak> or... <cfbreak />
+template_break
+    : COMPONENT_OPEN PREFIX TEMPLATE_BREAK label = template_attributeName? (
+        COMPONENT_CLOSE
+        | COMPONENT_SLASH_CLOSE
+    )
+    ;
+
+// <cfcontinue> or... <cfcontinue />
+template_continue
+    : COMPONENT_OPEN PREFIX TEMPLATE_CONTINUE label = template_attributeName? (
+        COMPONENT_CLOSE
+        | COMPONENT_SLASH_CLOSE
+    )
+    ;
+
+// <cfinclude template="..."> or... <cfinclude template="..." />
+template_include
+    : COMPONENT_OPEN PREFIX TEMPLATE_INCLUDE template_attribute* (
+        COMPONENT_CLOSE
+        | COMPONENT_SLASH_CLOSE
+    )
+    ;
+
+// <cfrethrow> or... <cfrethrow />
+template_rethrow
+    : COMPONENT_OPEN PREFIX TEMPLATE_RETHROW (COMPONENT_CLOSE | COMPONENT_SLASH_CLOSE)
+    ;
+
+// <cfthrow message="..." detail="..."> or... <cfthrow />
+template_throw
+    : COMPONENT_OPEN PREFIX TEMPLATE_THROW template_attribute* (
+        COMPONENT_CLOSE
+        | COMPONENT_SLASH_CLOSE
+    )
+    ;
+
+template_switch
+    :
+    // <cfswitch expression="...">
+    COMPONENT_OPEN PREFIX TEMPLATE_SWITCH template_attribute* COMPONENT_CLOSE
+    // <cfcase> or <cfdefaultcase>
+    template_switchBody
+    // </cftry>
+    COMPONENT_OPEN SLASH_PREFIX TEMPLATE_SWITCH COMPONENT_CLOSE
+    ;
+
+template_switchBody
+    : (template_statement | template_script | template_textContent | template_case)*
+    ;
+
+template_case
+    : (
+        // <cfcase value="...">
+        COMPONENT_OPEN PREFIX TEMPLATE_CASE template_attribute* COMPONENT_CLOSE
+        // code in case
+        template_statements
+        // </cfcase>
+        COMPONENT_OPEN SLASH_PREFIX TEMPLATE_CASE COMPONENT_CLOSE
+    )
+    | (
+        // <cfdefaultcase>
+        COMPONENT_OPEN PREFIX TEMPLATE_DEFAULTCASE COMPONENT_CLOSE
+        // code in default case
+        template_statements
+        // </cfdefaultcase >
+        COMPONENT_OPEN SLASH_PREFIX TEMPLATE_DEFAULTCASE COMPONENT_CLOSE
+    )
     ;

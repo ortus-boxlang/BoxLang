@@ -65,7 +65,7 @@ public class ListAvgTest {
 		    result = listAvg( list );
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 2 );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( 2 );
 	}
 
 	@DisplayName( "Tests the BIF ListAvg with a delimiter" )
@@ -77,7 +77,7 @@ public class ListAvgTest {
 		    result = listAvg( list, "|" );
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 2 );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( 2 );
 	}
 
 	@DisplayName( "Tests the BIF ListAvg with a multi-delimiter" )
@@ -89,7 +89,7 @@ public class ListAvgTest {
 		    result = listAvg( list, "|;" );
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 2 );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( 2 );
 	}
 
 	@DisplayName( "It tests the member function String.listAvg" )
@@ -101,7 +101,7 @@ public class ListAvgTest {
 		    result = list.listAvg();
 		       """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 2 );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( 2 );
 	}
 
 }

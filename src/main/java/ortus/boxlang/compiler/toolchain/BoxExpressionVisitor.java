@@ -1168,6 +1168,7 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 			case "GT", ">", "GREATERTHAN" -> BoxComparisonOperator.GreaterThan;
 			case "GTE", ">=", "GE", "GREATERTHANOREQTO", "GREATERTHANOREQUALTO" -> BoxComparisonOperator.GreaterThanEquals;
 			case "===" -> BoxComparisonOperator.TEqual;
+			case "!==" -> BoxComparisonOperator.TNotEqual;
 			case "LE", "<=", "LTE", "LESSTHANOREQTO", "LESSTHANOREQUALTO" -> BoxComparisonOperator.LessThanEquals;
 			case "LT", "<", "LESSTHAN" -> BoxComparisonOperator.LessThan;
 			case "NEQ", "!=", "NOTEQUAL", "ISNOT", "<>" -> BoxComparisonOperator.NotEqual;

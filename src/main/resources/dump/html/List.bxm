@@ -1,4 +1,6 @@
-<!--- List template --->
+<bx:script>
+	expandRoot = expand || expand eq null
+</bx:script>
 <bx:output>
 	<div class="bx-dump">
 		<table class="bx-table-secondary" title="#encodeForHTML( posInCode )#">
@@ -6,9 +8,8 @@
 				<caption
 					role="button"
 					tabindex="0"
-					<bx:if expand>open</bx:if>
-					onclick="this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none')"
-					onkeyup="if(event.key === 'Enter'){ this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none');}"
+					<bx:if expandRoot>open aria-expanded="true"<bx:else>aria-expanded="false"</bx:if>
+					data-bx-toggle="siblings"
 				>
 					<strong>
 						<bx:if label.len() >#label# - </bx:if>
@@ -24,7 +25,7 @@
 				</caption>
 			</bx:if>
 			<tbody
-				<bx:if !expand>class="d-none"</bx:if>
+				<bx:if !expandRoot>class="d-none"</bx:if>
 			>
 				<bx:script>
 					for ( i = 0; i < var.size(); i++ ) {
@@ -35,14 +36,18 @@
 						```
 							<tr>
 								<th
+									aria-expanded="true"
+									data-bx-toggle="onoff"
 									scope="row"
 									valign="top"
-									onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'"
-									>
+									tabindex="0"
+								>
 									#i+1#
 								</th>
 								<td>
-									<bx:set dump( var : var.get( i castas 'int' ), top : top, expand : expand )>
+									<div class="bx-onoff">
+										<bx:set dump( var : var.get( i castas 'int' ), top : top, expand : expand )>
+									</div>
 								</td>
 							</tr>
 						```

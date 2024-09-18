@@ -1,0 +1,19 @@
+class output=true {
+	echo("application pseudoconstructor echo");
+	flush;
+	
+	function onRequestStart() output=true {
+		echo("onRequestStart echo");
+		flush;
+	}
+	
+	function onRequestEnd() output=true {
+		echo("onRequestEnd echo");
+		flush;
+	}
+	
+	function onApplicationStart() output=true {
+		echo("onApplicationStart echo");
+		flush;
+	}
+}

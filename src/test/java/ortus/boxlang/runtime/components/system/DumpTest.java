@@ -60,13 +60,14 @@ public class DumpTest {
 	@DisplayName( "It can dump tag" )
 	@Test
 	public void testCanDumpTag() {
-
+		// @formatter:off
 		instance.executeSource(
 		    """
-		       <cfdump var="My Value">
-		    <cfset result = getBoxContext().getBuffer().toString()>
-		          """,
+		       	<cfdump var="My Value" format="html">
+		    	<cfset result = getBoxContext().getBuffer().toString()>
+		    """,
 		    context, BoxSourceType.CFTEMPLATE );
+		// @formatter:on
 		assertThat( variables.getAsString( result ) ).contains( "My Value" );
 		// If we change our cfdump template, this may break
 		assertThat( variables.getAsString( result ) ).contains( "String" );
@@ -75,28 +76,30 @@ public class DumpTest {
 	@DisplayName( "It can dump BL tag" )
 	@Test
 	public void testCanDumpBLTag() {
-
+		// @formatter:off
 		instance.executeSource(
 		    """
-		       <bx:dump var="My Value">
-		    <bx:set result = getBoxContext().getBuffer().toString()>
-		          """,
+		    	<bx:dump var='My Value'>
+		    	<bx:set result = getBoxContext().getBuffer().toString()>
+		    """,
 		    context, BoxSourceType.BOXTEMPLATE );
+		// @formatter:on
 		assertThat( variables.getAsString( result ) ).contains( "My Value" );
 		// If we change our cfdump template, this may break
-		assertThat( variables.getAsString( result ) ).contains( "String" );
+		assertThat( variables.getAsString( result ) ).contains( "My Value" );
 	}
 
 	@DisplayName( "It can dump script" )
 	@Test
 	public void testCanDumpScript() {
-
+		// @formatter:off
 		instance.executeSource(
 		    """
-		       dump var="My Value";
-		    result = getBoxContext().getBuffer().toString();
-		          """,
+		       	dump var="My Value" format="html";
+		    	result = getBoxContext().getBuffer().toString();
+		    """,
 		    context );
+		// @formatter:on
 		assertThat( variables.getAsString( result ) ).contains( "My Value" );
 		// If we change our cfdump template, this may break
 		assertThat( variables.getAsString( result ) ).contains( "String" );
@@ -105,16 +108,29 @@ public class DumpTest {
 	@DisplayName( "It can dump ACF script" )
 	@Test
 	public void testCanDumpACFScript() {
-
+		// @formatter:off
 		instance.executeSource(
 		    """
-		       cfdump( var="My Value");
-		    result = getBoxContext().getBuffer().toString();
-		          """,
+		      	cfdump( var="My Value");
+		    	result = getBoxContext().getBuffer().toString();
+		    """,
 		    context, BoxSourceType.CFSCRIPT );
+		// @formatter:on
 		assertThat( variables.getAsString( result ) ).contains( "My Value" );
-		// If we change our cfdump template, this may break
-		assertThat( variables.getAsString( result ) ).contains( "String" );
+	}
+
+	@DisplayName( "It can dump using the BIF" )
+	@Test
+	public void testCanDumpUsingBIF() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		      	dump( "My Value");
+		    	result = getBoxContext().getBuffer().toString();
+		    """,
+		    context );
+		// @formatter:on
+		assertThat( variables.getAsString( result ) ).contains( "My Value" );
 	}
 
 }

@@ -24,7 +24,7 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
+import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -56,9 +56,9 @@ public class DecimalFormat extends BIF {
 	 *
 	 * @argument.length The number of decimal places to include in the formatted string.
 	 */
-	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public String _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Locale			locale			= ( Locale ) context.getConfig().get( Key.locale );
-		double			value			= DoubleCaster.cast( arguments.get( Key.number ) );
+		Number			value			= NumberCaster.cast( arguments.get( Key.number ) );
 		int				decimalPlaces	= arguments.getAsInteger( Key.length );
 		NumberFormat	formatter		= java.text.DecimalFormat.getInstance( locale );
 		formatter.setMinimumFractionDigits( 2 );

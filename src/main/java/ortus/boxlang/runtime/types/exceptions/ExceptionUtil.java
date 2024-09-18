@@ -31,10 +31,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import ortus.boxlang.compiler.DiskClassUtil;
+import ortus.boxlang.compiler.IBoxpiler;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.SourceFile;
 import ortus.boxlang.compiler.javaboxpiler.JavaBoxpiler;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.ThrowableCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.operators.InstanceOf;
 import ortus.boxlang.runtime.scopes.Key;
@@ -82,16 +84,15 @@ public class ExceptionUtil {
 	public static void throwException( Object exception ) {
 		Object ex = DynamicObject.unWrap( exception );
 
-		if ( ex instanceof RuntimeException runtimeException ) {
-			throw runtimeException;
-		} else if ( ex instanceof Throwable throwable ) {
-			throw new CustomException( throwable.getMessage(), throwable );
-		}
-
 		if ( ex instanceof String string ) {
 			throw new CustomException( string );
 		} else {
-			throw new BoxRuntimeException( "Cannot throw object of type [" + ex.getClass().getName() + "].  Must be a Throwable." );
+			Throwable t = ThrowableCaster.cast( ex );
+			if ( t instanceof RuntimeException runtimeException ) {
+				throw runtimeException;
+			} else {
+				throw new CustomException( t.getMessage(), t );
+			}
 		}
 	}
 
@@ -156,9 +157,10 @@ public class ExceptionUtil {
 				}
 				String fileName = element.toString();
 				if ( ( fileName.contains( "$cf" ) || fileName.contains( "$bx" ) )
-				    // ._invoke means we're just executing the template or function. lambda$_invoke$ means we're in a lambda inside of that same tmeplate for
+				    // _pseudoConstructor means we're in a class pseudoconstructor, ._invoke means we're executing the template or function. lambda$_invoke$ means we're in a lambda inside of that same tmeplate for
 				    // function. argumentDefaultValue is true when this is next stack AFTER a call to Argument.getDefaultValue()
-				    && ( fileName.contains( "._invoke(" ) || ( isInComponent = fileName.contains( ".lambda$_invoke$" ) ) || argumentDefaultValue ) ) {
+				    && ( fileName.contains( "._pseudoConstructor(" ) || fileName.contains( "._invoke(" )
+				        || ( isInComponent = fileName.contains( ".lambda$_invoke$" ) ) || argumentDefaultValue ) ) {
 					// If we're just inside the nested lambda for a component, skip subssequent lines of the stack trace
 					if ( !skipNext.isEmpty() ) {
 						if ( fileName.startsWith( skipNext ) ) {
@@ -173,7 +175,7 @@ public class ExceptionUtil {
 					}
 					int		lineNo		= -1;
 					String	BLFileName	= element.getClassName();
-					var		sourceMap	= JavaBoxpiler.getInstance().getSourceMapFromFQN( element.getClassName() );
+					var		sourceMap	= JavaBoxpiler.getInstance().getSourceMapFromFQN( IBoxpiler.getBaseFQN( element.getClassName() ) );
 					if ( sourceMap != null ) {
 						lineNo		= sourceMap.convertJavaLineToSourceLine( element.getLineNumber() );
 						BLFileName	= sourceMap.getSource();

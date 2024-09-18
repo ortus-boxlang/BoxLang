@@ -17,15 +17,18 @@
  */
 package ortus.boxlang.runtime.bifs.global.conversion;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
-import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
+import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 
 @BoxBIF
 public class ToNumeric extends BIF {
@@ -36,7 +39,7 @@ public class ToNumeric extends BIF {
 	public ToNumeric() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "any", Key.value ),
+		    new Argument( true, "string", Key.value ),
 		    new Argument( false, "any", Key.radix )
 		};
 	}
@@ -46,7 +49,7 @@ public class ToNumeric extends BIF {
 	 *
 	 * @argument.value The value to cast.
 	 *
-	 * @argument.radix The radix to use when casting the value. Valid values are "bin", "oct", "dec", and "hex".
+	 * @argument.radix The radix to use when casting the value. Valid values are 2-36, "bin", "oct", "dec", and "hex".
 	 *
 	 * @param context   The context in which the BIF is being executed.
 	 * @param arguments The arguments passed to the BIF.
@@ -54,17 +57,19 @@ public class ToNumeric extends BIF {
 	 * @return The numeric value of the input.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Object	inputValue	= arguments.get( Key.value );
+		String	inputValue	= arguments.getAsString( Key.value );
 		Object	radixValue	= arguments.get( Key.radix );
 
 		if ( radixValue == null ) {
-			CastAttempt<Double> doubleCastAttempt = DoubleCaster.attempt( inputValue );
-			return doubleCastAttempt.wasSuccessful() ? doubleCastAttempt.get() : 0;
+			return NumberCaster.cast( inputValue );
 		} else {
-			String	inputValueAsString	= StringCaster.cast( inputValue );
-			String	radixValueAsString	= StringCaster.cast( radixValue );
-			int		numericRadix		= convertStringToRadix( radixValueAsString );
-			return Integer.parseInt( inputValueAsString, numericRadix );
+			int numericRadix = convertStringToRadix( radixValue );
+			if ( inputValue.length() >= 20 ) {
+				BigInteger bigInteger = new BigInteger( inputValue, numericRadix );
+				return new BigDecimal( bigInteger );
+			} else {
+				return Long.parseLong( inputValue, numericRadix );
+			}
 		}
 	}
 
@@ -75,7 +80,16 @@ public class ToNumeric extends BIF {
 	 *
 	 * @return The integer value of the radix string.
 	 */
-	private int convertStringToRadix( String radixString ) {
+	private int convertStringToRadix( Object oRadix ) {
+		if ( oRadix instanceof Number rn ) {
+			int radix = rn.intValue();
+			if ( radix >= 2 && radix <= 36 ) {
+				return radix;
+			} else {
+				throw new BoxValidationException( "Radix must be between 2 and 36." );
+			}
+		}
+		String radixString = StringCaster.cast( oRadix ).toLowerCase();
 		switch ( radixString ) {
 			case "bin" :
 				return 2;
@@ -86,7 +100,7 @@ public class ToNumeric extends BIF {
 			case "hex" :
 				return 16;
 			default :
-				return 10; // Default to decimal if unspecified or unrecognized
+				throw new BoxValidationException( "Invalid radix [" + radixString + "], valid values are [2-36,bin,oct,dec,hex]" );
 		}
 	}
 }

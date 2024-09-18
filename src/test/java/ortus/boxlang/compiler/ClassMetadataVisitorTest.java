@@ -16,13 +16,11 @@ package ortus.boxlang.compiler;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import java.io.IOException;
 import java.nio.file.Paths;
 
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.compiler.ast.visitor.ClassMetadataVisitor;
-import ortus.boxlang.compiler.parser.BoxScriptParser;
 import ortus.boxlang.compiler.parser.Parser;
 import ortus.boxlang.compiler.parser.ParsingResult;
 import ortus.boxlang.runtime.scopes.Key;
@@ -35,63 +33,61 @@ public class ClassMetadataVisitorTest {
 
 	@Test
 	public void testMetadataVisitor() {
-		try {
-			ParsingResult result = new BoxScriptParser()
-			    .parse( Paths.get( "src/test/java/ortus/boxlang/compiler/MyClassMDVistor.bx" ).toAbsolutePath().toFile() );
-			if ( !result.isCorrect() ) {
-				throw new ParseException( result.getIssues(), "" );
-			}
-			ClassMetadataVisitor visitor = new ClassMetadataVisitor();
-			result.getRoot().accept( visitor );
 
-			var meta = visitor.getMetadata();
-			assertThat( meta.get( Key.of( "type" ) ) ).isEqualTo( "class" );
-			assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "MyClassMDVistor" );
-			assertThat( meta.get( Key.of( "fullname" ) ) ).isEqualTo( "src.test.java.ortus.boxlang.compiler.MyClassMDVistor" );
-			assertThat( meta.getAsString( Key.of( "path" ) ).contains( "MyClassMDVistor.bx" ) ).isTrue();
-			assertThat( meta.get( Key.of( "properties" ) ) instanceof Array ).isTrue();
-			assertThat( meta.get( Key.of( "functions" ) ) instanceof Array ).isTrue();
-
-			assertThat( meta.get( Key.of( "extends" ) ) instanceof IStruct ).isTrue();
-
-			assertThat( meta.getAsArray( Key.of( "functions" ) ).size() ).isEqualTo( 7 );
-			var fun1 = meta.getAsArray( Key.of( "functions" ) ).get( 0 );
-			assertThat( fun1 ).isInstanceOf( Struct.class );
-			assertThat( ( ( IStruct ) fun1 ).containsKey( Key.of( "name" ) ) ).isTrue();
-
-			assertThat( meta.get( Key.of( "documentation" ) ) instanceof IStruct ).isTrue();
-			var docs = meta.getAsStruct( Key.of( "documentation" ) );
-			assertThat( docs.getAsString( Key.of( "brad" ) ).trim() ).isEqualTo( "wood" );
-			assertThat( docs.get( Key.of( "luis" ) ) ).isEqualTo( "" );
-			assertThat( docs.getAsString( Key.of( "hint" ) ).trim() )
-			    .isEqualTo( "This is my class description continued on this line \nand this one as well." );
-
-			assertThat( meta.get( Key.of( "annotations" ) ) instanceof IStruct ).isTrue();
-			var annos = meta.getAsStruct( Key.of( "annotations" ) );
-			assertThat( annos.getAsString( Key.of( "foo" ) ).trim() ).isEqualTo( "bar" );
-			// assertThat( annos.getAsString( Key.of( "implements" ) ).trim() ).isEqualTo( "Luis,Jorge" );
-			assertThat( annos.getAsString( Key.of( "singleton" ) ).trim() ).isEqualTo( "" );
-			assertThat( annos.getAsString( Key.of( "gavin" ) ).trim() ).isEqualTo( "pickin" );
-			assertThat( annos.getAsString( Key.of( "inject" ) ).trim() ).isEqualTo( "" );
-
-			assertThat( annos.get( Key.of( "multiAnno" ) ) ).isInstanceOf( Array.class );
-			assertThat( annos.getAsArray( Key.of( "multiAnno" ) ).size() ).isEqualTo( 3 );
-			assertThat( annos.getAsArray( Key.of( "multiAnno" ) ).get( 0 ) ).isEqualTo( "one" );
-			assertThat( annos.getAsArray( Key.of( "multiAnno" ) ).get( 1 ) ).isEqualTo( "two" );
-			assertThat( annos.getAsArray( Key.of( "multiAnno" ) ).get( 2 ) ).isEqualTo( "three" );
-
-			assertThat( annos.get( Key.of( "arrayAnno" ) ) ).isInstanceOf( Array.class );
-			assertThat( annos.getAsArray( Key.of( "arrayAnno" ) ).size() ).isEqualTo( 3 );
-			assertThat( annos.getAsArray( Key.of( "arrayAnno" ) ).get( 0 ) ).isEqualTo( "one" );
-			assertThat( annos.getAsArray( Key.of( "arrayAnno" ) ).get( 1 ) ).isEqualTo( "two" );
-			assertThat( annos.getAsArray( Key.of( "arrayAnno" ) ).get( 2 ) ).isEqualTo( "three" );
-
-			assertThat( annos.get( Key.of( "structAnno" ) ) ).isInstanceOf( IStruct.class );
-			assertThat( annos.getAsStruct( Key.of( "structAnno" ) ).get( Key.of( "one" ) ) ).isEqualTo( "two" );
-			assertThat( annos.getAsStruct( Key.of( "structAnno" ) ).get( Key.of( "three" ) ) ).isEqualTo( "four" );
-		} catch ( IOException e ) {
-			throw new RuntimeException( e );
+		ParsingResult result = new Parser()
+		    .parse( Paths.get( "src/test/java/ortus/boxlang/compiler/MyClassMDVistor.bx" ).toAbsolutePath().toFile() );
+		if ( !result.isCorrect() ) {
+			throw new ParseException( result.getIssues(), "" );
 		}
+		ClassMetadataVisitor visitor = new ClassMetadataVisitor();
+		result.getRoot().accept( visitor );
+
+		var meta = visitor.getMetadata();
+		assertThat( meta.get( Key.of( "type" ) ) ).isEqualTo( "class" );
+		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "MyClassMDVistor" );
+		assertThat( meta.get( Key.of( "fullname" ) ) ).isEqualTo( "src.test.java.ortus.boxlang.compiler.MyClassMDVistor" );
+		assertThat( meta.getAsString( Key.of( "path" ) ).contains( "MyClassMDVistor.bx" ) ).isTrue();
+		assertThat( meta.get( Key.of( "properties" ) ) instanceof Array ).isTrue();
+		assertThat( meta.get( Key.of( "functions" ) ) instanceof Array ).isTrue();
+
+		assertThat( meta.get( Key.of( "extends" ) ) instanceof IStruct ).isTrue();
+
+		assertThat( meta.getAsArray( Key.of( "functions" ) ).size() ).isEqualTo( 7 );
+		var fun1 = meta.getAsArray( Key.of( "functions" ) ).get( 0 );
+		assertThat( fun1 ).isInstanceOf( Struct.class );
+		assertThat( ( ( IStruct ) fun1 ).containsKey( Key.of( "name" ) ) ).isTrue();
+
+		assertThat( meta.get( Key.of( "documentation" ) ) instanceof IStruct ).isTrue();
+		var docs = meta.getAsStruct( Key.of( "documentation" ) );
+		assertThat( docs.getAsString( Key.of( "brad" ) ).trim() ).isEqualTo( "wood" );
+		assertThat( docs.get( Key.of( "luis" ) ) ).isEqualTo( "" );
+		assertThat( docs.getAsString( Key.of( "hint" ) ).trim() )
+		    .isEqualTo( "This is my class description continued on this line \nand this one as well." );
+
+		assertThat( meta.get( Key.of( "annotations" ) ) instanceof IStruct ).isTrue();
+		var annos = meta.getAsStruct( Key.of( "annotations" ) );
+		assertThat( annos.getAsString( Key.of( "foo" ) ).trim() ).isEqualTo( "bar" );
+		// assertThat( annos.getAsString( Key.of( "implements" ) ).trim() ).isEqualTo( "Luis,Jorge" );
+		assertThat( annos.getAsString( Key.of( "singleton" ) ).trim() ).isEqualTo( "" );
+		assertThat( annos.getAsString( Key.of( "gavin" ) ).trim() ).isEqualTo( "pickin" );
+		assertThat( annos.getAsString( Key.of( "inject" ) ).trim() ).isEqualTo( "" );
+
+		assertThat( annos.get( Key.of( "multiAnno" ) ) ).isInstanceOf( Array.class );
+		assertThat( annos.getAsArray( Key.of( "multiAnno" ) ).size() ).isEqualTo( 3 );
+		assertThat( annos.getAsArray( Key.of( "multiAnno" ) ).get( 0 ) ).isEqualTo( "one" );
+		assertThat( annos.getAsArray( Key.of( "multiAnno" ) ).get( 1 ) ).isEqualTo( "two" );
+		assertThat( annos.getAsArray( Key.of( "multiAnno" ) ).get( 2 ) ).isEqualTo( "three" );
+
+		assertThat( annos.get( Key.of( "arrayAnno" ) ) ).isInstanceOf( Array.class );
+		assertThat( annos.getAsArray( Key.of( "arrayAnno" ) ).size() ).isEqualTo( 3 );
+		assertThat( annos.getAsArray( Key.of( "arrayAnno" ) ).get( 0 ) ).isEqualTo( "one" );
+		assertThat( annos.getAsArray( Key.of( "arrayAnno" ) ).get( 1 ) ).isEqualTo( "two" );
+		assertThat( annos.getAsArray( Key.of( "arrayAnno" ) ).get( 2 ) ).isEqualTo( "three" );
+
+		assertThat( annos.get( Key.of( "structAnno" ) ) ).isInstanceOf( IStruct.class );
+		assertThat( annos.getAsStruct( Key.of( "structAnno" ) ).get( Key.of( "one" ) ) ).isEqualTo( "two" );
+		assertThat( annos.getAsStruct( Key.of( "structAnno" ) ).get( Key.of( "three" ) ) ).isEqualTo( "four" );
+
 	}
 
 	@Test

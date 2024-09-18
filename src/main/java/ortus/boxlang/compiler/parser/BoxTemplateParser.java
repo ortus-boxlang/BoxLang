@@ -118,31 +118,31 @@ public class BoxTemplateParser extends AbstractParser {
 		super( startLine, startColumn );
 	}
 
-	public ParsingResult parse( File file ) throws IOException {
+	public ParsingResult parse( File file, boolean isScript ) throws IOException {
 		this.file = file;
 		setSource( new SourceFile( file ) );
 		BOMInputStream		inputStream			= getInputStream( file );
 
 		Optional<String>	ext					= Parser.getFileExtension( file.getAbsolutePath() );
 		Boolean				classOrInterface	= ext.isPresent() && ext.get().equalsIgnoreCase( "bx" );
-		BoxNode				ast					= parserFirstStage( inputStream, classOrInterface );
+		BoxNode				ast					= parserFirstStage( inputStream, classOrInterface, isScript );
 		return new ParsingResult( ast, issues, comments );
 	}
 
-	public ParsingResult parse( String code ) throws IOException {
-		return parse( code, false );
+	public ParsingResult parse( String code, boolean isScript ) throws IOException {
+		return parse( code, false, isScript );
 	}
 
-	public ParsingResult parse( String code, Boolean classOrInterface ) throws IOException {
+	public ParsingResult parse( String code, boolean classOrInterface, boolean isScript ) throws IOException {
 		this.sourceCode = code;
 		setSource( new SourceCode( code ) );
 		InputStream	inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
-		BoxNode		ast			= parserFirstStage( inputStream, classOrInterface );
+		BoxNode		ast			= parserFirstStage( inputStream, classOrInterface, isScript );
 		return new ParsingResult( ast, issues, comments );
 	}
 
 	@Override
-	protected BoxNode parserFirstStage( InputStream inputStream, Boolean classOrInterface ) throws IOException {
+	protected BoxNode parserFirstStage( InputStream inputStream, boolean classOrInterface, boolean isScript ) throws IOException {
 		BoxTemplateLexerCustom	lexer	= new BoxTemplateLexerCustom( CharStreams.fromStream( inputStream, StandardCharsets.UTF_8 ) );
 		BoxTemplateGrammar		parser	= new BoxTemplateGrammar( new CommonTokenStream( lexer ) );
 		addErrorListeners( lexer, parser );
@@ -1069,7 +1069,7 @@ public class BoxTemplateParser extends AbstractParser {
 			ParsingResult result = new BoxScriptParser( position.getStart().getLine(), position.getStart().getColumn(), ( outputCounter > 0 ) )
 			    .setSource( sourceToParse )
 			    .setSubParser( true )
-			    .parse( code );
+			    .parse( code, true );
 			this.comments.addAll( result.getComments() );
 			if ( result.getIssues().isEmpty() ) {
 				BoxNode root = result.getRoot();

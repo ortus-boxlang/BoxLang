@@ -56,17 +56,7 @@ public class BoxArgumentDeclarationTransformer extends AbstractTransformer {
 			if ( boxArgument.getValue().isLiteral() ) {
 				defaultLiteral = transpiler.transform( boxArgument.getValue(), TransformerContext.NONE );
 			} else {
-				// String lambdaContextName = "lambdaContext" + transpiler.incrementAndGetLambdaContextCounter();
-				// transpiler.pushContextName( lambdaContextName );
-				// Node initExpr = transpiler.transform( boxArgument.getValue() );
-				// transpiler.popContextName();
-				//
-				// LambdaExpr lambda = new LambdaExpr();
-				// lambda.setParameters( new NodeList<>(
-				// new Parameter( new UnknownType(), lambdaContextName ) ) );
-				// lambda.setBody( new ExpressionStmt( ( Expression ) initExpr ) );
-				// defaultExpression = lambda;
-				throw new UnsupportedOperationException();
+				defaultExpression = transpiler.transform( boxArgument.getValue(), TransformerContext.NONE, ReturnValueContext.VALUE );
 			}
 		}
 

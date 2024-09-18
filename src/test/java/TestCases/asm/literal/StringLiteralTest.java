@@ -74,9 +74,9 @@ public class StringLiteralTest {
 		assertThat( result ).isEqualTo( "Hello World" );
 	}
 
-	@DisplayName( "Can decalare a string literal with interpolcation" )
+	@DisplayName( "Can declare a string literal with interpolation" )
 	@Test
-	public void testDecalreInterpolatedStringLiteral() {
+	public void testDeclareInterpolatedStringLiteral() {
 		var result = instance.executeStatement(
 		    """
 		    "Hello World #5#";

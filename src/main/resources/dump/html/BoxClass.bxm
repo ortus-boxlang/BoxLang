@@ -5,6 +5,7 @@
 	thisScope = var.$bx.getThisScope()
 	staticScope = var.$bx.getStaticScope()
 	sortedProperties = md.properties.toMutable().sort( ( a, b ) => compare( a.name, b.name ) )
+	expandRoot = expand || expand eq null
 </bx:script>
 <bx:output>
 	<div class="bx-dump">
@@ -13,9 +14,8 @@
 				class="bx-dhCs"
 				role="button"
 				tabindex="0"
-				<bx:if expand>open</bx:if>
-				onclick="this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none')"
-				onkeyup="if(event.key === 'Enter'){ this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none');}"
+				<bx:if expandRoot>open aria-expanded="true"<bx:else>aria-expanded="false"</bx:if>
+				data-bx-toggle="siblings"
 			>
 				<strong>
 					<bx:if label.len() >#label# - </bx:if>
@@ -28,224 +28,355 @@
 				</bx:if>
 			</caption>
 			<tbody
-				<bx:if !expand>class="d-none"</bx:if>
+				<bx:if !expandRoot>class="d-none"</bx:if>
 			>
 
+				<!--- PATH --->
 				<tr>
-					<th scope="row"><strong>Path</strong></th>
-					<td>#encodeForHTML( md.path )#</td>
+					<th
+						aria-expanded="true"
+						data-bx-toggle="onoff"
+						scope="row"
+						valign="top"
+						tabindex="0"
+					>
+						Path
+					</th>
+					<td>
+						<div class="bx-onoff">
+							<em>#encodeForHTML( md.path )#</em>
+						</div>
+					</td>
 				</tr>
 
 				<!--- EXTENDS --->
+				<bx:if md.extends>
 				<tr>
 					<th
+						aria-expanded="true"
+						data-bx-toggle="onoff"
 						scope="row"
 						valign="top"
-						onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'"
-						>
-						<strong>Extends</strong>
+						tabindex="0"
+					>
+						Extends
 					</th>
 					<td>
-						#writeDump( var : md.extends ?: '', top : top, expand : expand )#
+						<div class="bx-onoff">
+							#encodeForHTML( md.extends.name )#
+						</div>
 					</td>
 				</tr>
+				</bx:if>
 
 				<!--- IMPLEMENTS --->
+				<bx:if md.implements>
 				<tr>
 					<th
+						aria-expanded="true"
+						data-bx-toggle="onoff"
 						scope="row"
 						valign="top"
-						onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'"
-						>
-						<strong>Implements</strong>
+						tabindex="0"
+					>
+						Implements
 					</th>
 					<td>
-						#writeDump( var: md.implements, top: top, expand: expand )#
+						<div class="bx-onoff">
+							<ul>
+								<bx:loop collection="#md.implements#" item="interface">
+									<li>#encodeForHTML( interface.name )#</li>
+								</bx:loop>
+							</ul>
+						</div>
 					</td>
 				</tr>
+				</bx:if>
 
-				<!--- Annotations --->
+				<!--- ANNOTATIONS --->
+				<bx:if md.annotations>
 				<tr>
-					<th scope="row"><strong>Annotations</strong></th>
+					<th
+						aria-expanded="true"
+						data-bx-toggle="onoff"
+						scope="row"
+						valign="top"
+						tabindex="0"
+					>
+						Annotations
+					</th>
 					<td>
-						<bx:set annotations = md.annotations>
-						<table class="bx-table-default">
-							<thead>
-								<tr>
-									<th><b>Annotation</b></th>
-									<th><b>Value</b></th>
-								</tr>
-							</thead>
-							<tbody>
-								<bx:script>
-									for( thisAnnotation in annotations ) {
-										```
-											<tr>
-												<td>
-													<strong>#encodeForHTML( thisAnnotation )#</strong>
-												</td>
-												<td>
-													#writeDump( annotations[ thisAnnotation ] )#
-												</td>
-											</tr>
-										```
-										}
-								</bx:script>
-							</tbody>
-						</table>
+						<div class="bx-onoff">
+							<bx:set annotations = md.annotations>
+							<table class="bx-table-default">
+								<thead>
+									<tr>
+										<th><b>Annotation</b></th>
+										<th><b>Value</b></th>
+									</tr>
+								</thead>
+								<tbody>
+									<bx:script>
+										for( thisAnnotation in annotations ) {
+											```
+												<tr>
+													<td>
+														<strong>#encodeForHTML( thisAnnotation )#</strong>
+													</td>
+													<td>
+														#writeDump( annotations[ thisAnnotation ] )#
+													</td>
+												</tr>
+											```
+											}
+									</bx:script>
+								</tbody>
+							</table>
+						</div>
 					</td>
 				</tr>
+				</bx:if>
 
 				<!--- PROPERTIES --->
 				<tr>
 					<th
+						aria-expanded="true"
+						data-bx-toggle="onoff"
 						scope="row"
 						valign="top"
-						onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'"
-						>
+						tabindex="0"
+					>
 						Properties
 					</th>
 					<td>
-						<table class="bx-table-default">
-							<tr>
-								<th>Name</th>
-								<th>Value</th>
-							</tr>
-							<bx:loop array="#sortedProperties#" index="prop">
-								<tr>
-									<td
-										valign="top"
-										onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'"
-										>
-										<strong>#encodeForHTML( prop.name )#</strong>
-									</td>
-									<td>
-										#writeDump( var : variablesScope[ prop.name ] ?: null, top : top, expand : expand )#
-									</td>
-								</tr>
-							</bx:loop>
-						</table>
+						<div class="bx-onoff">
+							<bx:if sortedProperties.isEmpty()>
+								<p><em>None</em></p>
+							<bx:else>
+								<table class="bx-table-default">
+									<tr>
+										<th>Name</th>
+										<th>Value</th>
+									</tr>
+									<bx:loop array="#sortedProperties#" index="prop">
+										<tr>
+											<td
+												valign="top"
+												onclick="
+													this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none';
+													this.style.fontStyle = this.nextElementSibling.style.display === 'none' ? 'italic' : 'normal'
+												"
+												>
+												<strong>#encodeForHTML( prop.name )#</strong>
+											</td>
+											<td>
+												#writeDump( var : variablesScope[ prop.name ] ?: null, top : top, expand : expand )#
+											</td>
+										</tr>
+									</bx:loop>
+								</table>
+							</bx:if>
+						</div>
+					</td>
+				</tr>
+
+				<!--- PUBLIC Data  --->
+				<tr>
+					<th
+						aria-expanded="true"
+						data-bx-toggle="onoff"
+						scope="row"
+						valign="top"
+						tabindex="0"
+					>
+						Public Data
+					</th>
+					<td>
+						<div class="bx-onoff">
+							<bx:if thisScope.isEmpty()>
+								<p><em>None</em></p>
+							<bx:else>
+								<table class="bx-table-default">
+									<tr>
+										<th>Name</th>
+										<th>Value</th>
+									</tr>
+									<bx:loop collection="#thisScope#" item="dataProperty">
+										<bx:script>
+											thisData = thisScope[ dataProperty ]
+											if( (thisData instanceOf "ortus.boxlang.runtime.types.Function") ){
+												continue;
+											}
+										</bx:script>
+										<tr>
+											<td
+												valign="top"
+												onclick="
+													this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none';
+													this.style.fontStyle = this.nextElementSibling.style.display === 'none' ? 'italic' : 'normal'
+												"
+												>
+												<strong>#encodeForHTML( dataProperty )#</strong>
+											</td>
+											<td>
+												#writeDump( var : dataProperty ?: null, top : top, expand : expand )#
+											</td>
+										</tr>
+									</bx:loop>
+								</table>
+							</bx:if>
+						</div>
 					</td>
 				</tr>
 
 				<!--- Static METHODS  --->
+				<bx:if staticScope && showUDFs>
 				<tr>
 					<th
+						aria-expanded="true"
+						data-bx-toggle="onoff"
 						scope="row"
 						valign="top"
-						onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'"
-						>
+						tabindex="0"
+					>
 						Static Methods
 					</th>
 					<td>
-						<table class="bx-table-default">
-							<tr>
-								<th>Name</th>
-								<th>Signature</th>
-							</tr>
-							<bx:loop collection="#staticScope#" item="methodName">
-								<bx:script>
-									thisMethod = staticScope[ methodName ]
-									if( !(thisMethod instanceOf "ortus.boxlang.runtime.types.Function") ){
-										continue;
-									}
-								</bx:script>
+						<div class="bx-onoff">
+							<table class="bx-table-default">
 								<tr>
-									<td
-										valign="top"
-										onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'"
-										>
-										<strong>#encodeForHTML( methodName )#</strong>
-									</td>
-									<td>
-										#writeDump( var : thisMethod ?: null, top : top, expand : expand )#
-									</td>
+									<th>Name</th>
+									<th>Signature</th>
 								</tr>
-							</bx:loop>
-						</table>
+								<bx:loop collection="#staticScope#" item="methodName">
+									<bx:script>
+										thisMethod = staticScope[ methodName ]
+										if( !(thisMethod instanceOf "ortus.boxlang.runtime.types.Function") ){
+											continue;
+										}
+									</bx:script>
+									<tr>
+										<td
+											valign="top"
+											onclick="
+												this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none';
+												this.style.fontStyle = this.nextElementSibling.style.display === 'none' ? 'italic' : 'normal'
+											"
+											>
+											<strong>#encodeForHTML( methodName )#</strong>
+										</td>
+										<td>
+											#writeDump( var : thisMethod ?: null, top : top, expand : expand ?: false )#
+										</td>
+									</tr>
+								</bx:loop>
+							</table>
+						</div>
 					</td>
 				</tr>
+				</bx:if>
 
 				<!--- PUBLIC METHODS  --->
-				<tr>
-					<th
-						scope="row"
-						valign="top"
-						onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'"
+				<bx:if showUDFs>
+					<tr>
+						<th
+							aria-expanded="true"
+							data-bx-toggle="onoff"
+							scope="row"
+							valign="top"
+							tabindex="0"
 						>
-						Public Methods
-					</th>
-					<td>
-						<table class="bx-table-default">
-							<tr>
-								<th>Name</th>
-								<th>Signature</th>
-							</tr>
-							<bx:loop collection="#thisScope#" item="methodName">
-								<bx:script>
-									thisMethod = thisScope[ methodName ]
-									if( !(thisMethod instanceOf "ortus.boxlang.runtime.types.Function") ){
-										continue;
-									}
-								</bx:script>
-								<tr>
-									<td
-										valign="top"
-										onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'"
-										>
-										<strong>#encodeForHTML( methodName )#</strong>
-									</td>
-									<td>
-										#writeDump( var : thisMethod ?: null, top : top, expand : expand )#
-									</td>
-								</tr>
-							</bx:loop>
-						</table>
-					</td>
-				</tr>
+							Public Methods
+						</th>
+						<td>
+							<div class="bx-onoff">
+								<bx:if thisScope.isEmpty()>
+									<p><em>None</em></p>
+								<bx:else>
+									<table class="bx-table-default">
+										<tr>
+											<th>Name</th>
+											<th>Signature</th>
+										</tr>
+										<bx:loop collection="#thisScope#" item="methodName">
+											<bx:script>
+												thisMethod = thisScope[ methodName ]
+												if( !(thisMethod instanceOf "ortus.boxlang.runtime.types.Function") ){
+													continue;
+												}
+											</bx:script>
+											<tr>
+												<td
+													valign="top"
+													onclick="
+														this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none';
+														this.style.fontStyle = this.nextElementSibling.style.display === 'none' ? 'italic' : 'normal'
+													"
+													>
+													<strong>#encodeForHTML( methodName )#</strong>
+												</td>
+												<td>
+													#writeDump( var : thisMethod ?: null, top : top, expand : expand )#
+												</td>
+											</tr>
+										</bx:loop>
+									</table>
+								</bx:if>
+							</div>
+						</td>
+					</tr>
+				</bx:if>
 
 				<!--- PRIVATE METHODS  --->
-				<tr>
-					<th
-						scope="row"
-						valign="top"
-						onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'"
+				<bx:if showUDFs>
+					<tr>
+						<th
+							aria-expanded="true"
+							data-bx-toggle="onoff"
+							scope="row"
+							valign="top"
+							tabindex="0"
 						>
-						Private Methods
-					</th>
-					<td>
-						<table class="bx-table-default">
-							<tr>
-								<th>Name</th>
-								<th>Signature</th>
-							</tr>
-							<bx:loop collection="#variablesScope#" item="methodName">
-								<bx:script>
-									thisMethod = variablesScope[ methodName ]
-									if( !(thisMethod instanceOf "ortus.boxlang.runtime.types.Function") ){
-										continue;
-									}
-									if( thisMethod.getAccess().toString() == "public" ){
-										continue;
-									}
-								</bx:script>
-								<tr>
-									<td
-										valign="top"
-										onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'"
-										>
-										<strong>#encodeForHTML( methodName )#</strong>
-									</td>
-									<td>
-										#writeDump( var : thisMethod ?: null, top : top, expand : expand )#
-									</td>
-								</tr>
-							</bx:loop>
-						</table>
-					</td>
-				</tr>
-
-				<!--- STATIC METHODS  --->
+							Private Methods
+						</th>
+						<td>
+							<div class="bx-onoff">
+								<bx:if variablesScope.isEmpty()>
+									<p><em>None</em></p>
+								<bx:else>
+									<table class="bx-table-default">
+										<tr>
+											<th>Name</th>
+											<th>Signature</th>
+										</tr>
+										<bx:loop collection="#variablesScope#" item="methodName">
+											<bx:script>
+												thisMethod = variablesScope[ methodName ]
+												if( !(thisMethod instanceOf "ortus.boxlang.runtime.types.Function") ){
+													continue;
+												}
+												if( thisMethod.getAccess().toString() == "public" ){
+													continue;
+												}
+											</bx:script>
+											<tr>
+												<td
+													valign="top"
+													onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'"
+													>
+													<strong>#encodeForHTML( methodName )#</strong>
+												</td>
+												<td>
+													#writeDump( var : thisMethod ?: null, top : top, expand : expand )#
+												</td>
+											</tr>
+										</bx:loop>
+									</table>
+								</bx:if>
+							</div>
+						</td>
+					</tr>
+				</bx:if>
 			</tbody>
 		</table>
 	</div>

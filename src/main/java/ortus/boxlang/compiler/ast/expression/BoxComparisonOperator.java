@@ -23,7 +23,8 @@ public enum BoxComparisonOperator {
 	LessThanEquals,
 	NotEqual,
 	Contains,
-	TEqual;
+	TEqual,
+	TNotEqual;
 
 	public String getSymbol() {
 		switch ( this ) {
@@ -43,6 +44,8 @@ public enum BoxComparisonOperator {
 				return "contains";
 			case TEqual :
 				return "===";
+			case TNotEqual :
+				return "!==";
 			default :
 				return "";
 		}

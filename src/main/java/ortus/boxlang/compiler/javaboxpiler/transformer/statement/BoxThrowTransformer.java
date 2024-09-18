@@ -65,7 +65,7 @@ public class BoxThrowTransformer extends AbstractTransformer {
 			expr = new NullLiteralExpr();
 		}
 
-		if ( message != null ) {
+		if ( message != null || type != null || detail != null || errorcode != null || extendedinfo != null ) {
 			Expression	jType			= new NullLiteralExpr();
 			Expression	jMessage		= new NullLiteralExpr();
 			Expression	jDetail			= new NullLiteralExpr();

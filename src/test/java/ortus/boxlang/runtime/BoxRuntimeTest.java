@@ -40,7 +40,7 @@ public class BoxRuntimeTest {
 	@Test
 	@Disabled( "We can't shutdown the runtime singleton in the middle of an async test suite" )
 	public void testItCanStartUp() {
-		BoxRuntime runtime = BoxRuntime.getInstance( true );
+		BoxRuntime runtime = BoxRuntime.getInstance( "", "" );
 		assertThat( BoxRuntime.getInstance() ).isSameInstanceAs( runtime );
 		assertThat( runtime.getStartTime() ).isNotNull();
 

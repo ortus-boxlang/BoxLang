@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.bifs.global.decision;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.AfterAll;
@@ -35,12 +36,14 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class IsDateTest {
 
 	static BoxRuntime	instance;
 	IBoxContext			context;
 	IScope				variables;
+	static Key			result	= new Key( "result" );
 
 	@BeforeAll
 	public static void setUp() {
@@ -148,6 +151,89 @@ public class IsDateTest {
 		assertThat( ( Boolean ) variables.get( Key.of( "invalidLeapDay" ) ) ).isFalse();
 		assertThat( ( Boolean ) variables.get( Key.of( "invalidMonth" ) ) ).isFalse();
 		assertThat( ( Boolean ) variables.get( Key.of( "invalidDayNumber" ) ) ).isFalse();
+	}
+
+	/**
+	 * Localized Formats tests
+	 */
+	@DisplayName( "It tests the BIF IsDate with a full ISO including offset and locale argument" )
+	@Test
+	public void testIsDateFullISOLocale() {
+		instance.executeSource(
+		    """
+		    result = IsDate( date="2024-01-14T00:00:01.0001Z", locale="en-US" );
+		    """,
+		    context );
+		assertTrue( variables.getAsBoolean( result ) );
+	}
+
+	@DisplayName( "It tests the BIF IsDate using a localized russian format" )
+	@Test
+	public void testIsDateRussian() {
+		instance.executeSource(
+		    """
+		    result = IsDate( date="14.01.2024", locale="ru_RU" );
+		    """,
+		    context );
+		assertTrue( variables.getAsBoolean( result ) );
+	}
+
+	@DisplayName( "It tests the BIF IsDate using a localized, Spanish long-form format" )
+	@Test
+	public void testIsDateSpain() {
+
+		instance.executeSource(
+		    """
+		    result = IsDate( date="14 de enero de 2024", locale="es-ES" );
+		    """,
+		    context );
+		assertTrue( variables.getAsBoolean( result ) );
+	}
+
+	@DisplayName( "It tests the BIF IsDate using traditional chinese format" )
+	@Test
+	public void testIsDateChinese() {
+		instance.executeSource(
+		    """
+		    result = IsDate( date="2024年1月14日", locale="zh-CN" );
+		    """,
+		    context );
+		assertTrue( variables.getAsBoolean( result ) );
+	}
+
+	@DisplayName( "It tests the BIF IsDate returns false with an invalid date" )
+	@Test
+	public void testIsDateFalseChinese() {
+		instance.executeSource(
+		    """
+		    result = IsDate( date="12345", locale="zh-CN" );
+		    """,
+		    context );
+		assertFalse( variables.getAsBoolean( result ) );
+	}
+
+	@DisplayName( "It tests the BIF IsDate returns false if the date is from another locale" )
+	@Test
+	public void testIsDateFalseWrongLocale() {
+		instance.executeSource(
+		    """
+		    result = IsDate( date="2024年1月14日", locale="en-US" );
+		    """,
+		    context );
+		assertFalse( variables.getAsBoolean( result ) );
+	}
+
+	@DisplayName( "It tests the BIF IsDate will return false an invalid timezone" )
+	@Test
+	public void testIsDateTimezoneError() {
+		assertThrows(
+		    BoxRuntimeException.class,
+		    () -> instance.executeSource(
+		        """
+		        result = IsDate( date="2024-01-14", locale="en-US", timezone="Blah" );
+		        """,
+		        context )
+		);
 	}
 
 }

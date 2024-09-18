@@ -23,6 +23,7 @@ componentName
     :
     // Ask the component service if the component exists and verify that this context is actually a component.
     { isComponent(_input) }? identifier
+    //identifier
     ;
 
 // These are reserved words in the lexer, but are allowed to be an indentifer (variable name, method name)
@@ -50,6 +51,7 @@ reservedKeyword
     | FINAL
     | FINALLY
     | FOR
+    // | FUNCTION TODO: Brad
     | FUNCTION
     | IF
     | IMPORT
@@ -66,12 +68,14 @@ reservedKeyword
     | PARAM
     | PRIVATE
     | PROPERTY
+    //| PROPERTY TODO: Brad
     | PUBLIC
     | QUERY
     | REMOTE
     | REQUEST
     | REQUIRED
     | RETHROW
+    //| RETURN TODO: Brad
     | RETURN
     | SERVER
     | SETTING
@@ -163,7 +167,7 @@ interface
     ;
 
 // UDF or abstractFunction
-function: functionSignature postAnnotation* normalStatementBlock? SEMICOLON*
+function: functionSignature postAnnotation* ( ( normalStatementBlock? SEMICOLON*) | SEMICOLON)
     ;
 
 // public String myFunction( String foo, String bar )
@@ -234,7 +238,7 @@ functionOrStatement: function | statement
 
 // property name="foo" type="string" default="bar" inject="something";
 // Because a property is not seen as a normal statement, we have to add SEMICOLON here :(
-property: preAnnotation* PROPERTY postAnnotation* SEMICOLON*
+property: preAnnotation* PROPERTY postAnnotation* SEMICOLON+
     ;
 
 // /** Comment */
@@ -307,8 +311,11 @@ simpleStatement: break | continue | rethrow | assert | param | return | not
 not: NOT expression
     ;
 
-// http url="google.com" {}?
-component: componentName componentAttribute* (normalStatementBlock | SEMICOLON)
+// bx:http url="google.com" {}?
+component
+    :
+    // COMPONENT_PREFIX componentName componentAttribute* (normalStatementBlock | SEMICOLON)
+    componentName componentAttribute* (normalStatementBlock | SEMICOLON)
     ;
 
 componentAttribute: identifier ((EQUALSIGN | COLON) expression)?
@@ -407,7 +414,7 @@ rethrow: RETHROW
     ;
 
 // throw Exception;
-throw: THROW expression
+throw: { isThrow(_input) }? THROW expression
     ;
 
 /*
@@ -613,6 +620,7 @@ relOps
     | GE
     | GTESIGN
     | TEQ
+    | TENQ
     | LTE
     | LE
     | LTESIGN

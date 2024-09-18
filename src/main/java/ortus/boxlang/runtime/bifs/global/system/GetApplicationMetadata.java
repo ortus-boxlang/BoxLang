@@ -31,6 +31,7 @@ public class GetApplicationMetadata extends BIF {
 	 */
 	public GetApplicationMetadata() {
 		super();
+		// TODO: Lucee has suppressFunction and onlySupported booleans which filter out the things returned.
 	}
 
 	/**

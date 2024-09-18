@@ -3,10 +3,15 @@
 <div class="bx-dump" title="#encodeForHTML( posInCode )#">
 	<span class="bx-dwSv">
 		<span class="bx-dhSv">
-			<bx:if label.len() >#label# - </bx:if>
-			Datetime:
+			<bx:if label.len() >
+				#encodeForHTML( label )#
+			<bx:else>
+				Date/Time
+			</bx:if>
 		</span>
-		<span>#encodeForHTML( DateTimeFormat( var, "full" ) )#</span>
+		<span title="#encodeForHTML( dateTimeFormat( var, "full" ) )#">
+			#encodeForHTML( var.toString() )#
+		</span>
 	</span>
 </div>
 </bx:output>

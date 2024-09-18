@@ -65,7 +65,12 @@ public class BoxStaticAccessTransformer extends AbstractTransformer {
 		if ( objectAccess.getContext() instanceof BoxFQN fqn ) {
 			jContext = new StringLiteralExpr( fqn.getValue() );
 		} else if ( objectAccess.getContext() instanceof BoxIdentifier id ) {
-			jContext = ( Expression ) transpiler.transform( id, context );
+			// In BL code, this could be an import, but in CF it's just a string
+			if ( transpiler.matchesImport( id.getName() ) && transpiler.getProperty( "sourceType" ).toLowerCase().startsWith( "box" ) ) {
+				jContext = ( Expression ) transpiler.transform( id, context );
+			} else {
+				jContext = new StringLiteralExpr( id.getName() );
+			}
 		} else {
 			throw new ExpressionException( "Unexpected base token in static access.", objectAccess.getContext() );
 		}

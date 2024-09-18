@@ -72,7 +72,7 @@ public class ApplicationService extends BaseService {
 	 * Extensions to search for application descriptor classes
 	 */
 	// TODO: contribute cfc from compat extension
-	private Set<String>				applicationDescriptorExtensions			= new HashSet<>( Arrays.asList( "bxm", "cfm" ) );
+	private Set<String>				applicationDescriptorExtensions			= new HashSet<>( Arrays.asList( "bxm", "bxs", "cfm", "cfs" ) );
 
 	/**
 	 * The types of application listeners we support: Application classes and

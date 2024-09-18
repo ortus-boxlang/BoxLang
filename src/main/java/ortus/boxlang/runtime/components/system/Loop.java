@@ -55,7 +55,7 @@ public class Loop extends Component {
 		    new Attribute( Key.to, "double", Set.of( Validator.requires( Key.index ) ) ),
 		    new Attribute( Key.from, "double" ),
 		    new Attribute( Key.file, "string", Set.of( Validator.requires( Key.index ) ) ),
-		    new Attribute( Key.list, "string", Set.of( Validator.requires( Key.index ) ) ),
+		    new Attribute( Key.list, "string" ),
 		    new Attribute( Key.delimiters, "string" ),
 		    new Attribute( Key.collection, "Struct", Set.of( Validator.requires( Key.item ) ) ),
 		    new Attribute( Key.condition, "function" ),

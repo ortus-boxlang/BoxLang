@@ -18,7 +18,16 @@
 
 package ortus.boxlang.runtime.bifs.global.system;
 
-import org.junit.jupiter.api.*;
+import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.assertThrows;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -27,9 +36,6 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.exceptions.LockException;
-
-import static com.google.common.truth.Truth.assertThat;
-import static org.junit.Assert.assertThrows;
 
 public class LockTest {
 
@@ -119,12 +125,38 @@ public class LockTest {
 		assertThat( variables.get( result ) ).isEqualTo( "bar" );
 	}
 
+	@DisplayName( "It can get named lock readonly 0 timeout" )
+	@Test
+	public void testLockNamedReadonlyZeroTimeout() {
+		instance.executeSource(
+		    """
+		    lock name="mylock" timeout=0 type="readonly" {
+		    	result = "bar";
+		    }
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "bar" );
+	}
+
 	@DisplayName( "It can get named lock exclusive" )
 	@Test
 	public void testLockNamedExclusive() {
 		instance.executeSource(
 		    """
 		    lock name="mylock" timeout=10 type="exclusive" {
+		    	result = "bar";
+		    }
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "bar" );
+	}
+
+	@DisplayName( "It can get named lock exclusive 0 timeout" )
+	@Test
+	public void testLockNamedExclusiveZeroTimeout() {
+		instance.executeSource(
+		    """
+		    lock name="mylock" timeout=0 type="exclusive" {
 		    	result = "bar";
 		    }
 		    """,

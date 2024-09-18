@@ -173,7 +173,7 @@ public class DirectoryListTest {
 
 	}
 
-	@DisplayName( "It tests the BIF DirectoryList with a filter option" )
+	@DisplayName( "It tests the BIF DirectoryList with a filter string" )
 	@Test
 	public void testFilterDirectoryListBif() {
 		variables.put( Key.of( "testDirectory" ), Path.of( testDirectory ).toAbsolutePath().toString() );
@@ -181,6 +181,50 @@ public class DirectoryListTest {
 		instance.executeSource(
 		    """
 		    result = directoryList( variables.testDirectory, true, "name", "*.txt" );
+		    """,
+		    context );
+		var result = variables.get( Key.of( "result" ) );
+		assertTrue( result instanceof Array );
+		Array listing = ( Array ) result;
+		assertTrue( listing.size() == 2 );
+		for ( var i = 0; i < listing.size(); i++ ) {
+			assertTrue( listing.get( i ) instanceof String );
+			String fileName = ( String ) listing.get( i );
+			assertTrue( fileName.split( "\\." ).length == 2 );
+			assertThat( fileName.split( "\\." )[ fileName.split( "\\." ).length - 1 ] ).isEqualTo( "txt" );
+		}
+	}
+
+	@DisplayName( "It tests the BIF DirectoryList with a filter closure" )
+	@Test
+	public void testFilterDirectoryListClosureFilter() {
+		variables.put( Key.of( "testDirectory" ), Path.of( testDirectory ).toAbsolutePath().toString() );
+		assertTrue( FileSystemUtil.exists( testDirectory ) );
+		instance.executeSource(
+		    """
+		    result = directoryList( variables.testDirectory, true, "name", ( path ) -> listLast( path, "." ) == "txt" );
+		    """,
+		    context );
+		var result = variables.get( Key.of( "result" ) );
+		assertTrue( result instanceof Array );
+		Array listing = ( Array ) result;
+		assertTrue( listing.size() == 2 );
+		for ( var i = 0; i < listing.size(); i++ ) {
+			assertTrue( listing.get( i ) instanceof String );
+			String fileName = ( String ) listing.get( i );
+			assertTrue( fileName.split( "\\." ).length == 2 );
+			assertThat( fileName.split( "\\." )[ fileName.split( "\\." ).length - 1 ] ).isEqualTo( "txt" );
+		}
+	}
+
+	@DisplayName( "It tests the BIF DirectoryList with a multiple glob patterns" )
+	@Test
+	public void testFilterDirectoryListMultiGlob() {
+		variables.put( Key.of( "testDirectory" ), Path.of( testDirectory ).toAbsolutePath().toString() );
+		assertTrue( FileSystemUtil.exists( testDirectory ) );
+		instance.executeSource(
+		    """
+		    result = directoryList( variables.testDirectory, true, "name", "test.*t|atest.*" );
 		    """,
 		    context );
 		var result = variables.get( Key.of( "result" ) );

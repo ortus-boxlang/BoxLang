@@ -30,6 +30,7 @@ import ortus.boxlang.runtime.scopes.IntKey;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Function;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.NullValue;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
@@ -206,6 +207,11 @@ public class ArgumentUtil {
 	 */
 	public static ArgumentsScope createArgumentsScope( IBoxContext context, Map<Key, Object> namedArguments ) {
 		ArgumentsScope scope = new ArgumentsScope();
+		// handle argumentCollection
+		if ( namedArguments.get( Key.argumentCollection ) instanceof IStruct argCol ) {
+			scope.putAll( argCol );
+			namedArguments.remove( Key.argumentCollection );
+		}
 		scope.putAll( namedArguments );
 		return scope;
 	}

@@ -71,7 +71,7 @@ public class Directory extends Component {
 		        Validator.NON_EMPTY,
 		        Validator.valueOneOf( "dir", "file", "all" )
 		    ) ),
-		    new Attribute( Key.listInfo, "string", "query", Set.of(
+		    new Attribute( Key.listInfo, "string", "all", Set.of(
 		        Validator.REQUIRED,
 		        Validator.NON_EMPTY,
 		        Validator.valueOneOf( "name", "all" )
@@ -210,7 +210,7 @@ public class Directory extends Component {
 		            Map.of(
 		                Key.path, directory,
 		                Key.recurse, recurse,
-		                Key.listInfo, listInfo,
+		                Key.listInfo, listInfo.equalsIgnoreCase( "name" ) ? "querynames" : "query",
 		                Key.filter, filter != null ? filter : "",
 		                Key.sort, sort != null ? sort : "",
 		                Key.type, type

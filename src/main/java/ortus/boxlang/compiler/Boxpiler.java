@@ -1,8 +1,17 @@
 package ortus.boxlang.compiler;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import ortus.boxlang.compiler.javaboxpiler.JavaBoxpiler;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.compiler.parser.Parser;
@@ -17,14 +26,6 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ParseException;
 import ortus.boxlang.runtime.util.FRTransService;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
-
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 public abstract class Boxpiler implements IBoxpiler {
 
@@ -71,8 +72,34 @@ public abstract class Boxpiler implements IBoxpiler {
 	 * --------------------------------------------------------------------------
 	 */
 
+	/**
+	 * Get a class pool by name
+	 * 
+	 * @param classPoolName The name of the class pool
+	 * 
+	 * @return The class pool
+	 */
 	public Map<String, ClassInfo> getClassPool( String classPoolName ) {
 		return classPools.computeIfAbsent( classPoolName, k -> new ConcurrentHashMap<String, ClassInfo>() );
+	}
+
+	/**
+	 * Get all class pools
+	 * 
+	 * @return A map of class pools
+	 */
+	public Map<String, Map<String, ClassInfo>> getClassPools() {
+		return classPools;
+	}
+
+	/**
+	 * Clear page pools
+	 */
+	public void clearPagePool() {
+		// TODO: Not threadsafe if another thread is in the middle of loading a class.
+		// I really don't like locking these for concurrency, but we'd nee to have a least a read lock to make this thread safe
+		// Or we'd need a retry strategy if the page pool gets wiped in the middle of a compilation.
+		getClassPools().forEach( ( k, v ) -> v.clear() );
 	}
 
 	/**

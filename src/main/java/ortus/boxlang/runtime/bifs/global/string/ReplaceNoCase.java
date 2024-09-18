@@ -18,6 +18,8 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.FunctionCaster;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -36,39 +38,45 @@ public class ReplaceNoCase extends BIF {
 		declaredArguments = new Argument[] {
 		    new Argument( true, "string", Key.string ),
 		    new Argument( true, "string", Key.substring1 ),
-		    new Argument( true, "string", Key.obj ),
-		    new Argument( true, "string", Key.scope, "one" )
+		    new Argument( true, "any", Key.obj ),
+		    new Argument( true, "string", Key.scope, "one" ),
+		    new Argument( false, "string", Key.start, "1" )
 		};
 	}
 
 	/**
-	 * 
+	 *
 	 * Replaces occurrences of substring1 in a string with obj, in a specified scope. The search is case-sensitive. Function returns original string with
 	 * replacements made
-	 * 
+	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 * 
+	 *
 	 * @argument.string The string to search
-	 * 
+	 *
 	 * @argument.substring1 The substring to search for
-	 * 
+	 *
 	 * @argument.obj The string to replace substring1 with
-	 * 
+	 *
 	 * @argument.scope The scope to search in
-	 * 
+	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	string		= arguments.getAsString( Key.string );
 		String	substring1	= arguments.getAsString( Key.substring1 );
-		String	obj			= arguments.getAsString( Key.obj );
+		Object	obj			= arguments.get( Key.obj );
 		String	scope		= arguments.getAsString( Key.scope ).toLowerCase();
 		if ( scope.equalsIgnoreCase( "one" ) ) {
 			String	lowerCaseString		= string.toLowerCase();
 			String	lowerCaseSubstring	= substring1.toLowerCase();
 			int		idx					= lowerCaseString.indexOf( lowerCaseSubstring );
 			if ( idx != -1 ) {
-				return string.substring( 0, idx ) + obj + string.substring( idx + substring1.length() );
+				return obj instanceof String
+				    ? string.substring( 0, idx ) + StringCaster.cast( obj ) + string.substring( idx + substring1.length() )
+				    : string.substring( 0, idx )
+				        + context.invokeFunction( FunctionCaster.cast( obj ),
+				            new Object[] { string.substring( idx, idx + substring1.length() ), idx + 1, string } )
+				        + string.substring( idx + substring1.length() );
 			} else {
 				return string;
 			}
@@ -79,7 +87,12 @@ public class ReplaceNoCase extends BIF {
 			int				i					= 0;
 			while ( i < string.length() ) {
 				if ( lowerCaseString.substring( i ).startsWith( lowerCaseSubstring ) ) {
-					result.append( obj );
+					if ( obj instanceof String ) {
+						result.append( obj );
+					} else {
+						result.append( context.invokeFunction( FunctionCaster.cast( obj ),
+						    new Object[] { string.substring( i, i + substring1.length() ), i + 1, string } ) );
+					}
 					i += substring1.length();
 				} else {
 					result.append( string.charAt( i ) );

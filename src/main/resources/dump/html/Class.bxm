@@ -1,13 +1,14 @@
-<!--- table of class data --->
+<bx:script>
+	expandRoot = expand || expand eq null
+</bx:script>
 <bx:output>
 	<div class="bx-dump">
 		<table class="bx-table-tertiary" title="#encodeForHTML( posInCode )#">
 			<caption
 				role="button"
 				tabindex="0"
-				<bx:if expand>open</bx:if>
-				onclick="this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none')"
-				onkeyup="if(event.key === 'Enter'){ this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none');}"
+				<bx:if expandRoot>open aria-expanded="true"<bx:else>aria-expanded="false"</bx:if>
+				data-bx-toggle="siblings"
 			>
 				<strong>
 					<bx:if label.len() >#label# - </bx:if>
@@ -15,55 +16,213 @@
 				</strong>
 			</caption>
 			<tbody
-				<bx:if !expand>class="d-none"</bx:if>
+				<bx:if !expandRoot>class="d-none"</bx:if>
 			>
 				<!--- CLASS toString --->
 				<tr>
-					<th scope="row">
+					<th 
+						aria-expanded="true"
+						data-bx-toggle="onoff"
+						scope="row"
+						valign="top"
+						tabindex="0"
+					>
 						toString()
 					</th>
-					<td>#encodeForHTML( var.toString() )#</td>
+					<td>
+						<div class="bx-onoff">
+							#encodeForHTML( var.toString() )#
+						</div>
+					</td>
 				</tr>
 
 				<!--- CLASS NAME --->
 				<tr>
-					<th scope="row">
+					<th
+						aria-expanded="true"
+						data-bx-toggle="onoff"
+						scope="row"
+						valign="top"
+						tabindex="0"
+					>
 						Class
 					</th>
-					<td>#encodeForHTML( var.getClass().getName() )#</td>
+					<td>
+						<div class="bx-onoff">
+							<em>#encodeForHTML( var.getClass().getName() )#</em>
+						</div>
+					</td>
 				</tr>
 
 				<!--- CLASS FIELDS --->
+				<bx:if var.getClass().getFields().len()>
+					<tr>
+						<th
+							aria-expanded="true"
+							data-bx-toggle="onoff"
+							scope="row"
+							valign="top"
+							tabindex="0"
+						>
+							Fied(s)
+						</th>
+						<td>
+							<div class="bx-onoff">
+								<bx:set fields = var.getClass().getFields()>
+								<table class="bx-table-default">
+									<thead>
+										<tr>
+											<th>Name</th>
+											<th>Signature</th>
+											<th>Value</th>
+										</tr>
+									</thead>
+									<tbody>
+										<bx:script>
+											for( field in fields ) {
+												```
+													<tr>
+														<td>
+															<strong>#encodeForHTML( field.getName() )#</strong>
+														</td>
+														<td>
+															<pre><code>#encodeForHTML( field.toString() )#</code></pre>
+														</td>
+														<td>
+															<bx:try>
+																#encodeForHTML( field.get( var ) )#
+																<bx:catch>
+																	<em>--- Not Available ---</em>
+																</bx:catch>
+															</bx:try>
+														</td>
+													</tr>
+												```
+											}
+										</bx:script>
+									</tbody>
+								</table>
+							</div>
+						</td>
+					</tr>
+				</bx:if>
+
+				<!--- CLASS annotations --->
+				<bx:if var.getClass().getDeclaredannotations().len()>
+					<tr>
+						<th
+							aria-expanded="true"
+							data-bx-toggle="onoff"
+							scope="row"
+							valign="top"
+							tabindex="0"
+						>
+							Annotations(s)
+						</th>
+						<td>
+							<div class="bx-onoff">
+								<bx:set annotations = var.getClass().getDeclaredannotations()>
+								<table class="bx-table-default">
+									<thead>
+										<tr>
+											<th><b>Type</b></th>
+											<th><b>Signature</b></th>
+										</tr>
+									</thead>
+									<tbody>
+										<bx:script>
+											for( annotation in annotations ) {
+												```
+													<tr>
+														<td>#annotation.annotationType().toString()#</td>
+														<td>
+															<pre><code>#encodeForHTML( annotation.toString() )#</code></pre>
+														</td>
+													</tr>
+												```
+												}
+										</bx:script>
+									</tbody>
+								</table>
+							</div>
+						</td>
+					</tr>
+				</bx:if>
+
+				<!--- CLASS Constructors --->
+				<bx:if var.getClass().getDeclaredConstructors().len()>
+					<tr>
+						<th
+							aria-expanded="true"
+							data-bx-toggle="onoff"
+							scope="row"
+							valign="top"
+							tabindex="0"
+						>
+							Constructor(s)
+						</th>
+						<td>
+							<div class="bx-onoff">
+								<bx:set constructors = var.getClass().getDeclaredConstructors()>
+								<table class="bx-table-default">
+									<thead>
+										<tr>
+											<th><b>Signature</b></th>
+										</tr>
+									</thead>
+									<tbody>
+										<bx:script>
+											for( constructor in constructors ) {
+												```
+													<tr>
+														<td>
+															<pre><code>#encodeForHTML( constructor.toString() )#</code></pre>
+														</td>
+													</tr>
+												```
+												}
+										</bx:script>
+									</tbody>
+								</table>
+							</div>
+						</td>
+					</tr>
+				</bx:if>
+
+				<!--- CLASS Methods --->
 				<tr>
-					<th scope="row">Fied(s)</th>
+					<th
+						aria-expanded="true"
+						data-bx-toggle="onoff"
+						scope="row"
+						valign="top"
+						tabindex="0"
+					>
+						Method(s)
+					</th>
 					<td>
-						<bx:set fields = var.getClass().getFields()>
+						<div class="bx-onoff">
+							<bx:script>
+								import java.util.Arrays;
+								import java.util.Comparator;
+								methods = Arrays.stream( var.getClass().getDeclaredMethods() )
+									.sorted( Comparator.comparing( m -> m.getName() ) )
+									.toList();
+							</bx:script>
 							<table class="bx-table-default">
 								<thead>
-									<tr>
-										<th>Name</th>
-										<th>Signature</th>
-										<th>Value</th>
-									</tr>
+									<tr><th>Name</th><th>Signature</th></tr>
 								</thead>
 								<tbody>
 									<bx:script>
-										for( field in fields ) {
+										for( method in methods ) {
 											```
 												<tr>
 													<td>
-														<strong>#encodeForHTML( field.getName() )#</strong>
+														<strong>#encodeForHTML( method.getName() )#</strong>
 													</td>
 													<td>
-														<pre><code>#encodeForHTML( field.toString() )#</code></pre>
-													</td>
-													<td>
-														<bx:try>
-															#encodeForHTML( field.get( var ) )#
-															<bx:catch>
-																<em>--- Not Available ---</em>
-															</bx:catch>
-														</bx:try>
+														<pre><code>#encodeForHTML( method.toString() )#</code></pre>
 													</td>
 												</tr>
 											```
@@ -71,99 +230,7 @@
 									</bx:script>
 								</tbody>
 							</table>
-					</td>
-				</tr>
-
-				<!--- CLASS annotations --->
-				<tr>
-					<th scope="row">Annotations(s)</th>
-					<td>
-						<bx:set annotations = var.getClass().getDeclaredannotations()>
-						<table class="bx-table-default">
-							<thead>
-								<tr>
-									<th><b>Type</b></th>
-									<th><b>Signature</b></th>
-								</tr>
-							</thead>
-							<tbody>
-								<bx:script>
-									for( annotation in annotations ) {
-										```
-											<tr>
-												<td>#annotation.annotationType().toString()#</td>
-												<td>
-													<pre><code>#encodeForHTML( annotation.toString() )#</code></pre>
-												</td>
-											</tr>
-										```
-										}
-								</bx:script>
-							</tbody>
-						</table>
-					</td>
-				</tr>
-
-				<!--- CLASS Constructors --->
-				<tr>
-					<th scope="row">Constructor(s)</th>
-					<td>
-						<bx:set constructors = var.getClass().getDeclaredConstructors()>
-						<table class="bx-table-default">
-							<thead>
-								<tr>
-									<th><b>Signature</b></th>
-								</tr>
-							</thead>
-							<tbody>
-								<bx:script>
-									for( constructor in constructors ) {
-										```
-											<tr>
-												<td>
-													<pre><code>#encodeForHTML( constructor.toString() )#</code></pre>
-												</td>
-											</tr>
-										```
-										}
-								</bx:script>
-							</tbody>
-						</table>
-					</td>
-				</tr>
-
-				<!--- CLASS Methods --->
-				<tr>
-					<th scope="row">Method(s)</th>
-					<td>
-						<bx:script>
-							import java.util.Arrays;
-							import java.util.Comparator;
-							methods = Arrays.stream( var.getClass().getDeclaredMethods() )
-								.sorted( Comparator.comparing( m -> m.getName() ) )
-								.toList();
-						</bx:script>
-						<table class="bx-table-default">
-							<thead>
-								<tr><th>Name</th><th>Signature</th></tr>
-							</thead>
-							<tbody>
-								<bx:script>
-									for( method in methods ) {
-										```
-											<tr>
-												<td>
-													<strong>#encodeForHTML( method.getName() )#</strong>
-												</td>
-												<td>
-													<pre><code>#encodeForHTML( method.toString() )#</code></pre>
-												</td>
-											</tr>
-										```
-									}
-								</bx:script>
-							</tbody>
-						</table>
+						</div>
 					</td>
 				</tr>
 			</tbody>

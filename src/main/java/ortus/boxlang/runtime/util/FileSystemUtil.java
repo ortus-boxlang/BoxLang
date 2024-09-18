@@ -45,12 +45,13 @@ import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.AbstractMap;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -69,6 +70,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.util.ListUtil;
 
 public final class FileSystemUtil {
 
@@ -275,19 +277,20 @@ public final class FileSystemUtil {
 	 *
 	 * @param path    the path to list
 	 * @param recurse whether to recurse into subdirectories
-	 * @param filter  a glob filter to apply to the results
+	 * @param filter  a glob filter or a closure to filter the results
 	 * @param sort    a string containing the sort field and direction
 	 * @param type    the type of files to list
 	 *
 	 * @return
 	 */
-	public static Stream<Path> listDirectory( String path, Boolean recurse, String filter, String sort, String type ) {
+	@SuppressWarnings( "unchecked" )
+	public static Stream<Path> listDirectory( String path, Boolean recurse, Object filter, String sort, String type ) {
 		final String theType = type.toLowerCase();
 		// If path doesn't exist, return an empty stream
 		if ( !Files.exists( Path.of( path ) ) ) {
 			return Stream.empty();
 		}
-		final PathMatcher	pathMatcher		= FileSystems.getDefault().getPathMatcher( "glob:" + filter );
+
 		String[]			sortElements	= sort.split( ( "\\s+" ) );
 		String				sortField		= sortElements[ 0 ];
 		String				sortDirection	= sortElements.length > 1 ? sortElements[ 1 ].toLowerCase() : "asc";
@@ -333,10 +336,19 @@ public final class FileSystemUtil {
 			throw new BoxIOException( e );
 		}
 
-		return filter.length() > 1
-		    ? directoryStream.filter( item -> matchesType( item, theType ) && pathMatcher.matches( item.getFileName() ) )
-		        .sorted( pathSort )
-		    : directoryStream.filter( item -> matchesType( item, theType ) ).sorted( pathSort );
+		directoryStream = directoryStream.filter( item -> matchesType( item, theType ) );
+
+		if ( filter instanceof String && StringCaster.cast( filter ).length() > 1 ) {
+			ArrayList<PathMatcher> pathMatchers = ListUtil.asList( StringCaster.cast( filter ), "|" )
+			    .stream()
+			    .map( filterString -> FileSystems.getDefault().getPathMatcher( "glob:" + filterString ) )
+			    .collect( Collectors.toCollection( ArrayList::new ) );
+			directoryStream = directoryStream.filter( item -> pathMatchers.stream().anyMatch( pathMatcher -> pathMatcher.matches( item.getFileName() ) ) );
+		} else if ( filter instanceof java.util.function.Predicate<?> ) {
+			directoryStream = directoryStream.filter( ( java.util.function.Predicate<Path> ) filter );
+		}
+
+		return directoryStream.sorted( pathSort );
 	}
 
 	private static Boolean matchesType( Path item, String type ) {
@@ -869,8 +881,14 @@ public final class FileSystemUtil {
 		// Change all instances of \ to / to make it Java Standard.
 		path = path.replace( "\\", "/" );
 		String	originalPath		= path;
-		Path	originalPathPath	= Path.of( originalPath );
-		boolean	isAbsolute			= originalPathPath.isAbsolute();
+		Path	originalPathPath	= null;
+		try {
+			originalPathPath = Path.of( originalPath );
+		} catch ( java.nio.file.InvalidPathException e ) {
+			throw new BoxRuntimeException( String.format( "The path provided is an invalid path {%s}", originalPath ), e );
+		}
+
+		boolean isAbsolute = originalPathPath.isAbsolute();
 
 		// If the incoming path does NOT start with a /, then we make it relative to the current template (if there is one)
 		if ( !isAbsolute && !path.startsWith( SLASH_PREFIX ) ) {

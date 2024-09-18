@@ -73,12 +73,13 @@ public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 			}
 
 			try {
-				return TYPES.valueOf( type );
+				System.out.println( "Type: " + uType );
+				return TYPES.valueOf( uType );
 			} catch ( IllegalArgumentException e ) {
 				throw new BoxRuntimeException(
 				    String.format(
 				        "Could not create a struct with a type of [%s] as it is not a known type.",
-				        type
+				        uType
 				    )
 				);
 			}

@@ -1,6 +1,5 @@
 package ortus.boxlang.runtime.util;
 
-import java.io.File;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -35,7 +34,16 @@ public class FQN {
 	 * @param filePath The file path to generate the FQN from.
 	 */
 	public FQN( Path root, Path filePath ) {
-		this.parts = parseParts( root.relativize( filePath ).toString() );
+		root		= root.toAbsolutePath();
+		filePath	= filePath.toAbsolutePath();
+		if ( !filePath.startsWith( root ) ) {
+			throw new IllegalArgumentException( "File path must be a child of the root path." );
+		}
+		this.parts = parseParts( parseFromFile( root.relativize( filePath ) ) );
+	}
+
+	private FQN( String[] parts ) {
+		this.parts = parts;
 	}
 
 	/**
@@ -44,7 +52,7 @@ public class FQN {
 	 * @param path The path to generate the FQN from.
 	 */
 	public FQN( Path path ) {
-		this.parts = parseParts( parsePackageFromFile( path ) );
+		this.parts = parseParts( parseFromFile( path ) );
 	}
 
 	/**
@@ -87,9 +95,11 @@ public class FQN {
 	 * @param path   The path to generate the FQN from.
 	 */
 	public FQN( String prefix, Path path ) {
-		this.parts		= new String[ parseParts( parsePackageFromFile( path ) ).length + 1 ];
-		this.parts[ 0 ]	= prefix;
-		System.arraycopy( parseParts( parsePackageFromFile( path ) ), 0, this.parts, 1, parseParts( parsePackageFromFile( path ) ).length );
+		var	prefixParts	= parseParts( prefix );
+		var	pathParts	= parseParts( parseFromFile( path ) );
+		this.parts = new String[ prefixParts.length + pathParts.length ];
+		System.arraycopy( prefixParts, 0, this.parts, 0, prefixParts.length );
+		System.arraycopy( pathParts, 0, this.parts, prefixParts.length, pathParts.length );
 	}
 
 	/**
@@ -107,37 +117,59 @@ public class FQN {
 	 * @return String
 	 */
 	public String getPackageString() {
-		return String.join( ".", Arrays.copyOfRange( parts, 0, parts.length - 1 ) );
+		return getPackage().toString();
+	}
+
+	/**
+	 * Get only the package as an FQN.
+	 * 
+	 * @return String
+	 */
+	public FQN getPackage() {
+		if ( parts.length > 1 ) {
+			return new FQN( Arrays.copyOfRange( parts, 0, parts.length - 1 ) );
+		} else {
+			return new FQN( new String[] {} );
+		}
 	}
 
 	/**
 	 * Transforms the path into the package name
 	 *
-	 * @param packg String to grab the package name for.
+	 * @param fqn String to grab the package name for.
 	 *
 	 * @return returns the class name according the name conventions Test.ext -
 	 *         Test$ext
 	 */
-	static String[] parseParts( String packg ) {
+	static String[] parseParts( String fqn ) {
 		// Replace .. with .
-		packg = packg.replaceAll( "\\.\\.", "." );
+		fqn = fqn.replaceAll( "\\.\\.", "." );
 		// trim trailing period
-		if ( packg.endsWith( "." ) ) {
-			packg = packg.substring( 0, packg.length() - 1 );
+		if ( fqn.endsWith( "." ) ) {
+			fqn = fqn.substring( 0, fqn.length() - 1 );
 		}
 		// trim leading period
-		if ( packg.startsWith( "." ) ) {
-			packg = packg.substring( 1 );
+		if ( fqn.startsWith( "." ) ) {
+			fqn = fqn.substring( 1 );
 		}
 		// Remove any non alpha-numeric chars.
-		packg = packg.replaceAll( "[^a-zA-Z0-9\\.]", "" );
+		fqn = fqn.replaceAll( "[^a-zA-Z0-9\\.]", "" );
 
-		if ( packg.isEmpty() ) {
+		if ( fqn.isEmpty() ) {
 			return new String[] {};
 		}
+
+		// Find the last period in the string
+		int lastPeriodIndex = fqn.lastIndexOf( '.' );
+		if ( lastPeriodIndex != -1 ) {
+			// Lowercase everything up to the last period
+			String	beforeLastPeriod	= fqn.substring( 0, lastPeriodIndex ).toLowerCase();
+			String	afterLastPeriod		= fqn.substring( lastPeriodIndex + 1 );
+			fqn = beforeLastPeriod + "." + afterLastPeriod;
+		}
+
 		// parse fqn into list, loop over list and remove any empty strings and turn back into fqn
-		return Arrays.stream( packg.split( "\\." ) )
-		    .map( s -> s.toLowerCase() )
+		return Arrays.stream( fqn.split( "\\." ) )
 		    // if starts with number, prefix with _
 		    .map( s -> s.matches( "^\\d.*" ) ? "_" + s : s )
 		    .map( s -> {
@@ -157,8 +189,21 @@ public class FQN {
 	 * 
 	 * @return The package name.
 	 */
-	static String parsePackageFromFile( Path file ) {
-		String packg = file.toFile().toString().replace( File.separatorChar + file.toFile().getName(), "" );
+	static String parseFromFile( Path file ) {
+		// Strip extension from file name, if exists
+		String	fileName	= file.getFileName().toString();
+		int		dotIndex	= fileName.lastIndexOf( '.' );
+		if ( dotIndex > 0 ) {
+			fileName = fileName.substring( 0, dotIndex );
+		}
+		String	packg;
+		Path	parent	= file.getParent();
+		if ( parent != null ) {
+			packg = parent.resolve( fileName ).toString();
+		} else {
+			packg = fileName;
+		}
+
 		if ( packg.startsWith( "/" ) || packg.startsWith( "\\" ) ) {
 			packg = packg.substring( 1 );
 		}

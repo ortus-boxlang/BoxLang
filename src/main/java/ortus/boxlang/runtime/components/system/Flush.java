@@ -48,7 +48,9 @@ public class Flush extends Component {
 	 *
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
-		context.flushBuffer( false );
+		// force=true means that explictly flushing from inside a class/method with outpout=false will still flush out anything in the buffer
+		// force also doesn't just flush to our parent buffer, but all the way out to the request context's output stream (web or console)
+		context.flushBuffer( true );
 		return DEFAULT_RETURN;
 	}
 }

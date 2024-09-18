@@ -62,7 +62,7 @@ public class ToNumericTest {
 		    result = toNumeric("123.45")
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 123.45 );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( 123.45 );
 	}
 
 	@Test
@@ -72,7 +72,7 @@ public class ToNumericTest {
 		    result = toNumeric("29.5")
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 29.5 );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( 29.5 );
 	}
 
 	@Test

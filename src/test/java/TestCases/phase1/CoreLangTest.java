@@ -50,6 +50,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.SampleUDF;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.CustomException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.NoFieldException;
 import ortus.boxlang.runtime.types.exceptions.ParseException;
@@ -1074,6 +1075,14 @@ public class CoreLangTest {
 		     """,
 		    context ) );
 		assertThat( t.getMessage() ).contains( "Unterminated" );
+	}
+
+	@Test
+	public void testDeclareHugeStringLiteral() {
+		String hugeString = "Hello World abc".repeat( 10000 );
+		instance.executeSource(
+		    hugeString,
+		    context, BoxSourceType.CFTEMPLATE );
 	}
 
 	@DisplayName( "It should throw BoxRuntimeException" )
@@ -3305,4 +3314,69 @@ public class CoreLangTest {
 		// If this completes without handing the parser, we're basically good
 		assertThat( variables.get( result ) ).isEqualTo( false );
 	}
+
+	@Test
+	public void testLeadingZeros() {
+		instance.executeSource(
+		    """
+		       result = 08;
+		    result2 = 08.5;
+
+		    	 """,
+		    context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( 8 );
+		assertThat( variables.getAsNumber( Key.of( "result2" ) ).doubleValue() ).isEqualTo( 8.5 );
+	}
+
+	@Test
+	public void testRethrowStructedThrowable() {
+		Throwable t = assertThrows( CustomException.class, () -> instance.executeSource(
+		    """
+		    function reThrowMe( required struct err ) {
+		    	throw object=err;
+		    }
+		    try {
+		    	1/0;
+		    } catch( any e ) {
+		    	reThrowMe( e );
+		    }
+		    	 """,
+		    context, BoxSourceType.BOXSCRIPT ) );
+		assertThat( t.getMessage() ).contains( "zero" );
+	}
+
+	@Test
+	public void testXMLInStringBuffer() {
+	// @formatter:off
+	instance.executeSource(
+		"""
+			buffer = createObject( "java", "java.lang.StringBuffer" ).init();
+			buffer.append( '<cfcomponent>' );
+
+			buffer.append( '<\\cfcomponent>' );
+
+			result = buffer.toString();
+			println( result );
+		""",
+		context, BoxSourceType.CFSCRIPT
+	);
+	// @formatter:on
+	}
+
+	@Test
+	public void testExecuteTemplate() {
+		instance.executeTemplate(
+		    "src/test/java/TestCases/phase1/files/index.bxs",
+		    new String[] {}
+		);
+	}
+
+	@Test
+	public void testExecuteClass() {
+		instance.executeTemplate(
+		    "src/test/java/TestCases/phase1/files/Runner.bx",
+		    new String[] { "myArg" }
+		);
+	}
+
 }

@@ -40,7 +40,9 @@ import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.AbstractClassException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 import ortus.boxlang.runtime.types.meta.ClassMeta;
 
 public class ClassTest {
@@ -409,7 +411,7 @@ public class ClassTest {
 		assertThat( prop ).doesNotContainKey( Key.of( "defaultValue" ) );
 
 		assertThat( meta.get( Key.of( "functions" ) ) instanceof Array ).isTrue();
-		assertThat( meta.getAsArray( Key.of( "functions" ) ).size() ).isEqualTo( 7 );
+		assertThat( meta.getAsArray( Key.of( "functions" ) ).size() ).isEqualTo( 5 );
 		assertThat( meta.get( Key.of( "extends" ) ) ).isNull();
 		assertThat( meta.get( Key.of( "output" ) ) ).isEqualTo( false );
 		assertThat( meta.get( Key.of( "persisent" ) ) ).isEqualTo( false );
@@ -447,12 +449,18 @@ public class ClassTest {
 
 		instance.executeSource(
 		    """
-		      	cfc = new src.test.java.TestCases.phase3.OnMissingMethod();
-		    result = cfc.someFunc( "first", "second" );
-		      """, context );
+		         	cfc = new src.test.java.TestCases.phase3.OnMissingMethod();
+		       result = cfc.someFunc( "first", "second" );
+		       result2 = cfc.variablesMissingCaller( "first", "second" );
+		    result3 = cfc.headlessMissingCaller( "first", "second" );
+		         """, context );
 
-		String res = variables.getAsString( result );
+		String	res		= variables.getAsString( result );
+		String	res2	= variables.getAsString( Key.of( "result2" ) );
+		String	res3	= variables.getAsString( Key.of( "result3" ) );
 		assertThat( res ).isEqualTo( "someFuncsecond" );
+		assertThat( res2 ).isEqualTo( "doesNotExistsecond" );
+		assertThat( res3 ).isEqualTo( "doesNotExistsecond" );
 	}
 
 	@DisplayName( "It should call onMissingMethod with named args" )
@@ -461,12 +469,18 @@ public class ClassTest {
 
 		instance.executeSource(
 		    """
-		      	cfc = new src.test.java.TestCases.phase3.OnMissingMethod();
-		    result = cfc.someFunc( foo="first", bar="second" );
-		      """, context );
+		            	cfc = new src.test.java.TestCases.phase3.OnMissingMethod();
+		          result = cfc.someFunc( foo="first", bar="second" );
+		       result2 = cfc.variablesMissingCaller( foo="first", bar="second" );
+		    result3 = cfc.headlessMissingCaller( foo="first", bar="second" );
+		            """, context );
 
-		String res = variables.getAsString( result );
+		String	res		= variables.getAsString( result );
+		String	res2	= variables.getAsString( Key.of( "result2" ) );
+		String	res3	= variables.getAsString( Key.of( "result3" ) );
 		assertThat( res ).isEqualTo( "someFuncsecond" );
+		assertThat( res2 ).isEqualTo( "doesNotExistsecond" );
+		assertThat( res3 ).isEqualTo( "doesNotExistsecond" );
 	}
 
 	@DisplayName( "box meta" )
@@ -490,7 +504,7 @@ public class ClassTest {
 
 		assertThat( meta.get( Key.of( "extends" ) ) instanceof IStruct ).isTrue();
 
-		assertThat( meta.getAsArray( Key.of( "functions" ) ).size() ).isEqualTo( 7 );
+		assertThat( meta.getAsArray( Key.of( "functions" ) ).size() ).isEqualTo( 5 );
 		var fun1 = meta.getAsArray( Key.of( "functions" ) ).get( 0 );
 		assertThat( fun1 ).isInstanceOf( Struct.class );
 		assertThat( ( ( IStruct ) fun1 ).containsKey( Key.of( "name" ) ) ).isTrue();
@@ -669,6 +683,24 @@ public class ClassTest {
 		instance.executeSource(
 		    """
 		        	 cfc =  new src.test.java.TestCases.phase3.ImplicitConstructorTest( name="brad", age=43, favoriteColor="blue" );
+		    name = cfc.getName();
+		    age = cfc.getAge();
+		    favoriteColor = cfc.getFavoriteColor();
+		        """, context );
+
+		assertThat( variables.get( Key.of( "name" ) ) ).isEqualTo( "brad" );
+		assertThat( variables.get( Key.of( "age" ) ) ).isEqualTo( 43 );
+		assertThat( variables.get( Key.of( "favoriteColor" ) ) ).isEqualTo( "blue" );
+
+	}
+
+	@DisplayName( "Implicit Constructor named argumentCollection" )
+	@Test
+	public void testImplicitConstructorNamedArgumentCollection() {
+
+		instance.executeSource(
+		    """
+		        	 cfc =  new src.test.java.TestCases.phase3.ImplicitConstructorTest( argumentCollection={ name="brad", age=43, favoriteColor="blue" } );
 		    name = cfc.getName();
 		    age = cfc.getAge();
 		    favoriteColor = cfc.getFavoriteColor();
@@ -1143,6 +1175,14 @@ public class ClassTest {
 	}
 
 	@Test
+	public void testStaticArgDefaultTest() {
+		instance.executeSource(
+		    """
+		    foo = src.test.java.TestCases.phase3.StaticArgDefaultTest::create("hello");
+		      """, context, BoxSourceType.CFSCRIPT );
+	}
+
+	@Test
 	public void testDotExtends() {
 		instance.executeSource(
 		    """
@@ -1164,14 +1204,33 @@ public class ClassTest {
 
 	@Test
 	public void testAbstractClass() {
-		assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		Throwable t = assertThrows( AbstractClassException.class, () -> instance.executeSource(
 		    """
 		    clazz = new src.test.java.TestCases.phase3.AbstractClass();
 		      """, context ) );
+		assertThat( t.getMessage() ).contains( "Cannot instantiate an abstract class" );
 
 		instance.executeSource(
 		    """
 		       clazz = new src.test.java.TestCases.phase3.ConcreteClass();
+		    result1 = clazz.normal()
+		    result2 = clazz.abstractMethod()
+		       """, context );
+		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( "normal" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "abstractMethod" );
+	}
+
+	@Test
+	public void testAbstractClassCF() {
+		Throwable t = assertThrows( AbstractClassException.class, () -> instance.executeSource(
+		    """
+		    clazz = new src.test.java.TestCases.phase3.AbstractClassCF();
+		      """, context ) );
+		assertThat( t.getMessage() ).contains( "Cannot instantiate an abstract class" );
+
+		instance.executeSource(
+		    """
+		       clazz = new src.test.java.TestCases.phase3.ConcreteClassCF();
 		    result1 = clazz.normal()
 		    result2 = clazz.abstractMethod()
 		       """, context );
@@ -1211,7 +1270,38 @@ public class ClassTest {
 		        clazz = new src.test.java.TestCases.phase3.IllegalFinalExtends();
 		        """, context ) );
 		assertThat( t.getMessage() ).contains( "Cannot extend final class" );
+	}
 
+	@Test
+	public void testPseduoConstructorError() {
+		Array tagContext = null;
+		try {
+			instance.executeSource(
+			    """
+			    clazz = new src.test.java.TestCases.phase3.PseudoConstructorError();
+			    """, context );
+		} catch ( BoxRuntimeException e ) {
+			tagContext = ExceptionUtil.buildTagContext( e );
+		}
+		assertThat( tagContext ).isNotNull();
+		assertThat( tagContext.size() ).isEqualTo( 1 );
+		assertThat( ( ( IStruct ) tagContext.get( 0 ) ).getAsString( Key.template ) ).contains( "PseudoConstructorError.bx" );
+	}
+
+	@Test
+	public void testBadProperty() {
+		instance.executeSource(
+		    """
+		    clazz = new src.test.java.TestCases.phase3.BadProperty();
+		    """, context );
+	}
+
+	@Test
+	public void testCaseMisMatch() {
+		instance.executeSource(
+		    """
+		    cfc = new src.TEST.java.testcases.phase3.mYcLASS();
+		      """, context );
 	}
 
 }

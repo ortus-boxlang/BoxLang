@@ -38,6 +38,9 @@ import ortus.boxlang.runtime.util.LocalizationUtil;
 @BoxMember( type = BoxLangType.DATETIME, name = "dateFormat" )
 @BoxMember( type = BoxLangType.DATETIME, name = "timeFormat" )
 @BoxMember( type = BoxLangType.DATETIME, name = "dateTimeFormat" )
+@BoxMember( type = BoxLangType.STRING, name = "dateFormat" )
+@BoxMember( type = BoxLangType.STRING, name = "timeFormat" )
+@BoxMember( type = BoxLangType.STRING, name = "dateTimeFormat" )
 public class DateTimeFormat extends BIF {
 
 	private static final Key	FORMAT_EPOCH	= Key.of( "epoch" );
@@ -51,7 +54,8 @@ public class DateTimeFormat extends BIF {
 		declaredArguments = new Argument[] {
 		    new Argument( true, "any", Key.date ),
 		    new Argument( false, "string", Key.mask ),
-		    new Argument( false, "string", Key.timezone )
+		    new Argument( false, "string", Key.timezone ),
+		    new Argument( false, "string", Key.locale )
 		};
 	}
 
@@ -63,17 +67,34 @@ public class DateTimeFormat extends BIF {
 	 *
 	 * @argument.date The date string or object
 	 *
-	 * @argument.mask Optional format mask, or common mask
+	 * @argument.mask Optional format mask, or common mask. If an explicit mask is used, it should use the mask characters specified in the
+	 *                [java.time.format.DateTimeFormatter](https://docs.oracle.com/en%2Fjava%2Fjavase%2F21%2Fdocs%2Fapi%2F%2F/java.base/java/time/format/DateTimeFormatter.html) class.
+	 *                If a common mask is used, the following are supported:
+	 *                * short: equivalent to "M/d/y h:mm tt"
+	 *                * medium: equivalent to "MMM d, yyyy h:mm:ss tt"
+	 *                * long: medium followed by three-letter time zone; i.e. "MMMM d, yyyy h:mm:ss tt zzz"
+	 *                * full: equivalent to "dddd, MMMM d, yyyy H:mm:ss tt zz"
+	 *                * ISO8601/ISO: equivalent to "yyyy-MM-dd'T'HH:mm:ssXXX"
+	 *                * epoch: Total seconds of a given date (Example:1567517664)
+	 *                * epochms: Total milliseconds of a given date (Example:1567517664000)
 	 *
 	 * @argument.timezone Optional specific timezone to apply to the date ( if not present in the date string )
+	 *
+	 * @argument.locale Optional ISO locale string which will be used to localize the resulting date/time string
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		ZoneId		timezone		= LocalizationUtil.parseZoneId( arguments.getAsString( Key.timezone ), context );
 		DateTime	ref				= DateTimeCaster.cast( arguments.get( Key.date ), true, timezone );
 		Key			bifMethodKey	= arguments.getAsKey( BIF.__functionName );
 		String		format			= arguments.getAsString( Key.mask );
+
+		// Alternate named argument - ACFvsLucee
+		if ( format == null ) {
+			format = arguments.getAsString( Key.format );
+		}
+
 		// LS Subclass locales
-		Locale		locale			= LocalizationUtil.parseLocaleFromContext( context, arguments );
+		Locale locale = LocalizationUtil.parseLocaleFromContext( context, arguments );
 
 		// Apply our runtime timezone to our initial reference
 		ref = new DateTime( ref.getWrapped().withZoneSameInstant( timezone ) );
@@ -103,42 +124,12 @@ public class DateTimeFormat extends BIF {
 				    ? ref.format( formatter )
 				    : ref.format( formatter.withLocale( locale ) );
 			} else {
-				if ( bifMethodKey.equals( Key.dateFormat ) ) {
-					format = format.replace( "m", "M" );
-				}
-				format = applyCommonMaskReplacements( format.trim() );
 				return locale == null
 				    ? ref.format( format )
 				    : ref.format( locale, format );
 			}
 		}
 
-	}
-
-	/**
-	 * Handles any replacements of common mask patterns that are not supported by the Java DateTimeFormatter
-	 *
-	 * @param pattern
-	 *
-	 * @return String the sanitized pattern
-	 */
-	private String applyCommonMaskReplacements( String pattern ) {
-		return pattern
-		    .replace( "dddd", "EEEE" )
-		    .replace( "ddd", "EEE" )
-		    .replace( "TT", "a" )
-		    .replace( "tt", "a" )
-		    .replace( "mm/", "MM/" )
-		    .replace( "-mm-", "-MM-" )
-		    .replace( "-m-", "-M-" )
-		    .replace( "mmm", "MMM" )
-		    .replace( ":nn", ":mm" )
-		    // Lucee/ACF seconds mask handling
-		    .replace( ":SS", ":ss" )
-		    // Lucee/ACF miliseconds handling
-		    .replace( ".l", ".SSS" )
-		    .replace( "l", "S" )
-		    .replace( "L", "S" );
 	}
 
 }

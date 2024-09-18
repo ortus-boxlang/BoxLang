@@ -20,6 +20,7 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -39,7 +40,10 @@ public class Compress extends BIF {
 		    new Argument( true, Argument.STRING, Key.source ),
 		    new Argument( true, Argument.STRING, Key.destination ),
 		    new Argument( false, Argument.BOOLEAN, Key.includeBaseFolder, true ),
-		    new Argument( false, Argument.BOOLEAN, Key.overwrite, false )
+		    new Argument( false, Argument.BOOLEAN, Key.overwrite, false ),
+		    new Argument( false, Argument.STRING, Key.prefix, Set.of( Validator.NON_EMPTY ) ),
+		    new Argument( false, Argument.ANY, Key.filter ),
+		    new Argument( false, Argument.BOOLEAN, Key.recurse, true )
 		};
 	}
 
@@ -69,6 +73,13 @@ public class Compress extends BIF {
 	 *
 	 * @argument.overwrite Whether to overwrite the destination file if it already exists. Default is false.
 	 *
+	 * @argument.prefix The prefix directory to store the compressed files under. Default is empty.
+	 *
+	 * @argument.filter A regular expression to filter the files to compress or a function that receives the file name and returns a boolean.
+	 *
+	 * @argument.recurse Whether to compress the files recursively. Default is true.
+	 *
+	 * @return The absolute path to the compressed file.
 	 */
 	public String _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	format				= arguments.getAsString( Key.format );
@@ -76,13 +87,19 @@ public class Compress extends BIF {
 		String	destination			= arguments.getAsString( Key.destination );
 		boolean	includeBaseFolder	= BooleanCaster.cast( arguments.get( Key.includeBaseFolder ) );
 		boolean	overwrite			= BooleanCaster.cast( arguments.get( Key.overwrite ) );
+		Object	prefix				= arguments.get( Key.prefix );
+		Object	filter				= arguments.get( Key.filter );
 
 		return ZipUtil.compress(
 		    ZipUtil.COMPRESSION_FORMAT.valueOf( format.toUpperCase() ),
 		    source,
 		    destination,
 		    includeBaseFolder,
-		    overwrite
+		    overwrite,
+		    prefix == null ? "" : StringCaster.cast( prefix ),
+		    filter,
+		    BooleanCaster.cast( arguments.get( Key.recurse ) ),
+		    context
 		);
 	}
 }

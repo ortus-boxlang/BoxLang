@@ -1,30 +1,30 @@
 package ortus.boxlang.compiler.toolchain;
 
-import static ortus.boxlang.parser.antlr.CFScriptGrammar.BACKSLASH;
-import static ortus.boxlang.parser.antlr.CFScriptGrammar.BANG;
-import static ortus.boxlang.parser.antlr.CFScriptGrammar.BITWISE_COMPLEMENT;
-import static ortus.boxlang.parser.antlr.CFScriptGrammar.CONCATEQUAL;
-import static ortus.boxlang.parser.antlr.CFScriptGrammar.DOT_FLOAT_LITERAL;
-import static ortus.boxlang.parser.antlr.CFScriptGrammar.EQUALSIGN;
-import static ortus.boxlang.parser.antlr.CFScriptGrammar.FALSE;
-import static ortus.boxlang.parser.antlr.CFScriptGrammar.FLOAT_LITERAL;
-import static ortus.boxlang.parser.antlr.CFScriptGrammar.INTEGER_LITERAL;
-import static ortus.boxlang.parser.antlr.CFScriptGrammar.MINUS;
-import static ortus.boxlang.parser.antlr.CFScriptGrammar.MINUSEQUAL;
-import static ortus.boxlang.parser.antlr.CFScriptGrammar.MINUSMINUS;
-import static ortus.boxlang.parser.antlr.CFScriptGrammar.MOD;
-import static ortus.boxlang.parser.antlr.CFScriptGrammar.MODEQUAL;
-import static ortus.boxlang.parser.antlr.CFScriptGrammar.NOT;
-import static ortus.boxlang.parser.antlr.CFScriptGrammar.NULL;
-import static ortus.boxlang.parser.antlr.CFScriptGrammar.PERCENT;
-import static ortus.boxlang.parser.antlr.CFScriptGrammar.PLUS;
-import static ortus.boxlang.parser.antlr.CFScriptGrammar.PLUSEQUAL;
-import static ortus.boxlang.parser.antlr.CFScriptGrammar.PLUSPLUS;
-import static ortus.boxlang.parser.antlr.CFScriptGrammar.SLASH;
-import static ortus.boxlang.parser.antlr.CFScriptGrammar.SLASHEQUAL;
-import static ortus.boxlang.parser.antlr.CFScriptGrammar.STAR;
-import static ortus.boxlang.parser.antlr.CFScriptGrammar.STAREQUAL;
-import static ortus.boxlang.parser.antlr.CFScriptGrammar.TRUE;
+import static ortus.boxlang.parser.antlr.CFGrammar.BACKSLASH;
+import static ortus.boxlang.parser.antlr.CFGrammar.BANG;
+import static ortus.boxlang.parser.antlr.CFGrammar.BITWISE_COMPLEMENT;
+import static ortus.boxlang.parser.antlr.CFGrammar.CONCATEQUAL;
+import static ortus.boxlang.parser.antlr.CFGrammar.DOT_FLOAT_LITERAL;
+import static ortus.boxlang.parser.antlr.CFGrammar.EQUALSIGN;
+import static ortus.boxlang.parser.antlr.CFGrammar.FALSE;
+import static ortus.boxlang.parser.antlr.CFGrammar.FLOAT_LITERAL;
+import static ortus.boxlang.parser.antlr.CFGrammar.INTEGER_LITERAL;
+import static ortus.boxlang.parser.antlr.CFGrammar.MINUS;
+import static ortus.boxlang.parser.antlr.CFGrammar.MINUSEQUAL;
+import static ortus.boxlang.parser.antlr.CFGrammar.MINUSMINUS;
+import static ortus.boxlang.parser.antlr.CFGrammar.MOD;
+import static ortus.boxlang.parser.antlr.CFGrammar.MODEQUAL;
+import static ortus.boxlang.parser.antlr.CFGrammar.NOT;
+import static ortus.boxlang.parser.antlr.CFGrammar.NULL;
+import static ortus.boxlang.parser.antlr.CFGrammar.PERCENT;
+import static ortus.boxlang.parser.antlr.CFGrammar.PLUS;
+import static ortus.boxlang.parser.antlr.CFGrammar.PLUSEQUAL;
+import static ortus.boxlang.parser.antlr.CFGrammar.PLUSPLUS;
+import static ortus.boxlang.parser.antlr.CFGrammar.SLASH;
+import static ortus.boxlang.parser.antlr.CFGrammar.SLASHEQUAL;
+import static ortus.boxlang.parser.antlr.CFGrammar.STAR;
+import static ortus.boxlang.parser.antlr.CFGrammar.STAREQUAL;
+import static ortus.boxlang.parser.antlr.CFGrammar.TRUE;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -81,67 +81,67 @@ import ortus.boxlang.compiler.ast.expression.BoxUnaryOperation;
 import ortus.boxlang.compiler.ast.expression.BoxUnaryOperator;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
-import ortus.boxlang.compiler.parser.CFScriptParser;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.AnnotationContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.ArgumentContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.ArrayLiteralContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.AssignmentModifierContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.AtomsContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.AttributeSimpleContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.BinOpsContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.ClosureFuncContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.ExprAddContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.ExprAndContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.ExprArrayAccessContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.ExprArrayLiteralContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.ExprAssignContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.ExprAtomsContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.ExprBinaryContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.ExprCatContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.ExprDotAccessContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.ExprDotFloatContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.ExprDotFloatIDContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.ExprElvisContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.ExprEqualContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.ExprFunctionCallContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.ExprHeadlessContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.ExprIdentifierContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.ExprIllegalIdentifierContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.ExprLiteralsContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.ExprMultContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.ExprNewContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.ExprNotContainsContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.ExprOrContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.ExprOutStringContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.ExprPostfixContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.ExprPowerContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.ExprPrecedenceContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.ExprPrefixContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.ExprRelationalContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.ExprStatInvocableContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.ExprStaticAccessContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.ExprTernaryContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.ExprUnaryContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.ExprVarDeclContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.ExprXorContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.ExpressionContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.FqnContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.IdentifierContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.InvocableContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.LambdaFuncContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.LiteralsContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.NamedArgumentContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.NewContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.PositionalArgumentContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.RelOpsContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.ReservedOperatorsContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.StringLiteralContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.StringLiteralPartContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.StructExpressionContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.StructKeyContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.StructMemberContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammar.TestExpressionContext;
-import ortus.boxlang.parser.antlr.CFScriptGrammarBaseVisitor;
+import ortus.boxlang.compiler.parser.CFParser;
+import ortus.boxlang.parser.antlr.CFGrammar.AnnotationContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ArgumentContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ArrayLiteralContext;
+import ortus.boxlang.parser.antlr.CFGrammar.AssignmentModifierContext;
+import ortus.boxlang.parser.antlr.CFGrammar.AtomsContext;
+import ortus.boxlang.parser.antlr.CFGrammar.AttributeSimpleContext;
+import ortus.boxlang.parser.antlr.CFGrammar.BinOpsContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ClosureFuncContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ExprAddContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ExprAndContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ExprArrayAccessContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ExprArrayLiteralContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ExprAssignContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ExprAtomsContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ExprBinaryContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ExprCatContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ExprDotAccessContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ExprDotFloatContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ExprDotFloatIDContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ExprElvisContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ExprEqualContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ExprFunctionCallContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ExprHeadlessContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ExprIdentifierContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ExprIllegalIdentifierContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ExprLiteralsContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ExprMultContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ExprNewContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ExprNotContainsContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ExprOrContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ExprOutStringContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ExprPostfixContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ExprPowerContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ExprPrecedenceContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ExprPrefixContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ExprRelationalContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ExprStatInvocableContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ExprStaticAccessContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ExprTernaryContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ExprUnaryContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ExprVarDeclContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ExprXorContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ExpressionContext;
+import ortus.boxlang.parser.antlr.CFGrammar.FqnContext;
+import ortus.boxlang.parser.antlr.CFGrammar.IdentifierContext;
+import ortus.boxlang.parser.antlr.CFGrammar.InvocableContext;
+import ortus.boxlang.parser.antlr.CFGrammar.LambdaFuncContext;
+import ortus.boxlang.parser.antlr.CFGrammar.LiteralsContext;
+import ortus.boxlang.parser.antlr.CFGrammar.NamedArgumentContext;
+import ortus.boxlang.parser.antlr.CFGrammar.NewContext;
+import ortus.boxlang.parser.antlr.CFGrammar.PositionalArgumentContext;
+import ortus.boxlang.parser.antlr.CFGrammar.RelOpsContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ReservedOperatorsContext;
+import ortus.boxlang.parser.antlr.CFGrammar.StringLiteralContext;
+import ortus.boxlang.parser.antlr.CFGrammar.StringLiteralPartContext;
+import ortus.boxlang.parser.antlr.CFGrammar.StructExpressionContext;
+import ortus.boxlang.parser.antlr.CFGrammar.StructKeyContext;
+import ortus.boxlang.parser.antlr.CFGrammar.StructMemberContext;
+import ortus.boxlang.parser.antlr.CFGrammar.TestExpressionContext;
+import ortus.boxlang.parser.antlr.CFGrammarBaseVisitor;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 
 /**
@@ -150,14 +150,21 @@ import ortus.boxlang.runtime.types.exceptions.ExpressionException;
  * Some of the AST generation is complicated by the syntactical ambiguity of the language, where even
  * precedence changes at certain points.
  */
-public class CFExpressionVisitor extends CFScriptGrammarBaseVisitor<BoxExpression> {
+public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 
-	private final CFScriptParser	tools;
-	private final CFVisitor			statementVisitor;
+	private final CFParser	tools;
+	private final CFVisitor	statementVisitor;
 
-	public CFExpressionVisitor( CFScriptParser tools, CFVisitor statementVisitor ) {
+	public CFExpressionVisitor( CFParser tools, CFVisitor statementVisitor ) {
 		this.tools				= tools;
 		this.statementVisitor	= statementVisitor;
+	}
+
+	/**
+	 * getter for statement visitor
+	 */
+	public CFVisitor getStatementVisitor() {
+		return statementVisitor;
 	}
 
 	/**
@@ -1100,6 +1107,7 @@ public class CFExpressionVisitor extends CFScriptGrammarBaseVisitor<BoxExpressio
 			case "GT", ">", "GREATERTHAN" -> BoxComparisonOperator.GreaterThan;
 			case "GTE", ">=", "GE", "GREATERTHANOREQTO", "GREATERTHANOREQUALTO" -> BoxComparisonOperator.GreaterThanEquals;
 			case "===" -> BoxComparisonOperator.TEqual;
+			case "!==" -> BoxComparisonOperator.TNotEqual;
 			case "LE", "<=", "LTE", "LESSTHANOREQTO", "LESSTHANOREQUALTO" -> BoxComparisonOperator.LessThanEquals;
 			case "LT", "<", "LESSTHAN" -> BoxComparisonOperator.LessThan;
 			case "NEQ", "!=", "NOTEQUAL", "ISNOT", "<>" -> BoxComparisonOperator.NotEqual;

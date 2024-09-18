@@ -70,6 +70,11 @@ public class ReMatch extends BIF {
 			reg_expression = "(?i)" + reg_expression;
 		}
 
+		// Posix replacement for character classes
+		reg_expression	= ReFind.posixReplace( reg_expression, noCase );
+		// Ignore non-quantifier curly braces like PERL
+		reg_expression	= ReFind.replaceNonQuantiferCurlyBraces( reg_expression );
+
 		Matcher	matcher	= java.util.regex.Pattern.compile( reg_expression ).matcher( string );
 		Array	result	= new Array();
 

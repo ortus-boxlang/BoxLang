@@ -60,7 +60,7 @@ public class ListAvg extends ArrayAvg {
 	 *
 	 * @argument.includeEmptyFields whether to include empty fields in the average
 	 */
-	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Number _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		arguments.put(
 		    Key.array,
 		    ListUtil.asList(

@@ -87,6 +87,29 @@ You can support ColdBox and all of our Open Source initiatives at Ortus Solution
 - [Become a backer or sponsor on Patreon](https://www.patreon.com/ortussolutions)
 - [One-time donations via PayPal](https://www.paypal.com/paypalme/ortussolutions)
 
+## Technical Documentation
+
+The technical documentation for the [Types](https://boxlang.ortusbooks.com/boxlang-language/reference/types), [Built In Functions](https://boxlang.ortusbooks.com/boxlang-language/reference/built-in-functions), [Components](https://boxlang.ortusbooks.com/boxlang-language/reference/components) and [Exceptions](https://boxlang.ortusbooks.com/boxlang-language/reference/exceptions) sections of the [official documentation](https://boxlang.ortusbooks.com/) are generated directly from the BoxLang source code Javadoc comment blocks.   In order to ensure this documentation is accurate, please ensure any submissions in the areas of BIFs, Member Functions, Components, BoxLang types, and Exceptions are well documented.
+
+For BIFs and member functions, granular argument documentation is required. For Java classes containing multiple BIFs or member functions, you may use custom annotations to separately describe each BIF.  See the `TimeUnits.java` `_invoke` method for an example of how this is accomplished.  You may also exclude attributes and arguments from being documented for a particular functions.  The syntax for this is:
+
+```
+@function.MyFunction.arguments.exclude myArgument
+```
+
+To preview this documentation run the following command:
+```
+gradle generateTechnicalDocumentation
+```
+
+This will place all of the generated documentation in the `docs` directory.  The `Summary.md` file generated in the root of that directory, represent the navigation items to be spliced in to the `SUMMARY.md` file for the above linked sections.  Documentation changes are synchronized on each release with the following process:
+
+1. Run `gradle generateTechnicalDocumentation` on the source code.  
+2. Clone the documentation repository as a sibling of the source code repository
+3. Syncronize the changes between the two repositories using `rsync` : `rsync -Irav --update $PWD/docs/boxlang-language/reference/ $PWD/../boxlang-docs/boxlang-language/reference`
+4. Splice in the full contents of the generated `docs/Summary.md`, replacing the existing sections
+
+
 ## Contributors
 
 Thank you to all the people who have already contributed to BoxLang! We: heart: : heart: : heart: love you!

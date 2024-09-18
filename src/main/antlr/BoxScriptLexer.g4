@@ -156,6 +156,7 @@ MODEQUAL    : '%=';
 PLUS        : '+';
 PLUSPLUS    : '++';
 TEQ         : '===';
+TENQ        : '!==';
 
 // BITWISE OPERATORS
 BITWISE_OR                   : 'b|';
@@ -165,6 +166,8 @@ BITWISE_COMPLEMENT           : 'b~';
 BITWISE_SIGNED_LEFT_SHIFT    : 'b<<';
 BITWISE_SIGNED_RIGHT_SHIFT   : 'b>>';
 BITWISE_UNSIGNED_RIGHT_SHIFT : 'b>>>';
+
+COMPONENT_PREFIX: 'bx:';
 
 // ANY NEW LEXER RULES FOR AN ENGLISH WORD NEEDS ADDED TO THE identifer RULE IN THE PARSER
 

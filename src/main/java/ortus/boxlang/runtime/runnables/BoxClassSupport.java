@@ -452,11 +452,12 @@ public class BoxClassSupport {
 		meta.putIfAbsent( "invokeImplicitAccessor", thisClass.getCanInvokeImplicitAccessor() );
 
 		// Assemble the metadata
-		var functions = new ArrayList<Object>();
+		var	functions				= new ArrayList<Object>();
+		var	compileTimeMethodNames	= thisClass.getCompileTimeMethodNames();
 		// loop over target's variables scope and add metadata for each function
-		for ( var entry : thisClass.getVariablesScope().keySet() ) {
-			var value = thisClass.getVariablesScope().get( entry );
-			if ( value instanceof Function fun ) {
+		for ( var entry : compileTimeMethodNames ) {
+			// The only reason it wouldn't be a functon is if someone overwrote/removed it in the variables scope
+			if ( thisClass.getVariablesScope().get( entry ) instanceof Function fun ) {
 				functions.add( fun.getMetaData() );
 			}
 		}

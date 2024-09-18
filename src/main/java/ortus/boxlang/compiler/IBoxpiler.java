@@ -180,4 +180,6 @@ public interface IBoxpiler {
 	}
 
 	void compileClassInfo( String classPoolName, String FQN );
+
+	void clearPagePool();
 }

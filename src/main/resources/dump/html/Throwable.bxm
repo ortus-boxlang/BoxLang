@@ -1,15 +1,19 @@
+<bx:script>
+	expandRoot = expand || expand eq null
+</bx:script>
 <bx:import prefix="java" name="ortus.boxlang.runtime.types.exceptions.ExceptionUtil">
 <!--- Throwable template --->
 <bx:output>
 	<bx:set isBXError = var instanceof "ortus.boxlang.runtime.types.exceptions.BoxLangException">
 	<div class="bx-dump">
+
 		<table class="bx-table-red" title="#posInCode#">
 			<bx:if isBXError>
 				<caption
 					role="button"
 					tabindex="0"
-					onclick="this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none')"
-					onkeyup="if(event.key === 'Enter'){ this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none');}"
+					<bx:if expandRoot>open aria-expanded="true"<bx:else>aria-expanded="false"</bx:if>
+					data-bx-toggle="siblings"
 				>
 					<strong>
 						<bx:if label.len() >#label# - </bx:if>
@@ -20,8 +24,8 @@
 				<caption
 					role="button"
 					tabindex="0"
-					onclick="this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none')"
-					onkeyup="if(event.key === 'Enter'){ this.toggleAttribute('open');this.nextElementSibling.classList.toggle('d-none');}"
+					<bx:if expandRoot>open aria-expanded="true"<bx:else>aria-expanded="false"</bx:if>
+					data-bx-toggle="siblings"
 				>
 					<strong>
 						<bx:if label.len() >#label# - </bx:if>
@@ -29,38 +33,97 @@
 					</strong>
 				</caption>
 			</bx:if>
+
 			<!--- Throwable BODY --->
 			<tbody
-				<bx:if !expand>class="d-none"</bx:if>
+				<bx:if !expandRoot>class="d-none"</bx:if>
 			>
 				<tr>
-					<th scope="row">Message</th>
-					<td>#encodeForHTML( var.getMessage() )#</td></tr>
+					<th
+						aria-expanded="true"
+						data-bx-toggle="onoff"
+						scope="row"
+						valign="top"
+						tabindex="0"
+					>
+						Message
+					</th>
+					<td>
+						<div class="bx-onoff">
+							#encodeForHTML( var.getMessage() )#
+						</div>
+					</td>
+				</tr>
+
 				<bx:if isBXError>
 					<tr>
-						<th scope="row">Detail</th>
-						<td>#encodeForHTML( var.getDetail() )#</td>
+						<th
+							aria-expanded="true"
+							data-bx-toggle="onoff"
+							scope="row"
+							valign="top"
+							tabindex="0"
+						>
+							Detail
+						</th>
+						<td>
+							<div class="bx-onoff">
+								#encodeForHTML( var.getDetail() ?: "n/a" )#
+							</div>
+						</td>
 					</tr>
 					<tr>
-						<th scope="row">Tag Congtext</th>
+						<th
+							aria-expanded="true"
+							data-bx-toggle="onoff"
+							scope="row"
+							valign="top"
+							tabindex="0"
+						>
+							Tag Context
+						</th>
 						<td>
-							<bx:dump var="#var.getTagContext()#">
+							<div class="bx-onoff">
+								<bx:dump var="#var.getTagContext()#">
+							</div>
 						</td>
 					</tr>
 					<!--- TODO: Details from other exception subclasses --->
 				</bx:if>
+
 				<bx:if var.getCause() != null >
 					<tr>
-						<th scope="row">Cause</th>
+						<th
+							aria-expanded="true"
+							data-bx-toggle="onoff"
+							scope="row"
+							valign="top"
+							tabindex="0"
+						>
+							Cause
+						</th>
 						<td>
-							<bx:dump var="#var.getCause()#">
+							<div class="bx-onoff">
+								<bx:dump var="#var.getCause()#">
+							</div>
 						</td>
 					</tr>
 				</bx:if>
+
 				<tr>
-					<th scope="row">StackTrace</th>
+					<th
+						aria-expanded="true"
+						data-bx-toggle="onoff"
+						scope="row"
+						valign="top"
+						tabindex="0"
+					>
+							StackTrace
+					</th>
 					<td>
-						<pre>#encodeForHTML( ExceptionUtil.getStackTraceAsString( var ) )#</pre>
+						<div class="bx-onoff">
+							<pre>#encodeForHTML( ExceptionUtil.getStackTraceAsString( var ) )#</pre>
+						</div>
 					</td>
 				</tr>
 			</tbody>

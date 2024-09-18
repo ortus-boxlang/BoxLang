@@ -103,7 +103,7 @@ public class BoxComponentTransformer extends AbstractTransformer {
 		}, Type.getType( Component.ComponentBody.class ) );
 
 		AsmHelper.methodWithContextAndClassLocator( classNode, "process", Type.getType( IBoxContext.class ), Type.getType( Component.BodyResult.class ), false,
-		    transpiler,
+		    transpiler, false,
 		    () -> {
 			    List<AbstractInsnNode> nodes = new ArrayList<>();
 

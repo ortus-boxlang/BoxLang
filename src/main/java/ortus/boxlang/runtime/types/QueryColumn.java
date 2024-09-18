@@ -24,7 +24,8 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.Referencer;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
-import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
+import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
+import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
 import ortus.boxlang.runtime.interop.DynamicInteropService;
 import ortus.boxlang.runtime.scopes.IntKey;
 import ortus.boxlang.runtime.scopes.Key;
@@ -175,7 +176,7 @@ public class QueryColumn implements IReferenceable, Serializable {
 			index = intKey.getIntValue();
 		} else {
 			// If key is not an int, we must attempt to cast it
-			CastAttempt<Double> indexAtt = DoubleCaster.attempt( key.getName() );
+			CastAttempt<Number> indexAtt = NumberCaster.attempt( key.getName() );
 			if ( !indexAtt.wasSuccessful() ) {
 				if ( safe ) {
 					return -1;
@@ -184,10 +185,10 @@ public class QueryColumn implements IReferenceable, Serializable {
 				    "Query column cannot be assigned with key %s", key.getName()
 				) );
 			}
-			Double dIndex = indexAtt.get();
+			Number dIndex = indexAtt.get();
 			index = dIndex.intValue();
 			// Disallow non-integer indexes foo[1.5]
-			if ( index.doubleValue() != dIndex ) {
+			if ( index.doubleValue() != dIndex.doubleValue() ) {
 				if ( safe ) {
 					return -1;
 				}
@@ -243,7 +244,9 @@ public class QueryColumn implements IReferenceable, Serializable {
 	public Object assign( IBoxContext context, Key name, Object value ) {
 
 		// Check if the key is numeric
-		int index = getIntFromKey( name, true );
+		int		index		= getIntFromKey( name, true );
+		String	columnType	= getType().toString();
+		value = GenericCaster.cast( context, value, columnType );
 		// If assign a query column with a number like qry.col[1]='new value', then we ALWAYS get the value from that row
 		if ( index > 0 ) {
 			setCell( index - 1, value );

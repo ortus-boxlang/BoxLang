@@ -19,8 +19,10 @@ import java.util.regex.Pattern;
 import org.apache.commons.lang3.math.NumberUtils;
 
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
-import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
+import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.operators.GreaterThanEqual;
+import ortus.boxlang.runtime.operators.LessThanEqual;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.types.Closure;
 import ortus.boxlang.runtime.types.Function;
@@ -332,11 +334,11 @@ public class ValidationUtil {
 	 *
 	 * @return Boolean indicating if the value is within the range
 	 */
-	public static boolean isValidRange( Object value, Double min, Double max ) {
-		CastAttempt<Double> castedValue = DoubleCaster.attempt( value );
+	public static boolean isValidRange( Object value, Number min, Number max ) {
+		CastAttempt<Number> castedValue = NumberCaster.attempt( value );
 		if ( castedValue.wasSuccessful() ) {
-			double doubleValue = castedValue.get();
-			return doubleValue >= min && doubleValue <= max;
+			Number nValue = castedValue.get();
+			return GreaterThanEqual.invoke( nValue, min ) && LessThanEqual.invoke( nValue, max );
 		}
 		return false;
 	}

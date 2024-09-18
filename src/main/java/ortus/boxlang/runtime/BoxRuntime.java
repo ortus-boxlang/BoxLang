@@ -17,15 +17,36 @@
  */
 package ortus.boxlang.runtime;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.Instant;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import ortus.boxlang.compiler.ClassInfo;
 import ortus.boxlang.compiler.IBoxpiler;
 import ortus.boxlang.compiler.asmboxpiler.ASMBoxpiler;
 import ortus.boxlang.compiler.javaboxpiler.JavaBoxpiler;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.compiler.parser.ParsingResult;
+import ortus.boxlang.runtime.application.BaseApplicationListener;
+import ortus.boxlang.runtime.config.CLIOptions;
 import ortus.boxlang.runtime.config.ConfigLoader;
 import ortus.boxlang.runtime.config.Configuration;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -40,36 +61,33 @@ import ortus.boxlang.runtime.interceptors.Logging;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.DynamicClassLoader;
 import ortus.boxlang.runtime.logging.LoggingConfigurator;
-import ortus.boxlang.runtime.runnables.*;
+import ortus.boxlang.runtime.runnables.BoxScript;
+import ortus.boxlang.runtime.runnables.BoxTemplate;
+import ortus.boxlang.runtime.runnables.IBoxRunnable;
+import ortus.boxlang.runtime.runnables.IClassRunnable;
+import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.services.*;
+import ortus.boxlang.runtime.services.ApplicationService;
+import ortus.boxlang.runtime.services.AsyncService;
+import ortus.boxlang.runtime.services.CacheService;
+import ortus.boxlang.runtime.services.ComponentService;
+import ortus.boxlang.runtime.services.DatasourceService;
+import ortus.boxlang.runtime.services.FunctionService;
+import ortus.boxlang.runtime.services.IService;
+import ortus.boxlang.runtime.services.InterceptorService;
+import ortus.boxlang.runtime.services.ModuleService;
+import ortus.boxlang.runtime.services.SchedulerService;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 import ortus.boxlang.runtime.types.exceptions.MissingIncludeException;
 import ortus.boxlang.runtime.types.util.MathUtil;
 import ortus.boxlang.runtime.util.EncryptionUtil;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 import ortus.boxlang.runtime.util.Timer;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.Instant;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Properties;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Represents the top level runtime container for box lang. Config, global scopes, mappings, threadpools, etc all go here.
@@ -158,6 +176,12 @@ public class BoxRuntime implements java.io.Closeable {
 	private DynamicClassLoader					runtimeLoader;
 
 	/**
+	 * The CLI Options that where used to start the runtime, if any.
+	 * This can be null if not in a CLI environment
+	 */
+	private CLIOptions							cliOptions;
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Services
 	 * --------------------------------------------------------------------------
@@ -240,9 +264,20 @@ public class BoxRuntime implements java.io.Closeable {
 	 * @param debugMode   true if the runtime should be started in debug mode
 	 * @param configPath  The path to the configuration file to load as overrides
 	 * @param runtimeHome The path to the runtime home directory
+	 * @param options     The CLI Options that were used to start the runtime or null if not started via CLI
 	 */
-	private BoxRuntime( Boolean debugMode, String configPath, String runtimeHome ) {
-		// Seed if passed
+	private BoxRuntime( Boolean debugMode, String configPath, String runtimeHome, CLIOptions options ) {
+		Map<String, String> envVars = System.getenv();
+
+		// Seed the CLI Options (This can be null)
+		this.cliOptions = options;
+
+		// Debug mode 1st check via ENV vars
+		if ( debugMode == null ) {
+			debugMode = Boolean.parseBoolean( envVars.getOrDefault( "BOXLANG_DEBUG", "" ) );
+		}
+
+		// Seed if passed, arguements override ENV vars
 		if ( debugMode != null ) {
 			this.debugMode = debugMode;
 		}
@@ -255,10 +290,10 @@ public class BoxRuntime implements java.io.Closeable {
 		}
 
 		// Seed the override config path, it can be null
-		this.configPath = configPath;
+		this.configPath	= configPath;
 
 		// Seed startup properties
-		this.startTime = Instant.now();
+		this.startTime	= Instant.now();
 	}
 
 	/**
@@ -475,11 +510,11 @@ public class BoxRuntime implements java.io.Closeable {
 	}
 
 	/**
-	 * Get the singleton instance. This method is in charge of starting the runtime if it has not been started yet.
+	 * Get or startup a BoxLang Runtime instance.
+	 * <p>
+	 * A very simple variation for NON CLI applications using just the debug mode.
 	 *
-	 * This can be null if the runtime has not been started yet.
-	 *
-	 * @param debugMode true if the runtime should be started in debug mode
+	 * @param debugMode True if the runtime should be started in debug mode
 	 *
 	 * @return A BoxRuntime instance
 	 *
@@ -489,11 +524,11 @@ public class BoxRuntime implements java.io.Closeable {
 	}
 
 	/**
-	 * Get the singleton instance. This method is in charge of starting the runtime if it has not been started yet.
+	 * Get or startup a BoxLang Runtime instance.
+	 * <p>
+	 * Another variation for NON-cli applications using just the debug mode and a config override.
 	 *
-	 * This can be null if the runtime has not been started yet.
-	 *
-	 * @param debugMode  true if the runtime should be started in debug mode
+	 * @param debugMode  True if the runtime should be started in debug mode
 	 * @param configPath The path to the configuration file to load as overrides
 	 *
 	 * @return A BoxRuntime instance
@@ -504,22 +539,66 @@ public class BoxRuntime implements java.io.Closeable {
 	}
 
 	/**
-	 * Get the singleton instance. This method is in charge of starting the runtime if it has not been started yet.
+	 * Get or startup a BoxLang Runtime instance.
+	 * <p>
+	 * This is for NON-cli applications using just a runtime home directory and config path.
+	 * The debug mode will be identified by ENV or configuration.
 	 *
-	 * This can be null if the runtime has not been started yet.
-	 *
-	 * @param debugMode   true if the runtime should be started in debug mode
 	 * @param configPath  The path to the configuration file to load as overrides
-	 * @param runtimeHome The path to the runtime home directory
+	 * @param runtimeHome The path to the runtime home directory where all the runtime assets are stored
 	 *
 	 * @return A BoxRuntime instance
 	 *
 	 */
+	public static BoxRuntime getInstance( String configPath, String runtimeHome ) {
+		return getInstance( null, configPath, runtimeHome );
+	}
+
+	/**
+	 * Get or startup a BoxLang Runtime instance.
+	 * <p>
+	 * This method is used exclusively to start a CLI runtime instance.
+	 *
+	 * @param options The CLI Options that were used to start the runtime or null if not started via CLI
+	 *
+	 * @return A BoxRuntime instance
+	 */
+	public static BoxRuntime getInstance( CLIOptions options ) {
+		return getInstance( options.debug(), options.configFile(), options.runtimeHome(), options );
+	}
+
+	/**
+	 * Get or startup a BoxLang Runtime instance.
+	 * <p>
+	 * This variation doesn't use the CLIOptions as most likely this method is used by NON-CLI applications.
+	 *
+	 * @param debugMode   True if the runtime should be started in debug mode
+	 * @param configPath  The path to the configuration file to load as overrides
+	 * @param runtimeHome The path to the runtime home directory where all the runtime assets are stored
+	 *
+	 * @return A BoxRuntime instance
+	 */
 	public static BoxRuntime getInstance( Boolean debugMode, String configPath, String runtimeHome ) {
+		return getInstance( debugMode, configPath, runtimeHome, null );
+	}
+
+	/**
+	 * Get or startup a BoxLang Runtime instance.
+	 * <p>
+	 * This method uses all the possible parameters to start the runtime.
+	 *
+	 * @param debugMode   True if the runtime should be started in debug mode
+	 * @param configPath  The path to the configuration file to load as overrides
+	 * @param runtimeHome The path to the runtime home directory where all the runtime assets are stored
+	 * @param options     The CLI Options that were used to start the runtime or null if not started via CLI
+	 *
+	 * @return A BoxRuntime instance
+	 */
+	public static BoxRuntime getInstance( Boolean debugMode, String configPath, String runtimeHome, CLIOptions options ) {
 		if ( instance == null ) {
 			synchronized ( BoxRuntime.class ) {
 				if ( instance == null ) {
-					instance = new BoxRuntime( debugMode, configPath, runtimeHome );
+					instance = new BoxRuntime( debugMode, configPath, runtimeHome, options );
 				}
 			}
 			// We split in order to avoid circular dependencies on the runtime
@@ -531,10 +610,10 @@ public class BoxRuntime implements java.io.Closeable {
 	/**
 	 * Get the singleton instance. This can be null if the runtime has not been started yet.
 	 *
-	 * @return BoxRuntime
+	 * @return BoxRuntime instance or null if not started
 	 */
 	public static BoxRuntime getInstance() {
-		return getInstance( null );
+		return getInstance( ( Boolean ) null );
 	}
 
 	/**
@@ -710,6 +789,24 @@ public class BoxRuntime implements java.io.Closeable {
 	 */
 	public Boolean inDebugMode() {
 		return instance.debugMode;
+	}
+
+	/**
+	 * Get the CLI Options that were used to start the runtime. This can be null if not started via CLI
+	 *
+	 * @return The CLI Options or null if not started via CLI
+	 */
+	public CLIOptions getCliOptions() {
+		return instance.cliOptions;
+	}
+
+	/**
+	 * Check if the runtime is in CLI mode or not
+	 *
+	 * @return true if in CLI mode, false otherwise
+	 */
+	public boolean inCLIMode() {
+		return instance.cliOptions != null;
 	}
 
 	/**
@@ -1042,10 +1139,10 @@ public class BoxRuntime implements java.io.Closeable {
 	 * @param args         The array of arguments to pass to the main method
 	 */
 	public void executeClass( Class<IBoxRunnable> targetClass, String templatePath, IBoxContext context, String[] args ) {
-		// instance.logger.debug( "Executing class [{}]", templatePath );
-
-		ScriptingRequestBoxContext	scriptingContext	= new ScriptingRequestBoxContext( context );
-		IClassRunnable				target				= ( IClassRunnable ) DynamicObject.of( targetClass )
+		IBoxContext				scriptingContext	= ensureRequestTypeContext( context, Paths.get( templatePath ).toUri() );
+		BaseApplicationListener	listener			= scriptingContext.getParentOfType( RequestBoxContext.class ).getApplicationListener();
+		Throwable				errorToHandle		= null;
+		IClassRunnable			target				= ( IClassRunnable ) DynamicObject.of( targetClass )
 		    .invokeConstructor( scriptingContext )
 		    .getTargetInstance();
 
@@ -1053,24 +1150,56 @@ public class BoxRuntime implements java.io.Closeable {
 		if ( target.getThisScope().containsKey( Key.main ) ) {
 			// Fire!!!
 			try {
-				target.dereferenceAndInvoke( scriptingContext, Key.main, new Object[] { Array.fromArray( args ) }, false );
+				boolean result = listener.onRequestStart( scriptingContext, new Object[] { templatePath } );
+				if ( result ) {
+					// Not sure onClassRequest() works here since we already have the class loaded
+					target.dereferenceAndInvoke( scriptingContext, Key.main, new Object[] { Array.fromArray( args ) }, false );
+				}
 			} catch ( AbortException e ) {
+				try {
+					listener.onAbort( scriptingContext, new Object[] { templatePath } );
+				} catch ( Throwable ae ) {
+					// Opps, an error while handling onAbort
+					errorToHandle = ae;
+				}
 				scriptingContext.flushBuffer( true );
 				if ( e.getCause() != null ) {
 					// This will always be an instance of CustomException
 					throw ( RuntimeException ) e.getCause();
 				}
+			} catch ( MissingIncludeException e ) {
+				try {
+					// Not sure this is reachable since this method is probably only reached if the template existed. But just in case.
+					if ( !listener.onMissingTemplate( scriptingContext, new Object[] { e.getMissingFileName() } ) ) {
+						errorToHandle = e;
+					}
+				} catch ( Throwable t ) {
+					// Opps, an error while handling the missing template error
+					errorToHandle = t;
+				}
+			} catch ( Exception e ) {
+				errorToHandle = e;
 			} finally {
+				try {
+					listener.onRequestEnd( scriptingContext, new Object[] { templatePath } );
+				} catch ( Throwable e ) {
+					// Opps, an error while handling onRequestEnd
+					errorToHandle = e;
+				}
 				scriptingContext.flushBuffer( false );
 
-				// Debugging Timer
-				/*
-				 * instance.logger.debug(
-				 * "Executed template [{}] in [{}] ms",
-				 * template.getRunnablePath(),
-				 * timerUtil.stopAndGetMillis( "execute-" + template.hashCode() )
-				 * );
-				 */
+				if ( errorToHandle != null ) {
+					try {
+						if ( !listener.onError( scriptingContext, new Object[] { errorToHandle, "" } ) ) {
+							throw errorToHandle;
+						}
+						// This is a failsafe in case the onError blows up.
+					} catch ( Throwable t ) {
+						errorToHandle.printStackTrace();
+						ExceptionUtil.throwException( t );
+					}
+				}
+				scriptingContext.flushBuffer( false );
 			}
 		} else {
 			throw new BoxRuntimeException( "Class [" + targetClass.getName() + "] does not have a main method to execute." );
@@ -1085,32 +1214,65 @@ public class BoxRuntime implements java.io.Closeable {
 	 * @param context  The context to execute the template in
 	 */
 	public void executeTemplate( BoxTemplate template, IBoxContext context ) {
-		// Debugging Timers
-		/* timerUtil.start( "execute-" + template.hashCode() ); */
+		String templatePath = template.getRunnablePath().absolutePath().toString();
 		instance.logger.debug( "Executing template [{}]", template.getRunnablePath() );
 
-		IBoxContext scriptingContext = ensureRequestTypeContext( context, template.getRunnablePath().absolutePath().toUri() );
-
+		IBoxContext				scriptingContext	= ensureRequestTypeContext( context, template.getRunnablePath().absolutePath().toUri() );
+		BaseApplicationListener	listener			= scriptingContext.getParentOfType( RequestBoxContext.class ).getApplicationListener();
+		Throwable				errorToHandle		= null;
 		try {
-			// Fire!!!
-			template.invoke( scriptingContext );
+			boolean result = listener.onRequestStart( scriptingContext, new Object[] { templatePath } );
+			if ( result ) {
+				// Not sure if this works in this concext, since it's expected to include the template itself, but in this case our template is a loaded
+				// class, not a path which may or may not be a file and may or may not be inside of a mapping allowing a relative path to it
+				// listener.onRequest( scriptingContext, new Object[] { templatePath } );
+				template.invoke( scriptingContext );
+			}
 		} catch ( AbortException e ) {
+			try {
+				listener.onAbort( scriptingContext, new Object[] { templatePath } );
+			} catch ( Throwable ae ) {
+				// Opps, an error while handling onAbort
+				errorToHandle = ae;
+			}
 			scriptingContext.flushBuffer( true );
 			if ( e.getCause() != null ) {
 				// This will always be an instance of CustomException
 				throw ( RuntimeException ) e.getCause();
 			}
+		} catch ( MissingIncludeException e ) {
+			try {
+				// Not sure this is reachable since this method is probably only reached if the template existed. But just in case.
+				if ( !listener.onMissingTemplate( scriptingContext, new Object[] { e.getMissingFileName() } ) ) {
+					errorToHandle = e;
+				}
+			} catch ( Throwable t ) {
+				// Opps, an error while handling the missing template error
+				errorToHandle = t;
+			}
+		} catch ( Exception e ) {
+			errorToHandle = e;
 		} finally {
+			try {
+				listener.onRequestEnd( scriptingContext, new Object[] { templatePath } );
+			} catch ( Throwable e ) {
+				// Opps, an error while handling onRequestEnd
+				errorToHandle = e;
+			}
 			scriptingContext.flushBuffer( false );
 
-			// Debugging Timer
-			/*
-			 * instance.logger.debug(
-			 * "Executed template [{}] in [{}] ms",
-			 * template.getRunnablePath(),
-			 * timerUtil.stopAndGetMillis( "execute-" + template.hashCode() )
-			 * );
-			 */
+			if ( errorToHandle != null ) {
+				try {
+					if ( !listener.onError( scriptingContext, new Object[] { errorToHandle, "" } ) ) {
+						throw errorToHandle;
+					}
+					// This is a failsafe in case the onError blows up.
+				} catch ( Throwable t ) {
+					errorToHandle.printStackTrace();
+					ExceptionUtil.throwException( t );
+				}
+			}
+			scriptingContext.flushBuffer( false );
 		}
 	}
 
@@ -1135,11 +1297,23 @@ public class BoxRuntime implements java.io.Closeable {
 	 *
 	 * @param source  A string of the statement to execute
 	 * @param context The context to execute the source in
+	 * @param type    The type of source to execute
+	 *
+	 */
+	public Object executeStatement( String source, IBoxContext context, BoxSourceType type ) {
+		BoxScript scriptRunnable = RunnableLoader.getInstance().loadStatement( context, source, type );
+		return executeStatement( scriptRunnable, context );
+	}
+
+	/**
+	 * Execute a single statement in a specific context
+	 *
+	 * @param source  A string of the statement to execute
+	 * @param context The context to execute the source in
 	 *
 	 */
 	public Object executeStatement( String source, IBoxContext context ) {
-		BoxScript scriptRunnable = RunnableLoader.getInstance().loadStatement( context, source );
-		return executeStatement( scriptRunnable, context );
+		return executeStatement( source, context, BoxSourceType.BOXSCRIPT );
 	}
 
 	/**
@@ -1226,14 +1400,6 @@ public class BoxRuntime implements java.io.Closeable {
 			}
 		} finally {
 			scriptingContext.flushBuffer( false );
-
-			// Debugging Timer
-			/*
-			 * instance.logger.debug(
-			 * "Executed source  [{}] ms",
-			 * timerUtil.stopAndGetMillis( "execute-" + source.hashCode() )
-			 * );
-			 */
 		}
 
 		return results;
@@ -1272,7 +1438,7 @@ public class BoxRuntime implements java.io.Closeable {
 
 				try {
 
-					BoxScript	scriptRunnable		= RunnableLoader.getInstance().loadStatement( context, source );
+					BoxScript	scriptRunnable		= RunnableLoader.getInstance().loadStatement( context, source, BoxSourceType.BOXSCRIPT );
 
 					// Fire!!!
 					Object		result				= scriptRunnable.invoke( scriptingContext );
