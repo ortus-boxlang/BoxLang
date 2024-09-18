@@ -20,12 +20,15 @@ package ortus.boxlang.runtime.dynamic.casters;
 import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.operators.InstanceOf;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.types.BoxLangType;
@@ -132,8 +135,9 @@ public class GenericCaster implements IBoxCaster {
 		// Handle arrays like int[], or java.lang.String[]
 		if ( type.endsWith( "[]" ) ) {
 			// Remove the []
-			String		newType			= type.substring( 0, type.length() - 2 );
-			Class<?>	newTypeClass	= getClassFromType( newType, originalCaseType, false );
+			String newType = type.substring( 0, type.length() - 2 );
+			originalCaseType = originalCaseType.substring( 0, originalCaseType.length() - 2 );
+			Class<?>	newTypeClass	= getClassFromType( context, newType, originalCaseType, false );
 			Object[]	result;
 			Boolean		convertToArray	= false;
 
@@ -145,7 +149,7 @@ public class GenericCaster implements IBoxCaster {
 
 			if ( object.getClass().isArray() ) {
 				result = castNativeArrayToNativeArray( context, object, newType, fail, newTypeClass );
-			} else if ( object instanceof List<?> l ) {
+			} else if ( object instanceof List<?> ) {
 				result = castListToNativeArray( context, object, newType, fail, newTypeClass );
 			} else {
 				throw new BoxCastException(
@@ -319,8 +323,8 @@ public class GenericCaster implements IBoxCaster {
 	 *
 	 * @return The class instance
 	 */
-	public static Class<?> getClassFromType( String type ) {
-		return getClassFromType( type, type, true );
+	public static Class<?> getClassFromType( IBoxContext context, String type ) {
+		return getClassFromType( context, type, type, true );
 	}
 
 	/**
@@ -331,8 +335,8 @@ public class GenericCaster implements IBoxCaster {
 	 *
 	 * @return The class instance
 	 */
-	public static Class<?> getClassFromType( String type, String originalCaseType ) {
-		return getClassFromType( type, originalCaseType, true );
+	public static Class<?> getClassFromType( IBoxContext context, String type, String originalCaseType ) {
+		return getClassFromType( context, type, originalCaseType, true );
 	}
 
 	/**
@@ -344,7 +348,7 @@ public class GenericCaster implements IBoxCaster {
 	 *
 	 * @return The class instance
 	 */
-	public static Class<?> getClassFromType( String type, String originalCaseType, Boolean fail ) {
+	public static Class<?> getClassFromType( IBoxContext context, String type, String originalCaseType, Boolean fail ) {
 
 		if ( type.equals( "bigdecimal" ) || type.equals( "java.math.bigdecimal" ) ) {
 			return BigDecimal.class;
@@ -397,12 +401,9 @@ public class GenericCaster implements IBoxCaster {
 
 		// If we got here, then we have a full class name like java.lang.String
 		// Let's see if we can load it
-		try {
-			return Class.forName( type );
-		} catch ( ClassNotFoundException e ) {
-			if ( fail ) {
-				throw new BoxCastException( String.format( "Could not find class [%s]", type ) );
-			}
+		Optional<DynamicObject> loadResult = ClassLocator.getInstance().safeLoad( context, originalCaseType, "java" );
+		if ( loadResult.isPresent() ) {
+			return loadResult.get().getTargetClass();
 		}
 
 		if ( !fail ) {
@@ -410,7 +411,7 @@ public class GenericCaster implements IBoxCaster {
 		}
 
 		throw new BoxCastException(
-		    String.format( "Invalid cast type [%s]", type )
+		    String.format( "Invalid cast type [%s]", originalCaseType )
 		);
 	}
 }
