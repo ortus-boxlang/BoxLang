@@ -20,41 +20,30 @@ package ortus.boxlang.compiler.asmboxpiler.transformer.statement;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
-import org.objectweb.asm.tree.InsnNode;
-import org.objectweb.asm.tree.MethodInsnNode;
-import org.objectweb.asm.tree.VarInsnNode;
 
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxNode;
-import ortus.boxlang.compiler.ast.statement.BoxBufferOutput;
-import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.compiler.ast.BoxStatement;
+import ortus.boxlang.compiler.ast.statement.BoxScriptIsland;
 
-public class BoxBufferOutputTransformer extends AbstractTransformer {
+public class BoxScriptIslandTransformer extends AbstractTransformer {
 
-	public BoxBufferOutputTransformer( Transpiler transpiler ) {
+	public BoxScriptIslandTransformer( Transpiler transpiler ) {
 		super( transpiler );
 	}
 
 	@Override
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnContext ) throws IllegalStateException {
-		BoxBufferOutput			bufferOuput	= ( BoxBufferOutput ) node;
+		BoxScriptIsland			scriptIsland	= ( BoxScriptIsland ) node;
 
-		List<AbstractInsnNode>	nodes		= new ArrayList<>();
-		nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
-		nodes
-		    .addAll( transpiler.transform( bufferOuput.getExpression(), TransformerContext.NONE, ReturnValueContext.VALUE_OR_NULL ) );
-		nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
-		    Type.getInternalName( IBoxContext.class ),
-		    "writeToBuffer",
-		    Type.getMethodDescriptor( Type.getType( IBoxContext.class ), Type.getType( Object.class ) ),
-		    true ) );
-		nodes.add( new InsnNode( Opcodes.POP ) );
+		List<AbstractInsnNode>	nodes			= new ArrayList<>();
+		for ( BoxStatement statement : scriptIsland.getStatements() ) {
+			nodes.addAll( transpiler.transform( statement, context, returnContext ) );
+		}
 
 		return nodes;
 	}
