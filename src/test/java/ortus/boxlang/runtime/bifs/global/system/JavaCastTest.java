@@ -247,6 +247,21 @@ public class JavaCastTest {
 		assertThat( castedArr[ 2 ] ).isEqualTo( "c" );
 	}
 
+	@DisplayName( "It can cast a full Java array class" )
+	@Test
+	public void testItCanCastFullJavaArrayClass() {
+		instance.executeSource(
+		    """
+		    result = javaCast( 'java.lang.String[]', ["a","b","c"] );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( new String[] {}.getClass() );
+		String[] castedArr = ( String[] ) variables.get( result );
+		assertThat( castedArr[ 0 ] ).isEqualTo( "a" );
+		assertThat( castedArr[ 1 ] ).isEqualTo( "b" );
+		assertThat( castedArr[ 2 ] ).isEqualTo( "c" );
+	}
+
 	@DisplayName( "It can casts to a native Java array of struct" )
 	@Test
 	public void testItCastsToNativeArrayOfStruct() {
