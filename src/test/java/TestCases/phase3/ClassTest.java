@@ -1308,4 +1308,14 @@ public class ClassTest {
 		      """, context );
 	}
 
+	@Test
+	public void MethodPropConflict() {
+		instance.executeSource(
+		    """
+		       cfc = new src.test.java.TestCases.phase3.MethodPropConflict();
+		    result = cfc.spy();
+		         """, context );
+		assertThat( variables.get( result ) ).isEqualTo( "bar" );
+	}
+
 }
