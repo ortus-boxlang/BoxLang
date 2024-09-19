@@ -5,8 +5,15 @@ component {
 
 	}
 
-	function spy() {
+	function baz() {
+	}
+
+	function spyFoo() {
 		return variables.foo;
+	}
+
+	function spyBaz() {
+		return variables.baz;
 	}
 
 }

@@ -626,12 +626,22 @@ public class BoxClassTransformer extends AbstractTransformer {
 					// statements.add( it );
 				} );
 			} else {
-				// All other statements are added to the _invoke() method
+				// All other statements are added to the _pseudoConstructor() method
 				pseudoConstructorBody.addStatement( ( Statement ) javaASTNode );
 				// statements.add( ( Statement ) javaASTNode );
 			}
 		}
-		// loop over UDF registrations and add them to the _invoke() method
+		// Properties need defaulted AFTER the UDFs are added, but BEFORE the rest of the pseudoConstructor code runs
+		pseudoConstructorBody.addStatement(
+		    0,
+		    new MethodCallExpr(
+		        new NameExpr( "BoxClassSupport" ),
+		        "defaultProperties",
+		        NodeList.nodeList( new NameExpr( "this" ), new NameExpr( "context" ) )
+		    )
+		);
+
+		// loop over UDF registrations and add them to the _pseudoConstructor() method
 		( ( JavaTranspiler ) transpiler ).getUDFDeclarations().forEach( it -> {
 			pseudoConstructorBody.addStatement( 0, it );
 		} );

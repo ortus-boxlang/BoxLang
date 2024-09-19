@@ -38,6 +38,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.RequestScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.AbstractClassException;
@@ -1312,10 +1313,15 @@ public class ClassTest {
 	public void MethodPropConflict() {
 		instance.executeSource(
 		    """
-		       cfc = new src.test.java.TestCases.phase3.MethodPropConflict();
-		    result = cfc.spy();
-		         """, context );
+		    	cfc = new src.test.java.TestCases.phase3.MethodPropConflict();
+		    	result = cfc.spyFoo();
+		    	result2 = cfc.spyBaz();
+		    """, context );
+		// propery value wins in variables scope of same name
 		assertThat( variables.get( result ) ).isEqualTo( "bar" );
+		// But variable set in super class's psedu constructor will get hammered by the concrete class's method
+		assertThat( variables.get( "result2" ) ).isInstanceOf( Function.class );
+		assertThat( ( ( Function ) variables.get( "result2" ) ).getName().getName() ).isEqualTo( "baz" );
 	}
 
 }

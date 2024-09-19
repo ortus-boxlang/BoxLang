@@ -61,21 +61,33 @@ public class BoxClassSupport {
 	public static void pseudoConstructor( IClassRunnable thisClass, IBoxContext context ) {
 		context.pushTemplate( thisClass );
 		try {
-			// loop over properties and create variables.
-			for ( var property : thisClass.getProperties().values() ) {
-				if ( thisClass.getVariablesScope().get( property.name() ) == null ) {
-					thisClass.getVariablesScope().assign( context, property.name(), property.getDefaultValue( context ) );
-				}
-				if ( hasAccessors( thisClass ) ) {
-					// Don't override UDFs from a parent class which may already be defined
-					context.registerUDF( property.generatedGetter(), false );
-					context.registerUDF( property.generatedSetter(), false );
-				}
-			}
 			// TODO: pre/post interceptor announcements here
 			thisClass._pseudoConstructor( context );
 		} finally {
 			context.popTemplate();
+		}
+	}
+
+	/**
+	 * Call the pseudo constructor
+	 *
+	 * @param thisClass The class to call the pseudo constructor on
+	 * @param context   The context to use
+	 */
+	public static void defaultProperties( IClassRunnable thisClass, IBoxContext context ) {
+		// loop over properties and create variables.
+		for ( var property : thisClass.getProperties().values() ) {
+			Object existing = thisClass.getThisScope().get( property.name() );
+			// Don't override existing values, probably from a super class
+			// But UDFs of the same name? Yeah, nuke those suckers, lol. (╥﹏╥)
+			if ( existing == null || existing instanceof Function ) {
+				thisClass.getVariablesScope().assign( context, property.name(), property.getDefaultValue( context ) );
+			}
+			if ( hasAccessors( thisClass ) ) {
+				// Don't override UDFs from a parent class which may already be defined
+				context.registerUDF( property.generatedGetter(), false );
+				context.registerUDF( property.generatedSetter(), false );
+			}
 		}
 	}
 

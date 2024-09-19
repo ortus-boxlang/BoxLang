@@ -250,12 +250,7 @@ public class ClassBoxContext extends BaseBoxContext {
 			return;
 		}
 
-		// Don't override non functions floating around the variables scope.
-		// If this happens, we likely have a conflict with a property name, and the property should win.
-		Object existing = variablesScope.get( udf.getName() );
-		if ( existing == null || existing instanceof Function ) {
-			registerUDF( variablesScope, udf, override );
-		}
+		registerUDF( variablesScope, udf, override );
 
 		// TODO: actually enforce this when the UDF is called.
 
