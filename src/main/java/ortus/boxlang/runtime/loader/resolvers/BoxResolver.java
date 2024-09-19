@@ -289,15 +289,17 @@ public class BoxResolver extends BaseResolver {
 					Path targetPath = findExistingPathWithValidExtension( parentPath, slashName );
 					if ( targetPath != null ) {
 
+						System.out.println( "*********************************************" );
 						ResolvedFilePath newResolvedFilePath = resolvedFilePath
 						    .newFromRelative( parentPath.relativize( Paths.get( targetPath.toString() ) ).toString() );
 
-						System.out.println( "FilenameUtils.getBaseName( newResolvedFilePath.absolutePath().toString() ): "
+						System.out.println( "BoxResolver FilenameUtils.getBaseName( newResolvedFilePath.absolutePath().toString() ): "
 						    + FilenameUtils.getBaseName( newResolvedFilePath.absolutePath().toString() ) );
-						System.out.println( "targetPath.toAbsolutePath().toString(): " + targetPath.toAbsolutePath().toString() );
-						System.out.println( "newResolvedFilePath.getPackage().toString(): " + newResolvedFilePath.getPackage().toString() );
-						System.out.println( "resolvedFilePath.getPackage().toString(): " + resolvedFilePath.getPackage().toString() );
+						System.out.println( "BoxResolver targetPath.toAbsolutePath().toString(): " + targetPath.toAbsolutePath().toString() );
+						System.out.println( "BoxResolver newResolvedFilePath.getPackage().toString(): " + newResolvedFilePath.getPackage().toString() );
+						System.out.println( "BoxResolver resolvedFilePath.getPackage().toString(): " + resolvedFilePath.getPackage().toString() );
 
+						System.out.println( "*********************************************" );
 						return Optional.of( new ClassLocation(
 						    FilenameUtils.getBaseName( newResolvedFilePath.absolutePath().toString() ),
 						    targetPath.toAbsolutePath().toString(),
