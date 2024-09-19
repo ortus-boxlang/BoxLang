@@ -138,15 +138,14 @@ public class Logging extends BaseInterceptor {
 			}
 
 			LoggerContext				logContext		= ( LoggerContext ) LoggingConfigurator.encoder.getContext();
-			Logger						logger			= logContext.getLogger( logCategory );
 			org.slf4j.ILoggerFactory	loggerFactory	= LoggerFactory.getILoggerFactory();
 
 			if ( loggerFactory instanceof LoggerContext ) {
 				// Use the available factory context if it's a logback instance
-				logContext	= ( LoggerContext ) loggerFactory;
-				logger		= logContext.getLogger( logCategory );
-
+				logContext = ( LoggerContext ) loggerFactory;
 			}
+
+			Logger logger = logContext.getLogger( logCategory );
 
 			fileAppender = new FileAppender<>();
 			fileAppender.setFile( filePath );
