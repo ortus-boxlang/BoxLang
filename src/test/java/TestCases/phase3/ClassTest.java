@@ -620,14 +620,14 @@ public class ClassTest {
 
 		instance.executeSource(
 		    """
-			cfc = new src.test.java.TestCases.phase3.PropertyTestCF();
-			nameGet = cfc.getMyProperty();
-			setResult = cfc.SetMyProperty( "anotherValue" );
-			nameGet2 = cfc.getMyProperty();
-			test1 = cfc.getShortcutWithDefault()
-			test2 = cfc.getTypedShortcutWithDefault()
-			test3 = cfc.getChain()
-		        """, context );
+		    cfc = new src.test.java.TestCases.phase3.PropertyTestCF();
+		    nameGet = cfc.getMyProperty();
+		    setResult = cfc.SetMyProperty( "anotherValue" );
+		    nameGet2 = cfc.getMyProperty();
+		    test1 = cfc.getShortcutWithDefault()
+		    test2 = cfc.getTypedShortcutWithDefault()
+		    test3 = cfc.getChain()
+		           """, context );
 
 		var cfc = variables.getAsClassRunnable( Key.of( "cfc" ) );
 
