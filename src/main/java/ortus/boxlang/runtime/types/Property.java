@@ -18,31 +18,37 @@
 package ortus.boxlang.runtime.types;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.runnables.accessors.GeneratedGetter;
 import ortus.boxlang.runtime.runnables.accessors.GeneratedSetter;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.util.DuplicationUtil;
 
 /**
  * Represents a class property
  *
- * @param name            The name of the property
- * @param type            The type of the argument
- * @param defaultValue    The default value of the argument
- * @param annotations     Annotations for the property
- * @param documentation   Documentation for the property
- * @param generatedGetter The generated getter Function
- * @param generatedSetter The generated setter Function
+ * @param name              The name of the property
+ * @param type              The type of the argument
+ * @param defaultValue      The default value of the argument
+ * @param defaultExpression The default value of the argument as a Lambda to be evaluated at runtime
+ * @param annotations       Annotations for the property
+ * @param documentation     Documentation for the property
+ * @param generatedGetter   The generated getter Function
+ * @param generatedSetter   The generated setter Function
  *
  */
-public record Property( Key name, String type, Object defaultValue, IStruct annotations, IStruct documentation, Key getterName, Key setterName,
+public record Property( Key name, String type, Object defaultValue, DefaultExpression defaultExpression, IStruct annotations, IStruct documentation,
+    Key getterName, Key setterName,
     UDF generatedGetter, UDF generatedSetter, BoxSourceType sourceType ) {
 
-	public Property( Key name, String type, Object defaultValue, IStruct annotations, IStruct documentation, BoxSourceType sourceType ) {
+	public Property( Key name, String type, Object defaultValue, DefaultExpression defaultExpression, IStruct annotations, IStruct documentation,
+	    BoxSourceType sourceType ) {
 		// Pre-calculate the getter and setter names
 		this(
 		    name,
 		    type,
 		    defaultValue,
+		    defaultExpression,
 		    annotations,
 		    documentation,
 		    Key.of( "get" + name.getName() ),
@@ -52,6 +58,27 @@ public record Property( Key name, String type, Object defaultValue, IStruct anno
 		    new GeneratedSetter( Key.of( "set" + name.getName() ), name, type ),
 		    sourceType
 		);
+	}
+
+	public Object getDefaultValue( IBoxContext context ) {
+		if ( defaultExpression != null ) {
+			return defaultExpression.evaluate( context );
+		}
+		return DuplicationUtil.duplicate( defaultValue, false );
+	}
+
+	public Object getDefaultValueForMeta() {
+		if ( defaultValue != null ) {
+			return defaultValue;
+		}
+		if ( defaultExpression != null ) {
+			return "[Runtime Expression]";
+		}
+		return null;
+	}
+
+	public boolean hasDefaultValue() {
+		return defaultValue != null || defaultExpression != null;
 	}
 
 }

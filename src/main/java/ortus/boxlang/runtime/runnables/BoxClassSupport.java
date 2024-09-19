@@ -64,7 +64,7 @@ public class BoxClassSupport {
 			// loop over properties and create variables.
 			for ( var property : thisClass.getProperties().values() ) {
 				if ( thisClass.getVariablesScope().get( property.name() ) == null ) {
-					thisClass.getVariablesScope().assign( context, property.name(), property.defaultValue() );
+					thisClass.getVariablesScope().assign( context, property.name(), property.getDefaultValue( context ) );
 				}
 				if ( hasAccessors( thisClass ) ) {
 					// Don't override UDFs from a parent class which may already be defined
@@ -473,8 +473,8 @@ public class BoxClassSupport {
 			var	propertyStruct	= new Struct( IStruct.TYPES.LINKED );
 			propertyStruct.put( "name", property.name().getName() );
 			propertyStruct.put( "type", property.type() );
-			if ( property.defaultValue() != null ) {
-				propertyStruct.put( "default", property.defaultValue() );
+			if ( property.hasDefaultValue() ) {
+				propertyStruct.put( "default", property.getDefaultValueForMeta() );
 			}
 			if ( property.documentation() != null ) {
 				propertyStruct.putAll( property.documentation() );

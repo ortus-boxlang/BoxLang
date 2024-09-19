@@ -76,12 +76,6 @@ public record Argument(
 	public static final String LAMBDA = "lambda";
 	public static final String XML = "xml";
 
-	@FunctionalInterface
-	public static interface DefaultExpression {
-
-		Object evaluate( IBoxContext context );
-	}
-
 	public Argument( Key name ) {
 		this( false, "any", name );
 	}

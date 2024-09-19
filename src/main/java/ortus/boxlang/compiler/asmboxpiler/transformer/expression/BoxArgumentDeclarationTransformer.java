@@ -37,6 +37,7 @@ import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.DefaultExpression;
 import ortus.boxlang.runtime.types.IStruct;
 
 public class BoxArgumentDeclarationTransformer extends AbstractTransformer {
@@ -78,7 +79,7 @@ public class BoxArgumentDeclarationTransformer extends AbstractTransformer {
 		        Type.getType( String.class ),
 		        Type.getType( Key.class ),
 		        Type.getType( Object.class ),
-		        Type.getType( Argument.DefaultExpression.class ),
+		        Type.getType( DefaultExpression.class ),
 		        Type.getType( IStruct.class ),
 		        Type.getType( IStruct.class ) ),
 		    false ) );

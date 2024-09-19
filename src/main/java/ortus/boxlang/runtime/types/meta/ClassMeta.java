@@ -76,7 +76,7 @@ public class ClassMeta extends BoxMeta {
 		        Key._NAME, entry.getKey().getName(),
 		        Key.nameAsKey, entry.getKey(),
 		        Key.type, entry.getValue().type(),
-		        Key.defaultValue, entry.getValue().defaultValue(),
+		        Key.defaultValue, entry.getValue().getDefaultValueForMeta(),
 		        Key.annotations, ImmutableStruct.fromStruct( entry.getValue().annotations() ),
 		        Key.documentation, ImmutableStruct.fromStruct( entry.getValue().documentation() )
 		    ) ).toArray() ),

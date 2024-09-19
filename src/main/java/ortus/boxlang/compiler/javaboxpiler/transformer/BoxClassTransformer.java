@@ -25,17 +25,22 @@ import java.util.Objects;
 import com.github.javaparser.ParseResult;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
+import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.expr.ArrayCreationExpr;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.IntegerLiteralExpr;
+import com.github.javaparser.ast.expr.LambdaExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.StringLiteralExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.EmptyStmt;
+import com.github.javaparser.ast.stmt.ReturnStmt;
 import com.github.javaparser.ast.stmt.Statement;
+import com.github.javaparser.ast.type.UnknownType;
 
 import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxExpression;
@@ -698,10 +703,28 @@ public class BoxClassTransformer extends AbstractTransformer {
 			Expression			annotationStruct	= transformAnnotations( finalAnnotations );
 
 			// Process the default value
-			String				init				= "null";
+			String				defaultValue		= "null";
+			String				defaultExpression	= "null";
 			if ( defaultAnnotation != null && defaultAnnotation.getValue() != null ) {
-				Node initExpr = transpiler.transform( defaultAnnotation.getValue() );
-				init = initExpr.toString();
+
+				if ( defaultAnnotation.getValue().isLiteral() ) {
+					Node defaultValueExpr = transpiler.transform( defaultAnnotation.getValue() );
+					defaultValue = defaultValueExpr.toString();
+				} else {
+					String lambdaContextName = "lambdaContext" + transpiler.incrementAndGetLambdaContextCounter();
+					transpiler.pushContextName( lambdaContextName );
+					Node initExpr = transpiler.transform( defaultAnnotation.getValue() );
+					transpiler.popContextName();
+
+					LambdaExpr lambda = new LambdaExpr();
+					lambda.setParameters( new NodeList<>(
+					    new Parameter( new UnknownType(), lambdaContextName ) ) );
+					BlockStmt body = new BlockStmt();
+					body.addStatement( parseStatement( "ClassLocator classLocator = ClassLocator.getInstance();", Map.of() ) );
+					body.addStatement( new ReturnStmt( ( Expression ) initExpr ) );
+					lambda.setBody( body );
+					defaultExpression = lambda.toString();
+				}
 			}
 
 			// name and type must be simple values
@@ -729,12 +752,13 @@ public class BoxClassTransformer extends AbstractTransformer {
 			LinkedHashMap<String, String>	values		= new LinkedHashMap<>();
 			values.put( "type", type );
 			values.put( "name", jNameKey.toString() );
-			values.put( "init", init );
+			values.put( "defaultValue", defaultValue );
+			values.put( "defaultExpression", defaultExpression );
 			values.put( "annotations", annotationStruct.toString() );
 			values.put( "documentation", documentationStruct.toString() );
 			values.put( "sourceType", sourceType );
 			String		template	= """
-			                          				new Property( ${name}, "${type}", ${init}, ${annotations} ,${documentation}, BoxSourceType.${sourceType} )
+			                          				new Property( ${name}, "${type}", ${defaultValue}, ${defaultExpression}, ${annotations} ,${documentation}, BoxSourceType.${sourceType} )
 			                          """;
 			Expression	javaExpr	= parseExpression( template, values );
 			// logger.trace( "{} -> {}", prop.getSourceText(), javaExpr );
