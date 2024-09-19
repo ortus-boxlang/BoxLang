@@ -317,7 +317,7 @@ TAG_COMMENT_START: '<!---' -> pushMode(TAG_COMMENT), channel(HIDDEN);
 
 // ANY NEW LEXER RULES FOR AN ENGLISH WORD NEEDS ADDED TO THE identifer RULE IN THE PARSER
 
-ICHAR_2 : '#' {lastModeWas(TEMPLATE_ATTVALUE,1)}? -> type(ICHAR), popMode, popMode, popMode;
+ICHAR_2 : '#' {lastModeWas(TEMPLATE_ATTVALUE,2)}? -> type(ICHAR), popMode, popMode, popMode;
 ICHAR_1 : '#' {_modeStack.contains(hashMode)}? -> type(ICHAR), popMode, popMode;
 ICHAR   : '#';
 

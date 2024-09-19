@@ -1492,4 +1492,18 @@ public class CFTemplateTest {
 		assertThat( variables.get( result ) ).isEqualTo( true );
 	}
 
+	@Test
+	public void testAttributeUnquotedHashed() {
+		instance.executeSource(
+		    """
+		    <cfset mylist="item1,item2,item3">
+		    <cfloop list=#myList# item="thisItem">
+		    	<cfoutput>
+		    	#thisItem#
+		    	</cfoutput>
+		    </cfloop>
+		      """,
+		    context, BoxSourceType.CFTEMPLATE );
+	}
+
 }
