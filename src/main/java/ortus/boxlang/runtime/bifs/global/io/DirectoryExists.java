@@ -55,15 +55,20 @@ public class DirectoryExists extends BIF {
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	directoryPath	= arguments.getAsString( Key.path );
 		Boolean	allowRealPath	= arguments.getAsBoolean( Key.allowRealPath );
-		if ( !allowRealPath && Path.of( directoryPath ).isAbsolute() ) {
-			throw new BoxRuntimeException(
-			    "The file or path argument [" + directoryPath + "] is an absolute path. This is disallowed when the allowRealPath argument is set to false."
-			);
-		} else if ( !FileSystemUtil.exists( directoryPath ) ) {
-			directoryPath = FileSystemUtil.expandPath( context, directoryPath ).absolutePath().toString();
-		}
+		try {
+			if ( !allowRealPath && Path.of( directoryPath ).isAbsolute() ) {
+				throw new BoxRuntimeException(
+				    "The file or path argument [" + directoryPath + "] is an absolute path. This is disallowed when the allowRealPath argument is set to false."
+				);
+			} else if ( !FileSystemUtil.exists( directoryPath ) ) {
+				directoryPath = FileSystemUtil.expandPath( context, directoryPath ).absolutePath().toString();
+			}
 
-		return ( Boolean ) FileSystemUtil.exists( directoryPath ) && Files.isDirectory( Path.of( directoryPath ) );
+			return ( Boolean ) FileSystemUtil.exists( directoryPath ) && Files.isDirectory( Path.of( directoryPath ) );
+		} catch ( java.nio.file.InvalidPathException e ) {
+			// We ignore invalid paths
+			return false;
+		}
 	}
 
 }

@@ -49,8 +49,12 @@ public class GetCanonicalPath extends BIF {
 	 * @argument.path The file or directory path string
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
+		String path = arguments.getAsString( Key.path );
 		try {
-			return Path.of( FileSystemUtil.expandPath( context, arguments.getAsString( Key.path ) ).absolutePath().toString() ).toRealPath().toString();
+			return Path.of( FileSystemUtil.expandPath( context, path ).absolutePath().toString() ).toRealPath().toString();
+		} catch ( java.nio.file.InvalidPathException e ) {
+			// If the incoming path is totally invalid, just return it as-is
+			return path;
 		} catch ( IOException e ) {
 			throw new BoxIOException( e );
 		}

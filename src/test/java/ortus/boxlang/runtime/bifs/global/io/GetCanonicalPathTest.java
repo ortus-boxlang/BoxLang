@@ -19,6 +19,7 @@
 
 package ortus.boxlang.runtime.bifs.global.io;
 
+import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -85,6 +86,17 @@ public class GetCanonicalPathTest {
 		    context );
 		assertTrue( variables.get( Key.of( "result" ) ) instanceof String );
 		assertEquals( variables.getAsString( Key.of( "result" ) ), Path.of( testTextFile ).toAbsolutePath().toString() );
+	}
+
+	@DisplayName( "It ignores invalid paths" )
+	@Test
+	public void testIgnoresInvalidPaths() {
+		instance.executeSource(
+		    """
+		    result = GetCanonicalPath( "C:foo/bar/C:foo/bar/test.txt" );
+		    """,
+		    context );
+		assertThat( variables.get( Key.of( "result" ) ) ).isEqualTo( "C:foo/bar/C:foo/bar/test.txt" );
 	}
 
 }
