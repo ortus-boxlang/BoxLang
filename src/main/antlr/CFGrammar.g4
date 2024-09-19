@@ -351,7 +351,7 @@ if: IF LPAREN expression RPAREN ifStmt = statementOrBlock (ELSE elseStmt = state
 for
     : preFix? FOR LPAREN (
         VAR? expression IN expression
-        | expression? SEMICOLON expression? SEMICOLON expression?
+        | intializer = expression? SEMICOLON condition = expression? SEMICOLON increment = expression?
     ) RPAREN statementOrBlock
     ;
 

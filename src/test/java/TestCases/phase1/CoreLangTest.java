@@ -673,7 +673,66 @@ public class CoreLangTest {
 		         """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( 6 );
+	}
 
+	@DisplayName( "sentinel init only" )
+	@Test
+	public void testSentinelInitOnly() {
+
+		instance.executeSource(
+		    """
+		    for ( counter = 1 ; ; ) {
+		    	writeOutput( counter );
+		    	counter++;
+		    	if( counter > 5 ) {
+		    		break;
+		    	}
+		    }
+		    result = counter;
+		         """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 6 );
+	}
+
+	@DisplayName( "sentinel condition only" )
+	@Test
+	public void testSentinelConditionOnly() {
+
+		instance.executeSource(
+		    """
+		      counter = 1;
+		         for (  ; counter <= 5 ; ) {
+		         	writeOutput( counter );
+		         	counter++;
+
+		    assert counter < 100;
+		         }
+		         result = counter;
+		              """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 6 );
+	}
+
+	@DisplayName( "sentinel increment only" )
+	@Test
+	public void testSentinelIncrementOnly() {
+
+		instance.executeSource(
+		    """
+		       counter = 1;
+		    safety = 0;
+		       for (  ; ; counter++ ) {
+		       	writeOutput( counter );
+		       	if( counter > 5 ) {
+		       		break;
+		       	}
+		    	safety++;
+		    	assert safety < 100;
+		       }
+		       result = counter;
+		                    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 7 );
 	}
 
 	@DisplayName( "continue sentinel" )
