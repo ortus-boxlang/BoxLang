@@ -220,13 +220,31 @@ public class BoxResolver extends BaseResolver {
 				    absolutePath = pathExists( absolutePath );
 				    if ( absolutePath != null ) {
 					    try {
-						    String relativePath = Paths
-						        .get( entry.getKey().getName(), Paths.get( entry.getValue().toString() ).toRealPath().relativize( absolutePath ).toString() )
-						        .toString();
+						    String mappingName		= entry.getKey().getName();
+						    String mappingDirectory	= entry.getValue().toString();
+						    System.out.println( "BoxResolver mapping mappingName: " + mappingName );
+						    System.out.println( "BoxResolver mapping mappingDirectory: " + mappingDirectory );
+						    System.out.println( "BoxResolver mapping Paths.get( mappingDirectory ).toRealPath(): "
+						        + Paths.get( mappingDirectory ).toRealPath() );
+						    System.out.println( "BoxResolver mapping absolutePath: " + absolutePath );
+						    System.out.println( "BoxResolver mapping Paths.get( mappingDirectory ).toRealPath().relativize( absolutePath ): "
+						        + Paths.get( mappingDirectory ).toRealPath().relativize( absolutePath ) );
+						    String relativePath;
+
+						    // Java not smart enough to ignore a path part of just / and it will wind up with \\ in windows
+						    if ( mappingName.equals( "/" ) || mappingName.equals( "\\" ) ) {
+							    relativePath = Paths.get( mappingDirectory ).toRealPath().relativize( absolutePath ).toString();
+						    } else {
+							    relativePath = Paths
+							        .get( mappingName, Paths.get( mappingDirectory ).toRealPath().relativize( absolutePath ).toString() )
+							        .toString();
+						    }
+
+						    System.out.println( "BoxResolver mapping relativePath: " + relativePath );
 						    paths.add(
 						        ResolvedFilePath.of(
-						            entry.getKey().getName(),
-						            entry.getValue().toString(),
+						            mappingName,
+						            mappingDirectory,
 						            relativePath,
 						            absolutePath
 						        )
