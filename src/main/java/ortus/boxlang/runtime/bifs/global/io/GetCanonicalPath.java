@@ -24,7 +24,6 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
-import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
 @BoxBIF
@@ -56,7 +55,8 @@ public class GetCanonicalPath extends BIF {
 			// If the incoming path is totally invalid, just return it as-is
 			return path;
 		} catch ( IOException e ) {
-			throw new BoxIOException( e );
+			// If the incoming path is totally invalid, just return it as-is
+			return path;
 		}
 	}
 
