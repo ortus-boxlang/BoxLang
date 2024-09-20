@@ -377,6 +377,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		ip									= Key.of( "ip" );
 	public static final Key		interval							= Key.of( "interval" );
 	public static final Key		iso									= Key.of( "iso" );
+	public static final Key		isCaseSensitive						= Key.of( "isCaseSensitive" );
 	public static final Key		isValid								= Key.of( "isValid" );
 	public static final Key		item								= Key.of( "item" );
 	public static final Key		iterations							= Key.of( "iterations" );

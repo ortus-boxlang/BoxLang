@@ -20,6 +20,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.HasCustomMetaData;
 import ortus.boxlang.runtime.types.IType;
 
 @BoxBIF
@@ -48,6 +49,10 @@ public class GetMetaData extends BIF {
 		Object value = arguments.get( Key.value );
 
 		// Functions have a legacy metadata view that matches CF engines
+		if ( value instanceof HasCustomMetaData bxObject ) {
+			return bxObject.getCustomMetaData();
+		}
+
 		if ( value instanceof IType bxObject ) {
 			return bxObject.getBoxMeta().getMeta();
 		}

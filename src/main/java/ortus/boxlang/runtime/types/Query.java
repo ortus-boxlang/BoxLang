@@ -56,7 +56,7 @@ import ortus.boxlang.runtime.util.DuplicationUtil;
  * This type represents a representation of a database query result set.
  * It provides language specific methods to access columnar data, both as value lists and within iterative loops
  */
-public class Query implements IType, IReferenceable, Collection<IStruct>, Serializable {
+public class Query implements IType, IReferenceable, Collection<IStruct>, Serializable, HasCustomMetaData {
 
 	/**
 	 * Query data as List of arrays
@@ -275,11 +275,11 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 
 	/**
 	 * Abstraction for creating a new column so we can re-use logic easier between normal and immutable queries
-	 * 
+	 *
 	 * @param name  column name
 	 * @param type  column type
 	 * @param index column index
-	 * 
+	 *
 	 * @return QueryColumn object
 	 */
 	protected QueryColumn createQueryColumn( Key name, QueryColumnType type, int index ) {
@@ -871,32 +871,6 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	}
 
 	/**
-	 * Retrieve query metadata as a struct. Used to populate QueryMeta.
-	 *
-	 * Will populate the following keys if they don't already exist:
-	 * - recordCount: Number of rows in the query
-	 * - columns: List of column names
-	 * - _HASHCODE: Hashcode of the query
-	 *
-	 * @return The metadata as a struct
-	 */
-	public IStruct getMetaData() {
-		this.metadata.computeIfAbsent( Key.recordCount, key -> {
-			return data.size();
-		} );
-		this.metadata.computeIfAbsent( Key.columns, key -> {
-			return this.getColumns();
-		} );
-		this.metadata.computeIfAbsent( Key.columnList, key -> {
-			return this.getColumnList();
-		} );
-		this.metadata.computeIfAbsent( Key._HASHCODE, key -> {
-			return this.hashCode();
-		} );
-		return this.metadata;
-	}
-
-	/**
 	 * Duplicate the current query.
 	 *
 	 * @return A copy of the current query.
@@ -952,11 +926,50 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	/**
 	 * Convert this query to an immutable one. The new query will be a copy of this query and
 	 * changes to this query will not be reflected in the new query with the exception of complex objects, which are passed by reference.
-	 * 
+	 *
 	 * @return an ImmutableQuery containing the same data as this query
 	 */
 	public ImmutableQuery toImmutable() {
 		return new ImmutableQuery( this );
+	}
+
+	/**
+	 * Retrieve query metadata as a struct. Used to populate QueryMeta.
+	 *
+	 * Will populate the following keys if they don't already exist:
+	 * - recordCount: Number of rows in the query
+	 * - columns: List of column names
+	 * - _HASHCODE: Hashcode of the query
+	 *
+	 * @return The metadata as a struct
+	 */
+	public IStruct getMetaData() {
+		this.metadata.computeIfAbsent( Key.recordCount, key -> {
+			return data.size();
+		} );
+		this.metadata.computeIfAbsent( Key.columns, key -> {
+			return this.getColumns();
+		} );
+		this.metadata.computeIfAbsent( Key.columnList, key -> {
+			return this.getColumnList();
+		} );
+		this.metadata.computeIfAbsent( Key._HASHCODE, key -> {
+			return this.hashCode();
+		} );
+		return this.metadata;
+	}
+
+	@Override
+	public Object getCustomMetaData() {
+		Array columnMetadata = new Array();
+		for ( Map.Entry<Key, QueryColumn> entry : columns.entrySet() ) {
+			columnMetadata.add( Struct.of(
+			    Key._name, entry.getKey(),
+			    Key.typename, entry.getValue().getType().toString(),
+			    Key.isCaseSensitive, false
+			) );
+		}
+		return columnMetadata;
 	}
 
 }
