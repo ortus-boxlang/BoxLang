@@ -19,6 +19,7 @@
 
 package ortus.boxlang.runtime.bifs.global.io;
 
+import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -119,6 +120,17 @@ public class FileExistsTest {
 		    context );
 		Boolean result = ( Boolean ) variables.get( Key.of( "result" ) );
 		assertFalse( result );
+	}
+
+	@DisplayName( "It ignores invalid paths" )
+	@Test
+	public void testIgnoresInvalidPaths() {
+		instance.executeSource(
+		    """
+		    result = fileExists( "C:foo/bar/C:foo/bar/test.txt" );
+		    """,
+		    context );
+		assertThat( variables.get( Key.of( "result" ) ) ).isEqualTo( false );
 	}
 
 }

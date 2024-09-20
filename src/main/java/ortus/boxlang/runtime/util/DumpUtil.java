@@ -23,7 +23,12 @@ import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -37,11 +42,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
+import ortus.boxlang.runtime.components.jdbc.Query;
 import ortus.boxlang.runtime.context.ContainerBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
+import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.ITemplateRunnable;
@@ -53,7 +60,6 @@ import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.IType;
-import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -306,6 +312,7 @@ public class DumpUtil {
 				}
 				// This assumes HTML output. Needs to be dynamic as XML or plain text output wouldn't have CSS
 				dumpContext.writeToBuffer( "<style>" + getDumpTemplate( context, "Dump.css" ) + "</style>", true );
+				dumpContext.writeToBuffer( "<script>" + getDumpTemplate( context, "Dump.js" ) + "</script>" );
 			}
 
 			// Place the variables in the scope
@@ -358,6 +365,15 @@ public class DumpUtil {
 			return "Key.bxm";
 		} else if ( target instanceof DateTime ) {
 			return "DateTime.bxm";
+		} else if ( target instanceof LocalDate || target instanceof LocalDateTime || target instanceof ZonedDateTime ||
+		    target instanceof java.sql.Date || target instanceof java.sql.Timestamp || target instanceof java.util.Date ) {
+			target = DateTimeCaster.cast( target );
+			return "DateTime.bxm";
+		}
+		// These classes will just dump the class name and the `toString()` equivalent
+		// For easier debugging
+		else if ( target instanceof Duration || target instanceof ZoneId ) {
+			return "ToString.bxm";
 		} else if ( target instanceof Instant ) {
 			return "Instant.bxm";
 		} else if ( target instanceof IClassRunnable ) {
@@ -403,13 +419,13 @@ public class DumpUtil {
 		// Bypass caching in debug mode for easier testing
 		if ( context.getRuntime().inDebugMode() ) {
 			// logger.debug( "Dump template [{}] cache bypassed in debug mode", dumpTemplatePath );
-			return computeDumpTemplate( dumpTemplatePath );
+			return computeDumpTemplate( dumpTemplatePath, context );
 		}
 
 		// Normal flow caches dump template on first request.
 		return dumpTemplateCache.computeIfAbsent(
 		    dumpTemplatePath,
-		    DumpUtil::computeDumpTemplate
+		    key -> computeDumpTemplate( dumpTemplatePath, context )
 		);
 	}
 
@@ -417,19 +433,20 @@ public class DumpUtil {
 	 * Compute the dump template from the file system by compiling the template.
 	 *
 	 * @param dumpTemplatePath The path to the dump template
+	 * @param context          The context
 	 *
 	 * @return The dump template
 	 */
-	private static String computeDumpTemplate( String dumpTemplatePath ) {
+	private static String computeDumpTemplate( String dumpTemplatePath, IBoxContext context ) {
 		Objects.requireNonNull( dumpTemplatePath, "dumpTemplatePath cannot be null" );
 
 		// Try by resource first
 		InputStream dumpTemplate = null;
 		dumpTemplate = DumpUtil.class.getResourceAsStream( dumpTemplatePath );
 
-		// drop down to the file system if not found in resources
-		if ( dumpTemplate == null ) {
-			Path filePath = Paths.get( "src", "main", "resources" ).resolve( dumpTemplatePath );
+		// If we are NOT in jar mode and in debug mode, then re-read the file from the file system
+		if ( !context.getRuntime().inJarMode() && context.getRuntime().inDebugMode() ) {
+			Path filePath = Paths.get( "src", "main", "resources", dumpTemplatePath ).toAbsolutePath();
 			if ( Files.exists( filePath ) ) {
 				try {
 					dumpTemplate = Files.newInputStream( filePath );

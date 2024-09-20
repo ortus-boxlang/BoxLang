@@ -54,6 +54,11 @@ public class BoxStringConcat extends BoxExpression {
 	}
 
 	@Override
+	public boolean isLiteral() {
+		return values.stream().allMatch( BoxExpression::isLiteral );
+	}
+
+	@Override
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = super.toMap();
 

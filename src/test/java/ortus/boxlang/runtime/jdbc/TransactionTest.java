@@ -23,12 +23,14 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 
+import ortus.boxlang.runtime.context.IJDBCCapableContext;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.bifs.global.jdbc.BaseJDBCTest;
 import ortus.boxlang.runtime.scopes.Key;
@@ -431,6 +433,23 @@ public class TransactionTest extends BaseJDBCTest {
 		    .orElse( null );
 		assertNotNull( esme );
 		assertEquals( "Esme Acevedo", esme.getAsString( Key._NAME ) );
+	}
+
+	@DisplayName( "Can run an empty transaction with no default datasource defined" )
+	@Test
+	public void testTransactionNoDatasourceDefined() {
+
+		// remove the default datasource
+		( ( IJDBCCapableContext ) getContext() ).getConnectionManager().setDefaultDatasource( null );
+
+		assertDoesNotThrow( () -> {
+			getInstance().executeSource(
+			    """
+			    transaction {
+			    }
+			    """,
+			    getContext() );
+		} );
 	}
 
 	@DisplayName( "Nested transactions: A rollback on the child will not roll back the parent" )

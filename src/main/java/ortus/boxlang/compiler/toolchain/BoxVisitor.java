@@ -360,7 +360,15 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 		}
 
 		// Otherwise we have an index with 0 <= n <= 3 expressions
-		return new BoxForIndex( label, getOrNull( expressions, 0 ), getOrNull( expressions, 1 ), getOrNull( expressions, 2 ), body, pos, src );
+		return new BoxForIndex(
+		    label,
+		    Optional.ofNullable( ctx.intializer ).map( init -> init.accept( expressionVisitor ) ).orElse( null ),
+		    Optional.ofNullable( ctx.condition ).map( init -> init.accept( expressionVisitor ) ).orElse( null ),
+		    Optional.ofNullable( ctx.increment ).map( init -> init.accept( expressionVisitor ) ).orElse( null ),
+		    body,
+		    pos,
+		    src
+		);
 	}
 
 	@Override

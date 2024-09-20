@@ -8,9 +8,8 @@
 			<caption
 				role="button"
 				tabindex="0"
-				<bx:if expand>open</bx:if>
-				onclick="this.toggleAttribute( 'open' );this.nextElementSibling.classList.toggle( 'd-none' )"
-				onkeyup="if( event.key === 'Enter' ){ this.toggleAttribute( 'open' );this.nextElementSibling.classList.toggle( 'd-none' );}"
+				<bx:if expand>open aria-expanded="true"<bx:else>aria-expanded="false"</bx:if>
+				data-bx-toggle="siblings"
 				title="#encodeForHTML( var.getClass().getName() )#"
 			>
 				<strong>
@@ -26,48 +25,113 @@
 			>
 				<!--- Modifiers --->
 				<tr>
-					<th scope="row"><strong>Signature</strong></th>
+					<th 
+						aria-expanded="true"
+						data-bx-toggle="onoff"
+						scope="row"
+						valign="top"
+						tabindex="0"
+					>
+						Signature
+					</th>
 					<td>
-						<pre><code>#encodeForHTML( var.signatureAsString() )#</code></pre>
+						<div class="bx-onoff">
+							<pre><code>#encodeForHTML( var.signatureAsString() )#</code></pre>
+						</div>
 					</td>
 				</tr>
 
 				<!--- Arguments --->
 				<tr>
-					<th scope="row"><strong>Argument(s)</strong></th>
+					<th 
+						aria-expanded="true"
+						data-bx-toggle="onoff"
+						scope="row"
+						valign="top"
+						tabindex="0"
+					>
+						Argument(s)
+					</th>
 					<td>
-						<bx:set args = var.getArguments()>
-						<bx:if args.len() >
+						<div class="bx-onoff">
+							<bx:set args = var.getArguments()>
+							<bx:if args.len() >
+								<table class="bx-table-default">
+									<thead>
+										<tr>
+											<th><b>Required</b></th>
+											<th><b>Type</b></th>
+											<th><b>Name</b></th>
+											<th><b>Default Value</b></th>
+											<th><b>Hint</b></th>
+										</tr>
+									</thead>
+									<tbody>
+										<bx:script>
+											for( thisArg in args ) {
+												argHint = thisArg.documentation().hint ?: thisArg.annotations().hint ?: ""
+												```
+													<tr>
+														<td>
+															#encodeForHTML( thisArg.required() )#
+														</td>
+														<td>
+															#encodeForHTML( thisArg.type() )#
+														</td>
+														<td>
+															#encodeForHTML( thisArg.name() )#
+														</td>
+														<td>
+															#writedump( var: thisArg.defaultValue(), top: top, expand: expand )#
+														</td>
+														<td>
+															#encodeForHTML( argHint )#
+														</td>
+													</tr>
+												```
+												}
+										</bx:script>
+									</tbody>
+								</table>
+							<bx:else>
+								<em>--- No Arguments ---</em>
+							</bx:if>
+						</div>
+					</td>
+				</tr>
+
+				<!--- Annotations --->
+				<bx:if md.annotations>
+				<tr>
+					<th 
+						aria-expanded="true"
+						data-bx-toggle="onoff"
+						scope="row"
+						valign="top"
+						tabindex="0"
+					>
+						Annotations(s)
+					</th>
+					<td>
+						<div class="bx-onoff">
+							<bx:set annotations = md.annotations>
 							<table class="bx-table-default">
 								<thead>
 									<tr>
-										<th><b>Required</b></th>
-										<th><b>Type</b></th>
-										<th><b>Name</b></th>
-										<th><b>Default Value</b></th>
-										<th><b>Hint</b></th>
+										<th><b>Annotation</b></th>
+										<th><b>Value</b></th>
 									</tr>
 								</thead>
 								<tbody>
 									<bx:script>
-										for( thisArg in args ) {
-											argHint = thisArg.documentation().hint ?: thisArg.annotations().hint ?: ""
+										for( thisAnnotation in annotations ) {
 											```
 												<tr>
 													<td>
-														#encodeForHTML( thisArg.required() )#
+														<strong>#encodeForHTML( thisAnnotation )#</strong>
 													</td>
 													<td>
-														#encodeForHTML( thisArg.type() )#
-													</td>
-													<td>
-														#encodeForHTML( thisArg.name() )#
-													</td>
-													<td>
-														#writedump( var: thisArg.defaultValue(), top: top, expand: expand )#
-													</td>
-													<td>
-														#encodeForHTML( argHint )#
+														#writeDump( annotations[ thisAnnotation ] )#
 													</td>
 												</tr>
 											```
@@ -75,42 +139,7 @@
 									</bx:script>
 								</tbody>
 							</table>
-						<bx:else>
-							<em>--- No Arguments ---</em>
-						</bx:if>
-					</td>
-				</tr>
-
-				<!--- Annotations --->
-				<bx:if md.annotations>
-				<tr>
-					<th scope="row"><strong>Annotations(s)</strong></th>
-					<td>
-						<bx:set annotations = md.annotations>
-						<table class="bx-table-default">
-							<thead>
-								<tr>
-									<th><b>Annotation</b></th>
-									<th><b>Value</b></th>
-								</tr>
-							</thead>
-							<tbody>
-								<bx:script>
-									for( thisAnnotation in annotations ) {
-										```
-											<tr>
-												<td>
-													<strong>#encodeForHTML( thisAnnotation )#</strong>
-												</td>
-												<td>
-													#writeDump( annotations[ thisAnnotation ] )#
-												</td>
-											</tr>
-										```
-										}
-								</bx:script>
-							</tbody>
-						</table>
+						</div>
 					</td>
 				</tr>
 				</bx:if>

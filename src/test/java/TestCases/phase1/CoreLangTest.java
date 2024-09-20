@@ -673,7 +673,66 @@ public class CoreLangTest {
 		         """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( 6 );
+	}
 
+	@DisplayName( "sentinel init only" )
+	@Test
+	public void testSentinelInitOnly() {
+
+		instance.executeSource(
+		    """
+		    for ( counter = 1 ; ; ) {
+		    	writeOutput( counter );
+		    	counter++;
+		    	if( counter > 5 ) {
+		    		break;
+		    	}
+		    }
+		    result = counter;
+		         """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 6 );
+	}
+
+	@DisplayName( "sentinel condition only" )
+	@Test
+	public void testSentinelConditionOnly() {
+
+		instance.executeSource(
+		    """
+		      counter = 1;
+		         for (  ; counter <= 5 ; ) {
+		         	writeOutput( counter );
+		         	counter++;
+
+		    assert counter < 100;
+		         }
+		         result = counter;
+		              """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 6 );
+	}
+
+	@DisplayName( "sentinel increment only" )
+	@Test
+	public void testSentinelIncrementOnly() {
+
+		instance.executeSource(
+		    """
+		       counter = 1;
+		    safety = 0;
+		       for (  ; ; counter++ ) {
+		       	writeOutput( counter );
+		       	if( counter > 5 ) {
+		       		break;
+		       	}
+		    	safety++;
+		    	assert safety < 100;
+		       }
+		       result = counter;
+		                    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 7 );
 	}
 
 	@DisplayName( "continue sentinel" )
@@ -3347,20 +3406,36 @@ public class CoreLangTest {
 
 	@Test
 	public void testXMLInStringBuffer() {
-		// @formatter:off
-		instance.executeSource(
-		    """
-				buffer = createObject( "java", "java.lang.StringBuffer" ).init();
-				buffer.append( '<cfcomponent>' );
+	// @formatter:off
+	instance.executeSource(
+		"""
+			buffer = createObject( "java", "java.lang.StringBuffer" ).init();
+			buffer.append( '<cfcomponent>' );
 
-				buffer.append( '<\\cfcomponent>' );
+			buffer.append( '<\\cfcomponent>' );
 
-				result = buffer.toString();
-				println( result );
-		    """,
-		    context, BoxSourceType.CFSCRIPT
+			result = buffer.toString();
+			println( result );
+		""",
+		context, BoxSourceType.CFSCRIPT
+	);
+	// @formatter:on
+	}
+
+	@Test
+	public void testExecuteTemplate() {
+		instance.executeTemplate(
+		    "src/test/java/TestCases/phase1/files/index.bxs",
+		    new String[] {}
 		);
-		// @formatter:on
+	}
+
+	@Test
+	public void testExecuteClass() {
+		instance.executeTemplate(
+		    "src/test/java/TestCases/phase1/files/Runner.bx",
+		    new String[] { "myArg" }
+		);
 	}
 
 }

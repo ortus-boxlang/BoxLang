@@ -28,10 +28,10 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.STRUCT )
-
 public class StructAppend extends BIF {
 
 	/**
@@ -47,21 +47,24 @@ public class StructAppend extends BIF {
 	}
 
 	/**
-	 * Appends the contents of a second struct to the first struct either with or without overwrite
+	 * Appends the contents of a second struct to the first struct either with or
+	 * without overwrite
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.struct1 The target struct which will be the recipient of the appending
-	 * 
+	 * @argument.struct1 The target struct which will be the recipient of the
+	 *                   appending
+	 *
 	 * @argument.struct2 The struct containing the values to be appended
-	 * 
-	 * @argument.overwrite Default true. Whether to overwrite existing values found in struct1 from the values in struct2
+	 *
+	 * @argument.overwrite Default true. Whether to overwrite existing values found
+	 *                     in struct1 from the values in struct2
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Boolean	overwrite	= arguments.getAsBoolean( Key.overwrite );
-		IStruct	recipient	= arguments.getAsStruct( Key.struct1 );
-		IStruct	assignments	= arguments.getAsStruct( Key.struct2 );
+		Boolean			overwrite	= arguments.getAsBoolean( Key.overwrite );
+		final IStruct	recipient	= ensureRecipient( arguments.getAsStruct( Key.struct1 ) );
+		IStruct			assignments	= ensureRecipient( arguments.getAsStruct( Key.struct2 ) );
 
 		if ( overwrite ) {
 			recipient.putAll( assignments.getWrapped() );
@@ -72,4 +75,10 @@ public class StructAppend extends BIF {
 		return recipient;
 	}
 
+	private IStruct ensureRecipient( IStruct target ) {
+		if ( target == null ) {
+			return new Struct();
+		}
+		return target;
+	}
 }

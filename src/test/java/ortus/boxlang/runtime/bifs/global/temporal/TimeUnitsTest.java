@@ -97,6 +97,18 @@ public class TimeUnitsTest {
 		assertEquals( result, refYear );
 	}
 
+	@DisplayName( "It tests the String Member function Year" )
+	@Test
+	public void testMemberYearString() {
+		instance.executeSource(
+		    """
+		    result = "2025-01-01".year();
+		    """,
+		    context );
+		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
+		assertEquals( 2025, result );
+	}
+
 	@DisplayName( "It tests the BIF Quarter" )
 	@Test
 	public void testBifQuarter() {
@@ -134,6 +146,18 @@ public class TimeUnitsTest {
 		    context );
 		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
 		assertEquals( result, refMonth );
+	}
+
+	@DisplayName( "It tests the String Member function Month" )
+	@Test
+	public void testMemberMonthString() {
+		instance.executeSource(
+		    """
+		    result = "2025-01-01".month();
+		    """,
+		    context );
+		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
+		assertEquals( 1, result );
 	}
 
 	@DisplayName( "It tests the BIF MonthAsString" )
@@ -217,6 +241,18 @@ public class TimeUnitsTest {
 		    context );
 		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
 		assertEquals( result, refDay );
+	}
+
+	@DisplayName( "It tests the String Member function Day" )
+	@Test
+	public void testMemberDayString() {
+		instance.executeSource(
+		    """
+		    result = "2025-01-01".Day();
+		    """,
+		    context );
+		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
+		assertEquals( 1, result );
 	}
 
 	@DisplayName( "It tests the BIF DaysInMonth" )

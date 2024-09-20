@@ -29,7 +29,6 @@ import ortus.boxlang.runtime.util.DuplicationUtil;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.STRUCT )
-
 public class StructCopy extends BIF {
 
 	/**

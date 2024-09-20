@@ -45,6 +45,7 @@ import ortus.boxlang.compiler.asmboxpiler.ASMBoxpiler;
 import ortus.boxlang.compiler.javaboxpiler.JavaBoxpiler;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.compiler.parser.ParsingResult;
+import ortus.boxlang.runtime.application.BaseApplicationListener;
 import ortus.boxlang.runtime.config.CLIOptions;
 import ortus.boxlang.runtime.config.ConfigLoader;
 import ortus.boxlang.runtime.config.Configuration;
@@ -81,6 +82,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 import ortus.boxlang.runtime.types.exceptions.MissingIncludeException;
 import ortus.boxlang.runtime.types.util.MathUtil;
 import ortus.boxlang.runtime.util.EncryptionUtil;
@@ -1137,10 +1139,10 @@ public class BoxRuntime implements java.io.Closeable {
 	 * @param args         The array of arguments to pass to the main method
 	 */
 	public void executeClass( Class<IBoxRunnable> targetClass, String templatePath, IBoxContext context, String[] args ) {
-		// instance.logger.debug( "Executing class [{}]", templatePath );
-
-		ScriptingRequestBoxContext	scriptingContext	= new ScriptingRequestBoxContext( context );
-		IClassRunnable				target				= ( IClassRunnable ) DynamicObject.of( targetClass )
+		IBoxContext				scriptingContext	= ensureRequestTypeContext( context, Paths.get( templatePath ).toUri() );
+		BaseApplicationListener	listener			= scriptingContext.getParentOfType( RequestBoxContext.class ).getApplicationListener();
+		Throwable				errorToHandle		= null;
+		IClassRunnable			target				= ( IClassRunnable ) DynamicObject.of( targetClass )
 		    .invokeConstructor( scriptingContext )
 		    .getTargetInstance();
 
@@ -1148,24 +1150,56 @@ public class BoxRuntime implements java.io.Closeable {
 		if ( target.getThisScope().containsKey( Key.main ) ) {
 			// Fire!!!
 			try {
-				target.dereferenceAndInvoke( scriptingContext, Key.main, new Object[] { Array.fromArray( args ) }, false );
+				boolean result = listener.onRequestStart( scriptingContext, new Object[] { templatePath } );
+				if ( result ) {
+					// Not sure onClassRequest() works here since we already have the class loaded
+					target.dereferenceAndInvoke( scriptingContext, Key.main, new Object[] { Array.fromArray( args ) }, false );
+				}
 			} catch ( AbortException e ) {
+				try {
+					listener.onAbort( scriptingContext, new Object[] { templatePath } );
+				} catch ( Throwable ae ) {
+					// Opps, an error while handling onAbort
+					errorToHandle = ae;
+				}
 				scriptingContext.flushBuffer( true );
 				if ( e.getCause() != null ) {
 					// This will always be an instance of CustomException
 					throw ( RuntimeException ) e.getCause();
 				}
+			} catch ( MissingIncludeException e ) {
+				try {
+					// Not sure this is reachable since this method is probably only reached if the template existed. But just in case.
+					if ( !listener.onMissingTemplate( scriptingContext, new Object[] { e.getMissingFileName() } ) ) {
+						errorToHandle = e;
+					}
+				} catch ( Throwable t ) {
+					// Opps, an error while handling the missing template error
+					errorToHandle = t;
+				}
+			} catch ( Exception e ) {
+				errorToHandle = e;
 			} finally {
+				try {
+					listener.onRequestEnd( scriptingContext, new Object[] { templatePath } );
+				} catch ( Throwable e ) {
+					// Opps, an error while handling onRequestEnd
+					errorToHandle = e;
+				}
 				scriptingContext.flushBuffer( false );
 
-				// Debugging Timer
-				/*
-				 * instance.logger.debug(
-				 * "Executed template [{}] in [{}] ms",
-				 * template.getRunnablePath(),
-				 * timerUtil.stopAndGetMillis( "execute-" + template.hashCode() )
-				 * );
-				 */
+				if ( errorToHandle != null ) {
+					try {
+						if ( !listener.onError( scriptingContext, new Object[] { errorToHandle, "" } ) ) {
+							throw errorToHandle;
+						}
+						// This is a failsafe in case the onError blows up.
+					} catch ( Throwable t ) {
+						errorToHandle.printStackTrace();
+						ExceptionUtil.throwException( t );
+					}
+				}
+				scriptingContext.flushBuffer( false );
 			}
 		} else {
 			throw new BoxRuntimeException( "Class [" + targetClass.getName() + "] does not have a main method to execute." );
@@ -1180,32 +1214,65 @@ public class BoxRuntime implements java.io.Closeable {
 	 * @param context  The context to execute the template in
 	 */
 	public void executeTemplate( BoxTemplate template, IBoxContext context ) {
-		// Debugging Timers
-		/* timerUtil.start( "execute-" + template.hashCode() ); */
+		String templatePath = template.getRunnablePath().absolutePath().toString();
 		instance.logger.debug( "Executing template [{}]", template.getRunnablePath() );
 
-		IBoxContext scriptingContext = ensureRequestTypeContext( context, template.getRunnablePath().absolutePath().toUri() );
-
+		IBoxContext				scriptingContext	= ensureRequestTypeContext( context, template.getRunnablePath().absolutePath().toUri() );
+		BaseApplicationListener	listener			= scriptingContext.getParentOfType( RequestBoxContext.class ).getApplicationListener();
+		Throwable				errorToHandle		= null;
 		try {
-			// Fire!!!
-			template.invoke( scriptingContext );
+			boolean result = listener.onRequestStart( scriptingContext, new Object[] { templatePath } );
+			if ( result ) {
+				// Not sure if this works in this concext, since it's expected to include the template itself, but in this case our template is a loaded
+				// class, not a path which may or may not be a file and may or may not be inside of a mapping allowing a relative path to it
+				// listener.onRequest( scriptingContext, new Object[] { templatePath } );
+				template.invoke( scriptingContext );
+			}
 		} catch ( AbortException e ) {
+			try {
+				listener.onAbort( scriptingContext, new Object[] { templatePath } );
+			} catch ( Throwable ae ) {
+				// Opps, an error while handling onAbort
+				errorToHandle = ae;
+			}
 			scriptingContext.flushBuffer( true );
 			if ( e.getCause() != null ) {
 				// This will always be an instance of CustomException
 				throw ( RuntimeException ) e.getCause();
 			}
+		} catch ( MissingIncludeException e ) {
+			try {
+				// Not sure this is reachable since this method is probably only reached if the template existed. But just in case.
+				if ( !listener.onMissingTemplate( scriptingContext, new Object[] { e.getMissingFileName() } ) ) {
+					errorToHandle = e;
+				}
+			} catch ( Throwable t ) {
+				// Opps, an error while handling the missing template error
+				errorToHandle = t;
+			}
+		} catch ( Exception e ) {
+			errorToHandle = e;
 		} finally {
+			try {
+				listener.onRequestEnd( scriptingContext, new Object[] { templatePath } );
+			} catch ( Throwable e ) {
+				// Opps, an error while handling onRequestEnd
+				errorToHandle = e;
+			}
 			scriptingContext.flushBuffer( false );
 
-			// Debugging Timer
-			/*
-			 * instance.logger.debug(
-			 * "Executed template [{}] in [{}] ms",
-			 * template.getRunnablePath(),
-			 * timerUtil.stopAndGetMillis( "execute-" + template.hashCode() )
-			 * );
-			 */
+			if ( errorToHandle != null ) {
+				try {
+					if ( !listener.onError( scriptingContext, new Object[] { errorToHandle, "" } ) ) {
+						throw errorToHandle;
+					}
+					// This is a failsafe in case the onError blows up.
+				} catch ( Throwable t ) {
+					errorToHandle.printStackTrace();
+					ExceptionUtil.throwException( t );
+				}
+			}
+			scriptingContext.flushBuffer( false );
 		}
 	}
 
@@ -1333,14 +1400,6 @@ public class BoxRuntime implements java.io.Closeable {
 			}
 		} finally {
 			scriptingContext.flushBuffer( false );
-
-			// Debugging Timer
-			/*
-			 * instance.logger.debug(
-			 * "Executed source  [{}] ms",
-			 * timerUtil.stopAndGetMillis( "execute-" + source.hashCode() )
-			 * );
-			 */
 		}
 
 		return results;

@@ -72,7 +72,7 @@ public class Mid extends BIF {
 		if ( start <= input.length() ) {
 			// Ensure end doesn't exceed the length of the input string
 			if ( end > input.length() ) {
-				end = input.length() - 1;
+				end = input.length();
 			}
 
 			// Extract the substring

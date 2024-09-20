@@ -17,6 +17,8 @@ package ortus.boxlang.runtime.bifs.global.system;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.util.Map;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,6 +33,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.MathUtil;
 
@@ -247,9 +250,38 @@ public class JavaCastTest {
 		assertThat( castedArr[ 2 ] ).isEqualTo( "c" );
 	}
 
-	@DisplayName( "It can casts to a native Java array of struct" )
+	@DisplayName( "It can cast a full Java array class" )
 	@Test
-	public void testItCastsToNativeArrayOfStruct() {
+	public void testItCanCastFullJavaArrayClass() {
+		instance.executeSource(
+		    """
+		    result = javaCast( 'java.lang.String[]', ["a","b","c"] );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( new String[] {}.getClass() );
+		String[] castedArr = ( String[] ) variables.get( result );
+		assertThat( castedArr[ 0 ] ).isEqualTo( "a" );
+		assertThat( castedArr[ 1 ] ).isEqualTo( "b" );
+		assertThat( castedArr[ 2 ] ).isEqualTo( "c" );
+	}
+
+	@DisplayName( "It can cast a full Java array class non standard" )
+	@Test
+	public void testItCanCastFullJavaArrayClassNonStandard() {
+		instance.executeSource(
+		    """
+		    result = javaCast( 'java.util.Map[]', [{}] );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( new Map[] {}.getClass() );
+		@SuppressWarnings( "rawtypes" )
+		Map[] castedArr = ( Map[] ) variables.get( result );
+		assertThat( castedArr[ 0 ] ).isEqualTo( new Struct() );
+	}
+
+	@DisplayName( "It can casts to an array of struct" )
+	@Test
+	public void testItCastsToArrayOfStruct() {
 		instance.executeSource(
 		    """
 		    result = javaCast('Struct[]', [{key:"a"},{key:"b"},{key:"c"}]);

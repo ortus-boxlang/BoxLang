@@ -38,10 +38,12 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.RequestScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.AbstractClassException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 import ortus.boxlang.runtime.types.meta.ClassMeta;
 
 public class ClassTest {
@@ -544,6 +546,7 @@ public class ClassTest {
 				nameGet2 = cfc.getMyProperty();
 				test1 = cfc.getShortcutWithDefault()
 				test2 = cfc.getTypedShortcutWithDefault()
+				test3 = cfc.getChain()
 		    """, context );
 		// @formatter:on
 
@@ -554,11 +557,12 @@ public class ClassTest {
 		assertThat( variables.get( Key.of( "invalidSetErrored" ) ) ).isEqualTo( true );
 		assertThat( variables.get( Key.of( "test1" ) ) ).isEqualTo( "myDefaultValue" );
 		assertThat( variables.get( Key.of( "test2" ) ) ).isEqualTo( "myDefaultValue2" );
+		assertThat( variables.get( Key.of( "test3" ) ) ).isEqualTo( new Array() );
 
 		var	boxMeta	= ( ClassMeta ) cfc.getBoxMeta();
 		var	meta	= boxMeta.meta;
 
-		assertThat( meta.getAsArray( Key.of( "properties" ) ).size() ).isEqualTo( 6 );
+		assertThat( meta.getAsArray( Key.of( "properties" ) ).size() ).isEqualTo( 7 );
 
 		var prop1 = ( IStruct ) meta.getAsArray( Key.of( "properties" ) ).get( 0 );
 		assertThat( prop1.get( "name" ) ).isEqualTo( "myProperty" );
@@ -617,13 +621,14 @@ public class ClassTest {
 
 		instance.executeSource(
 		    """
-		        	cfc = new src.test.java.TestCases.phase3.PropertyTestCF();
-		      nameGet = cfc.getMyProperty();
-		      setResult = cfc.SetMyProperty( "anotherValue" );
-		      nameGet2 = cfc.getMyProperty();
+		    cfc = new src.test.java.TestCases.phase3.PropertyTestCF();
+		    nameGet = cfc.getMyProperty();
+		    setResult = cfc.SetMyProperty( "anotherValue" );
+		    nameGet2 = cfc.getMyProperty();
 		    test1 = cfc.getShortcutWithDefault()
 		    test2 = cfc.getTypedShortcutWithDefault()
-		        """, context );
+		    test3 = cfc.getChain()
+		           """, context );
 
 		var cfc = variables.getAsClassRunnable( Key.of( "cfc" ) );
 
@@ -632,11 +637,12 @@ public class ClassTest {
 		assertThat( variables.get( Key.of( "setResult" ) ) ).isEqualTo( cfc );
 		assertThat( variables.get( Key.of( "test1" ) ) ).isEqualTo( "myDefaultValue" );
 		assertThat( variables.get( Key.of( "test2" ) ) ).isEqualTo( "myDefaultValue2" );
+		assertThat( variables.get( Key.of( "test3" ) ) ).isEqualTo( new Array() );
 
 		var	boxMeta	= ( ClassMeta ) cfc.getBoxMeta();
 		var	meta	= boxMeta.meta;
 
-		assertThat( meta.getAsArray( Key.of( "properties" ) ).size() ).isEqualTo( 4 );
+		assertThat( meta.getAsArray( Key.of( "properties" ) ).size() ).isEqualTo( 5 );
 
 		var prop1 = ( IStruct ) meta.getAsArray( Key.of( "properties" ) ).get( 0 );
 		assertThat( prop1.get( "name" ) ).isEqualTo( "myProperty" );
@@ -829,10 +835,10 @@ public class ClassTest {
 		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "src.test.java.testcases.phase3.Chihuahua" );
 
 		IStruct extendsMeta = meta.getAsStruct( Key.of( "extends" ) );
-		assertThat( extendsMeta.getAsString( Key.of( "name" ) ).endsWith( ".Dog" ) ).isTrue();
+		assertThat( extendsMeta.getAsString( Key.of( "name" ) ) ).endsWith( ".Dog" );
 
 		extendsMeta = extendsMeta.getAsStruct( Key.of( "extends" ) );
-		assertThat( extendsMeta.getAsString( Key.of( "name" ) ).endsWith( ".Animal" ) ).isTrue();
+		assertThat( extendsMeta.getAsString( Key.of( "name" ) ) ).endsWith( ".Animal" );
 
 		extendsMeta = extendsMeta.getAsStruct( Key.of( "extends" ) );
 		assertThat( extendsMeta ).hasSize( 0 );
@@ -1174,6 +1180,14 @@ public class ClassTest {
 	}
 
 	@Test
+	public void testStaticArgDefaultTest() {
+		instance.executeSource(
+		    """
+		    foo = src.test.java.TestCases.phase3.StaticArgDefaultTest::create("hello");
+		      """, context, BoxSourceType.CFSCRIPT );
+	}
+
+	@Test
 	public void testDotExtends() {
 		instance.executeSource(
 		    """
@@ -1261,6 +1275,53 @@ public class ClassTest {
 		        clazz = new src.test.java.TestCases.phase3.IllegalFinalExtends();
 		        """, context ) );
 		assertThat( t.getMessage() ).contains( "Cannot extend final class" );
+	}
+
+	@Test
+	public void testPseduoConstructorError() {
+		Array tagContext = null;
+		try {
+			instance.executeSource(
+			    """
+			    clazz = new src.test.java.TestCases.phase3.PseudoConstructorError();
+			    """, context );
+		} catch ( BoxRuntimeException e ) {
+			tagContext = ExceptionUtil.buildTagContext( e );
+		}
+		assertThat( tagContext ).isNotNull();
+		assertThat( tagContext.size() ).isEqualTo( 1 );
+		assertThat( ( ( IStruct ) tagContext.get( 0 ) ).getAsString( Key.template ) ).contains( "PseudoConstructorError.bx" );
+	}
+
+	@Test
+	public void testBadProperty() {
+		instance.executeSource(
+		    """
+		    clazz = new src.test.java.TestCases.phase3.BadProperty();
+		    """, context );
+	}
+
+	@Test
+	public void testCaseMisMatch() {
+		instance.executeSource(
+		    """
+		    cfc = new src.TEST.java.testcases.phase3.mYcLASS();
+		      """, context );
+	}
+
+	@Test
+	public void MethodPropConflict() {
+		instance.executeSource(
+		    """
+		    	cfc = new src.test.java.TestCases.phase3.MethodPropConflict();
+		    	result = cfc.spyFoo();
+		    	result2 = cfc.spyBaz();
+		    """, context );
+		// propery value wins in variables scope of same name
+		assertThat( variables.get( result ) ).isEqualTo( "bar" );
+		// But variable set in super class's psedu constructor will get hammered by the concrete class's method
+		assertThat( variables.get( "result2" ) ).isInstanceOf( Function.class );
+		assertThat( ( ( Function ) variables.get( "result2" ) ).getName().getName() ).isEqualTo( "baz" );
 	}
 
 }

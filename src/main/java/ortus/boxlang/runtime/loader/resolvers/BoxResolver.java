@@ -17,6 +17,8 @@
  */
 package ortus.boxlang.runtime.loader.resolvers;
 
+import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -45,6 +47,11 @@ public class BoxResolver extends BaseResolver {
 	 * Singleton instance
 	 */
 	protected static BoxResolver				instance;
+
+	/**
+	 * Flag for whether FS is case sensitive or not to short circuit case insensitive path resolution
+	 */
+	private static boolean						isCaseSensitiveFS	= caseSensitivityCheck();
 
 	/**
 	 * List of valid class extensions
@@ -207,21 +214,41 @@ public class BoxResolver extends BaseResolver {
 			    // Generate multiple paths here
 			    List<ResolvedFilePath> paths = new ArrayList<ResolvedFilePath>();
 			    for ( String extension : VALID_EXTENSIONS ) {
-				    paths.add(
-				        ResolvedFilePath.of(
-				            entry.getKey().getName(),
-				            entry.getValue().toString(),
-				            slashName + extension,
-				            Path.of( StringUtils.replaceOnceIgnoreCase( slashName, entry.getKey().getName(), entry.getValue() + "/" ) + extension ).normalize()
-				        )
-				    );
+				    Path absolutePath = Path.of( StringUtils.replaceOnceIgnoreCase( slashName, entry.getKey().getName(), entry.getValue() + "/" ) + extension )
+				        .normalize();
+				    // Verify that the file exists
+				    absolutePath = pathExists( absolutePath );
+				    if ( absolutePath != null ) {
+					    try {
+						    String mappingName		= entry.getKey().getName();
+						    String mappingDirectory	= entry.getValue().toString();
+						    String relativePath;
+
+						    // Java not smart enough to ignore a path part of just / and it will wind up with \\ in windows
+						    if ( mappingName.equals( "/" ) || mappingName.equals( "\\" ) ) {
+							    relativePath = Paths.get( mappingDirectory ).toRealPath().relativize( absolutePath ).toString();
+						    } else {
+							    relativePath = Paths
+							        .get( mappingName, Paths.get( mappingDirectory ).toRealPath().relativize( absolutePath ).toString() )
+							        .toString();
+						    }
+
+						    paths.add(
+						        ResolvedFilePath.of(
+						            mappingName,
+						            mappingDirectory,
+						            relativePath,
+						            absolutePath
+						        )
+						    );
+					    } catch ( IOException e ) {
+						    // Ignore these errors-- file either got deleted or there was a disk issue
+					    }
+				    }
 			    }
 
 			    return paths.stream();
 		    } )
-		    // Verify that the file exists
-		    // TODO: Make this case insensitive
-		    .filter( possibleMatch -> possibleMatch.absolutePath().toFile().exists() )
 		    // Map it to a ClassLocation object
 		    .map( possibleMatch -> {
 
@@ -272,11 +299,9 @@ public class BoxResolver extends BaseResolver {
 					Path targetPath = findExistingPathWithValidExtension( parentPath, slashName );
 					if ( targetPath != null ) {
 
-						// System.out.println( "packageName: " + packageName );
-						// System.out.println( "classname: " + className );
-						// System.out.println( "name: " + name );
 						ResolvedFilePath newResolvedFilePath = resolvedFilePath
 						    .newFromRelative( parentPath.relativize( Paths.get( targetPath.toString() ) ).toString() );
+
 						return Optional.of( new ClassLocation(
 						    FilenameUtils.getBaseName( newResolvedFilePath.absolutePath().toString() ),
 						    targetPath.toAbsolutePath().toString(),
@@ -295,14 +320,94 @@ public class BoxResolver extends BaseResolver {
 
 	private Path findExistingPathWithValidExtension( Path parentPath, String slashName ) {
 		for ( String extension : VALID_EXTENSIONS ) {
-			Path targetPath = parentPath.resolve( slashName.substring( 1 ) + extension ).normalize();
+			Path	targetPath	= parentPath.resolve( slashName.substring( 1 ) + extension ).normalize();
 
-			// TODO: Make this case insensitive
-			if ( Files.exists( targetPath ) ) {
-				return targetPath;
+			Path	result		= pathExists( targetPath );
+			if ( result != null ) {
+				return result;
 			}
 		}
 		return null;
+	}
+
+	/**
+	 * Performs case insensitive path resolution
+	 * 
+	 * @param path The path to check
+	 * 
+	 * @return The resolved path or null if not found
+	 */
+	Path pathExists( Path path ) {
+		Boolean defaultCheck = Files.exists( path );
+		if ( defaultCheck ) {
+			try {
+				return path.toRealPath();
+			} catch ( IOException e ) {
+				return null;
+			}
+		}
+		if ( isCaseSensitiveFS ) {
+			String		realPath		= "";
+			String[]	pathSegments	= path.toString().replace( '\\', '/' ).split( "/" );
+			if ( pathSegments.length > 0 && pathSegments[ 0 ].contains( ":" ) ) {
+				realPath = pathSegments[ 0 ];
+			}
+			Boolean first = true;
+			for ( String thisSegment : pathSegments ) {
+				// Skip windows drive letter
+				if ( realPath == pathSegments[ 0 ] && pathSegments[ 0 ].contains( ":" ) && first ) {
+					first = false;
+					continue;
+				}
+				// Skip empty segments
+				if ( thisSegment.length() == 0 ) {
+					continue;
+				}
+
+				Boolean		found		= false;
+				String[]	children	= new File( realPath + "/" ).list();
+				// This will happen if we have a matched file in the middle of a path like /foo/index.cfm/bar
+				if ( children == null ) {
+					return null;
+				}
+				for ( String thisChild : children ) {
+					// We're taking the FIRST MATCH. Buyer beware
+					if ( thisSegment.equalsIgnoreCase( thisChild ) ) {
+						realPath	+= "/" + thisChild;
+						found		= true;
+						break;
+					}
+				}
+				// If we made it through the inner loop without a match, we've hit a dead end
+				if ( !found ) {
+					return null;
+				}
+			}
+			// If we made it through the outer loop, we've found a match
+			Path realPathFinal = Paths.get( realPath );
+			return realPathFinal;
+		}
+		return null;
+	}
+
+	private static boolean caseSensitivityCheck() {
+		try {
+			File	currentWorkingDir	= new File( System.getProperty( "user.home" ) );
+			File	case1				= new File( currentWorkingDir, "case1" );
+			File	case2				= new File( currentWorkingDir, "Case1" );
+			case1.createNewFile();
+			if ( case2.createNewFile() ) {
+				case1.delete();
+				case2.delete();
+				return true;
+			} else {
+				case1.delete();
+				return false;
+			}
+		} catch ( Throwable e ) {
+			e.printStackTrace();
+		}
+		return true;
 	}
 
 }

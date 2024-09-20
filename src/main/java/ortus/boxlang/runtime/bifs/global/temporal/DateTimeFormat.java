@@ -38,6 +38,9 @@ import ortus.boxlang.runtime.util.LocalizationUtil;
 @BoxMember( type = BoxLangType.DATETIME, name = "dateFormat" )
 @BoxMember( type = BoxLangType.DATETIME, name = "timeFormat" )
 @BoxMember( type = BoxLangType.DATETIME, name = "dateTimeFormat" )
+@BoxMember( type = BoxLangType.STRING, name = "dateFormat" )
+@BoxMember( type = BoxLangType.STRING, name = "timeFormat" )
+@BoxMember( type = BoxLangType.STRING, name = "dateTimeFormat" )
 public class DateTimeFormat extends BIF {
 
 	private static final Key	FORMAT_EPOCH	= Key.of( "epoch" );
@@ -84,8 +87,14 @@ public class DateTimeFormat extends BIF {
 		DateTime	ref				= DateTimeCaster.cast( arguments.get( Key.date ), true, timezone );
 		Key			bifMethodKey	= arguments.getAsKey( BIF.__functionName );
 		String		format			= arguments.getAsString( Key.mask );
+
+		// Alternate named argument - ACFvsLucee
+		if ( format == null ) {
+			format = arguments.getAsString( Key.format );
+		}
+
 		// LS Subclass locales
-		Locale		locale			= LocalizationUtil.parseLocaleFromContext( context, arguments );
+		Locale locale = LocalizationUtil.parseLocaleFromContext( context, arguments );
 
 		// Apply our runtime timezone to our initial reference
 		ref = new DateTime( ref.getWrapped().withZoneSameInstant( timezone ) );

@@ -882,11 +882,7 @@ public final class FileSystemUtil {
 		path = path.replace( "\\", "/" );
 		String	originalPath		= path;
 		Path	originalPathPath	= null;
-		try {
-			originalPathPath = Path.of( originalPath );
-		} catch ( java.nio.file.InvalidPathException e ) {
-			throw new BoxRuntimeException( String.format( "The path provided is an invalid path {%s}", originalPath ), e );
-		}
+		originalPathPath = Path.of( originalPath );
 
 		boolean isAbsolute = originalPathPath.isAbsolute();
 

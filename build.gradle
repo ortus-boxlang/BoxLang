@@ -71,6 +71,7 @@ sourceSets {
             include '**/*.json'
 			include '**/*.bx*'
 			include '**/*.css'
+			include '**/*.js'
 			include '**/*.cf*'
             include '**/META-INF/services/*'
         }

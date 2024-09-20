@@ -27,7 +27,6 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 
 @BoxBIF
-// TODO: Remove this alias once we're transpiling
 @BoxBIF( alias = "htmlEditFormat" )
 public class EncodeForHTML extends BIF {
 

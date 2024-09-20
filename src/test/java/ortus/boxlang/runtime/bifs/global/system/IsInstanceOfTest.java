@@ -64,11 +64,19 @@ public class IsInstanceOfTest {
 		    result = isInstanceOf( [], "ortus.boxlang.runtime.types.Array" );
 		    result2 = isInstanceOf( [], "java.util.List" );
 		    result3 = isInstanceOf( [], "java.util.Collection" );
+		    result4 = isInstanceOf( {}, "java.util.Map" );
+		    result5 = isInstanceOf( {}, "java.util.map" );
+		    result6 = isInstanceOf( {}, "Map" );
+		    result7 = isInstanceOf( {}, "map" );
 		      """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( true );
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( true );
 		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "result6" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "result7" ) ) ).isEqualTo( true );
 	}
 
 	@DisplayName( "It can can check not Java types" )
@@ -146,6 +154,47 @@ public class IsInstanceOfTest {
 		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( true );
 		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( true );
 		assertThat( variables.get( Key.of( "result6" ) ) ).isEqualTo( true );
+	}
+
+	@DisplayName( "True conditions" )
+	@Test
+	public void testTrueConditions() {
+		instance.executeSource(
+		    """
+		       aJavaString           = isInstanceOf( "boxlang", "java.lang.String" );
+		       aDateObject           = isInstanceOf( now(), "ortus.boxlang.runtime.types.DateTime" );
+		       aStruct               = isInstanceOf( {}, "java.util.Map" );
+		       anArray               = isInstanceOf( [], "Array" );
+		    aBoxLangClass         = isInstanceOf( new src.test.java.TestCases.phase3.Chihuahua(), "Chihuahua" );
+		    aBoxLangClassFullPath = isInstanceOf( new src.test.java.TestCases.phase3.Chihuahua(), "src.test.java.TestCases.phase3.Chihuahua" );
+		       """,
+		    context );
+		assertThat( ( Boolean ) variables.get( Key.of( "aJavaString" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "aDateObject" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "aStruct" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "anArray" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "aJavaString" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "aBoxLangClass" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "aBoxLangClassFullPath" ) ) ).isTrue();
+	}
+
+	@DisplayName( "False conditions" )
+	@Test
+	public void testFalseConditions() {
+		instance.executeSource(
+		    """
+		       aJavaString           = isInstanceOf( "gibberish", "aJavaString" );
+		       aDateObject           = isInstanceOf( now(), "java.bad.path.to.Date" );
+		       anArray               = isInstanceOf( [], "java.util.Map" );
+		    aBoxLangClass         = isInstanceOf( new src.test.java.TestCases.phase3.Chihuahua(), "somethingElse" );
+		    aBoxLangClassFullPath = isInstanceOf( new src.test.java.TestCases.phase3.Chihuahua(), "src.nope.java.TestCases.phase3.Chihuahua" );
+		       """,
+		    context );
+		assertThat( ( Boolean ) variables.get( Key.of( "aJavaString" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "aDateObject" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "anArray" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "aBoxLangClass" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "aBoxLangClassFullPath" ) ) ).isFalse();
 	}
 
 }

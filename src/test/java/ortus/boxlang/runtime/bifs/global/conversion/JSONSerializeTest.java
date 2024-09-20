@@ -399,4 +399,26 @@ public class JSONSerializeTest {
 		assertThat( json ).doesNotContain( "modifiedDate" );
 	}
 
+	@DisplayName( "It can serialize a boxlang function" )
+	@Test
+	public void testCanSerializeBoxLangFunction() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		    	function foo() {
+					return true;
+				}
+				result = jsonSerialize( {
+					"f": () => {},
+					"another" : foo
+				} );
+		    """,
+		context );
+		// @formatter:on
+
+		var json = variables.getAsString( result );
+		System.out.println( json );
+		assertThat( json ).isNotEmpty();
+	}
+
 }

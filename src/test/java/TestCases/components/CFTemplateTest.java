@@ -211,7 +211,7 @@ public class CFTemplateTest {
 		    i++
 		    ```
 		    <cfset foo = "bar">
-		    Test outpout
+		    Test ` output
 		    ```
 		    if ( i == 1 ) {
 		    	result = 'it worked'
@@ -224,7 +224,6 @@ public class CFTemplateTest {
 
 	@DisplayName( "component script Island inception" )
 	@Test
-	@Disabled( "This can't work without re-working the lexers to 'count' the island blocks." )
 	public void testComponentScriptIslandInception() {
 		instance.executeSource(
 		    """
@@ -1204,7 +1203,6 @@ public class CFTemplateTest {
 		    """
 		    <cfmodule template="src/test/java/TestCases/components/echoTag.cfm" foo="bar" foo2 = "bar2" brad=wood luis = majano >
 		    <cfset result = variables>
-
 		          """,
 		    context, BoxSourceType.CFTEMPLATE );
 		assertThat( variables.getAsStruct( result ) ).containsEntry( Key.of( "foo" ), "bar" );
@@ -1384,7 +1382,7 @@ public class CFTemplateTest {
 		    </cfoutput>
 		          """,
 		    context, BoxSourceType.CFTEMPLATE ) );
-		assertThat( e.getMessage() ).contains( "Unclosed expression" );
+		assertThat( e.getMessage() ).contains( "Unexpected end of expression" );
 
 	}
 
@@ -1408,6 +1406,104 @@ public class CFTemplateTest {
 		          """,
 		    context, BoxSourceType.CFTEMPLATE );
 		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "foo##barbaz#bum" );
+	}
+
+	@Test
+	public void testTrickyScriptBlocks() {
+		instance.executeSource(
+		    """
+		    <cfscript>
+		    	//</cfscript>
+		    </cfscript>
+
+		    <cfscript>
+		    	/* <cfscript>*/
+		    </cfscript>
+
+		    <cfscript>
+		    	result = "</cfscript>";
+		    </cfscript>
+		             """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "</cfscript>" );
+	}
+
+	@Test
+	public void testCompleteExpressionInTagParens() {
+		instance.executeSource(
+		    """
+		    	<cfset a = 0>
+		    	<cfset b = -1>
+		    	<cfset result = false>
+
+		    	<cfif ( a > b ) >
+		    		<cfset result = true>
+		    	</cfif>
+		    """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.get( result ) ).isEqualTo( true );
+
+	}
+
+	@Test
+	public void testCompleteExpressionInTagBrackets() {
+		instance.executeSource(
+		    """
+		    	<cfset a = 0>
+		    	<cfset b = -1>
+		    	<cfset result = false>
+
+		    	<cfif !variables[ a > b ? "result" : "a" ] >
+		    		<cfset result = true>
+		    	</cfif>
+		    """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.get( result ) ).isEqualTo( true );
+
+	}
+
+	@Test
+	public void testCompleteExpressionInTagBraces() {
+		instance.executeSource(
+		    """
+		    	<cfset a = 0>
+		    	<cfset b = -1>
+		    	<cfset result = false>
+
+		    	<cfif { val : a > b }.val >
+		    		<cfset result = true>
+		    	</cfif>
+		    """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.get( result ) ).isEqualTo( true );
+	}
+
+	@Test
+	public void testCompleteExpressionInTagClosure() {
+		instance.executeSource(
+		    """
+		    	<cfset result = false>
+
+		    	<cfif (()=>true)() >
+		    		<cfset result = true>
+		    	</cfif>
+		    """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.get( result ) ).isEqualTo( true );
+	}
+
+	@Test
+	public void testAttributeUnquotedHashed() {
+		instance.executeSource(
+		    """
+		    <cfset mylist="item1,item2,item3">
+		    <cfloop list=#myList# item="thisItem">
+		    	<cfoutput>
+		    	#thisItem#
+		    	</cfoutput>
+		    </cfloop>
+		      """,
+		    context, BoxSourceType.CFTEMPLATE );
 	}
 
 }

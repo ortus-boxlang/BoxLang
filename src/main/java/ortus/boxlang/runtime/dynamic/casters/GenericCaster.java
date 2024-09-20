@@ -20,12 +20,15 @@ package ortus.boxlang.runtime.dynamic.casters;
 import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.operators.InstanceOf;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.types.BoxLangType;
@@ -118,8 +121,8 @@ public class GenericCaster implements IBoxCaster {
 	 * @return The value, or null when cannot be cast or if the type was "null" or "void"
 	 */
 	public static Object cast( IBoxContext context, Object object, Object oType, Boolean fail ) {
-		String	OriginalCaseType	= StringCaster.cast( oType );
-		String	type				= OriginalCaseType.toLowerCase();
+		String	originalCaseType	= StringCaster.cast( oType );
+		String	type				= originalCaseType.toLowerCase();
 
 		if ( type.equals( "null" ) || type.equals( "void" ) ) {
 			return null;
@@ -129,13 +132,16 @@ public class GenericCaster implements IBoxCaster {
 			return object;
 		}
 
-		// Handle arrays like int[]
+		// Handle arrays like int[], or java.lang.String[]
 		if ( type.endsWith( "[]" ) ) {
-
-			String		newType			= type.substring( 0, type.length() - 2 );
-			Class<?>	newTypeClass	= getClassFromType( newType, false );
+			// Remove the []
+			String newType = type.substring( 0, type.length() - 2 );
+			originalCaseType = originalCaseType.substring( 0, originalCaseType.length() - 2 );
+			Class<?>	newTypeClass	= getClassFromType( context, newType, originalCaseType, false );
 			Object[]	result;
 			Boolean		convertToArray	= false;
+
+			// If we could not get the class, then we are casting to an array of objects
 			if ( newTypeClass == null ) {
 				convertToArray	= true;
 				newTypeClass	= Object.class;
@@ -143,7 +149,7 @@ public class GenericCaster implements IBoxCaster {
 
 			if ( object.getClass().isArray() ) {
 				result = castNativeArrayToNativeArray( context, object, newType, fail, newTypeClass );
-			} else if ( object instanceof List<?> l ) {
+			} else if ( object instanceof List<?> ) {
 				result = castListToNativeArray( context, object, newType, fail, newTypeClass );
 			} else {
 				throw new BoxCastException(
@@ -231,7 +237,7 @@ public class GenericCaster implements IBoxCaster {
 
 		if ( type.startsWith( "function:" ) && type.length() > 9 ) {
 			// strip off class name from "function:com.foo.Bar"
-			return FunctionCaster.cast( object, OriginalCaseType.substring( 9 ), fail );
+			return FunctionCaster.cast( object, originalCaseType.substring( 9 ), fail );
 		}
 
 		if ( type.equals( "query" ) ) {
@@ -310,50 +316,102 @@ public class GenericCaster implements IBoxCaster {
 		return result;
 	}
 
-	public static Class<?> getClassFromType( String type ) {
-		return getClassFromType( type, true );
+	/**
+	 * Get the class from a type sent in that we can cast
+	 *
+	 * @param type The type to get the class for
+	 *
+	 * @return The class instance
+	 */
+	public static Class<?> getClassFromType( IBoxContext context, String type ) {
+		return getClassFromType( context, type, type, true );
 	}
 
-	public static Class<?> getClassFromType( String type, Boolean fail ) {
+	/**
+	 * Get the class from a type sent in that we can cast
+	 *
+	 * @param type             The type to get the class for
+	 * @param originalCaseType The original case of the type
+	 *
+	 * @return The class instance
+	 */
+	public static Class<?> getClassFromType( IBoxContext context, String type, String originalCaseType ) {
+		return getClassFromType( context, type, originalCaseType, true );
+	}
 
-		if ( type.equals( "string" ) ) {
-			return String.class;
-		}
-		if ( type.equals( "double" ) ) {
-			return Double.class;
-		}
-		if ( type.equals( "boolean" ) ) {
-			return Boolean.class;
-		}
-		if ( type.equals( "bigdecimal" ) ) {
+	/**
+	 * Get the class from a type sent in that we can cast
+	 *
+	 * @param type             The type to get the class for
+	 * @param originalCaseType The original case of the type
+	 * @param fail             True to throw exception when type is invalid
+	 *
+	 * @return The class instance
+	 */
+	public static Class<?> getClassFromType( IBoxContext context, String type, String originalCaseType, Boolean fail ) {
+
+		if ( type.equals( "bigdecimal" ) || type.equals( "java.math.bigdecimal" ) ) {
 			return BigDecimal.class;
 		}
-		if ( type.equals( "char" ) ) {
-			return Character.class;
+		if ( type.equals( "biginteger" ) || type.equals( "java.math.biginteger" ) ) {
+			return java.math.BigInteger.class;
 		}
-		if ( type.equals( "byte" ) ) {
+		if ( type.equals( "boolean" ) || type.equals( "java.lang.boolean" ) ) {
+			return Boolean.class;
+		}
+		if ( type.equals( "byte" ) || type.equals( "java.lang.byte" ) ) {
 			return Byte.class;
 		}
-		if ( type.equals( "int" ) ) {
-			return Integer.class;
+		if ( type.equals( "char" ) || type.equals( "java.lang.char" ) ) {
+			return Character.class;
 		}
-		if ( type.equals( "long" ) ) {
-			return Long.class;
+		if ( type.equals( "double" ) || type.equals( "java.lang.double" ) ) {
+			return Double.class;
 		}
-		if ( type.equals( "short" ) ) {
-			return Short.class;
-		}
-		if ( type.equals( "float" ) ) {
+		if ( type.equals( "float" ) || type.equals( "java.lang.float" ) ) {
 			return Float.class;
 		}
-		if ( type.equals( "object" ) ) {
+		if ( type.equals( "instant" ) || type.equals( "java.time.instant" ) ) {
+			return java.time.Instant.class;
+		}
+		if ( type.equals( "int" ) || type.equals( "integer" ) || type.equals( "java.lang.integer" ) ) {
+			return Integer.class;
+		}
+		if ( type.equals( "LocalDate" ) || type.equals( "java.time.LocalDate" ) ) {
+			return java.time.LocalDate.class;
+		}
+		if ( type.equals( "LocalDateTime" ) || type.equals( "java.time.LocalDateTime" ) ) {
+			return java.time.LocalDateTime.class;
+		}
+		if ( type.equals( "LocalTime" ) || type.equals( "java.time.LocalTime" ) ) {
+			return java.time.LocalTime.class;
+		}
+		if ( type.equals( "long" ) || type.equals( "java.lang.long" ) ) {
+			return Long.class;
+		}
+		if ( type.equals( "short" ) || type.equals( "java.lang.short" ) ) {
+			return Short.class;
+		}
+		if ( type.equals( "string" ) || type.equals( "java.lang.string" ) ) {
+			return String.class;
+		}
+		if ( type.equals( "object" ) || type.equals( "java.lang.object" ) ) {
 			return Object.class;
 		}
+
+		// If we got here, then we have a full class name like java.lang.String
+		// Let's see if we can load it
+		Optional<DynamicObject> loadResult = ClassLocator.getInstance().safeLoad( context, originalCaseType, "java" );
+		if ( loadResult.isPresent() ) {
+			return loadResult.get().getTargetClass();
+		}
+
 		if ( !fail ) {
 			return null;
 		}
+
 		throw new BoxCastException(
-		    String.format( "Invalid cast type [%s]", type )
+		    String.format( "Invalid cast type [%s]", originalCaseType )
 		);
 	}
 }

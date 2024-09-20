@@ -137,6 +137,21 @@ public class Transaction implements ITransaction {
 	}
 
 	/**
+	 * Set the datasource associated with this transaction.
+	 * <p>
+	 * For transactions not initialized with a datasource, allows you to set the datasource after construction.
+	 * <p>
+	 * Will throw an exception if the datasource is already set.
+	 */
+	public Transaction setDataSource( DataSource datasource ) {
+		if ( this.datasource != null ) {
+			throw new DatabaseException( "Transaction datasource is already configured" );
+		}
+		this.datasource = datasource;
+		return this;
+	}
+
+	/**
 	 * Get the datasource associated with this transaction.
 	 * <p>
 	 * Useful for checking that a given query is using the same datasource as its wrapping transaction.

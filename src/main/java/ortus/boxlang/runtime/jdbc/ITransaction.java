@@ -46,6 +46,15 @@ public interface ITransaction {
 	public Connection getConnection();
 
 	/**
+	 * Set the datasource associated with this transaction.
+	 * <p>
+	 * For transactions not initialized with a datasource, allows you to set the datasource after construction.
+	 * <p>
+	 * Will throw an exception if the datasource is already set.
+	 */
+	public ITransaction setDataSource( DataSource datasource );
+
+	/**
 	 * Get the datasource associated with this transaction.
 	 * <p>
 	 * Useful for checking that a given query is using the same datasource as its wrapping transaction.

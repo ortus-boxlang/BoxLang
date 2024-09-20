@@ -17,15 +17,15 @@
  */
 package ortus.boxlang.compiler.ast.expression;
 
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
-
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * AST Node representing an array literal.
@@ -72,7 +72,7 @@ public class BoxArrayLiteral extends BoxExpression implements IBoxLiteral {
 
 	@Override
 	public boolean isLiteral() {
-		return true;
+		return values.stream().allMatch( BoxExpression::isLiteral );
 	}
 
 	@Override
