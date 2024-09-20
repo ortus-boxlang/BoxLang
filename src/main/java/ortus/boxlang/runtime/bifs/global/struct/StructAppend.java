@@ -31,7 +31,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 
 @BoxBIF
-@BoxMember(type = BoxLangType.STRUCT)
+@BoxMember( type = BoxLangType.STRUCT )
 public class StructAppend extends BIF {
 
 	/**
@@ -40,9 +40,9 @@ public class StructAppend extends BIF {
 	public StructAppend() {
 		super();
 		declaredArguments = new Argument[] {
-				new Argument(true, "structloose", Key.struct1),
-				new Argument(true, "structloose", Key.struct2),
-				new Argument(false, "boolean", Key.overwrite, true)
+		    new Argument( true, "structloose", Key.struct1 ),
+		    new Argument( true, "structloose", Key.struct2 ),
+		    new Argument( false, "boolean", Key.overwrite, true )
 		};
 	}
 
@@ -61,22 +61,22 @@ public class StructAppend extends BIF {
 	 * @argument.overwrite Default true. Whether to overwrite existing values found
 	 *                     in struct1 from the values in struct2
 	 */
-	public Object _invoke(IBoxContext context, ArgumentsScope arguments) {
-		Boolean overwrite = arguments.getAsBoolean(Key.overwrite);
-		final IStruct recipient = ensureRecipient(arguments.getAsStruct(Key.struct1));
-		IStruct assignments = ensureRecipient(arguments.getAsStruct(Key.struct2));
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
+		Boolean			overwrite	= arguments.getAsBoolean( Key.overwrite );
+		final IStruct	recipient	= ensureRecipient( arguments.getAsStruct( Key.struct1 ) );
+		IStruct			assignments	= ensureRecipient( arguments.getAsStruct( Key.struct2 ) );
 
-		if (overwrite) {
-			recipient.putAll(assignments.getWrapped());
+		if ( overwrite ) {
+			recipient.putAll( assignments.getWrapped() );
 		} else {
-			assignments.entrySet().stream().forEach(entry -> recipient.putIfAbsent(entry.getKey(), entry.getValue()));
+			assignments.entrySet().stream().forEach( entry -> recipient.putIfAbsent( entry.getKey(), entry.getValue() ) );
 		}
 
 		return recipient;
 	}
 
-	private IStruct ensureRecipient(IStruct target) {
-		if (target == null) {
+	private IStruct ensureRecipient( IStruct target ) {
+		if ( target == null ) {
 			return new Struct();
 		}
 		return target;
