@@ -244,39 +244,8 @@ public class ReFind extends BIF {
 	 * @return The escaped regular expression string
 	 */
 	public static String replaceNonQuantiferCurlyBraces( String input ) {
-		// String input = "Example regex with {{invalid}} and {valid{quantifiers}} like {2,4}";
-
-		// Regular expression to match valid quantifiers
-		String			quantifierRegex		= "\\{\\d*,?\\d*\\}";
-
-		// Pattern to match valid quantifiers
-		Pattern			quantifierPattern	= Pattern.compile( quantifierRegex );
-
-		// Matcher for the input string
-		Matcher			matcher				= quantifierPattern.matcher( input );
-
-		// Create a StringBuilder to build the final output
-		StringBuilder	escapedString		= new StringBuilder();
-
-		// Index to keep track of the position in the input string
-		int				lastIndex			= 0;
-
-		while ( matcher.find() ) {
-			// Append text between matches and the match itself
-			escapedString.append( input, lastIndex, matcher.start() );
-			escapedString.append( matcher.group() );
-
-			// Update lastIndex to the end of the current match
-			lastIndex = matcher.end();
-		}
-
-		// Append remaining text after the last match
-		escapedString.append( input.substring( lastIndex ) );
-
 		// Escape the remaining curly braces that are not part of valid quantifiers
-		String finalResult = escapedString.toString().replaceAll( "\\{", "\\\\{" ).replaceAll( "\\}", "\\\\}" );
-
-		return finalResult;
+		return input.toString().replaceAll( "\\{\\{", "\\\\{\\\\{" ).replaceAll( "\\}\\}", "\\\\}\\\\}" );
 	}
 
 }

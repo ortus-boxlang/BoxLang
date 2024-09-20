@@ -405,4 +405,26 @@ public class ReFindTest {
 		// @formatter:on
 	}
 
+	@DisplayName( "qb parse table name" )
+	@Test
+	public void testParseQBTableName() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+			result = reFindNoCase(
+                "(.*?)(?:\\s(?:AS\\s){0,1})([^\\)]+)$",
+                "users people",
+                1,
+                true
+            );
+			""",
+		context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( Struct.of(
+		    "LEN", Array.of( 12, 5, 6 ),
+		    "MATCH", Array.of( "users people", "users", "people" ),
+		    "POS", Array.of( 1, 1, 7 )
+		) );
+	}
+
 }
