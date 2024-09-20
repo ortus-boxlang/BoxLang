@@ -3438,4 +3438,32 @@ public class CoreLangTest {
 		);
 	}
 
+	@Test
+	public void testHigherOrderClosure() {
+	// @formatter:off
+	instance.executeSource(
+		"""
+			fullName = ( fname ) => ( lname ) => "#fname# #lname#";
+			result = fullName( "John" )( "Doe" );
+		""",
+		context, BoxSourceType.BOXSCRIPT
+	);
+	// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( "John Doe" );
+	}
+
+	@Test
+	public void testHigherOrderClosureCF() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				fullName = ( fname ) => ( lname ) => "#fname# #lname#";
+				result = fullName( "John" )( "Doe" );
+			""",
+			context, BoxSourceType.CFSCRIPT
+		);
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( "John Doe" );
+	}
+
 }
