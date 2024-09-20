@@ -14,8 +14,6 @@
  */
 package ortus.boxlang.runtime.bifs.global.string;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -30,6 +28,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.util.RegexUtil;
 import ortus.boxlang.runtime.validation.Validator;
 
 @BoxBIF
@@ -37,27 +36,6 @@ import ortus.boxlang.runtime.validation.Validator;
 @BoxMember( type = BoxLangType.STRING, name = "reFind", objectArgument = "string" )
 @BoxMember( type = BoxLangType.STRING, name = "reFindNoCase", objectArgument = "string" )
 public class ReFind extends BIF {
-
-	// POSIX Pattern
-	private static final Pattern				POSIX_PATTERN			= Pattern.compile( "\\[(.*?)\\]" );
-	private static final Pattern				POSIX_PATTERN_NOCASE	= Pattern.compile( "\\[(.*?)\\]", Pattern.CASE_INSENSITIVE );
-
-	// Define POSIX character classes and their Java regex equivalents
-	private static final Map<String, String>	POSIX_MAP				= new HashMap<>();
-	static {
-		POSIX_MAP.put( "[:alnum:]", "a-zA-Z0-9" );
-		POSIX_MAP.put( "[:alpha:]", "a-zA-Z" );
-		POSIX_MAP.put( "[:blank:]", " \\t" );
-		POSIX_MAP.put( "[:cntrl:]", "\\x00-\\x1F\\x7F" );
-		POSIX_MAP.put( "[:digit:]", "0-9" );
-		POSIX_MAP.put( "[:graph:]", "\\x21-\\x7E" );
-		POSIX_MAP.put( "[:lower:]", "a-z" );
-		POSIX_MAP.put( "[:print:]", "\\x20-\\x7E" );
-		POSIX_MAP.put( "[:punct:]", "!\"#$%&'()*+,-./:;<=>?@\\[\\]^_`{|}~" );
-		POSIX_MAP.put( "[:space:]", "\\s" );
-		POSIX_MAP.put( "[:upper:]", "A-Z" );
-		POSIX_MAP.put( "[:xdigit:]", "0-9a-fA-F" );
-	}
 
 	/**
 	 * Constructor
@@ -105,9 +83,9 @@ public class ReFind extends BIF {
 		boolean	noCase					= arguments.get( BIF.__functionName ).equals( Key.reFindNoCase );
 
 		// Posix replacement for character classes
-		reg_expression	= posixReplace( reg_expression, noCase );
+		reg_expression	= RegexUtil.posixReplace( reg_expression, noCase );
 		// Ignore non-quantifier curly braces like PERL
-		reg_expression	= replaceNonQuantiferCurlyBraces( reg_expression );
+		reg_expression	= RegexUtil.replaceNonQuantiferCurlyBraces( reg_expression );
 
 		// Check if the start position is within valid bounds
 		if ( start < 1 ) {
@@ -193,90 +171,4 @@ public class ReFind extends BIF {
 		}
 
 	}
-
-	/**
-	 * Replace POSIX character classes with Java regex equivalents
-	 *
-	 * @param expression The regular expression to modify
-	 * @param noCase     Whether to ignore case
-	 *
-	 * @return The modified regular expression
-	 */
-	public static String posixReplace( String expression, Boolean noCase ) {
-		// Replace POSIX character classes with Java regex equivalents
-		// Use a regex to find POSIX character classes in the regex
-		Matcher posixMatcher = noCase ? POSIX_PATTERN_NOCASE.matcher( expression ) : POSIX_PATTERN.matcher( expression );
-
-		// Return if no match
-		if ( !posixMatcher.find() ) {
-			return expression;
-		}
-
-		// Reset matcher to start from the beginning
-		posixMatcher.reset();
-		StringBuilder sb = new StringBuilder();
-		// Replace each POSIX character class with its Java regex equivalent
-		while ( posixMatcher.find() ) {
-			String insideBrackets = posixMatcher.group( 1 ); // get the content inside the square brackets
-			for ( Map.Entry<String, String> entry : POSIX_MAP.entrySet() ) {
-				insideBrackets = insideBrackets.replace( entry.getKey(), entry.getValue() );
-			}
-			posixMatcher.appendReplacement( sb, Matcher.quoteReplacement( "[" + insideBrackets + "]" ) );
-		}
-		posixMatcher.appendTail( sb );
-
-		// Replace POSIX character classes that are not inside square brackets
-		String returnExpression = sb.toString();
-		for ( Map.Entry<String, String> entry : POSIX_MAP.entrySet() ) {
-			returnExpression = returnExpression.replace( entry.getKey(), "[" + entry.getValue() + "]" );
-		}
-
-		return returnExpression;
-	}
-
-	/**
-	 * Perl regex allows abitrary curly braces in the regex. This function escapes the curly braces that are not part of valid quantifiers.
-	 * Ex: {{foobar}}
-	 * which is not a valid quantifier, will be escaped to \{\{foobar\}\}
-	 * 
-	 * @param input The regular expression string
-	 * 
-	 * @return The escaped regular expression string
-	 */
-	public static String replaceNonQuantiferCurlyBraces( String input ) {
-		// String input = "Example regex with {{invalid}} and {valid{quantifiers}} like {2,4}";
-
-		// Regular expression to match valid quantifiers
-		String			quantifierRegex		= "\\{\\d*,?\\d*\\}";
-
-		// Pattern to match valid quantifiers
-		Pattern			quantifierPattern	= Pattern.compile( quantifierRegex );
-
-		// Matcher for the input string
-		Matcher			matcher				= quantifierPattern.matcher( input );
-
-		// Create a StringBuilder to build the final output
-		StringBuilder	escapedString		= new StringBuilder();
-
-		// Index to keep track of the position in the input string
-		int				lastIndex			= 0;
-
-		while ( matcher.find() ) {
-			// Append text between matches and the match itself
-			escapedString.append( input, lastIndex, matcher.start() );
-			escapedString.append( matcher.group() );
-
-			// Update lastIndex to the end of the current match
-			lastIndex = matcher.end();
-		}
-
-		// Append remaining text after the last match
-		escapedString.append( input.substring( lastIndex ) );
-
-		// Escape the remaining curly braces that are not part of valid quantifiers
-		String finalResult = escapedString.toString().replaceAll( "\\{", "\\\\{" ).replaceAll( "\\}", "\\\\}" );
-
-		return finalResult;
-	}
-
 }
