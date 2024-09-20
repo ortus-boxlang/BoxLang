@@ -91,7 +91,7 @@ public class BoxTryTransformer extends AbstractTransformer {
 
 			TryCatchBlockNode catchHandler = new TryCatchBlockNode( tryStartLabel, tryEndLabel, javaCatchBodyStart,
 			    null );
-			transpiler.addTryCatchBlock( catchHandler );
+			tracker.addTryCatchBlock( catchHandler );
 
 			// if we are here none of our catch handlers matched the error so we inline another finally block
 			if ( boxTry.getFinallyBody().size() == 0 ) {
@@ -106,7 +106,7 @@ public class BoxTryTransformer extends AbstractTransformer {
 
 		TryCatchBlockNode catchHandler = new TryCatchBlockNode( tryStartLabel, tryEndLabel, finallyStartLabel,
 		    null );
-		transpiler.addTryCatchBlock( catchHandler );
+		tracker.addTryCatchBlock( catchHandler );
 
 		nodes.add( finallyStartLabel );
 
@@ -121,7 +121,7 @@ public class BoxTryTransformer extends AbstractTransformer {
 
 		nodes.add( finallyEndLabel );
 
-		transpiler.addTryCatchBlock( new TryCatchBlockNode( tryStartLabel, tryEndLabel, finallyStartLabel, null ) );
+		tracker.addTryCatchBlock( new TryCatchBlockNode( tryStartLabel, tryEndLabel, finallyStartLabel, null ) );
 
 		return nodes;
 
@@ -139,6 +139,12 @@ public class BoxTryTransformer extends AbstractTransformer {
 			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
 			if ( returnValueContext != ReturnValueContext.VALUE_OR_NULL ) {
 				nodes.add( new InsnNode( Opcodes.POP ) );
+			}
+
+			AbstractInsnNode inBetweenNode = inBetween.get();
+
+			if ( inBetweenNode != null ) {
+				nodes.add( inBetweenNode );
 			}
 		}
 
@@ -213,7 +219,7 @@ public class BoxTryTransformer extends AbstractTransformer {
 		nodes.add( new JumpInsnNode( Opcodes.GOTO, finallyEndLabel ) );
 		nodes.add( endHandlerLabel );
 
-		transpiler.addTryCatchBlock( new TryCatchBlockNode( startHandlerLabel, endHandlerLabel, finallyStartLabel, null ) );
+		tracker.addTryCatchBlock( new TryCatchBlockNode( startHandlerLabel, endHandlerLabel, finallyStartLabel, null ) );
 
 		return nodes;
 	}

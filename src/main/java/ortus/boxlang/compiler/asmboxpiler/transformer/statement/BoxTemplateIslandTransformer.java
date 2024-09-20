@@ -15,46 +15,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.compiler.asmboxpiler.transformer.expression;
+package ortus.boxlang.compiler.asmboxpiler.transformer.statement;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
-import org.objectweb.asm.tree.MethodInsnNode;
 
-import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxNode;
-import ortus.boxlang.compiler.ast.expression.BoxStringConcat;
-import ortus.boxlang.runtime.operators.Concat;
+import ortus.boxlang.compiler.ast.BoxStatement;
+import ortus.boxlang.compiler.ast.statement.component.BoxTemplateIsland;
 
-public class BoxStringConcatTransformer extends AbstractTransformer {
+public class BoxTemplateIslandTransformer extends AbstractTransformer {
 
-	public BoxStringConcatTransformer( Transpiler transpiler ) {
+	public BoxTemplateIslandTransformer( Transpiler transpiler ) {
 		super( transpiler );
 	}
 
 	@Override
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnContext ) throws IllegalStateException {
-		BoxStringConcat interpolation = ( BoxStringConcat ) node;
-		if ( interpolation.getValues().size() == 1 ) {
-			return transpiler.transform( interpolation.getValues().get( 0 ), TransformerContext.NONE, returnContext );
-		} else {
-			List<AbstractInsnNode> nodes = new ArrayList<>();
-			nodes.addAll( AsmHelper.array( Type.getType( Object.class ), interpolation.getValues(),
-			    ( value, i ) -> transpiler.transform( value, TransformerContext.NONE, ReturnValueContext.VALUE ) ) );
-			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
-			    Type.getInternalName( Concat.class ),
-			    "invoke",
-			    Type.getMethodDescriptor( Type.getType( String.class ), Type.getType( Object[].class ) ),
-			    false ) );
-			return nodes;
+		BoxTemplateIsland		templateIsland	= ( BoxTemplateIsland ) node;
+
+		List<AbstractInsnNode>	nodes			= new ArrayList<>();
+		for ( BoxStatement statement : templateIsland.getStatements() ) {
+			nodes.addAll( transpiler.transform( statement, context, returnContext ) );
 		}
+
+		return nodes;
 	}
 }

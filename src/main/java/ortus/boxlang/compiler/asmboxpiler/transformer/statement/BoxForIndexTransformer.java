@@ -58,11 +58,11 @@ public class BoxForIndexTransformer extends AbstractTransformer {
 		LabelNode	loopStart	= new LabelNode();
 		LabelNode	loopEnd		= new LabelNode();
 
-		transpiler.setCurrentBreak( forIn.getLabel(), breakTarget );
-		transpiler.setCurrentBreak( null, breakTarget );
+		transpiler.getCurrentMethodContextTracker().get().setCurrentBreak( forIn.getLabel(), breakTarget );
+		transpiler.getCurrentMethodContextTracker().get().setCurrentBreak( null, breakTarget );
 
-		transpiler.setCurrentContinue( null, loopStart );
-		transpiler.setCurrentContinue( forIn.getLabel(), loopStart );
+		transpiler.getCurrentMethodContextTracker().get().setCurrentContinue( null, loopStart );
+		transpiler.getCurrentMethodContextTracker().get().setCurrentContinue( forIn.getLabel(), loopStart );
 
 		if ( forIn.getInitializer() != null ) {
 			nodes.addAll( transpiler.transform( forIn.getInitializer(), context, ReturnValueContext.EMPTY ) );

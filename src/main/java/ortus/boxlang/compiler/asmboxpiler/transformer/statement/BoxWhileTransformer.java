@@ -51,11 +51,11 @@ public class BoxWhileTransformer extends AbstractTransformer {
 		// if ( boxWhile.getLabel() != null ) {
 
 		// }
-		transpiler.setCurrentBreak( boxWhile.getLabel(), breakTarget );
-		transpiler.setCurrentBreak( "", breakTarget );
+		transpiler.getCurrentMethodContextTracker().get().setCurrentBreak( boxWhile.getLabel(), breakTarget );
+		transpiler.getCurrentMethodContextTracker().get().setCurrentBreak( "", breakTarget );
 
-		transpiler.setCurrentContinue( null, start );
-		transpiler.setCurrentContinue( boxWhile.getLabel(), start );
+		transpiler.getCurrentMethodContextTracker().get().setCurrentContinue( null, start );
+		transpiler.getCurrentMethodContextTracker().get().setCurrentContinue( boxWhile.getLabel(), start );
 
 		// push two nulls onto the stack in order to initialize our strategy for keeping the stack height consistent
 		// this is to allow the statement to return an expression in the case of a BoxScript execution

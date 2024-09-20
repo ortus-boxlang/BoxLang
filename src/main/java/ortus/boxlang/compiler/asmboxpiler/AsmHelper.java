@@ -45,15 +45,83 @@ import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 public class AsmHelper {
 
+	public static List<AbstractInsnNode> callinvokeFunction(
+	    Transpiler transpiler,
+	    List<BoxArgument> args,
+	    List<AbstractInsnNode> name,
+	    TransformerContext context,
+	    boolean safe ) {
+		List<AbstractInsnNode> nodes = new ArrayList<AbstractInsnNode>();
+
+		nodes.addAll( name );
+
+		// handle positional args
+		if ( args.size() == 0 || args.get( 0 ).getName() == null ) {
+			nodes.addAll(
+			    AsmHelper.array( Type.getType( Object.class ), args,
+			        ( argument, i ) -> transpiler.transform( args.get( i ), context, ReturnValueContext.VALUE ) )
+			);
+
+			nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
+			    Type.getInternalName( IBoxContext.class ),
+			    "invokeFunction",
+			    Type.getMethodDescriptor( Type.getType( Object.class ), Type.getType( Key.class ), Type.getType( Object[].class ) ),
+			    true ) );
+
+			return nodes;
+		}
+
+		List<List<AbstractInsnNode>> keyValues = args.stream()
+		    .map( arg -> {
+			    List<List<AbstractInsnNode>> kv = List.of(
+			        transpiler.createKey( arg.getName() ),
+			        transpiler.transform( arg, context, ReturnValueContext.VALUE )
+			    );
+
+			    return kv;
+		    } )
+		    .flatMap( x -> x.stream() )
+		    .collect( Collectors.toList() );
+
+		nodes.addAll( AsmHelper.array( Type.getType( Object.class ), keyValues ) );
+
+		nodes.add(
+		    new MethodInsnNode( Opcodes.INVOKESTATIC,
+		        Type.getInternalName( Struct.class ),
+		        "of",
+		        Type.getMethodDescriptor( Type.getType( IStruct.class ), Type.getType( Object[].class ) ),
+		        false
+		    )
+		);
+
+		nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
+		    Type.getInternalName( IBoxContext.class ),
+		    "invokeFunction",
+		    Type.getMethodDescriptor( Type.getType( Object.class ), Type.getType( Key.class ), Type.getType( Map.class ) ),
+		    true ) );
+
+		return nodes;
+
+	}
+
 	public static List<AbstractInsnNode> callReferencerGetAndInvoke(
 	    Transpiler transpiler,
 	    List<BoxArgument> args,
 	    String name,
 	    TransformerContext context,
 	    boolean safe ) {
+		return callReferencerGetAndInvoke( transpiler, args, transpiler.createKey( name ), context, safe );
+	}
+
+	public static List<AbstractInsnNode> callReferencerGetAndInvoke(
+	    Transpiler transpiler,
+	    List<BoxArgument> args,
+	    List<AbstractInsnNode> name,
+	    TransformerContext context,
+	    boolean safe ) {
 		List<AbstractInsnNode> nodes = new ArrayList<AbstractInsnNode>();
 
-		nodes.addAll( transpiler.createKey( name ) );
+		nodes.addAll( name );
 
 		// handle positional args
 		if ( args.size() == 0 || args.get( 0 ).getName() == null ) {
@@ -490,8 +558,8 @@ public class AsmHelper {
 
 		// TODO needs to only use try catches that match labels in the above node list
 		// TODO should only clear the used nodes
-		transpiler.getTryCatchStack().stream().forEach( ( tryNode ) -> tryNode.accept( methodVisitor ) );
-		transpiler.clearTryCatchStack();
+		tracker.getTryCatchStack().stream().forEach( ( tryNode ) -> tryNode.accept( methodVisitor ) );
+		tracker.clearTryCatchStack();
 		methodVisitor.visitEnd();
 		transpiler.popMethodContextTracker();
 	}

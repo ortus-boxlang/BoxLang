@@ -263,29 +263,29 @@ public abstract class Transpiler implements ITranspiler {
 		return transformAnnotations( annotations, false, true );
 	}
 
-	public LabelNode getCurrentBreak( String label ) {
-		return breaks.get( label == null ? "" : label );
-	}
+	// public LabelNode getCurrentBreak( String label ) {
+	// return breaks.get( label == null ? "" : label );
+	// }
 
-	public void setCurrentBreak( String label, LabelNode labelNode ) {
-		this.breaks.put( label == null ? "" : label, labelNode );
-	}
+	// public void setCurrentBreak( String label, LabelNode labelNode ) {
+	// this.breaks.put( label == null ? "" : label, labelNode );
+	// }
 
-	public void removeCurrentBreak( String label ) {
-		this.breaks.remove( label == null ? "" : label );
-	}
+	// public void removeCurrentBreak( String label ) {
+	// this.breaks.remove( label == null ? "" : label );
+	// }
 
-	public LabelNode getCurrentContinue( String label ) {
-		return continues.get( label == null ? "" : label );
-	}
+	// public LabelNode getCurrentContinue( String label ) {
+	// return continues.get( label == null ? "" : label );
+	// }
 
-	public void setCurrentContinue( String label, LabelNode labelNode ) {
-		this.continues.put( label == null ? "" : label, labelNode );
-	}
+	// public void setCurrentContinue( String label, LabelNode labelNode ) {
+	// this.continues.put( label == null ? "" : label, labelNode );
+	// }
 
-	public void removeCurrentContinue( String label ) {
-		this.continues.remove( label == null ? "" : label );
-	}
+	// public void removeCurrentContinue( String label ) {
+	// this.continues.remove( label == null ? "" : label );
+	// }
 
 	public void addImport( BoxExpression expression, BoxIdentifier alias ) {
 		imports.add( ImportDefinition.parse( alias == null

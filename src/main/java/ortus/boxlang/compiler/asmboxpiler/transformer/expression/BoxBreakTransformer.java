@@ -42,11 +42,16 @@ public class BoxBreakTransformer extends AbstractTransformer {
 
 	@Override
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnContext ) throws IllegalStateException {
-		BoxBreak				breakNode		= ( BoxBreak ) node;
-		ExitsAllowed			exitsAllowed	= getExitsAllowed( node );
+		BoxBreak		breakNode		= ( BoxBreak ) node;
+		ExitsAllowed	exitsAllowed	= getExitsAllowed( node );
 
-		LabelNode				currentBreak	= transpiler.getCurrentBreak( breakNode.getLabel() );
-		List<AbstractInsnNode>	nodes			= new ArrayList<AbstractInsnNode>();
+		LabelNode		currentBreak	= null;
+
+		if ( transpiler.getCurrentMethodContextTracker().isPresent() ) {
+			currentBreak = transpiler.getCurrentMethodContextTracker().get().getCurrentBreak( breakNode.getLabel() );
+		}
+
+		List<AbstractInsnNode> nodes = new ArrayList<AbstractInsnNode>();
 
 		if ( returnContext.nullable || exitsAllowed.equals( ExitsAllowed.FUNCTION ) ) {
 			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );

@@ -96,9 +96,9 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 			    false ) );
 			nodes.add( new JumpInsnNode( Opcodes.IFEQ, endOfCase ) );
 			nodes.add( startOfCase );
-			transpiler.setCurrentBreak( null, endLabel );
+			transpiler.getCurrentMethodContextTracker().get().setCurrentBreak( null, endLabel );
 			c.getBody().forEach( stmt -> nodes.addAll( transpiler.transform( stmt, TransformerContext.NONE ) ) );
-			transpiler.removeCurrentBreak( null ); // TODO: label name?
+			transpiler.getCurrentMethodContextTracker().get().removeCurrentBreak( null ); // TODO: label name?
 			nodes.add( new LdcInsnNode( 1 ) );
 			nodes.add( new JumpInsnNode( Opcodes.GOTO, endOfAll ) );
 			nodes.add( endOfCase );
@@ -114,9 +114,14 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 					throw new ExpressionException( "Multiple default cases not supported", c.getPosition(), c.getSourceText() );
 				}
 				hasDefault = true;
+				nodes.add( new InsnNode( Opcodes.POP ) );
+				transpiler.getCurrentMethodContextTracker().get().setCurrentBreak( null, endLabel );
 				c.getBody().forEach( stmt -> nodes.addAll( transpiler.transform( stmt, TransformerContext.NONE ) ) );
+				transpiler.getCurrentMethodContextTracker().get().removeCurrentBreak( null );
+				nodes.add( new JumpInsnNode( Opcodes.GOTO, endLabel ) );
 			}
 		}
+
 		nodes.add( new InsnNode( Opcodes.POP ) );
 		nodes.add( endLabel );
 		nodes.add( new InsnNode( Opcodes.POP ) );

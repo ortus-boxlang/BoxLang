@@ -67,6 +67,7 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxIfElseTransfo
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxRethrowTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxScriptIslandTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxStaticInitializerTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxTemplateIslandTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxThrowTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxTryTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxWhileTransformer;
@@ -128,6 +129,7 @@ import ortus.boxlang.compiler.ast.statement.BoxThrow;
 import ortus.boxlang.compiler.ast.statement.BoxTry;
 import ortus.boxlang.compiler.ast.statement.BoxWhile;
 import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
+import ortus.boxlang.compiler.ast.statement.component.BoxTemplateIsland;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
@@ -203,6 +205,7 @@ public class AsmTranspiler extends Transpiler {
 		registry.put( BoxStaticAccess.class, new BoxStaticAccessTransformer( this ) );
 		registry.put( BoxStaticMethodInvocation.class, new BoxStaticMethodInvocationTransformer( this ) );
 		registry.put( BoxScriptIsland.class, new BoxScriptIslandTransformer( this ) );
+		registry.put( BoxTemplateIsland.class, new BoxTemplateIslandTransformer( this ) );
 	}
 
 	@Override

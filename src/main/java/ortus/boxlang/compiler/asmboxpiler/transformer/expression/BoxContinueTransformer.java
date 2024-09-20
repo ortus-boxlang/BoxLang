@@ -38,11 +38,16 @@ public class BoxContinueTransformer extends AbstractTransformer {
 
 	@Override
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnContext ) throws IllegalStateException {
-		BoxContinue				continueNode	= ( BoxContinue ) node;
-		ExitsAllowed			exitsAllowed	= getExitsAllowed( node );
+		BoxContinue		continueNode	= ( BoxContinue ) node;
+		ExitsAllowed	exitsAllowed	= getExitsAllowed( node );
 
-		LabelNode				currentBreak	= transpiler.getCurrentContinue( continueNode.getLabel() );
-		List<AbstractInsnNode>	nodes			= new ArrayList<AbstractInsnNode>();
+		LabelNode		currentBreak	= transpiler.getCurrentMethodContextTracker().get().getCurrentContinue( continueNode.getLabel() );
+
+		if ( transpiler.getCurrentMethodContextTracker().isPresent() ) {
+			currentBreak = transpiler.getCurrentMethodContextTracker().get().getCurrentContinue( continueNode.getLabel() );
+		}
+
+		List<AbstractInsnNode> nodes = new ArrayList<AbstractInsnNode>();
 
 		if ( returnContext.nullable || exitsAllowed.equals( ExitsAllowed.FUNCTION ) ) {
 			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );

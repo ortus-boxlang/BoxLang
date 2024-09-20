@@ -20,6 +20,7 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
@@ -118,8 +119,14 @@ public class BoxLambdaTransformer extends AbstractTransformer {
 
 		AsmHelper.methodWithContextAndClassLocator( classNode, "_invoke", Type.getType( FunctionBoxContext.class ), Type.getType( Object.class ), false,
 		    transpiler, false,
-		    () -> boxLambda.getBody().getChildren().stream().flatMap( statement -> transpiler.transform( statement, TransformerContext.NONE ).stream() )
-		        .toList() );
+		    () -> {
+			    if ( boxLambda.getBody().getChildren().size() == 0 ) {
+				    return List.of( new InsnNode( Opcodes.ACONST_NULL ) );
+			    }
+			    return boxLambda.getBody().getChildren().stream()
+			        .flatMap( statement -> transpiler.transform( statement, TransformerContext.NONE, ReturnValueContext.VALUE_OR_NULL ).stream() )
+			        .toList();
+		    } );
 
 		AsmHelper.complete( classNode, type, methodVisitor -> {
 			methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,

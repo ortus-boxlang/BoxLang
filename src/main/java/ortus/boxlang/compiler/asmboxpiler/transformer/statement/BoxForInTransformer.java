@@ -67,6 +67,12 @@ public class BoxForInTransformer extends AbstractTransformer {
 		LabelNode				loopStart	= new LabelNode();
 		LabelNode				loopEnd		= new LabelNode();
 
+		transpiler.getCurrentMethodContextTracker().get().setCurrentContinue( null, loopStart );
+		transpiler.getCurrentMethodContextTracker().get().setCurrentContinue( forIn.getLabel(), loopStart );
+
+		transpiler.getCurrentMethodContextTracker().get().setCurrentBreak( null, loopEnd );
+		transpiler.getCurrentMethodContextTracker().get().setCurrentBreak( forIn.getLabel(), loopEnd );
+
 		// access the collection
 		nodes.addAll( transpiler.transform( forIn.getExpression(), context ) );
 		// unwrap it
