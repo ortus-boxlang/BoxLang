@@ -959,4 +959,17 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		return new ImmutableQuery( this );
 	}
 
+	public Array asArrayOfStructs() {
+		Array arr = new Array();
+		for ( int i = 0; i < data.size(); i++ ) {
+			arr.add( getRowAsStruct( i ) );
+		}
+		return arr;
+	}
+
+	@Override
+	public String toString() {
+		return asString();
+	}
+
 }
