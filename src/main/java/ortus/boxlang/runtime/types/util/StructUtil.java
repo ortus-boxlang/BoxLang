@@ -33,7 +33,6 @@ import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
 
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
@@ -527,19 +526,39 @@ public class StructUtil {
 	 * @return the recipient struct merged
 	 */
 	public static IStruct deepMerge( IStruct recipient, IStruct merge ) {
+		return deepMerge( recipient, merge, false );
+	}
+
+	/**
+	 * Performs a deep merge on two structs. If override is set to true, it will override all keys in the recipeient with keys from the merge struct.
+	 * If set to false, it will only add top level and deep values not present in the recipient
+	 *
+	 * @param recipient The struct to merge into
+	 * @param merge     The struct to merge from
+	 * @param override  Whether to override the recipient keys with the merge keys
+	 *
+	 * @return the recipient struct merged
+	 */
+	public static IStruct deepMerge( IStruct recipient, IStruct merge, boolean override ) {
 		merge.entrySet().forEach(
 		    entry -> {
-			    if ( entry.getValue() instanceof IStruct && recipient.get( entry.getKey() ) instanceof IStruct ) {
-				    StructUtil.deepMerge( StructCaster.cast( entry.getValue() ), StructCaster.cast( recipient.get( entry.getKey() ) ) );
-			    } else if ( entry.getValue() instanceof Array && recipient.get( entry.getKey() ) instanceof Array ) {
-				    Array mergeable = ArrayCaster.cast( recipient.get( entry.getKey() ) );
-				    ArrayCaster.cast( entry.getValue() ).stream().forEach( item -> {
-					    if ( !mergeable.contains( entry.getValue() ) ) {
-						    mergeable.add( entry.getValue() );
+			    if ( entry.getValue() instanceof IStruct mergeStruct && recipient.get( entry.getKey() ) instanceof IStruct recipStruct ) {
+				    StructUtil.deepMerge( recipStruct, mergeStruct, override );
+			    } else if ( entry.getValue() instanceof Array merageArray && recipient.get( entry.getKey() ) instanceof Array recipArray ) {
+				    merageArray.stream().forEach( item -> {
+					    if ( !recipArray.contains( entry.getValue() ) ) {
+						    recipArray.add( entry.getValue() );
 					    }
 				    } );
 			    } else {
-				    recipient.putIfAbsent( entry.getKey(), entry.getValue() );
+				    System.out.println( "entry.getKey() = " + entry.getKey() );
+				    System.out.println( "entry.getValue() = " + entry.getValue() );
+				    System.out.println( "override = " + override );
+				    if ( override ) {
+					    recipient.put( entry.getKey(), entry.getValue() );
+				    } else {
+					    recipient.putIfAbsent( entry.getKey(), entry.getValue() );
+				    }
 			    }
 		    }
 		);

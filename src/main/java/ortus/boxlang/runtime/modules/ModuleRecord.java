@@ -412,7 +412,7 @@ public class ModuleRecord {
 		// Append any module settings found in the runtime configuration
 		if ( runtime.getConfiguration().modules.containsKey( this.name ) ) {
 			ModuleConfig config = ( ModuleConfig ) runtime.getConfiguration().modules.get( this.name );
-			StructUtil.deepMerge( this.settings, config.settings );
+			StructUtil.deepMerge( this.settings, config.settings, true );
 		}
 
 		this.interceptors				= variablesScope.getAsArray( Key.interceptors );

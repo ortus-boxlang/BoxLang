@@ -235,6 +235,10 @@ public class GenericCaster implements IBoxCaster {
 			return ThrowableCaster.cast( object, fail );
 		}
 
+		if ( type.equals( "key" ) ) {
+			return KeyCaster.cast( object, fail );
+		}
+
 		if ( type.startsWith( "function:" ) && type.length() > 9 ) {
 			// strip off class name from "function:com.foo.Bar"
 			return FunctionCaster.cast( object, originalCaseType.substring( 9 ), fail );
