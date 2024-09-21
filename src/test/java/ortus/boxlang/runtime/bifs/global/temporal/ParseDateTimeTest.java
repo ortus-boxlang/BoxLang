@@ -305,4 +305,24 @@ public class ParseDateTimeTest {
 		assertThat( IntegerCaster.cast( result.format( "n" ) ) ).isEqualTo( 0 );
 	}
 
+	@DisplayName( "It tests the BIF ParseDateTime using the common Chrome/Firefox Javascript toString format" )
+	@Test
+	public void testParseJSStringDate() {
+		instance.executeSource(
+		    """
+		    result = ParseDateTime( "Wed Sep 18 2024 09:20:47 GMT-0700 (Pacific Daylight Time)" );
+		    """,
+		    context );
+		DateTime result = ( DateTime ) variables.get( Key.of( "result" ) );
+		assertThat( result ).isInstanceOf( DateTime.class );
+		assertThat( result.toString() ).isInstanceOf( String.class );
+		assertThat( IntegerCaster.cast( result.format( "yyyy" ) ) ).isEqualTo( 2024 );
+		assertThat( IntegerCaster.cast( result.format( "M" ) ) ).isEqualTo( 9 );
+		assertThat( IntegerCaster.cast( result.format( "d" ) ) ).isEqualTo( 18 );
+		assertThat( IntegerCaster.cast( result.format( "H" ) ) ).isEqualTo( 9 );
+		assertThat( IntegerCaster.cast( result.format( "m" ) ) ).isEqualTo( 20 );
+		assertThat( IntegerCaster.cast( result.format( "s" ) ) ).isEqualTo( 47 );
+
+	}
+
 }
