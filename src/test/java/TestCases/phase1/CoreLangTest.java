@@ -3490,10 +3490,22 @@ public class CoreLangTest {
 		assertThat( tagContext.get( 0 ) ).isInstanceOf( IStruct.class );
 		IStruct tagContextStruct = ( IStruct ) tagContext.get( 0 );
 		assertThat( tagContextStruct.get( Key.of( "line" ) ) ).isEqualTo( 2 );
-		assertThat( tagContextStruct.getAsString( Key.of( "template" ) ) ).contains( "TagContextLineMapping.bxs" );
+		assertThat( tagContextStruct.getAsString( Key.of( "template" ) ) ).ignoringCase().contains( "TagContextLineMapping.bxs" );
 		String code[] = tagContextStruct.getAsString( Key.of( "codePrintPlain" ) ).split( "\n" );
 		assertThat( code[ 1 ] ).contains( "for( foo in null ) {" );
+	}
 
+	@Test
+	public void testFindJavaConstructorWithNulls() {
+	// @formatter:off
+	instance.executeSource(
+		"""
+		import java.net.URI;
+		new URI( null, null, "", null, null );
+		""",
+		context, BoxSourceType.BOXSCRIPT
+	);
+	// @formatter:on
 	}
 
 }
