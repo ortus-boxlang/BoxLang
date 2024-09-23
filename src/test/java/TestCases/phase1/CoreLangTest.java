@@ -3454,16 +3454,45 @@ public class CoreLangTest {
 
 	@Test
 	public void testHigherOrderClosureCF() {
+	// @formatter:off
+	instance.executeSource(
+		"""
+			fullName = ( fname ) => ( lname ) => "#fname# #lname#";
+			result = fullName( "John" )( "Doe" );
+		""",
+		context, BoxSourceType.CFSCRIPT
+	);
+	// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( "John Doe" );
+	}
+
+	@Test
+	public void testTagContextLineMapping() {
 		// @formatter:off
 		instance.executeSource(
 			"""
-				fullName = ( fname ) => ( lname ) => "#fname# #lname#";
-				result = fullName( "John" )( "Doe" );
+			tagContext = [];
+			try {
+				include "src/test/java/TestCases/phase1/TagContextLineMapping.bxs";
+				foo()
+			} catch( any e ) {
+				tagContext = e.tagContext;
+				println(tagContext)
+			}
 			""",
 			context, BoxSourceType.CFSCRIPT
 		);
 		// @formatter:on
-		assertThat( variables.get( result ) ).isEqualTo( "John Doe" );
+		assertThat( variables.get( Key.of( "tagContext" ) ) ).isInstanceOf( Array.class );
+		Array tagContext = variables.getAsArray( Key.of( "tagContext" ) );
+		assertThat( tagContext.size() ).isGreaterThan( 0 );
+		assertThat( tagContext.get( 0 ) ).isInstanceOf( IStruct.class );
+		IStruct tagContextStruct = ( IStruct ) tagContext.get( 0 );
+		assertThat( tagContextStruct.get( Key.of( "line" ) ) ).isEqualTo( 2 );
+		assertThat( tagContextStruct.getAsString( Key.of( "template" ) ) ).contains( "TagContextLineMapping.bxs" );
+		String code[] = tagContextStruct.getAsString( Key.of( "codePrintPlain" ) ).split( "\n" );
+		assertThat( code[ 1 ] ).contains( "for( foo in null ) {" );
+
 	}
 
 }
