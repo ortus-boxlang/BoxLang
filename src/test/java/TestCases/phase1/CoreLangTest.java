@@ -3477,6 +3477,7 @@ public class CoreLangTest {
 				foo()
 			} catch( any e ) {
 				tagContext = e.tagContext;
+				e.printStackTrace();
 				println(tagContext)
 			}
 			""",
