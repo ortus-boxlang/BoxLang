@@ -75,6 +75,11 @@ import ortus.boxlang.runtime.types.util.ListUtil;
 public final class FileSystemUtil {
 
 	/**
+	 * Flag for whether FS is case sensitive or not to short circuit case insensitive path resolution
+	 */
+	private static boolean				isCaseSensitiveFS		= caseSensitivityCheck();
+
+	/**
 	 * The default charset for file operations in BoxLang
 	 */
 	public static final Charset			DEFAULT_CHARSET			= StandardCharsets.UTF_8;
@@ -1070,6 +1075,86 @@ public final class FileSystemUtil {
 		} catch ( IOException e ) {
 			throw new BoxIOException( e );
 		}
+	}
+
+	/**
+	 * Performs case insensitive path resolution. This will return the real path, which may be different in case than the incoming path.
+	 * 
+	 * @param path The path to check
+	 * 
+	 * @return The resolved path or null if not found
+	 */
+	public static Path pathExistsCaseInsensitive( Path path ) {
+		Boolean defaultCheck = Files.exists( path );
+		if ( defaultCheck ) {
+			try {
+				return path.toRealPath();
+			} catch ( IOException e ) {
+				return null;
+			}
+		}
+		if ( isCaseSensitiveFS ) {
+			String		realPath		= "";
+			String[]	pathSegments	= path.toString().replace( '\\', '/' ).split( "/" );
+			if ( pathSegments.length > 0 && pathSegments[ 0 ].contains( ":" ) ) {
+				realPath = pathSegments[ 0 ];
+			}
+			Boolean first = true;
+			for ( String thisSegment : pathSegments ) {
+				// Skip windows drive letter
+				if ( realPath == pathSegments[ 0 ] && pathSegments[ 0 ].contains( ":" ) && first ) {
+					first = false;
+					continue;
+				}
+				// Skip empty segments
+				if ( thisSegment.length() == 0 ) {
+					continue;
+				}
+
+				Boolean		found		= false;
+				String[]	children	= new File( realPath + "/" ).list();
+				// This will happen if we have a matched file in the middle of a path like /foo/index.cfm/bar
+				if ( children == null ) {
+					return null;
+				}
+				for ( String thisChild : children ) {
+					// We're taking the FIRST MATCH. Buyer beware
+					if ( thisSegment.equalsIgnoreCase( thisChild ) ) {
+						realPath	+= "/" + thisChild;
+						found		= true;
+						break;
+					}
+				}
+				// If we made it through the inner loop without a match, we've hit a dead end
+				if ( !found ) {
+					return null;
+				}
+			}
+			// If we made it through the outer loop, we've found a match
+			Path realPathFinal = Paths.get( realPath );
+			return realPathFinal;
+		}
+		return null;
+	}
+
+	private static boolean caseSensitivityCheck() {
+		try {
+			File	currentWorkingDir	= new File( System.getProperty( "user.home" ) );
+			File	case1				= new File( currentWorkingDir, "case1" );
+			File	case2				= new File( currentWorkingDir, "Case1" );
+			case1.createNewFile();
+			if ( case2.createNewFile() ) {
+				case1.delete();
+				case2.delete();
+				return true;
+			} else {
+				case1.delete();
+				return false;
+			}
+		} catch ( Throwable e ) {
+			e.printStackTrace();
+		}
+		return true;
 	}
 
 }
