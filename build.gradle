@@ -106,7 +106,7 @@ dependencies {
 
 	// Implementation Dependencies
 	// https://mvnrepository.com/artifact/commons-io/commons-io
-	implementation "commons-io:commons-io:2.16.1"
+	implementation "commons-io:commons-io:2.17.0"
 	// https://mvnrepository.com/artifact/com.github.javaparser/javaparser-symbol-solver-core
 	implementation 'com.github.javaparser:javaparser-symbol-solver-core:3.26.2'
 	// https://mvnrepository.com/artifact/org.apache.commons/commons-lang3
