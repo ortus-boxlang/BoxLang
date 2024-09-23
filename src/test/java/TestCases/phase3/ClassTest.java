@@ -1328,7 +1328,7 @@ public class ClassTest {
 	public void testBinderProperties() {
 		instance.executeSource(
 		    """
-		      	cfc = new src.test.java.TestCases.phase3.Binder("my injector");
+		      	cfc = new src.test.java.TestCases.phase3.ConcreteBinder("my injector");
 		    properties = cfc.getProperties();
 		    currentMapping = cfc.getCurrentMapping();
 		      """, context );

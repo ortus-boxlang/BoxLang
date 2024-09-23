@@ -77,7 +77,7 @@ public class BoxClassSupport {
 	public static void defaultProperties( IClassRunnable thisClass, IBoxContext context ) {
 		// loop over properties and create variables.
 		for ( var property : thisClass.getProperties().values() ) {
-			Object existing = thisClass.getThisScope().get( property.name() );
+			Object existing = thisClass.getVariablesScope().get( property.name() );
 			// Don't override existing values, probably from a super class
 			// But UDFs of the same name? Yeah, nuke those suckers, lol. (╥﹏╥)
 			if ( existing == null || existing instanceof Function ) {
