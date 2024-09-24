@@ -15,9 +15,11 @@
 package ortus.boxlang.compiler.ast.visitor;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 
 import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxExpression;
@@ -37,16 +39,23 @@ import ortus.boxlang.compiler.ast.statement.BoxProperty;
 import ortus.boxlang.compiler.ast.statement.BoxReturnType;
 import ortus.boxlang.compiler.ast.statement.BoxType;
 import ortus.boxlang.compiler.javaboxpiler.transformer.BoxClassTransformer;
+import ortus.boxlang.compiler.parser.Parser;
+import ortus.boxlang.compiler.parser.ParsingResult;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
+import ortus.boxlang.runtime.loader.resolvers.BoxResolver;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
+import ortus.boxlang.runtime.types.exceptions.ParseException;
 import ortus.boxlang.runtime.util.FQN;
 import ortus.boxlang.runtime.util.FileSystemUtil;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 /**
  * I generate metadata for a class or interface based on the AST without needing to instantiate or even compile the code
@@ -68,7 +77,11 @@ public class ClassMetadataVisitor extends VoidBoxVisitor {
 
 	private boolean		accessors	= false;
 
+	private Path		sourcePath;
+
 	private IBoxContext	context;
+
+	private BoxResolver	BXResolver	= BoxResolver.getInstance();
 
 	/**
 	 * Constructor
@@ -107,13 +120,40 @@ public class ClassMetadataVisitor extends VoidBoxVisitor {
 		} else {
 			accessors = true;
 		}
-		processName( node, meta );
+		processName( node );
+		if ( meta.getAsStruct( Key.annotations ).containsKey( Key._EXTENDS ) ) {
+			meta.put( Key._EXTENDS, processSuper( meta.getAsStruct( Key.annotations ).getAsString( Key._EXTENDS ) ) );
+		}
 		super.visit( node );
 	}
 
-	private void processName( BoxNode node, IStruct meta ) {
+	private IStruct processSuper( String superName ) {
+		if ( this.sourcePath != null ) {
+			context.pushTemplate( ResolvedFilePath.of( this.sourcePath ) );
+		}
+		Optional<ClassLocation> superLookup = BXResolver.resolve( context, superName, false );
+		if ( this.sourcePath != null ) {
+			context.popTemplate();
+		}
+		if ( !superLookup.isPresent() ) {
+			throw new BoxRuntimeException( "Super class [" + superName + "] not found" );
+		}
+		String			superDiskPath	= superLookup.get().path();
+
+		ParsingResult	result			= new Parser().parse( Paths.get( superDiskPath ).toAbsolutePath().toFile() );
+		if ( !result.isCorrect() ) {
+			throw new ParseException( result.getIssues(), "" );
+		}
+		ClassMetadataVisitor visitor = new ClassMetadataVisitor();
+		result.getRoot().accept( visitor );
+
+		return visitor.getMetadata();
+	}
+
+	private void processName( BoxNode node ) {
 		if ( node.getPosition() != null && node.getPosition().getSource() != null && node.getPosition().getSource() instanceof SourceFile sf ) {
-			File	sourceFile		= sf.getFile();
+			File sourceFile = sf.getFile();
+			this.sourcePath = sourceFile.toPath();
 			var		contractedPath	= FileSystemUtil.contractPath( context, sourceFile.toString() );
 			String	name			= sourceFile.getName().replaceFirst( "[.][^.]+$", "" );
 			String	packageName		= FQN.of( Paths.get( contractedPath.relativePath() ) ).getPackageString();
@@ -130,7 +170,7 @@ public class ClassMetadataVisitor extends VoidBoxVisitor {
 		meta.put( Key._NAME, "" );
 		meta.put( Key.fullname, "" );
 		meta.put( Key.nameAsKey, Key.of( "" ) );
-		processName( node, meta );
+		processName( node );
 		super.visit( node );
 	}
 
