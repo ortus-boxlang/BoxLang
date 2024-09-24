@@ -3520,4 +3520,19 @@ public class CoreLangTest {
 		// @formatter:on
 	}
 
+	@DisplayName( "for in loop struct keys are strings" )
+	@Test
+	public void testForInLoopStructKeysAreStrings() {
+		instance.executeSource(
+		    """
+		    result=""
+		    str ={ foo : "bar" }
+		    for( key in str ) {
+		    	result = getMetadata( key ).getName();
+		    }
+		             """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "java.lang.String" );
+	}
+
 }
