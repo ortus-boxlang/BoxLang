@@ -97,4 +97,16 @@ public class ListRestTest {
 		assertThat( variables.get( result ) ).isEqualTo( "b,c" );
 	}
 
+	@DisplayName( "It works with a delimiter that is not in the string" )
+	@Test
+	public void testDelimiterNotInString() {
+		instance.executeSource(
+		    """
+		    str = "https://jsonplaceholder.typicode.com/posts/1";
+		    result = listRest( str, "?" );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "" );
+	}
+
 }

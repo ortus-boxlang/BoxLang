@@ -539,6 +539,23 @@ public class CoreLangTest {
 
 	}
 
+	@DisplayName( "for in loop struct keys are strings" )
+	@Test
+	public void testForInLoopStructKeysAreStrings() {
+
+		instance.executeSource(
+		    """
+		    result=""
+		    str ={ foo : "bar" }
+		    for( key in str ) {
+		    	result = getMetadata( key ).getName();
+		    }
+		             """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "java.lang.String" );
+
+	}
+
 	@DisplayName( "do while loop" )
 	@Test
 	@Timeout( value = 5, unit = TimeUnit.SECONDS )
