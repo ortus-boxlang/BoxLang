@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.dynamic;
 
+import java.util.List;
 import java.util.Map;
 
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -26,7 +27,6 @@ import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.QueryColumn;
 import ortus.boxlang.runtime.types.Struct;
@@ -219,9 +219,9 @@ public class Referencer {
 				next = new Struct();
 				set( context, isFinal, object, key, next );
 				// If it's not null, it needs to be a Map
-			} else if ( ! ( next instanceof Map || next instanceof Array || next instanceof Query || next instanceof QueryColumn ) ) {
+			} else if ( ! ( next instanceof Map || next instanceof List || next instanceof Query || next instanceof QueryColumn ) ) {
 				throw new BoxRuntimeException(
-				    String.format( "Cannot assign to key [%s] because it is a [%s] and not a Struct or Array",
+				    String.format( "Cannot assign to key [%s] because it is a [%s] and not a Struct,  Array, or Query",
 				        key.getName(),
 				        next.getClass().getName() ) );
 			}

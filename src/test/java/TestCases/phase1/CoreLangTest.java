@@ -3477,8 +3477,6 @@ public class CoreLangTest {
 				foo()
 			} catch( any e ) {
 				tagContext = e.tagContext;
-				e.printStackTrace();
-				println(tagContext)
 			}
 			""",
 			context, BoxSourceType.CFSCRIPT
@@ -3497,15 +3495,29 @@ public class CoreLangTest {
 
 	@Test
 	public void testFindJavaConstructorWithNulls() {
-	// @formatter:off
-	instance.executeSource(
-		"""
-		import java.net.URI;
-		new URI( null, null, "", null, null );
-		""",
-		context, BoxSourceType.BOXSCRIPT
-	);
-	// @formatter:on
+		// @formatter:off
+		instance.executeSource(
+			"""
+			import java.net.URI;
+			new URI( null, null, "", null, null );
+			""",
+			context, BoxSourceType.BOXSCRIPT
+		);
+		// @formatter:on
+	}
+
+	@Test
+	public void testAssignToList() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+			import java.util.ArrayList;
+			list = new ArrayList();
+			list[1] = "brad";
+			""",
+			context, BoxSourceType.BOXSCRIPT
+		);
+		// @formatter:on
 	}
 
 }
