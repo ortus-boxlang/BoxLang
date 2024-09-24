@@ -1,3 +1,20 @@
+/**
+ * [BoxLang]
+ *
+ * Copyright [2023] [Ortus Solutions, Corp]
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package ortus.boxlang.runtime.util;
 
 import java.nio.file.Path;
@@ -26,10 +43,10 @@ public class FQN {
 
 	/**
 	 * Construct an FQN that uses the root path to generate a relative path based on filePath.
-	 * 
+	 *
 	 * For example, given root = "c:\foo\bar" and filePath = "c:\foo\bar\test\Car.bx" this will create an FQN
 	 * like "test.Car".
-	 * 
+	 *
 	 * @param root     The root path to use to generate the relative path.
 	 * @param filePath The file path to generate the FQN from.
 	 */
@@ -48,7 +65,7 @@ public class FQN {
 
 	/**
 	 * Construct an FQN from a Path.
-	 * 
+	 *
 	 * @param path The path to generate the FQN from.
 	 */
 	public FQN( Path path ) {
@@ -57,7 +74,7 @@ public class FQN {
 
 	/**
 	 * Construct an FQN from a string.
-	 * 
+	 *
 	 * @param path The string to generate the FQN from.
 	 */
 	public FQN( String path ) {
@@ -66,7 +83,7 @@ public class FQN {
 
 	/**
 	 * Construct an FQN from a prefix and an existing FQN.
-	 * 
+	 *
 	 * @param prefix The prefix to add to the FQN.
 	 * @param fqn    The existing FQN to add the prefix to.
 	 */
@@ -78,7 +95,7 @@ public class FQN {
 
 	/**
 	 * Construct an FQN from a prefix and a string.
-	 * 
+	 *
 	 * @param prefix The prefix to add to the FQN.
 	 * @param path   The string to generate the FQN from.
 	 */
@@ -90,7 +107,7 @@ public class FQN {
 
 	/**
 	 * Construct an FQN from a prefix and a Path.
-	 * 
+	 *
 	 * @param prefix The prefix to add to the FQN.
 	 * @param path   The path to generate the FQN from.
 	 */
@@ -104,7 +121,7 @@ public class FQN {
 
 	/**
 	 * Get the FQN as a string. Includes both the name and package.
-	 * 
+	 *
 	 * @return String
 	 */
 	public String toString() {
@@ -113,7 +130,7 @@ public class FQN {
 
 	/**
 	 * Get only the package name.
-	 * 
+	 *
 	 * @return String
 	 */
 	public String getPackageString() {
@@ -122,7 +139,7 @@ public class FQN {
 
 	/**
 	 * Get only the package as an FQN.
-	 * 
+	 *
 	 * @return String
 	 */
 	public FQN getPackage() {
@@ -184,9 +201,9 @@ public class FQN {
 
 	/**
 	 * Parse the package from a file path.
-	 * 
+	 *
 	 * @param file The file to parse the package from.
-	 * 
+	 *
 	 * @return The package name.
 	 */
 	static String parseFromFile( Path file ) {
@@ -227,7 +244,7 @@ public class FQN {
 
 	/**
 	 * Factory method to create a new FQN instance from a prefix and a string.
-	 * 
+	 *
 	 * @return A new FQN instance.
 	 */
 	public static FQN of( String prefix, String path ) {
@@ -236,7 +253,7 @@ public class FQN {
 
 	/**
 	 * Factory method to create a new FQN instance from a prefix and a path.
-	 * 
+	 *
 	 * @return A new FQN instance.
 	 */
 	public static FQN of( String prefix, Path path ) {
@@ -245,7 +262,7 @@ public class FQN {
 
 	/**
 	 * Factory method to create a new FQN instance from a string.
-	 * 
+	 *
 	 * @return A new FQN instance.
 	 */
 	public static FQN of( String path ) {
@@ -254,7 +271,7 @@ public class FQN {
 
 	/**
 	 * Factory method to create a new FQN instance from a path.
-	 * 
+	 *
 	 * @return A new FQN instance.
 	 */
 	public static FQN of( Path path ) {
@@ -263,7 +280,7 @@ public class FQN {
 
 	/**
 	 * Create a new FQN instance from the current FQN with the prefix appended.
-	 * 
+	 *
 	 * @return A new FQN instance.
 	 */
 	public FQN appendPrefix( String prefix ) {
