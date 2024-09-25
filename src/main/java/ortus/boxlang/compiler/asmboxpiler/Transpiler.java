@@ -21,7 +21,9 @@ import org.objectweb.asm.tree.TypeInsnNode;
 
 import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
+import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxInterfaceTransformer;
 import ortus.boxlang.compiler.ast.BoxExpression;
+import ortus.boxlang.compiler.ast.BoxInterface;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStaticInitializer;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
@@ -34,6 +36,7 @@ import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public abstract class Transpiler implements ITranspiler {
 
@@ -42,6 +45,7 @@ public abstract class Transpiler implements ITranspiler {
 	private Map<String, ClassNode>			auxiliaries				= new LinkedHashMap<String, ClassNode>();
 	private List<TryCatchBlockNode>			tryCatchBlockNodes		= new ArrayList<TryCatchBlockNode>();
 	private int								lambdaCounter			= 0;
+	private int								componentCounter		= 0;
 	private Map<String, LabelNode>			breaks					= new LinkedHashMap<>();
 	private Map<String, LabelNode>			continues				= new LinkedHashMap<>();
 	private List<ImportDefinition>			imports					= new ArrayList<>();
@@ -56,6 +60,22 @@ public abstract class Transpiler implements ITranspiler {
 	 */
 	public void setProperty( String key, String value ) {
 		properties.put( key, value );
+	}
+
+	public boolean isInsideComponent() {
+		return componentCounter > 0;
+	}
+
+	public void incrementComponentCounter() {
+		componentCounter++;
+	}
+
+	public void decrementComponentCounter() {
+		componentCounter--;
+	}
+
+	public ClassNode transpile( BoxInterface boxClass ) throws BoxRuntimeException {
+		return BoxInterfaceTransformer.transpile( this, boxClass );
 	}
 
 	/**

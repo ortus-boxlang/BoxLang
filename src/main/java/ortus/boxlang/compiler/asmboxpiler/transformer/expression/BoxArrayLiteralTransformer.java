@@ -44,7 +44,8 @@ public class BoxArrayLiteralTransformer extends AbstractTransformer {
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnContext ) throws IllegalStateException {
 		BoxArrayLiteral			arrayLiteral	= ( BoxArrayLiteral ) node;
 		List<AbstractInsnNode>	nodes			= new ArrayList<>();
-		nodes.addAll( AsmHelper.array( Type.getType( Object.class ), arrayLiteral.getValues(), ( value, i ) -> transpiler.transform( value, context ) ) );
+		nodes.addAll( AsmHelper.array( Type.getType( Object.class ), arrayLiteral.getValues(),
+		    ( value, i ) -> transpiler.transform( value, context, ReturnValueContext.VALUE_OR_NULL ) ) );
 		nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
 		    Type.getInternalName( Array.class ),
 		    "of",

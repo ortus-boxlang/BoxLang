@@ -55,7 +55,7 @@ public class BoxNewTransformer extends AbstractTransformer {
 
 		nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
 		nodes.add( new LdcInsnNode( "" ) ); // TODO: how to set this?
-		nodes.addAll( transpiler.transform( boxNew.getExpression(), TransformerContext.NONE ) );
+		nodes.addAll( transpiler.transform( boxNew.getExpression(), TransformerContext.NONE, ReturnValueContext.VALUE ) );
 		nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
 		    Type.getInternalName( StringCaster.class ),
 		    "cast",

@@ -47,6 +47,7 @@ public class AsmHelper {
 
 	public static List<AbstractInsnNode> callinvokeFunction(
 	    Transpiler transpiler,
+	    Type invokeType,
 	    List<BoxArgument> args,
 	    List<AbstractInsnNode> name,
 	    TransformerContext context,
@@ -65,7 +66,7 @@ public class AsmHelper {
 			nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
 			    Type.getInternalName( IBoxContext.class ),
 			    "invokeFunction",
-			    Type.getMethodDescriptor( Type.getType( Object.class ), Type.getType( Key.class ), Type.getType( Object[].class ) ),
+			    Type.getMethodDescriptor( Type.getType( Object.class ), invokeType, Type.getType( Object[].class ) ),
 			    true ) );
 
 			return nodes;
@@ -97,7 +98,7 @@ public class AsmHelper {
 		nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
 		    Type.getInternalName( IBoxContext.class ),
 		    "invokeFunction",
-		    Type.getMethodDescriptor( Type.getType( Object.class ), Type.getType( Key.class ), Type.getType( Map.class ) ),
+		    Type.getMethodDescriptor( Type.getType( Object.class ), invokeType, Type.getType( Map.class ) ),
 		    true ) );
 
 		return nodes;

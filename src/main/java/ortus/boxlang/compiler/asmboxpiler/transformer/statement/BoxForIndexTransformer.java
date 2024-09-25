@@ -53,16 +53,18 @@ public class BoxForIndexTransformer extends AbstractTransformer {
 			throw new IllegalStateException();
 		}
 
-		LabelNode	breakTarget	= new LabelNode();
-		LabelNode	firstLoop	= new LabelNode();
-		LabelNode	loopStart	= new LabelNode();
-		LabelNode	loopEnd		= new LabelNode();
+		MethodContextTracker	tracker		= trackerOption.get();
 
-		transpiler.getCurrentMethodContextTracker().get().setCurrentBreak( forIn.getLabel(), breakTarget );
-		transpiler.getCurrentMethodContextTracker().get().setCurrentBreak( null, breakTarget );
+		LabelNode				breakTarget	= new LabelNode();
+		LabelNode				firstLoop	= new LabelNode();
+		LabelNode				loopStart	= new LabelNode();
+		LabelNode				loopEnd		= new LabelNode();
 
-		transpiler.getCurrentMethodContextTracker().get().setCurrentContinue( null, loopStart );
-		transpiler.getCurrentMethodContextTracker().get().setCurrentContinue( forIn.getLabel(), loopStart );
+		tracker.setCurrentBreak( forIn.getLabel(), breakTarget );
+		tracker.setCurrentBreak( null, breakTarget );
+
+		tracker.setCurrentContinue( null, loopStart );
+		tracker.setCurrentContinue( forIn.getLabel(), loopStart );
 
 		if ( forIn.getInitializer() != null ) {
 			nodes.addAll( transpiler.transform( forIn.getInitializer(), context, ReturnValueContext.EMPTY ) );
@@ -121,6 +123,10 @@ public class BoxForIndexTransformer extends AbstractTransformer {
 		if ( returnValueContext.empty ) {
 			nodes.add( new InsnNode( Opcodes.POP ) );
 		}
+
+		tracker.setCurrentBreak( null, null );
+
+		tracker.setCurrentContinue( null, null );
 
 		return nodes;
 	}

@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.VarInsnNode;
@@ -29,6 +30,7 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxFunctionInvocation;
+import ortus.boxlang.runtime.scopes.Key;
 
 public class BoxFunctionInvocationTransformer extends AbstractTransformer {
 
@@ -45,7 +47,9 @@ public class BoxFunctionInvocationTransformer extends AbstractTransformer {
 		nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
 		// nodes.addAll( transpiler.createKey( function.getName() ) );
 
-		nodes.addAll( AsmHelper.callinvokeFunction( transpiler, function.getArguments(), transpiler.createKey( function.getName() ), context, safe ) );
+		TransformerContext argContext = safe ? TransformerContext.SAFE : context;
+		nodes.addAll( AsmHelper.callinvokeFunction( transpiler, Type.getType( Key.class ), function.getArguments(), transpiler.createKey( function.getName() ),
+		    argContext, safe ) );
 
 		// nodes.addAll( AsmHelper.array( Type.getType( Object.class ), function.getArguments(),
 		// ( argument, i ) -> transpiler.transform( argument, safe, ReturnValueContext.VALUE ) ) );

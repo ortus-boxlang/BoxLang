@@ -32,6 +32,7 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxClosureTrans
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxComparisonOperationTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxContinueTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxDecimalLiteralTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxExpressionInvocationTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxExpressionStatementTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxFQNTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxFunctionInvocationTransformer;
@@ -64,6 +65,8 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxForInTransfor
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxForIndexTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxFunctionDeclarationTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxIfElseTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxInterfaceTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxParamTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxRethrowTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxScriptIslandTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxStaticInitializerTransformer;
@@ -73,6 +76,7 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxTryTransforme
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxWhileTransformer;
 import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxExpression;
+import ortus.boxlang.compiler.ast.BoxInterface;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
 import ortus.boxlang.compiler.ast.BoxStaticInitializer;
@@ -88,6 +92,7 @@ import ortus.boxlang.compiler.ast.expression.BoxClosure;
 import ortus.boxlang.compiler.ast.expression.BoxComparisonOperation;
 import ortus.boxlang.compiler.ast.expression.BoxDecimalLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxDotAccess;
+import ortus.boxlang.compiler.ast.expression.BoxExpressionInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
 import ortus.boxlang.compiler.ast.expression.BoxFunctionInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
@@ -119,6 +124,7 @@ import ortus.boxlang.compiler.ast.statement.BoxForIndex;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxIfElse;
 import ortus.boxlang.compiler.ast.statement.BoxImport;
+import ortus.boxlang.compiler.ast.statement.BoxParam;
 import ortus.boxlang.compiler.ast.statement.BoxProperty;
 import ortus.boxlang.compiler.ast.statement.BoxRethrow;
 import ortus.boxlang.compiler.ast.statement.BoxReturn;
@@ -206,6 +212,8 @@ public class AsmTranspiler extends Transpiler {
 		registry.put( BoxStaticMethodInvocation.class, new BoxStaticMethodInvocationTransformer( this ) );
 		registry.put( BoxScriptIsland.class, new BoxScriptIslandTransformer( this ) );
 		registry.put( BoxTemplateIsland.class, new BoxTemplateIslandTransformer( this ) );
+		registry.put( BoxExpressionInvocation.class, new BoxExpressionInvocationTransformer( this ) );
+		registry.put( BoxParam.class, new BoxParamTransformer( this ) );
 	}
 
 	@Override
@@ -335,6 +343,10 @@ public class AsmTranspiler extends Transpiler {
 	@Override
 	public ClassNode transpile( BoxClass boxClass ) throws BoxRuntimeException {
 		return BoxClassTransformer.transpile( this, boxClass );
+	}
+
+	public ClassNode transpile( BoxInterface boxClass ) throws BoxRuntimeException {
+		return BoxInterfaceTransformer.transpile( this, boxClass );
 	}
 
 	@Override

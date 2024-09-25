@@ -43,6 +43,8 @@ public class BoxComponentTransformer extends AbstractTransformer {
 			throw new IllegalStateException();
 		}
 
+		transpiler.incrementComponentCounter();
+
 		MethodContextTracker	tracker	= trackerOption.get();
 		List<AbstractInsnNode>	nodes	= new ArrayList<>();
 		nodes.addAll( tracker.loadCurrentContext() );
@@ -63,6 +65,8 @@ public class BoxComponentTransformer extends AbstractTransformer {
 		        Type.getType( Component.ComponentBody.class ) ),
 		    true ) );
 		nodes.add( new InsnNode( Opcodes.POP ) );
+
+		transpiler.decrementComponentCounter();
 
 		return nodes;
 	}

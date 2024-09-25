@@ -12,7 +12,6 @@
  * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-
 package ortus.boxlang.compiler.asmboxpiler.transformer.expression;
 
 import java.util.ArrayList;
@@ -22,46 +21,43 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.InsnNode;
-import org.objectweb.asm.tree.MethodInsnNode;
+import org.objectweb.asm.tree.VarInsnNode;
 
-import ortus.boxlang.compiler.asmboxpiler.Transpiler;
+import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
+import ortus.boxlang.compiler.asmboxpiler.AsmTranspiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxNode;
-import ortus.boxlang.compiler.ast.statement.BoxReturn;
-import ortus.boxlang.runtime.components.Component;
+import ortus.boxlang.compiler.ast.expression.BoxExpressionInvocation;
+import ortus.boxlang.compiler.ast.expression.BoxLambda;
+import ortus.boxlang.runtime.scopes.Key;
 
-public class BoxReturnTransformer extends AbstractTransformer {
+public class BoxExpressionInvocationTransformer extends AbstractTransformer {
 
-	public BoxReturnTransformer( Transpiler transpiler ) {
+	public BoxExpressionInvocationTransformer( AsmTranspiler transpiler ) {
 		super( transpiler );
 	}
 
 	@Override
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnContext ) throws IllegalStateException {
-		BoxReturn				boxReturn	= ( BoxReturn ) node;
+		BoxExpressionInvocation	invocation	= ( BoxExpressionInvocation ) node;
+
+		List<AbstractInsnNode>	nameNodes	= transpiler.transform( invocation.getExpr(), context, ReturnValueContext.VALUE );
 
 		List<AbstractInsnNode>	nodes		= new ArrayList<>();
-		if ( boxReturn.getExpression() == null ) {
-			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
-		} else if ( transpiler.isInsideComponent() ) {
-			nodes.addAll( transpiler.transform( boxReturn.getExpression(), TransformerContext.NONE, ReturnValueContext.VALUE_OR_NULL ) );
-			nodes.add(
-			    new MethodInsnNode(
-			        Opcodes.INVOKESTATIC,
-			        Type.getInternalName( Component.BodyResult.class ),
-			        "ofReturn",
-			        Type.getMethodDescriptor( Type.getType( Component.BodyResult.class ), Type.getType( Object.class ) ),
-			        false
-			    )
-			);
-			// template = "return Component.BodyResult.ofReturn( ${expr} );";
-		} else {
-			nodes.addAll( transpiler.transform( boxReturn.getExpression(), TransformerContext.NONE, ReturnValueContext.VALUE_OR_NULL ) );
+		nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
+
+		Type invokeType = invocation.getExpr() instanceof BoxLambda || invocation.getExpr().getDescendantsOfType( BoxLambda.class ).size() > 0
+		    ? Type.getType( Object.class )
+		    : Type.getType( Key.class );
+
+		nodes.addAll( AsmHelper.callinvokeFunction( transpiler, invokeType, invocation.getArguments(), nameNodes, context, false ) );
+
+		if ( returnContext.empty ) {
+			nodes.add( new InsnNode( Opcodes.POP ) );
 		}
-		nodes.add( new InsnNode( Opcodes.ARETURN ) );
+
 		return nodes;
 	}
-
 }
