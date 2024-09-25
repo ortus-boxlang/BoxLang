@@ -430,6 +430,9 @@ publishing {
     }
 }
 
+/**
+ * Digital Signing of assets
+ */
 signing {
 	def signingKey = System.getenv( "GPG_KEY" )
     def signingPassword = System.getenv( "GPG_PASSWORD" )
