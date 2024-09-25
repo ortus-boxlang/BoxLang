@@ -70,4 +70,24 @@ public class ControllerTest {
 		    context );
 	}
 
+	@Test
+	public void testCompatModuleConfig() {
+
+		instance.executeStatement(
+		    """
+		       	controller = new src.test.java.TestCases.asm.integration.mc();
+		    """,
+		    context );
+	}
+
+	@Test
+	public void testTryCatchLabelStack() {
+
+		instance.executeStatement(
+		    """
+		       	controller = new src.test.java.TestCases.asm.integration.TryCatchLabelStack();
+		    """,
+		    context );
+	}
+
 }
