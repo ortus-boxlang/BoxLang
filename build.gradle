@@ -431,6 +431,9 @@ publishing {
 }
 
 signing {
+	def signingKey = System.getenv( "GPG_KEY" )
+    def signingPassword = System.getenv( "GPG_PASSWORD" )
+    useInMemoryPgpKeys(signingKey, signingPassword)
     sign publishing.publications.shadow
 }
 
