@@ -107,7 +107,7 @@ public class BoxArgumentDeclarationTransformer extends AbstractTransformer {
 		    type.getInternalName(),
 		    null,
 		    Type.getInternalName( Object.class ),
-		    new String[] { Type.getInternalName( Argument.DefaultExpression.class ) } );
+		    new String[] { Type.getInternalName( DefaultExpression.class ) } );
 
 		MethodVisitor initVisitor = classNode.visitMethod( Opcodes.ACC_PUBLIC,
 		    "<init>",

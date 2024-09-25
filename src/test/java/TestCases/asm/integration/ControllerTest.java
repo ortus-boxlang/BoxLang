@@ -17,6 +17,8 @@
  */
 package TestCases.asm.integration;
 
+import static com.google.common.truth.Truth.assertThat;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -71,13 +73,18 @@ public class ControllerTest {
 	}
 
 	@Test
-	public void testCompatModuleConfig() {
-
+	public void testInterfaceImplementation() {
 		instance.executeStatement(
 		    """
-		       	controller = new src.test.java.TestCases.asm.integration.mc();
-		    """,
+		         	impl = new src.test.java.TestCases.asm.integration.Implementor();
+
+		    impl.setName( "test" );
+
+		    result = impl.getName();
+		      """,
 		    context );
+
+		assertThat( variables.get( result ) ).isEqualTo( "test" );
 	}
 
 	@Test
