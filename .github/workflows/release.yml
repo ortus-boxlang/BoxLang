@@ -152,7 +152,7 @@ jobs:
           SOURCE_DIR: "build/docs/javadoc"
           DEST_DIR: "boxlang/${{ env.VERSION }}"
 
-      - name: Publish Package
+      - name: Publish Package (Maven+Github)
         run: |
           gradle publish --no-daemon --no-parallel
           gradle closeAndReleaseRepository
