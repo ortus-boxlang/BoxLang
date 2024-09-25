@@ -315,11 +315,12 @@ publishing {
 			artifact sourcesJar
 
 			// This is the only one sonatype accepts, not ortus.boxlang
+			// https://central.sonatype.com/
 			groupId = 'io.boxlang'
 			artifactId = 'boxlang'
 			pom {
 				name = "BoxLang"
-				description = "BoxLang is a dynamic multi-runtime JVM Language based on fluency and functional constructs. It can be deployed as a standalone language or embedded in your Java applications."
+				description = "BoxLang is a dynamic multi-runtime JVM Language based on fluency and functional constructs. It can be deployed as a standalone language, embedded in your Java applications, web applications, serverless, android, etc."
 				url = "https://boxlang.io"
 				issueManagement {
 					system = "Jira"
@@ -393,6 +394,13 @@ publishing {
 						organization = "Ortus Solutions, Corp"
 						organizationUrl = "https://www.ortussolutions.com"
 					}
+					developer {
+						id = "ericpeterson"
+						name = "Eric Peterson"
+						email = "eric@ortussolutions.com"
+						organization = "Ortus Solutions, Corp"
+						organizationUrl = "https://www.ortussolutions.com"
+					}
 				}
 			}
         }
@@ -403,7 +411,27 @@ publishing {
             name = 'local-repo'
             url = layout.buildDirectory.dir( "repo" )
         }
+		maven {
+			name = "GitHubPackages"
+			url = "https://maven.pkg.github.com/octocat/hello-world"
+			credentials {
+				username = System.getenv( "GITHUB_ACTOR" )
+				password = System.getenv( "GITHUB_TOKEN" )
+			}
+		}
+		maven {
+			name = "OSSRH"
+			url = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+			credentials {
+				username = System.getenv( "MAVEN_USERNAME" )
+				password = System.getenv( "MAVEN_PASSWORD" )
+			}
+		}
     }
+}
+
+signing {
+    sign publishing.publications.shadow
 }
 
 /**
