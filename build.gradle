@@ -24,6 +24,7 @@ plugins {
 	// Maven Publisher
 	id 'maven-publish'
 	id 'signing'
+	id 'com.gradleup.nmcp' version "0.0.9"
 }
 
 /**
@@ -419,15 +420,18 @@ publishing {
 				password = System.getenv( "GITHUB_TOKEN" )
 			}
 		}
-		maven {
-			name = "OSSRH"
-			url = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
-			credentials {
-				username = System.getenv( "MAVEN_USERNAME" )
-				password = System.getenv( "MAVEN_PASSWORD" )
-			}
-		}
     }
+}
+
+nmcp {
+  publishAllProjectsProbablyBreakingProjectIsolation {
+    username = System.getenv( "MAVEN_USERNAME" )
+    password = System.getenv( "MAVEN_PASSWORD" )
+    // publish manually from the portal
+    //publicationType = "USER_MANAGED"
+    // or if you want to publish automatically
+    publicationType = "AUTOMATIC"
+  }
 }
 
 /**

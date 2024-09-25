@@ -156,7 +156,7 @@ jobs:
       - name: Publish Package (Maven+Github)
         run: |
           gradle publish --no-daemon --no-parallel
-          gradle closeAndReleaseRepository
+          gradle publishToSonatype closeAndReleaseSonatypeStagingRepository
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GPG_KEY: ${{ secrets.GPG_KEY }}
