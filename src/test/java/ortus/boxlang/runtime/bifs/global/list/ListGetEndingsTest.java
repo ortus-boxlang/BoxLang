@@ -99,4 +99,17 @@ public class ListGetEndingsTest {
 
 	}
 
+	@DisplayName( "Tests listFirst on stringables" )
+	@Test
+	public void testListFirstStringable() {
+		instance.executeSource(
+		    """
+		    list = createObject( "java", "java.net.URI" ).init( "https://google.com/?q=test" );
+		    result = listFirst( list, "?" );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "https://google.com/" );
+
+	}
+
 }
