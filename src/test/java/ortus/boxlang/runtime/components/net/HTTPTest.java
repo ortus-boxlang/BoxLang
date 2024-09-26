@@ -399,4 +399,37 @@ public class HTTPTest {
 		        "\\s+", "" ) );
 	}
 
+	@DisplayName( "It can handle bad gateways" )
+	@Test
+	public void testBadGateway() {
+		// @formatter:off
+		instance.executeSource( """
+			http method="GET" url="https://does-not-exist.also-does-not-exist" {
+				httpparam type="header" name="User-Agent" value="HyperCFML/7.5.2";
+			}
+			result = bxhttp;
+		""", context );
+		// @formatter:on
+
+		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
+
+		IStruct bxhttp = variables.getAsStruct( result );
+
+		Assertions.assertTrue( bxhttp.containsKey( Key.statusCode ) );
+		assertThat( bxhttp.get( Key.statusCode ) ).isEqualTo( 502 );
+		Assertions.assertTrue( bxhttp.containsKey( Key.status_code ) );
+		assertThat( bxhttp.get( Key.status_code ) ).isEqualTo( 502 );
+
+		Assertions.assertTrue( bxhttp.containsKey( Key.statusText ) );
+		assertThat( bxhttp.get( Key.statusText ) ).isEqualTo( "Bad Gateway" );
+		Assertions.assertTrue( bxhttp.containsKey( Key.status_text ) );
+		assertThat( bxhttp.get( Key.status_text ) ).isEqualTo( "Bad Gateway" );
+
+		Assertions.assertTrue( bxhttp.containsKey( Key.fileContent ) );
+		assertThat( bxhttp.get( Key.fileContent ) ).isEqualTo( "Connection Failure" );
+
+		Assertions.assertTrue( bxhttp.containsKey( Key.errorDetail ) );
+		assertThat( bxhttp.get( Key.errorDetail ) ).isEqualTo( "Unknown host: does-not-exist.also-does-not-exist: Name or service not known." );
+	}
+
 }

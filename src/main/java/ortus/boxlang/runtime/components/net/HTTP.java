@@ -18,6 +18,8 @@
 package ortus.boxlang.runtime.components.net;
 
 import java.io.IOException;
+import java.net.ConnectException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
@@ -153,6 +155,7 @@ public class HTTP extends Component {
 		Array	params			= executionState.getAsArray( Key.HTTPParams );
 		Struct	HTTPResult		= new Struct();
 
+		URI		uri				= null;
 		try {
 			HttpRequest.Builder			builder			= HttpRequest.newBuilder();
 			URIBuilder					uriBuilder		= new URIBuilder( theURL );
@@ -203,7 +206,8 @@ public class HTTP extends Component {
 			}
 
 			builder.method( method, bodyPublisher );
-			builder.uri( uriBuilder.build() );
+			uri = uriBuilder.build();
+			builder.uri( uri );
 			HttpRequest				request				= builder.build();
 			HttpClient				client				= HttpManager.getClient();
 			HttpResponse<String>	response			= client.send( request, HttpResponse.BodyHandlers.ofString() );
@@ -243,6 +247,21 @@ public class HTTP extends Component {
 			// Set the result back into the page
 			ExpressionInterpreter.setVariable( context, variableName, HTTPResult );
 
+			return DEFAULT_RETURN;
+		} catch ( ConnectException e ) {
+			HTTPResult.put( Key.responseHeader, Struct.EMPTY );
+			HTTPResult.put( Key.header, "" );
+			HTTPResult.put( Key.statusCode, 502 );
+			HTTPResult.put( Key.status_code, 502 );
+			HTTPResult.put( Key.statusText, "Bad Gateway" );
+			HTTPResult.put( Key.status_text, "Bad Gateway" );
+			HTTPResult.put( Key.fileContent, "Connection Failure" );
+			if ( uri != null ) {
+				HTTPResult.put( Key.errorDetail, String.format( "Unknown host: %s: Name or service not known.", uri.getHost() ) );
+			} else {
+				HTTPResult.put( Key.errorDetail, String.format( "Unknown host: %s: Name or service not known.", theURL ) );
+			}
+			ExpressionInterpreter.setVariable( context, variableName, HTTPResult );
 			return DEFAULT_RETURN;
 		} catch ( URISyntaxException | IOException | InterruptedException e ) {
 			throw new BoxRuntimeException( e.getMessage() );
