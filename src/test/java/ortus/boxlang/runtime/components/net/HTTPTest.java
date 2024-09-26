@@ -23,6 +23,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.created;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.havingExactly;
 import static com.github.tomakehurst.wiremock.client.WireMock.ok;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
@@ -162,6 +163,32 @@ public class HTTPTest {
 		assertThat( res.get( Key.statusText ) ).isEqualTo( "Created" );
 		String body = res.getAsString( Key.fileContent );
 		assertThat( body ).isEqualTo( "{\"id\": 1, \"name\": \"foobar\", \"body\": \"lorem ipsum dolor\"}" );
+	}
+
+	@DisplayName( "It can make a post request with form params where one name has multiple values" )
+	@Test
+	public void testPostFormParamsMultipleValuesForOneName( WireMockRuntimeInfo wmRuntimeInfo ) {
+		stubFor(
+		    post( "/posts" )
+		        .withFormParam( "tags", havingExactly( "tag-a", "tag-b" ) )
+		        .willReturn( created().withBody( "{\"id\": 1, \"tags\": [ \"tag-a\", \"tag-b\" ] }" ) ) );
+
+		// @formatter:off
+		instance.executeSource( String.format( """
+			http method="POST" url="%s" {
+				httpparam type="formfield" name="tags" value="tag-a";
+				httpparam type="formfield" name="tags" value="tag-b";
+			}
+		""", wmRuntimeInfo.getHttpBaseUrl() + "/posts" ), context );
+		// @formatter:on
+
+		assertThat( variables.get( bxhttp ) ).isInstanceOf( IStruct.class );
+
+		IStruct res = variables.getAsStruct( bxhttp );
+		assertThat( res.get( Key.statusCode ) ).isEqualTo( 201 );
+		assertThat( res.get( Key.statusText ) ).isEqualTo( "Created" );
+		String body = res.getAsString( Key.fileContent );
+		assertThat( body ).isEqualTo( "{\"id\": 1, \"tags\": [ \"tag-a\", \"tag-b\" ] }" );
 	}
 
 	@DisplayName( "It can make a post request with a json body" )

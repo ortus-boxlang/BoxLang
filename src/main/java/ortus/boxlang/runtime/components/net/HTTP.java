@@ -27,8 +27,8 @@ import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -160,7 +160,7 @@ public class HTTP extends Component {
 			HttpRequest.Builder			builder			= HttpRequest.newBuilder();
 			URIBuilder					uriBuilder		= new URIBuilder( theURL );
 			HttpRequest.BodyPublisher	bodyPublisher	= HttpRequest.BodyPublishers.noBody();
-			Map<String, String>			formFields		= new HashMap<>();
+			List<String>				formFields		= new ArrayList<>();
 			builder.header( "User-Agent", "BoxLang" );
 			for ( Object p : params ) {
 				IStruct	param	= StructCaster.cast( p );
@@ -187,7 +187,8 @@ public class HTTP extends Component {
 						if ( BooleanCaster.cast( param.getOrDefault( Key.encoded, true ) ) ) {
 							value = URLEncoder.encode( value, StandardCharsets.UTF_8 );
 						}
-						formFields.put( param.getAsString( Key._NAME ), value );
+						String name = param.getAsString( Key._NAME );
+						formFields.add( name + "=" + value );
 					}
 					case "cookie" -> builder.header( "Cookie",
 					    param.getAsString( Key._NAME ) + "=" + URLEncoder.encode( param.getAsString( Key.value ), StandardCharsets.UTF_8 ) );
@@ -197,9 +198,7 @@ public class HTTP extends Component {
 
 			if ( !formFields.isEmpty() ) {
 				bodyPublisher = HttpRequest.BodyPublishers.ofString(
-				    formFields.entrySet()
-				        .stream()
-				        .map( e -> e.getKey() + "=" + e.getValue() )
+				    formFields.stream()
 				        .collect( Collectors.joining( "&" ) )
 				);
 				builder.header( "Content-Type", "application/x-www-form-urlencoded" );
