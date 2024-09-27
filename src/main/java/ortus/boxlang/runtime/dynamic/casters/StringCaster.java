@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.dynamic.casters;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URL;
 import java.nio.file.Path;
@@ -177,6 +178,7 @@ public class StringCaster implements IBoxCaster {
 				return new String( b );
 			}
 		}
+
 		if ( object instanceof XML xml ) {
 			return xml.asString();
 		}
@@ -185,6 +187,10 @@ public class StringCaster implements IBoxCaster {
 		}
 		if ( object instanceof URL url ) {
 			return url.toString();
+		}
+
+		if ( object instanceof InetSocketAddress inet ) {
+			return inet.toString();
 		}
 
 		// Do we throw?
