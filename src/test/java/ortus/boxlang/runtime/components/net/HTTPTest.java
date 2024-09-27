@@ -18,6 +18,7 @@
 
 package ortus.boxlang.runtime.components.net;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.aMultipart;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.created;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
@@ -493,6 +494,79 @@ public class HTTPTest {
 
 		Assertions.assertTrue( bxhttp.containsKey( Key.errorDetail ) );
 		assertThat( bxhttp.get( Key.errorDetail ) ).isEqualTo( "Request timed out after 1 second." );
+	}
+
+	@DisplayName( "It can handle files" )
+	@Test
+	public void testFiles( WireMockRuntimeInfo wmRuntimeInfo ) {
+		stubFor(
+		    post( "/files" )
+		        .withMultipartRequestBody( aMultipart().withName( "photo" ) )
+		        .willReturn( created().withBody( "{\"success\": true }" ) ) );
+
+		String baseURL = wmRuntimeInfo.getHttpBaseUrl();
+		// @formatter:off
+		instance.executeSource( String.format( """
+			http method="POST" url="%s" {
+				httpparam type="file" name="photo" file="/src/test/resources/chuck_norris.jpg";
+			}
+			result = bxhttp;
+		""", baseURL + "/files" ), context );
+		// @formatter:on
+
+		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
+
+		IStruct bxhttp = variables.getAsStruct( result );
+
+		Assertions.assertTrue( bxhttp.containsKey( Key.statusCode ) );
+		assertThat( bxhttp.get( Key.statusCode ) ).isEqualTo( 201 );
+		Assertions.assertTrue( bxhttp.containsKey( Key.status_code ) );
+		assertThat( bxhttp.get( Key.status_code ) ).isEqualTo( 201 );
+
+		Assertions.assertTrue( bxhttp.containsKey( Key.statusText ) );
+		assertThat( bxhttp.get( Key.statusText ) ).isEqualTo( "Created" );
+		Assertions.assertTrue( bxhttp.containsKey( Key.status_text ) );
+		assertThat( bxhttp.get( Key.status_text ) ).isEqualTo( "Created" );
+
+		Assertions.assertTrue( bxhttp.containsKey( Key.fileContent ) );
+		assertThat( bxhttp.get( Key.fileContent ) ).isEqualTo( "{\"success\": true }" );
+	}
+
+	@DisplayName( "It can handle multipart uploads" )
+	@Test
+	public void testMultipart( WireMockRuntimeInfo wmRuntimeInfo ) {
+		stubFor(
+		    post( "/multipart" )
+		        .withMultipartRequestBody( aMultipart().withName( "photo" ).withName( "joke" ) )
+		        .willReturn( created().withBody( "{\"success\": true }" ) ) );
+
+		String baseURL = wmRuntimeInfo.getHttpBaseUrl();
+		// @formatter:off
+		instance.executeSource( String.format( """
+			http method="POST" url="%s" {
+				httpparam type="file" name="photo" file="/src/test/resources/chuck_norris.jpg";
+				httpparam type="formfield" name="joke" value="Chuck Norris can divide by zero.";
+			}
+			result = bxhttp;
+		""", baseURL + "/multipart" ), context );
+		// @formatter:on
+
+		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
+
+		IStruct bxhttp = variables.getAsStruct( result );
+
+		Assertions.assertTrue( bxhttp.containsKey( Key.statusCode ) );
+		assertThat( bxhttp.get( Key.statusCode ) ).isEqualTo( 201 );
+		Assertions.assertTrue( bxhttp.containsKey( Key.status_code ) );
+		assertThat( bxhttp.get( Key.status_code ) ).isEqualTo( 201 );
+
+		Assertions.assertTrue( bxhttp.containsKey( Key.statusText ) );
+		assertThat( bxhttp.get( Key.statusText ) ).isEqualTo( "Created" );
+		Assertions.assertTrue( bxhttp.containsKey( Key.status_text ) );
+		assertThat( bxhttp.get( Key.status_text ) ).isEqualTo( "Created" );
+
+		Assertions.assertTrue( bxhttp.containsKey( Key.fileContent ) );
+		assertThat( bxhttp.get( Key.fileContent ) ).isEqualTo( "{\"success\": true }" );
 	}
 
 }

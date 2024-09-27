@@ -17,9 +17,12 @@
  */
 package ortus.boxlang.runtime.components.net;
 
+import java.io.File;
+import java.io.IOException;
 import java.net.ConnectException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
@@ -49,6 +52,7 @@ import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.net.HTTPStatusReasons;
 import ortus.boxlang.runtime.net.HttpManager;
+import ortus.boxlang.runtime.net.HttpRequestMultipartBody;
 import ortus.boxlang.runtime.net.URIBuilder;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
@@ -58,6 +62,8 @@ import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
+import ortus.boxlang.runtime.util.FileSystemUtil;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 import ortus.boxlang.runtime.validation.Validator;
 
 @BoxComponent( allowsBody = true )
@@ -160,49 +166,84 @@ public class HTTP extends Component {
 		try {
 			HttpRequest.Builder			builder			= HttpRequest.newBuilder();
 			URIBuilder					uriBuilder		= new URIBuilder( theURL );
-			HttpRequest.BodyPublisher	bodyPublisher	= HttpRequest.BodyPublishers.noBody();
-			List<String>				formFields		= new ArrayList<>();
+			HttpRequest.BodyPublisher	bodyPublisher	= null;
+			List<IStruct>				formFields		= new ArrayList<>();
+			List<IStruct>				files			= new ArrayList<>();
 			builder.header( "User-Agent", "BoxLang" );
 			for ( Object p : params ) {
 				IStruct	param	= StructCaster.cast( p );
 				String	type	= param.getAsString( Key.type );
 				switch ( type.toLowerCase() ) {
 					case "header" -> builder.header( param.getAsString( Key._NAME ), param.getAsString( Key.value ) );
-					case "body" -> bodyPublisher = HttpRequest.BodyPublishers.ofString( param.getAsString( Key.value ) );
+					case "body" -> {
+						if ( bodyPublisher != null ) {
+							throw new BoxRuntimeException( "Cannot use a body httpparam with an existing http body: " + bodyPublisher.toString() );
+						}
+						bodyPublisher = HttpRequest.BodyPublishers.ofString( param.getAsString( Key.value ) );
+					}
 					case "xml" -> {
+						if ( bodyPublisher != null ) {
+							throw new BoxRuntimeException( "Cannot use a xml httpparam with an existing http body: " + bodyPublisher.toString() );
+						}
 						builder.header( "Content-Type", "text/xml" );
 						bodyPublisher = HttpRequest.BodyPublishers.ofString( param.getAsString( Key.value ) );
 					}
 					// @TODO move URLEncoder.encode usage a non-deprecated method
 					case "cgi" -> builder.header( param.getAsString( Key._NAME ),
 					    java.net.URLEncoder.encode( param.getAsString( Key.value ), StandardCharsets.UTF_8 ) );
-					case "file" -> throw new BoxRuntimeException( "Unhandled HTTPParam type: " + type );
+					case "file" -> files.add( param );
 					case "url" -> uriBuilder.addParameter(
 					    param.getAsString( Key._NAME ),
 					    BooleanCaster.cast( param.getOrDefault( Key.encoded, true ) )
 					        ? URLEncoder.encode( StringCaster.cast( param.get( Key.value ) ), StandardCharsets.UTF_8 )
 					        : StringCaster.cast( param.get( Key.value ) )
 					);
-					case "formfield" -> {
-						String value = param.getAsString( Key.value );
-						if ( BooleanCaster.cast( param.getOrDefault( Key.encoded, true ) ) ) {
-							value = URLEncoder.encode( value, StandardCharsets.UTF_8 );
-						}
-						String name = param.getAsString( Key._NAME );
-						formFields.add( name + "=" + value );
-					}
+					case "formfield" -> formFields.add( param );
 					case "cookie" -> builder.header( "Cookie",
 					    param.getAsString( Key._NAME ) + "=" + URLEncoder.encode( param.getAsString( Key.value ), StandardCharsets.UTF_8 ) );
 					default -> throw new BoxRuntimeException( "Unhandled HTTPParam type: " + type );
 				}
 			}
 
-			if ( !formFields.isEmpty() ) {
+			if ( !files.isEmpty() ) {
+				if ( bodyPublisher != null ) {
+					throw new BoxRuntimeException( "Cannot use a multipart body with an existing http body: " + bodyPublisher.toString() );
+				}
+				HttpRequestMultipartBody.Builder multipartBodyBuilder = new HttpRequestMultipartBody.Builder();
+				for ( IStruct param : files ) {
+					ResolvedFilePath	path		= FileSystemUtil.expandPath( context, param.getAsString( Key.file ) );
+					File				file		= path.absolutePath().toFile();
+					String				mimeType	= Optional.ofNullable( param.getAsString( Key.mimetype ) )
+					    .orElseGet( () -> URLConnection.getFileNameMap().getContentTypeFor( file.getName() ) );
+					multipartBodyBuilder.addPart( param.getAsString( Key._name ), file, mimeType, file.getName() );
+				}
+
+				for ( IStruct formField : formFields ) {
+					multipartBodyBuilder.addPart( formField.getAsString( Key._name ), formField.getAsString( Key.value ) );
+				}
+				HttpRequestMultipartBody multipartBody = multipartBodyBuilder.build();
+				builder.header( "Content-Type", multipartBody.getContentType() );
+				bodyPublisher = HttpRequest.BodyPublishers.ofByteArray( multipartBody.getBody() );
+			} else if ( !formFields.isEmpty() ) {
+				if ( bodyPublisher != null ) {
+					throw new BoxRuntimeException( "Cannot use a formfield httpparam with an existing http body: " + bodyPublisher.toString() );
+				}
 				bodyPublisher = HttpRequest.BodyPublishers.ofString(
 				    formFields.stream()
+				        .map( formField -> {
+					        String value = formField.getAsString( Key.value );
+					        if ( BooleanCaster.cast( formField.getOrDefault( Key.encoded, true ) ) ) {
+						        value = URLEncoder.encode( value, StandardCharsets.UTF_8 );
+					        }
+					        return formField.getAsString( Key._name ) + "=" + value;
+				        } )
 				        .collect( Collectors.joining( "&" ) )
 				);
 				builder.header( "Content-Type", "application/x-www-form-urlencoded" );
+			}
+
+			if ( bodyPublisher == null ) {
+				bodyPublisher = HttpRequest.BodyPublishers.noBody();
 			}
 
 			builder.method( method, bodyPublisher );
@@ -275,8 +316,8 @@ public class HTTP extends Component {
 				throw new BoxRuntimeException( innerException.getMessage() );
 			}
 			return DEFAULT_RETURN;
-		} catch ( URISyntaxException | InterruptedException e ) {
-			throw new BoxRuntimeException( e.getMessage() );
+		} catch ( URISyntaxException | InterruptedException | IOException e ) {
+			throw new BoxRuntimeException( e.getMessage(), e );
 		}
 	}
 
