@@ -158,7 +158,7 @@ jobs:
         if: env.SNAPSHOT == 'false'
         run: |
           gradle publish --no-daemon --no-parallel
-          gradle publishToSonatype closeAndReleaseSonatypeStagingRepository
+          gradle publishAllPublicationsToCentralPortal
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GPG_KEY: ${{ secrets.GPG_KEY }}
