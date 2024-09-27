@@ -459,4 +459,40 @@ public class HTTPTest {
 		assertThat( bxhttp.get( Key.errorDetail ) ).isEqualTo( "Unknown host: does-not-exist.also-does-not-exist: Name or service not known." );
 	}
 
+	@DisplayName( "It can handle timeouts" )
+	@Test
+	public void testTimeout( WireMockRuntimeInfo wmRuntimeInfo ) {
+		stubFor( get( "/timeout" ).willReturn( aResponse().withStatus( 200 ).withFixedDelay( 5000 ) ) );
+
+		String baseURL = wmRuntimeInfo.getHttpBaseUrl();
+		// @formatter:off
+		instance.executeSource( String.format( """
+			http timeout="1" method="GET" url="%s" {
+				httpparam type="header" name="User-Agent" value="HyperCFML/7.5.2";
+			}
+			result = bxhttp;
+		""", baseURL + "/timeout" ), context );
+		// @formatter:on
+
+		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
+
+		IStruct bxhttp = variables.getAsStruct( result );
+
+		Assertions.assertTrue( bxhttp.containsKey( Key.statusCode ) );
+		assertThat( bxhttp.get( Key.statusCode ) ).isEqualTo( 408 );
+		Assertions.assertTrue( bxhttp.containsKey( Key.status_code ) );
+		assertThat( bxhttp.get( Key.status_code ) ).isEqualTo( 408 );
+
+		Assertions.assertTrue( bxhttp.containsKey( Key.statusText ) );
+		assertThat( bxhttp.get( Key.statusText ) ).isEqualTo( "Request Timeout" );
+		Assertions.assertTrue( bxhttp.containsKey( Key.status_text ) );
+		assertThat( bxhttp.get( Key.status_text ) ).isEqualTo( "Request Timeout" );
+
+		Assertions.assertTrue( bxhttp.containsKey( Key.fileContent ) );
+		assertThat( bxhttp.get( Key.fileContent ) ).isEqualTo( "Request Timeout" );
+
+		Assertions.assertTrue( bxhttp.containsKey( Key.errorDetail ) );
+		assertThat( bxhttp.get( Key.errorDetail ) ).isEqualTo( "Request timed out after 1 second." );
+	}
+
 }

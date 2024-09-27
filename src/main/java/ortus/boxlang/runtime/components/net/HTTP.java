@@ -17,7 +17,6 @@
  */
 package ortus.boxlang.runtime.components.net;
 
-import java.io.IOException;
 import java.net.ConnectException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -33,6 +32,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 import ortus.boxlang.runtime.components.Attribute;
@@ -207,12 +208,19 @@ public class HTTP extends Component {
 			builder.method( method, bodyPublisher );
 			uri = uriBuilder.build();
 			builder.uri( uri );
-			HttpRequest				request				= builder.build();
-			HttpClient				client				= HttpManager.getClient();
-			HttpResponse<String>	response			= client.send( request, HttpResponse.BodyHandlers.ofString() );
+			HttpRequest								request			= builder.build();
+			HttpClient								client			= HttpManager.getClient();
+			CompletableFuture<HttpResponse<String>>	inflightRequest	= client.sendAsync( request, HttpResponse.BodyHandlers.ofString() );
+			CompletableFuture<HttpResponse<String>>	winner			= inflightRequest;
+			if ( attributes.containsKey( Key.timeout ) ) {
+				winner = inflightRequest.applyToEither( HttpManager.getTimeoutRequestAsync( attributes.getAsInteger( Key.timeout ) ), result -> result );
+			}
+			HttpResponse<String>	response			= winner.get();
 
-			HttpHeaders				httpHeaders			= response.headers();
-			IStruct					headers				= transformToResponseHeaderStruct( httpHeaders.map(), response );
+			HttpHeaders				httpHeaders			= Optional.ofNullable( response.headers() )
+			    .orElse( HttpHeaders.of( Map.of(), ( a, b ) -> true ) );
+			IStruct					headers				= transformToResponseHeaderStruct(
+			    httpHeaders.map() );
 			String					httpVersionString	= response.version() == HttpClient.Version.HTTP_1_1 ? "HTTP/1.1" : "HTTP/2";
 			String					statusCodeString	= String.valueOf( response.statusCode() );
 			String					statusText			= HTTPStatusReasons.getReasonForStatus( response.statusCode() );
@@ -228,8 +236,8 @@ public class HTTP extends Component {
 			HTTPResult.put( Key.status_code, response.statusCode() );
 			HTTPResult.put( Key.statusText, statusText );
 			HTTPResult.put( Key.status_text, statusText );
-			HTTPResult.put( Key.fileContent, response.body() );
-			HTTPResult.put( Key.errorDetail, "" );
+			HTTPResult.put( Key.fileContent, response.statusCode() == 408 ? "Request Timeout" : response.body() );
+			HTTPResult.put( Key.errorDetail, response.statusCode() == 408 ? response.body() : "" );
 			Optional<String> contentTypeHeader = httpHeaders.firstValue( "Content-Type" );
 			contentTypeHeader.ifPresent( ( contentType ) -> {
 				String[] contentTypeParts = contentType.split( ";\s*" );
@@ -247,22 +255,27 @@ public class HTTP extends Component {
 			ExpressionInterpreter.setVariable( context, variableName, HTTPResult );
 
 			return DEFAULT_RETURN;
-		} catch ( ConnectException e ) {
-			HTTPResult.put( Key.responseHeader, Struct.EMPTY );
-			HTTPResult.put( Key.header, "" );
-			HTTPResult.put( Key.statusCode, 502 );
-			HTTPResult.put( Key.status_code, 502 );
-			HTTPResult.put( Key.statusText, "Bad Gateway" );
-			HTTPResult.put( Key.status_text, "Bad Gateway" );
-			HTTPResult.put( Key.fileContent, "Connection Failure" );
-			if ( uri != null ) {
-				HTTPResult.put( Key.errorDetail, String.format( "Unknown host: %s: Name or service not known.", uri.getHost() ) );
+		} catch ( ExecutionException e ) {
+			Throwable innerException = e.getCause();
+			if ( innerException instanceof ConnectException ) {
+				HTTPResult.put( Key.responseHeader, Struct.EMPTY );
+				HTTPResult.put( Key.header, "" );
+				HTTPResult.put( Key.statusCode, 502 );
+				HTTPResult.put( Key.status_code, 502 );
+				HTTPResult.put( Key.statusText, "Bad Gateway" );
+				HTTPResult.put( Key.status_text, "Bad Gateway" );
+				HTTPResult.put( Key.fileContent, "Connection Failure" );
+				if ( uri != null ) {
+					HTTPResult.put( Key.errorDetail, String.format( "Unknown host: %s: Name or service not known.", uri.getHost() ) );
+				} else {
+					HTTPResult.put( Key.errorDetail, String.format( "Unknown host: %s: Name or service not known.", theURL ) );
+				}
+				ExpressionInterpreter.setVariable( context, variableName, HTTPResult );
 			} else {
-				HTTPResult.put( Key.errorDetail, String.format( "Unknown host: %s: Name or service not known.", theURL ) );
+				throw new BoxRuntimeException( innerException.getMessage() );
 			}
-			ExpressionInterpreter.setVariable( context, variableName, HTTPResult );
 			return DEFAULT_RETURN;
-		} catch ( URISyntaxException | IOException | InterruptedException e ) {
+		} catch ( URISyntaxException | InterruptedException e ) {
 			throw new BoxRuntimeException( e.getMessage() );
 		}
 	}
@@ -359,8 +372,12 @@ public class HTTP extends Component {
 		    } ).collect( Collectors.joining( " " ) );
 	}
 
-	private <T> IStruct transformToResponseHeaderStruct( Map<String, List<String>> headersMap, HttpResponse<T> response ) {
+	private IStruct transformToResponseHeaderStruct( Map<String, List<String>> headersMap ) {
 		IStruct responseHeaders = new Struct();
+
+		if ( headersMap == null ) {
+			return responseHeaders;
+		}
 
 		// Add all the headers to our struct
 		for ( String headerName : headersMap.keySet() ) {
