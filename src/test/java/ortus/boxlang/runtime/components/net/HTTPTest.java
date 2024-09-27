@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.components.net;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aMultipart;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.containing;
 import static com.github.tomakehurst.wiremock.client.WireMock.created;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
@@ -537,7 +538,12 @@ public class HTTPTest {
 	public void testMultipart( WireMockRuntimeInfo wmRuntimeInfo ) {
 		stubFor(
 		    post( "/multipart" )
-		        .withMultipartRequestBody( aMultipart().withName( "photo" ).withName( "joke" ) )
+		        .withMultipartRequestBody(
+		            aMultipart()
+		                .withName( "photo" )
+		                .withName( "joke" )
+		                .withBody( containing( "Chuck Norris can divide by zero." ) )
+		        )
 		        .willReturn( created().withBody( "{\"success\": true }" ) ) );
 
 		String baseURL = wmRuntimeInfo.getHttpBaseUrl();

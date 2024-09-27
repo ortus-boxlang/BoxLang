@@ -129,7 +129,7 @@ public class HttpRequestMultipartBody {
 				out.write( ( "\"\r\n" ).getBytes( StandardCharsets.UTF_8 ) );
 				Object content = record.getContent();
 				if ( content instanceof String ) {
-					out.write( ( "\r\n\r\n" ).getBytes( StandardCharsets.UTF_8 ) );
+					out.write( ( "\r\n" ).getBytes( StandardCharsets.UTF_8 ) );
 					out.write( ( ( String ) content ).getBytes( StandardCharsets.UTF_8 ) );
 				} else if ( content instanceof byte[] ) {
 					out.write( ( "Content-Type: " + record.getContentType() + "\r\n\r\n" ).getBytes( StandardCharsets.UTF_8 ) );
