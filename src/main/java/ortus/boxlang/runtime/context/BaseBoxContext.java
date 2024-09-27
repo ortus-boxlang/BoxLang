@@ -160,8 +160,20 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return IBoxContext
 	 */
 	public IBoxContext pushTemplate( IBoxRunnable template ) {
-		this.templates.push( template.getRunnablePath() );
+		pushTemplate( template.getRunnablePath() );
 		this.currentImports = template.getImports();
+		return this;
+	}
+
+	/**
+	 * Push a template to the stack
+	 *
+	 * @param template The template that this execution context is bound to
+	 *
+	 * @return IBoxContext
+	 */
+	public IBoxContext pushTemplate( ResolvedFilePath template ) {
+		this.templates.push( template );
 		return this;
 	}
 

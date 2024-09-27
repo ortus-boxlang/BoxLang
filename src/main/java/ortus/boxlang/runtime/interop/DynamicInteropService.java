@@ -1535,7 +1535,7 @@ public class DynamicInteropService {
 	public static Class<?> argumentToClass( Object thisArg ) {
 		// nulls are always null, why is this even a thing?
 		if ( thisArg == null ) {
-			return Object.class;
+			return null;
 		}
 		// If it's a primitive, we need to convert it to the wrapper class
 		Class<?> clazz = thisArg.getClass();

@@ -99,6 +99,7 @@ import ortus.boxlang.parser.antlr.CFGrammar.ExprPowerContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprPrecedenceContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprPrefixContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprRelationalContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ExprStatAnonymousFunctionContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprStatInvocableContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprStaticAccessContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprTernaryContext;
@@ -752,6 +753,11 @@ public class CFVisitor extends CFGrammarBaseVisitor<BoxNode> {
 
 	@Override
 	public BoxNode visitExprStaticAccess( ExprStaticAccessContext ctx ) {
+		return buildExprStat( ctx );
+	}
+
+	@Override
+	public BoxNode visitExprStatAnonymousFunction( ExprStatAnonymousFunctionContext ctx ) {
 		return buildExprStat( ctx );
 	}
 

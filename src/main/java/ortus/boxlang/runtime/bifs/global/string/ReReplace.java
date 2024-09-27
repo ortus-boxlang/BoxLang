@@ -26,6 +26,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
+import ortus.boxlang.runtime.types.util.RegexUtil;
 import ortus.boxlang.runtime.validation.Validator;
 
 @BoxBIF
@@ -77,9 +78,9 @@ public class ReReplace extends BIF {
 		}
 
 		// Posix replacement for character classes
-		regex	= ReFind.posixReplace( regex, noCase );
+		regex	= RegexUtil.posixReplace( regex, noCase );
 		// Ignore non-quantifier curly braces like PERL
-		regex	= ReFind.replaceNonQuantiferCurlyBraces( regex );
+		regex	= RegexUtil.replaceNonQuantiferCurlyBraces( regex );
 
 		StringBuffer	result		= new StringBuffer();
 		Matcher			matcher		= Pattern.compile( regex ).matcher( string );

@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import ortus.boxlang.runtime.interop.DynamicObject;
-import ortus.boxlang.runtime.scopes.IScope;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
@@ -75,8 +75,8 @@ public class CollectionCaster implements IBoxCaster {
 		}
 		object = DynamicObject.unWrap( object );
 
-		if ( object instanceof IScope scope ) {
-			return scope.keySet()
+		if ( object instanceof IStruct str ) {
+			return str.keySet()
 			    .stream()
 			    .map( k -> k.getName() )
 			    .collect( Collectors.toList() );

@@ -17,9 +17,7 @@
  */
 package ortus.boxlang.runtime.loader.resolvers;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -36,6 +34,7 @@ import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.util.FileSystemUtil;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 /**
@@ -47,11 +46,6 @@ public class BoxResolver extends BaseResolver {
 	 * Singleton instance
 	 */
 	protected static BoxResolver				instance;
-
-	/**
-	 * Flag for whether FS is case sensitive or not to short circuit case insensitive path resolution
-	 */
-	private static boolean						isCaseSensitiveFS	= caseSensitivityCheck();
 
 	/**
 	 * List of valid class extensions
@@ -102,6 +96,21 @@ public class BoxResolver extends BaseResolver {
 	 * This method will be called by the {@link ClassLocator} class
 	 * to resolve the class if the prefix matches.
 	 *
+	 * @param context   The current context of execution
+	 * @param name      The name of the class to resolve
+	 * @param loadClass When false, the class location is returned with informatino about where the class was found, but the class is not loaded and will be null.
+	 *
+	 * @return An optional class object representing the class if found
+	 */
+	public Optional<ClassLocation> resolve( IBoxContext context, String name, boolean loadClass ) {
+		return resolve( context, name, EMPTY_IMPORTS, loadClass );
+	}
+
+	/**
+	 * Each resolver has a way to resolve the class it represents.
+	 * This method will be called by the {@link ClassLocator} class
+	 * to resolve the class if the prefix matches.
+	 *
 	 * @param context The current context of execution
 	 * @param name    The name of the class to resolve
 	 *
@@ -109,7 +118,7 @@ public class BoxResolver extends BaseResolver {
 	 */
 	@Override
 	public Optional<ClassLocation> resolve( IBoxContext context, String name ) {
-		return resolve( context, name, EMPTY_IMPORTS );
+		return resolve( context, name, EMPTY_IMPORTS, true );
 	}
 
 	/**
@@ -125,6 +134,22 @@ public class BoxResolver extends BaseResolver {
 	 */
 	@Override
 	public Optional<ClassLocation> resolve( IBoxContext context, String name, List<ImportDefinition> imports ) {
+		return resolve( context, name, imports, true );
+	}
+
+	/**
+	 * Each resolver has a way to resolve the class it represents.
+	 * This method will be called by the {@link ClassLocator} class
+	 * to resolve the class if the prefix matches with imports.
+	 *
+	 * @param context   The current context of execution
+	 * @param name      The name of the class to resolve
+	 * @param imports   The list of imports to use
+	 * @param loadClass When false, the class location is returned with informatino about where the class was found, but the class is not loaded and will be null.
+	 *
+	 * @return An optional class object representing the class if found
+	 */
+	public Optional<ClassLocation> resolve( IBoxContext context, String name, List<ImportDefinition> imports, boolean loadClass ) {
 		// turn / into .
 		name	= name.replace( "../", "DOT_DOT_SLASH" )
 		    .replace( "/", "." )
@@ -136,8 +161,8 @@ public class BoxResolver extends BaseResolver {
 
 		final String fullyQualifiedName = expandFromImport( context, name, imports );
 
-		return findFromModules( context, fullyQualifiedName, imports )
-		    .or( () -> findFromLocal( context, fullyQualifiedName, imports ) );
+		return findFromModules( context, fullyQualifiedName, imports, loadClass )
+		    .or( () -> findFromLocal( context, fullyQualifiedName, imports, loadClass ) );
 	}
 
 	/**
@@ -149,6 +174,19 @@ public class BoxResolver extends BaseResolver {
 	 * @return The loaded class or null if not found
 	 */
 	public Optional<ClassLocation> findFromModules( IBoxContext context, String name, List<ImportDefinition> imports ) {
+		return findFromModules( context, name, imports, true );
+	}
+
+	/**
+	 * Load a class from the registered runtime module class loaders
+	 *
+	 * @param name      The fully qualified path of the class to load
+	 * @param imports   The list of imports to use
+	 * @param loadClass When false, the class location is returned with informatino about where the class was found, but the class is not loaded and will be null.
+	 *
+	 * @return The loaded class or null if not found
+	 */
+	public Optional<ClassLocation> findFromModules( IBoxContext context, String name, List<ImportDefinition> imports, boolean loadClass ) {
 		return Optional.ofNullable( null );
 	}
 
@@ -162,6 +200,20 @@ public class BoxResolver extends BaseResolver {
 	 * @return The loaded class or null if not found
 	 */
 	public Optional<ClassLocation> findFromLocal( IBoxContext context, String name, List<ImportDefinition> imports ) {
+		return findFromLocal( context, name, imports, true );
+	}
+
+	/**
+	 * Load a class from the configured directory byte code
+	 *
+	 * @param context   The current context of execution
+	 * @param name      The fully qualified path of the class to load
+	 * @param imports   The list of imports to use
+	 * @param loadClass When false, the class location is returned with informatino about where the class was found, but the class is not loaded and will be null.
+	 *
+	 * @return The loaded class or null if not found
+	 */
+	public Optional<ClassLocation> findFromLocal( IBoxContext context, String name, List<ImportDefinition> imports, boolean loadClass ) {
 		// Convert package dot name to a lookup path
 		String slashName = name.replace( "../", "DOT_DOT_SLASH" )
 		    .replace( ".", "/" )
@@ -176,8 +228,8 @@ public class BoxResolver extends BaseResolver {
 		// Find the class using:
 		// 1. Relative to the current template
 		// 2. A mapping
-		return findByRelativeLocation( context, finalSlashName, name, imports )
-		    .or( () -> findByMapping( context, finalSlashName, name, imports ) );
+		return findByRelativeLocation( context, finalSlashName, name, imports, loadClass )
+		    .or( () -> findByMapping( context, finalSlashName, name, imports, loadClass ) );
 	}
 
 	/**
@@ -187,6 +239,7 @@ public class BoxResolver extends BaseResolver {
 	 * @param slashName The name of the class to find using slahes instead of dots
 	 * @param name      The original dot notation name of the class to find
 	 * @param imports   The list of imports to use
+	 * @param loadClass When false, the class location is returned with informatino about where the class was found, but the class is not loaded and will be null.
 	 *
 	 * @return An Optional of {@link ClassLocation} if found, {@link Optional#empty()} otherwise
 	 */
@@ -194,7 +247,8 @@ public class BoxResolver extends BaseResolver {
 	    IBoxContext context,
 	    String slashName,
 	    String name,
-	    List<ImportDefinition> imports ) {
+	    List<ImportDefinition> imports,
+	    boolean loadClass ) {
 
 		// Look for a mapping that matches the start of the path
 		IStruct mappings = context.getConfig().getAsStruct( Key.mappings );
@@ -217,7 +271,7 @@ public class BoxResolver extends BaseResolver {
 				    Path absolutePath = Path.of( StringUtils.replaceOnceIgnoreCase( slashName, entry.getKey().getName(), entry.getValue() + "/" ) + extension )
 				        .normalize();
 				    // Verify that the file exists
-				    absolutePath = pathExists( absolutePath );
+				    absolutePath = FileSystemUtil.pathExistsCaseInsensitive( absolutePath );
 				    if ( absolutePath != null ) {
 					    try {
 						    String mappingName		= entry.getKey().getName();
@@ -260,7 +314,7 @@ public class BoxResolver extends BaseResolver {
 			        possibleMatch.absolutePath().toAbsolutePath().toString(),
 			        possibleMatch.getPackage().toString(),
 			        ClassLocator.TYPE_BX,
-			        RunnableLoader.getInstance().loadClass( possibleMatch, context ),
+			        loadClass ? RunnableLoader.getInstance().loadClass( possibleMatch, context ) : null,
 			        "",
 			        false
 			    );
@@ -276,6 +330,7 @@ public class BoxResolver extends BaseResolver {
 	 * @param slashName The name of the class to find using slahes instead of dots
 	 * @param name      The original dot notation name of the class to find
 	 * @param imports   The list of imports to use
+	 * @param loadClass When false, the class location is returned with informatino about where the class was found, but the class is not loaded and will be null.
 	 *
 	 * @return An Optional of {@link ClassLocation} if found, {@link Optional#empty()} otherwise
 	 */
@@ -283,7 +338,8 @@ public class BoxResolver extends BaseResolver {
 	    IBoxContext context,
 	    String slashName,
 	    String name,
-	    List<ImportDefinition> imports ) {
+	    List<ImportDefinition> imports,
+	    boolean loadClass ) {
 
 		// Check if the class exists in the directory of the currently-executing template
 		ResolvedFilePath resolvedFilePath = context.findClosestTemplate();
@@ -307,7 +363,7 @@ public class BoxResolver extends BaseResolver {
 						    targetPath.toAbsolutePath().toString(),
 						    newResolvedFilePath.getPackage().toString(),
 						    ClassLocator.TYPE_BX,
-						    RunnableLoader.getInstance().loadClass( newResolvedFilePath, context ),
+						    loadClass ? RunnableLoader.getInstance().loadClass( newResolvedFilePath, context ) : null,
 						    "",
 						    false
 						) );
@@ -322,92 +378,12 @@ public class BoxResolver extends BaseResolver {
 		for ( String extension : VALID_EXTENSIONS ) {
 			Path	targetPath	= parentPath.resolve( slashName.substring( 1 ) + extension ).normalize();
 
-			Path	result		= pathExists( targetPath );
+			Path	result		= FileSystemUtil.pathExistsCaseInsensitive( targetPath );
 			if ( result != null ) {
 				return result;
 			}
 		}
 		return null;
-	}
-
-	/**
-	 * Performs case insensitive path resolution
-	 * 
-	 * @param path The path to check
-	 * 
-	 * @return The resolved path or null if not found
-	 */
-	Path pathExists( Path path ) {
-		Boolean defaultCheck = Files.exists( path );
-		if ( defaultCheck ) {
-			try {
-				return path.toRealPath();
-			} catch ( IOException e ) {
-				return null;
-			}
-		}
-		if ( isCaseSensitiveFS ) {
-			String		realPath		= "";
-			String[]	pathSegments	= path.toString().replace( '\\', '/' ).split( "/" );
-			if ( pathSegments.length > 0 && pathSegments[ 0 ].contains( ":" ) ) {
-				realPath = pathSegments[ 0 ];
-			}
-			Boolean first = true;
-			for ( String thisSegment : pathSegments ) {
-				// Skip windows drive letter
-				if ( realPath == pathSegments[ 0 ] && pathSegments[ 0 ].contains( ":" ) && first ) {
-					first = false;
-					continue;
-				}
-				// Skip empty segments
-				if ( thisSegment.length() == 0 ) {
-					continue;
-				}
-
-				Boolean		found		= false;
-				String[]	children	= new File( realPath + "/" ).list();
-				// This will happen if we have a matched file in the middle of a path like /foo/index.cfm/bar
-				if ( children == null ) {
-					return null;
-				}
-				for ( String thisChild : children ) {
-					// We're taking the FIRST MATCH. Buyer beware
-					if ( thisSegment.equalsIgnoreCase( thisChild ) ) {
-						realPath	+= "/" + thisChild;
-						found		= true;
-						break;
-					}
-				}
-				// If we made it through the inner loop without a match, we've hit a dead end
-				if ( !found ) {
-					return null;
-				}
-			}
-			// If we made it through the outer loop, we've found a match
-			Path realPathFinal = Paths.get( realPath );
-			return realPathFinal;
-		}
-		return null;
-	}
-
-	private static boolean caseSensitivityCheck() {
-		try {
-			File	currentWorkingDir	= new File( System.getProperty( "user.home" ) );
-			File	case1				= new File( currentWorkingDir, "case1" );
-			File	case2				= new File( currentWorkingDir, "Case1" );
-			case1.createNewFile();
-			if ( case2.createNewFile() ) {
-				case1.delete();
-				case2.delete();
-				return true;
-			} else {
-				case1.delete();
-				return false;
-			}
-		} catch ( Throwable e ) {
-			e.printStackTrace();
-		}
-		return true;
 	}
 
 }

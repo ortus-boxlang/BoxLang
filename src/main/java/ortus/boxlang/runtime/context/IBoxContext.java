@@ -296,13 +296,22 @@ public interface IBoxContext extends IBoxAttachable, Serializable {
 	public Key findClosestFunctionName();
 
 	/**
-	 * Push a template to the stack
+	 * Push a template and imports to the stack
 	 *
 	 * @param template The template that this execution context is bound to
 	 *
 	 * @return IBoxContext
 	 */
 	public IBoxContext pushTemplate( IBoxRunnable template );
+
+	/**
+	 * Push a template to the stack
+	 *
+	 * @param template The template that this execution context is bound to
+	 *
+	 * @return IBoxContext
+	 */
+	public IBoxContext pushTemplate( ResolvedFilePath template );
 
 	/**
 	 * Pop a template from the stack

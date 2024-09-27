@@ -170,7 +170,12 @@
 												<strong>#encodeForHTML( prop.name )#</strong>
 											</td>
 											<td>
-												#writeDump( var : variablesScope[ prop.name ] ?: null, top : top, expand : expand )#
+												#writeDump(
+													var : variablesScope[ prop.name ] ?: null,
+													top : top,
+													expand : expand,
+													showUDFs : showUDFs
+												)#
 											</td>
 										</tr>
 									</bx:loop>
@@ -188,6 +193,7 @@
 						scope="row"
 						valign="top"
 						tabindex="0"
+						title="This Scope"
 					>
 						Public Data
 					</th>
@@ -219,7 +225,12 @@
 												<strong>#encodeForHTML( dataProperty )#</strong>
 											</td>
 											<td>
-												#writeDump( var : dataProperty ?: null, top : top, expand : expand )#
+												#writeDump(
+													var : dataProperty ?: null,
+													top : top,
+													expand : expand,
+													showUDFs : showUDFs
+												)#
 											</td>
 										</tr>
 									</bx:loop>

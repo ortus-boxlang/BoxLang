@@ -3438,4 +3438,101 @@ public class CoreLangTest {
 		);
 	}
 
+	@Test
+	public void testHigherOrderClosure() {
+	// @formatter:off
+	instance.executeSource(
+		"""
+			fullName = ( fname ) => ( lname ) => "#fname# #lname#";
+			result = fullName( "John" )( "Doe" );
+		""",
+		context, BoxSourceType.BOXSCRIPT
+	);
+	// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( "John Doe" );
+	}
+
+	@Test
+	public void testHigherOrderClosureCF() {
+	// @formatter:off
+	instance.executeSource(
+		"""
+			fullName = ( fname ) => ( lname ) => "#fname# #lname#";
+			result = fullName( "John" )( "Doe" );
+		""",
+		context, BoxSourceType.CFSCRIPT
+	);
+	// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( "John Doe" );
+	}
+
+	@Test
+	public void testTagContextLineMapping() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+			tagContext = [];
+			try {
+				include "src/test/java/TestCases/phase1/TagContextLineMapping.bxs";
+				foo()
+			} catch( any e ) {
+				tagContext = e.tagContext;
+			}
+			""",
+			context, BoxSourceType.CFSCRIPT
+		);
+		// @formatter:on
+		assertThat( variables.get( Key.of( "tagContext" ) ) ).isInstanceOf( Array.class );
+		Array tagContext = variables.getAsArray( Key.of( "tagContext" ) );
+		assertThat( tagContext.size() ).isGreaterThan( 0 );
+		assertThat( tagContext.get( 0 ) ).isInstanceOf( IStruct.class );
+		IStruct tagContextStruct = ( IStruct ) tagContext.get( 0 );
+		assertThat( tagContextStruct.get( Key.of( "line" ) ) ).isEqualTo( 2 );
+		assertThat( tagContextStruct.getAsString( Key.of( "template" ) ) ).ignoringCase().contains( "TagContextLineMapping.bxs" );
+		String code[] = tagContextStruct.getAsString( Key.of( "codePrintPlain" ) ).split( "\n" );
+		assertThat( code[ 1 ] ).contains( "for( foo in null ) {" );
+	}
+
+	@Test
+	public void testFindJavaConstructorWithNulls() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+			import java.net.URI;
+			new URI( null, null, "", null, null );
+			""",
+			context, BoxSourceType.BOXSCRIPT
+		);
+		// @formatter:on
+	}
+
+	@Test
+	public void testAssignToList() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+			import java.util.ArrayList;
+			list = new ArrayList();
+			list[1] = "brad";
+			""",
+			context, BoxSourceType.BOXSCRIPT
+		);
+		// @formatter:on
+	}
+
+	@DisplayName( "for in loop struct keys are strings" )
+	@Test
+	public void testForInLoopStructKeysAreStrings() {
+		instance.executeSource(
+		    """
+		    result=""
+		    str ={ foo : "bar" }
+		    for( key in str ) {
+		    	result = getMetadata( key ).getName();
+		    }
+		             """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "java.lang.String" );
+	}
+
 }

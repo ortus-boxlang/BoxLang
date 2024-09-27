@@ -81,7 +81,11 @@ class{
 		 */
 		settings = {
 			loadedOn : now(),
-			loadedBy : "Luis Majano"
+			loadedBy : "Luis Majano",
+			nested : {
+				supportedBy : "Brad",
+				SLA : "24 hours"
+			}
 		};
 
 		/**

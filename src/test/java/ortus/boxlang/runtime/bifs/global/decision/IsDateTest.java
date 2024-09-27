@@ -167,6 +167,17 @@ public class IsDateTest {
 		assertTrue( variables.getAsBoolean( result ) );
 	}
 
+	@DisplayName( "It tests the BIF IsDate with a common Javascript Date.toString output" )
+	@Test
+	public void testJSToStringFormat() {
+		instance.executeSource(
+		    """
+		    result = IsDate( "Wed Sep 18 2024 09:20:47 GMT-0700 (Pacific Daylight Time)" );
+		    """,
+		    context );
+		assertTrue( variables.getAsBoolean( result ) );
+	}
+
 	@DisplayName( "It tests the BIF IsDate using a localized russian format" )
 	@Test
 	public void testIsDateRussian() {

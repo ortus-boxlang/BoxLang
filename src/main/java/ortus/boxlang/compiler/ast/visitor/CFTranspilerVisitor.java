@@ -91,7 +91,7 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	private static Key								upperCaseKeysKey			= Key.of( "upperCaseKeys" );
 	private static Key								forceOutputTrueKey			= Key.of( "forceOutputTrue" );
 	private static Key								mergeDocsIntoAnnotationsKey	= Key.of( "mergeDocsIntoAnnotations" );
-	private static Key								compatKey					= Key.of( "compat" );
+	private static Key								compatKey					= Key.of( "compat-cfml" );
 	private static BoxRuntime						runtime						= BoxRuntime.getInstance();
 	private static ModuleService					moduleService				= runtime.getModuleService();
 	private boolean									isClass						= false;

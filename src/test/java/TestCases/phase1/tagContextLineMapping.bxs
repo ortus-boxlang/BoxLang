@@ -1,0 +1,5 @@
+function foo() {
+	for( foo in null ) {
+		println( "good luck" )
+	}
+}

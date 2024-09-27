@@ -1310,7 +1310,7 @@ public class ClassTest {
 	}
 
 	@Test
-	public void MethodPropConflict() {
+	public void testMethodPropConflict() {
 		instance.executeSource(
 		    """
 		    	cfc = new src.test.java.TestCases.phase3.MethodPropConflict();
@@ -1322,6 +1322,18 @@ public class ClassTest {
 		// But variable set in super class's psedu constructor will get hammered by the concrete class's method
 		assertThat( variables.get( "result2" ) ).isInstanceOf( Function.class );
 		assertThat( ( ( Function ) variables.get( "result2" ) ).getName().getName() ).isEqualTo( "baz" );
+	}
+
+	@Test
+	public void testBinderProperties() {
+		instance.executeSource(
+		    """
+		      	cfc = new src.test.java.TestCases.phase3.ConcreteBinder("my injector");
+		    properties = cfc.getProperties();
+		    currentMapping = cfc.getCurrentMapping();
+		      """, context );
+		assertThat( variables.get( "properties" ) ).isInstanceOf( IStruct.class );
+		assertThat( variables.get( "currentMapping" ) ).isInstanceOf( Array.class );
 	}
 
 }
