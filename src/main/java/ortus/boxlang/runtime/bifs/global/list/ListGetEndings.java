@@ -21,7 +21,6 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -68,7 +67,7 @@ public class ListGetEndings extends BIF {
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Key		bifMethodKey	= arguments.getAsKey( BIF.__functionName );
 		Array	listArray		= ListUtil.asList(
-		    StringCaster.cast( arguments.get( Key.list ) ),
+		    arguments.getAsString( Key.list ),
 		    arguments.getAsString( Key.delimiter ),
 		    arguments.getAsBoolean( Key.includeEmptyFields ),
 		    arguments.getAsBoolean( Key.multiCharacterDelimiter )
