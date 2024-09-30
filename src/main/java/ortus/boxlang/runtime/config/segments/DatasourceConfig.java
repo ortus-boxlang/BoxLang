@@ -526,12 +526,6 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 			result.setMaximumPoolSize( IntegerCaster.cast( properties.get( Key.maxConnections ), false ) );
 		}
 
-		// Hikari doesn't use a driver, but if present use it
-		// This is mostly for legacy support
-		if ( properties.containsKey( Key._CLASS ) ) {
-			result.setDriverClassName( properties.getAsString( Key._CLASS ) );
-		}
-
 		// We also support these HikariConfig-specific properties
 		if ( properties.containsKey( Key.autoCommit ) ) {
 			result.setAutoCommit( properties.getAsBoolean( Key.autoCommit ) );
