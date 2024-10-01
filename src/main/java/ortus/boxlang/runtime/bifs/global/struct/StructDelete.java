@@ -39,7 +39,7 @@ public class StructDelete extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "modifiableStruct", Key.struct ),
-		    new Argument( true, "string", Key.key )
+		    new Argument( true, "any", Key.key )
 		};
 	}
 
@@ -57,7 +57,7 @@ public class StructDelete extends BIF {
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		IStruct	target	= arguments.getAsStruct( Key.struct );
-		Key		key		= Key.of( arguments.getAsString( Key.key ) );
+		Key		key		= Key.of( arguments.get( Key.key ) );
 		target.remove( key );
 		return target;
 	}
