@@ -57,7 +57,16 @@ public class ApplicationBoxContext extends BaseBoxContext {
 	 * @param application The application to bind to this context
 	 */
 	public ApplicationBoxContext( Application application ) {
-		super( null );
+		this( null, application );
+	}
+
+	/**
+	 * Creates a new execution context with a bounded execution template and parent context
+	 *
+	 * @param application The application to bind to this context
+	 */
+	public ApplicationBoxContext( IBoxContext parent, Application application ) {
+		super( parent );
 		updateApplication( application );
 	}
 
