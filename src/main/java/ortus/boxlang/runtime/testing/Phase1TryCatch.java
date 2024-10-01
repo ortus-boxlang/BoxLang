@@ -281,6 +281,6 @@ public class Phase1TryCatch extends BoxTemplate {
 		}
 
 		// Bye bye! Ciao Bella!
-		boxRuntime.shutdown();
+		// boxRuntime.shutdown();
 	}
 }

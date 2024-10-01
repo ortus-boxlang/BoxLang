@@ -227,6 +227,6 @@ public class Phase1Switch extends BoxTemplate {
 		}
 
 		// Bye bye! Ciao Bella!
-		boxRuntime.shutdown();
+		// boxRuntime.shutdown();
 	}
 }
