@@ -218,12 +218,12 @@ public class Session implements Serializable {
 		// Create a temp request context with an application context with our application listener.
 		// This will allow the application scope to be available as well as all settings from the original Application.bx
 		listener.onSessionEnd(
-		    new ApplicationBoxContext(
-		        new ScriptingRequestBoxContext(
+		    new ScriptingRequestBoxContext(
+		        new ApplicationBoxContext(
 		            BoxRuntime.getInstance().getRuntimeContext(),
-		            listener
+		            listener.getApplication()
 		        ),
-		        listener.getApplication()
+		        listener
 		    ),
 		    new Object[] { sessionScope != null ? sessionScope : Struct.of(), listener.getApplication().getApplicationScope() }
 		);
