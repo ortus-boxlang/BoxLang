@@ -102,23 +102,43 @@ public record ResolvedFilePath( String mappingName, String mappingPath, String r
 	}
 
 	/**
-	 * Get the package of the resolved path.
-	 *
-	 * @return The package of the resolved path.
-	 */
-	public FQN getPackage() {
-		return FQN.of( relativePath != null ? Path.of( relativePath ) : absolutePath ).getPackage();
-	}
-
-	/**
 	 * Get the package of the resolved path, but with a prefix appended in front
 	 *
 	 * @param prefix The prefix to append to the package.
 	 *
 	 * @return The package of the resolved path with the prefix appended.
 	 */
-	public FQN getPackage( String prefix ) {
-		return FQN.of( prefix, relativePath != null ? Path.of( relativePath ) : absolutePath ).getPackage();
+	public FQN getFQN( String prefix ) {
+		return FQN.of( prefix, relativePath != null ? Path.of( relativePath ) : absolutePath );
+	}
+
+	/**
+	 * Get the package of the resolved path.
+	 *
+	 * @return The package of the resolved path.
+	 */
+	public FQN getFQN() {
+		return FQN.of( relativePath != null ? Path.of( relativePath ) : absolutePath );
+	}
+
+	/**
+	 * Get the Box package of the resolved path.
+	 *
+	 * @return The package of the resolved path.
+	 */
+	public BoxFQN getBoxFQN() {
+		return BoxFQN.of( relativePath != null ? Path.of( relativePath ) : absolutePath );
+	}
+
+	/**
+	 * Get the Box package of the resolved path, but with a prefix appended in front
+	 *
+	 * @param prefix The prefix to append to the package.
+	 *
+	 * @return The package of the resolved path with the prefix appended.
+	 */
+	public BoxFQN getBoxFQN( String prefix ) {
+		return BoxFQN.of( prefix, relativePath != null ? Path.of( relativePath ) : absolutePath );
 	}
 
 	/**

@@ -328,20 +328,12 @@ public class AsmTranspiler extends Transpiler {
 
 	@Override
 	public ClassNode transpile( BoxClass boxClass ) throws BoxRuntimeException {
-		Source	source			= boxClass.getPosition().getSource();
-		String	sourceType		= getProperty( "sourceType" );
+		Source		source			= boxClass.getPosition().getSource();
+		String		sourceType		= getProperty( "sourceType" );
 
-		String	filePath		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath()
+		String		filePath		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath()
 		    : "unknown";
-		String	fileName		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getName() : "unknown";
-		String	boxPackageName	= getProperty( "boxPackageName" );
-		String	rawBoxClassName	= boxPackageName + "." + fileName.replace( ".bx", "" ).replace( ".cfc", "" ), boxClassName;
-		// trim leading . if exists
-		if ( rawBoxClassName.startsWith( "." ) ) {
-			boxClassName = rawBoxClassName.substring( 1 );
-		} else {
-			boxClassName = rawBoxClassName;
-		}
+		String		boxClassName	= getProperty( "boxFQN" );
 		String		mappingName		= getProperty( "mappingName" );
 		String		mappingPath		= getProperty( "mappingPath" );
 		String		relativePath	= getProperty( "relativePath" );

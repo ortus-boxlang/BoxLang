@@ -312,7 +312,7 @@ public class BoxResolver extends BaseResolver {
 			    return new ClassLocation(
 			        className,
 			        possibleMatch.absolutePath().toAbsolutePath().toString(),
-			        possibleMatch.getPackage().toString(),
+			        possibleMatch.getFQN().getPackageString(),
 			        ClassLocator.TYPE_BX,
 			        loadClass ? RunnableLoader.getInstance().loadClass( possibleMatch, context ) : null,
 			        "",
@@ -361,7 +361,7 @@ public class BoxResolver extends BaseResolver {
 						return Optional.of( new ClassLocation(
 						    FilenameUtils.getBaseName( newResolvedFilePath.absolutePath().toString() ),
 						    targetPath.toAbsolutePath().toString(),
-						    newResolvedFilePath.getPackage().toString(),
+						    newResolvedFilePath.getFQN().getPackageString(),
 						    ClassLocator.TYPE_BX,
 						    loadClass ? RunnableLoader.getInstance().loadClass( newResolvedFilePath, context ) : null,
 						    "",
