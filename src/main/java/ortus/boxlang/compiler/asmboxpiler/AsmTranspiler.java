@@ -136,11 +136,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.StaticScope;
 import ortus.boxlang.runtime.scopes.ThisScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
-import ortus.boxlang.runtime.types.Array;
-import ortus.boxlang.runtime.types.IStruct;
-import ortus.boxlang.runtime.types.IType;
-import ortus.boxlang.runtime.types.Property;
-import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.*;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
@@ -878,6 +874,7 @@ public class AsmTranspiler extends Transpiler {
 			javaExpr.addAll( jNameKey );
 			javaExpr.add( new LdcInsnNode( type ) );
 			javaExpr.addAll( init );
+			javaExpr.add( new InsnNode( Opcodes.ACONST_NULL ) ); // TODO: might be lambda expression
 			javaExpr.addAll( annotationStruct );
 			javaExpr.addAll( documentationStruct );
 
@@ -890,7 +887,8 @@ public class AsmTranspiler extends Transpiler {
 			    Type.getInternalName( Property.class ),
 			    "<init>",
 			    Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( Key.class ), Type.getType( String.class ), Type.getType( Object.class ),
-			        Type.getType( IStruct.class ), Type.getType( IStruct.class ), Type.getType( BoxSourceType.class ) ),
+			        Type.getType( DefaultExpression.class ), Type.getType( IStruct.class ), Type.getType( IStruct.class ),
+			        Type.getType( BoxSourceType.class ) ),
 			    false ) );
 
 			members.add( jNameKey );
