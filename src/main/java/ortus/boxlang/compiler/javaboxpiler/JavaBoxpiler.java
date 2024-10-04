@@ -126,7 +126,7 @@ public class JavaBoxpiler extends Boxpiler {
 		Transpiler transpiler = Transpiler.getTranspiler();
 		transpiler.setProperty( "classname", classInfo.className() );
 		transpiler.setProperty( "packageName", classInfo.packageName().toString() );
-		transpiler.setProperty( "boxPackageName", classInfo.boxPackageName().toString() );
+		transpiler.setProperty( "boxFQN", classInfo.boxFqn().toString() );
 		transpiler.setProperty( "baseclass", classInfo.baseclass() );
 		transpiler.setProperty( "returnType", classInfo.returnType() );
 		transpiler.setProperty( "sourceType", classInfo.sourceType().name() );
@@ -162,7 +162,7 @@ public class JavaBoxpiler extends Boxpiler {
 			throw new BoxRuntimeException( javaSource );
 
 		// Capture the line numbers of each Java AST node from printing the Java source
-		diskClassUtil.writeLineNumbers( classInfo.classPoolName(), classInfo.FQN(),
+		diskClassUtil.writeLineNumbers( classInfo.classPoolName(), classInfo.fqn().toString(),
 		    generateLineNumberJSON( classInfo, prettyPrinter.getVisitor().getLineNumbers() ) );
 		return javaSource;
 	}
@@ -186,12 +186,12 @@ public class JavaBoxpiler extends Boxpiler {
 				return;
 			}
 			ParsingResult result = parseOrFail( sourceFile );
-			compileSource( generateJavaSource( result.getRoot(), classInfo ), classInfo.FQN(), classPoolName );
+			compileSource( generateJavaSource( result.getRoot(), classInfo ), classInfo.fqn().toString(), classPoolName );
 		} else if ( classInfo.source() != null ) {
 			ParsingResult result = parseOrFail( classInfo.source(), classInfo.sourceType(), classInfo.isClass() );
-			compileSource( generateJavaSource( result.getRoot(), classInfo ), classInfo.FQN(), classPoolName );
+			compileSource( generateJavaSource( result.getRoot(), classInfo ), classInfo.fqn().toString(), classPoolName );
 		} else if ( classInfo.interfaceProxyDefinition() != null ) {
-			compileSource( generateProxyJavaSource( classInfo ), classInfo.FQN(), classPoolName );
+			compileSource( generateProxyJavaSource( classInfo ), classInfo.fqn().toString(), classPoolName );
 		} else {
 			throw new BoxRuntimeException( "Unknown class info type: " + classInfo.toString() );
 		}
@@ -321,9 +321,9 @@ public class JavaBoxpiler extends Boxpiler {
 			classInfo = ClassInfo.forTemplate( resolvedFilePath, Parser.detectFile( path.toFile() ), this );
 		}
 		var classPool = getClassPool( classInfo.classPoolName() );
-		classPool.putIfAbsent( classInfo.FQN(), classInfo );
-		compileClassInfo( classInfo.classPoolName(), classInfo.FQN() );
-		return diskClassUtil.readClassBytes( classInfo.classPoolName(), classInfo.FQN() );
+		classPool.putIfAbsent( classInfo.fqn().toString(), classInfo );
+		compileClassInfo( classInfo.classPoolName(), classInfo.fqn().toString() );
+		return diskClassUtil.readClassBytes( classInfo.classPoolName(), classInfo.fqn().toString() );
 	}
 
 }

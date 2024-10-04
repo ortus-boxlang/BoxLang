@@ -114,7 +114,7 @@ public class BoxInterfaceTransformer extends AbstractTransformer {
 			private static Map<Key, AbstractFunction>	abstractMethods	= new LinkedHashMap<>();
 			private static Map<Key, Function>	defaultMethods	= new LinkedHashMap<>();
 			private static ${classname} instance;
-			private static Key name = ${boxInterfacename};
+			private static Key name = ${boxFQN};
 			private static List<BoxInterface> _supers = new ArrayList();
 			private static StaticScope staticScope;
 
@@ -258,36 +258,30 @@ public class BoxInterfaceTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 
-		BoxInterface	boxInterface		= ( BoxInterface ) node;
-		Source			source				= boxInterface.getPosition().getSource();
-		String			packageName			= transpiler.getProperty( "packageName" );
-		String			boxPackageName		= transpiler.getProperty( "boxPackageName" );
-		String			classname			= transpiler.getProperty( "classname" );
-		String			mappingName			= transpiler.getProperty( "mappingName" );
-		String			mappingPath			= transpiler.getProperty( "mappingPath" );
-		String			relativePath		= transpiler.getProperty( "relativePath" );
-		String			fileName			= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getName() : "unknown";
-		String			filePath			= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath() : "unknown";
-		String			boxInterfacename	= boxPackageName + "." + fileName.replace( ".bx", "" ).replace( ".cfc", "" );
-		String			sourceType			= transpiler.getProperty( "sourceType" );
+		BoxInterface					boxInterface	= ( BoxInterface ) node;
+		Source							source			= boxInterface.getPosition().getSource();
+		String							packageName		= transpiler.getProperty( "packageName" );
+		String							boxFQN			= transpiler.getProperty( "boxFQN" );
+		String							classname		= transpiler.getProperty( "classname" );
+		String							mappingName		= transpiler.getProperty( "mappingName" );
+		String							mappingPath		= transpiler.getProperty( "mappingPath" );
+		String							relativePath	= transpiler.getProperty( "relativePath" );
+		String							fileName		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getName() : "unknown";
+		String							filePath		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath()
+		    : "unknown";
+		String							sourceType		= transpiler.getProperty( "sourceType" );
 
-		// trim leading . if exists
-		if ( boxInterfacename.startsWith( "." ) ) {
-			boxInterfacename = boxInterfacename.substring( 1 );
-		}
-
-		Map<String, String>				values	= Map.ofEntries(
+		Map<String, String>				values			= Map.ofEntries(
 		    Map.entry( "packagename", packageName ),
-		    Map.entry( "boxPackageName", boxPackageName ),
 		    Map.entry( "classname", classname ),
 		    Map.entry( "fileName", fileName ),
 		    Map.entry( "resolvedFilePath", transpiler.getResolvedFilePath( mappingName, mappingPath, relativePath, filePath ) ),
 		    Map.entry( "sourceType", sourceType ),
 		    Map.entry( "compiledOnTimestamp", transpiler.getDateTime( LocalDateTime.now() ) ),
 		    Map.entry( "compileVersion", "1L" ),
-		    Map.entry( "boxInterfacename", createKey( boxInterfacename ).toString() )
+		    Map.entry( "boxFQN", createKey( boxFQN ).toString() )
 		);
-		String							code	= PlaceholderHelper.resolve( template, values );
+		String							code			= PlaceholderHelper.resolve( template, values );
 		ParseResult<CompilationUnit>	result;
 
 		try {

@@ -196,6 +196,6 @@ public class Phase2UDF extends BoxTemplate {
 		}
 
 		// Bye bye! Ciao Bella!
-		boxRuntime.shutdown();
+		// boxRuntime.shutdown();
 	}
 }

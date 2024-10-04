@@ -136,11 +136,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.StaticScope;
 import ortus.boxlang.runtime.scopes.ThisScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
-import ortus.boxlang.runtime.types.Array;
-import ortus.boxlang.runtime.types.IStruct;
-import ortus.boxlang.runtime.types.IType;
-import ortus.boxlang.runtime.types.Property;
-import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.*;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
@@ -328,20 +324,12 @@ public class AsmTranspiler extends Transpiler {
 
 	@Override
 	public ClassNode transpile( BoxClass boxClass ) throws BoxRuntimeException {
-		Source	source			= boxClass.getPosition().getSource();
-		String	sourceType		= getProperty( "sourceType" );
+		Source		source			= boxClass.getPosition().getSource();
+		String		sourceType		= getProperty( "sourceType" );
 
-		String	filePath		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath()
+		String		filePath		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath()
 		    : "unknown";
-		String	fileName		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getName() : "unknown";
-		String	boxPackageName	= getProperty( "boxPackageName" );
-		String	rawBoxClassName	= boxPackageName + "." + fileName.replace( ".bx", "" ).replace( ".cfc", "" ), boxClassName;
-		// trim leading . if exists
-		if ( rawBoxClassName.startsWith( "." ) ) {
-			boxClassName = rawBoxClassName.substring( 1 );
-		} else {
-			boxClassName = rawBoxClassName;
-		}
+		String		boxClassName	= getProperty( "boxFQN" );
 		String		mappingName		= getProperty( "mappingName" );
 		String		mappingPath		= getProperty( "mappingPath" );
 		String		relativePath	= getProperty( "relativePath" );
@@ -853,11 +841,36 @@ public class AsmTranspiler extends Transpiler {
 
 			List<AbstractInsnNode>	annotationStruct	= transformAnnotations( finalAnnotations );
 			/* Process default value */
-			List<AbstractInsnNode>	init;
+			List<AbstractInsnNode>	init, initLambda;
 			if ( defaultAnnotation.getValue() != null ) {
-				init = transform( defaultAnnotation.getValue(), TransformerContext.NONE, ReturnValueContext.EMPTY );
+
+				if ( defaultAnnotation.getValue().isLiteral() ) {
+					init		= transform( defaultAnnotation.getValue(), TransformerContext.NONE, ReturnValueContext.EMPTY );
+					initLambda	= List.of( new InsnNode( Opcodes.ACONST_NULL ) );
+				} else {
+					init = List.of( new InsnNode( Opcodes.ACONST_NULL ) );
+
+					Type					type		= Type.getType( "L" + getProperty( "packageName" ).replace( '.', '/' )
+					    + "/" + getProperty( "classname" )
+					    + "$Lambda_" + incrementAndGetLambdaCounter() + ";" );
+
+					List<AbstractInsnNode>	body		= transform( defaultAnnotation.getValue(), TransformerContext.NONE, ReturnValueContext.EMPTY );
+					ClassNode				classNode	= new ClassNode();
+					AsmHelper.init( classNode, false, type, Type.getType( Object.class ), methodVisitor -> {
+					}, Type.getType( DefaultExpression.class ) );
+					AsmHelper.methodWithContextAndClassLocator( classNode, "evaluate", Type.getType( IBoxContext.class ), Type.getType( Object.class ), false,
+					    this, false,
+					    () -> body );
+					setAuxiliary( type.getClassName(), classNode );
+
+					initLambda = List.of(
+					    new TypeInsnNode( Opcodes.NEW, type.getInternalName() ),
+					    new InsnNode( Opcodes.DUP ),
+					    new MethodInsnNode( Opcodes.INVOKESPECIAL, type.getInternalName(), "<init>", Type.getMethodDescriptor( Type.VOID_TYPE ), false ) );
+				}
 			} else {
-				init = List.of( new InsnNode( Opcodes.ACONST_NULL ) );
+				init		= List.of( new InsnNode( Opcodes.ACONST_NULL ) );
+				initLambda	= List.of( new InsnNode( Opcodes.ACONST_NULL ) );
 			}
 			// name and type must be simple values
 			String	name;
@@ -886,6 +899,7 @@ public class AsmTranspiler extends Transpiler {
 			javaExpr.addAll( jNameKey );
 			javaExpr.add( new LdcInsnNode( type ) );
 			javaExpr.addAll( init );
+			javaExpr.addAll( initLambda );
 			javaExpr.addAll( annotationStruct );
 			javaExpr.addAll( documentationStruct );
 
@@ -898,7 +912,8 @@ public class AsmTranspiler extends Transpiler {
 			    Type.getInternalName( Property.class ),
 			    "<init>",
 			    Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( Key.class ), Type.getType( String.class ), Type.getType( Object.class ),
-			        Type.getType( IStruct.class ), Type.getType( IStruct.class ), Type.getType( BoxSourceType.class ) ),
+			        Type.getType( DefaultExpression.class ), Type.getType( IStruct.class ), Type.getType( IStruct.class ),
+			        Type.getType( BoxSourceType.class ) ),
 			    false ) );
 
 			members.add( jNameKey );

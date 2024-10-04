@@ -158,7 +158,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 			// Private instance fields
 			private VariablesScope variablesScope = new ClassVariablesScope(this);
 			private ThisScope thisScope = new ThisScope();
-			private Key name = ${boxClassName};
+			private Key name = ${boxFQN};
 			private IClassRunnable _super = null;
 			private IClassRunnable child = null;
 			private Boolean canOutput = null;
@@ -443,7 +443,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 		BoxClass		boxClass			= ( BoxClass ) node;
 		Source			source				= boxClass.getPosition().getSource();
 		String			packageName			= transpiler.getProperty( "packageName" );
-		String			boxPackageName		= transpiler.getProperty( "boxPackageName" );
+		String			boxFQN				= transpiler.getProperty( "boxFQN" );
 		String			className			= transpiler.getProperty( "classname" );
 		String			mappingName			= transpiler.getProperty( "mappingName" );
 		String			mappingPath			= transpiler.getProperty( "mappingPath" );
@@ -514,20 +514,14 @@ public class BoxClassTransformer extends AbstractTransformer {
 		 * Prep the class template properties
 		 * --------------------------------------------------------------------------
 		 */
-		String	fileName		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getName() : "unknown";
-		String	filePath		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath() : "unknown";
-		String	boxClassName	= boxPackageName + "." + fileName.replace( ".bx", "" ).replace( ".cfc", "" );
-		String	sourceType		= transpiler.getProperty( "sourceType" );
-
-		// trim leading . if exists
-		if ( boxClassName.startsWith( "." ) ) {
-			boxClassName = boxClassName.substring( 1 );
-		}
+		String							fileName	= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getName() : "unknown";
+		String							filePath	= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath()
+		    : "unknown";
+		String							sourceType	= transpiler.getProperty( "sourceType" );
 
 		// This map replaces the string template
-		Map<String, String>				values	= Map.ofEntries(
+		Map<String, String>				values		= Map.ofEntries(
 		    Map.entry( "packagename", packageName ),
-		    Map.entry( "boxPackageName", boxPackageName ),
 		    Map.entry( "className", className ),
 		    Map.entry( "fileName", fileName ),
 		    Map.entry( "interfaceMethods", interfaceMethods ),
@@ -539,10 +533,10 @@ public class BoxClassTransformer extends AbstractTransformer {
 		    Map.entry( "resolvedFilePath", transpiler.getResolvedFilePath( mappingName, mappingPath, relativePath, filePath ) ),
 		    Map.entry( "compiledOnTimestamp", transpiler.getDateTime( LocalDateTime.now() ) ),
 		    Map.entry( "compileVersion", "1L" ),
-		    Map.entry( "boxClassName", createKey( boxClassName ).toString() ),
+		    Map.entry( "boxFQN", createKey( boxFQN ).toString() ),
 		    Map.entry( "compileTimeMethodNames", generateCompileTimeMethodNames( boxClass ) )
 		);
-		String							code	= PlaceholderHelper.resolve( CLASS_TEMPLATE, values );
+		String							code		= PlaceholderHelper.resolve( CLASS_TEMPLATE, values );
 		ParseResult<CompilationUnit>	result;
 
 		try {

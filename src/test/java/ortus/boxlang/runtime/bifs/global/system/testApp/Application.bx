@@ -1,0 +1,24 @@
+class {
+	this.name = "testApp";
+	this.sessionManagement = true;
+	this.mappings["/foobar"] = getDirectoryFromPath( getCurrentTemplatePath() );
+
+	function onApplicationStart() {
+		println( "onApplicationStart fired!" )
+	}
+
+	function onSessionStart() {
+		session.luis = "majano";
+	}
+
+	function onSessionEnd( sessionScope, appScope ) {
+		println( "onSessionEnd fired!" )
+		println( "in onSessionEnd: " & expandPath( "/foobar" ) )
+		// This will only be found if our mapping above is present
+		new foobar.myClass();
+		var tmp = application.brad
+		tmp = appScope.brad
+		tmp = sessionScope.luis
+	}
+
+}

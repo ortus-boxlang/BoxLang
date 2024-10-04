@@ -21,6 +21,7 @@ import java.io.Serializable;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -214,8 +215,16 @@ public class Session implements Serializable {
 		    ) );
 
 		// Any buffer output in this context will be discarded
+		// Create a temp request context with an application context with our application listener.
+		// This will allow the application scope to be available as well as all settings from the original Application.bx
 		listener.onSessionEnd(
-		    new ScriptingRequestBoxContext( BoxRuntime.getInstance().getRuntimeContext() ),
+		    new ScriptingRequestBoxContext(
+		        new ApplicationBoxContext(
+		            BoxRuntime.getInstance().getRuntimeContext(),
+		            listener.getApplication()
+		        ),
+		        listener
+		    ),
 		    new Object[] { sessionScope != null ? sessionScope : Struct.of(), listener.getApplication().getApplicationScope() }
 		);
 

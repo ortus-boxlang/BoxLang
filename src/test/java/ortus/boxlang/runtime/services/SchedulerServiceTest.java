@@ -43,7 +43,7 @@ public class SchedulerServiceTest {
 
 	@AfterAll
 	public static void tearDownAfterAll() {
-		runtime.shutdown( true );
+		// runtime.shutdown( true );
 	}
 
 	@DisplayName( "Test it can get an instance of the service" )

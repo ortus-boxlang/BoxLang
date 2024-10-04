@@ -9,7 +9,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.compiler.parser.ParsingResult;
@@ -47,97 +46,6 @@ public interface IBoxpiler {
 		} catch ( java.security.NoSuchAlgorithmException e ) {
 			throw new BoxRuntimeException( "Error compiling source", e );
 		}
-	}
-
-	/**
-	 * Transforms the path into the package name
-	 *
-	 * @param file File object to grab the package name for.
-	 *
-	 * @return returns the class name according the name conventions Test.ext -
-	 *         Test$ext
-	 */
-	static String getPackageName( File file ) {
-		String packg = file.toString().replace( File.separatorChar + file.getName(), "" );
-		if ( packg.startsWith( "/" ) ) {
-			packg = packg.substring( 1 );
-		}
-		// trim trailing \ or /
-		if ( packg.endsWith( "\\" ) || packg.endsWith( "/" ) ) {
-			packg = packg.substring( 0, packg.length() - 1 );
-		}
-
-		// Take out periods in folder names
-		packg	= packg.replaceAll( "\\.", "" );
-		// Replace / with .
-		packg	= packg.replaceAll( "/", "." );
-		// Remove any : from Windows drives
-		packg	= packg.replaceAll( ":", "" );
-		// Replace \ with .
-		packg	= packg.replaceAll( "\\\\", "." );
-
-		return cleanPackageName( packg );
-
-	}
-
-	/**
-	 * Transforms the path into the package name
-	 *
-	 * @param packg String to grab the package name for.
-	 *
-	 * @return returns the class name according the name conventions Test.ext -
-	 *         Test$ext
-	 */
-	static String cleanPackageName( String packg ) {
-		// Replace .. with .
-		packg = packg.replaceAll( "\\.\\.", "." );
-		// trim trailing period
-		if ( packg.endsWith( "." ) ) {
-			packg = packg.substring( 0, packg.length() - 1 );
-		}
-		// trim leading period
-		if ( packg.startsWith( "." ) ) {
-			packg = packg.substring( 1 );
-		}
-		// Remove any non alpha-numeric chars.
-		packg	= packg.replaceAll( "[^a-zA-Z0-9\\.]", "" );
-
-		// parse fqn into list, loop over list and remove any empty strings and turn back into fqn
-		packg	= Arrays.stream( packg.split( "\\." ) )
-		    .map( s -> s.toLowerCase() )
-		    // if starts with number, prefix with _
-		    .map( s -> s.matches( "^\\d.*" ) ? "_" + s : s )
-		    .map( s -> {
-			    if ( RESERVED_WORDS.contains( s ) ) {
-				    return "_" + s;
-			    }
-			    return s;
-		    } )
-		    .collect( Collectors.joining( "." ) );
-
-		return packg;
-
-	}
-
-	/**
-	 * Transforms the filename into the class name
-	 *
-	 * @param file File object to grab the class name for.
-	 *
-	 * @return returns the class name according the name conventions Test.ext -
-	 *         Test$ext
-	 */
-	static String getClassName( File file ) {
-		String name = file.getName().replace( ".", "$" ).replace( "-", "_" );
-		// Can't start with a number
-		name = name.matches( "^\\d.*" ) ? "_" + name : name;
-		// handle reserved words
-		if ( RESERVED_WORDS.contains( name.toLowerCase() ) ) {
-			name = "_" + name;
-		}
-		// Title case the name
-		name = name.substring( 0, 1 ).toUpperCase() + name.substring( 1 );
-		return name;
 	}
 
 	Map<String, ClassInfo> getClassPool( String classPoolName );

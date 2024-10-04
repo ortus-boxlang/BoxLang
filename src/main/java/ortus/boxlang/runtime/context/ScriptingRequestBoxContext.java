@@ -21,6 +21,7 @@ import java.net.URI;
 import java.util.UUID;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.application.BaseApplicationListener;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -84,6 +85,17 @@ public class ScriptingRequestBoxContext extends RequestBoxContext {
 	}
 
 	/**
+	 * Creates a new execution context with a parent context and a specific application listener.
+	 *
+	 * @param parent   The parent context
+	 * @param listener The application listener
+	 */
+	public ScriptingRequestBoxContext( IBoxContext parent, BaseApplicationListener listener ) {
+		super( parent );
+		setApplicationListener( listener );
+	}
+
+	/**
 	 * Creates a new execution context with a parent context, and template
 	 *
 	 * @param parent The parent context
@@ -107,7 +119,7 @@ public class ScriptingRequestBoxContext extends RequestBoxContext {
 	 * Creates a new execution context
 	 */
 	public ScriptingRequestBoxContext() {
-		this( runtime.getRuntimeContext(), null );
+		this( runtime.getRuntimeContext(), ( URI ) null );
 	}
 
 	/**

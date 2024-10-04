@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.scopes;
 import java.io.Serializable;
 import java.util.Arrays;
 
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
@@ -1006,6 +1007,7 @@ public class Key implements Comparable<Key>, Serializable {
 		if ( obj == null ) {
 			throw new BoxRuntimeException( "Cannot create a key from a null object" );
 		}
+		obj = DynamicObject.unWrap( obj );
 		return new Key( obj.toString(), obj );
 	}
 

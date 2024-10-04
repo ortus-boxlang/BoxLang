@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -308,11 +307,10 @@ public class BoxResolver extends BaseResolver {
 
 			    // System.out.println( "found: " + possibleMatch.absolutePath().toAbsolutePath().toString() );
 			    // System.out.println( "found package: " + possibleMatch.getPackage().toString() );
-			    var className = FilenameUtils.getBaseName( possibleMatch.absolutePath().toString() );
 			    return new ClassLocation(
-			        className,
+			        possibleMatch.getBoxFQN().getClassName(),
 			        possibleMatch.absolutePath().toAbsolutePath().toString(),
-			        possibleMatch.getPackage().toString(),
+			        possibleMatch.getBoxFQN().getPackageString(),
 			        ClassLocator.TYPE_BX,
 			        loadClass ? RunnableLoader.getInstance().loadClass( possibleMatch, context ) : null,
 			        "",
@@ -359,9 +357,9 @@ public class BoxResolver extends BaseResolver {
 						    .newFromRelative( parentPath.relativize( Paths.get( targetPath.toString() ) ).toString() );
 
 						return Optional.of( new ClassLocation(
-						    FilenameUtils.getBaseName( newResolvedFilePath.absolutePath().toString() ),
+						    newResolvedFilePath.getBoxFQN().getClassName(),
 						    targetPath.toAbsolutePath().toString(),
-						    newResolvedFilePath.getPackage().toString(),
+						    newResolvedFilePath.getBoxFQN().getPackageString(),
 						    ClassLocator.TYPE_BX,
 						    loadClass ? RunnableLoader.getInstance().loadClass( newResolvedFilePath, context ) : null,
 						    "",

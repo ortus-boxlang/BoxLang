@@ -118,19 +118,19 @@ dependencies {
 	// https://mvnrepository.com/artifact/org.apache.commons/commons-cli
 	implementation "commons-cli:commons-cli:1.9.0"
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-objects
-	implementation 'com.fasterxml.jackson.jr:jackson-jr-objects:2.17.2'
+	implementation 'com.fasterxml.jackson.jr:jackson-jr-objects:2.18.0'
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-extension-javatime
-	implementation 'com.fasterxml.jackson.jr:jackson-jr-extension-javatime:2.17.2'
+	implementation 'com.fasterxml.jackson.jr:jackson-jr-extension-javatime:2.18.0'
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-stree
-	implementation 'com.fasterxml.jackson.jr:jackson-jr-stree:2.17.2'
+	implementation 'com.fasterxml.jackson.jr:jackson-jr-stree:2.18.0'
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-annotation-support
-	implementation 'com.fasterxml.jackson.jr:jackson-jr-annotation-support:2.17.2'
+	implementation 'com.fasterxml.jackson.jr:jackson-jr-annotation-support:2.18.0'
 	// https://mvnrepository.com/artifact/org.slf4j/slf4j-api
 	implementation 'org.slf4j:slf4j-api:2.0.16'
 	// https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
 	implementation 'ch.qos.logback:logback-classic:1.5.8'
 	// https://mvnrepository.com/artifact/com.zaxxer/HikariCP
-	implementation 'com.zaxxer:HikariCP:5.1.0'
+	implementation 'com.zaxxer:HikariCP:6.0.0'
 	// https://mvnrepository.com/artifact/org.ow2.asm/asm-tree
 	implementation 'org.ow2.asm:asm-tree:9.7'
 	// https://mvnrepository.com/artifact/org.ow2.asm/asm-util
