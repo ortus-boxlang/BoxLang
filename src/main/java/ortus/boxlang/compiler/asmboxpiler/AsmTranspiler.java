@@ -841,11 +841,36 @@ public class AsmTranspiler extends Transpiler {
 
 			List<AbstractInsnNode>	annotationStruct	= transformAnnotations( finalAnnotations );
 			/* Process default value */
-			List<AbstractInsnNode>	init;
+			List<AbstractInsnNode>	init, initLambda;
 			if ( defaultAnnotation.getValue() != null ) {
-				init = transform( defaultAnnotation.getValue(), TransformerContext.NONE, ReturnValueContext.EMPTY );
+
+				if ( defaultAnnotation.getValue().isLiteral() ) {
+					init		= transform( defaultAnnotation.getValue(), TransformerContext.NONE, ReturnValueContext.EMPTY );
+					initLambda	= List.of( new InsnNode( Opcodes.ACONST_NULL ) );
+				} else {
+					init = List.of( new InsnNode( Opcodes.ACONST_NULL ) );
+
+					Type					type		= Type.getType( "L" + getProperty( "packageName" ).replace( '.', '/' )
+					    + "/" + getProperty( "classname" )
+					    + "$Lambda_" + incrementAndGetLambdaCounter() + ";" );
+
+					List<AbstractInsnNode>	body		= transform( defaultAnnotation.getValue(), TransformerContext.NONE, ReturnValueContext.EMPTY );
+					ClassNode				classNode	= new ClassNode();
+					AsmHelper.init( classNode, false, type, Type.getType( Object.class ), methodVisitor -> {
+					}, Type.getType( DefaultExpression.class ) );
+					AsmHelper.methodWithContextAndClassLocator( classNode, "evaluate", Type.getType( IBoxContext.class ), Type.getType( Object.class ), false,
+					    this, false,
+					    () -> body );
+					setAuxiliary( type.getClassName(), classNode );
+
+					initLambda = List.of(
+					    new TypeInsnNode( Opcodes.NEW, type.getInternalName() ),
+					    new InsnNode( Opcodes.DUP ),
+					    new MethodInsnNode( Opcodes.INVOKESPECIAL, type.getInternalName(), "<init>", Type.getMethodDescriptor( Type.VOID_TYPE ), false ) );
+				}
 			} else {
-				init = List.of( new InsnNode( Opcodes.ACONST_NULL ) );
+				init		= List.of( new InsnNode( Opcodes.ACONST_NULL ) );
+				initLambda	= List.of( new InsnNode( Opcodes.ACONST_NULL ) );
 			}
 			// name and type must be simple values
 			String	name;
@@ -874,7 +899,7 @@ public class AsmTranspiler extends Transpiler {
 			javaExpr.addAll( jNameKey );
 			javaExpr.add( new LdcInsnNode( type ) );
 			javaExpr.addAll( init );
-			javaExpr.add( new InsnNode( Opcodes.ACONST_NULL ) ); // TODO: might be lambda expression
+			javaExpr.addAll( initLambda );
 			javaExpr.addAll( annotationStruct );
 			javaExpr.addAll( documentationStruct );
 
