@@ -201,10 +201,13 @@ public class FQN {
 			if ( lastPeriodIndex != -1 ) {
 				// Lowercase everything up to the last period
 				String	beforeLastPeriod	= fqn.substring( 0, lastPeriodIndex ).toLowerCase();
-				String	afterLastPeriod		= fqn.substring( lastPeriodIndex + 1 );
+				String	afterLastPeriod		= fqn.substring( lastPeriodIndex + 1 ).toLowerCase();
 				// upper case first char of afterLastPeriod
 				afterLastPeriod	= afterLastPeriod.substring( 0, 1 ).toUpperCase() + afterLastPeriod.substring( 1 );
 				fqn				= beforeLastPeriod + "." + afterLastPeriod;
+			} else {
+				// There is no package, just a class, so upper case first char of fqn
+				fqn = fqn.substring( 0, 1 ).toUpperCase() + fqn.substring( 1 ).toLowerCase();
 			}
 		}
 

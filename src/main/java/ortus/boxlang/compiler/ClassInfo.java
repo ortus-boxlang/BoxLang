@@ -214,7 +214,6 @@ public record ClassInfo(
 	}
 
 	public Boolean isClass() {
-		System.out.println( "ClassInfo.isClass() " + packageName().toString() );
 		return packageName().toString().startsWith( "boxgenerated.boxclass" );
 	}
 
