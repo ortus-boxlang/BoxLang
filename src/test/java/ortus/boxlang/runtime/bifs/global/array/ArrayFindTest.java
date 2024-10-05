@@ -19,6 +19,7 @@
 package ortus.boxlang.runtime.bifs.global.array;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.assertThrows;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -32,6 +33,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 
 public class ArrayFindTest {
 
@@ -154,5 +156,35 @@ public class ArrayFindTest {
 		    context );
 		int found = ( int ) variables.get( result );
 		assertThat( found ).isEqualTo( 2 );
+	}
+
+	@DisplayName( "It should try to convert result of invoked predicate to boolean using CFML rules" )
+	@Test
+	public void testMatchPredicateResultToBoolean() {
+		{
+			instance.executeSource(
+			    """
+			    	nums = [ "red", "blue", "orange" ];
+			    	result = nums.find( item => item == "blue" ? 1 : 0 );
+			    """,
+			    context
+			);
+			int found = ( int ) variables.get( result );
+			assertThat( found ).isEqualTo( 2 );
+		}
+
+		{
+			BoxCastException e = assertThrows( BoxCastException.class, () -> {
+				instance.executeSource(
+				    """
+				    	nums = [ "red", "blue", "orange" ];
+				    	result = nums.find( item => "not-a-boolean" );
+				    """,
+				    context
+				);
+			} );
+
+			assertThat( e ).hasMessageThat().isEqualTo( "String [not-a-boolean] cannot be cast to a boolean" );
+		}
 	}
 }
