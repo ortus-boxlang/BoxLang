@@ -155,4 +155,17 @@ public class ArrayFindTest {
 		int found = ( int ) variables.get( result );
 		assertThat( found ).isEqualTo( 2 );
 	}
+
+	@DisplayName( "It should find using a closure returning a boolean" )
+	@Test
+	public void testMatchClosure() {
+		instance.executeSource(
+		    """
+		    result = ["a","b","c"].find( (v) => v == "b" ? 1 : 0 );
+		    """,
+		    context );
+
+		int found = ( int ) variables.get( result );
+		assertThat( found ).isEqualTo( 2 );
+	}
 }

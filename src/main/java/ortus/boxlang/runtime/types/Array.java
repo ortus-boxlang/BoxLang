@@ -40,6 +40,7 @@ import ortus.boxlang.runtime.bifs.BoxMemberExpose;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
@@ -704,7 +705,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	 */
 	public int findIndex( Function test, IBoxContext context ) {
 		return intStream()
-		    .filter( i -> ( boolean ) context.invokeFunction( test, new Object[] { get( i ) } ) )
+		    .filter( i -> BooleanCaster.cast( context.invokeFunction( test, new Object[] { get( i ), i } ) ) )
 		    .findFirst()
 		    .orElse( -1 ) + 1;
 	}

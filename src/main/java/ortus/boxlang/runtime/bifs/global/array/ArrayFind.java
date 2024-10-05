@@ -52,6 +52,25 @@ public class ArrayFind extends BIF {
 	/**
 	 * Array finders and contains functions with and without case sensitivity.
 	 * Please note that "contain" methods return a boolean, while "find" methods return an index.
+	 * If you use a function as the value, it will be used as a search closure or lambda. The signature of the function should be:
+	 *
+	 * <pre>
+	 *    ( value, index ) => {
+	 * 	  	return true; // if the value is found, else false
+	 *   }
+	 * </pre>
+	 *
+	 * Example:
+	 *
+	 * <pre>
+	 *   array = [ 1, 2, 3, 4, 5 ];
+	 *  index = array.find( ( value, index ) -> {
+	 * 		return value == 3;
+	 * } );
+	 * </pre>
+	 *
+	 * We recommend you use BoxLang lambdas ({@code ->}) for this purpose, so they only act upon the value and index without any side effects.
+	 * They will be faster and more efficient.
 	 *
 	 * @function.arrayFind This function searches the array for the specified value. Returns the index in the array of the first match, or 0 if there is
 	 *                     no match.
