@@ -36,11 +36,11 @@ import ortus.boxlang.runtime.util.ResolvedFilePath;
 public class JavaMethod extends Function {
 
 	private static final Argument[]	EMPTY_ARGUMENTS	= new Argument[ 0 ];
-	private static final IStruct	documentation	= Struct.of( "hint",
+	private static final IStruct	DOCUMENTATION	= Struct.of( "hint",
 	    "I am a wrapped Java method.  Since I may be overloaded, my return type and arguments will be determined when I am invoked" );
 
+	private static final String		RETURN_TYPE		= "any";
 	private final Key				name;
-	private final String			returnType		= "any";
 	private DynamicObject			dynamicObject;
 
 	/**
@@ -78,7 +78,7 @@ public class JavaMethod extends Function {
 	 * @return return type
 	 */
 	public String getReturnType() {
-		return returnType;
+		return RETURN_TYPE;
 	}
 
 	/**
@@ -96,7 +96,7 @@ public class JavaMethod extends Function {
 	 * @return function metadata
 	 */
 	public IStruct getDocumentation() {
-		return documentation;
+		return DOCUMENTATION;
 	}
 
 	/**
@@ -163,9 +163,10 @@ public class JavaMethod extends Function {
 	/**
 	 * True if the function requires strict arguments (basically a java method)
 	 * or false if this is a Boxlang method which can accept additional arbitrary arguments
-	 * 
+	 *
 	 * @return true if strict arguments are required
 	 */
+	@Override
 	public boolean requiresStrictArguments() {
 		return true;
 	}
