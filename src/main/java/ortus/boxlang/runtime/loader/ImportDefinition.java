@@ -96,6 +96,10 @@ public record ImportDefinition( String className, String resolverPrefix, String 
 			// If there is no alias, use the last part of the class name as the alias
 			String[] parts = className.split( "\\." );
 			alias = parts[ parts.length - 1 ];
+			// If there is one or more $ chars, take the last segment (nested class)
+			if ( alias.contains( "$" ) ) {
+				alias = alias.substring( alias.lastIndexOf( "$" ) + 1 );
+			}
 		}
 
 		int resolverDelimiterPos = className.indexOf( ":" );

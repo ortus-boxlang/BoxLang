@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.net.http.HttpRequest.BodyPublisher;
 import java.util.Comparator;
 import java.util.concurrent.TimeUnit;
 
@@ -2665,18 +2666,18 @@ public class CoreLangTest {
 
 		instance.executeSource(
 		    """
-		       	 import java:java.lang.String;
-		       	 javaStatic = java.lang.String::valueOf;
-		       	 result = javaStatic( "test" )
+		    		import java:java.lang.String;
+		    		javaStatic = java.lang.String::valueOf;
+		    		result = javaStatic( "test" )
 
-		       	 javaInstance = result.toUpperCase
-		       	 result2 = javaInstance()
+		    		javaInstance = result.toUpperCase
+		    		result2 = javaInstance()
 
-		       	 import java.util.Collections;
-		       	 result3 = [ 1, 7, 3, 99, 0 ].sort( Collections.reverseOrder().compare  )
+		    		import java.util.Collections;
+		    		result3 = [ 1, 7, 3, 99, 0 ].sort( Collections.reverseOrder().compare  )
 
-		       	 import java:java.lang.Math;
-		       	 result4 = [ 1, 2.4, 3.9, 4.5 ].map( Math::floor )
+		    		import java:java.lang.Math;
+		    		result4 = [ 1, 2.4, 3.9, 4.5 ].map( Math::floor )
 
 		       // Use the compare method from the Java reverse order comparator to sort a BL array
 		       [ 1, 7, 3, 99, 0 ].sort( Collections.reverseOrder()  )
@@ -2687,7 +2688,7 @@ public class CoreLangTest {
 		    result6 = isBrad( "luis" )
 		    result7 = [ "brad", "luis", "jon" ].filter( isBrad )
 
-		       	   """,
+		    		  """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "test" );
 
@@ -2702,6 +2703,19 @@ public class CoreLangTest {
 		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( true );
 		assertThat( variables.get( Key.of( "result6" ) ) ).isEqualTo( false );
 		assertThat( variables.get( Key.of( "result7" ) ) ).isEqualTo( Array.of( "brad" ) );
+	}
+
+	@Test
+	public void testJavaNestedClassImport() {
+
+		instance.executeSource(
+		    """
+		    import java.net.http.HttpRequest$BodyPublishers;
+		    result = BodyPublishers.noBody();
+		    	  """,
+		    context );
+		assertThat( variables.get( result ) ).isNotNull();
+		assertThat( BodyPublisher.class.isAssignableFrom( variables.get( result ).getClass() ) ).isTrue();
 	}
 
 	@Test
