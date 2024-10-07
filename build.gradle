@@ -134,7 +134,7 @@ dependencies {
 	// https://mvnrepository.com/artifact/org.ow2.asm/asm-tree
 	implementation 'org.ow2.asm:asm-tree:9.7'
 	// https://mvnrepository.com/artifact/org.ow2.asm/asm-util
-	implementation 'org.ow2.asm:asm-util:9.7'
+	implementation 'org.ow2.asm:asm-util:9.7.1'
 }
 
 /**
