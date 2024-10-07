@@ -348,7 +348,12 @@ public class AsmHelper {
 
 	public static void addStaticFieldGetterWithStaticGetter( ClassVisitor classVisitor, Type type, String field, String method, String staticMethod,
 	    Type property, Object value ) {
-		addStaticFieldGetter( classVisitor, type, field, method, property, value );
+		addStaticFieldGetterWithStaticGetter( classVisitor, type, field, method, staticMethod, property, value, true );
+	}
+
+	public static void addStaticFieldGetterWithStaticGetter( ClassVisitor classVisitor, Type type, String field, String method, String staticMethod,
+	    Type property, Object value, boolean isFinal ) {
+		addStaticFieldGetter( classVisitor, type, field, method, property, value, isFinal );
 		MethodVisitor methodVisitor = classVisitor.visitMethod( Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
 		    staticMethod,
 		    Type.getMethodDescriptor( property ),
@@ -365,7 +370,11 @@ public class AsmHelper {
 	}
 
 	public static void addStaticFieldGetter( ClassVisitor classVisitor, Type type, String field, String method, Type property, Object value ) {
-		FieldVisitor fieldVisitor = classVisitor.visitField( Opcodes.ACC_STATIC | Opcodes.ACC_FINAL | Opcodes.ACC_PUBLIC,
+		addStaticFieldGetter( classVisitor, type, field, method, property, value, true );
+	}
+
+	public static void addStaticFieldGetter( ClassVisitor classVisitor, Type type, String field, String method, Type property, Object value, boolean isFinal ) {
+		FieldVisitor fieldVisitor = classVisitor.visitField( Opcodes.ACC_STATIC | ( isFinal ? Opcodes.ACC_FINAL : 0 ) | Opcodes.ACC_PUBLIC,
 		    field,
 		    property.getDescriptor(),
 		    null,
@@ -725,21 +734,24 @@ public class AsmHelper {
 		    null );
 
 		methodVisitor.visitCode();
-		Label endOfMethod = new Label(), endOfMonitor = new Label();
+		Label endOfMethod = new Label();
 		methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
 		    type.getInternalName(),
 		    "instance",
 		    type.getDescriptor() );
-		methodVisitor.visitJumpInsn( Opcodes.IFNULL, endOfMethod );
+		methodVisitor.visitJumpInsn( Opcodes.IFNONNULL, endOfMethod );
 		methodVisitor.visitLdcInsn( type );
 		methodVisitor.visitInsn( Opcodes.MONITORENTER );
 		methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
 		    type.getInternalName(),
 		    "instance",
 		    type.getDescriptor() );
-		methodVisitor.visitJumpInsn( Opcodes.IFNULL, endOfMonitor );
+		Label start = new Label(), end = new Label(), handler = new Label();
+		methodVisitor.visitTryCatchBlock( start, end, handler, null );
+		methodVisitor.visitLabel( start );
+		methodVisitor.visitJumpInsn( Opcodes.IFNONNULL, end );
 		instantiation.accept( methodVisitor );
-		methodVisitor.visitLabel( endOfMonitor );
+		methodVisitor.visitLabel( end );
 		methodVisitor.visitLdcInsn( type );
 		methodVisitor.visitInsn( Opcodes.MONITOREXIT );
 		methodVisitor.visitLabel( endOfMethod );
@@ -748,7 +760,10 @@ public class AsmHelper {
 		    "instance",
 		    type.getDescriptor() );
 		methodVisitor.visitInsn( Opcodes.ARETURN );
-
+		methodVisitor.visitLabel( handler );
+		methodVisitor.visitLdcInsn( type );
+		methodVisitor.visitInsn( Opcodes.MONITOREXIT );
+		methodVisitor.visitInsn( Opcodes.ATHROW );
 		methodVisitor.visitMaxs( 0, 0 );
 		methodVisitor.visitEnd();
 	}

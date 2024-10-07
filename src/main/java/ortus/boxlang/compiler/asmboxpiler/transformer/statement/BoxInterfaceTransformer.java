@@ -147,7 +147,7 @@ public class BoxInterfaceTransformer {
 
 			methodVisitor.visitVarInsn( Opcodes.ALOAD, 1 );
 			methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
-			    Type.getInternalName( ortus.boxlang.runtime.runnables.BoxInterface.class ),
+			    type.getInternalName(),
 			    "staticInitializer",
 			    Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( IBoxContext.class ) ),
 			    false );
@@ -208,7 +208,8 @@ public class BoxInterfaceTransformer {
 		    "getStaticScope",
 		    "getStaticScopeStatic",
 		    Type.getType( StaticScope.class ),
-		    null );
+		    null,
+		    false );
 
 		AsmHelper.addStaticFieldGetter( classNode,
 		    type,
@@ -225,7 +226,7 @@ public class BoxInterfaceTransformer {
 		    null );
 		MethodVisitor addSuper = classNode.visitMethod( Opcodes.ACC_PUBLIC,
 		    "_addSuper",
-		    Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( BoxInterface.class ) ),
+		    Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( ortus.boxlang.runtime.runnables.BoxInterface.class ) ),
 		    null,
 		    null );
 		addSuper.visitCode();
@@ -297,7 +298,6 @@ public class BoxInterfaceTransformer {
 		pseudoConstructor.visitInsn( Opcodes.POP );
 		pseudoConstructor.visitInsn( Opcodes.RETURN );
 		pseudoConstructor.visitLabel( handler );
-		pseudoConstructor.visitInsn( Opcodes.POP );
 		pseudoConstructor.visitVarInsn( Opcodes.ALOAD, 1 );
 		pseudoConstructor.visitMethodInsn( Opcodes.INVOKEINTERFACE,
 		    Type.getInternalName( IBoxContext.class ),
@@ -305,7 +305,7 @@ public class BoxInterfaceTransformer {
 		    Type.getMethodDescriptor( Type.getType( ResolvedFilePath.class ) ),
 		    true );
 		pseudoConstructor.visitInsn( Opcodes.POP );
-		pseudoConstructor.visitInsn( Opcodes.RETURN );
+		pseudoConstructor.visitInsn( Opcodes.ATHROW );
 		pseudoConstructor.visitMaxs( 0, 0 );
 		pseudoConstructor.visitEnd();
 
@@ -395,15 +395,9 @@ public class BoxInterfaceTransformer {
 			    "sourceType",
 			    Type.getDescriptor( BoxSourceType.class ) );
 
-			transpiler.createKey( boxInterfacename )
-			    .forEach( abstractInsnNode -> abstractInsnNode.accept( methodVisitor ) );
-			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
-			    type.getInternalName(),
-			    "name",
-			    Type.getDescriptor( Key.class ) );
-
 			List<AbstractInsnNode>	annotations		= transpiler.transformAnnotations( boxInterface.getAnnotations() );
 			List<AbstractInsnNode>	documenation	= transpiler.transformDocumentation( boxInterface.getDocumentation() );
+			List<AbstractInsnNode>	name			= transpiler.createKey( boxInterfacename );
 
 			methodVisitor.visitLdcInsn( transpiler.getKeys().size() );
 			methodVisitor.visitTypeInsn( Opcodes.ANEWARRAY, Type.getInternalName( Key.class ) );
@@ -424,6 +418,12 @@ public class BoxInterfaceTransformer {
 			    type.getInternalName(),
 			    "keys",
 			    Type.getDescriptor( Key[].class ) );
+
+			name.forEach( abstractInsnNode -> abstractInsnNode.accept( methodVisitor ) );
+			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
+			    type.getInternalName(),
+			    "name",
+			    Type.getDescriptor( Key.class ) );
 
 			importNodes.forEach( node -> node.accept( methodVisitor ) );
 			methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
