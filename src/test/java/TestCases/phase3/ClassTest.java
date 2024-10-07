@@ -1151,19 +1151,20 @@ public class ClassTest {
 	public void testStaticImportDot() {
 		instance.executeSource(
 		    """
-		    import src.test.java.TestCases.phase3.StaticTest;
+		       import src.test.java.TestCases.phase3.StaticTest;
 
-		       result1 = StaticTest.foo;
-		       result2 = StaticTest.myStaticFunc();
-		       result4 = StaticTest.scoped;
-		       result5 = StaticTest.unscoped;
-		       result6 = StaticTest.again;
-		    // instance
-		    myInstance = new StaticTest();
-		    result7 = myInstance.foo;
-		    result8 = StaticTest.foo;
-		    result9 = myInstance.myInstanceFunc2()
-		                  """, context, BoxSourceType.BOXSCRIPT );
+		          result1 = StaticTest.foo;
+		          result2 = StaticTest.myStaticFunc();
+		          result4 = StaticTest.scoped;
+		          result5 = StaticTest.unscoped;
+		          result6 = StaticTest.again;
+		       // instance
+		       myInstance = new StaticTest();
+		       result7 = myInstance.foo;
+		       result8 = StaticTest.foo;
+		       result9 = myInstance.myInstanceFunc2()
+		    result10 = myInstance.getStaticBrad()
+		                     """, context, BoxSourceType.BOXSCRIPT );
 		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( 9000 );
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "static9000" );
 		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "brad" );
@@ -1177,6 +1178,7 @@ public class ClassTest {
 		assertThat( result9.get( 0 ) ).isEqualTo( "brad" );
 		assertThat( result9.get( 1 ) ).isEqualTo( "wood" );
 		assertThat( result9.get( 2 ) ).isEqualTo( 42 );
+		assertThat( variables.get( Key.of( "result10" ) ) ).isEqualTo( "wood" );
 	}
 
 	@Test
