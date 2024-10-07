@@ -92,7 +92,6 @@ public class BoxClassTransformer {
 
 	private static final String	EXTENDS_ANNOTATION_MARKER	= "overrideJava";
 
-	@SuppressWarnings( "unchecked" )
 	public static ClassNode transpile( Transpiler transpiler, BoxClass boxClass ) throws BoxRuntimeException {
 		Source	source			= boxClass.getPosition().getSource();
 		String	sourceType		= transpiler.getProperty( "sourceType" );
@@ -468,7 +467,7 @@ public class BoxClassTransformer {
 		).filter( l -> l.size() > 0 ).toList() );
 		// end import node setup
 
-		AsmHelper.methodWithContextAndClassLocator( classNode, "_pseudoConstructor", Type.getType( IBoxContext.class ), Type.VOID_TYPE, false, transpiler, true,
+		AsmHelper.methodWithContextAndClassLocator( classNode, "_pseudoConstructor", Type.getType( IBoxContext.class ), Type.VOID_TYPE, false, transpiler, false,
 		    () -> {
 			    return boxClass.getBody()
 			        .stream()
@@ -487,7 +486,7 @@ public class BoxClassTransformer {
 		    }
 		);
 
-		AsmHelper.methodWithContextAndClassLocator( classNode, "staticInitializer", Type.getType( IBoxContext.class ), Type.VOID_TYPE, true, transpiler, true,
+		AsmHelper.methodWithContextAndClassLocator( classNode, "staticInitializer", Type.getType( IBoxContext.class ), Type.VOID_TYPE, true, transpiler, false,
 		    () -> {
 			    List<AbstractInsnNode> staticNodes = ( List<AbstractInsnNode> ) transpiler.getBoxStaticInitializers()
 			        .stream()

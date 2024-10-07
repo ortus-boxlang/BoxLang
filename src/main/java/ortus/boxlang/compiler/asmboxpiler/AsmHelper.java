@@ -531,7 +531,7 @@ public class AsmHelper {
 		    null );
 		methodVisitor.visitCode();
 		// start tacking the context
-		new VarInsnNode( Opcodes.ALOAD, isStatic ? 0 : 1 ).accept( methodVisitor );
+		methodVisitor.visitVarInsn( Opcodes.ALOAD, isStatic ? 0 : 1 );
 		tracker.trackNewContext().forEach( ( node ) -> node.accept( methodVisitor ) );
 		methodVisitor.visitMethodInsn(
 		    Opcodes.INVOKESTATIC,
@@ -549,9 +549,9 @@ public class AsmHelper {
 			nodes.forEach( node -> node.accept( methodVisitor ) );
 		}
 
-		if ( implicityReturnNull ) {
+		if ( implicityReturnNull && !returnType.equals(Type.VOID_TYPE)) {
 			// push a null onto the stack so that we can return it if there isn't an explicity return
-			new InsnNode( Opcodes.ACONST_NULL ).accept( methodVisitor );
+			methodVisitor.visitInsn( Opcodes.ACONST_NULL );
 		}
 
 		methodVisitor.visitInsn( returnType.getOpcode( Opcodes.IRETURN ) );
@@ -712,4 +712,44 @@ public class AsmHelper {
 		return node;
 	}
 
+	public static void addLazySingleton( ClassVisitor classVisitor, Type type, Consumer<MethodVisitor> instantiation, Type... arguments ) {
+		classVisitor.visitField( Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC,
+			"instance",
+			type.getDescriptor(),
+			null,
+			null).visitEnd();
+		MethodVisitor methodVisitor = classVisitor.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
+			"getInstance",
+			Type.getMethodDescriptor(type, arguments),
+			null,
+			null);
+
+		methodVisitor.visitCode();
+		Label endOfMethod = new Label(), endOfMonitor = new Label();
+		methodVisitor.visitFieldInsn(Opcodes.GETSTATIC,
+			type.getInternalName(),
+			"instance",
+			type.getDescriptor());
+		methodVisitor.visitJumpInsn( Opcodes.IFNULL, endOfMethod);
+		methodVisitor.visitLdcInsn( type );
+		methodVisitor.visitInsn(Opcodes.MONITORENTER);
+		methodVisitor.visitFieldInsn(Opcodes.GETSTATIC,
+			type.getInternalName(),
+			"instance",
+			type.getDescriptor());
+		methodVisitor.visitJumpInsn( Opcodes.IFNULL, endOfMonitor);
+		instantiation.accept(methodVisitor);
+		methodVisitor.visitLabel( endOfMonitor );
+		methodVisitor.visitLdcInsn( type );
+		methodVisitor.visitInsn( Opcodes.MONITOREXIT );
+		methodVisitor.visitLabel(endOfMethod);
+		methodVisitor.visitFieldInsn(Opcodes.GETSTATIC,
+			type.getInternalName(),
+			"instance",
+			type.getDescriptor());
+		methodVisitor.visitInsn( Opcodes.ARETURN );
+
+		methodVisitor.visitMaxs(0, 0);
+		methodVisitor.visitEnd();
+	}
 }
