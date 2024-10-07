@@ -54,21 +54,21 @@ public class BoxInterfaceTransformer {
 
 	public static ClassNode transpile( Transpiler transpiler, BoxInterface boxInterface ) throws BoxRuntimeException {
 
-		Source			source				= boxInterface.getPosition().getSource();
-		String			packageName			= transpiler.getProperty( "packageName" );
-		String			boxPackageName		= transpiler.getProperty( "boxPackageName" );
-		String			classname			= transpiler.getProperty( "classname" );
-		String			mappingName			= transpiler.getProperty( "mappingName" );
-		String			mappingPath			= transpiler.getProperty( "mappingPath" );
-		String			relativePath		= transpiler.getProperty( "relativePath" );
-		String			fileName			= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getName() : "unknown";
-		String			filePath			= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath() : "unknown";
+		Source	source				= boxInterface.getPosition().getSource();
+		String	packageName			= transpiler.getProperty( "packageName" );
+		String	boxPackageName		= transpiler.getProperty( "boxPackageName" );
+		String	classname			= transpiler.getProperty( "classname" );
+		String	mappingName			= transpiler.getProperty( "mappingName" );
+		String	mappingPath			= transpiler.getProperty( "mappingPath" );
+		String	relativePath		= transpiler.getProperty( "relativePath" );
+		String	fileName			= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getName() : "unknown";
+		String	filePath			= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath() : "unknown";
 		// trim leading . if exists
-		String			boxInterfacename	= boxPackageName + (boxPackageName.isEmpty() ? "" : ".") + fileName.replace( ".bx", "" ).replace( ".cfc", "" );
-		String			sourceType			= transpiler.getProperty( "sourceType" );
+		String	boxInterfacename	= boxPackageName + ( boxPackageName.isEmpty() ? "" : "." ) + fileName.replace( ".bx", "" ).replace( ".cfc", "" );
+		String	sourceType			= transpiler.getProperty( "sourceType" );
 
-		Type	type			= Type.getType( "L" + packageName.replace( '.', '/' )
-			+ "/" + classname + ";" );
+		Type	type				= Type.getType( "L" + packageName.replace( '.', '/' )
+		    + "/" + classname + ";" );
 		transpiler.setProperty( "classType", type.getDescriptor() );
 		transpiler.setProperty( "classTypeInternal", type.getInternalName() );
 
@@ -81,232 +81,232 @@ public class BoxInterfaceTransformer {
 			methodVisitor.visitTypeInsn( Opcodes.NEW, type.getInternalName() );
 			methodVisitor.visitInsn( Opcodes.DUP );
 			methodVisitor.visitMethodInsn( Opcodes.INVOKESPECIAL,
-				type.getInternalName(),
-				"<init>",
-				Type.getMethodDescriptor( Type.VOID_TYPE ),
-				false );
-			methodVisitor.visitFieldInsn(Opcodes.PUTSTATIC,
-				type.getInternalName(),
-				"instance",
-				type.getDescriptor());
+			    type.getInternalName(),
+			    "<init>",
+			    Type.getMethodDescriptor( Type.VOID_TYPE ),
+			    false );
+			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
+			    type.getInternalName(),
+			    "instance",
+			    type.getDescriptor() );
 
 			methodVisitor.visitTypeInsn( Opcodes.NEW, Type.getInternalName( StaticScope.class ) );
 			methodVisitor.visitInsn( Opcodes.DUP );
-			methodVisitor.visitFieldInsn(Opcodes.GETSTATIC,
-				type.getInternalName(),
-				"instance",
-				type.getDescriptor());
+			methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
+			    type.getInternalName(),
+			    "instance",
+			    type.getDescriptor() );
 			methodVisitor.visitMethodInsn( Opcodes.INVOKESPECIAL,
-				Type.getInternalName( StaticScope.class ),
-				"<init>",
-				Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( ortus.boxlang.runtime.runnables.BoxInterface.class ) ),
-				false );
+			    Type.getInternalName( StaticScope.class ),
+			    "<init>",
+			    Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( ortus.boxlang.runtime.runnables.BoxInterface.class ) ),
+			    false );
 			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
-				type.getInternalName(),
-				"staticScope",
-				Type.getDescriptor( StaticScope.class ) );
+			    type.getInternalName(),
+			    "staticScope",
+			    Type.getDescriptor( StaticScope.class ) );
 
 			methodVisitor.visitTypeInsn( Opcodes.NEW, Type.getInternalName( InterfaceBoxContext.class ) );
 			methodVisitor.visitInsn( Opcodes.DUP );
 			methodVisitor.visitVarInsn( Opcodes.ALOAD, 0 );
-			methodVisitor.visitFieldInsn(Opcodes.GETSTATIC,
-				type.getInternalName(),
-				"instance",
-				type.getDescriptor());
+			methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
+			    type.getInternalName(),
+			    "instance",
+			    type.getDescriptor() );
 			methodVisitor.visitMethodInsn( Opcodes.INVOKESPECIAL,
-				Type.getInternalName( InterfaceBoxContext.class ),
-				"<init>",
-				Type.getMethodDescriptor( Type.VOID_TYPE,
-					Type.getType( IBoxContext.class ),
-					Type.getType( ortus.boxlang.runtime.runnables.BoxInterface.class ) ),
-				false );
+			    Type.getInternalName( InterfaceBoxContext.class ),
+			    "<init>",
+			    Type.getMethodDescriptor( Type.VOID_TYPE,
+			        Type.getType( IBoxContext.class ),
+			        Type.getType( ortus.boxlang.runtime.runnables.BoxInterface.class ) ),
+			    false );
 			methodVisitor.visitVarInsn( Opcodes.ASTORE, 1 );
 
 			methodVisitor.visitVarInsn( Opcodes.ALOAD, 1 );
-			methodVisitor.visitFieldInsn(Opcodes.GETSTATIC,
-				type.getInternalName(),
-				"instance",
-				type.getDescriptor());
+			methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
+			    type.getInternalName(),
+			    "instance",
+			    type.getDescriptor() );
 			methodVisitor.visitMethodInsn( Opcodes.INVOKEVIRTUAL,
-				Type.getInternalName( InterfaceBoxContext.class ),
-				"pushTemplate",
-				Type.getMethodDescriptor( Type.getType(IBoxContext.class), Type.getType( IBoxRunnable.class ) ),
-				false );
-			methodVisitor.visitInsn(Opcodes.POP);
+			    Type.getInternalName( InterfaceBoxContext.class ),
+			    "pushTemplate",
+			    Type.getMethodDescriptor( Type.getType( IBoxContext.class ), Type.getType( IBoxRunnable.class ) ),
+			    false );
+			methodVisitor.visitInsn( Opcodes.POP );
 
-			methodVisitor.visitFieldInsn(Opcodes.GETSTATIC,
-				type.getInternalName(),
-				"instance",
-				type.getDescriptor());
+			methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
+			    type.getInternalName(),
+			    "instance",
+			    type.getDescriptor() );
 			methodVisitor.visitVarInsn( Opcodes.ALOAD, 1 );
 			methodVisitor.visitMethodInsn( Opcodes.INVOKEVIRTUAL,
-				Type.getInternalName( ortus.boxlang.runtime.runnables.BoxInterface.class ),
-				"resolveSupers",
-				Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( IBoxContext.class ) ),
-				false );
+			    Type.getInternalName( ortus.boxlang.runtime.runnables.BoxInterface.class ),
+			    "resolveSupers",
+			    Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( IBoxContext.class ) ),
+			    false );
 
 			methodVisitor.visitVarInsn( Opcodes.ALOAD, 1 );
 			methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
-				Type.getInternalName( ortus.boxlang.runtime.runnables.BoxInterface.class ),
-				"staticInitializer",
-				Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( IBoxContext.class ) ),
-				false );
+			    Type.getInternalName( ortus.boxlang.runtime.runnables.BoxInterface.class ),
+			    "staticInitializer",
+			    Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( IBoxContext.class ) ),
+			    false );
 
-			methodVisitor.visitFieldInsn(Opcodes.GETSTATIC,
-				type.getInternalName(),
-				"instance",
-				type.getDescriptor());
+			methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
+			    type.getInternalName(),
+			    "instance",
+			    type.getDescriptor() );
 			methodVisitor.visitVarInsn( Opcodes.ALOAD, 1 );
 			methodVisitor.visitMethodInsn( Opcodes.INVOKEVIRTUAL,
-				type.getInternalName(),
-				"pseudoConstructor",
-				Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( IBoxContext.class ) ),
-				false );
+			    type.getInternalName(),
+			    "pseudoConstructor",
+			    Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( IBoxContext.class ) ),
+			    false );
 
 			methodVisitor.visitVarInsn( Opcodes.ALOAD, 1 );
 			methodVisitor.visitMethodInsn( Opcodes.INVOKEVIRTUAL,
-				Type.getInternalName( InterfaceBoxContext.class ),
-				"popTemplate",
-				Type.getMethodDescriptor( Type.getType(ResolvedFilePath.class) ),
-				false );
-			methodVisitor.visitInsn(Opcodes.POP);
+			    Type.getInternalName( InterfaceBoxContext.class ),
+			    "popTemplate",
+			    Type.getMethodDescriptor( Type.getType( ResolvedFilePath.class ) ),
+			    false );
+			methodVisitor.visitInsn( Opcodes.POP );
 		}, Type.getType( IBoxContext.class ) );
 
 		AsmHelper.addStaticFieldGetter( classNode,
-			type,
-			"imports",
-			"getImports",
-			Type.getType( List.class ),
-			null );
+		    type,
+		    "imports",
+		    "getImports",
+		    Type.getType( List.class ),
+		    null );
 		AsmHelper.addStaticFieldGetter( classNode,
-			type,
-			"path",
-			"getRunnablePath",
-			Type.getType( ResolvedFilePath.class ),
-			null );
+		    type,
+		    "path",
+		    "getRunnablePath",
+		    Type.getType( ResolvedFilePath.class ),
+		    null );
 		AsmHelper.addStaticFieldGetter( classNode,
-			type,
-			"sourceType",
-			"getSourceType",
-			Type.getType( BoxSourceType.class ),
-			null );
+		    type,
+		    "sourceType",
+		    "getSourceType",
+		    Type.getType( BoxSourceType.class ),
+		    null );
 		AsmHelper.addStaticFieldGetter( classNode,
-			type,
-			"annotations",
-			"getAnnotations",
-			Type.getType( IStruct.class ),
-			null );
+		    type,
+		    "annotations",
+		    "getAnnotations",
+		    Type.getType( IStruct.class ),
+		    null );
 		AsmHelper.addStaticFieldGetter( classNode,
-			type,
-			"documentation",
-			"getDocumentation",
-			Type.getType( IStruct.class ),
-			null );
+		    type,
+		    "documentation",
+		    "getDocumentation",
+		    Type.getType( IStruct.class ),
+		    null );
 		AsmHelper.addStaticFieldGetterWithStaticGetter( classNode,
-			type,
-			"staticScope",
-			"getStaticScope",
-			"getStaticScopeStatic",
-			Type.getType( StaticScope.class ),
-			null );
+		    type,
+		    "staticScope",
+		    "getStaticScope",
+		    "getStaticScopeStatic",
+		    Type.getType( StaticScope.class ),
+		    null );
 
 		AsmHelper.addStaticFieldGetter( classNode,
-			type,
-			"name",
-			"getName",
-			Type.getType( Key.class ),
-			null );
+		    type,
+		    "name",
+		    "getName",
+		    Type.getType( Key.class ),
+		    null );
 
 		AsmHelper.addStaticFieldGetter( classNode,
-			type,
-			"_supers",
-			"getSupers",
-			Type.getType( List.class ),
-			null );
-		MethodVisitor addSuper = classNode.visitMethod(Opcodes.ACC_PUBLIC,
-			"_addSuper",
-			Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType(BoxInterface.class)),
-			null,
-			null);
+		    type,
+		    "_supers",
+		    "getSupers",
+		    Type.getType( List.class ),
+		    null );
+		MethodVisitor addSuper = classNode.visitMethod( Opcodes.ACC_PUBLIC,
+		    "_addSuper",
+		    Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( BoxInterface.class ) ),
+		    null,
+		    null );
 		addSuper.visitCode();
 		addSuper.visitFieldInsn( Opcodes.GETSTATIC,
-			type.getInternalName(),
-			"_supers",
-			Type.getDescriptor( List.class ));
+		    type.getInternalName(),
+		    "_supers",
+		    Type.getDescriptor( List.class ) );
 		addSuper.visitVarInsn( Opcodes.ALOAD, 0 );
 		addSuper.visitMethodInsn( Opcodes.INVOKEINTERFACE,
-			Type.getInternalName( List.class ),
-			"add",
-			Type.getMethodDescriptor(Type.BOOLEAN_TYPE, Type.getType(Object.class)),
-			true);
+		    Type.getInternalName( List.class ),
+		    "add",
+		    Type.getMethodDescriptor( Type.BOOLEAN_TYPE, Type.getType( Object.class ) ),
+		    true );
 		addSuper.visitInsn( Opcodes.POP );
 		addSuper.visitInsn( Opcodes.RETURN );
-		addSuper.visitMaxs(0, 0);
+		addSuper.visitMaxs( 0, 0 );
 		addSuper.visitEnd();
 
 		classNode.visitField( Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL,
-			"keys",
-			Type.getDescriptor( Key[].class ),
-			null,
-			null ).visitEnd();
+		    "keys",
+		    Type.getDescriptor( Key[].class ),
+		    null,
+		    null ).visitEnd();
 
 		AsmHelper.addPrviateStaticFieldGetter( classNode,
-			type,
-			"abstractMethods",
-			"getAbstractMethods",
-			Type.getType( Map.class ),
-			null );
+		    type,
+		    "abstractMethods",
+		    "getAbstractMethods",
+		    Type.getType( Map.class ),
+		    null );
 		AsmHelper.addPrviateStaticFieldGetter( classNode,
-			type,
-			"defaultMethods",
-			"getDefaultMethods",
-			Type.getType( Map.class ),
-			null );
+		    type,
+		    "defaultMethods",
+		    "getDefaultMethods",
+		    Type.getType( Map.class ),
+		    null );
 
-		Label start = new Label(), end = new Label(), handler = new Label();
-		MethodVisitor pseudoConstructor = classNode.visitMethod(Opcodes.ACC_PUBLIC,
-			"pseudoConstructor",
-			Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType(IBoxContext.class)),
-			null,
-			null);
+		Label			start				= new Label(), end = new Label(), handler = new Label();
+		MethodVisitor	pseudoConstructor	= classNode.visitMethod( Opcodes.ACC_PUBLIC,
+		    "pseudoConstructor",
+		    Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( IBoxContext.class ) ),
+		    null,
+		    null );
 		pseudoConstructor.visitTryCatchBlock( start, end, handler, null );
 		pseudoConstructor.visitCode();
 		pseudoConstructor.visitVarInsn( Opcodes.ALOAD, 1 );
 		pseudoConstructor.visitVarInsn( Opcodes.ALOAD, 0 );
 		pseudoConstructor.visitMethodInsn( Opcodes.INVOKEINTERFACE,
-			Type.getInternalName(IBoxContext.class),
-			"pushTemplate",
-			Type.getMethodDescriptor(Type.getType(IBoxContext.class), Type.getType(IBoxRunnable.class)),
-			true );
+		    Type.getInternalName( IBoxContext.class ),
+		    "pushTemplate",
+		    Type.getMethodDescriptor( Type.getType( IBoxContext.class ), Type.getType( IBoxRunnable.class ) ),
+		    true );
 		pseudoConstructor.visitInsn( Opcodes.POP );
-		pseudoConstructor.visitLabel(start);
+		pseudoConstructor.visitLabel( start );
 		pseudoConstructor.visitVarInsn( Opcodes.ALOAD, 0 );
 		pseudoConstructor.visitVarInsn( Opcodes.ALOAD, 1 );
 		pseudoConstructor.visitMethodInsn( Opcodes.INVOKEVIRTUAL,
-			type.getInternalName(),
-			"_pseudoConstructor",
-			Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType(IBoxContext.class)),
-			false );
-		pseudoConstructor.visitLabel(end);
+		    type.getInternalName(),
+		    "_pseudoConstructor",
+		    Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( IBoxContext.class ) ),
+		    false );
+		pseudoConstructor.visitLabel( end );
 		pseudoConstructor.visitVarInsn( Opcodes.ALOAD, 1 );
 		pseudoConstructor.visitMethodInsn( Opcodes.INVOKEINTERFACE,
-			Type.getInternalName(IBoxContext.class),
-			"popTemplate",
-			Type.getMethodDescriptor(Type.getType(ResolvedFilePath.class)),
-			true );
+		    Type.getInternalName( IBoxContext.class ),
+		    "popTemplate",
+		    Type.getMethodDescriptor( Type.getType( ResolvedFilePath.class ) ),
+		    true );
 		pseudoConstructor.visitInsn( Opcodes.POP );
 		pseudoConstructor.visitInsn( Opcodes.RETURN );
-		pseudoConstructor.visitLabel(handler);
+		pseudoConstructor.visitLabel( handler );
 		pseudoConstructor.visitInsn( Opcodes.POP );
 		pseudoConstructor.visitVarInsn( Opcodes.ALOAD, 1 );
 		pseudoConstructor.visitMethodInsn( Opcodes.INVOKEINTERFACE,
-			Type.getInternalName(IBoxContext.class),
-			"popTemplate",
-			Type.getMethodDescriptor(Type.getType(ResolvedFilePath.class)),
-			true );
+		    Type.getInternalName( IBoxContext.class ),
+		    "popTemplate",
+		    Type.getMethodDescriptor( Type.getType( ResolvedFilePath.class ) ),
+		    true );
 		pseudoConstructor.visitInsn( Opcodes.POP );
 		pseudoConstructor.visitInsn( Opcodes.RETURN );
-		pseudoConstructor.visitMaxs(0, 0);
+		pseudoConstructor.visitMaxs( 0, 0 );
 		pseudoConstructor.visitEnd();
 
 		// these imports need to happen before any methods are processed - the actual nodes will be used later on in the static init section
@@ -315,94 +315,95 @@ public class BoxInterfaceTransformer {
 			imports.add( transpiler.transform( statement, TransformerContext.NONE, ReturnValueContext.EMPTY ) );
 		}
 		List<AbstractInsnNode> importNodes = AsmHelper.array( Type.getType( ImportDefinition.class ), Stream.concat(
-			imports.stream(),
-			transpiler.getImports().stream().map( raw -> {
-				List<AbstractInsnNode> nodes = new ArrayList<>();
-				nodes.addAll( raw );
-				nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
-					Type.getInternalName( ImportDefinition.class ),
-					"parse",
-					Type.getMethodDescriptor( Type.getType( ImportDefinition.class ), Type.getType( String.class ) ),
-					false ) );
-				return nodes;
-			} )
+		    imports.stream(),
+		    transpiler.getImports().stream().map( raw -> {
+			    List<AbstractInsnNode> nodes = new ArrayList<>();
+			    nodes.addAll( raw );
+			    nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+			        Type.getInternalName( ImportDefinition.class ),
+			        "parse",
+			        Type.getMethodDescriptor( Type.getType( ImportDefinition.class ), Type.getType( String.class ) ),
+			        false ) );
+			    return nodes;
+		    } )
 		).filter( l -> l.size() > 0 ).toList() );
 		// end import node setup
 
-		AsmHelper.methodWithContextAndClassLocator( classNode, "_pseudoConstructor", Type.getType( IBoxContext.class ), Type.VOID_TYPE, false, transpiler, false,
-			() -> {
-				return boxInterface.getBody()
-					.stream()
-					.sorted( ( a, b ) -> {
-						if ( a instanceof BoxFunctionDeclaration && ! ( b instanceof BoxFunctionDeclaration ) ) {
-							return -1;
-						} else if ( b instanceof BoxFunctionDeclaration && ! ( a instanceof BoxFunctionDeclaration ) ) {
-							return 1;
-						}
+		AsmHelper.methodWithContextAndClassLocator( classNode, "_pseudoConstructor", Type.getType( IBoxContext.class ), Type.VOID_TYPE, false, transpiler,
+		    false,
+		    () -> {
+			    return boxInterface.getBody()
+			        .stream()
+			        .sorted( ( a, b ) -> {
+				        if ( a instanceof BoxFunctionDeclaration && ! ( b instanceof BoxFunctionDeclaration ) ) {
+					        return -1;
+				        } else if ( b instanceof BoxFunctionDeclaration && ! ( a instanceof BoxFunctionDeclaration ) ) {
+					        return 1;
+				        }
 
-						return 0;
+				        return 0;
 
-					} )
-					.flatMap( statement -> transpiler.transform( statement, TransformerContext.NONE, ReturnValueContext.EMPTY ).stream() )
-					.toList();
-			}
+			        } )
+			        .flatMap( statement -> transpiler.transform( statement, TransformerContext.NONE, ReturnValueContext.EMPTY ).stream() )
+			        .toList();
+		    }
 		);
 
 		AsmHelper.methodWithContextAndClassLocator( classNode, "staticInitializer", Type.getType( IBoxContext.class ), Type.VOID_TYPE, true, transpiler, false,
-			() -> {
-				List<AbstractInsnNode> staticNodes = ( List<AbstractInsnNode> ) transpiler.getBoxStaticInitializers()
-					.stream()
-					.map( ( staticInitializer ) -> {
-						if ( staticInitializer == null || staticInitializer.getBody().size() == 0 ) {
-							return new ArrayList<AbstractInsnNode>();
-						}
+		    () -> {
+			    List<AbstractInsnNode> staticNodes = ( List<AbstractInsnNode> ) transpiler.getBoxStaticInitializers()
+			        .stream()
+			        .map( ( staticInitializer ) -> {
+				        if ( staticInitializer == null || staticInitializer.getBody().size() == 0 ) {
+					        return new ArrayList<AbstractInsnNode>();
+				        }
 
-						return staticInitializer.getBody()
-							.stream()
-							.map( statement -> transpiler.transform( statement, TransformerContext.NONE ) )
-							.flatMap( nodes -> nodes.stream() )
-							.collect( Collectors.toList() );
-					} )
-					.flatMap( s -> s.stream() )
-					.collect( Collectors.toList() );
+				        return staticInitializer.getBody()
+				            .stream()
+				            .map( statement -> transpiler.transform( statement, TransformerContext.NONE ) )
+				            .flatMap( nodes -> nodes.stream() )
+				            .collect( Collectors.toList() );
+			        } )
+			        .flatMap( s -> s.stream() )
+			        .collect( Collectors.toList() );
 
-				boxInterface.getDescendantsOfType( BoxFunctionDeclaration.class, ( expr ) -> {
-					BoxFunctionDeclaration func = ( BoxFunctionDeclaration ) expr;
+			    boxInterface.getDescendantsOfType( BoxFunctionDeclaration.class, ( expr ) -> {
+				    BoxFunctionDeclaration func = ( BoxFunctionDeclaration ) expr;
 
-					return func.getModifiers().contains( BoxMethodDeclarationModifier.STATIC );
-				} ).forEach( func -> {
-					staticNodes.addAll( transpiler.transform( func, TransformerContext.NONE ) );
-				} );
+				    return func.getModifiers().contains( BoxMethodDeclarationModifier.STATIC );
+			    } ).forEach( func -> {
+				    staticNodes.addAll( transpiler.transform( func, TransformerContext.NONE ) );
+			    } );
 
-				return staticNodes;
-			}
+			    return staticNodes;
+		    }
 		);
 
 		AsmHelper.complete( classNode, type, methodVisitor -> {
 			AsmHelper.resolvedFilePath( methodVisitor, mappingName, mappingPath, relativePath, filePath );
 			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
-				type.getInternalName(),
-				"path",
-				Type.getDescriptor( ResolvedFilePath.class ) );
+			    type.getInternalName(),
+			    "path",
+			    Type.getDescriptor( ResolvedFilePath.class ) );
 
 			methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
-				Type.getInternalName( BoxSourceType.class ),
-				sourceType,
-				Type.getDescriptor( BoxSourceType.class ) );
+			    Type.getInternalName( BoxSourceType.class ),
+			    sourceType,
+			    Type.getDescriptor( BoxSourceType.class ) );
 			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
-				type.getInternalName(),
-				"sourceType",
-				Type.getDescriptor( BoxSourceType.class ) );
+			    type.getInternalName(),
+			    "sourceType",
+			    Type.getDescriptor( BoxSourceType.class ) );
 
 			transpiler.createKey( boxInterfacename )
-				.forEach( abstractInsnNode -> abstractInsnNode.accept( methodVisitor ));
+			    .forEach( abstractInsnNode -> abstractInsnNode.accept( methodVisitor ) );
 			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
-				type.getInternalName(),
-				"name",
-				Type.getDescriptor( Key.class ) );
+			    type.getInternalName(),
+			    "name",
+			    Type.getDescriptor( Key.class ) );
 
-			List<AbstractInsnNode>			annotations		= transpiler.transformAnnotations( boxInterface.getAnnotations() );
-			List<AbstractInsnNode>			documenation	= transpiler.transformDocumentation( boxInterface.getDocumentation() );
+			List<AbstractInsnNode>	annotations		= transpiler.transformAnnotations( boxInterface.getAnnotations() );
+			List<AbstractInsnNode>	documenation	= transpiler.transformDocumentation( boxInterface.getDocumentation() );
 
 			methodVisitor.visitLdcInsn( transpiler.getKeys().size() );
 			methodVisitor.visitTypeInsn( Opcodes.ANEWARRAY, Type.getInternalName( Key.class ) );
@@ -411,67 +412,67 @@ public class BoxInterfaceTransformer {
 				methodVisitor.visitInsn( Opcodes.DUP );
 				methodVisitor.visitLdcInsn( index++ );
 				transpiler.transform( expression, TransformerContext.NONE, ReturnValueContext.EMPTY )
-					.forEach( methodInsnNode -> methodInsnNode.accept( methodVisitor ) );
+				    .forEach( methodInsnNode -> methodInsnNode.accept( methodVisitor ) );
 				methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
-					Type.getInternalName( Key.class ),
-					"of",
-					Type.getMethodDescriptor( Type.getType( Key.class ), Type.getType( Object.class ) ),
-					false );
+				    Type.getInternalName( Key.class ),
+				    "of",
+				    Type.getMethodDescriptor( Type.getType( Key.class ), Type.getType( Object.class ) ),
+				    false );
 				methodVisitor.visitInsn( Opcodes.AASTORE );
 			}
 			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
-				type.getInternalName(),
-				"keys",
-				Type.getDescriptor( Key[].class ) );
+			    type.getInternalName(),
+			    "keys",
+			    Type.getDescriptor( Key[].class ) );
 
 			importNodes.forEach( node -> node.accept( methodVisitor ) );
 			methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
-				Type.getInternalName( List.class ),
-				"of",
-				Type.getMethodDescriptor( Type.getType( List.class ), Type.getType( Object[].class ) ),
-				true );
+			    Type.getInternalName( List.class ),
+			    "of",
+			    Type.getMethodDescriptor( Type.getType( List.class ), Type.getType( Object[].class ) ),
+			    true );
 			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
-				type.getInternalName(),
-				"imports",
-				Type.getDescriptor( List.class ) );
+			    type.getInternalName(),
+			    "imports",
+			    Type.getDescriptor( List.class ) );
 
 			annotations.forEach( abstractInsnNode -> abstractInsnNode.accept( methodVisitor ) );
 			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
-				type.getInternalName(),
-				"annotations",
-				Type.getDescriptor( IStruct.class ) );
+			    type.getInternalName(),
+			    "annotations",
+			    Type.getDescriptor( IStruct.class ) );
 
 			documenation.forEach( abstractInsnNode -> abstractInsnNode.accept( methodVisitor ) );
 			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
-				type.getInternalName(),
-				"documentation",
-				Type.getDescriptor( IStruct.class ) );
+			    type.getInternalName(),
+			    "documentation",
+			    Type.getDescriptor( IStruct.class ) );
 
-			methodVisitor.visitTypeInsn(Opcodes.NEW, Type.getInternalName(LinkedHashMap.class));
+			methodVisitor.visitTypeInsn( Opcodes.NEW, Type.getInternalName( LinkedHashMap.class ) );
 			methodVisitor.visitInsn( Opcodes.DUP );
 			methodVisitor.visitMethodInsn( Opcodes.INVOKESPECIAL,
-				Type.getInternalName( LinkedHashMap.class ),
-				"<init>",
-				Type.getMethodDescriptor( Type.VOID_TYPE ),
-				false );
+			    Type.getInternalName( LinkedHashMap.class ),
+			    "<init>",
+			    Type.getMethodDescriptor( Type.VOID_TYPE ),
+			    false );
 			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC, type.getInternalName(), "abstractMethods", Type.getDescriptor( Map.class ) );
 
-			methodVisitor.visitTypeInsn(Opcodes.NEW, Type.getInternalName(LinkedHashMap.class));
+			methodVisitor.visitTypeInsn( Opcodes.NEW, Type.getInternalName( LinkedHashMap.class ) );
 			methodVisitor.visitInsn( Opcodes.DUP );
 			methodVisitor.visitMethodInsn( Opcodes.INVOKESPECIAL,
-				Type.getInternalName( LinkedHashMap.class ),
-				"<init>",
-				Type.getMethodDescriptor( Type.VOID_TYPE ),
-				false );
+			    Type.getInternalName( LinkedHashMap.class ),
+			    "<init>",
+			    Type.getMethodDescriptor( Type.VOID_TYPE ),
+			    false );
 			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC, type.getInternalName(), "defaultMethods", Type.getDescriptor( Map.class ) );
 
-			methodVisitor.visitTypeInsn(Opcodes.NEW, Type.getInternalName(ArrayList.class));
+			methodVisitor.visitTypeInsn( Opcodes.NEW, Type.getInternalName( ArrayList.class ) );
 			methodVisitor.visitInsn( Opcodes.DUP );
 			methodVisitor.visitMethodInsn( Opcodes.INVOKESPECIAL,
-				Type.getInternalName( ArrayList.class ),
-				"<init>",
-				Type.getMethodDescriptor( Type.VOID_TYPE ),
-				false );
+			    Type.getInternalName( ArrayList.class ),
+			    "<init>",
+			    Type.getMethodDescriptor( Type.VOID_TYPE ),
+			    false );
 			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC, type.getInternalName(), "_supers", Type.getDescriptor( List.class ) );
 
 		} );

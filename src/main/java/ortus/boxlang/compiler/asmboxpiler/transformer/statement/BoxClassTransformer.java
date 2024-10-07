@@ -467,7 +467,8 @@ public class BoxClassTransformer {
 		).filter( l -> l.size() > 0 ).toList() );
 		// end import node setup
 
-		AsmHelper.methodWithContextAndClassLocator( classNode, "_pseudoConstructor", Type.getType( IBoxContext.class ), Type.VOID_TYPE, false, transpiler, false,
+		AsmHelper.methodWithContextAndClassLocator( classNode, "_pseudoConstructor", Type.getType( IBoxContext.class ), Type.VOID_TYPE, false, transpiler,
+		    false,
 		    () -> {
 			    return boxClass.getBody()
 			        .stream()
