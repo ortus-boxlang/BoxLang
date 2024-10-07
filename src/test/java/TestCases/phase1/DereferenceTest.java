@@ -239,7 +239,7 @@ public class DereferenceTest {
 		instance.executeSource(
 		    """
 		    import java.util.Map$Entry;
-		      result = Map$Entry;
+		      result = Entry;
 		         """,
 		    context );
 
