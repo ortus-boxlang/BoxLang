@@ -1360,4 +1360,12 @@ public class ClassTest {
 		    .isEqualTo( "src.test.java.TestCases.phase3.sub-folder.Funky-Class" );
 	}
 
+	@Test
+	public void testColdBoxRenderer() {
+		instance.executeSource(
+		    """
+		    	cfc = new src.test.java.TestCases.phase3.MyRenderer();
+		    """, context );
+	}
+
 }
