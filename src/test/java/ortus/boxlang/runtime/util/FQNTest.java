@@ -72,6 +72,6 @@ public class FQNTest {
 	@Test
 	void testItCanCleanInvalidParts() {
 		FQN fqn = new FQN( Paths.get( "/src\\\\test\\class/ORTUS//switch/45/2run-time/util/fqntest.java" ) );
-		assertEquals( "src.test._class.ortus._switch._45._2runtime.util.Fqntest$java", fqn.toString() );
+		assertEquals( "src.test._class.ortus._switch._45._2run__time.util.Fqntest$java", fqn.toString() );
 	}
 }
