@@ -52,18 +52,18 @@ public class Attempt<T> {
 	 * |--------------------------------------------------------------------------
 	 */
 
-	private static final Attempt<?>	EMPTY	= new Attempt<>();
+	protected static final Attempt<?>	EMPTY	= new Attempt<>();
 
 	/**
 	 * The target value to evaluate
 	 * This can be a truthy or falsey value
 	 */
-	private final T					value;
+	protected final T					value;
 
 	/**
 	 * Validation Record
 	 */
-	private ValidationRecord		validationRecord;
+	protected ValidationRecord			validationRecord;
 
 	/**
 	 * |--------------------------------------------------------------------------
@@ -74,7 +74,7 @@ public class Attempt<T> {
 	/**
 	 * Constructor for an empty attempt
 	 */
-	private Attempt() {
+	protected Attempt() {
 		this( null );
 	}
 
@@ -82,7 +82,7 @@ public class Attempt<T> {
 	 * Constructor for an attempt with the incoming value
 	 * This can be anything, a truthy or falsey or null
 	 */
-	private Attempt( T value ) {
+	protected Attempt( T value ) {
 		this.value				= value;
 		this.validationRecord	= new ValidationRecord();
 	}
@@ -375,6 +375,17 @@ public class Attempt<T> {
 	}
 
 	/**
+	 * Alias to get() so it's more functional on what it does
+	 *
+	 * @return The value of the attempt
+	 *
+	 * @throws NoElementException If the attempt is empty
+	 */
+	public T getOrFail() {
+		return get();
+	}
+
+	/**
 	 * Verifies if the attempt is empty or not using the following rules:
 	 * - If the value is null, it is empty
 	 * - If the value is a truthy/falsey value, evaluate it
@@ -534,12 +545,23 @@ public class Attempt<T> {
 	 *
 	 * @return The value of the attempt or the value of the supplier
 	 */
-	public T orElseGet( Supplier<T> supplier ) {
+	public T orElseGet( Supplier<? extends T> supplier ) {
 		Objects.requireNonNull( supplier );
 		if ( this.isEmpty() ) {
 			return supplier.get();
 		}
 		return this.value;
+	}
+
+	/**
+	 * Alias to `orElseGet` but more fluent
+	 *
+	 * @param other The value to return if the attempt is empty
+	 *
+	 * @return The value of the attempt or the value passed in
+	 */
+	public T getOrSupply( Supplier<? extends T> other ) {
+		return orElseGet( other );
 	}
 
 	/**
@@ -675,7 +697,7 @@ public class Attempt<T> {
 	 * @return The string representation of the value if any, else empty string
 	 */
 	public String toString() {
-		return isEmpty() ? "Attempt.empty" : "Attempt[" + this.value.toString() + "]";
+		return isEmpty() ? "Attempt.empty" : String.format( "Attempt[%s]", this.value.toString() );
 	}
 
 	/**
