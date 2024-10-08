@@ -212,6 +212,23 @@
 			}
 		}
 	},
+	// These are the security settings for the runtime
+	"security": {
+		// All regex patterns are case-insensitive
+		// A list of regex patterns that will match import statements, and if matched, execution will be disallowed
+		// Ex: "disallowedImports": ["java\\.lang\\.(ProcessBuilder|Reflect", "java\\.io\\.(File|FileWriter)"]
+		"disallowedImports": [],
+		// A list of BIF names that will be disallowed from execution
+		// Ex: "disallowedBifs": ["createObject", "systemExecute"]
+		"disallowedBifs": [],
+		// A list of Component names that will be disallowed from execution
+		// Ex: "disallowedComponents": [ "execute", "http" ]
+		"disallowedComponents": [],
+		// A list of regex patterns that will match expressions in any type of source, and if matched, execution will be disallowed
+		// Careful here, you can disallow a lot of things
+		// Ex: "disallowedExpressions": [ "(\s)Runtime\\.(.*)" ]
+		"disallowedExpressions": []
+	},
 	/**
 	 * The BoxLang module settings
 	 * The key is the module name and the value is a struct of settings for that specific module
