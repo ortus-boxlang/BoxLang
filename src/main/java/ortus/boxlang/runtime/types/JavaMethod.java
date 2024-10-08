@@ -67,7 +67,6 @@ public class JavaMethod extends Function {
 	 *
 	 * @return array of arguments
 	 */
-
 	public Argument[] getArguments() {
 		return EMPTY_ARGUMENTS;
 	}
