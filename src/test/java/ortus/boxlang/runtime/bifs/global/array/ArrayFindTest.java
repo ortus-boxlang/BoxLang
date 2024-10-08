@@ -25,7 +25,6 @@ import java.util.function.Predicate;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -174,16 +173,18 @@ public class ArrayFindTest {
 
 	@DisplayName( "Function can be Java functional interface" )
 	@Test
-	@Disabled( "See comments on https://ortussolutions.atlassian.net/browse/BL-617" )
+	// @Disabled( "See comments on https://ortussolutions.atlassian.net/browse/BL-617" )
 	public void testJavaFunctionalInterface() {
 		Predicate<String> javaPredicate = ( s ) -> s.equals( "b" );
 		variables.put( "javaPredicate", javaPredicate );
+		// @formatter:off
 		instance.executeSource(
 		    """
-		    import java.util.function.Predicate;
-		       result = ["a","b","c"].find( javaPredicate );
-		       """,
-		    context );
+		  	  import java.util.function.Predicate;
+		      result = ["a","b","c"].find( javaPredicate );
+		    """,
+			context );
+		// @formatter:on
 
 		int found = ( int ) variables.get( result );
 		assertThat( found ).isEqualTo( 2 );
