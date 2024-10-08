@@ -234,7 +234,7 @@ public class DereferenceTest {
 		         """,
 		    context );
 
-		assertThat( variables.get( result ) ).isEqualTo( Map.Entry.class );
+		assertThat( DynamicObject.unWrap( variables.get( result ) ) ).isEqualTo( Map.Entry.class );
 
 		instance.executeSource(
 		    """
@@ -244,6 +244,20 @@ public class DereferenceTest {
 		    context );
 
 		assertThat( DynamicObject.unWrap( variables.get( result ) ) ).isEqualTo( Map.Entry.class );
+	}
+
+	@DisplayName( "dereference a method on anested class" )
+	@Test
+	public void testDereferenceAMethodOnANestedClass() {
+		instance.executeSource(
+		    """
+		    import java.net.http.HttpRequest;
+
+		    result = HttpRequest.BodyPublishers.ofString("test")
+		            """,
+		    context );
+
+		// assertThat( DynamicObject.unWrap( variables.get( result ) ) ).isEqualTo( Map.Entry.class );
 	}
 
 }

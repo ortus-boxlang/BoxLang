@@ -24,13 +24,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.StaticClassBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.resolvers.BoxResolver;
 import ortus.boxlang.runtime.loader.resolvers.IClassResolver;
 import ortus.boxlang.runtime.loader.resolvers.JavaResolver;
-import ortus.boxlang.runtime.runnables.BoxClassSupport;
-import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ClassNotFoundBoxLangException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
@@ -348,7 +345,7 @@ public class ClassLocator extends ClassLoader {
 		// If not, use our system lookup order
 		if ( resolverDelimiterPos == -1 ) {
 			ClassLocation target = resolveFromSystem( context, name, true, imports );
-			return ( target == null ) ? null : initializeBoxClassStaticContext( context, DynamicObject.of( target.clazz(), context ) );
+			return ( target == null ) ? null : DynamicObject.of( target.clazz(), context );
 		} else {
 			// If there is a resolver prefix, carve it off and use it directly/
 			String	resolverPrefix	= name.substring( 0, resolverDelimiterPos );
@@ -431,7 +428,7 @@ public class ClassLocator extends ClassLoader {
 		    } );
 
 		if ( resolvedClass.isPresent() ) {
-			return initializeBoxClassStaticContext( context, DynamicObject.of( resolvedClass.get().clazz(), context ) );
+			return DynamicObject.of( resolvedClass.get().clazz(), context );
 		}
 
 		if ( throwException ) {
@@ -441,30 +438,6 @@ public class ClassLocator extends ClassLoader {
 		}
 
 		return null;
-	}
-
-	/**
-	 * Initialize the static context of a Box Class
-	 *
-	 * @param context  The current context of execution
-	 * @param boxClass The box class to initialize
-	 *
-	 * @return The initialized box class
-	 */
-	private DynamicObject initializeBoxClassStaticContext( IBoxContext context, DynamicObject boxClass ) {
-		// Static initializers for Box Classes. We need to manually fire these so we can control the context
-		if ( !boxClass.getTargetClass().isInterface() && IClassRunnable.class.isAssignableFrom( boxClass.getTargetClass() ) ) {
-			if ( !( Boolean ) boxClass.getField( "staticInitialized" ).get() ) {
-				synchronized ( boxClass.getTargetClass() ) {
-					if ( !( Boolean ) boxClass.getField( "staticInitialized" ).get() ) {
-						boxClass.invokeStatic( context, "staticInitializer",
-						    new StaticClassBoxContext( context, boxClass, BoxClassSupport.getStaticScope( context, boxClass ) ) );
-						boxClass.setField( "staticInitialized", true );
-					}
-				}
-			}
-		}
-		return boxClass;
 	}
 
 	/**

@@ -1,4 +1,12 @@
 class {
+
+	static {
+		final brad = "wood"
+	}
+
+	variables.staticBrad = static.brad;
+
+
 	this.name = "testApp";
 	this.sessionManagement = true;
 	this.mappings["/foobar"] = getDirectoryFromPath( getCurrentTemplatePath() );
