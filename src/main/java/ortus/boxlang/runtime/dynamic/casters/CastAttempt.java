@@ -31,11 +31,20 @@ import ortus.boxlang.runtime.types.exceptions.BoxCastException;
  */
 public final class CastAttempt<T> extends Attempt<T> {
 
+	private static final CastAttempt<?> EMPTY = new CastAttempt<>();
+
 	/**
 	 * |--------------------------------------------------------------------------
 	 * | Constructors
 	 * |--------------------------------------------------------------------------
 	 */
+
+	/**
+	 * Constructs an empty instance.
+	 */
+	private CastAttempt() {
+		super();
+	}
 
 	/**
 	 * Constructs an instance with the value present.
@@ -51,16 +60,6 @@ public final class CastAttempt<T> extends Attempt<T> {
 	 * | Static Builders
 	 * |--------------------------------------------------------------------------
 	 */
-
-	/**
-	 * Create an empty attempt
-	 *
-	 * @return An empty attempt
-	 */
-	@SuppressWarnings( "unchecked" )
-	public static <T> CastAttempt<T> empty() {
-		return ( CastAttempt<T> ) EMPTY;
-	}
 
 	/**
 	 * Returns an {@code CastAttempt} with the specified present non-null value.
@@ -89,6 +88,16 @@ public final class CastAttempt<T> extends Attempt<T> {
 	}
 
 	/**
+	 * Create an empty attempt
+	 *
+	 * @return An empty attempt
+	 */
+	@SuppressWarnings( "unchecked" )
+	public static <T> CastAttempt<T> empty() {
+		return ( CastAttempt<T> ) EMPTY;
+	}
+
+	/**
 	 * |--------------------------------------------------------------------------
 	 * | Overrides
 	 * |--------------------------------------------------------------------------
@@ -108,6 +117,16 @@ public final class CastAttempt<T> extends Attempt<T> {
 			return this.value;
 		}
 		throw new BoxCastException( "The cast was not successful.  You cannot get the value." );
+	}
+
+	/**
+	 * Verifies if the attempt is empty
+	 *
+	 * @return True if the attempt is empty, false otherwise
+	 */
+	@Override
+	public boolean isPresent() {
+		return this.value != null;
 	}
 
 }

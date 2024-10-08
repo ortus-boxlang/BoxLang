@@ -465,7 +465,7 @@ public class Attempt<T> {
 	 *
 	 * @param action The action to perform
 	 */
-	public Attempt<T> ifSuccesful( Consumer<? super T> action ) {
+	public Attempt<T> ifSuccessful( Consumer<? super T> action ) {
 		return ifPresent( action );
 	}
 
