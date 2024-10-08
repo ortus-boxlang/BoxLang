@@ -57,6 +57,7 @@ public class JavaMethod extends Function {
 	 *
 	 * @return function name
 	 */
+	@Override
 	public Key getName() {
 		return this.name;
 	}
