@@ -1711,7 +1711,7 @@ public class DynamicInteropService {
 			// If we have the field, return its value, even if it's null
 			return getField( targetClass, targetInstance, name.getName() ).orElse( null );
 		} else if ( hasClassNoCase( targetClass, name.getName() ) ) {
-			return findClass( targetClass, name.getName() );
+			return DynamicObject.of( findClass( targetClass, name.getName() ) );
 		} else if ( targetClass.isEnum() ) {
 			return Enum.valueOf( ( Class<Enum> ) targetClass, name.getName() );
 		} else if ( getMethodNamesNoCase( targetClass, true ).contains( name.getName().toUpperCase() ) ) {
