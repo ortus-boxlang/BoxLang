@@ -205,6 +205,17 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	}
 
 	/**
+	 * Create an array from a Set<String>
+	 *
+	 * @param set The set to create the Array from
+	 *
+	 * @return The array
+	 */
+	public static Array fromSet( Set<? extends Object> set ) {
+		return new Array( new ArrayList<>( set ) );
+	}
+
+	/**
 	 * Create an Array from a Java array
 	 *
 	 * @param arr The array to create the Array from

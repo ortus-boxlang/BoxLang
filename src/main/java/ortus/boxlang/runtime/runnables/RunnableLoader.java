@@ -24,6 +24,8 @@ import ortus.boxlang.compiler.IBoxpiler;
 import ortus.boxlang.compiler.asmboxpiler.ASMBoxpiler;
 import ortus.boxlang.compiler.javaboxpiler.JavaBoxpiler;
 import ortus.boxlang.compiler.parser.BoxSourceType;
+import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.config.Configuration;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.StaticClassBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
@@ -48,9 +50,18 @@ public class RunnableLoader {
 	 * Singleton instance
 	 */
 	private static RunnableLoader		instance;
+
+	/**
+	 * The Boxpiler to use
+	 */
 	private IBoxpiler					boxpiler;
-	// TODO: make this configurable and move cf extensions to compat
-	private static final Set<String>	VALID_TEMPLATE_EXTENSIONS	= Set.of( "cfm", "cfml", "cfs", "bxs", "bxm", "bxml" );
+
+	/**
+	 * Valid template extensions
+	 *
+	 * @see Configuration#validTemplateExtensions
+	 */
+	private static final Set<String>	VALID_TEMPLATE_EXTENSIONS	= BoxRuntime.getInstance().getConfiguration().validTemplateExtensions;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -248,7 +259,7 @@ public class RunnableLoader {
 
 	/**
 	 * Run static initializers for a Box class
-	 * 
+	 *
 	 * @param clazz   The class to run the static initializer for
 	 * @param context The context to use
 	 */

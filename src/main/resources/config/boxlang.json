@@ -9,6 +9,23 @@
  * ${env.variablename:defaultValue} - The value of a valid environment variable or the default value. Example: ${env.CFCONFIG_HOME:/etc/cfconfig}
  */
 {
+	// Extensions BoxLang will process as classes
+	"validClassExtensions": [
+		"bx",
+		// Moving to compat at final release
+		"cfc"
+	],
+	// Extensions BoxLang will process as templates.
+	// This is used by the RunnableLoader
+	"validTemplateExtensions": [
+		"bxs",
+		"bxm",
+		"bxml",
+		// Moving to compat at final release
+		"cfm",
+		"cfml",
+		"cfs"
+	],
 	// Where all generated classes will be placed
 	"classGenerationDirectory": "${boxlang-home}/classes",
 	// This puts the entire runtime in debug mode

@@ -26,9 +26,11 @@ import java.time.Duration;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.TimeZone;
 
 import org.slf4j.Logger;
@@ -235,6 +237,16 @@ public class Configuration implements IConfigSegment {
 	public List<String>			disallowedFileOperationExtensions	= new ArrayList<>();
 
 	/**
+	 * Valid BoxLang class extensions
+	 */
+	public Set<String>			validClassExtensions				= new HashSet<>();
+
+	/**
+	 * Valid BoxLang template extensions
+	 */
+	public Set<String>			validTemplateExtensions				= new HashSet<>();
+
+	/**
 	 * Experimental Features
 	 */
 	public IStruct				experimental						= new Struct();
@@ -397,7 +409,7 @@ public class Configuration implements IConfigSegment {
 					}
 				} );
 			} else {
-				logger.warn( "The [runtime.javaLibraryPaths] configuration is not a JSON Object, ignoring it." );
+				logger.warn( "The [javaLibraryPaths] configuration is not a JSON Array, ignoring it." );
 			}
 		}
 
@@ -450,6 +462,26 @@ public class Configuration implements IConfigSegment {
 				    } );
 			} else {
 				logger.warn( "The [executors] configuration is not a JSON Object, ignoring it." );
+			}
+		}
+
+		// Process validClassExtensions
+		if ( config.containsKey( Key.validClassExtensions ) ) {
+			if ( config.get( Key.validClassExtensions ) instanceof List<?> castedList ) {
+				// iterate and add to the original list if it doesn't exist
+				castedList.forEach( item -> this.validClassExtensions.add( PlaceholderHelper.resolve( item ).toLowerCase() ) );
+			} else {
+				logger.warn( "The [validClassExtensions] configuration is not a JSON Array, ignoring it." );
+			}
+		}
+
+		// Process validtemplateExtensions
+		if ( config.containsKey( Key.validTemplateExtensions ) ) {
+			if ( config.get( Key.validTemplateExtensions ) instanceof List<?> castedList ) {
+				// iterate and add to the original list if it doesn't exist
+				castedList.forEach( item -> this.validTemplateExtensions.add( PlaceholderHelper.resolve( item ).toLowerCase() ) );
+			} else {
+				logger.warn( "The [validTemplateExtensions] configuration is not a JSON Array, ignoring it." );
 			}
 		}
 
@@ -726,6 +758,18 @@ public class Configuration implements IConfigSegment {
 	}
 
 	/**
+	 * This returns all valid BoxLang extensions for classes and templates.
+	 *
+	 * @return A set of all valid class extensions
+	 */
+	public Set<String> getValidExtensions() {
+		Set<String> extensions = new HashSet<>();
+		extensions.addAll( this.validClassExtensions );
+		extensions.addAll( this.validTemplateExtensions );
+		return extensions;
+	}
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Conversion
 	 * --------------------------------------------------------------------------
@@ -781,7 +825,10 @@ public class Configuration implements IConfigSegment {
 		    Key.setClientCookies, this.setClientCookies,
 		    Key.setDomainCookies, this.setDomainCookies,
 		    Key.timezone, this.timezone,
-		    Key.useHighPrecisionMath, this.useHighPrecisionMath
+		    Key.useHighPrecisionMath, this.useHighPrecisionMath,
+		    Key.validExtensions, Array.fromSet( getValidExtensions() ),
+		    Key.validClassExtensions, Array.fromSet( this.validClassExtensions ),
+		    Key.validTemplateExtensions, Array.fromSet( this.validTemplateExtensions )
 		);
 	}
 }
