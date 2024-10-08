@@ -705,7 +705,13 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	 */
 	public int findIndex( Function test, IBoxContext context ) {
 		return intStream()
-		    .filter( i -> BooleanCaster.cast( context.invokeFunction( test, new Object[] { get( i ), i } ) ) )
+		    .filter( i -> BooleanCaster.cast(
+		        test.requiresStrictArguments()
+		            // Java Lambdas
+		            ? context.invokeFunction( test, new Object[] { get( i ) } )
+		            // BoxLang Functions, more args!!=
+		            : context.invokeFunction( test, new Object[] { get( i ), i, this } )
+		    ) )
 		    .findFirst()
 		    .orElse( -1 ) + 1;
 	}
