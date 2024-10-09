@@ -42,6 +42,7 @@ import ortus.boxlang.runtime.config.segments.DatasourceConfig;
 import ortus.boxlang.runtime.config.segments.ExecutorConfig;
 import ortus.boxlang.runtime.config.segments.IConfigSegment;
 import ortus.boxlang.runtime.config.segments.ModuleConfig;
+import ortus.boxlang.runtime.config.segments.SecurityConfig;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
@@ -250,6 +251,11 @@ public class Configuration implements IConfigSegment {
 	 * Experimental Features
 	 */
 	public IStruct				experimental						= new Struct();
+
+	/**
+	 * The security configuration
+	 */
+	public SecurityConfig		security							= new SecurityConfig();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -824,6 +830,7 @@ public class Configuration implements IConfigSegment {
 		    Key.sessionTimeout, this.sessionTimeout,
 		    Key.setClientCookies, this.setClientCookies,
 		    Key.setDomainCookies, this.setDomainCookies,
+		    Key.security, this.security.asStruct(),
 		    Key.timezone, this.timezone,
 		    Key.useHighPrecisionMath, this.useHighPrecisionMath,
 		    Key.validExtensions, Array.fromSet( getValidExtensions() ),

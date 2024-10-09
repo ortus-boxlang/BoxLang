@@ -243,6 +243,10 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		directoryMove						= Key.of( "directoryMove" );
 	public static final Key		disabled							= Key.of( "disabled" );
 	public static final Key		display								= Key.of( "display" );
+	public static final Key		disallowedImports					= Key.of( "disallowedImports" );
+	public static final Key		disallowedBIFs						= Key.of( "disallowedBIFs" );
+	public static final Key		disallowedComponents				= Key.of( "disallowedComponents" );
+	public static final Key		disallowedExpressions				= Key.of( "disallowedExpressions" );
 	public static final Key		doAll								= Key.of( "doAll" );
 	public static final Key		documentation						= Key.of( "documentation" );
 	public static final Key		dollarFormat						= Key.of( "dollarFormat" );
@@ -586,6 +590,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		schedulerService					= Key.of( "schedulerService" );
 	public static final Key		scope								= Key.of( "scope" );
 	public static final Key		script_name							= Key.of( "script_name" );
+	public static final Key		security							= Key.of( "security" );
 	public static final Key		second								= Key.of( "second" );
 	public static final Key		seconds								= Key.of( "seconds" );
 	public static final Key		secure								= Key.of( "secure" );
