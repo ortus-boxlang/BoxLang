@@ -18,7 +18,9 @@
 package ortus.boxlang.runtime.config.segments;
 
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,13 +41,6 @@ public class SecurityConfig implements IConfigSegment {
 	 * Ex: "disallowedImports": ["java\\.lang\\.(ProcessBuilder|Reflect", "java\\.io\\.(File|FileWriter)"]
 	 */
 	public Set<String>			disallowedImports		= new HashSet<>();
-
-	/**
-	 * A list of regex patterns that will match expressions in any type of source, and if matched, execution will be disallowed
-	 * Careful here, you can disallow a lot of things
-	 * Ex: "disallowedExpressions": [ "(\s)Runtime\\.(.*)" ]
-	 */
-	public Set<String>			disallowedExpressions	= new HashSet<>();
 
 	/**
 	 * Disallowed BIFs in the runtime
@@ -71,6 +66,13 @@ public class SecurityConfig implements IConfigSegment {
 	private static final Logger	logger					= LoggerFactory.getLogger( SecurityConfig.class );
 
 	/**
+	 * Maps of allowed BIFs so lookups get faster as we go
+	 */
+	public Map<String, Boolean>	allowedBIFsLookup		= new ConcurrentHashMap<>();
+	public Map<String, Boolean>	allowedComponentsLookup	= new ConcurrentHashMap<>();
+	public Map<String, Boolean>	allowedImportsLookup	= new ConcurrentHashMap<>();
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Methods
 	 * --------------------------------------------------------------------------
@@ -88,10 +90,17 @@ public class SecurityConfig implements IConfigSegment {
 	 * The search is case-insensitive.
 	 * If it's disallowed, it will throw a SecurityException, else it will return true
 	 */
-	public boolean isBIFDisallowed( String name ) {
+	public boolean isBIFAllowed( String name ) {
+		// Is it allowed already?
+		if ( this.allowedBIFsLookup.containsKey( name ) ) {
+			return true;
+		}
+		// Check if it's disallowed
 		if ( this.disallowedBIFs.stream().anyMatch( name::equalsIgnoreCase ) ) {
 			throw new SecurityException( "The BIF '" + name + "' is disallowed, please check your security configuration in the language configuration file." );
 		}
+		// Add it
+		this.allowedBIFsLookup.put( name, true );
 		return true;
 	}
 
@@ -100,11 +109,40 @@ public class SecurityConfig implements IConfigSegment {
 	 * The search is case-insensitive.
 	 * If it's disallowed, it will throw a SecurityException, else it will return true
 	 */
-	public boolean isComponentDisallowed( String name ) {
+	public boolean isComponentAllowed( String name ) {
+		// Is it allowed already?
+		if ( this.allowedComponentsLookup.containsKey( name ) ) {
+			return true;
+		}
+		// Check if it's disallowed
 		if ( this.disallowedComponents.stream().anyMatch( name::equalsIgnoreCase ) ) {
 			throw new SecurityException(
 			    "The Component '" + name + "' is disallowed, please check your security configuration in the language configuration file." );
 		}
+		// Add it
+		this.allowedComponentsLookup.put( name, true );
+		return true;
+	}
+
+	/**
+	 * This function takes in a fully qualified class name and tests if it is disallowed.
+	 * The search is case-insensitive.
+	 * If it's disallowed, it will throw a SecurityException, else it will return true
+	 */
+	public boolean isClassAllowed( String name ) {
+		// Is it allowed already?
+		if ( this.allowedImportsLookup.containsKey( name ) ) {
+			return true;
+		}
+		// Check if it's disallowed
+		if ( this.disallowedImports
+		    .stream()
+		    .anyMatch( name::matches ) ) {
+			throw new SecurityException(
+			    "The class '" + name + "' is disallowed, please check your security configuration in the language configuration file." );
+		}
+		// Add it
+		this.allowedImportsLookup.put( name, true );
 		return true;
 	}
 
@@ -118,7 +156,6 @@ public class SecurityConfig implements IConfigSegment {
 	@Override
 	public IConfigSegment process( IStruct config ) {
 		PropertyHelper.processListToSet( config, Key.disallowedImports, this.disallowedImports );
-		PropertyHelper.processListToSet( config, Key.disallowedExpressions, this.disallowedExpressions );
 		PropertyHelper.processListToSet( config, Key.disallowedBIFs, this.disallowedBIFs );
 		PropertyHelper.processListToSet( config, Key.disallowedComponents, this.disallowedComponents );
 		return this;
@@ -131,7 +168,6 @@ public class SecurityConfig implements IConfigSegment {
 	public IStruct asStruct() {
 		return Struct.of(
 		    Key.disallowedImports, this.disallowedImports,
-		    Key.disallowedExpressions, this.disallowedExpressions,
 		    Key.disallowedBIFs, this.disallowedBIFs,
 		    Key.disallowedComponents, this.disallowedComponents
 		);

@@ -174,11 +174,12 @@ public class BaseResolver implements IClassResolver {
 	 * @return The resolved class name or the original class name if not found
 	 */
 	public String expandFromImport( IBoxContext context, String className, List<ImportDefinition> imports ) {
-		return imports.stream()
+		var fullyQualifiedName = imports.stream()
 		    // Discover import by matching the resolver prefix and the class name or alias or multi-import
 		    .filter( thisImport -> importApplies( thisImport ) && importHas( thisImport, className ) )
 		    // Return the first one, the first one wins
 		    .findFirst()
+		    // Convert the import to a fully qualified class name
 		    .map( targetImport -> {
 			    String fqn = targetImport.getFullyQualifiedClass( className );
 			    importCache.add( className + ":" + fqn );
@@ -186,6 +187,12 @@ public class BaseResolver implements IClassResolver {
 		    } )
 		    // Nothing found, return the original class name
 		    .orElse( className );
+
+		// Security check
+		BoxRuntime.getInstance().getConfiguration().security.isClassAllowed( fullyQualifiedName );
+
+		// Return the fully qualified class name
+		return fullyQualifiedName;
 	}
 
 	/**

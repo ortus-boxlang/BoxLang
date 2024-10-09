@@ -173,7 +173,7 @@ public class JavaResolverTest {
 	@DisplayName( "It can load libs from the 'home/libs' convention" )
 	@Test
 	void testItCanLoadLibsFromHomeLibs() throws IOException {
-		IBoxContext	context		= new ScriptingRequestBoxContext( runtime.getRuntimeContext() );
+		IBoxContext	ctx			= new ScriptingRequestBoxContext( runtime.getRuntimeContext() );
 		Path		homeLibs	= Path.of( "src/test/resources/libs" ).toAbsolutePath();
 
 		runtime.getRuntimeLoader().addURLs(
@@ -184,7 +184,7 @@ public class JavaResolverTest {
 
 		JavaResolver			javaResolver	= JavaResolver.getInstance();
 		String					targetClass		= "com.github.benmanes.caffeine.cache.Caffeine";
-		Optional<ClassLocation>	location		= javaResolver.resolve( context, targetClass );
+		Optional<ClassLocation>	location		= javaResolver.resolve( ctx, targetClass );
 
 		assertThat( location.isPresent() ).isTrue();
 		assertThat( location.get().clazz().getName() ).isEqualTo( targetClass );

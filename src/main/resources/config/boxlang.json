@@ -216,6 +216,7 @@
 	"security": {
 		// All regex patterns are case-insensitive
 		// A list of regex patterns that will match import statements, and if matched, execution will be disallowed
+		// This also applies to the `createObject` and `new` operators
 		// Ex: "disallowedImports": ["java\\.lang\\.(ProcessBuilder|Reflect", "java\\.io\\.(File|FileWriter)"]
 		"disallowedImports": [],
 		// A list of BIF names that will be disallowed from execution
@@ -223,11 +224,7 @@
 		"disallowedBifs": [],
 		// A list of Component names that will be disallowed from execution
 		// Ex: "disallowedComponents": [ "execute", "http" ]
-		"disallowedComponents": [],
-		// A list of regex patterns that will match expressions in any type of source, and if matched, execution will be disallowed
-		// Careful here, you can disallow a lot of things
-		// Ex: "disallowedExpressions": [ "(\s)Runtime\\.(.*)" ]
-		"disallowedExpressions": []
+		"disallowedComponents": []
 	},
 	/**
 	 * The BoxLang module settings

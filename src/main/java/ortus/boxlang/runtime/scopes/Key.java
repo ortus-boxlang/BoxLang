@@ -246,7 +246,6 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		disallowedImports					= Key.of( "disallowedImports" );
 	public static final Key		disallowedBIFs						= Key.of( "disallowedBIFs" );
 	public static final Key		disallowedComponents				= Key.of( "disallowedComponents" );
-	public static final Key		disallowedExpressions				= Key.of( "disallowedExpressions" );
 	public static final Key		doAll								= Key.of( "doAll" );
 	public static final Key		documentation						= Key.of( "documentation" );
 	public static final Key		dollarFormat						= Key.of( "dollarFormat" );
