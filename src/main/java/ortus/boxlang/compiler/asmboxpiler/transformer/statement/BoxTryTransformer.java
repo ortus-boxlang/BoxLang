@@ -146,6 +146,8 @@ public class BoxTryTransformer extends AbstractTransformer {
 			if ( inBetweenNode != null ) {
 				nodes.add( inBetweenNode );
 			}
+
+			return nodes;
 		}
 
 		nodes.addAll( AsmHelper.transformBodyExpressions(

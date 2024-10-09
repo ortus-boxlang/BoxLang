@@ -24,10 +24,10 @@ import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.TypeInsnNode;
-import org.objectweb.asm.tree.VarInsnNode;
 
 import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.expression.BoxArgument;
 import ortus.boxlang.runtime.BoxRuntime;
@@ -39,11 +39,78 @@ import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.runnables.BoxClassSupport;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.DefaultExpression;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 public class AsmHelper {
+
+	public static List<AbstractInsnNode> getDefaultExpression( AsmTranspiler transpiler, BoxExpression body ) {
+		Type		type		= Type.getType( "L" + transpiler.getProperty( "packageName" ).replace( '.', '/' )
+		    + "/" + transpiler.getProperty( "classname" )
+		    + "$Lambda_" + transpiler.incrementAndGetLambdaCounter() + ";" );
+
+		ClassNode	classNode	= new ClassNode();
+
+		classNode.visit(
+		    Opcodes.V17,
+		    Opcodes.ACC_PUBLIC,
+		    type.getInternalName(),
+		    null,
+		    Type.getInternalName( Object.class ),
+		    new String[] { Type.getInternalName( DefaultExpression.class ) } );
+
+		MethodVisitor initVisitor = classNode.visitMethod( Opcodes.ACC_PUBLIC,
+		    "<init>",
+		    Type.getMethodDescriptor( Type.VOID_TYPE ),
+		    null,
+		    null );
+		initVisitor.visitCode();
+		initVisitor.visitVarInsn( Opcodes.ALOAD, 0 );
+		initVisitor.visitMethodInsn( Opcodes.INVOKESPECIAL,
+		    Type.getInternalName( Object.class ),
+		    "<init>",
+		    Type.getMethodDescriptor( Type.VOID_TYPE ),
+		    false );
+		initVisitor.visitInsn( Opcodes.RETURN );
+		initVisitor.visitEnd();
+
+		MethodContextTracker t = new MethodContextTracker( false );
+		transpiler.addMethodContextTracker( t );
+		// Object evaluate( IBoxContext context );
+		MethodVisitor methodVisitor = classNode.visitMethod(
+		    Opcodes.ACC_PUBLIC,
+		    "evaluate",
+		    Type.getMethodDescriptor( Type.getType( Object.class ), Type.getType( IBoxContext.class ) ),
+		    null,
+		    null );
+		methodVisitor.visitCode();
+
+		t.trackNewContext();
+
+		transpiler.transform( body, TransformerContext.NONE, ReturnValueContext.VALUE_OR_NULL )
+		    .forEach( ( ins ) -> ins.accept( methodVisitor ) );
+
+		methodVisitor.visitInsn( Opcodes.ARETURN );
+		methodVisitor.visitMaxs( 0, 0 );
+		methodVisitor.visitEnd();
+
+		transpiler.popMethodContextTracker();
+
+		transpiler.setAuxiliary( type.getClassName(), classNode );
+
+		List<AbstractInsnNode> nodes = new ArrayList<AbstractInsnNode>();
+
+		nodes.add( new TypeInsnNode( Opcodes.NEW, type.getInternalName() ) );
+		nodes.add( new InsnNode( Opcodes.DUP ) );
+		nodes.add( new MethodInsnNode( Opcodes.INVOKESPECIAL,
+		    type.getInternalName(),
+		    "<init>",
+		    Type.getMethodDescriptor( Type.VOID_TYPE ),
+		    false ) );
+		return nodes;
+	}
 
 	public static List<AbstractInsnNode> callinvokeFunction(
 	    Transpiler transpiler,

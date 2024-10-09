@@ -97,4 +97,22 @@ public class ControllerTest {
 		    context );
 	}
 
+	@Test
+	public void testNestedLFunctionInComponent() {
+
+		instance.executeStatement(
+		    """
+		    lock name = "what" timeout=300 {
+		    	t = function(){
+		    		return "test";
+		    	}
+
+		    	result = t();
+		    }
+		      """,
+		    context );
+
+		assertThat( variables.get( result ) ).isEqualTo( "test" );
+	}
+
 }

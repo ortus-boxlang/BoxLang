@@ -41,6 +41,7 @@ import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.TypeInsnNode;
+import org.objectweb.asm.tree.VarInsnNode;
 
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
@@ -64,6 +65,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.javaproxy.InterfaceProxyService;
 import ortus.boxlang.runtime.loader.ImportDefinition;
+import ortus.boxlang.runtime.runnables.BoxClassSupport;
 import ortus.boxlang.runtime.runnables.BoxInterface;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.ClassVariablesScope;
@@ -470,7 +472,7 @@ public class BoxClassTransformer {
 		AsmHelper.methodWithContextAndClassLocator( classNode, "_pseudoConstructor", Type.getType( IBoxContext.class ), Type.VOID_TYPE, false, transpiler,
 		    false,
 		    () -> {
-			    return boxClass.getBody()
+			    List<AbstractInsnNode> psuedoBody = boxClass.getBody()
 			        .stream()
 			        .sorted( ( a, b ) -> {
 				        if ( a instanceof BoxFunctionDeclaration && ! ( b instanceof BoxFunctionDeclaration ) ) {
@@ -483,7 +485,21 @@ public class BoxClassTransformer {
 
 			        } )
 			        .flatMap( statement -> transpiler.transform( statement, TransformerContext.NONE, ReturnValueContext.EMPTY ).stream() )
-			        .toList();
+			        .collect( Collectors.toList() );
+
+			    psuedoBody.add( new VarInsnNode( Opcodes.ALOAD, 0 ) );
+			    psuedoBody.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
+
+			    psuedoBody.add(
+			        new MethodInsnNode( Opcodes.INVOKESTATIC,
+			            Type.getInternalName( BoxClassSupport.class ),
+			            "defaultProperties",
+			            Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( IClassRunnable.class ), Type.getType( IBoxContext.class ) ),
+			            false
+			        )
+			    );
+
+			    return psuedoBody;
 		    }
 		);
 

@@ -66,6 +66,14 @@ public abstract class Transpiler implements ITranspiler {
 		return componentCounter > 0;
 	}
 
+	public int getComponentCounter() {
+		return componentCounter;
+	}
+
+	public void setComponentCounter( int counter ) {
+		componentCounter = counter;
+	}
+
 	public void incrementComponentCounter() {
 		componentCounter++;
 	}
@@ -227,6 +235,7 @@ public abstract class Transpiler implements ITranspiler {
 
 	public List<AbstractInsnNode> transformAnnotations( List<BoxAnnotation> annotations, Boolean defaultTrue, boolean onlyLiteralValues ) {
 		List<List<AbstractInsnNode>> members = new ArrayList<>();
+
 		annotations.forEach( annotation -> {
 			List<AbstractInsnNode> annotationKey = createKey( annotation.getKey().getValue() );
 			members.add( annotationKey );
@@ -257,6 +266,7 @@ public abstract class Transpiler implements ITranspiler {
 			}
 			members.add( value );
 		} );
+
 		if ( annotations.isEmpty() ) {
 			return List.of(
 			    new TypeInsnNode( Opcodes.NEW, Type.getInternalName( Struct.class ) ),

@@ -140,12 +140,15 @@ public class BoxClosureTransformer extends AbstractTransformer {
 		    "getSourceType",
 		    Type.getType( BoxSourceType.class ) );
 
-		boolean isBlock = boxClosure.getBody() instanceof BoxStatementBlock;
+		boolean	isBlock				= boxClosure.getBody() instanceof BoxStatementBlock;
 
+		int		componentCounter	= transpiler.getComponentCounter();
+		transpiler.setComponentCounter( 0 );
 		AsmHelper.methodWithContextAndClassLocator( classNode, "_invoke", Type.getType( FunctionBoxContext.class ), Type.getType( Object.class ), false,
 		    transpiler, isBlock,
 		    () -> boxClosure.getBody().getChildren().stream().flatMap( statement -> transpiler.transform( statement, TransformerContext.NONE ).stream() )
 		        .toList() );
+		transpiler.setComponentCounter( componentCounter );
 
 		AsmHelper.complete( classNode, type, methodVisitor -> {
 			methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
