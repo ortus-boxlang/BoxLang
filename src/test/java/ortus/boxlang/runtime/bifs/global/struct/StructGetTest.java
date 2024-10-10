@@ -90,7 +90,6 @@ public class StructGetTest {
 		    """,
 		    context );
 		assertNull( variables.get( result ) );
-
 	}
 
 	@Disabled( "It tests the member function for Struct.getFromPath" )

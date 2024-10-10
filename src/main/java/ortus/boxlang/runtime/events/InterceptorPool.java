@@ -32,7 +32,6 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
-import ortus.boxlang.runtime.loader.resolvers.BoxResolver;
 import ortus.boxlang.runtime.modules.ModuleRecord;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
@@ -306,7 +305,7 @@ public class InterceptorPool {
 	    ModuleRecord moduleRecord ) {
 		// Get the class location
 		IBoxContext				context			= this.runtime.getRuntimeContext();
-		Optional<ClassLocation>	classLocation	= BoxResolver.getInstance().resolve(
+		Optional<ClassLocation>	classLocation	= this.runtime.getClassLocator().getBoxResolver().resolve(
 		    context,
 		    clazz
 		);

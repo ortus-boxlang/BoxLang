@@ -22,21 +22,22 @@ import static com.google.common.truth.Truth.assertThat;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
-import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.IProxyRunnable;
 import ortus.boxlang.runtime.types.Array;
 
 public class InterfaceProxyServiceTest {
 
-	private IBoxContext context = new ScriptingRequestBoxContext();
+	static BoxRuntime	runtime	= BoxRuntime.getInstance();
+	private IBoxContext	context	= new ScriptingRequestBoxContext();
 
 	@DisplayName( "It can generate a proxy" )
 	@Test
 	void testItCanGenerateAProxy() {
-		IClassRunnable	boxClassRunnable	= ( IClassRunnable ) ClassLocator.getInstance()
+		IClassRunnable	boxClassRunnable	= ( IClassRunnable ) runtime.getClassLocator()
 		    .load( context, "bx:" + "src.test.java.ortus.boxlang.runtime.dynamic.javaproxy.BoxClassRunnable", context.getCurrentImports() )
 		    .invokeConstructor( context )
 		    .unWrapBoxLangClass();

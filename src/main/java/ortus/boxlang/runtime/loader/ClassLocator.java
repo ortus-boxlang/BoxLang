@@ -23,6 +23,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.resolvers.BoxResolver;
@@ -101,6 +102,11 @@ public class ClassLocator extends ClassLoader {
 	);
 
 	/**
+	 * The Runtime
+	 */
+	private BoxRuntime									runtime;
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Constructors
 	 * --------------------------------------------------------------------------
@@ -120,12 +126,34 @@ public class ClassLocator extends ClassLoader {
 	 */
 	public static synchronized ClassLocator getInstance() {
 		if ( instance == null ) {
-			instance = new ClassLocator();
-			// Register core box and java resolvers
-			instance.registerResolver( BoxResolver.getInstance() );
-			instance.registerResolver( JavaResolver.getInstance() );
+			throw new BoxRuntimeException( "The ClassLocator instance has not been initialized." );
 		}
 		return instance;
+	}
+
+	/**
+	 * Get the singleton instance
+	 *
+	 * @param runtime The current runtime
+	 *
+	 * @return ClassLocator
+	 */
+	public static synchronized ClassLocator getInstance( BoxRuntime runtime ) {
+		if ( instance == null ) {
+			instance			= new ClassLocator();
+			instance.runtime	= runtime;
+			// Register core box and java resolvers
+			instance.registerResolver( new BoxResolver( instance ) );
+			instance.registerResolver( new JavaResolver( instance ) );
+		}
+		return instance;
+	}
+
+	/**
+	 * Get the runtime associated with this locator
+	 */
+	public BoxRuntime getRuntime() {
+		return this.runtime;
 	}
 
 	/**
@@ -133,6 +161,20 @@ public class ClassLocator extends ClassLoader {
 	 * Resolvers Registration
 	 * --------------------------------------------------------------------------
 	 */
+
+	/**
+	 * Shortcut to get the Java Resolver
+	 */
+	public JavaResolver getJavaResolver() {
+		return ( JavaResolver ) getResolver( JAVA_PREFIX );
+	}
+
+	/**
+	 * Shortcut to get the Box Resolver
+	 */
+	public BoxResolver getBoxResolver() {
+		return ( BoxResolver ) getResolver( BX_PREFIX );
+	}
 
 	/**
 	 * Get the cache of resolved classes

@@ -193,6 +193,7 @@ class ModuleRecordTest {
 		ModuleRecord	moduleRecord	= new ModuleRecord( physicalPath );
 		IBoxContext		context			= new ScriptingRequestBoxContext();
 		ModuleService	moduleService	= runtime.getModuleService();
+		JavaResolver	javaResolver	= runtime.getClassLocator().getJavaResolver();
 
 		// When
 		moduleRecord
@@ -219,11 +220,11 @@ class ModuleRecordTest {
 		assertThat( clazz.getName() ).isEqualTo( "HelloWorld" );
 
 		// JavaResolver can find the class explicitly
-		Optional<ClassLocation> classLocation = JavaResolver.getInstance().findFromModules( "HelloWorld@test", List.of(), context );
+		Optional<ClassLocation> classLocation = javaResolver.findFromModules( "HelloWorld@test", List.of(), context );
 		assertThat( classLocation.isPresent() ).isTrue();
 		assertThat( classLocation.get().clazz().getName() ).isEqualTo( "HelloWorld" );
 		// JavaResolver can find the class by discovery, it should interrogate all modules for it.
-		classLocation = JavaResolver.getInstance().findFromModules( "HelloWorld", List.of(), context );
+		classLocation = javaResolver.findFromModules( "HelloWorld", List.of(), context );
 		assertThat( classLocation.isPresent() ).isTrue();
 		assertThat( classLocation.get().clazz().getName() ).isEqualTo( "HelloWorld" );
 

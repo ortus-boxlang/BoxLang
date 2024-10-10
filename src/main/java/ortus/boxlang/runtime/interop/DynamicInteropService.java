@@ -175,7 +175,7 @@ public class DynamicInteropService {
 	/**
 	 * This is the class locator
 	 */
-	private static ClassLocator										classLocator		= ClassLocator.getInstance();
+	private static ClassLocator										classLocator		= BoxRuntime.getInstance().getClassLocator();
 
 	/**
 	 * Coercion maps

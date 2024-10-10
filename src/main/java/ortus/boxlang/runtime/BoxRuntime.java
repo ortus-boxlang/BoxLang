@@ -59,6 +59,7 @@ import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.interceptors.ASTCapture;
 import ortus.boxlang.runtime.interceptors.Logging;
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.loader.DynamicClassLoader;
 import ortus.boxlang.runtime.logging.LoggingConfigurator;
 import ortus.boxlang.runtime.runnables.BoxScript;
@@ -236,6 +237,11 @@ public class BoxRuntime implements java.io.Closeable {
 	 * The datasource manager which stores a registry of configured datasources.
 	 */
 	private DatasourceService					dataSourceService;
+
+	/**
+	 * The global class locator service
+	 */
+	private ClassLocator						classLocator;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -434,6 +440,9 @@ public class BoxRuntime implements java.io.Closeable {
 		this.schedulerService	= new SchedulerService( this );
 		this.dataSourceService	= new DatasourceService( this );
 
+		// Initiate the Class Locator Service in charge of doing all the class resolutions
+		this.classLocator		= ClassLocator.getInstance( this );
+
 		// Load the configurations and overrides
 		loadConfiguration( this.debugMode, this.configPath );
 
@@ -630,6 +639,13 @@ public class BoxRuntime implements java.io.Closeable {
 	 * Service Access Methods
 	 * --------------------------------------------------------------------------
 	 */
+
+	/**
+	 * Get the global class locator service
+	 */
+	public ClassLocator getClassLocator() {
+		return this.classLocator;
+	}
 
 	/**
 	 * Get the async service

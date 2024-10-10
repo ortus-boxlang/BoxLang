@@ -14,6 +14,7 @@
  */
 package ortus.boxlang.runtime.bifs.global.system;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -29,7 +30,7 @@ import ortus.boxlang.runtime.types.Argument;
 @BoxBIF
 public class GetClassMetadata extends BIF {
 
-	private static final ClassLocator CLASS_LOCATOR = ClassLocator.getInstance();
+	private static final ClassLocator CLASS_LOCATOR = BoxRuntime.getInstance().getClassLocator();
 
 	/**
 	 * Constructor

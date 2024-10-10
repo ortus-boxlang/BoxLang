@@ -26,6 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.commons.lang3.ClassUtils;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.config.Configuration;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
@@ -42,17 +43,27 @@ public class BaseResolver implements IClassResolver {
 	/**
 	 * The name of a resolver
 	 */
-	protected String	name		= "";
+	protected String		name		= "";
 
 	/**
 	 * The prefix of a resolver
 	 */
-	protected String	prefix		= "";
+	protected String		prefix		= "";
+
+	/**
+	 * The runtime that this resolver is associated with
+	 */
+	protected BoxRuntime	runtime;
+
+	/**
+	 * The class locator that this resolver is associated with
+	 */
+	protected ClassLocator	classLocator;
 
 	/**
 	 * The import cache
 	 */
-	private Set<String>	importCache	= ConcurrentHashMap.newKeySet();
+	private Set<String>		importCache	= ConcurrentHashMap.newKeySet();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -66,9 +77,11 @@ public class BaseResolver implements IClassResolver {
 	 * @param name   The name of the resolver
 	 * @param prefix The prefix of the resolver
 	 */
-	protected BaseResolver( String name, String prefix ) {
-		this.name	= name;
-		this.prefix	= prefix.toLowerCase();
+	protected BaseResolver( String name, String prefix, ClassLocator classLocator ) {
+		this.name			= name;
+		this.prefix			= prefix.toLowerCase();
+		this.classLocator	= classLocator;
+		this.runtime		= classLocator.getRuntime();
 	}
 
 	/**
@@ -120,6 +133,27 @@ public class BaseResolver implements IClassResolver {
 	 */
 	public void clearImportCache() {
 		this.importCache.clear();
+	}
+
+	/**
+	 * Get the runtime
+	 */
+	public BoxRuntime getRuntime() {
+		return this.runtime;
+	}
+
+	/**
+	 * Get the class locator
+	 */
+	public ClassLocator getClassLocator() {
+		return this.classLocator;
+	}
+
+	/**
+	 * Get the Runtime Configuration
+	 */
+	public Configuration getConfiguration() {
+		return getRuntime().getConfiguration();
 	}
 
 	/**

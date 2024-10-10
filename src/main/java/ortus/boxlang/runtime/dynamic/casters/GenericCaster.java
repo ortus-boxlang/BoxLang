@@ -26,9 +26,9 @@ import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
-import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.operators.InstanceOf;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.types.BoxLangType;
@@ -405,7 +405,7 @@ public class GenericCaster implements IBoxCaster {
 
 		// If we got here, then we have a full class name like java.lang.String
 		// Let's see if we can load it
-		Optional<DynamicObject> loadResult = ClassLocator.getInstance().safeLoad( context, originalCaseType, "java" );
+		Optional<DynamicObject> loadResult = BoxRuntime.getInstance().getClassLocator().safeLoad( context, originalCaseType, "java" );
 		if ( loadResult.isPresent() ) {
 			return loadResult.get().getTargetClass();
 		}

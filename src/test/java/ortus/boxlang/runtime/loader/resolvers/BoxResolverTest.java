@@ -45,11 +45,13 @@ public class BoxResolverTest {
 
 	static BoxRuntime	runtime;
 	static IBoxContext	context;
+	static BoxResolver	boxResolver;
 
 	@BeforeAll
 	public static void setUp() {
-		runtime	= BoxRuntime.getInstance( true );
-		context	= new ScriptingRequestBoxContext( runtime.getRuntimeContext() );
+		runtime		= BoxRuntime.getInstance( true );
+		context		= new ScriptingRequestBoxContext( runtime.getRuntimeContext() );
+		boxResolver	= runtime.getClassLocator().getBoxResolver();
 
 		// Create a mapping to the `resources` directory
 		Path resourcesDirectory = Paths.get( "src/test/resources" ).toAbsolutePath();
@@ -64,7 +66,6 @@ public class BoxResolverTest {
 	@DisplayName( "It can find be created" )
 	@Test
 	void testItCanBeCreated() {
-		BoxResolver boxResolver = BoxResolver.getInstance();
 		assertThat( boxResolver.getName() ).isEqualTo( "BoxResolver" );
 		assertThat( boxResolver.getPrefix() ).isEqualTo( "bx" );
 	}
@@ -73,8 +74,7 @@ public class BoxResolverTest {
 	@Test
 	@Disabled
 	void testFindFromModules() {
-		BoxResolver	boxResolver	= BoxResolver.getInstance();
-		String		className	= "apppath.models.User"; // Example class name
+		String className = "apppath.models.User"; // Example class name
 		assertThat( boxResolver.findFromModules( new ScriptingRequestBoxContext(), className, new ArrayList<>() ).isPresent() ).isFalse();
 	}
 
@@ -83,7 +83,6 @@ public class BoxResolverTest {
 	void testFindFromLocal() throws URISyntaxException {
 		// You can find this in src/test/resources/tests/components/User.cfc
 		String					testComponent	= "tests.components.User";
-		BoxResolver				boxResolver		= BoxResolver.getInstance();
 
 		// System.out.println( "mappings: " + Arrays.toString( runtime.getConfiguration().getRegisteredMappings() ) );
 
@@ -104,8 +103,6 @@ public class BoxResolverTest {
 	@DisplayName( "It can resolve classes" )
 	@Test
 	void testResolve() {
-		BoxResolver	boxResolver	= BoxResolver.getInstance();
-
 		IBoxContext	context		= new ScriptingRequestBoxContext();
 		String		className	= "apppath.models.User"; // Example class name
 

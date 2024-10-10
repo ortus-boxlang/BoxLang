@@ -48,11 +48,13 @@ import ortus.boxlang.runtime.types.IStruct;
 public class JavaResolverTest {
 
 	static BoxRuntime	runtime;
-	IBoxContext			context;
+	static JavaResolver	javaResolver;
+	static IBoxContext	context;
 
 	@BeforeAll
 	public static void setUp() {
-		runtime = BoxRuntime.getInstance( true );
+		runtime			= BoxRuntime.getInstance( true );
+		javaResolver	= runtime.getClassLocator().getJavaResolver();
 	}
 
 	@BeforeEach
@@ -68,7 +70,6 @@ public class JavaResolverTest {
 	@DisplayName( "It can find be created" )
 	@Test
 	public void testItCanBeCreated() {
-		JavaResolver javaResolver = JavaResolver.getInstance();
 		assertThat( javaResolver.getName() ).isEqualTo( "JavaResolver" );
 		assertThat( javaResolver.getPrefix() ).isEqualTo( "java" );
 	}
@@ -76,7 +77,6 @@ public class JavaResolverTest {
 	@DisplayName( "It can find inner classes using the $ separator" )
 	@Test
 	public void testFindInnerClasses() {
-		JavaResolver			javaResolver	= JavaResolver.getInstance();
 		String					className		= "java.util.Map$Entry"; // Example class name
 		Optional<ClassLocation>	classLocation	= javaResolver.findFromSystem( className, new ArrayList<>(), context );
 
@@ -91,7 +91,6 @@ public class JavaResolverTest {
 	@DisplayName( "It can find inner class enums using the $ separator" )
 	@Test
 	public void testFindInnerClassEnums() {
-		JavaResolver			javaResolver	= JavaResolver.getInstance();
 		String					className		= "ortus.boxlang.runtime.types.IStruct$TYPES";
 		Optional<ClassLocation>	classLocation	= javaResolver.findFromSystem( className, new ArrayList<>(), context );
 
@@ -106,7 +105,6 @@ public class JavaResolverTest {
 	@DisplayName( "It can find classes from the system" )
 	@Test
 	public void testFindFromSystem() {
-		JavaResolver			javaResolver	= JavaResolver.getInstance();
 		String					className		= "java.util.logging.ConsoleHandler";
 		Optional<ClassLocation>	classLocation	= javaResolver.findFromSystem( className, new ArrayList<>(), context );
 
@@ -121,7 +119,6 @@ public class JavaResolverTest {
 	@DisplayName( "It can find classes from dependent libraries" )
 	@Test
 	public void testFindFromDependentLibraries() {
-		JavaResolver			javaResolver	= JavaResolver.getInstance();
 		String					className		= "org.apache.commons.lang3.ClassUtils";
 		Optional<ClassLocation>	classLocation	= javaResolver.findFromSystem( className, new ArrayList<>(), context );
 
@@ -136,7 +133,6 @@ public class JavaResolverTest {
 	@DisplayName( "It can resolve classes" )
 	@Test
 	public void testResolve() {
-		JavaResolver			javaResolver	= JavaResolver.getInstance();
 		String					className		= "org.apache.commons.lang3.ClassUtils";
 		Optional<ClassLocation>	classLocation	= javaResolver.findFromSystem( className, new ArrayList<>(), context );
 
@@ -151,22 +147,21 @@ public class JavaResolverTest {
 	@DisplayName( "It can resolve wildcard imports from the JDK itself" )
 	@Test
 	void testItCanResolveWildcardImports() throws Exception {
-		List<ImportDefinition>	imports		= Arrays.asList(
+		List<ImportDefinition> imports = Arrays.asList(
 		    ImportDefinition.parse( "java:java.lang.*" ),
 		    ImportDefinition.parse( "java:java.util.*" )
 		);
 
-		JavaResolver			jResolver	= JavaResolver.getInstance();
-		jResolver.clearJdkImportCache();
-		assertThat( jResolver.getJdkImportCacheSize() ).isEqualTo( 0 );
+		javaResolver.clearJdkImportCache();
+		assertThat( javaResolver.getJdkImportCacheSize() ).isEqualTo( 0 );
 
-		String fqn = jResolver.expandFromImport( new ScriptingRequestBoxContext(), "String", imports );
+		String fqn = javaResolver.expandFromImport( new ScriptingRequestBoxContext(), "String", imports );
 		assertThat( fqn ).isEqualTo( "java.lang.String" );
 
-		fqn = jResolver.expandFromImport( new ScriptingRequestBoxContext(), "Integer", imports );
+		fqn = javaResolver.expandFromImport( new ScriptingRequestBoxContext(), "Integer", imports );
 		assertThat( fqn ).isEqualTo( "java.lang.Integer" );
 
-		fqn = jResolver.expandFromImport( new ScriptingRequestBoxContext(), "List", imports );
+		fqn = javaResolver.expandFromImport( new ScriptingRequestBoxContext(), "List", imports );
 		assertThat( fqn ).isEqualTo( "java.util.List" );
 	}
 
@@ -182,9 +177,8 @@ public class JavaResolverTest {
 
 		System.out.println( Arrays.toString( runtime.getRuntimeLoader().getURLs() ) );
 
-		JavaResolver			javaResolver	= JavaResolver.getInstance();
-		String					targetClass		= "com.github.benmanes.caffeine.cache.Caffeine";
-		Optional<ClassLocation>	location		= javaResolver.resolve( ctx, targetClass );
+		String					targetClass	= "com.github.benmanes.caffeine.cache.Caffeine";
+		Optional<ClassLocation>	location	= javaResolver.resolve( ctx, targetClass );
 
 		assertThat( location.isPresent() ).isTrue();
 		assertThat( location.get().clazz().getName() ).isEqualTo( targetClass );
