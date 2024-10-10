@@ -215,8 +215,8 @@
 	// These are the security settings for the runtime
 	"security": {
 		// All regex patterns are case-insensitive
-		// A list of regex patterns that will match import statements, and if matched, execution will be disallowed
-		// This also applies to the `createObject` and `new` operators
+		// A list of regex patterns that will match class paths, and if matched, execution will be disallowed
+		// This applies to import statements, createObject, new, and class creation
 		// Ex: "disallowedImports": ["java\\.lang\\.(ProcessBuilder|Reflect", "java\\.io\\.(File|FileWriter)"]
 		"disallowedImports": [],
 		// A list of BIF names that will be disallowed from execution
