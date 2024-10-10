@@ -28,7 +28,6 @@ import org.apache.commons.lang3.SerializationUtils;
 
 import ortus.boxlang.runtime.bifs.global.type.NullValue;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
-import ortus.boxlang.runtime.dynamic.casters.QueryCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
@@ -62,14 +61,12 @@ public class DuplicationUtil {
 			return target;
 		} else if ( target instanceof Enum<?> || target instanceof Class<?> ) {
 			return target;
-		} else if ( target instanceof IStruct && ( ( IStruct ) target ).isEmpty() ) {
-			return target;
-		} else if ( target instanceof IStruct ) {
-			return duplicateStruct( StructCaster.cast( target ), deep );
-		} else if ( target instanceof Array ) {
-			return duplicateArray( ArrayCaster.cast( target ), deep );
-		} else if ( target instanceof Query ) {
-			return duplicateQuery( QueryCaster.cast( target ), deep );
+		} else if ( target instanceof IStruct str ) {
+			return duplicateStruct( str, deep );
+		} else if ( target instanceof Array arr ) {
+			return duplicateArray( arr, deep );
+		} else if ( target instanceof Query arr ) {
+			return duplicateQuery( arr, deep );
 		} else if ( target instanceof DateTime dateTimeInstance ) {
 			return dateTimeInstance.clone();
 		} else if ( target instanceof Function ) {
