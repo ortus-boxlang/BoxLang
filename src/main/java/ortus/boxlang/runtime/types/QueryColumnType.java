@@ -27,6 +27,7 @@ public enum QueryColumnType {
 	BIGINT( Types.BIGINT ),
 	BINARY( Types.BINARY ),
 	BIT( Types.BIT ),
+	CHAR( Types.CHAR ),
 	DATE( Types.DATE ),
 	DECIMAL( Types.DECIMAL ),
 	DOUBLE( Types.DOUBLE ),
@@ -49,36 +50,62 @@ public enum QueryColumnType {
 	 */
 	public static QueryColumnType fromString( String type ) {
 		type = type.toLowerCase();
-		// TODO: handle other types
+		
 		switch ( type ) {
-			case "integer" :
-				return INTEGER;
+			case "array":
+			case "refcursor":
+			case "struct":
+			case "sqlxml":
+				return OTHER;
 			case "bigint" :
 				return BIGINT;
+			case "binary" :
+			case "varbinary" :
+			case "longvarbinary" :
+				return BINARY;
+			case "blob":
+			case "clob":
+			case "nclob":
+				return OBJECT;
+			case "bit" :
+				return BIT;
+			case "nchar" :
+			case "char":
+				return CHAR;
+			case "date" :
+				return DATE;
+			case "distinct" :
+				return OTHER;
+			case "decimal" :
+				return DECIMAL;
+			case "real" :
+			case "money" :
+			case "money4" :
+			case "float" :
 			case "double" :
 			case "numeric" :
 				return DOUBLE;
-			case "decimal" :
-				return DECIMAL;
+			case "idstamp" :
+				return CHAR;
+			case "tinyint" :
+			case "smallint" :
+			case "integer" :
+				return INTEGER;
+			case "nvarchar" :
+			case "longvarchar" :
+			case "longnvarchar" :
+				return VARCHAR;
+			case "object" :
+				return OBJECT;
+			case "other" :
+				return OTHER;
+			case "time" :
+				return TIME;
+			case "timestamp" :
+				return TIMESTAMP;
 			case "varchar" :
 			case "string" :
 				return VARCHAR;
-			case "binary" :
-				return BINARY;
-			case "bit" :
-				return BIT;
-			case "time" :
-				return TIME;
-			case "date" :
-				return DATE;
-			case "timestamp" :
-				return TIMESTAMP;
-			case "object" :
-				return OBJECT;
-			case "idstamp" :
-				return CHAR;
-			case "other" :
-				return OTHER;
 			case "null" :
 				return NULL;
 			default :
