@@ -1,5 +1,5 @@
 
-	/**
+/**
  * [BoxLang]
  *
  * Copyright [2023] [Ortus Solutions, Corp]
@@ -23,8 +23,8 @@ import static org.junit.Assert.assertEquals;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-public class QueryColumnTypeTest {;
-
+public class QueryColumnTypeTest {
+	;
 
 	@DisplayName( "Test fromString() constructor against all known cf_sql parameter types" )
 	@Test

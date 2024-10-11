@@ -50,12 +50,12 @@ public enum QueryColumnType {
 	 */
 	public static QueryColumnType fromString( String type ) {
 		type = type.toLowerCase();
-		
+
 		switch ( type ) {
-			case "array":
-			case "refcursor":
-			case "struct":
-			case "sqlxml":
+			case "array" :
+			case "refcursor" :
+			case "struct" :
+			case "sqlxml" :
 				return OTHER;
 			case "bigint" :
 				return BIGINT;
@@ -63,14 +63,14 @@ public enum QueryColumnType {
 			case "varbinary" :
 			case "longvarbinary" :
 				return BINARY;
-			case "blob":
-			case "clob":
-			case "nclob":
+			case "blob" :
+			case "clob" :
+			case "nclob" :
 				return OBJECT;
 			case "bit" :
 				return BIT;
 			case "nchar" :
-			case "char":
+			case "char" :
 				return CHAR;
 			case "date" :
 				return DATE;
