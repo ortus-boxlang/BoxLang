@@ -75,6 +75,8 @@ public enum QueryColumnType {
 				return TIMESTAMP;
 			case "object" :
 				return OBJECT;
+			case "idstamp" :
+				return CHAR;
 			case "other" :
 				return OTHER;
 			case "null" :
@@ -97,6 +99,8 @@ public enum QueryColumnType {
 				return "numeric";
 			case DECIMAL :
 				return "decimal";
+			case CHAR :
+				return "string";
 			case VARCHAR :
 				return "string";
 			case BINARY :
