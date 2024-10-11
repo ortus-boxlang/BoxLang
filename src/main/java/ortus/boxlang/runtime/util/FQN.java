@@ -186,7 +186,7 @@ public class FQN {
 		fqn	= normalizeDots( fqn );
 
 		// Remove any non alpha-numeric chars.
-		fqn	= fqn.replaceAll( "[^a-zA-Z0-9$\\.]", "" );
+		fqn	= fqn.replaceAll( "[^a-zA-Z0-9$\\.]", "__" );
 
 		if ( fqn.isEmpty() ) {
 			return new String[] {};
@@ -281,7 +281,7 @@ public class FQN {
 		// Replace / with .
 		fqn	= fqn.replaceAll( "/", "." );
 		// Remove any : from Windows drives
-		fqn	= fqn.replaceAll( ":", "" );
+		fqn	= fqn.replaceAll( ":", "_" );
 		// Replace \ with .
 		fqn	= fqn.replaceAll( "\\\\", "." );
 

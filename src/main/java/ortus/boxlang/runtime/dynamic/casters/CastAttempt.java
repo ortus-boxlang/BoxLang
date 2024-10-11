@@ -18,9 +18,9 @@
 package ortus.boxlang.runtime.dynamic.casters;
 
 import java.util.Objects;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
 
+import ortus.boxlang.runtime.dynamic.Attempt;
+import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 
 /**
@@ -30,34 +30,22 @@ import ortus.boxlang.runtime.types.exceptions.BoxCastException;
  * to check if a value is castable and then actually cast it. Instead, you can combine those
  * steps into one and still do something else if the casting was not possible.
  */
-public final class CastAttempt<T> {
+public final class CastAttempt<T> extends Attempt<T> {
 
-	private static final CastAttempt<?>	EMPTY	= new CastAttempt<>();
+	private static final CastAttempt<?> EMPTY = new CastAttempt<>();
 
 	/**
-	 * If non-null, the value; if null, indicates no value is present
+	 * |--------------------------------------------------------------------------
+	 * | Constructors
+	 * |--------------------------------------------------------------------------
 	 */
-	private final T						value;
 
 	/**
 	 * Constructs an empty instance.
 	 */
 	private CastAttempt() {
-		this.value = null;
-	}
-
-	/**
-	 * Returns an empty instance. No value is present for this
-	 * CastAttempt.
-	 *
-	 * @param <T> Type of the non-existent value
-	 *
-	 * @return an empty {@code CastAttempt}
-	 */
-	public static <T> CastAttempt<T> empty() {
-		@SuppressWarnings( "unchecked" )
-		CastAttempt<T> t = ( CastAttempt<T> ) EMPTY;
-		return t;
+		super();
+		this.simpleEval = true;
 	}
 
 	/**
@@ -66,8 +54,15 @@ public final class CastAttempt<T> {
 	 * @param value the non-null value to be present
 	 */
 	private CastAttempt( T value ) {
-		this.value = Objects.requireNonNull( value );
+		super( Objects.requireNonNull( value ) );
+		this.simpleEval = true;
 	}
+
+	/**
+	 * |--------------------------------------------------------------------------
+	 * | Static Builders
+	 * |--------------------------------------------------------------------------
+	 */
 
 	/**
 	 * Returns an {@code CastAttempt} with the specified present non-null value.
@@ -96,105 +91,92 @@ public final class CastAttempt<T> {
 	}
 
 	/**
+	 * Create an empty attempt
+	 *
+	 * @return An empty attempt
+	 */
+	@SuppressWarnings( "unchecked" )
+	public static <T> CastAttempt<T> empty() {
+		return ( CastAttempt<T> ) EMPTY;
+	}
+
+	/**
+	 * |--------------------------------------------------------------------------
+	 * | Overrides
+	 * |--------------------------------------------------------------------------
+	 */
+
+	/**
 	 * If a value is present in this {@code CastAttempt}, returns the value,
-	 * otherwise throws Exception
+	 * otherwise throws BoxCastException
 	 *
 	 * @return the non-null value held by this {@code CastAttempt}
 	 *
-	 * @see CastAttempt#wasSuccessful()
-	 */
-	public T get() {
-		if ( value == null ) {
-			throw new BoxCastException( "The cast was not successful.  You cannot get the value." );
-		}
-		return value;
-	}
-
-	/**
-	 * Return {@code true} if there is a value present, otherwise {@code false}.
-	 *
-	 * @return {@code true} if there is a value present, otherwise {@code false}
-	 */
-	public boolean wasSuccessful() {
-		return value != null;
-	}
-
-	/**
-	 * The opposite of {@link #wasSuccessful()}. Returns {@code true} if there is no
-	 * value present, otherwise {@code false}.
-	 */
-	public boolean ifFailed() {
-		return !wasSuccessful();
-	}
-
-	/**
-	 * If a value is present, invoke the specified consumer with the value,
-	 * otherwise do nothing.
-	 *
-	 * @param consumer block to be executed if a value is present
-	 *
-	 * @return this {@code CastAttempt}
-	 *
-	 * @throws NullPointerException if value is present and {@code consumer} is
-	 *                              null
-	 */
-	public CastAttempt<T> ifSuccessful( Consumer<? super T> consumer ) {
-		if ( value != null )
-			consumer.accept( value );
-
-		return this;
-	}
-
-	/**
-	 * Return the value if present, otherwise return {@code other}.
-	 *
-	 * @param other the value to be returned if there is no value present, may
-	 *              be null
-	 *
-	 * @return the value, if present, otherwise {@code other}
-	 */
-	public T getOrDefault( T other ) {
-		return value != null ? value : other;
-	}
-
-	/**
-	 * Return the value if present, otherwise invoke {@code other} and return
-	 * the result of that invocation.
-	 *
-	 * @param other a {@code Supplier} whose result is returned if no value
-	 *              is present
-	 *
-	 * @return the value if present otherwise the result of {@code other.get()}
-	 *
-	 * @throws NullPointerException if value is not present and {@code other} is
-	 *                              null
-	 */
-	public T getOrSupply( Supplier<? extends T> other ) {
-		return value != null ? value : other.get();
-	}
-
-	/**
-	 * @return The contained value, if present, otherwise throw an exception
-	 */
-	public T getOrFail() {
-		if ( value != null ) {
-			return value;
-		} else {
-			throw new BoxCastException( "Value could not be cast." );
-		}
-	}
-
-	/**
-	 * Returns a non-empty string representation of this CastAttempt suitable for
-	 * debugging. The exact presentation format is unspecified and may vary
-	 * between implementations and versions.
-	 *
-	 * @return the string representation of this instance
+	 * @throws BoxCastException if there is no value present
 	 */
 	@Override
-	public String toString() {
-		return value != null
-		    ? String.format( "CastAttempt[%s]", value )
-		    : "CastAttempt.empty";
+	public T get() {
+		if ( isPresent() ) {
+			return this.value;
+		}
+		throw new BoxCastException( "The cast was not successful.  You cannot get the value." );
 	}
+
+	/**
+	 * Verifies if the attempt is empty
+	 *
+	 * @return True if the attempt is empty, false otherwise
+	 */
+	@Override
+	public boolean isPresent() {
+		return this.value != null;
+	}
+
+	/**
+	 * Map the attempt to a new value with a supplier
+	 *
+	 * @param mapper The mapper to map the attempt to
+	 *
+	 * @return The new attempt
+	 */
+	@Override
+	public <U> CastAttempt<U> map( java.util.function.Function<? super T, ? extends U> mapper ) {
+		Objects.requireNonNull( mapper );
+		if ( isEmpty() ) {
+			return empty();
+		}
+
+		return of( mapper.apply( this.value ) );
+	}
+
+	/**
+	 * If a value is present, returns the result of applying the given
+	 * {@code Attempt}-bearing mapping function to the value, otherwise returns
+	 * an empty {@code Attempt}.
+	 *
+	 * <p>
+	 * This method is similar to {@link #map(Function)}, but the mapping
+	 * function is one whose result is already an {@code Attempt}, and if
+	 * invoked, {@code flatMap} does not wrap it within an additional
+	 * {@code Attempt}.
+	 *
+	 * @param <U>    The type of value of the {@code Attempt} returned by the
+	 *               mapping function
+	 * @param mapper the mapping function to apply to a value, if present
+	 *
+	 * @return the result of applying an {@code Attempt}-bearing mapping
+	 *         function to the value of this {@code Attempt}, if a value is
+	 *         present, otherwise an empty {@code Attempt}
+	 */
+	@SuppressWarnings( "unchecked" )
+	@Override
+	public <U> CastAttempt<U> flatMap( java.util.function.Function<? super T, ? extends Attempt<? extends U>> mapper ) {
+		Objects.requireNonNull( mapper );
+		if ( isEmpty() ) {
+			return empty();
+		}
+		CastAttempt<U> r = ( CastAttempt<U> ) mapper.apply( this.value );
+		return Objects.requireNonNull( r );
+	}
+
 }

@@ -40,6 +40,7 @@ import ortus.boxlang.runtime.bifs.BoxMemberExpose;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
@@ -201,6 +202,17 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	 */
 	public static Array fromList( List<? extends Object> list ) {
 		return new Array( list );
+	}
+
+	/**
+	 * Create an array from a Set<String>
+	 *
+	 * @param set The set to create the Array from
+	 *
+	 * @return The array
+	 */
+	public static Array fromSet( Set<? extends Object> set ) {
+		return new Array( new ArrayList<>( set ) );
 	}
 
 	/**
@@ -704,7 +716,13 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	 */
 	public int findIndex( Function test, IBoxContext context ) {
 		return intStream()
-		    .filter( i -> ( boolean ) context.invokeFunction( test, new Object[] { get( i ) } ) )
+		    .filter( i -> BooleanCaster.cast(
+		        test.requiresStrictArguments()
+		            // Java Lambdas
+		            ? context.invokeFunction( test, new Object[] { get( i ) } )
+		            // BoxLang Functions, more args!!=
+		            : context.invokeFunction( test, new Object[] { get( i ), i, this } )
+		    ) )
 		    .findFirst()
 		    .orElse( -1 ) + 1;
 	}

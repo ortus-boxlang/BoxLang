@@ -23,18 +23,27 @@ import static com.google.common.truth.Truth.assertThat;
 import java.util.Arrays;
 import java.util.List;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 
 public class BaseResolverTest {
 
+	static BoxRuntime runtime;
+
+	@BeforeAll
+	public static void setUp() {
+		runtime = BoxRuntime.getInstance( true );
+	}
+
 	@DisplayName( "It can create a base resolver" )
 	@Test
 	void testItCanCreateIt() {
-		BaseResolver target = new BaseResolver( "test", "TEST" );
+		BaseResolver target = new BaseResolver( "test", "TEST", runtime.getClassLocator() );
 		assertThat( target ).isInstanceOf( BaseResolver.class );
 		assertThat( target.getName() ).isEqualTo( "test" );
 		assertThat( target.getPrefix() ).isEqualTo( "test" );
@@ -53,29 +62,29 @@ public class BaseResolverTest {
 		    ImportDefinition.parse( "bx:models.test.HelloWorld" ),
 		    ImportDefinition.parse( "java:java.lang.List as jList" )
 		);
-		BaseResolver			jResolver	= JavaResolver.getInstance();
-		jResolver.clearImportCache();
+		BaseResolver			resolver	= runtime.getClassLocator().getJavaResolver();
+		resolver.clearImportCache();
 
-		String fqn = jResolver.expandFromImport( new ScriptingRequestBoxContext(), "String", imports );
+		String fqn = resolver.expandFromImport( new ScriptingRequestBoxContext(), "String", imports );
 		assertThat( fqn ).isEqualTo( "java.lang.String" );
-		assertThat( jResolver.getImportCacheSize() ).isEqualTo( 1 );
+		assertThat( resolver.getImportCacheSize() ).isEqualTo( 1 );
 
-		fqn = jResolver.expandFromImport( new ScriptingRequestBoxContext(), "Integer", imports );
+		fqn = resolver.expandFromImport( new ScriptingRequestBoxContext(), "Integer", imports );
 		assertThat( fqn ).isEqualTo( "java.lang.Integer" );
-		assertThat( jResolver.getImportCacheSize() ).isEqualTo( 2 );
+		assertThat( resolver.getImportCacheSize() ).isEqualTo( 2 );
 
 		// The Java resolver will ignore this mapping
-		fqn = jResolver.expandFromImport( new ScriptingRequestBoxContext(), "HelloWorld", imports );
+		fqn = resolver.expandFromImport( new ScriptingRequestBoxContext(), "HelloWorld", imports );
 		assertThat( fqn ).isEqualTo( "HelloWorld" );
-		assertThat( jResolver.getImportCacheSize() ).isEqualTo( 2 );
+		assertThat( resolver.getImportCacheSize() ).isEqualTo( 2 );
 
-		fqn = jResolver.expandFromImport( new ScriptingRequestBoxContext(), "BaseResolver", imports );
+		fqn = resolver.expandFromImport( new ScriptingRequestBoxContext(), "BaseResolver", imports );
 		assertThat( fqn ).isEqualTo( "ortus.boxlang.runtime.loader.resolvers.BaseResolver" );
-		assertThat( jResolver.getImportCacheSize() ).isEqualTo( 3 );
+		assertThat( resolver.getImportCacheSize() ).isEqualTo( 3 );
 
-		fqn = jResolver.expandFromImport( new ScriptingRequestBoxContext(), "jList", imports );
+		fqn = resolver.expandFromImport( new ScriptingRequestBoxContext(), "jList", imports );
 		assertThat( fqn ).isEqualTo( "java.lang.List" );
-		assertThat( jResolver.getImportCacheSize() ).isEqualTo( 4 );
+		assertThat( resolver.getImportCacheSize() ).isEqualTo( 4 );
 	}
 
 }

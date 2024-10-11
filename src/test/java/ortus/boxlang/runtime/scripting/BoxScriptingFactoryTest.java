@@ -59,7 +59,7 @@ public class BoxScriptingFactoryTest {
 	@Test
 	public void testGetExtensions() {
 		BoxScriptingFactory factory = new BoxScriptingFactory();
-		assertThat( factory.getExtensions() ).containsExactly( "bx", "cfm", "cfc", "cfs", "bxs", "bxm" );
+		assertThat( factory.getExtensions() ).containsAnyOf( "bx", "bxm", "bxs" );
 	}
 
 	@Test

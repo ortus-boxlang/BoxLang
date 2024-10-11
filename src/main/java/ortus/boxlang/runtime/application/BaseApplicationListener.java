@@ -634,7 +634,8 @@ public abstract class BaseApplicationListener {
 				case "wddx" :
 				case "xml" :
 					if ( context.getRuntime().getModuleService().hasModule( Key.wddx ) ) {
-						DynamicObject WDDXUtil = ClassLocator.getInstance()
+						DynamicObject WDDXUtil = context.getRuntime()
+						    .getClassLocator()
 						    .load(
 						        context,
 						        "ortus.boxlang.modules.wddx.util.WDDXUtil@wddx",

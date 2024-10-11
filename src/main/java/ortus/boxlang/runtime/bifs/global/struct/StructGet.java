@@ -29,7 +29,6 @@ import ortus.boxlang.runtime.types.BoxLangType;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.STRUCT, name = "getFromPath", objectArgument = "object" )
-
 public class StructGet extends BIF {
 
 	/**
@@ -38,8 +37,7 @@ public class StructGet extends BIF {
 	public StructGet() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "string", Key.path ),
-		    new Argument( false, "structloose", Key.object )
+		    new Argument( true, "string", Key.path )
 		};
 	}
 

@@ -25,7 +25,6 @@ import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
-import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.scopes.BaseScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -723,7 +722,7 @@ public class BoxClassSupport {
 			return dynO;
 		}
 		if ( obj instanceof String str ) {
-			return ClassLocator.getInstance().load( context, str, imports );
+			return BoxRuntime.getInstance().getClassLocator().load( context, str, imports );
 		}
 		throw new BoxRuntimeException( "Cannot load class for static access.  Type provided: " + obj.getClass().getName() );
 

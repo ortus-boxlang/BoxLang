@@ -195,7 +195,7 @@ public class FunctionService extends BaseService {
 	}
 
 	/**
-	 * Returns the global function with the given name
+	 * Returns the global function with the given name.
 	 *
 	 * @param name The name of the global function
 	 *

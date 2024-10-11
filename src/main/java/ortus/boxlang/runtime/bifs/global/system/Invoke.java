@@ -14,6 +14,7 @@
  */
 package ortus.boxlang.runtime.bifs.global.system;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -32,7 +33,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 @BoxBIF
 public class Invoke extends BIF {
 
-	ClassLocator classLocator = ClassLocator.getInstance();
+	ClassLocator classLocator = BoxRuntime.getInstance().getClassLocator();
 
 	/**
 	 * Constructor

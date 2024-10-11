@@ -403,6 +403,15 @@ public class ReFindTest {
 		    context );
 			assertThat( variables.get( result ) ).isEqualTo(13);
 		// @formatter:on
+		// @formatter:off
+		instance.executeSource(
+		    """
+				input   = "String with {{TOKEN}}";
+				result = ReFind( "\\{\\{[A-Z]+\\}\\}", input );
+		    """,
+		    context );
+			assertThat( variables.get( result ) ).isEqualTo(13);
+		// @formatter:on
 	}
 
 	@Test

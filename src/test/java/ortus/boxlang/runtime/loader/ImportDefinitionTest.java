@@ -66,12 +66,12 @@ public class ImportDefinitionTest {
 		assertThat( importDef.resolverPrefix() ).isEqualTo( null );
 		assertThat( importDef.alias() ).isEqualTo( "String" );
 
-		importDef = ImportDefinition.parse( "java.util.*" );
-		assertThat( importDef.isMultiImport() ).isEqualTo( true );
-		assertThat( importDef.className() ).isEqualTo( "java.util.*" );
+		importDef = ImportDefinition.parse( "java.net.http.HttpRequest$BodyPublishers" );
+		assertThat( importDef.isMultiImport() ).isEqualTo( false );
+		assertThat( importDef.className() ).isEqualTo( "java.net.http.HttpRequest$BodyPublishers" );
 		assertThat( importDef.resolverPrefix() ).isEqualTo( null );
-		assertThat( importDef.alias() ).isEqualTo( "*" );
-		assertThat( importDef.getPackageName() ).isEqualTo( "java.util" );
+		assertThat( importDef.alias() ).isEqualTo( "BodyPublishers" );
+		assertThat( importDef.getPackageName() ).isEqualTo( "java.net.http" );
 	}
 
 }

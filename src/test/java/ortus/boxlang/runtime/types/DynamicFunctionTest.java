@@ -1,4 +1,3 @@
-
 /**
  * [BoxLang]
  *
@@ -14,18 +13,15 @@
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
- * limitations under the License.
+ * limitations under the License.8
  */
-
-package ortus.boxlang.runtime.bifs.global.struct;
+package ortus.boxlang.runtime.types;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.Assert.assertNull;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -36,7 +32,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 
-public class StructGetTest {
+public class DynamicFunctionTest {
 
 	static BoxRuntime	instance;
 	IBoxContext			context;
@@ -50,7 +46,6 @@ public class StructGetTest {
 
 	@AfterAll
 	public static void teardown() {
-
 	}
 
 	@BeforeEach
@@ -59,53 +54,28 @@ public class StructGetTest {
 		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
-	@DisplayName( "It tests the BIF StructGet" )
+	@DisplayName( "It can create dynamic function and execute it" )
 	@Test
-	public void testBif() {
+	public void testDynamicFunction() {
+		DynamicFunction target = new DynamicFunction(
+		    Key.of( "SayHelloBaby" ),
+		    ( context, function ) -> {
+			    System.out.println( context.getArgumentsScope().toString() );
+			    return "Hello World";
+		    }
+		);
+		context.registerUDF( target );
+
+		// @formatter:off
 		instance.executeSource(
 		    """
-		    myStruct={
-		    	"foo" : {
-		    		"bar" : "baz"
-		    	}
-		    };
-		    result = StructGet( "myStruct.foo.bar" );
-		    """,
-		    context );
-		assertThat( variables.get( result ) ).isEqualTo( "baz" );
-
-	}
-
-	@DisplayName( "It tests the BIF StructGet Will return a null if a value is not present" )
-	@Test
-	public void testBifNullReturn() {
-		instance.executeSource(
-		    """
-		    myStruct={
-		    	"foo" : {
-		    		"bar" : "baz"
-		    	}
-		    };
-		    result = StructGet( "myStruct.foo.blah.blerge" );
-		    """,
-		    context );
-		assertNull( variables.get( result ) );
-	}
-
-	@Disabled( "It tests the member function for Struct.getFromPath" )
-	@Test
-	public void testMemberFunction() {
-		instance.executeSource(
-		    """
-		    myStruct={
-		    	"foo" : {
-		    		"bar" : "baz"
-		    	}
-		    };
-		    result = myStruct.getFromPath( "foo.bar" );
-		    """,
-		    context );
-		assertThat( variables.get( result ) ).isEqualTo( "baz" );
+				println( "Executing source")
+				result = SayHelloBaby( "Luis Majano" )
+			""",
+			context
+		);
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( "Hello World" );
 	}
 
 }
