@@ -326,6 +326,15 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	}
 
 	/**
+	 * Get the original name of the datasource - this is NOT unique and should not be used for identification.
+	 *
+	 * @return The original name of the datasource.
+	 */
+	public String getOriginalName() {
+		return this.name.getName();
+	}
+
+	/**
 	 * Processes the state of the configuration segment from the configuration struct.
 	 * <p>
 	 * Each segment is processed individually from the initial configuration struct.
