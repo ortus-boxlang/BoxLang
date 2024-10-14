@@ -31,6 +31,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.segments.ModuleConfig;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -250,5 +251,17 @@ class ModuleRecordTest {
 		    "Hello World, my name is boxlang and I am 0 years old"
 		);
 		// assertThat( variables.getAsString( Key.of( "result4" ) ) ).isEqualTo( "Hola Mundo!" );
+
+		// Test Module Class Locators
+		// @formatter:off
+		runtime.executeSource("""
+			helloClass = createObject( "models.Hello@test" )
+			result = helloClass.sayHello();
+		    """,
+			context,
+			BoxSourceType.BOXSCRIPT
+		);
+		// @formatter:on
+		assertThat( variables.getAsString( Key.result ) ).contains( "ModuleLand" );
 	}
 }
