@@ -404,27 +404,27 @@ public class BoxResolver extends BaseResolver {
 		if ( resolvedFilePath != null ) {
 			Path template = resolvedFilePath.absolutePath();
 
-			if ( template != null ) {
+			if ( template != null && !template.toString().equalsIgnoreCase( "unknown" ) ) {
 				// Get the parent directory of the template, verify it exists, else we are done
-				Path	parentPath	= template.getParent();
-				// System.out.println( "parentPath: " + parentPath );
+				Path parentPath = template.getParent();
+				if ( parentPath != null ) {
+					// See if path exists in this parent directory with a valid extension
+					Path targetPath = findExistingPathWithValidExtension( parentPath, slashName );
+					if ( targetPath != null ) {
 
-				// See if path exists in this parent directory with a valid extension
-				Path	targetPath	= findExistingPathWithValidExtension( parentPath, slashName );
-				if ( targetPath != null ) {
+						ResolvedFilePath newResolvedFilePath = resolvedFilePath
+						    .newFromRelative( parentPath.relativize( Paths.get( targetPath.toString() ) ).toString() );
 
-					ResolvedFilePath newResolvedFilePath = resolvedFilePath
-					    .newFromRelative( parentPath.relativize( Paths.get( targetPath.toString() ) ).toString() );
-
-					return Optional.of( new ClassLocation(
-					    newResolvedFilePath.getBoxFQN().getClassName(),
-					    targetPath.toAbsolutePath().toString(),
-					    newResolvedFilePath.getBoxFQN().getPackageString(),
-					    ClassLocator.TYPE_BX,
-					    loadClass ? RunnableLoader.getInstance().loadClass( newResolvedFilePath, context ) : null,
-					    "",
-					    false
-					) );
+						return Optional.of( new ClassLocation(
+						    newResolvedFilePath.getBoxFQN().getClassName(),
+						    targetPath.toAbsolutePath().toString(),
+						    newResolvedFilePath.getBoxFQN().getPackageString(),
+						    ClassLocator.TYPE_BX,
+						    loadClass ? RunnableLoader.getInstance().loadClass( newResolvedFilePath, context ) : null,
+						    "",
+						    false
+						) );
+					}
 				}
 			}
 		}
