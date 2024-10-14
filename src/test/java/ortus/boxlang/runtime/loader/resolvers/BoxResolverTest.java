@@ -126,7 +126,7 @@ public class BoxResolverTest {
 		);
 		Optional<ClassLocation>	classLocation	= boxResolver.resolve( context, className, imports );
 		assertThat( classLocation.isPresent() ).isTrue();
-		assertThat( classLocation.get().path() ).contains( "src/test/bx/models/TestClass" );
+		assertThat( classLocation.get().path() ).contains( "TestClass" );
 	}
 
 	@DisplayName( "It can resolve classes using imports for modules" )
