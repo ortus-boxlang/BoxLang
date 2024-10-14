@@ -65,15 +65,23 @@ public class ByteCaster implements IBoxCaster {
 			}
 		}
 
-		// TODO: Find a way to check if the string can be cast without throwing an exception here
-		try {
-			return Byte.valueOf( StringCaster.cast( object ) );
-		} catch ( NumberFormatException e ) {
-			if ( fail ) {
-				throw e;
-			} else {
-				return null;
-			}
+		// Check if it's already a byte
+		if ( object instanceof Byte b ) {
+			return b;
+		}
+
+		// Check if the object is already a number
+		if ( object instanceof Number num ) {
+			return num.byteValue();
+		}
+
+		CastAttempt<Number> number = NumberCaster.attempt( object );
+		if ( number.wasSuccessful() ) {
+			return number.get().byteValue();
+		} else if ( fail ) {
+			throw new BoxCastException( "Can't cast " + object.getClass().getName() + " to a byte." );
+		} else {
+			return null;
 		}
 
 	}

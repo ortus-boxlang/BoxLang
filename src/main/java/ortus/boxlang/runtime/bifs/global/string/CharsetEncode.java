@@ -29,7 +29,6 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 @BoxBIF
 
@@ -41,7 +40,7 @@ public class CharsetEncode extends BIF {
 	public CharsetEncode() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "any", Key.binary ),
+		    new Argument( true, "byte[]", Key.binary ),
 		    new Argument( false, "string", Key.encoding, "utf-8" )
 		};
 	}
@@ -57,13 +56,10 @@ public class CharsetEncode extends BIF {
 	 * @argument.encoding The charset encoding to use (default: utf-8 )
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-
-		if ( ! ( arguments.get( Key.binary ) instanceof byte[] ) ) {
-			throw new BoxRuntimeException( "The binary value passed to the function [charsetEncode] is not a valid binary object" );
-		}
+		byte[] binary = ( byte[] ) arguments.get( Key.binary );
 
 		return StringUtils.toEncodedString(
-		    ( byte[] ) arguments.get( Key.binary ),
+		    binary,
 		    Charset.forName( arguments.getAsString( Key.encoding ) )
 		);
 

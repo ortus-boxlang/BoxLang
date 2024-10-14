@@ -17,7 +17,6 @@
  */
 package ortus.boxlang.runtime.dynamic.casters;
 
-import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
@@ -57,9 +56,9 @@ public class GenericCaster implements IBoxCaster {
 	public static CastAttempt<Object> attempt( IBoxContext context, Object object, Object oType, boolean strict ) {
 		String type;
 		if ( oType instanceof BoxLangType boxType ) {
-			type = boxType.name().toLowerCase();
+			type = boxType.name();
 		} else {
-			type = StringCaster.cast( oType ).toLowerCase();
+			type = StringCaster.cast( oType );
 		}
 
 		// Represent legit null values in a NullValue instance
@@ -138,7 +137,8 @@ public class GenericCaster implements IBoxCaster {
 			String newType = type.substring( 0, type.length() - 2 );
 			originalCaseType = originalCaseType.substring( 0, originalCaseType.length() - 2 );
 			Class<?>	newTypeClass	= getClassFromType( context, newType, originalCaseType, false );
-			Object[]	result;
+			// Typed as Object instead of Object[] in case we're creating an array of primitives
+			Object		result;
 			Boolean		convertToArray	= false;
 
 			// If we could not get the class, then we are casting to an array of objects
@@ -148,9 +148,14 @@ public class GenericCaster implements IBoxCaster {
 			}
 
 			if ( object.getClass().isArray() ) {
+				// If our incoming object is already an array of the new type, just return it
+				if ( object.getClass().getComponentType().equals( newTypeClass ) ) {
+					return object;
+				}
 				result = castNativeArrayToNativeArray( context, object, newType, fail, newTypeClass );
-			} else if ( object instanceof List<?> ) {
-				result = castListToNativeArray( context, object, newType, fail, newTypeClass );
+			} else if ( object instanceof List<?> incomingList ) {
+				Object[] incomingArray = incomingList.toArray();
+				result = castNativeArrayToNativeArray( context, incomingArray, newType, fail, newTypeClass );
 			} else {
 				throw new BoxCastException(
 				    String.format( "You asked for type %s, but input %s cannot be cast to an array.", type,
@@ -158,7 +163,9 @@ public class GenericCaster implements IBoxCaster {
 				);
 			}
 			if ( convertToArray ) {
-				return ortus.boxlang.runtime.types.Array.fromArray( result );
+				// unsafe cast to Object[] is OK here because the convertToArray flag will never be true
+				// if our target type is an array of primitives, so we know it will have boxed types in it
+				return ortus.boxlang.runtime.types.Array.fromArray( ( Object[] ) result );
 			}
 			return result;
 		}
@@ -302,20 +309,23 @@ public class GenericCaster implements IBoxCaster {
 
 	}
 
-	private static Object[] castNativeArrayToNativeArray( IBoxContext context, Object object, String newType, boolean fail, Class<?> newTypeClass ) {
-		Object[] result = ( Object[] ) java.lang.reflect.Array.newInstance( newTypeClass, Array.getLength( object ) );
-		for ( int i = Array.getLength( object ) - 1; i >= 0; i-- ) {
-			result[ i ] = GenericCaster.cast( context, Array.get( object, i ), newType, fail );
-		}
-		return result;
-	}
-
-	private static Object[] castListToNativeArray( IBoxContext context, Object object, String newType, boolean fail, Class<?> newTypeClass ) {
-		List<?>		l				= ( List<?> ) object;
-		Object[]	incomingList	= l.toArray();
-		Object[]	result			= ( Object[] ) java.lang.reflect.Array.newInstance( newTypeClass, incomingList.length );
-		for ( int i = incomingList.length - 1; i >= 0; i-- ) {
-			result[ i ] = GenericCaster.cast( context, incomingList[ i ], newType, fail );
+	/**
+	 * Cast a native array to a native array
+	 * We are accepting Object and returning Object so we can pass arrays of primitives
+	 *
+	 * @param object       The object to cast
+	 * @param newType      The new type
+	 * @param fail         True to throw exception when type is invalid
+	 * @param newTypeClass The new type class
+	 *
+	 * @return The casted object
+	 */
+	private static Object castNativeArrayToNativeArray( IBoxContext context, Object object, String newType, boolean fail, Class<?> newTypeClass ) {
+		int		len		= java.lang.reflect.Array.getLength( object );
+		Object	result	= java.lang.reflect.Array.newInstance( newTypeClass, len );
+		for ( int i = len - 1; i >= 0; i-- ) {
+			Object v = GenericCaster.cast( context, java.lang.reflect.Array.get( object, i ), newType, fail );
+			java.lang.reflect.Array.set( result, i, v );
 		}
 		return result;
 	}
@@ -354,6 +364,33 @@ public class GenericCaster implements IBoxCaster {
 	 */
 	public static Class<?> getClassFromType( IBoxContext context, String type, String originalCaseType, Boolean fail ) {
 
+		// Check for primitive types first
+		if ( originalCaseType.equals( "byte" ) ) {
+			return byte.class;
+		}
+		if ( originalCaseType.equals( "char" ) ) {
+			return char.class;
+		}
+		if ( originalCaseType.equals( "short" ) ) {
+			return short.class;
+		}
+		if ( originalCaseType.equals( "int" ) ) {
+			return int.class;
+		}
+		if ( originalCaseType.equals( "long" ) ) {
+			return long.class;
+		}
+		if ( originalCaseType.equals( "float" ) ) {
+			return float.class;
+		}
+		if ( originalCaseType.equals( "double" ) ) {
+			return double.class;
+		}
+		if ( originalCaseType.equals( "boolean" ) ) {
+			return boolean.class;
+		}
+
+		// Check for boxed types
 		if ( type.equals( "bigdecimal" ) || type.equals( "java.math.bigdecimal" ) ) {
 			return BigDecimal.class;
 		}

@@ -75,17 +75,14 @@ public class ShortCaster implements IBoxCaster {
 			return Short.valueOf( ( short ) ( bool ? 1 : 0 ) );
 		}
 
-		// TODO: Find a way to check if the string can be cast without throwing an exception here
-		try {
-			return Short.valueOf( StringCaster.cast( object ) );
-		} catch ( NumberFormatException e ) {
-			if ( fail ) {
-				throw e;
-			} else {
-				return null;
-			}
+		CastAttempt<Number> number = NumberCaster.attempt( object );
+		if ( number.wasSuccessful() ) {
+			return number.get().shortValue();
+		} else if ( fail ) {
+			throw new BoxCastException( "Can't cast " + object.getClass().getName() + " to a short." );
+		} else {
+			return null;
 		}
-
 	}
 
 }
