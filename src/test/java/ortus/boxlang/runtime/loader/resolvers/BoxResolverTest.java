@@ -24,6 +24,8 @@ import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.AfterAll;
@@ -37,6 +39,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
+import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.DateTime;
@@ -100,13 +103,44 @@ public class BoxResolverTest {
 		assertThat( cfc.getThisScope().get( Key.of( "created" ) ) ).isInstanceOf( DateTime.class );
 	}
 
-	@DisplayName( "It can resolve classes" )
+	@DisplayName( "It can resolve classes using direct class names" )
 	@Test
 	void testResolve() {
-		IBoxContext	context		= new ScriptingRequestBoxContext();
-		String		className	= "apppath.models.User"; // Example class name
-
+		// Invalid Class
+		String className = "apppath.models.User";
 		assertThat( boxResolver.resolve( context, className ).isPresent() ).isFalse();
+
+		// Now a class that exists
+		className = "src.test.bx.Person";
+		assertThat( boxResolver.resolve( context, className ).isPresent() ).isTrue();
+	}
+
+	@DisplayName( "It can resolve classes using imports" )
+	@Test
+	void testResolveWithImports() {
+		String					className		= "TestClass";
+
+		List<ImportDefinition>	imports			= Arrays.asList(
+		    ImportDefinition.parse( "src.test.bx.models.Validation" ),
+		    ImportDefinition.parse( "src.test.bx.models.TestClass" )
+		);
+		Optional<ClassLocation>	classLocation	= boxResolver.resolve( context, className, imports );
+		assertThat( classLocation.isPresent() ).isTrue();
+		assertThat( classLocation.get().path() ).contains( "src/test/bx/models/TestClass" );
+	}
+
+	@DisplayName( "It can resolve classes using imports for modules" )
+	@Disabled
+	@Test
+	void testResolveWithImportsForModules() {
+		String					className		= "Hello";
+		List<ImportDefinition>	imports			= Arrays.asList(
+		    ImportDefinition.parse( "models.Hello@test" ),
+		    ImportDefinition.parse( "src.test.bx.models.TestClass" )
+		);
+		Optional<ClassLocation>	classLocation	= boxResolver.resolve( context, className, imports );
+		assertThat( classLocation.isPresent() ).isTrue();
+		assertThat( classLocation.get().path() ).contains( "test/models/Hello" );
 	}
 
 }

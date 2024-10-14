@@ -162,6 +162,7 @@ public class BoxResolver extends BaseResolver {
 		name	= name.endsWith( "." ) ? name.substring( 0, name.length() - 1 ) : name;
 
 		final String fullyQualifiedName = expandFromImport( context, name, imports );
+		// System.out.println( "--=--------> fullyQualifiedName: " + fullyQualifiedName );
 
 		return findFromModules( context, fullyQualifiedName, imports, loadClass )
 		    .or( () -> findFromLocal( context, fullyQualifiedName, imports, loadClass ) );
@@ -476,6 +477,41 @@ public class BoxResolver extends BaseResolver {
 		}
 
 		return slashName;
+	}
+
+	/**
+	 * Tries to expand the full class name using the import aliases given. If the class
+	 * name is not found as an import, we return the original class name.
+	 *
+	 * @param context   The current context of execution
+	 * @param className The name of the class to resolve
+	 * @param imports   The list of imports to use
+	 *
+	 * @return The resolved class name or the original class name if not found
+	 */
+	@Override
+	public String expandFromImport( IBoxContext context, String className, List<ImportDefinition> imports ) {
+		var fullyQualifiedName = imports.stream()
+		    // Discover import by matching the resolver prefix and the class name or alias or multi-import
+		    // This runs from concrete resolvers: bx, java, etc.
+		    // So if the resolver prefix matches, we continue, else we skip it.
+		    .filter( thisImport -> importApplies( thisImport ) && importHas( thisImport, className ) )
+		    // Return the first one, the first one wins
+		    .findFirst()
+		    // Convert the import to a fully qualified class name
+		    .map( targetImport -> {
+			    String fqn = targetImport.getFullyQualifiedClass( className );
+			    this.importCache.add( className + ":" + fqn );
+			    return fqn;
+		    } )
+		    // Nothing found, return the original class name
+		    .orElse( className );
+
+		// Security check
+		BoxRuntime.getInstance().getConfiguration().security.isClassAllowed( fullyQualifiedName );
+
+		// Return the fully qualified class name
+		return fullyQualifiedName;
 	}
 
 }
