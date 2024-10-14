@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.bifs.global.list;
 
+import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.bifs.global.array.ArrayFind;
@@ -36,6 +37,9 @@ import ortus.boxlang.runtime.types.util.ListUtil;
 @BoxMember( type = BoxLangType.STRING, name = "listContains" )
 @BoxMember( type = BoxLangType.STRING, name = "listContainsNoCase" )
 public class ListFind extends ArrayFind {
+
+	private static final Key	listContainsKey			= new Key( "listContains" );
+	private static final Key	listContainsNoCaseKey	= new Key( "listContainsNoCase" );
 
 	/**
 	 * Constructor
@@ -76,7 +80,8 @@ public class ListFind extends ArrayFind {
 		        arguments.getAsBoolean( Key.multiCharacterDelimiter )
 		    )
 		);
-		arguments.put( Key.substringMatch, true );
+		Key calledName = arguments.getAsKey( BIF.__functionName );
+		arguments.put( Key.substringMatch, calledName.equals( listContainsKey ) || calledName.equals( listContainsNoCaseKey ) ? true : false );
 		return super._invoke( context, arguments );
 	}
 
