@@ -22,8 +22,9 @@ import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
+
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.tree.ClassNode;
 
 import ortus.boxlang.compiler.ClassInfo;
 import ortus.boxlang.compiler.IBoxpiler;
@@ -80,18 +81,26 @@ public class DiskClassLoader extends URLClassLoader {
 	 */
 	@Override
 	protected Class<?> findClass( String name ) throws ClassNotFoundException {
+
 		Path		diskPath	= generateDiskPath( name );
 		// JIT compile
-		ClassInfo	classInfo	= boxPiler.getClassPool( classPoolName ).get( IBoxpiler.getBaseFQN( name ) );
-		if ( !hasClass( diskPath ) || ( classInfo != null && ( classInfo.lastModified() > diskPath.toFile().lastModified() ) ) ) {
-			// After this call, the class files will exist on disk
-			boxPiler.compileClassInfo( classPoolName, name );
+		String		baseName	= IBoxpiler.getBaseFQN( name );
+		ClassInfo	classInfo	= boxPiler.getClassPool( classPoolName ).get( baseName );
+		// Do we need to compile the class?
+		// Pre-compiled source files will follow this path, but will be discovered as already compiled when we try to parse them
+		if ( needsCompile( classInfo, diskPath, name, baseName ) ) {
+			// After this call, the class files will exist on disk, or will have been side-loaded into this classloader via the
+			// defineClass method (for pre-compiled source files)
+			boxPiler.compileClassInfo( classPoolName, baseName );
 		}
 
+		// If there is no class file on disk, then we assume pre-compiled class bytes were already side loaded in, so we just get them
+		// TODO: Change this to use the same flag discussed in the needsCompile method
 		if ( !diskPath.toFile().exists() ) {
 			return loadClass( name );
 		}
-		// Read file as byte array
+
+		// In all other scenarios, the BoxPiler should have compiled the class and written it to disk
 		byte[] bytes;
 		try {
 			bytes = Files.readAllBytes( diskPath );
@@ -100,6 +109,40 @@ public class DiskClassLoader extends URLClassLoader {
 		}
 
 		return defineClass( name, bytes, 0, bytes.length );
+	}
+
+	/**
+	 * Abstract out the logic for determining if a class needs to be compiled
+	 * 
+	 * @param classInfo the class info, may be null if there is none
+	 * @param diskPath  the path to the class file on disk, may not exist
+	 * @param name      the fully qualified class name
+	 * @param baseName  the base name of the class
+	 * 
+	 * @return true if the class needs to be compiled
+	 */
+	private boolean needsCompile( ClassInfo classInfo, Path diskPath, String name, String baseName ) {
+		// TODO: need to add some mutable flags to the classInfo object to track if it has been compiled or not
+		// and in what manner. For example, precompiled sources read directly into the class loader won't
+		// have a class file on disk and we should be able to just skip that check entirely if we know that.
+		// Using the existence of the class file on disk is not a good indicator of whether or not the class
+		// needs to be compiled or not, as a precompiled source file will not have a class file on disk.
+
+		// If we're loading an inner class, we know the compilation has already happened
+		if ( !name.equals( baseName ) ) {
+			return false;
+		}
+		// There is no class file cached on disk
+		if ( !hasClass( diskPath ) ) {
+			return true;
+		}
+
+		// If the class file is older than the source file
+		if ( classInfo != null && classInfo.lastModified() > diskPath.toFile().lastModified() ) {
+			return true;
+		}
+		// The class file exists on disk and is up to date
+		return false;
 	}
 
 	/**
@@ -175,8 +218,7 @@ public class DiskClassLoader extends URLClassLoader {
 			// remove initial magic number
 			buffer.getInt();
 
-			List<byte[]>	classBytesList	= new ArrayList<>();
-			boolean			first			= true;
+			boolean first = true;
 
 			while ( buffer.hasRemaining() ) {
 				// Read the length of the class file
@@ -195,18 +237,22 @@ public class DiskClassLoader extends URLClassLoader {
 						    + "].  Pre-compiled source code must have the same path and name as the original file." );
 					}
 				} else {
+					// String className = getClassName( classBytes );
 					// Define the class
 					defineClass( null, classBytes, 0, classBytes.length );
 				}
 			}
 
-			for ( byte[] classBytes : classBytesList ) {
-				// Define the class
-				defineClass( null, classBytes, 0, classBytes.length );
-			}
 		} catch ( IOException e ) {
 			throw new RuntimeException( "Failed to read file", e );
 		}
+	}
+
+	public static String getClassName( byte[] classBytes ) {
+		ClassReader	classReader	= new ClassReader( classBytes );
+		ClassNode	classNode	= new ClassNode();
+		classReader.accept( classNode, 0 );
+		return classNode.name.replace( '/', '.' );
 	}
 
 }

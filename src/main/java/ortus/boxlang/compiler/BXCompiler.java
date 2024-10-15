@@ -166,7 +166,7 @@ public class BXCompiler {
 		}
 	}
 
-	private static void compileFile( Path sourcePath, Path targetPath, Boolean stopOnError, BoxRuntime runtime, Path basePath, String mapping ) {
+	public static void compileFile( Path sourcePath, Path targetPath, Boolean stopOnError, BoxRuntime runtime, Path basePath, String mapping ) {
 		try {
 			Path directoryPath = targetPath.getParent();
 			if ( directoryPath != null && !Files.exists( directoryPath ) ) {
