@@ -189,8 +189,7 @@ public class JavaResolverTest {
 		);
 		Optional<ClassLocation>	classLocation	= javaResolver.resolve( context, className, imports );
 
-		System.out.println( classLocation );
-
+		// System.out.println( classLocation );
 		assertThat( classLocation.isPresent() ).isTrue();
 		assertThat( classLocation.get().name() ).isEqualTo( "Hola" );
 		assertThat( classLocation.get().packageName() ).isEqualTo( "com.ortussolutions.bifs" );
@@ -200,7 +199,7 @@ public class JavaResolverTest {
 
 	@DisplayName( "It can resolve wildcard imports from the JDK itself" )
 	@Test
-	void testItCanResolveWildcardImports() throws Exception {
+	void testItCanResolveWildcardImports() {
 		List<ImportDefinition> imports = Arrays.asList(
 		    ImportDefinition.parse( "java:java.lang.*" ),
 		    ImportDefinition.parse( "java:java.util.*" )
@@ -208,14 +207,36 @@ public class JavaResolverTest {
 
 		assertThat( javaResolver.getJdkImportCacheSize() ).isEqualTo( 0 );
 
-		String fqn = javaResolver.expandFromImport( new ScriptingRequestBoxContext(), "String", imports );
+		String fqn = javaResolver.expandFromImport( context, "String", imports );
 		assertThat( fqn ).isEqualTo( "java.lang.String" );
 
-		fqn = javaResolver.expandFromImport( new ScriptingRequestBoxContext(), "Integer", imports );
+		fqn = javaResolver.expandFromImport( context, "Integer", imports );
 		assertThat( fqn ).isEqualTo( "java.lang.Integer" );
 
-		fqn = javaResolver.expandFromImport( new ScriptingRequestBoxContext(), "List", imports );
+		fqn = javaResolver.expandFromImport( context, "List", imports );
 		assertThat( fqn ).isEqualTo( "java.util.List" );
+	}
+
+	@DisplayName( "It can resolve wildcard imports from NON JDK classes on disk path" )
+	@Test
+	void testItCanResolveWildcardImportsFromNonJDK() {
+		List<ImportDefinition>	imports	= Arrays.asList(
+		    ImportDefinition.parse( "java:ortus.boxlang.runtime.util.*" )
+		);
+
+		String					fqn		= javaResolver.expandFromImport( context, "DumpUtil", imports );
+		assertThat( fqn ).isEqualTo( "ortus.boxlang.runtime.util.DumpUtil" );
+	}
+
+	@DisplayName( "It can resolve wildcard imports from NON JDK classes in a JAR" )
+	@Test
+	void testItCanResolveWildcardImportsFromNonJDKInAJar() {
+		List<ImportDefinition>	imports	= Arrays.asList(
+		    ImportDefinition.parse( "java:com.zaxxer.hikari.util.*" )
+		);
+
+		String					fqn		= javaResolver.expandFromImport( context, "ConcurrentBag", imports );
+		assertThat( fqn ).isEqualTo( "com.zaxxer.hikari.util.ConcurrentBag" );
 	}
 
 	@DisplayName( "It can load libs from the 'home/libs' convention" )

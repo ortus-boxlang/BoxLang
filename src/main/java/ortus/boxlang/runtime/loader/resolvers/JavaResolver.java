@@ -313,7 +313,7 @@ public class JavaResolver extends BaseResolver {
 				return false;
 			}
 		} else {
-			// Use the base resolver
+			// Use the base resolver for NON jdk resolution classes
 			return super.importHasMulti( thisImport, className );
 		}
 	}
