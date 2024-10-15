@@ -20,6 +20,8 @@ package TestCases.components;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.io.IOException;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,6 +30,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
+import ortus.boxlang.compiler.parser.Parser;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -1504,6 +1507,25 @@ public class CFTemplateTest {
 		    </cfloop>
 		      """,
 		    context, BoxSourceType.CFTEMPLATE );
+	}
+
+	@Test
+	public void testQueryInTemplateIsland() {
+		try {
+			var result = new Parser().parse(
+			    """
+			    	{
+			    	```
+			    		<cfif foo></cfif>
+			    	```
+			    }
+			         """, BoxSourceType.CFSCRIPT );
+			if ( !result.isCorrect() ) {
+				throw new ParseException( result.getIssues(), "" );
+			}
+		} catch ( IOException e ) {
+			throw new RuntimeException( e );
+		}
 	}
 
 }

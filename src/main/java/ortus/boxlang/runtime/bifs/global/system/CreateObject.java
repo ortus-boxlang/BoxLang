@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.bifs.global.system;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -37,7 +38,7 @@ public class CreateObject extends BIF {
 	/**
 	 * How we find classes
 	 */
-	private static final ClassLocator	CLASS_LOCATOR	= ClassLocator.getInstance();
+	private static final ClassLocator	CLASS_LOCATOR	= BoxRuntime.getInstance().getClassLocator();
 	private static final String			CLASS_TYPE		= "class";
 	private static final String			COMPONENT_TYPE	= "component";
 

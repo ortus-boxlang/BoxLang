@@ -404,7 +404,11 @@ public abstract class BaseApplicationListener {
 	 * @param newID The new session identifier
 	 */
 	public void invalidateSession( Key newID ) {
-		Session terminalSession = this.context.getParentOfType( SessionBoxContext.class ).getSession();
+		SessionBoxContext sessionContext = context.getParentOfType( SessionBoxContext.class );
+		if ( sessionContext == null ) {
+			throw new BoxRuntimeException( "No session to invalidate.  Is session management enabled?" );
+		}
+		Session terminalSession = sessionContext.getSession();
 		context.getParentOfType( ApplicationBoxContext.class ).getApplication().getSessionsCache().clear( terminalSession.getID().getName() );
 		terminalSession.shutdown( this );
 		initializeSession( newID );
@@ -630,7 +634,8 @@ public abstract class BaseApplicationListener {
 				case "wddx" :
 				case "xml" :
 					if ( context.getRuntime().getModuleService().hasModule( Key.wddx ) ) {
-						DynamicObject WDDXUtil = ClassLocator.getInstance()
+						DynamicObject WDDXUtil = context.getRuntime()
+						    .getClassLocator()
 						    .load(
 						        context,
 						        "ortus.boxlang.modules.wddx.util.WDDXUtil@wddx",

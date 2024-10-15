@@ -141,4 +141,12 @@ public class StringCasterTest {
 		).isEqualTo( "UTC" );
 	}
 
+	@DisplayName( "It can cast an InetSocketAddress to a string" )
+	@Test
+	void testItCanCastAInetSocketAddress() {
+		assertThat(
+		    StringCaster.cast( new java.net.InetSocketAddress( "localhost", 80 ) )
+		).isEqualTo( "localhost/127.0.0.1:80" );
+	}
+
 }

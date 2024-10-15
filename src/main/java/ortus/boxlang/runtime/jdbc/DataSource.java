@@ -114,6 +114,15 @@ public class DataSource implements Comparable<DataSource> {
 	 */
 
 	/**
+	 * Get the original name of the datasource - this is NOT unique and should not be used for identification.
+	 *
+	 * @return The original name of the datasource.
+	 */
+	public String getOriginalName() {
+		return this.configuration.getOriginalName();
+	}
+
+	/**
 	 * Get a unique datasource name which includes a hash of the properties
 	 * Following the pattern: <code>bx_{name}_{properties_hash}</code>
 	 */

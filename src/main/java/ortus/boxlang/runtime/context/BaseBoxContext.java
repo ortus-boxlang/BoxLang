@@ -476,6 +476,7 @@ public class BaseBoxContext implements IBoxContext {
 	 *
 	 */
 	public Component.BodyResult invokeComponent( Key name, IStruct attributes, Component.ComponentBody componentBody ) {
+		getRuntime().getConfiguration().security.isComponentAllowed( name.getName() );
 		ComponentDescriptor comp = componentService.getComponent( name );
 		if ( comp != null ) {
 			return comp.invoke( this, attributes, componentBody );
@@ -506,6 +507,7 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return The BIFDescriptor if found, else null
 	 */
 	protected BIFDescriptor findBIF( Key name ) {
+		getRuntime().getConfiguration().security.isBIFAllowed( name.getName() );
 		return this.functionService.getGlobalFunction( name );
 	}
 

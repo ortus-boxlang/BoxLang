@@ -143,6 +143,9 @@ import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.ClassVariablesScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.StaticScope;
+import ortus.boxlang.runtime.scopes.ThisScope;
+import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.AbstractFunction;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.DefaultExpression;
@@ -393,12 +396,7 @@ public class AsmTranspiler extends Transpiler {
 				}
 			}
 
-			// Process the default value
-			// List<AbstractInsnNode> init = List.of( new InsnNode( Opcodes.ACONST_NULL ) );
-			// if ( defaultAnnotation != null && defaultAnnotation.getValue() != null ) {
-			// init = transform( ( BoxNode ) defaultAnnotation.getValue(), TransformerContext.NONE, ReturnValueContext.VALUE );
-			// }
-
+					Type					type		= Type.getType( "L" + getProperty( "packageName" ).replace( '.', '/' )
 			// name and type must be simple values
 			String	name;
 			String	type;
@@ -425,11 +423,9 @@ public class AsmTranspiler extends Transpiler {
 			javaExpr.add( new InsnNode( Opcodes.DUP ) );
 			javaExpr.addAll( jNameKey );
 			javaExpr.add( new LdcInsnNode( type ) );
-			javaExpr.addAll( defaultLiteral );
-
-			// create the default expression
-			javaExpr.addAll( defaultExpression );
-			javaExpr.addAll( transformAnnotations( finalAnnotations ) );
+			javaExpr.addAll( init );
+			javaExpr.addAll( initLambda );
+			javaExpr.addAll( annotationStruct );
 			javaExpr.addAll( documentationStruct );
 
 			javaExpr.add( new FieldInsnNode( Opcodes.GETSTATIC,
@@ -440,16 +436,9 @@ public class AsmTranspiler extends Transpiler {
 			javaExpr.add( new MethodInsnNode( Opcodes.INVOKESPECIAL,
 			    Type.getInternalName( Property.class ),
 			    "<init>",
-			    Type.getMethodDescriptor(
-			        Type.VOID_TYPE,
-			        Type.getType( Key.class ),
-			        Type.getType( String.class ),
-			        Type.getType( Object.class ),
-			        Type.getType( DefaultExpression.class ),
-			        Type.getType( IStruct.class ),
-			        Type.getType( IStruct.class ),
-			        Type.getType( BoxSourceType.class )
-			    ),
+			    Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( Key.class ), Type.getType( String.class ), Type.getType( Object.class ),
+			        Type.getType( DefaultExpression.class ), Type.getType( IStruct.class ), Type.getType( IStruct.class ),
+			        Type.getType( BoxSourceType.class ) ),
 			    false ) );
 
 			members.add( jNameKey );

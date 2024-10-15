@@ -401,9 +401,9 @@ public class ClassTest {
 
 		var	cfc		= variables.getAsClassRunnable( Key.of( "cfc" ) );
 		var	meta	= cfc.getMetaData();
-		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "src.test.java.testcases.phase3.MyClass" );
+		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "src.test.java.TestCases.phase3.MyClass" );
 		assertThat( meta.get( Key.of( "type" ) ) ).isEqualTo( "Component" );
-		assertThat( meta.get( Key.of( "fullname" ) ) ).isEqualTo( "src.test.java.testcases.phase3.MyClass" );
+		assertThat( meta.get( Key.of( "fullname" ) ) ).isEqualTo( "src.test.java.TestCases.phase3.MyClass" );
 		assertThat( meta.getAsString( Key.of( "path" ) ).contains( "MyClass.bx" ) ).isTrue();
 		// assertThat( meta.get( Key.of( "hashcode" ) ) ).isEqualTo( cfc.hashCode() );
 		assertThat( meta.get( Key.of( "properties" ) ) ).isInstanceOf( Array.class );
@@ -430,9 +430,9 @@ public class ClassTest {
 
 		var	cfc		= variables.getAsClassRunnable( Key.of( "cfc" ) );
 		var	meta	= cfc.getMetaData();
-		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "src.test.java.testcases.phase3.MyClassCF" );
+		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "src.test.java.TestCases.phase3.MyClassCF" );
 		assertThat( meta.get( Key.of( "type" ) ) ).isEqualTo( "Component" );
-		assertThat( meta.get( Key.of( "fullname" ) ) ).isEqualTo( "src.test.java.testcases.phase3.MyClassCF" );
+		assertThat( meta.get( Key.of( "fullname" ) ) ).isEqualTo( "src.test.java.TestCases.phase3.MyClassCF" );
 		assertThat( meta.getAsString( Key.of( "path" ) ).contains( "MyClassCF.cfc" ) ).isTrue();
 		// assertThat( meta.get( Key.of( "hashcode" ) ) ).isEqualTo( cfc.hashCode() );
 		assertThat( meta.get( Key.of( "properties" ) ) ).isInstanceOf( Array.class );
@@ -497,7 +497,7 @@ public class ClassTest {
 		var	boxMeta	= ( ClassMeta ) cfc.getBoxMeta();
 		var	meta	= boxMeta.meta;
 		assertThat( meta.get( Key.of( "type" ) ) ).isEqualTo( "Component" );
-		assertThat( meta.get( Key.of( "fullname" ) ) ).isEqualTo( "src.test.java.testcases.phase3.MyClass" );
+		assertThat( meta.get( Key.of( "fullname" ) ) ).isEqualTo( "src.test.java.TestCases.phase3.MyClass" );
 		assertThat( meta.getAsString( Key.of( "path" ) ).contains( "MyClass.bx" ) ).isTrue();
 		assertThat( meta.get( Key.of( "hashcode" ) ) ).isEqualTo( cfc.hashCode() );
 		assertThat( meta.get( Key.of( "properties" ) ) instanceof Array ).isTrue();
@@ -819,11 +819,11 @@ public class ClassTest {
 		    // Then the concrete class inits. getCurrentTemplate() shows the concrete class.
 		    "Chihuahua init Chihuahua.cfc",
 		    // A method inherited from a base class, sees "this" as the concrete class.
-		    "animal this is: src.test.java.testcases.phase3.Chihuahua",
+		    "animal this is: src.test.java.TestCases.phase3.Chihuahua",
 		    // A method inherited from a base class, sees the top level "variables" scope.
 		    "animal sees inDog as: true",
 		    // A method delegated to as super.foo() sees "this" as the concrete class.
-		    "super animal sees: src.test.java.testcases.phase3.Chihuahua",
+		    "super animal sees: src.test.java.TestCases.phase3.Chihuahua",
 		    // A method delegated to as super.foo() sees the top level "variables" scope.
 		    "super sees inDog as: true",
 		} );
@@ -832,7 +832,7 @@ public class ClassTest {
 		var	boxMeta	= ( ClassMeta ) cfc.getBoxMeta();
 		var	meta	= boxMeta.meta;
 
-		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "src.test.java.testcases.phase3.Chihuahua" );
+		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "src.test.java.TestCases.phase3.Chihuahua" );
 
 		IStruct extendsMeta = meta.getAsStruct( Key.of( "extends" ) );
 		assertThat( extendsMeta.getAsString( Key.of( "name" ) ) ).endsWith( ".Dog" );
@@ -1093,20 +1093,25 @@ public class ClassTest {
 	public void testStaticInstanceCF() {
 		instance.executeSource(
 		    """
-		             clazz = new src.test.java.TestCases.phase3.StaticTestCF();
+		    clazz = new src.test.java.TestCases.phase3.StaticTestCF();
 		    result1 = clazz.foo;
 		    result2 = clazz.myStaticFunc();
 		    result3 = clazz.myInstanceFunc();
 		    result4 = clazz.scoped;
 		    result5 = clazz.unscoped;
 		    result6 = clazz.again;
-		               """, context, BoxSourceType.CFSCRIPT );
+		    result7 = clazz.getStaticBrad();
+		    clazz2 = new src.test.java.TestCases.phase3.StaticTestCF();
+		    result8 = clazz2.getStaticBrad();
+		                       """, context, BoxSourceType.CFSCRIPT );
 		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( 42 );
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "static42" );
 		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( "instancestatic42" );
 		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "brad" );
 		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( "wood" );
 		assertThat( variables.get( Key.of( "result6" ) ) ).isEqualTo( "luis" );
+		assertThat( variables.get( Key.of( "result7" ) ) ).isEqualTo( "wood" );
+		assertThat( variables.get( Key.of( "result8" ) ) ).isEqualTo( "wood" );
 	}
 
 	@Test
@@ -1151,19 +1156,23 @@ public class ClassTest {
 	public void testStaticImportDot() {
 		instance.executeSource(
 		    """
-		    import src.test.java.TestCases.phase3.StaticTest;
+		          import src.test.java.TestCases.phase3.StaticTest;
 
-		       result1 = StaticTest.foo;
-		       result2 = StaticTest.myStaticFunc();
-		       result4 = StaticTest.scoped;
-		       result5 = StaticTest.unscoped;
-		       result6 = StaticTest.again;
-		    // instance
-		    myInstance = new StaticTest();
-		    result7 = myInstance.foo;
-		    result8 = StaticTest.foo;
-		    result9 = myInstance.myInstanceFunc2()
-		                  """, context, BoxSourceType.BOXSCRIPT );
+		             result1 = StaticTest.foo;
+		             result2 = StaticTest.myStaticFunc();
+		             result4 = StaticTest.scoped;
+		             result5 = StaticTest.unscoped;
+		             result6 = StaticTest.again;
+		          // instance
+		          myInstance = new StaticTest();
+		          result7 = myInstance.foo;
+		          result8 = StaticTest.foo;
+		          result9 = myInstance.myInstanceFunc2()
+		       result10 = myInstance.getStaticBrad()
+		    myInstance2 = new StaticTest();
+		    result11 = myInstance2.getStaticBrad()
+
+		                        """, context, BoxSourceType.BOXSCRIPT );
 		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( 9000 );
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "static9000" );
 		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "brad" );
@@ -1177,6 +1186,8 @@ public class ClassTest {
 		assertThat( result9.get( 0 ) ).isEqualTo( "brad" );
 		assertThat( result9.get( 1 ) ).isEqualTo( "wood" );
 		assertThat( result9.get( 2 ) ).isEqualTo( 42 );
+		assertThat( variables.get( Key.of( "result10" ) ) ).isEqualTo( "wood" );
+		assertThat( variables.get( Key.of( "result11" ) ) ).isEqualTo( "wood" );
 	}
 
 	@Test
@@ -1287,6 +1298,7 @@ public class ClassTest {
 			    """, context );
 		} catch ( BoxRuntimeException e ) {
 			tagContext = ExceptionUtil.buildTagContext( e );
+			System.out.println( tagContext );
 		}
 		assertThat( tagContext ).isNotNull();
 		assertThat( tagContext.size() ).isEqualTo( 1 );
@@ -1334,6 +1346,26 @@ public class ClassTest {
 		      """, context );
 		assertThat( variables.get( "properties" ) ).isInstanceOf( IStruct.class );
 		assertThat( variables.get( "currentMapping" ) ).isInstanceOf( Array.class );
+	}
+
+	@Test
+	public void testHypenInPath() {
+		instance.executeSource(
+		    """
+		      	cfc = new "src.test.java.TestCases.phase3.sub-folder.Funky-Class"();
+		    meta = cfc.$bx.meta;
+		      """, context );
+		assertThat( variables.get( "meta" ) ).isInstanceOf( IStruct.class );
+		assertThat( variables.getAsStruct( Key.of( "meta" ) ).getAsString( Key.fullname ) )
+		    .isEqualTo( "src.test.java.TestCases.phase3.sub-folder.Funky-Class" );
+	}
+
+	@Test
+	public void testColdBoxRenderer() {
+		instance.executeSource(
+		    """
+		    	cfc = new src.test.java.TestCases.phase3.MyRenderer();
+		    """, context );
 	}
 
 }

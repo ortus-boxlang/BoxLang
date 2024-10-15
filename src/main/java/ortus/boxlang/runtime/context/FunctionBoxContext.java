@@ -645,6 +645,9 @@ public class FunctionBoxContext extends BaseBoxContext {
 			Object value = result.value();
 			if ( value instanceof Function fun ) {
 				return fun;
+			} else if ( value == null ) {
+				throw new BoxRuntimeException(
+				    "Variable '" + name + "' is null and cannot be used as a function." );
 			} else {
 				throw new BoxRuntimeException(
 				    "Variable '" + name + "' of type  '" + value.getClass().getName() + "'  is not a function." );

@@ -179,6 +179,15 @@ public class ReReplaceTest {
 		    context );
 			assertThat( variables.get( result ) ).isEqualTo("String with brad");
 		// @formatter:on
+		// @formatter:off
+		instance.executeSource(
+		    """
+				input   = "String with {{TOKEN}}";
+				result = reReplacenocase( input, "\\{\\{[A-Z]+\\}\\}", "brad"  );
+		    """,
+		    context );
+			assertThat( variables.get( result ) ).isEqualTo("String with brad");
+		// @formatter:on
 	}
 
 }

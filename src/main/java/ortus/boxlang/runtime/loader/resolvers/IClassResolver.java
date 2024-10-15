@@ -22,8 +22,8 @@ import java.util.Optional;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.loader.ClassLocator;
-import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
+import ortus.boxlang.runtime.loader.ImportDefinition;
 
 /**
  * This interface is to implement ways to resolve classes in BoxLang.

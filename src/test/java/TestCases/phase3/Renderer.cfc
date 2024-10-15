@@ -1,0 +1,6 @@
+component {
+
+	function init() {
+	}
+	
+}

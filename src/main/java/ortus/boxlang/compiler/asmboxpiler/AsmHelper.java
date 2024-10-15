@@ -580,8 +580,8 @@ public class AsmHelper {
 	public static List<AbstractInsnNode> transformBodyExpressions( Transpiler transpiler, List<BoxStatement> statements, TransformerContext context,
 	    ReturnValueContext finalReturnValueContext ) {
 
-		if ( statements.size() == 0 ) {
-			return new ArrayList<AbstractInsnNode>();
+		if ( statements.isEmpty() ) {
+			return new ArrayList<>();
 		}
 
 		ReturnValueContext		bodyContext		= finalReturnValueContext == ReturnValueContext.VALUE_OR_NULL ? ReturnValueContext.EMPTY_UNLESS_JUMPING

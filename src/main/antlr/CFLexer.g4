@@ -81,10 +81,14 @@ options {
 	}
 
 	public void reset() {
+		resetCounters();
+		super.reset();
+	}
+
+	public void resetCounters() {
 		parenCount = 0;
 		braceCount = 0;
 		bracketCount = 0;
-		super.reset();
 	}
 
 	private boolean isExpressionComplete() {
@@ -480,19 +484,23 @@ TEMPLATE_ARGUMENT  : 'argument'  -> pushMode( TEMPLATE_COMPONENT_MODE );
 
 // return may or may not have an expression, so eat any leading whitespace now so it doesn't give us an expression part that's just a space
 TEMPLATE_RETURN:
-    'return' [ \t\r\n]* -> pushMode( TEMPLATE_COMPONENT_MODE ), pushMode( TEMPLATE_EXPRESSION_MODE_COMPONENT), pushMode( DEFAULT_SCRIPT_MODE)
+    'return' [ \t\r\n]* {resetCounters();} -> pushMode( TEMPLATE_COMPONENT_MODE ), pushMode( TEMPLATE_EXPRESSION_MODE_COMPONENT), pushMode(
+        DEFAULT_SCRIPT_MODE)
 ;
 
 TEMPLATE_IF:
-    'if' [ \t\r\n]+ -> pushMode( TEMPLATE_COMPONENT_MODE ), pushMode(TEMPLATE_EXPRESSION_MODE_COMPONENT), pushMode( DEFAULT_SCRIPT_MODE)
+    'if' [ \t\r\n]+ {resetCounters();} -> pushMode( TEMPLATE_COMPONENT_MODE ), pushMode(TEMPLATE_EXPRESSION_MODE_COMPONENT), pushMode(
+        DEFAULT_SCRIPT_MODE)
 ;
 TEMPLATE_ELSE: 'else' -> pushMode( TEMPLATE_COMPONENT_MODE );
 TEMPLATE_ELSEIF:
-    'elseif' [ \t\r\n]+ -> pushMode( TEMPLATE_COMPONENT_MODE ), pushMode(TEMPLATE_EXPRESSION_MODE_COMPONENT), pushMode( DEFAULT_SCRIPT_MODE)
+    'elseif' [ \t\r\n]+ {resetCounters();} -> pushMode( TEMPLATE_COMPONENT_MODE ), pushMode(TEMPLATE_EXPRESSION_MODE_COMPONENT), pushMode(
+        DEFAULT_SCRIPT_MODE)
 ;
 
 TEMPLATE_SET:
-    'set' [ \t\r\n]+ -> pushMode( TEMPLATE_COMPONENT_MODE ), pushMode( TEMPLATE_EXPRESSION_MODE_COMPONENT), pushMode( DEFAULT_SCRIPT_MODE)
+    'set' [ \t\r\n]+ {resetCounters();} -> pushMode( TEMPLATE_COMPONENT_MODE ), pushMode( TEMPLATE_EXPRESSION_MODE_COMPONENT), pushMode(
+        DEFAULT_SCRIPT_MODE)
 ;
 
 TEMPLATE_TRY         : 'try'         -> pushMode( TEMPLATE_COMPONENT_MODE );

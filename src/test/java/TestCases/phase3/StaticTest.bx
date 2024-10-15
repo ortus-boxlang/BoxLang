@@ -4,9 +4,11 @@
 			unscoped = "wood"
 			static foo = 9000;
 			'123' = 456;
+			final brad = "wood"
 		}
 
-		static.foo = 42;  
+		static.foo = 42;
+		variables.staticBrad = static.brad;
 
 		static {
 			static.again = "luis"
@@ -29,5 +31,10 @@
 		static function sayHello() {
 			return "Hello";
 		}
+
+		function getStaticBrad() {
+			return staticBrad;
+		}
+
 
 	}

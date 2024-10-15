@@ -31,6 +31,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.segments.ModuleConfig;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -193,6 +194,7 @@ class ModuleRecordTest {
 		ModuleRecord	moduleRecord	= new ModuleRecord( physicalPath );
 		IBoxContext		context			= new ScriptingRequestBoxContext();
 		ModuleService	moduleService	= runtime.getModuleService();
+		JavaResolver	javaResolver	= runtime.getClassLocator().getJavaResolver();
 
 		// When
 		moduleRecord
@@ -219,11 +221,11 @@ class ModuleRecordTest {
 		assertThat( clazz.getName() ).isEqualTo( "HelloWorld" );
 
 		// JavaResolver can find the class explicitly
-		Optional<ClassLocation> classLocation = JavaResolver.getInstance().findFromModules( "HelloWorld@test", List.of(), context );
+		Optional<ClassLocation> classLocation = javaResolver.findFromModules( "HelloWorld@test", List.of(), context );
 		assertThat( classLocation.isPresent() ).isTrue();
 		assertThat( classLocation.get().clazz().getName() ).isEqualTo( "HelloWorld" );
 		// JavaResolver can find the class by discovery, it should interrogate all modules for it.
-		classLocation = JavaResolver.getInstance().findFromModules( "HelloWorld", List.of(), context );
+		classLocation = javaResolver.findFromModules( "HelloWorld", List.of(), context );
 		assertThat( classLocation.isPresent() ).isTrue();
 		assertThat( classLocation.get().clazz().getName() ).isEqualTo( "HelloWorld" );
 
@@ -249,5 +251,17 @@ class ModuleRecordTest {
 		    "Hello World, my name is boxlang and I am 0 years old"
 		);
 		// assertThat( variables.getAsString( Key.of( "result4" ) ) ).isEqualTo( "Hola Mundo!" );
+
+		// Test Module Class Locators
+		// @formatter:off
+		runtime.executeSource("""
+			helloClass = createObject( "models.Hello@test" )
+			result = helloClass.sayHello();
+		    """,
+			context,
+			BoxSourceType.BOXSCRIPT
+		);
+		// @formatter:on
+		assertThat( variables.getAsString( Key.result ) ).contains( "ModuleLand" );
 	}
 }

@@ -79,6 +79,19 @@ public class DuplicateTest {
 	@DisplayName( "It tests the BIF Duplicate can duplicate a struct" )
 	@Test
 	public void testDuplicateStruct() {
+
+		// @formatter:off
+		instance.executeSource(
+		    """
+				ref = {};
+				result = duplicate( ref );
+				result.foo = "bar";
+			""",
+		    context
+		);
+		// @formatter:on
+		assertTrue( variables.getAsStruct( refKey ).isEmpty() );
+
 		// @formatter:off
 		instance.executeSource(
 		    """

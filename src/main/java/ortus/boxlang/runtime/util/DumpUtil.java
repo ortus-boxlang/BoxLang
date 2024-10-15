@@ -242,7 +242,11 @@ public class DumpUtil {
 			}
 		} else {
 			// out.println( "> " + target.getClass().getName() );
-			out.println( target.toString() );
+			if ( target == null ) {
+				out.println( "[null]" );
+			} else {
+				out.println( target.toString() );
+			}
 		}
 	}
 
@@ -253,7 +257,11 @@ public class DumpUtil {
 	 * @param target  The target object
 	 */
 	public static void dumpTextToBuffer( IBoxContext context, Object target ) {
-		context.writeToBuffer( target.toString(), true );
+		if ( target == null ) {
+			context.writeToBuffer( "[null]", true );
+		} else {
+			context.writeToBuffer( target.toString(), true );
+		}
 	}
 
 	/**

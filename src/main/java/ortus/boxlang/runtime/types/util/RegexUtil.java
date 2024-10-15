@@ -94,6 +94,11 @@ public class RegexUtil {
 	 * 
 	 * @return The escaped regular expression string
 	 */
+	/**
+	 * @param input The regular expression string
+	 * 
+	 * @return The escaped regular expression string
+	 */
 	public static String replaceNonQuantiferCurlyBraces( String input ) {
 		// Regular expression to match valid quantifiers like {2,4}, {3}, {,5}, etc.
 		String			quantifierRegex		= "\\{\\d*,?\\d*\\}";
@@ -113,8 +118,8 @@ public class RegexUtil {
 		while ( matcher.find() ) {
 			// Append text between matches and escape curly braces in that portion
 			String betweenMatches = input.substring( lastIndex, matcher.start() )
-			    .replace( "{", "\\{" )
-			    .replace( "}", "\\}" );
+			    .replaceAll( "(?<!\\\\)\\{", "\\\\{" ) // Escape '{' if not already escaped
+			    .replaceAll( "(?<!\\\\)\\}", "\\\\}" ); // Escape '}' if not already escaped
 
 			escapedString.append( betweenMatches );
 
@@ -126,7 +131,9 @@ public class RegexUtil {
 		}
 
 		// Append and escape any remaining text after the last match
-		escapedString.append( input.substring( lastIndex ).replace( "{", "\\{" ).replace( "}", "\\}" ) );
+		escapedString.append( input.substring( lastIndex )
+		    .replaceAll( "(?<!\\\\)\\{", "\\\\{" ) // Escape '{' if not already escaped
+		    .replaceAll( "(?<!\\\\)\\}", "\\\\}" ) ); // Escape '}' if not already escaped
 
 		return escapedString.toString();
 	}

@@ -26,6 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.commons.lang3.ClassUtils;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.config.Configuration;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
@@ -42,17 +43,27 @@ public class BaseResolver implements IClassResolver {
 	/**
 	 * The name of a resolver
 	 */
-	protected String	name		= "";
+	protected String		name		= "";
 
 	/**
 	 * The prefix of a resolver
 	 */
-	protected String	prefix		= "";
+	protected String		prefix		= "";
+
+	/**
+	 * The runtime that this resolver is associated with
+	 */
+	protected BoxRuntime	runtime;
+
+	/**
+	 * The class locator that this resolver is associated with
+	 */
+	protected ClassLocator	classLocator;
 
 	/**
 	 * The import cache
 	 */
-	private Set<String>	importCache	= ConcurrentHashMap.newKeySet();
+	protected Set<String>	importCache	= ConcurrentHashMap.newKeySet();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -66,9 +77,11 @@ public class BaseResolver implements IClassResolver {
 	 * @param name   The name of the resolver
 	 * @param prefix The prefix of the resolver
 	 */
-	protected BaseResolver( String name, String prefix ) {
-		this.name	= name;
-		this.prefix	= prefix.toLowerCase();
+	protected BaseResolver( String name, String prefix, ClassLocator classLocator ) {
+		this.name			= name;
+		this.prefix			= prefix.toLowerCase();
+		this.classLocator	= classLocator;
+		this.runtime		= classLocator.getRuntime();
 	}
 
 	/**
@@ -123,6 +136,27 @@ public class BaseResolver implements IClassResolver {
 	}
 
 	/**
+	 * Get the runtime
+	 */
+	public BoxRuntime getRuntime() {
+		return this.runtime;
+	}
+
+	/**
+	 * Get the class locator
+	 */
+	public ClassLocator getClassLocator() {
+		return this.classLocator;
+	}
+
+	/**
+	 * Get the Runtime Configuration
+	 */
+	public Configuration getConfiguration() {
+		return getRuntime().getConfiguration();
+	}
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Resolvers
 	 * --------------------------------------------------------------------------
@@ -174,22 +208,32 @@ public class BaseResolver implements IClassResolver {
 	 * @return The resolved class name or the original class name if not found
 	 */
 	public String expandFromImport( IBoxContext context, String className, List<ImportDefinition> imports ) {
-		return imports.stream()
+		var fullyQualifiedName = imports.stream()
 		    // Discover import by matching the resolver prefix and the class name or alias or multi-import
+		    // This runs from concrete resolvers: bx, java, etc.
+		    // So if the resolver prefix matches, we continue, else we skip it.
 		    .filter( thisImport -> importApplies( thisImport ) && importHas( thisImport, className ) )
 		    // Return the first one, the first one wins
 		    .findFirst()
+		    // Convert the import to a fully qualified class name
 		    .map( targetImport -> {
 			    String fqn = targetImport.getFullyQualifiedClass( className );
-			    importCache.add( className + ":" + fqn );
+			    this.importCache.add( className + ":" + fqn );
 			    return fqn;
 		    } )
 		    // Nothing found, return the original class name
 		    .orElse( className );
+
+		// Security check
+		BoxRuntime.getInstance().getConfiguration().security.isClassAllowed( fullyQualifiedName );
+
+		// Return the fully qualified class name
+		return fullyQualifiedName;
 	}
 
 	/**
 	 * Checks if the import has the given class. This method is used for single imports only
+	 * Ex: {@code import java.util.ArrayList;}
 	 *
 	 * @param thisImport The import to check
 	 * @param className  The class name to check
@@ -200,7 +244,7 @@ public class BaseResolver implements IClassResolver {
 		String cacheKey = className + ":" + thisImport.getFullyQualifiedClass( className );
 
 		// Verify cache
-		if ( importCache.contains( cacheKey ) ) {
+		if ( this.importCache.contains( cacheKey ) ) {
 			return true;
 		}
 

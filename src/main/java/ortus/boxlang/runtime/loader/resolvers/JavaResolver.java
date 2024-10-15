@@ -40,6 +40,17 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 /**
  * This resolver deals with Java classes only.
  * It has two import caches as well to deal with JDK classes and non-JDK classes.
+ * <p>
+ * In order to access it you must go via the @{link ClassLocator} class, as the ClassLocator
+ * controls all the resolvers in the runtime.
+ * <p>
+ * Example:
+ *
+ * <pre>
+ * ClassLocator.getJavaResolver();
+ * or
+ * ClassLocator.getResolver( ClassLocator.JAVA_PREFIX );
+ * </pre>
  */
 public class JavaResolver extends BaseResolver {
 
@@ -65,23 +76,12 @@ public class JavaResolver extends BaseResolver {
 	 */
 
 	/**
-	 * Private constructor
-	 */
-	private JavaResolver() {
-		super( "JavaResolver", "java" );
-	}
-
-	/**
-	 * Singleton instance
+	 * Constructor
 	 *
-	 * @return The instance
+	 * @param classLocator The class locator to use
 	 */
-	public static synchronized JavaResolver getInstance() {
-		if ( instance == null ) {
-			instance = new JavaResolver();
-		}
-
-		return instance;
+	public JavaResolver( ClassLocator classLocator ) {
+		super( "JavaResolver", "java", classLocator );
 	}
 
 	/**
@@ -313,7 +313,7 @@ public class JavaResolver extends BaseResolver {
 				return false;
 			}
 		} else {
-			// Use the base resolver
+			// Use the base resolver for NON jdk resolution classes
 			return super.importHasMulti( thisImport, className );
 		}
 	}

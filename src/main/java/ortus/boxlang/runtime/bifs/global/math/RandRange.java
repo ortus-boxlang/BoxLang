@@ -67,7 +67,10 @@ public class RandRange extends BIF {
 			    RoundingMode.DOWN );
 		}
 
-		return ( long ) ( number1.doubleValue() + Rand._invoke( seed ) * ( number2.doubleValue() - number1.doubleValue() ) );
+		// For integer values, ensure the range is inclusive of the top number
+		long	lower	= number1.longValue();
+		long	upper	= number2.longValue();
+		return lower + ( long ) ( Rand._invoke( seed ) * ( upper - lower + 1 ) );
 	}
 
 }

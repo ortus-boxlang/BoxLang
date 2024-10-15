@@ -209,6 +209,6 @@ public class Phase1 extends BoxTemplate {
 		}
 
 		// Bye bye! Ciao Bella!
-		boxRuntime.shutdown();
+		// boxRuntime.shutdown();
 	}
 }

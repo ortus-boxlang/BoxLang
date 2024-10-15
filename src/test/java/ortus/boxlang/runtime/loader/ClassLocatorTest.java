@@ -23,9 +23,11 @@ import static org.junit.Assert.assertThrows;
 import java.util.List;
 import java.util.Optional;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
@@ -34,10 +36,18 @@ import ortus.boxlang.runtime.types.exceptions.BoxLangException;
 
 public class ClassLocatorTest {
 
+	static BoxRuntime	runtime;
+	static ClassLocator	locator;
+
+	@BeforeAll
+	public static void setUp() {
+		runtime	= BoxRuntime.getInstance( true );
+		locator	= runtime.getClassLocator();
+	}
+
 	@DisplayName( "It can register the core resolvers" )
 	@Test
 	public void testCanRegisterCoreResolvers() {
-		ClassLocator locator = ClassLocator.getInstance();
 		assertThat( locator.hasResolver( "bx" ) ).isTrue();
 		assertThat( locator.hasResolver( "java" ) ).isTrue();
 		assertThat( locator.getResolvedPrefixes() ).containsAtLeast( "bx", "java" );
@@ -47,7 +57,6 @@ public class ClassLocatorTest {
 	@DisplayName( "It can throw an exception if you try to remove a core resolver" )
 	@Test
 	public void testItCannotRemoveACoreResolver() {
-		ClassLocator locator = ClassLocator.getInstance();
 		assertThrows( BoxLangException.class, () -> {
 			locator.removeResolver( "java" );
 		} );
@@ -59,7 +68,6 @@ public class ClassLocatorTest {
 	@DisplayName( "It can load classes with resolver prefix part of name" )
 	@Test
 	public void testCanLoadClassWithResolverInName() {
-		ClassLocator	locator		= ClassLocator.getInstance();
 		String			targetClass	= "java:java.lang.String";
 
 		DynamicObject	target		= locator.load( new ScriptingRequestBoxContext(), targetClass );
@@ -71,7 +79,6 @@ public class ClassLocatorTest {
 	@DisplayName( "It can load classes with system resolver lookup" )
 	@Test
 	public void testCanLoadClassWithSystemResolver() {
-		ClassLocator	locator		= ClassLocator.getInstance();
 		String			targetClass	= "java.lang.String";
 
 		DynamicObject	target		= locator.load( new ScriptingRequestBoxContext(), targetClass );
@@ -83,7 +90,6 @@ public class ClassLocatorTest {
 	@DisplayName( "It can find appropriate imports based on resolver type" )
 	@Test
 	public void testCanFindAppropriateImports() {
-		ClassLocator			locator		= ClassLocator.getInstance();
 		String					targetClass	= "java:String";
 		List<ImportDefinition>	imports		= List.of( ImportDefinition.parse( "java:java.lang.String as String" ) );
 
@@ -100,8 +106,7 @@ public class ClassLocatorTest {
 	@DisplayName( "It can load native Java classes and add to the resolver cache" )
 	@Test
 	public void testCanLoadJavaClassesWithCaching() {
-		ClassLocator	locator		= ClassLocator.getInstance();
-		String			targetClass	= "java.lang.String";
+		String targetClass = "java.lang.String";
 
 		locator.clear();
 		assertThat( locator.size() ).isEqualTo( 0 );
@@ -120,7 +125,6 @@ public class ClassLocatorTest {
 	@DisplayName( "It can safe load non-existent classes without throwing an exception" )
 	@Test
 	public void testCanSafeLoad() throws ClassNotFoundException {
-		ClassLocator			locator		= ClassLocator.getInstance();
 		String					targetClass	= "java.lang.Bogus";
 
 		Optional<DynamicObject>	target		= locator.safeLoad( new ScriptingRequestBoxContext(), targetClass, "java" );
@@ -133,8 +137,7 @@ public class ClassLocatorTest {
 	@DisplayName( "Resolver cache methods work" )
 	@Test
 	public void testResolverCacheMethods() throws ClassNotFoundException {
-		ClassLocator	locator		= ClassLocator.getInstance();
-		String			targetClass	= "java.lang.String";
+		String targetClass = "java.lang.String";
 		locator.getResolverCache().clear();
 
 		assertThat( locator.isEmpty() ).isTrue();

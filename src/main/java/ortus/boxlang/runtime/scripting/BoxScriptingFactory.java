@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.scripting;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
@@ -26,6 +27,7 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
 import javax.script.ScriptEngineManager;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -177,7 +179,7 @@ public class BoxScriptingFactory implements ScriptEngineFactory {
 	 */
 	@Override
 	public List<String> getExtensions() {
-		return List.of( "bx", "cfm", "cfc", "cfs", "bxs", "bxm" );
+		return new ArrayList<>( BoxRuntime.getInstance().getConfiguration().getValidExtensions() );
 	}
 
 	/**

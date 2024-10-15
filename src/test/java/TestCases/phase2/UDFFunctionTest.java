@@ -954,4 +954,22 @@ public class UDFFunctionTest {
 		assertThat( variables.get( result ) ).isEqualTo( true );
 	}
 
+	@Test
+	public void testDefaultValueReference() {
+		instance.executeSource(
+		    """
+		      	function foo( headers={}, flag=false ) {
+		      		if( flag ) {
+		      			headers["brad"] = "wood";
+		      		}
+		    		return headers;
+		      	}
+		      	foo(flag=true);
+		    result = foo();
+		      """,
+		    context );
+		assertThat( variables.getAsStruct( result ) ).isEmpty();
+
+	}
+
 }

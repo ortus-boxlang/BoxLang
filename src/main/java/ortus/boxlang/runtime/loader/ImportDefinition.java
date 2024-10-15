@@ -20,23 +20,36 @@ package ortus.boxlang.runtime.loader;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
- * Represents an import in BoxLang
+ * Represents an import in BoxLang. Imports can have aliases, wildcards, and resolver prefixes.
+ * <p>
+ * However, they can also be linked to a specific BoxLang Module via the {@code @{moduleName}} syntax.
+ * <p>
+ * Normal Resolution:
  *
+ * <pre>
  * import prefix:package.to.Class as alias
  * import package.to.Class
  * import package.to.Class as alias
  * import package.to.*
+ * </pre>
+ * <p>
+ * Module Resolution:
+ *
+ * <pre>
+ * import package.to.Class@ModuleName as alias
+ * import package.to.Class@ModuleName
+ * import package.to.Class@ModuleName as alias
+ * import package.to.*@ModuleName
+ * </pre>
  *
  * @param className      The class name
  * @param resolverPrefix The resolver prefix
  * @param alias          The alias
  */
-public record ImportDefinition( String className, String resolverPrefix, String alias ) {
+public record ImportDefinition( String className, String resolverPrefix, String alias, String moduleName ) {
 
 	// Compact constructor disallows null className
-	public ImportDefinition
-
-	{
+	public ImportDefinition {
 		if ( className == null ) {
 			throw new BoxRuntimeException( "Class name cannot be null." );
 		}
@@ -87,6 +100,7 @@ public record ImportDefinition( String className, String resolverPrefix, String 
 		String	className			= importStr;
 		String	resolverPrefix		= null;
 		String	alias				= null;
+		String	module				= null;
 
 		int		aliasDelimiterPos	= importStr.toLowerCase().lastIndexOf( " as " );
 		if ( aliasDelimiterPos != -1 ) {
@@ -96,6 +110,22 @@ public record ImportDefinition( String className, String resolverPrefix, String 
 			// If there is no alias, use the last part of the class name as the alias
 			String[] parts = className.split( "\\." );
 			alias = parts[ parts.length - 1 ];
+			// If there is one or more $ chars, take the last segment (nested class)
+			if ( alias.contains( "$" ) ) {
+				alias = alias.substring( alias.lastIndexOf( "$" ) + 1 );
+			}
+			int moduleDelimiterPos = alias.indexOf( "@" );
+			if ( moduleDelimiterPos != -1 ) {
+				alias = alias.substring( 0, moduleDelimiterPos );
+			}
+		}
+
+		// Check if the import is a module import, the class name must have a @moduleName
+		// Parse the module name and remove it from the class name
+		int moduleDelimiterPos = className.indexOf( "@" );
+		if ( moduleDelimiterPos != -1 ) {
+			module		= className.substring( moduleDelimiterPos + 1 );
+			className	= className.substring( 0, moduleDelimiterPos );
 		}
 
 		int resolverDelimiterPos = className.indexOf( ":" );
@@ -104,6 +134,6 @@ public record ImportDefinition( String className, String resolverPrefix, String 
 			className		= className.substring( resolverDelimiterPos + 1 );
 		}
 
-		return new ImportDefinition( className, resolverPrefix, alias );
+		return new ImportDefinition( className, resolverPrefix, alias, module );
 	}
 }

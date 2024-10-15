@@ -116,7 +116,7 @@ public class ASMBoxpiler extends Boxpiler {
 		Transpiler transpiler = Transpiler.getTranspiler();
 		transpiler.setProperty( "classname", classInfo.className() );
 		transpiler.setProperty( "packageName", classInfo.packageName().toString() );
-		transpiler.setProperty( "boxPackageName", classInfo.boxPackageName().toString() );
+		transpiler.setProperty( "boxFQN", classInfo.boxFqn().toString() );
 		transpiler.setProperty( "baseclass", classInfo.baseclass() );
 		transpiler.setProperty( "returnType", classInfo.returnType() );
 		transpiler.setProperty( "sourceType", classInfo.sourceType().name() );
@@ -138,7 +138,7 @@ public class ASMBoxpiler extends Boxpiler {
 			throw new IllegalStateException( "Unexpected root type: " + node.getClass() + ": " + node );
 		}
 		transpiler.getAuxiliary().forEach( consumer );
-		consumer.accept( classInfo.FQN(), classNode );
+		consumer.accept( classInfo.fqn().toString(), classNode );
 	}
 
 	private ParsingResult parseClassInfo( ClassInfo info ) {

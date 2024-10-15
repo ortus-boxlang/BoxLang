@@ -110,7 +110,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	/**
 	 * BoxLang Datasource Default configuration values
 	 * These are applied to ALL datasources
-	 * Please note that most of them rely on Hikari defaults
+	 * Please note that most of them rely on Hikari defaults but we use seconds in BoxLang to match CFConfig standards
 	 * <p>
 	 * References
 	 * https://github.com/brettwooldridge/HikariCP/wiki/MySQL-Configuration
@@ -122,28 +122,32 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	    // The minimum number of connections
 	    // Hikari: minimumIdle
 	    "minConnections", 10,
-	    // The maximum number of idle time in milliseconds ( 1 Minute )
-	    "maxIdleTime", 60000,
-	    // Maximum time to wait for a successful connection, in milliseconds ( 1 Second )
-	    "connectionTimeout", 1000,
-	    // The maximum number of idle time in milliseconds ( 10 Minutes )
-	    "idleTimeout", 60000,
+	    // Maximum time to wait for a successful connection, in seconds ( 1 Second )
+	    "connectionTimeout", 1,
+	    // The maximum number of idle time in seconds ( 10 Minutes = 600 )
+	    // • Refers to the maximum amount of time a connection can remain idle in the pool before it is eligible for eviction.
+	    // •If a connection is idle for longer than this time, it can be closed and removed from the pool, helping to free up resources.
+	    // • This setting only affects connections that are not in use and have exceeded the idle duration specified.
+	    // In Seconds
+	    "idleTimeout", 600,
 	    // This property controls the maximum lifetime of a connection in the pool.
 	    // An in-use connection will never be retired, only when it is closed will it then be removed
 	    // We strongly recommend setting this value, and it should be several seconds shorter than any database
 	    // or infrastructure imposed connection time limit
-	    // 30 minutes by default
-	    "maxLifetime", 1800000,
+	    // 30 minutes by default = 1800000ms = 1800 seconds
+	    // In Seconds
+	    "maxLifetime", 1800,
 	    // This property controls how frequently HikariCP will attempt to keep a connection alive, in order to prevent it from being timed out by the database
 	    // or network infrastructure
 	    // This value must be less than the maxLifetime value. A "keepalive" will only occur on an idle connectionThis value must be less than the maxLifetime
-	    // value. A "keepalive" will only occur on an idle connection ( 10 Minutes )
-	    "keepaliveTime", 600000,
+	    // value. A "keepalive" will only occur on an idle connection ( 10 Minutes = 600 seconds = 600,000 ms )
+	    // In Seconds
+	    "keepaliveTime", 600,
 	    // The default auto-commit state of connections created by this pool
 	    "autoCommit", true,
-	    // Register mbeans or not. By default, this is false
+	    // Register mbeans or not. By default, this is true
 	    // However, if you are using JMX, you can set this to true to get some additional monitoring information
-	    "registerMbeans", false,
+	    "registerMbeans", true,
 	    // Prep the custom properties
 	    "custom", new Struct()
 	);
@@ -319,6 +323,15 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 		uniqueName.append( properties.hashCode() );
 
 		return Key.of( uniqueName.toString() );
+	}
+
+	/**
+	 * Get the original name of the datasource - this is NOT unique and should not be used for identification.
+	 *
+	 * @return The original name of the datasource.
+	 */
+	public String getOriginalName() {
+		return this.name.getName();
 	}
 
 	/**
@@ -509,8 +522,11 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 		if ( properties.containsKey( Key.password ) ) {
 			result.setPassword( properties.getAsString( Key.password ) );
 		}
+		// Connection timeouts in seconds, but Hikari uses milliseconds
 		if ( properties.containsKey( Key.connectionTimeout ) ) {
-			result.setConnectionTimeout( LongCaster.cast( properties.get( Key.connectionTimeout ), false ) );
+			result.setConnectionTimeout(
+			    LongCaster.cast( properties.get( Key.connectionTimeout ), false ) * 1000
+			);
 		}
 		if ( properties.containsKey( Key.minConnections ) ) {
 			result.setMinimumIdle( IntegerCaster.cast( properties.get( Key.minConnections ), false ) );
@@ -519,24 +535,24 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 			result.setMaximumPoolSize( IntegerCaster.cast( properties.get( Key.maxConnections ), false ) );
 		}
 
-		// Hikari doesn't use a driver, but if present use it
-		// This is mostly for legacy support
-		if ( properties.containsKey( Key._CLASS ) ) {
-			result.setDriverClassName( properties.getAsString( Key._CLASS ) );
-		}
-
 		// We also support these HikariConfig-specific properties
 		if ( properties.containsKey( Key.autoCommit ) ) {
 			result.setAutoCommit( properties.getAsBoolean( Key.autoCommit ) );
 		}
 		if ( properties.containsKey( Key.idleTimeout ) ) {
-			result.setIdleTimeout( LongCaster.cast( properties.get( Key.idleTimeout ), false ) );
+			result.setIdleTimeout(
+			    LongCaster.cast( properties.get( Key.idleTimeout ), false ) * 1000
+			);
 		}
 		if ( properties.containsKey( Key.keepaliveTime ) ) {
-			result.setKeepaliveTime( LongCaster.cast( properties.get( Key.keepaliveTime ), false ) );
+			result.setKeepaliveTime(
+			    LongCaster.cast( properties.get( Key.keepaliveTime ), false ) * 1000
+			);
 		}
 		if ( properties.containsKey( Key.maxLifetime ) ) {
-			result.setMaxLifetime( LongCaster.cast( properties.get( Key.maxLifetime ), false ) );
+			result.setMaxLifetime(
+			    LongCaster.cast( properties.get( Key.maxLifetime ), false ) * 1000
+			);
 		}
 		if ( properties.containsKey( Key.connectionTestQuery ) ) {
 			result.setConnectionTestQuery( properties.getAsString( Key.connectionTestQuery ) );

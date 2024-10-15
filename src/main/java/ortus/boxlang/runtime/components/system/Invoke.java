@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.components.system;
 
 import java.util.Set;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
@@ -38,7 +39,7 @@ import ortus.boxlang.runtime.validation.Validator;
 @BoxComponent( allowsBody = true )
 public class Invoke extends Component {
 
-	ClassLocator			classLocator			= ClassLocator.getInstance();
+	ClassLocator			classLocator			= BoxRuntime.getInstance().getClassLocator();
 	static final Set<Key>	reservedAttributeNames	= Set.of( Key._CLASS, Key.method, Key.returnVariable, Key.argumentCollection );
 
 	/**
@@ -61,15 +62,15 @@ public class Invoke extends Component {
 	 * @param attributes     The attributes to the Component
 	 * @param body           The body of the Component
 	 * @param executionState The execution state of the Component
-	 * 
+	 *
 	 * @attribute.class The Box Class instance or the name of the Box Class to instantiate.
-	 * 
+	 *
 	 * @attribute.method The name of the method to invoke.
-	 * 
+	 *
 	 * @attribute.returnVariable The variable to store the result of the method invocation.
-	 * 
+	 *
 	 * @attribute.argumentCollection An array or struct of arguments to pass to the method.
-	 * 
+	 *
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
 		String	returnVariable	= attributes.getAsString( Key.returnVariable );
