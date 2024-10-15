@@ -46,6 +46,15 @@ import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 public class AsmHelper {
 
+	public static void addDebugLabel( List<AbstractInsnNode> nodes, String label ) {
+		if ( !ASMBoxpiler.DEBUG ) {
+			return;
+		}
+
+		nodes.add( new LdcInsnNode( label ) );
+		nodes.add( new InsnNode( Opcodes.POP ) );
+	}
+
 	public static List<AbstractInsnNode> getDefaultExpression( AsmTranspiler transpiler, BoxExpression body ) {
 		Type		type		= Type.getType( "L" + transpiler.getProperty( "packageName" ).replace( '.', '/' )
 		    + "/" + transpiler.getProperty( "classname" )
@@ -659,8 +668,6 @@ public class AsmHelper {
 			}
 
 			nodes.addAll( toAdd );
-			nodes.add( new LdcInsnNode( "DEBUG - ASMHelper 349" ) );
-			nodes.add( new InsnNode( Opcodes.POP ) );
 			nodes.add( new InsnNode( Opcodes.AASTORE ) );
 		}
 

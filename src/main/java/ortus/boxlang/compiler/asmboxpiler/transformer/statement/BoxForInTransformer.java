@@ -30,6 +30,7 @@ import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.TypeInsnNode;
 import org.objectweb.asm.tree.VarInsnNode;
 
+import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.AsmTranspiler;
 import ortus.boxlang.compiler.asmboxpiler.MethodContextTracker;
 import ortus.boxlang.compiler.asmboxpiler.MethodContextTracker.VarStore;
@@ -54,9 +55,10 @@ public class BoxForInTransformer extends AbstractTransformer {
 	}
 
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnValueContext ) {
-		BoxForIn						forIn			= ( BoxForIn ) node;
-		List<AbstractInsnNode>			nodes			= new ArrayList<>();
-		Optional<MethodContextTracker>	trackerOption	= transpiler.getCurrentMethodContextTracker();
+		BoxForIn				forIn	= ( BoxForIn ) node;
+		List<AbstractInsnNode>	nodes	= new ArrayList<>();
+		AsmHelper.addDebugLabel( nodes, "BoxForIn" );
+		Optional<MethodContextTracker> trackerOption = transpiler.getCurrentMethodContextTracker();
 
 		if ( trackerOption.isEmpty() ) {
 			throw new IllegalStateException();
@@ -67,11 +69,11 @@ public class BoxForInTransformer extends AbstractTransformer {
 		LabelNode				loopStart	= new LabelNode();
 		LabelNode				loopEnd		= new LabelNode();
 
-		tracker.setCurrentContinue( null, loopStart );
-		tracker.setCurrentContinue( forIn.getLabel(), loopStart );
-
-		tracker.setCurrentBreak( null, loopEnd );
-		tracker.setCurrentBreak( forIn.getLabel(), loopEnd );
+		tracker.setContinue( forIn, loopStart );
+		tracker.setBreak( forIn, loopEnd );
+		if ( forIn.getLabel() != null ) {
+			tracker.setStringLabel( forIn.getLabel(), forIn );
+		}
 
 		// access the collection
 		nodes.addAll( transpiler.transform( forIn.getExpression(), context, ReturnValueContext.VALUE_OR_NULL ) );

@@ -26,6 +26,7 @@ import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 
+import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
@@ -49,15 +50,21 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 		List<AbstractInsnNode>	condition	= transpiler.transform( boxSwitch.getCondition(), TransformerContext.NONE, ReturnValueContext.VALUE );
 
 		List<AbstractInsnNode>	nodes		= new ArrayList<>();
+		AsmHelper.addDebugLabel( nodes, "BoxSwitch" );
 		nodes.addAll( condition );
 		nodes.add( new LdcInsnNode( 0 ) );
 
-		LabelNode endLabel = new LabelNode();
+		LabelNode	endLabel	= new LabelNode();
+		LabelNode	breakTarget	= new LabelNode();
+
+		transpiler.getCurrentMethodContextTracker().ifPresent( t -> t.setBreak( boxSwitch, endLabel ) );
+
 		boxSwitch.getCases().forEach( c -> {
 			if ( c.getCondition() == null ) {
 				return;
 			}
 
+			AsmHelper.addDebugLabel( nodes, "BoxSwitch - case start" );
 			LabelNode startOfCase = new LabelNode(), endOfCase = new LabelNode(), endOfAll = new LabelNode();
 			nodes.add( new JumpInsnNode( Opcodes.IFNE, startOfCase ) );
 			// this dupes the condition
@@ -96,14 +103,15 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 			    false ) );
 			nodes.add( new JumpInsnNode( Opcodes.IFEQ, endOfCase ) );
 			nodes.add( startOfCase );
-			transpiler.getCurrentMethodContextTracker().get().setCurrentBreak( null, endLabel );
+
 			c.getBody().forEach( stmt -> nodes.addAll( transpiler.transform( stmt, TransformerContext.NONE ) ) );
-			transpiler.getCurrentMethodContextTracker().get().removeCurrentBreak( null ); // TODO: label name?
+
 			nodes.add( new LdcInsnNode( 1 ) );
 			nodes.add( new JumpInsnNode( Opcodes.GOTO, endOfAll ) );
 			nodes.add( endOfCase );
 			nodes.add( new LdcInsnNode( 0 ) );
 			nodes.add( endOfAll );
+			AsmHelper.addDebugLabel( nodes, "BoxSwitch - case end" );
 		} );
 
 		// TODO: Can there be more than one default case?
@@ -113,18 +121,33 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 				if ( hasDefault ) {
 					throw new ExpressionException( "Multiple default cases not supported", c.getPosition(), c.getSourceText() );
 				}
+				AsmHelper.addDebugLabel( nodes, "BoxSwitch - default case" );
 				hasDefault = true;
+
+				// pop the initial 0 constant in case we didn't match any cases
 				nodes.add( new InsnNode( Opcodes.POP ) );
-				transpiler.getCurrentMethodContextTracker().get().setCurrentBreak( null, endLabel );
+				// pop the condition off the stack
+				// nodes.add( new InsnNode( Opcodes.POP ) );
+
 				c.getBody().forEach( stmt -> nodes.addAll( transpiler.transform( stmt, TransformerContext.NONE ) ) );
-				transpiler.getCurrentMethodContextTracker().get().removeCurrentBreak( null );
+
 				nodes.add( new JumpInsnNode( Opcodes.GOTO, endLabel ) );
 			}
 		}
 
+		// pop the initial 0 constant in case we didn't match any cases
 		nodes.add( new InsnNode( Opcodes.POP ) );
 		nodes.add( endLabel );
+
+		// pop the condition off the stack
 		nodes.add( new InsnNode( Opcodes.POP ) );
+		// nodes.add( breakTarget );
+
+		if ( !returnContext.empty ) {
+			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+		}
+
+		AsmHelper.addDebugLabel( nodes, "BoxSwitch - done" );
 
 		return nodes;
 	}

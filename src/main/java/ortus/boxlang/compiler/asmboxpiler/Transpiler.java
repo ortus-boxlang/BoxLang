@@ -46,6 +46,7 @@ public abstract class Transpiler implements ITranspiler {
 	private List<TryCatchBlockNode>			tryCatchBlockNodes		= new ArrayList<TryCatchBlockNode>();
 	private int								lambdaCounter			= 0;
 	private int								componentCounter		= 0;
+	private int								functionBodyCounter		= 0;
 	private Map<String, LabelNode>			breaks					= new LinkedHashMap<>();
 	private Map<String, LabelNode>			continues				= new LinkedHashMap<>();
 	private List<ImportDefinition>			imports					= new ArrayList<>();
@@ -60,6 +61,18 @@ public abstract class Transpiler implements ITranspiler {
 	 */
 	public void setProperty( String key, String value ) {
 		properties.put( key, value );
+	}
+
+	public boolean canReturn() {
+		return functionBodyCounter > 0;
+	}
+
+	public void incrementfunctionBodyCounter() {
+		functionBodyCounter++;
+	}
+
+	public void decrementfunctionBodyCounter() {
+		functionBodyCounter--;
 	}
 
 	public boolean isInsideComponent() {

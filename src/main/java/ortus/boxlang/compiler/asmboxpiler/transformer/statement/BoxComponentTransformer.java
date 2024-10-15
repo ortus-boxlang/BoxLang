@@ -10,6 +10,8 @@ import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.InsnNode;
+import org.objectweb.asm.tree.JumpInsnNode;
+import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.TypeInsnNode;
 
@@ -64,8 +66,47 @@ public class BoxComponentTransformer extends AbstractTransformer {
 		    Type.getMethodDescriptor( Type.getType( Component.BodyResult.class ), Type.getType( Key.class ), Type.getType( IStruct.class ),
 		        Type.getType( Component.ComponentBody.class ) ),
 		    true ) );
-		nodes.add( new InsnNode( Opcodes.POP ) );
 
+		if ( boxComponent.getBody() == null || boxComponent.getBody().size() == 0 ) {
+			nodes.add( new InsnNode( Opcodes.POP ) );
+
+			transpiler.decrementComponentCounter();
+
+			return nodes;
+		}
+
+		if ( transpiler.canReturn() ) {
+			LabelNode ifLabel = new LabelNode();
+
+			nodes.add( new InsnNode( Opcodes.DUP ) );
+
+			nodes.add(
+			    new MethodInsnNode(
+			        Opcodes.INVOKEVIRTUAL,
+			        Type.getInternalName( Component.BodyResult.class ),
+			        "isEarlyExit",
+			        Type.getMethodDescriptor( Type.BOOLEAN_TYPE ),
+			        false
+			    )
+			);
+
+			nodes.add( new JumpInsnNode( Opcodes.IFEQ, ifLabel ) );
+
+			nodes.add(
+			    new MethodInsnNode(
+			        Opcodes.INVOKEVIRTUAL,
+			        Type.getInternalName( Component.BodyResult.class ),
+			        "returnValue",
+			        Type.getMethodDescriptor( Type.getType( Object.class ) ),
+			        false
+			    )
+			);
+
+			nodes.add( new InsnNode( Opcodes.ARETURN ) );
+
+			nodes.add( ifLabel );
+		}
+		nodes.add( new InsnNode( Opcodes.POP ) );
 		transpiler.decrementComponentCounter();
 
 		return nodes;

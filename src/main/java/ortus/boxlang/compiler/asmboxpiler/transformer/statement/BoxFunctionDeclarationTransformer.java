@@ -21,6 +21,7 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
@@ -133,6 +134,7 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		    "getSourceType",
 		    Type.getType( BoxSourceType.class ) );
 
+		transpiler.incrementfunctionBodyCounter();
 		AsmHelper.methodWithContextAndClassLocator( classNode, "_invoke", Type.getType( FunctionBoxContext.class ), Type.getType( Object.class ), false,
 		    transpiler, true,
 		    () -> {
@@ -146,6 +148,7 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 			        .flatMap( statement -> transpiler.transform( statement, safe, ReturnValueContext.EMPTY ).stream() )
 			        .toList();
 		    } );
+		transpiler.decrementfunctionBodyCounter();
 
 		AsmHelper.complete( classNode, type, methodVisitor -> {
 			transpiler.createKey( function.getName() ).forEach( methodInsnNode -> methodInsnNode.accept( methodVisitor ) );
@@ -202,6 +205,10 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		        Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( UDF.class ) ),
 		        true )
 		);
+
+		if ( returnContext.nullable ) {
+			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+		}
 
 		return nodes;
 	}

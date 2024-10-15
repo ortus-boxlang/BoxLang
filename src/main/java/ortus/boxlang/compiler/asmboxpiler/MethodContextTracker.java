@@ -13,6 +13,8 @@ import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.TryCatchBlockNode;
 import org.objectweb.asm.tree.VarInsnNode;
 
+import ortus.boxlang.compiler.ast.BoxNode;
+
 public class MethodContextTracker {
 
 	private int						varCount			= 0;
@@ -21,9 +23,56 @@ public class MethodContextTracker {
 	private List<TryCatchBlockNode>	tryCatchBlockNodes	= new ArrayList<TryCatchBlockNode>();
 	private Map<String, LabelNode>	breaks				= new LinkedHashMap<>();
 	private Map<String, LabelNode>	continues			= new LinkedHashMap<>();
+	private final CompilationType	type;
+	private Map<BoxNode, LabelNode>	nodeBreaks			= new LinkedHashMap<>();
+	private Map<BoxNode, LabelNode>	nodeContinues		= new LinkedHashMap<>();
+	private Map<String, BoxNode>	stringLabel			= new LinkedHashMap<>();
+
+	public enum CompilationType {
+		BoxClass,
+		Component,
+		Function
+	}
 
 	public record VarStore( int index, List<AbstractInsnNode> nodes ) {
 
+	}
+
+	public MethodContextTracker( boolean isStatic ) {
+		this( CompilationType.BoxClass, isStatic );
+	}
+
+	public MethodContextTracker( CompilationType type, boolean isStatic ) {
+		this.type	= type;
+		varCount	= isStatic ? -1 : 0;
+	}
+
+	public boolean canReturn() {
+		return this.type == CompilationType.Function;
+	}
+
+	public void setStringLabel( String label, BoxNode target ) {
+		stringLabel.put( label, target );
+	}
+
+	public BoxNode getStringLabel( String label ) {
+		return stringLabel.get( label );
+	}
+
+	public void setBreak( BoxNode node, LabelNode label ) {
+		nodeBreaks.put( node, label );
+	}
+
+	public LabelNode getBreak( BoxNode node ) {
+		return nodeBreaks.get( node );
+	}
+
+	public void setContinue( BoxNode node, LabelNode label ) {
+		nodeContinues.put( node, label );
+	}
+
+	public LabelNode getContinue( BoxNode node ) {
+		return nodeContinues.get( node );
 	}
 
 	public LabelNode getCurrentBreak( String label ) {
@@ -64,10 +113,6 @@ public class MethodContextTracker {
 
 	public int getUnusedStackCount() {
 		return unusedStackEntries;
-	}
-
-	public MethodContextTracker( boolean isStatic ) {
-		varCount = isStatic ? -1 : 0;
 	}
 
 	public void trackUnusedStackEntry() {

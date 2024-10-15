@@ -23,7 +23,6 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.BoxRuntime;
@@ -63,12 +62,35 @@ public class ControllerTest {
 	}
 
 	@Test
-	@Disabled( "Needs update for new constructor argument in Property record" )
-	public void testControllerCompilation() {
+	public void testSwitchInLoopInFunc() {
 		instance.executeStatement(
 		    """
-		       	controller = new src.test.java.TestCases.asm.integration.Controller();
-		    """,
+		         	function a(){
+		    	for ( x = 1; x < 5; x++ ) {
+		    		switch( x ){
+		    		}
+		    	}
+		    }
+		      """,
+		    context );
+	}
+
+	@Test
+	public void testSwitchWithCaseInLoopInFunc() {
+		instance.executeStatement(
+		    """
+		           	function a(){
+		      	for ( x = 1; x < 5; x++ ) {
+		      		switch( x ){
+		      			case "id": {
+
+		      			}
+		      		}
+		      	}
+
+		    }
+		    a()
+		        """,
 		    context );
 	}
 
@@ -113,6 +135,44 @@ public class ControllerTest {
 		    context );
 
 		assertThat( variables.get( result ) ).isEqualTo( "test" );
+	}
+
+	@Test
+	public void testReturnFromComponentInFunction() {
+
+		instance.executeStatement(
+		    """
+		      	function a(){
+		    	lock name="what" timeout=300 {
+		    		return "test";
+		    	}
+		    }
+
+		    result = a();
+		        """,
+		    context );
+
+		assertThat( variables.get( result ) ).isEqualTo( "test" );
+	}
+
+	@Test
+	public void testContinueInForIndex() {
+
+		instance.executeStatement(
+		    """
+		              	a = [ "orange", "red", "yellow" ]
+
+		          for( color in a ){
+
+		    switch( color ){
+		    	case "orange": result = color; break;
+		    	default: continue;
+		    }
+		          }
+		                """,
+		    context );
+
+		assertThat( variables.get( result ) ).isEqualTo( "orange" );
 	}
 
 }
