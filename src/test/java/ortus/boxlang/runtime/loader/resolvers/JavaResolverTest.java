@@ -22,7 +22,6 @@ import static com.google.common.truth.Truth.assertThat;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -37,33 +36,27 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
 import ortus.boxlang.runtime.loader.DynamicClassLoader;
 import ortus.boxlang.runtime.loader.ImportDefinition;
-import ortus.boxlang.runtime.modules.ModuleRecord;
-import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.services.ModuleService;
 import ortus.boxlang.runtime.types.IStruct;
 
-public class JavaResolverTest {
+public class JavaResolverTest extends AbstractResolverTest {
 
-	static BoxRuntime	runtime;
-	static JavaResolver	javaResolver;
-	static IBoxContext	context;
+	public static JavaResolver javaResolver;
 
 	@BeforeAll
-	public static void setUp() {
-		runtime			= BoxRuntime.getInstance( true );
-		javaResolver	= runtime.getClassLocator().getJavaResolver();
+	public static void beforeAll() {
+		javaResolver = runtime.getClassLocator().getJavaResolver();
 	}
 
 	@BeforeEach
-	public void setup() {
-		context = new ScriptingRequestBoxContext( runtime.getRuntimeContext() );
+	@Override
+	public void beforeEach() {
+		super.beforeEach();
 		javaResolver.clearJdkImportCache();
 	}
 
@@ -256,20 +249,6 @@ public class JavaResolverTest {
 
 		assertThat( location.isPresent() ).isTrue();
 		assertThat( location.get().clazz().getName() ).isEqualTo( targetClass );
-	}
-
-	private void loadTestModule() {
-		Key				moduleName		= new Key( "test" );
-		String			physicalPath	= Paths.get( "./modules/test" ).toAbsolutePath().toString();
-		ModuleRecord	moduleRecord	= new ModuleRecord( physicalPath );
-		ModuleService	moduleService	= runtime.getModuleService();
-
-		moduleRecord
-		    .loadDescriptor( context )
-		    .register( context )
-		    .activate( context );
-
-		moduleService.getRegistry().put( moduleName, moduleRecord );
 	}
 
 }
