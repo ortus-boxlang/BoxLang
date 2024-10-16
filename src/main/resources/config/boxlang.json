@@ -107,8 +107,6 @@
 		// 	  "database": "test"
 		// }
 	},
-	// An explicit whitelist of file extensions that are allowed to be uploaded - overrides any values in the disallowedWriteExtensions
-	"allowedFileOperationExtensions": [],
 	// The list of file extensions that are not allowed to be uploaded. Also enforced by file relocation operations ( e.g. copy/move )
 	"disallowedFileOperationExtensions": [
 		"bat",
@@ -224,7 +222,9 @@
 		"disallowedBifs": [],
 		// A list of Component names that will be disallowed from execution
 		// Ex: "disallowedComponents": [ "execute", "http" ]
-		"disallowedComponents": []
+		"disallowedComponents": [],
+		// An explicit whitelist of file extensions that are allowed to be uploaded - overrides any values in the disallowedWriteExtensions
+		"allowedFileOperationExtensions": []
 	},
 	/**
 	 * The BoxLang module settings

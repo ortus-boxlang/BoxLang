@@ -24,8 +24,11 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.util.ListUtil;
 
 /**
  * Helps convert from JSON to native Java/BoxLang Types
@@ -38,7 +41,7 @@ public class PropertyHelper {
 	private static final Logger logger = LoggerFactory.getLogger( PropertyHelper.class );
 
 	/**
-	 * Process the target key
+	 * This processes a JSON array list to a HashSet
 	 *
 	 * @param config The configuration object
 	 * @param key    The target key to look and process
@@ -52,6 +55,34 @@ public class PropertyHelper {
 			} else {
 				logger.warn( "The property [{}] must be a JSON Array", key );
 			}
+		}
+	}
+
+	/**
+	 * This processes:
+	 * - A string to a list (comma separated or a single string)
+	 * - A JSON array to a list
+	 *
+	 * @param config The configuration object
+	 * @param key    The target key to look and process
+	 * @param target The target list to populate with the values
+	 */
+	public static void processStringOrArrayToList( IStruct config, Key key, List<String> target ) {
+		if ( config.containsKey( key ) ) {
+			// If it's a string, convert it to an array
+			if ( config.get( key ) instanceof String castedStringList ) {
+				config.put(
+				    key,
+				    ListUtil.asList( PlaceholderHelper.resolve( castedStringList ), ListUtil.DEFAULT_DELIMITER )
+				);
+			}
+
+			// For some reason we have to re-cast this through a stream. Attempting to cast it directly throws a ClassCastException
+			ArrayCaster.cast( config.get( key ) )
+			    .stream()
+			    // Add each item to the incoming target
+			    .map( StringCaster::cast )
+			    .forEach( target::add );
 		}
 	}
 
