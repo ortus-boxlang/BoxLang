@@ -76,12 +76,12 @@ public class DiskClassLoader extends URLClassLoader {
 
 	/**
 	 * Find class on disk, if not found, delegate to parent
+	 * TODO: If we move to sharing classloaders across files with trusted cache, make the locking more granular instead of synchronizing the entire method
 	 *
 	 * @param name class name
 	 */
 	@Override
-	protected Class<?> findClass( String name ) throws ClassNotFoundException {
-
+	protected synchronized Class<?> findClass( String name ) throws ClassNotFoundException {
 		Path		diskPath	= generateDiskPath( name );
 		// JIT compile
 		String		baseName	= IBoxpiler.getBaseFQN( name );
@@ -107,7 +107,6 @@ public class DiskClassLoader extends URLClassLoader {
 		} catch ( IOException e ) {
 			throw new ClassNotFoundException( "Unable to read class file from disk", e );
 		}
-
 		return defineClass( name, bytes, 0, bytes.length );
 	}
 
@@ -133,8 +132,8 @@ public class DiskClassLoader extends URLClassLoader {
 			return false;
 		}
 		// There is no class file cached on disk
-		if ( !hasClass( diskPath ) ) {
-			return true;
+		if ( hasClass( diskPath ) ) {
+			return false;
 		}
 
 		// If the class file is older than the source file
