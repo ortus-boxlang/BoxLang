@@ -46,7 +46,7 @@ public class PreserveSingleQuotes extends BIF {
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		// This BIF itself doesn't do anything. It's largely a placeholder in the AST for the QueryPreserveSingleQuotesVisitor to look for.
 		// The Visitor actually does the work of escaping or preserving single quotes.
-		System.out.println( "PreserveSingleQuotes._invoke " + arguments.get( Key.variable ) );
+		// System.out.println( "PreserveSingleQuotes._invoke " + arguments.get( Key.variable ) );
 		return arguments.get( Key.variable );
 	}
 
