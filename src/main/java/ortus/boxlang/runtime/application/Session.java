@@ -104,7 +104,6 @@ public class Session implements Serializable {
 		// Move these to the COMPAT module
 		this.sessionScope.put( Key.urlToken, String.format( URL_TOKEN_FORMAT, bxid ) );
 		this.sessionScope.put( Key.cfid, ID.getName() );
-		this.sessionScope.put( Key.cftoken, 0 );
 
 		// Announce it's creation
 		BoxRuntime.getInstance()

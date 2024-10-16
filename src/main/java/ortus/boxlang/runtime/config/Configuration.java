@@ -146,13 +146,13 @@ public class Configuration implements IConfigSegment {
 	public String				sessionStorage					= "memory";
 
 	/**
-	 * This determines whether to send CFID and CFTOKEN cookies to the client browser.
+	 * This determines whether to send jSessionID cookies to the client browser.
 	 * {@code true} by default
 	 */
 	public Boolean				setClientCookies				= true;
 
 	/**
-	 * Sets CFID and CFTOKEN cookies for a domain (not a host) Required, for applications running on clusters
+	 * Sets jSessionID cookies for a domain (not a host) Required, for applications running on clusters
 	 * {@code true} by default
 	 */
 	public Boolean				setDomainCookies				= true;
