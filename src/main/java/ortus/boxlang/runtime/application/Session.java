@@ -41,13 +41,7 @@ public class Session implements Serializable {
 	/**
 	 * The concatenator for session IDs
 	 */
-	public static final String	ID_CONCATENATOR		= "_";
-
-	/**
-	 * The URL token format
-	 * MOVE TO COMPAT MODULE
-	 */
-	public static final String	URL_TOKEN_FORMAT	= "CFID=%s";
+	public static final String	ID_CONCATENATOR	= "_";
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -68,12 +62,12 @@ public class Session implements Serializable {
 	/**
 	 * Flag for when session has been started
 	 */
-	private final AtomicBoolean	isNew				= new AtomicBoolean( true );
+	private final AtomicBoolean	isNew			= new AtomicBoolean( true );
 
 	/**
 	 * The application name linked to
 	 */
-	private Key					applicationName		= null;
+	private Key					applicationName	= null;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -91,19 +85,13 @@ public class Session implements Serializable {
 		this.ID					= ID;
 		this.applicationName	= application.getName();
 		this.sessionScope		= new SessionScope();
-
-		DateTime	timeNow	= new DateTime();
-		String		bxid	= this.applicationName + ID_CONCATENATOR + ID;
+		DateTime timeNow = new DateTime();
 
 		// Initialize the session scope
 		this.sessionScope.put( Key.jsessionID, ID.getName() );
 		this.sessionScope.put( Key.sessionId, this.applicationName + ID_CONCATENATOR + ID );
 		this.sessionScope.put( Key.timeCreated, timeNow );
 		this.sessionScope.put( Key.lastVisit, timeNow );
-
-		// Move these to the COMPAT module
-		this.sessionScope.put( Key.urlToken, String.format( URL_TOKEN_FORMAT, bxid ) );
-		this.sessionScope.put( Key.cfid, ID.getName() );
 
 		// Announce it's creation
 		BoxRuntime.getInstance()

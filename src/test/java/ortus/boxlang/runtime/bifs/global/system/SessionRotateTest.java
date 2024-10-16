@@ -80,7 +80,7 @@ public class SessionRotateTest {
 
 		IStruct initialSession = variables.getAsStruct( Key.of( "initialSession" ) );
 		assertTrue( variables.getAsStruct( result ).containsKey( Key.of( "foo" ) ) );
-		assertNotEquals( initialSession.getAsString( Key.of( "cfid" ) ), variables.getAsStruct( result ).getAsString( Key.of( "cfid" ) ) );
+		assertNotEquals( initialSession.getAsString( Key.of( "jsessionID" ) ), variables.getAsStruct( result ).getAsString( Key.of( "jsessionID" ) ) );
 		assertNotEquals( initialSession.getAsDateTime( Key.of( "timeCreated" ) ), variables.getAsStruct( result ).getAsDateTime( Key.of( "timeCreated" ) ) );
 		assertNotEquals( initialSession.getAsString( Key.of( "sessionid" ) ), variables.getAsStruct( result ).getAsString( Key.of( "sessionid" ) ) );
 	}
