@@ -131,17 +131,17 @@ public class DiskClassLoader extends URLClassLoader {
 		if ( !name.equals( baseName ) ) {
 			return false;
 		}
-		// There is no class file cached on disk
+		// There is a class file cached on disk
 		if ( hasClass( diskPath ) ) {
+			// If the class file is older than the source file
+			if ( classInfo != null && classInfo.lastModified() > diskPath.toFile().lastModified() ) {
+				return true;
+			}
 			return false;
 		}
 
-		// If the class file is older than the source file
-		if ( classInfo != null && classInfo.lastModified() > diskPath.toFile().lastModified() ) {
-			return true;
-		}
-		// The class file exists on disk and is up to date
-		return false;
+		// There is no class file cached on disk
+		return true;
 	}
 
 	/**

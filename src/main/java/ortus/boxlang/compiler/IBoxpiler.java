@@ -21,10 +21,12 @@ import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 public interface IBoxpiler {
 
-	static final Set<String> RESERVED_WORDS = new HashSet<>( Arrays.asList( "abstract", "assert", "boolean", "break", "byte", "case", "catch", "char",
+	static final Set<String>	RESERVED_WORDS	= new HashSet<>( Arrays.asList( "abstract", "assert", "boolean", "break", "byte", "case", "catch", "char",
 	    "class", "const", "continue", "default", "do", "double", "else", "enum", "extends", "final", "finally", "float", "for", "goto", "if", "implements",
 	    "import", "instanceof", "int", "interface", "long", "native", "new", "package", "private", "protected", "public", "return", "short", "static",
 	    "strictfp", "super", "switch", "synchronized", "this", "throw", "throws", "transient", "try", "void", "volatile", "while" ) );
+
+	static final Pattern		FQNBasePattern	= Pattern.compile( "(.*?)(\\$Closure_.*|\\$Func_.*|\\$Lambda_.*)$" );
 
 	/**
 	 * Generate an MD5 hash.
@@ -80,7 +82,7 @@ public interface IBoxpiler {
 
 	static String getBaseFQN( String FQN ) {
 		// If fqn ends with $Cloure_xxx or $Func_xxx, $Lambda_xxx, then we need to strip that off to get the original FQN
-		Matcher m = Pattern.compile( "(.*?)(\\$Closure_.*|\\$Func_.*|\\$Lambda_.*)$" ).matcher( FQN );
+		Matcher m = FQNBasePattern.matcher( FQN );
 		if ( m.find() ) {
 			FQN = m.group( 1 );
 		}
