@@ -184,7 +184,7 @@ public class BoxResolverTest extends AbstractResolverTest {
 		);
 		Optional<ClassLocation>	classLocation	= boxResolver.resolve( context, className, imports );
 		assertThat( classLocation.isPresent() ).isTrue();
-		assertThat( classLocation.get().path() ).contains( "test/models/Hello" );
+		assertThat( classLocation.get().path().replace( "\\", "/" ) ).contains( "test/models/Hello" );
 	}
 
 }
