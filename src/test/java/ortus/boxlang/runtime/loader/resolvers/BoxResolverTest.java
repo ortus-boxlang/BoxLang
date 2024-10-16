@@ -163,6 +163,18 @@ public class BoxResolverTest extends AbstractResolverTest {
 		assertThat( classLocation.get().path() ).contains( "TestClass" );
 	}
 
+	@DisplayName( "It can resolve classes using wildcard imports" )
+	@Test
+	void testResolveWithWildcardImports() {
+		String					className		= "TestClass";
+		List<ImportDefinition>	imports			= Arrays.asList(
+		    ImportDefinition.parse( "src.test.bx.models.*" )
+		);
+		Optional<ClassLocation>	classLocation	= boxResolver.resolve( context, className, imports );
+		assertThat( classLocation.isPresent() ).isTrue();
+		assertThat( classLocation.get().path() ).contains( "TestClass" );
+	}
+
 	@DisplayName( "It can find classes from modules" )
 	@Test
 	void testFindFromModules() {
