@@ -47,6 +47,7 @@ import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.KeyCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.loader.DynamicClassLoader;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
@@ -534,6 +535,11 @@ public class Configuration implements IConfigSegment {
 			} else {
 				logger.warn( "The [runtime.modules] configuration is not a JSON Object, ignoring it." );
 			}
+		}
+
+		// Process our security configuration
+		if ( config.containsKey( Key.security ) ) {
+			security.process( StructCaster.cast( config.get( Key.security ) ) );
 		}
 
 		return this;

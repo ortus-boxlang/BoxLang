@@ -27,6 +27,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.io.Files;
+
 import ortus.boxlang.runtime.config.util.PropertyHelper;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
@@ -153,6 +155,33 @@ public class SecurityConfig implements IConfigSegment {
 		// Add it
 		this.allowedImportsLookup.put( name, true );
 		return true;
+	}
+
+	/**
+	 * Determines whether a file operation is allowed or not based on the file extension.
+	 * 
+	 * @param file
+	 * 
+	 * @return
+	 */
+	public boolean isFileOperationAllowed( String file ) {
+		String fileExtension = Files.getFileExtension( file );
+		return this.isExtensionAllowed( fileExtension );
+	}
+
+	/**
+	 * Determines whether a file extension is allowed or not.
+	 * 
+	 * @param extension
+	 * 
+	 * @return
+	 */
+	public boolean isExtensionAllowed( String extension ) {
+		if ( this.allowedFileOperationExtensions.contains( extension ) ) {
+			return true;
+		} else {
+			return !this.disallowedFileOperationExtensions.contains( extension );
+		}
 	}
 
 	/**

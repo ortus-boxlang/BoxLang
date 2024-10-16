@@ -25,8 +25,9 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
-import ortus.boxlang.runtime.util.FileSystemUtil;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.FileSystemUtil;
 
 @BoxBIF
 
@@ -59,8 +60,15 @@ public class FileCopy extends BIF {
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		arguments.put( Key.source, FileSystemUtil.expandPath( context, arguments.getAsString( Key.source ) ).absolutePath().toString() );
 		arguments.put( Key.destination, FileSystemUtil.expandPath( context, arguments.getAsString( Key.destination ) ).absolutePath().toString() );
+
+		// Make sure there is no attempt to move a file in to disallowed ( e.g. executable ) type
+		if ( !runtime.getConfiguration().security.isFileOperationAllowed( arguments.getAsString( Key.destination ) ) ) {
+			throw new BoxRuntimeException( "The destination path contains an extension disallowed by the runtime security settings." );
+		}
+
 		Path	sourcePath				= Path.of( arguments.getAsString( Key.source ) );
 		Path	destinationPath			= Path.of( arguments.getAsString( Key.destination ) );
+
 		Path	destinationDirectory	= destinationPath.getParent();
 		Boolean	createPaths				= arguments.getAsBoolean( Key.createPath );
 

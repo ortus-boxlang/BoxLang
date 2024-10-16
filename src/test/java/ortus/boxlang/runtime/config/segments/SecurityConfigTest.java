@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.config.segments;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -78,6 +79,14 @@ public class SecurityConfigTest {
 		String importName = "java\\.lang\\.String";
 		securityConfig.disallowedImports.add( importName );
 		assertThrows( SecurityException.class, () -> securityConfig.isClassAllowed( "java.lang.String" ) );
+	}
+
+	@DisplayName( "Check if an exe extension is disallowed" )
+	@Test
+	public void testIsExeDisalloweed() {
+		String fileName = "test.exe";
+		securityConfig.disallowedFileOperationExtensions.add( "exe" );
+		assertFalse( securityConfig.isFileOperationAllowed( fileName ) );
 	}
 
 }
