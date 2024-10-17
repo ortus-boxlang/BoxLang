@@ -74,7 +74,10 @@
 	"logsDirectory": "${boxlang-home}/logs",
 	// This is the experimental features flags.
 	// Please see the documentation to see which flags are available
-	"experimental": {},
+	"experimental": {
+		// If enabled, it will generate AST JSON data under the project's /grapher/data folder
+		"ASTCapture": false
+	},
 	// Global Executors for the runtime
 	// These are managed by the AsyncService and registered upon startup
 	// The name of the executor is the key and the value is a struct of executor settings
