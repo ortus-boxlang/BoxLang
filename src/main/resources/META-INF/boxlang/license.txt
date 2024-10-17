@@ -1,6 +1,6 @@
 ﻿********************************************************************************
 BoxLang Copyright Since 2023 by Ortus Solutions, Corp
-www.boxlang.org | www.ortussolutions.com
+www.boxlang.io | www.ortussolutions.com
 ********************************************************************************
 Ways to Help:
 - Become a Sponsor of the project by visiting https://www.ortussolutions.com/about-us/sponsors
