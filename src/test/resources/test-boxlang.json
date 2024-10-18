@@ -23,7 +23,7 @@
 	},
 	"caches": {
 		"default": {},
-		"imports": {
+		"bxImports": {
 			"provider": "BoxCacheProvider",
 			"properties": {
 				"evictCount": 1,
