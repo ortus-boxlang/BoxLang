@@ -69,7 +69,7 @@ public class BoxInterfaceTransformer {
 		String	fileName			= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getName() : "unknown";
 		String	filePath			= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath() : "unknown";
 		// trim leading . if exists
-		String	boxInterfacename	= boxPackageName + ( boxPackageName.isEmpty() ? "" : "." ) + fileName.replace( ".bx", "" ).replace( ".cfc", "" );
+		String	boxInterfacename	= transpiler.getProperty( "boxFQN" );
 		String	sourceType			= transpiler.getProperty( "sourceType" );
 
 		Type	type				= Type.getType( "L" + packageName.replace( '.', '/' )

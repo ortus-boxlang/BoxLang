@@ -967,7 +967,7 @@ public class ClassTest {
 		instance.executeSource(
 		    """
 		    import java.util.Timer;
-		      	myTask = new src.test.java.TestCases.phase3.JavaExtends();
+		      	myTask = new src.test.java.TestCases.asm.phase3.JavaExtends();
 		         assert myTask instanceof "java.util.TimerTask"
 
 		      jtimer = new Timer();
