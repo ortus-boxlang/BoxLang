@@ -75,6 +75,9 @@
 	// This is the experimental features flags.
 	// Please see the documentation to see which flags are available
 	"experimental": {
+		// This choose the compiler to use for the runtime
+		// Valid values are: "java", "asm"
+		"compiler": "java",
 		// If enabled, it will generate AST JSON data under the project's /grapher/data folder
 		"ASTCapture": false
 	},
