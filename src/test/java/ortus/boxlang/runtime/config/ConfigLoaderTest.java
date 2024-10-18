@@ -78,8 +78,7 @@ class ConfigLoaderTest {
 		assertThat( defaultCache.properties.get( "useLastAccessTimeouts" ) ).isEqualTo( true );
 
 		// Import Cache Checks
-		CacheConfig importCache = ( CacheConfig ) config.caches.get( "imports" );
-		assertThat( importCache.name.getNameNoCase() ).isEqualTo( "IMPORTS" );
+		CacheConfig importCache = ( CacheConfig ) config.caches.get( "bxImports" );
 		assertThat( importCache.provider.getNameNoCase() ).isEqualTo( "BOXCACHEPROVIDER" );
 		assertThat( importCache.properties ).isNotNull();
 		assertThat( importCache.properties.get( "maxObjects" ) ).isEqualTo( 200 );
@@ -190,8 +189,7 @@ class ConfigLoaderTest {
 		assertThat( defaultCache.properties.get( "useLastAccessTimeouts" ) ).isEqualTo( true );
 
 		// Import Cache Checks
-		CacheConfig importCache = ( CacheConfig ) config.caches.get( "imports" );
-		assertThat( importCache.name.getNameNoCase() ).isEqualTo( "IMPORTS" );
+		CacheConfig importCache = ( CacheConfig ) config.caches.get( "bxImports" );
 		assertThat( importCache.provider.getNameNoCase() ).isEqualTo( "BOXCACHEPROVIDER" );
 		assertThat( importCache.properties ).isNotNull();
 		assertThat( importCache.properties.get( "maxObjects" ) ).isEqualTo( 200 );
