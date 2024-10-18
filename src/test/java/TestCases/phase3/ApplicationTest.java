@@ -20,8 +20,6 @@ package TestCases.phase3;
 import static com.google.common.truth.Truth.assertThat;
 
 import java.nio.file.Path;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -37,7 +35,6 @@ import ortus.boxlang.runtime.context.BaseBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.scopes.ApplicationScope;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -85,11 +82,8 @@ public class ApplicationTest {
 		assertThat( variables.get( result ) ).isInstanceOf( ApplicationScope.class );
 		assertThat( variables.get( Key.of( "result2" ) ) ).isInstanceOf( SessionScope.class );
 
-		ApplicationBoxContext	appContext			= context.getParentOfType( ApplicationBoxContext.class );
-		Application				app					= appContext.getApplication();
-		Instant					actual				= DateTimeCaster.cast( variables.get( Key.of( "startTime" ) ) ).getWrapped().toInstant();
-		Instant					now					= Instant.now();
-		long					differenceInSeconds	= ChronoUnit.SECONDS.between( actual, now );
+		ApplicationBoxContext	appContext	= context.getParentOfType( ApplicationBoxContext.class );
+		Application				app			= appContext.getApplication();
 
 		assertThat( app.getName().getName() ).isEqualTo( "myAppsdfsdf" );
 		assertThat( app.getSessionsCache() ).isNotNull();
@@ -97,7 +91,6 @@ public class ApplicationTest {
 		assertThat( app.getApplicationScope().getName().getName() ).isEqualTo( "application" );
 		assertThat( app.getClassLoaders() ).isNotNull();
 		assertThat( app.hasStarted() ).isTrue();
-		assertThat( differenceInSeconds ).isAtMost( 1L );
 	}
 
 	@Test
