@@ -40,8 +40,9 @@ public class Session implements Serializable {
 
 	/**
 	 * The concatenator for session IDs
+	 * We leverage the `:` as it's a standard in many distributed caches like Redis and Couchbase to denote namespaces
 	 */
-	public static final String	ID_CONCATENATOR	= "_";
+	public static final String	ID_CONCATENATOR	= ":";
 
 	/**
 	 * --------------------------------------------------------------------------
