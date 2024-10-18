@@ -143,9 +143,6 @@ import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.ClassVariablesScope;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.scopes.StaticScope;
-import ortus.boxlang.runtime.scopes.ThisScope;
-import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.AbstractFunction;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.DefaultExpression;
@@ -386,20 +383,52 @@ public class AsmTranspiler extends Transpiler {
 			    .findFirst()
 			    .orElse( null );
 
-			List<AbstractInsnNode>	defaultLiteral		= List.of( new InsnNode( Opcodes.ACONST_NULL ) );
-			List<AbstractInsnNode>	defaultExpression	= List.of( new InsnNode( Opcodes.ACONST_NULL ) );
+			// List<AbstractInsnNode> defaultLiteral = List.of( new InsnNode( Opcodes.ACONST_NULL ) );
+			// List<AbstractInsnNode> defaultExpression = List.of( new InsnNode( Opcodes.ACONST_NULL ) );
+			// if ( defaultAnnotation.getValue() != null ) {
+			// if ( defaultAnnotation.getValue().isLiteral() ) {
+			// defaultLiteral = transform( defaultAnnotation.getValue(), TransformerContext.NONE );
+			// } else {
+			// defaultExpression = AsmHelper.getDefaultExpression( this, defaultAnnotation.getValue() );
+			// }
+			// }
+
+			List<AbstractInsnNode>	annotationStruct	= transformAnnotations( finalAnnotations );
+			List<AbstractInsnNode>	init, initLambda;
 			if ( defaultAnnotation.getValue() != null ) {
+
 				if ( defaultAnnotation.getValue().isLiteral() ) {
-					defaultLiteral = transform( defaultAnnotation.getValue(), TransformerContext.NONE );
+					init		= transform( defaultAnnotation.getValue(), TransformerContext.NONE, ReturnValueContext.EMPTY );
+					initLambda	= List.of( new InsnNode( Opcodes.ACONST_NULL ) );
 				} else {
-					defaultExpression = AsmHelper.getDefaultExpression( this, defaultAnnotation.getValue() );
-				}
-			}
+					init = List.of( new InsnNode( Opcodes.ACONST_NULL ) );
 
 					Type					type		= Type.getType( "L" + getProperty( "packageName" ).replace( '.', '/' )
+					    + "/" + getProperty( "classname" )
+					    + "$Lambda_" + incrementAndGetLambdaCounter() + ";" );
+
+					List<AbstractInsnNode>	body		= transform( defaultAnnotation.getValue(), TransformerContext.NONE, ReturnValueContext.EMPTY );
+					ClassNode				classNode	= new ClassNode();
+					AsmHelper.init( classNode, false, type, Type.getType( Object.class ), methodVisitor -> {
+					}, Type.getType( DefaultExpression.class ) );
+					AsmHelper.methodWithContextAndClassLocator( classNode, "evaluate", Type.getType( IBoxContext.class ), Type.getType( Object.class ), false,
+					    this, false,
+					    () -> body );
+					setAuxiliary( type.getClassName(), classNode );
+
+					initLambda = List.of(
+					    new TypeInsnNode( Opcodes.NEW, type.getInternalName() ),
+					    new InsnNode( Opcodes.DUP ),
+					    new MethodInsnNode( Opcodes.INVOKESPECIAL, type.getInternalName(), "<init>", Type.getMethodDescriptor( Type.VOID_TYPE ), false ) );
+				}
+			} else {
+				init		= List.of( new InsnNode( Opcodes.ACONST_NULL ) );
+				initLambda	= List.of( new InsnNode( Opcodes.ACONST_NULL ) );
+			}
+
+			String	type;
 			// name and type must be simple values
 			String	name;
-			String	type;
 			if ( nameAnnotation != null && nameAnnotation.getValue() instanceof BoxStringLiteral namelit ) {
 				name = namelit.getValue().trim();
 				if ( name.isEmpty() )
@@ -623,7 +652,7 @@ public class AsmTranspiler extends Transpiler {
 		}
 	}
 
-	private List<AbstractInsnNode> createAbstractFunction( BoxFunctionDeclaration func ) {
+	public List<AbstractInsnNode> createAbstractFunction( BoxFunctionDeclaration func ) {
 		List<AbstractInsnNode> nodes = new ArrayList<AbstractInsnNode>();
 
 		// public AbstractFunction( Key name, Argument[] arguments, String returnType, Access access, IStruct annotations, IStruct documentation,

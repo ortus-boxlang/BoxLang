@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -27,9 +28,14 @@ import org.objectweb.asm.tree.TypeInsnNode;
 
 import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
+import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxExpression;
+import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.expression.BoxArgument;
+import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
+import ortus.boxlang.compiler.ast.statement.BoxReturnType;
+import ortus.boxlang.compiler.ast.statement.BoxType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -39,12 +45,152 @@ import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.runnables.BoxClassSupport;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.AbstractFunction;
+import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.DefaultExpression;
+import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.util.MapHelper;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 public class AsmHelper {
+
+	public static List<AbstractInsnNode> generateMapOfAbstractMethodNames( Transpiler transpiler, BoxNode classOrInterface ) {
+		List<List<AbstractInsnNode>>	methodKeyLists	= classOrInterface.getDescendantsOfType( BoxFunctionDeclaration.class )
+		    .stream()
+		    .filter( func -> func.getBody() == null )
+		    .map( func -> {
+															    List<List<AbstractInsnNode>> absFunc = List.of(
+															        transpiler.createKey( func.getName() ),
+															        createAbstractFunction( transpiler, func )
+															    );
+
+															    return absFunc;
+														    } )
+		    .flatMap( x -> x.stream() )
+		    .collect( java.util.stream.Collectors.toList() );
+
+		List<AbstractInsnNode>			nodes			= new ArrayList<AbstractInsnNode>();
+
+		nodes.addAll( AsmHelper.array( Type.getType( Object.class ), methodKeyLists ) );
+
+		nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+		    Type.getInternalName( MapHelper.class ),
+		    "LinkedHashMapOfAny",
+		    Type.getMethodDescriptor( Type.getType( Map.class ), Type.getType( Object[].class ) ),
+		    false ) );
+
+		return nodes;
+	}
+
+	private static List<AbstractInsnNode> generateSetOfCompileTimeMethodNames( Transpiler transpiler, BoxClass boxClass ) {
+		List<List<AbstractInsnNode>>	methodKeyLists	= boxClass.getDescendantsOfType( BoxFunctionDeclaration.class )
+		    .stream()
+		    .map( BoxFunctionDeclaration::getName )
+		    .map( transpiler::createKey )
+		    .collect( java.util.stream.Collectors.toList() );
+
+		List<AbstractInsnNode>			nodes			= new ArrayList<AbstractInsnNode>();
+
+		nodes.addAll( AsmHelper.array( Type.getType( Key.class ), methodKeyLists ) );
+		nodes.add(
+		    new MethodInsnNode(
+		        Opcodes.INVOKESTATIC,
+		        Type.getInternalName( Set.class ),
+		        "of",
+		        Type.getMethodDescriptor( Type.getType( Set.class ), Type.getType( Object[].class ) ),
+		        true
+		    )
+		);
+
+		return nodes;
+
+	}
+
+	private static String getFunctionReturnType( BoxReturnType returnType ) {
+		if ( returnType == null || returnType.getType() == null ) {
+			return "any";
+		}
+
+		if ( returnType.getType().equals( BoxType.Fqn ) ) {
+			return returnType.getFqn();
+		}
+
+		return returnType.getType().name();
+	}
+
+	public static List<AbstractInsnNode> createAbstractFunction( Transpiler transpiler, BoxFunctionDeclaration func ) {
+		List<AbstractInsnNode> nodes = new ArrayList<AbstractInsnNode>();
+
+		nodes.add( new TypeInsnNode( Opcodes.NEW, Type.getInternalName( AbstractFunction.class ) ) );
+		nodes.add( new InsnNode( Opcodes.DUP ) );
+
+		// args
+		// Key name
+		nodes.addAll( transpiler.createKey( func.getName() ) );
+		// Argument[] arguments
+		List<List<AbstractInsnNode>> argList = func.getArgs()
+		    .stream()
+		    .map( arg -> transpiler.transform( arg, TransformerContext.NONE ) )
+		    .toList();
+		nodes.addAll( AsmHelper.array( Type.getType( Argument.class ), argList ) );
+
+		nodes.add( new LdcInsnNode( getFunctionReturnType( func.getType() ) ) );
+
+		String accessModifier = "PUBLIC";
+
+		if ( func.getAccessModifier() != null ) {
+			accessModifier = func.getAccessModifier().name().toUpperCase();
+		}
+		// Access access
+		nodes.add(
+		    new FieldInsnNode(
+		        Opcodes.GETSTATIC,
+		        Type.getInternalName( Function.Access.class ),
+		        accessModifier,
+		        Type.getDescriptor( Function.Access.class )
+		    )
+		);
+		// IStruct annotations
+		// TODO
+		nodes.add( new FieldInsnNode( Opcodes.GETSTATIC,
+		    Type.getInternalName( Struct.class ),
+		    "EMPTY",
+		    Type.getDescriptor( IStruct.class ) ) );
+		// IStruct documentation
+		// TODO
+		nodes.add( new FieldInsnNode( Opcodes.GETSTATIC,
+		    Type.getInternalName( Struct.class ),
+		    "EMPTY",
+		    Type.getDescriptor( IStruct.class ) ) );
+		// String sourceObjectName
+		nodes.add( new LdcInsnNode( transpiler.getProperty( "boxClassName" ) ) );
+		// String sourceObjectType
+		nodes.add( new LdcInsnNode( "class" ) );
+
+		nodes.add(
+		    new MethodInsnNode(
+		        Opcodes.INVOKESPECIAL,
+		        Type.getInternalName( AbstractFunction.class ),
+		        "<init>",
+		        Type.getMethodDescriptor(
+		            Type.VOID_TYPE,
+		            Type.getType( Key.class ),
+		            Type.getType( Argument[].class ),
+		            Type.getType( String.class ),
+		            Type.getType( Function.Access.class ),
+		            Type.getType( IStruct.class ),
+		            Type.getType( IStruct.class ),
+		            Type.getType( String.class ),
+		            Type.getType( String.class )
+		        ),
+		        false
+		    )
+		);
+
+		return nodes;
+	}
 
 	public static void addDebugLabel( List<AbstractInsnNode> nodes, String label ) {
 		if ( !ASMBoxpiler.DEBUG ) {

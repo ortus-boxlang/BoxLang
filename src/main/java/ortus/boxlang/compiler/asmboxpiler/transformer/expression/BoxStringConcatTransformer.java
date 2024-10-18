@@ -44,6 +44,7 @@ public class BoxStringConcatTransformer extends AbstractTransformer {
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnContext ) throws IllegalStateException {
 		BoxStringConcat interpolation = ( BoxStringConcat ) node;
 		if ( interpolation.getValues().size() == 1 ) {
+			// TODO should this invoke StringCaster?
 			return transpiler.transform( interpolation.getValues().get( 0 ), TransformerContext.NONE, returnContext );
 		} else {
 			List<AbstractInsnNode> nodes = new ArrayList<>();

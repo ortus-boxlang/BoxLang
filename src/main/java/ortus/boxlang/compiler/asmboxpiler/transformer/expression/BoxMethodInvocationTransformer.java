@@ -57,27 +57,7 @@ public class BoxMethodInvocationTransformer extends AbstractTransformer {
 			name = transpiler.createKey( invocation.getName() );
 		}
 
-		nodes.addAll( AsmHelper.callReferencerGetAndInvoke( transpiler, invocation.getArguments(), name, context, false ) );
-
-		// nodes
-		// .addAll( AsmHelper.array( Type.getType( Object.class ), invocation.getArguments(),
-		// ( argument, i ) -> transpiler.transform( argument, context, ReturnValueContext.VALUE ) ) );
-
-		// nodes.add( new FieldInsnNode( Opcodes.GETSTATIC,
-		// Type.getInternalName( Boolean.class ),
-		// safe.toString().toUpperCase(),
-		// Type.getDescriptor( Boolean.class ) ) );
-
-		// nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
-		// Type.getInternalName( Referencer.class ),
-		// "getAndInvoke",
-		// Type.getMethodDescriptor( Type.getType( Object.class ),
-		// Type.getType( IBoxContext.class ),
-		// Type.getType( Object.class ),
-		// Type.getType( Key.class ),
-		// Type.getType( Object[].class ),
-		// Type.getType( Boolean.class ) ),
-		// false ) );
+		nodes.addAll( AsmHelper.callReferencerGetAndInvoke( transpiler, invocation.getArguments(), name, context, safe ) );
 
 		if ( returnContext.empty ) {
 			nodes.add( new InsnNode( Opcodes.POP ) );

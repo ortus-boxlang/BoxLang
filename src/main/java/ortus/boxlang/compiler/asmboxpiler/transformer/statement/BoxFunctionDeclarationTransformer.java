@@ -21,6 +21,7 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 
@@ -32,6 +33,7 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.statement.BoxAccessModifier;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
+import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
 import ortus.boxlang.compiler.ast.statement.BoxReturnType;
 import ortus.boxlang.compiler.ast.statement.BoxType;
 import ortus.boxlang.compiler.parser.BoxSourceType;
@@ -77,6 +79,14 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		AsmHelper.init( classNode, true, type, Type.getType( UDF.class ), methodVisitor -> {
 		} );
 		transpiler.setAuxiliary( type.getClassName(), classNode );
+
+		AsmHelper.addStaticFieldGetter( classNode,
+		    type,
+		    "modifiers",
+		    "getModifiers",
+		    Type.getType( List.class ),
+		    null
+		);
 
 		AsmHelper.addStaticFieldGetter( classNode,
 		    type,
@@ -186,6 +196,31 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 			    type.getInternalName(),
 			    "documentation",
 			    Type.getDescriptor( IStruct.class ) );
+
+			AsmHelper.array(
+			    Type.getType( BoxMethodDeclarationModifier.class ),
+			    function.getModifiers(),
+			    ( bmdm, i ) -> List.of(
+			        new FieldInsnNode(
+			            Opcodes.GETSTATIC,
+			            Type.getInternalName( BoxMethodDeclarationModifier.class ),
+			            bmdm.toString().toUpperCase(),
+			            Type.getDescriptor( BoxMethodDeclarationModifier.class )
+			        )
+			    )
+			).stream()
+			    .forEach( modifierNode -> modifierNode.accept( methodVisitor ) );
+
+			methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
+			    Type.getInternalName( List.class ),
+			    "of",
+			    Type.getMethodDescriptor( Type.getType( List.class ), Type.getType( Object[].class ) ),
+			    true );
+
+			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
+			    type.getInternalName(),
+			    "modifiers",
+			    Type.getDescriptor( List.class ) );
 		} );
 
 		List<AbstractInsnNode> nodes = new ArrayList<AbstractInsnNode>();

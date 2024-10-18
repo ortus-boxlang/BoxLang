@@ -68,9 +68,10 @@ public class BoxForInTransformer extends AbstractTransformer {
 
 		LabelNode				loopStart	= new LabelNode();
 		LabelNode				loopEnd		= new LabelNode();
+		LabelNode				breakTarget	= new LabelNode();
 
 		tracker.setContinue( forIn, loopStart );
-		tracker.setBreak( forIn, loopEnd );
+		tracker.setBreak( forIn, breakTarget );
 		if ( forIn.getLabel() != null ) {
 			tracker.setStringLabel( forIn.getLabel(), forIn );
 		}
@@ -165,6 +166,13 @@ public class BoxForInTransformer extends AbstractTransformer {
 		nodes.addAll( transpiler.transform( forIn.getBody(), context, returnValueContext ) );
 
 		nodes.add( new JumpInsnNode( Opcodes.GOTO, loopStart ) );
+
+		nodes.add( breakTarget );
+		// every iteration we will swap the values and pop in order to remove the older value
+		if ( returnValueContext == ReturnValueContext.VALUE_OR_NULL ) {
+			nodes.add( new InsnNode( Opcodes.SWAP ) );
+			nodes.add( new InsnNode( Opcodes.POP ) );
+		}
 		// increment query loop
 		nodes.add( loopEnd );
 

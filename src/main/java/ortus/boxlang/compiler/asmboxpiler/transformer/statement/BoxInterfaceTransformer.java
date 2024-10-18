@@ -14,19 +14,29 @@
  */
 package ortus.boxlang.compiler.asmboxpiler.transformer.statement;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
+
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxInterface;
+import ortus.boxlang.compiler.ast.BoxStaticInitializer;
 import ortus.boxlang.compiler.ast.Source;
 import ortus.boxlang.compiler.ast.SourceFile;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
@@ -41,22 +51,17 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.StaticScope;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
-
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class BoxInterfaceTransformer {
 
 	public static ClassNode transpile( Transpiler transpiler, BoxInterface boxInterface ) throws BoxRuntimeException {
 
-		Source	source				= boxInterface.getPosition().getSource();
-		String	packageName			= transpiler.getProperty( "packageName" );
-		String	boxPackageName		= transpiler.getProperty( "boxPackageName" );
+		Source	source			= boxInterface.getPosition().getSource();
+		String	packageName		= transpiler.getProperty( "packageName" );
+		String	boxPackageName	= transpiler.getProperty( "boxFQN" );
+		transpiler.setProperty( "boxClassName", boxPackageName );
 		String	classname			= transpiler.getProperty( "classname" );
 		String	mappingName			= transpiler.getProperty( "mappingName" );
 		String	mappingPath			= transpiler.getProperty( "mappingPath" );
@@ -234,7 +239,7 @@ public class BoxInterfaceTransformer {
 		    type.getInternalName(),
 		    "_supers",
 		    Type.getDescriptor( List.class ) );
-		addSuper.visitVarInsn( Opcodes.ALOAD, 0 );
+		addSuper.visitVarInsn( Opcodes.ALOAD, 1 );
 		addSuper.visitMethodInsn( Opcodes.INVOKEINTERFACE,
 		    Type.getInternalName( List.class ),
 		    "add",
@@ -344,14 +349,40 @@ public class BoxInterfaceTransformer {
 				        return 0;
 
 			        } )
-			        .flatMap( statement -> transpiler.transform( statement, TransformerContext.NONE, ReturnValueContext.EMPTY ).stream() )
+			        .flatMap( statement -> {
+
+				        if ( ! ( statement instanceof BoxFunctionDeclaration )
+				            && ! ( statement instanceof BoxImport )
+				            && ! ( statement instanceof BoxStaticInitializer ) ) {
+					        throw new ExpressionException(
+					            "Statement type not supported in an interface: " + statement.getClass().getSimpleName(),
+					            statement
+					        );
+				        }
+
+				        if ( statement instanceof BoxFunctionDeclaration bfd && bfd.getBody() == null ) {
+					        return new ArrayList<InsnNode>().stream();
+				        }
+
+				        return transpiler.transform( statement, TransformerContext.NONE, ReturnValueContext.EMPTY ).stream();
+			        } )
 			        .toList();
 		    }
 		);
 
 		AsmHelper.methodWithContextAndClassLocator( classNode, "staticInitializer", Type.getType( IBoxContext.class ), Type.VOID_TYPE, true, transpiler, false,
 		    () -> {
-			    List<AbstractInsnNode> staticNodes = ( List<AbstractInsnNode> ) transpiler.getBoxStaticInitializers()
+			    List<AbstractInsnNode> staticNodes = new ArrayList<AbstractInsnNode>();
+
+			    boxInterface.getDescendantsOfType( BoxFunctionDeclaration.class, ( expr ) -> {
+				    BoxFunctionDeclaration func = ( BoxFunctionDeclaration ) expr;
+
+				    return func.getModifiers().contains( BoxMethodDeclarationModifier.STATIC );
+			    } ).forEach( func -> {
+				    staticNodes.addAll( transpiler.transform( func, TransformerContext.NONE ) );
+			    } );
+
+			    staticNodes.addAll( transpiler.getBoxStaticInitializers()
 			        .stream()
 			        .map( ( staticInitializer ) -> {
 				        if ( staticInitializer == null || staticInitializer.getBody().size() == 0 ) {
@@ -365,15 +396,8 @@ public class BoxInterfaceTransformer {
 				            .collect( Collectors.toList() );
 			        } )
 			        .flatMap( s -> s.stream() )
-			        .collect( Collectors.toList() );
-
-			    boxInterface.getDescendantsOfType( BoxFunctionDeclaration.class, ( expr ) -> {
-				    BoxFunctionDeclaration func = ( BoxFunctionDeclaration ) expr;
-
-				    return func.getModifiers().contains( BoxMethodDeclarationModifier.STATIC );
-			    } ).forEach( func -> {
-				    staticNodes.addAll( transpiler.transform( func, TransformerContext.NONE ) );
-			    } );
+			        .collect( Collectors.toList() )
+			    );
 
 			    return staticNodes;
 		    }
@@ -395,9 +419,11 @@ public class BoxInterfaceTransformer {
 			    "sourceType",
 			    Type.getDescriptor( BoxSourceType.class ) );
 
-			List<AbstractInsnNode>	annotations		= transpiler.transformAnnotations( boxInterface.getAnnotations() );
+			List<AbstractInsnNode>	annotations		= transpiler.transformAnnotations( boxInterface.getAllAnnotations() );
 			List<AbstractInsnNode>	documenation	= transpiler.transformDocumentation( boxInterface.getDocumentation() );
 			List<AbstractInsnNode>	name			= transpiler.createKey( boxInterfacename );
+
+			List<AbstractInsnNode>	abstractMethods	= AsmHelper.generateMapOfAbstractMethodNames( transpiler, boxInterface );
 
 			methodVisitor.visitLdcInsn( transpiler.getKeys().size() );
 			methodVisitor.visitTypeInsn( Opcodes.ANEWARRAY, Type.getInternalName( Key.class ) );
@@ -475,6 +501,8 @@ public class BoxInterfaceTransformer {
 			    false );
 			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC, type.getInternalName(), "_supers", Type.getDescriptor( List.class ) );
 
+			abstractMethods.forEach( node -> node.accept( methodVisitor ) );
+			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC, type.getInternalName(), "abstractMethods", Type.getDescriptor( Map.class ) );
 		} );
 
 		return classNode;

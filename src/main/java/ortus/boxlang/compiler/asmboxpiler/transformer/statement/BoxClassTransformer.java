@@ -35,12 +35,8 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.FieldInsnNode;
-import org.objectweb.asm.tree.InsnNode;
-import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
-import org.objectweb.asm.tree.TypeInsnNode;
 import org.objectweb.asm.tree.VarInsnNode;
 
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
@@ -73,18 +69,13 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.StaticScope;
 import ortus.boxlang.runtime.scopes.ThisScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
-import ortus.boxlang.runtime.types.AbstractFunction;
-import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
-import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.IType;
-import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.util.BLCollector;
 import ortus.boxlang.runtime.types.util.ListUtil;
-import ortus.boxlang.runtime.types.util.MapHelper;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 public class BoxClassTransformer {
@@ -100,15 +91,7 @@ public class BoxClassTransformer {
 
 		String	filePath		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath()
 		    : "unknown";
-		String	fileName		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getName() : "unknown";
-		String	boxPackageName	= transpiler.getProperty( "boxPackageName" );
-		String	rawBoxClassName	= boxPackageName + "." + fileName.replace( ".bx", "" ).replace( ".cfc", "" ), boxClassName;
-		// trim leading . if exists
-		if ( rawBoxClassName.startsWith( "." ) ) {
-			boxClassName = rawBoxClassName.substring( 1 );
-		} else {
-			boxClassName = rawBoxClassName;
-		}
+		String	boxClassName	= transpiler.getProperty( "boxFQN" );
 		transpiler.setProperty( "boxClassName", boxClassName );
 		String	mappingName		= transpiler.getProperty( "mappingName" );
 		String	mappingPath		= transpiler.getProperty( "mappingPath" );
@@ -641,39 +624,11 @@ public class BoxClassTransformer {
 			generateSetOfCompileTimeMethodNames( transpiler, boxClass ).forEach( node -> node.accept( methodVisitor ) );
 			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC, type.getInternalName(), "compileTimeMethodNames", Type.getDescriptor( Set.class ) );
 
-			generateMapOfAbstractMethodNames( transpiler, boxClass ).forEach( node -> node.accept( methodVisitor ) );
+			AsmHelper.generateMapOfAbstractMethodNames( transpiler, boxClass ).forEach( node -> node.accept( methodVisitor ) );
 			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC, type.getInternalName(), "abstractMethods", Type.getDescriptor( Map.class ) );
 		} );
 
 		return classNode;
-	}
-
-	private static List<AbstractInsnNode> generateMapOfAbstractMethodNames( Transpiler transpiler, BoxClass boxClass ) {
-		List<List<AbstractInsnNode>>	methodKeyLists	= boxClass.getDescendantsOfType( BoxFunctionDeclaration.class )
-		    .stream()
-		    .filter( func -> func.getBody() == null )
-		    .map( func -> {
-															    List<List<AbstractInsnNode>> absFunc = List.of(
-															        transpiler.createKey( func.getName() ),
-															        createAbstractFunction( transpiler, func )
-															    );
-
-															    return absFunc;
-														    } )
-		    .flatMap( x -> x.stream() )
-		    .collect( java.util.stream.Collectors.toList() );
-
-		List<AbstractInsnNode>			nodes			= new ArrayList<AbstractInsnNode>();
-
-		nodes.addAll( AsmHelper.array( Type.getType( Object.class ), methodKeyLists ) );
-
-		nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
-		    Type.getInternalName( MapHelper.class ),
-		    "LinkedHashMapOfAny",
-		    Type.getMethodDescriptor( Type.getType( Map.class ), Type.getType( Object[].class ) ),
-		    false ) );
-
-		return nodes;
 	}
 
 	private static List<AbstractInsnNode> generateSetOfCompileTimeMethodNames( Transpiler transpiler, BoxClass boxClass ) {
@@ -698,103 +653,6 @@ public class BoxClassTransformer {
 
 		return nodes;
 
-	}
-
-	private static List<AbstractInsnNode> createAbstractFunction( Transpiler transpiler, BoxFunctionDeclaration func ) {
-		List<AbstractInsnNode> nodes = new ArrayList<AbstractInsnNode>();
-
-		// public AbstractFunction( Key name, Argument[] arguments, String returnType, Access access, IStruct annotations, IStruct documentation,
-		// String sourceObjectName, String sourceObjectType ) {
-		// this.name = name;
-		// this.arguments = arguments;
-		// this.returnType = returnType;
-		// this.access = access;
-		// this.annotations = annotations;
-		// this.documentation = documentation;
-		// this.sourceObjectName = sourceObjectName;
-		// this.sourceObjectType = sourceObjectType;
-		// }
-
-		nodes.add( new TypeInsnNode( Opcodes.NEW, Type.getInternalName( AbstractFunction.class ) ) );
-		nodes.add( new InsnNode( Opcodes.DUP ) );
-
-		// args
-		// Key name
-		nodes.addAll( transpiler.createKey( func.getName() ) );
-		// Argument[] arguments
-		List<List<AbstractInsnNode>> argList = func.getArgs()
-		    .stream()
-		    .map( arg -> transpiler.transform( arg, TransformerContext.NONE ) )
-		    .toList();
-		nodes.addAll( AsmHelper.array( Type.getType( Argument.class ), argList ) );
-		// String returnType
-		if ( func.getType() != null ) {
-			nodes.addAll( transpiler.transform( func.getType(), TransformerContext.NONE ) );
-		} else {
-			nodes.add( new LdcInsnNode( "any" ) );
-		}
-
-		String accessModifier = "PUBLIC";
-
-		if ( func.getAccessModifier() != null ) {
-			accessModifier = func.getAccessModifier().name().toUpperCase();
-		}
-		// Access access
-		nodes.add(
-		    new FieldInsnNode(
-		        Opcodes.GETSTATIC,
-		        Type.getInternalName( Function.Access.class ),
-		        accessModifier,
-		        Type.getDescriptor( Function.Access.class )
-		    )
-		);
-		// IStruct annotations
-		// TODO
-		nodes.add( new FieldInsnNode( Opcodes.GETSTATIC,
-		    Type.getInternalName( Struct.class ),
-		    "EMPTY",
-		    Type.getDescriptor( IStruct.class ) ) );
-		// IStruct documentation
-		// TODO
-		nodes.add( new FieldInsnNode( Opcodes.GETSTATIC,
-		    Type.getInternalName( Struct.class ),
-		    "EMPTY",
-		    Type.getDescriptor( IStruct.class ) ) );
-		// String sourceObjectName
-		nodes.add( new LdcInsnNode( transpiler.getProperty( "boxClassName" ) ) );
-		// String sourceObjectType
-		nodes.add( new LdcInsnNode( "class" ) );
-
-		nodes.add(
-		    new MethodInsnNode(
-		        Opcodes.INVOKESPECIAL,
-		        Type.getInternalName( AbstractFunction.class ),
-		        "<init>",
-		        Type.getMethodDescriptor(
-		            Type.VOID_TYPE,
-		            Type.getType( Key.class ),
-		            Type.getType( Argument[].class ),
-		            Type.getType( String.class ),
-		            Type.getType( Function.Access.class ),
-		            Type.getType( IStruct.class ),
-		            Type.getType( IStruct.class ),
-		            Type.getType( String.class ),
-		            Type.getType( String.class )
-		        ),
-		        false
-		    )
-		);
-
-		// Key name
-		// Argument[] arguments
-		// String returnType
-		// Access access
-		// IStruct annotations
-		// IStruct documentation
-		// String sourceObjectName
-		// String sourceObjectType
-
-		return nodes;
 	}
 
 	private static void defineLookupPrivateMethod( Transpiler transpiler, ClassNode classNode, Type thisType ) {

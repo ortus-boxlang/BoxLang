@@ -260,11 +260,10 @@ public abstract class Transpiler implements ITranspiler {
 					value = transform( thisValue, TransformerContext.NONE, ReturnValueContext.VALUE );
 				}
 				// gonna try commenting this out
-				// else if ( onlyLiteralValues ) {
-				// // Runtime expressions we just put this place holder text in for
-				// value = List.of( new LdcInsnNode( "<Runtime Expression>" ) );
-				// }
-				else {
+				else if ( onlyLiteralValues ) {
+					// Runtime expressions we just put this place holder text in for
+					value = List.of( new LdcInsnNode( "<Runtime Expression>" ) );
+				} else {
 					value = transform( thisValue, TransformerContext.NONE, ReturnValueContext.VALUE );
 				}
 			} else if ( defaultTrue ) {
