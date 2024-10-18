@@ -25,7 +25,6 @@ import ortus.boxlang.runtime.util.ResolvedFilePath;
 public class ASMBoxpiler extends Boxpiler {
 
 	public static final boolean	DEBUG	= Boolean.getBoolean( "asmboxpiler.debug" );
-	// public static final boolean DEBUG = true;
 
 	/**
 	 * --------------------------------------------------------------------------
