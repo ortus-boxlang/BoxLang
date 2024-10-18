@@ -75,23 +75,13 @@ public class LongCaster implements IBoxCaster {
 			return Long.valueOf( bool ? 1 : 0 );
 		}
 
-		// TODO: Find a way to check if the string can be cast without throwing an exception here
-		try {
-			String value = StringCaster.cast( object, fail );
-			if ( value == null ) {
-				if ( fail ) {
-					throw new BoxCastException( "Can't cast null to a long." );
-				} else {
-					return null;
-				}
-			}
-			return Long.valueOf( value );
-		} catch ( NumberFormatException e ) {
-			if ( fail ) {
-				throw e;
-			} else {
-				return null;
-			}
+		CastAttempt<Number> number = NumberCaster.attempt( object );
+		if ( number.wasSuccessful() ) {
+			return number.get().longValue();
+		} else if ( fail ) {
+			throw new BoxCastException( "Can't cast " + object.getClass().getName() + " to a long." );
+		} else {
+			return null;
 		}
 
 	}

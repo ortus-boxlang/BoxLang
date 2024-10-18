@@ -649,6 +649,23 @@ public class ClassLocator extends ClassLoader {
 		Boolean isFromModule() {
 			return module != null;
 		}
+
+		/**
+		 * Show the state of this record as a string
+		 */
+		@Override
+		public String toString() {
+			return String.format(
+			    "ClassLocation [name=%s, path=%s, packageName=%s, type=%s, clazz=%s, module=%s, cachable=%s]",
+			    name,
+			    path,
+			    packageName,
+			    type,
+			    clazz,
+			    module,
+			    cachable
+			);
+		}
 	}
 
 }

@@ -25,6 +25,7 @@ import org.objectweb.asm.tree.JumpInsnNode;
 import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 
+import ortus.boxlang.compiler.asmboxpiler.MethodContextTracker;
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
@@ -48,14 +49,13 @@ public class BoxWhileTransformer extends AbstractTransformer {
 		    breakTarget = new LabelNode();
 		List<AbstractInsnNode>	nodes		= new ArrayList<>();
 
-		// if ( boxWhile.getLabel() != null ) {
+		MethodContextTracker	tracker		= transpiler.getCurrentMethodContextTracker().get();
+		tracker.setBreak( boxWhile, breakTarget );
+		tracker.setContinue( boxWhile, start );
 
-		// }
-		transpiler.setCurrentBreak( boxWhile.getLabel(), breakTarget );
-		transpiler.setCurrentBreak( "", breakTarget );
-
-		transpiler.setCurrentContinue( null, start );
-		transpiler.setCurrentContinue( boxWhile.getLabel(), start );
+		if ( boxWhile.getLabel() != null ) {
+			tracker.setStringLabel( boxWhile.getLabel(), boxWhile );
+		}
 
 		// push two nulls onto the stack in order to initialize our strategy for keeping the stack height consistent
 		// this is to allow the statement to return an expression in the case of a BoxScript execution

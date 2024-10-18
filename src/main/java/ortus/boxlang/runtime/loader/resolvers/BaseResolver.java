@@ -63,7 +63,7 @@ public class BaseResolver implements IClassResolver {
 	/**
 	 * The import cache
 	 */
-	private Set<String>		importCache	= ConcurrentHashMap.newKeySet();
+	protected Set<String>	importCache	= ConcurrentHashMap.newKeySet();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -210,13 +210,15 @@ public class BaseResolver implements IClassResolver {
 	public String expandFromImport( IBoxContext context, String className, List<ImportDefinition> imports ) {
 		var fullyQualifiedName = imports.stream()
 		    // Discover import by matching the resolver prefix and the class name or alias or multi-import
-		    .filter( thisImport -> importApplies( thisImport ) && importHas( thisImport, className ) )
+		    // This runs from concrete resolvers: bx, java, etc.
+		    // So if the resolver prefix matches, we continue, else we skip it.
+		    .filter( thisImport -> importApplies( thisImport ) && importHas( context, thisImport, className ) )
 		    // Return the first one, the first one wins
 		    .findFirst()
 		    // Convert the import to a fully qualified class name
 		    .map( targetImport -> {
 			    String fqn = targetImport.getFullyQualifiedClass( className );
-			    importCache.add( className + ":" + fqn );
+			    this.importCache.add( className + ":" + fqn );
 			    return fqn;
 		    } )
 		    // Nothing found, return the original class name
@@ -231,35 +233,38 @@ public class BaseResolver implements IClassResolver {
 
 	/**
 	 * Checks if the import has the given class. This method is used for single imports only
+	 * Ex: {@code import java.util.ArrayList;}
 	 *
+	 * @param context    The current context of execution
 	 * @param thisImport The import to check
 	 * @param className  The class name to check
 	 *
 	 * @return True if the import has the class name, false otherwise
 	 */
-	protected boolean importHas( ImportDefinition thisImport, String className ) {
+	protected boolean importHas( IBoxContext context, ImportDefinition thisImport, String className ) {
 		String cacheKey = className + ":" + thisImport.getFullyQualifiedClass( className );
 
 		// Verify cache
-		if ( importCache.contains( cacheKey ) ) {
+		if ( this.importCache.contains( cacheKey ) ) {
 			return true;
 		}
 
 		// Not a multi-import, check if the class name matches the alias
 		return thisImport.isMultiImport()
-		    ? importHasMulti( thisImport, className )
+		    ? importHasMulti( context, thisImport, className )
 		    : thisImport.alias().equalsIgnoreCase( className );
 	}
 
 	/**
 	 * Checks if the import has the given class name as a multi-import
 	 *
+	 * @param context    The current context of execution
 	 * @param thisImport The import to check
 	 * @param className  The class name to check
 	 *
 	 * @return True if the import has the class name, false otherwise
 	 */
-	protected boolean importHasMulti( ImportDefinition thisImport, String className ) {
+	protected boolean importHasMulti( IBoxContext context, ImportDefinition thisImport, String className ) {
 		try {
 			return ClassDiscovery
 			    .getClassFilesAsStream( thisImport.getPackageName(), false )

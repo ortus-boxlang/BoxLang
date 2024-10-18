@@ -228,8 +228,8 @@ public class JavaCastTest {
 		    result = javaCast('int[]', [1,2,3]);
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isInstanceOf( new Integer[] {}.getClass() );
-		Integer[] castedArr = ( Integer[] ) variables.get( result );
+		assertThat( variables.get( result ) ).isInstanceOf( new int[] {}.getClass() );
+		int[] castedArr = ( int[] ) variables.get( result );
 		assertThat( castedArr[ 0 ] ).isEqualTo( 1 );
 		assertThat( castedArr[ 1 ] ).isEqualTo( 2 );
 		assertThat( castedArr[ 2 ] ).isEqualTo( 3 );

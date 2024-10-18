@@ -70,6 +70,7 @@ public class ClassDiscovery {
 	 *
 	 * @throws IOException If the classpath cannot be read
 	 */
+	@SuppressWarnings( "unchecked" )
 	public static Stream<String> getClassFilesAsStream( String packageName, Boolean recursive ) throws IOException {
 		ClassLoader			classLoader	= BoxRuntime.getInstance().getClass().getClassLoader();
 		String				path		= packageName.replace( '.', '/' );
@@ -77,9 +78,16 @@ public class ClassDiscovery {
 
 		return Collections.list( resources )
 		    .stream()
-		    .map( URL::getFile )
-		    .map( File::new )
-		    .flatMap( directory -> Stream.of( findClassNames( directory, packageName, recursive ) ) );
+		    .flatMap( url -> {
+			    // We do different things based on the protocol
+			    if ( url.getProtocol().equals( JAR_FILE_EXTENSION ) ) {
+				    List<Class<?>> classesFound = findClassesInJar( url, path, classLoader, new Class[ 0 ] );
+				    return classesFound.stream().map( clazz -> clazz.getName() );
+			    } else {
+				    File directory = new File( url.getFile() );
+				    return Stream.of( findClassNames( directory, packageName, recursive ) );
+			    }
+		    } );
 	}
 
 	/**
@@ -273,7 +281,13 @@ public class ClassDiscovery {
 	 * @throws ClassNotFoundException
 	 */
 	public static String[] findClassNames( File directory, String packageName, Boolean recursive ) {
-		return Arrays.stream( directory.listFiles() )
+		// Do we have anything?
+		File[] aClassNames = directory.listFiles();
+		if ( aClassNames == null ) {
+			return new String[ 0 ];
+		}
+
+		return Arrays.stream( aClassNames )
 		    .parallel()
 		    .flatMap( file -> {
 			    if ( file.isDirectory() ) {

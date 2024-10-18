@@ -17,7 +17,9 @@
  */
 package ortus.boxlang.runtime.config.segments;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -25,8 +27,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.io.Files;
+
 import ortus.boxlang.runtime.config.util.PropertyHelper;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 
@@ -40,19 +45,25 @@ public class SecurityConfig implements IConfigSegment {
 	 * These are a list of regular expressions that are used to match against the import statements in the code
 	 * Ex: "disallowedImports": ["java\\.lang\\.(ProcessBuilder|Reflect", "java\\.io\\.(File|FileWriter)"]
 	 */
-	public Set<String>			disallowedImports		= new HashSet<>();
+	public Set<String>			disallowedImports					= new HashSet<>();
 
 	/**
 	 * Disallowed BIFs in the runtime
 	 * Ex: "disallowedBifs": ["createObject", "systemExecute"]
 	 */
-	public Set<String>			disallowedBIFs			= new HashSet<>();
+	public Set<String>			disallowedBIFs						= new HashSet<>();
 
 	/**
 	 * Disallowed Components in the runtime
 	 * Ex: "disallowedComponents": [ "execute", "http" ]
 	 */
-	public Set<String>			disallowedComponents	= new HashSet<>();
+	public Set<String>			disallowedComponents				= new HashSet<>();
+
+	/**
+	 * File extensions which are disallowed for file operations. The allowed array overrides any items in the disallow list.
+	 */
+	public List<String>			allowedFileOperationExtensions		= new ArrayList<>();
+	public List<String>			disallowedFileOperationExtensions	= new ArrayList<>();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -63,14 +74,14 @@ public class SecurityConfig implements IConfigSegment {
 	/**
 	 * Logger
 	 */
-	private static final Logger	logger					= LoggerFactory.getLogger( SecurityConfig.class );
+	private static final Logger	logger								= LoggerFactory.getLogger( SecurityConfig.class );
 
 	/**
 	 * Maps of allowed BIFs so lookups get faster as we go
 	 */
-	public Map<String, Boolean>	allowedBIFsLookup		= new ConcurrentHashMap<>();
-	public Map<String, Boolean>	allowedComponentsLookup	= new ConcurrentHashMap<>();
-	public Map<String, Boolean>	allowedImportsLookup	= new ConcurrentHashMap<>();
+	public Map<String, Boolean>	allowedBIFsLookup					= new ConcurrentHashMap<>();
+	public Map<String, Boolean>	allowedComponentsLookup				= new ConcurrentHashMap<>();
+	public Map<String, Boolean>	allowedImportsLookup				= new ConcurrentHashMap<>();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -147,6 +158,33 @@ public class SecurityConfig implements IConfigSegment {
 	}
 
 	/**
+	 * Determines whether a file operation is allowed or not based on the file extension.
+	 * 
+	 * @param file
+	 * 
+	 * @return
+	 */
+	public boolean isFileOperationAllowed( String file ) {
+		String fileExtension = Files.getFileExtension( file );
+		return this.isExtensionAllowed( fileExtension );
+	}
+
+	/**
+	 * Determines whether a file extension is allowed or not.
+	 * 
+	 * @param extension
+	 * 
+	 * @return
+	 */
+	public boolean isExtensionAllowed( String extension ) {
+		if ( this.allowedFileOperationExtensions.contains( extension ) ) {
+			return true;
+		} else {
+			return !this.disallowedFileOperationExtensions.contains( extension );
+		}
+	}
+
+	/**
 	 * Processes the configuration struct. Each segment is processed individually from the initial configuration struct.
 	 *
 	 * @param config the configuration struct
@@ -158,6 +196,8 @@ public class SecurityConfig implements IConfigSegment {
 		PropertyHelper.processListToSet( config, Key.disallowedImports, this.disallowedImports );
 		PropertyHelper.processListToSet( config, Key.disallowedBIFs, this.disallowedBIFs );
 		PropertyHelper.processListToSet( config, Key.disallowedComponents, this.disallowedComponents );
+		PropertyHelper.processStringOrArrayToList( config, Key.allowedFileOperationExtensions, this.allowedFileOperationExtensions );
+		PropertyHelper.processStringOrArrayToList( config, Key.disallowedFileOperationExtensions, this.disallowedFileOperationExtensions );
 		return this;
 	}
 
@@ -167,9 +207,11 @@ public class SecurityConfig implements IConfigSegment {
 	@Override
 	public IStruct asStruct() {
 		return Struct.of(
+		    Key.allowedFileOperationExtensions, Array.fromList( this.allowedFileOperationExtensions ),
 		    Key.disallowedImports, this.disallowedImports,
 		    Key.disallowedBIFs, this.disallowedBIFs,
-		    Key.disallowedComponents, this.disallowedComponents
+		    Key.disallowedComponents, this.disallowedComponents,
+		    Key.disallowedFileOperationExtensions, Array.fromList( this.disallowedFileOperationExtensions )
 		);
 	}
 

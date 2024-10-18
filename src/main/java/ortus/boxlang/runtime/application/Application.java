@@ -37,7 +37,6 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
-import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.LongCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
@@ -121,17 +120,14 @@ public class Application {
 	    // Key.TOD, 2147483647 is the largest integer allowed by Java but the ConcurrentStore will allocate 2147483647/4 as the initial size of the Concurent
 	    // map and will result in OOM errors
 	    Key.maxObjects, 100000,
-	    // Minutes
 	    Key.defaultLastAccessTimeout, 3600,
-	    // Minutes
 	    Key.defaultTimeout, 3600,
 	    Key.objectStore, "ConcurrentStore",
-	    // Seconds
 	    Key.reapFrequency, 120,
 	    Key.resetTimeoutOnAccess, true,
-	    Key.useLastAccessTimeouts, true
+	    Key.useLastAccessTimeouts, false
 	);
-	private static final Key				DEFAULT_SESSION_CACHEKEY		= Key.boxlangSessions;
+	private static final Key				DEFAULT_SESSION_CACHEKEY		= Key.bxSessions;
 
 	/**
 	 * An application can have a collection of class loaders that it can track and manage.
@@ -248,7 +244,9 @@ public class Application {
 	/**
 	 * Start the application if not already started
 	 *
-	 * @param context The context
+	 * @param context The context starting up the application
+	 *
+	 * @return The started application
 	 */
 	public Application start( IBoxContext context ) {
 		// Apps started, just return
@@ -301,31 +299,30 @@ public class Application {
 	 * @throws BoxRuntimeException If the session storage cache is not a string
 	 */
 	private void startupSessionStorage( ApplicationBoxContext appContext ) {
-		IStruct				settings			= this.startingListener.getSettings();
-		CastAttempt<String>	directiveAttempt	= StringCaster.attempt( settings.get( Key.sessionStorage ) );
-		String				sessionStorage		= SESSION_STORAGE_MEMORY;
+		// @formatter:off
+		IStruct	settings = this.startingListener.getSettings();
+		String	sessionStorageName = StringCaster
+		    .attempt( settings.get( Key.sessionStorage ) )
+			// If not a string, advice the user
+		    .ifEmpty( () -> {
+				throw new BoxRuntimeException( "Session storage directive must be a string that matches a registered cache" );
+			} )
+			// If present, make sure it has a value or default it
+			.map( ( String setting ) -> setting.trim().isEmpty() ? SESSION_STORAGE_MEMORY : setting.trim() )
+			// Return the right value or the default name
+		    .getOrDefault( SESSION_STORAGE_MEMORY );
+		// @formatter:on
 
-		// Let's be nice and tell them what they put is not good if not a string.
-		if ( directiveAttempt.ifFailed() ) {
-			throw new BoxRuntimeException( "Session storage directive must be a string that matches a registered cache" );
-		} else {
-			sessionStorage = directiveAttempt.get().trim();
-		}
-
-		// If empty, default it
-		if ( sessionStorage.isEmpty() ) {
-			sessionStorage = SESSION_STORAGE_MEMORY;
-		}
-
-		// Get the cache name according to the storage directive or default to memory
-		Key sessionCacheName = sessionStorage.equals( SESSION_STORAGE_MEMORY )
+		// Now we can get the right cache name to use
+		Key		sessionCacheName	= sessionStorageName.equals( SESSION_STORAGE_MEMORY )
 		    ? DEFAULT_SESSION_CACHEKEY
-		    : Key.of( sessionStorage );
+		    : Key.of( sessionStorageName );
 
 		// Create the memory cache if not already created
+		// This is a stop-gap, it should really never run. But if it does log it so we can fix it
 		if ( sessionCacheName.equals( DEFAULT_SESSION_CACHEKEY ) && !cacheService.hasCache( DEFAULT_SESSION_CACHEKEY ) ) {
 
-			logger.debug( "Creating default session memory cache as it doesn't exist" );
+			logger.warn( "Creating default session memory cache  as it doesn't exist" );
 
 			cacheService.createCache(
 			    DEFAULT_SESSION_CACHEKEY,

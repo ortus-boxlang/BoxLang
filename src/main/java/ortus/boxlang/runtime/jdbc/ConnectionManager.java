@@ -454,7 +454,7 @@ public class ConnectionManager {
 	 * @return The datasource object
 	 */
 	public DataSource register( DataSource target ) {
-		this.datasources.put( target.getUniqueName(), target );
+		this.datasources.put( target.getConfiguration().name, target );
 		return target;
 	}
 

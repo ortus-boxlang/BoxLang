@@ -24,19 +24,18 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.logging.ConsoleHandler;
 
 import org.apache.commons.lang3.ClassUtils;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.loader.ClassLocator;
@@ -45,26 +44,20 @@ import ortus.boxlang.runtime.loader.DynamicClassLoader;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.types.IStruct;
 
-public class JavaResolverTest {
+public class JavaResolverTest extends AbstractResolverTest {
 
-	static BoxRuntime	runtime;
-	static JavaResolver	javaResolver;
-	static IBoxContext	context;
+	public static JavaResolver javaResolver;
 
 	@BeforeAll
-	public static void setUp() {
-		runtime			= BoxRuntime.getInstance( true );
-		javaResolver	= runtime.getClassLocator().getJavaResolver();
+	public static void beforeAll() {
+		javaResolver = runtime.getClassLocator().getJavaResolver();
 	}
 
 	@BeforeEach
-	public void setup() {
-		context = new ScriptingRequestBoxContext( runtime.getRuntimeContext() );
-	}
-
-	@AfterAll
-	public static void teardown() {
-
+	@Override
+	public void beforeEach() {
+		super.beforeEach();
+		javaResolver.clearJdkImportCache();
 	}
 
 	@DisplayName( "It can find be created" )
@@ -132,37 +125,111 @@ public class JavaResolverTest {
 
 	@DisplayName( "It can resolve classes" )
 	@Test
-	public void testResolve() {
-		String					className		= "org.apache.commons.lang3.ClassUtils";
+	public void testResolveClasses() {
+		String					className		= "java.util.HashSet";
 		Optional<ClassLocation>	classLocation	= javaResolver.findFromSystem( className, new ArrayList<>(), context );
 
 		assertThat( classLocation.isPresent() ).isTrue();
-		assertThat( classLocation.get().clazz() ).isEqualTo( ClassUtils.class );
-		assertThat( classLocation.get().name() ).isEqualTo( "ClassUtils" );
-		assertThat( classLocation.get().packageName() ).isEqualTo( "org.apache.commons.lang3" );
+		assertThat( classLocation.get().clazz() ).isEqualTo( HashSet.class );
+		assertThat( classLocation.get().name() ).isEqualTo( "HashSet" );
+		assertThat( classLocation.get().packageName() ).isEqualTo( "java.util" );
 		assertThat( classLocation.get().type() ).isEqualTo( ClassLocator.TYPE_JAVA );
 		assertThat( classLocation.get().module() ).isNull();
 	}
 
+	@DisplayName( "It can resolve classes using aliases" )
+	@Test
+	public void testResolveWithAliases() {
+		String					className		= "MySet";
+		List<ImportDefinition>	imports			= Arrays.asList(
+		    ImportDefinition.parse( "java:java.util.HashSet as MySet" )
+		);
+		Optional<ClassLocation>	classLocation	= javaResolver.resolve( context, className, imports );
+
+		System.out.println( classLocation );
+
+		assertThat( classLocation.isPresent() ).isTrue();
+		assertThat( classLocation.get().clazz() ).isEqualTo( HashSet.class );
+		assertThat( classLocation.get().name() ).isEqualTo( "HashSet" );
+		assertThat( classLocation.get().packageName() ).isEqualTo( "java.util" );
+		assertThat( classLocation.get().type() ).isEqualTo( ClassLocator.TYPE_JAVA );
+	}
+
+	@DisplayName( "It can resolve a module class by resolution and not explicitly" )
+	@Test
+	public void testResolveModuleClass() {
+		loadTestModule();
+		String					className		= "com.ortussolutions.bifs.Hola";
+		List<ImportDefinition>	imports			= Arrays.asList(
+		    ImportDefinition.parse( "java:java.util.HashSet as MySet" )
+		);
+		Optional<ClassLocation>	classLocation	= javaResolver.resolve( context, className, imports );
+
+		assertThat( classLocation.isPresent() ).isTrue();
+		assertThat( classLocation.get().name() ).isEqualTo( "Hola" );
+		assertThat( classLocation.get().packageName() ).isEqualTo( "com.ortussolutions.bifs" );
+		assertThat( classLocation.get().type() ).isEqualTo( ClassLocator.TYPE_JAVA );
+		assertThat( classLocation.get().module() ).isEqualTo( "test" );
+	}
+
+	@DisplayName( "It can resolve a module class explicitly via an import" )
+	@Test
+	public void testResolveModuleClassExplicitly() {
+		loadTestModule();
+		String					className		= "Hola";
+		List<ImportDefinition>	imports			= Arrays.asList(
+		    ImportDefinition.parse( "java:com.ortussolutions.bifs.Hola@test" )
+		);
+		Optional<ClassLocation>	classLocation	= javaResolver.resolve( context, className, imports );
+
+		// System.out.println( classLocation );
+		assertThat( classLocation.isPresent() ).isTrue();
+		assertThat( classLocation.get().name() ).isEqualTo( "Hola" );
+		assertThat( classLocation.get().packageName() ).isEqualTo( "com.ortussolutions.bifs" );
+		assertThat( classLocation.get().type() ).isEqualTo( ClassLocator.TYPE_JAVA );
+		assertThat( classLocation.get().module() ).isEqualTo( "test" );
+	}
+
 	@DisplayName( "It can resolve wildcard imports from the JDK itself" )
 	@Test
-	void testItCanResolveWildcardImports() throws Exception {
+	void testItCanResolveWildcardImports() {
 		List<ImportDefinition> imports = Arrays.asList(
 		    ImportDefinition.parse( "java:java.lang.*" ),
 		    ImportDefinition.parse( "java:java.util.*" )
 		);
 
-		javaResolver.clearJdkImportCache();
 		assertThat( javaResolver.getJdkImportCacheSize() ).isEqualTo( 0 );
 
-		String fqn = javaResolver.expandFromImport( new ScriptingRequestBoxContext(), "String", imports );
+		String fqn = javaResolver.expandFromImport( context, "String", imports );
 		assertThat( fqn ).isEqualTo( "java.lang.String" );
 
-		fqn = javaResolver.expandFromImport( new ScriptingRequestBoxContext(), "Integer", imports );
+		fqn = javaResolver.expandFromImport( context, "Integer", imports );
 		assertThat( fqn ).isEqualTo( "java.lang.Integer" );
 
-		fqn = javaResolver.expandFromImport( new ScriptingRequestBoxContext(), "List", imports );
+		fqn = javaResolver.expandFromImport( context, "List", imports );
 		assertThat( fqn ).isEqualTo( "java.util.List" );
+	}
+
+	@DisplayName( "It can resolve wildcard imports from NON JDK classes on disk path" )
+	@Test
+	void testItCanResolveWildcardImportsFromNonJDK() {
+		List<ImportDefinition>	imports	= Arrays.asList(
+		    ImportDefinition.parse( "java:ortus.boxlang.runtime.util.*" )
+		);
+
+		String					fqn		= javaResolver.expandFromImport( context, "DumpUtil", imports );
+		assertThat( fqn ).isEqualTo( "ortus.boxlang.runtime.util.DumpUtil" );
+	}
+
+	@DisplayName( "It can resolve wildcard imports from NON JDK classes in a JAR" )
+	@Test
+	void testItCanResolveWildcardImportsFromNonJDKInAJar() {
+		List<ImportDefinition>	imports	= Arrays.asList(
+		    ImportDefinition.parse( "java:com.zaxxer.hikari.util.*" )
+		);
+
+		String					fqn		= javaResolver.expandFromImport( context, "ConcurrentBag", imports );
+		assertThat( fqn ).isEqualTo( "com.zaxxer.hikari.util.ConcurrentBag" );
 	}
 
 	@DisplayName( "It can load libs from the 'home/libs' convention" )

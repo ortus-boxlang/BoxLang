@@ -1,0 +1,9 @@
+interface {
+
+    function shift( required numeric gear );
+
+    default function needsFuel() {
+        return false;
+    }
+
+}

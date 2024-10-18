@@ -20,6 +20,7 @@
 package ortus.boxlang.runtime.bifs.global.io;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -39,6 +40,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
 public class FileMoveTest {
@@ -54,6 +56,10 @@ public class FileMoveTest {
 	@BeforeAll
 	public static void setUp() {
 		instance = BoxRuntime.getInstance( true );
+
+		// We are testing this here to ensure the default configuration is set up correctly
+		assertFalse( instance.getConfiguration().security.isExtensionAllowed( "exe" ) );
+
 	}
 
 	@AfterAll
@@ -91,6 +97,20 @@ public class FileMoveTest {
 		    """,
 		    context );
 		assertTrue( FileSystemUtil.exists( destination ) );
+	}
+
+	@DisplayName( "It tests the BIF FileMove security" )
+	@Test
+	public void testBifSecurity() {
+		variables.put( Key.of( "targetFile" ), Path.of( source ).toAbsolutePath().toString() );
+		assertThrows(
+		    BoxRuntimeException.class,
+		    () -> instance.executeSource(
+		        """
+		        fileMove( targetFile, "blah.exe" );
+		        """,
+		        context )
+		);
 	}
 
 }

@@ -53,6 +53,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.context.RuntimeBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
@@ -224,7 +225,11 @@ public class BoxRuntime implements java.io.Closeable {
 	private ModuleService						moduleService;
 
 	/**
-	 * The JavaBoxPiler instance
+	 * The BoxPiler implementation the runtime will use. At this time we offer two choices:
+	 * 1. JavaBoxpiler - Generates Java source code and compiles it via the JDK
+	 * 2. ASMBoxpiler - Generates bytecode directly via ASM
+	 * However, developers can create their own Boxpiler implementations and register them with the runtime
+	 * via configuration.
 	 */
 	private IBoxpiler							boxpiler;
 
@@ -345,17 +350,18 @@ public class BoxRuntime implements java.io.Closeable {
 			this.logger.info( "+ DebugMode detected in config, overriding to {}", this.debugMode );
 		}
 
-		// If in debug mode load the AST Capture listener for debugging
-		if ( this.debugMode ) {
-			this.interceptorService.register(
-			    DynamicObject.of( new ASTCapture( false, true ) ),
-			    Key.onParse
-			);
-		}
+		// AST Capture experimental feature
+		BooleanCaster.attempt(
+		    this.configuration.experimental.getOrDefault( "ASTCapture", false )
+		).ifSuccessful(
+		    astCapture -> this.interceptorService.register(
+		        DynamicObject.of( new ASTCapture( false, true ) ),
+		        Key.onParse
+		    )
+		);
 
 		// Load core logger and other core interceptions
 		this.interceptorService.register( new Logging( this ) );
-
 	}
 
 	/**
@@ -445,17 +451,19 @@ public class BoxRuntime implements java.io.Closeable {
 
 		// Load the configurations and overrides
 		loadConfiguration( this.debugMode, this.configPath );
+		// Anythying below might use configuration items
 
 		// Ensure home assets
 		ensureHomeAssets();
 
 		// Load the Dynamic Class Loader for the runtime
-		this.runtimeLoader = new DynamicClassLoader(
+		this.runtimeLoader	= new DynamicClassLoader(
 		    Key.runtime,
 		    getConfiguration().getJavaLibraryPaths(),
 		    this.getClass().getClassLoader()
 		);
-
+		// Startup the right Compiler
+		this.boxpiler		= chooseBoxpiler();
 		// Seed Mathematical Precision for the runtime
 		MathUtil.setHighPrecisionMath( getConfiguration().useHighPrecisionMath );
 
@@ -467,9 +475,7 @@ public class BoxRuntime implements java.io.Closeable {
 		this.applicationService.onStartup();
 
 		// Create our runtime context that will be the granddaddy of all contexts that execute inside this runtime
-		this.runtimeContext	= new RuntimeBoxContext();
-		this.boxpiler		= chooseBoxpiler();
-
+		this.runtimeContext = new RuntimeBoxContext();
 		// Now startup the modules so we can have a runtime context available to them
 		this.moduleService.onStartup();
 		// Now the cache service can be started, this allows for modules to register caches
@@ -507,16 +513,6 @@ public class BoxRuntime implements java.io.Closeable {
 	 * --------------------------------------------------------------------------
 	 * The entry point into the runtime
 	 */
-
-	private IBoxpiler chooseBoxpiler() {
-		switch ( ( String ) this.configuration.experimental.getOrDefault( "compiler", "java" ) ) {
-			case "asm" :
-				return ASMBoxpiler.getInstance();
-			case "java" :
-			default :
-				return JavaBoxpiler.getInstance();
-		}
-	}
 
 	/**
 	 * Get or startup a BoxLang Runtime instance.
@@ -983,7 +979,6 @@ public class BoxRuntime implements java.io.Closeable {
 
 	/**
 	 * Switch the runtime to generate java source and compile via the JDK
-	 *
 	 */
 	public void useJavaBoxpiler() {
 		RunnableLoader.getInstance().selectBoxPiler( JavaBoxpiler.class );
@@ -991,7 +986,6 @@ public class BoxRuntime implements java.io.Closeable {
 
 	/**
 	 * Switch the runtime to generate bytecode directly via ASM
-	 *
 	 */
 	public void useASMBoxPiler() {
 		RunnableLoader.getInstance().selectBoxPiler( ASMBoxpiler.class );
@@ -1549,6 +1543,23 @@ public class BoxRuntime implements java.io.Closeable {
 			return new ScriptingRequestBoxContext( context, template );
 		} else {
 			return new ScriptingRequestBoxContext( context );
+		}
+	}
+
+	/**
+	 * Choose the Boxpiler implementation to use according to the configuration
+	 *
+	 * @return The Boxpiler implementation to use
+	 */
+	private IBoxpiler chooseBoxpiler() {
+		switch ( ( String ) this.configuration.experimental.getOrDefault( "compiler", "java" ) ) {
+			case "asm" :
+				useASMBoxPiler();
+				return ASMBoxpiler.getInstance();
+			case "java" :
+			default :
+				useJavaBoxpiler();
+				return JavaBoxpiler.getInstance();
 		}
 	}
 

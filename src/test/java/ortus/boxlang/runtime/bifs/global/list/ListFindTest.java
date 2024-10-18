@@ -191,4 +191,17 @@ public class ListFindTest {
 		    context );
 	}
 
+	@DisplayName( "It should not find partial" )
+	@Test
+	public void testPartial() {
+		instance.executeSource(
+		    """
+		        nums = "red,blue,orange";
+		        result = nums.listFindNoCase( "b" );
+		    """,
+		    context );
+		int found = ( int ) variables.get( result );
+		assertThat( found ).isEqualTo( 0 );
+	}
+
 }

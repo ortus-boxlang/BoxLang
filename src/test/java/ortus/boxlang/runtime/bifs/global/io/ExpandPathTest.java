@@ -134,6 +134,25 @@ public class ExpandPathTest {
 	}
 
 	@Test
+	public void testFSCase() {
+		if ( FileSystemUtil.IS_WINDOWS ) {
+			// path relative to custom mapping
+			String abs;
+			try {
+				abs = Path.of( "src/test/java/ortus/boxlang/runtime/bifs/global/io/expandPathTest.txt" ).toAbsolutePath().toRealPath().toString();
+			} catch ( IOException e ) {
+				throw new RuntimeException( e );
+			}
+			instance.executeSource(
+			    """
+			    result = ExpandPath( "/EXPAND/PATH/TEST/EXPANDPATHTEST.TXT" );
+			    """,
+			    context );
+			assertThat( variables.get( result ) ).isEqualTo( abs );
+		}
+	}
+
+	@Test
 	public void testRelative() {
 		String abs = Path.of( "src/test/java/ortus/boxlang/runtime/bifs/global/io/expandPathTest.txt" ).toAbsolutePath().toString();
 		context.pushTemplate( new IBoxRunnable() {

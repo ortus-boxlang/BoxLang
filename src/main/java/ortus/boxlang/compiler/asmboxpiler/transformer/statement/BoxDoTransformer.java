@@ -48,10 +48,10 @@ public class BoxDoTransformer extends AbstractTransformer {
 		LabelNode				continueLabel	= new LabelNode();
 		List<AbstractInsnNode>	nodes			= new ArrayList<>();
 
-		transpiler.setCurrentBreak( boxDo.getLabel(), end );
-		transpiler.setCurrentBreak( null, end );
+		transpiler.getCurrentMethodContextTracker().get().setCurrentBreak( boxDo.getLabel(), end );
+		transpiler.getCurrentMethodContextTracker().get().setCurrentBreak( null, end );
 
-		transpiler.setCurrentContinue( null, continueLabel );
+		transpiler.getCurrentMethodContextTracker().get().setCurrentContinue( null, continueLabel );
 
 		// push two nulls onto the stack in order to initialize our strategy for keeping the stack height consistent
 		// this is to allow the statement to return an expression in the case of a BoxScript execution

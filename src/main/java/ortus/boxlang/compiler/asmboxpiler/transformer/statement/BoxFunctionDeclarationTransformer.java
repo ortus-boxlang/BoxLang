@@ -14,14 +14,16 @@
  */
 package ortus.boxlang.compiler.asmboxpiler.transformer.statement;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.FieldInsnNode;
+import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
-import org.objectweb.asm.tree.VarInsnNode;
 
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.AsmTranspiler;
@@ -31,6 +33,7 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.statement.BoxAccessModifier;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
+import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
 import ortus.boxlang.compiler.ast.statement.BoxReturnType;
 import ortus.boxlang.compiler.ast.statement.BoxType;
 import ortus.boxlang.compiler.parser.BoxSourceType;
@@ -76,6 +79,14 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		AsmHelper.init( classNode, true, type, Type.getType( UDF.class ), methodVisitor -> {
 		} );
 		transpiler.setAuxiliary( type.getClassName(), classNode );
+
+		AsmHelper.addStaticFieldGetter( classNode,
+		    type,
+		    "modifiers",
+		    "getModifiers",
+		    Type.getType( List.class ),
+		    null
+		);
 
 		AsmHelper.addStaticFieldGetter( classNode,
 		    type,
@@ -133,10 +144,21 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		    "getSourceType",
 		    Type.getType( BoxSourceType.class ) );
 
+		transpiler.incrementfunctionBodyCounter();
 		AsmHelper.methodWithContextAndClassLocator( classNode, "_invoke", Type.getType( FunctionBoxContext.class ), Type.getType( Object.class ), false,
 		    transpiler, true,
-		    () -> function.getBody().stream().flatMap( statement -> transpiler.transform( statement, safe, ReturnValueContext.EMPTY ).stream() )
-		        .toList() );
+		    () -> {
+
+			    if ( function.getBody() == null ) {
+				    return new ArrayList<AbstractInsnNode>();
+			    }
+
+			    return function.getBody()
+			        .stream()
+			        .flatMap( statement -> transpiler.transform( statement, safe, ReturnValueContext.EMPTY ).stream() )
+			        .toList();
+		    } );
+		transpiler.decrementfunctionBodyCounter();
 
 		AsmHelper.complete( classNode, type, methodVisitor -> {
 			transpiler.createKey( function.getName() ).forEach( methodInsnNode -> methodInsnNode.accept( methodVisitor ) );
@@ -174,20 +196,55 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 			    type.getInternalName(),
 			    "documentation",
 			    Type.getDescriptor( IStruct.class ) );
+
+			AsmHelper.array(
+			    Type.getType( BoxMethodDeclarationModifier.class ),
+			    function.getModifiers(),
+			    ( bmdm, i ) -> List.of(
+			        new FieldInsnNode(
+			            Opcodes.GETSTATIC,
+			            Type.getInternalName( BoxMethodDeclarationModifier.class ),
+			            bmdm.toString().toUpperCase(),
+			            Type.getDescriptor( BoxMethodDeclarationModifier.class )
+			        )
+			    )
+			).stream()
+			    .forEach( modifierNode -> modifierNode.accept( methodVisitor ) );
+
+			methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
+			    Type.getInternalName( List.class ),
+			    "of",
+			    Type.getMethodDescriptor( Type.getType( List.class ), Type.getType( Object[].class ) ),
+			    true );
+
+			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
+			    type.getInternalName(),
+			    "modifiers",
+			    Type.getDescriptor( List.class ) );
 		} );
 
-		return List.of(
-		    new VarInsnNode( Opcodes.ALOAD, 1 ),
+		List<AbstractInsnNode> nodes = new ArrayList<AbstractInsnNode>();
+
+		nodes.addAll( transpiler.getCurrentMethodContextTracker().get().loadCurrentContext() );
+		nodes.add(
 		    new MethodInsnNode( Opcodes.INVOKESTATIC,
 		        type.getInternalName(),
 		        "getInstance",
 		        Type.getMethodDescriptor( type ),
-		        false ),
+		        false )
+		);
+		nodes.add(
 		    new MethodInsnNode( Opcodes.INVOKEINTERFACE,
 		        Type.getInternalName( IBoxContext.class ),
 		        "registerUDF",
 		        Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( UDF.class ) ),
 		        true )
 		);
+
+		if ( returnContext.nullable ) {
+			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+		}
+
+		return nodes;
 	}
 }

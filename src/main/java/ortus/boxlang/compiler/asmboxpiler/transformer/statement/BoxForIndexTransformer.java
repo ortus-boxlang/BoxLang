@@ -28,6 +28,7 @@ import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 
 import javassist.bytecode.Opcode;
+import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.MethodContextTracker;
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
@@ -45,26 +46,30 @@ public class BoxForIndexTransformer extends AbstractTransformer {
 
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context,
 	    ReturnValueContext returnValueContext ) {
-		BoxForIndex						forIn			= ( BoxForIndex ) node;
-		List<AbstractInsnNode>			nodes			= new ArrayList<>();
-		Optional<MethodContextTracker>	trackerOption	= transpiler.getCurrentMethodContextTracker();
+		BoxForIndex				forIn	= ( BoxForIndex ) node;
+		List<AbstractInsnNode>	nodes	= new ArrayList<>();
+		AsmHelper.addDebugLabel( nodes, "BoxForIndex" );
+		Optional<MethodContextTracker> trackerOption = transpiler.getCurrentMethodContextTracker();
 
 		if ( trackerOption.isEmpty() ) {
 			throw new IllegalStateException();
 		}
 
-		LabelNode	breakTarget	= new LabelNode();
-		LabelNode	firstLoop	= new LabelNode();
-		LabelNode	loopStart	= new LabelNode();
-		LabelNode	loopEnd		= new LabelNode();
+		MethodContextTracker	tracker		= trackerOption.get();
 
-		transpiler.setCurrentBreak( forIn.getLabel(), breakTarget );
-		transpiler.setCurrentBreak( null, breakTarget );
+		LabelNode				breakTarget	= new LabelNode();
+		LabelNode				firstLoop	= new LabelNode();
+		LabelNode				loopStart	= new LabelNode();
+		LabelNode				loopEnd		= new LabelNode();
 
-		transpiler.setCurrentContinue( null, loopStart );
-		transpiler.setCurrentContinue( forIn.getLabel(), loopStart );
+		tracker.setContinue( forIn, loopStart );
+		tracker.setBreak( forIn, breakTarget );
+		if ( forIn.getLabel() != null ) {
+			tracker.setStringLabel( forIn.getLabel(), forIn );
+		}
 
 		if ( forIn.getInitializer() != null ) {
+			AsmHelper.addDebugLabel( nodes, "BoxForIndex - initializer" );
 			nodes.addAll( transpiler.transform( forIn.getInitializer(), context, ReturnValueContext.EMPTY ) );
 		}
 
@@ -77,17 +82,21 @@ public class BoxForIndexTransformer extends AbstractTransformer {
 
 		nodes.add( new JumpInsnNode( Opcode.GOTO, firstLoop ) );
 
+		AsmHelper.addDebugLabel( nodes, "BoxForIndex - loopStart" );
 		nodes.add( loopStart );
 
 		if ( forIn.getStep() != null ) {
+			AsmHelper.addDebugLabel( nodes, "BoxForIndex - step" );
 			nodes.addAll( transpiler.transform( forIn.getStep(), context, ReturnValueContext.EMPTY ) );
 		}
 
+		AsmHelper.addDebugLabel( nodes, "BoxForIndex - firstLoop" );
 		nodes.add( firstLoop );
 
 		nodes.add( new InsnNode( Opcodes.SWAP ) );
 		nodes.add( new InsnNode( Opcodes.POP ) );
 
+		AsmHelper.addDebugLabel( nodes, "BoxForIndex - condition" );
 		if ( forIn.getCondition() != null ) {
 			nodes.addAll( transpiler.transform( forIn.getCondition(), context, ReturnValueContext.VALUE ) );
 			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
@@ -107,20 +116,29 @@ public class BoxForIndexTransformer extends AbstractTransformer {
 
 		nodes.add( new JumpInsnNode( Opcodes.IFEQ, loopEnd ) );
 
+		AsmHelper.addDebugLabel( nodes, "BoxForIndex - body" );
 		nodes.addAll( transpiler.transform( forIn.getBody(), context, ReturnValueContext.VALUE_OR_NULL ) );
 
 		nodes.add( new JumpInsnNode( Opcode.GOTO, loopStart ) );
 
+		AsmHelper.addDebugLabel( nodes, "BoxForIndex - breakTarget" );
 		nodes.add( breakTarget );
 
 		nodes.add( new InsnNode( Opcodes.SWAP ) );
 		nodes.add( new InsnNode( Opcodes.POP ) );
 
+		AsmHelper.addDebugLabel( nodes, "BoxForIndex - loopEnd" );
 		nodes.add( loopEnd );
 
 		if ( returnValueContext.empty ) {
 			nodes.add( new InsnNode( Opcodes.POP ) );
 		}
+
+		tracker.setCurrentBreak( null, null );
+
+		tracker.setCurrentContinue( null, null );
+
+		AsmHelper.addDebugLabel( nodes, "BoxForIndex - done" );
 
 		return nodes;
 	}

@@ -25,6 +25,7 @@ import org.objectweb.asm.tree.JumpInsnNode;
 import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 
+import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
@@ -44,6 +45,7 @@ public class BoxIfElseTransformer extends AbstractTransformer {
 		BoxIfElse				ifElse	= ( BoxIfElse ) node;
 
 		List<AbstractInsnNode>	nodes	= new ArrayList<>();
+		AsmHelper.addDebugLabel( nodes, "BoxIf" );
 		nodes.addAll( transpiler.transform( ifElse.getCondition(), TransformerContext.NONE, ReturnValueContext.VALUE ) );
 		nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
 		    Type.getInternalName( BooleanCaster.class ),

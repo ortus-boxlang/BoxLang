@@ -17,6 +17,8 @@
  */
 package TestCases.asm.integration;
 
+import static com.google.common.truth.Truth.assertThat;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -60,12 +62,117 @@ public class ControllerTest {
 	}
 
 	@Test
-	public void testControllerCompilation() {
+	public void testSwitchInLoopInFunc() {
 		instance.executeStatement(
 		    """
-		       	controller = new src.test.java.TestCases.asm.integration.Controller();
+		         	function a(){
+		    	for ( x = 1; x < 5; x++ ) {
+		    		switch( x ){
+		    		}
+		    	}
+		    }
+		      """,
+		    context );
+	}
+
+	@Test
+	public void testSwitchWithCaseInLoopInFunc() {
+		instance.executeStatement(
+		    """
+		           	function a(){
+		      	for ( x = 1; x < 5; x++ ) {
+		      		switch( x ){
+		      			case "id": {
+
+		      			}
+		      		}
+		      	}
+
+		    }
+		    a()
+		        """,
+		    context );
+	}
+
+	@Test
+	public void testInterfaceImplementation() {
+		instance.executeStatement(
+		    """
+		         	impl = new src.test.java.TestCases.asm.integration.Implementor();
+
+		    impl.setName( "test" );
+
+		    result = impl.getName();
+		      """,
+		    context );
+
+		assertThat( variables.get( result ) ).isEqualTo( "test" );
+	}
+
+	@Test
+	public void testTryCatchLabelStack() {
+
+		instance.executeStatement(
+		    """
+		       	controller = new src.test.java.TestCases.asm.integration.TryCatchLabelStack();
 		    """,
 		    context );
+	}
+
+	@Test
+	public void testNestedLFunctionInComponent() {
+
+		instance.executeStatement(
+		    """
+		    lock name = "what" timeout=300 {
+		    	t = function(){
+		    		return "test";
+		    	}
+
+		    	result = t();
+		    }
+		      """,
+		    context );
+
+		assertThat( variables.get( result ) ).isEqualTo( "test" );
+	}
+
+	@Test
+	public void testReturnFromComponentInFunction() {
+
+		instance.executeStatement(
+		    """
+		      	function a(){
+		    	lock name="what" timeout=300 {
+		    		return "test";
+		    	}
+		    }
+
+		    result = a();
+		        """,
+		    context );
+
+		assertThat( variables.get( result ) ).isEqualTo( "test" );
+	}
+
+	@Test
+	public void testContinueInForIndex() {
+
+		instance.executeStatement(
+		    """
+		              	a = [ "orange", "red", "yellow" ]
+
+		          for( color in a ){
+
+		    switch( color ){
+		    	case "orange": result = color; break;
+		    	default: continue;
+		    }
+		          }
+		                """,
+		    context );
+
+		assertThat( variables.get( result ) ).isEqualTo( "orange" );
 	}
 
 }

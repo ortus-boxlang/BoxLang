@@ -1,0 +1,12 @@
+interface extends="IParentInterface,IUncleInterface" {
+	default function childDefaultMethod() {
+		return "childDefaultMethod";
+	}
+	default function parentOverrideMe() {
+		return "parentOverrideMeChild";
+	}
+	default function uncleOverrideMe() {
+		return "uncleOverrideMeChild";
+	}
+	function childMethod();
+}

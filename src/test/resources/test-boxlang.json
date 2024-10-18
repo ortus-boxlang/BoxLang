@@ -22,7 +22,8 @@
 		"useLastAccessTimeouts": true
 	},
 	"caches": {
-		"imports": {
+		"default": {},
+		"bxImports": {
 			"provider": "BoxCacheProvider",
 			"properties": {
 				"evictCount": 1,

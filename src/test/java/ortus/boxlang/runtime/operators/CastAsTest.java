@@ -31,6 +31,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.MathUtil;
 
@@ -234,6 +235,58 @@ public class CastAsTest {
 		assertThat( arrResult[ 1 ] ).isEqualTo( "Wood" );
 	}
 
+	@DisplayName( "It can cast primitive Array to boxed array" )
+	@Test
+	void testItCanCastPrimitiveArrayToBoxedArray() {
+		Object result = CastAs.invoke( context, new int[] { 1, 2, 3 }, "Integer[]" );
+		assertThat( result.getClass().isArray() ).isTrue();
+		assertThat( result ).isInstanceOf( Integer[].class );
+		Integer[] arrResult = ( ( Integer[] ) result );
+		assertThat( arrResult.length ).isEqualTo( 3 );
+		assertThat( arrResult[ 0 ] ).isEqualTo( 1 );
+		assertThat( arrResult[ 1 ] ).isEqualTo( 2 );
+		assertThat( arrResult[ 2 ] ).isEqualTo( 3 );
+	}
+
+	@DisplayName( "It can cast primitive Array to primitive array" )
+	@Test
+	void testItCanCastPrimitiveArrayToPrimitiveArray() {
+		Object result = CastAs.invoke( context, new int[] { 1, 2, 3 }, "int[]" );
+		assertThat( result.getClass().isArray() ).isTrue();
+		assertThat( result ).isInstanceOf( int[].class );
+		int[] arrResult = ( ( int[] ) result );
+		assertThat( arrResult.length ).isEqualTo( 3 );
+		assertThat( arrResult[ 0 ] ).isEqualTo( 1 );
+		assertThat( arrResult[ 1 ] ).isEqualTo( 2 );
+		assertThat( arrResult[ 2 ] ).isEqualTo( 3 );
+	}
+
+	@DisplayName( "It can cast boxed Array to boxed array" )
+	@Test
+	void testItCanCastBoxedArrayToBoxedArray() {
+		Object result = CastAs.invoke( context, new Integer[] { 1, 2, 3 }, "Integer[]" );
+		assertThat( result.getClass().isArray() ).isTrue();
+		assertThat( result ).isInstanceOf( Integer[].class );
+		Integer[] arrResult = ( ( Integer[] ) result );
+		assertThat( arrResult.length ).isEqualTo( 3 );
+		assertThat( arrResult[ 0 ] ).isEqualTo( 1 );
+		assertThat( arrResult[ 1 ] ).isEqualTo( 2 );
+		assertThat( arrResult[ 2 ] ).isEqualTo( 3 );
+	}
+
+	@DisplayName( "It can cast boxed Array to primitive array" )
+	@Test
+	void testItCanCastBoxedArrayToPrimitiveArray() {
+		Object result = CastAs.invoke( context, new Integer[] { 1, 2, 3 }, "int[]" );
+		assertThat( result.getClass().isArray() ).isTrue();
+		assertThat( result ).isInstanceOf( int[].class );
+		int[] arrResult = ( ( int[] ) result );
+		assertThat( arrResult.length ).isEqualTo( 3 );
+		assertThat( arrResult[ 0 ] ).isEqualTo( 1 );
+		assertThat( arrResult[ 1 ] ).isEqualTo( 2 );
+		assertThat( arrResult[ 2 ] ).isEqualTo( 3 );
+	}
+
 	@DisplayName( "It can cast List to array" )
 	@Test
 	void testItCanCastListToArray() {
@@ -245,6 +298,19 @@ public class CastAsTest {
 		assertThat( arrResult[ 0 ] ).isEqualTo( "Brad" );
 		assertThat( arrResult[ 1 ] instanceof String ).isTrue();
 		assertThat( arrResult[ 1 ] ).isEqualTo( "Wood" );
+	}
+
+	@DisplayName( "It can cast array to array of primitives" )
+	@Test
+	void testItCanCastArrayToArrayOfPrimitives() {
+		Object result = CastAs.invoke( context, Array.of( 0, 1, 2 ), "byte[]" );
+		assertThat( result.getClass().isArray() ).isTrue();
+		assertThat( result ).isInstanceOf( byte[].class );
+		byte[] arrResult = ( ( byte[] ) result );
+		assertThat( arrResult.length ).isEqualTo( 3 );
+		assertThat( arrResult[ 0 ] ).isEqualTo( 0 );
+		assertThat( arrResult[ 1 ] ).isEqualTo( 1 );
+		assertThat( arrResult[ 2 ] ).isEqualTo( 2 );
 	}
 
 	@DisplayName( "It can cast class to class" )

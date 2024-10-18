@@ -21,6 +21,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
 @BoxBIF
@@ -51,6 +52,10 @@ public class FileMove extends BIF {
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	sourcePath		= FileSystemUtil.expandPath( context, arguments.getAsString( Key.source ) ).absolutePath().toString();
 		String	destinationPath	= FileSystemUtil.expandPath( context, arguments.getAsString( Key.destination ) ).absolutePath().toString();
+		// Make sure there is no attempt to move a file in to disallowed ( e.g. executable ) type
+		if ( !runtime.getConfiguration().security.isFileOperationAllowed( destinationPath ) ) {
+			throw new BoxRuntimeException( "The destination path contains an extension disallowed by the runtime security settings." );
+		}
 		FileSystemUtil.move( sourcePath, destinationPath );
 		return null;
 	}

@@ -28,7 +28,7 @@ public class ImportDefinitionTest {
 	@DisplayName( "It can use default constructor" )
 	@Test
 	public void testCanUseDefaultConstructor() {
-		ImportDefinition ImportDefinition = new ImportDefinition( "java.lang.String", "java", "jString" );
+		ImportDefinition ImportDefinition = new ImportDefinition( "java.lang.String", "java", "jString", null );
 
 		assertThat( ImportDefinition.className() ).isEqualTo( "java.lang.String" );
 		assertThat( ImportDefinition.resolverPrefix() ).isEqualTo( "java" );
@@ -38,14 +38,12 @@ public class ImportDefinitionTest {
 	@DisplayName( "It can use default constructor with nulls" )
 	@Test
 	public void testCanUseDefaultConstructorWithNulls() {
-		ImportDefinition ImportDefinition = new ImportDefinition( "java.lang.String", null, null );
+		ImportDefinition ImportDefinition = new ImportDefinition( "java.lang.String", null, null, null );
 
 		assertThat( ImportDefinition.className() ).isEqualTo( "java.lang.String" );
 		assertThat( ImportDefinition.resolverPrefix() ).isEqualTo( null );
 		assertThat( ImportDefinition.alias() ).isEqualTo( null );
-
-		assertThrows( Throwable.class, () -> new ImportDefinition( null, null, null ) );
-
+		assertThrows( Throwable.class, () -> new ImportDefinition( null, null, null, null ) );
 	}
 
 	@DisplayName( "It can use static constructor parser" )
@@ -72,6 +70,36 @@ public class ImportDefinitionTest {
 		assertThat( importDef.resolverPrefix() ).isEqualTo( null );
 		assertThat( importDef.alias() ).isEqualTo( "BodyPublishers" );
 		assertThat( importDef.getPackageName() ).isEqualTo( "java.net.http" );
+	}
+
+	@DisplayName( "It can parse a simple import from a module" )
+	@Test
+	public void testCanParseSimpleImportFromModule() {
+		ImportDefinition importDef = ImportDefinition.parse( "java:java.lang.String@module" );
+		assertThat( importDef.className() ).isEqualTo( "java.lang.String" );
+		assertThat( importDef.resolverPrefix() ).isEqualTo( "java" );
+		assertThat( importDef.alias() ).isEqualTo( "String" );
+		assertThat( importDef.moduleName() ).isEqualTo( "module" );
+	}
+
+	@DisplayName( "It can parse a simple import from a module using an alias" )
+	@Test
+	public void testCanParseSimpleImportFromModuleUsingAlias() {
+		ImportDefinition importDef = ImportDefinition.parse( "java:java.lang.String@module AS jString" );
+		assertThat( importDef.className() ).isEqualTo( "java.lang.String" );
+		assertThat( importDef.resolverPrefix() ).isEqualTo( "java" );
+		assertThat( importDef.alias() ).isEqualTo( "jString" );
+		assertThat( importDef.moduleName() ).isEqualTo( "module" );
+	}
+
+	@DisplayName( "It can parse a simple import from a module using wildcards" )
+	@Test
+	public void testCanParseSimpleImportFromModuleUsingWildcards() {
+		ImportDefinition importDef = ImportDefinition.parse( "java:java.lang.*@module" );
+		assertThat( importDef.className() ).isEqualTo( "java.lang.*" );
+		assertThat( importDef.resolverPrefix() ).isEqualTo( "java" );
+		assertThat( importDef.alias() ).isEqualTo( "*" );
+		assertThat( importDef.moduleName() ).isEqualTo( "module" );
 	}
 
 }

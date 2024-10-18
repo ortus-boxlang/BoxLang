@@ -21,11 +21,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
-import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.InsnNode;
-import org.objectweb.asm.tree.MethodInsnNode;
 
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
@@ -35,9 +32,6 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxMethodInvocation;
-import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.Referencer;
-import ortus.boxlang.runtime.scopes.Key;
 
 public class BoxMethodInvocationTransformer extends AbstractTransformer {
 
@@ -56,31 +50,14 @@ public class BoxMethodInvocationTransformer extends AbstractTransformer {
 
 		nodes.addAll( transpiler.transform( invocation.getObj(), context, ReturnValueContext.VALUE ) );
 
+		List<AbstractInsnNode> name = null;
 		if ( invocation.getUsedDotAccess() ) {
-			nodes.addAll( transpiler.createKey( ( ( BoxIdentifier ) invocation.getName() ).getName() ) );
+			name = transpiler.createKey( ( ( BoxIdentifier ) invocation.getName() ).getName() );
 		} else {
-			nodes.addAll( transpiler.createKey( invocation.getName() ) );
+			name = transpiler.createKey( invocation.getName() );
 		}
 
-		nodes
-		    .addAll( AsmHelper.array( Type.getType( Object.class ), invocation.getArguments(),
-		        ( argument, i ) -> transpiler.transform( argument, context, ReturnValueContext.VALUE ) ) );
-
-		nodes.add( new FieldInsnNode( Opcodes.GETSTATIC,
-		    Type.getInternalName( Boolean.class ),
-		    safe.toString().toUpperCase(),
-		    Type.getDescriptor( Boolean.class ) ) );
-
-		nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
-		    Type.getInternalName( Referencer.class ),
-		    "getAndInvoke",
-		    Type.getMethodDescriptor( Type.getType( Object.class ),
-		        Type.getType( IBoxContext.class ),
-		        Type.getType( Object.class ),
-		        Type.getType( Key.class ),
-		        Type.getType( Object[].class ),
-		        Type.getType( Boolean.class ) ),
-		    false ) );
+		nodes.addAll( AsmHelper.callReferencerGetAndInvoke( transpiler, invocation.getArguments(), name, context, safe ) );
 
 		if ( returnContext.empty ) {
 			nodes.add( new InsnNode( Opcodes.POP ) );

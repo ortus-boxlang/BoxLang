@@ -23,6 +23,7 @@ import static com.google.common.truth.Truth.assertThat;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.BoxRuntime;
@@ -188,6 +189,17 @@ public class ReReplaceTest {
 		    context );
 			assertThat( variables.get( result ) ).isEqualTo("String with brad");
 		// @formatter:on
+	}
+
+	@DisplayName( "Doesn't throw exception if the string is null" )
+	@Test
+	public void testNullString() {
+		instance.executeSource(
+		    """
+		    result = reReplace( null, "[^a-z0-9]", '', "one" );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "" );
 	}
 
 }

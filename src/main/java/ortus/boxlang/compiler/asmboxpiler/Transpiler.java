@@ -21,17 +21,22 @@ import org.objectweb.asm.tree.TypeInsnNode;
 
 import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
+import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxInterfaceTransformer;
 import ortus.boxlang.compiler.ast.BoxExpression;
+import ortus.boxlang.compiler.ast.BoxInterface;
 import ortus.boxlang.compiler.ast.BoxNode;
+import ortus.boxlang.compiler.ast.BoxStaticInitializer;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxDocumentationAnnotation;
+import ortus.boxlang.compiler.ast.statement.BoxProperty;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public abstract class Transpiler implements ITranspiler {
 
@@ -40,10 +45,13 @@ public abstract class Transpiler implements ITranspiler {
 	private Map<String, ClassNode>			auxiliaries				= new LinkedHashMap<String, ClassNode>();
 	private List<TryCatchBlockNode>			tryCatchBlockNodes		= new ArrayList<TryCatchBlockNode>();
 	private int								lambdaCounter			= 0;
+	private int								componentCounter		= 0;
+	private int								functionBodyCounter		= 0;
 	private Map<String, LabelNode>			breaks					= new LinkedHashMap<>();
 	private Map<String, LabelNode>			continues				= new LinkedHashMap<>();
 	private List<ImportDefinition>			imports					= new ArrayList<>();
 	private List<MethodContextTracker>		methodContextTrackers	= new ArrayList<MethodContextTracker>();
+	private List<BoxStaticInitializer>		staticInitializers		= new ArrayList<>();
 
 	/**
 	 * Set a property
@@ -53,6 +61,42 @@ public abstract class Transpiler implements ITranspiler {
 	 */
 	public void setProperty( String key, String value ) {
 		properties.put( key, value );
+	}
+
+	public boolean canReturn() {
+		return functionBodyCounter > 0;
+	}
+
+	public void incrementfunctionBodyCounter() {
+		functionBodyCounter++;
+	}
+
+	public void decrementfunctionBodyCounter() {
+		functionBodyCounter--;
+	}
+
+	public boolean isInsideComponent() {
+		return componentCounter > 0;
+	}
+
+	public int getComponentCounter() {
+		return componentCounter;
+	}
+
+	public void setComponentCounter( int counter ) {
+		componentCounter = counter;
+	}
+
+	public void incrementComponentCounter() {
+		componentCounter++;
+	}
+
+	public void decrementComponentCounter() {
+		componentCounter--;
+	}
+
+	public ClassNode transpile( BoxInterface boxClass ) throws BoxRuntimeException {
+		return BoxInterfaceTransformer.transpile( this, boxClass );
 	}
 
 	/**
@@ -123,6 +167,14 @@ public abstract class Transpiler implements ITranspiler {
 		tryCatchBlockNodes = new ArrayList<TryCatchBlockNode>();
 	}
 
+	public void addBoxStaticInitializer( BoxStaticInitializer staticInitializer ) {
+		this.staticInitializers.add( staticInitializer );
+	}
+
+	public List<BoxStaticInitializer> getBoxStaticInitializers() {
+		return this.staticInitializers;
+	}
+
 	public Map<String, ClassNode> getAuxiliary() {
 		return auxiliaries;
 	}
@@ -163,6 +215,8 @@ public abstract class Transpiler implements ITranspiler {
 		}
 	}
 
+	public abstract List<List<AbstractInsnNode>> transformProperties( Type declaringType, List<BoxProperty> properties, String sourceType );
+
 	public List<AbstractInsnNode> createKey( String expr ) {
 		return createKey( new BoxStringLiteral( expr, null, expr ) );
 	}
@@ -194,6 +248,7 @@ public abstract class Transpiler implements ITranspiler {
 
 	public List<AbstractInsnNode> transformAnnotations( List<BoxAnnotation> annotations, Boolean defaultTrue, boolean onlyLiteralValues ) {
 		List<List<AbstractInsnNode>> members = new ArrayList<>();
+
 		annotations.forEach( annotation -> {
 			List<AbstractInsnNode> annotationKey = createKey( annotation.getKey().getValue() );
 			members.add( annotationKey );
@@ -202,15 +257,14 @@ public abstract class Transpiler implements ITranspiler {
 			if ( thisValue != null ) {
 				// Literal values are transformed directly
 				if ( thisValue.isLiteral() ) {
-					value = transform( thisValue, TransformerContext.NONE, ReturnValueContext.EMPTY );
+					value = transform( thisValue, TransformerContext.NONE, ReturnValueContext.VALUE );
 				}
 				// gonna try commenting this out
-				// else if ( onlyLiteralValues ) {
-				// // Runtime expressions we just put this place holder text in for
-				// value = List.of( new LdcInsnNode( "<Runtime Expression>" ) );
-				// }
-				else {
-					value = transform( thisValue, TransformerContext.NONE, ReturnValueContext.EMPTY );
+				else if ( onlyLiteralValues ) {
+					// Runtime expressions we just put this place holder text in for
+					value = List.of( new LdcInsnNode( "<Runtime Expression>" ) );
+				} else {
+					value = transform( thisValue, TransformerContext.NONE, ReturnValueContext.VALUE );
 				}
 			} else if ( defaultTrue ) {
 				// Annotations in tags with no value default to true string (CF compat)
@@ -224,6 +278,7 @@ public abstract class Transpiler implements ITranspiler {
 			}
 			members.add( value );
 		} );
+
 		if ( annotations.isEmpty() ) {
 			return List.of(
 			    new TypeInsnNode( Opcodes.NEW, Type.getInternalName( Struct.class ) ),
@@ -250,29 +305,29 @@ public abstract class Transpiler implements ITranspiler {
 		return transformAnnotations( annotations, false, true );
 	}
 
-	public LabelNode getCurrentBreak( String label ) {
-		return breaks.get( label == null ? "" : label );
-	}
+	// public LabelNode getCurrentBreak( String label ) {
+	// return breaks.get( label == null ? "" : label );
+	// }
 
-	public void setCurrentBreak( String label, LabelNode labelNode ) {
-		this.breaks.put( label == null ? "" : label, labelNode );
-	}
+	// public void setCurrentBreak( String label, LabelNode labelNode ) {
+	// this.breaks.put( label == null ? "" : label, labelNode );
+	// }
 
-	public void removeCurrentBreak( String label ) {
-		this.breaks.remove( label == null ? "" : label );
-	}
+	// public void removeCurrentBreak( String label ) {
+	// this.breaks.remove( label == null ? "" : label );
+	// }
 
-	public LabelNode getCurrentContinue( String label ) {
-		return continues.get( label == null ? "" : label );
-	}
+	// public LabelNode getCurrentContinue( String label ) {
+	// return continues.get( label == null ? "" : label );
+	// }
 
-	public void setCurrentContinue( String label, LabelNode labelNode ) {
-		this.continues.put( label == null ? "" : label, labelNode );
-	}
+	// public void setCurrentContinue( String label, LabelNode labelNode ) {
+	// this.continues.put( label == null ? "" : label, labelNode );
+	// }
 
-	public void removeCurrentContinue( String label ) {
-		this.continues.remove( label == null ? "" : label );
-	}
+	// public void removeCurrentContinue( String label ) {
+	// this.continues.remove( label == null ? "" : label );
+	// }
 
 	public void addImport( BoxExpression expression, BoxIdentifier alias ) {
 		imports.add( ImportDefinition.parse( alias == null
