@@ -265,16 +265,17 @@ public class JavaResolver extends BaseResolver {
 	 * - as a class
 	 * - as a multi-import (java.util.*) definition
 	 *
+	 * @param context    The current context of execution
 	 * @param thisImport The import to check
 	 * @param className  The class name to check
 	 *
 	 * @return True if the import has the class name, false otherwise
 	 */
 	@Override
-	protected boolean importHas( ImportDefinition thisImport, String className ) {
+	protected boolean importHas( IBoxContext context, ImportDefinition thisImport, String className ) {
 		return thisImport.isMultiImport()
-		    ? importHasMulti( thisImport, className )
-		    : super.importHas( thisImport, className );
+		    ? importHasMulti( context, thisImport, className )
+		    : super.importHas( context, thisImport, className );
 	}
 
 	/**
@@ -285,13 +286,14 @@ public class JavaResolver extends BaseResolver {
 	 *
 	 * If the class is not a JDK class, we delegate to the super class.
 	 *
+	 * @param context    The current context of execution
 	 * @param thisImport The import to check
 	 * @param className  The class name to check
 	 *
 	 * @return True if the import has the class name, false otherwise
 	 */
 	@Override
-	protected boolean importHasMulti( ImportDefinition thisImport, String className ) {
+	protected boolean importHasMulti( IBoxContext context, ImportDefinition thisImport, String className ) {
 		// We can't interrogate the JDK due to limitations in the JDK itself
 		if ( thisImport.className().matches( "(?i)(java|javax)\\..*" ) ) {
 
@@ -314,7 +316,7 @@ public class JavaResolver extends BaseResolver {
 			}
 		} else {
 			// Use the base resolver for NON jdk resolution classes
-			return super.importHasMulti( thisImport, className );
+			return super.importHasMulti( context, thisImport, className );
 		}
 	}
 

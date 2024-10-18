@@ -288,8 +288,7 @@ public class ClassDiscovery {
 		}
 
 		return Arrays.stream( aClassNames )
-		    // .parallel()
-		    .peek( file -> System.out.println( "File: " + file ) )
+		    .parallel()
 		    .flatMap( file -> {
 			    if ( file.isDirectory() ) {
 				    if ( recursive ) {

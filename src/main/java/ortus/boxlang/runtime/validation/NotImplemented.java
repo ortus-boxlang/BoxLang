@@ -30,7 +30,16 @@ import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 public class NotImplemented implements Validator {
 
 	public void validate( IBoxContext context, Key caller, Validatable record, IStruct records ) {
-		if ( records.get( record.name() ) != null ) {
+		Object targetValue = records.get( record.name() );
+
+		if ( targetValue != null ) {
+
+			// If the value is a string and EMPTY, then ignore it
+			// LEEWAY!
+			if ( targetValue instanceof String castedTargetValue && castedTargetValue.isEmpty() ) {
+				return;
+			}
+
 			throw new BoxValidationException( caller, record, "is not implemented yet and should not be provided." );
 		}
 	}

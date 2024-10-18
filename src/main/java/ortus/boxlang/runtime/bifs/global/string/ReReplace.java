@@ -51,20 +51,20 @@ public class ReReplace extends BIF {
 	}
 
 	/**
-	 * 
+	 *
 	 * Uses a regular expression (regex) to search a string for a string pattern and replace it with another. The search is case-sensitive.
-	 * 
+	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 * 
+	 *
 	 * @argument.string The string to search
-	 * 
+	 *
 	 * @argument.regex The regular expression to search for
-	 * 
+	 *
 	 * @argument.substring The string to replace regex with
-	 * 
+	 *
 	 * @argument.scope The scope to search in (one, all)
-	 * 
+	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	string		= arguments.getAsString( Key.string );
@@ -75,6 +75,17 @@ public class ReReplace extends BIF {
 
 		if ( noCase ) {
 			regex = "(?i)" + regex;
+		}
+
+		// Default string if null
+		if ( string == null ) {
+			string = "";
+		}
+		if ( substring == null ) {
+			substring = "";
+		}
+		if ( regex == null ) {
+			regex = "";
 		}
 
 		// Posix replacement for character classes

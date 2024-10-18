@@ -282,20 +282,23 @@ public final class FileSystemUtil {
 	 *
 	 * @param path    the path to list
 	 * @param recurse whether to recurse into subdirectories
-	 * @param filter  a glob filter or a closure to filter the results
+	 * @param filter  a glob filter or a closure to filter the results as a Predicate
 	 * @param sort    a string containing the sort field and direction
 	 * @param type    the type of files to list
 	 *
-	 * @return
+	 * @return a stream of paths
 	 */
 	@SuppressWarnings( "unchecked" )
 	public static Stream<Path> listDirectory( String path, Boolean recurse, Object filter, String sort, String type ) {
-		final String theType = type.toLowerCase();
+		Path targetPath = Path.of( path );
+
 		// If path doesn't exist, return an empty stream
-		if ( !Files.exists( Path.of( path ) ) ) {
+		if ( !Files.exists( targetPath ) ) {
 			return Stream.empty();
 		}
 
+		// Setup variables
+		final String		theType			= type.toLowerCase();
 		String[]			sortElements	= sort.split( ( "\\s+" ) );
 		String				sortField		= sortElements[ 0 ];
 		String				sortDirection	= sortElements.length > 1 ? sortElements[ 1 ].toLowerCase() : "asc";
@@ -333,32 +336,47 @@ public final class FileSystemUtil {
 
 		try {
 			if ( recurse ) {
-				directoryStream = Files.walk( Path.of( path ) ).parallel().filter( filterPath -> !filterPath.equals( Path.of( path ) ) );
+				directoryStream = Files.walk( targetPath ).parallel().filter( filterPath -> !filterPath.equals( targetPath ) );
 			} else {
-				directoryStream = Files.walk( Path.of( path ), 1 ).parallel().filter( filterPath -> !filterPath.equals( Path.of( path ) ) );
+				directoryStream = Files.walk( targetPath, 1 ).parallel().filter( filterPath -> !filterPath.equals( targetPath ) );
 			}
 		} catch ( IOException e ) {
 			throw new BoxIOException( e );
 		}
 
+		// Apply the type filter
 		directoryStream = directoryStream.filter( item -> matchesType( item, theType ) );
 
-		if ( filter instanceof String && StringCaster.cast( filter ).length() > 1 ) {
-			ArrayList<PathMatcher> pathMatchers = ListUtil.asList( StringCaster.cast( filter ), "|" )
+		// Is the filter a string or a closure?
+		if ( filter instanceof String castedFilter && castedFilter.length() > 1 ) {
+			ArrayList<PathMatcher> pathMatchers = ListUtil
+			    .asList( castedFilter, "|" )
 			    .stream()
 			    .map( filterString -> FileSystems.getDefault().getPathMatcher( "glob:" + filterString ) )
 			    .collect( Collectors.toCollection( ArrayList::new ) );
 			directoryStream = directoryStream.filter( item -> pathMatchers.stream().anyMatch( pathMatcher -> pathMatcher.matches( item.getFileName() ) ) );
-		} else if ( filter instanceof java.util.function.Predicate<?> ) {
+		}
+		// Predicate filter
+		else if ( filter instanceof java.util.function.Predicate<?> ) {
 			directoryStream = directoryStream.filter( ( java.util.function.Predicate<Path> ) filter );
 		}
 
+		// Finally, sort the stream
 		return directoryStream.sorted( pathSort );
 	}
 
+	/**
+	 * Matches the type of a file or directory
+	 *
+	 * @param item the path to match
+	 * @param type the type to match
+	 *
+	 * @return a boolean as to whether the path matches the type
+	 */
 	private static Boolean matchesType( Path item, String type ) {
 		switch ( type ) {
 			case "directory" :
+			case "dir" :
 				return Files.isDirectory( item );
 			case "file" :
 				return Files.isRegularFile( item );
@@ -1079,9 +1097,9 @@ public final class FileSystemUtil {
 
 	/**
 	 * Performs case insensitive path resolution. This will return the real path, which may be different in case than the incoming path.
-	 * 
+	 *
 	 * @param path The path to check
-	 * 
+	 *
 	 * @return The resolved path or null if not found
 	 */
 	public static Path pathExistsCaseInsensitive( Path path ) {

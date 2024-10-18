@@ -65,6 +65,15 @@ public record ImportDefinition( String className, String resolverPrefix, String 
 	}
 
 	/**
+	 * Is this import a module import?
+	 *
+	 * @return True if it is a module import, false otherwise
+	 */
+	public Boolean isModuleImport() {
+		return moduleName != null;
+	}
+
+	/**
 	 * Returns the package name of the import definition
 	 *
 	 * @return The package name
@@ -75,7 +84,7 @@ public record ImportDefinition( String className, String resolverPrefix, String 
 
 	/**
 	 * Returns the fully qualified class name of the import definition
-	 * considering if it is a wildcard import or not
+	 * considering if it is a wildcard import or not, and if it's from a targeted module or not.
 	 *
 	 * @param targetClass The class name in code that needed qualification
 	 *
@@ -84,9 +93,10 @@ public record ImportDefinition( String className, String resolverPrefix, String 
 	public String getFullyQualifiedClass( String targetClass ) {
 		if ( isMultiImport() ) {
 			return String.format( "%s.%s", className.substring( 0, className.length() - 2 ), targetClass );
-		} else {
-			return className;
+		} else if ( isModuleImport() ) {
+			return String.format( "%s@%s", className, moduleName );
 		}
+		return className;
 	}
 
 	/**

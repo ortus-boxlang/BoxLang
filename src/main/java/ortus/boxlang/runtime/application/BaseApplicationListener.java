@@ -143,8 +143,8 @@ public abstract class BaseApplicationListener {
 	    // Stil Considering if they will be core or a module
 	    "secureJson", false,
 	    "secureJsonPrefix", "",
-	    "allowedFileOperationExtensions", BoxRuntime.getInstance().getConfiguration().allowedFileOperationExtensions,
-	    "disallowedFileOperationExtensions", BoxRuntime.getInstance().getConfiguration().disallowedFileOperationExtensions
+	    "allowedFileOperationExtensions", BoxRuntime.getInstance().getConfiguration().security.allowedFileOperationExtensions,
+	    "disallowedFileOperationExtensions", BoxRuntime.getInstance().getConfiguration().security.disallowedFileOperationExtensions
 	);
 
 	/**

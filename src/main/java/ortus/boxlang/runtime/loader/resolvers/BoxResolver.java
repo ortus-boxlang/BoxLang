@@ -480,38 +480,34 @@ public class BoxResolver extends BaseResolver {
 	}
 
 	/**
-	 * Tries to expand the full class name using the import aliases given. If the class
-	 * name is not found as an import, we return the original class name.
+	 * Checks if the import has the given class name as a multi-import
 	 *
-	 * @param context   The current context of execution
-	 * @param className The name of the class to resolve
-	 * @param imports   The list of imports to use
+	 * @param context    The current context of execution
+	 * @param thisImport The import to check
+	 * @param className  The class name to check
 	 *
-	 * @return The resolved class name or the original class name if not found
+	 * @return True if the import has the class name, false otherwise
 	 */
 	@Override
-	public String expandFromImport( IBoxContext context, String className, List<ImportDefinition> imports ) {
-		var fullyQualifiedName = imports.stream()
-		    // Discover import by matching the resolver prefix and the class name or alias or multi-import
-		    // This runs from concrete resolvers: bx, java, etc.
-		    // So if the resolver prefix matches, we continue, else we skip it.
-		    .filter( thisImport -> importApplies( thisImport ) && importHas( thisImport, className ) )
-		    // Return the first one, the first one wins
-		    .findFirst()
-		    // Convert the import to a fully qualified class name
-		    .map( targetImport -> {
-			    String fqn = targetImport.getFullyQualifiedClass( className );
-			    this.importCache.add( className + ":" + fqn );
-			    return fqn;
-		    } )
-		    // Nothing found, return the original class name
-		    .orElse( className );
+	public boolean importHasMulti( IBoxContext context, ImportDefinition thisImport, String className ) {
+		String packageSlashName = getFullyQualifiedSlashName( thisImport.getPackageName() );
 
-		// Security check
-		BoxRuntime.getInstance().getConfiguration().security.isClassAllowed( fullyQualifiedName );
+		// This verifies that the package exists, else we need to expand it
+		if ( !FileSystemUtil.exists( packageSlashName ) ) {
+			packageSlashName = FileSystemUtil.expandPath( context, packageSlashName ).absolutePath().toString();
+		}
 
-		// Return the fully qualified class name
-		return fullyQualifiedName;
+		// Get the stream of class files in the package
+		// If it finds a class that matches the class name, then it returns true, else false
+		return FileSystemUtil.listDirectory(
+		    packageSlashName,
+		    false,
+		    null,
+		    "name",
+		    "file"
+		)
+		    .anyMatch( path -> path.getFileName().toString().startsWith( className + "." ) );
+
 	}
 
 }
