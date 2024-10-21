@@ -258,9 +258,9 @@ public class DumpUtil {
 	 */
 	public static void dumpTextToBuffer( IBoxContext context, Object target ) {
 		if ( target == null ) {
-			context.writeToBuffer( "[null]", true );
+			context.writeToBuffer( "[null]\n", true );
 		} else {
-			context.writeToBuffer( target.toString(), true );
+			context.writeToBuffer( target.toString() + "\n", true );
 		}
 	}
 
