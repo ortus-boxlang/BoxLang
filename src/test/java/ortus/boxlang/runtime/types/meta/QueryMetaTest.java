@@ -18,17 +18,16 @@
 package ortus.boxlang.runtime.types.meta;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import org.junit.jupiter.api.Disabled;
 
-import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.bifs.global.jdbc.BaseJDBCTest;
 import ortus.boxlang.runtime.dynamic.Referencer;
-import ortus.boxlang.runtime.types.Query;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Query;
 
 public class QueryMetaTest extends BaseJDBCTest {
 
@@ -46,7 +45,6 @@ public class QueryMetaTest extends BaseJDBCTest {
 
 	}
 
-	// @Disabled( "Disabled until implementation is complete" )
 	@DisplayName( "Test JDBC query meta" )
 	@Test
 	void testJDBCQueryMeta() {

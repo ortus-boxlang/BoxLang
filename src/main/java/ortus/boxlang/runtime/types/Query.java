@@ -275,11 +275,11 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 
 	/**
 	 * Abstraction for creating a new column so we can re-use logic easier between normal and immutable queries
-	 * 
+	 *
 	 * @param name  column name
 	 * @param type  column type
 	 * @param index column index
-	 * 
+	 *
 	 * @return QueryColumn object
 	 */
 	protected QueryColumn createQueryColumn( Key name, QueryColumnType type, int index ) {
@@ -863,7 +863,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		return this.$bx;
 	}
 
-	/*
+	/**
 	 * Returns a IntStream of the indexes
 	 */
 	public IntStream intStream() {
@@ -881,18 +881,10 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 * @return The metadata as a struct
 	 */
 	public IStruct getMetaData() {
-		this.metadata.computeIfAbsent( Key.recordCount, key -> {
-			return data.size();
-		} );
-		this.metadata.computeIfAbsent( Key.columns, key -> {
-			return this.getColumns();
-		} );
-		this.metadata.computeIfAbsent( Key.columnList, key -> {
-			return this.getColumnList();
-		} );
-		this.metadata.computeIfAbsent( Key._HASHCODE, key -> {
-			return this.hashCode();
-		} );
+		this.metadata.computeIfAbsent( Key.recordCount, key -> data.size() );
+		this.metadata.computeIfAbsent( Key.columns, key -> this.getColumns() );
+		this.metadata.computeIfAbsent( Key.columnList, key -> this.getColumnList() );
+		this.metadata.computeIfAbsent( Key._HASHCODE, key -> this.hashCode() );
 		return this.metadata;
 	}
 
@@ -952,13 +944,18 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	/**
 	 * Convert this query to an immutable one. The new query will be a copy of this query and
 	 * changes to this query will not be reflected in the new query with the exception of complex objects, which are passed by reference.
-	 * 
+	 *
 	 * @return an ImmutableQuery containing the same data as this query
 	 */
 	public ImmutableQuery toImmutable() {
 		return new ImmutableQuery( this );
 	}
 
+	/**
+	 * Convert this query to an array of structs.
+	 *
+	 * @return An array of structs representing the query
+	 */
 	public Array asArrayOfStructs() {
 		Array arr = new Array();
 		for ( int i = 0; i < data.size(); i++ ) {

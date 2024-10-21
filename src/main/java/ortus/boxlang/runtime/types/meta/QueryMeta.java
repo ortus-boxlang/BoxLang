@@ -46,7 +46,6 @@ public class QueryMeta extends BoxMeta {
 		IStruct metadata = target.getMetaData();
 		metadata.put( Key.type, "Query" );
 		this.meta = new ImmutableStruct( metadata );
-
 	}
 
 	/**

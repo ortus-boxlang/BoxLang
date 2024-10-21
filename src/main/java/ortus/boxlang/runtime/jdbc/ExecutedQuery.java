@@ -21,19 +21,19 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.time.Duration;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.events.BoxEvent;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
@@ -90,7 +90,7 @@ public final class ExecutedQuery {
 		this.queryMeta.computeIfAbsent( Key.cacheLastAccessTimeout, key -> Duration.ZERO );
 
 		// important that we set the metadata on the Query object for later getBoxMeta(), i.e. $bx.meta calls.
-		this.results.setMetadata( queryMeta );
+		this.results.setMetadata( this.queryMeta );
 	}
 
 	/**
@@ -247,7 +247,7 @@ public final class ExecutedQuery {
 	 * Retrieve query metadata.
 	 * <p>
 	 * The struct contains the following keys:
-	 * 
+	 *
 	 * <ul>
 	 * <li>SQL: The SQL statement that was executed. (string)
 	 * <li>SqlParameters: An ordered Array of queryparam values. (array)
@@ -259,7 +259,7 @@ public final class ExecutedQuery {
 	 * <li>CacheTimeout: The max time the query will be cached for. (timespan)
 	 * <li>CacheLastAccessTimeout: Max time to wait for a cache to be accessed before it is considered stale and automatically removed from the BoxLang cache. (timespan)
 	 * </ul>
-	 * 
+	 *
 	 * @return A struct of query metadata, like original SQL, parameters, size, and cache info.
 	 */
 	private @Nonnull IStruct getQueryMeta() {
