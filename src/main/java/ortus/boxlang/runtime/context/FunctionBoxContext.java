@@ -266,19 +266,14 @@ public class FunctionBoxContext extends BaseBoxContext {
 			return new ScopeSearchResult( argumentsScope, argumentsScope, key, true );
 		}
 
-		// Look in the "this" scope next
-		if ( key.equals( ThisScope.name ) && isInClass() ) {
-			return new ScopeSearchResult( getThisClass().getBottomClass(), getThisClass().getBottomClass(), key, true );
+		ScopeSearchResult thisSerach = scopeFindThis( key );
+		if ( thisSerach != null ) {
+			return thisSerach;
 		}
 
-		// Look in the "super" scope next
-		if ( key.equals( Key._super ) && getThisClass() != null ) {
-			if ( getThisClass().getSuper() != null ) {
-				return new ScopeSearchResult( getThisClass().getSuper(), getThisClass().getSuper(), key, true );
-			} else if ( getThisClass().isJavaExtends() ) {
-				var jSuper = DynamicObject.of( getThisClass() ).setTargetClass( getThisClass().getClass().getSuperclass() );
-				return new ScopeSearchResult( jSuper, jSuper, key, true );
-			}
+		ScopeSearchResult superSearch = scopeFindSuper( key );
+		if ( superSearch != null ) {
+			return superSearch;
 		}
 
 		// Look in the static scope next
@@ -344,6 +339,41 @@ public class FunctionBoxContext extends BaseBoxContext {
 			return parent.scopeFindNearby( key, defaultScope );
 		}
 
+	}
+
+	/**
+	 * This scope lookup abstracted for thread context to use
+	 * 
+	 * @param key The key to search for
+	 * 
+	 * @return The search result or null if not foud
+	 */
+	protected ScopeSearchResult scopeFindThis( Key key ) {
+		// Look in the "this" scope next
+		if ( key.equals( ThisScope.name ) && isInClass() ) {
+			return new ScopeSearchResult( getThisClass().getBottomClass(), getThisClass().getBottomClass(), key, true );
+		}
+		return null;
+	}
+
+	/**
+	 * Super scope lookup abstracted for thread context to use
+	 * 
+	 * @param key The key to search for
+	 * 
+	 * @return The search result or null if not foud
+	 */
+	protected ScopeSearchResult scopeFindSuper( Key key ) {
+		// Look in the "super" scope next
+		if ( key.equals( Key._super ) && getThisClass() != null ) {
+			if ( getThisClass().getSuper() != null ) {
+				return new ScopeSearchResult( getThisClass().getSuper(), getThisClass().getSuper(), key, true );
+			} else if ( getThisClass().isJavaExtends() ) {
+				var jSuper = DynamicObject.of( getThisClass() ).setTargetClass( getThisClass().getClass().getSuperclass() );
+				return new ScopeSearchResult( jSuper, jSuper, key, true );
+			}
+		}
+		return null;
 	}
 
 	/**

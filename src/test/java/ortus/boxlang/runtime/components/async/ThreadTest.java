@@ -260,11 +260,25 @@ public class ThreadTest {
 	@DisplayName( "It can access the this scope inside a thread created by a class" )
 	@Test
 	public void testThreadThisScope() {
+	// @formatter:off
+	instance.executeSource(
+		"""
+			myThreadingClass = new src.test.bx.MyThreadingClass()
+			result = myThreadingClass.execute();
+		""",
+		context, BoxSourceType.CFSCRIPT );
+	IStruct asStruct = variables.getAsStruct( result );
+	assertThat( asStruct.get( Key.error ) ).isNull();
+}
+
+	@DisplayName( "It can access the super scope inside a thread created by a class" )
+	@Test
+	public void testThreadSuperScope() {
 		// @formatter:off
 		instance.executeSource(
 			"""
 				myThreadingClass = new src.test.bx.MyThreadingClass()
-				result = myThreadingClass.execute();
+				result = myThreadingClass.executeSuper();
 			""",
 			context, BoxSourceType.CFSCRIPT );
 		IStruct asStruct = variables.getAsStruct( result );
