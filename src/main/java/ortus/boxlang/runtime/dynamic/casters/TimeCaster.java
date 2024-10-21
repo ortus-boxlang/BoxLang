@@ -100,6 +100,11 @@ public class TimeCaster implements IBoxCaster {
 		// Unwrap the object
 		object = DynamicObject.unWrap( object );
 
+		// We have a LocalTime object, it has already been cast
+		if ( object instanceof LocalTime targetDateTime ) {
+			return targetDateTime;
+		}
+
 		// We have a DateTime object
 		if ( object instanceof DateTime targetDateTime ) {
 			return targetDateTime.toLocalTime();

@@ -31,6 +31,7 @@ import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.operators.InstanceOf;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.types.BoxLangType;
+import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.NullValue;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
@@ -212,7 +213,8 @@ public class GenericCaster implements IBoxCaster {
 		if ( type.equals( "array" ) ) {
 			return ArrayCaster.cast( object, fail );
 		}
-		if ( type.equals( "datetime" ) || type.equals( "date" ) ) {
+		// BL-640 - if we have a DateTime object provided, we use that reference rather than strip the date by using the timecaster
+		if ( object instanceof DateTime || type.equals( "datetime" ) || type.equals( "date" ) || type.equals( "timestamp" ) ) {
 			return DateTimeCaster.cast( object, fail );
 		}
 		if ( type.equals( "time" ) ) {

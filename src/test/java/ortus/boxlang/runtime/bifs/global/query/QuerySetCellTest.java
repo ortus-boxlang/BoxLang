@@ -19,9 +19,9 @@
 package ortus.boxlang.runtime.bifs.global.query;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -32,9 +32,11 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.TimeCaster;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class QuerySetCellTest {
@@ -168,6 +170,53 @@ public class QuerySetCellTest {
 		assertEquals( 1, variables.get( Key.of( "bit1" ) ) );
 		assertEquals( 0, variables.get( Key.of( "bit2" ) ) );
 		assertEquals( 1, variables.get( Key.of( "bit3" ) ) );
+	}
+
+	// BL-640 - Test that time values in queries are handled correctly and allow for comparison
+	// If a DateTime object is used in a query, it should be able to be compared to another DateTime object
+	@DisplayName( "It tests the BIF DateDiff with a date within a query" )
+	@Test
+	public void testQueryDate() {
+		variables.put( "date1", new DateTime( "2024-01-20T00:00:00.100Z" ) );
+		variables.put( "date2", new DateTime( "2024-01-21T00:00:00.100Z" ) );
+		instance.executeSource(
+		    """
+		    	q = querynew( "id,created", "integer,timestamp" );
+		    	queryAddRow( q );
+		    	querySetCell( q, "id", 789 );
+		    	querySetCell(
+		    		q,
+		    		"created",
+		    		date1
+		    	);
+		    	result = abs(DateDiff('d', q.created, date2));
+		    """,
+		    context
+		);
+
+		Integer result = variables.getAsDouble( Key.of( "result" ) ).intValue();
+		assertEquals( result, 1 );
+
+		variables.put( "time1", TimeCaster.cast( "22:00:00" ) );
+		variables.put( "time2", TimeCaster.cast( "23:00:00" ) );
+		instance.executeSource(
+		    """
+		    	q = querynew( "id,created", "integer,time" );
+		    	queryAddRow( q );
+		    	querySetCell( q, "id", 789 );
+		    	querySetCell(
+		    		q,
+		    		"created",
+		    		time1
+		    	);
+		    	result = abs(DateDiff('h', q.created, time2));
+		    """,
+		    context
+		);
+
+		result = variables.getAsDouble( Key.of( "result" ) ).intValue();
+		assertEquals( result, 1 );
+
 	}
 
 }
