@@ -22,16 +22,15 @@ import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
@@ -45,6 +44,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 import ortus.boxlang.runtime.validation.Validator;
 
@@ -246,7 +246,9 @@ public class DBInfo extends Component {
 	 * @return Query object where each row represents a column on the given table.
 	 */
 	private Query getColumnsForTable( DatabaseMetaData databaseMetadata, String databaseName, String schema, String tableName ) throws SQLException {
-		logger.warn( "getColumnsForTable: databaseName: " + databaseName + ", schema: " + schema + ", tableName: " + tableName );
+
+		// logger.trace( "getColumnsForTable: databaseName: {}, schema: {}, tableName: {}", databaseName, schema, tableName );
+
 		Query result = new Query();
 		try ( ResultSet resultSet = databaseMetadata.getColumns( databaseName, schema, tableName, null ) ) {
 			ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
@@ -264,23 +266,34 @@ public class DBInfo extends Component {
 			while ( resultSet.next() ) {
 				IStruct								row					= buildQueryRow( resultSet, resultSetMetaData );
 
-				String								columnCatalog		= resultSet.getString( "TABLE_CAT" );
-				String								columnSchema		= resultSet.getString( "TABLE_SCHEM" );
-				String								columnTable			= resultSet.getString( "TABLE_NAME" );
-				String								lookupHash			= columnCatalog.hashCode() + "." + columnSchema.hashCode() + "."
-				    + columnTable.hashCode();
+				// These can be null
+				String								columnCatalog		= resultSet.getString( "TABLE_CAT" ) == null
+				    ? ""
+				    : resultSet.getString( "TABLE_CAT" );
+				String								columnSchema		= resultSet.getString( "TABLE_SCHEM" ) == null
+				    ? ""
+				    : resultSet.getString( "TABLE_SCHEM" );
 
-				List<String>						primaryKeys			= primaryKeyCache.computeIfAbsent( lookupHash,
-				    k -> getPrimaryKeys( databaseMetadata, columnCatalog, columnSchema, columnTable ) );
-				Map<String, Map<String, String>>	fkeys				= foreignKeyCache.computeIfAbsent( lookupHash,
-				    k -> getForeignKeysAsMap( databaseMetadata, columnCatalog, columnSchema, columnTable ) );
+				// This one is never null
+				String								columnTable			= resultSet.getString( "TABLE_NAME" );
+				String								lookupHash			= String.format( "%d.%d.%d", columnCatalog.hashCode(), columnSchema.hashCode(),
+				    columnTable.hashCode() );
+
+				List<String>						primaryKeys			= primaryKeyCache.computeIfAbsent(
+				    lookupHash,
+				    k -> getPrimaryKeys( databaseMetadata, columnCatalog, columnSchema, columnTable )
+				);
+				Map<String, Map<String, String>>	foreignKeys			= foreignKeyCache.computeIfAbsent(
+				    lookupHash,
+				    k -> getForeignKeysAsMap( databaseMetadata, columnCatalog, columnSchema, columnTable )
+				);
 				boolean								isPrimaryKey		= primaryKeys.contains( row.getAsString( Key.of( "COLUMN_NAME" ) ) );
-				boolean								isForeignKey		= fkeys.containsKey( row.getAsString( Key.of( "COLUMN_NAME" ) ) );
+				boolean								isForeignKey		= foreignKeys.containsKey( row.getAsString( Key.of( "COLUMN_NAME" ) ) );
 				String								referencedKeyColumn	= "N/A";
 				String								referencedKeyTable	= "N/A";
 
 				if ( isForeignKey ) {
-					Map<String, String> fkey = fkeys.get( row.getAsString( Key.of( "COLUMN_NAME" ) ) );
+					Map<String, String> fkey = foreignKeys.get( row.getAsString( Key.of( "COLUMN_NAME" ) ) );
 					referencedKeyColumn	= fkey.get( "PKCOLUMN_NAME" );
 					referencedKeyTable	= fkey.get( "PKTABLE_NAME" );
 				}
@@ -292,10 +305,12 @@ public class DBInfo extends Component {
 
 				result.addRow( row );
 			}
+
 			if ( result.isEmpty() && ( !databaseMetadata.getTables( null, schema, tableName, null ).next() ) ) {
 				throw new DatabaseException( String.format( "Table not found for pattern [%s] on schema [%s]", tableName, schema ) );
 			}
 		}
+
 		return result;
 	}
 
@@ -522,7 +537,7 @@ public class DBInfo extends Component {
 
 	/**
 	 * Retrieve the primary keys for a given catalog/schema/table combo and return them as a list of strings.
-	 * 
+	 *
 	 * @param metadata Database metadata object to use for querying, i.e. connection.getMetaData().
 	 * @param catalog  Catalog name to filter by.
 	 * @param schema   Schema name to filter by.
@@ -543,7 +558,7 @@ public class DBInfo extends Component {
 
 	/**
 	 * Retrieve the foreign keys for a given catalog/schema/table combo and return them as a map of column names to primary key column names and table names.
-	 * 
+	 *
 	 * @param metadata Database metadata object to use for querying, i.e. connection.getMetaData().
 	 * @param catalog  Catalog name to filter by.
 	 * @param schema   Schema name to filter by.
