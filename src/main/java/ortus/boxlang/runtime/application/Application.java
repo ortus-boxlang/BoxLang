@@ -216,7 +216,7 @@ public class Application {
 		if ( loadPathsUrls.length == 0 ) {
 			// Setup the runtime classloader as the thread's context class loader
 			// This is so third party libraries can find the classes they need as well.
-			Thread.currentThread().setContextClassLoader( BoxRuntime.getInstance().getRuntimeLoader() );
+			// Thread.currentThread().setContextClassLoader( BoxRuntime.getInstance().getRuntimeLoader() );
 			return;
 		}
 
@@ -231,7 +231,7 @@ public class Application {
 
 		// Setup the thread's context class loader now that we have the class loader
 		// This is so third party libraries can find the classes they need as well.
-		Thread.currentThread().setContextClassLoader( this.classLoaders.get( loaderCacheKey ) );
+		// Thread.currentThread().setContextClassLoader( this.classLoaders.get( loaderCacheKey ) );
 	}
 
 	/**
