@@ -84,7 +84,7 @@
 					<td>
 						<div class="bx-onoff">
 							<ul>
-								<bx:loop collection="#md.implements#" item="interface">
+								<bx:loop array="#md.implements#" item="interface">
 									<li>#encodeForHTML( interface.name )#</li>
 								</bx:loop>
 							</ul>
