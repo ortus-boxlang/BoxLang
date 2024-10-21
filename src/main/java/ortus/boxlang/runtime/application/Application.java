@@ -225,10 +225,6 @@ public class Application {
 			    logger.debug( "Application ClassLoader [{}] registered with these paths: [{}]", this.name, Arrays.toString( loadPathsUrls ) );
 			    return new DynamicClassLoader( this.name, loadPathsUrls, BoxRuntime.getInstance().getRuntimeLoader(), false );
 		    } );
-
-		// Setup the thread's context class loader now that we have the class loader
-		// This is so third party libraries can find the classes they need as well.
-		Thread.currentThread().setContextClassLoader( this.classLoaders.get( loaderCacheKey ) );
 	}
 
 	/**
