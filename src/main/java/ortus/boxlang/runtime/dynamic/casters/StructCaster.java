@@ -87,7 +87,7 @@ public class StructCaster implements IBoxCaster {
 		}
 
 		if ( object instanceof Map<?, ?> map ) {
-			return Struct.fromMap( ( Map<Object, Object> ) map );
+			return Struct.fromMap( map );
 		}
 
 		if ( fail ) {
