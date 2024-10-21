@@ -460,7 +460,8 @@ public class BoxRuntime implements java.io.Closeable {
 		this.runtimeLoader	= new DynamicClassLoader(
 		    Key.runtime,
 		    getConfiguration().getJavaLibraryPaths(),
-		    this.getClass().getClassLoader()
+		    this.getClass().getClassLoader(),
+		    true
 		);
 		// Startup the right Compiler
 		this.boxpiler		= chooseBoxpiler();

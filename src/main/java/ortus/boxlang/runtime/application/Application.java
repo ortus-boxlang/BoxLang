@@ -226,7 +226,7 @@ public class Application {
 		this.classLoaders.computeIfAbsent( loaderCacheKey,
 		    key -> {
 			    logger.debug( "Application ClassLoader [{}] registered with these paths: [{}]", this.name, Arrays.toString( loadPathsUrls ) );
-			    return new DynamicClassLoader( this.name, loadPathsUrls, BoxRuntime.getInstance().getRuntimeLoader() );
+			    return new DynamicClassLoader( this.name, loadPathsUrls, BoxRuntime.getInstance().getRuntimeLoader(), false );
 		    } );
 
 		// Setup the thread's context class loader now that we have the class loader

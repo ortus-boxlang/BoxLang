@@ -82,25 +82,34 @@ public class DynamicClassLoader extends URLClassLoader {
 	/**
 	 * Construct the class loader
 	 *
-	 * @param name   The unique name of the class loader
-	 * @param url    A single URL to load from
-	 * @param parent The parent class loader to delegate to
+	 * @param name            The unique name of the class loader
+	 * @param url             A single URL to load from
+	 * @param parent          The parent class loader to delegate to
+	 * @param loadParentFirst Whether to load the parent class loader or not, default is to create a boundary.
 	 */
-	public DynamicClassLoader( Key name, URL url, ClassLoader parent ) {
-		this( name, new URL[] { url }, parent );
+	public DynamicClassLoader( Key name, URL url, ClassLoader parent, Boolean loadParentFirst ) {
+		this( name, new URL[] { url }, parent, loadParentFirst );
 	}
 
 	/**
 	 * Construct the class loader
+	 * <p>
+	 * Please note the {@code loadParentFirst} setting. By default we create a virtual boundary
+	 * between classloaders and do not load the parent class loader into the root ClassLoader, only
+	 * into this class loader for hierarchical purposes. If this setting is set to true, then the
+	 * parent class loader will be loaded into the root class loader first and lookups go to the parent first.
+	 * <p>
+	 * This can be desired on certain ocassions, but for modular separation, this is disabled by default.
 	 *
-	 * @param name   The unique name of the class loader
-	 * @param urls   The URLs to load from
-	 * @param parent The parent class loader to delegate to
+	 * @param name            The unique name of the class loader
+	 * @param urls            The URLs to load from
+	 * @param parent          The parent class loader to delegate to
+	 * @param loadParentFirst Whether to load the parent class loader or not, default is to create a boundary.
 	 */
-	public DynamicClassLoader( Key name, URL[] urls, ClassLoader parent ) {
+	public DynamicClassLoader( Key name, URL[] urls, ClassLoader parent, Boolean loadParentFirst ) {
 		// We do not seed the parent class loader because we want to control the class loading
 		// And when to null out the parent to create separate class loading environments
-		super( name.getName(), urls, null );
+		super( name.getName(), urls, loadParentFirst ? parent : null );
 		Objects.requireNonNull( parent, "Parent class loader cannot be null" );
 		this.parent		= parent;
 		this.nameAsKey	= name;
@@ -113,7 +122,7 @@ public class DynamicClassLoader extends URLClassLoader {
 	 * @param parent The parent class loader to delegate to
 	 */
 	public DynamicClassLoader( Key name, ClassLoader parent ) {
-		this( name, new URL[ 0 ], parent );
+		this( name, new URL[ 0 ], parent, false );
 	}
 
 	/**

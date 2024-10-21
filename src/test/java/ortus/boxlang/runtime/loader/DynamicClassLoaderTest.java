@@ -39,7 +39,7 @@ public class DynamicClassLoaderTest {
 		Path				libPath				= Paths.get( "src/test/resources/libs/" ).toAbsolutePath().normalize();
 		URL[]				urls				= DynamicClassLoader.getJarURLs( libPath );
 		ClassLoader			parentClassLoader	= getClass().getClassLoader();
-		DynamicClassLoader	dynamicClassLoader	= new DynamicClassLoader( Key.of( "TestClassLoader" ), urls, parentClassLoader );
+		DynamicClassLoader	dynamicClassLoader	= new DynamicClassLoader( Key.of( "TestClassLoader" ), urls, parentClassLoader, false );
 		// String targetClass = "com.github.benmanes.caffeine.cache.Caffeine";
 		String				targetClass			= "HelloWorld";
 
@@ -64,7 +64,7 @@ public class DynamicClassLoaderTest {
 		// Given
 		URL[]				urls				= new URL[] { /* Add your test URLs here */ };
 		ClassLoader			parentClassLoader	= getClass().getClassLoader();
-		DynamicClassLoader	dynamicClassLoader	= new DynamicClassLoader( Key.of( "TestClassLoader" ), urls, parentClassLoader );
+		DynamicClassLoader	dynamicClassLoader	= new DynamicClassLoader( Key.of( "TestClassLoader" ), urls, parentClassLoader, false );
 
 		// When
 		try {
@@ -82,7 +82,7 @@ public class DynamicClassLoaderTest {
 		// Given
 		URL[]				urls				= new URL[] { /* Add your test URLs here */ };
 		ClassLoader			parentClassLoader	= getClass().getClassLoader();
-		DynamicClassLoader	dynamicClassLoader	= new DynamicClassLoader( Key.of( "TestClassLoader" ), urls, parentClassLoader );
+		DynamicClassLoader	dynamicClassLoader	= new DynamicClassLoader( Key.of( "TestClassLoader" ), urls, parentClassLoader, false );
 
 		// When
 		dynamicClassLoader.close();
