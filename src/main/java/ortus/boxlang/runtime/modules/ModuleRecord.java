@@ -377,7 +377,7 @@ public class ModuleRecord {
 			this.classLoader = new DynamicClassLoader(
 			    this.name,
 			    this.physicalPath.toUri().toURL(),
-			    runtime.getClass().getClassLoader()
+			    runtime.getRuntimeLoader()
 			);
 		} catch ( MalformedURLException e ) {
 			logger.error( "Error creating module [{}] class loader.", this.name, e );
