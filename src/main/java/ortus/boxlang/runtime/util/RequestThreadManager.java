@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.context.ThreadBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -297,6 +298,8 @@ public class RequestThreadManager {
 		local.put( Key.attributes, attributes );
 		// Finally we tell the thread manager about itself
 		registerThread( name, context );
+		// Register the threads context class loader according to where the thread was created
+		thread.setContextClassLoader( context.getParentOfType( RequestBoxContext.class ).getRequestClassLoader() );
 		// Up up and away
 		thread.start();
 

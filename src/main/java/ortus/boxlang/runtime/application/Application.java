@@ -214,16 +214,24 @@ public class Application {
 
 		// if we don't have any return out
 		if ( loadPathsUrls.length == 0 ) {
+			// Setup the runtime classloader as the thread's context class loader
+			// This is so third party libraries can find the classes they need as well.
+			Thread.currentThread().setContextClassLoader( BoxRuntime.getInstance().getRuntimeLoader() );
 			return;
 		}
 
 		// Get or compute a class loader according to the incoming URIs for classes to load
+		// Remember that Application.bx is instantiated per request, so each request could be different
 		String loaderCacheKey = EncryptionUtil.hash( Arrays.toString( loadPathsUrls ) );
 		this.classLoaders.computeIfAbsent( loaderCacheKey,
 		    key -> {
 			    logger.debug( "Application ClassLoader [{}] registered with these paths: [{}]", this.name, Arrays.toString( loadPathsUrls ) );
 			    return new DynamicClassLoader( this.name, loadPathsUrls, BoxRuntime.getInstance().getRuntimeLoader() );
 		    } );
+
+		// Setup the thread's context class loader now that we have the class loader
+		// This is so third party libraries can find the classes they need as well.
+		Thread.currentThread().setContextClassLoader( this.classLoaders.get( loaderCacheKey ) );
 	}
 
 	/**
