@@ -60,6 +60,7 @@ import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.IType;
+import ortus.boxlang.runtime.types.NullValue;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -359,7 +360,7 @@ public class DumpUtil {
 	 * @return The template name found in the resources folder
 	 */
 	private static String discoverTemplateName( Object target ) {
-		if ( target == null ) {
+		if ( target == null || target instanceof NullValue ) {
 			return "Null.bxm";
 		} else if ( target instanceof Throwable ) {
 			return "Throwable.bxm";
