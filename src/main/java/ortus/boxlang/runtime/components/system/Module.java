@@ -22,6 +22,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
@@ -45,9 +46,7 @@ public class Module extends Component {
 	/**
 	 * List of valid class extensions
 	 */
-	// TODO: Move .cfc extension into CF compat module and contribute it at startup.
-	// Need to add a setter or other similar mechanism to allow for dynamic extension
-	private static List<String> VALID_EXTENSIONS = List.of( ".bxm", ".cfm" );
+	private static List<String> VALID_EXTENSIONS = BoxRuntime.getInstance().getConfiguration().getValidTemplateExtensionsList();
 
 	/**
 	 * --------------------------------------------------------------------------

@@ -793,6 +793,24 @@ public class Configuration implements IConfigSegment {
 	}
 
 	/**
+	 * This returns all valid BoxLang class extensions.
+	 *
+	 * @return A list of all valid class extensions
+	 */
+	public List<String> getValidTemplateExtensionsList() {
+		return new ArrayList<>( this.validTemplateExtensions );
+	}
+
+	/**
+	 * This returns all valid BoxLang class extensions.
+	 *
+	 * @return A list of all valid class extensions
+	 */
+	public List<String> getValidClassExtensionsList() {
+		return new ArrayList<>( this.validClassExtensions );
+	}
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Conversion
 	 * --------------------------------------------------------------------------
