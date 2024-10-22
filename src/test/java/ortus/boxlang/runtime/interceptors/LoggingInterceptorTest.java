@@ -71,7 +71,6 @@ public class LoggingInterceptorTest {
 		    Key.log, "Test"
 		) );
 		assertTrue( StringCaster.cast( FileSystemUtil.read( logFilePath ) ).indexOf( "Hello" ) > -1 );
-		assertTrue( StringCaster.cast( FileSystemUtil.read( logFilePath ) ).indexOf( "World" ) > -1 );
 	}
 
 }

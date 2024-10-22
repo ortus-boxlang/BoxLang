@@ -17,16 +17,16 @@
  */
 package ortus.boxlang.runtime.interceptors;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
+import java.util.ServiceLoader;
 
 import org.slf4j.LoggerFactory;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.classic.spi.Configurator;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.FileAppender;
 import ortus.boxlang.runtime.BoxRuntime;
@@ -38,7 +38,6 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
-import ortus.boxlang.runtime.util.FileSystemUtil;
 
 /**
  * A BoxLang interceptor that provides logging capabilities
@@ -127,40 +126,49 @@ public class Logging extends BaseInterceptor {
 			);
 		}
 
-		FileAppender<ILoggingEvent> fileAppender = null;
+		FileAppender<ILoggingEvent>	fileAppender	= null;
+		Logger						logger			= null;
 		try {
 			if ( file == null ) {
 				file = logCategory + ".log";
 			}
-			String filePath = Paths.get( logsDirectory, "/", file ).normalize().toString();
-			if ( !FileSystemUtil.exists( filePath ) ) {
-				Files.createFile( Path.of( filePath ) );
-			}
+			String						filePath		= Paths.get( logsDirectory, "/", file ).normalize().toString();
 
-			LoggerContext logContext = ( LoggerContext ) LoggingConfigurator.encoder.getContext();
+			LoggerContext				logContext		= null;
 
-			if ( logContext == null ) {
-				logContext = new LoggerContext();
-			}
+			org.slf4j.ILoggerFactory	loggerFactory	= LoggerFactory.getILoggerFactory();
 
-			org.slf4j.ILoggerFactory loggerFactory = LoggerFactory.getILoggerFactory();
-
+			// If our core SLF4J logger factory is returning a logback instance use that
 			if ( loggerFactory instanceof LoggerContext ) {
-				// Use the available factory context if it's a logback instance
 				logContext = ( LoggerContext ) loggerFactory;
+			} else {
+				loggerFactory.getLogger( getClass().getName() )
+				    .warn( "The LoggerFactory context is not an instance of Logback LoggerContext. Recevied class: " + loggerFactory.getClass().getName() );
+				// otherwise grab the context from the configurator
+				LoggingConfigurator configurator = ServiceLoader
+				    .load( Configurator.class, BoxRuntime.class.getClassLoader() )
+				    .stream()
+				    .map( ServiceLoader.Provider::get )
+				    .map( target -> ( LoggingConfigurator ) target )
+				    .findFirst().orElse( null );
+
+				logContext = ( LoggerContext ) configurator.getLoggerContext();
 			}
 
-			Logger logger = logContext.getLogger( logCategory );
+			logger = logContext.getLogger( logCategory );
+			logger.setLevel( Level.ALL );
+			logger.setAdditive( true );
 
-			fileAppender = new FileAppender<>();
+			fileAppender = new FileAppender<ILoggingEvent>();
 			fileAppender.setFile( filePath );
 			fileAppender.setEncoder( LoggingConfigurator.encoder );
 			fileAppender.setContext( logContext );
+			fileAppender.setAppend( true );
+			fileAppender.setImmediateFlush( true );
+			fileAppender.setPrudent( true );
 			fileAppender.start();
 
 			logger.addAppender( fileAppender );
-			logger.setLevel( Level.ALL );
-			logger.setAdditive( false );
 
 			switch ( levelMap.get( levelKey ) ) {
 				case LEVEL_TRACE : {
@@ -173,6 +181,7 @@ public class Logging extends BaseInterceptor {
 				}
 				default :
 				case LEVEL_INFO : {
+					logContext.getLogger( Logger.ROOT_LOGGER_NAME ).info( logText );
 					logger.info( logText );
 					break;
 				}
@@ -190,6 +199,9 @@ public class Logging extends BaseInterceptor {
 			throw new BoxRuntimeException( "An error occurred while attempting to log the message", e );
 		} finally {
 			if ( fileAppender != null ) {
+				if ( logger != null ) {
+					logger.detachAppender( fileAppender );
+				}
 				fileAppender.stop();
 			}
 		}
