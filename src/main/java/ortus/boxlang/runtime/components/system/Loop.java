@@ -67,11 +67,10 @@ public class Loop extends Component {
 		    new Attribute( Key.label, "string", Set.of( Validator.NON_EMPTY ) ),
 		    new Attribute( Key.times, "integer", Set.of( Validator.min( 0 ) ) )
 
-			/*
+			/**
 			 * step
 			 * array
 			 * characters
-			 * 
 			 */
 		};
 	}
@@ -79,7 +78,7 @@ public class Loop extends Component {
 	/**
 	 * Different items are required based on loop type. Items listed as required may not be depending on your loop type. Loop forms: [query] [condition]
 	 * [index + from + to ] [index + list] [collection + item ]
-	 * *
+	 *
 	 *
 	 * @param context        The context in which the Component is being invoked
 	 * @param attributes     The attributes to the Component
