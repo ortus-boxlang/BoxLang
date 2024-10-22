@@ -176,12 +176,12 @@ public class DynamicInteropService {
 	/**
 	 * This is the class locator
 	 */
-	private static ClassLocator										classLocator		= BoxRuntime.getInstance().getClassLocator();
+	private static ClassLocator										classLocator		= null;
 
 	/**
 	 * This is the function service for invoking functions
 	 */
-	private static FunctionService									functionService		= BoxRuntime.getInstance().getFunctionService();
+	private static FunctionService									functionService		= null;
 
 	/**
 	 * Coercion maps
@@ -189,10 +189,6 @@ public class DynamicInteropService {
 	private static List<String>										numberTargets		= List.of( "boolean", "byte", "character", "string" );
 	private static List<String>										booleanTargets		= List.of( "string", "character" );
 
-	/**
-	 * Logger
-	 */
-	private static final Logger										logger				= LoggerFactory.getLogger( DynamicInteropService.class );
 
 	/**
 	 * Static Initializer
@@ -427,7 +423,7 @@ public class DynamicInteropService {
 				String superClassName = StringCaster.cast( superClassObject );
 				if ( superClassName != null && superClassName.length() > 0 && !superClassName.toLowerCase().startsWith( "java:" ) ) {
 					// Recursively load the super class
-					IClassRunnable _super = ( IClassRunnable ) classLocator.load( classContext,
+					IClassRunnable _super = ( IClassRunnable ) getClassLocator().load( classContext,
 					    superClassName,
 					    classContext.getCurrentImports()
 					)
@@ -459,7 +455,7 @@ public class DynamicInteropService {
 				    .toList();
 
 				for ( String interfaceName : interfaceNames ) {
-					BoxInterface thisInterface = ( BoxInterface ) classLocator.load( classContext, interfaceName, classContext.getCurrentImports() )
+					BoxInterface thisInterface = ( BoxInterface ) getClassLocator().load( classContext, interfaceName, classContext.getCurrentImports() )
 					    .unWrapBoxLangClass();
 					boxClass.registerInterface( thisInterface );
 				}
@@ -499,7 +495,7 @@ public class DynamicInteropService {
 					// implicit constructor
 
 					if ( positionalArgs != null && positionalArgs.length == 1 && positionalArgs[ 0 ] instanceof IStruct named ) {
-						namedArgs = named.getWrapped();
+						namedArgs = named;
 					} else if ( positionalArgs != null && positionalArgs.length > 0 ) {
 						throw new BoxRuntimeException( "Implicit constructor only accepts named args or a single Struct as a positional arg." );
 					}
@@ -508,7 +504,7 @@ public class DynamicInteropService {
 						if ( namedArgs.containsKey( Key.argumentCollection ) && namedArgs.get( Key.argumentCollection ) instanceof IStruct argCollection ) {
 							// Create copy of named args, merge in argCollection without overwriting, and delete arg collection key from copy of namedargs
 							namedArgs = new HashMap<>( namedArgs );
-							for ( Map.Entry<Key, Object> entry : argCollection.getWrapped().entrySet() ) {
+							for ( Map.Entry<Key, Object> entry : argCollection.entrySet() ) {
 								if ( !namedArgs.containsKey( entry.getKey() ) ) {
 									namedArgs.put( entry.getKey(), entry.getValue() );
 								}
@@ -1833,7 +1829,7 @@ public class DynamicInteropService {
 		// Unless the method is already defined on the class
 		if ( targetInstance != null ) {
 			ObjectRef			ref					= ObjectRef.of( targetInstance );
-			MemberDescriptor	memberDescriptor	= functionService.getMemberMethod( context, name, ref );
+			MemberDescriptor	memberDescriptor	= getFunctionService().getMemberMethod( context, name, ref );
 			if ( memberDescriptor != null ) {
 				targetInstance = ref.get();
 				return memberDescriptor.invoke( context, targetInstance, positionalArguments );
@@ -1920,7 +1916,7 @@ public class DynamicInteropService {
 
 		if ( targetInstance != null ) {
 			ObjectRef			ref					= ObjectRef.of( targetInstance );
-			MemberDescriptor	memberDescriptor	= functionService.getMemberMethod( context, name, ref );
+			MemberDescriptor	memberDescriptor	= getFunctionService().getMemberMethod( context, name, ref );
 			if ( memberDescriptor != null ) {
 				targetInstance = ref.get();
 				return memberDescriptor.invoke( context, targetInstance, namedArguments );
@@ -2220,4 +2216,33 @@ public class DynamicInteropService {
 		// Verify assignability including primitive autoboxing
 		return ClassUtils.isAssignable( argumentsAsClasses, constructorParams );
 	}
+
+	/**
+	 * Lazy load this to avoid static intitlizer deadlocks on startup
+	 */
+	private static FunctionService getFunctionService() {
+		if ( functionService == null ) {
+			synchronized ( DynamicInteropService.class ) {
+				if ( functionService == null ) {
+					functionService = BoxRuntime.getInstance().getFunctionService();
+				}
+			}
+		}
+		return functionService;
+	}
+
+	/**
+	 * Lazy load ClassLocator as well
+	 */
+	private static ClassLocator getClassLocator() {
+		if ( classLocator == null ) {
+			synchronized ( DynamicInteropService.class ) {
+				if ( classLocator == null ) {
+					classLocator = BoxRuntime.getInstance().getClassLocator();
+				}
+			}
+		}
+		return classLocator;
+	}
+
 }

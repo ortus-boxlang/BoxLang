@@ -223,7 +223,7 @@ public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 	/**
 	 * Get the wrapped map used in the implementation
 	 */
-	public Map<Key, Object> getWrapped();
+	public Map<? extends Object, Object> getWrapped();
 
 	/**
 	 * Get the type of struct

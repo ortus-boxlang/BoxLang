@@ -18,20 +18,14 @@
 package ortus.boxlang.runtime.types;
 
 import java.io.Serializable;
-import java.lang.ref.SoftReference;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -56,26 +50,18 @@ import ortus.boxlang.runtime.types.meta.IListenable;
 import ortus.boxlang.runtime.types.meta.StructMeta;
 
 /**
- * This type provides the core map class for Boxlang. Structs are highly versatile and are used for organizing and managing related data.
- *
- * Types of Structs in BoxLang:
- *
- * * Basic Structs: These are the basic structures where each key is associated with a single value. Keys are case-insensitive and can be strings or symbols.
- * * Nested Structs: Structs can contain other structs as values, allowing for a hierarchical organization of data.
- * * Case-Sensitive Structs: By default, BoxLang structs are case-insensitive. However, you can create case-sensitive structs if needed.
- * * Ordered Structs: This implementation of a Struct maintains keys in the order they were added.
- * * Sorted Structs: This implementation of a Struct maintains keys in specified sorted order.
- *
+ * I wrap a Map to allow it to be used as a Struct, but without needing to make a copy of the original Map.
+ * Changes to this struct will be reflected in the original map and vice versa
  *
  */
-public class Struct implements IStruct, IListenable, Serializable {
+public class StructMapWrapper implements IStruct, IListenable, Serializable {
 
 	/**
 	 * This is to help prevent endless recursion when converting a struct to a string. Technically, this approach only applies to structs
 	 * and would not prevent two arrays with circular references. If we run into that, we can probably move this static field to the
 	 * IType interface and add the same logic to the Array class and any other type that might have circular references like query.
 	 */
-	private static final ThreadLocal<Set<Integer>>	toStringObjects						= ThreadLocal.withInitial( HashSet::new );
+	private static final ThreadLocal<Set<Integer>>	toStringObjects		= ThreadLocal.withInitial( HashSet::new );
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -84,32 +70,9 @@ public class Struct implements IStruct, IListenable, Serializable {
 	 */
 
 	/**
-	 * A pre-made comparator to use with a sorted struct to sort longest keys first, and shortest last
-	 */
-	public static final Comparator<Key>				KEY_LENGTH_LONGEST_FIRST_COMPARATOR	= ( k1, k2 ) -> {
-																							int lengthCompare = Integer.compare( k2.getName().length(),
-																							    k1.getName().length() );
-																							if ( lengthCompare != 0 ) {
-																								return lengthCompare;
-																							} else {
-																								return k1.getName().compareTo( k2.getName() );
-																							}
-																						};
-
-	/**
-	 * An immutable singleton empty struct
-	 */
-	public static final IStruct						EMPTY								= new ImmutableStruct();
-
-	/**
 	 * Metadata object
 	 */
 	public BoxMeta									$bx;
-
-	/**
-	 * The type of struct ( private so that the interface method `getType` will be used )
-	 */
-	private final TYPES								type;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -120,24 +83,17 @@ public class Struct implements IStruct, IListenable, Serializable {
 	/**
 	 * Serial version UID
 	 */
-	private static final long						serialVersionUID					= 1L;
+	private static final long						serialVersionUID	= 1L;
 
 	/**
 	 * The wrapped map used in the implementation
 	 */
-	protected final Map<Key, Object>				wrapped;
+	protected final Map<Object, Object>				wrapped;
 
 	/**
 	 * Used to track change listeners. Intitialized on-demand
 	 */
 	private Map<Key, IChangeListener>				listeners;
-
-	/**
-	 * In general, a common approach is to choose an initial capacity that is a power of two.
-	 * For example, 16, 32, 64, etc. This is because ConcurrentHashMap uses power-of-two-sized hash tables,
-	 * and using a power-of-two capacity can lead to better distribution of elements in the table.
-	 */
-	protected static final int						INITIAL_CAPACITY					= 32;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -152,68 +108,8 @@ public class Struct implements IStruct, IListenable, Serializable {
 	 *
 	 * @throws BoxRuntimeException If an invalid type is specified: DEFAULT, LINKED, SORTED
 	 */
-	public Struct( TYPES type ) {
-		this.type		= type;
-
-		// Initialize the wrapped map
-		this.wrapped	= switch ( type ) {
-							case DEFAULT, CASE_SENSITIVE, SOFT -> new ConcurrentHashMap<>( INITIAL_CAPACITY );
-							case LINKED, LINKED_CASE_SENSITIVE -> Collections.synchronizedMap( new LinkedHashMap<>( INITIAL_CAPACITY ) );
-							case SORTED -> new ConcurrentSkipListMap<>();
-							case WEAK -> new WeakHashMap<>( INITIAL_CAPACITY );
-							default -> throw new BoxRuntimeException( "Invalid struct type [" + type.name() + "]" );
-						};
-	}
-
-	/**
-	 * Create a default struct
-	 */
-	public Struct() {
-		this( TYPES.DEFAULT );
-	}
-
-	/**
-	 * Create a sorted struct with the passed {@Link Comparator} object
-	 *
-	 * @param comparator The comparator to use
-	 */
-	public Struct( Comparator<Key> comparator ) {
-		this.type		= TYPES.SORTED;
-		this.wrapped	= new ConcurrentSkipListMap<>( comparator );
-	}
-
-	/**
-	 * Construct a struct from a map. This wraps the original map.
-	 * Use the {@code Struct( Type type, Map<? extends Object, ? extends Object> map )} method and
-	 * supply an explicit type to have this struct created with a copy of all the
-	 * keys/values in your map.
-	 *
-	 * @param map  The map to create the struct from
-	 * @param type The type of struct to create: DEFAULT, LINKED, SORTED
-	 */
-	public Struct( Map<Key, Object> map, TYPES type ) {
-		this.type		= type;
-		this.wrapped	= map;
-	}
-
-	/**
-	 * Construct a struct from the keys/values in your map.
-	 *
-	 * @param map The map to create the struct from
-	 */
-	public Struct( Map<? extends Object, ? extends Object> map ) {
-		this( TYPES.DEFAULT, map );
-	}
-
-	/**
-	 * Construct a struct of a specific type from an existing map
-	 *
-	 * @param type The type of struct to create: DEFAULT, LINKED, SORTED
-	 * @param map  The map to create the struct from
-	 */
-	public Struct( TYPES type, Map<? extends Object, ? extends Object> map ) {
-		this( type );
-		addAll( map );
+	public StructMapWrapper( Map<Object, Object> map ) {
+		this.wrapped = map;
 	}
 
 	/**
@@ -230,20 +126,8 @@ public class Struct implements IStruct, IListenable, Serializable {
 	 *
 	 * @return The struct created from the map
 	 */
-	public static IStruct fromMap( Map<? extends Object, ? extends Object> map ) {
-		return new Struct( map );
-	}
-
-	/**
-	 * Static helper to construct a struct of a specific type and an existing map
-	 *
-	 * @param type The type of struct to create: DEFAULT, LINKED, SORTED
-	 * @param map  The map to create the struct from
-	 *
-	 * @return The struct created from the map with the specified type
-	 */
-	public static IStruct fromMap( TYPES type, Map<Object, Object> map ) {
-		return new Struct( type, map );
+	public static IStruct of( Map<Object, Object> map ) {
+		return new StructMapWrapper( map );
 	}
 
 	/**
@@ -252,83 +136,6 @@ public class Struct implements IStruct, IListenable, Serializable {
 	 * --------------------------------------------------------------------------
 	 * These methods are used to create structs from name value pairs
 	 */
-
-	/**
-	 * Create a struct from a list of values. The values must be in pairs, key, value, key, value, etc.
-	 *
-	 * @param values The values to create the struct from
-	 *
-	 * @return The struct
-	 */
-	public static IStruct of( Object... values ) {
-		if ( values.length % 2 != 0 ) {
-			throw new BoxRuntimeException( "Invalid number of arguments.  Must be an even number." );
-		}
-		IStruct struct = new Struct();
-		for ( int i = 0; i < values.length; i += 2 ) {
-			struct.put( KeyCaster.cast( values[ i ] ), values[ i + 1 ] );
-		}
-		return struct;
-	}
-
-	/**
-	 * Create a linked struct from a list of values. The values must be in pairs, key, value, key, value, etc.
-	 *
-	 * @param values The values to create the struct from
-	 *
-	 * @return The linked struct
-	 */
-	public static IStruct linkedOf( Object... values ) {
-		if ( values.length % 2 != 0 ) {
-			throw new BoxRuntimeException( "Invalid number of arguments.  Must be an even number." );
-		}
-		IStruct struct = new Struct( TYPES.LINKED );
-		for ( int i = 0; i < values.length; i += 2 ) {
-			struct.put( KeyCaster.cast( values[ i ] ), values[ i + 1 ] );
-		}
-		return struct;
-	}
-
-	/**
-	 * Create a sorted struct from a list of values and the passed comparator.
-	 * The values must be in pairs, key, value, key, value, etc.
-	 *
-	 * @param comparator The comparator to use
-	 * @param values     The values to create the struct from
-	 *
-	 * @return The sorted struct
-	 */
-	public static IStruct sortedOf( Comparator<Key> comparator, Object... values ) {
-
-		if ( values.length % 2 != 0 ) {
-			throw new BoxRuntimeException( "Invalid number of arguments.  Must be an even number." );
-		}
-
-		IStruct struct = ( comparator == null ? new Struct( TYPES.SORTED ) : new Struct( comparator ) );
-
-		for ( int i = 0; i < values.length; i += 2 ) {
-			struct.put( KeyCaster.cast( values[ i ] ), values[ i + 1 ] );
-		}
-
-		return struct;
-	}
-
-	/**
-	 * Create a sorted struct from an existing map.
-	 *
-	 * @param comparator The comparator to use
-	 * @param map        An existing map to create the sorted struct from
-	 *
-	 * @return The sorted struct
-	 */
-	public static IStruct sortedOf( Comparator<Key> comparator, Map<Key, Object> map ) {
-
-		IStruct struct = ( comparator == null ? new Struct( TYPES.SORTED ) : new Struct( comparator ) );
-
-		struct.putAll( map );
-
-		return struct;
-	}
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -363,11 +170,19 @@ public class Struct implements IStruct, IListenable, Serializable {
 	 *
 	 * @return {@code true} if this map contains a mapping for the specified
 	 */
-	public boolean containsKey( Key key ) {
-		return isCaseSensitive()
-		    ? ( boolean ) keySet().stream().anyMatch( match -> match.equalsWithCase( key ) )
-		    : wrapped.containsKey( key );
+	public boolean containsKey( String key ) {
+		return wrapped.containsKey( key );
+	}
 
+	/**
+	 * Returns {@code true} if this map contains a mapping for the specified {@code Key}
+	 *
+	 * @param key key whose presence in this map is to be tested
+	 *
+	 * @return {@code true} if this map contains a mapping for the specified
+	 */
+	public boolean containsKey( Key key ) {
+		return wrapped.containsKey( key.getOriginalValue() );
 	}
 
 	/**
@@ -381,21 +196,7 @@ public class Struct implements IStruct, IListenable, Serializable {
 		if ( key instanceof Key keyKey ) {
 			return containsKey( keyKey );
 		}
-		if ( key instanceof String stringKey ) {
-			return containsKey( stringKey );
-		}
-		return containsKey( Key.of( StringCaster.cast( key ) ) );
-	}
-
-	/**
-	 * Returns {@code true} if this map maps one or more keys using a String key
-	 *
-	 * @param key The string key to look for. Automatically converted to Key object
-	 *
-	 * @return {@code true} if this map contains a mapping for the specified
-	 */
-	public boolean containsKey( String key ) {
-		return containsKey( Key.of( key ) );
+		return wrapped.containsKey( key );
 	}
 
 	/**
@@ -417,19 +218,8 @@ public class Struct implements IStruct, IListenable, Serializable {
 	 *
 	 * @return the value to which the specified key is mapped or null if not found
 	 */
-	@Override
-	public Object get( Object key ) {
-		if ( key instanceof Key keyKey ) {
-			return unWrapNull(
-			    isCaseSensitive()
-			        ? wrapped.get( keySet().stream().filter( k -> KeyCaster.cast( k ).equalsWithCase( keyKey ) ).findFirst().orElse( Key.EMPTY ) )
-			        : wrapped.get( keyKey )
-			);
-		}
-		if ( key instanceof String stringKey ) {
-			return get( stringKey );
-		}
-		return get( StringCaster.cast( key ) );
+	public Object get( Key key ) {
+		return wrapped.get( key.getOriginalValue() );
 	}
 
 	/**
@@ -439,13 +229,24 @@ public class Struct implements IStruct, IListenable, Serializable {
 	 *
 	 * @return the value to which the specified key is mapped or null if not found
 	 */
+	@Override
 	public Object get( String key ) {
-		Key keyObj = Key.of( key );
-		return unWrapNull(
-		    isCaseSensitive()
-		        ? wrapped.get( keySet().stream().filter( k -> KeyCaster.cast( k ).equalsWithCase( keyObj ) ).findFirst().orElse( Key.EMPTY ) )
-		        : wrapped.get( keyObj )
-		);
+		return wrapped.get( Key.of( key ) );
+	}
+
+	/**
+	 * Returns the value to which the specified Key is mapped
+	 *
+	 * @param key the key whose associated value is to be returned
+	 *
+	 * @return the value to which the specified key is mapped or null if not found
+	 */
+	@Override
+	public Object get( Object key ) {
+		if ( key instanceof Key keyKey ) {
+			return wrapped.get( keyKey.getOriginalValue() );
+		}
+		return wrapped.get( key );
 	}
 
 	/**
@@ -457,12 +258,19 @@ public class Struct implements IStruct, IListenable, Serializable {
 	 * @return The value of the key
 	 */
 	public Object getOrDefault( Key key, Object defaultValue ) {
-		return isCaseSensitive()
-		    ? unWrapNull(
-		        wrapped.getOrDefault( keySet().stream().filter( k -> KeyCaster.cast( k ).equalsWithCase( key ) ).findFirst().orElse( Key.EMPTY ), defaultValue )
-		    )
-		    : unWrapNull( wrapped.getOrDefault( key, defaultValue ) );
+		return getOrDefault( key.getOriginalValue(), defaultValue );
+	}
 
+	/**
+	 * Get key, with default value if not found
+	 *
+	 * @param key          The key to look for
+	 * @param defaultValue The default value to return if the key is not found
+	 *
+	 * @return The value of the key
+	 */
+	public Object getOrDefault( Object key, Object defaultValue ) {
+		return wrapped.getOrDefault( key, defaultValue );
 	}
 
 	/**
@@ -474,7 +282,7 @@ public class Struct implements IStruct, IListenable, Serializable {
 	 * @return The value of the key
 	 */
 	public Object getOrDefault( String key, Object defaultValue ) {
-		return getOrDefault( Key.of( key ), defaultValue );
+		return wrapped.getOrDefault( key, defaultValue );
 	}
 
 	/**
@@ -485,9 +293,7 @@ public class Struct implements IStruct, IListenable, Serializable {
 	 * @return The value of the key or a NullValue object, null means the key didn't exist *
 	 */
 	public Object getRaw( Key key ) {
-		return isCaseSensitive()
-		    ? wrapped.get( keySet().stream().filter( k -> KeyCaster.cast( k ).equalsWithCase( key ) ).findFirst().orElse( Key.EMPTY ) )
-		    : wrapped.get( key );
+		return wrapped.get( key );
 
 	}
 
@@ -502,21 +308,25 @@ public class Struct implements IStruct, IListenable, Serializable {
 	@Override
 	public Object put( Key key, Object value ) {
 		return wrapped.put(
-		    isCaseSensitive() && ! ( key instanceof KeyCased ) ? new KeyCased( key.getName() ) : key,
-		    notifyListeners( key, wrapNull( value ) )
+		    key.getOriginalValue(),
+		    notifyListeners( key, value )
 		);
 	}
 
 	/**
-	 * Set a value in the struct by a string key, which we auto-convert to a Key object
+	 * Set a value in the struct by a Key object
 	 *
-	 * @param key   The string key to set
+	 * @param key   The key to set
 	 * @param value The value to set
 	 *
 	 * @return The previous value of the key, or null if not found
 	 */
+	@Override
 	public Object put( String key, Object value ) {
-		return put( isCaseSensitive() ? KeyCased.of( key ) : Key.of( key ), value );
+		return wrapped.put(
+		    key,
+		    notifyListeners( Key.of( key ), value )
+		);
 	}
 
 	/**
@@ -532,7 +342,7 @@ public class Struct implements IStruct, IListenable, Serializable {
 		if ( !containsKey( key ) ) {
 			return wrapped.putIfAbsent(
 			    isCaseSensitive() && ! ( key instanceof KeyCased ) ? new KeyCased( key.getName() ) : key,
-			    notifyListeners( key, wrapNull( value ) )
+			    notifyListeners( key, value )
 			);
 		}
 		return null;
@@ -602,15 +412,9 @@ public class Struct implements IStruct, IListenable, Serializable {
 			entryStream = map.entrySet().stream().map( entry -> entry );
 		}
 		// With a linked hashmap we need to maintain order - which is a tiny bit slower
-		if ( type.equals( TYPES.LINKED ) ) {
-			entryStream.forEachOrdered( entry -> {
-				wrapped.put( entry.getKey(), ( entry.getValue() == null ) ? new NullValue() : entry.getValue() );
-			} );
-		} else {
-			entryStream.forEach( entry -> {
-				wrapped.put( entry.getKey(), ( entry.getValue() == null ) ? new NullValue() : entry.getValue() );
-			} );
-		}
+		entryStream.forEach( entry -> {
+			wrapped.put( entry.getKey(), entry.getValue() );
+		} );
 	}
 
 	/**
@@ -629,27 +433,16 @@ public class Struct implements IStruct, IListenable, Serializable {
 			entryStream = map.entrySet().stream().map( entry -> entry );
 		}
 		// With a linked hashmap we need to maintain order - which is a tiny bit slower
-		if ( type.equals( TYPES.LINKED ) ) {
-			entryStream.forEachOrdered( entry -> {
-				Key key;
-				if ( entry.getKey() instanceof Key entryKey ) {
-					key = entryKey;
-				} else {
-					key = Key.of( entry.getKey().toString() );
-				}
-				wrapped.put( key, ( entry.getValue() == null ) ? new NullValue() : entry.getValue() );
-			} );
-		} else {
-			entryStream.forEach( entry -> {
-				Key key;
-				if ( entry.getKey() instanceof Key entryKey ) {
-					key = entryKey;
-				} else {
-					key = Key.of( entry.getKey().toString() );
-				}
-				wrapped.put( key, ( entry.getValue() == null ) ? new NullValue() : entry.getValue() );
-			} );
-		}
+
+		entryStream.forEach( entry -> {
+			Object key;
+			if ( entry.getKey() instanceof Key entryKey ) {
+				key = entryKey.getOriginalValue();
+			} else {
+				key = entry.getKey();
+			}
+			wrapped.put( key, entry.getValue() );
+		} );
 	}
 
 	/**
@@ -666,7 +459,7 @@ public class Struct implements IStruct, IListenable, Serializable {
 	 */
 	@Override
 	public Set<Key> keySet() {
-		return wrapped.keySet();
+		return wrapped.keySet().stream().map( Key::of ).collect( Collectors.toCollection( LinkedHashSet::new ) );
 	}
 
 	/**
@@ -675,7 +468,6 @@ public class Struct implements IStruct, IListenable, Serializable {
 	@Override
 	public Collection<Object> values() {
 		return wrapped.values().stream()
-		    .map( entry -> unWrapNull( entry ) )
 		    .collect( Collectors.toList() );
 	}
 
@@ -685,7 +477,7 @@ public class Struct implements IStruct, IListenable, Serializable {
 	@Override
 	public Set<Entry<Key, Object>> entrySet() {
 		return wrapped.entrySet().stream()
-		    .map( entry -> new SimpleEntry<>( entry.getKey(), unWrapNull( entry.getValue() ) ) )
+		    .map( entry -> new SimpleEntry<>( Key.of( entry.getKey() ), entry.getValue() ) )
 		    .collect( Collectors.toCollection( LinkedHashSet::new ) );
 	}
 
@@ -716,7 +508,7 @@ public class Struct implements IStruct, IListenable, Serializable {
 		}
 		visited.add( this );
 		int result = 1;
-		for ( Map.Entry<Key, Object> entry : wrapped.entrySet() ) {
+		for ( Map.Entry<Object, Object> entry : wrapped.entrySet() ) {
 			result = 31 * result + ( entry.getKey() == null ? 0 : entry.getKey().hashCode() );
 			Object value = entry.getValue();
 			if ( value instanceof IType ) {
@@ -764,7 +556,7 @@ public class Struct implements IStruct, IListenable, Serializable {
 			sb.append( size() > 0 ? "{\n" : "{" );
 			sb.append( wrapped.entrySet().stream()
 			    .map( entry -> {
-				    String line = entry.getKey().getName() + " : ";
+				    String line = entry.getKey().toString() + " : ";
 				    if ( entry.getValue() instanceof IType t ) {
 					    line += t.asString();
 				    } else {
@@ -803,21 +595,22 @@ public class Struct implements IStruct, IListenable, Serializable {
 	 * @return The type of struct according to the {@Link Type} enum
 	 */
 	public TYPES getType() {
-		return type;
+		// TODO: Guess a valid type based on the class of the wrapped map?
+		return TYPES.DEFAULT;
 	}
 
 	/**
 	 * Returns a boolean as to whether the struct instance is case sensitive
 	 */
 	public Boolean isCaseSensitive() {
-		return type.equals( TYPES.CASE_SENSITIVE ) || type.equals( TYPES.LINKED_CASE_SENSITIVE );
+		return false;
 	}
 
 	/**
 	 * Returns a boolean as to whether this is a soft-referenced struct
 	 */
 	public Boolean isSoftReferenced() {
-		return type.equals( TYPES.SOFT );
+		return false;
 	}
 
 	/**
@@ -867,7 +660,7 @@ public class Struct implements IStruct, IListenable, Serializable {
 			    String.format( "The key [%s] was not found in the struct. Valid keys are (%s)", key.getName(), getKeysAsStrings() ), this
 			);
 		}
-		return unWrapNull( value );
+		return value;
 	}
 
 	/**
@@ -961,31 +754,6 @@ public class Struct implements IStruct, IListenable, Serializable {
 	}
 
 	/**
-	 * Wrap null values in an instance of the NullValue class
-	 *
-	 * @param value The value to wrap
-	 *
-	 * @return The wrapped value
-	 */
-	public Object wrapNull( Object value ) {
-		if ( value == null ) {
-			return new NullValue();
-		}
-		return wrapAssignment( value );
-	}
-
-	/**
-	 * Wraps the assignment value
-	 *
-	 * @param value The object to wrap ( or not )
-	 */
-	public Object wrapAssignment( Object value ) {
-		return isSoftReferenced()
-		    ? new SoftReference<Object>( value )
-		    : value;
-	}
-
-	/**
 	 * Get an array list of all the keys in the struct
 	 *
 	 * @return An array list of all the keys in the struct
@@ -1000,24 +768,7 @@ public class Struct implements IStruct, IListenable, Serializable {
 	 * @return An array list of all the keys in the struct
 	 */
 	public List<String> getKeysAsStrings() {
-		return keySet().stream().map( Key::getName ).collect( java.util.stream.Collectors.toList() );
-	}
-
-	/**
-	 * Unwrap null values from the NullValue class
-	 *
-	 * @param value The value to unwrap
-	 *
-	 * @return The unwrapped value which can be null
-	 */
-	@SuppressWarnings( "unchecked" )
-	public static Object unWrapNull( Object value ) {
-		if ( value instanceof NullValue ) {
-			return null;
-		}
-		return value instanceof SoftReference
-		    ? ( ( SoftReference<Object> ) value ).get()
-		    : value;
+		return wrapped.keySet().stream().map( String::valueOf ).collect( java.util.stream.Collectors.toList() );
 	}
 
 	/**

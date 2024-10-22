@@ -29,7 +29,6 @@ import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
@@ -3552,23 +3551,44 @@ public class CoreLangTest {
 
 	@DisplayName( "ConcurrentHashMap clear calls" )
 	@Test
-	@Disabled( "Needs brad fix on Member method map/list casting" )
 	public void testConcurrentHashMapClear() {
+	// @formatter:off
+	instance.executeSource(
+		"""
+		pool = createObject( "java", "java.util.concurrent.ConcurrentHashMap" ).init();
+
+		pool.put( "foo", "bar" );
+		 pool.put( "test", now() );
+
+		assert pool.size() == 2;
+
+		structClear( pool );
+
+		result = pool.size();
+		""",
+		context );
+	// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( 0 );
+	}
+
+	@DisplayName( "ArrayList clear calls" )
+	@Test
+	public void testArrayListClear() {
 		// @formatter:off
 		instance.executeSource(
-		    """
-		    pool = createObject( "java", "java.util.concurrent.ConcurrentHashMap" ).init();
+			"""
+			pool = createObject( "java", "java.util.ArrayList" ).init();
 
-			pool.put( "foo", "bar" );
-		 	pool.put( "test", now() );
+			pool.add( "foo" );
+			pool.add( "bar" );
 
 			assert pool.size() == 2;
 
-		    pool.clear();
+			arrayClear( pool );
 
 			result = pool.size();
-		    """,
-		    context );
+			""",
+			context );
 		// @formatter:on
 		assertThat( variables.get( result ) ).isEqualTo( 0 );
 	}
