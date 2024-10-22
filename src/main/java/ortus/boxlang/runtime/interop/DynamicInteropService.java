@@ -1831,7 +1831,7 @@ public class DynamicInteropService {
 
 		// If we have an instance, we can try to see if it accepts member methods
 		// Unless the method is already defined on the class
-		if ( targetInstance != null && !hasMethod( targetClass, name.getName() ) ) {
+		if ( targetInstance != null ) {
 			ObjectRef			ref					= ObjectRef.of( targetInstance );
 			MemberDescriptor	memberDescriptor	= functionService.getMemberMethod( context, name, ref );
 			if ( memberDescriptor != null ) {
