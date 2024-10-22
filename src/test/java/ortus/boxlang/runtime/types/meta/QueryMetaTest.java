@@ -59,18 +59,18 @@ public class QueryMetaTest extends BaseJDBCTest {
 		QueryMeta	$bx		= ( QueryMeta ) Referencer.get( getContext(), query, BoxMeta.key, false );
 
 		assertThat( $bx.$class ).isEqualTo( Query.class );
-		assertTrue( $bx.meta instanceof IStruct );
+		assertThat( $bx.meta ).isInstanceOf( IStruct.class );
 
-		assertTrue( $bx.meta.containsKey( Key.sql ) );
-		assertTrue( $bx.meta.containsKey( Key.sqlParameters ) );
-		assertTrue( $bx.meta.containsKey( Key.recordCount ) );
-		assertTrue( $bx.meta.containsKey( Key.columnList ) );
-		assertTrue( $bx.meta.containsKey( Key.executionTime ) );
-		assertTrue( $bx.meta.containsKey( Key.cached ) );
-		assertTrue( $bx.meta.containsKey( Key.cacheProvider ) );
-		assertTrue( $bx.meta.containsKey( Key.cacheKey ) );
-		assertTrue( $bx.meta.containsKey( Key.cacheTimeout ) );
-		assertTrue( $bx.meta.containsKey( Key.cacheLastAccessTimeout ) );
+		assertThat( $bx.meta ).containsKey( Key.sql );
+		assertThat( $bx.meta ).containsKey( Key.sqlParameters );
+		assertThat( $bx.meta ).containsKey( Key.recordCount );
+		assertThat( $bx.meta ).containsKey( Key.columnList );
+		assertThat( $bx.meta ).containsKey( Key.executionTime );
+		assertThat( $bx.meta ).containsKey( Key.cached );
+		assertThat( $bx.meta ).containsKey( Key.cacheProvider );
+		assertThat( $bx.meta ).containsKey( Key.cacheKey );
+		assertThat( $bx.meta ).containsKey( Key.cacheTimeout );
+		assertThat( $bx.meta ).containsKey( Key.cacheLastAccessTimeout );
 
 	}
 
