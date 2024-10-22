@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.interceptors;
 
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 import java.util.ServiceLoader;
@@ -132,7 +133,9 @@ public class Logging extends BaseInterceptor {
 			if ( file == null ) {
 				file = logCategory + ".log";
 			}
-			String						filePath		= Paths.get( logsDirectory, "/", file ).normalize().toString();
+			String						filePath		= Path.of( file ).isAbsolute()
+			    ? Path.of( file ).normalize().toString()
+			    : Paths.get( logsDirectory, "/", file ).normalize().toString();
 
 			LoggerContext				logContext		= null;
 
