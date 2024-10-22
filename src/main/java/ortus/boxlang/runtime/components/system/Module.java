@@ -216,30 +216,28 @@ public class Module extends Component {
 		        .toList()
 		);
 
-		// TODO: Case insensitive search.
-		ResolvedFilePath foundPath = pathToSearch
+		// Find the first file that exists
+		return pathToSearch
 		    .stream()
 		    // Map it to a Stream<File> object representing the Files to the files
 		    .flatMap( entry -> {
 			    // Generate multiple paths here
-			    List<ResolvedFilePath> files = new ArrayList<ResolvedFilePath>();
+			    List<ResolvedFilePath> files = new ArrayList<>();
 			    for ( String extension : VALID_EXTENSIONS ) {
+				    var tagPath = fullName + "." + extension;
 				    files.add(
 				        ResolvedFilePath.of(
 				            entry.mappingName(),
 				            entry.mappingPath(),
-				            fullName + extension,
-				            new File( entry.mappingPath(), fullName + extension ).toPath()
+				            tagPath,
+				            new File( entry.mappingPath(), tagPath ).toPath()
 				        )
 				    );
 			    }
-
 			    return files.stream();
 		    } )
 		    .filter( possibleMatch -> possibleMatch.absolutePath().toFile().exists() )
 		    .findFirst()
 		    .orElseThrow( () -> new BoxRuntimeException( "Could not find custom tag [" + name + "]" ) );
-
-		return foundPath;
 	}
 }
