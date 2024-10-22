@@ -63,6 +63,7 @@ import ortus.boxlang.runtime.runnables.BoxInterface;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.IntKey;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
@@ -176,6 +177,11 @@ public class DynamicInteropService {
 	 * This is the class locator
 	 */
 	private static ClassLocator										classLocator		= BoxRuntime.getInstance().getClassLocator();
+
+	/**
+	 * This is the function service for invoking functions
+	 */
+	private static FunctionService									functionService		= BoxRuntime.getInstance().getFunctionService();
 
 	/**
 	 * Coercion maps
@@ -1598,6 +1604,7 @@ public class DynamicInteropService {
 	/**
 	 * Dereference this object by a key and return the value, or throw exception
 	 *
+	 * @param context     The context to use for the dereference
 	 * @param targetClass The class to dereference and look for the value on
 	 * @param name        The name of the key to dereference
 	 * @param safe        If true, return null if the method is not found, otherwise throw an exception
@@ -1611,6 +1618,7 @@ public class DynamicInteropService {
 	/**
 	 * Dereference this object by a key and return the value, or throw exception
 	 *
+	 * @param context        The context to use for the dereference
 	 * @param targetInstance The instance to dereference and look for the value on
 	 * @param name           The name of the key to dereference
 	 * @param safe           If true, return null if the method is not found, otherwise throw an exception
@@ -1624,6 +1632,7 @@ public class DynamicInteropService {
 	/**
 	 * Dereference this object by a key and return the value, or throw exception
 	 *
+	 * @param context        The context to use for the dereference
 	 * @param targetClass    The class to dereference and look for the value on
 	 * @param targetInstance The instance to dereference and look for the value on
 	 * @param name           The name of the key to dereference
@@ -1766,7 +1775,11 @@ public class DynamicInteropService {
 	 *
 	 * @return The requested return value or null
 	 */
-	public static Object dereferenceAndInvoke( Class<?> targetClass, IBoxContext context, Key name, Object[] positionalArguments,
+	public static Object dereferenceAndInvoke(
+	    Class<?> targetClass,
+	    IBoxContext context,
+	    Key name,
+	    Object[] positionalArguments,
 	    Boolean safe ) {
 		return dereferenceAndInvoke( targetClass, null, context, name, positionalArguments, safe );
 	}
@@ -1782,7 +1795,11 @@ public class DynamicInteropService {
 	 *
 	 * @return The requested return value or null
 	 */
-	public static Object dereferenceAndInvoke( Object targetInstance, IBoxContext context, Key name, Object[] positionalArguments,
+	public static Object dereferenceAndInvoke(
+	    Object targetInstance,
+	    IBoxContext context,
+	    Key name,
+	    Object[] positionalArguments,
 	    Boolean safe ) {
 		return dereferenceAndInvoke( targetInstance.getClass(), targetInstance, context, name, positionalArguments, safe );
 	}
@@ -1799,22 +1816,33 @@ public class DynamicInteropService {
 	 *
 	 * @return The requested return value or null
 	 */
-	public static Object dereferenceAndInvoke( Class<?> targetClass, Object targetInstance, IBoxContext context, Key name, Object[] positionalArguments,
+	public static Object dereferenceAndInvoke(
+	    Class<?> targetClass,
+	    Object targetInstance,
+	    IBoxContext context,
+	    Key name,
+	    Object[] positionalArguments,
 	    Boolean safe ) {
 
+		// If the object is referencable, allow it to handle the dereference itself
 		if ( IReferenceable.class.isAssignableFrom( targetClass ) && targetInstance != null && targetInstance instanceof IReferenceable ref ) {
 			return ref.dereferenceAndInvoke( context, name, positionalArguments, safe );
 		}
 
-		if ( targetInstance != null ) {
+		// If we have an instance, we can try to see if it accepts member methods
+		// FOR now we only support member methods on IType instances.
+		// If not, it basically tries to aggressively cast any type to a discovered member method
+		// We can try to change this later on, if we find it's needed and if we can avoid doing aggressive and performance instensive casting
+		if ( targetInstance != null && targetInstance instanceof IType ) {
 			ObjectRef			ref					= ObjectRef.of( targetInstance );
-			MemberDescriptor	memberDescriptor	= BoxRuntime.getInstance().getFunctionService().getMemberMethod( context, name, ref );
+			MemberDescriptor	memberDescriptor	= functionService.getMemberMethod( context, name, ref );
 			if ( memberDescriptor != null ) {
 				targetInstance = ref.get();
 				return memberDescriptor.invoke( context, targetInstance, positionalArguments );
 			}
 		}
 
+		// Does the requested method exist? Else if in safe mode return null
 		if ( safe && !hasMethod( targetClass, name.getName() ) ) {
 			return null;
 		}
@@ -1825,15 +1853,46 @@ public class DynamicInteropService {
 			return targetClass;
 		}
 
+		// Else let's do an invoke dynamic
 		return invoke( context, targetClass, targetInstance, name.getName(), safe, positionalArguments );
 	}
 
-	public static Object dereferenceAndInvoke( Class<?> targetClass, IBoxContext context, Key name, Map<Key, Object> namedArguments,
+	/**
+	 * Dereference this object by a key and invoke the result as an invokable (UDF, java method)
+	 *
+	 * @param targetClass    The class to assign the field on
+	 * @param context        The IBoxContext in which the function will be executed
+	 * @param name           The name of the key to dereference, which becomes the method name
+	 * @param namedArguments The arguments to pass to the invokable
+	 * @param safe           If true, return null if the method is not found, otherwise throw an exception
+	 *
+	 * @return The requested return value or null
+	 */
+	public static Object dereferenceAndInvoke(
+	    Class<?> targetClass,
+	    IBoxContext context,
+	    Key name,
+	    Map<Key, Object> namedArguments,
 	    Boolean safe ) {
 		return dereferenceAndInvoke( targetClass, null, context, name, namedArguments, safe );
 	}
 
-	public static Object dereferenceAndInvoke( Object targetInstance, IBoxContext context, Key name, Map<Key, Object> namedArguments,
+	/**
+	 * Dereference this object by a key and invoke the result as an invokable (UDF, java method)
+	 *
+	 * @param targetInstance The instance to assign the field on
+	 * @param context        The IBoxContext in which the function will be executed
+	 * @param name           The name of the key to dereference, which becomes the method name
+	 * @param namedArguments The arguments to pass to the invokable
+	 * @param safe           If true, return null if the method is not found, otherwise throw an exception
+	 *
+	 * @return The requested return value or null
+	 */
+	public static Object dereferenceAndInvoke(
+	    Object targetInstance,
+	    IBoxContext context,
+	    Key name,
+	    Map<Key, Object> namedArguments,
 	    Boolean safe ) {
 		return dereferenceAndInvoke( targetInstance.getClass(), targetInstance, context, name, namedArguments, safe );
 	}
@@ -1849,7 +1908,12 @@ public class DynamicInteropService {
 	 *
 	 * @return The requested return value or null
 	 */
-	public static Object dereferenceAndInvoke( Class<?> targetClass, Object targetInstance, IBoxContext context, Key name, Map<Key, Object> namedArguments,
+	public static Object dereferenceAndInvoke(
+	    Class<?> targetClass,
+	    Object targetInstance,
+	    IBoxContext context,
+	    Key name,
+	    Map<Key, Object> namedArguments,
 	    Boolean safe ) {
 
 		if ( IReferenceable.class.isAssignableFrom( targetClass ) && targetInstance != null && targetInstance instanceof IReferenceable ref ) {
@@ -1858,7 +1922,7 @@ public class DynamicInteropService {
 
 		if ( targetInstance != null ) {
 			ObjectRef			ref					= ObjectRef.of( targetInstance );
-			MemberDescriptor	memberDescriptor	= BoxRuntime.getInstance().getFunctionService().getMemberMethod( context, name, ref );
+			MemberDescriptor	memberDescriptor	= functionService.getMemberMethod( context, name, ref );
 			if ( memberDescriptor != null ) {
 				targetInstance = ref.get();
 				return memberDescriptor.invoke( context, targetInstance, namedArguments );

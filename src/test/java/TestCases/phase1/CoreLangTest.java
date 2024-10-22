@@ -29,7 +29,6 @@ import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
@@ -3552,7 +3551,6 @@ public class CoreLangTest {
 
 	@DisplayName( "ConcurrentHashMap clear calls" )
 	@Test
-	@Disabled( "Brad to fix due to unecessary casting of maps and lists" )
 	public void testConcurrentHashMapClear() {
 		// @formatter:off
 		instance.executeSource(
