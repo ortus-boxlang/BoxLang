@@ -75,6 +75,13 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	private boolean					enforceExplicitOutput	= false;
 
 	/**
+	 * Flag to enable/disabled debug output for a request regardless of runtime
+	 * Each runtime can provide its own implementation of this setting
+	 * It defaults to the runtime's debug mode
+	 */
+	private boolean					showDebugOutput			= getRuntime().inDebugMode();
+
+	/**
 	 * The request timeout in milliseconds
 	 */
 	private Long					requestTimeout			= null;
@@ -463,6 +470,29 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	 */
 	public void shutdownConnections() {
 		this.connectionManager.shutdown();
+	}
+
+	/**
+	 * Set the debug output flag for this request
+	 * This is a request-specific setting that can be used to enable or disable debug output for a request
+	 * regardless of the runtime's debug mode.
+	 *
+	 * @param showDebugOutput true to enable debug output
+	 */
+	public RequestBoxContext setShowDebugOutput( boolean showDebugOutput ) {
+		this.showDebugOutput = showDebugOutput;
+		return this;
+	}
+
+	/**
+	 * Get the debug output flag for this request
+	 * This is a request-specific setting that can be used to enable or disable debug output for a request
+	 * regardless of the runtime's debug mode.
+	 *
+	 * @return true if debug output is enabled
+	 */
+	public boolean isShowDebugOutput() {
+		return this.showDebugOutput;
 	}
 
 }
