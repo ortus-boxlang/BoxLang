@@ -153,6 +153,13 @@ public class Logging extends BaseInterceptor {
 				    .findFirst().orElse( null );
 
 				logContext = ( LoggerContext ) configurator.getLoggerContext();
+
+				// In the servlet context we are seeing the configurator configure method is not being run automagically
+				if ( logContext == null ) {
+					logContext = new LoggerContext();
+					configurator.configure( logContext );
+					logContext.start();
+				}
 			}
 
 			logger = logContext.getLogger( logCategory );
