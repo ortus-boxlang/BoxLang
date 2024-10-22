@@ -189,7 +189,6 @@ public class DynamicInteropService {
 	private static List<String>										numberTargets		= List.of( "boolean", "byte", "character", "string" );
 	private static List<String>										booleanTargets		= List.of( "string", "character" );
 
-
 	/**
 	 * Static Initializer
 	 */
