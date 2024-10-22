@@ -157,8 +157,8 @@ public class Logging extends BaseInterceptor {
 				// In the servlet context we are seeing the configurator configure method is not being run automagically
 				if ( logContext == null ) {
 					logContext = new LoggerContext();
-					configurator.configure( logContext );
 					logContext.start();
+					configurator.configure( logContext );
 				}
 			}
 
