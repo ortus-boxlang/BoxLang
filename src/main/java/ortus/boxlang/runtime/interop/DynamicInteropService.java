@@ -1830,10 +1830,8 @@ public class DynamicInteropService {
 		}
 
 		// If we have an instance, we can try to see if it accepts member methods
-		// FOR now we only support member methods on IType instances.
-		// If not, it basically tries to aggressively cast any type to a discovered member method
-		// We can try to change this later on, if we find it's needed and if we can avoid doing aggressive and performance instensive casting
-		if ( targetInstance != null && targetInstance instanceof IType ) {
+		// Unless the method is already defined on the class
+		if ( targetInstance != null && !hasMethod( targetClass, name.getName() ) ) {
 			ObjectRef			ref					= ObjectRef.of( targetInstance );
 			MemberDescriptor	memberDescriptor	= functionService.getMemberMethod( context, name, ref );
 			if ( memberDescriptor != null ) {
@@ -1842,7 +1840,7 @@ public class DynamicInteropService {
 			}
 		}
 
-		// Does the requested method exist? Else if in safe mode return null
+		// If the method requested is not found, return null if safe is true
 		if ( safe && !hasMethod( targetClass, name.getName() ) ) {
 			return null;
 		}

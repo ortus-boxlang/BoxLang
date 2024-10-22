@@ -3560,7 +3560,7 @@ public class CoreLangTest {
 			pool.put( "foo", "bar" );
 		 	pool.put( "test", now() );
 
-			//assert pool.size() == 2;
+			assert pool.size() == 2;
 
 		    pool.clear();
 
