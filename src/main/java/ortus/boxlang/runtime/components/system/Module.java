@@ -46,7 +46,7 @@ public class Module extends Component {
 	/**
 	 * List of valid class extensions
 	 */
-	private static List<String> VALID_EXTENSIONS = BoxRuntime.getInstance().getConfiguration().getValidTemplateExtensionsList();
+	private static final List<String> VALID_EXTENSIONS = BoxRuntime.getInstance().getConfiguration().getValidTemplateExtensionsList();
 
 	/**
 	 * --------------------------------------------------------------------------

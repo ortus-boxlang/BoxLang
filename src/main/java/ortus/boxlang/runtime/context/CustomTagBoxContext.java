@@ -23,12 +23,13 @@ import ortus.boxlang.runtime.scopes.ThisScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 
 /**
- * This context represents the context of any function execution in BoxLang
- * It encapsulates the arguments scope and local scope and has a reference to the function being invoked.
- * This context is extended for use with both UDFs and Closures as well
+ * This class represents the execution context for a custom tag
+ * <p>
+ * It has a variables scope and a this scope, if any
  */
 public class CustomTagBoxContext extends BaseBoxContext {
 
@@ -42,18 +43,23 @@ public class CustomTagBoxContext extends BaseBoxContext {
 	 */
 	protected IScope	thisScope;
 
+	/**
+	 * The name of the executing tag
+	 */
 	private Key			tagName;
 
 	/**
 	 * Creates a new execution context with a bounded function instance and parent context
 	 *
-	 * @param parent The parent context
+	 * @param parent  The parent context
+	 * @param tagName The name of the executing tag
 	 */
 	public CustomTagBoxContext( IBoxContext parent, Key tagName ) {
 		super( parent );
 		this.tagName	= tagName;
 		variablesScope	= new VariablesScope();
 		thisScope		= null;
+
 		if ( parent instanceof FunctionBoxContext context && context.isInClass() ) {
 			thisScope = context.getThisClass().getThisScope();
 		} else if ( parent instanceof ClassBoxContext context ) {
@@ -61,6 +67,10 @@ public class CustomTagBoxContext extends BaseBoxContext {
 		}
 	}
 
+	/**
+	 * @inheritDoc
+	 */
+	@Override
 	public IStruct getVisibleScopes( IStruct scopes, boolean nearby, boolean shallow ) {
 		if ( hasParent() && !shallow ) {
 			getParent().getVisibleScopes( scopes, false, false );
@@ -85,7 +95,6 @@ public class CustomTagBoxContext extends BaseBoxContext {
 	 */
 	@Override
 	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow ) {
-
 		Object result = variablesScope.getRaw( key );
 		// Null means not found
 		if ( result != null ) {
@@ -105,7 +114,6 @@ public class CustomTagBoxContext extends BaseBoxContext {
 
 		// A custom tag cannot see nearby scopes above it
 		return parent.scopeFind( key, defaultScope );
-
 	}
 
 	/**
@@ -152,12 +160,10 @@ public class CustomTagBoxContext extends BaseBoxContext {
 			return variablesScope;
 		}
 
-		if ( thisScope != null ) {
-			if ( name.equals( ThisScope.name ) ) {
-				// A thread has special permission to "see" the this scope from its parent,
-				// even though it's not "nearby" to any other scopes
-				return this.thisScope;
-			}
+		if ( thisScope != null && name.equals( ThisScope.name ) ) {
+			// A thread has special permission to "see" the this scope from its parent,
+			// even though it's not "nearby" to any other scopes
+			return this.thisScope;
 		}
 
 		if ( shallow ) {
@@ -166,6 +172,14 @@ public class CustomTagBoxContext extends BaseBoxContext {
 
 		// A custom tag cannot see nearby scopes above it
 		return parent.getScope( name );
+	}
+
+	/**
+	 * @inheritDoc
+	 */
+	@Override
+	public void registerUDF( UDF udf, boolean override ) {
+		registerUDF( variablesScope, udf, override );
 	}
 
 	/**

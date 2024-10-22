@@ -63,6 +63,7 @@ public class ContainerBoxContext extends BaseBoxContext {
 	 * --------------------------------------------------------------------------
 	 */
 
+	@Override
 	public IStruct getVisibleScopes( IStruct scopes, boolean nearby, boolean shallow ) {
 		if ( hasParent() && !shallow ) {
 			getParent().getVisibleScopes( scopes, false, false );
@@ -83,6 +84,7 @@ public class ContainerBoxContext extends BaseBoxContext {
 	 * @return The value of the key if found
 	 *
 	 */
+	@Override
 	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow ) {
 
 		// In query loop?
@@ -117,6 +119,7 @@ public class ContainerBoxContext extends BaseBoxContext {
 	 * @return The value of the key if found
 	 *
 	 */
+	@Override
 	public ScopeSearchResult scopeFind( Key key, IScope defaultScope ) {
 		return parent.scopeFind( key, defaultScope );
 	}
@@ -127,6 +130,7 @@ public class ContainerBoxContext extends BaseBoxContext {
 	 *
 	 * @return The requested scope
 	 */
+	@Override
 	public IScope getScope( Key name ) throws ScopeNotFoundException {
 		return parent.getScope( name );
 	}
@@ -137,6 +141,7 @@ public class ContainerBoxContext extends BaseBoxContext {
 	 *
 	 * @return The requested scope
 	 */
+	@Override
 	public IScope getScopeNearby( Key name, boolean shallow ) throws ScopeNotFoundException {
 		// Check the scopes I know about
 		if ( name.equals( variablesScope.getName() ) ) {
@@ -150,6 +155,7 @@ public class ContainerBoxContext extends BaseBoxContext {
 		return getScope( name );
 	}
 
+	@Override
 	public void registerUDF( UDF udf, boolean override ) {
 		registerUDF( variablesScope, udf, override );
 	}
@@ -159,6 +165,7 @@ public class ContainerBoxContext extends BaseBoxContext {
 	 *
 	 * @return The scope reference to use
 	 */
+	@Override
 	public IScope getDefaultAssignmentScope() {
 		return variablesScope;
 	}

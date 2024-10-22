@@ -156,9 +156,9 @@ public class ClassBoxContext extends BaseBoxContext {
 
 	/**
 	 * This scope lookup abstracted for thread context to use
-	 * 
+	 *
 	 * @param key The key to search for
-	 * 
+	 *
 	 * @return The search result or null if not foud
 	 */
 	protected ScopeSearchResult scopeFindThis( Key key ) {
@@ -170,9 +170,9 @@ public class ClassBoxContext extends BaseBoxContext {
 
 	/**
 	 * Super scope lookup abstracted for thread context to use
-	 * 
+	 *
 	 * @param key The key to search for
-	 * 
+	 *
 	 * @return The search result or null if not foud
 	 */
 	protected ScopeSearchResult scopeFindSuper( Key key ) {
@@ -303,6 +303,7 @@ public class ClassBoxContext extends BaseBoxContext {
 	 *
 	 * @return This context
 	 */
+	@Override
 	public IBoxContext flushBuffer( boolean force ) {
 		if ( !canOutput() && !force ) {
 			return this;
@@ -316,6 +317,7 @@ public class ClassBoxContext extends BaseBoxContext {
 	 *
 	 * @return Whether the function can output
 	 */
+	@Override
 	public Boolean canOutput() {
 		return getThisClass().canOutput();
 	}
@@ -326,6 +328,7 @@ public class ClassBoxContext extends BaseBoxContext {
 	 *
 	 * @return Return value of the function call
 	 */
+	@Override
 	public Object invokeFunction( Key name, Object[] positionalArguments ) {
 		BIFDescriptor bif = findBIF( name );
 		if ( bif != null ) {
@@ -356,6 +359,7 @@ public class ClassBoxContext extends BaseBoxContext {
 	 *
 	 * @return Return value of the function call
 	 */
+	@Override
 	public Object invokeFunction( Key name, Map<Key, Object> namedArguments ) {
 		BIFDescriptor bif = findBIF( name );
 		if ( bif != null ) {
@@ -381,6 +385,7 @@ public class ClassBoxContext extends BaseBoxContext {
 	 *
 	 * @return Return value of the function call
 	 */
+	@Override
 	public Object invokeFunction( Key name ) {
 		BIFDescriptor bif = findBIF( name );
 		if ( bif != null ) {
@@ -405,7 +410,7 @@ public class ClassBoxContext extends BaseBoxContext {
 
 	/**
 	 * Get the "this" scope
-	 * 
+	 *
 	 * @return The "this" scope
 	 */
 	public IScope getThisScope() {
