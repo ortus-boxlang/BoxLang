@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.util;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 import ortus.boxlang.runtime.scopes.Key;
 
@@ -100,6 +101,20 @@ public class Attachable implements IBoxAttachable {
 	 */
 	public Key[] getAttachmentKeys() {
 		return this.attachments.keySet().toArray( new Key[ 0 ] );
+	}
+
+	/**
+	 * Comput an attachment if it is not already present.
+	 * If an attachment for this key was already set, return the original value.
+	 *
+	 * @param key             The key to attach the value to.
+	 * @param mappingFunction The function to compute the value to attach.
+	 *
+	 */
+	@SuppressWarnings( "unchecked" )
+	@Override
+	public <T> T computeAttachmentIfAbsent( Key key, Function<? super Key, ? extends T> mappingFunction ) {
+		return ( T ) this.attachments.computeIfAbsent( key, mappingFunction );
 	}
 
 }
