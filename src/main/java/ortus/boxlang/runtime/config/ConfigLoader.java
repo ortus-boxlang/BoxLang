@@ -295,31 +295,10 @@ public class ConfigLoader {
 		IStruct flatConfig = StructUtil.toFlatMap( config );
 
 		if ( !propertyOverrides.isEmpty() ) {
-			propertyOverrides.entrySet().stream().forEach( entry -> {
-				logger.debug( "Overriding runtime config [{}] with Java System property value [{}]", entry.getKey().getName(), entry.getValue() );
-				Object existing = flatConfig.get( entry.getKey() );
-				if ( existing != null ) {
-					if ( existing instanceof List ) {
-						flatConfig.put( entry.getKey(), ListUtil.asList( StringCaster.cast( entry.getValue() ), "," ) );
-					} else if ( existing instanceof Map ) {
-						try {
-							IStruct configValue = StructCaster
-							    .cast( JSONUtil.fromJSON( StringCaster.cast( entry.getValue() ), true ) );
-							flatConfig.put( entry.getKey(), configValue );
-						} catch ( Exception e ) {
-							logger.error( "Failed to merge property override [{}]. The value of [{}] could not be converted to a struct",
-							    entry.getKey().getName(), entry.getValue() );
-						}
-					} else {
-						flatConfig.put( entry.getKey(), entry.getValue() );
-					}
-				} else {
-					flatConfig.put( entry.getKey(), entry.getValue() );
-				}
-			} );
+			propertyOverrides.entrySet().stream().forEach( entry -> applyOverride( entry, flatConfig ) );
 		}
 		if ( !envOverrides.isEmpty() ) {
-			flatConfig.putAll( envOverrides );
+			envOverrides.entrySet().stream().forEach( entry -> applyOverride( entry, flatConfig ) );
 		}
 
 		return StructUtil.unFlattenKeys( flatConfig, true, false );
@@ -344,6 +323,38 @@ public class ConfigLoader {
 			    return Map.entry( Key.of( key ), entry.getValue() );
 		    } )
 		    .collect( BLCollector.toStruct() );
+	}
+
+	/**
+	 * Apply an override to the flattened configuration
+	 * 
+	 * @param entry
+	 * @param flatConfig
+	 */
+	public static void applyOverride( Map.Entry<Key, Object> entry, IStruct flatConfig ) {
+		logger.debug( "Overriding runtime config [{}] with Java System property value [{}]",
+		    entry.getKey().getName(), entry.getValue() );
+		Object existing = flatConfig.get( entry.getKey() );
+		if ( existing != null ) {
+			if ( existing instanceof List ) {
+				flatConfig.put( entry.getKey(),
+				    ListUtil.asList( StringCaster.cast( entry.getValue() ), "," ) );
+			} else if ( existing instanceof Map ) {
+				try {
+					IStruct configValue = StructCaster
+					    .cast( JSONUtil.fromJSON( StringCaster.cast( entry.getValue() ), true ) );
+					flatConfig.put( entry.getKey(), configValue );
+				} catch ( Exception e ) {
+					logger.error(
+					    "Failed to merge property override [{}]. The value of [{}] could not be converted to a struct",
+					    entry.getKey().getName(), entry.getValue() );
+				}
+			} else {
+				flatConfig.put( entry.getKey(), entry.getValue() );
+			}
+		} else {
+			flatConfig.put( entry.getKey(), entry.getValue() );
+		}
 	}
 
 }
