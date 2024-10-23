@@ -28,7 +28,7 @@ import ortus.boxlang.runtime.dynamic.Referencer;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
-import ortus.boxlang.runtime.types.immutable.ImmutableStruct;
+import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableStruct;
 
 public class StructMetaTest {
 
@@ -44,19 +44,19 @@ public class StructMetaTest {
 		assertThat( $bx.$class ).isEqualTo( Struct.class );
 		assertThat( $bx.meta instanceof IStruct ).isTrue();
 		assertThat( $bx.meta.containsKey( "type" ) ).isTrue();
-		assertThat( $bx.meta.containsKey( "immutable" ) ).isTrue();
+		assertThat( $bx.meta.containsKey( "unmodifiable" ) ).isTrue();
 		assertThat( $bx.meta.get( "type" ) ).isEqualTo( "DEFAULT" );
-		assertThat( $bx.meta.get( "immutable" ) ).isEqualTo( false );
+		assertThat( $bx.meta.get( "unmodifiable" ) ).isEqualTo( false );
 
-		str	= new ImmutableStruct( Struct.TYPES.SORTED );
+		str	= new UnmodifiableStruct( Struct.TYPES.SORTED );
 		$bx	= ( StructMeta ) Referencer.get( context, str, BoxMeta.key, false );
 
-		assertThat( $bx.$class ).isEqualTo( ImmutableStruct.class );
+		assertThat( $bx.$class ).isEqualTo( UnmodifiableStruct.class );
 		assertThat( $bx.meta instanceof IStruct ).isTrue();
 		assertThat( $bx.meta.containsKey( "type" ) ).isTrue();
-		assertThat( $bx.meta.containsKey( "immutable" ) ).isTrue();
+		assertThat( $bx.meta.containsKey( "Unmodifiable" ) ).isTrue();
 		assertThat( $bx.meta.get( "type" ) ).isEqualTo( "SORTED" );
-		assertThat( $bx.meta.get( "immutable" ) ).isEqualTo( true );
+		assertThat( $bx.meta.get( "Unmodifiable" ) ).isEqualTo( true );
 
 	}
 

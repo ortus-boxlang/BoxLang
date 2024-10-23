@@ -33,7 +33,7 @@ import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.ConfigurationException;
-import ortus.boxlang.runtime.types.immutable.ImmutableStruct;
+import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableStruct;
 import ortus.boxlang.runtime.types.util.BLCollector;
 import ortus.boxlang.runtime.types.util.JSONUtil;
 import ortus.boxlang.runtime.types.util.ListUtil;
@@ -275,14 +275,14 @@ public class ConfigLoader {
 	 **/
 	public IStruct mergeEnvironmentOverrides( IStruct config ) {
 		// We bring this in here in case a system property was dynamically set
-		ImmutableStruct	collectedEnvironment	= ImmutableStruct.of(
-		    Key.environment, ImmutableStruct.fromMap( System.getenv() ),
-		    Key.properties, ImmutableStruct.fromMap( System.getProperties() )
+		UnmodifiableStruct	collectedEnvironment	= UnmodifiableStruct.of(
+		    Key.environment, UnmodifiableStruct.fromMap( System.getenv() ),
+		    Key.properties, UnmodifiableStruct.fromMap( System.getProperties() )
 		);
 
-		IStruct			propertyOverrides		= filterEnv( collectedEnvironment.getAsStruct( Key.properties ) );
+		IStruct				propertyOverrides		= filterEnv( collectedEnvironment.getAsStruct( Key.properties ) );
 
-		IStruct			envOverrides			= filterEnv( collectedEnvironment.getAsStruct( Key.environment ) )
+		IStruct				envOverrides			= filterEnv( collectedEnvironment.getAsStruct( Key.environment ) )
 		    .entrySet()
 		    .stream()
 		    .filter( entry -> !propertyOverrides.containsKey( entry.getKey() ) )

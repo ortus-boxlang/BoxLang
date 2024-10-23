@@ -22,7 +22,7 @@ import java.util.Map;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
-import ortus.boxlang.runtime.types.immutable.ImmutableStruct;
+import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableStruct;
 
 /**
  * I handle casting anything to a Struct that needs to be modifiable
@@ -74,14 +74,14 @@ public class ModifiableStructCaster implements IBoxCaster {
 		}
 		object = DynamicObject.unWrap( object );
 
-		if ( object instanceof ImmutableStruct ) {
-			throw new BoxCastException( "Can't cast ImmutableStruct to a modifiable Struct." );
+		if ( object instanceof UnmodifiableStruct ) {
+			throw new BoxCastException( "Can't cast UnmodifiableStruct to a modifiable Struct." );
 		}
 
 		// Unmodifiable Map is not a specific class, so we have to get clever
 		// These are created via java.util.Collection
 		if ( object instanceof Map && object.getClass().getName().startsWith( "java.util.ImmutableCollections$" ) ) {
-			throw new BoxCastException( "Can't cast Immutable Map to a modifiable Struct." );
+			throw new BoxCastException( "Can't cast Unmodifiable Map to a modifiable Struct." );
 		}
 
 		// Unmodifiable Map is not a specific class, so we have to get clever

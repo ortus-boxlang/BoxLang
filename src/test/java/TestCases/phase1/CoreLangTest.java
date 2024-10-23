@@ -3133,10 +3133,10 @@ public class CoreLangTest {
 	}
 
 	@Test
-	public void testFinalImmutable() {
+	public void testFinalUnmodifiable() {
 		instance.executeSource(
 		    """
-		    final lockDown = [ 1, 2, 3 ].toImmutable()
+		    final lockDown = [ 1, 2, 3 ].toUnmodifiable()
 		    """,
 		    context, BoxSourceType.BOXSCRIPT );
 	}

@@ -38,7 +38,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.IStruct;
-import ortus.boxlang.runtime.types.immutable.ImmutableStruct;
+import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableStruct;
 import ortus.boxlang.runtime.util.LocalizationUtil;
 
 public class GetLocaleInfoTest {
@@ -74,14 +74,14 @@ public class GetLocaleInfoTest {
 		    """,
 		    context );
 		var result = variables.get( Key.of( "result" ) );
-		assertThat( result ).isInstanceOf( ImmutableStruct.class );
+		assertThat( result ).isInstanceOf( UnmodifiableStruct.class );
 		IStruct infoStruct = StructCaster.cast( result );
 		assertTrue( infoStruct.containsKey( "country" ) );
 		assertThat( infoStruct.get( "country" ) ).isInstanceOf( String.class );
 		assertTrue( infoStruct.containsKey( "display" ) );
-		assertThat( infoStruct.get( "display" ) ).isInstanceOf( ImmutableStruct.class );
+		assertThat( infoStruct.get( "display" ) ).isInstanceOf( UnmodifiableStruct.class );
 		assertTrue( infoStruct.containsKey( "iso" ) );
-		assertThat( infoStruct.get( "iso" ) ).isInstanceOf( ImmutableStruct.class );
+		assertThat( infoStruct.get( "iso" ) ).isInstanceOf( UnmodifiableStruct.class );
 		assertTrue( infoStruct.containsKey( "language" ) );
 		assertTrue( infoStruct.containsKey( "name" ) );
 		assertTrue( infoStruct.containsKey( "variant" ) );
@@ -100,14 +100,14 @@ public class GetLocaleInfoTest {
 		    """,
 		    context );
 		var result = variables.get( Key.of( "result" ) );
-		assertThat( result ).isInstanceOf( ImmutableStruct.class );
+		assertThat( result ).isInstanceOf( UnmodifiableStruct.class );
 		IStruct infoStruct = StructCaster.cast( result );
 		assertTrue( infoStruct.containsKey( "country" ) );
 		assertThat( infoStruct.get( "country" ) ).isInstanceOf( String.class );
 		assertTrue( infoStruct.containsKey( "display" ) );
-		assertThat( infoStruct.get( "display" ) ).isInstanceOf( ImmutableStruct.class );
+		assertThat( infoStruct.get( "display" ) ).isInstanceOf( UnmodifiableStruct.class );
 		assertTrue( infoStruct.containsKey( "iso" ) );
-		assertThat( infoStruct.get( "iso" ) ).isInstanceOf( ImmutableStruct.class );
+		assertThat( infoStruct.get( "iso" ) ).isInstanceOf( UnmodifiableStruct.class );
 		assertTrue( infoStruct.containsKey( "language" ) );
 		assertTrue( infoStruct.containsKey( "name" ) );
 		assertTrue( infoStruct.containsKey( "variant" ) );
@@ -126,14 +126,14 @@ public class GetLocaleInfoTest {
 		    """,
 		    context );
 		var result = variables.get( Key.of( "result" ) );
-		assertThat( result ).isInstanceOf( ImmutableStruct.class );
+		assertThat( result ).isInstanceOf( UnmodifiableStruct.class );
 		IStruct infoStruct = StructCaster.cast( result );
 		assertTrue( infoStruct.containsKey( "country" ) );
 		assertThat( infoStruct.get( "country" ) ).isInstanceOf( String.class );
 		assertTrue( infoStruct.containsKey( "display" ) );
-		assertThat( infoStruct.get( "display" ) ).isInstanceOf( ImmutableStruct.class );
+		assertThat( infoStruct.get( "display" ) ).isInstanceOf( UnmodifiableStruct.class );
 		assertTrue( infoStruct.containsKey( "iso" ) );
-		assertThat( infoStruct.get( "iso" ) ).isInstanceOf( ImmutableStruct.class );
+		assertThat( infoStruct.get( "iso" ) ).isInstanceOf( UnmodifiableStruct.class );
 		assertTrue( infoStruct.containsKey( "language" ) );
 		assertTrue( infoStruct.containsKey( "name" ) );
 		assertTrue( infoStruct.containsKey( "variant" ) );
@@ -154,14 +154,14 @@ public class GetLocaleInfoTest {
 		    """,
 		    context );
 		var result = variables.get( Key.of( "result" ) );
-		assertThat( result ).isInstanceOf( ImmutableStruct.class );
+		assertThat( result ).isInstanceOf( UnmodifiableStruct.class );
 		IStruct infoStruct = StructCaster.cast( result );
 		assertTrue( infoStruct.containsKey( "country" ) );
 		assertThat( infoStruct.get( "country" ) ).isInstanceOf( String.class );
 		assertTrue( infoStruct.containsKey( "display" ) );
-		assertThat( infoStruct.get( "display" ) ).isInstanceOf( ImmutableStruct.class );
+		assertThat( infoStruct.get( "display" ) ).isInstanceOf( UnmodifiableStruct.class );
 		assertTrue( infoStruct.containsKey( "iso" ) );
-		assertThat( infoStruct.get( "iso" ) ).isInstanceOf( ImmutableStruct.class );
+		assertThat( infoStruct.get( "iso" ) ).isInstanceOf( UnmodifiableStruct.class );
 		assertTrue( infoStruct.containsKey( "language" ) );
 		assertTrue( infoStruct.containsKey( "name" ) );
 		assertTrue( infoStruct.containsKey( "variant" ) );

@@ -19,14 +19,14 @@ package ortus.boxlang.runtime.types;
 
 import java.io.Serializable;
 
-import ortus.boxlang.runtime.types.immutable.IImmutable;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.GenericMeta;
+import ortus.boxlang.runtime.types.unmodifiable.IUnmodifiable;
 
 /**
  * I represent a null value, so we can store it in a ConcurrentHashMap
  */
-public class NullValue implements IType, IImmutable, Serializable {
+public class NullValue implements IType, IUnmodifiable, Serializable {
 
 	/**
 	 * Serializable
@@ -67,11 +67,11 @@ public class NullValue implements IType, IImmutable, Serializable {
 	}
 
 	/**
-	 * We can't convert `null` back to mutable. So it remains as is.
+	 * We can't convert `null` back to Modifiable. So it remains as is.
 	 *
-	 * @return The mutable type
+	 * @return The Modifiable type
 	 */
-	public IType toMutable() {
+	public IType toModifiable() {
 		return this;
 	}
 

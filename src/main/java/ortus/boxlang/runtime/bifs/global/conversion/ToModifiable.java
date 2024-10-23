@@ -21,26 +21,23 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
-import ortus.boxlang.runtime.dynamic.casters.QueryCaster;
-import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
-import ortus.boxlang.runtime.types.Struct;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableArray;
+import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableStruct;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.ARRAY )
 @BoxMember( type = BoxLangType.STRUCT )
 @BoxMember( type = BoxLangType.QUERY )
-public class ToImmutable extends BIF {
+public class ToModifiable extends BIF {
 
 	/**
 	 * Constructor
 	 */
-	public ToImmutable() {
+	public ToModifiable() {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "any", Key.value )
@@ -48,36 +45,30 @@ public class ToImmutable extends BIF {
 	}
 
 	/**
-	 * Convert an array, struct or query to its immutable counterpart.
+	 * Convert an array, struct or query to its Modifiable counterpart.
 	 *
 	 * @argument.value The array, struct or query to convert.
 	 *
 	 * @param context   The context in which the BIF is being executed.
 	 * @param arguments The arguments passed to the BIF.
 	 *
-	 * @return The value converted to its immutable counterpart.
+	 * @return The value converted to its Modifiable counterpart. If we can't change we just return it.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Object	inputValue	= arguments.get( Key.value );
+		Object inputValue = arguments.get( Key.value );
+
 		// Arrays
-		var		castedArray	= ArrayCaster.attempt( inputValue );
-		if ( castedArray.wasSuccessful() ) {
-			return castedArray.get().toImmutable();
+		if ( inputValue instanceof UnmodifiableArray castedArray ) {
+			return castedArray.toModifiable();
 		}
 		// Structs
-		var castedStruct = StructCaster.attempt( inputValue );
-		if ( castedStruct.wasSuccessful() ) {
-			// This cast is not safe. Need to add .toImmutable() to the IStruct interface
-			return ( ( Struct ) castedStruct.get() ).toImmutable();
+		else if ( inputValue instanceof UnmodifiableStruct castedStruct ) {
+			return castedStruct.toModifiable();
 		}
-		// Queries
-		var castedQuery = QueryCaster.attempt( inputValue );
-		if ( castedQuery.wasSuccessful() ) {
-			return castedQuery.get().toImmutable();
+		// Others
+		else {
+			return inputValue;
 		}
-		// Exceptions
-		throw new BoxRuntimeException( "Cannot convert value to immutable type as it is not a struct, array or query" );
-
 	}
 
 }

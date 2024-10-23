@@ -18,7 +18,7 @@
 package ortus.boxlang.runtime.types.meta;
 
 import ortus.boxlang.runtime.types.IStruct;
-import ortus.boxlang.runtime.types.immutable.ImmutableStruct;
+import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableStruct;
 
 /**
  * This class represents generic BoxLang metadata for a an object which has no object-specifc properties
@@ -42,7 +42,7 @@ public class GenericMeta extends BoxMeta {
 		} else {
 			this.$class = target.getClass();
 		}
-		this.meta = ImmutableStruct.EMPTY;
+		this.meta = UnmodifiableStruct.EMPTY;
 
 	}
 

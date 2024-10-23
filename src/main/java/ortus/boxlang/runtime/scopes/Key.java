@@ -835,7 +835,7 @@ public class Key implements Comparable<Key>, Serializable {
 	protected Object			originalValue;
 
 	/**
-	 * Keys are immutable, so we can cache the hash code
+	 * Keys are Unmodifiable, so we can cache the hash code
 	 */
 	protected int				hashCode;
 

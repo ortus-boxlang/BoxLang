@@ -46,9 +46,9 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
-import ortus.boxlang.runtime.types.immutable.ImmutableQuery;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.QueryMeta;
+import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableQuery;
 import ortus.boxlang.runtime.types.util.BLCollector;
 import ortus.boxlang.runtime.util.DuplicationUtil;
 
@@ -274,7 +274,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	}
 
 	/**
-	 * Abstraction for creating a new column so we can re-use logic easier between normal and immutable queries
+	 * Abstraction for creating a new column so we can re-use logic easier between normal and Unmodifiable queries
 	 *
 	 * @param name  column name
 	 * @param type  column type
@@ -942,13 +942,13 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	}
 
 	/**
-	 * Convert this query to an immutable one. The new query will be a copy of this query and
+	 * Convert this query to an Unmodifiable one. The new query will be a copy of this query and
 	 * changes to this query will not be reflected in the new query with the exception of complex objects, which are passed by reference.
 	 *
-	 * @return an ImmutableQuery containing the same data as this query
+	 * @return an UnmodifiableQuery containing the same data as this query
 	 */
-	public ImmutableQuery toImmutable() {
-		return new ImmutableQuery( this );
+	public UnmodifiableQuery toUnmodifiable() {
+		return new UnmodifiableQuery( this );
 	}
 
 	/**

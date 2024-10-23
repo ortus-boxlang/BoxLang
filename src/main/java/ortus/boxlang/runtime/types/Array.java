@@ -51,11 +51,11 @@ import ortus.boxlang.runtime.scopes.IntKey;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
-import ortus.boxlang.runtime.types.immutable.ImmutableArray;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.GenericMeta;
 import ortus.boxlang.runtime.types.meta.IChangeListener;
 import ortus.boxlang.runtime.types.meta.IListenable;
+import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableArray;
 import ortus.boxlang.runtime.types.util.BLCollector;
 
 /**
@@ -70,7 +70,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	 * Public Properties
 	 * --------------------------------------------------------------------------
 	 */
-	public static final Array					EMPTY				= new ImmutableArray();
+	public static final Array					EMPTY				= new UnmodifiableArray();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -760,10 +760,10 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	}
 
 	/**
-	 * Make immutable
+	 * Make Unmodifiable
 	 */
-	public ImmutableArray toImmutable() {
-		return new ImmutableArray( this );
+	public UnmodifiableArray toUnmodifiable() {
+		return new UnmodifiableArray( this );
 	}
 
 	/**

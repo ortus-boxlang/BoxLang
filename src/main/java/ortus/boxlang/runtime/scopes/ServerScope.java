@@ -27,8 +27,8 @@ import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
-import ortus.boxlang.runtime.types.immutable.ImmutableArray;
-import ortus.boxlang.runtime.types.immutable.ImmutableStruct;
+import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableArray;
+import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableStruct;
 import ortus.boxlang.runtime.util.NetworkUtil;
 
 /**
@@ -131,7 +131,7 @@ public class ServerScope extends BaseScope {
 		 */
 		put(
 		    Key.boxlang,
-		    ImmutableStruct.of(
+		    UnmodifiableStruct.of(
 		        "buildDate", versionInfo.get( "buildDate" ),
 		        "boxlangId", versionInfo.get( "boxlangId" ),
 		        "codename", versionInfo.get( "codename" ),
@@ -146,7 +146,7 @@ public class ServerScope extends BaseScope {
 		/**
 		 * OPERATING SYSTEM INFO
 		 */
-		put( Key.os, ImmutableStruct.of(
+		put( Key.os, UnmodifiableStruct.of(
 		    "additionalinformation", "",
 		    "arch", System.getProperty( "os.arch", "" ),
 		    "archModel", System.getProperty( "os.arch", "" ),
@@ -160,7 +160,7 @@ public class ServerScope extends BaseScope {
 		/**
 		 * OS SEPARATOR INFO
 		 */
-		put( Key.separator, ImmutableStruct.of(
+		put( Key.separator, UnmodifiableStruct.of(
 		    "path", System.getProperty( "path.separator", "" ),
 		    "file", System.getProperty( "file.separator", "" ),
 		    "line", System.getProperty( "line.separator", "" )
@@ -169,22 +169,22 @@ public class ServerScope extends BaseScope {
 		/**
 		 * CLI INFO
 		 */
-		put( Key.cli, ImmutableStruct.of(
+		put( Key.cli, UnmodifiableStruct.of(
 		    // From where the CLI was executed
 		    "executionPath", System.getProperty( "user.dir", "" ),
 		    // The actual full command line
 		    "command", System.getProperty( "sun.java.command", "" ),
 		    // The original command line arguments
-		    "args", runtime.inCLIMode() ? new ImmutableArray( runtime.getCliOptions().cliArgs() ) : "",
+		    "args", runtime.inCLIMode() ? new UnmodifiableArray( runtime.getCliOptions().cliArgs() ) : "",
 		    // The parsed arguments
-		    "parsed", runtime.inCLIMode() ? new ImmutableStruct( runtime.getCliOptions().parseArguments() ) : new ImmutableStruct()
+		    "parsed", runtime.inCLIMode() ? new UnmodifiableStruct( runtime.getCliOptions().parseArguments() ) : new UnmodifiableStruct()
 		) );
 
 		/**
 		 * JAVA INFO
 		 */
 		Runtime javaRuntime = Runtime.getRuntime();
-		put( Key.java, ImmutableStruct.of(
+		put( Key.java, UnmodifiableStruct.of(
 		    "archModel", System.getProperty( "os.arch", "" ),
 		    "executionPath", System.getProperty( "user.dir", "" ),
 		    "freeMemory", javaRuntime.freeMemory(),
@@ -194,13 +194,13 @@ public class ServerScope extends BaseScope {
 		    "version", System.getProperty( "java.version", "" )
 		) );
 
-		IStruct	env		= ImmutableStruct.fromMap( System.getenv() );
-		IStruct	props	= ImmutableStruct.fromMap( System.getProperties() );
+		IStruct	env		= UnmodifiableStruct.fromMap( System.getenv() );
+		IStruct	props	= UnmodifiableStruct.fromMap( System.getProperties() );
 
 		/**
 		 * JAVA SYSTEM PROPERTIES AND ENVIRONMENT
 		 */
-		put( Key.system, ImmutableStruct.of(
+		put( Key.system, UnmodifiableStruct.of(
 		    // TODO: create wrapper struct that gives live view of env vars, not just a copy
 		    "environment", env,
 		    // TODO: create wrapper struct that gives live view of system properties, not just a copy

@@ -388,7 +388,7 @@ public class DumpUtil {
 		} else if ( target instanceof IStruct ) {
 			return "Struct.bxm";
 		} else if ( target instanceof IType ) {
-			return target.getClass().getSimpleName().replace( "Immutable", "" ) + ".bxm";
+			return target.getClass().getSimpleName().replace( "Unmodifiable", "" ) + ".bxm";
 		} else if ( target instanceof String ) {
 			return "String.bxm";
 		} else if ( target instanceof Number ) {

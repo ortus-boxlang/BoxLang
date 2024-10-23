@@ -21,7 +21,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Method;
 
 /**
- * This immutable record represents an executable method handle and it's metadata.
+ * This Unmodifiable record represents an executable method handle and it's metadata.
  * This record is the one that is cached in the {@link DynamicObject} map.
  *
  * @param methodName    The name of the method
@@ -36,5 +36,5 @@ public record MethodRecord(
     MethodHandle methodHandle,
     boolean isStatic,
     int argumentCount ) {
-	// A beautiful java record of our method handle
+    // A beautiful java record of our method handle
 }

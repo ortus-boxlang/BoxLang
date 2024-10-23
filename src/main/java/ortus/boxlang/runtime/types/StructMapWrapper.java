@@ -43,11 +43,11 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.KeyCased;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
-import ortus.boxlang.runtime.types.immutable.ImmutableStruct;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.IChangeListener;
 import ortus.boxlang.runtime.types.meta.IListenable;
 import ortus.boxlang.runtime.types.meta.StructMeta;
+import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableStruct;
 
 /**
  * I wrap a Map to allow it to be used as a Struct, but without needing to make a copy of the original Map.
@@ -614,10 +614,10 @@ public class StructMapWrapper implements IStruct, IListenable, Serializable {
 	}
 
 	/**
-	 * Helper to make the struct immutable
+	 * Helper to make the struct Unmodifiable
 	 */
-	public ImmutableStruct toImmutable() {
-		return new ImmutableStruct( this );
+	public UnmodifiableStruct toUnmodifiable() {
+		return new UnmodifiableStruct( this );
 	}
 
 	/**

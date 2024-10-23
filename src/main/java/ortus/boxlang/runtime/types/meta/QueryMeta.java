@@ -20,7 +20,7 @@ package ortus.boxlang.runtime.types.meta;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
-import ortus.boxlang.runtime.types.immutable.ImmutableStruct;
+import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableStruct;
 
 /**
  * This class represents the metadata of a BoxLang Query object
@@ -45,7 +45,7 @@ public class QueryMeta extends BoxMeta {
 		// one might say this method call is a bit meta...
 		IStruct metadata = target.getMetaData();
 		metadata.put( Key.type, "Query" );
-		this.meta = new ImmutableStruct( metadata );
+		this.meta = new UnmodifiableStruct( metadata );
 	}
 
 	/**
