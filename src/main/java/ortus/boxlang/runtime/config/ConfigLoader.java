@@ -296,7 +296,7 @@ public class ConfigLoader {
 
 		if ( !propertyOverrides.isEmpty() ) {
 			propertyOverrides.entrySet().stream().forEach( entry -> {
-				logger.debug( "Overriding runtime config [%s] with Java System property value [{}]", entry.getKey().getName(), entry.getValue() );
+				logger.debug( "Overriding runtime config [{}] with Java System property value [{}]", entry.getKey().getName(), entry.getValue() );
 				Object existing = flatConfig.get( entry.getKey() );
 				if ( existing != null ) {
 					if ( existing instanceof List ) {
