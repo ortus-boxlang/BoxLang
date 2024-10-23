@@ -32,6 +32,7 @@ import javax.script.SimpleBindings;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.dynamic.Referencer;
 import ortus.boxlang.runtime.dynamic.javaproxy.InterfaceProxyService;
 import ortus.boxlang.runtime.interop.DynamicObject;
@@ -314,8 +315,13 @@ public class BoxScriptingEngine implements ScriptEngine, Compilable, Invocable {
 			throw new ScriptException( "Cannot invoke method on null object" );
 		}
 
-		// This will handle any sort of referencable object, including member methods on data types
-		return Referencer.getAndInvoke( getBoxContext(), thiz, Key.of( name ), args, false );
+		RequestBoxContext.setCurrent( getBoxContext().getParentOfType( RequestBoxContext.class ) );
+		try {
+			// This will handle any sort of referencable object, including member methods on data types
+			return Referencer.getAndInvoke( getBoxContext(), thiz, Key.of( name ), args, false );
+		} finally {
+			RequestBoxContext.removeCurrent();
+		}
 	}
 
 	/**
@@ -331,7 +337,12 @@ public class BoxScriptingEngine implements ScriptEngine, Compilable, Invocable {
 	 */
 	@Override
 	public Object invokeFunction( String name, Object... args ) throws ScriptException, NoSuchMethodException {
-		return boxContext.invokeFunction( Key.of( name ), args );
+		RequestBoxContext.setCurrent( boxContext.getParentOfType( RequestBoxContext.class ) );
+		try {
+			return boxContext.invokeFunction( Key.of( name ), args );
+		} finally {
+			RequestBoxContext.removeCurrent();
+		}
 	}
 
 	/**
