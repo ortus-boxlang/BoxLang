@@ -74,7 +74,7 @@ public class Logging extends BaseInterceptor {
 	private static final String				LEVEL_WARN		= "warn";
 	private static final String				LEVEL_ERROR		= "error";
 
-	// An Unmodifiable map of logging levels
+	// An Unmodifiable map of logging levels.
 	private static final Map<Key, String>	levelMap		= Map.of(
 	    Key.of( "Trace" ), LEVEL_TRACE,
 	    Key.of( "Debug" ), LEVEL_DEBUG,
