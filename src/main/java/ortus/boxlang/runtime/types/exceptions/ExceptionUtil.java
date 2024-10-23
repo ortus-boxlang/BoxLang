@@ -289,6 +289,20 @@ public class ExceptionUtil {
 	}
 
 	/**
+	 * This method will allow you to get the position in code of where an execution of it takes place.
+	 *
+	 * @return The String representation of the position in code > {@code templatePath:lineNumber}
+	 */
+	public static String getCurrentPositionInCode() {
+		Array tagContext = getTagContext( 1 );
+		if ( !tagContext.isEmpty() ) {
+			IStruct thisTag = ( IStruct ) tagContext.get( 0 );
+			return thisTag.getAsString( Key.template ) + ":" + thisTag.get( Key.line );
+		}
+		return "[not found]";
+	}
+
+	/**
 	 * Get the tag context from an exception.
 	 *
 	 * @param e The exception

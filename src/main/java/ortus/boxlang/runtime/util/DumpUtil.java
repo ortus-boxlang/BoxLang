@@ -55,7 +55,6 @@ import ortus.boxlang.runtime.runnables.ITemplateRunnable;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
-import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
@@ -314,11 +313,7 @@ public class DumpUtil {
 			if ( outerDump ) {
 				buffer = new StringBuffer();
 				context.pushBuffer( buffer );
-				Array tagContext = ExceptionUtil.getTagContext( 1 );
-				if ( !tagContext.isEmpty() ) {
-					IStruct thisTag = ( IStruct ) tagContext.get( 0 );
-					posInCode = thisTag.getAsString( Key.template ) + ":" + thisTag.get( Key.line );
-				}
+				posInCode = ExceptionUtil.getCurrentPositionInCode();
 				// This assumes HTML output. Needs to be dynamic as XML or plain text output wouldn't have CSS
 				dumpContext.writeToBuffer( "<style>" + getDumpTemplate( context, "Dump.css" ) + "</style>", true );
 				dumpContext.writeToBuffer( "<script>" + getDumpTemplate( context, "Dump.js" ) + "</script>" );

@@ -129,6 +129,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		buffersize							= Key.of( "buffersize" );
 	public static final Key		bxDefaultDatasource					= Key.of( "bxDefaultDatasource" );
 	public static final Key		bxRandomSeed						= Key.of( "bxRandomSeed" );
+	public static final Key		bxTracers							= Key.of( "bxTracers" );
 	public static final Key		cached								= Key.of( "cached" );
 	public static final Key		cachedwithin						= Key.of( "cachedwithin" );
 	public static final Key		cacheName							= Key.of( "cacheName" );
@@ -139,6 +140,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		canonicalize						= Key.of( "canonicalize" );
 	public static final Key		caseSensitive						= Key.of( "caseSensitive" );
 	public static final Key		cause								= Key.of( "cause" );
+	public static final Key		category							= Key.of( "category" );
 	public static final Key		cert_cookie							= Key.of( "cert_cookie" );
 	public static final Key		cert_flags							= Key.of( "cert_flags" );
 	public static final Key		cert_issuer							= Key.of( "cert_issuer" );
@@ -300,6 +302,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		expression2							= Key.of( "expression2" );
 	public static final Key		expressions							= Key.of( "expressions" );
 	public static final Key		extendedinfo						= Key.of( "extendedinfo" );
+	public static final Key		extrainfo							= Key.of( "extrainfo" );
 	public static final Key		fatalErrors							= Key.of( "fatalErrors" );
 	public static final Key		file								= Key.of( "file" );
 	public static final Key		fileContent							= Key.of( "fileContent" );
