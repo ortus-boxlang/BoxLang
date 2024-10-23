@@ -13,7 +13,7 @@ env:
 jobs:
   tests:
     if: "!contains(github.event.head_commit.message, 'skip tests')"
-    name: "Test on ${{ matrix.os }}"
+    name: "Test on ${{ matrix.os }}, Compiler: ${{ matrix.compiler }}, Exp: ${{ matrix.experimental }}"
     runs-on: ${{ matrix.os }}
     env:
       DB_USER: root
