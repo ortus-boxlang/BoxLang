@@ -91,7 +91,8 @@ public class Trace extends Component {
 		        attributes.getAsString( Key.category ),
 		        attributes.getAsString( Key.type ),
 		        attributes.getAsString( Key.text ),
-		        attributes.get( Key.extrainfo )
+		        attributes.get( Key.extrainfo ),
+		        context
 		    );
 
 		// If we are aborting, then throw an abort exception.

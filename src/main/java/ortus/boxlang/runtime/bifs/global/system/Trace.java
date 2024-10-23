@@ -39,11 +39,11 @@ public class Trace extends BIF {
 	public Trace() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( false, "boolean", Key.abort, false ),
-		    new Argument( false, "String", Key.category, "" ),
 		    new Argument( true, "string", Key.text, Set.of( Validator.REQUIRED, Validator.NON_EMPTY ) ),
+		    new Argument( false, "String", Key.category, "" ),
 		    new Argument( false, "string", Key.type, "Information", Set.of( Validator.REQUIRED ) ),
-		    new Argument( false, "any", Key.extrainfo, "" )
+		    new Argument( false, "any", Key.extrainfo, "" ),
+		    new Argument( false, "boolean", Key.abort, false ),
 		};
 	}
 
@@ -86,7 +86,8 @@ public class Trace extends BIF {
 		        arguments.getAsString( Key.category ),
 		        arguments.getAsString( Key.type ),
 		        arguments.getAsString( Key.text ),
-		        arguments.get( Key.extrainfo )
+		        arguments.get( Key.extrainfo ),
+		        context
 		    );
 
 		// If we are aborting, then throw an abort exception.

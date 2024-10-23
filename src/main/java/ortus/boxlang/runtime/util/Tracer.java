@@ -23,6 +23,8 @@ import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.context.ApplicationBoxContext;
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.logging.LogLevel;
 import ortus.boxlang.runtime.scopes.Key;
@@ -81,15 +83,24 @@ public class Tracer {
 	 * @param type      The type of the trace
 	 * @param text      The text of the trace
 	 * @param extraInfo Any extra information to attach to the trace
+	 * @param context   The context in which the trace is being invoked
 	 */
-	public void trace( String category, String type, String text, Object extraInfo ) {
-		String	logType			= LogLevel.valueOf( type.trim(), false ).getName();
-		String	extraAsString	= extraToString( extraInfo );
-		String	positionInCode	= ExceptionUtil.getCurrentPositionInCode();
+	public void trace( String category, String type, String text, Object extraInfo, IBoxContext context ) {
+		String					logType			= LogLevel.valueOf( type.trim(), false ).getName();
+		String					extraAsString	= extraToString( extraInfo );
+		String					positionInCode	= ExceptionUtil.getCurrentPositionInCode();
+		String					applicationName	= "uknown-application";
+
+		// Do we have an app name?
+		ApplicationBoxContext	appContext		= context.getParentOfType( ApplicationBoxContext.class );
+		if ( appContext != null ) {
+			applicationName = appContext.getApplication().getName().getName();
+		}
 
 		// Create a new record
-		addTraceRecord(
+		this.traceRecords.add(
 		    new TracerRecord(
+		        applicationName,
 		        Instant.now(),
 		        positionInCode,
 		        category,
@@ -100,14 +111,16 @@ public class Tracer {
 		);
 
 		// TracerMessage
+		// [applicationName] [category] [positionInCode] [text] [extraAsString]
 		String traceMessage = new StringJoiner( " " )
+		    .add( "[" ).add( applicationName ).add( "]" )
 		    .add( "[" ).add( category ).add( "]" )
 		    .add( "[" ).add( positionInCode ).add( "]" )
 		    .add( "[" ).add( text ).add( "]" )
 		    .add( "[" ).add( extraAsString ).add( "]" )
 		    .toString();
 
-		// Send to the logging facility
+		// Send to the logging facilities
 		BoxRuntime.getInstance()
 		    .getInterceptorService()
 		    .announce(
@@ -124,28 +137,27 @@ public class Tracer {
 	}
 
 	/**
-	 * Add a trace record to the tracer.
-	 *
-	 * @param target The target to add the trace record to
-	 */
-	public void addTraceRecord( ortus.boxlang.runtime.util.Tracer.TracerRecord target ) {
-		this.traceRecords.add( target );
-	}
-
-	/**
 	 * Get the trace records.
 	 *
 	 * @return The trace records
 	 */
-	public Queue<ortus.boxlang.runtime.util.Tracer.TracerRecord> getTraceRecords() {
+	public Queue<ortus.boxlang.runtime.util.Tracer.TracerRecord> getTracers() {
 		return this.traceRecords;
 	}
 
 	/**
 	 * Count the number of trace records.
 	 */
-	public int countTraceRecords() {
+	public int count() {
 		return this.traceRecords.size();
+	}
+
+	/**
+	 * Reset the tracers.
+	 */
+	public Tracer reset() {
+		this.traceRecords.clear();
+		return this;
 	}
 
 	/**
@@ -153,7 +165,7 @@ public class Tracer {
 	 *
 	 * @param extraInfo The object to convert to a string
 	 */
-	public static String extraToString( Object extraInfo ) {
+	private static String extraToString( Object extraInfo ) {
 		if ( extraInfo == null ) {
 			return "[null]";
 		}
@@ -171,6 +183,7 @@ public class Tracer {
 	 * Create a tracer record that will be tracked.
 	 */
 	public record TracerRecord(
+	    String applicationName,
 	    Instant tracedAt,
 	    String traceLocation,
 	    String category,
