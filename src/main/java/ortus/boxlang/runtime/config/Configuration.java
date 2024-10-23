@@ -29,7 +29,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 
@@ -372,10 +371,10 @@ public class Configuration implements IConfigSegment {
 
 		// Process mappings
 		if ( config.containsKey( Key.mappings ) ) {
-			if ( config.get( Key.mappings ) instanceof Map<?, ?> castedMap ) {
-				castedMap.forEach( ( key, value ) -> this.mappings.put(
-				    Key.of( key ),
-				    PlaceholderHelper.resolve( value ) ) );
+			if ( config.get( Key.mappings ) instanceof IStruct castedMap ) {
+				castedMap.entrySet().forEach( entry -> this.mappings.put(
+				    entry.getKey(),
+				    PlaceholderHelper.resolve( entry.getValue() ) ) );
 			} else {
 				logger.warn( "The [runtime.mappings] configuration is not a JSON Object, ignoring it." );
 			}
@@ -435,8 +434,8 @@ public class Configuration implements IConfigSegment {
 
 		// Process default cache configuration
 		if ( config.containsKey( Key.defaultCache ) ) {
-			if ( config.get( Key.defaultCache ) instanceof Map<?, ?> castedMap ) {
-				this.defaultCache = new CacheConfig().processProperties( new Struct( castedMap ) );
+			if ( config.get( Key.defaultCache ) instanceof IStruct castedMap ) {
+				this.defaultCache = new CacheConfig().processProperties( castedMap );
 			} else {
 				logger.warn( "The [runtime.defaultCache] configuration is not a JSON Object, ignoring it." );
 			}
@@ -469,13 +468,13 @@ public class Configuration implements IConfigSegment {
 
 		// Process executors
 		if ( config.containsKey( Key.executors ) ) {
-			if ( config.get( Key.executors ) instanceof Map<?, ?> castedExecutors ) {
+			if ( config.get( Key.executors ) instanceof IStruct castedExecutors ) {
 				// Process each executor configuration
 				castedExecutors
 				    .entrySet()
 				    .forEach( entry -> {
-					    if ( entry.getValue() instanceof Map<?, ?> castedMap ) {
-						    ExecutorConfig executorConfig = new ExecutorConfig( KeyCaster.cast( entry.getKey() ) )
+					    if ( entry.getValue() instanceof IStruct castedMap ) {
+						    ExecutorConfig executorConfig = new ExecutorConfig( entry.getKey() )
 						        .process( StructCaster.cast( castedMap ) );
 						    this.executors.put( executorConfig.name, executorConfig );
 					    } else {
@@ -512,8 +511,8 @@ public class Configuration implements IConfigSegment {
 
 		// Process experimentals map
 		if ( config.containsKey( Key.experimental ) ) {
-			if ( config.get( Key.experimental ) instanceof Map<?, ?> castedMap ) {
-				castedMap.forEach( ( key, value ) -> this.experimental.put( Key.of( key ), PlaceholderHelper.resolve( value ) ) );
+			if ( config.get( Key.experimental ) instanceof IStruct castedStruct ) {
+				castedStruct.entrySet().forEach( entry -> this.experimental.put( entry.getKey(), PlaceholderHelper.resolve( entry.getValue() ) ) );
 			} else {
 				logger.warn( "The [runtime.experimental] configuration is not a JSON Object, ignoring it." );
 			}
@@ -526,14 +525,14 @@ public class Configuration implements IConfigSegment {
 
 		// Process Datasource Configurations
 		if ( config.containsKey( Key.datasources ) ) {
-			if ( config.get( Key.datasources ) instanceof Map<?, ?> castedDataSources ) {
+			if ( config.get( Key.datasources ) instanceof IStruct castedDataSources ) {
 				// Process each datasource configuration
 				castedDataSources
 				    .entrySet()
 				    .forEach( entry -> {
-					    if ( entry.getValue() instanceof Map<?, ?> castedMap ) {
-						    DatasourceConfig datasourceConfig = new DatasourceConfig( Key.of( entry.getKey() ) )
-						        .process( new Struct( castedMap ) );
+					    if ( entry.getValue() instanceof IStruct castedStruct ) {
+						    DatasourceConfig datasourceConfig = new DatasourceConfig( entry.getKey() )
+						        .process( new Struct( castedStruct ) );
 						    this.datasources.put( datasourceConfig.name, datasourceConfig );
 					    } else {
 						    logger.warn(
@@ -548,14 +547,14 @@ public class Configuration implements IConfigSegment {
 
 		// Process modules
 		if ( config.containsKey( Key.modules ) ) {
-			if ( config.get( Key.modules ) instanceof Map<?, ?> castedModules ) {
+			if ( config.get( Key.modules ) instanceof IStruct castedModules ) {
 				// Process each module configuration
 				castedModules
 				    .entrySet()
 				    .forEach( entry -> {
-					    if ( entry.getValue() instanceof Map<?, ?> castedMap ) {
-						    ModuleConfig moduleConfig = new ModuleConfig( KeyCaster.cast( entry.getKey() ).getName() )
-						        .process( new Struct( castedMap ) );
+					    if ( entry.getValue() instanceof IStruct castedMap ) {
+						    ModuleConfig moduleConfig = new ModuleConfig( entry.getKey().getName() )
+						        .process( castedMap );
 						    this.modules.put( moduleConfig.name, moduleConfig );
 					    } else {
 						    logger.warn( "The [runtime.modules.{}] configuration is not a JSON Object, ignoring it.",
