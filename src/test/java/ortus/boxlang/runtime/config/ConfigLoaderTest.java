@@ -32,6 +32,8 @@ import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.segments.CacheConfig;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.IStruct;
 
 class ConfigLoaderTest {
 
@@ -54,6 +56,9 @@ class ConfigLoaderTest {
 		}
 		if ( System.getProperty( "BOXLANG_SECURITY_ALLOWEDFILEOPERATIONEXTENSIONS" ) != null ) {
 			System.clearProperty( "BOXLANG_SECURITY_ALLOWEDFILEOPERATIONEXTENSIONS" );
+		}
+		if ( System.getProperty( "boxlang.experimental.compiler" ) != null ) {
+			System.clearProperty( "boxlang.experimental.compiler" );
 		}
 	}
 
@@ -211,6 +216,7 @@ class ConfigLoaderTest {
 	@Test
 	void testItCanMergeEnvironmentalProperties() {
 		System.setProperty( "boxlang.security.allowedFileOperationExtensions", ".exe" );
+		System.setProperty( "boxlang.experimental.compiler", "asm" );
 		Configuration config = ConfigLoader.getInstance().loadCore();
 		// Core config checks
 		// Compiler Checks
@@ -253,6 +259,8 @@ class ConfigLoaderTest {
 		// Check the debug mode
 		assertThat( config.security.allowedFileOperationExtensions ).isInstanceOf( List.class );
 		assertThat( config.security.allowedFileOperationExtensions ).contains( ".exe" );
+		assertThat( config.experimental ).isInstanceOf( IStruct.class );
+		assertThat( config.experimental.getAsString( Key.of( "compiler" ) ) ).isEqualTo( "asm" );
 	}
 
 	@DisplayName( "It can merge environmental properties in to the config using the alternate syntax" )
