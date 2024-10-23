@@ -89,7 +89,7 @@ jobs:
             **/build/test-results/**
 
       - name: Inform Slack
-        if: ${{ failure() && github.ref == 'refs/heads/development' }}
+        if: ${{ !matrix.experimental && failure() && github.ref == 'refs/heads/development' }}
         uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_CHANNEL: boxlang
