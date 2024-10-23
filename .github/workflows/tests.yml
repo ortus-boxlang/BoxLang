@@ -25,15 +25,16 @@ jobs:
         os: ["ubuntu-latest", "windows-latest"]
         jdkVersion: ["21"]
         experimental: [false]
-        compiler: ["java", "asm"]
-        #include:
-        #- jdkVersion: "21"
-        #  os: "windows-latest"
-        #  experimental: true
-        # Disabled for now until we can figure out the gradle matrix
-        #- jdkVersion: "21"
-        #  os: "ubuntu-latest"
-        #  experimental: true
+        compiler: ["java"]
+        include:
+          - jdkVersion: "21"
+            os: "ubuntu-latest"
+            compiler: "asm"
+            experimental: true
+          - jdkVersion: "21"
+            os: "windows-latest"
+            compiler: "asm"
+            experimental: true
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
