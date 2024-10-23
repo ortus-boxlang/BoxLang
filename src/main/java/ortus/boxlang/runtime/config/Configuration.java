@@ -33,7 +33,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -286,6 +285,7 @@ public class Configuration implements IConfigSegment {
 	 * @return The new configuration object based on the core + overrides
 	 */
 	public Configuration process( IStruct config ) {
+
 		// Store original config
 		this.originalConfig = config;
 
@@ -444,23 +444,22 @@ public class Configuration implements IConfigSegment {
 
 		// Process declared cache configurations
 		if ( config.containsKey( Key.caches ) ) {
-			if ( config.get( Key.caches ) instanceof Map<?, ?> castedCaches ) {
+			if ( config.get( Key.caches ) instanceof IStruct castedCaches ) {
 				// Process each cache configuration
 				castedCaches
 				    .entrySet()
 				    .forEach( entry -> {
-
 					    // We ignore `default` caches, not accepted in boxlang.
-					    if ( StringUtils.equalsIgnoreCase( ( String ) entry.getKey(), "default" ) ) {
+					    if ( entry.getKey().equals( Key._DEFAULT ) ) {
 						    return;
 					    }
 
-					    if ( entry.getValue() instanceof Map<?, ?> castedMap ) {
-						    CacheConfig cacheConfig = new CacheConfig( ( String ) entry.getKey() ).process( new Struct( castedMap ) );
+					    if ( entry.getValue() instanceof IStruct castedStruct ) {
+						    CacheConfig cacheConfig = new CacheConfig( KeyCaster.cast( entry.getKey() ) ).process( castedStruct );
 						    this.caches.put( cacheConfig.name, cacheConfig );
 					    } else {
 						    logger.warn( "The [caches.{}] configuration is not a JSON Object, ignoring it.",
-						        entry.getKey() );
+						        entry.getKey().getName() );
 					    }
 				    } );
 			} else {
@@ -476,8 +475,8 @@ public class Configuration implements IConfigSegment {
 				    .entrySet()
 				    .forEach( entry -> {
 					    if ( entry.getValue() instanceof Map<?, ?> castedMap ) {
-						    ExecutorConfig executorConfig = new ExecutorConfig( ( String ) entry.getKey() )
-						        .process( new Struct( castedMap ) );
+						    ExecutorConfig executorConfig = new ExecutorConfig( KeyCaster.cast( entry.getKey() ) )
+						        .process( StructCaster.cast( castedMap ) );
 						    this.executors.put( executorConfig.name, executorConfig );
 					    } else {
 						    logger.warn( "The [executors.{}] configuration is not a JSON Object, ignoring it.",

@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.config.segments;
 
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.AsyncService;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -65,6 +66,16 @@ public class ExecutorConfig {
 	 */
 	public ExecutorConfig( String name ) {
 		this.name = name;
+	}
+
+	/**
+	 * Constructor by name and type
+	 *
+	 * @param name The name key of the executor
+	 */
+	public ExecutorConfig( Key name ) {
+		this.name = name.getName();
+		;
 	}
 
 	/**
