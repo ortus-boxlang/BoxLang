@@ -83,7 +83,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: tests-${{ matrix.os }}-${{ matrix.jdkVersion }}
+          name: tests-${{ matrix.os }}-${{ matrix.jdkVersion }}-${{ matrix.compiler }}
           path: |
             **/build/reports/tests/**
             **/build/test-results/**
