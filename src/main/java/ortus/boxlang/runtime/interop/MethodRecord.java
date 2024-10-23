@@ -36,5 +36,5 @@ public record MethodRecord(
     MethodHandle methodHandle,
     boolean isStatic,
     int argumentCount ) {
-    // A beautiful java record of our method handle
+	// A beautiful java record of our method handle
 }
