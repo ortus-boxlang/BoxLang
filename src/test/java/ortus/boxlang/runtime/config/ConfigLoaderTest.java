@@ -26,6 +26,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -44,6 +45,16 @@ class ConfigLoaderTest {
 	@AfterAll
 	public static void teardown() {
 
+	}
+
+	@BeforeEach
+	public void setupEach() {
+		if ( System.getProperty( "boxlang.security.allowedFileOperationExtensions" ) != null ) {
+			System.clearProperty( "boxlang.security.allowedFileOperationExtensions" );
+		}
+		if ( System.getProperty( "BOXLANG_SECURITY_ALLOWEDFILEOPERATIONEXTENSIONS" ) != null ) {
+			System.clearProperty( "BOXLANG_SECURITY_ALLOWEDFILEOPERATIONEXTENSIONS" );
+		}
 	}
 
 	@DisplayName( "It can load the core config file" )
