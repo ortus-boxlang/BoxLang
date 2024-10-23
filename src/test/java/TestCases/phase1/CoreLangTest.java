@@ -3593,4 +3593,18 @@ public class CoreLangTest {
 		assertThat( variables.get( result ) ).isEqualTo( 0 );
 	}
 
+	@DisplayName( "not operator precedence" )
+	@Test
+	public void testNotOperatorPrecedence() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+			foo = "bar"
+			result = !foo eq foo;
+			""",
+			context, BoxSourceType.CFSCRIPT );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( false );
+	}
+
 }

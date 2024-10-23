@@ -35,6 +35,8 @@ import ortus.boxlang.compiler.ast.expression.BoxArgument;
 import ortus.boxlang.compiler.ast.expression.BoxArrayAccess;
 import ortus.boxlang.compiler.ast.expression.BoxAssignment;
 import ortus.boxlang.compiler.ast.expression.BoxAssignmentOperator;
+import ortus.boxlang.compiler.ast.expression.BoxBinaryOperation;
+import ortus.boxlang.compiler.ast.expression.BoxBinaryOperator;
 import ortus.boxlang.compiler.ast.expression.BoxBooleanLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxComparisonOperation;
 import ortus.boxlang.compiler.ast.expression.BoxComparisonOperator;
@@ -99,6 +101,24 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	private boolean									upperCaseKeys				= true;
 	private boolean									forceOutputTrue				= true;
 	private boolean									mergeDocsIntoAnnotations	= true;
+
+	private Set<BoxBinaryOperator>					binaryOpsHigherThanNot		= Set.of(
+	    BoxBinaryOperator.Power,
+	    BoxBinaryOperator.Star,
+	    BoxBinaryOperator.Slash,
+	    BoxBinaryOperator.Backslash,
+	    BoxBinaryOperator.Mod,
+	    BoxBinaryOperator.Plus,
+	    BoxBinaryOperator.Minus,
+	    BoxBinaryOperator.Contains,
+	    BoxBinaryOperator.NotContains,
+	    BoxBinaryOperator.BitwiseAnd,
+	    BoxBinaryOperator.BitwiseOr,
+	    BoxBinaryOperator.BitwiseXor,
+	    BoxBinaryOperator.BitwiseSignedLeftShift,
+	    BoxBinaryOperator.BitwiseSignedRightShift,
+	    BoxBinaryOperator.BitwiseUnsignedRightShift
+	);
 
 	static {
 		// ENSURE ALL KEYS ARE LOWERCASE FOR EASIER MATCHING
@@ -820,6 +840,71 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 					);
 				}
 			} );
+		}
+		return super.visit( node );
+	}
+
+	/**
+	 * Rewrite !foo eq bar
+	 * as !(foo eq bar)
+	 * These operators should be higher precedence than the not operator
+	 * ^
+	 * *, /
+	 * \
+	 * MOD
+	 * +, -
+	 * CONTAINS
+	 * DOES NOT CONTAIN
+	 */
+	public BoxNode visit( BoxBinaryOperation node ) {
+		BoxExpression left = node.getLeft();
+		// If this is a binary operations and the left operator is a unary not
+		if ( binaryOpsHigherThanNot.contains( node.getOperator() ) && left instanceof BoxUnaryOperation buo && buo.getOperator() == BoxUnaryOperator.Not ) {
+			// Rip off the not and warp the binary in parents
+			node.setLeft( buo.getExpr() );
+			BoxExpression parenNode = new BoxParenthesis( node, node.getPosition(), node.getSourceText() );
+			// Then re-apply the not to the parens
+			return visit( new BoxUnaryOperation( parenNode, BoxUnaryOperator.Not, node.getPosition(), node.getSourceText() ) );
+		}
+		return super.visit( node );
+	}
+
+	/**
+	 * Rewrite !foo eq bar
+	 * as !(foo eq bar)
+	 * These operators should be higher precedence than the not operator
+	 * EQ, NEQ, LT, LTE, GT, GTE, ==, !=, >, >=, <, <=
+	 */
+	public BoxNode visit( BoxComparisonOperation node ) {
+		BoxExpression left = node.getLeft();
+		// If this is a binary operations and the left operator is a unary not
+		if ( left instanceof BoxUnaryOperation buo && buo.getOperator() == BoxUnaryOperator.Not ) {
+			// Rip off the not and wrap the comparison in parents
+			node.setLeft( buo.getExpr() );
+			BoxExpression parenNode = new BoxParenthesis( node, node.getPosition(), node.getSourceText() );
+			// Then re-apply the not to the parens
+			return visit( new BoxUnaryOperation( parenNode, BoxUnaryOperator.Not, node.getPosition(), node.getSourceText() ) );
+		}
+		return super.visit( node );
+	}
+
+	/**
+	 * Rewrite !foo eq bar
+	 * as !(foo eq bar)
+	 * These operators should be higher precedence than the not operator
+	 * &
+	 */
+	public BoxNode visit( BoxStringConcat node ) {
+		List<BoxExpression> values = node.getValues();
+		// If this is a concat with 2 expressions. I'm going to ignore foo & bar & baz & bum... as it feels like an edge case and is more annoying
+		if ( values.size() == 2 && values.get( 0 ) instanceof BoxUnaryOperation buo && buo.getOperator() == BoxUnaryOperator.Not ) {
+			// Rip off the not and wrap the comparison in parents
+			values.set( 0, buo.getExpr() );
+			// values is passed by reference, but this updates the internal children tracking
+			node.setValues( values );
+			BoxExpression parenNode = new BoxParenthesis( node, node.getPosition(), node.getSourceText() );
+			// Then re-apply the not to the parens
+			return visit( new BoxUnaryOperation( parenNode, BoxUnaryOperator.Not, node.getPosition(), node.getSourceText() ) );
 		}
 		return super.visit( node );
 	}
