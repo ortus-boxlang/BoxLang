@@ -426,9 +426,9 @@ public class PendingQuery {
 				QueryParameter	param			= this.parameters.get( i - 1 );
 				Integer			scaleOrLength	= param.getScaleOrLength();
 				if ( scaleOrLength == null ) {
-					preparedStatement.setObject( i, param.getValue(), param.getSqlTypeAsInt() );
+					preparedStatement.setObject( i, param.toSQLType(), param.getSqlTypeAsInt() );
 				} else {
-					preparedStatement.setObject( i, param.getValue(), param.getSqlTypeAsInt(), scaleOrLength );
+					preparedStatement.setObject( i, param.toSQLType(), param.getSqlTypeAsInt(), scaleOrLength );
 				}
 			}
 		}
