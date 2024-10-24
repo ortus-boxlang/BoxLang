@@ -370,7 +370,7 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 			} catch ( Exception x ) {
 				throw new BoxRuntimeException(
 				    String.format(
-				        "The the date time value of [%s] could not be parsed as a valid date or datetimea locale of [%s]",
+				        "The the date time value of [%s] could not be parsed as a valid date or datetime locale of [%s]",
 				        dateTime,
 				        locale.getDisplayName()
 				    ), x );
