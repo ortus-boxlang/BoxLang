@@ -20,6 +20,7 @@ import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
+import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
@@ -103,6 +104,11 @@ public class Len extends BIF {
 
 		if ( object instanceof DateTime dt ) {
 			return dt.toString().length();
+		}
+
+		CastAttempt<DateTime> dateTimeAttempt = DateTimeCaster.attempt( object );
+		if ( dateTimeAttempt.wasSuccessful() ) {
+			return dateTimeAttempt.get().toString().length();
 		}
 
 		CastAttempt<Array> arrayAttempt = ArrayCaster.attempt( object );
