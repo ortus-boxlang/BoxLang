@@ -76,4 +76,53 @@ public class StringLenTest {
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( 7 );
 	}
+
+	@DisplayName( "It returns the length of a date time object using a member function" )
+	@Test
+	public void testStringLenFunctionDateTimeMember() {
+		instance.executeSource(
+		    """
+		    dt = now();
+		    result = dt.len()
+		    """,
+		    context );
+		// Assert that result is greater than 0
+		assertThat( variables.getAsInteger( result ) ).isGreaterThan( 0 );
+	}
+
+	@DisplayName( "It returns the length of a date time object using the bif" )
+	@Test
+	public void testStringLenFunctionDateTimeBif() {
+		instance.executeSource(
+		    """
+		    dt = now();
+		    result = len( dt )
+		    """,
+		    context );
+		// Assert that result is greater than 0
+		assertThat( variables.getAsInteger( result ) ).isGreaterThan( 0 );
+	}
+
+	@DisplayName( "It returns the length of a number" )
+	@Test
+	public void testStringLenFunctionNumber() {
+		instance.executeSource(
+		    """
+		    result = len( 12345 )
+		    """,
+		    context );
+		assertThat( variables.getAsInteger( result ) ).isEqualTo( 5 );
+	}
+
+	@DisplayName( "It returns the length of a number using the member method" )
+	@Test
+	public void testStringLenFunctionNumberMember() {
+		instance.executeSource(
+		    """
+		    num = 12345;
+		       result = num.len()
+		       """,
+		    context );
+		assertThat( variables.getAsInteger( result ) ).isEqualTo( 5 );
+	}
 }
