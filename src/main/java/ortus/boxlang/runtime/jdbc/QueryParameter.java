@@ -115,7 +115,7 @@ public class QueryParameter {
 	 * Retrieve the value casted to the declared SQL type of the parameter..
 	 */
 	public Object toSQLType() {
-		if( this.value == null ) {
+		if ( this.value == null ) {
 			return null;
 		}
 		return switch ( this.type ) {
