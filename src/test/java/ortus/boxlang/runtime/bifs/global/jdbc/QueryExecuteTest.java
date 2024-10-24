@@ -70,17 +70,17 @@ public class QueryExecuteTest extends BaseJDBCTest {
 	public void testTimestampDateParam() {
 		instance.executeSource(
 		    """
-		    queryExecute(
-				"
-				INSERT INTO developers ( id, name, role, createdAt )
-				VALUES ( 100, 'Tony Skipponi', 'Engineer', :timestamp )",
-				{
-					timestamp : { sqltype : "cf_sql_timestamp", value : now() }
-				},
-				{ "datasource" : "mysqldatasource" }
-			);
-			result = queryExecute( "SELECT * FROM developers WHERE id = 100", [], { "datasource" : "mysqldatasource" } );
-		    """,
+		       queryExecute(
+		    	"
+		    	INSERT INTO developers ( id, name, role, createdAt )
+		    	VALUES ( 100, 'Tony Skipponi', 'Engineer', :timestamp )",
+		    	{
+		    		timestamp : { sqltype : "cf_sql_timestamp", value : now() }
+		    	},
+		    	{ "datasource" : "mysqldatasource" }
+		    );
+		    result = queryExecute( "SELECT * FROM developers WHERE id = 100", [], { "datasource" : "mysqldatasource" } );
+		       """,
 		    context );
 		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
 		Query query = variables.getAsQuery( result );

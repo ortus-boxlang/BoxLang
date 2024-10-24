@@ -59,11 +59,11 @@ public class BaseJDBCTest {
 		if ( JDBCTestUtils.hasMySQLModule() ) {
 			/**
 			 * docker run -d \
-				--name MYSQL_boxlang \
-				-p 3306:3306 \
-				-e MYSQL_DATABASE=boxlang \
-				-e MYSQL_ROOT_PASSWORD=123456Password \
-				mysql:8
+			 * --name MYSQL_boxlang \
+			 * -p 3306:3306 \
+			 * -e MYSQL_DATABASE=boxlang \
+			 * -e MYSQL_ROOT_PASSWORD=123456Password \
+			 * mysql:8
 			 */
 			// Register a mysql datasource for later use
 			mysqlDatasource = DataSource.fromStruct( Key.of( "mysqldatasource" ), Struct.of(
