@@ -4,7 +4,7 @@
 	variablesScope = var.$bx.getVariablesScope()
 	thisScope = var.$bx.getThisScope()
 	staticScope = var.$bx.getStaticScope()
-	sortedProperties = md.properties.toMutable().sort( ( a, b ) => compare( a.name, b.name ) )
+	sortedProperties = md.properties.toModifiable().sort( ( a, b ) => compare( a.name, b.name ) )
 	expandRoot = expand || expand eq null
 </bx:script>
 <bx:output>
