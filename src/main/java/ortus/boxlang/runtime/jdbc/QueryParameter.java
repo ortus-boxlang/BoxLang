@@ -115,6 +115,9 @@ public class QueryParameter {
 	 * Retrieve the value casted to the declared SQL type of the parameter..
 	 */
 	public Object toSQLType() {
+		if( this.value == null ) {
+			return null;
+		}
 		return switch ( this.type ) {
 			case QueryColumnType.INTEGER -> IntegerCaster.cast( this.value );
 			case QueryColumnType.BIGINT -> BigIntegerCaster.cast( this.value );
