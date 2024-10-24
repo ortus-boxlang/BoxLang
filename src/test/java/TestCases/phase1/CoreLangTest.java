@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.net.http.HttpRequest.BodyPublisher;
 import java.util.Comparator;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.AfterAll;
@@ -40,6 +41,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.LocalScope;
@@ -3596,15 +3598,33 @@ public class CoreLangTest {
 	@DisplayName( "not operator precedence" )
 	@Test
 	public void testNotOperatorPrecedence() {
+	// @formatter:off
+	instance.executeSource(
+		"""
+		foo = "bar"
+		result = !foo eq foo;
+		""",
+		context, BoxSourceType.CFSCRIPT );
+	// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( false );
+	}
+
+	@DisplayName( "auto init dynamic object on instance method call" )
+	@Test
+	public void testAutoInitDynamicObjectOnInstanceMethodCall() {
 		// @formatter:off
 		instance.executeSource(
 			"""
-			foo = "bar"
-			result = !foo eq foo;
+				myList = createObject( 'java', 'java.util.ArrayList' );
+				myList.add( "foo" );
 			""",
-			context, BoxSourceType.CFSCRIPT );
+			context );
 		// @formatter:on
-		assertThat( variables.get( result ) ).isEqualTo( false );
+		assertThat( DynamicObject.unWrap( variables.get( Key.of( "myList" ) ) ) ).isInstanceOf( List.class );
+		@SuppressWarnings( "unchecked" )
+		List<Object> list = ( List<Object> ) DynamicObject.unWrap( variables.get( Key.of( "myList" ) ) );
+		assertThat( list.size() ).isEqualTo( 1 );
+		assertThat( list.get( 0 ) ).isEqualTo( "foo" );
 	}
 
 }

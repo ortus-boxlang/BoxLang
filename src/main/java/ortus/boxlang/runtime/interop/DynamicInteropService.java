@@ -42,8 +42,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.ClassUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
@@ -585,6 +583,26 @@ public class DynamicInteropService {
 	 * @return The result of the method invocation
 	 */
 	public static Object invoke( IBoxContext context, Class<?> targetClass, Object targetInstance, String methodName, Boolean safe, Object... arguments ) {
+		return invoke( context, null, targetClass, targetInstance, methodName, safe, arguments );
+	}
+
+	/**
+	 * Invoke can be used to invoke public methods on instances, or static methods on classes/interfaces.
+	 *
+	 * If it's determined that the method handle is static, then the target instance is ignored.
+	 * If it's determined that the method handle is not static, then the target instance is used.
+	 *
+	 * @param context        The context to use for the method invocation
+	 * @param targetClass    The Class that you want to invoke a method on
+	 * @param targetInstance The instance to call the method on, or null if it's static
+	 * @param safe           Whether the method should throw an error or return null if it doesn't exist
+	 * @param methodName     The name of the method to invoke
+	 * @param arguments      The arguments to pass to the method
+	 *
+	 * @return The result of the method invocation
+	 */
+	public static Object invoke( IBoxContext context, DynamicObject dynamicObject, Class<?> targetClass, Object targetInstance, String methodName, Boolean safe,
+	    Object... arguments ) {
 		// Verify method name
 		if ( methodName == null || methodName.isEmpty() ) {
 			throw new BoxRuntimeException( "Method name cannot be null or empty." );
@@ -597,14 +615,17 @@ public class DynamicInteropService {
 		MethodRecord	methodRecord;
 		Class<?>[]		argumentClasses	= argumentsToClasses( arguments );
 		try {
-			methodRecord = getMethodHandle(
+			methodRecord	= getMethodHandle(
 			    context,
+			    dynamicObject,
 			    targetClass,
 			    targetInstance,
 			    methodName,
 			    argumentClasses,
 			    arguments
 			);
+			// May have been populated by getMethodHandle
+			targetInstance	= dynamicObject == null ? targetInstance : dynamicObject.getTargetInstance();
 		} catch ( RuntimeException e ) {
 			if ( safe ) {
 				return null;
@@ -658,7 +679,7 @@ public class DynamicInteropService {
 	 *
 	 * @return The result of the method invocation
 	 */
-	public static Object invokeStatic( IBoxContext context, Class<?> targetClass, String methodName, Object... arguments ) {
+	public static Object invokeStatic( IBoxContext context, DynamicObject dynamicObject, Class<?> targetClass, String methodName, Object... arguments ) {
 		// Verify method name
 		if ( methodName == null || methodName.isEmpty() ) {
 			throw new BoxRuntimeException( "Method name cannot be null or empty." );
@@ -667,7 +688,7 @@ public class DynamicInteropService {
 		// Unwrap any ClassInvoker instances
 		unWrapArguments( arguments );
 		Class<?>[]		argumentClasses	= argumentsToClasses( arguments );
-		MethodRecord	methodRecord	= getMethodHandle( context, targetClass, null, methodName, argumentClasses, arguments );
+		MethodRecord	methodRecord	= getMethodHandle( context, dynamicObject, targetClass, null, methodName, argumentClasses, arguments );
 
 		// Coerce the arguments to the right types
 		coerceArguments(
@@ -1084,6 +1105,7 @@ public class DynamicInteropService {
 	 * or creates a new one if not found or throws an exception if the method signature doesn't exist
 	 *
 	 * @param context            The context to use for the method invocation
+	 * @param dynamicObject      The dynamic object to get the method handle for
 	 * @param targetClass        The class to get the method handle for
 	 * @param methodName         The name of the method to get the handle for
 	 * @param argumentsAsClasses The array of arguments as classes to map
@@ -1094,6 +1116,7 @@ public class DynamicInteropService {
 	 */
 	public static MethodRecord getMethodHandle(
 	    IBoxContext context,
+	    DynamicObject dynamicObject,
 	    Class<?> targetClass,
 	    Object targetInstance,
 	    String methodName,
@@ -1108,7 +1131,7 @@ public class DynamicInteropService {
 		if ( methodRecord == null || !handlesCacheEnabled ) {
 			synchronized ( cacheKey.intern() ) {
 				if ( methodRecord == null || !handlesCacheEnabled ) {
-					methodRecord = discoverMethodHandle( context, targetClass, targetInstance, methodName, argumentsAsClasses, arguments );
+					methodRecord = discoverMethodHandle( context, dynamicObject, targetClass, targetInstance, methodName, argumentsAsClasses, arguments );
 					methodHandleCache.put( cacheKey, methodRecord );
 				}
 			}
@@ -1137,6 +1160,7 @@ public class DynamicInteropService {
 	 */
 	public static MethodRecord discoverMethodHandle(
 	    IBoxContext context,
+	    DynamicObject dynamicObject,
 	    Class<?> targetClass,
 	    Object targetInstance,
 	    String methodName,
@@ -1150,6 +1174,19 @@ public class DynamicInteropService {
 		// - argument coercion
 		Method			targetMethod	= findMatchingMethod( context, targetClass, methodName, argumentsAsClasses, arguments );
 		MethodHandle	targetHandle;
+
+		// If we are calling an instance method, but have no instance, and have the dynamicobject reference, then initialize it if there is a no-arg constructor
+		if ( !Modifier.isStatic( targetMethod.getModifiers() ) && targetInstance == null && dynamicObject != null ) {
+			// Check if the dynamic object has a no-arg constructor
+			try {
+				targetInstance = invokeConstructor( context, targetClass );
+				dynamicObject.setTargetInstance( targetInstance );
+			} catch ( NoConstructorException e ) {
+				// If there is no no-arg constructor, then we can't call the method
+				throw new BoxRuntimeException( "No instance provided for non-static method " + methodName + " for class " + targetClass.getName()
+				    + " and there is not an no-arg constructor to call." );
+			}
+		}
 
 		// Verify we can access the method, if we can't then we need to go up the inheritance chain to find it or die
 		// This happens when objects implement default method interfaces usually
@@ -1771,12 +1808,13 @@ public class DynamicInteropService {
 	 * @return The requested return value or null
 	 */
 	public static Object dereferenceAndInvoke(
+	    DynamicObject dynamicObject,
 	    Class<?> targetClass,
 	    IBoxContext context,
 	    Key name,
 	    Object[] positionalArguments,
 	    Boolean safe ) {
-		return dereferenceAndInvoke( targetClass, null, context, name, positionalArguments, safe );
+		return dereferenceAndInvoke( dynamicObject, targetClass, null, context, name, positionalArguments, safe );
 	}
 
 	/**
@@ -1791,12 +1829,13 @@ public class DynamicInteropService {
 	 * @return The requested return value or null
 	 */
 	public static Object dereferenceAndInvoke(
+	    DynamicObject dynamicObject,
 	    Object targetInstance,
 	    IBoxContext context,
 	    Key name,
 	    Object[] positionalArguments,
 	    Boolean safe ) {
-		return dereferenceAndInvoke( targetInstance.getClass(), targetInstance, context, name, positionalArguments, safe );
+		return dereferenceAndInvoke( dynamicObject, targetInstance.getClass(), targetInstance, context, name, positionalArguments, safe );
 	}
 
 	/**
@@ -1812,6 +1851,7 @@ public class DynamicInteropService {
 	 * @return The requested return value or null
 	 */
 	public static Object dereferenceAndInvoke(
+	    DynamicObject dynamicObject,
 	    Class<?> targetClass,
 	    Object targetInstance,
 	    IBoxContext context,
@@ -1847,7 +1887,7 @@ public class DynamicInteropService {
 		}
 
 		// Else let's do an invoke dynamic
-		return invoke( context, targetClass, targetInstance, name.getName(), safe, positionalArguments );
+		return invoke( context, dynamicObject, targetClass, targetInstance, name.getName(), safe, positionalArguments );
 	}
 
 	/**
@@ -1862,12 +1902,13 @@ public class DynamicInteropService {
 	 * @return The requested return value or null
 	 */
 	public static Object dereferenceAndInvoke(
+	    DynamicObject dynamicObject,
 	    Class<?> targetClass,
 	    IBoxContext context,
 	    Key name,
 	    Map<Key, Object> namedArguments,
 	    Boolean safe ) {
-		return dereferenceAndInvoke( targetClass, null, context, name, namedArguments, safe );
+		return dereferenceAndInvoke( dynamicObject, targetClass, null, context, name, namedArguments, safe );
 	}
 
 	/**
@@ -1882,12 +1923,13 @@ public class DynamicInteropService {
 	 * @return The requested return value or null
 	 */
 	public static Object dereferenceAndInvoke(
+	    DynamicObject dynamicObject,
 	    Object targetInstance,
 	    IBoxContext context,
 	    Key name,
 	    Map<Key, Object> namedArguments,
 	    Boolean safe ) {
-		return dereferenceAndInvoke( targetInstance.getClass(), targetInstance, context, name, namedArguments, safe );
+		return dereferenceAndInvoke( dynamicObject, targetInstance.getClass(), targetInstance, context, name, namedArguments, safe );
 	}
 
 	/**
@@ -1902,6 +1944,7 @@ public class DynamicInteropService {
 	 * @return The requested return value or null
 	 */
 	public static Object dereferenceAndInvoke(
+	    DynamicObject dynamicObject,
 	    Class<?> targetClass,
 	    Object targetInstance,
 	    IBoxContext context,
