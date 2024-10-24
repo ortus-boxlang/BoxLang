@@ -14,6 +14,7 @@
  */
 package ortus.boxlang.compiler.asmboxpiler.transformer.statement;
 
+import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -77,6 +78,7 @@ import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.util.BLCollector;
 import ortus.boxlang.runtime.types.util.ListUtil;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
+import ortus.boxlang.runtime.util.conversion.ObjectMarshaller;
 
 public class BoxClassTransformer {
 
@@ -340,6 +342,25 @@ public class BoxClassTransformer {
 		getAllAbstractMethodsMethodVisitor.visitInsn( Type.getType( Map.class ).getOpcode( Opcodes.IRETURN ) );
 		getAllAbstractMethodsMethodVisitor.visitMaxs( 0, 0 );
 		getAllAbstractMethodsMethodVisitor.visitEnd();
+
+		MethodVisitor writeReplaceMethodVisitor = classNode.visitMethod( Opcodes.ACC_PRIVATE,
+		    "writeReplace",
+		    Type.getMethodDescriptor( Type.getType( Object.class ) ),
+		    null,
+		    new String[] { Type.getInternalName( ObjectStreamException.class ) } );
+		writeReplaceMethodVisitor.visitCode();
+		// return ObjectMarshaller.serializeClass( this );
+		writeReplaceMethodVisitor.visitVarInsn( Opcodes.ALOAD, 0 );
+		writeReplaceMethodVisitor.visitMethodInsn(
+		    Opcodes.INVOKESTATIC,
+		    Type.getInternalName( ObjectMarshaller.class ),
+		    "serializeClass",
+		    Type.getMethodDescriptor( Type.getType( Object.class ), Type.getType( IClassRunnable.class ) ),
+		    false
+		);
+		writeReplaceMethodVisitor.visitInsn( Type.getType( Map.class ).getOpcode( Opcodes.IRETURN ) );
+		writeReplaceMethodVisitor.visitMaxs( 0, 0 );
+		writeReplaceMethodVisitor.visitEnd();
 
 		defineLookupPrivateMethod( transpiler, classNode, type );
 		defineLookupPrivateField( transpiler, classNode, type );
