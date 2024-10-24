@@ -27,6 +27,7 @@ public class BaseJDBCTest {
 	IScope						variables;
 	static DataSource			datasource;
 	static DataSource			mssqlDatasource;
+	static DataSource			mysqlDatasource;
 	static DatasourceService	datasourceService;
 
 	@BeforeAll
@@ -51,7 +52,34 @@ public class BaseJDBCTest {
 			    Key.of( "MSSQLdatasource" ),
 			    mssqlDatasource.getConfiguration()
 			);
+			datasourceService.register( Key.of( "MSSQLdatasource" ), mssqlDatasource );
 			mssqlDatasource.execute( "CREATE TABLE developers ( id INTEGER, name VARCHAR(155), role VARCHAR(155) )" );
+		}
+
+		if ( JDBCTestUtils.hasMySQLModule() ) {
+			/**
+			 * docker run -d \
+				--name MYSQL_boxlang \
+				-p 3306:3306 \
+				-e MYSQL_DATABASE=boxlang \
+				-e MYSQL_ROOT_PASSWORD=123456Password \
+				mysql:8
+			 */
+			// Register a mysql datasource for later use
+			mysqlDatasource = DataSource.fromStruct( Key.of( "mysqldatasource" ), Struct.of(
+			    "username", "root",
+			    "password", "123456Password",
+			    "host", "localhost",
+			    "port", "3306",
+			    "driver", "mysql",
+			    "database", "boxlang"
+			) );
+			instance.getConfiguration().datasources.put(
+			    Key.of( "mysqldatasource" ),
+			    mysqlDatasource.getConfiguration()
+			);
+			datasourceService.register( Key.of( "mysqldatasource" ), mysqlDatasource );
+			mysqlDatasource.execute( "CREATE TABLE developers ( id INTEGER, name VARCHAR(155), role VARCHAR(155), createdAt TIMESTAMP )" );
 		}
 	}
 
@@ -62,6 +90,10 @@ public class BaseJDBCTest {
 		if ( mssqlDatasource != null ) {
 			JDBCTestUtils.dropDevelopersTable( mssqlDatasource );
 			mssqlDatasource.shutdown();
+		}
+		if ( mysqlDatasource != null ) {
+			JDBCTestUtils.dropDevelopersTable( mysqlDatasource );
+			mysqlDatasource.shutdown();
 		}
 	}
 
