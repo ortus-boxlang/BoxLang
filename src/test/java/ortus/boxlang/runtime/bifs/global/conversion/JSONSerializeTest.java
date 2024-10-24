@@ -438,4 +438,92 @@ public class JSONSerializeTest {
 		assertThat( json ).isEqualTo( "{ }" );
 	}
 
+	@DisplayName( "It can handle recursion of structs" )
+	@Test
+	public void testCanHandleRecursion() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		    	foo = {}
+				bar = { foo : foo }
+				foo.bar = bar
+				result = jsonSerialize( foo )
+				println( result )
+		    """,
+		context );
+		// @formatter:on
+
+		var json = variables.getAsString( result );
+	}
+
+	@DisplayName( "It can handle recursion of Java Map" )
+	@Test
+	public void testCanHandleRecursionInJavaMap() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		    	foo = new java.util.HashMap()
+				foo.put( "one", 1 )
+				foo.put( "two", 2 )
+				foo.put( "three", 3 )
+
+				bar = new java.util.HashMap()
+				bar.put( "foo", foo )
+
+				foo.put( "bar", bar )
+
+				result = jsonSerialize( foo )
+				println( result )
+		    """,
+		context );
+		// @formatter:on
+
+		var json = variables.getAsString( result );
+	}
+
+	@DisplayName( "It can handle recursion of arrays" )
+	@Test
+	public void testCanHandleRecursionInArrays() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		    	foo = [ 1, 2, 3 ]
+				bar = [ foo ]
+
+				foo.append( bar )
+
+				result = jsonSerialize( foo )
+				println( result )
+		    """,
+		context );
+		// @formatter:on
+
+		var json = variables.getAsString( result );
+	}
+
+	@DisplayName( "It can handle recursion of Java List" )
+	@Test
+	public void testCanHandleRecursionInJavaList() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		    	foo = new java.util.ArrayList()
+				foo.add( 1 )
+				foo.add( 2 )
+				foo.add( 3 )
+
+				bar = new java.util.ArrayList()
+				bar.add( foo )
+
+				foo.add( bar )
+
+				result = jsonSerialize( foo )
+				println( result )
+		    """,
+		context );
+		// @formatter:on
+
+		var json = variables.getAsString( result );
+	}
+
 }
