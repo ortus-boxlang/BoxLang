@@ -3617,6 +3617,9 @@ public class CoreLangTest {
 			"""
 				myList = createObject( 'java', 'java.util.ArrayList' );
 				myList.add( "foo" );
+				// second time to test cached method handle code path in dynamic interop service
+				myList2 = createObject( 'java', 'java.util.ArrayList' );
+				myList2.add( "foo" );
 			""",
 			context );
 		// @formatter:on

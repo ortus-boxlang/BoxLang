@@ -635,11 +635,18 @@ public class DynamicInteropService {
 			}
 		}
 
-		// If it's not static, we need a target instance
-		if ( !methodRecord.isStatic() && targetInstance == null ) {
-			throw new BoxRuntimeException(
-			    "You can't call invoke on a null target instance. Use [invokeStatic] instead or set the target instance manually or via the constructor."
-			);
+		// If we are calling an instance method, but have no instance, and have the dynamicobject reference, then initialize it if there is a no-arg constructor
+		// We are doing this here as well as inside discoverMethodHandle because when the method handle is cached, the discover method will not be run again
+		if ( !methodRecord.isStatic() && targetInstance == null && dynamicObject != null ) {
+			// Check if the dynamic object has a no-arg constructor
+			try {
+				targetInstance = invokeConstructor( context, targetClass );
+				dynamicObject.setTargetInstance( targetInstance );
+			} catch ( NoConstructorException e ) {
+				// If there is no no-arg constructor, then we can't call the method
+				throw new BoxRuntimeException( "No instance provided for non-static method " + methodName + " for class " + targetClass.getName()
+				    + " and there is not an no-arg constructor to call." );
+			}
 		}
 
 		try {
