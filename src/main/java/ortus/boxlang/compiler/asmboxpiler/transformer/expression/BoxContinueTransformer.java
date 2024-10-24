@@ -86,7 +86,7 @@ public class BoxContinueTransformer extends AbstractTransformer {
 		// throw new RuntimeException( "Cannot break from current location" );
 		// }
 
-		throw new RuntimeException( "Cannot continue from current location" );
+		throw new RuntimeException( "Cannot continue from current location - processing: " + transpiler.getProperty( "relativePath" ) );
 
 	}
 
