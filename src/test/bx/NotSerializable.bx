@@ -1,0 +1,41 @@
+/**
+ * We use this class for testing serializations
+ */
+class serializable=false{
+
+	property String name;
+	property String surname;
+	property numeric age serializable=false;
+	property Date createdDate;
+	property Date modifiedDate;
+	property boolean isActive;
+	property Array tags;
+	@jsonExclude
+	property any javaSystem;
+	property anotherProp;
+	property anotherProp2;
+
+	property composition;
+
+	function init(){
+		variables.name = "John";
+		variables.surname = "Doe";
+		variables.age = 30;
+		variables.createdDate = now();
+		variables.modifiedDate = now();
+		variables.isActive = true;
+		variables.tags = ["tag1", "tag2"];
+		variables.test = CreateObject( "java", "java.lang.System" );
+		variables.anotherProp = "hello";
+		variables.anotherProp2 = "hello";
+
+		variables.composition = new MyThreadingClass();
+
+		return this;
+	}
+
+	function sayHello(){
+		return "Hello " & variables.name;
+	}
+
+}

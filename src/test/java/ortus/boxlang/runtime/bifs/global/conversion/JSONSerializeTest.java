@@ -421,4 +421,21 @@ public class JSONSerializeTest {
 		assertThat( json ).isNotEmpty();
 	}
 
+	@DisplayName( "It can serialize a non-serializable class as a basic return" )
+	@Test
+	public void testCanSerializeNonSerializableClass() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		    	test = new src.test.bx.NotSerializable()
+				result = jsonSerialize( test )
+				println( result )
+		    """,
+		context );
+		// @formatter:on
+
+		var json = variables.getAsString( result );
+		assertThat( json ).isEqualTo( "{ }" );
+	}
+
 }

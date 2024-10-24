@@ -30,6 +30,7 @@ import com.fasterxml.jackson.jr.ob.impl.JSONWriter;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
@@ -37,6 +38,7 @@ import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Property;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.util.BLCollector;
 
 /**
@@ -79,8 +81,14 @@ public class BoxClassSerializer implements ValueWriter {
 		VariablesScope		variablesScope		= bxClass.getVariablesScope();
 		IBoxContext			boxContext			= BoxRuntime.getInstance().getRuntimeContext();
 
+		// Verify if the class is NOT serializable via the "serializable" annotation and it's false, return {}
+		if ( BooleanCaster.cast( classAnnotations.getOrDefault( Key.serializable, true ) ) == false ) {
+			context.writeValue( new Struct() );
+			return;
+		}
+
 		// Seed the class annotations needed
-		Array				classJsonExcludes	= inflateArray( classAnnotations.getOrDefault( Key.jsonExclude, "" ) );
+		Array classJsonExcludes = inflateArray( classAnnotations.getOrDefault( Key.jsonExclude, "" ) );
 
 		// If there is a "toJson" method in the class, then call it
 		// The user wants control over the serialization
@@ -109,6 +117,11 @@ public class BoxClassSerializer implements ValueWriter {
 
 			    // Does the property name exist in the jsonExclude list?
 			    return !prop.annotations().containsKey( Key.jsonExclude ) && classJsonExcludes.findIndex( prop.name(), false ) == 0;
+		    } )
+		    // Filter out any properties that have the serialiable = false annotation
+		    .filter( entry -> {
+			    Property prop = properties.get( entry.getKey() );
+			    return BooleanCaster.cast( prop.annotations().getOrDefault( Key.serializable, true ) );
 		    } )
 		    // If the property is null, then set it to an empty string
 		    .map( entry -> {
