@@ -26,6 +26,11 @@ jobs:
         jdkVersion: ["21"]
         experimental: [false]
         compiler: ["java", "asm"]
+        # include:
+        #   - jdkVersion: "22"
+        #     os: "ubuntu-latest"
+        #     compiler: "asm"
+        #     experimental: true
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
