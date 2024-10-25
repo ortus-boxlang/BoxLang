@@ -188,14 +188,8 @@ public class BoxClassSupport {
 		thisClass.getGetterLookup().putAll( _super.getGetterLookup() );
 		thisClass.getSetterLookup().putAll( _super.getSetterLookup() );
 
-		// merge annotations
-		for ( var entry : _super.getAnnotations().entrySet() ) {
-			Key key = entry.getKey();
-			if ( !thisClass.getAnnotations().containsKey( key ) && !key.equals( Key._EXTENDS ) && !key.equals( Key._IMPLEMENTS )
-			    && !key.equals( Key._ABSTRACT ) ) {
-				thisClass.getAnnotations().put( key, entry.getValue() );
-			}
-		}
+		// DO NOT merge annotations. They stay separate between parent/child classes and must be merged at runtime, if desired.
+		// https://ortussolutions.atlassian.net/browse/BL-677
 
 	}
 
