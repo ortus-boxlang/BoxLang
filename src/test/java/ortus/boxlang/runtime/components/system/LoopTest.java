@@ -304,4 +304,18 @@ public class LoopTest {
 
 	}
 
+	@Test
+	public void testLoopArrayCollection() {
+		instance.executeSource(
+		    """
+		    	<bx:set a = [1,2,3] >
+		    	<bx:set result = "" >
+		    	<bx:loop collection="#a#" item="interface">
+		    		<bx:set result &= interface >
+		    	</bx:loop>
+		    """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.getAsString( Key.of( "result" ) ) ).isEqualTo( "123" );
+	}
+
 }
