@@ -215,7 +215,7 @@ class ConfigLoaderTest {
 	@DisplayName( "It can merge environmental properties in to the config" )
 	@Test
 	void testItCanMergeEnvironmentalProperties() {
-		System.setProperty( "boxlang.security.allowedFileOperationExtensions", ".exe" );
+		System.setProperty( "BOXLANG_SECURITY_ALLOWEDFILEOPERATIONEXTENSIONS", ".exe" );
 		System.setProperty( "boxlang.experimental.compiler", "asm" );
 		Configuration config = ConfigLoader.getInstance().loadCore();
 		// Core config checks
@@ -261,54 +261,6 @@ class ConfigLoaderTest {
 		assertThat( config.security.allowedFileOperationExtensions ).contains( ".exe" );
 		assertThat( config.experimental ).isInstanceOf( IStruct.class );
 		assertThat( config.experimental.getAsString( Key.of( "compiler" ) ) ).isEqualTo( "asm" );
-	}
-
-	@DisplayName( "It can merge environmental properties in to the config using the alternate syntax" )
-	@Test
-	void testItCanMergeEnvironmentalPropertiesAlt() {
-		System.setProperty( "BOXLANG_SECURITY_ALLOWEDFILEOPERATIONEXTENSIONS", ".exe" );
-		Configuration config = ConfigLoader.getInstance().loadCore();
-		// Core config checks
-		// Compiler Checks
-		assertThat( config.classGenerationDirectory ).doesNotContainMatch( "(ignorecase)\\{java-temp\\}" );
-
-		// Runtime Checks
-		assertThat( config.mappings ).isNotEmpty();
-		assertThat( config.modulesDirectory.size() ).isGreaterThan( 0 );
-		// First one should be the user home directory
-		assertThat( config.modulesDirectory.get( 0 ) ).doesNotContainMatch( "(ignorecase)\\{boxlang-home\\}" );
-
-		// Log Directory Check
-		assertThat( config.logsDirectory ).isNotEmpty();
-
-		// Cache Checks
-		assertThat( config.caches ).isNotEmpty();
-
-		// Default Cache Checks
-		CacheConfig defaultCache = ( CacheConfig ) config.defaultCache;
-		assertThat( defaultCache ).isNotNull();
-		assertThat( defaultCache.name.getNameNoCase() ).isEqualTo( "DEFAULT" );
-		assertThat( defaultCache.provider.getNameNoCase() ).isEqualTo( "BOXCACHEPROVIDER" );
-		assertThat( defaultCache.properties ).isNotNull();
-		assertThat( defaultCache.properties.get( "maxObjects" ) ).isEqualTo( 1000 );
-		assertThat( defaultCache.properties.get( "reapFrequency" ) ).isEqualTo( 120 );
-		assertThat( defaultCache.properties.get( "evictionPolicy" ) ).isEqualTo( "LRU" );
-		assertThat( defaultCache.properties.get( "objectStore" ) ).isEqualTo( "ConcurrentStore" );
-		assertThat( defaultCache.properties.get( "useLastAccessTimeouts" ) ).isEqualTo( true );
-
-		// Import Cache Checks
-		CacheConfig importCache = ( CacheConfig ) config.caches.get( "bxImports" );
-		assertThat( importCache.provider.getNameNoCase() ).isEqualTo( "BOXCACHEPROVIDER" );
-		assertThat( importCache.properties ).isNotNull();
-		assertThat( importCache.properties.get( "maxObjects" ) ).isEqualTo( 200 );
-		assertThat( importCache.properties.get( "reapFrequency" ) ).isEqualTo( 120 );
-		assertThat( importCache.properties.get( "evictionPolicy" ) ).isEqualTo( "LRU" );
-		assertThat( importCache.properties.get( "objectStore" ) ).isEqualTo( "ConcurrentStore" );
-		assertThat( importCache.properties.get( "useLastAccessTimeouts" ) ).isEqualTo( true );
-
-		// Check the debug mode
-		assertThat( config.security.allowedFileOperationExtensions ).isInstanceOf( List.class );
-		assertThat( config.security.allowedFileOperationExtensions ).contains( ".exe" );
 	}
 
 }
