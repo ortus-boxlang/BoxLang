@@ -629,18 +629,15 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		IStruct result = ( IStruct ) resultObject;
 
 		assertThat( result ).containsKey( Key.cached );
-		assertThat( result.getAsBoolean( Key.cached ) ).isEqualTo( true );
-
 		assertThat( result ).containsKey( Key.cacheProvider );
-		assertEquals( "default", result.getAsString( Key.cacheProvider ) );
-
 		assertThat( result ).containsKey( Key.cacheKey );
-		assertEquals( "adminDevs", result.getAsString( Key.cacheKey ) );
-
 		assertThat( result ).containsKey( Key.cacheTimeout );
-		assertEquals( Duration.ofHours( 1 ), result.get( Key.cacheTimeout ) );
-
 		assertThat( result ).containsKey( Key.cacheLastAccessTimeout );
+		
+		assertThat( result.getAsBoolean( Key.cached ) ).isEqualTo( true );
+		assertEquals( "default", result.getAsString( Key.cacheProvider ) );
+		assertEquals( "adminDevs", result.getAsString( Key.cacheKey ) );
+		assertEquals( Duration.ofHours( 1 ), result.get( Key.cacheTimeout ) );
 		assertEquals( Duration.ofMinutes( 30 ), result.get( Key.cacheLastAccessTimeout ) );
 	}
 
