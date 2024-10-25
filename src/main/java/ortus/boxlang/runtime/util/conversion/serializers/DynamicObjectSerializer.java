@@ -19,6 +19,8 @@ package ortus.boxlang.runtime.util.conversion.serializers;
 
 import java.io.IOException;
 import java.lang.reflect.Modifier;
+import java.util.List;
+import java.util.Map;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.jr.ob.api.ValueWriter;
@@ -39,6 +41,18 @@ public class DynamicObjectSerializer implements ValueWriter {
 		// If the object is a BoxClass, then serialize it as a BoxClass
 		if ( dynamicObject.unWrap() instanceof IClassRunnable bxClass ) {
 			context.writeValue( bxClass );
+			return;
+		}
+
+		// If it's a list, then serialize it as a list
+		if ( dynamicObject.unWrap() instanceof List<?> castedList ) {
+			context.writeValue( castedList );
+			return;
+		}
+
+		// If it's a map, then serialize it as a map
+		if ( dynamicObject.unWrap() instanceof Map<?, ?> castedMap ) {
+			context.writeValue( castedMap );
 			return;
 		}
 

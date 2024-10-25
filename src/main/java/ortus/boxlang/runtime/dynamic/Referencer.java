@@ -86,7 +86,7 @@ public class Referencer {
 		if ( object instanceof DynamicObject dob ) {
 			return dob.dereferenceAndInvoke( context, key, positionalArguments, safe );
 		}
-		return DynamicInteropService.dereferenceAndInvoke( object, context, key, positionalArguments, safe );
+		return DynamicInteropService.dereferenceAndInvoke( null, object, context, key, positionalArguments, safe );
 	}
 
 	/**
@@ -109,7 +109,7 @@ public class Referencer {
 		if ( object instanceof DynamicObject dob ) {
 			return dob.dereferenceAndInvoke( context, key, new Object[] {}, safe );
 		}
-		return DynamicInteropService.dereferenceAndInvoke( object, context, key, new Object[] {}, safe );
+		return DynamicInteropService.dereferenceAndInvoke( null, object, context, key, new Object[] {}, safe );
 	}
 
 	/**
@@ -133,7 +133,7 @@ public class Referencer {
 		if ( object instanceof DynamicObject dob ) {
 			return dob.dereferenceAndInvoke( context, key, namedArguments, safe );
 		}
-		return DynamicInteropService.dereferenceAndInvoke( object, context, key, namedArguments, safe );
+		return DynamicInteropService.dereferenceAndInvoke( null, object, context, key, namedArguments, safe );
 	}
 
 	/**

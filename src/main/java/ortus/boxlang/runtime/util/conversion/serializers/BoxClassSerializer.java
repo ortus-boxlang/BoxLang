@@ -19,7 +19,9 @@ package ortus.boxlang.runtime.util.conversion.serializers;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,7 +51,10 @@ public class BoxClassSerializer implements ValueWriter {
 	/**
 	 * Logger
 	 */
-	private static final Logger logger = LoggerFactory.getLogger( BoxClassSerializer.class );
+	private static final Logger								logger			= LoggerFactory.getLogger( BoxClassSerializer.class );
+
+	// ThreadLocal to keep track of seen structs in the current thread
+	private static final ThreadLocal<Set<IClassRunnable>>	visitedClasses	= ThreadLocal.withInitial( HashSet::new );
 
 	/**
 	 * Inflate an annotation value into an Array
@@ -80,6 +85,14 @@ public class BoxClassSerializer implements ValueWriter {
 		IStruct				classAnnotations	= bxClass.getAnnotations();
 		VariablesScope		variablesScope		= bxClass.getVariablesScope();
 		IBoxContext			boxContext			= BoxRuntime.getInstance().getRuntimeContext();
+
+		// Get the current thread's set of visted classes
+		Set<IClassRunnable>	visited				= visitedClasses.get();
+
+		if ( visited.contains( bxClass ) ) {
+			g.writeString( "recursive-class-skipping" );
+			return;
+		}
 
 		// Verify if the class is NOT serializable via the "serializable" annotation and it's false, return {}
 		if ( BooleanCaster.cast( classAnnotations.getOrDefault( Key.serializable, true ) ) == false ) {
@@ -139,6 +152,9 @@ public class BoxClassSerializer implements ValueWriter {
 
 		// Iterate and output each name using the entry set
 		context.writeValue( memento );
+
+		// Cleanup
+		visited.remove( bxClass );
 	}
 
 	@Override

@@ -261,7 +261,7 @@ public class DynamicObject implements IReferenceable, Serializable {
 	 * @return The result of the method invocation
 	 */
 	public Object invoke( IBoxContext context, String methodName, Object... arguments ) {
-		return DynamicInteropService.invoke( context, this.getTargetClass(), this.getTargetInstance(), methodName, false, arguments );
+		return DynamicInteropService.invoke( context, this, this.getTargetClass(), this.getTargetInstance(), methodName, false, arguments );
 	}
 
 	/**
@@ -275,7 +275,7 @@ public class DynamicObject implements IReferenceable, Serializable {
 	 *
 	 */
 	public Object invokeStatic( IBoxContext context, String methodName, Object... arguments ) {
-		return DynamicInteropService.invoke( context, this.targetClass, methodName, false, arguments );
+		return DynamicInteropService.invoke( context, this, this.targetClass, null, methodName, false, arguments );
 	}
 
 	/**
@@ -631,7 +631,7 @@ public class DynamicObject implements IReferenceable, Serializable {
 			return BoxClassSupport.dereferenceAndInvokeStatic( this, context, name, positionalArguments, safe );
 		}
 
-		return DynamicInteropService.dereferenceAndInvoke( this.targetClass, this.targetInstance, context, name, positionalArguments, safe );
+		return DynamicInteropService.dereferenceAndInvoke( this, this.targetClass, this.targetInstance, context, name, positionalArguments, safe );
 	}
 
 	/**
@@ -650,7 +650,7 @@ public class DynamicObject implements IReferenceable, Serializable {
 			return BoxClassSupport.dereferenceAndInvokeStatic( this, context, name, namedArguments, safe );
 		}
 
-		return DynamicInteropService.dereferenceAndInvoke( this.targetClass, this.targetInstance, context, name, namedArguments, safe );
+		return DynamicInteropService.dereferenceAndInvoke( this, this.targetClass, this.targetInstance, context, name, namedArguments, safe );
 	}
 
 	/**
