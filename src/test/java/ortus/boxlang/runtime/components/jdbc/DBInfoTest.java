@@ -117,7 +117,7 @@ public class DBInfoTest extends BaseJDBCTest {
 	public void testDBNamesType() {
 		getInstance().executeSource(
 		    """
-		        cfdbinfo( type='dbnames', name='result', datasource='MYSQLDB' )
+		        cfdbinfo( type='dbnames', name='result', datasource='mysqldatasource' )
 		    """,
 		    getContext(), BoxSourceType.CFSCRIPT );
 		Object theResult = getVariables().get( result );
@@ -128,13 +128,13 @@ public class DBInfoTest extends BaseJDBCTest {
 		assertEquals( 2, dbNamesQuery.getColumns().size() );
 
 		IStruct ourDBRow = dbNamesQuery.stream()
-		    .filter( row -> row.getAsString( Key.of( "DBNAME" ) ).equals( "testDB" ) )
+		    .filter( row -> row.getAsString( Key.of( "DBNAME" ) ).equals( "mysqlDB" ) )
 		    .findFirst()
 		    .orElse( null );
 
 		assertNotNull( ourDBRow );
 		assertEquals( "CATALOG", ourDBRow.getAsString( Key.type ) );
-		assertEquals( "testDB", ourDBRow.getAsString( Key.of( "DBNAME" ) ) );
+		assertEquals( "mysqlDB", ourDBRow.getAsString( Key.of( "DBNAME" ) ) );
 	}
 
 	@DisplayName( "Can get table column data" )
@@ -272,7 +272,7 @@ public class DBInfoTest extends BaseJDBCTest {
 	public void testTablesTypeBadDBName() {
 		getInstance().executeSource(
 		    """
-		        cfdbinfo( type='tables', name='result', datasource="MYSQLDB", dbname="foo" )
+		        cfdbinfo( type='tables', name='result', datasource="mysqldatasource", dbname="foo" )
 		    """,
 		    getContext(), BoxSourceType.CFSCRIPT );
 		Query resultQuery = ( Query ) getVariables().get( result );

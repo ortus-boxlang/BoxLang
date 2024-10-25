@@ -61,7 +61,7 @@ public class BaseJDBCTest {
 			 * docker run -d \
 			 * --name MYSQL_boxlang \
 			 * -p 3306:3306 \
-			 * -e MYSQL_DATABASE=boxlang \
+			 * -e MYSQL_DATABASE=mysqlDB \
 			 * -e MYSQL_ROOT_PASSWORD=123456Password \
 			 * mysql:8
 			 */
@@ -72,7 +72,7 @@ public class BaseJDBCTest {
 			    "host", "localhost",
 			    "port", "3306",
 			    "driver", "mysql",
-			    "database", "boxlang"
+			    "database", "mysqlDB"
 			) );
 			instance.getConfiguration().datasources.put(
 			    Key.of( "mysqldatasource" ),

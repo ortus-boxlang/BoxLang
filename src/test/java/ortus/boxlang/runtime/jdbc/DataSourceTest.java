@@ -104,7 +104,7 @@ public class DataSourceTest {
 		    Key.of( "mysql" ),
 		    Struct.of(
 		        "username", "root",
-		        "password", "secret",
+		        "password", "123456Password",
 		        "connectionString", "jdbc:mysql://localhost:3306"
 		    ) );
 		Connection	conn			= myDataSource.getConnection();
