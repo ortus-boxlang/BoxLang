@@ -21,12 +21,10 @@ package ortus.boxlang.runtime.components.jdbc;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 
@@ -359,25 +357,25 @@ public class QueryTest extends BaseJDBCTest {
 		assertInstanceOf( IStruct.class, resultObject );
 		IStruct result = StructCaster.cast( resultObject );
 
-		assertTrue( result.containsKey( "sql" ) );
+		assertThat( result ).containsKey( Key.sql );
 		assertEquals( "SELECT * FROM developers WHERE role = ?", result.getAsString( Key.sql ) );
 
-		assertTrue( result.containsKey( "cached" ) );
-		assertFalse( result.getAsBoolean( Key.cached ) );
+		assertThat( result ).containsKey( Key.cached );
+		assertThat( result.getAsBoolean( Key.cached ) ).isEqualTo( false );
 
-		assertTrue( result.containsKey( "sqlParameters" ) );
+		assertThat( result ).containsKey( Key.sqlParameters );
 		assertEquals( Array.of( "Developer" ), result.getAsArray( Key.sqlParameters ) );
 
-		assertTrue( result.containsKey( "recordCount" ) );
+		assertThat( result ).containsKey( Key.recordCount );
 		assertEquals( 2, result.getAsInteger( Key.recordCount ) );
 
-		assertTrue( result.containsKey( "columnList" ) );
-		assertEquals( "ID,NAME,ROLE", result.getAsString( Key.columnList ) );
+		assertThat( result ).containsKey( Key.columnList );
+		assertEquals( "ID,NAME,ROLE,CREATEDAT", result.getAsString( Key.columnList ) );
 
-		assertTrue( result.containsKey( "executionTime" ) );
+		assertThat( result ).containsKey( Key.executionTime );
 		assertThat( result.getAsLong( Key.executionTime ) ).isAtLeast( 0 );
 
-		assertFalse( result.containsKey( "generatedKey" ) );
+		assertThat( result.containsKey( Key.generatedKey ) ).isEqualTo( false );
 	}
 
 	@DisplayName( "It closes connection on completion" )
@@ -401,16 +399,16 @@ public class QueryTest extends BaseJDBCTest {
 		getInstance().executeSource(
 		    """
 		       <bx:query name="result" cache="true" cacheTimeout="#createTimespan( 0, 0, 0, 2 )#" result="queryMeta" returnType="array">
-		    SELECT * FROM developers WHERE role = <bx:queryparam value="Developer" />
+		    SELECT id,name,role FROM developers WHERE role = <bx:queryparam value="Developer" />
 		    </bx:query>
 		       <bx:query name="result2" cache="true" cacheTimeout="#createTimespan( 0, 0, 0, 2 )#" result="queryMeta2" returnType="array">
-		    SELECT * FROM developers WHERE role = <bx:queryparam value="Developer" />
+		    SELECT id,name,role FROM developers WHERE role = <bx:queryparam value="Developer" />
 		    </bx:query>
 		       <bx:query name="result3" cache="true" cacheTimeout="#createTimespan( 0, 0, 0, 2 )#" result="queryMeta3" returnType="array">
-		    SELECT * FROM developers WHERE role = <bx:queryparam value="Admin" />
+		    SELECT id,name,role FROM developers WHERE role = <bx:queryparam value="Admin" />
 		    </bx:query>, [ 'Admin
 		       <bx:query name="result4" cache="false" cacheTimeout="#createTimespan( 0, 0, 0, 2 )#" result="queryMeta4" returnType="array">
-		    SELECT * FROM developers WHERE role = <bx:queryparam value="Developer" />
+		    SELECT id,name,role FROM developers WHERE role = <bx:queryparam value="Developer" />
 		    </bx:query>
 		       """,
 		    getContext(), BoxSourceType.BOXTEMPLATE );
@@ -427,19 +425,19 @@ public class QueryTest extends BaseJDBCTest {
 
 		// Query 1 should NOT be cached
 		IStruct queryMeta = StructCaster.cast( getVariables().getAsStruct( Key.of( "queryMeta" ) ) );
-		assertFalse( queryMeta.getAsBoolean( Key.cached ) );
+		assertThat( queryMeta.getAsBoolean( Key.cached ) ).isEqualTo( false );
 
 		// query 2 SHOULD be cached
 		IStruct queryMeta2 = StructCaster.cast( getVariables().getAsStruct( Key.of( "queryMeta2" ) ) );
-		assertTrue( queryMeta2.getAsBoolean( Key.cached ) );
+		assertThat( queryMeta2.getAsBoolean( Key.cached ) ).isEqualTo( true );
 
 		// query 3 should NOT be cached because it has an additional param
 		IStruct queryMeta3 = StructCaster.cast( getVariables().getAsStruct( Key.of( "queryMeta3" ) ) );
-		assertFalse( queryMeta3.getAsBoolean( Key.cached ) );
+		assertThat( queryMeta3.getAsBoolean( Key.cached ) ).isEqualTo( false );
 
 		// query 4 should NOT be cached because it strictly disallows it
 		IStruct queryMeta4 = StructCaster.cast( getVariables().getAsStruct( Key.of( "queryMeta4" ) ) );
-		assertFalse( queryMeta4.getAsBoolean( Key.cached ) );
+		assertThat( queryMeta4.getAsBoolean( Key.cached ) ).isEqualTo( false );
 	}
 
 }
