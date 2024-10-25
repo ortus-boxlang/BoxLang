@@ -179,6 +179,17 @@ public class JDBCTestUtils {
 	}
 
 	/**
+	 * Ensure various tables exist in the database for testing purposes.
+	 */
+	public static void ensureTestTableExists( DataSource datasource ) {
+		try {
+			datasource.execute( "CREATE TABLE developers ( id INTEGER, name VARCHAR(155), role VARCHAR(155), createdAt TIMESTAMP )" );
+		} catch ( DatabaseException e ) {
+			// Ignore the exception if the table already exists
+		}
+	}
+
+	/**
 	 * Reset the `developers` table to a known, consistent state for testing.
 	 *
 	 * @param datasource

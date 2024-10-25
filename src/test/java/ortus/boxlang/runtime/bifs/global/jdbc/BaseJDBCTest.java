@@ -40,7 +40,8 @@ public class BaseJDBCTest {
 
 		if ( JDBCTestUtils.hasMSSQLModule() ) {
 			// Register a MSSQL datasource for later use
-			mssqlDatasource = DataSource.fromStruct( Key.of( "MSSQLdatasource" ), Struct.of(
+			Key mssqlName = Key.of( "MSSQLdatasource" );
+			mssqlDatasource = DataSource.fromStruct( mssqlName, Struct.of(
 			    "username", "sa",
 			    "password", "123456Password",
 			    "host", "localhost",
@@ -49,11 +50,11 @@ public class BaseJDBCTest {
 			    "database", "master"
 			) );
 			instance.getConfiguration().datasources.put(
-			    Key.of( "MSSQLdatasource" ),
+			    mssqlName,
 			    mssqlDatasource.getConfiguration()
 			);
-			datasourceService.register( Key.of( "MSSQLdatasource" ), mssqlDatasource );
-			mssqlDatasource.execute( "CREATE TABLE developers ( id INTEGER, name VARCHAR(155), role VARCHAR(155) )" );
+			datasourceService.register( mssqlName, mssqlDatasource );
+			JDBCTestUtils.ensureTestTableExists( mssqlDatasource );
 		}
 
 		if ( JDBCTestUtils.hasMySQLModule() ) {
@@ -66,7 +67,8 @@ public class BaseJDBCTest {
 			 * mysql:8
 			 */
 			// Register a mysql datasource for later use
-			mysqlDatasource = DataSource.fromStruct( Key.of( "mysqldatasource" ), Struct.of(
+			Key mysqlName = Key.of( "MySQLdatasource" );
+			mysqlDatasource = DataSource.fromStruct( mysqlName, Struct.of(
 			    "username", "root",
 			    "password", "123456Password",
 			    "host", "localhost",
@@ -75,11 +77,11 @@ public class BaseJDBCTest {
 			    "database", "mysqlDB"
 			) );
 			instance.getConfiguration().datasources.put(
-			    Key.of( "mysqldatasource" ),
+			    mysqlName,
 			    mysqlDatasource.getConfiguration()
 			);
-			datasourceService.register( Key.of( "mysqldatasource" ), mysqlDatasource );
-			mysqlDatasource.execute( "CREATE TABLE developers ( id INTEGER, name VARCHAR(155), role VARCHAR(155), createdAt TIMESTAMP )" );
+			datasourceService.register( mysqlName, mysqlDatasource );
+			JDBCTestUtils.ensureTestTableExists( mysqlDatasource );
 		}
 	}
 

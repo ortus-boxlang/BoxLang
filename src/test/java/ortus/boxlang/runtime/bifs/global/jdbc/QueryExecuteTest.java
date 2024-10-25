@@ -87,6 +87,30 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		assertEquals( 1, query.size() );
 	}
 
+	@EnabledIf( "tools.JDBCTestUtils#hasMySQLModule" )
+	@DisplayName( "It can use string values as timestamp params." )
+	@Test
+	public void testTimestampParamCompare() {
+		instance.executeSource(
+		    """
+		    queryExecute( "INSERT INTO developers ( id, name, role, createdAt )
+		    	VALUES ( 101, 'Tony Skipponi', 'Engineer', NOW() )", {}, { "datasource" : "mysqldatasource" } );
+		    result = queryExecute(
+		    	"
+		    	SELECT * FROM developers
+				WHERE createdAt IS NOT NULL AND createdAt < :timestamp",
+		    	{
+		    		timestamp : { sqltype : "cf_sql_timestamp", value : "09/24/2099" }
+		    	},
+		    	{ "datasource" : "mysqldatasource" }
+		    );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
+		Query query = variables.getAsQuery( result );
+		assertEquals( 1, query.size() );
+	}
+
 	@DisplayName( "It can execute a query with no bindings on the default datasource" )
 	@Test
 	public void testSimpleExecute() {
