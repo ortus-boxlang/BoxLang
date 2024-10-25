@@ -633,7 +633,7 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		assertThat( result ).containsKey( Key.cacheKey );
 		assertThat( result ).containsKey( Key.cacheTimeout );
 		assertThat( result ).containsKey( Key.cacheLastAccessTimeout );
-		
+
 		assertThat( result.getAsBoolean( Key.cached ) ).isEqualTo( true );
 		assertEquals( "default", result.getAsString( Key.cacheProvider ) );
 		assertEquals( "adminDevs", result.getAsString( Key.cacheKey ) );
