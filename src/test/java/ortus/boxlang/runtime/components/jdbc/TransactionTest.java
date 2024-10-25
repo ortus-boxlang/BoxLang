@@ -21,6 +21,7 @@ package ortus.boxlang.runtime.components.jdbc;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import static com.google.common.truth.Truth.assertThat;
 import ortus.boxlang.runtime.bifs.global.jdbc.BaseJDBCTest;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.scopes.Key;
@@ -51,7 +52,7 @@ public class TransactionTest extends BaseJDBCTest {
 		    """,
 		    getContext() );
 		Query theResult = ( Query ) getVariables().get( result );
-		assertEquals( 4, theResult.size() );
+		assertThat( theResult.size() ).isEqualTo( 4 );
 	}
 
 	@DisplayName( "Throws validation error if you try to commit or rollback a non-existing transaction" )
@@ -64,7 +65,7 @@ public class TransactionTest extends BaseJDBCTest {
 		    """,
 		    getContext() )
 		);
-		assertTrue( e.getMessage().startsWith( "Transaction is not started" ) );
+		assertThat( e.getMessage() ).startsWith( "Transaction is not started" );
 	}
 
 	@DisplayName( "Throws on bad action level" )
@@ -74,7 +75,7 @@ public class TransactionTest extends BaseJDBCTest {
 
 		BoxRuntimeException e = assertThrows( BoxRuntimeException.class, () -> getInstance().executeSource( "transaction action='foo'{}", getContext() ) );
 
-		assertTrue( e.getMessage().startsWith( "Input [action] for component [Transaction] must be one of the following values:" ) );
+		assertThat( e.getMessage() ).startsWith( "Input [action] for component [Transaction] must be one of the following values:" );
 	}
 
 	@DisplayName( "Throws on bad isolation level" )
@@ -84,7 +85,7 @@ public class TransactionTest extends BaseJDBCTest {
 
 		BoxRuntimeException e = assertThrows( BoxRuntimeException.class, () -> getInstance().executeSource( "transaction isolation='foo'{}", getContext() ) );
 
-		assertTrue( e.getMessage().startsWith( "Input [isolation] for component [Transaction] must be one of the following values:" ) );
+		assertThat( e.getMessage() ).startsWith( "Input [isolation] for component [Transaction] must be one of the following values:" );
 	}
 
 	@DisplayName( "Re-broadcasts exceptions" )
@@ -92,12 +93,12 @@ public class TransactionTest extends BaseJDBCTest {
 	public void testTransactionException() {
 		DatabaseException databaseException = assertThrows( DatabaseException.class,
 		    () -> getInstance().executeSource( "transaction { queryExecute( 'SELECxT id FROM developers' ); }", getContext() ) );
-		assertTrue( databaseException.getMessage().startsWith( "Syntax error:" ) );
+		assertThat( databaseException.getMessage() ).startsWith( "Syntax error:" );
 
 		BoxRuntimeException genericException = assertThrows( BoxRuntimeException.class,
 		    () -> getInstance().executeSource( "transaction { queryExecute( 'SELECT id FROM developers' ); throw( message = 'fooey' ); }", getContext() ) );
 
-		assertTrue( genericException.getMessage().startsWith( "fooey" ) );
+		assertThat( genericException.getMessage() ).startsWith( "fooey" );
 	}
 
 	@DisplayName( "Properly cleans up transaction context after exceptions" )
@@ -119,7 +120,7 @@ public class TransactionTest extends BaseJDBCTest {
 
 		Query theResult = ( Query ) getInstance()
 		    .executeStatement( "queryExecute( 'SELECT * FROM developers WHERE id IN (111)' );", getContext() );
-		assertEquals( 1, theResult.size() );
+		assertThat( theResult.size() ).isEqualTo( 1 );
 	}
 
 	@DisplayName( "Emits transactional events" )
@@ -165,12 +166,12 @@ public class TransactionTest extends BaseJDBCTest {
 		      }
 		      """,
 		    getContext() );
-		assertTrue( getVariables().containsKey( "begin" ) );
-		assertTrue( getVariables().containsKey( "end" ) );
-		assertTrue( getVariables().containsKey( "acquire" ) );
-		assertTrue( getVariables().containsKey( "release" ) );
-		assertTrue( getVariables().containsKey( "commit" ) );
-		assertTrue( getVariables().containsKey( "rollback" ) );
-		assertTrue( getVariables().containsKey( "savepoint" ) );
+		assertThat( getVariables() ).containsKey( Key.of( "begin" ) );
+		assertThat( getVariables() ).containsKey( Key.of( "end" ) );
+		assertThat( getVariables() ).containsKey( Key.of( "acquire" ) );
+		assertThat( getVariables() ).containsKey( Key.of( "release" ) );
+		assertThat( getVariables() ).containsKey( Key.of( "commit" ) );
+		assertThat( getVariables() ).containsKey( Key.of( "rollback" ) );
+		assertThat( getVariables() ).containsKey( Key.of( "savepoint" ) );
 	}
 }
