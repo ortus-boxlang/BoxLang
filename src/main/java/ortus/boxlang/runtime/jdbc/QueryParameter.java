@@ -28,6 +28,9 @@ import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
+/**
+ * Represents a parameter to a SQL query created via QueryExecute or the Query component.
+ */
 public class QueryParameter {
 
 	/**
@@ -115,7 +118,7 @@ public class QueryParameter {
 	 * Retrieve the value casted to the declared SQL type of the parameter..
 	 */
 	public Object toSQLType() {
-		if( this.value == null ) {
+		if ( this.value == null ) {
 			return null;
 		}
 		return switch ( this.type ) {
