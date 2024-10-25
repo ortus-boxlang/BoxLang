@@ -30,6 +30,8 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.text.StringEscapeUtils;
+
 import ortus.boxlang.compiler.DiskClassUtil;
 import ortus.boxlang.compiler.IBoxpiler;
 import ortus.boxlang.compiler.ast.Position;
@@ -96,6 +98,12 @@ public class ExceptionUtil {
 		}
 	}
 
+	/**
+	 * Print the stack trace of an exception to the given PrintStream
+	 *
+	 * @param e   The exception
+	 * @param out The target print stream
+	 */
 	public static void printBoxLangStackTrace( Throwable e, PrintStream out ) {
 		StringWriter		sw			= new StringWriter();
 		PrintWriter			pw			= new PrintWriter( sw );
@@ -238,6 +246,15 @@ public class ExceptionUtil {
 		return tagContext;
 	}
 
+	/**
+	 * Utility to get the surrounding lines of code for a given line number in a file
+	 *
+	 * @param fileName The file name
+	 * @param lineNo   The line number
+	 * @param html     True if the output should be HTML
+	 *
+	 * @return The surrounding lines of code
+	 */
 	private static String getSurroudingLinesOfCode( String fileName, int lineNo, boolean html ) {
 		// read file, if exists, and return the surrounding lines of code, 2 before and 2 after
 		File srcFile = new File( fileName );
@@ -255,7 +272,7 @@ public class ExceptionUtil {
 
 				StringBuilder	codeSnippet	= new StringBuilder();
 				for ( int i = startLine; i <= endLine; i++ ) {
-					String theLine = escapeHTML( lines.get( i - 1 ) );
+					String theLine = StringEscapeUtils.escapeHtml4( lines.get( i - 1 ) );
 					if ( i == lineNo && html ) {
 						codeSnippet.append( "<b>" ).append( i ).append( ": " ).append( theLine ).append( "</b>" ).append( "<br>" );
 					} else {
@@ -271,11 +288,18 @@ public class ExceptionUtil {
 		return "";
 	}
 
-	protected static String escapeHTML( String s ) {
-		if ( s == null ) {
-			return "";
+	/**
+	 * This method will allow you to get the position in code of where an execution of it takes place.
+	 *
+	 * @return The String representation of the position in code > {@code templatePath:lineNumber}
+	 */
+	public static String getCurrentPositionInCode() {
+		Array tagContext = getTagContext( 1 );
+		if ( !tagContext.isEmpty() ) {
+			IStruct thisTag = ( IStruct ) tagContext.get( 0 );
+			return thisTag.getAsString( Key.template ) + ":" + thisTag.get( Key.line );
 		}
-		return s.replace( "<", "&lt;" ).replace( ">", "&gt;" );
+		return "[not found]";
 	}
 
 	/**
@@ -324,6 +348,13 @@ public class ExceptionUtil {
 		return sw.toString();
 	}
 
+	/**
+	 * Get the merged stack trace from the Throwable
+	 *
+	 * @param cause The exception
+	 *
+	 * @return The merged stack trace
+	 */
 	public static StackTraceElement[] getMergedStackTrace( Throwable cause ) {
 		List<StackTraceElement>	merged		= new ArrayList<>();
 		StackTraceElement[]		elements	= cause.getStackTrace();
@@ -353,6 +384,13 @@ public class ExceptionUtil {
 		return merged.toArray( new StackTraceElement[ 0 ] );
 	}
 
+	/**
+	 * Get the merged stack trace from the Throwable
+	 *
+	 * @param cause The exception
+	 *
+	 * @return The merged stack trace
+	 */
 	public static LinkedHashMap<Throwable, StackTraceElement[]> getMergedStackTrace2( Throwable cause ) {
 		LinkedHashMap<Throwable, StackTraceElement[]>	map		= new LinkedHashMap<>();
 
@@ -386,6 +424,13 @@ public class ExceptionUtil {
 		return map;
 	}
 
+	/**
+	 * Convert a Throwable to a Struct
+	 *
+	 * @param target The Throwable
+	 *
+	 * @return The Struct
+	 */
 	public static IStruct throwableToStruct( Throwable target ) {
 		if ( target == null ) {
 			return null;

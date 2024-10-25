@@ -590,6 +590,12 @@ public final class LocalizationUtil {
 		    .appendOptional( DateTimeFormatter.ofLocalizedTime( FormatStyle.LONG ).withLocale( locale ) )
 		    .appendOptional( DateTimeFormatter.ofLocalizedTime( FormatStyle.FULL ).withLocale( locale ) )
 		    // Generic styles
+		    .appendOptional(
+		        new DateTimeFormatterBuilder()
+		            .parseCaseInsensitive()
+		            .appendPattern( "yyyy-MM-dd hh:mm:ss a" )
+		            .toFormatter( locale )
+		    )
 		    .appendOptional( DateTimeFormatter.ofPattern( DateTime.ISO_DATE_TIME_MILIS_FORMAT_MASK ) )
 		    .appendOptional( DateTimeFormatter.ofPattern( DateTime.ISO_DATE_TIME_MILIS_NO_T_FORMAT_MASK ) )
 		    .appendOptional( DateTimeFormatter.ofPattern( DateTime.ISO_DATE_TIME_VARIATION_FORMAT_MASK ) )

@@ -27,6 +27,7 @@ public class BaseJDBCTest {
 	IScope						variables;
 	static DataSource			datasource;
 	static DataSource			mssqlDatasource;
+	static DataSource			mysqlDatasource;
 	static DatasourceService	datasourceService;
 
 	@BeforeAll
@@ -39,7 +40,8 @@ public class BaseJDBCTest {
 
 		if ( JDBCTestUtils.hasMSSQLModule() ) {
 			// Register a MSSQL datasource for later use
-			mssqlDatasource = DataSource.fromStruct( Key.of( "MSSQLdatasource" ), Struct.of(
+			Key mssqlName = Key.of( "MSSQLdatasource" );
+			mssqlDatasource = DataSource.fromStruct( mssqlName, Struct.of(
 			    "username", "sa",
 			    "password", "123456Password",
 			    "host", "localhost",
@@ -48,10 +50,38 @@ public class BaseJDBCTest {
 			    "database", "master"
 			) );
 			instance.getConfiguration().datasources.put(
-			    Key.of( "MSSQLdatasource" ),
+			    mssqlName,
 			    mssqlDatasource.getConfiguration()
 			);
-			mssqlDatasource.execute( "CREATE TABLE developers ( id INTEGER, name VARCHAR(155), role VARCHAR(155) )" );
+			datasourceService.register( mssqlName, mssqlDatasource );
+			JDBCTestUtils.ensureTestTableExists( mssqlDatasource );
+		}
+
+		if ( JDBCTestUtils.hasMySQLModule() ) {
+			/**
+			 * docker run -d \
+			 * --name MYSQL_boxlang \
+			 * -p 3306:3306 \
+			 * -e MYSQL_DATABASE=mysqlDB \
+			 * -e MYSQL_ROOT_PASSWORD=123456Password \
+			 * mysql:8
+			 */
+			// Register a mysql datasource for later use
+			Key mysqlName = Key.of( "MySQLdatasource" );
+			mysqlDatasource = DataSource.fromStruct( mysqlName, Struct.of(
+			    "username", "root",
+			    "password", "123456Password",
+			    "host", "localhost",
+			    "port", "3306",
+			    "driver", "mysql",
+			    "database", "mysqlDB"
+			) );
+			instance.getConfiguration().datasources.put(
+			    mysqlName,
+			    mysqlDatasource.getConfiguration()
+			);
+			datasourceService.register( mysqlName, mysqlDatasource );
+			JDBCTestUtils.ensureTestTableExists( mysqlDatasource );
 		}
 	}
 
@@ -62,6 +92,10 @@ public class BaseJDBCTest {
 		if ( mssqlDatasource != null ) {
 			JDBCTestUtils.dropDevelopersTable( mssqlDatasource );
 			mssqlDatasource.shutdown();
+		}
+		if ( mysqlDatasource != null ) {
+			JDBCTestUtils.dropDevelopersTable( mysqlDatasource );
+			mysqlDatasource.shutdown();
 		}
 	}
 

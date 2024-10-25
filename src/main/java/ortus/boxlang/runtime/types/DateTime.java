@@ -230,6 +230,16 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	}
 
 	/**
+	 * Constructor to create DateTime from a java.time.LocalTime object which has no date component
+	 * This will use the system default timezone
+	 *
+	 * @param time The time object
+	 */
+	public DateTime( java.time.LocalTime time ) {
+		this( ZonedDateTime.of( LocalDate.EPOCH, time, ZoneId.systemDefault() ) );
+	}
+
+	/**
 	 * Constructor to create DateTime from a LocalDateTime object
 	 * This will use the system default timezone
 	 *
@@ -360,7 +370,7 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 			} catch ( Exception x ) {
 				throw new BoxRuntimeException(
 				    String.format(
-				        "The the date time value of [%s] could not be parsed as a valid date or datetimea locale of [%s]",
+				        "The the date time value of [%s] could not be parsed as a valid date or datetime locale of [%s]",
 				        dateTime,
 				        locale.getDisplayName()
 				    ), x );

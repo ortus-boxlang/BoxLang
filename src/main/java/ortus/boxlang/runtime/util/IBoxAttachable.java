@@ -25,6 +25,16 @@ import ortus.boxlang.runtime.scopes.Key;
 public interface IBoxAttachable {
 
 	/**
+	 * Comput an attachment if it is not already present.
+	 * If an attachment for this key was already set, return the original value.
+	 *
+	 * @param key             The key to attach the value to.
+	 * @param mappingFunction The function to compute the value to attach.
+	 *
+	 */
+	public <T> T computeAttachmentIfAbsent( Key key, java.util.function.Function<? super Key, ? extends T> mappingFunction );
+
+	/**
 	 * Put a key-value pair of attachable data to the Box object.
 	 * If an attachment for this key was already set, return the original value.
 	 *

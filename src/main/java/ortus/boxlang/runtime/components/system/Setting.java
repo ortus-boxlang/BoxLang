@@ -34,25 +34,33 @@ public class Setting extends Component {
 		    new Attribute( Key.enableOutputOnly, "boolean" ),
 		    new Attribute( Key.showDebugOutput, "boolean" ),
 		    new Attribute( Key.requestTimeout, "long" )
-
 		};
 	}
 
 	/**
-	 * Tests for a parameter's existence, tests its data type, and, if a default value is not assigned, optionally provides one.
+	 * Controls some key request features of the runtime at the request level.
+	 * <p>
+	 * <ul>
+	 * <li>{@code enableOutputOnly}: If true, the runtime will only output the result of the request and not the debug output</li>
+	 * <li>{@code showDebugOutput}: If true, the runtime will output the debug output</li>
+	 * <li>{@code requestTimeout}: The timeout in seconds for the request</li>
+	 * </ul>
 	 *
 	 * @param context        The context in which the Component is being invoked
 	 * @param attributes     The attributes to the Component
 	 * @param body           The body of the Component
 	 * @param executionState The execution state of the Component
-	 * 
 	 *
+	 * @attribute.enableOutputOnly If true, the runtime will only output the result of the request and not the debug output
+	 *
+	 * @attribute.showDebugOutput If true, the runtime will output the debug output according to the runtime in use
+	 *
+	 * @attribute.requestTimeout The timeout in seconds for the request
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
 		Boolean				showDebugOutput		= attributes.getAsBoolean( Key.showDebugOutput );
 		Boolean				enableOutputOnly	= attributes.getAsBoolean( Key.enableOutputOnly );
 		Long				requestTimeout		= attributes.getAsLong( Key.requestTimeout );
-
 		RequestBoxContext	requestContext		= context.getParentOfType( RequestBoxContext.class );
 
 		if ( enableOutputOnly != null ) {
@@ -63,9 +71,10 @@ public class Setting extends Component {
 			// This will change the setting for the request of the request
 			requestContext.setRequestTimeout( requestTimeout );
 		}
-
-		// TODO: Implemet showDebugOutput. It feels like this should be specific to a web server, but since the setting component is core, maybe we add it to
-		// the core
+		if ( showDebugOutput != null ) {
+			// This will change the setting for the request of the request
+			requestContext.setShowDebugOutput( showDebugOutput );
+		}
 
 		return DEFAULT_RETURN;
 	}

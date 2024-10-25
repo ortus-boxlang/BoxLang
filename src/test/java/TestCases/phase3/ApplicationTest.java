@@ -21,7 +21,6 @@ import static com.google.common.truth.Truth.assertThat;
 
 import java.nio.file.Path;
 
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -52,11 +51,6 @@ public class ApplicationTest {
 	@BeforeAll
 	public static void setUp() {
 		instance = BoxRuntime.getInstance( true );
-	}
-
-	@AfterAll
-	public static void teardown() {
-
 	}
 
 	@BeforeEach
@@ -125,9 +119,14 @@ public class ApplicationTest {
 	@DisplayName( "java settings setup" )
 	@Test
 	public void testJavaSettings() {
+
+		ClassLoader currentClassLoader = Thread.currentThread().getContextClassLoader();
+
 		// @formatter:off
 		instance.executeSource(
 		    """
+				import java.lang.Thread;
+
 		        application name="myJavaApp" javaSettings={
 					loadPaths = [ "/src/test/resources/libs" ],
 					reloadOnChange = true
@@ -138,12 +137,19 @@ public class ApplicationTest {
 
 				 import org.apache.commons.lang3.ClassUtils
 				 targetInstance2 = ClassUtils.getClass()
+
+				 result = Thread.currentThread().getContextClassLoader()
+
 			""", context );
 		// @formatter:on
 
 		ApplicationBoxContext	appContext	= context.getParentOfType( ApplicationBoxContext.class );
 		Application				app			= appContext.getApplication();
 		assertThat( app.getClassLoaderCount() ).isEqualTo( 1 );
+
+		// ClassLoader newClassLoader = ( ClassLoader ) variables.get( result );
+		// assertThat( newClassLoader ).isNotEqualTo( currentClassLoader );
+		// assertThat( newClassLoader.getName() ).isEqualTo( "myJavaApp" );
 	}
 
 	@DisplayName( "Ad-hoc config override" )

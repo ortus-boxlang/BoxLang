@@ -55,11 +55,11 @@ import ortus.boxlang.runtime.runnables.ITemplateRunnable;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
-import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.IType;
+import ortus.boxlang.runtime.types.NullValue;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -258,9 +258,9 @@ public class DumpUtil {
 	 */
 	public static void dumpTextToBuffer( IBoxContext context, Object target ) {
 		if ( target == null ) {
-			context.writeToBuffer( "[null]", true );
+			context.writeToBuffer( "[null]\n", true );
 		} else {
-			context.writeToBuffer( target.toString(), true );
+			context.writeToBuffer( target.toString() + "\n", true );
 		}
 	}
 
@@ -313,11 +313,7 @@ public class DumpUtil {
 			if ( outerDump ) {
 				buffer = new StringBuffer();
 				context.pushBuffer( buffer );
-				Array tagContext = ExceptionUtil.getTagContext( 1 );
-				if ( !tagContext.isEmpty() ) {
-					IStruct thisTag = ( IStruct ) tagContext.get( 0 );
-					posInCode = thisTag.getAsString( Key.template ) + ":" + thisTag.get( Key.line );
-				}
+				posInCode = ExceptionUtil.getCurrentPositionInCode();
 				// This assumes HTML output. Needs to be dynamic as XML or plain text output wouldn't have CSS
 				dumpContext.writeToBuffer( "<style>" + getDumpTemplate( context, "Dump.css" ) + "</style>", true );
 				dumpContext.writeToBuffer( "<script>" + getDumpTemplate( context, "Dump.js" ) + "</script>" );
@@ -359,7 +355,7 @@ public class DumpUtil {
 	 * @return The template name found in the resources folder
 	 */
 	private static String discoverTemplateName( Object target ) {
-		if ( target == null ) {
+		if ( target == null || target instanceof NullValue ) {
 			return "Null.bxm";
 		} else if ( target instanceof Throwable ) {
 			return "Throwable.bxm";
@@ -392,7 +388,7 @@ public class DumpUtil {
 		} else if ( target instanceof IStruct ) {
 			return "Struct.bxm";
 		} else if ( target instanceof IType ) {
-			return target.getClass().getSimpleName().replace( "Immutable", "" ) + ".bxm";
+			return target.getClass().getSimpleName().replace( "Unmodifiable", "" ) + ".bxm";
 		} else if ( target instanceof String ) {
 			return "String.bxm";
 		} else if ( target instanceof Number ) {

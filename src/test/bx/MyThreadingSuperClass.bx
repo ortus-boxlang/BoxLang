@@ -1,0 +1,6 @@
+class {
+
+	function superMethod() {
+		return "superMethod";
+	}
+}

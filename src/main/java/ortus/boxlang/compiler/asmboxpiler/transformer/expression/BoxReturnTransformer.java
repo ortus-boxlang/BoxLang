@@ -43,6 +43,12 @@ public class BoxReturnTransformer extends AbstractTransformer {
 		BoxReturn				boxReturn	= ( BoxReturn ) node;
 
 		List<AbstractInsnNode>	nodes		= new ArrayList<>();
+
+		if ( !transpiler.canReturn() ) {
+			nodes.add( new InsnNode( Opcodes.RETURN ) );
+			return nodes;
+		}
+
 		if ( boxReturn.getExpression() == null ) {
 			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
 		} else if ( transpiler.isInsideComponent() ) {
@@ -56,7 +62,6 @@ public class BoxReturnTransformer extends AbstractTransformer {
 			        false
 			    )
 			);
-			// template = "return Component.BodyResult.ofReturn( ${expr} );";
 		} else {
 			nodes.addAll( transpiler.transform( boxReturn.getExpression(), TransformerContext.NONE, ReturnValueContext.VALUE_OR_NULL ) );
 		}

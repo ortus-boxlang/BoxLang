@@ -226,8 +226,9 @@ public class FunctionService extends BaseService {
 	/**
 	 * Returns the member method with the given name and type by verifying if the passed object can be cast to that type
 	 *
-	 * @param name   The name of the member method
-	 * @param object An object to cast to the type of the member method
+	 * @param context The context to use for casting
+	 * @param name    The name of the member method to get
+	 * @param object  An object to cast to the type of the member method to
 	 *
 	 * @return The member method with the given name and type or null if none exists
 	 */

@@ -67,7 +67,7 @@ public class StructAppend extends BIF {
 		IStruct			assignments	= ensureRecipient( arguments.getAsStruct( Key.struct2 ) );
 
 		if ( overwrite ) {
-			recipient.putAll( assignments.getWrapped() );
+			recipient.addAll( assignments.getWrapped() );
 		} else {
 			assignments.entrySet().stream().forEach( entry -> recipient.putIfAbsent( entry.getKey(), entry.getValue() ) );
 		}

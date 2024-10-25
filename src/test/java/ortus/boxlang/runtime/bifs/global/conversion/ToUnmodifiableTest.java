@@ -32,10 +32,10 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
-import ortus.boxlang.runtime.types.immutable.ImmutableArray;
-import ortus.boxlang.runtime.types.immutable.ImmutableStruct;
+import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableArray;
+import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableStruct;
 
-public class ToImmutableTest {
+public class ToUnmodifiableTest {
 
 	static BoxRuntime	instance;
 	IBoxContext			context;
@@ -59,34 +59,34 @@ public class ToImmutableTest {
 		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
-	@DisplayName( "It can turn arrays to immutable" )
+	@DisplayName( "It can turn arrays to Unmodifiable" )
 	@Test
-	public void testToArrayImmutable() {
+	public void testToArrayUnmodifiable() {
 		// @formatter:off
 		instance.executeSource(
 		    """
-		      	result = toImmutable( [ 1, 2, 3 ] )
-		    	result2 = [1,2,3].toImmutable();
+		      	result = toUnmodifiable( [ 1, 2, 3 ] )
+		    	result2 = [1,2,3].toUnmodifiable();
 		    """,
 		    context );
 		// @formatter:on
-		assertThat( variables.get( result ) ).isInstanceOf( ImmutableArray.class );
-		assertThat( variables.get( result2 ) ).isInstanceOf( ImmutableArray.class );
+		assertThat( variables.get( result ) ).isInstanceOf( UnmodifiableArray.class );
+		assertThat( variables.get( result2 ) ).isInstanceOf( UnmodifiableArray.class );
 	}
 
-	@DisplayName( "It can turn structs to immutable" )
+	@DisplayName( "It can turn structs to Unmodifiable" )
 	@Test
-	public void testToStructImmutable() {
+	public void testToStructUnmodifiable() {
 		// @formatter:off
 		instance.executeSource(
 		    """
-		      	result = toImmutable( { a: 1, b: 2, c: 3 } )
-		    	result2 = { a: 1, b: 2, c: 3 }.toImmutable();
+		      	result = toUnmodifiable( { a: 1, b: 2, c: 3 } )
+		    	result2 = { a: 1, b: 2, c: 3 }.toUnmodifiable();
 		    """,
 		    context );
 		// @formatter:on
-		assertThat( variables.get( result ) ).isInstanceOf( ImmutableStruct.class );
-		assertThat( variables.get( result2 ) ).isInstanceOf( ImmutableStruct.class );
+		assertThat( variables.get( result ) ).isInstanceOf( UnmodifiableStruct.class );
+		assertThat( variables.get( result2 ) ).isInstanceOf( UnmodifiableStruct.class );
 	}
 
 }

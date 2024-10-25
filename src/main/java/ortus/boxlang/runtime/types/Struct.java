@@ -49,11 +49,11 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.KeyCased;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
-import ortus.boxlang.runtime.types.immutable.ImmutableStruct;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.IChangeListener;
 import ortus.boxlang.runtime.types.meta.IListenable;
 import ortus.boxlang.runtime.types.meta.StructMeta;
+import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableStruct;
 
 /**
  * This type provides the core map class for Boxlang. Structs are highly versatile and are used for organizing and managing related data.
@@ -97,9 +97,9 @@ public class Struct implements IStruct, IListenable, Serializable {
 																						};
 
 	/**
-	 * An immutable singleton empty struct
+	 * An Unmodifiable singleton empty struct
 	 */
-	public static final IStruct						EMPTY								= new ImmutableStruct();
+	public static final IStruct						EMPTY								= new UnmodifiableStruct();
 
 	/**
 	 * Metadata object
@@ -821,10 +821,10 @@ public class Struct implements IStruct, IListenable, Serializable {
 	}
 
 	/**
-	 * Helper to make the struct immutable
+	 * Helper to make the struct Unmodifiable
 	 */
-	public ImmutableStruct toImmutable() {
-		return new ImmutableStruct( this );
+	public UnmodifiableStruct toUnmodifiable() {
+		return new UnmodifiableStruct( this );
 	}
 
 	/**
@@ -1023,7 +1023,7 @@ public class Struct implements IStruct, IListenable, Serializable {
 	/**
 	 * Get the wrapped map used in the implementation
 	 */
-	public Map<Key, Object> getWrapped() {
+	public Map<? extends Object, Object> getWrapped() {
 		return wrapped;
 	}
 

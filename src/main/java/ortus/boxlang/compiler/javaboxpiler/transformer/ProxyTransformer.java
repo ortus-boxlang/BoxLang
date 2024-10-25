@@ -36,6 +36,7 @@ public class ProxyTransformer {
 		import ortus.boxlang.runtime.context.*;
 		import ortus.boxlang.runtime.context.ClassBoxContext;
 		import ortus.boxlang.runtime.context.FunctionBoxContext;
+		import ortus.boxlang.runtime.context.RequestBoxContext;
 		import ortus.boxlang.runtime.dynamic.casters.*;
 		import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 		import ortus.boxlang.runtime.dynamic.IReferenceable;
@@ -163,8 +164,10 @@ public class ProxyTransformer {
 				}
 			}
 			sb.append( "};\n" );
-			// TODO: Get actual context
-			sb.append( "    IBoxContext context = new ScriptingRequestBoxContext( BoxRuntime.getInstance().getRuntimeContext() );\n" );
+			sb.append( "    IBoxContext context = RequestBoxContext.getCurrent();\n" );
+			sb.append( "    if( context == null ) {\n" );
+			sb.append( "      context = new ScriptingRequestBoxContext( BoxRuntime.getInstance().getRuntimeContext() );\n" );
+			sb.append( "    }\n" );
 			sb.append( "    Object result = " );
 			sb.append( classReferenceName );
 			sb.append( ".dereferenceAndInvoke( context, Key.of( \"" );

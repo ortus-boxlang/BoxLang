@@ -20,10 +20,10 @@
 package ortus.boxlang.runtime.components.jdbc;
 
 import static org.junit.Assert.assertNotNull;
+import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Map;
 
@@ -103,7 +103,7 @@ public class DBInfoTest extends BaseJDBCTest {
 		    """,
 		    getContext(), BoxSourceType.CFSCRIPT );
 		Object theResult = getVariables().get( result );
-		assertTrue( theResult instanceof Query );
+		assertThat( theResult ).isInstanceOf( Query.class );
 		Query versionQuery = ( Query ) theResult;
 		assertEquals( 1, versionQuery.size() );
 		assertEquals( 6, versionQuery.getColumns().size() );
@@ -117,24 +117,24 @@ public class DBInfoTest extends BaseJDBCTest {
 	public void testDBNamesType() {
 		getInstance().executeSource(
 		    """
-		        cfdbinfo( type='dbnames', name='result', datasource='MYSQLDB' )
+		        cfdbinfo( type='dbnames', name='result', datasource='mysqldatasource' )
 		    """,
 		    getContext(), BoxSourceType.CFSCRIPT );
 		Object theResult = getVariables().get( result );
-		assertTrue( theResult instanceof Query );
+		assertThat( theResult ).isInstanceOf( Query.class );
 
 		Query dbNamesQuery = ( Query ) theResult;
-		assertTrue( dbNamesQuery.size() > 0 );
+		assertThat( dbNamesQuery.size() ).isGreaterThan( 0 );
 		assertEquals( 2, dbNamesQuery.getColumns().size() );
 
 		IStruct ourDBRow = dbNamesQuery.stream()
-		    .filter( row -> row.getAsString( Key.of( "DBNAME" ) ).equals( "testDB" ) )
+		    .filter( row -> row.getAsString( Key.of( "DBNAME" ) ).equals( "mysqlDB" ) )
 		    .findFirst()
 		    .orElse( null );
 
 		assertNotNull( ourDBRow );
 		assertEquals( "CATALOG", ourDBRow.getAsString( Key.type ) );
-		assertEquals( "testDB", ourDBRow.getAsString( Key.of( "DBNAME" ) ) );
+		assertEquals( "mysqlDB", ourDBRow.getAsString( Key.of( "DBNAME" ) ) );
 	}
 
 	@DisplayName( "Can get table column data" )
@@ -146,10 +146,10 @@ public class DBInfoTest extends BaseJDBCTest {
 		    """,
 		    getContext(), BoxSourceType.CFSCRIPT );
 		Object theResult = getVariables().get( result );
-		assertTrue( theResult instanceof Query );
+		assertThat( theResult ).isInstanceOf( Query.class );
 
 		Query resultQuery = ( Query ) theResult;
-		assertTrue( resultQuery.size() > 0 );
+		assertThat( resultQuery.size() ).isGreaterThan( 0 );
 	}
 
 	@Disabled( "Test incomplete." )
@@ -160,10 +160,10 @@ public class DBInfoTest extends BaseJDBCTest {
 		getInstance().executeSource( "cfdbinfo( type='columns', name='result', table='%s.dbo.admins' )".formatted( databaseName ),
 		    getContext(), BoxSourceType.CFSCRIPT );
 		Object theResult = getVariables().get( result );
-		assertTrue( theResult instanceof Query );
+		assertThat( theResult ).isInstanceOf( Query.class );
 
 		Query resultQuery = ( Query ) theResult;
-		assertTrue( resultQuery.size() > 0 );
+		assertThat( resultQuery.size() ).isGreaterThan( 0 );
 	}
 
 	@DisplayName( "Can get primary and foreign key info in type=columns" )
@@ -175,7 +175,7 @@ public class DBInfoTest extends BaseJDBCTest {
 		    """,
 		    getContext(), BoxSourceType.CFSCRIPT );
 		Query resultQuery = getVariables().getAsQuery( result );
-		assertTrue( resultQuery.size() > 0 );
+		assertThat( resultQuery.size() ).isGreaterThan( 0 );
 		assertEquals( 29, resultQuery.getColumns().size() );
 
 		IStruct nameRow = resultQuery.stream()
@@ -225,23 +225,23 @@ public class DBInfoTest extends BaseJDBCTest {
 		    """,
 		    getContext(), BoxSourceType.CFSCRIPT );
 		Object theResult = getVariables().get( result );
-		assertTrue( theResult instanceof Query );
+		assertThat( theResult ).isInstanceOf( Query.class );
 
 		Query resultQuery = ( Query ) theResult;
-		assertTrue( resultQuery.size() > 0 );
+		assertThat( resultQuery.size() ).isGreaterThan( 0 );
 		Map<Key, QueryColumn> columns = resultQuery.getColumns();
 
 		assertEquals( 10, columns.size() );
-		assertTrue( columns.containsKey( Key.of( "TABLE_CAT" ) ) );
-		assertTrue( columns.containsKey( Key.of( "TABLE_SCHEM" ) ) );
-		assertTrue( columns.containsKey( Key.of( "TABLE_NAME" ) ) );
-		assertTrue( columns.containsKey( Key.of( "TABLE_TYPE" ) ) );
-		assertTrue( columns.containsKey( Key.of( "REMARKS" ) ) );
-		assertTrue( columns.containsKey( Key.of( "TYPE_CAT" ) ) );
-		assertTrue( columns.containsKey( Key.of( "TYPE_SCHEM" ) ) );
-		assertTrue( columns.containsKey( Key.of( "TYPE_NAME" ) ) );
-		assertTrue( columns.containsKey( Key.of( "SELF_REFERENCING_COL_NAME" ) ) );
-		assertTrue( columns.containsKey( Key.of( "REF_GENERATION" ) ) );
+		assertThat( columns ).containsKey( Key.of( "TABLE_CAT" ) );
+		assertThat( columns ).containsKey( Key.of( "TABLE_SCHEM" ) );
+		assertThat( columns ).containsKey( Key.of( "TABLE_NAME" ) );
+		assertThat( columns ).containsKey( Key.of( "TABLE_TYPE" ) );
+		assertThat( columns ).containsKey( Key.of( "REMARKS" ) );
+		assertThat( columns ).containsKey( Key.of( "TYPE_CAT" ) );
+		assertThat( columns ).containsKey( Key.of( "TYPE_SCHEM" ) );
+		assertThat( columns ).containsKey( Key.of( "TYPE_NAME" ) );
+		assertThat( columns ).containsKey( Key.of( "SELF_REFERENCING_COL_NAME" ) );
+		assertThat( columns ).containsKey( Key.of( "REF_GENERATION" ) );
 
 		IStruct testTableRow = resultQuery.stream()
 		    .filter( row -> row.getAsString( Key.of( "TABLE_NAME" ) ).equals( "ADMINS" ) )
@@ -259,7 +259,7 @@ public class DBInfoTest extends BaseJDBCTest {
 		    """,
 		    getContext(), BoxSourceType.CFSCRIPT );
 		Query resultQuery = ( Query ) getVariables().get( result );
-		assertTrue( resultQuery.size() > 0 );
+		assertThat( resultQuery.size() ).isGreaterThan( 0 );
 		Boolean isCorrectDBName = resultQuery.stream()
 		    .allMatch( row -> row.getAsString( Key.of( "TABLE_CAT" ) ).equals( "BoxlangDB" ) );
 		assertNotNull( isCorrectDBName );
@@ -272,11 +272,11 @@ public class DBInfoTest extends BaseJDBCTest {
 	public void testTablesTypeBadDBName() {
 		getInstance().executeSource(
 		    """
-		        cfdbinfo( type='tables', name='result', datasource="MYSQLDB", dbname="foo" )
+		        cfdbinfo( type='tables', name='result', datasource="mysqldatasource", dbname="foo" )
 		    """,
 		    getContext(), BoxSourceType.CFSCRIPT );
 		Query resultQuery = ( Query ) getVariables().get( result );
-		assertTrue( resultQuery.size() == 0 );
+		assertThat( resultQuery.size() ).isEqualTo( 0 );
 	}
 
 	@DisplayName( "Can get filter table results by pattern name" )
@@ -288,7 +288,7 @@ public class DBInfoTest extends BaseJDBCTest {
 		    """,
 		    getContext(), BoxSourceType.CFSCRIPT );
 		Query resultQuery = ( Query ) getVariables().get( result );
-		assertTrue( resultQuery.size() == 1 );
+		assertThat( resultQuery.size() ).isEqualTo( 1 );
 		Boolean isDeveloperTable = resultQuery.stream()
 		    .allMatch( row -> row.getAsString( Key.of( "TABLE_NAME" ) ).equals( "ADMINS" ) );
 		assertNotNull( isDeveloperTable );
@@ -303,27 +303,27 @@ public class DBInfoTest extends BaseJDBCTest {
 		    """,
 		    getContext(), BoxSourceType.CFSCRIPT );
 		Object theResult = getVariables().get( result );
-		assertTrue( theResult instanceof Query );
+		assertThat( theResult ).isInstanceOf( Query.class );
 
 		Query resultQuery = ( Query ) theResult;
-		assertTrue( resultQuery.size() > 0 );
+		assertThat( resultQuery.size() ).isGreaterThan( 0 );
 		Map<Key, QueryColumn> columns = resultQuery.getColumns();
 
 		assertEquals( 14, columns.size() );
-		assertTrue( columns.containsKey( Key.of( "PKTABLE_CAT" ) ) );
-		assertTrue( columns.containsKey( Key.of( "PKTABLE_SCHEM" ) ) );
-		assertTrue( columns.containsKey( Key.of( "PKTABLE_NAME" ) ) );
-		assertTrue( columns.containsKey( Key.of( "PKCOLUMN_NAME" ) ) );
-		assertTrue( columns.containsKey( Key.of( "FKTABLE_CAT" ) ) );
-		assertTrue( columns.containsKey( Key.of( "FKTABLE_SCHEM" ) ) );
-		assertTrue( columns.containsKey( Key.of( "FKTABLE_NAME" ) ) );
-		assertTrue( columns.containsKey( Key.of( "FKCOLUMN_NAME" ) ) );
-		assertTrue( columns.containsKey( Key.of( "KEY_SEQ" ) ) );
-		assertTrue( columns.containsKey( Key.of( "UPDATE_RULE" ) ) );
-		assertTrue( columns.containsKey( Key.of( "DELETE_RULE" ) ) );
-		assertTrue( columns.containsKey( Key.of( "FK_NAME" ) ) );
-		assertTrue( columns.containsKey( Key.of( "PK_NAME" ) ) );
-		assertTrue( columns.containsKey( Key.of( "DEFERRABILITY" ) ) );
+		assertThat( columns ).containsKey( Key.of( "PKTABLE_CAT" ) );
+		assertThat( columns ).containsKey( Key.of( "PKTABLE_SCHEM" ) );
+		assertThat( columns ).containsKey( Key.of( "PKTABLE_NAME" ) );
+		assertThat( columns ).containsKey( Key.of( "PKCOLUMN_NAME" ) );
+		assertThat( columns ).containsKey( Key.of( "FKTABLE_CAT" ) );
+		assertThat( columns ).containsKey( Key.of( "FKTABLE_SCHEM" ) );
+		assertThat( columns ).containsKey( Key.of( "FKTABLE_NAME" ) );
+		assertThat( columns ).containsKey( Key.of( "FKCOLUMN_NAME" ) );
+		assertThat( columns ).containsKey( Key.of( "KEY_SEQ" ) );
+		assertThat( columns ).containsKey( Key.of( "UPDATE_RULE" ) );
+		assertThat( columns ).containsKey( Key.of( "DELETE_RULE" ) );
+		assertThat( columns ).containsKey( Key.of( "FK_NAME" ) );
+		assertThat( columns ).containsKey( Key.of( "PK_NAME" ) );
+		assertThat( columns ).containsKey( Key.of( "DEFERRABILITY" ) );
 
 		IStruct testTableRow = resultQuery.stream()
 		    .filter( row -> row.getAsString( Key.of( "FK_NAME" ) ).equals( "DEVID" ) )
@@ -341,10 +341,10 @@ public class DBInfoTest extends BaseJDBCTest {
 		    """,
 		    getContext(), BoxSourceType.CFSCRIPT );
 		Object theResult = getVariables().get( result );
-		assertTrue( theResult instanceof Query );
+		assertThat( theResult ).isInstanceOf( Query.class );
 
 		Query resultQuery = ( Query ) theResult;
-		assertTrue( resultQuery.size() > 0 );
+		assertThat( resultQuery.size() ).isGreaterThan( 0 );
 	}
 
 	@DisplayName( "Can get table indices via type=index" )
@@ -356,26 +356,26 @@ public class DBInfoTest extends BaseJDBCTest {
 		    """,
 		    getContext(), BoxSourceType.CFSCRIPT );
 		Object theResult = getVariables().get( result );
-		assertTrue( theResult instanceof Query );
+		assertThat( theResult ).isInstanceOf( Query.class );
 
 		Query resultQuery = ( Query ) theResult;
-		assertTrue( resultQuery.size() > 0 );
+		assertThat( resultQuery.size() ).isGreaterThan( 0 );
 		Map<Key, QueryColumn> columns = resultQuery.getColumns();
 
 		assertEquals( 13, columns.size() );
-		assertTrue( columns.containsKey( Key.of( "TABLE_CAT" ) ) );
-		assertTrue( columns.containsKey( Key.of( "TABLE_SCHEM" ) ) );
-		assertTrue( columns.containsKey( Key.of( "TABLE_NAME" ) ) );
-		assertTrue( columns.containsKey( Key.of( "NON_UNIQUE" ) ) );
-		assertTrue( columns.containsKey( Key.of( "INDEX_QUALIFIER" ) ) );
-		assertTrue( columns.containsKey( Key.of( "INDEX_NAME" ) ) );
-		assertTrue( columns.containsKey( Key.of( "TYPE" ) ) );
-		assertTrue( columns.containsKey( Key.of( "ORDINAL_POSITION" ) ) );
-		assertTrue( columns.containsKey( Key.of( "COLUMN_NAME" ) ) );
-		assertTrue( columns.containsKey( Key.of( "ASC_OR_DESC" ) ) );
-		assertTrue( columns.containsKey( Key.of( "CARDINALITY" ) ) );
-		assertTrue( columns.containsKey( Key.of( "PAGES" ) ) );
-		assertTrue( columns.containsKey( Key.of( "FILTER_CONDITION" ) ) );
+		assertThat( columns ).containsKey( Key.of( "TABLE_CAT" ) );
+		assertThat( columns ).containsKey( Key.of( "TABLE_SCHEM" ) );
+		assertThat( columns ).containsKey( Key.of( "TABLE_NAME" ) );
+		assertThat( columns ).containsKey( Key.of( "NON_UNIQUE" ) );
+		assertThat( columns ).containsKey( Key.of( "INDEX_QUALIFIER" ) );
+		assertThat( columns ).containsKey( Key.of( "INDEX_NAME" ) );
+		assertThat( columns ).containsKey( Key.of( "TYPE" ) );
+		assertThat( columns ).containsKey( Key.of( "ORDINAL_POSITION" ) );
+		assertThat( columns ).containsKey( Key.of( "COLUMN_NAME" ) );
+		assertThat( columns ).containsKey( Key.of( "ASC_OR_DESC" ) );
+		assertThat( columns ).containsKey( Key.of( "CARDINALITY" ) );
+		assertThat( columns ).containsKey( Key.of( "PAGES" ) );
+		assertThat( columns ).containsKey( Key.of( "FILTER_CONDITION" ) );
 
 		IStruct testTableRow = resultQuery.stream()
 		    .filter( row -> row.getAsString( Key.of( "COLUMN_NAME" ) ).equals( "ID" ) )
@@ -393,22 +393,22 @@ public class DBInfoTest extends BaseJDBCTest {
 		    """,
 		    getContext(), BoxSourceType.CFSCRIPT );
 		Object theResult = getVariables().get( result );
-		assertTrue( theResult instanceof Query );
+		assertThat( theResult ).isInstanceOf( Query.class );
 
 		Query resultQuery = ( Query ) theResult;
-		assertTrue( resultQuery.size() > 0 );
+		assertThat( resultQuery.size() ).isGreaterThan( 0 );
 		Map<Key, QueryColumn> columns = resultQuery.getColumns();
 
 		assertEquals( 9, columns.size() );
-		assertTrue( columns.containsKey( Key.of( "PROCEDURE_CAT" ) ) );
-		assertTrue( columns.containsKey( Key.of( "PROCEDURE_SCHEM" ) ) );
-		assertTrue( columns.containsKey( Key.of( "PROCEDURE_NAME" ) ) );
-		assertTrue( columns.containsKey( Key.of( "RESERVED1" ) ) );
-		assertTrue( columns.containsKey( Key.of( "RESERVED2" ) ) );
-		assertTrue( columns.containsKey( Key.of( "RESERVED3" ) ) );
-		assertTrue( columns.containsKey( Key.of( "REMARKS" ) ) );
-		assertTrue( columns.containsKey( Key.of( "PROCEDURE_TYPE" ) ) );
-		assertTrue( columns.containsKey( Key.of( "SPECIFIC_NAME" ) ) );
+		assertThat( columns ).containsKey( Key.of( "PROCEDURE_CAT" ) );
+		assertThat( columns ).containsKey( Key.of( "PROCEDURE_SCHEM" ) );
+		assertThat( columns ).containsKey( Key.of( "PROCEDURE_NAME" ) );
+		assertThat( columns ).containsKey( Key.of( "RESERVED1" ) );
+		assertThat( columns ).containsKey( Key.of( "RESERVED2" ) );
+		assertThat( columns ).containsKey( Key.of( "RESERVED3" ) );
+		assertThat( columns ).containsKey( Key.of( "REMARKS" ) );
+		assertThat( columns ).containsKey( Key.of( "PROCEDURE_TYPE" ) );
+		assertThat( columns ).containsKey( Key.of( "SPECIFIC_NAME" ) );
 
 		IStruct testTableRow = resultQuery.stream()
 		    .filter( row -> row.getAsString( Key.of( "PROCEDURE_NAME" ) ).equals( "FOO" ) )

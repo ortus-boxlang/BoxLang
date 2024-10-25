@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.runtime.types.immutable;
+package ortus.boxlang.runtime.types.unmodifiable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -27,11 +27,11 @@ import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.exceptions.UnmodifiableException;
 
 /**
- * Represents an immutable Array. All data you want needs to be passed in the constructor or
+ * Represents an Unmodifiable Array. All data you want needs to be passed in the constructor or
  * provided to a static creation method. Once instantiated, the Array cannot be modified. An
  * exception will be thrown if you invoke any mutator method.
  */
-public class ImmutableArray extends Array implements IImmutable {
+public class UnmodifiableArray extends Array implements IUnmodifiable {
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -42,7 +42,7 @@ public class ImmutableArray extends Array implements IImmutable {
 	/**
 	 * Constructor to create default array
 	 */
-	public ImmutableArray() {
+	public UnmodifiableArray() {
 		super( 10 );
 	}
 
@@ -51,8 +51,8 @@ public class ImmutableArray extends Array implements IImmutable {
 	 *
 	 * @param initialCapactity The initialCapactity of Array to create
 	 */
-	public ImmutableArray( int initialCapactity ) {
-		// Immutable array does not use syncronized list
+	public UnmodifiableArray( int initialCapactity ) {
+		// Unmodifiable array does not use syncronized list
 		super( new ArrayList<Object>( initialCapactity ) );
 	}
 
@@ -61,7 +61,7 @@ public class ImmutableArray extends Array implements IImmutable {
 	 *
 	 * @param arr The array to create the Array from
 	 */
-	public ImmutableArray( Object[] arr ) {
+	public UnmodifiableArray( Object[] arr ) {
 		super( arr );
 	}
 
@@ -70,7 +70,7 @@ public class ImmutableArray extends Array implements IImmutable {
 	 *
 	 * @param list The List to create the Array from
 	 */
-	public ImmutableArray( List<? extends Object> list ) {
+	public UnmodifiableArray( List<? extends Object> list ) {
 		this( list.size() );
 		// add each item to this array
 		for ( Object item : list ) {
@@ -79,12 +79,12 @@ public class ImmutableArray extends Array implements IImmutable {
 	}
 
 	/**
-	 * To Mutable
+	 * To Modifiable
 	 *
-	 * @return The mutable type
+	 * @return The Modifiable type
 	 */
 	@Override
-	public Array toMutable() {
+	public Array toModifiable() {
 		return new Array( this.wrapped );
 	}
 
@@ -99,8 +99,8 @@ public class ImmutableArray extends Array implements IImmutable {
 	 *
 	 * @param list The List to create the Array from
 	 */
-	public static ImmutableArray fromList( List<? extends Object> list ) {
-		return new ImmutableArray( list );
+	public static UnmodifiableArray fromList( List<? extends Object> list ) {
+		return new UnmodifiableArray( list );
 	}
 
 	/**
@@ -108,8 +108,8 @@ public class ImmutableArray extends Array implements IImmutable {
 	 *
 	 * @param arr The array to create the Array from
 	 */
-	public static ImmutableArray fromArray( Object[] arr ) {
-		return new ImmutableArray( arr );
+	public static UnmodifiableArray fromArray( Object[] arr ) {
+		return new UnmodifiableArray( arr );
 	}
 
 	/**
@@ -119,7 +119,7 @@ public class ImmutableArray extends Array implements IImmutable {
 	 *
 	 * @return The Array
 	 */
-	public static ImmutableArray of( Object... values ) {
+	public static UnmodifiableArray of( Object... values ) {
 		return fromArray( values );
 	}
 
@@ -134,39 +134,39 @@ public class ImmutableArray extends Array implements IImmutable {
 	}
 
 	public boolean add( Object e ) {
-		throw new UnmodifiableException( "Cannot modify immutable Array" );
+		throw new UnmodifiableException( "Cannot modify Unmodifiable Array" );
 	}
 
 	public boolean remove( Object o ) {
-		throw new UnmodifiableException( "Cannot modify immutable Array" );
+		throw new UnmodifiableException( "Cannot modify Unmodifiable Array" );
 	}
 
 	public boolean addAll( Collection<? extends Object> c ) {
-		throw new UnmodifiableException( "Cannot modify immutable Array" );
+		throw new UnmodifiableException( "Cannot modify Unmodifiable Array" );
 	}
 
 	public boolean addAll( int index, Collection<? extends Object> c ) {
-		throw new UnmodifiableException( "Cannot modify immutable Array" );
+		throw new UnmodifiableException( "Cannot modify Unmodifiable Array" );
 	}
 
 	public boolean removeAll( Collection<?> c ) {
-		throw new UnmodifiableException( "Cannot modify immutable Array" );
+		throw new UnmodifiableException( "Cannot modify Unmodifiable Array" );
 	}
 
 	public boolean retainAll( Collection<?> c ) {
-		throw new UnmodifiableException( "Cannot modify immutable Array" );
+		throw new UnmodifiableException( "Cannot modify Unmodifiable Array" );
 	}
 
 	public void clear() {
-		throw new UnmodifiableException( "Cannot modify immutable Array" );
+		throw new UnmodifiableException( "Cannot modify Unmodifiable Array" );
 	}
 
 	public Object remove( int index ) {
-		throw new UnmodifiableException( "Cannot modify immutable Array" );
+		throw new UnmodifiableException( "Cannot modify Unmodifiable Array" );
 	}
 
 	public int append( Object e ) {
-		throw new UnmodifiableException( "Cannot modify immutable Array" );
+		throw new UnmodifiableException( "Cannot modify Unmodifiable Array" );
 	}
 
 	/**
@@ -183,7 +183,7 @@ public class ImmutableArray extends Array implements IImmutable {
 	 */
 	@Override
 	public Object assign( IBoxContext context, Key key, Object value ) {
-		throw new UnmodifiableException( "Cannot modify immutable Array" );
+		throw new UnmodifiableException( "Cannot modify Unmodifiable Array" );
 	}
 
 }

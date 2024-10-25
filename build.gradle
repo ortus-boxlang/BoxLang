@@ -100,7 +100,7 @@ dependencies {
 	testImplementation "org.wiremock:wiremock:3.9.1"
 	// https://mvnrepository.com/artifact/org.apache.derby/derby
 	testImplementation 'org.apache.derby:derby:10.17.1.0'
-	testImplementation 'io.undertow:undertow-core:2.3.17.Final'
+	testImplementation 'io.undertow:undertow-core:2.3.18.Final'
 
 	// Antlr
 	antlr "org.antlr:antlr4:$antlrVersion"
@@ -128,7 +128,7 @@ dependencies {
 	// https://mvnrepository.com/artifact/org.slf4j/slf4j-api
 	implementation 'org.slf4j:slf4j-api:2.0.16'
 	// https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
-	implementation 'ch.qos.logback:logback-classic:1.5.10'
+	implementation 'ch.qos.logback:logback-classic:1.5.11'
 	// https://mvnrepository.com/artifact/com.zaxxer/HikariCP
 	implementation 'com.zaxxer:HikariCP:6.0.0'
 	// https://mvnrepository.com/artifact/org.ow2.asm/asm-tree

@@ -23,6 +23,9 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStatement;
+import ortus.boxlang.compiler.ast.expression.BoxFQN;
+import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
+import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -51,11 +54,26 @@ public class BoxComponentTransformer extends AbstractTransformer {
 		List<AbstractInsnNode>	nodes	= new ArrayList<>();
 		nodes.addAll( tracker.loadCurrentContext() );
 
+		String				componentName	= boxComponent.getName();
+		List<BoxAnnotation>	attributes		= boxComponent.getAttributes();
+
+		// Check for custom tag shortcut like <cf_brad>
+		if ( componentName.startsWith( "_" ) ) {
+			attributes.add(
+			    new BoxAnnotation(
+			        new BoxFQN( "name", null, componentName ),
+			        new BoxStringLiteral( componentName.substring( 1 ), null, componentName ),
+			        null,
+			        null )
+			);
+			componentName = "module";
+		}
+
 		// create key of component name
-		nodes.addAll( transpiler.createKey( boxComponent.getName() ) );
+		nodes.addAll( transpiler.createKey( componentName ) );
 
 		// convert attributes to struct
-		nodes.addAll( transpiler.transformAnnotations( boxComponent.getAttributes(), true, false ) );
+		nodes.addAll( transpiler.transformAnnotations( attributes, true, false ) );
 
 		// Component.ComponentBody
 		nodes.addAll( generateBodyNodes( boxComponent.getBody() ) );

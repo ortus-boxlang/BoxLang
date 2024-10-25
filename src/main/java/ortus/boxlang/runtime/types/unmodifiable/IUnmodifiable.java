@@ -15,20 +15,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.runtime.types.immutable;
+package ortus.boxlang.runtime.types.unmodifiable;
 
 import ortus.boxlang.runtime.types.IType;
 
 /**
- * Represents a base type which is immutable
+ * Represents a base type which is Unmodifiable
  */
-public interface IImmutable {
+public interface IUnmodifiable {
 
 	/**
-	 * Convert the immutable type to a mutable type
+	 * Convert the Unmodifiable type to a Modifiable type
 	 *
-	 * @return The mutable type
+	 * @return The Modifiable type
 	 */
-	IType toMutable();
+	IType toModifiable();
 
 }

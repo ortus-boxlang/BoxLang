@@ -117,6 +117,9 @@ public class BoxLambdaTransformer extends AbstractTransformer {
 		    "getSourceType",
 		    Type.getType( BoxSourceType.class ) );
 
+		int componentCounter = transpiler.getComponentCounter();
+		transpiler.setComponentCounter( 0 );
+		transpiler.incrementfunctionBodyCounter();
 		AsmHelper.methodWithContextAndClassLocator( classNode, "_invoke", Type.getType( FunctionBoxContext.class ), Type.getType( Object.class ), false,
 		    transpiler, false,
 		    () -> {
@@ -127,6 +130,8 @@ public class BoxLambdaTransformer extends AbstractTransformer {
 			        .flatMap( statement -> transpiler.transform( statement, TransformerContext.NONE, ReturnValueContext.VALUE_OR_NULL ).stream() )
 			        .toList();
 		    } );
+		transpiler.decrementfunctionBodyCounter();
+		transpiler.setComponentCounter( componentCounter );
 
 		AsmHelper.complete( classNode, type, methodVisitor -> {
 			methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,

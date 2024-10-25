@@ -68,7 +68,7 @@ public class StructGetMetadataTest {
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
-		assertTrue( variables.getAsStruct( result ).containsKey( Key.of( "immutable" ) ) );
+		assertTrue( variables.getAsStruct( result ).containsKey( Key.of( "unmodifiable" ) ) );
 		assertTrue( variables.getAsStruct( result ).containsKey( Key.of( "casesensitive" ) ) );
 		assertTrue( variables.getAsStruct( result ).containsKey( Key.of( "soft" ) ) );
 		assertTrue( variables.getAsStruct( result ).containsKey( Key.of( "ordered" ) ) );
@@ -85,7 +85,7 @@ public class StructGetMetadataTest {
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
-		assertTrue( variables.getAsStruct( result ).containsKey( Key.of( "immutable" ) ) );
+		assertTrue( variables.getAsStruct( result ).containsKey( Key.of( "unmodifiable" ) ) );
 		assertTrue( variables.getAsStruct( result ).containsKey( Key.of( "casesensitive" ) ) );
 		assertTrue( variables.getAsStruct( result ).containsKey( Key.of( "soft" ) ) );
 		assertTrue( variables.getAsStruct( result ).containsKey( Key.of( "ordered" ) ) );

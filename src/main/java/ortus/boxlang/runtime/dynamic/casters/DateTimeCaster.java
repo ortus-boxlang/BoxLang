@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.dynamic.casters;
 
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
@@ -199,6 +200,11 @@ public class DateTimeCaster implements IBoxCaster {
 		// We have a java.sql.Timestamp object
 		if ( object instanceof java.sql.Timestamp targetTimestamp ) {
 			return new DateTime( targetTimestamp.toInstant().atZone( timezone ) );
+		}
+
+		// We have a java.time.LocalTime; object
+		if ( object instanceof LocalTime targetTimestamp ) {
+			return new DateTime( targetTimestamp );
 		}
 
 		// Try to cast it to a String and see if we can parse it

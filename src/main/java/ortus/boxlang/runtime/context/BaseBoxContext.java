@@ -1219,4 +1219,9 @@ public class BaseBoxContext implements IBoxContext {
 		return this.attachable.getAttachmentKeys();
 	}
 
+	@Override
+	public <T> T computeAttachmentIfAbsent( Key key, java.util.function.Function<? super Key, ? extends T> mappingFunction ) {
+		return this.attachable.computeAttachmentIfAbsent( key, mappingFunction );
+	}
+
 }

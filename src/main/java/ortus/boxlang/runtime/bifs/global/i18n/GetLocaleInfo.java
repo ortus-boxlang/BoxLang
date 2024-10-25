@@ -25,7 +25,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
-import ortus.boxlang.runtime.types.immutable.ImmutableStruct;
+import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableStruct;
 import ortus.boxlang.runtime.util.LocalizationUtil;
 
 @BoxBIF
@@ -65,13 +65,13 @@ public class GetLocaleInfo extends BIF {
 		    .setLocale( LocalizationUtil.parseLocaleOrDefault( dspLocale, locale ) )
 		    .build();
 
-		return ImmutableStruct.of(
+		return UnmodifiableStruct.of(
 		    Key.country, locale.getCountry(),
-		    Key.display, ImmutableStruct.of(
+		    Key.display, UnmodifiableStruct.of(
 		        Key.country, locale.getDisplayCountry( displayLocale ),
 		        Key.language, locale.getDisplayLanguage( displayLocale )
 		    ),
-		    Key.iso, ImmutableStruct.of(
+		    Key.iso, UnmodifiableStruct.of(
 		        Key.country, locale.getISO3Country(),
 		        // Note this replicates the Lucee behavior where the ISO object returns the non-iso3 language
 		        // and the top level language key returns the iso3 version

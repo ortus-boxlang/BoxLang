@@ -314,8 +314,10 @@ public class BoxRuntime implements java.io.Closeable {
 	 * @param configPath The path to the configuration file to load as overrides, this can be null
 	 */
 	private void loadConfiguration( Boolean debugMode, String configPath ) {
+		ConfigLoader loader = ConfigLoader.getInstance();
 		// 1. Load Core Configuration file : resources/config/boxlang.json
-		this.configuration = ConfigLoader.getInstance().loadCore();
+		this.configuration = loader.loadCore();
+
 		this.interceptorService.announce(
 		    BoxEvent.ON_CONFIGURATION_LOAD,
 		    Struct.of( "config", this.configuration )
@@ -324,7 +326,8 @@ public class BoxRuntime implements java.io.Closeable {
 		// 2. Runtime Home Override? Check runtime home for a ${boxlang-home}/config/boxlang.json
 		String runtimeHomeConfigPath = Paths.get( getRuntimeHome().toString(), "config", "boxlang.json" ).toString();
 		if ( Files.exists( Path.of( runtimeHomeConfigPath ) ) ) {
-			this.configuration.process( ConfigLoader.getInstance().deserializeConfig( runtimeHomeConfigPath ) );
+			IStruct appliedConfig = loader.mergeEnvironmentOverrides( loader.deserializeConfig( runtimeHomeConfigPath ) );
+			this.configuration.process( appliedConfig );
 			this.interceptorService.announce(
 			    BoxEvent.ON_CONFIGURATION_OVERRIDE_LOAD,
 			    Struct.of( "config", this.configuration, "configOverride", runtimeHomeConfigPath )
@@ -333,7 +336,8 @@ public class BoxRuntime implements java.io.Closeable {
 
 		// 3. CLI or ENV Config Path Override, which comes via the arguments
 		if ( configPath != null ) {
-			this.configuration.process( ConfigLoader.getInstance().deserializeConfig( configPath ) );
+			IStruct appliedConfig = loader.mergeEnvironmentOverrides( loader.deserializeConfig( configPath ) );
+			this.configuration.process( appliedConfig );
 			this.interceptorService.announce(
 			    BoxEvent.ON_CONFIGURATION_OVERRIDE_LOAD,
 			    Struct.of( "config", this.configuration, "configOverride", configPath )
@@ -460,7 +464,8 @@ public class BoxRuntime implements java.io.Closeable {
 		this.runtimeLoader	= new DynamicClassLoader(
 		    Key.runtime,
 		    getConfiguration().getJavaLibraryPaths(),
-		    this.getClass().getClassLoader()
+		    this.getClass().getClassLoader(),
+		    true
 		);
 		// Startup the right Compiler
 		this.boxpiler		= chooseBoxpiler();
@@ -1158,6 +1163,7 @@ public class BoxRuntime implements java.io.Closeable {
 
 		// Does it have a main method?
 		if ( target.getThisScope().containsKey( Key.main ) ) {
+			RequestBoxContext.setCurrent( scriptingContext.getParentOfType( RequestBoxContext.class ) );
 			// Fire!!!
 			try {
 				boolean result = listener.onRequestStart( scriptingContext, new Object[] { templatePath } );
@@ -1210,6 +1216,7 @@ public class BoxRuntime implements java.io.Closeable {
 					}
 				}
 				scriptingContext.flushBuffer( false );
+				RequestBoxContext.removeCurrent();
 			}
 		} else {
 			throw new BoxRuntimeException( "Class [" + targetClass.getName() + "] does not have a main method to execute." );
@@ -1230,6 +1237,7 @@ public class BoxRuntime implements java.io.Closeable {
 		IBoxContext				scriptingContext	= ensureRequestTypeContext( context, template.getRunnablePath().absolutePath().toUri() );
 		BaseApplicationListener	listener			= scriptingContext.getParentOfType( RequestBoxContext.class ).getApplicationListener();
 		Throwable				errorToHandle		= null;
+		RequestBoxContext.setCurrent( scriptingContext.getParentOfType( RequestBoxContext.class ) );
 		try {
 			boolean result = listener.onRequestStart( scriptingContext, new Object[] { templatePath } );
 			if ( result ) {
@@ -1283,6 +1291,7 @@ public class BoxRuntime implements java.io.Closeable {
 				}
 			}
 			scriptingContext.flushBuffer( false );
+			RequestBoxContext.removeCurrent();
 		}
 	}
 
@@ -1335,6 +1344,7 @@ public class BoxRuntime implements java.io.Closeable {
 	 */
 	public Object executeStatement( BoxScript scriptRunnable, IBoxContext context ) {
 		IBoxContext scriptingContext = ensureRequestTypeContext( context );
+		RequestBoxContext.setCurrent( scriptingContext.getParentOfType( RequestBoxContext.class ) );
 		try {
 			// Fire!!!
 			return scriptRunnable.invoke( scriptingContext );
@@ -1347,6 +1357,7 @@ public class BoxRuntime implements java.io.Closeable {
 			return null;
 		} finally {
 			scriptingContext.flushBuffer( false );
+			RequestBoxContext.removeCurrent();
 		}
 
 	}
@@ -1399,6 +1410,7 @@ public class BoxRuntime implements java.io.Closeable {
 		BoxScript	scriptRunnable		= RunnableLoader.getInstance().loadSource( scriptingContext, source, type );
 		Object		results				= null;
 
+		RequestBoxContext.setCurrent( scriptingContext.getParentOfType( RequestBoxContext.class ) );
 		try {
 			// Fire!!!
 			results = scriptRunnable.invoke( scriptingContext );
@@ -1410,6 +1422,7 @@ public class BoxRuntime implements java.io.Closeable {
 			}
 		} finally {
 			scriptingContext.flushBuffer( false );
+			RequestBoxContext.removeCurrent();
 		}
 
 		return results;
@@ -1425,6 +1438,7 @@ public class BoxRuntime implements java.io.Closeable {
 		IBoxContext		scriptingContext	= ensureRequestTypeContext( context );
 		BufferedReader	reader				= new BufferedReader( new InputStreamReader( sourceStream ) );
 		String			source;
+		RequestBoxContext.setCurrent( scriptingContext.getParentOfType( RequestBoxContext.class ) );
 
 		try {
 			Boolean quiet = reader.ready();
@@ -1484,6 +1498,8 @@ public class BoxRuntime implements java.io.Closeable {
 			}
 		} catch ( IOException e ) {
 			throw new BoxRuntimeException( "Error reading source stream", e );
+		} finally {
+			RequestBoxContext.removeCurrent();
 		}
 
 		return null;

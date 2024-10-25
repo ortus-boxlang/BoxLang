@@ -501,6 +501,13 @@ public class ClassTest {
 		assertThat( meta.getAsString( Key.of( "path" ) ).contains( "MyClass.bx" ) ).isTrue();
 		assertThat( meta.get( Key.of( "hashcode" ) ) ).isEqualTo( cfc.hashCode() );
 		assertThat( meta.get( Key.of( "properties" ) ) instanceof Array ).isTrue();
+		Array properties = meta.getAsArray( Key.of( "properties" ) );
+		assertThat( properties.size() ).isEqualTo( 1 );
+		assertThat( properties.get( 0 ) instanceof IStruct ).isTrue();
+		IStruct prop = ( IStruct ) properties.get( 0 );
+		assertThat( prop.getAsStruct( Key.documentation ) ).containsKey( Key.of( "test" ) );
+		assertThat( prop.getAsStruct( Key.documentation ).get( Key.of( "test" ) ) ).isEqualTo( "" );
+
 		assertThat( meta.get( Key.of( "functions" ) ) instanceof Array ).isTrue();
 
 		assertThat( meta.get( Key.of( "extends" ) ) instanceof IStruct ).isTrue();
@@ -509,12 +516,12 @@ public class ClassTest {
 		var fun1 = meta.getAsArray( Key.of( "functions" ) ).get( 0 );
 		assertThat( fun1 ).isInstanceOf( Struct.class );
 		assertThat( ( ( IStruct ) fun1 ).containsKey( Key.of( "name" ) ) ).isTrue();
-		System.out.println( meta.getAsArray( Key.of( "functions" ) ).asString() );
 
 		assertThat( meta.get( Key.of( "documentation" ) ) instanceof IStruct ).isTrue();
 		var docs = meta.getAsStruct( Key.of( "documentation" ) );
 		assertThat( docs.getAsString( Key.of( "brad" ) ).trim() ).isEqualTo( "wood" );
 		assertThat( docs.get( Key.of( "luis" ) ) ).isEqualTo( "" );
+		assertThat( docs.getAsString( Key.of( "_itwontlikeme~`!@#$%^&*()-=+[]{}\\|'\";:,.<>/?*áéíóúüñ" ) ).trim() ).isEqualTo( "formbuilderV2Form" );
 		assertThat( docs.getAsString( Key.of( "hint" ) ).trim() ).isEqualTo( "This is my class description continued on this line \nand this one as well." );
 
 		assertThat( meta.get( Key.of( "annotations" ) ) instanceof IStruct ).isTrue();

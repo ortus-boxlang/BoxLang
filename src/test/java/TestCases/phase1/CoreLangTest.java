@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.net.http.HttpRequest.BodyPublisher;
 import java.util.Comparator;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.AfterAll;
@@ -40,6 +41,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.LocalScope;
@@ -3133,10 +3135,10 @@ public class CoreLangTest {
 	}
 
 	@Test
-	public void testFinalImmutable() {
+	public void testFinalUnmodifiable() {
 		instance.executeSource(
 		    """
-		    final lockDown = [ 1, 2, 3 ].toImmutable()
+		    final lockDown = [ 1, 2, 3 ].toUnmodifiable()
 		    """,
 		    context, BoxSourceType.BOXSCRIPT );
 	}
@@ -3547,6 +3549,85 @@ public class CoreLangTest {
 		             """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "java.lang.String" );
+	}
+
+	@DisplayName( "ConcurrentHashMap clear calls" )
+	@Test
+	public void testConcurrentHashMapClear() {
+	// @formatter:off
+	instance.executeSource(
+		"""
+		pool = createObject( "java", "java.util.concurrent.ConcurrentHashMap" ).init();
+
+		pool.put( "foo", "bar" );
+		 pool.put( "test", now() );
+
+		assert pool.size() == 2;
+
+		structClear( pool );
+
+		result = pool.size();
+		""",
+		context );
+	// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( 0 );
+	}
+
+	@DisplayName( "ArrayList clear calls" )
+	@Test
+	public void testArrayListClear() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+			pool = createObject( "java", "java.util.ArrayList" ).init();
+
+			pool.add( "foo" );
+			pool.add( "bar" );
+
+			assert pool.size() == 2;
+
+			arrayClear( pool );
+
+			result = pool.size();
+			""",
+			context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( 0 );
+	}
+
+	@DisplayName( "not operator precedence" )
+	@Test
+	public void testNotOperatorPrecedence() {
+	// @formatter:off
+	instance.executeSource(
+		"""
+		foo = "bar"
+		result = !foo eq foo;
+		""",
+		context, BoxSourceType.CFSCRIPT );
+	// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( false );
+	}
+
+	@DisplayName( "auto init dynamic object on instance method call" )
+	@Test
+	public void testAutoInitDynamicObjectOnInstanceMethodCall() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				myList = createObject( 'java', 'java.util.ArrayList' );
+				myList.add( "foo" );
+				// second time to test cached method handle code path in dynamic interop service
+				myList2 = createObject( 'java', 'java.util.ArrayList' );
+				myList2.add( "foo" );
+			""",
+			context );
+		// @formatter:on
+		assertThat( DynamicObject.unWrap( variables.get( Key.of( "myList" ) ) ) ).isInstanceOf( List.class );
+		@SuppressWarnings( "unchecked" )
+		List<Object> list = ( List<Object> ) DynamicObject.unWrap( variables.get( Key.of( "myList" ) ) );
+		assertThat( list.size() ).isEqualTo( 1 );
+		assertThat( list.get( 0 ) ).isEqualTo( "foo" );
 	}
 
 }

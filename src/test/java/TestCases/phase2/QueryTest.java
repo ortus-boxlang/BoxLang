@@ -183,11 +183,11 @@ public class QueryTest {
 	}
 
 	@Test
-	public void testImmutableQuery() {
+	public void testUnmodifiableQuery() {
 
 		instance.executeSource(
 		    """
-		    	myQry = queryNew( "col", "string", [ [ "foo" ] ] ).toImmutable();
+		    	myQry = queryNew( "col", "string", [ [ "foo" ] ] ).toUnmodifiable();
 		    	recordCount = myQry.recordCount;
 		    	colList = myQry.columnList;
 		    	cellData = myQry.col;
@@ -201,28 +201,28 @@ public class QueryTest {
 	}
 
 	@Test
-	public void testImmutableQueryErrors() {
+	public void testUnmodifiableQueryErrors() {
 		assertThrows( UnmodifiableException.class, () -> instance.executeSource(
 		    """
-		    	myQry = queryNew( "col", "string", [ [ "foo" ] ] ).toImmutable();
+		    	myQry = queryNew( "col", "string", [ [ "foo" ] ] ).toUnmodifiable();
 		    	myQry.col[ 1 ] = "bar";
 		    """,
 		    context ) );
 		assertThrows( UnmodifiableException.class, () -> instance.executeSource(
 		    """
-		    	myQry = queryNew( "col", "string", [ [ "foo" ] ] ).toImmutable();
+		    	myQry = queryNew( "col", "string", [ [ "foo" ] ] ).toUnmodifiable();
 		    	myQry.col = "bar";
 		    """,
 		    context ) );
 		assertThrows( UnmodifiableException.class, () -> instance.executeSource(
 		    """
-		    	myQry = queryNew( "col", "string", [ [ "foo" ] ] ).toImmutable();
+		    	myQry = queryNew( "col", "string", [ [ "foo" ] ] ).toUnmodifiable();
 		    	myQry.addRow()
 		    """,
 		    context ) );
 		assertThrows( UnmodifiableException.class, () -> instance.executeSource(
 		    """
-		    	myQry = queryNew( "col", "string", [ [ "foo" ] ] ).toImmutable();
+		    	myQry = queryNew( "col", "string", [ [ "foo" ] ] ).toUnmodifiable();
 		    	myQry.addColumn("brad")
 		    """,
 		    context ) );

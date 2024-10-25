@@ -218,11 +218,12 @@ public class Application {
 		}
 
 		// Get or compute a class loader according to the incoming URIs for classes to load
+		// Remember that Application.bx is instantiated per request, so each request could be different
 		String loaderCacheKey = EncryptionUtil.hash( Arrays.toString( loadPathsUrls ) );
 		this.classLoaders.computeIfAbsent( loaderCacheKey,
 		    key -> {
 			    logger.debug( "Application ClassLoader [{}] registered with these paths: [{}]", this.name, Arrays.toString( loadPathsUrls ) );
-			    return new DynamicClassLoader( this.name, loadPathsUrls, BoxRuntime.getInstance().getRuntimeLoader() );
+			    return new DynamicClassLoader( this.name, loadPathsUrls, BoxRuntime.getInstance().getRuntimeLoader(), false );
 		    } );
 	}
 

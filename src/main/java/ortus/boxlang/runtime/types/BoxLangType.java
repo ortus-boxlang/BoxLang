@@ -21,6 +21,8 @@ import ortus.boxlang.runtime.scopes.Key;
 
 /**
  * This enum represents the types that are supported by BoxLang.
+ * <p>
+ * We also use them to target specific member methods in the BoxLang runtime.
  */
 public enum BoxLangType {
 

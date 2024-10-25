@@ -294,7 +294,7 @@ public interface IClassRunnable extends ITemplateRunnable, IStruct {
 	}
 
 	@Override
-	default Map<Key, Object> getWrapped() {
+	default Map<? extends Object, Object> getWrapped() {
 		return getThisScope().getWrapped();
 	}
 

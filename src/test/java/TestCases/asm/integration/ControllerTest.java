@@ -62,6 +62,15 @@ public class ControllerTest {
 	}
 
 	@Test
+	public void testReturnInTemplate() {
+		instance.executeStatement(
+		    """
+		      include template="src/test/java/TestCases/asm/integration/TemplateWithReturn.cfm";
+		    """,
+		    context );
+	}
+
+	@Test
 	public void testSwitchInLoopInFunc() {
 		instance.executeStatement(
 		    """

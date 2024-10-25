@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.runtime.types.immutable;
+package ortus.boxlang.runtime.types.unmodifiable;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -32,11 +32,11 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.UnmodifiableException;
 
 /**
- * Represents an immutable Struct. All data you want needs to be passed in the constructor or
+ * Represents an Unmodifiable Struct. All data you want needs to be passed in the constructor or
  * provided to a static creation method. Once instantiated, the Struct cannot be modified. An
  * exception will be thrown if you invoke any mutator method.
  */
-public class ImmutableStruct extends Struct implements IImmutable {
+public class UnmodifiableStruct extends Struct implements IUnmodifiable {
 
 	/**
 	 * The type of struct
@@ -54,8 +54,8 @@ public class ImmutableStruct extends Struct implements IImmutable {
 	 *
 	 * @param type The type of struct to create: DEFAULT, LINKED, SORTED
 	 */
-	public ImmutableStruct( TYPES type ) {
-		// Immutable struct does not use syncronized maps
+	public UnmodifiableStruct( TYPES type ) {
+		// Unmodifiable struct does not use syncronized maps
 		super(
 		    switch ( type ) {
 			    case DEFAULT -> new HashMap<>( INITIAL_CAPACITY );
@@ -71,7 +71,7 @@ public class ImmutableStruct extends Struct implements IImmutable {
 	/**
 	 * Create a default struct
 	 */
-	public ImmutableStruct() {
+	public UnmodifiableStruct() {
 		this( TYPES.DEFAULT );
 	}
 
@@ -80,7 +80,7 @@ public class ImmutableStruct extends Struct implements IImmutable {
 	 *
 	 * @param map The map to create the struct from
 	 */
-	public ImmutableStruct( Map<? extends Object, ? extends Object> map ) {
+	public UnmodifiableStruct( Map<? extends Object, ? extends Object> map ) {
 		this( TYPES.DEFAULT, map );
 	}
 
@@ -89,7 +89,7 @@ public class ImmutableStruct extends Struct implements IImmutable {
 	 *
 	 * @param struct The struct to create the struct from
 	 */
-	public ImmutableStruct( IStruct struct ) {
+	public UnmodifiableStruct( IStruct struct ) {
 		this( struct instanceof Struct str ? str.getType() : Struct.TYPES.DEFAULT, struct.getWrapped() );
 	}
 
@@ -99,18 +99,18 @@ public class ImmutableStruct extends Struct implements IImmutable {
 	 * @param map  The map to create the struct from
 	 * @param type The type of struct to create: DEFAULT, LINKED, SORTED
 	 */
-	public ImmutableStruct( TYPES type, Map<? extends Object, ? extends Object> map ) {
+	public UnmodifiableStruct( TYPES type, Map<? extends Object, ? extends Object> map ) {
 		this( type );
 		_addAll( map );
 	}
 
 	/**
-	 * To Mutable
+	 * To Modifiable
 	 *
-	 * @return The mutable type
+	 * @return The Modifiable type
 	 */
 	@Override
-	public Struct toMutable() {
+	public Struct toModifiable() {
 		return new Struct( this.wrapped, this.type );
 	}
 
@@ -119,8 +119,8 @@ public class ImmutableStruct extends Struct implements IImmutable {
 	 *
 	 * @param map The map to create the struct from
 	 */
-	public static ImmutableStruct fromMap( Map<? extends Object, ? extends Object> map ) {
-		return new ImmutableStruct( map );
+	public static UnmodifiableStruct fromMap( Map<? extends Object, ? extends Object> map ) {
+		return new UnmodifiableStruct( map );
 	}
 
 	/**
@@ -129,8 +129,8 @@ public class ImmutableStruct extends Struct implements IImmutable {
 	 * @param map  The map to create the struct from
 	 * @param type The type of struct to create: DEFAULT, LINKED, SORTED
 	 */
-	public static ImmutableStruct fromMap( TYPES type, Map<Object, Object> map ) {
-		return new ImmutableStruct( type, map );
+	public static UnmodifiableStruct fromMap( TYPES type, Map<Object, Object> map ) {
+		return new UnmodifiableStruct( type, map );
 	}
 
 	/**
@@ -138,8 +138,8 @@ public class ImmutableStruct extends Struct implements IImmutable {
 	 *
 	 * @param struct The struct to create the struct from
 	 */
-	public static ImmutableStruct fromStruct( IStruct struct ) {
-		return new ImmutableStruct( struct );
+	public static UnmodifiableStruct fromStruct( IStruct struct ) {
+		return new UnmodifiableStruct( struct );
 	}
 
 	/**
@@ -149,11 +149,11 @@ public class ImmutableStruct extends Struct implements IImmutable {
 	 *
 	 * @return The struct
 	 */
-	public static ImmutableStruct of( Object... values ) {
+	public static UnmodifiableStruct of( Object... values ) {
 		if ( values.length % 2 != 0 ) {
 			throw new BoxRuntimeException( "Invalid number of arguments.  Must be an even number." );
 		}
-		ImmutableStruct struct = new ImmutableStruct();
+		UnmodifiableStruct struct = new UnmodifiableStruct();
 		for ( int i = 0; i < values.length; i += 2 ) {
 			struct._put( KeyCaster.cast( values[ i ] ), values[ i + 1 ] );
 		}
@@ -176,7 +176,7 @@ public class ImmutableStruct extends Struct implements IImmutable {
 	 */
 	@Override
 	public Object put( Key key, Object value ) {
-		throw new UnmodifiableException( "Cannot modify immutable Struct" );
+		throw new UnmodifiableException( "Cannot modify Unmodifiable Struct" );
 	}
 
 	/**
@@ -200,7 +200,7 @@ public class ImmutableStruct extends Struct implements IImmutable {
 	 * @return The previous value of the key, or null if not found
 	 */
 	public Object put( String key, Object value ) {
-		throw new UnmodifiableException( "Cannot modify immutable Struct" );
+		throw new UnmodifiableException( "Cannot modify Unmodifiable Struct" );
 	}
 
 	/**
@@ -213,7 +213,7 @@ public class ImmutableStruct extends Struct implements IImmutable {
 	 */
 	@Override
 	public Object putIfAbsent( Key key, Object value ) {
-		throw new UnmodifiableException( "Cannot modify immutable Struct" );
+		throw new UnmodifiableException( "Cannot modify Unmodifiable Struct" );
 	}
 
 	/**
@@ -225,7 +225,7 @@ public class ImmutableStruct extends Struct implements IImmutable {
 	 * @return The previous value of the key, or null if not found
 	 */
 	public Object putIfAbsent( String key, Object value ) {
-		throw new UnmodifiableException( "Cannot modify immutable Struct" );
+		throw new UnmodifiableException( "Cannot modify Unmodifiable Struct" );
 	}
 
 	/**
@@ -235,7 +235,7 @@ public class ImmutableStruct extends Struct implements IImmutable {
 	 */
 	@Override
 	public Object remove( Object key ) {
-		throw new UnmodifiableException( "Cannot modify immutable Struct" );
+		throw new UnmodifiableException( "Cannot modify Unmodifiable Struct" );
 	}
 
 	/**
@@ -244,7 +244,7 @@ public class ImmutableStruct extends Struct implements IImmutable {
 	 * @param key The String key to remove
 	 */
 	public Object remove( String key ) {
-		throw new UnmodifiableException( "Cannot modify immutable Struct" );
+		throw new UnmodifiableException( "Cannot modify Unmodifiable Struct" );
 	}
 
 	/**
@@ -253,7 +253,7 @@ public class ImmutableStruct extends Struct implements IImmutable {
 	 * @param key The String key to remove
 	 */
 	public Object remove( Key key ) {
-		throw new UnmodifiableException( "Cannot modify immutable Struct" );
+		throw new UnmodifiableException( "Cannot modify Unmodifiable Struct" );
 	}
 
 	/**
@@ -262,7 +262,7 @@ public class ImmutableStruct extends Struct implements IImmutable {
 	 */
 	@Override
 	public void putAll( Map<? extends Key, ? extends Object> map ) {
-		throw new UnmodifiableException( "Cannot modify immutable Struct" );
+		throw new UnmodifiableException( "Cannot modify Unmodifiable Struct" );
 	}
 
 	/**
@@ -305,7 +305,7 @@ public class ImmutableStruct extends Struct implements IImmutable {
 	 * @param map
 	 */
 	public void addAll( Map<? extends Object, ? extends Object> map ) {
-		throw new UnmodifiableException( "Cannot modify immutable Struct" );
+		throw new UnmodifiableException( "Cannot modify Unmodifiable Struct" );
 	}
 
 	/**
@@ -313,7 +313,7 @@ public class ImmutableStruct extends Struct implements IImmutable {
 	 */
 	@Override
 	public void clear() {
-		throw new UnmodifiableException( "Cannot modify immutable Struct" );
+		throw new UnmodifiableException( "Cannot modify Unmodifiable Struct" );
 	}
 
 	/**
@@ -330,7 +330,7 @@ public class ImmutableStruct extends Struct implements IImmutable {
 	 */
 	@Override
 	public Object assign( IBoxContext context, Key key, Object value ) {
-		throw new UnmodifiableException( "Cannot modify immutable Struct" );
+		throw new UnmodifiableException( "Cannot modify Unmodifiable Struct" );
 	}
 
 	/**

@@ -161,11 +161,7 @@ public class JDBCTestUtils {
 		        "driver", "derby",
 		        "connectionString", "jdbc:derby:memory:" + databaseName + ";create=true"
 		    ) );
-		try {
-			datasource.execute( "CREATE TABLE developers ( id INTEGER, name VARCHAR(155), role VARCHAR(155) )" );
-		} catch ( DatabaseException e ) {
-			// Ignore the exception if the table already exists
-		}
+		ensureTestTableExists( datasource );
 		return datasource;
 	}
 
@@ -176,6 +172,17 @@ public class JDBCTestUtils {
 	 */
 	public static void dropDevelopersTable( DataSource datasource ) {
 		datasource.execute( "DROP TABLE developers" );
+	}
+
+	/**
+	 * Ensure various tables exist in the database for testing purposes.
+	 */
+	public static void ensureTestTableExists( DataSource datasource ) {
+		try {
+			datasource.execute( "CREATE TABLE developers ( id INTEGER, name VARCHAR(155), role VARCHAR(155), createdAt TIMESTAMP )" );
+		} catch ( DatabaseException e ) {
+			// Ignore the exception if the table already exists
+		}
 	}
 
 	/**

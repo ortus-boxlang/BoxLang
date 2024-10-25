@@ -41,7 +41,7 @@ import ortus.boxlang.runtime.util.ValidationUtil;
  * It is useful when you have a value that could be null or not, and you want to
  * handle it in a more functional way.
  * <p>
- * Attemps are also immutable, so you can chain methods to handle the value in a
+ * Attemps are also Unmodifiable, so you can chain methods to handle the value in a
  * more functional way, but it never mutates the original value.
  */
 public class Attempt<T> {

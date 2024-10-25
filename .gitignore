@@ -39,3 +39,6 @@ derby.log
 
 # ANTLR Plugin artifacts
 **/gen
+
+src/test/java/ortus/boxlang/compiler/Precompiled.bx
+src/test/java/ortus/boxlang/compiler/Precompiled.bxs

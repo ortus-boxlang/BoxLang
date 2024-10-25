@@ -21,10 +21,8 @@ package ortus.boxlang.runtime.jdbc;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -104,7 +102,7 @@ public class DataSourceTest {
 		    Key.of( "mysql" ),
 		    Struct.of(
 		        "username", "root",
-		        "password", "secret",
+		        "password", "123456Password",
 		        "connectionString", "jdbc:mysql://localhost:3306"
 		    ) );
 		Connection	conn			= myDataSource.getConnection();
@@ -224,8 +222,8 @@ public class DataSourceTest {
 		Query			queryResults	= executedQuery.getResults();
 
 		assertNotEquals( 0, queryResults.size() );
-		assertTrue( queryResults.hasColumn( Key.of( "id" ) ) );
-		assertTrue( queryResults.hasColumn( Key.of( "name" ) ) );
+		assertThat( queryResults.hasColumn( Key.of( "id" ) ) ).isEqualTo( true );
+		assertThat( queryResults.hasColumn( Key.of( "name" ) ) ).isEqualTo( true );
 
 		Object[] firstRow = queryResults.getRow( 0 );
 		assert ( firstRow[ 0 ].equals( 1 ) );
@@ -310,9 +308,9 @@ public class DataSourceTest {
 		    )
 		);
 
-		assertTrue( datasource1.equals( datasource2 ) );
-		assertFalse( datasource1.equals( datasource3 ) );
-		assertFalse( datasource3.equals( datasource4 ) );
+		assertThat( datasource1.equals( datasource2 ) ).isEqualTo( true );
+		assertThat( datasource1.equals( datasource3 ) ).isEqualTo( false );
+		assertThat( datasource3.equals( datasource4 ) ).isEqualTo( false );
 	}
 
 	@DisplayName( "It can check authentication" )
@@ -328,8 +326,8 @@ public class DataSourceTest {
 		    )
 		);
 
-		assertFalse( myDSN.isAuthenticationMatch( "user", "password" ) );
-		assertTrue( myDSN.isAuthenticationMatch( "user", "pa$$w0rd" ) );
+		assertThat( myDSN.isAuthenticationMatch( "user", "password" ) ).isEqualTo( false );
+		assertThat( myDSN.isAuthenticationMatch( "user", "pa$$w0rd" ) ).isEqualTo( true );
 	}
 
 	@DisplayName( "It can get basic pool statistics" )
@@ -338,12 +336,12 @@ public class DataSourceTest {
 		DataSource	derbyDB	= JDBCTestUtils.buildDatasource( "funkyDB", new Struct() );
 		IStruct		stats	= derbyDB.getPoolStats();
 
-		assertTrue( stats.containsKey( Key.of( "pendingThreads" ) ) );
-		assertTrue( stats.containsKey( Key.of( "totalConnections" ) ) );
-		assertTrue( stats.containsKey( Key.of( "activeConnections" ) ) );
-		assertTrue( stats.containsKey( Key.of( "idleConnections" ) ) );
-		assertTrue( stats.containsKey( Key.of( "maxConnections" ) ) );
-		assertTrue( stats.containsKey( Key.of( "minConnections" ) ) );
+		assertThat( stats ).containsKey( Key.of( "pendingThreads" ) );
+		assertThat( stats ).containsKey( Key.of( "totalConnections" ) );
+		assertThat( stats ).containsKey( Key.of( "activeConnections" ) );
+		assertThat( stats ).containsKey( Key.of( "idleConnections" ) );
+		assertThat( stats ).containsKey( Key.of( "maxConnections" ) );
+		assertThat( stats ).containsKey( Key.of( "minConnections" ) );
 
 		assertEquals( 0, stats.getAsInteger( Key.of( "activeConnections" ) ) );
 	}

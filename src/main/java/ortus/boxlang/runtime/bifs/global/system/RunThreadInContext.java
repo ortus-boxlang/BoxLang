@@ -42,7 +42,7 @@ public class RunThreadInContext extends BIF {
 	}
 
 	/**
-	 * Executes the code in the callback with a speciec parent context so a specific application name
+	 * Executes the code in the callback with a specific parent context so a specific application name
 	 * is visible and an optional sessionID, or a specific context can be provided from another request.
 	 * If context is provided, application name and sessionID are not allowed.
 	 *
@@ -50,13 +50,13 @@ public class RunThreadInContext extends BIF {
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.applicationName The application name to use run the code in.
-	 * 
+	 *
 	 * @argument.sessionId The sessionID to use to run the code in (requires application name).
-	 * 
+	 *
 	 * @argument.context The context to use to run the code in. Mututally exclusive with applicationName and sessionId.
-	 * 
+	 *
 	 * @argument.callback The function to run in the new context.
-	 * 
+	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Function	callback		= arguments.getAsFunction( Key.callback );

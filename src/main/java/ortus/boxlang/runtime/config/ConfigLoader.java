@@ -20,15 +20,24 @@ package ortus.boxlang.runtime.config;
 import java.io.File;
 import java.net.URL;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.dynamic.casters.StructCaster;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.ConfigurationException;
+import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableStruct;
+import ortus.boxlang.runtime.types.util.BLCollector;
 import ortus.boxlang.runtime.types.util.JSONUtil;
+import ortus.boxlang.runtime.types.util.ListUtil;
+import ortus.boxlang.runtime.types.util.StructUtil;
 
 /**
  * This class is responsible for loading the core configuration file from the `resources` folder
@@ -58,6 +67,12 @@ public class ConfigLoader {
 	 * Logger
 	 */
 	private static final Logger	logger				= LoggerFactory.getLogger( ConfigLoader.class );
+
+	/**
+	 * Env placeholders
+	 */
+	private static final String	ENV_PREFIX			= "BOXLANG_";
+	private static final String	PROPERTY_PREFIX		= "boxlang.";
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -113,7 +128,8 @@ public class ConfigLoader {
 		// Parse it natively to Java objects
 		Object rawConfig = JSONUtil.fromJSON(
 		    // Load the file from the resources folder
-		    ConfigLoader.class.getClassLoader().getResourceAsStream( configFile )
+		    ConfigLoader.class.getClassLoader().getResourceAsStream( configFile ),
+		    true
 		);
 
 		// Verify it loaded the configuration map
@@ -133,7 +149,7 @@ public class ConfigLoader {
 	 * @return The parsed configuration
 	 */
 	public Configuration loadFromMap( IStruct configMap ) {
-		return new Configuration().process( configMap );
+		return new Configuration().process( mergeEnvironmentOverrides( configMap ) );
 	}
 
 	/**
@@ -203,7 +219,7 @@ public class ConfigLoader {
 	@SuppressWarnings( "unchecked" )
 	public IStruct deserializeConfig( File source ) {
 		// Parse it natively to Java objects
-		Object rawConfig = JSONUtil.fromJSON( source );
+		Object rawConfig = JSONUtil.fromJSON( source, true );
 
 		// Verify it loaded the configuration map
 		if ( rawConfig instanceof Map ) {
@@ -244,6 +260,101 @@ public class ConfigLoader {
 	 */
 	public IStruct deserializeConfig( Path source ) {
 		return deserializeConfig( source.toFile() );
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Environment Overrides
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Merge environment overrides with the configuration
+	 *
+	 * @param config The configuration to merge the environment overrides with
+	 **/
+	public IStruct mergeEnvironmentOverrides( IStruct config ) {
+		// We bring this in here in case a system property was dynamically set
+		UnmodifiableStruct	collectedEnvironment	= UnmodifiableStruct.of(
+		    Key.environment, UnmodifiableStruct.fromMap( System.getenv() ),
+		    Key.properties, UnmodifiableStruct.fromMap( System.getProperties() )
+		);
+
+		IStruct				propertyOverrides		= filterEnv( collectedEnvironment.getAsStruct( Key.properties ) );
+
+		IStruct				envOverrides			= filterEnv( collectedEnvironment.getAsStruct( Key.environment ) )
+		    .entrySet()
+		    .stream()
+		    .filter( entry -> !propertyOverrides.containsKey( entry.getKey() ) )
+		    .collect( BLCollector.toStruct() );
+
+		if ( envOverrides.isEmpty() && propertyOverrides.isEmpty() ) {
+			return config;
+		}
+
+		IStruct flatConfig = StructUtil.toFlatMap( config );
+
+		if ( !propertyOverrides.isEmpty() ) {
+			propertyOverrides.entrySet().stream().forEach( entry -> applyOverride( entry, flatConfig ) );
+		}
+		if ( !envOverrides.isEmpty() ) {
+			envOverrides.entrySet().stream().forEach( entry -> applyOverride( entry, flatConfig ) );
+		}
+
+		return StructUtil.unFlattenKeys( flatConfig, true, false );
+	}
+
+	/**
+	 * Filter the environment variables for BoxLang specific ones
+	 *
+	 * @param env The environment to filter
+	 *
+	 * @return The filtered environment
+	 */
+	public IStruct filterEnv( IStruct envCollection ) {
+		return envCollection.entrySet()
+		    .stream()
+		    .filter( entry -> entry.getKey().getName().toUpperCase().startsWith( ENV_PREFIX )
+		        || entry.getKey().getName().toLowerCase().startsWith( PROPERTY_PREFIX ) )
+		    .map( entry -> {
+			    Array keyList = ListUtil.asList( entry.getKey().getName().toLowerCase().replace( "_", "." ), "." );
+			    keyList.remove( 0 );
+			    String key = ListUtil.asString( keyList, "." );
+			    return Map.entry( Key.of( key ), entry.getValue() );
+		    } )
+		    .collect( BLCollector.toStruct() );
+	}
+
+	/**
+	 * Apply an override to the flattened configuration
+	 * 
+	 * @param entry
+	 * @param flatConfig
+	 */
+	public static void applyOverride( Map.Entry<Key, Object> entry, IStruct flatConfig ) {
+		logger.debug( "Overriding runtime config [{}] with Java System property value [{}]",
+		    entry.getKey().getName(), entry.getValue() );
+		Object existing = flatConfig.get( entry.getKey() );
+		if ( existing != null ) {
+			if ( existing instanceof List ) {
+				flatConfig.put( entry.getKey(),
+				    ListUtil.asList( StringCaster.cast( entry.getValue() ), "," ) );
+			} else if ( existing instanceof Map ) {
+				try {
+					IStruct configValue = StructCaster
+					    .cast( JSONUtil.fromJSON( StringCaster.cast( entry.getValue() ), true ) );
+					flatConfig.put( entry.getKey(), configValue );
+				} catch ( Exception e ) {
+					logger.error(
+					    "Failed to merge property override [{}]. The value of [{}] could not be converted to a struct",
+					    entry.getKey().getName(), entry.getValue() );
+				}
+			} else {
+				flatConfig.put( entry.getKey(), entry.getValue() );
+			}
+		} else {
+			flatConfig.put( entry.getKey(), entry.getValue() );
+		}
 	}
 
 }

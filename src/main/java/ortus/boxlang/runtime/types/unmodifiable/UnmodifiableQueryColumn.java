@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.runtime.types.immutable;
+package ortus.boxlang.runtime.types.unmodifiable;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
@@ -24,7 +24,7 @@ import ortus.boxlang.runtime.types.QueryColumn;
 import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.exceptions.UnmodifiableException;
 
-public class ImmutableQueryColumn extends QueryColumn {
+public class UnmodifiableQueryColumn extends QueryColumn {
 
 	/**
 	 * Serial version UID
@@ -39,7 +39,7 @@ public class ImmutableQueryColumn extends QueryColumn {
 	 * @param query query
 	 * @param index column index (0-based)
 	 */
-	public ImmutableQueryColumn( Key name, QueryColumnType type, Query query, int index ) {
+	public UnmodifiableQueryColumn( Key name, QueryColumnType type, Query query, int index ) {
 		super( name, type, query, index );
 	}
 
@@ -54,7 +54,7 @@ public class ImmutableQueryColumn extends QueryColumn {
 	 * @return This QueryColumn
 	 */
 	public QueryColumn setCell( int row, Object value ) {
-		throw new UnmodifiableException( "Cannot set cell in immutable Query column" );
+		throw new UnmodifiableException( "Cannot set cell in Unmodifiable Query column" );
 	}
 
 	/***************************
@@ -63,7 +63,7 @@ public class ImmutableQueryColumn extends QueryColumn {
 
 	@Override
 	public Object assign( IBoxContext context, Key name, Object value ) {
-		throw new UnmodifiableException( "Cannot assign to immutable Query column" );
+		throw new UnmodifiableException( "Cannot assign to Unmodifiable Query column" );
 	}
 
 }

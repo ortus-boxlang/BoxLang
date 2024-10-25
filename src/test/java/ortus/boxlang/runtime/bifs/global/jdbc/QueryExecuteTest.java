@@ -21,12 +21,10 @@ package ortus.boxlang.runtime.bifs.global.jdbc;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Duration;
 import java.util.List;
@@ -62,6 +60,53 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
 		Query query = variables.getAsQuery( result );
 		assertEquals( 0, query.size() );
+	}
+
+	@EnabledIf( "tools.JDBCTestUtils#hasMySQLModule" )
+	@DisplayName( "It supports timestamp param types" )
+	@Test
+	public void testTimestampDateParam() {
+		instance.executeSource(
+		    """
+		       queryExecute(
+		    	"
+		    	INSERT INTO developers ( id, name, role, createdAt )
+		    	VALUES ( 100, 'Tony Skipponi', 'Engineer', :timestamp )",
+		    	{
+		    		timestamp : { sqltype : "cf_sql_timestamp", value : now() }
+		    	},
+		    	{ "datasource" : "mysqldatasource" }
+		    );
+		    result = queryExecute( "SELECT * FROM developers WHERE id = 100", [], { "datasource" : "mysqldatasource" } );
+		       """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
+		Query query = variables.getAsQuery( result );
+		assertEquals( 1, query.size() );
+	}
+
+	@EnabledIf( "tools.JDBCTestUtils#hasMySQLModule" )
+	@DisplayName( "It can use string values as timestamp params." )
+	@Test
+	public void testTimestampParamCompare() {
+		instance.executeSource(
+		    """
+		      queryExecute( "INSERT INTO developers ( id, name, role, createdAt )
+		      	VALUES ( 101, 'Tony Skipponi', 'Engineer', NOW() )", {}, { "datasource" : "mysqldatasource" } );
+		      result = queryExecute(
+		      	"
+		      	SELECT * FROM developers
+		    WHERE createdAt IS NOT NULL AND createdAt < :timestamp",
+		      	{
+		      		timestamp : { sqltype : "cf_sql_timestamp", value : "09/24/2099" }
+		      	},
+		      	{ "datasource" : "mysqldatasource" }
+		      );
+		      """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
+		Query query = variables.getAsQuery( result );
+		assertEquals( 1, query.size() );
 	}
 
 	@DisplayName( "It can execute a query with no bindings on the default datasource" )
@@ -362,22 +407,22 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		assertInstanceOf( IStruct.class, resultObject );
 		IStruct result = StructCaster.cast( resultObject );
 
-		assertTrue( result.containsKey( "sql" ) );
+		assertThat( result ).containsKey( Key.sql );
 		assertEquals( "SELECT * FROM developers WHERE role = ?", result.getAsString( Key.sql ) );
 
-		assertTrue( result.containsKey( "sqlParameters" ) );
+		assertThat( result ).containsKey( Key.sqlParameters );
 		assertEquals( Array.of( "Developer" ), result.getAsArray( Key.sqlParameters ) );
 
-		assertTrue( result.containsKey( "recordCount" ) );
+		assertThat( result ).containsKey( Key.recordCount );
 		assertEquals( 2, result.getAsInteger( Key.recordCount ) );
 
-		assertTrue( result.containsKey( "columnList" ) );
-		assertEquals( "ID,NAME,ROLE", result.getAsString( Key.columnList ) );
+		assertThat( result ).containsKey( Key.columnList );
+		assertEquals( "ID,NAME,ROLE,CREATEDAT", result.getAsString( Key.columnList ) );
 
-		assertTrue( result.containsKey( "executionTime" ) );
+		assertThat( result ).containsKey( Key.executionTime );
 		assertThat( result.getAsLong( Key.executionTime ) ).isAtLeast( 0 );
 
-		assertFalse( result.containsKey( "generatedKey" ) );
+		assertThat( result.containsKey( Key.generatedKey ) ).isEqualTo( false );
 	}
 
 	@DisplayName( "It can execute a query against an ad-hoc datasource" )
@@ -432,7 +477,7 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		    isDate = isNumeric( result.my_date[1] )
 		    """,
 		    context );
-		assertFalse( variables.getAsBoolean( Key.of( "isDate" ) ) );
+		assertThat( variables.getAsBoolean( Key.of( "isDate" ) ) ).isEqualTo( false );
 	}
 
 	@DisplayName( "It can read time values" )
@@ -444,7 +489,7 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		    isDate = isNumeric( result.my_date[1] )
 		    """,
 		    context );
-		assertFalse( variables.getAsBoolean( Key.of( "isDate" ) ) );
+		assertThat( variables.getAsBoolean( Key.of( "isDate" ) ) ).isEqualTo( false );
 	}
 
 	@EnabledIf( "tools.JDBCTestUtils#hasMSSQLModule" )
@@ -493,7 +538,7 @@ public class QueryExecuteTest extends BaseJDBCTest {
 	public void testQueryCaching() {
 		instance.executeSource(
 		    """
-		       sql = "SELECT * FROM developers WHERE role = ?";
+		       sql = "SELECT id,name,role FROM developers WHERE role = ?";
 		    params = [ 'Developer' ];
 		       result  = queryExecute( sql, params, { "cache": true, "cacheTimeout": createTimespan( 0, 0, 0, 2 ), "result" : "queryMeta", "returnType" : "array" } );
 		       result2 = queryExecute( sql, params, { "cache": true, "cacheTimeout": createTimespan( 0, 0, 0, 2 ), "result" : "queryMeta2", "returnType" : "array" } );
@@ -514,19 +559,19 @@ public class QueryExecuteTest extends BaseJDBCTest {
 
 		// Query 1 should NOT be cached
 		IStruct queryMeta = StructCaster.cast( variables.getAsStruct( Key.of( "queryMeta" ) ) );
-		assertFalse( queryMeta.getAsBoolean( Key.cached ) );
+		assertThat( queryMeta.getAsBoolean( Key.cached ) ).isEqualTo( false );
 
 		// query 2 SHOULD be cached
 		IStruct queryMeta2 = StructCaster.cast( variables.getAsStruct( Key.of( "queryMeta2" ) ) );
-		assertTrue( queryMeta2.getAsBoolean( Key.cached ) );
+		assertThat( queryMeta2.getAsBoolean( Key.cached ) ).isEqualTo( true );
 
 		// query 3 should NOT be cached because it has an additional param
 		IStruct queryMeta3 = StructCaster.cast( variables.getAsStruct( Key.of( "queryMeta3" ) ) );
-		assertFalse( queryMeta3.getAsBoolean( Key.cached ) );
+		assertThat( queryMeta3.getAsBoolean( Key.cached ) ).isEqualTo( false );
 
 		// query 4 should NOT be cached because it strictly disallows it
 		IStruct queryMeta4 = StructCaster.cast( variables.getAsStruct( Key.of( "queryMeta4" ) ) );
-		assertFalse( queryMeta4.getAsBoolean( Key.cached ) );
+		assertThat( queryMeta4.getAsBoolean( Key.cached ) ).isEqualTo( false );
 	}
 
 	@DisplayName( "It can name a cache provider" )
@@ -536,12 +581,12 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		instance.executeSource(
 		    """
 		    result  = queryExecute(
-				"SELECT * FROM developers WHERE role = ?",
+				"SELECT id,name,role FROM developers WHERE role = ?",
 				[ 'Developer' ],
 				{ "cache": true, "cacheProvider": "default", "result" : "queryMeta", "returnType" : "array" }
 			);
 		    result2  = queryExecute(
-				"SELECT * FROM developers WHERE role = ?",
+				"SELECT id,name,role FROM developers WHERE role = ?",
 				[ 'Developer' ],
 				{ "cache": true, "cacheProvider": "default", "result" : "queryMeta2", "returnType" : "array" }
 			);
@@ -555,11 +600,11 @@ public class QueryExecuteTest extends BaseJDBCTest {
 
 		// Query 1 should NOT be cached
 		IStruct queryMeta = StructCaster.cast( variables.getAsStruct( Key.of( "queryMeta" ) ) );
-		assertFalse( queryMeta.getAsBoolean( Key.cached ) );
+		assertThat( queryMeta.getAsBoolean( Key.cached ) ).isEqualTo( false );
 
 		// query 2 SHOULD be cached
 		IStruct queryMeta2 = StructCaster.cast( variables.getAsStruct( Key.of( "queryMeta2" ) ) );
-		assertTrue( queryMeta2.getAsBoolean( Key.cached ) );
+		assertThat( queryMeta2.getAsBoolean( Key.cached ) ).isEqualTo( true );
 	}
 
 	@DisplayName( "It properly sets query results with cache metadata" )
@@ -583,19 +628,19 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		assertInstanceOf( IStruct.class, resultObject );
 		IStruct result = ( IStruct ) resultObject;
 
-		assertTrue( result.containsKey( "cached" ) );
-		assertTrue( result.getAsBoolean( Key.cached ) );
+		assertThat( result ).containsKey( Key.cached );
+		assertThat( result.getAsBoolean( Key.cached ) ).isEqualTo( true );
 
-		assertTrue( result.containsKey( "cacheProvider" ) );
+		assertThat( result ).containsKey( Key.cacheProvider );
 		assertEquals( "default", result.getAsString( Key.cacheProvider ) );
 
-		assertTrue( result.containsKey( "cacheKey" ) );
+		assertThat( result ).containsKey( Key.cacheKey );
 		assertEquals( "adminDevs", result.getAsString( Key.cacheKey ) );
 
-		assertTrue( result.containsKey( "cacheTimeout" ) );
+		assertThat( result ).containsKey( Key.cacheTimeout );
 		assertEquals( Duration.ofHours( 1 ), result.get( Key.cacheTimeout ) );
 
-		assertTrue( result.containsKey( "cacheLastAccessTimeout" ) );
+		assertThat( result ).containsKey( Key.cacheLastAccessTimeout );
 		assertEquals( Duration.ofMinutes( 30 ), result.get( Key.cacheLastAccessTimeout ) );
 	}
 

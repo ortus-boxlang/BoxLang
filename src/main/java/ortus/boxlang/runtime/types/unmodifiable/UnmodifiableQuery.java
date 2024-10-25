@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.runtime.types.immutable;
+package ortus.boxlang.runtime.types.unmodifiable;
 
 import java.sql.ResultSet;
 import java.util.Collection;
@@ -37,7 +37,7 @@ import ortus.boxlang.runtime.types.exceptions.UnmodifiableException;
  * This type represents a representation of a database query result set.
  * It provides language specific methods to access columnar data, both as value lists and within iterative loops
  */
-public class ImmutableQuery extends Query implements IImmutable {
+public class UnmodifiableQuery extends Query implements IUnmodifiable {
 
 	/**
 	 * Serialization version
@@ -49,25 +49,25 @@ public class ImmutableQuery extends Query implements IImmutable {
 	 *
 	 * @param meta Struct of metadata, most likely JDBC metadata such as sql, cache parameters, etc.
 	 */
-	public ImmutableQuery( IStruct meta ) {
+	public UnmodifiableQuery( IStruct meta ) {
 		super( meta );
 	}
 
 	/**
 	 * Create a new query with a default (empty) metadata struct
 	 */
-	public ImmutableQuery() {
+	public UnmodifiableQuery() {
 		this( new Struct( IStruct.TYPES.SORTED ) );
 	}
 
 	/**
-	 * Create an immutable query from a mutable query
+	 * Create an Unmodifiable query from a Modifiable query
 	 *
-	 * @param query The mutable query to convert
+	 * @param query The Modifiable query to convert
 	 *
-	 * @return The immutable query
+	 * @return The Unmodifiable query
 	 */
-	public ImmutableQuery( Query query ) {
+	public UnmodifiableQuery( Query query ) {
 		this();
 		// add columns
 		for ( Map.Entry<Key, QueryColumn> columnInfo : query.getColumns().entrySet() ) {
@@ -87,8 +87,8 @@ public class ImmutableQuery extends Query implements IImmutable {
 	 *
 	 * @return Query object
 	 */
-	public static ImmutableQuery fromResultSet( ResultSet resultSet ) {
-		return Query.fromResultSet( resultSet ).toImmutable();
+	public static UnmodifiableQuery fromResultSet( ResultSet resultSet ) {
+		return Query.fromResultSet( resultSet ).toUnmodifiable();
 	}
 
 	/**
@@ -100,8 +100,8 @@ public class ImmutableQuery extends Query implements IImmutable {
 	 *
 	 * @return Query object
 	 */
-	public static ImmutableQuery fromArray( Array columnNames, Array columnTypes, Object rowData ) {
-		return Query.fromArray( columnNames, columnTypes, rowData ).toImmutable();
+	public static UnmodifiableQuery fromArray( Array columnNames, Array columnTypes, Object rowData ) {
+		return Query.fromArray( columnNames, columnTypes, rowData ).toUnmodifiable();
 	}
 
 	/**
@@ -115,12 +115,12 @@ public class ImmutableQuery extends Query implements IImmutable {
 	 * @return this query
 	 */
 	@Override
-	public ImmutableQuery addColumn( Key name, QueryColumnType type, Object[] columnData ) {
-		throw new UnmodifiableException( "Cannot add columns to an ImmutableQuery" );
+	public UnmodifiableQuery addColumn( Key name, QueryColumnType type, Object[] columnData ) {
+		throw new UnmodifiableException( "Cannot add columns to an UnmodifiableQuery" );
 	}
 
 	/**
-	 * Abstraction for creating a new column so we can re-use logic easier between normal and immutable queries
+	 * Abstraction for creating a new column so we can re-use logic easier between normal and Unmodifiable queries
 	 *
 	 * @param name  column name
 	 * @param type  column type
@@ -130,7 +130,7 @@ public class ImmutableQuery extends Query implements IImmutable {
 	 */
 	@Override
 	protected QueryColumn createQueryColumn( Key name, QueryColumnType type, int index ) {
-		return new ImmutableQueryColumn( name, type, this, index );
+		return new UnmodifiableQueryColumn( name, type, this, index );
 	}
 
 	/**
@@ -144,8 +144,8 @@ public class ImmutableQuery extends Query implements IImmutable {
 	 * @return this query
 	 */
 	@Override
-	public ImmutableQuery insertQueryAt( int position, Query target ) {
-		throw new UnmodifiableException( "Cannot insert queries into an ImmutableQuery" );
+	public UnmodifiableQuery insertQueryAt( int position, Query target ) {
+		throw new UnmodifiableException( "Cannot insert queries into an UnmodifiableQuery" );
 	}
 
 	/**
@@ -157,7 +157,7 @@ public class ImmutableQuery extends Query implements IImmutable {
 	 */
 	@Override
 	public int addRow( Object[] row ) {
-		throw new UnmodifiableException( "Cannot add rows to an ImmutableQuery" );
+		throw new UnmodifiableException( "Cannot add rows to an UnmodifiableQuery" );
 	}
 
 	/**
@@ -169,8 +169,8 @@ public class ImmutableQuery extends Query implements IImmutable {
 	 * @return this query
 	 */
 	@Override
-	public ImmutableQuery swapRow( int sourceRow, int destinationRow ) {
-		throw new UnmodifiableException( "Cannot swap rows in an ImmutableQuery" );
+	public UnmodifiableQuery swapRow( int sourceRow, int destinationRow ) {
+		throw new UnmodifiableException( "Cannot swap rows in an UnmodifiableQuery" );
 	}
 
 	/**
@@ -182,7 +182,7 @@ public class ImmutableQuery extends Query implements IImmutable {
 	 */
 	@Override
 	public int addRow( IStruct row ) {
-		throw new UnmodifiableException( "Cannot add rows to an ImmutableQuery" );
+		throw new UnmodifiableException( "Cannot add rows to an UnmodifiableQuery" );
 	}
 
 	/**
@@ -194,7 +194,7 @@ public class ImmutableQuery extends Query implements IImmutable {
 	 */
 	@Override
 	public int addRows( int rows ) {
-		throw new UnmodifiableException( "Cannot add rows to an ImmutableQuery" );
+		throw new UnmodifiableException( "Cannot add rows to an UnmodifiableQuery" );
 	}
 
 	/**
@@ -204,7 +204,7 @@ public class ImmutableQuery extends Query implements IImmutable {
 	 */
 	@Override
 	public void deleteColumn( Key name ) {
-		throw new UnmodifiableException( "Cannot delete columns from an ImmutableQuery" );
+		throw new UnmodifiableException( "Cannot delete columns from an UnmodifiableQuery" );
 	}
 
 	/**
@@ -215,8 +215,8 @@ public class ImmutableQuery extends Query implements IImmutable {
 	 * @return this query
 	 */
 	@Override
-	public ImmutableQuery deleteRow( int index ) {
-		throw new UnmodifiableException( "Cannot delete rows from an ImmutableQuery" );
+	public UnmodifiableQuery deleteRow( int index ) {
+		throw new UnmodifiableException( "Cannot delete rows from an UnmodifiableQuery" );
 	}
 
 	/**
@@ -232,7 +232,7 @@ public class ImmutableQuery extends Query implements IImmutable {
 	 */
 	@Override
 	public int addData( Object rowData ) {
-		throw new UnmodifiableException( "Cannot add data to an ImmutableQuery" );
+		throw new UnmodifiableException( "Cannot add data to an UnmodifiableQuery" );
 	}
 
 	/**
@@ -244,8 +244,8 @@ public class ImmutableQuery extends Query implements IImmutable {
 	 * @return this query
 	 */
 	@Override
-	public ImmutableQuery setCell( Key columnName, int rowIndex, Object value ) {
-		throw new UnmodifiableException( "Cannot set cells in an ImmutableQuery" );
+	public UnmodifiableQuery setCell( Key columnName, int rowIndex, Object value ) {
+		throw new UnmodifiableException( "Cannot set cells in an UnmodifiableQuery" );
 	}
 
 	/**
@@ -255,7 +255,7 @@ public class ImmutableQuery extends Query implements IImmutable {
 	 */
 	@Override
 	public void sort( Comparator<IStruct> compareFunc ) {
-		throw new UnmodifiableException( "Cannot sort an ImmutableQuery" );
+		throw new UnmodifiableException( "Cannot sort an UnmodifiableQuery" );
 	}
 
 	/***************************
@@ -264,32 +264,32 @@ public class ImmutableQuery extends Query implements IImmutable {
 
 	@Override
 	public boolean add( IStruct row ) {
-		throw new UnmodifiableException( "Cannot add rows to an ImmutableQuery" );
+		throw new UnmodifiableException( "Cannot add rows to an UnmodifiableQuery" );
 	}
 
 	@Override
 	public boolean remove( Object o ) {
-		throw new UnmodifiableException( "Cannot remove rows from an ImmutableQuery" );
+		throw new UnmodifiableException( "Cannot remove rows from an UnmodifiableQuery" );
 	}
 
 	@Override
 	public boolean addAll( Collection<? extends IStruct> rows ) {
-		throw new UnmodifiableException( "Cannot add rows to an ImmutableQuery" );
+		throw new UnmodifiableException( "Cannot add rows to an UnmodifiableQuery" );
 	}
 
 	@Override
 	public boolean removeAll( Collection<?> c ) {
-		throw new UnmodifiableException( "Cannot remove rows from an ImmutableQuery" );
+		throw new UnmodifiableException( "Cannot remove rows from an UnmodifiableQuery" );
 	}
 
 	@Override
 	public boolean retainAll( Collection<?> c ) {
-		throw new UnmodifiableException( "Cannot retain rows in an ImmutableQuery" );
+		throw new UnmodifiableException( "Cannot retain rows in an UnmodifiableQuery" );
 	}
 
 	@Override
 	public void clear() {
-		throw new UnmodifiableException( "Cannot clear an ImmutableQuery" );
+		throw new UnmodifiableException( "Cannot clear an UnmodifiableQuery" );
 	}
 
 	/***************************
@@ -298,7 +298,7 @@ public class ImmutableQuery extends Query implements IImmutable {
 
 	@Override
 	public Object assign( IBoxContext context, Key name, Object value ) {
-		throw new UnmodifiableException( "Cannot assign to an ImmutableQuery" );
+		throw new UnmodifiableException( "Cannot assign to an UnmodifiableQuery" );
 	}
 
 	/**
@@ -307,21 +307,21 @@ public class ImmutableQuery extends Query implements IImmutable {
 	 * @return A copy of the current query.
 	 */
 	@Override
-	public ImmutableQuery duplicate() {
-		return super.duplicate( false ).toImmutable();
+	public UnmodifiableQuery duplicate() {
+		return super.duplicate( false ).toUnmodifiable();
 	}
 
 	/***************************
-	 * IImutable implementation
+	 * IUnmodifiable implementation
 	 ****************************/
 
 	/**
-	 * To Mutable
+	 * To Modifiable
 	 *
-	 * @return The mutable type
+	 * @return The Modifiable type
 	 */
 	@Override
-	public Query toMutable() {
+	public Query toModifiable() {
 		var q = new Query();
 		// add columns
 		for ( Map.Entry<Key, QueryColumn> columnInfo : getColumns().entrySet() ) {

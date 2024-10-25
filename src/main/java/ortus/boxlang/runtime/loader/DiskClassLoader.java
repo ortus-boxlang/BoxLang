@@ -121,7 +121,7 @@ public class DiskClassLoader extends URLClassLoader {
 	 * @return true if the class needs to be compiled
 	 */
 	private boolean needsCompile( ClassInfo classInfo, Path diskPath, String name, String baseName ) {
-		// TODO: need to add some mutable flags to the classInfo object to track if it has been compiled or not
+		// TODO: need to add some Modifiable flags to the classInfo object to track if it has been compiled or not
 		// and in what manner. For example, precompiled sources read directly into the class loader won't
 		// have a class file on disk and we should be able to just skip that check entirely if we know that.
 		// Using the existence of the class file on disk is not a good indicator of whether or not the class

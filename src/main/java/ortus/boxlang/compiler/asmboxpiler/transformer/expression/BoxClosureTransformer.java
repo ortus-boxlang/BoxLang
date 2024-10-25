@@ -144,10 +144,12 @@ public class BoxClosureTransformer extends AbstractTransformer {
 
 		int		componentCounter	= transpiler.getComponentCounter();
 		transpiler.setComponentCounter( 0 );
+		transpiler.incrementfunctionBodyCounter();
 		AsmHelper.methodWithContextAndClassLocator( classNode, "_invoke", Type.getType( FunctionBoxContext.class ), Type.getType( Object.class ), false,
 		    transpiler, isBlock,
 		    () -> boxClosure.getBody().getChildren().stream().flatMap( statement -> transpiler.transform( statement, TransformerContext.NONE ).stream() )
 		        .toList() );
+		transpiler.decrementfunctionBodyCounter();
 		transpiler.setComponentCounter( componentCounter );
 
 		AsmHelper.complete( classNode, type, methodVisitor -> {

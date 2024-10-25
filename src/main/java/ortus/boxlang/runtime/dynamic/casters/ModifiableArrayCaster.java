@@ -22,7 +22,7 @@ import java.util.List;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
-import ortus.boxlang.runtime.types.immutable.ImmutableArray;
+import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableArray;
 
 /**
  * I handle casting anything to a Array that needs to be modifiable
@@ -75,8 +75,8 @@ public class ModifiableArrayCaster implements IBoxCaster {
 		}
 		object = DynamicObject.unWrap( object );
 
-		if ( object instanceof ImmutableArray ) {
-			throw new BoxCastException( "Can't cast ImmutableArray to a modifiable Array." );
+		if ( object instanceof UnmodifiableArray ) {
+			throw new BoxCastException( "Can't cast UnmodifiableArray to a modifiable Array." );
 		}
 
 		if ( object.getClass().isArray() ) {
@@ -85,7 +85,7 @@ public class ModifiableArrayCaster implements IBoxCaster {
 
 		// Immutable list is not a specific class, so we have to get clever
 		if ( object instanceof List && object.getClass().getName().contains( "Immutable" ) ) {
-			throw new BoxCastException( "Can't cast Immutable List to a modifiable Array." );
+			throw new BoxCastException( "Can't cast Unmodifiable List to a modifiable Array." );
 		}
 
 		// delegate to ArrayCaster

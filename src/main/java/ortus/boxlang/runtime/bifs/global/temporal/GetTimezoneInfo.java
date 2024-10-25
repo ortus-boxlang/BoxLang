@@ -28,7 +28,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
-import ortus.boxlang.runtime.types.immutable.ImmutableStruct;
+import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableStruct;
 import ortus.boxlang.runtime.util.LocalizationUtil;
 
 @BoxBIF
@@ -71,7 +71,7 @@ public class GetTimezoneInfo extends BIF {
 
 		// System.out.println( "Offset: " + tz.getOffset( tz.getRawOffset() ) );
 
-		return ImmutableStruct.of(
+		return UnmodifiableStruct.of(
 		    "DSTOffset", tz.getDSTSavings(),
 		    "id", tz.getID(),
 		    "isDSTon", tz.inDaylightTime( new Date() ),

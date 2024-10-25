@@ -35,7 +35,7 @@ import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Struct;
 
-public class ToMutableTest {
+public class ToModifiableTest {
 
 	static BoxRuntime	instance;
 	IBoxContext			context;
@@ -59,15 +59,15 @@ public class ToMutableTest {
 		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
-	@DisplayName( "It can turn immutable arrays to mutable" )
+	@DisplayName( "It can turn Unmodifiable arrays to Modifiable" )
 	@Test
-	public void testToArrayMutable() {
+	public void testToArrayModifiable() {
 		// @formatter:off
 		instance.executeSource(
 		    """
-			    myArray = [1,2,3].toImmutable();
-		      	result = toMutable( myArray );
-		    	result2 = myArray.tomutable();
+			    myArray = [1,2,3].toUnmodifiable();
+		      	result = toModifiable( myArray );
+		    	result2 = myArray.toModifiable();
 		    """,
 		    context );
 		// @formatter:on
@@ -75,15 +75,15 @@ public class ToMutableTest {
 		assertThat( variables.get( result2 ) ).isInstanceOf( Array.class );
 	}
 
-	@DisplayName( "It can turn immutable structs to mutable" )
+	@DisplayName( "It can turn Unmodifiable structs to Modifiable" )
 	@Test
-	public void testToStructmutable() {
+	public void testToStructModifiable() {
 		// @formatter:off
 		instance.executeSource(
 		    """
-				myStruct = { a: 1, b: 2, c: 3 }.toImmutable();
-		      	result = tomutable( myStruct )
-		    	result2 = myStruct.tomutable();
+				myStruct = { a: 1, b: 2, c: 3 }.toUnmodifiable();
+		      	result = toModifiable( myStruct )
+		    	result2 = myStruct.toModifiable();
 		    """,
 		    context );
 		// @formatter:on

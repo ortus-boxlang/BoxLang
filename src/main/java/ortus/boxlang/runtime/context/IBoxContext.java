@@ -671,7 +671,7 @@ public interface IBoxContext extends IBoxAttachable, Serializable {
 
 	/**
 	 * Register a UDF with a specific scope
-	 * 
+	 *
 	 * @param map      The map to assign to
 	 * @param udf      The UDF to register
 	 * @param override true, override any existing UDF with the same name

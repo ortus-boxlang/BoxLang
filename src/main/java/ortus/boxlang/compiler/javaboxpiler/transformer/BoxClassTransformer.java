@@ -967,8 +967,10 @@ public class BoxClassTransformer extends AbstractTransformer {
 			}
 		}
 		sb.append( "};\n" );
-		// TODO: Get actual context
-		sb.append( "    IBoxContext context = new ScriptingRequestBoxContext( BoxRuntime.getInstance().getRuntimeContext() );\n" );
+		sb.append( "    IBoxContext context = RequestBoxContext.getCurrent();\n" );
+		sb.append( "    if( context == null ) {\n" );
+		sb.append( "      context = new ScriptingRequestBoxContext( BoxRuntime.getInstance().getRuntimeContext() );\n" );
+		sb.append( "    }\n" );
 		sb.append( "    Object result = this.dereferenceAndInvoke( context, Key.of( \"" );
 		sb.append( func.getName() );
 		sb.append( "\" ), ___args, false );\n" );

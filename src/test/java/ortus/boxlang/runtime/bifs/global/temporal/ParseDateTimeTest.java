@@ -325,4 +325,24 @@ public class ParseDateTimeTest {
 
 	}
 
+	@DisplayName( "It tests the BIF ParseDateTime allowing Luis to use lower-case am/pm format" )
+	@Test
+	public void testParseLuisFormat() {
+		instance.executeSource(
+		    """
+		    result = ParseDateTime( "2021-01-01 12:00:00 pm" );
+		    """,
+		    context );
+		DateTime result = ( DateTime ) variables.get( Key.of( "result" ) );
+		assertThat( result ).isInstanceOf( DateTime.class );
+		assertThat( result.toString() ).isInstanceOf( String.class );
+		assertThat( IntegerCaster.cast( result.format( "yyyy" ) ) ).isEqualTo( 2021 );
+		assertThat( IntegerCaster.cast( result.format( "M" ) ) ).isEqualTo( 1 );
+		assertThat( IntegerCaster.cast( result.format( "d" ) ) ).isEqualTo( 1 );
+		assertThat( IntegerCaster.cast( result.format( "H" ) ) ).isEqualTo( 12 );
+		assertThat( IntegerCaster.cast( result.format( "m" ) ) ).isEqualTo( 0 );
+		assertThat( IntegerCaster.cast( result.format( "s" ) ) ).isEqualTo( 0 );
+
+	}
+
 }

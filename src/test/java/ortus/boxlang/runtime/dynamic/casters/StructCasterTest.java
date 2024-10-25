@@ -49,7 +49,7 @@ public class StructCasterTest {
 	void testItCanCastList() {
 		assertThat( StructCaster.cast( new HashMap<Object, Object>() ) instanceof IStruct ).isTrue();
 
-		// immutable
+		// Unmodifiable
 		assertThat( StructCaster.cast( Map.of() ) instanceof IStruct ).isTrue();
 		assertThat( StructCaster.cast( Map.copyOf( Map.of() ) ) instanceof IStruct ).isTrue();
 

@@ -12,10 +12,12 @@ import java.lang.System;
  *
  * @brad wood
  * @luis
+ * @_itwontlikeme~`!@#$%^&*()-=+[]{}\|'";:,.<>/?*áéíóúüñ formbuilderV2Form
  */
 @foo "bar"
 class singleton gavin="pickin" inject {
 
+    /**@test*/
     property name;
 
     variables.setup=true; // ending comment

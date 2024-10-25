@@ -51,7 +51,7 @@ public class ModifiableStructCasterTest {
 	void testItCanCastList() {
 		assertThat( ModifiableStructCaster.cast( new HashMap<Object, Object>() ) instanceof IStruct ).isTrue();
 
-		// immutable
+		// Unmodifiable
 
 		assertThrows( BoxCastException.class, () -> ModifiableStructCaster.cast( Map.of() ) );
 		assertThrows( BoxCastException.class, () -> ModifiableStructCaster.cast( Map.copyOf( Map.of() ) ) );
