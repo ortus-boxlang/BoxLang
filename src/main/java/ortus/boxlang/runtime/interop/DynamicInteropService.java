@@ -672,7 +672,7 @@ public class DynamicInteropService {
 		} catch ( RuntimeException e ) {
 			throw e;
 		} catch ( Throwable e ) {
-			throw new BoxRuntimeException( "Error invoking method " + methodName + " for class " + targetClass.getName(), e );
+			throw new BoxRuntimeException( "Error invoking method " + methodName + "() for class " + targetClass.getName(), e );
 		}
 	}
 
@@ -714,7 +714,7 @@ public class DynamicInteropService {
 		} catch ( RuntimeException e ) {
 			throw e;
 		} catch ( Throwable e ) {
-			throw new BoxRuntimeException( "Error invoking method " + methodName + " for class " + targetClass.getName(), e );
+			throw new BoxRuntimeException( "Error invoking method " + methodName + "() for class " + targetClass.getName(), e );
 		}
 	}
 
