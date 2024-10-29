@@ -44,6 +44,7 @@ import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.SessionScope;
 import ortus.boxlang.runtime.services.ApplicationService;
+import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
@@ -68,27 +69,27 @@ public abstract class BaseApplicationListener {
 	/**
 	 * The application name
 	 */
-	protected Key				appName						= null;
+	protected Key							appName						= null;
 
 	/**
 	 * The application linked to this listener
 	 */
-	protected Application		application;
+	protected Application					application;
 
 	/**
 	 * The request context bound to this listener
 	 */
-	protected RequestBoxContext	context;
+	protected RequestBoxContext				context;
 
 	/**
 	 * The listener's interception pool
 	 */
-	protected InterceptorPool	interceptorPool;
+	protected InterceptorPool				interceptorPool;
 
 	/**
 	 * The available request pool interceptors
 	 */
-	private static final Key[]	REQUEST_INTERCEPTION_POINTS	= List.of(
+	private static final Key[]				REQUEST_INTERCEPTION_POINTS	= List.of(
 	    Key.onRequest,
 	    Key.onRequestStart,
 	    Key.onRequestEnd,
@@ -103,13 +104,23 @@ public abstract class BaseApplicationListener {
 	).toArray( new Key[ 0 ] );
 
 	/**
+	 * Runtime
+	 */
+	private static final BoxRuntime			runtime						= BoxRuntime.getInstance();
+
+	/**
+	 * Interceptor Service
+	 */
+	private static final InterceptorService	interceptorService			= runtime.getInterceptorService();
+
+	/**
 	 * All Application settings (which are really set per-request). This includes any "expected" ones from the BoxLog core, plus any additional settings
 	 * that a module or add-on may be looking for. This also determines default values for all settings.
 	 * <p>
 	 * You can find the majority of defaults in the {@link Configuration} class.
 	 */
-	protected IStruct			settings					= Struct.of(
-	    "applicationTimeout", BoxRuntime.getInstance().getConfiguration().applicationTimeout,
+	protected IStruct						settings					= Struct.of(
+	    "applicationTimeout", runtime.getConfiguration().applicationTimeout,
 	    // CLIENT WILL BE REMOVED IN BOXLANG
 	    // Kept here for now
 	    "clientManagement", false,
@@ -118,39 +129,39 @@ public abstract class BaseApplicationListener {
 	    // END: CLIENT
 	    "componentPaths", new Array(),
 	    "customTagPaths", new Array(),
-	    "datasource", BoxRuntime.getInstance().getConfiguration().defaultDatasource,
-	    "defaultDatasource", BoxRuntime.getInstance().getConfiguration().defaultDatasource,
+	    "datasource", runtime.getConfiguration().defaultDatasource,
+	    "defaultDatasource", runtime.getConfiguration().defaultDatasource,
 	    "datasources", new Struct(),
-	    "invokeImplicitAccessor", BoxRuntime.getInstance().getConfiguration().invokeImplicitAccessor,
+	    "invokeImplicitAccessor", runtime.getConfiguration().invokeImplicitAccessor,
 	    "javaSettings", Struct.of(
 	        "loadPaths", new Array(),
 	        "loadSystemClassPath", false,
 	        "reloadOnChange", false
 	    ),
-	    "locale", BoxRuntime.getInstance().getConfiguration().locale.toString(),
+	    "locale", runtime.getConfiguration().locale.toString(),
 	    "mappings", Struct.of(),
-	    "sessionManagement", BoxRuntime.getInstance().getConfiguration().sessionManagement,
-	    "sessionStorage", BoxRuntime.getInstance().getConfiguration().sessionStorage,
-	    "sessionTimeout", BoxRuntime.getInstance().getConfiguration().sessionTimeout,
-	    "setClientCookies", BoxRuntime.getInstance().getConfiguration().setClientCookies,
-	    "setDomainCookies", BoxRuntime.getInstance().getConfiguration().setDomainCookies,
+	    "sessionManagement", runtime.getConfiguration().sessionManagement,
+	    "sessionStorage", runtime.getConfiguration().sessionStorage,
+	    "sessionTimeout", runtime.getConfiguration().sessionTimeout,
+	    "setClientCookies", runtime.getConfiguration().setClientCookies,
+	    "setDomainCookies", runtime.getConfiguration().setDomainCookies,
 	    // These are auto-calculated at runtime
 	    "class", "",
 	    "name", "",
 	    "source", "",
 	    // end auto-calculated
-	    "timezone", BoxRuntime.getInstance().getConfiguration().timezone.getId(),
+	    "timezone", runtime.getConfiguration().timezone.getId(),
 	    // Stil Considering if they will be core or a module
 	    "secureJson", false,
 	    "secureJsonPrefix", "",
-	    "allowedFileOperationExtensions", BoxRuntime.getInstance().getConfiguration().security.allowedFileOperationExtensions,
-	    "disallowedFileOperationExtensions", BoxRuntime.getInstance().getConfiguration().security.disallowedFileOperationExtensions
+	    "allowedFileOperationExtensions", runtime.getConfiguration().security.allowedFileOperationExtensions,
+	    "disallowedFileOperationExtensions", runtime.getConfiguration().security.disallowedFileOperationExtensions
 	);
 
 	/**
 	 * Logger
 	 */
-	private static final Logger	logger						= LoggerFactory.getLogger( BaseApplicationListener.class );
+	private static final Logger				logger						= LoggerFactory.getLogger( BaseApplicationListener.class );
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -471,15 +482,24 @@ public abstract class BaseApplicationListener {
 	 */
 	public void onRequest( IBoxContext context, Object[] args ) {
 		logger.trace( "Fired onRequest ...................." );
+		IStruct eventArgs = Struct.of(
+		    "context", context,
+		    "args", args,
+		    "application", this.application,
+		    "listener", this
+		);
 
+		// Announce locally
 		this.interceptorPool.announce(
 		    Key.onRequest,
-		    Struct.of(
-		        "context", context,
-		        "args", args,
-		        "application", this.application,
-		        "listener", this
-		    ),
+		    eventArgs,
+		    context
+		);
+
+		// Announce globally
+		interceptorService.announce(
+		    Key.onRequest,
+		    eventArgs,
 		    context
 		);
 	}
@@ -494,17 +514,27 @@ public abstract class BaseApplicationListener {
 	 */
 	public boolean onRequestStart( IBoxContext context, Object[] args ) {
 		logger.trace( "Fired onRequestStart ...................." );
+		IStruct eventArgs = Struct.of(
+		    "context", context,
+		    "args", args,
+		    "application", this.application,
+		    "listener", this
+		);
 
+		// Announce locally
 		this.interceptorPool.announce(
 		    Key.onRequestStart,
-		    Struct.of(
-		        "context", context,
-		        "args", args,
-		        "application", this.application,
-		        "listener", this
-		    ),
+		    eventArgs,
 		    context
 		);
+
+		// Announce globally
+		interceptorService.announce(
+		    Key.onRequestStart,
+		    eventArgs,
+		    context
+		);
+
 		return true;
 	}
 
@@ -516,15 +546,24 @@ public abstract class BaseApplicationListener {
 	 */
 	public void onRequestEnd( IBoxContext context, Object[] args ) {
 		logger.trace( "Fired onRequestEnd ...................." );
+		IStruct eventArgs = Struct.of(
+		    "context", context,
+		    "args", args,
+		    "application", this.application,
+		    "listener", this
+		);
 
+		// Announce locally
 		this.interceptorPool.announce(
 		    Key.onRequestEnd,
-		    Struct.of(
-		        "context", context,
-		        "args", args,
-		        "application", this.application,
-		        "listener", this
-		    ),
+		    eventArgs,
+		    context
+		);
+
+		// Announce globally
+		interceptorService.announce(
+		    Key.onRequestEnd,
+		    eventArgs,
 		    context
 		);
 	}
@@ -538,14 +577,24 @@ public abstract class BaseApplicationListener {
 	public void onAbort( IBoxContext context, Object[] args ) {
 		logger.trace( "Fired onAbort ...................." );
 
+		IStruct eventArgs = Struct.of(
+		    "context", context,
+		    "args", args,
+		    "application", this.application,
+		    "listener", this
+		);
+
+		// Announce locally
 		this.interceptorPool.announce(
 		    Key.onAbort,
-		    Struct.of(
-		        "context", context,
-		        "args", args,
-		        "application", this.application,
-		        "listener", this
-		    ),
+		    eventArgs,
+		    context
+		);
+
+		// Announce globally
+		interceptorService.announce(
+		    Key.onAbort,
+		    eventArgs,
 		    context
 		);
 	}
@@ -559,6 +608,14 @@ public abstract class BaseApplicationListener {
 	public void onClassRequest( IBoxContext context, Object[] args ) {
 		logger.trace( "Fired onClassRequest ...................." );
 
+		IStruct eventArgs = Struct.of(
+		    "context", context,
+		    "args", args,
+		    "application", this.application,
+		    "listener", this
+		);
+
+		// Announce locally
 		this.interceptorPool.announce(
 		    Key.onClassRequest,
 		    Struct.of(
@@ -567,6 +624,13 @@ public abstract class BaseApplicationListener {
 		        "application", this.application,
 		        "listener", this
 		    ),
+		    context
+		);
+
+		// Announce globally
+		interceptorService.announce(
+		    Key.onClassRequest,
+		    eventArgs,
 		    context
 		);
 	}
@@ -698,14 +762,24 @@ public abstract class BaseApplicationListener {
 	public void onSessionStart( IBoxContext context, Object[] args ) {
 		logger.trace( "Fired onSessionStart ...................." );
 
+		IStruct eventArgs = Struct.of(
+		    "context", context,
+		    "args", args,
+		    "application", this.application,
+		    "listener", this
+		);
+
+		// Announce locally
 		this.interceptorPool.announce(
 		    Key.onSessionStart,
-		    Struct.of(
-		        "context", context,
-		        "args", args,
-		        "application", this.application,
-		        "listener", this
-		    ),
+		    eventArgs,
+		    context
+		);
+
+		// Announce globally
+		interceptorService.announce(
+		    Key.onSessionStart,
+		    eventArgs,
 		    context
 		);
 	}
@@ -719,14 +793,24 @@ public abstract class BaseApplicationListener {
 	public void onSessionEnd( IBoxContext context, Object[] args ) {
 		logger.trace( "Fired onSessionEnd ...................." );
 
+		IStruct eventArgs = Struct.of(
+		    "context", context,
+		    "args", args,
+		    "application", this.application,
+		    "listener", this
+		);
+
+		// Announce locally
 		this.interceptorPool.announce(
 		    Key.onSessionEnd,
-		    Struct.of(
-		        "context", context,
-		        "args", args,
-		        "application", this.application,
-		        "listener", this
-		    ),
+		    eventArgs,
+		    context
+		);
+
+		// Announce globally
+		interceptorService.announce(
+		    Key.onSessionEnd,
+		    eventArgs,
 		    context
 		);
 	}
@@ -784,16 +868,27 @@ public abstract class BaseApplicationListener {
 	public boolean onError( IBoxContext context, Object[] args ) {
 		logger.trace( "Fired onError ...................." );
 
+		IStruct eventArgs = Struct.of(
+		    "context", context,
+		    "args", args,
+		    "application", this.application,
+		    "listener", this
+		);
+
+		// Announce locally
 		this.interceptorPool.announce(
 		    Key.onError,
-		    Struct.of(
-		        "context", context,
-		        "args", args,
-		        "application", this.application,
-		        "listener", this
-		    ),
+		    eventArgs,
 		    context
 		);
+
+		// Announce globally
+		interceptorService.announce(
+		    Key.onError,
+		    eventArgs,
+		    context
+		);
+
 		return true;
 	}
 
@@ -808,16 +903,27 @@ public abstract class BaseApplicationListener {
 	public boolean onMissingTemplate( IBoxContext context, Object[] args ) {
 		logger.trace( "Fired onMissingTemplate ...................." );
 
+		IStruct eventArgs = Struct.of(
+		    "context", context,
+		    "args", args,
+		    "application", this.application,
+		    "listener", this
+		);
+
+		// Announce locally
 		this.interceptorPool.announce(
 		    Key.missingTemplate,
-		    Struct.of(
-		        "context", context,
-		        "args", args,
-		        "application", this.application,
-		        "listener", this
-		    ),
+		    eventArgs,
 		    context
 		);
+
+		// Announce globally
+		interceptorService.announce(
+		    Key.missingTemplate,
+		    eventArgs,
+		    context
+		);
+
 		return true;
 	}
 }
