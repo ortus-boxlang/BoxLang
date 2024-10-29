@@ -214,6 +214,8 @@ public class Application {
 
 		// if we don't have any return out
 		if ( loadPathsUrls.length == 0 ) {
+			// If there are no javasettings, ensure we just use the runtime CL
+			Thread.currentThread().setContextClassLoader( BoxRuntime.getInstance().getRuntimeLoader() );
 			return;
 		}
 
@@ -225,6 +227,8 @@ public class Application {
 			    logger.debug( "Application ClassLoader [{}] registered with these paths: [{}]", this.name, Arrays.toString( loadPathsUrls ) );
 			    return new DynamicClassLoader( this.name, loadPathsUrls, BoxRuntime.getInstance().getRuntimeLoader(), false );
 		    } );
+		// Make sure our thread is using the right class loader
+		Thread.currentThread().setContextClassLoader( this.classLoaders.get( loaderCacheKey ) );
 	}
 
 	/**

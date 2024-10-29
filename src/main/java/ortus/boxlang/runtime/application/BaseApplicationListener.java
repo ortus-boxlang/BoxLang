@@ -179,6 +179,9 @@ public abstract class BaseApplicationListener {
 		context.setApplicationListener( this );
 		this.interceptorPool = new InterceptorPool( Key.appListener, BoxRuntime.getInstance() )
 		    .registerInterceptionPoint( REQUEST_INTERCEPTION_POINTS );
+
+		// Ensure our thread is at least using the runtime CL. If there is an application defined later, this may get updated to a more specific request CL.
+		Thread.currentThread().setContextClassLoader( BoxRuntime.getInstance().getRuntimeLoader() );
 	}
 
 	/**
