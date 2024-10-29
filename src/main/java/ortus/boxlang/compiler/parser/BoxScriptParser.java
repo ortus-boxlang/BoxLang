@@ -51,6 +51,7 @@ import ortus.boxlang.compiler.ast.expression.BoxBooleanLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxDecimalLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxDotAccess;
 import ortus.boxlang.compiler.ast.expression.BoxExpressionInvocation;
+import ortus.boxlang.compiler.ast.expression.BoxFQN;
 import ortus.boxlang.compiler.ast.expression.BoxFunctionInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
@@ -59,6 +60,8 @@ import ortus.boxlang.compiler.ast.expression.BoxNew;
 import ortus.boxlang.compiler.ast.expression.BoxNull;
 import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
+import ortus.boxlang.compiler.ast.expression.BoxStaticAccess;
+import ortus.boxlang.compiler.ast.expression.BoxStaticMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxStructLiteral;
 import ortus.boxlang.compiler.toolchain.BoxExpressionVisitor;
@@ -548,13 +551,13 @@ public class BoxScriptParser extends AbstractParser {
 	 * @param left  the left side of the dot access left.right
 	 * @param right the right side of the dot access left.right
 	 */
-	public void checkDotAccess( BoxExpression left, BoxExpression right ) {
+	public void checkDotAccess( BoxExpression left, BoxExpression right, boolean isStatic ) {
 
 		// Check the right hand side to see if it is a valid access method
-		checkRight( right );
+		checkRight( right, isStatic );
 
 		// Check to see if the left hand side is something that is valid to be accessed via a dot access
-		checkLeft( left );
+		checkLeft( left, isStatic );
 
 		// Now we know the LHS is valid for access by a dot method and the RHS is a valid access method, so
 		// we can check the combinations here if needed.
@@ -566,7 +569,7 @@ public class BoxScriptParser extends AbstractParser {
 	 *
 	 * @param right the right side of the dot access left.right
 	 */
-	private void checkRight( BoxExpression right ) {
+	private void checkRight( BoxExpression right, boolean isStatic ) {
 		// Check the right hand side is a valid access method and fall through if it is not
 		switch ( right ) {
 			case BoxFunctionInvocation ignored -> {
@@ -587,7 +590,8 @@ public class BoxScriptParser extends AbstractParser {
 			}
 			case BoxExpressionInvocation ignored -> {
 			}
-			default -> errorListener.semanticError( "dot access via " + right.getDescription() + " is not a valid access method", right.getPosition() );
+			default -> errorListener.semanticError( ( isStatic ? "static" : "dot" ) + " access via " + right.getDescription() + " is not a valid access method",
+			    right.getPosition() );
 		}
 	}
 
@@ -596,7 +600,7 @@ public class BoxScriptParser extends AbstractParser {
 	 *
 	 * @param left the left side of the dot access left.right
 	 */
-	private void checkLeft( BoxExpression left ) {
+	private void checkLeft( BoxExpression left, boolean isStatic ) {
 		// Check the left hand side is a valid construct for dot access and fall through if it is not
 		switch ( left ) {
 			case BoxFunctionInvocation ignored -> {
@@ -624,9 +628,15 @@ public class BoxScriptParser extends AbstractParser {
 			case BoxDecimalLiteral ignored -> {
 			}
 			case BoxParenthesis ignored -> {
-				// TODO: Brad - Should we allow this always, or check what is inside the parenthesis?
 			}
-			default -> errorListener.semanticError( left.getDescription() + " is not a valid construct for dot access", left.getPosition() );
+			case BoxStaticMethodInvocation ignored -> {
+			}
+			case BoxStaticAccess ignored -> {
+			}
+			case BoxFQN ignored -> {
+			}
+			default -> errorListener.semanticError( left.getDescription() + " is not a valid construct for " + ( isStatic ? "static" : "dot" ) + " access",
+			    left.getPosition() );
 		}
 	}
 

@@ -8,6 +8,7 @@ component {
 
 	static.foo = 42; 
 	variables.staticBrad = static.brad;
+	this.thisStaticBrad = variables.staticBrad;
 
 	static {
 		static.again = "luis"
@@ -23,6 +24,10 @@ component {
 
 	function getStaticBrad() {
 		return staticBrad;
+	}
+
+	static function getInstance() {
+		return new src.test.java.TestCases.phase3.StaticTestCF();
 	}
 
 }

@@ -90,8 +90,8 @@ import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprBitShiftContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprBorContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprCastAsContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprCatContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprDotAccessContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprDotFloatContext;
+import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprDotOrColonAccessContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprElvisContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprEqualContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprFunctionCallContext;
@@ -110,7 +110,6 @@ import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprPrefixContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprRelationalContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprStatAnonymousFunctionContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprStatInvocableContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprStaticAccessContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprTernaryContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprUnaryContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprXorContext;
@@ -669,7 +668,7 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 	}
 
 	@Override
-	public BoxNode visitExprDotAccess( ExprDotAccessContext ctx ) {
+	public BoxNode visitExprDotOrColonAccess( ExprDotOrColonAccessContext ctx ) {
 		return buildExprStat( ctx );
 	}
 
@@ -788,11 +787,6 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 
 	@Override
 	public BoxNode visitExprArrayLiteral( ExprArrayLiteralContext ctx ) {
-		return buildExprStat( ctx );
-	}
-
-	@Override
-	public BoxNode visitExprStaticAccess( ExprStaticAccessContext ctx ) {
 		return buildExprStat( ctx );
 	}
 

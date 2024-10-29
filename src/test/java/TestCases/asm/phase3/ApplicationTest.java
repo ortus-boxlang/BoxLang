@@ -81,7 +81,7 @@ public class ApplicationTest {
 		// @formatter:off
 		instance.executeSource(
 		    """
-		        application name="myAppsdfsdf" sessionmanagement="true";
+		        application name="myAppsdfsdfasm" sessionmanagement="true";
 
 				result = application;
 				result2 = session;
@@ -98,7 +98,7 @@ public class ApplicationTest {
 		Instant					now					= Instant.now();
 		long					differenceInSeconds	= ChronoUnit.SECONDS.between( actual, now );
 
-		assertThat( app.getName().getName() ).isEqualTo( "myAppsdfsdf" );
+		assertThat( app.getName().getName() ).isEqualTo( "myAppsdfsdfasm" );
 		assertThat( app.getSessionsCache() ).isNotNull();
 		assertThat( app.getApplicationScope() ).isNotNull();
 		assertThat( app.getApplicationScope().getName().getName() ).isEqualTo( "application" );
@@ -112,13 +112,13 @@ public class ApplicationTest {
 		// @formatter:off
 		instance.executeSource(
 		    """
-		        application name="myAppsdfsdf2" sessionmanagement="true";
+		        application name="myAppsdfsdf2asm" sessionmanagement="true";
 				result = GetApplicationMetadata();
 			""", context );
 		// @formatter:on
 
 		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
-		assertThat( variables.getAsStruct( result ).get( "name" ) ).isEqualTo( "myAppsdfsdf2" );
+		assertThat( variables.getAsStruct( result ).get( "name" ) ).isEqualTo( "myAppsdfsdf2asm" );
 		assertThat( variables.getAsStruct( result ).get( "sessionmanagement" ).toString() ).isEqualTo( "true" );
 	}
 

@@ -1086,7 +1086,10 @@ public class ClassTest {
 		                        myStaticUDF   = src.test.java.TestCases.phase3.StaticTest::sayHello;
 		                        result7   =  myStaticUDF();
 		                        result8 = src.test.java.TestCases.phase3.StaticTest::123;
-		                                                               """, context, BoxSourceType.BOXSCRIPT );
+		                        result9 = src.test.java.TestCases.phase3.StaticTest2::getInstance().getStaticBrad();
+		                        result10 = src.test.java.TestCases.phase3.StaticTest2::getInstance().thisStaticBrad;
+		                                                                                                                      """, context,
+		    BoxSourceType.BOXSCRIPT );
 		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( 9000 );
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "static9000" );
 		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "brad" );
@@ -1094,6 +1097,34 @@ public class ClassTest {
 		assertThat( variables.get( Key.of( "result6" ) ) ).isEqualTo( "luis" );
 		assertThat( variables.get( Key.of( "result7" ) ) ).isEqualTo( "Hello" );
 		assertThat( variables.get( Key.of( "result8" ) ) ).isEqualTo( 456 );
+		assertThat( variables.get( Key.of( "result9" ) ) ).isEqualTo( "wood" );
+		assertThat( variables.get( Key.of( "result10" ) ) ).isEqualTo( "wood" );
+	}
+
+	@Test
+	public void testStaticNestedMethod() {
+		instance.executeSource(
+		    """
+		      	import java.lang.Thread;
+		      	result = Thread::currentThread().getContextClassLoader();
+		    // This is the same as above
+		      	result2 = Thread.currentThread().getContextClassLoader();
+		      """, context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.get( result ) ).isNotNull();
+		assertThat( variables.get( result ) ).isInstanceOf( ClassLoader.class );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isNotNull();
+		assertThat( variables.get( Key.of( "result2" ) ) ).isInstanceOf( ClassLoader.class );
+	}
+
+	@Test
+	public void testStaticNestedProperty() {
+		instance.executeSource(
+		    """
+		      	import java.lang.System;
+		      	System::out.println( "testStaticNestedProperty test" );
+		    // This is the same as above.
+		      	System.out.println( "testStaticNestedProperty test2" );
+		      """, context, BoxSourceType.BOXSCRIPT );
 	}
 
 	@Test
@@ -1125,19 +1156,23 @@ public class ClassTest {
 	public void testStaticStaticCF() {
 		instance.executeSource(
 		    """
-		    result1 = src.test.java.TestCases.phase3.StaticTest::foo;
-		    result2 = src.test.java.TestCases.phase3.StaticTest::myStaticFunc();
-		    result4 = src.test.java.TestCases.phase3.StaticTest::scoped;
-		    result5 = src.test.java.TestCases.phase3.StaticTest::unscoped;
-		    result6 = src.test.java.TestCases.phase3.StaticTest::again;
-		    result7 = src.test.java.TestCases.phase3.StaticTest::123;
-		                     """, context, BoxSourceType.CFSCRIPT );
+		    	result1 = src.test.java.TestCases.phase3.StaticTest::foo;
+		    	result2 = src.test.java.TestCases.phase3.StaticTest::myStaticFunc();
+		    	result4 = src.test.java.TestCases.phase3.StaticTest::scoped;
+		    	result5 = src.test.java.TestCases.phase3.StaticTest::unscoped;
+		    	result6 = src.test.java.TestCases.phase3.StaticTest::again;
+		    	result7 = src.test.java.TestCases.phase3.StaticTest::123;
+		    	result9 = src.test.java.TestCases.phase3.StaticTestCF2::getInstance().getStaticBrad();
+		    	result10 = src.test.java.TestCases.phase3.StaticTestCF2::getInstance().thisStaticBrad;
+		    """, context, BoxSourceType.CFSCRIPT );
 		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( 9000 );
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "static9000" );
 		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "brad" );
 		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( "wood" );
 		assertThat( variables.get( Key.of( "result6" ) ) ).isEqualTo( "luis" );
 		assertThat( variables.get( Key.of( "result7" ) ) ).isEqualTo( 456 );
+		assertThat( variables.get( Key.of( "result9" ) ) ).isEqualTo( "wood" );
+		assertThat( variables.get( Key.of( "result10" ) ) ).isEqualTo( "wood" );
 	}
 
 	@Test
