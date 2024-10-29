@@ -1183,7 +1183,7 @@ public class DynamicInteropService {
 		MethodHandle	targetHandle;
 
 		// If we are calling an instance method, but have no instance, and have the dynamicobject reference, then initialize it if there is a no-arg constructor
-		if ( !Modifier.isStatic( targetMethod.getModifiers() ) && targetInstance == null && dynamicObject != null ) {
+		if ( targetMethod != null && targetInstance == null && dynamicObject != null && !Modifier.isStatic( targetMethod.getModifiers() ) ) {
 			// Check if the dynamic object has a no-arg constructor
 			try {
 				targetInstance = invokeConstructor( context, targetClass );
