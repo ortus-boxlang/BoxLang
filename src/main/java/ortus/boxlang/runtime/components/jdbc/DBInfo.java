@@ -389,7 +389,7 @@ public class DBInfo extends Component {
 	    String filter ) throws SQLException {
 		Query result = new Query();
 
-		try ( ResultSet resultSet = databaseMetadata.getTables( databaseName, schema, tableName, new String[] { filter } ) ) {
+		try ( ResultSet resultSet = databaseMetadata.getTables( databaseName, schema, tableName, filter == null ? null : new String[] { filter } ) ) {
 			ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
 			buildQueryColumns( result, resultSetMetaData );
 
