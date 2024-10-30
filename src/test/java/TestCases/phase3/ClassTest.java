@@ -386,6 +386,8 @@ public class ClassTest {
 
 				// Can call public methods on this
 				assert cfc.runThisFoo() == "I work! whee true true bar true";
+
+				assert cfc.thisVar == "thisValue";
 			""", context );
 		// @formatter:on
 	}
