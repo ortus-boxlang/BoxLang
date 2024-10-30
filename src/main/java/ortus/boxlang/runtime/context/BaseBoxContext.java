@@ -43,6 +43,7 @@ import ortus.boxlang.runtime.services.ComponentService;
 import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.NullValue;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.QueryColumn;
 import ortus.boxlang.runtime.types.Struct;
@@ -61,7 +62,15 @@ import ortus.boxlang.runtime.util.ResolvedFilePath;
  */
 public class BaseBoxContext implements IBoxContext {
 
+	/**
+	 * TODO: This can be removed later, it was put here to catch some endless recursion bugs
+	 */
 	private static final ThreadLocal<Integer>	flushBufferDepth	= ThreadLocal.withInitial( () -> 0 );
+
+	/**
+	 * A flag to control whether null is considered undefined or not. Used by the compat module
+	 */
+	public static boolean						nullIsUndefined		= false;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -710,6 +719,26 @@ public class BaseBoxContext implements IBoxContext {
 	 */
 	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow ) {
 		throw new BoxRuntimeException( "Unimplemented method 'scopeFindNearby'" );
+	}
+
+	/**
+	 * Decide if a value found in a scope is defined or not
+	 * 
+	 * @param value The value to check, possibly null, possibly an instance of NullValue
+	 * 
+	 * @return True if the value is defined, else false
+	 */
+	protected boolean isDefined( Object value ) {
+		// If the value is null, it's not defined because the struct litearlly has no key for this
+		if ( value == null ) {
+			return false;
+		}
+		// Default BoxLang behavior is null is defined, but if compat has toggled the nullIsUndefined setting, then we need to check for our placeHolder NullValue value
+		if ( nullIsUndefined && value instanceof NullValue ) {
+			return false;
+		}
+		// Otherwise, it's defined
+		return true;
 	}
 
 	/**
