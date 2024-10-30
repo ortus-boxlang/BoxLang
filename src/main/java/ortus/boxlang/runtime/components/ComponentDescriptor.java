@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.components;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -134,7 +135,7 @@ public class ComponentDescriptor {
 					this.componentInstance = ( ( Component ) DynamicObject.of( this.componentClass )
 					    .invokeConstructor( ( IBoxContext ) null, new Object[] {} )
 					    .getTargetInstance() )
-					    .setName( name );
+					        .setName( name );
 					interceptorService.announce(
 					    BoxEvent.ON_COMPONENT_INSTANCE,
 					    new Struct(
@@ -152,6 +153,27 @@ public class ComponentDescriptor {
 			}
 		}
 		return this.componentInstance;
+	}
+
+	/**
+	 * Get a struct of the attributes the component offers
+	 *
+	 * @return The struct of attributes
+	 */
+	public IStruct getAttributes() {
+		IStruct attributeStruct = new Struct( Struct.TYPES.LINKED );
+		Arrays.stream( getComponent().getDeclaredAttributes() )
+		    .forEach( attribute -> {
+			    attributeStruct.put(
+			        attribute.name(),
+			        Struct.of(
+			            "type", attribute.type(),
+			            "defaultValue", attribute.defaultValue(),
+			            "validators", attribute.validators()
+			        )
+			    );
+		    } );
+		return attributeStruct;
 	}
 
 	/**
