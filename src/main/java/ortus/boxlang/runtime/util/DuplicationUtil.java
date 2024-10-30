@@ -100,27 +100,30 @@ public class DuplicationUtil {
 		    | SecurityException e ) {
 			throw new BoxRuntimeException( "An exception occurred while duplicating the class", e );
 		}
+
 		// variables scope
 		if ( deep ) {
 			newClass.getVariablesScope().putAll( duplicateStruct( originalClass.getVariablesScope(), deep ) );
 		} else {
 			newClass.getVariablesScope().putAll( originalClass.getVariablesScope() );
 		}
+
 		// this scope
 		if ( deep ) {
 			newClass.getThisScope().putAll( duplicateStruct( originalClass.getThisScope(), deep ) );
 		} else {
 			newClass.getThisScope().putAll( originalClass.getThisScope() );
 		}
+
 		// super scope
 		if ( originalClass.getSuper() != null ) {
-			newClass._setSuper( duplicateClass( originalClass.getSuper(), deep ) );
+			IClassRunnable newSuper = duplicateClass( originalClass.getSuper(), deep );
+			newSuper.setChild( newClass );
+			newClass._setSuper( newSuper );
+
 		}
-		// child
-		if ( originalClass.getChild() != null ) {
-			newClass.setChild( duplicateClass( originalClass.getChild(), deep ) );
-		}
-		// interfaces
+
+		// interfaces (these are singletons with no instance state, so nothing to really duplicate)
 		newClass.getInterfaces().addAll( originalClass.getInterfaces() );
 
 		return newClass;
