@@ -3662,4 +3662,29 @@ public class CoreLangTest {
 		assertThat( variables.get( Key.of( "result7" ) ) ).isEqualTo( "baz" );
 	}
 
+	@DisplayName( "test import name restrictions" )
+	@Test
+	public void testImportNameRestrictions() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				import ortus.boxlang.runtime.context.BaseBoxContext;
+				currentValue = BaseBoxContext.nullIsUndefined;
+				BaseBoxContext.nullIsUndefined = currentValue;
+			""",
+			context );
+		// @formatter:on
+
+		// @formatter:off
+		Throwable t = assertThrows( BoxRuntimeException.class, () ->
+		instance.executeSource(
+			"""
+				import ortus.boxlang.runtime.context.BaseBoxContext;
+				BaseBoxContext = "foo";
+			""",
+			context ) );
+		// @formatter:on
+		assertThat( t.getMessage() ).contains( "You cannot assign a variable with the same name as an import" );
+	}
+
 }

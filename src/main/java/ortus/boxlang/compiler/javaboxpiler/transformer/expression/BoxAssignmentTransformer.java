@@ -206,9 +206,11 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		}
 
 		if ( furthestLeft instanceof BoxIdentifier id ) {
-			if ( transpiler.matchesImport( id.getName() ) && transpiler.getProperty( "sourceType" ).toLowerCase().startsWith( "box" ) ) {
-				throw new ExpressionException( "You cannot assign a variable with the same name as an import: [" + id.getName() + "]",
-				    furthestLeft.getPosition(), furthestLeft.getSourceText() );
+			// imported.foo = 5 is ok, but imported = 5 is not
+			if ( left instanceof BoxIdentifier idl && transpiler.matchesImport( idl.getName() )
+			    && transpiler.getProperty( "sourceType" ).toLowerCase().startsWith( "box" ) ) {
+				throw new ExpressionException( "You cannot assign a variable with the same name as an import: [" + idl.getName() + "]",
+				    idl.getPosition(), idl.getSourceText() );
 			}
 
 			Node	keyNode	= createKey( id.getName() );
