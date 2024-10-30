@@ -34,13 +34,11 @@ import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.context.ClassBoxContext;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.KeyCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.interop.DynamicInteropService;
 import ortus.boxlang.runtime.runnables.BoxInterface;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.scopes.KeyCased;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
@@ -293,7 +291,7 @@ public class StructMapWrapper implements IStruct, IListenable, Serializable {
 	 * @return The value of the key or a NullValue object, null means the key didn't exist *
 	 */
 	public Object getRaw( Key key ) {
-		return wrapped.get( key );
+		return wrapped.get( key.getOriginalValue() );
 
 	}
 
@@ -341,7 +339,7 @@ public class StructMapWrapper implements IStruct, IListenable, Serializable {
 	public Object putIfAbsent( Key key, Object value ) {
 		if ( !containsKey( key ) ) {
 			return wrapped.putIfAbsent(
-			    isCaseSensitive() && ! ( key instanceof KeyCased ) ? new KeyCased( key.getName() ) : key,
+			    key.getOriginalValue(),
 			    notifyListeners( key, value )
 			);
 		}
@@ -392,9 +390,7 @@ public class StructMapWrapper implements IStruct, IListenable, Serializable {
 	 */
 	public Object remove( Key key ) {
 		notifyListeners( key, null );
-		return isCaseSensitive()
-		    ? wrapped.remove( keySet().stream().filter( k -> KeyCaster.cast( k ).equalsWithCase( key ) ).findFirst().orElse( Key.EMPTY ) )
-		    : wrapped.remove( key );
+		return wrapped.remove( key.getOriginalValue() );
 	}
 
 	/**

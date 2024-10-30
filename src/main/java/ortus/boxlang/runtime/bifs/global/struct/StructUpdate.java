@@ -39,7 +39,7 @@ public class StructUpdate extends StructInsert {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "modifiableStruct", Key.struct ),
-		    new Argument( true, "string", Key.key ),
+		    new Argument( true, "any", Key.key ),
 		    new Argument( true, "any", Key.value )
 		};
 	}

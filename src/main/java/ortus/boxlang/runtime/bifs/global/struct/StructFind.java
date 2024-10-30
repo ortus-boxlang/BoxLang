@@ -42,7 +42,7 @@ public class StructFind extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "structloose", Key.struct ),
-		    new Argument( true, "string", Key.key ),
+		    new Argument( true, "any", Key.key ),
 		    new Argument( false, "any", Key.defaultValue )
 		};
 	}
@@ -61,7 +61,7 @@ public class StructFind extends BIF {
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		IStruct	struct			= arguments.getAsStruct( Key.struct );
-		Key		searchKey		= Key.of( arguments.getAsString( Key.key ) );
+		Key		searchKey		= Key.of( arguments.get( Key.key ) );
 		Object	defaultValue	= arguments.get( Key.defaultValue );
 		if ( !struct.containsKey( searchKey ) ) {
 			if ( defaultValue != null ) {

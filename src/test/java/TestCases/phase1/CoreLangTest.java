@@ -3630,4 +3630,36 @@ public class CoreLangTest {
 		assertThat( list.get( 0 ) ).isEqualTo( "foo" );
 	}
 
+	@DisplayName( "key access in struct map wrapper" )
+	@Test
+	public void testKeyAccessInStructMapWrapper() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				myMap = CreateObject("java","java.util.concurrent.ConcurrentHashMap").init() castas "struct";
+				myMap["coldbox"] = "rocks";
+				result = myMap["coldbox"];
+				myMap.foo = "bar"
+				result2 = myMap.foo;
+				result3 = structKeyExists( myMap, "coldbox" );
+				crayCrayKey = ['whoo-hoo'];
+				myMap[ crayCrayKey ] = "y'all gonna make me lose my mind";
+				result4 = myMap[ crayCrayKey ];
+				result5 = structKeyExists( myMap, crayCrayKey );
+				myMap.delete( "coldbox" );
+				result6 = structKeyExists( myMap, "coldbox" );
+				structUpdate( myMap, "foo", "baz" );
+				result7 = myMap.foo;
+			""",
+			context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( "rocks" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "bar" );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "y'all gonna make me lose my mind" );
+		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "result6" ) ) ).isEqualTo( false );
+		assertThat( variables.get( Key.of( "result7" ) ) ).isEqualTo( "baz" );
+	}
+
 }

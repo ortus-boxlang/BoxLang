@@ -40,7 +40,7 @@ public class StructInsert extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "modifiableStruct", Key.struct ),
-		    new Argument( true, "string", Key.key ),
+		    new Argument( true, "any", Key.key ),
 		    new Argument( true, "any", Key.value ),
 		    new Argument( false, "boolean", Key.overwrite, false )
 		};
@@ -62,7 +62,7 @@ public class StructInsert extends BIF {
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		IStruct	struct		= arguments.getAsStruct( Key.struct );
-		Key		key			= Key.of( arguments.getAsString( Key.key ) );
+		Key		key			= Key.of( arguments.get( Key.key ) );
 		Boolean	overwrite	= arguments.getAsBoolean( Key.overwrite );
 
 		if ( !overwrite && struct.containsKey( key ) ) {
