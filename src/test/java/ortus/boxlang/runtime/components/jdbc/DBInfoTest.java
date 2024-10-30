@@ -19,8 +19,8 @@
 
 package ortus.boxlang.runtime.components.jdbc;
 
-import static org.junit.Assert.assertNotNull;
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -28,10 +28,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.util.Map;
 
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
-import org.junit.jupiter.api.Disabled;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.bifs.global.jdbc.BaseJDBCTest;
@@ -214,6 +214,25 @@ public class DBInfoTest extends BaseJDBCTest {
 	public void testColumnsTypeWithNonExistentTable() {
 		assertThrows( DatabaseException.class,
 		    () -> getInstance().executeSource( "cfdbinfo( type='columns', name='result', table='404NotFound' )", getContext(), BoxSourceType.CFSCRIPT ) );
+	}
+
+	@DisplayName( "Can get db tables with a filter, but the type is NOT tables, so it must throw an exception" )
+	@Test
+	public void testTablesTypeWithFilterAndBadType() {
+		assertThrows( BoxValidationException.class,
+		    () -> getInstance().executeSource( "cfdbinfo( type='columns', name='result', filter='TABLE' )", getContext(), BoxSourceType.CFSCRIPT ) );
+	}
+
+	@DisplayName( "Can get db tables with a basic filter of 'TABLE'" )
+	@Test
+	public void testTablesTypeWithFilter() {
+		getInstance().executeSource(
+		    """
+		        cfdbinfo( type='tables', name='result', filter='TABLE' )
+		    """,
+		    getContext(), BoxSourceType.CFSCRIPT );
+		Query theResult = getVariables().getAsQuery( result );
+		assertThat( theResult.size() ).isGreaterThan( 0 );
 	}
 
 	@DisplayName( "Can get db tables when type=tables" )

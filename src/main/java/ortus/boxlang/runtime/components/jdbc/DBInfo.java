@@ -45,6 +45,7 @@ import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 import ortus.boxlang.runtime.validation.Validator;
 
@@ -96,21 +97,23 @@ public class DBInfo extends Component {
 		    new Attribute( Key.table, "string" ),
 		    new Attribute( Key.pattern, "string" ),
 		    new Attribute( Key.dbname, "string" ),
+		    new Attribute( Key.filter, "string" ),
+
+		    // We probably will not implement these. We can remove later if we decide not to.
 		    new Attribute( Key.username, "string", Set.of(
 		        Validator.NOT_IMPLEMENTED
 		    ) ),
 		    new Attribute( Key.password, "string", Set.of(
 		        Validator.NOT_IMPLEMENTED
 		    ) ),
-		    new Attribute( Key.filter, "string", Set.of(
-		        Validator.NOT_IMPLEMENTED
-		    ) )
 		};
 	}
 
 	/**
-	 * Retrieve database metadata for a given datasource.
+	 * Retrieve database metadata for a given datasource. This can include: column metadata, database names, table names, foreign keys, index info,
+	 * stored procedures, and version info.
 	 * <p>
+	 * Please note that the <code>type</code> attribute is required, and the <code>name</code> attribute is required to store the result.
 	 *
 	 * @attribute.type Type of metadata to retrieve. One of: `columns`, `dbnames`, `tables`, `foreignkeys`, `index`, `procedures`, or `version`.
 	 *
@@ -120,23 +123,28 @@ public class DBInfo extends Component {
 	 *
 	 * @attribute.datasource Name of the datasource to check metadata on. If not provided, the default datasource will be used.
 	 *
-	 * @attribute.username Not currently implemented.
-	 *
-	 * @attribute.password Not currently implemented.
-	 *
-	 * @attribute.filter A lucee-only attribute to perform additional filtering on <code>type="tables"</code> results. Not currently implemented, as this
-	 *                   should be performed by a queryFilter() call.
+	 * @attribute.filter This is a string value that must match a table type in your database implementation. Each database is different.
+	 *                   Some common filter types are:
+	 *                   <ul>
+	 *                   <li>TABLE - This is the default value and will return only tables.</li>
+	 *                   <li>VIEW - This will return only views.</li>
+	 *                   <li>SYSTEM TABLE - This will return only system tables.</li>
+	 *                   <li>GLOBAL TEMPORARY - This will return only global temporary tables.</li>
+	 *                   <li>LOCAL TEMPORARY - This will return only local temporary tables.</li>
+	 *                   <li>ALIAS - This will return only aliases.</li>
+	 *                   <li>SYNONYM - This will return only synonyms.</li>
+	 *                   </ul>
 	 *
 	 * @param context        The context in which the Component is being invoked
 	 * @param attributes     The attributes to the Component
 	 * @param body           The body of the Component
 	 * @param executionState The execution state of the Component
-	 *
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
 		IJDBCCapableContext	jdbcContext			= context.getParentOfType( IJDBCCapableContext.class );
 		ConnectionManager	connectionManager	= jdbcContext.getConnectionManager();
 
+		// Prep arguments
 		DataSource			datasource			= attributes.containsKey( Key.datasource )
 		    ? connectionManager.getDatasourceOrThrow( Key.of( attributes.getAsString( Key.datasource ) ) )
 		    : connectionManager.getDefaultDatasourceOrThrow();
@@ -144,38 +152,86 @@ public class DBInfo extends Component {
 		if ( tableNameLookup == null ) {
 			tableNameLookup = attributes.getAsString( Key.pattern );
 		}
+		DBInfoType	type	= DBInfoType.fromString( attributes.getAsString( Key.type ) );
+		String		filter	= attributes.getAsString( Key.filter );
 
-		DBInfoType type = DBInfoType.fromString( attributes.getAsString( Key.type ) );
+		// If the filter is set, the type must be "tables"
+		if ( filter != null && !filter.isEmpty() && !type.equals( DBInfoType.TABLES ) ) {
+			throw new BoxValidationException( "The 'filter' attribute can only be used with the 'tables' type" );
+		}
 
+		// Now that we have the datasource, we can get the connection and metadata by type
 		try ( Connection conn = datasource.getConnection(); ) {
 			DatabaseMetaData databaseMetadata = conn.getMetaData();
-
 			tableNameLookup = normalizeTableNameCasing( databaseMetadata, tableNameLookup );
 			String databaseName = attributes.getAsString( Key.dbname );
+
 			if ( databaseName == null ) {
 				// Specify database name in a dot-delimited string, i.e. "mDB.mySchema.tblUsers".
 				databaseName = parseDatabaseFromTableName( tableNameLookup );
 			}
+
 			if ( databaseName == null ) {
 				// Default to the database name set on the connection (provided by the datasource config).
 				databaseName = getDatabaseNameFromConnection( conn );
 			}
+
 			String	schema		= parseSchemaFromTableName( tableNameLookup );
 			String	tableName	= parseTableName( tableNameLookup );
-			Query	result		= ( switch ( type ) {
-									case DBNAMES -> getDbNames( databaseMetadata );
-									case VERSION -> getVersion( databaseMetadata );
-									case COLUMNS -> getColumnsForTable( databaseMetadata, databaseName, schema, tableName );
-									case TABLES -> getTables( databaseMetadata, databaseName, schema, tableName );
-									case FOREIGNKEYS -> getForeignKeys( databaseMetadata, databaseName, schema, tableName );
-									case INDEX -> getIndexes( databaseMetadata, databaseName, schema, tableName );
-									case PROCEDURES -> getProcedures( databaseMetadata, databaseName, schema, tableName );
-								} );
+
+			// If the filter is not null and not empty, validate it at runtime against the valid database metadata filter types
+			if ( filter != null && !filter.isEmpty() ) {
+				validateFilter( filter, databaseMetadata.getTableTypes() );
+			}
+
+			Query result = ( switch ( type ) {
+				case DBNAMES -> getDbNames( databaseMetadata );
+				case VERSION -> getVersion( databaseMetadata );
+				case COLUMNS -> getColumnsForTable( databaseMetadata, databaseName, schema, tableName );
+				case TABLES -> getTables( databaseMetadata, databaseName, schema, tableName, filter );
+				case FOREIGNKEYS -> getForeignKeys( databaseMetadata, databaseName, schema, tableName );
+				case INDEX -> getIndexes( databaseMetadata, databaseName, schema, tableName );
+				case PROCEDURES -> getProcedures( databaseMetadata, databaseName, schema, tableName );
+			} );
 			ExpressionInterpreter.setVariable( context, attributes.getAsString( Key._NAME ), result );
 		} catch ( SQLException e ) {
 			throw new DatabaseException( "Unable to read " + attributes.getAsString( Key.type ) + " metadata", e );
 		}
 		return DEFAULT_RETURN;
+	}
+
+	/**
+	 * Validate the filter attribute against the valid database metadata filter types.
+	 *
+	 * @param filter     The filter value to validate.
+	 * @param tableTypes ResultSet of valid table types from the database metadata.
+	 *
+	 * @throws BoxValidationException If the filter value is not found in the table types ResultSet.
+	 */
+	private void validateFilter( String filter, ResultSet tableTypes ) {
+		List<String> allowedTypes = new ArrayList<>();
+
+		try ( tableTypes ) {
+			allowedTypes = new ArrayList<>();
+			boolean validType = false;
+
+			while ( tableTypes.next() ) {
+				String type = tableTypes.getString( 1 );
+				allowedTypes.add( type );
+				if ( type.equals( filter ) ) {
+					validType = true;
+					break;
+				}
+			}
+
+			if ( !validType ) {
+				throw new BoxValidationException(
+				    "Invalid [dbinfo] type=table filter [" + filter + "]. Supported table types are " + String.join( ", ", allowedTypes ) + "."
+				);
+			}
+		} catch ( SQLException e ) {
+			throw new DatabaseException( "Error retrieving table types.", e );
+		}
 	}
 
 	/**
@@ -321,13 +377,19 @@ public class DBInfo extends Component {
 	 * @param databaseName Name of the database to check for tables. If not provided, the database name from the connection will be used.
 	 * @param tableName    Optional pattern to filter table names by. Can use wildcards or any `LIKE`-compatible pattern such as `tbl_%`. Can use
 	 *                     `schemaName.tableName` syntax to additionally filter by schema.
+	 * @param filter       Optional filter to apply to the table type. Can be `TABLE`, `VIEW`, `SYSTEM TABLE`, `GLOBAL TEMPORARY`, `LOCAL TEMPORARY`,
 	 *
 	 * @return Query object where each row represents a table in the provided database.
 	 */
-	private Query getTables( DatabaseMetaData databaseMetadata, String databaseName, String schema, String tableName ) throws SQLException {
+	private Query getTables(
+	    DatabaseMetaData databaseMetadata,
+	    String databaseName,
+	    String schema,
+	    String tableName,
+	    String filter ) throws SQLException {
 		Query result = new Query();
 
-		try ( ResultSet resultSet = databaseMetadata.getTables( databaseName, schema, tableName, null ) ) {
+		try ( ResultSet resultSet = databaseMetadata.getTables( databaseName, schema, tableName, new String[] { filter } ) ) {
 			ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
 			buildQueryColumns( result, resultSetMetaData );
 
