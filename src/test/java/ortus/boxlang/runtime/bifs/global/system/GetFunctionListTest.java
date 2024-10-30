@@ -19,7 +19,6 @@ package ortus.boxlang.runtime.bifs.global.system;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -45,11 +44,6 @@ public class GetFunctionListTest {
 		instance = BoxRuntime.getInstance( true );
 	}
 
-	@AfterAll
-	public static void teardown() {
-
-	}
-
 	@BeforeEach
 	public void setupEach() {
 		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
@@ -59,12 +53,13 @@ public class GetFunctionListTest {
 	@DisplayName( "It can get the functions list" )
 	@Test
 	public void testGetFunctionList() {
-
+		// @formatter:off
 		instance.executeSource(
 		    """
 		    result = getFunctionList()
 		     """,
 		    context );
+		// @formatter:on
 
 		System.out.println( variables.get( result ) );
 		IStruct functions = ( IStruct ) variables.get( result );
