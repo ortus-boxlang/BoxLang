@@ -198,7 +198,6 @@ public class ScriptingRequestBoxContext extends RequestBoxContext {
 
 		// In Variables scope? (thread-safe lookup and get)
 		Object result = variablesScope.getRaw( key );
-		System.out.println( "key: " + key );
 		// Null means not found
 		if ( isDefined( result ) ) {
 			// Unwrap the value now in case it was really actually null for real
