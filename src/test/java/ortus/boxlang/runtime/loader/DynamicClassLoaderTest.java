@@ -40,11 +40,13 @@ public class DynamicClassLoaderTest {
 		URL[]				urls				= DynamicClassLoader.getJarURLs( libPath );
 		ClassLoader			parentClassLoader	= getClass().getClassLoader();
 		DynamicClassLoader	dynamicClassLoader	= new DynamicClassLoader( Key.of( "TestClassLoader" ), urls, parentClassLoader, false );
-		// String targetClass = "com.github.benmanes.caffeine.cache.Caffeine";
-		String				targetClass			= "HelloWorld";
 
-		// When
-		Class<?>			loadedClass			= dynamicClassLoader.loadClass(
+		assertThat( dynamicClassLoader.getURLs() ).hasLength( 3 );
+		assertThat( dynamicClassLoader.getResource( "config.properties" ) ).isNotNull();
+
+		// String targetClass = "com.github.benmanes.caffeine.cache.Caffeine";
+		String		targetClass	= "HelloWorld";
+		Class<?>	loadedClass	= dynamicClassLoader.loadClass(
 		    targetClass
 		); // Replace with an actual test class name
 

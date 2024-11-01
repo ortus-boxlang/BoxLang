@@ -518,14 +518,13 @@ el2
     | LPAREN expression RPAREN                                              # exprPrecedence        // ( foo )
     | new                                                                   # exprNew               // new foo.bar.Baz()
     | el2 LPAREN argumentList? RPAREN                                       # exprFunctionCall      // foo(bar, baz)
-    | el2 QM? DOT DOT? el2                                                  # exprDotAccess         // xc.y?.z recursive and Adobe's stupid foo..bar bug they allow
+    | el2 (QM? DOT DOT? | COLONCOLON) el2                                   # exprDotOrColonAccess  // xc.y?.z or foo::bar recursive and Adobe's stupid foo..bar bug they allow
     | el2 QM? DOT? DOT_FLOAT_LITERAL                                        # exprDotFloat          // foo.50
     | el2 QM? DOT? DOT_NUMBER_PREFIXED_IDENTIFIER                           # exprDotFloatID        // foo.50bar
     | el2 LBRACKET expression RBRACKET                                      # exprArrayAccess       // foo[bar]
     | <assoc = right> op = (NOT | BANG | MINUS | PLUS) el2                  # exprUnary             //  !foo, -foo, +foo
     | <assoc = right> op = (PLUSPLUS | MINUSMINUS | BITWISE_COMPLEMENT) el2 # exprPrefix            // ++foo, --foo, ~foo
     | el2 op = (PLUSPLUS | MINUSMINUS)                                      # exprPostfix           // foo++, bar--
-    | el2 COLONCOLON el2                                                    # exprStaticAccess      // foo::bar
     | el2 POWER el2                                                         # exprPower             // foo ^ bar
     | el2 op = (STAR | SLASH | PERCENT | MOD | BACKSLASH) el2               # exprMult              // foo * bar
     | el2 op = (PLUS | MINUS) el2                                           # exprAdd               // foo + bar

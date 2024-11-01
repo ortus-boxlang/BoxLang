@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.bifs;
 
+import java.util.Arrays;
 import java.util.Map;
 
 import ortus.boxlang.runtime.BoxRuntime;
@@ -27,6 +28,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.util.ArgumentUtil;
 
@@ -113,6 +115,26 @@ public class BIFDescriptor {
 	 */
 	public Boolean hasNamespace() {
 		return namespace != null;
+	}
+
+	public IStruct getArguments() {
+		IStruct argumentsStruct = new Struct( Struct.TYPES.LINKED );
+		Arrays.stream( getBIF().getDeclaredArguments() )
+		    .forEach( argument -> {
+			    argumentsStruct.put(
+			        argument.name(),
+			        Struct.of(
+			            "type", argument.type(),
+			            "required", argument.required(),
+			            "defaultValue", argument.defaultValue(),
+			            "validators", argument.validators(),
+			            "annotations", argument.annotations(),
+			            "documentation", argument.documentation()
+			        )
+			    );
+		    } );
+
+		return argumentsStruct;
 	}
 
 	/**

@@ -38,6 +38,7 @@ import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.compiler.parser.DocParser;
 import ortus.boxlang.compiler.parser.ParsingResult;
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.context.BaseBoxContext;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -64,6 +65,8 @@ public class CoreLangTest {
 	IBoxContext			context;
 	IScope				variables;
 	static Key			result	= new Key( "result" );
+	// Used in a test
+	public static int	num		= 0;
 
 	@BeforeAll
 	public static void setUp() {
@@ -3628,6 +3631,128 @@ public class CoreLangTest {
 		List<Object> list = ( List<Object> ) DynamicObject.unWrap( variables.get( Key.of( "myList" ) ) );
 		assertThat( list.size() ).isEqualTo( 1 );
 		assertThat( list.get( 0 ) ).isEqualTo( "foo" );
+	}
+
+	@DisplayName( "key access in struct map wrapper" )
+	@Test
+	public void testKeyAccessInStructMapWrapper() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				myMap = CreateObject("java","java.util.concurrent.ConcurrentHashMap").init() castas "struct";
+				myMap["coldbox"] = "rocks";
+				result = myMap["coldbox"];
+				myMap.foo = "bar"
+				result2 = myMap.foo;
+				result3 = structKeyExists( myMap, "coldbox" );
+				crayCrayKey = ['whoo-hoo'];
+				myMap[ crayCrayKey ] = "y'all gonna make me lose my mind";
+				result4 = myMap[ crayCrayKey ];
+				result5 = structKeyExists( myMap, crayCrayKey );
+				myMap.delete( "coldbox" );
+				result6 = structKeyExists( myMap, "coldbox" );
+				structUpdate( myMap, "foo", "baz" );
+				result7 = myMap.foo;
+			""",
+			context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( "rocks" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "bar" );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "y'all gonna make me lose my mind" );
+		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "result6" ) ) ).isEqualTo( false );
+		assertThat( variables.get( Key.of( "result7" ) ) ).isEqualTo( "baz" );
+	}
+
+	@DisplayName( "test import name restrictions" )
+	@Test
+	public void testImportNameRestrictions() {
+	// @formatter:off
+	instance.executeSource(
+		"""
+			import ortus.boxlang.runtime.context.BaseBoxContext;
+			currentValue = BaseBoxContext.nullIsUndefined;
+			BaseBoxContext.nullIsUndefined = currentValue;
+		""",
+		context );
+	// @formatter:on
+
+	// @formatter:off
+	Throwable t = assertThrows( BoxRuntimeException.class, () ->
+	instance.executeSource(
+		"""
+			import ortus.boxlang.runtime.context.BaseBoxContext;
+			BaseBoxContext = "foo";
+		""",
+		context ) );
+	// @formatter:on
+		assertThat( t.getMessage() ).contains( "You cannot assign a variable with the same name as an import" );
+	}
+
+	@Test
+	public void testAssignPublicJavaPropertiesIndirectly() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				import ortus.boxlang.runtime.context.BaseBoxContext;
+				bbc = BaseBoxContext;
+				bbc.nullIsUndefined = true;
+				result = BaseBoxContext.nullIsUndefined;
+			""",
+			context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( true );
+		BaseBoxContext.nullIsUndefined = false;
+	}
+
+	@Test
+	public void testAssignPublicJavaPropertiesDirectly() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				import ortus.boxlang.runtime.context.BaseBoxContext;
+				import TestCases.phase1.CoreLangTest;
+
+				BaseBoxContext.nullIsUndefined = true;
+				result = BaseBoxContext.nullIsUndefined;
+				result2 = BaseBoxContext.nullIsUndefined.len();
+				
+				CoreLangTest.num += 5;
+				result3 = CoreLangTest.num;
+			""",
+			context );
+		// @formatter:on
+		BaseBoxContext.nullIsUndefined = false;
+		assertThat( variables.get( result ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( 4 );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( 5 );
+		assertThat( CoreLangTest.num ).isEqualTo( 5 );
+
+	}
+
+	@DisplayName( "Test null scope lookup order" )
+	@Test
+	public void testNullScopeLookupOrder() {
+
+		// @formatter:off
+		instance.executeSource( """
+			function testMe( string foo ) {
+				local.foo = null;
+				// local scope is checked first, but since local is null, we'll ignore it
+				return foo;
+			}
+			result = testMe( "arguments" );
+			"""
+			, context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isNull();
+
+		instance.executeSource( """
+		                        foo = null;
+		                        result = foo;
+		                        """, context );
+		assertThat( variables.get( result ) ).isNull();
 	}
 
 }

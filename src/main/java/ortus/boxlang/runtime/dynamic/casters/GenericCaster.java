@@ -226,6 +226,9 @@ public class GenericCaster implements IBoxCaster {
 		if ( type.equals( "struct" ) ) {
 			return StructCaster.cast( object, fail );
 		}
+		if ( type.equals( "collection" ) ) {
+			return CollectionCaster.cast( object, fail );
+		}
 		if ( type.equals( "structloose" ) ) {
 			return StructCasterLoose.cast( object, fail );
 		}

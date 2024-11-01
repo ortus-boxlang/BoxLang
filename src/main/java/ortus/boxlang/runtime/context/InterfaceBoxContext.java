@@ -90,7 +90,7 @@ public class InterfaceBoxContext extends BaseBoxContext {
 
 		Object result = staticScope.getRaw( key );
 		// Null means not found
-		if ( result != null ) {
+		if ( isDefined( result ) ) {
 			// Unwrap the value now in case it was really actually null for real
 			return new ScopeSearchResult( staticScope, Struct.unWrapNull( result ), key );
 		}

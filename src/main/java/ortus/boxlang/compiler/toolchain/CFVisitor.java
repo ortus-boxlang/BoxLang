@@ -82,8 +82,8 @@ import ortus.boxlang.parser.antlr.CFGrammar.ExprArrayLiteralContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprAssignContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprBinaryContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprCatContext;
-import ortus.boxlang.parser.antlr.CFGrammar.ExprDotAccessContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprDotFloatContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ExprDotOrColonAccessContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprElvisContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprEqualContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprFunctionCallContext;
@@ -101,7 +101,6 @@ import ortus.boxlang.parser.antlr.CFGrammar.ExprPrefixContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprRelationalContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprStatAnonymousFunctionContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprStatInvocableContext;
-import ortus.boxlang.parser.antlr.CFGrammar.ExprStaticAccessContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprTernaryContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprUnaryContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprXorContext;
@@ -659,7 +658,7 @@ public class CFVisitor extends CFGrammarBaseVisitor<BoxNode> {
 	}
 
 	@Override
-	public BoxNode visitExprDotAccess( ExprDotAccessContext ctx ) {
+	public BoxNode visitExprDotOrColonAccess( ExprDotOrColonAccessContext ctx ) {
 		return buildExprStat( ctx );
 	}
 
@@ -748,11 +747,6 @@ public class CFVisitor extends CFGrammarBaseVisitor<BoxNode> {
 
 	@Override
 	public BoxNode visitExprArrayLiteral( ExprArrayLiteralContext ctx ) {
-		return buildExprStat( ctx );
-	}
-
-	@Override
-	public BoxNode visitExprStaticAccess( ExprStaticAccessContext ctx ) {
 		return buildExprStat( ctx );
 	}
 

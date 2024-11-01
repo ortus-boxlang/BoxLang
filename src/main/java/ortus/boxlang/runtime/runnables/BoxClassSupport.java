@@ -21,6 +21,7 @@ import java.util.Map;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
+import ortus.boxlang.runtime.context.BaseBoxContext;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
@@ -80,7 +81,11 @@ public class BoxClassSupport {
 			// Don't override existing values, probably from a super class
 			// But UDFs of the same name? Yeah, nuke those suckers, lol. (╥﹏╥)
 			if ( existing == null || existing instanceof Function ) {
-				thisClass.getVariablesScope().assign( context, property.name(), property.getDefaultValue( context ) );
+				Object defaultValue = property.getDefaultValue( context );
+				// If the compat module is making null behave like CF, then don't default null properties. ColdBox blows up otherwise, and I'm sure other code as well.
+				if ( defaultValue != null || !BaseBoxContext.nullIsUndefined ) {
+					thisClass.getVariablesScope().assign( context, property.name(), defaultValue );
+				}
 			}
 			if ( hasAccessors( thisClass ) ) {
 				// Don't override UDFs from a parent class which may already be defined
@@ -188,14 +193,8 @@ public class BoxClassSupport {
 		thisClass.getGetterLookup().putAll( _super.getGetterLookup() );
 		thisClass.getSetterLookup().putAll( _super.getSetterLookup() );
 
-		// merge annotations
-		for ( var entry : _super.getAnnotations().entrySet() ) {
-			Key key = entry.getKey();
-			if ( !thisClass.getAnnotations().containsKey( key ) && !key.equals( Key._EXTENDS ) && !key.equals( Key._IMPLEMENTS )
-			    && !key.equals( Key._ABSTRACT ) ) {
-				thisClass.getAnnotations().put( key, entry.getValue() );
-			}
-		}
+		// DO NOT merge annotations. They stay separate between parent/child classes and must be merged at runtime, if desired.
+		// https://ortussolutions.atlassian.net/browse/BL-677
 
 	}
 

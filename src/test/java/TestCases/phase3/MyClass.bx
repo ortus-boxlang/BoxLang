@@ -20,6 +20,7 @@ class singleton gavin="pickin" inject {
     /**@test*/
     property name;
 
+    this.thisVar = "thisValue";
     variables.setup=true; // ending comment
     System.out.println( "word" );
     request.foo="bar";

@@ -75,7 +75,6 @@ public class StructKeyExistsTest {
 		    """,
 		    context );
 		assertFalse( variables.getAsBoolean( result ) );
-
 	}
 
 	@DisplayName( "It tests the Member function Struct.keyExists" )
@@ -95,7 +94,18 @@ public class StructKeyExistsTest {
 		    """,
 		    context );
 		assertFalse( variables.getAsBoolean( result ) );
+	}
 
+	@DisplayName( "It tests that null exists" )
+	@Test
+	public void testNull() {
+		instance.executeSource(
+		    """
+		    myStruct={ "foo" : null };
+		    result = myStruct.keyExists( "foo" );
+		    """,
+		    context );
+		assertTrue( variables.getAsBoolean( result ) );
 	}
 
 }

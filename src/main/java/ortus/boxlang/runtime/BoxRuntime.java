@@ -1164,6 +1164,7 @@ public class BoxRuntime implements java.io.Closeable {
 		// Does it have a main method?
 		if ( target.getThisScope().containsKey( Key.main ) ) {
 			RequestBoxContext.setCurrent( scriptingContext.getParentOfType( RequestBoxContext.class ) );
+			ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
 			// Fire!!!
 			try {
 				boolean result = listener.onRequestStart( scriptingContext, new Object[] { templatePath } );
@@ -1217,6 +1218,7 @@ public class BoxRuntime implements java.io.Closeable {
 				}
 				scriptingContext.flushBuffer( false );
 				RequestBoxContext.removeCurrent();
+				Thread.currentThread().setContextClassLoader( oldClassLoader );
 			}
 		} else {
 			throw new BoxRuntimeException( "Class [" + targetClass.getName() + "] does not have a main method to execute." );
@@ -1238,6 +1240,7 @@ public class BoxRuntime implements java.io.Closeable {
 		BaseApplicationListener	listener			= scriptingContext.getParentOfType( RequestBoxContext.class ).getApplicationListener();
 		Throwable				errorToHandle		= null;
 		RequestBoxContext.setCurrent( scriptingContext.getParentOfType( RequestBoxContext.class ) );
+		ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
 		try {
 			boolean result = listener.onRequestStart( scriptingContext, new Object[] { templatePath } );
 			if ( result ) {
@@ -1292,6 +1295,7 @@ public class BoxRuntime implements java.io.Closeable {
 			}
 			scriptingContext.flushBuffer( false );
 			RequestBoxContext.removeCurrent();
+			Thread.currentThread().setContextClassLoader( oldClassLoader );
 		}
 	}
 
@@ -1345,6 +1349,7 @@ public class BoxRuntime implements java.io.Closeable {
 	public Object executeStatement( BoxScript scriptRunnable, IBoxContext context ) {
 		IBoxContext scriptingContext = ensureRequestTypeContext( context );
 		RequestBoxContext.setCurrent( scriptingContext.getParentOfType( RequestBoxContext.class ) );
+		ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
 		try {
 			// Fire!!!
 			return scriptRunnable.invoke( scriptingContext );
@@ -1358,6 +1363,7 @@ public class BoxRuntime implements java.io.Closeable {
 		} finally {
 			scriptingContext.flushBuffer( false );
 			RequestBoxContext.removeCurrent();
+			Thread.currentThread().setContextClassLoader( oldClassLoader );
 		}
 
 	}
@@ -1411,6 +1417,7 @@ public class BoxRuntime implements java.io.Closeable {
 		Object		results				= null;
 
 		RequestBoxContext.setCurrent( scriptingContext.getParentOfType( RequestBoxContext.class ) );
+		ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
 		try {
 			// Fire!!!
 			results = scriptRunnable.invoke( scriptingContext );
@@ -1423,6 +1430,7 @@ public class BoxRuntime implements java.io.Closeable {
 		} finally {
 			scriptingContext.flushBuffer( false );
 			RequestBoxContext.removeCurrent();
+			Thread.currentThread().setContextClassLoader( oldClassLoader );
 		}
 
 		return results;
@@ -1439,6 +1447,7 @@ public class BoxRuntime implements java.io.Closeable {
 		BufferedReader	reader				= new BufferedReader( new InputStreamReader( sourceStream ) );
 		String			source;
 		RequestBoxContext.setCurrent( scriptingContext.getParentOfType( RequestBoxContext.class ) );
+		ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
 
 		try {
 			Boolean quiet = reader.ready();
@@ -1500,6 +1509,7 @@ public class BoxRuntime implements java.io.Closeable {
 			throw new BoxRuntimeException( "Error reading source stream", e );
 		} finally {
 			RequestBoxContext.removeCurrent();
+			Thread.currentThread().setContextClassLoader( oldClassLoader );
 		}
 
 		return null;

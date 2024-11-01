@@ -198,10 +198,13 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 
 		List<AbstractInsnNode> nodes = new ArrayList<>();
 		if ( furthestLeft instanceof BoxIdentifier id ) {
-			if ( transpiler.matchesImport( id.getName() ) && transpiler.getProperty( "sourceType" ).toLowerCase().startsWith( "box" ) ) {
-				throw new ExpressionException( "You cannot assign a variable with the same name as an import: [" + id.getName() + "]",
-				    furthestLeft.getPosition(), furthestLeft.getSourceText() );
+			// imported.foo = 5 is ok, but imported = 5 is not
+			if ( left instanceof BoxIdentifier idl && transpiler.matchesImport( idl.getName() )
+			    && transpiler.getProperty( "sourceType" ).toLowerCase().startsWith( "box" ) ) {
+				throw new ExpressionException( "You cannot assign a variable with the same name as an import: [" + idl.getName() + "]",
+				    idl.getPosition(), idl.getSourceText() );
 			}
+
 			/*
 			 * Referencer.setDeep(
 			 * ${contextName},
@@ -229,19 +232,29 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 				nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
 			}
 
-			tracker.ifPresent( t -> nodes.addAll( t.loadCurrentContext() ) );
-			nodes.addAll( transpiler.createKey( id.getName() ) );
-			tracker.ifPresent( t -> nodes.addAll( t.loadCurrentContext() ) );
-			nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
-			    Type.getInternalName( IBoxContext.class ),
-			    "getDefaultAssignmentScope",
-			    Type.getMethodDescriptor( Type.getType( IScope.class ) ),
-			    true ) );
-			nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
-			    Type.getInternalName( IBoxContext.class ),
-			    "scopeFindNearby",
-			    Type.getMethodDescriptor( Type.getType( IBoxContext.ScopeSearchResult.class ), Type.getType( Key.class ), Type.getType( IScope.class ) ),
-			    true ) );
+			Class<?>	baseObjectClass;
+			// If id is an imported class name, load the class directly instead of searching scopes for it
+			boolean		isBoxSyntax	= transpiler.getProperty( "sourceType" ).toLowerCase().startsWith( "box" );
+			if ( transpiler.matchesImport( id.getName() ) && isBoxSyntax ) {
+				baseObjectClass = Object.class;
+				nodes.addAll( AsmHelper.loadClass( transpiler, id ) );
+			} else {
+				// Otherwise, search for varible in scopes
+				baseObjectClass = IBoxContext.ScopeSearchResult.class;
+				tracker.ifPresent( t -> nodes.addAll( t.loadCurrentContext() ) );
+				nodes.addAll( transpiler.createKey( id.getName() ) );
+				tracker.ifPresent( t -> nodes.addAll( t.loadCurrentContext() ) );
+				nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
+				    Type.getInternalName( IBoxContext.class ),
+				    "getDefaultAssignmentScope",
+				    Type.getMethodDescriptor( Type.getType( IScope.class ) ),
+				    true ) );
+				nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
+				    Type.getInternalName( IBoxContext.class ),
+				    "scopeFindNearby",
+				    Type.getMethodDescriptor( Type.getType( IBoxContext.ScopeSearchResult.class ), Type.getType( Key.class ), Type.getType( IScope.class ) ),
+				    true ) );
+			}
 
 			nodes.addAll( jRight );
 
@@ -255,7 +268,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			        Type.getType( IBoxContext.class ),
 			        Type.BOOLEAN_TYPE,
 			        Type.getType( Key.class ),
-			        Type.getType( IBoxContext.ScopeSearchResult.class ),
+			        Type.getType( baseObjectClass ),
 			        Type.getType( Object.class ),
 			        Type.getType( Key[].class ) ),
 			    false ) );

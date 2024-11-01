@@ -75,9 +75,9 @@ public class DynamicClassLoader extends URLClassLoader {
 	private final ConcurrentHashMap<String, Class<?>>	unfoundClasses	= new ConcurrentHashMap<>();
 
 	/**
-	 * Logger
+	 * Logger. Lazy init to avoid deadlocks on runtime startup
 	 */
-	private static final Logger							logger			= LoggerFactory.getLogger( DynamicClassLoader.class );
+	private static Logger								logger			= null;
 
 	/**
 	 * Construct the class loader
@@ -157,6 +157,7 @@ public class DynamicClassLoader extends URLClassLoader {
 	 * @param safe      Whether to throw an exception if the class is not found
 	 */
 	public Class<?> findClass( String className, Boolean safe ) throws ClassNotFoundException {
+		Logger logger = getLogger();
 		if ( closed ) {
 			throw new BoxRuntimeException(
 			    "Class loader [" + nameAsKey.getName() + "] is closed, but you are trying to use it still! Closed by this thread: \n\n" + closedStack );
@@ -396,9 +397,12 @@ public class DynamicClassLoader extends URLClassLoader {
 
 		// Stream all files recursively, filtering for .jar and .class files
 		try ( Stream<Path> fileStream = Files.walk( targetPath ) ) {
-			return fileStream
-			    .parallel()
-			    .filter( path -> path.toString().endsWith( ".jar" ) || path.toString().endsWith( ".class" ) )
+			return Stream.concat(
+			    Stream.of( targetPath ), // Include the directory itself
+			    fileStream
+			        .parallel()
+			        .filter( path -> path.toString().endsWith( ".jar" ) || path.toString().endsWith( ".class" ) )
+			)
 			    .map( path -> {
 				    try {
 					    // Convert Path to URL using toUri() and toURL()
@@ -408,6 +412,8 @@ public class DynamicClassLoader extends URLClassLoader {
 				    }
 			    } )
 			    .toArray( URL[]::new );
+		} catch ( IOException e ) {
+			throw new UncheckedIOException( e );
 		}
 	}
 
@@ -425,7 +431,7 @@ public class DynamicClassLoader extends URLClassLoader {
 		    .map( path -> {
 			    try {
 				    Path targetPath = Paths.get( ( String ) path );
-				    // If this is a directory, then get all the JARs and classes in the directory
+				    // If this is a directory, then get all the JARs and classes in the directory as well as the dir itself
 				    // else if it's a jar/class file then just return the URL
 				    if ( Files.isDirectory( targetPath ) ) {
 					    return getJarURLs( targetPath );
@@ -438,8 +444,20 @@ public class DynamicClassLoader extends URLClassLoader {
 		    } )
 		    .flatMap( Arrays::stream )
 		    .distinct()
-		    // .peek( url -> logger.debug( "Inflated URL: [{}]", url ) )
+		    // .peek( url -> getLogger().debug( "Inflated URL: [{}]", url ) )
 		    .toArray( URL[]::new );
+	}
+
+	private static Logger getLogger() {
+		if ( logger == null ) {
+			synchronized ( DynamicClassLoader.class ) {
+				if ( logger == null ) {
+					logger = LoggerFactory.getLogger( DynamicClassLoader.class );
+				}
+			}
+		}
+		return logger;
+
 	}
 
 }

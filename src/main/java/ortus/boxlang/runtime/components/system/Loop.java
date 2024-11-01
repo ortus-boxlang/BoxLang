@@ -1,3 +1,4 @@
+
 /**
  * [BoxLang]
  *
@@ -17,6 +18,7 @@
  */
 package ortus.boxlang.runtime.components.system;
 
+import java.util.Collection;
 import java.util.Set;
 
 import ortus.boxlang.runtime.components.Attribute;
@@ -57,7 +59,7 @@ public class Loop extends Component {
 		    new Attribute( Key.file, "string", Set.of( Validator.requires( Key.index ) ) ),
 		    new Attribute( Key.list, "string" ),
 		    new Attribute( Key.delimiters, "string" ),
-		    new Attribute( Key.collection, "Struct", Set.of( Validator.requires( Key.item ) ) ),
+		    new Attribute( Key.collection, "collection", Set.of( Validator.requires( Key.item ) ) ),
 		    new Attribute( Key.condition, "function" ),
 		    new Attribute( Key.query, "any" ),
 		    new Attribute( Key.group, "string", Set.of( Validator.NON_EMPTY ) ),
@@ -87,23 +89,23 @@ public class Loop extends Component {
 	 *
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
-		Array		array				= attributes.getAsArray( Key.array );
-		String		item				= attributes.getAsString( Key.item );
-		String		index				= attributes.getAsString( Key.index );
-		Double		to					= attributes.getAsDouble( Key.to );
-		Double		from				= attributes.getAsDouble( Key.from );
-		String		file				= attributes.getAsString( Key.file );
-		String		list				= attributes.getAsString( Key.list );
-		String		delimiters			= attributes.getAsString( Key.delimiters );
-		IStruct		collection			= attributes.getAsStruct( Key.collection );
-		Function	condition			= attributes.getAsFunction( Key.condition );
-		String		group				= attributes.getAsString( Key.group );
-		Boolean		groupCaseSensitive	= attributes.getAsBoolean( Key.groupCaseSensitive );
-		Integer		startRow			= attributes.getAsInteger( Key.startRow );
-		Integer		endRow				= attributes.getAsInteger( Key.endRow );
-		Object		queryOrName			= attributes.get( Key.query );
-		String		label				= attributes.getAsString( Key.label );
-		Integer		times				= attributes.getAsInteger( Key.times );
+		Array				array				= attributes.getAsArray( Key.array );
+		String				item				= attributes.getAsString( Key.item );
+		String				index				= attributes.getAsString( Key.index );
+		Double				to					= attributes.getAsDouble( Key.to );
+		Double				from				= attributes.getAsDouble( Key.from );
+		String				file				= attributes.getAsString( Key.file );
+		String				list				= attributes.getAsString( Key.list );
+		String				delimiters			= attributes.getAsString( Key.delimiters );
+		Collection<Object>	collection			= ( Collection<Object> ) attributes.get( Key.collection );
+		Function			condition			= attributes.getAsFunction( Key.condition );
+		String				group				= attributes.getAsString( Key.group );
+		Boolean				groupCaseSensitive	= attributes.getAsBoolean( Key.groupCaseSensitive );
+		Integer				startRow			= attributes.getAsInteger( Key.startRow );
+		Integer				endRow				= attributes.getAsInteger( Key.endRow );
+		Object				queryOrName			= attributes.get( Key.query );
+		String				label				= attributes.getAsString( Key.label );
+		Integer				times				= attributes.getAsInteger( Key.times );
 
 		if ( times != null ) {
 			return _invokeTimes( context, times, item, index, body, executionState, label );
@@ -184,10 +186,11 @@ public class Loop extends Component {
 		return DEFAULT_RETURN;
 	}
 
-	private BodyResult _invokeCollection( IBoxContext context, IStruct collection, String item, ComponentBody body, IStruct executionState, String label ) {
+	private BodyResult _invokeCollection( IBoxContext context, Collection<Object> collection, String item, ComponentBody body, IStruct executionState,
+	    String label ) {
 		// Loop over array, executing body every time
-		for ( Key key : collection.keySet() ) {
-			ExpressionInterpreter.setVariable( context, item, key.getName() );
+		for ( Object key : collection ) {
+			ExpressionInterpreter.setVariable( context, item, key );
 			// Run the code inside of the output loop
 			BodyResult bodyResult = processBody( context, body );
 			// IF there was a return statement inside our body, we early exit now

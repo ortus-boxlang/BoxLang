@@ -20,7 +20,7 @@ class {
 	}
 
 	static function getInstance() {
-		return new src.test.java.TestCases.phase3.StaticTest();
+		return new src.test.java.TestCases.phase3.StaticTest2();
 	}
 
 	function myInstanceFunc() {

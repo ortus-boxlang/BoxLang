@@ -34,7 +34,9 @@ import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.HexFormat;
+import java.util.Random;
 import java.util.stream.IntStream;
 
 import javax.crypto.BadPaddingException;
@@ -100,6 +102,11 @@ public final class EncryptionUtil {
 	 * Default iterations to perform during encryption - the minimum recomended by NIST
 	 */
 	public final static int				DEFAULT_ENCRYPTION_ITERATIONS	= 1000;
+
+	/**
+	 * Threadsafe instances of Random and Secure random instances which are used by the getRandom method
+	 */
+	private static HashMap<Key, Random>	randomStore						= new HashMap<Key, Random>();
 
 	/**
 	 * Supported key algorithms
@@ -711,6 +718,28 @@ public final class EncryptionUtil {
 				throw new BoxRuntimeException( "Error serializing object: " + e.getMessage(), e );
 			}
 		}
+	}
+
+	/**
+	 * Retrieves an instance of the specified random generator. If an agorithm is provided the method will return a SecureRandom instance
+	 * 
+	 * @param algorithm
+	 * 
+	 * @return
+	 */
+	public static Random getRandom( String algorithm ) {
+		Key		algorithmKey	= algorithm == null ? Key._DEFAULT : Key.of( algorithm );
+
+		Random	random			= randomStore.get( algorithmKey );
+		if ( random == null ) {
+			try {
+				random = algorithmKey.equals( Key._DEFAULT ) ? new Random() : SecureRandom.getInstance( algorithm );
+			} catch ( NoSuchAlgorithmException e ) {
+				throw new BoxRuntimeException( "The algorithm: " + algorithm + " is not implemented in the current Java runtime", e );
+			}
+			randomStore.put( algorithmKey, random );
+		}
+		return random;
 	}
 
 	/**

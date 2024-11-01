@@ -96,4 +96,17 @@ public class RandRangeTest {
 		       """, context );
 	}
 
+	@DisplayName( "It returns a random number in range using an algorithm" )
+	@Test
+	public void testItReturnsARandomNumberInRangeWithAlgorithm() {
+		instance.executeSource(
+		    """
+		    loop times=1000 {
+		       	result = randRange( 0, 12, "SHA1PRNG" );
+		    	assert result >= 0;
+		    	assert result <= 12;
+		    }
+		       """, context );
+	}
+
 }

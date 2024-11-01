@@ -316,11 +316,13 @@ public class BoxScriptingEngine implements ScriptEngine, Compilable, Invocable {
 		}
 
 		RequestBoxContext.setCurrent( getBoxContext().getParentOfType( RequestBoxContext.class ) );
+		ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
 		try {
 			// This will handle any sort of referencable object, including member methods on data types
 			return Referencer.getAndInvoke( getBoxContext(), thiz, Key.of( name ), args, false );
 		} finally {
 			RequestBoxContext.removeCurrent();
+			Thread.currentThread().setContextClassLoader( oldClassLoader );
 		}
 	}
 
@@ -338,10 +340,12 @@ public class BoxScriptingEngine implements ScriptEngine, Compilable, Invocable {
 	@Override
 	public Object invokeFunction( String name, Object... args ) throws ScriptException, NoSuchMethodException {
 		RequestBoxContext.setCurrent( boxContext.getParentOfType( RequestBoxContext.class ) );
+		ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
 		try {
 			return boxContext.invokeFunction( Key.of( name ), args );
 		} finally {
 			RequestBoxContext.removeCurrent();
+			Thread.currentThread().setContextClassLoader( oldClassLoader );
 		}
 	}
 

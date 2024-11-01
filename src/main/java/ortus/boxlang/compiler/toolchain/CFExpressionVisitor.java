@@ -98,9 +98,9 @@ import ortus.boxlang.parser.antlr.CFGrammar.ExprAssignContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprAtomsContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprBinaryContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprCatContext;
-import ortus.boxlang.parser.antlr.CFGrammar.ExprDotAccessContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprDotFloatContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprDotFloatIDContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ExprDotOrColonAccessContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprElvisContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprEqualContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprFunctionCallContext;
@@ -119,7 +119,6 @@ import ortus.boxlang.parser.antlr.CFGrammar.ExprPrecedenceContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprPrefixContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprRelationalContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprStatInvocableContext;
-import ortus.boxlang.parser.antlr.CFGrammar.ExprStaticAccessContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprTernaryContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprUnaryContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprVarDeclContext;
@@ -263,7 +262,7 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 		// the case. As other types may also need conversion, we hand off to a helper method.
 		var	leftId	= convertDotElement( left, false );
 
-		tools.checkDotAccess( leftId, right );
+		tools.checkDotAccess( leftId, right, false );
 
 		return new BoxDotAccess( leftId, ctx.QM() != null, right, pos, src );
 	}
@@ -281,7 +280,7 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 		// the case. As other types may also need conversion, we hand off to a helper method.
 		var	leftId	= convertDotElement( left, false );
 
-		tools.checkDotAccess( leftId, right );
+		tools.checkDotAccess( leftId, right, false );
 
 		return new BoxDotAccess( leftId, ctx.QM() != null, right, pos, src );
 	}
@@ -307,15 +306,20 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 	 * @return the AST for a particular accessor operation
 	 */
 	@Override
-	public BoxExpression visitExprDotAccess( ExprDotAccessContext ctx ) {
-
+	public BoxExpression visitExprDotOrColonAccess( ExprDotOrColonAccessContext ctx ) {
+		boolean	isStatic	= ctx.COLONCOLON() != null;
 		// Positions is based upon the right hand side of the dot, but strangely, includes the dot
-		var	pos		= tools.getPosition( ctx.el2( 1 ) );
-		var	start	= pos.getStart();
+		var		pos			= tools.getPosition( ctx.el2( 1 ) );
+		var		start		= pos.getStart();
 		start.setColumn( start.getColumn() - 1 );
-		var	src		= "." + tools.getSourceText( ctx.el2( 1 ) );
+		var	src		= ( isStatic ? "::" : "." ) + tools.getSourceText( ctx.el2( 1 ) );
 		var	left	= ctx.el2( 0 ).accept( this );
 		var	right	= ctx.el2( 1 ).accept( this );
+
+		// foo.bar.baz::property or foo.bar.baz::method() MUST be seen as a class name on the LHS, not dot access
+		if ( isStatic && left instanceof BoxDotAccess ) {
+			left = new BoxFQN( ctx.el2( 0 ).getText(), tools.getPosition( ctx.el2( 0 ) ), tools.getSourceText( ctx.el2( 0 ) ) );
+		}
 
 		// Because Booleans take precedence over keywords as identifiers, we will get a
 		// boolean literal for left or right and so we convert them to Identifiers if that is
@@ -325,7 +329,7 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 
 		// Check validity of this type of access. Will add an issue to the list if there is an invalid access
 		// but we will still generate a DotAccess node and carry on, so we catch all errors in one pass.
-		tools.checkDotAccess( leftId, rightId );
+		tools.checkDotAccess( leftId, rightId, isStatic );
 
 		switch ( right ) {
 
@@ -393,11 +397,16 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 				// The Id needs to end in the correct column, not the end of the invocation
 				var iPos = new Position( ids, ide );
 
-				// Some messing around to get the text correct for the MethodInvocation
-				// as FunctionInvocation only stores a string, not an identifier for the function for
-				// some reason.
-				return new BoxMethodInvocation( new BoxIdentifier( iName, iPos, iName ), left, invocation.getArguments(), ctx.QM() != null, true,
-				    invocation.getPosition(), invocation.getSourceText() );
+				if ( isStatic ) {
+					return new BoxStaticMethodInvocation( new BoxIdentifier( iName, iPos, iName ), left,
+					    invocation.getArguments(), invocation.getPosition(), "::" + invocation.getSourceText() );
+				} else {
+					// Some messing around to get the text correct for the MethodInvocation
+					// as FunctionInvocation only stores a string, not an identifier for the function for
+					// some reason.
+					return new BoxMethodInvocation( new BoxIdentifier( iName, iPos, iName ), left, invocation.getArguments(), ctx.QM() != null, true,
+					    invocation.getPosition(), invocation.getSourceText() );
+				}
 			}
 
 			case BoxExpressionInvocation invocation -> {
@@ -461,8 +470,11 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 				return new BoxArrayAccess( leftId, ctx.QM() != null, arrayAccess.getAccess(), pos, src );
 			}
 			case null, default -> {
-
-				return new BoxDotAccess( leftId, ctx.QM() != null, rightId, pos, src );
+				if ( isStatic ) {
+					return new BoxStaticAccess( leftId, false, rightId, tools.getPosition( ctx.el2( 1 ) ), src );
+				} else {
+					return new BoxDotAccess( leftId, ctx.QM() != null, rightId, pos, src );
+				}
 			}
 		}
 	}
@@ -877,24 +889,6 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 			return new BoxScope( ctx.getText(), pos, src );
 		}
 		return new BoxIdentifier( ctx.getText(), pos, src );
-	}
-
-	@Override
-	public BoxExpression visitExprStaticAccess( ExprStaticAccessContext ctx ) {
-		var	pos		= tools.getPosition( ctx );
-		var	src		= tools.getSourceText( ctx );
-
-		var	left	= ctx.el2( 0 ).accept( this );
-		if ( left instanceof BoxDotAccess ) {
-			left = new BoxFQN( ctx.el2( 0 ).getText(), tools.getPosition( ctx.el2( 0 ) ), tools.getSourceText( ctx.el2( 0 ) ) );
-		}
-		var right = ctx.el2( 1 ).accept( this );
-
-		if ( right instanceof BoxFunctionInvocation invocation ) {
-			return new BoxStaticMethodInvocation( new BoxIdentifier( invocation.getName(), invocation.getPosition(), invocation.getSourceText() ), left,
-			    invocation.getArguments(), invocation.getPosition(), "::" + invocation.getSourceText() );
-		}
-		return new BoxStaticAccess( left, false, right, tools.getPosition( ctx.el2( 1 ) ), "::" + tools.getSourceText( ctx.el2( 1 ) ) );
 	}
 
 	@Override
