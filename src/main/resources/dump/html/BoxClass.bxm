@@ -5,7 +5,7 @@
 	thisScope = var.$bx.getThisScope()
 	staticScope = var.$bx.getStaticScope()
 	sortedProperties = md.properties.toModifiable().sort( ( a, b ) => compare( a.name, b.name ) )
-	expandRoot = expand || expand eq null
+	expandRoot = expand ?: true;
 </bx:script>
 <bx:output>
 	<div class="bx-dump">

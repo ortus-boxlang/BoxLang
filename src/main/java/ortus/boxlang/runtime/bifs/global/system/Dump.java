@@ -80,7 +80,7 @@ public class Dump extends BIF {
 		    // The number of levels to display when dumping collections. Great to avoid dumping the entire world!
 		    new Argument( false, Argument.NUMERIC, Key.top, 0 ),
 		    // Whether to expand the dump. By default, the dump is expanded on the first level only
-		    new Argument( false, Argument.BOOLEAN, Key.expand ),
+		    new Argument( false, Argument.BOOLEAN, Key.expand, true ),
 		    // Whether to do a hard abort the request after dumping
 		    new Argument( false, Argument.BOOLEAN, Key.abort, false ),
 		    // The output location which can be "buffer", "console", or "{absolute file path}", default is "buffer" (backwards compat => browser)
