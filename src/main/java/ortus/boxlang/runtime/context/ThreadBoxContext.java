@@ -159,14 +159,14 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 
 		Object result = localScope.getRaw( key );
 		// Null means not found
-		if ( result != null ) {
+		if ( isDefined( result ) ) {
 			// Unwrap the value now in case it was really actually null for real
 			return new ScopeSearchResult( localScope, Struct.unWrapNull( result ), key );
 		}
 
 		result = variablesScope.getRaw( key );
 		// Null means not found
-		if ( result != null ) {
+		if ( isDefined( result ) ) {
 			// A thread has special permission to "see" the variables scope from its parent,
 			// even though it's not "nearby" to any other scopes
 			return new ScopeSearchResult( variablesScope, Struct.unWrapNull( result ), key );
@@ -235,7 +235,7 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 
 		Object result = threadMeta.getRaw( key );
 		// Null means not found
-		if ( result != null ) {
+		if ( isDefined( result ) ) {
 			return new ScopeSearchResult( threadMeta, Struct.unWrapNull( result ), key );
 		}
 

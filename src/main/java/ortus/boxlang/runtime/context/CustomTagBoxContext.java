@@ -97,7 +97,7 @@ public class CustomTagBoxContext extends BaseBoxContext {
 	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow ) {
 		Object result = variablesScope.getRaw( key );
 		// Null means not found
-		if ( result != null ) {
+		if ( isDefined( result ) ) {
 			// Unwrap the value now in case it was really actually null for real
 			return new ScopeSearchResult( variablesScope, Struct.unWrapNull( result ), key );
 		}

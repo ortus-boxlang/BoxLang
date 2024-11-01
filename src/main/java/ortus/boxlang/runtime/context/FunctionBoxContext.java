@@ -294,14 +294,14 @@ public class FunctionBoxContext extends BaseBoxContext {
 
 		Object result = localScope.getRaw( key );
 		// Null means not found
-		if ( result != null ) {
+		if ( isDefined( result ) ) {
 			// Unwrap the value now in case it was really actually null for real
 			return new ScopeSearchResult( localScope, Struct.unWrapNull( result ), key );
 		}
 
 		result = argumentsScope.getRaw( key );
 		// Null means not found
-		if ( result != null ) {
+		if ( isDefined( result ) ) {
 			// Unwrap the value now in case it was really actually null for real
 			return new ScopeSearchResult( argumentsScope, Struct.unWrapNull( result ), key );
 		}
@@ -317,7 +317,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 			IScope classVariablesScope = getThisClass().getBottomClass().getVariablesScope();
 			result = classVariablesScope.getRaw( key );
 			// Null means not found
-			if ( result != null ) {
+			if ( isDefined( result ) ) {
 				// Unwrap the value now in case it was really actually null for real
 				return new ScopeSearchResult( classVariablesScope, Struct.unWrapNull( result ), key );
 			}

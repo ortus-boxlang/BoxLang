@@ -151,14 +151,14 @@ public class ClosureBoxContext extends FunctionBoxContext {
 
 		Object result = localScope.getRaw( key );
 		// Null means not found
-		if ( result != null ) {
+		if ( isDefined( result ) ) {
 			// Unwrap the value now in case it was really actually null for real
 			return new ScopeSearchResult( localScope, Struct.unWrapNull( result ), key );
 		}
 
 		result = argumentsScope.getRaw( key );
 		// Null means not found
-		if ( result != null ) {
+		if ( isDefined( result ) ) {
 			// Unwrap the value now in case it was really actually null for real
 			return new ScopeSearchResult( argumentsScope, Struct.unWrapNull( result ), key );
 		}

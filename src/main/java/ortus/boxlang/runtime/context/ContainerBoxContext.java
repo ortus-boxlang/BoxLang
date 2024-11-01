@@ -96,7 +96,7 @@ public class ContainerBoxContext extends BaseBoxContext {
 		// In Variables scope? (thread-safe lookup and get)
 		Object result = variablesScope.getRaw( key );
 		// Null means not found
-		if ( result != null ) {
+		if ( isDefined( result ) ) {
 			// Unwrap the value now in case it was really actually null for real
 			return new ScopeSearchResult( variablesScope, Struct.unWrapNull( result ), key );
 		}
