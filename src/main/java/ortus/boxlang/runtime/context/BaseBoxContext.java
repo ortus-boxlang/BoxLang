@@ -728,7 +728,7 @@ public class BaseBoxContext implements IBoxContext {
 	 * 
 	 * @return True if the value is defined, else false
 	 */
-	protected boolean isDefined( Object value ) {
+	public boolean isDefined( Object value ) {
 		// If the value is null, it's not defined because the struct litearlly has no key for this
 		if ( value == null ) {
 			return false;

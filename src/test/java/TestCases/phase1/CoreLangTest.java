@@ -3713,7 +3713,7 @@ public class CoreLangTest {
 			"""
 				import ortus.boxlang.runtime.context.BaseBoxContext;
 				import TestCases.phase1.CoreLangTest;
-				
+
 				BaseBoxContext.nullIsUndefined = true;
 				result = BaseBoxContext.nullIsUndefined;
 				result2 = BaseBoxContext.nullIsUndefined.len();
@@ -3729,6 +3729,30 @@ public class CoreLangTest {
 		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( 5 );
 		assertThat( CoreLangTest.num ).isEqualTo( 5 );
 
+	}
+
+	@DisplayName( "Test null scope lookup order" )
+	@Test
+	public void testNullScopeLookupOrder() {
+
+		// @formatter:off
+		instance.executeSource( """
+			function testMe( string foo ) {
+				local.foo = null;
+				// local scope is checked first, but since local is null, we'll ignore it
+				return foo;
+			}
+			result = testMe( "arguments" );
+			"""
+			, context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isNull();
+
+		instance.executeSource( """
+		                        foo = null;
+		                        result = foo;
+		                        """, context );
+		assertThat( variables.get( result ) ).isNull();
 	}
 
 }
