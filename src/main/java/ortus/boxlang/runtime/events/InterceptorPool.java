@@ -397,6 +397,30 @@ public class InterceptorPool {
 	}
 
 	/**
+	 * This method UNregisters a Java interceptor with the pool by metadata inspection
+	 * of the {@link InterceptionPoint} annotation. It will inspect the interceptor for
+	 * methods that match the states that the pool can announce. If the
+	 * interceptor has a method that matches the state, it will UNregister it with the pool.
+	 *
+	 * @param interceptor The interceptor to UNregister that must implement {@link IInterceptor}
+	 *
+	 * @return The same pool
+	 */
+	public InterceptorPool unregister( IInterceptor interceptor ) {
+		// Discover all @InterceptionPoint methods and build into an array of Keys to register
+		DynamicObject	target	= DynamicObject.of( interceptor );
+		Set<Key>		states	= target.getMethodsAsStream( true )
+		    // filter only the methods that have the @InterceptionPoint annotation
+		    .filter( method -> method.isAnnotationPresent( InterceptionPoint.class ) )
+		    // map it to the method name
+		    .map( method -> Key.of( method.getName() ) )
+		    // Collect to the states set to register
+		    .collect( Collectors.toSet() );
+
+		return unregister( target, states.toArray( new Key[ 0 ] ) );
+	}
+
+	/**
 	 * This method registers a BoxLang interceptor with the pool by metadata inspection.
 	 * It will inspect the interceptor for methods that match the states that the
 	 * pool can announce. If the interceptor has a method that matches
