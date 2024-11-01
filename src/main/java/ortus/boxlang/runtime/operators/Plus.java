@@ -50,8 +50,13 @@ public class Plus implements IOperator {
 		// BigDecimals are over twice the heap usage of a Double (~64 bits vs ~24 bits)
 		if ( nLeft instanceof Integer li ) {
 			if ( nRight instanceof Integer ri ) {
-				// Cast to long to avoid integer overflow
-				return ( long ) li + ri;
+				// Check if the result will overflow an int
+				long result = ( long ) li + ( long ) ri;
+				if ( result > Integer.MAX_VALUE || result < Integer.MIN_VALUE ) {
+					return result; // Return as long if it overflows
+				} else {
+					return ( int ) result; // Return as int if it doesn't overflow
+				}
 			}
 			if ( nRight instanceof Long rl && rl <= MAX_SAFE_LONG && rl >= MIN_SAFE_LONG ) {
 				return li + rl;
