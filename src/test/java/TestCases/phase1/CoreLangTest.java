@@ -38,6 +38,7 @@ import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.compiler.parser.DocParser;
 import ortus.boxlang.compiler.parser.ParsingResult;
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.context.BaseBoxContext;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -64,6 +65,8 @@ public class CoreLangTest {
 	IBoxContext			context;
 	IScope				variables;
 	static Key			result	= new Key( "result" );
+	// Used in a test
+	public static int	num		= 0;
 
 	@BeforeAll
 	public static void setUp() {
@@ -3665,26 +3668,67 @@ public class CoreLangTest {
 	@DisplayName( "test import name restrictions" )
 	@Test
 	public void testImportNameRestrictions() {
+	// @formatter:off
+	instance.executeSource(
+		"""
+			import ortus.boxlang.runtime.context.BaseBoxContext;
+			currentValue = BaseBoxContext.nullIsUndefined;
+			BaseBoxContext.nullIsUndefined = currentValue;
+		""",
+		context );
+	// @formatter:on
+
+	// @formatter:off
+	Throwable t = assertThrows( BoxRuntimeException.class, () ->
+	instance.executeSource(
+		"""
+			import ortus.boxlang.runtime.context.BaseBoxContext;
+			BaseBoxContext = "foo";
+		""",
+		context ) );
+	// @formatter:on
+		assertThat( t.getMessage() ).contains( "You cannot assign a variable with the same name as an import" );
+	}
+
+	@Test
+	public void testAssignPublicJavaPropertiesIndirectly() {
 		// @formatter:off
 		instance.executeSource(
 			"""
 				import ortus.boxlang.runtime.context.BaseBoxContext;
-				currentValue = BaseBoxContext.nullIsUndefined;
-				BaseBoxContext.nullIsUndefined = currentValue;
+				bbc = BaseBoxContext;
+				bbc.nullIsUndefined = true;
+				result = BaseBoxContext.nullIsUndefined;
 			""",
 			context );
 		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( true );
+		BaseBoxContext.nullIsUndefined = false;
+	}
 
+	@Test
+	public void testAssignPublicJavaPropertiesDirectly() {
 		// @formatter:off
-		Throwable t = assertThrows( BoxRuntimeException.class, () ->
 		instance.executeSource(
 			"""
 				import ortus.boxlang.runtime.context.BaseBoxContext;
-				BaseBoxContext = "foo";
+				import TestCases.phase1.CoreLangTest;
+				
+				BaseBoxContext.nullIsUndefined = true;
+				result = BaseBoxContext.nullIsUndefined;
+				result2 = BaseBoxContext.nullIsUndefined.len();
+				
+				CoreLangTest.num += 5;
+				result3 = CoreLangTest.num;
 			""",
-			context ) );
+			context );
 		// @formatter:on
-		assertThat( t.getMessage() ).contains( "You cannot assign a variable with the same name as an import" );
+		BaseBoxContext.nullIsUndefined = false;
+		assertThat( variables.get( result ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( 4 );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( 5 );
+		assertThat( CoreLangTest.num ).isEqualTo( 5 );
+
 	}
 
 }
