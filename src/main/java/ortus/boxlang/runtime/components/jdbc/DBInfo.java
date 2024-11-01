@@ -226,7 +226,7 @@ public class DBInfo extends Component {
 
 			if ( !validType ) {
 				throw new BoxValidationException(
-				    "Invalid [dbinfo] type=table filter [" + filter + "]. Supported table types are " + String.join( ", ", allowedTypes ) + "."
+				    String.format( "Invalid [dbinfo] type=table filter [%s]. Supported table types are %s.", filter, String.join( ", ", allowedTypes ) )
 				);
 			}
 		} catch ( SQLException e ) {
@@ -291,8 +291,6 @@ public class DBInfo extends Component {
 
 	/**
 	 * Retrieve column metadata for a given table name.
-	 *
-	 * @TODO: Add support for Lucee's custom foreign key and primary key fields.
 	 *
 	 * @param datasource   Datasource on which the table resides.
 	 * @param databaseName Name of the database to check for tables. If not provided, the database name from the connection will be used.
