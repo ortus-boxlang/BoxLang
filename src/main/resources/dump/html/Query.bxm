@@ -1,5 +1,5 @@
 <bx:script>
-	expandRoot = expand || expand eq null
+	expandRoot = expand ?: true;
 </bx:script>
 <bx:output>
 	<div class="bx-dump">
