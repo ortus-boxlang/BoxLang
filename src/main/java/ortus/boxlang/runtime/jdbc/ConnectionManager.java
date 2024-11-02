@@ -177,7 +177,7 @@ public class ConnectionManager {
 			this.transaction = new ChildTransaction( this.transaction );
 			logger.debug( "Opened CHILD transaction {}", this.transaction );
 		} else {
-			this.transaction = new Transaction( datasource );
+			this.transaction = new Transaction( context, datasource );
 			logger.debug( "Opened transaction {}", this.transaction );
 		}
 		return this.transaction;
