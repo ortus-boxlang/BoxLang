@@ -723,7 +723,8 @@ public class BoxClassSupport {
 		if ( obj instanceof String str ) {
 			return BoxRuntime.getInstance().getClassLocator().load( context, str, imports );
 		}
-		throw new BoxRuntimeException( "Cannot load class for static access.  Type provided: " + obj.getClass().getName() );
+		throw new BoxRuntimeException( "Cannot load class for static access.  Did you try to statically dereference an instance on accident?  Type provided: "
+		    + obj.getClass().getName() );
 
 	}
 

@@ -3756,6 +3756,39 @@ public class CoreLangTest {
 	}
 
 	@Test
+	public void testStaticReferenceEdgeCases() {
+
+		// @formatter:off
+		instance.executeSource( """
+				import java.lang.System;
+				[1,2,3].stream().forEach( System.out.println )
+			"""
+			, context );
+		instance.executeSource( """
+				import java.lang.System;
+				[1,2,3].stream().forEach( System::out.println )
+			"""
+			, context );
+		instance.executeSource( """
+				import java.lang.System;
+				function getSystem() {
+					return System;
+				}
+				[1,2,3].stream().forEach( getSystem()::out.println )
+			"""
+			, context );
+		instance.executeSource( """
+				import java.lang.System;
+				function getSystem() {
+					return System;
+				}
+				getSystem()::getProperties()
+			"""
+			, context );
+		// @formatter:on
+	}
+
+	@Test
 	public void testCastStringToKey() {
 
 		// @formatter:off

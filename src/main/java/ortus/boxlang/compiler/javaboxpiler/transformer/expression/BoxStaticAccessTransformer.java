@@ -72,12 +72,18 @@ public class BoxStaticAccessTransformer extends AbstractTransformer {
 				jContext = new StringLiteralExpr( id.getName() );
 			}
 		} else {
-			throw new ExpressionException( "Unexpected base token in static access.", objectAccess.getContext() );
+			// foo.bar()::baz
+			// This is not valid in Java, but CF/BL perform all static access at runtime and use :: for field as well so it seems reasonable
+			// that if foo.bar() returns a static class reference, then we should be able to statically dereference it
+			jContext = ( Expression ) transpiler.transform( objectAccess.getContext(), context );
+			// throw new ExpressionException( "Unexpected base token in static access.", objectAccess.getContext() );
 		}
 
 		// "scope" here isn't a BoxLang proper scope, it's just whatever Java source represents the context of the access expression
 		values.put( "scopeReference", jContext.toString() );
 
+		// TODO: I think this should use an explicit getStatic() method because the method we're using would also allow intance access, but if the dev used
+		// :: then we REALLY should only be allowing static access here.
 		String	template	= """
 		                      Referencer.get(
 		                      	${contextName},

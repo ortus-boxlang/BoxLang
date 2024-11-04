@@ -32,7 +32,6 @@ import ortus.boxlang.compiler.ast.expression.BoxStaticMethodInvocation;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
 import ortus.boxlang.compiler.javaboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.TransformerContext;
-import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 
 public class BoxStaticMethodInvocationTransformer extends AbstractTransformer {
 
@@ -50,9 +49,13 @@ public class BoxStaticMethodInvocationTransformer extends AbstractTransformer {
 		if ( baseObject instanceof BoxFQN fqn ) {
 			expr = new StringLiteralExpr( fqn.getValue() );
 		} else if ( baseObject instanceof BoxIdentifier id ) {
+			// TODO: What if we have foo::bar() but foo is the name of a variable AND ALSO the name of an accessible Box Class?
+			// Do we treat "foo" as a FQN class name or a variable in that case??
 			expr = ( Expression ) transpiler.transform( id, context );
 		} else {
-			throw new ExpressionException( "Unexpected base token in static method access.", baseObject );
+			// foo()::bar()
+			expr = ( Expression ) transpiler.transform( baseObject, context );
+			// throw new ExpressionException( "Unexpected base token in static method access.", baseObject );
 		}
 		Map<String, String> values = new HashMap<>() {
 
@@ -76,6 +79,7 @@ public class BoxStaticMethodInvocationTransformer extends AbstractTransformer {
 	}
 
 	private String getTemplate( BoxStaticMethodInvocation function ) {
+		// TODO: I feel like this should use an explicit getAndInvokeStatic() method so we don't allow access to an instance method when the dev specifically used ::
 		StringBuilder sb = new StringBuilder(
 		    "Referencer.getAndInvoke(${contextName},BoxClassSupport.ensureClass(${contextName},${expr},imports),${methodKey}," );
 
