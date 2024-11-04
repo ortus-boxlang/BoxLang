@@ -3755,4 +3755,18 @@ public class CoreLangTest {
 		assertThat( variables.get( result ) ).isNull();
 	}
 
+
+	@Test
+	public void testPassingBLFunctionsToJavaMethods() {
+		instance.executeSource(
+		    """
+		        	import java.lang.System;
+		        	[1,2,3].stream().forEach( ::echo )
+		    // Lambdas/closures have output=false by default in BL code.
+		        	[1,2,3].stream().forEach( (i) output=true -> echo(i) )
+		      result = getBoxContext().getBuffer().toString();
+		        """, context );
+		assertThat( variables.get( result ) ).isEqualTo( "123123" );
+	}
+
 }
