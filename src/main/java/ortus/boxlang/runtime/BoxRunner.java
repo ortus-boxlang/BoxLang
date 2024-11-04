@@ -20,6 +20,7 @@ package ortus.boxlang.runtime;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -364,18 +365,23 @@ public class BoxRunner {
 
 	/**
 	 * Convert a template path to an absolute path from the currently executing directory.
+	 * If the passed string is not a valid path, the original string is returned unchanged.
 	 *
 	 * @param path The path to the template
 	 *
 	 * @return The absolute path to the template, or the original path if it was already absolute
 	 */
 	private static String templateToAbsolute( String path ) {
-		Path templatePath = Path.of( path );
-		// If path is not already absolute, make it absolute relative to the working directory of our process
-		if ( ! ( templatePath.toFile().isAbsolute() ) ) {
-			templatePath = Path.of( System.getProperty( "user.dir" ), templatePath.toString() );
+		try {
+			Path templatePath = Path.of( path );
+			// If path is not already absolute, make it absolute relative to the working directory of our process
+			if ( ! ( templatePath.toFile().isAbsolute() ) ) {
+				templatePath = Path.of( System.getProperty( "user.dir" ), templatePath.toString() );
+			}
+			return templatePath.toString();
+		} catch ( InvalidPathException e ) {
+			return path;
 		}
-		return templatePath.toString();
 	}
 
 	/**
@@ -386,8 +392,12 @@ public class BoxRunner {
 	 * @return Whether or not the file is a shebang script
 	 */
 	private static boolean isShebangScript( String path ) {
-		Path templatePath = Path.of( templateToAbsolute( path ) );
-
+		Path templatePath;
+		try {
+			templatePath = Path.of( templateToAbsolute( path ) );
+		} catch ( InvalidPathException e ) {
+			return false;
+		}
 		// return false if the file doesn't exist
 		if ( !Files.exists( templatePath ) ) {
 			return false;
