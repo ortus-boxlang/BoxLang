@@ -813,6 +813,14 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		minimumIdle							= Key.of( "minimumIdle" );
 	public static final Key		poolName							= Key.of( "poolName" );
 
+	// Transaction events
+	public static final Key		onTransactionBegin					= Key.of( "onTransactionBegin" );
+	public static final Key		onTransactionEnd					= Key.of( "onTransactionEnd" );
+	public static final Key		onTransactionAcquire				= Key.of( "onTransactionAcquire" );
+	public static final Key		onTransactionRelease				= Key.of( "onTransactionRelease" );
+	public static final Key		onTransactionCommit					= Key.of( "onTransactionCommit" );
+	public static final Key		onTransactionRollback				= Key.of( "onTransactionRollback" );
+	public static final Key		onTransactionSetSavepoint			= Key.of( "onTransactionSetSavepoint" );
 	/**
 	 * --------------------------------------------------------------------------
 	 * Private Properties

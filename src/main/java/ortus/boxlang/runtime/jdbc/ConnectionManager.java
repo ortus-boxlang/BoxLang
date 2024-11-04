@@ -16,6 +16,7 @@ package ortus.boxlang.runtime.jdbc;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -26,6 +27,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.segments.DatasourceConfig;
 import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.scopes.Key;
@@ -51,7 +53,7 @@ public class ConnectionManager {
 	/**
 	 * Logger
 	 */
-	private static final Logger		logger				= LoggerFactory.getLogger( ConnectionManager.class );
+	private static final Logger		logger							= LoggerFactory.getLogger( ConnectionManager.class );
 
 	/**
 	 * The active transaction (if any) for this request/thread/BoxLang context.
@@ -66,17 +68,27 @@ public class ConnectionManager {
 	/**
 	 * A default datasource, that can be set manully mostly for testing purpose mostly
 	 */
-	private DataSource				defaultDatasource	= null;
+	private DataSource				defaultDatasource				= null;
 
 	/**
 	 * A concurrent map of datasources registered with the manager.
 	 */
-	private Map<Key, DataSource>	datasources			= new ConcurrentHashMap<>();
+	private Map<Key, DataSource>	datasources						= new ConcurrentHashMap<>();
 
 	/**
 	 * The DatasourceService instance
 	 */
-	private DatasourceService		datasourceService	= BoxRuntime.getInstance().getDataSourceService();
+	private DatasourceService		datasourceService				= BoxRuntime.getInstance().getDataSourceService();
+
+	private static final Key[]		TRANSACTION_INTERCEPTION_POINTS	= List.of(
+	    Key.onTransactionBegin,
+	    Key.onTransactionEnd,
+	    Key.onTransactionAcquire,
+	    Key.onTransactionRelease,
+	    Key.onTransactionCommit,
+	    Key.onTransactionRollback,
+	    Key.onTransactionSetSavepoint
+	).toArray( new Key[ 0 ] );
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -91,6 +103,13 @@ public class ConnectionManager {
 	 */
 	public ConnectionManager( IBoxContext context ) {
 		this.context = context;
+
+		RequestBoxContext requestContext = this.context.getParentOfType( RequestBoxContext.class );
+		if ( requestContext != null ) {
+			requestContext.getApplicationListener()
+			    .getInterceptorPool()
+			    .registerInterceptionPoint( TRANSACTION_INTERCEPTION_POINTS );
+		}
 	}
 
 	/**
