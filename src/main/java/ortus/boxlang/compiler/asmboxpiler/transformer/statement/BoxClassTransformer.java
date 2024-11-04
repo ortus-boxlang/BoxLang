@@ -88,12 +88,13 @@ public class BoxClassTransformer {
 	private static final String	EXTENDS_ANNOTATION_MARKER	= "overrideJava";
 
 	public static ClassNode transpile( Transpiler transpiler, BoxClass boxClass ) throws BoxRuntimeException {
-		Source	source			= boxClass.getPosition().getSource();
-		String	sourceType		= transpiler.getProperty( "sourceType" );
+		Source	source		= boxClass.getPosition().getSource();
+		String	sourceType	= transpiler.getProperty( "sourceType" );
 
-		String	filePath		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath()
+		String	filePath	= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath()
 		    : "unknown";
-		String	boxClassName	= transpiler.getProperty( "boxFQN" );
+		transpiler.setProperty( "filePath", filePath );
+		String boxClassName = transpiler.getProperty( "boxFQN" );
 		transpiler.setProperty( "boxClassName", boxClassName );
 		String	mappingName		= transpiler.getProperty( "mappingName" );
 		String	mappingPath		= transpiler.getProperty( "mappingPath" );
@@ -193,6 +194,7 @@ public class BoxClassTransformer {
 		}
 
 		ClassNode classNode = new ClassNode();
+		classNode.visitSource( filePath, null );
 
 		AsmHelper.init( classNode, false, type, superclass, methodVisitor -> {
 			methodVisitor.visitVarInsn( Opcodes.ALOAD, 0 );

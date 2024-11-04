@@ -738,7 +738,7 @@ public class CoreLangTest {
 		       result = counter;
 		                    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 7 );
+		assertThat( variables.get( result ) ).isEqualTo( 6 );
 	}
 
 	@DisplayName( "continue sentinel" )
@@ -2811,6 +2811,32 @@ public class CoreLangTest {
 	}
 
 	@Test
+	public void testSimplePositionalFunctionalMemberAccessArgs() {
+
+		instance.executeSource(
+		    """
+		    foo = .left(1);
+		    result2 = foo( "test" );
+
+		    	 """,
+		    context );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "t" );
+	}
+
+	@Test
+	public void testSimpleNamedFunctionalMemberAccessArgs() {
+
+		instance.executeSource(
+		    """
+		    foo = .left(count=1);
+		    result2 = foo( "test" );
+
+		    	 """,
+		    context );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "t" );
+	}
+
+	@Test
 	public void testFunctionalMemberAccessArgs() {
 
 		instance.executeSource(
@@ -2985,7 +3011,6 @@ public class CoreLangTest {
 
 	@Test
 	public void testAssginmentModifierCF() {
-
 		instance.executeSource(
 		    """
 		    function func(){
@@ -3174,7 +3199,7 @@ public class CoreLangTest {
 		    """
 		    foo.50foo = "bar";
 		    result = foo.50foo;
-		      """,
+		    """,
 		    context, BoxSourceType.CFSCRIPT );
 		assertThat( variables.get( result ) ).isEqualTo( "bar" );
 
@@ -3189,7 +3214,7 @@ public class CoreLangTest {
 		Throwable t = assertThrows( ParseException.class, () -> instance.executeSource(
 		    """
 		    50foo = "bar";
-		      """,
+		    """,
 		    context, BoxSourceType.CFSCRIPT ) );
 		assertThat( t.getMessage() ).contains( "Identifier name cannot start with a number" );
 	}
@@ -3411,14 +3436,14 @@ public class CoreLangTest {
 		Throwable t = assertThrows( CustomException.class, () -> instance.executeSource(
 		    """
 		    function reThrowMe( required struct err ) {
-		    	throw object=err;
+		    throw object=err;
 		    }
 		    try {
-		    	1/0;
+		    1/0;
 		    } catch( any e ) {
-		    	reThrowMe( e );
+		    reThrowMe( e );
 		    }
-		    	 """,
+		    """,
 		    context, BoxSourceType.BOXSCRIPT ) );
 		assertThat( t.getMessage() ).contains( "zero" );
 	}
@@ -3495,6 +3520,7 @@ public class CoreLangTest {
 				include "src/test/java/TestCases/phase1/TagContextLineMapping.bxs";
 				foo()
 			} catch( any e ) {
+				x = e;
 				tagContext = e.tagContext;
 			}
 			""",

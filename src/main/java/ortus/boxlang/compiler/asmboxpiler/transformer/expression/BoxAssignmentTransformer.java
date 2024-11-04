@@ -58,6 +58,7 @@ import ortus.boxlang.runtime.operators.Multiply;
 import ortus.boxlang.runtime.operators.Plus;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.LocalScope;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 
 public class BoxAssignmentTransformer extends AbstractTransformer {
@@ -68,14 +69,22 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 
 	@Override
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnContext ) throws IllegalStateException {
-		BoxAssignment			assigment	= ( BoxAssignment ) node;
+		BoxAssignment			assignment	= ( BoxAssignment ) node;
 		List<AbstractInsnNode>	nodes		= null;
 
-		if ( assigment.getOp() == BoxAssignmentOperator.Equal ) {
-			List<AbstractInsnNode> jRight = transpiler.transform( assigment.getRight(), TransformerContext.NONE, ReturnValueContext.VALUE );
-			nodes = transformEquals( assigment.getLeft(), jRight, assigment.getOp(), assigment.getModifiers() );
+		if ( assignment.getOp() == null ) {
+			if ( ! ( assignment.getLeft() instanceof BoxIdentifier ) ) {
+				throw new ExpressionException( "You cannot declare a variable using " + assignment.getLeft().getClass().getSimpleName(),
+				    assignment.getPosition(),
+				    assignment.getSourceText() );
+			}
+
+			nodes = assignNullValue( ( BoxIdentifier ) assignment.getLeft() );
+		} else if ( assignment.getOp() == BoxAssignmentOperator.Equal ) {
+			List<AbstractInsnNode> jRight = transpiler.transform( assignment.getRight(), TransformerContext.NONE, ReturnValueContext.VALUE );
+			nodes = transformEquals( assignment.getLeft(), jRight, assignment.getOp(), assignment.getModifiers() );
 		} else {
-			nodes = transformCompoundEquals( assigment );
+			nodes = transformCompoundEquals( assignment );
 		}
 
 		if ( returnContext.empty ) {
@@ -431,6 +440,42 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			default -> throw new ExpressionException( "Unknown assingment operator " + operator.toString(), assignment.getPosition(),
 			    assignment.getSourceText() );
 		};
+	}
+
+	private List<AbstractInsnNode> assignNullValue( BoxIdentifier name ) {
+		List<AbstractInsnNode> nodes = new ArrayList<>();
+		transpiler.getCurrentMethodContextTracker().ifPresent( t -> nodes.addAll( t.loadCurrentContext() ) );
+
+		nodes.add( new InsnNode( Opcodes.DUP ) );
+		nodes.add( new FieldInsnNode( Opcodes.GETSTATIC,
+		    Type.getInternalName( LocalScope.class ),
+		    "name",
+		    Type.getDescriptor( Key.class ) ) );
+		nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+
+		nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
+		    Type.getInternalName( IBoxContext.class ),
+		    "scopeFindNearby",
+		    Type.getMethodDescriptor( Type.getType( IBoxContext.ScopeSearchResult.class ),
+		        Type.getType( Key.class ),
+		        Type.getType( IScope.class ) ),
+		    true ) );
+
+		nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+		nodes.addAll( AsmHelper.array( Type.getType( Key.class ), List.of( transpiler.createKey( ( name.getName() ) ) ) ) );
+
+		nodes.add( new MethodInsnNode(
+		    Opcodes.INVOKESTATIC,
+		    Type.getInternalName( Referencer.class ),
+		    "setDeep",
+		    Type.getMethodDescriptor( Type.getType( Object.class ),
+		        Type.getType( IBoxContext.class ),
+		        Type.getType( IBoxContext.ScopeSearchResult.class ),
+		        Type.getType( Object.class ),
+		        Type.getType( Key[].class ) ),
+		    false ) );
+
+		return nodes;
 	}
 
 }

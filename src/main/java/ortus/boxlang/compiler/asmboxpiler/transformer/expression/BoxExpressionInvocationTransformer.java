@@ -30,7 +30,7 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxExpressionInvocation;
-import ortus.boxlang.compiler.ast.expression.BoxLambda;
+import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
 import ortus.boxlang.runtime.scopes.Key;
 
 public class BoxExpressionInvocationTransformer extends AbstractTransformer {
@@ -46,11 +46,10 @@ public class BoxExpressionInvocationTransformer extends AbstractTransformer {
 		List<AbstractInsnNode>	nameNodes	= transpiler.transform( invocation.getExpr(), context, ReturnValueContext.VALUE );
 
 		List<AbstractInsnNode>	nodes		= new ArrayList<>();
+
 		nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
 
-		Type invokeType = invocation.getExpr() instanceof BoxLambda || invocation.getExpr().getDescendantsOfType( BoxLambda.class ).size() > 0
-		    ? Type.getType( Object.class )
-		    : Type.getType( Key.class );
+		Type invokeType = getInvocationType( invocation.getExpr() );
 
 		nodes.addAll( AsmHelper.callinvokeFunction( transpiler, invokeType, invocation.getArguments(), nameNodes, context, false ) );
 
@@ -59,5 +58,29 @@ public class BoxExpressionInvocationTransformer extends AbstractTransformer {
 		}
 
 		return nodes;
+	}
+
+	private Type getInvocationType( BoxNode expressionNode ) {
+		BoxNode firstUseful = expressionNode;
+
+		while ( firstUseful instanceof BoxParenthesis ) {
+			firstUseful = firstUseful.getChildren().getFirst();
+
+			if ( firstUseful == null ) {
+				return Type.getType( Key.class );
+			}
+		}
+
+		// Previously we were using the following code to switch invocation type
+		// Type invokeType = invocation.getExpr() instanceof BoxLambda || invocation.getExpr() instanceof BoxDotAccess
+		// || invocation.getExpr() instanceof BoxFunctionInvocation
+		// || invocation.getExpr().getDescendantsOfType( BoxLambda.class ).size() > 0
+		// ? Type.getType( Object.class )
+		// : Type.getType( Key.class );
+		// I haven't been able to figure out why we would want "Key" in this context. I'm switching to use Object exclusively until
+		// I have a good reason not to.
+
+		return Type.getType( Object.class );
+
 	}
 }

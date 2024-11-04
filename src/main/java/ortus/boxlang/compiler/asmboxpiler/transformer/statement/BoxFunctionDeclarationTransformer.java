@@ -16,6 +16,7 @@ package ortus.boxlang.compiler.asmboxpiler.transformer.statement;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -76,6 +77,7 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		BoxAccessModifier	access			= function.getAccessModifier() == null ? BoxAccessModifier.Public : function.getAccessModifier();
 
 		ClassNode			classNode		= new ClassNode();
+		classNode.visitSource( transpiler.getProperty( "filePath" ), null );
 		AsmHelper.init( classNode, true, type, Type.getType( UDF.class ), methodVisitor -> {
 		} );
 		transpiler.setAuxiliary( type.getClassName(), classNode );
@@ -150,13 +152,13 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		    () -> {
 
 			    if ( function.getBody() == null ) {
-				    return new ArrayList<AbstractInsnNode>();
+				    return AsmHelper.addLineNumberLabels( new ArrayList<AbstractInsnNode>(), node );
 			    }
 
-			    return function.getBody()
+			    return AsmHelper.addLineNumberLabels( function.getBody()
 			        .stream()
 			        .flatMap( statement -> transpiler.transform( statement, safe, ReturnValueContext.EMPTY ).stream() )
-			        .toList();
+			        .collect( Collectors.toList() ), node );
 		    } );
 		transpiler.decrementfunctionBodyCounter();
 
@@ -241,7 +243,7 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		        true )
 		);
 
-		if ( returnContext.nullable ) {
+		if ( returnContext == ReturnValueContext.VALUE || returnContext == ReturnValueContext.VALUE_OR_NULL ) {
 			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
 		}
 

@@ -45,20 +45,10 @@ public class BoxFunctionInvocationTransformer extends AbstractTransformer {
 
 		List<AbstractInsnNode>	nodes		= new ArrayList<>();
 		nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
-		// nodes.addAll( transpiler.createKey( function.getName() ) );
 
 		TransformerContext argContext = safe ? TransformerContext.SAFE : context;
 		nodes.addAll( AsmHelper.callinvokeFunction( transpiler, Type.getType( Key.class ), function.getArguments(), transpiler.createKey( function.getName() ),
 		    argContext, safe ) );
-
-		// nodes.addAll( AsmHelper.array( Type.getType( Object.class ), function.getArguments(),
-		// ( argument, i ) -> transpiler.transform( argument, safe, ReturnValueContext.VALUE ) ) );
-
-		// nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
-		// Type.getInternalName( IBoxContext.class ),
-		// "invokeFunction",
-		// Type.getMethodDescriptor( Type.getType( Object.class ), Type.getType( Key.class ), Type.getType( Object[].class ) ),
-		// true ) );
 
 		if ( returnContext.empty ) {
 			nodes.add( new InsnNode( Opcodes.POP ) );

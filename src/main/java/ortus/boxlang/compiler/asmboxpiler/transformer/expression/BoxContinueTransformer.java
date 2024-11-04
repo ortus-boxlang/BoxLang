@@ -18,10 +18,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.JumpInsnNode;
 import org.objectweb.asm.tree.LabelNode;
+import org.objectweb.asm.tree.LdcInsnNode;
+import org.objectweb.asm.tree.MethodInsnNode;
 
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.MethodContextTracker;
@@ -39,6 +42,7 @@ import ortus.boxlang.compiler.ast.statement.BoxForIndex;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxWhile;
 import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
+import ortus.boxlang.runtime.components.Component;
 
 public class BoxContinueTransformer extends AbstractTransformer {
 
@@ -71,7 +75,15 @@ public class BoxContinueTransformer extends AbstractTransformer {
 		}
 
 		if ( exitsAllowed.equals( ExitsAllowed.COMPONENT ) ) {
-			// template = "if(true) return Component.BodyResult.ofBreak(" + componentLabel + ");";
+			nodes.add( new LdcInsnNode( "" ) );
+			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+			    Type.getInternalName( Component.BodyResult.class ),
+			    "ofBreak",
+			    Type.getMethodDescriptor( Type.getType( Component.BodyResult.class ), Type.getType( String.class ) ),
+			    false )
+			);
+			nodes.add( new InsnNode( Opcodes.ARETURN ) );
+			return nodes;
 		} else if ( exitsAllowed.equals( ExitsAllowed.LOOP ) ) {
 			nodes.add( new JumpInsnNode( Opcodes.GOTO, currentBreak ) );
 			return nodes;
@@ -79,12 +91,7 @@ public class BoxContinueTransformer extends AbstractTransformer {
 		} else if ( exitsAllowed.equals( ExitsAllowed.FUNCTION ) ) {
 			nodes.add( new InsnNode( Opcodes.ARETURN ) );
 			return nodes;
-		} else {
-			// template = "if(true) return;";
 		}
-		// if ( currentBreak == null ) {
-		// throw new RuntimeException( "Cannot break from current location" );
-		// }
 
 		throw new RuntimeException( "Cannot continue from current location - processing: " + transpiler.getProperty( "relativePath" ) );
 
