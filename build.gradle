@@ -124,7 +124,7 @@ dependencies {
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-stree
 	implementation 'com.fasterxml.jackson.jr:jackson-jr-stree:2.18.1'
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-annotation-support
-	implementation 'com.fasterxml.jackson.jr:jackson-jr-annotation-support:2.18.0'
+	implementation 'com.fasterxml.jackson.jr:jackson-jr-annotation-support:2.18.1'
 	// https://mvnrepository.com/artifact/org.slf4j/slf4j-api
 	implementation 'org.slf4j:slf4j-api:2.0.16'
 	// https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
