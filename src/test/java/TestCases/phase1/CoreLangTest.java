@@ -3755,7 +3755,6 @@ public class CoreLangTest {
 		assertThat( variables.get( result ) ).isNull();
 	}
 
-
 	@Test
 	public void testCastStringToKey() {
 
