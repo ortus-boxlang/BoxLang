@@ -3755,6 +3755,18 @@ public class CoreLangTest {
 		assertThat( variables.get( result ) ).isNull();
 	}
 
+
+	@Test
+	public void testCastStringToKey() {
+
+		// @formatter:off
+		instance.executeSource( """		
+				getBoxContext().getRuntime().getDatasourceService().get( "myDataSourceNameFromTheArray" )
+			"""
+			, context );
+		// @formatter:on
+	}
+
 	@Test
 	public void testPassingBLFunctionsToJavaMethods() {
 		instance.executeSource(

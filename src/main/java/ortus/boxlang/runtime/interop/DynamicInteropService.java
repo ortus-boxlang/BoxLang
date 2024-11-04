@@ -51,6 +51,7 @@ import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
+import ortus.boxlang.runtime.dynamic.casters.KeyCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCasterLoose;
 import ortus.boxlang.runtime.dynamic.javaproxy.InterfaceProxyService;
@@ -2189,7 +2190,16 @@ public class DynamicInteropService {
 		if ( Number.class.isAssignableFrom( expected ) && Number.class.isAssignableFrom( actual ) ) {
 			// logger.debug( "Coerce attempt: Both numbers, using generic caster to " + expectedClass );
 			return Optional.of(
-			    GenericCaster.cast( context, value, expectedClass )
+			    GenericCaster.cast( context, value, expectedClass, false )
+			);
+		}
+
+		// EXPECTED: Key
+		// To help with interacting with core BL classes, if the target method requires a Key then cast simple values
+		if ( Key.class.isAssignableFrom( expected ) ) {
+			// logger.debug( "Coerce attempt: Both numbers, using generic caster to " + expectedClass );
+			return Optional.of(
+			    KeyCaster.cast( value, false )
 			);
 		}
 
@@ -2204,7 +2214,7 @@ public class DynamicInteropService {
 			// logger.debug( "Coerce attempt: Castable to boolean " + actualClass );
 
 			return Optional.of(
-			    BooleanCaster.cast( value )
+			    BooleanCaster.cast( value, false )
 			);
 		}
 
@@ -2212,7 +2222,7 @@ public class DynamicInteropService {
 		if ( expectedClass.equals( "string" ) ) {
 			// logger.debug( "Coerce attempt: Castable to String " + actualClass );
 			return Optional.of(
-			    StringCaster.cast( value )
+			    StringCaster.cast( value, false )
 			);
 		}
 
@@ -2227,11 +2237,6 @@ public class DynamicInteropService {
 			        ? InterfaceProxyService.buildCoreProxy( functionalInterface, context, value, null )
 			        : InterfaceProxyService.buildGenericProxy( context, value, null, new Class[] { functionalInterface }, functionalInterface.getClassLoader() )
 			);
-		}
-		// If we have them both, just return it, this is needed for super class lookups
-		if ( functionalInterface != null && functionalInterface.isAssignableFrom( value.getClass() ) ) {
-			// logger.debug( "Coerce attempt: Castable to " + expectedClass + " from " + actualClass );
-			return Optional.of( value );
 		}
 
 		// logger.debug( "Coerce attempt FAILED for [" + expected + "] from [" + actual + "] with value [" + value.toString() + "]" );
