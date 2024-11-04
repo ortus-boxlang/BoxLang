@@ -1218,6 +1218,18 @@ public class BaseBoxContext implements IBoxContext {
 	}
 
 	/**
+	 * Serach for an ancestor context of RequestBoxContext
+	 * This is a convenience method for getParentOfType( RequestBoxContext.class )
+	 * since it is so common
+	 *
+	 * @return The matching parent RequestBoxContext, or null if one is not found of this
+	 *         type.
+	 */
+	public RequestBoxContext getRequestContext() {
+		return getParentOfType( RequestBoxContext.class );
+	}
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Attachable Delegation
 	 * --------------------------------------------------------------------------
