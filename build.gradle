@@ -120,7 +120,7 @@ dependencies {
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-objects
 	implementation 'com.fasterxml.jackson.jr:jackson-jr-objects:2.18.0'
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-extension-javatime
-	implementation 'com.fasterxml.jackson.jr:jackson-jr-extension-javatime:2.18.0'
+	implementation 'com.fasterxml.jackson.jr:jackson-jr-extension-javatime:2.18.1'
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-stree
 	implementation 'com.fasterxml.jackson.jr:jackson-jr-stree:2.18.0'
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-annotation-support
