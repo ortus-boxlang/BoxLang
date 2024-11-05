@@ -62,7 +62,9 @@ public abstract class Transpiler implements ITranspiler {
 	private int								componentCounter			= 0;
 	private int								componentOptionalCounter	= 0;
 	private int								functionBodyCounter			= 0;
+	private int								forLoopBreakCounter			= 0;
 	private ArrayDeque<String>				currentContextName			= new ArrayDeque<>();
+	private ArrayDeque<Integer>				currentforLoopBreakCounter	= new ArrayDeque<>();
 	// This is a list of import metadata used to enforce reserve variable names
 	private List<ImportDefinition>			imports						= new ArrayList<ImportDefinition>();
 	// This is the actual transpiled expressions representing the java code used to define the import in the class. Gathered here so we can hoist them
@@ -249,6 +251,20 @@ public abstract class Transpiler implements ITranspiler {
 
 	public int incrementAndGetComponentOptionalCounter() {
 		return ++componentOptionalCounter;
+	}
+
+	public int incrementAndGetForLoopBreakCounter() {
+		++forLoopBreakCounter;
+		currentforLoopBreakCounter.add( forLoopBreakCounter );
+		return forLoopBreakCounter;
+	}
+
+	public void popForLoopBreakCounter() {
+		currentforLoopBreakCounter.pop();
+	}
+
+	public Integer peekForLoopBreakCounter() {
+		return currentforLoopBreakCounter.peek();
 	}
 
 	public void pushComponent() {

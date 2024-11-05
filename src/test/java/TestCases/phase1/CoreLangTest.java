@@ -741,6 +741,20 @@ public class CoreLangTest {
 		assertThat( variables.get( result ) ).isEqualTo( 6 );
 	}
 
+	@DisplayName( "sentinel increment does not run after break" )
+	@Test
+	public void testSentinelIncrementDoesNotRunAfterBreak() {
+
+		instance.executeSource(
+		    """
+		    for( i=0; true; i++ ) {
+		    	break;
+		    }
+		                      """,
+		    context );
+		assertThat( variables.get( Key.of( "i" ) ) ).isEqualTo( 0 );
+	}
+
 	@DisplayName( "continue sentinel" )
 	@Test
 	public void testContinueSentinel() {

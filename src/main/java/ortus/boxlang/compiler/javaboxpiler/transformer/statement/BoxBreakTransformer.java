@@ -45,7 +45,15 @@ public class BoxBreakTransformer extends AbstractTransformer {
 		if ( exitsAllowed.equals( ExitsAllowed.COMPONENT ) ) {
 			template = "if(true) return Component.BodyResult.ofBreak(" + componentLabel + ");";
 		} else if ( exitsAllowed.equals( ExitsAllowed.LOOP ) ) {
-			template = "if(true) break " + breakLabel + ";";
+			String	breakDetectionName	= null;
+			Integer	breakCounter		= transpiler.peekForLoopBreakCounter();
+			if ( breakCounter != null ) {
+				breakDetectionName	= "didBreak" + breakCounter;
+				template			= "if(true) { " + breakDetectionName + "=true; break " + breakLabel + "; }";
+			} else {
+				template = "if(true) break " + breakLabel + ";";
+			}
+
 		} else if ( exitsAllowed.equals( ExitsAllowed.FUNCTION ) ) {
 			template = "if(true) return null;";
 		} else {
