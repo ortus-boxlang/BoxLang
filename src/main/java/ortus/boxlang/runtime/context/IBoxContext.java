@@ -614,6 +614,16 @@ public interface IBoxContext extends IBoxAttachable, Serializable {
 	public RequestBoxContext getRequestContext();
 
 	/**
+	 * Serach for an ancestor context of ApplicationBoxContext
+	 * This is a convenience method for getParentOfType( ApplicationBoxContext.class )
+	 * since it is so common
+	 *
+	 * @return The matching parent ApplicationBoxContext, or null if one is not found of this
+	 *         type.
+	 */
+	public ApplicationBoxContext getApplicationContext();
+
+	/**
 	 * Convenience method to retrieve a single config item
 	 *
 	 * @param itemKey the object key to retrieve
@@ -699,9 +709,9 @@ public interface IBoxContext extends IBoxAttachable, Serializable {
 
 	/**
 	 * This implements a check if a value is defined, which allows the compat module to override for CF behavior
-	 * 
+	 *
 	 * @param value The value to check
-	 * 
+	 *
 	 * @return True if the value is defined, else false
 	 */
 	public boolean isDefined( Object value );

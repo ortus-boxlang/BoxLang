@@ -723,9 +723,9 @@ public class BaseBoxContext implements IBoxContext {
 
 	/**
 	 * Decide if a value found in a scope is defined or not
-	 * 
+	 *
 	 * @param value The value to check, possibly null, possibly an instance of NullValue
-	 * 
+	 *
 	 * @return True if the value is defined, else false
 	 */
 	public boolean isDefined( Object value ) {
@@ -1227,6 +1227,18 @@ public class BaseBoxContext implements IBoxContext {
 	 */
 	public RequestBoxContext getRequestContext() {
 		return getParentOfType( RequestBoxContext.class );
+	}
+
+	/**
+	 * Serach for an ancestor context of ApplicationBoxContext
+	 * This is a convenience method for getParentOfType( ApplicationBoxContext.class )
+	 * since it is so common
+	 *
+	 * @return The matching parent ApplicationBoxContext, or null if one is not found of this
+	 *         type.
+	 */
+	public ApplicationBoxContext getApplicationContext() {
+		return getParentOfType( ApplicationBoxContext.class );
 	}
 
 	/**
