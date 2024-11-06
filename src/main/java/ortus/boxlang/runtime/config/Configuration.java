@@ -104,6 +104,11 @@ public class Configuration implements IConfigSegment {
 	public Locale				locale							= Locale.getDefault();
 
 	/**
+	 * Enable whitespace compression in output. Only in use by the web runtimes currently.
+	 */
+	public boolean				whitespaceCompressionEnabled	= true;
+
+	/**
 	 * Invoke implicit getters and setters when using the implicit accessor
 	 * {@code true} by default
 	 */
@@ -319,6 +324,12 @@ public class Configuration implements IConfigSegment {
 		if ( config.containsKey( Key.invokeImplicitAccessor ) ) {
 			BooleanCaster.attempt( PlaceholderHelper.resolve( config.get( Key.invokeImplicitAccessor ) ) )
 			    .ifSuccessful( value -> this.invokeImplicitAccessor = value );
+		}
+
+		// whitespaceCompressionEnabled
+		if ( config.containsKey( Key.whitespaceCompressionEnabled ) ) {
+			BooleanCaster.attempt( PlaceholderHelper.resolve( config.get( Key.whitespaceCompressionEnabled ) ) )
+			    .ifSuccessful( value -> this.whitespaceCompressionEnabled = value );
 		}
 
 		// Use High Precision Math
@@ -854,6 +865,7 @@ public class Configuration implements IConfigSegment {
 		    Key.executors, executorsCopy,
 		    Key.experimental, Struct.fromMap( this.experimental ),
 		    Key.invokeImplicitAccessor, this.invokeImplicitAccessor,
+		    Key.whitespaceCompressionEnabled, this.whitespaceCompressionEnabled,
 		    Key.javaLibraryPaths, Array.fromList( this.javaLibraryPaths ),
 		    Key.locale, this.locale,
 		    Key.mappings, mappingsCopy,

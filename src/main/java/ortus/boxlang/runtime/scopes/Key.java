@@ -724,6 +724,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		warning								= Key.of( "warning" );
 	public static final Key		web_server_api						= Key.of( "web_server_api" );
 	public static final Key		webURL								= Key.of( "webURL" );
+	public static final Key		whitespaceCompressionEnabled		= Key.of( "whitespaceCompressionEnabled" );
 	public static final Key		workstation							= Key.of( "workstation" );
 	public static final Key		write								= Key.of( "write" );
 	public static final Key		wddx								= Key.of( "wddx" );

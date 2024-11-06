@@ -38,6 +38,8 @@
 	// The default locale for the runtime; defaults to the JVM locale if empty
 	// Please use the IETF BCP 47 language tag values
 	"locale": "",
+	// Enable whitespace compression in output.  Only in use by the web runtimes currently.
+	"whitespaceCompressionEnabled": true,
 	// By default BoxLang uses high-precision mathematics via BigDecimal operations
 	// You can turn this off here for all applications
 	"useHighPrecisionMath": true,
