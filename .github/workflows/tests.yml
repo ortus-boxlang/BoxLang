@@ -72,7 +72,7 @@ jobs:
 
       - name: Test Module
         run: |
-          gradle :src:modules:test:build -Dboxlang.experimental.compiler=${{ matrix.compiler }} --stacktrace --console=plain
+          gradle :src:modules:test:build "-Dboxlang.experimental.compiler=${{ matrix.compiler }}" --stacktrace --console=plain
           gradle test "-Dboxlang.experimental.compiler=${{ matrix.compiler }}" --stacktrace --console=plain
 
       - name: Upload Test Results
