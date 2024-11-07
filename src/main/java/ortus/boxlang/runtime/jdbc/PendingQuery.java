@@ -197,6 +197,13 @@ public class PendingQuery {
 	}
 
 	/**
+	 * Retrieve the generated or provided-in-query-options cache key for this query.
+	 */
+	public String getCacheKey() {
+		return this.cacheKey;
+	}
+
+	/**
 	 * Processes the bindings provided to the constructor and returns a list of {@link QueryParameter} instances.
 	 * Will also modify the SQL string to replace named parameters with positional placeholders.
 	 *
