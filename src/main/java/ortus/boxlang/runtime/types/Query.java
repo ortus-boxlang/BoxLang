@@ -168,15 +168,6 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	}
 
 	/**
-	 * Override Query metadata - used for setting custom query meta on cached queries.
-	 */
-	public Query setMetadata( IStruct meta ) {
-		this.metadata	= meta;
-		this.$bx		= null;
-		return this;
-	}
-
-	/**
 	 * Get the list of column definitions for this query
 	 *
 	 * @return map of columns
@@ -886,6 +877,15 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		this.metadata.computeIfAbsent( Key.columnList, key -> this.getColumnList() );
 		this.metadata.computeIfAbsent( Key._HASHCODE, key -> this.hashCode() );
 		return this.metadata;
+	}
+
+	/**
+	 * Override Query metadata - used for setting custom query meta on cached queries.
+	 */
+	public Query setMetadata( IStruct meta ) {
+		this.metadata	= meta;
+		this.$bx		= null;
+		return this;
 	}
 
 	/**
