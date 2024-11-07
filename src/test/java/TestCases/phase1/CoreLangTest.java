@@ -755,6 +755,23 @@ public class CoreLangTest {
 		assertThat( variables.get( Key.of( "i" ) ) ).isEqualTo( 0 );
 	}
 
+	@DisplayName( "nested sentinel break" )
+	@Test
+	public void testNestedSentinelBreak() {
+
+		instance.executeSource(
+		    """
+		    	for( i=0; i<1; i++ ) {
+		    		for( k=0; true; k++ ) {
+		    			break;
+		    		}
+		    		break;
+		    	}
+		    """,
+		    context );
+		assertThat( variables.get( Key.of( "k" ) ) ).isEqualTo( 0 );
+	}
+
 	@DisplayName( "continue sentinel" )
 	@Test
 	public void testContinueSentinel() {

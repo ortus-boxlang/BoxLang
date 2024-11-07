@@ -255,7 +255,7 @@ public abstract class Transpiler implements ITranspiler {
 
 	public int incrementAndGetForLoopBreakCounter() {
 		++forLoopBreakCounter;
-		currentforLoopBreakCounter.add( forLoopBreakCounter );
+		currentforLoopBreakCounter.push( forLoopBreakCounter );
 		return forLoopBreakCounter;
 	}
 
