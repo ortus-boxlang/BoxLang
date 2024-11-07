@@ -23,5 +23,8 @@ class accessors=true {
 
     function init() {
         getMyProperty();
+        // force this property to be uninitialized so we can test the default return of the generated getter method
+        structDelete( variables, "name" );
+        assert !structKeyExists( variables, "name" );
     }
 }
