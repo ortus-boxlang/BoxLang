@@ -3945,9 +3945,9 @@ public class CoreLangTest {
 	@Test
 	public void testBigNumber() {
 		instance.executeSource(
-			"""
-				l = 9876543210
-			""", context );
+		    """
+		    	l = 9876543210
+		    """, context );
 	}
 
 }
