@@ -1414,4 +1414,27 @@ public class ClassTest {
 		    """, context );
 	}
 
+	@DisplayName( "bx: resolver prefix on new" )
+	@Test
+	public void testBXResolverPrefixNew() {
+
+		instance.executeSource(
+		    """
+		       cfc = new bx:src.test.java.TestCases.phase3.PropertyTestCF();
+		    """,
+		    context );
+	}
+
+	@DisplayName( "bx: resolver prefix on import" )
+	@Test
+	public void testBXResolverPrefixImport() {
+
+		instance.executeSource(
+		    """
+		    import bx:src.test.java.TestCases.phase3.PropertyTestCF as brad;
+		    new brad()
+		      """,
+		    context );
+	}
+
 }
