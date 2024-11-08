@@ -3942,4 +3942,12 @@ public class CoreLangTest {
 		assertThat( variables.get( Key.of( "resultNeg4" ) ) ).isEqualTo( "b" );
 	}
 
+	@Test
+	public void testBigNumber() {
+		instance.executeSource(
+			"""
+				l = 9876543210
+			""", context );
+	}
+
 }

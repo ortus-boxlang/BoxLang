@@ -43,7 +43,7 @@ public class BoxIntegerLiteralTransformer extends AbstractTransformer {
 		BoxIntegerLiteral	literal	= ( BoxIntegerLiteral ) node;
 		int					len		= literal.getValue().length();
 		// 10 or fewer chars can use an int literal
-		if ( len <= 10 ) {
+		if ( len < 10 ) {
 			return List.of(
 			    new LdcInsnNode( Integer.valueOf( literal.getValue() ) ),
 			    new MethodInsnNode( Opcodes.INVOKESTATIC,

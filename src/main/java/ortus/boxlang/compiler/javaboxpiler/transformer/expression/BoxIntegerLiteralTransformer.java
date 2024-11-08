@@ -49,7 +49,7 @@ public class BoxIntegerLiteralTransformer extends AbstractTransformer {
 		int					len		= literal.getValue().length();
 		Expression			javaExpr;
 		// 10 or fewer chars can use an int literal
-		if ( len <= 10 ) {
+		if ( len < 10 ) {
 			javaExpr = new IntegerLiteralExpr( literal.getValue() );
 		} else if ( len <= 19 ) {
 			// 11-19 chars needs a long literal
