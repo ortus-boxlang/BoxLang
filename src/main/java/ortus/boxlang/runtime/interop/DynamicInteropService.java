@@ -1703,9 +1703,12 @@ public class DynamicInteropService {
 			// Special logic so we can treat exceptions as referencable. Possibly move to helper
 		} else if ( targetInstance instanceof List list ) {
 			Integer index = Array.validateAndGetIntForDereference( name, list.size(), safe );
-			// non-existant indexes return null when dereferncing safely
-			if ( safe && ( index < 1 || index > list.size() ) ) {
+			// non-existant indexes or keys which could not be turned into an int return null when dereferencing safely
+			if ( safe && ( index == null || Math.abs( index ) > list.size() || index == 0 ) ) {
 				return null;
+			}
+			if ( index < 0 ) {
+				return list.get( list.size() + index );
 			}
 			return list.get( index - 1 );
 		} else if ( targetInstance != null && targetInstance.getClass().isArray() ) {
@@ -1715,9 +1718,12 @@ public class DynamicInteropService {
 			}
 
 			Integer index = Array.validateAndGetIntForDereference( name, arr.length, safe );
-			// non-existant indexes return null when dereferncing safely
-			if ( safe && ( index < 1 || index > arr.length ) ) {
+			// non-existant indexes or keys which could not be turned into an int return null when dereferencing safely
+			if ( safe && ( index == null || Math.abs( index ) > arr.length || index == 0 ) ) {
 				return null;
+			}
+			if ( index < 0 ) {
+				return arr[ arr.length + index ];
 			}
 			return arr[ index - 1 ];
 		} else if ( targetInstance instanceof Throwable t && exceptionKeys.contains( name ) ) {
@@ -1750,9 +1756,13 @@ public class DynamicInteropService {
 			// Special logic for accessing strings as array. Possibly move to helper
 		} else if ( targetInstance instanceof String s && name instanceof IntKey intKey ) {
 			Integer index = Array.validateAndGetIntForDereference( intKey, s.length(), safe );
-			// non-existant indexes return null when dereferncing safely
-			if ( safe && ( index < 1 || index > s.length() ) ) {
+
+			// non-existant indexes or keys which could not be turned into an int return null when dereferencing safely
+			if ( safe && ( index == null || Math.abs( index ) > s.length() || index == 0 ) ) {
 				return null;
+			}
+			if ( index < 0 ) {
+				return s.substring( s.length() + index, s.length() + index + 1 );
 			}
 			return s.substring( index - 1, index );
 			// Special logic for native arrays. Possibly move to helper

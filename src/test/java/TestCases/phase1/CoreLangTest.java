@@ -3860,13 +3860,86 @@ public class CoreLangTest {
 	public void testPassingBLFunctionsToJavaMethods() {
 		instance.executeSource(
 		    """
-		        	import java.lang.System;
-		        	[1,2,3].stream().forEach( ::echo )
+		    		import java.lang.System;
+		    		[1,2,3].stream().forEach( ::echo )
 		    // Lambdas/closures have output=false by default in BL code.
-		        	[1,2,3].stream().forEach( (i) output=true -> echo(i) )
-		      result = getBoxContext().getBuffer().toString();
-		        """, context );
+		    		[1,2,3].stream().forEach( (i) output=true -> echo(i) )
+		    result = getBoxContext().getBuffer().toString();
+		    	""", context );
 		assertThat( variables.get( result ) ).isEqualTo( "123123" );
+	}
+
+	@Test
+	public void testArrayIndexes() {
+		instance.executeSource(
+		    """
+		    arr = ["b","r","a","d"]
+		    result1 = arr[ 1 ]
+		    result2 = arr[ 2 ]
+		    result3 = arr[ 3 ]
+		    result4 = arr[ 4 ]
+		    resultNeg1 = arr[ -1 ]
+		    resultNeg2 = arr[ -2 ]
+		    resultNeg3 = arr[ -3 ]
+		    resultNeg4 = arr[ -4 ]
+		    """, context );
+		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( "b" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "r" );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( "a" );
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "d" );
+		assertThat( variables.get( Key.of( "resultNeg1" ) ) ).isEqualTo( "d" );
+		assertThat( variables.get( Key.of( "resultNeg2" ) ) ).isEqualTo( "a" );
+		assertThat( variables.get( Key.of( "resultNeg3" ) ) ).isEqualTo( "r" );
+		assertThat( variables.get( Key.of( "resultNeg4" ) ) ).isEqualTo( "b" );
+	}
+
+	@Test
+	public void testStringIndexes() {
+		instance.executeSource(
+		    """
+		    str = "brad"
+		    result1 = str[ 1 ]
+		    result2 = str[ 2 ]
+		    result3 = str[ 3 ]
+		    result4 = str[ 4 ]
+		    resultNeg1 = str[ -1 ]
+		    resultNeg2 = str[ -2 ]
+		    resultNeg3 = str[ -3 ]
+		    resultNeg4 = str[ -4 ]
+		    """, context );
+		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( "b" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "r" );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( "a" );
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "d" );
+		assertThat( variables.get( Key.of( "resultNeg1" ) ) ).isEqualTo( "d" );
+		assertThat( variables.get( Key.of( "resultNeg2" ) ) ).isEqualTo( "a" );
+		assertThat( variables.get( Key.of( "resultNeg3" ) ) ).isEqualTo( "r" );
+		assertThat( variables.get( Key.of( "resultNeg4" ) ) ).isEqualTo( "b" );
+	}
+
+	@Test
+	public void testNativeListIndexes() {
+		instance.executeSource(
+		    """
+		    arr = ["b","r","a","d"].asList()
+
+		    result1 = arr[ 1 ]
+		    result2 = arr[ 2 ]
+		    result3 = arr[ 3 ]
+		    result4 = arr[ 4 ]
+		    resultNeg1 = arr[ -1 ]
+		    resultNeg2 = arr[ -2 ]
+		    resultNeg3 = arr[ -3 ]
+		    resultNeg4 = arr[ -4 ]
+		    """, context );
+		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( "b" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "r" );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( "a" );
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "d" );
+		assertThat( variables.get( Key.of( "resultNeg1" ) ) ).isEqualTo( "d" );
+		assertThat( variables.get( Key.of( "resultNeg2" ) ) ).isEqualTo( "a" );
+		assertThat( variables.get( Key.of( "resultNeg3" ) ) ).isEqualTo( "r" );
+		assertThat( variables.get( Key.of( "resultNeg4" ) ) ).isEqualTo( "b" );
 	}
 
 }

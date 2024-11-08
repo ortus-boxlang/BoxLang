@@ -976,8 +976,9 @@ public class Key implements Comparable<Key>, Serializable {
 			// optimization for common cases where incoming string is actually an int up to
 			// 3 digits
 			if ( ( len == 1 && isDigit( bytes[ 0 ] ) )
-			    || ( len == 2 && isDigit( bytes[ 0 ] ) && isDigit( bytes[ 1 ] ) )
-			    || ( len == 3 && isDigit( bytes[ 0 ] ) && isDigit( bytes[ 1 ] ) && isDigit( bytes[ 2 ] ) ) ) {
+			    || ( len == 2 && isDigitOrMinus( bytes[ 0 ] ) && isDigit( bytes[ 1 ] ) )
+			    || ( len == 3 && isDigitOrMinus( bytes[ 0 ] ) && isDigit( bytes[ 1 ] ) && isDigit( bytes[ 2 ] ) )
+			    || ( len == 4 && isDigitOrMinus( bytes[ 0 ] ) && isDigit( bytes[ 1 ] ) && isDigit( bytes[ 2 ] ) && isDigit( bytes[ 3 ] ) ) ) {
 				return new IntKey( Integer.parseInt( name ) );
 
 			}
@@ -1003,6 +1004,17 @@ public class Key implements Comparable<Key>, Serializable {
 	 */
 	private static boolean isDigit( byte b ) {
 		return b >= 48 && b <= 57;
+	}
+
+	/**
+	 * A little helper to decide if a byte represents a digit 0-9 or a negative sign
+	 *
+	 * @param b The byte to check
+	 *
+	 * @return True if the byte is a digit
+	 */
+	private static boolean isDigitOrMinus( byte b ) {
+		return b == 45 || isDigit( b );
 	}
 
 	/**
