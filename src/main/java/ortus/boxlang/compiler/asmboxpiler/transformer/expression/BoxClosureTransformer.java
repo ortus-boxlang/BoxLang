@@ -147,7 +147,8 @@ public class BoxClosureTransformer extends AbstractTransformer {
 		transpiler.incrementfunctionBodyCounter();
 		AsmHelper.methodWithContextAndClassLocator( classNode, "_invoke", Type.getType( FunctionBoxContext.class ), Type.getType( Object.class ), false,
 		    transpiler, isBlock,
-		    () -> boxClosure.getBody().getChildren().stream().flatMap( statement -> transpiler.transform( statement, TransformerContext.NONE ).stream() )
+		    () -> boxClosure.getBody().getChildren().stream()
+		        .flatMap( statement -> transpiler.transform( statement, TransformerContext.NONE, ReturnValueContext.VALUE_OR_NULL ).stream() )
 		        .toList() );
 		transpiler.decrementfunctionBodyCounter();
 		transpiler.setComponentCounter( componentCounter );
@@ -217,5 +218,6 @@ public class BoxClosureTransformer extends AbstractTransformer {
 		    false ) );
 
 		return nodes;
+		// return AsmHelper.addLineNumberLabels( nodes, node );
 	}
 }

@@ -55,7 +55,8 @@ public class BoxStructLiteralTransformer extends AbstractTransformer {
 
 		if ( structLiteral.getType() == BoxStructType.Unordered ) {
 			if ( empty ) {
-				return List.of(
+				List<AbstractInsnNode> nodes = new ArrayList<>();
+				nodes.addAll( List.of(
 				    new TypeInsnNode( Opcodes.NEW, Type.getInternalName( Struct.class ) ),
 				    new InsnNode( Opcodes.DUP ),
 				    new MethodInsnNode( Opcodes.INVOKESPECIAL,
@@ -63,7 +64,8 @@ public class BoxStructLiteralTransformer extends AbstractTransformer {
 				        "<init>",
 				        Type.getMethodDescriptor( Type.VOID_TYPE ),
 				        false )
-				);
+				) );
+				return AsmHelper.addLineNumberLabels( nodes, node );
 			}
 
 			List<AbstractInsnNode> nodes = new ArrayList<>();
@@ -86,10 +88,11 @@ public class BoxStructLiteralTransformer extends AbstractTransformer {
 			    "of",
 			    Type.getMethodDescriptor( Type.getType( IStruct.class ), Type.getType( Object[].class ) ),
 			    false ) );
-			return nodes;
+			return AsmHelper.addLineNumberLabels( nodes, node );
 		} else {
 			if ( empty ) {
-				return List.of(
+				List<AbstractInsnNode> nodes = new ArrayList<>();
+				nodes.addAll( List.of(
 				    new TypeInsnNode( Opcodes.NEW, Type.getInternalName( Struct.class ) ),
 				    new InsnNode( Opcodes.DUP ),
 				    new FieldInsnNode( Opcodes.GETSTATIC,
@@ -101,7 +104,8 @@ public class BoxStructLiteralTransformer extends AbstractTransformer {
 				        "<init>",
 				        Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( IStruct.TYPES.class ) ),
 				        false )
-				);
+				) );
+				return AsmHelper.addLineNumberLabels( nodes, node );
 			}
 			List<AbstractInsnNode> nodes = new ArrayList<>();
 
@@ -124,7 +128,7 @@ public class BoxStructLiteralTransformer extends AbstractTransformer {
 			    Type.getMethodDescriptor( Type.getType( IStruct.class ), Type.getType( Object[].class ) ),
 			    false ) );
 
-			return nodes;
+			return AsmHelper.addLineNumberLabels( nodes, node );
 		}
 	}
 }

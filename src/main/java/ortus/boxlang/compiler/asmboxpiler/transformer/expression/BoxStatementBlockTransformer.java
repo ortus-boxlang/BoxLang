@@ -49,7 +49,6 @@ public class BoxStatementBlockTransformer extends AbstractTransformer {
 
 		nodes.addAll( AsmHelper.transformBodyExpressions( transpiler, boxStatementBlock.getBody(), context, returnContext ) );
 
-		return nodes;
-		// return AsmHelper.addLineNumberLabels( nodes, node );
+		return AsmHelper.addLineNumberLabels( nodes, node );
 	}
 }

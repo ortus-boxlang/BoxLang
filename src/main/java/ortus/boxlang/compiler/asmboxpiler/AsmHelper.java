@@ -84,6 +84,7 @@ public class AsmHelper {
 
 		nodes.add( 0, start );
 		nodes.add( 1, new LineNumberNode( node.getPosition().getStart().getLine(), start ) );
+
 		nodes.add( end );
 		nodes.add( new LineNumberNode( node.getPosition().getStart().getLine(), end ) );
 
@@ -806,13 +807,7 @@ public class AsmHelper {
 		    false );
 		tracker.storeNewVariable( Opcodes.ASTORE ).nodes().forEach( ( node ) -> node.accept( methodVisitor ) );
 
-		// methodVisitor.visitVarInsn( Opcodes.ASTORE, isStatic ? 1 : 2 );
-		List<AbstractInsnNode> nodes = supplier.get();
-		if ( !nodes.isEmpty() && ( nodes.get( nodes.size() - 1 ).getOpcode() == Opcodes.POP || nodes.get( nodes.size() - 1 ).getOpcode() == Opcodes.POP2 ) ) {
-			nodes.subList( 0, nodes.size() - 1 ).forEach( node -> node.accept( methodVisitor ) );
-		} else {
-			nodes.forEach( node -> node.accept( methodVisitor ) );
-		}
+		supplier.get().forEach( node -> node.accept( methodVisitor ) );
 
 		if ( implicityReturnNull && !returnType.equals( Type.VOID_TYPE ) ) {
 			// push a null onto the stack so that we can return it if there isn't an explicity return

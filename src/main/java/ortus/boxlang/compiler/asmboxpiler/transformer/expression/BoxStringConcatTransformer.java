@@ -55,7 +55,7 @@ public class BoxStringConcatTransformer extends AbstractTransformer {
 			    "invoke",
 			    Type.getMethodDescriptor( Type.getType( String.class ), Type.getType( Object[].class ) ),
 			    false ) );
-			return nodes;
+			return AsmHelper.addLineNumberLabels( nodes, node );
 		}
 	}
 }

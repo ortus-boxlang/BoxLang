@@ -57,7 +57,7 @@ public class BoxExpressionInvocationTransformer extends AbstractTransformer {
 			nodes.add( new InsnNode( Opcodes.POP ) );
 		}
 
-		return nodes;
+		return AsmHelper.addLineNumberLabels( nodes, node );
 	}
 
 	private Type getInvocationType( BoxNode expressionNode ) {

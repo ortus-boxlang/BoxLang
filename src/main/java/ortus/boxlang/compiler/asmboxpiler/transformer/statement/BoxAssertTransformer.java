@@ -24,6 +24,7 @@ import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.VarInsnNode;
 
+import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
@@ -55,6 +56,6 @@ public class BoxAssertTransformer extends AbstractTransformer {
 			nodes.add( new InsnNode( Opcodes.POP ) );
 		}
 
-		return nodes;
+		return AsmHelper.addLineNumberLabels( nodes, node );
 	}
 }

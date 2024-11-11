@@ -27,6 +27,7 @@ import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.VarInsnNode;
 
+import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
@@ -105,7 +106,7 @@ public class BoxAccessTransformer extends AbstractTransformer {
 			    true
 			) );
 
-			return nodes;
+			return AsmHelper.addLineNumberLabels( nodes, node );
 
 		} else {
 			// BoxNode parent = ( BoxNode ) objectAccess.getParent();
@@ -140,7 +141,7 @@ public class BoxAccessTransformer extends AbstractTransformer {
 				    true ) );
 			}
 
-			return nodes;
+			return AsmHelper.addLineNumberLabels( nodes, node );
 		}
 	}
 

@@ -51,6 +51,6 @@ public class BoxArrayLiteralTransformer extends AbstractTransformer {
 		    "of",
 		    Type.getMethodDescriptor( Type.getType( Array.class ), Type.getType( Object[].class ) ),
 		    false ) );
-		return nodes;
+		return AsmHelper.addLineNumberLabels( nodes, node );
 	}
 }

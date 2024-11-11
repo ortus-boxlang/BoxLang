@@ -91,7 +91,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			nodes.add( new InsnNode( Opcodes.POP ) );
 		}
 
-		return nodes;
+		return AsmHelper.addLineNumberLabels( nodes, node );
 	}
 
 	public List<AbstractInsnNode> transformEquals( BoxExpression left, List<AbstractInsnNode> jRight, BoxAssignmentOperator op,

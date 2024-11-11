@@ -41,17 +41,17 @@ public class BoxStringLiteralTransformer extends AbstractTransformer {
 
 	@Override
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnContext ) throws IllegalStateException {
-		BoxStringLiteral	literal	= ( BoxStringLiteral ) node;
+		BoxStringLiteral		literal	= ( BoxStringLiteral ) node;
 
-		String				value	= literal.getValue();
+		String					value	= literal.getValue();
+		List<AbstractInsnNode>	nodes	= new ArrayList<AbstractInsnNode>();
 
 		if ( value.length() < MAX_LITERAL_LENGTH ) {
-			return List.of( new LdcInsnNode( literal.getValue() ) );
+			nodes.add( new LdcInsnNode( literal.getValue() ) );
+			return AsmHelper.addLineNumberLabels( nodes, node );
 
 		}
-
-		List<AbstractInsnNode>	nodes	= new ArrayList<AbstractInsnNode>();
-		List<String>			parts	= splitStringIntoParts( value );
+		List<String> parts = splitStringIntoParts( value );
 
 		nodes.add( new LdcInsnNode( "" ) );
 		nodes.addAll(
@@ -73,7 +73,7 @@ public class BoxStringLiteralTransformer extends AbstractTransformer {
 		    false )
 		);
 
-		return nodes;
+		return AsmHelper.addLineNumberLabels( nodes, node );
 	}
 
 	/**

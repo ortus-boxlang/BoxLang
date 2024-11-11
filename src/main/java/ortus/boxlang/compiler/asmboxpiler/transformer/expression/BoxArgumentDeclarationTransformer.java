@@ -31,6 +31,7 @@ import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.TypeInsnNode;
 
+import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.MethodContextTracker;
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
@@ -91,7 +92,7 @@ public class BoxArgumentDeclarationTransformer extends AbstractTransformer {
 		        Type.getType( IStruct.class ),
 		        Type.getType( IStruct.class ) ),
 		    false ) );
-		return nodes;
+		return AsmHelper.addLineNumberLabels( nodes, node );
 	}
 
 	private List<AbstractInsnNode> getDefaultExpression( BoxExpression body ) {

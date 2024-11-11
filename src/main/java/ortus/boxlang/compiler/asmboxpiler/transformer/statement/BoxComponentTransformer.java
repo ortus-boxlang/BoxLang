@@ -91,6 +91,8 @@ public class BoxComponentTransformer extends AbstractTransformer {
 			transpiler.decrementComponentCounter();
 
 			return nodes;
+			// TODO: this causes CoreLangTest.unicode
+			// return AsmHelper.addLineNumberLabels( nodes, node );
 		}
 
 		if ( transpiler.canReturn() ) {
@@ -128,6 +130,8 @@ public class BoxComponentTransformer extends AbstractTransformer {
 		transpiler.decrementComponentCounter();
 
 		return nodes;
+		// TODO: this causes CoreLangTest.unicode
+		// return AsmHelper.addLineNumberLabels( nodes, node );
 	}
 
 	private List<AbstractInsnNode> generateBodyNodes( List<BoxStatement> body ) {

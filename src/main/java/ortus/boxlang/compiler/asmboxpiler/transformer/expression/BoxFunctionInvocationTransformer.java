@@ -55,5 +55,7 @@ public class BoxFunctionInvocationTransformer extends AbstractTransformer {
 		}
 
 		return nodes;
+		// TODO: this causes issues in testProperties
+		// return AsmHelper.addLineNumberLabels( nodes, node );
 	}
 }
