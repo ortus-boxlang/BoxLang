@@ -438,31 +438,21 @@ public class ConnectionManager {
 	 * @return The datasource object, or null if not found.
 	 */
 	public DataSource getDatasource( Key datasourceName ) {
+		return this.datasources.computeIfAbsent( datasourceName, ( uniqueName ) -> {
+			// Try to discover now: These come from the context, so overrides are already applied
+			IStruct configDatasources = this.context.getConfig().getAsStruct( Key.datasources );
 
-		// Check in the local cache first
-		DataSource target = this.datasources.get( datasourceName );
-		if ( target != null ) {
-			return target;
-		}
+			// If the name doesn't exist in the datasources map, we return null
+			if ( !configDatasources.containsKey( uniqueName ) ) {
+				return null;
+			}
 
-		// Try to discover now: These come from the context, so overrides are already applied
-		IStruct configDatasources = this.context.getConfig().getAsStruct( Key.datasources );
-
-		// If the name doesn't exist in the datasources map, we return null
-		if ( !configDatasources.containsKey( datasourceName ) ) {
-			return null;
-		}
-
-		// Build out the config from the struct first.
-		DatasourceConfig	dsnConfig	= new DatasourceConfig( datasourceName )
-		    .process( configDatasources.getAsStruct( datasourceName ) )
-		    .withAppName( getApplicationName() );
-		// Register the datasource
-		DataSource			dsn			= this.datasourceService.register( dsnConfig );
-		// Cache it
-		this.datasources.put( datasourceName, dsn );
-
-		return dsn;
+			// Build out the config from the struct first.
+			DatasourceConfig dsnConfig = new DatasourceConfig( uniqueName )
+			    .process( configDatasources.getAsStruct( uniqueName ) )
+			    .withAppName( getApplicationName() );
+			return this.datasourceService.register( dsnConfig );
+		} );
 	}
 
 	/**
@@ -516,26 +506,19 @@ public class ConnectionManager {
 	 * @return A new or already registered datasource
 	 */
 	public DataSource getOnTheFlyDataSource( IStruct properties ) {
-		Key			datasourceName	= Key.of( "onthefly_" + properties.hashCode() );
-		DataSource	target			= this.datasources.get( datasourceName );
+		Key datasourceName = Key.of( "onthefly_" + properties.hashCode() );
+		return this.datasources.computeIfAbsent( datasourceName, ( uniqueName ) -> {
+			// Build out the config
+			DatasourceConfig config = new DatasourceConfig(
+			    Key.of( datasourceName.getName() ),
+			    properties
+			)
+			    .withAppName( getApplicationName() )
+			    .setOnTheFly();
 
-		if ( target != null ) {
-			return target;
-		}
-
-		// Build out the config
-		DatasourceConfig config = new DatasourceConfig(
-		    Key.of( datasourceName.getName() ),
-		    properties
-		)
-		    .withAppName( getApplicationName() )
-		    .setOnTheFly();
-
-		// Register it
-		target = this.datasourceService.register( config );
-		this.datasources.put( datasourceName, target );
-
-		return target;
+			// Register it
+			return this.datasourceService.register( config );
+		} );
 	}
 
 	/**
