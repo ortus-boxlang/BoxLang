@@ -1,5 +1,5 @@
 <bx:script>
-	expandRoot = expand || expand eq null
+	expandRoot = expand ?: true;
 </bx:script>
 <bx:import prefix="java" name="ortus.boxlang.runtime.types.exceptions.ExceptionUtil">
 <!--- Throwable template --->

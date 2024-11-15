@@ -738,7 +738,58 @@ public class CoreLangTest {
 		       result = counter;
 		                    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 7 );
+		assertThat( variables.get( result ) ).isEqualTo( 6 );
+	}
+
+	@DisplayName( "sentinel increment does not run after break" )
+	@Test
+	public void testSentinelIncrementDoesNotRunAfterBreak() {
+
+		instance.executeSource(
+		    """
+		    for( i=0; true; i++ ) {
+		    	break;
+		    }
+		                      """,
+		    context );
+		assertThat( variables.get( Key.of( "i" ) ) ).isEqualTo( 0 );
+	}
+
+	@DisplayName( "sentinel with switch that uses break" )
+	@Test
+	public void testSentinelWithSwitchThatUsesBreak() {
+
+		instance.executeSource(
+		    """
+		    safety = 0;
+		       for( i=0; i<5; i++ ) {
+		    	safety++;
+		    	assert safety < 100;
+		       	switch( "brad" ) {
+		       		case "brad":
+		       			break;
+		       	}
+		       }
+		    """,
+		    context );
+		assertThat( variables.get( Key.of( "i" ) ) ).isEqualTo( 5 );
+	}
+
+	@DisplayName( "nested sentinel break" )
+	@Test
+	public void testNestedSentinelBreak() {
+
+		instance.executeSource(
+		    """
+		    	for( i=0; i<1; i++ ) {
+		    		for( k=0; true; k++ ) {
+		    			break;
+		    		}
+		    		break;
+		    	}
+		    """,
+		    context );
+		assertThat( variables.get( Key.of( "k" ) ) ).isEqualTo( 0 );
 	}
 
 	@DisplayName( "continue sentinel" )
@@ -2811,6 +2862,32 @@ public class CoreLangTest {
 	}
 
 	@Test
+	public void testSimplePositionalFunctionalMemberAccessArgs() {
+
+		instance.executeSource(
+		    """
+		    foo = .left(1);
+		    result2 = foo( "test" );
+
+		    	 """,
+		    context );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "t" );
+	}
+
+	@Test
+	public void testSimpleNamedFunctionalMemberAccessArgs() {
+
+		instance.executeSource(
+		    """
+		    foo = .left(count=1);
+		    result2 = foo( "test" );
+
+		    	 """,
+		    context );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "t" );
+	}
+
+	@Test
 	public void testFunctionalMemberAccessArgs() {
 
 		instance.executeSource(
@@ -2985,7 +3062,6 @@ public class CoreLangTest {
 
 	@Test
 	public void testAssginmentModifierCF() {
-
 		instance.executeSource(
 		    """
 		    function func(){
@@ -3174,7 +3250,7 @@ public class CoreLangTest {
 		    """
 		    foo.50foo = "bar";
 		    result = foo.50foo;
-		      """,
+		    """,
 		    context, BoxSourceType.CFSCRIPT );
 		assertThat( variables.get( result ) ).isEqualTo( "bar" );
 
@@ -3189,7 +3265,7 @@ public class CoreLangTest {
 		Throwable t = assertThrows( ParseException.class, () -> instance.executeSource(
 		    """
 		    50foo = "bar";
-		      """,
+		    """,
 		    context, BoxSourceType.CFSCRIPT ) );
 		assertThat( t.getMessage() ).contains( "Identifier name cannot start with a number" );
 	}
@@ -3411,14 +3487,14 @@ public class CoreLangTest {
 		Throwable t = assertThrows( CustomException.class, () -> instance.executeSource(
 		    """
 		    function reThrowMe( required struct err ) {
-		    	throw object=err;
+		    throw object=err;
 		    }
 		    try {
-		    	1/0;
+		    1/0;
 		    } catch( any e ) {
-		    	reThrowMe( e );
+		    reThrowMe( e );
 		    }
-		    	 """,
+		    """,
 		    context, BoxSourceType.BOXSCRIPT ) );
 		assertThat( t.getMessage() ).contains( "zero" );
 	}
@@ -3495,6 +3571,7 @@ public class CoreLangTest {
 				include "src/test/java/TestCases/phase1/TagContextLineMapping.bxs";
 				foo()
 			} catch( any e ) {
+				x = e;
 				tagContext = e.tagContext;
 			}
 			""",
@@ -3753,6 +3830,144 @@ public class CoreLangTest {
 		                        result = foo;
 		                        """, context );
 		assertThat( variables.get( result ) ).isNull();
+	}
+
+	@Test
+	public void testStaticReferenceEdgeCases() {
+
+		// @formatter:off
+		instance.executeSource( """
+				import java.lang.System;
+				[1,2,3].stream().forEach( System.out.println )
+			"""
+			, context );
+		instance.executeSource( """
+				import java.lang.System;
+				[1,2,3].stream().forEach( System::out.println )
+			"""
+			, context );
+		instance.executeSource( """
+				import java.lang.System;
+				function getSystem() {
+					return System;
+				}
+				[1,2,3].stream().forEach( getSystem()::out.println )
+			"""
+			, context );
+		instance.executeSource( """
+				import java.lang.System;
+				function getSystem() {
+					return System;
+				}
+				getSystem()::getProperties()
+			"""
+			, context );
+		// @formatter:on
+	}
+
+	@Test
+	public void testCastStringToKey() {
+
+		// @formatter:off
+		instance.executeSource( """		
+				getBoxContext().getRuntime().getDatasourceService().get( "myDataSourceNameFromTheArray" )
+			"""
+			, context );
+		// @formatter:on
+	}
+
+	@Test
+	public void testPassingBLFunctionsToJavaMethods() {
+		instance.executeSource(
+		    """
+		    		import java.lang.System;
+		    		[1,2,3].stream().forEach( ::echo )
+		    // Lambdas/closures have output=false by default in BL code.
+		    		[1,2,3].stream().forEach( (i) output=true -> echo(i) )
+		    result = getBoxContext().getBuffer().toString();
+		    	""", context );
+		assertThat( variables.get( result ) ).isEqualTo( "123123" );
+	}
+
+	@Test
+	public void testArrayIndexes() {
+		instance.executeSource(
+		    """
+		    arr = ["b","r","a","d"]
+		    result1 = arr[ 1 ]
+		    result2 = arr[ 2 ]
+		    result3 = arr[ 3 ]
+		    result4 = arr[ 4 ]
+		    resultNeg1 = arr[ -1 ]
+		    resultNeg2 = arr[ -2 ]
+		    resultNeg3 = arr[ -3 ]
+		    resultNeg4 = arr[ -4 ]
+		    """, context );
+		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( "b" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "r" );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( "a" );
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "d" );
+		assertThat( variables.get( Key.of( "resultNeg1" ) ) ).isEqualTo( "d" );
+		assertThat( variables.get( Key.of( "resultNeg2" ) ) ).isEqualTo( "a" );
+		assertThat( variables.get( Key.of( "resultNeg3" ) ) ).isEqualTo( "r" );
+		assertThat( variables.get( Key.of( "resultNeg4" ) ) ).isEqualTo( "b" );
+	}
+
+	@Test
+	public void testStringIndexes() {
+		instance.executeSource(
+		    """
+		    str = "brad"
+		    result1 = str[ 1 ]
+		    result2 = str[ 2 ]
+		    result3 = str[ 3 ]
+		    result4 = str[ 4 ]
+		    resultNeg1 = str[ -1 ]
+		    resultNeg2 = str[ -2 ]
+		    resultNeg3 = str[ -3 ]
+		    resultNeg4 = str[ -4 ]
+		    """, context );
+		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( "b" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "r" );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( "a" );
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "d" );
+		assertThat( variables.get( Key.of( "resultNeg1" ) ) ).isEqualTo( "d" );
+		assertThat( variables.get( Key.of( "resultNeg2" ) ) ).isEqualTo( "a" );
+		assertThat( variables.get( Key.of( "resultNeg3" ) ) ).isEqualTo( "r" );
+		assertThat( variables.get( Key.of( "resultNeg4" ) ) ).isEqualTo( "b" );
+	}
+
+	@Test
+	public void testNativeListIndexes() {
+		instance.executeSource(
+		    """
+		    arr = ["b","r","a","d"].asList()
+
+		    result1 = arr[ 1 ]
+		    result2 = arr[ 2 ]
+		    result3 = arr[ 3 ]
+		    result4 = arr[ 4 ]
+		    resultNeg1 = arr[ -1 ]
+		    resultNeg2 = arr[ -2 ]
+		    resultNeg3 = arr[ -3 ]
+		    resultNeg4 = arr[ -4 ]
+		    """, context );
+		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( "b" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "r" );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( "a" );
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "d" );
+		assertThat( variables.get( Key.of( "resultNeg1" ) ) ).isEqualTo( "d" );
+		assertThat( variables.get( Key.of( "resultNeg2" ) ) ).isEqualTo( "a" );
+		assertThat( variables.get( Key.of( "resultNeg3" ) ) ).isEqualTo( "r" );
+		assertThat( variables.get( Key.of( "resultNeg4" ) ) ).isEqualTo( "b" );
+	}
+
+	@Test
+	public void testBigNumber() {
+		instance.executeSource(
+		    """
+		    	l = 9876543210
+		    """, context );
 	}
 
 }

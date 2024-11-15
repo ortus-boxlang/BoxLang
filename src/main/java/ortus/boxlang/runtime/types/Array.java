@@ -284,6 +284,15 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 		return wrapped;
 	}
 
+	/**
+	 * Because toList() can't be called from BL code due to the arrayToList() BIF
+	 * 
+	 * @return
+	 */
+	public List<Object> asList() {
+		return wrapped;
+	}
+
 	public boolean add( Object e ) {
 		synchronized ( wrapped ) {
 			return wrapped.add( notifyListeners( wrapped.size(), e ) );
@@ -813,9 +822,12 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 		}
 
 		Integer index = Array.validateAndGetIntForDereference( key, wrapped.size(), safe );
-		// non-existant indexes return null when dereferncing safely
-		if ( safe && ( index < 1 || index > wrapped.size() ) ) {
+		// non-existant indexes or keys which could not be turned into an int return null when dereferencing safely
+		if ( safe && ( index == null || Math.abs( index ) > wrapped.size() || index == 0 ) ) {
 			return null;
+		}
+		if ( index < 0 ) {
+			return wrapped.get( wrapped.size() + index );
 		}
 		return wrapped.get( index - 1 );
 	}
@@ -925,7 +937,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	 *
 	 * @return The index
 	 */
-	public static int validateAndGetIntForDereference( Key key, int size, boolean safe ) {
+	public static Integer validateAndGetIntForDereference( Key key, int size, boolean safe ) {
 		Integer index = getIntFromKey( key, safe );
 
 		// If we're dereferencing safely, anything goes.
@@ -933,15 +945,18 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 			return index;
 		}
 
-		// Dissallow negative indexes foo[-1]
-		if ( index < 1 ) {
-			throw new BoxRuntimeException(
-			    "Array cannot be indexed by a number smaller than 1"
-			);
+		// assert: if safe was false, then index cannot be null here
+
+		// negative indexes are allowed, and offset from the right had side of the array
+
+		if ( index == 0 ) {
+			throw new BoxRuntimeException( String.format(
+			    "Arrays cannot be accesse by an index of 0.", index, size
+			) );
 		}
 
-		// Disallow out of bounds indexes foo[5]
-		if ( index > size ) {
+		// Disallow out of bounds indexes foo[5] or foo[-5]
+		if ( Math.abs( index ) > size ) {
 			throw new BoxRuntimeException( String.format(
 			    "Array index [%s] is out of bounds for an array of length [%s]", index, size
 			) );
@@ -950,6 +965,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	}
 
 	public static int validateAndGetIntForAssign( Key key, int size, boolean isNative ) {
+		// Since safe is false, we don't need to deal with null since getIntFromKey will throw an exception
 		Integer index = getIntFromKey( key, false );
 
 		// Dissallow negative indexes foo[-1]
@@ -970,7 +986,15 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 		return index;
 	}
 
-	public static int getIntFromKey( Key key, boolean safe ) {
+	/**
+	 * Get an integer from a key, returning null if the key is not an integer unless safe is false.
+	 * 
+	 * @param key  The key to get the integer from
+	 * @param safe Whether to return null if the key is not an integer
+	 * 
+	 * @return The integer or null
+	 */
+	public static Integer getIntFromKey( Key key, boolean safe ) {
 		Integer index;
 
 		// If key is int, use it directly
@@ -981,7 +1005,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 			CastAttempt<Number> indexAtt = NumberCaster.attempt( key.getName() );
 			if ( !indexAtt.wasSuccessful() ) {
 				if ( safe ) {
-					return -1;
+					return null;
 				}
 				throw new BoxRuntimeException( String.format(
 				    "Array cannot be assigned with key %s", key.getName()
@@ -992,7 +1016,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 			// Dissallow non-integer indexes foo[1.5]
 			if ( index.doubleValue() != dIndex.doubleValue() ) {
 				if ( safe ) {
-					return -1;
+					return null;
 				}
 				throw new BoxRuntimeException( String.format(
 				    "Array index [%s] is invalid.  Index must be an integer.", dIndex

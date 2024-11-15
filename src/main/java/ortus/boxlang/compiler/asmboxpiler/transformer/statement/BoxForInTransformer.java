@@ -31,6 +31,7 @@ import org.objectweb.asm.tree.TypeInsnNode;
 import org.objectweb.asm.tree.VarInsnNode;
 
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
+import ortus.boxlang.compiler.asmboxpiler.AsmHelper.LineNumberIns;
 import ortus.boxlang.compiler.asmboxpiler.AsmTranspiler;
 import ortus.boxlang.compiler.asmboxpiler.MethodContextTracker;
 import ortus.boxlang.compiler.asmboxpiler.MethodContextTracker.VarStore;
@@ -75,6 +76,10 @@ public class BoxForInTransformer extends AbstractTransformer {
 		if ( forIn.getLabel() != null ) {
 			tracker.setStringLabel( forIn.getLabel(), forIn );
 		}
+
+		LineNumberIns expressionPos = AsmHelper.translatePosition( forIn.getExpression() );
+
+		nodes.addAll( expressionPos.start() );
 
 		// access the collection
 		nodes.addAll( transpiler.transform( forIn.getExpression(), context, ReturnValueContext.VALUE_OR_NULL ) );
@@ -162,6 +167,8 @@ public class BoxForInTransformer extends AbstractTransformer {
 		// assign the variable
 		nodes.addAll( assignVar( forIn, iteratorVar.index(), context ) );
 		nodes.add( new InsnNode( Opcodes.POP ) );
+
+		nodes.addAll( expressionPos.end() );
 
 		nodes.addAll( transpiler.transform( forIn.getBody(), context, returnValueContext ) );
 

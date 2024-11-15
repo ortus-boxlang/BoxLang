@@ -21,6 +21,8 @@ import java.util.Set;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CommonToken;
 import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.TokenSource;
+import org.antlr.v4.runtime.misc.Pair;
 
 import ortus.boxlang.parser.antlr.BoxScriptLexer;
 
@@ -33,18 +35,29 @@ public class BoxScriptLexerCustom extends BoxScriptLexer {
 	/**
 	 * Reserved words that are operators
 	 */
-	private static final Set<Integer>	operatorWords		= Set.of( AND, EQ, EQUAL, EQV, GE, GREATER, GT, GTE, IMP, IS, LE, LESS, LT, LTE, MOD, NEQ, NOT, OR,
+	private static final Set<Integer>	operatorWords			= Set.of( AND, EQ, EQUAL, EQV, GE, GREATER, GT, GTE, IMP, IS, LE, LESS, LT, LTE, MOD, NEQ, NOT,
+	    OR,
 	    THAN, XOR );
 
 	/**
 	 * A flag to track if the last token was a dot
 	 */
-	private boolean						dotty				= false;
+	private boolean						dotty					= false;
+
+	/**
+	 * A flag to track if we are fixing a component prefix
+	 */
+	private CommonToken					componentPrefixColon	= null;
 
 	/**
 	 * ASCII Character code for left parenthesis
 	 */
-	private int							LPAREN_Char_Code	= 40;
+	private int							LPAREN_Char_Code		= 40;
+
+	/**
+	 * Track the last token
+	 */
+	private Token						lastToken				= null;
 
 	/**
 	 * Constructor
@@ -149,12 +162,42 @@ public class BoxScriptLexerCustom extends BoxScriptLexer {
 	 * Workaround for reserved expression words that are in dot access
 	 */
 	public Token nextToken() {
-		Token nextToken = super.nextToken();
+		Token nextToken;
+		// If there is a colon waiting from the last componentprefix we "fixed" return it as the next token
+		if ( componentPrefixColon != null ) {
+			nextToken				= componentPrefixColon;
+			componentPrefixColon	= null;
+			lastToken				= nextToken;
+			return nextToken;
+		}
+
+		nextToken = super.nextToken();
 
 		switch ( nextToken.getType() ) {
 
 			case BoxScriptLexer.DOT :
 				dotty = true;
+				lastToken = nextToken;
+				return nextToken;
+
+			case BoxScriptLexer.COMPONENT_PREFIX :
+				// If the last token was a new or import, then this is an identifier
+				// new bx:foo.bar()
+				// import bx:foo.bar;
+				// Return just bx as an identifier and force the next token to be :
+				if ( lastToken != null && ( lastToken.getType() == BoxScriptLexer.NEW || lastToken.getType() == BoxScriptLexer.IMPORT ) ) {
+					Token tmpToken = new CommonToken( new Pair<TokenSource, CharStream>( this, this._input ), BoxScriptLexer.IDENTIFIER,
+					    DEFAULT_TOKEN_CHANNEL,
+					    nextToken.getStartIndex(), nextToken.getStopIndex() - 1 );
+
+					// Calculate the position of the colon now and create its token
+					componentPrefixColon	= new CommonToken( new Pair<TokenSource, CharStream>( this, this._input ), BoxScriptLexer.COLON,
+					    DEFAULT_TOKEN_CHANNEL,
+					    nextToken.getStartIndex() + 2, nextToken.getStopIndex() );
+
+					nextToken				= tmpToken;
+				}
+				lastToken = nextToken;
 				return nextToken;
 
 			default :
@@ -171,6 +214,10 @@ public class BoxScriptLexerCustom extends BoxScriptLexer {
 					( ( CommonToken ) nextToken ).setType( IDENTIFIER );
 				}
 				dotty = false;
+				// ignore whitespace or comment tokens
+				if ( nextToken.getChannel() == DEFAULT_TOKEN_CHANNEL ) {
+					lastToken = nextToken;
+				}
 				return nextToken;
 		}
 	}

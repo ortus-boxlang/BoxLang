@@ -181,9 +181,14 @@ public class ExceptionUtil {
 						// take entire string up until ".lambda$_invoke$"
 						skipNext = fileName.substring( 0, fileName.indexOf( ".lambda$_invoke$" ) );
 					}
-					int		lineNo		= -1;
+					int		lineNo		= element.getLineNumber();
 					String	BLFileName	= element.getClassName();
-					var		sourceMap	= JavaBoxpiler.getInstance().getSourceMapFromFQN( IBoxpiler.getBaseFQN( element.getClassName() ) );
+
+					if ( element.getFileName() != null ) {
+						BLFileName = element.getFileName();
+					}
+
+					var sourceMap = JavaBoxpiler.getInstance().getSourceMapFromFQN( IBoxpiler.getBaseFQN( element.getClassName() ) );
 					if ( sourceMap != null ) {
 						lineNo		= sourceMap.convertJavaLineToSourceLine( element.getLineNumber() );
 						BLFileName	= sourceMap.getSource();

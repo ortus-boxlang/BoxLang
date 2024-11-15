@@ -175,4 +175,13 @@ public class FunctionalBIFAccess extends Function {
 		return true;
 	}
 
+	/**
+	 * If we are wrapping a BIF that outputs something, don't block it
+	 * 
+	 * @param context The context in which the function is being invoked
+	 */
+	public boolean canOutput( FunctionBoxContext context ) {
+		return true;
+	}
+
 }

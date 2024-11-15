@@ -602,6 +602,7 @@ public final class LocalizationUtil {
 		    .appendOptional( DateTimeFormatter.ofPattern( DateTime.DEFAULT_DATETIME_FORMAT_MASK ) )
 		    .appendOptional( DateTimeFormatter.ofPattern( DateTime.TS_FORMAT_MASK ) )
 		    .appendOptional( DateTimeFormatter.ofPattern( DateTime.JS_COMMON_TO_STRING_MASK ) )
+		    .appendOptional( DateTimeFormatter.ofPattern( DateTime.JS_COMMON_ALT_STRING_MASK ) )
 		    .appendOptional( DateTimeFormatter.ISO_INSTANT )
 		    .appendOptional( DateTimeFormatter.ISO_DATE_TIME )
 		    .appendOptional( DateTimeFormatter.ISO_LOCAL_DATE_TIME )

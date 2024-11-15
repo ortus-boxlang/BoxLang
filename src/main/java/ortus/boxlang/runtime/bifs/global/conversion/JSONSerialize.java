@@ -24,6 +24,7 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -53,7 +54,7 @@ public class JSONSerialize extends BIF {
 	public JSONSerialize() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "any", Key.var ),
+		    new Argument( true, "any", Key.data ),
 		    // NOT A BOOLEAN! Can be true, false, row, column, or struct
 		    new Argument( false, "string", Key.queryFormat, "row" ),
 		    // Don't set this to a boolean, Lucee accepts a charset here which ColdBox passes
@@ -68,7 +69,7 @@ public class JSONSerialize extends BIF {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.var The variable to convert to a JSON string.
+	 * @argument.data The variable to convert to a JSON string.
 	 *
 	 * @argument.queryFormat If the variable is a query, specifies whether to serialize the query by rows or by columns.
 	 *
@@ -79,7 +80,7 @@ public class JSONSerialize extends BIF {
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		// TODO useSecureJSONPrefix - Don't assume this is a boolean, Lucee accepts a charset here which ColdBox passes
 
-		Object	obj			= arguments.get( Key.var );
+		Object	obj			= arguments.get( Key.data );
 		String	queryFormat	= arguments.getAsString( Key.queryFormat ).toLowerCase();
 
 		// Normalize Params
@@ -121,7 +122,7 @@ public class JSONSerialize extends BIF {
 
 		// If we called "foo,bar".listToJSON(), then we need to convert the string to a list
 		if ( arguments.get( BIF.__functionName ).equals( Key.listToJSON ) ) {
-			obj = ListUtil.asList( arguments.getAsString( Key.var ), "," );
+			obj = ListUtil.asList( StringCaster.cast( arguments.get( Key.data ) ), "," );
 		}
 
 		// Serialize the object to JSON

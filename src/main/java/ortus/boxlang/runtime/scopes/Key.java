@@ -724,6 +724,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		warning								= Key.of( "warning" );
 	public static final Key		web_server_api						= Key.of( "web_server_api" );
 	public static final Key		webURL								= Key.of( "webURL" );
+	public static final Key		whitespaceCompressionEnabled		= Key.of( "whitespaceCompressionEnabled" );
 	public static final Key		workstation							= Key.of( "workstation" );
 	public static final Key		write								= Key.of( "write" );
 	public static final Key		wddx								= Key.of( "wddx" );
@@ -813,6 +814,14 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		minimumIdle							= Key.of( "minimumIdle" );
 	public static final Key		poolName							= Key.of( "poolName" );
 
+	// Transaction events
+	public static final Key		onTransactionBegin					= Key.of( "onTransactionBegin" );
+	public static final Key		onTransactionEnd					= Key.of( "onTransactionEnd" );
+	public static final Key		onTransactionAcquire				= Key.of( "onTransactionAcquire" );
+	public static final Key		onTransactionRelease				= Key.of( "onTransactionRelease" );
+	public static final Key		onTransactionCommit					= Key.of( "onTransactionCommit" );
+	public static final Key		onTransactionRollback				= Key.of( "onTransactionRollback" );
+	public static final Key		onTransactionSetSavepoint			= Key.of( "onTransactionSetSavepoint" );
 	/**
 	 * --------------------------------------------------------------------------
 	 * Private Properties
@@ -967,8 +976,9 @@ public class Key implements Comparable<Key>, Serializable {
 			// optimization for common cases where incoming string is actually an int up to
 			// 3 digits
 			if ( ( len == 1 && isDigit( bytes[ 0 ] ) )
-			    || ( len == 2 && isDigit( bytes[ 0 ] ) && isDigit( bytes[ 1 ] ) )
-			    || ( len == 3 && isDigit( bytes[ 0 ] ) && isDigit( bytes[ 1 ] ) && isDigit( bytes[ 2 ] ) ) ) {
+			    || ( len == 2 && isDigitOrMinus( bytes[ 0 ] ) && isDigit( bytes[ 1 ] ) )
+			    || ( len == 3 && isDigitOrMinus( bytes[ 0 ] ) && isDigit( bytes[ 1 ] ) && isDigit( bytes[ 2 ] ) )
+			    || ( len == 4 && isDigitOrMinus( bytes[ 0 ] ) && isDigit( bytes[ 1 ] ) && isDigit( bytes[ 2 ] ) && isDigit( bytes[ 3 ] ) ) ) {
 				return new IntKey( Integer.parseInt( name ) );
 
 			}
@@ -994,6 +1004,17 @@ public class Key implements Comparable<Key>, Serializable {
 	 */
 	private static boolean isDigit( byte b ) {
 		return b >= 48 && b <= 57;
+	}
+
+	/**
+	 * A little helper to decide if a byte represents a digit 0-9 or a negative sign
+	 *
+	 * @param b The byte to check
+	 *
+	 * @return True if the byte is a digit
+	 */
+	private static boolean isDigitOrMinus( byte b ) {
+		return b == 45 || isDigit( b );
 	}
 
 	/**

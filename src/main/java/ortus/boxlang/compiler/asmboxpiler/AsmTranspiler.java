@@ -36,6 +36,8 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxExpressionIn
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxExpressionStatementTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxFQNTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxFunctionInvocationTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxFunctionalBIFAccessTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxFunctionalMemberAccessTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxIdentifierTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxImportTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxIntegerLiteralTransformer;
@@ -95,6 +97,8 @@ import ortus.boxlang.compiler.ast.expression.BoxDotAccess;
 import ortus.boxlang.compiler.ast.expression.BoxExpressionInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
 import ortus.boxlang.compiler.ast.expression.BoxFunctionInvocation;
+import ortus.boxlang.compiler.ast.expression.BoxFunctionalBIFAccess;
+import ortus.boxlang.compiler.ast.expression.BoxFunctionalMemberAccess;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxLambda;
@@ -215,6 +219,8 @@ public class AsmTranspiler extends Transpiler {
 		registry.put( BoxTemplateIsland.class, new BoxTemplateIslandTransformer( this ) );
 		registry.put( BoxExpressionInvocation.class, new BoxExpressionInvocationTransformer( this ) );
 		registry.put( BoxParam.class, new BoxParamTransformer( this ) );
+		registry.put( BoxFunctionalBIFAccess.class, new BoxFunctionalBIFAccessTransformer( this ) );
+		registry.put( BoxFunctionalMemberAccess.class, new BoxFunctionalMemberAccessTransformer( this ) );
 	}
 
 	@Override
@@ -228,6 +234,8 @@ public class AsmTranspiler extends Transpiler {
 		String		relativePath	= getProperty( "relativePath" );
 		Source		source			= boxScript.getPosition().getSource();
 		String		filePath		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath() : "unknown";
+		setProperty( "filePath", filePath );
+		classNode.visitSource( filePath, null );
 
 		String		baseClassName	= getProperty( "baseclass" ) != null ? getProperty( "baseclass" ) : "BoxScript";
 
@@ -311,7 +319,7 @@ public class AsmTranspiler extends Transpiler {
 
 			methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
 			    Type.getInternalName( BoxSourceType.class ),
-			    "BOXSCRIPT",
+			    getProperty( "sourceType" ).toUpperCase(),
 			    Type.getDescriptor( BoxSourceType.class ) );
 			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
 			    type.getInternalName(),

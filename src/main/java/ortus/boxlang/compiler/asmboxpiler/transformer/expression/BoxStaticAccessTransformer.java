@@ -70,7 +70,8 @@ public class BoxStaticAccessTransformer extends AbstractTransformer {
 				nodes.add( new LdcInsnNode( id.getName() ) );
 			}
 		} else {
-			throw new ExpressionException( "Unexpected base token in static access.", objectAccess.getContext() );
+			nodes.addAll( transpiler.transform( objectAccess.getContext(), context, ReturnValueContext.VALUE ) );
+			// throw new ExpressionException( "Unexpected base token in static access.", objectAccess.getContext() );
 		}
 		nodes.add( new FieldInsnNode( Opcodes.GETSTATIC, transpiler.getProperty( "classTypeInternal" ), "imports", Type.getDescriptor( List.class ) ) );
 

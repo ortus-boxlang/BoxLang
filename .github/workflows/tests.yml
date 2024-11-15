@@ -42,7 +42,7 @@ jobs:
           java-version: ${{ matrix.jdkVersion }}
 
       - name: Setup Gradle
-        uses: gradle/gradle-build-action@v3
+        uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.7"
 
@@ -72,8 +72,8 @@ jobs:
 
       - name: Test Module
         run: |
-          gradle :src:modules:test:build -Dboxlang.experimental.compiler=${{ matrix.compiler }} --stacktrace --console=plain
-          gradle test --stacktrace --console=plain
+          gradle :src:modules:test:build "-Dboxlang.experimental.compiler=${{ matrix.compiler }}" --stacktrace --console=plain
+          gradle test "-Dboxlang.experimental.compiler=${{ matrix.compiler }}" --stacktrace --console=plain
 
       - name: Upload Test Results
         if: always()

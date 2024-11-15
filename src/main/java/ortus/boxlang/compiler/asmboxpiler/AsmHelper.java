@@ -21,7 +21,9 @@ import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.InsnNode;
+import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.LdcInsnNode;
+import org.objectweb.asm.tree.LineNumberNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.TypeInsnNode;
@@ -57,6 +59,36 @@ import ortus.boxlang.runtime.types.util.MapHelper;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 public class AsmHelper {
+
+	public record LineNumberIns( List<AbstractInsnNode> start, List<AbstractInsnNode> end ) {
+
+	}
+
+	public static LineNumberIns translatePosition( BoxNode node ) {
+		LabelNode	start	= new LabelNode();
+		LabelNode	end		= new LabelNode();
+
+		return new LineNumberIns(
+		    List.of( start, new LineNumberNode( node.getPosition().getStart().getLine(), start ) ),
+		    List.of( end, new LineNumberNode( node.getPosition().getEnd().getLine(), end ) )
+		);
+	}
+
+	public static List<AbstractInsnNode> addLineNumberLabels( List<AbstractInsnNode> nodes, BoxNode node ) {
+		LabelNode	start	= new LabelNode();
+		LabelNode	end		= new LabelNode();
+
+		if ( node.getPosition() == null ) {
+			return nodes;
+		}
+
+		nodes.add( 0, start );
+		nodes.add( 1, new LineNumberNode( node.getPosition().getStart().getLine(), start ) );
+		nodes.add( end );
+		nodes.add( new LineNumberNode( node.getPosition().getStart().getLine(), end ) );
+
+		return nodes;
+	}
 
 	public static List<AbstractInsnNode> generateMapOfAbstractMethodNames( Transpiler transpiler, BoxNode classOrInterface ) {
 		List<List<AbstractInsnNode>>	methodKeyLists	= classOrInterface.getDescendantsOfType( BoxFunctionDeclaration.class )

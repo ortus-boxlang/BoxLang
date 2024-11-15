@@ -14,13 +14,16 @@
  */
 package ortus.boxlang.compiler.asmboxpiler.transformer.expression;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
+import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
+import org.objectweb.asm.tree.TypeInsnNode;
 
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
@@ -28,6 +31,7 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxDecimalLiteral;
+import ortus.boxlang.runtime.types.util.MathUtil;
 
 public class BoxDecimalLiteralTransformer extends AbstractTransformer {
 
@@ -38,6 +42,21 @@ public class BoxDecimalLiteralTransformer extends AbstractTransformer {
 	@Override
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnContext ) throws IllegalStateException {
 		BoxDecimalLiteral literal = ( BoxDecimalLiteral ) node;
+
+		if ( MathUtil.isHighPrecisionMath() ) {
+			return List.of(
+			    new TypeInsnNode( Opcodes.NEW, Type.getInternalName( BigDecimal.class ) ),
+			    new InsnNode( Opcodes.DUP ),
+			    new LdcInsnNode( literal.getValue() ),
+			    new MethodInsnNode( Opcodes.INVOKESPECIAL,
+			        Type.getInternalName( BigDecimal.class ),
+			        "<init>",
+			        Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( String.class ) ),
+			        false
+			    )
+			);
+		}
+
 		return List.of( new LdcInsnNode( Double.valueOf( literal.getValue() ) ), new MethodInsnNode( Opcodes.INVOKESTATIC,
 		    Type.getInternalName( Double.class ),
 		    "valueOf",

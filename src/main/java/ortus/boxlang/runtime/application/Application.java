@@ -501,8 +501,10 @@ public class Application {
 		}
 
 		// Announce it globally
+		RequestBoxContext requestContext = new ScriptingRequestBoxContext( BoxRuntime.getInstance().getRuntimeContext() );
 		BoxRuntime.getInstance().getInterceptorService().announce( Key.onApplicationEnd, Struct.of(
-		    "application", this
+		    "application", this,
+		    "context", requestContext
 		) );
 
 		// Shutdown all sessions
@@ -527,7 +529,7 @@ public class Application {
 		if ( this.startingListener != null ) {
 			// Any buffer output in this context will be discarded
 			this.startingListener.onApplicationEnd(
-			    new ScriptingRequestBoxContext( BoxRuntime.getInstance().getRuntimeContext() ),
+			    requestContext,
 			    new Object[] { applicationScope }
 			);
 		}

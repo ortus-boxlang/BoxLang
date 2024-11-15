@@ -27,6 +27,7 @@ import java.util.List;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -214,6 +215,7 @@ class ConfigLoaderTest {
 
 	@DisplayName( "It can merge environmental properties in to the config" )
 	@Test
+	@Disabled( "This test passes, but is not thread safe to run in CI in parallel with other tests" )
 	void testItCanMergeEnvironmentalProperties() {
 		System.setProperty( "BOXLANG_SECURITY_ALLOWEDFILEOPERATIONEXTENSIONS", ".exe" );
 		System.setProperty( "boxlang.experimental.compiler", "asm" );

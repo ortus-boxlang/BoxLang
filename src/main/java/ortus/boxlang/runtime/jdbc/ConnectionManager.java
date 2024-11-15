@@ -16,6 +16,7 @@ package ortus.boxlang.runtime.jdbc;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -26,6 +27,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.segments.DatasourceConfig;
 import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.scopes.Key;
@@ -51,7 +53,7 @@ public class ConnectionManager {
 	/**
 	 * Logger
 	 */
-	private static final Logger		logger				= LoggerFactory.getLogger( ConnectionManager.class );
+	private static final Logger		logger							= LoggerFactory.getLogger( ConnectionManager.class );
 
 	/**
 	 * The active transaction (if any) for this request/thread/BoxLang context.
@@ -66,17 +68,27 @@ public class ConnectionManager {
 	/**
 	 * A default datasource, that can be set manully mostly for testing purpose mostly
 	 */
-	private DataSource				defaultDatasource	= null;
+	private DataSource				defaultDatasource				= null;
 
 	/**
 	 * A concurrent map of datasources registered with the manager.
 	 */
-	private Map<Key, DataSource>	datasources			= new ConcurrentHashMap<>();
+	private Map<Key, DataSource>	datasources						= new ConcurrentHashMap<>();
 
 	/**
 	 * The DatasourceService instance
 	 */
-	private DatasourceService		datasourceService	= BoxRuntime.getInstance().getDataSourceService();
+	private DatasourceService		datasourceService				= BoxRuntime.getInstance().getDataSourceService();
+
+	private static final Key[]		TRANSACTION_INTERCEPTION_POINTS	= List.of(
+	    Key.onTransactionBegin,
+	    Key.onTransactionEnd,
+	    Key.onTransactionAcquire,
+	    Key.onTransactionRelease,
+	    Key.onTransactionCommit,
+	    Key.onTransactionRollback,
+	    Key.onTransactionSetSavepoint
+	).toArray( new Key[ 0 ] );
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -91,6 +103,13 @@ public class ConnectionManager {
 	 */
 	public ConnectionManager( IBoxContext context ) {
 		this.context = context;
+
+		RequestBoxContext requestContext = this.context.getParentOfType( RequestBoxContext.class );
+		if ( requestContext != null ) {
+			requestContext.getApplicationListener()
+			    .getInterceptorPool()
+			    .registerInterceptionPoint( TRANSACTION_INTERCEPTION_POINTS );
+		}
 	}
 
 	/**
@@ -177,7 +196,7 @@ public class ConnectionManager {
 			this.transaction = new ChildTransaction( this.transaction );
 			logger.debug( "Opened CHILD transaction {}", this.transaction );
 		} else {
-			this.transaction = new Transaction( datasource );
+			this.transaction = new Transaction( context, datasource );
 			logger.debug( "Opened transaction {}", this.transaction );
 		}
 		return this.transaction;
@@ -419,31 +438,21 @@ public class ConnectionManager {
 	 * @return The datasource object, or null if not found.
 	 */
 	public DataSource getDatasource( Key datasourceName ) {
+		return this.datasources.computeIfAbsent( datasourceName, ( uniqueName ) -> {
+			// Try to discover now: These come from the context, so overrides are already applied
+			IStruct configDatasources = this.context.getConfig().getAsStruct( Key.datasources );
 
-		// Check in the local cache first
-		DataSource target = this.datasources.get( datasourceName );
-		if ( target != null ) {
-			return target;
-		}
+			// If the name doesn't exist in the datasources map, we return null
+			if ( !configDatasources.containsKey( uniqueName ) ) {
+				return null;
+			}
 
-		// Try to discover now: These come from the context, so overrides are already applied
-		IStruct configDatasources = this.context.getConfig().getAsStruct( Key.datasources );
-
-		// If the name doesn't exist in the datasources map, we return null
-		if ( !configDatasources.containsKey( datasourceName ) ) {
-			return null;
-		}
-
-		// Build out the config from the struct first.
-		DatasourceConfig	dsnConfig	= new DatasourceConfig( datasourceName )
-		    .process( configDatasources.getAsStruct( datasourceName ) )
-		    .withAppName( getApplicationName() );
-		// Register the datasource
-		DataSource			dsn			= this.datasourceService.register( dsnConfig );
-		// Cache it
-		this.datasources.put( datasourceName, dsn );
-
-		return dsn;
+			// Build out the config from the struct first.
+			DatasourceConfig dsnConfig = new DatasourceConfig( uniqueName )
+			    .process( configDatasources.getAsStruct( uniqueName ) )
+			    .withAppName( getApplicationName() );
+			return this.datasourceService.register( dsnConfig );
+		} );
 	}
 
 	/**
@@ -497,26 +506,19 @@ public class ConnectionManager {
 	 * @return A new or already registered datasource
 	 */
 	public DataSource getOnTheFlyDataSource( IStruct properties ) {
-		Key			datasourceName	= Key.of( "onthefly_" + properties.hashCode() );
-		DataSource	target			= this.datasources.get( datasourceName );
+		Key datasourceName = Key.of( "onthefly_" + properties.hashCode() );
+		return this.datasources.computeIfAbsent( datasourceName, ( uniqueName ) -> {
+			// Build out the config
+			DatasourceConfig config = new DatasourceConfig(
+			    Key.of( datasourceName.getName() ),
+			    properties
+			)
+			    .withAppName( getApplicationName() )
+			    .setOnTheFly();
 
-		if ( target != null ) {
-			return target;
-		}
-
-		// Build out the config
-		DatasourceConfig config = new DatasourceConfig(
-		    Key.of( datasourceName.getName() ),
-		    properties
-		)
-		    .withAppName( getApplicationName() )
-		    .setOnTheFly();
-
-		// Register it
-		target = this.datasourceService.register( config );
-		this.datasources.put( datasourceName, target );
-
-		return target;
+			// Register it
+			return this.datasourceService.register( config );
+		} );
 	}
 
 	/**

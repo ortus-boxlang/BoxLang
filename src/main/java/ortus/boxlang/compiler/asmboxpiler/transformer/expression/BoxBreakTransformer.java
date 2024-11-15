@@ -58,12 +58,23 @@ public class BoxBreakTransformer extends AbstractTransformer {
 		MethodContextTracker	tracker			= transpiler.getCurrentMethodContextTracker().get();
 		List<AbstractInsnNode>	nodes			= new ArrayList<AbstractInsnNode>();
 
-		if ( returnContext.nullable || exitsAllowed.equals( ExitsAllowed.FUNCTION ) ) {
+		BoxNode					labelTarget		= tracker.getStringLabel( breakNode.getLabel() );
+		if ( labelTarget == null ) {
+			labelTarget = getTargetAncestor( breakNode );
+		}
+
+		int intermediateCount = countIntermediateLoops( labelTarget, breakNode );
+
+		for ( int i = 0; i < intermediateCount; i++ ) {
+			nodes.add( new InsnNode( Opcodes.POP ) );
+		}
+
+		if ( returnContext.nullable
+		    || exitsAllowed.equals( ExitsAllowed.FUNCTION ) ) {
 			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
 		}
 
-		BoxNode		labelTarget		= tracker.getStringLabel( breakNode.getLabel() );
-		LabelNode	currentBreak	= tracker.getBreak( labelTarget != null ? labelTarget : getTargetAncestor( breakNode ) );
+		LabelNode currentBreak = tracker.getBreak( labelTarget != null ? labelTarget : getTargetAncestor( breakNode ) );
 
 		if ( currentBreak != null ) {
 			if ( returnContext.nullable && nodes.size() == 0 ) {
@@ -105,5 +116,21 @@ public class BoxBreakTransformer extends AbstractTransformer {
 		return node.getFirstNodeOfTypes( BoxSwitch.class, BoxFunctionDeclaration.class, BoxClosure.class, BoxLambda.class, BoxComponent.class, BoxDo.class,
 		    BoxForIndex.class, BoxForIn.class,
 		    BoxWhile.class );
+	}
+
+	public int countIntermediateLoops( BoxNode target, BoxBreak breakNode ) {
+		int		count	= 0;
+
+		BoxNode	parent	= breakNode.getParent();
+
+		while ( parent != target ) {
+			if ( parent instanceof BoxWhile || parent instanceof BoxDo || parent instanceof BoxForIn || parent instanceof BoxForIndex ) {
+				count++;
+			}
+
+			parent = parent.getParent();
+		}
+
+		return count;
 	}
 }

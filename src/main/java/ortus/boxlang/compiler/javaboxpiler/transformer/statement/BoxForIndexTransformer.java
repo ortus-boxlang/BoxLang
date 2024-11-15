@@ -21,8 +21,11 @@ import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.expr.BooleanLiteralExpr;
 import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.NameExpr;
+import com.github.javaparser.ast.expr.UnaryExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
+import com.github.javaparser.ast.stmt.IfStmt;
 import com.github.javaparser.ast.stmt.LabeledStmt;
 import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.ast.stmt.TryStmt;
@@ -55,11 +58,12 @@ public class BoxForIndexTransformer extends AbstractTransformer {
 	 */
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-		BoxForIndex	boxFor		= ( BoxForIndex ) node;
+		BoxForIndex	boxFor				= ( BoxForIndex ) node;
 
-		Expression	initializer	= null;
-		Expression	condition	= null;
-		Expression	step		= null;
+		Expression	initializer			= null;
+		Expression	condition			= null;
+		Expression	step				= null;
+		String		breakDetectionName	= "didBreak" + transpiler.incrementAndGetForLoopBreakCounter();
 
 		if ( boxFor.getInitializer() != null ) {
 			initializer = ( Expression ) transpiler.transform( boxFor.getInitializer(), TransformerContext.LEFT );
@@ -81,6 +85,7 @@ public class BoxForIndexTransformer extends AbstractTransformer {
 			template2 = "while( BooleanCaster.cast( ${condition} ) ) {}";
 		}
 		BlockStmt stmt = new BlockStmt();
+		stmt.addStatement( ( Statement ) parseStatement( "boolean " + breakDetectionName + " = false;", values ) );
 		if ( initializer != null ) {
 			ExpressionStmt init = new ExpressionStmt( initializer );
 			stmt.addStatement( init );
@@ -96,7 +101,10 @@ public class BoxForIndexTransformer extends AbstractTransformer {
 		if ( step != null ) {
 			// And we run the step in the finally block
 			ExpressionStmt stepStmt = new ExpressionStmt( step );
-			tryStmt.setFinallyBlock( new BlockStmt( new NodeList<Statement>( stepStmt ) ) );
+			tryStmt.setFinallyBlock( new BlockStmt( new NodeList<Statement>(
+			    // if( !didBreakN ) stepExpressionstatement;
+			    new IfStmt( new UnaryExpr( new NameExpr( breakDetectionName ), UnaryExpr.Operator.LOGICAL_COMPLEMENT ), stepStmt, null )
+			) ) );
 		} else {
 			// We need to trick the Java compiler which requires a try resource, catch block, or finally block
 			tryStmt.setFinallyBlock( new BlockStmt() );
@@ -109,6 +117,8 @@ public class BoxForIndexTransformer extends AbstractTransformer {
 		} else {
 			stmt.addStatement( whileStmt );
 		}
+
+		transpiler.popForLoopBreakCounter();
 
 		// logger.trace( node.getSourceText() + " -> " + stmt );
 		addIndex( stmt, node );

@@ -67,7 +67,7 @@ public class RandRange extends BIF {
 		// For integer values, ensure the range is inclusive of the top number
 		long	lower	= number1.longValue();
 		long	upper	= number2.longValue();
-		return lower + ( long ) ( Rand._invoke( algorithm, seed ) ) * ( upper - lower + 1 );
+		return lower + ( long ) ( Rand._invoke( algorithm, seed ) * ( upper - lower + 1 ) );
 	}
 
 }

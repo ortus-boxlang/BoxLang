@@ -358,10 +358,14 @@ public class BoxRuntime implements java.io.Closeable {
 		BooleanCaster.attempt(
 		    this.configuration.experimental.getOrDefault( "ASTCapture", false )
 		).ifSuccessful(
-		    astCapture -> this.interceptorService.register(
-		        DynamicObject.of( new ASTCapture( false, true ) ),
-		        Key.onParse
-		    )
+		    astCapture -> {
+			    if ( astCapture ) {
+				    this.interceptorService.register(
+				        DynamicObject.of( new ASTCapture( false, true ) ),
+				        Key.onParse
+				    );
+			    }
+		    }
 		);
 
 		// Load core logger and other core interceptions

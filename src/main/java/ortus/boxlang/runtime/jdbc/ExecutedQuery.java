@@ -119,6 +119,7 @@ public final class ExecutedQuery {
 		Query	results			= null;
 		IStruct	queryMeta		= Struct.of(
 		    "cached", false,
+		    "cacheKey", pendingQuery.getCacheKey(),
 		    "sql", pendingQuery.getOriginalSql(),
 		    "sqlParameters", Array.fromList( pendingQuery.getParameterValues() ),
 		    "executionTime", executionTime

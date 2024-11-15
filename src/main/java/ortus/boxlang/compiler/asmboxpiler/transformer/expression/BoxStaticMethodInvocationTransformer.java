@@ -41,7 +41,6 @@ import ortus.boxlang.compiler.ast.expression.BoxStaticMethodInvocation;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.BoxClassSupport;
-import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 
 public class BoxStaticMethodInvocationTransformer extends AbstractTransformer {
 
@@ -65,7 +64,8 @@ public class BoxStaticMethodInvocationTransformer extends AbstractTransformer {
 		} else if ( baseObject instanceof BoxIdentifier id ) {
 			nodes.addAll( transpiler.transform( id, context, ReturnValueContext.VALUE ) );
 		} else {
-			throw new ExpressionException( "Unexpected base token in static method access.", baseObject );
+			nodes.addAll( transpiler.transform( baseObject, context, ReturnValueContext.VALUE ) );
+			// throw new ExpressionException( "Unexpected base token in static method access.", baseObject );
 		}
 
 		nodes.add( new FieldInsnNode( Opcodes.GETSTATIC, transpiler.getProperty( "classTypeInternal" ), "imports",

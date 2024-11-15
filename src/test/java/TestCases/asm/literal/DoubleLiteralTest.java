@@ -19,6 +19,8 @@ package TestCases.asm.literal;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import java.math.BigDecimal;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -71,7 +73,7 @@ public class DoubleLiteralTest {
 		        """,
 		    context );
 
-		assertThat( result ).isEqualTo( 3.5 );
+		assertThat( ( ( BigDecimal ) result ).doubleValue() ).isEqualTo( 3.5 );
 	}
 
 	@DisplayName( "Can decalare a double literal" )
@@ -83,6 +85,6 @@ public class DoubleLiteralTest {
 		        """,
 		    context );
 
-		assertThat( result ).isEqualTo( -3.5 );
+		assertThat( ( ( BigDecimal ) result ).doubleValue() ).isEqualTo( -3.5 );
 	}
 }

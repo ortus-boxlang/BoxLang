@@ -556,6 +556,7 @@ public class ClassTest {
 				test1 = cfc.getShortcutWithDefault()
 				test2 = cfc.getTypedShortcutWithDefault()
 				test3 = cfc.getChain()
+				test4 = cfc.getName()
 		    """, context );
 		// @formatter:on
 
@@ -567,6 +568,7 @@ public class ClassTest {
 		assertThat( variables.get( Key.of( "test1" ) ) ).isEqualTo( "myDefaultValue" );
 		assertThat( variables.get( Key.of( "test2" ) ) ).isEqualTo( "myDefaultValue2" );
 		assertThat( variables.get( Key.of( "test3" ) ) ).isEqualTo( new Array() );
+		assertThat( variables.get( Key.of( "test4" ) ) ).isNull();
 
 		var	boxMeta	= ( ClassMeta ) cfc.getBoxMeta();
 		var	meta	= boxMeta.meta;
@@ -1410,6 +1412,29 @@ public class ClassTest {
 		    """
 		    	cfc = new src.test.java.TestCases.phase3.MyRenderer();
 		    """, context );
+	}
+
+	@DisplayName( "bx: resolver prefix on new" )
+	@Test
+	public void testBXResolverPrefixNew() {
+
+		instance.executeSource(
+		    """
+		       cfc = new bx:src.test.java.TestCases.phase3.PropertyTestCF();
+		    """,
+		    context );
+	}
+
+	@DisplayName( "bx: resolver prefix on import" )
+	@Test
+	public void testBXResolverPrefixImport() {
+
+		instance.executeSource(
+		    """
+		    import bx:src.test.java.TestCases.phase3.PropertyTestCF as brad;
+		    new brad()
+		      """,
+		    context );
 	}
 
 }
