@@ -20,6 +20,11 @@ import com.github.javaparser.ast.Node;
 
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.statement.BoxBreak;
+import ortus.boxlang.compiler.ast.statement.BoxDo;
+import ortus.boxlang.compiler.ast.statement.BoxForIn;
+import ortus.boxlang.compiler.ast.statement.BoxForIndex;
+import ortus.boxlang.compiler.ast.statement.BoxSwitch;
+import ortus.boxlang.compiler.ast.statement.BoxWhile;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
 import ortus.boxlang.compiler.javaboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.TransformerContext;
@@ -45,9 +50,11 @@ public class BoxBreakTransformer extends AbstractTransformer {
 		if ( exitsAllowed.equals( ExitsAllowed.COMPONENT ) ) {
 			template = "if(true) return Component.BodyResult.ofBreak(" + componentLabel + ");";
 		} else if ( exitsAllowed.equals( ExitsAllowed.LOOP ) ) {
+			@SuppressWarnings( "unchecked" )
+			BoxNode	specificExit		= node.getFirstNodeOfTypes( BoxDo.class, BoxForIndex.class, BoxForIn.class, BoxSwitch.class, BoxWhile.class );
 			String	breakDetectionName	= null;
 			Integer	breakCounter		= transpiler.peekForLoopBreakCounter();
-			if ( breakCounter != null ) {
+			if ( specificExit instanceof BoxForIndex && breakCounter != null ) {
 				breakDetectionName	= "didBreak" + breakCounter;
 				template			= "if(true) { " + breakDetectionName + "=true; break " + breakLabel + "; }";
 			} else {
