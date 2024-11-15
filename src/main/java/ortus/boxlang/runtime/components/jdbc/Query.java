@@ -19,9 +19,6 @@ package ortus.boxlang.runtime.components.jdbc;
 
 import java.util.Set;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
@@ -41,11 +38,6 @@ import ortus.boxlang.runtime.validation.Validator;
 
 @BoxComponent( requiresBody = true )
 public class Query extends Component {
-
-	/**
-	 * Logger
-	 */
-	private Logger log = LoggerFactory.getLogger( Query.class );
 
 	/**
 	 * Constructor
