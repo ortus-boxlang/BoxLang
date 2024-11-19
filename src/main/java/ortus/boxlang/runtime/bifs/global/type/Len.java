@@ -20,7 +20,6 @@ import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
-import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
@@ -28,7 +27,6 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
-import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -38,13 +36,13 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 @BoxBIF( alias = "ArrayLen" )
 @BoxBIF( alias = "StringLen" )
 @BoxBIF( alias = "QueryRecordCount" )
+@BoxMember( type = BoxLangType.STRING )
 @BoxMember( type = BoxLangType.STRUCT, name = "count" )
 @BoxMember( type = BoxLangType.STRUCT, name = "len" )
+@BoxMember( type = BoxLangType.ARRAY )
+@BoxMember( type = BoxLangType.QUERY )
 @BoxMember( type = BoxLangType.DATETIME, name = "len" )
 @BoxMember( type = BoxLangType.DATE, name = "len" )
-@BoxMember( type = BoxLangType.ARRAY )
-@BoxMember( type = BoxLangType.STRING )
-@BoxMember( type = BoxLangType.QUERY )
 public class Len extends BIF {
 
 	/**
@@ -102,13 +100,10 @@ public class Len extends BIF {
 			return q.size();
 		}
 
-		if ( object instanceof DateTime dt ) {
-			return dt.toString().length();
-		}
-
-		CastAttempt<DateTime> dateTimeAttempt = DateTimeCaster.attempt( object );
-		if ( dateTimeAttempt.wasSuccessful() ) {
-			return dateTimeAttempt.get().toString().length();
+		// Dates are all handled inside the string caster, since they only have a "length" as a string
+		CastAttempt<String> stringAttempt = StringCaster.attempt( object );
+		if ( stringAttempt.wasSuccessful() ) {
+			return stringAttempt.get().length();
 		}
 
 		CastAttempt<Array> arrayAttempt = ArrayCaster.attempt( object );
@@ -119,11 +114,6 @@ public class Len extends BIF {
 		CastAttempt<IStruct> structAttempt = StructCaster.attempt( object );
 		if ( structAttempt.wasSuccessful() ) {
 			return structAttempt.get().size();
-		}
-
-		CastAttempt<String> stringAttempt = StringCaster.attempt( object );
-		if ( stringAttempt.wasSuccessful() ) {
-			return stringAttempt.get().length();
 		}
 
 		throw new BoxRuntimeException( "Cannot determine length of object of type " + object.getClass().getName() );

@@ -21,6 +21,7 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -48,7 +49,7 @@ public class Println extends BIF {
 	 * @argument.message The message to print
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Object obj = arguments.get( Key.message );
+		Object obj = DynamicObject.unWrap( arguments.get( Key.message ) );
 
 		// If it's a BoxLang type, let's use the string representation
 		if ( obj instanceof IType t ) {

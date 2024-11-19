@@ -24,6 +24,7 @@ import java.net.URI;
 import java.net.URL;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.Locale;
@@ -134,11 +135,18 @@ public class StringCaster implements IBoxCaster {
 		if ( object instanceof Path path ) {
 			return path.toString();
 		}
+
+		// Date classes
+
+		// This check needs to run BEFORE the next one since a java.sql.Date IS a java.util.Date, but the toInstance() method will throw an unchecked exception
+		if ( object instanceof java.sql.Date sDate ) {
+			return sDate.toString();
+		}
 		if ( object instanceof java.util.Date date ) {
-			return new DateTime( date ).toString();
+			return date.toString();
 		}
 		if ( object instanceof Instant instant ) {
-			return new DateTime( instant ).toString();
+			return instant.toString();
 		}
 		if ( object instanceof DateTime dt ) {
 			return dt.toString();
@@ -146,11 +154,31 @@ public class StringCaster implements IBoxCaster {
 		if ( object instanceof Locale lc ) {
 			return lc.toString();
 		}
-		if ( object instanceof java.util.UUID uuid ) {
-			return uuid.toString();
-		}
 		if ( object instanceof ZoneId castedZone ) {
 			return castedZone.getId();
+		}
+		if ( object instanceof LocalTime targetTimestamp ) {
+			return targetTimestamp.toString();
+		}
+		if ( object instanceof java.time.LocalDateTime targetLocalDateTime ) {
+			return targetLocalDateTime.toString();
+		}
+		if ( object instanceof java.time.LocalDate targetLocalDate ) {
+			return targetLocalDate.toString();
+		}
+		if ( object instanceof java.sql.Timestamp targetTimestamp ) {
+			return targetTimestamp.toString();
+		}
+		if ( object instanceof java.time.ZonedDateTime targetZonedDateTime ) {
+			return targetZonedDateTime.toString();
+		}
+		if ( object instanceof java.util.Calendar targetCalendar ) {
+			return targetCalendar.getTime().toString();
+		}
+		// End date classes
+
+		if ( object instanceof java.util.UUID uuid ) {
+			return uuid.toString();
 		}
 		if ( object instanceof StringBuilder sb ) {
 			return sb.toString();
