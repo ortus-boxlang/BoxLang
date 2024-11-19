@@ -21,6 +21,9 @@ package ortus.boxlang.runtime.components.debug;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,7 +32,6 @@ import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
@@ -40,10 +42,11 @@ import ortus.boxlang.runtime.types.IStruct;
 
 public class TimerTest {
 
-	static BoxRuntime	instance;
-	IBoxContext			context;
-	IScope				variables;
-	static Key			result	= new Key( "result" );
+	static BoxRuntime			instance;
+	ScriptingRequestBoxContext	context;
+	IScope						variables;
+	ByteArrayOutputStream		baos;
+	static Key					result	= new Key( "result" );
 
 	@BeforeAll
 	public static void setUp() {
@@ -56,8 +59,9 @@ public class TimerTest {
 
 	@BeforeEach
 	public void setupEach() {
-		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
-		variables	= context.getScopeNearby( VariablesScope.name );
+		context = new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		context.setOut( new PrintStream( ( baos = new ByteArrayOutputStream() ), true ) );
+		variables = context.getScopeNearby( VariablesScope.name );
 	}
 
 	@DisplayName( "It tests the BIF Timer as a comment" )
@@ -65,15 +69,15 @@ public class TimerTest {
 	public void testComponentCF() {
 		instance.executeSource(
 		    """
-		    <cftimer type="comment" label="TimeIt"><cfscript>sleep(1)</cfscript></cftimer><cfset result = getBoxContext().getBuffer().toString()>
+		    <cftimer type="comment" label="TimeIt"><cfscript>sleep(1)</cfscript></cftimer>
 		    """,
 		    context, BoxSourceType.CFTEMPLATE );
 
-		assertTrue( variables.get( result ) instanceof String );
-		assertTrue( variables.getAsString( result ).length() > 0 );
-		assertTrue( variables.getAsString( result ).trim().contains( "<!-- TimeIt :" ) );
-		System.out.println( variables.getAsString( result ).trim() );
-		assertTrue( variables.getAsString( result ).trim().contains( "ms -->" ) );
+		assertTrue( baos.toString() instanceof String );
+		assertTrue( baos.toString().length() > 0 );
+		assertTrue( baos.toString().trim().contains( "<!-- TimeIt :" ) );
+		System.out.println( baos.toString().trim() );
+		assertTrue( baos.toString().trim().contains( "ms -->" ) );
 	}
 
 	@DisplayName( "It tests the BIF Timer as a comment in BL" )
@@ -81,14 +85,13 @@ public class TimerTest {
 	public void testComponentBXM() {
 		instance.executeSource(
 		    """
-		    <bx:timer type="comment" label="TimeIt"><bx:script>sleep(1)</bx:script></bx:timer><bx:set result = getBoxContext().getBuffer().toString()>
+		    <bx:timer type="comment" label="TimeIt"><bx:script>sleep(1)</bx:script></bx:timer>
 		    """,
 		    context, BoxSourceType.BOXTEMPLATE );
 
-		assertTrue( variables.get( result ) instanceof String );
-		assertTrue( variables.getAsString( result ).length() > 0 );
-		assertTrue( variables.getAsString( result ).trim().contains( "<!-- TimeIt :" ) );
-		assertTrue( variables.getAsString( result ).trim().contains( "ms -->" ) );
+		assertTrue( baos.toString().length() > 0 );
+		assertTrue( baos.toString().trim().contains( "<!-- TimeIt :" ) );
+		assertTrue( baos.toString().trim().contains( "ms -->" ) );
 	}
 
 	@DisplayName( "It tests the BIF Timer as a comment in BL Script" )
@@ -99,14 +102,12 @@ public class TimerTest {
 		    timer type="comment" label="TimeIt"{
 		    	sleep(1);
 		    }
-		    result = getBoxContext().getBuffer().toString();
 		       """,
 		    context, BoxSourceType.BOXSCRIPT );
 
-		assertTrue( variables.get( result ) instanceof String );
-		assertTrue( variables.getAsString( result ).length() > 0 );
-		assertTrue( variables.getAsString( result ).trim().contains( "<!-- TimeIt :" ) );
-		assertTrue( variables.getAsString( result ).trim().contains( "ms -->" ) );
+		assertTrue( baos.toString().length() > 0 );
+		assertTrue( baos.toString().trim().contains( "<!-- TimeIt :" ) );
+		assertTrue( baos.toString().trim().contains( "ms -->" ) );
 	}
 
 	@DisplayName( "It tests the BIF Timer as a variable" )
@@ -174,17 +175,16 @@ public class TimerTest {
 	public void testComponentLabelOnly() {
 		instance.executeSource(
 		    """
-		       timer label="TimeIt"{
-		       	sleep(1);
-		       }
-		    result = getBoxContext().getBuffer().toString()
-		          """,
+		    timer label="TimeIt"{
+		    	sleep(1);
+		    }
+		       """,
 		    context, BoxSourceType.BOXSCRIPT );
 
-		assertTrue( variables.get( result ) instanceof String );
-		assertTrue( variables.getAsString( result ).length() > 0 );
-		assertTrue( variables.getAsString( result ).trim().contains( "TimeIt" ) );
-		assertTrue( variables.getAsString( result ).trim().contains( "ms" ) );
+		assertTrue( baos.toString() instanceof String );
+		assertTrue( baos.toString().length() > 0 );
+		assertTrue( baos.toString().trim().contains( "TimeIt" ) );
+		assertTrue( baos.toString().trim().contains( "ms" ) );
 	}
 
 	@DisplayName( "It tests the BIF Timer as a debug append" )
@@ -208,14 +208,14 @@ public class TimerTest {
 	public void testComponentInline() {
 		instance.executeSource(
 		    """
-		    <bx:timer type="inline" label="TimeIt"><bx:script>sleep(1)</bx:script></bx:timer><bx:set result = getBoxContext().getBuffer().toString()>
+		    <bx:timer type="inline" label="TimeIt"><bx:script>sleep(1)</bx:script></bx:timer>
 		    """,
 		    context, BoxSourceType.BOXTEMPLATE );
 
-		assertTrue( variables.get( result ) instanceof String );
-		assertTrue( variables.getAsString( result ).length() > 0 );
-		assertTrue( variables.getAsString( result ).trim().contains( "TimeIt :" ) );
-		assertTrue( variables.getAsString( result ).trim().contains( "ms" ) );
+		assertTrue( baos.toString() instanceof String );
+		assertTrue( baos.toString().length() > 0 );
+		assertTrue( baos.toString().trim().contains( "TimeIt :" ) );
+		assertTrue( baos.toString().trim().contains( "ms" ) );
 	}
 
 	@DisplayName( "It tests the BIF Timer as outline in BL" )
@@ -223,16 +223,16 @@ public class TimerTest {
 	public void testComponentOutline() {
 		instance.executeSource(
 		    """
-		    <bx:timer type="outline" label="TimeIt"><bx:script>sleep(1)</bx:script></bx:timer><bx:set result = getBoxContext().getBuffer().toString()>
+		    <bx:timer type="outline" label="TimeIt"><bx:script>sleep(1)</bx:script></bx:timer>
 		    """,
 		    context, BoxSourceType.BOXTEMPLATE );
 
-		assertTrue( variables.get( result ) instanceof String );
-		assertTrue( variables.getAsString( result ).length() > 0 );
-		assertTrue( variables.getAsString( result ).trim().contains( "<fieldset" ) );
-		assertTrue( variables.getAsString( result ).trim().contains( "<legend" ) );
-		assertTrue( variables.getAsString( result ).trim().contains( "TimeIt :" ) );
-		assertTrue( variables.getAsString( result ).trim().contains( "ms" ) );
+		assertTrue( baos.toString() instanceof String );
+		assertTrue( baos.toString().length() > 0 );
+		assertTrue( baos.toString().trim().contains( "<fieldset" ) );
+		assertTrue( baos.toString().trim().contains( "<legend" ) );
+		assertTrue( baos.toString().trim().contains( "TimeIt :" ) );
+		assertTrue( baos.toString().trim().contains( "ms" ) );
 	}
 
 	@DisplayName( "It tests the Component StopWatch as a variable" )
@@ -255,17 +255,15 @@ public class TimerTest {
 	public void testStopWatchLabelOnly() {
 		instance.executeSource(
 		    """
-		       stopwatch label="TimeIt"{
-		       	sleep(1);
-		       }
-		    result = getBoxContext().getBuffer().toString()
-		          """,
+		    stopwatch label="TimeIt"{
+		    	sleep(1);
+		    }
+		       """,
 		    context, BoxSourceType.BOXSCRIPT );
 
-		assertTrue( variables.get( result ) instanceof String );
-		assertTrue( variables.getAsString( result ).length() > 0 );
-		assertTrue( variables.getAsString( result ).trim().contains( "TimeIt" ) );
-		assertTrue( variables.getAsString( result ).trim().contains( "ms" ) );
+		assertTrue( baos.toString().length() > 0 );
+		assertTrue( baos.toString().trim().contains( "TimeIt" ) );
+		assertTrue( baos.toString().trim().contains( "ms" ) );
 	}
 
 }
