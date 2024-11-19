@@ -64,7 +64,11 @@ public class ArgumentsScope extends BaseScope {
 
 	@Override
 	public boolean containsKey( Key key ) {
-		key = resolveKey( key );
+		// Leave this unneccessary override as a reminder. All the other get/put methods translate between numeric and named keys, but contains key
+		// will ONLY look for real live actual keys. This is largely for CF compat as `arguments[ 1 ]` works but `structKeyExists( arguments, 1 )` returns false.
+		// It sort of makes sense if you think about it as the numeric keys only really existing when using the arguments as an array.
+		// containsKey() is what powers structKeyExists(), and when using the arguments scope as a struct, it should only return true for actual keys and ignore the "spoofed"
+		// positional numeric keys that allow it to behave as an array.
 		return super.containsKey( key );
 	}
 
@@ -106,7 +110,7 @@ public class ArgumentsScope extends BaseScope {
 	/**
 	 * Resolve a key to the actual key in the scope
 	 * Arguments allows existing items to be referenced by name OR position.
-	 * argumetns[1] is the same as arguments.first
+	 * arguments[1] is the same as arguments.first
 	 * So if we have an int key coming in, change it to the actual key in that position
 	 *
 	 * @param key The key to resolve
