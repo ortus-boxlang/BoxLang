@@ -205,10 +205,11 @@ public class DumpUtil {
 			if ( output.equals( "buffer" ) ) {
 				context.writeToBuffer(
 				    """
-				    	<div style="display: inline-block; padding: 8px 12px; background-color: #ff4d4d; color: white; font-weight: bold; border-radius: 5px;">
+				    	<div style="margin-top: 10px; display: inline-block; padding: 8px 12px; background-color: #ff4d4d; color: white; font-weight: bold; border-radius: 5px;">
 				    		Dump Aborted
 				    	</div>
-				    """, true );
+				    """,
+				    true );
 			}
 			context.flushBuffer( true );
 			throw new AbortException( "request", null );

@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.components.system;
 
 import java.util.Set;
 
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
@@ -46,7 +47,7 @@ public class Dump extends Component {
 		    new Attribute( Key.label, "string", "" ),
 		    new Attribute( Key.top, "numeric", 0 ),
 		    new Attribute( Key.expand, "boolean" ),
-		    new Attribute( Key.abort, "boolean", false ),
+		    new Attribute( Key.abort, "any", false ),
 		    new Attribute( Key.output, "string", "buffer", Set.of( Validator.NON_EMPTY ) ),
 		    new Attribute( Key.format, "string", Set.of( Validator.valueOneOf( "html", "text" ), Validator.NON_EMPTY ) ),
 		    new Attribute( Key.showUDFs, "boolean", true )
@@ -87,13 +88,19 @@ public class Dump extends Component {
 	 *
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
+		// Abort as String and empty means true <bx:dump var="" abort>
+		Object abort = attributes.get( Key.abort );
+		if ( abort instanceof String castedAbort && castedAbort.isEmpty() ) {
+			attributes.put( Key.abort, true );
+		}
+
 		DumpUtil.dump(
 		    context,
 		    DynamicObject.unWrap( attributes.get( Key.var ) ),
 		    attributes.getAsString( Key.label ),
 		    IntegerCaster.cast( attributes.get( Key.top ) ),
 		    attributes.getAsBoolean( Key.expand ),
-		    attributes.getAsBoolean( Key.abort ),
+		    BooleanCaster.cast( attributes.get( Key.abort ) ),
 		    attributes.getAsString( Key.output ).toLowerCase(),
 		    attributes.getAsString( Key.format ),
 		    attributes.getAsBoolean( Key.showUDFs )
