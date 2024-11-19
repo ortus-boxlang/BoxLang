@@ -19,11 +19,11 @@ package ortus.boxlang.runtime.components.system;
 
 import java.util.Set;
 
-import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
@@ -48,7 +48,7 @@ public class Dump extends Component {
 		    new Attribute( Key.top, "numeric", 0 ),
 		    new Attribute( Key.expand, "boolean" ),
 		    new Attribute( Key.abort, "any", false ),
-		    new Attribute( Key.output, "string", "buffer", Set.of( Validator.NON_EMPTY ) ),
+		    new Attribute( Key.output, "string", Set.of( Validator.NON_EMPTY ) ),
 		    new Attribute( Key.format, "string", Set.of( Validator.valueOneOf( "html", "text" ), Validator.NON_EMPTY ) ),
 		    new Attribute( Key.showUDFs, "boolean", true )
 		};
@@ -101,7 +101,7 @@ public class Dump extends Component {
 		    IntegerCaster.cast( attributes.get( Key.top ) ),
 		    attributes.getAsBoolean( Key.expand ),
 		    BooleanCaster.cast( attributes.get( Key.abort ) ),
-		    attributes.getAsString( Key.output ).toLowerCase(),
+		    attributes.getAsString( Key.output ),
 		    attributes.getAsString( Key.format ),
 		    attributes.getAsBoolean( Key.showUDFs )
 		);

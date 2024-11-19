@@ -85,7 +85,7 @@ public class Dump extends BIF {
 		    // Whether to do a hard abort the request after dumping
 		    new Argument( false, Argument.BOOLEAN, Key.abort, false ),
 		    // The output location which can be "buffer", "console", or "{absolute file path}", default is "buffer" (backwards compat => browser)
-		    new Argument( false, Argument.STRING, Key.output, "buffer", Set.of( Validator.NON_EMPTY ) ),
+		    new Argument( false, Argument.STRING, Key.output, Set.of( Validator.NON_EMPTY ) ),
 		    // The output format which can be "html" or "text". The default is based on the output location
 		    new Argument( false, Argument.STRING, Key.format, Set.of( Validator.valueOneOf( "html", "text" ), Validator.NON_EMPTY ) ),
 		    // Show UDFs or not
@@ -138,7 +138,7 @@ public class Dump extends BIF {
 		    IntegerCaster.cast( arguments.get( Key.top ) ),
 		    arguments.getAsBoolean( Key.expand ),
 		    BooleanCaster.cast( arguments.get( Key.abort ) ),
-		    arguments.getAsString( Key.output ).toLowerCase(),
+		    arguments.getAsString( Key.output ),
 		    arguments.getAsString( Key.format ),
 		    arguments.getAsBoolean( Key.showUDFs )
 		);

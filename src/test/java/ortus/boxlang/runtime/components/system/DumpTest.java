@@ -20,6 +20,9 @@ package ortus.boxlang.runtime.components.system;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,7 +31,6 @@ import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -36,10 +38,11 @@ import ortus.boxlang.runtime.scopes.VariablesScope;
 
 public class DumpTest {
 
-	static BoxRuntime	instance;
-	IBoxContext			context;
-	IScope				variables;
-	static Key			result	= new Key( "result" );
+	static BoxRuntime			instance;
+	ScriptingRequestBoxContext	context;
+	IScope						variables;
+	ByteArrayOutputStream		baos;
+	static Key					result	= new Key( "result" );
 
 	@BeforeAll
 	public static void setUp() {
@@ -53,8 +56,9 @@ public class DumpTest {
 
 	@BeforeEach
 	public void setupEach() {
-		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
-		variables	= context.getScopeNearby( VariablesScope.name );
+		context = new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		context.setOut( new PrintStream( ( baos = new ByteArrayOutputStream() ), true ) );
+		variables = context.getScopeNearby( VariablesScope.name );
 	}
 
 	@DisplayName( "It can dump tag" )
@@ -64,13 +68,12 @@ public class DumpTest {
 		instance.executeSource(
 		    """
 		       	<cfdump var="My Value" format="html">
-		    	<cfset result = getBoxContext().getBuffer().toString()>
 		    """,
 		    context, BoxSourceType.CFTEMPLATE );
 		// @formatter:on
-		assertThat( variables.getAsString( result ) ).contains( "My Value" );
+		assertThat( baos.toString() ).contains( "My Value" );
 		// If we change our cfdump template, this may break
-		assertThat( variables.getAsString( result ) ).contains( "String" );
+		assertThat( baos.toString() ).contains( "String" );
 	}
 
 	@DisplayName( "It can dump BL tag" )
@@ -80,13 +83,10 @@ public class DumpTest {
 		instance.executeSource(
 		    """
 		    	<bx:dump var='My Value'>
-		    	<bx:set result = getBoxContext().getBuffer().toString()>
 		    """,
 		    context, BoxSourceType.BOXTEMPLATE );
 		// @formatter:on
-		assertThat( variables.getAsString( result ) ).contains( "My Value" );
-		// If we change our cfdump template, this may break
-		assertThat( variables.getAsString( result ) ).contains( "My Value" );
+		assertThat( baos.toString() ).contains( "My Value" );
 	}
 
 	@DisplayName( "It can dump script" )
@@ -96,13 +96,12 @@ public class DumpTest {
 		instance.executeSource(
 		    """
 		       	dump var="My Value" format="html";
-		    	result = getBoxContext().getBuffer().toString();
 		    """,
 		    context );
 		// @formatter:on
-		assertThat( variables.getAsString( result ) ).contains( "My Value" );
+		assertThat( baos.toString() ).contains( "My Value" );
 		// If we change our cfdump template, this may break
-		assertThat( variables.getAsString( result ) ).contains( "String" );
+		assertThat( baos.toString() ).contains( "String" );
 	}
 
 	@DisplayName( "It can dump ACF script" )
@@ -112,11 +111,10 @@ public class DumpTest {
 		instance.executeSource(
 		    """
 		      	cfdump( var="My Value");
-		    	result = getBoxContext().getBuffer().toString();
 		    """,
 		    context, BoxSourceType.CFSCRIPT );
 		// @formatter:on
-		assertThat( variables.getAsString( result ) ).contains( "My Value" );
+		assertThat( baos.toString() ).contains( "My Value" );
 	}
 
 	@DisplayName( "It can dump using the BIF" )
@@ -126,11 +124,10 @@ public class DumpTest {
 		instance.executeSource(
 		    """
 		      	dump( "My Value");
-		    	result = getBoxContext().getBuffer().toString();
 		    """,
 		    context );
 		// @formatter:on
-		assertThat( variables.getAsString( result ) ).contains( "My Value" );
+		assertThat( baos.toString() ).contains( "My Value" );
 	}
 
 }
