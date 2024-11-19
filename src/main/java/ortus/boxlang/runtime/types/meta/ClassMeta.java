@@ -27,8 +27,8 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
-import ortus.boxlang.runtime.types.immutable.ImmutableArray;
-import ortus.boxlang.runtime.types.immutable.ImmutableStruct;
+import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableArray;
+import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableStruct;
 
 /**
  * This class represents generic BoxLang metadata for a an object which has no object-specifc properties
@@ -63,22 +63,22 @@ public class ClassMeta extends BoxMeta {
 			    functions.add( ( ( FunctionMeta ) ( ( Function ) entry ).getBoxMeta() ).meta );
 		    } );
 
-		this.meta = ImmutableStruct.of(
+		this.meta = UnmodifiableStruct.of(
 		    Key._NAME, target.getName().getName(),
 		    Key.nameAsKey, target.getName(),
-		    Key.documentation, ImmutableStruct.fromStruct( target.getDocumentation() ),
-		    Key.annotations, ImmutableStruct.fromStruct( target.getAnnotations() ),
+		    Key.documentation, UnmodifiableStruct.fromStruct( target.getDocumentation() ),
+		    Key.annotations, UnmodifiableStruct.fromStruct( target.getAnnotations() ),
 		    Key._EXTENDS, target.getSuper() != null ? target.getSuper().getBoxMeta().getMeta() : Struct.EMPTY,
-		    Key._IMPLEMENTS, ImmutableArray.fromList( target.getInterfaces().stream().map( iface -> iface.getBoxMeta().getMeta() ).toList() ),
-		    Key.functions, ImmutableArray.fromList( functions ),
+		    Key._IMPLEMENTS, UnmodifiableArray.fromList( target.getInterfaces().stream().map( iface -> iface.getBoxMeta().getMeta() ).toList() ),
+		    Key.functions, UnmodifiableArray.fromList( functions ),
 		    Key._HASHCODE, target.hashCode(),
-		    Key.properties, ImmutableArray.of( target.getProperties().entrySet().stream().map( entry -> ImmutableStruct.of(
+		    Key.properties, UnmodifiableArray.of( target.getProperties().entrySet().stream().map( entry -> UnmodifiableStruct.of(
 		        Key._NAME, entry.getKey().getName(),
 		        Key.nameAsKey, entry.getKey(),
 		        Key.type, entry.getValue().type(),
-		        Key.defaultValue, entry.getValue().defaultValue(),
-		        Key.annotations, ImmutableStruct.fromStruct( entry.getValue().annotations() ),
-		        Key.documentation, ImmutableStruct.fromStruct( entry.getValue().documentation() )
+		        Key.defaultValue, entry.getValue().getDefaultValueForMeta(),
+		        Key.annotations, UnmodifiableStruct.fromStruct( entry.getValue().annotations() ),
+		        Key.documentation, UnmodifiableStruct.fromStruct( entry.getValue().documentation() )
 		    ) ).toArray() ),
 		    Key.type, "Component",
 		    Key.fullname, target.getName().getName(),

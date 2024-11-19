@@ -17,20 +17,26 @@
  */
 package ortus.boxlang.runtime.components.net;
 
+import java.io.File;
 import java.io.IOException;
+import java.net.ConnectException;
+import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 import ortus.boxlang.runtime.components.Attribute;
@@ -46,6 +52,7 @@ import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.net.HTTPStatusReasons;
 import ortus.boxlang.runtime.net.HttpManager;
+import ortus.boxlang.runtime.net.HttpRequestMultipartBody;
 import ortus.boxlang.runtime.net.URIBuilder;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
@@ -55,6 +62,8 @@ import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
+import ortus.boxlang.runtime.util.FileSystemUtil;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 import ortus.boxlang.runtime.validation.Validator;
 
 @BoxComponent( allowsBody = true )
@@ -153,63 +162,106 @@ public class HTTP extends Component {
 		Array	params			= executionState.getAsArray( Key.HTTPParams );
 		Struct	HTTPResult		= new Struct();
 
+		URI		uri				= null;
 		try {
 			HttpRequest.Builder			builder			= HttpRequest.newBuilder();
 			URIBuilder					uriBuilder		= new URIBuilder( theURL );
-			HttpRequest.BodyPublisher	bodyPublisher	= HttpRequest.BodyPublishers.noBody();
-			Map<String, String>			formFields		= new HashMap<>();
+			HttpRequest.BodyPublisher	bodyPublisher	= null;
+			List<IStruct>				formFields		= new ArrayList<>();
+			List<IStruct>				files			= new ArrayList<>();
 			builder.header( "User-Agent", "BoxLang" );
 			for ( Object p : params ) {
 				IStruct	param	= StructCaster.cast( p );
 				String	type	= param.getAsString( Key.type );
 				switch ( type.toLowerCase() ) {
 					case "header" -> builder.header( param.getAsString( Key._NAME ), param.getAsString( Key.value ) );
-					case "body" -> bodyPublisher = HttpRequest.BodyPublishers.ofString( param.getAsString( Key.value ) );
+					case "body" -> {
+						if ( bodyPublisher != null ) {
+							throw new BoxRuntimeException( "Cannot use a body httpparam with an existing http body: " + bodyPublisher.toString() );
+						}
+						bodyPublisher = HttpRequest.BodyPublishers.ofString( param.getAsString( Key.value ) );
+					}
 					case "xml" -> {
+						if ( bodyPublisher != null ) {
+							throw new BoxRuntimeException( "Cannot use a xml httpparam with an existing http body: " + bodyPublisher.toString() );
+						}
 						builder.header( "Content-Type", "text/xml" );
 						bodyPublisher = HttpRequest.BodyPublishers.ofString( param.getAsString( Key.value ) );
 					}
 					// @TODO move URLEncoder.encode usage a non-deprecated method
 					case "cgi" -> builder.header( param.getAsString( Key._NAME ),
 					    java.net.URLEncoder.encode( param.getAsString( Key.value ), StandardCharsets.UTF_8 ) );
-					case "file" -> throw new BoxRuntimeException( "Unhandled HTTPParam type: " + type );
+					case "file" -> files.add( param );
 					case "url" -> uriBuilder.addParameter(
 					    param.getAsString( Key._NAME ),
 					    BooleanCaster.cast( param.getOrDefault( Key.encoded, true ) )
 					        ? URLEncoder.encode( StringCaster.cast( param.get( Key.value ) ), StandardCharsets.UTF_8 )
 					        : StringCaster.cast( param.get( Key.value ) )
 					);
-					case "formfield" -> {
-						String value = param.getAsString( Key.value );
-						if ( BooleanCaster.cast( param.getOrDefault( Key.encoded, true ) ) ) {
-							value = URLEncoder.encode( value, StandardCharsets.UTF_8 );
-						}
-						formFields.put( param.getAsString( Key._NAME ), value );
-					}
+					case "formfield" -> formFields.add( param );
 					case "cookie" -> builder.header( "Cookie",
 					    param.getAsString( Key._NAME ) + "=" + URLEncoder.encode( param.getAsString( Key.value ), StandardCharsets.UTF_8 ) );
 					default -> throw new BoxRuntimeException( "Unhandled HTTPParam type: " + type );
 				}
 			}
 
-			if ( !formFields.isEmpty() ) {
+			if ( !files.isEmpty() ) {
+				if ( bodyPublisher != null ) {
+					throw new BoxRuntimeException( "Cannot use a multipart body with an existing http body: " + bodyPublisher.toString() );
+				}
+				HttpRequestMultipartBody.Builder multipartBodyBuilder = new HttpRequestMultipartBody.Builder();
+				for ( IStruct param : files ) {
+					ResolvedFilePath	path		= FileSystemUtil.expandPath( context, param.getAsString( Key.file ) );
+					File				file		= path.absolutePath().toFile();
+					String				mimeType	= Optional.ofNullable( param.getAsString( Key.mimetype ) )
+					    .orElseGet( () -> URLConnection.getFileNameMap().getContentTypeFor( file.getName() ) );
+					multipartBodyBuilder.addPart( param.getAsString( Key._name ), file, mimeType, file.getName() );
+				}
+
+				for ( IStruct formField : formFields ) {
+					multipartBodyBuilder.addPart( formField.getAsString( Key._name ), formField.getAsString( Key.value ) );
+				}
+				HttpRequestMultipartBody multipartBody = multipartBodyBuilder.build();
+				builder.header( "Content-Type", multipartBody.getContentType() );
+				bodyPublisher = HttpRequest.BodyPublishers.ofByteArray( multipartBody.getBody() );
+			} else if ( !formFields.isEmpty() ) {
+				if ( bodyPublisher != null ) {
+					throw new BoxRuntimeException( "Cannot use a formfield httpparam with an existing http body: " + bodyPublisher.toString() );
+				}
 				bodyPublisher = HttpRequest.BodyPublishers.ofString(
-				    formFields.entrySet()
-				        .stream()
-				        .map( e -> e.getKey() + "=" + e.getValue() )
+				    formFields.stream()
+				        .map( formField -> {
+					        String value = formField.getAsString( Key.value );
+					        if ( BooleanCaster.cast( formField.getOrDefault( Key.encoded, true ) ) ) {
+						        value = URLEncoder.encode( value, StandardCharsets.UTF_8 );
+					        }
+					        return formField.getAsString( Key._name ) + "=" + value;
+				        } )
 				        .collect( Collectors.joining( "&" ) )
 				);
 				builder.header( "Content-Type", "application/x-www-form-urlencoded" );
 			}
 
-			builder.method( method, bodyPublisher );
-			builder.uri( uriBuilder.build() );
-			HttpRequest				request				= builder.build();
-			HttpClient				client				= HttpManager.getClient();
-			HttpResponse<String>	response			= client.send( request, HttpResponse.BodyHandlers.ofString() );
+			if ( bodyPublisher == null ) {
+				bodyPublisher = HttpRequest.BodyPublishers.noBody();
+			}
 
-			HttpHeaders				httpHeaders			= response.headers();
-			IStruct					headers				= transformToResponseHeaderStruct( httpHeaders.map(), response );
+			builder.method( method, bodyPublisher );
+			uri = uriBuilder.build();
+			builder.uri( uri );
+			HttpRequest								request			= builder.build();
+			HttpClient								client			= HttpManager.getClient();
+			CompletableFuture<HttpResponse<String>>	inflightRequest	= client.sendAsync( request, HttpResponse.BodyHandlers.ofString() );
+			CompletableFuture<HttpResponse<String>>	winner			= inflightRequest;
+			if ( attributes.containsKey( Key.timeout ) ) {
+				winner = inflightRequest.applyToEither( HttpManager.getTimeoutRequestAsync( attributes.getAsInteger( Key.timeout ) ), result -> result );
+			}
+			HttpResponse<String>	response			= winner.get();
+
+			HttpHeaders				httpHeaders			= Optional.ofNullable( response.headers() )
+			    .orElse( HttpHeaders.of( Map.of(), ( a, b ) -> true ) );
+			IStruct					headers				= transformToResponseHeaderStruct(
+			    httpHeaders.map() );
 			String					httpVersionString	= response.version() == HttpClient.Version.HTTP_1_1 ? "HTTP/1.1" : "HTTP/2";
 			String					statusCodeString	= String.valueOf( response.statusCode() );
 			String					statusText			= HTTPStatusReasons.getReasonForStatus( response.statusCode() );
@@ -225,8 +277,8 @@ public class HTTP extends Component {
 			HTTPResult.put( Key.status_code, response.statusCode() );
 			HTTPResult.put( Key.statusText, statusText );
 			HTTPResult.put( Key.status_text, statusText );
-			HTTPResult.put( Key.fileContent, response.body() );
-			HTTPResult.put( Key.errorDetail, "" );
+			HTTPResult.put( Key.fileContent, response.statusCode() == 408 ? "Request Timeout" : response.body() );
+			HTTPResult.put( Key.errorDetail, response.statusCode() == 408 ? response.body() : "" );
 			Optional<String> contentTypeHeader = httpHeaders.firstValue( "Content-Type" );
 			contentTypeHeader.ifPresent( ( contentType ) -> {
 				String[] contentTypeParts = contentType.split( ";\s*" );
@@ -244,8 +296,28 @@ public class HTTP extends Component {
 			ExpressionInterpreter.setVariable( context, variableName, HTTPResult );
 
 			return DEFAULT_RETURN;
-		} catch ( URISyntaxException | IOException | InterruptedException e ) {
-			throw new BoxRuntimeException( e.getMessage() );
+		} catch ( ExecutionException e ) {
+			Throwable innerException = e.getCause();
+			if ( innerException instanceof ConnectException ) {
+				HTTPResult.put( Key.responseHeader, Struct.EMPTY );
+				HTTPResult.put( Key.header, "" );
+				HTTPResult.put( Key.statusCode, 502 );
+				HTTPResult.put( Key.status_code, 502 );
+				HTTPResult.put( Key.statusText, "Bad Gateway" );
+				HTTPResult.put( Key.status_text, "Bad Gateway" );
+				HTTPResult.put( Key.fileContent, "Connection Failure" );
+				if ( uri != null ) {
+					HTTPResult.put( Key.errorDetail, String.format( "Unknown host: %s: Name or service not known.", uri.getHost() ) );
+				} else {
+					HTTPResult.put( Key.errorDetail, String.format( "Unknown host: %s: Name or service not known.", theURL ) );
+				}
+				ExpressionInterpreter.setVariable( context, variableName, HTTPResult );
+			} else {
+				throw new BoxRuntimeException( innerException.getMessage() );
+			}
+			return DEFAULT_RETURN;
+		} catch ( URISyntaxException | InterruptedException | IOException e ) {
+			throw new BoxRuntimeException( e.getMessage(), e );
 		}
 	}
 
@@ -341,8 +413,12 @@ public class HTTP extends Component {
 		    } ).collect( Collectors.joining( " " ) );
 	}
 
-	private <T> IStruct transformToResponseHeaderStruct( Map<String, List<String>> headersMap, HttpResponse<T> response ) {
+	private IStruct transformToResponseHeaderStruct( Map<String, List<String>> headersMap ) {
 		IStruct responseHeaders = new Struct();
+
+		if ( headersMap == null ) {
+			return responseHeaders;
+		}
 
 		// Add all the headers to our struct
 		for ( String headerName : headersMap.keySet() ) {

@@ -92,7 +92,6 @@ public class BoxRuntimeTest {
 	@DisplayName( "It can execute an expression" )
 	@Test
 	public void testItCanExecuteAnExpression() {
-
 		BoxRuntime	instance	= BoxRuntime.getInstance( true );
 		Object		result;
 		result = instance.executeStatement( "3+3" );

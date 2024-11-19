@@ -52,6 +52,7 @@ import com.sun.jdi.event.ClassPrepareEvent;
 import com.sun.jdi.event.Event;
 import com.sun.jdi.event.EventSet;
 import com.sun.jdi.event.ExceptionEvent;
+import com.sun.jdi.event.MethodExitEvent;
 import com.sun.jdi.event.StepEvent;
 import com.sun.jdi.event.ThreadDeathEvent;
 import com.sun.jdi.event.ThreadStartEvent;
@@ -60,13 +61,12 @@ import com.sun.jdi.request.BreakpointRequest;
 import com.sun.jdi.request.ClassPrepareRequest;
 import com.sun.jdi.request.EventRequest;
 import com.sun.jdi.request.ExceptionRequest;
+import com.sun.jdi.request.MethodExitRequest;
 import com.sun.jdi.request.ThreadDeathRequest;
 import com.sun.jdi.request.ThreadStartRequest;
 
-import ortus.boxlang.compiler.IBoxpiler;
 import ortus.boxlang.compiler.SourceMap;
 import ortus.boxlang.compiler.SourceMap.SourceMapRecord;
-import ortus.boxlang.compiler.javaboxpiler.JavaBoxpiler;
 import ortus.boxlang.debugger.JDITools.WrappedValue;
 import ortus.boxlang.debugger.event.ExitEvent;
 import ortus.boxlang.debugger.event.OutputEvent;
@@ -85,7 +85,6 @@ public class BoxLangDebugger {
 	private OutputStream						debugAdapterOutput;
 	Map<String, List<Breakpoint>>				breakpoints;
 	private List<ReferenceType>					vmClasses;
-	private IBoxpiler							boxpiler;
 	private Status								status;
 	private DebugAdapter						debugAdapter;
 	private InputStream							vmInput;
@@ -104,6 +103,9 @@ public class BoxLangDebugger {
 	private String								matcher;
 	private ReferenceType						boxLangExceptionRef;
 
+	private int									SUSPEND_POLICY		= ThreadStartRequest.SUSPEND_EVENT_THREAD;
+	private MethodExitRequest					methodExitRequest	= null;
+
 	public enum Status {
 		NOT_STARTED,
 		INITIALIZED,
@@ -118,7 +120,6 @@ public class BoxLangDebugger {
 		this.debugAdapterOutput	= debugAdapterOutput;
 		breakpoints				= new HashMap<>();
 		vmClasses				= new ArrayList<>();
-		this.boxpiler			= JavaBoxpiler.getInstance();
 		this.status				= Status.NOT_STARTED;
 		this.debugAdapter		= debugAdapter;
 	}
@@ -126,8 +127,7 @@ public class BoxLangDebugger {
 	public void initialize() {
 		try {
 			this.vm = this.initStrat.initialize();
-
-			lookForBoxLangClasses();
+			this.forceBoxLangClassSearch();
 		} catch ( Exception e ) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -243,23 +243,23 @@ public class BoxLangDebugger {
 
 	private void enableThreadRequests() {
 		ThreadStartRequest startRequest = vm.eventRequestManager().createThreadStartRequest();
-		startRequest.setSuspendPolicy( ThreadStartRequest.SUSPEND_EVENT_THREAD );
+		startRequest.setSuspendPolicy( SUSPEND_POLICY );
 		startRequest.enable();
 
 		ThreadDeathRequest deathRequest = vm.eventRequestManager().createThreadDeathRequest();
-		deathRequest.setSuspendPolicy( ThreadDeathRequest.SUSPEND_EVENT_THREAD );
+		deathRequest.setSuspendPolicy( SUSPEND_POLICY );
 		startRequest.enable();
 	}
 
 	private void enableClassPrepareRequest() {
 		ClassPrepareRequest classPrepareRequest = vm.eventRequestManager().createClassPrepareRequest();
 		classPrepareRequest.addClassFilter( "*.BoxLangException" );
-		classPrepareRequest.setSuspendPolicy( ClassPrepareRequest.SUSPEND_EVENT_THREAD );
+		classPrepareRequest.setSuspendPolicy( SUSPEND_POLICY );
 		classPrepareRequest.enable();
 
 		classPrepareRequest = vm.eventRequestManager().createClassPrepareRequest();
 		classPrepareRequest.addClassFilter( "boxgenerated.*" );
-		classPrepareRequest.setSuspendPolicy( ClassPrepareRequest.SUSPEND_EVENT_THREAD );
+		classPrepareRequest.setSuspendPolicy( SUSPEND_POLICY );
 		classPrepareRequest.enable();
 	}
 
@@ -499,7 +499,7 @@ public class BoxLangDebugger {
 			    var				topFrame	= ctr.getBoxLangStackFrames().get( 0 );
 
 			    BreakpointRequest bpReq		= vm.eventRequestManager().createBreakpointRequest( topFrame.location() );
-			    bpReq.setSuspendPolicy( BreakpointRequest.SUSPEND_EVENT_THREAD );
+			    bpReq.setSuspendPolicy( SUSPEND_POLICY );
 			    bpReq.enable();
 
 			    continueExecution( threadId, false );
@@ -543,9 +543,13 @@ public class BoxLangDebugger {
 
 	private void processVMEvents( EventSet eventSet ) throws IncompatibleThreadStateException, AbsentInformationException {
 		for ( Event event : eventSet ) {
-			// System.out.println( "Found event: " + event.toString() );
+			// this if statement is only used to catch the event initiated by forceBoxLangClassSearch
+			if ( event instanceof MethodExitEvent mee ) {
+				this.methodExitRequest.disable();
+				lookForBoxLangClasses( mee.thread() );
 
-			if ( event instanceof VMDeathEvent de ) {
+				eventSet.resume();
+			} else if ( event instanceof VMDeathEvent de ) {
 				handleDeathEvent( eventSet, de );
 			} else if ( event instanceof ClassPrepareEvent cpe ) {
 				handleClassPrepareEvent( eventSet, cpe );
@@ -646,12 +650,17 @@ public class BoxLangDebugger {
 		    }, () -> eventSet.resume() );
 	}
 
-	private void lookForBoxLangClasses() {
+	private void forceBoxLangClassSearch() {
+		this.methodExitRequest = vm.eventRequestManager().createMethodExitRequest();
+		methodExitRequest.enable();
+	}
+
+	private void lookForBoxLangClasses( ThreadReference threadRef ) {
 		this.vm.allClasses().stream()
 		    .filter( ( refType ) -> refType.name().toLowerCase().contains( "boxgenerated" ) )
 		    .forEach( ( refType ) -> {
 			    vmClasses.add( refType );
-			    // findSourceMapByFQN( refType.name() );
+			    findSourceMapByFQN( threadRef, refType.name() );
 		    } );
 	}
 
@@ -672,15 +681,15 @@ public class BoxLangDebugger {
 
 	public SourceMap findSourceMapByFQN( ThreadReference thread, String fqn ) {
 
-		if ( this.sourceMapsFromFQN.containsKey( fqn ) ) {
-			return this.sourceMapsFromFQN.get( fqn );
+		if ( BoxLangDebugger.sourceMapsFromFQN.containsKey( fqn ) ) {
+			return BoxLangDebugger.sourceMapsFromFQN.get( fqn );
 		}
 
 		Optional<SourceMap> val = getSourceMapFromVM( thread, fqn );
 
 		val.ifPresent( ( map ) -> {
 			this.sourceMaps.put( map.source.toLowerCase(), map );
-			this.sourceMapsFromFQN.put( fqn, map );
+			BoxLangDebugger.sourceMapsFromFQN.put( fqn, map );
 		} );
 
 		return val.orElse( null );
@@ -697,7 +706,7 @@ public class BoxLangDebugger {
 		Method getInstance = JDITools.findMethodByNameAndArgs( boxRuntime, "getInstance", new ArrayList<String>() );
 
 		try {
-			Value			boxpilerInstance	= boxRuntime.invokeMethod( thread, getInstance, new ArrayList<Value>(), 0 );
+			Value			boxpilerInstance	= boxRuntime.invokeMethod( thread, getInstance, new ArrayList<Value>(), ClassType.INVOKE_SINGLE_THREADED );
 
 			WrappedValue	wrappedBoxpiler		= JDITools.wrap( thread, boxpilerInstance );
 
@@ -912,9 +921,13 @@ public class BoxLangDebugger {
 							continue;
 						}
 
-						SourceMapRecord	foundMapRecord	= sourceMap.findClosestSourceMapRecord( breakpoint.line );
+						SourceMapRecord foundMapRecord = sourceMap.findClosestSourceMapRecord( breakpoint.line );
 
-						String			sourceName		= normalizeName( foundMapRecord.javaSourceClassName );
+						if ( foundMapRecord == null ) {
+							continue;
+						}
+
+						String sourceName = normalizeName( foundMapRecord.javaSourceClassName );
 
 						if ( !sourceName.equals( normalizeName( vmClass.name() ) ) ) {
 							continue;
@@ -933,7 +946,7 @@ public class BoxLangDebugger {
 						}
 
 						BreakpointRequest bpReq = vm.eventRequestManager().createBreakpointRequest( foundLoc );
-						bpReq.setSuspendPolicy( BreakpointRequest.SUSPEND_EVENT_THREAD );
+						bpReq.setSuspendPolicy( SUSPEND_POLICY );
 						bpReq.enable();
 
 					} catch ( BoxRuntimeException e ) {

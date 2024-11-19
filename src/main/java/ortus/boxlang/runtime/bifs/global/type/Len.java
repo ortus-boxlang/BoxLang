@@ -20,6 +20,7 @@ import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
+import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
@@ -27,6 +28,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
+import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -35,11 +37,14 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 @BoxBIF( alias = "StructCount" )
 @BoxBIF( alias = "ArrayLen" )
 @BoxBIF( alias = "StringLen" )
+@BoxBIF( alias = "QueryRecordCount" )
 @BoxMember( type = BoxLangType.STRUCT, name = "count" )
 @BoxMember( type = BoxLangType.STRUCT, name = "len" )
+@BoxMember( type = BoxLangType.DATETIME, name = "len" )
+@BoxMember( type = BoxLangType.DATE, name = "len" )
 @BoxMember( type = BoxLangType.ARRAY )
 @BoxMember( type = BoxLangType.STRING )
-// TODO: Query
+@BoxMember( type = BoxLangType.QUERY )
 public class Len extends BIF {
 
 	/**
@@ -48,7 +53,6 @@ public class Len extends BIF {
 	public Len() {
 		super();
 		declaredArguments = new Argument[] {
-		    // TODO: structCount calls the arg "struct" so we need to support that
 		    // Basically add a second param and check both. This really only matters
 		    // if someone calls the BIF with named args, which is quite rare.
 		    new Argument( true, "any", Key.value )
@@ -64,25 +68,62 @@ public class Len extends BIF {
 	 * @argument.value The number to return the absolute value of
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Object object = arguments.get( Key.value );
+		Object	object	= arguments.get( Key.value );
+
+		// Check if there is an argument called "struct", if so, use that
+		Object	struct	= arguments.get( "struct" );
+		if ( struct != null ) {
+			object = struct;
+		}
+
+		// Check if there is an argument called "query", if so, use that
+		Object query = arguments.get( "query" );
+		if ( query != null ) {
+			object = query;
+		}
+
+		// Check if there is an argument called "array", if so, use that
+		Object array = arguments.get( "array" );
+		if ( array != null ) {
+			object = array;
+		}
+
+		// Check if there is an argument called "string", if so, use that
+		Object string = arguments.get( "string" );
+		if ( string != null ) {
+			object = string;
+		}
+
 		if ( object == null ) {
 			return 0;
-		}
-		CastAttempt<Array> arrayAttempt = ArrayCaster.attempt( object );
-		if ( arrayAttempt.wasSuccessful() ) {
-			return arrayAttempt.get().size();
-		}
-		CastAttempt<IStruct> structAttempt = StructCaster.attempt( object );
-		if ( structAttempt.wasSuccessful() ) {
-			return structAttempt.get().size();
-		}
-		CastAttempt<String> stringAttempt = StringCaster.attempt( object );
-		if ( stringAttempt.wasSuccessful() ) {
-			return stringAttempt.get().length();
 		}
 
 		if ( object instanceof Query q ) {
 			return q.size();
+		}
+
+		if ( object instanceof DateTime dt ) {
+			return dt.toString().length();
+		}
+
+		CastAttempt<DateTime> dateTimeAttempt = DateTimeCaster.attempt( object );
+		if ( dateTimeAttempt.wasSuccessful() ) {
+			return dateTimeAttempt.get().toString().length();
+		}
+
+		CastAttempt<Array> arrayAttempt = ArrayCaster.attempt( object );
+		if ( arrayAttempt.wasSuccessful() ) {
+			return arrayAttempt.get().size();
+		}
+
+		CastAttempt<IStruct> structAttempt = StructCaster.attempt( object );
+		if ( structAttempt.wasSuccessful() ) {
+			return structAttempt.get().size();
+		}
+
+		CastAttempt<String> stringAttempt = StringCaster.attempt( object );
+		if ( stringAttempt.wasSuccessful() ) {
+			return stringAttempt.get().length();
 		}
 
 		throw new BoxRuntimeException( "Cannot determine length of object of type " + object.getClass().getName() );

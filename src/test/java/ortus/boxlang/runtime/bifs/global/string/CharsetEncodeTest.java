@@ -19,6 +19,7 @@
 
 package ortus.boxlang.runtime.bifs.global.string;
 
+import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.nio.charset.Charset;
@@ -77,6 +78,25 @@ public class CharsetEncodeTest {
 		    """,
 		    context );
 		assertEquals( "BoxLang Rocks!\nYou should try it!", variables.getAsString( result ) );
+
+	}
+
+	@Test
+	public void testByteArray() {
+
+		instance.executeSource(
+		    """
+		    result = charsetEncode( [0], "utf-8");
+		    """,
+		    context );
+		assertThat( variables.get( result ).equals( new byte[] { 0 } ) );
+
+		instance.executeSource(
+		    """
+		    result = charsetEncode( javacast("byte[]", [0] ), "utf-8");
+		    """,
+		    context );
+		assertThat( variables.get( result ).equals( new byte[] { 0 } ) );
 
 	}
 

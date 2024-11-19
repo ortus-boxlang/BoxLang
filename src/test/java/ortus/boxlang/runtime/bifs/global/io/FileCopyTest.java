@@ -40,6 +40,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
 public class FileCopyTest {
@@ -134,6 +135,20 @@ public class FileCopyTest {
 		    () -> instance.executeSource(
 		        """
 		        fileCopy( source, destination, false );
+		        """,
+		        context )
+		);
+	}
+
+	@DisplayName( "It tests the BIF FileCopy security" )
+	@Test
+	public void testBifSecurity() {
+		variables.put( Key.of( "source" ), Path.of( sourceFile ).toAbsolutePath().toString() );
+		assertThrows(
+		    BoxRuntimeException.class,
+		    () -> instance.executeSource(
+		        """
+		        fileCopy( source, "blah.exe" );
 		        """,
 		        context )
 		);

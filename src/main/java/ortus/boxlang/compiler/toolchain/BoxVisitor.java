@@ -90,8 +90,8 @@ import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprBitShiftContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprBorContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprCastAsContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprCatContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprDotAccessContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprDotFloatContext;
+import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprDotOrColonAccessContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprElvisContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprEqualContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprFunctionCallContext;
@@ -108,8 +108,8 @@ import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprPowerContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprPrecedenceContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprPrefixContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprRelationalContext;
+import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprStatAnonymousFunctionContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprStatInvocableContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprStaticAccessContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprTernaryContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprUnaryContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprXorContext;
@@ -360,7 +360,15 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 		}
 
 		// Otherwise we have an index with 0 <= n <= 3 expressions
-		return new BoxForIndex( label, getOrNull( expressions, 0 ), getOrNull( expressions, 1 ), getOrNull( expressions, 2 ), body, pos, src );
+		return new BoxForIndex(
+		    label,
+		    Optional.ofNullable( ctx.intializer ).map( init -> init.accept( expressionVisitor ) ).orElse( null ),
+		    Optional.ofNullable( ctx.condition ).map( init -> init.accept( expressionVisitor ) ).orElse( null ),
+		    Optional.ofNullable( ctx.increment ).map( init -> init.accept( expressionVisitor ) ).orElse( null ),
+		    body,
+		    pos,
+		    src
+		);
 	}
 
 	@Override
@@ -660,7 +668,7 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 	}
 
 	@Override
-	public BoxNode visitExprDotAccess( ExprDotAccessContext ctx ) {
+	public BoxNode visitExprDotOrColonAccess( ExprDotOrColonAccessContext ctx ) {
 		return buildExprStat( ctx );
 	}
 
@@ -783,7 +791,7 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 	}
 
 	@Override
-	public BoxNode visitExprStaticAccess( ExprStaticAccessContext ctx ) {
+	public BoxNode visitExprStatAnonymousFunction( ExprStatAnonymousFunctionContext ctx ) {
 		return buildExprStat( ctx );
 	}
 

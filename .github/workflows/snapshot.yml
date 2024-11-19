@@ -17,18 +17,6 @@ env:
   MODULE_ID: ${{ github.event.repository.name }}
 
 jobs:
-  #############################################
-  # Tests First baby! We fail, no build :(
-  #############################################
-  tests:
-    uses: ./.github/workflows/tests.yml
-    secrets: inherit
-    permissions:
-      checks: write
-      pull-requests: write
-      contents: read
-      issues: read
-
   ##########################################################################################
   # Format Source Code
   ##########################################################################################
@@ -50,15 +38,23 @@ jobs:
       - name: Format Java Source
         run: ./gradlew spotlessApply --stacktrace
 
-      # - name: Format BoxLang Source
-      #   uses: Ortus-Solutions/commandbox-action@v1.0.2
-      #   with:
-      #     cmd: run-script format
-
       - name: Commit Format Changes
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: Apply cfformat changes
+
+  #############################################
+  # Tests First baby! We fail, no build :(
+  #############################################
+  tests:
+    uses: ./.github/workflows/tests.yml
+    needs: format
+    secrets: inherit
+    permissions:
+      checks: write
+      pull-requests: write
+      contents: read
+      issues: read
 
   #############################################
   # Build Snapshot Release
@@ -70,5 +66,6 @@ jobs:
     permissions:
       checks: write
       contents: write
+      packages: write
     with:
       snapshot: true

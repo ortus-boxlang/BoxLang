@@ -20,7 +20,8 @@ package ortus.boxlang.runtime.bifs.global.array;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import org.junit.jupiter.api.AfterAll;
+import java.util.function.Predicate;
+
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -43,11 +44,6 @@ public class ArrayFindTest {
 	@BeforeAll
 	public static void setUp() {
 		instance = BoxRuntime.getInstance( true );
-	}
-
-	@AfterAll
-	public static void teardown() {
-
 	}
 
 	@BeforeEach
@@ -154,5 +150,50 @@ public class ArrayFindTest {
 		    context );
 		int found = ( int ) variables.get( result );
 		assertThat( found ).isEqualTo( 2 );
+	}
+
+	@DisplayName( "It should find using a closure returning a boolean" )
+	@Test
+	public void testMatchClosure() {
+		instance.executeSource(
+		    """
+		    result = ["a","b","c"].find( (v) => v == "b" ? 1 : 0 );
+		    """,
+		    context );
+
+		int found = ( int ) variables.get( result );
+		assertThat( found ).isEqualTo( 2 );
+	}
+
+	@DisplayName( "Function can be Java functional interface" )
+	@Test
+	// @Disabled( "See comments on https://ortussolutions.atlassian.net/browse/BL-617" )
+	public void testJavaFunctionalInterface() {
+		Predicate<String> javaPredicate = s -> s.equals( "b" );
+		variables.put( "javaPredicate", javaPredicate );
+		// @formatter:off
+		instance.executeSource(
+		    """
+		  	  import java.util.function.Predicate;
+		      result = ["a","b","c"].find( javaPredicate );
+		    """,
+			context );
+		// @formatter:on
+
+		int found = ( int ) variables.get( result );
+		assertThat( found ).isEqualTo( 2 );
+	}
+
+	@DisplayName( "It can't cast closure to string" )
+	@Test
+	public void testClosureToString() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		        result = ["x"].find(() => false)
+		    """,
+		    context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( 0 );
 	}
 }

@@ -20,7 +20,7 @@ package ortus.boxlang.runtime.config;
 import java.util.List;
 
 import ortus.boxlang.runtime.types.IStruct;
-import ortus.boxlang.runtime.types.immutable.ImmutableStruct;
+import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableStruct;
 import ortus.boxlang.runtime.util.CLIUtil;
 
 /**
@@ -137,7 +137,7 @@ public record CLIOptions(
 	 * @return The state representation of this record as a struct
 	 */
 	public IStruct toStruct() {
-		return ImmutableStruct.of(
+		return UnmodifiableStruct.of(
 		    "actionCommand", actionCommand(),
 		    "cliArgs", cliArgs(),
 		    "cliArgsRaw", cliArgsRaw(),

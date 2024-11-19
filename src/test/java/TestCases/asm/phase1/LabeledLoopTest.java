@@ -154,7 +154,7 @@ public class LabeledLoopTest {
 		    """
 		    data = [1,2,3]
 		       result = 0
-		       	mylabel : for( var x in data ) {
+		       	mylabel : for( x in data ) {
 		       		result ++
 		       		break mylabel;
 		       		result ++

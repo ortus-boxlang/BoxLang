@@ -24,6 +24,7 @@ import java.util.Optional;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
+import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 
@@ -57,6 +58,7 @@ import ortus.boxlang.runtime.operators.Multiply;
 import ortus.boxlang.runtime.operators.Plus;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.LocalScope;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 
 public class BoxAssignmentTransformer extends AbstractTransformer {
@@ -67,14 +69,22 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 
 	@Override
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnContext ) throws IllegalStateException {
-		BoxAssignment			assigment	= ( BoxAssignment ) node;
+		BoxAssignment			assignment	= ( BoxAssignment ) node;
 		List<AbstractInsnNode>	nodes		= null;
 
-		if ( assigment.getOp() == BoxAssignmentOperator.Equal ) {
-			List<AbstractInsnNode> jRight = transpiler.transform( assigment.getRight(), TransformerContext.NONE, ReturnValueContext.VALUE );
-			nodes = transformEquals( assigment.getLeft(), jRight, assigment.getOp(), assigment.getModifiers() );
+		if ( assignment.getOp() == null ) {
+			if ( ! ( assignment.getLeft() instanceof BoxIdentifier ) ) {
+				throw new ExpressionException( "You cannot declare a variable using " + assignment.getLeft().getClass().getSimpleName(),
+				    assignment.getPosition(),
+				    assignment.getSourceText() );
+			}
+
+			nodes = assignNullValue( ( BoxIdentifier ) assignment.getLeft() );
+		} else if ( assignment.getOp() == BoxAssignmentOperator.Equal ) {
+			List<AbstractInsnNode> jRight = transpiler.transform( assignment.getRight(), TransformerContext.NONE, ReturnValueContext.VALUE );
+			nodes = transformEquals( assignment.getLeft(), jRight, assignment.getOp(), assignment.getModifiers() );
 		} else {
-			nodes = transformCompoundEquals( assigment );
+			nodes = transformCompoundEquals( assignment );
 		}
 
 		if ( returnContext.empty ) {
@@ -86,11 +96,22 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 
 	public List<AbstractInsnNode> transformEquals( BoxExpression left, List<AbstractInsnNode> jRight, BoxAssignmentOperator op,
 	    List<BoxAssignmentModifier> modifiers ) throws IllegalStateException {
-		boolean							hasVar	= hasVar( modifiers );
-		Optional<MethodContextTracker>	tracker	= transpiler.getCurrentMethodContextTracker();
+		boolean							hasVar			= hasVar( modifiers );
+		boolean							hasStatic		= hasStatic( modifiers );
+		boolean							hasFinal		= hasFinal( modifiers );
+		String							mustBeScopeName	= null;
+		Optional<MethodContextTracker>	tracker			= transpiler.getCurrentMethodContextTracker();
 
 		// "#arguments.scope#.#arguments.propertyName#" = arguments.propertyValue;
 		if ( left instanceof BoxStringInterpolation || left instanceof BoxStringLiteral ) {
+			if ( hasVar ) {
+				throw new ExpressionException( "You cannot use the [var] keyword with a quoted string on the left hand side of your assignment",
+				    left.getPosition(), left.getSourceText() );
+			}
+			if ( hasStatic ) {
+				throw new ExpressionException( "You cannot use the [static] keyword with a quoted string on the left hand side of your assignment",
+				    left.getPosition(), left.getSourceText() );
+			}
 			/*
 			 * ExpressionInterpreter.setVariable(
 			 * ${contextName},
@@ -139,8 +160,13 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			furthestLeft = currentObjectAccess.getContext();
 		}
 
+		if ( hasStatic && hasVar ) {
+			throw new ExpressionException( "You cannot use the [var] and [static] keywords together", left.getPosition(), left.getSourceText() );
+		}
+
 		// If this assignment was var foo = 1, then we need into insert the scope as the furthest left and shift the key
 		if ( hasVar ) {
+			mustBeScopeName = "local";
 			// This is for the edge case of
 			// var variables = 5
 			// or
@@ -158,35 +184,86 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			furthestLeft = new BoxIdentifier( "local", null, null );
 		}
 
+		// If this assignment was static foo = 1, then we need into insert the scope as the furthest left and shift the key
+		if ( hasStatic ) {
+			mustBeScopeName = "static";
+			// This is for the edge case of
+			// static variables = 5
+			// or
+			// static variables.foo = 5
+			// in which case it's not really a scope but just an identifier
+			// I'd rather do this check when building the AST but the parse tree is more of a pain to deal with
+			if ( furthestLeft instanceof BoxScope scope ) {
+				accessKeys.add( 0, transpiler.createKey( scope.getName() ) );
+			} else if ( furthestLeft instanceof BoxIdentifier id ) {
+				accessKeys.add( 0, transpiler.createKey( id.getName() ) );
+			} else {
+				throw new ExpressionException( "You cannot use the [static] keyword before " + furthestLeft.getClass().getSimpleName(),
+				    furthestLeft.getPosition(),
+				    furthestLeft.getSourceText() );
+			}
+			furthestLeft = new BoxIdentifier( "static", null, null );
+		}
+
 		List<AbstractInsnNode> nodes = new ArrayList<>();
 		if ( furthestLeft instanceof BoxIdentifier id ) {
-			if ( transpiler.matchesImport( id.getName() ) && transpiler.getProperty( "sourceType" ).toLowerCase().startsWith( "box" ) ) {
-				throw new ExpressionException( "You cannot assign a variable with the same name as an import: [" + id.getName() + "]",
-				    furthestLeft.getPosition(), furthestLeft.getSourceText() );
+			// imported.foo = 5 is ok, but imported = 5 is not
+			if ( left instanceof BoxIdentifier idl && transpiler.matchesImport( idl.getName() )
+			    && transpiler.getProperty( "sourceType" ).toLowerCase().startsWith( "box" ) ) {
+				throw new ExpressionException( "You cannot assign a variable with the same name as an import: [" + idl.getName() + "]",
+				    idl.getPosition(), idl.getSourceText() );
 			}
+
 			/*
 			 * Referencer.setDeep(
 			 * ${contextName},
+			 * hasFinal,
+			 * mustBeScope
 			 * ${contextName}.scopeFindNearby( ${accessKey}, ${contextName}.getDefaultAssignmentScope() ),
 			 * ${right}
 			 * ${accessKeys});
 			 */
-			tracker.ifPresent( t -> nodes.addAll( t.loadCurrentContext() ) );
+			tracker.ifPresent( t -> {
+				nodes.addAll( t.loadCurrentContext() );
+			} );
 
-			tracker.ifPresent( t -> nodes.addAll( t.loadCurrentContext() ) );
-			List<AbstractInsnNode> keyNode = transpiler.createKey( id.getName() );
-			nodes.addAll( keyNode );
-			tracker.ifPresent( t -> nodes.addAll( t.loadCurrentContext() ) );
-			nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
-			    Type.getInternalName( IBoxContext.class ),
-			    "getDefaultAssignmentScope",
-			    Type.getMethodDescriptor( Type.getType( IScope.class ) ),
-			    true ) );
-			nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
-			    Type.getInternalName( IBoxContext.class ),
-			    "scopeFindNearby",
-			    Type.getMethodDescriptor( Type.getType( IBoxContext.ScopeSearchResult.class ), Type.getType( Key.class ), Type.getType( IScope.class ) ),
-			    true ) );
+			nodes.add( new FieldInsnNode( Opcodes.GETSTATIC, Type.getInternalName( Boolean.class ), hasFinal ? "TRUE" : "FALSE",
+			    Type.getDescriptor( Boolean.class ) ) );
+			nodes.add( new MethodInsnNode( Opcodes.INVOKEVIRTUAL,
+			    Type.getInternalName( Boolean.class ),
+			    "booleanValue",
+			    Type.getMethodDescriptor( Type.getType( boolean.class ) ),
+			    false ) );
+
+			if ( mustBeScopeName != null ) {
+				nodes.addAll( transpiler.createKey( mustBeScopeName ) );
+			} else {
+				nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+			}
+
+			Class<?>	baseObjectClass;
+			// If id is an imported class name, load the class directly instead of searching scopes for it
+			boolean		isBoxSyntax	= transpiler.getProperty( "sourceType" ).toLowerCase().startsWith( "box" );
+			if ( transpiler.matchesImport( id.getName() ) && isBoxSyntax ) {
+				baseObjectClass = Object.class;
+				nodes.addAll( AsmHelper.loadClass( transpiler, id ) );
+			} else {
+				// Otherwise, search for varible in scopes
+				baseObjectClass = IBoxContext.ScopeSearchResult.class;
+				tracker.ifPresent( t -> nodes.addAll( t.loadCurrentContext() ) );
+				nodes.addAll( transpiler.createKey( id.getName() ) );
+				tracker.ifPresent( t -> nodes.addAll( t.loadCurrentContext() ) );
+				nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
+				    Type.getInternalName( IBoxContext.class ),
+				    "getDefaultAssignmentScope",
+				    Type.getMethodDescriptor( Type.getType( IScope.class ) ),
+				    true ) );
+				nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
+				    Type.getInternalName( IBoxContext.class ),
+				    "scopeFindNearby",
+				    Type.getMethodDescriptor( Type.getType( IBoxContext.ScopeSearchResult.class ), Type.getType( Key.class ), Type.getType( IScope.class ) ),
+				    true ) );
+			}
 
 			nodes.addAll( jRight );
 
@@ -198,7 +275,9 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			    "setDeep",
 			    Type.getMethodDescriptor( Type.getType( Object.class ),
 			        Type.getType( IBoxContext.class ),
-			        Type.getType( IBoxContext.ScopeSearchResult.class ),
+			        Type.BOOLEAN_TYPE,
+			        Type.getType( Key.class ),
+			        Type.getType( baseObjectClass ),
 			        Type.getType( Object.class ),
 			        Type.getType( Key[].class ) ),
 			    false ) );
@@ -210,11 +289,27 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			/*
 			 * Referencer.setDeep(
 			 * ${contextName},
+			 * hasFinal
+			 * mustBeScope
 			 * ${furthestLeft},
 			 * ${right},
 			 * ${accessKeys})
 			 */
 			tracker.ifPresent( t -> nodes.addAll( t.loadCurrentContext() ) );
+
+			nodes.add( new FieldInsnNode( Opcodes.GETSTATIC, Type.getInternalName( Boolean.class ), hasFinal ? "TRUE" : "FALSE",
+			    Type.getDescriptor( Boolean.class ) ) );
+			nodes.add( new MethodInsnNode( Opcodes.INVOKEVIRTUAL,
+			    Type.getInternalName( Boolean.class ),
+			    "booleanValue",
+			    Type.getMethodDescriptor( Type.getType( boolean.class ) ),
+			    false ) );
+
+			if ( mustBeScopeName != null ) {
+				nodes.addAll( transpiler.createKey( mustBeScopeName ) );
+			} else {
+				nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+			}
 
 			nodes.addAll( transpiler.transform( furthestLeft, TransformerContext.NONE, ReturnValueContext.VALUE ) );
 
@@ -228,6 +323,8 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			    "setDeep",
 			    Type.getMethodDescriptor( Type.getType( Object.class ),
 			        Type.getType( IBoxContext.class ),
+			        Type.BOOLEAN_TYPE,
+			        Type.getType( Key.class ),
 			        Type.getType( Object.class ),
 			        Type.getType( Object.class ),
 			        Type.getType( Key[].class ) ),
@@ -323,6 +420,14 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		return modifiers.stream().anyMatch( it -> it == BoxAssignmentModifier.VAR );
 	}
 
+	private boolean hasStatic( List<BoxAssignmentModifier> modifiers ) {
+		return modifiers.stream().anyMatch( it -> it == BoxAssignmentModifier.STATIC );
+	}
+
+	private boolean hasFinal( List<BoxAssignmentModifier> modifiers ) {
+		return modifiers.stream().anyMatch( it -> it == BoxAssignmentModifier.FINAL );
+	}
+
 	private Class<?> getMethodCallTemplate( BoxAssignment assignment ) {
 		BoxAssignmentOperator operator = assignment.getOp();
 		return switch ( operator ) {
@@ -335,6 +440,42 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			default -> throw new ExpressionException( "Unknown assingment operator " + operator.toString(), assignment.getPosition(),
 			    assignment.getSourceText() );
 		};
+	}
+
+	private List<AbstractInsnNode> assignNullValue( BoxIdentifier name ) {
+		List<AbstractInsnNode> nodes = new ArrayList<>();
+		transpiler.getCurrentMethodContextTracker().ifPresent( t -> nodes.addAll( t.loadCurrentContext() ) );
+
+		nodes.add( new InsnNode( Opcodes.DUP ) );
+		nodes.add( new FieldInsnNode( Opcodes.GETSTATIC,
+		    Type.getInternalName( LocalScope.class ),
+		    "name",
+		    Type.getDescriptor( Key.class ) ) );
+		nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+
+		nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
+		    Type.getInternalName( IBoxContext.class ),
+		    "scopeFindNearby",
+		    Type.getMethodDescriptor( Type.getType( IBoxContext.ScopeSearchResult.class ),
+		        Type.getType( Key.class ),
+		        Type.getType( IScope.class ) ),
+		    true ) );
+
+		nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+		nodes.addAll( AsmHelper.array( Type.getType( Key.class ), List.of( transpiler.createKey( ( name.getName() ) ) ) ) );
+
+		nodes.add( new MethodInsnNode(
+		    Opcodes.INVOKESTATIC,
+		    Type.getInternalName( Referencer.class ),
+		    "setDeep",
+		    Type.getMethodDescriptor( Type.getType( Object.class ),
+		        Type.getType( IBoxContext.class ),
+		        Type.getType( IBoxContext.ScopeSearchResult.class ),
+		        Type.getType( Object.class ),
+		        Type.getType( Key[].class ) ),
+		    false ) );
+
+		return nodes;
 	}
 
 }

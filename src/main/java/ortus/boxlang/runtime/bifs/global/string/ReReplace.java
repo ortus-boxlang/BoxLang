@@ -26,6 +26,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
+import ortus.boxlang.runtime.types.util.RegexUtil;
 import ortus.boxlang.runtime.validation.Validator;
 
 @BoxBIF
@@ -50,20 +51,20 @@ public class ReReplace extends BIF {
 	}
 
 	/**
-	 * 
+	 *
 	 * Uses a regular expression (regex) to search a string for a string pattern and replace it with another. The search is case-sensitive.
-	 * 
+	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 * 
+	 *
 	 * @argument.string The string to search
-	 * 
+	 *
 	 * @argument.regex The regular expression to search for
-	 * 
+	 *
 	 * @argument.substring The string to replace regex with
-	 * 
+	 *
 	 * @argument.scope The scope to search in (one, all)
-	 * 
+	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	string		= arguments.getAsString( Key.string );
@@ -76,10 +77,21 @@ public class ReReplace extends BIF {
 			regex = "(?i)" + regex;
 		}
 
+		// Default string if null
+		if ( string == null ) {
+			string = "";
+		}
+		if ( substring == null ) {
+			substring = "";
+		}
+		if ( regex == null ) {
+			regex = "";
+		}
+
 		// Posix replacement for character classes
-		regex	= ReFind.posixReplace( regex, noCase );
+		regex	= RegexUtil.posixReplace( regex, noCase );
 		// Ignore non-quantifier curly braces like PERL
-		regex	= ReFind.replaceNonQuantiferCurlyBraces( regex );
+		regex	= RegexUtil.replaceNonQuantiferCurlyBraces( regex );
 
 		StringBuffer	result		= new StringBuffer();
 		Matcher			matcher		= Pattern.compile( regex ).matcher( string );

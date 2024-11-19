@@ -22,6 +22,9 @@ package ortus.boxlang.runtime.bifs.global.system;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -72,9 +75,27 @@ public class SessionInvalidateTest {
 		    context );
 		IStruct initialSession = variables.getAsStruct( Key.of( "initialSession" ) );
 		assertFalse( variables.getAsStruct( result ).containsKey( Key.of( "foo" ) ) );
-		assertNotEquals( initialSession.getAsString( Key.of( "cfid" ) ), variables.getAsStruct( result ).getAsString( Key.of( "cfid" ) ) );
+		assertNotEquals( initialSession.getAsString( Key.of( "jsessionID" ) ), variables.getAsStruct( result ).getAsString( Key.of( "jsessionID" ) ) );
 		assertNotEquals( initialSession.getAsDateTime( Key.of( "timeCreated" ) ), variables.getAsStruct( result ).getAsDateTime( Key.of( "timeCreated" ) ) );
 		assertNotEquals( initialSession.getAsString( Key.of( "sessionid" ) ), variables.getAsStruct( result ).getAsString( Key.of( "sessionid" ) ) );
+	}
+
+	@DisplayName( "It tests onSessionEnd" )
+	@Test
+	public void testOnSessionEnd() {
+		try {
+			context = new ScriptingRequestBoxContext( instance.getRuntimeContext(),
+			    new URI( "src/test/java/ortus/boxlang/runtime/bifs/global/system/testApp/index.bxm" ) );
+		} catch ( URISyntaxException e ) {
+			throw new RuntimeException( e );
+		}
+		instance.executeSource(
+		    """
+		    	application.brad = "wood";
+		    	println( "in test: " & expandPath( "/foobar" ) )
+		    	sessionInvalidate();
+		    """,
+		    context );
 	}
 
 }

@@ -14,11 +14,16 @@
  */
 package ortus.boxlang.compiler.asmboxpiler.transformer.expression;
 
+import java.util.ArrayList;
 import java.util.List;
 
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.LdcInsnNode;
+import org.objectweb.asm.tree.MethodInsnNode;
 
+import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
@@ -28,13 +33,64 @@ import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 
 public class BoxStringLiteralTransformer extends AbstractTransformer {
 
+	private static final int MAX_LITERAL_LENGTH = 30000; // 64KB limit
+
 	public BoxStringLiteralTransformer( Transpiler transpiler ) {
 		super( transpiler );
 	}
 
 	@Override
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnContext ) throws IllegalStateException {
-		BoxStringLiteral literal = ( BoxStringLiteral ) node;
-		return List.of( new LdcInsnNode( literal.getValue() ) );
+		BoxStringLiteral	literal	= ( BoxStringLiteral ) node;
+
+		String				value	= literal.getValue();
+
+		if ( value.length() < MAX_LITERAL_LENGTH ) {
+			return List.of( new LdcInsnNode( literal.getValue() ) );
+
+		}
+
+		List<AbstractInsnNode>	nodes	= new ArrayList<AbstractInsnNode>();
+		List<String>			parts	= splitStringIntoParts( value );
+
+		nodes.add( new LdcInsnNode( "" ) );
+		nodes.addAll(
+		    AsmHelper.array( Type.getType( String.class ), parts.stream().map( s -> {
+			    List<AbstractInsnNode> x = List.of( new LdcInsnNode( s ) );
+
+			    return x;
+		    }
+		    ).toList() ) );
+
+		nodes.add( new MethodInsnNode(
+		    Opcodes.INVOKESTATIC,
+		    Type.getInternalName( String.class ),
+		    "join",
+		    Type.getMethodDescriptor( Type.getType( String.class ),
+		        Type.getType( CharSequence.class ),
+		        Type.getType( CharSequence[].class )
+		    ),
+		    false )
+		);
+
+		return nodes;
+	}
+
+	/**
+	 * Split a large string into parts
+	 *
+	 * @param str The input string.
+	 * 
+	 * @return A list of StringLiteralExpr parts.
+	 **/
+	private List<String> splitStringIntoParts( String str ) {
+		List<String>	parts	= new ArrayList<>();
+		int				length	= str.length();
+		for ( int i = 0; i < length; i += MAX_LITERAL_LENGTH ) {
+			int		end		= Math.min( length, i + MAX_LITERAL_LENGTH );
+			String	part	= str.substring( i, end );
+			parts.add( part );
+		}
+		return parts;
 	}
 }

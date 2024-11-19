@@ -24,14 +24,44 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.VariablesScope;
 
 class StructTest {
+
+	static BoxRuntime	instance;
+	IBoxContext			context;
+	IScope				variables;
+	static Key			result	= new Key( "result" );
+
+	@BeforeAll
+	public static void setUp() {
+		instance = BoxRuntime.getInstance( true );
+	}
+
+	@AfterAll
+	public static void teardown() {
+	}
+
+	@BeforeEach
+	public void setupEach() {
+		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		variables	= context.getScopeNearby( VariablesScope.name );
+	}
 
 	@DisplayName( "Test equals and hash code with no data" )
 	@Test
@@ -230,6 +260,41 @@ class StructTest {
 		assertThat( struct.size() ).isEqualTo( 0 );
 		assertThat( struct.getType() ).isEqualTo( Struct.TYPES.CASE_SENSITIVE );
 		assertThat( struct.getWrapped() ).isInstanceOf( ConcurrentHashMap.class );
+	}
+
+	@DisplayName( "Can use Java objects as struct keys" )
+	@Test
+	void testCanUseJavaObjectsAsKeys() {
+		instance.executeSource(
+		    """
+		         import java.lang.Object;
+		         import java.util.HashMap;
+
+		         key = new Object();
+		         key2 = new Object();
+		         myStr = new HashMap();
+		         myStr.put(key, "test");
+		         myStr[key2] = "test2";
+		         value = myStr[key];
+		         value2 = myStr[key2];
+		       //  myStr.delete(key);
+		    values = [];
+		       for( theKey in myStr ) {
+		    	assert theKey.getClass().getName() == 'java.lang.Object'
+		    	values.append( myStr[ theKey ] );
+		       }
+		           """,
+		    context );
+		Object		key		= DynamicObject.unWrap( variables.get( "key" ) );
+		Object		key2	= DynamicObject.unWrap( variables.get( "key2" ) );
+		Map<?, ?>	myStr	= ( Map<?, ?> ) DynamicObject.unWrap( variables.get( Key.of( "myStr" ) ) );
+		assertThat( myStr ).containsKey( key );
+		assertThat( myStr ).containsKey( key2 );
+		assertThat( variables.get( "value" ) ).isEqualTo( "test" );
+		assertThat( variables.get( "value2" ) ).isEqualTo( "test2" );
+		// assertThat( myStr ).doesNotContainKey( key );
+		// assertThat( myStr ).hasSize( 1 );
+		assertThat( variables.getAsArray( Key.of( "values" ) ) ).containsExactly( "test", "test2" );
 	}
 
 }

@@ -83,4 +83,32 @@ public class ArrayAppendTest {
 		assertThat( ( ( Array ) variables.get( Key.of( "arr" ) ) ).get( 3 ) ).isEqualTo( "test" );
 	}
 
+	@DisplayName( "It can append another array" )
+	@Test
+	public void testAppendArrays() {
+		instance.executeSource(
+		    """
+		    arr = [ 1, 2, 3 ];
+		    arrayAppend( arr, [ 4, 5, 6 ], true );
+		    result = arrayLen( arr );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 6 );
+		assertThat( ( ( Array ) variables.get( Key.of( "arr" ) ) ).get( 3 ) ).isEqualTo( 4 );
+	}
+
+	@DisplayName( "It can append a single value even when the merge flag is true" )
+	@Test
+	public void testAppendSingleValueInMergeMode() {
+		instance.executeSource(
+		    """
+		    arr = [ 1, 2, 3 ];
+		    arrayAppend( arr, 4, true );
+		    result = arrayLen( arr );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 4 );
+		assertThat( ( ( Array ) variables.get( Key.of( "arr" ) ) ).get( 3 ) ).isEqualTo( 4 );
+	}
+
 }

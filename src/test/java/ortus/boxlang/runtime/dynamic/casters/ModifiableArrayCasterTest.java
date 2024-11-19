@@ -49,7 +49,7 @@ public class ModifiableArrayCasterTest {
 	void testItCanCastList() {
 		assertThat( ModifiableArrayCaster.cast( new ArrayList<Object>() ) instanceof Array ).isTrue();
 
-		// immutable
+		// Unmodifiable
 		assertThrows( BoxCastException.class, () -> ModifiableArrayCaster.cast( List.of() ) );
 		assertThrows( BoxCastException.class, () -> ModifiableArrayCaster.cast( List.copyOf( List.of() ) ) );
 	}

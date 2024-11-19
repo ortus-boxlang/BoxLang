@@ -25,17 +25,22 @@ import java.util.Objects;
 import com.github.javaparser.ParseResult;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
+import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.expr.ArrayCreationExpr;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.IntegerLiteralExpr;
+import com.github.javaparser.ast.expr.LambdaExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.StringLiteralExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.EmptyStmt;
+import com.github.javaparser.ast.stmt.ReturnStmt;
 import com.github.javaparser.ast.stmt.Statement;
+import com.github.javaparser.ast.type.UnknownType;
 
 import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxExpression;
@@ -153,7 +158,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 			// Private instance fields
 			private VariablesScope variablesScope = new ClassVariablesScope(this);
 			private ThisScope thisScope = new ThisScope();
-			private Key name = ${boxClassName};
+			private Key name = ${boxFQN};
 			private IClassRunnable _super = null;
 			private IClassRunnable child = null;
 			private Boolean canOutput = null;
@@ -438,7 +443,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 		BoxClass		boxClass			= ( BoxClass ) node;
 		Source			source				= boxClass.getPosition().getSource();
 		String			packageName			= transpiler.getProperty( "packageName" );
-		String			boxPackageName		= transpiler.getProperty( "boxPackageName" );
+		String			boxFQN				= transpiler.getProperty( "boxFQN" );
 		String			className			= transpiler.getProperty( "classname" );
 		String			mappingName			= transpiler.getProperty( "mappingName" );
 		String			mappingPath			= transpiler.getProperty( "mappingPath" );
@@ -509,20 +514,14 @@ public class BoxClassTransformer extends AbstractTransformer {
 		 * Prep the class template properties
 		 * --------------------------------------------------------------------------
 		 */
-		String	fileName		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getName() : "unknown";
-		String	filePath		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath() : "unknown";
-		String	boxClassName	= boxPackageName + "." + fileName.replace( ".bx", "" ).replace( ".cfc", "" );
-		String	sourceType		= transpiler.getProperty( "sourceType" );
-
-		// trim leading . if exists
-		if ( boxClassName.startsWith( "." ) ) {
-			boxClassName = boxClassName.substring( 1 );
-		}
+		String							fileName	= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getName() : "unknown";
+		String							filePath	= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath()
+		    : "unknown";
+		String							sourceType	= transpiler.getProperty( "sourceType" );
 
 		// This map replaces the string template
-		Map<String, String>				values	= Map.ofEntries(
+		Map<String, String>				values		= Map.ofEntries(
 		    Map.entry( "packagename", packageName ),
-		    Map.entry( "boxPackageName", boxPackageName ),
 		    Map.entry( "className", className ),
 		    Map.entry( "fileName", fileName ),
 		    Map.entry( "interfaceMethods", interfaceMethods ),
@@ -534,10 +533,10 @@ public class BoxClassTransformer extends AbstractTransformer {
 		    Map.entry( "resolvedFilePath", transpiler.getResolvedFilePath( mappingName, mappingPath, relativePath, filePath ) ),
 		    Map.entry( "compiledOnTimestamp", transpiler.getDateTime( LocalDateTime.now() ) ),
 		    Map.entry( "compileVersion", "1L" ),
-		    Map.entry( "boxClassName", createKey( boxClassName ).toString() ),
+		    Map.entry( "boxFQN", createKey( boxFQN ).toString() ),
 		    Map.entry( "compileTimeMethodNames", generateCompileTimeMethodNames( boxClass ) )
 		);
-		String							code	= PlaceholderHelper.resolve( CLASS_TEMPLATE, values );
+		String							code		= PlaceholderHelper.resolve( CLASS_TEMPLATE, values );
 		ParseResult<CompilationUnit>	result;
 
 		try {
@@ -621,12 +620,22 @@ public class BoxClassTransformer extends AbstractTransformer {
 					// statements.add( it );
 				} );
 			} else {
-				// All other statements are added to the _invoke() method
+				// All other statements are added to the _pseudoConstructor() method
 				pseudoConstructorBody.addStatement( ( Statement ) javaASTNode );
 				// statements.add( ( Statement ) javaASTNode );
 			}
 		}
-		// loop over UDF registrations and add them to the _invoke() method
+		// Properties need defaulted AFTER the UDFs are added, but BEFORE the rest of the pseudoConstructor code runs
+		pseudoConstructorBody.addStatement(
+		    0,
+		    new MethodCallExpr(
+		        new NameExpr( "BoxClassSupport" ),
+		        "defaultProperties",
+		        NodeList.nodeList( new NameExpr( "this" ), new NameExpr( "context" ) )
+		    )
+		);
+
+		// loop over UDF registrations and add them to the _pseudoConstructor() method
 		( ( JavaTranspiler ) transpiler ).getUDFDeclarations().forEach( it -> {
 			pseudoConstructorBody.addStatement( 0, it );
 		} );
@@ -698,10 +707,28 @@ public class BoxClassTransformer extends AbstractTransformer {
 			Expression			annotationStruct	= transformAnnotations( finalAnnotations );
 
 			// Process the default value
-			String				init				= "null";
+			String				defaultValue		= "null";
+			String				defaultExpression	= "null";
 			if ( defaultAnnotation != null && defaultAnnotation.getValue() != null ) {
-				Node initExpr = transpiler.transform( defaultAnnotation.getValue() );
-				init = initExpr.toString();
+
+				if ( defaultAnnotation.getValue().isLiteral() ) {
+					Node defaultValueExpr = transpiler.transform( defaultAnnotation.getValue() );
+					defaultValue = defaultValueExpr.toString();
+				} else {
+					String lambdaContextName = "lambdaContext" + transpiler.incrementAndGetLambdaContextCounter();
+					transpiler.pushContextName( lambdaContextName );
+					Node initExpr = transpiler.transform( defaultAnnotation.getValue() );
+					transpiler.popContextName();
+
+					LambdaExpr lambda = new LambdaExpr();
+					lambda.setParameters( new NodeList<>(
+					    new Parameter( new UnknownType(), lambdaContextName ) ) );
+					BlockStmt body = new BlockStmt();
+					body.addStatement( parseStatement( "ClassLocator classLocator = ClassLocator.getInstance();", Map.of() ) );
+					body.addStatement( new ReturnStmt( ( Expression ) initExpr ) );
+					lambda.setBody( body );
+					defaultExpression = lambda.toString();
+				}
 			}
 
 			// name and type must be simple values
@@ -729,12 +756,13 @@ public class BoxClassTransformer extends AbstractTransformer {
 			LinkedHashMap<String, String>	values		= new LinkedHashMap<>();
 			values.put( "type", type );
 			values.put( "name", jNameKey.toString() );
-			values.put( "init", init );
+			values.put( "defaultValue", defaultValue );
+			values.put( "defaultExpression", defaultExpression );
 			values.put( "annotations", annotationStruct.toString() );
 			values.put( "documentation", documentationStruct.toString() );
 			values.put( "sourceType", sourceType );
 			String		template	= """
-			                          				new Property( ${name}, "${type}", ${init}, ${annotations} ,${documentation}, BoxSourceType.${sourceType} )
+			                          				new Property( ${name}, "${type}", ${defaultValue}, ${defaultExpression}, ${annotations} ,${documentation}, BoxSourceType.${sourceType} )
 			                          """;
 			Expression	javaExpr	= parseExpression( template, values );
 			// logger.trace( "{} -> {}", prop.getSourceText(), javaExpr );
@@ -939,8 +967,10 @@ public class BoxClassTransformer extends AbstractTransformer {
 			}
 		}
 		sb.append( "};\n" );
-		// TODO: Get actual context
-		sb.append( "    IBoxContext context = new ScriptingRequestBoxContext( BoxRuntime.getInstance().getRuntimeContext() );\n" );
+		sb.append( "    IBoxContext context = RequestBoxContext.getCurrent();\n" );
+		sb.append( "    if( context == null ) {\n" );
+		sb.append( "      context = new ScriptingRequestBoxContext( BoxRuntime.getInstance().getRuntimeContext() );\n" );
+		sb.append( "    }\n" );
 		sb.append( "    Object result = this.dereferenceAndInvoke( context, Key.of( \"" );
 		sb.append( func.getName() );
 		sb.append( "\" ), ___args, false );\n" );

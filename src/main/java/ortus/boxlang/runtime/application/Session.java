@@ -21,6 +21,7 @@ import java.io.Serializable;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -39,14 +40,9 @@ public class Session implements Serializable {
 
 	/**
 	 * The concatenator for session IDs
+	 * We leverage the `:` as it's a standard in many distributed caches like Redis and Couchbase to denote namespaces
 	 */
-	public static final String	ID_CONCATENATOR		= "_";
-
-	/**
-	 * The URL token format
-	 * MOVE TO COMPAT MODULE
-	 */
-	public static final String	URL_TOKEN_FORMAT	= "CFID=%s";
+	public static final String	ID_CONCATENATOR	= ":";
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -67,12 +63,12 @@ public class Session implements Serializable {
 	/**
 	 * Flag for when session has been started
 	 */
-	private final AtomicBoolean	isNew				= new AtomicBoolean( true );
+	private final AtomicBoolean	isNew			= new AtomicBoolean( true );
 
 	/**
 	 * The application name linked to
 	 */
-	private Key					applicationName		= null;
+	private Key					applicationName	= null;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -90,20 +86,13 @@ public class Session implements Serializable {
 		this.ID					= ID;
 		this.applicationName	= application.getName();
 		this.sessionScope		= new SessionScope();
-
-		DateTime	timeNow	= new DateTime();
-		String		bxid	= this.applicationName + ID_CONCATENATOR + ID;
+		DateTime timeNow = new DateTime();
 
 		// Initialize the session scope
 		this.sessionScope.put( Key.jsessionID, ID.getName() );
 		this.sessionScope.put( Key.sessionId, this.applicationName + ID_CONCATENATOR + ID );
 		this.sessionScope.put( Key.timeCreated, timeNow );
 		this.sessionScope.put( Key.lastVisit, timeNow );
-
-		// Move these to the COMPAT module
-		this.sessionScope.put( Key.urlToken, String.format( URL_TOKEN_FORMAT, bxid ) );
-		this.sessionScope.put( Key.cfid, ID.getName() );
-		this.sessionScope.put( Key.cftoken, 0 );
 
 		// Announce it's creation
 		BoxRuntime.getInstance()
@@ -214,8 +203,16 @@ public class Session implements Serializable {
 		    ) );
 
 		// Any buffer output in this context will be discarded
+		// Create a temp request context with an application context with our application listener.
+		// This will allow the application scope to be available as well as all settings from the original Application.bx
 		listener.onSessionEnd(
-		    new ScriptingRequestBoxContext( BoxRuntime.getInstance().getRuntimeContext() ),
+		    new ScriptingRequestBoxContext(
+		        new ApplicationBoxContext(
+		            BoxRuntime.getInstance().getRuntimeContext(),
+		            listener.getApplication()
+		        ),
+		        listener
+		    ),
 		    new Object[] { sessionScope != null ? sessionScope : Struct.of(), listener.getApplication().getApplicationScope() }
 		);
 

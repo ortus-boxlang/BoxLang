@@ -65,26 +65,35 @@ public enum BoxEvent {
 	ON_REQUEST_FLUSH_BUFFER( "onRequestFlushBuffer" ),
 	ON_SESSION_CREATED( "onSessionCreated" ),
 	ON_SESSION_DESTROYED( "onSessionDestroyed" ),
+	ON_REQUEST( "onRequest" ),
+	ON_REQUEST_START( "onRequestStart" ),
+	ON_REQUEST_END( "onRequestEnd" ),
+	ON_CLASS_REQUEST( "onClassRequest" ),
+	ON_SESSION_START( "onSessionStart" ),
+	ON_SESSION_END( "onSessionEnd" ),
+	ON_ERROR( "onError" ),
+	ON_MISSING_TEMPLATE( "onMissingTemplate" ),
+	ON_ABORT( "onAbort" ),
 
 	/**
-	 * Request Events
+	 * Request Context Events
 	 */
 	ON_REQUEST_CONTEXT_CONFIG( "onRequestContextConfig" ),
 
 	/**
-	 * Template
+	 * Template Invocations
 	 */
 	PRE_TEMPLATE_INVOKE( "preTemplateInvoke" ),
 	POST_TEMPLATE_INVOKE( "postTemplateInvoke" ),
 
 	/**
-	 * Function Execution Events
+	 * Function Invocations
 	 */
 	PRE_FUNCTION_INVOKE( "preFunctionInvoke" ),
 	POST_FUNCTION_INVOKE( "postFunctionInvoke" ),
 
 	/**
-	 * Query Events
+	 * Query Invocations
 	 */
 	ON_QUERY_BUILD( "onQueryBuild" ),
 	PRE_QUERY_EXECUTE( "preQueryExecute" ),

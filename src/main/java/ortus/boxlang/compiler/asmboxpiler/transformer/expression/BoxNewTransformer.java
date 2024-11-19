@@ -55,7 +55,7 @@ public class BoxNewTransformer extends AbstractTransformer {
 
 		nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
 		nodes.add( new LdcInsnNode( "" ) ); // TODO: how to set this?
-		nodes.addAll( transpiler.transform( boxNew.getExpression(), TransformerContext.NONE ) );
+		nodes.addAll( transpiler.transform( boxNew.getExpression(), TransformerContext.NONE, ReturnValueContext.VALUE ) );
 		nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
 		    Type.getInternalName( StringCaster.class ),
 		    "cast",
@@ -83,17 +83,8 @@ public class BoxNewTransformer extends AbstractTransformer {
 		    false ) );
 
 		nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
-		nodes.addAll(
-		    AsmHelper.array( Type.getType( Object.class ), boxNew.getArguments(),
-		        ( argument, i ) -> transpiler.transform( boxNew.getArguments().get( i ), context ) ) );
 
-		nodes.add( new MethodInsnNode( Opcodes.INVOKEVIRTUAL,
-		    Type.getInternalName( DynamicObject.class ),
-		    "invokeConstructor",
-		    Type.getMethodDescriptor( Type.getType( DynamicObject.class ),
-		        Type.getType( IBoxContext.class ),
-		        Type.getType( Object[].class ) ),
-		    false ) );
+		nodes.addAll( AsmHelper.callDynamicObjectInvokeConstructor( transpiler, boxNew.getArguments(), context ) );
 
 		nodes.add( new MethodInsnNode( Opcodes.INVOKEVIRTUAL,
 		    Type.getInternalName( DynamicObject.class ),

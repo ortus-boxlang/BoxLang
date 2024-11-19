@@ -209,7 +209,7 @@ public class BIFDocumentationGenerator {
 							    .replace( '@' + ( ( BlockTagTree ) specificDescription ).getTagName(), "" ).trim();
 						} else {
 							description = ( commentTree.getFirstSentence().toString() + "\n\n"
-							    + commentTree.getBody().toString() ).trim();
+							    + commentTree.getBody().stream().map( tag -> tag.toString() ).collect( Collectors.joining( "\n" ) ) ).trim();
 						}
 
 						argumentsExclude = ArrayCaster.cast( commentTree.getBlockTags().stream()

@@ -23,8 +23,8 @@ import ortus.boxlang.runtime.types.Closure;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Lambda;
-import ortus.boxlang.runtime.types.immutable.ImmutableArray;
-import ortus.boxlang.runtime.types.immutable.ImmutableStruct;
+import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableArray;
+import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableStruct;
 
 /**
  * This class represents BoxLang metadata for a function
@@ -52,7 +52,7 @@ public class FunctionMeta extends BoxMeta {
 		Object[]	params	= new Object[ target.getArguments().length ];
 		int			i		= 0;
 		for ( Argument argument : target.getArguments() ) {
-			params[ i++ ] = ImmutableStruct.of(
+			params[ i++ ] = UnmodifiableStruct.of(
 			    Key._NAME, argument.name().getName(),
 			    Key.nameAsKey, argument.name(),
 			    Key.required, argument.required(),
@@ -63,14 +63,14 @@ public class FunctionMeta extends BoxMeta {
 			);
 		}
 		// Assemble the metadata
-		this.meta = ImmutableStruct.of(
+		this.meta = UnmodifiableStruct.of(
 		    Key._NAME, target.getName().getName(),
 		    Key.nameAsKey, target.getName(),
 		    Key.returnType, target.getReturnType(),
 		    Key.access, target.getAccess().toString().toLowerCase(),
 		    Key.documentation, target.getDocumentation(),
 		    Key.annotations, target.getAnnotations(),
-		    Key.parameters, new ImmutableArray( params ),
+		    Key.parameters, new UnmodifiableArray( params ),
 		    Key.closure, target instanceof Closure,
 		    Key.lambda, target instanceof Lambda
 		);

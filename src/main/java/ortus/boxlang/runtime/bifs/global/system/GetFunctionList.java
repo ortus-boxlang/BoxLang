@@ -57,7 +57,8 @@ public class GetFunctionList extends BIF {
 			            "module", bif.hasModule() ? bif.module : "---",
 			            "namespace", bif.hasNamespace() ? bif.namespace : "---",
 			            "isGlobal", bif.isGlobal,
-			            "className", bif.BIFClass.getCanonicalName()
+			            "className", bif.BIFClass.getCanonicalName(),
+			            "arguments", bif.getArguments()
 			        )
 			    );
 		    } );

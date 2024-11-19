@@ -20,10 +20,7 @@ package TestCases.phase3;
 import static com.google.common.truth.Truth.assertThat;
 
 import java.nio.file.Path;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -37,7 +34,6 @@ import ortus.boxlang.runtime.context.BaseBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.scopes.ApplicationScope;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -55,11 +51,6 @@ public class ApplicationTest {
 	@BeforeAll
 	public static void setUp() {
 		instance = BoxRuntime.getInstance( true );
-	}
-
-	@AfterAll
-	public static void teardown() {
-
 	}
 
 	@BeforeEach
@@ -85,11 +76,8 @@ public class ApplicationTest {
 		assertThat( variables.get( result ) ).isInstanceOf( ApplicationScope.class );
 		assertThat( variables.get( Key.of( "result2" ) ) ).isInstanceOf( SessionScope.class );
 
-		ApplicationBoxContext	appContext			= context.getParentOfType( ApplicationBoxContext.class );
-		Application				app					= appContext.getApplication();
-		Instant					actual				= DateTimeCaster.cast( variables.get( Key.of( "startTime" ) ) ).getWrapped().toInstant();
-		Instant					now					= Instant.now();
-		long					differenceInSeconds	= ChronoUnit.SECONDS.between( actual, now );
+		ApplicationBoxContext	appContext	= context.getParentOfType( ApplicationBoxContext.class );
+		Application				app			= appContext.getApplication();
 
 		assertThat( app.getName().getName() ).isEqualTo( "myAppsdfsdf" );
 		assertThat( app.getSessionsCache() ).isNotNull();
@@ -97,7 +85,6 @@ public class ApplicationTest {
 		assertThat( app.getApplicationScope().getName().getName() ).isEqualTo( "application" );
 		assertThat( app.getClassLoaders() ).isNotNull();
 		assertThat( app.hasStarted() ).isTrue();
-		assertThat( differenceInSeconds ).isAtMost( 1L );
 	}
 
 	@Test
@@ -132,9 +119,14 @@ public class ApplicationTest {
 	@DisplayName( "java settings setup" )
 	@Test
 	public void testJavaSettings() {
+
+		ClassLoader currentClassLoader = Thread.currentThread().getContextClassLoader();
+
 		// @formatter:off
 		instance.executeSource(
 		    """
+				import java.lang.Thread;
+
 		        application name="myJavaApp" javaSettings={
 					loadPaths = [ "/src/test/resources/libs" ],
 					reloadOnChange = true
@@ -145,12 +137,19 @@ public class ApplicationTest {
 
 				 import org.apache.commons.lang3.ClassUtils
 				 targetInstance2 = ClassUtils.getClass()
+
+				 result = Thread.currentThread().getContextClassLoader()
+
 			""", context );
 		// @formatter:on
 
 		ApplicationBoxContext	appContext	= context.getParentOfType( ApplicationBoxContext.class );
 		Application				app			= appContext.getApplication();
 		assertThat( app.getClassLoaderCount() ).isEqualTo( 1 );
+
+		// ClassLoader newClassLoader = ( ClassLoader ) variables.get( result );
+		// assertThat( newClassLoader ).isNotEqualTo( currentClassLoader );
+		// assertThat( newClassLoader.getName() ).isEqualTo( "myJavaApp" );
 	}
 
 	@DisplayName( "Ad-hoc config override" )

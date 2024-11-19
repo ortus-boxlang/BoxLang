@@ -22,12 +22,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
-import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.StaticScope;
 import ortus.boxlang.runtime.types.AbstractFunction;
@@ -67,7 +67,7 @@ public abstract class BoxInterface implements ITemplateRunnable, IReferenceable,
 						throw new BoxRuntimeException( "BoxLang Interaces cannot extend Java interfaces" );
 					}
 					// Recursively load the super interface
-					BoxInterface _super = ( BoxInterface ) ClassLocator.getInstance().load( context,
+					BoxInterface _super = ( BoxInterface ) BoxRuntime.getInstance().getClassLocator().load( context,
 					    superInterfaceName,
 					    context.getCurrentImports()
 					)

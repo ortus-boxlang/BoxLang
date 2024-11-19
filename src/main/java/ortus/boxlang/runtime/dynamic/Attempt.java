@@ -41,7 +41,7 @@ import ortus.boxlang.runtime.util.ValidationUtil;
  * It is useful when you have a value that could be null or not, and you want to
  * handle it in a more functional way.
  * <p>
- * Attemps are also immutable, so you can chain methods to handle the value in a
+ * Attemps are also Unmodifiable, so you can chain methods to handle the value in a
  * more functional way, but it never mutates the original value.
  */
 public class Attempt<T> {
@@ -52,18 +52,24 @@ public class Attempt<T> {
 	 * |--------------------------------------------------------------------------
 	 */
 
-	private static final Attempt<?>	EMPTY	= new Attempt<>();
+	protected static final Attempt<?>	EMPTY		= new Attempt<>();
 
 	/**
 	 * The target value to evaluate
 	 * This can be a truthy or falsey value
 	 */
-	private final T					value;
+	protected final T					value;
 
 	/**
 	 * Validation Record
 	 */
-	private ValidationRecord		validationRecord;
+	protected ValidationRecord			validationRecord;
+
+	/**
+	 * Simple eval for the attempt
+	 * No truthy or validation checks
+	 */
+	protected Boolean					simpleEval	= false;
 
 	/**
 	 * |--------------------------------------------------------------------------
@@ -74,7 +80,7 @@ public class Attempt<T> {
 	/**
 	 * Constructor for an empty attempt
 	 */
-	private Attempt() {
+	protected Attempt() {
 		this( null );
 	}
 
@@ -82,7 +88,7 @@ public class Attempt<T> {
 	 * Constructor for an attempt with the incoming value
 	 * This can be anything, a truthy or falsey or null
 	 */
-	private Attempt( T value ) {
+	protected Attempt( T value ) {
 		this.value				= value;
 		this.validationRecord	= new ValidationRecord();
 	}
@@ -375,6 +381,17 @@ public class Attempt<T> {
 	}
 
 	/**
+	 * Alias to get() so it's more functional on what it does
+	 *
+	 * @return The value of the attempt
+	 *
+	 * @throws NoElementException If the attempt is empty
+	 */
+	public T getOrFail() {
+		return get();
+	}
+
+	/**
 	 * Verifies if the attempt is empty or not using the following rules:
 	 * - If the value is null, it is empty
 	 * - If the value is a truthy/falsey value, evaluate it
@@ -424,6 +441,11 @@ public class Attempt<T> {
 			return false;
 		}
 
+		// If we have a simple eval, we are done
+		if ( this.simpleEval ) {
+			return true;
+		}
+
 		// Verify truthy/falsey values
 		var castAttempt = BooleanCaster.attempt( this.value );
 		if ( castAttempt.wasSuccessful() ) {
@@ -454,7 +476,7 @@ public class Attempt<T> {
 	 *
 	 * @param action The action to perform
 	 */
-	public Attempt<T> ifSuccesful( Consumer<? super T> action ) {
+	public Attempt<T> ifSuccessful( Consumer<? super T> action ) {
 		return ifPresent( action );
 	}
 
@@ -534,12 +556,23 @@ public class Attempt<T> {
 	 *
 	 * @return The value of the attempt or the value of the supplier
 	 */
-	public T orElseGet( Supplier<T> supplier ) {
+	public T orElseGet( Supplier<? extends T> supplier ) {
 		Objects.requireNonNull( supplier );
-		if ( this.isEmpty() ) {
+		if ( isEmpty() ) {
 			return supplier.get();
 		}
 		return this.value;
+	}
+
+	/**
+	 * Alias to `orElseGet` but more fluent
+	 *
+	 * @param other The value to return if the attempt is empty
+	 *
+	 * @return The value of the attempt or the value passed in
+	 */
+	public T getOrSupply( Supplier<? extends T> other ) {
+		return orElseGet( other );
 	}
 
 	/**
@@ -551,11 +584,11 @@ public class Attempt<T> {
 	 */
 	public <U> Attempt<U> map( java.util.function.Function<? super T, ? extends U> mapper ) {
 		Objects.requireNonNull( mapper );
-		if ( this.isEmpty() ) {
-			return new Attempt<>();
+		if ( isEmpty() ) {
+			return empty();
 		}
 
-		return new Attempt<>( mapper.apply( this.value ) );
+		return of( mapper.apply( this.value ) );
 	}
 
 	/**
@@ -580,8 +613,8 @@ public class Attempt<T> {
 	@SuppressWarnings( "unchecked" )
 	public <U> Attempt<U> flatMap( java.util.function.Function<? super T, ? extends Attempt<? extends U>> mapper ) {
 		Objects.requireNonNull( mapper );
-		if ( this.isEmpty() ) {
-			return new Attempt<>();
+		if ( isEmpty() ) {
+			return empty();
 		}
 		Attempt<U> r = ( Attempt<U> ) mapper.apply( this.value );
 		return Objects.requireNonNull( r );
@@ -609,7 +642,7 @@ public class Attempt<T> {
 	 * @return The value of the attempt if present or throws an exception
 	 */
 	public T orThrow( String type, String message ) {
-		if ( this.isEmpty() ) {
+		if ( isEmpty() ) {
 			orThrow( new CustomException(
 			    message,
 			    "",
@@ -634,7 +667,7 @@ public class Attempt<T> {
 	 * @return The value of the attempt if present
 	 */
 	public T orThrow( String message ) {
-		if ( this.isEmpty() ) {
+		if ( isEmpty() ) {
 			throw new NoElementException( message );
 		}
 		return this.value;
@@ -651,7 +684,7 @@ public class Attempt<T> {
 	 * @return The value of the attempt if present
 	 */
 	public T orThrow( Exception throwable ) {
-		if ( this.isEmpty() ) {
+		if ( isEmpty() ) {
 			try {
 				throw throwable;
 			} catch ( Exception e ) {
@@ -675,7 +708,7 @@ public class Attempt<T> {
 	 * @return The string representation of the value if any, else empty string
 	 */
 	public String toString() {
-		return isEmpty() ? "Attempt.empty" : "Attempt[" + this.value.toString() + "]";
+		return isEmpty() ? "Attempt.empty" : String.format( "Attempt[%s]", this.value.toString() );
 	}
 
 	/**
@@ -697,12 +730,12 @@ public class Attempt<T> {
 
 		if ( obj instanceof Attempt<?> castedAttempt ) {
 			// If both are empty, they are equal
-			if ( this.isEmpty() && castedAttempt.isEmpty() ) {
+			if ( isEmpty() && castedAttempt.isEmpty() ) {
 				return true;
 			}
 
 			// If one is empty and the other is not, they are not equal
-			if ( this.isEmpty() || castedAttempt.isEmpty() ) {
+			if ( isEmpty() || castedAttempt.isEmpty() ) {
 				return false;
 			}
 
@@ -711,12 +744,12 @@ public class Attempt<T> {
 		}
 
 		// If we are empty and the incoming object is null, they are equal
-		if ( this.isEmpty() && obj == null ) {
+		if ( isEmpty() && obj == null ) {
 			return true;
 		}
 
 		// If we are not empty and the incoming object is null, they are not equal
-		if ( this.isEmpty() && obj != null ) {
+		if ( isEmpty() && obj != null ) {
 			return false;
 		}
 
@@ -733,15 +766,25 @@ public class Attempt<T> {
 	 * @return The attempt if the predicate is true, else an empty attempt
 	 */
 	public Attempt<T> filter( Predicate<? super T> predicate ) {
-		if ( this.isEmpty() ) {
-			return new Attempt<>();
+		if ( isEmpty() ) {
+			return empty();
 		}
 
 		if ( predicate.test( this.value ) ) {
 			return this;
 		}
 
-		return new Attempt<>();
+		return empty();
+	}
+
+	/**
+	 * Set the attempt to a simple evaluation
+	 *
+	 * @param eval True if the attempt is a simple evaluation, false otherwise
+	 */
+	public Attempt<T> setSimpleEval( Boolean eval ) {
+		this.simpleEval = eval;
+		return this;
 	}
 
 }

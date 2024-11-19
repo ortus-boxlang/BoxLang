@@ -43,6 +43,7 @@ import ortus.boxlang.runtime.services.ComponentService;
 import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.NullValue;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.QueryColumn;
 import ortus.boxlang.runtime.types.Struct;
@@ -61,7 +62,15 @@ import ortus.boxlang.runtime.util.ResolvedFilePath;
  */
 public class BaseBoxContext implements IBoxContext {
 
+	/**
+	 * TODO: This can be removed later, it was put here to catch some endless recursion bugs
+	 */
 	private static final ThreadLocal<Integer>	flushBufferDepth	= ThreadLocal.withInitial( () -> 0 );
+
+	/**
+	 * A flag to control whether null is considered undefined or not. Used by the compat module
+	 */
+	public static boolean						nullIsUndefined		= false;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -160,8 +169,20 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return IBoxContext
 	 */
 	public IBoxContext pushTemplate( IBoxRunnable template ) {
-		this.templates.push( template.getRunnablePath() );
+		pushTemplate( template.getRunnablePath() );
 		this.currentImports = template.getImports();
+		return this;
+	}
+
+	/**
+	 * Push a template to the stack
+	 *
+	 * @param template The template that this execution context is bound to
+	 *
+	 * @return IBoxContext
+	 */
+	public IBoxContext pushTemplate( ResolvedFilePath template ) {
+		this.templates.push( template );
 		return this;
 	}
 
@@ -464,6 +485,7 @@ public class BaseBoxContext implements IBoxContext {
 	 *
 	 */
 	public Component.BodyResult invokeComponent( Key name, IStruct attributes, Component.ComponentBody componentBody ) {
+		getRuntime().getConfiguration().security.isComponentAllowed( name.getName() );
 		ComponentDescriptor comp = componentService.getComponent( name );
 		if ( comp != null ) {
 			return comp.invoke( this, attributes, componentBody );
@@ -494,6 +516,7 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return The BIFDescriptor if found, else null
 	 */
 	protected BIFDescriptor findBIF( Key name ) {
+		getRuntime().getConfiguration().security.isBIFAllowed( name.getName() );
 		return this.functionService.getGlobalFunction( name );
 	}
 
@@ -696,6 +719,26 @@ public class BaseBoxContext implements IBoxContext {
 	 */
 	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow ) {
 		throw new BoxRuntimeException( "Unimplemented method 'scopeFindNearby'" );
+	}
+
+	/**
+	 * Decide if a value found in a scope is defined or not
+	 *
+	 * @param value The value to check, possibly null, possibly an instance of NullValue
+	 *
+	 * @return True if the value is defined, else false
+	 */
+	public boolean isDefined( Object value ) {
+		// If the value is null, it's not defined because the struct litearlly has no key for this
+		if ( value == null ) {
+			return false;
+		}
+		// Default BoxLang behavior is null is defined, but if compat has toggled the nullIsUndefined setting, then we need to check for our placeHolder NullValue value
+		if ( nullIsUndefined && value instanceof NullValue ) {
+			return false;
+		}
+		// Otherwise, it's defined
+		return true;
 	}
 
 	/**
@@ -1175,6 +1218,30 @@ public class BaseBoxContext implements IBoxContext {
 	}
 
 	/**
+	 * Serach for an ancestor context of RequestBoxContext
+	 * This is a convenience method for getParentOfType( RequestBoxContext.class )
+	 * since it is so common
+	 *
+	 * @return The matching parent RequestBoxContext, or null if one is not found of this
+	 *         type.
+	 */
+	public RequestBoxContext getRequestContext() {
+		return getParentOfType( RequestBoxContext.class );
+	}
+
+	/**
+	 * Serach for an ancestor context of ApplicationBoxContext
+	 * This is a convenience method for getParentOfType( ApplicationBoxContext.class )
+	 * since it is so common
+	 *
+	 * @return The matching parent ApplicationBoxContext, or null if one is not found of this
+	 *         type.
+	 */
+	public ApplicationBoxContext getApplicationContext() {
+		return getParentOfType( ApplicationBoxContext.class );
+	}
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Attachable Delegation
 	 * --------------------------------------------------------------------------
@@ -1203,6 +1270,11 @@ public class BaseBoxContext implements IBoxContext {
 	@Override
 	public Key[] getAttachmentKeys() {
 		return this.attachable.getAttachmentKeys();
+	}
+
+	@Override
+	public <T> T computeAttachmentIfAbsent( Key key, java.util.function.Function<? super Key, ? extends T> mappingFunction ) {
+		return this.attachable.computeAttachmentIfAbsent( key, mappingFunction );
 	}
 
 }

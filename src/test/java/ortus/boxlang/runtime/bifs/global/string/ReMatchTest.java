@@ -123,6 +123,16 @@ public class ReMatchTest {
 			assertThat( variables.get( result ) ).isInstanceOf( Array.class );
 			assertThat( variables.get( result ) ).isEqualTo(Array.of( "{{TOKEN}}" ));
 		// @formatter:on
+		// @formatter:off
+		instance.executeSource(
+		    """
+				input   = "String with {{TOKEN}}";
+				result = ReMatch( "\\{\\{[A-Z]+\\}\\}", input );
+		    """,
+		    context );
+			assertThat( variables.get( result ) ).isInstanceOf( Array.class );
+			assertThat( variables.get( result ) ).isEqualTo(Array.of( "{{TOKEN}}" ));
+		// @formatter:on
 	}
 
 }

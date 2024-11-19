@@ -1,4 +1,4 @@
-# ⚡︎ Project Jericho - BoxLang
+# ⚡︎ Project Jericho - BoxLang JVM Language
 
 > A next generation multi-runtime dynamic programming language for the JVM. InvokeDynamic is our first name!
 
@@ -23,7 +23,7 @@ Holy Ghost which is given unto us. ." Romans 5:5
 
 ----
 
-**BoxLang** is a modern dynamic JVM language that can be deployed on multiple runtimes: operating system (Windows/Mac/*nix/Embedded), web server, lambda, iOS, android, web assembly, and more. **BoxLang** combines many features from different programming languages, including Java, ColdFusion, Python, Ruby, Go, and PHP, to provide developers with a modern and expressive syntax.
+**BoxLang** is a modern dynamic JVM language that can be deployed on multiple runtimes: operating system (Windows/Mac/*nix/Embedded), web server, lambda, iOS, android, web assembly, and more. **BoxLang** combines many features from different programming languages, including Java, CFML, Python, Ruby, Go, and PHP, to provide developers with a modern and expressive syntax.
 
 **BoxLang** has been designed to be a highly adaptable and dynamic language to take advantage of all the modern features of the JVM and was designed with several goals in mind:
 
@@ -54,7 +54,7 @@ Apache License, Version 2.0.
 
 ## Open-Source & Professional Support
 
-This project is a professional open source project and is available as FREE and open source to use.  Ortus Solutions, Corp provides commercial support, training and commercial subscriptions which include the following:
+This project is a professional open source project and is available as FREE and open source to use.  Ortus Solutions, Corp provides commercial support, training and commercial licenses which include the following:
 
 * Professional Support and Priority Queuing
 * Remote Assistance and Troubleshooting

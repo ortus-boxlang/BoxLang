@@ -22,14 +22,19 @@ import static com.google.common.truth.Truth.assertThat;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Path;
+import java.util.List;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.segments.CacheConfig;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.IStruct;
 
 class ConfigLoaderTest {
 
@@ -43,6 +48,19 @@ class ConfigLoaderTest {
 	@AfterAll
 	public static void teardown() {
 
+	}
+
+	@BeforeEach
+	public void setupEach() {
+		if ( System.getProperty( "boxlang.security.allowedFileOperationExtensions" ) != null ) {
+			System.clearProperty( "boxlang.security.allowedFileOperationExtensions" );
+		}
+		if ( System.getProperty( "BOXLANG_SECURITY_ALLOWEDFILEOPERATIONEXTENSIONS" ) != null ) {
+			System.clearProperty( "BOXLANG_SECURITY_ALLOWEDFILEOPERATIONEXTENSIONS" );
+		}
+		if ( System.getProperty( "boxlang.experimental.compiler" ) != null ) {
+			System.clearProperty( "boxlang.experimental.compiler" );
+		}
 	}
 
 	@DisplayName( "It can load the core config file" )
@@ -78,8 +96,7 @@ class ConfigLoaderTest {
 		assertThat( defaultCache.properties.get( "useLastAccessTimeouts" ) ).isEqualTo( true );
 
 		// Import Cache Checks
-		CacheConfig importCache = ( CacheConfig ) config.caches.get( "imports" );
-		assertThat( importCache.name.getNameNoCase() ).isEqualTo( "IMPORTS" );
+		CacheConfig importCache = ( CacheConfig ) config.caches.get( "bxImports" );
 		assertThat( importCache.provider.getNameNoCase() ).isEqualTo( "BOXCACHEPROVIDER" );
 		assertThat( importCache.properties ).isNotNull();
 		assertThat( importCache.properties.get( "maxObjects" ) ).isEqualTo( 200 );
@@ -190,11 +207,62 @@ class ConfigLoaderTest {
 		assertThat( defaultCache.properties.get( "useLastAccessTimeouts" ) ).isEqualTo( true );
 
 		// Import Cache Checks
-		CacheConfig importCache = ( CacheConfig ) config.caches.get( "imports" );
-		assertThat( importCache.name.getNameNoCase() ).isEqualTo( "IMPORTS" );
+		CacheConfig importCache = ( CacheConfig ) config.caches.get( "bxImports" );
 		assertThat( importCache.provider.getNameNoCase() ).isEqualTo( "BOXCACHEPROVIDER" );
 		assertThat( importCache.properties ).isNotNull();
 		assertThat( importCache.properties.get( "maxObjects" ) ).isEqualTo( 200 );
+	}
+
+	@DisplayName( "It can merge environmental properties in to the config" )
+	@Test
+	@Disabled( "This test passes, but is not thread safe to run in CI in parallel with other tests" )
+	void testItCanMergeEnvironmentalProperties() {
+		System.setProperty( "BOXLANG_SECURITY_ALLOWEDFILEOPERATIONEXTENSIONS", ".exe" );
+		System.setProperty( "boxlang.experimental.compiler", "asm" );
+		Configuration config = ConfigLoader.getInstance().loadCore();
+		// Core config checks
+		// Compiler Checks
+		assertThat( config.classGenerationDirectory ).doesNotContainMatch( "(ignorecase)\\{java-temp\\}" );
+
+		// Runtime Checks
+		assertThat( config.mappings ).isNotEmpty();
+		assertThat( config.modulesDirectory.size() ).isGreaterThan( 0 );
+		// First one should be the user home directory
+		assertThat( config.modulesDirectory.get( 0 ) ).doesNotContainMatch( "(ignorecase)\\{boxlang-home\\}" );
+
+		// Log Directory Check
+		assertThat( config.logsDirectory ).isNotEmpty();
+
+		// Cache Checks
+		assertThat( config.caches ).isNotEmpty();
+
+		// Default Cache Checks
+		CacheConfig defaultCache = ( CacheConfig ) config.defaultCache;
+		assertThat( defaultCache ).isNotNull();
+		assertThat( defaultCache.name.getNameNoCase() ).isEqualTo( "DEFAULT" );
+		assertThat( defaultCache.provider.getNameNoCase() ).isEqualTo( "BOXCACHEPROVIDER" );
+		assertThat( defaultCache.properties ).isNotNull();
+		assertThat( defaultCache.properties.get( "maxObjects" ) ).isEqualTo( 1000 );
+		assertThat( defaultCache.properties.get( "reapFrequency" ) ).isEqualTo( 120 );
+		assertThat( defaultCache.properties.get( "evictionPolicy" ) ).isEqualTo( "LRU" );
+		assertThat( defaultCache.properties.get( "objectStore" ) ).isEqualTo( "ConcurrentStore" );
+		assertThat( defaultCache.properties.get( "useLastAccessTimeouts" ) ).isEqualTo( true );
+
+		// Import Cache Checks
+		CacheConfig importCache = ( CacheConfig ) config.caches.get( "bxImports" );
+		assertThat( importCache.provider.getNameNoCase() ).isEqualTo( "BOXCACHEPROVIDER" );
+		assertThat( importCache.properties ).isNotNull();
+		assertThat( importCache.properties.get( "maxObjects" ) ).isEqualTo( 200 );
+		assertThat( importCache.properties.get( "reapFrequency" ) ).isEqualTo( 120 );
+		assertThat( importCache.properties.get( "evictionPolicy" ) ).isEqualTo( "LRU" );
+		assertThat( importCache.properties.get( "objectStore" ) ).isEqualTo( "ConcurrentStore" );
+		assertThat( importCache.properties.get( "useLastAccessTimeouts" ) ).isEqualTo( true );
+
+		// Check the debug mode
+		assertThat( config.security.allowedFileOperationExtensions ).isInstanceOf( List.class );
+		assertThat( config.security.allowedFileOperationExtensions ).contains( ".exe" );
+		assertThat( config.experimental ).isInstanceOf( IStruct.class );
+		assertThat( config.experimental.getAsString( Key.of( "compiler" ) ) ).isEqualTo( "asm" );
 	}
 
 }

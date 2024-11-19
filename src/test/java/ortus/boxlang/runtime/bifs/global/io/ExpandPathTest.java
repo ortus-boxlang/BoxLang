@@ -20,7 +20,6 @@
 package ortus.boxlang.runtime.bifs.global.io;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.Assert.assertThrows;
 
 import java.io.File;
 import java.io.IOException;
@@ -42,7 +41,6 @@ import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
@@ -133,6 +131,25 @@ public class ExpandPathTest {
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( abs );
+	}
+
+	@Test
+	public void testFSCase() {
+		if ( FileSystemUtil.IS_WINDOWS ) {
+			// path relative to custom mapping
+			String abs;
+			try {
+				abs = Path.of( "src/test/java/ortus/boxlang/runtime/bifs/global/io/expandPathTest.txt" ).toAbsolutePath().toRealPath().toString();
+			} catch ( IOException e ) {
+				throw new RuntimeException( e );
+			}
+			instance.executeSource(
+			    """
+			    result = ExpandPath( "/EXPAND/PATH/TEST/EXPANDPATHTEST.TXT" );
+			    """,
+			    context );
+			assertThat( variables.get( result ) ).isEqualTo( abs );
+		}
 	}
 
 	@Test
@@ -257,13 +274,13 @@ public class ExpandPathTest {
 	@Test
 	public void testInvalidWindowsPath() {
 		if ( FileSystemUtil.IS_WINDOWS ) {
-			assertThrows( BoxRuntimeException.class, () -> {
-				instance.executeSource(
-				    """
-				    	result = expandPath('C:\\Users\\jacob\\Dev\\ortussollutions\\boxlang-container-demo\\app\\layouts\\C:\\Users\\jacob\\Dev\\ortussollutions\\boxlang-container-demo\\app\\layouts\\helper.cfm')
-				    """,
-				    context );
-			} );
+			instance.executeSource(
+			    """
+			    badPath = 'C:\\Users\\jacob\\Dev\\ortussollutions\\boxlang-container-demo\\app\\layouts\\C:\\Users\\jacob\\Dev\\ortussollutions\\boxlang-container-demo\\app\\layouts\\helper.cfm';
+			      	result = expandPath( badPath );
+			      """,
+			    context );
+			assertThat( variables.getAsString( result ) ).isEqualTo( variables.getAsString( Key.of( "badPath" ) ) );
 		}
 	}
 }

@@ -26,9 +26,10 @@ import java.time.Duration;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
+import java.util.Set;
 import java.util.TimeZone;
 
 import org.slf4j.Logger;
@@ -40,11 +41,12 @@ import ortus.boxlang.runtime.config.segments.DatasourceConfig;
 import ortus.boxlang.runtime.config.segments.ExecutorConfig;
 import ortus.boxlang.runtime.config.segments.IConfigSegment;
 import ortus.boxlang.runtime.config.segments.ModuleConfig;
+import ortus.boxlang.runtime.config.segments.SecurityConfig;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
-import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.KeyCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.loader.DynamicClassLoader;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
@@ -53,14 +55,14 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.DateTimeHelper;
-import ortus.boxlang.runtime.types.util.ListUtil;
 import ortus.boxlang.runtime.util.DataNavigator;
 import ortus.boxlang.runtime.util.DataNavigator.Navigator;
 import ortus.boxlang.runtime.util.LocalizationUtil;
 
 /**
  * The BoxLang configuration object representing the core configuration.
- * This object is responsible for processing the configuration struct and returning a new configuration object based on the overrides.
+ * This object is responsible for processing the configuration struct and
+ * returning a new configuration object based on the overrides.
  * Each segment is processed individually from the initial configuration struct.
  * The configuration object can be converted to a struct for serialization.
  *
@@ -80,164 +82,183 @@ public class Configuration implements IConfigSegment {
 	 * The directory where the generated classes will be placed
 	 * The default is the system temp directory + {@code /boxlang}
 	 */
-	public String				classGenerationDirectory			= System.getProperty( "java.io.tmpdir" ) + "boxlang";
+	public String				classGenerationDirectory		= System.getProperty( "java.io.tmpdir" ) + "boxlang";
 
 	/**
 	 * The debug mode flag which turns on all kinds of debugging information
 	 * {@code false} by default
 	 */
-	public Boolean				debugMode							= false;
+	public Boolean				debugMode						= false;
 
 	/**
 	 * The Timezone to use for the runtime;
 	 * Uses the Java Timezone format: {@code America/New_York}
 	 * Uses the default system timezone if not set
 	 */
-	public ZoneId				timezone							= TimeZone.getDefault().toZoneId();
+	public ZoneId				timezone						= TimeZone.getDefault().toZoneId();
 
 	/**
 	 * The default locale to use for the runtime
 	 * Uses the default system locale if not set
 	 */
-	public Locale				locale								= Locale.getDefault();
+	public Locale				locale							= Locale.getDefault();
+
+	/**
+	 * Enable whitespace compression in output. Only in use by the web runtimes currently.
+	 */
+	public boolean				whitespaceCompressionEnabled	= true;
 
 	/**
 	 * Invoke implicit getters and setters when using the implicit accessor
 	 * {@code true} by default
 	 */
-	public Boolean				invokeImplicitAccessor				= true;
+	public Boolean				invokeImplicitAccessor			= true;
 
 	/**
-	 * Use high precision math for all math operations, else it relies on Double precision
+	 * Use high precision math for all math operations, else it relies on Double
+	 * precision
 	 * {@code true} by default
 	 */
-	public Boolean				useHighPrecisionMath				= true;
+	public Boolean				useHighPrecisionMath			= true;
 
 	/**
 	 * The application timeout
 	 * {@code 0} means no timeout and is the default
 	 */
-	public Duration				applicationTimeout					= Duration.ofDays( 0 );
+	public Duration				applicationTimeout				= Duration.ofDays( 0 );
 
 	/**
 	 * The request timeout
 	 * {@code 0} means no timeout and is the default
 	 */
-	public Duration				requestTimeout						= Duration.ofSeconds( 0 );;
+	public Duration				requestTimeout					= Duration.ofSeconds( 0 );;
 
 	/**
 	 * The session timeout
 	 * {@code 30} minutes by default
 	 */
-	public Duration				sessionTimeout						= Duration.ofMinutes( 30 );
+	public Duration				sessionTimeout					= Duration.ofMinutes( 30 );
 
 	/**
-	 * This flag enables/disables session management in the runtime for all applications by default.
+	 * This flag enables/disables session management in the runtime for all
+	 * applications by default.
 	 * {@code false} by default
 	 */
-	public Boolean				sessionManagement					= false;
+	public Boolean				sessionManagement				= false;
 
 	/**
-	 * The default session storage cache. This has to be the name of a registered cache
+	 * The default session storage cache. This has to be the name of a registered
+	 * cache
 	 * or the keyword "memory" which indicates our internal cache.
 	 * {@code memory} is the default
 	 */
-	public String				sessionStorage						= "memory";
+	public String				sessionStorage					= "memory";
 
 	/**
-	 * This determines whether to send CFID and CFTOKEN cookies to the client browser.
+	 * This determines whether to send jSessionID cookies to the client browser.
 	 * {@code true} by default
 	 */
-	public Boolean				setClientCookies					= true;
+	public Boolean				setClientCookies				= true;
 
 	/**
-	 * Sets CFID and CFTOKEN cookies for a domain (not a host) Required, for applications running on clusters
+	 * Sets jSessionID cookies for a domain (not a host) Required, for applications
+	 * running on clusters
 	 * {@code true} by default
 	 */
-	public Boolean				setDomainCookies					= true;
+	public Boolean				setDomainCookies				= true;
 
 	/**
 	 * A sorted struct of mappings
 	 */
-	public IStruct				mappings							= new Struct( Struct.KEY_LENGTH_LONGEST_FIRST_COMPARATOR );
+	public IStruct				mappings						= new Struct( Struct.KEY_LENGTH_LONGEST_FIRST_COMPARATOR );
 
 	/**
 	 * An array of directories where modules are located and loaded from.
 	 * {@code [ /{boxlang-home}/modules ]}
 	 */
-	public List<String>			modulesDirectory					= new ArrayList<>(
+	public List<String>			modulesDirectory				= new ArrayList<>(
 	    Arrays.asList( BoxRuntime.getInstance().getRuntimeHome().toString() + "/modules" ) );
 
 	/**
 	 * The default logs directory for the runtime
 	 */
-	public String				logsDirectory						= Paths.get( BoxRuntime.getInstance().getRuntimeHome().toString(), "/logs" ).normalize()
+	public String				logsDirectory					= Paths.get( BoxRuntime.getInstance().getRuntimeHome().toString(), "/logs" ).normalize()
 	    .toString();
 
 	/**
 	 * An array of directories where custom tags are located and loaded from.
 	 * {@code [ /{boxlang-home}/customTags ]}
 	 */
-	public List<String>			customTagsDirectory					= new ArrayList<>(
+	public List<String>			customTagsDirectory				= new ArrayList<>(
 	    Arrays.asList( BoxRuntime.getInstance().getRuntimeHome().toString() + "/customTags" ) );
 
 	/**
 	 * An array of directories where jar files will be loaded from at runtime.
 	 */
-	public List<String>			javaLibraryPaths					= new ArrayList<>(
+	public List<String>			javaLibraryPaths				= new ArrayList<>(
 	    Arrays.asList( BoxRuntime.getInstance().getRuntimeHome().toString() + "/lib" ) );
 
 	/**
 	 * Cache registrations
 	 */
-	public IStruct				caches								= new Struct();
+	public IStruct				caches							= new Struct();
 
 	/**
 	 * Default datasource registration
 	 */
-	public String				defaultDatasource					= "";
+	public String				defaultDatasource				= "";
 
 	/**
 	 * Global datasource registrations
 	 */
-	public IStruct				datasources							= new Struct();
+	public IStruct				datasources						= new Struct();
 
 	/**
-	 * Default remote class method return format when executing a method from web runtimes.
+	 * Default remote class method return format when executing a method from web
+	 * runtimes.
 	 * The default is JSON
 	 */
-	public String				defaultRemoteMethodReturnFormat		= "json";
+	public String				defaultRemoteMethodReturnFormat	= "json";
 
 	/**
 	 * Default cache registration
 	 */
-	public CacheConfig			defaultCache						= new CacheConfig();
+	public CacheConfig			defaultCache					= new CacheConfig();
 
 	/**
 	 * The modules configuration
 	 */
-	public IStruct				modules								= new Struct();
+	public IStruct				modules							= new Struct();
 
 	/**
 	 * The last config struct loaded
 	 */
-	public IStruct				originalConfig						= new Struct();
+	public IStruct				originalConfig					= new Struct();
 
 	/**
 	 * A collection of all the registered global executors
 	 */
-	public IStruct				executors							= new Struct();
+	public IStruct				executors						= new Struct();
 
 	/**
-	 * File extensions which are disallowed for file operations. The allowed array overrides any items in the disallow list.
+	 * Valid BoxLang class extensions
 	 */
-	public List<String>			allowedFileOperationExtensions		= new ArrayList<>();
-	public List<String>			disallowedFileOperationExtensions	= new ArrayList<>();
+	public Set<String>			validClassExtensions			= new HashSet<>();
+
+	/**
+	 * Valid BoxLang template extensions
+	 */
+	public Set<String>			validTemplateExtensions			= new HashSet<>();
 
 	/**
 	 * Experimental Features
 	 */
-	public IStruct				experimental						= new Struct();
+	public IStruct				experimental					= new Struct();
+
+	/**
+	 * The security configuration
+	 */
+	public SecurityConfig		security						= new SecurityConfig();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -248,7 +269,7 @@ public class Configuration implements IConfigSegment {
 	/**
 	 * Logger
 	 */
-	private static final Logger	logger								= LoggerFactory.getLogger( Configuration.class );
+	private static final Logger	logger							= LoggerFactory.getLogger( Configuration.class );
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -257,21 +278,27 @@ public class Configuration implements IConfigSegment {
 	 */
 
 	/**
-	 * Processes a configuration struct and returns a new configuration object based on the overrides.
+	 * Processes a configuration struct and returns a new configuration object based
+	 * on the overrides.
 	 *
-	 * This method makes sure all elements in the incoming configuration struct are processed and applied to the configuration object.
+	 * This method makes sure all elements in the incoming configuration struct are
+	 * processed and applied to the configuration object.
 	 *
 	 * @param config the configuration struct
 	 *
 	 * @return The new configuration object based on the core + overrides
 	 */
 	public Configuration process( IStruct config ) {
+
 		// Store original config
 		this.originalConfig = config;
 
-		// Debug Mode
+		// Debug Mode || Debbuging Enabled (cfconfig)
 		if ( config.containsKey( "debugMode" ) ) {
-			this.debugMode = ( Boolean ) config.get( "debugMode" );
+			this.debugMode = BooleanCaster.cast( PlaceholderHelper.resolve( config.get( "debugMode" ) ) );
+		}
+		if ( config.containsKey( "debuggingEnabled" ) ) {
+			this.debugMode = BooleanCaster.cast( PlaceholderHelper.resolve( config.get( "debuggingEnabled" ) ) );
 		}
 
 		// Compiler
@@ -299,6 +326,12 @@ public class Configuration implements IConfigSegment {
 			    .ifSuccessful( value -> this.invokeImplicitAccessor = value );
 		}
 
+		// whitespaceCompressionEnabled
+		if ( config.containsKey( Key.whitespaceCompressionEnabled ) ) {
+			BooleanCaster.attempt( PlaceholderHelper.resolve( config.get( Key.whitespaceCompressionEnabled ) ) )
+			    .ifSuccessful( value -> this.whitespaceCompressionEnabled = value );
+		}
+
 		// Use High Precision Math
 		if ( config.containsKey( Key.useHighPrecisionMath ) ) {
 			BooleanCaster.attempt( PlaceholderHelper.resolve( config.get( Key.useHighPrecisionMath ) ) )
@@ -306,18 +339,22 @@ public class Configuration implements IConfigSegment {
 		}
 
 		// Application Timeout
-		if ( config.containsKey( Key.applicationTimeout ) && StringCaster.cast( config.get( "applicationTimeout" ) ).length() > 0 ) {
-			this.applicationTimeout = DateTimeHelper.timespanToDuration( PlaceholderHelper.resolve( config.get( "applicationTimeout" ) ) );
+		if ( config.containsKey( Key.applicationTimeout )
+		    && StringCaster.cast( config.get( "applicationTimeout" ) ).length() > 0 ) {
+			this.applicationTimeout = DateTimeHelper
+			    .timespanToDuration( PlaceholderHelper.resolve( config.get( "applicationTimeout" ) ) );
 		}
 
 		// Request Timeout
 		if ( config.containsKey( Key.requestTimeout ) && StringCaster.cast( config.get( "requestTimeout" ) ).length() > 0 ) {
-			this.requestTimeout = DateTimeHelper.timespanToDuration( PlaceholderHelper.resolve( config.get( "requestTimeout" ) ) );
+			this.requestTimeout = DateTimeHelper
+			    .timespanToDuration( PlaceholderHelper.resolve( config.get( "requestTimeout" ) ) );
 		}
 
 		// Session Timeout
 		if ( config.containsKey( Key.sessionTimeout ) && StringCaster.cast( config.get( "sessionTimeout" ) ).length() > 0 ) {
-			this.sessionTimeout = DateTimeHelper.timespanToDuration( PlaceholderHelper.resolve( config.get( "sessionTimeout" ) ) );
+			this.sessionTimeout = DateTimeHelper
+			    .timespanToDuration( PlaceholderHelper.resolve( config.get( "sessionTimeout" ) ) );
 		}
 
 		// Session Management
@@ -345,11 +382,10 @@ public class Configuration implements IConfigSegment {
 
 		// Process mappings
 		if ( config.containsKey( Key.mappings ) ) {
-			if ( config.get( Key.mappings ) instanceof Map<?, ?> castedMap ) {
-				castedMap.forEach( ( key, value ) -> this.mappings.put(
-				    Key.of( key ),
-				    PlaceholderHelper.resolve( value )
-				) );
+			if ( config.get( Key.mappings ) instanceof IStruct castedMap ) {
+				castedMap.entrySet().forEach( entry -> this.mappings.put(
+				    entry.getKey(),
+				    PlaceholderHelper.resolve( entry.getValue() ) ) );
 			} else {
 				logger.warn( "The [runtime.mappings] configuration is not a JSON Object, ignoring it." );
 			}
@@ -397,19 +433,20 @@ public class Configuration implements IConfigSegment {
 					}
 				} );
 			} else {
-				logger.warn( "The [runtime.javaLibraryPaths] configuration is not a JSON Object, ignoring it." );
+				logger.warn( "The [javaLibraryPaths] configuration is not a JSON Array, ignoring it." );
 			}
 		}
 
 		// Process the default method return format
 		if ( config.containsKey( Key.defaultRemoteMethodReturnFormat ) ) {
-			this.defaultRemoteMethodReturnFormat = PlaceholderHelper.resolve( config.get( Key.defaultRemoteMethodReturnFormat ) ).toLowerCase();
+			this.defaultRemoteMethodReturnFormat = PlaceholderHelper
+			    .resolve( config.get( Key.defaultRemoteMethodReturnFormat ) ).toLowerCase();
 		}
 
 		// Process default cache configuration
 		if ( config.containsKey( Key.defaultCache ) ) {
-			if ( config.get( Key.defaultCache ) instanceof Map<?, ?> castedMap ) {
-				this.defaultCache = new CacheConfig().processProperties( new Struct( castedMap ) );
+			if ( config.get( Key.defaultCache ) instanceof IStruct castedMap ) {
+				this.defaultCache = new CacheConfig().processProperties( castedMap );
 			} else {
 				logger.warn( "The [runtime.defaultCache] configuration is not a JSON Object, ignoring it." );
 			}
@@ -417,16 +454,22 @@ public class Configuration implements IConfigSegment {
 
 		// Process declared cache configurations
 		if ( config.containsKey( Key.caches ) ) {
-			if ( config.get( Key.caches ) instanceof Map<?, ?> castedCaches ) {
+			if ( config.get( Key.caches ) instanceof IStruct castedCaches ) {
 				// Process each cache configuration
 				castedCaches
 				    .entrySet()
 				    .forEach( entry -> {
-					    if ( entry.getValue() instanceof Map<?, ?> castedMap ) {
-						    CacheConfig cacheConfig = new CacheConfig( ( String ) entry.getKey() ).process( new Struct( castedMap ) );
+					    // We ignore `default` caches, not accepted in boxlang.
+					    if ( entry.getKey().equals( Key._DEFAULT ) ) {
+						    return;
+					    }
+
+					    if ( entry.getValue() instanceof IStruct castedStruct ) {
+						    CacheConfig cacheConfig = new CacheConfig( KeyCaster.cast( entry.getKey() ) ).process( castedStruct );
 						    this.caches.put( cacheConfig.name, cacheConfig );
 					    } else {
-						    logger.warn( "The [caches.{}] configuration is not a JSON Object, ignoring it.", entry.getKey() );
+						    logger.warn( "The [caches.{}] configuration is not a JSON Object, ignoring it.",
+						        entry.getKey().getName() );
 					    }
 				    } );
 			} else {
@@ -436,16 +479,18 @@ public class Configuration implements IConfigSegment {
 
 		// Process executors
 		if ( config.containsKey( Key.executors ) ) {
-			if ( config.get( Key.executors ) instanceof Map<?, ?> castedExecutors ) {
+			if ( config.get( Key.executors ) instanceof IStruct castedExecutors ) {
 				// Process each executor configuration
 				castedExecutors
 				    .entrySet()
 				    .forEach( entry -> {
-					    if ( entry.getValue() instanceof Map<?, ?> castedMap ) {
-						    ExecutorConfig executorConfig = new ExecutorConfig( ( String ) entry.getKey() ).process( new Struct( castedMap ) );
+					    if ( entry.getValue() instanceof IStruct castedMap ) {
+						    ExecutorConfig executorConfig = new ExecutorConfig( entry.getKey() )
+						        .process( StructCaster.cast( castedMap ) );
 						    this.executors.put( executorConfig.name, executorConfig );
 					    } else {
-						    logger.warn( "The [executors.{}] configuration is not a JSON Object, ignoring it.", entry.getKey() );
+						    logger.warn( "The [executors.{}] configuration is not a JSON Object, ignoring it.",
+						        entry.getKey() );
 					    }
 				    } );
 			} else {
@@ -453,10 +498,32 @@ public class Configuration implements IConfigSegment {
 			}
 		}
 
+		// Process validClassExtensions
+		if ( config.containsKey( Key.validClassExtensions ) ) {
+			if ( config.get( Key.validClassExtensions ) instanceof List<?> castedList ) {
+				// iterate and add to the original list if it doesn't exist
+				castedList
+				    .forEach( item -> this.validClassExtensions.add( PlaceholderHelper.resolve( item ).toLowerCase() ) );
+			} else {
+				logger.warn( "The [validClassExtensions] configuration is not a JSON Array, ignoring it." );
+			}
+		}
+
+		// Process validtemplateExtensions
+		if ( config.containsKey( Key.validTemplateExtensions ) ) {
+			if ( config.get( Key.validTemplateExtensions ) instanceof List<?> castedList ) {
+				// iterate and add to the original list if it doesn't exist
+				castedList.forEach(
+				    item -> this.validTemplateExtensions.add( PlaceholderHelper.resolve( item ).toLowerCase() ) );
+			} else {
+				logger.warn( "The [validTemplateExtensions] configuration is not a JSON Array, ignoring it." );
+			}
+		}
+
 		// Process experimentals map
 		if ( config.containsKey( Key.experimental ) ) {
-			if ( config.get( Key.experimental ) instanceof Map<?, ?> castedMap ) {
-				castedMap.forEach( ( key, value ) -> this.experimental.put( Key.of( key ), PlaceholderHelper.resolve( value ) ) );
+			if ( config.get( Key.experimental ) instanceof IStruct castedStruct ) {
+				castedStruct.entrySet().forEach( entry -> this.experimental.put( entry.getKey(), PlaceholderHelper.resolve( entry.getValue() ) ) );
 			} else {
 				logger.warn( "The [runtime.experimental] configuration is not a JSON Object, ignoring it." );
 			}
@@ -469,16 +536,19 @@ public class Configuration implements IConfigSegment {
 
 		// Process Datasource Configurations
 		if ( config.containsKey( Key.datasources ) ) {
-			if ( config.get( Key.datasources ) instanceof Map<?, ?> castedDataSources ) {
+			if ( config.get( Key.datasources ) instanceof IStruct castedDataSources ) {
 				// Process each datasource configuration
 				castedDataSources
 				    .entrySet()
 				    .forEach( entry -> {
-					    if ( entry.getValue() instanceof Map<?, ?> castedMap ) {
-						    DatasourceConfig datasourceConfig = new DatasourceConfig( Key.of( entry.getKey() ) ).process( new Struct( castedMap ) );
+					    if ( entry.getValue() instanceof IStruct castedStruct ) {
+						    DatasourceConfig datasourceConfig = new DatasourceConfig( entry.getKey() )
+						        .process( new Struct( castedStruct ) );
 						    this.datasources.put( datasourceConfig.name, datasourceConfig );
 					    } else {
-						    logger.warn( "The [runtime.datasources.{}] configuration is not a JSON Object, ignoring it.", entry.getKey() );
+						    logger.warn(
+						        "The [runtime.datasources.{}] configuration is not a JSON Object, ignoring it.",
+						        entry.getKey() );
 					    }
 				    } );
 			} else {
@@ -488,16 +558,18 @@ public class Configuration implements IConfigSegment {
 
 		// Process modules
 		if ( config.containsKey( Key.modules ) ) {
-			if ( config.get( Key.modules ) instanceof Map<?, ?> castedModules ) {
+			if ( config.get( Key.modules ) instanceof IStruct castedModules ) {
 				// Process each module configuration
 				castedModules
 				    .entrySet()
 				    .forEach( entry -> {
-					    if ( entry.getValue() instanceof Map<?, ?> castedMap ) {
-						    ModuleConfig moduleConfig = new ModuleConfig( KeyCaster.cast( entry.getKey() ).getName() ).process( new Struct( castedMap ) );
+					    if ( entry.getValue() instanceof IStruct castedMap ) {
+						    ModuleConfig moduleConfig = new ModuleConfig( entry.getKey().getName() )
+						        .process( castedMap );
 						    this.modules.put( moduleConfig.name, moduleConfig );
 					    } else {
-						    logger.warn( "The [runtime.modules.{}] configuration is not a JSON Object, ignoring it.", entry.getKey() );
+						    logger.warn( "The [runtime.modules.{}] configuration is not a JSON Object, ignoring it.",
+						        entry.getKey() );
 					    }
 				    } );
 
@@ -506,26 +578,9 @@ public class Configuration implements IConfigSegment {
 			}
 		}
 
-		// File operation safety keys
-		if ( config.containsKey( Key.allowedFileOperationExtensions ) ) {
-			if ( config.get( Key.allowedFileOperationExtensions ) instanceof String ) {
-				config.put( Key.allowedFileOperationExtensions,
-				    ListUtil.asList( config.getAsString( Key.allowedFileOperationExtensions ), ListUtil.DEFAULT_DELIMITER ) );
-			}
-
-			// For some reason we have to re-cast this through a stream. Attempting to cast it directly throws a ClassCastException
-			this.allowedFileOperationExtensions = ArrayCaster.cast( config.get( Key.allowedFileOperationExtensions ) ).stream().map( StringCaster::cast )
-			    .toList();
-		}
-
-		if ( config.containsKey( Key.disallowedFileOperationExtensions ) ) {
-			if ( config.get( Key.disallowedFileOperationExtensions ) instanceof String ) {
-				config.put( Key.disallowedFileOperationExtensions,
-				    ListUtil.asList( config.getAsString( Key.disallowedFileOperationExtensions ), ListUtil.DEFAULT_DELIMITER ) );
-			}
-			// For some reason we have to re-cast this through a stream. Attempting to cast it directly throws a ClassCastException
-			this.disallowedFileOperationExtensions = ArrayCaster.cast( config.get( Key.disallowedFileOperationExtensions ) ).stream().map( StringCaster::cast )
-			    .toList();
+		// Process our security configuration
+		if ( config.containsKey( Key.security ) ) {
+			security.process( StructCaster.cast( config.get( Key.security ) ) );
 		}
 
 		return this;
@@ -551,7 +606,8 @@ public class Configuration implements IConfigSegment {
 	/**
 	 * Verify if a mapping exists
 	 *
-	 * @param mapping The mapping to verify: {@code /myMapping}, please note the leading slash
+	 * @param mapping The mapping to verify: {@code /myMapping}, please note the
+	 *                leading slash
 	 *
 	 * @return True if the mapping exists, false otherwise
 	 */
@@ -562,7 +618,8 @@ public class Configuration implements IConfigSegment {
 	/**
 	 * Verify if a mapping exists
 	 *
-	 * @param mapping The mapping to verify: {@code /myMapping}, please note the leading slash
+	 * @param mapping The mapping to verify: {@code /myMapping}, please note the
+	 *                leading slash
 	 *
 	 * @return True if the mapping exists, false otherwise
 	 */
@@ -577,7 +634,8 @@ public class Configuration implements IConfigSegment {
 	/**
 	 * Register a mapping in the runtime configuration
 	 *
-	 * @param mapping The mapping to register: {@code /myMapping}, please note the leading slash
+	 * @param mapping The mapping to register: {@code /myMapping}, please note the
+	 *                leading slash
 	 * @param path    The absolute path to the directory to map to the mapping
 	 *
 	 * @throws BoxRuntimeException If the path does not exist
@@ -591,7 +649,8 @@ public class Configuration implements IConfigSegment {
 	/**
 	 * Register a mapping in the runtime configuration
 	 *
-	 * @param mapping The mapping to register: {@code /myMapping}, please note the leading slash
+	 * @param mapping The mapping to register: {@code /myMapping}, please note the
+	 *                leading slash
 	 * @param path    The absolute path to the directory to map to the mapping
 	 *
 	 * @throws BoxRuntimeException If the path does not exist
@@ -610,8 +669,7 @@ public class Configuration implements IConfigSegment {
 		// Verify it exists else throw an exception
 		if ( !pathObj.toFile().exists() ) {
 			throw new BoxRuntimeException(
-			    String.format( "The path [%s] does not exist.", pathObj )
-			);
+			    String.format( "The path [%s] does not exist.", pathObj ) );
 		}
 
 		// Now we can add it
@@ -623,7 +681,8 @@ public class Configuration implements IConfigSegment {
 	/**
 	 * Unregister a mapping in the runtime configuration
 	 *
-	 * @param mapping The String mapping to unregister: {@code /myMapping}, please note the leading slash
+	 * @param mapping The String mapping to unregister: {@code /myMapping}, please
+	 *                note the leading slash
 	 *
 	 * @return True if the mapping was removed, false otherwise
 	 */
@@ -634,7 +693,8 @@ public class Configuration implements IConfigSegment {
 	/**
 	 * Unregister a mapping in the runtime configuration using a {@link Key}
 	 *
-	 * @param mapping The Key mapping to unregister: {@code /myMapping}, please note the leading slash
+	 * @param mapping The Key mapping to unregister: {@code /myMapping}, please note
+	 *                the leading slash
 	 *
 	 * @return True if the mapping was removed, false otherwise
 	 */
@@ -655,7 +715,8 @@ public class Configuration implements IConfigSegment {
 
 	/**
 	 * Get the java library paths as an array of URLs of Jar files
-	 * This is usually called by the runtime to load all the JARs in the paths to the runtime classloader
+	 * This is usually called by the runtime to load all the JARs in the paths to
+	 * the runtime classloader
 	 *
 	 * @throws BoxIOException If a path is not a valid path
 	 *
@@ -687,13 +748,17 @@ public class Configuration implements IConfigSegment {
 	}
 
 	/**
-	 * Helper method to validate datasource drivers configured in the runtime configuration
-	 * This makes sure all declared drivers are registered with the datasource service
+	 * Helper method to validate datasource drivers configured in the runtime
+	 * configuration
+	 * This makes sure all declared drivers are registered with the datasource
+	 * service
 	 *
-	 * @throws BoxRuntimeException If a datasource driver is not registered with the datasource service
+	 * @throws BoxRuntimeException If a datasource driver is not registered with the
+	 *                             datasource service
 	 */
 	public void validateDatsourceDrivers() {
-		// iterate over all datasources and validate the drivers exists in the datasource service, else throw an exception
+		// iterate over all datasources and validate the drivers exists in the
+		// datasource service, else throw an exception
 		this.datasources.entrySet().forEach( entry -> {
 			DatasourceConfig datasource = ( DatasourceConfig ) entry.getValue();
 			if ( !BoxRuntime.getInstance().getDataSourceService().hasDriver( datasource.getDriver() ) ) {
@@ -701,9 +766,7 @@ public class Configuration implements IConfigSegment {
 				    String.format(
 				        "The datasource [%s] has a driver [%s] that is not registered with the datasource service.",
 				        datasource.name,
-				        datasource.getDriver()
-				    )
-				);
+				        datasource.getDriver() ) );
 			}
 		} );
 	}
@@ -717,12 +780,43 @@ public class Configuration implements IConfigSegment {
 	 * config.navigate( "originalConfig" )
 	 * </pre>
 	 *
-	 * @param path The path to the object in the data structure. By default it's the root.
+	 * @param path The path to the object in the data structure. By default it's the
+	 *             root.
 	 *
 	 * @return The navigator with a potential navigation path set
 	 */
 	public Navigator navigate( String... path ) {
 		return DataNavigator.of( asStruct() ).from( path );
+	}
+
+	/**
+	 * This returns all valid BoxLang extensions for classes and templates.
+	 *
+	 * @return A set of all valid class extensions
+	 */
+	public Set<String> getValidExtensions() {
+		Set<String> extensions = new HashSet<>();
+		extensions.addAll( this.validClassExtensions );
+		extensions.addAll( this.validTemplateExtensions );
+		return extensions;
+	}
+
+	/**
+	 * This returns all valid BoxLang class extensions.
+	 *
+	 * @return A list of all valid class extensions
+	 */
+	public List<String> getValidTemplateExtensionsList() {
+		return new ArrayList<>( this.validTemplateExtensions );
+	}
+
+	/**
+	 * This returns all valid BoxLang class extensions.
+	 *
+	 * @return A list of all valid class extensions
+	 */
+	public List<String> getValidClassExtensionsList() {
+		return new ArrayList<>( this.validClassExtensions );
 	}
 
 	/**
@@ -742,19 +836,23 @@ public class Configuration implements IConfigSegment {
 		mappingsCopy.putAll( this.mappings );
 
 		IStruct cachesCopy = new Struct();
-		this.caches.entrySet().forEach( entry -> cachesCopy.put( entry.getKey(), ( ( CacheConfig ) entry.getValue() ).toStruct() ) );
+		this.caches.entrySet()
+		    .forEach( entry -> cachesCopy.put( entry.getKey(), ( ( CacheConfig ) entry.getValue() ).toStruct() ) );
 
 		IStruct executorsCopy = new Struct();
-		this.executors.entrySet().forEach( entry -> executorsCopy.put( entry.getKey(), ( ( ExecutorConfig ) entry.getValue() ).toStruct() ) );
+		this.executors.entrySet()
+		    .forEach( entry -> executorsCopy.put( entry.getKey(), ( ( ExecutorConfig ) entry.getValue() ).toStruct() ) );
 
 		IStruct datsourcesCopy = new Struct();
-		this.datasources.entrySet().forEach( entry -> datsourcesCopy.put( entry.getKey(), ( ( DatasourceConfig ) entry.getValue() ).asStruct() ) );
+		this.datasources.entrySet()
+		    .forEach( entry -> datsourcesCopy.put( entry.getKey(), ( ( DatasourceConfig ) entry.getValue() ).asStruct() ) );
 
 		IStruct modulesCopy = new Struct();
-		this.modules.entrySet().forEach( entry -> modulesCopy.put( entry.getKey(), ( ( ModuleConfig ) entry.getValue() ).asStruct() ) );
+		this.modules.entrySet()
+		    .forEach( entry -> modulesCopy.put( entry.getKey(), ( ( ModuleConfig ) entry.getValue() ).asStruct() ) );
 
 		return Struct.of(
-		    Key.allowedFileOperationExtensions, Array.fromList( this.allowedFileOperationExtensions ),
+
 		    Key.applicationTimeout, this.applicationTimeout,
 		    Key.caches, cachesCopy,
 		    Key.classGenerationDirectory, this.classGenerationDirectory,
@@ -764,10 +862,10 @@ public class Configuration implements IConfigSegment {
 		    Key.defaultCache, this.defaultCache.toStruct(),
 		    Key.defaultDatasource, this.defaultDatasource,
 		    Key.defaultRemoteMethodReturnFormat, this.defaultRemoteMethodReturnFormat,
-		    Key.disallowedFileOperationExtensions, Array.fromList( this.disallowedFileOperationExtensions ),
 		    Key.executors, executorsCopy,
 		    Key.experimental, Struct.fromMap( this.experimental ),
 		    Key.invokeImplicitAccessor, this.invokeImplicitAccessor,
+		    Key.whitespaceCompressionEnabled, this.whitespaceCompressionEnabled,
 		    Key.javaLibraryPaths, Array.fromList( this.javaLibraryPaths ),
 		    Key.locale, this.locale,
 		    Key.mappings, mappingsCopy,
@@ -780,8 +878,11 @@ public class Configuration implements IConfigSegment {
 		    Key.sessionTimeout, this.sessionTimeout,
 		    Key.setClientCookies, this.setClientCookies,
 		    Key.setDomainCookies, this.setDomainCookies,
+		    Key.security, this.security.asStruct(),
 		    Key.timezone, this.timezone,
-		    Key.useHighPrecisionMath, this.useHighPrecisionMath
-		);
+		    Key.useHighPrecisionMath, this.useHighPrecisionMath,
+		    Key.validExtensions, Array.fromSet( getValidExtensions() ),
+		    Key.validClassExtensions, Array.fromSet( this.validClassExtensions ),
+		    Key.validTemplateExtensions, Array.fromSet( this.validTemplateExtensions ) );
 	}
 }

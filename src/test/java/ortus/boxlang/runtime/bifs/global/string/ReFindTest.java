@@ -403,6 +403,50 @@ public class ReFindTest {
 		    context );
 			assertThat( variables.get( result ) ).isEqualTo(13);
 		// @formatter:on
+		// @formatter:off
+		instance.executeSource(
+		    """
+				input   = "String with {{TOKEN}}";
+				result = ReFind( "\\{\\{[A-Z]+\\}\\}", input );
+		    """,
+		    context );
+			assertThat( variables.get( result ) ).isEqualTo(13);
+		// @formatter:on
+	}
+
+	@Test
+	public void testIgnoreRandomCurlies() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				input   = "{String} wi{th random} cu{{rlies}} {1,2,3,4,5}";
+				result = ReFind( input, "test " & input );
+		    """,
+		    context );
+			assertThat( variables.get( result ) ).isEqualTo( 6 );
+		// @formatter:on
+	}
+
+	@DisplayName( "qb parse table name" )
+	@Test
+	public void testParseQBTableName() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+			result = reFindNoCase(
+                "(.*?)(?:\\s(?:AS\\s){0,1})([^\\)]+)$",
+                "users people",
+                1,
+                true
+            );
+			""",
+		context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( Struct.of(
+		    "LEN", Array.of( 12, 5, 6 ),
+		    "MATCH", Array.of( "users people", "users", "people" ),
+		    "POS", Array.of( 1, 1, 7 )
+		) );
 	}
 
 }

@@ -149,7 +149,7 @@ public class NumberCaster implements IBoxCaster {
 				}
 
 				// 10 or fewer chars can use an int literal
-				if ( len <= 10 ) {
+				if ( len < 10 ) {
 					return Integer.parseInt( value );
 				} else if ( len <= 19 ) {
 					// 11-19 chars needs a long literal

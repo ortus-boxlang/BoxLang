@@ -23,9 +23,11 @@ import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.HashSet;
 import java.util.List;
@@ -40,9 +42,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
+import ortus.boxlang.runtime.components.jdbc.Query;
 import ortus.boxlang.runtime.context.ContainerBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
@@ -52,12 +54,11 @@ import ortus.boxlang.runtime.runnables.ITemplateRunnable;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
-import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.IType;
-import ortus.boxlang.runtime.types.Query;
+import ortus.boxlang.runtime.types.NullValue;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -118,17 +119,29 @@ public class DumpUtil {
 	    String output,
 	    String format,
 	    Boolean showUDFs ) {
-		output = output.toLowerCase();
 
-		// Backwards compat here, could put this in the transpiler if we want
-		if ( output.equals( "browser" ) ) {
-			output = "buffer";
+		boolean isScriptContext = context.getRequestContext() instanceof ScriptingRequestBoxContext;
+
+		// Default output param
+		if ( output == null ) {
+			if ( isScriptContext ) {
+				output = "console";
+			} else {
+				output = "buffer";
+			}
+		} else {
+			output = output.toLowerCase();
+
+			// Backwards compat here, could put this in the transpiler if we want
+			if ( output.equals( "browser" ) ) {
+				output = "buffer";
+			}
 		}
 
 		// Determine the output format if not passed from the output parameter.
 		if ( format == null ) {
 			// If the output is console or the parent context is a scripting context, then use text.
-			if ( output.equals( "console" ) || context.getParentOfType( RequestBoxContext.class ) instanceof ScriptingRequestBoxContext ) {
+			if ( output.equals( "console" ) || isScriptContext ) {
 				format = "text";
 			}
 			// Otherwise, use HTML (default for buffer or filename)
@@ -158,7 +171,11 @@ public class DumpUtil {
 		switch ( output ) {
 			// SEND TO CONSOLE
 			case "console" :
-				dumpToConsole( context, target, label );
+				if ( format.equals( "html" ) ) {
+					dumpHTMLToConsole( context, target, label, top, expand, abort, output, format, showUDFs );
+				} else {
+					dumpTextToConsole( context, target, label );
+				}
 				break;
 
 			// SEND TO BUFFER (HTML or TEXT)
@@ -203,10 +220,11 @@ public class DumpUtil {
 			if ( output.equals( "buffer" ) ) {
 				context.writeToBuffer(
 				    """
-				    	<div style="display: inline-block; padding: 8px 12px; background-color: #ff4d4d; color: white; font-weight: bold; border-radius: 5px;">
+				    	<div style="margin-top: 10px; display: inline-block; padding: 8px 12px; background-color: #ff4d4d; color: white; font-weight: bold; border-radius: 5px;">
 				    		Dump Aborted
 				    	</div>
-				    """, true );
+				    """,
+				    true );
 			}
 			context.flushBuffer( true );
 			throw new AbortException( "request", null );
@@ -220,8 +238,40 @@ public class DumpUtil {
 	 * @param target  The target object
 	 * @param label   The label for the object
 	 */
-	public static void dumpToConsole( IBoxContext context, Object target, String label ) {
-		PrintStream out = context.getParentOfType( RequestBoxContext.class ).getOut();
+	public static void dumpHTMLToConsole(
+	    IBoxContext context,
+	    Object target,
+	    String label,
+	    Integer top,
+	    Boolean expand,
+	    Boolean abort,
+	    String output,
+	    String format,
+	    Boolean showUDFs ) {
+		// Push a fresh buffer to our context to capture the HTML generated
+		StringBuffer buffer = new StringBuffer();
+		context.pushBuffer( buffer );
+		try {
+			// Fire the HTML templates to fill up the buffer
+			dumpHTMLToBuffer( context, target, label, top, expand, abort, output, format, showUDFs );
+			// Dump the buffer to the console
+			context.getRequestContext().getOut().println( buffer.toString() );
+		} finally {
+			// We're done with you.
+			context.popBuffer();
+		}
+
+	}
+
+	/**
+	 * Dump the object to the console.
+	 *
+	 * @param context The context
+	 * @param target  The target object
+	 * @param label   The label for the object
+	 */
+	public static void dumpTextToConsole( IBoxContext context, Object target, String label ) {
+		PrintStream out = context.getRequestContext().getOut();
 
 		// Do we have a console label?
 		if ( label != null && !label.isEmpty() ) {
@@ -240,7 +290,11 @@ public class DumpUtil {
 			}
 		} else {
 			// out.println( "> " + target.getClass().getName() );
-			out.println( target.toString() );
+			if ( target == null ) {
+				out.println( "[null]" );
+			} else {
+				out.println( target.toString() );
+			}
 		}
 	}
 
@@ -251,7 +305,11 @@ public class DumpUtil {
 	 * @param target  The target object
 	 */
 	public static void dumpTextToBuffer( IBoxContext context, Object target ) {
-		context.writeToBuffer( target.toString(), true );
+		if ( target == null ) {
+			context.writeToBuffer( "[null]\n", true );
+		} else {
+			context.writeToBuffer( target.toString() + "\n", true );
+		}
 	}
 
 	/**
@@ -303,11 +361,7 @@ public class DumpUtil {
 			if ( outerDump ) {
 				buffer = new StringBuffer();
 				context.pushBuffer( buffer );
-				Array tagContext = ExceptionUtil.getTagContext( 1 );
-				if ( !tagContext.isEmpty() ) {
-					IStruct thisTag = ( IStruct ) tagContext.get( 0 );
-					posInCode = thisTag.getAsString( Key.template ) + ":" + thisTag.get( Key.line );
-				}
+				posInCode = ExceptionUtil.getCurrentPositionInCode();
 				// This assumes HTML output. Needs to be dynamic as XML or plain text output wouldn't have CSS
 				dumpContext.writeToBuffer( "<style>" + getDumpTemplate( context, "Dump.css" ) + "</style>", true );
 				dumpContext.writeToBuffer( "<script>" + getDumpTemplate( context, "Dump.js" ) + "</script>" );
@@ -349,7 +403,7 @@ public class DumpUtil {
 	 * @return The template name found in the resources folder
 	 */
 	private static String discoverTemplateName( Object target ) {
-		if ( target == null ) {
+		if ( target == null || target instanceof NullValue ) {
 			return "Null.bxm";
 		} else if ( target instanceof Throwable ) {
 			return "Throwable.bxm";
@@ -367,6 +421,11 @@ public class DumpUtil {
 		    target instanceof java.sql.Date || target instanceof java.sql.Timestamp || target instanceof java.util.Date ) {
 			target = DateTimeCaster.cast( target );
 			return "DateTime.bxm";
+		}
+		// These classes will just dump the class name and the `toString()` equivalent
+		// For easier debugging
+		else if ( target instanceof Duration || target instanceof ZoneId ) {
+			return "ToString.bxm";
 		} else if ( target instanceof Instant ) {
 			return "Instant.bxm";
 		} else if ( target instanceof IClassRunnable ) {
@@ -377,7 +436,7 @@ public class DumpUtil {
 		} else if ( target instanceof IStruct ) {
 			return "Struct.bxm";
 		} else if ( target instanceof IType ) {
-			return target.getClass().getSimpleName().replace( "Immutable", "" ) + ".bxm";
+			return target.getClass().getSimpleName().replace( "Unmodifiable", "" ) + ".bxm";
 		} else if ( target instanceof String ) {
 			return "String.bxm";
 		} else if ( target instanceof Number ) {

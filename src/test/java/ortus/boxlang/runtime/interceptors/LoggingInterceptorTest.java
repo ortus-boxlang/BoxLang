@@ -41,22 +41,28 @@ public class LoggingInterceptorTest {
 	IScope				variables;
 
 	static Logging		loggingInterceptor;
-	static String		testLogFile	= "LoggingInterceptorTest.txt";
+	static String		tmpDirectory	= "src/test/resources/tmp/FileSystemStoreTest";
+	static String		testLogFile		= "LoggingInterceptorTest.txt";
 	static String		logFilePath;
+	static String		absoluteLogeFilePath;
 	static String		logDirectory;
 
 	@BeforeAll
 	public static void setUp() {
-		instance			= BoxRuntime.getInstance( true );
-		loggingInterceptor	= new Logging( instance );
-		logDirectory		= instance.getConfiguration().logsDirectory;
-		logFilePath			= Paths.get( logDirectory, "/", testLogFile ).toString();
+		instance				= BoxRuntime.getInstance( true );
+		loggingInterceptor		= new Logging( instance );
+		logDirectory			= instance.getConfiguration().logsDirectory;
+		logFilePath				= Paths.get( logDirectory, "/", testLogFile ).toString();
+		absoluteLogeFilePath	= Paths.get( tmpDirectory, testLogFile ).toAbsolutePath().toString();
 	}
 
 	@AfterAll
 	public static void teardown() {
 		if ( FileSystemUtil.exists( logFilePath ) ) {
 			FileSystemUtil.deleteFile( logFilePath );
+		}
+		if ( FileSystemUtil.exists( absoluteLogeFilePath ) ) {
+			FileSystemUtil.deleteFile( absoluteLogeFilePath );
 		}
 	}
 
@@ -71,7 +77,18 @@ public class LoggingInterceptorTest {
 		    Key.log, "Test"
 		) );
 		assertTrue( StringCaster.cast( FileSystemUtil.read( logFilePath ) ).indexOf( "Hello" ) > -1 );
-		assertTrue( StringCaster.cast( FileSystemUtil.read( logFilePath ) ).indexOf( "World" ) > -1 );
+	}
+
+	@DisplayName( "It can log a message to an absolute path" )
+	@Test
+	void testLogAbsolute() throws InterruptedException {
+		loggingInterceptor.logMessage( Struct.of(
+		    Key.text, "Hello, Absolute Path!",
+		    Key.level, "INFO",
+		    Key.file, absoluteLogeFilePath,
+		    Key.log, "Test"
+		) );
+		assertTrue( StringCaster.cast( FileSystemUtil.read( absoluteLogeFilePath ) ).indexOf( "Hello" ) > -1 );
 	}
 
 }

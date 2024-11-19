@@ -12,6 +12,8 @@ component accessors=true {
 
     property String typedShortcutWithDefault default="myDefaultValue2";
 
+    property name="chain"   type="array"  default="#ArrayNew(1)#";
+
     function init() {
         getMyProperty();
     }

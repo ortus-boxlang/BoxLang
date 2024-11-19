@@ -10,6 +10,8 @@ import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.InsnNode;
+import org.objectweb.asm.tree.JumpInsnNode;
+import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.TypeInsnNode;
 
@@ -21,6 +23,9 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStatement;
+import ortus.boxlang.compiler.ast.expression.BoxFQN;
+import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
+import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -43,15 +48,32 @@ public class BoxComponentTransformer extends AbstractTransformer {
 			throw new IllegalStateException();
 		}
 
+		transpiler.incrementComponentCounter();
+
 		MethodContextTracker	tracker	= trackerOption.get();
 		List<AbstractInsnNode>	nodes	= new ArrayList<>();
 		nodes.addAll( tracker.loadCurrentContext() );
 
+		String				componentName	= boxComponent.getName();
+		List<BoxAnnotation>	attributes		= boxComponent.getAttributes();
+
+		// Check for custom tag shortcut like <cf_brad>
+		if ( componentName.startsWith( "_" ) ) {
+			attributes.add(
+			    new BoxAnnotation(
+			        new BoxFQN( "name", null, componentName ),
+			        new BoxStringLiteral( componentName.substring( 1 ), null, componentName ),
+			        null,
+			        null )
+			);
+			componentName = "module";
+		}
+
 		// create key of component name
-		nodes.addAll( transpiler.createKey( boxComponent.getName() ) );
+		nodes.addAll( transpiler.createKey( componentName ) );
 
 		// convert attributes to struct
-		nodes.addAll( transpiler.transformAnnotations( boxComponent.getAttributes() ) );
+		nodes.addAll( transpiler.transformAnnotations( attributes, true, false ) );
 
 		// Component.ComponentBody
 		nodes.addAll( generateBodyNodes( boxComponent.getBody() ) );
@@ -62,7 +84,48 @@ public class BoxComponentTransformer extends AbstractTransformer {
 		    Type.getMethodDescriptor( Type.getType( Component.BodyResult.class ), Type.getType( Key.class ), Type.getType( IStruct.class ),
 		        Type.getType( Component.ComponentBody.class ) ),
 		    true ) );
+
+		if ( boxComponent.getBody() == null || boxComponent.getBody().size() == 0 ) {
+			nodes.add( new InsnNode( Opcodes.POP ) );
+
+			transpiler.decrementComponentCounter();
+
+			return nodes;
+		}
+
+		if ( transpiler.canReturn() ) {
+			LabelNode ifLabel = new LabelNode();
+
+			nodes.add( new InsnNode( Opcodes.DUP ) );
+
+			nodes.add(
+			    new MethodInsnNode(
+			        Opcodes.INVOKEVIRTUAL,
+			        Type.getInternalName( Component.BodyResult.class ),
+			        "isEarlyExit",
+			        Type.getMethodDescriptor( Type.BOOLEAN_TYPE ),
+			        false
+			    )
+			);
+
+			nodes.add( new JumpInsnNode( Opcodes.IFEQ, ifLabel ) );
+
+			nodes.add(
+			    new MethodInsnNode(
+			        Opcodes.INVOKEVIRTUAL,
+			        Type.getInternalName( Component.BodyResult.class ),
+			        "returnValue",
+			        Type.getMethodDescriptor( Type.getType( Object.class ) ),
+			        false
+			    )
+			);
+
+			nodes.add( new InsnNode( Opcodes.ARETURN ) );
+
+			nodes.add( ifLabel );
+		}
 		nodes.add( new InsnNode( Opcodes.POP ) );
+		transpiler.decrementComponentCounter();
 
 		return nodes;
 	}

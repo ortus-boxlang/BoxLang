@@ -25,9 +25,9 @@ import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
 import ch.qos.logback.classic.spi.Configurator;
 import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.classic.spi.LoggerContextAwareBase;
 import ch.qos.logback.core.ConsoleAppender;
-import ch.qos.logback.core.spi.ContextAwareBase;
-import ch.qos.logback.core.util.StatusPrinter;
+import ch.qos.logback.core.Context;
 import ortus.boxlang.runtime.BoxRuntime;
 
 /**
@@ -40,7 +40,7 @@ import ortus.boxlang.runtime.BoxRuntime;
  *
  * See https://logback.qos.ch/manual/configuration.html for more information on logback configuration.
  */
-public class LoggingConfigurator extends ContextAwareBase implements Configurator {
+public class LoggingConfigurator extends LoggerContextAwareBase implements Configurator {
 
 	/**
 	 * Logback-specific encoder pattern. Thankfully, this is fairly legible compared to the JUL pattern.
@@ -50,7 +50,7 @@ public class LoggingConfigurator extends ContextAwareBase implements Configurato
 	 */
 	public static String				LOG_FORMAT	= "%date %logger{0} [%level] %kvp %message%n";
 
-	public static PatternLayoutEncoder	encoder		= new PatternLayoutEncoder();
+	public static PatternLayoutEncoder	encoder;
 
 	/**
 	 * Default constructor needed by logback
@@ -69,19 +69,22 @@ public class LoggingConfigurator extends ContextAwareBase implements Configurato
 	 * @return The status of the configuration
 	 */
 	public ExecutionStatus configure( LoggerContext loggerContext ) {
-		// Base log level depending on debug mode
-		var		debugMode	= BoxRuntime.getInstance().inDebugMode();
-		Level	logLevel	= Boolean.TRUE.equals( debugMode ) ? Level.DEBUG : Level.WARN;
 
-		// Setup the Pattern Layout Encoder
-		// See: https://logback.qos.ch/manual/layouts.html#ClassicPatternLayout
+		// LoggerContext loggerContext = new LoggerContext();
+		loggerContext.setName( "BoxLang" );
+
+		encoder = new PatternLayoutEncoder();
 		encoder.setContext( loggerContext );
 		encoder.setPattern( LOG_FORMAT );
 		encoder.start();
 
+		// Base log level depending on debug mode
+		var								debugMode	= BoxRuntime.getInstance().inDebugMode();
+		Level							logLevel	= Boolean.TRUE.equals( debugMode ) ? Level.DEBUG : Level.WARN;
+
 		// Configure a Console Appender
 		// See: https://logback.qos.ch/manual/appenders.html
-		ConsoleAppender<ILoggingEvent> appender = new ConsoleAppender<>();
+		ConsoleAppender<ILoggingEvent>	appender	= new ConsoleAppender<>();
 		appender.setContext( loggerContext );
 		appender.setEncoder( encoder );
 		appender.start();
@@ -91,15 +94,11 @@ public class LoggingConfigurator extends ContextAwareBase implements Configurato
 		rootLogger.setLevel( logLevel );
 		rootLogger.addAppender( appender );
 
-		// Print logback internal status
-		// See https://logback.qos.ch/manual/configuration.html#debug
-		// This is useful for debugging logback configuration issues
-		if ( Boolean.TRUE.equals( debugMode ) ) {
-			StatusPrinter.print( loggerContext );
-		}
+		setLoggerContext( loggerContext );
 
 		// We should be the last configurator to run, so stop searching for further configurators.
 		return ExecutionStatus.DO_NOT_INVOKE_NEXT_IF_ANY;
+
 	}
 
 	/**
@@ -116,6 +115,19 @@ public class LoggingConfigurator extends ContextAwareBase implements Configurato
 		Level	logLevel	= Boolean.TRUE.equals( debugMode ) ? Level.DEBUG : Level.INFO;
 		Logger	rootLogger	= ( Logger ) LoggerFactory.getLogger( Logger.ROOT_LOGGER_NAME );
 		rootLogger.setLevel( logLevel );
+	}
+
+	/**
+	 * Override to set the context on the encoder
+	 *
+	 **/
+	public void setContext( Context context ) {
+		if ( this.context == null ) {
+			this.context = context;
+		} else if ( this.context != context ) {
+			getLoggerContext().getLogger( Logger.ROOT_LOGGER_NAME )
+			    .error( "LoggingConfigurator context has been already set and an attempt to overwrite was made." );
+		}
 	}
 
 }

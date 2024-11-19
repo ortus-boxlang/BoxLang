@@ -21,8 +21,8 @@ import java.util.Set;
 
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
-import ortus.boxlang.runtime.types.immutable.IImmutable;
-import ortus.boxlang.runtime.types.immutable.ImmutableStruct;
+import ortus.boxlang.runtime.types.unmodifiable.IUnmodifiable;
+import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableStruct;
 
 /**
  * This class represents BoxLang metadata for a Scope
@@ -42,9 +42,9 @@ public class ScopeMeta extends BoxMeta {
 		this.$class	= target.getClass();
 
 		// Assemble the metadata
-		this.meta	= ImmutableStruct.of(
+		this.meta	= UnmodifiableStruct.of(
 		    "type", this.target.getType().name(),
-		    "immutable", this.target instanceof IImmutable,
+		    "unmodifiable", this.target instanceof IUnmodifiable,
 		    "casesensitive", this.target.isCaseSensitive(),
 		    "soft", this.target.isSoftReferenced(),
 		    "ordered", this.target.getType().equals( IStruct.TYPES.LINKED ) || this.target.getType().equals( IStruct.TYPES.LINKED_CASE_SENSITIVE ),

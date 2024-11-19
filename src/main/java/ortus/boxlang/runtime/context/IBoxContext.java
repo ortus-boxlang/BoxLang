@@ -296,13 +296,22 @@ public interface IBoxContext extends IBoxAttachable, Serializable {
 	public Key findClosestFunctionName();
 
 	/**
-	 * Push a template to the stack
+	 * Push a template and imports to the stack
 	 *
 	 * @param template The template that this execution context is bound to
 	 *
 	 * @return IBoxContext
 	 */
 	public IBoxContext pushTemplate( IBoxRunnable template );
+
+	/**
+	 * Push a template to the stack
+	 *
+	 * @param template The template that this execution context is bound to
+	 *
+	 * @return IBoxContext
+	 */
+	public IBoxContext pushTemplate( ResolvedFilePath template );
 
 	/**
 	 * Pop a template from the stack
@@ -595,6 +604,26 @@ public interface IBoxContext extends IBoxAttachable, Serializable {
 	public <T> T getParentOfType( Class<T> type );
 
 	/**
+	 * Serach for an ancestor context of RequestBoxContext
+	 * This is a convenience method for getParentOfType( RequestBoxContext.class )
+	 * since it is so common
+	 *
+	 * @return The matching parent RequestBoxContext, or null if one is not found of this
+	 *         type.
+	 */
+	public RequestBoxContext getRequestContext();
+
+	/**
+	 * Serach for an ancestor context of ApplicationBoxContext
+	 * This is a convenience method for getParentOfType( ApplicationBoxContext.class )
+	 * since it is so common
+	 *
+	 * @return The matching parent ApplicationBoxContext, or null if one is not found of this
+	 *         type.
+	 */
+	public ApplicationBoxContext getApplicationContext();
+
+	/**
 	 * Convenience method to retrieve a single config item
 	 *
 	 * @param itemKey the object key to retrieve
@@ -662,7 +691,7 @@ public interface IBoxContext extends IBoxAttachable, Serializable {
 
 	/**
 	 * Register a UDF with a specific scope
-	 * 
+	 *
 	 * @param map      The map to assign to
 	 * @param udf      The UDF to register
 	 * @param override true, override any existing UDF with the same name
@@ -677,5 +706,14 @@ public interface IBoxContext extends IBoxAttachable, Serializable {
 			}
 		}
 	}
+
+	/**
+	 * This implements a check if a value is defined, which allows the compat module to override for CF behavior
+	 *
+	 * @param value The value to check
+	 *
+	 * @return True if the value is defined, else false
+	 */
+	public boolean isDefined( Object value );
 
 }

@@ -51,12 +51,15 @@ public class IsEmpty extends BIF {
 	}
 
 	/**
-	 * Determine whether a given value is empty
+	 * Determine whether a given value is empty. We check for emptiness of
+	 * anything that can be casted to: Array, Struct, Query, or String.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.value The value to test for emptiness.
+	 * @argument.value The value/object to check for emptiness.
+	 *
+	 * @return True if the value is empty, false otherwise.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object object = arguments.get( Key.value );

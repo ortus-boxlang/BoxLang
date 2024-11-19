@@ -111,8 +111,9 @@ public class ClassBoxContext extends BaseBoxContext {
 	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow ) {
 
 		// Direct Scope
-		if ( key.equals( thisScope.getName() ) ) {
-			return new ScopeSearchResult( getThisClass(), getThisClass(), key, true );
+		ScopeSearchResult thisSerach = scopeFindThis( key );
+		if ( thisSerach != null ) {
+			return thisSerach;
 		}
 
 		// Static Scope
@@ -121,13 +122,9 @@ public class ClassBoxContext extends BaseBoxContext {
 		}
 
 		// Super Class
-		if ( key.equals( Key._super ) ) {
-			if ( getThisClass().getSuper() != null ) {
-				return new ScopeSearchResult( getThisClass().getSuper(), getThisClass().getSuper(), key, true );
-			} else if ( getThisClass().isJavaExtends() ) {
-				var jSuper = DynamicObject.of( getThisClass() ).setTargetClass( getThisClass().getClass().getSuperclass() );
-				return new ScopeSearchResult( jSuper, jSuper, key, true );
-			}
+		ScopeSearchResult superSearch = scopeFindSuper( key );
+		if ( superSearch != null ) {
+			return superSearch;
 		}
 
 		// Special check for $bx
@@ -143,7 +140,7 @@ public class ClassBoxContext extends BaseBoxContext {
 
 		Object result = variablesScope.getRaw( key );
 		// Null means not found
-		if ( result != null ) {
+		if ( isDefined( result ) ) {
 			// Unwrap the value now in case it was really actually null for real
 			return new ScopeSearchResult( variablesScope, Struct.unWrapNull( result ), key );
 		}
@@ -155,6 +152,39 @@ public class ClassBoxContext extends BaseBoxContext {
 		// A component cannot see nearby scopes above it
 		return parent.scopeFind( key, defaultScope );
 
+	}
+
+	/**
+	 * This scope lookup abstracted for thread context to use
+	 *
+	 * @param key The key to search for
+	 *
+	 * @return The search result or null if not foud
+	 */
+	protected ScopeSearchResult scopeFindThis( Key key ) {
+		if ( key.equals( thisScope.getName() ) ) {
+			return new ScopeSearchResult( getThisClass(), getThisClass(), key, true );
+		}
+		return null;
+	}
+
+	/**
+	 * Super scope lookup abstracted for thread context to use
+	 *
+	 * @param key The key to search for
+	 *
+	 * @return The search result or null if not foud
+	 */
+	protected ScopeSearchResult scopeFindSuper( Key key ) {
+		if ( key.equals( Key._super ) ) {
+			if ( getThisClass().getSuper() != null ) {
+				return new ScopeSearchResult( getThisClass().getSuper(), getThisClass().getSuper(), key, true );
+			} else if ( getThisClass().isJavaExtends() ) {
+				var jSuper = DynamicObject.of( getThisClass() ).setTargetClass( getThisClass().getClass().getSuperclass() );
+				return new ScopeSearchResult( jSuper, jSuper, key, true );
+			}
+		}
+		return null;
 	}
 
 	/**
@@ -273,6 +303,7 @@ public class ClassBoxContext extends BaseBoxContext {
 	 *
 	 * @return This context
 	 */
+	@Override
 	public IBoxContext flushBuffer( boolean force ) {
 		if ( !canOutput() && !force ) {
 			return this;
@@ -286,6 +317,7 @@ public class ClassBoxContext extends BaseBoxContext {
 	 *
 	 * @return Whether the function can output
 	 */
+	@Override
 	public Boolean canOutput() {
 		return getThisClass().canOutput();
 	}
@@ -296,6 +328,7 @@ public class ClassBoxContext extends BaseBoxContext {
 	 *
 	 * @return Return value of the function call
 	 */
+	@Override
 	public Object invokeFunction( Key name, Object[] positionalArguments ) {
 		BIFDescriptor bif = findBIF( name );
 		if ( bif != null ) {
@@ -326,6 +359,7 @@ public class ClassBoxContext extends BaseBoxContext {
 	 *
 	 * @return Return value of the function call
 	 */
+	@Override
 	public Object invokeFunction( Key name, Map<Key, Object> namedArguments ) {
 		BIFDescriptor bif = findBIF( name );
 		if ( bif != null ) {
@@ -351,6 +385,7 @@ public class ClassBoxContext extends BaseBoxContext {
 	 *
 	 * @return Return value of the function call
 	 */
+	@Override
 	public Object invokeFunction( Key name ) {
 		BIFDescriptor bif = findBIF( name );
 		if ( bif != null ) {
@@ -371,6 +406,15 @@ public class ClassBoxContext extends BaseBoxContext {
 			}
 		}
 		return invokeFunction( function, name, new Object[] {} );
+	}
+
+	/**
+	 * Get the "this" scope
+	 *
+	 * @return The "this" scope
+	 */
+	public IScope getThisScope() {
+		return thisScope;
 	}
 
 }

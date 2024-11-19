@@ -79,6 +79,19 @@ public class DuplicateTest {
 	@DisplayName( "It tests the BIF Duplicate can duplicate a struct" )
 	@Test
 	public void testDuplicateStruct() {
+
+		// @formatter:off
+		instance.executeSource(
+		    """
+				ref = {};
+				result = duplicate( ref );
+				result.foo = "bar";
+			""",
+		    context
+		);
+		// @formatter:on
+		assertTrue( variables.getAsStruct( refKey ).isEmpty() );
+
 		// @formatter:off
 		instance.executeSource(
 		    """
@@ -444,6 +457,88 @@ public class DuplicateTest {
 		    context );
 		assertNull( variables.get( refKey ) );
 		assertNull( variables.get( resultKey ) );
+	}
+
+	@DisplayName( "It can duplicate a class" )
+	@Test
+	public void testDuplicateAClass() {
+		instance.executeSource(
+		    """
+		          clazz = new src.test.java.TestCases.phase3.MyClass();
+		       clazz.complex = [ foo : "bar" ]
+		        request.foo = "bar2"
+		          clazz2 = duplicate( clazz, false );
+		       clazz2.complex.baz = "bum"
+		    // struct is shared by reference
+		      assert structKeyList( clazz.complex ) == "foo,baz";
+		       assert structKeyList( clazz2.complex ) == "foo,baz";
+
+		          // execute public method
+		          result = clazz2.foo();
+
+		          // private methods error
+		          try {
+		          	clazz2.bar()
+		          	assert false;
+		          } catch( BoxRuntimeException e ) {
+		          	assert e.message contains "bar";
+		          }
+
+		          // pseduoconstructor should NOT run again
+		          assert request.foo == "bar2"
+
+		          // Can call public method that accesses private method, and variables, and request scope
+		          assert result == "I work! whee true true bar2 true";
+
+		          // This scope is reference to actual CFC instance
+		          assert clazz2.$bx.$class.getName() == clazz2.getThis().$bx.$class.getName();
+
+		          // Can call public methods on this
+		          assert clazz2.runThisFoo() == "I work! whee true true bar2 true";
+
+		          assert clazz2.thisVar == "thisValue";
+		            		         """,
+		    context );
+	}
+
+	@DisplayName( "It can duplicate a class deeply" )
+	@Test
+	public void testDuplicateAClassDeeply() {
+		instance.executeSource(
+		    """
+		         clazz = new src.test.java.TestCases.phase3.MyClass();
+		      clazz.complex = [ foo : "bar" ]
+		       request.foo = "bar2"
+		         clazz2 = duplicate( clazz, true );
+		       clazz2.complex.baz = "bum"
+		       assert structKeyList( clazz.complex ) == "foo";
+		    assert structKeyList( clazz2.complex ) == "foo,baz";
+		         // execute public method
+		         result = clazz2.foo();
+
+		         // private methods error
+		         try {
+		         	clazz2.bar()
+		         	assert false;
+		         } catch( BoxRuntimeException e ) {
+		         	assert e.message contains "bar";
+		         }
+
+		         // pseduoconstructor should NOT run again
+		         assert request.foo == "bar2"
+
+		         // Can call public method that accesses private method, and variables, and request scope
+		         assert result == "I work! whee true true bar2 true";
+
+		         // This scope is reference to actual CFC instance
+		         assert clazz2.$bx.$class.getName() == clazz2.getThis().$bx.$class.getName();
+
+		         // Can call public methods on this
+		         assert clazz2.runThisFoo() == "I work! whee true true bar2 true";
+
+		         assert clazz2.thisVar == "thisValue";
+		           		         """,
+		    context );
 	}
 
 	@Disabled( "Performance benchmark test on a struct" )

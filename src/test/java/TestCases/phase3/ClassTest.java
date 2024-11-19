@@ -38,6 +38,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.RequestScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.AbstractClassException;
@@ -385,6 +386,8 @@ public class ClassTest {
 
 				// Can call public methods on this
 				assert cfc.runThisFoo() == "I work! whee true true bar true";
+
+				assert cfc.thisVar == "thisValue";
 			""", context );
 		// @formatter:on
 	}
@@ -400,9 +403,9 @@ public class ClassTest {
 
 		var	cfc		= variables.getAsClassRunnable( Key.of( "cfc" ) );
 		var	meta	= cfc.getMetaData();
-		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "src.test.java.testcases.phase3.MyClass" );
+		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "src.test.java.TestCases.phase3.MyClass" );
 		assertThat( meta.get( Key.of( "type" ) ) ).isEqualTo( "Component" );
-		assertThat( meta.get( Key.of( "fullname" ) ) ).isEqualTo( "src.test.java.testcases.phase3.MyClass" );
+		assertThat( meta.get( Key.of( "fullname" ) ) ).isEqualTo( "src.test.java.TestCases.phase3.MyClass" );
 		assertThat( meta.getAsString( Key.of( "path" ) ).contains( "MyClass.bx" ) ).isTrue();
 		// assertThat( meta.get( Key.of( "hashcode" ) ) ).isEqualTo( cfc.hashCode() );
 		assertThat( meta.get( Key.of( "properties" ) ) ).isInstanceOf( Array.class );
@@ -429,9 +432,9 @@ public class ClassTest {
 
 		var	cfc		= variables.getAsClassRunnable( Key.of( "cfc" ) );
 		var	meta	= cfc.getMetaData();
-		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "src.test.java.testcases.phase3.MyClassCF" );
+		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "src.test.java.TestCases.phase3.MyClassCF" );
 		assertThat( meta.get( Key.of( "type" ) ) ).isEqualTo( "Component" );
-		assertThat( meta.get( Key.of( "fullname" ) ) ).isEqualTo( "src.test.java.testcases.phase3.MyClassCF" );
+		assertThat( meta.get( Key.of( "fullname" ) ) ).isEqualTo( "src.test.java.TestCases.phase3.MyClassCF" );
 		assertThat( meta.getAsString( Key.of( "path" ) ).contains( "MyClassCF.cfc" ) ).isTrue();
 		// assertThat( meta.get( Key.of( "hashcode" ) ) ).isEqualTo( cfc.hashCode() );
 		assertThat( meta.get( Key.of( "properties" ) ) ).isInstanceOf( Array.class );
@@ -496,10 +499,17 @@ public class ClassTest {
 		var	boxMeta	= ( ClassMeta ) cfc.getBoxMeta();
 		var	meta	= boxMeta.meta;
 		assertThat( meta.get( Key.of( "type" ) ) ).isEqualTo( "Component" );
-		assertThat( meta.get( Key.of( "fullname" ) ) ).isEqualTo( "src.test.java.testcases.phase3.MyClass" );
+		assertThat( meta.get( Key.of( "fullname" ) ) ).isEqualTo( "src.test.java.TestCases.phase3.MyClass" );
 		assertThat( meta.getAsString( Key.of( "path" ) ).contains( "MyClass.bx" ) ).isTrue();
 		assertThat( meta.get( Key.of( "hashcode" ) ) ).isEqualTo( cfc.hashCode() );
 		assertThat( meta.get( Key.of( "properties" ) ) instanceof Array ).isTrue();
+		Array properties = meta.getAsArray( Key.of( "properties" ) );
+		assertThat( properties.size() ).isEqualTo( 1 );
+		assertThat( properties.get( 0 ) instanceof IStruct ).isTrue();
+		IStruct prop = ( IStruct ) properties.get( 0 );
+		assertThat( prop.getAsStruct( Key.documentation ) ).containsKey( Key.of( "test" ) );
+		assertThat( prop.getAsStruct( Key.documentation ).get( Key.of( "test" ) ) ).isEqualTo( "" );
+
 		assertThat( meta.get( Key.of( "functions" ) ) instanceof Array ).isTrue();
 
 		assertThat( meta.get( Key.of( "extends" ) ) instanceof IStruct ).isTrue();
@@ -508,12 +518,12 @@ public class ClassTest {
 		var fun1 = meta.getAsArray( Key.of( "functions" ) ).get( 0 );
 		assertThat( fun1 ).isInstanceOf( Struct.class );
 		assertThat( ( ( IStruct ) fun1 ).containsKey( Key.of( "name" ) ) ).isTrue();
-		System.out.println( meta.getAsArray( Key.of( "functions" ) ).asString() );
 
 		assertThat( meta.get( Key.of( "documentation" ) ) instanceof IStruct ).isTrue();
 		var docs = meta.getAsStruct( Key.of( "documentation" ) );
 		assertThat( docs.getAsString( Key.of( "brad" ) ).trim() ).isEqualTo( "wood" );
 		assertThat( docs.get( Key.of( "luis" ) ) ).isEqualTo( "" );
+		assertThat( docs.getAsString( Key.of( "_itwontlikeme~`!@#$%^&*()-=+[]{}\\|'\";:,.<>/?*áéíóúüñ" ) ).trim() ).isEqualTo( "formbuilderV2Form" );
 		assertThat( docs.getAsString( Key.of( "hint" ) ).trim() ).isEqualTo( "This is my class description continued on this line \nand this one as well." );
 
 		assertThat( meta.get( Key.of( "annotations" ) ) instanceof IStruct ).isTrue();
@@ -545,6 +555,8 @@ public class ClassTest {
 				nameGet2 = cfc.getMyProperty();
 				test1 = cfc.getShortcutWithDefault()
 				test2 = cfc.getTypedShortcutWithDefault()
+				test3 = cfc.getChain()
+				test4 = cfc.getName()
 		    """, context );
 		// @formatter:on
 
@@ -555,11 +567,13 @@ public class ClassTest {
 		assertThat( variables.get( Key.of( "invalidSetErrored" ) ) ).isEqualTo( true );
 		assertThat( variables.get( Key.of( "test1" ) ) ).isEqualTo( "myDefaultValue" );
 		assertThat( variables.get( Key.of( "test2" ) ) ).isEqualTo( "myDefaultValue2" );
+		assertThat( variables.get( Key.of( "test3" ) ) ).isEqualTo( new Array() );
+		assertThat( variables.get( Key.of( "test4" ) ) ).isNull();
 
 		var	boxMeta	= ( ClassMeta ) cfc.getBoxMeta();
 		var	meta	= boxMeta.meta;
 
-		assertThat( meta.getAsArray( Key.of( "properties" ) ).size() ).isEqualTo( 6 );
+		assertThat( meta.getAsArray( Key.of( "properties" ) ).size() ).isEqualTo( 7 );
 
 		var prop1 = ( IStruct ) meta.getAsArray( Key.of( "properties" ) ).get( 0 );
 		assertThat( prop1.get( "name" ) ).isEqualTo( "myProperty" );
@@ -618,13 +632,14 @@ public class ClassTest {
 
 		instance.executeSource(
 		    """
-		        	cfc = new src.test.java.TestCases.phase3.PropertyTestCF();
-		      nameGet = cfc.getMyProperty();
-		      setResult = cfc.SetMyProperty( "anotherValue" );
-		      nameGet2 = cfc.getMyProperty();
+		    cfc = new src.test.java.TestCases.phase3.PropertyTestCF();
+		    nameGet = cfc.getMyProperty();
+		    setResult = cfc.SetMyProperty( "anotherValue" );
+		    nameGet2 = cfc.getMyProperty();
 		    test1 = cfc.getShortcutWithDefault()
 		    test2 = cfc.getTypedShortcutWithDefault()
-		        """, context );
+		    test3 = cfc.getChain()
+		           """, context );
 
 		var cfc = variables.getAsClassRunnable( Key.of( "cfc" ) );
 
@@ -633,11 +648,12 @@ public class ClassTest {
 		assertThat( variables.get( Key.of( "setResult" ) ) ).isEqualTo( cfc );
 		assertThat( variables.get( Key.of( "test1" ) ) ).isEqualTo( "myDefaultValue" );
 		assertThat( variables.get( Key.of( "test2" ) ) ).isEqualTo( "myDefaultValue2" );
+		assertThat( variables.get( Key.of( "test3" ) ) ).isEqualTo( new Array() );
 
 		var	boxMeta	= ( ClassMeta ) cfc.getBoxMeta();
 		var	meta	= boxMeta.meta;
 
-		assertThat( meta.getAsArray( Key.of( "properties" ) ).size() ).isEqualTo( 4 );
+		assertThat( meta.getAsArray( Key.of( "properties" ) ).size() ).isEqualTo( 5 );
 
 		var prop1 = ( IStruct ) meta.getAsArray( Key.of( "properties" ) ).get( 0 );
 		assertThat( prop1.get( "name" ) ).isEqualTo( "myProperty" );
@@ -814,11 +830,11 @@ public class ClassTest {
 		    // Then the concrete class inits. getCurrentTemplate() shows the concrete class.
 		    "Chihuahua init Chihuahua.cfc",
 		    // A method inherited from a base class, sees "this" as the concrete class.
-		    "animal this is: src.test.java.testcases.phase3.Chihuahua",
+		    "animal this is: src.test.java.TestCases.phase3.Chihuahua",
 		    // A method inherited from a base class, sees the top level "variables" scope.
 		    "animal sees inDog as: true",
 		    // A method delegated to as super.foo() sees "this" as the concrete class.
-		    "super animal sees: src.test.java.testcases.phase3.Chihuahua",
+		    "super animal sees: src.test.java.TestCases.phase3.Chihuahua",
 		    // A method delegated to as super.foo() sees the top level "variables" scope.
 		    "super sees inDog as: true",
 		} );
@@ -827,13 +843,13 @@ public class ClassTest {
 		var	boxMeta	= ( ClassMeta ) cfc.getBoxMeta();
 		var	meta	= boxMeta.meta;
 
-		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "src.test.java.testcases.phase3.Chihuahua" );
+		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "src.test.java.TestCases.phase3.Chihuahua" );
 
 		IStruct extendsMeta = meta.getAsStruct( Key.of( "extends" ) );
-		assertThat( extendsMeta.getAsString( Key.of( "name" ) ).endsWith( ".Dog" ) ).isTrue();
+		assertThat( extendsMeta.getAsString( Key.of( "name" ) ) ).endsWith( ".Dog" );
 
 		extendsMeta = extendsMeta.getAsStruct( Key.of( "extends" ) );
-		assertThat( extendsMeta.getAsString( Key.of( "name" ) ).endsWith( ".Animal" ) ).isTrue();
+		assertThat( extendsMeta.getAsString( Key.of( "name" ) ) ).endsWith( ".Animal" );
 
 		extendsMeta = extendsMeta.getAsStruct( Key.of( "extends" ) );
 		assertThat( extendsMeta ).hasSize( 0 );
@@ -1074,7 +1090,10 @@ public class ClassTest {
 		                        myStaticUDF   = src.test.java.TestCases.phase3.StaticTest::sayHello;
 		                        result7   =  myStaticUDF();
 		                        result8 = src.test.java.TestCases.phase3.StaticTest::123;
-		                                                               """, context, BoxSourceType.BOXSCRIPT );
+		                        result9 = src.test.java.TestCases.phase3.StaticTest2::getInstance().getStaticBrad();
+		                        result10 = src.test.java.TestCases.phase3.StaticTest2::getInstance().thisStaticBrad;
+		                                                                                                                      """, context,
+		    BoxSourceType.BOXSCRIPT );
 		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( 9000 );
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "static9000" );
 		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "brad" );
@@ -1082,45 +1101,82 @@ public class ClassTest {
 		assertThat( variables.get( Key.of( "result6" ) ) ).isEqualTo( "luis" );
 		assertThat( variables.get( Key.of( "result7" ) ) ).isEqualTo( "Hello" );
 		assertThat( variables.get( Key.of( "result8" ) ) ).isEqualTo( 456 );
+		assertThat( variables.get( Key.of( "result9" ) ) ).isEqualTo( "wood" );
+		assertThat( variables.get( Key.of( "result10" ) ) ).isEqualTo( "wood" );
+	}
+
+	@Test
+	public void testStaticNestedMethod() {
+		instance.executeSource(
+		    """
+		      	import java.lang.Thread;
+		      	result = Thread::currentThread().getContextClassLoader();
+		    // This is the same as above
+		      	result2 = Thread.currentThread().getContextClassLoader();
+		      """, context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.get( result ) ).isNotNull();
+		assertThat( variables.get( result ) ).isInstanceOf( ClassLoader.class );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isNotNull();
+		assertThat( variables.get( Key.of( "result2" ) ) ).isInstanceOf( ClassLoader.class );
+	}
+
+	@Test
+	public void testStaticNestedProperty() {
+		instance.executeSource(
+		    """
+		      	import java.lang.System;
+		      	System::out.println( "testStaticNestedProperty test" );
+		    // This is the same as above.
+		      	System.out.println( "testStaticNestedProperty test2" );
+		      """, context, BoxSourceType.BOXSCRIPT );
 	}
 
 	@Test
 	public void testStaticInstanceCF() {
 		instance.executeSource(
 		    """
-		             clazz = new src.test.java.TestCases.phase3.StaticTestCF();
+		    clazz = new src.test.java.TestCases.phase3.StaticTestCF();
 		    result1 = clazz.foo;
 		    result2 = clazz.myStaticFunc();
 		    result3 = clazz.myInstanceFunc();
 		    result4 = clazz.scoped;
 		    result5 = clazz.unscoped;
 		    result6 = clazz.again;
-		               """, context, BoxSourceType.CFSCRIPT );
+		    result7 = clazz.getStaticBrad();
+		    clazz2 = new src.test.java.TestCases.phase3.StaticTestCF();
+		    result8 = clazz2.getStaticBrad();
+		                       """, context, BoxSourceType.CFSCRIPT );
 		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( 42 );
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "static42" );
 		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( "instancestatic42" );
 		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "brad" );
 		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( "wood" );
 		assertThat( variables.get( Key.of( "result6" ) ) ).isEqualTo( "luis" );
+		assertThat( variables.get( Key.of( "result7" ) ) ).isEqualTo( "wood" );
+		assertThat( variables.get( Key.of( "result8" ) ) ).isEqualTo( "wood" );
 	}
 
 	@Test
 	public void testStaticStaticCF() {
 		instance.executeSource(
 		    """
-		    result1 = src.test.java.TestCases.phase3.StaticTest::foo;
-		    result2 = src.test.java.TestCases.phase3.StaticTest::myStaticFunc();
-		    result4 = src.test.java.TestCases.phase3.StaticTest::scoped;
-		    result5 = src.test.java.TestCases.phase3.StaticTest::unscoped;
-		    result6 = src.test.java.TestCases.phase3.StaticTest::again;
-		    result7 = src.test.java.TestCases.phase3.StaticTest::123;
-		                     """, context, BoxSourceType.CFSCRIPT );
+		    	result1 = src.test.java.TestCases.phase3.StaticTest::foo;
+		    	result2 = src.test.java.TestCases.phase3.StaticTest::myStaticFunc();
+		    	result4 = src.test.java.TestCases.phase3.StaticTest::scoped;
+		    	result5 = src.test.java.TestCases.phase3.StaticTest::unscoped;
+		    	result6 = src.test.java.TestCases.phase3.StaticTest::again;
+		    	result7 = src.test.java.TestCases.phase3.StaticTest::123;
+		    	result9 = src.test.java.TestCases.phase3.StaticTestCF2::getInstance().getStaticBrad();
+		    	result10 = src.test.java.TestCases.phase3.StaticTestCF2::getInstance().thisStaticBrad;
+		    """, context, BoxSourceType.CFSCRIPT );
 		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( 9000 );
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "static9000" );
 		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "brad" );
 		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( "wood" );
 		assertThat( variables.get( Key.of( "result6" ) ) ).isEqualTo( "luis" );
 		assertThat( variables.get( Key.of( "result7" ) ) ).isEqualTo( 456 );
+		assertThat( variables.get( Key.of( "result9" ) ) ).isEqualTo( "wood" );
+		assertThat( variables.get( Key.of( "result10" ) ) ).isEqualTo( "wood" );
 	}
 
 	@Test
@@ -1146,19 +1202,23 @@ public class ClassTest {
 	public void testStaticImportDot() {
 		instance.executeSource(
 		    """
-		    import src.test.java.TestCases.phase3.StaticTest;
+		          import src.test.java.TestCases.phase3.StaticTest;
 
-		       result1 = StaticTest.foo;
-		       result2 = StaticTest.myStaticFunc();
-		       result4 = StaticTest.scoped;
-		       result5 = StaticTest.unscoped;
-		       result6 = StaticTest.again;
-		    // instance
-		    myInstance = new StaticTest();
-		    result7 = myInstance.foo;
-		    result8 = StaticTest.foo;
-		    result9 = myInstance.myInstanceFunc2()
-		                  """, context, BoxSourceType.BOXSCRIPT );
+		             result1 = StaticTest.foo;
+		             result2 = StaticTest.myStaticFunc();
+		             result4 = StaticTest.scoped;
+		             result5 = StaticTest.unscoped;
+		             result6 = StaticTest.again;
+		          // instance
+		          myInstance = new StaticTest();
+		          result7 = myInstance.foo;
+		          result8 = StaticTest.foo;
+		          result9 = myInstance.myInstanceFunc2()
+		       result10 = myInstance.getStaticBrad()
+		    myInstance2 = new StaticTest();
+		    result11 = myInstance2.getStaticBrad()
+
+		                        """, context, BoxSourceType.BOXSCRIPT );
 		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( 9000 );
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "static9000" );
 		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "brad" );
@@ -1172,6 +1232,8 @@ public class ClassTest {
 		assertThat( result9.get( 0 ) ).isEqualTo( "brad" );
 		assertThat( result9.get( 1 ) ).isEqualTo( "wood" );
 		assertThat( result9.get( 2 ) ).isEqualTo( 42 );
+		assertThat( variables.get( Key.of( "result10" ) ) ).isEqualTo( "wood" );
+		assertThat( variables.get( Key.of( "result11" ) ) ).isEqualTo( "wood" );
 	}
 
 	@Test
@@ -1282,6 +1344,7 @@ public class ClassTest {
 			    """, context );
 		} catch ( BoxRuntimeException e ) {
 			tagContext = ExceptionUtil.buildTagContext( e );
+			System.out.println( tagContext );
 		}
 		assertThat( tagContext ).isNotNull();
 		assertThat( tagContext.size() ).isEqualTo( 1 );
@@ -1302,6 +1365,76 @@ public class ClassTest {
 		    """
 		    cfc = new src.TEST.java.testcases.phase3.mYcLASS();
 		      """, context );
+	}
+
+	@Test
+	public void testMethodPropConflict() {
+		instance.executeSource(
+		    """
+		    	cfc = new src.test.java.TestCases.phase3.MethodPropConflict();
+		    	result = cfc.spyFoo();
+		    	result2 = cfc.spyBaz();
+		    """, context );
+		// propery value wins in variables scope of same name
+		assertThat( variables.get( result ) ).isEqualTo( "bar" );
+		// But variable set in super class's psedu constructor will get hammered by the concrete class's method
+		assertThat( variables.get( "result2" ) ).isInstanceOf( Function.class );
+		assertThat( ( ( Function ) variables.get( "result2" ) ).getName().getName() ).isEqualTo( "baz" );
+	}
+
+	@Test
+	public void testBinderProperties() {
+		instance.executeSource(
+		    """
+		      	cfc = new src.test.java.TestCases.phase3.ConcreteBinder("my injector");
+		    properties = cfc.getProperties();
+		    currentMapping = cfc.getCurrentMapping();
+		      """, context );
+		assertThat( variables.get( "properties" ) ).isInstanceOf( IStruct.class );
+		assertThat( variables.get( "currentMapping" ) ).isInstanceOf( Array.class );
+	}
+
+	@Test
+	public void testHypenInPath() {
+		instance.executeSource(
+		    """
+		      	cfc = new "src.test.java.TestCases.phase3.sub-folder.Funky-Class"();
+		    meta = cfc.$bx.meta;
+		      """, context );
+		assertThat( variables.get( "meta" ) ).isInstanceOf( IStruct.class );
+		assertThat( variables.getAsStruct( Key.of( "meta" ) ).getAsString( Key.fullname ) )
+		    .isEqualTo( "src.test.java.TestCases.phase3.sub-folder.Funky-Class" );
+	}
+
+	@Test
+	public void testColdBoxRenderer() {
+		instance.executeSource(
+		    """
+		    	cfc = new src.test.java.TestCases.phase3.MyRenderer();
+		    """, context );
+	}
+
+	@DisplayName( "bx: resolver prefix on new" )
+	@Test
+	public void testBXResolverPrefixNew() {
+
+		instance.executeSource(
+		    """
+		       cfc = new bx:src.test.java.TestCases.phase3.PropertyTestCF();
+		    """,
+		    context );
+	}
+
+	@DisplayName( "bx: resolver prefix on import" )
+	@Test
+	public void testBXResolverPrefixImport() {
+
+		instance.executeSource(
+		    """
+		    import bx:src.test.java.TestCases.phase3.PropertyTestCF as brad;
+		    new brad()
+		      """,
+		    context );
 	}
 
 }

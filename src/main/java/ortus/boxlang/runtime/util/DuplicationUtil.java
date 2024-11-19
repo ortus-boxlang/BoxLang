@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.util;
 
 import java.io.Serializable;
+import java.lang.reflect.InvocationTargetException;
 import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentSkipListMap;
@@ -28,8 +29,8 @@ import org.apache.commons.lang3.SerializationUtils;
 
 import ortus.boxlang.runtime.bifs.global.type.NullValue;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
-import ortus.boxlang.runtime.dynamic.casters.QueryCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
+import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.DateTime;
@@ -62,14 +63,14 @@ public class DuplicationUtil {
 			return target;
 		} else if ( target instanceof Enum<?> || target instanceof Class<?> ) {
 			return target;
-		} else if ( target instanceof IStruct && ( ( IStruct ) target ).isEmpty() ) {
-			return target;
-		} else if ( target instanceof IStruct ) {
-			return duplicateStruct( StructCaster.cast( target ), deep );
-		} else if ( target instanceof Array ) {
-			return duplicateArray( ArrayCaster.cast( target ), deep );
-		} else if ( target instanceof Query ) {
-			return duplicateQuery( QueryCaster.cast( target ), deep );
+		} else if ( target instanceof IClassRunnable icr ) {
+			return duplicateClass( icr, deep );
+		} else if ( target instanceof IStruct str ) {
+			return duplicateStruct( str, deep );
+		} else if ( target instanceof Array arr ) {
+			return duplicateArray( arr, deep );
+		} else if ( target instanceof Query arr ) {
+			return duplicateQuery( arr, deep );
 		} else if ( target instanceof DateTime dateTimeInstance ) {
 			return dateTimeInstance.clone();
 		} else if ( target instanceof Function ) {
@@ -91,6 +92,43 @@ public class DuplicationUtil {
 		}
 	}
 
+	private static IClassRunnable duplicateClass( IClassRunnable originalClass, Boolean deep ) {
+		IClassRunnable newClass;
+		try {
+			newClass = originalClass.getClass().getConstructor().newInstance();
+		} catch ( InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException
+		    | SecurityException e ) {
+			throw new BoxRuntimeException( "An exception occurred while duplicating the class", e );
+		}
+
+		// variables scope
+		if ( deep ) {
+			newClass.getVariablesScope().putAll( duplicateStruct( originalClass.getVariablesScope(), deep ) );
+		} else {
+			newClass.getVariablesScope().putAll( originalClass.getVariablesScope() );
+		}
+
+		// this scope
+		if ( deep ) {
+			newClass.getThisScope().putAll( duplicateStruct( originalClass.getThisScope(), deep ) );
+		} else {
+			newClass.getThisScope().putAll( originalClass.getThisScope() );
+		}
+
+		// super scope
+		if ( originalClass.getSuper() != null ) {
+			IClassRunnable newSuper = duplicateClass( originalClass.getSuper(), deep );
+			newSuper.setChild( newClass );
+			newClass._setSuper( newSuper );
+
+		}
+
+		// interfaces (these are singletons with no instance state, so nothing to really duplicate)
+		newClass.getInterfaces().addAll( originalClass.getInterfaces() );
+
+		return newClass;
+	}
+
 	/**
 	 * Duplicate a Struct object
 	 *
@@ -99,7 +137,7 @@ public class DuplicationUtil {
 	 *
 	 * @return A new Struct copy
 	 */
-	public static Struct duplicateStruct( IStruct target, Boolean deep ) {
+	public static IStruct duplicateStruct( IStruct target, Boolean deep ) {
 		var entries = target.entrySet().stream();
 
 		if ( target.getType().equals( Struct.TYPES.LINKED ) ) {

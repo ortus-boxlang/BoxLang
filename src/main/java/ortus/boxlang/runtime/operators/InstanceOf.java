@@ -18,12 +18,10 @@
 package ortus.boxlang.runtime.operators;
 
 import java.util.List;
-import java.util.Optional;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
-import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.runnables.BoxInterface;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 
@@ -63,18 +61,13 @@ public class InstanceOf implements IOperator {
 		if ( left instanceof IClassRunnable boxClass2 ) {
 			boxClass = boxClass2;
 			String boxClassName = boxClass.getName().getName();
-			if ( boxClassName.equalsIgnoreCase( type )
-			    || boxClassName.toLowerCase().endsWith( "." + type.toLowerCase() ) ) {
+			if ( looseClassCheck( boxClassName, type ) ) {
 				return true;
 			}
 		}
 
 		// Perform exact Java type check
-		if ( left.getClass().getName().equalsIgnoreCase( type )
-		    // Lucee does some loose typing here, not sure exactly how it works, but it's along these lines
-		    || left.getClass().getName().toLowerCase().endsWith( "." + type.toLowerCase() ) ) {
-
-			// System.out.println( "java exact check true" );
+		if ( looseClassCheck( left.getClass().getName(), type ) ) {
 			return true;
 		}
 
@@ -84,8 +77,7 @@ public class InstanceOf implements IOperator {
 			while ( ( _super = _super.getSuper() ) != null ) {
 				// For each super class, check if it's the same as the type
 				String boxClassName = _super.getName().getName();
-				if ( boxClassName.equalsIgnoreCase( type )
-				    || boxClassName.toLowerCase().endsWith( "." + type.toLowerCase() ) ) {
+				if ( looseClassCheck( boxClassName, type ) ) {
 					return true;
 				}
 				// For each super class, check if implements an interface of that type
@@ -100,16 +92,22 @@ public class InstanceOf implements IOperator {
 		}
 
 		// Perform Java inheritance check
-		Optional<DynamicObject> loadResult = ClassLocator.getInstance().safeLoad( context, type, "java" );
-		// true if left's class is the same as, or a superclass or superinterface of javaType
-		if ( loadResult.isPresent() && loadResult.get().getTargetClass().isAssignableFrom( left.getClass() ) ) {
+		Class<?> leftClass = left.getClass();
+		if ( isAssignableFromIgnoreCase( type, leftClass ) ) {
 			return true;
 		}
 
 		return false;
 	}
 
-	// I check a list of interfaces for a specific type
+	/**
+	 * I check a list of interfaces for a specific type
+	 * 
+	 * @param interfaces The interfaces to check
+	 * @param type       The type to check against
+	 * 
+	 * @return true if the interface is assignable from the type
+	 */
 	private static Boolean checkInterfaces( List<BoxInterface> interfaces, String type ) {
 		for ( BoxInterface boxInterface : interfaces ) {
 			if ( checkInterface( type, boxInterface ) ) {
@@ -119,11 +117,17 @@ public class InstanceOf implements IOperator {
 		return false;
 	}
 
-	// I check a single interface for a specific type and recurse into its super interfaces
+	/**
+	 * I check a single interface for a specific type and recurse into its super interfaces
+	 * 
+	 * @param type         The type to check against
+	 * @param boxInterface The interface to check
+	 * 
+	 * @return true if the interface is assignable from the type
+	 */
 	private static Boolean checkInterface( String type, BoxInterface boxInterface ) {
 		// If we match, quit
-		if ( boxInterface.getName().getName().equalsIgnoreCase( type )
-		    || boxInterface.getName().getName().toLowerCase().endsWith( "." + type.toLowerCase() ) ) {
+		if ( looseClassCheck( boxInterface.getName().getName(), type ) ) {
 			return true;
 		}
 		// If one of the super interfaces matches, quit
@@ -134,6 +138,61 @@ public class InstanceOf implements IOperator {
 		}
 		// We give up
 		return false;
+	}
+
+	/**
+	 * Check Java inheritance
+	 * 
+	 * @param targetTypeName The string type to check against
+	 * @param leftClass      The class to check
+	 * 
+	 * @return true if the class is assignable from the type
+	 */
+	private static boolean isAssignableFromIgnoreCase( String targetTypeName, Class<?> leftClass ) {
+		while ( leftClass != null ) {
+			if ( looseClassCheck( leftClass.getName(), targetTypeName ) ) {
+				return true;
+			}
+			// Check interfaces
+			if ( checkJavaInterfaces( leftClass.getInterfaces(), targetTypeName ) ) {
+				return true;
+			}
+			leftClass = leftClass.getSuperclass();
+		}
+		return false;
+	}
+
+	/**
+	 * Check Java interfaces including super interfaces
+	 * 
+	 * @param interfaces     The interfaces to check
+	 * @param targetTypeName The type to check against
+	 * 
+	 * @return true if the interface is assignable from the type
+	 */
+	private static boolean checkJavaInterfaces( Class<?>[] interfaces, String targetTypeName ) {
+		for ( Class<?> iface : interfaces ) {
+			if ( looseClassCheck( iface.getName(), targetTypeName ) ) {
+				return true;
+			}
+			// Recursively check superinterfaces
+			if ( checkJavaInterfaces( iface.getInterfaces(), targetTypeName ) ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Will match java.lang.String or just String, or even java.lang.string or string.
+	 * 
+	 * @param actual   The actual class name
+	 * @param expected The expected class name
+	 * 
+	 * @return true if the class names match
+	 */
+	private static boolean looseClassCheck( String actual, String expected ) {
+		return actual.equalsIgnoreCase( expected ) || actual.toLowerCase().endsWith( "." + expected.toLowerCase() );
 	}
 
 }

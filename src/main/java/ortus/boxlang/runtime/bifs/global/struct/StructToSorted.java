@@ -73,7 +73,7 @@ public class StructToSorted extends BIF {
 
 		IStruct recipient = StructCaster.cast( structCreator.invoke( context, arguments ) );
 
-		recipient.putAll( target.getWrapped() );
+		recipient.addAll( target.getWrapped() );
 
 		return recipient;
 

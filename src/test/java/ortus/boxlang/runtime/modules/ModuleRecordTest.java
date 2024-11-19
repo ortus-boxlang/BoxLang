@@ -31,7 +31,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.config.segments.ModuleConfig;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
@@ -42,6 +44,7 @@ import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.services.ModuleService;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
 
 class ModuleRecordTest {
 
@@ -146,6 +149,11 @@ class ModuleRecordTest {
 		String			physicalPath	= Paths.get( "./modules/test" ).toAbsolutePath().toString();
 		ModuleRecord	moduleRecord	= new ModuleRecord( physicalPath );
 		IBoxContext		context			= new ScriptingRequestBoxContext();
+		// Seed some configuration override
+		runtime.getConfiguration().modules.putIfAbsent( moduleName, new ModuleConfig( moduleName.getName() ).process( Struct.of() ) );
+		ModuleConfig testModuleConfig = ( ModuleConfig ) runtime.getConfiguration().modules.get( moduleName );
+		testModuleConfig.settings.putIfAbsent( Key.of( "nested" ), Struct.of() );
+		testModuleConfig.settings.getAsStruct( Key.of( "nested" ) ).putIfAbsent( Key.of( "supportedBy" ), "Jon" );
 
 		// When
 		moduleRecord.loadDescriptor( context );
@@ -172,6 +180,9 @@ class ModuleRecordTest {
 		assertThat( moduleRecord.disabled ).isEqualTo( false );
 		assertThat( moduleRecord.mapping ).isEqualTo( ModuleService.MODULE_MAPPING_PREFIX + "test" );
 		assertThat( moduleRecord.invocationPath ).isEqualTo( ModuleService.MODULE_MAPPING_INVOCATION_PREFIX + moduleRecord.name.getName() );
+		assertThat( moduleRecord.settings.getAsStruct( Key.of( "nested" ) ).get( Key.of( "SLA" ) ) ).isEqualTo( "24 hours" );
+		assertThat( moduleRecord.settings.getAsStruct( Key.of( "nested" ) ).get( Key.of( "supportedBy" ) ) ).isEqualTo( "Jon" );
+
 	}
 
 	@DisplayName( "Can activate a module descriptor" )
@@ -183,6 +194,7 @@ class ModuleRecordTest {
 		ModuleRecord	moduleRecord	= new ModuleRecord( physicalPath );
 		IBoxContext		context			= new ScriptingRequestBoxContext();
 		ModuleService	moduleService	= runtime.getModuleService();
+		JavaResolver	javaResolver	= runtime.getClassLocator().getJavaResolver();
 
 		// When
 		moduleRecord
@@ -209,11 +221,11 @@ class ModuleRecordTest {
 		assertThat( clazz.getName() ).isEqualTo( "HelloWorld" );
 
 		// JavaResolver can find the class explicitly
-		Optional<ClassLocation> classLocation = JavaResolver.getInstance().findFromModules( "HelloWorld@test", List.of(), context );
+		Optional<ClassLocation> classLocation = javaResolver.findFromModules( "HelloWorld@test", List.of(), context );
 		assertThat( classLocation.isPresent() ).isTrue();
 		assertThat( classLocation.get().clazz().getName() ).isEqualTo( "HelloWorld" );
 		// JavaResolver can find the class by discovery, it should interrogate all modules for it.
-		classLocation = JavaResolver.getInstance().findFromModules( "HelloWorld", List.of(), context );
+		classLocation = javaResolver.findFromModules( "HelloWorld", List.of(), context );
 		assertThat( classLocation.isPresent() ).isTrue();
 		assertThat( classLocation.get().clazz().getName() ).isEqualTo( "HelloWorld" );
 
@@ -239,5 +251,17 @@ class ModuleRecordTest {
 		    "Hello World, my name is boxlang and I am 0 years old"
 		);
 		// assertThat( variables.getAsString( Key.of( "result4" ) ) ).isEqualTo( "Hola Mundo!" );
+
+		// Test Module Class Locators
+		// @formatter:off
+		runtime.executeSource("""
+			helloClass = createObject( "models.Hello@test" )
+			result = helloClass.sayHello();
+		    """,
+			context,
+			BoxSourceType.BOXSCRIPT
+		);
+		// @formatter:on
+		assertThat( variables.getAsString( Key.result ) ).contains( "ModuleLand" );
 	}
 }

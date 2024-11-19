@@ -46,7 +46,7 @@ public class StructFindKey extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "structloose", Key.struct ),
-		    new Argument( true, "string", Key.key ),
+		    new Argument( true, "any", Key.key ),
 		    new Argument( false, "string", Key.scope, "one" )
 		};
 	}
@@ -64,7 +64,7 @@ public class StructFindKey extends BIF {
 	 * @argument.scope Either one (default), which finds the first instance or all to return all values
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Key				scopeKey		= Key.of( arguments.getAsString( Key.scope ) );
+		Key				scopeKey		= Key.of( arguments.get( Key.scope ) );
 		Stream<IStruct>	searchStream	= StructUtil.findKey(
 		    arguments.getAsStruct( Key.struct ),
 		    arguments.getAsString( Key.key )

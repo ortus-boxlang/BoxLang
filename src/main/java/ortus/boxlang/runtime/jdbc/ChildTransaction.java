@@ -93,6 +93,19 @@ public class ChildTransaction implements ITransaction {
 	}
 
 	/**
+	 * No-op for setting the datasource on a nested transaction.
+	 * <p>
+	 * The datasource is set on the parent transaction, and all child transactions inherit the datasource from their parent.
+	 * <p>
+	 * Will log a warning if called; otherwise no action taken.
+	 */
+	public ChildTransaction setDataSource( DataSource datasource ) {
+		logger.warn(
+		    "Cannot set datasource on a nested transaction. No action required; this nested transaction will use the datasource defined by the parent" );
+		return this;
+	}
+
+	/**
 	 * Get the datasource associated with this transaction.
 	 * <p>
 	 * Useful for checking that a given query is using the same datasource as its wrapping transaction.

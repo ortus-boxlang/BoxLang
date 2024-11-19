@@ -19,6 +19,7 @@ import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
+import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -55,11 +56,11 @@ public class ArrayAppend extends BIF {
 	 *                 appended as a single element.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Array	actualArray	= arguments.getAsArray( Key.array );
-		Object	value		= arguments.get( Key.value );
-		if ( arguments.getAsBoolean( Key.merge ) ) {
-			Array arrayToMerge = ArrayCaster.cast( value );
-			actualArray.addAll( arrayToMerge );
+		Array				actualArray	= arguments.getAsArray( Key.array );
+		Object				value		= arguments.get( Key.value );
+		CastAttempt<Array>	attempt		= ArrayCaster.attempt( value );
+		if ( arguments.getAsBoolean( Key.merge ) && attempt.wasSuccessful() ) {
+			actualArray.addAll( attempt.get() );
 		} else {
 			actualArray.add( value );
 		}

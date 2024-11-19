@@ -1188,6 +1188,29 @@ public class CoreLangTest {
 
 	}
 
+	@Test
+	public void testSwtichWithBreakInDefault() {
+
+		instance.executeSource(
+		    """
+		          	result = ""
+		          variables.foo = true;
+
+		          switch( "12" ) {
+		          case "brad":
+		    	result= "brad";
+		          	break;
+		          default:
+		    result="test";
+		      break;
+		          }
+		              """,
+		    context );
+
+		assertThat( variables.get( result ) ).isEqualTo( "test" );
+
+	}
+
 	@DisplayName( "switch fall through case" )
 	@Test
 	public void testSwtichFallThroughCase() {

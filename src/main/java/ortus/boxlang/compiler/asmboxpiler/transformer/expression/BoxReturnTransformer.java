@@ -19,8 +19,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.InsnNode;
+import org.objectweb.asm.tree.MethodInsnNode;
 
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
@@ -28,6 +30,7 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.statement.BoxReturn;
+import ortus.boxlang.runtime.components.Component;
 
 public class BoxReturnTransformer extends AbstractTransformer {
 
@@ -40,8 +43,25 @@ public class BoxReturnTransformer extends AbstractTransformer {
 		BoxReturn				boxReturn	= ( BoxReturn ) node;
 
 		List<AbstractInsnNode>	nodes		= new ArrayList<>();
+
+		if ( !transpiler.canReturn() ) {
+			nodes.add( new InsnNode( Opcodes.RETURN ) );
+			return nodes;
+		}
+
 		if ( boxReturn.getExpression() == null ) {
 			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+		} else if ( transpiler.isInsideComponent() ) {
+			nodes.addAll( transpiler.transform( boxReturn.getExpression(), TransformerContext.NONE, ReturnValueContext.VALUE_OR_NULL ) );
+			nodes.add(
+			    new MethodInsnNode(
+			        Opcodes.INVOKESTATIC,
+			        Type.getInternalName( Component.BodyResult.class ),
+			        "ofReturn",
+			        Type.getMethodDescriptor( Type.getType( Component.BodyResult.class ), Type.getType( Object.class ) ),
+			        false
+			    )
+			);
 		} else {
 			nodes.addAll( transpiler.transform( boxReturn.getExpression(), TransformerContext.NONE, ReturnValueContext.VALUE_OR_NULL ) );
 		}

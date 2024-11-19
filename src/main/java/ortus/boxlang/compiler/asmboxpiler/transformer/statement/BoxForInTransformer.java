@@ -30,6 +30,8 @@ import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.TypeInsnNode;
 import org.objectweb.asm.tree.VarInsnNode;
 
+import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
+import ortus.boxlang.compiler.asmboxpiler.AsmHelper.LineNumberIns;
 import ortus.boxlang.compiler.asmboxpiler.AsmTranspiler;
 import ortus.boxlang.compiler.asmboxpiler.MethodContextTracker;
 import ortus.boxlang.compiler.asmboxpiler.MethodContextTracker.VarStore;
@@ -54,9 +56,10 @@ public class BoxForInTransformer extends AbstractTransformer {
 	}
 
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnValueContext ) {
-		BoxForIn						forIn			= ( BoxForIn ) node;
-		List<AbstractInsnNode>			nodes			= new ArrayList<>();
-		Optional<MethodContextTracker>	trackerOption	= transpiler.getCurrentMethodContextTracker();
+		BoxForIn				forIn	= ( BoxForIn ) node;
+		List<AbstractInsnNode>	nodes	= new ArrayList<>();
+		AsmHelper.addDebugLabel( nodes, "BoxForIn" );
+		Optional<MethodContextTracker> trackerOption = transpiler.getCurrentMethodContextTracker();
 
 		if ( trackerOption.isEmpty() ) {
 			throw new IllegalStateException();
@@ -66,9 +69,20 @@ public class BoxForInTransformer extends AbstractTransformer {
 
 		LabelNode				loopStart	= new LabelNode();
 		LabelNode				loopEnd		= new LabelNode();
+		LabelNode				breakTarget	= new LabelNode();
+
+		tracker.setContinue( forIn, loopStart );
+		tracker.setBreak( forIn, breakTarget );
+		if ( forIn.getLabel() != null ) {
+			tracker.setStringLabel( forIn.getLabel(), forIn );
+		}
+
+		LineNumberIns expressionPos = AsmHelper.translatePosition( forIn.getExpression() );
+
+		nodes.addAll( expressionPos.start() );
 
 		// access the collection
-		nodes.addAll( transpiler.transform( forIn.getExpression(), context ) );
+		nodes.addAll( transpiler.transform( forIn.getExpression(), context, ReturnValueContext.VALUE_OR_NULL ) );
 		// unwrap it
 		nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
 		    Type.getInternalName( DynamicObject.class ),
@@ -154,9 +168,18 @@ public class BoxForInTransformer extends AbstractTransformer {
 		nodes.addAll( assignVar( forIn, iteratorVar.index(), context ) );
 		nodes.add( new InsnNode( Opcodes.POP ) );
 
+		nodes.addAll( expressionPos.end() );
+
 		nodes.addAll( transpiler.transform( forIn.getBody(), context, returnValueContext ) );
 
 		nodes.add( new JumpInsnNode( Opcodes.GOTO, loopStart ) );
+
+		nodes.add( breakTarget );
+		// every iteration we will swap the values and pop in order to remove the older value
+		if ( returnValueContext == ReturnValueContext.VALUE_OR_NULL ) {
+			nodes.add( new InsnNode( Opcodes.SWAP ) );
+			nodes.add( new InsnNode( Opcodes.POP ) );
+		}
 		// increment query loop
 		nodes.add( loopEnd );
 

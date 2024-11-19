@@ -21,11 +21,11 @@ import java.util.Map;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
+import ortus.boxlang.runtime.context.BaseBoxContext;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
-import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.scopes.BaseScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -61,21 +61,37 @@ public class BoxClassSupport {
 	public static void pseudoConstructor( IClassRunnable thisClass, IBoxContext context ) {
 		context.pushTemplate( thisClass );
 		try {
-			// loop over properties and create variables.
-			for ( var property : thisClass.getProperties().values() ) {
-				if ( thisClass.getVariablesScope().get( property.name() ) == null ) {
-					thisClass.getVariablesScope().assign( context, property.name(), property.defaultValue() );
-				}
-				if ( hasAccessors( thisClass ) ) {
-					// Don't override UDFs from a parent class which may already be defined
-					context.registerUDF( property.generatedGetter(), false );
-					context.registerUDF( property.generatedSetter(), false );
-				}
-			}
 			// TODO: pre/post interceptor announcements here
 			thisClass._pseudoConstructor( context );
 		} finally {
 			context.popTemplate();
+		}
+	}
+
+	/**
+	 * Call the pseudo constructor
+	 *
+	 * @param thisClass The class to call the pseudo constructor on
+	 * @param context   The context to use
+	 */
+	public static void defaultProperties( IClassRunnable thisClass, IBoxContext context ) {
+		// loop over properties and create variables.
+		for ( var property : thisClass.getProperties().values() ) {
+			Object existing = thisClass.getVariablesScope().get( property.name() );
+			// Don't override existing values, probably from a super class
+			// But UDFs of the same name? Yeah, nuke those suckers, lol. (╥﹏╥)
+			if ( existing == null || existing instanceof Function ) {
+				Object defaultValue = property.getDefaultValue( context );
+				// If the compat module is making null behave like CF, then don't default null properties. ColdBox blows up otherwise, and I'm sure other code as well.
+				if ( defaultValue != null || !BaseBoxContext.nullIsUndefined ) {
+					thisClass.getVariablesScope().assign( context, property.name(), defaultValue );
+				}
+			}
+			if ( hasAccessors( thisClass ) ) {
+				// Don't override UDFs from a parent class which may already be defined
+				context.registerUDF( property.generatedGetter(), false );
+				context.registerUDF( property.generatedSetter(), false );
+			}
 		}
 	}
 
@@ -177,14 +193,8 @@ public class BoxClassSupport {
 		thisClass.getGetterLookup().putAll( _super.getGetterLookup() );
 		thisClass.getSetterLookup().putAll( _super.getSetterLookup() );
 
-		// merge annotations
-		for ( var entry : _super.getAnnotations().entrySet() ) {
-			Key key = entry.getKey();
-			if ( !thisClass.getAnnotations().containsKey( key ) && !key.equals( Key._EXTENDS ) && !key.equals( Key._IMPLEMENTS )
-			    && !key.equals( Key._ABSTRACT ) ) {
-				thisClass.getAnnotations().put( key, entry.getValue() );
-			}
-		}
+		// DO NOT merge annotations. They stay separate between parent/child classes and must be merged at runtime, if desired.
+		// https://ortussolutions.atlassian.net/browse/BL-677
 
 	}
 
@@ -473,8 +483,8 @@ public class BoxClassSupport {
 			var	propertyStruct	= new Struct( IStruct.TYPES.LINKED );
 			propertyStruct.put( "name", property.name().getName() );
 			propertyStruct.put( "type", property.type() );
-			if ( property.defaultValue() != null ) {
-				propertyStruct.put( "default", property.defaultValue() );
+			if ( property.hasDefaultValue() ) {
+				propertyStruct.put( "default", property.getDefaultValueForMeta() );
 			}
 			if ( property.documentation() != null ) {
 				propertyStruct.putAll( property.documentation() );
@@ -711,9 +721,10 @@ public class BoxClassSupport {
 			return dynO;
 		}
 		if ( obj instanceof String str ) {
-			return ClassLocator.getInstance().load( context, str, imports );
+			return BoxRuntime.getInstance().getClassLocator().load( context, str, imports );
 		}
-		throw new BoxRuntimeException( "Cannot load class for static access.  Type provided: " + obj.getClass().getName() );
+		throw new BoxRuntimeException( "Cannot load class for static access.  Did you try to statically dereference an instance on accident?  Type provided: "
+		    + obj.getClass().getName() );
 
 	}
 

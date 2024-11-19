@@ -17,13 +17,17 @@
  */
 package ortus.boxlang.runtime.runnables;
 
+import java.nio.file.Path;
 import java.util.Set;
 
 import ortus.boxlang.compiler.IBoxpiler;
 import ortus.boxlang.compiler.asmboxpiler.ASMBoxpiler;
 import ortus.boxlang.compiler.javaboxpiler.JavaBoxpiler;
 import ortus.boxlang.compiler.parser.BoxSourceType;
+import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.config.Configuration;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.StaticClassBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 import ortus.boxlang.runtime.types.exceptions.MissingIncludeException;
@@ -46,9 +50,18 @@ public class RunnableLoader {
 	 * Singleton instance
 	 */
 	private static RunnableLoader		instance;
+
+	/**
+	 * The Boxpiler to use
+	 */
 	private IBoxpiler					boxpiler;
-	// TODO: make this configurable and move cf extensions to compat
-	private static final Set<String>	VALID_TEMPLATE_EXTENSIONS	= Set.of( "cfm", "cfml", "cfs", "bxs", "bxm", "bxml" );
+
+	/**
+	 * Valid template extensions
+	 *
+	 * @see Configuration#validTemplateExtensions
+	 */
+	private static final Set<String>	VALID_TEMPLATE_EXTENSIONS	= BoxRuntime.getInstance().getConfiguration().validTemplateExtensions;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -112,12 +125,39 @@ public class RunnableLoader {
 	 * @return
 	 */
 	public BoxTemplate loadTemplateAbsolute( IBoxContext context, ResolvedFilePath resolvedFilePath ) {
-		// TODO: Make case insensitive
-		if ( !resolvedFilePath.absolutePath().toFile().exists() ) {
+		Path result = FileSystemUtil.pathExistsCaseInsensitive( resolvedFilePath.absolutePath() );
+		if ( result == null ) {
 			throw new MissingIncludeException( "The template path [" + resolvedFilePath.absolutePath().toString() + "] could not be found.",
 			    resolvedFilePath.absolutePath().toString() );
 		}
+		// If the path found on disk is not the same as the resolved path, then we need to update the resolved path
+		// This would happen on a case-sensitive file system where the incoming path had the incorrect case, but we
+		// we want our resolvedPath instance to reflect the real path on disk.
+		if ( !result.equals( resolvedFilePath.absolutePath() ) ) {
+			// relative path can be null
+			int lengthToUse = resolvedFilePath.relativePath() != null
+			    ? resolvedFilePath.relativePath().length()
+			    : resolvedFilePath.absolutePath().toString().length();
 
+			// Check if the result length is less than or equal to the length to use
+			if ( result.toString().length() <= lengthToUse ) {
+				// Create new relative path with last N chars of the new path
+				resolvedFilePath = ResolvedFilePath.of(
+				    resolvedFilePath.mappingName(),
+				    resolvedFilePath.mappingPath(),
+				    resolvedFilePath.absolutePath().toString().substring( result.toString().length() ),
+				    result
+				);
+			} else {
+				// Reuse the old relative path
+				resolvedFilePath = ResolvedFilePath.of(
+				    resolvedFilePath.mappingName(),
+				    resolvedFilePath.mappingPath(),
+				    resolvedFilePath.relativePath(),
+				    result
+				);
+			}
+		}
 		String	ext			= "";
 		String	fileName	= resolvedFilePath.absolutePath().getFileName().toString().toLowerCase();
 		if ( fileName.contains( "." ) ) {
@@ -197,7 +237,9 @@ public class RunnableLoader {
 	 * @return The BoxLang class
 	 */
 	public Class<IBoxRunnable> loadClass( String source, IBoxContext context, BoxSourceType type ) {
-		return this.boxpiler.compileClass( source, type );
+		Class<IBoxRunnable> clazz = this.boxpiler.compileClass( source, type );
+		runStaticInitializer( clazz, context );
+		return clazz;
 	}
 
 	/**
@@ -210,7 +252,31 @@ public class RunnableLoader {
 	 * @return The BoxLang class
 	 */
 	public Class<IBoxRunnable> loadClass( ResolvedFilePath resolvedFilePath, IBoxContext context ) {
-		return this.boxpiler.compileClass( resolvedFilePath );
+		Class<IBoxRunnable> clazz = this.boxpiler.compileClass( resolvedFilePath );
+		runStaticInitializer( clazz, context );
+		return clazz;
+	}
+
+	/**
+	 * Run static initializers for a Box class
+	 *
+	 * @param clazz   The class to run the static initializer for
+	 * @param context The context to use
+	 */
+	private void runStaticInitializer( Class<IBoxRunnable> clazz, IBoxContext context ) {
+		// Static initializers for Box Classes. We need to manually fire these so we can control the context
+		if ( !clazz.isInterface() && IClassRunnable.class.isAssignableFrom( clazz ) ) {
+			DynamicObject boxClass = DynamicObject.of( clazz );
+			if ( !( Boolean ) boxClass.getField( "staticInitialized" ).get() ) {
+				synchronized ( clazz ) {
+					if ( !( Boolean ) boxClass.getField( "staticInitialized" ).get() ) {
+						boxClass.invokeStatic( context, "staticInitializer",
+						    new StaticClassBoxContext( context, boxClass, BoxClassSupport.getStaticScope( context, boxClass ) ) );
+						boxClass.setField( "staticInitialized", true );
+					}
+				}
+			}
+		}
 	}
 
 }

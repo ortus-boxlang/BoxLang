@@ -75,6 +75,11 @@ import ortus.boxlang.runtime.types.util.ListUtil;
 public final class FileSystemUtil {
 
 	/**
+	 * Flag for whether FS is case sensitive or not to short circuit case insensitive path resolution
+	 */
+	private static boolean				isCaseSensitiveFS		= caseSensitivityCheck();
+
+	/**
 	 * The default charset for file operations in BoxLang
 	 */
 	public static final Charset			DEFAULT_CHARSET			= StandardCharsets.UTF_8;
@@ -277,20 +282,23 @@ public final class FileSystemUtil {
 	 *
 	 * @param path    the path to list
 	 * @param recurse whether to recurse into subdirectories
-	 * @param filter  a glob filter or a closure to filter the results
+	 * @param filter  a glob filter or a closure to filter the results as a Predicate
 	 * @param sort    a string containing the sort field and direction
 	 * @param type    the type of files to list
 	 *
-	 * @return
+	 * @return a stream of paths
 	 */
 	@SuppressWarnings( "unchecked" )
 	public static Stream<Path> listDirectory( String path, Boolean recurse, Object filter, String sort, String type ) {
-		final String theType = type.toLowerCase();
+		Path targetPath = Path.of( path );
+
 		// If path doesn't exist, return an empty stream
-		if ( !Files.exists( Path.of( path ) ) ) {
+		if ( !Files.exists( targetPath ) ) {
 			return Stream.empty();
 		}
 
+		// Setup variables
+		final String		theType			= type.toLowerCase();
 		String[]			sortElements	= sort.split( ( "\\s+" ) );
 		String				sortField		= sortElements[ 0 ];
 		String				sortDirection	= sortElements.length > 1 ? sortElements[ 1 ].toLowerCase() : "asc";
@@ -328,32 +336,47 @@ public final class FileSystemUtil {
 
 		try {
 			if ( recurse ) {
-				directoryStream = Files.walk( Path.of( path ) ).parallel().filter( filterPath -> !filterPath.equals( Path.of( path ) ) );
+				directoryStream = Files.walk( targetPath ).parallel().filter( filterPath -> !filterPath.equals( targetPath ) );
 			} else {
-				directoryStream = Files.walk( Path.of( path ), 1 ).parallel().filter( filterPath -> !filterPath.equals( Path.of( path ) ) );
+				directoryStream = Files.walk( targetPath, 1 ).parallel().filter( filterPath -> !filterPath.equals( targetPath ) );
 			}
 		} catch ( IOException e ) {
 			throw new BoxIOException( e );
 		}
 
+		// Apply the type filter
 		directoryStream = directoryStream.filter( item -> matchesType( item, theType ) );
 
-		if ( filter instanceof String && StringCaster.cast( filter ).length() > 1 ) {
-			ArrayList<PathMatcher> pathMatchers = ListUtil.asList( StringCaster.cast( filter ), "|" )
+		// Is the filter a string or a closure?
+		if ( filter instanceof String castedFilter && castedFilter.length() > 1 ) {
+			ArrayList<PathMatcher> pathMatchers = ListUtil
+			    .asList( castedFilter, "|" )
 			    .stream()
 			    .map( filterString -> FileSystems.getDefault().getPathMatcher( "glob:" + filterString ) )
 			    .collect( Collectors.toCollection( ArrayList::new ) );
 			directoryStream = directoryStream.filter( item -> pathMatchers.stream().anyMatch( pathMatcher -> pathMatcher.matches( item.getFileName() ) ) );
-		} else if ( filter instanceof java.util.function.Predicate<?> ) {
+		}
+		// Predicate filter
+		else if ( filter instanceof java.util.function.Predicate<?> ) {
 			directoryStream = directoryStream.filter( ( java.util.function.Predicate<Path> ) filter );
 		}
 
+		// Finally, sort the stream
 		return directoryStream.sorted( pathSort );
 	}
 
+	/**
+	 * Matches the type of a file or directory
+	 *
+	 * @param item the path to match
+	 * @param type the type to match
+	 *
+	 * @return a boolean as to whether the path matches the type
+	 */
 	private static Boolean matchesType( Path item, String type ) {
 		switch ( type ) {
 			case "directory" :
+			case "dir" :
 				return Files.isDirectory( item );
 			case "file" :
 				return Files.isRegularFile( item );
@@ -882,11 +905,7 @@ public final class FileSystemUtil {
 		path = path.replace( "\\", "/" );
 		String	originalPath		= path;
 		Path	originalPathPath	= null;
-		try {
-			originalPathPath = Path.of( originalPath );
-		} catch ( java.nio.file.InvalidPathException e ) {
-			throw new BoxRuntimeException( String.format( "The path provided is an invalid path {%s}", originalPath ), e );
-		}
+		originalPathPath = Path.of( originalPath );
 
 		boolean isAbsolute = originalPathPath.isAbsolute();
 
@@ -1074,6 +1093,86 @@ public final class FileSystemUtil {
 		} catch ( IOException e ) {
 			throw new BoxIOException( e );
 		}
+	}
+
+	/**
+	 * Performs case insensitive path resolution. This will return the real path, which may be different in case than the incoming path.
+	 *
+	 * @param path The path to check
+	 *
+	 * @return The resolved path or null if not found
+	 */
+	public static Path pathExistsCaseInsensitive( Path path ) {
+		Boolean defaultCheck = Files.exists( path );
+		if ( defaultCheck ) {
+			try {
+				return path.toRealPath();
+			} catch ( IOException e ) {
+				return null;
+			}
+		}
+		if ( isCaseSensitiveFS ) {
+			String		realPath		= "";
+			String[]	pathSegments	= path.toString().replace( '\\', '/' ).split( "/" );
+			if ( pathSegments.length > 0 && pathSegments[ 0 ].contains( ":" ) ) {
+				realPath = pathSegments[ 0 ];
+			}
+			Boolean first = true;
+			for ( String thisSegment : pathSegments ) {
+				// Skip windows drive letter
+				if ( realPath == pathSegments[ 0 ] && pathSegments[ 0 ].contains( ":" ) && first ) {
+					first = false;
+					continue;
+				}
+				// Skip empty segments
+				if ( thisSegment.length() == 0 ) {
+					continue;
+				}
+
+				Boolean		found		= false;
+				String[]	children	= new File( realPath + "/" ).list();
+				// This will happen if we have a matched file in the middle of a path like /foo/index.cfm/bar
+				if ( children == null ) {
+					return null;
+				}
+				for ( String thisChild : children ) {
+					// We're taking the FIRST MATCH. Buyer beware
+					if ( thisSegment.equalsIgnoreCase( thisChild ) ) {
+						realPath	+= "/" + thisChild;
+						found		= true;
+						break;
+					}
+				}
+				// If we made it through the inner loop without a match, we've hit a dead end
+				if ( !found ) {
+					return null;
+				}
+			}
+			// If we made it through the outer loop, we've found a match
+			Path realPathFinal = Paths.get( realPath );
+			return realPathFinal;
+		}
+		return null;
+	}
+
+	private static boolean caseSensitivityCheck() {
+		try {
+			File	currentWorkingDir	= new File( System.getProperty( "user.home" ) );
+			File	case1				= new File( currentWorkingDir, "case1" );
+			File	case2				= new File( currentWorkingDir, "Case1" );
+			case1.createNewFile();
+			if ( case2.createNewFile() ) {
+				case1.delete();
+				case2.delete();
+				return true;
+			} else {
+				case1.delete();
+				return false;
+			}
+		} catch ( Throwable e ) {
+			e.printStackTrace();
+		}
+		return true;
 	}
 
 }

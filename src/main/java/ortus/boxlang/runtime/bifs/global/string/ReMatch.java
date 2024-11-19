@@ -25,6 +25,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
+import ortus.boxlang.runtime.types.util.RegexUtil;
 
 @BoxBIF
 @BoxBIF( alias = "reMatchNoCase" )
@@ -71,9 +72,9 @@ public class ReMatch extends BIF {
 		}
 
 		// Posix replacement for character classes
-		reg_expression	= ReFind.posixReplace( reg_expression, noCase );
+		reg_expression	= RegexUtil.posixReplace( reg_expression, noCase );
 		// Ignore non-quantifier curly braces like PERL
-		reg_expression	= ReFind.replaceNonQuantiferCurlyBraces( reg_expression );
+		reg_expression	= RegexUtil.replaceNonQuantiferCurlyBraces( reg_expression );
 
 		Matcher	matcher	= java.util.regex.Pattern.compile( reg_expression ).matcher( string );
 		Array	result	= new Array();

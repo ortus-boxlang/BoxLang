@@ -12,8 +12,8 @@ env:
 
 jobs:
   tests:
-    if: "!contains(github.event.head_commit.message, 'skip tests')" 
-    name: Tests ${{ github.event.repository.name }}
+    if: "!contains(github.event.head_commit.message, 'skip tests')"
+    name: "OS: ${{ matrix.os }}, Compiler: ${{ matrix.compiler }}, Exp: ${{ matrix.experimental }}"
     runs-on: ${{ matrix.os }}
     env:
       DB_USER: root
@@ -22,17 +22,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ "ubuntu-latest", "windows-latest" ]
-        jdkVersion: [ "21" ]
+        os: ["ubuntu-latest", "windows-latest"]
+        jdkVersion: ["21"]
         experimental: [false]
-        #include:
-          #- jdkVersion: "21"
-          #  os: "windows-latest"
-          #  experimental: true
-          # Disabled for now until we can figure out the gradle matrix
-          #- jdkVersion: "21"
-          #  os: "ubuntu-latest"
-          #  experimental: true
+        compiler: ["java", "asm"]
+        # include:
+        #   - jdkVersion: "22"
+        #     os: "ubuntu-latest"
+        #     compiler: "asm"
+        #     experimental: true
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -44,7 +42,7 @@ jobs:
           java-version: ${{ matrix.jdkVersion }}
 
       - name: Setup Gradle
-        uses: gradle/gradle-build-action@v3
+        uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.7"
 
@@ -74,20 +72,20 @@ jobs:
 
       - name: Test Module
         run: |
-          gradle :src:modules:test:build --stacktrace --console=plain
-          gradle test --stacktrace --console=plain
+          gradle :src:modules:test:build "-Dboxlang.experimental.compiler=${{ matrix.compiler }}" --stacktrace --console=plain
+          gradle test "-Dboxlang.experimental.compiler=${{ matrix.compiler }}" --stacktrace --console=plain
 
       - name: Upload Test Results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: tests-${{ matrix.os }}-${{ matrix.jdkVersion }}
+          name: tests-${{ matrix.os }}-${{ matrix.jdkVersion }}-${{ matrix.compiler }}
           path: |
             **/build/reports/tests/**
             **/build/test-results/**
 
       - name: Inform Slack
-        if: ${{ failure() && github.ref == 'refs/heads/development' }}
+        if: ${{ !matrix.experimental && failure() && github.ref == 'refs/heads/development' }}
         uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_CHANNEL: boxlang

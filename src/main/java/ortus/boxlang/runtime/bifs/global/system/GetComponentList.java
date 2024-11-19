@@ -57,7 +57,8 @@ public class GetComponentList extends BIF {
 			            "module", descriptor.hasModule() ? descriptor.module : "---",
 			            "className", descriptor.componentClass.getCanonicalName(),
 			            "allowsBody", descriptor.allowsBody(),
-			            "requiresBody", descriptor.requiresBody()
+			            "requiresBody", descriptor.requiresBody(),
+			            "attributes", descriptor.getAttributes()
 			        )
 			    );
 		    } );

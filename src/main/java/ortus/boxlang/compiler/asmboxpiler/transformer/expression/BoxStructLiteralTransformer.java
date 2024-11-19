@@ -34,7 +34,6 @@ import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
-import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
@@ -105,26 +104,21 @@ public class BoxStructLiteralTransformer extends AbstractTransformer {
 				);
 			}
 			List<AbstractInsnNode> nodes = new ArrayList<>();
-			nodes.add( new LdcInsnNode( structLiteral.getValues() ) );
-			nodes.add( new TypeInsnNode( Opcodes.ANEWARRAY, Type.getInternalName( Object.class ) ) );
-			int i = 1;
-			for ( BoxExpression expr : structLiteral.getValues() ) {
-				nodes.add( new InsnNode( Opcodes.DUP ) );
-				nodes.add( new LdcInsnNode( i - 1 ) );
-				if ( expr instanceof BoxIdentifier && i % 2 != 0 ) {
+
+			nodes.addAll( AsmHelper.array( Type.getType( Object.class ), structLiteral.getValues(), ( value, i ) -> {
+				if ( value instanceof BoxIdentifier && i % 2 != 1 ) {
 					// { foo : "bar" }
-					nodes.add( new LdcInsnNode( expr.getSourceText() ) );
-				} else if ( expr instanceof BoxScope && i % 2 != 0 ) {
+					return List.of( new LdcInsnNode( value.getSourceText() ) );
+				} else if ( value instanceof BoxScope && i % 2 != 1 ) {
 					// { this : "bar" }
-					nodes.add( new LdcInsnNode( expr.getSourceText() ) );
+					return List.of( new LdcInsnNode( value.getSourceText() ) );
 				} else {
 					// { "foo" : "bar" }
-					nodes.addAll( transpiler.transform( expr, context, ReturnValueContext.VALUE ) );
+					return transpiler.transform( value, context, ReturnValueContext.VALUE );
 				}
-				nodes.add( new InsnNode( Opcodes.AASTORE ) );
-				i++;
-			}
-			nodes.add( new MethodInsnNode( Opcodes.INVOKESPECIAL,
+			} ) );
+
+			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
 			    Type.getInternalName( Struct.class ),
 			    "linkedOf",
 			    Type.getMethodDescriptor( Type.getType( IStruct.class ), Type.getType( Object[].class ) ),

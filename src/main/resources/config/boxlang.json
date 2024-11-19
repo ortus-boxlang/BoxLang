@@ -9,6 +9,23 @@
  * ${env.variablename:defaultValue} - The value of a valid environment variable or the default value. Example: ${env.CFCONFIG_HOME:/etc/cfconfig}
  */
 {
+	// Extensions BoxLang will process as classes
+	"validClassExtensions": [
+		"bx",
+		// Moving to compat at final release
+		"cfc"
+	],
+	// Extensions BoxLang will process as templates.
+	// This is used by the RunnableLoader
+	"validTemplateExtensions": [
+		"bxs",
+		"bxm",
+		"bxml",
+		// Moving to compat at final release
+		"cfm",
+		"cfml",
+		"cfs"
+	],
 	// Where all generated classes will be placed
 	"classGenerationDirectory": "${boxlang-home}/classes",
 	// This puts the entire runtime in debug mode
@@ -21,6 +38,8 @@
 	// The default locale for the runtime; defaults to the JVM locale if empty
 	// Please use the IETF BCP 47 language tag values
 	"locale": "",
+	// Enable whitespace compression in output.  Only in use by the web runtimes currently.
+	"whitespaceCompressionEnabled": true,
 	// By default BoxLang uses high-precision mathematics via BigDecimal operations
 	// You can turn this off here for all applications
 	"useHighPrecisionMath": true,
@@ -57,7 +76,13 @@
 	"logsDirectory": "${boxlang-home}/logs",
 	// This is the experimental features flags.
 	// Please see the documentation to see which flags are available
-	"experimental": {},
+	"experimental": {
+		// This choose the compiler to use for the runtime
+		// Valid values are: "java", "asm"
+		"compiler": "java",
+		// If enabled, it will generate AST JSON data under the project's /grapher/data folder
+		"ASTCapture": false
+	},
 	// Global Executors for the runtime
 	// These are managed by the AsyncService and registered upon startup
 	// The name of the executor is the key and the value is a struct of executor settings
@@ -90,87 +115,43 @@
 		// 	  "database": "test"
 		// }
 	},
-	// An explicit whitelist of file extensions that are allowed to be uploaded - overrides any values in the disallowedWriteExtensions
-	"allowedFileOperationExtensions": [],
-	// The list of file extensions that are not allowed to be uploaded. Also enforced by file relocation operations ( e.g. copy/move )
-	"disallowedFileOperationExtensions": [
-		"bat",
-		"exe",
-		"cmd",
-		"cfm",
-		"cfc",
-		"cfs",
-		"bx",
-		"bxm",
-		"bxs",
-		"sh",
-		"php",
-		"pl",
-		"cgi",
-		"386",
-		"dll",
-		"com",
-		"torrent",
-		"js",
-		"app",
-		"jar",
-		"pif",
-		"vb",
-		"vbscript",
-		"wsf",
-		"asp",
-		"cer",
-		"csr",
-		"jsp",
-		"drv",
-		"sys",
-		"ade",
-		"adp",
-		"bas",
-		"chm",
-		"cpl",
-		"crt",
-		"csh",
-		"fxp",
-		"hlp",
-		"hta",
-		"inf",
-		"ins",
-		"isp",
-		"jse",
-		"htaccess",
-		"htpasswd",
-		"ksh",
-		"lnk",
-		"mdb",
-		"mde",
-		"mdt",
-		"mdw",
-		"msc",
-		"msi",
-		"msp",
-		"mst",
-		"ops",
-		"pcd",
-		"prg",
-		"reg",
-		"scr",
-		"sct",
-		"shb",
-		"shs",
-		"url",
-		"vbe",
-		"vbs",
-		"wsc",
-		"wsf",
-		"wsh"
-	],
 	// The default return format for class invocations via web runtimes
 	"defaultRemoteMethodReturnFormat": "json",
 	// The configuration for the BoxLang `default` cache.  If empty, we use the defaults
 	// See the ortus.boxlang.runtime.config.segments.CacheConfig for all the available settings
-	// This is used by query caching, template caching, and other internal caching, unless you override it
-	"defaultCache": {},
+	// This is used by query caching, template caching, and other internal caching.
+	// You can use the cache() BIF in order to get access to the default cache.
+	"defaultCache": {
+		// How many to evict at a time once a policy is triggered
+		"evictCount": 1,
+		// The eviction policy to use: Least Recently Used
+		// Other policies are: LRU, LFU, FIFO, LIFO, RANDOM
+		"evictionPolicy": "LRU",
+		// The free memory percentage threshold to trigger eviction
+		// 0 = disabled, 1-100 = percentage of available free memory in heap
+		// If the threadhold is reached, the eviction policy is triggered
+		"freeMemoryPercentageThreshold": 0,
+		// The maximum number of objects to store in the cache
+		"maxObjects": 1000,
+		// The maximum in seconds to keep an object in the cache since it's last access
+		// So if an object is not accessed in this time or greater, it will be removed from the cache
+		"defaultLastAccessTimeout": 1800,
+		// The maximum time in seconds to keep an object in the cache regardless if it's used or not
+		// A default timeout of 0 = never expire, careful with this setting
+		"defaultTimeout": 3600,
+		// The object store to use to store the objects.
+		// The default is a ConcurrentStore which is a memory sensitive store
+		"objectStore": "ConcurrentStore",
+		// The frequency in seconds to check for expired objects and expire them using the policy
+		// This creates a BoxLang task that runs every X seconds to check for expired objects
+		"reapFrequency": 120,
+		// If enabled, the last access timeout will be reset on every access
+		// This means that the last access timeout will be reset to the defaultLastAccessTimeout on every access
+		// Usually for session caches or to simulate a session
+		"resetTimeoutOnAccess": false,
+		// If enabled, the last access timeout will be used to evict objects from the cache
+		"useLastAccessTimeouts": true
+	},
 	/**
 	* Register any named caches here.
 	* The key is the name of the cache and the value is the cache configuration.
@@ -179,7 +160,39 @@
 	* The `properties` property is optional and is a struct of properties that are specific to the cache provider.
 	*/
 	"caches": {
-		"imports": {
+		// This is the holder of all sessions in a BoxLang runtime.
+		// The keys are prefixed by application to create separation.
+		"bxSessions": {
+			"provider": "BoxCacheProvider",
+			"properties": {
+				// How many objects to evict when the cache is full
+				"evictCount": 1,
+				// The eviction policy to use: FIFO, LFU, LIFO, LRU, MFU, MRU, Random
+				"evictionPolicy": "LRU",
+				// The maximum number of objects the cache can hold
+				"maxObjects": 100000,
+				// How long should sessions last for in seconds. Default is 60 minutes.
+				"defaultTimeout": 3600,
+				// The object store to use to store the objects.
+				// The default is a ConcurrentStore which is a thread safe and fast storage.
+				// Available Stores are: BlackHoleStore, ConcurrentSoftReferenceStore, ConcurrentStore, FileSystemStore, Your own.
+				"objectStore": "ConcurrentStore",
+				// The free memory percentage threshold to start evicting objects
+				// Only use if memory is constricted and you need to relieve cache pressure
+				// Please note that this only makes sense depending on which object store you use.
+				"freeMemoryPercentageThreshold": 0,
+				// The frequency in seconds to check for expired objects and expire them using the policy
+				// This creates a BoxLang task that runs every X seconds to check for expired objects
+				// Default is every 2 minutes
+				"reapFrequency": 120,
+				// This makes a session extend it's life when accessed.  So if a users uses anything or puts anything
+				// In session, it will re-issue the timeout.
+				"resetTimeoutOnAccess": true,
+				// Sessions don't rely on the last access timeouts but on the default timeout only.
+				"useLastAccessTimeouts": false
+			}
+		},
+		"bxImports": {
 			"provider": "BoxCacheProvider",
 			"properties": {
 				"evictCount": 1,
@@ -194,6 +207,95 @@
 				"useLastAccessTimeouts": true
 			}
 		}
+	},
+	// These are the security settings for the runtime
+	"security": {
+		// All regex patterns are case-insensitive
+		// A list of regex patterns that will match class paths, and if matched, execution will be disallowed
+		// This applies to import statements, createObject, new, and class creation
+		// Ex: "disallowedImports": ["java\\.lang\\.(ProcessBuilder|Reflect", "java\\.io\\.(File|FileWriter)"]
+		"disallowedImports": [],
+		// A list of BIF names that will be disallowed from execution
+		// Ex: "disallowedBifs": ["createObject", "systemExecute"]
+		"disallowedBifs": [],
+		// A list of Component names that will be disallowed from execution
+		// Ex: "disallowedComponents": [ "execute", "http" ]
+		"disallowedComponents": [],
+		// An explicit whitelist of file extensions that are allowed to be uploaded - overrides any values in the disallowedWriteExtensions
+		"allowedFileOperationExtensions": [],
+		// The list of file extensions that are not allowed to be uploaded. Also enforced by file relocation operations ( e.g. copy/move )
+		"disallowedFileOperationExtensions": [
+			"bat",
+			"exe",
+			"cmd",
+			"cfm",
+			"cfc",
+			"cfs",
+			"bx",
+			"bxm",
+			"bxs",
+			"sh",
+			"php",
+			"pl",
+			"cgi",
+			"386",
+			"dll",
+			"com",
+			"torrent",
+			"js",
+			"app",
+			"jar",
+			"pif",
+			"vb",
+			"vbscript",
+			"wsf",
+			"asp",
+			"cer",
+			"csr",
+			"jsp",
+			"drv",
+			"sys",
+			"ade",
+			"adp",
+			"bas",
+			"chm",
+			"cpl",
+			"crt",
+			"csh",
+			"fxp",
+			"hlp",
+			"hta",
+			"inf",
+			"ins",
+			"isp",
+			"jse",
+			"htaccess",
+			"htpasswd",
+			"ksh",
+			"lnk",
+			"mdb",
+			"mde",
+			"mdt",
+			"mdw",
+			"msc",
+			"msi",
+			"msp",
+			"mst",
+			"ops",
+			"pcd",
+			"prg",
+			"reg",
+			"scr",
+			"sct",
+			"shb",
+			"shs",
+			"url",
+			"vbe",
+			"vbs",
+			"wsc",
+			"wsf",
+			"wsh"
+		]
 	},
 	/**
 	 * The BoxLang module settings

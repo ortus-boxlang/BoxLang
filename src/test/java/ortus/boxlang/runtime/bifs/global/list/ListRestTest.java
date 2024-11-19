@@ -97,4 +97,16 @@ public class ListRestTest {
 		assertThat( variables.get( result ) ).isEqualTo( "b,c" );
 	}
 
+	@DisplayName( "It can cast stringable objects" )
+	@Test
+	public void testStringable() {
+		instance.executeSource(
+		    """
+		    list = createObject( "java", "java.net.URI" ).init( "https://google.com/?q=test" );
+		    result = listRest( list, "?" );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "q=test" );
+	}
+
 }

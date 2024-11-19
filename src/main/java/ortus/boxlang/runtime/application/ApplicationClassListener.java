@@ -81,7 +81,7 @@ public class ApplicationClassListener extends BaseApplicationListener {
 	public void onRequest( IBoxContext context, Object[] args ) {
 		super.onRequest( context, args );
 
-		if ( listener.getVariablesScope().containsKey( Key.onRequest ) ) {
+		if ( listener.getThisScope().containsKey( Key.onRequest ) ) {
 			listener.dereferenceAndInvoke( context, Key.onRequest, args, false );
 		} else {
 			// Default includes template inside the Class's context
@@ -105,7 +105,7 @@ public class ApplicationClassListener extends BaseApplicationListener {
 	public boolean onRequestStart( IBoxContext context, Object[] args ) {
 		super.onRequestStart( context, args );
 
-		if ( listener.getVariablesScope().containsKey( Key.onRequestStart ) ) {
+		if ( listener.getThisScope().containsKey( Key.onRequestStart ) ) {
 			Object result = listener.dereferenceAndInvoke( context, Key.onRequestStart, args, false );
 			if ( result != null ) {
 				return BooleanCaster.cast( result );
@@ -121,7 +121,7 @@ public class ApplicationClassListener extends BaseApplicationListener {
 	public void onSessionStart( IBoxContext context, Object[] args ) {
 		super.onSessionStart( context, args );
 
-		if ( listener.getVariablesScope().containsKey( Key.onSessionStart ) ) {
+		if ( listener.getThisScope().containsKey( Key.onSessionStart ) ) {
 			listener.dereferenceAndInvoke( context, Key.onSessionStart, args, false );
 		}
 	}
@@ -130,7 +130,7 @@ public class ApplicationClassListener extends BaseApplicationListener {
 	public void onApplicationStart( IBoxContext context, Object[] args ) {
 		super.onApplicationStart( context, args );
 
-		if ( listener.getVariablesScope().containsKey( Key.onApplicationStart ) ) {
+		if ( listener.getThisScope().containsKey( Key.onApplicationStart ) ) {
 			listener.dereferenceAndInvoke( context, Key.onApplicationStart, args, false );
 		}
 	}
@@ -139,7 +139,7 @@ public class ApplicationClassListener extends BaseApplicationListener {
 	public void onRequestEnd( IBoxContext context, Object[] args ) {
 		super.onRequestEnd( context, args );
 
-		if ( listener.getVariablesScope().containsKey( Key.onRequestEnd ) ) {
+		if ( listener.getThisScope().containsKey( Key.onRequestEnd ) ) {
 			listener.dereferenceAndInvoke( context, Key.onRequestEnd, args, false );
 		}
 	}
@@ -148,7 +148,7 @@ public class ApplicationClassListener extends BaseApplicationListener {
 	public void onAbort( IBoxContext context, Object[] args ) {
 		super.onAbort( context, args );
 
-		if ( listener.getVariablesScope().containsKey( Key.onAbort ) ) {
+		if ( listener.getThisScope().containsKey( Key.onAbort ) ) {
 			listener.dereferenceAndInvoke( context, Key.onAbort, args, false );
 		}
 	}
@@ -157,7 +157,7 @@ public class ApplicationClassListener extends BaseApplicationListener {
 	public void onSessionEnd( IBoxContext context, Object[] args ) {
 		super.onSessionEnd( context, args );
 
-		if ( listener.getVariablesScope().containsKey( Key.onSessionEnd ) ) {
+		if ( listener.getThisScope().containsKey( Key.onSessionEnd ) ) {
 			listener.dereferenceAndInvoke( context, Key.onSessionEnd, args, false );
 		}
 	}
@@ -166,7 +166,7 @@ public class ApplicationClassListener extends BaseApplicationListener {
 	public void onApplicationEnd( IBoxContext context, Object[] args ) {
 		super.onApplicationEnd( context, args );
 
-		if ( listener.getVariablesScope().containsKey( Key.onApplicationEnd ) ) {
+		if ( listener.getThisScope().containsKey( Key.onApplicationEnd ) ) {
 			listener.dereferenceAndInvoke( context, Key.onApplicationEnd, args, false );
 		}
 	}
@@ -175,7 +175,7 @@ public class ApplicationClassListener extends BaseApplicationListener {
 	public boolean onError( IBoxContext context, Object[] args ) {
 		super.onError( context, args );
 
-		if ( listener.getVariablesScope().containsKey( Key.onError ) ) {
+		if ( listener.getThisScope().containsKey( Key.onError ) ) {
 			listener.dereferenceAndInvoke( context, Key.onError, args, false );
 			return true;
 		} else {
@@ -187,7 +187,7 @@ public class ApplicationClassListener extends BaseApplicationListener {
 	public boolean onMissingTemplate( IBoxContext context, Object[] args ) {
 		super.onMissingTemplate( context, args );
 
-		if ( listener.getVariablesScope().containsKey( Key.onMissingTemplate ) ) {
+		if ( listener.getThisScope().containsKey( Key.onMissingTemplate ) ) {
 			Object result = listener.dereferenceAndInvoke( context, Key.onMissingTemplate, args, false );
 			if ( result != null ) {
 				return BooleanCaster.cast( result );
@@ -220,7 +220,7 @@ public class ApplicationClassListener extends BaseApplicationListener {
 		 * Any returnFormat annotation on any other method called during the request is ignored, so long as it wasn't the method specified in the URL
 		 * Lucee sets the response content type based on the return format, but Adobe doesn't appear to set any response headers at all based on the return format
 		 */
-		if ( listener.getVariablesScope().get( Key.onClassRequest ) instanceof Function ) {
+		if ( listener.getThisScope().get( Key.onClassRequest ) instanceof Function ) {
 			invokeClassRequest( context, listener, Key.onClassRequest.getName(), null, args, returnFormat, false );
 		} else {
 			invokeClassRequest(

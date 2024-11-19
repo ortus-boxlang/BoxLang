@@ -12,12 +12,15 @@ import java.lang.System;
  *
  * @brad wood
  * @luis
+ * @_itwontlikeme~`!@#$%^&*()-=+[]{}\|'";:,.<>/?*áéíóúüñ formbuilderV2Form
  */
 @foo "bar"
 class singleton gavin="pickin" inject {
 
+    /**@test*/
     property name;
 
+    this.thisVar = "thisValue";
     variables.setup=true; // ending comment
     System.out.println( "word" );
     request.foo="bar";

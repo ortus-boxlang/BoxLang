@@ -22,7 +22,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.net.http.HttpRequest.BodyPublisher;
 import java.util.Comparator;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.AfterAll;
@@ -36,9 +38,11 @@ import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.compiler.parser.DocParser;
 import ortus.boxlang.compiler.parser.ParsingResult;
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.context.BaseBoxContext;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.LocalScope;
@@ -61,6 +65,8 @@ public class CoreLangTest {
 	IBoxContext			context;
 	IScope				variables;
 	static Key			result	= new Key( "result" );
+	// Used in a test
+	public static int	num		= 0;
 
 	@BeforeAll
 	public static void setUp() {
@@ -673,7 +679,117 @@ public class CoreLangTest {
 		         """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( 6 );
+	}
 
+	@DisplayName( "sentinel init only" )
+	@Test
+	public void testSentinelInitOnly() {
+
+		instance.executeSource(
+		    """
+		    for ( counter = 1 ; ; ) {
+		    	writeOutput( counter );
+		    	counter++;
+		    	if( counter > 5 ) {
+		    		break;
+		    	}
+		    }
+		    result = counter;
+		         """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 6 );
+	}
+
+	@DisplayName( "sentinel condition only" )
+	@Test
+	public void testSentinelConditionOnly() {
+
+		instance.executeSource(
+		    """
+		      counter = 1;
+		         for (  ; counter <= 5 ; ) {
+		         	writeOutput( counter );
+		         	counter++;
+
+		    assert counter < 100;
+		         }
+		         result = counter;
+		              """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 6 );
+	}
+
+	@DisplayName( "sentinel increment only" )
+	@Test
+	public void testSentinelIncrementOnly() {
+
+		instance.executeSource(
+		    """
+		       counter = 1;
+		    safety = 0;
+		       for (  ; ; counter++ ) {
+		       	writeOutput( counter );
+		       	if( counter > 5 ) {
+		       		break;
+		       	}
+		    	safety++;
+		    	assert safety < 100;
+		       }
+		       result = counter;
+		                    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 6 );
+	}
+
+	@DisplayName( "sentinel increment does not run after break" )
+	@Test
+	public void testSentinelIncrementDoesNotRunAfterBreak() {
+
+		instance.executeSource(
+		    """
+		    for( i=0; true; i++ ) {
+		    	break;
+		    }
+		                      """,
+		    context );
+		assertThat( variables.get( Key.of( "i" ) ) ).isEqualTo( 0 );
+	}
+
+	@DisplayName( "sentinel with switch that uses break" )
+	@Test
+	public void testSentinelWithSwitchThatUsesBreak() {
+
+		instance.executeSource(
+		    """
+		    safety = 0;
+		       for( i=0; i<5; i++ ) {
+		    	safety++;
+		    	assert safety < 100;
+		       	switch( "brad" ) {
+		       		case "brad":
+		       			break;
+		       	}
+		       }
+		    """,
+		    context );
+		assertThat( variables.get( Key.of( "i" ) ) ).isEqualTo( 5 );
+	}
+
+	@DisplayName( "nested sentinel break" )
+	@Test
+	public void testNestedSentinelBreak() {
+
+		instance.executeSource(
+		    """
+		    	for( i=0; i<1; i++ ) {
+		    		for( k=0; true; k++ ) {
+		    			break;
+		    		}
+		    		break;
+		    	}
+		    """,
+		    context );
+		assertThat( variables.get( Key.of( "k" ) ) ).isEqualTo( 0 );
 	}
 
 	@DisplayName( "continue sentinel" )
@@ -2606,18 +2722,18 @@ public class CoreLangTest {
 
 		instance.executeSource(
 		    """
-		       	 import java:java.lang.String;
-		       	 javaStatic = java.lang.String::valueOf;
-		       	 result = javaStatic( "test" )
+		    		import java:java.lang.String;
+		    		javaStatic = java.lang.String::valueOf;
+		    		result = javaStatic( "test" )
 
-		       	 javaInstance = result.toUpperCase
-		       	 result2 = javaInstance()
+		    		javaInstance = result.toUpperCase
+		    		result2 = javaInstance()
 
-		       	 import java.util.Collections;
-		       	 result3 = [ 1, 7, 3, 99, 0 ].sort( Collections.reverseOrder().compare  )
+		    		import java.util.Collections;
+		    		result3 = [ 1, 7, 3, 99, 0 ].sort( Collections.reverseOrder().compare  )
 
-		       	 import java:java.lang.Math;
-		       	 result4 = [ 1, 2.4, 3.9, 4.5 ].map( Math::floor )
+		    		import java:java.lang.Math;
+		    		result4 = [ 1, 2.4, 3.9, 4.5 ].map( Math::floor )
 
 		       // Use the compare method from the Java reverse order comparator to sort a BL array
 		       [ 1, 7, 3, 99, 0 ].sort( Collections.reverseOrder()  )
@@ -2628,7 +2744,7 @@ public class CoreLangTest {
 		    result6 = isBrad( "luis" )
 		    result7 = [ "brad", "luis", "jon" ].filter( isBrad )
 
-		       	   """,
+		    		  """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "test" );
 
@@ -2643,6 +2759,19 @@ public class CoreLangTest {
 		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( true );
 		assertThat( variables.get( Key.of( "result6" ) ) ).isEqualTo( false );
 		assertThat( variables.get( Key.of( "result7" ) ) ).isEqualTo( Array.of( "brad" ) );
+	}
+
+	@Test
+	public void testJavaNestedClassImport() {
+
+		instance.executeSource(
+		    """
+		    import java.net.http.HttpRequest$BodyPublishers;
+		    result = BodyPublishers.noBody();
+		    	  """,
+		    context );
+		assertThat( variables.get( result ) ).isNotNull();
+		assertThat( BodyPublisher.class.isAssignableFrom( variables.get( result ).getClass() ) ).isTrue();
 	}
 
 	@Test
@@ -2730,6 +2859,32 @@ public class CoreLangTest {
 		assertThat( variables.get( Key.of( "result6" ) ) ).isEqualTo( "brad" );
 		assertThat( variables.get( Key.of( "result7" ) ) )
 		    .isEqualTo( Array.of( "Luis", "Jon", "Brad", "Eric", "Jorge", "Majo", "Jaime", "Esme" ) );
+	}
+
+	@Test
+	public void testSimplePositionalFunctionalMemberAccessArgs() {
+
+		instance.executeSource(
+		    """
+		    foo = .left(1);
+		    result2 = foo( "test" );
+
+		    	 """,
+		    context );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "t" );
+	}
+
+	@Test
+	public void testSimpleNamedFunctionalMemberAccessArgs() {
+
+		instance.executeSource(
+		    """
+		    foo = .left(count=1);
+		    result2 = foo( "test" );
+
+		    	 """,
+		    context );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "t" );
 	}
 
 	@Test
@@ -2907,7 +3062,6 @@ public class CoreLangTest {
 
 	@Test
 	public void testAssginmentModifierCF() {
-
 		instance.executeSource(
 		    """
 		    function func(){
@@ -3060,10 +3214,10 @@ public class CoreLangTest {
 	}
 
 	@Test
-	public void testFinalImmutable() {
+	public void testFinalUnmodifiable() {
 		instance.executeSource(
 		    """
-		    final lockDown = [ 1, 2, 3 ].toImmutable()
+		    final lockDown = [ 1, 2, 3 ].toUnmodifiable()
 		    """,
 		    context, BoxSourceType.BOXSCRIPT );
 	}
@@ -3096,7 +3250,7 @@ public class CoreLangTest {
 		    """
 		    foo.50foo = "bar";
 		    result = foo.50foo;
-		      """,
+		    """,
 		    context, BoxSourceType.CFSCRIPT );
 		assertThat( variables.get( result ) ).isEqualTo( "bar" );
 
@@ -3111,7 +3265,7 @@ public class CoreLangTest {
 		Throwable t = assertThrows( ParseException.class, () -> instance.executeSource(
 		    """
 		    50foo = "bar";
-		      """,
+		    """,
 		    context, BoxSourceType.CFSCRIPT ) );
 		assertThat( t.getMessage() ).contains( "Identifier name cannot start with a number" );
 	}
@@ -3333,14 +3487,14 @@ public class CoreLangTest {
 		Throwable t = assertThrows( CustomException.class, () -> instance.executeSource(
 		    """
 		    function reThrowMe( required struct err ) {
-		    	throw object=err;
+		    throw object=err;
 		    }
 		    try {
-		    	1/0;
+		    1/0;
 		    } catch( any e ) {
-		    	reThrowMe( e );
+		    reThrowMe( e );
 		    }
-		    	 """,
+		    """,
 		    context, BoxSourceType.BOXSCRIPT ) );
 		assertThat( t.getMessage() ).contains( "zero" );
 	}
@@ -3377,6 +3531,471 @@ public class CoreLangTest {
 		    "src/test/java/TestCases/phase1/files/Runner.bx",
 		    new String[] { "myArg" }
 		);
+	}
+
+	@Test
+	public void testHigherOrderClosure() {
+	// @formatter:off
+	instance.executeSource(
+		"""
+			fullName = ( fname ) => ( lname ) => "#fname# #lname#";
+			result = fullName( "John" )( "Doe" );
+		""",
+		context, BoxSourceType.BOXSCRIPT
+	);
+	// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( "John Doe" );
+	}
+
+	@Test
+	public void testHigherOrderClosureCF() {
+	// @formatter:off
+	instance.executeSource(
+		"""
+			fullName = ( fname ) => ( lname ) => "#fname# #lname#";
+			result = fullName( "John" )( "Doe" );
+		""",
+		context, BoxSourceType.CFSCRIPT
+	);
+	// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( "John Doe" );
+	}
+
+	@Test
+	public void testTagContextLineMapping() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+			tagContext = [];
+			try {
+				include "src/test/java/TestCases/phase1/TagContextLineMapping.bxs";
+				foo()
+			} catch( any e ) {
+				x = e;
+				tagContext = e.tagContext;
+			}
+			""",
+			context, BoxSourceType.CFSCRIPT
+		);
+		// @formatter:on
+		assertThat( variables.get( Key.of( "tagContext" ) ) ).isInstanceOf( Array.class );
+		Array tagContext = variables.getAsArray( Key.of( "tagContext" ) );
+		assertThat( tagContext.size() ).isGreaterThan( 0 );
+		assertThat( tagContext.get( 0 ) ).isInstanceOf( IStruct.class );
+		IStruct tagContextStruct = ( IStruct ) tagContext.get( 0 );
+		assertThat( tagContextStruct.get( Key.of( "line" ) ) ).isEqualTo( 2 );
+		assertThat( tagContextStruct.getAsString( Key.of( "template" ) ) ).ignoringCase().contains( "TagContextLineMapping.bxs" );
+		String code[] = tagContextStruct.getAsString( Key.of( "codePrintPlain" ) ).split( "\n" );
+		assertThat( code[ 1 ] ).contains( "for( foo in null ) {" );
+	}
+
+	@Test
+	public void testFindJavaConstructorWithNulls() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+			import java.net.URI;
+			new URI( null, null, "", null, null );
+			""",
+			context, BoxSourceType.BOXSCRIPT
+		);
+		// @formatter:on
+	}
+
+	@Test
+	public void testAssignToList() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+			import java.util.ArrayList;
+			list = new ArrayList();
+			list[1] = "brad";
+			""",
+			context, BoxSourceType.BOXSCRIPT
+		);
+		// @formatter:on
+	}
+
+	@DisplayName( "for in loop struct keys are strings" )
+	@Test
+	public void testForInLoopStructKeysAreStrings() {
+		instance.executeSource(
+		    """
+		    result=""
+		    str ={ foo : "bar" }
+		    for( key in str ) {
+		    	result = getMetadata( key ).getName();
+		    }
+		             """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "java.lang.String" );
+	}
+
+	@DisplayName( "ConcurrentHashMap clear calls" )
+	@Test
+	public void testConcurrentHashMapClear() {
+	// @formatter:off
+	instance.executeSource(
+		"""
+		pool = createObject( "java", "java.util.concurrent.ConcurrentHashMap" ).init();
+
+		pool.put( "foo", "bar" );
+		 pool.put( "test", now() );
+
+		assert pool.size() == 2;
+
+		structClear( pool );
+
+		result = pool.size();
+		""",
+		context );
+	// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( 0 );
+	}
+
+	@DisplayName( "ArrayList clear calls" )
+	@Test
+	public void testArrayListClear() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+			pool = createObject( "java", "java.util.ArrayList" ).init();
+
+			pool.add( "foo" );
+			pool.add( "bar" );
+
+			assert pool.size() == 2;
+
+			arrayClear( pool );
+
+			result = pool.size();
+			""",
+			context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( 0 );
+	}
+
+	@DisplayName( "not operator precedence" )
+	@Test
+	public void testNotOperatorPrecedence() {
+	// @formatter:off
+	instance.executeSource(
+		"""
+		foo = "bar"
+		result = !foo eq foo;
+		""",
+		context, BoxSourceType.CFSCRIPT );
+	// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( false );
+	}
+
+	@DisplayName( "auto init dynamic object on instance method call" )
+	@Test
+	public void testAutoInitDynamicObjectOnInstanceMethodCall() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				myList = createObject( 'java', 'java.util.ArrayList' );
+				myList.add( "foo" );
+				// second time to test cached method handle code path in dynamic interop service
+				myList2 = createObject( 'java', 'java.util.ArrayList' );
+				myList2.add( "foo" );
+			""",
+			context );
+		// @formatter:on
+		assertThat( DynamicObject.unWrap( variables.get( Key.of( "myList" ) ) ) ).isInstanceOf( List.class );
+		@SuppressWarnings( "unchecked" )
+		List<Object> list = ( List<Object> ) DynamicObject.unWrap( variables.get( Key.of( "myList" ) ) );
+		assertThat( list.size() ).isEqualTo( 1 );
+		assertThat( list.get( 0 ) ).isEqualTo( "foo" );
+	}
+
+	@DisplayName( "key access in struct map wrapper" )
+	@Test
+	public void testKeyAccessInStructMapWrapper() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				myMap = CreateObject("java","java.util.concurrent.ConcurrentHashMap").init() castas "struct";
+				myMap["coldbox"] = "rocks";
+				result = myMap["coldbox"];
+				myMap.foo = "bar"
+				result2 = myMap.foo;
+				result3 = structKeyExists( myMap, "coldbox" );
+				crayCrayKey = ['whoo-hoo'];
+				myMap[ crayCrayKey ] = "y'all gonna make me lose my mind";
+				result4 = myMap[ crayCrayKey ];
+				result5 = structKeyExists( myMap, crayCrayKey );
+				myMap.delete( "coldbox" );
+				result6 = structKeyExists( myMap, "coldbox" );
+				structUpdate( myMap, "foo", "baz" );
+				result7 = myMap.foo;
+			""",
+			context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( "rocks" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "bar" );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "y'all gonna make me lose my mind" );
+		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "result6" ) ) ).isEqualTo( false );
+		assertThat( variables.get( Key.of( "result7" ) ) ).isEqualTo( "baz" );
+	}
+
+	@DisplayName( "test import name restrictions" )
+	@Test
+	public void testImportNameRestrictions() {
+	// @formatter:off
+	instance.executeSource(
+		"""
+			import ortus.boxlang.runtime.context.BaseBoxContext;
+			currentValue = BaseBoxContext.nullIsUndefined;
+			BaseBoxContext.nullIsUndefined = currentValue;
+		""",
+		context );
+	// @formatter:on
+
+	// @formatter:off
+	Throwable t = assertThrows( BoxRuntimeException.class, () ->
+	instance.executeSource(
+		"""
+			import ortus.boxlang.runtime.context.BaseBoxContext;
+			BaseBoxContext = "foo";
+		""",
+		context ) );
+	// @formatter:on
+		assertThat( t.getMessage() ).contains( "You cannot assign a variable with the same name as an import" );
+	}
+
+	@Test
+	public void testAssignPublicJavaPropertiesIndirectly() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				import ortus.boxlang.runtime.context.BaseBoxContext;
+				bbc = BaseBoxContext;
+				bbc.nullIsUndefined = true;
+				result = BaseBoxContext.nullIsUndefined;
+			""",
+			context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( true );
+		BaseBoxContext.nullIsUndefined = false;
+	}
+
+	@Test
+	public void testAssignPublicJavaPropertiesDirectly() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				import ortus.boxlang.runtime.context.BaseBoxContext;
+				import TestCases.phase1.CoreLangTest;
+
+				BaseBoxContext.nullIsUndefined = true;
+				result = BaseBoxContext.nullIsUndefined;
+				result2 = BaseBoxContext.nullIsUndefined.len();
+				
+				CoreLangTest.num += 5;
+				result3 = CoreLangTest.num;
+			""",
+			context );
+		// @formatter:on
+		BaseBoxContext.nullIsUndefined = false;
+		assertThat( variables.get( result ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( 4 );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( 5 );
+		assertThat( CoreLangTest.num ).isEqualTo( 5 );
+
+	}
+
+	@DisplayName( "Test null scope lookup order" )
+	@Test
+	public void testNullScopeLookupOrder() {
+
+		// @formatter:off
+		instance.executeSource( """
+			function testMe( string foo ) {
+				local.foo = null;
+				// local scope is checked first, but since local is null, we'll ignore it
+				return foo;
+			}
+			result = testMe( "arguments" );
+			"""
+			, context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isNull();
+
+		instance.executeSource( """
+		                        foo = null;
+		                        result = foo;
+		                        """, context );
+		assertThat( variables.get( result ) ).isNull();
+	}
+
+	@Test
+	public void testStaticReferenceEdgeCases() {
+
+		// @formatter:off
+		instance.executeSource( """
+				import java.lang.System;
+				[1,2,3].stream().forEach( System.out.println )
+			"""
+			, context );
+		instance.executeSource( """
+				import java.lang.System;
+				[1,2,3].stream().forEach( System::out.println )
+			"""
+			, context );
+		instance.executeSource( """
+				import java.lang.System;
+				function getSystem() {
+					return System;
+				}
+				[1,2,3].stream().forEach( getSystem()::out.println )
+			"""
+			, context );
+		instance.executeSource( """
+				import java.lang.System;
+				function getSystem() {
+					return System;
+				}
+				getSystem()::getProperties()
+			"""
+			, context );
+		// @formatter:on
+	}
+
+	@Test
+	public void testCastStringToKey() {
+
+		// @formatter:off
+		instance.executeSource( """		
+				getBoxContext().getRuntime().getDatasourceService().get( "myDataSourceNameFromTheArray" )
+			"""
+			, context );
+		// @formatter:on
+	}
+
+	@Test
+	public void testPassingBLFunctionsToJavaMethods() {
+		instance.executeSource(
+		    """
+		    		import java.lang.System;
+		    		[1,2,3].stream().forEach( ::echo )
+		    // Lambdas/closures have output=false by default in BL code.
+		    		[1,2,3].stream().forEach( (i) output=true -> echo(i) )
+		    result = getBoxContext().getBuffer().toString();
+		    	""", context );
+		assertThat( variables.get( result ) ).isEqualTo( "123123" );
+	}
+
+	@Test
+	public void testArrayIndexes() {
+		instance.executeSource(
+		    """
+		    arr = ["b","r","a","d"]
+		    result1 = arr[ 1 ]
+		    result2 = arr[ 2 ]
+		    result3 = arr[ 3 ]
+		    result4 = arr[ 4 ]
+		    resultNeg1 = arr[ -1 ]
+		    resultNeg2 = arr[ -2 ]
+		    resultNeg3 = arr[ -3 ]
+		    resultNeg4 = arr[ -4 ]
+		    """, context );
+		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( "b" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "r" );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( "a" );
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "d" );
+		assertThat( variables.get( Key.of( "resultNeg1" ) ) ).isEqualTo( "d" );
+		assertThat( variables.get( Key.of( "resultNeg2" ) ) ).isEqualTo( "a" );
+		assertThat( variables.get( Key.of( "resultNeg3" ) ) ).isEqualTo( "r" );
+		assertThat( variables.get( Key.of( "resultNeg4" ) ) ).isEqualTo( "b" );
+	}
+
+	@Test
+	public void testStringIndexes() {
+		instance.executeSource(
+		    """
+		    str = "brad"
+		    result1 = str[ 1 ]
+		    result2 = str[ 2 ]
+		    result3 = str[ 3 ]
+		    result4 = str[ 4 ]
+		    resultNeg1 = str[ -1 ]
+		    resultNeg2 = str[ -2 ]
+		    resultNeg3 = str[ -3 ]
+		    resultNeg4 = str[ -4 ]
+		    """, context );
+		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( "b" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "r" );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( "a" );
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "d" );
+		assertThat( variables.get( Key.of( "resultNeg1" ) ) ).isEqualTo( "d" );
+		assertThat( variables.get( Key.of( "resultNeg2" ) ) ).isEqualTo( "a" );
+		assertThat( variables.get( Key.of( "resultNeg3" ) ) ).isEqualTo( "r" );
+		assertThat( variables.get( Key.of( "resultNeg4" ) ) ).isEqualTo( "b" );
+	}
+
+	@Test
+	public void testNativeListIndexes() {
+		instance.executeSource(
+		    """
+		    arr = ["b","r","a","d"].asList()
+
+		    result1 = arr[ 1 ]
+		    result2 = arr[ 2 ]
+		    result3 = arr[ 3 ]
+		    result4 = arr[ 4 ]
+		    resultNeg1 = arr[ -1 ]
+		    resultNeg2 = arr[ -2 ]
+		    resultNeg3 = arr[ -3 ]
+		    resultNeg4 = arr[ -4 ]
+		    """, context );
+		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( "b" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "r" );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( "a" );
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "d" );
+		assertThat( variables.get( Key.of( "resultNeg1" ) ) ).isEqualTo( "d" );
+		assertThat( variables.get( Key.of( "resultNeg2" ) ) ).isEqualTo( "a" );
+		assertThat( variables.get( Key.of( "resultNeg3" ) ) ).isEqualTo( "r" );
+		assertThat( variables.get( Key.of( "resultNeg4" ) ) ).isEqualTo( "b" );
+	}
+
+	@Test
+	public void testBigNumber() {
+		instance.executeSource(
+		    """
+		    	l = 9876543210
+		    """, context );
+	}
+
+	@Test
+	public void testNumericKeysDoNotExistInNamedParamArguments() {
+		instance.executeSource(
+		    """
+		      	function foo( param ) {
+		      		variables.result1 = structKeyExists( arguments, 1 )
+		      		variables.result2 = arguments[ 1 ]
+		      		variables.result3 = structKeyExists( arguments, "param" )
+		      		variables.result4 = arguments[ "param" ]
+		      	}
+
+		      	foo( param="brad" )
+		    variables.firstResult1 = result1;
+		    variables.firstResult2 = result2;
+		    variables.firstResult3 = result3;
+		    variables.firstResult4 = result4;
+		      	foo( "brad" )
+		      """, context );
+		assertThat( variables.get( Key.of( "firstResult1" ) ) ).isEqualTo( false );
+		assertThat( variables.get( Key.of( "firstResult2" ) ).toString() ).contains( "brad" );
+		assertThat( variables.get( Key.of( "firstResult3" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "firstResult4" ) ).toString() ).contains( "brad" );
+		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( false );
+		assertThat( variables.get( Key.of( "result2" ) ).toString() ).contains( "brad" );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "result4" ) ).toString() ).contains( "brad" );
 	}
 
 }

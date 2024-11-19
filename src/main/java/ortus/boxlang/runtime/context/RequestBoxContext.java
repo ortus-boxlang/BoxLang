@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.context;
 import java.io.PrintStream;
 import java.net.URI;
 import java.time.ZoneId;
+import java.util.ArrayDeque;
 import java.util.Locale;
 
 import ortus.boxlang.runtime.BoxRuntime;
@@ -50,60 +51,72 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	 */
 
 	/**
+	 * Track the current request box context for the thread. Allow more than one as a stack.
+	 */
+	private static final ThreadLocal<ArrayDeque<RequestBoxContext>>	current					= new ThreadLocal<ArrayDeque<RequestBoxContext>>();
+
+	/**
 	 * The locale for this request
 	 */
-	private Locale					locale					= null;
+	private Locale													locale					= null;
 
 	/**
 	 * The timezone for this request
 	 */
-	private ZoneId					timezone				= null;
+	private ZoneId													timezone				= null;
 
 	/**
 	 * The thread manager for this request
 	 */
-	private RequestThreadManager	threadManager			= null;
+	private RequestThreadManager									threadManager			= null;
 
 	/**
 	 * The request class loader
 	 */
-	private DynamicClassLoader		requestClassLoader		= null;
+	private DynamicClassLoader										requestClassLoader		= null;
 
 	/**
 	 * Flag to enforce explicit output
 	 */
-	private boolean					enforceExplicitOutput	= false;
+	private boolean													enforceExplicitOutput	= false;
+
+	/**
+	 * Flag to enable/disabled debug output for a request regardless of runtime
+	 * Each runtime can provide its own implementation of this setting
+	 * It defaults to the runtime's debug mode
+	 */
+	private boolean													showDebugOutput			= getRuntime().inDebugMode();
 
 	/**
 	 * The request timeout in milliseconds
 	 */
-	private Long					requestTimeout			= null;
+	private Long													requestTimeout			= null;
 
 	/**
 	 * The time in milliseconds when the request started
 	 */
-	private DateTime				requestStart			= new DateTime();
+	private DateTime												requestStart			= new DateTime();
 
 	/**
 	 * The JDBC connection manager, which tracks transaction state/context and allows a thread or request to retrieve connections.
 	 */
-	private ConnectionManager		connectionManager;
+	private ConnectionManager										connectionManager;
 
 	/**
 	 * Application.bx listener for this request
 	 * null if there is none
 	 */
-	private BaseApplicationListener	applicationListener;
+	private BaseApplicationListener									applicationListener;
 
 	/**
 	 * The application service
 	 */
-	private ApplicationService		applicationService		= getRuntime().getApplicationService();
+	private ApplicationService										applicationService		= getRuntime().getApplicationService();
 
 	/**
 	 * The output buffer for the script
 	 */
-	private PrintStream				out						= System.out;
+	private PrintStream												out						= System.out;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -463,6 +476,57 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	 */
 	public void shutdownConnections() {
 		this.connectionManager.shutdown();
+	}
+
+	/**
+	 * Set the debug output flag for this request
+	 * This is a request-specific setting that can be used to enable or disable debug output for a request
+	 * regardless of the runtime's debug mode.
+	 *
+	 * @param showDebugOutput true to enable debug output
+	 */
+	public RequestBoxContext setShowDebugOutput( boolean showDebugOutput ) {
+		this.showDebugOutput = showDebugOutput;
+		return this;
+	}
+
+	/**
+	 * Get the debug output flag for this request
+	 * This is a request-specific setting that can be used to enable or disable debug output for a request
+	 * regardless of the runtime's debug mode.
+	 *
+	 * @return true if debug output is enabled
+	 */
+	public boolean isShowDebugOutput() {
+		return this.showDebugOutput;
+	}
+
+	public static RequestBoxContext getCurrent() {
+		ArrayDeque<RequestBoxContext> stack = current.get();
+		if ( stack == null || stack.isEmpty() ) {
+			return null;
+		}
+		return stack.peek();
+	}
+
+	public static void setCurrent( RequestBoxContext context ) {
+		ArrayDeque<RequestBoxContext> stack = current.get();
+		// No synchronization is needed here since only one thread can access a threadlocal var at a time.
+		if ( stack == null ) {
+			stack = new ArrayDeque<RequestBoxContext>();
+			current.set( stack );
+		}
+		stack.push( context );
+	}
+
+	public static void removeCurrent() {
+		ArrayDeque<RequestBoxContext> stack = current.get();
+		if ( stack != null ) {
+			stack.pop();
+			if ( stack.isEmpty() ) {
+				current.remove();
+			}
+		}
 	}
 
 }

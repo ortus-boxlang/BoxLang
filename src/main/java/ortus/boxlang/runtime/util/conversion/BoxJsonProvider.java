@@ -31,12 +31,16 @@ import com.fasterxml.jackson.jr.ob.impl.JSONWriter;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.types.DateTime;
+import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.util.conversion.deserializers.ArrayDeserializer;
 import ortus.boxlang.runtime.util.conversion.deserializers.DateTimeDeserializer;
 import ortus.boxlang.runtime.util.conversion.deserializers.LocalDateDeserializer;
 import ortus.boxlang.runtime.util.conversion.deserializers.LocalDateTimeDeserializer;
 import ortus.boxlang.runtime.util.conversion.deserializers.StructDeserializer;
+import ortus.boxlang.runtime.util.conversion.serializers.BoxArraySerializer;
 import ortus.boxlang.runtime.util.conversion.serializers.BoxClassSerializer;
+import ortus.boxlang.runtime.util.conversion.serializers.BoxFunctionSerializer;
+import ortus.boxlang.runtime.util.conversion.serializers.BoxStructSerializer;
 import ortus.boxlang.runtime.util.conversion.serializers.DynamicObjectSerializer;
 
 /**
@@ -56,6 +60,18 @@ public class BoxJsonProvider extends ReaderWriterProvider {
 
 		if ( IClassRunnable.class.isAssignableFrom( type ) ) {
 			return new BoxClassSerializer();
+		}
+
+		if ( List.class.isAssignableFrom( type ) ) {
+			return new BoxArraySerializer();
+		}
+
+		if ( Function.class.isAssignableFrom( type ) ) {
+			return new BoxFunctionSerializer();
+		}
+
+		if ( Map.class.isAssignableFrom( type ) ) {
+			return new BoxStructSerializer();
 		}
 
 		if ( type == DynamicObject.class ) {

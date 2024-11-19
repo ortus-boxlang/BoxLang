@@ -54,11 +54,6 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 	protected IScope				variablesScope;
 
 	/**
-	 * The parent's this scope
-	 */
-	protected IScope				thisScope;
-
-	/**
 	 * The Thread
 	 */
 	protected Thread				thread;
@@ -102,12 +97,6 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 		localScope				= new LocalScope();
 
 		variablesScope			= parent.getScopeNearby( VariablesScope.name );
-		thisScope				= null;
-		if ( parent instanceof FunctionBoxContext context && context.isInClass() ) {
-			thisScope = context.getThisClass().getThisScope();
-		} else if ( parent instanceof ClassBoxContext context ) {
-			thisScope = context.getThisClass().getThisScope();
-		}
 	}
 
 	/**
@@ -137,9 +126,20 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 			// A thread has special permission to "see" the variables and this scope from its parent,
 			// even though it's not "nearby" to any other scopes
 			scopes.getAsStruct( Key.contextual ).put( VariablesScope.name, variablesScope );
-			if ( thisScope != null ) {
-				scopes.getAsStruct( Key.contextual ).put( ThisScope.name, thisScope );
+
+			if ( getParent() instanceof FunctionBoxContext fbc && fbc.isInClass() ) {
+				scopes.getAsStruct( Key.contextual ).put( ThisScope.name, fbc.getThisClass().getThisScope() );
 			}
+			if ( getParent() instanceof ClassBoxContext cbc ) {
+				scopes.getAsStruct( Key.contextual ).put( ThisScope.name, cbc.getThisScope() );
+			}
+			if ( getParent() instanceof FunctionBoxContext fbc && fbc.isInClass() && fbc.getThisClass().getSuper() != null ) {
+				scopes.getAsStruct( Key.contextual ).put( Key._super, fbc.getThisClass().getSuper().getVariablesScope() );
+			}
+			if ( getParent() instanceof ClassBoxContext cbc && cbc.getThisClass().getSuper() != null ) {
+				scopes.getAsStruct( Key.contextual ).put( Key._super, cbc.getThisClass().getSuper().getVariablesScope() );
+			}
+
 		}
 
 		return scopes;
@@ -159,14 +159,14 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 
 		Object result = localScope.getRaw( key );
 		// Null means not found
-		if ( result != null ) {
+		if ( isDefined( result ) ) {
 			// Unwrap the value now in case it was really actually null for real
 			return new ScopeSearchResult( localScope, Struct.unWrapNull( result ), key );
 		}
 
 		result = variablesScope.getRaw( key );
 		// Null means not found
-		if ( result != null ) {
+		if ( isDefined( result ) ) {
 			// A thread has special permission to "see" the variables scope from its parent,
 			// even though it's not "nearby" to any other scopes
 			return new ScopeSearchResult( variablesScope, Struct.unWrapNull( result ), key );
@@ -196,7 +196,8 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 	 */
 	@Override
 	public ScopeSearchResult scopeFind( Key key, IScope defaultScope ) {
-		IStruct threadMeta = threadManager.getThreadMeta( threadName );
+		IStruct				threadMeta	= threadManager.getThreadMeta( threadName );
+		ScopeSearchResult	parentSearchResult;
 
 		// access thread.foo inside a thread
 		if ( key.equals( Key.thread ) ) {
@@ -208,13 +209,33 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 			return new ScopeSearchResult( threadMeta, threadMeta, key, true );
 		}
 
-		if ( thisScope != null && key.equals( ThisScope.name ) ) {
-			return new ScopeSearchResult( thisScope, thisScope, key, true );
+		// If we're inside a function, we can see the function's this and super scopes
+		if ( getParent() instanceof FunctionBoxContext fbc ) {
+			parentSearchResult = fbc.scopeFindThis( key );
+			if ( parentSearchResult != null ) {
+				return parentSearchResult;
+			}
+			parentSearchResult = fbc.scopeFindSuper( key );
+			if ( parentSearchResult != null ) {
+				return parentSearchResult;
+			}
+		}
+
+		// If we're inside a class (pseudoconstructor), we can see the class's this and super scopes
+		if ( getParent() instanceof ClassBoxContext cbc ) {
+			parentSearchResult = cbc.scopeFindThis( key );
+			if ( parentSearchResult != null ) {
+				return parentSearchResult;
+			}
+			parentSearchResult = cbc.scopeFindSuper( key );
+			if ( parentSearchResult != null ) {
+				return parentSearchResult;
+			}
 		}
 
 		Object result = threadMeta.getRaw( key );
 		// Null means not found
-		if ( result != null ) {
+		if ( isDefined( result ) ) {
 			return new ScopeSearchResult( threadMeta, Struct.unWrapNull( result ), key );
 		}
 
@@ -253,11 +274,21 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 			return this.variablesScope;
 		}
 
-		if ( thisScope != null ) {
-			if ( name.equals( ThisScope.name ) ) {
-				// A thread has special permission to "see" the this scope from its parent,
-				// even though it's not "nearby" to any other scopes
-				return this.thisScope;
+		if ( name.equals( ThisScope.name ) ) {
+			if ( getParent() instanceof FunctionBoxContext fbc && fbc.isInClass() ) {
+				return fbc.getThisClass().getThisScope();
+			}
+			if ( getParent() instanceof ClassBoxContext cbc ) {
+				return cbc.getThisScope();
+			}
+		}
+
+		if ( name.equals( Key._super ) ) {
+			if ( getParent() instanceof FunctionBoxContext fbc && fbc.isInClass() && fbc.getThisClass().getSuper() != null ) {
+				return fbc.getThisClass().getSuper().getVariablesScope();
+			}
+			if ( getParent() instanceof ClassBoxContext cbc && cbc.getThisClass().getSuper() != null ) {
+				return cbc.getThisClass().getSuper().getVariablesScope();
 			}
 		}
 

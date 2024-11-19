@@ -32,7 +32,6 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
-import ortus.boxlang.runtime.loader.resolvers.BoxResolver;
 import ortus.boxlang.runtime.modules.ModuleRecord;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
@@ -306,7 +305,7 @@ public class InterceptorPool {
 	    ModuleRecord moduleRecord ) {
 		// Get the class location
 		IBoxContext				context			= this.runtime.getRuntimeContext();
-		Optional<ClassLocation>	classLocation	= BoxResolver.getInstance().resolve(
+		Optional<ClassLocation>	classLocation	= this.runtime.getClassLocator().getBoxResolver().resolve(
 		    context,
 		    clazz
 		);
@@ -395,6 +394,30 @@ public class InterceptorPool {
 		    .collect( Collectors.toSet() );
 
 		return register( target, states.toArray( new Key[ 0 ] ) );
+	}
+
+	/**
+	 * This method UNregisters a Java interceptor with the pool by metadata inspection
+	 * of the {@link InterceptionPoint} annotation. It will inspect the interceptor for
+	 * methods that match the states that the pool can announce. If the
+	 * interceptor has a method that matches the state, it will UNregister it with the pool.
+	 *
+	 * @param interceptor The interceptor to UNregister that must implement {@link IInterceptor}
+	 *
+	 * @return The same pool
+	 */
+	public InterceptorPool unregister( IInterceptor interceptor ) {
+		// Discover all @InterceptionPoint methods and build into an array of Keys to register
+		DynamicObject	target	= DynamicObject.of( interceptor );
+		Set<Key>		states	= target.getMethodsAsStream( true )
+		    // filter only the methods that have the @InterceptionPoint annotation
+		    .filter( method -> method.isAnnotationPresent( InterceptionPoint.class ) )
+		    // map it to the method name
+		    .map( method -> Key.of( method.getName() ) )
+		    // Collect to the states set to register
+		    .collect( Collectors.toSet() );
+
+		return unregister( target, states.toArray( new Key[ 0 ] ) );
 	}
 
 	/**

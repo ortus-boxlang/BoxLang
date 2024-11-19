@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.scopes;
 import java.io.Serializable;
 import java.util.Arrays;
 
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
@@ -122,12 +123,13 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		boxBif								= Key.of( "BoxBif" );
 	public static final Key		boxCacheProvider					= Key.of( "BoxCacheProvider" );
 	public static final Key		boxlang								= Key.of( "boxlang" );
-	public static final Key		boxlangSessions						= Key.of( "boxlangSessions" );
+	public static final Key		bxSessions							= Key.of( "bxSessions" );
 	public static final Key		boxMember							= Key.of( "BoxMember" );
 	public static final Key		boxRuntime							= Key.of( "boxRuntime" );
 	public static final Key		buffersize							= Key.of( "buffersize" );
 	public static final Key		bxDefaultDatasource					= Key.of( "bxDefaultDatasource" );
 	public static final Key		bxRandomSeed						= Key.of( "bxRandomSeed" );
+	public static final Key		bxTracers							= Key.of( "bxTracers" );
 	public static final Key		cached								= Key.of( "cached" );
 	public static final Key		cachedwithin						= Key.of( "cachedwithin" );
 	public static final Key		cacheName							= Key.of( "cacheName" );
@@ -138,6 +140,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		canonicalize						= Key.of( "canonicalize" );
 	public static final Key		caseSensitive						= Key.of( "caseSensitive" );
 	public static final Key		cause								= Key.of( "cause" );
+	public static final Key		category							= Key.of( "category" );
 	public static final Key		cert_cookie							= Key.of( "cert_cookie" );
 	public static final Key		cert_flags							= Key.of( "cert_flags" );
 	public static final Key		cert_issuer							= Key.of( "cert_issuer" );
@@ -242,6 +245,9 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		directoryMove						= Key.of( "directoryMove" );
 	public static final Key		disabled							= Key.of( "disabled" );
 	public static final Key		display								= Key.of( "display" );
+	public static final Key		disallowedImports					= Key.of( "disallowedImports" );
+	public static final Key		disallowedBIFs						= Key.of( "disallowedBIFs" );
+	public static final Key		disallowedComponents				= Key.of( "disallowedComponents" );
 	public static final Key		doAll								= Key.of( "doAll" );
 	public static final Key		documentation						= Key.of( "documentation" );
 	public static final Key		dollarFormat						= Key.of( "dollarFormat" );
@@ -249,6 +255,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		domain								= Key.of( "domain" );
 	public static final Key		dspLocale							= Key.of( "dspLocale" );
 	public static final Key		dump								= Key.of( "dump" );
+	public static final Key		dumpLevel							= Key.of( "dumpLevel" );
 	public static final Key		duration							= Key.of( "duration" );
 	public static final Key		elapsedTime							= Key.of( "elapsedTime" );
 	public static final Key		elem								= Key.of( "elem" );
@@ -285,6 +292,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		executionMode						= Key.of( "executionMode" );
 	public static final Key		executionState						= Key.of( "executionState" );
 	public static final Key		executionTime						= Key.of( "executionTime" );
+	public static final Key		generatedKey						= Key.of( "generatedKey" );
 	public static final Key		expand								= Key.of( "expand" );
 	public static final Key		executors							= Key.of( "executors" );
 	public static final Key		expires								= Key.of( "expires" );
@@ -295,6 +303,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		expression2							= Key.of( "expression2" );
 	public static final Key		expressions							= Key.of( "expressions" );
 	public static final Key		extendedinfo						= Key.of( "extendedinfo" );
+	public static final Key		extrainfo							= Key.of( "extrainfo" );
 	public static final Key		fatalErrors							= Key.of( "fatalErrors" );
 	public static final Key		file								= Key.of( "file" );
 	public static final Key		fileContent							= Key.of( "fileContent" );
@@ -584,6 +593,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		schedulerService					= Key.of( "schedulerService" );
 	public static final Key		scope								= Key.of( "scope" );
 	public static final Key		script_name							= Key.of( "script_name" );
+	public static final Key		security							= Key.of( "security" );
 	public static final Key		second								= Key.of( "second" );
 	public static final Key		seconds								= Key.of( "seconds" );
 	public static final Key		secure								= Key.of( "secure" );
@@ -705,12 +715,16 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		value								= Key.of( "value" );
 	public static final Key		var									= Key.of( "var" );
 	public static final Key		variable							= Key.of( "variable" );
+	public static final Key		validExtensions						= Key.of( "validExtensions" );
+	public static final Key		validClassExtensions				= Key.of( "validClassExtensions" );
+	public static final Key		validTemplateExtensions				= Key.of( "validTemplateExtensions" );
 	public static final Key		variables							= Key.of( "variables" );
 	public static final Key		variant								= Key.of( "variant" );
 	public static final Key		version								= Key.of( "version" );
 	public static final Key		warning								= Key.of( "warning" );
 	public static final Key		web_server_api						= Key.of( "web_server_api" );
 	public static final Key		webURL								= Key.of( "webURL" );
+	public static final Key		whitespaceCompressionEnabled		= Key.of( "whitespaceCompressionEnabled" );
 	public static final Key		workstation							= Key.of( "workstation" );
 	public static final Key		write								= Key.of( "write" );
 	public static final Key		wddx								= Key.of( "wddx" );
@@ -800,6 +814,14 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		minimumIdle							= Key.of( "minimumIdle" );
 	public static final Key		poolName							= Key.of( "poolName" );
 
+	// Transaction events
+	public static final Key		onTransactionBegin					= Key.of( "onTransactionBegin" );
+	public static final Key		onTransactionEnd					= Key.of( "onTransactionEnd" );
+	public static final Key		onTransactionAcquire				= Key.of( "onTransactionAcquire" );
+	public static final Key		onTransactionRelease				= Key.of( "onTransactionRelease" );
+	public static final Key		onTransactionCommit					= Key.of( "onTransactionCommit" );
+	public static final Key		onTransactionRollback				= Key.of( "onTransactionRollback" );
+	public static final Key		onTransactionSetSavepoint			= Key.of( "onTransactionSetSavepoint" );
 	/**
 	 * --------------------------------------------------------------------------
 	 * Private Properties
@@ -823,7 +845,7 @@ public class Key implements Comparable<Key>, Serializable {
 	protected Object			originalValue;
 
 	/**
-	 * Keys are immutable, so we can cache the hash code
+	 * Keys are Unmodifiable, so we can cache the hash code
 	 */
 	protected int				hashCode;
 
@@ -954,8 +976,9 @@ public class Key implements Comparable<Key>, Serializable {
 			// optimization for common cases where incoming string is actually an int up to
 			// 3 digits
 			if ( ( len == 1 && isDigit( bytes[ 0 ] ) )
-			    || ( len == 2 && isDigit( bytes[ 0 ] ) && isDigit( bytes[ 1 ] ) )
-			    || ( len == 3 && isDigit( bytes[ 0 ] ) && isDigit( bytes[ 1 ] ) && isDigit( bytes[ 2 ] ) ) ) {
+			    || ( len == 2 && isDigitOrMinus( bytes[ 0 ] ) && isDigit( bytes[ 1 ] ) )
+			    || ( len == 3 && isDigitOrMinus( bytes[ 0 ] ) && isDigit( bytes[ 1 ] ) && isDigit( bytes[ 2 ] ) )
+			    || ( len == 4 && isDigitOrMinus( bytes[ 0 ] ) && isDigit( bytes[ 1 ] ) && isDigit( bytes[ 2 ] ) && isDigit( bytes[ 3 ] ) ) ) {
 				return new IntKey( Integer.parseInt( name ) );
 
 			}
@@ -984,6 +1007,17 @@ public class Key implements Comparable<Key>, Serializable {
 	}
 
 	/**
+	 * A little helper to decide if a byte represents a digit 0-9 or a negative sign
+	 *
+	 * @param b The byte to check
+	 *
+	 * @return True if the byte is a digit
+	 */
+	private static boolean isDigitOrMinus( byte b ) {
+		return b == 45 || isDigit( b );
+	}
+
+	/**
 	 * Static builder of a case-insensitive key using the incoming key name
 	 *
 	 * @param obj Object value to use as the key
@@ -1005,6 +1039,7 @@ public class Key implements Comparable<Key>, Serializable {
 		if ( obj == null ) {
 			throw new BoxRuntimeException( "Cannot create a key from a null object" );
 		}
+		obj = DynamicObject.unWrap( obj );
 		return new Key( obj.toString(), obj );
 	}
 

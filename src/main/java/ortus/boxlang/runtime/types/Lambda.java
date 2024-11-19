@@ -24,7 +24,7 @@ import ortus.boxlang.runtime.scopes.Key;
  * Lambdas aim to be "pure" functions, by
  * - being deterministic (same inputs always produce the same output)
  * - having no side effects (no scope lookups outside of itself)
- * - being immutable (this requires you to pass immutable arguments to the lambda)
+ * - being Unmodifiable (this requires you to pass Unmodifiable arguments to the lambda)
  */
 public abstract class Lambda extends Function {
 

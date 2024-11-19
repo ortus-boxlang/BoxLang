@@ -92,7 +92,7 @@ public class ClassMetadataVisitorTest {
 
 	@Test
 	public void testMetadataVisitorCF() {
-		ParsingResult result = new Parser().parse( Paths.get( "src/test/java/TestCases/phase3/MyClassCF.cfc" ).toAbsolutePath().toFile() );
+		ParsingResult result = new Parser().parse( Paths.get( "src/test/java/ortus/boxlang/compiler/MyClassMDVistorCF.cfc" ).toAbsolutePath().toFile() );
 		if ( !result.isCorrect() ) {
 			throw new ParseException( result.getIssues(), "" );
 		}
@@ -102,13 +102,28 @@ public class ClassMetadataVisitorTest {
 		var meta = visitor.getMetadata();
 		System.out.println( meta );
 		assertThat( meta.get( Key.of( "type" ) ) ).isEqualTo( "class" );
-		assertThat( meta.get( Key.of( "fullname" ) ) ).isEqualTo( "src.test.java.testcases.phase3.MyClassCF" );
-		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "MyClassCF" );
-		assertThat( meta.getAsString( Key.of( "path" ) ).contains( "MyClassCF.cfc" ) ).isTrue();
+		assertThat( meta.get( Key.of( "fullname" ) ) ).isEqualTo( "src.test.java.ortus.boxlang.compiler.MyClassMDVistorCF" );
+		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "MyClassMDVistorCF" );
+		assertThat( meta.getAsString( Key.of( "path" ) ).contains( "MyClassMDVistorCF.cfc" ) ).isTrue();
 		assertThat( meta.get( Key.of( "properties" ) ) instanceof Array ).isTrue();
 		assertThat( meta.get( Key.of( "functions" ) ) instanceof Array ).isTrue();
 
-		assertThat( meta.get( Key.of( "extends" ) ) instanceof IStruct ).isTrue();
+		assertThat( meta.get( Key.of( "extends" ) ) ).isInstanceOf( IStruct.class );
+		IStruct extendsMeta = meta.getAsStruct( Key.of( "extends" ) );
+		assertThat( extendsMeta.getAsString( Key.of( "name" ) ) ).isEqualTo( "MyClassMDVistorCFParent" );
+		assertThat( extendsMeta.getAsString( Key.of( "fullname" ) ) ).isEqualTo( "src.test.java.ortus.boxlang.compiler.MyClassMDVistorCFParent" );
+		assertThat( extendsMeta.getAsString( Key.of( "type" ) ) ).isEqualTo( "class" );
+
+		// functions array has two functions
+		assertThat( extendsMeta.getAsArray( Key.of( "functions" ) ).size() ).isEqualTo( 2 );
+		IStruct superFun1 = ( IStruct ) extendsMeta.getAsArray( Key.of( "functions" ) ).get( 0 );
+		assertThat( superFun1.getAsString( Key.of( "name" ) ) ).isEqualTo( "init" );
+		IStruct superFun2 = ( IStruct ) extendsMeta.getAsArray( Key.of( "functions" ) ).get( 1 );
+		assertThat( superFun2.getAsString( Key.of( "name" ) ) ).isEqualTo( "superMethod" );
+
+		assertThat( extendsMeta.get( Key.of( "annotations" ) ) ).isInstanceOf( IStruct.class );
+		IStruct superAnnos = extendsMeta.getAsStruct( Key.of( "annotations" ) );
+		assertThat( superAnnos.getAsString( Key.of( "super" ) ).trim() ).isEqualTo( "man" );
 
 		assertThat( meta.getAsArray( Key.of( "functions" ) ).size() ).isEqualTo( 5 );
 		var fun1 = meta.getAsArray( Key.of( "functions" ) ).get( 0 );

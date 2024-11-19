@@ -16,6 +16,7 @@ package ortus.boxlang.runtime.services;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,7 +54,7 @@ public class DatasourceService extends BaseService {
 	/**
 	 * Map of datasources registered with the service.
 	 */
-	private Map<Key, DataSource>	datasources	= new HashMap<>();
+	private Map<Key, DataSource>	datasources	= new ConcurrentHashMap<>();
 
 	/**
 	 * Map of JDBC drivers registered with the service.
@@ -246,8 +247,7 @@ public class DatasourceService extends BaseService {
 	 * @return The datasource that was registered
 	 */
 	public DataSource register( Key name, DataSource datasource ) {
-		this.datasources.put( name, datasource );
-		return datasource;
+		return this.datasources.putIfAbsent( name, datasource );
 	}
 
 	/**

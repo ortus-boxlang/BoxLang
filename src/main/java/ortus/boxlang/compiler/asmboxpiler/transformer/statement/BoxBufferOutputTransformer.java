@@ -47,7 +47,8 @@ public class BoxBufferOutputTransformer extends AbstractTransformer {
 
 		List<AbstractInsnNode>	nodes		= new ArrayList<>();
 		nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
-		nodes.addAll( transpiler.transform( bufferOuput.getExpression(), TransformerContext.NONE, ReturnValueContext.EMPTY ) );
+		nodes
+		    .addAll( transpiler.transform( bufferOuput.getExpression(), TransformerContext.NONE, ReturnValueContext.VALUE_OR_NULL ) );
 		nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
 		    Type.getInternalName( IBoxContext.class ),
 		    "writeToBuffer",

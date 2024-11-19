@@ -1,4 +1,4 @@
-class {
+class extends=MyThreadingSuperClass {
 
 	function init() {
 		this.foo = "bar";
@@ -11,6 +11,15 @@ class {
 		}
 		thread name="myThread" action="join";
 		return myThread;
+	}
+
+	function executeSuper() {
+		thread name="myThread2"{
+			printLn( "thread can access super scope: #super.superMethod()#" );
+			sleep( 1000 );
+		}
+		thread name="myThread2" action="join";
+		return myThread2;
 	}
 
 }

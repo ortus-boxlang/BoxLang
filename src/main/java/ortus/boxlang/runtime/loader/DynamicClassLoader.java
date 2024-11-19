@@ -75,32 +75,41 @@ public class DynamicClassLoader extends URLClassLoader {
 	private final ConcurrentHashMap<String, Class<?>>	unfoundClasses	= new ConcurrentHashMap<>();
 
 	/**
-	 * Logger
+	 * Logger. Lazy init to avoid deadlocks on runtime startup
 	 */
-	private static final Logger							logger			= LoggerFactory.getLogger( DynamicClassLoader.class );
+	private static Logger								logger			= null;
 
 	/**
 	 * Construct the class loader
 	 *
-	 * @param name   The unique name of the class loader
-	 * @param url    A single URL to load from
-	 * @param parent The parent class loader to delegate to
+	 * @param name            The unique name of the class loader
+	 * @param url             A single URL to load from
+	 * @param parent          The parent class loader to delegate to
+	 * @param loadParentFirst Whether to load the parent class loader or not, default is to create a boundary.
 	 */
-	public DynamicClassLoader( Key name, URL url, ClassLoader parent ) {
-		this( name, new URL[] { url }, parent );
+	public DynamicClassLoader( Key name, URL url, ClassLoader parent, Boolean loadParentFirst ) {
+		this( name, new URL[] { url }, parent, loadParentFirst );
 	}
 
 	/**
 	 * Construct the class loader
+	 * <p>
+	 * Please note the {@code loadParentFirst} setting. By default we create a virtual boundary
+	 * between classloaders and do not load the parent class loader into the root ClassLoader, only
+	 * into this class loader for hierarchical purposes. If this setting is set to true, then the
+	 * parent class loader will be loaded into the root class loader first and lookups go to the parent first.
+	 * <p>
+	 * This can be desired on certain ocassions, but for modular separation, this is disabled by default.
 	 *
-	 * @param name   The unique name of the class loader
-	 * @param urls   The URLs to load from
-	 * @param parent The parent class loader to delegate to
+	 * @param name            The unique name of the class loader
+	 * @param urls            The URLs to load from
+	 * @param parent          The parent class loader to delegate to
+	 * @param loadParentFirst Whether to load the parent class loader or not, default is to create a boundary.
 	 */
-	public DynamicClassLoader( Key name, URL[] urls, ClassLoader parent ) {
+	public DynamicClassLoader( Key name, URL[] urls, ClassLoader parent, Boolean loadParentFirst ) {
 		// We do not seed the parent class loader because we want to control the class loading
 		// And when to null out the parent to create separate class loading environments
-		super( name.getName(), urls, null );
+		super( name.getName(), urls, loadParentFirst ? parent : null );
 		Objects.requireNonNull( parent, "Parent class loader cannot be null" );
 		this.parent		= parent;
 		this.nameAsKey	= name;
@@ -113,7 +122,7 @@ public class DynamicClassLoader extends URLClassLoader {
 	 * @param parent The parent class loader to delegate to
 	 */
 	public DynamicClassLoader( Key name, ClassLoader parent ) {
-		this( name, new URL[ 0 ], parent );
+		this( name, new URL[ 0 ], parent, false );
 	}
 
 	/**
@@ -148,6 +157,7 @@ public class DynamicClassLoader extends URLClassLoader {
 	 * @param safe      Whether to throw an exception if the class is not found
 	 */
 	public Class<?> findClass( String className, Boolean safe ) throws ClassNotFoundException {
+		Logger logger = getLogger();
 		if ( closed ) {
 			throw new BoxRuntimeException(
 			    "Class loader [" + nameAsKey.getName() + "] is closed, but you are trying to use it still! Closed by this thread: \n\n" + closedStack );
@@ -387,9 +397,12 @@ public class DynamicClassLoader extends URLClassLoader {
 
 		// Stream all files recursively, filtering for .jar and .class files
 		try ( Stream<Path> fileStream = Files.walk( targetPath ) ) {
-			return fileStream
-			    .parallel()
-			    .filter( path -> path.toString().endsWith( ".jar" ) || path.toString().endsWith( ".class" ) )
+			return Stream.concat(
+			    Stream.of( targetPath ), // Include the directory itself
+			    fileStream
+			        .parallel()
+			        .filter( path -> path.toString().endsWith( ".jar" ) || path.toString().endsWith( ".class" ) )
+			)
 			    .map( path -> {
 				    try {
 					    // Convert Path to URL using toUri() and toURL()
@@ -399,6 +412,8 @@ public class DynamicClassLoader extends URLClassLoader {
 				    }
 			    } )
 			    .toArray( URL[]::new );
+		} catch ( IOException e ) {
+			throw new UncheckedIOException( e );
 		}
 	}
 
@@ -416,7 +431,7 @@ public class DynamicClassLoader extends URLClassLoader {
 		    .map( path -> {
 			    try {
 				    Path targetPath = Paths.get( ( String ) path );
-				    // If this is a directory, then get all the JARs and classes in the directory
+				    // If this is a directory, then get all the JARs and classes in the directory as well as the dir itself
 				    // else if it's a jar/class file then just return the URL
 				    if ( Files.isDirectory( targetPath ) ) {
 					    return getJarURLs( targetPath );
@@ -429,8 +444,20 @@ public class DynamicClassLoader extends URLClassLoader {
 		    } )
 		    .flatMap( Arrays::stream )
 		    .distinct()
-		    // .peek( url -> logger.debug( "Inflated URL: [{}]", url ) )
+		    // .peek( url -> getLogger().debug( "Inflated URL: [{}]", url ) )
 		    .toArray( URL[]::new );
+	}
+
+	private static Logger getLogger() {
+		if ( logger == null ) {
+			synchronized ( DynamicClassLoader.class ) {
+				if ( logger == null ) {
+					logger = LoggerFactory.getLogger( DynamicClassLoader.class );
+				}
+			}
+		}
+		return logger;
+
 	}
 
 }

@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class ArrayTest {
 
@@ -72,20 +73,21 @@ public class ArrayTest {
 		assertThat( array.get( 0 ) ).isEqualTo( "foo" );
 		assertThat( array.dereference( context, Key.of( "1" ), false ) ).isEqualTo( "foo" );
 		assertThat( array.dereference( context, Key.of( 1 ), false ) ).isEqualTo( "foo" );
+		assertThat( array.dereference( context, Key.of( -1 ), false ) ).isEqualTo( "foo" );
 		assertThat( array.dereferenceAndInvoke( new ScriptingRequestBoxContext(), Key.of( "get" ), new Object[] { 0 }, false ) ).isEqualTo( "foo" );
 
 		// Can't reference negative, string, non-int, or out-of-bounds indexes
-		assertThrows( Throwable.class, () -> array.assign( context, Key.of( "-1" ), "foo" ) );
-		assertThrows( Throwable.class, () -> array.assign( context, Key.of( "sdf" ), "foo" ) );
-		assertThrows( Throwable.class, () -> array.dereference( context, Key.of( "-1" ), false ) );
-		assertThrows( Throwable.class, () -> array.dereference( context, Key.of( "1.5" ), false ) );
-		assertThrows( Throwable.class, () -> array.dereference( context, Key.of( "sdf" ), false ) );
-		assertThrows( Throwable.class, () -> array.dereference( context, Key.of( "999" ), false ) );
+		assertThrows( BoxRuntimeException.class, () -> array.assign( context, Key.of( "-1" ), "foo" ) );
+		assertThrows( BoxRuntimeException.class, () -> array.assign( context, Key.of( "sdf" ), "foo" ) );
+		assertThrows( BoxRuntimeException.class, () -> array.dereference( context, Key.of( "0" ), false ) );
+		assertThrows( BoxRuntimeException.class, () -> array.dereference( context, Key.of( "1.5" ), false ) );
+		assertThrows( BoxRuntimeException.class, () -> array.dereference( context, Key.of( "sdf" ), false ) );
+		assertThrows( BoxRuntimeException.class, () -> array.dereference( context, Key.of( "999" ), false ) );
 
 		// Unless we're playing it safe, then anything goes.
 		assertThat( array.dereference( context, Key.of( "99999" ), true ) ).isEqualTo( null );
-		assertThat( array.dereference( context, Key.of( "-1" ), true ) ).isEqualTo( null );
 		assertThat( array.dereference( context, Key.of( "1.5" ), true ) ).isEqualTo( null );
+		assertThat( array.dereference( context, Key.of( "0" ), true ) ).isEqualTo( null );
 		assertThat( array.dereference( context, Key.of( "sdf" ), true ) ).isEqualTo( null );
 		assertThat( array.dereference( context, Key.of( "999" ), true ) ).isEqualTo( null );
 
@@ -97,6 +99,25 @@ public class ArrayTest {
 		assertThat( array.dereference( context, Key.of( 100 ), false ) ).isEqualTo( "foo100" );
 		assertThat( array.dereference( context, Key.of( "99" ), false ) ).isEqualTo( null );
 		assertThat( array.dereference( context, Key.of( 99 ), false ) ).isEqualTo( null );
+	}
+
+	@DisplayName( "Test dereferencing negative" )
+	@Test
+	void testDereferencingNegative() {
+		Array array = Array.of( "b", "r", "a", "d" );
+
+		assertThat( array.dereference( context, Key.of( 1 ), false ) ).isEqualTo( "b" );
+		assertThat( array.dereference( context, Key.of( 2 ), false ) ).isEqualTo( "r" );
+		assertThat( array.dereference( context, Key.of( 3 ), false ) ).isEqualTo( "a" );
+		assertThat( array.dereference( context, Key.of( 4 ), false ) ).isEqualTo( "d" );
+		assertThat( array.dereference( context, Key.of( -1 ), false ) ).isEqualTo( "d" );
+		assertThat( array.dereference( context, Key.of( -2 ), false ) ).isEqualTo( "a" );
+		assertThat( array.dereference( context, Key.of( -3 ), false ) ).isEqualTo( "r" );
+		assertThat( array.dereference( context, Key.of( -4 ), false ) ).isEqualTo( "b" );
+
+		assertThrows( BoxRuntimeException.class, () -> array.dereference( context, Key.of( "-5" ), false ) );
+		assertThrows( BoxRuntimeException.class, () -> array.dereference( context, Key.of( "5" ), false ) );
+		assertThrows( BoxRuntimeException.class, () -> array.dereference( context, Key.of( "0" ), false ) );
 	}
 
 	@DisplayName( "Test parallel streams" )

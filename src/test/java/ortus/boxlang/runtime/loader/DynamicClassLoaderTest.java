@@ -39,12 +39,14 @@ public class DynamicClassLoaderTest {
 		Path				libPath				= Paths.get( "src/test/resources/libs/" ).toAbsolutePath().normalize();
 		URL[]				urls				= DynamicClassLoader.getJarURLs( libPath );
 		ClassLoader			parentClassLoader	= getClass().getClassLoader();
-		DynamicClassLoader	dynamicClassLoader	= new DynamicClassLoader( Key.of( "TestClassLoader" ), urls, parentClassLoader );
-		// String targetClass = "com.github.benmanes.caffeine.cache.Caffeine";
-		String				targetClass			= "HelloWorld";
+		DynamicClassLoader	dynamicClassLoader	= new DynamicClassLoader( Key.of( "TestClassLoader" ), urls, parentClassLoader, false );
 
-		// When
-		Class<?>			loadedClass			= dynamicClassLoader.loadClass(
+		assertThat( dynamicClassLoader.getURLs() ).hasLength( 3 );
+		assertThat( dynamicClassLoader.getResource( "config.properties" ) ).isNotNull();
+
+		// String targetClass = "com.github.benmanes.caffeine.cache.Caffeine";
+		String		targetClass	= "HelloWorld";
+		Class<?>	loadedClass	= dynamicClassLoader.loadClass(
 		    targetClass
 		); // Replace with an actual test class name
 
@@ -64,7 +66,7 @@ public class DynamicClassLoaderTest {
 		// Given
 		URL[]				urls				= new URL[] { /* Add your test URLs here */ };
 		ClassLoader			parentClassLoader	= getClass().getClassLoader();
-		DynamicClassLoader	dynamicClassLoader	= new DynamicClassLoader( Key.of( "TestClassLoader" ), urls, parentClassLoader );
+		DynamicClassLoader	dynamicClassLoader	= new DynamicClassLoader( Key.of( "TestClassLoader" ), urls, parentClassLoader, false );
 
 		// When
 		try {
@@ -82,7 +84,7 @@ public class DynamicClassLoaderTest {
 		// Given
 		URL[]				urls				= new URL[] { /* Add your test URLs here */ };
 		ClassLoader			parentClassLoader	= getClass().getClassLoader();
-		DynamicClassLoader	dynamicClassLoader	= new DynamicClassLoader( Key.of( "TestClassLoader" ), urls, parentClassLoader );
+		DynamicClassLoader	dynamicClassLoader	= new DynamicClassLoader( Key.of( "TestClassLoader" ), urls, parentClassLoader, false );
 
 		// When
 		dynamicClassLoader.close();

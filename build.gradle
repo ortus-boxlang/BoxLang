@@ -24,6 +24,7 @@ plugins {
 	// Maven Publisher
 	id 'maven-publish'
 	id 'signing'
+	id 'com.gradleup.nmcp' version "0.0.9"
 }
 
 /**
@@ -96,17 +97,17 @@ dependencies {
 	testImplementation "com.google.truth:truth:1.+"
 	testImplementation "commons-cli:commons-cli:1.9.0"
 	// https://wiremock.org/
-	testImplementation "org.wiremock:wiremock:3.9.1"
+	testImplementation "org.wiremock:wiremock:3.9.2"
 	// https://mvnrepository.com/artifact/org.apache.derby/derby
 	testImplementation 'org.apache.derby:derby:10.17.1.0'
-	testImplementation 'io.undertow:undertow-core:2.3.17.Final'
+	testImplementation 'io.undertow:undertow-core:2.3.18.Final'
 
 	// Antlr
 	antlr "org.antlr:antlr4:$antlrVersion"
 
 	// Implementation Dependencies
 	// https://mvnrepository.com/artifact/commons-io/commons-io
-	implementation "commons-io:commons-io:2.16.1"
+	implementation "commons-io:commons-io:2.17.0"
 	// https://mvnrepository.com/artifact/com.github.javaparser/javaparser-symbol-solver-core
 	implementation 'com.github.javaparser:javaparser-symbol-solver-core:3.26.2'
 	// https://mvnrepository.com/artifact/org.apache.commons/commons-lang3
@@ -117,23 +118,23 @@ dependencies {
 	// https://mvnrepository.com/artifact/org.apache.commons/commons-cli
 	implementation "commons-cli:commons-cli:1.9.0"
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-objects
-	implementation 'com.fasterxml.jackson.jr:jackson-jr-objects:2.17.2'
+	implementation 'com.fasterxml.jackson.jr:jackson-jr-objects:2.18.1'
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-extension-javatime
-	implementation 'com.fasterxml.jackson.jr:jackson-jr-extension-javatime:2.17.2'
+	implementation 'com.fasterxml.jackson.jr:jackson-jr-extension-javatime:2.18.1'
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-stree
-	implementation 'com.fasterxml.jackson.jr:jackson-jr-stree:2.17.2'
+	implementation 'com.fasterxml.jackson.jr:jackson-jr-stree:2.18.1'
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-annotation-support
-	implementation 'com.fasterxml.jackson.jr:jackson-jr-annotation-support:2.17.2'
+	implementation 'com.fasterxml.jackson.jr:jackson-jr-annotation-support:2.18.1'
 	// https://mvnrepository.com/artifact/org.slf4j/slf4j-api
 	implementation 'org.slf4j:slf4j-api:2.0.16'
 	// https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
-	implementation 'ch.qos.logback:logback-classic:1.5.8'
+	implementation 'ch.qos.logback:logback-classic:1.5.12'
 	// https://mvnrepository.com/artifact/com.zaxxer/HikariCP
-	implementation 'com.zaxxer:HikariCP:5.1.0'
+	implementation 'com.zaxxer:HikariCP:6.2.1'
 	// https://mvnrepository.com/artifact/org.ow2.asm/asm-tree
-	implementation 'org.ow2.asm:asm-tree:9.7'
+	implementation 'org.ow2.asm:asm-tree:9.7.1'
 	// https://mvnrepository.com/artifact/org.ow2.asm/asm-util
-	implementation 'org.ow2.asm:asm-util:9.7'
+	implementation 'org.ow2.asm:asm-util:9.7.1'
 }
 
 /**
@@ -315,11 +316,12 @@ publishing {
 			artifact sourcesJar
 
 			// This is the only one sonatype accepts, not ortus.boxlang
+			// https://central.sonatype.com/
 			groupId = 'io.boxlang'
 			artifactId = 'boxlang'
 			pom {
 				name = "BoxLang"
-				description = "BoxLang is a dynamic multi-runtime JVM Language based on fluency and functional constructs. It can be deployed as a standalone language or embedded in your Java applications."
+				description = "BoxLang is a dynamic multi-runtime JVM Language based on fluency and functional constructs. It can be deployed as a standalone language, embedded in your Java applications, web applications, serverless, android, etc."
 				url = "https://boxlang.io"
 				issueManagement {
 					system = "Jira"
@@ -393,6 +395,13 @@ publishing {
 						organization = "Ortus Solutions, Corp"
 						organizationUrl = "https://www.ortussolutions.com"
 					}
+					developer {
+						id = "ericpeterson"
+						name = "Eric Peterson"
+						email = "eric@ortussolutions.com"
+						organization = "Ortus Solutions, Corp"
+						organizationUrl = "https://www.ortussolutions.com"
+					}
 				}
 			}
         }
@@ -403,7 +412,36 @@ publishing {
             name = 'local-repo'
             url = layout.buildDirectory.dir( "repo" )
         }
+		maven {
+			name = "GitHubPackages"
+			url = "https://maven.pkg.github.com/ortus-boxlang/boxlang"
+			credentials {
+				username = System.getenv( "GITHUB_ACTOR" )
+				password = System.getenv( "GITHUB_TOKEN" )
+			}
+		}
     }
+}
+
+nmcp {
+  publishAllProjectsProbablyBreakingProjectIsolation {
+    username = System.getenv( "MAVEN_USERNAME" ) ?: project.findProperty( "maven_username" )
+    password = System.getenv( "MAVEN_PASSWORD" ) ?: project.findProperty( "maven_password" )
+    // publish manually from the portal
+    //publicationType = "USER_MANAGED"
+    // or if you want to publish automatically
+    publicationType = "AUTOMATIC"
+  }
+}
+
+/**
+ * Digital Signing of assets
+ */
+signing {
+	def signingKey = System.getenv("GPG_KEY") ?: project.findProperty("signing.keyId")
+	def signingPassword = System.getenv("GPG_PASSWORD") ?: project.findProperty("signing.password")
+    useInMemoryPgpKeys(signingKey, signingPassword)
+    sign publishing.publications.shadow
 }
 
 /**

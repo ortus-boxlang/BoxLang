@@ -51,14 +51,19 @@ public class ExpandPath extends BIF {
 		String	path				= arguments.getAsString( Key.path );
 		boolean	hasTrailingSlash	= path.endsWith( "/" ) || path.endsWith( "\\" );
 		// base path is base template, or the original template that started the request, NOT the currently-executing template
-		String	pathStr				= FileSystemUtil.expandPath( context, path, context.findBaseTemplate() ).absolutePath().toString();
 
-		if ( hasTrailingSlash ) {
-			if ( !pathStr.endsWith( "/" ) || !pathStr.endsWith( "\\" ) ) {
-				pathStr += File.separator;
+		try {
+			String pathStr = FileSystemUtil.expandPath( context, path, context.findBaseTemplate() ).absolutePath().toString();
+			if ( hasTrailingSlash ) {
+				if ( !pathStr.endsWith( "/" ) || !pathStr.endsWith( "\\" ) ) {
+					pathStr += File.separator;
+				}
 			}
+			return pathStr;
+		} catch ( java.nio.file.InvalidPathException e ) {
+			// If the incoming path is totally invalid, we can't expand it, so just return it as-is
+			return path;
 		}
-		return pathStr;
 
 	}
 

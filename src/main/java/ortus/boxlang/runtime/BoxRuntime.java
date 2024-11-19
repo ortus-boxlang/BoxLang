@@ -53,12 +53,14 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.context.RuntimeBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.interceptors.ASTCapture;
 import ortus.boxlang.runtime.interceptors.Logging;
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.loader.DynamicClassLoader;
 import ortus.boxlang.runtime.logging.LoggingConfigurator;
 import ortus.boxlang.runtime.runnables.BoxScript;
@@ -223,7 +225,11 @@ public class BoxRuntime implements java.io.Closeable {
 	private ModuleService						moduleService;
 
 	/**
-	 * The JavaBoxPiler instance
+	 * The BoxPiler implementation the runtime will use. At this time we offer two choices:
+	 * 1. JavaBoxpiler - Generates Java source code and compiles it via the JDK
+	 * 2. ASMBoxpiler - Generates bytecode directly via ASM
+	 * However, developers can create their own Boxpiler implementations and register them with the runtime
+	 * via configuration.
 	 */
 	private IBoxpiler							boxpiler;
 
@@ -236,6 +242,11 @@ public class BoxRuntime implements java.io.Closeable {
 	 * The datasource manager which stores a registry of configured datasources.
 	 */
 	private DatasourceService					dataSourceService;
+
+	/**
+	 * The global class locator service
+	 */
+	private ClassLocator						classLocator;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -303,8 +314,10 @@ public class BoxRuntime implements java.io.Closeable {
 	 * @param configPath The path to the configuration file to load as overrides, this can be null
 	 */
 	private void loadConfiguration( Boolean debugMode, String configPath ) {
+		ConfigLoader loader = ConfigLoader.getInstance();
 		// 1. Load Core Configuration file : resources/config/boxlang.json
-		this.configuration = ConfigLoader.getInstance().loadCore();
+		this.configuration = loader.loadCore();
+
 		this.interceptorService.announce(
 		    BoxEvent.ON_CONFIGURATION_LOAD,
 		    Struct.of( "config", this.configuration )
@@ -313,7 +326,8 @@ public class BoxRuntime implements java.io.Closeable {
 		// 2. Runtime Home Override? Check runtime home for a ${boxlang-home}/config/boxlang.json
 		String runtimeHomeConfigPath = Paths.get( getRuntimeHome().toString(), "config", "boxlang.json" ).toString();
 		if ( Files.exists( Path.of( runtimeHomeConfigPath ) ) ) {
-			this.configuration.process( ConfigLoader.getInstance().deserializeConfig( runtimeHomeConfigPath ) );
+			IStruct appliedConfig = loader.mergeEnvironmentOverrides( loader.deserializeConfig( runtimeHomeConfigPath ) );
+			this.configuration.process( appliedConfig );
 			this.interceptorService.announce(
 			    BoxEvent.ON_CONFIGURATION_OVERRIDE_LOAD,
 			    Struct.of( "config", this.configuration, "configOverride", runtimeHomeConfigPath )
@@ -322,7 +336,8 @@ public class BoxRuntime implements java.io.Closeable {
 
 		// 3. CLI or ENV Config Path Override, which comes via the arguments
 		if ( configPath != null ) {
-			this.configuration.process( ConfigLoader.getInstance().deserializeConfig( configPath ) );
+			IStruct appliedConfig = loader.mergeEnvironmentOverrides( loader.deserializeConfig( configPath ) );
+			this.configuration.process( appliedConfig );
 			this.interceptorService.announce(
 			    BoxEvent.ON_CONFIGURATION_OVERRIDE_LOAD,
 			    Struct.of( "config", this.configuration, "configOverride", configPath )
@@ -339,17 +354,22 @@ public class BoxRuntime implements java.io.Closeable {
 			this.logger.info( "+ DebugMode detected in config, overriding to {}", this.debugMode );
 		}
 
-		// If in debug mode load the AST Capture listener for debugging
-		if ( this.debugMode ) {
-			this.interceptorService.register(
-			    DynamicObject.of( new ASTCapture( false, true ) ),
-			    Key.onParse
-			);
-		}
+		// AST Capture experimental feature
+		BooleanCaster.attempt(
+		    this.configuration.experimental.getOrDefault( "ASTCapture", false )
+		).ifSuccessful(
+		    astCapture -> {
+			    if ( astCapture ) {
+				    this.interceptorService.register(
+				        DynamicObject.of( new ASTCapture( false, true ) ),
+				        Key.onParse
+				    );
+			    }
+		    }
+		);
 
 		// Load core logger and other core interceptions
 		this.interceptorService.register( new Logging( this ) );
-
 	}
 
 	/**
@@ -434,19 +454,25 @@ public class BoxRuntime implements java.io.Closeable {
 		this.schedulerService	= new SchedulerService( this );
 		this.dataSourceService	= new DatasourceService( this );
 
+		// Initiate the Class Locator Service in charge of doing all the class resolutions
+		this.classLocator		= ClassLocator.getInstance( this );
+
 		// Load the configurations and overrides
 		loadConfiguration( this.debugMode, this.configPath );
+		// Anythying below might use configuration items
 
 		// Ensure home assets
 		ensureHomeAssets();
 
 		// Load the Dynamic Class Loader for the runtime
-		this.runtimeLoader = new DynamicClassLoader(
+		this.runtimeLoader	= new DynamicClassLoader(
 		    Key.runtime,
 		    getConfiguration().getJavaLibraryPaths(),
-		    this.getClass().getClassLoader()
+		    this.getClass().getClassLoader(),
+		    true
 		);
-
+		// Startup the right Compiler
+		this.boxpiler		= chooseBoxpiler();
 		// Seed Mathematical Precision for the runtime
 		MathUtil.setHighPrecisionMath( getConfiguration().useHighPrecisionMath );
 
@@ -458,9 +484,7 @@ public class BoxRuntime implements java.io.Closeable {
 		this.applicationService.onStartup();
 
 		// Create our runtime context that will be the granddaddy of all contexts that execute inside this runtime
-		this.runtimeContext	= new RuntimeBoxContext();
-		this.boxpiler		= chooseBoxpiler();
-
+		this.runtimeContext = new RuntimeBoxContext();
 		// Now startup the modules so we can have a runtime context available to them
 		this.moduleService.onStartup();
 		// Now the cache service can be started, this allows for modules to register caches
@@ -498,16 +522,6 @@ public class BoxRuntime implements java.io.Closeable {
 	 * --------------------------------------------------------------------------
 	 * The entry point into the runtime
 	 */
-
-	private IBoxpiler chooseBoxpiler() {
-		switch ( ( String ) this.configuration.experimental.getOrDefault( "compiler", "java" ) ) {
-			case "asm" :
-				return ASMBoxpiler.getInstance();
-			case "java" :
-			default :
-				return JavaBoxpiler.getInstance();
-		}
-	}
 
 	/**
 	 * Get or startup a BoxLang Runtime instance.
@@ -630,6 +644,13 @@ public class BoxRuntime implements java.io.Closeable {
 	 * Service Access Methods
 	 * --------------------------------------------------------------------------
 	 */
+
+	/**
+	 * Get the global class locator service
+	 */
+	public ClassLocator getClassLocator() {
+		return this.classLocator;
+	}
 
 	/**
 	 * Get the async service
@@ -967,7 +988,6 @@ public class BoxRuntime implements java.io.Closeable {
 
 	/**
 	 * Switch the runtime to generate java source and compile via the JDK
-	 *
 	 */
 	public void useJavaBoxpiler() {
 		RunnableLoader.getInstance().selectBoxPiler( JavaBoxpiler.class );
@@ -975,7 +995,6 @@ public class BoxRuntime implements java.io.Closeable {
 
 	/**
 	 * Switch the runtime to generate bytecode directly via ASM
-	 *
 	 */
 	public void useASMBoxPiler() {
 		RunnableLoader.getInstance().selectBoxPiler( ASMBoxpiler.class );
@@ -1148,6 +1167,8 @@ public class BoxRuntime implements java.io.Closeable {
 
 		// Does it have a main method?
 		if ( target.getThisScope().containsKey( Key.main ) ) {
+			RequestBoxContext.setCurrent( scriptingContext.getParentOfType( RequestBoxContext.class ) );
+			ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
 			// Fire!!!
 			try {
 				boolean result = listener.onRequestStart( scriptingContext, new Object[] { templatePath } );
@@ -1200,6 +1221,8 @@ public class BoxRuntime implements java.io.Closeable {
 					}
 				}
 				scriptingContext.flushBuffer( false );
+				RequestBoxContext.removeCurrent();
+				Thread.currentThread().setContextClassLoader( oldClassLoader );
 			}
 		} else {
 			throw new BoxRuntimeException( "Class [" + targetClass.getName() + "] does not have a main method to execute." );
@@ -1220,6 +1243,8 @@ public class BoxRuntime implements java.io.Closeable {
 		IBoxContext				scriptingContext	= ensureRequestTypeContext( context, template.getRunnablePath().absolutePath().toUri() );
 		BaseApplicationListener	listener			= scriptingContext.getParentOfType( RequestBoxContext.class ).getApplicationListener();
 		Throwable				errorToHandle		= null;
+		RequestBoxContext.setCurrent( scriptingContext.getParentOfType( RequestBoxContext.class ) );
+		ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
 		try {
 			boolean result = listener.onRequestStart( scriptingContext, new Object[] { templatePath } );
 			if ( result ) {
@@ -1273,6 +1298,8 @@ public class BoxRuntime implements java.io.Closeable {
 				}
 			}
 			scriptingContext.flushBuffer( false );
+			RequestBoxContext.removeCurrent();
+			Thread.currentThread().setContextClassLoader( oldClassLoader );
 		}
 	}
 
@@ -1325,6 +1352,8 @@ public class BoxRuntime implements java.io.Closeable {
 	 */
 	public Object executeStatement( BoxScript scriptRunnable, IBoxContext context ) {
 		IBoxContext scriptingContext = ensureRequestTypeContext( context );
+		RequestBoxContext.setCurrent( scriptingContext.getParentOfType( RequestBoxContext.class ) );
+		ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
 		try {
 			// Fire!!!
 			return scriptRunnable.invoke( scriptingContext );
@@ -1337,6 +1366,8 @@ public class BoxRuntime implements java.io.Closeable {
 			return null;
 		} finally {
 			scriptingContext.flushBuffer( false );
+			RequestBoxContext.removeCurrent();
+			Thread.currentThread().setContextClassLoader( oldClassLoader );
 		}
 
 	}
@@ -1389,6 +1420,8 @@ public class BoxRuntime implements java.io.Closeable {
 		BoxScript	scriptRunnable		= RunnableLoader.getInstance().loadSource( scriptingContext, source, type );
 		Object		results				= null;
 
+		RequestBoxContext.setCurrent( scriptingContext.getParentOfType( RequestBoxContext.class ) );
+		ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
 		try {
 			// Fire!!!
 			results = scriptRunnable.invoke( scriptingContext );
@@ -1400,6 +1433,8 @@ public class BoxRuntime implements java.io.Closeable {
 			}
 		} finally {
 			scriptingContext.flushBuffer( false );
+			RequestBoxContext.removeCurrent();
+			Thread.currentThread().setContextClassLoader( oldClassLoader );
 		}
 
 		return results;
@@ -1415,6 +1450,8 @@ public class BoxRuntime implements java.io.Closeable {
 		IBoxContext		scriptingContext	= ensureRequestTypeContext( context );
 		BufferedReader	reader				= new BufferedReader( new InputStreamReader( sourceStream ) );
 		String			source;
+		RequestBoxContext.setCurrent( scriptingContext.getParentOfType( RequestBoxContext.class ) );
+		ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
 
 		try {
 			Boolean quiet = reader.ready();
@@ -1474,6 +1511,9 @@ public class BoxRuntime implements java.io.Closeable {
 			}
 		} catch ( IOException e ) {
 			throw new BoxRuntimeException( "Error reading source stream", e );
+		} finally {
+			RequestBoxContext.removeCurrent();
+			Thread.currentThread().setContextClassLoader( oldClassLoader );
 		}
 
 		return null;
@@ -1533,6 +1573,23 @@ public class BoxRuntime implements java.io.Closeable {
 			return new ScriptingRequestBoxContext( context, template );
 		} else {
 			return new ScriptingRequestBoxContext( context );
+		}
+	}
+
+	/**
+	 * Choose the Boxpiler implementation to use according to the configuration
+	 *
+	 * @return The Boxpiler implementation to use
+	 */
+	private IBoxpiler chooseBoxpiler() {
+		switch ( ( String ) this.configuration.experimental.getOrDefault( "compiler", "java" ) ) {
+			case "asm" :
+				useASMBoxPiler();
+				return ASMBoxpiler.getInstance();
+			case "java" :
+			default :
+				useJavaBoxpiler();
+				return JavaBoxpiler.getInstance();
 		}
 	}
 

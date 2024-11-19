@@ -42,8 +42,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.ClassUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
@@ -53,6 +51,7 @@ import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
+import ortus.boxlang.runtime.dynamic.casters.KeyCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCasterLoose;
 import ortus.boxlang.runtime.dynamic.javaproxy.InterfaceProxyService;
@@ -63,6 +62,7 @@ import ortus.boxlang.runtime.runnables.BoxInterface;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.IntKey;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
@@ -175,18 +175,18 @@ public class DynamicInteropService {
 	/**
 	 * This is the class locator
 	 */
-	private static ClassLocator										classLocator		= ClassLocator.getInstance();
+	private static ClassLocator										classLocator		= null;
+
+	/**
+	 * This is the function service for invoking functions
+	 */
+	private static FunctionService									functionService		= null;
 
 	/**
 	 * Coercion maps
 	 */
 	private static List<String>										numberTargets		= List.of( "boolean", "byte", "character", "string" );
 	private static List<String>										booleanTargets		= List.of( "string", "character" );
-
-	/**
-	 * Logger
-	 */
-	private static final Logger										logger				= LoggerFactory.getLogger( DynamicInteropService.class );
 
 	/**
 	 * Static Initializer
@@ -421,7 +421,7 @@ public class DynamicInteropService {
 				String superClassName = StringCaster.cast( superClassObject );
 				if ( superClassName != null && superClassName.length() > 0 && !superClassName.toLowerCase().startsWith( "java:" ) ) {
 					// Recursively load the super class
-					IClassRunnable _super = ( IClassRunnable ) classLocator.load( classContext,
+					IClassRunnable _super = ( IClassRunnable ) getClassLocator().load( classContext,
 					    superClassName,
 					    classContext.getCurrentImports()
 					)
@@ -453,7 +453,7 @@ public class DynamicInteropService {
 				    .toList();
 
 				for ( String interfaceName : interfaceNames ) {
-					BoxInterface thisInterface = ( BoxInterface ) classLocator.load( classContext, interfaceName, classContext.getCurrentImports() )
+					BoxInterface thisInterface = ( BoxInterface ) getClassLocator().load( classContext, interfaceName, classContext.getCurrentImports() )
 					    .unWrapBoxLangClass();
 					boxClass.registerInterface( thisInterface );
 				}
@@ -493,7 +493,7 @@ public class DynamicInteropService {
 					// implicit constructor
 
 					if ( positionalArgs != null && positionalArgs.length == 1 && positionalArgs[ 0 ] instanceof IStruct named ) {
-						namedArgs = named.getWrapped();
+						namedArgs = named;
 					} else if ( positionalArgs != null && positionalArgs.length > 0 ) {
 						throw new BoxRuntimeException( "Implicit constructor only accepts named args or a single Struct as a positional arg." );
 					}
@@ -502,7 +502,7 @@ public class DynamicInteropService {
 						if ( namedArgs.containsKey( Key.argumentCollection ) && namedArgs.get( Key.argumentCollection ) instanceof IStruct argCollection ) {
 							// Create copy of named args, merge in argCollection without overwriting, and delete arg collection key from copy of namedargs
 							namedArgs = new HashMap<>( namedArgs );
-							for ( Map.Entry<Key, Object> entry : argCollection.getWrapped().entrySet() ) {
+							for ( Map.Entry<Key, Object> entry : argCollection.entrySet() ) {
 								if ( !namedArgs.containsKey( entry.getKey() ) ) {
 									namedArgs.put( entry.getKey(), entry.getValue() );
 								}
@@ -584,6 +584,26 @@ public class DynamicInteropService {
 	 * @return The result of the method invocation
 	 */
 	public static Object invoke( IBoxContext context, Class<?> targetClass, Object targetInstance, String methodName, Boolean safe, Object... arguments ) {
+		return invoke( context, null, targetClass, targetInstance, methodName, safe, arguments );
+	}
+
+	/**
+	 * Invoke can be used to invoke public methods on instances, or static methods on classes/interfaces.
+	 *
+	 * If it's determined that the method handle is static, then the target instance is ignored.
+	 * If it's determined that the method handle is not static, then the target instance is used.
+	 *
+	 * @param context        The context to use for the method invocation
+	 * @param targetClass    The Class that you want to invoke a method on
+	 * @param targetInstance The instance to call the method on, or null if it's static
+	 * @param safe           Whether the method should throw an error or return null if it doesn't exist
+	 * @param methodName     The name of the method to invoke
+	 * @param arguments      The arguments to pass to the method
+	 *
+	 * @return The result of the method invocation
+	 */
+	public static Object invoke( IBoxContext context, DynamicObject dynamicObject, Class<?> targetClass, Object targetInstance, String methodName, Boolean safe,
+	    Object... arguments ) {
 		// Verify method name
 		if ( methodName == null || methodName.isEmpty() ) {
 			throw new BoxRuntimeException( "Method name cannot be null or empty." );
@@ -596,14 +616,17 @@ public class DynamicInteropService {
 		MethodRecord	methodRecord;
 		Class<?>[]		argumentClasses	= argumentsToClasses( arguments );
 		try {
-			methodRecord = getMethodHandle(
+			methodRecord	= getMethodHandle(
 			    context,
+			    dynamicObject,
 			    targetClass,
 			    targetInstance,
 			    methodName,
 			    argumentClasses,
 			    arguments
 			);
+			// May have been populated by getMethodHandle
+			targetInstance	= dynamicObject == null ? targetInstance : dynamicObject.getTargetInstance();
 		} catch ( RuntimeException e ) {
 			if ( safe ) {
 				return null;
@@ -613,11 +636,18 @@ public class DynamicInteropService {
 			}
 		}
 
-		// If it's not static, we need a target instance
-		if ( !methodRecord.isStatic() && targetInstance == null ) {
-			throw new BoxRuntimeException(
-			    "You can't call invoke on a null target instance. Use [invokeStatic] instead or set the target instance manually or via the constructor."
-			);
+		// If we are calling an instance method, but have no instance, and have the dynamicobject reference, then initialize it if there is a no-arg constructor
+		// We are doing this here as well as inside discoverMethodHandle because when the method handle is cached, the discover method will not be run again
+		if ( !methodRecord.isStatic() && targetInstance == null && dynamicObject != null ) {
+			// Check if the dynamic object has a no-arg constructor
+			try {
+				targetInstance = invokeConstructor( context, targetClass );
+				dynamicObject.setTargetInstance( targetInstance );
+			} catch ( NoConstructorException e ) {
+				// If there is no no-arg constructor, then we can't call the method
+				throw new BoxRuntimeException( "No instance provided for non-static method " + methodName + " for class " + targetClass.getName()
+				    + " and there is not an no-arg constructor to call." );
+			}
 		}
 
 		try {
@@ -643,7 +673,7 @@ public class DynamicInteropService {
 		} catch ( RuntimeException e ) {
 			throw e;
 		} catch ( Throwable e ) {
-			throw new BoxRuntimeException( "Error invoking method " + methodName + " for class " + targetClass.getName(), e );
+			throw new BoxRuntimeException( "Error invoking method " + methodName + "() for class " + targetClass.getName(), e );
 		}
 	}
 
@@ -657,7 +687,7 @@ public class DynamicInteropService {
 	 *
 	 * @return The result of the method invocation
 	 */
-	public static Object invokeStatic( IBoxContext context, Class<?> targetClass, String methodName, Object... arguments ) {
+	public static Object invokeStatic( IBoxContext context, DynamicObject dynamicObject, Class<?> targetClass, String methodName, Object... arguments ) {
 		// Verify method name
 		if ( methodName == null || methodName.isEmpty() ) {
 			throw new BoxRuntimeException( "Method name cannot be null or empty." );
@@ -666,7 +696,7 @@ public class DynamicInteropService {
 		// Unwrap any ClassInvoker instances
 		unWrapArguments( arguments );
 		Class<?>[]		argumentClasses	= argumentsToClasses( arguments );
-		MethodRecord	methodRecord	= getMethodHandle( context, targetClass, null, methodName, argumentClasses, arguments );
+		MethodRecord	methodRecord	= getMethodHandle( context, dynamicObject, targetClass, null, methodName, argumentClasses, arguments );
 
 		// Coerce the arguments to the right types
 		coerceArguments(
@@ -685,7 +715,7 @@ public class DynamicInteropService {
 		} catch ( RuntimeException e ) {
 			throw e;
 		} catch ( Throwable e ) {
-			throw new BoxRuntimeException( "Error invoking method " + methodName + " for class " + targetClass.getName(), e );
+			throw new BoxRuntimeException( "Error invoking method " + methodName + "() for class " + targetClass.getName(), e );
 		}
 	}
 
@@ -1083,6 +1113,7 @@ public class DynamicInteropService {
 	 * or creates a new one if not found or throws an exception if the method signature doesn't exist
 	 *
 	 * @param context            The context to use for the method invocation
+	 * @param dynamicObject      The dynamic object to get the method handle for
 	 * @param targetClass        The class to get the method handle for
 	 * @param methodName         The name of the method to get the handle for
 	 * @param argumentsAsClasses The array of arguments as classes to map
@@ -1093,6 +1124,7 @@ public class DynamicInteropService {
 	 */
 	public static MethodRecord getMethodHandle(
 	    IBoxContext context,
+	    DynamicObject dynamicObject,
 	    Class<?> targetClass,
 	    Object targetInstance,
 	    String methodName,
@@ -1107,7 +1139,7 @@ public class DynamicInteropService {
 		if ( methodRecord == null || !handlesCacheEnabled ) {
 			synchronized ( cacheKey.intern() ) {
 				if ( methodRecord == null || !handlesCacheEnabled ) {
-					methodRecord = discoverMethodHandle( context, targetClass, targetInstance, methodName, argumentsAsClasses, arguments );
+					methodRecord = discoverMethodHandle( context, dynamicObject, targetClass, targetInstance, methodName, argumentsAsClasses, arguments );
 					methodHandleCache.put( cacheKey, methodRecord );
 				}
 			}
@@ -1136,6 +1168,7 @@ public class DynamicInteropService {
 	 */
 	public static MethodRecord discoverMethodHandle(
 	    IBoxContext context,
+	    DynamicObject dynamicObject,
 	    Class<?> targetClass,
 	    Object targetInstance,
 	    String methodName,
@@ -1149,6 +1182,19 @@ public class DynamicInteropService {
 		// - argument coercion
 		Method			targetMethod	= findMatchingMethod( context, targetClass, methodName, argumentsAsClasses, arguments );
 		MethodHandle	targetHandle;
+
+		// If we are calling an instance method, but have no instance, and have the dynamicobject reference, then initialize it if there is a no-arg constructor
+		if ( targetMethod != null && targetInstance == null && dynamicObject != null && !Modifier.isStatic( targetMethod.getModifiers() ) ) {
+			// Check if the dynamic object has a no-arg constructor
+			try {
+				targetInstance = invokeConstructor( context, targetClass );
+				dynamicObject.setTargetInstance( targetInstance );
+			} catch ( NoConstructorException e ) {
+				// If there is no no-arg constructor, then we can't call the method
+				throw new BoxRuntimeException( "No instance provided for non-static method " + methodName + " for class " + targetClass.getName()
+				    + " and there is not an no-arg constructor to call." );
+			}
+		}
 
 		// Verify we can access the method, if we can't then we need to go up the inheritance chain to find it or die
 		// This happens when objects implement default method interfaces usually
@@ -1535,7 +1581,7 @@ public class DynamicInteropService {
 	public static Class<?> argumentToClass( Object thisArg ) {
 		// nulls are always null, why is this even a thing?
 		if ( thisArg == null ) {
-			return Object.class;
+			return null;
 		}
 		// If it's a primitive, we need to convert it to the wrapper class
 		Class<?> clazz = thisArg.getClass();
@@ -1598,6 +1644,7 @@ public class DynamicInteropService {
 	/**
 	 * Dereference this object by a key and return the value, or throw exception
 	 *
+	 * @param context     The context to use for the dereference
 	 * @param targetClass The class to dereference and look for the value on
 	 * @param name        The name of the key to dereference
 	 * @param safe        If true, return null if the method is not found, otherwise throw an exception
@@ -1611,6 +1658,7 @@ public class DynamicInteropService {
 	/**
 	 * Dereference this object by a key and return the value, or throw exception
 	 *
+	 * @param context        The context to use for the dereference
 	 * @param targetInstance The instance to dereference and look for the value on
 	 * @param name           The name of the key to dereference
 	 * @param safe           If true, return null if the method is not found, otherwise throw an exception
@@ -1624,6 +1672,7 @@ public class DynamicInteropService {
 	/**
 	 * Dereference this object by a key and return the value, or throw exception
 	 *
+	 * @param context        The context to use for the dereference
 	 * @param targetClass    The class to dereference and look for the value on
 	 * @param targetInstance The instance to dereference and look for the value on
 	 * @param name           The name of the key to dereference
@@ -1654,9 +1703,12 @@ public class DynamicInteropService {
 			// Special logic so we can treat exceptions as referencable. Possibly move to helper
 		} else if ( targetInstance instanceof List list ) {
 			Integer index = Array.validateAndGetIntForDereference( name, list.size(), safe );
-			// non-existant indexes return null when dereferncing safely
-			if ( safe && ( index < 1 || index > list.size() ) ) {
+			// non-existant indexes or keys which could not be turned into an int return null when dereferencing safely
+			if ( safe && ( index == null || Math.abs( index ) > list.size() || index == 0 ) ) {
 				return null;
+			}
+			if ( index < 0 ) {
+				return list.get( list.size() + index );
 			}
 			return list.get( index - 1 );
 		} else if ( targetInstance != null && targetInstance.getClass().isArray() ) {
@@ -1666,9 +1718,12 @@ public class DynamicInteropService {
 			}
 
 			Integer index = Array.validateAndGetIntForDereference( name, arr.length, safe );
-			// non-existant indexes return null when dereferncing safely
-			if ( safe && ( index < 1 || index > arr.length ) ) {
+			// non-existant indexes or keys which could not be turned into an int return null when dereferencing safely
+			if ( safe && ( index == null || Math.abs( index ) > arr.length || index == 0 ) ) {
 				return null;
+			}
+			if ( index < 0 ) {
+				return arr[ arr.length + index ];
 			}
 			return arr[ index - 1 ];
 		} else if ( targetInstance instanceof Throwable t && exceptionKeys.contains( name ) ) {
@@ -1701,9 +1756,13 @@ public class DynamicInteropService {
 			// Special logic for accessing strings as array. Possibly move to helper
 		} else if ( targetInstance instanceof String s && name instanceof IntKey intKey ) {
 			Integer index = Array.validateAndGetIntForDereference( intKey, s.length(), safe );
-			// non-existant indexes return null when dereferncing safely
-			if ( safe && ( index < 1 || index > s.length() ) ) {
+
+			// non-existant indexes or keys which could not be turned into an int return null when dereferencing safely
+			if ( safe && ( index == null || Math.abs( index ) > s.length() || index == 0 ) ) {
 				return null;
+			}
+			if ( index < 0 ) {
+				return s.substring( s.length() + index, s.length() + index + 1 );
 			}
 			return s.substring( index - 1, index );
 			// Special logic for native arrays. Possibly move to helper
@@ -1711,7 +1770,7 @@ public class DynamicInteropService {
 			// If we have the field, return its value, even if it's null
 			return getField( targetClass, targetInstance, name.getName() ).orElse( null );
 		} else if ( hasClassNoCase( targetClass, name.getName() ) ) {
-			return findClass( targetClass, name.getName() );
+			return DynamicObject.of( findClass( targetClass, name.getName() ) );
 		} else if ( targetClass.isEnum() ) {
 			return Enum.valueOf( ( Class<Enum> ) targetClass, name.getName() );
 		} else if ( getMethodNamesNoCase( targetClass, true ).contains( name.getName().toUpperCase() ) ) {
@@ -1766,9 +1825,14 @@ public class DynamicInteropService {
 	 *
 	 * @return The requested return value or null
 	 */
-	public static Object dereferenceAndInvoke( Class<?> targetClass, IBoxContext context, Key name, Object[] positionalArguments,
+	public static Object dereferenceAndInvoke(
+	    DynamicObject dynamicObject,
+	    Class<?> targetClass,
+	    IBoxContext context,
+	    Key name,
+	    Object[] positionalArguments,
 	    Boolean safe ) {
-		return dereferenceAndInvoke( targetClass, null, context, name, positionalArguments, safe );
+		return dereferenceAndInvoke( dynamicObject, targetClass, null, context, name, positionalArguments, safe );
 	}
 
 	/**
@@ -1782,9 +1846,14 @@ public class DynamicInteropService {
 	 *
 	 * @return The requested return value or null
 	 */
-	public static Object dereferenceAndInvoke( Object targetInstance, IBoxContext context, Key name, Object[] positionalArguments,
+	public static Object dereferenceAndInvoke(
+	    DynamicObject dynamicObject,
+	    Object targetInstance,
+	    IBoxContext context,
+	    Key name,
+	    Object[] positionalArguments,
 	    Boolean safe ) {
-		return dereferenceAndInvoke( targetInstance.getClass(), targetInstance, context, name, positionalArguments, safe );
+		return dereferenceAndInvoke( dynamicObject, targetInstance.getClass(), targetInstance, context, name, positionalArguments, safe );
 	}
 
 	/**
@@ -1799,22 +1868,32 @@ public class DynamicInteropService {
 	 *
 	 * @return The requested return value or null
 	 */
-	public static Object dereferenceAndInvoke( Class<?> targetClass, Object targetInstance, IBoxContext context, Key name, Object[] positionalArguments,
+	public static Object dereferenceAndInvoke(
+	    DynamicObject dynamicObject,
+	    Class<?> targetClass,
+	    Object targetInstance,
+	    IBoxContext context,
+	    Key name,
+	    Object[] positionalArguments,
 	    Boolean safe ) {
 
+		// If the object is referencable, allow it to handle the dereference itself
 		if ( IReferenceable.class.isAssignableFrom( targetClass ) && targetInstance != null && targetInstance instanceof IReferenceable ref ) {
 			return ref.dereferenceAndInvoke( context, name, positionalArguments, safe );
 		}
 
+		// If we have an instance, we can try to see if it accepts member methods
+		// Unless the method is already defined on the class
 		if ( targetInstance != null ) {
 			ObjectRef			ref					= ObjectRef.of( targetInstance );
-			MemberDescriptor	memberDescriptor	= BoxRuntime.getInstance().getFunctionService().getMemberMethod( context, name, ref );
+			MemberDescriptor	memberDescriptor	= getFunctionService().getMemberMethod( context, name, ref );
 			if ( memberDescriptor != null ) {
 				targetInstance = ref.get();
 				return memberDescriptor.invoke( context, targetInstance, positionalArguments );
 			}
 		}
 
+		// If the method requested is not found, return null if safe is true
 		if ( safe && !hasMethod( targetClass, name.getName() ) ) {
 			return null;
 		}
@@ -1825,17 +1904,50 @@ public class DynamicInteropService {
 			return targetClass;
 		}
 
-		return invoke( context, targetClass, targetInstance, name.getName(), safe, positionalArguments );
+		// Else let's do an invoke dynamic
+		return invoke( context, dynamicObject, targetClass, targetInstance, name.getName(), safe, positionalArguments );
 	}
 
-	public static Object dereferenceAndInvoke( Class<?> targetClass, IBoxContext context, Key name, Map<Key, Object> namedArguments,
+	/**
+	 * Dereference this object by a key and invoke the result as an invokable (UDF, java method)
+	 *
+	 * @param targetClass    The class to assign the field on
+	 * @param context        The IBoxContext in which the function will be executed
+	 * @param name           The name of the key to dereference, which becomes the method name
+	 * @param namedArguments The arguments to pass to the invokable
+	 * @param safe           If true, return null if the method is not found, otherwise throw an exception
+	 *
+	 * @return The requested return value or null
+	 */
+	public static Object dereferenceAndInvoke(
+	    DynamicObject dynamicObject,
+	    Class<?> targetClass,
+	    IBoxContext context,
+	    Key name,
+	    Map<Key, Object> namedArguments,
 	    Boolean safe ) {
-		return dereferenceAndInvoke( targetClass, null, context, name, namedArguments, safe );
+		return dereferenceAndInvoke( dynamicObject, targetClass, null, context, name, namedArguments, safe );
 	}
 
-	public static Object dereferenceAndInvoke( Object targetInstance, IBoxContext context, Key name, Map<Key, Object> namedArguments,
+	/**
+	 * Dereference this object by a key and invoke the result as an invokable (UDF, java method)
+	 *
+	 * @param targetInstance The instance to assign the field on
+	 * @param context        The IBoxContext in which the function will be executed
+	 * @param name           The name of the key to dereference, which becomes the method name
+	 * @param namedArguments The arguments to pass to the invokable
+	 * @param safe           If true, return null if the method is not found, otherwise throw an exception
+	 *
+	 * @return The requested return value or null
+	 */
+	public static Object dereferenceAndInvoke(
+	    DynamicObject dynamicObject,
+	    Object targetInstance,
+	    IBoxContext context,
+	    Key name,
+	    Map<Key, Object> namedArguments,
 	    Boolean safe ) {
-		return dereferenceAndInvoke( targetInstance.getClass(), targetInstance, context, name, namedArguments, safe );
+		return dereferenceAndInvoke( dynamicObject, targetInstance.getClass(), targetInstance, context, name, namedArguments, safe );
 	}
 
 	/**
@@ -1849,7 +1961,13 @@ public class DynamicInteropService {
 	 *
 	 * @return The requested return value or null
 	 */
-	public static Object dereferenceAndInvoke( Class<?> targetClass, Object targetInstance, IBoxContext context, Key name, Map<Key, Object> namedArguments,
+	public static Object dereferenceAndInvoke(
+	    DynamicObject dynamicObject,
+	    Class<?> targetClass,
+	    Object targetInstance,
+	    IBoxContext context,
+	    Key name,
+	    Map<Key, Object> namedArguments,
 	    Boolean safe ) {
 
 		if ( IReferenceable.class.isAssignableFrom( targetClass ) && targetInstance != null && targetInstance instanceof IReferenceable ref ) {
@@ -1858,7 +1976,7 @@ public class DynamicInteropService {
 
 		if ( targetInstance != null ) {
 			ObjectRef			ref					= ObjectRef.of( targetInstance );
-			MemberDescriptor	memberDescriptor	= BoxRuntime.getInstance().getFunctionService().getMemberMethod( context, name, ref );
+			MemberDescriptor	memberDescriptor	= getFunctionService().getMemberMethod( context, name, ref );
 			if ( memberDescriptor != null ) {
 				targetInstance = ref.get();
 				return memberDescriptor.invoke( context, targetInstance, namedArguments );
@@ -2082,7 +2200,16 @@ public class DynamicInteropService {
 		if ( Number.class.isAssignableFrom( expected ) && Number.class.isAssignableFrom( actual ) ) {
 			// logger.debug( "Coerce attempt: Both numbers, using generic caster to " + expectedClass );
 			return Optional.of(
-			    GenericCaster.cast( context, value, expectedClass )
+			    GenericCaster.cast( context, value, expectedClass, false )
+			);
+		}
+
+		// EXPECTED: Key
+		// To help with interacting with core BL classes, if the target method requires a Key then cast simple values
+		if ( Key.class.isAssignableFrom( expected ) ) {
+			// logger.debug( "Coerce attempt: Both numbers, using generic caster to " + expectedClass );
+			return Optional.of(
+			    KeyCaster.cast( value, false )
 			);
 		}
 
@@ -2097,7 +2224,7 @@ public class DynamicInteropService {
 			// logger.debug( "Coerce attempt: Castable to boolean " + actualClass );
 
 			return Optional.of(
-			    BooleanCaster.cast( value )
+			    BooleanCaster.cast( value, false )
 			);
 		}
 
@@ -2105,7 +2232,7 @@ public class DynamicInteropService {
 		if ( expectedClass.equals( "string" ) ) {
 			// logger.debug( "Coerce attempt: Castable to String " + actualClass );
 			return Optional.of(
-			    StringCaster.cast( value )
+			    StringCaster.cast( value, false )
 			);
 		}
 
@@ -2120,11 +2247,6 @@ public class DynamicInteropService {
 			        ? InterfaceProxyService.buildCoreProxy( functionalInterface, context, value, null )
 			        : InterfaceProxyService.buildGenericProxy( context, value, null, new Class[] { functionalInterface }, functionalInterface.getClassLoader() )
 			);
-		}
-		// If we have them both, just return it, this is needed for super class lookups
-		if ( functionalInterface != null && functionalInterface.isAssignableFrom( value.getClass() ) ) {
-			// logger.debug( "Coerce attempt: Castable to " + expectedClass + " from " + actualClass );
-			return Optional.of( value );
 		}
 
 		// logger.debug( "Coerce attempt FAILED for [" + expected + "] from [" + actual + "] with value [" + value.toString() + "]" );
@@ -2158,4 +2280,33 @@ public class DynamicInteropService {
 		// Verify assignability including primitive autoboxing
 		return ClassUtils.isAssignable( argumentsAsClasses, constructorParams );
 	}
+
+	/**
+	 * Lazy load this to avoid static intitlizer deadlocks on startup
+	 */
+	private static FunctionService getFunctionService() {
+		if ( functionService == null ) {
+			synchronized ( DynamicInteropService.class ) {
+				if ( functionService == null ) {
+					functionService = BoxRuntime.getInstance().getFunctionService();
+				}
+			}
+		}
+		return functionService;
+	}
+
+	/**
+	 * Lazy load ClassLocator as well
+	 */
+	private static ClassLocator getClassLocator() {
+		if ( classLocator == null ) {
+			synchronized ( DynamicInteropService.class ) {
+				if ( classLocator == null ) {
+					classLocator = BoxRuntime.getInstance().getClassLocator();
+				}
+			}
+		}
+		return classLocator;
+	}
+
 }

@@ -14,6 +14,12 @@
  */
 package ortus.boxlang.runtime.jdbc;
 
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
+import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
+import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.dynamic.casters.BigIntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.scopes.Key;
@@ -22,6 +28,9 @@ import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
+/**
+ * Represents a parameter to a SQL query created via QueryExecute or the Query component.
+ */
 public class QueryParameter {
 
 	/**
@@ -98,8 +107,35 @@ public class QueryParameter {
 		return new QueryParameter( Struct.of( "value", value ) );
 	}
 
+	/**
+	 * Retrieve the parameter value.
+	 */
 	public Object getValue() {
 		return value;
+	}
+
+	/**
+	 * Retrieve the value casted to the declared SQL type of the parameter..
+	 */
+	public Object toSQLType() {
+		if ( this.value == null ) {
+			return null;
+		}
+		return switch ( this.type ) {
+			case QueryColumnType.INTEGER -> IntegerCaster.cast( this.value );
+			case QueryColumnType.BIGINT -> BigIntegerCaster.cast( this.value );
+			case QueryColumnType.DOUBLE -> DoubleCaster.cast( this.value );
+			case QueryColumnType.DECIMAL -> DoubleCaster.cast( this.value );
+			case QueryColumnType.CHAR, VARCHAR -> StringCaster.cast( this.value );
+			case QueryColumnType.BINARY -> this.value; // @TODO: Will this work?
+			case QueryColumnType.BIT -> BooleanCaster.cast( this.value );
+			case QueryColumnType.TIME -> DateTimeCaster.cast( this.value );
+			case QueryColumnType.DATE -> DateTimeCaster.cast( this.value );
+			case QueryColumnType.TIMESTAMP -> new java.sql.Timestamp( DateTimeCaster.cast( this.value ).toEpochMillis() );
+			case QueryColumnType.OBJECT -> this.value;
+			case QueryColumnType.OTHER -> this.value;
+			case QueryColumnType.NULL -> null;
+		};
 	}
 
 	/**

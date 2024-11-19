@@ -14,6 +14,7 @@ import org.objectweb.asm.util.TraceClassVisitor;
 import ortus.boxlang.compiler.Boxpiler;
 import ortus.boxlang.compiler.ClassInfo;
 import ortus.boxlang.compiler.ast.BoxClass;
+import ortus.boxlang.compiler.ast.BoxInterface;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
 import ortus.boxlang.compiler.ast.visitor.QueryEscapeSingleQuoteVisitor;
@@ -114,7 +115,7 @@ public class ASMBoxpiler extends Boxpiler {
 		Transpiler transpiler = Transpiler.getTranspiler();
 		transpiler.setProperty( "classname", classInfo.className() );
 		transpiler.setProperty( "packageName", classInfo.packageName().toString() );
-		transpiler.setProperty( "boxPackageName", classInfo.boxPackageName().toString() );
+		transpiler.setProperty( "boxFQN", classInfo.boxFqn().toString() );
 		transpiler.setProperty( "baseclass", classInfo.baseclass() );
 		transpiler.setProperty( "returnType", classInfo.returnType() );
 		transpiler.setProperty( "sourceType", classInfo.sourceType().name() );
@@ -130,11 +131,13 @@ public class ASMBoxpiler extends Boxpiler {
 			classNode = transpiler.transpile( boxScript );
 		} else if ( node instanceof BoxClass boxClass ) {
 			classNode = transpiler.transpile( boxClass );
+		} else if ( node instanceof BoxInterface boxInterface ) {
+			classNode = transpiler.transpile( boxInterface );
 		} else {
-			throw new IllegalStateException( "Unexpected root type: " + node );
+			throw new IllegalStateException( "Unexpected root type: " + node.getClass() + ": " + node );
 		}
 		transpiler.getAuxiliary().forEach( consumer );
-		consumer.accept( classInfo.FQN(), classNode );
+		consumer.accept( classInfo.fqn().toString(), classNode );
 	}
 
 	private ParsingResult parseClassInfo( ClassInfo info ) {

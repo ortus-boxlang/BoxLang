@@ -18,11 +18,14 @@
 
 package ortus.boxlang.runtime.components.net;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.aMultipart;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.containing;
 import static com.github.tomakehurst.wiremock.client.WireMock.created;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.havingExactly;
 import static com.github.tomakehurst.wiremock.client.WireMock.ok;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
@@ -162,6 +165,32 @@ public class HTTPTest {
 		assertThat( res.get( Key.statusText ) ).isEqualTo( "Created" );
 		String body = res.getAsString( Key.fileContent );
 		assertThat( body ).isEqualTo( "{\"id\": 1, \"name\": \"foobar\", \"body\": \"lorem ipsum dolor\"}" );
+	}
+
+	@DisplayName( "It can make a post request with form params where one name has multiple values" )
+	@Test
+	public void testPostFormParamsMultipleValuesForOneName( WireMockRuntimeInfo wmRuntimeInfo ) {
+		stubFor(
+		    post( "/posts" )
+		        .withFormParam( "tags", havingExactly( "tag-a", "tag-b" ) )
+		        .willReturn( created().withBody( "{\"id\": 1, \"tags\": [ \"tag-a\", \"tag-b\" ] }" ) ) );
+
+		// @formatter:off
+		instance.executeSource( String.format( """
+			http method="POST" url="%s" {
+				httpparam type="formfield" name="tags" value="tag-a";
+				httpparam type="formfield" name="tags" value="tag-b";
+			}
+		""", wmRuntimeInfo.getHttpBaseUrl() + "/posts" ), context );
+		// @formatter:on
+
+		assertThat( variables.get( bxhttp ) ).isInstanceOf( IStruct.class );
+
+		IStruct res = variables.getAsStruct( bxhttp );
+		assertThat( res.get( Key.statusCode ) ).isEqualTo( 201 );
+		assertThat( res.get( Key.statusText ) ).isEqualTo( "Created" );
+		String body = res.getAsString( Key.fileContent );
+		assertThat( body ).isEqualTo( "{\"id\": 1, \"tags\": [ \"tag-a\", \"tag-b\" ] }" );
 	}
 
 	@DisplayName( "It can make a post request with a json body" )
@@ -397,6 +426,153 @@ public class HTTPTest {
 		    	[{"userId":1,"id":1,"title":"suntautfacererepellatprovidentoccaecatiexcepturioptioreprehenderit","body":"quiaetsuscipit\\nsuscipitrecusandaeconsequunturexpeditaetcum\\nreprehenderitmolestiaeututquastotam\\nnostrumrerumestautemsuntremevenietarchitecto"},{"userId":1,"id":2,"title":"quiestesse","body":"estrerumtemporevitae\\nsequisintnihilreprehenderitdolorbeataeeadoloresneque\\nfugiatblanditiisvoluptateporrovelnihilmolestiaeutreiciendis\\nquiaperiamnondebitispossimusquinequenisinulla"},{"userId":1,"id":3,"title":"eamolestiasquasiexercitationemrepellatquiipsasitaut","body":"etiustosedquoiure\\nvoluptatemoccaecatiomniseligendiautad\\nvoluptatemdoloribusvelaccusantiumquispariatur\\nmolestiaeporroeiusodioetlaboreetvelitaut"},{"userId":1,"id":4,"title":"eumetestoccaecati","body":"ullametsaepereiciendisvoluptatemadipisci\\nsitametautemassumendaprovidentrerumculpa\\nquishiccommodinesciuntremteneturdoloremqueipsamiure\\nquissuntvoluptatemrerumillovelit"},{"userId":1,"id":5,"title":"nesciuntquasodio","body":"repudiandaeveniamquaeratsuntsed\\naliasautfugiatsitautemsedest\\nvoluptatemomnispossimusessevoluptatibusquis\\nestautteneturdolorneque"},{"userId":1,"id":6,"title":"doloremeummagnieosaperiamquia","body":"utaspernaturcorporisharumnihilquisprovidentsequi\\nmollitianobisaliquidmolestiae\\nperspiciatiseteanemoabreprehenderitaccusantiumquas\\nvoluptatedoloresvelitetdoloremquemolestiae"},{"userId":1,"id":7,"title":"magnamfacilisautem","body":"doloreplaceatquibusdameaquovitae\\nmagniquisenimquiquisquonemoautsaepe\\nquidemrepellatexcepturiutquia\\nsuntutsequieoseasedquas"},{"userId":1,"id":8,"title":"doloremdoloreestipsam","body":"dignissimosaperiamdoloremquieum\\nfacilisquibusdamanimisintsuscipitquisintpossimuscum\\nquaeratmagnimaioresexcepturi\\nipsamutcommodidolorvoluptatummodiautvitae"},{"userId":1,"id":9,"title":"nesciuntiureomnisdoloremtemporaetaccusantium","body":"consecteturaniminesciuntiuredolore\\nenimquiaad\\nveniamautemutquamautnobis\\netestautquodautprovidentvoluptasautemvoluptas"},{"userId":1,"id":10,"title":"optiomolestiasidquiaeum","body":"quoetexpeditamodicumofficiavelmagni\\ndoloribusquirepudiandae\\nveronisisit\\nquosveniamquodsedaccusamusveritatiserror"}]
 		    """.replaceAll(
 		        "\\s+", "" ) );
+	}
+
+	@DisplayName( "It can handle bad gateways" )
+	@Test
+	public void testBadGateway() {
+		// @formatter:off
+		instance.executeSource( """
+			http method="GET" url="https://does-not-exist.also-does-not-exist" {
+				httpparam type="header" name="User-Agent" value="HyperCFML/7.5.2";
+			}
+			result = bxhttp;
+		""", context );
+		// @formatter:on
+
+		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
+
+		IStruct bxhttp = variables.getAsStruct( result );
+
+		Assertions.assertTrue( bxhttp.containsKey( Key.statusCode ) );
+		assertThat( bxhttp.get( Key.statusCode ) ).isEqualTo( 502 );
+		Assertions.assertTrue( bxhttp.containsKey( Key.status_code ) );
+		assertThat( bxhttp.get( Key.status_code ) ).isEqualTo( 502 );
+
+		Assertions.assertTrue( bxhttp.containsKey( Key.statusText ) );
+		assertThat( bxhttp.get( Key.statusText ) ).isEqualTo( "Bad Gateway" );
+		Assertions.assertTrue( bxhttp.containsKey( Key.status_text ) );
+		assertThat( bxhttp.get( Key.status_text ) ).isEqualTo( "Bad Gateway" );
+
+		Assertions.assertTrue( bxhttp.containsKey( Key.fileContent ) );
+		assertThat( bxhttp.get( Key.fileContent ) ).isEqualTo( "Connection Failure" );
+
+		Assertions.assertTrue( bxhttp.containsKey( Key.errorDetail ) );
+		assertThat( bxhttp.get( Key.errorDetail ) ).isEqualTo( "Unknown host: does-not-exist.also-does-not-exist: Name or service not known." );
+	}
+
+	@DisplayName( "It can handle timeouts" )
+	@Test
+	public void testTimeout( WireMockRuntimeInfo wmRuntimeInfo ) {
+		stubFor( get( "/timeout" ).willReturn( aResponse().withStatus( 200 ).withFixedDelay( 5000 ) ) );
+
+		String baseURL = wmRuntimeInfo.getHttpBaseUrl();
+		// @formatter:off
+		instance.executeSource( String.format( """
+			http timeout="1" method="GET" url="%s" {
+				httpparam type="header" name="User-Agent" value="HyperCFML/7.5.2";
+			}
+			result = bxhttp;
+		""", baseURL + "/timeout" ), context );
+		// @formatter:on
+
+		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
+
+		IStruct bxhttp = variables.getAsStruct( result );
+
+		Assertions.assertTrue( bxhttp.containsKey( Key.statusCode ) );
+		assertThat( bxhttp.get( Key.statusCode ) ).isEqualTo( 408 );
+		Assertions.assertTrue( bxhttp.containsKey( Key.status_code ) );
+		assertThat( bxhttp.get( Key.status_code ) ).isEqualTo( 408 );
+
+		Assertions.assertTrue( bxhttp.containsKey( Key.statusText ) );
+		assertThat( bxhttp.get( Key.statusText ) ).isEqualTo( "Request Timeout" );
+		Assertions.assertTrue( bxhttp.containsKey( Key.status_text ) );
+		assertThat( bxhttp.get( Key.status_text ) ).isEqualTo( "Request Timeout" );
+
+		Assertions.assertTrue( bxhttp.containsKey( Key.fileContent ) );
+		assertThat( bxhttp.get( Key.fileContent ) ).isEqualTo( "Request Timeout" );
+
+		Assertions.assertTrue( bxhttp.containsKey( Key.errorDetail ) );
+		assertThat( bxhttp.get( Key.errorDetail ) ).isEqualTo( "Request timed out after 1 second." );
+	}
+
+	@DisplayName( "It can handle files" )
+	@Test
+	public void testFiles( WireMockRuntimeInfo wmRuntimeInfo ) {
+		stubFor(
+		    post( "/files" )
+		        .withMultipartRequestBody( aMultipart().withName( "photo" ) )
+		        .willReturn( created().withBody( "{\"success\": true }" ) ) );
+
+		String baseURL = wmRuntimeInfo.getHttpBaseUrl();
+		// @formatter:off
+		instance.executeSource( String.format( """
+			http method="POST" url="%s" {
+				httpparam type="file" name="photo" file="/src/test/resources/chuck_norris.jpg";
+			}
+			result = bxhttp;
+		""", baseURL + "/files" ), context );
+		// @formatter:on
+
+		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
+
+		IStruct bxhttp = variables.getAsStruct( result );
+
+		Assertions.assertTrue( bxhttp.containsKey( Key.statusCode ) );
+		assertThat( bxhttp.get( Key.statusCode ) ).isEqualTo( 201 );
+		Assertions.assertTrue( bxhttp.containsKey( Key.status_code ) );
+		assertThat( bxhttp.get( Key.status_code ) ).isEqualTo( 201 );
+
+		Assertions.assertTrue( bxhttp.containsKey( Key.statusText ) );
+		assertThat( bxhttp.get( Key.statusText ) ).isEqualTo( "Created" );
+		Assertions.assertTrue( bxhttp.containsKey( Key.status_text ) );
+		assertThat( bxhttp.get( Key.status_text ) ).isEqualTo( "Created" );
+
+		Assertions.assertTrue( bxhttp.containsKey( Key.fileContent ) );
+		assertThat( bxhttp.get( Key.fileContent ) ).isEqualTo( "{\"success\": true }" );
+	}
+
+	@DisplayName( "It can handle multipart uploads" )
+	@Test
+	public void testMultipart( WireMockRuntimeInfo wmRuntimeInfo ) {
+		stubFor(
+		    post( "/multipart" )
+		        .withMultipartRequestBody(
+		            aMultipart()
+		                .withName( "photo" )
+		                .withName( "joke" )
+		                .withBody( containing( "Chuck Norris can divide by zero." ) )
+		        )
+		        .willReturn( created().withBody( "{\"success\": true }" ) ) );
+
+		String baseURL = wmRuntimeInfo.getHttpBaseUrl();
+		// @formatter:off
+		instance.executeSource( String.format( """
+			http method="POST" url="%s" {
+				httpparam type="file" name="photo" file="/src/test/resources/chuck_norris.jpg";
+				httpparam type="formfield" name="joke" value="Chuck Norris can divide by zero.";
+			}
+			result = bxhttp;
+		""", baseURL + "/multipart" ), context );
+		// @formatter:on
+
+		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
+
+		IStruct bxhttp = variables.getAsStruct( result );
+
+		Assertions.assertTrue( bxhttp.containsKey( Key.statusCode ) );
+		assertThat( bxhttp.get( Key.statusCode ) ).isEqualTo( 201 );
+		Assertions.assertTrue( bxhttp.containsKey( Key.status_code ) );
+		assertThat( bxhttp.get( Key.status_code ) ).isEqualTo( 201 );
+
+		Assertions.assertTrue( bxhttp.containsKey( Key.statusText ) );
+		assertThat( bxhttp.get( Key.statusText ) ).isEqualTo( "Created" );
+		Assertions.assertTrue( bxhttp.containsKey( Key.status_text ) );
+		assertThat( bxhttp.get( Key.status_text ) ).isEqualTo( "Created" );
+
+		Assertions.assertTrue( bxhttp.containsKey( Key.fileContent ) );
+		assertThat( bxhttp.get( Key.fileContent ) ).isEqualTo( "{\"success\": true }" );
 	}
 
 }

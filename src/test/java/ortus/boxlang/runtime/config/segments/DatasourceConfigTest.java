@@ -262,17 +262,17 @@ class DatasourceConfigTest {
 		    "database", "integerTest",
 		    "minConnections", "1",
 		    "maxConnections", "11",
-		    "connectionTimeout", "30000",
-		    "idleTimeout", "600000",
-		    "maxLifetime", "180000"
+		    "connectionTimeout", "3",
+		    "idleTimeout", "600",
+		    "maxLifetime", "1800"
 		) ).setOnTheFly();
 
 		HikariConfig		hikariConfig	= datasource.toHikariConfig();
-		assertEquals( hikariConfig.getMinimumIdle(), 1 );
-		assertEquals( hikariConfig.getMaximumPoolSize(), 11 );
-		assertEquals( hikariConfig.getConnectionTimeout(), 30000 );
-		assertEquals( hikariConfig.getIdleTimeout(), 600000 );
-		assertEquals( hikariConfig.getMaxLifetime(), 180000 );
+		assertEquals( 1, hikariConfig.getMinimumIdle() );
+		assertEquals( 11, hikariConfig.getMaximumPoolSize() );
+		assertEquals( 3000, hikariConfig.getConnectionTimeout() );
+		assertEquals( 600000, hikariConfig.getIdleTimeout() );
+		assertEquals( 1800000, hikariConfig.getMaxLifetime() );
 	}
 
 	@DisplayName( "It can skip driver in place of jdbc url" )

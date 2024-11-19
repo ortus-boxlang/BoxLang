@@ -193,6 +193,6 @@ public class Phase2Lambda extends BoxTemplate {
         }
 
         // Bye bye! Ciao Bella!
-        boxRuntime.shutdown();
+        // boxRuntime.shutdown();
     }
 }

@@ -66,6 +66,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.util.StructUtil;
 import ortus.boxlang.runtime.util.DataNavigator;
 import ortus.boxlang.runtime.util.EncryptionUtil;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
@@ -376,7 +377,8 @@ public class ModuleRecord {
 			this.classLoader = new DynamicClassLoader(
 			    this.name,
 			    this.physicalPath.toUri().toURL(),
-			    runtime.getClass().getClassLoader()
+			    runtime.getRuntimeLoader(),
+			    false
 			);
 		} catch ( MalformedURLException e ) {
 			logger.error( "Error creating module [{}] class loader.", this.name, e );
@@ -410,9 +412,8 @@ public class ModuleRecord {
 
 		// Append any module settings found in the runtime configuration
 		if ( runtime.getConfiguration().modules.containsKey( this.name ) ) {
-			// TODO: Later do a deep merge
 			ModuleConfig config = ( ModuleConfig ) runtime.getConfiguration().modules.get( this.name );
-			this.settings.putAll( config.settings );
+			StructUtil.deepMerge( this.settings, config.settings, true );
 		}
 
 		this.interceptors				= variablesScope.getAsArray( Key.interceptors );

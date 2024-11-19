@@ -26,9 +26,6 @@ import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.Array;
-import ortus.boxlang.runtime.types.Query;
-import ortus.boxlang.runtime.types.QueryColumn;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
@@ -86,7 +83,7 @@ public class Referencer {
 		if ( object instanceof DynamicObject dob ) {
 			return dob.dereferenceAndInvoke( context, key, positionalArguments, safe );
 		}
-		return DynamicInteropService.dereferenceAndInvoke( object, context, key, positionalArguments, safe );
+		return DynamicInteropService.dereferenceAndInvoke( null, object, context, key, positionalArguments, safe );
 	}
 
 	/**
@@ -109,7 +106,7 @@ public class Referencer {
 		if ( object instanceof DynamicObject dob ) {
 			return dob.dereferenceAndInvoke( context, key, new Object[] {}, safe );
 		}
-		return DynamicInteropService.dereferenceAndInvoke( object, context, key, new Object[] {}, safe );
+		return DynamicInteropService.dereferenceAndInvoke( null, object, context, key, new Object[] {}, safe );
 	}
 
 	/**
@@ -133,7 +130,7 @@ public class Referencer {
 		if ( object instanceof DynamicObject dob ) {
 			return dob.dereferenceAndInvoke( context, key, namedArguments, safe );
 		}
-		return DynamicInteropService.dereferenceAndInvoke( object, context, key, namedArguments, safe );
+		return DynamicInteropService.dereferenceAndInvoke( null, object, context, key, namedArguments, safe );
 	}
 
 	/**
@@ -218,12 +215,6 @@ public class Referencer {
 
 				next = new Struct();
 				set( context, isFinal, object, key, next );
-				// If it's not null, it needs to be a Map
-			} else if ( ! ( next instanceof Map || next instanceof Array || next instanceof Query || next instanceof QueryColumn ) ) {
-				throw new BoxRuntimeException(
-				    String.format( "Cannot assign to key [%s] because it is a [%s] and not a Struct or Array",
-				        key.getName(),
-				        next.getClass().getName() ) );
 			}
 			object	= next;
 			// Only counts the first time through

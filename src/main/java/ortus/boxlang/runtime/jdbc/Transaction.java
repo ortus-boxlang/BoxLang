@@ -23,6 +23,8 @@ import java.sql.Savepoint;
 import java.util.HashMap;
 import java.util.Map;
 
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.types.IStruct;
@@ -39,6 +41,11 @@ public class Transaction implements ITransaction {
 	 * Logger
 	 */
 	private static final Logger	logger					= LoggerFactory.getLogger( Transaction.class );
+
+	/**
+	 * The context associated with this transaction.
+	 */
+	private IBoxContext			context;
 
 	/**
 	 * The underlying JDBC connection.
@@ -81,8 +88,9 @@ public class Transaction implements ITransaction {
 	 *
 	 * @param datasource The datasource associated with this transaction
 	 */
-	public Transaction( DataSource datasource ) {
-		this.datasource = datasource;
+	public Transaction( IBoxContext context, DataSource datasource ) {
+		this.context	= context;
+		this.datasource	= datasource;
 	}
 
 	/**
@@ -127,13 +135,27 @@ public class Transaction implements ITransaction {
 				    "transaction", this,
 				    "connection", this.connection
 				);
-				BoxRuntime.getInstance().getInterceptorService()
-				    .announce( BoxEvent.ON_TRANSACTION_ACQUIRE, eventData );
+				announce( BoxEvent.ON_TRANSACTION_ACQUIRE, eventData );
 			} catch ( SQLException e ) {
 				throw new DatabaseException( "Failed to begin transaction:", e );
 			}
 		}
 		return this.connection;
+	}
+
+	/**
+	 * Set the datasource associated with this transaction.
+	 * <p>
+	 * For transactions not initialized with a datasource, allows you to set the datasource after construction.
+	 * <p>
+	 * Will throw an exception if the datasource is already set.
+	 */
+	public Transaction setDataSource( DataSource datasource ) {
+		if ( this.datasource != null ) {
+			throw new DatabaseException( "Transaction datasource is already configured" );
+		}
+		this.datasource = datasource;
+		return this;
 	}
 
 	/**
@@ -152,8 +174,7 @@ public class Transaction implements ITransaction {
 		IStruct eventData = Struct.of(
 		    "transaction", this
 		);
-		BoxRuntime.getInstance().getInterceptorService()
-		    .announce( BoxEvent.ON_TRANSACTION_BEGIN, eventData );
+		announce( BoxEvent.ON_TRANSACTION_BEGIN, eventData );
 		return this;
 	}
 
@@ -165,8 +186,7 @@ public class Transaction implements ITransaction {
 		    "connection", connection == null ? null : connection,
 		    "transaction", this
 		);
-		BoxRuntime.getInstance().getInterceptorService()
-		    .announce( BoxEvent.ON_TRANSACTION_COMMIT, eventData );
+		announce( BoxEvent.ON_TRANSACTION_COMMIT, eventData );
 		if ( this.connection != null ) {
 			try {
 				logger.debug( "Committing transaction" );
@@ -198,8 +218,7 @@ public class Transaction implements ITransaction {
 		    "connection", connection == null ? null : connection,
 		    "transaction", this
 		);
-		BoxRuntime.getInstance().getInterceptorService()
-		    .announce( BoxEvent.ON_TRANSACTION_ROLLBACK, eventData );
+		announce( BoxEvent.ON_TRANSACTION_ROLLBACK, eventData );
 
 		if ( this.connection != null ) {
 			try {
@@ -234,8 +253,7 @@ public class Transaction implements ITransaction {
 		    "connection", connection == null ? null : connection,
 		    "transaction", this
 		);
-		BoxRuntime.getInstance().getInterceptorService()
-		    .announce( BoxEvent.ON_TRANSACTION_SET_SAVEPOINT, eventData );
+		announce( BoxEvent.ON_TRANSACTION_SET_SAVEPOINT, eventData );
 
 		if ( this.connection != null ) {
 			try {
@@ -257,8 +275,7 @@ public class Transaction implements ITransaction {
 		    "connection", connection == null ? null : connection,
 		    "transaction", this
 		);
-		BoxRuntime.getInstance().getInterceptorService()
-		    .announce( BoxEvent.ON_TRANSACTION_END, eventData );
+		announce( BoxEvent.ON_TRANSACTION_END, eventData );
 
 		if ( this.connection != null ) {
 			try {
@@ -268,8 +285,7 @@ public class Transaction implements ITransaction {
 				    "transaction", this,
 				    "connection", this.connection
 				);
-				BoxRuntime.getInstance().getInterceptorService()
-				    .announce( BoxEvent.ON_TRANSACTION_RELEASE, releaseEventData );
+				announce( BoxEvent.ON_TRANSACTION_RELEASE, releaseEventData );
 
 				if ( this.connection.getAutoCommit() ) {
 					this.connection.setAutoCommit( true );
@@ -284,5 +300,20 @@ public class Transaction implements ITransaction {
 			}
 		}
 		return this;
+	}
+
+	/**
+	 * Announce a transactional event on BOTH the runtime-level and application-level interceptor pools.
+	 */
+	private void announce( BoxEvent event, IStruct eventData ) {
+		RequestBoxContext requestContext = this.context.getParentOfType( RequestBoxContext.class );
+		if ( requestContext != null ) {
+			requestContext.getApplicationListener()
+			    .getInterceptorPool()
+			    .announce( event, eventData );
+		}
+
+		BoxRuntime.getInstance().getInterceptorService()
+		    .announce( event, eventData );
 	}
 }

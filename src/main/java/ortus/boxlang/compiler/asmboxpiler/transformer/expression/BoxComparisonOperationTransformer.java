@@ -17,10 +17,14 @@
  */
 package ortus.boxlang.compiler.asmboxpiler.transformer.expression;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
+
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
@@ -28,11 +32,15 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxComparisonOperation;
 import ortus.boxlang.compiler.ast.expression.BoxComparisonOperator;
-import ortus.boxlang.runtime.operators.*;
+import ortus.boxlang.runtime.operators.EqualsEquals;
+import ortus.boxlang.runtime.operators.EqualsEqualsEquals;
+import ortus.boxlang.runtime.operators.GreaterThan;
+import ortus.boxlang.runtime.operators.GreaterThanEqual;
+import ortus.boxlang.runtime.operators.LessThan;
+import ortus.boxlang.runtime.operators.LessThanEqual;
+import ortus.boxlang.runtime.operators.Not;
+import ortus.boxlang.runtime.operators.NotEqualsEquals;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class BoxComparisonOperationTransformer extends AbstractTransformer {
 
@@ -45,6 +53,7 @@ public class BoxComparisonOperationTransformer extends AbstractTransformer {
 		BoxComparisonOperation	operation	= ( BoxComparisonOperation ) node;
 		List<AbstractInsnNode>	left		= transpiler.transform( operation.getLeft(), TransformerContext.NONE, ReturnValueContext.VALUE );
 		List<AbstractInsnNode>	right		= transpiler.transform( operation.getRight(), TransformerContext.NONE, ReturnValueContext.VALUE );
+		boolean					negated		= false;
 
 		Class<?>				dispatcher;
 		if ( operation.getOperator() == BoxComparisonOperator.Equal ) {
@@ -53,6 +62,9 @@ public class BoxComparisonOperationTransformer extends AbstractTransformer {
 			dispatcher = NotEqualsEquals.class;
 		} else if ( operation.getOperator() == BoxComparisonOperator.TEqual ) {
 			dispatcher = EqualsEqualsEquals.class;
+		} else if ( operation.getOperator() == BoxComparisonOperator.TNotEqual ) {
+			dispatcher	= EqualsEqualsEquals.class;
+			negated		= true;
 		} else if ( operation.getOperator() == BoxComparisonOperator.GreaterThan ) {
 			dispatcher = GreaterThan.class;
 		} else if ( operation.getOperator() == BoxComparisonOperator.GreaterThanEquals ) {
@@ -70,6 +82,18 @@ public class BoxComparisonOperationTransformer extends AbstractTransformer {
 		nodes.addAll( right );
 		nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC, Type.getInternalName( dispatcher ), "invoke",
 		    Type.getMethodDescriptor( Type.getType( Boolean.class ), Type.getType( Object.class ), Type.getType( Object.class ) ), false ) );
+
+		if ( negated ) {
+			nodes.add(
+			    new MethodInsnNode(
+			        Opcodes.INVOKESTATIC,
+			        Type.getInternalName( Not.class ),
+			        "invoke",
+			        Type.getMethodDescriptor( Type.getType( Boolean.class ), Type.getType( Object.class ) ),
+			        false
+			    )
+			);
+		}
 		return nodes;
 	}
 

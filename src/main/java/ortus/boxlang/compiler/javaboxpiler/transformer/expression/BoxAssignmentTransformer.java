@@ -206,13 +206,22 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		}
 
 		if ( furthestLeft instanceof BoxIdentifier id ) {
-			if ( transpiler.matchesImport( id.getName() ) && transpiler.getProperty( "sourceType" ).toLowerCase().startsWith( "box" ) ) {
-				throw new ExpressionException( "You cannot assign a variable with the same name as an import: [" + id.getName() + "]",
-				    furthestLeft.getPosition(), furthestLeft.getSourceText() );
+			boolean isBoxSyntax = transpiler.getProperty( "sourceType" ).toLowerCase().startsWith( "box" );
+			// imported.foo = 5 is ok, but imported = 5 is not
+			if ( left instanceof BoxIdentifier idl && transpiler.matchesImport( idl.getName() ) && isBoxSyntax ) {
+				throw new ExpressionException( "You cannot assign a variable with the same name as an import: [" + idl.getName() + "]",
+				    idl.getPosition(), idl.getSourceText() );
+			}
+
+			String baseObjTemplate = "${contextName}.scopeFindNearby( ${accessKey}, ${contextName}.getDefaultAssignmentScope() ),";
+			// imported.foo needs to swap out the furthest left object
+			if ( transpiler.matchesImport( id.getName() ) && isBoxSyntax ) {
+				baseObjTemplate = "classLocator.load( ${contextName}, \"${accessName}\", imports ),";
 			}
 
 			Node	keyNode	= createKey( id.getName() );
 			String	thisKey	= keyNode.toString();
+			values.put( "accessName", id.getName() );
 			values.put( "accessKey", thisKey );
 			values.put( "mustBeScopeName", mustBeScopeName == null ? "null" : createKey( mustBeScopeName ).toString() );
 			values.put( "hasFinal", hasFinal ? "true" : "false" );
@@ -227,11 +236,11 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			           	${contextName},
 			           	${hasFinal},
 			           	${mustBeScopeName},
-			           	${contextName}.scopeFindNearby( ${accessKey}, ${contextName}.getDefaultAssignmentScope() ),
-			           	${right}
-			           	${accessKeys}
-			           )
-			           """;
+			           	""" + baseObjTemplate + """
+			                                    	${right}
+			                                    	${accessKeys}
+			                                    )
+			                                    """;
 		} else {
 			if ( accessKeys.size() == 0 ) {
 				throw new ExpressionException( "You cannot assign a value to " + left.getClass().getSimpleName(), left.getPosition(), left.getSourceText() );

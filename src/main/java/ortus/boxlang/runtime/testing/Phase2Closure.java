@@ -203,6 +203,6 @@ public class Phase2Closure extends BoxTemplate {
         }
 
         // Bye bye! Ciao Bella!
-        boxRuntime.shutdown();
+        // boxRuntime.shutdown();
     }
 }

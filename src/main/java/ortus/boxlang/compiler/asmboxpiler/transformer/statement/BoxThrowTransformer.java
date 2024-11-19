@@ -86,7 +86,7 @@ public class BoxThrowTransformer extends AbstractTransformer {
 			        false )
 			);
 		} else if ( message == null ) {
-			return transpiler.transform( boxThrow.getExpression(), TransformerContext.RIGHT );
+			return transpiler.transform( boxThrow.getExpression(), TransformerContext.RIGHT, ReturnValueContext.VALUE_OR_NULL );
 		}
 
 		List<AbstractInsnNode> nodes = new ArrayList<>();

@@ -46,13 +46,13 @@ public class CacheTest extends BaseCacheTest {
 	public void canGetNamedCache() {
 		runtime.executeSource(
 		    """
-		    result = cache( "imports" )
+		    result = cache( "bxSessions" )
 		    """,
 		    context );
 
 		ICacheProvider cache = ( ICacheProvider ) variables.get( result );
 		assertNotNull( cache );
-		assertThat( cache.getName().getName() ).isEqualTo( "imports" );
+		assertThat( cache.getName().getName() ).isEqualTo( "bxSessions" );
 	}
 
 }

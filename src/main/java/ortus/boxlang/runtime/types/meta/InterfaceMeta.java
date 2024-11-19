@@ -28,8 +28,8 @@ import ortus.boxlang.runtime.types.AbstractFunction;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
-import ortus.boxlang.runtime.types.immutable.ImmutableArray;
-import ortus.boxlang.runtime.types.immutable.ImmutableStruct;
+import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableArray;
+import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableStruct;
 
 /**
  * This class represents generic BoxLang metadata for a an object which has no object-specifc properties
@@ -63,14 +63,14 @@ public class InterfaceMeta extends BoxMeta {
 			supersMeta.put( _super.getName().getName(), _super.getBoxMeta().getMeta() );
 		}
 
-		this.meta = ImmutableStruct.of(
+		this.meta = UnmodifiableStruct.of(
 		    Key._NAME, target.getName().getName(),
 		    Key.nameAsKey, target.getName(),
-		    Key.documentation, ImmutableStruct.fromStruct( target.getDocumentation() ),
-		    Key.annotations, ImmutableStruct.fromStruct( target.getAnnotations() ),
+		    Key.documentation, UnmodifiableStruct.fromStruct( target.getDocumentation() ),
+		    Key.annotations, UnmodifiableStruct.fromStruct( target.getAnnotations() ),
 		    Key._EXTENDS, supersMeta,
-		    Key.functions, ImmutableArray.fromList( functions ),
-		    Key.defaultFunctions, ImmutableArray.fromList( defaultFunctions ),
+		    Key.functions, UnmodifiableArray.fromList( functions ),
+		    Key.defaultFunctions, UnmodifiableArray.fromList( defaultFunctions ),
 		    Key._HASHCODE, target.hashCode(),
 		    Key.type, "Interface",
 		    Key.fullname, target.getName().getName(),

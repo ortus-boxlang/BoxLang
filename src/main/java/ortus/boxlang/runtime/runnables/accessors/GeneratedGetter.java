@@ -118,7 +118,8 @@ public class GeneratedGetter extends UDF {
 	 * @return
 	 */
 	public Object _invoke( FunctionBoxContext context ) {
-		return context.getScopeNearby( VariablesScope.name ).dereference( context, variable, false );
+		// We want null to be returned if the variable is not found to match CF
+		return context.getScopeNearby( VariablesScope.name ).get( variable );
 	}
 
 	// ITemplateRunnable implementation methods

@@ -108,6 +108,10 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	public static final String				ODBC_DATE_TIME_FORMAT_MASK					= TS_FORMAT_MASK;
 	public static final String				ODBC_DATE_FORMAT_MASK						= "'{d '''yyyy-MM-dd'''}'";
 	public static final String				ODBC_TIME_FORMAT_MASK						= "'{t '''HH:mm:ss'''}'";
+	// The format used by most browsers when calling toString on a Javascript date object - note that this is implementation dependent and may not be reliable
+	public static final String				JS_COMMON_TO_STRING_MASK					= "EEE MMM dd yyyy HH:mm:ss 'GMT'Z (zzzz)";
+	// The format used by most browsers when calling toString on a Javascript date object - note that this is implementation dependent and may not be reliable
+	public static final String				JS_COMMON_ALT_STRING_MASK					= "EEE MMM dd yyyy HH:mm:ss 'GMT'Z (zzz)";
 
 	/**
 	 * Common Modes
@@ -127,6 +131,7 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	    "ISODateTime", DateTimeFormatter.ofPattern( ISO_OFFSET_DATE_TIME_NOMILLIS_FORMAT_MASK ),
 	    "ISO8601DateTime", DateTimeFormatter.ISO_OFFSET_DATE_TIME,
 	    "ODBCDateTime", DateTimeFormatter.ofPattern( ODBC_DATE_TIME_FORMAT_MASK ),
+	    "javascriptDateTime", DateTimeFormatter.ofPattern( JS_COMMON_TO_STRING_MASK ),
 	    "fullDate", DateTimeFormatter.ofLocalizedDate( FormatStyle.FULL ),
 	    "longDate", DateTimeFormatter.ofLocalizedDate( FormatStyle.LONG ),
 	    "mediumDate", DateTimeFormatter.ofLocalizedDate( FormatStyle.MEDIUM ),
@@ -224,6 +229,16 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	 */
 	public DateTime( java.sql.Time time ) {
 		this( ZonedDateTime.of( LocalDate.EPOCH, time.toLocalTime(), ZoneId.systemDefault() ) );
+	}
+
+	/**
+	 * Constructor to create DateTime from a java.time.LocalTime object which has no date component
+	 * This will use the system default timezone
+	 *
+	 * @param time The time object
+	 */
+	public DateTime( java.time.LocalTime time ) {
+		this( ZonedDateTime.of( LocalDate.EPOCH, time, ZoneId.systemDefault() ) );
 	}
 
 	/**
@@ -357,7 +372,7 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 			} catch ( Exception x ) {
 				throw new BoxRuntimeException(
 				    String.format(
-				        "The the date time value of [%s] could not be parsed as a valid date or datetimea locale of [%s]",
+				        "The the date time value of [%s] could not be parsed as a valid date or datetime locale of [%s]",
 				        dateTime,
 				        locale.getDisplayName()
 				    ), x );

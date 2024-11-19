@@ -193,8 +193,8 @@ public abstract class Boxpiler implements IBoxpiler {
 	public Class<IBoxRunnable> compileStatement( String source, BoxSourceType type ) {
 		ClassInfo	classInfo	= ClassInfo.forStatement( source, type, this );
 		var			classPool	= getClassPool( classInfo.classPoolName() );
-		classPool.putIfAbsent( classInfo.FQN(), classInfo );
-		classInfo = classPool.get( classInfo.FQN() );
+		classPool.putIfAbsent( classInfo.fqn().toString(), classInfo );
+		classInfo = classPool.get( classInfo.fqn().toString() );
 
 		return classInfo.getDiskClass();
 
@@ -212,8 +212,8 @@ public abstract class Boxpiler implements IBoxpiler {
 	public Class<IBoxRunnable> compileScript( String source, BoxSourceType type ) {
 		ClassInfo	classInfo	= ClassInfo.forScript( source, type, this );
 		var			classPool	= getClassPool( classInfo.classPoolName() );
-		classPool.putIfAbsent( classInfo.FQN(), classInfo );
-		classInfo = classPool.get( classInfo.FQN() );
+		classPool.putIfAbsent( classInfo.fqn().toString(), classInfo );
+		classInfo = classPool.get( classInfo.fqn().toString() );
 
 		return classInfo.getDiskClass();
 	}
@@ -229,19 +229,19 @@ public abstract class Boxpiler implements IBoxpiler {
 	public Class<IBoxRunnable> compileTemplate( ResolvedFilePath resolvedFilePath ) {
 		ClassInfo	classInfo	= ClassInfo.forTemplate( resolvedFilePath, Parser.detectFile( resolvedFilePath.absolutePath().toFile() ), this );
 		var			classPool	= getClassPool( classInfo.classPoolName() );
-		classPool.putIfAbsent( classInfo.FQN(), classInfo );
+		classPool.putIfAbsent( classInfo.fqn().toString(), classInfo );
 		// If the new class is newer than the one on disk, recompile it
-		if ( classPool.get( classInfo.FQN() ).lastModified() < classInfo.lastModified() ) {
+		if ( classPool.get( classInfo.fqn().toString() ).lastModified() < classInfo.lastModified() ) {
 			try {
 				// Don't know if this does anything, but calling it for good measure
-				classPool.get( classInfo.FQN() ).getClassLoader().close();
+				classPool.get( classInfo.fqn().toString() ).getClassLoader().close();
 			} catch ( IOException e ) {
 				e.printStackTrace();
 			}
-			classPool.put( classInfo.FQN(), classInfo );
-			compileClassInfo( classInfo.classPoolName(), classInfo.FQN() );
+			classPool.put( classInfo.fqn().toString(), classInfo );
+			compileClassInfo( classInfo.classPoolName(), classInfo.fqn().toString() );
 		} else {
-			classInfo = classPool.get( classInfo.FQN() );
+			classInfo = classPool.get( classInfo.fqn().toString() );
 		}
 		return classInfo.getDiskClass();
 	}
@@ -257,8 +257,8 @@ public abstract class Boxpiler implements IBoxpiler {
 	public Class<IBoxRunnable> compileClass( String source, BoxSourceType type ) {
 		ClassInfo	classInfo	= ClassInfo.forClass( source, type, this );
 		var			classPool	= getClassPool( classInfo.classPoolName() );
-		classPool.putIfAbsent( classInfo.FQN(), classInfo );
-		classInfo = classPool.get( classInfo.FQN() );
+		classPool.putIfAbsent( classInfo.fqn().toString(), classInfo );
+		classInfo = classPool.get( classInfo.fqn().toString() );
 
 		return classInfo.getDiskClass();
 	}
@@ -274,19 +274,19 @@ public abstract class Boxpiler implements IBoxpiler {
 	public Class<IBoxRunnable> compileClass( ResolvedFilePath resolvedFilePath ) {
 		ClassInfo	classInfo	= ClassInfo.forClass( resolvedFilePath, Parser.detectFile( resolvedFilePath.absolutePath().toFile() ), this );
 		var			classPool	= getClassPool( classInfo.classPoolName() );
-		classPool.putIfAbsent( classInfo.FQN(), classInfo );
+		classPool.putIfAbsent( classInfo.fqn().toString(), classInfo );
 		// If the new class is newer than the one on disk, recompile it
-		if ( classPool.get( classInfo.FQN() ).lastModified() < classInfo.lastModified() ) {
+		if ( classPool.get( classInfo.fqn().toString() ).lastModified() < classInfo.lastModified() ) {
 			try {
 				// Don't know if this does anything, but calling it for good measure
-				classPool.get( classInfo.FQN() ).getClassLoader().close();
+				classPool.get( classInfo.fqn().toString() ).getClassLoader().close();
 			} catch ( IOException e ) {
 				e.printStackTrace();
 			}
-			classPool.put( classInfo.FQN(), classInfo );
-			compileClassInfo( classInfo.classPoolName(), classInfo.FQN() );
+			classPool.put( classInfo.fqn().toString(), classInfo );
+			compileClassInfo( classInfo.classPoolName(), classInfo.fqn().toString() );
 		} else {
-			classInfo = classPool.get( classInfo.FQN() );
+			classInfo = classPool.get( classInfo.fqn().toString() );
 		}
 		return classInfo.getDiskClass();
 	}
@@ -295,8 +295,8 @@ public abstract class Boxpiler implements IBoxpiler {
 	public Class<IProxyRunnable> compileInterfaceProxy( IBoxContext context, InterfaceProxyDefinition definition ) {
 		ClassInfo	classInfo	= ClassInfo.forInterfaceProxy( definition.name(), definition, this );
 		var			classPool	= getClassPool( classInfo.classPoolName() );
-		classPool.putIfAbsent( classInfo.FQN(), classInfo );
-		classInfo = classPool.get( classInfo.FQN() );
+		classPool.putIfAbsent( classInfo.fqn().toString(), classInfo );
+		classInfo = classPool.get( classInfo.fqn().toString() );
 
 		return classInfo.getDiskClassProxy();
 

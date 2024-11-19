@@ -18,6 +18,8 @@
 
 package ortus.boxlang.runtime.bifs.global.math;
 
+import static com.google.common.truth.Truth.assertThat;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -94,6 +96,35 @@ public class RandRangeTest {
 
 		    }
 		       """, context );
+	}
+
+	@DisplayName( "It returns a random number in range using an algorithm" )
+	@Test
+	public void testItReturnsARandomNumberInRangeWithAlgorithm() {
+		instance.executeSource(
+		    """
+		    loop times=1000 {
+		       	result = randRange( 0, 12, "SHA1PRNG" );
+		    	assert result >= 0;
+		    	assert result <= 12;
+		    }
+		       """, context );
+	}
+
+	@DisplayName( "It includes upper and lower bound" )
+	@Test
+	public void testItIncludesUpperAndLowerBound() {
+		instance.executeSource(
+		    """
+		    result = []
+		       loop times=1000 {
+		          	result.append( randRange( 1, 3 ) );
+		    		 //result.append( rand() );
+		       }
+		          """, context );
+		assertThat( variables.getAsArray( result ) ).contains( 1L );
+		assertThat( variables.getAsArray( result ) ).contains( 2L );
+		assertThat( variables.getAsArray( result ) ).contains( 3L );
 	}
 
 }

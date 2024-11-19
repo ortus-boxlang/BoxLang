@@ -1,33 +1,45 @@
-	class {
-		static {
-			static.scoped = "brad";
-			unscoped = "wood"
-			static foo = 9000;
-			'123' = 456;
-		}
-
-		static.foo = 42;  
-
-		static {
-			static.again = "luis"
-		}
-
-		static function myStaticFunc() {
-			return "static" & static.foo;
-		}
-
-		function myInstanceFunc() {
-			return "instance" & myStaticFunc();
-		}
-
-		array function myInstanceFunc2() {
-			return [static.scoped,
-			static.unscoped,
-			static.foo];
-		}
-
-		static function sayHello() {
-			return "Hello";
-		}
-
+class {
+	static {
+		static.scoped = "brad";
+		unscoped = "wood"
+		static foo = 9000;
+		'123' = 456;
+		final brad = "wood"
 	}
+
+	static.foo = 42;
+	variables.staticBrad = static.brad;
+	this.thisStaticBrad = variables.staticBrad;
+
+	static {
+		static.again = "luis"
+	}
+
+	static function myStaticFunc() {
+		return "static" & static.foo;
+	}
+
+	static function getInstance() {
+		return new src.test.java.TestCases.phase3.StaticTest();
+	}
+
+	function myInstanceFunc() {
+		return "instance" & myStaticFunc();
+	}
+
+	array function myInstanceFunc2() {
+		return [static.scoped,
+		static.unscoped,
+		static.foo];
+	}
+
+	static function sayHello() {
+		return "Hello";
+	}
+
+	function getStaticBrad() {
+		return staticBrad;
+	}
+
+
+}

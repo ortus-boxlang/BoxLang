@@ -40,6 +40,7 @@ public class TransactionRollback extends TransactionBIF {
 
 	/**
 	 * Rollback the current transaction and discard all unpersisted queries.
+	 * 
 	 * <p>
 	 * Only the changes made since the last <code>transactionSetSavepoint()</code> or <code>transactionCommit()</code> call will be discarded.
 	 * <p>

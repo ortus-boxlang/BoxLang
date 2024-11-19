@@ -4,6 +4,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -17,25 +19,493 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.InsnNode;
+import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.LdcInsnNode;
+import org.objectweb.asm.tree.LineNumberNode;
+import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.TypeInsnNode;
 import org.objectweb.asm.tree.VarInsnNode;
 
 import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
+import ortus.boxlang.compiler.ast.BoxClass;
+import ortus.boxlang.compiler.ast.BoxExpression;
+import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStatement;
+import ortus.boxlang.compiler.ast.expression.BoxArgument;
+import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
+import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
+import ortus.boxlang.compiler.ast.statement.BoxReturnType;
+import ortus.boxlang.compiler.ast.statement.BoxType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.dynamic.Referencer;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.runnables.BoxClassSupport;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.AbstractFunction;
+import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.DefaultExpression;
+import ortus.boxlang.runtime.types.Function;
+import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.util.MapHelper;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 public class AsmHelper {
+
+	public record LineNumberIns( List<AbstractInsnNode> start, List<AbstractInsnNode> end ) {
+
+	}
+
+	public static LineNumberIns translatePosition( BoxNode node ) {
+		LabelNode	start	= new LabelNode();
+		LabelNode	end		= new LabelNode();
+
+		return new LineNumberIns(
+		    List.of( start, new LineNumberNode( node.getPosition().getStart().getLine(), start ) ),
+		    List.of( end, new LineNumberNode( node.getPosition().getEnd().getLine(), end ) )
+		);
+	}
+
+	public static List<AbstractInsnNode> addLineNumberLabels( List<AbstractInsnNode> nodes, BoxNode node ) {
+		LabelNode	start	= new LabelNode();
+		LabelNode	end		= new LabelNode();
+
+		if ( node.getPosition() == null ) {
+			return nodes;
+		}
+
+		nodes.add( 0, start );
+		nodes.add( 1, new LineNumberNode( node.getPosition().getStart().getLine(), start ) );
+		nodes.add( end );
+		nodes.add( new LineNumberNode( node.getPosition().getStart().getLine(), end ) );
+
+		return nodes;
+	}
+
+	public static List<AbstractInsnNode> generateMapOfAbstractMethodNames( Transpiler transpiler, BoxNode classOrInterface ) {
+		List<List<AbstractInsnNode>>	methodKeyLists	= classOrInterface.getDescendantsOfType( BoxFunctionDeclaration.class )
+		    .stream()
+		    .filter( func -> func.getBody() == null )
+		    .map( func -> {
+															    List<List<AbstractInsnNode>> absFunc = List.of(
+															        transpiler.createKey( func.getName() ),
+															        createAbstractFunction( transpiler, func )
+															    );
+
+															    return absFunc;
+														    } )
+		    .flatMap( x -> x.stream() )
+		    .collect( java.util.stream.Collectors.toList() );
+
+		List<AbstractInsnNode>			nodes			= new ArrayList<AbstractInsnNode>();
+
+		nodes.addAll( AsmHelper.array( Type.getType( Object.class ), methodKeyLists ) );
+
+		nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+		    Type.getInternalName( MapHelper.class ),
+		    "LinkedHashMapOfAny",
+		    Type.getMethodDescriptor( Type.getType( Map.class ), Type.getType( Object[].class ) ),
+		    false ) );
+
+		return nodes;
+	}
+
+	private static List<AbstractInsnNode> generateSetOfCompileTimeMethodNames( Transpiler transpiler, BoxClass boxClass ) {
+		List<List<AbstractInsnNode>>	methodKeyLists	= boxClass.getDescendantsOfType( BoxFunctionDeclaration.class )
+		    .stream()
+		    .map( BoxFunctionDeclaration::getName )
+		    .map( transpiler::createKey )
+		    .collect( java.util.stream.Collectors.toList() );
+
+		List<AbstractInsnNode>			nodes			= new ArrayList<AbstractInsnNode>();
+
+		nodes.addAll( AsmHelper.array( Type.getType( Key.class ), methodKeyLists ) );
+		nodes.add(
+		    new MethodInsnNode(
+		        Opcodes.INVOKESTATIC,
+		        Type.getInternalName( Set.class ),
+		        "of",
+		        Type.getMethodDescriptor( Type.getType( Set.class ), Type.getType( Object[].class ) ),
+		        true
+		    )
+		);
+
+		return nodes;
+
+	}
+
+	private static String getFunctionReturnType( BoxReturnType returnType ) {
+		if ( returnType == null || returnType.getType() == null ) {
+			return "any";
+		}
+
+		if ( returnType.getType().equals( BoxType.Fqn ) ) {
+			return returnType.getFqn();
+		}
+
+		return returnType.getType().name();
+	}
+
+	public static List<AbstractInsnNode> createAbstractFunction( Transpiler transpiler, BoxFunctionDeclaration func ) {
+		List<AbstractInsnNode> nodes = new ArrayList<AbstractInsnNode>();
+
+		nodes.add( new TypeInsnNode( Opcodes.NEW, Type.getInternalName( AbstractFunction.class ) ) );
+		nodes.add( new InsnNode( Opcodes.DUP ) );
+
+		// args
+		// Key name
+		nodes.addAll( transpiler.createKey( func.getName() ) );
+		// Argument[] arguments
+		List<List<AbstractInsnNode>> argList = func.getArgs()
+		    .stream()
+		    .map( arg -> transpiler.transform( arg, TransformerContext.NONE ) )
+		    .toList();
+		nodes.addAll( AsmHelper.array( Type.getType( Argument.class ), argList ) );
+
+		nodes.add( new LdcInsnNode( getFunctionReturnType( func.getType() ) ) );
+
+		String accessModifier = "PUBLIC";
+
+		if ( func.getAccessModifier() != null ) {
+			accessModifier = func.getAccessModifier().name().toUpperCase();
+		}
+		// Access access
+		nodes.add(
+		    new FieldInsnNode(
+		        Opcodes.GETSTATIC,
+		        Type.getInternalName( Function.Access.class ),
+		        accessModifier,
+		        Type.getDescriptor( Function.Access.class )
+		    )
+		);
+		// IStruct annotations
+		// TODO
+		nodes.add( new FieldInsnNode( Opcodes.GETSTATIC,
+		    Type.getInternalName( Struct.class ),
+		    "EMPTY",
+		    Type.getDescriptor( IStruct.class ) ) );
+		// IStruct documentation
+		// TODO
+		nodes.add( new FieldInsnNode( Opcodes.GETSTATIC,
+		    Type.getInternalName( Struct.class ),
+		    "EMPTY",
+		    Type.getDescriptor( IStruct.class ) ) );
+		// String sourceObjectName
+		nodes.add( new LdcInsnNode( transpiler.getProperty( "boxClassName" ) ) );
+		// String sourceObjectType
+		nodes.add( new LdcInsnNode( "class" ) );
+
+		nodes.add(
+		    new MethodInsnNode(
+		        Opcodes.INVOKESPECIAL,
+		        Type.getInternalName( AbstractFunction.class ),
+		        "<init>",
+		        Type.getMethodDescriptor(
+		            Type.VOID_TYPE,
+		            Type.getType( Key.class ),
+		            Type.getType( Argument[].class ),
+		            Type.getType( String.class ),
+		            Type.getType( Function.Access.class ),
+		            Type.getType( IStruct.class ),
+		            Type.getType( IStruct.class ),
+		            Type.getType( String.class ),
+		            Type.getType( String.class )
+		        ),
+		        false
+		    )
+		);
+
+		return nodes;
+	}
+
+	public static void addDebugLabel( List<AbstractInsnNode> nodes, String label ) {
+		if ( !ASMBoxpiler.DEBUG ) {
+			return;
+		}
+
+		nodes.add( new LdcInsnNode( label ) );
+		nodes.add( new InsnNode( Opcodes.POP ) );
+	}
+
+	public static List<AbstractInsnNode> getDefaultExpression( AsmTranspiler transpiler, BoxExpression body ) {
+		Type		type		= Type.getType( "L" + transpiler.getProperty( "packageName" ).replace( '.', '/' )
+		    + "/" + transpiler.getProperty( "classname" )
+		    + "$Lambda_" + transpiler.incrementAndGetLambdaCounter() + ";" );
+
+		ClassNode	classNode	= new ClassNode();
+
+		classNode.visit(
+		    Opcodes.V17,
+		    Opcodes.ACC_PUBLIC,
+		    type.getInternalName(),
+		    null,
+		    Type.getInternalName( Object.class ),
+		    new String[] { Type.getInternalName( DefaultExpression.class ) } );
+
+		MethodVisitor initVisitor = classNode.visitMethod( Opcodes.ACC_PUBLIC,
+		    "<init>",
+		    Type.getMethodDescriptor( Type.VOID_TYPE ),
+		    null,
+		    null );
+		initVisitor.visitCode();
+		initVisitor.visitVarInsn( Opcodes.ALOAD, 0 );
+		initVisitor.visitMethodInsn( Opcodes.INVOKESPECIAL,
+		    Type.getInternalName( Object.class ),
+		    "<init>",
+		    Type.getMethodDescriptor( Type.VOID_TYPE ),
+		    false );
+		initVisitor.visitInsn( Opcodes.RETURN );
+		initVisitor.visitEnd();
+
+		MethodContextTracker t = new MethodContextTracker( false );
+		transpiler.addMethodContextTracker( t );
+		// Object evaluate( IBoxContext context );
+		MethodVisitor methodVisitor = classNode.visitMethod(
+		    Opcodes.ACC_PUBLIC,
+		    "evaluate",
+		    Type.getMethodDescriptor( Type.getType( Object.class ), Type.getType( IBoxContext.class ) ),
+		    null,
+		    null );
+		methodVisitor.visitCode();
+
+		t.trackNewContext();
+
+		transpiler.transform( body, TransformerContext.NONE, ReturnValueContext.VALUE_OR_NULL )
+		    .forEach( ( ins ) -> ins.accept( methodVisitor ) );
+
+		methodVisitor.visitInsn( Opcodes.ARETURN );
+		methodVisitor.visitMaxs( 0, 0 );
+		methodVisitor.visitEnd();
+
+		transpiler.popMethodContextTracker();
+
+		transpiler.setAuxiliary( type.getClassName(), classNode );
+
+		List<AbstractInsnNode> nodes = new ArrayList<AbstractInsnNode>();
+
+		nodes.add( new TypeInsnNode( Opcodes.NEW, type.getInternalName() ) );
+		nodes.add( new InsnNode( Opcodes.DUP ) );
+		nodes.add( new MethodInsnNode( Opcodes.INVOKESPECIAL,
+		    type.getInternalName(),
+		    "<init>",
+		    Type.getMethodDescriptor( Type.VOID_TYPE ),
+		    false ) );
+		return nodes;
+	}
+
+	public static List<AbstractInsnNode> callinvokeFunction(
+	    Transpiler transpiler,
+	    Type invokeType,
+	    List<BoxArgument> args,
+	    List<AbstractInsnNode> name,
+	    TransformerContext context,
+	    boolean safe ) {
+		List<AbstractInsnNode> nodes = new ArrayList<AbstractInsnNode>();
+
+		nodes.addAll( name );
+
+		// handle positional args
+		if ( args.size() == 0 || args.get( 0 ).getName() == null ) {
+			nodes.addAll(
+			    AsmHelper.array( Type.getType( Object.class ), args,
+			        ( argument, i ) -> transpiler.transform( args.get( i ), context, ReturnValueContext.VALUE ) )
+			);
+
+			nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
+			    Type.getInternalName( IBoxContext.class ),
+			    "invokeFunction",
+			    Type.getMethodDescriptor( Type.getType( Object.class ), invokeType, Type.getType( Object[].class ) ),
+			    true ) );
+
+			return nodes;
+		}
+
+		List<List<AbstractInsnNode>> keyValues = args.stream()
+		    .map( arg -> {
+			    List<List<AbstractInsnNode>> kv = List.of(
+			        transpiler.createKey( arg.getName() ),
+			        transpiler.transform( arg, context, ReturnValueContext.VALUE )
+			    );
+
+			    return kv;
+		    } )
+		    .flatMap( x -> x.stream() )
+		    .collect( Collectors.toList() );
+
+		nodes.addAll( AsmHelper.array( Type.getType( Object.class ), keyValues ) );
+
+		nodes.add(
+		    new MethodInsnNode( Opcodes.INVOKESTATIC,
+		        Type.getInternalName( Struct.class ),
+		        "of",
+		        Type.getMethodDescriptor( Type.getType( IStruct.class ), Type.getType( Object[].class ) ),
+		        false
+		    )
+		);
+
+		nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
+		    Type.getInternalName( IBoxContext.class ),
+		    "invokeFunction",
+		    Type.getMethodDescriptor( Type.getType( Object.class ), invokeType, Type.getType( Map.class ) ),
+		    true ) );
+
+		return nodes;
+
+	}
+
+	public static List<AbstractInsnNode> callReferencerGetAndInvoke(
+	    Transpiler transpiler,
+	    List<BoxArgument> args,
+	    String name,
+	    TransformerContext context,
+	    boolean safe ) {
+		return callReferencerGetAndInvoke( transpiler, args, transpiler.createKey( name ), context, safe );
+	}
+
+	public static List<AbstractInsnNode> callReferencerGetAndInvoke(
+	    Transpiler transpiler,
+	    List<BoxArgument> args,
+	    List<AbstractInsnNode> name,
+	    TransformerContext context,
+	    boolean safe ) {
+		List<AbstractInsnNode> nodes = new ArrayList<AbstractInsnNode>();
+
+		nodes.addAll( name );
+
+		// handle positional args
+		if ( args.size() == 0 || args.get( 0 ).getName() == null ) {
+			nodes.addAll(
+			    AsmHelper.array( Type.getType( Object.class ), args,
+			        ( argument, i ) -> transpiler.transform( args.get( i ), context, ReturnValueContext.VALUE ) )
+			);
+
+			nodes.add( new FieldInsnNode( Opcodes.GETSTATIC, Type.getInternalName( Boolean.class ), safe ? "TRUE" : "FALSE",
+			    Type.getDescriptor( Boolean.class ) ) );
+
+			nodes.add( new MethodInsnNode(
+			    Opcodes.INVOKESTATIC,
+			    Type.getInternalName( Referencer.class ),
+			    "getAndInvoke",
+			    Type.getMethodDescriptor( Type.getType( Object.class ),
+			        Type.getType( IBoxContext.class ),
+			        Type.getType( Object.class ),
+			        Type.getType( Key.class ),
+			        Type.getType( Object[].class ),
+			        Type.getType( Boolean.class )
+			    ),
+			    false )
+			);
+
+			return nodes;
+		}
+
+		List<List<AbstractInsnNode>> keyValues = args.stream()
+		    .map( arg -> {
+			    List<List<AbstractInsnNode>> kv = List.of(
+			        transpiler.createKey( arg.getName() ),
+			        transpiler.transform( arg, context, ReturnValueContext.VALUE )
+			    );
+
+			    return kv;
+		    } )
+		    .flatMap( x -> x.stream() )
+		    .collect( Collectors.toList() );
+
+		nodes.addAll( AsmHelper.array( Type.getType( Object.class ), keyValues ) );
+
+		nodes.add(
+		    new MethodInsnNode( Opcodes.INVOKESTATIC,
+		        Type.getInternalName( Struct.class ),
+		        "of",
+		        Type.getMethodDescriptor( Type.getType( IStruct.class ), Type.getType( Object[].class ) ),
+		        false
+		    )
+		);
+
+		nodes.add( new FieldInsnNode( Opcodes.GETSTATIC, Type.getInternalName( Boolean.class ), safe ? "TRUE" : "FALSE",
+		    Type.getDescriptor( Boolean.class ) ) );
+
+		nodes.add( new MethodInsnNode(
+		    Opcodes.INVOKESTATIC,
+		    Type.getInternalName( Referencer.class ),
+		    "getAndInvoke",
+		    Type.getMethodDescriptor( Type.getType( Object.class ),
+		        Type.getType( IBoxContext.class ),
+		        Type.getType( Object.class ),
+		        Type.getType( Key.class ),
+		        Type.getType( Map.class ),
+		        Type.getType( Boolean.class )
+		    ),
+		    false )
+		);
+
+		return nodes;
+
+	}
+
+	public static List<AbstractInsnNode> callDynamicObjectInvokeConstructor( Transpiler transpiler, List<BoxArgument> args, TransformerContext context ) {
+		List<AbstractInsnNode> nodes = new ArrayList<AbstractInsnNode>();
+
+		// handle positional args
+		if ( args.size() == 0 || args.get( 0 ).getName() == null ) {
+			nodes.addAll(
+			    AsmHelper.array( Type.getType( Object.class ), args,
+			        ( argument, i ) -> transpiler.transform( args.get( i ), context, ReturnValueContext.VALUE ) )
+			);
+
+			nodes.add( new MethodInsnNode( Opcodes.INVOKEVIRTUAL,
+			    Type.getInternalName( DynamicObject.class ),
+			    "invokeConstructor",
+			    Type.getMethodDescriptor( Type.getType( DynamicObject.class ),
+			        Type.getType( IBoxContext.class ),
+			        Type.getType( Object[].class ) ),
+			    false ) );
+
+			return nodes;
+		}
+
+		List<List<AbstractInsnNode>> keyValues = args.stream()
+		    .map( arg -> {
+			    List<List<AbstractInsnNode>> kv = List.of(
+			        transpiler.createKey( arg.getName() ),
+			        transpiler.transform( arg, context, ReturnValueContext.VALUE )
+			    );
+
+			    return kv;
+		    } )
+		    .flatMap( x -> x.stream() )
+		    .collect( Collectors.toList() );
+
+		nodes.addAll( AsmHelper.array( Type.getType( Object.class ), keyValues ) );
+
+		nodes.add(
+		    new MethodInsnNode( Opcodes.INVOKESTATIC,
+		        Type.getInternalName( Struct.class ),
+		        "of",
+		        Type.getMethodDescriptor( Type.getType( IStruct.class ), Type.getType( Object[].class ) ),
+		        false
+		    )
+		);
+
+		nodes.add( new MethodInsnNode( Opcodes.INVOKEVIRTUAL,
+		    Type.getInternalName( DynamicObject.class ),
+		    "invokeConstructor",
+		    Type.getMethodDescriptor( Type.getType( DynamicObject.class ),
+		        Type.getType( IBoxContext.class ),
+		        Type.getType( Map.class ) ),
+		    false ) );
+
+		return nodes;
+
+	}
 
 	public static void init( ClassVisitor classVisitor, boolean singleton, Type type, Type superClass, Consumer<MethodVisitor> onConstruction,
 	    Type... interfaces ) {
@@ -134,7 +604,12 @@ public class AsmHelper {
 
 	public static void addStaticFieldGetterWithStaticGetter( ClassVisitor classVisitor, Type type, String field, String method, String staticMethod,
 	    Type property, Object value ) {
-		addStaticFieldGetter( classVisitor, type, field, method, property, value );
+		addStaticFieldGetterWithStaticGetter( classVisitor, type, field, method, staticMethod, property, value, true );
+	}
+
+	public static void addStaticFieldGetterWithStaticGetter( ClassVisitor classVisitor, Type type, String field, String method, String staticMethod,
+	    Type property, Object value, boolean isFinal ) {
+		addStaticFieldGetter( classVisitor, type, field, method, property, value, isFinal );
 		MethodVisitor methodVisitor = classVisitor.visitMethod( Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
 		    staticMethod,
 		    Type.getMethodDescriptor( property ),
@@ -151,7 +626,11 @@ public class AsmHelper {
 	}
 
 	public static void addStaticFieldGetter( ClassVisitor classVisitor, Type type, String field, String method, Type property, Object value ) {
-		FieldVisitor fieldVisitor = classVisitor.visitField( Opcodes.ACC_STATIC | Opcodes.ACC_FINAL | Opcodes.ACC_PUBLIC,
+		addStaticFieldGetter( classVisitor, type, field, method, property, value, true );
+	}
+
+	public static void addStaticFieldGetter( ClassVisitor classVisitor, Type type, String field, String method, Type property, Object value, boolean isFinal ) {
+		FieldVisitor fieldVisitor = classVisitor.visitField( Opcodes.ACC_STATIC | ( isFinal ? Opcodes.ACC_FINAL : 0 ) | Opcodes.ACC_PUBLIC,
 		    field,
 		    property.getDescriptor(),
 		    null,
@@ -187,6 +666,29 @@ public class AsmHelper {
 		methodVisitor.visitCode();
 		methodVisitor.visitVarInsn( Opcodes.ALOAD, 0 );
 		methodVisitor.visitFieldInsn( Opcodes.GETFIELD,
+		    type.getInternalName(),
+		    field,
+		    property.getDescriptor() );
+		methodVisitor.visitInsn( property.getOpcode( Opcodes.IRETURN ) );
+		methodVisitor.visitMaxs( 0, 0 );
+		methodVisitor.visitEnd();
+	}
+
+	public static void addPrviateStaticFieldGetter( ClassVisitor classVisitor, Type type, String field, String method, Type property, Object value ) {
+		FieldVisitor fieldVisitor = classVisitor.visitField( Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC,
+		    field,
+		    property.getDescriptor(),
+		    null,
+		    value );
+		fieldVisitor.visitEnd();
+		MethodVisitor methodVisitor = classVisitor.visitMethod( Opcodes.ACC_PUBLIC,
+		    method,
+		    Type.getMethodDescriptor( property ),
+		    null,
+		    null );
+		methodVisitor.visitCode();
+		methodVisitor.visitVarInsn( Opcodes.ALOAD, 0 );
+		methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
 		    type.getInternalName(),
 		    field,
 		    property.getDescriptor() );
@@ -258,8 +760,8 @@ public class AsmHelper {
 	public static List<AbstractInsnNode> transformBodyExpressions( Transpiler transpiler, List<BoxStatement> statements, TransformerContext context,
 	    ReturnValueContext finalReturnValueContext ) {
 
-		if ( statements.size() == 0 ) {
-			return new ArrayList<AbstractInsnNode>();
+		if ( statements.isEmpty() ) {
+			return new ArrayList<>();
 		}
 
 		ReturnValueContext		bodyContext		= finalReturnValueContext == ReturnValueContext.VALUE_OR_NULL ? ReturnValueContext.EMPTY_UNLESS_JUMPING
@@ -294,7 +796,7 @@ public class AsmHelper {
 		    null );
 		methodVisitor.visitCode();
 		// start tacking the context
-		new VarInsnNode( Opcodes.ALOAD, isStatic ? 0 : 1 ).accept( methodVisitor );
+		methodVisitor.visitVarInsn( Opcodes.ALOAD, isStatic ? 0 : 1 );
 		tracker.trackNewContext().forEach( ( node ) -> node.accept( methodVisitor ) );
 		methodVisitor.visitMethodInsn(
 		    Opcodes.INVOKESTATIC,
@@ -312,9 +814,9 @@ public class AsmHelper {
 			nodes.forEach( node -> node.accept( methodVisitor ) );
 		}
 
-		if ( implicityReturnNull ) {
+		if ( implicityReturnNull && !returnType.equals( Type.VOID_TYPE ) ) {
 			// push a null onto the stack so that we can return it if there isn't an explicity return
-			new InsnNode( Opcodes.ACONST_NULL ).accept( methodVisitor );
+			methodVisitor.visitInsn( Opcodes.ACONST_NULL );
 		}
 
 		methodVisitor.visitInsn( returnType.getOpcode( Opcodes.IRETURN ) );
@@ -322,8 +824,8 @@ public class AsmHelper {
 
 		// TODO needs to only use try catches that match labels in the above node list
 		// TODO should only clear the used nodes
-		transpiler.getTryCatchStack().stream().forEach( ( tryNode ) -> tryNode.accept( methodVisitor ) );
-		transpiler.clearTryCatchStack();
+		tracker.getTryCatchStack().stream().forEach( ( tryNode ) -> tryNode.accept( methodVisitor ) );
+		tracker.clearTryCatchStack();
 		methodVisitor.visitEnd();
 		transpiler.popMethodContextTracker();
 	}
@@ -339,9 +841,16 @@ public class AsmHelper {
 		for ( int i = 0; i < values.size(); i++ ) {
 			nodes.add( new InsnNode( Opcodes.DUP ) );
 			nodes.add( new LdcInsnNode( i ) );
-			nodes.addAll( transformer.apply( values.get( i ), i ) );
+
+			List<AbstractInsnNode> toAdd = transformer.apply( values.get( i ), i );
+			if ( toAdd.size() == 0 ) {
+				nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+			}
+
+			nodes.addAll( toAdd );
 			nodes.add( new InsnNode( Opcodes.AASTORE ) );
 		}
+
 		return nodes;
 	}
 
@@ -413,7 +922,7 @@ public class AsmHelper {
 		    "getInstance",
 		    Type.getMethodDescriptor( Type.getType( BoxRuntime.class ) ),
 		    false );
-		node.visitMethodInsn( Opcodes.INVOKESTATIC,
+		node.visitMethodInsn( Opcodes.INVOKEVIRTUAL,
 		    Type.getInternalName( BoxRuntime.class ),
 		    "getRuntimeContext",
 		    Type.getMethodDescriptor( Type.getType( IBoxContext.class ) ),
@@ -439,6 +948,8 @@ public class AsmHelper {
 			node.visitLdcInsn( index );
 			node.visitVarInsn( descriptor.getArgumentTypes()[ index ].getOpcode( Opcodes.ILOAD ), offset );
 			// TODO: boxing of primitives
+			node.visitLdcInsn( "DEBUG - ASMHelper 451" );
+			node.visitInsn( Opcodes.POP );
 			node.visitInsn( Opcodes.AASTORE );
 			offset += descriptor.getArgumentTypes()[ index ].getSize();
 		}
@@ -462,5 +973,82 @@ public class AsmHelper {
 		node.visitEnd();
 
 		return node;
+	}
+
+	public static void addLazySingleton( ClassVisitor classVisitor, Type type, Consumer<MethodVisitor> instantiation, Type... arguments ) {
+		classVisitor.visitField( Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC,
+		    "instance",
+		    type.getDescriptor(),
+		    null,
+		    null ).visitEnd();
+		MethodVisitor methodVisitor = classVisitor.visitMethod( Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
+		    "getInstance",
+		    Type.getMethodDescriptor( type, arguments ),
+		    null,
+		    null );
+
+		methodVisitor.visitCode();
+		Label endOfMethod = new Label();
+		methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
+		    type.getInternalName(),
+		    "instance",
+		    type.getDescriptor() );
+		methodVisitor.visitJumpInsn( Opcodes.IFNONNULL, endOfMethod );
+		methodVisitor.visitLdcInsn( type );
+		methodVisitor.visitInsn( Opcodes.MONITORENTER );
+		methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
+		    type.getInternalName(),
+		    "instance",
+		    type.getDescriptor() );
+		Label start = new Label(), end = new Label(), handler = new Label();
+		methodVisitor.visitTryCatchBlock( start, end, handler, null );
+		methodVisitor.visitLabel( start );
+		methodVisitor.visitJumpInsn( Opcodes.IFNONNULL, end );
+		instantiation.accept( methodVisitor );
+		methodVisitor.visitLabel( end );
+		methodVisitor.visitLdcInsn( type );
+		methodVisitor.visitInsn( Opcodes.MONITOREXIT );
+		methodVisitor.visitLabel( endOfMethod );
+		methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
+		    type.getInternalName(),
+		    "instance",
+		    type.getDescriptor() );
+		methodVisitor.visitInsn( Opcodes.ARETURN );
+		methodVisitor.visitLabel( handler );
+		methodVisitor.visitLdcInsn( type );
+		methodVisitor.visitInsn( Opcodes.MONITOREXIT );
+		methodVisitor.visitInsn( Opcodes.ATHROW );
+		methodVisitor.visitMaxs( 0, 0 );
+		methodVisitor.visitEnd();
+	}
+
+	/**
+	 * Create the nodes for loading a class from the class locator
+	 * 
+	 * classLocator.load( context, "NameOfClass", imports )
+	 * 
+	 * @param transpiler The transpiler
+	 * @param identifier The identifier of the class to load
+	 * 
+	 * @return The nodes
+	 */
+	public static List<AbstractInsnNode> loadClass( Transpiler transpiler, BoxIdentifier identifier ) {
+		List<AbstractInsnNode> nodes = new ArrayList<>();
+		nodes.add( new VarInsnNode( Opcodes.ALOAD, 2 ) );
+		transpiler.getCurrentMethodContextTracker().ifPresent( ( t ) -> nodes.addAll( t.loadCurrentContext() ) );
+		nodes.add( new LdcInsnNode( identifier.getName() ) );
+		nodes.add( new FieldInsnNode( Opcodes.GETSTATIC,
+		    transpiler.getProperty( "packageName" ).replace( '.', '/' )
+		        + "/"
+		        + transpiler.getProperty( "classname" ),
+		    "imports",
+		    Type.getDescriptor( List.class ) ) );
+		nodes.add( new MethodInsnNode( Opcodes.INVOKEVIRTUAL,
+		    Type.getInternalName( ClassLocator.class ),
+		    "load",
+		    Type.getMethodDescriptor( Type.getType( DynamicObject.class ), Type.getType( IBoxContext.class ), Type.getType( String.class ),
+		        Type.getType( List.class ) ),
+		    false ) );
+		return nodes;
 	}
 }

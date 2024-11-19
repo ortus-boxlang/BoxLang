@@ -40,6 +40,17 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 /**
  * This resolver deals with Java classes only.
  * It has two import caches as well to deal with JDK classes and non-JDK classes.
+ * <p>
+ * In order to access it you must go via the @{link ClassLocator} class, as the ClassLocator
+ * controls all the resolvers in the runtime.
+ * <p>
+ * Example:
+ *
+ * <pre>
+ * ClassLocator.getJavaResolver();
+ * or
+ * ClassLocator.getResolver( ClassLocator.JAVA_PREFIX );
+ * </pre>
  */
 public class JavaResolver extends BaseResolver {
 
@@ -65,23 +76,12 @@ public class JavaResolver extends BaseResolver {
 	 */
 
 	/**
-	 * Private constructor
-	 */
-	private JavaResolver() {
-		super( "JavaResolver", "java" );
-	}
-
-	/**
-	 * Singleton instance
+	 * Constructor
 	 *
-	 * @return The instance
+	 * @param classLocator The class locator to use
 	 */
-	public static synchronized JavaResolver getInstance() {
-		if ( instance == null ) {
-			instance = new JavaResolver();
-		}
-
-		return instance;
+	public JavaResolver( ClassLocator classLocator ) {
+		super( "JavaResolver", "java", classLocator );
 	}
 
 	/**
@@ -265,16 +265,17 @@ public class JavaResolver extends BaseResolver {
 	 * - as a class
 	 * - as a multi-import (java.util.*) definition
 	 *
+	 * @param context    The current context of execution
 	 * @param thisImport The import to check
 	 * @param className  The class name to check
 	 *
 	 * @return True if the import has the class name, false otherwise
 	 */
 	@Override
-	protected boolean importHas( ImportDefinition thisImport, String className ) {
+	protected boolean importHas( IBoxContext context, ImportDefinition thisImport, String className ) {
 		return thisImport.isMultiImport()
-		    ? importHasMulti( thisImport, className )
-		    : super.importHas( thisImport, className );
+		    ? importHasMulti( context, thisImport, className )
+		    : super.importHas( context, thisImport, className );
 	}
 
 	/**
@@ -285,13 +286,14 @@ public class JavaResolver extends BaseResolver {
 	 *
 	 * If the class is not a JDK class, we delegate to the super class.
 	 *
+	 * @param context    The current context of execution
 	 * @param thisImport The import to check
 	 * @param className  The class name to check
 	 *
 	 * @return True if the import has the class name, false otherwise
 	 */
 	@Override
-	protected boolean importHasMulti( ImportDefinition thisImport, String className ) {
+	protected boolean importHasMulti( IBoxContext context, ImportDefinition thisImport, String className ) {
 		// We can't interrogate the JDK due to limitations in the JDK itself
 		if ( thisImport.className().matches( "(?i)(java|javax)\\..*" ) ) {
 
@@ -313,8 +315,8 @@ public class JavaResolver extends BaseResolver {
 				return false;
 			}
 		} else {
-			// Use the base resolver
-			return super.importHasMulti( thisImport, className );
+			// Use the base resolver for NON jdk resolution classes
+			return super.importHasMulti( context, thisImport, className );
 		}
 	}
 

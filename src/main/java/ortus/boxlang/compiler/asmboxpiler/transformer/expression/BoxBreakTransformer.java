@@ -26,12 +26,22 @@ import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 
+import ortus.boxlang.compiler.asmboxpiler.MethodContextTracker;
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxNode;
+import ortus.boxlang.compiler.ast.expression.BoxClosure;
+import ortus.boxlang.compiler.ast.expression.BoxLambda;
 import ortus.boxlang.compiler.ast.statement.BoxBreak;
+import ortus.boxlang.compiler.ast.statement.BoxDo;
+import ortus.boxlang.compiler.ast.statement.BoxForIn;
+import ortus.boxlang.compiler.ast.statement.BoxForIndex;
+import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
+import ortus.boxlang.compiler.ast.statement.BoxSwitch;
+import ortus.boxlang.compiler.ast.statement.BoxWhile;
+import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
 
 public class BoxBreakTransformer extends AbstractTransformer {
@@ -45,14 +55,31 @@ public class BoxBreakTransformer extends AbstractTransformer {
 		BoxBreak				breakNode		= ( BoxBreak ) node;
 		ExitsAllowed			exitsAllowed	= getExitsAllowed( node );
 
-		LabelNode				currentBreak	= transpiler.getCurrentBreak( breakNode.getLabel() );
+		MethodContextTracker	tracker			= transpiler.getCurrentMethodContextTracker().get();
 		List<AbstractInsnNode>	nodes			= new ArrayList<AbstractInsnNode>();
 
-		if ( returnContext.nullable || exitsAllowed.equals( ExitsAllowed.FUNCTION ) ) {
+		BoxNode					labelTarget		= tracker.getStringLabel( breakNode.getLabel() );
+		if ( labelTarget == null ) {
+			labelTarget = getTargetAncestor( breakNode );
+		}
+
+		int intermediateCount = countIntermediateLoops( labelTarget, breakNode );
+
+		for ( int i = 0; i < intermediateCount; i++ ) {
+			nodes.add( new InsnNode( Opcodes.POP ) );
+		}
+
+		if ( returnContext.nullable
+		    || exitsAllowed.equals( ExitsAllowed.FUNCTION ) ) {
 			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
 		}
 
+		LabelNode currentBreak = tracker.getBreak( labelTarget != null ? labelTarget : getTargetAncestor( breakNode ) );
+
 		if ( currentBreak != null ) {
+			if ( returnContext.nullable && nodes.size() == 0 ) {
+				nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+			}
 			nodes.add( new JumpInsnNode( Opcodes.GOTO, currentBreak ) );
 			return nodes;
 		}
@@ -83,5 +110,27 @@ public class BoxBreakTransformer extends AbstractTransformer {
 
 		throw new RuntimeException( "Cannot break from current location" );
 
+	}
+
+	public BoxNode getTargetAncestor( BoxNode node ) {
+		return node.getFirstNodeOfTypes( BoxSwitch.class, BoxFunctionDeclaration.class, BoxClosure.class, BoxLambda.class, BoxComponent.class, BoxDo.class,
+		    BoxForIndex.class, BoxForIn.class,
+		    BoxWhile.class );
+	}
+
+	public int countIntermediateLoops( BoxNode target, BoxBreak breakNode ) {
+		int		count	= 0;
+
+		BoxNode	parent	= breakNode.getParent();
+
+		while ( parent != target ) {
+			if ( parent instanceof BoxWhile || parent instanceof BoxDo || parent instanceof BoxForIn || parent instanceof BoxForIndex ) {
+				count++;
+			}
+
+			parent = parent.getParent();
+		}
+
+		return count;
 	}
 }

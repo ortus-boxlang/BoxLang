@@ -29,6 +29,7 @@ import org.apache.commons.lang3.ClassUtils;
 
 import ortus.boxlang.compiler.IBoxpiler;
 import ortus.boxlang.compiler.javaboxpiler.JavaBoxpiler;
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.interop.proxies.BaseProxy;
@@ -46,7 +47,7 @@ public class InterfaceProxyService {
 	/**
 	 * Our class locator
 	 */
-	private static final ClassLocator	classLocator	= ClassLocator.getInstance();
+	private static final ClassLocator	classLocator	= BoxRuntime.getInstance().getClassLocator();
 
 	/**
 	 * BoxPiler

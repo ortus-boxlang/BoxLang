@@ -118,7 +118,7 @@ public class DocParser extends AbstractParser {
 	}
 
 	private BoxDocumentationAnnotation toAst( File file, DocGrammar.BlockTagContext node ) {
-		BoxFQN			name	= new BoxFQN( node.blockTagName().NAME().getText(), getPosition( node.blockTagName() ), getSourceText( node.blockTagName() ) );
+		BoxFQN			name	= new BoxFQN( node.blockTagName().getText(), getPosition( node.blockTagName() ), getSourceText( node.blockTagName() ) );
 		// use string builder to get text from child nodes that are NOT a new line
 		StringBuilder	valueSB	= new StringBuilder();
 		node.blockTagContent().forEach( it -> {
@@ -129,7 +129,7 @@ public class DocParser extends AbstractParser {
 				}
 			} );
 		} );
-		BoxStringLiteral value = new BoxStringLiteral( valueSB.toString(), getPosition( node ), getSourceText( node ) );
+		BoxStringLiteral value = new BoxStringLiteral( valueSB.toString().trim(), getPosition( node ), getSourceText( node ) );
 		return new BoxDocumentationAnnotation( name, value, getPosition( node ), getSourceText( node ) );
 	}
 

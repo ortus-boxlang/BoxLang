@@ -55,24 +55,12 @@ public class AttachableTest {
 		IStruct struct = attachable.getAttachment( Key.of( "test" ) );
 		assertThat( struct ).isNotNull();
 	}
-	/*
-	 * @DisplayName( "Test attachment types with chaining" )
-	 * 
-	 * @Test
-	 * void testAttachmentTypesWithChaining() {
-	 * attachable.putAttachment( Key.of( "test" ), "String test" );
-	 * String test = attachable.getAttachment( Key.of( "test" ) ).toUpperCase();
-	 * assertThat( test ).isEqualTo( "STRING TEST" );
-	 * 
-	 * // Try a HashMap
-	 * attachable.putAttachment( Key.of( "test" ), new HashMap<>() );
-	 * int size = attachable.getAttachment( Key.of( "test" ) ).size();
-	 * assertThat( size ).isEqualTo( 0 );
-	 * 
-	 * // Try a IStruct
-	 * attachable.putAttachment( Key.of( "test" ), Struct.of( "test", "hola" ) );
-	 * String testValue = attachable.getAttachment( Key.of( "test" ) ).getAsString( Key.of( "test" ) );
-	 * assertThat( testValue ).isEqualTo( "hola" );
-	 * }
-	 */
+
+	@DisplayName( "Test attachment compute" )
+	@Test
+	void testAttachmentCompute() {
+		attachable.computeAttachmentIfAbsent( Key.of( "test" ), key -> "String test" );
+		String test = attachable.getAttachment( Key.of( "test" ) );
+		assertThat( test ).isEqualTo( "String test" );
+	}
 }

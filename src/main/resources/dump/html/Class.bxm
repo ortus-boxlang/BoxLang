@@ -1,5 +1,5 @@
 <bx:script>
-	expandRoot = expand || expand eq null
+	expandRoot = expand ?: true;
 </bx:script>
 <bx:output>
 	<div class="bx-dump">
@@ -64,7 +64,7 @@
 							valign="top"
 							tabindex="0"
 						>
-							Fied(s)
+							Field(s)
 						</th>
 						<td>
 							<div class="bx-onoff">

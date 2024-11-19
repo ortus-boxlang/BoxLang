@@ -14,13 +14,16 @@
  */
 package ortus.boxlang.compiler.asmboxpiler.transformer.expression;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
+import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
+import org.objectweb.asm.tree.TypeInsnNode;
 
 import ortus.boxlang.compiler.asmboxpiler.AsmTranspiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
@@ -37,11 +40,41 @@ public class BoxIntegerLiteralTransformer extends AbstractTransformer {
 
 	@Override
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnContext ) throws IllegalStateException {
-		BoxIntegerLiteral literal = ( BoxIntegerLiteral ) node;
-		return List.of( new LdcInsnNode( Integer.valueOf( literal.getValue() ) ), new MethodInsnNode( Opcodes.INVOKESTATIC,
-		    Type.getInternalName( Integer.class ),
-		    "valueOf",
-		    Type.getMethodDescriptor( Type.getType( Integer.class ), Type.INT_TYPE ),
-		    false ) );
+		BoxIntegerLiteral	literal	= ( BoxIntegerLiteral ) node;
+		int					len		= literal.getValue().length();
+		// 10 or fewer chars can use an int literal
+		if ( len < 10 ) {
+			return List.of(
+			    new LdcInsnNode( Integer.valueOf( literal.getValue() ) ),
+			    new MethodInsnNode( Opcodes.INVOKESTATIC,
+			        Type.getInternalName( Integer.class ),
+			        "valueOf",
+			        Type.getMethodDescriptor( Type.getType( Integer.class ), Type.INT_TYPE ),
+			        false
+			    )
+			);
+		} else if ( len <= 19 ) {
+			return List.of(
+			    new LdcInsnNode( Long.valueOf( literal.getValue() ) ),
+			    new MethodInsnNode( Opcodes.INVOKESTATIC,
+			        Type.getInternalName( Long.class ),
+			        "valueOf",
+			        Type.getMethodDescriptor( Type.getType( Long.class ), Type.LONG_TYPE ),
+			        false
+			    )
+			);
+		}
+
+		return List.of(
+		    new TypeInsnNode( Opcodes.NEW, Type.getInternalName( BigDecimal.class ) ),
+		    new InsnNode( Opcodes.DUP ),
+		    new LdcInsnNode( literal.getValue() ),
+		    new MethodInsnNode( Opcodes.INVOKESPECIAL,
+		        Type.getInternalName( BigDecimal.class ),
+		        "<init>",
+		        Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( String.class ) ),
+		        false
+		    )
+		);
 	}
 }

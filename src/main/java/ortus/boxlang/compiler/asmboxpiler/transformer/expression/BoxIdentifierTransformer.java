@@ -20,12 +20,10 @@ import java.util.List;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
-import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.InsnNode;
-import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
-import org.objectweb.asm.tree.VarInsnNode;
 
+import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
@@ -33,8 +31,6 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.interop.DynamicObject;
-import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 
@@ -51,21 +47,8 @@ public class BoxIdentifierTransformer extends AbstractTransformer {
 		List<AbstractInsnNode>	nodes		= new ArrayList<>();
 
 		if ( transpiler.matchesImport( identifier.getName() ) && transpiler.getProperty( "sourceType" ).toLowerCase().startsWith( "box" ) ) {
-			nodes.add( new VarInsnNode( Opcodes.ALOAD, 2 ) );
-			nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
-			nodes.add( new LdcInsnNode( identifier.getName() ) );
-			nodes.add( new FieldInsnNode( Opcodes.GETSTATIC,
-			    transpiler.getProperty( "packageName" ).replace( '.', '/' )
-			        + "/"
-			        + transpiler.getProperty( "classname" ),
-			    "imports",
-			    Type.getDescriptor( List.class ) ) );
-			nodes.add( new MethodInsnNode( Opcodes.INVOKEVIRTUAL,
-			    Type.getInternalName( ClassLocator.class ),
-			    "load",
-			    Type.getMethodDescriptor( Type.getType( DynamicObject.class ), Type.getType( IBoxContext.class ), Type.getType( String.class ),
-			        Type.getType( List.class ) ),
-			    false ) );
+			// If id is an imported class name, load the class directly instead of searching scopes for it
+			nodes.addAll( AsmHelper.loadClass( transpiler, identifier ) );
 		} else {
 			transpiler.getCurrentMethodContextTracker().ifPresent( ( t ) -> nodes.addAll( t.loadCurrentContext() ) );
 			nodes.addAll( transpiler.createKey( identifier.getName() ) );

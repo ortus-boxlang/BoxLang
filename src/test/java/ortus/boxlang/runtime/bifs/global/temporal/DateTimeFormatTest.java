@@ -447,6 +447,21 @@ public class DateTimeFormatTest {
 		assertEquals( result, dateRef.format( formatter.withLocale( LocalizationUtil.parseLocale( "es-ES" ) ) ) );
 	}
 
+	@DisplayName( "It tests the Member function DateTime.DateTimeFormat with the common JS toString format" )
+	@Test
+	public void testJsToStringDateTimeFormatMember() {
+		DateTime dateRef = new DateTime( ZoneId.of( "UTC" ) );
+		variables.put( Key.date, dateRef );
+		instance.executeSource(
+		    """
+		    result = date.DateTimeFormat( "javascript", "UTC", "en-US" );
+		    """,
+		    context );
+		String				result		= variables.getAsString( Key.of( "result" ) );
+		DateTimeFormatter	formatter	= ( DateTimeFormatter ) DateTime.COMMON_FORMATTERS.get( "javascriptDateTime" );
+		assertEquals( result, dateRef.format( formatter.withLocale( LocalizationUtil.parseLocale( "en-US" ) ) ) );
+	}
+
 	@DisplayName( "It tests the Member function String.DateTimeFormat" )
 	@Test
 	public void testLocalizedDateTimeFormatStringMember() {

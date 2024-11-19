@@ -21,8 +21,6 @@ import java.io.File;
 import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -58,21 +56,18 @@ public class ApplicationService extends BaseService {
 
 	/**
 	 * The applications for this runtime
-	 * TODO: timeout applications
 	 */
-	private Map<Key, Application>	applications							= new ConcurrentHashMap<>();
+	private Map<Key, Application>	applications	= new ConcurrentHashMap<>();
 
 	/**
-	 * Extensions to search for application descriptor templates
+	 * Extensions to search for application descriptor classes: Application.bx, Application.cfc, etc
 	 */
-	// TODO: contribute cfc from compat extension
-	private Set<String>				applicationDescriptorClassExtensions	= new HashSet<>( Arrays.asList( "bx", "cfc" ) );
+	private Set<String>				applicationDescriptorClassExtensions;
 
 	/**
-	 * Extensions to search for application descriptor classes
+	 * Extensions to search for application descriptor templates: Application.bxm, Application.bxml, etc
 	 */
-	// TODO: contribute cfc from compat extension
-	private Set<String>				applicationDescriptorExtensions			= new HashSet<>( Arrays.asList( "bxm", "bxs", "cfm", "cfs" ) );
+	private Set<String>				applicationDescriptorExtensions;
 
 	/**
 	 * The types of application listeners we support: Application classes and
@@ -188,7 +183,9 @@ public class ApplicationService extends BaseService {
 	 */
 	@Override
 	public void onStartup() {
-		// logger.info( "ApplicationService.onStartup()" );
+		// Setup the application descriptor extensions from the runtime configuration
+		this.applicationDescriptorClassExtensions	= BoxRuntime.getInstance().getConfiguration().validClassExtensions;
+		this.applicationDescriptorExtensions		= BoxRuntime.getInstance().getConfiguration().validTemplateExtensions;
 	}
 
 	/**
