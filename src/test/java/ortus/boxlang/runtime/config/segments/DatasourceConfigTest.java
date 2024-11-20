@@ -44,7 +44,7 @@ class DatasourceConfigTest {
 		) );
 		HikariConfig		hikariConfig	= datasource.toHikariConfig();
 
-		assertThat( hikariConfig.getJdbcUrl() ).isEqualTo( "jdbc:postgresql://localhost:5432/foo?" );
+		assertThat( hikariConfig.getJdbcUrl() ).isEqualTo( "jdbc:postgresql://localhost:5432/foo" );
 	}
 
 	@DisplayName( "It can load config" )
