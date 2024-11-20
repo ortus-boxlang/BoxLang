@@ -569,6 +569,15 @@ public final class LocalizationUtil {
 		return symbols;
 	}
 
+	/**
+	 * Parses a date string into a ZonedDateTime instance
+	 *
+	 * @param dateTime the date time string to parse
+	 * @param locale   the locale
+	 * @param timezone the timezone
+	 * 
+	 * @return
+	 */
 	public static ZonedDateTime parseFromString( String dateTime, Locale locale, ZoneId timezone ) {
 
 		Boolean	likelyHasDate			= dateTime.contains( "/" ) || dateTime.contains( "-" );
