@@ -60,4 +60,27 @@ public interface IJDBCDriver {
 	 * Get default custom parameters for the driver to incorporate into the datasource config
 	 */
 	public IStruct getDefaultCustomParams();
+
+	/**
+	 * Get the default URI delimiter
+	 */
+	public String getDefaultURIDelimiter();
+
+	/**
+	 * Get the default custom params delimiter
+	 */
+	public String getDefaultDelimiter();
+
+	/**
+	 * This helper method is used to convert the custom parameters in the config (Key.custom)
+	 * to a query string that can be used by the driver to build the connection URL.
+	 * <p>
+	 * We incorporate the default parameters into the custom parameters and return the query string
+	 * using the driver's default delimiter.
+	 *
+	 * @param config The datasource config
+	 *
+	 * @return The custom parameters as a query string
+	 */
+	public String customParamsToQueryString( DatasourceConfig config );
 }

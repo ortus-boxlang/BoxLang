@@ -99,8 +99,6 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	private static final List<Key>	CONNECTION_STRING_KEYS			= List.of(
 	    // Standard JDBC notation: (connectionString)
 	    Key.connectionString,
-	    // CFConfig notation (dsn)
-	    Key.dsn,
 	    // Adobe CF notation (url)
 	    Key.URL,
 	    // HikariConfig notation
@@ -395,21 +393,28 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 		    .stream()
 		    .forEach( entry -> this.properties.putIfAbsent( entry.getKey(), entry.getValue() ) );
 
-		// Validation and normalization
 		// DBDriver Alias for CFConfig
 		if ( this.properties.containsKey( Key.dbdriver ) ) {
 			this.properties.computeIfAbsent( Key.driver, key -> this.properties.get( Key.dbdriver ) );
 		}
 
-		// Type Driver Alias
+		// Type Driver Alias: Adobe
 		if ( this.properties.containsKey( Key.type ) ) {
 			this.properties.computeIfAbsent( Key.driver, key -> this.properties.get( Key.type ) );
 		}
 
-		// if no driver/type set, attempt to determine from the JDBC connection string.
+		// Driver Alias
 		String driver = this.properties.getOrDefault( Key.driver, "" ).toString();
+
+		// if no driver/type set, attempt to determine from the JDBC connection string.
 		if ( driver.isBlank() ) {
-			this.properties.put( Key.driver, discoverDriverFromJdbcUrl( getConnectionString() ) );
+			var connectionString = getConnectionString();
+			// From connection string or DSN (CFConfig)
+			if ( !connectionString.isBlank() ) {
+				this.properties.put( Key.driver, discoverDriverFromJdbcUrl( connectionString ) );
+			} else if ( this.properties.containsKey( Key.dsn ) ) {
+				this.properties.put( Key.driver, discoverDriverFromJdbcUrl( this.properties.getAsString( Key.dsn ) ) );
+			}
 		}
 
 		return this;
@@ -577,14 +582,14 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	}
 
 	/**
-	 * Retrieve the connection string from the properties, or build it from the appropriate driver.
+	 * Retrieve the connection string from the properties, or build it from the appropriate driver module.
 	 *
 	 * If any of these properties are found, they will be returned as-is, in the following order:
 	 * <ul>
 	 * <li><code>connectionString</code></li>
-	 * <li><code>dsn</code></li>
 	 * <li><code>URL</code></li>
 	 * <li><code>jdbcURL</code></li>
+	 * <li><code>dsn</code> - Special case used on placeholder replacements</li>
 	 * </ul>
 	 *
 	 * If none of these properties are found then we delegate to a registered driver in the
@@ -599,14 +604,16 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 		// We are overriding the driver's connection string
 		String connectionString = getConnectionString();
 
+		// If empty we delegate it to the module to build the URL
 		if ( connectionString.isBlank() ) {
-			// Verify if we have a registered driver. Which needs to match
-			// the driver name in the module. ex: `mysql`, `postgresql`, etc.
-			connectionString = driver.buildConnectionURL( this );
+			connectionString = replaceConnectionPlaceholders( driver.buildConnectionURL( this ) );
+		} else if ( this.properties.containsKey( Key.dsn ) ) {
+			connectionString = replaceConnectionPlaceholders( this.properties.getAsString( Key.dsn ) ) +
+			    driver.getDefaultURIDelimiter() +
+			    driver.customParamsToQueryString( this );
 		}
 
-		// Incorporate Placeholders : Just in case
-		return replaceConnectionPlaceholders( connectionString );
+		return connectionString;
 	}
 
 	/**
@@ -687,7 +694,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 		    .stream()
 		    .filter( key -> this.properties.containsKey( key ) && !this.properties.getAsString( key ).isBlank() )
 		    .findFirst()
-		    .map( key -> addCustomParams( this.properties.getAsString( key ) ) )
+		    .map( key -> this.properties.getAsString( key ) )
 		    .orElse( "" );
 	}
 

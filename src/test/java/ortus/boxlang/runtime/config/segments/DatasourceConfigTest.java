@@ -283,11 +283,14 @@ class DatasourceConfigTest {
 		) );
 		assertEquals( "jdbc:postgresql://127.0.0.1:5432/foo?", datasource.toHikariConfig().getJdbcUrl() );
 
-		// dsn key
+		// dsn key shortcut for CFConfig
 		DatasourceConfig datasource2 = new DatasourceConfig( Key.of( "Foo" ), Struct.of(
-		    "dsn", "jdbc:postgresql://127.0.0.1:5432/foo?"
+		    "dsn", "jdbc:postgresql://{host}:{port}/{database}",
+		    "database", "foo",
+		    "host", "localhost",
+		    "port", "5432"
 		) );
-		assertEquals( "jdbc:postgresql://127.0.0.1:5432/foo?", datasource2.toHikariConfig().getJdbcUrl() );
+		assertEquals( "jdbc:postgresql://localhost:5432/foo?", datasource2.toHikariConfig().getJdbcUrl() );
 
 		// connectionString key
 		DatasourceConfig datasource3 = new DatasourceConfig( Key.of( "Foo" ), Struct.of(
