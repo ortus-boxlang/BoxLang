@@ -300,7 +300,7 @@ class DatasourceConfigTest {
 		    "host", "localhost",
 		    "port", "5432"
 		) );
-		assertThat( datasource2.toHikariConfig().getJdbcUrl() ).isEqualTo( "jdbc:postgresql://localhost:5432/foo?" );
+		assertThat( datasource2.toHikariConfig().getJdbcUrl() ).isEqualTo( "jdbc:postgresql://localhost:5432/foo" );
 
 		// connectionString key
 		DatasourceConfig datasource3 = new DatasourceConfig( Key.of( "Foo" ), Struct.of(

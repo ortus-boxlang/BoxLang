@@ -637,13 +637,13 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 			targetCustom = StructUtil.toQueryString( ( IStruct ) this.properties.get( Key.custom ), delimiter );
 		}
 
-		// Incorporate URI Delimiter if it doesn't exist
-		if ( !target.contains( URIDelimiter ) ) {
-			target += URIDelimiter;
-		}
-
 		// Append the custom parameters
 		if ( targetCustom.length() > 0 ) {
+			// Incorporate URI Delimiter if it doesn't exist
+			if ( !target.contains( URIDelimiter ) ) {
+				target += URIDelimiter;
+			}
+			// Now add the custom parameters
 			target += targetCustom;
 		}
 
