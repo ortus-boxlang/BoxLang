@@ -22,14 +22,20 @@ import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.text.ParsePosition;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.FormatStyle;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Locale;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.commons.lang3.LocaleUtils;
 import org.slf4j.Logger;
@@ -202,14 +208,28 @@ public final class LocalizationUtil {
 		NUMBER_FORMAT_PATTERNS.put( DEFAULT_NUMBER_FORMAT_KEY, "#,#00.#" );
 	}
 
-	public static final String					CURRENCY_TYPE_LOCAL			= "local";
-	public static final String					CURRENCY_TYPE_INTERNATIONAL	= "international";
-	public static final String					CURRENCY_TYPE_NONE			= "none";
+	public static final String					CURRENCY_TYPE_LOCAL				= "local";
+	public static final String					CURRENCY_TYPE_INTERNATIONAL		= "international";
+	public static final String					CURRENCY_TYPE_NONE				= "none";
+
+	/**
+	 * Pattern matchers for testing date time strings
+	 */
+
+	// Matches long form date strings like "Jan 1, 2023" or "January 1, 2023"
+	public static final Pattern					REGEX_LONGFORM_PATTERN			= Pattern.compile(
+	    "(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\\s+\\d{1,2},\\s+\\d{4}"
+	);
+	// Matches timezone offset like +01:00, -08:00, or Z
+	public static final Pattern					REGEX_TZ_OFFSET_PATTERN			= Pattern.compile( ".*[+-][0-9]{2}:?[0-9]{2}|Z$" );
+
+	// Matches timezone id like PST or UTC
+	public static final Pattern					REGEX_TZ_ABBREVIATION_PATTERN	= Pattern.compile( "[A-Z]{3,}" );
 
 	/**
 	 * A struct of ZoneID aliases ( e.g. PST )
 	 */
-	public static final HashMap<Key, String>	ZONE_ALIASES				= new HashMap<Key, String>();
+	public static final HashMap<Key, String>	ZONE_ALIASES					= new HashMap<Key, String>();
 	static {
 		ZONE_ALIASES.putAll(
 		    ZoneId.SHORT_IDS.entrySet()
@@ -549,6 +569,106 @@ public final class LocalizationUtil {
 		return symbols;
 	}
 
+	public static ZonedDateTime parseFromString( String dateTime, Locale locale, ZoneId timezone ) {
+
+		Boolean	likelyHasDate			= dateTime.contains( "/" ) || dateTime.contains( "-" );
+		Boolean	likelyIsLongFormDate	= !likelyHasDate && REGEX_LONGFORM_PATTERN.matcher( dateTime ).matches();
+		Boolean	likelyHasTime			= dateTime.contains( ":" );
+		Boolean	likelyHasDateTime		= ( likelyIsLongFormDate || likelyHasDate ) && likelyHasTime;
+		Boolean	likelyIsTimeOnly		= !likelyHasDate && !likelyIsLongFormDate && likelyHasTime;
+		Boolean	likelyContainsTimezone	= dateTime.charAt( dateTime.length() - 1 ) == 'Z'
+		    || REGEX_TZ_OFFSET_PATTERN.matcher( dateTime ).matches() || REGEX_TZ_ABBREVIATION_PATTERN.matcher( dateTime ).matches();
+		Boolean	containsNonLatin		= Stream.of( dateTime.split( "" ) )
+		    .anyMatch( c -> Character.UnicodeBlock.of( c.charAt( 0 ) ) != Character.UnicodeBlock.BASIC_LATIN );
+
+		if ( !containsNonLatin ) {
+			try {
+				return likelyContainsTimezone
+				    ? ZonedDateTime.parse( dateTime, getLocaleZonedDateTimeParsers( locale ) )
+				    : ( likelyHasDateTime
+				        ? ZonedDateTime.of( LocalDateTime.parse( dateTime, getLocaleDateTimeParsers( locale ) ), timezone )
+				        : ( !likelyIsTimeOnly
+				            ? ZonedDateTime.of(
+				                LocalDateTime.of( LocalDate.parse( dateTime, getLocaleDateParsers( locale ) ), LocalTime.MIN ),
+				                timezone )
+				            : ZonedDateTime.of( LocalDate.MIN, LocalTime.parse( dateTime, getLocaleTimeParsers( locale ) ),
+				                ZoneId.systemDefault() ) ) );
+			} catch ( java.time.format.DateTimeParseException e ) {
+				throw new BoxRuntimeException(
+				    String.format(
+				        "The the date time value of [%s] could not be parsed as a valid date or datetime locale of [%s]",
+				        dateTime,
+				        locale.getDisplayName()
+				    ), e );
+			}
+		} else {
+			return parseFromUnicodeString( dateTime, locale, timezone );
+		}
+
+	}
+
+	/**
+	 * Parses a date time string that contains non-latin characters
+	 * This method is the slowest method of parsing a date time string. It is only used for localized date/time string values
+	 *
+	 * @param dateTime
+	 * @param locale
+	 * @param timezone
+	 *
+	 * @return
+	 */
+	public static ZonedDateTime parseFromUnicodeString( String dateTime, Locale locale, ZoneId timezone ) {
+
+		ZonedDateTime parsed = null;
+
+		// // try parsing if it fails then our time does not contain timezone info so we fall back to a local zoned date
+		try {
+			parsed = ZonedDateTime.parse( dateTime, getLocaleZonedDateTimeParsers( locale ) );
+		} catch ( java.time.format.DateTimeParseException e ) {
+			// First fallback - it has a time without a zone
+			try {
+				parsed = ZonedDateTime.of( LocalDateTime.parse( dateTime, getLocaleDateTimeParsers( locale ) ),
+				    timezone );
+				// Second fallback - it is only a date and we need to supply a time
+			} catch ( java.time.format.DateTimeParseException x ) {
+				try {
+					parsed = ZonedDateTime.of(
+					    LocalDateTime.of( LocalDate.parse( dateTime, getLocaleDateParsers( locale ) ), LocalTime.MIN ),
+					    timezone );
+					// last fallback - this is a time only value
+				} catch ( java.time.format.DateTimeParseException z ) {
+					parsed = ZonedDateTime.of( LocalDate.MIN, LocalTime.parse( dateTime, getLocaleTimeParsers( locale ) ),
+					    ZoneId.systemDefault() );
+				}
+			} catch ( Exception x ) {
+				throw new BoxRuntimeException(
+				    String.format(
+				        "The the date time value of [%s] could not be parsed as a valid date or datetime locale of [%s]",
+				        dateTime,
+				        locale.getDisplayName()
+				    ), x );
+			}
+		} catch ( Exception e ) {
+			throw new BoxRuntimeException(
+			    String.format(
+			        "The the date time value of [%s] could not be parsed with a locale of [%s]",
+			        dateTime,
+			        locale.getDisplayName()
+			    ), e );
+		}
+
+		return parsed;
+	}
+
+	/**
+	 * Returns a new DateTimeFormatterBuilder instance set to lenient parsing
+	 *
+	 * @return
+	 */
+	public static DateTimeFormatterBuilder newLenientDateTimeFormatterBuilder() {
+		return new DateTimeFormatterBuilder().parseLenient();
+	}
+
 	/**
 	 * Returns a localized set of ZonedDateTime parsers
 	 *
@@ -556,15 +676,22 @@ public final class LocalizationUtil {
 	 *
 	 * @return the localized DateTimeFormatter object
 	 */
-
 	public static DateTimeFormatter getLocaleZonedDateTimeParsers( Locale locale ) {
-		DateTimeFormatterBuilder formatBuilder = new DateTimeFormatterBuilder();
-		return formatBuilder.parseLenient()
-		    // Localized styles
-		    .appendOptional( DateTimeFormatter.ISO_ZONED_DATE_TIME.withLocale( locale ) )
+		return appendLocaleZonedDateTimeParsers( newLenientDateTimeFormatterBuilder(), locale ).toFormatter( locale );
+	}
+
+	/**
+	 * Appends the locale zoned date time parsers to a format buiilder instance
+	 *
+	 * @param builder the DateTimeFormatterBuilder instance
+	 * @param locale  the Locale object which informs the formatters/parsers
+	 *
+	 * @return the builder instance
+	 */
+	public static DateTimeFormatterBuilder appendLocaleZonedDateTimeParsers( DateTimeFormatterBuilder builder, Locale locale ) {
+		return builder.appendOptional( DateTimeFormatter.ISO_ZONED_DATE_TIME.withLocale( locale ) )
 		    .appendOptional( DateTimeFormatter.ISO_ZONED_DATE_TIME )
-		    .appendOptional( DateTimeFormatter.ISO_OFFSET_DATE_TIME )
-		    .toFormatter( locale );
+		    .appendOptional( DateTimeFormatter.ISO_OFFSET_DATE_TIME );
 	}
 
 	/**
@@ -575,9 +702,19 @@ public final class LocalizationUtil {
 	 * @return the localized DateTimeFormatter object
 	 */
 	public static DateTimeFormatter getLocaleDateTimeParsers( Locale locale ) {
-		DateTimeFormatterBuilder formatBuilder = new DateTimeFormatterBuilder();
-		return formatBuilder.parseLenient()
-		    .appendOptional( DateTimeFormatter.ofLocalizedDateTime( FormatStyle.SHORT, FormatStyle.SHORT ).withLocale( locale ) )
+		return appendLocaleDateTimeParsers( newLenientDateTimeFormatterBuilder(), locale ).toFormatter( locale );
+	}
+
+	/**
+	 * Appends the locale date time parsers to a format buiilder instance
+	 *
+	 * @param builder the DateTimeFormatterBuilder instance
+	 * @param locale  the Locale object which informs the formatters/parsers
+	 *
+	 * @return the builder instance
+	 */
+	public static DateTimeFormatterBuilder appendLocaleDateTimeParsers( DateTimeFormatterBuilder builder, Locale locale ) {
+		return builder.appendOptional( DateTimeFormatter.ofLocalizedDateTime( FormatStyle.SHORT, FormatStyle.SHORT ).withLocale( locale ) )
 		    .appendOptional( DateTimeFormatter.ofLocalizedDateTime( FormatStyle.MEDIUM, FormatStyle.MEDIUM ).withLocale( locale ) )
 		    .appendOptional( DateTimeFormatter.ofLocalizedDateTime( FormatStyle.LONG, FormatStyle.LONG ).withLocale( locale ) )
 		    .appendOptional( DateTimeFormatter.ofLocalizedDateTime( FormatStyle.FULL, FormatStyle.FULL ).withLocale( locale ) )
@@ -605,8 +742,7 @@ public final class LocalizationUtil {
 		    .appendOptional( DateTimeFormatter.ofPattern( DateTime.JS_COMMON_ALT_STRING_MASK ) )
 		    .appendOptional( DateTimeFormatter.ISO_INSTANT )
 		    .appendOptional( DateTimeFormatter.ISO_DATE_TIME )
-		    .appendOptional( DateTimeFormatter.ISO_LOCAL_DATE_TIME )
-		    .toFormatter( locale );
+		    .appendOptional( DateTimeFormatter.ISO_LOCAL_DATE_TIME );
 	}
 
 	/**
@@ -618,9 +754,19 @@ public final class LocalizationUtil {
 	 */
 
 	public static DateTimeFormatter getLocaleDateParsers( Locale locale ) {
-		DateTimeFormatterBuilder formatBuilder = new DateTimeFormatterBuilder();
-		return formatBuilder.parseLenient()
-		    .appendOptional( DateTimeFormatter.ofLocalizedDate( FormatStyle.SHORT ).withLocale( locale ) )
+		return appendLocaleDateParsers( newLenientDateTimeFormatterBuilder(), locale ).toFormatter( locale );
+	}
+
+	/**
+	 * Appends the locale date parsers to a format buiilder instance
+	 *
+	 * @param builder the DateTimeFormatterBuilder instance
+	 * @param locale  the Locale object which informs the formatters/parsers
+	 *
+	 * @return the builder instance
+	 */
+	public static DateTimeFormatterBuilder appendLocaleDateParsers( DateTimeFormatterBuilder builder, Locale locale ) {
+		return builder.appendOptional( DateTimeFormatter.ofLocalizedDate( FormatStyle.SHORT ).withLocale( locale ) )
 		    .appendOptional( DateTimeFormatter.ofLocalizedDate( FormatStyle.MEDIUM ).withLocale( locale ) )
 		    .appendOptional( DateTimeFormatter.ofLocalizedDate( FormatStyle.LONG ).withLocale( locale ) )
 		    .appendOptional( DateTimeFormatter.ofLocalizedDate( FormatStyle.FULL ).withLocale( locale ) )
@@ -631,8 +777,7 @@ public final class LocalizationUtil {
 		    .appendOptional( DateTimeFormatter.ofPattern( DateTime.DEFAULT_DATE_FORMAT_MASK ) )
 		    .appendOptional( DateTimeFormatter.ISO_DATE )
 		    .appendOptional( DateTimeFormatter.ISO_LOCAL_DATE )
-		    .appendOptional( DateTimeFormatter.BASIC_ISO_DATE )
-		    .toFormatter( locale );
+		    .appendOptional( DateTimeFormatter.BASIC_ISO_DATE );
 	}
 
 	/**
@@ -645,14 +790,24 @@ public final class LocalizationUtil {
 
 	public static DateTimeFormatter getLocaleTimeParsers( Locale locale ) {
 		DateTimeFormatterBuilder formatBuilder = new DateTimeFormatterBuilder();
-		return formatBuilder.parseLenient()
-		    .appendOptional( DateTimeFormatter.ofLocalizedTime( FormatStyle.SHORT ).withLocale( locale ) )
+		return appendLocaleTimeParsers( newLenientDateTimeFormatterBuilder(), locale ).toFormatter( locale );
+	}
+
+	/**
+	 * Appends the locale time parsers to a format buiilder instance
+	 *
+	 * @param builder the DateTimeFormatterBuilder instance
+	 * @param locale  the Locale object which informs the formatters/parsers
+	 *
+	 * @return the builder instance
+	 */
+	public static DateTimeFormatterBuilder appendLocaleTimeParsers( DateTimeFormatterBuilder builder, Locale locale ) {
+		return builder.appendOptional( DateTimeFormatter.ofLocalizedTime( FormatStyle.SHORT ).withLocale( locale ) )
 		    .appendOptional( DateTimeFormatter.ofLocalizedTime( FormatStyle.MEDIUM ).withLocale( locale ) )
 		    .appendOptional( DateTimeFormatter.ofLocalizedTime( FormatStyle.LONG ).withLocale( locale ) )
 		    .appendOptional( DateTimeFormatter.ofLocalizedTime( FormatStyle.FULL ).withLocale( locale ) )
 		    .appendOptional( DateTimeFormatter.ofPattern( DateTime.DEFAULT_TIME_FORMAT_MASK ) )
-		    .appendOptional( DateTimeFormatter.ISO_TIME )
-		    .toFormatter( locale );
+		    .appendOptional( DateTimeFormatter.ISO_TIME );
 	}
 
 	/**

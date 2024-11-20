@@ -348,44 +348,8 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	 * @param timezone The timezone to assign to the string, if an offset or zone is not provided in the value
 	 */
 	public DateTime( String dateTime, Locale locale, ZoneId timezone ) {
-		ZonedDateTime parsed = null;
-		this.formatter = DateTimeFormatter.ISO_ZONED_DATE_TIME.withLocale( locale );
-		// try parsing if it fails then our time does not contain timezone info so we fall back to a local zoned date
-		try {
-			parsed = ZonedDateTime.parse( dateTime, LocalizationUtil.getLocaleZonedDateTimeParsers( locale ) );
-		} catch ( java.time.format.DateTimeParseException e ) {
-			// First fallback - it has a time without a zone
-			try {
-				parsed = ZonedDateTime.of( LocalDateTime.parse( dateTime, LocalizationUtil.getLocaleDateTimeParsers( locale ) ),
-				    timezone );
-				// Second fallback - it is only a date and we need to supply a time
-			} catch ( java.time.format.DateTimeParseException x ) {
-				try {
-					parsed = ZonedDateTime.of(
-					    LocalDateTime.of( LocalDate.parse( dateTime, LocalizationUtil.getLocaleDateParsers( locale ) ), LocalTime.MIN ),
-					    timezone );
-					// last fallback - this is a time only value
-				} catch ( java.time.format.DateTimeParseException z ) {
-					parsed = ZonedDateTime.of( LocalDate.MIN, LocalTime.parse( dateTime, LocalizationUtil.getLocaleTimeParsers( locale ) ),
-					    ZoneId.systemDefault() );
-				}
-			} catch ( Exception x ) {
-				throw new BoxRuntimeException(
-				    String.format(
-				        "The the date time value of [%s] could not be parsed as a valid date or datetime locale of [%s]",
-				        dateTime,
-				        locale.getDisplayName()
-				    ), x );
-			}
-		} catch ( Exception e ) {
-			throw new BoxRuntimeException(
-			    String.format(
-			        "The the date time value of [%s] could not be parsed with a locale of [%s]",
-			        dateTime,
-			        locale.getDisplayName()
-			    ), e );
-		}
-		this.wrapped = parsed;
+		this.formatter	= DateTimeFormatter.ISO_ZONED_DATE_TIME.withLocale( locale );
+		this.wrapped	= LocalizationUtil.parseFromString( dateTime, locale, timezone );
 	}
 
 	/**
