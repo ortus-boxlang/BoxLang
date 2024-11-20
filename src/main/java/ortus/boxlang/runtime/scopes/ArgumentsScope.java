@@ -45,19 +45,44 @@ public class ArgumentsScope extends BaseScope {
 	}
 
 	/**
+	 * Create a new arguments scope with the given attributes
+	 *
+	 * @param attributes The attributes to add to the scope
+	 */
+	public ArgumentsScope( IStruct attributes ) {
+		super( ArgumentsScope.name, Struct.TYPES.LINKED );
+		putAll( attributes );
+	}
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Methods
 	 * --------------------------------------------------------------------------
 	 */
 
+	/**
+	 * Convert the arguments scope to a native array
+	 *
+	 * @return The arguments as a native array
+	 */
 	public Object[] asNativeArray() {
 		return values().toArray();
 	}
 
+	/**
+	 * Convert the arguments scope to a BoxLang array
+	 *
+	 * @return The arguments as a BoxLang array
+	 */
 	public Array asArray() {
 		return Array.of( asNativeArray() );
 	}
 
+	/**
+	 * Convert the arguments scope to a BoxLang struct
+	 *
+	 * @return The arguments as a BoxLang struct
+	 */
 	public IStruct asStruct() {
 		return this;
 	}
@@ -72,6 +97,13 @@ public class ArgumentsScope extends BaseScope {
 		return super.containsKey( key );
 	}
 
+	/**
+	 * Helper method to create an arguments scope from a map
+	 *
+	 * @param key The key to use for the scope
+	 *
+	 * @return The arguments scope key
+	 */
 	public Object get( Key key ) {
 		key = resolveKey( key );
 		return super.get( key );
@@ -140,7 +172,7 @@ public class ArgumentsScope extends BaseScope {
 
 	/**
 	 * Was this arguments scope created with an array of arguments or a struct of named arguments?
-	 * 
+	 *
 	 * @return True if positional, false if named
 	 */
 	public boolean isPositional() {
@@ -149,9 +181,9 @@ public class ArgumentsScope extends BaseScope {
 
 	/**
 	 * Set whether this arguments scope was created with an array of arguments or a struct of named arguments
-	 * 
+	 *
 	 * @param positional True if positional, false if named
-	 * 
+	 *
 	 * @return This arguments scope
 	 */
 	public ArgumentsScope setPositional( boolean positional ) {

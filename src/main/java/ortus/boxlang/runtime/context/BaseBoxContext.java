@@ -951,7 +951,7 @@ public class BaseBoxContext implements IBoxContext {
 		if ( !force ) {
 			Boolean explicitOutput = ( Boolean ) getConfigItem( Key.enforceExplicitOutput, false );
 			if ( explicitOutput ) {
-				// If we are requiring to be in an output compo nent, let's look fo r it
+				// If we are requiring to be in an output component, let's look fo r it
 				outputState = findClosestComponent( Key.output );
 				if ( outputState == null ) {
 					return this;

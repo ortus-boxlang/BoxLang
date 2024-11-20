@@ -108,6 +108,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		asOptional							= Key.of( "asOptional" );
 	public static final Key		assocAttribs						= Key.of( "assocAttribs" );
 	public static final Key		asyncService						= Key.of( "asyncService" );
+	public static final Key		announce							= Key.of( "announce" );
 	public static final Key		attribute							= Key.of( "attribute" );
 	public static final Key		attributeCollection					= Key.of( "attributeCollection" );
 	public static final Key		attributes							= Key.of( "attributes" );
@@ -121,6 +122,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		binary								= Key.of( "binary" );
 	public static final Key		body								= Key.of( "body" );
 	public static final Key		boxBif								= Key.of( "BoxBif" );
+	public static final Key		boxComponent						= Key.of( "BoxComponent" );
 	public static final Key		boxCacheProvider					= Key.of( "BoxCacheProvider" );
 	public static final Key		boxlang								= Key.of( "boxlang" );
 	public static final Key		bxSessions							= Key.of( "bxSessions" );
@@ -332,6 +334,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		getAsBinary							= Key.of( "getAsBinary" );
 	public static final Key		getClass							= Key.of( "getClass" );
 	public static final Key		getFileInfo							= Key.of( "getFileInfo" );
+	public static final Key		getName								= Key.of( "getName" );
 	public static final Key		group								= Key.of( "group" );
 	public static final Key		groupCaseSensitive					= Key.of( "groupCaseSensitive" );
 	public static final Key		hasEndTag							= Key.of( "hasEndTag" );
@@ -475,6 +478,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		newDelimiter						= Key.of( "newDelimiter" );
 	public static final Key		newDirectory						= Key.of( "newDirectory" );
 	public static final Key		newPath								= Key.of( "newPath" );
+	public static final Key		newBuffer							= Key.of( "newBuffer" );
+	public static final Key		newBuilder							= Key.of( "newBuilder" );
 	public static final Key		noInit								= Key.of( "noInit" );
 	public static final Key		nulls								= Key.of( "null" );
 	public static final Key		number								= Key.of( "number" );
@@ -529,6 +534,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		precise								= Key.of( "precise" );
 	public static final Key		prefix								= Key.of( "prefix" );
 	public static final Key		priority							= Key.of( "priority" );
+	public static final Key		processBody							= Key.of( "processBody" );
 	public static final Key		positionals							= Key.of( "positionals" );
 	public static final Key		properties							= Key.of( "properties" );
 	public static final Key		protocol							= Key.of( "protocol" );

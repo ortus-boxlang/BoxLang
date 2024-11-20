@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.runtime.bifs;
+package ortus.boxlang.runtime.components;
 
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -23,12 +23,13 @@ import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Function;
+import ortus.boxlang.runtime.types.IStruct;
 
 /**
- * This is a BIF that is used to proxy from a BoxLang script to a Java method
+ * This is a Component that is used to proxy from a BoxLang Class to a Java method
  */
-@BoxBIF
-public class BoxLangBIFProxy extends BIF {
+@BoxComponent
+public class BoxLangComponentProxy extends Component {
 
 	/**
 	 * The target BoxLang BIF class we proxy to
@@ -42,23 +43,23 @@ public class BoxLangBIFProxy extends BIF {
 
 	/**
 	 * Constructor
-	 *
-	 * @param target The target function we proxy to
 	 */
-	public BoxLangBIFProxy( IClassRunnable target ) {
+	public BoxLangComponentProxy( IClassRunnable target ) {
 		super();
-		this.target			= target;
-		this.bxFunction		= this.target.getThisScope().getAsFunction( Key.invoke );
-		declaredArguments	= this.bxFunction.getArguments();
+		this.target		= target;
+		this.bxFunction	= this.target.getThisScope().getAsFunction( Key.invoke );
+		// declaredArguments = this.bxFunction.getArguments();
 	}
 
 	/**
 	 * Constructor
 	 */
-	public BoxLangBIFProxy() {
+	public BoxLangComponentProxy() {
 	}
 
 	/**
+	 * Get the target BoxLang BIF class we proxy to
+	 *
 	 * @return the target
 	 */
 	public IClassRunnable getTarget() {
@@ -66,19 +67,27 @@ public class BoxLangBIFProxy extends BIF {
 	}
 
 	/**
+	 * Set the target BoxLang BIF class we proxy to
+	 *
 	 * @param target the target to set
 	 */
-	public BoxLangBIFProxy setTarget( IClassRunnable target ) {
+	public BoxLangComponentProxy setTarget( IClassRunnable target ) {
 		this.target = target;
 		return this;
 	}
 
 	@Override
-	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		// System.out.println( "BoxLangBIF.invoke() called" );
-		// System.out.println( "Arguments " + arguments.toString() );
+	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
 
-		// Any AOP Stuff HERE if we need to goes here
+		// System.out.println( "BoxLangComponent.invoke() called" );
+		// System.out.println( "Attributes " + attributes.toString() );
+
+		// Prepare component arguments
+		ArgumentsScope arguments = new ArgumentsScope();
+		arguments.put( Key.context, context );
+		arguments.put( Key.attributes, attributes );
+		arguments.put( Key.body, body );
+		arguments.put( Key.executionState, executionState );
 
 		// Execute
 		FunctionBoxContext fContext = Function.generateFunctionContext(
@@ -91,12 +100,13 @@ public class BoxLangBIFProxy extends BIF {
 		);
 		fContext.setThisClass( this.target );
 		fContext.pushTemplate( this.target );
-
 		try {
-			return this.bxFunction.invoke( fContext );
+			var bodyResult = this.bxFunction.invoke( fContext );
+			return ( bodyResult == null ) ? Component.DEFAULT_RETURN : ( BodyResult ) bodyResult;
 		} finally {
 			fContext.popTemplate();
 		}
+
 	}
 
 }

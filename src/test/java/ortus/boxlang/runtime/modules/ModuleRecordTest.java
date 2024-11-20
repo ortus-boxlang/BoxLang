@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -41,6 +42,7 @@ import ortus.boxlang.runtime.loader.resolvers.JavaResolver;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.services.ComponentService;
 import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.services.ModuleService;
 import ortus.boxlang.runtime.types.IStruct;
@@ -215,6 +217,12 @@ class ModuleRecordTest {
 		assertThat( functionService.hasGlobalFunction( Key.of( "moduleHelloWorld" ) ) ).isTrue();
 		assertThat( functionService.hasGlobalFunction( Key.of( "moduleNow" ) ) ).isTrue();
 
+		// It should register components
+		ComponentService componentService = runtime.getComponentService();
+		assertThat( moduleRecord.components.size() ).isEqualTo( 1 );
+		System.out.println( Arrays.toString( componentService.getComponentNames() ) );
+		assertThat( componentService.hasComponent( Key.of( "HolaComponent" ) ) ).isTrue();
+
 		// Register a class loader
 		Class<?> clazz = moduleRecord.findModuleClass( "HelloWorld", false, context );
 		assertThat( clazz ).isNotNull();
@@ -241,6 +249,13 @@ class ModuleRecordTest {
 
 			//result4 = hola();
 		    """, context );
+		// @formatter:on
+
+		// Test the component
+		// @formatter:off
+		runtime.executeSource("""
+				<bx:HolaComponent>Hello</bx:HolaComponent>
+		    """, context, BoxSourceType.BOXTEMPLATE );
 		// @formatter:on
 
 		IScope variables = context.getScopeNearby( VariablesScope.name );
