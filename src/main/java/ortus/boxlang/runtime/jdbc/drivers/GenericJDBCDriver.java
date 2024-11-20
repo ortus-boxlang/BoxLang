@@ -27,6 +27,11 @@ import ortus.boxlang.runtime.types.util.StructUtil;
 /**
  * This is the generic JDBC driver that can be used to register datasources in the system.
  * We use a generic JDBC Url connection schema to connect to the database.
+ * <p>
+ * All modules that need to connect to a database should use this driver as it's
+ * base class.
+ * <p>
+ * Make sure you take note of all the properties and methods that are available to you.
  */
 public class GenericJDBCDriver implements IJDBCDriver {
 
@@ -34,6 +39,7 @@ public class GenericJDBCDriver implements IJDBCDriver {
 	 * --------------------------------------------------------------------------
 	 * Driver properties
 	 * --------------------------------------------------------------------------
+	 * Each module that extends this class should override them as needed.
 	 */
 
 	/**
@@ -52,7 +58,16 @@ public class GenericJDBCDriver implements IJDBCDriver {
 	protected String				driverClassName		= "";
 
 	/**
-	 * The default delimiter for the custom parameters
+	 * The default delimiter for the addition of custom paramters to the connection URL.
+	 * This delimits the start of the custom parameters.
+	 * Example: jdbc:mysql://localhost:3306/mydb?param1=value1&param2=value2
+	 */
+	protected String				defaultURIDelimiter	= "?";
+
+	/**
+	 * The default delimiter for the custom parameters attached to the connection URL
+	 * Example: jdbc:mysql://localhost:3306/mydb?param1=value1&param2=value2
+	 * This delimits each custom parameter.
 	 */
 	protected String				defaultDelimiter	= "&";
 
@@ -124,6 +139,10 @@ public class GenericJDBCDriver implements IJDBCDriver {
 		return this.driverClassName;
 	}
 
+	/**
+	 * This builds a generic connection URL for the driver.
+	 * Each module that extends this class should override this method as needed.
+	 */
 	@Override
 	public String buildConnectionURL( DatasourceConfig config ) {
 		// Validate the driver
@@ -131,6 +150,7 @@ public class GenericJDBCDriver implements IJDBCDriver {
 		if ( jDriver.isEmpty() ) {
 			throw new IllegalArgumentException( "The driver property is required for the Generic JDBC Driver" );
 		}
+
 		// Validate the port
 		Integer port = IntegerCaster.cast( config.properties.getOrDefault( Key.port, 0 ), false );
 		if ( port == null || port == 0 ) {
@@ -144,11 +164,12 @@ public class GenericJDBCDriver implements IJDBCDriver {
 
 		// Build the Generic connection URL
 		return String.format(
-		    "jdbc:%s://%s:%d/%s?%s",
+		    "jdbc:%s://%s:%d/%s%s%s",
 		    jDriver,
 		    host,
 		    port,
 		    database,
+		    getDefaultURIDelimiter(),
 		    customParamsToQueryString( config )
 		);
 	}
@@ -203,6 +224,15 @@ public class GenericJDBCDriver implements IJDBCDriver {
 	}
 
 	/**
+	 * Get the URI delimiter for the custom parameters
+	 *
+	 * @return The URI delimiter
+	 */
+	public String getDefaultURIDelimiter() {
+		return this.defaultURIDelimiter;
+	}
+
+	/**
 	 * This helper method is used to convert the custom parameters in the config (Key.custom)
 	 * to a query string that can be used by the driver to build the connection URL.
 	 * <p>
@@ -214,18 +244,18 @@ public class GenericJDBCDriver implements IJDBCDriver {
 	 * @return The custom parameters as a query string
 	 */
 	public String customParamsToQueryString( DatasourceConfig config ) {
-		IStruct params = new Struct( this.defaultCustomParams );
+		IStruct params = new Struct( getDefaultCustomParams() );
 
 		// If the custom parameters are a string, convert them to a struct
 		if ( config.properties.get( Key.custom ) instanceof String castedParams ) {
-			config.properties.put( Key.custom, StructUtil.fromQueryString( castedParams, this.defaultDelimiter ) );
+			config.properties.put( Key.custom, StructUtil.fromQueryString( castedParams, getDefaultDelimiter() ) );
 		}
 
 		// Add all the custom parameters to the params struct
 		config.properties.getAsStruct( Key.custom ).forEach( params::put );
 
 		// Return it as the query string needed by the driver
-		return StructUtil.toQueryString( params, this.defaultDelimiter );
+		return StructUtil.toQueryString( params, getDefaultDelimiter() );
 	}
 
 }
