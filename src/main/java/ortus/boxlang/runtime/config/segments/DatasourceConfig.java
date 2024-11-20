@@ -600,31 +600,36 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	 * @return JDBC connection string, e.g. <code>jdbc:mysql://localhost:3306/foo?useSSL=false</code>
 	 */
 	private String getOrBuildConnectionString( IJDBCDriver driver ) {
-		// If we have a connection string, use it without asking the driver
-		// We are overriding the driver's connection string
-		String connectionString = getConnectionString();
+		// 1. Attempt to find the connection string from the properties first.
+		String connectionString = replaceConnectionPlaceholders( getConnectionString() );
 
-		// If empty we delegate it to the module to build the URL
-		if ( connectionString.isBlank() ) {
-			connectionString = replaceConnectionPlaceholders( driver.buildConnectionURL( this ) );
-		} else if ( this.properties.containsKey( Key.dsn ) ) {
-			connectionString = replaceConnectionPlaceholders( this.properties.getAsString( Key.dsn ) ) +
-			    driver.getDefaultURIDelimiter() +
-			    driver.customParamsToQueryString( this );
+		// 2. If the attempt was empty, then try to find the connection string from the DSN cfconfig element
+		if ( connectionString.isEmpty() && this.properties.containsKey( Key.dsn ) ) {
+			connectionString = replaceConnectionPlaceholders( this.properties.getAsString( Key.dsn ) );
 		}
 
+		// 3. If the attempt was empty, then try to build the connection string from the driver
+		// This adds all the placeholders and custom parameters via the driver
+		if ( connectionString.isEmpty() ) {
+			connectionString = replaceConnectionPlaceholders( driver.buildConnectionURL( this ) );
+		} else {
+			connectionString = addCustomParams( connectionString, driver.getDefaultURIDelimiter(), driver.getDefaultDelimiter() );
+		}
+
+		// Finalize with custom params
 		return connectionString;
 	}
 
 	/**
 	 * This method is used to incorporate custom parameters into the target connection string.
 	 *
-	 * @param target    The target connection string
-	 * @param delimiter The delimiter to use
+	 * @param target       The target connection string
+	 * @param URIDelimiter The URI delimiter to use
+	 * @param delimiter    The delimiter to use for the custom parameters
 	 *
 	 * @return The connection string with custom parameters incorporated
 	 */
-	public String addCustomParams( String target, String delimiter ) {
+	public String addCustomParams( String target, String URIDelimiter, String delimiter ) {
 		String targetCustom = "";
 		if ( this.properties.get( Key.custom ) instanceof String castedCustom ) {
 			targetCustom = castedCustom;
@@ -632,15 +637,13 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 			targetCustom = StructUtil.toQueryString( ( IStruct ) this.properties.get( Key.custom ), delimiter );
 		}
 
-		if ( targetCustom.length() > 0 ) {
-			// If the target connection string already has parameters, append an ampersand
-			if ( target.contains( "?" ) && !target.endsWith( "?" ) ) {
-				target += delimiter;
-			} else if ( !target.contains( "?" ) ) {
-				target += "?";
-			}
+		// Incorporate URI Delimiter if it doesn't exist
+		if ( !target.contains( URIDelimiter ) ) {
+			target += URIDelimiter;
+		}
 
-			// Append the custom parameters
+		// Append the custom parameters
+		if ( targetCustom.length() > 0 ) {
 			target += targetCustom;
 		}
 
@@ -648,15 +651,15 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	}
 
 	/**
-	 * This method is used to incorporate custom parameters into the target connection string.
-	 * Using the default {@code &} delimiter.
+	 * This method is used to incorporate custom parameters into the target connection string
+	 * Using default delimiters of <code>?</code> and <code>&</code>
 	 *
 	 * @param target The target connection string
 	 *
 	 * @return The connection string with custom parameters incorporated
 	 */
 	public String addCustomParams( String target ) {
-		return addCustomParams( target, "&" );
+		return addCustomParams( target, "?", "&" );
 	}
 
 	/**
@@ -674,12 +677,24 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	 * @return The connection string with placeholders replaced
 	 */
 	private String replaceConnectionPlaceholders( String target ) {
+		// Short circuit if the target is empty
+		if ( target.isBlank() ) {
+			return target;
+		}
+
 		// Replace placeholders
-		target	= target.replace( "{host}", ( String ) this.properties.getOrDefault( Key.host, "NOT_FOUND" ) );
-		target	= target.replace( "{port}",
+		target	= target.replace(
+		    "{host}",
+		    StringCaster.cast( this.properties.getOrDefault( Key.host, "NOT_FOUND" ), true )
+		);
+		target	= target.replace(
+		    "{port}",
 		    StringCaster.cast( this.properties.getOrDefault( Key.port, 0 ), true )
 		);
-		target	= target.replace( "{database}", ( String ) this.properties.getOrDefault( Key.database, "NOT_FOUND" ) );
+		target	= target.replace(
+		    "{database}",
+		    StringCaster.cast( this.properties.getOrDefault( Key.database, "NOT_FOUND" ), true )
+		);
 
 		return target;
 	}
