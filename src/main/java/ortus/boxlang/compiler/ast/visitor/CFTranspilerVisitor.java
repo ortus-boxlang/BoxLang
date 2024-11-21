@@ -356,9 +356,13 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 			node.setName( BIFMap.get( name ) );
 		}
 
-		if ( name.equalsIgnoreCase( "structKeyExists" ) && node.getArguments().size() == 2 ) {
-			return transpileStructKeyExists( node );
-		}
+		// This is now done with runtime checks in the actual structKeyExist() BIF triggered by the compat module
+		/*
+		 * if ( name.equalsIgnoreCase( "structKeyExists" ) && node.getArguments().size() == 2 ) {
+		 * return transpileStructKeyExists( node );
+		 * }
+		 */
+
 		// Look for valueList( myQry.columnName ) or valueList( myQry[ "columnName" ] )
 		if ( name.equalsIgnoreCase( "valueList" ) && node.getArguments().size() > 0 && node.getArguments().get( 0 ).getValue() instanceof BoxAccess ) {
 			return transpileValueList( node );

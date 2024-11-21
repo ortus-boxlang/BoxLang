@@ -2381,26 +2381,6 @@ public class CoreLangTest {
 
 	}
 
-	@DisplayName( "CF transpile structKeyExists" )
-	@Test
-	public void testCFTranspileStructKeyExists() {
-
-		instance.executeSource(
-		    """
-		       str = {
-		    	foo : 'bar',
-		    	baz : null
-		    };
-		    result = structKeyExists( str, "foo" )
-		    result2 = structKeyExists( str, "baz" )
-		    	 """,
-		    context, BoxSourceType.CFSCRIPT );
-
-		assertThat( variables.getAsBoolean( result ) ).isTrue();
-		assertThat( variables.getAsBoolean( Key.of( "result2" ) ) ).isFalse();
-
-	}
-
 	@Test
 	public void numberKey() {
 
@@ -3988,6 +3968,34 @@ public class CoreLangTest {
 		    variables.firstResult4 = result4;
 		      	foo( "brad" )
 		      """, context );
+		assertThat( variables.get( Key.of( "firstResult1" ) ) ).isEqualTo( false );
+		assertThat( variables.get( Key.of( "firstResult2" ) ).toString() ).contains( "brad" );
+		assertThat( variables.get( Key.of( "firstResult3" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "firstResult4" ) ).toString() ).contains( "brad" );
+		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( false );
+		assertThat( variables.get( Key.of( "result2" ) ).toString() ).contains( "brad" );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "result4" ) ).toString() ).contains( "brad" );
+	}
+
+	@Test
+	public void testNumericKeysDoNotExistInNamedParamArgumentsCF() {
+		instance.executeSource(
+		    """
+		      	function foo( param ) {
+		      		variables.result1 = structKeyExists( arguments, 1 )
+		      		variables.result2 = arguments[ 1 ]
+		      		variables.result3 = structKeyExists( arguments, "param" )
+		      		variables.result4 = arguments[ "param" ]
+		      	}
+
+		      	foo( param="brad" )
+		    variables.firstResult1 = result1;
+		    variables.firstResult2 = result2;
+		    variables.firstResult3 = result3;
+		    variables.firstResult4 = result4;
+		      	foo( "brad" )
+		      """, context, BoxSourceType.CFSCRIPT );
 		assertThat( variables.get( Key.of( "firstResult1" ) ) ).isEqualTo( false );
 		assertThat( variables.get( Key.of( "firstResult2" ) ).toString() ).contains( "brad" );
 		assertThat( variables.get( Key.of( "firstResult3" ) ) ).isEqualTo( true );
