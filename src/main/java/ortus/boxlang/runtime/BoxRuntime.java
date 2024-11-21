@@ -433,8 +433,10 @@ public class BoxRuntime implements java.io.Closeable {
 	 * once the instance is set in order to avoid circular dependencies.
 	 *
 	 * Any logic that requires any services or operations to be seeded first, then go here.
+	 * 
+	 * @param debugMode True if the runtime should be started in debug mode
 	 */
-	private void startup() {
+	private void startup( Boolean debugMode ) {
 		// Internal timer
 		timerUtil.start( "runtime-startup" );
 
@@ -458,7 +460,7 @@ public class BoxRuntime implements java.io.Closeable {
 		this.classLocator		= ClassLocator.getInstance( this );
 
 		// Load the configurations and overrides
-		loadConfiguration( this.debugMode, this.configPath );
+		loadConfiguration( debugMode, this.configPath );
 		// Anythying below might use configuration items
 
 		// Ensure home assets
@@ -616,7 +618,7 @@ public class BoxRuntime implements java.io.Closeable {
 				}
 			}
 			// We split in order to avoid circular dependencies on the runtime
-			instance.startup();
+			instance.startup( debugMode );
 		}
 		return instance;
 	}
