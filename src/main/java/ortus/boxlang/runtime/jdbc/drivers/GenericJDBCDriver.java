@@ -248,7 +248,12 @@ public class GenericJDBCDriver implements IJDBCDriver {
 
 		// If the custom parameters are a string, convert them to a struct
 		if ( config.properties.get( Key.custom ) instanceof String castedParams ) {
-			config.properties.put( Key.custom, StructUtil.fromQueryString( castedParams, getDefaultDelimiter() ) );
+			String parseDelimiter = getDefaultDelimiter();
+			if ( !castedParams.contains( parseDelimiter ) && !parseDelimiter.equals( "&" ) ) {
+				// No custom delimiter found; the custom parameters are probably ampersand-separated
+				parseDelimiter = "&";
+			}
+			config.properties.put( Key.custom, StructUtil.fromQueryString( castedParams, parseDelimiter ) );
 		}
 
 		// Add all the custom parameters to the params struct
