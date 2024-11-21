@@ -254,11 +254,15 @@ public class ModuleRecord {
 		Path	directoryPath	= Path.of( physicalPath );
 		Path	boxjsonPath		= directoryPath.resolve( MODULE_CONFIG_FILE );
 
+		// Load the module name from the box.json file if it exists
 		if ( Files.exists( boxjsonPath ) ) {
 			DataNavigator
 			    .of( boxjsonPath )
 			    .from( "boxlang" )
-			    .ifPresent( "moduleName", value -> this.name = Key.of( value ) );
+			    .ifPresent( "moduleName", value -> this.name = Key.of( value ) )
+			    .ifPresent( "minimumVersion",
+			        value -> BoxRuntime.getInstance().getModuleService().verifyModuleAndBoxLangVersion( ( String ) value, directoryPath )
+			    );
 		}
 
 		// Default to the directory name if the box.json file does not exist

@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.semver4j.Semver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -86,6 +87,11 @@ public class ModuleService extends BaseService {
 	private Map<Key, ModuleRecord>	registry							= new ConcurrentHashMap<>();
 
 	/**
+	 * The BoxLang Semantic version
+	 */
+	private Semver					runtimeSemver;
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Constructor(s)
 	 * --------------------------------------------------------------------------
@@ -128,6 +134,9 @@ public class ModuleService extends BaseService {
 	public void onStartup() {
 		BoxRuntime.timerUtil.start( "moduleservice-startup" );
 		logger.debug( "+ Starting up Module Service..." );
+
+		// Store the running BoxLang version
+		this.runtimeSemver = new Semver( getRuntime().getVersionInfo().getAsString( Key.version ) );
 
 		// Register external module locations from the config
 		runtime.getConfiguration().modulesDirectory.forEach( this::addModulePath );
@@ -546,6 +555,56 @@ public class ModuleService extends BaseService {
 		}
 
 		return this;
+	}
+
+	/**
+	 * Verify a module version and the BoxLang version are compatible.
+	 * <p>
+	 * Rules:
+	 * - If the major version is different, then we are not compatible, so throw an exception
+	 * - If the minor/path version is different, then we are compatible, but we will log a warning
+	 *
+	 * @param moduleVersion The version of the module
+	 * @param directoryPath The directory path of the module
+	 *
+	 * @throws BoxRuntimeException If the module requires a different major version of BoxLang
+	 */
+	public void verifyModuleAndBoxLangVersion( String moduleVersion, Path directoryPath ) {
+		// Early exit if the module version is null or blank
+		if ( moduleVersion == null || moduleVersion.isBlank() ) {
+			logger.warn( "Module [{}] does not have a BoxLang [minimumVersion] specified in the ModuleConfig.bx file", directoryPath.getFileName() );
+			return;
+		}
+
+		// value must be non-null and a string and have a length
+		if ( moduleVersion != null && !moduleVersion.isBlank() ) {
+			Semver minimumVersion = new Semver( moduleVersion );
+
+			// Major version check
+			// Module minimum version = 3
+			// Runtime version = 4 allow it, < 3 throw exception
+			if ( this.runtimeSemver.getMajor() < minimumVersion.getMajor() ) {
+				throw new BoxRuntimeException(
+				    String.format(
+				        "Module [%s] requires BoxLang version [%s] but we are running [%s]",
+				        directoryPath.getFileName(),
+				        minimumVersion,
+				        this.runtimeSemver
+				    )
+				);
+			}
+
+			// Minor and Patch version check
+			if ( this.runtimeSemver.compareTo( minimumVersion ) < 0 ) {
+				logger.warn(
+				    "Module [{}] requires a minimum BoxLang version [{}] or later, but we are running [{}]. " +
+				        "There may be compatibility issues with newer features or bug fixes.",
+				    directoryPath.getFileName(),
+				    minimumVersion,
+				    this.runtimeSemver
+				);
+			}
+		}
 	}
 
 	/**

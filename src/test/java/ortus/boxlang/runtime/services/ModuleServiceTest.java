@@ -19,16 +19,17 @@ package ortus.boxlang.runtime.services;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.nio.file.Paths;
 
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 class ModuleServiceTest {
 
@@ -39,11 +40,6 @@ class ModuleServiceTest {
 	public static void setupBeforeAll() {
 		runtime	= BoxRuntime.getInstance( true );
 		service	= runtime.getModuleService();
-	}
-
-	@AfterAll
-	public static void tearDownAfterAll() {
-
 	}
 
 	@DisplayName( "Test it can get an instance of the service" )
@@ -86,6 +82,26 @@ class ModuleServiceTest {
 		var count = service.getModulePaths().size();
 		assertDoesNotThrow( () -> service.addModulePath( "" ) );
 		assertThat( service.getModulePaths().size() ).isEqualTo( count );
+	}
+
+	@DisplayName( "Test it can allow a modules version against the runtime version" )
+	@Test
+	void testItCanAllowModuleVersionAgainstRuntimeVersion() {
+		assertDoesNotThrow( () -> service.verifyModuleAndBoxLangVersion( "1.0.0", Paths.get( "" ) ) );
+		assertDoesNotThrow( () -> service.verifyModuleAndBoxLangVersion( "1.1.0", Paths.get( "" ) ) );
+		assertDoesNotThrow( () -> service.verifyModuleAndBoxLangVersion( "1.0.1", Paths.get( "" ) ) );
+	}
+
+	@DisplayName( "Test it can disallow a modules version against the runtime version due to < major version issue" )
+	@Test
+	void testItCanDisallowModuleVersionAgainstRuntimeVersionDueToMajorVersionIssue() {
+		assertThrows( BoxRuntimeException.class, () -> service.verifyModuleAndBoxLangVersion( "2.0.0", Paths.get( "" ) ) );
+	}
+
+	@DisplayName( "Test it can still allow a modules version against the runtime version due to > major version issue" )
+	@Test
+	void testItCanStillAllowModuleVersionAgainstRuntimeVersionDueToMajorVersionIssue() {
+		assertDoesNotThrow( () -> service.verifyModuleAndBoxLangVersion( "0.0.0", Paths.get( "" ) ) );
 	}
 
 }
