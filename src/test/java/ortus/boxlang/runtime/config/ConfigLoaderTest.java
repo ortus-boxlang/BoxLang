@@ -24,7 +24,6 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.util.List;
 
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -43,11 +42,6 @@ class ConfigLoaderTest {
 	@BeforeAll
 	public static void setUp() {
 		runtime = BoxRuntime.getInstance( true );
-	}
-
-	@AfterAll
-	public static void teardown() {
-
 	}
 
 	@BeforeEach

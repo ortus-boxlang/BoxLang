@@ -19,8 +19,10 @@ package ortus.boxlang.runtime.bifs.global.system;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
+import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.events.BoxEvent;
+import ortus.boxlang.runtime.interceptors.Logging;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -35,9 +37,10 @@ public class WriteLog extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "string", Key.text ),
+		    new Argument( false, "string", Key.type, Logging.DEFAULT_LOG_LEVEL ),
+		    new Argument( false, "boolean", Key.application, true ),
 		    new Argument( false, "string", Key.file ),
-		    new Argument( false, "string", Key.log, "Application" ),
-		    new Argument( false, "string", Key.type, "Information" ),
+		    new Argument( false, "string", Key.log, Logging.DEFAULT_LOG_TYPE ),
 		};
 	}
 
@@ -48,14 +51,24 @@ public class WriteLog extends BIF {
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.text The text of the log message
-	 * 
-	 * @argument.file A custom log file to write to
-	 * 
-	 * @argument.log If a custom file is not specified the log category to write to
-	 * 
+	 *
 	 * @argument.type The log level ( debug, info, warn, error )
+	 *
+	 * @argument.application If true, it logs the application name alongside the message. Default is true.
+	 *
+	 * @argument.file A custom log file to write to
+	 *
+	 * @argument.log If a custom file is not specified the log category to write to
+	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
+		// Get the application name
+		ApplicationBoxContext appContext = context.getApplicationContext();
+		// Set the application name if not null
+		if ( appContext != null ) {
+			arguments.put( Key.application, appContext.getApplication().getName() );
+		}
+		// Announce the log message
 		interceptorService.announce( BoxEvent.LOG_MESSAGE, arguments );
 		return null;
 	}

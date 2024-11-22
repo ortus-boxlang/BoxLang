@@ -33,48 +33,66 @@ import ortus.boxlang.runtime.BoxRuntime;
  *
  * THIS CLASS IS CALLED AUTOMATICALLY BY LOGBACK'S SERVICE LOADER MECHANISM.
  *
- * This class serves as a single endpoint for configuring the slf4j logging provider. Currently that is logback, but in the future it may be another
+ * This class serves as a single endpoint for configuring the slf4j logging
+ * provider. Currently that is logback, but in the future it may be another
  * provider.
  *
- * See https://logback.qos.ch/manual/configuration.html for more information on logback configuration.
+ * See https://logback.qos.ch/manual/configuration.html for more information on
+ * logback configuration.
  */
 public class LoggingConfigurator extends LoggerContextAwareBase implements Configurator {
 
 	/**
-	 * Logback-specific encoder pattern. Thankfully, this is fairly legible compared to the JUL pattern.
+	 * Logback-specific encoder pattern. Thankfully, this is fairly legible compared
+	 * to the JUL pattern.
 	 * https://logback.qos.ch/manual/layouts.html#conversionWord
 	 *
 	 * @see https://logback.qos.ch/manual/layouts.html#conversionWord
 	 */
-	public static String				LOG_FORMAT	= "%date %logger{0} [%level] %kvp %message%n";
+	public static final String	LOG_FORMAT		= "%date %logger{0} [%level] %kvp %message%n";
 
-	public static PatternLayoutEncoder	encoder;
+	/**
+	 * The name of the context for the runtime
+	 */
+	public static final String	CONTEXT_NAME	= "BoxLang";
+
+	/**
+	 * The encoder to use for the logging provider
+	 */
+	public PatternLayoutEncoder	encoder;
+
+	/**
+	 * The root logger for the runtime
+	 */
+	public Logger				rootLogger;
 
 	/**
 	 * Default constructor needed by logback
 	 */
 	public LoggingConfigurator() {
+		// Needed by logback
 	}
 
 	/**
 	 * Configure the logging provider.
+	 * <p>
 	 * This is called by the logback service loader mechanism.
-	 * This initializes the runtime's basic logging conifguration which can be expanded on.
-	 * This the minimal configuration needed to get the runtime up and running.
+	 * <p>
+	 * This initializes the runtime's basic logging conifguration which can be
+	 * expanded on.
 	 *
 	 * @param loggerContext The logger context to configure
 	 *
-	 * @return The status of the configuration
+	 * @return The status of the configuration @see ExecutionStatus
 	 */
 	public ExecutionStatus configure( LoggerContext loggerContext ) {
+		loggerContext.setName( CONTEXT_NAME );
 
-		// LoggerContext loggerContext = new LoggerContext();
-		loggerContext.setName( "BoxLang" );
-
-		encoder = new PatternLayoutEncoder();
-		encoder.setContext( loggerContext );
-		encoder.setPattern( LOG_FORMAT );
-		encoder.start();
+		// Setup the encoder
+		this.encoder = new PatternLayoutEncoder();
+		this.encoder.setContext( loggerContext );
+		this.encoder.setPattern( LOG_FORMAT );
+		this.encoder.start();
 
 		// Base log level depending on debug mode
 		var								debugMode	= BoxRuntime.getInstance().inDebugMode();
@@ -87,43 +105,43 @@ public class LoggingConfigurator extends LoggerContextAwareBase implements Confi
 		appender.setEncoder( encoder );
 		appender.start();
 
-		// Configure Root Logger
-		Logger rootLogger = loggerContext.getLogger( Logger.ROOT_LOGGER_NAME );
-		rootLogger.setLevel( logLevel );
-		rootLogger.addAppender( appender );
+		// Configure the Root Logger
+		this.rootLogger = loggerContext.getLogger( Logger.ROOT_LOGGER_NAME );
+		this.rootLogger.setLevel( logLevel );
+		this.rootLogger.addAppender( appender );
 
+		// Set the logger context back
 		setLoggerContext( loggerContext );
+		BoxRuntime.getInstance().setLoggingConfigurator( this );
 
-		// We should be the last configurator to run, so stop searching for further configurators.
+		// We should be the last configurator to run, so stop searching for further
+		// configurators.
 		return ExecutionStatus.DO_NOT_INVOKE_NEXT_IF_ANY;
-
 	}
 
 	/**
 	 * Enable debug mode for the runtime's root logger or not.
 	 *
-	 * This is usually a convenience method for the runtime to enable or disable debug mode
+	 * This is usually a convenience method for the runtime to enable or disable
+	 * debug mode
 	 * via configuration overrides
 	 *
 	 * @param debugMode True to enable debug mode, false to disable
-	 *
 	 */
-	public static void reconfigureDebugMode( Boolean debugMode ) {
-		// Get root Logger from the logger context and set the log level to DEBUG
-		Level logLevel = Boolean.TRUE.equals( debugMode ) ? Level.DEBUG : Level.INFO;
-		// rootLogger = ( Logger ) LoggerFactory.getLogger( Logger.ROOT_LOGGER_NAME );
-		// rootLogger.setLevel( logLevel );
+	public void reconfigureDebugMode( Boolean debugMode ) {
+		this.rootLogger.setLevel( Boolean.TRUE.equals( debugMode ) ? Level.DEBUG : Level.INFO );
 	}
 
 	/**
 	 * Override to set the context on the encoder
-	 *
-	 **/
+	 */
+	@Override
 	public void setContext( Context context ) {
 		if ( this.context == null ) {
 			this.context = context;
 		} else if ( this.context != context ) {
-			getLoggerContext().getLogger( Logger.ROOT_LOGGER_NAME )
+			getLoggerContext()
+			    .getLogger( Logger.ROOT_LOGGER_NAME )
 			    .error( "LoggingConfigurator context has been already set and an attempt to overwrite was made." );
 		}
 	}

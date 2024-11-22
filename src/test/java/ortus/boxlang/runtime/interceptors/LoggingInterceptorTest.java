@@ -59,7 +59,7 @@ public class LoggingInterceptorTest {
 	@AfterAll
 	public static void teardown() {
 		if ( FileSystemUtil.exists( logFilePath ) ) {
-			FileSystemUtil.deleteFile( logFilePath );
+			// FileSystemUtil.deleteFile( logFilePath );
 		}
 		if ( FileSystemUtil.exists( absoluteLogeFilePath ) ) {
 			FileSystemUtil.deleteFile( absoluteLogeFilePath );
@@ -68,7 +68,7 @@ public class LoggingInterceptorTest {
 
 	@DisplayName( "It can log a message" )
 	@Test
-	void testLogMessage() throws InterruptedException {
+	void testLogMessage() {
 		System.out.println( logFilePath );
 		loggingInterceptor.logMessage( Struct.of(
 		    Key.text, "Hello, World!",
@@ -81,7 +81,7 @@ public class LoggingInterceptorTest {
 
 	@DisplayName( "It can log a message to an absolute path" )
 	@Test
-	void testLogAbsolute() throws InterruptedException {
+	void testLogAbsolute() {
 		loggingInterceptor.logMessage( Struct.of(
 		    Key.text, "Hello, Absolute Path!",
 		    Key.level, "INFO",

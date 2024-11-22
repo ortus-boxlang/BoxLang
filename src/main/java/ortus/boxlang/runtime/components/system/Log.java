@@ -22,8 +22,10 @@ package ortus.boxlang.runtime.components.system;
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
+import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.events.BoxEvent;
+import ortus.boxlang.runtime.interceptors.Logging;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 
@@ -39,8 +41,9 @@ public class Log extends Component {
 		declaredAttributes = new Attribute[] {
 		    new Attribute( Key.text, "string" ),
 		    new Attribute( Key.file, "string" ),
-		    new Attribute( Key.log, "string", "Application" ),
-		    new Attribute( Key.type, "string", "Information" ),
+		    new Attribute( Key.log, "string", Logging.DEFAULT_LOG_TYPE ),
+		    new Attribute( Key.type, "string", Logging.DEFAULT_LOG_LEVEL ),
+		    new Attribute( Key.application, "boolean", true )
 		};
 	}
 
@@ -53,15 +56,24 @@ public class Log extends Component {
 	 * @param executionState The execution state of the Component
 	 *
 	 * @attribute.text The text to log
-	 * 
+	 *
 	 * @attribute.file An optional explicit file to log to
-	 * 
+	 *
 	 * @attribute.log The log category to write to
-	 * 
+	 *
+	 *
+	 * @argument.application If true, it logs the application name alongside the message. Default is true.
+	 *
 	 * @attribute.type The log level of the entry. One of "Information", "Warning", "Error", "Debug", "Trace"
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
-
+		// Get the application name
+		ApplicationBoxContext appContext = context.getApplicationContext();
+		// Set the application name if not null
+		if ( appContext != null ) {
+			attributes.put( Key.application, appContext.getApplication().getName() );
+		}
+		// Announce the log message
 		interceptorService.announce( BoxEvent.LOG_MESSAGE, attributes );
 
 		return DEFAULT_RETURN;

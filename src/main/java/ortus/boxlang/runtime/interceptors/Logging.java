@@ -21,7 +21,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 import java.util.ServiceLoader;
+import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.commons.io.FilenameUtils;
 import org.slf4j.LoggerFactory;
 
 import ch.qos.logback.classic.Level;
@@ -35,9 +37,7 @@ import ortus.boxlang.runtime.events.BaseInterceptor;
 import ortus.boxlang.runtime.events.InterceptionPoint;
 import ortus.boxlang.runtime.logging.LoggingConfigurator;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.IStruct;
-import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
@@ -45,37 +45,34 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  */
 public class Logging extends BaseInterceptor {
 
+	public static final String							DEFAULT_LOG_LEVEL		= "Information";
+	public static final String							DEFAULT_LOG_TYPE		= "Application";
+	public static final String							DEFAULT_LOG_CATEGORY	= "BoxRuntime";
+
 	/**
 	 * The directory where logs are stored
+	 * This comes from the configuration in the runtime.
 	 */
-	private final String					logsDirectory;
+	private final String								logsDirectory;
 
 	/**
 	 * A map of appenders
 	 */
-	private Struct							appendersMap	= new Struct();
-
-	/**
-	 * The arguments for the logMessage method
-	 */
-	private Argument[]						logArguments	= new Argument[] {
-	    new Argument( true, "string", Key.text ),
-	    new Argument( false, "string", Key.file ),
-	    new Argument( false, "string", Key.log, "Application" ),
-	    new Argument( false, "string", Key.type, "Information" )
-	};
+	private Map<String, FileAppender<ILoggingEvent>>	appendersMap			= new ConcurrentHashMap<>();
 
 	/**
 	 * Logging Levels
 	 */
-	private static final String				LEVEL_TRACE		= "trace";
-	private static final String				LEVEL_DEBUG		= "debug";
-	private static final String				LEVEL_INFO		= "info";
-	private static final String				LEVEL_WARN		= "warn";
-	private static final String				LEVEL_ERROR		= "error";
+	private static final String							LEVEL_TRACE				= "trace";
+	private static final String							LEVEL_DEBUG				= "debug";
+	private static final String							LEVEL_INFO				= "info";
+	private static final String							LEVEL_WARN				= "warn";
+	private static final String							LEVEL_ERROR				= "error";
 
-	// An Unmodifiable map of logging levels.
-	private static final Map<Key, String>	levelMap		= Map.of(
+	/**
+	 * An Unmodifiable map of logging levels.
+	 */
+	private static final Map<Key, String>				levelMap				= Map.of(
 	    Key.of( "Trace" ), LEVEL_TRACE,
 	    Key.of( "Debug" ), LEVEL_DEBUG,
 	    Key.of( "Debugging" ), LEVEL_DEBUG,
@@ -105,19 +102,31 @@ public class Logging extends BaseInterceptor {
 	public void logMessage( IStruct data ) {
 		String	logText		= data.getAsString( Key.text );
 		String	file		= data.getAsString( Key.file );
-		String	logCategory	= data.getAsString( Key.log );
+		// The application name is the category, or if not provided, the default
+		String	logCategory	= ( String ) data.getOrDefault( Key.application, DEFAULT_LOG_CATEGORY );
 		String	logLevel	= data.getAsString( Key.level );
 		// named argument for tags bx:log and function writeLog
 		String	logType		= data.getAsString( Key.type );
-		if ( logCategory == null ) {
-			logCategory = "BoxRuntime";
+
+		// Default the category to BoxRuntime if it is empty
+		if ( logCategory.isEmpty() ) {
+			logCategory = DEFAULT_LOG_CATEGORY;
 		}
-		if ( logType != null ) {
+		// Default the log level to Information if it is empty
+		if ( logType != null && !logType.isEmpty() ) {
 			logLevel = logType;
 		}
+		// Prep a default file location, if the file was ommitted
+		if ( file == null ) {
+			file = logCategory + ".log";
+		}
+		// If the file is an absolute path, use it, otherwise use the logs directory as the base
+		String	filePath	= Path.of( file ).isAbsolute()
+		    ? Path.of( file ).normalize().toString()
+		    : Paths.get( logsDirectory, "/", file ).normalize().toString();
 
-		Key levelKey = Key.of( logLevel );
-
+		// Validate the log level
+		Key		levelKey	= Key.of( logLevel );
 		if ( !levelMap.containsKey( levelKey ) ) {
 			throw new BoxRuntimeException(
 			    String.format(
@@ -127,104 +136,100 @@ public class Logging extends BaseInterceptor {
 			);
 		}
 
-		FileAppender<ILoggingEvent>	fileAppender	= null;
-		Logger						logger			= null;
 		try {
-			if ( file == null ) {
-				file = logCategory + ".log";
-			}
-			String						filePath		= Path.of( file ).isAbsolute()
-			    ? Path.of( file ).normalize().toString()
-			    : Paths.get( logsDirectory, "/", file ).normalize().toString();
-
-			LoggerContext				logContext		= null;
-
-			org.slf4j.ILoggerFactory	loggerFactory	= LoggerFactory.getILoggerFactory();
-
-			// If our core SLF4J logger factory is returning a logback instance use that
-			if ( loggerFactory instanceof LoggerContext ) {
-				logContext = ( LoggerContext ) loggerFactory;
-			} else {
-				loggerFactory.getLogger( getClass().getName() )
-				    .warn( "The LoggerFactory context is not an instance of Logback LoggerContext. Recevied class: " + loggerFactory.getClass().getName() );
-				// otherwise grab the context from the configurator
-				LoggingConfigurator configurator = ServiceLoader
-				    .load( Configurator.class, BoxRuntime.class.getClassLoader() )
-				    .stream()
-				    .map( ServiceLoader.Provider::get )
-				    .map( target -> ( LoggingConfigurator ) target )
-				    .findFirst().orElse( null );
-
-				logContext = ( LoggerContext ) configurator.getLoggerContext();
-
-				// In the servlet context we are seeing the configurator configure method is not being run automagically
-				if ( logContext == null ) {
-					logContext = new LoggerContext();
-					logContext.start();
-					configurator.configure( logContext );
+			// Build the logger context or get it if it exists
+			LoggerContext	logContext	= getOrBuildLoggerContext();
+			// Now that we have a context
+			// A logger is based on the {logCategory}:{filePath-hash} so we can have multiple loggers
+			// for the same file, but different categories
+			final Logger	logger		= logContext.getLogger( logCategory + ":" + FilenameUtils.getBaseName( filePath ) );
+			logger.setLevel( Level.TRACE );
+			// Create or compute the file appender requested
+			// This provides locking also and caching so we don't have to keep creating them
+			// Shutdown will stop the appenders
+			this.appendersMap.computeIfAbsent( filePath.toLowerCase(), key -> {
+				var appender = new FileAppender<ILoggingEvent>();
+				appender.setFile( filePath );
+				appender.setEncoder( getRuntime().getLoggingConfigurator().encoder );
+				appender.setContext( logContext );
+				appender.start();
+				if ( !logger.isAttached( appender ) ) {
+					logger.addAppender( appender );
 				}
-			}
+				return appender;
+			} );
 
-			logger = logContext.getLogger( logCategory );
-			logger.setLevel( Level.ALL );
-			logger.setAdditive( true );
-
-			fileAppender = new FileAppender<ILoggingEvent>();
-			fileAppender.setFile( filePath );
-			fileAppender.setEncoder( LoggingConfigurator.encoder );
-			fileAppender.setContext( logContext );
-			fileAppender.setAppend( true );
-			fileAppender.setImmediateFlush( true );
-			fileAppender.setPrudent( true );
-			fileAppender.start();
-
-			logger.addAppender( fileAppender );
-
+			// Log according to the level
 			switch ( levelMap.get( levelKey ) ) {
-				case LEVEL_TRACE : {
-					logger.trace( logText );
-					break;
-				}
-				case LEVEL_DEBUG : {
-					logger.debug( logText );
-					break;
-				}
-				default :
-				case LEVEL_INFO : {
+				case LEVEL_TRACE -> logger.trace( logText );
+				case LEVEL_DEBUG -> logger.debug( logText );
+				case LEVEL_INFO -> {
 					logContext.getLogger( Logger.ROOT_LOGGER_NAME ).info( logText );
 					logger.info( logText );
-					break;
 				}
-				case LEVEL_WARN : {
-					logger.warn( logText );
-					break;
-				}
-				case LEVEL_ERROR : {
-					logger.error( logText );
-					break;
-				}
+				case LEVEL_WARN -> logger.warn( logText );
+				case LEVEL_ERROR -> logger.error( logText );
+				default -> throw new BoxRuntimeException(
+				    String.format(
+				        "[%s] is not a valid logging level.",
+				        logLevel
+				    )
+				);
 			}
 
 		} catch ( Exception e ) {
 			throw new BoxRuntimeException( "An error occurred while attempting to log the message", e );
-		} finally {
-			if ( fileAppender != null ) {
-				if ( logger != null ) {
-					logger.detachAppender( fileAppender );
-				}
-				fileAppender.stop();
-			}
 		}
 
 	}
 
 	/**
+	 * Gets the logger context or builds one if it doesn't exist (Usually in a servlet context)
+	 *
+	 * @return The logger context
+	 */
+	private LoggerContext getOrBuildLoggerContext() {
+		LoggerContext				logContext		= null;
+		org.slf4j.ILoggerFactory	loggerFactory	= LoggerFactory.getILoggerFactory();
+
+		// If our core SLF4J logger factory is returning a logback instance use that
+		if ( loggerFactory instanceof LoggerContext ) {
+			return ( LoggerContext ) loggerFactory;
+		}
+
+		// Log the issue and try to get the context from the configurator
+		loggerFactory
+		    .getLogger( getClass().getName() )
+		    .warn( "The LoggerFactory context is not an instance of Logback LoggerContext. Received class: {}", loggerFactory.getClass().getName() );
+
+		// otherwise grab the context from the configurator
+		LoggingConfigurator configurator = ServiceLoader
+		    .load( Configurator.class, BoxRuntime.class.getClassLoader() )
+		    .stream()
+		    .map( ServiceLoader.Provider::get )
+		    .map( LoggingConfigurator.class::cast )
+		    .findFirst()
+		    .orElse( null );
+
+		logContext = configurator.getLoggerContext();
+
+		// In the servlet context we are seeing the configurator configure method is not being run automagically
+		if ( logContext == null ) {
+			logContext = new LoggerContext();
+			logContext.start();
+			configurator.configure( logContext );
+		}
+
+		return logContext;
+	}
+
+	/**
 	 * Runtime shutdown interception
 	 */
-	@SuppressWarnings( "unchecked" )
 	@InterceptionPoint
 	public void onRuntimeShutdown() {
-		this.appendersMap.keySet().stream().forEach( key -> ( ( FileAppender<ILoggingEvent> ) this.appendersMap.get( key ) ).stop() );
+		// iterate over the appenders and call stop
+		this.appendersMap.values().forEach( FileAppender::stop );
 	}
 
 	/**
