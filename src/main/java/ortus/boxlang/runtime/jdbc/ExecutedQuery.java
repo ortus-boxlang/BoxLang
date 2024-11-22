@@ -128,7 +128,7 @@ public final class ExecutedQuery {
 			}
 		}
 
-		IStruct	queryMeta		= Struct.of(
+		IStruct queryMeta = Struct.of(
 		    "cached", false,
 		    "cacheKey", pendingQuery.getCacheKey(),
 		    "sql", pendingQuery.getOriginalSql(),
