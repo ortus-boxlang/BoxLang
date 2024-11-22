@@ -97,14 +97,6 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	public Query( IStruct meta ) {
 		this.functionService	= BoxRuntime.getInstance().getFunctionService();
 		this.metadata			= meta == null ? new Struct( IStruct.TYPES.SORTED ) : meta;
-
-		// Set defaults for cache metadata, just in case they are not set.
-		this.metadata.putIfAbsent( Key.executionTime, 0 );
-		this.metadata.putIfAbsent( Key.cached, false );
-		this.metadata.putIfAbsent( Key.cacheKey, null );
-		this.metadata.putIfAbsent( Key.cacheProvider, null );
-		this.metadata.computeIfAbsent( Key.cacheTimeout, key -> Duration.ZERO );
-		this.metadata.computeIfAbsent( Key.cacheLastAccessTimeout, key -> Duration.ZERO );
 	}
 
 	/**
@@ -881,6 +873,12 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 * @return The metadata as a struct
 	 */
 	public IStruct getMetaData() {
+		this.metadata.putIfAbsent( Key.executionTime, 0 );
+		this.metadata.putIfAbsent( Key.cached, false );
+		this.metadata.putIfAbsent( Key.cacheKey, null );
+		this.metadata.putIfAbsent( Key.cacheProvider, null );
+		this.metadata.computeIfAbsent( Key.cacheTimeout, key -> Duration.ZERO );
+		this.metadata.computeIfAbsent( Key.cacheLastAccessTimeout, key -> Duration.ZERO );
 		this.metadata.computeIfAbsent( Key.recordCount, key -> data.size() );
 		this.metadata.computeIfAbsent( Key.columns, key -> this.getColumns() );
 		this.metadata.computeIfAbsent( Key.columnList, key -> this.getColumnList() );
