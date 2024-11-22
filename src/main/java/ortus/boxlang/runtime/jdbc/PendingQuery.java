@@ -299,7 +299,7 @@ public class PendingQuery {
 			logger.debug( "Checking cache for query: {}", this.cacheKey );
 			Attempt<Object> cachedQuery = cacheProvider.get( this.cacheKey );
 			if ( cachedQuery.isPresent() ) {
-				return respondWithCachedQuery( (ExecutedQuery) cachedQuery.get() );
+				return respondWithCachedQuery( ( ExecutedQuery ) cachedQuery.get() );
 			}
 			logger.debug( "Query is NOT present, continuing to execute query: {}", this.cacheKey );
 		}
@@ -330,7 +330,7 @@ public class PendingQuery {
 			// we use separate get() and set() calls over a .getOrSet() so we can run `.setIsCached()` on discovered/cached results.
 			Attempt<Object> cachedQuery = this.cacheProvider.get( this.cacheKey );
 			if ( cachedQuery.isPresent() ) {
-				return respondWithCachedQuery( (ExecutedQuery) cachedQuery.get() );
+				return respondWithCachedQuery( ( ExecutedQuery ) cachedQuery.get() );
 			}
 
 			ExecutedQuery executedQuery = executeStatement( connection );
@@ -350,35 +350,34 @@ public class PendingQuery {
 		try {
 			ArrayList<ExecutedQuery> queries = new ArrayList<>();
 			for ( String sqlStatement : this.sql.split( ";" ) ) {
-				try(
-					Statement statement = this.parameters.isEmpty()
-						? connection.createStatement()
-						: connection.prepareStatement( this.sql, Statement.RETURN_GENERATED_KEYS );
-				){
+				try (
+				    Statement statement = this.parameters.isEmpty()
+				        ? connection.createStatement()
+				        : connection.prepareStatement( this.sql, Statement.RETURN_GENERATED_KEYS ); ) {
 
 					applyParameters( statement );
 					applyStatementOptions( statement );
 
 					interceptorService.announce(
-						BoxEvent.PRE_QUERY_EXECUTE,
-						Struct.of(
-							"sql", this.sql,
-							"bindings", getParameterValues(),
-							"pendingQuery", this
-						)
+					    BoxEvent.PRE_QUERY_EXECUTE,
+					    Struct.of(
+					        "sql", this.sql,
+					        "bindings", getParameterValues(),
+					        "pendingQuery", this
+					    )
 					);
 
 					long	startTick	= System.currentTimeMillis();
 					boolean	hasResults	= statement instanceof PreparedStatement preparedStatement
-						? preparedStatement.execute()
-						: statement.execute( sqlStatement, Statement.RETURN_GENERATED_KEYS );
+					    ? preparedStatement.execute()
+					    : statement.execute( sqlStatement, Statement.RETURN_GENERATED_KEYS );
 					long	endTick		= System.currentTimeMillis();
 
 					queries.add( ExecutedQuery.fromPendingQuery(
-						this,
-						statement,
-						endTick - startTick,
-						hasResults
+					    this,
+					    statement,
+					    endTick - startTick,
+					    hasResults
 					) );
 				}
 			}
@@ -408,15 +407,15 @@ public class PendingQuery {
 	 */
 	private ExecutedQuery respondWithCachedQuery( ExecutedQuery cachedQuery ) {
 		logger.debug( "Query is present, returning cached result: {}", this.cacheKey );
-		IStruct cacheMeta = Struct.of(
+		IStruct	cacheMeta	= Struct.of(
 		    "cached", true,
 		    "cacheKey", this.cacheKey,
 		    "cacheProvider", this.cacheProvider.getName().toString(),
 		    "cacheTimeout", this.queryOptions.cacheTimeout,
 		    "cacheLastAccessTimeout", this.queryOptions.cacheLastAccessTimeout
 		);
-		Query results = cachedQuery.getResults();
-		Struct queryMeta = new Struct( cachedQuery.getQueryMeta() );
+		Query	results		= cachedQuery.getResults();
+		Struct	queryMeta	= new Struct( cachedQuery.getQueryMeta() );
 		queryMeta.addAll( cacheMeta );
 		results.setMetadata( queryMeta );
 		return new ExecutedQuery( results, cachedQuery.getGeneratedKey() );
