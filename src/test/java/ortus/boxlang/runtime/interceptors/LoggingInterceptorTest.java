@@ -59,7 +59,7 @@ public class LoggingInterceptorTest {
 	@AfterAll
 	public static void teardown() {
 		if ( FileSystemUtil.exists( logFilePath ) ) {
-			// FileSystemUtil.deleteFile( logFilePath );
+			FileSystemUtil.deleteFile( logFilePath );
 		}
 		if ( FileSystemUtil.exists( absoluteLogeFilePath ) ) {
 			FileSystemUtil.deleteFile( absoluteLogeFilePath );
