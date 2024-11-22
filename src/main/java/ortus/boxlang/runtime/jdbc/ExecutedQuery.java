@@ -21,7 +21,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
@@ -80,14 +79,6 @@ public final class ExecutedQuery {
 		this.results		= results;
 		this.generatedKey	= generatedKey;
 		this.queryMeta		= queryMeta;
-
-		// Set defaults for cache metadata, just in case they are not set.
-		this.queryMeta.putIfAbsent( Key.executionTime, 0 );
-		this.queryMeta.putIfAbsent( Key.cached, false );
-		this.queryMeta.putIfAbsent( Key.cacheKey, null );
-		this.queryMeta.putIfAbsent( Key.cacheProvider, null );
-		this.queryMeta.computeIfAbsent( Key.cacheTimeout, key -> Duration.ZERO );
-		this.queryMeta.computeIfAbsent( Key.cacheLastAccessTimeout, key -> Duration.ZERO );
 
 		// important that we set the metadata on the Query object for later getBoxMeta(), i.e. $bx.meta calls.
 		this.results.setMetadata( this.queryMeta );
