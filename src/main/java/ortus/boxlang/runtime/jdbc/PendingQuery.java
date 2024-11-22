@@ -41,6 +41,7 @@ import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 import ortus.boxlang.runtime.types.util.ListUtil;
@@ -298,7 +299,7 @@ public class PendingQuery {
 			logger.debug( "Checking cache for query: {}", this.cacheKey );
 			Attempt<Object> cachedQuery = cacheProvider.get( this.cacheKey );
 			if ( cachedQuery.isPresent() ) {
-				return respondWithCachedQuery( cachedQuery );
+				return respondWithCachedQuery( (ExecutedQuery) cachedQuery.get() );
 			}
 			logger.debug( "Query is NOT present, continuing to execute query: {}", this.cacheKey );
 		}
@@ -329,7 +330,7 @@ public class PendingQuery {
 			// we use separate get() and set() calls over a .getOrSet() so we can run `.setIsCached()` on discovered/cached results.
 			Attempt<Object> cachedQuery = this.cacheProvider.get( this.cacheKey );
 			if ( cachedQuery.isPresent() ) {
-				return respondWithCachedQuery( cachedQuery );
+				return respondWithCachedQuery( (ExecutedQuery) cachedQuery.get() );
 			}
 
 			ExecutedQuery executedQuery = executeStatement( connection );
@@ -405,7 +406,7 @@ public class PendingQuery {
 	 * <p>
 	 * This method assumes cachedQuery.isPresent() has already been checked, and populates the ExecutedQuery instance with the query cache metadata, such as cacheKey, cacheProvider, etc.
 	 */
-	private ExecutedQuery respondWithCachedQuery( Attempt<Object> cachedQuery ) {
+	private ExecutedQuery respondWithCachedQuery( ExecutedQuery cachedQuery ) {
 		logger.debug( "Query is present, returning cached result: {}", this.cacheKey );
 		IStruct cacheMeta = Struct.of(
 		    "cached", true,
@@ -414,7 +415,11 @@ public class PendingQuery {
 		    "cacheTimeout", this.queryOptions.cacheTimeout,
 		    "cacheLastAccessTimeout", this.queryOptions.cacheLastAccessTimeout
 		);
-		return ExecutedQuery.fromCachedQuery( ( ExecutedQuery ) cachedQuery.get(), cacheMeta );
+		Query results = cachedQuery.getResults();
+		Struct queryMeta = new Struct( cachedQuery.getQueryMeta() );
+		queryMeta.addAll( cacheMeta );
+		results.setMetadata( queryMeta );
+		return new ExecutedQuery( results, cachedQuery.getGeneratedKey() );
 	}
 
 	/**
