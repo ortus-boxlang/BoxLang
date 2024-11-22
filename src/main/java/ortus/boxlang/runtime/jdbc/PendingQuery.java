@@ -349,37 +349,37 @@ public class PendingQuery {
 		try {
 			ArrayList<ExecutedQuery> queries = new ArrayList<>();
 			for ( String sqlStatement : this.sql.split( ";" ) ) {
-				// @TODO: Consider refactoring this to use a try-with-resources block, as the ExecutedQuery
-				// should not need the Statement object once the constructor completes and returns.
-				Statement statement = this.parameters.isEmpty()
-				    ? connection.createStatement()
-				    : connection.prepareStatement( this.sql, Statement.RETURN_GENERATED_KEYS );
+				try(
+					Statement statement = this.parameters.isEmpty()
+						? connection.createStatement()
+						: connection.prepareStatement( this.sql, Statement.RETURN_GENERATED_KEYS );
+				){
 
-				applyParameters( statement );
-				applyStatementOptions( statement );
+					applyParameters( statement );
+					applyStatementOptions( statement );
 
-				interceptorService.announce(
-				    BoxEvent.PRE_QUERY_EXECUTE,
-				    Struct.of(
-				        "sql", this.sql,
-				        "bindings", getParameterValues(),
-				        "pendingQuery", this
-				    )
-				);
+					interceptorService.announce(
+						BoxEvent.PRE_QUERY_EXECUTE,
+						Struct.of(
+							"sql", this.sql,
+							"bindings", getParameterValues(),
+							"pendingQuery", this
+						)
+					);
 
-				long	startTick	= System.currentTimeMillis();
-				boolean	hasResults	= statement instanceof PreparedStatement preparedStatement
-				    ? preparedStatement.execute()
-				    : statement.execute( sqlStatement, Statement.RETURN_GENERATED_KEYS );
-				long	endTick		= System.currentTimeMillis();
+					long	startTick	= System.currentTimeMillis();
+					boolean	hasResults	= statement instanceof PreparedStatement preparedStatement
+						? preparedStatement.execute()
+						: statement.execute( sqlStatement, Statement.RETURN_GENERATED_KEYS );
+					long	endTick		= System.currentTimeMillis();
 
-				// @TODO: Close the statement to prevent resource leaks!
-				queries.add( ExecutedQuery.fromPendingQuery(
-				    this,
-				    statement,
-				    endTick - startTick,
-				    hasResults
-				) );
+					queries.add( ExecutedQuery.fromPendingQuery(
+						this,
+						statement,
+						endTick - startTick,
+						hasResults
+					) );
+				}
 			}
 			return queries.getFirst();
 		} catch ( SQLException e ) {
