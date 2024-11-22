@@ -595,14 +595,14 @@ public class ModuleService extends BaseService {
 			}
 
 			// Minor and Patch version check
-			if ( this.runtimeSemver.compareTo( minimumVersion ) < 0 ) {
-				logger.warn(
-				    "Module [{}] requires a minimum BoxLang version [{}] or later, but we are running [{}]. " +
-				        "There may be compatibility issues with newer features or bug fixes.",
-				    directoryPath.getFileName(),
-				    minimumVersion,
-				    this.runtimeSemver
-				);
+			if ( this.runtimeSemver.getMinor() != minimumVersion.getMinor() || this.runtimeSemver.getPatch() != minimumVersion.getPatch() ) {
+				// logger.trace(
+				// "Module [{}] requires a minimum BoxLang version [{}] or later, but we are running [{}]. " +
+				// "There may be compatibility issues with newer features or bug fixes.",
+				// directoryPath.getFileName(),
+				// minimumVersion,
+				// this.runtimeSemver
+				// );
 			}
 		}
 	}

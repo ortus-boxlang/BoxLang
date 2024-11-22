@@ -40,7 +40,7 @@ public class WriteLog extends BIF {
 		    new Argument( false, "string", Key.type, Logging.DEFAULT_LOG_LEVEL ),
 		    new Argument( false, "boolean", Key.application, true ),
 		    new Argument( false, "string", Key.file ),
-		    new Argument( false, "string", Key.log, Logging.DEFAULT_LOG_TYPE ),
+		    new Argument( false, "string", Key.log )
 		};
 	}
 
@@ -52,21 +52,21 @@ public class WriteLog extends BIF {
 	 *
 	 * @argument.text The text of the log message
 	 *
-	 * @argument.type The log level ( debug, info, warn, error )
+	 * @argument.type The log level of the entry. One of "Information", "Warning", "Error", "Debug", "Trace"
 	 *
 	 * @argument.application If true, it logs the application name alongside the message. Default is true.
 	 *
-	 * @argument.file A custom log file to write to
+	 * @argument.file The log file to write to. If not specified, the default log file is used.
 	 *
-	 * @argument.log If a custom file is not specified the log category to write to
+	 * @argument.log Shortcut to a specific logfile. Available log files are: Application, Scheduler, etc. (MOVE TO CFML-COMPAT MODULE, IT'S DUMB)
 	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		// Get the application name
 		ApplicationBoxContext appContext = context.getApplicationContext();
-		// Set the application name if not null
-		if ( appContext != null ) {
-			arguments.put( Key.application, appContext.getApplication().getName() );
+		// Set the application name if not null and the application argument is true
+		if ( appContext != null && arguments.getAsBoolean( Key.application ) ) {
+			arguments.put( Key.applicationName, appContext.getApplication().getName() );
 		}
 		// Announce the log message
 		interceptorService.announce( BoxEvent.LOG_MESSAGE, arguments );

@@ -35,6 +35,7 @@ import ch.qos.logback.core.FileAppender;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.events.BaseInterceptor;
 import ortus.boxlang.runtime.events.InterceptionPoint;
+import ortus.boxlang.runtime.logging.LogLevel;
 import ortus.boxlang.runtime.logging.LoggingConfigurator;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
@@ -45,9 +46,9 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  */
 public class Logging extends BaseInterceptor {
 
-	public static final String							DEFAULT_LOG_LEVEL		= "Information";
+	public static final String							DEFAULT_LOG_LEVEL		= "info";
 	public static final String							DEFAULT_LOG_TYPE		= "Application";
-	public static final String							DEFAULT_LOG_CATEGORY	= "BoxRuntime";
+	public static final String							DEFAULT_LOG_CATEGORY	= "boxruntime";
 
 	/**
 	 * The directory where logs are stored
@@ -61,30 +62,6 @@ public class Logging extends BaseInterceptor {
 	private Map<String, FileAppender<ILoggingEvent>>	appendersMap			= new ConcurrentHashMap<>();
 
 	/**
-	 * Logging Levels
-	 */
-	private static final String							LEVEL_TRACE				= "trace";
-	private static final String							LEVEL_DEBUG				= "debug";
-	private static final String							LEVEL_INFO				= "info";
-	private static final String							LEVEL_WARN				= "warn";
-	private static final String							LEVEL_ERROR				= "error";
-
-	/**
-	 * An Unmodifiable map of logging levels.
-	 */
-	private static final Map<Key, String>				levelMap				= Map.of(
-	    Key.of( "Trace" ), LEVEL_TRACE,
-	    Key.of( "Debug" ), LEVEL_DEBUG,
-	    Key.of( "Debugging" ), LEVEL_DEBUG,
-	    Key.of( "Info" ), LEVEL_INFO,
-	    Key.of( "Information" ), LEVEL_INFO,
-	    Key.of( "Warning" ), LEVEL_WARN,
-	    Key.of( "Warn" ), LEVEL_WARN,
-	    Key.of( "Error" ), LEVEL_ERROR,
-	    Key.of( "Fatal" ), LEVEL_ERROR
-	);
-
-	/**
 	 * Constructor
 	 *
 	 * @param instance The BoxRuntime instance
@@ -94,56 +71,89 @@ public class Logging extends BaseInterceptor {
 	}
 
 	/**
-	 * Logs a message
+	 * Logs a message to a file or location
+	 * <p>
+	 * Data should contain the following keys:
+	 * <ul>
+	 * <li>applicationName: The name of the application requesting the log messasge. Can be empty</li>
+	 * <li>text: The text of the log message</li>
+	 * <li>type: The severity log level ( fatal, error, info, warn, debug, trace )</li>
+	 * <li>file: The file to log to. If empty, the "log" key is used</li>
+	 * </ul>
+	 *
+	 * <p>
+	 * The <code>log</code> key is a shortcut to a specific log file. Available log files are: Application, Scheduler, etc.
+	 * Which is dumb and should be moved to the CFML compatibility module. Leaving until we move it.
 	 *
 	 * @param data The data to be passed to the interceptor
+	 *
+	 * @throws IIllegalArgumentException If the log level is not valid
 	 */
 	@InterceptionPoint
 	public void logMessage( IStruct data ) {
-		String	logText		= data.getAsString( Key.text );
-		String	file		= data.getAsString( Key.file );
-		// The application name is the category, or if not provided, the default
-		String	logCategory	= ( String ) data.getOrDefault( Key.application, DEFAULT_LOG_CATEGORY );
-		String	logLevel	= data.getAsString( Key.level );
-		// named argument for tags bx:log and function writeLog
-		String	logType		= data.getAsString( Key.type );
+		// The incoming data
+		String	logCategory	= ( String ) data.getOrDefault( Key.applicationName, DEFAULT_LOG_CATEGORY );
+		String	logText		= ( String ) data.getOrDefault( Key.text, "" );
+		String	logType		= ( String ) data.getOrDefault( Key.type, DEFAULT_LOG_LEVEL );
+		String	logFile		= ( String ) data.getOrDefault( Key.file, "" );
+		String	compatLog	= ( String ) data.getOrDefault( Key.log, "" );
 
-		// Default the category to BoxRuntime if it is empty
+		// If the logText is empty, then don't log anything
+		if ( logText.isEmpty() ) {
+			return;
+		}
+
+		// Default to info if no log level is passed
+		if ( logType.isEmpty() ) {
+			logType = DEFAULT_LOG_LEVEL;
+		}
+		// Get and Validate log level
+		Key logLevel = LogLevel.valueOf( logType, false );
+
+		// The application name is used as the logging category.
+		// If it is empty, then use the default category
 		if ( logCategory.isEmpty() ) {
 			logCategory = DEFAULT_LOG_CATEGORY;
 		}
-		// Default the log level to Information if it is empty
-		if ( logType != null && !logType.isEmpty() ) {
-			logLevel = logType;
+		if ( logFile == null ) {
+			logFile = "";
 		}
-		// Prep a default file location, if the file was ommitted
-		if ( file == null ) {
-			file = logCategory + ".log";
+		if ( compatLog == null ) {
+			compatLog = "";
 		}
-		// If the file is an absolute path, use it, otherwise use the logs directory as the base
-		String	filePath	= Path.of( file ).isAbsolute()
-		    ? Path.of( file ).normalize().toString()
-		    : Paths.get( logsDirectory, "/", file ).normalize().toString();
 
-		// Validate the log level
-		Key		levelKey	= Key.of( logLevel );
-		if ( !levelMap.containsKey( levelKey ) ) {
-			throw new BoxRuntimeException(
-			    String.format(
-			        "[%s] is not a valid logging level.",
-			        logLevel
-			    )
-			);
+		// COMPAT MODE: If we have an incoming `log` key, then we need to map it to a file.
+		// This is a dumb feature and should be moved to the CFML compatibility module
+		// As per the CFML docs, if the file is passed, then ignore this
+		if ( logFile.isEmpty() && !compatLog.isEmpty() ) {
+			logFile = compatLog.toLowerCase();
 		}
+
+		// If no file or log is passed, then use the default log file: boxruntime.log
+		if ( logFile.isEmpty() ) {
+			logFile = DEFAULT_LOG_CATEGORY + ".log";
+		}
+
+		// Verify the log file ends in `.log` and if not, append it
+		if ( !logFile.toLowerCase().endsWith( ".log" ) ) {
+			logFile += ".log";
+		}
+
+		// If the file is an absolute path, use it, otherwise use the logs directory as the base
+		String filePath = Path.of( logFile ).isAbsolute()
+		    ? Path.of( logFile ).normalize().toString()
+		    : Paths.get( logsDirectory, "/", logFile ).normalize().toString();
 
 		try {
 			// Build the logger context or get it if it exists
-			LoggerContext	logContext	= getOrBuildLoggerContext();
+			LoggerContext logContext = getOrBuildLoggerContext();
 			// Now that we have a context
-			// A logger is based on the {logCategory}:{filePath-hash} so we can have multiple loggers
+			// A logger is based on the {fileName} as the category. This allows multiple loggers
 			// for the same file, but different categories
-			final Logger	logger		= logContext.getLogger( logCategory + ":" + FilenameUtils.getBaseName( filePath ) );
+			final Logger logger = logContext.getLogger( FilenameUtils.getBaseName( filePath ).toLowerCase() );
+			// TODO: This should be configurable
 			logger.setLevel( Level.TRACE );
+
 			// Create or compute the file appender requested
 			// This provides locking also and caching so we don't have to keep creating them
 			// Shutdown will stop the appenders
@@ -152,29 +162,24 @@ public class Logging extends BaseInterceptor {
 				appender.setFile( filePath );
 				appender.setEncoder( getRuntime().getLoggingConfigurator().encoder );
 				appender.setContext( logContext );
+				appender.setAppend( true );
+				appender.setImmediateFlush( true );
+				appender.setPrudent( true );
 				appender.start();
-				if ( !logger.isAttached( appender ) ) {
-					logger.addAppender( appender );
-				}
+				logger.addAppender( appender );
 				return appender;
 			} );
 
 			// Log according to the level
-			switch ( levelMap.get( levelKey ) ) {
-				case LEVEL_TRACE -> logger.trace( logText );
-				case LEVEL_DEBUG -> logger.debug( logText );
-				case LEVEL_INFO -> {
-					logContext.getLogger( Logger.ROOT_LOGGER_NAME ).info( logText );
-					logger.info( logText );
-				}
-				case LEVEL_WARN -> logger.warn( logText );
-				case LEVEL_ERROR -> logger.error( logText );
-				default -> throw new BoxRuntimeException(
-				    String.format(
-				        "[%s] is not a valid logging level.",
-				        logLevel
-				    )
-				);
+			switch ( logLevel.getNameNoCase() ) {
+				// No fatal in SL4J
+				case "FATAL" -> logger.error( logText );
+				case "ERROR" -> logger.error( logText );
+				case "WARN" -> logger.warn( logText );
+				case "INFO" -> logger.info( logText );
+				case "DEBUG" -> logger.debug( logText );
+				case "TRACE" -> logger.trace( logText );
+				default -> logger.info( logText );
 			}
 
 		} catch ( Exception e ) {

@@ -72,7 +72,7 @@ public class LoggingInterceptorTest {
 		System.out.println( logFilePath );
 		loggingInterceptor.logMessage( Struct.of(
 		    Key.text, "Hello, World!",
-		    Key.level, "INFO",
+		    Key.type, "INFO",
 		    Key.file, testLogFile,
 		    Key.log, "Test"
 		) );
@@ -84,7 +84,7 @@ public class LoggingInterceptorTest {
 	void testLogAbsolute() {
 		loggingInterceptor.logMessage( Struct.of(
 		    Key.text, "Hello, Absolute Path!",
-		    Key.level, "INFO",
+		    Key.type, "INFO",
 		    Key.file, absoluteLogeFilePath,
 		    Key.log, "Test"
 		) );

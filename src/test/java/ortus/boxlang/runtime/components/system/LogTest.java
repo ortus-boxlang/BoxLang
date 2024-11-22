@@ -47,16 +47,20 @@ public class LogTest {
 	IBoxContext			context;
 	IScope				variables;
 	static Key			result	= new Key( "result" );
+	static String		logFilePath;
 
 	@BeforeAll
 	public static void setUp() {
 		instance		= BoxRuntime.getInstance( true );
 		logsDirectory	= instance.getConfiguration().logsDirectory;
-
+		logFilePath		= Paths.get( logsDirectory, "/foo.log" ).normalize().toString();
 	}
 
 	@AfterAll
-	public static void teardown() {
+	public static void tearDown() {
+		if ( FileSystemUtil.exists( logFilePath ) ) {
+			FileSystemUtil.deleteFile( logFilePath );
+		}
 	}
 
 	@BeforeEach
@@ -70,7 +74,7 @@ public class LogTest {
 	public void testComponentScript() {
 		instance.executeSource(
 		    """
-		    log text="Hello Logger!" log="Foo" file="foo.log";
+		    log text="Hello Logger!" file="foo.log";
 		    """,
 		    context, BoxSourceType.BOXSCRIPT );
 	}
@@ -80,7 +84,7 @@ public class LogTest {
 	public void testComponentCF() {
 		instance.executeSource(
 		    """
-		    <cflog text="Hello Logger!" log="Foo" file="foo.log" />
+		    <cflog text="Hello Logger!" file="foo.log" />
 		    """,
 		    context, BoxSourceType.CFTEMPLATE );
 	}
@@ -90,7 +94,7 @@ public class LogTest {
 	public void testComponentBX() {
 		instance.executeSource(
 		    """
-		    <bx:log text="Hello Logger!" log="Foo" file="foo.log" />
+		    <bx:log text="Hello Logger!" file="foo.log" />
 		    """,
 		    context, BoxSourceType.BOXTEMPLATE );
 	}
@@ -98,14 +102,10 @@ public class LogTest {
 	@DisplayName( "It tests the BIF Log with Script parsing" )
 	@Test
 	public void testComponentCustomLogScript() {
-		String logFilePath = Paths.get( logsDirectory, "/foo.log" ).normalize().toString();
-		if ( FileSystemUtil.exists( logFilePath ) ) {
-			FileSystemUtil.deleteFile( logFilePath );
-		}
 
 		instance.executeSource(
 		    """
-		    log text="Hello Logger!" log="Foo" file="foo.log";
+		    log text="Hello Logger!" file="foo.log";
 		    """,
 		    context, BoxSourceType.BOXSCRIPT );
 
@@ -117,14 +117,9 @@ public class LogTest {
 	@DisplayName( "It tests the BIF Log with CF tag parsing" )
 	@Test
 	public void testComponentCustomLogCF() {
-		String logFilePath = Paths.get( logsDirectory, "/foo.log" ).normalize().toString();
-		if ( FileSystemUtil.exists( logFilePath ) ) {
-			FileSystemUtil.deleteFile( logFilePath );
-		}
-
 		instance.executeSource(
 		    """
-		    <cflog text="Hello Logger!" log="Foo" file="foo.log"/>
+		    <cflog text="Hello Logger!" file="foo.log"/>
 		    """,
 		    context, BoxSourceType.CFTEMPLATE );
 
@@ -136,14 +131,9 @@ public class LogTest {
 	@DisplayName( "It tests the BIF Log with BX tag parsing" )
 	@Test
 	public void testComponentCustomLogBX() {
-		String logFilePath = Paths.get( logsDirectory, "/foo.log" ).normalize().toString();
-		if ( FileSystemUtil.exists( logFilePath ) ) {
-			FileSystemUtil.deleteFile( logFilePath );
-		}
-
 		instance.executeSource(
 		    """
-		    <bx:log text="Hello Logger!" log="Foo" file="foo.log"/>
+		    <bx:log text="Hello Logger!"  file="foo.log"/>
 		    """,
 		    context, BoxSourceType.BOXTEMPLATE );
 
