@@ -17,8 +17,6 @@
  */
 package ortus.boxlang.runtime.logging;
 
-import org.slf4j.LoggerFactory;
-
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
@@ -112,9 +110,9 @@ public class LoggingConfigurator extends LoggerContextAwareBase implements Confi
 	 */
 	public static void reconfigureDebugMode( Boolean debugMode ) {
 		// Get root Logger from the logger context and set the log level to DEBUG
-		Level	logLevel	= Boolean.TRUE.equals( debugMode ) ? Level.DEBUG : Level.INFO;
-		Logger	rootLogger	= ( Logger ) LoggerFactory.getLogger( Logger.ROOT_LOGGER_NAME );
-		rootLogger.setLevel( logLevel );
+		Level logLevel = Boolean.TRUE.equals( debugMode ) ? Level.DEBUG : Level.INFO;
+		// rootLogger = ( Logger ) LoggerFactory.getLogger( Logger.ROOT_LOGGER_NAME );
+		// rootLogger.setLevel( logLevel );
 	}
 
 	/**
