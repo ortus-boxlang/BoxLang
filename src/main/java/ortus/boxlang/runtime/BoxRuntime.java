@@ -62,7 +62,7 @@ import ortus.boxlang.runtime.interceptors.Logging;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.loader.DynamicClassLoader;
-import ortus.boxlang.runtime.logging.LoggingConfigurator;
+import ortus.boxlang.runtime.logging.LoggingService;
 import ortus.boxlang.runtime.runnables.BoxScript;
 import ortus.boxlang.runtime.runnables.BoxTemplate;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
@@ -124,16 +124,6 @@ public class BoxRuntime implements java.io.Closeable {
 	 * Logger for the runtime
 	 */
 	private Logger								logger;
-
-	/**
-	 * The logging configuration for the runtime
-	 * This is set by the first call to `getLogger()` which happens in the
-	 *
-	 * <pre>
-	 * startup()
-	 * </pre>
-	 */
-	private LoggingConfigurator					loggingConfigurator;
 
 	/**
 	 * The timestamp when the runtime was started
@@ -263,6 +253,12 @@ public class BoxRuntime implements java.io.Closeable {
 	private ClassLocator						classLocator;
 
 	/**
+	 * Singleton Logging Service that manages all logging events, appenders and more
+	 * Please note that it does not adhere to the IService to avoid chicken-and-egg issues
+	 */
+	private LoggingService						loggingService;
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Public Fields
 	 * --------------------------------------------------------------------------
@@ -363,7 +359,7 @@ public class BoxRuntime implements java.io.Closeable {
 			this.debugMode = this.configuration.debugMode;
 			// Reconfigure the logging if enabled
 			if ( this.debugMode ) {
-				this.loggingConfigurator.reconfigureDebugMode( this.debugMode );
+				this.loggingService.reconfigureDebugMode( this.debugMode );
 			}
 			this.logger.info( "+ DebugMode detected in config, overriding to {}", this.debugMode );
 		}
@@ -458,10 +454,13 @@ public class BoxRuntime implements java.io.Closeable {
 		// Internal timer
 		timerUtil.start( "runtime-startup" );
 
+		// Startup the Logging Service: Unique as it's not an IService
+		this.loggingService	= LoggingService.getInstance( this );
+
 		// Startup basic logging
 		// Here is where LogBack looks via ServiceLoader for a `Configurator` class
 		// Which in our case is our {@link LoggingConfigurator} class.
-		this.logger = LoggerFactory.getLogger( BoxRuntime.class );
+		this.logger			= LoggerFactory.getLogger( BoxRuntime.class );
 		// We can now log the startup
 		this.logger.info( "+ Starting up BoxLang Runtime" );
 
@@ -767,31 +766,17 @@ public class BoxRuntime implements java.io.Closeable {
 	}
 
 	/**
+	 * Get the logging service
+	 */
+	public LoggingService getLoggingService() {
+		return loggingService;
+	}
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Methods
 	 * --------------------------------------------------------------------------
 	 */
-
-	/**
-	 * Get the configured Logging Configurator for the runtime
-	 *
-	 * @return The Configurator
-	 */
-	public LoggingConfigurator getLoggingConfigurator() {
-		return instance.loggingConfigurator;
-	}
-
-	/**
-	 * Set the Logging Configurator
-	 *
-	 * @param configurator The configurator to set
-	 *
-	 * @return The Runtime
-	 */
-	public BoxRuntime setLoggingConfigurator( LoggingConfigurator configurator ) {
-		instance.loggingConfigurator = configurator;
-		return instance;
-	}
 
 	/**
 	 * Get runtime class loader

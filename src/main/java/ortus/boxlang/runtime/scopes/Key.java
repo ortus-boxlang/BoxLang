@@ -423,6 +423,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		listToJSON							= Key.of( "listToJSON" );
 	public static final Key		lJustify							= Key.of( "lJustify" );
 	public static final Key		loadPaths							= Key.of( "loadPaths" );
+	public static final Key		loggingService						= Key.of( "loggingService" );
 	public static final Key		local_addr							= Key.of( "local_addr" );
 	public static final Key		local_host							= Key.of( "local_host" );
 	public static final Key		locale								= Key.of( "locale" );

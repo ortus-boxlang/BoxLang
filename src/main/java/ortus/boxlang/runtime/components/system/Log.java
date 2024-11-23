@@ -25,7 +25,7 @@ import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.events.BoxEvent;
-import ortus.boxlang.runtime.interceptors.Logging;
+import ortus.boxlang.runtime.logging.LoggingService;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 
@@ -42,7 +42,7 @@ public class Log extends Component {
 		    new Attribute( Key.text, "string" ),
 		    new Attribute( Key.file, "string" ),
 		    new Attribute( Key.log, "string" ),
-		    new Attribute( Key.type, "string", Logging.DEFAULT_LOG_LEVEL ),
+		    new Attribute( Key.type, "string", LoggingService.DEFAULT_LOG_LEVEL ),
 		    new Attribute( Key.application, "boolean", true )
 		};
 	}

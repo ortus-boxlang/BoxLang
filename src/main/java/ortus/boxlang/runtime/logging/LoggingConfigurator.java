@@ -57,16 +57,6 @@ public class LoggingConfigurator extends LoggerContextAwareBase implements Confi
 	public static final String	CONTEXT_NAME	= "BoxLang";
 
 	/**
-	 * The encoder to use for the logging provider
-	 */
-	public PatternLayoutEncoder	encoder;
-
-	/**
-	 * The root logger for the runtime
-	 */
-	public Logger				rootLogger;
-
-	/**
 	 * Default constructor needed by logback
 	 */
 	public LoggingConfigurator() {
@@ -89,10 +79,12 @@ public class LoggingConfigurator extends LoggerContextAwareBase implements Confi
 		loggerContext.setName( CONTEXT_NAME );
 
 		// Setup the encoder
-		this.encoder = new PatternLayoutEncoder();
-		this.encoder.setContext( loggerContext );
-		this.encoder.setPattern( LOG_FORMAT );
-		this.encoder.start();
+		var encoder = new PatternLayoutEncoder();
+		encoder.setContext( loggerContext );
+		encoder.setPattern( LOG_FORMAT );
+		encoder.setImmediateFlush( true );
+		encoder.setOutputPatternAsHeader( true );
+		encoder.start();
 
 		// Base log level depending on debug mode
 		var								debugMode	= BoxRuntime.getInstance().inDebugMode();
@@ -106,30 +98,22 @@ public class LoggingConfigurator extends LoggerContextAwareBase implements Confi
 		appender.start();
 
 		// Configure the Root Logger
-		this.rootLogger = loggerContext.getLogger( Logger.ROOT_LOGGER_NAME );
-		this.rootLogger.setLevel( logLevel );
-		this.rootLogger.addAppender( appender );
+		var rootLogger = loggerContext.getLogger( Logger.ROOT_LOGGER_NAME );
+		rootLogger.setLevel( logLevel );
+		rootLogger.addAppender( appender );
 
 		// Set the logger context back
 		setLoggerContext( loggerContext );
-		BoxRuntime.getInstance().setLoggingConfigurator( this );
+
+		// Store the necessary configuration for the runtime
+		LoggingService.getInstance()
+		    .setLoggingConfigurator( this )
+		    .setEncoder( encoder )
+		    .setRootLogger( rootLogger );
 
 		// We should be the last configurator to run, so stop searching for further
 		// configurators.
 		return ExecutionStatus.DO_NOT_INVOKE_NEXT_IF_ANY;
-	}
-
-	/**
-	 * Enable debug mode for the runtime's root logger or not.
-	 *
-	 * This is usually a convenience method for the runtime to enable or disable
-	 * debug mode
-	 * via configuration overrides
-	 *
-	 * @param debugMode True to enable debug mode, false to disable
-	 */
-	public void reconfigureDebugMode( Boolean debugMode ) {
-		this.rootLogger.setLevel( Boolean.TRUE.equals( debugMode ) ? Level.DEBUG : Level.INFO );
 	}
 
 	/**

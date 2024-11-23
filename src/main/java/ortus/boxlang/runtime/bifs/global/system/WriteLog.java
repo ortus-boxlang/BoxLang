@@ -22,7 +22,7 @@ import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.events.BoxEvent;
-import ortus.boxlang.runtime.interceptors.Logging;
+import ortus.boxlang.runtime.logging.LoggingService;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -37,7 +37,7 @@ public class WriteLog extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "string", Key.text ),
-		    new Argument( false, "string", Key.type, Logging.DEFAULT_LOG_LEVEL ),
+		    new Argument( false, "string", Key.type, LoggingService.DEFAULT_LOG_LEVEL ),
 		    new Argument( false, "boolean", Key.application, true ),
 		    new Argument( false, "string", Key.file ),
 		    new Argument( false, "string", Key.log )

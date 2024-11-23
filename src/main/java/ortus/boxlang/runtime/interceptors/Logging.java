@@ -19,9 +19,7 @@ package ortus.boxlang.runtime.interceptors;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Map;
 import java.util.ServiceLoader;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.LoggerFactory;
@@ -30,13 +28,12 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.spi.Configurator;
-import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.core.FileAppender;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.events.BaseInterceptor;
 import ortus.boxlang.runtime.events.InterceptionPoint;
 import ortus.boxlang.runtime.logging.LogLevel;
 import ortus.boxlang.runtime.logging.LoggingConfigurator;
+import ortus.boxlang.runtime.logging.LoggingService;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -46,20 +43,8 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  */
 public class Logging extends BaseInterceptor {
 
-	public static final String							DEFAULT_LOG_LEVEL		= "info";
-	public static final String							DEFAULT_LOG_TYPE		= "Application";
-	public static final String							DEFAULT_LOG_CATEGORY	= "boxruntime";
-
-	/**
-	 * The directory where logs are stored
-	 * This comes from the configuration in the runtime.
-	 */
-	private final String								logsDirectory;
-
-	/**
-	 * A map of appenders
-	 */
-	private Map<String, FileAppender<ILoggingEvent>>	appendersMap			= new ConcurrentHashMap<>();
+	private LoggingService	loggingService;
+	private BoxRuntime		runtime;
 
 	/**
 	 * Constructor
@@ -67,7 +52,8 @@ public class Logging extends BaseInterceptor {
 	 * @param instance The BoxRuntime instance
 	 */
 	public Logging( BoxRuntime instance ) {
-		this.logsDirectory = instance.getConfiguration().logsDirectory;
+		this.runtime		= instance;
+		this.loggingService	= instance.getLoggingService();
 	}
 
 	/**
@@ -92,9 +78,9 @@ public class Logging extends BaseInterceptor {
 	@InterceptionPoint
 	public void logMessage( IStruct data ) {
 		// The incoming data
-		String	logCategory	= ( String ) data.getOrDefault( Key.applicationName, DEFAULT_LOG_CATEGORY );
+		String	logCategory	= ( String ) data.getOrDefault( Key.applicationName, LoggingService.DEFAULT_LOG_CATEGORY );
 		String	logText		= ( String ) data.getOrDefault( Key.text, "" );
-		String	logType		= ( String ) data.getOrDefault( Key.type, DEFAULT_LOG_LEVEL );
+		String	logType		= ( String ) data.getOrDefault( Key.type, LoggingService.DEFAULT_LOG_LEVEL );
 		String	logFile		= ( String ) data.getOrDefault( Key.file, "" );
 		String	compatLog	= ( String ) data.getOrDefault( Key.log, "" );
 
@@ -105,7 +91,7 @@ public class Logging extends BaseInterceptor {
 
 		// Default to info if no log level is passed
 		if ( logType.isEmpty() ) {
-			logType = DEFAULT_LOG_LEVEL;
+			logType = LoggingService.DEFAULT_LOG_LEVEL;
 		}
 		// Get and Validate log level
 		Key logLevel = LogLevel.valueOf( logType, false );
@@ -113,7 +99,7 @@ public class Logging extends BaseInterceptor {
 		// The application name is used as the logging category.
 		// If it is empty, then use the default category
 		if ( logCategory.isEmpty() ) {
-			logCategory = DEFAULT_LOG_CATEGORY;
+			logCategory = LoggingService.DEFAULT_LOG_CATEGORY;
 		}
 		if ( logFile == null ) {
 			logFile = "";
@@ -131,7 +117,7 @@ public class Logging extends BaseInterceptor {
 
 		// If no file or log is passed, then use the default log file: boxruntime.log
 		if ( logFile.isEmpty() ) {
-			logFile = DEFAULT_LOG_CATEGORY + ".log";
+			logFile = LoggingService.DEFAULT_LOG_CATEGORY + ".log";
 		}
 
 		// Verify the log file ends in `.log` and if not, append it
@@ -142,33 +128,24 @@ public class Logging extends BaseInterceptor {
 		// If the file is an absolute path, use it, otherwise use the logs directory as the base
 		String filePath = Path.of( logFile ).isAbsolute()
 		    ? Path.of( logFile ).normalize().toString()
-		    : Paths.get( logsDirectory, "/", logFile ).normalize().toString();
+		    : Paths.get( loggingService.getLogsDirectory(), "/", logFile ).normalize().toString();
 
 		try {
 			// Build the logger context or get it if it exists
-			LoggerContext logContext = getOrBuildLoggerContext();
+			LoggerContext	logContext	= getOrBuildLoggerContext();
 			// Now that we have a context
 			// A logger is based on the {fileName} as the category. This allows multiple loggers
 			// for the same file, but different categories
-			final Logger logger = logContext.getLogger( FilenameUtils.getBaseName( filePath ).toLowerCase() );
-			// TODO: This should be configurable
+			final Logger	logger		= logContext.getLogger( FilenameUtils.getBaseName( filePath ).toLowerCase() );
 			logger.setLevel( Level.TRACE );
+			logger.setAdditive( true );
 
 			// Create or compute the file appender requested
 			// This provides locking also and caching so we don't have to keep creating them
 			// Shutdown will stop the appenders
-			this.appendersMap.computeIfAbsent( filePath.toLowerCase(), key -> {
-				var appender = new FileAppender<ILoggingEvent>();
-				appender.setFile( filePath );
-				appender.setEncoder( getRuntime().getLoggingConfigurator().encoder );
-				appender.setContext( logContext );
-				appender.setAppend( true );
-				appender.setImmediateFlush( true );
-				appender.setPrudent( true );
-				appender.start();
-				logger.addAppender( appender );
-				return appender;
-			} );
+			logger.addAppender(
+			    this.loggingService.getOrBuildAppender( filePath, logContext )
+			);
 
 			// Log according to the level
 			switch ( logLevel.getNameNoCase() ) {
@@ -190,6 +167,7 @@ public class Logging extends BaseInterceptor {
 
 	/**
 	 * Gets the logger context or builds one if it doesn't exist (Usually in a servlet context)
+	 * TODO: Move to the service
 	 *
 	 * @return The logger context
 	 */
@@ -233,8 +211,7 @@ public class Logging extends BaseInterceptor {
 	 */
 	@InterceptionPoint
 	public void onRuntimeShutdown() {
-		// iterate over the appenders and call stop
-		this.appendersMap.values().forEach( FileAppender::stop );
+		this.loggingService.shutdown();
 	}
 
 	/**
