@@ -43,12 +43,13 @@ import ortus.boxlang.runtime.util.FileSystemUtil;
 public class WriteLogTest {
 
 	static BoxRuntime				instance;
+	static String					logsDirectory;
 	static IBoxContext				context;
 	static IScope					variables;
 	static Key						result		= new Key( "result" );
+	static String					logFilePath;
 	static ByteArrayOutputStream	outContent;
 	static PrintStream				originalOut	= System.out;
-	static String					logsDirectory;
 
 	@BeforeAll
 	public static void setUp() {
@@ -56,12 +57,12 @@ public class WriteLogTest {
 		logsDirectory	= instance.getConfiguration().logsDirectory;
 		outContent		= new ByteArrayOutputStream();
 		System.setOut( new PrintStream( outContent ) );
+		logFilePath = Paths.get( logsDirectory, "/writelog.log" ).normalize().toString();
 	}
 
 	@AfterAll
 	public static void teardown() {
 		System.setOut( originalOut );
-		String logFilePath = Paths.get( logsDirectory, "/foo.log" ).normalize().toString();
 		if ( FileSystemUtil.exists( logFilePath ) ) {
 			FileSystemUtil.deleteFile( logFilePath );
 		}

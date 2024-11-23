@@ -42,7 +42,7 @@ public class LoggingInterceptorTest {
 
 	static Logging		loggingInterceptor;
 	static String		tmpDirectory	= "src/test/resources/tmp/FileSystemStoreTest";
-	static String		testLogFile		= "LoggingInterceptorTest.txt";
+	static String		testLogFile		= "LoggingInterceptorTest.log";
 	static String		logFilePath;
 	static String		absoluteLogeFilePath;
 	static String		logDirectory;
