@@ -29,6 +29,7 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
@@ -84,7 +85,7 @@ public class Dump extends BIF {
 		    // Whether to do a hard abort the request after dumping
 		    new Argument( false, Argument.BOOLEAN, Key.abort, false ),
 		    // The output location which can be "buffer", "console", or "{absolute file path}", default is "buffer" (backwards compat => browser)
-		    new Argument( false, Argument.STRING, Key.output, "buffer", Set.of( Validator.NON_EMPTY ) ),
+		    new Argument( false, Argument.STRING, Key.output, Set.of( Validator.NON_EMPTY ) ),
 		    // The output format which can be "html" or "text". The default is based on the output location
 		    new Argument( false, Argument.STRING, Key.format, Set.of( Validator.valueOneOf( "html", "text" ), Validator.NON_EMPTY ) ),
 		    // Show UDFs or not
@@ -123,6 +124,12 @@ public class Dump extends BIF {
 	 * @argument.showUDFs Show UDFs or not. Default is true. (Only in HTML output)
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
+		// Abort as String and empty means true <bx:dump var="" abort>
+		Object abort = arguments.get( Key.abort );
+		if ( abort instanceof String castedAbort && castedAbort.isEmpty() ) {
+			arguments.put( Key.abort, true );
+		}
+
 		// Dump the object
 		DumpUtil.dump(
 		    context,
@@ -130,8 +137,8 @@ public class Dump extends BIF {
 		    arguments.getAsString( Key.label ),
 		    IntegerCaster.cast( arguments.get( Key.top ) ),
 		    arguments.getAsBoolean( Key.expand ),
-		    arguments.getAsBoolean( Key.abort ),
-		    arguments.getAsString( Key.output ).toLowerCase(),
+		    BooleanCaster.cast( arguments.get( Key.abort ) ),
+		    arguments.getAsString( Key.output ),
 		    arguments.getAsString( Key.format ),
 		    arguments.getAsBoolean( Key.showUDFs )
 		);

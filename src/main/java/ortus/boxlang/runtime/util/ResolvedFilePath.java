@@ -105,11 +105,11 @@ public record ResolvedFilePath( String mappingName, String mappingPath, String r
 	}
 
 	/**
-	 * Get the package of the resolved path, but with a prefix appended in front
+	 * Get the package of the resolved path, but with a prefix prepended in front
 	 *
-	 * @param prefix The prefix to append to the package.
+	 * @param prefix The prefix to prepend to the package.
 	 *
-	 * @return The package of the resolved path with the prefix appended.
+	 * @return The package of the resolved path with the prefix prepended.
 	 */
 	public FQN getFQN( String prefix ) {
 		return FQN.of( prefix, relativePath != null ? Path.of( relativePath ) : absolutePath );
@@ -134,11 +134,11 @@ public record ResolvedFilePath( String mappingName, String mappingPath, String r
 	}
 
 	/**
-	 * Get the Box package of the resolved path, but with a prefix appended in front
+	 * Get the Box package of the resolved path, but with a prefix prepended in front
 	 *
-	 * @param prefix The prefix to append to the package.
+	 * @param prefix The prefix to prepend to the package.
 	 *
-	 * @return The package of the resolved path with the prefix appended.
+	 * @return The package of the resolved path with the prefix prepended.
 	 */
 	public BoxFQN getBoxFQN( String prefix ) {
 		return BoxFQN.of( prefix, relativePath != null ? Path.of( relativePath ) : absolutePath );

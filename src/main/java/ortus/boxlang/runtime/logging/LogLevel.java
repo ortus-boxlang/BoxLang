@@ -30,6 +30,7 @@ import ortus.boxlang.runtime.scopes.Key;
  */
 public class LogLevel {
 
+	// Standard Logging Libraries log levels.
 	public static final Key	OFF		= Key.of( "off" );
 	public static final Key	FATAL	= Key.of( "fatal" );
 	public static final Key	ERROR	= Key.of( "error" );
@@ -37,10 +38,9 @@ public class LogLevel {
 	public static final Key	INFO	= Key.of( "info" );
 	public static final Key	DEBUG	= Key.of( "debug" );
 	public static final Key	TRACE	= Key.of( "trace" );
-	public static final Key	ALL		= Key.of( "all" );
 
 	/**
-	 * Convert a string to a LogLevel Key
+	 * Convert a human-readable log level to a LogLevel Key
 	 *
 	 * @param level The string to convert into a LogLevel Key
 	 * @param safe  If true, then it will return null instead of the exception
@@ -68,8 +68,6 @@ public class LogLevel {
 				return DEBUG;
 			case "trace" :
 				return TRACE;
-			case "all" :
-				return ALL;
 			default : {
 				if ( safe ) {
 					return null;
@@ -94,7 +92,7 @@ public class LogLevel {
 	 * @return The levels as an array of keys
 	 */
 	public static Key[] getLevels() {
-		return new Key[] { OFF, FATAL, ERROR, WARN, INFO, DEBUG, TRACE, ALL };
+		return new Key[] { OFF, FATAL, ERROR, WARN, INFO, DEBUG, TRACE };
 	}
 
 	/**

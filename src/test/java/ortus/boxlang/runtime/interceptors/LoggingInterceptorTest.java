@@ -29,6 +29,7 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.logging.LoggingService;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Struct;
@@ -42,7 +43,7 @@ public class LoggingInterceptorTest {
 
 	static Logging		loggingInterceptor;
 	static String		tmpDirectory	= "src/test/resources/tmp/FileSystemStoreTest";
-	static String		testLogFile		= "LoggingInterceptorTest.txt";
+	static String		testLogFile		= "LoggingInterceptorTest.log";
 	static String		logFilePath;
 	static String		absoluteLogeFilePath;
 	static String		logDirectory;
@@ -58,6 +59,7 @@ public class LoggingInterceptorTest {
 
 	@AfterAll
 	public static void teardown() {
+		LoggingService.getInstance().shutdownAppenders();
 		if ( FileSystemUtil.exists( logFilePath ) ) {
 			FileSystemUtil.deleteFile( logFilePath );
 		}
@@ -68,11 +70,11 @@ public class LoggingInterceptorTest {
 
 	@DisplayName( "It can log a message" )
 	@Test
-	void testLogMessage() throws InterruptedException {
+	void testLogMessage() {
 		System.out.println( logFilePath );
 		loggingInterceptor.logMessage( Struct.of(
 		    Key.text, "Hello, World!",
-		    Key.level, "INFO",
+		    Key.type, "INFO",
 		    Key.file, testLogFile,
 		    Key.log, "Test"
 		) );
@@ -81,10 +83,10 @@ public class LoggingInterceptorTest {
 
 	@DisplayName( "It can log a message to an absolute path" )
 	@Test
-	void testLogAbsolute() throws InterruptedException {
+	void testLogAbsolute() {
 		loggingInterceptor.logMessage( Struct.of(
 		    Key.text, "Hello, Absolute Path!",
-		    Key.level, "INFO",
+		    Key.type, "INFO",
 		    Key.file, absoluteLogeFilePath,
 		    Key.log, "Test"
 		) );

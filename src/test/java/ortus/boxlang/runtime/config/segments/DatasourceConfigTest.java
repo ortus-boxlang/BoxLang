@@ -18,7 +18,6 @@
 package ortus.boxlang.runtime.config.segments;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -45,7 +44,7 @@ class DatasourceConfigTest {
 		) );
 		HikariConfig		hikariConfig	= datasource.toHikariConfig();
 
-		assert hikariConfig.getJdbcUrl().equals( "jdbc:postgresql://localhost:5432/foo" );
+		assertThat( hikariConfig.getJdbcUrl() ).isEqualTo( "jdbc:postgresql://localhost:5432/foo" );
 	}
 
 	@DisplayName( "It can load config" )
@@ -59,11 +58,10 @@ class DatasourceConfigTest {
 		    "custom", Struct.of( "useSSL", false )
 		) );
 		HikariConfig		hikariConfig	= datasource.toHikariConfig();
-
-		assertEquals( "jdbc:mysql://127.0.0.1:3306/foo?useSSL=false", hikariConfig.getJdbcUrl() );
+		assertThat( hikariConfig.getJdbcUrl() ).isEqualTo( "jdbc:mysql://127.0.0.1:3306/foo?useSSL=false" );
 	}
 
-	@DisplayName( "It can load a config with placeholders" )
+	@DisplayName( "It can load a config with placeholders on a url key" )
 	@Test
 	void testItCanConstructConnectionStringWithPlaceholders() {
 		DatasourceConfig	datasource		= new DatasourceConfig( Key.of( "Foo" ), Struct.of(
@@ -75,8 +73,21 @@ class DatasourceConfigTest {
 		    "custom", Struct.of( "useSSL", false )
 		) );
 		HikariConfig		hikariConfig	= datasource.toHikariConfig();
+		assertThat( hikariConfig.getJdbcUrl() ).isEqualTo( "jdbc:mysql://localhost:3306/foo?useSSL=false" );
+	}
 
-		assertEquals( "jdbc:mysql://localhost:3306/foo?useSSL=false", hikariConfig.getJdbcUrl() );
+	@DisplayName( "It can load a config with placeholders on a dsn key" )
+	@Test
+	void testItCanConstructConnectionStringWithPlaceholdersOnDSN() {
+		DatasourceConfig	datasource		= new DatasourceConfig( Key.of( "Foo" ), Struct.of(
+		    "dsn", "jdbc:mysql://{host}:{port}/{database}",
+		    "host", "localhost",
+		    "port", 3306,
+		    "database", "foo",
+		    "custom", Struct.of( "useSSL", false )
+		) );
+		HikariConfig		hikariConfig	= datasource.toHikariConfig();
+		assertThat( hikariConfig.getJdbcUrl() ).isEqualTo( "jdbc:mysql://localhost:3306/foo?useSSL=false" );
 	}
 
 	@DisplayName( "It can load config" )
@@ -89,8 +100,7 @@ class DatasourceConfigTest {
 		    "database", "foo"
 		) );
 		HikariConfig		hikariConfig	= datasource.toHikariConfig();
-
-		assertEquals( "jdbc:postgresql://127.0.0.1:5432/foo?", hikariConfig.getJdbcUrl() );
+		assertThat( hikariConfig.getJdbcUrl() ).isEqualTo( "jdbc:postgresql://127.0.0.1:5432/foo?" );
 	}
 
 	@DisplayName( "It can create a unique name for the datasource" )
@@ -236,7 +246,7 @@ class DatasourceConfigTest {
 		) );
 		HikariConfig		hikariConfig	= datasource.toHikariConfig();
 
-		assertEquals( "jdbc:postgresql://127.0.0.1:5432/foo?", hikariConfig.getJdbcUrl() );
+		assertThat( hikariConfig.getJdbcUrl() ).isEqualTo( "jdbc:postgresql://127.0.0.1:5432/foo?" );
 	}
 
 	@DisplayName( "It can use 'dbdriver' in place of 'driver', for CFConfig support" )
@@ -250,7 +260,7 @@ class DatasourceConfigTest {
 		) );
 		HikariConfig		hikariConfig	= datasource.toHikariConfig();
 
-		assertEquals( "jdbc:postgresql://127.0.0.1:5432/foo?", hikariConfig.getJdbcUrl() );
+		assertThat( hikariConfig.getJdbcUrl() ).isEqualTo( "jdbc:postgresql://127.0.0.1:5432/foo?" );
 	}
 
 	@DisplayName( "It casts numeric values correctly upon instantation" )
@@ -268,11 +278,11 @@ class DatasourceConfigTest {
 		) ).setOnTheFly();
 
 		HikariConfig		hikariConfig	= datasource.toHikariConfig();
-		assertEquals( 1, hikariConfig.getMinimumIdle() );
-		assertEquals( 11, hikariConfig.getMaximumPoolSize() );
-		assertEquals( 3000, hikariConfig.getConnectionTimeout() );
-		assertEquals( 600000, hikariConfig.getIdleTimeout() );
-		assertEquals( 1800000, hikariConfig.getMaxLifetime() );
+		assertThat( hikariConfig.getMinimumIdle() ).isEqualTo( 1 );
+		assertThat( hikariConfig.getMaximumPoolSize() ).isEqualTo( 11 );
+		assertThat( hikariConfig.getConnectionTimeout() ).isEqualTo( 3000 );
+		assertThat( hikariConfig.getIdleTimeout() ).isEqualTo( 600000 );
+		assertThat( hikariConfig.getMaxLifetime() ).isEqualTo( 1800000 );
 	}
 
 	@DisplayName( "It can skip driver in place of jdbc url" )
@@ -281,25 +291,28 @@ class DatasourceConfigTest {
 		DatasourceConfig datasource = new DatasourceConfig( Key.of( "Foo" ), Struct.of(
 		    "url", "jdbc:postgresql://127.0.0.1:5432/foo?"
 		) );
-		assertEquals( "jdbc:postgresql://127.0.0.1:5432/foo?", datasource.toHikariConfig().getJdbcUrl() );
+		assertThat( datasource.toHikariConfig().getJdbcUrl() ).isEqualTo( "jdbc:postgresql://127.0.0.1:5432/foo?" );
 
-		// dsn key
+		// dsn key shortcut for CFConfig
 		DatasourceConfig datasource2 = new DatasourceConfig( Key.of( "Foo" ), Struct.of(
-		    "dsn", "jdbc:postgresql://127.0.0.1:5432/foo?"
+		    "dsn", "jdbc:postgresql://{host}:{port}/{database}",
+		    "database", "foo",
+		    "host", "localhost",
+		    "port", "5432"
 		) );
-		assertEquals( "jdbc:postgresql://127.0.0.1:5432/foo?", datasource2.toHikariConfig().getJdbcUrl() );
+		assertThat( datasource2.toHikariConfig().getJdbcUrl() ).isEqualTo( "jdbc:postgresql://localhost:5432/foo" );
 
 		// connectionString key
 		DatasourceConfig datasource3 = new DatasourceConfig( Key.of( "Foo" ), Struct.of(
 		    "connectionString", "jdbc:postgresql://127.0.0.1:5432/foo?"
 		) );
-		assertEquals( "jdbc:postgresql://127.0.0.1:5432/foo?", datasource3.toHikariConfig().getJdbcUrl() );
+		assertThat( datasource3.toHikariConfig().getJdbcUrl() ).isEqualTo( "jdbc:postgresql://127.0.0.1:5432/foo?" );
 
 		// jdbcURL key
 		DatasourceConfig datasource4 = new DatasourceConfig( Key.of( "Foo" ), Struct.of(
 		    "jdbcURL", "jdbc:postgresql://127.0.0.1:5432/foo?"
 		) );
-		assertEquals( "jdbc:postgresql://127.0.0.1:5432/foo?", datasource4.toHikariConfig().getJdbcUrl() );
+		assertThat( datasource4.toHikariConfig().getJdbcUrl() ).isEqualTo( "jdbc:postgresql://127.0.0.1:5432/foo?" );
 	}
 
 }

@@ -18,7 +18,6 @@
 package ortus.boxlang.runtime.application;
 
 import java.io.Serializable;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.ApplicationBoxContext;
@@ -63,7 +62,7 @@ public class Session implements Serializable {
 	/**
 	 * Flag for when session has been started
 	 */
-	private final AtomicBoolean	isNew			= new AtomicBoolean( true );
+	private boolean				isNew			= true;
 
 	/**
 	 * The application name linked to
@@ -142,16 +141,29 @@ public class Session implements Serializable {
 	 */
 	public Session start( IBoxContext context ) {
 		// If the session has started, just return it and update it's last visit time
-		if ( !this.isNew.get() ) {
+		if ( !isNew ) {
 			updateLastVisit();
 			return this;
 		}
+		synchronized ( this ) {
+			// Double check lock
+			if ( !isNew ) {
+				return this;
+			}
+			// Set this now so onSessionStart() won't go all recursive doom into itself
+			isNew = false;
 
-		// Announce it's start
-		BaseApplicationListener listener = context.getParentOfType( RequestBoxContext.class ).getApplicationListener();
-		listener.onSessionStart( context, new Object[] { this.ID } );
-		this.isNew.set( false );
-
+			try {
+				// Announce it's start
+				BaseApplicationListener listener = context.getParentOfType( RequestBoxContext.class ).getApplicationListener();
+				listener.onSessionStart( context, new Object[] { this.ID } );
+			} catch ( Exception e ) {
+				// If startup errored, flag the session as not intialized. The next thread can try again.
+				// An error in your onSessionStart() will mean you can never get passed it, but I think that's actually desired as the
+				// app likely relies on a complete and successful session start.
+				isNew = true;
+			}
+		}
 		return this;
 	}
 
@@ -243,7 +255,7 @@ public class Session implements Serializable {
 		return Struct.of(
 		    Key.id, this.ID,
 		    Key.scope, this.sessionScope,
-		    "isNew", this.isNew.get(),
+		    "isNew", isNew,
 		    Key.applicationName, this.applicationName
 		);
 	}

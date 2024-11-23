@@ -45,7 +45,6 @@ import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.components.jdbc.Query;
 import ortus.boxlang.runtime.context.ContainerBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
@@ -120,17 +119,29 @@ public class DumpUtil {
 	    String output,
 	    String format,
 	    Boolean showUDFs ) {
-		output = output.toLowerCase();
 
-		// Backwards compat here, could put this in the transpiler if we want
-		if ( output.equals( "browser" ) ) {
-			output = "buffer";
+		boolean isScriptContext = context.getRequestContext() instanceof ScriptingRequestBoxContext;
+
+		// Default output param
+		if ( output == null ) {
+			if ( isScriptContext ) {
+				output = "console";
+			} else {
+				output = "buffer";
+			}
+		} else {
+			output = output.toLowerCase();
+
+			// Backwards compat here, could put this in the transpiler if we want
+			if ( output.equals( "browser" ) ) {
+				output = "buffer";
+			}
 		}
 
 		// Determine the output format if not passed from the output parameter.
 		if ( format == null ) {
 			// If the output is console or the parent context is a scripting context, then use text.
-			if ( output.equals( "console" ) || context.getParentOfType( RequestBoxContext.class ) instanceof ScriptingRequestBoxContext ) {
+			if ( output.equals( "console" ) || isScriptContext ) {
 				format = "text";
 			}
 			// Otherwise, use HTML (default for buffer or filename)
@@ -160,7 +171,11 @@ public class DumpUtil {
 		switch ( output ) {
 			// SEND TO CONSOLE
 			case "console" :
-				dumpToConsole( context, target, label );
+				if ( format.equals( "html" ) ) {
+					dumpHTMLToConsole( context, target, label, top, expand, abort, output, format, showUDFs );
+				} else {
+					dumpTextToConsole( context, target, label );
+				}
 				break;
 
 			// SEND TO BUFFER (HTML or TEXT)
@@ -205,10 +220,11 @@ public class DumpUtil {
 			if ( output.equals( "buffer" ) ) {
 				context.writeToBuffer(
 				    """
-				    	<div style="display: inline-block; padding: 8px 12px; background-color: #ff4d4d; color: white; font-weight: bold; border-radius: 5px;">
+				    	<div style="margin-top: 10px; display: inline-block; padding: 8px 12px; background-color: #ff4d4d; color: white; font-weight: bold; border-radius: 5px;">
 				    		Dump Aborted
 				    	</div>
-				    """, true );
+				    """,
+				    true );
 			}
 			context.flushBuffer( true );
 			throw new AbortException( "request", null );
@@ -222,8 +238,40 @@ public class DumpUtil {
 	 * @param target  The target object
 	 * @param label   The label for the object
 	 */
-	public static void dumpToConsole( IBoxContext context, Object target, String label ) {
-		PrintStream out = context.getParentOfType( RequestBoxContext.class ).getOut();
+	public static void dumpHTMLToConsole(
+	    IBoxContext context,
+	    Object target,
+	    String label,
+	    Integer top,
+	    Boolean expand,
+	    Boolean abort,
+	    String output,
+	    String format,
+	    Boolean showUDFs ) {
+		// Push a fresh buffer to our context to capture the HTML generated
+		StringBuffer buffer = new StringBuffer();
+		context.pushBuffer( buffer );
+		try {
+			// Fire the HTML templates to fill up the buffer
+			dumpHTMLToBuffer( context, target, label, top, expand, abort, output, format, showUDFs );
+			// Dump the buffer to the console
+			context.getRequestContext().getOut().println( buffer.toString() );
+		} finally {
+			// We're done with you.
+			context.popBuffer();
+		}
+
+	}
+
+	/**
+	 * Dump the object to the console.
+	 *
+	 * @param context The context
+	 * @param target  The target object
+	 * @param label   The label for the object
+	 */
+	public static void dumpTextToConsole( IBoxContext context, Object target, String label ) {
+		PrintStream out = context.getRequestContext().getOut();
 
 		// Do we have a console label?
 		if ( label != null && !label.isEmpty() ) {

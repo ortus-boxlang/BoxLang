@@ -25,6 +25,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
+import ortus.boxlang.runtime.types.IStruct;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.STRUCT )
@@ -53,7 +54,17 @@ public class StructKeyExists extends BIF {
 	 * @argument.key The key within the struct to test for existence
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Object result = arguments.getAsStruct( Key.struct ).getRaw( Key.of( arguments.get( Key.key ) ) );
+		Key		keyKey	= Key.of( arguments.get( Key.key ) );
+		IStruct	struct	= arguments.getAsStruct( Key.struct );
+
+		// First check if the key exists in the struct. This is here to filter out keys which are accessible, but
+		// not actually returned by the keySet() method, such as the `1` key in an arguments scope. You can access it, but it's not really there as a key.
+		if ( !struct.containsKey( keyKey ) ) {
+			return false;
+		}
+
+		// If the key exists, then we need to check if the value is defined based on our current null settings.
+		Object result = struct.getRaw( keyKey );
 		return context.isDefined( result );
 	}
 

@@ -68,8 +68,9 @@ public class BoxLangBIFProxy extends BIF {
 	/**
 	 * @param target the target to set
 	 */
-	public void setTarget( IClassRunnable target ) {
+	public BoxLangBIFProxy setTarget( IClassRunnable target ) {
 		this.target = target;
+		return this;
 	}
 
 	@Override

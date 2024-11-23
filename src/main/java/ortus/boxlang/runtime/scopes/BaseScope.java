@@ -110,6 +110,7 @@ public class BaseScope extends Struct implements IScope {
 	 *
 	 * @return The {@Link BoxMeta} object for this struct
 	 */
+	@Override
 	public BoxMeta getBoxMeta() {
 		if ( this.$bx == null ) {
 			this.$bx = new ScopeMeta( this, this.finalKeys );
@@ -153,9 +154,10 @@ public class BaseScope extends Struct implements IScope {
 	/**
 	 * Assign a value to a key in this scope
 	 */
+	@Override
 	public Object put( Key key, Object value ) {
 		if ( finalKeys.contains( key ) ) {
-			if ( super.get( key ) instanceof Function f ) {
+			if ( super.get( key ) instanceof Function ) {
 				throw new BoxRuntimeException( "Cannot override final function [" + key.getName() + "] in scope [" + scopeName.getName() + "]" );
 			}
 			throw new BoxRuntimeException( "Cannot reassign final key [" + key.getName() + "] in scope [" + scopeName.getName() + "]" );
@@ -166,6 +168,7 @@ public class BaseScope extends Struct implements IScope {
 	/**
 	 * Assign a value to a key in this scope if it doesn't exist
 	 */
+	@Override
 	public Object putIfAbsent( Key key, Object value ) {
 		if ( finalKeys.contains( key ) ) {
 			throw new BoxRuntimeException( "Cannot reassign final key [" + key.getName() + "] in scope [" + scopeName.getName() + "]" );
@@ -178,6 +181,7 @@ public class BaseScope extends Struct implements IScope {
 	 *
 	 * @param key The String key to remove
 	 */
+	@Override
 	public Object remove( Key key ) {
 		if ( finalKeys.contains( key ) ) {
 			throw new BoxRuntimeException( "Cannot delete final key [" + key.getName() + "] in scope [" + scopeName.getName() + "]" );

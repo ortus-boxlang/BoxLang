@@ -43,9 +43,13 @@ import ortus.boxlang.runtime.bifs.BIFDescriptor;
 import ortus.boxlang.runtime.bifs.BoxLangBIFProxy;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.cache.providers.ICacheProvider;
+import ortus.boxlang.runtime.components.BoxLangComponentProxy;
 import ortus.boxlang.runtime.components.Component;
+import ortus.boxlang.runtime.components.Component.ComponentBody;
+import ortus.boxlang.runtime.components.ComponentDescriptor;
 import ortus.boxlang.runtime.config.segments.ModuleConfig;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.events.IInterceptor;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.jdbc.drivers.DriverShim;
@@ -53,6 +57,7 @@ import ortus.boxlang.runtime.jdbc.drivers.IJDBCDriver;
 import ortus.boxlang.runtime.loader.DynamicClassLoader;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
+import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.ThisScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
@@ -63,6 +68,7 @@ import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.services.ModuleService;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
+import ortus.boxlang.runtime.types.DynamicFunction;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -147,6 +153,11 @@ public class ModuleRecord {
 	 * The BIFS collaborated by the module
 	 */
 	public Array				bifs						= new Array();
+
+	/**
+	 * The Components collaborated by the module
+	 */
+	public Array				components					= new Array();
 
 	/**
 	 * The member Methods collaborated by the module
@@ -243,11 +254,15 @@ public class ModuleRecord {
 		Path	directoryPath	= Path.of( physicalPath );
 		Path	boxjsonPath		= directoryPath.resolve( MODULE_CONFIG_FILE );
 
+		// Load the module name from the box.json file if it exists
 		if ( Files.exists( boxjsonPath ) ) {
 			DataNavigator
 			    .of( boxjsonPath )
 			    .from( "boxlang" )
-			    .ifPresent( "moduleName", value -> this.name = Key.of( value ) );
+			    .ifPresent( "moduleName", value -> this.name = Key.of( value ) )
+			    .ifPresent( "minimumVersion",
+			        value -> BoxRuntime.getInstance().getModuleService().verifyModuleAndBoxLangVersion( ( String ) value, directoryPath )
+			    );
 		}
 
 		// Default to the directory name if the box.json file does not exist
@@ -429,11 +444,19 @@ public class ModuleRecord {
 		// Register BoxLang Bifs if they exist
 		Path bifsPath = this.physicalPath.resolve( ModuleService.MODULE_BIFS );
 		if ( Files.exists( bifsPath ) && Files.isDirectory( bifsPath ) ) {
-
 			// Iterate over all files *.cfc/bx and register them
 			// These are the BoxLang Bifs
 			for ( File targetFile : bifsPath.toFile().listFiles() ) {
 				registerBIF( targetFile, context );
+			}
+		}
+
+		// Register BoxLang Components if they exists
+		Path componentPaths = this.physicalPath.resolve( ModuleService.MODULE_COMPONENTS );
+		if ( Files.exists( componentPaths ) && Files.isDirectory( componentPaths ) ) {
+			// Iterate over all files *.cfc/bx and register them
+			for ( File targetFile : componentPaths.toFile().listFiles() ) {
+				registerComponent( targetFile, context );
 			}
 		}
 
@@ -495,259 +518,6 @@ public class ModuleRecord {
 		this.registeredOn = Instant.now();
 
 		return this;
-	}
-
-	/**
-	 * Register a BIF with the runtime
-	 *
-	 * @param targetFile The target file to register that represents the BIF on disk
-	 * @param context    The current context of execution
-	 *
-	 * @return The ModuleRecord
-	 */
-	private ModuleRecord registerBIF( File targetFile, IBoxContext context ) {
-		// System.out.println( "Processing " + targetFile.getAbsolutePath() );
-
-		// Skip directories and non CFC/BX files
-		// We are not doing recursive registration for the moment.
-		if ( targetFile.isDirectory() || !targetFile.getName().matches( "^.*\\.(cfc|bx)$" ) ) {
-			return this;
-		}
-
-		// Nice References
-		BoxRuntime			runtime				= BoxRuntime.getInstance();
-		FunctionService		functionService		= runtime.getFunctionService();
-		InterceptorService	interceptorService	= runtime.getInterceptorService();
-
-		// Try to load the BoxLang class
-		Key					className			= Key.of( FilenameUtils.getBaseName( targetFile.getAbsolutePath() ) );
-		IClassRunnable		oBIF				= ( IClassRunnable ) DynamicObject.of(
-		    RunnableLoader.getInstance().loadClass(
-		        ResolvedFilePath.of(
-		            null,
-		            null,
-		            ( this.invocationPath + "." + ModuleService.MODULE_BIFS ).replaceAll( "\\.", Matcher.quoteReplacement( File.separator ) ) + File.separator
-		                + FilenameUtils.getBaseName( targetFile.getAbsolutePath() ),
-		            targetFile.toPath()
-		        ),
-		        context
-		    )
-		).invokeConstructor( context )
-		    .getTargetInstance();
-
-		/*
-		 * --------------------------------------------------------------------------
-		 * DI Injections
-		 * --------------------------------------------------------------------------
-		 * Inject the following references into the BoxLang BIF
-		 * - boxRuntime : BoxLangRuntime
-		 * - log : A logger
-		 * - functionService : The BoxLang FunctionService
-		 * - interceptorService : The BoxLang InterceptorService
-		 * - moduleRecord : The ModuleRecord instance
-		 */
-
-		oBIF.getVariablesScope().put( Key.moduleRecord, this );
-		oBIF.getVariablesScope().put( Key.boxRuntime, runtime );
-		oBIF.getVariablesScope().put( Key.functionService, functionService );
-		oBIF.getVariablesScope().put( Key.interceptorService, interceptorService );
-		oBIF.getVariablesScope().put( Key.log, LoggerFactory.getLogger( oBIF.getClass() ) );
-
-		/*
-		 * --------------------------------------------------------------------------
-		 * BIF Registration
-		 * --------------------------------------------------------------------------
-		 */
-		BIFDescriptor	bifDescriptor	= new BIFDescriptor(
-		    className,
-		    oBIF.getClass(),
-		    this.name.getName(),
-		    null,
-		    true,
-		    new BoxLangBIFProxy( oBIF )
-		);
-		Key[]			bifAliases		= buildBIFAliases( oBIF, className );
-		for ( Key bifAlias : bifAliases ) {
-			// Register the mapping in the runtime
-			functionService.registerGlobalFunction(
-			    bifDescriptor,
-			    bifAlias,
-			    true
-			);
-			logger.info(
-			    "> Registered Module [{}] BIF [{}] with alias [{}]",
-			    this.name.getName(),
-			    className.getName(),
-			    bifAlias.getName()
-			);
-			this.bifs.push( bifAlias );
-		}
-
-		/*
-		 * --------------------------------------------------------------------------
-		 * BIF Member Method(s) Registration
-		 * --------------------------------------------------------------------------
-		 */
-		Array bifMemberMethods = discoverMemberMethods( oBIF, className );
-		for ( Object memberMethod : bifMemberMethods ) {
-			Key			memberKey		= Key.of( ( ( IStruct ) memberMethod ).getAsString( Key._NAME ) );
-			BoxLangType	memberType		= ( BoxLangType ) ( ( IStruct ) memberMethod ).get( Key.type );
-			String		objectArgument	= ( ( IStruct ) memberMethod ).getAsString( Key.objectArgument );
-
-			// Call to register
-			functionService.registerMemberMethod(
-			    memberKey,
-			    new MemberDescriptor(
-			        memberKey,
-			        memberType,
-			        java.lang.Object.class,
-			        // Pass null if objectArgument is empty
-			        objectArgument.isEmpty() ? null : Key.of( objectArgument ),
-			        bifDescriptor
-			    )
-			);
-			logger.info(
-			    "> Registered Module [{}] MemberMethod [{}]",
-			    this.name.getName(),
-			    memberMethod
-			);
-			this.memberMethods.push( memberMethod );
-		}
-
-		return this;
-	}
-
-	/**
-	 * Discover member methods by getting the {@code BoxMember} annotation on the Class.
-	 *
-	 * @param targetBIF The target BIF to discover member methods for
-	 * @param className The class name of the BIF
-	 *
-	 * @return An array of member methods for the BIF: {@code [ { name : "", objectArgument: "", type : BoxLangType } ] }
-	 */
-	private Array discoverMemberMethods( IClassRunnable targetBIF, Key className ) {
-		// Get the BoxMember annotation
-		Object boxMembers = targetBIF.getBoxMeta().getMeta().getAsStruct( Key.annotations ).getOrDefault( Key.boxMember, null );
-
-		// System.out.println( className.getName() + " BoxMembers Found [" + boxMembers + "]" );
-
-		// Case 0: If null, then we don't have any :)
-		if ( boxMembers == null ) {
-			return new Array();
-		}
-
-		// Case 1 : This is a simple String with no value, throw an exception
-		// @BoxMember
-		if ( boxMembers instanceof String castedBoxMember && castedBoxMember.isBlank() ) {
-			throw new BoxRuntimeException( className.getName() + " BoxMember annotation is missing it's type value, which is mandatory" );
-		}
-
-		// Case 2 : This is a simple String with a value which is the type. Validate it, default it's record and return it
-		// ClassName : ArrayFoo
-		// @BoxMember "array" -> { "name": "foo", "objectArgument": null, type: BoxLangType.ARRAY }
-		if ( boxMembers instanceof String castedBoxMember && !castedBoxMember.isBlank() ) {
-			// Validate the type is valid else throw an exception
-			if ( !BoxLangType.isValid( castedBoxMember ) ) {
-				throw new BoxRuntimeException(
-				    className.getName() + " BoxMember annotation has an invalid type value [" + castedBoxMember + "]" +
-				        "Valid types are: " + Arrays.toString( BoxLangType.values() )
-				);
-			}
-			BoxLangType boxType = BoxLangType.valueOf( castedBoxMember.toUpperCase() );
-			return Array.of(
-			    Struct.of(
-			        // Default member name for class ArrayFoo with BoxType of Array is just foo()
-			        Key._NAME, className.getNameNoCase().replaceAll( boxType.getKey().getNameNoCase(), "" ),
-			        Key.objectArgument, "",
-			        Key.type, boxType
-			    )
-			);
-		}
-
-		// Case 3 : We have a struct of member methods, validate them and return them
-		// @BoxMember { "string": { "name": "append", "objectArgument": "string" } }
-		if ( boxMembers instanceof IStruct castedBoxMember ) {
-			Array result = new Array();
-
-			// Iterate over all entries and validate them
-			for ( IStruct.Entry<Key, ?> entry : castedBoxMember.entrySet() ) {
-				// Validate Type first which is the key of the entry
-				Key type = entry.getKey();
-				if ( !BoxLangType.isValid( type ) ) {
-					throw new BoxRuntimeException(
-					    className.getName() + " BoxMember annotation has an invalid type value [" + type.getName() + "]" +
-					        "Valid types are: " + Arrays.toString( BoxLangType.values() )
-					);
-				}
-
-				// Now the value of this key must be a struct with the following keys: name, objectArgument
-				// Validate the value is a struct
-				if ( ! ( entry.getValue() instanceof IStruct memberRecord ) ) {
-					throw new BoxRuntimeException(
-					    className.getName() + " BoxMember annotation value must be a struct with the following keys: [name], [objectArgument]"
-					);
-				}
-
-				// Prepare the record now
-				BoxLangType boxType = BoxLangType.valueOf( type.getNameNoCase() );
-				memberRecord.put( Key.type, boxType );
-				memberRecord.computeIfAbsent( Key._NAME, k -> className.getNameNoCase().replaceAll( type.getNameNoCase(), "" )
-				);
-				memberRecord.putIfAbsent( Key.objectArgument, "" );
-				result.push( memberRecord );
-			}
-
-			return result;
-		}
-
-		// Who knows what this is, just return an empty struct
-		return new Array();
-	}
-
-	/**
-	 * Build an array of Key aliases for the BIF based on the following rules:
-	 * - If the BIF has any `BoxBIF` annoations that have a value, use those
-	 * - If the BIF has any `BoxBIF` annoations that have no value, use the BIF name
-	 *
-	 * {@code
-	 * // No value : use the class name
-	 * @BoxBIF
-	 * // Use the MyBif value as a simple string
-	 *
-	 * @BoxBIF "MyBif"
-	 *         // Use the array of aliases
-	 * @BoxBIF [ "bif1", "bif2"]
-	 *         }
-	 *
-	 * @param targetBIF The target BIF to build aliases for
-	 * @param className The class name of the BIF
-	 *
-	 * @return An array of Key aliases for the BIF
-	 */
-	private Key[] buildBIFAliases( IClassRunnable targetBIF, Key className ) {
-		// Get the BoxBIF annotation
-		Object boxBifAnnotation = targetBIF.getBoxMeta().getMeta().getAsStruct( Key.annotations ).getOrDefault( Key.boxBif, "" );
-
-		// Case 1 : This is a simple String with no value, just return
-		if ( boxBifAnnotation instanceof String castedAnnotation && castedAnnotation.isBlank() ) {
-			return new Key[] { className };
-		}
-
-		// Case 2 : This is a simple String with a value, return the value as the alias instead of the name of the file on disk
-		if ( boxBifAnnotation instanceof String castedAnnotationWithValue && !castedAnnotationWithValue.isBlank() ) {
-			return new Key[] {
-			    Key.of( castedAnnotationWithValue )
-			};
-		}
-
-		// Case 3 : We have an Array of aliases, and they have values, return them alongside the class name
-		if ( boxBifAnnotation instanceof Array castedAliases ) {
-			// convert the values in the array to Keys
-			return castedAliases.push( className ).stream().map( Key::of ).toArray( Key[]::new );
-		}
-
-		// Default : Just return the class name
-		return new Key[] { className };
 	}
 
 	/**
@@ -916,7 +686,7 @@ public class ModuleRecord {
 		);
 	}
 
-	/*
+	/**
 	 * --------------------------------------------------------------------------
 	 * Getters
 	 * --------------------------------------------------------------------------
@@ -973,6 +743,365 @@ public class ModuleRecord {
 		    "version", version,
 		    "webURL", webURL
 		);
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Private Helpers
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Register a BoxLang based Component with the runtime
+	 *
+	 * @param targetFile The target file to register that represents the Component on disk
+	 * @param context    The current context of execution
+	 *
+	 * @return The ModuleRecord
+	 */
+	private ModuleRecord registerComponent( File targetFile, IBoxContext context ) {
+		// System.out.println( "Processing component: " + targetFile.getAbsolutePath() );
+
+		// Skip directories and non CFC/BX files
+		// We are not doing recursive registration for the moment.
+		if ( targetFile.isDirectory() || !targetFile.getName().matches( "^.*\\.(cfc|bx)$" ) ) {
+			return this;
+		}
+
+		// Nice References
+		BoxRuntime				runtime				= BoxRuntime.getInstance();
+		ComponentService		componentService	= runtime.getComponentService();
+		// Try to load the BoxLang class and proxy
+		Key						className			= Key.of( FilenameUtils.getBaseName( targetFile.getAbsolutePath() ) );
+		IClassRunnable			oComponent			= loadClassRunnable( targetFile, ModuleService.MODULE_COMPONENTS, context );
+		BoxLangComponentProxy	oComponentProxy		= new BoxLangComponentProxy( oComponent );
+		oComponentProxy.setName( className );
+
+		// Inject some helpers
+		oComponent.getVariablesScope().put( Key.newBuffer, new DynamicFunction(
+		    Key.newBuffer,
+		    ( context1, fnc ) -> new StringBuffer()
+		) );
+		oComponent.getVariablesScope().put( Key.newBuilder, new DynamicFunction(
+		    Key.newBuilder,
+		    ( context1, fnc ) -> new StringBuilder()
+		) );
+
+		// ProcessBody Delegate
+		oComponent.getVariablesScope().put( Key.processBody, new DynamicFunction(
+		    Key.processBody,
+		    ( context1, fnc ) -> {
+			    ArgumentsScope args	= context1.getArgumentsScope();
+			    Object		buffer	= args.get( "buffer" );
+
+			    return oComponentProxy.processBody(
+			        ( IBoxContext ) args.get( "context" ),
+			        ( ComponentBody ) args.get( "body" ),
+			        buffer instanceof StringBuffer ? ( StringBuffer ) buffer : new StringBuffer()
+			    );
+		    }
+		) );
+		// Get Name Delegate
+		oComponent.getVariablesScope().put( Key.getName, new DynamicFunction(
+		    Key.getName,
+		    ( context1, fnc ) -> oComponent.getName()
+		) );
+
+		/**
+		 * --------------------------------------------------------------------------
+		 * Component Registration
+		 * --------------------------------------------------------------------------
+		 */
+
+		IStruct				annotations			= oComponent.getBoxMeta().getMeta().getAsStruct( Key.annotations );
+		ComponentDescriptor	descriptor			= new ComponentDescriptor(
+		    oComponent.getName(),
+		    oComponent.getClass(),
+		    this.name.getName(),
+		    null,
+		    oComponentProxy,
+		    BooleanCaster.cast( annotations.getOrDefault( "AllowsBody", false ) ),
+		    BooleanCaster.cast( annotations.getOrDefault( "RequiresBody", false ) )
+		);
+		Key[]				componentAliases	= buildAnnotationAliases( oComponent, className, Key.boxComponent );
+		System.out.println( "Component Aliases: " + Arrays.toString( componentAliases ) );
+
+		// Register all components with their aliases
+		for ( Key thisAlias : componentAliases ) {
+			componentService.registerComponent( descriptor, thisAlias, true );
+			logger.info(
+			    "> Registered Module [{}] Component [{}] with alias [{}]",
+			    this.name.getName(),
+			    className.getName(),
+			    thisAlias.getName()
+			);
+			this.components.push( thisAlias );
+		}
+
+		return this;
+	}
+
+	/**
+	 * Register a BoxLang based BIF with the runtime
+	 *
+	 * @param targetFile The target file to register that represents the BIF on disk
+	 * @param context    The current context of execution
+	 *
+	 * @return The ModuleRecord
+	 */
+	private ModuleRecord registerBIF( File targetFile, IBoxContext context ) {
+		// System.out.println( "Processing BIF: " + targetFile.getAbsolutePath() );
+
+		// Skip directories and non CFC/BX files
+		// We are not doing recursive registration for the moment.
+		if ( targetFile.isDirectory() || !targetFile.getName().matches( "^.*\\.(cfc|bx)$" ) ) {
+			return this;
+		}
+
+		// Nice References
+		BoxRuntime		runtime			= BoxRuntime.getInstance();
+		FunctionService	functionService	= runtime.getFunctionService();
+		// Try to load the BoxLang class
+		Key				className		= Key.of( FilenameUtils.getBaseName( targetFile.getAbsolutePath() ) );
+		IClassRunnable	oBIF			= loadClassRunnable( targetFile, ModuleService.MODULE_BIFS, context );
+
+		/**
+		 * --------------------------------------------------------------------------
+		 * BIF Registration
+		 * --------------------------------------------------------------------------
+		 */
+		BIFDescriptor	bifDescriptor	= new BIFDescriptor(
+		    className,
+		    oBIF.getClass(),
+		    this.name.getName(),
+		    null,
+		    true,
+		    new BoxLangBIFProxy( oBIF )
+		);
+		Key[]			bifAliases		= buildAnnotationAliases( oBIF, className, Key.boxBif );
+		for ( Key bifAlias : bifAliases ) {
+			// Register the mapping in the runtime
+			functionService.registerGlobalFunction(
+			    bifDescriptor,
+			    bifAlias,
+			    true
+			);
+			logger.info(
+			    "> Registered Module [{}] BIF [{}] with alias [{}]",
+			    this.name.getName(),
+			    className.getName(),
+			    bifAlias.getName()
+			);
+			this.bifs.push( bifAlias );
+		}
+
+		/**
+		 * --------------------------------------------------------------------------
+		 * BIF Member Method(s) Registration
+		 * --------------------------------------------------------------------------
+		 */
+		Array bifMemberMethods = discoverMemberMethods( oBIF, className );
+		for ( Object memberMethod : bifMemberMethods ) {
+			Key			memberKey		= Key.of( ( ( IStruct ) memberMethod ).getAsString( Key._NAME ) );
+			BoxLangType	memberType		= ( BoxLangType ) ( ( IStruct ) memberMethod ).get( Key.type );
+			String		objectArgument	= ( ( IStruct ) memberMethod ).getAsString( Key.objectArgument );
+
+			// Call to register
+			functionService.registerMemberMethod(
+			    memberKey,
+			    new MemberDescriptor(
+			        memberKey,
+			        memberType,
+			        java.lang.Object.class,
+			        // Pass null if objectArgument is empty
+			        objectArgument.isEmpty() ? null : Key.of( objectArgument ),
+			        bifDescriptor
+			    )
+			);
+			logger.info(
+			    "> Registered Module [{}] MemberMethod [{}]",
+			    this.name.getName(),
+			    memberMethod
+			);
+			this.memberMethods.push( memberMethod );
+		}
+
+		return this;
+	}
+
+	/**
+	 * Discover member methods by getting the {@code BoxMember} annotation on the Class.
+	 *
+	 * @param targetBIF The target BIF to discover member methods for
+	 * @param className The class name of the BIF
+	 *
+	 * @return An array of member methods for the BIF: {@code [ { name : "", objectArgument: "", type : BoxLangType } ] }
+	 */
+	private Array discoverMemberMethods( IClassRunnable targetBIF, Key className ) {
+		// Get the BoxMember annotation
+		Object boxMembers = targetBIF.getBoxMeta().getMeta().getAsStruct( Key.annotations ).getOrDefault( Key.boxMember, null );
+
+		// System.out.println( className.getName() + " BoxMembers Found [" + boxMembers + "]" );
+
+		// Case 0: If null, then we don't have any :)
+		if ( boxMembers == null ) {
+			return new Array();
+		}
+
+		// Case 1 : This is a simple String with no value, throw an exception
+		// @BoxMember
+		if ( boxMembers instanceof String castedBoxMember && castedBoxMember.isBlank() ) {
+			throw new BoxRuntimeException( className.getName() + " BoxMember annotation is missing it's type value, which is mandatory" );
+		}
+
+		// Case 2 : This is a simple String with a value which is the type. Validate it, default it's record and return it
+		// ClassName : ArrayFoo
+		// @BoxMember "array" -> { "name": "foo", "objectArgument": null, type: BoxLangType.ARRAY }
+		if ( boxMembers instanceof String castedBoxMember && !castedBoxMember.isBlank() ) {
+			// Validate the type is valid else throw an exception
+			if ( !BoxLangType.isValid( castedBoxMember ) ) {
+				throw new BoxRuntimeException(
+				    className.getName() + " BoxMember annotation has an invalid type value [" + castedBoxMember + "]" +
+				        "Valid types are: " + Arrays.toString( BoxLangType.values() )
+				);
+			}
+			BoxLangType boxType = BoxLangType.valueOf( castedBoxMember.toUpperCase() );
+			return Array.of(
+			    Struct.of(
+			        // Default member name for class ArrayFoo with BoxType of Array is just foo()
+			        Key._NAME, className.getNameNoCase().replaceAll( boxType.getKey().getNameNoCase(), "" ),
+			        Key.objectArgument, "",
+			        Key.type, boxType
+			    )
+			);
+		}
+
+		// Case 3 : We have a struct of member methods, validate them and return them
+		// @BoxMember { "string": { "name": "append", "objectArgument": "string" } }
+		if ( boxMembers instanceof IStruct castedBoxMember ) {
+			Array result = new Array();
+
+			// Iterate over all entries and validate them
+			for ( IStruct.Entry<Key, ?> entry : castedBoxMember.entrySet() ) {
+				// Validate Type first which is the key of the entry
+				Key type = entry.getKey();
+				if ( !BoxLangType.isValid( type ) ) {
+					throw new BoxRuntimeException(
+					    className.getName() + " BoxMember annotation has an invalid type value [" + type.getName() + "]" +
+					        "Valid types are: " + Arrays.toString( BoxLangType.values() )
+					);
+				}
+
+				// Now the value of this key must be a struct with the following keys: name, objectArgument
+				// Validate the value is a struct
+				if ( ! ( entry.getValue() instanceof IStruct memberRecord ) ) {
+					throw new BoxRuntimeException(
+					    className.getName() + " BoxMember annotation value must be a struct with the following keys: [name], [objectArgument]"
+					);
+				}
+
+				// Prepare the record now
+				BoxLangType boxType = BoxLangType.valueOf( type.getNameNoCase() );
+				memberRecord.put( Key.type, boxType );
+				memberRecord.computeIfAbsent( Key._NAME, k -> className.getNameNoCase().replaceAll( type.getNameNoCase(), "" )
+				);
+				memberRecord.putIfAbsent( Key.objectArgument, "" );
+				result.push( memberRecord );
+			}
+
+			return result;
+		}
+
+		// Who knows what this is, just return an empty struct
+		return new Array();
+	}
+
+	/**
+	 * Build an array of Key aliases for the BIF/Component based on the following rules:
+	 * - If the target has any `{annotation}` annoations that have a value, use those
+	 * - If the target has any `{annotation}` annoations that have no value, use the BIF name
+	 *
+	 * @param target     The target Component/BIF to build aliases for
+	 * @param className  The class name of the target
+	 * @param annotation The annotation to look for
+	 *
+	 * @return An array of Key aliases
+	 */
+	private Key[] buildAnnotationAliases( IClassRunnable target, Key className, Key annotation ) {
+		// Get the requested annotation for the target
+		Object annotations = target.getBoxMeta().getMeta().getAsStruct( Key.annotations ).getOrDefault( annotation, "" );
+
+		// Case 1 : This is a simple String with no value, just return
+		if ( annotations instanceof String castedAnnotation && castedAnnotation.isBlank() ) {
+			return new Key[] { className };
+		}
+
+		// Case 2 : This is a simple String with a value, return the value as the alias instead of the name of the file on disk
+		if ( annotations instanceof String castedAnnotationWithValue && !castedAnnotationWithValue.isBlank() ) {
+			return new Key[] {
+			    Key.of( castedAnnotationWithValue )
+			};
+		}
+
+		// Case 3 : We have an Array of aliases, and they have values, return them alongside the class name
+		if ( annotations instanceof Array castedAliases ) {
+			// convert the values in the array to Keys
+			return castedAliases.push( className ).stream().map( Key::of ).toArray( Key[]::new );
+		}
+
+		// Default : Just return the class name
+		return new Key[] { className };
+	}
+
+	/**
+	 * Load a BoxLang class from disk and return it as a {@link IClassRunnable}
+	 *
+	 * @param targetFile      The target file to load
+	 * @param conventionsPath The conventions path to load the class from
+	 * @param context         The current context of execution
+	 *
+	 * @return The loaded BoxLang class
+	 */
+	private IClassRunnable loadClassRunnable( File targetFile, String conventionsPath, IBoxContext context ) {
+		var					oTargetObject		= ( IClassRunnable ) DynamicObject.of(
+		    RunnableLoader.getInstance().loadClass(
+		        ResolvedFilePath.of(
+		            null,
+		            null,
+		            ( this.invocationPath + "." + conventionsPath )
+		                .replaceAll( "\\.", Matcher.quoteReplacement( File.separator ) )
+		                + File.separator
+		                + FilenameUtils.getBaseName( targetFile.getAbsolutePath() ),
+		            targetFile.toPath()
+		        ),
+		        context
+		    )
+		).invokeConstructor( context )
+		    .getTargetInstance();
+
+		/**
+		 * --------------------------------------------------------------------------
+		 * DI Injections
+		 * --------------------------------------------------------------------------
+		 * Inject the following references into the BoxLang BIF
+		 * - boxRuntime : BoxLangRuntime
+		 * - log : A logger
+		 * - functionService : The BoxLang FunctionService
+		 * - interceptorService : The BoxLang InterceptorService
+		 * - moduleRecord : The ModuleRecord instance
+		 */
+
+		BoxRuntime			runtime				= BoxRuntime.getInstance();
+		FunctionService		functionService		= runtime.getFunctionService();
+		InterceptorService	interceptorService	= runtime.getInterceptorService();
+
+		oTargetObject.getVariablesScope().put( Key.moduleRecord, this );
+		oTargetObject.getVariablesScope().put( Key.boxRuntime, runtime );
+		oTargetObject.getVariablesScope().put( Key.functionService, functionService );
+		oTargetObject.getVariablesScope().put( Key.interceptorService, interceptorService );
+		oTargetObject.getVariablesScope().put( Key.log, LoggerFactory.getLogger( oTargetObject.getClass() ) );
+
+		return oTargetObject;
 	}
 
 }

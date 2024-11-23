@@ -21,7 +21,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
@@ -76,34 +75,10 @@ public final class ExecutedQuery {
 	 * @param generatedKey The generated key of the query, if any.
 	 * @param queryMeta    Struct of query metadata, such as original SQL, parameters, size, and cache info.
 	 */
-	public ExecutedQuery( @Nonnull Query results, @Nullable Object generatedKey, @Nullable IStruct queryMeta ) {
+	public ExecutedQuery( @Nonnull Query results, @Nullable Object generatedKey ) {
 		this.results		= results;
 		this.generatedKey	= generatedKey;
-		this.queryMeta		= queryMeta;
-
-		// Set defaults for cache metadata, just in case they are not set.
-		this.queryMeta.putIfAbsent( Key.executionTime, 0 );
-		this.queryMeta.putIfAbsent( Key.cached, false );
-		this.queryMeta.putIfAbsent( Key.cacheKey, null );
-		this.queryMeta.putIfAbsent( Key.cacheProvider, null );
-		this.queryMeta.computeIfAbsent( Key.cacheTimeout, key -> Duration.ZERO );
-		this.queryMeta.computeIfAbsent( Key.cacheLastAccessTimeout, key -> Duration.ZERO );
-
-		// important that we set the metadata on the Query object for later getBoxMeta(), i.e. $bx.meta calls.
-		this.results.setMetadata( this.queryMeta );
-	}
-
-	/**
-	 * Build a new ExecutedQuery instance from a previously cached ExecutedQuery instance plus some cache metadata.
-	 */
-	public static ExecutedQuery fromCachedQuery( @Nonnull ExecutedQuery cachedQuery, IStruct cacheMeta ) {
-		Struct queryMeta = new Struct( cachedQuery.getQueryMeta() );
-		queryMeta.addAll( cacheMeta );
-		return new ExecutedQuery(
-		    cachedQuery.getResults(),
-		    cachedQuery.getGeneratedKey(),
-		    queryMeta
-		);
+		this.queryMeta		= results.getMetaData();
 	}
 
 	/**
@@ -117,13 +92,6 @@ public final class ExecutedQuery {
 	public static ExecutedQuery fromPendingQuery( @Nonnull PendingQuery pendingQuery, @Nonnull Statement statement, long executionTime, boolean hasResults ) {
 		Object	generatedKey	= null;
 		Query	results			= null;
-		IStruct	queryMeta		= Struct.of(
-		    "cached", false,
-		    "cacheKey", pendingQuery.getCacheKey(),
-		    "sql", pendingQuery.getOriginalSql(),
-		    "sqlParameters", Array.fromList( pendingQuery.getParameterValues() ),
-		    "executionTime", executionTime
-		);
 
 		try ( ResultSet rs = statement.getResultSet() ) {
 			results = Query.fromResultSet( rs );
@@ -160,7 +128,17 @@ public final class ExecutedQuery {
 			}
 		}
 
-		ExecutedQuery executedQuery = new ExecutedQuery( results, generatedKey, queryMeta );
+		IStruct queryMeta = Struct.of(
+		    "cached", false,
+		    "cacheKey", pendingQuery.getCacheKey(),
+		    "sql", pendingQuery.getOriginalSql(),
+		    "sqlParameters", Array.fromList( pendingQuery.getParameterValues() ),
+		    "executionTime", executionTime
+		);
+
+		// important that we set the metadata on the Query object for later getBoxMeta(), i.e. $bx.meta calls.
+		results.setMetadata( queryMeta );
+		ExecutedQuery executedQuery = new ExecutedQuery( results, generatedKey );
 
 		interceptorService.announce(
 		    BoxEvent.POST_QUERY_EXECUTE,
@@ -263,7 +241,7 @@ public final class ExecutedQuery {
 	 *
 	 * @return A struct of query metadata, like original SQL, parameters, size, and cache info.
 	 */
-	private @Nonnull IStruct getQueryMeta() {
+	public @Nonnull IStruct getQueryMeta() {
 		return this.queryMeta;
 	}
 

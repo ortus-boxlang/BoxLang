@@ -1,0 +1,60 @@
+/**
+ * This is a BoxLang only Component
+ *
+ * Annotations you can use on a component:
+ * <pre>
+ * // The alias of the Component, defaults to the name of the Class
+ * @BoxComponent 'myComponentAlias'
+ * @BoxComponent [ 'myComponentAlias', 'anotherAlias' ]
+ * @AllowsBody [boolean=false]
+ * @RequiresBody [boolean=false]
+ * </pre>
+ *
+ * The runtime injects the following into the variables	scope:
+ * - boxRuntime : BoxLangRuntime
+ * - log : A logger
+ * - functionService : The BoxLang FunctionService
+ * - interceptorService : The BoxLang InterceptorService
+ * - moduleRecord : The ModuleRecord instance
+ *
+ * The runtime also injects the following helpers into the variables scope:
+ * - newBuffer() : Create and return a new StringBuffer
+ * - newBuilder() : Create and return a new StringBuilder
+ * - processBody( context, body, [buffer] ) : Process the body of a component
+ * - getName() : Get the name of the component
+ */
+@BoxComponent 'HolaComponent'
+@AllowsBody true
+@RequiresBody false
+class{
+
+	/**
+	 * The execution of this Component
+	 *
+	 * <pre>
+	 * <bx:holaComponent>This is my output</bx:holaComponent>
+	 * </pre>
+	 *
+	 * @param context The context of the execution (IBoxContext)
+	 * @param attributes The attributes of the component that were passed in
+	 * @param body The body of the component that you can pass to `processBody(context, body, [buffer])` for execution and buffer retreival
+	 * @param executionState The execution state of the component. Each component get's one as an isolated state.
+	 *
+	 * @return A BodyResult instance or null for a default result return.
+	 */
+	function invoke( required context, Struct attributes, any body, Struct executionState ){
+		// A buffer to capture the body output
+		var	buffer		= newBuffer();
+		var	bodyResult	= processBody( context, body, buffer );
+
+		// // If there was a return statement inside our body, we early exit now
+		if ( bodyResult.isEarlyExit() ) {
+			return bodyResult;
+		}
+		// // reverse the buffer contents and place into a string
+		var newContent	= buffer.reverse().toString();
+		// // output it to the page buffer
+		context.writeToBuffer( newContent );
+	}
+
+}

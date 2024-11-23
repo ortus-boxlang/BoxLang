@@ -209,7 +209,7 @@
 									</tr>
 									<bx:loop collection="#thisScope#" item="dataProperty">
 										<bx:script>
-											thisData = thisScope[ dataProperty ]
+											thisData = thisScope[ dataProperty ] ?: null;
 											if( (thisData instanceOf "ortus.boxlang.runtime.types.Function") ){
 												continue;
 											}
@@ -261,8 +261,8 @@
 								</tr>
 								<bx:loop collection="#staticScope#" item="methodName">
 									<bx:script>
-										thisMethod = staticScope[ methodName ]
-										if( !(thisMethod instanceOf "ortus.boxlang.runtime.types.Function") ){
+										thisMethod = staticScope[ methodName ] ?: null;
+										if( isNull( thisMethod ) || !(thisMethod instanceOf "ortus.boxlang.runtime.types.Function") ){
 											continue;
 										}
 									</bx:script>
@@ -311,8 +311,8 @@
 										</tr>
 										<bx:loop collection="#thisScope#" item="methodName">
 											<bx:script>
-												thisMethod = thisScope[ methodName ]
-												if( !(thisMethod instanceOf "ortus.boxlang.runtime.types.Function") ){
+												thisMethod = thisScope[ methodName ] ?: null;
+												if( isNull( thisMethod ) || !(thisMethod instanceOf "ortus.boxlang.runtime.types.Function") ){
 													continue;
 												}
 											</bx:script>
@@ -362,8 +362,8 @@
 										</tr>
 										<bx:loop collection="#variablesScope#" item="methodName">
 											<bx:script>
-												thisMethod = variablesScope[ methodName ]
-												if( !(thisMethod instanceOf "ortus.boxlang.runtime.types.Function") ){
+												thisMethod = variablesScope[ methodName ] ?: null;
+												if( isNull( thisMethod ) || !(thisMethod instanceOf "ortus.boxlang.runtime.types.Function") ){
 													continue;
 												}
 												if( thisMethod.getAccess().toString() == "public" ){

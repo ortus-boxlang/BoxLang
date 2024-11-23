@@ -35,6 +35,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.logging.LoggingService;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
@@ -43,13 +44,13 @@ import ortus.boxlang.runtime.util.FileSystemUtil;
 public class WriteLogTest {
 
 	static BoxRuntime				instance;
+	static String					logsDirectory;
 	static IBoxContext				context;
 	static IScope					variables;
 	static Key						result		= new Key( "result" );
+	static String					logFilePath;
 	static ByteArrayOutputStream	outContent;
 	static PrintStream				originalOut	= System.out;
-
-	static String					logsDirectory;
 
 	@BeforeAll
 	public static void setUp() {
@@ -57,12 +58,16 @@ public class WriteLogTest {
 		logsDirectory	= instance.getConfiguration().logsDirectory;
 		outContent		= new ByteArrayOutputStream();
 		System.setOut( new PrintStream( outContent ) );
+		logFilePath = Paths.get( logsDirectory, "/writelog.log" ).normalize().toString();
 	}
 
 	@AfterAll
 	public static void teardown() {
 		System.setOut( originalOut );
-
+		LoggingService.getInstance().shutdownAppenders();
+		if ( FileSystemUtil.exists( logFilePath ) ) {
+			FileSystemUtil.deleteFile( logFilePath );
+		}
 	}
 
 	@BeforeEach
@@ -72,7 +77,7 @@ public class WriteLogTest {
 		outContent.reset();
 	}
 
-	@DisplayName( "It can write a default log" )
+	@DisplayName( "It can write to the default log file" )
 	@Test
 	public void testPrint() {
 		instance.executeSource(
@@ -80,45 +85,45 @@ public class WriteLogTest {
 		    writeLog( "Hello Logger!" )
 		    """,
 		    context );
+
+		// Assert we got here
+		assertTrue( StringUtils.contains( outContent.toString(), "Hello Logger!" ) );
 	}
 
-	@DisplayName( "It can write a default with a custom category" )
+	@DisplayName( "It can write a default with a compat log argument" )
 	@Test
 	public void testCategory() {
 		instance.executeSource(
 		    """
-		    writeLog( text="Hello Logger!", log="Custom" )
+		    writeLog( text="Hola Logger!", log="Custom" )
 		    """,
 		    context );
+		// Assert we got here
+		assertTrue( StringUtils.contains( outContent.toString(), "Hola Logger!" ) );
 	}
 
 	@DisplayName( "It can write a default with a custom log file" )
 	@Test
 	public void testCustomFile() {
 		String logFilePath = Paths.get( logsDirectory, "/foo.log" ).normalize().toString();
-		if ( FileSystemUtil.exists( logFilePath ) ) {
-			FileSystemUtil.deleteFile( logFilePath );
-		}
 		instance.executeSource(
 		    """
-		    writeLog( text="Hello Logger!", log="Foo", file="foo.log" )
+		    writeLog( text="Custom Logger!", file="foo.log" )
 		    """,
 		    context );
 		assertTrue( FileSystemUtil.exists( logFilePath ) );
 		String fileContent = StringCaster.cast( FileSystemUtil.read( logFilePath ) );
-		assertTrue( StringUtils.contains( fileContent, "Hello Logger!" ) );
+		assertTrue( StringUtils.contains( fileContent, "Custom Logger!" ) );
+
 	}
 
 	@DisplayName( "It can write a default with a custom log file" )
 	@Test
 	public void testCustomFileAndLevel() {
 		String logFilePath = Paths.get( logsDirectory, "/foo.log" ).normalize().toString();
-		if ( FileSystemUtil.exists( logFilePath ) ) {
-			FileSystemUtil.deleteFile( logFilePath );
-		}
 		instance.executeSource(
 		    """
-		    writeLog( text="Hello Error Logger!", log="Foo", file="foo.log", type="Error" );
+		    writeLog( text="Hello Error Logger!", file="foo.log", type="Error" );
 		    """,
 		    context );
 
@@ -131,6 +136,7 @@ public class WriteLogTest {
 		String fileContent = StringCaster.cast( FileSystemUtil.read( logFilePath ) );
 		assertTrue( StringUtils.contains( fileContent, "[ERROR]" ) );
 		assertTrue( StringUtils.contains( fileContent, "Hello Error Logger!" ) );
+
 	}
 
 }

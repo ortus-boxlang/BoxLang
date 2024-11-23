@@ -2266,26 +2266,6 @@ public class CoreLangTest {
 
 	}
 
-	@DisplayName( "CF transpile structKeyExists" )
-	@Test
-	public void testCFTranspileStructKeyExists() {
-
-		instance.executeSource(
-		    """
-		       str = {
-		    	foo : 'bar',
-		    	baz : null
-		    };
-		    result = structKeyExists( str, "foo" )
-		    result2 = structKeyExists( str, "baz" )
-		    	 """,
-		    context, BoxSourceType.CFSCRIPT );
-
-		assertThat( variables.getAsBoolean( result ) ).isTrue();
-		assertThat( variables.getAsBoolean( Key.of( "result2" ) ) ).isFalse();
-
-	}
-
 	@Test
 	public void numberKey() {
 

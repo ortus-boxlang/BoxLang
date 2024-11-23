@@ -62,7 +62,7 @@ import ortus.boxlang.runtime.interceptors.Logging;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.loader.DynamicClassLoader;
-import ortus.boxlang.runtime.logging.LoggingConfigurator;
+import ortus.boxlang.runtime.logging.LoggingService;
 import ortus.boxlang.runtime.runnables.BoxScript;
 import ortus.boxlang.runtime.runnables.BoxTemplate;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
@@ -92,7 +92,8 @@ import ortus.boxlang.runtime.util.ResolvedFilePath;
 import ortus.boxlang.runtime.util.Timer;
 
 /**
- * Represents the top level runtime container for box lang. Config, global scopes, mappings, threadpools, etc all go here.
+ * Represents the top level runtime container for box lang. Config, global
+ * scopes, mappings, threadpools, etc all go here.
  * All threads, requests, invocations, etc share this.
  */
 public class BoxRuntime implements java.io.Closeable {
@@ -158,7 +159,8 @@ public class BoxRuntime implements java.io.Closeable {
 
 	/**
 	 * Runtime global services.
-	 * This can be used to store ANY service and make it available to the entire runtime as a singleton.
+	 * This can be used to store ANY service and make it available to the entire
+	 * runtime as a singleton.
 	 */
 	private ConcurrentHashMap<Key, IService>	globalServices			= new ConcurrentHashMap<>();
 
@@ -225,10 +227,12 @@ public class BoxRuntime implements java.io.Closeable {
 	private ModuleService						moduleService;
 
 	/**
-	 * The BoxPiler implementation the runtime will use. At this time we offer two choices:
+	 * The BoxPiler implementation the runtime will use. At this time we offer two
+	 * choices:
 	 * 1. JavaBoxpiler - Generates Java source code and compiles it via the JDK
 	 * 2. ASMBoxpiler - Generates bytecode directly via ASM
-	 * However, developers can create their own Boxpiler implementations and register them with the runtime
+	 * However, developers can create their own Boxpiler implementations and
+	 * register them with the runtime
 	 * via configuration.
 	 */
 	private IBoxpiler							boxpiler;
@@ -247,6 +251,12 @@ public class BoxRuntime implements java.io.Closeable {
 	 * The global class locator service
 	 */
 	private ClassLocator						classLocator;
+
+	/**
+	 * Singleton Logging Service that manages all logging events, appenders and more
+	 * Please note that it does not adhere to the IService to avoid chicken-and-egg issues
+	 */
+	private LoggingService						loggingService;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -275,7 +285,8 @@ public class BoxRuntime implements java.io.Closeable {
 	 * @param debugMode   true if the runtime should be started in debug mode
 	 * @param configPath  The path to the configuration file to load as overrides
 	 * @param runtimeHome The path to the runtime home directory
-	 * @param options     The CLI Options that were used to start the runtime or null if not started via CLI
+	 * @param options     The CLI Options that were used to start the runtime or
+	 *                    null if not started via CLI
 	 */
 	private BoxRuntime( Boolean debugMode, String configPath, String runtimeHome, CLIOptions options ) {
 		Map<String, String> envVars = System.getenv();
@@ -311,7 +322,8 @@ public class BoxRuntime implements java.io.Closeable {
 	 * Hierarchical loading of the configuration
 	 *
 	 * @param debugMode  The debug mode to load in the configuration
-	 * @param configPath The path to the configuration file to load as overrides, this can be null
+	 * @param configPath The path to the configuration file to load as overrides,
+	 *                   this can be null
 	 */
 	private void loadConfiguration( Boolean debugMode, String configPath ) {
 		ConfigLoader loader = ConfigLoader.getInstance();
@@ -320,18 +332,17 @@ public class BoxRuntime implements java.io.Closeable {
 
 		this.interceptorService.announce(
 		    BoxEvent.ON_CONFIGURATION_LOAD,
-		    Struct.of( "config", this.configuration )
-		);
+		    Struct.of( "config", this.configuration ) );
 
-		// 2. Runtime Home Override? Check runtime home for a ${boxlang-home}/config/boxlang.json
+		// 2. Runtime Home Override? Check runtime home for a
+		// ${boxlang-home}/config/boxlang.json
 		String runtimeHomeConfigPath = Paths.get( getRuntimeHome().toString(), "config", "boxlang.json" ).toString();
 		if ( Files.exists( Path.of( runtimeHomeConfigPath ) ) ) {
 			IStruct appliedConfig = loader.mergeEnvironmentOverrides( loader.deserializeConfig( runtimeHomeConfigPath ) );
 			this.configuration.process( appliedConfig );
 			this.interceptorService.announce(
 			    BoxEvent.ON_CONFIGURATION_OVERRIDE_LOAD,
-			    Struct.of( "config", this.configuration, "configOverride", runtimeHomeConfigPath )
-			);
+			    Struct.of( "config", this.configuration, "configOverride", runtimeHomeConfigPath ) );
 		}
 
 		// 3. CLI or ENV Config Path Override, which comes via the arguments
@@ -340,8 +351,7 @@ public class BoxRuntime implements java.io.Closeable {
 			this.configuration.process( appliedConfig );
 			this.interceptorService.announce(
 			    BoxEvent.ON_CONFIGURATION_OVERRIDE_LOAD,
-			    Struct.of( "config", this.configuration, "configOverride", configPath )
-			);
+			    Struct.of( "config", this.configuration, "configOverride", configPath ) );
 		}
 
 		// Finally verify if we overwrote the debugmode in one of the configs above
@@ -349,24 +359,21 @@ public class BoxRuntime implements java.io.Closeable {
 			this.debugMode = this.configuration.debugMode;
 			// Reconfigure the logging if enabled
 			if ( this.debugMode ) {
-				LoggingConfigurator.reconfigureDebugMode( this.debugMode );
+				this.loggingService.reconfigureDebugMode( this.debugMode );
 			}
 			this.logger.info( "+ DebugMode detected in config, overriding to {}", this.debugMode );
 		}
 
 		// AST Capture experimental feature
 		BooleanCaster.attempt(
-		    this.configuration.experimental.getOrDefault( "ASTCapture", false )
-		).ifSuccessful(
-		    astCapture -> {
-			    if ( astCapture ) {
-				    this.interceptorService.register(
-				        DynamicObject.of( new ASTCapture( false, true ) ),
-				        Key.onParse
-				    );
-			    }
-		    }
-		);
+		    this.configuration.experimental.getOrDefault( "ASTCapture", false ) ).ifSuccessful(
+		        astCapture -> {
+			        if ( astCapture ) {
+				        this.interceptorService.register(
+				            DynamicObject.of( new ASTCapture( false, true ) ),
+				            Key.onParse );
+			        }
+		        } );
 
 		// Load core logger and other core interceptions
 		this.interceptorService.register( new Logging( this ) );
@@ -381,7 +388,8 @@ public class BoxRuntime implements java.io.Closeable {
 			try {
 				Files.createDirectories( this.runtimeHome );
 			} catch ( IOException e ) {
-				throw new BoxRuntimeException( "Could not create runtime home directory at [" + this.runtimeHome + "]", e );
+				throw new BoxRuntimeException( "Could not create runtime home directory at [" + this.runtimeHome + "]",
+				    e );
 			}
 		}
 
@@ -393,7 +401,8 @@ public class BoxRuntime implements java.io.Closeable {
 				    try {
 					    Files.createDirectories( dirPath );
 				    } catch ( IOException e ) {
-					    throw new BoxRuntimeException( "Could not create runtime home directory at [" + dirPath + "]", e );
+					    throw new BoxRuntimeException(
+					        "Could not create runtime home directory at [" + dirPath + "]", e );
 				    }
 			    }
 		    } );
@@ -408,22 +417,26 @@ public class BoxRuntime implements java.io.Closeable {
 			}
 		}
 
-		// If we don't have the config/boxlang.json file in the runtime home, copy it from the resources
+		// If we don't have the config/boxlang.json file in the runtime home, copy it
+		// from the resources
 		Path runtimeHomeConfigPath = Paths.get( this.runtimeHome.toString(), "config", "boxlang.json" );
 		if ( !Files.exists( runtimeHomeConfigPath ) ) {
 			try ( InputStream inputStream = BoxRuntime.class.getResourceAsStream( "/config/boxlang.json" ) ) {
 				Files.copy( inputStream, runtimeHomeConfigPath );
 			} catch ( IOException e ) {
-				throw new BoxRuntimeException( "Could not copy runtime home configuration file to [" + runtimeHomeConfigPath + "]", e );
+				throw new BoxRuntimeException(
+				    "Could not copy runtime home configuration file to [" + runtimeHomeConfigPath + "]", e );
 			}
 		}
 
-		// Copy the META-INF/boxlang/version.properties to the runtime home always, and overwrite if it exists
+		// Copy the META-INF/boxlang/version.properties to the runtime home always, and
+		// overwrite if it exists
 		Path runtimeHomeVersionPath = Paths.get( this.runtimeHome.toString(), "version.properties" );
 		try ( InputStream inputStream = BoxRuntime.class.getResourceAsStream( "/META-INF/boxlang/version.properties" ) ) {
 			Files.copy( inputStream, runtimeHomeVersionPath, java.nio.file.StandardCopyOption.REPLACE_EXISTING );
 		} catch ( IOException e ) {
-			throw new BoxRuntimeException( "Could not copy runtime home version file to [" + runtimeHomeVersionPath + "]", e );
+			throw new BoxRuntimeException(
+			    "Could not copy runtime home version file to [" + runtimeHomeVersionPath + "]", e );
 		}
 
 	}
@@ -432,14 +445,22 @@ public class BoxRuntime implements java.io.Closeable {
 	 * This is the startup of the runtime called internally by the constructor
 	 * once the instance is set in order to avoid circular dependencies.
 	 *
-	 * Any logic that requires any services or operations to be seeded first, then go here.
+	 * Any logic that requires any services or operations to be seeded first, then
+	 * go here.
+	 *
+	 * @param debugMode True if the runtime should be started in debug mode
 	 */
-	private void startup() {
+	private void startup( Boolean debugMode ) {
 		// Internal timer
 		timerUtil.start( "runtime-startup" );
 
+		// Startup the Logging Service: Unique as it's not an IService
+		this.loggingService	= LoggingService.getInstance( this );
+
 		// Startup basic logging
-		this.logger = LoggerFactory.getLogger( BoxRuntime.class );
+		// Here is where LogBack looks via ServiceLoader for a `Configurator` class
+		// Which in our case is our {@link LoggingConfigurator} class.
+		this.logger			= LoggerFactory.getLogger( BoxRuntime.class );
 		// We can now log the startup
 		this.logger.info( "+ Starting up BoxLang Runtime" );
 
@@ -454,11 +475,12 @@ public class BoxRuntime implements java.io.Closeable {
 		this.schedulerService	= new SchedulerService( this );
 		this.dataSourceService	= new DatasourceService( this );
 
-		// Initiate the Class Locator Service in charge of doing all the class resolutions
+		// Initiate the Class Locator Service in charge of doing all the class
+		// resolutions
 		this.classLocator		= ClassLocator.getInstance( this );
 
 		// Load the configurations and overrides
-		loadConfiguration( this.debugMode, this.configPath );
+		loadConfiguration( debugMode, this.configPath );
 		// Anythying below might use configuration items
 
 		// Ensure home assets
@@ -469,8 +491,7 @@ public class BoxRuntime implements java.io.Closeable {
 		    Key.runtime,
 		    getConfiguration().getJavaLibraryPaths(),
 		    this.getClass().getClassLoader(),
-		    true
-		);
+		    true );
 		// Startup the right Compiler
 		this.boxpiler		= chooseBoxpiler();
 		// Seed Mathematical Precision for the runtime
@@ -483,15 +504,19 @@ public class BoxRuntime implements java.io.Closeable {
 		this.componentService.onStartup();
 		this.applicationService.onStartup();
 
-		// Create our runtime context that will be the granddaddy of all contexts that execute inside this runtime
+		// Create our runtime context that will be the granddaddy of all contexts that
+		// execute inside this runtime
 		this.runtimeContext = new RuntimeBoxContext();
 		// Now startup the modules so we can have a runtime context available to them
 		this.moduleService.onStartup();
-		// Now the cache service can be started, this allows for modules to register caches
+		// Now the cache service can be started, this allows for modules to register
+		// caches
 		this.cacheService.onStartup();
-		// Now all schedulers can be started, this allows for modules to register schedulers
+		// Now all schedulers can be started, this allows for modules to register
+		// schedulers
 		this.schedulerService.onStartup();
-		// Now the datasource manager can be started, this allows for modules to register datasources
+		// Now the datasource manager can be started, this allows for modules to
+		// register datasources
 		this.dataSourceService.onStartup();
 
 		// Global Services are now available, start them up
@@ -507,13 +532,11 @@ public class BoxRuntime implements java.io.Closeable {
 		this.logger.debug(
 		    "+ BoxLang Runtime Started at [{}] in [{}]ms",
 		    Instant.now(),
-		    timerUtil.stopAndGetMillis( "runtime-startup" )
-		);
+		    timerUtil.stopAndGetMillis( "runtime-startup" ) );
 
 		// Announce it baby! Runtime is up
 		this.interceptorService.announce(
-		    BoxEvent.ON_RUNTIME_START
-		);
+		    BoxEvent.ON_RUNTIME_START );
 	}
 
 	/**
@@ -540,7 +563,8 @@ public class BoxRuntime implements java.io.Closeable {
 	/**
 	 * Get or startup a BoxLang Runtime instance.
 	 * <p>
-	 * Another variation for NON-cli applications using just the debug mode and a config override.
+	 * Another variation for NON-cli applications using just the debug mode and a
+	 * config override.
 	 *
 	 * @param debugMode  True if the runtime should be started in debug mode
 	 * @param configPath The path to the configuration file to load as overrides
@@ -555,11 +579,13 @@ public class BoxRuntime implements java.io.Closeable {
 	/**
 	 * Get or startup a BoxLang Runtime instance.
 	 * <p>
-	 * This is for NON-cli applications using just a runtime home directory and config path.
+	 * This is for NON-cli applications using just a runtime home directory and
+	 * config path.
 	 * The debug mode will be identified by ENV or configuration.
 	 *
 	 * @param configPath  The path to the configuration file to load as overrides
-	 * @param runtimeHome The path to the runtime home directory where all the runtime assets are stored
+	 * @param runtimeHome The path to the runtime home directory where all the
+	 *                    runtime assets are stored
 	 *
 	 * @return A BoxRuntime instance
 	 *
@@ -573,7 +599,8 @@ public class BoxRuntime implements java.io.Closeable {
 	 * <p>
 	 * This method is used exclusively to start a CLI runtime instance.
 	 *
-	 * @param options The CLI Options that were used to start the runtime or null if not started via CLI
+	 * @param options The CLI Options that were used to start the runtime or null if
+	 *                not started via CLI
 	 *
 	 * @return A BoxRuntime instance
 	 */
@@ -584,11 +611,13 @@ public class BoxRuntime implements java.io.Closeable {
 	/**
 	 * Get or startup a BoxLang Runtime instance.
 	 * <p>
-	 * This variation doesn't use the CLIOptions as most likely this method is used by NON-CLI applications.
+	 * This variation doesn't use the CLIOptions as most likely this method is used
+	 * by NON-CLI applications.
 	 *
 	 * @param debugMode   True if the runtime should be started in debug mode
 	 * @param configPath  The path to the configuration file to load as overrides
-	 * @param runtimeHome The path to the runtime home directory where all the runtime assets are stored
+	 * @param runtimeHome The path to the runtime home directory where all the
+	 *                    runtime assets are stored
 	 *
 	 * @return A BoxRuntime instance
 	 */
@@ -603,8 +632,10 @@ public class BoxRuntime implements java.io.Closeable {
 	 *
 	 * @param debugMode   True if the runtime should be started in debug mode
 	 * @param configPath  The path to the configuration file to load as overrides
-	 * @param runtimeHome The path to the runtime home directory where all the runtime assets are stored
-	 * @param options     The CLI Options that were used to start the runtime or null if not started via CLI
+	 * @param runtimeHome The path to the runtime home directory where all the
+	 *                    runtime assets are stored
+	 * @param options     The CLI Options that were used to start the runtime or
+	 *                    null if not started via CLI
 	 *
 	 * @return A BoxRuntime instance
 	 */
@@ -616,13 +647,14 @@ public class BoxRuntime implements java.io.Closeable {
 				}
 			}
 			// We split in order to avoid circular dependencies on the runtime
-			instance.startup();
+			instance.startup( debugMode );
 		}
 		return instance;
 	}
 
 	/**
-	 * Get the singleton instance. This can be null if the runtime has not been started yet.
+	 * Get the singleton instance. This can be null if the runtime has not been
+	 * started yet.
 	 *
 	 * @return BoxRuntime instance or null if not started
 	 */
@@ -734,6 +766,13 @@ public class BoxRuntime implements java.io.Closeable {
 	}
 
 	/**
+	 * Get the logging service
+	 */
+	public LoggingService getLoggingService() {
+		return loggingService;
+	}
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Methods
 	 * --------------------------------------------------------------------------
@@ -813,7 +852,8 @@ public class BoxRuntime implements java.io.Closeable {
 	}
 
 	/**
-	 * Get the CLI Options that were used to start the runtime. This can be null if not started via CLI
+	 * Get the CLI Options that were used to start the runtime. This can be null if
+	 * not started via CLI
 	 *
 	 * @return The CLI Options or null if not started via CLI
 	 */
@@ -840,7 +880,8 @@ public class BoxRuntime implements java.io.Closeable {
 	}
 
 	/**
-	 * Announce an event with the provided {@link IStruct} of data short-hand for {@link #getInterceptorService()}.announce()
+	 * Announce an event with the provided {@link IStruct} of data short-hand for
+	 * {@link #getInterceptorService()}.announce()
 	 *
 	 * @param state The Key state to announce
 	 * @param data  The data to announce
@@ -850,7 +891,8 @@ public class BoxRuntime implements java.io.Closeable {
 	}
 
 	/**
-	 * Announce an event with the provided {@link IStruct} of data short-hand for {@link #getInterceptorService()}.announce()
+	 * Announce an event with the provided {@link IStruct} of data short-hand for
+	 * {@link #getInterceptorService()}.announce()
 	 *
 	 * @param state The state to announce
 	 * @param data  The data to announce
@@ -860,7 +902,8 @@ public class BoxRuntime implements java.io.Closeable {
 	}
 
 	/**
-	 * Announce an event with the provided {@link IStruct} of data short-hand for {@link #getInterceptorService()}.announce()
+	 * Announce an event with the provided {@link IStruct} of data short-hand for
+	 * {@link #getInterceptorService()}.announce()
 	 *
 	 * @param state The Key state to announce
 	 * @param data  The data to announce
@@ -886,7 +929,8 @@ public class BoxRuntime implements java.io.Closeable {
 	/**
 	 * Shut down the runtime with the option to force it
 	 *
-	 * @force If true, forces the shutdown of the runtime, nothing will be gracefully shutdown
+	 * @force If true, forces the shutdown of the runtime, nothing will be
+	 *        gracefully shutdown
 	 */
 	public synchronized void shutdown( Boolean force ) {
 		if ( instance == null ) {
@@ -897,8 +941,7 @@ public class BoxRuntime implements java.io.Closeable {
 		// Announce it globally!
 		instance.interceptorService.announce(
 		    BoxEvent.ON_RUNTIME_SHUTDOWN,
-		    Struct.of( "runtime", this, "force", force )
-		);
+		    Struct.of( "runtime", this, "force", force ) );
 
 		// Shutdown the global services first
 		this.globalServices.values()
@@ -1007,7 +1050,8 @@ public class BoxRuntime implements java.io.Closeable {
 		// Lazy Load the version info
 		if ( this.versionInfo == null ) {
 			Properties properties = new Properties();
-			try ( InputStream inputStream = BoxRunner.class.getResourceAsStream( "/META-INF/boxlang/version.properties" ) ) {
+			try ( InputStream inputStream = BoxRunner.class
+			    .getResourceAsStream( "/META-INF/boxlang/version.properties" ) ) {
 				properties.load( inputStream );
 			} catch ( IOException e ) {
 				e.printStackTrace();
@@ -1072,26 +1116,26 @@ public class BoxRuntime implements java.io.Closeable {
 	 * @param args         The arguments to pass to the template
 	 */
 	public void executeTemplate( String templatePath, IBoxContext context, String[] args ) {
-		// If the templatePath is a .cfs, .cfm then use the loadTemplateAbsolute, if it's a .cfc, .bx then use the loadClass
+		// If the templatePath is a .cfs, .cfm then use the loadTemplateAbsolute, if
+		// it's a .cfc, .bx then use the loadClass
 		if ( StringUtils.endsWithAny( templatePath, ".cfc", ".bx" ) ) {
 			// Load the class
 			Class<IBoxRunnable> targetClass = RunnableLoader.getInstance().loadClass(
 			    ResolvedFilePath.of( Paths.get( templatePath ) ),
-			    this.runtimeContext
-			);
+			    this.runtimeContext );
 			executeClass( targetClass, templatePath, context, args );
 		} else {
 			// Load the template
 			BoxTemplate targetTemplate = RunnableLoader.getInstance().loadTemplateAbsolute(
 			    this.runtimeContext,
-			    ResolvedFilePath.of( Paths.get( templatePath ) )
-			);
+			    ResolvedFilePath.of( Paths.get( templatePath ) ) );
 			executeTemplate( targetTemplate, context );
 		}
 	}
 
 	/**
-	 * Execute a single template in an existing context using a {@see URL} of the template to execution
+	 * Execute a single template in an existing context using a {@see URL} of the
+	 * template to execution
 	 *
 	 * @param templateURL A URL location to execution
 	 * @param context     The context to execute the template in
@@ -1108,7 +1152,8 @@ public class BoxRuntime implements java.io.Closeable {
 	}
 
 	/**
-	 * Execute a single template in its own context using a {@see URL} of the template to execution
+	 * Execute a single template in its own context using a {@see URL} of the
+	 * template to execution
 	 *
 	 * @param templateURL A URL location to execution
 	 *
@@ -1118,7 +1163,8 @@ public class BoxRuntime implements java.io.Closeable {
 	}
 
 	/**
-	 * Execute a single template in its own context using an already-loaded template runnable
+	 * Execute a single template in its own context using an already-loaded template
+	 * runnable
 	 *
 	 * @param template A template to execute
 	 *
@@ -1134,7 +1180,8 @@ public class BoxRuntime implements java.io.Closeable {
 	 * @param args   The arguments to pass to the module
 	 *
 	 * @throws BoxRuntimeException if the module does not exist
-	 * @throws BoxRuntimeException If the module is not executable, meaning it doesn't have a main method
+	 * @throws BoxRuntimeException If the module is not executable, meaning it
+	 *                             doesn't have a main method
 	 */
 	public void executeModule( String module, String[] args ) {
 		// Verify module exists or throw an exception
@@ -1159,7 +1206,8 @@ public class BoxRuntime implements java.io.Closeable {
 	 */
 	public void executeClass( Class<IBoxRunnable> targetClass, String templatePath, IBoxContext context, String[] args ) {
 		IBoxContext				scriptingContext	= ensureRequestTypeContext( context, Paths.get( templatePath ).toUri() );
-		BaseApplicationListener	listener			= scriptingContext.getParentOfType( RequestBoxContext.class ).getApplicationListener();
+		BaseApplicationListener	listener			= scriptingContext.getParentOfType( RequestBoxContext.class )
+		    .getApplicationListener();
 		Throwable				errorToHandle		= null;
 		IClassRunnable			target				= ( IClassRunnable ) DynamicObject.of( targetClass )
 		    .invokeConstructor( scriptingContext )
@@ -1174,7 +1222,8 @@ public class BoxRuntime implements java.io.Closeable {
 				boolean result = listener.onRequestStart( scriptingContext, new Object[] { templatePath } );
 				if ( result ) {
 					// Not sure onClassRequest() works here since we already have the class loaded
-					target.dereferenceAndInvoke( scriptingContext, Key.main, new Object[] { Array.fromArray( args ) }, false );
+					target.dereferenceAndInvoke( scriptingContext, Key.main, new Object[] { Array.fromArray( args ) },
+					    false );
 				}
 			} catch ( AbortException e ) {
 				try {
@@ -1190,7 +1239,8 @@ public class BoxRuntime implements java.io.Closeable {
 				}
 			} catch ( MissingIncludeException e ) {
 				try {
-					// Not sure this is reachable since this method is probably only reached if the template existed. But just in case.
+					// Not sure this is reachable since this method is probably only reached if the
+					// template existed. But just in case.
 					if ( !listener.onMissingTemplate( scriptingContext, new Object[] { e.getMissingFileName() } ) ) {
 						errorToHandle = e;
 					}
@@ -1225,13 +1275,15 @@ public class BoxRuntime implements java.io.Closeable {
 				Thread.currentThread().setContextClassLoader( oldClassLoader );
 			}
 		} else {
-			throw new BoxRuntimeException( "Class [" + targetClass.getName() + "] does not have a main method to execute." );
+			throw new BoxRuntimeException(
+			    "Class [" + targetClass.getName() + "] does not have a main method to execute." );
 		}
 
 	}
 
 	/**
-	 * Execute a single template in an existing context using an already-loaded template runnable
+	 * Execute a single template in an existing context using an already-loaded
+	 * template runnable
 	 *
 	 * @param template A template to execute
 	 * @param context  The context to execute the template in
@@ -1240,16 +1292,20 @@ public class BoxRuntime implements java.io.Closeable {
 		String templatePath = template.getRunnablePath().absolutePath().toString();
 		instance.logger.debug( "Executing template [{}]", template.getRunnablePath() );
 
-		IBoxContext				scriptingContext	= ensureRequestTypeContext( context, template.getRunnablePath().absolutePath().toUri() );
-		BaseApplicationListener	listener			= scriptingContext.getParentOfType( RequestBoxContext.class ).getApplicationListener();
+		IBoxContext				scriptingContext	= ensureRequestTypeContext( context,
+		    template.getRunnablePath().absolutePath().toUri() );
+		BaseApplicationListener	listener			= scriptingContext.getParentOfType( RequestBoxContext.class )
+		    .getApplicationListener();
 		Throwable				errorToHandle		= null;
 		RequestBoxContext.setCurrent( scriptingContext.getParentOfType( RequestBoxContext.class ) );
 		ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
 		try {
 			boolean result = listener.onRequestStart( scriptingContext, new Object[] { templatePath } );
 			if ( result ) {
-				// Not sure if this works in this concext, since it's expected to include the template itself, but in this case our template is a loaded
-				// class, not a path which may or may not be a file and may or may not be inside of a mapping allowing a relative path to it
+				// Not sure if this works in this concext, since it's expected to include the
+				// template itself, but in this case our template is a loaded
+				// class, not a path which may or may not be a file and may or may not be inside
+				// of a mapping allowing a relative path to it
 				// listener.onRequest( scriptingContext, new Object[] { templatePath } );
 				template.invoke( scriptingContext );
 			}
@@ -1267,7 +1323,8 @@ public class BoxRuntime implements java.io.Closeable {
 			}
 		} catch ( MissingIncludeException e ) {
 			try {
-				// Not sure this is reachable since this method is probably only reached if the template existed. But just in case.
+				// Not sure this is reachable since this method is probably only reached if the
+				// template existed. But just in case.
 				if ( !listener.onMissingTemplate( scriptingContext, new Object[] { e.getMissingFileName() } ) ) {
 					errorToHandle = e;
 				}
@@ -1441,7 +1498,8 @@ public class BoxRuntime implements java.io.Closeable {
 	}
 
 	/**
-	 * This is our REPL (Read-Eval-Print-Loop) method that allows for interactive BoxLang execution
+	 * This is our REPL (Read-Eval-Print-Loop) method that allows for interactive
+	 * BoxLang execution
 	 *
 	 * @param sourceStream An input stream to read
 	 * @param context      The context to execute the source in
@@ -1475,7 +1533,8 @@ public class BoxRuntime implements java.io.Closeable {
 
 				try {
 
-					BoxScript	scriptRunnable		= RunnableLoader.getInstance().loadStatement( context, source, BoxSourceType.BOXSCRIPT );
+					BoxScript	scriptRunnable		= RunnableLoader.getInstance().loadStatement( context, source,
+					    BoxSourceType.BOXSCRIPT );
 
 					// Fire!!!
 					Object		result				= scriptRunnable.invoke( scriptingContext );
@@ -1521,12 +1580,14 @@ public class BoxRuntime implements java.io.Closeable {
 
 	/**
 	 * Print the transpiled Java code for a given source file.
-	 * This is useful for debugging and understanding how the BoxLang code is transpiled to Java.
+	 * This is useful for debugging and understanding how the BoxLang code is
+	 * transpiled to Java.
 	 *
 	 * @param filePath The path to the source file
 	 */
 	public void printTranspiledJavaCode( String filePath ) {
-		ClassInfo		classInfo	= ClassInfo.forTemplate( ResolvedFilePath.of( "", "", Path.of( filePath ).getParent().toString(), filePath ),
+		ClassInfo		classInfo	= ClassInfo.forTemplate(
+		    ResolvedFilePath.of( "", "", Path.of( filePath ).getParent().toString(), filePath ),
 		    BoxSourceType.BOXSCRIPT,
 		    this.boxpiler );
 		ParsingResult	result		= boxpiler.parseOrFail( Path.of( filePath ).toFile() );
@@ -1546,8 +1607,10 @@ public class BoxRuntime implements java.io.Closeable {
 	}
 
 	/**
-	 * Check the given context to see if it has a variables scope. If not, create a new scripting
-	 * context that has a variables scope and return that with the original context as the parent.
+	 * Check the given context to see if it has a variables scope. If not, create a
+	 * new scripting
+	 * context that has a variables scope and return that with the original context
+	 * as the parent.
 	 *
 	 * @param context The context to check
 	 *
@@ -1558,8 +1621,10 @@ public class BoxRuntime implements java.io.Closeable {
 	}
 
 	/**
-	 * Check the given context to see if it has a request scope. If not, create a new scripting
-	 * context that has a request scope and return that with the original context as the parent.
+	 * Check the given context to see if it has a request scope. If not, create a
+	 * new scripting
+	 * context that has a request scope and return that with the original context as
+	 * the parent.
 	 *
 	 * @param context  The context to check
 	 * @param template The template to use for the context if needed

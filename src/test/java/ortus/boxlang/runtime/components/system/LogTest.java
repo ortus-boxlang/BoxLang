@@ -21,8 +21,10 @@ package ortus.boxlang.runtime.components.system;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.PrintStream;
 import java.nio.file.Paths;
 
+import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -34,7 +36,7 @@ import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.logging.LoggingService;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
@@ -42,27 +44,40 @@ import ortus.boxlang.runtime.util.FileSystemUtil;
 
 public class LogTest {
 
-	static BoxRuntime	instance;
-	static String		logsDirectory;
-	IBoxContext			context;
-	IScope				variables;
-	static Key			result	= new Key( "result" );
+	static BoxRuntime				instance;
+	static String					logsDirectory;
+	IBoxContext						context;
+	IScope							variables;
+	static Key						result		= new Key( "result" );
+	static String					logFilePath;
+	static String					logFileName;
+	static ByteArrayOutputStream	outContent;
+	static PrintStream				originalOut	= System.out;
 
 	@BeforeAll
 	public static void setUp() {
 		instance		= BoxRuntime.getInstance( true );
 		logsDirectory	= instance.getConfiguration().logsDirectory;
-
+		outContent		= new ByteArrayOutputStream();
+		System.setOut( new PrintStream( outContent ) );
+		logFileName	= "bxlog.log";
+		logFilePath	= Paths.get( logsDirectory, "/" + logFileName ).normalize().toString();
 	}
 
 	@AfterAll
-	public static void teardown() {
+	public static void tearDown() {
+		System.setOut( originalOut );
+		LoggingService.getInstance().shutdownAppenders();
+		if ( FileSystemUtil.exists( logFilePath ) ) {
+			FileSystemUtil.deleteFile( logFilePath );
+		}
 	}
 
 	@BeforeEach
 	public void setupEach() {
 		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
 		variables	= context.getScopeNearby( VariablesScope.name );
+		outContent.reset();
 	}
 
 	@DisplayName( "It tests the BIF Log with Script parsing" )
@@ -70,9 +85,10 @@ public class LogTest {
 	public void testComponentScript() {
 		instance.executeSource(
 		    """
-		    log text="Hello Logger!" log="Foo" file="foo.log";
+		    log text="Hello Logger!" file="bxlog";
 		    """,
 		    context, BoxSourceType.BOXSCRIPT );
+		assertTrue( StringUtils.contains( outContent.toString(), "Hello Logger!" ) );
 	}
 
 	@DisplayName( "It tests the BIF Log with CFML parsing" )
@@ -80,9 +96,10 @@ public class LogTest {
 	public void testComponentCF() {
 		instance.executeSource(
 		    """
-		    <cflog text="Hello Logger!" log="Foo" file="foo.log" />
+		    <cflog text="Hello Logger!" file="bxlog.log" />
 		    """,
 		    context, BoxSourceType.CFTEMPLATE );
+		assertTrue( StringUtils.contains( outContent.toString(), "Hello Logger!" ) );
 	}
 
 	@DisplayName( "It tests the BIF Log with BoxLang parsing" )
@@ -90,66 +107,10 @@ public class LogTest {
 	public void testComponentBX() {
 		instance.executeSource(
 		    """
-		    <bx:log text="Hello Logger!" log="Foo" file="foo.log" />
+		    <bx:log text="Hello Logger!" file="bxlog.log" />
 		    """,
 		    context, BoxSourceType.BOXTEMPLATE );
-	}
-
-	@DisplayName( "It tests the BIF Log with Script parsing" )
-	@Test
-	public void testComponentCustomLogScript() {
-		String logFilePath = Paths.get( logsDirectory, "/foo.log" ).normalize().toString();
-		if ( FileSystemUtil.exists( logFilePath ) ) {
-			FileSystemUtil.deleteFile( logFilePath );
-		}
-
-		instance.executeSource(
-		    """
-		    log text="Hello Logger!" log="Foo" file="foo.log";
-		    """,
-		    context, BoxSourceType.BOXSCRIPT );
-
-		assertTrue( FileSystemUtil.exists( logFilePath ) );
-		String fileContent = StringCaster.cast( FileSystemUtil.read( logFilePath ) );
-		assertTrue( StringUtils.contains( fileContent, "Hello Logger!" ) );
-	}
-
-	@DisplayName( "It tests the BIF Log with CF tag parsing" )
-	@Test
-	public void testComponentCustomLogCF() {
-		String logFilePath = Paths.get( logsDirectory, "/foo.log" ).normalize().toString();
-		if ( FileSystemUtil.exists( logFilePath ) ) {
-			FileSystemUtil.deleteFile( logFilePath );
-		}
-
-		instance.executeSource(
-		    """
-		    <cflog text="Hello Logger!" log="Foo" file="foo.log"/>
-		    """,
-		    context, BoxSourceType.CFTEMPLATE );
-
-		assertTrue( FileSystemUtil.exists( logFilePath ) );
-		String fileContent = StringCaster.cast( FileSystemUtil.read( logFilePath ) );
-		assertTrue( StringUtils.contains( fileContent, "Hello Logger!" ) );
-	}
-
-	@DisplayName( "It tests the BIF Log with BX tag parsing" )
-	@Test
-	public void testComponentCustomLogBX() {
-		String logFilePath = Paths.get( logsDirectory, "/foo.log" ).normalize().toString();
-		if ( FileSystemUtil.exists( logFilePath ) ) {
-			FileSystemUtil.deleteFile( logFilePath );
-		}
-
-		instance.executeSource(
-		    """
-		    <bx:log text="Hello Logger!" log="Foo" file="foo.log"/>
-		    """,
-		    context, BoxSourceType.BOXTEMPLATE );
-
-		assertTrue( FileSystemUtil.exists( logFilePath ) );
-		String fileContent = StringCaster.cast( FileSystemUtil.read( logFilePath ) );
-		assertTrue( StringUtils.contains( fileContent, "Hello Logger!" ) );
+		assertTrue( StringUtils.contains( outContent.toString(), "Hello Logger!" ) );
 	}
 
 }

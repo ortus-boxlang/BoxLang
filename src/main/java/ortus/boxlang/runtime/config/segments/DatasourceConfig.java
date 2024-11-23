@@ -99,8 +99,6 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	private static final List<Key>	CONNECTION_STRING_KEYS			= List.of(
 	    // Standard JDBC notation: (connectionString)
 	    Key.connectionString,
-	    // CFConfig notation (dsn)
-	    Key.dsn,
 	    // Adobe CF notation (url)
 	    Key.URL,
 	    // HikariConfig notation
@@ -395,21 +393,28 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 		    .stream()
 		    .forEach( entry -> this.properties.putIfAbsent( entry.getKey(), entry.getValue() ) );
 
-		// Validation and normalization
 		// DBDriver Alias for CFConfig
 		if ( this.properties.containsKey( Key.dbdriver ) ) {
 			this.properties.computeIfAbsent( Key.driver, key -> this.properties.get( Key.dbdriver ) );
 		}
 
-		// Type Driver Alias
+		// Type Driver Alias: Adobe
 		if ( this.properties.containsKey( Key.type ) ) {
 			this.properties.computeIfAbsent( Key.driver, key -> this.properties.get( Key.type ) );
 		}
 
-		// if no driver/type set, attempt to determine from the JDBC connection string.
+		// Driver Alias
 		String driver = this.properties.getOrDefault( Key.driver, "" ).toString();
+
+		// if no driver/type set, attempt to determine from the JDBC connection string.
 		if ( driver.isBlank() ) {
-			this.properties.put( Key.driver, discoverDriverFromJdbcUrl( getConnectionString() ) );
+			var connectionString = getConnectionString();
+			// From connection string or DSN (CFConfig)
+			if ( !connectionString.isBlank() ) {
+				this.properties.put( Key.driver, discoverDriverFromJdbcUrl( connectionString ) );
+			} else if ( this.properties.containsKey( Key.dsn ) ) {
+				this.properties.put( Key.driver, discoverDriverFromJdbcUrl( this.properties.getAsString( Key.dsn ) ) );
+			}
 		}
 
 		return this;
@@ -511,6 +516,10 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 		if ( this.properties.get( Key.custom ) instanceof String castedCustomParams ) {
 			this.properties.put( Key.custom, StructUtil.fromQueryString( castedCustomParams ) );
 		}
+		// Incorporate the driver's default 'custom' properties
+		IStruct customParams = this.properties.getAsStruct( Key.custom );
+		driverOrDefault.getDefaultCustomParams().entrySet().stream().forEach( entry -> customParams.putIfAbsent( entry.getKey(), entry.getValue() ) );
+		this.properties.put( Key.custom, customParams );
 
 		// Build out the JDBC URL according to the driver chosen or url chosen
 		result.setJdbcUrl( getOrBuildConnectionString( driverOrDefault ) );
@@ -577,14 +586,14 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	}
 
 	/**
-	 * Retrieve the connection string from the properties, or build it from the appropriate driver.
+	 * Retrieve the connection string from the properties, or build it from the appropriate driver module.
 	 *
 	 * If any of these properties are found, they will be returned as-is, in the following order:
 	 * <ul>
 	 * <li><code>connectionString</code></li>
-	 * <li><code>dsn</code></li>
 	 * <li><code>URL</code></li>
 	 * <li><code>jdbcURL</code></li>
+	 * <li><code>dsn</code> - Special case used on placeholder replacements</li>
 	 * </ul>
 	 *
 	 * If none of these properties are found then we delegate to a registered driver in the
@@ -595,29 +604,36 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	 * @return JDBC connection string, e.g. <code>jdbc:mysql://localhost:3306/foo?useSSL=false</code>
 	 */
 	private String getOrBuildConnectionString( IJDBCDriver driver ) {
-		// If we have a connection string, use it without asking the driver
-		// We are overriding the driver's connection string
-		String connectionString = getConnectionString();
+		// 1. Attempt to find the connection string from the properties first.
+		String connectionString = replaceConnectionPlaceholders( getConnectionString() );
 
-		if ( connectionString.isBlank() ) {
-			// Verify if we have a registered driver. Which needs to match
-			// the driver name in the module. ex: `mysql`, `postgresql`, etc.
-			connectionString = driver.buildConnectionURL( this );
+		// 2. If the attempt was empty, then try to find the connection string from the DSN cfconfig element
+		if ( connectionString.isEmpty() && this.properties.containsKey( Key.dsn ) ) {
+			connectionString = replaceConnectionPlaceholders( this.properties.getAsString( Key.dsn ) );
 		}
 
-		// Incorporate Placeholders : Just in case
-		return replaceConnectionPlaceholders( connectionString );
+		// 3. If the attempt was empty, then try to build the connection string from the driver
+		// This adds all the placeholders and custom parameters via the driver
+		if ( connectionString.isEmpty() ) {
+			connectionString = replaceConnectionPlaceholders( driver.buildConnectionURL( this ) );
+		} else {
+			connectionString = addCustomParams( connectionString, driver.getDefaultURIDelimiter(), driver.getDefaultDelimiter() );
+		}
+
+		// Finalize with custom params
+		return connectionString;
 	}
 
 	/**
 	 * This method is used to incorporate custom parameters into the target connection string.
 	 *
-	 * @param target    The target connection string
-	 * @param delimiter The delimiter to use
+	 * @param target       The target connection string
+	 * @param URIDelimiter The URI delimiter to use
+	 * @param delimiter    The delimiter to use for the custom parameters
 	 *
 	 * @return The connection string with custom parameters incorporated
 	 */
-	public String addCustomParams( String target, String delimiter ) {
+	public String addCustomParams( String target, String URIDelimiter, String delimiter ) {
 		String targetCustom = "";
 		if ( this.properties.get( Key.custom ) instanceof String castedCustom ) {
 			targetCustom = castedCustom;
@@ -625,15 +641,13 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 			targetCustom = StructUtil.toQueryString( ( IStruct ) this.properties.get( Key.custom ), delimiter );
 		}
 
+		// Append the custom parameters
 		if ( targetCustom.length() > 0 ) {
-			// If the target connection string already has parameters, append an ampersand
-			if ( target.contains( "?" ) && !target.endsWith( "?" ) ) {
-				target += delimiter;
-			} else if ( !target.contains( "?" ) ) {
-				target += "?";
+			// Incorporate URI Delimiter if it doesn't exist
+			if ( !target.contains( URIDelimiter ) ) {
+				target += URIDelimiter;
 			}
-
-			// Append the custom parameters
+			// Now add the custom parameters
 			target += targetCustom;
 		}
 
@@ -641,15 +655,15 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	}
 
 	/**
-	 * This method is used to incorporate custom parameters into the target connection string.
-	 * Using the default {@code &} delimiter.
+	 * This method is used to incorporate custom parameters into the target connection string
+	 * Using default delimiters of <code>?</code> and <code>&</code>
 	 *
 	 * @param target The target connection string
 	 *
 	 * @return The connection string with custom parameters incorporated
 	 */
 	public String addCustomParams( String target ) {
-		return addCustomParams( target, "&" );
+		return addCustomParams( target, "?", "&" );
 	}
 
 	/**
@@ -667,12 +681,24 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	 * @return The connection string with placeholders replaced
 	 */
 	private String replaceConnectionPlaceholders( String target ) {
+		// Short circuit if the target is empty
+		if ( target.isBlank() ) {
+			return target;
+		}
+
 		// Replace placeholders
-		target	= target.replace( "{host}", ( String ) this.properties.getOrDefault( Key.host, "NOT_FOUND" ) );
-		target	= target.replace( "{port}",
+		target	= target.replace(
+		    "{host}",
+		    StringCaster.cast( this.properties.getOrDefault( Key.host, "NOT_FOUND" ), true )
+		);
+		target	= target.replace(
+		    "{port}",
 		    StringCaster.cast( this.properties.getOrDefault( Key.port, 0 ), true )
 		);
-		target	= target.replace( "{database}", ( String ) this.properties.getOrDefault( Key.database, "NOT_FOUND" ) );
+		target	= target.replace(
+		    "{database}",
+		    StringCaster.cast( this.properties.getOrDefault( Key.database, "NOT_FOUND" ), true )
+		);
 
 		return target;
 	}
@@ -687,7 +713,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 		    .stream()
 		    .filter( key -> this.properties.containsKey( key ) && !this.properties.getAsString( key ).isBlank() )
 		    .findFirst()
-		    .map( key -> addCustomParams( this.properties.getAsString( key ) ) )
+		    .map( key -> this.properties.getAsString( key ) )
 		    .orElse( "" );
 	}
 
