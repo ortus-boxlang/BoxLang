@@ -17,6 +17,8 @@
  */
 package ortus.boxlang.runtime.logging;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -242,11 +244,50 @@ public class LoggingService {
 	}
 
 	/**
+	 * Verify if we have the passed in filePath appender
+	 *
+	 * @return True if the appender exists, false otherwise
+	 */
+	public boolean hasAppender( String filePath ) {
+		return this.appendersMap.containsKey( filePath.toLowerCase() );
+	}
+
+	/**
+	 * Remove the appender from the cache using the file path
+	 *
+	 * @param filePath The file path to remove the appender for
+	 *
+	 * @return True if the appender was removed, false otherwise
+	 */
+	public boolean removeAppender( String filePath ) {
+		return this.appendersMap.remove( filePath.toLowerCase() ) != null;
+	}
+
+	/**
+	 * Get a list of all registered file appenders
+	 *
+	 * @return The list of appenders
+	 */
+	public List<String> getAppendersList() {
+		return new ArrayList<>( this.appendersMap.keySet() );
+	}
+
+	/**
+	 * Shutdown all the appenders
+	 *
+	 * @return The logging service
+	 */
+	public LoggingService shutdownAppenders() {
+		this.appendersMap.values().forEach( FileAppender::stop );
+		return instance;
+	}
+
+	/**
 	 * Shutdown the logging service
 	 */
 	public LoggingService shutdown() {
 		// Shutdown all the appenders
-		this.appendersMap.values().forEach( FileAppender::stop );
+		shutdownAppenders();
 		return instance;
 	}
 

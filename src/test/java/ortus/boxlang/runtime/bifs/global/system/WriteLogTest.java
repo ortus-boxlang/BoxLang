@@ -35,6 +35,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.logging.LoggingService;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
@@ -63,6 +64,7 @@ public class WriteLogTest {
 	@AfterAll
 	public static void teardown() {
 		System.setOut( originalOut );
+		LoggingService.getInstance().shutdownAppenders();
 		if ( FileSystemUtil.exists( logFilePath ) ) {
 			FileSystemUtil.deleteFile( logFilePath );
 		}
