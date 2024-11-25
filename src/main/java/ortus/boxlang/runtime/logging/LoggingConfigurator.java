@@ -49,7 +49,7 @@ public class LoggingConfigurator extends LoggerContextAwareBase implements Confi
 	 *
 	 * @see https://logback.qos.ch/manual/layouts.html#conversionWord
 	 */
-	public static final String	LOG_FORMAT		= "%date %logger{0} [%level] %kvp %message%n";
+	public static final String	LOG_FORMAT		= "%date{STRICT} %logger{0} [%level] %kvp %message%n";
 
 	/**
 	 * The name of the context for the runtime
@@ -82,7 +82,6 @@ public class LoggingConfigurator extends LoggerContextAwareBase implements Confi
 		var encoder = new PatternLayoutEncoder();
 		encoder.setContext( loggerContext );
 		encoder.setPattern( LOG_FORMAT );
-		encoder.setImmediateFlush( true );
 		encoder.setOutputPatternAsHeader( true );
 		encoder.start();
 
