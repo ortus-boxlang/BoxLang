@@ -17,18 +17,26 @@
  */
 package ortus.boxlang.runtime.logging;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
+
+import org.apache.commons.io.FilenameUtils;
+import org.slf4j.LoggerFactory;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
+import ch.qos.logback.classic.spi.Configurator;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.FileAppender;
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.scopes.Key;
 
 /**
  * This service allows BoxLang to leverage logging facilities and interact with the logging system.
@@ -55,6 +63,9 @@ public class LoggingService {
 	 * --------------------------------------------------------------------------
 	 */
 
+	/**
+	 * Singleton
+	 */
 	private static LoggingService						instance;
 
 	/**
@@ -76,6 +87,11 @@ public class LoggingService {
 	 * The root logger for the runtime
 	 */
 	private Logger										rootLogger;
+
+	/**
+	 * The logger context for the runtime
+	 */
+	private LoggerContext								loggerContext;
 
 	/**
 	 * The BoxLang pattern encoder we use for logging
@@ -141,7 +157,7 @@ public class LoggingService {
 
 	/**
 	 * --------------------------------------------------------------------------
-	 * Methods
+	 * Getters & Setters
 	 * --------------------------------------------------------------------------
 	 */
 
@@ -200,6 +216,33 @@ public class LoggingService {
 	}
 
 	/**
+	 * Get the logger context
+	 *
+	 * @return The logger context
+	 */
+	public LoggerContext getLoggerContext() {
+		return this.loggerContext;
+	}
+
+	/**
+	 * Set the logger context
+	 *
+	 * @param loggerContext The logger context to set
+	 *
+	 * @return The logging service
+	 */
+	public LoggingService setLoggerContext( LoggerContext loggerContext ) {
+		this.loggerContext = loggerContext;
+		return instance;
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Runtime Methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
 	 * Enable debug mode for the runtime's root logger or not.
 	 *
 	 * This is usually a convenience method for the runtime to enable or disable
@@ -210,6 +253,77 @@ public class LoggingService {
 	 */
 	public LoggingService reconfigureDebugMode( Boolean debugMode ) {
 		this.rootLogger.setLevel( Boolean.TRUE.equals( debugMode ) ? Level.DEBUG : Level.INFO );
+		return instance;
+	}
+
+	/**
+	 * Log a message into a specific log file and a specific type
+	 *
+	 * @param message         The message to log
+	 * @param type            The type of log message (fatal, error, info, warn, debug, trace)
+	 * @param applicationName The name of the application requesting the log message
+	 * @param logFile         The destination file to log to in the logs directory. If empty, the default log file is used
+	 *
+	 * @return The logging service
+	 */
+	public LoggingService logMessage(
+	    String message,
+	    String type,
+	    String applicationName,
+	    String logFile ) {
+
+		// Default to info if no log level is passed
+		if ( type.isEmpty() ) {
+			type = DEFAULT_LOG_LEVEL;
+		}
+		// Get and Validate log level
+		Key logLevel = LogLevel.valueOf( type, false );
+
+		// The application name is used as the logging category.
+		// If it is empty, then use the default category
+		if ( applicationName.isEmpty() ) {
+			applicationName = DEFAULT_LOG_CATEGORY;
+		}
+
+		// If no file or log is passed, then use the default log file: boxruntime.log
+		if ( logFile.isEmpty() ) {
+			logFile = LoggingService.DEFAULT_LOG_CATEGORY + ".log";
+		}
+
+		// Verify the log file ends in `.log` and if not, append it
+		if ( !logFile.toLowerCase().endsWith( ".log" ) ) {
+			logFile += ".log";
+		}
+
+		// If the file is an absolute path, use it, otherwise use the logs directory as the base
+		String			filePath	= Path.of( logFile ).isAbsolute()
+		    ? Path.of( logFile ).normalize().toString()
+		    : Paths.get( getLogsDirectory(), "/", logFile ).normalize().toString();
+
+		// Build the logger context or get it if it exists
+		// Now that we have a context
+		// A logger is based on the {fileName} as the category. This allows multiple loggers
+		// for the same file, but different categories
+		final Logger	logger		= getLoggerContext().getLogger( FilenameUtils.getBaseName( filePath ).toLowerCase() );
+		logger.setLevel( Level.TRACE );
+
+		// Create or compute the file appender requested
+		// This provides locking also and caching so we don't have to keep creating them
+		// Shutdown will stop the appenders
+		logger.addAppender( getOrBuildAppender( filePath, getLoggerContext() ) );
+
+		// Log according to the level
+		switch ( logLevel.getNameNoCase() ) {
+			// No fatal in SL4J
+			case "FATAL" -> logger.error( message );
+			case "ERROR" -> logger.error( message );
+			case "WARN" -> logger.warn( message );
+			case "INFO" -> logger.info( message );
+			case "DEBUG" -> logger.debug( message );
+			case "TRACE" -> logger.trace( message );
+			default -> logger.info( message );
+		}
+
 		return instance;
 	}
 
@@ -288,7 +402,54 @@ public class LoggingService {
 	public LoggingService shutdown() {
 		// Shutdown all the appenders
 		shutdownAppenders();
+		this.loggerContext.stop();
 		return instance;
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Private Methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Gets the logger context or builds one if it doesn't exist (Usually in a servlet context)
+	 *
+	 * @return The logger context
+	 */
+	private LoggerContext getOrBuildLoggerContext() {
+		LoggerContext				logContext		= null;
+		org.slf4j.ILoggerFactory	loggerFactory	= LoggerFactory.getILoggerFactory();
+
+		// If our core SLF4J logger factory is returning a logback instance use that
+		if ( loggerFactory instanceof LoggerContext ) {
+			return ( LoggerContext ) loggerFactory;
+		}
+
+		// Log the issue and try to get the context from the configurator
+		loggerFactory
+		    .getLogger( getClass().getName() )
+		    .warn( "The LoggerFactory context is not an instance of Logback LoggerContext. Received class: {}", loggerFactory.getClass().getName() );
+
+		// otherwise grab the context from the configurator
+		LoggingConfigurator configurator = ServiceLoader
+		    .load( Configurator.class, BoxRuntime.class.getClassLoader() )
+		    .stream()
+		    .map( ServiceLoader.Provider::get )
+		    .map( LoggingConfigurator.class::cast )
+		    .findFirst()
+		    .orElse( null );
+
+		logContext = configurator.getLoggerContext();
+
+		// In the servlet context we are seeing the configurator configure method is not being run automagically
+		if ( logContext == null ) {
+			logContext = new LoggerContext();
+			logContext.start();
+			configurator.configure( logContext );
+		}
+
+		return logContext;
 	}
 
 }

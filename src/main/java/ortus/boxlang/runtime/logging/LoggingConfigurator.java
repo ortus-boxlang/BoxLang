@@ -29,27 +29,21 @@ import ch.qos.logback.core.Context;
 import ortus.boxlang.runtime.BoxRuntime;
 
 /**
- * Configures the bundled SLF4J provider via logback.
- *
- * THIS CLASS IS CALLED AUTOMATICALLY BY LOGBACK'S SERVICE LOADER MECHANISM.
- *
- * This class serves as a single endpoint for configuring the slf4j logging
- * provider. Currently that is logback, but in the future it may be another
- * provider.
- *
+ * This class configures LogBack for the BoxLang runtime.
+ * <p>
+ * <strong>THIS CLASS IS CALLED AUTOMATICALLY BY LOGBACK'S SERVICE LOADER MECHANISM.</strong>
+ * <p>
  * See https://logback.qos.ch/manual/configuration.html for more information on
  * logback configuration.
  */
 public class LoggingConfigurator extends LoggerContextAwareBase implements Configurator {
 
 	/**
-	 * Logback-specific encoder pattern. Thankfully, this is fairly legible compared
-	 * to the JUL pattern.
-	 * https://logback.qos.ch/manual/layouts.html#conversionWord
+	 * The log format for the BoxLang runtime
 	 *
 	 * @see https://logback.qos.ch/manual/layouts.html#conversionWord
 	 */
-	public static final String	LOG_FORMAT		= "[%date{STRICT}] [%highlight(%-5level)] [%thread] [%logger{0}] %kvp %message%n";
+	public static final String	LOG_FORMAT		= "[%date{STRICT}] [%thread] [%-5level] [%logger{0}] %kvp %message%n";
 
 	/**
 	 * The name of the context for the runtime
@@ -78,7 +72,7 @@ public class LoggingConfigurator extends LoggerContextAwareBase implements Confi
 	public ExecutionStatus configure( LoggerContext loggerContext ) {
 		loggerContext.setName( CONTEXT_NAME );
 
-		// Setup the encoder
+		// Setup the runtime encoder with the BoxLang format
 		var encoder = new PatternLayoutEncoder();
 		encoder.setContext( loggerContext );
 		encoder.setPattern( LOG_FORMAT );
@@ -88,7 +82,7 @@ public class LoggingConfigurator extends LoggerContextAwareBase implements Confi
 		var								debugMode	= BoxRuntime.getInstance().inDebugMode();
 		Level							logLevel	= Boolean.TRUE.equals( debugMode ) ? Level.DEBUG : Level.WARN;
 
-		// Configure a Console Appender
+		// Configure The Console Appender
 		// See: https://logback.qos.ch/manual/appenders.html
 		ConsoleAppender<ILoggingEvent>	appender	= new ConsoleAppender<>();
 		appender.setContext( loggerContext );
@@ -105,6 +99,7 @@ public class LoggingConfigurator extends LoggerContextAwareBase implements Confi
 
 		// Store the necessary configuration for the runtime
 		LoggingService.getInstance()
+		    .setLoggerContext( loggerContext )
 		    .setLoggingConfigurator( this )
 		    .setEncoder( encoder )
 		    .setRootLogger( rootLogger );
