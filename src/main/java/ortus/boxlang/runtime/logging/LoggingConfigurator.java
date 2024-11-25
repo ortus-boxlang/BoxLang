@@ -82,7 +82,6 @@ public class LoggingConfigurator extends LoggerContextAwareBase implements Confi
 		var encoder = new PatternLayoutEncoder();
 		encoder.setContext( loggerContext );
 		encoder.setPattern( LOG_FORMAT );
-		encoder.setOutputPatternAsHeader( true );
 		encoder.start();
 
 		// Base log level depending on debug mode
