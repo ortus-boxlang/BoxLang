@@ -71,8 +71,6 @@ public class Logging extends BaseInterceptor {
 	 * The <code>log</code> key is a shortcut to a specific log file. Available log files are: Application, Scheduler, etc.
 	 * Which is dumb and should be moved to the CFML compatibility module. Leaving until we move it.
 	 *
-	 * TODO: Encapsulate all logic to the service for reuse
-	 *
 	 * @param data The data to be passed to the interceptor
 	 *
 	 * @throws IIllegalArgumentException If the log level is not valid

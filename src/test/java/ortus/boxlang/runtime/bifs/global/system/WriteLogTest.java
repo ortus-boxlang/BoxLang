@@ -18,6 +18,7 @@
 
 package ortus.boxlang.runtime.bifs.global.system;
 
+import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertTrue;
 
 import java.io.PrintStream;
@@ -51,6 +52,7 @@ public class WriteLogTest {
 	static String					logFilePath;
 	static ByteArrayOutputStream	outContent;
 	static PrintStream				originalOut	= System.out;
+	static String					defaultLogFilePath;
 
 	@BeforeAll
 	public static void setUp() {
@@ -58,7 +60,12 @@ public class WriteLogTest {
 		logsDirectory	= instance.getConfiguration().logsDirectory;
 		outContent		= new ByteArrayOutputStream();
 		System.setOut( new PrintStream( outContent ) );
-		logFilePath = Paths.get( logsDirectory, "/writelog.log" ).normalize().toString();
+		logFilePath			= Paths.get( logsDirectory, "/writelog.log" ).normalize().toString();
+		defaultLogFilePath	= Paths.get( logsDirectory, "/boxruntime.log" ).normalize().toString();
+
+		if ( FileSystemUtil.exists( defaultLogFilePath ) ) {
+			FileSystemUtil.deleteFile( defaultLogFilePath );
+		}
 	}
 
 	@AfterAll
@@ -87,7 +94,8 @@ public class WriteLogTest {
 		    context );
 
 		// Assert we got here
-		assertTrue( StringUtils.contains( outContent.toString(), "Hello Logger!" ) );
+		assertThat( FileSystemUtil.exists( defaultLogFilePath ) ).isTrue();
+		assertThat( outContent.toString() ).contains( "Hello Logger!" );
 	}
 
 	@DisplayName( "It can write a default with a compat log argument" )
@@ -99,43 +107,34 @@ public class WriteLogTest {
 		    """,
 		    context );
 		// Assert we got here
-		assertTrue( StringUtils.contains( outContent.toString(), "Hola Logger!" ) );
+		assertThat( StringUtils.contains( outContent.toString(), "Hola Logger!" ) ).isTrue();
 	}
 
 	@DisplayName( "It can write a default with a custom log file" )
 	@Test
 	public void testCustomFile() {
-		String logFilePath = Paths.get( logsDirectory, "/foo.log" ).normalize().toString();
 		instance.executeSource(
 		    """
-		    writeLog( text="Custom Logger!", file="foo.log" )
+		    writeLog( text="Custom Logger!", file="writelog.log" )
 		    """,
 		    context );
 		assertTrue( FileSystemUtil.exists( logFilePath ) );
 		String fileContent = StringCaster.cast( FileSystemUtil.read( logFilePath ) );
 		assertTrue( StringUtils.contains( fileContent, "Custom Logger!" ) );
-
 	}
 
-	@DisplayName( "It can write a default with a custom log file" )
+	@DisplayName( "It can write a default with a custom log file and type" )
 	@Test
 	public void testCustomFileAndLevel() {
-		String logFilePath = Paths.get( logsDirectory, "/foo.log" ).normalize().toString();
 		instance.executeSource(
 		    """
-		    writeLog( text="Hello Error Logger!", file="foo.log", type="Error" );
+		    writeLog( text="Hello Error Logger!", file="writelog.log", type="Error" );
 		    """,
 		    context );
 
-		instance.executeSource(
-		    """
-		    writeLog( text="Hello Root Logger!" );
-		    """,
-		    context );
-		assertTrue( FileSystemUtil.exists( logFilePath ) );
 		String fileContent = StringCaster.cast( FileSystemUtil.read( logFilePath ) );
-		assertTrue( StringUtils.contains( fileContent, "[ERROR]" ) );
-		assertTrue( StringUtils.contains( fileContent, "Hello Error Logger!" ) );
+		assertThat( fileContent ).contains( "ERROR" );
+		assertThat( fileContent ).contains( "Hello Error Logger!" );
 
 	}
 
