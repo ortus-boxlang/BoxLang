@@ -22,7 +22,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.io.FilenameUtils;
@@ -32,7 +31,6 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
-import ch.qos.logback.classic.spi.Configurator;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.FileAppender;
 import ortus.boxlang.runtime.BoxRuntime;
@@ -439,25 +437,33 @@ public class LoggingService {
 		    .getLogger( getClass().getName() )
 		    .warn( "The LoggerFactory context is not an instance of Logback LoggerContext. Received class: {}", loggerFactory.getClass().getName() );
 
-		// otherwise grab the context from the configurator
-		LoggingConfigurator configurator = ServiceLoader
-		    .load( Configurator.class, BoxRuntime.class.getClassLoader() )
-		    .stream()
-		    .map( ServiceLoader.Provider::get )
-		    .map( LoggingConfigurator.class::cast )
-		    .findFirst()
-		    .orElse( null );
+		// Do we have a configurator?
+		if ( this.loggingConfigurator == null ) {
+			synchronized ( this ) {
+				if ( this.loggingConfigurator == null ) {
+					// In the servlet context we are seeing the configurator configure method is not being run automagically
+					loggerFactory
+					    .getLogger( getClass().getName() )
+					    .warn( "Log context was null, attempting to configure the logger context manually" );
 
-		logContext = configurator.getLoggerContext();
-
-		// In the servlet context we are seeing the configurator configure method is not being run automagically
-		if ( logContext == null ) {
-			logContext = new LoggerContext();
-			logContext.start();
-			configurator.configure( logContext );
+					logContext = new LoggerContext();
+					logContext.start();
+					var newLoggingConfig = new LoggingConfigurator();
+					newLoggingConfig.configure( logContext );
+					this.loggingConfigurator = newLoggingConfig;
+				}
+			}
 		}
 
-		return logContext;
+		return getLoggingConfigurator().getLoggerContext();
+		// LoggingConfigurator configurator = ServiceLoader
+		// .load( Configurator.class, BoxRuntime.class.getClassLoader() )
+		// .stream()
+		// .map( ServiceLoader.Provider::get )
+		// .map( LoggingConfigurator.class::cast )
+		// .findFirst()
+		// .orElse( null );
+		// logContext = configurator.getLoggerContext();
 	}
 
 }
