@@ -131,6 +131,11 @@ public class LoggingService {
 		return instance;
 	}
 
+	public LoggingService loadConfiguration() {
+		LoggerContext context = ( LoggerContext ) LoggerFactory.getILoggerFactory();
+		return instance;
+	}
+
 	/**
 	 * Get the singleton instance of the LoggingService
 	 *
@@ -221,6 +226,9 @@ public class LoggingService {
 	 * @return The logger context
 	 */
 	public LoggerContext getLoggerContext() {
+		if ( this.loggerContext == null ) {
+			this.loggerContext = getOrBuildLoggerContext();
+		}
 		return this.loggerContext;
 	}
 
@@ -304,7 +312,7 @@ public class LoggingService {
 		// Now that we have a context
 		// A logger is based on the {fileName} as the category. This allows multiple loggers
 		// for the same file, but different categories
-		final Logger	logger		= getLoggerContext().getLogger( FilenameUtils.getBaseName( filePath ).toLowerCase() );
+		final Logger	logger		= getOrBuildLoggerContext().getLogger( FilenameUtils.getBaseName( filePath ).toLowerCase() );
 		logger.setLevel( Level.TRACE );
 
 		// Create or compute the file appender requested

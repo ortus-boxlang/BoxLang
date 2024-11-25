@@ -58,7 +58,7 @@ public class LoggingConfigurator extends LoggerContextAwareBase implements Confi
 	}
 
 	/**
-	 * Configure the logging provider.
+	 * Configures the basic logging for the BoxLang runtime.
 	 * <p>
 	 * This is called by the logback service loader mechanism.
 	 * <p>
