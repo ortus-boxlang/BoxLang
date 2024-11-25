@@ -49,7 +49,7 @@ public class LoggingConfigurator extends LoggerContextAwareBase implements Confi
 	 *
 	 * @see https://logback.qos.ch/manual/layouts.html#conversionWord
 	 */
-	public static final String	LOG_FORMAT		= "%date{STRICT} %logger{0} [%level] %kvp %message%n";
+	public static final String	LOG_FORMAT		= "[%date{STRICT}] [%highlight(%-5level)] [%thread] [%logger{0}] %kvp %message%n";
 
 	/**
 	 * The name of the context for the runtime
