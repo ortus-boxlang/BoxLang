@@ -121,6 +121,22 @@ public class DynamicFunction extends UDF {
 	}
 
 	/**
+	 * Simple Constructor of just the name and the target and arguments
+	 *
+	 * @param name      The name of the function that will be used to register it
+	 * @param target    The target lambda that will be executed when the function is called
+	 * @param arguments The arguments of the function
+	 */
+	public DynamicFunction(
+	    Key name,
+	    BiFunction<FunctionBoxContext, DynamicFunction, Object> target,
+	    Argument[] arguments ) {
+		this.name		= name;
+		this.target		= target;
+		this.arguments	= arguments;
+	}
+
+	/**
 	 * Simple Constructor of just the name and the target
 	 *
 	 * @param name   The name of the function that will be used to register it

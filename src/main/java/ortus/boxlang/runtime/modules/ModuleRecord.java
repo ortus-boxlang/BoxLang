@@ -57,6 +57,7 @@ import ortus.boxlang.runtime.jdbc.drivers.IJDBCDriver;
 import ortus.boxlang.runtime.loader.DynamicClassLoader;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
+import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.ThisScope;
@@ -792,13 +793,19 @@ public class ModuleRecord {
 		    Key.processBody,
 		    ( context1, fnc ) -> {
 			    ArgumentsScope args	= context1.getArgumentsScope();
-			    Object		buffer	= args.get( "buffer" );
+
+			    Object		buffer	= args.get( Key.buffer );
 
 			    return oComponentProxy.processBody(
-			        ( IBoxContext ) args.get( "context" ),
-			        ( ComponentBody ) args.get( "body" ),
+			        ( IBoxContext ) args.get( Key.context ),
+			        ( ComponentBody ) args.get( Key.body ),
 			        buffer instanceof StringBuffer ? ( StringBuffer ) buffer : new StringBuffer()
 			    );
+		    },
+		    new Argument[] {
+		        new Argument( true, "any", Key.context ),
+		        new Argument( true, "any", Key.body ),
+		        new Argument( true, "any", Key.buffer )
 		    }
 		) );
 		// Get Name Delegate

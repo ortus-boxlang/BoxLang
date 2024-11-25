@@ -251,13 +251,6 @@ class ModuleRecordTest {
 		    """, context );
 		// @formatter:on
 
-		// Test the component
-		// @formatter:off
-		runtime.executeSource("""
-				<bx:HolaComponent>Hello</bx:HolaComponent>
-		    """, context, BoxSourceType.BOXTEMPLATE );
-		// @formatter:on
-
 		IScope variables = context.getScopeNearby( VariablesScope.name );
 		assertThat( variables.getAsString( Key.result ) )
 		    .isEqualTo( "Hello World, my name is boxlang and I am 0 years old" );
@@ -265,7 +258,16 @@ class ModuleRecordTest {
 		assertThat( variables.getAsString( Key.of( "result3" ) ) ).isEqualTo(
 		    "Hello World, my name is boxlang and I am 0 years old"
 		);
-		// assertThat( variables.getAsString( Key.of( "result4" ) ) ).isEqualTo( "Hola Mundo!" );
+
+		// Test the component body execution
+		// @formatter:off
+		runtime.executeSource("""
+				<bx:HolaComponent>Hello</bx:HolaComponent>
+				<bx:set result4 = getBoxContext().getBuffer().toString()>
+		    """, context, BoxSourceType.BOXTEMPLATE );
+		// @formatter:on
+		// The buffer is reversed on this component so it should be backwards
+		assertThat( variables.getAsString( Key.of( "result4" ) ).trim() ).isEqualTo( "olleH" );
 
 		// Test Module Class Locators
 		// @formatter:off
