@@ -87,11 +87,18 @@ public class WriteLogTest {
 	@DisplayName( "It can write to the default log file" )
 	@Test
 	public void testPrint() {
+		// @formatter:off
 		instance.executeSource(
 		    """
-		    writeLog( "Hello Logger!" )
+				writeLog( "Hello Logger!" )
+				writeLog( "Hola!" )
+				writeLog( text="Hola debug", type="Debug" )
+				writeLog( text="Hola debug", type="error" )
+				writeLog( text="Hola debug", type="warning" )
+				writeLog( text="Hola debug", type="info" )
 		    """,
 		    context );
+		// @formatter:on
 
 		// Assert we got here
 		assertThat( FileSystemUtil.exists( defaultLogFilePath ) ).isTrue();

@@ -279,7 +279,7 @@ public class LoggingService {
 	    String logFile ) {
 
 		// Default to info if no log level is passed
-		if ( type.isEmpty() ) {
+		if ( type == null || type.isEmpty() ) {
 			type = DEFAULT_LOG_LEVEL;
 		}
 		// Get and Validate log level
@@ -287,9 +287,11 @@ public class LoggingService {
 
 		// The application name is used as the logging category.
 		// If it is empty, then use the default category
-		if ( applicationName.isEmpty() ) {
-			applicationName = DEFAULT_LOG_CATEGORY;
+		if ( applicationName == null || applicationName.isEmpty() ) {
+			applicationName = "no-application";
 		}
+		// Include the application name in the message
+		message = String.format( "[%s] %s", applicationName, message );
 
 		// If no file or log is passed, then use the default log file: boxruntime.log
 		if ( logFile.isEmpty() ) {

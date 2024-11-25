@@ -64,7 +64,7 @@ public class Logging extends BaseInterceptor {
 	@InterceptionPoint
 	public void logMessage( IStruct data ) {
 		// The incoming data
-		String	applicationName	= ( String ) data.getOrDefault( Key.applicationName, LoggingService.DEFAULT_LOG_CATEGORY );
+		String	applicationName	= data.getAsString( Key.applicationName );
 		String	logText			= ( String ) data.getOrDefault( Key.text, "" );
 		String	logType			= ( String ) data.getOrDefault( Key.type, LoggingService.DEFAULT_LOG_LEVEL );
 		String	logFile			= ( String ) data.getOrDefault( Key.file, "" );
