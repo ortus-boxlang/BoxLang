@@ -799,7 +799,7 @@ public class ModuleRecord {
 			    return oComponentProxy.processBody(
 			        ( IBoxContext ) args.get( Key.context ),
 			        ( ComponentBody ) args.get( Key.body ),
-			        buffer instanceof StringBuffer ? ( StringBuffer ) buffer : new StringBuffer()
+			        buffer instanceof StringBuffer ? ( StringBuffer ) buffer : context.getBuffer()
 			    );
 		    },
 		    new Argument[] {
@@ -831,7 +831,6 @@ public class ModuleRecord {
 		    BooleanCaster.cast( annotations.getOrDefault( "RequiresBody", false ) )
 		);
 		Key[]				componentAliases	= buildAnnotationAliases( oComponent, className, Key.boxComponent );
-		System.out.println( "Component Aliases: " + Arrays.toString( componentAliases ) );
 
 		// Register all components with their aliases
 		for ( Key thisAlias : componentAliases ) {

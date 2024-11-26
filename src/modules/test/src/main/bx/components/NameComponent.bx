@@ -23,7 +23,7 @@
  * - processBody( context, body, [buffer] ) : Process the body of a component
  * - getName() : Get the name of the component
  */
-@BoxComponent 'HolaComponent'
+@BoxComponent 'NombreComponent'
 @AllowsBody true
 @RequiresBody false
 class{
@@ -47,12 +47,14 @@ class{
 		var	buffer		= newBuffer();
 		var	bodyResult	= processBody( context, body, buffer );
 
+		var helloComponent = context.findClosestComponent( "HelloComponent" );
+
 		// // If there was a return statement inside our body, we early exit now
 		if ( bodyResult.isEarlyExit() ) {
 			return bodyResult;
 		}
-		// // reverse the buffer contents and place into a string
-		var newContent	= buffer.toString();
+		// if we are nested inside a helloComponent, we add a comma to the output
+		var newContent	= isNull( helloComponent ) ? buffer.toString() : ", " & buffer.toString();
 		// // output it to the page buffer
 		context.writeToBuffer( newContent );
 	}
