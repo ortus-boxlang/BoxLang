@@ -91,7 +91,7 @@
 		// The root logger level
 		// Valid values are in order of severity: ERROR, WARN, INFO, DEBUG, TRACE, OFF
 		// If the runtime is in Debug mode, this will be set to DEBUG
-		"rootLevel": "INFO",
+		"rootLevel": "WARN",
 		// A collection of loggers and their configurations
 		"loggers": {}
 	},
