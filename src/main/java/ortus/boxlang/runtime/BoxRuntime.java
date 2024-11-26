@@ -961,6 +961,7 @@ public class BoxRuntime implements java.io.Closeable {
 
 		// Shutdown logging
 		instance.logger.debug( "+ BoxLang Runtime has been shutdown" );
+		instance.loggingService.shutdown();
 
 		// Shutdown the runtime
 		instance = null;

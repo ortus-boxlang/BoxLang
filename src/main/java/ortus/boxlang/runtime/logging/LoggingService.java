@@ -36,6 +36,9 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.Appender;
 import ch.qos.logback.core.ConsoleAppender;
 import ch.qos.logback.core.FileAppender;
+import ch.qos.logback.core.rolling.RollingFileAppender;
+import ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy;
+import ch.qos.logback.core.util.FileSize;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.scopes.Key;
 
@@ -45,6 +48,11 @@ import ortus.boxlang.runtime.scopes.Key;
  * It also manages all custom logging events, appenders and loggers.
  * <p>
  * It's not a true BoxLang service, due to the chicken and egg problem of logging being needed before the runtime starts.
+ * <p>
+ * The <code>configureBasic()</code> method is called by the runtime to setup the basic logging system.
+ * <p>
+ * Once the runtime is online and has read the configuration file (boxlang.json), it can reconfigure the logging system.
+ * This could change logging levels, add new appenders, etc.
  */
 public class LoggingService {
 
@@ -368,14 +376,38 @@ public class LoggingService {
 	 */
 	public FileAppender<ILoggingEvent> getOrBuildAppender( String filePath, LoggerContext logContext ) {
 		return ( FileAppender<ILoggingEvent> ) this.appendersMap.computeIfAbsent( filePath.toLowerCase(), key -> {
-			var appender = new FileAppender<ILoggingEvent>();
+			var		appender		= new RollingFileAppender<ILoggingEvent>();
+			String	fileName		= FilenameUtils.getBaseName( filePath );
+			String	enclosingFolder	= FilenameUtils.getFullPathNoEndSeparator( filePath );
+
+			// Set basics of appender
+			appender.setName( "bx." + fileName );
 			appender.setFile( filePath );
-			appender.setEncoder( getEncoder() );
 			appender.setContext( logContext );
+			appender.setEncoder( getEncoder() );
 			appender.setAppend( true );
 			appender.setImmediateFlush( true );
-			appender.setPrudent( true );
+			// This is commented as rolling with compression does not allow prudent handling
+			// appender.setPrudent( true );
+
+			// Time-based rolling policy with file size constraint
+			// TODO: Get from configuration items
+			SizeAndTimeBasedRollingPolicy<ILoggingEvent> policy = new SizeAndTimeBasedRollingPolicy<>();
+			policy.setContext( logContext );
+			policy.setParent( appender );
+			policy.setFileNamePattern( enclosingFolder + "/archives/" + fileName + ".%d{yyyy-MM-dd}.%i.log.zip" );
+			policy.setMaxHistory( 90 ); // Keep 90 days
+			policy.setMaxFileSize( FileSize.valueOf( "100MB" ) ); // Maximum file size for each log
+			policy.setTotalSizeCap( FileSize.valueOf( "5GB" ) ); // Max total cap size
+			policy.start();
+
+			// Configure it
+			appender.setRollingPolicy( policy );
 			appender.start();
+
+			// Uncomment to verify issues
+			// StatusPrinter.print( logContext );
+
 			return appender;
 		} );
 	}
@@ -425,7 +457,7 @@ public class LoggingService {
 	public LoggingService shutdown() {
 		// Shutdown all the appenders
 		shutdownAppenders();
-		this.loggerContext.stop();
+		getLoggerContext().stop();
 		return instance;
 	}
 

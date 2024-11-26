@@ -97,21 +97,4 @@ public class Logging extends BaseInterceptor {
 
 	}
 
-	/**
-	 * Runtime shutdown interception
-	 */
-	@InterceptionPoint
-	public void onRuntimeShutdown() {
-		this.loggingService.shutdown();
-	}
-
-	/**
-	 * Alternate signature for onRuntimeShutdown
-	 *
-	 * @param data The data to be passed to the interceptor
-	 */
-	public void onRuntimeShutdown( IStruct data ) {
-		onRuntimeShutdown();
-	}
-
 }
