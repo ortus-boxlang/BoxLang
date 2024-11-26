@@ -455,7 +455,7 @@ public class BoxRuntime implements java.io.Closeable {
 		timerUtil.start( "runtime-startup" );
 
 		// Startup the Logging Service: Unique as it's not an IService
-		this.loggingService	= LoggingService.getInstance( this );
+		this.loggingService	= LoggingService.getInstance( this ).configureBasic( debugMode );
 
 		// Startup basic logging
 		// Here is where LogBack looks via ServiceLoader for a `Configurator` class
