@@ -64,11 +64,11 @@ public class Logging extends BaseInterceptor {
 	@InterceptionPoint
 	public void logMessage( IStruct data ) {
 		// The incoming data
-		String	applicationName	= data.getAsString( Key.applicationName );
 		String	logText			= ( String ) data.getOrDefault( Key.text, "" );
 		String	logType			= ( String ) data.getOrDefault( Key.type, LoggingService.DEFAULT_LOG_LEVEL );
 		String	logFile			= ( String ) data.getOrDefault( Key.file, "" );
 		String	compatLog		= ( String ) data.getOrDefault( Key.log, "" );
+		Object	applicationName	= data.get( Key.applicationName );
 
 		// If the logText is empty, then don't log anything
 		if ( logText.isEmpty() ) {
@@ -91,7 +91,7 @@ public class Logging extends BaseInterceptor {
 		LoggingService.getInstance().logMessage(
 		    logText,
 		    logType,
-		    applicationName,
+		    ( applicationName instanceof Key ) ? ( ( Key ) applicationName ).getName() : "",
 		    logFile
 		);
 
