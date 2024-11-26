@@ -73,7 +73,13 @@ public class WriteLogTest {
 		System.setOut( originalOut );
 		LoggingService.getInstance().shutdownAppenders();
 		if ( FileSystemUtil.exists( logFilePath ) ) {
-			FileSystemUtil.deleteFile( logFilePath );
+			try {
+				FileSystemUtil.deleteFile( logFilePath );
+			} catch ( Exception e ) {
+				// Leave this due to stupid windows file locking
+				// We can't use prudent also due to rolling file appenders
+				e.printStackTrace();
+			}
 		}
 	}
 

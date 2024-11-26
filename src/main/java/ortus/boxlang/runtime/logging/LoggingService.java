@@ -64,7 +64,7 @@ public class LoggingService {
 
 	public static final String						DEFAULT_LOG_LEVEL	= "info";
 	public static final String						DEFAULT_LOG_TYPE	= "Application";
-	public static final String						DEFAULT_LOG_FILE	= "boxruntime";
+	public static final String						DEFAULT_LOG_FILE	= "boxruntime.log";
 	public static final String						CONTEXT_NAME		= "BoxLang";
 
 	/**
@@ -155,6 +155,8 @@ public class LoggingService {
 		} else {
 			this.loggerContext = new LoggerContext();
 		}
+
+		this.loggerContext.reset();
 
 		// Name it
 		this.loggerContext.setName( CONTEXT_NAME );
@@ -277,17 +279,9 @@ public class LoggingService {
 	 * This could change logging levels, add new appenders, etc.
 	 */
 	public LoggingService reconfigure() {
-
-		// Setup the runtime appender
-		FileAppender<ILoggingEvent>	runtimeAppender	= getOrBuildAppender(
-		    getLogsDirectory() + "/boxruntime.log",
-		    this.loggerContext
-		);
-
 		// Reconfigure Root Logger
-		Level						rootLevel		= Level.toLevel( this.runtime.getConfiguration().logging.rootLevel );
+		Level rootLevel = Level.toLevel( this.runtime.getConfiguration().logging.rootLevel );
 		this.rootLogger.setLevel( rootLevel );
-		this.rootLogger.addAppender( runtimeAppender );
 
 		return instance;
 	}
@@ -361,7 +355,7 @@ public class LoggingService {
 
 		// If no file or log is passed, then use the default log file: boxruntime.log
 		if ( logFile.isEmpty() ) {
-			logFile = LoggingService.DEFAULT_LOG_FILE + ".log";
+			logFile = DEFAULT_LOG_FILE;
 		}
 
 		// Verify the log file ends in `.log` and if not, append it
