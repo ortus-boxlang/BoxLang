@@ -33,6 +33,7 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
 import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.Appender;
 import ch.qos.logback.core.ConsoleAppender;
 import ch.qos.logback.core.FileAppender;
 import ortus.boxlang.runtime.BoxRuntime;
@@ -53,17 +54,17 @@ public class LoggingService {
 	 * --------------------------------------------------------------------------
 	 */
 
-	public static final String							DEFAULT_LOG_LEVEL		= "info";
-	public static final String							DEFAULT_LOG_TYPE		= "Application";
-	public static final String							DEFAULT_LOG_CATEGORY	= "boxruntime";
-	public static final String							CONTEXT_NAME			= "BoxLang";
+	public static final String						DEFAULT_LOG_LEVEL		= "info";
+	public static final String						DEFAULT_LOG_TYPE		= "Application";
+	public static final String						DEFAULT_LOG_CATEGORY	= "boxruntime";
+	public static final String						CONTEXT_NAME			= "BoxLang";
 
 	/**
 	 * The log format for the BoxLang runtime
 	 *
 	 * @see https://logback.qos.ch/manual/layouts.html#conversionWord
 	 */
-	public static final String							LOG_FORMAT				= "[%date{STRICT}] [%thread] [%-5level] [%logger{0}] %message %ex%n";
+	public static final String						LOG_FORMAT				= "[%date{STRICT}] [%thread] [%-5level] [%logger{0}] %message %ex%n";
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -74,32 +75,32 @@ public class LoggingService {
 	/**
 	 * Singleton
 	 */
-	private static LoggingService						instance;
+	private static LoggingService					instance;
 
 	/**
 	 * The linked runtime
 	 */
-	private BoxRuntime									runtime;
+	private BoxRuntime								runtime;
 
 	/**
 	 * The root logger for the runtime
 	 */
-	private Logger										rootLogger;
+	private Logger									rootLogger;
 
 	/**
 	 * The logger context for the runtime
 	 */
-	private LoggerContext								loggerContext;
+	private LoggerContext							loggerContext;
 
 	/**
 	 * The BoxLang pattern encoder we use for logging
 	 */
-	private PatternLayoutEncoder						encoder;
+	private PatternLayoutEncoder					encoder;
 
 	/**
-	 * A map of appenders
+	 * A map of registered appenders
 	 */
-	private Map<String, FileAppender<ILoggingEvent>>	appendersMap			= new ConcurrentHashMap<>();
+	private Map<String, Appender<ILoggingEvent>>	appendersMap			= new ConcurrentHashMap<>();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -366,7 +367,7 @@ public class LoggingService {
 	 * @return The file appender, computed or from cache
 	 */
 	public FileAppender<ILoggingEvent> getOrBuildAppender( String filePath, LoggerContext logContext ) {
-		return this.appendersMap.computeIfAbsent( filePath.toLowerCase(), key -> {
+		return ( FileAppender<ILoggingEvent> ) this.appendersMap.computeIfAbsent( filePath.toLowerCase(), key -> {
 			var appender = new FileAppender<ILoggingEvent>();
 			appender.setFile( filePath );
 			appender.setEncoder( getEncoder() );
@@ -414,7 +415,7 @@ public class LoggingService {
 	 * @return The logging service
 	 */
 	public LoggingService shutdownAppenders() {
-		this.appendersMap.values().forEach( FileAppender::stop );
+		this.appendersMap.values().forEach( Appender::stop );
 		return instance;
 	}
 
