@@ -62,17 +62,17 @@ public class LoggingService {
 	 * --------------------------------------------------------------------------
 	 */
 
-	public static final String						DEFAULT_LOG_LEVEL		= "info";
-	public static final String						DEFAULT_LOG_TYPE		= "Application";
-	public static final String						DEFAULT_LOG_CATEGORY	= "boxruntime";
-	public static final String						CONTEXT_NAME			= "BoxLang";
+	public static final String						DEFAULT_LOG_LEVEL	= "info";
+	public static final String						DEFAULT_LOG_TYPE	= "Application";
+	public static final String						DEFAULT_LOG_FILE	= "boxruntime";
+	public static final String						CONTEXT_NAME		= "BoxLang";
 
 	/**
 	 * The log format for the BoxLang runtime
 	 *
 	 * @see https://logback.qos.ch/manual/layouts.html#conversionWord
 	 */
-	public static final String						LOG_FORMAT				= "[%date{STRICT}] [%thread] [%-5level] [%logger{0}] %message %ex%n";
+	public static final String						LOG_FORMAT			= "[%date{STRICT}] [%thread] [%-5level] [%logger{0}] %message %ex%n";
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -108,7 +108,7 @@ public class LoggingService {
 	/**
 	 * A map of registered appenders
 	 */
-	private Map<String, Appender<ILoggingEvent>>	appendersMap			= new ConcurrentHashMap<>();
+	private Map<String, Appender<ILoggingEvent>>	appendersMap		= new ConcurrentHashMap<>();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -271,17 +271,61 @@ public class LoggingService {
 	 */
 
 	/**
-	 * Enable debug mode for the runtime's root logger or not.
-	 *
-	 * This is usually a convenience method for the runtime to enable or disable
-	 * debug mode
-	 * via configuration overrides
-	 *
-	 * @param debugMode True to enable debug mode, false to disable
+	 * This method is called by the runtime to reconfigure the logging system
+	 * once the configuration file has been read.
+	 * <p>
+	 * This could change logging levels, add new appenders, etc.
 	 */
-	public LoggingService reconfigureDebugMode( Boolean debugMode ) {
-		this.rootLogger.setLevel( Boolean.TRUE.equals( debugMode ) ? Level.DEBUG : Level.INFO );
+	public LoggingService reconfigure() {
+
+		// Setup the runtime appender
+		FileAppender<ILoggingEvent>	runtimeAppender	= getOrBuildAppender(
+		    getLogsDirectory() + "/boxruntime.log",
+		    this.loggerContext
+		);
+
+		// Reconfigure Root Logger
+		Level						rootLevel		= Level.toLevel( this.runtime.getConfiguration().logging.rootLevel );
+		this.rootLogger.setLevel( rootLevel );
+		this.rootLogger.addAppender( runtimeAppender );
+
 		return instance;
+	}
+
+	/**
+	 * Log a message into the default log file and the default log type
+	 *
+	 * @param message The message to log
+	 *
+	 * @return The logging service
+	 */
+	public LoggingService logMessage( String message ) {
+		return logMessage( message, DEFAULT_LOG_LEVEL, "no-application", DEFAULT_LOG_FILE );
+	}
+
+	/**
+	 * Log a message into the default log file and a custom log type
+	 *
+	 * @param message The message to log
+	 * @param type    The type of log message (fatal, error, info, warn, debug, trace)
+	 *
+	 * @return The logging service
+	 */
+	public LoggingService logMessage( String message, String type ) {
+		return logMessage( message, type, "no-application", DEFAULT_LOG_FILE );
+	}
+
+	/**
+	 * Log a message into the default log file and a custom log type
+	 *
+	 * @param message         The message to log
+	 * @param type            The type of log message (fatal, error, info, warn, debug, trace)
+	 * @param applicationName The name of the application requesting the log message
+	 *
+	 * @return The logging service
+	 */
+	public LoggingService logMessage( String message, String type, String applicationName ) {
+		return logMessage( message, type, applicationName, DEFAULT_LOG_FILE );
 	}
 
 	/**
@@ -317,7 +361,7 @@ public class LoggingService {
 
 		// If no file or log is passed, then use the default log file: boxruntime.log
 		if ( logFile.isEmpty() ) {
-			logFile = LoggingService.DEFAULT_LOG_CATEGORY + ".log";
+			logFile = LoggingService.DEFAULT_LOG_FILE + ".log";
 		}
 
 		// Verify the log file ends in `.log` and if not, append it
@@ -362,7 +406,7 @@ public class LoggingService {
 	 * Get the runtime's log directory as per the configuration
 	 */
 	public String getLogsDirectory() {
-		return this.runtime.getConfiguration().logsDirectory;
+		return this.runtime.getConfiguration().logging.logsDirectory;
 	}
 
 	/**
@@ -381,7 +425,7 @@ public class LoggingService {
 			String	enclosingFolder	= FilenameUtils.getFullPathNoEndSeparator( filePath );
 
 			// Set basics of appender
-			appender.setName( "bx." + fileName );
+			appender.setName( fileName );
 			appender.setFile( filePath );
 			appender.setContext( logContext );
 			appender.setEncoder( getEncoder() );
@@ -391,14 +435,19 @@ public class LoggingService {
 			// appender.setPrudent( true );
 
 			// Time-based rolling policy with file size constraint
-			// TODO: Get from configuration items
 			SizeAndTimeBasedRollingPolicy<ILoggingEvent> policy = new SizeAndTimeBasedRollingPolicy<>();
 			policy.setContext( logContext );
 			policy.setParent( appender );
 			policy.setFileNamePattern( enclosingFolder + "/archives/" + fileName + ".%d{yyyy-MM-dd}.%i.log.zip" );
-			policy.setMaxHistory( 90 ); // Keep 90 days
-			policy.setMaxFileSize( FileSize.valueOf( "100MB" ) ); // Maximum file size for each log
-			policy.setTotalSizeCap( FileSize.valueOf( "5GB" ) ); // Max total cap size
+			policy.setMaxHistory(
+			    this.runtime.getConfiguration().logging.maxLogDays
+			);
+			policy.setMaxFileSize( FileSize.valueOf(
+			    this.runtime.getConfiguration().logging.maxFileSize
+			) ); // Maximum file size for each log
+			policy.setTotalSizeCap( FileSize.valueOf(
+			    this.runtime.getConfiguration().logging.totalCapSize
+			) ); // Max total cap size
 			policy.start();
 
 			// Configure it

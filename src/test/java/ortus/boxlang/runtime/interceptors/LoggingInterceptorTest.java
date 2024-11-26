@@ -52,7 +52,7 @@ public class LoggingInterceptorTest {
 	public static void setUp() {
 		instance				= BoxRuntime.getInstance( true );
 		loggingInterceptor		= new Logging( instance );
-		logDirectory			= instance.getConfiguration().logsDirectory;
+		logDirectory			= instance.getConfiguration().logging.logsDirectory;
 		logFilePath				= Paths.get( logDirectory, "/", testLogFile ).toString();
 		absoluteLogeFilePath	= Paths.get( tmpDirectory, testLogFile ).toAbsolutePath().toString();
 	}

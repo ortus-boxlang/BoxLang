@@ -357,12 +357,11 @@ public class BoxRuntime implements java.io.Closeable {
 		// Finally verify if we overwrote the debugmode in one of the configs above
 		if ( debugMode == null ) {
 			this.debugMode = this.configuration.debugMode;
-			// Reconfigure the logging if enabled
-			if ( this.debugMode ) {
-				this.loggingService.reconfigureDebugMode( this.debugMode );
-			}
 			this.logger.info( "+ DebugMode detected in config, overriding to {}", this.debugMode );
 		}
+
+		// Reconfigure the logging services
+		this.loggingService.reconfigure();
 
 		// AST Capture experimental feature
 		BooleanCaster.attempt(

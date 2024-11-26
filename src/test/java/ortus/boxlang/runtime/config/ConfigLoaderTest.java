@@ -72,7 +72,7 @@ class ConfigLoaderTest {
 		assertThat( config.modulesDirectory.get( 0 ) ).doesNotContainMatch( "(ignorecase)\\{boxlang-home\\}" );
 
 		// Log Directory Check
-		assertThat( config.logsDirectory ).isNotEmpty();
+		assertThat( config.logging.logsDirectory ).isNotEmpty();
 
 		// Cache Checks
 		assertThat( config.caches ).isNotEmpty();
@@ -225,7 +225,7 @@ class ConfigLoaderTest {
 		assertThat( config.modulesDirectory.get( 0 ) ).doesNotContainMatch( "(ignorecase)\\{boxlang-home\\}" );
 
 		// Log Directory Check
-		assertThat( config.logsDirectory ).isNotEmpty();
+		assertThat( config.logging.logsDirectory ).isNotEmpty();
 
 		// Cache Checks
 		assertThat( config.caches ).isNotEmpty();

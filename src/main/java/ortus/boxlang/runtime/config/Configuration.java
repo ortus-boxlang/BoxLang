@@ -40,6 +40,7 @@ import ortus.boxlang.runtime.config.segments.CacheConfig;
 import ortus.boxlang.runtime.config.segments.DatasourceConfig;
 import ortus.boxlang.runtime.config.segments.ExecutorConfig;
 import ortus.boxlang.runtime.config.segments.IConfigSegment;
+import ortus.boxlang.runtime.config.segments.LoggingConfig;
 import ortus.boxlang.runtime.config.segments.ModuleConfig;
 import ortus.boxlang.runtime.config.segments.SecurityConfig;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
@@ -180,12 +181,6 @@ public class Configuration implements IConfigSegment {
 	    Arrays.asList( BoxRuntime.getInstance().getRuntimeHome().toString() + "/modules" ) );
 
 	/**
-	 * The default logs directory for the runtime
-	 */
-	public String				logsDirectory					= Paths.get( BoxRuntime.getInstance().getRuntimeHome().toString(), "/logs" ).normalize()
-	    .toString();
-
-	/**
 	 * An array of directories where custom tags are located and loaded from.
 	 * {@code [ /{boxlang-home}/customTags ]}
 	 */
@@ -259,6 +254,11 @@ public class Configuration implements IConfigSegment {
 	 * The security configuration
 	 */
 	public SecurityConfig		security						= new SecurityConfig();
+
+	/**
+	 * The logging configuration
+	 */
+	public LoggingConfig		logging							= new LoggingConfig();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -583,6 +583,11 @@ public class Configuration implements IConfigSegment {
 			security.process( StructCaster.cast( config.get( Key.security ) ) );
 		}
 
+		// Process our logging configuration
+		if ( config.containsKey( Key.logging ) ) {
+			logging.process( StructCaster.cast( config.get( Key.logging ) ) );
+		}
+
 		return this;
 	}
 
@@ -868,6 +873,7 @@ public class Configuration implements IConfigSegment {
 		    Key.whitespaceCompressionEnabled, this.whitespaceCompressionEnabled,
 		    Key.javaLibraryPaths, Array.fromList( this.javaLibraryPaths ),
 		    Key.locale, this.locale,
+		    Key.logging, this.logging.asStruct(),
 		    Key.mappings, mappingsCopy,
 		    Key.modules, modulesCopy,
 		    Key.modulesDirectory, Array.fromList( this.modulesDirectory ),
