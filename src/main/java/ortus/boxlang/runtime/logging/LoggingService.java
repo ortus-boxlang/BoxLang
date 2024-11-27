@@ -33,6 +33,7 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
 import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.classic.util.LogbackMDCAdapterSimple;
 import ch.qos.logback.core.Appender;
 import ch.qos.logback.core.ConsoleAppender;
 import ch.qos.logback.core.FileAppender;
@@ -44,16 +45,25 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.scopes.Key;
 
 /**
- * This service allows BoxLang to leverage logging facilities and interact with the logging system.
+ * This service allows BoxLang to leverage logging facilities and interact with the logging system: LogBack: https://logback.qos.ch/manual/index.html
  * <p>
  * It also manages all custom logging events, appenders and loggers.
  * <p>
  * It's not a true BoxLang service, due to the chicken and egg problem of logging being needed before the runtime starts.
  * <p>
- * The <code>configureBasic()</code> method is called by the runtime to setup the basic logging system.
+ * The {@link #configureBasic(Boolean)} method is called by the runtime to setup the basic logging system first, then
+ * once the runtime is online and has read the configuration file (boxlang.json), it can reconfigure the logging system
+ * via the {@link #reconfigure()} method.
  * <p>
- * Once the runtime is online and has read the configuration file (boxlang.json), it can reconfigure the logging system.
- * This could change logging levels, add new appenders, etc.
+ * Please note that in BoxLang you can use the following arguments for logging via the {@link #logMessage(String, String, String, String)} method:
+ * <ul>
+ * <li><strong>message</strong> - The message to send for logging or a lambda that produces the message</li>
+ * <li><strong>type</strong> - The logging level type (error, info, warn, debug, trace)</li>
+ * <li><strong>applicationName</strong> - The name of the BoxLang application (if any)</li>
+ * <li><strong>logger</strong> - The named logger to emit to. Example: "scheduler, application, orm, etc"</li>
+ * </ul>
+ * <p>
+ * If the named logger does not exist or it's an absolute path, then the logger will be registered as a new logger, with the name of the file as the category.
  */
 public class LoggingService {
 
@@ -158,6 +168,7 @@ public class LoggingService {
 		}
 
 		this.loggerContext.reset();
+		this.loggerContext.setMDCAdapter( new LogbackMDCAdapterSimple() );
 
 		// Name it
 		this.loggerContext.setName( CONTEXT_NAME );
