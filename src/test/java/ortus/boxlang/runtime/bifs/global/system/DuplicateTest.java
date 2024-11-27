@@ -409,7 +409,7 @@ public class DuplicateTest {
 		Query	result	= QueryCaster.cast( variables.get( resultKey ) );
 
 		assertEquals( ref.size(), result.size() );
-		assertEquals( ref.getColumnList(), result.getColumnList() );
+		assertEquals( ref.columnList(), result.columnList() );
 		for ( int i = 0; i < ref.size(); i++ ) {
 			for ( Key columnName : ref.getColumns().keySet() ) {
 				QueryColumn	a	= ref.getColumn( columnName );
