@@ -126,7 +126,11 @@ public class BoxComponentTransformer extends AbstractTransformer {
 
 			nodes.add( ifLabel );
 		}
-		nodes.add( new InsnNode( Opcodes.POP ) );
+
+		if ( returnContext != ReturnValueContext.VALUE && returnContext != ReturnValueContext.VALUE_OR_NULL ) {
+			nodes.add( new InsnNode( Opcodes.POP ) );
+		}
+
 		transpiler.decrementComponentCounter();
 
 		return nodes;

@@ -539,7 +539,7 @@ public class AsmTranspiler extends Transpiler {
 			for ( BoxExpression expression : getKeys().values() ) {
 				methodVisitor.visitInsn( Opcodes.DUP );
 				methodVisitor.visitLdcInsn( index++ );
-				transform( expression, TransformerContext.NONE, ReturnValueContext.EMPTY ).forEach( methodInsnNode -> methodInsnNode.accept( methodVisitor ) );
+				transform( expression, TransformerContext.NONE, ReturnValueContext.VALUE ).forEach( methodInsnNode -> methodInsnNode.accept( methodVisitor ) );
 				methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
 				    Type.getInternalName( Key.class ),
 				    "of",
