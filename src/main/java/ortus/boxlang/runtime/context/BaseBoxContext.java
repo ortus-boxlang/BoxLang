@@ -760,7 +760,7 @@ public class BaseBoxContext implements IBoxContext {
 					return new ScopeSearchResult( null, queryLoops.get( query ) + 1, key );
 				}
 				if ( key.equals( Key.columnList ) ) {
-					return new ScopeSearchResult( null, query.columnList(), key );
+					return new ScopeSearchResult( null, query.getColumnList(), key );
 				}
 				if ( query.hasColumn( key ) ) {
 					// TODO: create query scope wrapper for edge cases

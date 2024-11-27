@@ -46,6 +46,6 @@ public class QueryColumnArray extends BIF {
 	 * @argument.query The query to get the column names from
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		return arguments.getAsQuery( Key.query ).columnArray();
+		return arguments.getAsQuery( Key.query ).getColumnArray();
 	}
 }

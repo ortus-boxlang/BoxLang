@@ -36,7 +36,6 @@ import java.util.stream.Stream;
 import java.time.Duration;
 
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.bifs.BoxMemberExpose;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
@@ -646,8 +645,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 *
 	 * @return column names as string
 	 */
-	@BoxMemberExpose
-	public String columnList() {
+	public String getColumnList() {
 		return getColumns().keySet().stream().map( Key::getName ).collect( Collectors.joining( "," ) );
 	}
 
@@ -656,8 +654,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 *
 	 * @return column names as array
 	 */
-	@BoxMemberExpose
-	public Array columnArray() {
+	public Array getColumnArray() {
 		return getColumns().keySet().stream().map( Key::getName ).collect( BLCollector.toArray() );
 	}
 
@@ -793,7 +790,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 			return size();
 		}
 		if ( name.equals( Key.columnList ) ) {
-			return columnList();
+			return getColumnList();
 		}
 		if ( name.equals( Key.currentRow ) ) {
 			return getRowFromContext( context ) + 1;
@@ -884,7 +881,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		this.metadata.computeIfAbsent( Key.cacheLastAccessTimeout, key -> Duration.ZERO );
 		this.metadata.computeIfAbsent( Key.recordCount, key -> data.size() );
 		this.metadata.computeIfAbsent( Key.columns, key -> this.getColumns() );
-		this.metadata.computeIfAbsent( Key.columnList, key -> this.columnList() );
+		this.metadata.computeIfAbsent( Key.columnList, key -> this.getColumnList() );
 		this.metadata.computeIfAbsent( Key._HASHCODE, key -> this.hashCode() );
 		return this.metadata;
 	}
