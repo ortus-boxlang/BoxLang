@@ -59,7 +59,7 @@ public class IfTest {
 
 	@AfterEach
 	public void teardownEach() {
-		instance.useJavaBoxpiler();
+		// instance.useJavaBoxpiler();
 	}
 
 	@DisplayName( "Will run the code inside of an if with a true condition" )

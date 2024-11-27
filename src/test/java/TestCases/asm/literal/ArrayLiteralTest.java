@@ -60,7 +60,7 @@ public class ArrayLiteralTest {
 
 	@AfterEach
 	public void teardownEach() {
-		instance.useJavaBoxpiler();
+		// instance.useJavaBoxpiler();
 	}
 
 	@DisplayName( "Can decalare an empty literal" )

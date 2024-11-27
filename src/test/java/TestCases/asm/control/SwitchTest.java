@@ -59,7 +59,7 @@ public class SwitchTest {
 
 	@AfterEach
 	public void teardownEach() {
-		instance.useJavaBoxpiler();
+		// instance.useJavaBoxpiler();
 	}
 
 	@DisplayName( "Will not execute code that doesn't match a condition" )

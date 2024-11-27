@@ -60,7 +60,7 @@ public class LabeledLoopTest {
 
 	@AfterEach
 	public void teardownEach() {
-		instance.useJavaBoxpiler();
+		// instance.useJavaBoxpiler();
 	}
 
 	@Test

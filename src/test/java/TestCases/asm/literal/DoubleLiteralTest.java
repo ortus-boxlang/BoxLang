@@ -61,7 +61,7 @@ public class DoubleLiteralTest {
 
 	@AfterEach
 	public void teardownEach() {
-		instance.useJavaBoxpiler();
+		// instance.useJavaBoxpiler();
 	}
 
 	@DisplayName( "Can declare a double literal" )

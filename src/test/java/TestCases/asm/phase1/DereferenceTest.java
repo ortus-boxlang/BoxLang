@@ -64,7 +64,7 @@ public class DereferenceTest {
 
 	@AfterEach
 	public void teardownEach() {
-		instance.useJavaBoxpiler();
+		// instance.useJavaBoxpiler();
 	}
 
 	@DisplayName( "Single identifier dot access" )

@@ -60,7 +60,7 @@ public class BasicTest {
 
 	@AfterEach
 	public void teardownEach() {
-		instance.useJavaBoxpiler();
+		// instance.useJavaBoxpiler();
 	}
 
 	@DisplayName( "ASM Easy Difficulty Source Test" )

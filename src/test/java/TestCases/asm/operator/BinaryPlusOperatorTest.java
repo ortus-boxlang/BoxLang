@@ -59,7 +59,7 @@ public class BinaryPlusOperatorTest {
 
 	@AfterEach
 	public void teardownEach() {
-		instance.useJavaBoxpiler();
+		// instance.useJavaBoxpiler();
 	}
 
 	@DisplayName( "Can add two positive int" )

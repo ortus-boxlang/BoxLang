@@ -59,7 +59,7 @@ public class StringLiteralTest {
 
 	@AfterEach
 	public void teardownEach() {
-		instance.useJavaBoxpiler();
+		// instance.useJavaBoxpiler();
 	}
 
 	@DisplayName( "Can decalare a string literal" )

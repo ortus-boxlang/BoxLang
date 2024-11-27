@@ -73,7 +73,7 @@ public class ClassTest {
 
 	@AfterEach
 	public void teardownEach() {
-		instance.useJavaBoxpiler();
+		// instance.useJavaBoxpiler();
 	}
 
 	@DisplayName( "Test can create vanilla module config" )

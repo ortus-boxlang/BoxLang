@@ -69,7 +69,7 @@ public class ObjectReferenceAssignmentTest {
 
 	@AfterEach
 	public void teardownEach() {
-		instance.useJavaBoxpiler();
+		// instance.useJavaBoxpiler();
 	}
 
 	@DisplayName( "scope assignment" )

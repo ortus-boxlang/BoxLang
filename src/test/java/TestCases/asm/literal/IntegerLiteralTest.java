@@ -59,7 +59,7 @@ public class IntegerLiteralTest {
 
 	@AfterEach
 	public void teardownEach() {
-		instance.useJavaBoxpiler();
+		// instance.useJavaBoxpiler();
 	}
 
 	@DisplayName( "Can decalare an int literal" )
