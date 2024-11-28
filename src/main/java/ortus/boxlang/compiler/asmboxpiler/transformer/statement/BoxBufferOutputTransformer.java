@@ -54,7 +54,10 @@ public class BoxBufferOutputTransformer extends AbstractTransformer {
 		    "writeToBuffer",
 		    Type.getMethodDescriptor( Type.getType( IBoxContext.class ), Type.getType( Object.class ) ),
 		    true ) );
-		nodes.add( new InsnNode( Opcodes.POP ) );
+
+		if ( returnContext != ReturnValueContext.VALUE && returnContext != ReturnValueContext.VALUE_OR_NULL ) {
+			nodes.add( new InsnNode( Opcodes.POP ) );
+		}
 
 		return nodes;
 	}

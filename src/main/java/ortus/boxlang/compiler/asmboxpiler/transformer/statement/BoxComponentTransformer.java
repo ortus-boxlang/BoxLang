@@ -86,7 +86,9 @@ public class BoxComponentTransformer extends AbstractTransformer {
 		    true ) );
 
 		if ( boxComponent.getBody() == null || boxComponent.getBody().size() == 0 ) {
-			nodes.add( new InsnNode( Opcodes.POP ) );
+			if ( returnContext != ReturnValueContext.VALUE && returnContext != ReturnValueContext.VALUE_OR_NULL ) {
+				nodes.add( new InsnNode( Opcodes.POP ) );
+			}
 
 			transpiler.decrementComponentCounter();
 
