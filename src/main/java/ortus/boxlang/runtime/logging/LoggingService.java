@@ -77,7 +77,7 @@ public class LoggingService {
 
 	public static final String						DEFAULT_LOG_LEVEL	= "info";
 	public static final String						DEFAULT_LOG_TYPE	= "Application";
-	public static final String						DEFAULT_LOG_FILE	= "boxruntime.log";
+	public static final String						DEFAULT_LOG_FILE	= "runtime.log";
 	public static final String						CONTEXT_NAME		= "BoxLang";
 
 	/**
