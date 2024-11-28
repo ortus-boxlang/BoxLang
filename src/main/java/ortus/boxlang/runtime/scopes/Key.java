@@ -92,6 +92,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		ANONYMOUSCLOSURE					= Key.of( "ANONYMOUSCLOSURE" );
 	public static final Key		ANONYMOUSLAMBDA						= Key.of( "ANONYMOUSLAMBDA" );
 	public static final Key		append								= Key.of( "append" );
+	public static final Key		appender							= Key.of( "appender" );
+	public static final Key		appenderArguments					= Key.of( "appenderArguments" );
 	public static final Key		application							= Key.of( "application" );
 	public static final Key		applicationName						= Key.of( "applicationName" );
 	public static final Key		applicationService					= Key.of( "applicationService" );
@@ -291,6 +293,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		evictionPolicy						= Key.of( "evictionPolicy" );
 	public static final Key		experimental						= Key.of( "experimental" );
 	public static final Key		execute								= Key.of( "execute" );
+	public static final Key		encoder								= Key.of( "encoder" );
 	public static final Key		entryPath							= Key.of( "entryPath" );
 	public static final Key		entryPaths							= Key.of( "entryPaths" );
 	public static final Key		executionMode						= Key.of( "executionMode" );
@@ -426,6 +429,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		lJustify							= Key.of( "lJustify" );
 	public static final Key		loadPaths							= Key.of( "loadPaths" );
 	public static final Key		logging								= Key.of( "logging" );
+	public static final Key		loggers								= Key.of( "loggers" );
 	public static final Key		logsDirectory						= Key.of( "logsDirectory" );
 	public static final Key		loggingService						= Key.of( "loggingService" );
 	public static final Key		local_addr							= Key.of( "local_addr" );
@@ -689,6 +693,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		terminate							= Key.of( "terminate" );
 	public static final Key		terminated							= Key.of( "terminated" );
 	public static final Key		terminateOnTimeout					= Key.of( "terminateOnTimeout" );
+	public static final Key		trace								= Key.of( "trace" );
 	public static final Key		text								= Key.of( "text" );
 	public static final Key		textQualifier						= Key.of( "textQualifier" );
 	public static final Key		thisTag								= Key.of( "thisTag" );

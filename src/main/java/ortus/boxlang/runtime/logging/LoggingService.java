@@ -78,6 +78,7 @@ public class LoggingService {
 	public static final String						DEFAULT_LOG_LEVEL	= "info";
 	public static final String						DEFAULT_LOG_TYPE	= "Application";
 	public static final String						DEFAULT_LOG_FILE	= "runtime.log";
+	public static final String						DEFAULT_APPLICATION	= "no-application";
 	public static final String						CONTEXT_NAME		= "BoxLang";
 
 	/**
@@ -295,11 +296,11 @@ public class LoggingService {
 	 */
 	public LoggingService reconfigure() {
 		// Reconfigure Root Logger
-		Level rootLevel = Level.toLevel( this.runtime.getConfiguration().logging.rootLevel );
+		Level rootLevel = Level.toLevel( this.runtime.getConfiguration().logging.rootLevel.getName() );
 		this.rootLogger.setLevel( rootLevel );
 
 		// Change encoder or not to JSON, default is text
-		if ( this.runtime.getConfiguration().logging.defaultEncoder.equalsIgnoreCase( "json" ) ) {
+		if ( this.runtime.getConfiguration().logging.defaultEncoder.equals( Key.json ) ) {
 			// Build a logback json encoder
 			JsonEncoder targetEncoder = new JsonEncoder();
 			targetEncoder.setContext( this.loggerContext );
@@ -311,7 +312,7 @@ public class LoggingService {
 	}
 
 	/**
-	 * Log a message into the default log file and the default log type
+	 * Log a message into the default log file and the default log type with no application name
 	 *
 	 * @param message The message to log
 	 *
@@ -322,7 +323,7 @@ public class LoggingService {
 	}
 
 	/**
-	 * Log a message into the default log file and a custom log type
+	 * Log a message into the default log file and a custom log type with no application name
 	 *
 	 * @param message The message to log
 	 * @param type    The type of log message (fatal, error, info, warn, debug, trace)
@@ -334,7 +335,7 @@ public class LoggingService {
 	}
 
 	/**
-	 * Log a message into the default log file and a custom log type
+	 * Log a message into the default log file and a custom log type and a custom application name
 	 *
 	 * @param message         The message to log
 	 * @param type            The type of log message (fatal, error, info, warn, debug, trace)
@@ -347,74 +348,76 @@ public class LoggingService {
 	}
 
 	/**
-	 * Log a message into a specific log file and a specific type
+	 * Log a message with specific arguments
 	 *
 	 * @param message         The message to log
 	 * @param type            The type of log message (fatal, error, info, warn, debug, trace)
 	 * @param applicationName The name of the application requesting the log message
-	 * @param logFile         The destination file to log to in the logs directory. If empty, the default log file is used
+	 * @param logger          The logger destination. It can be a named logger or an absolute path
 	 *
 	 * @return The logging service
+	 *
+	 * @throws IllegalArgumentException If the log level is not valid
 	 */
 	public LoggingService logMessage(
 	    String message,
 	    String type,
 	    String applicationName,
-	    String logFile ) {
+	    String logger ) {
 
-		// Default to info if no log level is passed
+		// Default level to info if no log level is passed
 		if ( type == null || type.isEmpty() ) {
 			type = DEFAULT_LOG_LEVEL;
 		}
-		// Get and Validate log level
-		Key logLevel = LogLevel.valueOf( type, false );
+		// Get and Validate the log level
+		Key targetLogLevel = LogLevel.valueOf( type, false );
 
-		// The application name is used as the logging category.
-		// If it is empty, then use the default category
+		// If it is empty, then use the default of no-application
 		if ( applicationName == null || applicationName.isEmpty() ) {
-			applicationName = "no-application";
+			applicationName = DEFAULT_APPLICATION;
 		}
 		// Include the application name in the message
 		message = String.format( "[%s] %s", applicationName, message );
 
-		// If no file or log is passed, then use the default log file: boxruntime.log
-		if ( logFile.isEmpty() ) {
-			logFile = DEFAULT_LOG_FILE;
+		// If no file or logger is passed, then use the default logger: runtime.log
+		if ( logger.isEmpty() ) {
+			logger = DEFAULT_LOG_FILE;
 		}
-
 		// Verify the log file ends in `.log` and if not, append it
-		if ( !logFile.toLowerCase().endsWith( ".log" ) ) {
-			logFile += ".log";
+		if ( !logger.toLowerCase().endsWith( ".log" ) ) {
+			logger += ".log";
 		}
 
 		// If the file is an absolute path, use it, otherwise use the logs directory as the base
-		String			filePath		= Path.of( logFile ).isAbsolute()
-		    ? Path.of( logFile ).normalize().toString()
-		    : Paths.get( getLogsDirectory(), "/", logFile ).normalize().toString();
+		// All logger names should be lowercase
+		String			loggerFilePath	= Path.of( logger ).isAbsolute()
+		    ? Path.of( logger ).normalize().toString()
+		    : Paths.get( getLogsDirectory(), "/", logger.toLowerCase() ).normalize().toString();
+		String			loggerName		= FilenameUtils.getBaseName( loggerFilePath.toLowerCase() );
 
-		// A BoxLang logger is based on the {fileName} as the category.
+		// Get the logger and set the level
 		LoggerContext	targetContext	= getLoggerContext();
-		Logger			logger			= targetContext.getLogger( FilenameUtils.getBaseName( filePath ).toLowerCase() );
-		logger.setLevel( Level.TRACE );
-		FileAppender<ILoggingEvent> appender = getOrBuildAppender( filePath, targetContext );
+		Logger			oLogger			= targetContext.getLogger( loggerName );
+		oLogger.setLevel( Level.TRACE );
+		FileAppender<ILoggingEvent> appender = getOrBuildAppender( loggerFilePath, targetContext );
 
 		// Create or compute the file appender requested
 		// This provides locking also and caching so we don't have to keep creating them
 		// Shutdown will stop the appenders
-		if ( !logger.isAttached( appender ) ) {
-			logger.addAppender( appender );
+		if ( !oLogger.isAttached( appender ) ) {
+			oLogger.addAppender( appender );
 		}
 
 		// Log according to the level
-		switch ( logLevel.getNameNoCase() ) {
+		switch ( targetLogLevel.getNameNoCase() ) {
 			// No fatal in SL4J
-			case "FATAL" -> logger.error( message );
-			case "ERROR" -> logger.error( message );
-			case "WARN" -> logger.warn( message );
-			case "INFO" -> logger.info( message );
-			case "DEBUG" -> logger.debug( message );
-			case "TRACE" -> logger.trace( message );
-			default -> logger.info( message );
+			case "FATAL" -> oLogger.error( message );
+			case "ERROR" -> oLogger.error( message );
+			case "WARN" -> oLogger.warn( message );
+			case "INFO" -> oLogger.info( message );
+			case "DEBUG" -> oLogger.debug( message );
+			case "TRACE" -> oLogger.trace( message );
+			default -> oLogger.info( message );
 		}
 
 		return instance;

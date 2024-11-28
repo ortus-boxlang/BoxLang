@@ -20,11 +20,9 @@ package ortus.boxlang.runtime.config.segments;
 import java.nio.file.Paths;
 import java.util.Set;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.util.PropertyHelper;
+import ortus.boxlang.runtime.logging.LogLevel;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -34,10 +32,14 @@ import ortus.boxlang.runtime.types.Struct;
  */
 public class LoggingConfig implements IConfigSegment {
 
+	public static final Set<String>	VALID_LOG_LEVELS	= Set.of( "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL", "OFF" );
+	public static final Set<String>	VALID_ENCODERS		= Set.of( "text", "json" );
+	public static final Key			DEFAULT_ENCODER		= new Key( "text" );
+
 	/**
 	 * The default logs directory for the runtime
 	 */
-	public String						logsDirectory		= Paths.get( BoxRuntime.getInstance().getRuntimeHome().toString(), "/logs" )
+	public String					logsDirectory		= Paths.get( BoxRuntime.getInstance().getRuntimeHome().toString(), "/logs" )
 	    .normalize()
 	    .toString();
 
@@ -46,50 +48,37 @@ public class LoggingConfig implements IConfigSegment {
 	 * Default is 90 days or 3 months
 	 * Set to 0 to disable
 	 */
-	public int							maxLogDays			= 90;
+	public int						maxLogDays			= 90;
 
 	/**
 	 * The maximum file size for a single log file before rotation
 	 * You can use the following suffixes: KB, MB, GB
 	 * Default is 100MB
 	 */
-	public String						maxFileSize			= "100MB";
+	public String					maxFileSize			= "100MB";
 
 	/**
 	 * The total cap size of all log files before rotation
 	 * You can use the following suffixes: KB, MB, GB
 	 * Default is 5GB
 	 */
-	public String						totalCapSize		= "5GB";
+	public String					totalCapSize		= "5GB";
 
 	/**
 	 * The root logger level
 	 */
-	public String						rootLevel			= "INFO";
+	public Key						rootLevel			= new Key( "INFO" );
 
 	/**
 	 * The collection of loggers and their levels
 	 */
-	public IStruct						loggers				= Struct.of();
+	public IStruct					loggers				= Struct.of();
 
 	/**
 	 * The default encoding for the log files
 	 * This can be either "text" or "json". The default is "text"
 	 */
-	public String						defaultEncoder		= "text";
-
-	/**
-	 * --------------------------------------------------------------------------
-	 * Private Props
-	 * --------------------------------------------------------------------------
-	 */
-
-	/**
-	 * Logger
-	 */
-	private static final Logger			logger				= LoggerFactory.getLogger( LoggingConfig.class );
-
-	private static final Set<String>	VALID_LOG_LEVELS	= Set.of( "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL", "OFF" );
+	public Key						defaultEncoder		= DEFAULT_ENCODER;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -117,8 +106,8 @@ public class LoggingConfig implements IConfigSegment {
 		this.maxLogDays		= PropertyHelper.processInteger( config, Key.maxLogDays, this.maxLogDays );
 		this.maxFileSize	= PropertyHelper.processString( config, Key.maxFileSize, this.maxFileSize );
 		this.totalCapSize	= PropertyHelper.processString( config, Key.totalCapSize, this.totalCapSize );
-		this.rootLevel		= PropertyHelper.processString( config, Key.rootLevel, this.rootLevel, VALID_LOG_LEVELS );
-		this.defaultEncoder	= PropertyHelper.processString( config, Key.defaultEncoder, this.defaultEncoder, Set.of( "text", "json" ) );
+		this.rootLevel		= LogLevel.valueOf( PropertyHelper.processString( config, Key.rootLevel, this.rootLevel.getName(), VALID_LOG_LEVELS ), false );
+		this.defaultEncoder	= Key.of( PropertyHelper.processString( config, Key.defaultEncoder, DEFAULT_ENCODER.getName(), VALID_ENCODERS ) );
 		return this;
 	}
 
@@ -128,11 +117,12 @@ public class LoggingConfig implements IConfigSegment {
 	@Override
 	public IStruct asStruct() {
 		return Struct.of(
-		    Key.defaultEncoder, this.defaultEncoder,
+		    Key.defaultEncoder, this.defaultEncoder.getName(),
 		    Key.logsDirectory, this.logsDirectory,
+		    Key.loggers, this.loggers,
 		    Key.maxLogDays, this.maxLogDays,
 		    Key.maxFileSize, this.maxFileSize,
-		    Key.rootLevel, this.rootLevel,
+		    Key.rootLevel, this.rootLevel.getName(),
 		    Key.totalCapSize, this.totalCapSize
 		);
 	}

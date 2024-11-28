@@ -61,9 +61,11 @@ public class Log extends Component {
 	 *
 	 * @attribute.type The log level of the entry. One of "Information", "Warning", "Error", "Debug", "Trace"
 	 *
-	 * @attribute.file The log file to write to. If not specified, the default log file is used.
+	 * @attribute.log The destination logger to use. If not passed, we use the default logger (runtime.log).
+	 *                If the logger is a file appender and it doesn't exist it will create it for you.
+	 *                If the value is an absolue path, it will create a file appender for you at that location.
 	 *
-	 * @attribute.log Shortcut to a specific logfile. Available log files are: Application, Scheduler, etc. (MOVE TO CFML-COMPAT MODULE, IT'S DUMB)
+	 * @attribute.file (COMPAT ONLY) Do not use anymore, use log instead. If defined, we will use this instead of log.
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
 		// Get the application name

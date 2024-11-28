@@ -29,6 +29,7 @@ import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
@@ -148,6 +149,22 @@ public class PropertyHelper {
 			return IntegerCaster.cast( PlaceholderHelper.resolve( config.get( key ) ) );
 		}
 		return defaultValue;
+	}
+
+	/**
+	 * Process a key that's supposed to be a IStruct and return it as a struct,
+	 * else, return a new struct.
+	 *
+	 * @param config The configuration object
+	 * @param key    The target key to look and process
+	 *
+	 * @return The struct
+	 */
+	public static IStruct processToStruct( IStruct config, Key key ) {
+		if ( config.containsKey( key ) ) {
+			return config.get( key ) instanceof IStruct castedStruct ? castedStruct : Struct.of();
+		}
+		return Struct.of();
 	}
 
 }

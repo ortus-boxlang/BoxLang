@@ -61,7 +61,7 @@ public class WriteLogTest {
 		outContent		= new ByteArrayOutputStream();
 		System.setOut( new PrintStream( outContent ) );
 		logFilePath			= Paths.get( logsDirectory, "/writelog.log" ).normalize().toString();
-		defaultLogFilePath	= Paths.get( logsDirectory, "/boxruntime.log" ).normalize().toString();
+		defaultLogFilePath	= Paths.get( logsDirectory, "/runtime.log" ).normalize().toString();
 
 		if ( FileSystemUtil.exists( defaultLogFilePath ) ) {
 			FileSystemUtil.deleteFile( defaultLogFilePath );

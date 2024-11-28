@@ -64,35 +64,35 @@ public class Logging extends BaseInterceptor {
 	@InterceptionPoint
 	public void logMessage( IStruct data ) {
 		// The incoming data
-		String	logText			= ( String ) data.getOrDefault( Key.text, "" );
-		String	logType			= ( String ) data.getOrDefault( Key.type, LoggingService.DEFAULT_LOG_LEVEL );
-		String	logFile			= ( String ) data.getOrDefault( Key.file, "" );
-		String	compatLog		= ( String ) data.getOrDefault( Key.log, "" );
+		String	text			= ( String ) data.getOrDefault( Key.text, "" );
+		String	type			= ( String ) data.getOrDefault( Key.type, LoggingService.DEFAULT_LOG_LEVEL );
+		String	logger			= ( String ) data.getOrDefault( Key.log, "" );
+		String	file			= ( String ) data.getOrDefault( Key.file, "" );
 		Object	applicationName	= data.get( Key.applicationName );
 
-		// If the logText is empty, then don't log anything
-		if ( logText.isEmpty() ) {
+		// If the text is empty, then don't log anything
+		if ( text.isEmpty() ) {
 			return;
 		}
 
-		if ( logFile == null ) {
-			logFile = "";
+		// Defaults
+		if ( file == null ) {
+			file = "";
 		}
-		if ( compatLog == null ) {
-			compatLog = "";
+		if ( logger == null ) {
+			logger = "";
 		}
-		// COMPAT MODE: If we have an incoming `log` key, then we need to map it to a file.
-		// This is a dumb feature and should be moved to the CFML compatibility module
-		// As per the CFML docs, if the file is passed, then ignore this
-		if ( logFile.isEmpty() && !compatLog.isEmpty() ) {
-			logFile = compatLog.toLowerCase();
+
+		// COMPAT MODE: if you have a file, we transpile it to the logger
+		if ( !file.isEmpty() ) {
+			logger = file;
 		}
 
 		LoggingService.getInstance().logMessage(
-		    logText,
-		    logType,
+		    text,
+		    type,
 		    ( applicationName instanceof Key ) ? ( ( Key ) applicationName ).getName() : "",
-		    logFile
+		    logger
 		);
 
 	}

@@ -39,7 +39,6 @@ public class WriteLog extends BIF {
 		    new Argument( true, "string", Key.text ),
 		    new Argument( false, "string", Key.type, LoggingService.DEFAULT_LOG_LEVEL ),
 		    new Argument( false, "boolean", Key.application, true ),
-		    new Argument( false, "string", Key.file ),
 		    new Argument( false, "string", Key.log )
 		};
 	}
@@ -56,9 +55,11 @@ public class WriteLog extends BIF {
 	 *
 	 * @argument.application If true, it logs the application name alongside the message. Default is true.
 	 *
-	 * @argument.file The log file to write to. If not specified, the default log file is used.
+	 * @argument.log The destination logger to use. If not passed, we use the default logger (runtime.log).
+	 *               If the logger is a file appender and it doesn't exist it will create it for you.
+	 *               If the value is an absolue path, it will create a file appender for you at that location.
 	 *
-	 * @argument.log Shortcut to a specific logfile. Available log files are: Application, Scheduler, etc. (MOVE TO CFML-COMPAT MODULE, IT'S DUMB)
+	 * @argument.file (COMPAT ONLY) Do not use anymore, use log instead. If defined, we will use this instead of log.
 	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
