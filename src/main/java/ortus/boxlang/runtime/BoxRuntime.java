@@ -296,7 +296,10 @@ public class BoxRuntime implements java.io.Closeable {
 
 		// Debug mode 1st check via ENV vars
 		if ( debugMode == null ) {
-			debugMode = Boolean.parseBoolean( envVars.getOrDefault( "BOXLANG_DEBUG", "" ) );
+			String debugModeEnv = envVars.get( "BOXLANG_DEBUG" );
+			if ( debugModeEnv != null ) {
+				debugMode = Boolean.parseBoolean( debugModeEnv );
+			}
 		}
 
 		// Seed if passed, arguements override ENV vars
