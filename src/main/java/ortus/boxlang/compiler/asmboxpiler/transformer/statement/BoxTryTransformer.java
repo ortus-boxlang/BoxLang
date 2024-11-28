@@ -44,6 +44,7 @@ import ortus.boxlang.compiler.ast.statement.BoxTryCatch;
 import ortus.boxlang.runtime.context.CatchBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 
 public class BoxTryTransformer extends AbstractTransformer {
@@ -82,6 +83,14 @@ public class BoxTryTransformer extends AbstractTransformer {
 
 			var eVar = tracker.storeNewVariable( Opcodes.ASTORE );
 			nodes.addAll( eVar.nodes() );
+
+			nodes.add( new VarInsnNode( Opcodes.ALOAD, eVar.index() ) );
+			nodes.add( new TypeInsnNode( Opcodes.INSTANCEOF, Type.getInternalName( AbortException.class ) ) );
+			LabelNode abortLabel = new LabelNode();
+			nodes.add( new JumpInsnNode( Opcodes.IFEQ, abortLabel ) );
+			nodes.add( new VarInsnNode( Opcodes.ALOAD, eVar.index() ) );
+			nodes.add( new InsnNode( Opcodes.ATHROW ) );
+			nodes.add( abortLabel );
 
 			for ( BoxTryCatch catchNode : boxTry.getCatches() ) {
 				nodes.addAll(
