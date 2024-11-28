@@ -31,12 +31,14 @@ import org.slf4j.LoggerFactory;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.classic.encoder.JsonEncoder;
 import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.classic.util.LogbackMDCAdapterSimple;
 import ch.qos.logback.core.Appender;
 import ch.qos.logback.core.ConsoleAppender;
 import ch.qos.logback.core.FileAppender;
+import ch.qos.logback.core.encoder.EncoderBase;
 import ch.qos.logback.core.rolling.RollingFileAppender;
 import ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy;
 import ch.qos.logback.core.util.FileSize;
@@ -112,9 +114,9 @@ public class LoggingService {
 	private LoggerContext							loggerContext;
 
 	/**
-	 * The BoxLang pattern encoder we use for logging
+	 * The default encoder for the runtime: We can use either a text or JSON encoder
 	 */
-	private PatternLayoutEncoder					encoder;
+	private EncoderBase<ILoggingEvent>				defaultEncoder;
 
 	/**
 	 * A map of registered appenders
@@ -174,16 +176,17 @@ public class LoggingService {
 		this.loggerContext.setName( CONTEXT_NAME );
 
 		// Setup the runtime encoder with the BoxLang format
-		this.encoder = new PatternLayoutEncoder();
-		this.encoder.setContext( loggerContext );
-		this.encoder.setPattern( LOG_FORMAT );
-		this.encoder.start();
+		PatternLayoutEncoder defaultEncoder = new PatternLayoutEncoder();
+		defaultEncoder.setContext( loggerContext );
+		defaultEncoder.setPattern( LOG_FORMAT );
+		defaultEncoder.start();
+		setDefaultEncoder( defaultEncoder );
 
 		// Configure a basic Console Appender
 		// See: https://logback.qos.ch/manual/appenders.html
 		ConsoleAppender<ILoggingEvent> appender = new ConsoleAppender<>();
 		appender.setContext( this.loggerContext );
-		appender.setEncoder( this.encoder );
+		appender.setEncoder( this.defaultEncoder );
 		appender.start();
 
 		// Configure the Root Logger
@@ -241,8 +244,8 @@ public class LoggingService {
 	 *
 	 * @return The encoder
 	 */
-	public PatternLayoutEncoder getEncoder() {
-		return this.encoder;
+	public EncoderBase<ILoggingEvent> getDefaultEncoder() {
+		return this.defaultEncoder;
 	}
 
 	/**
@@ -252,8 +255,8 @@ public class LoggingService {
 	 *
 	 * @return LoggingService
 	 */
-	public LoggingService setEncoder( PatternLayoutEncoder encoder ) {
-		this.encoder = encoder;
+	public LoggingService setDefaultEncoder( EncoderBase<ILoggingEvent> encoder ) {
+		this.defaultEncoder = encoder;
 		return instance;
 	}
 
@@ -294,6 +297,15 @@ public class LoggingService {
 		// Reconfigure Root Logger
 		Level rootLevel = Level.toLevel( this.runtime.getConfiguration().logging.rootLevel );
 		this.rootLogger.setLevel( rootLevel );
+
+		// Change encoder or not to JSON, default is text
+		if ( this.runtime.getConfiguration().logging.defaultEncoder.equalsIgnoreCase( "json" ) ) {
+			// Build a logback json encoder
+			JsonEncoder targetEncoder = new JsonEncoder();
+			targetEncoder.setContext( this.loggerContext );
+			targetEncoder.start();
+			setDefaultEncoder( targetEncoder );
+		}
 
 		return instance;
 	}
@@ -434,7 +446,7 @@ public class LoggingService {
 			appender.setName( fileName );
 			appender.setFile( filePath );
 			appender.setContext( logContext );
-			appender.setEncoder( getEncoder() );
+			appender.setEncoder( getDefaultEncoder() );
 			appender.setAppend( true );
 			appender.setImmediateFlush( true );
 			// This is commented as rolling with compression does not allow prudent handling

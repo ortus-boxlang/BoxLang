@@ -92,6 +92,9 @@
 		// Valid values are in order of severity: ERROR, WARN, INFO, DEBUG, TRACE, OFF
 		// If the runtime is in Debug mode, this will be set to DEBUG
 		"rootLevel": "WARN",
+		// Default Encoder for file appenders.
+		// The available options are "text" and "json"
+		"defaultEncoder": "text",
 		// A collection of loggers and their configurations
 		"loggers": {}
 	},
