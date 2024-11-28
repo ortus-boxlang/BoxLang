@@ -1288,4 +1288,28 @@ public class BoxTemplateTest {
 		}
 	}
 
+	@Test
+	public void testEqualAFterTag() {
+		instance.executeSource(
+		    """
+		       <bx:if true>=
+		    </bx:if>
+		    <bx:set output = getBoxContext().getBuffer().toString()>
+		         """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.getAsString( Key.output ).trim() ).isEqualTo( "=" );
+	}
+
+	@Test
+	public void testLessThanBeforeTag() {
+		instance.executeSource(
+		    """
+		    <<bx:set result = "bar">
+		    <bx:set output = getBoxContext().getBuffer().toString()>
+		         """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.get( result ) ).isEqualTo( "bar" );
+		assertThat( variables.getAsString( Key.output ).trim() ).isEqualTo( "<" );
+	}
+
 }

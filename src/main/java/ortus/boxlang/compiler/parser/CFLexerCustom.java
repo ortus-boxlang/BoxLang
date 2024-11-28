@@ -35,28 +35,53 @@ public class CFLexerCustom extends CFLexer {
 	/**
 	 * If the last token was an elseif
 	 */
-	Boolean								inElseIf			= false;
+	Boolean								inElseIf						= false;
+
+	/**
+	 * Track the special token COMPONENT_CLOSE_EQUAL that happens when we have >= ending a component like cfif and need to break this into two tokens.
+	 */
+	Boolean								inComponentCloseEqual			= false;
+
+	/**
+	 * A reference to the last component close equal token
+	 */
+	Token								lastComponentCloseEqual			= null;
 
 	/**
 	 * A reference to the last elseif token
 	 */
-	Token								lastElseIf			= null;
+	Token								lastElseIf						= null;
+
+	/**
+	 * A reference to the last token
+	 */
+	Token								lastToken						= null;
 
 	/**
 	 * Reserved words that are operators
 	 */
-	private static final Set<Integer>	operatorWords		= Set.of( AND, EQ, EQUAL, EQV, GE, GREATER, GT, GTE, IMP, IS, LE, LESS, LT, LTE, MOD, NEQ, NOT, OR,
-	    THAN, XOR );
+	private static final Set<Integer>	operatorWords					= Set.of( AND, EQ, EQUAL, EQV, GE, GREATER, GT, GTE, IMP, IS, LE, LESS, LT, LTE, MOD,
+	    NEQ, NOT, OR, THAN, XOR );
+
+	/**
+	 * Try and track what tokens can't preceed operators. This prolly won't be an exhaustive list, but trying to cover as may bases as we can.
+	 * operator words above, when followed by a `(` will be treated as an identifier ONLY if they are preceeded by a token in this list, or there is no previous token
+	 */
+	private static final Set<Integer>	tokensThatDoNoPreceedeOperators	= Set.of( LPAREN, LBRACE, RBRACE, LBRACKET, SEMICOLON, RETURN, COLON, DOT, COMMA, AND,
+	    EQ, EQUAL, EQV, GE, GT, GTE, IMP, IS, LE, LT, LTE, MOD, NEQ, NOT, OR, THAN, XOR, AMPAMP, EQEQ, GTSIGN, GTESIGN, LTSIGN, LTESIGN, BANGEQUAL,
+	    LESSTHANGREATERTHAN, BANG, PIPEPIPE, AMPERSAND, ARROW, BACKSLASH, COLONCOLON, ELVIS, EQUALSIGN, ARROW_RIGHT, MINUS, MINUSMINUS, PIPE, PERCENT, POWER,
+	    QM, SLASH, STAR, CONCATEQUAL, PLUSEQUAL, MINUSEQUAL, STAREQUAL, SLASHEQUAL, MODEQUAL, PLUS, PLUSPLUS, TEQ, TENQ, TEMPLATE_IF, TEMPLATE_ELSEIF,
+	    TEMPLATE_SET, TEMPLATE_RETURN );
 
 	/**
 	 * A flag to track if the last token was a dot
 	 */
-	private boolean						dotty				= false;
+	private boolean						dotty							= false;
 
 	/**
 	 * ASCII Character code for left parenthesis
 	 */
-	private int							LPAREN_Char_Code	= 40;
+	private int							LPAREN_Char_Code				= 40;
 
 	/**
 	 * The mode for the lexer to start in
@@ -168,7 +193,15 @@ public class CFLexerCustom extends CFLexer {
 			CommonToken ifToken = new CommonToken( new Pair<TokenSource, CharStream>( this, this._input ), CFLexer.IF, DEFAULT_TOKEN_CHANNEL,
 			    lastElseIf.getStartIndex() + 4, lastElseIf.getStopIndex() );
 			ifToken.setText( "if" );
-			return ifToken;
+			lastToken = ifToken;
+			return setLastToken( ifToken );
+		}
+		if ( inComponentCloseEqual ) {
+			inComponentCloseEqual = false;
+			CommonToken equalToken = new CommonToken( new Pair<TokenSource, CharStream>( this, this._input ), CFLexer.CONTENT_TEXT, DEFAULT_TOKEN_CHANNEL,
+			    lastComponentCloseEqual.getStartIndex() + 1, lastComponentCloseEqual.getStopIndex() );
+			equalToken.setText( "=" );
+			return setLastToken( equalToken );
 		}
 		Token nextToken = super.nextToken();
 
@@ -182,16 +215,25 @@ public class CFLexerCustom extends CFLexer {
 				CommonToken elseToken = new CommonToken( new Pair<TokenSource, CharStream>( this, this._input ), CFLexer.ELSE, DEFAULT_TOKEN_CHANNEL,
 				    nextToken.getStartIndex(), nextToken.getStopIndex() - 2 );
 				elseToken.setText( "else" );
-				return elseToken;
+				return setLastToken( elseToken );
 
 			case CFLexer.DOT :
 				dotty = true;
-				return nextToken;
+				return setLastToken( nextToken );
 
 			case CFLexer.UNEXPECTED_EXPRESSION_END :
 				errorListener.semanticError( "Unexpected end of expression", parser.getPosition( nextToken ) );
 				( ( CommonToken ) nextToken ).setType( COMPONENT_OPEN );
-				return nextToken;
+				return setLastToken( nextToken );
+
+			case CFLexer.COMPONENT_CLOSE_EQUAL :
+				inComponentCloseEqual = true;
+				lastComponentCloseEqual = nextToken;
+				CommonToken componentCloseToken = new CommonToken( new Pair<TokenSource, CharStream>( this, this._input ), CFLexer.COMPONENT_CLOSE,
+				    DEFAULT_TOKEN_CHANNEL,
+				    nextToken.getStartIndex(), nextToken.getStopIndex() - 1 );
+				componentCloseToken.setText( ">" );
+				return setLastToken( componentCloseToken );
 
 			default :
 				// reserved operators after a dot are just identifiers
@@ -203,12 +245,20 @@ public class CFLexerCustom extends CFLexer {
 					// LT()
 					// GT()
 				} else if ( nextToken.getType() != CFLexer.NOT && operatorWords.contains( nextToken.getType() )
-				    && getInputStream().LA( 1 ) == LPAREN_Char_Code ) {
+				    && nextNonWhiteSpaceCharIs( LPAREN_Char_Code )
+				    && ( lastToken == null || tokensThatDoNoPreceedeOperators.contains( lastToken.getType() ) ) ) {
 					( ( CommonToken ) nextToken ).setType( IDENTIFIER );
 				}
 				dotty = false;
-				return nextToken;
+				return setLastToken( nextToken );
 		}
+	}
+
+	private Token setLastToken( Token token ) {
+		if ( token.getChannel() != HIDDEN ) {
+			lastToken = token;
+		}
+		return token;
 	}
 
 	/**
@@ -279,6 +329,15 @@ public class CFLexerCustom extends CFLexer {
 			}
 		}
 		return results;
+	}
+
+	private boolean nextNonWhiteSpaceCharIs( int charCode ) {
+		int	pos			= 1;
+		int	nextChar	= getInputStream().LA( pos++ );
+		while ( Character.isWhitespace( nextChar ) ) {
+			nextChar = getInputStream().LA( pos++ );
+		}
+		return nextChar == charCode;
 	}
 
 }

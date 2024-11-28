@@ -1528,4 +1528,28 @@ public class CFTemplateTest {
 		}
 	}
 
+	@Test
+	public void testEqualAFterTag() {
+		instance.executeSource(
+		    """
+		       <cfif true>=
+		    </cfif>
+		    <cfset output = getBoxContext().getBuffer().toString()>
+		         """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.getAsString( Key.output ).trim() ).isEqualTo( "=" );
+	}
+
+	@Test
+	public void testLessThanBeforeTag() {
+		instance.executeSource(
+		    """
+		    <<cfset result = "bar">
+		    <cfset output = getBoxContext().getBuffer().toString()>
+		         """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.get( result ) ).isEqualTo( "bar" );
+		assertThat( variables.getAsString( Key.output ).trim() ).isEqualTo( "<" );
+	}
+
 }

@@ -3982,20 +3982,20 @@ public class CoreLangTest {
 	public void testNumericKeysDoNotExistInNamedParamArgumentsCF() {
 		instance.executeSource(
 		    """
-		      	function foo( param ) {
-		      		variables.result1 = structKeyExists( arguments, 1 )
-		      		variables.result2 = arguments[ 1 ]
-		      		variables.result3 = structKeyExists( arguments, "param" )
-		      		variables.result4 = arguments[ "param" ]
-		      	}
+		    	function foo( param ) {
+		    		variables.result1 = structKeyExists( arguments, 1 )
+		    		variables.result2 = arguments[ 1 ]
+		    		variables.result3 = structKeyExists( arguments, "param" )
+		    		variables.result4 = arguments[ "param" ]
+		    	}
 
-		      	foo( param="brad" )
+		    	foo( param="brad" )
 		    variables.firstResult1 = result1;
 		    variables.firstResult2 = result2;
 		    variables.firstResult3 = result3;
 		    variables.firstResult4 = result4;
-		      	foo( "brad" )
-		      """, context, BoxSourceType.CFSCRIPT );
+		    	foo( "brad" )
+		    """, context, BoxSourceType.CFSCRIPT );
 		assertThat( variables.get( Key.of( "firstResult1" ) ) ).isEqualTo( false );
 		assertThat( variables.get( Key.of( "firstResult2" ) ).toString() ).contains( "brad" );
 		assertThat( variables.get( Key.of( "firstResult3" ) ) ).isEqualTo( true );
@@ -4004,6 +4004,106 @@ public class CoreLangTest {
 		assertThat( variables.get( Key.of( "result2" ) ).toString() ).contains( "brad" );
 		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( true );
 		assertThat( variables.get( Key.of( "result4" ) ).toString() ).contains( "brad" );
+	}
+
+	@Test
+	public void testBadWhitespaceAfterWordOperatorCF() {
+		instance.executeSource(
+		    """
+		    <cfset foo = true>
+		    <cfset bar = true>
+
+		    <cfif foo and( bar ) >
+		    	<cfset result = 1>
+		    <cfelse>
+		    	<cfset result = 2>
+		    </cfif>
+		    """, context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.get( result ) ).isEqualTo( 1 );
+
+		instance.executeSource(
+		    """
+		    <cfset foo = true>
+		    <cfset bar = true>
+
+		    <cffunction name="and">
+		    	<cfreturn false>
+		    </cffunction>
+
+		    <cfif and ( bar ) >
+		    	<cfset result = 1>
+		    <cfelse>
+		    	<cfset result = 2>
+		    </cfif>
+		            """, context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.get( result ) ).isEqualTo( 2 );
+
+		instance.executeSource(
+		    """
+		    <cfset foo = true>
+		    <cfset bar = true>
+
+		    <cffunction name="and">
+		    	<cfreturn false>
+		    </cffunction>
+
+		    <cfif and( bar ) >
+		    	<cfset result = 1>
+		    <cfelse>
+		    	<cfset result = 2>
+		    </cfif>
+		            """, context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.get( result ) ).isEqualTo( 2 );
+	}
+
+	@Test
+	public void testBadWhitespaceAfterWordOperator() {
+		instance.executeSource(
+		    """
+		    <bx:set foo = true>
+		    <bx:set bar = true>
+
+		    <bx:if foo and( bar ) >
+		    	<bx:set result = 1>
+		    <bx:else>
+		    	<bx:set result = 2>
+		    </bx:if>
+		    """, context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.get( result ) ).isEqualTo( 1 );
+
+		instance.executeSource(
+		    """
+		    <bx:set foo = true>
+		    <bx:set bar = true>
+
+		    <bx:function name="and">
+		    	<bx:return false>
+		    </bx:function>
+
+		    <bx:if and ( bar ) >
+		    	<bx:set result = 1>
+		    <bx:else>
+		    	<bx:set result = 2>
+		    </bx:if>
+		    		""", context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.get( result ) ).isEqualTo( 2 );
+
+		instance.executeSource(
+		    """
+		    <bx:set foo = true>
+		    <bx:set bar = true>
+
+		    <bx:function name="and">
+		    	<bx:return false>
+		    </bx:function>
+
+		    <bx:if and( bar ) >
+		    	<bx:set result = 1>
+		    <bx:else>
+		    	<bx:set result = 2>
+		    </bx:if>
+		    		""", context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.get( result ) ).isEqualTo( 2 );
 	}
 
 }
