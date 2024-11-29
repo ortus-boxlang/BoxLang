@@ -74,6 +74,6 @@ public class BoxParamTransformer extends AbstractTransformer {
 			);
 		}
 		// Delegate to the component transformer
-		return transpiler.transform( new BoxComponent( "param", attrs, node.getPosition(), node.getSourceText() ), context );
+		return transpiler.transform( new BoxComponent( "param", attrs, node.getPosition(), node.getSourceText() ), context, returnContext );
 	}
 }
