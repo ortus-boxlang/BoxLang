@@ -466,8 +466,8 @@ public class LoggingService {
 
 		// Compute it
 		return getLogger(
-			loggerName,
-			Paths.get( getLogsDirectory(), "/", loggerName.getNameNoCase() ).normalize().toString();
+		    loggerName,
+		    Paths.get( getLogsDirectory(), "/", loggerName.getNameNoCase() ).normalize().toString()
 		);
 	}
 
