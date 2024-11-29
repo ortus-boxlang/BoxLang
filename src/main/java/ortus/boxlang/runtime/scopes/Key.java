@@ -83,6 +83,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		action								= Key.of( "action" );
 	public static final Key		addnewline							= Key.of( "addnewline" );
 	public static final Key		addToken							= Key.of( "addToken" );
+	public static final Key		additive							= Key.of( "additive" );
 	public static final Key		algorithm							= Key.of( "algorithm" );
 	public static final Key		allow								= Key.of( "allow" );
 	public static final Key		allowedFileOperationExtensions		= Key.of( "allowedFileOperationExtensions" );

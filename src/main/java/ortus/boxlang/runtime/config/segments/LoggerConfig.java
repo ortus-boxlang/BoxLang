@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.config.segments;
 import java.util.Set;
 
 import ortus.boxlang.runtime.config.util.PropertyHelper;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.logging.LogLevel;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
@@ -63,6 +64,12 @@ public class LoggerConfig implements IConfigSegment {
 	public IStruct					appenderArguments	= Struct.of();
 
 	/**
+	 * Is it additive or not: if true, the logger will inherit the parent's level, if false, it will use its own level
+	 * Default is true
+	 */
+	public boolean					additive			= true;
+
+	/**
 	 * Default logging configuration
 	 */
 	private LoggingConfig			loggingConfig;
@@ -86,6 +93,7 @@ public class LoggerConfig implements IConfigSegment {
 		    PropertyHelper.processString( config, Key.encoder, LoggingConfig.DEFAULT_ENCODER.getName(), LoggingConfig.VALID_ENCODERS )
 		);
 		this.appenderArguments	= PropertyHelper.processToStruct( config, Key.appenderArguments );
+		this.additive			= BooleanCaster.cast( PropertyHelper.processString( config, Key.additive, "true" ) );
 
 		return this;
 	}
@@ -98,6 +106,7 @@ public class LoggerConfig implements IConfigSegment {
 		return Struct.of(
 		    Key._NAME, this.name.getName(),
 		    Key.level, this.level.getName(),
+		    Key.additive, this.additive,
 		    Key.appender, this.appender.getName(),
 		    Key.encoder, this.encoder.getName(),
 		    Key.appenderArguments, argsCopy
