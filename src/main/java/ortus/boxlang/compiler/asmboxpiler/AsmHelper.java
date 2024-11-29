@@ -346,7 +346,7 @@ public class AsmHelper {
 		nodes.add(
 		    new MethodInsnNode( Opcodes.INVOKESTATIC,
 		        Type.getInternalName( Struct.class ),
-		        "of",
+		        "linkedOf",
 		        Type.getMethodDescriptor( Type.getType( IStruct.class ), Type.getType( Object[].class ) ),
 		        false
 		    )
@@ -425,7 +425,7 @@ public class AsmHelper {
 		nodes.add(
 		    new MethodInsnNode( Opcodes.INVOKESTATIC,
 		        Type.getInternalName( Struct.class ),
-		        "of",
+		        "linkedOf",
 		        Type.getMethodDescriptor( Type.getType( IStruct.class ), Type.getType( Object[].class ) ),
 		        false
 		    )
@@ -490,7 +490,7 @@ public class AsmHelper {
 		nodes.add(
 		    new MethodInsnNode( Opcodes.INVOKESTATIC,
 		        Type.getInternalName( Struct.class ),
-		        "of",
+		        "linkedOf",
 		        Type.getMethodDescriptor( Type.getType( IStruct.class ), Type.getType( Object[].class ) ),
 		        false
 		    )

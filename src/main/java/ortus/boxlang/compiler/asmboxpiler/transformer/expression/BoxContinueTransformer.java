@@ -23,7 +23,6 @@ import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.JumpInsnNode;
 import org.objectweb.asm.tree.LabelNode;
-import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
@@ -75,10 +74,10 @@ public class BoxContinueTransformer extends AbstractTransformer {
 		}
 
 		if ( exitsAllowed.equals( ExitsAllowed.COMPONENT ) ) {
-			nodes.add( new LdcInsnNode( "" ) );
+			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
 			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
 			    Type.getInternalName( Component.BodyResult.class ),
-			    "ofBreak",
+			    "ofContinue",
 			    Type.getMethodDescriptor( Type.getType( Component.BodyResult.class ), Type.getType( String.class ) ),
 			    false )
 			);

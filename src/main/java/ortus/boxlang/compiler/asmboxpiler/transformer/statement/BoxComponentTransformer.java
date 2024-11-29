@@ -48,8 +48,6 @@ public class BoxComponentTransformer extends AbstractTransformer {
 			throw new IllegalStateException();
 		}
 
-		transpiler.incrementComponentCounter();
-
 		MethodContextTracker	tracker	= trackerOption.get();
 		List<AbstractInsnNode>	nodes	= new ArrayList<>();
 		nodes.addAll( tracker.loadCurrentContext() );
@@ -76,7 +74,9 @@ public class BoxComponentTransformer extends AbstractTransformer {
 		nodes.addAll( transpiler.transformAnnotations( attributes, true, false ) );
 
 		// Component.ComponentBody
+		transpiler.incrementComponentCounter();
 		nodes.addAll( generateBodyNodes( boxComponent.getBody() ) );
+		transpiler.decrementComponentCounter();
 
 		nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
 		    Type.getInternalName( IBoxContext.class ),
@@ -90,14 +90,36 @@ public class BoxComponentTransformer extends AbstractTransformer {
 				nodes.add( new InsnNode( Opcodes.POP ) );
 			}
 
-			transpiler.decrementComponentCounter();
+			// transpiler.decrementComponentCounter();
 
 			return nodes;
 			// TODO: this causes CoreLangTest.unicode
 			// return AsmHelper.addLineNumberLabels( nodes, node );
 		}
 
-		if ( transpiler.canReturn() ) {
+		if ( transpiler.isInsideComponent() ) {
+			LabelNode ifLabel = new LabelNode();
+
+			nodes.add( new InsnNode( Opcodes.DUP ) );
+
+			nodes.add(
+			    new MethodInsnNode(
+			        Opcodes.INVOKEVIRTUAL,
+			        Type.getInternalName( Component.BodyResult.class ),
+			        "isEarlyExit",
+			        Type.getMethodDescriptor( Type.BOOLEAN_TYPE ),
+			        false
+			    )
+			);
+
+			nodes.add( new JumpInsnNode( Opcodes.IFEQ, ifLabel ) );
+
+			nodes.add( new InsnNode( Opcodes.ARETURN ) );
+
+			nodes.add( ifLabel );
+
+			nodes.add( new InsnNode( Opcodes.ARETURN ) );
+		} else if ( transpiler.canReturn() ) {
 			LabelNode ifLabel = new LabelNode();
 
 			nodes.add( new InsnNode( Opcodes.DUP ) );
@@ -133,7 +155,7 @@ public class BoxComponentTransformer extends AbstractTransformer {
 			nodes.add( new InsnNode( Opcodes.POP ) );
 		}
 
-		transpiler.decrementComponentCounter();
+		// transpiler.decrementComponentCounter();
 
 		return nodes;
 		// TODO: this causes CoreLangTest.unicode

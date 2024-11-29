@@ -67,13 +67,14 @@ public class BoxForInTransformer extends AbstractTransformer {
 			throw new IllegalStateException();
 		}
 
-		MethodContextTracker	tracker		= trackerOption.get();
+		MethodContextTracker	tracker			= trackerOption.get();
 
-		LabelNode				loopStart	= new LabelNode();
-		LabelNode				loopEnd		= new LabelNode();
-		LabelNode				breakTarget	= new LabelNode();
+		LabelNode				loopStart		= new LabelNode();
+		LabelNode				loopEnd			= new LabelNode();
+		LabelNode				breakTarget		= new LabelNode();
+		LabelNode				continueTarget	= new LabelNode();
 
-		tracker.setContinue( forIn, loopStart );
+		tracker.setContinue( forIn, continueTarget );
 		tracker.setBreak( forIn, breakTarget );
 		if ( forIn.getLabel() != null ) {
 			tracker.setStringLabel( forIn.getLabel(), forIn );
@@ -196,6 +197,8 @@ public class BoxForInTransformer extends AbstractTransformer {
 		nodes.addAll( expressionPos.end() );
 
 		nodes.addAll( transpiler.transform( forIn.getBody(), context, returnValueContext ) );
+
+		nodes.add( continueTarget );
 
 		// increment query loop
 		nodes.add( new VarInsnNode( Opcodes.ILOAD, isQueryVar.index() ) );
