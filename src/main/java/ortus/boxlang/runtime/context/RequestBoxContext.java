@@ -33,6 +33,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.ThreadScope;
 import ortus.boxlang.runtime.services.ApplicationService;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -367,6 +368,12 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 		IStruct mappings = appSettings.getAsStruct( Key.mappings );
 		if ( !mappings.isEmpty() ) {
 			config.getAsStruct( Key.mappings ).putAll( mappings );
+		}
+
+		// Add in custom tag paths. We calld them customTagsDirectory, but CF calls them customTagPaths. Maybe support both?
+		Array customTagPaths = appSettings.getAsArray( Key.customTagPaths );
+		if ( !customTagPaths.isEmpty() ) {
+			config.getAsArray( Key.customTagsDirectory ).addAll( customTagPaths );
 		}
 
 		// OTHER OVERRIDES go here

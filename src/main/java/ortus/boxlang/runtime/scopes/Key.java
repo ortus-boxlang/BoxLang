@@ -207,6 +207,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		customTagName						= Key.of( "customTagName" );
 	public static final Key		customTagPath						= Key.of( "customTagPath" );
 	public static final Key		customTagsDirectory					= Key.of( "customTagsDirectory" );
+	public static final Key		customTagPaths						= Key.of( "customTagPaths" );
 	public static final Key		data								= Key.of( "data" );
 	public static final Key		dataCollection						= Key.of( "dataCollection" );
 	public static final Key		datasource							= Key.of( "datasource" );
