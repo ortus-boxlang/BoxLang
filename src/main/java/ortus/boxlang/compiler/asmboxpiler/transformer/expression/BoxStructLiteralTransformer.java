@@ -71,12 +71,12 @@ public class BoxStructLiteralTransformer extends AbstractTransformer {
 			List<AbstractInsnNode> nodes = new ArrayList<>();
 
 			nodes.addAll( AsmHelper.array( Type.getType( Object.class ), structLiteral.getValues(), ( value, i ) -> {
-				if ( value instanceof BoxIdentifier && i % 2 != 1 ) {
+				if ( value instanceof BoxIdentifier bi && i % 2 != 1 ) {
 					// { foo : "bar" }
-					return List.of( new LdcInsnNode( value.getSourceText() ) );
-				} else if ( value instanceof BoxScope && i % 2 != 1 ) {
+					return List.of( new LdcInsnNode( bi.getName() ) );
+				} else if ( value instanceof BoxScope bs && i % 2 != 1 ) {
 					// { this : "bar" }
-					return List.of( new LdcInsnNode( value.getSourceText() ) );
+					return List.of( new LdcInsnNode( bs.getName() ) );
 				} else {
 					// { "foo" : "bar" }
 					return transpiler.transform( value, context, ReturnValueContext.VALUE );

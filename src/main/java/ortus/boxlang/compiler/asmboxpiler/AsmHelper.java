@@ -1100,6 +1100,8 @@ public class AsmHelper {
 	 */
 	public static List<AbstractInsnNode> loadClass( Transpiler transpiler, BoxIdentifier identifier ) {
 		List<AbstractInsnNode> nodes = new ArrayList<>();
+		// the variable at slot 2 needs to be an instance of ClassLocator
+		// todo convert this to use some specific method like tracker.loadClassLocator()
 		nodes.add( new VarInsnNode( Opcodes.ALOAD, 2 ) );
 		transpiler.getCurrentMethodContextTracker().ifPresent( ( t ) -> nodes.addAll( t.loadCurrentContext() ) );
 		nodes.add( new LdcInsnNode( identifier.getName() ) );

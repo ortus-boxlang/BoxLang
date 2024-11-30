@@ -41,6 +41,7 @@ import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.DefaultExpression;
@@ -61,7 +62,7 @@ public class BoxArgumentDeclarationTransformer extends AbstractTransformer {
 		List<AbstractInsnNode>	defaultExpression	= List.of( new InsnNode( Opcodes.ACONST_NULL ) );
 		if ( boxArgument.getValue() != null ) {
 			if ( boxArgument.getValue().isLiteral() ) {
-				defaultLiteral = transpiler.transform( boxArgument.getValue(), TransformerContext.NONE );
+				defaultLiteral = transpiler.transform( boxArgument.getValue(), TransformerContext.NONE, ReturnValueContext.VALUE_OR_NULL );
 			} else {
 				defaultExpression = getDefaultExpression( boxArgument.getValue() );
 				// defaultExpression = transpiler.transform( boxArgument.getValue(), TransformerContext.NONE, ReturnValueContext.VALUE );
@@ -137,6 +138,14 @@ public class BoxArgumentDeclarationTransformer extends AbstractTransformer {
 		methodVisitor.visitCode();
 
 		t.trackNewContext();
+
+		methodVisitor.visitMethodInsn(
+		    Opcodes.INVOKESTATIC,
+		    Type.getInternalName( ClassLocator.class ),
+		    "getInstance",
+		    Type.getMethodDescriptor( Type.getType( ClassLocator.class ) ),
+		    false );
+		t.storeNewVariable( Opcodes.ASTORE ).nodes().forEach( ( node ) -> node.accept( methodVisitor ) );
 
 		transpiler.transform( body, TransformerContext.NONE, ReturnValueContext.VALUE_OR_NULL )
 		    .forEach( ( ins ) -> ins.accept( methodVisitor ) );

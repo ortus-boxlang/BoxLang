@@ -69,6 +69,7 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 			nodes.add( new JumpInsnNode( Opcodes.IFNE, startOfCase ) );
 			// this dupes the condition
 			nodes.add( new InsnNode( Opcodes.DUP ) );
+
 			if ( c.getDelimiter() == null ) {
 				nodes.addAll( transpiler.transform( c.getCondition(), TransformerContext.NONE, ReturnValueContext.VALUE ) );
 				nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
@@ -82,13 +83,18 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 				    "cast",
 				    Type.getMethodDescriptor( Type.getType( String.class ), Type.getType( Object.class ) ),
 				    false ) );
+
 				nodes.addAll( transpiler.transform( c.getCondition(), TransformerContext.NONE, ReturnValueContext.VALUE ) );
+
 				nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
 				    Type.getInternalName( StringCaster.class ),
 				    "cast",
 				    Type.getMethodDescriptor( Type.getType( String.class ), Type.getType( Object.class ) ),
 				    false ) );
+
+				nodes.add( new InsnNode( Opcodes.SWAP ) );
 				nodes.addAll( transpiler.transform( c.getDelimiter(), TransformerContext.NONE, ReturnValueContext.VALUE ) );
+
 				nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
 				    Type.getInternalName( ListUtil.class ),
 				    "containsNoCase",

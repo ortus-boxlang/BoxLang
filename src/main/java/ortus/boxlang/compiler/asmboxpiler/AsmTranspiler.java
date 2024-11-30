@@ -669,7 +669,7 @@ public class AsmTranspiler extends Transpiler {
 			if ( defaultAnnotation.getValue() != null ) {
 
 				if ( defaultAnnotation.getValue().isLiteral() ) {
-					init		= transform( defaultAnnotation.getValue(), TransformerContext.NONE, ReturnValueContext.EMPTY );
+					init		= transform( defaultAnnotation.getValue(), TransformerContext.NONE, ReturnValueContext.VALUE_OR_NULL );
 					initLambda	= List.of( new InsnNode( Opcodes.ACONST_NULL ) );
 				} else {
 					init = List.of( new InsnNode( Opcodes.ACONST_NULL ) );

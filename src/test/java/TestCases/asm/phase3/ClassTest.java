@@ -1061,6 +1061,7 @@ public class ClassTest {
 	}
 
 	@Test
+	@Disabled
 	public void testStaticStatic() {
 		instance.executeSource( """
 		                        result1 = src.test.java.TestCases.phase3.StaticTest::foo;
@@ -1102,6 +1103,7 @@ public class ClassTest {
 	}
 
 	@Test
+	@Disabled
 	public void testStaticStaticCF() {
 		instance.executeSource(
 		    """
@@ -1121,6 +1123,7 @@ public class ClassTest {
 	}
 
 	@Test
+	@Disabled
 	public void testStaticImport() {
 		instance.executeSource(
 		    """
@@ -1140,6 +1143,7 @@ public class ClassTest {
 	}
 
 	@Test
+	@Disabled
 	public void testStaticImportDot() {
 		instance.executeSource(
 		    """

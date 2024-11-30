@@ -20,6 +20,7 @@ import java.util.List;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
+import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 
@@ -48,6 +49,10 @@ public class BoxStringLiteralTransformer extends AbstractTransformer {
 
 		if ( value.length() < MAX_LITERAL_LENGTH ) {
 			nodes.add( new LdcInsnNode( literal.getValue() ) );
+
+			if ( returnContext != ReturnValueContext.VALUE && returnContext != ReturnValueContext.VALUE_OR_NULL ) {
+				nodes.add( new InsnNode( Opcodes.POP ) );
+			}
 			return AsmHelper.addLineNumberLabels( nodes, node );
 
 		}
@@ -72,6 +77,10 @@ public class BoxStringLiteralTransformer extends AbstractTransformer {
 		    ),
 		    false )
 		);
+
+		if ( returnContext != ReturnValueContext.VALUE && returnContext != ReturnValueContext.VALUE_OR_NULL ) {
+			nodes.add( new InsnNode( Opcodes.POP ) );
+		}
 
 		return AsmHelper.addLineNumberLabels( nodes, node );
 	}

@@ -184,9 +184,10 @@ public abstract class Transpiler implements ITranspiler {
 	}
 
 	public void setAuxiliary( String name, ClassNode classNode ) {
-		if ( auxiliaries.putIfAbsent( name, classNode ) != null ) {
-			// throw new IllegalArgumentException( "Auxiliary already registered: " + name );
-		}
+		auxiliaries.put( name, classNode );
+		// if ( auxiliaries.putIfAbsent( name, classNode ) != null ) {
+		// throw new IllegalArgumentException( "Auxiliary already registered: " + name );
+		// }
 	}
 
 	public int incrementAndGetLambdaCounter() {
@@ -230,7 +231,7 @@ public abstract class Transpiler implements ITranspiler {
 		documentation.forEach( doc -> {
 			List<AbstractInsnNode> annotationKey = createKey( doc.getKey().getValue() );
 			members.add( annotationKey );
-			List<AbstractInsnNode> value = transform( doc.getValue(), TransformerContext.NONE, ReturnValueContext.EMPTY );
+			List<AbstractInsnNode> value = transform( doc.getValue(), TransformerContext.NONE, ReturnValueContext.VALUE );
 			members.add( value );
 		} );
 		if ( members.isEmpty() ) {

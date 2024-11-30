@@ -24,6 +24,7 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.FieldInsnNode;
+import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.VarInsnNode;
 
@@ -106,6 +107,10 @@ public class BoxAccessTransformer extends AbstractTransformer {
 			    true
 			) );
 
+			if ( returnContext.empty ) {
+				nodes.add( new InsnNode( Opcodes.POP ) );
+			}
+
 			return AsmHelper.addLineNumberLabels( nodes, node );
 
 		} else {
@@ -140,6 +145,10 @@ public class BoxAccessTransformer extends AbstractTransformer {
 				    "unwrapQueryColumn",
 				    Type.getMethodDescriptor( Type.getType( Object.class ), Type.getType( Object.class ) ),
 				    true ) );
+			}
+
+			if ( returnContext.empty ) {
+				nodes.add( new InsnNode( Opcodes.POP ) );
 			}
 
 			return AsmHelper.addLineNumberLabels( nodes, node );

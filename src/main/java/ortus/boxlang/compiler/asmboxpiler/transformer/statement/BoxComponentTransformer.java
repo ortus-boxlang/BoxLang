@@ -119,7 +119,7 @@ public class BoxComponentTransformer extends AbstractTransformer {
 			nodes.add( ifLabel );
 
 			return nodes;
-		} else if ( transpiler.canReturn() && !returnContext.empty ) {
+		} else if ( transpiler.canReturn() ) {
 			LabelNode ifLabel = new LabelNode();
 
 			nodes.add( new InsnNode( Opcodes.DUP ) );

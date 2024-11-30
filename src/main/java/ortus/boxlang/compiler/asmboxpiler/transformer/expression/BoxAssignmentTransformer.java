@@ -122,7 +122,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			List<AbstractInsnNode> nodes = new ArrayList<>();
 			tracker.ifPresent( t -> nodes.addAll( t.loadCurrentContext() ) );
 
-			nodes.addAll( transpiler.transform( left, null ) );
+			nodes.addAll( transpiler.transform( left, null, ReturnValueContext.VALUE_OR_NULL ) );
 
 			nodes.addAll( jRight );
 
@@ -339,7 +339,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 
 		Optional<MethodContextTracker>	tracker	= transpiler.getCurrentMethodContextTracker();
 		List<AbstractInsnNode>			nodes	= new ArrayList<>();
-		List<AbstractInsnNode>			right	= transpiler.transform( assigment.getRight(), TransformerContext.NONE );
+		List<AbstractInsnNode>			right	= transpiler.transform( assigment.getRight(), TransformerContext.NONE, ReturnValueContext.VALUE );
 
 		/*
 		 * ${operation}.invoke(${contextName},
@@ -378,7 +378,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 
 			nodes.addAll( accessKey );
 		} else if ( assigment.getLeft() instanceof BoxAccess objectAccess ) {
-			nodes.addAll( transpiler.transform( objectAccess.getContext(), TransformerContext.NONE ) );
+			nodes.addAll( transpiler.transform( objectAccess.getContext(), TransformerContext.NONE, ReturnValueContext.VALUE_OR_NULL ) );
 
 			List<AbstractInsnNode> accessKey;
 			// DotAccess just uses the string directly, array access allows any expression

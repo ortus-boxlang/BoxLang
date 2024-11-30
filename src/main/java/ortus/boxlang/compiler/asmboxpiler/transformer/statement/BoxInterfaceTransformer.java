@@ -431,7 +431,7 @@ public class BoxInterfaceTransformer {
 			for ( BoxExpression expression : transpiler.getKeys().values() ) {
 				methodVisitor.visitInsn( Opcodes.DUP );
 				methodVisitor.visitLdcInsn( index++ );
-				transpiler.transform( expression, TransformerContext.NONE, ReturnValueContext.EMPTY )
+				transpiler.transform( expression, TransformerContext.NONE, ReturnValueContext.VALUE )
 				    .forEach( methodInsnNode -> methodInsnNode.accept( methodVisitor ) );
 				methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
 				    Type.getInternalName( Key.class ),
