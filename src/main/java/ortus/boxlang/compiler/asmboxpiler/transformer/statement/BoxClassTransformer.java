@@ -367,75 +367,65 @@ public class BoxClassTransformer {
 		defineLookupPrivateMethod( transpiler, classNode, type );
 		defineLookupPrivateField( transpiler, classNode, type );
 
-		AsmHelper.addFieldGetter( classNode,
+		AsmHelper.addPrivateFieldGetter( classNode,
 		    type,
 		    "variablesScope",
 		    "getVariablesScope",
 		    Type.getType( VariablesScope.class ),
 		    null );
-		AsmHelper.addFieldGetter( classNode,
+		AsmHelper.addPrivateFieldGetter( classNode,
 		    type,
 		    "thisScope",
 		    "getThisScope",
 		    Type.getType( ThisScope.class ),
 		    null );
-		AsmHelper.addFieldGetter( classNode,
+		AsmHelper.addPrivateFieldGetter( classNode,
 		    type,
 		    "name",
 		    "getName",
 		    Type.getType( Key.class ),
 		    null );
-		AsmHelper.addFieldGetter( classNode,
+		AsmHelper.addPrivateFieldGetter( classNode,
 		    type,
 		    "interfaces",
 		    "getInterfaces",
 		    Type.getType( List.class ),
 		    null );
-		AsmHelper.addFieldGetterAndSetter( classNode,
+		AsmHelper.addPrivateFieldGetterAndSetter( classNode,
 		    type,
 		    "_super",
 		    "getSuper",
 		    "_setSuper",
 		    Type.getType( IClassRunnable.class ),
-		    null,
-		    methodVisitor -> {
-		    } );
-		AsmHelper.addFieldGetterAndSetter( classNode,
+		    null );
+		AsmHelper.addPrivateFieldGetterAndSetter( classNode,
 		    type,
 		    "child",
 		    "getChild",
 		    "setChild",
 		    Type.getType( IClassRunnable.class ),
-		    null,
-		    methodVisitor -> {
-		    } );
-		AsmHelper.addFieldGetterAndSetter( classNode,
+		    null );
+		AsmHelper.addPrivateFieldGetterAndSetter( classNode,
 		    type,
 		    "canOutput",
 		    "getCanOutput",
 		    "setCanOutput",
 		    Type.getType( Boolean.class ),
-		    null,
-		    methodVisitor -> {
-		    } );
-		AsmHelper.addFieldGetterAndSetter( classNode,
+		    null );
+		AsmHelper.addPrivateFieldGetterAndSetter( classNode,
 		    type,
 		    "$bx",
 		    "_getbx",
 		    "_setbx",
 		    Type.getType( BoxMeta.class ),
-		    null,
-		    methodVisitor -> {
-		    } );
-		AsmHelper.addFieldGetterAndSetter( classNode,
+		    null );
+		AsmHelper.addPrivateFieldGetterAndSetter( classNode,
 		    type,
 		    "canInvokeImplicitAccessor",
 		    "getCanInvokeImplicitAccessor",
 		    "setCanInvokeImplicitAccessor",
 		    Type.getType( Boolean.class ),
-		    null,
-		    methodVisitor -> {
-		    } );
+		    null );
 
 		AsmHelper.boxClassSupport( classNode, "pseudoConstructor", Type.VOID_TYPE, Type.getType( IBoxContext.class ) );
 		AsmHelper.boxClassSupport( classNode, "canOutput", Type.getType( Boolean.class ) );

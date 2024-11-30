@@ -652,7 +652,35 @@ public class AsmHelper {
 		methodVisitor.visitEnd();
 	}
 
-	public static void addFieldGetter( ClassVisitor classVisitor, Type type, String field, String method, Type property, Object value ) {
+	public static void addPublicStaticFieldAndPublicStaticGetter(
+	    ClassVisitor classVisitor,
+	    Type owningType,
+	    String field,
+	    String method,
+	    Type propertyType,
+	    Object defaultValue ) {
+		FieldVisitor fieldVisitor = classVisitor.visitField( Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
+		    field,
+		    propertyType.getDescriptor(),
+		    null,
+		    defaultValue );
+		fieldVisitor.visitEnd();
+		MethodVisitor methodVisitor = classVisitor.visitMethod( Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
+		    method,
+		    Type.getMethodDescriptor( propertyType ),
+		    null,
+		    null );
+		methodVisitor.visitCode();
+		methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
+		    owningType.getInternalName(),
+		    field,
+		    propertyType.getDescriptor() );
+		methodVisitor.visitInsn( propertyType.getOpcode( Opcodes.IRETURN ) );
+		methodVisitor.visitMaxs( 0, 0 );
+		methodVisitor.visitEnd();
+	}
+
+	public static void addPrivateFieldGetter( ClassVisitor classVisitor, Type type, String field, String method, Type property, Object value ) {
 		FieldVisitor fieldVisitor = classVisitor.visitField( Opcodes.ACC_PRIVATE,
 		    field,
 		    property.getDescriptor(),
@@ -667,6 +695,49 @@ public class AsmHelper {
 		methodVisitor.visitCode();
 		methodVisitor.visitVarInsn( Opcodes.ALOAD, 0 );
 		methodVisitor.visitFieldInsn( Opcodes.GETFIELD,
+		    type.getInternalName(),
+		    field,
+		    property.getDescriptor() );
+		methodVisitor.visitInsn( property.getOpcode( Opcodes.IRETURN ) );
+		methodVisitor.visitMaxs( 0, 0 );
+		methodVisitor.visitEnd();
+	}
+
+	public static void addPrivateFieldGetterAndSetter( ClassVisitor classVisitor, Type type, String field, String getter, String setter, Type property,
+	    Object value ) {
+		addPrivateFieldGetter( classVisitor, type, field, getter, property, value );
+		MethodVisitor methodVisitor = classVisitor.visitMethod( Opcodes.ACC_PUBLIC,
+		    setter,
+		    Type.getMethodDescriptor( Type.VOID_TYPE, property ),
+		    null,
+		    null );
+		methodVisitor.visitCode();
+		methodVisitor.visitVarInsn( Opcodes.ALOAD, 0 );
+		methodVisitor.visitVarInsn( Opcodes.ALOAD, 1 );
+		methodVisitor.visitFieldInsn( Opcodes.PUTFIELD,
+		    type.getInternalName(),
+		    field,
+		    property.getDescriptor() );
+		methodVisitor.visitInsn( Opcodes.RETURN );
+		methodVisitor.visitMaxs( 0, 0 );
+		methodVisitor.visitEnd();
+	}
+
+	public static void addFieldGetter( ClassVisitor classVisitor, Type type, String field, String method, Type property, Object value ) {
+		FieldVisitor fieldVisitor = classVisitor.visitField( Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC,
+		    field,
+		    property.getDescriptor(),
+		    null,
+		    value );
+		fieldVisitor.visitEnd();
+		MethodVisitor methodVisitor = classVisitor.visitMethod( Opcodes.ACC_PUBLIC,
+		    method,
+		    Type.getMethodDescriptor( property ),
+		    null,
+		    null );
+		methodVisitor.visitCode();
+		methodVisitor.visitVarInsn( Opcodes.ALOAD, 0 );
+		methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
 		    type.getInternalName(),
 		    field,
 		    property.getDescriptor() );

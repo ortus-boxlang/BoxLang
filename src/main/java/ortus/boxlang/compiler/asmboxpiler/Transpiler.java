@@ -64,6 +64,10 @@ public abstract class Transpiler implements ITranspiler {
 	}
 
 	public boolean canReturn() {
+		String returnType = getProperty( "returnType" );
+		if ( returnType != null && !returnType.equals( "void" ) ) {
+			return true;
+		}
 		return functionBodyCounter > 0;
 	}
 

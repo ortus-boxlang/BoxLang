@@ -616,6 +616,11 @@ public class AsmTranspiler extends Transpiler {
 					case EMPTY, EMPTY_UNLESS_JUMPING -> 0;
 					case VALUE, VALUE_OR_NULL -> 1;
 				};
+
+				if ( node instanceof BoxReturn ) {
+					expectation = 0;
+				}
+
 				if ( expectation != delta ) {
 					throw new IllegalStateException( node.getClass() + " with " + returnValueContext + " yielded a stack delta of " + delta );
 				}
@@ -673,7 +678,7 @@ public class AsmTranspiler extends Transpiler {
 					    + "/" + getProperty( "classname" )
 					    + "$Lambda_" + incrementAndGetLambdaCounter() + ";" );
 
-					List<AbstractInsnNode>	body		= transform( defaultAnnotation.getValue(), TransformerContext.NONE, ReturnValueContext.EMPTY );
+					List<AbstractInsnNode>	body		= transform( defaultAnnotation.getValue(), TransformerContext.NONE, ReturnValueContext.VALUE_OR_NULL );
 					ClassNode				classNode	= new ClassNode();
 					AsmHelper.init( classNode, false, type, Type.getType( Object.class ), methodVisitor -> {
 					}, Type.getType( DefaultExpression.class ) );
