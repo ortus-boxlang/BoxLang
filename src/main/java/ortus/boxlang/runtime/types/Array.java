@@ -57,6 +57,7 @@ import ortus.boxlang.runtime.types.meta.IChangeListener;
 import ortus.boxlang.runtime.types.meta.IListenable;
 import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableArray;
 import ortus.boxlang.runtime.types.util.BLCollector;
+import ortus.boxlang.runtime.util.RegexBuilder;
 
 /**
  * The primary array class in BoxLang. This class wraps a Java List and provides additional functionality for BoxLang.
@@ -286,7 +287,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 
 	/**
 	 * Because toList() can't be called from BL code due to the arrayToList() BIF
-	 * 
+	 *
 	 * @return
 	 */
 	public List<Object> asList() {
@@ -546,7 +547,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 		sb.append( "[\n  " );
 		sb.append( wrapped.stream()
 		    .map( value -> ( value instanceof IType t ? t.asString() : ( value == null ? "[null]" : value.toString() ) ) )
-		    .map( line -> line.replaceAll( "(?m)^", "  " ) ) // Add an indent to the start of each line
+		    .map( line -> RegexBuilder.of( line, RegexBuilder.MULTILINE_START_OF_LINE ).replaceAllAndGet( "  " ) ) // Add an indent to the start of each line
 		    .collect( java.util.stream.Collectors.joining( ",\n" ) ) );
 		sb.append( "\n]" );
 		return sb.toString();
@@ -988,10 +989,10 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 
 	/**
 	 * Get an integer from a key, returning null if the key is not an integer unless safe is false.
-	 * 
+	 *
 	 * @param key  The key to get the integer from
 	 * @param safe Whether to return null if the key is not an integer
-	 * 
+	 *
 	 * @return The integer or null
 	 */
 	public static Integer getIntFromKey( Key key, boolean safe ) {

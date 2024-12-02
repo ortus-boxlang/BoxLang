@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -408,7 +409,9 @@ public class FunctionService extends BaseService {
 			Key memberKey;
 			if ( member.name().equals( "" ) ) {
 				// Default member name for class ArrayFoo with BoxType of Array is just foo()
-				memberKey = Key.of( className.toLowerCase().replaceAll( member.type().name().toLowerCase(), "" ) );
+				memberKey = Key.of(
+				    StringUtils.replace( className.toLowerCase(), member.type().name().toLowerCase(), "" )
+				);
 			} else {
 				memberKey = Key.of( member.name() );
 			}

@@ -57,7 +57,6 @@ import ortus.boxlang.runtime.jdbc.drivers.IJDBCDriver;
 import ortus.boxlang.runtime.loader.DynamicClassLoader;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
-import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.ThisScope;
@@ -67,6 +66,7 @@ import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.services.IService;
 import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.services.ModuleService;
+import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.DynamicFunction;
@@ -304,7 +304,7 @@ public class ModuleRecord {
 		        ResolvedFilePath.of(
 		            null,
 		            null,
-		            packageName.replaceAll( "\\.", Matcher.quoteReplacement( File.separator ) ) + File.separator + ModuleService.MODULE_DESCRIPTOR,
+		            packageName.replace( ".", Matcher.quoteReplacement( File.separator ) ) + File.separator + ModuleService.MODULE_DESCRIPTOR,
 		            descriptorPath
 		        ),
 		        context
@@ -975,7 +975,7 @@ public class ModuleRecord {
 			return Array.of(
 			    Struct.of(
 			        // Default member name for class ArrayFoo with BoxType of Array is just foo()
-			        Key._NAME, className.getNameNoCase().replaceAll( boxType.getKey().getNameNoCase(), "" ),
+			        Key._NAME, className.getNameNoCase().replace( boxType.getKey().getNameNoCase(), "" ),
 			        Key.objectArgument, "",
 			        Key.type, boxType
 			    )
@@ -1009,7 +1009,7 @@ public class ModuleRecord {
 				// Prepare the record now
 				BoxLangType boxType = BoxLangType.valueOf( type.getNameNoCase() );
 				memberRecord.put( Key.type, boxType );
-				memberRecord.computeIfAbsent( Key._NAME, k -> className.getNameNoCase().replaceAll( type.getNameNoCase(), "" )
+				memberRecord.computeIfAbsent( Key._NAME, k -> className.getNameNoCase().replace( type.getNameNoCase(), "" )
 				);
 				memberRecord.putIfAbsent( Key.objectArgument, "" );
 				result.push( memberRecord );
@@ -1075,7 +1075,7 @@ public class ModuleRecord {
 		            null,
 		            null,
 		            ( this.invocationPath + "." + conventionsPath )
-		                .replaceAll( "\\.", Matcher.quoteReplacement( File.separator ) )
+		                .replace( ".", Matcher.quoteReplacement( File.separator ) )
 		                + File.separator
 		                + FilenameUtils.getBaseName( targetFile.getAbsolutePath() ),
 		            targetFile.toPath()

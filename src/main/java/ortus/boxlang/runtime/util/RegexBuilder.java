@@ -30,17 +30,18 @@ public class RegexBuilder {
 	 * Pattern Dictionary
 	 * Add as many patterns as needed, but make sure they are in all caps and alphabetically ordered.
 	 */
-	public static final Pattern	BACKSLASH			= Pattern.compile( "\\\\" );
-	public static final Pattern	COLON				= Pattern.compile( ":" );
+	public static final Pattern	BACKSLASH				= Pattern.compile( "\\\\" );
+	public static final Pattern	COLON					= Pattern.compile( ":" );
 	// cardNumber contains characters other than digit, space, or underscore
-	public static final Pattern	CREDIT_CARD_NUMBERS	= Pattern.compile( "[0-9 ,_-]+" );
-	public static final Pattern	NO_DIGITS			= Pattern.compile( "\\D" );
-	public static final Pattern	PACKAGE_NAMES		= Pattern.compile( "[^a-zA-Z0-9$\\.]" );
-	public static final Pattern	PERIOD				= Pattern.compile( "\\." );
-	public static final Pattern	SLASH				= Pattern.compile( "/" );
-	public static final Pattern	STARTS_WITH_DIGIT	= Pattern.compile( "^\\d.*" );
-	public static final Pattern	TWO_DOTS			= Pattern.compile( "\\.{2}" );
-	public static final Pattern	WHITESPACE			= Pattern.compile( "\\s" );
+	public static final Pattern	CREDIT_CARD_NUMBERS		= Pattern.compile( "[0-9 ,_-]+" );
+	public static final Pattern	MULTILINE_START_OF_LINE	= Pattern.compile( "(?m)^" );
+	public static final Pattern	NO_DIGITS				= Pattern.compile( "\\D" );
+	public static final Pattern	PACKAGE_NAMES			= Pattern.compile( "[^a-zA-Z0-9$\\.]" );
+	public static final Pattern	PERIOD					= Pattern.compile( "\\." );
+	public static final Pattern	SLASH					= Pattern.compile( "/" );
+	public static final Pattern	STARTS_WITH_DIGIT		= Pattern.compile( "^\\d.*" );
+	public static final Pattern	TWO_DOTS				= Pattern.compile( "\\.{2}" );
+	public static final Pattern	WHITESPACE				= Pattern.compile( "\\s" );
 
 	/**
 	 * Build a matcher for the given pattern lookup

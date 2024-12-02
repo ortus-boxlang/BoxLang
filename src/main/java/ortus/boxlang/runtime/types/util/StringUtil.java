@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.fasterxml.jackson.jr.ob.JSON;
 
 /**
@@ -100,15 +102,14 @@ public class StringUtil {
 	 */
 	public static String slugify( String str, int maxLength, String allow ) {
 		// Replace multiple spaces with a single space
-		String slug = str.trim().toLowerCase()
-		    .replace( "\\s+", "-" )
-		    .replaceAll( "ä", "ae" )
-		    .replaceAll( "ü", "ue" )
-		    .replaceAll( "ö", "oe" )
-		    .replaceAll( "ß", "ss" );
+		String slug = str.trim().toLowerCase().replace( "\\s+", "-" );
+
+		// Strip accents
+		slug	= StringUtils.stripAccents( slug );
+		slug	= StringUtils.replace( slug, "ß", "ss" );
 
 		// More cleanup
-		slug = slug.toLowerCase().replaceAll( "[^a-z0-9" + allow + "]", "-" ).replaceAll( "-+", "-" );
+		slug	= slug.replaceAll( "[^a-z0-9" + allow + "]", "-" ).replaceAll( "-+", "-" );
 
 		// is there a max length restriction
 		if ( maxLength != 0 && slug.length() > maxLength ) {
