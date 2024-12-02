@@ -1,7 +1,0 @@
-class implements="java:java.lang.Runnable" {
-
-	function run() {
-		println("Hello from a thread!");
-	}
-
-}

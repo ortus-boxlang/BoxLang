@@ -1,6 +1,0 @@
-try {
-	1/0
-} catch( any e ) {
-	e.printStackTrace()
-	println( e.tagContext )
-}

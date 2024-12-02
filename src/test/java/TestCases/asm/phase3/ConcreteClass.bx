@@ -1,6 +1,0 @@
-class extends="AbstractClass" {
-
-	function abstractMethod() {
-		return "abstractMethod";
-	}
-}
