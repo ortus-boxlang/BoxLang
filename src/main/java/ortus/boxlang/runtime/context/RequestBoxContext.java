@@ -376,6 +376,19 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 			config.getAsArray( Key.customTagsDirectory ).addAll( customTagPaths );
 		}
 
+		// Add in classPaths and componentPaths (for CF compat) to the classPaths array
+		Array classPaths = appSettings.getAsArray( Key.classPaths );
+		if ( classPaths != null && !classPaths.isEmpty() ) {
+			// Expand each path in case it's relative
+			config.getAsArray( Key.classPaths ).addAll( classPaths );
+		}
+		// TODO: move componentPaths logic to compat
+		Array componentPaths = appSettings.getAsArray( Key.componentPaths );
+		if ( componentPaths != null && !componentPaths.isEmpty() ) {
+			// Expand each path in case it's relative
+			config.getAsArray( Key.classPaths ).addAll( componentPaths );
+		}
+
 		// OTHER OVERRIDES go here
 
 		// Announce it so modules can do their own overrides and such

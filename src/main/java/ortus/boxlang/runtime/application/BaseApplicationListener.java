@@ -127,6 +127,8 @@ public abstract class BaseApplicationListener {
 	    "clientStorage", "cookie",
 	    "clientTimeout", 1,
 	    // END: CLIENT
+	    "classPaths", new Array(),
+	    // TODO: move this logic to compat
 	    "componentPaths", new Array(),
 	    "customTagPaths", new Array(),
 	    "datasource", runtime.getConfiguration().defaultDatasource,

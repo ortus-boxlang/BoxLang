@@ -392,6 +392,41 @@ public class ClassTest {
 		// @formatter:on
 	}
 
+	@DisplayName( "basic class file via component path" )
+	@Test
+	public void testBasicClassFileViaComponentPath() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				newClassPaths = getApplicationMetadata().classPaths.append( expandPath( "/src/test/java/TestCases/phase3" ) );
+				application classPaths=newClassPaths;
+				cfc = new MyClass();
+				// execute public method
+				result = cfc.foo();
+
+				assert result == "I work! whee true true bar true";
+			""", context );
+		// @formatter:on
+	}
+
+	@DisplayName( "basic class file via component path subdir" )
+	@Test
+	public void testBasicClassFileViaComponentPathSubDir() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				newClassPaths = getApplicationMetadata().classPaths.append( expandPath( "/src/test/java/TestCases" ) );
+				application classPaths=newClassPaths;
+				import phase3.MyClass as bradClass;
+				cfc = new bradClass();
+				// execute public method
+				result = cfc.foo();
+
+				assert result == "I work! whee true true bar true";
+			""", context );
+		// @formatter:on
+	}
+
 	@DisplayName( "legacy meta" )
 	@Test
 	public void testlegacyMeta() {

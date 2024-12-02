@@ -287,8 +287,12 @@ public class BoxResolver extends BaseResolver {
 		// Try to find the class using:
 		// 1. Relative to the current template
 		// 2. A mapping
+		// 3. Custom tag directory or component/class path
 		return findByRelativeLocation( context, finalSlashName, name, imports, loadClass )
-		    .or( () -> findByMapping( context, finalSlashName, name, imports, loadClass ) );
+		    // TODO: both of these method call context.getConfig(), but ideally we just call it once
+		    // For classes found in a lookup directory, it will result in getConfig() being called twice.
+		    .or( () -> findByMapping( context, finalSlashName, name, imports, loadClass ) )
+		    .or( () -> findByLookupDirectory( context, finalSlashName, name, imports, loadClass ) );
 	}
 
 	/**
@@ -431,6 +435,54 @@ public class BoxResolver extends BaseResolver {
 		}
 
 		return Optional.empty();
+	}
+
+	/**
+	 * Find a class in lookup directories. This includes custom tag paths and component/class paths
+	 *
+	 * @param context   The current context of execution
+	 * @param slashName The name of the class to find using slahes instead of dots
+	 * @param name      The original dot notation name of the class to find
+	 * @param imports   The list of imports to use
+	 * @param loadClass When false, the class location is returned with informatino about where the class was found, but the class is not loaded and will be null.
+	 *
+	 * @return An Optional of {@link ClassLocation} if found, {@link Optional#empty()} otherwise
+	 */
+	private Optional<ClassLocation> findByLookupDirectory(
+	    IBoxContext context,
+	    String slashName,
+	    String name,
+	    List<ImportDefinition> imports,
+	    boolean loadClass ) {
+
+		List<Path> lookupPaths = new ArrayList<Path>();
+		lookupPaths
+		    .addAll( context.getConfig().getAsArray( Key.customTagsDirectory ).stream().map( String::valueOf ).map( Path::of ).toList() );
+		lookupPaths.addAll( context.getConfig().getAsArray( Key.classPaths ).stream().map( String::valueOf ).map( Path::of ).toList() );
+
+		Optional<Path> result = lookupPaths
+		    .stream()
+		    .map( cp -> findExistingPathWithValidExtension( cp, slashName ) )
+		    .filter( path -> path != null )
+		    .findFirst();
+
+		if ( !result.isPresent() ) {
+			return Optional.empty();
+		}
+		Path				foundPath			= result.get();
+
+		ResolvedFilePath	newResolvedFilePath	= ResolvedFilePath.of( "", "", slashName, foundPath );
+
+		return Optional.of( new ClassLocation(
+		    newResolvedFilePath.getBoxFQN().getClassName(),
+		    foundPath.toAbsolutePath().toString(),
+		    newResolvedFilePath.getBoxFQN().getPackageString(),
+		    ClassLocator.TYPE_BX,
+		    loadClass ? RunnableLoader.getInstance().loadClass( newResolvedFilePath, context ) : null,
+		    "",
+		    false
+		) );
+
 	}
 
 	/**

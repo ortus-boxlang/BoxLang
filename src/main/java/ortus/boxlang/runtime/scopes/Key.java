@@ -165,6 +165,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		childname							= Key.of( "childname" );
 	public static final Key		classGenerationDirectory			= Key.of( "classGenerationDirectory" );
 	public static final Key		className							= Key.of( "className" );
+	public static final Key		classPaths							= Key.of( "classPaths" );
 	public static final Key		cli									= Key.of( "cli" );
 	public static final Key		clazz								= Key.of( "clazz" );
 	public static final Key		clientCert							= Key.of( "clientCert" );
@@ -184,6 +185,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		columnTypeList						= Key.of( "columnTypeList" );
 	public static final Key		compiler							= Key.of( "compiler" );
 	public static final Key		component							= Key.of( "component" );
+	public static final Key		componentPaths						= Key.of( "componentPaths" );
 	public static final Key		componentService					= Key.of( "componentService" );
 	public static final Key		compression							= Key.of( "compression" );
 	public static final Key		condition							= Key.of( "condition" );

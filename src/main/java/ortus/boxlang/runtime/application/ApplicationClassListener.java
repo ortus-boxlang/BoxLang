@@ -24,11 +24,13 @@ import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.util.BLCollector;
 import ortus.boxlang.runtime.util.EncryptionUtil;
+import ortus.boxlang.runtime.util.FileSystemUtil;
 
 /**
  * I represent an Application listener that wraps an Application class instance, delegting to it, where possible and providing default
@@ -56,6 +58,15 @@ public class ApplicationClassListener extends BaseApplicationListener {
 		    .putAll( listener.getThisScope().entrySet().stream().filter( e -> ! ( e.getValue() instanceof Function ) ).collect( BLCollector.toStruct() ) );
 		this.settings.put( Key.source, listener.getRunnablePath().absolutePath().toString() );
 		this.settings.put( Key._CLASS, listener.getRunnablePath().absolutePath().toString() );
+
+		// Expand classPaths in Application.bx. They will be relative to the Application.bx file if not starting with /
+		Array classPaths = this.settings.getAsArray( Key.classPaths );
+		classPaths = classPaths.stream()
+		    .map( String::valueOf )
+		    .map( ( cp ) -> {
+			    return FileSystemUtil.expandPath( context, cp, listener.getRunnablePath() );
+
+		    } ).collect( BLCollector.toArray() );
 
 		// If there is no application name or if it's empty, make one up.
 		String appName = StringCaster.cast( this.settings.get( Key._NAME ) );

@@ -68,6 +68,8 @@
 	"customTagsDirectory": [
 		"${boxlang-home}/customTags"
 	],
+	// A collection of directories to lookup box classes in (.bx files), they must be absolute paths
+	"classPaths": [],
 	// A collection of directories we will class load all Java *.jar files from
 	"javaLibraryPaths": [
 		"${boxlang-home}/lib"

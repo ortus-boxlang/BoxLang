@@ -188,6 +188,11 @@ public class Configuration implements IConfigSegment {
 	    Arrays.asList( BoxRuntime.getInstance().getRuntimeHome().toString() + "/customTags" ) );
 
 	/**
+	 * An array of directories where box classes are located and loaded from.
+	 */
+	public List<String>			classPaths						= new ArrayList<>();
+
+	/**
 	 * An array of directories where jar files will be loaded from at runtime.
 	 */
 	public List<String>			javaLibraryPaths				= new ArrayList<>(
@@ -418,6 +423,22 @@ public class Configuration implements IConfigSegment {
 				} );
 			} else {
 				logger.warn( "The [runtime.customTagsDirectory] configuration is not a JSON Array, ignoring it." );
+			}
+		}
+
+		// process classPaths directories
+		if ( config.containsKey( Key.classPaths ) ) {
+			if ( config.get( Key.classPaths ) instanceof List<?> castedList ) {
+				// iterate and add to the original list if it doesn't exist
+				castedList.forEach( item -> {
+					var resolvedItem = PlaceholderHelper.resolve( item );
+					// Verify or add the path
+					if ( !this.classPaths.contains( resolvedItem ) ) {
+						this.classPaths.add( resolvedItem );
+					}
+				} );
+			} else {
+				logger.warn( "The [classPaths] configuration is not a JSON Array, ignoring it." );
 			}
 		}
 
@@ -862,6 +883,7 @@ public class Configuration implements IConfigSegment {
 		    Key.caches, cachesCopy,
 		    Key.classGenerationDirectory, this.classGenerationDirectory,
 		    Key.customTagsDirectory, Array.fromList( this.customTagsDirectory ),
+		    Key.classPaths, Array.fromList( this.classPaths ),
 		    Key.datasources, datsourcesCopy,
 		    Key.debugMode, this.debugMode,
 		    Key.defaultCache, this.defaultCache.toStruct(),
