@@ -103,11 +103,11 @@ public class ValidationUtil {
 	public static boolean isValidCreditCard( String cardNumber ) {
 		int	shortestValidCardLength	= 12;
 		int	longestValidCardLength	= 19;
-		if ( cardNumber == null || !cardNumber.matches( "[0-9 ,_-]+" ) ) {
+		if ( cardNumber == null || !RegexBuilder.of( cardNumber, RegexBuilder.CREDIT_CARD_NUMBERS ).matches() ) {
 			// cardNumber contains characters other than digit, space, or underscore
 			return false;
 		}
-		String sanitized = cardNumber.replaceAll( "[^0-9]", "" );
+		String sanitized = RegexBuilder.of( cardNumber, RegexBuilder.NO_DIGITS ).replaceAllAndGet( "" );
 		if ( sanitized.length() < shortestValidCardLength || sanitized.length() > longestValidCardLength ) {
 			return false;
 		}
