@@ -83,6 +83,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		action								= Key.of( "action" );
 	public static final Key		addnewline							= Key.of( "addnewline" );
 	public static final Key		addToken							= Key.of( "addToken" );
+	public static final Key		additive							= Key.of( "additive" );
 	public static final Key		algorithm							= Key.of( "algorithm" );
 	public static final Key		allow								= Key.of( "allow" );
 	public static final Key		allowedFileOperationExtensions		= Key.of( "allowedFileOperationExtensions" );
@@ -92,6 +93,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		ANONYMOUSCLOSURE					= Key.of( "ANONYMOUSCLOSURE" );
 	public static final Key		ANONYMOUSLAMBDA						= Key.of( "ANONYMOUSLAMBDA" );
 	public static final Key		append								= Key.of( "append" );
+	public static final Key		appender							= Key.of( "appender" );
+	public static final Key		appenderArguments					= Key.of( "appenderArguments" );
 	public static final Key		application							= Key.of( "application" );
 	public static final Key		applicationName						= Key.of( "applicationName" );
 	public static final Key		applicationService					= Key.of( "applicationService" );
@@ -128,6 +131,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		bxSessions							= Key.of( "bxSessions" );
 	public static final Key		boxMember							= Key.of( "BoxMember" );
 	public static final Key		boxRuntime							= Key.of( "boxRuntime" );
+	public static final Key		buffer								= Key.of( "buffer" );
 	public static final Key		buffersize							= Key.of( "buffersize" );
 	public static final Key		bxDefaultDatasource					= Key.of( "bxDefaultDatasource" );
 	public static final Key		bxRandomSeed						= Key.of( "bxRandomSeed" );
@@ -203,6 +207,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		customTagName						= Key.of( "customTagName" );
 	public static final Key		customTagPath						= Key.of( "customTagPath" );
 	public static final Key		customTagsDirectory					= Key.of( "customTagsDirectory" );
+	public static final Key		customTagPaths						= Key.of( "customTagPaths" );
 	public static final Key		data								= Key.of( "data" );
 	public static final Key		dataCollection						= Key.of( "dataCollection" );
 	public static final Key		datasource							= Key.of( "datasource" );
@@ -221,6 +226,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		debugMode							= Key.of( "debugMode" );
 	public static final Key		deep								= Key.of( "deep" );
 	public static final Key		defaultCache						= Key.of( "defaultCache" );
+	public static final Key		defaultEncoder						= Key.of( "defaultEncoder" );
 	public static final Key		defaultDatasource					= Key.of( "defaultDatasource" );
 	public static final Key		defaultFunctions					= Key.of( "defaultFunctions" );
 	public static final Key		defaultLastAccessTimeout			= Key.of( "defaultLastAccessTimeout" );
@@ -289,6 +295,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		evictionPolicy						= Key.of( "evictionPolicy" );
 	public static final Key		experimental						= Key.of( "experimental" );
 	public static final Key		execute								= Key.of( "execute" );
+	public static final Key		encoder								= Key.of( "encoder" );
 	public static final Key		entryPath							= Key.of( "entryPath" );
 	public static final Key		entryPaths							= Key.of( "entryPaths" );
 	public static final Key		executionMode						= Key.of( "executionMode" );
@@ -423,6 +430,9 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		listToJSON							= Key.of( "listToJSON" );
 	public static final Key		lJustify							= Key.of( "lJustify" );
 	public static final Key		loadPaths							= Key.of( "loadPaths" );
+	public static final Key		logging								= Key.of( "logging" );
+	public static final Key		loggers								= Key.of( "loggers" );
+	public static final Key		logsDirectory						= Key.of( "logsDirectory" );
 	public static final Key		loggingService						= Key.of( "loggingService" );
 	public static final Key		local_addr							= Key.of( "local_addr" );
 	public static final Key		local_host							= Key.of( "local_host" );
@@ -438,6 +448,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		match								= Key.of( "match" );
 	public static final Key		max									= Key.of( "max" );
 	public static final Key		maxFrames							= Key.of( "maxFrames" );
+	public static final Key		maxFileSize							= Key.of( "maxFileSize" );
+	public static final Key		maxLogDays							= Key.of( "maxLogDays" );
 	public static final Key		maxLength							= Key.of( "maxLength" );
 	public static final Key		maxObjects							= Key.of( "maxObjects" );
 	public static final Key		maxRows								= Key.of( "maxRows" );
@@ -561,6 +573,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		recordCount							= Key.of( "recordCount" );
 	public static final Key		reFindNoCase						= Key.of( "reFindNoCase" );
 	public static final Key		recurse								= Key.of( "recurse" );
+	public static final Key		rootLevel							= Key.of( "rootLevel" );
 	public static final Key		recursive							= Key.of( "recursive" );
 	public static final Key		redirect							= Key.of( "redirect" );
 	public static final Key		reg_expression						= Key.of( "reg_expression" );
@@ -682,6 +695,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		terminate							= Key.of( "terminate" );
 	public static final Key		terminated							= Key.of( "terminated" );
 	public static final Key		terminateOnTimeout					= Key.of( "terminateOnTimeout" );
+	public static final Key		trace								= Key.of( "trace" );
 	public static final Key		text								= Key.of( "text" );
 	public static final Key		textQualifier						= Key.of( "textQualifier" );
 	public static final Key		thisTag								= Key.of( "thisTag" );
@@ -701,6 +715,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		token								= Key.of( "token" );
 	public static final Key		toKey								= Key.of( "toKey" );
 	public static final Key		top									= Key.of( "top" );
+	public static final Key		totalCapSize						= Key.of( "totalCapSize" );
 	public static final Key		trim								= Key.of( "trim" );
 	public static final Key		type								= Key.of( "type" );
 	public static final Key		typename							= Key.of( "typename" );

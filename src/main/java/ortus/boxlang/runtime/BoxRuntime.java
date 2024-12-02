@@ -296,7 +296,10 @@ public class BoxRuntime implements java.io.Closeable {
 
 		// Debug mode 1st check via ENV vars
 		if ( debugMode == null ) {
-			debugMode = Boolean.parseBoolean( envVars.getOrDefault( "BOXLANG_DEBUG", "" ) );
+			String debugModeEnv = envVars.get( "BOXLANG_DEBUG" );
+			if ( debugModeEnv != null ) {
+				debugMode = Boolean.parseBoolean( debugModeEnv );
+			}
 		}
 
 		// Seed if passed, arguements override ENV vars
@@ -357,12 +360,11 @@ public class BoxRuntime implements java.io.Closeable {
 		// Finally verify if we overwrote the debugmode in one of the configs above
 		if ( debugMode == null ) {
 			this.debugMode = this.configuration.debugMode;
-			// Reconfigure the logging if enabled
-			if ( this.debugMode ) {
-				this.loggingService.reconfigureDebugMode( this.debugMode );
-			}
 			this.logger.info( "+ DebugMode detected in config, overriding to {}", this.debugMode );
 		}
+
+		// Reconfigure the logging services
+		this.loggingService.reconfigure();
 
 		// AST Capture experimental feature
 		BooleanCaster.attempt(
@@ -455,7 +457,7 @@ public class BoxRuntime implements java.io.Closeable {
 		timerUtil.start( "runtime-startup" );
 
 		// Startup the Logging Service: Unique as it's not an IService
-		this.loggingService	= LoggingService.getInstance( this );
+		this.loggingService	= LoggingService.getInstance( this ).configureBasic( debugMode );
 
 		// Startup basic logging
 		// Here is where LogBack looks via ServiceLoader for a `Configurator` class
@@ -961,6 +963,7 @@ public class BoxRuntime implements java.io.Closeable {
 
 		// Shutdown logging
 		instance.logger.debug( "+ BoxLang Runtime has been shutdown" );
+		instance.loggingService.shutdown();
 
 		// Shutdown the runtime
 		instance = null;

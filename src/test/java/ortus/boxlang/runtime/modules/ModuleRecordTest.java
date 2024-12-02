@@ -219,9 +219,10 @@ class ModuleRecordTest {
 
 		// It should register components
 		ComponentService componentService = runtime.getComponentService();
-		assertThat( moduleRecord.components.size() ).isEqualTo( 1 );
-		System.out.println( Arrays.toString( componentService.getComponentNames() ) );
+		assertThat( moduleRecord.components.size() ).isEqualTo( 2 );
+		// System.out.println( Arrays.toString( componentService.getComponentNames() ) );
 		assertThat( componentService.hasComponent( Key.of( "HolaComponent" ) ) ).isTrue();
+		assertThat( componentService.hasComponent( Key.of( "NombreComponent" ) ) ).isTrue();
 
 		// Register a class loader
 		Class<?> clazz = moduleRecord.findModuleClass( "HelloWorld", false, context );
@@ -251,13 +252,6 @@ class ModuleRecordTest {
 		    """, context );
 		// @formatter:on
 
-		// Test the component
-		// @formatter:off
-		runtime.executeSource("""
-				<bx:HolaComponent>Hello</bx:HolaComponent>
-		    """, context, BoxSourceType.BOXTEMPLATE );
-		// @formatter:on
-
 		IScope variables = context.getScopeNearby( VariablesScope.name );
 		assertThat( variables.getAsString( Key.result ) )
 		    .isEqualTo( "Hello World, my name is boxlang and I am 0 years old" );
@@ -265,7 +259,16 @@ class ModuleRecordTest {
 		assertThat( variables.getAsString( Key.of( "result3" ) ) ).isEqualTo(
 		    "Hello World, my name is boxlang and I am 0 years old"
 		);
-		// assertThat( variables.getAsString( Key.of( "result4" ) ) ).isEqualTo( "Hola Mundo!" );
+
+		// Test the component body execution
+		// @formatter:off
+		runtime.executeSource("""
+				<bx:HolaComponent>Hello <bx:NombreComponent>Luis</bx:NombreComponent></bx:HolaComponent>
+				<bx:set result4 = getBoxContext().getBuffer().toString()>
+		    """, context, BoxSourceType.BOXTEMPLATE );
+		// @formatter:on
+		// The buffer is reversed on this component so it should be backwards
+		assertThat( variables.getAsString( Key.of( "result4" ) ).trim() ).isEqualTo( "Hello , Luis" );
 
 		// Test Module Class Locators
 		// @formatter:off

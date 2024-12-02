@@ -23,6 +23,7 @@ options {
 	private int parenCount = 0;
 	private int braceCount = 0;
 	private int bracketCount = 0;
+	private boolean isQuery = false;
 
 	private int countModes(int mode) {
 		int count = 0;
@@ -149,6 +150,12 @@ COMPONENT_SLASH_CLOSE99:
 COMPONENT_CLOSE99:
     '>' {isExpressionComplete() && _modeStack.contains(TEMPLATE_EXPRESSION_MODE_COMPONENT)}? -> type(COMPONENT_CLOSE), popMode, popMode, popMode,
         popMode, popMode
+;
+
+// We have to capture this scenario and break it apart in our lexer super class into two tokens.  If we don't capture this here, the >= rule below will match it and 
+// fail to end the component for us, causing an invalid parse
+COMPONENT_CLOSE_EQUAL:
+    '>=' {isExpressionComplete() && _modeStack.contains(TEMPLATE_EXPRESSION_MODE_COMPONENT)}? -> popMode, popMode, popMode, popMode, popMode
 ;
 
 // Comments can live inside script expressions, if we're inside a component/tag (CF/Lucee compat only)
@@ -481,6 +488,10 @@ TEMPLATE_COMPONENT : 'component' -> pushMode( TEMPLATE_COMPONENT_MODE );
 TEMPLATE_INTERFACE : 'interface' -> pushMode( TEMPLATE_COMPONENT_MODE );
 TEMPLATE_FUNCTION  : 'function'  -> pushMode( TEMPLATE_COMPONENT_MODE );
 TEMPLATE_ARGUMENT  : 'argument'  -> pushMode( TEMPLATE_COMPONENT_MODE );
+// cfquery doesn't have a dedicated AST node, but we need to pretend we're in a cfoutput when we enter a cfquery.
+TEMPLATE_QUERY:
+    'query' {isQuery=true;} -> type(COMPONENT_NAME), pushMode( TEMPLATE_COMPONENT_MODE )
+;
 
 // return may or may not have an expression, so eat any leading whitespace now so it doesn't give us an expression part that's just a space
 TEMPLATE_RETURN:
@@ -534,6 +545,10 @@ COMMENT_START1:
     '<!---' -> pushMode(TEMPLATE_COMMENT_QUIET), channel(HIDDEN), type(COMMENT_START)
 ;
 
+COMPONENT_CLOSE4:
+    {isQuery}? '>' -> popMode, popMode, popMode, pushMode(TEMPLATE_OUTPUT_MODE), pushMode(DEFAULT_TEMPLATE_MODE), type(COMPONENT_CLOSE)
+;
+
 COMPONENT_CLOSE: '>' -> popMode, popMode, popMode;
 
 COMPONENT_SLASH_CLOSE: '/>' -> popMode, popMode, popMode;
@@ -576,6 +591,9 @@ mode TEMPLATE_END_COMPONENT;
 TEMPLATE_IF2        : 'if'        -> type(TEMPLATE_IF);
 TEMPLATE_COMPONENT2 : 'component' -> type(TEMPLATE_COMPONENT);
 TEMPLATE_FUNCTION2  : 'function'  -> type(TEMPLATE_FUNCTION);
+// If we're ending a cfquery, we need to use the special exit below with the extra pop out of output mode
+TEMPLATE_QUERY2: 'query' {isQuery=true;} -> type(COMPONENT_NAME);
+
 // popping back to: POSSIBLE_COMPONENT -> DEFAULT_MODE -> OUTPUT_MODE -> COMPONENT -> POSSIBLE_COMPONENT -> DEFAULT_MODE
 OUTPUT_END:
     'output' COMPONENT_WHITESPACE_OUTPUT3* '>' -> popMode, popMode, popMode, popMode, popMode, popMode
@@ -598,8 +616,11 @@ TEMPLATE_DEFAULTCASE2 : 'defaultcase' -> type(TEMPLATE_DEFAULTCASE);
 
 COMPONENT_WHITESPACE_OUTPUT3: [ \t\r\n] -> skip;
 
-COMPONENT_NAME2  : COMPONENT_NameStartChar COMPONENT_NameChar* -> type(COMPONENT_NAME);
-COMPONENT_CLOSE2 : '>'                                         -> popMode, popMode, type(COMPONENT_CLOSE);
+COMPONENT_NAME2: COMPONENT_NameStartChar COMPONENT_NameChar* -> type(COMPONENT_NAME);
+// If we're coming out of a cfquery, then pop 2 extra times to get out of the output mode and additional default template mode
+COMPONENT_CLOSE2: '>' {isQuery}? -> popMode, popMode, popMode, popMode, type(COMPONENT_CLOSE);
+// all other ending tags
+COMPONENT_CLOSE23: '>' -> popMode, popMode, type(COMPONENT_CLOSE);
 
 // *********************************************************************************************************************
 mode TEMPLATE_ATTVALUE;
@@ -672,11 +693,13 @@ DUMMY2: .;
 // *********************************************************************************************************************
 mode TEMPLATE_POSSIBLE_COMPONENT;
 
-PREFIX       : 'cf'  -> pushMode(TEMPLATE_COMPONENT_NAME_MODE);
-SLASH_PREFIX : '/cf' -> pushMode(TEMPLATE_END_COMPONENT);
+PREFIX       : 'cf'  {isQuery=false;} -> pushMode(TEMPLATE_COMPONENT_NAME_MODE);
+SLASH_PREFIX : '/cf' {isQuery=false;} -> pushMode(TEMPLATE_END_COMPONENT);
+
+COMPONENT_OPEN2: '<' -> type(COMPONENT_OPEN);
 
 TEMPLATE_ICHAR7:
-    '#' {_modeStack.contains(TEMPLATE_OUTPUT_MODE)}? -> type(ICHAR), popMode, pushMode( DEFAULT_SCRIPT_MODE )
+    '#' {_modeStack.contains(TEMPLATE_OUTPUT_MODE)}? -> type(ICHAR), popMode, pushMode(hashMode), pushMode( DEFAULT_SCRIPT_MODE )
 ;
 
 TEMPLATE_ANY: . -> type(CONTENT_TEXT), popMode;

@@ -528,7 +528,12 @@ public class CFParser extends AbstractParser {
 		lexer.reset();
 		Token		token		= lexer.nextToken();
 		DocParser	docParser	= new DocParser( token.getLine(), token.getCharPositionInLine() ).setSource( sourceToParse );
+
 		while ( token.getType() != Token.EOF ) {
+
+			// uncomment this to see all tokens as they were sent from out custom lexer
+			// System.out.println( token.toString() + " " + CFLexer.VOCABULARY.getSymbolicName( token.getType() ) );
+
 			if ( token.getType() == CFLexer.JAVADOC_COMMENT ) {
 				ParsingResult result = docParser.parse( null, token.getText() );
 				if ( docParser.issues.isEmpty() ) {

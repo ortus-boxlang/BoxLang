@@ -17,25 +17,57 @@
  */
 package ortus.boxlang.runtime.logging;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.commons.io.FilenameUtils;
+import org.slf4j.ILoggerFactory;
+import org.slf4j.LoggerFactory;
+
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.classic.encoder.JsonEncoder;
 import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
 import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.classic.util.LogbackMDCAdapterSimple;
+import ch.qos.logback.core.Appender;
+import ch.qos.logback.core.ConsoleAppender;
 import ch.qos.logback.core.FileAppender;
+import ch.qos.logback.core.encoder.EncoderBase;
+import ch.qos.logback.core.rolling.RollingFileAppender;
+import ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy;
+import ch.qos.logback.core.util.FileSize;
+import ch.qos.logback.core.util.StatusPrinter;
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
 
 /**
- * This service allows BoxLang to leverage logging facilities and interact with the logging system.
+ * This service allows BoxLang to leverage logging facilities and interact with the logging system: LogBack: https://logback.qos.ch/manual/index.html
  * <p>
  * It also manages all custom logging events, appenders and loggers.
  * <p>
  * It's not a true BoxLang service, due to the chicken and egg problem of logging being needed before the runtime starts.
+ * <p>
+ * The {@link #configureBasic(Boolean)} method is called by the runtime to setup the basic logging system first, then
+ * once the runtime is online and has read the configuration file (boxlang.json), it can reconfigure the logging system
+ * via the {@link #reconfigure()} method.
+ * <p>
+ * Please note that in BoxLang you can use the following arguments for logging via the {@link #logMessage(String, String, String, String)} method:
+ * <ul>
+ * <li><strong>message</strong> - The message to send for logging or a lambda that produces the message</li>
+ * <li><strong>type</strong> - The logging level type (error, info, warn, debug, trace)</li>
+ * <li><strong>applicationName</strong> - The name of the BoxLang application (if any)</li>
+ * <li><strong>logger</strong> - The named logger to emit to. Example: "scheduler, application, orm, etc"</li>
+ * </ul>
+ * <p>
+ * If the named logger does not exist or it's an absolute path, then the logger will be registered as a new logger, with the name of the file as the category.
  */
 public class LoggingService {
 
@@ -45,9 +77,18 @@ public class LoggingService {
 	 * --------------------------------------------------------------------------
 	 */
 
-	public static final String							DEFAULT_LOG_LEVEL		= "info";
-	public static final String							DEFAULT_LOG_TYPE		= "Application";
-	public static final String							DEFAULT_LOG_CATEGORY	= "boxruntime";
+	public static final String						DEFAULT_LOG_LEVEL	= "info";
+	public static final String						DEFAULT_LOG_TYPE	= "Application";
+	public static final String						DEFAULT_LOG_FILE	= "runtime.log";
+	public static final String						DEFAULT_APPLICATION	= "no-application";
+	public static final String						CONTEXT_NAME		= "BoxLang";
+
+	/**
+	 * The log format for the BoxLang runtime
+	 *
+	 * @see https://logback.qos.ch/manual/layouts.html#conversionWord
+	 */
+	public static final String						LOG_FORMAT			= "[%date{STRICT}] [%thread] [%-5level] [%logger{0}] %message %ex%n";
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -55,37 +96,43 @@ public class LoggingService {
 	 * --------------------------------------------------------------------------
 	 */
 
-	private static LoggingService						instance;
+	/**
+	 * Singleton
+	 */
+	private static LoggingService					instance;
 
 	/**
 	 * The linked runtime
 	 */
-	private BoxRuntime									runtime;
-
-	/**
-	 * The logging configuration for the runtime
-	 * This is set by the first call to `getLogger()` which happens in the
-	 *
-	 * <pre>
-	 * startup()
-	 * </pre>
-	 */
-	private LoggingConfigurator							loggingConfigurator;
+	private BoxRuntime								runtime;
 
 	/**
 	 * The root logger for the runtime
 	 */
-	private Logger										rootLogger;
+	private Logger									rootLogger;
 
 	/**
-	 * The BoxLang pattern encoder we use for logging
+	 * The logger context for the runtime
 	 */
-	private PatternLayoutEncoder						encoder;
+	private LoggerContext							loggerContext;
 
 	/**
-	 * A map of appenders
+	 * The default encoder for the runtime: We can use either a text or JSON encoder
 	 */
-	private Map<String, FileAppender<ILoggingEvent>>	appendersMap			= new ConcurrentHashMap<>();
+	private EncoderBase<ILoggingEvent>				defaultEncoder;
+
+	/**
+	 * A map of registered appenders
+	 * We lazy-load all appenders and cache them here
+	 */
+	private Map<String, Appender<ILoggingEvent>>	appendersMap		= new ConcurrentHashMap<>();
+
+	/**
+	 * A map of registered loggers we can use in the runtime
+	 * We lazy-load and cache them here
+	 * We use a struct so they are case-insensitive
+	 */
+	private IStruct									loggersMap			= new Struct();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -131,17 +178,8 @@ public class LoggingService {
 	}
 
 	/**
-	 * Get the configured Logging Configurator for the runtime
-	 *
-	 * @return The Configurator
-	 */
-	public LoggingConfigurator getLoggingConfigurator() {
-		return this.loggingConfigurator;
-	}
-
-	/**
 	 * --------------------------------------------------------------------------
-	 * Methods
+	 * Getters & Setters
 	 * --------------------------------------------------------------------------
 	 */
 
@@ -155,7 +193,14 @@ public class LoggingService {
 	}
 
 	/**
-	 * Set the root logger
+	 * Get the runtime's log directory as per the configuration
+	 */
+	public String getLogsDirectory() {
+		return this.runtime.getConfiguration().logging.logsDirectory;
+	}
+
+	/**
+	 * Set the root logger for the runtime
 	 *
 	 * @param logger The logger to set
 	 *
@@ -171,8 +216,8 @@ public class LoggingService {
 	 *
 	 * @return The encoder
 	 */
-	public PatternLayoutEncoder getEncoder() {
-		return this.encoder;
+	public EncoderBase<ILoggingEvent> getDefaultEncoder() {
+		return this.defaultEncoder;
 	}
 
 	/**
@@ -182,43 +227,333 @@ public class LoggingService {
 	 *
 	 * @return LoggingService
 	 */
-	public LoggingService setEncoder( PatternLayoutEncoder encoder ) {
-		this.encoder = encoder;
+	public LoggingService setDefaultEncoder( EncoderBase<ILoggingEvent> encoder ) {
+		this.defaultEncoder = encoder;
 		return instance;
 	}
 
 	/**
-	 * Set the Logging Configurator
+	 * Get the logger context
 	 *
-	 * @param configurator The configurator to set
-	 *
-	 * @return The Runtime
+	 * @return The logger context
 	 */
-	public LoggingService setLoggingConfigurator( LoggingConfigurator configurator ) {
-		this.loggingConfigurator = configurator;
+	public LoggerContext getLoggerContext() {
+		return this.loggerContext;
+	}
+
+	/**
+	 * Set the logger context
+	 *
+	 * @param loggerContext The logger context to set
+	 *
+	 * @return The logging service
+	 */
+	public LoggingService setLoggerContext( LoggerContext loggerContext ) {
+		this.loggerContext = loggerContext;
 		return instance;
 	}
 
 	/**
-	 * Enable debug mode for the runtime's root logger or not.
-	 *
-	 * This is usually a convenience method for the runtime to enable or disable
-	 * debug mode
-	 * via configuration overrides
-	 *
-	 * @param debugMode True to enable debug mode, false to disable
+	 * --------------------------------------------------------------------------
+	 * Configuration Methods
+	 * --------------------------------------------------------------------------
+	 * The runtime is configured initially with a basic logging system, then reconfigured once the configuration file is read.
 	 */
-	public LoggingService reconfigureDebugMode( Boolean debugMode ) {
-		this.rootLogger.setLevel( Boolean.TRUE.equals( debugMode ) ? Level.DEBUG : Level.INFO );
+
+	/**
+	 * This configures LogBack with a basic configuration, so we can use logging before we actually read
+	 * the configuration file.
+	 * <p>
+	 * Once the configuration file is read, we can reconfigure the logging system.
+	 *
+	 * @param debugMode The flag the runtime was started with
+	 */
+	public LoggingService configureBasic( Boolean debugMode ) {
+		ILoggerFactory loggerFactory = LoggerFactory.getILoggerFactory();
+
+		// Are we in Servlet mode or not? If we are not, then we have to build the logger context
+		if ( loggerFactory instanceof LoggerContext ) {
+			this.loggerContext = ( LoggerContext ) loggerFactory;
+		} else {
+			this.loggerContext = new LoggerContext();
+		}
+
+		this.loggerContext.reset();
+		this.loggerContext.setMDCAdapter( new LogbackMDCAdapterSimple() );
+
+		// Name it
+		this.loggerContext.setName( CONTEXT_NAME );
+
+		// Setup the runtime encoder with the BoxLang format
+		PatternLayoutEncoder oEncoder = new PatternLayoutEncoder();
+		oEncoder.setContext( loggerContext );
+		oEncoder.setPattern( LOG_FORMAT );
+		oEncoder.start();
+		setDefaultEncoder( oEncoder );
+
+		// Configure a basic Console Appender
+		// See: https://logback.qos.ch/manual/appenders.html
+		ConsoleAppender<ILoggingEvent> appender = new ConsoleAppender<>();
+		appender.setContext( this.loggerContext );
+		appender.setEncoder( oEncoder );
+		appender.start();
+
+		// Configure the Root Logger
+		this.rootLogger = loggerContext.getLogger( Logger.ROOT_LOGGER_NAME );
+		this.rootLogger.setLevel( Boolean.TRUE.equals( debugMode ) ? Level.DEBUG : Level.WARN );
+		this.rootLogger.addAppender( appender );
+
 		return instance;
 	}
 
 	/**
-	 * Get the runtime's log directory as per the configuration
+	 * This method is called by the runtime to reconfigure the logging system
+	 * once the configuration file has been read.
+	 * <p>
+	 * This could change logging levels, add new appenders, etc.
 	 */
-	public String getLogsDirectory() {
-		return this.runtime.getConfiguration().logsDirectory;
+	public LoggingService reconfigure() {
+		// Reconfigure Root Logger from the configuration file
+		Level rootLevel = Level.toLevel( this.runtime.getConfiguration().logging.rootLevel.getName() );
+		this.rootLogger.setLevel( rootLevel );
+
+		// Change encoder or not to JSON, default is text
+		if ( this.runtime.getConfiguration().logging.defaultEncoder.equals( Key.json ) ) {
+			setDefaultEncoder( buildJsonEncoder() );
+		}
+
+		// Debugging
+		if ( this.runtime.inDebugMode() ) {
+			StatusPrinter.print( this.loggerContext );
+		}
+
+		return instance;
 	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Logging Methods
+	 * --------------------------------------------------------------------------
+	 * Basic logging methods that all BoxLang applications can use
+	 */
+
+	/**
+	 * Log a message into the default log file and the default log type with no application name
+	 *
+	 * @param message The message to log
+	 *
+	 * @return The logging service
+	 */
+	public LoggingService logMessage( String message ) {
+		return logMessage( message, DEFAULT_LOG_LEVEL, "no-application", DEFAULT_LOG_FILE );
+	}
+
+	/**
+	 * Log a message into the default log file and a custom log type with no application name
+	 *
+	 * @param message The message to log
+	 * @param type    The type of log message (fatal, error, info, warn, debug, trace)
+	 *
+	 * @return The logging service
+	 */
+	public LoggingService logMessage( String message, String type ) {
+		return logMessage( message, type, "no-application", DEFAULT_LOG_FILE );
+	}
+
+	/**
+	 * Log a message into the default log file and a custom log type and a custom application name
+	 *
+	 * @param message         The message to log
+	 * @param type            The type of log message (fatal, error, info, warn, debug, trace)
+	 * @param applicationName The name of the application requesting the log message
+	 *
+	 * @return The logging service
+	 */
+	public LoggingService logMessage( String message, String type, String applicationName ) {
+		return logMessage( message, type, applicationName, DEFAULT_LOG_FILE );
+	}
+
+	/**
+	 * Log a message with specific arguments
+	 *
+	 * @param message         The message to log
+	 * @param type            The type of log message (fatal, error, info, warn, debug, trace)
+	 * @param applicationName The name of the application requesting the log message
+	 * @param logger          The logger destination. It can be a named logger or an absolute path
+	 *
+	 * @return The logging service
+	 *
+	 * @throws IllegalArgumentException If the log level is not valid
+	 */
+	public LoggingService logMessage(
+	    String message,
+	    String type,
+	    String applicationName,
+	    String logger ) {
+
+		// Default level to info if no log level is passed
+		if ( type == null || type.isEmpty() ) {
+			type = DEFAULT_LOG_LEVEL;
+		}
+		// Get and Validate the log level
+		Key targetLogLevel = LogLevel.valueOf( type, false );
+
+		// If it is empty, then use the default of no-application
+		if ( applicationName == null || applicationName.isEmpty() ) {
+			applicationName = DEFAULT_APPLICATION;
+		}
+		// Include the application name in the message
+		message = String.format( "[%s] %s", applicationName, message );
+
+		// If no file or logger is passed, then use the default logger: runtime.log
+		if ( logger.isEmpty() ) {
+			logger = DEFAULT_LOG_FILE;
+		}
+		// Verify the log file ends in `.log` and if not, append it
+		if ( !logger.toLowerCase().endsWith( ".log" ) ) {
+			logger += ".log";
+		}
+
+		// If the file is an absolute path, use it, otherwise use the logs directory as the base
+		// All logger names should be lowercase
+		String			loggerFilePath	= Path.of( logger ).isAbsolute()
+		    ? Path.of( logger ).normalize().toString()
+		    : Paths.get( getLogsDirectory(), "/", logger.toLowerCase() ).normalize().toString();
+		String			loggerName		= FilenameUtils.getBaseName( loggerFilePath.toLowerCase() );
+
+		// Get the logger and set the level
+		LoggerContext	targetContext	= getLoggerContext();
+		Logger			oLogger			= targetContext.getLogger( loggerName );
+		oLogger.setLevel( Level.TRACE );
+		FileAppender<ILoggingEvent> appender = getOrBuildAppender( loggerFilePath, targetContext );
+
+		// Create or compute the file appender requested
+		// This provides locking also and caching so we don't have to keep creating them
+		// Shutdown will stop the appenders
+		if ( !oLogger.isAttached( appender ) ) {
+			oLogger.addAppender( appender );
+		}
+
+		// Log according to the level
+		switch ( targetLogLevel.getNameNoCase() ) {
+			// No fatal in SL4J
+			case "FATAL" -> oLogger.error( message );
+			case "ERROR" -> oLogger.error( message );
+			case "WARN" -> oLogger.warn( message );
+			case "INFO" -> oLogger.info( message );
+			case "DEBUG" -> oLogger.debug( message );
+			case "TRACE" -> oLogger.trace( message );
+			default -> oLogger.info( message );
+		}
+
+		return instance;
+	}
+
+	/**
+	 * Get a logger by registered name.
+	 * If the logger doesn't exist, it will auto-register it and load it
+	 * using the name as the file name in the logs directory.
+	 *
+	 * @param loggerName The name of the logger
+	 *
+	 * @return The logger requested
+	 */
+	public Logger getLogger( Key loggerName ) {
+		// Is it regsitered already?
+		if ( this.loggersMap.containsKey( loggerName ) ) {
+			return ( Logger ) this.loggersMap.get( loggerName );
+		}
+
+		// Compute it
+		return getLogger(
+		    loggerName,
+		    Paths.get( getLogsDirectory(), "/", loggerName.getNameNoCase() ).normalize().toString()
+		);
+	}
+
+	/**
+	 * Get a logger by registered name.
+	 * If the logger doesn't exist, it will auto-register it and load it
+	 * using the name as the file name in the logs directory.
+	 *
+	 * @param loggerName The name of the logger
+	 * @param filePath   The file path to the logger. If any, this can be null
+	 *
+	 * @return The logger requested
+	 */
+	public Logger getLogger( Key loggerName, String filePath ) {
+		// Comput if absent and return the logger
+		return ( Logger ) this.loggersMap.computeIfAbsent( loggerName, key -> {
+			LoggerContext	targetContext	= getLoggerContext();
+			Logger			oLogger			= targetContext.getLogger( key.getNameNoCase() );
+			oLogger.setLevel( Level.TRACE );
+			oLogger.addAppender( getOrBuildAppender( filePath, targetContext ) );
+			oLogger.setAdditive( true );
+			return oLogger;
+		} );
+	}
+
+	/**
+	 * Verify if a logger with the specified name exists
+	 *
+	 * @param loggerName The name of the logger to verify
+	 */
+	public boolean hasLogger( Key loggerName ) {
+		return this.loggersMap.containsKey( loggerName );
+	}
+
+	/**
+	 * Tell me how many loggers have been registered
+	 *
+	 * @return The number of loggers registered
+	 */
+	public int getLoggersCount() {
+		return this.loggersMap.size();
+	}
+
+	/**
+	 * Get a list of all the registered loggers so far in the runtime
+	 *
+	 * @return The list of loggers
+	 */
+	public List<String> getLoggersList() {
+		return this.loggersMap.getKeysAsStrings();
+	}
+
+	/**
+	 * Get a list of all the registered loggers so far in the runtime
+	 *
+	 * @return The list of loggers
+	 */
+	public List<Key> getLoggersKeys() {
+		return this.loggersMap.getKeys();
+	}
+
+	/**
+	 * Remove a logger by name
+	 *
+	 * @param loggerName The name of the logger to remove
+	 *
+	 * @return True if the logger was removed, false otherwise
+	 */
+	public boolean removeLogger( Key loggerName ) {
+		Logger oLogger = ( Logger ) this.loggersMap.remove( loggerName );
+
+		if ( oLogger != null ) {
+			oLogger.detachAndStopAllAppenders();
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Appender Methods
+	 * --------------------------------------------------------------------------
+	 * We lazy-load and dynamically create appenders as needed
+	 * These methods manage the appenders and their lifecycles
+	 */
 
 	/**
 	 * Get the requested file appender according to log location
@@ -230,15 +565,46 @@ public class LoggingService {
 	 * @return The file appender, computed or from cache
 	 */
 	public FileAppender<ILoggingEvent> getOrBuildAppender( String filePath, LoggerContext logContext ) {
-		return this.appendersMap.computeIfAbsent( filePath.toLowerCase(), key -> {
-			var appender = new FileAppender<ILoggingEvent>();
+		return ( FileAppender<ILoggingEvent> ) this.appendersMap.computeIfAbsent( filePath.toLowerCase(), key -> {
+			var		appender		= new RollingFileAppender<ILoggingEvent>();
+			String	fileName		= FilenameUtils.getBaseName( filePath );
+			String	enclosingFolder	= FilenameUtils.getFullPathNoEndSeparator( filePath );
+
+			// Set basics of appender
+			appender.setName( fileName );
 			appender.setFile( filePath );
-			appender.setEncoder( getEncoder() );
 			appender.setContext( logContext );
+			appender.setEncoder( getDefaultEncoder() );
 			appender.setAppend( true );
 			appender.setImmediateFlush( true );
-			appender.setPrudent( true );
+			// This is commented as rolling with compression does not allow prudent handling
+			// appender.setPrudent( true );
+
+			// Time-based rolling policy with file size constraint
+			SizeAndTimeBasedRollingPolicy<ILoggingEvent> policy = new SizeAndTimeBasedRollingPolicy<>();
+			policy.setContext( logContext );
+			policy.setParent( appender );
+			policy.setFileNamePattern( enclosingFolder + "/archives/" + fileName + ".%d{yyyy-MM-dd}.%i.log.zip" );
+			policy.setMaxHistory(
+			    this.runtime.getConfiguration().logging.maxLogDays
+			);
+			policy.setMaxFileSize( FileSize.valueOf(
+			    this.runtime.getConfiguration().logging.maxFileSize
+			) ); // Maximum file size for each log
+			policy.setTotalSizeCap( FileSize.valueOf(
+			    this.runtime.getConfiguration().logging.totalCapSize
+			) ); // Max total cap size
+			policy.start();
+
+			// Configure it
+			appender.setRollingPolicy( policy );
 			appender.start();
+
+			// Uncomment to verify issues
+			if ( this.runtime.inDebugMode() ) {
+				StatusPrinter.print( logContext );
+			}
+
 			return appender;
 		} );
 	}
@@ -278,7 +644,7 @@ public class LoggingService {
 	 * @return The logging service
 	 */
 	public LoggingService shutdownAppenders() {
-		this.appendersMap.values().forEach( FileAppender::stop );
+		this.appendersMap.values().forEach( Appender::stop );
 		return instance;
 	}
 
@@ -288,7 +654,21 @@ public class LoggingService {
 	public LoggingService shutdown() {
 		// Shutdown all the appenders
 		shutdownAppenders();
+		getLoggerContext().stop();
 		return instance;
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Private Methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	private JsonEncoder buildJsonEncoder() {
+		JsonEncoder targetEncoder = new JsonEncoder();
+		targetEncoder.setContext( this.loggerContext );
+		targetEncoder.start();
+		return targetEncoder;
 	}
 
 }

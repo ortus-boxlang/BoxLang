@@ -25,9 +25,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
+import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
 /**
@@ -84,6 +87,84 @@ public class PropertyHelper {
 			    .map( StringCaster::cast )
 			    .forEach( target::add );
 		}
+	}
+
+	/**
+	 * Process an incoming string, do replacements, and validate
+	 * that it's a value within the allowed incoming set of values
+	 *
+	 * @param config        The configuration object
+	 * @param key           The target key to look and process
+	 * @param allowedValues The set of allowed values. If not allowed, throw an exception
+	 *
+	 * @throws BoxVa
+	 */
+	public static String processString( IStruct config, Key key, String defaultValue, Set<String> allowedValues ) {
+		if ( config.containsKey( key ) ) {
+			String value = PlaceholderHelper.resolve( config.get( key ) );
+
+			if ( !allowedValues.contains( value ) ) {
+				throw new BoxValidationException(
+				    String.format(
+				        "The value [%s] is not allowed for the property [%s]. Allowed values are: %s",
+				        value,
+				        key,
+				        allowedValues.toString()
+				    )
+				);
+			}
+
+			return value;
+		}
+
+		return defaultValue;
+	}
+
+	/**
+	 * Process an incoming string, and do replacements.
+	 * If the key is found, replace the value with the resolved value
+	 * If the key is NOT found, do nothing
+	 *
+	 * @param config The configuration object
+	 * @param key    The target key to look and process
+	 */
+	public static String processString( IStruct config, Key key, String defaultValue ) {
+		if ( config.containsKey( key ) ) {
+			return PlaceholderHelper.resolve( config.get( key ) );
+		}
+		return defaultValue;
+	}
+
+	/**
+	 * Process an incoming string, and do replacements and return the value as an integer
+	 *
+	 * @param config       The configuration object
+	 * @param key          The target key to look and process
+	 * @param defaultValue The default value to return if the key is not found
+	 *
+	 * @return The integer value
+	 */
+	public static Integer processInteger( IStruct config, Key key, Integer defaultValue ) {
+		if ( config.containsKey( key ) ) {
+			return IntegerCaster.cast( PlaceholderHelper.resolve( config.get( key ) ) );
+		}
+		return defaultValue;
+	}
+
+	/**
+	 * Process a key that's supposed to be a IStruct and return it as a struct,
+	 * else, return a new struct.
+	 *
+	 * @param config The configuration object
+	 * @param key    The target key to look and process
+	 *
+	 * @return The struct
+	 */
+	public static IStruct processToStruct( IStruct config, Key key ) {
+		if ( config.containsKey( key ) ) {
+			return config.get( key ) instanceof IStruct castedStruct ? castedStruct : Struct.of();
+		}
+		return Struct.of();
 	}
 
 }

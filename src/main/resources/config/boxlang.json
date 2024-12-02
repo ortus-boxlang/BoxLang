@@ -72,8 +72,101 @@
 	"javaLibraryPaths": [
 		"${boxlang-home}/lib"
 	],
-	// The location of the log files the runtime will produce
-	"logsDirectory": "${boxlang-home}/logs",
+	// Logging Settings for the runtime
+	"logging": {
+		// The location of the log files the runtime will produce
+		"logsDirectory": "${boxlang-home}/logs",
+		// The maximum number of days to keep log files before rotation
+		// Default is 90 days or 3 months
+		// Set to 0 to never rotate
+		"maxLogDays": 90,
+		// The maximum file size for a single log file before rotation
+		// You can use the following suffixes: KB, MB, GB
+		// Default is 100MB
+		"maxFileSize": "100MB",
+		// The total cap size of all log files before rotation
+		// You can use the following suffixes: KB, MB, GB
+		// Default is 5GB
+		"totalCapSize": "5GB",
+		// The root logger level
+		// Valid values are in order of severity: ERROR, WARN, INFO, DEBUG, TRACE, OFF
+		// If the runtime is in Debug mode, this will be set to DEBUG
+		"rootLevel": "WARN",
+		// Default Encoder for file appenders.
+		// The available options are "text" and "json"
+		"defaultEncoder": "text",
+		// A collection of pre-defined loggers and their configurations
+		"loggers": {
+			// The runtime main and default log
+			"runtime": {
+				// Valid values are in order of severity: ERROR, WARN, INFO, DEBUG, TRACE, OFF
+				// Leave out if it should inherit from the root logger
+				//"level": "WARN",
+				// Valid values are: "file", "console",
+				// Coming soon: "smtp", "socket", "db", "syslog" or "java class name"
+				// Please note that we only use Rolling File Appenders
+				"appender": "file",
+				// Use the defaults from the runtime
+				"appenderArguments": {},
+				// The available options are "text" and "json"
+				"encoder": "text",
+				// Additive logging: true means that this logger will inherit the appenders from the root logger
+				// If false, it will only use the appenders defined in this logger
+				"additive": true
+			},
+			// The modules log
+			"modules": {
+				// Valid values are in order of severity: ERROR, WARN, INFO, DEBUG, TRACE, OFF
+				// Leave out if it should inherit from the root logger
+				//"level": "WARN",
+				// Valid values are: "file", "console",
+				// Coming soon: "smtp", "socket", "db", "syslog" or "java class name"
+				// Please note that we only use Rolling File Appenders
+				"appender": "file",
+				// Use the defaults from the runtime
+				"appenderArguments": {},
+				// The available options are "text" and "json"
+				"encoder": "text",
+				// Additive logging: true means that this logger will inherit the appenders from the root logger
+				// If false, it will only use the appenders defined in this logger
+				"additive": true
+			},
+			// All applications will use this logger
+			"application": {
+				// Valid values are in order of severity: ERROR, WARN, INFO, DEBUG, TRACE, OFF
+				// Leave out if it should inherit from the root logger
+				"level": "TRACE",
+				// Valid values are: "file", "console",
+				// Coming soon: "smtp", "socket", "db", "syslog" or "java class name"
+				// Please note that we only use Rolling File Appenders
+				"appender": "file",
+				// Use the defaults from the runtime
+				"appenderArguments": {},
+				// The available options are "text" and "json"
+				"encoder": "text",
+				// Additive logging: true means that this logger will inherit the appenders from the root logger
+				// If false, it will only use the appenders defined in this logger
+				"additive": true
+			},
+			// All scheduled tasks logging
+			"scheduler": {
+				// Valid values are in order of severity: ERROR, WARN, INFO, DEBUG, TRACE, OFF
+				// Leave out if it should inherit from the root logger
+				"level": "INFO",
+				// Valid values are: "file", "console",
+				// Coming soon: "smtp", "socket", "db", "syslog" or "java class name"
+				// Please note that we only use Rolling File Appenders
+				"appender": "file",
+				// Use the defaults from the runtime
+				"appenderArguments": {},
+				// The available options are "text" and "json"
+				"encoder": "text",
+				// Additive logging: true means that this logger will inherit the appenders from the root logger
+				// If false, it will only use the appenders defined in this logger
+				"additive": true
+			}
+		}
+	},
 	// This is the experimental features flags.
 	// Please see the documentation to see which flags are available
 	"experimental": {

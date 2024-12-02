@@ -409,6 +409,8 @@ mode POSSIBLE_COMPONENT;
 PREFIX: 'bx:' -> pushMode(COMPONENT_NAME_MODE);
 SLASH_PREFIX: '/bx:' -> pushMode(END_COMPONENT);
 
+COMPONENT_OPEN2: '<' -> type(COMPONENT_OPEN);
+
 ICHAR7:
 	'#' {_modeStack.contains(OUTPUT_MODE)}? -> type(ICHAR), popMode, pushMode(EXPRESSION_MODE_STRING
 		);

@@ -57,7 +57,7 @@ public class LogTest {
 	@BeforeAll
 	public static void setUp() {
 		instance		= BoxRuntime.getInstance( true );
-		logsDirectory	= instance.getConfiguration().logsDirectory;
+		logsDirectory	= instance.getConfiguration().logging.logsDirectory;
 		outContent		= new ByteArrayOutputStream();
 		System.setOut( new PrintStream( outContent ) );
 		logFileName	= "bxlog.log";

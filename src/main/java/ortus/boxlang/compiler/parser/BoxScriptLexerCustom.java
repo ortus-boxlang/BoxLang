@@ -35,29 +35,41 @@ public class BoxScriptLexerCustom extends BoxScriptLexer {
 	/**
 	 * Reserved words that are operators
 	 */
-	private static final Set<Integer>	operatorWords			= Set.of( AND, EQ, EQUAL, EQV, GE, GREATER, GT, GTE, IMP, IS, LE, LESS, LT, LTE, MOD, NEQ, NOT,
-	    OR,
-	    THAN, XOR );
+	private static final Set<Integer>	operatorWords					= Set.of( AND, EQ, EQUAL, EQV, GE, GREATER, GT, GTE, IMP, IS, LE, LESS, LT, LTE, MOD,
+	    NEQ, NOT,
+	    OR, THAN, XOR );
+
+	/**
+	 * Try and track what tokens can't preceed operators. This prolly won't be an exhaustive list, but trying to cover as may bases as we can.
+	 * operator words above, when followed by a `(` will be treated as an identifier ONLY if they are preceeded by a token in this list, or there is no previous token
+	 */
+	private static final Set<Integer>	tokensThatDoNoPreceedeOperators	= Set.of( LPAREN, LBRACE, RBRACE, LBRACKET, SEMICOLON, RETURN, COLON, DOT, COMMA, AND,
+	    EQ, EQUAL, EQV, GE, GT, GTE, IMP, IS, LE, LT, LTE, MOD, NEQ, NOT, OR, THAN, XOR, AMPAMP, EQEQ, GTSIGN, GTESIGN, LTSIGN, LTESIGN, BANGEQUAL,
+	    LESSTHANGREATERTHAN, BANG, PIPEPIPE, AMPERSAND, ARROW, BACKSLASH, COLONCOLON, ELVIS, EQUALSIGN, ARROW_RIGHT, MINUS, MINUSMINUS, PIPE, PERCENT, POWER,
+	    QM, SLASH, STAR, CONCATEQUAL, PLUSEQUAL, MINUSEQUAL, STAREQUAL, SLASHEQUAL, MODEQUAL, PLUS, PLUSPLUS, TEQ, TENQ /*
+	                                                                                                                     * , TEMPLATE_IF, TEMPLATE_ELSEIF,
+	                                                                                                                     * TEMPLATE_SET, TEMPLATE_RETURN
+	                                                                                                                     */ );
 
 	/**
 	 * A flag to track if the last token was a dot
 	 */
-	private boolean						dotty					= false;
+	private boolean						dotty							= false;
 
 	/**
 	 * A flag to track if we are fixing a component prefix
 	 */
-	private CommonToken					componentPrefixColon	= null;
+	private CommonToken					componentPrefixColon			= null;
 
 	/**
 	 * ASCII Character code for left parenthesis
 	 */
-	private int							LPAREN_Char_Code		= 40;
+	private int							LPAREN_Char_Code				= 40;
 
 	/**
 	 * Track the last token
 	 */
-	private Token						lastToken				= null;
+	private Token						lastToken						= null;
 
 	/**
 	 * Constructor
@@ -167,8 +179,7 @@ public class BoxScriptLexerCustom extends BoxScriptLexer {
 		if ( componentPrefixColon != null ) {
 			nextToken				= componentPrefixColon;
 			componentPrefixColon	= null;
-			lastToken				= nextToken;
-			return nextToken;
+			return setLastToken( nextToken );
 		}
 
 		nextToken = super.nextToken();
@@ -177,8 +188,7 @@ public class BoxScriptLexerCustom extends BoxScriptLexer {
 
 			case BoxScriptLexer.DOT :
 				dotty = true;
-				lastToken = nextToken;
-				return nextToken;
+				return setLastToken( nextToken );
 
 			case BoxScriptLexer.COMPONENT_PREFIX :
 				// If the last token was a new or import, then this is an identifier
@@ -197,8 +207,7 @@ public class BoxScriptLexerCustom extends BoxScriptLexer {
 
 					nextToken				= tmpToken;
 				}
-				lastToken = nextToken;
-				return nextToken;
+				return setLastToken( nextToken );
 
 			default :
 				// reserved operators after a dot are just identifiers
@@ -210,15 +219,29 @@ public class BoxScriptLexerCustom extends BoxScriptLexer {
 					// LT()
 					// GT()
 				} else if ( nextToken.getType() != BoxScriptLexer.NOT && operatorWords.contains( nextToken.getType() )
-				    && getInputStream().LA( 1 ) == LPAREN_Char_Code ) {
+				    && nextNonWhiteSpaceCharIs( LPAREN_Char_Code )
+				    && ( lastToken == null || tokensThatDoNoPreceedeOperators.contains( lastToken.getType() ) ) ) {
 					( ( CommonToken ) nextToken ).setType( IDENTIFIER );
 				}
 				dotty = false;
-				// ignore whitespace or comment tokens
-				if ( nextToken.getChannel() == DEFAULT_TOKEN_CHANNEL ) {
-					lastToken = nextToken;
-				}
-				return nextToken;
+				return setLastToken( nextToken );
 		}
 	}
+
+	private Token setLastToken( Token token ) {
+		if ( token.getChannel() != HIDDEN ) {
+			lastToken = token;
+		}
+		return token;
+	}
+
+	private boolean nextNonWhiteSpaceCharIs( int charCode ) {
+		int	pos			= 1;
+		int	nextChar	= getInputStream().LA( pos++ );
+		while ( Character.isWhitespace( nextChar ) ) {
+			nextChar = getInputStream().LA( pos++ );
+		}
+		return nextChar == charCode;
+	}
+
 }

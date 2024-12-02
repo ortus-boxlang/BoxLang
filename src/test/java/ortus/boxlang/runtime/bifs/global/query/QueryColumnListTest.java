@@ -7,7 +7,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http: //www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,10 +15,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.runtime.bifs.global.math;
+
+package ortus.boxlang.runtime.bifs.global.query;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.assertTrue;
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -30,8 +33,10 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.util.ListUtil;
 
-public class LogTest {
+public class QueryColumnListTest {
 
 	static BoxRuntime	instance;
 	IBoxContext			context;
@@ -43,49 +48,48 @@ public class LogTest {
 		instance = BoxRuntime.getInstance( true );
 	}
 
+	@AfterAll
+	public static void teardown() {
+
+	}
+
 	@BeforeEach
 	public void setupEach() {
 		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
 		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
-	@DisplayName( "It returns natural logarithm" )
+	@DisplayName( "It should return an list of column names" )
 	@Test
-	public void testItReturnsNaturalLogarithm() {
+	public void testQueryColumnList() {
 		instance.executeSource(
 		    """
-		    result = log(1);
+		    query = QueryNew( "id,name", "integer,varchar" );
+		    result = QueryColumnList( query );
 		    """,
 		    context );
-		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( StrictMath.log( 1 ) );
-		instance.executeSource(
-		    """
-		    result = log(0.5);
-		    """,
-		    context );
-		assertThat( variables.getAsNumber( result ).toString() ).isEqualTo( "-0.6931471805625540367844847419647936" );
+
+		assertTrue( variables.get( result ) instanceof String );
+		Array arrayResult = ListUtil.asList( variables.getAsString( result ), "," );
+		assertThat( arrayResult.size() ).isEqualTo( 2 );
+		assertThat( arrayResult.get( 0 ) ).isEqualTo( "id" );
+		assertThat( arrayResult.get( 1 ) ).isEqualTo( "name" );
 	}
 
-	@DisplayName( "It returns natural logarithm member" )
+	@DisplayName( "It should work with member functions" )
 	@Test
-	public void testItReturnsNaturalLogarithmMember() {
+	public void testQueryColumnListMemberFunction() {
 		instance.executeSource(
 		    """
-		    result = (1).log();
+		    query = QueryNew( "id,name", "integer,varchar" );
+		    result = query.ColumnList();
 		    """,
 		    context );
-		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( StrictMath.log( 1 ) );
-		instance.executeSource(
-		    """
-		    result = (0.5).log();
-		    """,
-		    context );
-		assertThat( variables.getAsNumber( result ).toString() ).isEqualTo( "-0.6931471805625540367844847419647936" );
-		instance.executeSource(
-		    """
-		    result = (123123123123123123123123123).log();
-		    """,
-		    context );
-		assertThat( variables.getAsNumber( result ).toString() ).isEqualTo( "60.07522708756309744519394650363874" );
+
+		assertTrue( variables.get( result ) instanceof String );
+		Array arrayResult = ListUtil.asList( variables.getAsString( result ), "," );
+		assertThat( arrayResult.size() ).isEqualTo( 2 );
+		assertThat( arrayResult.get( 0 ) ).isEqualTo( "id" );
+		assertThat( arrayResult.get( 1 ) ).isEqualTo( "name" );
 	}
 }
