@@ -144,9 +144,6 @@ public class RegexBuilder {
 		 */
 		public RegexMatcher replaceAll( String replacement ) {
 			Objects.requireNonNull( replacement, "Replacement cannot be null" );
-			if ( replacement.isEmpty() ) {
-				throw new IllegalArgumentException( "Replacement cannot be empty" );
-			}
 			this.input = this.pattern
 			    .matcher( this.input )
 			    .replaceAll( replacement );
