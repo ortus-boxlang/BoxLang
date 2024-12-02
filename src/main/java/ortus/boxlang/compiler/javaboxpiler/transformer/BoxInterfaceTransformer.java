@@ -27,7 +27,6 @@ import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.IntegerLiteralExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
-import com.github.javaparser.ast.expr.StringLiteralExpr;
 
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxInterface;
@@ -41,6 +40,7 @@ import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxImport;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
+import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxStringLiteralTransformer;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
@@ -378,7 +378,7 @@ public class BoxInterfaceTransformer extends AbstractTransformer {
 		for ( Map.Entry<String, BoxExpression> entry : transpiler.getKeys().entrySet() ) {
 			MethodCallExpr methodCallExpr = new MethodCallExpr( new NameExpr( "Key" ), "of" );
 			if ( entry.getValue() instanceof BoxStringLiteral str ) {
-				methodCallExpr.addArgument( new StringLiteralExpr( str.getValue() ) );
+				methodCallExpr.addArgument( BoxStringLiteralTransformer.transform( str.getValue() ) );
 			} else if ( entry.getValue() instanceof BoxIntegerLiteral id ) {
 				methodCallExpr.addArgument( new IntegerLiteralExpr( id.getValue() ) );
 			} else {

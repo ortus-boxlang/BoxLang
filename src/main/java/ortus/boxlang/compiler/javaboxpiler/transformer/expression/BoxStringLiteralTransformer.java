@@ -18,7 +18,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.MethodCallExpr;
@@ -51,15 +50,26 @@ public class BoxStringLiteralTransformer extends AbstractTransformer {
 	 * @return generates a Java Parser string Literal or concatenation expression
 	 */
 	@Override
-	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-		BoxStringLiteral	literal	= ( BoxStringLiteral ) node;
-		String				value	= escape( literal.getValue() );
+	public Expression transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
+		BoxStringLiteral literal = ( BoxStringLiteral ) node;
+		return transform( literal.getValue() );
+	}
 
-		if ( value.length() > MAX_LITERAL_LENGTH ) {
+	/**
+	 * Transform just the string portion (reuseable for other purposes)
+	 *
+	 * @param value The input string.
+	 *
+	 * @return generates a Java Parser string Literal or concatenation expression
+	 */
+	public static Expression transform( String value ) throws IllegalStateException {
+		String escapedVal = escape( value );
+
+		if ( escapedVal.length() > MAX_LITERAL_LENGTH ) {
 			List<String> parts = splitStringIntoParts( value );
 			return createArrayJoinMethodCall( parts );
 		} else {
-			return new StringLiteralExpr( value );
+			return new StringLiteralExpr( escapedVal );
 		}
 	}
 
@@ -70,7 +80,7 @@ public class BoxStringLiteralTransformer extends AbstractTransformer {
 	 * 
 	 * @return A list of StringLiteralExpr parts.
 	 **/
-	private List<String> splitStringIntoParts( String str ) {
+	private static List<String> splitStringIntoParts( String str ) {
 		List<String>	parts	= new ArrayList<>();
 		int				length	= str.length();
 		for ( int i = 0; i < length; i += MAX_LITERAL_LENGTH ) {
@@ -88,9 +98,10 @@ public class BoxStringLiteralTransformer extends AbstractTransformer {
 	 * 
 	 * @return A BinaryExpr representing the concatenation of all parts.
 	 **/
-	private Expression createArrayJoinMethodCall( List<String> parts ) {
+	private static Expression createArrayJoinMethodCall( List<String> parts ) {
 		// Create a MethodCallExpr for String.join with an array of strings
 		var args = parts.stream()
+		    // Assumes the parts won't have so many escaped chars to put back over the limit
 		    .map( part -> ( Expression ) new StringLiteralExpr( escape( part ) ) ) // Escape quotes and create StringLiteralExpr
 		    .collect( Collectors.toCollection( NodeList::new ) ); // Collect into NodeList
 		args.add( 0, new StringLiteralExpr( "" ) ); // Delimiter
@@ -106,7 +117,7 @@ public class BoxStringLiteralTransformer extends AbstractTransformer {
 	 *
 	 * @return The output String.
 	 **/
-	private String escape( String s ) {
+	private static String escape( String s ) {
 		return s.replace( "\\", "\\\\" )
 		    .replace( "\t", "\\t" )
 		    .replace( "\b", "\\b" )

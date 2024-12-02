@@ -27,7 +27,6 @@ import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.LambdaExpr;
 import com.github.javaparser.ast.expr.NullLiteralExpr;
 import com.github.javaparser.ast.expr.ObjectCreationExpr;
-import com.github.javaparser.ast.expr.StringLiteralExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.ReturnStmt;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
@@ -38,6 +37,7 @@ import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
 import ortus.boxlang.compiler.javaboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.TransformerContext;
+import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxStringLiteralTransformer;
 
 /**
  * Transform a BoxArgumentDeclarationTransformer Node the equivalent Java Parser AST nodes
@@ -85,7 +85,7 @@ public class BoxArgumentDeclarationTransformer extends AbstractTransformer {
 		// Create the argument list
 		NodeList<Expression>	arguments			= new NodeList<Expression>(
 		    new BooleanLiteralExpr( boxArgument.getRequired() ),
-		    new StringLiteralExpr( type ),
+		    BoxStringLiteralTransformer.transform( type ),
 		    createKey( boxArgument.getName() ),
 		    defaultLiteral,
 		    defaultExpression,

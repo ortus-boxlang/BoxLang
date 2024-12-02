@@ -22,7 +22,6 @@ import java.util.Map;
 
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
-import com.github.javaparser.ast.expr.StringLiteralExpr;
 
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
@@ -63,13 +62,13 @@ public class BoxStaticAccessTransformer extends AbstractTransformer {
 		Expression jContext;
 
 		if ( objectAccess.getContext() instanceof BoxFQN fqn ) {
-			jContext = new StringLiteralExpr( fqn.getValue() );
+			jContext = BoxStringLiteralTransformer.transform( fqn.getValue() );
 		} else if ( objectAccess.getContext() instanceof BoxIdentifier id ) {
 			// In BL code, this could be an import, but in CF it's just a string
 			if ( transpiler.matchesImport( id.getName() ) && transpiler.getProperty( "sourceType" ).toLowerCase().startsWith( "box" ) ) {
 				jContext = ( Expression ) transpiler.transform( id, context );
 			} else {
-				jContext = new StringLiteralExpr( id.getName() );
+				jContext = BoxStringLiteralTransformer.transform( id.getName() );
 			}
 		} else {
 			// foo.bar()::baz
