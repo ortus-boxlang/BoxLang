@@ -235,6 +235,8 @@ shadowJar {
 }
 
 test {
+	systemProperty 'boxlang.experimental.compiler', System.getProperty('boxlang.experimental.compiler', "java")
+
 	testLogging {
 		events "FAILED", "STANDARD_ERROR"
 	}
