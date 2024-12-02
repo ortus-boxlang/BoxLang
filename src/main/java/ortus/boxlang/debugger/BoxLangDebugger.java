@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import com.sun.jdi.AbsentInformationException;
@@ -105,6 +106,8 @@ public class BoxLangDebugger {
 
 	private int									SUSPEND_POLICY		= ThreadStartRequest.SUSPEND_EVENT_THREAD;
 	private MethodExitRequest					methodExitRequest	= null;
+
+	private static final Pattern				NON_WORD_PATTERN	= Pattern.compile( "\\W" );
 
 	public enum Status {
 		NOT_STARTED,
@@ -979,6 +982,6 @@ public class BoxLangDebugger {
 	}
 
 	private String normalizeName( String className ) {
-		return className.replaceAll( "\\W", "" ).toLowerCase();
+		return NON_WORD_PATTERN.matcher( className ).replaceAll( "" ).toLowerCase();
 	}
 }
