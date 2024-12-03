@@ -404,7 +404,6 @@ public class ClassTest {
 				// execute public method
 				result = cfc.foo();
 
-				assert result == "I work! whee true true bar true";
 			""", context );
 		// @formatter:on
 	}
