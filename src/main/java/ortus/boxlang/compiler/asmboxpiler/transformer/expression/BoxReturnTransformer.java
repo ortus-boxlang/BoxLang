@@ -47,6 +47,9 @@ public class BoxReturnTransformer extends AbstractTransformer {
 
 		if ( !transpiler.canReturn() ) {
 			nodes.add( new InsnNode( Opcodes.RETURN ) );
+			if ( returnContext.nullable ) {
+				nodes.add( new InsnNode( Opcodes.ARETURN ) );
+			}
 			return nodes;
 		}
 

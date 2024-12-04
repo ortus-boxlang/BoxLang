@@ -85,17 +85,17 @@ public class BoxComponentTransformer extends AbstractTransformer {
 		        Type.getType( Component.ComponentBody.class ) ),
 		    true ) );
 
-		if ( boxComponent.getBody() == null || boxComponent.getBody().size() == 0 ) {
-			// if ( returnContext != ReturnValueContext.VALUE && returnContext != ReturnValueContext.VALUE_OR_NULL ) {
-			// nodes.add( new InsnNode( Opcodes.POP ) );
-			// }
+		// if ( boxComponent.getBody() == null || boxComponent.getBody().size() == 0 ) {
+		// if ( returnContext != ReturnValueContext.VALUE && returnContext != ReturnValueContext.VALUE_OR_NULL ) {
+		// nodes.add( new InsnNode( Opcodes.POP ) );
+		// }
 
-			// transpiler.decrementComponentCounter();
+		// transpiler.decrementComponentCounter();
 
-			// return nodes;
-			// TODO: this causes CoreLangTest.unicode
-			// return AsmHelper.addLineNumberLabels( nodes, node );
-		}
+		// return nodes;
+		// TODO: this causes CoreLangTest.unicode
+		// return AsmHelper.addLineNumberLabels( nodes, node );
+		// }
 
 		if ( transpiler.isInsideComponent() ) {
 			LabelNode ifLabel = new LabelNode();
@@ -116,7 +116,12 @@ public class BoxComponentTransformer extends AbstractTransformer {
 
 			nodes.add( new InsnNode( Opcodes.ARETURN ) );
 
+			AsmHelper.addDebugLabel( nodes, "BoxComponent - isInsideComponent ifLabel" );
 			nodes.add( ifLabel );
+
+			if ( returnContext != ReturnValueContext.VALUE && returnContext != ReturnValueContext.VALUE_OR_NULL ) {
+				nodes.add( new InsnNode( Opcodes.POP ) );
+			}
 
 			return nodes;
 		} else if ( transpiler.canReturn() ) {
@@ -134,6 +139,7 @@ public class BoxComponentTransformer extends AbstractTransformer {
 			    )
 			);
 
+			AsmHelper.addDebugLabel( nodes, "BoxComponent - canReturn ifeq ifLabel" );
 			nodes.add( new JumpInsnNode( Opcodes.IFEQ, ifLabel ) );
 
 			nodes.add(
@@ -148,15 +154,20 @@ public class BoxComponentTransformer extends AbstractTransformer {
 
 			nodes.add( new InsnNode( Opcodes.ARETURN ) );
 
+			AsmHelper.addDebugLabel( nodes, "BoxComponent - canReturn ifLabel" );
 			nodes.add( ifLabel );
-		}
-
-		if ( returnContext != ReturnValueContext.VALUE && returnContext != ReturnValueContext.VALUE_OR_NULL ) {
-			nodes.add( new InsnNode( Opcodes.POP ) );
+			if ( returnContext != ReturnValueContext.VALUE && returnContext != ReturnValueContext.VALUE_OR_NULL ) {
+				nodes.add( new InsnNode( Opcodes.POP ) );
+			}
+		} else {
+			// remove the body result because we decided not to use it.
+			if ( returnContext != ReturnValueContext.VALUE && returnContext != ReturnValueContext.VALUE_OR_NULL ) {
+				nodes.add( new InsnNode( Opcodes.POP ) );
+			}
 		}
 
 		// transpiler.decrementComponentCounter();
-
+		AsmHelper.addDebugLabel( nodes, "BoxComponent - done" );
 		return nodes;
 		// TODO: this causes CoreLangTest.unicode
 		// return AsmHelper.addLineNumberLabels( nodes, node );
@@ -193,6 +204,7 @@ public class BoxComponentTransformer extends AbstractTransformer {
 		    + "$ComponentBodyLambda_" + transpiler.incrementAndGetLambdaCounter() + ";" );
 
 		ClassNode	classNode	= new ClassNode();
+		classNode.visitSource( transpiler.getProperty( "filePath" ), null );
 
 		AsmHelper.init( classNode, false, type, Type.getType( Object.class ), methodVisitor -> {
 		}, Type.getType( Component.ComponentBody.class ) );

@@ -58,6 +58,7 @@ public class BoxLambdaTransformer extends AbstractTransformer {
 		    + "$Lambda_" + transpiler.incrementAndGetLambdaCounter() + ";" );
 
 		ClassNode	classNode	= new ClassNode();
+		classNode.visitSource( transpiler.getProperty( "filePath" ), null );
 
 		AsmHelper.init( classNode, true, type, Type.getType( Lambda.class ), methodVisitor -> {
 		} );

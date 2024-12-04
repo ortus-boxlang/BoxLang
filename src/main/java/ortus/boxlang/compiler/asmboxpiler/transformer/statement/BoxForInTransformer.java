@@ -253,6 +253,8 @@ public class BoxForInTransformer extends AbstractTransformer {
 		) );
 		nodes.add( unRegisterQueryLabel );
 
+		AsmHelper.addDebugLabel( nodes, "BoxForIn - end" );
+
 		return nodes;
 	}
 

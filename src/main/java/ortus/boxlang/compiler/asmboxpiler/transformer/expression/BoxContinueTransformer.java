@@ -61,6 +61,10 @@ public class BoxContinueTransformer extends AbstractTransformer {
 			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
 		}
 
+		// if ( returnContext == ReturnValueContext.VALUE || returnContext == ReturnValueContext.VALUE_OR_NULL || exitsAllowed.equals( ExitsAllowed.FUNCTION ) ) {
+		// nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+		// }
+
 		MethodContextTracker	tracker			= transpiler.getCurrentMethodContextTracker().get();
 		BoxNode					labelTarget		= tracker.getStringLabel( continueNode.getLabel() );
 		LabelNode				currentBreak	= tracker.getContinue( labelTarget != null ? labelTarget : getTargetAncestor( continueNode ) );

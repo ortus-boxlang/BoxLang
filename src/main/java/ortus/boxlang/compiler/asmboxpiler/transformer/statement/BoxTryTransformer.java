@@ -68,12 +68,15 @@ public class BoxTryTransformer extends AbstractTransformer {
 		LabelNode				finallyStartLabel	= new LabelNode();
 		LabelNode				finallyEndLabel		= new LabelNode();
 
+		AsmHelper.addDebugLabel( nodes, "BoxTryBlock" );
+
 		nodes.add( tryStartLabel );
 
 		nodes.addAll( generateBodyNodesWithInlinedFinally( context, returnValueContext, boxTry.getTryBody(), boxTry.getFinallyBody(), () -> tryEndLabel ) );
 
 		// if we hit this instruction we have successfully executed the try body and inlined finally code
 		// we can skip to the end of this construct
+		AsmHelper.addDebugLabel( nodes, "BoxTryBlock goto finallyEndLabel" );
 		nodes.add( new JumpInsnNode( Opcodes.GOTO, finallyEndLabel ) );
 
 		if ( boxTry.getCatches().size() > 0 ) {
@@ -117,6 +120,7 @@ public class BoxTryTransformer extends AbstractTransformer {
 		    null );
 		tracker.addTryCatchBlock( catchHandler );
 
+		AsmHelper.addDebugLabel( nodes, "BoxTry - finallyStartLabel" );
 		nodes.add( finallyStartLabel );
 
 		var errorVarStore = tracker.storeNewVariable( Opcodes.ASTORE );
@@ -128,6 +132,7 @@ public class BoxTryTransformer extends AbstractTransformer {
 
 		nodes.add( new InsnNode( Opcodes.ATHROW ) );
 
+		AsmHelper.addDebugLabel( nodes, "BoxTry - FinallyEndLabel" );
 		nodes.add( finallyEndLabel );
 
 		tracker.addTryCatchBlock( new TryCatchBlockNode( tryStartLabel, tryEndLabel, finallyStartLabel, null ) );
@@ -178,6 +183,8 @@ public class BoxTryTransformer extends AbstractTransformer {
 		    context,
 		    returnValueContext
 		) );
+
+		AsmHelper.addDebugLabel( nodes, "BoxTryBlock - END" );
 
 		return nodes;
 	}

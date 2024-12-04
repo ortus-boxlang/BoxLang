@@ -242,6 +242,7 @@ public class AsmHelper {
 		    + "$Lambda_" + transpiler.incrementAndGetLambdaCounter() + ";" );
 
 		ClassNode	classNode	= new ClassNode();
+		classNode.visitSource( transpiler.getProperty( "filePath" ), null );
 
 		classNode.visit(
 		    Opcodes.V17,
@@ -836,8 +837,8 @@ public class AsmHelper {
 			return new ArrayList<>();
 		}
 
-		ReturnValueContext		bodyContext		= finalReturnValueContext == ReturnValueContext.VALUE_OR_NULL ? ReturnValueContext.EMPTY_UNLESS_JUMPING
-		    : ReturnValueContext.EMPTY;
+		ReturnValueContext		bodyContext		= finalReturnValueContext == ReturnValueContext.EMPTY ? ReturnValueContext.EMPTY
+		    : ReturnValueContext.EMPTY_UNLESS_JUMPING;
 
 		List<AbstractInsnNode>	nodes			= statements.stream().limit( statements.size() - 1 )
 		    .flatMap( child -> transpiler.transform( child, context, bodyContext ).stream() )

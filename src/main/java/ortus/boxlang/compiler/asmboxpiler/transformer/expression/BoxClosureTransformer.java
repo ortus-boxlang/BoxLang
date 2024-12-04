@@ -33,6 +33,7 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxClosure;
+import ortus.boxlang.compiler.ast.statement.BoxExpressionStatement;
 import ortus.boxlang.compiler.ast.statement.BoxStatementBlock;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
@@ -63,6 +64,7 @@ public class BoxClosureTransformer extends AbstractTransformer {
 		    + "$Closure_" + transpiler.incrementAndGetLambdaCounter() + ";" );
 
 		ClassNode	classNode	= new ClassNode();
+		classNode.visitSource( transpiler.getProperty( "filePath" ), null );
 
 		AsmHelper.init( classNode, true, type, Type.getType( Closure.class ), methodVisitor -> {
 		} );
@@ -145,11 +147,27 @@ public class BoxClosureTransformer extends AbstractTransformer {
 		int		componentCounter	= transpiler.getComponentCounter();
 		transpiler.setComponentCounter( 0 );
 		transpiler.incrementfunctionBodyCounter();
+
+		ReturnValueContext closureReturnContext = isBlock ? ReturnValueContext.EMPTY : ReturnValueContext.VALUE_OR_NULL;
 		AsmHelper.methodWithContextAndClassLocator( classNode, "_invoke", Type.getType( FunctionBoxContext.class ), Type.getType( Object.class ), false,
 		    transpiler, isBlock,
-		    () -> boxClosure.getBody().getChildren().stream()
-		        .flatMap( statement -> transpiler.transform( statement, TransformerContext.NONE, ReturnValueContext.VALUE_OR_NULL ).stream() )
-		        .toList() );
+		    () -> {
+			    List<AbstractInsnNode> bodyNodes = new ArrayList();
+
+			    BoxNode				body		= boxClosure.getBody();
+
+			    if ( body instanceof BoxExpressionStatement boxExpr ) {
+				    bodyNodes.addAll( transpiler.transform( boxExpr.getExpression(), TransformerContext.NONE, closureReturnContext ) );
+			    } else {
+				    bodyNodes.addAll( transpiler.transform( body, TransformerContext.NONE, closureReturnContext ) );
+			    }
+
+			    if ( isBlock ) {
+				    bodyNodes.add( 0, new InsnNode( Opcodes.ACONST_NULL ) );
+			    }
+
+			    return bodyNodes;
+		    } );
 		transpiler.decrementfunctionBodyCounter();
 		transpiler.setComponentCounter( componentCounter );
 
@@ -170,7 +188,7 @@ public class BoxClosureTransformer extends AbstractTransformer {
 			    Type.getDescriptor( String.class ) );
 			AsmHelper.array(
 			    Type.getType( Argument.class ),
-			    boxClosure.getArgs().stream().map( decl -> transpiler.transform( decl, TransformerContext.NONE ) ).toList() )
+			    boxClosure.getArgs().stream().map( decl -> transpiler.transform( decl, TransformerContext.NONE, ReturnValueContext.VALUE ) ).toList() )
 			    .forEach( abstractInsnNode -> abstractInsnNode.accept( methodVisitor ) );
 			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
 			    type.getInternalName(),
