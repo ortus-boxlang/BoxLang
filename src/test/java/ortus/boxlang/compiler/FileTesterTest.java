@@ -160,6 +160,53 @@ public class FileTesterTest {
 		       """,
 		    context );
 
+	@DisplayName( "Test valueList() to queryColumnData().toList()" )
+	@Test
+	public void testCompileIssue1() {
+		// instance.useJavaBoxpiler();
+		instance.executeSource(
+		    """
+		    a = new src.test.java.ortus.boxlang.compiler.CompileIssue1();
+		                                      """,
+		    context );
+	}
+
+	@DisplayName( "Test valueList() to queryColumnData().toList()" )
+	@Test
+	public void zzz() {
+		// instance.useJavaBoxpiler();
+		instance.executeSource(
+		    """
+		    a = 0
+		           while( a < 5 ){
+		       try{
+
+
+		       }
+		       catch( any e ){
+
+		       }
+		    	a++;
+		        }
+		                                            """,
+		    context );
+	}
+
+	@DisplayName( "Test valueList() to queryColumnData().toList()" )
+	@Test
+	public void switchBreak() {
+		// instance.useJavaBoxpiler();
+		// @formatter:off
+		instance.executeSource("""
+			a = 1;
+			while(a < 10) {
+				if(true) {
+					break;
+				}
+			}
+			""",
+		    context );
+		// @formatter:on
 	}
 
 }

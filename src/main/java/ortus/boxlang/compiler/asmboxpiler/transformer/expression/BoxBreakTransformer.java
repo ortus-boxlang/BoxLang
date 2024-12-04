@@ -63,12 +63,6 @@ public class BoxBreakTransformer extends AbstractTransformer {
 			labelTarget = getTargetAncestor( breakNode );
 		}
 
-		int intermediateCount = countIntermediateLoops( labelTarget, breakNode );
-
-		for ( int i = 0; i < intermediateCount; i++ ) {
-			nodes.add( new InsnNode( Opcodes.POP ) );
-		}
-
 		if ( returnContext.nullable
 		    || exitsAllowed.equals( ExitsAllowed.FUNCTION ) ) {
 			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
