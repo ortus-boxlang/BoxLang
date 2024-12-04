@@ -13,11 +13,11 @@ import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.InsnNode;
-import org.objectweb.asm.tree.InvokeDynamicInsnNode;
 import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
-import org.objectweb.asm.tree.MultiANewArrayInsnNode;
 import org.objectweb.asm.tree.TypeInsnNode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.Transformer;
@@ -142,6 +142,7 @@ import ortus.boxlang.compiler.ast.statement.BoxTry;
 import ortus.boxlang.compiler.ast.statement.BoxWhile;
 import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
 import ortus.boxlang.compiler.ast.statement.component.BoxTemplateIsland;
+import ortus.boxlang.compiler.javaboxpiler.JavaBoxpiler;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
@@ -162,6 +163,8 @@ import ortus.boxlang.runtime.types.util.MapHelper;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 public class AsmTranspiler extends Transpiler {
+
+	protected static final Logger					logger						= LoggerFactory.getLogger( JavaBoxpiler.class );
 
 	private static final int[]						STACK_SIZE_DELTA			= {
 	    0, // nop = 0 (0x0)
@@ -569,63 +572,89 @@ public class AsmTranspiler extends Transpiler {
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnValueContext ) {
 		Transformer transformer = registry.get( node.getClass() );
 		if ( transformer != null ) {
-			List<AbstractInsnNode> nodes = transformer.transform( node, context, returnValueContext );
-			if ( ASMBoxpiler.DEBUG ) {
-				int delta = 0;
-				for ( AbstractInsnNode value : nodes ) {
-					if ( value.getOpcode() == -1 ) {
-						continue;
-					} else if ( value instanceof FieldInsnNode fieldInsnNode ) {
-						Type type = Type.getType( fieldInsnNode.desc );
-						delta += switch ( fieldInsnNode.getOpcode() ) {
-							case Opcodes.GETSTATIC -> type.getSize();
-							case Opcodes.PUTSTATIC -> -type.getSize();
-							case Opcodes.GETFIELD -> type.getSize() - 1;
-							case Opcodes.PUTFIELD -> -type.getSize() - 1;
-							default -> throw new IllegalStateException();
-						};
-					} else if ( value instanceof MethodInsnNode methodInsnNode ) {
-						Type type = Type.getMethodType( methodInsnNode.desc );
-						for ( Type argument : type.getArgumentTypes() ) {
-							delta -= argument.getSize();
-						}
-						delta	+= type.getReturnType().getSize();
-						delta	+= switch ( methodInsnNode.getOpcode() ) {
-									case Opcodes.INVOKESTATIC -> 0;
-									case Opcodes.INVOKEVIRTUAL, Opcodes.INVOKEINTERFACE, Opcodes.INVOKESPECIAL -> -1;
-									default -> throw new IllegalStateException();
-								};
-					} else if ( value instanceof InvokeDynamicInsnNode invokeDynamicInsnNode ) {
-						Type type = Type.getMethodType( invokeDynamicInsnNode.desc );
-						for ( Type argument : type.getArgumentTypes() ) {
-							delta -= argument.getSize();
-						}
-						delta += type.getReturnType().getSize();
-					} else if ( value instanceof LdcInsnNode ldcInsnNode ) {
-						delta += ldcInsnNode.cst instanceof Double || ldcInsnNode.cst instanceof Long ? 2 : 1;
-					} else if ( value instanceof MultiANewArrayInsnNode multiANewArrayInsnNode ) {
-						delta -= multiANewArrayInsnNode.dims + 1;
-					} else {
-						if ( STACK_SIZE_DELTA[ value.getOpcode() ] == Integer.MIN_VALUE ) {
-							throw new IllegalStateException();
-						}
-						delta += STACK_SIZE_DELTA[ value.getOpcode() ];
-					}
-				}
-				int expectation = switch ( returnValueContext ) {
-					case EMPTY, EMPTY_UNLESS_JUMPING -> 0;
-					case VALUE, VALUE_OR_NULL -> 1;
-				};
+			try {
+				List<AbstractInsnNode> nodes = transformer.transform( node, context, returnValueContext );
 
-				if ( node instanceof BoxReturn ) {
-					expectation = 0;
+				return nodes;
+			} catch ( Exception e ) {
+				this.logger.error( "Error transforming:" + node.getClass().toString() );
+				if ( getProperty( "filePath" ) != null ) {
+					this.logger.error( "	file: " + getProperty( "filePath" ) );
+				} else {
+					this.logger.error( "	file: unkown" );
 				}
 
-				if ( expectation != delta ) {
-					throw new IllegalStateException( node.getClass() + " with " + returnValueContext + " yielded a stack delta of " + delta );
+				if ( node.getPosition() != null ) {
+					this.logger.error( "	position: " + node.getPosition().toString() );
+				} else {
+					this.logger.error( "	position: unkown" );
 				}
+
+				if ( node.getSourceText() != null ) {
+					this.logger.error( "	source: " + node.getSourceText() );
+				} else {
+					this.logger.error( "	source: unkown" );
+				}
+
+				this.logger.error( e.getMessage() );
+				throw e;
 			}
-			return nodes;
+			// if ( ASMBoxpiler.DEBUG ) {
+			// int delta = 0;
+			// for ( AbstractInsnNode value : nodes ) {
+			// if ( value.getOpcode() == -1 ) {
+			// continue;
+			// } else if ( value instanceof FieldInsnNode fieldInsnNode ) {
+			// Type type = Type.getType( fieldInsnNode.desc );
+			// delta += switch ( fieldInsnNode.getOpcode() ) {
+			// case Opcodes.GETSTATIC -> type.getSize();
+			// case Opcodes.PUTSTATIC -> -type.getSize();
+			// case Opcodes.GETFIELD -> type.getSize() - 1;
+			// case Opcodes.PUTFIELD -> -type.getSize() - 1;
+			// default -> throw new IllegalStateException();
+			// };
+			// } else if ( value instanceof MethodInsnNode methodInsnNode ) {
+			// Type type = Type.getMethodType( methodInsnNode.desc );
+			// for ( Type argument : type.getArgumentTypes() ) {
+			// delta -= argument.getSize();
+			// }
+			// delta += type.getReturnType().getSize();
+			// delta += switch ( methodInsnNode.getOpcode() ) {
+			// case Opcodes.INVOKESTATIC -> 0;
+			// case Opcodes.INVOKEVIRTUAL, Opcodes.INVOKEINTERFACE, Opcodes.INVOKESPECIAL -> -1;
+			// default -> throw new IllegalStateException();
+			// };
+			// } else if ( value instanceof InvokeDynamicInsnNode invokeDynamicInsnNode ) {
+			// Type type = Type.getMethodType( invokeDynamicInsnNode.desc );
+			// for ( Type argument : type.getArgumentTypes() ) {
+			// delta -= argument.getSize();
+			// }
+			// delta += type.getReturnType().getSize();
+			// } else if ( value instanceof LdcInsnNode ldcInsnNode ) {
+			// delta += ldcInsnNode.cst instanceof Double || ldcInsnNode.cst instanceof Long ? 2 : 1;
+			// } else if ( value instanceof MultiANewArrayInsnNode multiANewArrayInsnNode ) {
+			// delta -= multiANewArrayInsnNode.dims + 1;
+			// } else {
+			// if ( STACK_SIZE_DELTA[ value.getOpcode() ] == Integer.MIN_VALUE ) {
+			// throw new IllegalStateException();
+			// }
+			// delta += STACK_SIZE_DELTA[ value.getOpcode() ];
+			// }
+			// }
+			// int expectation = switch ( returnValueContext ) {
+			// case EMPTY, EMPTY_UNLESS_JUMPING -> 0;
+			// case VALUE, VALUE_OR_NULL -> 1;
+			// };
+
+			// if ( node instanceof BoxReturn ) {
+			// expectation = 0;
+			// }
+
+			// if ( expectation != delta ) {
+			// throw new IllegalStateException( node.getClass() + " with " + returnValueContext + " yielded a stack delta of " + delta );
+			// }
+			// }
+			// return nodes;
 		}
 		throw new IllegalStateException( "unsupported: " + node.getClass().getSimpleName() + " : " + node.getSourceText() );
 	}

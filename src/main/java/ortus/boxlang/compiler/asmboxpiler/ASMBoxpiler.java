@@ -3,6 +3,7 @@ package ortus.boxlang.compiler.asmboxpiler;
 import java.io.File;
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.function.BiConsumer;
@@ -103,13 +104,26 @@ public class ASMBoxpiler extends Boxpiler {
 		node.accept( new QueryEscapeSingleQuoteVisitor() );
 		doCompileClassInfo( transpiler( classInfo ), classInfo, node, ( fqn, classNode ) -> {
 			ClassWriter classWriter = new ClassWriter( ClassWriter.COMPUTE_FRAMES );
-			if ( DEBUG ) {
-				classNode.accept( new CheckClassAdapter( new TraceClassVisitor( classWriter, new PrintWriter( System.out ) ) ) );
-			} else {
-				classNode.accept( classWriter );
+			try {
+				if ( DEBUG ) {
+					classNode.accept( new CheckClassAdapter( new TraceClassVisitor( classWriter, new PrintWriter( System.out ) ) ) );
+				} else {
+					classNode.accept( classWriter );
+				}
+				byte[] bytes = classWriter.toByteArray();
+				diskClassUtil.writeBytes( classInfo.classPoolName(), fqn, "class", bytes );
+			} catch ( Exception e ) {
+				StringWriter out = new StringWriter();
+				classNode.accept( new CheckClassAdapter( new TraceClassVisitor( classWriter, new PrintWriter( out ) ) ) );
+
+				try {
+					e.printStackTrace( new PrintWriter( out ) );
+					this.logger.error( out.toString() );
+				} catch ( Exception ex ) {
+					this.logger.error( "Unabel to output ASM error info: " + ex.getMessage() );
+				}
+				throw e;
 			}
-			byte[] bytes = classWriter.toByteArray();
-			diskClassUtil.writeBytes( classInfo.classPoolName(), fqn, "class", bytes );
 		} );
 	}
 
