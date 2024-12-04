@@ -508,6 +508,13 @@ public class DynamicInteropService {
 								}
 							}
 							namedArgs.remove( Key.argumentCollection );
+						} else if ( namedArgs.containsKey( Key.argumentCollection ) && namedArgs.get( Key.argumentCollection ) instanceof Array argArray ) {
+							// Create copy of named args, merge in argCollection without overwriting, and delete arg collection key from copy of namedargs
+							namedArgs = new HashMap<>( namedArgs );
+							for ( int i = 0; i < argArray.size(); i++ ) {
+								namedArgs.put( Key.of( i + 1 ), argArray.get( i ) );
+							}
+							namedArgs.remove( Key.argumentCollection );
 						}
 						// loop over args and invoke setter methods for each
 						for ( Map.Entry<Key, Object> entry : namedArgs.entrySet() ) {
