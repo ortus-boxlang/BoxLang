@@ -46,6 +46,9 @@ public class RegexBuilder {
 	public static final Pattern	REGEX_QUANTIFIER_END	= Pattern.compile( "(?<!\\\\)\\}" );
 	public static final Pattern	REGEX_QUANTIFIER_START	= Pattern.compile( "(?<!\\\\)\\{" );
 	public static final Pattern	SLASH					= Pattern.compile( "/" );
+	public static final Pattern	SQL_COMMA_SPACING		= Pattern.compile( "\\s*(?![^()]*\\))(,)\\s*" );
+	public static final Pattern	SQL_PARENTHESIS_END		= Pattern.compile( "(\\w|\\'|\"|\\`)\\)" );
+	public static final Pattern	SQL_PARENTHESIS_START	= Pattern.compile( "\\((\\w|\\'|\"|\\`)" );
 	public static final Pattern	STARTS_WITH_DIGIT		= Pattern.compile( "^\\d.*" );
 	public static final Pattern	TWO_DOTS				= Pattern.compile( "\\.{2}" );
 	public static final Pattern	WHITESPACE				= Pattern.compile( "\\s" );

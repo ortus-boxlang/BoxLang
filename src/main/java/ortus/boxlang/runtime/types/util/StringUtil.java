@@ -151,19 +151,19 @@ public class StringUtil {
 		    // trim it
 		    .map( String::trim )
 		    // comma spacing
-		    .map( item -> item.replaceAll( "\\s*(?![^()]*\\))(,)\\s*", "," + NEW_LINE + INDENT ) )
+		    .map( item -> RegexBuilder.of( item, RegexBuilder.SQL_COMMA_SPACING ).replaceAllAndGet( "," + NEW_LINE + INDENT ) )
 		    // parenthesis spacing
-		    .map( item -> item.replaceAll( "\\((\\w|\\'|\"|\\`)", "( $1" ) )
-		    .map( item -> item.replaceAll( "(\\w|\\'|\"|\\`)\\)", "$1 )" ) )
+		    .map( item -> RegexBuilder.of( item, RegexBuilder.SQL_PARENTHESIS_START ).replaceAllAndGet( "( $1" ) )
+		    .map( item -> RegexBuilder.of( item, RegexBuilder.SQL_PARENTHESIS_END ).replaceAllAndGet( "$1 )" ) )
 		    // Keyword spacing
-		    .map( item -> item.replaceAll( "(?i)(\s)*(" + SQL_KEYWORDS_REGEX + ")(\s)+", NEW_LINE + "$2" + NEW_LINE + INDENT ).toUpperCase() )
+		    .map( item -> RegexBuilder.of( item, "(?i)(\s)*(" + SQL_KEYWORDS_REGEX + ")(\s)+" ).replaceAllAndGet( NEW_LINE + "$2" + NEW_LINE + INDENT )
+		        .toUpperCase() )
 		    // Indented Keyword spacing
-		    .map( item -> item.replaceAll( "(?i)(" + SQL_INDENTED_KEYWORDS_REGEX + ")", NEW_LINE + INDENT + "$1" ).toUpperCase() )
+		    .map( item -> RegexBuilder.of( item, "(?i)(" + SQL_INDENTED_KEYWORDS_REGEX + ")" ).replaceAllAndGet( NEW_LINE + INDENT + "$1" ).toUpperCase() )
 		    // Add a line break after a SQL_LOGICAL_OPERATORS and upper case the logical operator
-		    .map( item -> item.replaceAll( "(?i)(" + SQL_LOGICAL_OPERATORS_REGEX + ")", "$1" + NEW_LINE ).toUpperCase() )
-
+		    .map( item -> RegexBuilder.of( item, "(?i)(" + SQL_LOGICAL_OPERATORS_REGEX + ")" ).replaceAllAndGet( "$1" + NEW_LINE ).toUpperCase() )
 		    // Add spacing before an after a SQL_OPERATORS_REGEX
-		    .map( item -> item.replaceAll( "(?i)(" + SQL_OPERATORS_REGEX + ")", " $1 " ) )
+		    .map( item -> RegexBuilder.of( item, "(?i)(" + SQL_OPERATORS_REGEX + ")" ).replaceAllAndGet( " $1 " ) )
 		    // Collect to a list of strings with a newline for each line
 		    .collect( StringBuilder::new, ( sb, s ) -> sb.append( s ).append( NEW_LINE ), StringBuilder::append )
 		    .toString();
@@ -217,7 +217,7 @@ public class StringUtil {
 	 * @return The string in kebab-case
 	 */
 	public static String kebabCase( String target ) {
-		return target.toLowerCase().replaceAll( "\\s+", "-" );
+		return RegexBuilder.of( target.toLowerCase(), RegexBuilder.MULTIPLE_SPACES ).replaceAllAndGet( "-" );
 	}
 
 	/**
@@ -228,7 +228,7 @@ public class StringUtil {
 	 * @return The string in snake_case
 	 */
 	public static String snakeCase( String target ) {
-		return target.toLowerCase().replaceAll( "\\s+", "_" );
+		return RegexBuilder.of( target.toLowerCase(), RegexBuilder.MULTIPLE_SPACES ).replaceAllAndGet( "_" );
 	}
 
 	/**
