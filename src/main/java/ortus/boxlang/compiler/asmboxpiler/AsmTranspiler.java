@@ -373,6 +373,9 @@ public class AsmTranspiler extends Transpiler {
 	private static HashMap<Class<?>, Transformer>	registry					= new HashMap<>();
 	private static final String						EXTENDS_ANNOTATION_MARKER	= "overrideJava";
 
+	private List<AbstractInsnNode>					UDFDeclarations				= new ArrayList<>();
+	private List<AbstractInsnNode>					staticUDFDeclarations		= new ArrayList<>();
+
 	public AsmTranspiler() {
 		// TODO: instance write to static field. Seems like an oversight in Java version (retained until clarified).
 		registry.put( BoxStringLiteral.class, new BoxStringLiteralTransformer( this ) );
@@ -495,8 +498,14 @@ public class AsmTranspiler extends Transpiler {
 		    false,
 		    this,
 		    false,
-		    () -> AsmHelper.transformBodyExpressions( this, boxScript.getStatements(), TransformerContext.NONE,
-		        returnType == Type.VOID_TYPE ? ReturnValueContext.EMPTY : ReturnValueContext.VALUE_OR_NULL )
+		    () -> {
+			    List<AbstractInsnNode> nodes = new ArrayList<>();
+			    List<AbstractInsnNode> body	= AsmHelper.transformBodyExpressions( this, boxScript.getStatements(), TransformerContext.NONE,
+			        returnType == Type.VOID_TYPE ? ReturnValueContext.EMPTY : ReturnValueContext.VALUE_OR_NULL );
+			    nodes.addAll( getUDFDeclarations() );
+			    nodes.addAll( body );
+			    return nodes;
+		    }
 		);
 
 		AsmHelper.complete( classNode, type, methodVisitor -> {
@@ -1069,5 +1078,13 @@ public class AsmTranspiler extends Transpiler {
 
 		return nodes;
 
+	}
+
+	public List<AbstractInsnNode> getStaticUDFDeclarations() {
+		return staticUDFDeclarations;
+	}
+
+	public List<AbstractInsnNode> getUDFDeclarations() {
+		return UDFDeclarations;
 	}
 }

@@ -31,6 +31,7 @@ import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
+import ortus.boxlang.compiler.asmboxpiler.AsmTranspiler;
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
@@ -66,10 +67,9 @@ public class BoxInterfaceTransformer {
 		String	mappingName			= transpiler.getProperty( "mappingName" );
 		String	mappingPath			= transpiler.getProperty( "mappingPath" );
 		String	relativePath		= transpiler.getProperty( "relativePath" );
-		String	fileName			= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getName() : "unknown";
 		String	filePath			= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath() : "unknown";
 		// trim leading . if exists
-		String	boxInterfacename	= transpiler.getProperty( "boxFQN" );
+		String	boxInterfaceName	= transpiler.getProperty( "boxFQN" );
 		String	sourceType			= transpiler.getProperty( "sourceType" );
 
 		Type	type				= Type.getType( "L" + packageName.replace( '.', '/' )
@@ -337,36 +337,29 @@ public class BoxInterfaceTransformer {
 		AsmHelper.methodWithContextAndClassLocator( classNode, "_pseudoConstructor", Type.getType( IBoxContext.class ), Type.VOID_TYPE, false, transpiler,
 		    false,
 		    () -> {
-			    return boxInterface.getBody()
+			    List<AbstractInsnNode> nodes = new ArrayList<>();
+			    List<AbstractInsnNode> body	= boxInterface.getBody()
 			        .stream()
-			        .sorted( ( a, b ) -> {
-				        if ( a instanceof BoxFunctionDeclaration && ! ( b instanceof BoxFunctionDeclaration ) ) {
-					        return -1;
-				        } else if ( b instanceof BoxFunctionDeclaration && ! ( a instanceof BoxFunctionDeclaration ) ) {
-					        return 1;
-				        }
-
-				        return 0;
-
-			        } )
 			        .flatMap( statement -> {
+												        if ( ! ( statement instanceof BoxFunctionDeclaration )
+												            && ! ( statement instanceof BoxImport )
+												            && ! ( statement instanceof BoxStaticInitializer ) ) {
+													        throw new ExpressionException(
+													            "Statement type not supported in an interface: " + statement.getClass().getSimpleName(),
+													            statement
+													        );
+												        }
 
-				        if ( ! ( statement instanceof BoxFunctionDeclaration )
-				            && ! ( statement instanceof BoxImport )
-				            && ! ( statement instanceof BoxStaticInitializer ) ) {
-					        throw new ExpressionException(
-					            "Statement type not supported in an interface: " + statement.getClass().getSimpleName(),
-					            statement
-					        );
-				        }
+												        if ( statement instanceof BoxFunctionDeclaration bfd && bfd.getBody() == null ) {
+													        return new ArrayList<InsnNode>().stream();
+												        }
 
-				        if ( statement instanceof BoxFunctionDeclaration bfd && bfd.getBody() == null ) {
-					        return new ArrayList<InsnNode>().stream();
-				        }
-
-				        return transpiler.transform( statement, TransformerContext.NONE, ReturnValueContext.EMPTY ).stream();
-			        } )
+												        return transpiler.transform( statement, TransformerContext.NONE, ReturnValueContext.EMPTY ).stream();
+											        } )
 			        .toList();
+			    nodes.addAll( ( ( AsmTranspiler ) transpiler ).getUDFDeclarations() );
+			    nodes.addAll( body );
+			    return nodes;
 		    }
 		);
 
@@ -421,7 +414,7 @@ public class BoxInterfaceTransformer {
 
 			List<AbstractInsnNode>	annotations		= transpiler.transformAnnotations( boxInterface.getAllAnnotations() );
 			List<AbstractInsnNode>	documenation	= transpiler.transformDocumentation( boxInterface.getDocumentation() );
-			List<AbstractInsnNode>	name			= transpiler.createKey( boxInterfacename );
+			List<AbstractInsnNode>	name			= transpiler.createKey( boxInterfaceName );
 
 			List<AbstractInsnNode>	abstractMethods	= AsmHelper.generateMapOfAbstractMethodNames( transpiler, boxInterface );
 

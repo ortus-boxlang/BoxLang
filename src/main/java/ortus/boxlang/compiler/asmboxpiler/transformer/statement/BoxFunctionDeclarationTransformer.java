@@ -225,8 +225,12 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 			    Type.getDescriptor( List.class ) );
 		} );
 
-		List<AbstractInsnNode> nodes = new ArrayList<AbstractInsnNode>();
-
+		List<AbstractInsnNode> nodes;
+		if ( function.getModifiers().contains( BoxMethodDeclarationModifier.STATIC ) ) {
+			nodes = new ArrayList<>();
+		} else {
+			nodes = ( ( AsmTranspiler ) transpiler ).getUDFDeclarations();
+		}
 		nodes.addAll( transpiler.getCurrentMethodContextTracker().get().loadCurrentContext() );
 		nodes.add(
 		    new MethodInsnNode( Opcodes.INVOKESTATIC,
@@ -247,6 +251,10 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
 		}
 
-		return nodes;
+		if ( function.getModifiers().contains( BoxMethodDeclarationModifier.STATIC ) ) {
+			return nodes;
+		} else {
+			return new ArrayList<>();
+		}
 	}
 }

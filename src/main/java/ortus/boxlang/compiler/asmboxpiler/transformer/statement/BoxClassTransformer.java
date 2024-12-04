@@ -41,6 +41,7 @@ import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.VarInsnNode;
 
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
+import ortus.boxlang.compiler.asmboxpiler.AsmTranspiler;
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
@@ -468,20 +469,13 @@ public class BoxClassTransformer {
 		AsmHelper.methodWithContextAndClassLocator( classNode, "_pseudoConstructor", Type.getType( IBoxContext.class ), Type.VOID_TYPE, false, transpiler,
 		    false,
 		    () -> {
-			    List<AbstractInsnNode> psuedoBody = boxClass.getBody()
+			    List<AbstractInsnNode> psuedoBody = new ArrayList<>();
+			    List<AbstractInsnNode> body		= boxClass.getBody()
 			        .stream()
-			        .sorted( ( a, b ) -> {
-				        if ( a instanceof BoxFunctionDeclaration && ! ( b instanceof BoxFunctionDeclaration ) ) {
-					        return -1;
-				        } else if ( b instanceof BoxFunctionDeclaration && ! ( a instanceof BoxFunctionDeclaration ) ) {
-					        return 1;
-				        }
-
-				        return 0;
-
-			        } )
 			        .flatMap( statement -> transpiler.transform( statement, TransformerContext.NONE, ReturnValueContext.EMPTY ).stream() )
 			        .collect( Collectors.toList() );
+			    psuedoBody.addAll( ( ( AsmTranspiler ) transpiler ).getUDFDeclarations() );
+			    psuedoBody.addAll( body );
 
 			    psuedoBody.add( new VarInsnNode( Opcodes.ALOAD, 0 ) );
 			    psuedoBody.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );

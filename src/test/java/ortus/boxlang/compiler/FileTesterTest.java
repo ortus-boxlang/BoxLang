@@ -147,4 +147,19 @@ public class FileTesterTest {
 		       """,
 		    context );
 	}
+
+	@DisplayName( "Test hoisting" )
+	@Test
+	public void testHoisting() {
+		instance.executeSource(
+		    """
+		    result = foo();
+		    function foo() {
+		       	return "bar";
+		       }
+		       """,
+		    context );
+
+	}
+
 }
