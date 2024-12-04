@@ -3,6 +3,7 @@ package ortus.boxlang.compiler.asmboxpiler;
 import java.io.File;
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.function.BiConsumer;
 
@@ -18,6 +19,7 @@ import ortus.boxlang.compiler.ast.BoxInterface;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
 import ortus.boxlang.compiler.ast.visitor.QueryEscapeSingleQuoteVisitor;
+import ortus.boxlang.compiler.parser.Parser;
 import ortus.boxlang.compiler.parser.ParsingResult;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
@@ -151,6 +153,17 @@ public class ASMBoxpiler extends Boxpiler {
 
 	@Override
 	public List<byte[]> compileTemplateBytes( ResolvedFilePath resolvedFilePath ) {
-		throw new UnsupportedOperationException( "Unimplemented method 'compileTemplateBytes'" );
+		Path		path		= resolvedFilePath.absolutePath();
+		ClassInfo	classInfo	= null;
+		// file extension is .bx or .cfc
+		if ( path.toString().endsWith( ".bx" ) || path.toString().endsWith( ".cfc" ) ) {
+			classInfo = ClassInfo.forClass( resolvedFilePath, Parser.detectFile( path.toFile() ), this );
+		} else {
+			classInfo = ClassInfo.forTemplate( resolvedFilePath, Parser.detectFile( path.toFile() ), this );
+		}
+		var classPool = getClassPool( classInfo.classPoolName() );
+		classPool.putIfAbsent( classInfo.fqn().toString(), classInfo );
+		compileClassInfo( classInfo.classPoolName(), classInfo.fqn().toString() );
+		return diskClassUtil.readClassBytes( classInfo.classPoolName(), classInfo.fqn().toString() );
 	}
 }
