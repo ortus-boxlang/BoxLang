@@ -50,7 +50,7 @@
 									<bx:set dump(
 										var : var[ i ],
 										top : top,
-										expand : expand
+										expand : expand ?: null
 									)>
 								</div>
 							</td>

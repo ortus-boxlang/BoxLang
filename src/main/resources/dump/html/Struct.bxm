@@ -86,10 +86,10 @@
 									tabindex="0"
 									>
 									#encodeForHTML( key )#
-								</th>	
+								</th>
 								<td>
 									<div class="bx-onoff">
-										<bx:set dump( var : var[ key ], top : top, expand : expand ) >
+										<bx:set dump( var : var[ key ], top : top, expand : expand ?: null ) >
 									</div>
 								</td>
 							</tr>
