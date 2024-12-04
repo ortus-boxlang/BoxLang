@@ -520,6 +520,19 @@ public class ClassTest {
 		assertThat( res3 ).isEqualTo( "doesNotExistsecond" );
 	}
 
+	@DisplayName( "It should call onMissingMethod through invoke" )
+	@Test
+	public void testOnMissingMethodInvoke() {
+		instance.executeSource(
+		    """
+		          cfc = new src.test.java.TestCases.phase3.OnMissingMethod();
+		    result = invoke( cfc, "someFunc", [ "first", "second" ] );
+		           """, context );
+
+		String res = variables.getAsString( result );
+		assertThat( res ).isEqualTo( "someFuncsecond" );
+	}
+
 	@DisplayName( "box meta" )
 	@Test
 	public void testBoxMeta() {
