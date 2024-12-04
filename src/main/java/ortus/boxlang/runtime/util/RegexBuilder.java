@@ -40,6 +40,7 @@ public class RegexBuilder {
 	public static final Pattern	MULTILINE_START_OF_LINE	= Pattern.compile( "(?m)^" );
 	public static final Pattern	MULTIPLE_SPACES			= Pattern.compile( "\\s+" );
 	public static final Pattern	NO_DIGITS				= Pattern.compile( "\\D" );
+	public static final Pattern	NON_ALPHANUMERIC		= Pattern.compile( "[^a-zA-Z0-9]" );
 	public static final Pattern	PACKAGE_NAMES			= Pattern.compile( "[^a-zA-Z0-9$\\.]" );
 	public static final Pattern	PERIOD					= Pattern.compile( "\\." );
 	public static final Pattern	REGEX_QUANTIFIER		= Pattern.compile( "\\{\\d*,?\\d*\\}" );
