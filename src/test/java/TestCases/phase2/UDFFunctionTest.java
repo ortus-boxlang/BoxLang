@@ -972,4 +972,41 @@ public class UDFFunctionTest {
 
 	}
 
+	@Test
+	public void testOverwriteArgumentsScope() {
+		instance.executeSource(
+		    """
+		      function foo() {
+		    // Keys in argument scope are replaced with contents of this struct
+		      	arguments = { brad : 'wood' };
+		      	return arguments;
+		      }
+		      result = foo( luis = 'majano' );
+		      """,
+		    context );
+		assertThat( variables.getAsStruct( result ) ).containsKey( Key.of( "brad" ) );
+		assertThat( variables.getAsStruct( result ) ).doesNotContainKey( Key.of( "luis" ) );
+		assertThat( variables.getAsStruct( result ).get( Key.of( "brad" ) ) ).isEqualTo( "wood" );
+	}
+
+	@Test
+	public void testOverwriteArgumentsScopeNonStruct() {
+		instance.executeSource(
+		    """
+		      function foo() {
+		    // Not assigning a struct, so we just set local.arguments as a normal variable
+		      	arguments = "hello";
+		          variables.localRef = local;
+		      	return arguments;
+		      }
+		      result = foo( luis = 'majano' );
+		      """,
+		    context );
+		assertThat( variables.getAsStruct( result ) ).containsKey( Key.of( "luis" ) );
+		assertThat( variables.getAsStruct( result ) ).doesNotContainKey( Key.of( "brad" ) );
+		assertThat( variables.getAsStruct( result ).get( Key.of( "luis" ) ) ).isEqualTo( "majano" );
+		assertThat( variables.getAsStruct( Key.of( "localRef" ) ) ).containsKey( Key.of( "arguments" ) );
+		assertThat( variables.getAsStruct( Key.of( "localRef" ) ).get( Key.of( "arguments" ) ) ).isEqualTo( "hello" );
+	}
+
 }
