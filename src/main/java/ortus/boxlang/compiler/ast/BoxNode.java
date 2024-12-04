@@ -14,22 +14,24 @@
  */
 package ortus.boxlang.compiler.ast;
 
-import com.fasterxml.jackson.jr.ob.JSON;
-import com.fasterxml.jackson.jr.ob.JSON.Feature;
-import com.fasterxml.jackson.jr.ob.JSONObjectException;
-import ortus.boxlang.compiler.ast.comment.BoxComment;
-import ortus.boxlang.compiler.ast.comment.BoxDocComment;
-import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
-import ortus.boxlang.compiler.ast.statement.BoxImport;
-import ortus.boxlang.compiler.ast.visitor.BoxVisitable;
-import ortus.boxlang.compiler.ast.visitor.PrettyPrintBoxVisitor;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
+
+import com.fasterxml.jackson.jr.ob.JSON;
+import com.fasterxml.jackson.jr.ob.JSON.Feature;
+import com.fasterxml.jackson.jr.ob.JSONObjectException;
+
+import ortus.boxlang.compiler.ast.comment.BoxComment;
+import ortus.boxlang.compiler.ast.comment.BoxDocComment;
+import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
+import ortus.boxlang.compiler.ast.statement.BoxImport;
+import ortus.boxlang.compiler.ast.visitor.BoxVisitable;
+import ortus.boxlang.compiler.ast.visitor.PrettyPrintBoxVisitor;
+import ortus.boxlang.runtime.util.RegexBuilder;
 
 /**
  * Base class for the BoxLang AST Nodes
@@ -662,9 +664,12 @@ public abstract class BoxNode implements BoxVisitable {
 		if ( className.startsWith( "Box" ) ) {
 			className = className.substring( 3 );
 		}
-		var name = className.replaceAll( "([A-Z])", " $1" ).toLowerCase().trim();
+		var name = RegexBuilder.of( className, RegexBuilder.UPPERCASE_GROUP )
+		    .replaceAllAndGet( " $1" )
+		    .toLowerCase()
+		    .trim();
 
-		if ( name.matches( "^[aeiou].*" ) ) {
+		if ( RegexBuilder.of( name, RegexBuilder.VOWELS ).matches() ) {
 			return "an " + name;
 		} else {
 			return "a " + name;

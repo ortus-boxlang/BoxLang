@@ -35,9 +35,11 @@ public class RegexBuilder {
 	 * Add as many patterns as needed, but make sure they are in all caps and alphabetically ordered.
 	 */
 	public static final Pattern	BACKSLASH				= Pattern.compile( "\\\\" );
-	public static final Pattern	COLON					= Pattern.compile( ":" );
+	public static final Pattern	CARRIAGE_RETURN			= Pattern.compile( "\\r" );
 	public static final Pattern	CF_SQL					= Pattern.compile( "(?i)CF_SQL_" );
+	public static final Pattern	COLON					= Pattern.compile( ":" );
 	public static final Pattern	CREDIT_CARD_NUMBERS		= Pattern.compile( "[0-9 ,_-]+" );
+	public static final Pattern	END_OF_LINE_COLONS		= Pattern.compile( ":+$" );
 	public static final Pattern	LINE_ENDINGS			= Pattern.compile( "\\r?\\n" );
 	public static final Pattern	MULTILINE_START_OF_LINE	= Pattern.compile( "(?m)^" );
 	public static final Pattern	MULTIPLE_SPACES			= Pattern.compile( "\\s+" );
@@ -55,7 +57,9 @@ public class RegexBuilder {
 	public static final Pattern	SQL_PARENTHESIS_START	= Pattern.compile( "\\((\\w|\\'|\"|\\`)" );
 	public static final Pattern	STARTS_WITH_DIGIT		= Pattern.compile( "^\\d.*" );
 	public static final Pattern	TWO_DOTS				= Pattern.compile( "\\.{2}" );
+	public static final Pattern	UPPERCASE_GROUP			= Pattern.compile( "([A-Z])" );
 	public static final Pattern	WHITESPACE				= Pattern.compile( "\\s" );
+	public static final Pattern	VOWELS					= Pattern.compile( "^[aeiou].*" );
 
 	/**
 	 * Build a matcher for the given pattern lookup
@@ -90,6 +94,17 @@ public class RegexBuilder {
 	 */
 	public static RegexMatcher of( String input, Pattern pattern ) {
 		return new RegexMatcher( input ).match( pattern );
+	}
+
+	/**
+	 * Conmmonly used utility to strip whitespace from a string
+	 */
+	public static String stripWhitespace( String input ) {
+		return of( input, WHITESPACE ).replaceAllAndGet( "" );
+	}
+
+	public static String stripCarriageReturns( String input ) {
+		return of( input, CARRIAGE_RETURN ).replaceAllAndGet( "" );
 	}
 
 	/**

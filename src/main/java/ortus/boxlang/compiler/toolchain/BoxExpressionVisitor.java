@@ -153,6 +153,7 @@ import ortus.boxlang.parser.antlr.BoxScriptGrammar.StructMemberContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammar.TestExpressionContext;
 import ortus.boxlang.parser.antlr.BoxScriptGrammarBaseVisitor;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
+import ortus.boxlang.runtime.util.RegexBuilder;
 
 /**
  * This class is responsible for visiting the parse tree and generating the AST for BoxScript expressions.
@@ -174,7 +175,7 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 	 * This is here simply to allow tests to resolve a single expression without having to walk exprStaments
 	 *
 	 * @param ctx the parse tree
-	 * 
+	 *
 	 * @return the expression
 	 */
 	public BoxExpression visitTestExpression( TestExpressionContext ctx ) {
@@ -200,7 +201,7 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 	 * </p>
 	 *
 	 * @param ctx the parse tree
-	 * 
+	 *
 	 * @return The AST for the parenthesised expression
 	 */
 	@Override
@@ -306,7 +307,7 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 	 * </p>
 	 *
 	 * @param ctx the parse tree
-	 * 
+	 *
 	 * @return the AST for a particular accessor operation
 	 */
 	@Override
@@ -679,9 +680,9 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 	 * Generate the ELVIS AST node.
 	 *
 	 * @param bermudaTriangle the parse tree
-	 * 
+	 *
 	 * @return The binary operation representing Elvis
-	 * 
+	 *
 	 * @apiNote Elvis needs boats
 	 */
 	@Override
@@ -997,7 +998,7 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 	 * </p>
 	 *
 	 * @param ctx the parse tree
-	 * 
+	 *
 	 * @return Either a BoxIdentifier or BoxScope AST node
 	 */
 	@Override
@@ -1150,14 +1151,14 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 	 * </p>
 	 *
 	 * @param ctx the parse tree
-	 * 
+	 *
 	 * @return the operation AST node
 	 */
 	public BoxComparisonOperator buildRelOp( RelOpsContext ctx ) {
 
 		// Convert the context to a string without whitespace. Then we can just have a string
 		// switch
-		var op = ctx.getText().replaceAll( "\\s+", "" ).toUpperCase();
+		var op = RegexBuilder.stripWhitespace( ctx.getText() ).toUpperCase();
 
 		return switch ( op ) {
 			case "GT", ">", "GREATERTHAN" -> BoxComparisonOperator.GreaterThan;
@@ -1180,14 +1181,14 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 	 * </p>
 	 *
 	 * @param ctx the parse tree
-	 * 
+	 *
 	 * @return the operation AST node
 	 */
 	public BoxBinaryOperator buildBinOp( BinOpsContext ctx ) {
 
 		// Convert the context to a string without whitespace. Then we can just have a string
 		// switch
-		var op = ctx.getText().replaceAll( "\\s+", "" ).toUpperCase();
+		var op = RegexBuilder.stripWhitespace( ctx.getText() ).toUpperCase();
 
 		return switch ( op ) {
 			case "EQV" -> BoxBinaryOperator.Equivalence;
@@ -1202,7 +1203,7 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 	 * Build the assignment operator from the token
 	 *
 	 * @param token The token to build the operator from
-	 * 
+	 *
 	 * @return The BoxAssignmentOperator AST
 	 */
 	private BoxAssignmentOperator buildAssignOp( Token token ) {
@@ -1228,11 +1229,11 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 	 * </p>
 	 *
 	 * @param prefix The possibly COLON-suffixed string for scope generation.
-	 * 
+	 *
 	 * @return The BoxScope AST
 	 */
 	private BoxExpression buildScope( Token prefix ) {
-		var scope = prefix.getText().replaceAll( "[:]+$", "" ).toUpperCase();
+		var scope = RegexBuilder.of( prefix.getText(), RegexBuilder.END_OF_LINE_COLONS ).replaceAllAndGet( "" ).toUpperCase();
 		return new BoxScope( scope, tools.getPosition( prefix ), prefix.getText() );
 	}
 
@@ -1241,7 +1242,7 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 	 * when not in a dot accessor.
 	 *
 	 * @param expr The expression to convert
-	 * 
+	 *
 	 * @return The converted expression
 	 */
 	private BoxExpression convertDotElement( BoxExpression expr, boolean withScope ) {
@@ -1255,7 +1256,7 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 	 * Builds the correct type for a value key or value in a struct literal.
 	 *
 	 * @param ctx the ParserContext to accept and convert
-	 * 
+	 *
 	 * @return the correct BoxType
 	 */
 	private BoxExpression buildKey( ExpressionContext ctx ) {
@@ -1275,7 +1276,7 @@ public class BoxExpressionVisitor extends BoxScriptGrammarBaseVisitor<BoxExpress
 	 * a visitor to handle such nodes so that we can call the visitor even when the parser rejected the input
 	 *
 	 * @param node the error node
-	 * 
+	 *
 	 * @return a New error node so that AST building can work
 	 */
 	@Override
