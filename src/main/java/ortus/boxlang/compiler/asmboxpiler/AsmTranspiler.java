@@ -142,7 +142,6 @@ import ortus.boxlang.compiler.ast.statement.BoxTry;
 import ortus.boxlang.compiler.ast.statement.BoxWhile;
 import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
 import ortus.boxlang.compiler.ast.statement.component.BoxTemplateIsland;
-import ortus.boxlang.compiler.javaboxpiler.JavaBoxpiler;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
@@ -164,7 +163,7 @@ import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 public class AsmTranspiler extends Transpiler {
 
-	protected static final Logger					logger						= LoggerFactory.getLogger( JavaBoxpiler.class );
+	protected static final Logger					logger						= LoggerFactory.getLogger( ASMBoxpiler.class );
 
 	private static final int[]						STACK_SIZE_DELTA			= {
 	    0, // nop = 0 (0x0)
