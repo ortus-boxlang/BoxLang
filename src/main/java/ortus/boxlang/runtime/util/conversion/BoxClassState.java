@@ -23,6 +23,7 @@ import java.util.Optional;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
@@ -121,8 +122,11 @@ public class BoxClassState implements Serializable {
 	 * @throws ObjectStreamException
 	 */
 	private Object readResolve() throws ObjectStreamException {
-		IBoxContext		context		= BoxRuntime.getInstance().getRuntimeContext();
-		IClassRunnable	boxClass	= ( IClassRunnable ) ClassLocator
+		IBoxContext context = RequestBoxContext.getCurrent();
+		if ( context == null ) {
+			context = BoxRuntime.getInstance().getRuntimeContext();
+		}
+		IClassRunnable boxClass = ( IClassRunnable ) ClassLocator
 		    .getInstance()
 		    .load(
 		        context,
