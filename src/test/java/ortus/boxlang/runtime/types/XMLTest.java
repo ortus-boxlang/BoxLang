@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.types;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.AfterAll;
@@ -265,6 +266,24 @@ class XMLTest {
 		    context );
 		assertEquals( 2, variables.getAsArray( result ).size() );
 
+	}
+
+	@DisplayName( "Can check for XMLChildren with StructKeyExists" )
+	@Test
+	void textStructKeyExistsXmlChildren() {
+		instance.executeSource(
+		    """
+		       myXML = XMLParse(
+		    	'<company name="Ortus Solutions">
+		            	<employee fname="Luis" lname="Majano"  />
+		            	<employee fname="Brad" lname="Wood" />
+		            </company>'
+		    );
+		       result = structKeyExists( myXML.xmlRoot, "XmlChildren" );
+		       """,
+		    context );
+		Object r = variables.get( result );
+		assertTrue( variables.getAsBoolean( result ) );
 	}
 
 }

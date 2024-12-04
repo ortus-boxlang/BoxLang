@@ -60,6 +60,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.IType;
 import ortus.boxlang.runtime.types.NullValue;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.XML;
 import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
@@ -407,6 +408,8 @@ public class DumpUtil {
 			return "Null.bxm";
 		} else if ( target instanceof Throwable ) {
 			return "Throwable.bxm";
+		} else if ( target instanceof XML ) {
+			return "XML.bxm";
 		} else if ( target instanceof Query ) {
 			return "Query.bxm";
 		} else if ( target instanceof Function ) {
