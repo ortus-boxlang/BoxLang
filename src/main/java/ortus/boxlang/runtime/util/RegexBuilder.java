@@ -44,6 +44,7 @@ public class RegexBuilder {
 	public static final Pattern	NON_ALPHANUMERIC		= Pattern.compile( "[^a-zA-Z0-9]" );
 	public static final Pattern	PACKAGE_NAMES			= Pattern.compile( "[^a-zA-Z0-9$\\.]" );
 	public static final Pattern	PERIOD					= Pattern.compile( "\\." );
+	public static final Pattern	REGEX_META				= Pattern.compile( "([\\\\$])" );
 	public static final Pattern	REGEX_QUANTIFIER		= Pattern.compile( "\\{\\d*,?\\d*\\}" );
 	public static final Pattern	REGEX_QUANTIFIER_END	= Pattern.compile( "(?<!\\\\)\\}" );
 	public static final Pattern	REGEX_QUANTIFIER_START	= Pattern.compile( "(?<!\\\\)\\{" );

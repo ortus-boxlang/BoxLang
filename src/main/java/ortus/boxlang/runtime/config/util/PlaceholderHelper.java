@@ -26,6 +26,7 @@ import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.RegexBuilder;
 
 /**
  * A helper class for resolving placeholders in configuration files
@@ -174,7 +175,7 @@ public class PlaceholderHelper {
 	 */
 	@SuppressWarnings( "unused" )
 	private static String escapeReplacementMetaChars( String input ) {
-		return input.replaceAll( "([\\\\$])", "\\\\$1" );
+		return RegexBuilder.of( input, RegexBuilder.REGEX_META ).replaceAllAndGet( "\\\\$1" );
 	}
 
 }
