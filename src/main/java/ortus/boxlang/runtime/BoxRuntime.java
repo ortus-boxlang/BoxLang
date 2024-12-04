@@ -674,6 +674,13 @@ public class BoxRuntime implements java.io.Closeable {
 	}
 
 	/**
+	 * Returns the compiler instance to use based on the configuration
+	 */
+	public IBoxpiler getCompiler() {
+		return this.boxpiler;
+	}
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Service Access Methods
 	 * --------------------------------------------------------------------------
