@@ -26,6 +26,8 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.fasterxml.jackson.jr.ob.JSON;
 
+import ortus.boxlang.runtime.util.RegexBuilder;
+
 /**
  * A collection of string utility functions
  */
@@ -102,14 +104,14 @@ public class StringUtil {
 	 */
 	public static String slugify( String str, int maxLength, String allow ) {
 		// Replace multiple spaces with a single space
-		String slug = str.trim().toLowerCase().replace( "\\s+", "-" );
+		String slug = RegexBuilder.of( str.trim().toLowerCase(), RegexBuilder.MULTIPLE_SPACES ).replaceAllAndGet( "-" );
 
 		// Strip accents
 		slug	= StringUtils.stripAccents( slug );
 		slug	= StringUtils.replace( slug, "ß", "ss" );
 
 		// More cleanup
-		slug	= slug.replaceAll( "[^a-z0-9" + allow + "]", "-" ).replaceAll( "-+", "-" );
+		slug	= RegexBuilder.of( slug, "[^a-z0-9" + allow + "]" ).replaceAllAndGet( "-" );
 
 		// is there a max length restriction
 		if ( maxLength != 0 && slug.length() > maxLength ) {

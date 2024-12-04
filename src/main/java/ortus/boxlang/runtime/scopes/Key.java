@@ -129,6 +129,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		boxCacheProvider					= Key.of( "BoxCacheProvider" );
 	public static final Key		boxlang								= Key.of( "boxlang" );
 	public static final Key		bxSessions							= Key.of( "bxSessions" );
+	public static final Key		bxRegex								= Key.of( "bxRegex" );
 	public static final Key		boxMember							= Key.of( "BoxMember" );
 	public static final Key		boxRuntime							= Key.of( "boxRuntime" );
 	public static final Key		buffer								= Key.of( "buffer" );

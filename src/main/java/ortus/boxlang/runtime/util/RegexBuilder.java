@@ -18,7 +18,11 @@
 package ortus.boxlang.runtime.util;
 
 import java.util.Objects;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.scopes.Key;
 
 /**
  * This class can be used as a utility to handle regular expressions.
@@ -32,12 +36,15 @@ public class RegexBuilder {
 	 */
 	public static final Pattern	BACKSLASH				= Pattern.compile( "\\\\" );
 	public static final Pattern	COLON					= Pattern.compile( ":" );
-	// cardNumber contains characters other than digit, space, or underscore
 	public static final Pattern	CREDIT_CARD_NUMBERS		= Pattern.compile( "[0-9 ,_-]+" );
 	public static final Pattern	MULTILINE_START_OF_LINE	= Pattern.compile( "(?m)^" );
+	public static final Pattern	MULTIPLE_SPACES			= Pattern.compile( "\\s+" );
 	public static final Pattern	NO_DIGITS				= Pattern.compile( "\\D" );
 	public static final Pattern	PACKAGE_NAMES			= Pattern.compile( "[^a-zA-Z0-9$\\.]" );
 	public static final Pattern	PERIOD					= Pattern.compile( "\\." );
+	public static final Pattern	REGEX_QUANTIFIER		= Pattern.compile( "\\{\\d*,?\\d*\\}" );
+	public static final Pattern	REGEX_QUANTIFIER_END	= Pattern.compile( "(?<!\\\\)\\}" );
+	public static final Pattern	REGEX_QUANTIFIER_START	= Pattern.compile( "(?<!\\\\)\\{" );
 	public static final Pattern	SLASH					= Pattern.compile( "/" );
 	public static final Pattern	STARTS_WITH_DIGIT		= Pattern.compile( "^\\d.*" );
 	public static final Pattern	TWO_DOTS				= Pattern.compile( "\\.{2}" );
@@ -122,7 +129,14 @@ public class RegexBuilder {
 			if ( pattern.isEmpty() ) {
 				throw new IllegalArgumentException( "Pattern cannot be empty" );
 			}
-			this.pattern = Pattern.compile( pattern );
+
+			// Lookup or compile the pattern into the regex cache
+			String cacheKey = EncryptionUtil.hash( pattern );
+			this.pattern = ( Pattern ) BoxRuntime.getInstance()
+			    .getCacheService()
+			    .getCache( Key.bxRegex )
+			    .getOrSet( cacheKey, () -> Pattern.compile( pattern ) );
+
 			return this;
 		}
 
@@ -133,6 +147,15 @@ public class RegexBuilder {
 		 */
 		public Boolean matches() {
 			return this.pattern.matcher( this.input ).matches();
+		}
+
+		/**
+		 * Get the matcher instance for the input string and pattern
+		 *
+		 * @return The matcher instance
+		 */
+		public Matcher matcher() {
+			return this.pattern.matcher( this.input );
 		}
 
 		/**

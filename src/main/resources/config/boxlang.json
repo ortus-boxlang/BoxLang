@@ -174,7 +174,7 @@
 	"experimental": {
 		// This choose the compiler to use for the runtime
 		// Valid values are: "java", "asm"
-		"compiler": "java",
+		"compiler": "asm",
 		// If enabled, it will generate AST JSON data under the project's /grapher/data folder
 		"ASTCapture": false
 	},
@@ -285,6 +285,24 @@
 				"resetTimeoutOnAccess": true,
 				// Sessions don't rely on the last access timeouts but on the default timeout only.
 				"useLastAccessTimeouts": false
+			}
+		},
+		// Stores all dynamic regular expressions used in the runtime
+		"bxRegex": {
+			"provider": "BoxCacheProvider",
+			"properties": {
+				"evictCount": 1,
+				"evictionPolicy": "LRU",
+				"freeMemoryPercentageThreshold": 0,
+				"maxObjects": 500,
+				// 30 minutes ifnot used
+				"defaultLastAccessTimeout": 1800,
+				// 60 minutes default
+				"defaultTimeout": 3600,
+				"objectStore": "ConcurrentSoftReferenceStore",
+				"reapFrequency": 120,
+				"resetTimeoutOnAccess": false,
+				"useLastAccessTimeouts": true
 			}
 		},
 		"bxImports": {
