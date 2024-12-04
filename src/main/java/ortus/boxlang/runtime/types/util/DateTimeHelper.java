@@ -32,6 +32,8 @@ import java.util.concurrent.TimeUnit;
 
 import javax.management.InvalidAttributeValueException;
 
+import ortus.boxlang.runtime.util.RegexBuilder;
+
 /**
  * We represent a static date/time helper class that assists with time units on date/time conversions
  * It doesn't hold any date/time information.
@@ -416,7 +418,8 @@ public class DateTimeHelper {
 	 * @throws InvalidAttributeValueException
 	 */
 	public static String validateTime( String time ) throws InvalidAttributeValueException {
-		if ( !time.matches( "^([0-1][0-9]|[2][0-3]):[0-5][0-9]$" ) ) {
+
+		if ( !RegexBuilder.of( time, RegexBuilder.TWENTY_FOUR_HOUR_TIME ).matches() ) {
 
 			// Do we have only hours?
 			if ( time.contains( ":" ) ) {

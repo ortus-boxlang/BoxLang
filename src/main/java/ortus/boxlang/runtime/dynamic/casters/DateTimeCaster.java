@@ -27,6 +27,7 @@ import org.apache.commons.lang3.time.DateUtils;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
+import ortus.boxlang.runtime.util.RegexBuilder;
 
 /**
  * I cast to DateTime objects
@@ -220,7 +221,7 @@ public class DateTimeCaster implements IBoxCaster {
 
 		try {
 			// Timestamp string "^\{ts ([^\}])*\}" - {ts 2023-01-01 12:00:00}
-			if ( targetString.matches( "^\\{ts ([^\\}]*)\\}" ) ) {
+			if ( RegexBuilder.of( targetString, RegexBuilder.TIMESTAMP ).matches() ) {
 				return new DateTime(
 				    LocalDateTime.parse(
 				        targetString.trim(),

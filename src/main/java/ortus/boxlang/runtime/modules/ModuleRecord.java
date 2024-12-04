@@ -76,6 +76,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.StructUtil;
 import ortus.boxlang.runtime.util.DataNavigator;
 import ortus.boxlang.runtime.util.EncryptionUtil;
+import ortus.boxlang.runtime.util.RegexBuilder;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 /**
@@ -765,7 +766,7 @@ public class ModuleRecord {
 
 		// Skip directories and non CFC/BX files
 		// We are not doing recursive registration for the moment.
-		if ( targetFile.isDirectory() || !targetFile.getName().matches( "^.*\\.(cfc|bx)$" ) ) {
+		if ( targetFile.isDirectory() || !RegexBuilder.of( targetFile.getName(), RegexBuilder.CFC_OR_BX_FILE ).matches() ) {
 			return this;
 		}
 
@@ -860,7 +861,7 @@ public class ModuleRecord {
 
 		// Skip directories and non CFC/BX files
 		// We are not doing recursive registration for the moment.
-		if ( targetFile.isDirectory() || !targetFile.getName().matches( "^.*\\.(cfc|bx)$" ) ) {
+		if ( targetFile.isDirectory() || !RegexBuilder.of( targetFile.getName(), RegexBuilder.CFC_OR_BX_FILE ).matches() ) {
 			return this;
 		}
 

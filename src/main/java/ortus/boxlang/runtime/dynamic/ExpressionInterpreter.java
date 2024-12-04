@@ -33,6 +33,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
+import ortus.boxlang.runtime.util.RegexBuilder;
 
 /**
  * I handle interpreting expressions
@@ -68,7 +69,7 @@ public class ExpressionInterpreter {
 			return expression.substring( 1, expression.length() - 1 ).replace( "''", "'" );
 		}
 		// If expression is a number, return it directly
-		if ( expression.matches( "^-?\\d+(\\.\\d+)?$" ) ) {
+		if ( RegexBuilder.of( expression, RegexBuilder.NUMBERS ).matches() ) {
 			return NumberCaster.cast( expression );
 		}
 		// Check for true/false

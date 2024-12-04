@@ -36,6 +36,7 @@ import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.ModuleService;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.RegexBuilder;
 
 /**
  * This resolver deals with Java classes only.
@@ -295,9 +296,10 @@ public class JavaResolver extends BaseResolver {
 	@Override
 	protected boolean importHasMulti( IBoxContext context, ImportDefinition thisImport, String className ) {
 		// We can't interrogate the JDK due to limitations in the JDK itself
-		if ( thisImport.className().matches( "(?i)(java|javax)\\..*" ) ) {
+		if ( RegexBuilder.of( thisImport.className(), RegexBuilder.JAVA_PACKAGE ).matches() ) {
 
-			logger.debug( "Checking if [{}] is a JDK class", thisImport.getFullyQualifiedClass( className ) );
+			if ( logger.isDebugEnabled() )
+				logger.debug( "Checking if [{}] is a JDK class", thisImport.getFullyQualifiedClass( className ) );
 
 			// Do we have it in the cache?
 			if ( jdkClassImportCache.contains( thisImport.getFullyQualifiedClass( className ) ) ) {
@@ -307,7 +309,9 @@ public class JavaResolver extends BaseResolver {
 			try {
 				Class.forName( thisImport.getFullyQualifiedClass( className ), false, getSystemClassLoader() );
 				jdkClassImportCache.add( thisImport.getFullyQualifiedClass( className ) );
-				logger.debug( "Found JDK Class [{}] and added to jdk import cache", thisImport.getFullyQualifiedClass( className ) );
+
+				if ( logger.isDebugEnabled() )
+					logger.debug( "Found JDK Class [{}] and added to jdk import cache", thisImport.getFullyQualifiedClass( className ) );
 
 				return true;
 			} catch ( ClassNotFoundException e ) {
