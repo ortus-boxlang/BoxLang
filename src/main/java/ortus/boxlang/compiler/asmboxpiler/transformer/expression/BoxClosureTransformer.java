@@ -163,7 +163,7 @@ public class BoxClosureTransformer extends AbstractTransformer {
 			    }
 
 			    if ( isBlock ) {
-				    bodyNodes.add( 0, new InsnNode( Opcodes.ACONST_NULL ) );
+				    bodyNodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
 			    }
 
 			    return bodyNodes;

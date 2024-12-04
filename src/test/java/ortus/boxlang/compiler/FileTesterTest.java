@@ -138,4 +138,13 @@ public class FileTesterTest {
 		    context );
 	}
 
+	@DisplayName( "Test bddTest" )
+	@Test
+	public void testBDDTest() {
+		instance.executeSource(
+		    """
+		    result = new src.test.java.ortus.boxlang.compiler.BDDTest();
+		       """,
+		    context );
+	}
 }
