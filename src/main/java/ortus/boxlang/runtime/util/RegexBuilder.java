@@ -36,6 +36,7 @@ public class RegexBuilder {
 	 */
 	public static final Pattern	BACKSLASH				= Pattern.compile( "\\\\" );
 	public static final Pattern	COLON					= Pattern.compile( ":" );
+	public static final Pattern	CF_SQL					= Pattern.compile( "(?i)CF_SQL_" );
 	public static final Pattern	CREDIT_CARD_NUMBERS		= Pattern.compile( "[0-9 ,_-]+" );
 	public static final Pattern	MULTILINE_START_OF_LINE	= Pattern.compile( "(?m)^" );
 	public static final Pattern	MULTIPLE_SPACES			= Pattern.compile( "\\s+" );

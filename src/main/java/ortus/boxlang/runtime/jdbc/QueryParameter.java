@@ -14,19 +14,20 @@
  */
 package ortus.boxlang.runtime.jdbc;
 
+import ortus.boxlang.runtime.dynamic.casters.BigIntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
-import ortus.boxlang.runtime.dynamic.casters.BigIntegerCaster;
-import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.util.ListUtil;
+import ortus.boxlang.runtime.util.RegexBuilder;
 
 /**
  * Represents a parameter to a SQL query created via QueryExecute or the Query component.
@@ -88,7 +89,9 @@ public class QueryParameter {
 		}
 
 		this.value		= this.isNullParam ? null : v;
-		this.type		= QueryColumnType.fromString( sqltype.replaceAll( "(?i)CF_SQL_", "" ) );
+		this.type		= QueryColumnType.fromString(
+		    RegexBuilder.of( sqltype, RegexBuilder.CF_SQL ).replaceAllAndGet( "" )
+		);
 		this.maxLength	= param.getAsInteger( Key.maxLength );
 		this.scale		= param.getAsInteger( Key.scale );
 	}
