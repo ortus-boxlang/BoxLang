@@ -141,6 +141,10 @@ public final class ExecutedQuery {
 		    "executionTime", executionTime
 		);
 
+		if ( generatedKey != null ) {
+			queryMeta.put( "generatedKey", generatedKey );
+		}
+
 		// important that we set the metadata on the Query object for later getBoxMeta(), i.e. $bx.meta calls.
 		results.setMetadata( queryMeta );
 		ExecutedQuery executedQuery = new ExecutedQuery( results, generatedKey );
