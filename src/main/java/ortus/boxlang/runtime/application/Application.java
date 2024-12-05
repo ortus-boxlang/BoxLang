@@ -207,10 +207,10 @@ public class Application {
 	/**
 	 * Startup the class loader paths from the this.javaSettings.loadPaths
 	 *
-	 * @param appContext The application context
+	 * @param requestContext The request context
 	 */
-	public void startupClassLoaderPaths( ApplicationBoxContext appContext ) {
-		URL[] loadPathsUrls = this.startingListener.getJavaSettingsLoadPaths( appContext );
+	public void startupClassLoaderPaths( RequestBoxContext requestContext ) {
+		URL[] loadPathsUrls = this.startingListener.getJavaSettingsLoadPaths( requestContext );
 
 		// if we don't have any return out
 		if ( loadPathsUrls.length == 0 ) {
@@ -271,12 +271,11 @@ public class Application {
 			this.started			= true;
 
 			// Get the app listener (Application.bx)
-			this.startingListener	= context.getParentOfType( RequestBoxContext.class ).getApplicationListener();
-			ApplicationBoxContext appContext = context.getParentOfType( ApplicationBoxContext.class );
+			this.startingListener	= context.getRequestContext().getApplicationListener();
 			// Startup the class loader
-			startupClassLoaderPaths( appContext );
+			startupClassLoaderPaths( context.getRequestContext() );
 			// Startup session storages
-			startupSessionStorage( appContext );
+			startupSessionStorage( context.getApplicationContext() );
 
 			// Announce it globally
 			BoxRuntime.getInstance().getInterceptorService().announce( Key.onApplicationStart, Struct.of(
