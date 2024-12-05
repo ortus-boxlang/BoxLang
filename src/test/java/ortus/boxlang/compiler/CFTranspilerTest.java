@@ -19,6 +19,7 @@ import static com.google.common.truth.Truth.assertThat;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -303,6 +304,21 @@ public class CFTranspilerTest {
 		         """,
 		    context, BoxSourceType.CFSCRIPT );
 		assertThat( variables.get( result ) ).isEqualTo( false );
+
+	}
+
+	@Disabled
+	@Test
+	public void testUnquotedAttribute() {
+		instance.executeSource(
+		    """
+		    <cfquery datasource="test" name="NewDate" maxrows=1>
+		    	select messagedate
+		    	from messages
+		    	where topicid = #topicid# order by messagedate ASC
+		    </cfquery>
+		           """,
+		    context, BoxSourceType.CFTEMPLATE );
 
 	}
 
