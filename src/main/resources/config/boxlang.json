@@ -413,13 +413,13 @@
 	/**
 	 * The BoxLang module settings
 	 * The key is the module name and the value is a struct of settings for that specific module
-	 * The `disabled` property is a boolean that determines if the module should be enabled or not
+	 * The `enabled` property is a boolean that determines if the module should be enabled or not.  Default is true
 	 * The `settings` property is a struct of settings that are specific to the module and will be override the module settings
 	 */
 	"modules": {
 		// The Compat Module
 		// "compat": {
-		// 	"disabled": false,
+		// 	"enabled": true,
 		// 	"settings": {
 		// 		"isLucee": true,
 		// 		"isAdobe": true

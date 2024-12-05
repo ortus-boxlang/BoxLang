@@ -122,9 +122,9 @@ public class ModuleRecord {
 	public String				mapping;
 
 	/**
-	 * If the module is disabled for activation, defaults to false
+	 * If the module is enabled for activation, defaults to false
 	 */
-	public boolean				disabled					= false;
+	public boolean				enabled						= true;
 
 	/**
 	 * Flag to indicate if the module has been activated or not yet
@@ -322,12 +322,12 @@ public class ModuleRecord {
 		this.author			= ( String ) thisScope.getOrDefault( Key.author, "" );
 		this.description	= ( String ) thisScope.getOrDefault( Key.description, "" );
 		this.webURL			= ( String ) thisScope.getOrDefault( Key.webURL, "" );
-		this.disabled		= ( Boolean ) thisScope.getOrDefault( Key.disabled, false );
+		this.enabled		= ( Boolean ) thisScope.getOrDefault( Key.enabled, true );
 
 		// Verify if we disabled the loading of the module in the runtime config
 		if ( runtime.getConfiguration().modules.containsKey( this.name ) ) {
 			ModuleConfig config = ( ModuleConfig ) runtime.getConfiguration().modules.get( this.name );
-			this.disabled = config.disabled;
+			this.enabled = config.enabled;
 		}
 
 		// Do we have a custom mapping to override?
@@ -695,12 +695,12 @@ public class ModuleRecord {
 	 */
 
 	/**
-	 * If the module is disabled for activation
+	 * If the module is enabled for activation
 	 *
-	 * @return {@code true} if the module is disabled for activation, {@code false} otherwise
+	 * @return {@code true} if the module is enabled for activation, {@code false} otherwise
 	 */
-	public boolean isDisabled() {
-		return disabled;
+	public boolean isEnabled() {
+		return enabled;
 	}
 
 	/**
@@ -732,7 +732,7 @@ public class ModuleRecord {
 		    "author", author,
 		    "customInterceptionPoints", Array.copyOf( customInterceptionPoints ),
 		    "description", description,
-		    "disabled", disabled,
+		    "enabled", enabled,
 		    "Id", id,
 		    "interceptors", Array.copyOf( interceptors ),
 		    "invocationPath", invocationPath,
