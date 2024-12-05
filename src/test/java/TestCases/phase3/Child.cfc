@@ -1,4 +1,4 @@
-component extends="Parent" accessors="true" {
+component extends="Parent" {
 
 	property name="properties";
 

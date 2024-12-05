@@ -23,7 +23,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -393,19 +392,19 @@ public class ClassTest {
 		// @formatter:on
 	}
 
-	@DisplayName( "parent init will re-call the child init" )
+	@DisplayName( "parent super.init will preserve child variables scope" )
 	@Test
-	@Disabled
 	public void superInitTest() {
 		// @formatter:off
 		instance.executeSource(
 		    """
+				request.calls = [];
 				settings = {
 					"foo" : "bar"
 				};
 				cfc = new src.test.java.TestCases.phase3.Child( properties=settings );
 
-				assert cfc.getSettings() == settings;
+				assert cfc.getProperties() == settings;
 
 			""", context );
 		// @formatter:on

@@ -1,6 +1,9 @@
-component {
+component accessors="true"{
+
+	property name="foo";
 
     function init() {
+		variables.foo = "bar";
         setupFrameworkDefaults();
         return this;
     }
