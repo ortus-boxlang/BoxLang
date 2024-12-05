@@ -4126,7 +4126,6 @@ public class CoreLangTest {
 		assertThat( variables.get( result ) ).isEqualTo( "general" );
 	}
 
-//	@Disabled
 	@Test
 	public void testComponentAttributeName() {
 		assertThrows( KeyNotFoundException.class, () -> {
