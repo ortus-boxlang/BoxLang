@@ -524,13 +524,13 @@ public class LoggingService {
 	/**
 	 * Get the requested file appender according to log location
 	 *
-	 * @param filePath   The file path to get the appender for
-	 * @param logContext The logger context requested for the appender
-	 * @param logger     The logger to add the appender to
+	 * @param filePath     The file path to get the appender for
+	 * @param logContext   The logger context requested for the appender
+	 * @param loggerConfig The logger configuration
 	 *
 	 * @return The file appender, computed or from cache
 	 */
-	public FileAppender<ILoggingEvent> getOrBuildAppender( String filePath, LoggerContext logContext ) {
+	public FileAppender<ILoggingEvent> getOrBuildAppender( String filePath, LoggerContext logContext, LoggerConfig loggerConfig ) {
 		return ( FileAppender<ILoggingEvent> ) this.appendersMap.computeIfAbsent( filePath.toLowerCase(), key -> {
 			var		appender		= new RollingFileAppender<ILoggingEvent>();
 			String	fileName		= FilenameUtils.getBaseName( filePath );
@@ -658,7 +658,7 @@ public class LoggingService {
 
 		oLogger.setLevel( targetLevel );
 		oLogger.setAdditive( loggerConfig.additive );
-		oLogger.addAppender( getOrBuildAppender( loggerFilePath, targetContext ) );
+		oLogger.addAppender( getOrBuildAppender( loggerFilePath, targetContext, loggerConfig ) );
 		return oLogger;
 	}
 
