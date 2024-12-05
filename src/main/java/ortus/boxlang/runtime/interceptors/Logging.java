@@ -94,7 +94,6 @@ public class Logging extends BaseInterceptor {
 		    ( applicationName instanceof Key ) ? ( ( Key ) applicationName ).getName() : "",
 		    logger
 		);
-
 	}
 
 }
