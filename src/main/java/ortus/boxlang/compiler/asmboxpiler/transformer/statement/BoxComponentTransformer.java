@@ -212,13 +212,20 @@ public class BoxComponentTransformer extends AbstractTransformer {
 		AsmHelper.methodWithContextAndClassLocator( classNode, "process", Type.getType( IBoxContext.class ), Type.getType( Component.BodyResult.class ), false,
 		    transpiler, false,
 		    () -> {
-			    List<AbstractInsnNode> nodes = new ArrayList<>();
+			    List<AbstractInsnNode> nodes	= new ArrayList<>();
+			    List<AbstractInsnNode> bodyNodes = body.stream()
+			        .flatMap( statement -> transpiler.transform( statement, TransformerContext.NONE ).stream() )
+			        .toList();
+
+			    // nodes.addAll(
+			    // body.stream()
+			    // .flatMap( statement -> transpiler.transform( statement, TransformerContext.NONE ).stream() )
+			    // .toList()
+			    // );
 
 			    nodes.addAll(
-			        body.stream()
-			            .flatMap( statement -> transpiler.transform( statement, TransformerContext.NONE ).stream() )
-			            .toList()
-			    );
+			        AsmHelper.methodLengthGuard(
+			            type, bodyNodes, classNode, "process", Type.getType( IBoxContext.class ), Type.getType( Component.BodyResult.class ), transpiler ) );
 
 			    nodes.add(
 			        new FieldInsnNode( Opcodes.GETSTATIC,

@@ -583,6 +583,10 @@ public class AsmTranspiler extends Transpiler {
 			try {
 				List<AbstractInsnNode> nodes = transformer.transform( node, context, returnValueContext );
 
+				if ( returnValueContext == ReturnValueContext.EMPTY ) {
+					nodes.add( 0, new DividerNode() );
+				}
+
 				return nodes;
 			} catch ( Exception e ) {
 				this.logger.error( "Error transforming:" + node.getClass().toString() );

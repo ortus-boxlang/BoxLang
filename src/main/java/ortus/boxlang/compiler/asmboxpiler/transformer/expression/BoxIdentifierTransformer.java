@@ -73,6 +73,10 @@ public class BoxIdentifierTransformer extends AbstractTransformer {
 			    Type.getMethodDescriptor( Type.getType( Object.class ) ),
 			    false ) );
 		}
+
+		if ( returnContext.empty ) {
+			nodes.add( new InsnNode( Opcodes.POP ) );
+		}
 		return AsmHelper.addLineNumberLabels( nodes, node );
 	}
 }

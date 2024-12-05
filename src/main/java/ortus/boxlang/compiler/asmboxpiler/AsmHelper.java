@@ -60,6 +60,8 @@ import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 public class AsmHelper {
 
+	private static final int METHOD_SIZE_LIMIT = 25000;
+
 	public record LineNumberIns( List<AbstractInsnNode> start, List<AbstractInsnNode> end ) {
 
 	}
@@ -879,7 +881,9 @@ public class AsmHelper {
 		    false );
 		tracker.storeNewVariable( Opcodes.ASTORE ).nodes().forEach( ( node ) -> node.accept( methodVisitor ) );
 
-		supplier.get().forEach( node -> node.accept( methodVisitor ) );
+		var nodes = supplier.get();
+
+		nodes.forEach( node -> node.accept( methodVisitor ) );
 
 		if ( implicityReturnNull && !returnType.equals( Type.VOID_TYPE ) ) {
 			// push a null onto the stack so that we can return it if there isn't an explicity return
@@ -1119,5 +1123,90 @@ public class AsmHelper {
 		        Type.getType( List.class ) ),
 		    false ) );
 		return nodes;
+	}
+
+	public static List<AbstractInsnNode> methodLengthGuard(
+	    Type mainType,
+	    List<AbstractInsnNode> nodes,
+	    ClassNode classNode,
+	    String name,
+	    Type parameterType,
+	    Type returnType,
+	    Transpiler transpiler ) {
+
+		if ( nodes.size() < METHOD_SIZE_LIMIT ) {
+			return nodes;
+		}
+
+		List<List<AbstractInsnNode>>	subNodes	= splitifyInstructions( nodes );
+
+		List<AbstractInsnNode>			toReturn	= subNodes.stream().map( nodeList -> {
+														String subName = "_sub_" + name + nodeList.hashCode();
+														methodWithContextAndClassLocator(
+														    classNode,
+														    subName,
+														    parameterType,
+														    returnType,
+														    false,
+														    transpiler,
+														    true,
+														    () -> nodeList
+														);
+
+														List<AbstractInsnNode> subMethodCallNodes = new ArrayList<AbstractInsnNode>();
+
+														subMethodCallNodes.add(
+														    new VarInsnNode( Opcodes.ALOAD, 0 )
+														);
+
+														subMethodCallNodes.add(
+														    new VarInsnNode( Opcodes.ALOAD, 1 )
+														);
+
+														subMethodCallNodes.add(
+														    new MethodInsnNode(
+														        Opcodes.INVOKEVIRTUAL,
+														        mainType.getInternalName(),
+														        subName,
+														        Type.getMethodDescriptor( returnType, parameterType ),
+														        false
+														    )
+														);
+
+														subMethodCallNodes.add( new InsnNode( Opcodes.POP ) );
+
+														return subMethodCallNodes;
+													} )
+		    .flatMap( s -> s.stream() )
+		    .collect( Collectors.toList() );
+
+		toReturn.removeLast();
+
+		return toReturn;
+	}
+
+	private static List<List<AbstractInsnNode>> splitifyInstructions( List<AbstractInsnNode> nodes ) {
+		List<List<AbstractInsnNode>>	subNodes	= new ArrayList<>();
+		int								min			= 0;
+
+		while ( min < nodes.size() ) {
+
+			for ( var i = min + Math.min( METHOD_SIZE_LIMIT, nodes.size() - min ); i > min; i-- ) {
+				if ( ! ( nodes.get( i ) instanceof DividerNode ) ) {
+					continue;
+				}
+
+				subNodes.add( nodes.subList( min, i ) );
+				min = i;
+				break;
+			}
+
+			if ( nodes.size() - min <= METHOD_SIZE_LIMIT ) {
+				subNodes.add( nodes.subList( min, nodes.size() ) );
+				break;
+			}
+		}
+
+		return subNodes;
 	}
 }
