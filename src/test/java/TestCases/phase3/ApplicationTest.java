@@ -244,8 +244,6 @@ public class ApplicationTest {
 						loadPaths = [ "/javalib/helloworld.jar" ],
 						reloadOnChange = true
 					};
-
-					hello = createObject( "java", "HelloWorld" );
 			""", context );
 		// @formatter:on
 
