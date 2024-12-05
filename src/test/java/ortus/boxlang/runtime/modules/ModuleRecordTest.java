@@ -137,7 +137,7 @@ class ModuleRecordTest {
 		assertThat( moduleRecord.author ).isEqualTo( "Luis Majano" );
 		assertThat( moduleRecord.description ).isEqualTo( "This module does amazing things" );
 		assertThat( moduleRecord.webURL ).isEqualTo( "https://www.ortussolutions.com" );
-		assertThat( moduleRecord.enabled ).isEqualTo( false );
+		assertThat( moduleRecord.enabled ).isEqualTo( true );
 		assertThat( moduleRecord.mapping ).isEqualTo( ModuleService.MODULE_MAPPING_PREFIX + "test" );
 		assertThat( moduleRecord.invocationPath ).isEqualTo( ModuleService.MODULE_MAPPING_INVOCATION_PREFIX + moduleRecord.name.getName() );
 	}
