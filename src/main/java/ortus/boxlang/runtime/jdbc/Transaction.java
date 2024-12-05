@@ -14,22 +14,23 @@
  */
 package ortus.boxlang.runtime.jdbc;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Savepoint;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
-import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.events.BoxEvent;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
-import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 
 /**
@@ -123,6 +124,9 @@ public class Transaction implements ITransaction {
 	public Connection getConnection() {
 		if ( this.connection == null ) {
 			this.connection = this.datasource.getConnection();
+			if ( this.connection == null ) {
+				throw new BoxRuntimeException( "Failed to acquire connection from datasource" );
+			}
 			try {
 				this.connection.setAutoCommit( false );
 
