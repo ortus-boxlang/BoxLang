@@ -242,7 +242,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			                                    )
 			                                    """;
 		} else {
-			if ( accessKeys.size() == 0 ) {
+			if ( accessKeys.size() == 0 && ! ( left instanceof BoxScope ) ) {
 				throw new ExpressionException( "You cannot assign a value to " + left.getClass().getSimpleName(), left.getPosition(), left.getSourceText() );
 			}
 			values.put( "furthestLeft", transpiler.transform( furthestLeft, TransformerContext.NONE ).toString() );
@@ -260,6 +260,17 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			           	${accessKeys}
 			           )
 			           """;
+			if ( accessKeys.size() == 0 ) {
+				template = """
+				           Referencer.setDeep(
+				           	${contextName},
+				           	${hasFinal},
+				           	${mustBeScopeName},
+				           	${furthestLeft},
+				           	${right}
+				           )
+				           """;
+			}
 		}
 
 		Node javaExpr = parseExpression( template, values );
