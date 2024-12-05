@@ -881,9 +881,7 @@ public class AsmHelper {
 		    false );
 		tracker.storeNewVariable( Opcodes.ASTORE ).nodes().forEach( ( node ) -> node.accept( methodVisitor ) );
 
-		var nodes = supplier.get();
-
-		nodes.forEach( node -> node.accept( methodVisitor ) );
+		supplier.get().forEach( node -> node.accept( methodVisitor ) );
 
 		if ( implicityReturnNull && !returnType.equals( Type.VOID_TYPE ) ) {
 			// push a null onto the stack so that we can return it if there isn't an explicity return
@@ -1019,8 +1017,6 @@ public class AsmHelper {
 			node.visitLdcInsn( index );
 			node.visitVarInsn( descriptor.getArgumentTypes()[ index ].getOpcode( Opcodes.ILOAD ), offset );
 			// TODO: boxing of primitives
-			node.visitLdcInsn( "DEBUG - ASMHelper 451" );
-			node.visitInsn( Opcodes.POP );
 			node.visitInsn( Opcodes.AASTORE );
 			offset += descriptor.getArgumentTypes()[ index ].getSize();
 		}

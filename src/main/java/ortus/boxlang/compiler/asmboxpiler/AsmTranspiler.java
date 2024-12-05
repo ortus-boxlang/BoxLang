@@ -581,9 +581,9 @@ public class AsmTranspiler extends Transpiler {
 		Transformer transformer = registry.get( node.getClass() );
 		if ( transformer != null ) {
 			try {
-				List<AbstractInsnNode> nodes = transformer.transform( node, context, returnValueContext );
+				List<AbstractInsnNode> nodes = new ArrayList( transformer.transform( node, context, returnValueContext ) );
 
-				if ( returnValueContext == ReturnValueContext.EMPTY ) {
+				if ( returnValueContext == ReturnValueContext.EMPTY && nodes.size() > 0 ) {
 					nodes.add( 0, new DividerNode() );
 				}
 
