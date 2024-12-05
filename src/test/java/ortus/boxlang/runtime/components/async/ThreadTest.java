@@ -178,16 +178,38 @@ public class ThreadTest {
 	public void testCanJoinThreadNoTimeout() {
 		// @formatter:off
 		instance.executeSource(
-		    """
-		       thread name="myThread" {
-		    	   sleep( 2000 )
-		       }
-		    thread name="myThread" action="join";
-		       result = myThread;
-		    		""",
-		    context, BoxSourceType.CFSCRIPT );
+			"""
+			thread name="myThread" {
+				sleep( 2000 )
+			}
+			thread name="myThread" action="join";
+			result = myThread;
+					""",
+			context, BoxSourceType.CFSCRIPT );
 		// @formatter:on
 		assertThat( variables.getAsStruct( result ).get( Key.status ) ).isEqualTo( "COMPLETED" );
+	}
+
+	@DisplayName( "It can use local scope" )
+	@Test
+	public void testCanUseLocalScope() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+			thread name="myThread" {
+				local.foo = "bar";
+				variables.result = local.foo;
+				variables.threadContext = getBoxContext();
+			}
+			thread name="myThread" action="join";
+
+					""",
+			context, BoxSourceType.CFSCRIPT );
+		// @formatter:on
+		assertThat( variables.get( Key.of( "result" ) ) ).isEqualTo( "bar" );
+		// ensure variables scope doesn't have local key
+		assertThat( variables ).doesNotContainKey( Key.of( "local" ) );
+		assertThat( ( ( IBoxContext ) variables.get( Key.of( "threadContext" ) ) ).getScopeNearby( Key.of( "local" ) ) ).doesNotContainKey( Key.of( "local" ) );
 	}
 
 	@DisplayName( "It can join thread zero timeout" )

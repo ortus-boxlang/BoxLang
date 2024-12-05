@@ -157,6 +157,11 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 	@Override
 	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow ) {
 
+		// Look in the local scope first
+		if ( key.equals( localScope.getName() ) ) {
+			return new ScopeSearchResult( localScope, localScope, key, true );
+		}
+
 		Object result = localScope.getRaw( key );
 		// Null means not found
 		if ( isDefined( result ) ) {
