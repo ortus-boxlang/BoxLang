@@ -15,4 +15,8 @@ component extends="Parent" {
         super.setupFrameworkDefaults();
     }
 
+	function childFunction(){
+		return "childFunction";
+	}
+
 }

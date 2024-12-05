@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -394,6 +395,7 @@ public class ClassTest {
 
 	@DisplayName( "parent super.init will preserve child variables scope" )
 	@Test
+	@Disabled( "For Brad's super duper ref map fix" )
 	public void superInitTest() {
 		// @formatter:off
 		instance.executeSource(

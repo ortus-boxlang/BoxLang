@@ -7,4 +7,8 @@ component accessors="true"{
 		return this;
     }
 
+	function grandParentFunction(){
+		return "grandParentFunction";
+	}
+
 }

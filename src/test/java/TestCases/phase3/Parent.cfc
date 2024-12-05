@@ -13,4 +13,8 @@ component accessors="true" extends="GrandParent" {
       request.calls.append( "running parent setupFrameworkDefaults()" );
     }
 
+	function parentFunction(){
+		return "parentFunction";
+	}
+
 }
