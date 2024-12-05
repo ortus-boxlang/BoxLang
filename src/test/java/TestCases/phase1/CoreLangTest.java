@@ -30,6 +30,7 @@ import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
@@ -4126,4 +4127,15 @@ public class CoreLangTest {
 		assertThat( variables.get( result ) ).isEqualTo( "general" );
 	}
 
+	@Disabled
+	@Test
+	public void testComponentAttributeName() {
+		assertThrows( KeyNotFoundException.class, () -> {
+			instance.executeSource(
+			    """
+			    ftp server="xxxx";
+			      	                                              """,
+			    context, BoxSourceType.CFSCRIPT );
+		} );
+	}
 }
