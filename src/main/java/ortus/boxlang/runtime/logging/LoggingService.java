@@ -455,14 +455,24 @@ public class LoggingService {
 		Key		loggerKey		= Key.of( FilenameUtils.getBaseName( loggerFilePath.toLowerCase() ) );
 
 		// Compute it or return it
-		return ( Logger ) this.loggersMap.computeIfAbsent( loggerKey, key -> {
-			LoggerContext	targetContext	= getLoggerContext();
-			Logger			oLogger			= targetContext.getLogger( key.getNameNoCase() );
-			oLogger.setLevel( Level.TRACE );
-			oLogger.addAppender( getOrBuildAppender( loggerFilePath, targetContext ) );
-			oLogger.setAdditive( true );
-			return oLogger;
-		} );
+		return ( Logger ) this.loggersMap.computeIfAbsent( loggerKey, key -> createLogger( loggerKey, loggerFilePath ) );
+	}
+
+	/**
+	 * Build a logger with the specified name and file path
+	 *
+	 * @param loggerKey      The key of the logger to build
+	 * @param loggerFilePath The file path to log to
+	 *
+	 * @return The logger requested
+	 */
+	private Logger createLogger( Key loggerKey, String loggerFilePath ) {
+		LoggerContext	targetContext	= getLoggerContext();
+		Logger			oLogger			= targetContext.getLogger( loggerKey.getNameNoCase() );
+		oLogger.setLevel( Level.TRACE );
+		oLogger.setAdditive( true );
+		oLogger.addAppender( getOrBuildAppender( loggerFilePath, targetContext ) );
+		return oLogger;
 	}
 
 	/**
