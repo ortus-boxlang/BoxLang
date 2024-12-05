@@ -14,6 +14,7 @@
  */
 package ortus.boxlang.runtime.bifs.global.jdbc;
 
+import java.sql.Connection;
 import java.util.Set;
 
 import ortus.boxlang.runtime.bifs.BIF;
@@ -21,12 +22,11 @@ import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.IJDBCCapableContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
-import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
-import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.jdbc.ConnectionManager;
 import ortus.boxlang.runtime.jdbc.ExecutedQuery;
 import ortus.boxlang.runtime.jdbc.PendingQuery;
 import ortus.boxlang.runtime.jdbc.QueryOptions;
+import ortus.boxlang.runtime.jdbc.qoq.QoQConnection;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -57,21 +57,34 @@ public class QueryExecute extends BIF {
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.sql The SQL to execute
-	 *
+	 * 
 	 * @argument.params An array of binding parameters or a struct of named binding parameters
 	 *
 	 * @argument.options A struct of query options
 	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		IJDBCCapableContext		jdbcContext			= context.getParentOfType( IJDBCCapableContext.class );
-		ConnectionManager		connectionManager	= jdbcContext.getConnectionManager();
-		CastAttempt<IStruct>	optionsAsStruct		= StructCaster.attempt( arguments.get( Key.options ) );
-		QueryOptions			options				= new QueryOptions( optionsAsStruct.getOrDefault( new Struct() ) );
-		String					sql					= arguments.getAsString( Key.sql );
-		Object					bindings			= arguments.get( Key.params );
-		PendingQuery			pendingQuery		= new PendingQuery( sql, bindings, options );
-		ExecutedQuery			executedQuery		= pendingQuery.execute( connectionManager );
+		IStruct optionsAsStruct = arguments.getAsStruct( Key.options );
+		if ( optionsAsStruct == null ) {
+			optionsAsStruct = new Struct();
+		}
+		String			sql				= arguments.getAsString( Key.sql );
+		Object			bindings		= arguments.get( Key.params );
+
+		QueryOptions	options			= new QueryOptions( optionsAsStruct );
+		PendingQuery	pendingQuery	= new PendingQuery( sql, bindings, options );
+
+		ExecutedQuery	executedQuery;
+		// QoQ uses a special QoQ connection
+		if ( options.isQoQ() ) {
+			Connection connection = new QoQConnection( context );
+			executedQuery = pendingQuery.execute( connection );
+		} else {
+			// whereas normal queries use the JDBC connection manager
+			IJDBCCapableContext	jdbcContext			= context.getParentOfType( IJDBCCapableContext.class );
+			ConnectionManager	connectionManager	= jdbcContext.getConnectionManager();
+			executedQuery = pendingQuery.execute( connectionManager );
+		}
 
 		if ( options.wantsResultStruct() ) {
 			assert options.resultVariableName != null;

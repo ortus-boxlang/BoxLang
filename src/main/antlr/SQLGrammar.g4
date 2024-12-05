@@ -340,23 +340,31 @@ reindex_stmt:
 //select_stmt:    common_table_stmt? select_core (compound_operator select_core)* order_by_stmt? limit_stmt?;
 
 select_stmt:
-    select_core (UNION_ ALL_? select_core)* order_by_stmt? limit_stmt?
+    select_core (union)* order_by_stmt? limit_stmt?
+;
+
+union:
+    UNION_ ALL_? select_core
 ;
 
 join_clause:
     table (join_operator table join_constraint?)*
 ;
 
-select_core: (
-        SELECT_ (DISTINCT_ /*| ALL_*/)? result_column (COMMA result_column)* (
-            FROM_ (table (COMMA table)* | join_clause)
-        )? (WHERE_ whereExpr = expr)? (
-            GROUP_ BY_ groupByExpr += expr (COMMA groupByExpr += expr)* (
-                HAVING_ havingExpr = expr
-            )?
-        )? //(WINDOW_ window_name AS_ window_defn ( COMMA window_name AS_ window_defn)*)?
-    )
+select_core:
+    SELECT_ top? (DISTINCT_ /*| ALL_*/)? result_column (COMMA result_column)* (
+        FROM_ (table (COMMA table)* | join_clause)
+    )? (WHERE_ whereExpr = expr)? (
+        GROUP_ BY_ groupByExpr += expr (COMMA groupByExpr += expr)* (
+            HAVING_ havingExpr = expr
+        )?
+    )? limit_stmt?
+    //(WINDOW_ window_name AS_ window_defn ( COMMA window_name AS_ window_defn)*)?
     // | values_clause
+;
+
+top:
+    TOP NUMERIC_LITERAL
 ;
 
 factored_select_stmt:

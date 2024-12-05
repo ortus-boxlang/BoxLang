@@ -14,11 +14,16 @@
  */
 package ortus.boxlang.compiler.ast.sql.select.expression;
 
+import java.util.Map;
+
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.sql.select.SQLTable;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Query;
+import ortus.boxlang.runtime.types.QueryColumnType;
 
 /**
  * Abstract Node class representing SQL column reference
@@ -27,7 +32,7 @@ public class SQLColumn extends SQLExpression {
 
 	private SQLTable	table;
 
-	private String		name;
+	private Key			name;
 
 	/**
 	 * Constructor
@@ -35,7 +40,7 @@ public class SQLColumn extends SQLExpression {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code of the statement
 	 */
-	protected SQLColumn( SQLTable table, String name, Position position, String sourceText ) {
+	public SQLColumn( SQLTable table, String name, Position position, String sourceText ) {
 		super( position, sourceText );
 		setName( name );
 		setTable( table );
@@ -46,7 +51,7 @@ public class SQLColumn extends SQLExpression {
 	 *
 	 * @return the name of the function
 	 */
-	public String getName() {
+	public Key getName() {
 		return name;
 	}
 
@@ -56,7 +61,7 @@ public class SQLColumn extends SQLExpression {
 	 * @param name the name of the function
 	 */
 	public void setName( String name ) {
-		this.name = name;
+		this.name = Key.of( name );
 	}
 
 	/**
@@ -74,6 +79,20 @@ public class SQLColumn extends SQLExpression {
 		this.table = table;
 	}
 
+	/**
+	 * What type does this expression evaluate to
+	 */
+	public QueryColumnType getType( Map<SQLTable, Query> tableLookup ) {
+		return tableLookup.get( table ).getColumns().get( name ).getType();
+	}
+
+	/**
+	 * Evaluate the expression
+	 */
+	public Object evaluate( Map<SQLTable, Query> tableLookup, int i ) {
+		return tableLookup.get( table ).getCell( name, i - 1 );
+	}
+
 	@Override
 	public void accept( VoidBoxVisitor v ) {
 		// TODO Auto-generated method stub
@@ -84,6 +103,19 @@ public class SQLColumn extends SQLExpression {
 	public BoxNode accept( ReplacingBoxVisitor v ) {
 		// TODO Auto-generated method stub
 		throw new UnsupportedOperationException( "Unimplemented method 'accept'" );
+	}
+
+	@Override
+	public Map<String, Object> toMap() {
+		Map<String, Object> map = super.toMap();
+
+		map.put( "name", name.getName() );
+		if ( table != null ) {
+			map.put( "table", table.toMap() );
+		} else {
+			map.put( "table", null );
+		}
+		return map;
 	}
 
 }

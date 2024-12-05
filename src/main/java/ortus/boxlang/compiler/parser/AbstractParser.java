@@ -39,6 +39,7 @@ import ortus.boxlang.compiler.ast.Point;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.Source;
 import ortus.boxlang.compiler.ast.comment.BoxComment;
+import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 
 /**
  * Parser abstract class
@@ -91,8 +92,12 @@ public abstract class AbstractParser {
 	 *
 	 * @throws IOException
 	 */
-	protected BOMInputStream getInputStream( File file ) throws IOException {
-		return BOMInputStream.builder().setFile( file ).setByteOrderMarks( ByteOrderMark.UTF_8 ).setInclude( false ).get();
+	protected BOMInputStream getInputStream( File file ) {
+		try {
+			return BOMInputStream.builder().setFile( file ).setByteOrderMarks( ByteOrderMark.UTF_8 ).setInclude( false ).get();
+		} catch ( IOException e ) {
+			throw new BoxIOException( e );
+		}
 	}
 
 	/**

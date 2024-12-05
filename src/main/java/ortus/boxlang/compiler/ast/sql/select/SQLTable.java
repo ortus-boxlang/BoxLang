@@ -14,11 +14,14 @@
  */
 package ortus.boxlang.compiler.ast.sql.select;
 
+import java.util.Map;
+
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.sql.SQLNode;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
+import ortus.boxlang.runtime.scopes.Key;
 
 /**
  * Abstract Node class representing SQL table declaration
@@ -27,9 +30,9 @@ public class SQLTable extends SQLNode {
 
 	private String	schema;
 
-	private String	name;
+	private Key		name;
 
-	private String	alias;
+	private Key		alias;
 
 	/**
 	 * Constructor
@@ -37,7 +40,7 @@ public class SQLTable extends SQLNode {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code of the statement
 	 */
-	protected SQLTable( String schema, String name, String alias, Position position, String sourceText ) {
+	public SQLTable( String schema, String name, String alias, Position position, String sourceText ) {
 		super( position, sourceText );
 		setSchema( schema );
 		setName( name );
@@ -61,7 +64,7 @@ public class SQLTable extends SQLNode {
 	/**
 	 * Get the table name
 	 */
-	public String getName() {
+	public Key getName() {
 		return name;
 	}
 
@@ -69,13 +72,13 @@ public class SQLTable extends SQLNode {
 	 * Set the table name
 	 */
 	public void setName( String name ) {
-		this.name = name;
+		this.name = Key.of( name );
 	}
 
 	/**
 	 * Get the table alias
 	 */
-	public String getAlias() {
+	public Key getAlias() {
 		return alias;
 	}
 
@@ -83,7 +86,19 @@ public class SQLTable extends SQLNode {
 	 * Set the table alias
 	 */
 	public void setAlias( String alias ) {
-		this.alias = alias;
+		this.alias = ( alias == null ) ? null : Key.of( alias );
+	}
+
+	public boolean isCalled( Key name ) {
+		return this.name.equals( name ) || ( alias != null && alias.equals( name ) );
+	}
+
+	public String getVariableName() {
+		if ( schema != null ) {
+			return schema + "." + name.getName();
+		} else {
+			return name.getName();
+		}
 	}
 
 	@Override
@@ -97,4 +112,23 @@ public class SQLTable extends SQLNode {
 		// TODO Auto-generated method stub
 		throw new UnsupportedOperationException( "Unimplemented method 'accept'" );
 	}
+
+	@Override
+	public Map<String, Object> toMap() {
+		Map<String, Object> map = super.toMap();
+
+		if ( schema != null ) {
+			map.put( "schema", schema );
+		} else {
+			map.put( "schema", null );
+		}
+		map.put( "name", name.getName() );
+		if ( alias != null ) {
+			map.put( "alias", alias.getName() );
+		} else {
+			map.put( "alias", null );
+		}
+		return map;
+	}
+
 }

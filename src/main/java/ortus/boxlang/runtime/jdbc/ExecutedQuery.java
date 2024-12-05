@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.events.BoxEvent;
+import ortus.boxlang.runtime.jdbc.qoq.QoQStatement;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.types.Array;
@@ -93,10 +94,14 @@ public final class ExecutedQuery {
 		Object	generatedKey	= null;
 		Query	results			= null;
 
-		try ( ResultSet rs = statement.getResultSet() ) {
-			results = Query.fromResultSet( rs );
-		} catch ( SQLException e ) {
-			throw new DatabaseException( e.getMessage(), e );
+		if ( statement instanceof QoQStatement qs ) {
+			results = qs.getQueryResult();
+		} else {
+			try ( ResultSet rs = statement.getResultSet() ) {
+				results = Query.fromResultSet( rs );
+			} catch ( SQLException e ) {
+				throw new DatabaseException( e.getMessage(), e );
+			}
 		}
 
 		// Capture generated keys, if any.

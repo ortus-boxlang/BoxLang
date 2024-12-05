@@ -14,11 +14,16 @@
  */
 package ortus.boxlang.compiler.ast.sql.select.expression.operation;
 
+import java.util.Map;
+
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
+import ortus.boxlang.compiler.ast.sql.select.SQLTable;
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLExpression;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
+import ortus.boxlang.runtime.types.Query;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
  * Abstract Node class representing SQL BETWEEN operation
@@ -37,7 +42,7 @@ public class SQLBetweenOperation extends SQLExpression {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code of the statement
 	 */
-	protected SQLBetweenOperation( SQLExpression expression, SQLExpression left, SQLExpression right, Position position, String sourceText ) {
+	public SQLBetweenOperation( SQLExpression expression, SQLExpression left, SQLExpression right, Position position, String sourceText ) {
 		super( position, sourceText );
 		setExpression( expression );
 		setLeft( left );
@@ -99,6 +104,13 @@ public class SQLBetweenOperation extends SQLExpression {
 		return true;
 	}
 
+	/**
+	 * Evaluate the expression
+	 */
+	public Object evaluate( Map<SQLTable, Query> tableLookup, int i ) {
+		throw new BoxRuntimeException( "not implemented" );
+	}
+
 	@Override
 	public void accept( VoidBoxVisitor v ) {
 		// TODO Auto-generated method stub
@@ -109,6 +121,16 @@ public class SQLBetweenOperation extends SQLExpression {
 	public BoxNode accept( ReplacingBoxVisitor v ) {
 		// TODO Auto-generated method stub
 		throw new UnsupportedOperationException( "Unimplemented method 'accept'" );
+	}
+
+	@Override
+	public Map<String, Object> toMap() {
+		Map<String, Object> map = super.toMap();
+
+		map.put( "expression", expression.toMap() );
+		map.put( "left", left.toMap() );
+		map.put( "right", right.toMap() );
+		return map;
 	}
 
 }

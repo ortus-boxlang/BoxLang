@@ -474,7 +474,6 @@ public class PendingQuery {
 		/**
 		 * TODO: Implement the following options:
 		 * ormoptions
-		 * dbtype : query of queries (In progress)
 		 * username and password : To evaluate later due to security concerns of overriding datasources, not going to implement unless requested
 		 * clientInfo : Part of the connection: get/setClientInfo()
 		 */

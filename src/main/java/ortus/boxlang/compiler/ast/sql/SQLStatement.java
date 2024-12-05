@@ -28,7 +28,7 @@ public abstract class SQLStatement extends SQLNode {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code of the statement
 	 */
-	protected SQLStatement( Position position, String sourceText ) {
+	public SQLStatement( Position position, String sourceText ) {
 		super( position, sourceText );
 	}
 }

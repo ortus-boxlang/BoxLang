@@ -37,6 +37,7 @@ import ortus.boxlang.compiler.ast.comment.BoxSingleLineComment;
 import ortus.boxlang.compiler.toolchain.SQLVisitor;
 import ortus.boxlang.parser.antlr.SQLGrammar;
 import ortus.boxlang.parser.antlr.SQLLexer;
+import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 
 /**
  * Parser for QoQ scripts
@@ -63,11 +64,11 @@ public class SQLParser extends AbstractParser {
 	 *
 	 * @return a ParsingResult containing the AST with a BoxScript as root and the list of errors (if any)
 	 *
-	 * @throws IOException if the input stream is in error
+	 * @ if the input stream is in error
 	 *
 	 * @see ParsingResult
 	 */
-	public ParsingResult parse( File file, boolean isScript ) throws IOException {
+	public ParsingResult parse( File file, boolean isScript ) {
 		this.file = file;
 		setSource( new SourceFile( file ) );
 		BOMInputStream	inputStream			= getInputStream( file );
@@ -84,16 +85,16 @@ public class SQLParser extends AbstractParser {
 	 *
 	 * @return a ParsingResult containing the AST with a BoxScript as root and the list of errors (if any)
 	 *
-	 * @throws IOException if the input stream is in error
+	 * @ if the input stream is in error
 	 *
 	 * @see BoxScript
 	 * @see ParsingResult
 	 */
-	public ParsingResult parse( String code, boolean isScript ) throws IOException {
+	public ParsingResult parse( String code, boolean isScript ) {
 		return parse( code, false, isScript );
 	}
 
-	public ParsingResult parse( String code ) throws IOException {
+	public ParsingResult parse( String code ) {
 		return parse( code, false, true );
 	}
 
@@ -104,13 +105,13 @@ public class SQLParser extends AbstractParser {
 	 *
 	 * @return a ParsingResult containing the AST with a BoxScript as root and the list of errors (if any)
 	 *
-	 * @throws IOException if the input stream is in error
+	 * @ if the input stream is in error
 	 *
 	 * @see BoxScript
 	 * @see ParsingResult
 	 */
 	@Override
-	public ParsingResult parse( String code, boolean classOrInterface, boolean isScript ) throws IOException {
+	public ParsingResult parse( String code, boolean classOrInterface, boolean isScript ) {
 		this.sourceCode = code;
 		setSource( new SourceCode( code ) );
 		InputStream	inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
@@ -126,13 +127,18 @@ public class SQLParser extends AbstractParser {
 	 *
 	 * @return the ANTLR ParserRule representing the parse tree of the code
 	 *
-	 * @throws IOException io error
+	 * @ io error
 	 */
 	@Override
-	protected BoxNode parserFirstStage( InputStream stream, boolean classOrInterface, boolean isScript ) throws IOException {
+	protected BoxNode parserFirstStage( InputStream stream, boolean classOrInterface, boolean isScript ) {
 
-		SQLLexerCustom	lexer	= new SQLLexerCustom( CharStreams.fromStream( stream, StandardCharsets.UTF_8 ), errorListener, this );
-		SQLGrammar		parser	= new SQLGrammar( new CommonTokenStream( lexer ) );
+		SQLLexerCustom lexer;
+		try {
+			lexer = new SQLLexerCustom( CharStreams.fromStream( stream, StandardCharsets.UTF_8 ), errorListener, this );
+		} catch ( IOException e ) {
+			throw new BoxIOException( e );
+		}
+		SQLGrammar parser = new SQLGrammar( new CommonTokenStream( lexer ) );
 
 		// DEBUG: Will print a trace of all parser rules visited:
 		// boxParser.setTrace( true );
@@ -205,7 +211,7 @@ public class SQLParser extends AbstractParser {
 		}
 	}
 
-	private void extractComments( SQLLexerCustom lexer ) throws IOException {
+	private void extractComments( SQLLexerCustom lexer ) {
 		lexer.reset();
 		Token token = lexer.nextToken();
 		while ( token.getType() != Token.EOF ) {

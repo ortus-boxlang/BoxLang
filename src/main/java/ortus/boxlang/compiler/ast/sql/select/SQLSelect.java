@@ -15,11 +15,13 @@
 package ortus.boxlang.compiler.ast.sql.select;
 
 import java.util.List;
+import java.util.Map;
 
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.sql.SQLNode;
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLExpression;
+import ortus.boxlang.compiler.ast.sql.select.expression.literal.SQLNumberLiteral;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -43,15 +45,16 @@ public class SQLSelect extends SQLNode {
 
 	private SQLExpression			having;
 
+	private SQLNumberLiteral		limit;
+
 	/**
 	 * Constructor
 	 *
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code of the statement
 	 */
-	protected SQLSelect( boolean distinct, List<SQLResultColumn> resultColumns, SQLTable table, List<SQLJoin> joins, SQLExpression where,
-	    List<SQLExpression> groupBys,
-	    SQLExpression having, Position position, String sourceText ) {
+	public SQLSelect( boolean distinct, List<SQLResultColumn> resultColumns, SQLTable table, List<SQLJoin> joins, SQLExpression where,
+	    List<SQLExpression> groupBys, SQLExpression having, SQLNumberLiteral limit, Position position, String sourceText ) {
 		super( position, sourceText );
 		setDistinct( distinct );
 		setResultColumns( resultColumns );
@@ -60,6 +63,7 @@ public class SQLSelect extends SQLNode {
 		setWhere( where );
 		setGroupBys( groupBys );
 		setHaving( having );
+		setLimit( limit );
 	}
 
 	/**
@@ -75,7 +79,13 @@ public class SQLSelect extends SQLNode {
 	public void setResultColumns( List<SQLResultColumn> resultColumns ) {
 		replaceChildren( this.resultColumns, resultColumns );
 		this.resultColumns = resultColumns;
-		resultColumns.forEach( c -> c.setParent( this ) );
+		if ( resultColumns != null ) {
+			for ( int i = 0; i < resultColumns.size(); i++ ) {
+				SQLResultColumn column = resultColumns.get( i );
+				column.setParent( this );
+				column.setOrdinalPosition( i + 1 );
+			}
+		}
 	}
 
 	/**
@@ -84,7 +94,9 @@ public class SQLSelect extends SQLNode {
 	public void setTable( SQLTable table ) {
 		replaceChildren( this.table, table );
 		this.table = table;
-		table.setParent( this );
+		if ( table != null ) {
+			table.setParent( this );
+		}
 	}
 
 	/**
@@ -93,19 +105,23 @@ public class SQLSelect extends SQLNode {
 	public void setJoins( List<SQLJoin> joins ) {
 		replaceChildren( this.joins, joins );
 		this.joins = joins;
-		joins.forEach( j -> j.setParent( this ) );
+		if ( joins != null ) {
+			joins.forEach( j -> j.setParent( this ) );
+		}
 	}
 
 	/**
 	 * Set the WHERE node
 	 */
 	public void setWhere( SQLExpression where ) {
-		if ( !where.isBoolean() ) {
+		if ( where != null && !where.isBoolean() ) {
 			throw new BoxRuntimeException( "WHERE clause must be a boolean expression" );
 		}
 		replaceChildren( this.where, where );
 		this.where = where;
-		where.setParent( this );
+		if ( where != null ) {
+			where.setParent( this );
+		}
 	}
 
 	/**
@@ -114,19 +130,23 @@ public class SQLSelect extends SQLNode {
 	public void setGroupBys( List<SQLExpression> groupBys ) {
 		replaceChildren( this.groupBys, groupBys );
 		this.groupBys = groupBys;
-		groupBys.forEach( g -> g.setParent( this ) );
+		if ( groupBys != null ) {
+			groupBys.forEach( g -> g.setParent( this ) );
+		}
 	}
 
 	/**
 	 * Set the HAVING node
 	 */
 	public void setHaving( SQLExpression having ) {
-		if ( !having.isBoolean() ) {
+		if ( having != null && !having.isBoolean() ) {
 			throw new BoxRuntimeException( "HAVING clause must be a boolean expression" );
 		}
 		replaceChildren( this.having, having );
 		this.having = having;
-		having.setParent( this );
+		if ( having != null ) {
+			having.setParent( this );
+		}
 	}
 
 	/**
@@ -178,6 +198,24 @@ public class SQLSelect extends SQLNode {
 		return having;
 	}
 
+	/**
+	 * Set the LIMIT node
+	 */
+	public void setLimit( SQLNumberLiteral limit ) {
+		replaceChildren( this.limit, limit );
+		this.limit = limit;
+		if ( limit != null ) {
+			limit.setParent( this );
+		}
+	}
+
+	/**
+	 * Get the LIMIT node
+	 */
+	public SQLNumberLiteral getLimit() {
+		return limit;
+	}
+
 	@Override
 	public void accept( VoidBoxVisitor v ) {
 		// TODO Auto-generated method stub
@@ -189,4 +227,50 @@ public class SQLSelect extends SQLNode {
 		// TODO Auto-generated method stub
 		throw new UnsupportedOperationException( "Unimplemented method 'accept'" );
 	}
+
+	@Override
+	public Map<String, Object> toMap() {
+		Map<String, Object> map = super.toMap();
+
+		if ( distinct ) {
+			map.put( "distinct", distinct );
+		} else {
+			map.put( "distinct", null );
+		}
+
+		map.put( "resultColumns", resultColumns.stream().map( SQLResultColumn::toMap ).toList() );
+		if ( table != null ) {
+			map.put( "table", table.toMap() );
+		} else {
+			map.put( "table", null );
+		}
+		if ( joins != null ) {
+			map.put( "joins", joins.stream().map( SQLJoin::toMap ).toList() );
+		} else {
+			map.put( "joins", null );
+		}
+		if ( where != null ) {
+			map.put( "where", where.toMap() );
+		} else {
+			map.put( "where", null );
+		}
+		if ( groupBys != null ) {
+			map.put( "groupBys", groupBys.stream().map( SQLExpression::toMap ).toList() );
+		} else {
+			map.put( "groupBys", null );
+		}
+		if ( having != null ) {
+			map.put( "having", having.toMap() );
+		} else {
+			map.put( "having", null );
+		}
+		if ( limit != null ) {
+			map.put( "limit", limit.toMap() );
+		} else {
+			map.put( "limit", null );
+		}
+
+		return map;
+	}
+
 }

@@ -14,11 +14,16 @@
  */
 package ortus.boxlang.compiler.ast.sql.select.expression.literal;
 
+import java.util.Map;
+
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
+import ortus.boxlang.compiler.ast.sql.select.SQLTable;
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLExpression;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
+import ortus.boxlang.runtime.types.Query;
+import ortus.boxlang.runtime.types.QueryColumnType;
 
 /**
  * Abstract Node class representing SQL number literal
@@ -33,7 +38,7 @@ public class SQLNumberLiteral extends SQLExpression {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code of the statement
 	 */
-	protected SQLNumberLiteral( Number value, Position position, String sourceText ) {
+	public SQLNumberLiteral( Number value, Position position, String sourceText ) {
 		super( position, sourceText );
 		setValue( value );
 	}
@@ -58,6 +63,20 @@ public class SQLNumberLiteral extends SQLExpression {
 		return true;
 	}
 
+	/**
+	 * What type does this expression evaluate to
+	 */
+	public QueryColumnType getType( Map<SQLTable, Query> tableLookup ) {
+		return QueryColumnType.DOUBLE;
+	}
+
+	/**
+	 * Evaluate the expression
+	 */
+	public Object evaluate( Map<SQLTable, Query> tableLookup, int i ) {
+		return value;
+	}
+
 	@Override
 	public void accept( VoidBoxVisitor v ) {
 		// TODO Auto-generated method stub
@@ -68,6 +87,14 @@ public class SQLNumberLiteral extends SQLExpression {
 	public BoxNode accept( ReplacingBoxVisitor v ) {
 		// TODO Auto-generated method stub
 		throw new UnsupportedOperationException( "Unimplemented method 'accept'" );
+	}
+
+	@Override
+	public Map<String, Object> toMap() {
+		Map<String, Object> map = super.toMap();
+
+		map.put( "value", value );
+		return map;
 	}
 
 }

@@ -14,8 +14,13 @@
  */
 package ortus.boxlang.compiler.ast.sql.select.expression;
 
+import java.util.Map;
+
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.sql.SQLNode;
+import ortus.boxlang.compiler.ast.sql.select.SQLTable;
+import ortus.boxlang.runtime.types.Query;
+import ortus.boxlang.runtime.types.QueryColumnType;
 
 /**
  * Abstract Node class representing SQL expression
@@ -28,7 +33,7 @@ public abstract class SQLExpression extends SQLNode {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code of the statement
 	 */
-	protected SQLExpression( Position position, String sourceText ) {
+	public SQLExpression( Position position, String sourceText ) {
 		super( position, sourceText );
 	}
 
@@ -45,5 +50,20 @@ public abstract class SQLExpression extends SQLNode {
 	public boolean isBoolean() {
 		return false;
 	}
+
+	/**
+	 * What type does this expression evaluate to
+	 */
+	public QueryColumnType getType( Map<SQLTable, Query> tableLookup ) {
+		if ( isBoolean() ) {
+			return QueryColumnType.BIT;
+		}
+		return QueryColumnType.OBJECT;
+	}
+
+	/**
+	 * Evaluate the expression
+	 */
+	public abstract Object evaluate( Map<SQLTable, Query> tableLookup, int i );
 
 }

@@ -14,11 +14,15 @@
  */
 package ortus.boxlang.compiler.ast.sql.select.expression;
 
+import java.util.Map;
+
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.sql.select.SQLTable;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
+import ortus.boxlang.runtime.types.Query;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
  * Abstract Node class representing SQL * expression
@@ -33,7 +37,7 @@ public class SQLStarExpression extends SQLExpression {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code of the statement
 	 */
-	protected SQLStarExpression( SQLTable table, Position position, String sourceText ) {
+	public SQLStarExpression( SQLTable table, Position position, String sourceText ) {
 		super( position, sourceText );
 		setTable( table );
 	}
@@ -53,6 +57,13 @@ public class SQLStarExpression extends SQLExpression {
 		this.table = table;
 	}
 
+	/**
+	 * Evaluate the expression
+	 */
+	public Object evaluate( Map<SQLTable, Query> tableLookup, int i ) {
+		throw new BoxRuntimeException( "Cannot evaluate a * expression" );
+	}
+
 	@Override
 	public void accept( VoidBoxVisitor v ) {
 		// TODO Auto-generated method stub
@@ -63,6 +74,18 @@ public class SQLStarExpression extends SQLExpression {
 	public BoxNode accept( ReplacingBoxVisitor v ) {
 		// TODO Auto-generated method stub
 		throw new UnsupportedOperationException( "Unimplemented method 'accept'" );
+	}
+
+	@Override
+	public Map<String, Object> toMap() {
+		Map<String, Object> map = super.toMap();
+
+		if ( table != null ) {
+			map.put( "table", table.toMap() );
+		} else {
+			map.put( "table", null );
+		}
+		return map;
 	}
 
 }

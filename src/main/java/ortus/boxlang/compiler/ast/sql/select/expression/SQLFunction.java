@@ -15,11 +15,16 @@
 package ortus.boxlang.compiler.ast.sql.select.expression;
 
 import java.util.List;
+import java.util.Map;
 
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
+import ortus.boxlang.compiler.ast.sql.select.SQLTable;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
+import ortus.boxlang.runtime.types.Query;
+import ortus.boxlang.runtime.types.QueryColumnType;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
  * Abstract Node class representing SQL function call
@@ -36,7 +41,7 @@ public class SQLFunction extends SQLExpression {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code of the statement
 	 */
-	protected SQLFunction( String name, List<SQLExpression> arguments, Position position, String sourceText ) {
+	public SQLFunction( String name, List<SQLExpression> arguments, Position position, String sourceText ) {
 		super( position, sourceText );
 		setName( name );
 		setArguments( arguments );
@@ -88,6 +93,21 @@ public class SQLFunction extends SQLExpression {
 		return false;
 	}
 
+	/**
+	 * What type does this expression evaluate to
+	 */
+	public QueryColumnType getType( Map<SQLTable, Query> tableLookup ) {
+		// TODO: actually return proper type based on the function in question
+		return QueryColumnType.OBJECT;
+	}
+
+	/**
+	 * Evaluate the expression
+	 */
+	public Object evaluate( Map<SQLTable, Query> tableLookup, int i ) {
+		throw new BoxRuntimeException( "not implemented" );
+	}
+
 	@Override
 	public void accept( VoidBoxVisitor v ) {
 		// TODO Auto-generated method stub
@@ -98,6 +118,15 @@ public class SQLFunction extends SQLExpression {
 	public BoxNode accept( ReplacingBoxVisitor v ) {
 		// TODO Auto-generated method stub
 		throw new UnsupportedOperationException( "Unimplemented method 'accept'" );
+	}
+
+	@Override
+	public Map<String, Object> toMap() {
+		Map<String, Object> map = super.toMap();
+
+		map.put( "name", getName() );
+		map.put( "arguments", getArguments().stream().map( BoxNode::toMap ).toList() );
+		return map;
 	}
 
 }
