@@ -14,11 +14,13 @@
  */
 package ortus.boxlang.runtime.jdbc.qoq;
 
+import java.sql.SQLException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 import ortus.boxlang.compiler.ast.sql.SQLNode;
 import ortus.boxlang.compiler.ast.sql.select.SQLResultColumn;
+import ortus.boxlang.compiler.ast.sql.select.SQLSelect;
 import ortus.boxlang.compiler.ast.sql.select.SQLSelectStatement;
 import ortus.boxlang.compiler.ast.sql.select.SQLTable;
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLColumn;
@@ -71,34 +73,59 @@ public class QoQService {
 		return ( SQLNode ) result.getRoot();
 	}
 
-	public static Query executeSelect( IBoxContext context, SQLSelectStatement select ) {
+	public static Query executeSelect( IBoxContext context, SQLSelectStatement selectStatement, QoQStatement statement ) throws SQLException {
 		Map<SQLTable, Query>	tableLookup		= new LinkedHashMap<SQLTable, Query>();
 
 		// TODO: Process all joins
-		String					tableVarName	= select.getSelect().getTable().getVariableName();
+		String					tableVarName	= selectStatement.getSelect().getTable().getVariableName();
 		Query					source			= getSourceQuery( context, tableVarName );
-		tableLookup.put( select.getSelect().getTable(), source );
+		tableLookup.put( selectStatement.getSelect().getTable(), source );
 
-		Map<Key, TypedResultColumn>	resultColumns	= calculateResultColumns( select, tableLookup );
+		Map<Key, TypedResultColumn>	resultColumns	= calculateResultColumns( selectStatement, tableLookup );
 
 		Query						target			= buildTargetQuery( resultColumns );
 
+		// Process one select
+		// TODO: refactor this out
+		SQLSelect					select			= selectStatement.getSelect();
+
+		Long						thisSelectLimit	= select.getLimitValue();
+		// This boolean expression will be used to filter the records we keep
+		SQLExpression				where			= select.getWhere();
+		boolean						canEarlyLimit	= selectStatement.getOrderBys() == null;
+
+		// 1-based index!
 		for ( int i = 1; i <= source.size(); i++ ) {
-			SQLExpression where = select.getSelect().getWhere();
+			// enforce top/limit for this select. This would be a "top N" clause in the select or a "limit N" clause BEFORE the order by, which
+			// could exist or all selects in a union.
+			if ( canEarlyLimit && thisSelectLimit > -1 && i > thisSelectLimit ) {
+				break;
+			}
 			// Evaluate the where expression
 			if ( where == null || ( Boolean ) where.evaluate( tableLookup, i ) ) {
 				Object[] values = new Object[ resultColumns.size() ];
 				for ( Key key : resultColumns.keySet() ) {
-					TypedResultColumn	typedResultColumn	= resultColumns.get( key );
-					QueryColumnType		type				= typedResultColumn.type;
-					SQLResultColumn		resultColumn		= typedResultColumn.resultColumn;
-					Object				value				= resultColumn.getExpression().evaluate( tableLookup, i );
+					SQLResultColumn	resultColumn	= resultColumns.get( key ).resultColumn;
+					Object			value			= resultColumn.getExpression().evaluate( tableLookup, i );
 					values[ resultColumn.getOrdinalPosition() - 1 ] = value;
 				}
 				target.addRow( values );
 			}
 		}
 
+		// TODO: Sort the query
+
+		// This is the maxRows in the query options. It takes priority.
+		Long overallSelectLimit = statement.getLargeMaxRows();
+		// If that wasn't set, use the limit clause AFTER the order by (which could apply at the end of a union)
+		if ( overallSelectLimit == -1 ) {
+			overallSelectLimit = selectStatement.getLimitValue();
+		}
+
+		// If we have a limit for the final select, apply it here.
+		if ( overallSelectLimit > -1 ) {
+			target.truncate( overallSelectLimit );
+		}
 		return target;
 	}
 

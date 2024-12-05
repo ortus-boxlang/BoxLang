@@ -216,6 +216,16 @@ public class SQLSelect extends SQLNode {
 		return limit;
 	}
 
+	/**
+	 * Get the value of the limit node, defaulting to -1 if not set. -1 means no limit.
+	 */
+	public Long getLimitValue() {
+		if ( getLimit() == null ) {
+			return -1L;
+		}
+		return getLimit().getValue().longValue();
+	}
+
 	@Override
 	public void accept( VoidBoxVisitor v ) {
 		// TODO Auto-generated method stub

@@ -117,6 +117,16 @@ public class SQLSelectStatement extends SQLStatement {
 	}
 
 	/**
+	 * Get the value of the limit node, defaulting to -1 if not set. -1 means no limit.
+	 */
+	public Long getLimitValue() {
+		if ( getLimit() == null ) {
+			return -1L;
+		}
+		return getLimit().getValue().longValue();
+	}
+
+	/**
 	 * Get the ORDER BY nodes
 	 */
 	public List<SQLOrderBy> getOrderBys() {

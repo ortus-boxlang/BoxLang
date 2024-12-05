@@ -23,6 +23,7 @@ import ortus.boxlang.compiler.ast.sql.select.SQLTable;
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLExpression;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
+import ortus.boxlang.runtime.operators.EqualsEquals;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -136,7 +137,40 @@ public class SQLBinaryOperation extends SQLExpression {
 	 * Evaluate the expression
 	 */
 	public Object evaluate( Map<SQLTable, Query> tableLookup, int i ) {
-		throw new BoxRuntimeException( "not implemented" );
+		// Implement each binary operator
+		switch ( operator ) {
+			case AND :
+				break;
+			case DIVIDE :
+				break;
+			case EQUAL :
+				Object leftValue = left.evaluate( tableLookup, i );
+				Object rightValue = right.evaluate( tableLookup, i );
+				return EqualsEquals.invoke( leftValue, rightValue, true );
+			case GREATERTHAN :
+				break;
+			case GREATERTHANOREQUAL :
+				break;
+			case LESSTHAN :
+				break;
+			case LESSTHANOREQUAL :
+				break;
+			case MINUS :
+				break;
+			case MODULO :
+				break;
+			case MULTIPLY :
+				break;
+			case NOTEQUAL :
+				break;
+			case OR :
+				break;
+			case PLUS :
+				break;
+			default :
+				throw new BoxRuntimeException( "Unknown binary operator: " + operator );
+		}
+		throw new UnsupportedOperationException( "Unimplemented binary operator: " + operator );
 	}
 
 	@Override

@@ -18,6 +18,8 @@ import ortus.boxlang.compiler.ast.sql.select.expression.literal.SQLBooleanLitera
 import ortus.boxlang.compiler.ast.sql.select.expression.literal.SQLNullLiteral;
 import ortus.boxlang.compiler.ast.sql.select.expression.literal.SQLNumberLiteral;
 import ortus.boxlang.compiler.ast.sql.select.expression.literal.SQLStringLiteral;
+import ortus.boxlang.compiler.ast.sql.select.expression.operation.SQLBinaryOperation;
+import ortus.boxlang.compiler.ast.sql.select.expression.operation.SQLBinaryOperator;
 import ortus.boxlang.compiler.parser.SQLParser;
 import ortus.boxlang.parser.antlr.SQLGrammar.ExprContext;
 import ortus.boxlang.parser.antlr.SQLGrammar.Literal_valueContext;
@@ -309,6 +311,9 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 			return new SQLColumn( tableRef, ctx.column_name().getText(), pos, src );
 		} else if ( ctx.literal_value() != null ) {
 			return ( SQLExpression ) visit( ctx.literal_value() );
+		} else if ( ctx.EQ() != null || ctx.ASSIGN() != null ) {
+			return new SQLBinaryOperation( visitExpr( ctx.expr( 0 ), table, joins ), visitExpr( ctx.expr( 1 ), table, joins ), SQLBinaryOperator.EQUAL, pos,
+			    src );
 		} else {
 			throw new UnsupportedOperationException( "Unimplemented expression: " + src );
 		}
@@ -336,7 +341,12 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 		} else if ( ctx.FALSE_() != null ) {
 			return new SQLBooleanLiteral( false, pos, src );
 		} else if ( ctx.STRING_LITERAL() != null ) {
-			return new SQLStringLiteral( ctx.STRING_LITERAL().getText(), pos, src );
+			String str = ctx.STRING_LITERAL().getText();
+			// strip quote chars
+			str	= str.substring( 1, str.length() - 1 );
+			// unescape `''` inside string
+			str	= str.replace( "''", "'" );
+			return new SQLStringLiteral( str, pos, src );
 		} else {
 			throw new UnsupportedOperationException( "Unimplemented literal expression: " + src );
 		}

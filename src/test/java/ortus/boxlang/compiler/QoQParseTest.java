@@ -82,14 +82,17 @@ public class QoQParseTest {
 	public void testRunQoQ() {
 		instance.executeSource(
 		    """
-		    myQry = queryNew( "col,col2", "varchar,integer", [["foo",42],["bar",9001]] )
-		            q = queryExecute(
-		         	"select col, 5 as brad, col2 luis from myQry where true",
-		         	[],
-		         	{ dbType : "query" }
-		         );
-		      println( q )
-		         """,
+		     myQry = queryNew( "col,col2", "varchar,integer", [["foo",42],["bar",9001]] )
+		             q = queryExecute( "
+		    	select col, 5 as brad, col2 luis
+		    	from myQry
+		    	where col = 'foo'
+		    ",
+		          	[],
+		          	{ dbType : "query", maxRows = 1 }
+		          );
+		       println( q )
+		          """,
 		    context );
 	}
 

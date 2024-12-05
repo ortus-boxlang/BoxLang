@@ -26,7 +26,7 @@ import ortus.boxlang.runtime.types.Query;
 public class QoQStatement implements java.sql.Statement {
 
 	private IBoxContext	context;
-	private int			maxRows	= 0;
+	private long		maxRows	= -1;
 	private Connection	connection;
 	private Query		result;
 
@@ -53,8 +53,16 @@ public class QoQStatement implements java.sql.Statement {
 	public void setMaxFieldSize( int max ) throws SQLException {
 	}
 
-	public int getMaxRows() throws SQLException {
+	public void setLargeMaxRows( long max ) throws SQLException {
+		maxRows = max;
+	}
+
+	public long getLargeMaxRows() throws SQLException {
 		return maxRows;
+	}
+
+	public int getMaxRows() throws SQLException {
+		return ( int ) maxRows;
 	}
 
 	public void setMaxRows( int max ) throws SQLException {
@@ -170,7 +178,7 @@ public class QoQStatement implements java.sql.Statement {
 		SQLSelectStatement select = ( SQLSelectStatement ) QoQService.parseSQL( sql );
 
 		// execute the query
-		result = QoQService.executeSelect( context, select );
+		result = QoQService.executeSelect( context, select, this );
 		return true;
 	}
 
