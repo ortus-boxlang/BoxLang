@@ -91,7 +91,6 @@ public class ReReplace extends BIF {
 
 		StringBuffer	result		= new StringBuffer();
 		Matcher			matcher		= RegexBuilder.of( string, regex, noCase ).matcher();
-
 		boolean			upperCase	= false;
 		boolean			lowerCase	= false;
 
