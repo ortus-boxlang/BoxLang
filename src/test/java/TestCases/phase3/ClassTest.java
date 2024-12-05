@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -388,6 +389,24 @@ public class ClassTest {
 				assert cfc.runThisFoo() == "I work! whee true true bar true";
 
 				assert cfc.thisVar == "thisValue";
+			""", context );
+		// @formatter:on
+	}
+
+	@DisplayName( "parent init will re-call the child init" )
+	@Test
+	@Disabled
+	public void superInitTest() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				settings = {
+					"foo" : "bar"
+				};
+				cfc = new src.test.java.TestCases.phase3.Child( properties=settings );
+
+				assert cfc.getSettings() == settings;
+
 			""", context );
 		// @formatter:on
 	}

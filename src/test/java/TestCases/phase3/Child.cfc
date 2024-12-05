@@ -1,6 +1,9 @@
-component extends="Parent" {
+component extends="Parent" accessors="true" {
 
-    function init() {
+	property name="properties";
+
+    function init( properties = {} ) {
+		variables.properties = arguments.properties;
         return super.init();
     }
 
