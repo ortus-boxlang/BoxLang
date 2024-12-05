@@ -203,7 +203,6 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 			}
 			throw e;
 		} catch ( Throwable e ) {
-			context.flushBuffer( true );
 			throw e;
 		} finally {
 			context.popTemplate();
