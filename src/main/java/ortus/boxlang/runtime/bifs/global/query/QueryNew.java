@@ -24,7 +24,9 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Query;
+import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.util.BLCollector;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
 @BoxBIF
@@ -86,6 +88,10 @@ public class QueryNew extends BIF {
 		if ( columnList instanceof String cl ) {
 			columnNames = ArrayCaster.cast(
 			    ListUtil.asList( cl, "," )
+			        .stream()
+			        .map( String::valueOf )
+			        .map( String::trim )
+			        .collect( BLCollector.toArray() )
 			);
 		}
 		// If it's an array, then it's data
@@ -100,7 +106,12 @@ public class QueryNew extends BIF {
 		}
 
 		// Verify Column Types
-		Array columnTypes = ListUtil.asList( arguments.getAsString( Key.columnTypeList ), "," );
+		Array columnTypes = ListUtil
+		    .asList( arguments.getAsString( Key.columnTypeList ), "," )
+		    .stream()
+		    .map( String::valueOf )
+		    .map( String::trim )
+		    .collect( BLCollector.toArray() );
 		if ( columnTypes.isEmpty() ) {
 			// add "object" as default type
 			for ( int i = 0; i < columnNames.size(); i++ ) {

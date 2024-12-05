@@ -126,7 +126,7 @@ public class ArrayToListTest {
 		assertThat( joined ).isEqualTo( ",,,3" );
 	}
 
-	@DisplayName( "It should preseve empty delimiters" )
+	@DisplayName( "It should preserve empty delimiters" )
 	@Test
 	public void testPreserveEmpty() {
 		instance.executeSource(

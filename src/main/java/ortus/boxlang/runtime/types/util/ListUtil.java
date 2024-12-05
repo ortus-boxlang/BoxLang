@@ -142,7 +142,6 @@ public class ListUtil {
 		}
 
 		return Arrays.stream( result )
-		    .map( String::trim )
 		    .collect( BLCollector.toArray() );
 	}
 
