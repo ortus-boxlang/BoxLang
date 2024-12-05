@@ -44,6 +44,7 @@ import ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy;
 import ch.qos.logback.core.util.FileSize;
 import ch.qos.logback.core.util.StatusPrinter;
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.config.segments.LoggerConfig;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -459,23 +460,6 @@ public class LoggingService {
 	}
 
 	/**
-	 * Build a logger with the specified name and file path
-	 *
-	 * @param loggerKey      The key of the logger to build
-	 * @param loggerFilePath The file path to log to
-	 *
-	 * @return The logger requested
-	 */
-	private Logger createLogger( Key loggerKey, String loggerFilePath ) {
-		LoggerContext	targetContext	= getLoggerContext();
-		Logger			oLogger			= targetContext.getLogger( loggerKey.getNameNoCase() );
-		oLogger.setLevel( Level.TRACE );
-		oLogger.setAdditive( true );
-		oLogger.addAppender( getOrBuildAppender( loggerFilePath, targetContext ) );
-		return oLogger;
-	}
-
-	/**
 	 * Verify if a logger with the specified name exists
 	 *
 	 * @param loggerName The name of the logger to verify
@@ -651,6 +635,31 @@ public class LoggingService {
 		targetEncoder.setContext( this.loggerContext );
 		targetEncoder.start();
 		return targetEncoder;
+	}
+
+	/**
+	 * Build a logger with the specified name and file path
+	 *
+	 * @param loggerKey      The key of the logger to build
+	 * @param loggerFilePath The file path to log to
+	 *
+	 * @return The logger requested
+	 */
+	private Logger createLogger( Key loggerKey, String loggerFilePath ) {
+		LoggerContext	targetContext	= getLoggerContext();
+		Logger			oLogger			= targetContext.getLogger( loggerKey.getNameNoCase() );
+
+		// Check if we have the logger configuration or else build a vanilla one
+		LoggerConfig	loggerConfig	= ( LoggerConfig ) this.runtime
+		    .getConfiguration().logging.loggers
+		        .computeIfAbsent( loggerKey, key -> new LoggerConfig( key.getNameNoCase(), this.runtime.getConfiguration().logging ) );
+
+		Level			targetLevel		= Level.toLevel( LogLevel.valueOf( loggerConfig.level.getName(), false ).getName() );
+
+		oLogger.setLevel( targetLevel );
+		oLogger.setAdditive( loggerConfig.additive );
+		oLogger.addAppender( getOrBuildAppender( loggerFilePath, targetContext ) );
+		return oLogger;
 	}
 
 }
