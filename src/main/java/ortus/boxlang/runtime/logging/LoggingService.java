@@ -456,7 +456,7 @@ public class LoggingService {
 		Key		loggerKey		= Key.of( FilenameUtils.getBaseName( loggerFilePath.toLowerCase() ) );
 
 		// Compute it or return it
-		return ( Logger ) this.loggersMap.computeIfAbsent( loggerKey, key -> createLogger( loggerKey, loggerFilePath ) );
+		return ( Logger ) this.loggersMap.computeIfAbsent( Key.of( loggerFilePath ), key -> createLogger( loggerKey, loggerFilePath ) );
 	}
 
 	/**
@@ -638,7 +638,8 @@ public class LoggingService {
 	}
 
 	/**
-	 * Build a logger with the specified name and file path
+	 * Build a logger with the specified name and file path.
+	 * This will also look into the configuration file for the logger level and additivity.
 	 *
 	 * @param loggerKey      The key of the logger to build
 	 * @param loggerFilePath The file path to log to
@@ -652,11 +653,11 @@ public class LoggingService {
 		// Check if we have the logger configuration or else build a vanilla one
 		LoggerConfig	loggerConfig	= ( LoggerConfig ) this.runtime
 		    .getConfiguration().logging.loggers
-		    .computeIfAbsent( loggerKey, key -> new LoggerConfig( key.getNameNoCase(), this.runtime.getConfiguration().logging ) );
+		        .computeIfAbsent( loggerKey, key -> new LoggerConfig( key.getNameNoCase(), this.runtime.getConfiguration().logging ) );
+		Level			configLevel		= Level.toLevel( LogLevel.valueOf( loggerConfig.level.getName(), false ).getName() );
 
-		Level			targetLevel		= Level.toLevel( LogLevel.valueOf( loggerConfig.level.getName(), false ).getName() );
-
-		oLogger.setLevel( targetLevel );
+		// Seed the properties
+		oLogger.setLevel( configLevel );
 		oLogger.setAdditive( loggerConfig.additive );
 		oLogger.addAppender( getOrBuildAppender( loggerFilePath, targetContext, loggerConfig ) );
 		return oLogger;
