@@ -429,6 +429,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		limit								= Key.of( "limit" );
 	public static final Key		line								= Key.of( "line" );
 	public static final Key		list								= Key.of( "list" );
+	public static final Key		listener							= Key.of( "listener" );
 	public static final Key		listInfo							= Key.of( "listInfo" );
 	public static final Key		listToJSON							= Key.of( "listToJSON" );
 	public static final Key		lJustify							= Key.of( "lJustify" );
@@ -806,6 +807,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		cacheKey							= Key.of( "cacheKey" );
 	public static final Key		cacheRegion							= Key.of( "cacheRegion" );
 	public static final Key		clientInfo							= Key.of( "clientInfo" );
+	public static final Key		clientManagement					= Key.of( "clientManagement" );
 	public static final Key		connectionString					= Key.of( "connectionString" );
 	public static final Key		database							= Key.of( "database" );
 	public static final Key		dbtype								= Key.of( "dbtype" );
