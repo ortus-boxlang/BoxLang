@@ -409,30 +409,9 @@ public class LoggingService {
 		if ( logger.isEmpty() ) {
 			logger = DEFAULT_LOG_FILE;
 		}
-		// Verify the log file ends in `.log` and if not, append it
-		if ( !logger.toLowerCase().endsWith( ".log" ) ) {
-			logger += ".log";
-		}
 
-		// If the file is an absolute path, use it, otherwise use the logs directory as the base
-		// All logger names should be lowercase
-		String			loggerFilePath	= Path.of( logger ).isAbsolute()
-		    ? Path.of( logger ).normalize().toString()
-		    : Paths.get( getLogsDirectory(), "/", logger.toLowerCase() ).normalize().toString();
-		String			loggerName		= FilenameUtils.getBaseName( loggerFilePath.toLowerCase() );
-
-		// Get the logger and set the level
-		LoggerContext	targetContext	= getLoggerContext();
-		Logger			oLogger			= targetContext.getLogger( loggerName );
-		oLogger.setLevel( Level.TRACE );
-		FileAppender<ILoggingEvent> appender = getOrBuildAppender( loggerFilePath, targetContext );
-
-		// Create or compute the file appender requested
-		// This provides locking also and caching so we don't have to keep creating them
-		// Shutdown will stop the appenders
-		if ( !oLogger.isAttached( appender ) ) {
-			oLogger.addAppender( appender );
-		}
+		// Compute and get the logger
+		Logger oLogger = getLogger( logger );
 
 		// Log according to the level
 		switch ( targetLogLevel.getNameNoCase() ) {
@@ -454,40 +433,33 @@ public class LoggingService {
 	 * If the logger doesn't exist, it will auto-register it and load it
 	 * using the name as the file name in the logs directory.
 	 *
-	 * @param loggerName The name of the logger
+	 * @param logger The name of the logger to retrieve.
 	 *
 	 * @return The logger requested
 	 */
-	public Logger getLogger( Key loggerName ) {
-		// Is it regsitered already?
-		if ( this.loggersMap.containsKey( loggerName ) ) {
-			return ( Logger ) this.loggersMap.get( loggerName );
+	public Logger getLogger( String logger ) {
+		// The incoming logger can be:
+		// 1. A named logger: "scheduler", "application", "orm", etc
+		// 2. A relative path: "scheduler.log", "application.log", "orm.log"
+		// 3. An absolute path: "/var/log/boxlang/scheduler.log"
+
+		// Make sure it ends in .log
+		if ( !logger.endsWith( ".log" ) ) {
+			logger = logger + ".log";
 		}
 
-		// Compute it
-		return getLogger(
-		    loggerName,
-		    Paths.get( getLogsDirectory(), "/", loggerName.getNameNoCase() ).normalize().toString()
-		);
-	}
+		// If the file is an absolute path, use it, otherwise use the logs directory as the base
+		String	loggerFilePath	= Path.of( logger ).normalize().isAbsolute()
+		    ? Path.of( logger ).normalize().toString()
+		    : Paths.get( getLogsDirectory(), logger.toLowerCase() ).normalize().toString();
+		Key		loggerKey		= Key.of( FilenameUtils.getBaseName( loggerFilePath.toLowerCase() ) );
 
-	/**
-	 * Get a logger by registered name.
-	 * If the logger doesn't exist, it will auto-register it and load it
-	 * using the name as the file name in the logs directory.
-	 *
-	 * @param loggerName The name of the logger
-	 * @param filePath   The file path to the logger. If any, this can be null
-	 *
-	 * @return The logger requested
-	 */
-	public Logger getLogger( Key loggerName, String filePath ) {
-		// Comput if absent and return the logger
-		return ( Logger ) this.loggersMap.computeIfAbsent( loggerName, key -> {
+		// Compute it or return it
+		return ( Logger ) this.loggersMap.computeIfAbsent( loggerKey, key -> {
 			LoggerContext	targetContext	= getLoggerContext();
 			Logger			oLogger			= targetContext.getLogger( key.getNameNoCase() );
 			oLogger.setLevel( Level.TRACE );
-			oLogger.addAppender( getOrBuildAppender( filePath, targetContext ) );
+			oLogger.addAppender( getOrBuildAppender( loggerFilePath, targetContext ) );
 			oLogger.setAdditive( true );
 			return oLogger;
 		} );
