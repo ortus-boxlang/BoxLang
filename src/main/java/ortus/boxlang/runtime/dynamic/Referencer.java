@@ -206,6 +206,11 @@ public class Referencer {
 		// Catch the case where we're assigning an actual scope
 		// arguments = someStruct
 		if ( object instanceof IScope os && keys.length == 0 ) {
+			// if we are setting a scope equal to itself, just return it.
+			if ( os == value ) {
+				return value;
+			}
+
 			CastAttempt<IStruct> castedStruct = StructCaster.attempt( value );
 			if ( castedStruct.wasSuccessful() ) {
 				os.clear();
