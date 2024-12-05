@@ -113,7 +113,8 @@ public class BoxTryTransformer extends AbstractTransformer {
 				}
 			}
 			nodes.addAll( AsmHelper.transformBodyExpressions( transpiler, boxTry.getFinallyBody(), context, returnValueContext ) );
-			nodes.add( new JumpInsnNode( Opcodes.GOTO, finallyEndLabel ) );
+			nodes.add( new VarInsnNode( Opcodes.ALOAD, eVar.index() ) );
+			nodes.add( new InsnNode( Opcodes.ATHROW ) );
 		}
 
 		TryCatchBlockNode catchHandler = new TryCatchBlockNode( tryStartLabel, tryEndLabel, finallyStartLabel,
