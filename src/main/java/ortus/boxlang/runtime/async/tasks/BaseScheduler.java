@@ -236,7 +236,7 @@ public class BaseScheduler implements IScheduler {
 			// Iterate over tasks and send them off for scheduling
 			this.tasks.entrySet()
 			    .parallelStream()
-			    .forEachOrdered( entry -> startupTask( entry.getKey(), entry.getValue() ) );
+			    .forEachOrdered( entry -> startupTask( entry.getKey() ) );
 
 			// Mark scheduler as started
 			this.started	= true;
@@ -285,12 +285,26 @@ public class BaseScheduler implements IScheduler {
 	}
 
 	/**
+	 * Startup manullay the passed in task
+	 *
+	 * @param task The task to startup
+	 *
+	 * @return The task record
+	 */
+	public TaskRecord startupTask( ScheduledTask task ) {
+		return startupTask( task.getName() );
+	}
+
+	/**
 	 * Startup a specific task by name
 	 *
-	 * @param taskName   The name of the task
-	 * @param taskRecord The task record object
+	 * @param taskName The name of the task
+	 *
+	 * @return The task record
 	 */
-	private void startupTask( String taskName, TaskRecord taskRecord ) {
+	public TaskRecord startupTask( String taskName ) {
+		// Get the task record
+		var taskRecord = getTaskRecord( taskName );
 		// Verify we can start it up the task or not
 		if ( taskRecord.task.isDisabled() ) {
 			taskRecord.disabled = true;
@@ -299,8 +313,7 @@ public class BaseScheduler implements IScheduler {
 			    this.name,
 			    taskName
 			);
-			// Continue iteration
-			return;
+			return taskRecord;
 		} else {
 			// Log scheduling startup
 			logger.info(
@@ -308,6 +321,16 @@ public class BaseScheduler implements IScheduler {
 			    this.name,
 			    taskName
 			);
+		}
+
+		// Verify that the task record: scheduledAt is null
+		if ( taskRecord.scheduledAt != null ) {
+			logger.warn(
+			    "- Scheduler ({}) skipping task ({}) as it has already been scheduled.",
+			    this.name,
+			    taskName
+			);
+			return taskRecord;
 		}
 
 		// Send it off for scheduling
@@ -330,6 +353,8 @@ public class BaseScheduler implements IScheduler {
 			taskRecord.errorMessage	= e.getMessage();
 			taskRecord.stacktrace	= Arrays.toString( e.getStackTrace() );
 		}
+
+		return taskRecord;
 	}
 
 	/**
