@@ -212,6 +212,30 @@ public class FunctionTest {
 		assertThat( argscope.get( extraExtra ) ).isEqualTo( "Jorge" );
 	}
 
+	@DisplayName( "can process argumentCollection structs that look like arrays" )
+	@Test
+	void testCanProcessArrayLikeStructArgumentCollection() {
+		Key			firstName	= Key.of( "firstName" );
+		Key			lastName	= Key.of( "lastName" );
+		Key			key1		= Key.of( "1" );
+		Key			key2		= Key.of( "2" );
+		Key			key3		= Key.of( "3" );
+		Argument[]	args		= new Argument[] {
+		    new Argument( true, "String", firstName, "brad" ),
+		    new Argument( true, "String", lastName, "wood" )
+		};
+		UDF			udf			= new SampleUDF( UDF.Access.PUBLIC, Key.of( "foo" ), "any", args, null );
+		IScope		argscope	= udf
+		    .createArgumentsScope( context, new HashMap<Key, Object>( Map.of(
+		        Function.ARGUMENT_COLLECTION, Map.of( key1, "Luis", key3, "Gavin", key2, "Majano" )
+		    ) ) );
+
+		assertThat( argscope.get( firstName ) ).isEqualTo( "Luis" );
+		assertThat( argscope.get( lastName ) ).isEqualTo( "Majano" );
+		assertThat( argscope.size() ).isEqualTo( 3 );
+		assertThat( argscope.get( key3 ) ).isEqualTo( "Gavin" );
+	}
+
 	@DisplayName( "can process argumentCollection Array override" )
 	@Test
 	void testCanProcessArgumentCollectionArrayOverride() {
