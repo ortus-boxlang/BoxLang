@@ -238,7 +238,7 @@ public class ApplicationTest {
 		instance.executeSource(
 		    """
 		        application
-					name="myJavaApp"
+					name="myJavaAppWithMappings"
 					mappings = { "/javalib": "/src/test/resources/libs/" }
 					javaSettings={
 						loadPaths = [ "/javalib/helloworld.jar" ],
