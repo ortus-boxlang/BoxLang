@@ -30,8 +30,8 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.IJDBCCapableContext;
 import ortus.boxlang.runtime.jdbc.ConnectionManager;
 import ortus.boxlang.runtime.jdbc.DataSource;
-import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.jdbc.ITransaction;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
@@ -121,7 +121,12 @@ public class Transaction extends Component {
 					transaction.commit();
 					break;
 				case "rollback" :
-					transaction.rollback( Key.of( attributes.getAsString( Key.savepoint ) ) );
+					String savepoint = attributes.getAsString( Key.savepoint );
+					if ( savepoint == null ) {
+						transaction.rollback();
+					} else {
+						transaction.rollback( Key.of( savepoint ) );
+					}
 					break;
 				case "setsavepoint" :
 					transaction.setSavepoint( Key.of( attributes.getAsString( Key.savepoint ) ) );
