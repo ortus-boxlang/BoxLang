@@ -277,7 +277,7 @@ public abstract class BaseApplicationListener {
 		}
 
 		// We are in app mode
-		URL[]				loadPathsUrls	= getJavaSettingsLoadPaths( context.getParentOfType( ApplicationBoxContext.class ) );
+		URL[]				loadPathsUrls	= getJavaSettingsLoadPaths( context );
 		String				loaderCacheKey	= EncryptionUtil.hash( Arrays.toString( loadPathsUrls ) );
 		DynamicClassLoader	target			= this.application.getClassLoader( loaderCacheKey );
 		if ( target == null ) {
@@ -291,11 +291,11 @@ public abstract class BaseApplicationListener {
 	 * This reads the javaSettings.loadPaths, expands them, and returns them as URLs of
 	 * jars and classes
 	 *
-	 * @param appContext The application context
+	 * @param requestContext The request context which can contain all the necessary information to expand the paths
 	 *
 	 * @return The expanded load paths as URLs
 	 */
-	public URL[] getJavaSettingsLoadPaths( ApplicationBoxContext appContext ) {
+	public URL[] getJavaSettingsLoadPaths( RequestBoxContext requestContext ) {
 		// Get the source location to resolve pathing
 		String				source					= StringCaster.cast( this.settings.get( Key.source ) );
 		ResolvedFilePath	listenerResolvedPath	= ResolvedFilePath.of( source );
@@ -306,7 +306,7 @@ public abstract class BaseApplicationListener {
 		IStruct				javaSettings			= this.settings.getAsStruct( Key.javaSettings );
 		Array				loadPaths				= ArrayCaster.cast( javaSettings.getOrDefault( Key.loadPaths, new Array() ) )
 		    .stream()
-		    .map( item -> FileSystemUtil.expandPath( appContext, ( String ) item, listenerResolvedPath ).absolutePath().toString() )
+		    .map( item -> FileSystemUtil.expandPath( requestContext, ( String ) item, listenerResolvedPath ).absolutePath().toString() )
 		    .collect( BLCollector.toArray() );
 
 		// Inflate them to what we need now
@@ -318,7 +318,7 @@ public abstract class BaseApplicationListener {
 	 * discovered and passed app context
 	 */
 	private void createOrUpdateClassLoaderPaths() {
-		this.application.startupClassLoaderPaths( this.context.getParentOfType( ApplicationBoxContext.class ) );
+		this.application.startupClassLoaderPaths( this.context );
 	}
 
 	/**

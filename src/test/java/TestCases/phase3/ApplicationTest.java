@@ -231,4 +231,25 @@ public class ApplicationTest {
 		assertThat( app.getClassLoaderCount() ).isEqualTo( 1 );
 	}
 
+	@DisplayName( "Can resolve mappings with java settings" )
+	@Test
+	public void testJavaSettingsMappings() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		        application
+					name="myJavaAppWithMappings"
+					mappings = { "/javalib": "/src/test/resources/libs/" }
+					javaSettings={
+						loadPaths = [ "/javalib/helloworld.jar" ],
+						reloadOnChange = true
+					};
+			""", context );
+		// @formatter:on
+
+		ApplicationBoxContext	appContext	= context.getParentOfType( ApplicationBoxContext.class );
+		Application				app			= appContext.getApplication();
+		assertThat( app.getClassLoaderCount() ).isEqualTo( 1 );
+	}
+
 }

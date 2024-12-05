@@ -392,6 +392,23 @@ public class ClassTest {
 		// @formatter:on
 	}
 
+	@DisplayName( "parent super.init will preserve child variables scope" )
+	@Test
+	public void superInitTest() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				request.calls = [];
+				settings = {
+					"foo" : "bar"
+				};
+				cfc = new src.test.java.TestCases.phase3.Child( properties=settings );
+				assert cfc.configure() == settings;
+
+			""", context );
+		// @formatter:on
+	}
+
 	@DisplayName( "basic class file via component path" )
 	@Test
 	public void testBasicClassFileViaComponentPath() {

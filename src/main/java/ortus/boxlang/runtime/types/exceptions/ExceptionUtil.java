@@ -193,16 +193,19 @@ public class ExceptionUtil {
 						lineNo		= sourceMap.convertJavaLineToSourceLine( element.getLineNumber() );
 						BLFileName	= sourceMap.getSource();
 					}
-					String	id	= "";
-					Matcher	m	= Pattern.compile( ".*\\$Func_(.*)$" ).matcher( element.getClassName() );
+					String	functionName	= "";
+					String	id				= "";
+					Matcher	m				= Pattern.compile( ".*\\$Func_(.*)$" ).matcher( element.getClassName() );
 					if ( m.find() ) {
-						id = m.group( 1 ) + "()";
+						functionName	= m.group( 1 );
+						id				= id + "()";
 					}
 					thisTagContext.add( Struct.of(
 					    Key.codePrintHTML, getSurroudingLinesOfCode( BLFileName, lineNo, true ),
 					    Key.codePrintPlain, getSurroudingLinesOfCode( BLFileName, lineNo, false ),
 					    Key.column, -1,
 					    Key.id, id,
+					    Key.function, functionName,
 					    Key.line, lineNo,
 					    Key.Raw_Trace, element.toString(),
 					    Key.template, BLFileName,

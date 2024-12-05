@@ -121,4 +121,29 @@ public class ListToArrayTest {
 		assertEquals( result.get( 2 ), "baz" );
 	}
 
+	@DisplayName( "It preserves spaces in strings when splitting on empty strings" )
+	@Test
+	public void testPreservesSpaces() {
+		Array result = ( Array ) instance.executeStatement( "listToArray( list='first second third', delimiter='' )" );
+		assertEquals( result.size(), 18 );
+		assertEquals( result.get( 0 ), "f" );
+		assertEquals( result.get( 1 ), "i" );
+		assertEquals( result.get( 2 ), "r" );
+		assertEquals( result.get( 3 ), "s" );
+		assertEquals( result.get( 4 ), "t" );
+		assertEquals( result.get( 5 ), " " );
+		assertEquals( result.get( 6 ), "s" );
+		assertEquals( result.get( 7 ), "e" );
+		assertEquals( result.get( 8 ), "c" );
+		assertEquals( result.get( 9 ), "o" );
+		assertEquals( result.get( 10 ), "n" );
+		assertEquals( result.get( 11 ), "d" );
+		assertEquals( result.get( 12 ), " " );
+		assertEquals( result.get( 13 ), "t" );
+		assertEquals( result.get( 14 ), "h" );
+		assertEquals( result.get( 15 ), "i" );
+		assertEquals( result.get( 16 ), "r" );
+		assertEquals( result.get( 17 ), "d" );
+	}
+
 }

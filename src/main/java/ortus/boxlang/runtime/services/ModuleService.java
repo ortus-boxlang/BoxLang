@@ -186,7 +186,7 @@ public class ModuleService extends BaseService {
 	 * Scans all possible module locations and registers all modules found
 	 * This method doesn't activate the modules, it just registers them
 	 */
-	void registerAll() {
+	public void registerAll() {
 		var timerLabel = "moduleservice-registerallmodules";
 		BoxRuntime.timerUtil.start( timerLabel );
 
@@ -223,7 +223,7 @@ public class ModuleService extends BaseService {
 	 *
 	 * @throws BoxRuntimeException If the module is not in the module registry
 	 */
-	void register( Key name ) {
+	public void register( Key name ) {
 		var timerLabel = "moduleservice-register-" + name.getName();
 		BoxRuntime.timerUtil.start( timerLabel );
 
@@ -289,7 +289,7 @@ public class ModuleService extends BaseService {
 	/**
 	 * Activate all modules that are not disabled
 	 */
-	void activateAll() {
+	public void activateAll() {
 		var timerLabel = "moduleservice-activateallmodules";
 		BoxRuntime.timerUtil.start( timerLabel );
 
@@ -320,7 +320,7 @@ public class ModuleService extends BaseService {
 	 *
 	 * @throws BoxRuntimeException If the module is not in the module registry
 	 */
-	void activate( Key name ) {
+	public void activate( Key name ) {
 		var timerLabel = "moduleservice-activate-" + name.getName();
 		BoxRuntime.timerUtil.start( timerLabel );
 
@@ -391,7 +391,7 @@ public class ModuleService extends BaseService {
 	/**
 	 * Unload all modules
 	 */
-	void unloadAll() {
+	public void unloadAll() {
 		this.registry
 		    .keySet()
 		    .stream()
@@ -403,7 +403,7 @@ public class ModuleService extends BaseService {
 	 *
 	 * @param name The name of the module to unload
 	 */
-	void unload( Key name ) {
+	public void unload( Key name ) {
 		// Check if the module is in the registry or it's already deactivated
 		if ( !this.registry.containsKey( name ) || !this.registry.get( name ).isActivated() ) {
 			return;

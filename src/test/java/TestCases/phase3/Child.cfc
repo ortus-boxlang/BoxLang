@@ -1,8 +1,14 @@
 component extends="Parent" {
 
-    function init() {
-        return super.init();
-    }
+	// If you un-comment this out, then the ClassTest.superInitTest will pass
+    // function init( struct properties = {} ) {
+	// 	super.init( argumentCollection = arguments );
+    //     return this;
+    // }
+
+	function configure(){
+		return variables.properties;
+	}
 
     private void function setupFrameworkDefaults() {
         request.calls.append( "running child setupFrameworkDefaults()" );

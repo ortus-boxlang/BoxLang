@@ -89,6 +89,92 @@
 						</td>
 					</tr>
 					<!--- TODO: Details from other exception subclasses --->
+					<bx:if var instanceof "ortus.boxlang.runtime.types.exceptions.DatabaseException">
+						<tr>
+							<th
+								aria-expanded="true"
+								data-bx-toggle="onoff"
+								scope="row"
+								valign="top"
+								tabindex="0"
+							>
+								SQL
+							</th>
+							<td>
+								<div class="bx-onoff">
+									<bx:dump var="#var.getSQL()#">
+								</div>
+							</td>
+						</tr>
+
+						<tr>
+							<th
+								aria-expanded="true"
+								data-bx-toggle="onoff"
+								scope="row"
+								valign="top"
+								tabindex="0"
+							>
+								Query Error
+							</th>
+							<td>
+								<div class="bx-onoff">
+									<bx:dump var="#var.getQueryError()#">
+								</div>
+							</td>
+						</tr>
+
+						<tr>
+							<th
+								aria-expanded="true"
+								data-bx-toggle="onoff"
+								scope="row"
+								valign="top"
+								tabindex="0"
+							>
+								Where
+							</th>
+							<td>
+								<div class="bx-onoff">
+									<bx:dump var="#var.getWhere()#">
+								</div>
+							</td>
+						</tr>
+
+						<tr>
+							<th
+								aria-expanded="true"
+								data-bx-toggle="onoff"
+								scope="row"
+								valign="top"
+								tabindex="0"
+							>
+								SQL State
+							</th>
+							<td>
+								<div class="bx-onoff">
+									<bx:dump var="#var.getSQLState()#">
+								</div>
+							</td>
+						</tr>
+
+						<tr>
+							<th
+								aria-expanded="true"
+								data-bx-toggle="onoff"
+								scope="row"
+								valign="top"
+								tabindex="0"
+							>
+								Native Error Code
+							</th>
+							<td>
+								<div class="bx-onoff">
+									<bx:dump var="#var.getNativeErrorCode()#">
+								</div>
+							</td>
+						</tr>
+					</bx:if>
 				</bx:if>
 
 				<bx:if var.getCause() != null >

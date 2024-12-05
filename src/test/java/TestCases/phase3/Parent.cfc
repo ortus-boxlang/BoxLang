@@ -1,6 +1,10 @@
-component {
+component accessors="true" extends="GrandParent" {
 
-    function init() {
+	property name="properties" type="struct";
+
+    function init( struct properties = {} ) {
+		variables.properties = arguments.properties;
+		super.init();
         setupFrameworkDefaults();
         return this;
     }
