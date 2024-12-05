@@ -403,8 +403,7 @@ public class ClassTest {
 					"foo" : "bar"
 				};
 				cfc = new src.test.java.TestCases.phase3.Child( properties=settings );
-
-				assert cfc.getProperties() == settings;
+				assert cfc.configure() == settings;
 
 			""", context );
 		// @formatter:on
