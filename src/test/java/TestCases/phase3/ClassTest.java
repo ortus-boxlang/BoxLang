@@ -129,7 +129,7 @@ public class ClassTest {
 		    	/**
 		    	 * This boolean flag tells the module service to skip the module registration/activation process.
 		    	 */
-		    	this.disabled = false;
+		    	this.enabled = true;
 
 		    	/**
 		    	 * --------------------------------------------------------------------------
