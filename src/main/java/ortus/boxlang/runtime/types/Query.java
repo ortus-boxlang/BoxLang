@@ -21,6 +21,7 @@ import java.io.Serializable;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -33,7 +34,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import java.time.Duration;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
@@ -974,6 +974,10 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	@Override
 	public String toString() {
 		return asString();
+	}
+
+	public Array getColumnNames() {
+		return getColumnArray();
 	}
 
 }
