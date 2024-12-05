@@ -250,7 +250,7 @@ public class ModuleService extends BaseService {
 		moduleRecord.loadDescriptor( runtimeContext );
 
 		// Check if the module is disabled, if so, skip it
-		if ( moduleRecord.isEnabled() ) {
+		if ( !moduleRecord.isEnabled() ) {
 			logger.warn(
 			    "+ Module Service: Module [{}] is disabled, skipping registration",
 			    moduleRecord.name
@@ -342,7 +342,7 @@ public class ModuleService extends BaseService {
 		}
 
 		// Check if the module is disabled
-		if ( this.registry.get( name ).isEnabled() ) {
+		if ( !this.registry.get( name ).isEnabled() ) {
 			logger.debug(
 			    "+ Module Service: Module [{}] is disabled, skipping activation",
 			    name
