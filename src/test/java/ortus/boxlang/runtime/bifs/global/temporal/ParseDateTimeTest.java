@@ -365,4 +365,24 @@ public class ParseDateTimeTest {
 
 	}
 
+	@DisplayName( "It tests the BIF ParseDateTime with a common epoch pattern" )
+	@Test
+	public void testParseLongAndShortDateTime() {
+		instance.executeSource(
+		    """
+		    result = ParseDateTime( "January 1 1970 00:00" );
+		    """,
+		    context );
+		DateTime result = ( DateTime ) variables.get( Key.of( "result" ) );
+		assertThat( result ).isInstanceOf( DateTime.class );
+		assertThat( result.toString() ).isInstanceOf( String.class );
+		assertThat( IntegerCaster.cast( result.format( "yyyy" ) ) ).isEqualTo( 1970 );
+		assertThat( IntegerCaster.cast( result.format( "M" ) ) ).isEqualTo( 1 );
+		assertThat( IntegerCaster.cast( result.format( "d" ) ) ).isEqualTo( 1 );
+		assertThat( IntegerCaster.cast( result.format( "H" ) ) ).isEqualTo( 0 );
+		assertThat( IntegerCaster.cast( result.format( "m" ) ) ).isEqualTo( 0 );
+		assertThat( IntegerCaster.cast( result.format( "s" ) ) ).isEqualTo( 0 );
+
+	}
+
 }

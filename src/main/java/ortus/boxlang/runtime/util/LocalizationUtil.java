@@ -218,7 +218,7 @@ public final class LocalizationUtil {
 
 	// Matches long form date strings like "Jan 1, 2023" or "January 1, 2023"
 	public static final Pattern					REGEX_LONGFORM_PATTERN			= Pattern.compile(
-	    "(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\\s+\\d{1,2},\\s+\\d{4}"
+	    "(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\\s+\\d{1,2},?\\s+\\d{4}"
 	);
 	// Matches timezone offset like +01:00, -08:00, or Z
 	public static final Pattern					REGEX_TZ_OFFSET_PATTERN			= Pattern.compile( ".*[+-][0-9]{2}:?[0-9]{2}|Z$" );
@@ -581,7 +581,7 @@ public final class LocalizationUtil {
 	public static ZonedDateTime parseFromString( String dateTime, Locale locale, ZoneId timezone ) {
 
 		Boolean	likelyHasDate			= dateTime.contains( "/" ) || dateTime.contains( "-" );
-		Boolean	likelyIsLongFormDate	= !likelyHasDate && REGEX_LONGFORM_PATTERN.matcher( dateTime ).matches();
+		Boolean	likelyIsLongFormDate	= !likelyHasDate && REGEX_LONGFORM_PATTERN.matcher( dateTime ).find();
 		Boolean	likelyHasTime			= dateTime.contains( ":" );
 		Boolean	likelyHasDateTime		= ( likelyIsLongFormDate || likelyHasDate ) && likelyHasTime;
 		Boolean	likelyIsTimeOnly		= !likelyHasDate && !likelyIsLongFormDate && likelyHasTime;
@@ -741,6 +741,9 @@ public final class LocalizationUtil {
 		            .parseCaseInsensitive()
 		            .appendPattern( "yyyy-MM-dd hh:mm:ss a" )
 		            .toFormatter( locale )
+		    )
+		    .appendOptional(
+		        DateTimeFormatter.ofPattern( "MMMM d yyyy HH:mm" )
 		    )
 		    .appendOptional( DateTimeFormatter.ofPattern( DateTime.ISO_DATE_TIME_MILIS_FORMAT_MASK ) )
 		    .appendOptional( DateTimeFormatter.ofPattern( DateTime.ISO_DATE_TIME_MILIS_NO_T_FORMAT_MASK ) )
