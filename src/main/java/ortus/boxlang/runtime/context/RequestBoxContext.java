@@ -38,6 +38,7 @@ import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
+import ortus.boxlang.runtime.util.LocalizationUtil;
 import ortus.boxlang.runtime.util.RequestThreadManager;
 
 /**
@@ -362,6 +363,11 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 		IStruct datasources = appSettings.getAsStruct( Key.datasources );
 		if ( !datasources.isEmpty() ) {
 			config.getAsStruct( Key.datasources ).putAll( datasources );
+		}
+
+		String timezone = appSettings.getAsString( Key.timezone );
+		if ( timezone != null ) {
+			config.put( Key.timezone, LocalizationUtil.parseZoneId( timezone ) );
 		}
 
 		// Mapping overrides

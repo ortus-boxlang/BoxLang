@@ -20,6 +20,7 @@ package TestCases.phase3;
 import static com.google.common.truth.Truth.assertThat;
 
 import java.nio.file.Path;
+import java.time.ZoneId;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -250,6 +251,48 @@ public class ApplicationTest {
 		ApplicationBoxContext	appContext	= context.getParentOfType( ApplicationBoxContext.class );
 		Application				app			= appContext.getApplication();
 		assertThat( app.getClassLoaderCount() ).isEqualTo( 1 );
+	}
+
+	@DisplayName( "Datasources declared in App.cfc will be promoted" )
+	@Test
+	public void testDatasourceDeclaration() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		        application
+					name="myAppWithDatasource"
+					datasources = { 
+						mysql = {
+							database : "mysql",
+							host : "localhost",
+							port : "3306",
+							driver : "MySQL",
+							username : "root",
+							password : "mysql"
+						}
+					};
+			""", context );
+		// @formatter:on
+
+		IStruct config = context.getConfig();
+		assertThat( config.getAsStruct( Key.datasources ) ).isNotEmpty();
+	}
+
+	@DisplayName( "Timezone declared in App.cfc will be promoted" )
+	@Test
+	public void testTimezoneDeclaration() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		        application
+					name="myAppWithDatasource"
+					timezone="America/Los_Angeles";
+			""", context );
+		// @formatter:on
+
+		assertThat( context.getConfig().get( Key.timezone ) ).isInstanceOf( ZoneId.class );
+		ZoneId zone = ( ZoneId ) context.getConfig().get( Key.timezone );
+		assertThat( zone.getId() ).isEqualTo( "America/Los_Angeles" );
 	}
 
 }
