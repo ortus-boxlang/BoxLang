@@ -17,7 +17,10 @@
  */
 package ortus.boxlang.runtime.loader;
 
+import java.net.URL;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,9 +32,12 @@ import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.resolvers.BoxResolver;
 import ortus.boxlang.runtime.loader.resolvers.IClassResolver;
 import ortus.boxlang.runtime.loader.resolvers.JavaResolver;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ClassNotFoundBoxLangException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
+import ortus.boxlang.runtime.util.EncryptionUtil;
 
 /**
  * This is a Class Loader is in charge of locating Box classes in the lookup algorithm
@@ -101,10 +107,18 @@ public class ClassLocator extends ClassLoader {
 	    BX_PREFIX, JAVA_PREFIX
 	);
 
+	private static final String							COLON				= ":";
+
 	/**
 	 * The Runtime
 	 */
 	private BoxRuntime									runtime;
+
+	/**
+	 * This locator can track a-la-carte class loaders for dynamic class loading
+	 * Requested by createObject() calls.
+	 */
+	private Map<String, DynamicClassLoader>				classLoaders		= new ConcurrentHashMap<>();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -455,7 +469,10 @@ public class ClassLocator extends ClassLoader {
 		// Must be final for the lambda to use it
 		final List<ImportDefinition>	thisImports		= imports;
 		// Unique Cache Key
-		String							cacheKey		= resolverPrefix + ":" + name;
+		String							cacheKey		= new StringBuilder( resolverPrefix )
+		    .append( COLON )
+		    .append( name )
+		    .toString();
 
 		// Try to resolve it
 		Optional<ClassLocation>			resolvedClass	= getClass( cacheKey )
@@ -480,6 +497,47 @@ public class ClassLocator extends ClassLoader {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Load a class from a specific array of class paths
+	 *
+	 * @param context        The current context of execution
+	 * @param name           The fully qualified path/name of the class to load
+	 * @param classPaths     The array of class paths to use when resolving the class
+	 * @param throwException If true, it will throw an exception if the class is not found, else it will return null
+	 * @param imports        The list of imports to use when resolving the class
+	 *
+	 * @return The invokable representation of the class
+	 */
+	public DynamicObject loadFromClassPaths(
+	    IBoxContext context,
+	    String name,
+	    Array classPaths,
+	    Boolean throwException,
+	    List<ImportDefinition> imports ) {
+
+		// Get the class paths and expand them
+		URL[]				loadPathsUrls	= DynamicClassLoader.inflateClassPaths( classPaths );
+		String				loaderCacheKey	= EncryptionUtil.hash( Arrays.toString( loadPathsUrls ) );
+		DynamicClassLoader	classLoader		= this.classLoaders.computeIfAbsent(
+		    loaderCacheKey,
+		    key -> {
+			    // logger.debug( "Application ClassLoader [{}] registered with these paths: [{}]", this.name, Arrays.toString( loadPathsUrls ) );
+			    return new DynamicClassLoader( Key.of( loaderCacheKey ), loadPathsUrls,
+			        BoxRuntime.getInstance().getRuntimeLoader(), false );
+		    } );
+
+		try {
+			return DynamicObject.of( classLoader.loadClass( name ), context );
+		} catch ( ClassNotFoundException e ) {
+			if ( throwException ) {
+				throw new ClassNotFoundBoxLangException(
+				    String.format( "The requested class [%s] has not been located in the class paths.", name )
+				);
+			}
+			return null;
+		}
 	}
 
 	/**
@@ -619,6 +677,48 @@ public class ClassLocator extends ClassLoader {
 		}
 
 		return null;
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Class Loader Methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Get all the class loaders registered
+	 *
+	 * @return The class loader map
+	 */
+	public Map<String, DynamicClassLoader> getClassLoaders() {
+		return this.classLoaders;
+	}
+
+	/**
+	 * Verify if the class loader exists by cache key
+	 *
+	 * @param loaderKey The key of the class loader
+	 */
+	public boolean hasClassLoader( String loaderKey ) {
+		return this.classLoaders.containsKey( loaderKey );
+	}
+
+	/**
+	 * Get a class loader by cache key
+	 *
+	 * @param loaderKey The key of the class loader
+	 *
+	 * @return The class loader
+	 */
+	public DynamicClassLoader getClassLoader( String loaderKey ) {
+		return this.classLoaders.get( loaderKey );
+	}
+
+	/**
+	 * Count how many class loaders we have loaded
+	 */
+	public long getClassLoaderCount() {
+		return this.classLoaders.size();
 	}
 
 	/**
