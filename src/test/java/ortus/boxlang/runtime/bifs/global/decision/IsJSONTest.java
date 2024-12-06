@@ -101,34 +101,12 @@ public class IsJSONTest {
 		assertThat( ( Boolean ) variables.get( Key.of( "aStructWithSingleQuotedKeys" ) ) ).isFalse();
 	}
 
-	@DisplayName( "It will return true with valid JSON with escape characters" )
+	@DisplayName( "It will return true when reading a JSON file with a BOM and escape characters" )
 	@Test
 	public void testEscapeCharacters() {
-		String testJSON = """
-		                  [
-		                  	{
-		                  		"whitelist": "user\\.login,user\\.logout,^main.*",
-		                  		"securelist": "^user\\.*, ^admin",
-		                  		"match": "event",
-		                  		"roles": "admin",
-		                  		"permissions": "",
-		                  		"redirect": "user.login"
-		                  	},
-		                  	{
-		                  		"whitelist": "",
-		                  		"securelist": "^shopping",
-		                  		"match": "url",
-		                  		"roles": "",
-		                  		"permissions": "shop,checkout",
-		                  		"redirect": "user.login",
-		                  		"useSSL": true
-		                  	}
-		                  ]
-		                  """;
-		variables.put( Key.of( "testJSON" ), testJSON );
 		instance.executeSource(
 		    """
-		    assert isJSON( trim( testJSON ) ) == true;
+		    assert isJSON( fileRead( "src/test/resources/test-templates/json_withBOM.json" ) ) == true;
 		       """,
 		    context );
 	}

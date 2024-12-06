@@ -298,4 +298,17 @@ public class JSONDeserializeTest {
 
 	}
 
+	@DisplayName( "It can deserialize valid JSON with escape characters and a BOM" )
+	@Test
+	public void testEscapeCharacters() {
+		instance.executeSource(
+		    """
+		    result = JSONDeserialize( fileRead( "src/test/resources/test-templates/json_withBOM.json" ) );
+		            """,
+		    context );
+
+		Object result = variables.get( Key.of( "result" ) );
+		assertThat( result ).isInstanceOf( Array.class );
+	}
+
 }

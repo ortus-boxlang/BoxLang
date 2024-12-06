@@ -53,7 +53,9 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import org.apache.commons.io.ByteOrderMark;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.BOMInputStream;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
 
@@ -157,10 +159,6 @@ public final class FileSystemUtil {
 		} else {
 			path = Path.of( filePath );
 		}
-		Charset cs = StandardCharsets.UTF_8;
-		if ( charset != null ) {
-			cs = Charset.forName( charset );
-		}
 
 		try {
 			if ( isURL ) {
@@ -169,10 +167,7 @@ public final class FileSystemUtil {
 					if ( isBinaryFile( filePath ) ) {
 						return IOUtils.toByteArray( fileURL.openStream() );
 					} else {
-						InputStreamReader inputReader = new InputStreamReader( fileURL.openStream() );
-						try ( BufferedReader reader = new BufferedReader( inputReader ) ) {
-							return reader.lines().parallel().collect( Collectors.joining( LINE_SEPARATOR ) );
-						}
+						return StringCaster.cast( fileURL.openStream(), charset, true );
 					}
 				} catch ( MalformedURLException e ) {
 					throw new BoxRuntimeException(
@@ -184,11 +179,28 @@ public final class FileSystemUtil {
 				if ( isBinaryFile( filePath ) ) {
 					return Files.readAllBytes( path );
 				} else if ( bufferSize == null ) {
-					return Files.readString( path, cs );
+					return StringCaster.cast( Files.newInputStream( path ), charset, true );
 				} else {
-					try ( BufferedReader reader = new BufferedReader( Files.newBufferedReader( path, cs ), bufferSize ) ) {
-						return reader.lines().parallel().collect( Collectors.joining( LINE_SEPARATOR ) );
-					}
+					// @formatter:off
+					try (
+					    BOMInputStream inputStream = BOMInputStream.builder()
+					        .setPath( path )
+					        .setByteOrderMarks( ByteOrderMark.UTF_8, ByteOrderMark.UTF_16BE, ByteOrderMark.UTF_16LE, ByteOrderMark.UTF_32BE,
+					            ByteOrderMark.UTF_32LE )
+					        .setInclude( false )
+					        .get() 
+						) {
+							InputStreamReader inputReader = null;
+							if ( charset != null ) {
+								inputReader = new InputStreamReader( inputStream, charset );
+							} else {
+								inputReader = new InputStreamReader( inputStream );
+							}
+							try ( BufferedReader reader = new BufferedReader( inputReader, bufferSize ) ) {
+								return reader.lines().collect( Collectors.joining( FileSystemUtil.LINE_SEPARATOR ) );
+							}
+						}
+					// @formatter:on
 				}
 			}
 
@@ -586,7 +598,7 @@ public final class FileSystemUtil {
 		Object[] mimeParts = mimeType.split( "/" );
 
 		return !TEXT_MIME_PREFIXES.contains( mimeParts[ 0 ] )
-		    && !TEXT_MIME_PREFIXES.contains( mimeParts[ mimeParts.length - 1 ] );
+		    && !TEXT_MIME_SUFFIXES.contains( mimeParts[ mimeParts.length - 1 ] );
 	}
 
 	/**
