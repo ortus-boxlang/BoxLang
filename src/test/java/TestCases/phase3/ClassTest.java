@@ -395,7 +395,6 @@ public class ClassTest {
 
 	@DisplayName( "parent super.init will preserve child variables scope" )
 	@Test
-	@Disabled( "For Brad's super duper ref map fix" )
 	public void superInitTest() {
 		// @formatter:off
 		instance.executeSource(
@@ -1523,7 +1522,6 @@ public class ClassTest {
 
 	@DisplayName( "udf class has enclosing class reference" )
 	@Test
-	@Disabled
 	public void testUDFClassEnclosingClassReference() {
 
 		instance.executeSource(

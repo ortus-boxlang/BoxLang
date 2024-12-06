@@ -513,6 +513,12 @@ public class AsmHelper {
 
 	public static void init( ClassVisitor classVisitor, boolean singleton, Type type, Type superClass, Consumer<MethodVisitor> onConstruction,
 	    Type... interfaces ) {
+		init( classVisitor, singleton, type, superClass, null, onConstruction, interfaces );
+	}
+
+	public static void init( ClassVisitor classVisitor, boolean singleton, Type type, Type superClass, Consumer<ClassVisitor> postVisit,
+	    Consumer<MethodVisitor> onConstruction,
+	    Type... interfaces ) {
 		classVisitor.visit(
 		    Opcodes.V17,
 		    Opcodes.ACC_PUBLIC,
@@ -520,6 +526,10 @@ public class AsmHelper {
 		    null,
 		    superClass.getInternalName(),
 		    interfaces.length == 0 ? null : Arrays.stream( interfaces ).map( Type::getInternalName ).toArray( String[]::new ) );
+
+		if ( postVisit != null ) {
+			postVisit.accept( classVisitor );
+		}
 
 		if ( singleton ) {
 			addGetInstance( classVisitor, type );

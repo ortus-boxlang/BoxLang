@@ -194,9 +194,12 @@ public class BoxClassTransformer {
 		}
 
 		ClassNode classNode = new ClassNode();
-		classNode.visitSource( filePath, null );
+		transpiler.setOwningCLass( classNode );
+		transpiler.setProperty( "enclosingClassInternalName", type.getInternalName() );
 
-		AsmHelper.init( classNode, false, type, superclass, methodVisitor -> {
+		AsmHelper.init( classNode, false, type, superclass, cv -> {
+			classNode.visitSource( filePath, null );
+		}, methodVisitor -> {
 			methodVisitor.visitVarInsn( Opcodes.ALOAD, 0 );
 			methodVisitor.visitTypeInsn( Opcodes.NEW, Type.getInternalName( ClassVariablesScope.class ) );
 			methodVisitor.visitInsn( Opcodes.DUP );

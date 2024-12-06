@@ -54,6 +54,7 @@ public abstract class Transpiler implements ITranspiler {
 	private List<ImportDefinition>							imports					= new ArrayList<>();
 	private List<MethodContextTracker>						methodContextTrackers	= new ArrayList<MethodContextTracker>();
 	private List<BoxStaticInitializer>						staticInitializers		= new ArrayList<>();
+	private ClassNode										owningClassNode			= null;
 
 	/**
 	 * Set a property
@@ -63,6 +64,14 @@ public abstract class Transpiler implements ITranspiler {
 	 */
 	public void setProperty( String key, String value ) {
 		properties.put( key, value );
+	}
+
+	public void setOwningCLass( ClassNode node ) {
+		owningClassNode = node;
+	}
+
+	public ClassNode getOwningClass() {
+		return owningClassNode;
 	}
 
 	public boolean canReturn() {

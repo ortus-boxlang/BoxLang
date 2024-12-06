@@ -81,9 +81,18 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		BoxAccessModifier	access			= function.getAccessModifier() == null ? BoxAccessModifier.Public : function.getAccessModifier();
 
 		ClassNode			classNode		= new ClassNode();
-		classNode.visitSource( transpiler.getProperty( "filePath" ), null );
-		AsmHelper.init( classNode, true, type, Type.getType( UDF.class ), methodVisitor -> {
+		AsmHelper.init( classNode, true, type, Type.getType( UDF.class ), cv -> {
+			cv.visitSource( transpiler.getProperty( "filePath" ), null );
+			cv.visitNestHost( transpiler.getProperty( "enclosingClassInternalName" ) );
+			cv.visitInnerClass( type.getInternalName(), transpiler.getProperty( "enclosingClassInternalName" ),
+			    "Func_" + function.getName(),
+			    Opcodes.ACC_PUBLIC );
+		}, methodVisitor -> {
 		} );
+		transpiler.getOwningClass().visitInnerClass( type.getInternalName(), transpiler.getProperty( "enclosingClassInternalName" ),
+		    "Func_" + function.getName(),
+		    Opcodes.ACC_PUBLIC );
+
 		transpiler.setAuxiliary( type.getClassName(), classNode );
 
 		AsmHelper.addStaticFieldGetter( classNode,
