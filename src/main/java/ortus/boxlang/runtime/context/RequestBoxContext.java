@@ -367,7 +367,7 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 
 		String timezone = appSettings.getAsString( Key.timezone );
 		if ( timezone != null ) {
-			config.put( Key.timezone, LocalizationUtil.parseZoneId( timezone ) );
+			setTimezone( LocalizationUtil.parseZoneId( timezone ) );
 		}
 
 		// Mapping overrides
