@@ -316,7 +316,9 @@ public class HTTP extends Component {
 				throw new BoxRuntimeException( innerException.getMessage() );
 			}
 			return DEFAULT_RETURN;
-		} catch ( URISyntaxException | InterruptedException | IOException e ) {
+		} catch ( InterruptedException e ) {
+			throw new BoxRuntimeException( "The request was interrupted", "InterruptedException", e );
+		} catch ( URISyntaxException | IOException e ) {
 			throw new BoxRuntimeException( e.getMessage(), e );
 		}
 	}
