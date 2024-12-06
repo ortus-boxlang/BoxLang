@@ -130,7 +130,7 @@ public class RuntimeBoxContext extends BaseBoxContext {
 	 *
 	 */
 	@Override
-	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow ) {
+	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow, boolean forAssign ) {
 
 		// There are no near-by scopes in the runtime context. Everything is global here.
 
@@ -138,7 +138,7 @@ public class RuntimeBoxContext extends BaseBoxContext {
 			return null;
 		}
 
-		return scopeFind( key, defaultScope );
+		return scopeFind( key, defaultScope, forAssign );
 	}
 
 	/**
@@ -150,10 +150,10 @@ public class RuntimeBoxContext extends BaseBoxContext {
 	 *
 	 */
 	@Override
-	public ScopeSearchResult scopeFind( Key key, IScope defaultScope ) {
+	public ScopeSearchResult scopeFind( Key key, IScope defaultScope, boolean forAssign ) {
 
 		if ( parent != null ) {
-			return parent.scopeFind( key, defaultScope );
+			return parent.scopeFind( key, defaultScope, forAssign );
 		}
 
 		// Default scope requested for missing keys

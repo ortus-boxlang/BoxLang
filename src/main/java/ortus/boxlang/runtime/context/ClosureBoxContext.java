@@ -139,7 +139,7 @@ public class ClosureBoxContext extends FunctionBoxContext {
 	 * @return The result of the search. Null if performing a shallow search and nothing was fond
 	 *
 	 */
-	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow ) {
+	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow, boolean forAssign ) {
 
 		if ( key.equals( localScope.getName() ) ) {
 			return new ScopeSearchResult( localScope, localScope, key, true );
@@ -151,14 +151,14 @@ public class ClosureBoxContext extends FunctionBoxContext {
 
 		Object result = localScope.getRaw( key );
 		// Null means not found
-		if ( isDefined( result ) ) {
+		if ( isDefined( result, forAssign ) ) {
 			// Unwrap the value now in case it was really actually null for real
 			return new ScopeSearchResult( localScope, Struct.unWrapNull( result ), key );
 		}
 
 		result = argumentsScope.getRaw( key );
 		// Null means not found
-		if ( isDefined( result ) ) {
+		if ( isDefined( result, forAssign ) ) {
 			// Unwrap the value now in case it was really actually null for real
 			return new ScopeSearchResult( argumentsScope, Struct.unWrapNull( result ), key );
 		}
@@ -184,7 +184,7 @@ public class ClosureBoxContext extends FunctionBoxContext {
 		// Now we pick up where we left off at the original closure context's parent.
 		// Closures don't care about the "nearby" scopes of their parent execution contexts! We only climb the parent chain to find global scopes like CGI or
 		// server
-		return parent.scopeFind( key, defaultScope );
+		return parent.scopeFind( key, defaultScope, forAssign );
 
 	}
 

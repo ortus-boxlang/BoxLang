@@ -167,7 +167,7 @@ public class Phase2Closure$closure1 extends Closure {
 		    Key.of( "Greeting" ),
 		    Concat.invoke(
 		        "Hello ",
-		        context.scopeFindNearby( Key.of( "name" ), null ).value()
+		        context.scopeFindNearby( Key.of( "name" ), null, false ).value()
 		    )
 		);
 
@@ -175,17 +175,17 @@ public class Phase2Closure$closure1 extends Closure {
 		Referencer.getAndInvoke(
 		    context,
 		    // Object
-		    context.scopeFindNearby( Key.of( "out" ), null ).value(),
+		    context.scopeFindNearby( Key.of( "out" ), null, false ).value(),
 		    // Method
 		    Key.of( "println" ),
 		    // Arguments
 		    new Object[] {
-		        "Inside Closure, outside lookup finds: " + context.scopeFindNearby( Key.of( "outside" ), null ).value()
+		        "Inside Closure, outside lookup finds: " + context.scopeFindNearby( Key.of( "outside" ), null, false ).value()
 		    },
 		    false
 		);
 
-		return context.scopeFindNearby( Key.of( "greeting" ), null ).value();
+		return context.scopeFindNearby( Key.of( "greeting" ), null, false ).value();
 	}
 
 }

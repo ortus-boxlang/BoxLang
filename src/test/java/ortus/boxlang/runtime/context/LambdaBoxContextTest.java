@@ -79,7 +79,7 @@ public class LambdaBoxContextTest {
 		variablesScope.put( variablesOnly, "variables scope only" );
 
 		// ambiguous finds local scope
-		assertThat( context.scopeFindNearby( ambiguous, null ).value() ).isEqualTo( "local scope ambiguous" );
+		assertThat( context.scopeFindNearby( ambiguous, null, false ).value() ).isEqualTo( "local scope ambiguous" );
 
 		// local.ambiguous works
 		assertThat( context.getScopeNearby( LocalScope.name ).get( ambiguous ) ).isEqualTo( "local scope ambiguous" );
@@ -89,9 +89,9 @@ public class LambdaBoxContextTest {
 		assertThat( context.getScopeNearby( ArgumentsScope.name ).get( ambiguous ) ).isEqualTo( "arguments scope ambiguous" );
 
 		// find var in local
-		assertThat( context.scopeFindNearby( localOnly, null ).value() ).isEqualTo( "local scope only" );
+		assertThat( context.scopeFindNearby( localOnly, null, false ).value() ).isEqualTo( "local scope only" );
 		// find var in arguments
-		assertThat( context.scopeFindNearby( argsOnly, null ).value() ).isEqualTo( "arguments scope only" );
+		assertThat( context.scopeFindNearby( argsOnly, null, false ).value() ).isEqualTo( "arguments scope only" );
 
 		// Lambda has no visiblity to variables scope
 		assertThrows( Throwable.class, () -> context.getScopeNearby( VariablesScope.name ).get( ambiguous ) );

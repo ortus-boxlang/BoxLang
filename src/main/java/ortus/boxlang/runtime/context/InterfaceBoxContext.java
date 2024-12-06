@@ -75,7 +75,7 @@ public class InterfaceBoxContext extends BaseBoxContext {
 	 * @return The search result
 	 */
 	@Override
-	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow ) {
+	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow, boolean forAssign ) {
 
 		// Static Scope
 		if ( key.equals( StaticScope.name ) ) {
@@ -90,7 +90,7 @@ public class InterfaceBoxContext extends BaseBoxContext {
 
 		Object result = staticScope.getRaw( key );
 		// Null means not found
-		if ( isDefined( result ) ) {
+		if ( isDefined( result, forAssign ) ) {
 			// Unwrap the value now in case it was really actually null for real
 			return new ScopeSearchResult( staticScope, Struct.unWrapNull( result ), key );
 		}
@@ -100,7 +100,7 @@ public class InterfaceBoxContext extends BaseBoxContext {
 		}
 
 		// A component cannot see nearby scopes above it
-		return parent.scopeFind( key, defaultScope );
+		return parent.scopeFind( key, defaultScope, forAssign );
 
 	}
 
@@ -113,9 +113,9 @@ public class InterfaceBoxContext extends BaseBoxContext {
 	 * @return The search result
 	 */
 	@Override
-	public ScopeSearchResult scopeFind( Key key, IScope defaultScope ) {
+	public ScopeSearchResult scopeFind( Key key, IScope defaultScope, boolean forAssign ) {
 		// The interface context has no "global" scopes, so just defer to parent
-		return parent.scopeFind( key, defaultScope );
+		return parent.scopeFind( key, defaultScope, forAssign );
 	}
 
 	/**

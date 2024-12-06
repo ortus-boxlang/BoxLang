@@ -594,7 +594,7 @@ public class BaseBoxContext implements IBoxContext {
 	protected Function findFunction( Key name ) {
 		ScopeSearchResult result = null;
 		try {
-			result = scopeFindNearby( name, null );
+			result = scopeFindNearby( name, null, false );
 		} catch ( KeyNotFoundException e ) {
 			return null;
 		}
@@ -698,7 +698,7 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return The value of the key if found
 	 *
 	 */
-	public ScopeSearchResult scopeFind( Key key, IScope defaultScope ) {
+	public ScopeSearchResult scopeFind( Key key, IScope defaultScope, boolean forAssign ) {
 		throw new BoxRuntimeException( "Unimplemented method 'scopeFind'" );
 	}
 
@@ -717,7 +717,7 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return The value of the key if found
 	 *
 	 */
-	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow ) {
+	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow, boolean forAssign ) {
 		throw new BoxRuntimeException( "Unimplemented method 'scopeFindNearby'" );
 	}
 
@@ -728,13 +728,14 @@ public class BaseBoxContext implements IBoxContext {
 	 *
 	 * @return True if the value is defined, else false
 	 */
-	public boolean isDefined( Object value ) {
+	public boolean isDefined( Object value, boolean forAssign ) {
 		// If the value is null, it's not defined because the struct litearlly has no key for this
 		if ( value == null ) {
 			return false;
 		}
 		// Default BoxLang behavior is null is defined, but if compat has toggled the nullIsUndefined setting, then we need to check for our placeHolder NullValue value
-		if ( nullIsUndefined && value instanceof NullValue ) {
+		// Unless we're check for the purpose of assignment, then we need to treat NullValue as undefined
+		if ( !forAssign && nullIsUndefined && value instanceof NullValue ) {
 			return false;
 		}
 		// Otherwise, it's defined
@@ -848,8 +849,8 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return The value of the key if found
 	 *
 	 */
-	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope ) {
-		return scopeFindNearby( key, defaultScope, false );
+	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean forAssign ) {
+		return scopeFindNearby( key, defaultScope, false, forAssign );
 	}
 
 	/**

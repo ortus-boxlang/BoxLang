@@ -77,7 +77,7 @@ public class FunctionBoxContextTest {
 		variablesScope.put( variablesOnly, "variables scope only" );
 
 		// ambiguous finds local scope
-		assertThat( context.scopeFindNearby( ambiguous, null ).value() ).isEqualTo( "local scope ambiguous" );
+		assertThat( context.scopeFindNearby( ambiguous, null, false ).value() ).isEqualTo( "local scope ambiguous" );
 
 		// local.ambiguous works
 		assertThat( context.getScopeNearby( LocalScope.name ).get( ambiguous ) ).isEqualTo( "local scope ambiguous" );
@@ -87,11 +87,11 @@ public class FunctionBoxContextTest {
 		assertThat( context.getScopeNearby( ArgumentsScope.name ).get( ambiguous ) ).isEqualTo( "arguments scope ambiguous" );
 
 		// find var in local
-		assertThat( context.scopeFindNearby( localOnly, null ).value() ).isEqualTo( "local scope only" );
+		assertThat( context.scopeFindNearby( localOnly, null, false ).value() ).isEqualTo( "local scope only" );
 		// find var in arguments
-		assertThat( context.scopeFindNearby( argsOnly, null ).value() ).isEqualTo( "arguments scope only" );
+		assertThat( context.scopeFindNearby( argsOnly, null, false ).value() ).isEqualTo( "arguments scope only" );
 		// find var in variables
-		assertThat( context.scopeFindNearby( variablesOnly, null ).value() ).isEqualTo( "variables scope only" );
+		assertThat( context.scopeFindNearby( variablesOnly, null, false ).value() ).isEqualTo( "variables scope only" );
 	}
 
 	@Test

@@ -4136,4 +4136,29 @@ public class CoreLangTest {
 			    context, BoxSourceType.CFSCRIPT );
 		} );
 	}
+
+	@DisplayName( "It still sets variables in the local scope even if they are set to null" )
+	@Test
+	public void testNullStillInLocalScope() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				function returnsNull() {
+					return;
+				}
+
+				function doesStuff() {
+					var inner = returnsNull();
+					if ( !isNull( inner ) ) {
+						return inner;
+					}
+					inner = "local value leaked to variables";
+					return "set this time";
+				}
+				result = doesStuff();
+				result = doesStuff();
+			""",
+			context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "set this time" );
+	}
 }

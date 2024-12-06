@@ -86,7 +86,7 @@ public class QoQParseTest {
 		             q = queryExecute( "
 		    	select col, 5 as brad, col2 luis
 		    	from myQry
-		    	where col = 'foo'
+		    	where (col = 'foo') and col2 IS 42
 		    ",
 		          	[],
 		          	{ dbType : "query", maxRows = 1 }

@@ -176,7 +176,7 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	}
 
 	@Override
-	public ScopeSearchResult scopeFind( Key key, IScope defaultScope ) {
+	public ScopeSearchResult scopeFind( Key key, IScope defaultScope, boolean forAssign ) {
 
 		if ( this.threadManager != null && this.threadManager.hasThreads() ) {
 			// Global access to bxthread scope
@@ -191,7 +191,7 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 		}
 
 		if ( parent != null ) {
-			return parent.scopeFind( key, defaultScope );
+			return parent.scopeFind( key, defaultScope, forAssign );
 		}
 
 		// Default scope requested for missing keys

@@ -26,6 +26,7 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.InsnNode;
+import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
@@ -258,10 +259,12 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 				    "getDefaultAssignmentScope",
 				    Type.getMethodDescriptor( Type.getType( IScope.class ) ),
 				    true ) );
+				nodes.add( new LdcInsnNode( true ) );
 				nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
 				    Type.getInternalName( IBoxContext.class ),
 				    "scopeFindNearby",
-				    Type.getMethodDescriptor( Type.getType( IBoxContext.ScopeSearchResult.class ), Type.getType( Key.class ), Type.getType( IScope.class ) ),
+				    Type.getMethodDescriptor( Type.getType( IBoxContext.ScopeSearchResult.class ), Type.getType( Key.class ), Type.getType( IScope.class ),
+				        Type.BOOLEAN_TYPE ),
 				    true ) );
 			}
 
@@ -363,12 +366,13 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			    "getDefaultAssignmentScope",
 			    Type.getMethodDescriptor( Type.getType( IScope.class ) ),
 			    true ) );
+			nodes.add( new LdcInsnNode( true ) );
 			nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
 			    Type.getInternalName( IBoxContext.class ),
 			    "scopeFindNearby",
 			    Type.getMethodDescriptor( Type.getType( IBoxContext.ScopeSearchResult.class ),
 			        Type.getType( Key.class ),
-			        Type.getType( IScope.class ) ),
+			        Type.getType( IScope.class ), Type.BOOLEAN_TYPE ),
 			    true ) );
 			nodes.add( new MethodInsnNode( Opcodes.INVOKEVIRTUAL,
 			    Type.getInternalName( IBoxContext.ScopeSearchResult.class ),
@@ -452,13 +456,15 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		    "name",
 		    Type.getDescriptor( Key.class ) ) );
 		nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+		nodes.add( new LdcInsnNode( true ) );
 
 		nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
 		    Type.getInternalName( IBoxContext.class ),
 		    "scopeFindNearby",
 		    Type.getMethodDescriptor( Type.getType( IBoxContext.ScopeSearchResult.class ),
 		        Type.getType( Key.class ),
-		        Type.getType( IScope.class ) ),
+		        Type.getType( IScope.class ),
+		        Type.BOOLEAN_TYPE ),
 		    true ) );
 
 		nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );

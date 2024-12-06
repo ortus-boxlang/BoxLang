@@ -141,7 +141,7 @@ public class ApplicationBoxContext extends BaseBoxContext {
 	 * @return The value of the key if found
 	 */
 	@Override
-	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow ) {
+	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow, boolean forAssign ) {
 
 		// There are no near-by scopes in the application context. Everything is global here.
 
@@ -149,7 +149,7 @@ public class ApplicationBoxContext extends BaseBoxContext {
 			return null;
 		}
 
-		return scopeFind( key, defaultScope );
+		return scopeFind( key, defaultScope, forAssign );
 	}
 
 	/**
@@ -161,11 +161,11 @@ public class ApplicationBoxContext extends BaseBoxContext {
 	 * @return The value of the key if found
 	 */
 	@Override
-	public ScopeSearchResult scopeFind( Key key, IScope defaultScope ) {
+	public ScopeSearchResult scopeFind( Key key, IScope defaultScope, boolean forAssign ) {
 		if ( key.equals( applicationScope.getName() ) ) {
 			return new ScopeSearchResult( applicationScope, applicationScope, key, true );
 		}
-		return parent.scopeFind( key, defaultScope );
+		return parent.scopeFind( key, defaultScope, forAssign );
 	}
 
 	/**

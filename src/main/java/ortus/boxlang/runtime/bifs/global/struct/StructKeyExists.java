@@ -65,7 +65,7 @@ public class StructKeyExists extends BIF {
 
 		// If the key exists, then we need to check if the value is defined based on our current null settings.
 		Object result = struct.getRaw( keyKey );
-		return context.isDefined( result );
+		return context.isDefined( result, false );
 	}
 
 }

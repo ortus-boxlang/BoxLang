@@ -73,7 +73,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			String				template	= """
 			                                  Referencer.setDeep(
 			                                  	${contextName},
-			                                  	${contextName}.scopeFindNearby( LocalScope.name, null ),
+			                                  	${contextName}.scopeFindNearby( LocalScope.name, null, true ),
 			                                  	null,
 			                                  	${accessKey}
 			                                  )
@@ -213,7 +213,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 				    idl.getPosition(), idl.getSourceText() );
 			}
 
-			String baseObjTemplate = "${contextName}.scopeFindNearby( ${accessKey}, ${contextName}.getDefaultAssignmentScope() ),";
+			String baseObjTemplate = "${contextName}.scopeFindNearby( ${accessKey}, ${contextName}.getDefaultAssignmentScope(), true ),";
 			// imported.foo needs to swap out the furthest left object
 			if ( transpiler.matchesImport( id.getName() ) && isBoxSyntax ) {
 				baseObjTemplate = "classLocator.load( ${contextName}, \"${accessName}\", imports ),";
@@ -297,7 +297,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			accessKey = createKey( id.getName() );
 			values.put( "accessKey", accessKey.toString() );
 			String obj = PlaceholderHelper.resolve(
-			    "${contextName}.scopeFindNearby( ${accessKey}, ${contextName}.getDefaultAssignmentScope() ).scope()",
+			    "${contextName}.scopeFindNearby( ${accessKey}, ${contextName}.getDefaultAssignmentScope(), true ).scope()",
 			    values );
 			values.put( "obj", obj );
 

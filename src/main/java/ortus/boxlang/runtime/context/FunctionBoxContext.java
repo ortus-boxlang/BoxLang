@@ -248,7 +248,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 * @return The search result
 	 */
 	@Override
-	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow ) {
+	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow, boolean forAssign ) {
 
 		// Special check for $bx
 		if ( key.equals( BoxMeta.key ) && isInClass() ) {
@@ -294,14 +294,14 @@ public class FunctionBoxContext extends BaseBoxContext {
 
 		Object result = localScope.getRaw( key );
 		// Null means not found
-		if ( isDefined( result ) ) {
+		if ( isDefined( result, forAssign ) ) {
 			// Unwrap the value now in case it was really actually null for real
 			return new ScopeSearchResult( localScope, Struct.unWrapNull( result ), key );
 		}
 
 		result = argumentsScope.getRaw( key );
 		// Null means not found
-		if ( isDefined( result ) ) {
+		if ( isDefined( result, forAssign ) ) {
 			// Unwrap the value now in case it was really actually null for real
 			return new ScopeSearchResult( argumentsScope, Struct.unWrapNull( result ), key );
 		}
@@ -317,7 +317,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 			IScope classVariablesScope = getThisClass().getBottomClass().getVariablesScope();
 			result = classVariablesScope.getRaw( key );
 			// Null means not found
-			if ( isDefined( result ) ) {
+			if ( isDefined( result, forAssign ) ) {
 				// Unwrap the value now in case it was really actually null for real
 				return new ScopeSearchResult( classVariablesScope, Struct.unWrapNull( result ), key );
 			}
@@ -327,7 +327,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 			}
 
 			// A component cannot see nearby scopes above it
-			return parent.scopeFind( key, defaultScope );
+			return parent.scopeFind( key, defaultScope, forAssign );
 		} else {
 
 			if ( shallow ) {
@@ -336,7 +336,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 
 			// A UDF is "transparent" and can see everything in the parent scope as a
 			// "local" observer
-			return parent.scopeFindNearby( key, defaultScope );
+			return parent.scopeFindNearby( key, defaultScope, forAssign );
 		}
 
 	}
@@ -385,9 +385,9 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 * @return The search result
 	 */
 	@Override
-	public ScopeSearchResult scopeFind( Key key, IScope defaultScope ) {
+	public ScopeSearchResult scopeFind( Key key, IScope defaultScope, boolean forAssign ) {
 		// The FunctionBoxContext has no "global" scopes, so just defer to parent
-		return parent.scopeFind( key, defaultScope );
+		return parent.scopeFind( key, defaultScope, forAssign );
 	}
 
 	/**
@@ -666,7 +666,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 	protected Function findFunction( Key name ) {
 		ScopeSearchResult result = null;
 		try {
-			result = scopeFindNearby( name, null );
+			result = scopeFindNearby( name, null, false );
 		} catch ( KeyNotFoundException e ) {
 			// Ignore
 		}

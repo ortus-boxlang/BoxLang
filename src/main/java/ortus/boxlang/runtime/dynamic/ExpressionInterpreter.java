@@ -97,7 +97,7 @@ public class ExpressionInterpreter {
 			}
 		} else {
 			// Unscoped variable like foo.bar. This finds the first part of the expression
-			ref = context.scopeFindNearby( refName, ( safe ? context.getDefaultAssignmentScope() : null ) ).value();
+			ref = context.scopeFindNearby( refName, ( safe ? context.getDefaultAssignmentScope() : null ), false ).value();
 			if ( ref == null && !safe ) {
 				throw new KeyNotFoundException( "Variable [" + refName + "] not found." );
 			}
@@ -141,7 +141,7 @@ public class ExpressionInterpreter {
 			}
 		} else {
 			// Unscoped variable like foo.bar. We need to search and find what scope it lives in, if any.
-			ScopeSearchResult scopeSearchResult = context.scopeFindNearby( refName, context.getDefaultAssignmentScope() );
+			ScopeSearchResult scopeSearchResult = context.scopeFindNearby( refName, context.getDefaultAssignmentScope(), true );
 			ref = scopeSearchResult.scope();
 			if ( scopeSearchResult.isScope() ) {
 				// create Key[] out of remaining strings in parts

@@ -100,7 +100,7 @@ public class ScriptingRequestBoxContextTest {
 		Key							key				= Key.of( "testIt" );
 		IScope						variablesScope	= context.getScopeNearby( Key.of( "variables" ) );
 		variablesScope.put( key, "value" );
-		ScopeSearchResult result = context.scopeFindNearby( key, null );
+		ScopeSearchResult result = context.scopeFindNearby( key, null, false );
 		assertThat( result.value() ).isEqualTo( "value" );
 		assertThat( result.scope() ).isEqualTo( variablesScope );
 	}
@@ -111,7 +111,7 @@ public class ScriptingRequestBoxContextTest {
 		ScriptingRequestBoxContext	context			= new ScriptingRequestBoxContext();
 		Key							key				= Key.of( "testIt" );
 		IScope						variablesScope	= context.getScopeNearby( Key.of( "variables" ) );
-		ScopeSearchResult			result			= context.scopeFindNearby( key, variablesScope );
+		ScopeSearchResult			result			= context.scopeFindNearby( key, variablesScope, false );
 		assertThat( result.value() ).isEqualTo( null );
 		assertThat( result.scope() ).isEqualTo( variablesScope );
 	}
@@ -120,7 +120,7 @@ public class ScriptingRequestBoxContextTest {
 	@DisplayName( "Test scopeFind with missing key" )
 	void testScopeFindMissingKey() {
 		ScriptingRequestBoxContext context = new ScriptingRequestBoxContext();
-		assertThrows( KeyNotFoundException.class, () -> context.scopeFindNearby( new Key( "nonExistentKey" ), null ) );
+		assertThrows( KeyNotFoundException.class, () -> context.scopeFindNearby( new Key( "nonExistentKey" ), null, false ) );
 	}
 
 	@Test

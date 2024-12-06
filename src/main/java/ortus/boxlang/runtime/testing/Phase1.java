@@ -132,7 +132,7 @@ public class Phase1 extends BoxTemplate {
 			    new Object[] {
 
 			        Concat.invoke(
-			            context.scopeFindNearby( Key.of( "GREETING" ), null ).value(),
+			            context.scopeFindNearby( Key.of( "GREETING" ), null, false ).value(),
 			            Concat.invoke( " world ", serverScope.get( Key.of( "counter" ) ) )
 			        )
 

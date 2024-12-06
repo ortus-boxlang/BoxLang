@@ -94,7 +94,7 @@ public class Phase1TryCatch extends BoxTemplate {
 		// unscoped assignment performs lookup to find the scope to assign to
 		ScopeSearchResult	result			= context.scopeFindNearby(
 		    Key.of( "system" ),
-		    context.getDefaultAssignmentScope()
+		    context.getDefaultAssignmentScope(), false
 		);
 		result.scope().assign(
 		    context,
@@ -122,7 +122,7 @@ public class Phase1TryCatch extends BoxTemplate {
 			    new Object[] {
 			        Referencer.get(
 			            context,
-			            catchContext.scopeFindNearby( Key.of( "e" ), null ).value(),
+			            catchContext.scopeFindNearby( Key.of( "e" ), null, false ).value(),
 			            Key.of( "message" ),
 			            false
 			        )
@@ -175,7 +175,7 @@ public class Phase1TryCatch extends BoxTemplate {
 				    new Object[] {
 				        Referencer.get(
 				            context,
-				            catchContext.scopeFindNearby( Key.of( "e" ), null ).value(),
+				            catchContext.scopeFindNearby( Key.of( "e" ), null, false ).value(),
 				            Key.of( "message" ),
 				            false
 				        )
@@ -198,7 +198,7 @@ public class Phase1TryCatch extends BoxTemplate {
 				    new Object[] {
 				        Referencer.get(
 				            context,
-				            catchContext.scopeFindNearby( Key.of( "e" ), null ).value(),
+				            catchContext.scopeFindNearby( Key.of( "e" ), null, false ).value(),
 				            Key.of( "message" ),
 				            false
 				        )
