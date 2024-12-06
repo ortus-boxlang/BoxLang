@@ -173,6 +173,10 @@ public class ClassMetadataVisitor extends VoidBoxVisitor {
 		    .orElseThrow( () -> new ExpressionException( "Property [" + prop.getSourceText() + "] missing type annotation", prop ) );
 		BoxAnnotation		defaultAnnotation	= finalAnnotations.stream().filter( it -> it.getKey().getValue().equalsIgnoreCase( "default" ) ).findFirst()
 		    .orElse( null );
+		BoxAnnotation		getterAnnotation	= finalAnnotations.stream().filter( it -> it.getKey().getValue().equalsIgnoreCase( "getter" ) ).findFirst()
+		    .orElse( null );
+		BoxAnnotation		setterAnnotation	= finalAnnotations.stream().filter( it -> it.getKey().getValue().equalsIgnoreCase( "setter" ) ).findFirst()
+		    .orElse( null );
 
 		String				name				= getBoxExprAsSimpleValue( nameAnnotation.getValue() ).toString();
 		String				type				= getBoxExprAsSimpleValue( typeAnnotation.getValue() ).toString();
@@ -188,33 +192,36 @@ public class ClassMetadataVisitor extends VoidBoxVisitor {
 		);
 
 		if ( accessors ) {
-			this.meta.getAsArray( Key.functions ).add(
-			    Struct.of(
-			        Key._NAME, "get" + name,
-			        Key.nameAsKey, Key.of( "get" + name ),
-			        Key.returnType, type,
-			        Key.access, "public",
-			        Key.documentation, Struct.of(),
-			        Key.annotations, Struct.of(),
-			        Key.parameters, Array.of(),
-			        Key.closure, false,
-			        Key.lambda, false
-			    )
-			);
-			this.meta.getAsArray( Key.functions ).add(
-			    Struct.of(
-			        Key._NAME, "set" + name,
-			        Key.nameAsKey, Key.of( "set" + name ),
-			        Key.returnType, "void",
-			        Key.access, "public",
-			        Key.documentation, Struct.of(),
-			        Key.annotations, Struct.of(),
-			        Key.parameters, processArguments( List.of( new BoxArgumentDeclaration( true, type, name, null, List.of(), List.of(), null, null ) ) ),
-			        Key.closure, false,
-			        Key.lambda, false
-			    )
-			);
-
+			if ( getterAnnotation == null || BooleanCaster.cast( getBoxExprAsSimpleValue( getterAnnotation.getValue() ) ) ) {
+				this.meta.getAsArray( Key.functions ).add(
+				    Struct.of(
+				        Key._NAME, "get" + name,
+				        Key.nameAsKey, Key.of( "get" + name ),
+				        Key.returnType, type,
+				        Key.access, "public",
+				        Key.documentation, Struct.of(),
+				        Key.annotations, Struct.of(),
+				        Key.parameters, Array.of(),
+				        Key.closure, false,
+				        Key.lambda, false
+				    )
+				);
+			}
+			if ( setterAnnotation == null || BooleanCaster.cast( getBoxExprAsSimpleValue( setterAnnotation.getValue() ) ) ) {
+				this.meta.getAsArray( Key.functions ).add(
+				    Struct.of(
+				        Key._NAME, "set" + name,
+				        Key.nameAsKey, Key.of( "set" + name ),
+				        Key.returnType, "void",
+				        Key.access, "public",
+				        Key.documentation, Struct.of(),
+				        Key.annotations, Struct.of(),
+				        Key.parameters, processArguments( List.of( new BoxArgumentDeclaration( true, type, name, null, List.of(), List.of(), null, null ) ) ),
+				        Key.closure, false,
+				        Key.lambda, false
+				    )
+				);
+			}
 		}
 	}
 
