@@ -382,7 +382,7 @@ public class BoxClassTransformer {
 		AsmHelper.addPrivateFieldGetter( classNode,
 		    type,
 		    "name",
-		    "getName",
+		    "bxGetName",
 		    Type.getType( Key.class ),
 		    null );
 		AsmHelper.addPrivateFieldGetter( classNode,
