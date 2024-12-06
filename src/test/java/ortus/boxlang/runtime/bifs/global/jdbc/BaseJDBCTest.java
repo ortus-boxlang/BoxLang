@@ -22,13 +22,13 @@ import tools.JDBCTestUtils;
 
 public class BaseJDBCTest {
 
-	static BoxRuntime			instance;
-	ScriptingRequestBoxContext	context;
-	IScope						variables;
-	static DataSource			datasource;
-	static DataSource			mssqlDatasource;
-	static DataSource			mysqlDatasource;
-	static DatasourceService	datasourceService;
+	static BoxRuntime						instance;
+	protected ScriptingRequestBoxContext	context;
+	IScope									variables;
+	static DataSource						datasource;
+	static DataSource						mssqlDatasource;
+	static DataSource						mysqlDatasource;
+	static DatasourceService				datasourceService;
 
 	@BeforeAll
 	public static void setUp() {

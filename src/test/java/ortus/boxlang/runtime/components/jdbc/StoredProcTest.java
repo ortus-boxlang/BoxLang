@@ -9,7 +9,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -30,7 +29,6 @@ import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 public class StoredProcTest extends BaseJDBCTest {
 
 	static BoxRuntime	instance;
-	IBoxContext			context;
 	static Key			result	= new Key( "result" );
 
 	private DataSource	mysqlDatasource;
@@ -100,11 +98,6 @@ public class StoredProcTest extends BaseJDBCTest {
 		    """,
 		    setUpContext
 		);
-	}
-
-	@BeforeEach
-	public void setupEach() {
-		context = new ScriptingRequestBoxContext( instance.getRuntimeContext() );
 	}
 
 	public void setupMySQLTest() {
