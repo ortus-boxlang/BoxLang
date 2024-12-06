@@ -44,9 +44,10 @@ public class DataSourceServiceTest {
 
 	@BeforeAll
 	public static void setUp() {
-		runtime			= BoxRuntime.getInstance( true );
-		service			= new DatasourceService( runtime );
-		datasourceName	= Key.of( "foobar" );
+		runtime	= BoxRuntime.getInstance( true );
+		service	= new DatasourceService( runtime );
+		service.onConfigurationLoad();
+		datasourceName = Key.of( "foobar" );
 	}
 
 	@BeforeEach

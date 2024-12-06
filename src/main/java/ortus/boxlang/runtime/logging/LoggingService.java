@@ -412,7 +412,7 @@ public class LoggingService {
 		}
 
 		// Compute and get the logger
-		Logger oLogger = getLogger( logger );
+		Logger oLogger = ( Logger ) getLogger( logger );
 
 		// Log according to the level
 		switch ( targetLogLevel.getNameNoCase() ) {
@@ -438,7 +438,7 @@ public class LoggingService {
 	 *
 	 * @return The logger requested
 	 */
-	public Logger getLogger( String logger ) {
+	public org.slf4j.Logger getLogger( String logger ) {
 		// The incoming logger can be:
 		// 1. A named logger: "scheduler", "application", "orm", etc
 		// 2. A relative path: "scheduler.log", "application.log", "orm.log"
@@ -456,7 +456,7 @@ public class LoggingService {
 		Key		loggerKey		= Key.of( FilenameUtils.getBaseName( loggerFilePath.toLowerCase() ) );
 
 		// Compute it or return it
-		return ( Logger ) this.loggersMap.computeIfAbsent( Key.of( loggerFilePath ), key -> createLogger( loggerKey, loggerFilePath ) );
+		return ( org.slf4j.Logger ) this.loggersMap.computeIfAbsent( Key.of( loggerFilePath ), key -> createLogger( loggerKey, loggerFilePath ) );
 	}
 
 	/**
