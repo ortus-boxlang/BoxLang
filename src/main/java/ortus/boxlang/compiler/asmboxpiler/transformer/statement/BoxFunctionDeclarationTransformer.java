@@ -93,10 +93,9 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		ClassNode owningClass = transpiler.getOwningClass();
 		if ( owningClass != null ) {
 			owningClass.visitInnerClass( type.getInternalName(), transpiler.getProperty( "enclosingClassInternalName" ),
-				"Func_" + function.getName(),
-				Opcodes.ACC_PUBLIC );
+			    "Func_" + function.getName(),
+			    Opcodes.ACC_PUBLIC );
 		}
-
 
 		transpiler.setAuxiliary( type.getClassName(), classNode );
 
