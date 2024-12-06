@@ -59,7 +59,7 @@ public class DateAdd extends BIF {
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		ZoneId		timezone	= LocalizationUtil.parseZoneId( null, context );
-		DateTime	ref			= DateTimeCaster.cast( arguments.get( Key.date ), true, timezone, true );
+		DateTime	ref			= DateTimeCaster.cast( arguments.get( Key.date ), true, timezone, true, context );
 		return ref.modify(
 		    arguments.getAsString( Key.datepart ),
 		    arguments.getAsLong( Key.number )

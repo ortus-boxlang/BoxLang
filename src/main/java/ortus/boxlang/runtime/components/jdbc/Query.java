@@ -134,12 +134,12 @@ public class Query extends Component {
 		// QoQ uses a special QoQ connection
 		if ( options.isQoQ() ) {
 			Connection connection = new QoQConnection( context );
-			executedQuery = pendingQuery.execute( connection );
+			executedQuery = pendingQuery.execute( connection, context );
 		} else {
 			// whereas normal queries use the JDBC connection manager
 			IJDBCCapableContext	jdbcContext			= context.getParentOfType( IJDBCCapableContext.class );
 			ConnectionManager	connectionManager	= jdbcContext.getConnectionManager();
-			executedQuery = pendingQuery.execute( connectionManager );
+			executedQuery = pendingQuery.execute( connectionManager, context );
 		}
 
 		if ( options.wantsResultStruct() ) {

@@ -14,6 +14,7 @@
  */
 package ortus.boxlang.runtime.jdbc;
 
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BigIntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
@@ -120,7 +121,7 @@ public class QueryParameter {
 	/**
 	 * Retrieve the value casted to the declared SQL type of the parameter..
 	 */
-	public Object toSQLType() {
+	public Object toSQLType( IBoxContext context ) {
 		if ( this.value == null ) {
 			return null;
 		}
@@ -132,9 +133,9 @@ public class QueryParameter {
 			case QueryColumnType.CHAR, VARCHAR -> StringCaster.cast( this.value );
 			case QueryColumnType.BINARY -> this.value; // @TODO: Will this work?
 			case QueryColumnType.BIT -> BooleanCaster.cast( this.value );
-			case QueryColumnType.TIME -> DateTimeCaster.cast( this.value );
-			case QueryColumnType.DATE -> DateTimeCaster.cast( this.value );
-			case QueryColumnType.TIMESTAMP -> new java.sql.Timestamp( DateTimeCaster.cast( this.value ).toEpochMillis() );
+			case QueryColumnType.TIME -> DateTimeCaster.cast( this.value, context );
+			case QueryColumnType.DATE -> DateTimeCaster.cast( this.value, context );
+			case QueryColumnType.TIMESTAMP -> new java.sql.Timestamp( DateTimeCaster.cast( this.value, context ).toEpochMillis() );
 			case QueryColumnType.OBJECT -> this.value;
 			case QueryColumnType.OTHER -> this.value;
 			case QueryColumnType.NULL -> null;

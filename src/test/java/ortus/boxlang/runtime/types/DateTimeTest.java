@@ -26,12 +26,30 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.LongCaster;
 
 public class DateTimeTest {
+
+	static BoxRuntime	instance;
+	IBoxContext			context;
+
+	@BeforeAll
+	public static void setUp() {
+		instance = BoxRuntime.getInstance( true );
+	}
+
+	@BeforeEach
+	public void setupEach() {
+		context = new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+	}
 
 	@DisplayName( "Test Constructors" )
 	@Test
@@ -48,7 +66,7 @@ public class DateTimeTest {
 		assertThat( dateTimeFromParts.setFormat( "yyyy-MM-dd HH:mm:ss" ).toString() ).isEqualTo( "2023-12-31 12:30:30" );
 		DateTime dateFromParts = new DateTime( 2023, 12, 31 );
 		assertThat( dateFromParts.setFormat( "yyyy-MM-dd HH:mm:ss" ).toString() ).isEqualTo( "2023-12-31 00:00:00" );
-		DateTime dateFromSQLDate = new DateTime( Date.valueOf( "2023-12-31" ) );
+		DateTime dateFromSQLDate = new DateTime( Date.valueOf( "2023-12-31" ), context );
 		assertThat( dateFromSQLDate.setFormat( "yyyy-MM-dd HH:mm:ss" ).toString() ).isEqualTo( "2023-12-31 00:00:00" );
 		DateTime datefromSQLTime = new DateTime( Time.valueOf( "23:00:00" ) );
 		assertThat( datefromSQLTime.setFormat( "yyyy-MM-dd HH:mm:ss" ).toString() ).isEqualTo( "1970-01-01 23:00:00" );

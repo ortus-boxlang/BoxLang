@@ -351,7 +351,7 @@ public class DumpUtil {
 		String			posInCode		= "";
 		String			dumpTemplate	= null;
 		StringBuffer	buffer			= null;
-		String			templateName	= discoverTemplateName( target );
+		String			templateName	= discoverTemplateName( target, context );
 
 		try {
 			// Get and Compile the Dump template to execute.
@@ -403,7 +403,7 @@ public class DumpUtil {
 	 *
 	 * @return The template name found in the resources folder
 	 */
-	private static String discoverTemplateName( Object target ) {
+	private static String discoverTemplateName( Object target, IBoxContext context ) {
 		if ( target == null || target instanceof NullValue ) {
 			return "Null.bxm";
 		} else if ( target instanceof Throwable ) {
@@ -422,7 +422,7 @@ public class DumpUtil {
 			return "DateTime.bxm";
 		} else if ( target instanceof LocalDate || target instanceof LocalDateTime || target instanceof ZonedDateTime ||
 		    target instanceof java.sql.Date || target instanceof java.sql.Timestamp || target instanceof java.util.Date ) {
-			target = DateTimeCaster.cast( target );
+			target = DateTimeCaster.cast( target, context );
 			return "DateTime.bxm";
 		}
 		// These classes will just dump the class name and the `toString()` equivalent

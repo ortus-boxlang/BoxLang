@@ -215,7 +215,7 @@ public class GenericCaster implements IBoxCaster {
 		}
 		// BL-640 - if we have a DateTime object provided, we use that reference rather than strip the date by using the timecaster
 		if ( object instanceof DateTime || type.equals( "datetime" ) || type.equals( "date" ) || type.equals( "timestamp" ) ) {
-			return DateTimeCaster.cast( object, fail );
+			return DateTimeCaster.cast( object, fail, context );
 		}
 		if ( type.equals( "time" ) ) {
 			return TimeCaster.cast( object, fail );

@@ -201,13 +201,13 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	 *
 	 * @param date The date object
 	 */
-	public DateTime( java.util.Date date ) {
+	public DateTime( java.util.Date date, ZoneId timezone ) {
 		this(
 		    ( date instanceof java.sql.Date sqlDate )
-		        ? ZonedDateTime.of( sqlDate.toLocalDate(), LocalTime.of( 0, 0 ), ZoneId.systemDefault() )
+		        ? ZonedDateTime.of( sqlDate.toLocalDate(), LocalTime.of( 0, 0 ), timezone )
 		        : ( date instanceof java.sql.Time sqlTime )
-		            ? ZonedDateTime.of( LocalDate.EPOCH, sqlTime.toLocalTime(), ZoneId.systemDefault() )
-		            : date.toInstant().atZone( ZoneId.systemDefault() )
+		            ? ZonedDateTime.of( LocalDate.EPOCH, sqlTime.toLocalTime(), timezone )
+		            : date.toInstant().atZone( timezone )
 		);
 	}
 
@@ -217,8 +217,18 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	 *
 	 * @param date The date object
 	 */
-	public DateTime( java.sql.Date date ) {
-		this( ZonedDateTime.of( date.toLocalDate(), LocalTime.of( 0, 0 ), ZoneId.systemDefault() ) );
+	public DateTime( java.sql.Date date, IBoxContext context ) {
+		this( ZonedDateTime.of( date.toLocalDate(), LocalTime.of( 0, 0 ), LocalizationUtil.parseZoneId( null, context ) ) );
+	}
+
+	/**
+	 * Constructor to create DateTime from a java.sql.Date object which has no time component
+	 * This will use the system default timezone
+	 *
+	 * @param date The date object
+	 */
+	public DateTime( java.sql.Date date, ZoneId timezone ) {
+		this( ZonedDateTime.of( date.toLocalDate(), LocalTime.of( 0, 0 ), timezone ) );
 	}
 
 	/**
@@ -886,7 +896,8 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 		if ( other instanceof ZonedDateTime castedDateTime ) {
 			return getWrapped().compareTo( castedDateTime );
 		}
-		return getWrapped().compareTo( DateTimeCaster.cast( other ).getWrapped() );
+
+		return getWrapped().compareTo( DateTimeCaster.cast( other, BoxRuntime.getInstance().getRuntimeContext() ).getWrapped() );
 	}
 
 	/**

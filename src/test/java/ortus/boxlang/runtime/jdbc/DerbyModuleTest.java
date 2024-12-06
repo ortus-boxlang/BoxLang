@@ -57,7 +57,8 @@ public class DerbyModuleTest {
 		moduleService.onStartup();
 
 		DataSource datasource = JDBCTestUtils.constructTestDataSource(
-		    "DerbyModuleTest"
+		    "DerbyModuleTest",
+		    context
 		);
 
 		context.getConnectionManager().setDefaultDatasource( datasource );

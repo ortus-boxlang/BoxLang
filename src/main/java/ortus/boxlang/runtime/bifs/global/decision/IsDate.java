@@ -99,7 +99,7 @@ public class IsDate extends BIF {
 			}
 			// Caster handling
 		} else {
-			return DateTimeCaster.attempt( dateRef ).wasSuccessful();
+			return DateTimeCaster.attempt( dateRef, context ).wasSuccessful();
 		}
 
 	}

@@ -62,7 +62,8 @@ public class DateConvert extends BIF {
 		DateTime	dateRef		= DateTimeCaster.cast(
 		    arguments.get( Key.date ),
 		    true,
-		    localZone
+		    localZone,
+		    context
 		);
 
 		return dateRef.convertToZone( conversion.equals( utc2Local ) ? localZone : ZoneId.of( "UTC" ) );

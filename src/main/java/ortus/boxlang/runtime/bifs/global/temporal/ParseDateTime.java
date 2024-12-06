@@ -70,7 +70,7 @@ public class ParseDateTime extends BIF {
 		ZoneId	timezone	= LocalizationUtil.parseZoneId( arguments.getAsString( Key.timezone ), context );
 		Locale	locale		= LocalizationUtil.parseLocale( arguments.getAsString( Key.locale ) );
 		if ( dateRef instanceof DateTime ) {
-			DateTime dateObj = DateTimeCaster.cast( dateRef );
+			DateTime dateObj = DateTimeCaster.cast( dateRef, context );
 			if ( format != null ) {
 				dateObj.setFormat( format );
 			} else if ( locale != null ) {

@@ -2,6 +2,7 @@ package tools;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.segments.DatasourceConfig;
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.jdbc.DataSource;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
@@ -153,7 +154,7 @@ public class JDBCTestUtils {
 	 *
 	 * @return A DataSource instance with a consistent `DEVELOPERS` table created.
 	 */
-	public static DataSource constructTestDataSource( String databaseName ) {
+	public static DataSource constructTestDataSource( String databaseName, IBoxContext context ) {
 		DataSource datasource = DataSource.fromStruct(
 		    databaseName,
 		    Struct.of(
@@ -161,7 +162,7 @@ public class JDBCTestUtils {
 		        "driver", "derby",
 		        "connectionString", "jdbc:derby:memory:" + databaseName + ";create=true"
 		    ) );
-		ensureTestTableExists( datasource );
+		ensureTestTableExists( datasource, context );
 		return datasource;
 	}
 
@@ -170,16 +171,16 @@ public class JDBCTestUtils {
 	 *
 	 * @param datasource
 	 */
-	public static void dropDevelopersTable( DataSource datasource ) {
-		datasource.execute( "DROP TABLE developers" );
+	public static void dropDevelopersTable( DataSource datasource, IBoxContext context ) {
+		datasource.execute( "DROP TABLE developers", context );
 	}
 
 	/**
 	 * Ensure various tables exist in the database for testing purposes.
 	 */
-	public static void ensureTestTableExists( DataSource datasource ) {
+	public static void ensureTestTableExists( DataSource datasource, IBoxContext context ) {
 		try {
-			datasource.execute( "CREATE TABLE developers ( id INTEGER, name VARCHAR(155), role VARCHAR(155), createdAt TIMESTAMP )" );
+			datasource.execute( "CREATE TABLE developers ( id INTEGER, name VARCHAR(155), role VARCHAR(155), createdAt TIMESTAMP )", context );
 		} catch ( DatabaseException e ) {
 			// Ignore the exception if the table already exists
 		}
@@ -190,11 +191,11 @@ public class JDBCTestUtils {
 	 *
 	 * @param datasource
 	 */
-	public static void resetDevelopersTable( DataSource datasource ) {
-		datasource.execute( "TRUNCATE TABLE developers" );
-		datasource.execute( "INSERT INTO developers ( id, name, role ) VALUES ( 77, 'Michael Born', 'Developer' )" );
-		datasource.execute( "INSERT INTO developers ( id, name, role ) VALUES ( 1, 'Luis Majano', 'CEO' )" );
-		datasource.execute( "INSERT INTO developers ( id, name, role ) VALUES ( 42, 'Eric Peterson', 'Developer' )" );
-		datasource.execute( "INSERT INTO developers ( id, name, role ) VALUES ( 9001, 'Bob O''Reily', 'QA' )" );
+	public static void resetDevelopersTable( DataSource datasource, IBoxContext context ) {
+		datasource.execute( "TRUNCATE TABLE developers", context );
+		datasource.execute( "INSERT INTO developers ( id, name, role ) VALUES ( 77, 'Michael Born', 'Developer' )", context );
+		datasource.execute( "INSERT INTO developers ( id, name, role ) VALUES ( 1, 'Luis Majano', 'CEO' )", context );
+		datasource.execute( "INSERT INTO developers ( id, name, role ) VALUES ( 42, 'Eric Peterson', 'Developer' )", context );
+		datasource.execute( "INSERT INTO developers ( id, name, role ) VALUES ( 9001, 'Bob O''Reily', 'QA' )", context );
 	}
 }

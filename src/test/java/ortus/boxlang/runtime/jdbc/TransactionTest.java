@@ -21,18 +21,23 @@ package ortus.boxlang.runtime.jdbc;
 
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 
-import ortus.boxlang.runtime.context.IJDBCCapableContext;
 import ortus.boxlang.compiler.parser.BoxSourceType;
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.global.jdbc.BaseJDBCTest;
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.IJDBCCapableContext;
+import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
@@ -41,7 +46,19 @@ import tools.JDBCTestUtils;
 
 public class TransactionTest extends BaseJDBCTest {
 
-	static Key result = new Key( "result" );
+	static Key			result	= new Key( "result" );
+	static BoxRuntime	instance;
+	IBoxContext			context;
+
+	@BeforeAll
+	public static void setUp() {
+		instance = BoxRuntime.getInstance( true );
+	}
+
+	@BeforeEach
+	public void setupEach() {
+		context = new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+	}
 
 	@ParameterizedTest
 	@org.junit.jupiter.params.provider.ValueSource( strings = {
@@ -376,10 +393,9 @@ public class TransactionTest extends BaseJDBCTest {
 
 	@Test
 	public void testCustomQueryDatasource() {
-
 		getInstance().getConfiguration().datasources.put(
 		    Key.of( "myOtherDatasource" ),
-		    JDBCTestUtils.constructTestDataSource( "myOtherDatasource" ).getConfiguration()
+		    JDBCTestUtils.constructTestDataSource( "myOtherDatasource", context ).getConfiguration()
 		);
 
 		getInstance().executeSource(
@@ -409,7 +425,7 @@ public class TransactionTest extends BaseJDBCTest {
 		// Set up a datasource
 		getInstance().getConfiguration().datasources.put(
 		    Key.of( "fooey" ),
-		    JDBCTestUtils.constructTestDataSource( "fooey" ).getConfiguration()
+		    JDBCTestUtils.constructTestDataSource( "fooey", context ).getConfiguration()
 		);
 
 		getInstance().executeSource(

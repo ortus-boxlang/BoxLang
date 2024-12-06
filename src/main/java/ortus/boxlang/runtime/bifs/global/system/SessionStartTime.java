@@ -50,7 +50,7 @@ public class SessionStartTime extends BIF {
 		SessionBoxContext sessionContext = context.getParentOfType( SessionBoxContext.class );
 		return sessionContext == null
 		    ? context.getParentOfType( RequestBoxContext.class ).getRequestStart()
-		    : DateTimeCaster.cast( sessionContext.getSession().getSessionScope().get( Key.timeCreated ) );
+		    : DateTimeCaster.cast( sessionContext.getSession().getSessionScope().get( Key.timeCreated ), context );
 	}
 
 }

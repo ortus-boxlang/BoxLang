@@ -60,9 +60,10 @@ public class DataSourceTest {
 
 	@BeforeAll
 	public static void setUp() {
-		instance	= BoxRuntime.getInstance( true );
-		datasource	= JDBCTestUtils.constructTestDataSource( java.lang.invoke.MethodHandles.lookup().lookupClass().getSimpleName() );
-		testDB		= JDBCTestUtils.constructTestDataSource( "testDB" );
+		instance = BoxRuntime.getInstance( true );
+		IBoxContext setUpContext = new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		datasource	= JDBCTestUtils.constructTestDataSource( java.lang.invoke.MethodHandles.lookup().lookupClass().getSimpleName(), setUpContext );
+		testDB		= JDBCTestUtils.constructTestDataSource( "testDB", setUpContext );
 	}
 
 	@AfterAll
@@ -78,9 +79,9 @@ public class DataSourceTest {
 
 	@BeforeEach
 	public void resetTable() {
-		assertDoesNotThrow( () -> JDBCTestUtils.resetDevelopersTable( datasource ) );
 		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
 		variables	= context.getScopeNearby( VariablesScope.name );
+		assertDoesNotThrow( () -> JDBCTestUtils.resetDevelopersTable( datasource, context ) );
 	}
 
 	@DisplayName( "It can get an Apache Derby JDBC connection" )
@@ -171,7 +172,7 @@ public class DataSourceTest {
 	void testDataSourceExecute() {
 		try ( Connection conn = datasource.getConnection() ) {
 			assertDoesNotThrow( () -> {
-				ExecutedQuery executedQuery = datasource.execute( "SELECT * FROM developers", conn );
+				ExecutedQuery executedQuery = datasource.execute( "SELECT * FROM developers", conn, context );
 				assertEquals( 4, executedQuery.getRecordCount() );
 			} );
 		} catch ( SQLException e ) {
@@ -187,7 +188,8 @@ public class DataSourceTest {
 				ExecutedQuery executedQuery = datasource.execute(
 				    "SELECT * FROM developers WHERE name = ?",
 				    Array.of( "Michael Born" ),
-				    conn
+				    conn,
+				    context
 				);
 				assertEquals( 1, executedQuery.getRecordCount() );
 				Query results = executedQuery.getResults();
@@ -209,7 +211,8 @@ public class DataSourceTest {
 				ExecutedQuery executedQuery = datasource.execute(
 				    "SELECT * FROM developers WHERE name = :name",
 				    Struct.of( "name", "Michael Born" ),
-				    conn
+				    conn,
+				    context
 				);
 				assertEquals( 1, executedQuery.getRecordCount() );
 				Query results = executedQuery.getResults();
@@ -231,7 +234,8 @@ public class DataSourceTest {
 				datasource.execute(
 				    "SELECT * FROM developers WHERE name = :name",
 				    Struct.of( "developer", "Michael Born" ),
-				    conn
+				    conn,
+				    context
 				);
 			} );
 			assertEquals( "Missing param in query: [name]. SQL: SELECT * FROM developers WHERE name = :name", exception.getMessage() );
@@ -243,7 +247,7 @@ public class DataSourceTest {
 	@DisplayName( "It can get results in query form" )
 	@Test
 	void testQueryExecuteQueryResults() {
-		ExecutedQuery	executedQuery	= datasource.execute( "SELECT * FROM developers WHERE id=1" );
+		ExecutedQuery	executedQuery	= datasource.execute( "SELECT * FROM developers WHERE id=1", context );
 		Query			queryResults	= executedQuery.getResults();
 
 		assertNotEquals( 0, queryResults.size() );
@@ -258,13 +262,13 @@ public class DataSourceTest {
 	@DisplayName( "It can get results in query form" )
 	@Test
 	void testQueryExecuteException() {
-		assertThrows( DatabaseException.class, () -> datasource.execute( "SELECT * FROM foobar WHERE id=1" ) );
+		assertThrows( DatabaseException.class, () -> datasource.execute( "SELECT * FROM foobar WHERE id=1", context ) );
 	}
 
 	@DisplayName( "It can get results in array form" )
 	@Test
 	void testQueryExecuteArrayResults() {
-		ExecutedQuery	executedQuery	= datasource.execute( "SELECT * FROM developers WHERE id=1" );
+		ExecutedQuery	executedQuery	= datasource.execute( "SELECT * FROM developers WHERE id=1", context );
 		Array			results			= executedQuery.getResultsAsArray();
 		assertNotEquals( 0, results.size() );
 
@@ -284,8 +288,9 @@ public class DataSourceTest {
 		try ( Connection conn = datasource.getConnection() ) {
 			assertDoesNotThrow( () -> {
 				datasource.execute(
-				    "CREATE TABLE developers2 (id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY(START WITH 1, INCREMENT BY 1), name VARCHAR(155) NOT NULL)" );
-				ExecutedQuery executedQuery = datasource.execute( "INSERT INTO developers2 (name) VALUES ('Eric Peterson')", conn );
+				    "CREATE TABLE developers2 (id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY(START WITH 1, INCREMENT BY 1), name VARCHAR(155) NOT NULL)",
+				    context );
+				ExecutedQuery executedQuery = datasource.execute( "INSERT INTO developers2 (name) VALUES ('Eric Peterson')", conn, context );
 				assertEquals( 0, executedQuery.getRecordCount() );
 				BigDecimal generatedKey = ( BigDecimal ) executedQuery.getGeneratedKey();
 				assert generatedKey != null;
@@ -294,7 +299,7 @@ public class DataSourceTest {
 		} catch ( SQLException e ) {
 			throw new RuntimeException( e );
 		} finally {
-			datasource.execute( "DROP TABLE developers2" );
+			datasource.execute( "DROP TABLE developers2", context );
 		}
 	}
 

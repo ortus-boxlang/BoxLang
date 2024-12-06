@@ -28,7 +28,7 @@ public class ToScript extends BIF {
 		Object					runtimeVar		= arguments.get( Key.cfvar );
 		String					jsVar			= arguments.getAsString( Key.javascriptvar );
 
-		CastAttempt<DateTime>	dateCastAttempt	= DateTimeCaster.attempt( runtimeVar );
+		CastAttempt<DateTime>	dateCastAttempt	= DateTimeCaster.attempt( runtimeVar, context );
 		if ( dateCastAttempt.wasSuccessful() ) {
 			return jsVar + " = new Date('" + dateCastAttempt.get().toISOString() + "');";
 		}

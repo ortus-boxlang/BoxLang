@@ -62,8 +62,8 @@ public class DateCompare extends BIF {
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String		datePart	= arguments.getAsString( Key.datepart );
 		ZoneId		timezone	= LocalizationUtil.parseZoneId( null, context );
-		DateTime	date1		= DateTimeCaster.cast( arguments.get( Key.date1 ), true, timezone );
-		DateTime	date2		= DateTimeCaster.cast( arguments.get( Key.date2 ), true, timezone );
+		DateTime	date1		= DateTimeCaster.cast( arguments.get( Key.date1 ), true, timezone, context );
+		DateTime	date2		= DateTimeCaster.cast( arguments.get( Key.date2 ), true, timezone, context );
 
 		if ( datePart == null ) {
 			return date1.toEpochMillis().compareTo( date2.toEpochMillis() );
