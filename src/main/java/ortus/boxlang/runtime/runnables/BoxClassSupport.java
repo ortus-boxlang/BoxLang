@@ -89,8 +89,12 @@ public class BoxClassSupport {
 			}
 			if ( hasAccessors( thisClass ) ) {
 				// Don't override UDFs from a parent class which may already be defined
-				context.registerUDF( property.generatedGetter(), false );
-				context.registerUDF( property.generatedSetter(), false );
+				if ( thisClass.getGetterLookup().containsKey( property.getterName() ) ) {
+					context.registerUDF( property.generatedGetter(), false );
+				}
+				if ( thisClass.getSetterLookup().containsKey( property.setterName() ) ) {
+					context.registerUDF( property.generatedSetter(), false );
+				}
 			}
 		}
 	}

@@ -1092,6 +1092,23 @@ public class ClassTest {
 	}
 
 	@Test
+	public void testGeneratedAccessors() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+			cfc = new src.test.java.TestCases.phase3.GeneratedAccessor();
+			""",
+		context );
+		IStruct cfc = (IStruct) variables.get( Key.of( "cfc" ) );
+		assertThat( cfc.containsKey( Key.of( "getName" ) ) ).isEqualTo( true );
+		assertThat( cfc.containsKey( Key.of( "setName" ) ) ).isEqualTo( true );
+		assertThat( cfc.containsKey( Key.of( "getAge" ) ) ).isEqualTo( false );
+		assertThat( cfc.containsKey( Key.of( "setAge" ) ) ).isEqualTo( true );
+		assertThat( cfc.containsKey( Key.of( "getEmail" ) ) ).isEqualTo( true );
+		assertThat( cfc.containsKey( Key.of( "setEmail" ) ) ).isEqualTo( false );
+	}
+
+	@Test
 	public void testImplicitAccessor() {
 		instance.executeSource(
 		    """

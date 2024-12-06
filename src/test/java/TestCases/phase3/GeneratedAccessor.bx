@@ -1,0 +1,7 @@
+class accessors="true" {
+
+	property string name;
+	property integer age getter="false";
+	property string email setter="false";
+
+}
