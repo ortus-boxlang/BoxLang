@@ -971,7 +971,6 @@ public class ClassTest {
 	}
 
 	@Test
-	@Disabled
 	public void testSuperHeadlessFunctionInvocationToChild() {
 
 		instance.executeSource(

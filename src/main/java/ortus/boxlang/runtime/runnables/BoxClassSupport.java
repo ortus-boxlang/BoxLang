@@ -38,6 +38,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
@@ -183,7 +184,7 @@ public class BoxClassSupport {
 	public static void setSuper( IClassRunnable thisClass, IClassRunnable _super ) {
 		thisClass._setSuper( _super );
 		_super.setChild( thisClass );
-		// This runs before the psedu constructor and init, so the base class will override anything it declares
+		// This runs before the pseudo constructor and init, so the base class will override anything it declares
 		thisClass.getVariablesScope().addAll( _super.getVariablesScope().getWrapped() );
 		thisClass.getThisScope().addAll( _super.getThisScope().getWrapped() );
 
@@ -323,7 +324,6 @@ public class BoxClassSupport {
 			    null
 			);
 
-			functionContext.setThisClass( thisClass );
 			return function.invoke( functionContext );
 		}
 
@@ -407,7 +407,6 @@ public class BoxClassSupport {
 			    null
 			);
 
-			functionContext.setThisClass( thisClass );
 			return function.invoke( functionContext );
 		}
 
@@ -763,6 +762,41 @@ public class BoxClassSupport {
 				        + abstractMethod.getValue().getSourceObjectType() + " [" + abstractMethod.getValue().getSourceObjectName() + "]." );
 			}
 		}
+	}
+
+	/**
+	 * Given a UDF instance, resolve the actual class it was declared in. A method may be inherited by a child class, and copied down into the child class's
+	 * variables scope, but at runtime, the class it uses as `super` needs to be relative to the current location.
+	 */
+	public static IClassRunnable resolveClassForUDF( IClassRunnable thisClass, Function udf ) {
+		// If null, then skip all our logic
+		if ( thisClass == null ) {
+			return null;
+		}
+
+		// This logic is only for UDFs, not closure, lambdas, etc
+		if ( ! ( udf instanceof UDF ) ) {
+			return thisClass;
+		}
+
+		// Where was this function origionally defined
+		Class<?> enclosingClass = udf.getClass().getEnclosingClass();
+
+		// If the enclosing class is the same as the current class, then we're good
+		if ( enclosingClass == thisClass.getClass() ) {
+			return thisClass;
+		}
+
+		// Otherwise, let's climb the supers (if they even exist) and see if one of them declared it
+		IClassRunnable thisSuper = thisClass.getSuper();
+		while ( thisSuper != null ) {
+			if ( enclosingClass == thisSuper.getClass() ) {
+				return thisSuper;
+			}
+			thisSuper = thisSuper.getSuper();
+		}
+		// If the original class and no supers were the enclosing class, then this is prolly a mixin. Just return the original value.
+		return thisClass;
 	}
 
 }

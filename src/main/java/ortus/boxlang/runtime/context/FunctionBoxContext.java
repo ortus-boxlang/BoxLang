@@ -172,7 +172,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 		this.argumentsScope		= new ArgumentsScope();
 		this.function			= function;
 		this.functionCalledName	= functionCalledName;
-		setThisClass( thisClass );
+		setThisClass( BoxClassSupport.resolveClassForUDF( thisClass, function ) );
 		pushTemplate( function );
 		try {
 			ArgumentUtil.createArgumentsScope( this, positionalArguments, function.getArguments(), this.argumentsScope,
@@ -204,7 +204,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 		this.argumentsScope		= new ArgumentsScope();
 		this.function			= function;
 		this.functionCalledName	= functionCalledName;
-		setThisClass( thisClass );
+		setThisClass( BoxClassSupport.resolveClassForUDF( thisClass, function ) );
 		pushTemplate( function );
 		try {
 			ArgumentUtil.createArgumentsScope( this, namedArguments, function.getArguments(), this.argumentsScope,
