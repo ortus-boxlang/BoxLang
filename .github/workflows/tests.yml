@@ -95,6 +95,7 @@ jobs:
           SLACK_TITLE: "${{ github.repository }} Build Failure"
           SLACK_USERNAME: CI
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+          MSG_MINIMAL: true
 
   publish-test-results:
     name: Publish Test Results
