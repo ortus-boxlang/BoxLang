@@ -194,7 +194,7 @@ public class BoxClassTransformer {
 		}
 
 		ClassNode classNode = new ClassNode();
-		transpiler.setOwningCLass( classNode );
+		transpiler.setOwningClass( classNode );
 		transpiler.setProperty( "enclosingClassInternalName", type.getInternalName() );
 
 		AsmHelper.init( classNode, false, type, superclass, cv -> {

@@ -66,7 +66,7 @@ public abstract class Transpiler implements ITranspiler {
 		properties.put( key, value );
 	}
 
-	public void setOwningCLass( ClassNode node ) {
+	public void setOwningClass( ClassNode node ) {
 		owningClassNode = node;
 	}
 
