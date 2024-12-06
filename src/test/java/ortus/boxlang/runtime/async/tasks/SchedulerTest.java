@@ -24,10 +24,10 @@ import java.time.LocalDateTime;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 
@@ -36,11 +36,15 @@ import ortus.boxlang.runtime.types.IStruct;
 
 class SchedulerTest {
 
-	BaseScheduler		scheduler;
+	BaseScheduler				scheduler;
 
 	@Spy
-	@InjectMocks
-	private BoxRuntime	runtime;
+	private static BoxRuntime	instance;
+
+	@BeforeAll
+	public static void setupBeforeAll() {
+		instance = BoxRuntime.getInstance( true );
+	}
 
 	@BeforeEach
 	public void setupBeforeEach() {
@@ -52,7 +56,7 @@ class SchedulerTest {
 	@Test
 	void testItCanCreateIt() {
 		assertThat( scheduler ).isNotNull();
-		assertThat( scheduler.getName() ).isEqualTo( "bdd" );
+		assertThat( scheduler.getSchedulerName() ).isEqualTo( "bdd" );
 		assertThat( scheduler.getAsyncService() ).isNotNull();
 		assertThat( scheduler.getExecutor() ).isNull();
 		scheduler.startup();

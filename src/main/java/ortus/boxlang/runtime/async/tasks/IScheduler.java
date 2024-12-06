@@ -159,7 +159,7 @@ public interface IScheduler {
 	 *
 	 * @return the name
 	 */
-	public String getName();
+	public String getSchedulerName();
 
 	/**
 	 * Set the scheduler name
@@ -168,7 +168,7 @@ public interface IScheduler {
 	 *
 	 * @return the scheduler object
 	 */
-	public BaseScheduler setName( String name );
+	public BaseScheduler setSchedulerName( String name );
 
 	/**
 	 * Get the scheduler timezone
@@ -181,7 +181,7 @@ public interface IScheduler {
 	 * Set the scheduler's timezone
 	 *
 	 * @param timezone the timezone to set
-	 * 
+	 *
 	 * @return the scheduler object
 	 */
 	public BaseScheduler setTimezone( ZoneId timezone );

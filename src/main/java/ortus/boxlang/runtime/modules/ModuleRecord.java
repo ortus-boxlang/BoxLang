@@ -502,7 +502,7 @@ public class ModuleRecord {
 		ServiceLoader.load( IScheduler.class, this.classLoader )
 		    .stream()
 		    .map( ServiceLoader.Provider::get )
-		    .forEach( scheduler -> runtime.getSchedulerService().loadScheduler( Key.of( scheduler.getName() + "@" + this.name ), scheduler ) );
+		    .forEach( scheduler -> runtime.getSchedulerService().loadScheduler( Key.of( scheduler.getSchedulerName() + "@" + this.name ), scheduler ) );
 
 		// Do we have any Java ICacheProviders to register in the CacheService
 		ServiceLoader.load( ICacheProvider.class, this.classLoader )

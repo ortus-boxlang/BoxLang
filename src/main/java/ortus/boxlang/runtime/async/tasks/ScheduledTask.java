@@ -35,7 +35,6 @@ import java.util.function.Predicate;
 import javax.management.InvalidAttributeValueException;
 
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.async.executors.ExecutorRecord;
@@ -248,7 +247,7 @@ public class ScheduledTask implements Runnable {
 	/**
 	 * Logger
 	 */
-	private static final Logger						logger				= LoggerFactory.getLogger( ScheduledTask.class );
+	private final Logger							logger;
 
 	/**
 	 * BoxLang Timer utility
@@ -280,6 +279,7 @@ public class ScheduledTask implements Runnable {
 		this.group		= group;
 		this.executor	= executor;
 		this.scheduler	= scheduler;
+		this.logger		= BoxRuntime.getInstance().getLoggingService().getLogger( "scheduler" );
 
 		// Init the stats
 		this.stats		= Struct.of(
