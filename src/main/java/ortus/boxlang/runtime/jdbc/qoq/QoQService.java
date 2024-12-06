@@ -74,12 +74,16 @@ public class QoQService {
 	}
 
 	public static Query executeSelect( IBoxContext context, SQLSelectStatement selectStatement, QoQStatement statement ) throws SQLException {
-		Map<SQLTable, Query>	tableLookup		= new LinkedHashMap<SQLTable, Query>();
+		Map<SQLTable, Query>	tableLookup	= new LinkedHashMap<SQLTable, Query>();
+		boolean					hasTable	= selectStatement.getSelect().getTable() != null;
+		Query					source		= null;
 
 		// TODO: Process all joins
-		String					tableVarName	= selectStatement.getSelect().getTable().getVariableName();
-		Query					source			= getSourceQuery( context, tableVarName );
-		tableLookup.put( selectStatement.getSelect().getTable(), source );
+		if ( hasTable ) {
+			String tableVarName = selectStatement.getSelect().getTable().getVariableName();
+			source = getSourceQuery( context, tableVarName );
+			tableLookup.put( selectStatement.getSelect().getTable(), source );
+		}
 
 		Map<Key, TypedResultColumn>	resultColumns	= calculateResultColumns( selectStatement, tableLookup );
 
@@ -93,6 +97,18 @@ public class QoQService {
 		// This boolean expression will be used to filter the records we keep
 		SQLExpression				where			= select.getWhere();
 		boolean						canEarlyLimit	= selectStatement.getOrderBys() == null;
+
+		// Just selecting out literal values
+		if ( !hasTable ) {
+			Object[] values = new Object[ resultColumns.size() ];
+			for ( Key key : resultColumns.keySet() ) {
+				SQLResultColumn	resultColumn	= resultColumns.get( key ).resultColumn;
+				Object			value			= resultColumn.getExpression().evaluate( tableLookup, 1 );
+				values[ resultColumn.getOrdinalPosition() - 1 ] = value;
+			}
+			target.addRow( values );
+			return target;
+		}
 
 		// 1-based index!
 		for ( int i = 1; i <= source.size(); i++ ) {

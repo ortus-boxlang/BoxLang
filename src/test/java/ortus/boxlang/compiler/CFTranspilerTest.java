@@ -19,7 +19,6 @@ import static com.google.common.truth.Truth.assertThat;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -307,19 +306,92 @@ public class CFTranspilerTest {
 
 	}
 
-	@Disabled
+	@Test
+	public void testUnquotedAttributeCF() {
+		instance.executeSource(
+		    """
+		    <cfquery dbtype="query" maxrows=1>
+		    	select 42
+		    </cfquery>
+		           """,
+		    context, BoxSourceType.CFTEMPLATE );
+	}
+
+	@Test
+	public void testUnquotedAttributeCF2() {
+		instance.executeSource(
+		    """
+		    <cfquery dbtype="query" maxrows="1">
+		    	select 42
+		    </cfquery>
+		    	""",
+		    context, BoxSourceType.CFTEMPLATE );
+	}
+
+	@Test
+	public void testUnquotedAttributeCF3() {
+		instance.executeSource(
+		    """
+		    <cfquery dbtype="query" datasource=foo>
+		    	select 42
+		    </cfquery>
+		    	""",
+		    context, BoxSourceType.CFTEMPLATE );
+	}
+
+	@Test
+	public void testUnquotedAttributeCF4() {
+		instance.executeSource(
+		    """
+		    <cfquery dbtype="query" foo=>
+		    	select 42
+		    </cfquery>
+		    	""",
+		    context, BoxSourceType.CFTEMPLATE );
+	}
+
 	@Test
 	public void testUnquotedAttribute() {
 		instance.executeSource(
 		    """
-		    <cfquery datasource="test" name="NewDate" maxrows=1>
-		    	select messagedate
-		    	from messages
-		    	where topicid = #topicid# order by messagedate ASC
-		    </cfquery>
+		    <bx:query dbtype="query" name="NewDate" maxrows=1>
+		    	select 42
+		    </bx:query>
 		           """,
-		    context, BoxSourceType.CFTEMPLATE );
+		    context, BoxSourceType.BOXTEMPLATE );
+	}
 
+	@Test
+	public void testUnquotedAttribute2() {
+		instance.executeSource(
+		    """
+		    <bx:query dbtype="query" maxrows="1">
+		    	select 42
+		    </bx:query>
+		    	""",
+		    context, BoxSourceType.CFTEMPLATE );
+	}
+
+	@Test
+	public void testUnquotedAttribute3() {
+		instance.executeSource(
+		    """
+		    <bx:query dbtype="query" datasource=foo>
+		    	select 42
+		    </bx:query>
+		    	""",
+		    context, BoxSourceType.CFTEMPLATE );
+	}
+
+	@Test
+	public void testUnquotedAttribute4() {
+		instance.executeSource(
+		    """
+		    <bx:query dbtype="query" foo=>
+		    	select 42
+		    </bx:query>
+		    	""",
+		    context, BoxSourceType.CFTEMPLATE );
 	}
 
 }

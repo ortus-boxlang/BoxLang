@@ -102,27 +102,6 @@ options {
  @members {
  
  
- public int popMode() {
- System.out.println( "popMode back to "+
- modeNames[_modeStack.peek()]);
- return super.popMode();
- }
- 
- public void pushMode(int m) {
- System.out.println( "pushMode "+modeNames[m]);
- super.pushMode(m);
- 
- System.out.println( "*****
- modes ******" );
- System.out.println( "mode: " + modeNames[_mode] );
- for ( int m2 :
- _modeStack.toArray() ) {
- System.out.println( "mode: " + modeNames[m2] );
- }
- System.out.println(
- "***** end modes ******" );
- }
- 
  public Token emit() {
  Token t =
  _factory.create(_tokenFactorySourcePair, _type, _text, _channel, _tokenStartCharIndex,
@@ -132,6 +111,21 @@ options {
  System.out.println(
  t.toString() + " " + _SYMBOLIC_NAMES[t.getType()] );
  return t;
+ }
+ public int popMode() {
+ System.out.println( "popMode back to "+ modeNames[_modeStack.peek()]);
+ return super.popMode();
+ }
+ 
+ public void pushMode(int m) {
+	System.out.println( "pushMode "+modeNames[m]);
+	super.pushMode(m);
+	
+	System.out.print( ">>>>> modes >>>>> " );
+	for ( int m2 :	_modeStack.toArray() ) {
+		System.out.print( " > " + modeNames[m2] );
+	}
+	System.out.println( " > " + modeNames[_mode] );
  }
 
  }
@@ -644,6 +638,10 @@ COMPONENT_SLASH_CLOSE2:
 ;
 
 // There may be no value, so we need to pop out of ATTVALUE if we find the end of the component
+COMPONENT_CLOSE6:
+    '>' {isQuery}? -> popMode, popMode, popMode, popMode, pushMode(TEMPLATE_OUTPUT_MODE), pushMode(DEFAULT_TEMPLATE_MODE), type(COMPONENT_CLOSE)
+;
+
 COMPONENT_CLOSE5: '>' -> popMode, popMode, popMode, popMode, type(COMPONENT_CLOSE);
 
 COMPONENT_SLASH_CLOSE3:
@@ -662,6 +660,11 @@ COMPONENT_WHITESPACE_OUTPUT4: [ \t\r\n] -> popMode, popMode, skip;
 // If we're in a cfoutput tag, don't pop as far and stay in outut mode
 COMPONENT_CLOSE_OUTPUT3:
     '>' {lastModeWas(TEMPLATE_OUTPUT_MODE,2)}? -> popMode, popMode, pushMode(DEFAULT_TEMPLATE_MODE), type( COMPONENT_CLOSE)
+;
+
+COMPONENT_CLOSE7:
+    '>' {isQuery}? -> popMode, popMode, popMode, popMode, popMode, pushMode(TEMPLATE_OUTPUT_MODE), pushMode(DEFAULT_TEMPLATE_MODE), type(
+        COMPONENT_CLOSE)
 ;
 
 // If we find the end of the component, pop all the way out of the component

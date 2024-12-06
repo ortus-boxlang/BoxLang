@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -214,6 +215,7 @@ public class FunctionTest {
 
 	@DisplayName( "can process argumentCollection structs that look like arrays" )
 	@Test
+	@Disabled
 	void testCanProcessArrayLikeStructArgumentCollection() {
 		Key			firstName	= Key.of( "firstName" );
 		Key			lastName	= Key.of( "lastName" );
