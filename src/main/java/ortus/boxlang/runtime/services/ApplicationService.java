@@ -26,7 +26,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.application.Application;
@@ -81,8 +80,7 @@ public class ApplicationService extends BaseService {
 	/**
 	 * Logger
 	 */
-	@SuppressWarnings( "unused" )
-	private static final Logger logger = LoggerFactory.getLogger( ApplicationService.class );
+	private Logger logger;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -177,6 +175,14 @@ public class ApplicationService extends BaseService {
 	 * Runtime Service Event Methods
 	 * --------------------------------------------------------------------------
 	 */
+
+	/**
+	 * The configuration load event is fired when the runtime loads the configuration
+	 */
+	@Override
+	public void onConfigurationLoad() {
+		this.logger = runtime.getLoggingService().getLogger( "application" );
+	}
 
 	/**
 	 * The startup event is fired when the runtime starts up

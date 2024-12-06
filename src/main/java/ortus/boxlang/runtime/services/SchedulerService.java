@@ -66,11 +66,18 @@ public class SchedulerService extends BaseService {
 	 */
 
 	/**
+	 * The configuration load event is fired when the runtime loads the configuration
+	 */
+	@Override
+	public void onConfigurationLoad() {
+		this.logger = runtime.getLoggingService().getLogger( "scheduler" );
+	}
+
+	/**
 	 * The startup event is fired when the runtime starts up
 	 */
 	@Override
 	public void onStartup() {
-		this.logger = runtime.getLoggingService().getLogger( "scheduler" );
 		BoxRuntime.timerUtil.start( "schedulerservice-startup" );
 		this.logger.info( "+ Starting up Scheduler Service..." );
 

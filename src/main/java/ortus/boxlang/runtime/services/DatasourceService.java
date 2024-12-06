@@ -19,7 +19,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.segments.DatasourceConfig;
@@ -49,7 +48,7 @@ public class DatasourceService extends BaseService {
 	/**
 	 * Logger
 	 */
-	private static final Logger		logger		= LoggerFactory.getLogger( DatasourceService.class );
+	private Logger					logger;
 
 	/**
 	 * Map of datasources registered with the service.
@@ -66,6 +65,14 @@ public class DatasourceService extends BaseService {
 	 * Constructor(s)
 	 * --------------------------------------------------------------------------
 	 */
+
+	/**
+	 * The configuration load event is fired when the runtime loads the configuration
+	 */
+	@Override
+	public void onConfigurationLoad() {
+		this.logger = runtime.getLoggingService().getLogger( "datasource" );
+	}
 
 	/**
 	 * Constructor

@@ -18,7 +18,6 @@
 package ortus.boxlang.runtime.services;
 
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.events.BoxEvent;
@@ -46,7 +45,7 @@ public class InterceptorService extends InterceptorPool implements IService {
 	/**
 	 * Logger
 	 */
-	private static final Logger logger = LoggerFactory.getLogger( InterceptorService.class );
+	private Logger logger;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -69,6 +68,14 @@ public class InterceptorService extends InterceptorPool implements IService {
 	 * Runtime Service Interface Methods
 	 * --------------------------------------------------------------------------
 	 */
+
+	/**
+	 * The configuration load event is fired when the runtime loads the configuration
+	 */
+	@Override
+	public void onConfigurationLoad() {
+		this.logger = runtime.getLoggingService().getLogger( "runtime" );
+	}
 
 	/**
 	 * The startup event is fired when the runtime starts up

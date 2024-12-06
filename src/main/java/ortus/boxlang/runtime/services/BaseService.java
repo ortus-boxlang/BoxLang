@@ -88,6 +88,11 @@ public abstract class BaseService implements IService {
 	 */
 
 	/**
+	 * The configuration load event is fired when the runtime loads the configuration
+	 */
+	public abstract void onConfigurationLoad();
+
+	/**
 	 * The startup event is fired when the runtime starts up
 	 */
 	public abstract void onStartup();

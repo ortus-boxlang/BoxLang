@@ -27,7 +27,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.async.executors.BoxScheduledExecutor;
@@ -109,7 +108,7 @@ public class AsyncService extends BaseService {
 	/**
 	 * Logger
 	 */
-	private static final Logger			logger				= LoggerFactory.getLogger( AsyncService.class );
+	private Logger						logger;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -131,6 +130,14 @@ public class AsyncService extends BaseService {
 	 * Runtime Service Event Methods
 	 * --------------------------------------------------------------------------
 	 */
+
+	/**
+	 * The configuration load event is fired when the runtime loads the configuration
+	 */
+	@Override
+	public void onConfigurationLoad() {
+		this.logger = runtime.getLoggingService().getLogger( "async" );
+	}
 
 	/**
 	 * The startup event is fired when the runtime starts up

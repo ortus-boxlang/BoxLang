@@ -26,7 +26,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.BIF;
@@ -58,7 +57,7 @@ public class FunctionService extends BaseService {
 	/**
 	 * Logger
 	 */
-	private static final Logger								logger			= LoggerFactory.getLogger( FunctionService.class );
+	private Logger											logger;
 
 	/**
 	 * The set of global functions registered with the service
@@ -101,6 +100,14 @@ public class FunctionService extends BaseService {
 	 * Runtime Service Event Methods
 	 * --------------------------------------------------------------------------
 	 */
+
+	/**
+	 * The configuration load event is fired when the runtime loads the configuration
+	 */
+	@Override
+	public void onConfigurationLoad() {
+		this.logger = runtime.getLoggingService().getLogger( "runtime" );
+	}
 
 	/**
 	 * The startup event is fired when the runtime starts up

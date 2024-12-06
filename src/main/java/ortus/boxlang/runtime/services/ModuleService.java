@@ -127,11 +127,18 @@ public class ModuleService extends BaseService {
 	 */
 
 	/**
+	 * The configuration load event is fired when the runtime loads the configuration
+	 */
+	@Override
+	public void onConfigurationLoad() {
+		this.logger = runtime.getLoggingService().getLogger( "modules" );
+	}
+
+	/**
 	 * The startup event is fired when the runtime starts up
 	 */
 	@Override
 	public void onStartup() {
-		this.logger = runtime.getLoggingService().getLogger( "modules" );
 		BoxRuntime.timerUtil.start( "moduleservice-startup" );
 		this.logger.info( "+ Starting up Module Service..." );
 

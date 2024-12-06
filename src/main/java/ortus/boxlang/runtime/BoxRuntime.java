@@ -485,6 +485,17 @@ public class BoxRuntime implements java.io.Closeable {
 		loadConfiguration( debugMode, this.configPath );
 		// Anythying below might use configuration items
 
+		// Announce it to the services
+		this.interceptorService.onConfigurationLoad();
+		this.asyncService.onConfigurationLoad();
+		this.cacheService.onConfigurationLoad();
+		this.functionService.onConfigurationLoad();
+		this.componentService.onConfigurationLoad();
+		this.applicationService.onConfigurationLoad();
+		this.moduleService.onConfigurationLoad();
+		this.schedulerService.onConfigurationLoad();
+		this.dataSourceService.onConfigurationLoad();
+
 		// Ensure home assets
 		ensureHomeAssets();
 

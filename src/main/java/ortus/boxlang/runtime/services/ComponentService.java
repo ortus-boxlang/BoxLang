@@ -23,7 +23,6 @@ import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.components.BoxComponent;
@@ -47,7 +46,7 @@ public class ComponentService extends BaseService {
 	/**
 	 * Logger
 	 */
-	private static final Logger				logger				= LoggerFactory.getLogger( ComponentService.class );
+	private Logger							logger;
 
 	/**
 	 * The set of components registered with the service
@@ -74,6 +73,14 @@ public class ComponentService extends BaseService {
 	 * Runtime Service Event Methods
 	 * --------------------------------------------------------------------------
 	 */
+
+	/**
+	 * The configuration load event is fired when the runtime loads the configuration
+	 */
+	@Override
+	public void onConfigurationLoad() {
+		this.logger = runtime.getLoggingService().getLogger( "runtime" );
+	}
 
 	/**
 	 * The startup event is fired when the runtime starts up

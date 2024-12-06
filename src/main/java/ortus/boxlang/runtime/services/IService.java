@@ -35,6 +35,11 @@ public interface IService {
 	public Key getName();
 
 	/**
+	 * The configuration load event is fired when the runtime loads the configuration
+	 */
+	public void onConfigurationLoad();
+
+	/**
 	 * The startup event is fired when the runtime starts up
 	 */
 	public void onStartup();
