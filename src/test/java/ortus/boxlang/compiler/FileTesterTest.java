@@ -20,6 +20,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -159,6 +160,27 @@ public class FileTesterTest {
 		       }
 		       """,
 		    context );
+	}
+
+	@DisplayName( "Test valueList() to queryColumnData().toList()" )
+	@Test
+	public void testContinueInSwitch() {
+		// instance.useJavaBoxpiler();
+		instance.executeSource(
+		    """
+		    				<cfoutput>
+		    	<cfloop list="a,b,c,d">
+		    		<cfswitch expression="t">
+		    			<cfcase value="x">
+		    				<cfcontinue>
+		    			</cfcase>
+		    		</cfswitch>
+		    	</cfloop>
+		    	DONE!
+		    	</div>
+		    </cfoutput>
+		    		                                      """,
+		    context, BoxSourceType.CFTEMPLATE );
 	}
 
 	@DisplayName( "Test valueList() to queryColumnData().toList()" )

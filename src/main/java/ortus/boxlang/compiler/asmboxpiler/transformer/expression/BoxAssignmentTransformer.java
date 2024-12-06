@@ -283,7 +283,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			    false ) );
 
 		} else {
-			if ( accessKeys.size() == 0 ) {
+			if ( accessKeys.size() == 0 && ! ( left instanceof BoxScope ) ) {
 				throw new ExpressionException( "You cannot assign a value to " + left.getClass().getSimpleName(), left.getPosition(), left.getSourceText() );
 			}
 			/*

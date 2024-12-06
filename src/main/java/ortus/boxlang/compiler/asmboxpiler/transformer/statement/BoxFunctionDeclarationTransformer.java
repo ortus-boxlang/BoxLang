@@ -56,16 +56,20 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 	// @formatter:on
 	@Override
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnContext ) throws IllegalStateException {
-		BoxFunctionDeclaration	function		= ( BoxFunctionDeclaration ) node;
-		TransformerContext		safe			= function.getName().equalsIgnoreCase( "isnull" ) ? TransformerContext.SAFE : context;
+		BoxFunctionDeclaration	function	= ( BoxFunctionDeclaration ) node;
+		TransformerContext		safe		= function.getName().equalsIgnoreCase( "isnull" ) ? TransformerContext.SAFE : context;
 
-		Type					type			= Type.getType( "L" + transpiler.getProperty( "packageName" ).replace( '.', '/' )
+		if ( transpiler.hasCompiledFunction( function.getName() ) ) {
+			throw new IllegalStateException( "Cannot define multiple functions with the same name: " + function.getName() );
+		}
+
+		Type			type			= Type.getType( "L" + transpiler.getProperty( "packageName" ).replace( '.', '/' )
 		    + "/" + transpiler.getProperty( "classname" )
 		    + "$Func_" + function.getName() + ";" );
 
-		BoxReturnType			boxReturnType	= function.getType();
-		BoxType					returnType		= BoxType.Any;
-		String					fqn				= null;
+		BoxReturnType	boxReturnType	= function.getType();
+		BoxType			returnType		= BoxType.Any;
+		String			fqn				= null;
 		if ( boxReturnType != null ) {
 			returnType = boxReturnType.getType();
 			if ( returnType.equals( BoxType.Fqn ) ) {
@@ -225,12 +229,8 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 			    Type.getDescriptor( List.class ) );
 		} );
 
-		List<AbstractInsnNode> nodes;
-		if ( function.getModifiers().contains( BoxMethodDeclarationModifier.STATIC ) ) {
-			nodes = new ArrayList<>();
-		} else {
-			nodes = ( ( AsmTranspiler ) transpiler ).getUDFDeclarations();
-		}
+		List<AbstractInsnNode> nodes = new ArrayList<>();
+
 		nodes.addAll( transpiler.getCurrentMethodContextTracker().get().loadCurrentContext() );
 		nodes.add(
 		    new MethodInsnNode( Opcodes.INVOKESTATIC,
@@ -249,6 +249,10 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 
 		if ( returnContext == ReturnValueContext.VALUE || returnContext == ReturnValueContext.VALUE_OR_NULL ) {
 			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+		}
+
+		if ( !function.getModifiers().contains( BoxMethodDeclarationModifier.STATIC ) ) {
+			transpiler.addUDFRegistration( function.getName(), nodes );
 		}
 
 		if ( function.getModifiers().contains( BoxMethodDeclarationModifier.STATIC ) ) {

@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -502,7 +503,7 @@ public class AsmTranspiler extends Transpiler {
 			    List<AbstractInsnNode> nodes = new ArrayList<>();
 			    List<AbstractInsnNode> body	= AsmHelper.transformBodyExpressions( this, boxScript.getStatements(), TransformerContext.NONE,
 			        returnType == Type.VOID_TYPE ? ReturnValueContext.EMPTY : ReturnValueContext.VALUE_OR_NULL );
-			    nodes.addAll( getUDFDeclarations() );
+			    nodes.addAll( getUDFRegistrations() );
 			    nodes.addAll( body );
 			    return nodes;
 		    }
@@ -576,12 +577,25 @@ public class AsmTranspiler extends Transpiler {
 		return BoxInterfaceTransformer.transpile( this, boxClass );
 	}
 
+	private boolean isUnsplittable( BoxNode node ) {
+		return node instanceof BoxSwitch
+		    || node instanceof BoxWhile
+		    || node instanceof BoxForIn
+		    || node instanceof BoxForIndex
+		    || node instanceof BoxIfElse
+		    || node instanceof BoxDo;
+	}
+
 	@Override
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnValueContext ) {
 		Transformer transformer = registry.get( node.getClass() );
 		if ( transformer != null ) {
 			try {
 				List<AbstractInsnNode> nodes = new ArrayList( transformer.transform( node, context, returnValueContext ) );
+
+				if ( isUnsplittable( node ) ) {
+					nodes = nodes.stream().filter( n -> ! ( n instanceof DividerNode ) ).collect( Collectors.toList() );
+				}
 
 				if ( returnValueContext == ReturnValueContext.EMPTY && nodes.size() > 0 ) {
 					nodes.add( 0, new DividerNode() );

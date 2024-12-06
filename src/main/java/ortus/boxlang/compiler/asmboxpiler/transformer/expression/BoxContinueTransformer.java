@@ -39,6 +39,7 @@ import ortus.boxlang.compiler.ast.statement.BoxDo;
 import ortus.boxlang.compiler.ast.statement.BoxForIn;
 import ortus.boxlang.compiler.ast.statement.BoxForIndex;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
+import ortus.boxlang.compiler.ast.statement.BoxSwitch;
 import ortus.boxlang.compiler.ast.statement.BoxWhile;
 import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
@@ -104,7 +105,7 @@ public class BoxContinueTransformer extends AbstractTransformer {
 	public BoxNode getTargetAncestor( BoxNode node ) {
 		return node.getFirstNodeOfTypes( BoxFunctionDeclaration.class, BoxClosure.class, BoxLambda.class, BoxComponent.class, BoxDo.class,
 		    BoxForIndex.class, BoxForIn.class,
-		    BoxWhile.class );
+		    BoxWhile.class, BoxSwitch.class );
 	}
 
 	private boolean isLoop( BoxNode node ) {

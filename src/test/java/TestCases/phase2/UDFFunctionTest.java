@@ -30,6 +30,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.compiler.javaboxpiler.JavaBoxpiler;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
@@ -168,20 +169,39 @@ public class UDFFunctionTest {
 
 	}
 
-	@DisplayName( "It should allow you to declare multiple functions with the same name" )
+	@DisplayName( "It should not allow you to declare multiple functions with the same name" )
 	@Test
 	public void testMultipleFunctionDeclarationsSameName() {
+		if ( instance.getCompiler() instanceof JavaBoxpiler ) {
+			return;
+		}
 
+		assertThrows( IllegalStateException.class, () -> {
+			instance.executeSource(
+			    """
+			          function foo() {
+			       	return "first";
+			       }
+			    function foo() {
+			       	return "second";
+			       }
+			       result = foo();
+			       """,
+			    context );
+		} );
+	}
+
+	@DisplayName( "It should allow you to include functions with the same name" )
+	@Test
+	public void testMultipleFunctionDeclarationsSameNameInclude() {
 		instance.executeSource(
 		    """
-		          function foo() {
-		       	return "first";
-		       }
-		    function foo() {
-		       	return "second";
-		       }
-		       result = foo();
-		       """,
+		    include template="src/test/java/TestCases/phase2/includeFuncs.cfm";
+		             function foo() {
+		          	return "first";
+		          }
+		          result = foo();
+		          """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "second" );
 		assertThat( variables.get( foo ) instanceof UDF ).isEqualTo( true );

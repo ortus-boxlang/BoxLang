@@ -6,6 +6,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -40,18 +41,19 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public abstract class Transpiler implements ITranspiler {
 
-	private final HashMap<String, String>	properties				= new HashMap<String, String>();
-	private Map<String, BoxExpression>		keys					= new LinkedHashMap<String, BoxExpression>();
-	private Map<String, ClassNode>			auxiliaries				= new LinkedHashMap<String, ClassNode>();
-	private List<TryCatchBlockNode>			tryCatchBlockNodes		= new ArrayList<TryCatchBlockNode>();
-	private int								lambdaCounter			= 0;
-	private int								componentCounter		= 0;
-	private int								functionBodyCounter		= 0;
-	private Map<String, LabelNode>			breaks					= new LinkedHashMap<>();
-	private Map<String, LabelNode>			continues				= new LinkedHashMap<>();
-	private List<ImportDefinition>			imports					= new ArrayList<>();
-	private List<MethodContextTracker>		methodContextTrackers	= new ArrayList<MethodContextTracker>();
-	private List<BoxStaticInitializer>		staticInitializers		= new ArrayList<>();
+	private final HashMap<String, String>					properties				= new HashMap<String, String>();
+	private final HashMap<String, List<AbstractInsnNode>>	udfs					= new HashMap<String, List<AbstractInsnNode>>();
+	private Map<String, BoxExpression>						keys					= new LinkedHashMap<String, BoxExpression>();
+	private Map<String, ClassNode>							auxiliaries				= new LinkedHashMap<String, ClassNode>();
+	private List<TryCatchBlockNode>							tryCatchBlockNodes		= new ArrayList<TryCatchBlockNode>();
+	private int												lambdaCounter			= 0;
+	private int												componentCounter		= 0;
+	private int												functionBodyCounter		= 0;
+	private Map<String, LabelNode>							breaks					= new LinkedHashMap<>();
+	private Map<String, LabelNode>							continues				= new LinkedHashMap<>();
+	private List<ImportDefinition>							imports					= new ArrayList<>();
+	private List<MethodContextTracker>						methodContextTrackers	= new ArrayList<MethodContextTracker>();
+	private List<BoxStaticInitializer>						staticInitializers		= new ArrayList<>();
 
 	/**
 	 * Set a property
@@ -120,6 +122,18 @@ public abstract class Transpiler implements ITranspiler {
 
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context ) {
 		return transform( node, context, ReturnValueContext.EMPTY );
+	}
+
+	public void addUDFRegistration( String name, List<AbstractInsnNode> nodes ) {
+		this.udfs.put( name, nodes );
+	}
+
+	public boolean hasCompiledFunction( String name ) {
+		return this.udfs.containsKey( name );
+	}
+
+	public List<AbstractInsnNode> getUDFRegistrations() {
+		return this.udfs.values().stream().flatMap( l -> l.stream() ).collect( Collectors.toList() );
 	}
 
 	public abstract List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnValueContext );

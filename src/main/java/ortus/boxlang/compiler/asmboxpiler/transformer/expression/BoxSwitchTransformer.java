@@ -65,6 +65,7 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 		LabelNode	breakTarget	= new LabelNode();
 
 		tracker.setBreak( boxSwitch, breakTarget );
+		tracker.setContinue( boxSwitch, breakTarget );
 
 		boxSwitch.getCases().forEach( c -> {
 			if ( c.getCondition() == null ) {

@@ -41,7 +41,6 @@ import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.VarInsnNode;
 
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
-import ortus.boxlang.compiler.asmboxpiler.AsmTranspiler;
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
@@ -474,7 +473,7 @@ public class BoxClassTransformer {
 			        .stream()
 			        .flatMap( statement -> transpiler.transform( statement, TransformerContext.NONE, ReturnValueContext.EMPTY ).stream() )
 			        .collect( Collectors.toList() );
-			    psuedoBody.addAll( ( ( AsmTranspiler ) transpiler ).getUDFDeclarations() );
+			    psuedoBody.addAll( transpiler.getUDFRegistrations() );
 			    psuedoBody.addAll( body );
 
 			    psuedoBody.add( new VarInsnNode( Opcodes.ALOAD, 0 ) );

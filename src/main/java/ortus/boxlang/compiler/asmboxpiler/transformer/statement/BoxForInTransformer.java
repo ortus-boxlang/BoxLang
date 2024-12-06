@@ -164,20 +164,13 @@ public class BoxForInTransformer extends AbstractTransformer {
 		VarStore iteratorVar = tracker.storeNewVariable( Opcodes.ASTORE );
 		nodes.addAll( iteratorVar.nodes() );
 
-		// push two nulls onto the stack in order to initialize our strategy for keeping the stack height consistent
-		// this is to allow the statement to return an expression in the case of a BoxScript execution
-		if ( returnValueContext == ReturnValueContext.VALUE_OR_NULL ) {
-			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
-			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
-		}
+		nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
 
 		nodes.add( loopStart );
 
+		var varStore = tracker.storeNewVariable( Opcodes.ASTORE );
 		// every iteration we will swap the values and pop in order to remove the older value
-		if ( returnValueContext == ReturnValueContext.VALUE_OR_NULL ) {
-			nodes.add( new InsnNode( Opcodes.SWAP ) );
-			nodes.add( new InsnNode( Opcodes.POP ) );
-		}
+		nodes.addAll( varStore.nodes() );
 
 		nodes.add( new VarInsnNode( Opcodes.ALOAD, iteratorVar.index() ) );
 		nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
@@ -196,7 +189,7 @@ public class BoxForInTransformer extends AbstractTransformer {
 
 		nodes.addAll( expressionPos.end() );
 
-		nodes.addAll( transpiler.transform( forIn.getBody(), context, returnValueContext ) );
+		nodes.addAll( transpiler.transform( forIn.getBody(), context, ReturnValueContext.VALUE_OR_NULL ) );
 
 		nodes.add( continueTarget );
 
@@ -224,11 +217,8 @@ public class BoxForInTransformer extends AbstractTransformer {
 		nodes.add( new JumpInsnNode( Opcodes.GOTO, loopStart ) );
 
 		nodes.add( breakTarget );
-		// every iteration we will swap the values and pop in order to remove the older value
-		if ( returnValueContext == ReturnValueContext.VALUE_OR_NULL ) {
-			nodes.add( new InsnNode( Opcodes.SWAP ) );
-			nodes.add( new InsnNode( Opcodes.POP ) );
-		}
+
+		nodes.addAll( varStore.nodes() );
 
 		nodes.add( loopEnd );
 
@@ -252,6 +242,12 @@ public class BoxForInTransformer extends AbstractTransformer {
 		    true
 		) );
 		nodes.add( unRegisterQueryLabel );
+
+		nodes.add( new VarInsnNode( Opcodes.ALOAD, varStore.index() ) );
+
+		if ( returnValueContext.empty ) {
+			nodes.add( new InsnNode( Opcodes.POP ) );
+		}
 
 		AsmHelper.addDebugLabel( nodes, "BoxForIn - end" );
 

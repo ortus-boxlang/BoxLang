@@ -59,8 +59,12 @@ public class BoxThrowTransformer extends AbstractTransformer {
 		    false
 		) );
 
+		if ( !returnContext.empty ) {
+			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+
+		}
+
 		// this is a noop but needs to be present for validation purposes
-		nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
 
 		return nodes;
 

@@ -31,7 +31,6 @@ import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
-import ortus.boxlang.compiler.asmboxpiler.AsmTranspiler;
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
@@ -357,7 +356,7 @@ public class BoxInterfaceTransformer {
 												        return transpiler.transform( statement, TransformerContext.NONE, ReturnValueContext.EMPTY ).stream();
 											        } )
 			        .toList();
-			    nodes.addAll( ( ( AsmTranspiler ) transpiler ).getUDFDeclarations() );
+			    nodes.addAll( transpiler.getUDFRegistrations() );
 			    nodes.addAll( body );
 			    return nodes;
 		    }

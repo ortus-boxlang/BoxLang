@@ -1044,6 +1044,7 @@ public class BoxRuntime implements java.io.Closeable {
 	 */
 	public void useJavaBoxpiler() {
 		RunnableLoader.getInstance().selectBoxPiler( JavaBoxpiler.class );
+		this.boxpiler = JavaBoxpiler.getInstance();
 	}
 
 	/**
@@ -1051,6 +1052,7 @@ public class BoxRuntime implements java.io.Closeable {
 	 */
 	public void useASMBoxPiler() {
 		RunnableLoader.getInstance().selectBoxPiler( ASMBoxpiler.class );
+		this.boxpiler = ASMBoxpiler.getInstance();
 	}
 
 	/**

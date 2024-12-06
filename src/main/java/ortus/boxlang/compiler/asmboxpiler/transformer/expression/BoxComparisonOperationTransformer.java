@@ -23,6 +23,7 @@ import java.util.List;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
+import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
@@ -95,6 +96,11 @@ public class BoxComparisonOperationTransformer extends AbstractTransformer {
 			    )
 			);
 		}
+
+		if ( returnContext.empty ) {
+			nodes.add( new InsnNode( Opcodes.POP ) );
+		}
+
 		return AsmHelper.addLineNumberLabels( nodes, node );
 	}
 
