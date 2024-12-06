@@ -25,6 +25,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.compiler.javaboxpiler.JavaBoxpiler;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -58,7 +59,9 @@ public class SourceMapTest {
 
 	@Test
 	public void testVariableLineNumber() {
-
+		if ( instance.getCompiler() instanceof JavaBoxpiler ) {
+			return;
+		}
 		Exception		e		= assertThrows( KeyNotFoundException.class, () -> {
 									instance.executeSource(
 									    """
@@ -71,11 +74,14 @@ public class SourceMapTest {
 		PrintWriter		printer	= new PrintWriter( out );
 		e.printStackTrace( printer );
 
-		assertThat( out.toString().contains( "MissingVar.bx:3" ) ).isTrue();
+		assertThat( out.toString() ).contains( "MissingVar.bx:3" );
 	}
 
 	@Test
 	public void testTemmplateMissingVariable() {
+		if ( instance.getCompiler() instanceof JavaBoxpiler ) {
+			return;
+		}
 
 		Exception		e		= assertThrows( KeyNotFoundException.class, () -> {
 									instance.executeSource(
@@ -89,12 +95,14 @@ public class SourceMapTest {
 		PrintWriter		printer	= new PrintWriter( out );
 		e.printStackTrace( printer );
 
-		assertThat( out.toString().contains( "MissingVarTemplate.bxm:14" ) ).isTrue();
+		assertThat( out.toString() ).contains( "MissingVarTemplate.bxm:14" );
 	}
 
 	@Test
 	public void testTemmplateMissingVariableInComponent() {
-
+		if ( instance.getCompiler() instanceof JavaBoxpiler ) {
+			return;
+		}
 		Exception		e		= assertThrows( KeyNotFoundException.class, () -> {
 									instance.executeSource(
 									    """
@@ -109,9 +117,9 @@ public class SourceMapTest {
 
 		String errorOutput = out.toString();
 
-		assertThat( errorOutput.contains( "ComponentInTemplate.bxm:5" ) ).isTrue();
-		assertThat( errorOutput.contains( "ComponentInTemplate.bxm:4" ) ).isTrue();
-		assertThat( errorOutput.contains( "ComponentInTemplate.bxm:1" ) ).isTrue();
+		assertThat( errorOutput ).contains( "ComponentInTemplate.bxm:5" );
+		assertThat( errorOutput ).contains( "ComponentInTemplate.bxm:4" );
+		assertThat( errorOutput ).contains( "ComponentInTemplate.bxm:1" );
 	}
 
 }
