@@ -121,14 +121,7 @@ public abstract class BaseApplicationListener {
 	 */
 	protected IStruct						settings					= Struct.of(
 	    "applicationTimeout", runtime.getConfiguration().applicationTimeout,
-	    // CLIENT WILL BE REMOVED IN BOXLANG
-	    // Kept here for now
-	    "clientManagement", false,
-	    "clientStorage", "cookie",
-	    "clientTimeout", 1,
-	    // END: CLIENT
 	    "classPaths", new Array(),
-	    // TODO: move this logic to compat
 	    "componentPaths", new Array(),
 	    "customTagPaths", new Array(),
 	    "datasource", runtime.getConfiguration().defaultDatasource,
@@ -209,6 +202,13 @@ public abstract class BaseApplicationListener {
 	}
 
 	/**
+	 * Gets the Request Context
+	 */
+	public RequestBoxContext getRequestContext() {
+		return this.context;
+	}
+
+	/**
 	 * Verifies if the application is defined or not
 	 *
 	 * @return true if the application is defined, false otherwise
@@ -260,6 +260,10 @@ public abstract class BaseApplicationListener {
 			// also remove any session context
 			context.removeParentContext( SessionBoxContext.class );
 		}
+
+		BoxRuntime.getInstance().getInterceptorService().announce( BoxEvent.ON_APPLICATION_DEFINED, Struct.of(
+		    "listener", this
+		) );
 	}
 
 	/**
@@ -431,7 +435,7 @@ public abstract class BaseApplicationListener {
 	}
 
 	/**
-	 * Intializes a new session, also called by every new request via the {@link BaseApplicationListener#defineApplication} method
+	 * Initializes a new session, also called by every new request via the {@link BaseApplicationListener#defineApplication} method
 	 *
 	 * @param newID The new session identifier
 	 */
