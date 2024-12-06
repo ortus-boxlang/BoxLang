@@ -243,6 +243,14 @@ public class DataSource implements Comparable<DataSource> {
 	 * @return An array of Structs, each representing a row of the result set (if any). If there are no results (say, for an UPDATE statement), an empty
 	 *         array is returned.
 	 */
+	public ExecutedQuery execute( String query ) {
+		try ( Connection conn = getConnection() ) {
+			return execute( query, conn, null );
+		} catch ( SQLException e ) {
+			throw new DatabaseException( e.getMessage(), e );
+		}
+	}
+
 	public ExecutedQuery execute( String query, IBoxContext context ) {
 		try ( Connection conn = getConnection() ) {
 			return execute( query, conn, context );

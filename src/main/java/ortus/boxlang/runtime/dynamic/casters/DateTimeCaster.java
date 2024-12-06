@@ -26,6 +26,7 @@ import org.apache.commons.lang3.time.DateUtils;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
@@ -123,7 +124,11 @@ public class DateTimeCaster implements IBoxCaster {
 	 * @return The value
 	 */
 	public static DateTime cast( Object object ) {
-		return cast( object, true, BoxRuntime.getInstance().getRuntimeContext() );
+		IBoxContext context = RequestBoxContext.getCurrent();
+		if ( context == null ) {
+			context = BoxRuntime.getInstance().getRuntimeContext();
+		}
+		return cast( object, true, context );
 	}
 
 	/**
@@ -178,6 +183,12 @@ public class DateTimeCaster implements IBoxCaster {
 	 */
 	public static DateTime cast( Object object, Boolean fail, ZoneId timezone, Boolean clone, IBoxContext context ) {
 		if ( timezone == null ) {
+			if ( context == null ) {
+				context = RequestBoxContext.getCurrent();
+				if ( context == null ) {
+					context = BoxRuntime.getInstance().getRuntimeContext();
+				}
+			}
 			timezone = LocalizationUtil.parseZoneId( null, context );
 		}
 
