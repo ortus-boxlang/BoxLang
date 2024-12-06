@@ -23,6 +23,7 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -52,7 +53,7 @@ public class URLEncodedFormat extends BIF {
 	 * @argument.String
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String str = arguments.getAsString( Key.string );
+		String str = StringCaster.cast( arguments.get( Key.string ) );
 		try {
 			// W3C says to use UTF-8 for all encoding: http://www.w3.org/TR/html40/appendix/notes.html#non-ascii-chars
 			return java.net.URLEncoder.encode( str, "utf-8" );
