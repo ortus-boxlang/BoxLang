@@ -204,7 +204,7 @@ public class StructUtil {
 	 * @return A filtered array
 	 */
 	@SuppressWarnings( "unchecked" )
-	public static Struct filter(
+	public static IStruct filter(
 	    IStruct struct,
 	    Function callback,
 	    IBoxContext callbackContext,
