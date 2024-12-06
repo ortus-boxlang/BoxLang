@@ -103,7 +103,7 @@
 			"runtime": {
 				// Valid values are in order of severity: ERROR, WARN, INFO, DEBUG, TRACE, OFF
 				// Leave out if it should inherit from the root logger
-				"level": "INFO",
+				"level": "DEBUG",
 				// Valid values are: "file", "console",
 				// Coming soon: "smtp", "socket", "db", "syslog" or "java class name"
 				// Please note that we only use Rolling File Appenders
@@ -120,7 +120,7 @@
 			"modules": {
 				// Valid values are in order of severity: ERROR, WARN, INFO, DEBUG, TRACE, OFF
 				// Leave out if it should inherit from the root logger
-				"level": "INFO",
+				"level": "DEBUG",
 				// Valid values are: "file", "console",
 				// Coming soon: "smtp", "socket", "db", "syslog" or "java class name"
 				// Please note that we only use Rolling File Appenders
@@ -137,7 +137,7 @@
 			"application": {
 				// Valid values are in order of severity: ERROR, WARN, INFO, DEBUG, TRACE, OFF
 				// Leave out if it should inherit from the root logger
-				"level": "TRACE",
+				"level": "DEBUG",
 				// Valid values are: "file", "console",
 				// Coming soon: "smtp", "socket", "db", "syslog" or "java class name"
 				// Please note that we only use Rolling File Appenders
@@ -154,7 +154,7 @@
 			"scheduler": {
 				// Valid values are in order of severity: ERROR, WARN, INFO, DEBUG, TRACE, OFF
 				// Leave out if it should inherit from the root logger
-				"level": "INFO",
+				"level": "DEBUG",
 				// Valid values are: "file", "console",
 				// Coming soon: "smtp", "socket", "db", "syslog" or "java class name"
 				// Please note that we only use Rolling File Appenders
