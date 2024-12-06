@@ -45,6 +45,7 @@ public class CreateObjectTest {
 	@BeforeAll
 	public static void setUp() {
 		instance = BoxRuntime.getInstance( true );
+		instance.getClassLocator().clearClassLoaders();
 	}
 
 	@BeforeEach

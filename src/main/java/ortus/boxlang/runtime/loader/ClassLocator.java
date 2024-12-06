@@ -37,7 +37,9 @@ import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ClassNotFoundBoxLangException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
+import ortus.boxlang.runtime.types.util.BLCollector;
 import ortus.boxlang.runtime.util.EncryptionUtil;
+import ortus.boxlang.runtime.util.FileSystemUtil;
 
 /**
  * This is a Class Loader is in charge of locating Box classes in the lookup algorithm
@@ -518,14 +520,23 @@ public class ClassLocator extends ClassLoader {
 	    List<ImportDefinition> imports ) {
 
 		// Get the class paths and expand them
-		URL[]				loadPathsUrls	= DynamicClassLoader.inflateClassPaths( classPaths );
+		URL[]				loadPathsUrls	= DynamicClassLoader.inflateClassPaths(
+		    classPaths
+		        .stream()
+		        .map( item -> FileSystemUtil.expandPath( context.getRequestContext(), ( String ) item ).absolutePath().toString() )
+		        .collect( BLCollector.toArray() )
+		);
 		String				loaderCacheKey	= EncryptionUtil.hash( Arrays.toString( loadPathsUrls ) );
 		DynamicClassLoader	classLoader		= this.classLoaders.computeIfAbsent(
 		    loaderCacheKey,
 		    key -> {
 			    // logger.debug( "Application ClassLoader [{}] registered with these paths: [{}]", this.name, Arrays.toString( loadPathsUrls ) );
-			    return new DynamicClassLoader( Key.of( loaderCacheKey ), loadPathsUrls,
-			        BoxRuntime.getInstance().getRuntimeLoader(), false );
+			    return new DynamicClassLoader(
+			        Key.of( loaderCacheKey ),
+			        loadPathsUrls,
+			        BoxRuntime.getInstance().getRuntimeLoader(),
+			        false
+			    );
 		    } );
 
 		try {
@@ -719,6 +730,13 @@ public class ClassLocator extends ClassLoader {
 	 */
 	public long getClassLoaderCount() {
 		return this.classLoaders.size();
+	}
+
+	/**
+	 * Clear all the class loaders
+	 */
+	public void clearClassLoaders() {
+		this.classLoaders.clear();
 	}
 
 	/**
