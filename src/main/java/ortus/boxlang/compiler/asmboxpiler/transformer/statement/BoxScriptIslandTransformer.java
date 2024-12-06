@@ -22,6 +22,7 @@ import java.util.List;
 
 import org.objectweb.asm.tree.AbstractInsnNode;
 
+import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
@@ -45,6 +46,6 @@ public class BoxScriptIslandTransformer extends AbstractTransformer {
 			nodes.addAll( transpiler.transform( statement, context, returnContext ) );
 		}
 
-		return nodes;
+		return AsmHelper.addLineNumberLabels( nodes, node );
 	}
 }

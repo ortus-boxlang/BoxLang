@@ -26,6 +26,7 @@ import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 
+import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.MethodContextTracker;
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
@@ -75,7 +76,7 @@ public class BoxBreakTransformer extends AbstractTransformer {
 				nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
 			}
 			nodes.add( new JumpInsnNode( Opcodes.GOTO, currentBreak ) );
-			return nodes;
+			return AsmHelper.addLineNumberLabels( nodes, node );
 		}
 
 		if ( exitsAllowed.equals( ExitsAllowed.COMPONENT ) ) {
@@ -87,14 +88,14 @@ public class BoxBreakTransformer extends AbstractTransformer {
 			    false )
 			);
 			nodes.add( new InsnNode( Opcodes.ARETURN ) );
-			return nodes;
+			return AsmHelper.addLineNumberLabels( nodes, node );
 		} else if ( exitsAllowed.equals( ExitsAllowed.LOOP ) ) {
 			// template = "if(true) break " + breakLabel + ";";
 			nodes.add( new InsnNode( Opcodes.ARETURN ) );
-			return nodes;
+			return AsmHelper.addLineNumberLabels( nodes, node );
 		} else if ( exitsAllowed.equals( ExitsAllowed.FUNCTION ) ) {
 			nodes.add( new InsnNode( Opcodes.ARETURN ) );
-			return nodes;
+			return AsmHelper.addLineNumberLabels( nodes, node );
 		} else {
 			// template = "if(true) return;";
 		}

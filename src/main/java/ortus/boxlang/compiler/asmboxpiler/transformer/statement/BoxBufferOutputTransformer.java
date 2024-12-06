@@ -62,6 +62,6 @@ public class BoxBufferOutputTransformer extends AbstractTransformer {
 
 		AsmHelper.addDebugLabel( nodes, "BoxBufferOutput - end" );
 
-		return nodes;
+		return AsmHelper.addLineNumberLabels( nodes, node );
 	}
 }

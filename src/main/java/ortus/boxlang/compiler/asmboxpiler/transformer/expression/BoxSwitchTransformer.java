@@ -175,6 +175,6 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 
 		AsmHelper.addDebugLabel( nodes, "BoxSwitch - done" );
 
-		return nodes;
+		return AsmHelper.addLineNumberLabels( nodes, node );
 	}
 }

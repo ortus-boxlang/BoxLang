@@ -26,6 +26,7 @@ import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.TypeInsnNode;
 
+import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
@@ -64,9 +65,7 @@ public class BoxThrowTransformer extends AbstractTransformer {
 
 		}
 
-		// this is a noop but needs to be present for validation purposes
-
-		return nodes;
+		return AsmHelper.addLineNumberLabels( nodes, node );
 
 	}
 

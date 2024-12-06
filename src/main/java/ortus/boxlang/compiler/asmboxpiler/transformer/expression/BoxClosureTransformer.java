@@ -235,7 +235,6 @@ public class BoxClosureTransformer extends AbstractTransformer {
 		    Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( IBoxContext.class ) ),
 		    false ) );
 
-		return nodes;
-		// return AsmHelper.addLineNumberLabels( nodes, node );
+		return AsmHelper.addLineNumberLabels( nodes, node );
 	}
 }

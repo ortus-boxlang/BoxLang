@@ -50,7 +50,7 @@ public class BoxReturnTransformer extends AbstractTransformer {
 			if ( returnContext.nullable ) {
 				nodes.add( new InsnNode( Opcodes.ARETURN ) );
 			}
-			return nodes;
+			return AsmHelper.addLineNumberLabels( nodes, node );
 		}
 
 		if ( boxReturn.getExpression() == null ) {

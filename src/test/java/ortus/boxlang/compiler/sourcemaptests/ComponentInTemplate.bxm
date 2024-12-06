@@ -1,0 +1,8 @@
+<bx:output>
+    <bx:set arr = [ "a", "b", "c" ] />
+
+    <bx:loop array="#arr#" index="i" >
+        #x#
+    </bx:loop>
+</bx:output>
+

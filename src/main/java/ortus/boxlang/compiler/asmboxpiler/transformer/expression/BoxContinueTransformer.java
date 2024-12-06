@@ -75,7 +75,7 @@ public class BoxContinueTransformer extends AbstractTransformer {
 				nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
 			}
 			nodes.add( new JumpInsnNode( Opcodes.GOTO, currentBreak ) );
-			return nodes;
+			return AsmHelper.addLineNumberLabels( nodes, node );
 		}
 
 		if ( exitsAllowed.equals( ExitsAllowed.COMPONENT ) ) {
@@ -87,14 +87,14 @@ public class BoxContinueTransformer extends AbstractTransformer {
 			    false )
 			);
 			nodes.add( new InsnNode( Opcodes.ARETURN ) );
-			return nodes;
+			return AsmHelper.addLineNumberLabels( nodes, node );
 		} else if ( exitsAllowed.equals( ExitsAllowed.LOOP ) ) {
 			nodes.add( new JumpInsnNode( Opcodes.GOTO, currentBreak ) );
-			return nodes;
+			return AsmHelper.addLineNumberLabels( nodes, node );
 			// template = "if(true) break " + breakLabel + ";";
 		} else if ( exitsAllowed.equals( ExitsAllowed.FUNCTION ) ) {
 			nodes.add( new InsnNode( Opcodes.ARETURN ) );
-			return nodes;
+			return AsmHelper.addLineNumberLabels( nodes, node );
 		}
 
 		throw new RuntimeException( "Cannot continue from current location - processing: " + transpiler.getProperty( "relativePath" ) );
@@ -106,9 +106,5 @@ public class BoxContinueTransformer extends AbstractTransformer {
 		return node.getFirstNodeOfTypes( BoxFunctionDeclaration.class, BoxClosure.class, BoxLambda.class, BoxComponent.class, BoxDo.class,
 		    BoxForIndex.class, BoxForIn.class,
 		    BoxWhile.class, BoxSwitch.class );
-	}
-
-	private boolean isLoop( BoxNode node ) {
-		return node instanceof BoxForIndex;
 	}
 }

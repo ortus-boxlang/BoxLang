@@ -85,18 +85,6 @@ public class BoxComponentTransformer extends AbstractTransformer {
 		        Type.getType( Component.ComponentBody.class ) ),
 		    true ) );
 
-		// if ( boxComponent.getBody() == null || boxComponent.getBody().size() == 0 ) {
-		// if ( returnContext != ReturnValueContext.VALUE && returnContext != ReturnValueContext.VALUE_OR_NULL ) {
-		// nodes.add( new InsnNode( Opcodes.POP ) );
-		// }
-
-		// transpiler.decrementComponentCounter();
-
-		// return nodes;
-		// TODO: this causes CoreLangTest.unicode
-		// return AsmHelper.addLineNumberLabels( nodes, node );
-		// }
-
 		if ( transpiler.isInsideComponent() ) {
 			LabelNode ifLabel = new LabelNode();
 
@@ -123,7 +111,7 @@ public class BoxComponentTransformer extends AbstractTransformer {
 				nodes.add( new InsnNode( Opcodes.POP ) );
 			}
 
-			return nodes;
+			return AsmHelper.addLineNumberLabels( nodes, node );
 		} else if ( transpiler.canReturn() ) {
 			LabelNode ifLabel = new LabelNode();
 
@@ -166,11 +154,9 @@ public class BoxComponentTransformer extends AbstractTransformer {
 			}
 		}
 
-		// transpiler.decrementComponentCounter();
 		AsmHelper.addDebugLabel( nodes, "BoxComponent - done" );
-		return nodes;
-		// TODO: this causes CoreLangTest.unicode
-		// return AsmHelper.addLineNumberLabels( nodes, node );
+
+		return AsmHelper.addLineNumberLabels( nodes, node );
 	}
 
 	private List<AbstractInsnNode> generateBodyNodes( List<BoxStatement> body ) {

@@ -140,7 +140,7 @@ public class BoxForIndexTransformer extends AbstractTransformer {
 
 		AsmHelper.addDebugLabel( nodes, "BoxForIndex - done" );
 
-		return nodes;
+		return AsmHelper.addLineNumberLabels( nodes, node );
 	}
 
 }

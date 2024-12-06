@@ -138,7 +138,7 @@ public class BoxTryTransformer extends AbstractTransformer {
 
 		tracker.addTryCatchBlock( new TryCatchBlockNode( tryStartLabel, tryEndLabel, finallyStartLabel, null ) );
 
-		return nodes;
+		return AsmHelper.addLineNumberLabels( nodes, node );
 
 	}
 

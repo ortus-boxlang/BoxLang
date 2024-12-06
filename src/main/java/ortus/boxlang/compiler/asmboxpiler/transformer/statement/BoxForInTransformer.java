@@ -251,7 +251,7 @@ public class BoxForInTransformer extends AbstractTransformer {
 
 		AsmHelper.addDebugLabel( nodes, "BoxForIn - end" );
 
-		return nodes;
+		return AsmHelper.addLineNumberLabels( nodes, node );
 	}
 
 	private List<AbstractInsnNode> assignVar( BoxForIn forIn, int iteratorIndex, TransformerContext context ) {

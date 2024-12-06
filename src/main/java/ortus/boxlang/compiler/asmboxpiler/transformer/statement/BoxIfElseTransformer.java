@@ -80,7 +80,7 @@ public class BoxIfElseTransformer extends AbstractTransformer {
 
 		AsmHelper.addDebugLabel( nodes, "BoxIfElse - end" );
 
-		return nodes;
+		return AsmHelper.addLineNumberLabels( nodes, node );
 
 	}
 
