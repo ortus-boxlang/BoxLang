@@ -96,7 +96,7 @@ public class LoggerConfig implements IConfigSegment {
 	}
 
 	@Override
-	public IConfigSegment process( IStruct config ) {
+	public LoggerConfig process( IStruct config ) {
 		this.level				= LogLevel.valueOf( PropertyHelper.processString( config, Key.level, this.loggingConfig.rootLevel.getName() ), false );
 		this.appender			= Key.of( PropertyHelper.processString( config, Key.appender, DEFAULT_APPENDER.getName(), VALID_APPENDERS ) );
 		this.encoder			= Key.of(

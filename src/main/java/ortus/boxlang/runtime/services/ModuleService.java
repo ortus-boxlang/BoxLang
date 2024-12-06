@@ -29,7 +29,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.semver4j.Semver;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.events.BoxEvent;
@@ -79,7 +78,7 @@ public class ModuleService extends BaseService {
 	/**
 	 * Logger
 	 */
-	private static final Logger		logger								= LoggerFactory.getLogger( ModuleService.class );
+	private Logger					logger;
 
 	/**
 	 * Module registry
@@ -132,8 +131,9 @@ public class ModuleService extends BaseService {
 	 */
 	@Override
 	public void onStartup() {
+		this.logger = runtime.getLoggingService().getLogger( "modules" );
 		BoxRuntime.timerUtil.start( "moduleservice-startup" );
-		logger.debug( "+ Starting up Module Service..." );
+		this.logger.info( "+ Starting up Module Service..." );
 
 		// Store the running BoxLang version
 		this.runtimeSemver = new Semver( getRuntime().getVersionInfo().getAsString( Key.version ) );
@@ -154,7 +154,7 @@ public class ModuleService extends BaseService {
 		);
 
 		// Let it be known!
-		logger.info( "+ Module Service started in [{}] ms", BoxRuntime.timerUtil.stopAndGetMillis( "moduleservice-startup" ) );
+		this.logger.info( "+ Module Service started in [{}] ms", BoxRuntime.timerUtil.stopAndGetMillis( "moduleservice-startup" ) );
 	}
 
 	/**
@@ -173,7 +173,7 @@ public class ModuleService extends BaseService {
 		// Unload all modules
 		unloadAll();
 
-		logger.debug( "+ Module Service shutdown" );
+		this.logger.info( "+ Module Service shutdown" );
 	}
 
 	/**
@@ -201,7 +201,7 @@ public class ModuleService extends BaseService {
 		    .forEach( this::register );
 
 		// Log it
-		logger.debug(
+		this.logger.debug(
 		    "+ Module Service: Registered [{}] modules in [{}] ms",
 		    this.registry.size(),
 		    BoxRuntime.timerUtil.stopAndGetMillis( timerLabel )
@@ -229,10 +229,13 @@ public class ModuleService extends BaseService {
 
 		// Check if the module is in the registry
 		if ( !this.registry.containsKey( name ) ) {
-			throw new BoxRuntimeException(
-			    "Cannot register the module [" + name + "] is not in the module registry." +
-			        "Valid modules are: " + this.registry.keySet().toString()
+			var errorMessage = String.format(
+			    "Cannot register the module [%s] is not in the module registry. Valid modules are: %s",
+			    name,
+			    this.registry.keySet().toString()
 			);
+			this.logger.error( errorMessage );
+			throw new BoxRuntimeException( errorMessage );
 		}
 
 		// Get the module record and context of execution for modules
@@ -251,7 +254,7 @@ public class ModuleService extends BaseService {
 
 		// Check if the module is disabled, if so, skip it
 		if ( !moduleRecord.isEnabled() ) {
-			logger.warn(
+			this.logger.warn(
 			    "+ Module Service: Module [{}] is disabled, skipping registration",
 			    moduleRecord.name
 			);
@@ -271,7 +274,7 @@ public class ModuleService extends BaseService {
 		);
 
 		// Log it
-		logger.debug(
+		this.logger.info(
 		    "+ Module Service: Registered module [{}@{}] in [{}] ms from [{}]",
 		    moduleRecord.name.getName(),
 		    moduleRecord.version,
@@ -300,7 +303,7 @@ public class ModuleService extends BaseService {
 		    .forEach( this::activate );
 
 		// Log it
-		logger.debug(
+		this.logger.info(
 		    "+ Module Service: Activated [{}] modules in [{}] ms",
 		    this.registry.size(),
 		    BoxRuntime.timerUtil.stopAndGetMillis( timerLabel )
@@ -326,15 +329,18 @@ public class ModuleService extends BaseService {
 
 		// Check if the module is in the registry
 		if ( !this.registry.containsKey( name ) ) {
-			throw new BoxRuntimeException(
-			    "Cannot activate the module [" + name + "] is not in the module registry." +
-			        "Valid modules are: " + this.registry.keySet().toString()
+			var errorMessage = String.format(
+			    "Cannot activate the module [%s] as it is not in the module registry. Valid modules are: %s",
+			    name,
+			    this.registry.keySet().toString()
 			);
+			this.logger.warn( errorMessage );
+			throw new BoxRuntimeException( errorMessage );
 		}
 
 		// Check if the module is already activated
 		if ( this.registry.get( name ).isActivated() ) {
-			logger.warn(
+			this.logger.warn(
 			    "+ Module Service: Module [{}] is already activated, skipping re-activation",
 			    name
 			);
@@ -343,7 +349,7 @@ public class ModuleService extends BaseService {
 
 		// Check if the module is disabled
 		if ( !this.registry.get( name ).isEnabled() ) {
-			logger.debug(
+			this.logger.warn(
 			    "+ Module Service: Module [{}] is disabled, skipping activation",
 			    name
 			);
@@ -374,7 +380,7 @@ public class ModuleService extends BaseService {
 		);
 
 		// Log it
-		logger.debug(
+		this.logger.info(
 		    "+ Module Service: Activated module [{}@{}] in [{}] ms",
 		    moduleRecord.name.getName(),
 		    moduleRecord.version,
@@ -420,8 +426,17 @@ public class ModuleService extends BaseService {
 		    Struct.of( "moduleRecord", moduleRecord, "moduleName", name )
 		);
 
-		// Call onUnload()
-		moduleRecord.unload( runtimeContext );
+		// We try/catch it in case it bongs, as we want all modules to unload
+		try {
+			moduleRecord.unload( runtimeContext );
+		} catch ( Exception e ) {
+			this.logger.error(
+			    "+ Module Service: Error unloading module [{}@{}]: {}",
+			    moduleRecord.name,
+			    moduleRecord.version,
+			    e.getMessage()
+			);
+		}
 
 		// Announce it
 		announce(
@@ -430,8 +445,8 @@ public class ModuleService extends BaseService {
 		);
 
 		// Log it
-		logger.debug(
-		    "+ Module Service: Unload module [{}@{}]",
+		this.logger.info(
+		    "+ Module Service: Unloaded module [{}@{}]",
 		    moduleRecord.name,
 		    moduleRecord.version
 		);
@@ -537,7 +552,7 @@ public class ModuleService extends BaseService {
 				Files.createDirectories( path );
 			} catch ( IOException e ) {
 				if ( e instanceof FileSystemException && e.getMessage().contains( "Read-only file system" ) ) {
-					logger.warn( "ModuleService: Cannot create module path [{}] as it is on a read-only file system", path.toString() );
+					this.logger.warn( "ModuleService: Cannot create module path [{}] as it is on a read-only file system", path );
 					return this;
 				} else {
 					throw new BoxRuntimeException( "Error creating module path: " + path.toString(), e );
@@ -549,9 +564,9 @@ public class ModuleService extends BaseService {
 		if ( Files.isDirectory( path ) ) {
 			// Add a module path to the list
 			this.modulePaths.add( path );
-			logger.debug( "+ ModuleService: Added an external module path: [{}]", path.toString() );
+			this.logger.info( "+ ModuleService: Added an external module path: [{}]", path );
 		} else {
-			logger.warn( "ModuleService: Requested addModulePath [{}] does not exist or is not a directory", path.toString() );
+			this.logger.warn( "ModuleService: Requested addModulePath [{}] does not exist or is not a directory", path );
 		}
 
 		return this;
@@ -572,7 +587,7 @@ public class ModuleService extends BaseService {
 	public void verifyModuleAndBoxLangVersion( String moduleVersion, Path directoryPath ) {
 		// Early exit if the module version is null or blank
 		if ( moduleVersion == null || moduleVersion.isBlank() ) {
-			logger.warn( "Module [{}] does not have a BoxLang [minimumVersion] specified in the ModuleConfig.bx file", directoryPath.getFileName() );
+			this.logger.warn( "Module [{}] does not have a BoxLang [minimumVersion] specified in the ModuleConfig.bx file", directoryPath.getFileName() );
 			return;
 		}
 
@@ -584,26 +599,16 @@ public class ModuleService extends BaseService {
 			// Module minimum version = 3
 			// Runtime version = 4 allow it, < 3 throw exception
 			if ( this.runtimeSemver.getMajor() < minimumVersion.getMajor() ) {
-				throw new BoxRuntimeException(
-				    String.format(
-				        "Module [%s] requires BoxLang version [%s] but we are running [%s]",
-				        directoryPath.getFileName(),
-				        minimumVersion,
-				        this.runtimeSemver
-				    )
+				var errorMessage = String.format(
+				    "Module [%s] requires BoxLang version [%s] but we are running [%s]",
+				    directoryPath.getFileName(),
+				    minimumVersion,
+				    this.runtimeSemver
 				);
+				this.logger.error( errorMessage );
+				throw new BoxRuntimeException( errorMessage );
 			}
 
-			// Minor and Patch version check
-			if ( this.runtimeSemver.getMinor() != minimumVersion.getMinor() || this.runtimeSemver.getPatch() != minimumVersion.getPatch() ) {
-				// logger.trace(
-				// "Module [{}] requires a minimum BoxLang version [{}] or later, but we are running [{}]. " +
-				// "There may be compatibility issues with newer features or bug fixes.",
-				// directoryPath.getFileName(),
-				// minimumVersion,
-				// this.runtimeSemver
-				// );
-			}
 		}
 	}
 
