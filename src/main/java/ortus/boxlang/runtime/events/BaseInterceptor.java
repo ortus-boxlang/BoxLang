@@ -17,6 +17,8 @@
  */
 package ortus.boxlang.runtime.events;
 
+import org.slf4j.Logger;
+
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
@@ -31,7 +33,12 @@ public abstract class BaseInterceptor implements IInterceptor {
 	/**
 	 * The properties to configure the interceptor with (if any)
 	 */
-	protected IStruct properties = new Struct();
+	protected IStruct	properties	= new Struct();
+
+	/**
+	 * The logger
+	 */
+	protected Logger	logger;
 
 	/**
 	 * This method is called by the BoxLang runtime to configure the interceptor
@@ -40,7 +47,8 @@ public abstract class BaseInterceptor implements IInterceptor {
 	 * @param properties The properties to configure the interceptor with (if any)
 	 */
 	public void configure( IStruct properties ) {
-		this.properties = properties;
+		this.properties	= properties;
+		this.logger		= getRuntime().getLoggingService().getLogger( "runtime" );
 	}
 
 	/**
@@ -111,6 +119,13 @@ public abstract class BaseInterceptor implements IInterceptor {
 	 */
 	public BoxRuntime getRuntime() {
 		return BoxRuntime.getInstance();
+	}
+
+	/**
+	 * Get the logger
+	 */
+	public Logger getLogger() {
+		return this.logger;
 	}
 
 	/**
