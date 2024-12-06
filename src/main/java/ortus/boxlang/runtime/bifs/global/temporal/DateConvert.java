@@ -32,7 +32,8 @@ import ortus.boxlang.runtime.util.LocalizationUtil;
 @BoxBIF
 public class DateConvert extends BIF {
 
-	private static final Key utc2Local = Key.of( "utc2Local" );
+	private static final Key	utc2Local	= Key.of( "utc2Local" );
+	private static final ZoneId	utcZone		= ZoneId.of( "UTC" );
 
 	/**
 	 * Constructor
@@ -59,14 +60,16 @@ public class DateConvert extends BIF {
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Key			conversion	= Key.of( arguments.getAsString( Key.conversionType ) );
 		ZoneId		localZone	= LocalizationUtil.parseZoneId( null, context );
-		DateTime	dateRef		= DateTimeCaster.cast(
-		    arguments.get( Key.date ),
-		    true,
-		    localZone,
-		    context
-		);
+		ZoneId		refZone		= conversion.equals( utc2Local ) ? utcZone : localZone;
+		Object		dateObject	= arguments.get( Key.date );
+		DateTime	dateRef		= null;
+		if ( dateObject instanceof String stringDate ) {
+			dateRef = new DateTime( stringDate, refZone );
+		} else {
+			dateRef = DateTimeCaster.cast( dateObject, context );
+		}
 
-		return dateRef.convertToZone( conversion.equals( utc2Local ) ? localZone : ZoneId.of( "UTC" ) );
+		return dateRef.convertToZone( conversion.equals( utc2Local ) ? localZone : utcZone );
 
 	}
 

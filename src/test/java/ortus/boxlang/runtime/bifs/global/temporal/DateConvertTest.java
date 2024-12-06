@@ -67,7 +67,7 @@ public class DateConvertTest {
 
 	@DisplayName( "It tests the BIF DateConvert local2UTC" )
 	@Test
-	public void testDateCompareLocal2Utc() {
+	public void testDateConvertLocal2Utc() {
 		var	localZone	= ZoneId.of( "America/Los_Angeles" );
 		var	dateRef		= new DateTime( localZone );
 		assertEquals( dateRef.getWrapped().getZone(), localZone );
@@ -85,7 +85,7 @@ public class DateConvertTest {
 
 	@DisplayName( "It tests the BIF DateConvert with utc2Local" )
 	@Test
-	public void testDateCompareUtcToLocal() {
+	public void testDateConvertUtcToLocal() {
 		var	utcZone		= ZoneId.of( "UTC" );
 		var	localZone	= ZoneId.of( "America/Los_Angeles" );
 		var	dateRef		= new DateTime( utcZone );
@@ -103,6 +103,46 @@ public class DateConvertTest {
 		DateTime result = DateTimeCaster.cast( variables.get( Key.of( "result" ) ) );
 		assertNotEquals( result.getWrapped().getZone(), utcZone );
 		assertTrue( result.getWrapped().equals( conversionRef.getWrapped() ) );
+	}
+
+	@DisplayName( "It tests the BIF DateConvert with utc2Local on epoch date" )
+	@Test
+	public void testDateConvertUtcToLocalEpoch() {
+		var	utcZone		= ZoneId.of( "UTC" );
+		var	localZone	= ZoneId.of( "America/Los_Angeles" );
+		var	dateRef		= "1970-01-01T00:00";
+		variables.put( Key.of( "date" ), dateRef );
+		instance.executeSource(
+		    """
+		    setTimezone( "America/Los_Angeles" );
+		       result = dateConvert( "utc2local", date );
+		       """,
+		    context );
+
+		DateTime result = DateTimeCaster.cast( variables.get( Key.of( "result" ) ) );
+		assertNotEquals( result.getWrapped().getZone(), utcZone );
+		assertEquals( result.getWrapped().getZone(), localZone );
+		assertEquals( "1969-12-31T16:00", result.format( "yyyy-MM-dd'T'HH:mm" ) );
+	}
+
+	@DisplayName( "It tests the BIF DateConvert with utc2Local on epoch date" )
+	@Test
+	public void testDateConvertLocalToUTCEpoch() {
+		var	utcZone		= ZoneId.of( "UTC" );
+		var	localZone	= ZoneId.of( "America/Los_Angeles" );
+		var	dateRef		= "1969-12-31T16:00:00";
+		variables.put( Key.of( "date" ), dateRef );
+		instance.executeSource(
+		    """
+		    setTimezone( "America/Los_Angeles" );
+		       result = dateConvert( "local2utc", date );
+		       """,
+		    context );
+
+		DateTime result = variables.getAsDateTime( Key.of( "result" ) );
+		assertNotEquals( result.getWrapped().getZone(), localZone );
+		assertEquals( result.getWrapped().getZone(), utcZone );
+		assertEquals( "1970-01-01T00:00", result.format( "yyyy-MM-dd'T'HH:mm" ) );
 	}
 
 }
