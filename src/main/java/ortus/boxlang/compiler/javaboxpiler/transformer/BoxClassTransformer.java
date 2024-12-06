@@ -272,7 +272,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 				return documentation;
 			}
 
-			public Key getName() {
+			public Key bxGetName() {
 				return this.name;
 			}
 

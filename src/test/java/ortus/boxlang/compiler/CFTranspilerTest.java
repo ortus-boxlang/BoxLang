@@ -176,7 +176,7 @@ public class CFTranspilerTest {
 		    """,
 		    context, BoxSourceType.CFSCRIPT );
 		assertThat( variables.get( Key.of( "clazz" ) ) ).isInstanceOf( IClassRunnable.class );
-		assertThat( ( ( IClassRunnable ) variables.get( Key.of( "clazz" ) ) ).getName().getName() ).isEqualTo( "src.test.java.TestCases.phase3.MyClassCF" );
+		assertThat( ( ( IClassRunnable ) variables.get( Key.of( "clazz" ) ) ).bxGetName().getName() ).isEqualTo( "src.test.java.TestCases.phase3.MyClassCF" );
 	}
 
 	@DisplayName( "Test BIF return value" )

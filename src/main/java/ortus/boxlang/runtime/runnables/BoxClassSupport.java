@@ -117,7 +117,7 @@ public class BoxClassSupport {
 	 * @return The string representation
 	 */
 	public static String asString( IClassRunnable thisClass ) {
-		return "Class: " + thisClass.getName().getName();
+		return "Class: " + thisClass.bxGetName().getName();
 	}
 
 	/**
@@ -471,7 +471,7 @@ public class BoxClassSupport {
 				functions.add( fun.getMetaData() );
 			}
 		}
-		meta.put( "name", thisClass.getName().getName() );
+		meta.put( "name", thisClass.bxGetName().getName() );
 		meta.put( "accessors", hasAccessors( thisClass ) );
 		meta.put( "functions", Array.fromList( functions ) );
 
@@ -502,8 +502,8 @@ public class BoxClassSupport {
 		}
 		meta.put( "properties", properties );
 		meta.put( "type", "Component" );
-		meta.put( "name", thisClass.getName().getName() );
-		meta.put( "fullname", thisClass.getName().getName() );
+		meta.put( "name", thisClass.bxGetName().getName() );
+		meta.put( "fullname", thisClass.bxGetName().getName() );
 		meta.put( "path", thisClass.getRunnablePath().absolutePath().toString() );
 		meta.put( "persisent", false );
 
@@ -737,7 +737,7 @@ public class BoxClassSupport {
 	 * @throws BoxValidationException If the class does not satisfy the interface
 	 */
 	public static void validateAbstractMethods( IClassRunnable thisClass, Map<Key, AbstractFunction> abstractMethods ) {
-		String className = thisClass.getName().getName();
+		String className = thisClass.bxGetName().getName();
 
 		// Having an onMissingMethod() UDF is the golden ticket to implementing any interface
 		if ( thisClass.getThisScope().get( Key.onMissingMethod ) instanceof Function ) {

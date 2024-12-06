@@ -65,7 +65,7 @@ public class BoxClassState implements Serializable {
 	 */
 	public BoxClassState( IClassRunnable target ) {
 		// Store the class path
-		this.classPath = target.getName();
+		this.classPath = target.bxGetName();
 		// Get the metadata properties to see which ones
 		// are NOT serializable
 		Array aProperties = target.getBoxMeta().getMeta().getAsArray( Key.properties );

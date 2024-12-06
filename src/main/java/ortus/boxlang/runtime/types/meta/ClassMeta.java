@@ -64,8 +64,8 @@ public class ClassMeta extends BoxMeta {
 		    } );
 
 		this.meta = UnmodifiableStruct.of(
-		    Key._NAME, target.getName().getName(),
-		    Key.nameAsKey, target.getName(),
+		    Key._NAME, target.bxGetName().getName(),
+		    Key.nameAsKey, target.bxGetName(),
 		    Key.documentation, UnmodifiableStruct.fromStruct( target.getDocumentation() ),
 		    Key.annotations, UnmodifiableStruct.fromStruct( target.getAnnotations() ),
 		    Key._EXTENDS, target.getSuper() != null ? target.getSuper().getBoxMeta().getMeta() : Struct.EMPTY,
@@ -81,7 +81,7 @@ public class ClassMeta extends BoxMeta {
 		        Key.documentation, UnmodifiableStruct.fromStruct( entry.getValue().documentation() )
 		    ) ).toArray() ),
 		    Key.type, "Component",
-		    Key.fullname, target.getName().getName(),
+		    Key.fullname, target.bxGetName().getName(),
 		    Key.path, target.getRunnablePath().absolutePath().toString()
 		);
 

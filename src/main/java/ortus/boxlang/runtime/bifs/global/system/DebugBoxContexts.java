@@ -62,7 +62,7 @@ public class DebugBoxContexts extends BIF {
 		    ( c instanceof FunctionBoxContext fbc ? fbc.getFunction().getName() + "() - " + fbc.getFunction().getClass().getSuperclass().getSimpleName()
 		        : "N/A" ),
 		    "isInClass",
-		    ( c instanceof FunctionBoxContext fbc ? fbc.isInClass() + ( fbc.isInClass() ? " (" + fbc.getThisClass().getName() + ")" : "" ) : "N/A" ),
+		    ( c instanceof FunctionBoxContext fbc ? fbc.isInClass() + ( fbc.isInClass() ? " (" + fbc.getThisClass().bxGetName() + ")" : "" ) : "N/A" ),
 		    "declaringContext", ( c instanceof ClosureBoxContext cbc ? generateContextData( cbc.getFunction().getDeclaringContext() ) : "N/A" )
 		);
 	}

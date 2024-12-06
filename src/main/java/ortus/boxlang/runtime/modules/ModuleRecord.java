@@ -812,7 +812,7 @@ public class ModuleRecord {
 		// Get Name Delegate
 		oComponent.getVariablesScope().put( Key.getName, new DynamicFunction(
 		    Key.getName,
-		    ( context1, fnc ) -> oComponent.getName()
+		    ( context1, fnc ) -> oComponent.bxGetName()
 		) );
 
 		/**
@@ -823,7 +823,7 @@ public class ModuleRecord {
 
 		IStruct				annotations			= oComponent.getBoxMeta().getMeta().getAsStruct( Key.annotations );
 		ComponentDescriptor	descriptor			= new ComponentDescriptor(
-		    oComponent.getName(),
+		    oComponent.bxGetName(),
 		    oComponent.getClass(),
 		    this.name.getName(),
 		    null,

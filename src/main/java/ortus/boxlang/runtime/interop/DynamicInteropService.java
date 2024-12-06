@@ -431,7 +431,7 @@ public class DynamicInteropService {
 
 					// Check for final annotation and throw if we're trying to extend a final class
 					if ( _super.getAnnotations().get( Key._final ) != null ) {
-						throw new BoxRuntimeException( "Cannot extend final class: " + _super.getName() );
+						throw new BoxRuntimeException( "Cannot extend final class: " + _super.bxGetName() );
 					}
 					// Set in our super class
 					boxClass.setSuper( _super );
@@ -462,7 +462,7 @@ public class DynamicInteropService {
 
 			if ( !noInit ) {
 				if ( boxClass.getAnnotations().get( Key._ABSTRACT ) != null ) {
-					throw new AbstractClassException( "Cannot instantiate an abstract class: " + boxClass.getName() );
+					throw new AbstractClassException( "Cannot instantiate an abstract class: " + boxClass.bxGetName() );
 				}
 				if ( boxClass.getSuper() != null ) {
 					BoxClassSupport.validateAbstractMethods( boxClass, boxClass.getSuper().getAllAbstractMethods() );

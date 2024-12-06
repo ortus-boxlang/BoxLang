@@ -51,7 +51,7 @@ public interface IClassRunnable extends ITemplateRunnable, IStruct {
 	/**
 	 * Get the name
 	 */
-	public Key getName();
+	public Key bxGetName();
 
 	/**
 	 * Get the variables scope
@@ -112,7 +112,7 @@ public interface IClassRunnable extends ITemplateRunnable, IStruct {
 
 	/**
 	 * A helper to look at the "output" annotation, caching the result
-	 * 
+	 *
 	 * @return Whether the function can output
 	 */
 	public Boolean canOutput();
