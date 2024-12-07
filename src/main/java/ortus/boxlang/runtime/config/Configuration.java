@@ -266,6 +266,11 @@ public class Configuration implements IConfigSegment {
 	public LoggingConfig		logging							= new LoggingConfig();
 
 	/**
+	 * Scheduled tasks configuration
+	 */
+	// public ScheduledTasksConfig scheduledTasks = new ScheduledTasksConfig();
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Private Properties
 	 * --------------------------------------------------------------------------
