@@ -103,7 +103,7 @@
 			"runtime": {
 				// Valid values are in order of severity: ERROR, WARN, INFO, DEBUG, TRACE, OFF
 				// Leave out if it should inherit from the root logger
-				"level": "DEBUG",
+				"level": "INFO",
 				// Valid values are: "file", "console",
 				// Coming soon: "smtp", "socket", "db", "syslog" or "java class name"
 				// Please note that we only use Rolling File Appenders
@@ -116,8 +116,8 @@
 				// If false, it will only use the appenders defined in this logger
 				"additive": true
 			},
-			// The modules log
-			"modules": {
+			// All async operations and facilities will log here.
+			"async": {
 				// Valid values are in order of severity: ERROR, WARN, INFO, DEBUG, TRACE, OFF
 				// Leave out if it should inherit from the root logger
 				"level": "DEBUG",
@@ -133,7 +133,58 @@
 				// If false, it will only use the appenders defined in this logger
 				"additive": true
 			},
-			// All applications will use this logger
+			// All cache operations and facilities will log here.
+			"cache": {
+				// Valid values are in order of severity: ERROR, WARN, INFO, DEBUG, TRACE, OFF
+				// Leave out if it should inherit from the root logger
+				"level": "WARN",
+				// Valid values are: "file", "console",
+				// Coming soon: "smtp", "socket", "db", "syslog" or "java class name"
+				// Please note that we only use Rolling File Appenders
+				"appender": "file",
+				// Use the defaults from the runtime
+				"appenderArguments": {},
+				// The available options are "text" and "json"
+				"encoder": "text",
+				// Additive logging: true means that this logger will inherit the appenders from the root logger
+				// If false, it will only use the appenders defined in this logger
+				"additive": true
+			},
+			// The datasource log is used by the creation, debugging, and management of datasources
+			"datasource": {
+				// Valid values are in order of severity: ERROR, WARN, INFO, DEBUG, TRACE, OFF
+				// Leave out if it should inherit from the root logger
+				"level": "WARN",
+				// Valid values are: "file", "console",
+				// Coming soon: "smtp", "socket", "db", "syslog" or "java class name"
+				// Please note that we only use Rolling File Appenders
+				"appender": "file",
+				// Use the defaults from the runtime
+				"appenderArguments": {},
+				// The available options are "text" and "json"
+				"encoder": "text",
+				// Additive logging: true means that this logger will inherit the appenders from the root logger
+				// If false, it will only use the appenders defined in this logger
+				"additive": true
+			},
+			// The modules log is used by the module service and records all module activity
+			"modules": {
+				// Valid values are in order of severity: ERROR, WARN, INFO, DEBUG, TRACE, OFF
+				// Leave out if it should inherit from the root logger
+				"level": "INFO",
+				// Valid values are: "file", "console",
+				// Coming soon: "smtp", "socket", "db", "syslog" or "java class name"
+				// Please note that we only use Rolling File Appenders
+				"appender": "file",
+				// Use the defaults from the runtime
+				"appenderArguments": {},
+				// The available options are "text" and "json"
+				"encoder": "text",
+				// Additive logging: true means that this logger will inherit the appenders from the root logger
+				// If false, it will only use the appenders defined in this logger
+				"additive": true
+			},
+			// All applications will use this logger for any custom logging
 			"application": {
 				// Valid values are in order of severity: ERROR, WARN, INFO, DEBUG, TRACE, OFF
 				// Leave out if it should inherit from the root logger
@@ -150,11 +201,11 @@
 				// If false, it will only use the appenders defined in this logger
 				"additive": true
 			},
-			// All scheduled tasks logging
+			// All scheduled tasks logging will go here
 			"scheduler": {
 				// Valid values are in order of severity: ERROR, WARN, INFO, DEBUG, TRACE, OFF
 				// Leave out if it should inherit from the root logger
-				"level": "DEBUG",
+				"level": "INFO",
 				// Valid values are: "file", "console",
 				// Coming soon: "smtp", "socket", "db", "syslog" or "java class name"
 				// Please note that we only use Rolling File Appenders

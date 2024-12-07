@@ -55,7 +55,7 @@ public class WriteLog extends BIF {
 	 *
 	 * @argument.application If true, it logs the application name alongside the message. Default is true.
 	 *
-	 * @argument.log The destination logger to use. If not passed, we use the default logger (runtime.log).
+	 * @argument.log The destination logger to use. If not passed, we use the default logger (application.log).
 	 *               If the logger is a file appender and it doesn't exist it will create it for you.
 	 *               If the value is an absolue path, it will create a file appender for you at that location.
 	 *

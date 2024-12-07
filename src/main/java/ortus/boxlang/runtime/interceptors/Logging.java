@@ -29,8 +29,10 @@ import ortus.boxlang.runtime.types.IStruct;
  */
 public class Logging extends BaseInterceptor {
 
-	private LoggingService	loggingService;
-	private BoxRuntime		runtime;
+	private static final String	DEFAULT_LOGGER	= "application";
+
+	private LoggingService		loggingService;
+	private BoxRuntime			runtime;
 
 	/**
 	 * Constructor
@@ -50,7 +52,7 @@ public class Logging extends BaseInterceptor {
 	 * <li>applicationName: The name of the application requesting the log messasge. Can be empty</li>
 	 * <li>text: The text of the log message</li>
 	 * <li>type: The severity log level ( fatal, error, info, warn, debug, trace )</li>
-	 * <li>file: The file to log to. If empty, the "log" key is used</li>
+	 * <li>log: The logger to log to.</li>
 	 * </ul>
 	 *
 	 * <p>
@@ -79,8 +81,8 @@ public class Logging extends BaseInterceptor {
 		if ( file == null ) {
 			file = "";
 		}
-		if ( logger == null ) {
-			logger = "";
+		if ( logger == null || logger.isEmpty() ) {
+			logger = DEFAULT_LOGGER;
 		}
 
 		// COMPAT MODE: if you have a file, we transpile it to the logger
@@ -91,7 +93,7 @@ public class Logging extends BaseInterceptor {
 		LoggingService.getInstance().logMessage(
 		    text,
 		    type,
-		    ( applicationName instanceof Key ) ? ( ( Key ) applicationName ).getName() : "",
+		    ( applicationName instanceof Key appNameKey ) ? ( appNameKey ).getName() : "",
 		    logger
 		);
 	}
