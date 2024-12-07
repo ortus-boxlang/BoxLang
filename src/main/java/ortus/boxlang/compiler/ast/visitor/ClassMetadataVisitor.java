@@ -284,7 +284,7 @@ public class ClassMetadataVisitor extends VoidBoxVisitor {
 		if ( !result.isCorrect() ) {
 			throw new ParseException( result.getIssues(), "" );
 		}
-		ClassMetadataVisitor visitor = new ClassMetadataVisitor();
+		ClassMetadataVisitor visitor = new ClassMetadataVisitor( context );
 		result.getRoot().accept( visitor );
 
 		return visitor.getMetadata();
