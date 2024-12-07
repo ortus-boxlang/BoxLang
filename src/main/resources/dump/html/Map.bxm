@@ -14,7 +14,7 @@
 					<strong>
 						<bx:if label.len() >#label# - </bx:if>
 						#var.getClass().getSimpleName()#:
-						<bx:if top gt 0 && top lt var.size()>#top#/</bx:if>#var.size()# items
+						<bx:if top != null && top lt var.size()>#top#/</bx:if>#var.size()# items
 					</strong>
 				</caption>
 			<bx:else>
@@ -22,7 +22,7 @@
 					<strong>
 						<bx:if label.len() >#label# - </bx:if>
 						#var.getClass().getSimpleName()#:
-						<bx:if top gt 0 && top lt var.size()>#top#/</bx:if>#var.size()# items
+						<bx:if top != null && top lt var.size()>#top#/</bx:if>#var.size()# items
 					</strong>
 				</caption>
 			</bx:if>
@@ -33,7 +33,7 @@
 					index = 1;
 					for ( key in var ) {
 						// Top limit only if > 0
-						if( top > 0 && index++ > top ) {
+						if( top != null && index++ > top ) {
 							break;
 						}
 						```
@@ -50,7 +50,7 @@
 								</th>
 								<td>
 									<div class="bx-onoff">
-										<bx:set dump( var : var[ key ], top : top, expand : expand ) >
+										<bx:set dump( var : var[ key ], top : top == null ? null : top - 1, expand : expand ) >
 									</div>
 								</td>
 							</tr>

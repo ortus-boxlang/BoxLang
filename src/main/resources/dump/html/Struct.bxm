@@ -19,9 +19,9 @@
 							<bx:if label.len() >#label# - </bx:if>
 							#encodeForHTML( var.getName().getName().toUpperCase() )# Scope:
 							<bx:if var instanceof 'CGIScope'>
-								<bx:if top gt 0 && top lt var.getDumpKeys().size()>#top#/</bx:if>#var.getDumpKeys().size()# items
+								<bx:if top != null && top lt var.getDumpKeys().size()>#top#/</bx:if>#var.getDumpKeys().size()# items
 							<bx:else>
-								<bx:if top gt 0 && top lt var.len()>#top#/</bx:if>#var.len()# items
+								<bx:if top != null && top lt var.len()>#top#/</bx:if>#var.len()# items
 							</bx:if>
 						</strong>
 					</caption>
@@ -30,7 +30,7 @@
 						<strong>
 							<bx:if label.len() >#label# - </bx:if>
 							#encodeForHTML( var.getName().getName().toUpperCase() )# Scope:
-							<bx:if top gt 0 && top lt var.len()>#top#/</bx:if>#var.len()# items
+							<bx:if top != null && top lt var.len()>#top#/</bx:if>#var.len()# items
 						</strong>
 					</caption>
 				</bx:if>
@@ -47,7 +47,7 @@
 						<strong>
 							<bx:if label.len() >#label# - </bx:if>
 							Struct:
-							<bx:if top gt 0 && top lt var.len()>#top#/</bx:if>#var.len()# items
+							<bx:if top != null && top lt var.len()>#top#/</bx:if>#var.len()# items
 						</strong>
 					</caption>
 				<bx:else>
@@ -55,7 +55,7 @@
 						<strong>
 							<bx:if label.len() >#label# - </bx:if>
 							Struct:
-							<bx:if top gt 0 && top lt var.len()>#top#/</bx:if>#var.len()# items
+							<bx:if top != null && top lt var.len()>#top#/</bx:if>#var.len()# items
 						</strong>
 					</caption>
 				</bx:if>
@@ -72,7 +72,7 @@
 					}
 					index = 1;
 					for ( key in theCollection ) {
-						if( top > 0 && index++ > top ) {
+						if( top != null && index++ > top ) {
 							break;
 						}
 						```
@@ -89,7 +89,7 @@
 								</th>
 								<td>
 									<div class="bx-onoff">
-										<bx:set dump( var : var[ key ], top : top, expand : expand ?: null ) >
+										<bx:set dump( var : var[ key ], top : top == null ? null : top - 1, expand : expand ?: null ) >
 									</div>
 								</td>
 							</tr>

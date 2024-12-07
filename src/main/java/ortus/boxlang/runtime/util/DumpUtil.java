@@ -38,6 +38,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import javax.annotation.Nullable;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -114,7 +116,7 @@ public class DumpUtil {
 	    IBoxContext context,
 	    Object target,
 	    String label,
-	    Integer top,
+	    @Nullable Integer top,
 	    Boolean expand,
 	    Boolean abort,
 	    String output,
@@ -243,7 +245,7 @@ public class DumpUtil {
 	    IBoxContext context,
 	    Object target,
 	    String label,
-	    Integer top,
+	    @Nullable Integer top,
 	    Boolean expand,
 	    Boolean abort,
 	    String output,
@@ -330,7 +332,7 @@ public class DumpUtil {
 	    IBoxContext context,
 	    Object target,
 	    String label,
-	    Integer top,
+	    @Nullable Integer top,
 	    Boolean expand,
 	    Boolean abort,
 	    String output,
@@ -344,6 +346,12 @@ public class DumpUtil {
 		// The target object has already been dumped in this thread, so return to prevent recursion
 		if ( !dumped.add( thisHashCode ) ) {
 			context.writeToBuffer( "<div><em>Recursive Reference (Skipping dump)</em></div>", true );
+			return;
+		}
+
+		// Reached the top limit, so return to prevent dumping the entire world
+		if ( top != null && top <= 0 ) {
+			context.writeToBuffer( "<div><em>Top Limit reached (Skipping dump)</em></div>", true );
 			return;
 		}
 

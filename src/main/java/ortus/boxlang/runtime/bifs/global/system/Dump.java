@@ -79,7 +79,7 @@ public class Dump extends BIF {
 		    // A custom label to display above the dump (Only in HTML output)
 		    new Argument( false, Argument.STRING, Key.label, "" ),
 		    // The number of levels to display when dumping collections. Great to avoid dumping the entire world!
-		    new Argument( false, Argument.NUMERIC, Key.top, 0 ),
+		    new Argument( false, Argument.NUMERIC, Key.top ),
 		    // Whether to expand the dump. By default, the dump is expanded on the first level only
 		    new Argument( false, Argument.BOOLEAN, Key.expand, true ),
 		    // Whether to do a hard abort the request after dumping
@@ -130,12 +130,14 @@ public class Dump extends BIF {
 			arguments.put( Key.abort, true );
 		}
 
+		Object top = arguments.get( Key.top );
+
 		// Dump the object
 		DumpUtil.dump(
 		    context,
 		    DynamicObject.unWrap( arguments.get( Key.var ) ),
 		    arguments.getAsString( Key.label ),
-		    IntegerCaster.cast( arguments.get( Key.top ) ),
+		    top == null ? null : IntegerCaster.cast( top ),
 		    arguments.getAsBoolean( Key.expand ),
 		    BooleanCaster.cast( arguments.get( Key.abort ) ),
 		    arguments.getAsString( Key.output ),

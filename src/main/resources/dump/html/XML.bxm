@@ -38,7 +38,7 @@
 								</th>
 								<td>
 									<div class="bx-onoff">
-										<bx:set dump( var : theCollection[ key ], top : top, expand : expand ) >
+										<bx:set dump( var : theCollection[ key ], top : top == null ? null : top - 1, expand : expand ) >
 									</div>
 								</td>
 							</tr>
