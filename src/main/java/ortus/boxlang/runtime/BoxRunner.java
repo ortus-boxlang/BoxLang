@@ -317,14 +317,21 @@ public class BoxRunner {
 				break;
 			}
 
+			String[]	currentParts	= current.split( "\\." );
+			String		currentExt		= "";
+
+			if ( currentParts.length > 0 ) {
+				currentExt = "." + currentParts[ currentParts.length - 1 ];
+			}
+
 			// Template to execute?
-			if ( actionCommand == null && ALLOWED_TEMPLATE_EXECUTIONS.contains( current ) ) {
+			if ( actionCommand == null && ALLOWED_TEMPLATE_EXECUTIONS.contains( currentExt ) ) {
 				file = templateToAbsolute( current );
 				continue;
 			}
 
 			// Is it a shebang script to execute
-			if ( actionCommand == null && isShebangScript( current ) ) {
+			if ( actionCommand == null && isShebangScript( currentExt ) ) {
 				file = getSheBangScript( current );
 				continue;
 			}
