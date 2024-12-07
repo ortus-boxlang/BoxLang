@@ -412,7 +412,7 @@ public class LoggingService {
 		}
 
 		// Compute and get the logger
-		Logger oLogger = ( Logger ) getLogger( logger );
+		BoxLangLogger oLogger = getLogger( logger );
 
 		// Log according to the level
 		switch ( targetLogLevel.getNameNoCase() ) {
@@ -438,7 +438,7 @@ public class LoggingService {
 	 *
 	 * @return The logger requested
 	 */
-	public org.slf4j.Logger getLogger( String logger ) {
+	public BoxLangLogger getLogger( String logger ) {
 		// The incoming logger can be:
 		// 1. A named logger: "scheduler", "application", "orm", etc
 		// 2. A relative path: "scheduler.log", "application.log", "orm.log"
@@ -456,7 +456,7 @@ public class LoggingService {
 		Key		loggerKey		= Key.of( FilenameUtils.getBaseName( loggerFilePath.toLowerCase() ) );
 
 		// Compute it or return it
-		return ( org.slf4j.Logger ) this.loggersMap.computeIfAbsent( Key.of( loggerFilePath ), key -> createLogger( loggerKey, loggerFilePath ) );
+		return ( BoxLangLogger ) this.loggersMap.computeIfAbsent( Key.of( loggerFilePath ), key -> createLogger( loggerKey, loggerFilePath ) );
 	}
 
 	/**
@@ -646,7 +646,7 @@ public class LoggingService {
 	 *
 	 * @return The logger requested
 	 */
-	private Logger createLogger( Key loggerKey, String loggerFilePath ) {
+	private BoxLangLogger createLogger( Key loggerKey, String loggerFilePath ) {
 		LoggerContext	targetContext	= getLoggerContext();
 		Logger			oLogger			= targetContext.getLogger( loggerKey.getNameNoCase() );
 
@@ -660,7 +660,8 @@ public class LoggingService {
 		oLogger.setLevel( configLevel );
 		oLogger.setAdditive( loggerConfig.additive );
 		oLogger.addAppender( getOrBuildAppender( loggerFilePath, targetContext, loggerConfig ) );
-		return oLogger;
+
+		return new BoxLangLogger( oLogger );
 	}
 
 }
