@@ -39,6 +39,12 @@ public class BoxLangLogger implements LocationAwareLogger, LoggingEventAware, Ap
 		this.logger = logger;
 	}
 
+	/**
+	 * ***************************************************************************
+	 * Custom Methods not in interfaces, but are of great help!
+	 * ***************************************************************************
+	 */
+
 	public void setLevel( int level ) {
 		Level newLevel = Level.toLevel( level );
 		this.logger.setLevel( newLevel );
@@ -51,6 +57,16 @@ public class BoxLangLogger implements LocationAwareLogger, LoggingEventAware, Ap
 	public void setLevel( org.slf4j.event.Level level ) {
 		this.logger.setLevel( Level.toLevel( level.toInt() ) );
 	}
+
+	public void setAdditive( boolean additive ) {
+		this.logger.setAdditive( additive );
+	}
+
+	/**
+	 * ***************************************************************************
+	 * END Custom Methods
+	 * ***************************************************************************
+	 */
 
 	@Override
 	public void addAppender( Appender<ILoggingEvent> newAppender ) {
