@@ -80,6 +80,15 @@ public class DynamicClassLoader extends URLClassLoader {
 	private static Logger								logger			= null;
 
 	/**
+	 * Runtime special prefixes Set that MUST come from the parent class loader
+	 * THIS IS SPECIAL CASE FOR LOGGING FRAMEWORKS WHERE THIRD PARTY JARS MAY BE LOADED AND DELEGATED TO THE PARENT
+	 */
+	private static final Set<String>					PARENT_CLASSES	= Set.of(
+	    "ch.qos.logback",
+	    "org.slf4j"
+	);
+
+	/**
 	 * Construct the class loader
 	 *
 	 * @param name            The unique name of the class loader
@@ -184,6 +193,12 @@ public class DynamicClassLoader extends URLClassLoader {
 				return null;
 			}
 			throw new ClassNotFoundException( String.format( "Class [%s] not found in class loader [%s]", className, this.nameAsKey.getName() ) );
+		}
+
+		// 2.5. Special case for Logback/SL4j so we are guaranteed to use the same interfaces as the BoxLang Runtime.
+		if ( this.parent != null && PARENT_CLASSES.stream().anyMatch( className::startsWith ) ) {
+			// logger.trace( "[{}].[{}] : Class is a special parent class, delegating to parent", this.nameAsKey.getName(), className );
+			return getDynamicParent().loadClass( className );
 		}
 
 		// 3. Attempt to load from JARs/classes in the seeded URLs
