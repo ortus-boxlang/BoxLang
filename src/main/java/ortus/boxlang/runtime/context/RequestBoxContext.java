@@ -163,6 +163,9 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 		return this.out;
 	}
 
+	/**
+	 * @InheritDoc
+	 */
 	@Override
 	public IStruct getVisibleScopes( IStruct scopes, boolean nearby, boolean shallow ) {
 		if ( this.threadManager != null && this.threadManager.hasThreads() ) {
@@ -175,6 +178,9 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 		return super.getVisibleScopes( scopes, nearby, shallow );
 	}
 
+	/**
+	 * @InheritDoc
+	 */
 	@Override
 	public ScopeSearchResult scopeFind( Key key, IScope defaultScope, boolean forAssign ) {
 
@@ -527,6 +533,12 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 		return this.showDebugOutput;
 	}
 
+	/**
+	 * Look at the current thread and see if it has a request context and return it
+	 * Else return null
+	 *
+	 * @return The current request context or null
+	 */
 	public static RequestBoxContext getCurrent() {
 		ArrayDeque<RequestBoxContext> stack = current.get();
 		if ( stack == null || stack.isEmpty() ) {
@@ -535,16 +547,25 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 		return stack.peek();
 	}
 
+	/**
+	 * Set the current request context for the thread
+	 *
+	 * @param context The request context
+	 */
 	public static void setCurrent( RequestBoxContext context ) {
 		ArrayDeque<RequestBoxContext> stack = current.get();
 		// No synchronization is needed here since only one thread can access a threadlocal var at a time.
 		if ( stack == null ) {
-			stack = new ArrayDeque<RequestBoxContext>();
+			stack = new ArrayDeque<>();
 			current.set( stack );
 		}
 		stack.push( context );
 	}
 
+	/**
+	 * Remove the current request context from the thread
+	 * This cleanup is done by the runtime once a thread is done processing a request
+	 */
 	public static void removeCurrent() {
 		ArrayDeque<RequestBoxContext> stack = current.get();
 		if ( stack != null ) {
