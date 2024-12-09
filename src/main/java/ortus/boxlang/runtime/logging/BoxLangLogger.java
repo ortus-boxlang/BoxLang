@@ -25,6 +25,7 @@ import org.slf4j.event.LoggingEvent;
 import org.slf4j.spi.LocationAwareLogger;
 import org.slf4j.spi.LoggingEventAware;
 
+import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.Appender;
@@ -36,6 +37,19 @@ public class BoxLangLogger implements LocationAwareLogger, LoggingEventAware, Ap
 
 	public BoxLangLogger( Logger logger ) {
 		this.logger = logger;
+	}
+
+	public void setLevel( int level ) {
+		Level newLevel = Level.toLevel( level );
+		this.logger.setLevel( newLevel );
+	}
+
+	public void setLevel( ch.qos.logback.classic.Level level ) {
+		this.logger.setLevel( level );
+	}
+
+	public void setLevel( org.slf4j.event.Level level ) {
+		this.logger.setLevel( Level.toLevel( level.toInt() ) );
 	}
 
 	@Override
