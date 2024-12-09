@@ -345,13 +345,15 @@ public class Application {
 
 		// Now store it
 		this.sessionsCache = this.cacheService.getCache( sessionCacheName );
-		// Register the session cleanup interceptor
-		this.sessionsCache.getInterceptorPool()
+		// Register the session cleanup interceptor for: BEFORE_CACHE_ELEMENT_REMOVED
+		this.sessionsCache
+		    .getInterceptorPool()
 		    .register( data -> {
 			    ICacheProvider targetCache = ( ICacheProvider ) data.get( "cache" );
 			    String		key			= ( String ) data.get( "key" );
 
-			    logger.debug( "Session cache interceptor [{}] cleared key [{}]", targetCache.getName(), key );
+			    if ( logger.isDebugEnabled() )
+				    logger.debug( "Session cache interceptor [{}] cleared key [{}]", targetCache.getName(), key );
 
 			    targetCache
 			        .get( key )

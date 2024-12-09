@@ -440,8 +440,10 @@ public abstract class BaseApplicationListener {
 	 * @param newID The new session identifier
 	 */
 	public void initializeSession( Key newID ) {
-		ApplicationBoxContext	appContext		= this.context.getParentOfType( ApplicationBoxContext.class );
-		Session					targetSession	= appContext.getApplication().getOrCreateSession( newID );
+		Session targetSession = this.context
+		    .getApplicationContext()
+		    .getApplication()
+		    .getOrCreateSession( newID );
 		this.context.removeParentContext( SessionBoxContext.class );
 		this.context.injectTopParentContext( new SessionBoxContext( targetSession ) );
 		targetSession.start( this.context );

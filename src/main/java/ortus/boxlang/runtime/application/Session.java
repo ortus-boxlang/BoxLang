@@ -22,7 +22,6 @@ import java.io.Serializable;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.scopes.Key;
@@ -155,7 +154,7 @@ public class Session implements Serializable {
 
 			try {
 				// Announce it's start
-				BaseApplicationListener listener = context.getParentOfType( RequestBoxContext.class ).getApplicationListener();
+				BaseApplicationListener listener = context.getRequestContext().getApplicationListener();
 				listener.onSessionStart( context, new Object[] { this.ID } );
 			} catch ( Exception e ) {
 				// If startup errored, flag the session as not intialized. The next thread can try again.
@@ -207,7 +206,7 @@ public class Session implements Serializable {
 	 * @param listener The listener that is shutting down the session
 	 */
 	public void shutdown( BaseApplicationListener listener ) {
-		// Announce it's destruction
+		// Announce it's destruction to the runtime first
 		BoxRuntime.getInstance()
 		    .getInterceptorService()
 		    .announce( BoxEvent.ON_SESSION_DESTROYED, Struct.of(
@@ -225,7 +224,12 @@ public class Session implements Serializable {
 		        ),
 		        listener
 		    ),
-		    new Object[] { sessionScope != null ? sessionScope : Struct.of(), listener.getApplication().getApplicationScope() }
+		    new Object[] {
+		        // If the session scope is null, just pass an empty struct
+		        sessionScope != null ? sessionScope : Struct.of(),
+		        // Pass the application scope
+		        listener.getApplication().getApplicationScope()
+		    }
 		);
 
 		// Clear the session scope
