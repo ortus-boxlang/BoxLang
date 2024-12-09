@@ -26,6 +26,8 @@ import java.util.Locale;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.application.ApplicationDefaultListener;
 import ortus.boxlang.runtime.application.BaseApplicationListener;
+import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
+import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.jdbc.ConnectionManager;
 import ortus.boxlang.runtime.loader.DynamicClassLoader;
@@ -33,7 +35,6 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.ThreadScope;
 import ortus.boxlang.runtime.services.ApplicationService;
-import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -323,14 +324,19 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	 * It depends on whether the context wants its changes to exist for the rest of the entire
 	 * request or only for code that executes in the current context and below.
 	 *
+	 * IMPORTANT: This method could be run multiple times during a request.
+	 * BE CONGNIIZANT OF PERFORMANCE.
+	 *
 	 * @return A struct of configuration
 	 */
 	@Override
 	public IStruct getConfig() {
 		IStruct config = super.getConfig();
 
-		// Apply request-specific overrides
-		// These can happen from BIF calls specifically
+		// Apply request-specific overrides, this happens after some BIF calls override the following in the context:
+		// - locale : setLocale()
+		// - timezone : setTimezone()
+		// - requestTimeout : setRequestTimeout()
 		if ( this.locale != null ) {
 			config.put( Key.locale, this.locale );
 		}
@@ -342,11 +348,24 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 		}
 		config.put( Key.enforceExplicitOutput, this.enforceExplicitOutput );
 
+		/**
+		 * --------------------------------------------------------------------------
+		 * Get the Application.bx settings and apply them to the config struct as overrides
+		 * --------------------------------------------------------------------------
+		 */
 		IStruct appSettings = getApplicationListener().getSettings();
 		// Make the request settings generically available in the config struct.
 		// This doesn't mean we won't strategically place specific settings like mappings into specific parts
 		// of the config struct, but this at least ensure everything is available for whomever wants to use it
 		config.put( Key.applicationSettings, appSettings );
+
+		/**
+		 * --------------------------------------------------------------------------
+		 * Datasource Overrides
+		 * --------------------------------------------------------------------------
+		 * - A string pointing to a datasource in the datasources struct
+		 * - A struct defining the datasource inline
+		 */
 
 		// Default Datasource as string pointing to a datasource in the datasources struct
 		// this.datasource = "coldbox"
@@ -366,40 +385,31 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 		}
 
 		// Datasource overrides
-		IStruct datasources = appSettings.getAsStruct( Key.datasources );
-		if ( !datasources.isEmpty() ) {
-			config.getAsStruct( Key.datasources ).putAll( datasources );
-		}
+		StructCaster.attempt( appSettings.get( Key.datasources ) )
+		    .ifPresent( datasources -> config.getAsStruct( Key.datasources ).putAll( datasources ) );
+		// ----------------------------------------------------------------------------------
 
-		String timezone = appSettings.getAsString( Key.timezone );
-		if ( timezone != null ) {
-			setTimezone( LocalizationUtil.parseZoneId( timezone ) );
+		// Timezone override
+		String appTimezone = appSettings.getAsString( Key.timezone );
+		if ( appTimezone != null && !appTimezone.isEmpty() ) {
+			setTimezone( LocalizationUtil.parseZoneId( appTimezone ) );
 		}
 
 		// Mapping overrides
-		IStruct mappings = appSettings.getAsStruct( Key.mappings );
-		if ( !mappings.isEmpty() ) {
-			config.getAsStruct( Key.mappings ).putAll( mappings );
-		}
+		StructCaster.attempt( appSettings.get( Key.mappings ) )
+		    .ifPresent( mappings -> config.getAsStruct( Key.mappings ).putAll( mappings ) );
 
-		// Add in custom tag paths. We calld them customTagsDirectory, but CF calls them customTagPaths. Maybe support both?
-		Array customTagPaths = appSettings.getAsArray( Key.customTagPaths );
-		if ( !customTagPaths.isEmpty() ) {
-			config.getAsArray( Key.customTagsDirectory ).addAll( customTagPaths );
-		}
+		// Add in custom tag paths. We called them customTagsDirectory, but CF calls them customTagPaths. Maybe support both?
+		ArrayCaster.attempt( appSettings.get( Key.customTagPaths ) )
+		    .ifPresent( customTagPaths -> config.getAsArray( Key.customTagsDirectory ).addAll( customTagPaths ) );
 
 		// Add in classPaths and componentPaths (for CF compat) to the classPaths array
-		Array classPaths = appSettings.getAsArray( Key.classPaths );
-		if ( classPaths != null && !classPaths.isEmpty() ) {
-			// Expand each path in case it's relative
-			config.getAsArray( Key.classPaths ).addAll( classPaths );
-		}
+		ArrayCaster.attempt( appSettings.get( Key.classPaths ) )
+		    .ifPresent( classPaths -> config.getAsArray( Key.classPaths ).addAll( classPaths ) );
+
 		// TODO: move componentPaths logic to compat
-		Array componentPaths = appSettings.getAsArray( Key.componentPaths );
-		if ( componentPaths != null && !componentPaths.isEmpty() ) {
-			// Expand each path in case it's relative
-			config.getAsArray( Key.classPaths ).addAll( componentPaths );
-		}
+		ArrayCaster.attempt( appSettings.get( Key.componentPaths ) )
+		    .ifPresent( componentPaths -> config.getAsArray( Key.classPaths ).addAll( componentPaths ) );
 
 		// OTHER OVERRIDES go here
 
