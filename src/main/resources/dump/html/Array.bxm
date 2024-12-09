@@ -14,7 +14,7 @@
 					<strong>
 						<bx:if label.len() >#label# - </bx:if>
 						Array:
-						<bx:if top gt 0 && top lt var.len()>#top#/</bx:if>#var.len()# items
+						<bx:if top != null && top lt var.len()>#top#/</bx:if>#var.len()# items
 					</strong>
 				</caption>
 			<bx:else>
@@ -31,7 +31,7 @@
 				<bx:script>
 					for ( i = 1; i <= var.len(); i++ ) {
 						// Top limit only if > 0
-						if( top > 0 && i > top ) {
+						if( top != null && i > top ) {
 							break;
 						}
 						```
@@ -49,7 +49,7 @@
 								<div class="bx-onoff">
 									<bx:set dump(
 										var : var[ i ],
-										top : top,
+										top : top == null ? null : top - 1,
 										expand : expand ?: null
 									)>
 								</div>
