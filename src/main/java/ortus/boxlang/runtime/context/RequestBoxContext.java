@@ -55,7 +55,7 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	/**
 	 * Track the current request box context for the thread. Allow more than one as a stack.
 	 */
-	private static final ThreadLocal<ArrayDeque<RequestBoxContext>>	current					= new ThreadLocal<ArrayDeque<RequestBoxContext>>();
+	private static final ThreadLocal<ArrayDeque<RequestBoxContext>>	current					= new ThreadLocal<>();
 
 	/**
 	 * The locale for this request
