@@ -32,7 +32,6 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
 import ortus.boxlang.runtime.loader.ImportDefinition;
-import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.modules.ModuleRecord;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.Key;
@@ -63,8 +62,7 @@ public class BoxResolver extends BaseResolver {
 	/**
 	 * Empty list of imports
 	 */
-	private static final List<ImportDefinition>	EMPTY_IMPORTS	= List.of();
-	BoxLangLogger								logger;
+	private static final List<ImportDefinition> EMPTY_IMPORTS = List.of();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -79,7 +77,6 @@ public class BoxResolver extends BaseResolver {
 	 */
 	public BoxResolver( ClassLocator classLocator ) {
 		super( "BoxResolver", "bx", classLocator );
-		this.logger = this.runtime.getLoggingService().getLogger( "boxresolver" );
 	}
 
 	/**
@@ -321,7 +318,7 @@ public class BoxResolver extends BaseResolver {
 
 		// System.out.println( "mappings: " + mappings );
 		// System.out.println( "slashName: " + slashName );
-		this.logger.debug( "Resolving [{}], mappings: [{}]", slashName, mappings );
+		getLogger().debug( "Resolving [{}], mappings: [{}]", slashName, mappings );
 
 		// Maybe if we have > 20 mappings we should use parallel streams
 
