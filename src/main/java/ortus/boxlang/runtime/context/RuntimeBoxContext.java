@@ -45,7 +45,7 @@ public class RuntimeBoxContext extends BaseBoxContext {
 	 * --------------------------------------------------------------------------
 	 */
 
-	private static final Logger	logger			= LoggerFactory.getLogger( ServerScope.class );
+	private static final Logger	logger			= LoggerFactory.getLogger( RuntimeBoxContext.class );
 
 	/**
 	 * The variables scope
