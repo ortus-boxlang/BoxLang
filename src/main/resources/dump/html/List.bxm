@@ -30,7 +30,7 @@
 				<bx:script>
 					for ( i = 0; i < var.size(); i++ ) {
 						// Top limit only if > 0
-						if( top != null && i > top ) {
+						if( !isNull( top ) && i > top ) {
 							break;
 						}
 						```
@@ -46,7 +46,7 @@
 								</th>
 								<td>
 									<div class="bx-onoff">
-										<bx:set dump( var : var.get( i castas 'int' ), top : top == null ? null : top - 1, expand : expand )>
+										<bx:set dump( var : var.get( i castas 'int' ), top : isNull( top ) ? null : top - 1, expand : expand )>
 									</div>
 								</td>
 							</tr>
