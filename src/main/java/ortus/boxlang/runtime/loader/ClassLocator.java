@@ -398,6 +398,10 @@ public class ClassLocator extends ClassLoader {
 	 *
 	 */
 	public DynamicObject load( IBoxContext context, String name, List<ImportDefinition> imports ) {
+		// If the imports are null, set them to an empty list
+		if ( imports == null ) {
+			imports = List.of();
+		}
 		// Check to see if our incoming name has a resolver prefix
 		int resolverDelimiterPos = name.indexOf( ":" );
 		// If not, use our system lookup order
@@ -465,9 +469,11 @@ public class ClassLocator extends ClassLoader {
 	    Boolean throwException,
 	    List<ImportDefinition> imports ) {
 
+		// If the imports are null, set them to an empty list
 		if ( imports == null ) {
 			imports = List.of();
 		}
+
 		// Must be final for the lambda to use it
 		final List<ImportDefinition>	thisImports		= imports;
 		// Unique Cache Key
@@ -660,7 +666,10 @@ public class ClassLocator extends ClassLoader {
 	 *
 	 * @return The resolved class location or null if throwException is false and the class is not found
 	 */
-	private ClassLocation resolveFromSystem( IBoxContext context, String name, Boolean throwException,
+	private ClassLocation resolveFromSystem(
+	    IBoxContext context,
+	    String name,
+	    Boolean throwException,
 	    List<ImportDefinition> imports ) {
 
 		// Try to get it from cache
