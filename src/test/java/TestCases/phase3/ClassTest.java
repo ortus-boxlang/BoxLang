@@ -1541,4 +1541,18 @@ public class ClassTest {
 			assertThat( variables.get( "outerClass" ) ).isEqualTo( variables.get("innerClassesOuterClass") );
 	}
 
+	@DisplayName( "mixins should be public" )
+	@Test
+	public void testMixinsPublic() {
+
+		instance.executeSource(
+		    """
+		    mt = new src.test.java.TestCases.phase3.MixinTest()
+			mt.includeMixin();
+			result = mt.mixed()
+		      """,
+		    context );
+		assertThat( variables.get( "result" ) ).isEqualTo( "mixed up" );
+	}
+
 }

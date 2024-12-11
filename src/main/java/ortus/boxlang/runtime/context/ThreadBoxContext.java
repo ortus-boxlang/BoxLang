@@ -128,7 +128,7 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 			scopes.getAsStruct( Key.contextual ).put( VariablesScope.name, variablesScope );
 
 			if ( getParent() instanceof FunctionBoxContext fbc && fbc.isInClass() ) {
-				scopes.getAsStruct( Key.contextual ).put( ThisScope.name, fbc.getThisClass().getThisScope() );
+				scopes.getAsStruct( Key.contextual ).put( ThisScope.name, fbc.getThisClass().getBottomClass().getThisScope() );
 			}
 			if ( getParent() instanceof ClassBoxContext cbc ) {
 				scopes.getAsStruct( Key.contextual ).put( ThisScope.name, cbc.getThisScope() );
@@ -281,7 +281,7 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 
 		if ( name.equals( ThisScope.name ) ) {
 			if ( getParent() instanceof FunctionBoxContext fbc && fbc.isInClass() ) {
-				return fbc.getThisClass().getThisScope();
+				return fbc.getThisClass().getBottomClass().getThisScope();
 			}
 			if ( getParent() instanceof ClassBoxContext cbc ) {
 				return cbc.getThisScope();

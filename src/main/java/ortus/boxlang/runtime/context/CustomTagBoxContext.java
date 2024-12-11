@@ -61,9 +61,9 @@ public class CustomTagBoxContext extends BaseBoxContext {
 		thisScope		= null;
 
 		if ( parent instanceof FunctionBoxContext context && context.isInClass() ) {
-			thisScope = context.getThisClass().getThisScope();
+			thisScope = context.getThisClass().getBottomClass().getThisScope();
 		} else if ( parent instanceof ClassBoxContext context ) {
-			thisScope = context.getThisClass().getThisScope();
+			thisScope = context.getThisClass().getBottomClass().getThisScope();
 		}
 	}
 

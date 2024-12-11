@@ -458,7 +458,7 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 			// at a time. Each class has its own caching later for the output annotation.
 			if ( context != null && context.isInClass() ) {
 				// If we're in a class, we need to check the class output annotation
-				this.canOutput = context.getThisClass().canOutput();
+				this.canOutput = context.getThisClass().getBottomClass().canOutput();
 			}
 
 		}

@@ -234,6 +234,10 @@ public class BoxClassSupport {
 	 * @return The assigned value
 	 */
 	public static Object assign( IClassRunnable thisClass, IBoxContext context, Key key, Object value ) {
+
+		// This would only matter if we called super.myField and we'd want the bottom class's this scope
+		thisClass = thisClass.getBottomClass();
+
 		// If invokeImplicitAccessor is enabled, and the key is a property, invoke the setter method.
 		// This may call either a generated setter or a user-defined setter
 		if ( thisClass.canInvokeImplicitAccessor( context ) && thisClass.getProperties().containsKey( key ) ) {
@@ -263,6 +267,9 @@ public class BoxClassSupport {
 		if ( key.equals( BoxMeta.key ) ) {
 			return thisClass.getBoxMeta();
 		}
+
+		// This would only matter if we called super.myField and we'd want the bottom class's this scope
+		thisClass = thisClass.getBottomClass();
 
 		// If invokeImplicitAccessor is enabled, and the key is a property, invoke the getter method.
 		// This may call either a generated getter or a user-defined getter
@@ -304,9 +311,12 @@ public class BoxClassSupport {
 	 */
 	public static Object dereferenceAndInvoke( IClassRunnable thisClass, IBoxContext context, Key name, Object[] positionalArguments, Boolean safe ) {
 		// Where to look for the functions
+		// This should always be the "bottom" class since "super" is the only way to get a direct reference to a parent class
 		BaseScope scope = thisClass.getThisScope();
 		// we are a super class, so we reached here via super.method()
 		if ( thisClass.getChild() != null ) {
+			// Don't use getBottomClass() as we want to get the actual UDFs at this level.
+			// When the UDF runs, the scopes it "sees" will still be from the bottom (except super, of course)
 			scope = thisClass.getVariablesScope();
 		}
 
@@ -387,9 +397,12 @@ public class BoxClassSupport {
 	 */
 	public static Object dereferenceAndInvoke( IClassRunnable thisClass, IBoxContext context, Key name, Map<Key, Object> namedArguments, Boolean safe ) {
 		// Where to look for the functions
+		// This should always be the "bottom" class since "super" is the only way to get a direct reference to a parent class
 		BaseScope scope = thisClass.getThisScope();
 		// we are a super class, so we reached here via super.method()
 		if ( thisClass.getChild() != null ) {
+			// Don't use getBottomClass() as we want to get the actual UDFs at this level.
+			// When the UDF runs, the scopes it "sees" will still be from the bottom (except super, of course)
 			scope = thisClass.getVariablesScope();
 		}
 

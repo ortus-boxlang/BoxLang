@@ -129,7 +129,7 @@ public class ClassBoxContext extends BaseBoxContext {
 
 		// Special check for $bx
 		if ( key.equals( BoxMeta.key ) ) {
-			return new ScopeSearchResult( getThisClass(), getThisClass().getBoxMeta(), BoxMeta.key, false );
+			return new ScopeSearchResult( getThisClass(), getThisClass().getBottomClass().getBoxMeta(), BoxMeta.key, false );
 		}
 
 		// In query loop?
@@ -319,7 +319,7 @@ public class ClassBoxContext extends BaseBoxContext {
 	 */
 	@Override
 	public Boolean canOutput() {
-		return getThisClass().canOutput();
+		return getThisClass().getBottomClass().canOutput();
 	}
 
 	/**
