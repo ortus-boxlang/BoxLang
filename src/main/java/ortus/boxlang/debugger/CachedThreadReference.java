@@ -16,15 +16,17 @@ import ortus.boxlang.runtime.BoxRuntime;
 
 public class CachedThreadReference {
 
+	private BoxLangDebugger			debugger;
 	private Logger					logger;
 	public final ThreadReference	threadReference;
 	public final VirtualMachine		vm;
 	private List<StackFrameTuple>	stackFrames	= new ArrayList<StackFrameTuple>();
 
-	public CachedThreadReference( ThreadReference threadReference ) {
+	public CachedThreadReference( BoxLangDebugger debugger, ThreadReference threadReference ) {
 		this.logger				= LoggerFactory.getLogger( BoxRuntime.class );
 		this.threadReference	= threadReference;
 		this.vm					= threadReference.virtualMachine();
+		this.debugger			= debugger;
 
 		this.cacheStackFrames();
 	}
@@ -44,13 +46,19 @@ public class CachedThreadReference {
 
 			this.threadReference.frames()
 			    .stream()
-			    .filter( ( stackFrame ) -> stackFrame.location().declaringType().name().contains( "boxgenerated" ) )
-			    .filter( ( stackFrame ) -> !stackFrame.location().method().name().contains( "dereferenceAndInvoke" ) )
+			    .filter( ( stackFrame ) -> {
+				    return stackFrame.location().declaringType().name().contains( "boxgenerated" );
+			    } )
+			    .filter( ( stackFrame ) -> {
+				    return !stackFrame.location().method().name().contains( "dereferenceAndInvoke" );
+			    } )
 			    .forEach( ( sf ) -> {
 				    try {
-
+					    // sf.getValues( sf.visibleVariables()
 					    this.stackFrames
-					        .add( new StackFrameTuple( sf, sf.location(), sf.hashCode(), sf.getValues( sf.visibleVariables() ), this.threadReference ) );
+					        .add(
+					            new StackFrameTuple( debugger, sf, sf.location(), sf.hashCode(), sf.getValues( sf.visibleVariables() ),
+					                this.threadReference ) );
 				    } catch ( AbsentInformationException e ) {
 					    logger.info( "Unable to gather stack frames information for {}", sf.toString() );
 				    }

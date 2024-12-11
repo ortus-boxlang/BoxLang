@@ -87,8 +87,8 @@ public class AsmHelper {
 		nodes.add( 0, start );
 		nodes.add( 1, new LineNumberNode( node.getPosition().getStart().getLine(), start ) );
 
-		nodes.add( end );
-		nodes.add( new LineNumberNode( node.getPosition().getStart().getLine(), end ) );
+		// nodes.add( end );
+		// nodes.add( new LineNumberNode( node.getPosition().getEnd().getLine(), end ) );
 
 		return nodes;
 	}
@@ -880,7 +880,16 @@ public class AsmHelper {
 		    null,
 		    null );
 		methodVisitor.visitCode();
-		// start tacking the context
+		Label	startContextLabel	= new Label();
+		Label	endContextLabel		= new Label();
+		methodVisitor.visitLabel( startContextLabel );
+		methodVisitor.visitLocalVariable( "context", Type.getDescriptor( IBoxContext.class ), null, startContextLabel, endContextLabel, isStatic ? 0 : 1 );
+
+		if ( !isStatic ) {
+			methodVisitor.visitLocalVariable( "this", Type.getObjectType( classNode.name ).getDescriptor(), null, startContextLabel, endContextLabel, 0 );
+		}
+
+		// start tracking the context
 		methodVisitor.visitVarInsn( Opcodes.ALOAD, isStatic ? 0 : 1 );
 		tracker.trackNewContext().forEach( ( node ) -> node.accept( methodVisitor ) );
 		methodVisitor.visitMethodInsn(
@@ -905,6 +914,7 @@ public class AsmHelper {
 		// TODO should only clear the used nodes
 		tracker.getTryCatchStack().stream().forEach( ( tryNode ) -> tryNode.accept( methodVisitor ) );
 		tracker.clearTryCatchStack();
+		methodVisitor.visitLabel( endContextLabel );
 		methodVisitor.visitEnd();
 		transpiler.popMethodContextTracker();
 	}

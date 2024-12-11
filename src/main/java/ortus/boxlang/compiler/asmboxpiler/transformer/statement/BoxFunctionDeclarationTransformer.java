@@ -269,7 +269,8 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		}
 
 		if ( function.getModifiers().contains( BoxMethodDeclarationModifier.STATIC ) ) {
-			return AsmHelper.addLineNumberLabels( nodes, node );
+			// return AsmHelper.addLineNumberLabels( nodes, node );
+			return nodes;
 		} else {
 			return new ArrayList<>();
 		}

@@ -20,8 +20,6 @@ package ortus.boxlang.debugger.event;
 import java.util.List;
 import java.util.stream.IntStream;
 
-import com.sun.jdi.event.BreakpointEvent;
-
 import ortus.boxlang.debugger.DebugAdapter;
 
 /**
@@ -108,9 +106,9 @@ public class StoppedEvent extends Event {
 		return new StoppedEvent( "breakpoint", threadId, new int[] {} );
 	}
 
-	public static StoppedEvent breakpoint( BreakpointEvent breakpointEvent, int breakpointId ) {
+	public static StoppedEvent breakpoint( int id, int breakpointId ) {
 
-		return new StoppedEvent( "breakpoint", ( int ) breakpointEvent.thread().uniqueID(), new int[] { breakpointId } );
+		return new StoppedEvent( "breakpoint", id, new int[] { breakpointId } );
 	}
 
 	@Override
