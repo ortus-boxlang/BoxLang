@@ -860,6 +860,6 @@ table_function_name:
 any_name:
     IDENTIFIER
     | keyword
-    | STRING_LITERAL
-    | OPEN_PAR any_name CLOSE_PAR
+    // | STRING_LITERAL
+    //| OPEN_PAR any_name CLOSE_PAR
 ;

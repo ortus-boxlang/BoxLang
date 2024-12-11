@@ -18,11 +18,10 @@ import java.util.Map;
 
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
-import ortus.boxlang.compiler.ast.sql.select.SQLTable;
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLExpression;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
-import ortus.boxlang.runtime.types.Query;
+import ortus.boxlang.runtime.jdbc.qoq.QoQExecutionService.QoQExecution;
 
 /**
  * Abstract Node class representing SQL null
@@ -49,7 +48,7 @@ public class SQLNullLiteral extends SQLExpression {
 	/**
 	 * Evaluate the expression
 	 */
-	public Object evaluate( Map<SQLTable, Query> tableLookup, int i ) {
+	public Object evaluate( QoQExecution QoQExec, int i ) {
 		return null;
 	}
 

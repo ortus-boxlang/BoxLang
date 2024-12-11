@@ -22,6 +22,7 @@ import ortus.boxlang.compiler.ast.sql.select.SQLTable;
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLExpression;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
+import ortus.boxlang.runtime.jdbc.qoq.QoQExecutionService.QoQExecution;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.QueryColumnType;
 
@@ -66,21 +67,21 @@ public class SQLNumberLiteral extends SQLExpression {
 	/**
 	 * What type does this expression evaluate to
 	 */
-	public QueryColumnType getType( Map<SQLTable, Query> tableLookup ) {
+	public QueryColumnType getType( QoQExecution QoQExec ) {
 		return QueryColumnType.DOUBLE;
 	}
 
 	/**
 	 * Evaluate the expression
 	 */
-	public Object evaluate( Map<SQLTable, Query> tableLookup, int i ) {
+	public Object evaluate( QoQExecution QoQExec, int i ) {
 		return value;
 	}
 
 	/**
 	 * Runtime check if the expression evaluates to a numeric value and works for columns as well
 	 * 
-	 * @param tableLookup lookup for tables
+	 * @param QoQExec Query execution state
 	 * 
 	 * @return true if the expression evaluates to a numeric value
 	 */

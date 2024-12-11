@@ -114,7 +114,7 @@ public class SQLSelect extends SQLNode {
 	 * Set the WHERE node
 	 */
 	public void setWhere( SQLExpression where ) {
-		if ( where != null && !where.isBoolean() ) {
+		if ( where != null && !where.isBoolean( null ) ) {
 			throw new BoxRuntimeException( "WHERE clause must be a boolean expression" );
 		}
 		replaceChildren( this.where, where );
@@ -139,7 +139,7 @@ public class SQLSelect extends SQLNode {
 	 * Set the HAVING node
 	 */
 	public void setHaving( SQLExpression having ) {
-		if ( having != null && !having.isBoolean() ) {
+		if ( having != null && !having.isBoolean( null ) ) {
 			throw new BoxRuntimeException( "HAVING clause must be a boolean expression" );
 		}
 		replaceChildren( this.having, having );

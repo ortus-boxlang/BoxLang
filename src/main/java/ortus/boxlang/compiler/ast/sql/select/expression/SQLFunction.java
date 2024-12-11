@@ -16,24 +16,28 @@ package ortus.boxlang.compiler.ast.sql.select.expression;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
-import ortus.boxlang.compiler.ast.sql.select.SQLTable;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
-import ortus.boxlang.runtime.types.Query;
+import ortus.boxlang.runtime.jdbc.qoq.QoQExecutionService.QoQExecution;
+import ortus.boxlang.runtime.jdbc.qoq.QoQFunctionService;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.QueryColumnType;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
  * Abstract Node class representing SQL function call
  */
 public class SQLFunction extends SQLExpression {
 
-	private String				name;
+	private final static Set<QueryColumnType>	numericTypes	= Set.of( QueryColumnType.BIGINT, QueryColumnType.DECIMAL, QueryColumnType.DOUBLE,
+	    QueryColumnType.INTEGER, QueryColumnType.BIT );
 
-	private List<SQLExpression>	arguments;
+	private Key									name;
+
+	private List<SQLExpression>					arguments;
 
 	/**
 	 * Constructor
@@ -41,7 +45,7 @@ public class SQLFunction extends SQLExpression {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code of the statement
 	 */
-	public SQLFunction( String name, List<SQLExpression> arguments, Position position, String sourceText ) {
+	public SQLFunction( Key name, List<SQLExpression> arguments, Position position, String sourceText ) {
 		super( position, sourceText );
 		setName( name );
 		setArguments( arguments );
@@ -52,7 +56,7 @@ public class SQLFunction extends SQLExpression {
 	 *
 	 * @return the name of the function
 	 */
-	public String getName() {
+	public Key getName() {
 		return name;
 	}
 
@@ -61,7 +65,7 @@ public class SQLFunction extends SQLExpression {
 	 *
 	 * @param name the name of the function
 	 */
-	public void setName( String name ) {
+	public void setName( Key name ) {
 		this.name = name;
 	}
 
@@ -86,26 +90,39 @@ public class SQLFunction extends SQLExpression {
 	}
 
 	/**
-	 * Check if the expression evaluates to a boolean value
+	 * Runtime check if the expression evaluates to a boolean value and works for columns as well
+	 * 
+	 * @param QoQExec Query execution state
+	 * 
+	 * @return true if the expression evaluates to a boolean value
 	 */
-	public boolean isBoolean() {
-		// TODO implement based on name of function
-		return false;
+	public boolean isBoolean( QoQExecution QoQExec ) {
+		return getType( QoQExec ) == QueryColumnType.BIT;
+	}
+
+	/**
+	 * Runtime check if the expression evaluates to a numeric value and works for columns as well
+	 * 
+	 * @param QoQExec Query execution state
+	 * 
+	 * @return true if the expression evaluates to a numeric value
+	 */
+	public boolean isNumeric( QoQExecution QoQExec ) {
+		return numericTypes.contains( getType( QoQExec ) );
 	}
 
 	/**
 	 * What type does this expression evaluate to
 	 */
-	public QueryColumnType getType( Map<SQLTable, Query> tableLookup ) {
-		// TODO: actually return proper type based on the function in question
-		return QueryColumnType.OBJECT;
+	public QueryColumnType getType( QoQExecution QoQExec ) {
+		return QoQFunctionService.getFunction( name ).getReturnType();
 	}
 
 	/**
 	 * Evaluate the expression
 	 */
-	public Object evaluate( Map<SQLTable, Query> tableLookup, int i ) {
-		throw new BoxRuntimeException( "not implemented" );
+	public Object evaluate( QoQExecution QoQExec, int i ) {
+		return QoQFunctionService.getFunction( name ).invoke( arguments.stream().map( a -> a.evaluate( QoQExec, i ) ).toList() );
 	}
 
 	@Override
@@ -124,7 +141,7 @@ public class SQLFunction extends SQLExpression {
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = super.toMap();
 
-		map.put( "name", getName() );
+		map.put( "name", getName().getName() );
 		map.put( "arguments", getArguments().stream().map( BoxNode::toMap ).toList() );
 		return map;
 	}

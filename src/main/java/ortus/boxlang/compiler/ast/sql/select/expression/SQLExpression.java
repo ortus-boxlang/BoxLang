@@ -14,12 +14,9 @@
  */
 package ortus.boxlang.compiler.ast.sql.select.expression;
 
-import java.util.Map;
-
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.sql.SQLNode;
-import ortus.boxlang.compiler.ast.sql.select.SQLTable;
-import ortus.boxlang.runtime.types.Query;
+import ortus.boxlang.runtime.jdbc.qoq.QoQExecutionService.QoQExecution;
 import ortus.boxlang.runtime.types.QueryColumnType;
 
 /**
@@ -45,39 +42,32 @@ public abstract class SQLExpression extends SQLNode {
 	}
 
 	/**
-	 * Check if the expression evaluates to a boolean value
-	 */
-	public boolean isBoolean() {
-		return false;
-	}
-
-	/**
 	 * Runtime check if the expression evaluates to a boolean value and works for columns as well
 	 * 
-	 * @param tableLookup lookup for tables
+	 * @param QoQExec Query execution state
 	 * 
 	 * @return true if the expression evaluates to a boolean value
 	 */
-	public boolean isBoolean( Map<SQLTable, Query> tableLookup ) {
-		return isBoolean();
+	public boolean isBoolean( QoQExecution QoQExec ) {
+		return false;
 	}
 
 	/**
 	 * Runtime check if the expression evaluates to a numeric value and works for columns as well
 	 * 
-	 * @param tableLookup lookup for tables
+	 * @param QoQExec Query execution state
 	 * 
 	 * @return true if the expression evaluates to a numeric value
 	 */
-	public boolean isNumeric( Map<SQLTable, Query> tableLookup ) {
+	public boolean isNumeric( QoQExecution QoQExec ) {
 		return false;
 	}
 
 	/**
 	 * What type does this expression evaluate to
 	 */
-	public QueryColumnType getType( Map<SQLTable, Query> tableLookup ) {
-		if ( isBoolean() ) {
+	public QueryColumnType getType( QoQExecution QoQExec ) {
+		if ( isBoolean( QoQExec ) ) {
 			return QueryColumnType.BIT;
 		}
 		return QueryColumnType.OBJECT;
@@ -86,6 +76,6 @@ public abstract class SQLExpression extends SQLNode {
 	/**
 	 * Evaluate the expression
 	 */
-	public abstract Object evaluate( Map<SQLTable, Query> tableLookup, int i );
+	public abstract Object evaluate( QoQExecution QoQExec, int i );
 
 }

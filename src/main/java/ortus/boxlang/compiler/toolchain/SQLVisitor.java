@@ -1,5 +1,6 @@
 package ortus.boxlang.compiler.toolchain;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.antlr.v4.runtime.tree.TerminalNode;
@@ -12,8 +13,11 @@ import ortus.boxlang.compiler.ast.sql.select.SQLSelect;
 import ortus.boxlang.compiler.ast.sql.select.SQLSelectStatement;
 import ortus.boxlang.compiler.ast.sql.select.SQLTable;
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLColumn;
+import ortus.boxlang.compiler.ast.sql.select.expression.SQLCountFunction;
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLExpression;
+import ortus.boxlang.compiler.ast.sql.select.expression.SQLFunction;
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLOrderBy;
+import ortus.boxlang.compiler.ast.sql.select.expression.SQLParam;
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLParenthesis;
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLStarExpression;
 import ortus.boxlang.compiler.ast.sql.select.expression.literal.SQLBooleanLiteral;
@@ -45,7 +49,8 @@ import ortus.boxlang.runtime.scopes.Key;
  */
 public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 
-	private final SQLParser tools;
+	private final SQLParser	tools;
+	private int				bindCount	= 0;
 
 	public SQLVisitor( SQLParser tools ) {
 		this.tools = tools;
@@ -330,16 +335,37 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 		} else if ( ctx.OR_() != null ) {
 			return binarySimple( ctx.expr( 0 ), ctx.expr( 1 ), SQLBinaryOperator.OR, pos, src, table, joins );
 		} else if ( ctx.function_name() != null ) {
-			throw new UnsupportedOperationException( "functions Unimplemented: " + src );
+			Key					functionName	= Key.of( ctx.function_name().getText() );
+			boolean				hasDistinct		= ctx.DISTINCT_() != null;
+			List<SQLExpression>	arguments		= new ArrayList<SQLExpression>();
+			if ( ctx.STAR() != null ) {
+				arguments.add( new SQLStarExpression( null, pos, src ) );
+			} else {
+				arguments = ctx.expr().stream().map( e -> visitExpr( e, table, joins ) ).toList();
+			}
+			if ( functionName.equals( Key.count ) ) {
+				return new SQLCountFunction( functionName, arguments, hasDistinct, pos, src );
+			} else {
+				return new SQLFunction( functionName, arguments, pos, src );
+			}
 		} else if ( ctx.BIND_PARAMETER() != null ) {
-			throw new UnsupportedOperationException( "bind parameters unimplemented: " + src );
+			int		index	= bindCount++;
+			String	name	= null;
+			if ( ctx.BIND_PARAMETER().getText().startsWith( ":" ) ) {
+				name = ctx.BIND_PARAMETER().getText().substring( 1 );
+			}
+			return new SQLParam( name, index, pos, src );
 		} else if ( ctx.IN_() != null ) {
 			SQLExpression		expr	= visitExpr( ctx.expr( 0 ), table, joins );
 			List<SQLExpression>	values	= ctx.expr().stream().skip( 1 ).map( e -> visitExpr( e, table, joins ) ).toList();
 			return new SQLInOperation( expr, values, ctx.NOT_() != null, pos, src );
 		} else if ( ctx.LIKE_() != null ) {
-			return binarySimple( ctx.expr( 0 ), ctx.expr( 1 ), ctx.NOT_() != null ? SQLBinaryOperator.NOTLIKE : SQLBinaryOperator.LIKE, pos, src, table,
-			    joins );
+			SQLBinaryOperator	op		= ctx.NOT_() != null ? SQLBinaryOperator.NOTLIKE : SQLBinaryOperator.LIKE;
+			SQLExpression		escape	= null;
+			if ( ctx.ESCAPE_() != null ) {
+				escape = visitExpr( ctx.expr( 2 ), table, joins );
+			}
+			return new SQLBinaryOperation( visitExpr( ctx.expr( 0 ), table, joins ), visitExpr( ctx.expr( 1 ), table, joins ), op, escape, pos, src );
 		} else if ( ctx.PIPE2() != null ) {
 			return binarySimple( ctx.expr( 0 ), ctx.expr( 1 ), SQLBinaryOperator.CONCAT, pos, src, table, joins );
 		} else if ( ctx.STAR() != null ) {

@@ -19,12 +19,11 @@ import java.util.Map;
 
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
-import ortus.boxlang.compiler.ast.sql.select.SQLTable;
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLExpression;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
+import ortus.boxlang.runtime.jdbc.qoq.QoQExecutionService.QoQExecution;
 import ortus.boxlang.runtime.operators.EqualsEquals;
-import ortus.boxlang.runtime.types.Query;
 
 /**
  * Abstract Node class representing SQL IN operation
@@ -97,19 +96,23 @@ public class SQLInOperation extends SQLExpression {
 	}
 
 	/**
-	 * Check if the expression evaluates to a boolean value
+	 * Runtime check if the expression evaluates to a boolean value and works for columns as well
+	 * 
+	 * @param QoQExec Query execution state
+	 * 
+	 * @return true if the expression evaluates to a boolean value
 	 */
-	public boolean isBoolean() {
+	public boolean isBoolean( QoQExecution QoQExec ) {
 		return true;
 	}
 
 	/**
 	 * Evaluate the expression
 	 */
-	public Object evaluate( Map<SQLTable, Query> tableLookup, int i ) {
-		Object value = expression.evaluate( tableLookup, i );
+	public Object evaluate( QoQExecution QoQExec, int i ) {
+		Object value = expression.evaluate( QoQExec, i );
 		for ( SQLExpression v : values ) {
-			if ( EqualsEquals.invoke( value, v.evaluate( tableLookup, i ), true ) ) {
+			if ( EqualsEquals.invoke( value, v.evaluate( QoQExec, i ), true ) ) {
 				return !not;
 			}
 		}

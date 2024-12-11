@@ -18,11 +18,10 @@ import java.util.Map;
 
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
-import ortus.boxlang.compiler.ast.sql.select.SQLTable;
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLExpression;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
-import ortus.boxlang.runtime.types.Query;
+import ortus.boxlang.runtime.jdbc.qoq.QoQExecutionService.QoQExecution;
 import ortus.boxlang.runtime.types.QueryColumnType;
 
 /**
@@ -66,14 +65,14 @@ public class SQLStringLiteral extends SQLExpression {
 	/**
 	 * What type does this expression evaluate to
 	 */
-	public QueryColumnType getType( Map<SQLTable, Query> tableLookup ) {
+	public QueryColumnType getType( QoQExecution QoQExec ) {
 		return QueryColumnType.VARCHAR;
 	}
 
 	/**
 	 * Evaluate the expression
 	 */
-	public Object evaluate( Map<SQLTable, Query> tableLookup, int i ) {
+	public Object evaluate( QoQExecution QoQExec, int i ) {
 		return value;
 	}
 

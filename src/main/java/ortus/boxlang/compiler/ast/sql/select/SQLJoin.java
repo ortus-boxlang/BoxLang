@@ -86,7 +86,7 @@ public class SQLJoin extends SQLNode {
 	 * Set the ON expression
 	 */
 	public void setOn( SQLExpression on ) {
-		if ( !on.isBoolean() ) {
+		if ( !on.isBoolean( null ) ) {
 			throw new BoxRuntimeException( "ON clause must be a boolean expression" );
 		}
 		replaceChildren( this.on, on );

@@ -15,6 +15,7 @@
 package ortus.boxlang.compiler.ast.sql.select.expression;
 
 import java.util.Map;
+import java.util.Set;
 
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
@@ -24,37 +25,63 @@ import ortus.boxlang.runtime.jdbc.qoq.QoQExecutionService.QoQExecution;
 import ortus.boxlang.runtime.types.QueryColumnType;
 
 /**
- * Abstract Node class representing SQL parenthetical expression
+ * Abstract Node class representing SQL Param expression
  */
-public class SQLParenthesis extends SQLExpression {
+public class SQLParam extends SQLExpression {
 
-	private SQLExpression expression;
+	private final static Set<QueryColumnType>	numericTypes	= Set.of( QueryColumnType.BIGINT, QueryColumnType.DECIMAL, QueryColumnType.DOUBLE,
+	    QueryColumnType.INTEGER, QueryColumnType.BIT );
 
 	/**
-	 * Constructor
+	 * Null if positinal
+	 */
+	private String								name;
+
+	// JDBC uses 1-based indexes!
+	private int									index			= 0;
+
+	/**
+	 * Constructor. Index is 1-based!
 	 *
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code of the statement
 	 */
-	public SQLParenthesis( SQLExpression expression, Position position, String sourceText ) {
+	public SQLParam( String name, int index, Position position, String sourceText ) {
 		super( position, sourceText );
-		setExpression( expression );
+		setName( name );
+		setIndex( index );
 	}
 
 	/**
-	 * Get the expression
+	 * Get the name of the function
+	 *
+	 * @return the name of the function
 	 */
-	public SQLExpression getExpression() {
-		return expression;
+	public String getName() {
+		return name;
 	}
 
 	/**
-	 * Set the expression
+	 * Set the name of the function
+	 *
+	 * @param name the name of the function
 	 */
-	public void setExpression( SQLExpression expression ) {
-		replaceChildren( this.expression, expression );
-		this.expression = expression;
-		this.expression.setParent( this );
+	public void setName( String name ) {
+		this.name = name;
+	}
+
+	/**
+	 * Get the index. 1-based!
+	 */
+	public int getIndex() {
+		return index;
+	}
+
+	/**
+	 * Set the index. 1-based!
+	 */
+	public void setIndex( int index ) {
+		this.index = index;
 	}
 
 	/**
@@ -65,7 +92,7 @@ public class SQLParenthesis extends SQLExpression {
 	 * @return true if the expression evaluates to a boolean value
 	 */
 	public boolean isBoolean( QoQExecution QoQExec ) {
-		return expression.isBoolean( QoQExec );
+		return getType( QoQExec ) == QueryColumnType.BIT;
 	}
 
 	/**
@@ -76,21 +103,21 @@ public class SQLParenthesis extends SQLExpression {
 	 * @return true if the expression evaluates to a numeric value
 	 */
 	public boolean isNumeric( QoQExecution QoQExec ) {
-		return expression.isNumeric( QoQExec );
+		return numericTypes.contains( getType( QoQExec ) );
 	}
 
 	/**
 	 * What type does this expression evaluate to
 	 */
 	public QueryColumnType getType( QoQExecution QoQExec ) {
-		return expression.getType( QoQExec );
+		return QueryColumnType.fromSQLType( QoQExec.params().get( index ).type() );
 	}
 
 	/**
 	 * Evaluate the expression
 	 */
 	public Object evaluate( QoQExecution QoQExec, int i ) {
-		return expression.evaluate( QoQExec, i );
+		return QoQExec.params().get( index ).value();
 	}
 
 	@Override
@@ -109,7 +136,12 @@ public class SQLParenthesis extends SQLExpression {
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = super.toMap();
 
-		map.put( "expression", expression.toMap() );
+		if ( name != null ) {
+			map.put( "name", name );
+		} else {
+			map.put( "name", null );
+		}
+		map.put( "index", index );
 		return map;
 	}
 

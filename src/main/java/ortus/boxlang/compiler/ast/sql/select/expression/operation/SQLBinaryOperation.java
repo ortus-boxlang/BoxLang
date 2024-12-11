@@ -19,14 +19,15 @@ import java.util.Set;
 
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
-import ortus.boxlang.compiler.ast.sql.select.SQLTable;
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLExpression;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.jdbc.qoq.LikeOperation;
+import ortus.boxlang.runtime.jdbc.qoq.QoQExecutionService.QoQExecution;
 import ortus.boxlang.runtime.operators.Compare;
 import ortus.boxlang.runtime.operators.Concat;
 import ortus.boxlang.runtime.operators.EqualsEquals;
-import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
@@ -37,7 +38,8 @@ public class SQLBinaryOperation extends SQLExpression {
 
 	// EQUAL, NOTEQUAL, LESSTHAN, LESSTHANOREQUAL, GREATERTHAN, GREATERTHANOREQUAL, AND, OR
 	private static final Set<SQLBinaryOperator>	booleanOperators	= Set.of( SQLBinaryOperator.EQUAL, SQLBinaryOperator.NOTEQUAL, SQLBinaryOperator.LESSTHAN,
-	    SQLBinaryOperator.LESSTHANOREQUAL, SQLBinaryOperator.GREATERTHAN, SQLBinaryOperator.GREATERTHANOREQUAL, SQLBinaryOperator.AND, SQLBinaryOperator.OR );
+	    SQLBinaryOperator.LESSTHANOREQUAL, SQLBinaryOperator.GREATERTHAN, SQLBinaryOperator.GREATERTHANOREQUAL, SQLBinaryOperator.AND, SQLBinaryOperator.OR,
+	    SQLBinaryOperator.LIKE, SQLBinaryOperator.NOTLIKE );
 
 	private static Set<SQLBinaryOperator>		mathOperators		= Set.of( SQLBinaryOperator.MINUS, SQLBinaryOperator.MULTIPLY, SQLBinaryOperator.DIVIDE,
 	    SQLBinaryOperator.MODULO );
@@ -47,6 +49,11 @@ public class SQLBinaryOperation extends SQLExpression {
 	private SQLExpression						right;
 
 	private SQLBinaryOperator					operator;
+
+	/**
+	 * Only used for Like
+	 */
+	private SQLExpression						escape				= null;
 
 	/**
 	 * Constructor
@@ -59,6 +66,21 @@ public class SQLBinaryOperation extends SQLExpression {
 		setLeft( left );
 		setRight( right );
 		setOperator( operator );
+	}
+
+	/**
+	 * Constructor
+	 *
+	 * @param position   position of the statement in the source code
+	 * @param sourceText source code of the statement
+	 */
+	public SQLBinaryOperation( SQLExpression left, SQLExpression right, SQLBinaryOperator operator, SQLExpression escape, Position position,
+	    String sourceText ) {
+		super( position, sourceText );
+		setLeft( left );
+		setRight( right );
+		setOperator( operator );
+		setEscape( escape );
 	}
 
 	/**
@@ -108,18 +130,36 @@ public class SQLBinaryOperation extends SQLExpression {
 	}
 
 	/**
-	 * Check if the expression evaluates to a boolean value
+	 * Get the escape
 	 */
-	public boolean isBoolean() {
+	public SQLExpression getEscape() {
+		return escape;
+	}
+
+	/**
+	 * Set the escape
+	 */
+	public void setEscape( SQLExpression escape ) {
+		this.escape = escape;
+	}
+
+	/**
+	 * Runtime check if the expression evaluates to a boolean value and works for columns as well
+	 * 
+	 * @param QoQExec Query execution state
+	 * 
+	 * @return true if the expression evaluates to a boolean value
+	 */
+	public boolean isBoolean( QoQExecution QoQExec ) {
 		return booleanOperators.contains( operator );
 	}
 
 	/**
 	 * What type does this expression evaluate to
 	 */
-	public QueryColumnType getType( Map<SQLTable, Query> tableLookup ) {
+	public QueryColumnType getType( QoQExecution QoQExec ) {
 		// If this is a boolean operation, then we're a bit
-		if ( isBoolean() ) {
+		if ( isBoolean( QoQExec ) ) {
 			return QueryColumnType.BIT;
 		}
 		// All math operators but + return a number
@@ -128,9 +168,10 @@ public class SQLBinaryOperation extends SQLExpression {
 		}
 		// Plus returns a string if the left and right operand were a string, otherwise it's a math operation.
 		if ( operator == SQLBinaryOperator.PLUS ) {
-			return QueryColumnType.isStringType( left.getType( tableLookup ) ) && QueryColumnType.isStringType( right.getType( tableLookup ) )
-			    ? QueryColumnType.VARCHAR
-			    : QueryColumnType.DOUBLE;
+			return QueryColumnType.isStringType( left.getType( QoQExec ) )
+			    && QueryColumnType.isStringType( right.getType( QoQExec ) )
+			        ? QueryColumnType.VARCHAR
+			        : QueryColumnType.DOUBLE;
 		}
 		return QueryColumnType.OBJECT;
 	}
@@ -138,87 +179,99 @@ public class SQLBinaryOperation extends SQLExpression {
 	/**
 	 * Runtime check if the expression evaluates to a numeric value and works for columns as well
 	 * 
-	 * @param tableLookup lookup for tables
+	 * @param QoQExec Query execution state
 	 * 
 	 * @return true if the expression evaluates to a numeric value
 	 */
-	public boolean isNumeric( Map<SQLTable, Query> tableLookup ) {
-		return getType( tableLookup ) == QueryColumnType.DOUBLE;
+	public boolean isNumeric( QoQExecution QoQExec ) {
+		return getType( QoQExec ) == QueryColumnType.DOUBLE;
 	}
 
 	/**
 	 * Evaluate the expression
 	 */
-	public Object evaluate( Map<SQLTable, Query> tableLookup, int i ) {
+	public Object evaluate( QoQExecution QoQExec, int i ) {
 		Object	leftValue;
 		Object	rightValue;
 		int		compareResult;
 		// Implement each binary operator
 		switch ( operator ) {
 			case DIVIDE :
-				ensureNumericOperands( tableLookup );
-				return evalAsNumber( left, tableLookup, i ) / evalAsNumber( right, tableLookup, i );
+				ensureNumericOperands( QoQExec );
+				return evalAsNumber( left, QoQExec, i ) / evalAsNumber( right, QoQExec, i );
 			case EQUAL :
-				leftValue = left.evaluate( tableLookup, i );
-				rightValue = right.evaluate( tableLookup, i );
+				leftValue = left.evaluate( QoQExec, i );
+				rightValue = right.evaluate( QoQExec, i );
 				return EqualsEquals.invoke( leftValue, rightValue, true );
 			case GREATERTHAN :
-				return Compare.invoke( left.evaluate( tableLookup, i ), right.evaluate( tableLookup, i ), true ) == 1;
+				return Compare.invoke( left.evaluate( QoQExec, i ), right.evaluate( QoQExec, i ), true ) == 1;
 			case GREATERTHANOREQUAL :
-				compareResult = Compare.invoke( left.evaluate( tableLookup, i ), right.evaluate( tableLookup, i ), true );
+				compareResult = Compare.invoke( left.evaluate( QoQExec, i ), right.evaluate( QoQExec, i ), true );
 				return compareResult == 1 || compareResult == 0;
 			case LESSTHAN :
-				return Compare.invoke( left.evaluate( tableLookup, i ), right.evaluate( tableLookup, i ), true ) == -1;
+				return Compare.invoke( left.evaluate( QoQExec, i ), right.evaluate( QoQExec, i ), true ) == -1;
 			case LESSTHANOREQUAL :
-				compareResult = Compare.invoke( left.evaluate( tableLookup, i ), right.evaluate( tableLookup, i ), true );
+				compareResult = Compare.invoke( left.evaluate( QoQExec, i ), right.evaluate( QoQExec, i ), true );
 				return compareResult == -1 || compareResult == 0;
 			case MINUS :
-				ensureNumericOperands( tableLookup );
-				return evalAsNumber( left, tableLookup, i ) - evalAsNumber( right, tableLookup, i );
+				ensureNumericOperands( QoQExec );
+				return evalAsNumber( left, QoQExec, i ) - evalAsNumber( right, QoQExec, i );
 			case MODULO :
-				ensureNumericOperands( tableLookup );
-				return evalAsNumber( left, tableLookup, i ) % evalAsNumber( right, tableLookup, i );
+				ensureNumericOperands( QoQExec );
+				return evalAsNumber( left, QoQExec, i ) % evalAsNumber( right, QoQExec, i );
 			case MULTIPLY :
-				ensureNumericOperands( tableLookup );
-				return evalAsNumber( left, tableLookup, i ) * evalAsNumber( right, tableLookup, i );
+				ensureNumericOperands( QoQExec );
+				return evalAsNumber( left, QoQExec, i ) * evalAsNumber( right, QoQExec, i );
 			case NOTEQUAL :
-				leftValue = left.evaluate( tableLookup, i );
-				rightValue = right.evaluate( tableLookup, i );
+				leftValue = left.evaluate( QoQExec, i );
+				rightValue = right.evaluate( QoQExec, i );
 				return !EqualsEquals.invoke( leftValue, rightValue, true );
 			case AND :
-				ensureBooleanOperands( tableLookup );
-				leftValue = left.evaluate( tableLookup, i );
+				ensureBooleanOperands( QoQExec );
+				leftValue = left.evaluate( QoQExec, i );
 				// Short circuit, don't eval right if left is false
 				if ( ( Boolean ) leftValue ) {
-					return ( Boolean ) right.evaluate( tableLookup, i );
+					return ( Boolean ) right.evaluate( QoQExec, i );
 				} else {
 					return false;
 				}
 			case OR :
-				ensureBooleanOperands( tableLookup );
-				if ( ( Boolean ) left.evaluate( tableLookup, i ) ) {
+				ensureBooleanOperands( QoQExec );
+				if ( ( Boolean ) left.evaluate( QoQExec, i ) ) {
 					return true;
 				}
-				if ( ( Boolean ) right.evaluate( tableLookup, i ) ) {
+				if ( ( Boolean ) right.evaluate( QoQExec, i ) ) {
 					return true;
 				}
 				return false;
 			case PLUS :
-				if ( left.isNumeric( tableLookup ) && right.isNumeric( tableLookup ) ) {
-					return evalAsNumber( left, tableLookup, i ) + evalAsNumber( right, tableLookup, i );
+				if ( left.isNumeric( QoQExec ) && right.isNumeric( QoQExec ) ) {
+					return evalAsNumber( left, QoQExec, i ) + evalAsNumber( right, QoQExec, i );
 				} else {
-					return Concat.invoke( left.evaluate( tableLookup, i ), right.evaluate( tableLookup, i ) );
+					return Concat.invoke( left.evaluate( QoQExec, i ), right.evaluate( QoQExec, i ) );
 				}
 			case LIKE :
-				break;
+				return doLike( QoQExec, i );
 			case NOTLIKE :
-				break;
+				return !doLike( QoQExec, i );
 			case CONCAT :
-				return Concat.invoke( left.evaluate( tableLookup, i ), right.evaluate( tableLookup, i ) );
+				return Concat.invoke( left.evaluate( QoQExec, i ), right.evaluate( QoQExec, i ) );
 			default :
 				throw new BoxRuntimeException( "Unknown binary operator: " + operator );
 		}
-		throw new UnsupportedOperationException( "Unimplemented binary operator: " + operator );
+	}
+
+	/**
+	 * Implement LIKE so we can reuse for NOT LIKE
+	 */
+	private boolean doLike( QoQExecution QoQExec, int i ) {
+		String	leftValueStr	= StringCaster.cast( left.evaluate( QoQExec, i ) );
+		String	rightValueStr	= StringCaster.cast( right.evaluate( QoQExec, i ) );
+		String	escapeValue		= null;
+		if ( escape != null ) {
+			escapeValue = StringCaster.cast( escape.evaluate( QoQExec, i ) );
+		}
+		return LikeOperation.invoke( leftValueStr, rightValueStr, escapeValue );
 	}
 
 	/**
@@ -226,13 +279,13 @@ public class SQLBinaryOperation extends SQLExpression {
 	 * 
 	 * @return true if the left and right operands are boolean expressions or bit columns
 	 */
-	private void ensureBooleanOperands( Map<SQLTable, Query> tableLookup ) {
+	private void ensureBooleanOperands( QoQExecution QoQExec ) {
 		// These checks may or may not work. If we can't get away with this, then we can boolean cast the values
 		// but SQL doesn't really have the same concept of truthiness and mostly expects to always get booleans from boolean columns or boolean expressions
-		if ( !left.isBoolean( tableLookup ) ) {
+		if ( !left.isBoolean( QoQExec ) ) {
 			throw new BoxRuntimeException( "Left side of a boolean [" + operator.getSymbol() + "] operation must be a boolean expression or bit column" );
 		}
-		if ( !right.isBoolean( tableLookup ) ) {
+		if ( !right.isBoolean( QoQExec ) ) {
 			throw new BoxRuntimeException( "Right side of a boolean [" + operator.getSymbol() + "] operation must be a boolean expression or bit column" );
 		}
 	}
@@ -240,11 +293,11 @@ public class SQLBinaryOperation extends SQLExpression {
 	/**
 	 * Reusable helper method to ensure that the left and right operands are numeric expressions or numeric columns
 	 */
-	private void ensureNumericOperands( Map<SQLTable, Query> tableLookup ) {
-		if ( !left.isNumeric( tableLookup ) ) {
+	private void ensureNumericOperands( QoQExecution QoQExec ) {
+		if ( !left.isNumeric( QoQExec ) ) {
 			throw new BoxRuntimeException( "Left side of a math [" + operator.getSymbol() + "] operation must be a numeric expression or numeric column" );
 		}
-		if ( !right.isNumeric( tableLookup ) ) {
+		if ( !right.isNumeric( QoQExec ) ) {
 			throw new BoxRuntimeException( "Right side of a math [" + operator.getSymbol() + "] operation must be a numeric expression or numeric column" );
 		}
 	}
@@ -258,8 +311,8 @@ public class SQLBinaryOperation extends SQLExpression {
 	 * 
 	 * @return
 	 */
-	private double evalAsNumber( SQLExpression expression, Map<SQLTable, Query> tableLookup, int i ) {
-		return ( ( Number ) expression.evaluate( tableLookup, i ) ).doubleValue();
+	private double evalAsNumber( SQLExpression expression, QoQExecution QoQExec, int i ) {
+		return ( ( Number ) expression.evaluate( QoQExec, i ) ).doubleValue();
 	}
 
 	@Override
@@ -281,6 +334,11 @@ public class SQLBinaryOperation extends SQLExpression {
 		map.put( "left", left.toMap() );
 		map.put( "right", right.toMap() );
 		map.put( "operator", enumToMap( operator ) );
+		if ( escape != null ) {
+			map.put( "escape", escape.toMap() );
+		} else {
+			map.put( "escape", null );
+		}
 		return map;
 	}
 

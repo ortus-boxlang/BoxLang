@@ -18,11 +18,10 @@ import java.util.Map;
 
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
-import ortus.boxlang.compiler.ast.sql.select.SQLTable;
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLExpression;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
-import ortus.boxlang.runtime.types.Query;
+import ortus.boxlang.runtime.jdbc.qoq.QoQExecutionService.QoQExecution;
 
 /**
  * Abstract Node class representing SQL boolean
@@ -63,16 +62,20 @@ public class SQLBooleanLiteral extends SQLExpression {
 	}
 
 	/**
-	 * Check if the expression evaluates to a boolean value
+	 * Runtime check if the expression evaluates to a boolean value and works for columns as well
+	 * 
+	 * @param QoQExec Query execution state
+	 * 
+	 * @return true if the expression evaluates to a boolean value
 	 */
-	public boolean isBoolean() {
+	public boolean isBoolean( QoQExecution QoQExec ) {
 		return true;
 	}
 
 	/**
 	 * Evaluate the expression
 	 */
-	public Object evaluate( Map<SQLTable, Query> tableLookup, int i ) {
+	public Object evaluate( QoQExecution QoQExec, int i ) {
 		return value;
 	}
 

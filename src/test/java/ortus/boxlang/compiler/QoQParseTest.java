@@ -19,7 +19,6 @@ import static com.google.common.truth.Truth.assertThat;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.compiler.parser.ParsingResult;
@@ -80,21 +79,18 @@ public class QoQParseTest {
 	}
 
 	@Test
-	@Disabled
 	public void testRunQoQ() {
 		instance.executeSource(
 		    """
-		     myQry = queryNew( "col,col2", "varchar,integer", [["foo",42],["bar",9001]] )
-		             q = queryExecute( "
-		    	select col, 5 as brad, col2 luis
-		    	from myQry
-		    	where (col = 'foo') or col2 IS 9001
-		    ",
-		          	[],
-		          	{ dbType : "query", maxRows = 1 }
-		          );
-		       println( q )
-		          """,
+		          myQry = queryNew( "col,col2", "varchar,integer", [["foo",42],["bar",9001]] )
+		                  q = queryExecute( "
+		    select upper('test') as val
+		         ",
+		               	[],
+		               	{ dbType : "query" }
+		               );
+		            println( q )
+		               """,
 		    context );
 	}
 

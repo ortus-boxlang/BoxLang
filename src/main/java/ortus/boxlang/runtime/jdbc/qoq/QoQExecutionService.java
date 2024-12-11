@@ -16,6 +16,7 @@ package ortus.boxlang.runtime.jdbc.qoq;
 
 import java.sql.SQLException;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import ortus.boxlang.compiler.ast.sql.SQLNode;
@@ -31,6 +32,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.jdbc.qoq.QoQPreparedStatement.ParamItem;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
@@ -43,7 +45,7 @@ import ortus.boxlang.runtime.util.FRTransService;
 /**
  * I handle executing query of queries
  */
-public class QoQService {
+public class QoQExecutionService {
 
 	/**
 	 * The transaction service used to track subtransactions
@@ -85,7 +87,14 @@ public class QoQService {
 			tableLookup.put( selectStatement.getSelect().getTable(), source );
 		}
 
-		Map<Key, TypedResultColumn>	resultColumns	= calculateResultColumns( selectStatement, tableLookup );
+		// This holds the AST and the runtime values for the query
+		QoQExecution				QoQExec			= QoQExecution.of(
+		    selectStatement,
+		    tableLookup,
+		    statement instanceof QoQPreparedStatement qp ? qp.getParameters() : null
+		);
+
+		Map<Key, TypedResultColumn>	resultColumns	= calculateResultColumns( QoQExec );
 
 		Query						target			= buildTargetQuery( resultColumns );
 
@@ -103,7 +112,7 @@ public class QoQService {
 			Object[] values = new Object[ resultColumns.size() ];
 			for ( Key key : resultColumns.keySet() ) {
 				SQLResultColumn	resultColumn	= resultColumns.get( key ).resultColumn;
-				Object			value			= resultColumn.getExpression().evaluate( tableLookup, 1 );
+				Object			value			= resultColumn.getExpression().evaluate( QoQExec, 1 );
 				values[ resultColumn.getOrdinalPosition() - 1 ] = value;
 			}
 			target.addRow( values );
@@ -118,11 +127,11 @@ public class QoQService {
 				break;
 			}
 			// Evaluate the where expression
-			if ( where == null || ( Boolean ) where.evaluate( tableLookup, i ) ) {
+			if ( where == null || ( Boolean ) where.evaluate( QoQExec, i ) ) {
 				Object[] values = new Object[ resultColumns.size() ];
 				for ( Key key : resultColumns.keySet() ) {
 					SQLResultColumn	resultColumn	= resultColumns.get( key ).resultColumn;
-					Object			value			= resultColumn.getExpression().evaluate( tableLookup, i );
+					Object			value			= resultColumn.getExpression().evaluate( QoQExec, i );
 					values[ resultColumn.getOrdinalPosition() - 1 ] = value;
 				}
 				target.addRow( values );
@@ -160,19 +169,19 @@ public class QoQService {
 		return target;
 	}
 
-	private static Map<Key, TypedResultColumn> calculateResultColumns( SQLSelectStatement select, Map<SQLTable, Query> tableLookup ) {
+	private static Map<Key, TypedResultColumn> calculateResultColumns( QoQExecution QoQExec ) {
 		Map<Key, TypedResultColumn> resultColumns = new LinkedHashMap<Key, TypedResultColumn>();
-		for ( SQLResultColumn resultColumn : select.getSelect().getResultColumns() ) {
+		for ( SQLResultColumn resultColumn : QoQExec.select.getSelect().getResultColumns() ) {
 			// For *, expand all columns in the query
 			if ( resultColumn.isStarExpression() ) {
 				// TODO: when we add joins, handle looking up the correct table reference based on resultColumn.getTable()
-				var thisTable = tableLookup.get( select.getSelect().getTable() );
+				var thisTable = QoQExec.tableLookup.get( QoQExec.select.getSelect().getTable() );
 				for ( Key key : thisTable.getColumns().keySet() ) {
 					resultColumns.put( key,
 					    TypedResultColumn.of(
 					        thisTable.getColumns().get( key ).getType(),
 					        new SQLResultColumn(
-					            new SQLColumn( select.getSelect().getTable(), key.getName(), null, null ),
+					            new SQLColumn( QoQExec.select.getSelect().getTable(), key.getName(), null, null ),
 					            null,
 					            resultColumns.size() + 1,
 					            null,
@@ -184,7 +193,7 @@ public class QoQService {
 				// Non-star columns are named after the column, or given a column_0, column_1, etc name
 			} else {
 				resultColumns.put( resultColumn.getResultColumnName(),
-				    TypedResultColumn.of( resultColumn.getExpression().getType( tableLookup ), resultColumn ) );
+				    TypedResultColumn.of( resultColumn.getExpression().getType( QoQExec ), resultColumn ) );
 			}
 		}
 		return resultColumns;
@@ -203,6 +212,16 @@ public class QoQService {
 
 		public static TypedResultColumn of( QueryColumnType type, SQLResultColumn resultColumn ) {
 			return new TypedResultColumn( type, resultColumn );
+		}
+	}
+
+	/**
+	 * A wrapper class to hold together both the SQL AST being executed as well as the runtime values for a given execution of the query
+	 */
+	public record QoQExecution( SQLSelectStatement select, Map<SQLTable, Query> tableLookup, List<ParamItem> params ) {
+
+		public static QoQExecution of( SQLSelectStatement select, Map<SQLTable, Query> tableLookup, List<ParamItem> params ) {
+			return new QoQExecution( select, tableLookup, params );
 		}
 	}
 

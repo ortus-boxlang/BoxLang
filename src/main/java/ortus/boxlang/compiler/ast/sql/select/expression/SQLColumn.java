@@ -15,14 +15,15 @@
 package ortus.boxlang.compiler.ast.sql.select.expression;
 
 import java.util.Map;
+import java.util.Set;
 
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.sql.select.SQLTable;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
+import ortus.boxlang.runtime.jdbc.qoq.QoQExecutionService.QoQExecution;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.QueryColumnType;
 
 /**
@@ -30,9 +31,12 @@ import ortus.boxlang.runtime.types.QueryColumnType;
  */
 public class SQLColumn extends SQLExpression {
 
-	private SQLTable	table;
+	private final static Set<QueryColumnType>	numericTypes	= Set.of( QueryColumnType.BIGINT, QueryColumnType.DECIMAL, QueryColumnType.DOUBLE,
+	    QueryColumnType.INTEGER, QueryColumnType.BIT );
 
-	private Key			name;
+	private SQLTable							table;
+
+	private Key									name;
 
 	/**
 	 * Constructor
@@ -82,26 +86,37 @@ public class SQLColumn extends SQLExpression {
 	/**
 	 * What type does this expression evaluate to
 	 */
-	public QueryColumnType getType( Map<SQLTable, Query> tableLookup ) {
-		return tableLookup.get( table ).getColumns().get( name ).getType();
+	public QueryColumnType getType( QoQExecution QoQExec ) {
+		return QoQExec.tableLookup().get( table ).getColumns().get( name ).getType();
 	}
 
 	/**
 	 * Evaluate the expression
 	 */
-	public Object evaluate( Map<SQLTable, Query> tableLookup, int i ) {
-		return tableLookup.get( table ).getCell( name, i - 1 );
+	public Object evaluate( QoQExecution QoQExec, int i ) {
+		return QoQExec.tableLookup().get( table ).getCell( name, i - 1 );
 	}
 
 	/**
 	 * Runtime check if the expression evaluates to a boolean value and works for columns as well
 	 * 
-	 * @param tableLookup lookup for tables
+	 * @param QoQExec Query execution state
 	 * 
 	 * @return true if the expression evaluates to a boolean value
 	 */
-	public boolean isBoolean( Map<SQLTable, Query> tableLookup ) {
-		return getType( tableLookup ) == QueryColumnType.BIT;
+	public boolean isBoolean( QoQExecution QoQExec ) {
+		return getType( QoQExec ) == QueryColumnType.BIT;
+	}
+
+	/**
+	 * Runtime check if the expression evaluates to a numeric value and works for columns as well
+	 * 
+	 * @param QoQExec Query execution state
+	 * 
+	 * @return true if the expression evaluates to a numeric value
+	 */
+	public boolean isNumeric( QoQExecution QoQExec ) {
+		return numericTypes.contains( getType( QoQExec ) );
 	}
 
 	@Override

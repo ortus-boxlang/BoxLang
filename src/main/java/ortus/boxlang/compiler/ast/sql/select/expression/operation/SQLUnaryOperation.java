@@ -19,11 +19,10 @@ import java.util.Set;
 
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
-import ortus.boxlang.compiler.ast.sql.select.SQLTable;
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLExpression;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
-import ortus.boxlang.runtime.types.Query;
+import ortus.boxlang.runtime.jdbc.qoq.QoQExecutionService.QoQExecution;
 import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
@@ -85,18 +84,22 @@ public class SQLUnaryOperation extends SQLExpression {
 	}
 
 	/**
-	 * Check if the expression evaluates to a boolean value
+	 * Runtime check if the expression evaluates to a boolean value and works for columns as well
+	 * 
+	 * @param QoQExec Query execution state
+	 * 
+	 * @return true if the expression evaluates to a boolean value
 	 */
-	public boolean isBoolean() {
+	public boolean isBoolean( QoQExecution QoQExec ) {
 		return booleanOperators.contains( operator );
 	}
 
 	/**
 	 * What type does this expression evaluate to
 	 */
-	public QueryColumnType getType( Map<SQLTable, Query> tableLookup ) {
+	public QueryColumnType getType( QoQExecution QoQExec ) {
 		// If this is a boolean operation, then we're a bit
-		if ( isBoolean() ) {
+		if ( isBoolean( QoQExec ) ) {
 			return QueryColumnType.BIT;
 		}
 		if ( mathOperators.contains( operator ) ) {
@@ -108,33 +111,33 @@ public class SQLUnaryOperation extends SQLExpression {
 	/**
 	 * Runtime check if the expression evaluates to a numeric value and works for columns as well
 	 * 
-	 * @param tableLookup lookup for tables
+	 * @param QoQExec Query execution state
 	 * 
 	 * @return true if the expression evaluates to a numeric value
 	 */
-	public boolean isNumeric( Map<SQLTable, Query> tableLookup ) {
-		return getType( tableLookup ) == QueryColumnType.DOUBLE;
+	public boolean isNumeric( QoQExecution QoQExec ) {
+		return getType( QoQExec ) == QueryColumnType.DOUBLE;
 	}
 
 	/**
 	 * Evaluate the expression
 	 */
-	public Object evaluate( Map<SQLTable, Query> tableLookup, int i ) {
+	public Object evaluate( QoQExecution QoQExec, int i ) {
 		// Implement each unary operator
 		switch ( operator ) {
 			case ISNOTNULL :
-				return expression.evaluate( tableLookup, i ) != null;
+				return expression.evaluate( QoQExec, i ) != null;
 			case ISNULL :
-				return expression.evaluate( tableLookup, i ) != null;
+				return expression.evaluate( QoQExec, i ) != null;
 			case MINUS :
-				ensureNumericOperand( tableLookup );
-				return -evalAsNumber( expression, tableLookup, i );
+				ensureNumericOperand( QoQExec );
+				return -evalAsNumber( expression, QoQExec, i );
 			case NOT :
-				ensureBooleanOperand( tableLookup );
-				return ! ( ( boolean ) expression.evaluate( tableLookup, i ) );
+				ensureBooleanOperand( QoQExec );
+				return ! ( ( boolean ) expression.evaluate( QoQExec, i ) );
 			case PLUS :
-				ensureNumericOperand( tableLookup );
-				return expression.evaluate( tableLookup, i );
+				ensureNumericOperand( QoQExec );
+				return expression.evaluate( QoQExec, i );
 			default :
 				throw new BoxRuntimeException( "Unknown binary operator: " + operator );
 
@@ -146,10 +149,10 @@ public class SQLUnaryOperation extends SQLExpression {
 	 * 
 	 * @return true if the left and right operands are boolean expressions or bit columns
 	 */
-	private void ensureBooleanOperand( Map<SQLTable, Query> tableLookup ) {
+	private void ensureBooleanOperand( QoQExecution QoQExec ) {
 		// These checks may or may not work. If we can't get away with this, then we can boolean cast the values
 		// but SQL doesn't really have the same concept of truthiness and mostly expects to always get booleans from boolean columns or boolean expressions
-		if ( !expression.isBoolean( tableLookup ) ) {
+		if ( !expression.isBoolean( QoQExec ) ) {
 			throw new BoxRuntimeException( "Unary operation [" + operator.getSymbol() + "] must be a boolean expression or bit column" );
 		}
 	}
@@ -157,8 +160,8 @@ public class SQLUnaryOperation extends SQLExpression {
 	/**
 	 * Reusable helper method to ensure that the left and right operands are numeric expressions or numeric columns
 	 */
-	private void ensureNumericOperand( Map<SQLTable, Query> tableLookup ) {
-		if ( !expression.isNumeric( tableLookup ) ) {
+	private void ensureNumericOperand( QoQExecution QoQExec ) {
+		if ( !expression.isNumeric( QoQExec ) ) {
 			throw new BoxRuntimeException( "Unary operation [" + operator.getSymbol() + "] must be a numeric expression or numeric column" );
 		}
 	}
@@ -172,8 +175,8 @@ public class SQLUnaryOperation extends SQLExpression {
 	 * 
 	 * @return
 	 */
-	private double evalAsNumber( SQLExpression expression, Map<SQLTable, Query> tableLookup, int i ) {
-		return ( ( Number ) expression.evaluate( tableLookup, i ) ).doubleValue();
+	private double evalAsNumber( SQLExpression expression, QoQExecution QoQExec, int i ) {
+		return ( ( Number ) expression.evaluate( QoQExec, i ) ).doubleValue();
 	}
 
 	@Override

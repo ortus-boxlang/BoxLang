@@ -22,6 +22,7 @@ import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.sql.select.SQLTable;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.QueryColumnType;
 
@@ -38,7 +39,7 @@ public class SQLCountFunction extends SQLFunction {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code of the statement
 	 */
-	public SQLCountFunction( String name, List<SQLExpression> arguments, boolean distinct, Position position, String sourceText ) {
+	public SQLCountFunction( Key name, List<SQLExpression> arguments, boolean distinct, Position position, String sourceText ) {
 		super( name, arguments, position, sourceText );
 		setDistinct( distinct );
 	}
@@ -67,7 +68,7 @@ public class SQLCountFunction extends SQLFunction {
 	/**
 	 * Runtime check if the expression evaluates to a numeric value and works for columns as well
 	 * 
-	 * @param tableLookup lookup for tables
+	 * @param QoQExec Query execution state
 	 * 
 	 * @return true if the expression evaluates to a numeric value
 	 */
@@ -92,7 +93,7 @@ public class SQLCountFunction extends SQLFunction {
 		Map<String, Object> map = super.toMap();
 
 		map.put( "distinct", isDistinct() );
-		map.put( "name", getName() );
+		map.put( "name", getName().getName() );
 		map.put( "arguments", getArguments().stream().map( BoxNode::toMap ).toList() );
 		return map;
 	}
