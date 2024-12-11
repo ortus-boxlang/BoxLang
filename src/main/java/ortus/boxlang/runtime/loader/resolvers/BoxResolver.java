@@ -318,7 +318,7 @@ public class BoxResolver extends BaseResolver {
 
 		// System.out.println( "mappings: " + mappings );
 		// System.out.println( "slashName: " + slashName );
-		getLogger().trace( "Resolving [{}] against mappings: [{}]", slashName, mappings );
+		// getLogger().trace( "Resolving [{}] against mappings: [{}]", slashName, mappings );
 
 		// Maybe if we have > 20 mappings we should use parallel streams
 
