@@ -23,6 +23,8 @@ import ortus.boxlang.compiler.ast.sql.select.SQLTable;
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLExpression;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
+import ortus.boxlang.runtime.operators.Compare;
+import ortus.boxlang.runtime.operators.Concat;
 import ortus.boxlang.runtime.operators.EqualsEquals;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.QueryColumnType;
@@ -134,43 +136,130 @@ public class SQLBinaryOperation extends SQLExpression {
 	}
 
 	/**
+	 * Runtime check if the expression evaluates to a numeric value and works for columns as well
+	 * 
+	 * @param tableLookup lookup for tables
+	 * 
+	 * @return true if the expression evaluates to a numeric value
+	 */
+	public boolean isNumeric( Map<SQLTable, Query> tableLookup ) {
+		return getType( tableLookup ) == QueryColumnType.DOUBLE;
+	}
+
+	/**
 	 * Evaluate the expression
 	 */
 	public Object evaluate( Map<SQLTable, Query> tableLookup, int i ) {
+		Object	leftValue;
+		Object	rightValue;
+		int		compareResult;
 		// Implement each binary operator
 		switch ( operator ) {
-			case AND :
-				break;
 			case DIVIDE :
-				break;
+				ensureNumericOperands( tableLookup );
+				return evalAsNumber( left, tableLookup, i ) / evalAsNumber( right, tableLookup, i );
 			case EQUAL :
-				Object leftValue = left.evaluate( tableLookup, i );
-				Object rightValue = right.evaluate( tableLookup, i );
+				leftValue = left.evaluate( tableLookup, i );
+				rightValue = right.evaluate( tableLookup, i );
 				return EqualsEquals.invoke( leftValue, rightValue, true );
 			case GREATERTHAN :
-				break;
+				return Compare.invoke( left.evaluate( tableLookup, i ), right.evaluate( tableLookup, i ), true ) == 1;
 			case GREATERTHANOREQUAL :
-				break;
+				compareResult = Compare.invoke( left.evaluate( tableLookup, i ), right.evaluate( tableLookup, i ), true );
+				return compareResult == 1 || compareResult == 0;
 			case LESSTHAN :
-				break;
+				return Compare.invoke( left.evaluate( tableLookup, i ), right.evaluate( tableLookup, i ), true ) == -1;
 			case LESSTHANOREQUAL :
-				break;
+				compareResult = Compare.invoke( left.evaluate( tableLookup, i ), right.evaluate( tableLookup, i ), true );
+				return compareResult == -1 || compareResult == 0;
 			case MINUS :
-				break;
+				ensureNumericOperands( tableLookup );
+				return evalAsNumber( left, tableLookup, i ) - evalAsNumber( right, tableLookup, i );
 			case MODULO :
-				break;
+				ensureNumericOperands( tableLookup );
+				return evalAsNumber( left, tableLookup, i ) % evalAsNumber( right, tableLookup, i );
 			case MULTIPLY :
-				break;
+				ensureNumericOperands( tableLookup );
+				return evalAsNumber( left, tableLookup, i ) * evalAsNumber( right, tableLookup, i );
 			case NOTEQUAL :
-				break;
+				leftValue = left.evaluate( tableLookup, i );
+				rightValue = right.evaluate( tableLookup, i );
+				return !EqualsEquals.invoke( leftValue, rightValue, true );
+			case AND :
+				ensureBooleanOperands( tableLookup );
+				leftValue = left.evaluate( tableLookup, i );
+				// Short circuit, don't eval right if left is false
+				if ( ( Boolean ) leftValue ) {
+					return ( Boolean ) right.evaluate( tableLookup, i );
+				} else {
+					return false;
+				}
 			case OR :
-				break;
+				ensureBooleanOperands( tableLookup );
+				if ( ( Boolean ) left.evaluate( tableLookup, i ) ) {
+					return true;
+				}
+				if ( ( Boolean ) right.evaluate( tableLookup, i ) ) {
+					return true;
+				}
+				return false;
 			case PLUS :
+				if ( left.isNumeric( tableLookup ) && right.isNumeric( tableLookup ) ) {
+					return evalAsNumber( left, tableLookup, i ) + evalAsNumber( right, tableLookup, i );
+				} else {
+					return Concat.invoke( left.evaluate( tableLookup, i ), right.evaluate( tableLookup, i ) );
+				}
+			case LIKE :
 				break;
+			case NOTLIKE :
+				break;
+			case CONCAT :
+				return Concat.invoke( left.evaluate( tableLookup, i ), right.evaluate( tableLookup, i ) );
 			default :
 				throw new BoxRuntimeException( "Unknown binary operator: " + operator );
 		}
 		throw new UnsupportedOperationException( "Unimplemented binary operator: " + operator );
+	}
+
+	/**
+	 * Reusable helper method to ensure that the left and right operands are boolean expressions or bit columns
+	 * 
+	 * @return true if the left and right operands are boolean expressions or bit columns
+	 */
+	private void ensureBooleanOperands( Map<SQLTable, Query> tableLookup ) {
+		// These checks may or may not work. If we can't get away with this, then we can boolean cast the values
+		// but SQL doesn't really have the same concept of truthiness and mostly expects to always get booleans from boolean columns or boolean expressions
+		if ( !left.isBoolean( tableLookup ) ) {
+			throw new BoxRuntimeException( "Left side of a boolean [" + operator.getSymbol() + "] operation must be a boolean expression or bit column" );
+		}
+		if ( !right.isBoolean( tableLookup ) ) {
+			throw new BoxRuntimeException( "Right side of a boolean [" + operator.getSymbol() + "] operation must be a boolean expression or bit column" );
+		}
+	}
+
+	/**
+	 * Reusable helper method to ensure that the left and right operands are numeric expressions or numeric columns
+	 */
+	private void ensureNumericOperands( Map<SQLTable, Query> tableLookup ) {
+		if ( !left.isNumeric( tableLookup ) ) {
+			throw new BoxRuntimeException( "Left side of a math [" + operator.getSymbol() + "] operation must be a numeric expression or numeric column" );
+		}
+		if ( !right.isNumeric( tableLookup ) ) {
+			throw new BoxRuntimeException( "Right side of a math [" + operator.getSymbol() + "] operation must be a numeric expression or numeric column" );
+		}
+	}
+
+	/**
+	 * Helper for evaluating an expression as a number
+	 * 
+	 * @param tableLookup
+	 * @param expression
+	 * @param i
+	 * 
+	 * @return
+	 */
+	private double evalAsNumber( SQLExpression expression, Map<SQLTable, Query> tableLookup, int i ) {
+		return ( ( Number ) expression.evaluate( tableLookup, i ) ).doubleValue();
 	}
 
 	@Override

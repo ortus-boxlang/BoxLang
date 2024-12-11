@@ -35,6 +35,7 @@ GT: '>';
 GT_EQ: '>=';
 EQ: '==';
 NOT_EQ1: '!=';
+BANG: '!';
 NOT_EQ2: '<>';
 
 ABORT_: 'ABORT';

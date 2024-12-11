@@ -22,8 +22,8 @@ import ortus.boxlang.compiler.ast.sql.select.SQLTable;
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLExpression;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
+import ortus.boxlang.runtime.operators.Compare;
 import ortus.boxlang.runtime.types.Query;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
  * Abstract Node class representing SQL BETWEEN operation
@@ -36,17 +36,20 @@ public class SQLBetweenOperation extends SQLExpression {
 
 	private SQLExpression	right;
 
+	private boolean			not;
+
 	/**
 	 * Constructor
 	 *
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code of the statement
 	 */
-	public SQLBetweenOperation( SQLExpression expression, SQLExpression left, SQLExpression right, Position position, String sourceText ) {
+	public SQLBetweenOperation( SQLExpression expression, SQLExpression left, SQLExpression right, boolean not, Position position, String sourceText ) {
 		super( position, sourceText );
 		setExpression( expression );
 		setLeft( left );
 		setRight( right );
+		setNot( not );
 	}
 
 	/**
@@ -98,6 +101,20 @@ public class SQLBetweenOperation extends SQLExpression {
 	}
 
 	/**
+	 * Get the not
+	 */
+	public boolean isNot() {
+		return not;
+	}
+
+	/**
+	 * Set the not
+	 */
+	public void setNot( boolean not ) {
+		this.not = not;
+	}
+
+	/**
 	 * Check if the expression evaluates to a boolean value
 	 */
 	public boolean isBoolean() {
@@ -108,7 +125,29 @@ public class SQLBetweenOperation extends SQLExpression {
 	 * Evaluate the expression
 	 */
 	public Object evaluate( Map<SQLTable, Query> tableLookup, int i ) {
-		throw new BoxRuntimeException( "not implemented" );
+		Object	leftValue		= left.evaluate( tableLookup, i );
+		Object	rightValue		= right.evaluate( tableLookup, i );
+		Object	expressionValue	= expression.evaluate( tableLookup, i );
+		// The ^ not inverses the result if the not flag is true
+		return doBetween( leftValue, rightValue, expressionValue ) ^ not;
+	}
+
+	/**
+	 * Helper for evaluating an expression as a number
+	 * 
+	 * @param left  the left operand value
+	 * @param right the right operand value
+	 * @param value the value to check if it's between the left and right operands
+	 * 
+	 * @return true if the value is between the left and right operands
+	 */
+	private boolean doBetween( Object left, Object right, Object value ) {
+		int result = Compare.invoke( left, value, true );
+		if ( result == 1 ) {
+			return false;
+		}
+		result = Compare.invoke( value, right, true );
+		return result != 1;
 	}
 
 	@Override

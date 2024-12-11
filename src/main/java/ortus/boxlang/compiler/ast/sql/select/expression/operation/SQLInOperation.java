@@ -23,8 +23,8 @@ import ortus.boxlang.compiler.ast.sql.select.SQLTable;
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLExpression;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
+import ortus.boxlang.runtime.operators.EqualsEquals;
 import ortus.boxlang.runtime.types.Query;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
  * Abstract Node class representing SQL IN operation
@@ -43,7 +43,7 @@ public class SQLInOperation extends SQLExpression {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code of the statement
 	 */
-	public SQLInOperation( boolean not, SQLExpression expression, List<SQLExpression> values, Position position, String sourceText ) {
+	public SQLInOperation( SQLExpression expression, List<SQLExpression> values, boolean not, Position position, String sourceText ) {
 		super( position, sourceText );
 		setExpression( expression );
 		setValues( values );
@@ -107,7 +107,13 @@ public class SQLInOperation extends SQLExpression {
 	 * Evaluate the expression
 	 */
 	public Object evaluate( Map<SQLTable, Query> tableLookup, int i ) {
-		throw new BoxRuntimeException( "not implemented" );
+		Object value = expression.evaluate( tableLookup, i );
+		for ( SQLExpression v : values ) {
+			if ( EqualsEquals.invoke( value, v.evaluate( tableLookup, i ), true ) ) {
+				return !not;
+			}
+		}
+		return not;
 	}
 
 	@Override

@@ -35,6 +35,9 @@ public class SQLUnaryOperation extends SQLExpression {
 	// NOT, ISNULL, ISNOTNULL
 	private static final Set<SQLUnaryOperator>	booleanOperators	= Set.of( SQLUnaryOperator.NOT, SQLUnaryOperator.ISNULL, SQLUnaryOperator.ISNOTNULL );
 
+	// math operators
+	private static final Set<SQLUnaryOperator>	mathOperators		= Set.of( SQLUnaryOperator.PLUS, SQLUnaryOperator.MINUS );
+
 	private SQLExpression						expression;
 
 	private SQLUnaryOperator					operator;
@@ -96,17 +99,81 @@ public class SQLUnaryOperation extends SQLExpression {
 		if ( isBoolean() ) {
 			return QueryColumnType.BIT;
 		}
-		if ( operator == SQLUnaryOperator.PLUS || operator == SQLUnaryOperator.MINUS ) {
+		if ( mathOperators.contains( operator ) ) {
 			return QueryColumnType.DOUBLE;
 		}
 		return QueryColumnType.OBJECT;
 	}
 
 	/**
+	 * Runtime check if the expression evaluates to a numeric value and works for columns as well
+	 * 
+	 * @param tableLookup lookup for tables
+	 * 
+	 * @return true if the expression evaluates to a numeric value
+	 */
+	public boolean isNumeric( Map<SQLTable, Query> tableLookup ) {
+		return getType( tableLookup ) == QueryColumnType.DOUBLE;
+	}
+
+	/**
 	 * Evaluate the expression
 	 */
 	public Object evaluate( Map<SQLTable, Query> tableLookup, int i ) {
-		throw new BoxRuntimeException( "not implemented" );
+		// Implement each unary operator
+		switch ( operator ) {
+			case ISNOTNULL :
+				return expression.evaluate( tableLookup, i ) != null;
+			case ISNULL :
+				return expression.evaluate( tableLookup, i ) != null;
+			case MINUS :
+				ensureNumericOperand( tableLookup );
+				return -evalAsNumber( expression, tableLookup, i );
+			case NOT :
+				ensureBooleanOperand( tableLookup );
+				return ! ( ( boolean ) expression.evaluate( tableLookup, i ) );
+			case PLUS :
+				ensureNumericOperand( tableLookup );
+				return expression.evaluate( tableLookup, i );
+			default :
+				throw new BoxRuntimeException( "Unknown binary operator: " + operator );
+
+		}
+	}
+
+	/**
+	 * Reusable helper method to ensure that the left and right operands are boolean expressions or bit columns
+	 * 
+	 * @return true if the left and right operands are boolean expressions or bit columns
+	 */
+	private void ensureBooleanOperand( Map<SQLTable, Query> tableLookup ) {
+		// These checks may or may not work. If we can't get away with this, then we can boolean cast the values
+		// but SQL doesn't really have the same concept of truthiness and mostly expects to always get booleans from boolean columns or boolean expressions
+		if ( !expression.isBoolean( tableLookup ) ) {
+			throw new BoxRuntimeException( "Unary operation [" + operator.getSymbol() + "] must be a boolean expression or bit column" );
+		}
+	}
+
+	/**
+	 * Reusable helper method to ensure that the left and right operands are numeric expressions or numeric columns
+	 */
+	private void ensureNumericOperand( Map<SQLTable, Query> tableLookup ) {
+		if ( !expression.isNumeric( tableLookup ) ) {
+			throw new BoxRuntimeException( "Unary operation [" + operator.getSymbol() + "] must be a numeric expression or numeric column" );
+		}
+	}
+
+	/**
+	 * Helper for evaluating an expression as a number
+	 * 
+	 * @param tableLookup
+	 * @param expression
+	 * @param i
+	 * 
+	 * @return
+	 */
+	private double evalAsNumber( SQLExpression expression, Map<SQLTable, Query> tableLookup, int i ) {
+		return ( ( Number ) expression.evaluate( tableLookup, i ) ).doubleValue();
 	}
 
 	@Override

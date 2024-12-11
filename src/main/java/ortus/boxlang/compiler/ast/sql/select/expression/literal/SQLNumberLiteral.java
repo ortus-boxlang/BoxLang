@@ -77,6 +77,17 @@ public class SQLNumberLiteral extends SQLExpression {
 		return value;
 	}
 
+	/**
+	 * Runtime check if the expression evaluates to a numeric value and works for columns as well
+	 * 
+	 * @param tableLookup lookup for tables
+	 * 
+	 * @return true if the expression evaluates to a numeric value
+	 */
+	public boolean isNumeric( Map<SQLTable, Query> tableLookup ) {
+		return true;
+	}
+
 	@Override
 	public void accept( VoidBoxVisitor v ) {
 		// TODO Auto-generated method stub

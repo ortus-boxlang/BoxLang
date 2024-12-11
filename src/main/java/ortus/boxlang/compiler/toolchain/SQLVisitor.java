@@ -5,6 +5,7 @@ import java.util.List;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
 import ortus.boxlang.compiler.ast.BoxNode;
+import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.sql.select.SQLJoin;
 import ortus.boxlang.compiler.ast.sql.select.SQLResultColumn;
 import ortus.boxlang.compiler.ast.sql.select.SQLSelect;
@@ -13,13 +14,18 @@ import ortus.boxlang.compiler.ast.sql.select.SQLTable;
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLColumn;
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLExpression;
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLOrderBy;
+import ortus.boxlang.compiler.ast.sql.select.expression.SQLParenthesis;
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLStarExpression;
 import ortus.boxlang.compiler.ast.sql.select.expression.literal.SQLBooleanLiteral;
 import ortus.boxlang.compiler.ast.sql.select.expression.literal.SQLNullLiteral;
 import ortus.boxlang.compiler.ast.sql.select.expression.literal.SQLNumberLiteral;
 import ortus.boxlang.compiler.ast.sql.select.expression.literal.SQLStringLiteral;
+import ortus.boxlang.compiler.ast.sql.select.expression.operation.SQLBetweenOperation;
 import ortus.boxlang.compiler.ast.sql.select.expression.operation.SQLBinaryOperation;
 import ortus.boxlang.compiler.ast.sql.select.expression.operation.SQLBinaryOperator;
+import ortus.boxlang.compiler.ast.sql.select.expression.operation.SQLInOperation;
+import ortus.boxlang.compiler.ast.sql.select.expression.operation.SQLUnaryOperation;
+import ortus.boxlang.compiler.ast.sql.select.expression.operation.SQLUnaryOperator;
 import ortus.boxlang.compiler.parser.SQLParser;
 import ortus.boxlang.parser.antlr.SQLGrammar.ExprContext;
 import ortus.boxlang.parser.antlr.SQLGrammar.Literal_valueContext;
@@ -311,12 +317,74 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 			return new SQLColumn( tableRef, ctx.column_name().getText(), pos, src );
 		} else if ( ctx.literal_value() != null ) {
 			return ( SQLExpression ) visit( ctx.literal_value() );
-		} else if ( ctx.EQ() != null || ctx.ASSIGN() != null ) {
-			return new SQLBinaryOperation( visitExpr( ctx.expr( 0 ), table, joins ), visitExpr( ctx.expr( 1 ), table, joins ), SQLBinaryOperator.EQUAL, pos,
-			    src );
+		} else if ( ctx.EQ() != null || ctx.ASSIGN() != null || ctx.IS_() != null ) {
+			// IS vs IS NOT
+			SQLBinaryOperator operator = ctx.NOT_() != null ? SQLBinaryOperator.NOTEQUAL : SQLBinaryOperator.EQUAL;
+			return binarySimple( ctx.expr( 0 ), ctx.expr( 1 ), operator, pos, src, table, joins );
+		} else if ( ctx.BETWEEN_() != null ) {
+			return new SQLBetweenOperation( visitExpr( ctx.expr( 0 ), table, joins ), visitExpr( ctx.expr( 1 ), table, joins ),
+			    visitExpr( ctx.expr( 2 ), table, joins ), ctx.NOT_() != null, pos, src );
+		} else if ( ctx.AND_() != null ) {
+			// Needs to run AFTER between checks
+			return binarySimple( ctx.expr( 0 ), ctx.expr( 1 ), SQLBinaryOperator.AND, pos, src, table, joins );
+		} else if ( ctx.OR_() != null ) {
+			return binarySimple( ctx.expr( 0 ), ctx.expr( 1 ), SQLBinaryOperator.OR, pos, src, table, joins );
+		} else if ( ctx.function_name() != null ) {
+			throw new UnsupportedOperationException( "functions Unimplemented: " + src );
+		} else if ( ctx.BIND_PARAMETER() != null ) {
+			throw new UnsupportedOperationException( "bind parameters unimplemented: " + src );
+		} else if ( ctx.IN_() != null ) {
+			SQLExpression		expr	= visitExpr( ctx.expr( 0 ), table, joins );
+			List<SQLExpression>	values	= ctx.expr().stream().skip( 1 ).map( e -> visitExpr( e, table, joins ) ).toList();
+			return new SQLInOperation( expr, values, ctx.NOT_() != null, pos, src );
+		} else if ( ctx.LIKE_() != null ) {
+			return binarySimple( ctx.expr( 0 ), ctx.expr( 1 ), ctx.NOT_() != null ? SQLBinaryOperator.NOTLIKE : SQLBinaryOperator.LIKE, pos, src, table,
+			    joins );
+		} else if ( ctx.PIPE2() != null ) {
+			return binarySimple( ctx.expr( 0 ), ctx.expr( 1 ), SQLBinaryOperator.CONCAT, pos, src, table, joins );
+		} else if ( ctx.STAR() != null ) {
+			return binarySimple( ctx.expr( 0 ), ctx.expr( 1 ), SQLBinaryOperator.MULTIPLY, pos, src, table, joins );
+		} else if ( ctx.DIV() != null ) {
+			return binarySimple( ctx.expr( 0 ), ctx.expr( 1 ), SQLBinaryOperator.DIVIDE, pos, src, table, joins );
+		} else if ( ctx.MOD() != null ) {
+			return binarySimple( ctx.expr( 0 ), ctx.expr( 1 ), SQLBinaryOperator.MODULO, pos, src, table, joins );
+		} else if ( ctx.PLUS() != null ) {
+			return binarySimple( ctx.expr( 0 ), ctx.expr( 1 ), SQLBinaryOperator.PLUS, pos, src, table, joins );
+		} else if ( ctx.MINUS() != null ) {
+			return binarySimple( ctx.expr( 0 ), ctx.expr( 1 ), SQLBinaryOperator.MINUS, pos, src, table, joins );
+		} else if ( ctx.LT() != null ) {
+			return binarySimple( ctx.expr( 0 ), ctx.expr( 1 ), SQLBinaryOperator.LESSTHAN, pos, src, table, joins );
+		} else if ( ctx.LT_EQ() != null ) {
+			return binarySimple( ctx.expr( 0 ), ctx.expr( 1 ), SQLBinaryOperator.LESSTHANOREQUAL, pos, src, table, joins );
+		} else if ( ctx.GT() != null ) {
+			return binarySimple( ctx.expr( 0 ), ctx.expr( 1 ), SQLBinaryOperator.GREATERTHAN, pos, src, table, joins );
+		} else if ( ctx.GT_EQ() != null ) {
+			return binarySimple( ctx.expr( 0 ), ctx.expr( 1 ), SQLBinaryOperator.GREATERTHANOREQUAL, pos, src, table, joins );
+		} else if ( ctx.NOT_EQ1() != null || ctx.NOT_EQ2() != null ) {
+			return binarySimple( ctx.expr( 0 ), ctx.expr( 1 ), SQLBinaryOperator.NOTEQUAL, pos, src, table, joins );
+		} else if ( ctx.OPEN_PAR() != null ) {
+			// Needs to run AFTER function and IN checks
+			return new SQLParenthesis( visitExpr( ctx.expr( 0 ), table, joins ), pos, src );
+		} else if ( ctx.unary_operator() != null ) {
+			SQLUnaryOperator op;
+			if ( ctx.unary_operator().BANG() != null ) {
+				op = SQLUnaryOperator.NOT;
+			} else if ( ctx.unary_operator().MINUS() != null ) {
+				op = SQLUnaryOperator.MINUS;
+			} else if ( ctx.unary_operator().PLUS() != null ) {
+				op = SQLUnaryOperator.PLUS;
+			} else {
+				throw new UnsupportedOperationException( "Unimplemented unary operator: " + ctx.unary_operator().getText() );
+			}
+			return new SQLUnaryOperation( visitExpr( ctx.expr( 0 ), table, joins ), op, pos, src );
 		} else {
 			throw new UnsupportedOperationException( "Unimplemented expression: " + src );
 		}
+	}
+
+	private SQLExpression binarySimple( ExprContext left, ExprContext right, SQLBinaryOperator op, Position pos, String src, SQLTable table,
+	    List<SQLJoin> joins ) {
+		return new SQLBinaryOperation( visitExpr( left, table, joins ), visitExpr( right, table, joins ), op, pos, src );
 	}
 
 	/**

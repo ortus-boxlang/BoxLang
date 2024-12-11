@@ -52,6 +52,28 @@ public abstract class SQLExpression extends SQLNode {
 	}
 
 	/**
+	 * Runtime check if the expression evaluates to a boolean value and works for columns as well
+	 * 
+	 * @param tableLookup lookup for tables
+	 * 
+	 * @return true if the expression evaluates to a boolean value
+	 */
+	public boolean isBoolean( Map<SQLTable, Query> tableLookup ) {
+		return isBoolean();
+	}
+
+	/**
+	 * Runtime check if the expression evaluates to a numeric value and works for columns as well
+	 * 
+	 * @param tableLookup lookup for tables
+	 * 
+	 * @return true if the expression evaluates to a numeric value
+	 */
+	public boolean isNumeric( Map<SQLTable, Query> tableLookup ) {
+		return false;
+	}
+
+	/**
 	 * What type does this expression evaluate to
 	 */
 	public QueryColumnType getType( Map<SQLTable, Query> tableLookup ) {

@@ -66,6 +66,28 @@ public class SQLParenthesis extends SQLExpression {
 	}
 
 	/**
+	 * Runtime check if the expression evaluates to a boolean value and works for columns as well
+	 * 
+	 * @param tableLookup lookup for tables
+	 * 
+	 * @return true if the expression evaluates to a boolean value
+	 */
+	public boolean isBoolean( Map<SQLTable, Query> tableLookup ) {
+		return expression.isBoolean( tableLookup );
+	}
+
+	/**
+	 * Runtime check if the expression evaluates to a numeric value and works for columns as well
+	 * 
+	 * @param tableLookup lookup for tables
+	 * 
+	 * @return true if the expression evaluates to a numeric value
+	 */
+	public boolean isNumeric( Map<SQLTable, Query> tableLookup ) {
+		return expression.isNumeric( tableLookup );
+	}
+
+	/**
 	 * What type does this expression evaluate to
 	 */
 	public QueryColumnType getType( Map<SQLTable, Query> tableLookup ) {

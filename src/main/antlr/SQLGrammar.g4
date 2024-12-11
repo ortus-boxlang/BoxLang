@@ -230,16 +230,16 @@ expr:
     | unary_operator expr
     | expr PIPE2 expr
     | expr ( STAR | DIV | MOD) expr
-    | expr ( PLUS | MINUS) expr
-    | expr ( LT2 | GT2 | AMP | PIPE) expr
+    | expr (PLUS | MINUS) expr
+    // | expr ( LT2 | GT2 | AMP | PIPE) expr
     | expr ( LT | LT_EQ | GT | GT_EQ) expr
     | expr (
         ASSIGN
         | EQ
         | NOT_EQ1
         | NOT_EQ2
-        | IS_
         | IS_ NOT_
+        | IS_
         // | IS_ NOT_? DISTINCT_ FROM_
         // | IN_
         | LIKE_
@@ -254,8 +254,7 @@ expr:
     //| OPEN_PAR expr (COMMA expr)* CLOSE_PAR
     // | CAST_ OPEN_PAR expr AS_ type_name CLOSE_PAR
     // | expr COLLATE_ collation_name
-    | expr NOT_? (LIKE_ | GLOB_ | REGEXP_ | MATCH_) expr (ESCAPE_ expr)?
-    | expr ( ISNULL_ | NOTNULL_ | NOT_ NULL_)
+    | expr NOT_? LIKE_ expr (ESCAPE_ expr)?
     | expr IS_ NOT_? expr
     | expr NOT_? BETWEEN_ expr AND_ expr
     | expr NOT_? IN_ (
@@ -589,7 +588,7 @@ unary_operator:
     MINUS
     | PLUS
     // | TILDE
-    | NOT_
+    | BANG
 ;
 
 error_message:

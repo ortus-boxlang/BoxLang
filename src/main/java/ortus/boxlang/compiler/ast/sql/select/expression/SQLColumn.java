@@ -93,6 +93,17 @@ public class SQLColumn extends SQLExpression {
 		return tableLookup.get( table ).getCell( name, i - 1 );
 	}
 
+	/**
+	 * Runtime check if the expression evaluates to a boolean value and works for columns as well
+	 * 
+	 * @param tableLookup lookup for tables
+	 * 
+	 * @return true if the expression evaluates to a boolean value
+	 */
+	public boolean isBoolean( Map<SQLTable, Query> tableLookup ) {
+		return getType( tableLookup ) == QueryColumnType.BIT;
+	}
+
 	@Override
 	public void accept( VoidBoxVisitor v ) {
 		// TODO Auto-generated method stub
