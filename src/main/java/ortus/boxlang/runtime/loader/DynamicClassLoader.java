@@ -36,6 +36,7 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.global.type.NullValue;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
@@ -196,8 +197,9 @@ public class DynamicClassLoader extends URLClassLoader {
 		}
 
 		// 2.5. Special case for Logback/SL4j so we are guaranteed to use the same interfaces as the BoxLang Runtime.
+		// Any other special cases can be added here to the PARENT_CLASSES set
 		if ( this.parent != null && PARENT_CLASSES.stream().anyMatch( className::startsWith ) ) {
-			// logger.trace( "[{}].[{}] : Class is a special parent class, delegating to parent", this.nameAsKey.getName(), className );
+			logger.trace( "[{}].[{}] : Class is a special parent class, delegating to parent", this.nameAsKey.getName(), className );
 			return getDynamicParent().loadClass( className );
 		}
 
@@ -213,13 +215,13 @@ public class DynamicClassLoader extends URLClassLoader {
 				cachedClass = getDynamicParent().loadClass( className );
 				logger.trace( "[{}].[{}] : Class found in parent", this.nameAsKey.getName(), className );
 			} catch ( ClassNotFoundException parentException ) {
+				logger.trace( "[{}].[{}] : Class not found in parent, adding to unfound classes", this.nameAsKey.getName(), className );
 				// Add to the unfound cache
 				this.unfoundClasses.put( className, NullValue.class );
 				// If not safe, throw the exception
 				if ( !safe ) {
 					throw new ClassNotFoundException( String.format( "Class [%s] not found in class loader [%s]", className, this.nameAsKey.getName() ) );
 				}
-				logger.trace( "[{}].[{}] : Class not found in parent", this.nameAsKey.getName(), className );
 			}
 
 		}
@@ -463,6 +465,11 @@ public class DynamicClassLoader extends URLClassLoader {
 		    .toArray( URL[]::new );
 	}
 
+	/**
+	 * Lazy init of the logger
+	 *
+	 * @return The logger
+	 */
 	private static Logger getLogger() {
 		if ( logger == null ) {
 			synchronized ( DynamicClassLoader.class ) {
@@ -472,7 +479,20 @@ public class DynamicClassLoader extends URLClassLoader {
 			}
 		}
 		return logger;
+	}
 
+	/**
+	 * Get the runtime's class loader
+	 */
+	public static ClassLoader getRuntimeClassLoader() {
+		return BoxRuntime.getInstance().getRuntimeLoader();
+	}
+
+	/**
+	 * Get the thread's context class loader
+	 */
+	public static ClassLoader getContextClassLoader() {
+		return Thread.currentThread().getContextClassLoader();
 	}
 
 }

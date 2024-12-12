@@ -180,4 +180,15 @@ public class ToStringTest {
 		assertThat( variables.getAsString( result ) ).isEqualTo( "1756.8000000000002" );
 	}
 
+	@DisplayName( "It can do a member method on a String" )
+	@Test
+	public void testMemberMethodOnString() {
+		instance.executeSource(
+		    """
+		    result = "Hello World".toString()
+		    """,
+		    context );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "Hello World" );
+	}
+
 }
