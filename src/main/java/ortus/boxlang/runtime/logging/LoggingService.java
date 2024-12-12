@@ -89,7 +89,7 @@ public class LoggingService {
 	 *
 	 * @see https://logback.qos.ch/manual/layouts.html#conversionWord
 	 */
-	public static final String						LOG_FORMAT			= "[%date{STRICT}] [%thread] [%-5level] [%logger{0}] %message %ex%n";
+	public static final String						LOG_FORMAT			= "[%date{STRICT}] [%thread] [%-5level] [%logger] %message %ex%n";
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -653,7 +653,7 @@ public class LoggingService {
 		// Check if we have the logger configuration or else build a vanilla one
 		LoggerConfig	loggerConfig	= ( LoggerConfig ) this.runtime
 		    .getConfiguration().logging.loggers
-		    .computeIfAbsent( loggerKey, key -> new LoggerConfig( key.getNameNoCase(), this.runtime.getConfiguration().logging ) );
+		        .computeIfAbsent( loggerKey, key -> new LoggerConfig( key.getNameNoCase(), this.runtime.getConfiguration().logging ) );
 		Level			configLevel		= Level.toLevel( LogLevel.valueOf( loggerConfig.level.getName(), false ).getName() );
 
 		// Seed the properties
