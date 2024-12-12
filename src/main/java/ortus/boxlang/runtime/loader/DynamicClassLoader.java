@@ -178,7 +178,7 @@ public class DynamicClassLoader extends URLClassLoader {
 			safe = false;
 		}
 
-		logger.trace( "[{}] Discovering class: [{}]", this.nameAsKey.getName(), className );
+		logger.trace( "[{}] Discovering class: [{}] from thread [{}]", this.nameAsKey.getName(), className, Thread.currentThread().getName() );
 
 		// 1. Check the loaded cache first and return if found
 		Class<?> cachedClass = this.loadedClasses.get( className );
@@ -206,14 +206,14 @@ public class DynamicClassLoader extends URLClassLoader {
 		// 3. Attempt to load from JARs/classes in the seeded URLs
 		try {
 			cachedClass = super.findClass( className );
-			logger.trace( "[{}].[{}] : Class found locally", this.nameAsKey.getName(), className );
+			logger.trace( "[{}].[{}] : Class found locally from thread [{}] ", this.nameAsKey.getName(), className, Thread.currentThread().getName() );
 		} catch ( ClassNotFoundException e ) {
 
-			// 3. If not found in JARs, delegate to parent class loader
+			// 4. If not found in JARs, delegate to parent class loader
 			try {
 				logger.trace( "[{}].[{}] : Class not found locally, trying the parent...", this.nameAsKey.getName(), className );
 				cachedClass = getDynamicParent().loadClass( className );
-				logger.trace( "[{}].[{}] : Class found in parent", this.nameAsKey.getName(), className );
+				logger.trace( "[{}].[{}] : Class found in parent on thread [{}]", this.nameAsKey.getName(), className, Thread.currentThread().getName() );
 			} catch ( ClassNotFoundException parentException ) {
 				logger.trace( "[{}].[{}] : Class not found in parent, adding to unfound classes", this.nameAsKey.getName(), className );
 				// Add to the unfound cache
