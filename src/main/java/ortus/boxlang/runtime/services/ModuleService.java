@@ -143,7 +143,8 @@ public class ModuleService extends BaseService {
 		this.logger.info( "+ Starting up Module Service..." );
 
 		// Store the running BoxLang version
-		this.runtimeSemver = new Semver( getRuntime().getVersionInfo().getAsString( Key.version ) );
+		String runtimeVersion = getRuntime().getVersionInfo().getAsString( Key.version );
+		this.runtimeSemver = new Semver( runtimeVersion.equalsIgnoreCase( "@build.version@" ) ? "0.0.0" : runtimeVersion );
 
 		// Register external module locations from the config
 		runtime.getConfiguration().modulesDirectory.forEach( this::addModulePath );
@@ -592,6 +593,11 @@ public class ModuleService extends BaseService {
 	 * @throws BoxRuntimeException If the module requires a different major version of BoxLang
 	 */
 	public void verifyModuleAndBoxLangVersion( String moduleVersion, Path directoryPath ) {
+		// If we are in development mode, we don't care about the version
+		if ( this.runtimeSemver.getMajor() == 0 ) {
+			return;
+		}
+
 		// Early exit if the module version is null or blank
 		if ( moduleVersion == null || moduleVersion.isBlank() ) {
 			this.logger.warn( "Module [{}] does not have a BoxLang [minimumVersion] specified in the ModuleConfig.bx file", directoryPath.getFileName() );
