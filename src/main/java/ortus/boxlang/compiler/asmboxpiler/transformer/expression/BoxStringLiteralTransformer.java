@@ -53,7 +53,9 @@ public class BoxStringLiteralTransformer extends AbstractTransformer {
 			if ( returnContext != ReturnValueContext.VALUE && returnContext != ReturnValueContext.VALUE_OR_NULL ) {
 				nodes.add( new InsnNode( Opcodes.POP ) );
 			}
-			return AsmHelper.addLineNumberLabels( nodes, node );
+
+			return nodes;
+			// return AsmHelper.addLineNumberLabels( nodes, node );
 
 		}
 		List<String> parts = splitStringIntoParts( value );
@@ -82,7 +84,8 @@ public class BoxStringLiteralTransformer extends AbstractTransformer {
 			nodes.add( new InsnNode( Opcodes.POP ) );
 		}
 
-		return AsmHelper.addLineNumberLabels( nodes, node );
+		return nodes;
+		// return AsmHelper.addLineNumberLabels( nodes, node );
 	}
 
 	/**

@@ -169,13 +169,13 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		    () -> {
 
 			    if ( function.getBody() == null ) {
-				    return AsmHelper.addLineNumberLabels( new ArrayList<AbstractInsnNode>(), node );
+				    return new ArrayList<AbstractInsnNode>();
 			    }
 
-			    return AsmHelper.addLineNumberLabels( function.getBody()
+			    return function.getBody()
 			        .stream()
 			        .flatMap( statement -> transpiler.transform( statement, safe, ReturnValueContext.EMPTY ).stream() )
-			        .collect( Collectors.toList() ), node );
+			        .collect( Collectors.toList() );
 		    } );
 		transpiler.decrementfunctionBodyCounter();
 
@@ -269,7 +269,6 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		}
 
 		if ( function.getModifiers().contains( BoxMethodDeclarationModifier.STATIC ) ) {
-			// return AsmHelper.addLineNumberLabels( nodes, node );
 			return nodes;
 		} else {
 			return new ArrayList<>();

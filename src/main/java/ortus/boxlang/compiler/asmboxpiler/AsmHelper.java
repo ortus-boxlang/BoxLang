@@ -77,18 +77,16 @@ public class AsmHelper {
 	}
 
 	public static List<AbstractInsnNode> addLineNumberLabels( List<AbstractInsnNode> nodes, BoxNode node ) {
-		LabelNode	start	= new LabelNode();
-		LabelNode	end		= new LabelNode();
+		LabelNode start = new LabelNode();
 
 		if ( node.getPosition() == null ) {
 			return nodes;
 		}
 
-		nodes.add( 0, start );
-		nodes.add( 1, new LineNumberNode( node.getPosition().getStart().getLine(), start ) );
+		int startLine = node.getPosition().getStart().getLine();
 
-		// nodes.add( end );
-		// nodes.add( new LineNumberNode( node.getPosition().getEnd().getLine(), end ) );
+		nodes.add( 0, start );
+		nodes.add( 1, new LineNumberNode( startLine, start ) );
 
 		return nodes;
 	}

@@ -999,7 +999,7 @@ public class BoxLangDebugger {
 
 				List<Location> locations = findLocation( fileName, breakpoint );
 
-				locations.stream().forEach( location -> {
+				locations.stream().limit( 1 ).forEach( location -> {
 					BreakpointRequest bpReq = vm.eventRequestManager().createBreakpointRequest( location );
 					bpReq.setSuspendPolicy( SUSPEND_POLICY );
 					bpReq.enable();
