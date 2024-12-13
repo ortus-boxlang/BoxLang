@@ -29,8 +29,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.apache.commons.lang3.StringUtils;
-
 import com.fasterxml.jackson.jr.ob.JSONObjectException;
 
 import ortus.boxlang.compiler.BXCompiler;
@@ -79,7 +77,12 @@ public class BoxRunner {
 	/**
 	 * A list of action commands that can be executed by the BoxRunner: compile, cftranspile, featureAudit
 	 */
-	private static final List<String> ACTION_COMMANDS = List.of( "compile", "cftranspile", "featureaudit" );
+	private static final List<String>	ACTION_COMMANDS				= List.of( "compile", "cftranspile", "featureaudit" );
+
+	/**
+	 * The allowed template extensions that can be executed by the BoxRunner
+	 */
+	private static final List<String>	ALLOWED_TEMPLATE_EXECUTIONS	= List.of( ".cfm", ".cfs", ".bxm", ".bx", ".bxs" );
 
 	/**
 	 * Main entry point for the BoxLang runtime.
@@ -314,16 +317,21 @@ public class BoxRunner {
 				break;
 			}
 
+			String[]	currentParts	= current.split( "\\." );
+			String		currentExt		= "";
+
+			if ( currentParts.length > 0 ) {
+				currentExt = "." + currentParts[ currentParts.length - 1 ];
+			}
+
 			// Template to execute?
-			// If the current ends with .bx/bxs/bxm then it's a template
-			// TODO: contribute cfm and cfs from compat module
-			if ( actionCommand == null && StringUtils.endsWithAny( current, ".cfm", ".cfs", ".bxm", ".bx", ".bxs" ) ) {
+			if ( actionCommand == null && ALLOWED_TEMPLATE_EXECUTIONS.contains( currentExt ) ) {
 				file = templateToAbsolute( current );
 				continue;
 			}
 
 			// Is it a shebang script to execute
-			if ( actionCommand == null && isShebangScript( current ) ) {
+			if ( actionCommand == null && isShebangScript( currentExt ) ) {
 				file = getSheBangScript( current );
 				continue;
 			}
@@ -347,20 +355,8 @@ public class BoxRunner {
 			cliArgs.add( current );
 		}
 
-		return new CLIOptions(
-		    file,
-		    debug,
-		    code,
-		    configFile,
-		    printAST,
-		    transpile,
-		    runtimeHome,
-		    showVersion,
-		    cliArgs,
-		    args,
-		    targetModule,
-		    actionCommand
-		);
+		return new CLIOptions( file, debug, code, configFile, printAST, transpile, runtimeHome, showVersion, cliArgs, args, targetModule, actionCommand );
+
 	}
 
 	/**

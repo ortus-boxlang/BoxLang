@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.cache.providers.ICacheProvider;
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.Attempt;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
@@ -40,8 +41,8 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
-import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.Query;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 import ortus.boxlang.runtime.types.util.ListUtil;
@@ -293,7 +294,7 @@ public class PendingQuery {
 	 *
 	 * @see ExecutedQuery
 	 */
-	public @Nonnull ExecutedQuery execute( ConnectionManager connectionManager ) {
+	public @Nonnull ExecutedQuery execute( ConnectionManager connectionManager, IBoxContext context ) {
 		// We do an early cache check here to avoid the overhead of creating a connection if we already have a matching cached query.
 		if ( isCacheable() ) {
 			logger.debug( "Checking cache for query: {}", this.cacheKey );
@@ -306,7 +307,7 @@ public class PendingQuery {
 
 		Connection connection = connectionManager.getConnection( this.queryOptions );
 		try {
-			return execute( connection );
+			return execute( connection, context );
 		} finally {
 			if ( connection != null ) {
 				connectionManager.releaseConnection( connection );
@@ -325,7 +326,7 @@ public class PendingQuery {
 	 *
 	 * @see ExecutedQuery
 	 */
-	public @Nonnull ExecutedQuery execute( Connection connection ) {
+	public @Nonnull ExecutedQuery execute( Connection connection, IBoxContext context ) {
 		if ( isCacheable() ) {
 			// we use separate get() and set() calls over a .getOrSet() so we can run `.setIsCached()` on discovered/cached results.
 			Attempt<Object> cachedQuery = this.cacheProvider.get( this.cacheKey );
@@ -333,11 +334,11 @@ public class PendingQuery {
 				return respondWithCachedQuery( ( ExecutedQuery ) cachedQuery.get() );
 			}
 
-			ExecutedQuery executedQuery = executeStatement( connection );
+			ExecutedQuery executedQuery = executeStatement( connection, context );
 			this.cacheProvider.set( this.cacheKey, executedQuery, this.queryOptions.cacheTimeout, this.queryOptions.cacheLastAccessTimeout );
 			return executedQuery;
 		}
-		return executeStatement( connection );
+		return executeStatement( connection, context );
 	}
 
 	/**
@@ -346,7 +347,7 @@ public class PendingQuery {
 	 * * If query parameters are present, a {@link PreparedStatement} will be utilized and populated with the paremeter bindings. Otherwise, a standard {@link Statement} object will be used.
 	 * * Will announce a `PRE_QUERY_EXECUTE` event before executing the query.
 	 */
-	private ExecutedQuery executeStatement( Connection connection ) {
+	private ExecutedQuery executeStatement( Connection connection, IBoxContext context ) {
 		try {
 			ArrayList<ExecutedQuery> queries = new ArrayList<>();
 			for ( String sqlStatement : this.sql.split( ";" ) ) {
@@ -355,7 +356,7 @@ public class PendingQuery {
 				        ? connection.createStatement()
 				        : connection.prepareStatement( this.sql, Statement.RETURN_GENERATED_KEYS ); ) {
 
-					applyParameters( statement );
+					applyParameters( statement, context );
 					applyStatementOptions( statement );
 
 					interceptorService.announce(
@@ -426,7 +427,7 @@ public class PendingQuery {
 	 * <p>
 	 * Will only take action if 1) there are parameters to apply, and 2) the Statement object is a PreparedStatement.
 	 */
-	private void applyParameters( Statement statement ) throws SQLException {
+	private void applyParameters( Statement statement, IBoxContext context ) throws SQLException {
 		if ( this.parameters.isEmpty() ) {
 			return;
 		}
@@ -437,9 +438,9 @@ public class PendingQuery {
 				QueryParameter	param			= this.parameters.get( i - 1 );
 				Integer			scaleOrLength	= param.getScaleOrLength();
 				if ( scaleOrLength == null ) {
-					preparedStatement.setObject( i, param.toSQLType(), param.getSqlTypeAsInt() );
+					preparedStatement.setObject( i, param.toSQLType( context ), param.getSqlTypeAsInt() );
 				} else {
-					preparedStatement.setObject( i, param.toSQLType(), param.getSqlTypeAsInt(), scaleOrLength );
+					preparedStatement.setObject( i, param.toSQLType( context ), param.getSqlTypeAsInt(), scaleOrLength );
 				}
 			}
 		}
@@ -474,7 +475,6 @@ public class PendingQuery {
 		/**
 		 * TODO: Implement the following options:
 		 * ormoptions
-		 * dbtype : query of queries (In progress)
 		 * username and password : To evaluate later due to security concerns of overriding datasources, not going to implement unless requested
 		 * clientInfo : Part of the connection: get/setClientInfo()
 		 */

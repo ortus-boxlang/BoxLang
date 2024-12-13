@@ -43,6 +43,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  * <li><code>password</code> - The password to use when connecting to the datasource.
  * <li><code>timeout</code> - The number of seconds to wait for the query to execute before timing out.
  * <li><code>maxRows</code> - The maximum number of rows to return from the query.
+ * <li><code>dbtype</code> - The type of query. "query" or "hql"
  * </ul>
  */
 public class QueryOptions {
@@ -97,6 +98,11 @@ public class QueryOptions {
 	 * The maximum number of rows to return from the query, defaults to all
 	 */
 	public final Long				maxRows;
+
+	/**
+	 * dbtype of the query. "query" or "hql"
+	 */
+	public final String				dbtype;
 
 	/**
 	 * The fetch size for the query. Should be preferred over `maxRows` for large result sets, as `maxrows` will only truncate further rows from the
@@ -180,7 +186,9 @@ public class QueryOptions {
 		this.cacheProvider			= ( String ) options.getOrDefault( Key.cacheProvider, cacheService.getDefaultCache().getName().toString() );
 
 		Integer intMaxRows = options.getAsInteger( Key.maxRows );
-		this.maxRows = Long.valueOf( intMaxRows != null ? intMaxRows : -1 );
+		this.maxRows	= Long.valueOf( intMaxRows != null ? intMaxRows : -1 );
+
+		this.dbtype		= options.getAsString( Key.dbtype );
 
 		determineReturnType();
 	}
@@ -224,12 +232,6 @@ public class QueryOptions {
 	}
 
 	/**
-	 * --------------------------------------------------------------------------
-	 * Private Helpers
-	 * --------------------------------------------------------------------------
-	 */
-
-	/**
 	 * If the query options contain a `username` field, then the query should use the provided username and password to connect to the datasource.
 	 *
 	 * @return True if the query should use a username and password to connect to the datasource, false otherwise.
@@ -237,6 +239,16 @@ public class QueryOptions {
 	public boolean wantsUsernameAndPassword() {
 		return this.username != null;
 	}
+
+	public boolean isQoQ() {
+		return this.dbtype != null && this.dbtype.equalsIgnoreCase( "query" );
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Private Helpers
+	 * --------------------------------------------------------------------------
+	 */
 
 	/**
 	 * Parse the `returnType` query option and set the `returnType` and `columnKey` fields.
@@ -270,6 +282,7 @@ public class QueryOptions {
 		result.put( "fetchSize", this.fetchSize );
 		result.put( "setQueryTimeout", this.queryTimeout );
 		result.put( "setMaxRows", this.maxRows );
+		result.put( "dbtype", this.dbtype );
 		return result;
 	}
 

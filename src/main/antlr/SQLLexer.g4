@@ -35,6 +35,7 @@ GT: '>';
 GT_EQ: '>=';
 EQ: '==';
 NOT_EQ1: '!=';
+BANG: '!';
 NOT_EQ2: '<>';
 
 ABORT_: 'ABORT';
@@ -149,6 +150,7 @@ TEMP_: 'TEMP';
 TEMPORARY_: 'TEMPORARY';
 THEN_: 'THEN';
 TO_: 'TO';
+TOP: 'TOP';
 TRANSACTION_: 'TRANSACTION';
 TRIGGER_: 'TRIGGER';
 UNION_: 'UNION';
@@ -207,7 +209,7 @@ IDENTIFIER:
 
 NUMERIC_LITERAL: ((DIGIT+ ('.' DIGIT*)?) | ('.' DIGIT+)) ('E' [-+]? DIGIT+)? | '0x' HEX_DIGIT+;
 
-BIND_PARAMETER: '?' DIGIT* | [:@$] IDENTIFIER;
+BIND_PARAMETER: '?' | ':' IDENTIFIER;
 
 STRING_LITERAL: '\'' ( ~'\'' | '\'\'')* '\'';
 

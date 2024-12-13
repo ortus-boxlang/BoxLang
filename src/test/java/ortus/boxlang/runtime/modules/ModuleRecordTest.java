@@ -23,7 +23,6 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -113,7 +112,7 @@ class ModuleRecordTest {
 		assertThat( structRepresentation.get( "activatedOn" ) ).isNull();
 		assertThat( structRepresentation.get( "author" ) ).isEqualTo( "" );
 		assertThat( structRepresentation.get( "description" ) ).isEqualTo( "" );
-		assertThat( structRepresentation.getAsBoolean( Key.of( "disabled" ) ) ).isFalse();
+		assertThat( structRepresentation.getAsBoolean( Key.of( "enabled" ) ) ).isTrue();
 		assertThat( structRepresentation.get( "id" ) ).isNotNull();
 		assertThat( structRepresentation.getAsArray( Key.of( "interceptors" ) ).size() ).isEqualTo( 0 );
 		assertThat( structRepresentation.get( "invocationPath" ) ).isEqualTo( "bxModules.TestModule" );
@@ -138,7 +137,7 @@ class ModuleRecordTest {
 		assertThat( moduleRecord.author ).isEqualTo( "Luis Majano" );
 		assertThat( moduleRecord.description ).isEqualTo( "This module does amazing things" );
 		assertThat( moduleRecord.webURL ).isEqualTo( "https://www.ortussolutions.com" );
-		assertThat( moduleRecord.disabled ).isEqualTo( false );
+		assertThat( moduleRecord.enabled ).isEqualTo( true );
 		assertThat( moduleRecord.mapping ).isEqualTo( ModuleService.MODULE_MAPPING_PREFIX + "test" );
 		assertThat( moduleRecord.invocationPath ).isEqualTo( ModuleService.MODULE_MAPPING_INVOCATION_PREFIX + moduleRecord.name.getName() );
 	}
@@ -179,7 +178,7 @@ class ModuleRecordTest {
 		assertThat( moduleRecord.author ).isEqualTo( "Luis Majano" );
 		assertThat( moduleRecord.description ).isEqualTo( "This module does amazing things" );
 		assertThat( moduleRecord.webURL ).isEqualTo( "https://www.ortussolutions.com" );
-		assertThat( moduleRecord.disabled ).isEqualTo( false );
+		assertThat( moduleRecord.enabled ).isEqualTo( true );
 		assertThat( moduleRecord.mapping ).isEqualTo( ModuleService.MODULE_MAPPING_PREFIX + "test" );
 		assertThat( moduleRecord.invocationPath ).isEqualTo( ModuleService.MODULE_MAPPING_INVOCATION_PREFIX + moduleRecord.name.getName() );
 		assertThat( moduleRecord.settings.getAsStruct( Key.of( "nested" ) ).get( Key.of( "SLA" ) ) ).isEqualTo( "24 hours" );

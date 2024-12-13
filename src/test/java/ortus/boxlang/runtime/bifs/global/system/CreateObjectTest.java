@@ -18,9 +18,9 @@
 
 package ortus.boxlang.runtime.bifs.global.system;
 
+import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -45,11 +45,7 @@ public class CreateObjectTest {
 	@BeforeAll
 	public static void setUp() {
 		instance = BoxRuntime.getInstance( true );
-	}
-
-	@AfterAll
-	public static void teardown() {
-
+		instance.getClassLocator().clearClassLoaders();
 	}
 
 	@BeforeEach
@@ -63,7 +59,6 @@ public class CreateObjectTest {
 	void testBIFBX() {
 		Object test = instance.executeStatement( "createObject( 'class', 'src.test.java.TestCases.phase3.MyClass' )" );
 		assertTrue( test instanceof IClassRunnable );
-
 	}
 
 	@DisplayName( "Test BIF CreateObject With BX no type" )
@@ -71,7 +66,6 @@ public class CreateObjectTest {
 	void testBIFBXNoType() {
 		Object test = instance.executeStatement( "createObject( 'src.test.java.TestCases.phase3.MyClass' )" );
 		assertTrue( test instanceof IClassRunnable );
-
 	}
 
 	@DisplayName( "Test BIF CreateObject Java" )
@@ -81,7 +75,24 @@ public class CreateObjectTest {
 		assertTrue( test instanceof DynamicObject );
 		test = instance.executeStatement( "createObject( 'java', 'java.lang.String' ).init()" );
 		assertTrue( test instanceof String );
+	}
 
+	@DisplayName( "It can createobject java with one class path as string" )
+	@Test
+	void testBIFJavaClassPathAsString() {
+		DynamicObject test = ( DynamicObject ) instance.executeStatement(
+		    "createObject( 'java', 'HelloWorld', '/src/test/resources/libs/helloworld.jar' )"
+		);
+		assertThat( test.getTargetClass().getName() ).isEqualTo( "HelloWorld" );
+	}
+
+	@DisplayName( "It can createobject java with one class path as an array" )
+	@Test
+	void testBIFJavaClassPathAsArray() {
+		DynamicObject test = ( DynamicObject ) instance.executeStatement(
+		    "createObject( 'java', 'HelloWorld', ['/src/test/resources/libs/helloworld.jar'] )"
+		);
+		assertThat( test.getTargetClass().getName() ).isEqualTo( "HelloWorld" );
 	}
 
 }

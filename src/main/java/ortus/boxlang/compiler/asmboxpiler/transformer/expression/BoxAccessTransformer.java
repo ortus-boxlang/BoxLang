@@ -24,9 +24,11 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.FieldInsnNode;
+import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.VarInsnNode;
 
+import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
@@ -105,7 +107,11 @@ public class BoxAccessTransformer extends AbstractTransformer {
 			    true
 			) );
 
-			return nodes;
+			if ( returnContext.empty ) {
+				nodes.add( new InsnNode( Opcodes.POP ) );
+			}
+
+			return AsmHelper.addLineNumberLabels( nodes, node );
 
 		} else {
 			// BoxNode parent = ( BoxNode ) objectAccess.getParent();
@@ -127,7 +133,8 @@ public class BoxAccessTransformer extends AbstractTransformer {
 			        Type.getType( Boolean.class ) ),
 			    false ) );
 			BoxNode parent = objectAccess.getParent();
-			if ( ! ( parent instanceof BoxAccess )
+
+			if ( ! ( parent instanceof BoxAccess ba && ba.getContext() == objectAccess )
 			    // I don't know if this will work, but I'm trying to make an exception for query columns being passed to array BIFs
 			    // This prolly won't work if a query column is passed as a second param that isn't the array
 			    && ! ( parent instanceof BoxArgument barg && barg.getParent() instanceof BoxFunctionInvocation bfun
@@ -140,7 +147,11 @@ public class BoxAccessTransformer extends AbstractTransformer {
 				    true ) );
 			}
 
-			return nodes;
+			if ( returnContext.empty ) {
+				nodes.add( new InsnNode( Opcodes.POP ) );
+			}
+
+			return AsmHelper.addLineNumberLabels( nodes, node );
 		}
 	}
 

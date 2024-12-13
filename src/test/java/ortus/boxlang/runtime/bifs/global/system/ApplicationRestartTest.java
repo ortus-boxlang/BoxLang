@@ -66,22 +66,23 @@ public class ApplicationRestartTest {
 	@Test
 	void testItCanStopAnApplication() {
 
-		instance.executeSource(
-		    """
-		    application name="unit-test1" sessionmanagement="true";
-		       """,
-		    context );
+		instance.executeSource( """
+		                        application name="unit-test1" sessionmanagement="true";
+		                           """, context );
 
 		Application targetApp = context.getParentOfType( ApplicationBoxContext.class ).getApplication();
 
 		assertThat( targetApp.hasStarted() ).isTrue();
 		Instant startTime = targetApp.getStartTime();
 
+		// @formatter:off
 		instance.executeSource(
 		    """
-		    applicationRestart();
+		    	sleep( 1000 );
+		      	applicationRestart();
 		    """,
 		    context );
+		// @formatter:on
 
 		assertThat( targetApp.hasStarted() ).isTrue();
 		// Verify the new start time is after the old start time

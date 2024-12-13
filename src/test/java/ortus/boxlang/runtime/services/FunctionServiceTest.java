@@ -23,7 +23,6 @@ import static com.google.common.truth.Truth.assertThat;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
 import org.mockito.Spy;
 
 import ortus.boxlang.runtime.BoxRuntime;
@@ -35,12 +34,12 @@ class FunctionServiceTest {
 	FunctionService		service;
 
 	@Spy
-	@InjectMocks
-	private BoxRuntime	runtime;
+	private BoxRuntime	runtime	= BoxRuntime.getInstance();
 
 	@BeforeEach
 	public void setupBeforeEach() {
 		service = new FunctionService( runtime );
+		service.onConfigurationLoad();
 		service.onStartup();
 	}
 

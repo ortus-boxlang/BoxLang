@@ -21,6 +21,7 @@ import java.io.Serializable;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -33,7 +34,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import java.time.Duration;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
@@ -673,6 +673,19 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		    .collect( Collectors.toList() );
 	}
 
+	/**
+	 * Truncate the query to a specific number of rows
+	 * This method does not lock the query and would allow other modifications or access while trimming the rows, whcih is not an atomic operation.
+	 */
+	public Query truncate( long rows ) {
+		rows = Math.max( 0, rows );
+		// loop and remove all rows over the count
+		while ( data.size() > rows ) {
+			data.remove( data.size() - 1 );
+		}
+		return this;
+	}
+
 	/***************************
 	 * Collection implementation
 	 ****************************/
@@ -974,6 +987,10 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	@Override
 	public String toString() {
 		return asString();
+	}
+
+	public Array getColumnNames() {
+		return getColumnArray();
 	}
 
 }

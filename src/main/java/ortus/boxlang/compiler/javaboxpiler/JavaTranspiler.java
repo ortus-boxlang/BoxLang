@@ -41,7 +41,6 @@ import com.github.javaparser.ast.expr.FieldAccessExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.ObjectCreationExpr;
-import com.github.javaparser.ast.expr.StringLiteralExpr;
 import com.github.javaparser.ast.stmt.Statement;
 
 import ortus.boxlang.compiler.JavaSourceString;
@@ -436,13 +435,13 @@ public class JavaTranspiler extends Transpiler {
 		            .setType( "AbstractFunction" )
 		            .addArgument( transformer.createKey( bfd.getName() ) )
 		            .addArgument( argumentsArray )
-		            .addArgument( new StringLiteralExpr( returnTypeString ) )
+		            .addArgument( BoxStringLiteralTransformer.transform( returnTypeString ) )
 		            .addArgument(
 		                new FieldAccessExpr( new FieldAccessExpr( new NameExpr( "Function" ), "Access" ), access.toString().toUpperCase() ) )
 		            .addArgument( transformer.transformAnnotations( bfd.getAnnotations() ) )
 		            .addArgument( transformer.transformDocumentation( bfd.getDocumentation() ) )
-		            .addArgument( new StringLiteralExpr( sourceObjectName ) )
-		            .addArgument( new StringLiteralExpr( sourceObjectType ) )
+		            .addArgument( BoxStringLiteralTransformer.transform( sourceObjectName ) )
+		            .addArgument( BoxStringLiteralTransformer.transform( sourceObjectType ) )
 		    );
 	}
 

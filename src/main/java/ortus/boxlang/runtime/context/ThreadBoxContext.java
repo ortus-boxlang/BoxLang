@@ -128,7 +128,7 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 			scopes.getAsStruct( Key.contextual ).put( VariablesScope.name, variablesScope );
 
 			if ( getParent() instanceof FunctionBoxContext fbc && fbc.isInClass() ) {
-				scopes.getAsStruct( Key.contextual ).put( ThisScope.name, fbc.getThisClass().getThisScope() );
+				scopes.getAsStruct( Key.contextual ).put( ThisScope.name, fbc.getThisClass().getBottomClass().getThisScope() );
 			}
 			if ( getParent() instanceof ClassBoxContext cbc ) {
 				scopes.getAsStruct( Key.contextual ).put( ThisScope.name, cbc.getThisScope() );
@@ -155,18 +155,23 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 	 * @return The search result
 	 */
 	@Override
-	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow ) {
+	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow, boolean forAssign ) {
+
+		// Look in the local scope first
+		if ( key.equals( localScope.getName() ) ) {
+			return new ScopeSearchResult( localScope, localScope, key, true );
+		}
 
 		Object result = localScope.getRaw( key );
 		// Null means not found
-		if ( isDefined( result ) ) {
+		if ( isDefined( result, forAssign ) ) {
 			// Unwrap the value now in case it was really actually null for real
 			return new ScopeSearchResult( localScope, Struct.unWrapNull( result ), key );
 		}
 
 		result = variablesScope.getRaw( key );
 		// Null means not found
-		if ( isDefined( result ) ) {
+		if ( isDefined( result, forAssign ) ) {
 			// A thread has special permission to "see" the variables scope from its parent,
 			// even though it's not "nearby" to any other scopes
 			return new ScopeSearchResult( variablesScope, Struct.unWrapNull( result ), key );
@@ -182,7 +187,7 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 			return null;
 		}
 
-		return scopeFind( key, defaultScope );
+		return scopeFind( key, defaultScope, forAssign );
 
 	}
 
@@ -195,7 +200,7 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 	 * @return The search result
 	 */
 	@Override
-	public ScopeSearchResult scopeFind( Key key, IScope defaultScope ) {
+	public ScopeSearchResult scopeFind( Key key, IScope defaultScope, boolean forAssign ) {
 		IStruct				threadMeta	= threadManager.getThreadMeta( threadName );
 		ScopeSearchResult	parentSearchResult;
 
@@ -235,11 +240,11 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 
 		Object result = threadMeta.getRaw( key );
 		// Null means not found
-		if ( isDefined( result ) ) {
+		if ( isDefined( result, forAssign ) ) {
 			return new ScopeSearchResult( threadMeta, Struct.unWrapNull( result ), key );
 		}
 
-		return parent.scopeFind( key, defaultScope );
+		return parent.scopeFind( key, defaultScope, forAssign );
 	}
 
 	/**
@@ -276,7 +281,7 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 
 		if ( name.equals( ThisScope.name ) ) {
 			if ( getParent() instanceof FunctionBoxContext fbc && fbc.isInClass() ) {
-				return fbc.getThisClass().getThisScope();
+				return fbc.getThisClass().getBottomClass().getThisScope();
 			}
 			if ( getParent() instanceof ClassBoxContext cbc ) {
 				return cbc.getThisScope();

@@ -175,7 +175,7 @@ public class CFTranspilerTest {
 		    """,
 		    context, BoxSourceType.CFSCRIPT );
 		assertThat( variables.get( Key.of( "clazz" ) ) ).isInstanceOf( IClassRunnable.class );
-		assertThat( ( ( IClassRunnable ) variables.get( Key.of( "clazz" ) ) ).getName().getName() ).isEqualTo( "src.test.java.TestCases.phase3.MyClassCF" );
+		assertThat( ( ( IClassRunnable ) variables.get( Key.of( "clazz" ) ) ).bxGetName().getName() ).isEqualTo( "src.test.java.TestCases.phase3.MyClassCF" );
 	}
 
 	@DisplayName( "Test BIF return value" )
@@ -304,6 +304,94 @@ public class CFTranspilerTest {
 		    context, BoxSourceType.CFSCRIPT );
 		assertThat( variables.get( result ) ).isEqualTo( false );
 
+	}
+
+	@Test
+	public void testUnquotedAttributeCF() {
+		instance.executeSource(
+		    """
+		    <cfquery dbtype="query" maxrows=1>
+		    	select 42
+		    </cfquery>
+		           """,
+		    context, BoxSourceType.CFTEMPLATE );
+	}
+
+	@Test
+	public void testUnquotedAttributeCF2() {
+		instance.executeSource(
+		    """
+		    <cfquery dbtype="query" maxrows="1">
+		    	select 42
+		    </cfquery>
+		    	""",
+		    context, BoxSourceType.CFTEMPLATE );
+	}
+
+	@Test
+	public void testUnquotedAttributeCF3() {
+		instance.executeSource(
+		    """
+		    <cfquery dbtype="query" datasource=foo>
+		    	select 42
+		    </cfquery>
+		    	""",
+		    context, BoxSourceType.CFTEMPLATE );
+	}
+
+	@Test
+	public void testUnquotedAttributeCF4() {
+		instance.executeSource(
+		    """
+		    <cfquery dbtype="query" foo=>
+		    	select 42
+		    </cfquery>
+		    	""",
+		    context, BoxSourceType.CFTEMPLATE );
+	}
+
+	@Test
+	public void testUnquotedAttribute() {
+		instance.executeSource(
+		    """
+		    <bx:query dbtype="query" name="NewDate" maxrows=1>
+		    	select 42
+		    </bx:query>
+		           """,
+		    context, BoxSourceType.BOXTEMPLATE );
+	}
+
+	@Test
+	public void testUnquotedAttribute2() {
+		instance.executeSource(
+		    """
+		    <bx:query dbtype="query" maxrows="1">
+		    	select 42
+		    </bx:query>
+		    	""",
+		    context, BoxSourceType.CFTEMPLATE );
+	}
+
+	@Test
+	public void testUnquotedAttribute3() {
+		instance.executeSource(
+		    """
+		    <bx:query dbtype="query" datasource=foo>
+		    	select 42
+		    </bx:query>
+		    	""",
+		    context, BoxSourceType.CFTEMPLATE );
+	}
+
+	@Test
+	public void testUnquotedAttribute4() {
+		instance.executeSource(
+		    """
+		    <bx:query dbtype="query" foo=>
+		    	select 42
+		    </bx:query>
+		    	""",
+		    context, BoxSourceType.CFTEMPLATE );
 	}
 
 }

@@ -172,7 +172,7 @@
 											<td>
 												#writeDump(
 													var : variablesScope[ prop.name ] ?: null,
-													top : top,
+													top : isNull( top ) ? null : top - 1,
 													expand : expand,
 													showUDFs : showUDFs
 												)#
@@ -227,7 +227,7 @@
 											<td>
 												#writeDump(
 													var : dataProperty ?: null,
-													top : top,
+													top : isNull( top ) ? null : top - 1,
 													expand : expand,
 													showUDFs : showUDFs
 												)#
@@ -277,7 +277,7 @@
 											<strong>#encodeForHTML( methodName )#</strong>
 										</td>
 										<td>
-											#writeDump( var : thisMethod ?: null, top : top, expand : expand ?: false )#
+											#writeDump( var : thisMethod ?: null, top : isNull( top ) ? null : top - 1, expand : expand ?: false )#
 										</td>
 									</tr>
 								</bx:loop>
@@ -327,7 +327,7 @@
 													<strong>#encodeForHTML( methodName )#</strong>
 												</td>
 												<td>
-													#writeDump( var : thisMethod ?: null, top : top, expand : expand )#
+													#writeDump( var : thisMethod ?: null, top : isNull( top ) ? null : top - 1, expand : expand )#
 												</td>
 											</tr>
 										</bx:loop>
@@ -378,7 +378,7 @@
 													<strong>#encodeForHTML( methodName )#</strong>
 												</td>
 												<td>
-													#writeDump( var : thisMethod ?: null, top : top, expand : expand )#
+													#writeDump( var : thisMethod ?: null, top : isNull( top ) ? null : top - 1, expand : expand )#
 												</td>
 											</tr>
 										</bx:loop>

@@ -70,7 +70,7 @@ public class BoxFunctionalMemberAccessTransformer extends AbstractTransformer {
 			        Type.getType( Key.class ) ),
 			    false ) );
 
-			return nodes;
+			return AsmHelper.addLineNumberLabels( nodes, node );
 		}
 		nodes.add( new TypeInsnNode( Opcodes.NEW, Type.getInternalName( FunctionalMemberAccessArgs.class ) ) );
 		nodes.add( new InsnNode( Opcodes.DUP ) );
@@ -102,7 +102,7 @@ public class BoxFunctionalMemberAccessTransformer extends AbstractTransformer {
 		    ),
 		    false ) );
 
-		return nodes;
+		return AsmHelper.addLineNumberLabels( nodes, node );
 	}
 
 	private List<AbstractInsnNode> generateNamedArgumentLambda( BoxFunctionalMemberAccess memberAccess ) {

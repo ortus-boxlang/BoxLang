@@ -21,11 +21,14 @@ import java.util.Map;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext.ScopeSearchResult;
+import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
+import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.interop.DynamicInteropService;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
@@ -198,6 +201,27 @@ public class Referencer {
 	public static Object setDeep( IBoxContext context, boolean isFinal, Key mustBeScopeName, Object object, Object value, Key... keys ) {
 		if ( mustBeScopeName != null && ! ( object instanceof IScope s && s.getName().equals( mustBeScopeName ) ) ) {
 			throw new BoxRuntimeException( "Scope [" + mustBeScopeName.getName() + "] is not available in this context." );
+		}
+
+		// Catch the case where we're assigning an actual scope
+		// arguments = someStruct
+		if ( object instanceof IScope os && keys.length == 0 ) {
+			// if we are setting a scope equal to itself, just return it.
+			if ( os == value ) {
+				return value;
+			}
+
+			CastAttempt<IStruct> castedStruct = StructCaster.attempt( value );
+			if ( castedStruct.wasSuccessful() ) {
+				os.clear();
+				os.putAll( castedStruct.get() );
+				return value;
+			} else {
+				// If this isn't a struct, then we're going to just create a key in the default scope.
+				// Adobe does this. Lucee just blows up. We're going to be more like Adobe. For now. Maybe. We'll see.
+				keys	= new Key[] { os.getName() };
+				object	= context.getDefaultAssignmentScope();
+			}
 		}
 
 		for ( int i = 0; i <= keys.length - 1; i++ ) {

@@ -33,6 +33,7 @@ import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
 import ortus.boxlang.runtime.loader.DynamicClassLoader;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.loader.util.ClassDiscovery;
+import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
@@ -64,6 +65,11 @@ public class BaseResolver implements IClassResolver {
 	 * The import cache
 	 */
 	protected Set<String>	importCache	= ConcurrentHashMap.newKeySet();
+
+	/**
+	 * Logging Class
+	 */
+	protected BoxLangLogger	logger;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -299,6 +305,20 @@ public class BaseResolver implements IClassResolver {
 	 */
 	protected static DynamicClassLoader getSystemClassLoader() {
 		return BoxRuntime.getInstance().getRuntimeLoader();
+	}
+
+	/**
+	 * Get the resolver loggers
+	 */
+	protected BoxLangLogger getLogger() {
+		if ( this.logger == null ) {
+			synchronized ( this ) {
+				if ( this.logger == null ) {
+					this.logger = BoxRuntime.getInstance().getLoggingService().getLogger( "resolver" );
+				}
+			}
+		}
+		return this.logger;
 	}
 
 }

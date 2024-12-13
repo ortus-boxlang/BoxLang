@@ -1,0 +1,52 @@
+<bx:script>
+	expandRoot = expand ?: true;
+</bx:script>
+<bx:output>
+	<div class="bx-dump">
+		<table class="bx-table-primary" title="#posInCode#">
+			<caption
+				role="button"
+				tabindex="0"
+				<bx:if expandRoot>open aria-expanded="true"<bx:else>aria-expanded="false"</bx:if>
+				data-bx-toggle="siblings"
+			>
+				<strong>
+					<bx:if label.len() >#label# - </bx:if>
+					XML #var.getXMLType()#
+				</strong>
+			</caption>
+
+
+			<!--- XML BODY --->
+			<tbody
+				<bx:if !expandRoot>class="d-none"</bx:if>
+			>
+				<bx:script>
+					theCollection = var.getDumpRepresentation();
+					for ( key in theCollection ) {
+						```
+						<bx:if NOT isCustomFunction( theCollection[ key ] ) >
+							<tr>
+								<th
+									aria-expanded="true"
+									data-bx-toggle="onoff"
+									scope="row"
+									valign="top"
+									tabindex="0"
+									>
+									#encodeForHTML( key )#
+								</th>
+								<td>
+									<div class="bx-onoff">
+										<bx:set dump( var : theCollection[ key ], top : isNull( top ) ? null : top - 1, expand : expand ) >
+									</div>
+								</td>
+							</tr>
+						</bx:if>
+						```
+					}
+				</bx:script>
+			</tbody>
+		</table>
+	</div>
+</bx:output>

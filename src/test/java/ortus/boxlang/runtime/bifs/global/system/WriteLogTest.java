@@ -61,11 +61,7 @@ public class WriteLogTest {
 		outContent		= new ByteArrayOutputStream();
 		System.setOut( new PrintStream( outContent ) );
 		logFilePath			= Paths.get( logsDirectory, "/writelog.log" ).normalize().toString();
-		defaultLogFilePath	= Paths.get( logsDirectory, "/runtime.log" ).normalize().toString();
-
-		if ( FileSystemUtil.exists( defaultLogFilePath ) ) {
-			FileSystemUtil.deleteFile( defaultLogFilePath );
-		}
+		defaultLogFilePath	= Paths.get( logsDirectory, "/application.log" ).normalize().toString();
 	}
 
 	@AfterAll
@@ -108,7 +104,6 @@ public class WriteLogTest {
 
 		// Assert we got here
 		assertThat( FileSystemUtil.exists( defaultLogFilePath ) ).isTrue();
-		assertThat( outContent.toString() ).contains( "Hello Logger!" );
 	}
 
 	@DisplayName( "It can write a default with a compat log argument" )

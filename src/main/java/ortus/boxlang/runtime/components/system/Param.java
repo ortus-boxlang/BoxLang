@@ -22,11 +22,11 @@ import java.util.Set;
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
-import ortus.boxlang.runtime.validation.Validator;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.validation.Validator;
 
 @BoxComponent
 public class Param extends Component {
@@ -75,14 +75,13 @@ public class Param extends Component {
 		Object	defaultValue	= attributes.get( Key._DEFAULT );
 		Object	existingValue	= ExpressionInterpreter.getVariable( context, varName, defaultValue != null );
 		if ( existingValue == null && defaultValue != null ) {
-			existingValue = defaultValue;
+			ExpressionInterpreter.setVariable( context, varName, defaultValue );
 		}
 
 		// TODO: Enforce validation here
 		// BL types can be passed to GenericCaster
 		// Other type delegate to isValid()
 
-		ExpressionInterpreter.setVariable( context, varName, existingValue );
 		return DEFAULT_RETURN;
 	}
 }

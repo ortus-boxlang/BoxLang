@@ -31,7 +31,6 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.async.executors.ExecutorRecord;
@@ -100,7 +99,7 @@ public class BaseScheduler implements IScheduler {
 	/**
 	 * Logger
 	 */
-	protected static final Logger				logger						= LoggerFactory.getLogger( BaseScheduler.class );
+	protected final Logger						logger;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -113,7 +112,7 @@ public class BaseScheduler implements IScheduler {
 	 * Auto-generated name, system default timezone and the default async service
 	 */
 	public BaseScheduler() {
-		this( "boxlang-scheduler-" + RandomStringUtils.randomAlphanumeric( 10 ) );
+		this( "boxlang-scheduler-" + RandomStringUtils.secure().nextAlphanumeric( 10 ) );
 	}
 
 	/**
@@ -135,8 +134,10 @@ public class BaseScheduler implements IScheduler {
 		this.name			= name;
 		this.timezone		= timezone;
 		this.asyncService	= BoxRuntime.getInstance().getAsyncService();
+		this.logger			= BoxRuntime.getInstance().getLoggingService().getLogger( "scheduler" );
+
 		// Log it
-		logger.info( "Created scheduler [{}] with a [{}] timezone", name, timezone.getId() );
+		this.logger.info( "Created scheduler [{}] with a [{}] timezone", name, timezone.getId() );
 	}
 
 	/**
@@ -236,7 +237,7 @@ public class BaseScheduler implements IScheduler {
 			// Iterate over tasks and send them off for scheduling
 			this.tasks.entrySet()
 			    .parallelStream()
-			    .forEachOrdered( entry -> startupTask( entry.getKey(), entry.getValue() ) );
+			    .forEachOrdered( entry -> startupTask( entry.getKey() ) );
 
 			// Mark scheduler as started
 			this.started	= true;
@@ -246,7 +247,7 @@ public class BaseScheduler implements IScheduler {
 			this.onStartup();
 
 			// Log it
-			logger.info( "Scheduler [{}] has started!", this.name );
+			this.logger.info( "Scheduler [{}] has started!", this.name );
 		}
 
 		return this;
@@ -261,7 +262,7 @@ public class BaseScheduler implements IScheduler {
 	 * @return
 	 */
 	public synchronized BaseScheduler restart( boolean force, long timeout ) {
-		logger.info( "+ Restarting scheduler [{}] with force: {} and timeout: {}", this.name, force, timeout );
+		this.logger.info( "+ Restarting scheduler [{}] with force: {} and timeout: {}", this.name, force, timeout );
 		// Shutdown first
 		shutdown( force, timeout );
 		// Clear tasks
@@ -270,7 +271,7 @@ public class BaseScheduler implements IScheduler {
 		configure();
 		// Startup
 		startup();
-		logger.info( "+ Scheduler [{}] has been restarted!", this.name );
+		this.logger.info( "+ Scheduler [{}] has been restarted!", this.name );
 		return this;
 	}
 
@@ -285,41 +286,64 @@ public class BaseScheduler implements IScheduler {
 	}
 
 	/**
+	 * Startup manullay the passed in task
+	 *
+	 * @param task The task to startup
+	 *
+	 * @return The task record
+	 */
+	public TaskRecord startupTask( ScheduledTask task ) {
+		return startupTask( task.getName() );
+	}
+
+	/**
 	 * Startup a specific task by name
 	 *
-	 * @param taskName   The name of the task
-	 * @param taskRecord The task record object
+	 * @param taskName The name of the task
+	 *
+	 * @return The task record
 	 */
-	private void startupTask( String taskName, TaskRecord taskRecord ) {
+	public TaskRecord startupTask( String taskName ) {
+		// Get the task record
+		var taskRecord = getTaskRecord( taskName );
 		// Verify we can start it up the task or not
 		if ( taskRecord.task.isDisabled() ) {
 			taskRecord.disabled = true;
-			logger.warn(
+			this.logger.warn(
 			    "- Scheduler ({}) skipping task ({}) as it is disabled.",
 			    this.name,
 			    taskName
 			);
-			// Continue iteration
-			return;
+			return taskRecord;
 		} else {
 			// Log scheduling startup
-			logger.info(
+			this.logger.info(
 			    "- Scheduler ({}) scheduling task ({})...",
 			    this.name,
 			    taskName
 			);
 		}
 
+		// Verify that the task record: scheduledAt is null
+		if ( taskRecord.scheduledAt != null ) {
+			this.logger.warn(
+			    "- Scheduler ({}) skipping task ({}) as it has already been scheduled.",
+			    this.name,
+			    taskName
+			);
+			return taskRecord;
+		}
+
 		// Send it off for scheduling
 		try {
 			taskRecord.future		= taskRecord.task.start();
 			taskRecord.scheduledAt	= LocalDateTime.now( this.timezone );
-			logger.debug(
+			this.logger.debug(
 			    "√ Task ({}) scheduled successfully.",
 			    taskName
 			);
 		} catch ( Exception e ) {
-			logger.error(
+			this.logger.error(
 			    "X Error scheduling task ({}}) => {}",
 			    this.name + "." + taskName,
 			    e.getMessage()
@@ -330,6 +354,8 @@ public class BaseScheduler implements IScheduler {
 			taskRecord.errorMessage	= e.getMessage();
 			taskRecord.stacktrace	= Arrays.toString( e.getStackTrace() );
 		}
+
+		return taskRecord;
 	}
 
 	/**
@@ -342,7 +368,7 @@ public class BaseScheduler implements IScheduler {
 	public BaseScheduler shutdown( boolean force, long timeout ) {
 		// If started, then we can shutdown
 		if ( !this.started ) {
-			logger.info( "Scheduler [{}] has not been started yet. Skipping shutdown.", this.name );
+			this.logger.info( "Scheduler [{}] has not been started yet. Skipping shutdown.", this.name );
 			return this;
 		}
 
@@ -366,7 +392,7 @@ public class BaseScheduler implements IScheduler {
 		this.startedAt	= null;
 
 		// Log it
-		logger.info( "Scheduler [{}] has been shutdown!", this.name );
+		this.logger.info( "Scheduler [{}] has been shutdown!", this.name );
 		return this;
 	}
 
@@ -402,14 +428,14 @@ public class BaseScheduler implements IScheduler {
 	 * Called before the scheduler is going to be shutdown
 	 */
 	public void onShutdown() {
-		logger.info( "Shutting down scheduler [{}]", this.name );
+		this.logger.info( "Shutting down scheduler [{}]", this.name );
 	}
 
 	/**
 	 * Called after the scheduler has registered all schedules
 	 */
 	public void onStartup() {
-		logger.info( "Starting up scheduler [{}]", this.name );
+		this.logger.info( "Starting up scheduler [{}]", this.name );
 	}
 
 	/**
@@ -419,9 +445,9 @@ public class BaseScheduler implements IScheduler {
 	 * @param exception The exception object
 	 */
 	public void onAnyTaskError( ScheduledTask task, Exception exception ) {
-		logger.error(
+		this.logger.error(
 		    "Task [{}.{}] has failed with {}",
-		    getName(),
+		    getSchedulerName(),
 		    task.getName(),
 		    exception.getMessage(),
 		    exception
@@ -435,7 +461,7 @@ public class BaseScheduler implements IScheduler {
 	 * @param result The result (if any) that the task produced
 	 */
 	public void onAnyTaskSuccess( ScheduledTask task, Optional<?> result ) {
-		logger.info( "Task [{}.{}] has succeeded", getName(), task.getName() );
+		this.logger.info( "Task [{}.{}] has succeeded", getSchedulerName(), task.getName() );
 	}
 
 	/**
@@ -444,7 +470,7 @@ public class BaseScheduler implements IScheduler {
 	 * @param task The task about to be executed
 	 */
 	public void beforeAnyTask( ScheduledTask task ) {
-		logger.debug( "Task [{}.{}] is about to run", getName(), task.getName() );
+		this.logger.debug( "Task [{}.{}] is about to run", getSchedulerName(), task.getName() );
 	}
 
 	/**
@@ -455,9 +481,9 @@ public class BaseScheduler implements IScheduler {
 	 * @param result The result (if any) that the task produced
 	 */
 	public void afterAnyTask( ScheduledTask task, Optional<?> result ) {
-		logger.debug(
+		this.logger.debug(
 		    "Task [{}.{}] has run with result [{}]",
-		    getName(),
+		    getSchedulerName(),
 		    task.getName(),
 		    result.isPresent() ? result.get() : "no result"
 		);
@@ -594,7 +620,7 @@ public class BaseScheduler implements IScheduler {
 	 *
 	 * @return the name
 	 */
-	public String getName() {
+	public String getSchedulerName() {
 		return this.name;
 	}
 
@@ -603,7 +629,7 @@ public class BaseScheduler implements IScheduler {
 	 *
 	 * @param name the name to set
 	 */
-	public BaseScheduler setName( String name ) {
+	public BaseScheduler setSchedulerName( String name ) {
 		this.name = name;
 		return this;
 	}

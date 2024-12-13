@@ -54,7 +54,7 @@ public class BLCollector {
 	 *
 	 * @return The populated Struct
 	 */
-	public static Collector<Map.Entry<Key, Object>, ?, Struct> toStruct() {
+	public static Collector<Map.Entry<Key, Object>, ?, IStruct> toStruct() {
 		return Collector.of(
 		    Struct::new, // supplier
 		    ( struct, entry ) -> struct.put( entry.getKey(), entry.getValue() ), // accumulator
@@ -75,7 +75,7 @@ public class BLCollector {
 	 *
 	 * @return The populated Struct
 	 */
-	public static Collector<Map.Entry<Key, Object>, ?, Struct> toStruct( IStruct.TYPES type ) {
+	public static Collector<Map.Entry<Key, Object>, ?, IStruct> toStruct( IStruct.TYPES type ) {
 		Collector.Characteristics[] characteristics;
 		if ( type == IStruct.TYPES.LINKED ) {
 			characteristics = new Collector.Characteristics[] { Collector.Characteristics.IDENTITY_FINISH, Collector.Characteristics.CONCURRENT };

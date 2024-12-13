@@ -14,8 +14,6 @@
  */
 package ortus.boxlang.runtime.util;
 
-import java.util.regex.Pattern;
-
 import org.apache.commons.lang3.math.NumberUtils;
 
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
@@ -35,50 +33,6 @@ import ortus.boxlang.runtime.types.UDF;
  * Is not concerned with whether the data is parseable or can be converted to a given type, only whether it is in a valid format.
  */
 public class ValidationUtil {
-
-	/**
-	 * Regular expression Pattern to match a URL with a `http`, `https`, `ftp`, or `file` scheme.
-	 *
-	 * @see https://regex101.com/r/kWhB1u/1
-	 */
-	public static final Pattern	URL						= Pattern.compile( "^(https?|ftp|file)://([A-Za-z0-90.]*)/?([-a-zA-Z0-9.+&@#/]+)?(\\??[^\\s]*)$" );
-
-	/**
-	 * Regular expression Pattern to match a North American Numbering Plan (NANP) telephone number. This does not support international numbers.
-	 */
-	public static final Pattern	TELEPHONE				= Pattern.compile(
-	    "^(?:(?:\\+?1\\s*(?:[.-]\\s*)?)?(?:\\(\\s*([2-9]1[02-9]|[2-9][02-8]1|[2-9][02-8][02-9])\\s*\\)|([2-9]1[02-9]|[2-9][02-8]1|[2-9][02-8][02-9]))\\s*(?:[.-]\\s*)?)?([2-9]1[02-9]|[2-9][02-9]1|[2-9][02-9]{2})\\s*(?:[.-]\\s*)?([0-9]{4})(?:\\s*(?:#|x\\.?|ext\\.?|extension)\\s*(\\d+))?$" );
-
-	/**
-	 * Regular expression Pattern to match a United States Postal Service (USPS) ZIP Code.
-	 */
-	public static final Pattern	ZIPCODE					= Pattern.compile( "\\d{5}([ -]?\\d{4})?" );
-
-	/**
-	 * Regular expression Pattern to match a Social Security Number (SSN).
-	 */
-	public static final Pattern	SSN						= Pattern.compile( "^(?!219099999|078051120)(?!666|000|9\\d{2})\\d{3}(?!00)\\d{2}(?!0{4})\\d{4}$" );
-
-	/**
-	 * Regular expression to match a Version 4 Universally Unique Identifier (UUID), in a
-	 * case-insensitive fashion.
-	 *
-	 * @see https://gitlab.com/jamietanna/uuid/-/blob/v0.2.0/uuid-core/src/main/java/me/jvt/uuid/Patterns.java
-	 */
-	public static final Pattern	UUID_V4					= Pattern
-	    .compile( "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[89abAB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}" );
-
-	/**
-	 * Regular expression to match a Version 4 Universally Unique Identifier (UUID), in a
-	 * case-insensitive fashion.
-	 */
-	public static final Pattern	UUID_PATTERN			= Pattern
-	    .compile( "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[89abAB][a-fA-F0-9]{3}[a-fA-F0-9]{12}" );
-
-	/**
-	 * Regular expression to match a valid variable name.
-	 */
-	public static final String	VALID_VARIABLE_REGEX	= "^[a-zA-Z_][a-zA-Z0-9_]*$";
 
 	/**
 	 * Perform the Lunh algorithm to validate a credit card number.
@@ -103,11 +57,11 @@ public class ValidationUtil {
 	public static boolean isValidCreditCard( String cardNumber ) {
 		int	shortestValidCardLength	= 12;
 		int	longestValidCardLength	= 19;
-		if ( cardNumber == null || !cardNumber.matches( "[0-9 ,_-]+" ) ) {
+		if ( cardNumber == null || !RegexBuilder.of( cardNumber, RegexBuilder.CREDIT_CARD_NUMBERS ).matches() ) {
 			// cardNumber contains characters other than digit, space, or underscore
 			return false;
 		}
-		String sanitized = cardNumber.replaceAll( "[^0-9]", "" );
+		String sanitized = RegexBuilder.of( cardNumber, RegexBuilder.NO_DIGITS ).replaceAllAndGet( "" );
 		if ( sanitized.length() < shortestValidCardLength || sanitized.length() > longestValidCardLength ) {
 			return false;
 		}
@@ -159,7 +113,7 @@ public class ValidationUtil {
 	 * @return Boolean indicating whether the given string is a valid compatible UUID.
 	 */
 	public static boolean isValidGUID( String uuid ) {
-		return UUID_V4.matcher( uuid ).matches();
+		return RegexBuilder.of( uuid, RegexBuilder.UUID_V4 ).matches();
 	}
 
 	/**
@@ -172,7 +126,7 @@ public class ValidationUtil {
 	 * @return Boolean indicating whether the given string is a valid compatible UUID.
 	 */
 	public static boolean isValidUUID( String uuid ) {
-		return UUID_PATTERN.matcher( uuid ).matches();
+		return RegexBuilder.of( uuid, RegexBuilder.UUID_PATTERN ).matches();
 	}
 
 	/**
@@ -186,9 +140,7 @@ public class ValidationUtil {
 	 * @return Boolean indicating whether the given string is a valid SSN.
 	 */
 	public static boolean isValidSSN( String ssn ) {
-		return SSN.matcher(
-		    ssn.replace( "-", "" ).replace( " ", "" )
-		).matches();
+		return RegexBuilder.of( ssn.replace( "-", "" ).replace( " ", "" ), RegexBuilder.SSN ).matches();
 	}
 
 	/**
@@ -199,7 +151,7 @@ public class ValidationUtil {
 	 * @return Boolean indicating whether the given string is a valid US or North American telephone number.
 	 */
 	public static boolean isValidTelephone( String phone ) {
-		return TELEPHONE.matcher( phone ).matches();
+		return RegexBuilder.of( phone, RegexBuilder.TELEPHONE ).matches();
 	}
 
 	/**
@@ -210,7 +162,7 @@ public class ValidationUtil {
 	 * @return Boolean indicating whether the given string is a valid URL.
 	 */
 	public static boolean isValidURL( String url ) {
-		return URL.matcher( url ).matches();
+		return RegexBuilder.of( url, RegexBuilder.URL ).matches();
 	}
 
 	/**
@@ -226,7 +178,7 @@ public class ValidationUtil {
 	 * @return Boolean indicating whether the given string is a valid zip code.
 	 */
 	public static boolean isValidZipCode( String zipCode ) {
-		return ZIPCODE.matcher( zipCode ).matches();
+		return RegexBuilder.of( zipCode, RegexBuilder.ZIPCODE ).matches();
 	}
 
 	/**
@@ -239,7 +191,7 @@ public class ValidationUtil {
 	 * @return Boolean indicating whether the given string is a valid variable name.
 	 */
 	public static boolean isValidVariableName( String variableName ) {
-		return variableName.matches( VALID_VARIABLE_REGEX );
+		return RegexBuilder.of( variableName, RegexBuilder.VALID_VARIABLENAME ).matches();
 	}
 
 	/**
@@ -352,7 +304,7 @@ public class ValidationUtil {
 	 * @return Boolean indicating if the value matches the regex
 	 */
 	public static boolean isValidMatch( String value, String regex ) {
-		return value.matches( regex );
+		return RegexBuilder.of( value, regex ).matches();
 	}
 
 	/**
@@ -374,7 +326,7 @@ public class ValidationUtil {
 	 * @param email The email address to validate
 	 */
 	public static boolean isValidEmail( String email ) {
-		return email.matches( "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$" );
+		return RegexBuilder.of( email, RegexBuilder.EMAIL ).matches();
 	}
 
 	/**
@@ -385,7 +337,7 @@ public class ValidationUtil {
 	 * @param pattern The regex pattern to match
 	 */
 	public static boolean isValidPattern( String value, String pattern ) {
-		return value.matches( pattern );
+		return RegexBuilder.of( value, pattern ).matches();
 	}
 
 }

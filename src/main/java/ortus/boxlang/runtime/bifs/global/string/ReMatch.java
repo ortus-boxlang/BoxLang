@@ -26,6 +26,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.RegexUtil;
+import ortus.boxlang.runtime.util.RegexBuilder;
 
 @BoxBIF
 @BoxBIF( alias = "reMatchNoCase" )
@@ -47,16 +48,16 @@ public class ReMatch extends BIF {
 	}
 
 	/**
-	 * 
+	 *
 	 * Uses a regular expression (RE) to search a string for a pattern, starting from a specified position.
-	 * 
+	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 * 
+	 *
 	 * @argument.reg_expression The regular expression to search for
-	 * 
+	 *
 	 * @argument.string The string to serach in
-	 * 
+	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	reg_expression	= arguments.getAsString( Key.reg_expression );
@@ -67,16 +68,12 @@ public class ReMatch extends BIF {
 			return new Array();
 		}
 
-		if ( noCase ) {
-			reg_expression = "(?i)" + reg_expression;
-		}
-
 		// Posix replacement for character classes
 		reg_expression	= RegexUtil.posixReplace( reg_expression, noCase );
 		// Ignore non-quantifier curly braces like PERL
 		reg_expression	= RegexUtil.replaceNonQuantiferCurlyBraces( reg_expression );
 
-		Matcher	matcher	= java.util.regex.Pattern.compile( reg_expression ).matcher( string );
+		Matcher	matcher	= RegexBuilder.of( string, reg_expression, noCase ).matcher();
 		Array	result	= new Array();
 
 		while ( matcher.find() ) {

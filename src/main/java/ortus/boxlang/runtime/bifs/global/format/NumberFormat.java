@@ -87,8 +87,8 @@ public class NumberFormat extends BIF {
 			} else if ( format.equals( "ls$" ) ) {
 				formatter = LocalizationUtil.localizedCurrencyFormatter( locale );
 			} else {
-				format = format.replaceAll( "9", "0" )
-				    .replaceAll( "_", "#" );
+				format = format.replace( "9", "0" )
+				    .replace( "_", "#" );
 				if ( format.substring( 0, 1 ).equals( "L" ) ) {
 					format = format.substring( 1, format.length() );
 				} else if ( format.substring( 0, 1 ).equals( "C" ) ) {

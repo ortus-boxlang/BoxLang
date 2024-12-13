@@ -13,7 +13,7 @@
 					<strong>
 						<bx:if label.len() >#label# - </bx:if>
 						Query:
-						<bx:if top gt 0 && top lt var.recordcount>#top#/</bx:if>#var.recordcount# rows
+						<bx:if !isNull( top ) && top lt var.recordcount>#top#/</bx:if>#var.recordcount# rows
 					</strong>
 				</caption>
 				<thead
@@ -29,7 +29,7 @@
 					<bx:if !expandRoot>class="d-none"</bx:if>
 				>
 					<bx:loop query="#var#" item="row" index="index">
-						<bx:if top gt 0 and var.currentRow gt top >
+						<bx:if !isNull( top ) and var.currentRow gt top >
 							<bx:break/>
 						</bx:if>
 						<tr>

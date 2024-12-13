@@ -15,12 +15,15 @@
 package ortus.boxlang.compiler.ast.sql.select.expression.operation;
 
 import java.util.List;
+import java.util.Map;
 
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLExpression;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
+import ortus.boxlang.runtime.jdbc.qoq.QoQExecution;
+import ortus.boxlang.runtime.operators.EqualsEquals;
 
 /**
  * Abstract Node class representing SQL IN operation
@@ -39,7 +42,7 @@ public class SQLInOperation extends SQLExpression {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code of the statement
 	 */
-	protected SQLInOperation( boolean not, SQLExpression expression, List<SQLExpression> values, Position position, String sourceText ) {
+	public SQLInOperation( SQLExpression expression, List<SQLExpression> values, boolean not, Position position, String sourceText ) {
 		super( position, sourceText );
 		setExpression( expression );
 		setValues( values );
@@ -93,10 +96,27 @@ public class SQLInOperation extends SQLExpression {
 	}
 
 	/**
-	 * Check if the expression evaluates to a boolean value
+	 * Runtime check if the expression evaluates to a boolean value and works for columns as well
+	 * 
+	 * @param QoQExec Query execution state
+	 * 
+	 * @return true if the expression evaluates to a boolean value
 	 */
-	public boolean isBoolean() {
+	public boolean isBoolean( QoQExecution QoQExec ) {
 		return true;
+	}
+
+	/**
+	 * Evaluate the expression
+	 */
+	public Object evaluate( QoQExecution QoQExec, int[] intersection ) {
+		Object value = expression.evaluate( QoQExec, intersection );
+		for ( SQLExpression v : values ) {
+			if ( EqualsEquals.invoke( value, v.evaluate( QoQExec, intersection ), true ) ) {
+				return !not;
+			}
+		}
+		return not;
 	}
 
 	@Override
@@ -109,6 +129,16 @@ public class SQLInOperation extends SQLExpression {
 	public BoxNode accept( ReplacingBoxVisitor v ) {
 		// TODO Auto-generated method stub
 		throw new UnsupportedOperationException( "Unimplemented method 'accept'" );
+	}
+
+	@Override
+	public Map<String, Object> toMap() {
+		Map<String, Object> map = super.toMap();
+
+		map.put( "not", not );
+		map.put( "expression", expression.toMap() );
+		map.put( "values", values.stream().map( SQLExpression::toMap ).toList() );
+		return map;
 	}
 
 }

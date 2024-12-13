@@ -89,7 +89,7 @@ public class ArgumentsScope extends BaseScope {
 
 	@Override
 	public boolean containsKey( Key key ) {
-		// Leave this unneccessary override as a reminder. All the other get/put methods translate between numeric and named keys, but contains key
+		// Leave this unnecessary override as a reminder. All the other get/put methods translate between numeric and named keys, but contains key
 		// will ONLY look for real live actual keys. This is largely for CF compat as `arguments[ 1 ]` works but `structKeyExists( arguments, 1 )` returns false.
 		// It sort of makes sense if you think about it as the numeric keys only really existing when using the arguments as an array.
 		// containsKey() is what powers structKeyExists(), and when using the arguments scope as a struct, it should only return true for actual keys and ignore the "spoofed"

@@ -33,6 +33,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
+import ortus.boxlang.runtime.util.RegexBuilder;
 
 /**
  * I handle interpreting expressions
@@ -68,7 +69,7 @@ public class ExpressionInterpreter {
 			return expression.substring( 1, expression.length() - 1 ).replace( "''", "'" );
 		}
 		// If expression is a number, return it directly
-		if ( expression.matches( "^-?\\d+(\\.\\d+)?$" ) ) {
+		if ( RegexBuilder.of( expression, RegexBuilder.NUMBERS ).matches() ) {
 			return NumberCaster.cast( expression );
 		}
 		// Check for true/false
@@ -96,7 +97,7 @@ public class ExpressionInterpreter {
 			}
 		} else {
 			// Unscoped variable like foo.bar. This finds the first part of the expression
-			ref = context.scopeFindNearby( refName, ( safe ? context.getDefaultAssignmentScope() : null ) ).value();
+			ref = context.scopeFindNearby( refName, ( safe ? context.getDefaultAssignmentScope() : null ), false ).value();
 			if ( ref == null && !safe ) {
 				throw new KeyNotFoundException( "Variable [" + refName + "] not found." );
 			}
@@ -140,7 +141,7 @@ public class ExpressionInterpreter {
 			}
 		} else {
 			// Unscoped variable like foo.bar. We need to search and find what scope it lives in, if any.
-			ScopeSearchResult scopeSearchResult = context.scopeFindNearby( refName, context.getDefaultAssignmentScope() );
+			ScopeSearchResult scopeSearchResult = context.scopeFindNearby( refName, context.getDefaultAssignmentScope(), true );
 			ref = scopeSearchResult.scope();
 			if ( scopeSearchResult.isScope() ) {
 				// create Key[] out of remaining strings in parts

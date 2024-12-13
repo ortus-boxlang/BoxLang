@@ -485,6 +485,17 @@ public class BoxRuntime implements java.io.Closeable {
 		loadConfiguration( debugMode, this.configPath );
 		// Anythying below might use configuration items
 
+		// Announce it to the services
+		this.interceptorService.onConfigurationLoad();
+		this.asyncService.onConfigurationLoad();
+		this.cacheService.onConfigurationLoad();
+		this.functionService.onConfigurationLoad();
+		this.componentService.onConfigurationLoad();
+		this.applicationService.onConfigurationLoad();
+		this.moduleService.onConfigurationLoad();
+		this.schedulerService.onConfigurationLoad();
+		this.dataSourceService.onConfigurationLoad();
+
 		// Ensure home assets
 		ensureHomeAssets();
 
@@ -671,6 +682,13 @@ public class BoxRuntime implements java.io.Closeable {
 	 */
 	public static Boolean hasInstance() {
 		return instance != null;
+	}
+
+	/**
+	 * Returns the compiler instance to use based on the configuration
+	 */
+	public IBoxpiler getCompiler() {
+		return this.boxpiler;
 	}
 
 	/**
@@ -1037,6 +1055,7 @@ public class BoxRuntime implements java.io.Closeable {
 	 */
 	public void useJavaBoxpiler() {
 		RunnableLoader.getInstance().selectBoxPiler( JavaBoxpiler.class );
+		this.boxpiler = JavaBoxpiler.getInstance();
 	}
 
 	/**
@@ -1044,6 +1063,7 @@ public class BoxRuntime implements java.io.Closeable {
 	 */
 	public void useASMBoxPiler() {
 		RunnableLoader.getInstance().selectBoxPiler( ASMBoxpiler.class );
+		this.boxpiler = ASMBoxpiler.getInstance();
 	}
 
 	/**
@@ -1650,7 +1670,7 @@ public class BoxRuntime implements java.io.Closeable {
 	 * @return The Boxpiler implementation to use
 	 */
 	private IBoxpiler chooseBoxpiler() {
-		switch ( ( String ) this.configuration.experimental.getOrDefault( "compiler", "java" ) ) {
+		switch ( ( String ) this.configuration.experimental.getOrDefault( "compiler", "asm" ) ) {
 			case "asm" :
 				useASMBoxPiler();
 				return ASMBoxpiler.getInstance();

@@ -232,7 +232,7 @@ public class TimeUnits extends BIF {
 		} else {
 
 			dateRef = DateTimeCaster.cast( arguments.get( Key.date ), true,
-			    LocalizationUtil.parseZoneId( arguments.getAsString( Key.timezone ), context ) );
+			    LocalizationUtil.parseZoneId( arguments.getAsString( Key.timezone ), context ), context );
 
 			if ( arguments.get( Key.timezone ) != null ) {
 				dateRef = dateRef.clone( ZoneId.of( arguments.getAsString( Key.timezone ) ) );

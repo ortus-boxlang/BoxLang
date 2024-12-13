@@ -14,11 +14,14 @@
  */
 package ortus.boxlang.compiler.ast.sql.select.expression.literal;
 
+import java.util.Map;
+
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLExpression;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
+import ortus.boxlang.runtime.jdbc.qoq.QoQExecution;
 
 /**
  * Abstract Node class representing SQL null
@@ -31,7 +34,7 @@ public class SQLNullLiteral extends SQLExpression {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code of the statement
 	 */
-	protected SQLNullLiteral( Position position, String sourceText ) {
+	public SQLNullLiteral( Position position, String sourceText ) {
 		super( position, sourceText );
 	}
 
@@ -40,6 +43,13 @@ public class SQLNullLiteral extends SQLExpression {
 	 */
 	public boolean isLiteral() {
 		return true;
+	}
+
+	/**
+	 * Evaluate the expression
+	 */
+	public Object evaluate( QoQExecution QoQExec, int[] intersection ) {
+		return null;
 	}
 
 	@Override
@@ -52,6 +62,13 @@ public class SQLNullLiteral extends SQLExpression {
 	public BoxNode accept( ReplacingBoxVisitor v ) {
 		// TODO Auto-generated method stub
 		throw new UnsupportedOperationException( "Unimplemented method 'accept'" );
+	}
+
+	@Override
+	public Map<String, Object> toMap() {
+		Map<String, Object> map = super.toMap();
+
+		return map;
 	}
 
 }

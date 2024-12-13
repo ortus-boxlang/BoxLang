@@ -147,11 +147,11 @@ public class Phase2Lambda$lambda1 extends Lambda {
 		    Key.of( "Greeting" ),
 		    Concat.invoke(
 		        "Hello ",
-		        context.scopeFindNearby( Key.of( "name" ), null ).value()
+		        context.scopeFindNearby( Key.of( "name" ), null, false ).value()
 		    )
 		);
 
-		return context.scopeFindNearby( Key.of( "greeting" ), null ).value();
+		return context.scopeFindNearby( Key.of( "greeting" ), null, false ).value();
 	}
 
 	// ITemplateRunnable implementation methods

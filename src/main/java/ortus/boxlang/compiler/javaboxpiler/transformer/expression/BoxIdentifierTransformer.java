@@ -52,8 +52,8 @@ public class BoxIdentifierTransformer extends AbstractTransformer {
 			template = "classLocator.load( ${contextName}, \"${id}\", imports )";
 		} else {
 			template = switch ( context ) {
-				case SAFE -> "${contextName}.scopeFindNearby( ${accessKey}, ${contextName}.getDefaultAssignmentScope()).value()";
-				default -> "${contextName}.scopeFindNearby( ${accessKey}, null).value()";
+				case SAFE -> "${contextName}.scopeFindNearby( ${accessKey}, ${contextName}.getDefaultAssignmentScope(), false ).value()";
+				default -> "${contextName}.scopeFindNearby( ${accessKey}, null, false ).value()";
 			};
 		}
 

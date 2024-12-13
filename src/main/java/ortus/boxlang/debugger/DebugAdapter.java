@@ -25,7 +25,6 @@ import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -40,7 +39,6 @@ import com.sun.jdi.InvocationException;
 import com.sun.jdi.Location;
 import com.sun.jdi.ObjectReference;
 import com.sun.jdi.ThreadReference;
-import com.sun.jdi.event.BreakpointEvent;
 
 import ortus.boxlang.compiler.SourceMap;
 import ortus.boxlang.debugger.BoxLangDebugger.StackFrameTuple;
@@ -494,30 +492,15 @@ public class DebugAdapter {
 	public Function<StackFrameTuple, StackFrame> convertStackFrameTupleToDAPStackFrame( BoxLangDebugger debugger ) {
 		return ( tuple ) -> {
 			StackFrame sf = new StackFrame();
-			sf.id		= tuple.id();
-			sf.column	= 1;
+			sf.id			= tuple.id();
+			sf.column		= 1;
 
-			SourceMap map = debugger.findSourceMapByFQN( tuple.thread(), tuple.location().declaringType().name() );
+			sf.line			= tuple.sourceLine();
+			sf.name			= debugger.getStackFrameName( tuple );
 
-			sf.line = tuple.location().lineNumber();
-			Integer sourceLine = map.convertJavaLineToSourceLine( sf.line );
-			if ( sourceLine != null ) {
-				sf.line = sourceLine;
-			}
-
-			sf.name = tuple.location().method().name();
-			String stackFrameName = debugger.getStackFrameName( tuple );
-			if ( stackFrameName != null ) {
-				sf.name = stackFrameName;
-			} else if ( map != null && map.isTemplate() ) {
-				sf.name = map.getFileName();
-			}
-
-			sf.source = new Source();
-			if ( sf.source != null ) {
-				sf.source.path	= map.source.toString();
-				sf.source.name	= Path.of( map.source ).getFileName().toString();
-			}
+			sf.source		= new Source();
+			sf.source.path	= tuple.sourceFile();
+			sf.source.name	= tuple.getFileName();
 
 			return sf;
 		};
@@ -556,24 +539,16 @@ public class DebugAdapter {
 	// ================= EVENTS ==========================
 	// ===================================================
 
-	public void sendStoppedEventForBreakpoint( BreakpointEvent breakpointEvent ) {
-		SourceMap			map			= debugger.findSourceMapByFQN( breakpointEvent.thread(), breakpointEvent.location().declaringType().name() );
-		String				sourcePath	= map.source.toLowerCase();
-
-		BreakpointRequest	bp			= null;
+	public void sendStoppedEventForBreakpoint( int id, String sourcePath, int lineNumber ) {
 
 		for ( BreakpointRequest b : this.breakpoints ) {
-			if ( b.source.equalsIgnoreCase( sourcePath ) ) {
-				bp = b;
-				break;
+			if ( ! ( b.source.equalsIgnoreCase( sourcePath ) && b.line == lineNumber )
+			    && ! ( b.source.equalsIgnoreCase( sourcePath ) && lineNumber == -1 ) ) {
+				continue;
 			}
-		}
 
-		if ( bp == null ) {
-			return;
+			StoppedEvent.breakpoint( id, b.id ).send( this.outputStream );
 		}
-		// TODO convert this file/line number to boxlang
-		StoppedEvent.breakpoint( breakpointEvent, bp.id ).send( this.outputStream );
 	}
 
 	record ScopeCache( com.sun.jdi.StackFrame stackFrame, ObjectReference scope ) {

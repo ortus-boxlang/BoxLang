@@ -29,6 +29,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.IntKey;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.NullValue;
@@ -139,8 +140,21 @@ public class ArgumentUtil {
 
 				namedArguments.remove( Function.ARGUMENT_COLLECTION );
 			} else if ( argCollection instanceof Map<?, ?> ) {
-				Map<Key, Object> argumentCollection = ( Map<Key, Object> ) argCollection;
-				scope.putAll( argumentCollection );
+				Map<Key, Object>	argumentCollection	= ( Map<Key, Object> ) argCollection;
+				List<Key>			keys				= argumentCollection.keySet().stream().collect( java.util.stream.Collectors.toList() );
+				for ( int i = 0; i < keys.size(); i++ ) {
+					Key key = keys.get( i );
+					if ( key instanceof IntKey intKey ) {
+						Object	value	= argumentCollection.get( key );
+						Key		name	= intKey;
+						if ( intKey.getIntValue() - 1 < arguments.length ) {
+							name = arguments[ intKey.getIntValue() - 1 ].name();
+						}
+						scope.put( name, value );
+					} else {
+						scope.put( key, argumentCollection.get( key ) );
+					}
+				}
 				namedArguments.remove( Function.ARGUMENT_COLLECTION );
 			} else if ( argCollection instanceof List<?> ) {
 				listCollection = ( List<Object> ) argCollection;
@@ -210,6 +224,11 @@ public class ArgumentUtil {
 		// handle argumentCollection
 		if ( namedArguments.get( Key.argumentCollection ) instanceof IStruct argCol ) {
 			scope.putAll( argCol );
+			namedArguments.remove( Key.argumentCollection );
+		} else if ( namedArguments.get( Key.argumentCollection ) instanceof Array argArray ) {
+			for ( int i = 0; i < argArray.size(); i++ ) {
+				scope.put( Key.of( i + 1 ), argArray.get( i ) );
+			}
 			namedArguments.remove( Key.argumentCollection );
 		}
 		scope.putAll( namedArguments );

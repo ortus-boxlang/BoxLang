@@ -25,8 +25,10 @@ import org.objectweb.asm.tree.JumpInsnNode;
 import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
+import org.objectweb.asm.tree.VarInsnNode;
 
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
+import ortus.boxlang.compiler.asmboxpiler.MethodContextTracker;
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
@@ -50,14 +52,20 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 		List<AbstractInsnNode>	condition	= transpiler.transform( boxSwitch.getCondition(), TransformerContext.NONE, ReturnValueContext.VALUE );
 
 		List<AbstractInsnNode>	nodes		= new ArrayList<>();
+		MethodContextTracker	tracker		= transpiler.getCurrentMethodContextTracker().get();
 		AsmHelper.addDebugLabel( nodes, "BoxSwitch" );
 		nodes.addAll( condition );
+		var switchConditionVarStore = tracker.storeNewVariable( Opcodes.ASTORE );
+		nodes.addAll( switchConditionVarStore.nodes() );
 		nodes.add( new LdcInsnNode( 0 ) );
+		var switchVarStore = tracker.storeNewVariable( Opcodes.ISTORE );
+		nodes.addAll( switchVarStore.nodes() );
 
 		LabelNode	endLabel	= new LabelNode();
 		LabelNode	breakTarget	= new LabelNode();
 
-		transpiler.getCurrentMethodContextTracker().ifPresent( t -> t.setBreak( boxSwitch, endLabel ) );
+		tracker.setBreak( boxSwitch, breakTarget );
+		tracker.setContinue( boxSwitch, breakTarget );
 
 		boxSwitch.getCases().forEach( c -> {
 			if ( c.getCondition() == null ) {
@@ -66,9 +74,12 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 
 			AsmHelper.addDebugLabel( nodes, "BoxSwitch - case start" );
 			LabelNode startOfCase = new LabelNode(), endOfCase = new LabelNode(), endOfAll = new LabelNode();
+			nodes.add( new VarInsnNode( Opcodes.ILOAD, switchVarStore.index() ) );
 			nodes.add( new JumpInsnNode( Opcodes.IFNE, startOfCase ) );
 			// this dupes the condition
-			nodes.add( new InsnNode( Opcodes.DUP ) );
+			// nodes.add( new InsnNode( Opcodes.DUP ) );
+			nodes.add( new VarInsnNode( Opcodes.ALOAD, switchConditionVarStore.index() ) );
+
 			if ( c.getDelimiter() == null ) {
 				nodes.addAll( transpiler.transform( c.getCondition(), TransformerContext.NONE, ReturnValueContext.VALUE ) );
 				nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
@@ -82,13 +93,18 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 				    "cast",
 				    Type.getMethodDescriptor( Type.getType( String.class ), Type.getType( Object.class ) ),
 				    false ) );
+
 				nodes.addAll( transpiler.transform( c.getCondition(), TransformerContext.NONE, ReturnValueContext.VALUE ) );
+
 				nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
 				    Type.getInternalName( StringCaster.class ),
 				    "cast",
 				    Type.getMethodDescriptor( Type.getType( String.class ), Type.getType( Object.class ) ),
 				    false ) );
+
+				nodes.add( new InsnNode( Opcodes.SWAP ) );
 				nodes.addAll( transpiler.transform( c.getDelimiter(), TransformerContext.NONE, ReturnValueContext.VALUE ) );
+
 				nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
 				    Type.getInternalName( ListUtil.class ),
 				    "containsNoCase",
@@ -104,12 +120,18 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 			nodes.add( new JumpInsnNode( Opcodes.IFEQ, endOfCase ) );
 			nodes.add( startOfCase );
 
-			c.getBody().forEach( stmt -> nodes.addAll( transpiler.transform( stmt, TransformerContext.NONE ) ) );
+			c.getBody().forEach( stmt -> nodes.addAll( transpiler.transform( stmt, TransformerContext.NONE, ReturnValueContext.EMPTY_UNLESS_JUMPING ) ) );
 
 			nodes.add( new LdcInsnNode( 1 ) );
+			nodes.addAll( switchVarStore.nodes() );
+			AsmHelper.addDebugLabel( nodes, "BoxSwitch - goto endOfAll" );
 			nodes.add( new JumpInsnNode( Opcodes.GOTO, endOfAll ) );
+			AsmHelper.addDebugLabel( nodes, "BoxSwitch - endOfCase" );
 			nodes.add( endOfCase );
 			nodes.add( new LdcInsnNode( 0 ) );
+			nodes.addAll( switchVarStore.nodes() );
+
+			AsmHelper.addDebugLabel( nodes, "BoxSwitch - endOfAll" );
 			nodes.add( endOfAll );
 			AsmHelper.addDebugLabel( nodes, "BoxSwitch - case end" );
 		} );
@@ -125,23 +147,27 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 				hasDefault = true;
 
 				// pop the initial 0 constant in case we didn't match any cases
-				nodes.add( new InsnNode( Opcodes.POP ) );
+				// nodes.add( new InsnNode( Opcodes.POP ) );
 				// pop the condition off the stack
 				// nodes.add( new InsnNode( Opcodes.POP ) );
 
-				c.getBody().forEach( stmt -> nodes.addAll( transpiler.transform( stmt, TransformerContext.NONE ) ) );
+				c.getBody().forEach( stmt -> nodes.addAll( transpiler.transform( stmt, TransformerContext.NONE, ReturnValueContext.EMPTY_UNLESS_JUMPING ) ) );
 
+				AsmHelper.addDebugLabel( nodes, "BoxSwitch - goto Endlabel" );
 				nodes.add( new JumpInsnNode( Opcodes.GOTO, endLabel ) );
 			}
 		}
-
+		nodes.add( new JumpInsnNode( Opcodes.GOTO, endLabel ) );
 		// pop the initial 0 constant in case we didn't match any cases
+		AsmHelper.addDebugLabel( nodes, "BoxSwitch - breakTarget" );
+		nodes.add( breakTarget );
 		nodes.add( new InsnNode( Opcodes.POP ) );
+
+		AsmHelper.addDebugLabel( nodes, "BoxSwitch - endLabel" );
 		nodes.add( endLabel );
 
 		// pop the condition off the stack
-		nodes.add( new InsnNode( Opcodes.POP ) );
-		// nodes.add( breakTarget );
+		// nodes.add( new InsnNode( Opcodes.POP ) );
 
 		if ( !returnContext.empty ) {
 			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
@@ -149,6 +175,6 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 
 		AsmHelper.addDebugLabel( nodes, "BoxSwitch - done" );
 
-		return nodes;
+		return AsmHelper.addLineNumberLabels( nodes, node );
 	}
 }

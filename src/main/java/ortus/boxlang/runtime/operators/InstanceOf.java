@@ -60,7 +60,7 @@ public class InstanceOf implements IOperator {
 		// First perform exact boxClass check
 		if ( left instanceof IClassRunnable boxClass2 ) {
 			boxClass = boxClass2;
-			String boxClassName = boxClass.getName().getName();
+			String boxClassName = boxClass.bxGetName().getName();
 			if ( looseClassCheck( boxClassName, type ) ) {
 				return true;
 			}
@@ -76,7 +76,7 @@ public class InstanceOf implements IOperator {
 			IClassRunnable _super = boxClass;
 			while ( ( _super = _super.getSuper() ) != null ) {
 				// For each super class, check if it's the same as the type
-				String boxClassName = _super.getName().getName();
+				String boxClassName = _super.bxGetName().getName();
 				if ( looseClassCheck( boxClassName, type ) ) {
 					return true;
 				}
@@ -102,10 +102,10 @@ public class InstanceOf implements IOperator {
 
 	/**
 	 * I check a list of interfaces for a specific type
-	 * 
+	 *
 	 * @param interfaces The interfaces to check
 	 * @param type       The type to check against
-	 * 
+	 *
 	 * @return true if the interface is assignable from the type
 	 */
 	private static Boolean checkInterfaces( List<BoxInterface> interfaces, String type ) {
@@ -119,10 +119,10 @@ public class InstanceOf implements IOperator {
 
 	/**
 	 * I check a single interface for a specific type and recurse into its super interfaces
-	 * 
+	 *
 	 * @param type         The type to check against
 	 * @param boxInterface The interface to check
-	 * 
+	 *
 	 * @return true if the interface is assignable from the type
 	 */
 	private static Boolean checkInterface( String type, BoxInterface boxInterface ) {
@@ -142,10 +142,10 @@ public class InstanceOf implements IOperator {
 
 	/**
 	 * Check Java inheritance
-	 * 
+	 *
 	 * @param targetTypeName The string type to check against
 	 * @param leftClass      The class to check
-	 * 
+	 *
 	 * @return true if the class is assignable from the type
 	 */
 	private static boolean isAssignableFromIgnoreCase( String targetTypeName, Class<?> leftClass ) {
@@ -164,10 +164,10 @@ public class InstanceOf implements IOperator {
 
 	/**
 	 * Check Java interfaces including super interfaces
-	 * 
+	 *
 	 * @param interfaces     The interfaces to check
 	 * @param targetTypeName The type to check against
-	 * 
+	 *
 	 * @return true if the interface is assignable from the type
 	 */
 	private static boolean checkJavaInterfaces( Class<?>[] interfaces, String targetTypeName ) {
@@ -185,10 +185,10 @@ public class InstanceOf implements IOperator {
 
 	/**
 	 * Will match java.lang.String or just String, or even java.lang.string or string.
-	 * 
+	 *
 	 * @param actual   The actual class name
 	 * @param expected The expected class name
-	 * 
+	 *
 	 * @return true if the class names match
 	 */
 	private static boolean looseClassCheck( String actual, String expected ) {

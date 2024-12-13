@@ -22,7 +22,6 @@ import java.util.Map;
 
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
-import com.github.javaparser.ast.expr.StringLiteralExpr;
 
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
@@ -47,7 +46,7 @@ public class BoxStaticMethodInvocationTransformer extends AbstractTransformer {
 		Expression					expr;
 
 		if ( baseObject instanceof BoxFQN fqn ) {
-			expr = new StringLiteralExpr( fqn.getValue() );
+			expr = BoxStringLiteralTransformer.transform( fqn.getValue() );
 		} else if ( baseObject instanceof BoxIdentifier id ) {
 			// TODO: What if we have foo::bar() but foo is the name of a variable AND ALSO the name of an accessible Box Class?
 			// Do we treat "foo" as a FQN class name or a variable in that case??

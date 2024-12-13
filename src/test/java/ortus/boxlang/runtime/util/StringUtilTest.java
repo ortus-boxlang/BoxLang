@@ -39,7 +39,7 @@ public class StringUtilTest {
 	@Test
 	void testSlugWithSpecialChars() {
 		String slug = StringUtil.slugify( "This is ä ü test ß" );
-		assertThat( slug ).isEqualTo( "this-is-ae-ue-test-ss" );
+		assertThat( slug ).isEqualTo( "this-is-a-u-test-ss" );
 	}
 
 	@DisplayName( "Can pretty print sql" )

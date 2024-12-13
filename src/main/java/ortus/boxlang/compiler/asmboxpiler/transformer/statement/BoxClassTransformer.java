@@ -57,8 +57,8 @@ import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
 import ortus.boxlang.compiler.ast.statement.BoxReturnType;
 import ortus.boxlang.compiler.ast.statement.BoxType;
 import ortus.boxlang.compiler.parser.BoxSourceType;
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.javaproxy.InterfaceProxyService;
 import ortus.boxlang.runtime.loader.ImportDefinition;
@@ -125,7 +125,10 @@ public class BoxClassTransformer {
 			    .filter( it -> it.toLowerCase().startsWith( "java:" ) )
 			    .map( it -> it.substring( 5 ) )
 			    .collect( BLCollector.toArray() );
-			var		interfaceProxyDefinition	= InterfaceProxyService.generateDefinition( new ScriptingRequestBoxContext(), implementsArray );
+
+			// var interfaceProxyDefinition = InterfaceProxyService.generateDefinition( new ScriptingRequestBoxContext(), implementsArray );
+			var		interfaceProxyDefinition	= InterfaceProxyService.generateDefinition( BoxRuntime.getInstance().getRuntimeContext(), implementsArray );
+
 			// TODO: Remove methods that already have a @overrideJava UDF definition to avoid duplicates
 			interfaces.addAll( interfaceProxyDefinition.interfaces().stream().map( iface -> Type.getType( "L" + iface.replace( '.', '/' ) + ";" ) ).toList() );
 			interfaceMethods = interfaceProxyDefinition.methods().stream()
@@ -194,9 +197,12 @@ public class BoxClassTransformer {
 		}
 
 		ClassNode classNode = new ClassNode();
-		classNode.visitSource( filePath, null );
+		transpiler.setOwningClass( classNode );
+		transpiler.setProperty( "enclosingClassInternalName", type.getInternalName() );
 
-		AsmHelper.init( classNode, false, type, superclass, methodVisitor -> {
+		AsmHelper.init( classNode, false, type, superclass, cv -> {
+			classNode.visitSource( filePath, null );
+		}, methodVisitor -> {
 			methodVisitor.visitVarInsn( Opcodes.ALOAD, 0 );
 			methodVisitor.visitTypeInsn( Opcodes.NEW, Type.getInternalName( ClassVariablesScope.class ) );
 			methodVisitor.visitInsn( Opcodes.DUP );
@@ -367,75 +373,65 @@ public class BoxClassTransformer {
 		defineLookupPrivateMethod( transpiler, classNode, type );
 		defineLookupPrivateField( transpiler, classNode, type );
 
-		AsmHelper.addFieldGetter( classNode,
+		AsmHelper.addPrivateFieldGetter( classNode,
 		    type,
 		    "variablesScope",
 		    "getVariablesScope",
 		    Type.getType( VariablesScope.class ),
 		    null );
-		AsmHelper.addFieldGetter( classNode,
+		AsmHelper.addPrivateFieldGetter( classNode,
 		    type,
 		    "thisScope",
 		    "getThisScope",
 		    Type.getType( ThisScope.class ),
 		    null );
-		AsmHelper.addFieldGetter( classNode,
+		AsmHelper.addPrivateFieldGetter( classNode,
 		    type,
 		    "name",
-		    "getName",
+		    "bxGetName",
 		    Type.getType( Key.class ),
 		    null );
-		AsmHelper.addFieldGetter( classNode,
+		AsmHelper.addPrivateFieldGetter( classNode,
 		    type,
 		    "interfaces",
 		    "getInterfaces",
 		    Type.getType( List.class ),
 		    null );
-		AsmHelper.addFieldGetterAndSetter( classNode,
+		AsmHelper.addPrivateFieldGetterAndSetter( classNode,
 		    type,
 		    "_super",
 		    "getSuper",
 		    "_setSuper",
 		    Type.getType( IClassRunnable.class ),
-		    null,
-		    methodVisitor -> {
-		    } );
-		AsmHelper.addFieldGetterAndSetter( classNode,
+		    null );
+		AsmHelper.addPrivateFieldGetterAndSetter( classNode,
 		    type,
 		    "child",
 		    "getChild",
 		    "setChild",
 		    Type.getType( IClassRunnable.class ),
-		    null,
-		    methodVisitor -> {
-		    } );
-		AsmHelper.addFieldGetterAndSetter( classNode,
+		    null );
+		AsmHelper.addPrivateFieldGetterAndSetter( classNode,
 		    type,
 		    "canOutput",
 		    "getCanOutput",
 		    "setCanOutput",
 		    Type.getType( Boolean.class ),
-		    null,
-		    methodVisitor -> {
-		    } );
-		AsmHelper.addFieldGetterAndSetter( classNode,
+		    null );
+		AsmHelper.addPrivateFieldGetterAndSetter( classNode,
 		    type,
 		    "$bx",
 		    "_getbx",
 		    "_setbx",
 		    Type.getType( BoxMeta.class ),
-		    null,
-		    methodVisitor -> {
-		    } );
-		AsmHelper.addFieldGetterAndSetter( classNode,
+		    null );
+		AsmHelper.addPrivateFieldGetterAndSetter( classNode,
 		    type,
 		    "canInvokeImplicitAccessor",
 		    "getCanInvokeImplicitAccessor",
 		    "setCanInvokeImplicitAccessor",
 		    Type.getType( Boolean.class ),
-		    null,
-		    methodVisitor -> {
-		    } );
+		    null );
 
 		AsmHelper.boxClassSupport( classNode, "pseudoConstructor", Type.VOID_TYPE, Type.getType( IBoxContext.class ) );
 		AsmHelper.boxClassSupport( classNode, "canOutput", Type.getType( Boolean.class ) );
@@ -478,20 +474,13 @@ public class BoxClassTransformer {
 		AsmHelper.methodWithContextAndClassLocator( classNode, "_pseudoConstructor", Type.getType( IBoxContext.class ), Type.VOID_TYPE, false, transpiler,
 		    false,
 		    () -> {
-			    List<AbstractInsnNode> psuedoBody = boxClass.getBody()
+			    List<AbstractInsnNode> psuedoBody = new ArrayList<>();
+			    List<AbstractInsnNode> body		= boxClass.getBody()
 			        .stream()
-			        .sorted( ( a, b ) -> {
-				        if ( a instanceof BoxFunctionDeclaration && ! ( b instanceof BoxFunctionDeclaration ) ) {
-					        return -1;
-				        } else if ( b instanceof BoxFunctionDeclaration && ! ( a instanceof BoxFunctionDeclaration ) ) {
-					        return 1;
-				        }
-
-				        return 0;
-
-			        } )
 			        .flatMap( statement -> transpiler.transform( statement, TransformerContext.NONE, ReturnValueContext.EMPTY ).stream() )
 			        .collect( Collectors.toList() );
+			    psuedoBody.addAll( transpiler.getUDFRegistrations() );
+			    psuedoBody.addAll( body );
 
 			    psuedoBody.add( new VarInsnNode( Opcodes.ALOAD, 0 ) );
 			    psuedoBody.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
@@ -565,7 +554,7 @@ public class BoxClassTransformer {
 			for ( BoxExpression expression : transpiler.getKeys().values() ) {
 				methodVisitor.visitInsn( Opcodes.DUP );
 				methodVisitor.visitLdcInsn( index++ );
-				transpiler.transform( expression, TransformerContext.NONE, ReturnValueContext.EMPTY )
+				transpiler.transform( expression, TransformerContext.NONE, ReturnValueContext.VALUE )
 				    .forEach( methodInsnNode -> methodInsnNode.accept( methodVisitor ) );
 				methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
 				    Type.getInternalName( Key.class ),

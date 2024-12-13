@@ -84,7 +84,7 @@ public class DateTimeFormat extends BIF {
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		ZoneId		timezone		= LocalizationUtil.parseZoneId( arguments.getAsString( Key.timezone ), context );
-		DateTime	ref				= DateTimeCaster.cast( arguments.get( Key.date ), true, timezone );
+		DateTime	ref				= DateTimeCaster.cast( arguments.get( Key.date ), true, timezone, context );
 		Key			bifMethodKey	= arguments.getAsKey( BIF.__functionName );
 		String		format			= arguments.getAsString( Key.mask );
 

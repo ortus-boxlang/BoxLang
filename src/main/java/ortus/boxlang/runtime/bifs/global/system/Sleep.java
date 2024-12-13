@@ -53,7 +53,8 @@ public class Sleep extends BIF {
 			Thread.sleep( duration );
 		} catch ( InterruptedException e ) {
 			throw new BoxRuntimeException(
-			    "An unexpected error occurred while attempting to sleep the thread",
+			    "The sleep thread was interrupted",
+			    "InterruptedException",
 			    e
 			);
 		}

@@ -33,7 +33,7 @@ public class CatchBoxContextTest {
 	void testDefaultConstructor() {
 		CatchBoxContext context = new CatchBoxContext( new ScriptingRequestBoxContext(), Key.of( "e" ), new Exception() );
 		assertThat( context.getParent() ).isNotNull();
-		assertThat( context.scopeFindNearby( Key.of( "e" ), null ).value() instanceof Exception ).isTrue();
+		assertThat( context.scopeFindNearby( Key.of( "e" ), null, false ).value() instanceof Exception ).isTrue();
 	}
 
 	@Test

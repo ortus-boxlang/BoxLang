@@ -72,7 +72,8 @@ public class CreateODBCDateTime extends BIF {
 		DateTime dateRef = DateTimeCaster.cast(
 		    arguments.get( Key.date ),
 		    true,
-		    LocalizationUtil.parseZoneId( arguments.getAsString( Key.timezone ), context )
+		    LocalizationUtil.parseZoneId( arguments.getAsString( Key.timezone ), context ),
+		    context
 		);
 		return new DateTime( dateRef.getWrapped() ).setFormat( formatters.getAsString( arguments.getAsKey( BIF.__functionName ) ) );
 	}

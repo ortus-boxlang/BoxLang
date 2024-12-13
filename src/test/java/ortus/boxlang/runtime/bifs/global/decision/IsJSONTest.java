@@ -101,6 +101,16 @@ public class IsJSONTest {
 		assertThat( ( Boolean ) variables.get( Key.of( "aStructWithSingleQuotedKeys" ) ) ).isFalse();
 	}
 
+	@DisplayName( "It will return true when reading a JSON file with a BOM and escape characters" )
+	@Test
+	public void testEscapeCharacters() {
+		instance.executeSource(
+		    """
+		    assert isJSON( fileRead( "src/test/resources/test-templates/json_withBOM.json" ) ) == true;
+		       """,
+		    context );
+	}
+
 	// For future reference when building deserializeJSON():
 	// // both engines succeed
 	// writeDump( deserializeJSON( '{}' ) );

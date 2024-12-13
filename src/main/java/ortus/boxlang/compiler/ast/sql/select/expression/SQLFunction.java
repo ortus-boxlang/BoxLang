@@ -15,20 +15,30 @@
 package ortus.boxlang.compiler.ast.sql.select.expression;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
+import ortus.boxlang.runtime.jdbc.qoq.QoQExecution;
+import ortus.boxlang.runtime.jdbc.qoq.QoQFunctionService;
+import ortus.boxlang.runtime.jdbc.qoq.QoQFunctionService.QoQFunction;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.QueryColumnType;
 
 /**
  * Abstract Node class representing SQL function call
  */
 public class SQLFunction extends SQLExpression {
 
-	private String				name;
+	private final static Set<QueryColumnType>	numericTypes	= Set.of( QueryColumnType.BIGINT, QueryColumnType.DECIMAL, QueryColumnType.DOUBLE,
+	    QueryColumnType.INTEGER, QueryColumnType.BIT );
 
-	private List<SQLExpression>	arguments;
+	private Key									name;
+
+	private List<SQLExpression>					arguments;
 
 	/**
 	 * Constructor
@@ -36,7 +46,7 @@ public class SQLFunction extends SQLExpression {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code of the statement
 	 */
-	protected SQLFunction( String name, List<SQLExpression> arguments, Position position, String sourceText ) {
+	public SQLFunction( Key name, List<SQLExpression> arguments, Position position, String sourceText ) {
 		super( position, sourceText );
 		setName( name );
 		setArguments( arguments );
@@ -47,7 +57,7 @@ public class SQLFunction extends SQLExpression {
 	 *
 	 * @return the name of the function
 	 */
-	public String getName() {
+	public Key getName() {
 		return name;
 	}
 
@@ -56,7 +66,7 @@ public class SQLFunction extends SQLExpression {
 	 *
 	 * @param name the name of the function
 	 */
-	public void setName( String name ) {
+	public void setName( Key name ) {
 		this.name = name;
 	}
 
@@ -81,11 +91,55 @@ public class SQLFunction extends SQLExpression {
 	}
 
 	/**
-	 * Check if the expression evaluates to a boolean value
+	 * Runtime check if the expression evaluates to a boolean value and works for columns as well
+	 * 
+	 * @param QoQExec Query execution state
+	 * 
+	 * @return true if the expression evaluates to a boolean value
 	 */
-	public boolean isBoolean() {
-		// TODO implement based on name of function
-		return false;
+	public boolean isBoolean( QoQExecution QoQExec ) {
+		return getType( QoQExec ) == QueryColumnType.BIT;
+	}
+
+	/**
+	 * Runtime check if the expression evaluates to a numeric value and works for columns as well
+	 * 
+	 * @param QoQExec Query execution state
+	 * 
+	 * @return true if the expression evaluates to a numeric value
+	 */
+	public boolean isNumeric( QoQExecution QoQExec ) {
+		return numericTypes.contains( getType( QoQExec ) );
+	}
+
+	/**
+	 * Is function aggregate
+	 */
+	public boolean isAggregate() {
+		return QoQFunctionService.getFunction( name ).isAggregate();
+	}
+
+	/**
+	 * What type does this expression evaluate to
+	 */
+	public QueryColumnType getType( QoQExecution QoQExec ) {
+		return QoQFunctionService.getFunction( name ).returnType();
+	}
+
+	/**
+	 * Evaluate the expression
+	 */
+	public Object evaluate( QoQExecution QoQExec, int[] intersection ) {
+		QoQFunction function = QoQFunctionService.getFunction( name );
+		if ( function.requiredParams() > arguments.size() ) {
+			throw new RuntimeException(
+			    "QoQ Function [" + name + "] expects at least" + function.requiredParams() + " arguments, but got " + arguments.size() );
+		}
+		if ( function.isAggregate() ) {
+			return function.invokeAggregate( arguments, QoQExec );
+		} else {
+			return function.invoke( arguments.stream().map( a -> a.evaluate( QoQExec, intersection ) ).toList() );
+		}
 	}
 
 	@Override
@@ -98,6 +152,15 @@ public class SQLFunction extends SQLExpression {
 	public BoxNode accept( ReplacingBoxVisitor v ) {
 		// TODO Auto-generated method stub
 		throw new UnsupportedOperationException( "Unimplemented method 'accept'" );
+	}
+
+	@Override
+	public Map<String, Object> toMap() {
+		Map<String, Object> map = super.toMap();
+
+		map.put( "name", getName().getName() );
+		map.put( "arguments", getArguments().stream().map( BoxNode::toMap ).toList() );
+		return map;
 	}
 
 }

@@ -60,6 +60,8 @@ import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 public class AsmHelper {
 
+	private static final int METHOD_SIZE_LIMIT = 25000;
+
 	public record LineNumberIns( List<AbstractInsnNode> start, List<AbstractInsnNode> end ) {
 
 	}
@@ -75,17 +77,16 @@ public class AsmHelper {
 	}
 
 	public static List<AbstractInsnNode> addLineNumberLabels( List<AbstractInsnNode> nodes, BoxNode node ) {
-		LabelNode	start	= new LabelNode();
-		LabelNode	end		= new LabelNode();
+		LabelNode start = new LabelNode();
 
 		if ( node.getPosition() == null ) {
 			return nodes;
 		}
 
+		int startLine = node.getPosition().getStart().getLine();
+
 		nodes.add( 0, start );
-		nodes.add( 1, new LineNumberNode( node.getPosition().getStart().getLine(), start ) );
-		nodes.add( end );
-		nodes.add( new LineNumberNode( node.getPosition().getStart().getLine(), end ) );
+		nodes.add( 1, new LineNumberNode( startLine, start ) );
 
 		return nodes;
 	}
@@ -241,6 +242,7 @@ public class AsmHelper {
 		    + "$Lambda_" + transpiler.incrementAndGetLambdaCounter() + ";" );
 
 		ClassNode	classNode	= new ClassNode();
+		classNode.visitSource( transpiler.getProperty( "filePath" ), null );
 
 		classNode.visit(
 		    Opcodes.V17,
@@ -345,7 +347,7 @@ public class AsmHelper {
 		nodes.add(
 		    new MethodInsnNode( Opcodes.INVOKESTATIC,
 		        Type.getInternalName( Struct.class ),
-		        "of",
+		        "linkedOf",
 		        Type.getMethodDescriptor( Type.getType( IStruct.class ), Type.getType( Object[].class ) ),
 		        false
 		    )
@@ -424,7 +426,7 @@ public class AsmHelper {
 		nodes.add(
 		    new MethodInsnNode( Opcodes.INVOKESTATIC,
 		        Type.getInternalName( Struct.class ),
-		        "of",
+		        "linkedOf",
 		        Type.getMethodDescriptor( Type.getType( IStruct.class ), Type.getType( Object[].class ) ),
 		        false
 		    )
@@ -489,7 +491,7 @@ public class AsmHelper {
 		nodes.add(
 		    new MethodInsnNode( Opcodes.INVOKESTATIC,
 		        Type.getInternalName( Struct.class ),
-		        "of",
+		        "linkedOf",
 		        Type.getMethodDescriptor( Type.getType( IStruct.class ), Type.getType( Object[].class ) ),
 		        false
 		    )
@@ -509,6 +511,12 @@ public class AsmHelper {
 
 	public static void init( ClassVisitor classVisitor, boolean singleton, Type type, Type superClass, Consumer<MethodVisitor> onConstruction,
 	    Type... interfaces ) {
+		init( classVisitor, singleton, type, superClass, null, onConstruction, interfaces );
+	}
+
+	public static void init( ClassVisitor classVisitor, boolean singleton, Type type, Type superClass, Consumer<ClassVisitor> postVisit,
+	    Consumer<MethodVisitor> onConstruction,
+	    Type... interfaces ) {
 		classVisitor.visit(
 		    Opcodes.V17,
 		    Opcodes.ACC_PUBLIC,
@@ -516,6 +524,10 @@ public class AsmHelper {
 		    null,
 		    superClass.getInternalName(),
 		    interfaces.length == 0 ? null : Arrays.stream( interfaces ).map( Type::getInternalName ).toArray( String[]::new ) );
+
+		if ( postVisit != null ) {
+			postVisit.accept( classVisitor );
+		}
 
 		if ( singleton ) {
 			addGetInstance( classVisitor, type );
@@ -651,7 +663,35 @@ public class AsmHelper {
 		methodVisitor.visitEnd();
 	}
 
-	public static void addFieldGetter( ClassVisitor classVisitor, Type type, String field, String method, Type property, Object value ) {
+	public static void addPublicStaticFieldAndPublicStaticGetter(
+	    ClassVisitor classVisitor,
+	    Type owningType,
+	    String field,
+	    String method,
+	    Type propertyType,
+	    Object defaultValue ) {
+		FieldVisitor fieldVisitor = classVisitor.visitField( Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
+		    field,
+		    propertyType.getDescriptor(),
+		    null,
+		    defaultValue );
+		fieldVisitor.visitEnd();
+		MethodVisitor methodVisitor = classVisitor.visitMethod( Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
+		    method,
+		    Type.getMethodDescriptor( propertyType ),
+		    null,
+		    null );
+		methodVisitor.visitCode();
+		methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
+		    owningType.getInternalName(),
+		    field,
+		    propertyType.getDescriptor() );
+		methodVisitor.visitInsn( propertyType.getOpcode( Opcodes.IRETURN ) );
+		methodVisitor.visitMaxs( 0, 0 );
+		methodVisitor.visitEnd();
+	}
+
+	public static void addPrivateFieldGetter( ClassVisitor classVisitor, Type type, String field, String method, Type property, Object value ) {
 		FieldVisitor fieldVisitor = classVisitor.visitField( Opcodes.ACC_PRIVATE,
 		    field,
 		    property.getDescriptor(),
@@ -666,6 +706,49 @@ public class AsmHelper {
 		methodVisitor.visitCode();
 		methodVisitor.visitVarInsn( Opcodes.ALOAD, 0 );
 		methodVisitor.visitFieldInsn( Opcodes.GETFIELD,
+		    type.getInternalName(),
+		    field,
+		    property.getDescriptor() );
+		methodVisitor.visitInsn( property.getOpcode( Opcodes.IRETURN ) );
+		methodVisitor.visitMaxs( 0, 0 );
+		methodVisitor.visitEnd();
+	}
+
+	public static void addPrivateFieldGetterAndSetter( ClassVisitor classVisitor, Type type, String field, String getter, String setter, Type property,
+	    Object value ) {
+		addPrivateFieldGetter( classVisitor, type, field, getter, property, value );
+		MethodVisitor methodVisitor = classVisitor.visitMethod( Opcodes.ACC_PUBLIC,
+		    setter,
+		    Type.getMethodDescriptor( Type.VOID_TYPE, property ),
+		    null,
+		    null );
+		methodVisitor.visitCode();
+		methodVisitor.visitVarInsn( Opcodes.ALOAD, 0 );
+		methodVisitor.visitVarInsn( Opcodes.ALOAD, 1 );
+		methodVisitor.visitFieldInsn( Opcodes.PUTFIELD,
+		    type.getInternalName(),
+		    field,
+		    property.getDescriptor() );
+		methodVisitor.visitInsn( Opcodes.RETURN );
+		methodVisitor.visitMaxs( 0, 0 );
+		methodVisitor.visitEnd();
+	}
+
+	public static void addFieldGetter( ClassVisitor classVisitor, Type type, String field, String method, Type property, Object value ) {
+		FieldVisitor fieldVisitor = classVisitor.visitField( Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC,
+		    field,
+		    property.getDescriptor(),
+		    null,
+		    value );
+		fieldVisitor.visitEnd();
+		MethodVisitor methodVisitor = classVisitor.visitMethod( Opcodes.ACC_PUBLIC,
+		    method,
+		    Type.getMethodDescriptor( property ),
+		    null,
+		    null );
+		methodVisitor.visitCode();
+		methodVisitor.visitVarInsn( Opcodes.ALOAD, 0 );
+		methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
 		    type.getInternalName(),
 		    field,
 		    property.getDescriptor() );
@@ -764,8 +847,8 @@ public class AsmHelper {
 			return new ArrayList<>();
 		}
 
-		ReturnValueContext		bodyContext		= finalReturnValueContext == ReturnValueContext.VALUE_OR_NULL ? ReturnValueContext.EMPTY_UNLESS_JUMPING
-		    : ReturnValueContext.EMPTY;
+		ReturnValueContext		bodyContext		= finalReturnValueContext == ReturnValueContext.EMPTY ? ReturnValueContext.EMPTY
+		    : ReturnValueContext.EMPTY_UNLESS_JUMPING;
 
 		List<AbstractInsnNode>	nodes			= statements.stream().limit( statements.size() - 1 )
 		    .flatMap( child -> transpiler.transform( child, context, bodyContext ).stream() )
@@ -795,7 +878,16 @@ public class AsmHelper {
 		    null,
 		    null );
 		methodVisitor.visitCode();
-		// start tacking the context
+		Label	startContextLabel	= new Label();
+		Label	endContextLabel		= new Label();
+		methodVisitor.visitLabel( startContextLabel );
+		methodVisitor.visitLocalVariable( "context", Type.getDescriptor( IBoxContext.class ), null, startContextLabel, endContextLabel, isStatic ? 0 : 1 );
+
+		if ( !isStatic ) {
+			methodVisitor.visitLocalVariable( "this", Type.getObjectType( classNode.name ).getDescriptor(), null, startContextLabel, endContextLabel, 0 );
+		}
+
+		// start tracking the context
 		methodVisitor.visitVarInsn( Opcodes.ALOAD, isStatic ? 0 : 1 );
 		tracker.trackNewContext().forEach( ( node ) -> node.accept( methodVisitor ) );
 		methodVisitor.visitMethodInsn(
@@ -806,13 +898,7 @@ public class AsmHelper {
 		    false );
 		tracker.storeNewVariable( Opcodes.ASTORE ).nodes().forEach( ( node ) -> node.accept( methodVisitor ) );
 
-		// methodVisitor.visitVarInsn( Opcodes.ASTORE, isStatic ? 1 : 2 );
-		List<AbstractInsnNode> nodes = supplier.get();
-		if ( !nodes.isEmpty() && ( nodes.get( nodes.size() - 1 ).getOpcode() == Opcodes.POP || nodes.get( nodes.size() - 1 ).getOpcode() == Opcodes.POP2 ) ) {
-			nodes.subList( 0, nodes.size() - 1 ).forEach( node -> node.accept( methodVisitor ) );
-		} else {
-			nodes.forEach( node -> node.accept( methodVisitor ) );
-		}
+		supplier.get().forEach( node -> node.accept( methodVisitor ) );
 
 		if ( implicityReturnNull && !returnType.equals( Type.VOID_TYPE ) ) {
 			// push a null onto the stack so that we can return it if there isn't an explicity return
@@ -826,6 +912,7 @@ public class AsmHelper {
 		// TODO should only clear the used nodes
 		tracker.getTryCatchStack().stream().forEach( ( tryNode ) -> tryNode.accept( methodVisitor ) );
 		tracker.clearTryCatchStack();
+		methodVisitor.visitLabel( endContextLabel );
 		methodVisitor.visitEnd();
 		transpiler.popMethodContextTracker();
 	}
@@ -948,8 +1035,6 @@ public class AsmHelper {
 			node.visitLdcInsn( index );
 			node.visitVarInsn( descriptor.getArgumentTypes()[ index ].getOpcode( Opcodes.ILOAD ), offset );
 			// TODO: boxing of primitives
-			node.visitLdcInsn( "DEBUG - ASMHelper 451" );
-			node.visitInsn( Opcodes.POP );
 			node.visitInsn( Opcodes.AASTORE );
 			offset += descriptor.getArgumentTypes()[ index ].getSize();
 		}
@@ -1034,6 +1119,8 @@ public class AsmHelper {
 	 */
 	public static List<AbstractInsnNode> loadClass( Transpiler transpiler, BoxIdentifier identifier ) {
 		List<AbstractInsnNode> nodes = new ArrayList<>();
+		// the variable at slot 2 needs to be an instance of ClassLocator
+		// todo convert this to use some specific method like tracker.loadClassLocator()
 		nodes.add( new VarInsnNode( Opcodes.ALOAD, 2 ) );
 		transpiler.getCurrentMethodContextTracker().ifPresent( ( t ) -> nodes.addAll( t.loadCurrentContext() ) );
 		nodes.add( new LdcInsnNode( identifier.getName() ) );
@@ -1050,5 +1137,102 @@ public class AsmHelper {
 		        Type.getType( List.class ) ),
 		    false ) );
 		return nodes;
+	}
+
+	public static List<AbstractInsnNode> methodLengthGuard(
+	    Type mainType,
+	    List<AbstractInsnNode> nodes,
+	    ClassNode classNode,
+	    String name,
+	    Type parameterType,
+	    Type returnType,
+	    Transpiler transpiler ) {
+
+		if ( nodes.size() < METHOD_SIZE_LIMIT ) {
+			return nodes;
+		}
+
+		List<List<AbstractInsnNode>>	subNodes	= splitifyInstructions( nodes );
+
+		List<AbstractInsnNode>			toReturn	= subNodes.stream().map( nodeList -> {
+														String subName = "_sub_" + name + nodeList.hashCode();
+														methodWithContextAndClassLocator(
+														    classNode,
+														    subName,
+														    parameterType,
+														    returnType,
+														    false,
+														    transpiler,
+														    true,
+														    () -> nodeList
+														);
+
+														List<AbstractInsnNode> subMethodCallNodes = new ArrayList<AbstractInsnNode>();
+
+														subMethodCallNodes.add(
+														    new VarInsnNode( Opcodes.ALOAD, 0 )
+														);
+
+														subMethodCallNodes.add(
+														    new VarInsnNode( Opcodes.ALOAD, 1 )
+														);
+
+														subMethodCallNodes.add(
+														    new MethodInsnNode(
+														        Opcodes.INVOKEVIRTUAL,
+														        mainType.getInternalName(),
+														        subName,
+														        Type.getMethodDescriptor( returnType, parameterType ),
+														        false
+														    )
+														);
+
+														subMethodCallNodes.add( new InsnNode( Opcodes.POP ) );
+
+														return subMethodCallNodes;
+													} )
+		    .flatMap( s -> s.stream() )
+		    .collect( Collectors.toList() );
+
+		toReturn.removeLast();
+
+		return toReturn;
+	}
+
+	private static List<List<AbstractInsnNode>> splitifyInstructions( List<AbstractInsnNode> nodes ) {
+		List<List<AbstractInsnNode>>	subNodes	= new ArrayList<>();
+		int								min			= 0;
+
+		while ( min < nodes.size() ) {
+
+			for ( var i = min + Math.min( METHOD_SIZE_LIMIT, nodes.size() - min ); i >= min; i-- ) {
+				if ( ! ( nodes.get( i ) instanceof DividerNode ) && i != min ) {
+					continue;
+				}
+
+				if ( min == i ) {
+					i = nodes.size();
+					for ( var j = min + Math.min( METHOD_SIZE_LIMIT, nodes.size() - min ); j < nodes.size(); j++ ) {
+						if ( ! ( nodes.get( j ) instanceof DividerNode ) ) {
+							continue;
+						}
+
+						i = j;
+						break;
+					}
+				}
+
+				subNodes.add( nodes.subList( min, i ) );
+				min = i;
+				break;
+			}
+
+			if ( nodes.size() - min <= METHOD_SIZE_LIMIT ) {
+				subNodes.add( nodes.subList( min, nodes.size() ) );
+				break;
+			}
+		}
+
+		return subNodes;
 	}
 }

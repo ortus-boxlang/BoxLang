@@ -23,7 +23,7 @@ import ortus.boxlang.runtime.jdbc.ConnectionManager;
  * This interface is used mostly on the RequestBoxContext and ThreadBoxContext classes to provide access to the ConnectionManager
  * and other JDBC-related functionality.
  */
-public interface IJDBCCapableContext {
+public interface IJDBCCapableContext extends IBoxContext {
 
 	/**
 	 * Get the ConnectionManager (connection and transaction tracker) for this context.

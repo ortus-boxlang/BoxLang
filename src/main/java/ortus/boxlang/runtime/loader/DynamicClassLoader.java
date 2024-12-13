@@ -36,6 +36,7 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.global.type.NullValue;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
@@ -78,6 +79,15 @@ public class DynamicClassLoader extends URLClassLoader {
 	 * Logger. Lazy init to avoid deadlocks on runtime startup
 	 */
 	private static Logger								logger			= null;
+
+	/**
+	 * Runtime special prefixes Set that MUST come from the parent class loader
+	 * THIS IS SPECIAL CASE FOR LOGGING FRAMEWORKS WHERE THIRD PARTY JARS MAY BE LOADED AND DELEGATED TO THE PARENT
+	 */
+	private static final Set<String>					PARENT_CLASSES	= Set.of(
+	    "ch.qos.logback",
+	    "org.slf4j"
+	);
 
 	/**
 	 * Construct the class loader
@@ -168,7 +178,8 @@ public class DynamicClassLoader extends URLClassLoader {
 			safe = false;
 		}
 
-		logger.trace( "[{}] Discovering class: [{}]", this.nameAsKey.getName(), className );
+		logger.trace( "[{}] Discovering class: [{}] from thread [{}]", this.nameAsKey.getName(), className, Thread.currentThread().getName() );
+		logger.trace( "The context class loader is [{}]", Thread.currentThread().getContextClassLoader().getName() );
 
 		// 1. Check the loaded cache first and return if found
 		Class<?> cachedClass = this.loadedClasses.get( className );
@@ -186,25 +197,33 @@ public class DynamicClassLoader extends URLClassLoader {
 			throw new ClassNotFoundException( String.format( "Class [%s] not found in class loader [%s]", className, this.nameAsKey.getName() ) );
 		}
 
+		// 2.5. Special case for Logback/SL4j so we are guaranteed to use the same interfaces as the BoxLang Runtime.
+		// Any other special cases can be added here to the PARENT_CLASSES set
+		if ( this.parent != null && PARENT_CLASSES.stream().anyMatch( className::startsWith ) ) {
+			logger.trace( "[{}].[{}] : Class is a special parent class, delegating to parent", this.nameAsKey.getName(), className );
+			return getDynamicParent().loadClass( className );
+		}
+
 		// 3. Attempt to load from JARs/classes in the seeded URLs
 		try {
 			cachedClass = super.findClass( className );
-			logger.trace( "[{}].[{}] : Class found locally", this.nameAsKey.getName(), className );
+			logger.trace( "[{}].[{}] : Class found locally from thread [{}] ", this.nameAsKey.getName(), className, Thread.currentThread().getName() );
 		} catch ( ClassNotFoundException e ) {
 
-			// 3. If not found in JARs, delegate to parent class loader
+			// 4. If not found in JARs, delegate to parent class loader
 			try {
 				logger.trace( "[{}].[{}] : Class not found locally, trying the parent...", this.nameAsKey.getName(), className );
+				logger.trace( "The context class loader is [{}]", Thread.currentThread().getContextClassLoader().getName() );
 				cachedClass = getDynamicParent().loadClass( className );
-				logger.trace( "[{}].[{}] : Class found in parent", this.nameAsKey.getName(), className );
+				logger.trace( "[{}].[{}] : Class found in parent on thread [{}]", this.nameAsKey.getName(), className, Thread.currentThread().getName() );
 			} catch ( ClassNotFoundException parentException ) {
+				logger.trace( "[{}].[{}] : Class not found in parent, adding to unfound classes", this.nameAsKey.getName(), className );
 				// Add to the unfound cache
 				this.unfoundClasses.put( className, NullValue.class );
 				// If not safe, throw the exception
 				if ( !safe ) {
 					throw new ClassNotFoundException( String.format( "Class [%s] not found in class loader [%s]", className, this.nameAsKey.getName() ) );
 				}
-				logger.trace( "[{}].[{}] : Class not found in parent", this.nameAsKey.getName(), className );
 			}
 
 		}
@@ -448,6 +467,11 @@ public class DynamicClassLoader extends URLClassLoader {
 		    .toArray( URL[]::new );
 	}
 
+	/**
+	 * Lazy init of the logger
+	 *
+	 * @return The logger
+	 */
 	private static Logger getLogger() {
 		if ( logger == null ) {
 			synchronized ( DynamicClassLoader.class ) {
@@ -457,7 +481,20 @@ public class DynamicClassLoader extends URLClassLoader {
 			}
 		}
 		return logger;
+	}
 
+	/**
+	 * Get the runtime's class loader
+	 */
+	public static ClassLoader getRuntimeClassLoader() {
+		return BoxRuntime.getInstance().getRuntimeLoader();
+	}
+
+	/**
+	 * Get the thread's context class loader
+	 */
+	public static ClassLoader getContextClassLoader() {
+		return Thread.currentThread().getContextClassLoader();
 	}
 
 }

@@ -24,7 +24,9 @@ import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.JumpInsnNode;
 import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.MethodInsnNode;
+import org.objectweb.asm.tree.VarInsnNode;
 
+import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.MethodContextTracker;
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
@@ -59,18 +61,21 @@ public class BoxWhileTransformer extends AbstractTransformer {
 
 		// push two nulls onto the stack in order to initialize our strategy for keeping the stack height consistent
 		// this is to allow the statement to return an expression in the case of a BoxScript execution
-		if ( returnContext == ReturnValueContext.VALUE_OR_NULL ) {
-			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
-			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
-		}
+		// if ( returnContext == ReturnValueContext.VALUE_OR_NULL ) {
+		nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+		// nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+		var varStore = tracker.storeNewVariable( Opcodes.ASTORE );
 
+		// }
+
+		AsmHelper.addDebugLabel( nodes, "BoxWhile - start label" );
 		nodes.add( start );
-
+		nodes.addAll( varStore.nodes() );
 		// every iteration we will swap the values and pop in order to remove the older value
-		if ( returnContext == ReturnValueContext.VALUE_OR_NULL ) {
-			nodes.add( new InsnNode( Opcodes.SWAP ) );
-			nodes.add( new InsnNode( Opcodes.POP ) );
-		}
+		// if ( returnContext == ReturnValueContext.VALUE_OR_NULL ) {
+		// nodes.add( new InsnNode( Opcodes.SWAP ) );
+		// nodes.add( new InsnNode( Opcodes.POP ) );
+		// }
 
 		nodes.addAll( transpiler.transform( boxWhile.getCondition(), TransformerContext.RIGHT, ReturnValueContext.VALUE ) );
 		nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
@@ -83,20 +88,30 @@ public class BoxWhileTransformer extends AbstractTransformer {
 		    "booleanValue",
 		    Type.getMethodDescriptor( Type.BOOLEAN_TYPE ),
 		    false ) );
+
+		AsmHelper.addDebugLabel( nodes, "BoxWhile - jump end" );
 		nodes.add( new JumpInsnNode( Opcodes.IFEQ, end ) );
 
-		nodes.addAll( transpiler.transform( boxWhile.getBody(), TransformerContext.NONE, returnContext ) );
+		nodes.addAll( transpiler.transform( boxWhile.getBody(), TransformerContext.NONE, ReturnValueContext.VALUE_OR_NULL ) );
+
+		AsmHelper.addDebugLabel( nodes, "BoxWhile - jump start" );
 		nodes.add( new JumpInsnNode( Opcodes.GOTO, start ) );
 
+		AsmHelper.addDebugLabel( nodes, "BoxWhile - breakTarget" );
 		nodes.add( breakTarget );
+
+		nodes.addAll( varStore.nodes() );
+
+		AsmHelper.addDebugLabel( nodes, "BoxWhile - end label" );
+		nodes.add( end );
+
+		nodes.add( new VarInsnNode( Opcodes.ALOAD, varStore.index() ) );
+
 		// every iteration we will swap the values and pop in order to remove the older value
-		if ( returnContext == ReturnValueContext.VALUE_OR_NULL ) {
-			nodes.add( new InsnNode( Opcodes.SWAP ) );
+		if ( returnContext == ReturnValueContext.EMPTY || returnContext == ReturnValueContext.EMPTY_UNLESS_JUMPING ) {
 			nodes.add( new InsnNode( Opcodes.POP ) );
 		}
 
-		nodes.add( end );
-
-		return nodes;
+		return AsmHelper.addLineNumberLabels( nodes, node );
 	}
 }

@@ -83,8 +83,8 @@ public class DateDiff extends BIF {
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Key			datePart	= Key.of( arguments.getAsString( Key.datepart ) );
 		ZoneId		timezone	= LocalizationUtil.parseZoneId( null, context );
-		DateTime	date1		= DateTimeCaster.cast( arguments.get( Key.date1 ), true, timezone );
-		DateTime	date2		= DateTimeCaster.cast( arguments.get( Key.date2 ), true, timezone );
+		DateTime	date1		= DateTimeCaster.cast( arguments.get( Key.date1 ), true, timezone, context );
+		DateTime	date2		= DateTimeCaster.cast( arguments.get( Key.date2 ), true, timezone, context );
 
 		long		result		= IMPROBABLE_RESULT;
 		// @formatter:off

@@ -29,7 +29,6 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
-import ortus.boxlang.runtime.logging.LoggingService;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Struct;
@@ -53,25 +52,25 @@ public class LoggingInterceptorTest {
 		instance				= BoxRuntime.getInstance( true );
 		loggingInterceptor		= new Logging( instance );
 		logDirectory			= instance.getConfiguration().logging.logsDirectory;
-		logFilePath				= Paths.get( logDirectory, "/", testLogFile.toLowerCase() ).toString();
+		logFilePath				= Paths.get( logDirectory, testLogFile.toLowerCase() ).toString();
 		absoluteLogeFilePath	= Paths.get( tmpDirectory, testLogFile.toLowerCase() ).toAbsolutePath().toString();
 	}
 
 	@AfterAll
 	public static void teardown() {
-		LoggingService.getInstance().shutdownAppenders();
+		// LoggingService.getInstance().shutdownAppenders();
 		if ( FileSystemUtil.exists( logFilePath ) ) {
-			FileSystemUtil.deleteFile( logFilePath );
+			// FileSystemUtil.deleteFile( logFilePath );
 		}
 		if ( FileSystemUtil.exists( absoluteLogeFilePath ) ) {
-			FileSystemUtil.deleteFile( absoluteLogeFilePath );
+			// FileSystemUtil.deleteFile( absoluteLogeFilePath );
 		}
 	}
 
 	@DisplayName( "It can log a message" )
 	@Test
 	void testLogMessage() {
-		System.out.println( logFilePath );
+		// System.out.println( testLogFile );
 		loggingInterceptor.logMessage( Struct.of(
 		    Key.text, "Hello, World!",
 		    Key.type, "INFO",

@@ -54,6 +54,7 @@ import ortus.boxlang.runtime.types.meta.IChangeListener;
 import ortus.boxlang.runtime.types.meta.IListenable;
 import ortus.boxlang.runtime.types.meta.StructMeta;
 import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableStruct;
+import ortus.boxlang.runtime.util.RegexBuilder;
 
 /**
  * This type provides the core map class for Boxlang. Structs are highly versatile and are used for organizing and managing related data.
@@ -776,7 +777,7 @@ public class Struct implements IStruct, IListenable, Serializable {
 				    }
 				    return line;
 			    } )
-			    .map( line -> line.replaceAll( "(?m)^", "  " ) ) // Add an indent to the start of each line
+			    .map( line -> RegexBuilder.of( line, RegexBuilder.MULTILINE_START_OF_LINE ).replaceAllAndGet( "  " ) ) // Add an indent to the start of each line
 			    .collect( java.util.stream.Collectors.joining( ",\n" ) ) );
 			sb.append( size() > 0 ? "\n}" : "}" );
 			return sb.toString();

@@ -234,7 +234,6 @@ public class CoreLangTest {
 		assertThat( variables.get( result ) ).isEqualTo( "in catch also finally" );
 		assertThat( variables.get( Key.of( "message" ) ) ).isEqualTo( "You cannot divide by zero." );
 		assertThat( variables.get( Key.of( "message2" ) ) ).isEqualTo( "You cannot divide by zero." );
-
 	}
 
 	@DisplayName( "try catch with var in CF" )
@@ -3774,7 +3773,7 @@ public class CoreLangTest {
 				BaseBoxContext.nullIsUndefined = true;
 				result = BaseBoxContext.nullIsUndefined;
 				result2 = BaseBoxContext.nullIsUndefined.len();
-				
+
 				CoreLangTest.num += 5;
 				result3 = CoreLangTest.num;
 			""",
@@ -3849,7 +3848,7 @@ public class CoreLangTest {
 	public void testCastStringToKey() {
 
 		// @formatter:off
-		instance.executeSource( """		
+		instance.executeSource( """
 				getBoxContext().getRuntime().getDatasourceService().get( "myDataSourceNameFromTheArray" )
 			"""
 			, context );
@@ -4106,4 +4105,60 @@ public class CoreLangTest {
 		assertThat( variables.get( result ) ).isEqualTo( 2 );
 	}
 
+	@DisplayName( "nested try catch with specific catch" )
+	@Test
+	public void testNestedTryCatchWithSpecificCatch() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+			result = "default";
+		    try {
+		    	try {
+					throw( type = "Different", message = "boom" );
+				} catch ( Specific e ) {
+					result = "specific";
+				}
+			} catch ( any e ) {
+				result = "general";
+			}
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "general" );
+	}
+
+	@Test
+	public void testComponentAttributeName() {
+		assertThrows( KeyNotFoundException.class, () -> {
+			instance.executeSource(
+			    """
+			    ftp server="xxxx";
+			    """,
+			    context, BoxSourceType.CFSCRIPT );
+		} );
+	}
+
+	@DisplayName( "It still sets variables in the local scope even if they are set to null" )
+	@Test
+	public void testNullStillInLocalScope() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				function returnsNull() {
+					return;
+				}
+
+				function doesStuff() {
+					var inner = returnsNull();
+					if ( !isNull( inner ) ) {
+						return inner;
+					}
+					inner = "local value leaked to variables";
+					return "set this time";
+				}
+				result = doesStuff();
+				result = doesStuff();
+			""",
+			context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "set this time" );
+	}
 }

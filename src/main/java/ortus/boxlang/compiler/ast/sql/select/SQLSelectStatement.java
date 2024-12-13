@@ -15,6 +15,7 @@
 package ortus.boxlang.compiler.ast.sql.select;
 
 import java.util.List;
+import java.util.Map;
 
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
@@ -41,7 +42,7 @@ public class SQLSelectStatement extends SQLStatement {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code of the statement
 	 */
-	protected SQLSelectStatement( SQLSelect select, List<SQLSelect> unions, List<SQLOrderBy> orderBys, SQLNumberLiteral limit, Position position,
+	public SQLSelectStatement( SQLSelect select, List<SQLSelect> unions, List<SQLOrderBy> orderBys, SQLNumberLiteral limit, Position position,
 	    String sourceText ) {
 		super( position, sourceText );
 		setSelect( select );
@@ -56,7 +57,9 @@ public class SQLSelectStatement extends SQLStatement {
 	public void setSelect( SQLSelect select ) {
 		replaceChildren( this.select, select );
 		this.select = select;
-		this.select.setParent( this );
+		if ( select != null ) {
+			this.select.setParent( this );
+		}
 	}
 
 	/**
@@ -72,7 +75,9 @@ public class SQLSelectStatement extends SQLStatement {
 	public void setUnions( List<SQLSelect> unions ) {
 		replaceChildren( this.unions, unions );
 		this.unions = unions;
-		unions.forEach( u -> u.setParent( this ) );
+		if ( unions != null ) {
+			unions.forEach( u -> u.setParent( this ) );
+		}
 	}
 
 	/**
@@ -88,14 +93,9 @@ public class SQLSelectStatement extends SQLStatement {
 	public void setOrderBys( List<SQLOrderBy> orderBys ) {
 		replaceChildren( this.orderBys, orderBys );
 		this.orderBys = orderBys;
-		orderBys.forEach( o -> o.setParent( this ) );
-	}
-
-	/**
-	 * Get the ORDER BY nodes
-	 */
-	public List<SQLOrderBy> getOrderBys() {
-		return orderBys;
+		if ( orderBys != null ) {
+			orderBys.forEach( o -> o.setParent( this ) );
+		}
 	}
 
 	/**
@@ -104,7 +104,9 @@ public class SQLSelectStatement extends SQLStatement {
 	public void setLimit( SQLNumberLiteral limit ) {
 		replaceChildren( this.limit, limit );
 		this.limit = limit;
-		limit.setParent( this );
+		if ( limit != null ) {
+			limit.setParent( this );
+		}
 	}
 
 	/**
@@ -112,6 +114,23 @@ public class SQLSelectStatement extends SQLStatement {
 	 */
 	public SQLNumberLiteral getLimit() {
 		return limit;
+	}
+
+	/**
+	 * Get the value of the limit node, defaulting to -1 if not set. -1 means no limit.
+	 */
+	public Long getLimitValue() {
+		if ( getLimit() == null ) {
+			return -1L;
+		}
+		return getLimit().getValue().longValue();
+	}
+
+	/**
+	 * Get the ORDER BY nodes
+	 */
+	public List<SQLOrderBy> getOrderBys() {
+		return orderBys;
 	}
 
 	@Override
@@ -125,4 +144,23 @@ public class SQLSelectStatement extends SQLStatement {
 		// TODO Auto-generated method stub
 		throw new UnsupportedOperationException( "Unimplemented method 'accept'" );
 	}
+
+	@Override
+	public Map<String, Object> toMap() {
+		Map<String, Object> map = super.toMap();
+
+		map.put( "select", select.toMap() );
+		if ( unions != null ) {
+			map.put( "unions", unions.stream().map( SQLSelect::toMap ).toList() );
+		} else {
+			map.put( "unions", null );
+		}
+		if ( orderBys != null ) {
+			map.put( "orderBys", orderBys.stream().map( SQLOrderBy::toMap ).toList() );
+		} else {
+			map.put( "orderBys", null );
+		}
+		return map;
+	}
+
 }

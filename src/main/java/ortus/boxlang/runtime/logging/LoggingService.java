@@ -44,6 +44,7 @@ import ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy;
 import ch.qos.logback.core.util.FileSize;
 import ch.qos.logback.core.util.StatusPrinter;
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.config.segments.LoggerConfig;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -88,7 +89,7 @@ public class LoggingService {
 	 *
 	 * @see https://logback.qos.ch/manual/layouts.html#conversionWord
 	 */
-	public static final String						LOG_FORMAT			= "[%date{STRICT}] [%thread] [%-5level] [%logger{0}] %message %ex%n";
+	public static final String						LOG_FORMAT			= "[%date{STRICT}] [%thread] [%-5level] [%logger] %message %ex%n";
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -323,7 +324,7 @@ public class LoggingService {
 		}
 
 		// Debugging
-		if ( this.runtime.inDebugMode() ) {
+		if ( this.runtime.getConfiguration().logging.statusPrinterOnLoad ) {
 			StatusPrinter.print( this.loggerContext );
 		}
 
@@ -409,30 +410,9 @@ public class LoggingService {
 		if ( logger.isEmpty() ) {
 			logger = DEFAULT_LOG_FILE;
 		}
-		// Verify the log file ends in `.log` and if not, append it
-		if ( !logger.toLowerCase().endsWith( ".log" ) ) {
-			logger += ".log";
-		}
 
-		// If the file is an absolute path, use it, otherwise use the logs directory as the base
-		// All logger names should be lowercase
-		String			loggerFilePath	= Path.of( logger ).isAbsolute()
-		    ? Path.of( logger ).normalize().toString()
-		    : Paths.get( getLogsDirectory(), "/", logger.toLowerCase() ).normalize().toString();
-		String			loggerName		= FilenameUtils.getBaseName( loggerFilePath.toLowerCase() );
-
-		// Get the logger and set the level
-		LoggerContext	targetContext	= getLoggerContext();
-		Logger			oLogger			= targetContext.getLogger( loggerName );
-		oLogger.setLevel( Level.TRACE );
-		FileAppender<ILoggingEvent> appender = getOrBuildAppender( loggerFilePath, targetContext );
-
-		// Create or compute the file appender requested
-		// This provides locking also and caching so we don't have to keep creating them
-		// Shutdown will stop the appenders
-		if ( !oLogger.isAttached( appender ) ) {
-			oLogger.addAppender( appender );
-		}
+		// Compute and get the logger
+		BoxLangLogger oLogger = getLogger( logger );
 
 		// Log according to the level
 		switch ( targetLogLevel.getNameNoCase() ) {
@@ -454,43 +434,29 @@ public class LoggingService {
 	 * If the logger doesn't exist, it will auto-register it and load it
 	 * using the name as the file name in the logs directory.
 	 *
-	 * @param loggerName The name of the logger
+	 * @param logger The name of the logger to retrieve.
 	 *
 	 * @return The logger requested
 	 */
-	public Logger getLogger( Key loggerName ) {
-		// Is it regsitered already?
-		if ( this.loggersMap.containsKey( loggerName ) ) {
-			return ( Logger ) this.loggersMap.get( loggerName );
+	public BoxLangLogger getLogger( String logger ) {
+		// The incoming logger can be:
+		// 1. A named logger: "scheduler", "application", "orm", etc
+		// 2. A relative path: "scheduler.log", "application.log", "orm.log"
+		// 3. An absolute path: "/var/log/boxlang/scheduler.log"
+
+		// Make sure it ends in .log
+		if ( !logger.endsWith( ".log" ) ) {
+			logger = logger + ".log";
 		}
 
-		// Compute it
-		return getLogger(
-		    loggerName,
-		    Paths.get( getLogsDirectory(), "/", loggerName.getNameNoCase() ).normalize().toString()
-		);
-	}
+		// If the file is an absolute path, use it, otherwise use the logs directory as the base
+		String	loggerFilePath	= Path.of( logger ).normalize().isAbsolute()
+		    ? Path.of( logger ).normalize().toString()
+		    : Paths.get( getLogsDirectory(), logger.toLowerCase() ).normalize().toString();
+		Key		loggerKey		= Key.of( FilenameUtils.getBaseName( loggerFilePath.toLowerCase() ) );
 
-	/**
-	 * Get a logger by registered name.
-	 * If the logger doesn't exist, it will auto-register it and load it
-	 * using the name as the file name in the logs directory.
-	 *
-	 * @param loggerName The name of the logger
-	 * @param filePath   The file path to the logger. If any, this can be null
-	 *
-	 * @return The logger requested
-	 */
-	public Logger getLogger( Key loggerName, String filePath ) {
-		// Comput if absent and return the logger
-		return ( Logger ) this.loggersMap.computeIfAbsent( loggerName, key -> {
-			LoggerContext	targetContext	= getLoggerContext();
-			Logger			oLogger			= targetContext.getLogger( key.getNameNoCase() );
-			oLogger.setLevel( Level.TRACE );
-			oLogger.addAppender( getOrBuildAppender( filePath, targetContext ) );
-			oLogger.setAdditive( true );
-			return oLogger;
-		} );
+		// Compute it or return it
+		return ( BoxLangLogger ) this.loggersMap.computeIfAbsent( Key.of( loggerFilePath ), key -> createLogger( loggerKey, loggerFilePath ) );
 	}
 
 	/**
@@ -558,13 +524,13 @@ public class LoggingService {
 	/**
 	 * Get the requested file appender according to log location
 	 *
-	 * @param filePath   The file path to get the appender for
-	 * @param logContext The logger context requested for the appender
-	 * @param logger     The logger to add the appender to
+	 * @param filePath     The file path to get the appender for
+	 * @param logContext   The logger context requested for the appender
+	 * @param loggerConfig The logger configuration
 	 *
 	 * @return The file appender, computed or from cache
 	 */
-	public FileAppender<ILoggingEvent> getOrBuildAppender( String filePath, LoggerContext logContext ) {
+	public FileAppender<ILoggingEvent> getOrBuildAppender( String filePath, LoggerContext logContext, LoggerConfig loggerConfig ) {
 		return ( FileAppender<ILoggingEvent> ) this.appendersMap.computeIfAbsent( filePath.toLowerCase(), key -> {
 			var		appender		= new RollingFileAppender<ILoggingEvent>();
 			String	fileName		= FilenameUtils.getBaseName( filePath );
@@ -601,7 +567,7 @@ public class LoggingService {
 			appender.start();
 
 			// Uncomment to verify issues
-			if ( this.runtime.inDebugMode() ) {
+			if ( this.runtime.getConfiguration().logging.statusPrinterOnLoad ) {
 				StatusPrinter.print( logContext );
 			}
 
@@ -669,6 +635,33 @@ public class LoggingService {
 		targetEncoder.setContext( this.loggerContext );
 		targetEncoder.start();
 		return targetEncoder;
+	}
+
+	/**
+	 * Build a logger with the specified name and file path.
+	 * This will also look into the configuration file for the logger level and additivity.
+	 *
+	 * @param loggerKey      The key of the logger to build
+	 * @param loggerFilePath The file path to log to
+	 *
+	 * @return The logger requested
+	 */
+	private BoxLangLogger createLogger( Key loggerKey, String loggerFilePath ) {
+		LoggerContext	targetContext	= getLoggerContext();
+		Logger			oLogger			= targetContext.getLogger( loggerKey.getNameNoCase() );
+
+		// Check if we have the logger configuration or else build a vanilla one
+		LoggerConfig	loggerConfig	= ( LoggerConfig ) this.runtime
+		    .getConfiguration().logging.loggers
+		    .computeIfAbsent( loggerKey, key -> new LoggerConfig( key.getNameNoCase(), this.runtime.getConfiguration().logging ) );
+		Level			configLevel		= Level.toLevel( LogLevel.valueOf( loggerConfig.level.getName(), false ).getName() );
+
+		// Seed the properties
+		oLogger.setLevel( configLevel );
+		oLogger.setAdditive( loggerConfig.additive );
+		oLogger.addAppender( getOrBuildAppender( loggerFilePath, targetContext, loggerConfig ) );
+
+		return new BoxLangLogger( oLogger );
 	}
 
 }

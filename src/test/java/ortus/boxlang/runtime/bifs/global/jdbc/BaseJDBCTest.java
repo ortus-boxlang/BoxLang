@@ -22,20 +22,21 @@ import tools.JDBCTestUtils;
 
 public class BaseJDBCTest {
 
-	static BoxRuntime			instance;
-	ScriptingRequestBoxContext	context;
-	IScope						variables;
-	static DataSource			datasource;
-	static DataSource			mssqlDatasource;
-	static DataSource			mysqlDatasource;
-	static DatasourceService	datasourceService;
+	static BoxRuntime						instance;
+	protected ScriptingRequestBoxContext	context;
+	IScope									variables;
+	static DataSource						datasource;
+	static DataSource						mssqlDatasource;
+	static DataSource						mysqlDatasource;
+	static DatasourceService				datasourceService;
 
 	@BeforeAll
 	public static void setUp() {
-		instance			= BoxRuntime.getInstance( true );
-		datasourceService	= instance.getDataSourceService();
+		instance = BoxRuntime.getInstance( true );
+		IBoxContext setUpContext = new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		datasourceService = instance.getDataSourceService();
 		String uniqueName = UUID.randomUUID().toString();
-		datasource = JDBCTestUtils.constructTestDataSource( uniqueName );
+		datasource = JDBCTestUtils.constructTestDataSource( uniqueName, setUpContext );
 		datasourceService.register( Key.of( uniqueName ), datasource );
 
 		if ( JDBCTestUtils.hasMSSQLModule() ) {
@@ -54,7 +55,7 @@ public class BaseJDBCTest {
 			    mssqlDatasource.getConfiguration()
 			);
 			datasourceService.register( mssqlName, mssqlDatasource );
-			JDBCTestUtils.ensureTestTableExists( mssqlDatasource );
+			JDBCTestUtils.ensureTestTableExists( mssqlDatasource, setUpContext );
 		}
 
 		if ( JDBCTestUtils.hasMySQLModule() ) {
@@ -81,20 +82,21 @@ public class BaseJDBCTest {
 			    mysqlDatasource.getConfiguration()
 			);
 			datasourceService.register( mysqlName, mysqlDatasource );
-			JDBCTestUtils.ensureTestTableExists( mysqlDatasource );
+			JDBCTestUtils.ensureTestTableExists( mysqlDatasource, setUpContext );
 		}
 	}
 
 	@AfterAll
 	public static void teardown() throws SQLException {
-		JDBCTestUtils.dropDevelopersTable( datasource );
+		IBoxContext tearDownContext = new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		JDBCTestUtils.dropDevelopersTable( datasource, tearDownContext );
 		datasource.shutdown();
 		if ( mssqlDatasource != null ) {
-			JDBCTestUtils.dropDevelopersTable( mssqlDatasource );
+			JDBCTestUtils.dropDevelopersTable( mssqlDatasource, tearDownContext );
 			mssqlDatasource.shutdown();
 		}
 		if ( mysqlDatasource != null ) {
-			JDBCTestUtils.dropDevelopersTable( mysqlDatasource );
+			JDBCTestUtils.dropDevelopersTable( mysqlDatasource, tearDownContext );
 			mysqlDatasource.shutdown();
 		}
 	}
@@ -104,7 +106,7 @@ public class BaseJDBCTest {
 		context = new ScriptingRequestBoxContext( instance.getRuntimeContext() );
 		context.getConnectionManager().setDefaultDatasource( datasource );
 		variables = context.getScopeNearby( VariablesScope.name );
-		assertDoesNotThrow( () -> JDBCTestUtils.resetDevelopersTable( datasource ) );
+		assertDoesNotThrow( () -> JDBCTestUtils.resetDevelopersTable( datasource, context ) );
 		// Clear the caches
 		instance.getCacheService().getDefaultCache().clearAll();
 	}

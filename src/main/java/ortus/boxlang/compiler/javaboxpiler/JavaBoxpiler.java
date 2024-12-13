@@ -58,6 +58,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
+import ortus.boxlang.runtime.util.RegexBuilder;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 /**
@@ -216,7 +217,7 @@ public class JavaBoxpiler extends Boxpiler {
 			StandardJavaFileManager				fileManager			= compiler.getStandardFileManager( diagnostics, null, null );
 
 			// Set the location where .class files should be written
-			String								classPoolDiskPrefix	= classPoolName.replaceAll( "[^a-zA-Z0-9]", "_" );
+			String								classPoolDiskPrefix	= RegexBuilder.of( classPoolName, RegexBuilder.NON_ALPHANUMERIC ).replaceAllAndGet( "_" );
 
 			fileManager.setLocation( StandardLocation.CLASS_OUTPUT, Arrays.asList( classGenerationDirectory.resolve( classPoolDiskPrefix ).toFile() ) );
 
@@ -229,7 +230,8 @@ public class JavaBoxpiler extends Boxpiler {
 			boolean							compilerResult	= task.call();
 
 			if ( !compilerResult ) {
-				String errors = diagnostics.getDiagnostics().stream().map( d -> d.toString() )
+				String errors = diagnostics.getDiagnostics().stream()
+				    .map( Object::toString )
 				    .collect( Collectors.joining( "\n" ) );
 				throw new BoxRuntimeException( errors + "\n" + javaSource );
 			}

@@ -25,7 +25,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
-import ortus.boxlang.compiler.javaboxpiler.JavaBoxpiler;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ParseException;
@@ -181,7 +180,7 @@ public class BXCompiler {
 			// calculate relative path by replacing the base path with an empty string
 			Path relativePath = basePath.relativize( sourcePath );
 			// remove file name
-			bytesList = JavaBoxpiler.getInstance()
+			bytesList = runtime.getCompiler()
 			    .compileTemplateBytes( ResolvedFilePath.of( mapping, basePath.toString(), relativePath.toString(), sourcePath ) );
 		} catch ( ParseException e ) {
 			if ( stopOnError ) {

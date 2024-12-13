@@ -6,6 +6,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -40,18 +41,20 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public abstract class Transpiler implements ITranspiler {
 
-	private final HashMap<String, String>	properties				= new HashMap<String, String>();
-	private Map<String, BoxExpression>		keys					= new LinkedHashMap<String, BoxExpression>();
-	private Map<String, ClassNode>			auxiliaries				= new LinkedHashMap<String, ClassNode>();
-	private List<TryCatchBlockNode>			tryCatchBlockNodes		= new ArrayList<TryCatchBlockNode>();
-	private int								lambdaCounter			= 0;
-	private int								componentCounter		= 0;
-	private int								functionBodyCounter		= 0;
-	private Map<String, LabelNode>			breaks					= new LinkedHashMap<>();
-	private Map<String, LabelNode>			continues				= new LinkedHashMap<>();
-	private List<ImportDefinition>			imports					= new ArrayList<>();
-	private List<MethodContextTracker>		methodContextTrackers	= new ArrayList<MethodContextTracker>();
-	private List<BoxStaticInitializer>		staticInitializers		= new ArrayList<>();
+	private final HashMap<String, String>					properties				= new HashMap<String, String>();
+	private final HashMap<String, List<AbstractInsnNode>>	udfs					= new HashMap<String, List<AbstractInsnNode>>();
+	private Map<String, BoxExpression>						keys					= new LinkedHashMap<String, BoxExpression>();
+	private Map<String, ClassNode>							auxiliaries				= new LinkedHashMap<String, ClassNode>();
+	private List<TryCatchBlockNode>							tryCatchBlockNodes		= new ArrayList<TryCatchBlockNode>();
+	private int												lambdaCounter			= 0;
+	private int												componentCounter		= 0;
+	private int												functionBodyCounter		= 0;
+	private Map<String, LabelNode>							breaks					= new LinkedHashMap<>();
+	private Map<String, LabelNode>							continues				= new LinkedHashMap<>();
+	private List<ImportDefinition>							imports					= new ArrayList<>();
+	private List<MethodContextTracker>						methodContextTrackers	= new ArrayList<MethodContextTracker>();
+	private List<BoxStaticInitializer>						staticInitializers		= new ArrayList<>();
+	private ClassNode										owningClassNode			= null;
 
 	/**
 	 * Set a property
@@ -63,7 +66,19 @@ public abstract class Transpiler implements ITranspiler {
 		properties.put( key, value );
 	}
 
+	public void setOwningClass( ClassNode node ) {
+		owningClassNode = node;
+	}
+
+	public ClassNode getOwningClass() {
+		return owningClassNode;
+	}
+
 	public boolean canReturn() {
+		String returnType = getProperty( "returnType" );
+		if ( returnType != null && !returnType.equals( "void" ) ) {
+			return true;
+		}
 		return functionBodyCounter > 0;
 	}
 
@@ -116,6 +131,18 @@ public abstract class Transpiler implements ITranspiler {
 
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context ) {
 		return transform( node, context, ReturnValueContext.EMPTY );
+	}
+
+	public void addUDFRegistration( String name, List<AbstractInsnNode> nodes ) {
+		this.udfs.put( name, nodes );
+	}
+
+	public boolean hasCompiledFunction( String name ) {
+		return this.udfs.containsKey( name );
+	}
+
+	public List<AbstractInsnNode> getUDFRegistrations() {
+		return this.udfs.values().stream().flatMap( l -> l.stream() ).collect( Collectors.toList() );
 	}
 
 	public abstract List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnValueContext );
@@ -180,9 +207,10 @@ public abstract class Transpiler implements ITranspiler {
 	}
 
 	public void setAuxiliary( String name, ClassNode classNode ) {
-		if ( auxiliaries.putIfAbsent( name, classNode ) != null ) {
-			// throw new IllegalArgumentException( "Auxiliary already registered: " + name );
-		}
+		auxiliaries.put( name, classNode );
+		// if ( auxiliaries.putIfAbsent( name, classNode ) != null ) {
+		// throw new IllegalArgumentException( "Auxiliary already registered: " + name );
+		// }
 	}
 
 	public int incrementAndGetLambdaCounter() {
@@ -226,7 +254,7 @@ public abstract class Transpiler implements ITranspiler {
 		documentation.forEach( doc -> {
 			List<AbstractInsnNode> annotationKey = createKey( doc.getKey().getValue() );
 			members.add( annotationKey );
-			List<AbstractInsnNode> value = transform( doc.getValue(), TransformerContext.NONE, ReturnValueContext.EMPTY );
+			List<AbstractInsnNode> value = transform( doc.getValue(), TransformerContext.NONE, ReturnValueContext.VALUE );
 			members.add( value );
 		} );
 		if ( members.isEmpty() ) {

@@ -14,19 +14,21 @@
  */
 package ortus.boxlang.runtime.jdbc;
 
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.BigIntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
-import ortus.boxlang.runtime.dynamic.casters.BigIntegerCaster;
-import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.util.ListUtil;
+import ortus.boxlang.runtime.util.RegexBuilder;
 
 /**
  * Represents a parameter to a SQL query created via QueryExecute or the Query component.
@@ -88,7 +90,9 @@ public class QueryParameter {
 		}
 
 		this.value		= this.isNullParam ? null : v;
-		this.type		= QueryColumnType.fromString( sqltype.replaceAll( "(?i)CF_SQL_", "" ) );
+		this.type		= QueryColumnType.fromString(
+		    RegexBuilder.of( sqltype, RegexBuilder.CF_SQL ).replaceAllAndGet( "" )
+		);
 		this.maxLength	= param.getAsInteger( Key.maxLength );
 		this.scale		= param.getAsInteger( Key.scale );
 	}
@@ -117,7 +121,7 @@ public class QueryParameter {
 	/**
 	 * Retrieve the value casted to the declared SQL type of the parameter..
 	 */
-	public Object toSQLType() {
+	public Object toSQLType( IBoxContext context ) {
 		if ( this.value == null ) {
 			return null;
 		}
@@ -129,9 +133,9 @@ public class QueryParameter {
 			case QueryColumnType.CHAR, VARCHAR -> StringCaster.cast( this.value );
 			case QueryColumnType.BINARY -> this.value; // @TODO: Will this work?
 			case QueryColumnType.BIT -> BooleanCaster.cast( this.value );
-			case QueryColumnType.TIME -> DateTimeCaster.cast( this.value );
-			case QueryColumnType.DATE -> DateTimeCaster.cast( this.value );
-			case QueryColumnType.TIMESTAMP -> new java.sql.Timestamp( DateTimeCaster.cast( this.value ).toEpochMillis() );
+			case QueryColumnType.TIME -> DateTimeCaster.cast( this.value, context );
+			case QueryColumnType.DATE -> DateTimeCaster.cast( this.value, context );
+			case QueryColumnType.TIMESTAMP -> new java.sql.Timestamp( DateTimeCaster.cast( this.value, context ).toEpochMillis() );
 			case QueryColumnType.OBJECT -> this.value;
 			case QueryColumnType.OTHER -> this.value;
 			case QueryColumnType.NULL -> null;

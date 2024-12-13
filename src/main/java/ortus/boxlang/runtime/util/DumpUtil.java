@@ -38,6 +38,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import javax.annotation.Nullable;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,6 +62,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.IType;
 import ortus.boxlang.runtime.types.NullValue;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.XML;
 import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
@@ -113,7 +116,7 @@ public class DumpUtil {
 	    IBoxContext context,
 	    Object target,
 	    String label,
-	    Integer top,
+	    @Nullable Integer top,
 	    Boolean expand,
 	    Boolean abort,
 	    String output,
@@ -242,7 +245,7 @@ public class DumpUtil {
 	    IBoxContext context,
 	    Object target,
 	    String label,
-	    Integer top,
+	    @Nullable Integer top,
 	    Boolean expand,
 	    Boolean abort,
 	    String output,
@@ -329,7 +332,7 @@ public class DumpUtil {
 	    IBoxContext context,
 	    Object target,
 	    String label,
-	    Integer top,
+	    @Nullable Integer top,
 	    Boolean expand,
 	    Boolean abort,
 	    String output,
@@ -346,11 +349,17 @@ public class DumpUtil {
 			return;
 		}
 
+		// Reached the top limit, so return to prevent dumping the entire world
+		if ( top != null && top <= 0 ) {
+			context.writeToBuffer( "<div><em>Top Limit reached (Skipping dump)</em></div>", true );
+			return;
+		}
+
 		// Prep variables to use for dumping
 		String			posInCode		= "";
 		String			dumpTemplate	= null;
 		StringBuffer	buffer			= null;
-		String			templateName	= discoverTemplateName( target );
+		String			templateName	= discoverTemplateName( target, context );
 
 		try {
 			// Get and Compile the Dump template to execute.
@@ -402,11 +411,13 @@ public class DumpUtil {
 	 *
 	 * @return The template name found in the resources folder
 	 */
-	private static String discoverTemplateName( Object target ) {
+	private static String discoverTemplateName( Object target, IBoxContext context ) {
 		if ( target == null || target instanceof NullValue ) {
 			return "Null.bxm";
 		} else if ( target instanceof Throwable ) {
 			return "Throwable.bxm";
+		} else if ( target instanceof XML ) {
+			return "XML.bxm";
 		} else if ( target instanceof Query ) {
 			return "Query.bxm";
 		} else if ( target instanceof Function ) {
@@ -419,7 +430,7 @@ public class DumpUtil {
 			return "DateTime.bxm";
 		} else if ( target instanceof LocalDate || target instanceof LocalDateTime || target instanceof ZonedDateTime ||
 		    target instanceof java.sql.Date || target instanceof java.sql.Timestamp || target instanceof java.util.Date ) {
-			target = DateTimeCaster.cast( target );
+			target = DateTimeCaster.cast( target, context );
 			return "DateTime.bxm";
 		}
 		// These classes will just dump the class name and the `toString()` equivalent

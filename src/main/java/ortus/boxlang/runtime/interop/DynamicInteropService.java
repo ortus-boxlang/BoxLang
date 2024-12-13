@@ -431,7 +431,7 @@ public class DynamicInteropService {
 
 					// Check for final annotation and throw if we're trying to extend a final class
 					if ( _super.getAnnotations().get( Key._final ) != null ) {
-						throw new BoxRuntimeException( "Cannot extend final class: " + _super.getName() );
+						throw new BoxRuntimeException( "Cannot extend final class: " + _super.bxGetName() );
 					}
 					// Set in our super class
 					boxClass.setSuper( _super );
@@ -462,7 +462,7 @@ public class DynamicInteropService {
 
 			if ( !noInit ) {
 				if ( boxClass.getAnnotations().get( Key._ABSTRACT ) != null ) {
-					throw new AbstractClassException( "Cannot instantiate an abstract class: " + boxClass.getName() );
+					throw new AbstractClassException( "Cannot instantiate an abstract class: " + boxClass.bxGetName() );
 				}
 				if ( boxClass.getSuper() != null ) {
 					BoxClassSupport.validateAbstractMethods( boxClass, boxClass.getSuper().getAllAbstractMethods() );
@@ -506,6 +506,13 @@ public class DynamicInteropService {
 								if ( !namedArgs.containsKey( entry.getKey() ) ) {
 									namedArgs.put( entry.getKey(), entry.getValue() );
 								}
+							}
+							namedArgs.remove( Key.argumentCollection );
+						} else if ( namedArgs.containsKey( Key.argumentCollection ) && namedArgs.get( Key.argumentCollection ) instanceof Array argArray ) {
+							// Create copy of named args, merge in argCollection without overwriting, and delete arg collection key from copy of namedargs
+							namedArgs = new HashMap<>( namedArgs );
+							for ( int i = 0; i < argArray.size(); i++ ) {
+								namedArgs.put( Key.of( i + 1 ), argArray.get( i ) );
 							}
 							namedArgs.remove( Key.argumentCollection );
 						}

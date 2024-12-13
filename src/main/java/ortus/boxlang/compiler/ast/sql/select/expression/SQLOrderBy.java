@@ -14,15 +14,18 @@
  */
 package ortus.boxlang.compiler.ast.sql.select.expression;
 
+import java.util.Map;
+
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
+import ortus.boxlang.compiler.ast.sql.SQLNode;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 
 /**
  * Abstract Node class representing SQL Order By item
  */
-public class SQLOrderBy extends SQLExpression {
+public class SQLOrderBy extends SQLNode {
 
 	private SQLExpression	expression;
 
@@ -34,7 +37,7 @@ public class SQLOrderBy extends SQLExpression {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code of the statement
 	 */
-	protected SQLOrderBy( SQLExpression expression, boolean ascending, Position position, String sourceText ) {
+	public SQLOrderBy( SQLExpression expression, boolean ascending, Position position, String sourceText ) {
 		super( position, sourceText );
 		setExpression( expression );
 		setAscending( ascending );
@@ -80,6 +83,15 @@ public class SQLOrderBy extends SQLExpression {
 	public BoxNode accept( ReplacingBoxVisitor v ) {
 		// TODO Auto-generated method stub
 		throw new UnsupportedOperationException( "Unimplemented method 'accept'" );
+	}
+
+	@Override
+	public Map<String, Object> toMap() {
+		Map<String, Object> map = super.toMap();
+
+		map.put( "expression", expression.toMap() );
+		map.put( "ascending", ascending );
+		return map;
 	}
 
 }

@@ -24,9 +24,14 @@ import java.time.format.DateTimeFormatter;
 
 import org.apache.commons.lang3.time.DateUtils;
 
+import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
+import ortus.boxlang.runtime.util.LocalizationUtil;
+import ortus.boxlang.runtime.util.RegexBuilder;
 
 /**
  * I cast to DateTime objects
@@ -95,7 +100,20 @@ public class DateTimeCaster implements IBoxCaster {
 	 * @return The value
 	 */
 	public static CastAttempt<DateTime> attempt( Object object ) {
-		return CastAttempt.ofNullable( cast( object, false ) );
+		return attempt( object, BoxRuntime.getInstance().getRuntimeContext() );
+	}
+
+	/**
+	 * Tests to see if the value can be cast.
+	 * Returns a {@code CastAttempt<T>} which will contain the result if casting was
+	 * was successfull, or can be interogated to proceed otherwise.
+	 *
+	 * @param object The value to cast
+	 *
+	 * @return The value
+	 */
+	public static CastAttempt<DateTime> attempt( Object object, IBoxContext context ) {
+		return CastAttempt.ofNullable( cast( object, false, context ) );
 	}
 
 	/**
@@ -106,7 +124,22 @@ public class DateTimeCaster implements IBoxCaster {
 	 * @return The value
 	 */
 	public static DateTime cast( Object object ) {
-		return cast( object, true );
+		IBoxContext context = RequestBoxContext.getCurrent();
+		if ( context == null ) {
+			context = BoxRuntime.getInstance().getRuntimeContext();
+		}
+		return cast( object, true, context );
+	}
+
+	/**
+	 * Used to cast anything, throwing exception if we fail
+	 *
+	 * @param object The value to cast
+	 *
+	 * @return The value
+	 */
+	public static DateTime cast( Object object, IBoxContext context ) {
+		return cast( object, true, context );
 	}
 
 	/**
@@ -117,8 +150,8 @@ public class DateTimeCaster implements IBoxCaster {
 	 *
 	 * @return The value, or null when cannot be cast
 	 */
-	public static DateTime cast( Object object, Boolean fail ) {
-		return cast( object, fail, ZoneId.systemDefault() );
+	public static DateTime cast( Object object, Boolean fail, IBoxContext context ) {
+		return cast( object, fail, null, context );
 	}
 
 	/**
@@ -132,8 +165,8 @@ public class DateTimeCaster implements IBoxCaster {
 	 *
 	 * @return The value, or null when cannot be cast
 	 */
-	public static DateTime cast( Object object, Boolean fail, ZoneId timezone ) {
-		return cast( object, fail, timezone, false );
+	public static DateTime cast( Object object, Boolean fail, ZoneId timezone, IBoxContext context ) {
+		return cast( object, fail, timezone, false, context );
 	}
 
 	/**
@@ -148,7 +181,16 @@ public class DateTimeCaster implements IBoxCaster {
 	 *
 	 * @return The value, or null when cannot be cast
 	 */
-	public static DateTime cast( Object object, Boolean fail, ZoneId timezone, Boolean clone ) {
+	public static DateTime cast( Object object, Boolean fail, ZoneId timezone, Boolean clone, IBoxContext context ) {
+		if ( timezone == null ) {
+			if ( context == null ) {
+				context = RequestBoxContext.getCurrent();
+				if ( context == null ) {
+					context = BoxRuntime.getInstance().getRuntimeContext();
+				}
+			}
+			timezone = LocalizationUtil.parseZoneId( null, context );
+		}
 
 		// Null is null
 		if ( object == null ) {
@@ -189,7 +231,7 @@ public class DateTimeCaster implements IBoxCaster {
 
 		// This check needs to run BEFORE the next one since a java.sql.Date IS a java.util.Date, but the toInstance() method will throw an unchecked exception
 		if ( object instanceof java.sql.Date sDate ) {
-			return new DateTime( sDate );
+			return new DateTime( sDate, timezone );
 		}
 
 		// We have a java.util.Date object
@@ -220,7 +262,7 @@ public class DateTimeCaster implements IBoxCaster {
 
 		try {
 			// Timestamp string "^\{ts ([^\}])*\}" - {ts 2023-01-01 12:00:00}
-			if ( targetString.matches( "^\\{ts ([^\\}]*)\\}" ) ) {
+			if ( RegexBuilder.of( targetString, RegexBuilder.TIMESTAMP ).matches() ) {
 				return new DateTime(
 				    LocalDateTime.parse(
 				        targetString.trim(),
@@ -238,7 +280,7 @@ public class DateTimeCaster implements IBoxCaster {
 		// Now let's go to Apache commons lang for its date parsing
 		// TODO: Refactor to handle the remaining parsing in the constructor for the DateTime class. We shouldn't mantain handling of patterns in two places
 		try {
-			return new DateTime( DateUtils.parseDateStrictly( targetString, COMMON_PATTERNS ) );
+			return new DateTime( DateUtils.parseDateStrictly( targetString, COMMON_PATTERNS ), timezone );
 		} catch ( java.text.ParseException e ) {
 			try {
 				return new DateTime( targetString );

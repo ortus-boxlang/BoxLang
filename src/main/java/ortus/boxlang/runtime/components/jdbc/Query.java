@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.components.jdbc;
 
+import java.sql.Connection;
 import java.util.Set;
 
 import ortus.boxlang.runtime.components.Attribute;
@@ -30,6 +31,7 @@ import ortus.boxlang.runtime.jdbc.ConnectionManager;
 import ortus.boxlang.runtime.jdbc.ExecutedQuery;
 import ortus.boxlang.runtime.jdbc.PendingQuery;
 import ortus.boxlang.runtime.jdbc.QueryOptions;
+import ortus.boxlang.runtime.jdbc.qoq.QoQConnection;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
@@ -70,7 +72,7 @@ public class Query extends Component {
 		        Validator.NOT_IMPLEMENTED
 		    ) ),
 		    new Attribute( Key.dbtype, "string", Set.of(
-		        Validator.NOT_IMPLEMENTED
+		        Validator.NON_EMPTY, Validator.valueOneOf( "query", "hql" )
 		    ) ),
 		    new Attribute( Key.username, "string", Set.of(
 		        Validator.NOT_IMPLEMENTED
@@ -102,9 +104,7 @@ public class Query extends Component {
 	}
 
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
-		IJDBCCapableContext	jdbcContext			= context.getParentOfType( IJDBCCapableContext.class );
-		ConnectionManager	connectionManager	= jdbcContext.getConnectionManager();
-		QueryOptions		options				= new QueryOptions( attributes );
+		QueryOptions options = new QueryOptions( attributes );
 
 		executionState.put( Key.queryParams, new Array() );
 
@@ -129,7 +129,18 @@ public class Query extends Component {
 		String			sql				= buffer.toString();
 		Array			bindings		= executionState.getAsArray( Key.queryParams );
 		PendingQuery	pendingQuery	= new PendingQuery( sql, bindings, options );
-		ExecutedQuery	executedQuery	= pendingQuery.execute( connectionManager );
+
+		ExecutedQuery	executedQuery;
+		// QoQ uses a special QoQ connection
+		if ( options.isQoQ() ) {
+			Connection connection = new QoQConnection( context );
+			executedQuery = pendingQuery.execute( connection, context );
+		} else {
+			// whereas normal queries use the JDBC connection manager
+			IJDBCCapableContext	jdbcContext			= context.getParentOfType( IJDBCCapableContext.class );
+			ConnectionManager	connectionManager	= jdbcContext.getConnectionManager();
+			executedQuery = pendingQuery.execute( connectionManager, context );
+		}
 
 		if ( options.wantsResultStruct() ) {
 			assert options.resultVariableName != null;

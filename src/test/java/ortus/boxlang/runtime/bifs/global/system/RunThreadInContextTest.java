@@ -64,10 +64,11 @@ public class RunThreadInContextTest {
 	public void testCanRunCodeInApplication() {
 		instance.executeSource(
 		    """
-		    runThreadInContext( applicationName="myApp", callback=()=>{
-		      	println( "running in application #application.applicationname#")
-		      });
-		         """,
+		    application name="myApp";
+		       runThreadInContext( applicationName="myApp", callback=()=>{
+		         	println( "running in application #application.applicationname#")
+		         });
+		            """,
 		    context );
 	}
 
@@ -75,10 +76,12 @@ public class RunThreadInContextTest {
 	public void testCanRunCodeInApplicationSession() {
 		instance.executeSource(
 		    """
-		    runThreadInContext( applicationName="myApp", sessionID="12345", callback=()=>{
-		      	println( "running in application/session #application.applicationname#/#session.sessionID#")
-		      });
-		         """,
+		       application name="myApp" sessionManagement=true;
+		    sessionID = session.jsessionID;
+		       runThreadInContext( applicationName="myApp", sessionID=sessionID, callback=()=>{
+		         	println( "running in application/session #application.applicationname#/#session.sessionID#")
+		         });
+		            """,
 		    context );
 	}
 }

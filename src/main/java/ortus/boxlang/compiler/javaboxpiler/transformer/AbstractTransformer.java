@@ -32,7 +32,6 @@ import com.github.javaparser.ast.expr.BooleanLiteralExpr;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
-import com.github.javaparser.ast.expr.StringLiteralExpr;
 import com.github.javaparser.ast.stmt.Statement;
 
 import ortus.boxlang.compiler.ast.BoxExpression;
@@ -57,6 +56,7 @@ import ortus.boxlang.compiler.ast.statement.BoxSwitch;
 import ortus.boxlang.compiler.ast.statement.BoxWhile;
 import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
 import ortus.boxlang.compiler.javaboxpiler.Transpiler;
+import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxStringLiteralTransformer;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 
 /**
@@ -253,7 +253,7 @@ public abstract class AbstractTransformer implements Transformer {
 					value = ( Expression ) transpiler.transform( thisValue );
 				} else if ( onlyLiteralValues ) {
 					// Runtime expressions we just put this place holder text in for
-					value = new StringLiteralExpr( "<Runtime Expression>" );
+					value = BoxStringLiteralTransformer.transform( "<Runtime Expression>" );
 				} else {
 					value = ( Expression ) transpiler.transform( thisValue );
 				}
@@ -262,7 +262,7 @@ public abstract class AbstractTransformer implements Transformer {
 				value = new BooleanLiteralExpr( true );
 			} else {
 				// Annotations in script with no value default to empty string (CF compat)
-				value = new StringLiteralExpr( "" );
+				value = BoxStringLiteralTransformer.transform( "" );
 			}
 			members.add( value );
 		} );

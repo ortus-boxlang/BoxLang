@@ -1,0 +1,7 @@
+class {
+
+	function includeMixin() {
+		include "mixin.bxs";
+	}
+
+}

@@ -207,13 +207,15 @@ public class Application {
 	/**
 	 * Startup the class loader paths from the this.javaSettings.loadPaths
 	 *
-	 * @param appContext The application context
+	 * @param requestContext The request context
 	 */
-	public void startupClassLoaderPaths( ApplicationBoxContext appContext ) {
-		URL[] loadPathsUrls = this.startingListener.getJavaSettingsLoadPaths( appContext );
+	public void startupClassLoaderPaths( RequestBoxContext requestContext ) {
+		URL[] loadPathsUrls = this.startingListener.getJavaSettingsLoadPaths( requestContext );
 
 		// if we don't have any return out
 		if ( loadPathsUrls.length == 0 ) {
+			logger.trace( "===> Setting the context classLoader to the [runtime] loader during startupClassLoaderPaths via [{}]",
+			    Thread.currentThread().getName() );
 			// If there are no javasettings, ensure we just use the runtime CL
 			Thread.currentThread().setContextClassLoader( BoxRuntime.getInstance().getRuntimeLoader() );
 			return;
@@ -228,6 +230,8 @@ public class Application {
 			    return new DynamicClassLoader( this.name, loadPathsUrls, BoxRuntime.getInstance().getRuntimeLoader(), false );
 		    } );
 		// Make sure our thread is using the right class loader
+		logger.trace( "===> Setting the context classLoader to the [javasettings] loader during startupClassLoaderPaths via [{}]",
+		    Thread.currentThread().getName() );
 		Thread.currentThread().setContextClassLoader( this.classLoaders.get( loaderCacheKey ) );
 	}
 
@@ -271,12 +275,11 @@ public class Application {
 			this.started			= true;
 
 			// Get the app listener (Application.bx)
-			this.startingListener	= context.getParentOfType( RequestBoxContext.class ).getApplicationListener();
-			ApplicationBoxContext appContext = context.getParentOfType( ApplicationBoxContext.class );
+			this.startingListener	= context.getRequestContext().getApplicationListener();
 			// Startup the class loader
-			startupClassLoaderPaths( appContext );
+			startupClassLoaderPaths( context.getRequestContext() );
 			// Startup session storages
-			startupSessionStorage( appContext );
+			startupSessionStorage( context.getApplicationContext() );
 
 			// Announce it globally
 			BoxRuntime.getInstance().getInterceptorService().announce( Key.onApplicationStart, Struct.of(
@@ -346,13 +349,15 @@ public class Application {
 
 		// Now store it
 		this.sessionsCache = this.cacheService.getCache( sessionCacheName );
-		// Register the session cleanup interceptor
-		this.sessionsCache.getInterceptorPool()
+		// Register the session cleanup interceptor for: BEFORE_CACHE_ELEMENT_REMOVED
+		this.sessionsCache
+		    .getInterceptorPool()
 		    .register( data -> {
 			    ICacheProvider targetCache = ( ICacheProvider ) data.get( "cache" );
 			    String		key			= ( String ) data.get( "key" );
 
-			    logger.debug( "Session cache interceptor [{}] cleared key [{}]", targetCache.getName(), key );
+			    if ( logger.isDebugEnabled() )
+				    logger.debug( "Session cache interceptor [{}] cleared key [{}]", targetCache.getName(), key );
 
 			    targetCache
 			        .get( key )

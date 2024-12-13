@@ -172,7 +172,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 		this.argumentsScope		= new ArgumentsScope();
 		this.function			= function;
 		this.functionCalledName	= functionCalledName;
-		setThisClass( thisClass );
+		setThisClass( BoxClassSupport.resolveClassForUDF( thisClass, function ) );
 		pushTemplate( function );
 		try {
 			ArgumentUtil.createArgumentsScope( this, positionalArguments, function.getArguments(), this.argumentsScope,
@@ -204,7 +204,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 		this.argumentsScope		= new ArgumentsScope();
 		this.function			= function;
 		this.functionCalledName	= functionCalledName;
-		setThisClass( thisClass );
+		setThisClass( BoxClassSupport.resolveClassForUDF( thisClass, function ) );
 		pushTemplate( function );
 		try {
 			ArgumentUtil.createArgumentsScope( this, namedArguments, function.getArguments(), this.argumentsScope,
@@ -248,7 +248,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 * @return The search result
 	 */
 	@Override
-	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow ) {
+	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow, boolean forAssign ) {
 
 		// Special check for $bx
 		if ( key.equals( BoxMeta.key ) && isInClass() ) {
@@ -294,14 +294,14 @@ public class FunctionBoxContext extends BaseBoxContext {
 
 		Object result = localScope.getRaw( key );
 		// Null means not found
-		if ( isDefined( result ) ) {
+		if ( isDefined( result, forAssign ) ) {
 			// Unwrap the value now in case it was really actually null for real
 			return new ScopeSearchResult( localScope, Struct.unWrapNull( result ), key );
 		}
 
 		result = argumentsScope.getRaw( key );
 		// Null means not found
-		if ( isDefined( result ) ) {
+		if ( isDefined( result, forAssign ) ) {
 			// Unwrap the value now in case it was really actually null for real
 			return new ScopeSearchResult( argumentsScope, Struct.unWrapNull( result ), key );
 		}
@@ -317,7 +317,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 			IScope classVariablesScope = getThisClass().getBottomClass().getVariablesScope();
 			result = classVariablesScope.getRaw( key );
 			// Null means not found
-			if ( isDefined( result ) ) {
+			if ( isDefined( result, forAssign ) ) {
 				// Unwrap the value now in case it was really actually null for real
 				return new ScopeSearchResult( classVariablesScope, Struct.unWrapNull( result ), key );
 			}
@@ -327,7 +327,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 			}
 
 			// A component cannot see nearby scopes above it
-			return parent.scopeFind( key, defaultScope );
+			return parent.scopeFind( key, defaultScope, forAssign );
 		} else {
 
 			if ( shallow ) {
@@ -336,7 +336,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 
 			// A UDF is "transparent" and can see everything in the parent scope as a
 			// "local" observer
-			return parent.scopeFindNearby( key, defaultScope );
+			return parent.scopeFindNearby( key, defaultScope, forAssign );
 		}
 
 	}
@@ -385,9 +385,9 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 * @return The search result
 	 */
 	@Override
-	public ScopeSearchResult scopeFind( Key key, IScope defaultScope ) {
+	public ScopeSearchResult scopeFind( Key key, IScope defaultScope, boolean forAssign ) {
 		// The FunctionBoxContext has no "global" scopes, so just defer to parent
-		return parent.scopeFind( key, defaultScope );
+		return parent.scopeFind( key, defaultScope, forAssign );
 	}
 
 	/**
@@ -587,8 +587,8 @@ public class FunctionBoxContext extends BaseBoxContext {
 		Function function = findFunction( name );
 		if ( function == null ) {
 
-			if ( isInClass() && getThisClass().getVariablesScope().containsKey( Key.onMissingMethod ) ) {
-				return getThisClass().getVariablesScope().dereferenceAndInvoke(
+			if ( isInClass() && getThisClass().getBottomClass().getVariablesScope().containsKey( Key.onMissingMethod ) ) {
+				return getThisClass().getBottomClass().getVariablesScope().dereferenceAndInvoke(
 				    this,
 				    Key.onMissingMethod,
 				    new Object[] { name.getName(), ArgumentUtil.createArgumentsScope( this, positionalArguments ) },
@@ -616,11 +616,11 @@ public class FunctionBoxContext extends BaseBoxContext {
 
 		Function function = findFunction( name );
 		if ( function == null ) {
-			if ( isInClass() && getThisClass().getVariablesScope().containsKey( Key.onMissingMethod ) ) {
+			if ( isInClass() && getThisClass().getBottomClass().getVariablesScope().containsKey( Key.onMissingMethod ) ) {
 				Map<Key, Object> args = new HashMap<>();
 				args.put( Key.missingMethodName, name.getName() );
 				args.put( Key.missingMethodArguments, ArgumentUtil.createArgumentsScope( this, namedArguments ) );
-				return getThisClass().getVariablesScope().dereferenceAndInvoke( this, Key.onMissingMethod, args, false );
+				return getThisClass().getBottomClass().getVariablesScope().dereferenceAndInvoke( this, Key.onMissingMethod, args, false );
 			} else {
 				throw new BoxRuntimeException( "Function [" + name + "] not found" );
 			}
@@ -641,8 +641,8 @@ public class FunctionBoxContext extends BaseBoxContext {
 
 		Function function = findFunction( name );
 		if ( function == null ) {
-			if ( isInClass() && getThisClass().getVariablesScope().containsKey( Key.onMissingMethod ) ) {
-				return getThisClass().getVariablesScope().dereferenceAndInvoke(
+			if ( isInClass() && getThisClass().getBottomClass().getVariablesScope().containsKey( Key.onMissingMethod ) ) {
+				return getThisClass().getBottomClass().getVariablesScope().dereferenceAndInvoke(
 				    this,
 				    Key.onMissingMethod,
 				    new Object[] { name.getName(), ArgumentUtil.createArgumentsScope( this, new Object[] {} ) },
@@ -666,7 +666,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 	protected Function findFunction( Key name ) {
 		ScopeSearchResult result = null;
 		try {
-			result = scopeFindNearby( name, null );
+			result = scopeFindNearby( name, null, false );
 		} catch ( KeyNotFoundException e ) {
 			// Ignore
 		}
@@ -726,7 +726,13 @@ public class FunctionBoxContext extends BaseBoxContext {
 				registerUDF( boxClass.getStaticScope(), udf, override );
 				return;
 			}
-			registerUDF( boxClass.getVariablesScope(), udf, override );
+			// Register in variables (private)
+			registerUDF( boxClass.getBottomClass().getVariablesScope(), udf, override );
+
+			// if public, put there as well
+			if ( udf.getAccess().isEffectivePublic() ) {
+				registerUDF( boxClass.getBottomClass().getThisScope(), udf, override );
+			}
 		} else {
 			// else, defer to parent context
 			getParent().registerUDF( udf, override );

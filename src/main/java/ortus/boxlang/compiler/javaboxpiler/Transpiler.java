@@ -46,6 +46,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.runnables.BoxScript;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.RegexBuilder;
 
 /**
  * Transpiler Base class
@@ -157,7 +158,7 @@ public abstract class Transpiler implements ITranspiler {
 
 	/**
 	 * Increment and return the try catch counter
-	 * 
+	 *
 	 * @return the incremented value
 	 */
 	public int incrementAndGetTryCatchCounter() {
@@ -166,7 +167,7 @@ public abstract class Transpiler implements ITranspiler {
 
 	/**
 	 * Increment and return the switch counter
-	 * 
+	 *
 	 * @return the incremented value
 	 */
 	public int incrementAndGetSwitchCounter() {
@@ -175,7 +176,7 @@ public abstract class Transpiler implements ITranspiler {
 
 	/**
 	 * Increment and return the for in counter
-	 * 
+	 *
 	 * @return the incremented value
 	 */
 	public int incrementAndGetForInCounter() {
@@ -184,7 +185,7 @@ public abstract class Transpiler implements ITranspiler {
 
 	/**
 	 * Increment and return the lambda counter
-	 * 
+	 *
 	 * @return the incremented value
 	 */
 	public void pushContextName( String name ) {
@@ -196,7 +197,7 @@ public abstract class Transpiler implements ITranspiler {
 
 	/**
 	 * Increment and return the lambda counter
-	 * 
+	 *
 	 * @return the incremented value
 	 */
 	public String popContextName() {
@@ -205,7 +206,7 @@ public abstract class Transpiler implements ITranspiler {
 
 	/**
 	 * Increment and return the lambda counter
-	 * 
+	 *
 	 * @return the incremented value
 	 */
 	public String peekContextName() {
@@ -214,7 +215,7 @@ public abstract class Transpiler implements ITranspiler {
 
 	/**
 	 * Increment and return the lambda counter
-	 * 
+	 *
 	 * @param importString the import string to add
 	 */
 	public void addImport( String importString ) {
@@ -364,6 +365,6 @@ public abstract class Transpiler implements ITranspiler {
 	}
 
 	public String escapeJavaString( String str ) {
-		return str.replaceAll( "\\\\", "\\\\\\\\" );
+		return RegexBuilder.of( str, RegexBuilder.BACKSLASH ).replaceAllAndGet( "\\\\\\\\" );
 	}
 }

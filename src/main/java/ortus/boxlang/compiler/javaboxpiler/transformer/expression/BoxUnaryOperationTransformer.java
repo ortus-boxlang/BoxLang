@@ -79,7 +79,7 @@ public class BoxUnaryOperationTransformer extends AbstractTransformer {
 			accessKey	= createKey( id.getName() );
 			values.put( "accessKey", accessKey.toString() );
 			String obj = PlaceholderHelper.resolve(
-			    "${contextName}.scopeFindNearby( ${accessKey}, null ).scope()",
+			    "${contextName}.scopeFindNearby( ${accessKey}, null, true ).scope()",
 			    values );
 			values.put( "obj", obj );
 		} else if ( expr instanceof BoxAccess objectAccess && operator != BoxUnaryOperator.Not && operator != BoxUnaryOperator.Minus

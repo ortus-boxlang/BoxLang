@@ -39,8 +39,8 @@ public class BoxAssignment extends BoxExpression {
 	/**
 	 * Constructor
 	 *
-	 * @param left       left side of the assigment
-	 * @param right      right side of the assigment
+	 * @param left       left side of the assignment
+	 * @param right      right side of the assignment
 	 * @param position   position of the expression in the source code
 	 * @param sourceText source code of the expression
 	 */

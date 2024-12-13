@@ -48,11 +48,14 @@ public class JSONUtil {
 	/**
 	 * The JSON builder library we use
 	 */
+	@SuppressWarnings( "deprecation" )
 	private static final JSON JSON_BUILDER = JSON.builder(
 	    // Use a custom factory with enabled parsing features
 	    new JsonFactory()
 	        .enable( JsonParser.Feature.ALLOW_COMMENTS )
 	        .enable( JsonParser.Feature.ALLOW_YAML_COMMENTS )
+	        // TODO: This whole block needs to be converted over to use the JsonFactory.builder() as the following feature is deprecated
+	        .enable( JsonParser.Feature.ALLOW_BACKSLASH_ESCAPING_ANY_CHARACTER )
 	)
 	    // Enable JSON features
 	    // https://fasterxml.github.io/jackson-jr/javadoc/jr-objects/2.8/com/fasterxml/jackson/jr/ob/JSON.Feature.html

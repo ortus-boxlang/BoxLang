@@ -21,9 +21,11 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.InsnNode;
+import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.VarInsnNode;
 
+import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
@@ -82,10 +84,12 @@ public class BoxUnaryOperationTransformer extends AbstractTransformer {
 			nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
 			nodes.addAll( transpiler.createKey( id.getName() ) );
 			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+			nodes.add( new LdcInsnNode( true ) );
 			nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
 			    Type.getInternalName( IBoxContext.class ),
 			    "scopeFindNearby",
-			    Type.getMethodDescriptor( Type.getType( IBoxContext.ScopeSearchResult.class ), Type.getType( Key.class ), Type.getType( IScope.class ) ),
+			    Type.getMethodDescriptor( Type.getType( IBoxContext.ScopeSearchResult.class ), Type.getType( Key.class ), Type.getType( IScope.class ),
+			        Type.BOOLEAN_TYPE ),
 			    true ) );
 			nodes.add( new MethodInsnNode( Opcodes.INVOKEVIRTUAL,
 			    Type.getInternalName( IBoxContext.ScopeSearchResult.class ),
@@ -164,7 +168,7 @@ public class BoxUnaryOperationTransformer extends AbstractTransformer {
 			nodes.add( new InsnNode( Opcodes.POP ) );
 		}
 
-		return nodes;
+		return AsmHelper.addLineNumberLabels( nodes, node );
 	}
 
 	private AbstractInsnNode getMethodCallTemplateCompound( BoxUnaryOperation operation ) {

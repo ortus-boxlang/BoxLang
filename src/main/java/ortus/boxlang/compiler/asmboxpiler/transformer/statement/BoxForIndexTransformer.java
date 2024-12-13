@@ -26,6 +26,7 @@ import org.objectweb.asm.tree.JumpInsnNode;
 import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
+import org.objectweb.asm.tree.VarInsnNode;
 
 import javassist.bytecode.Opcode;
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
@@ -73,13 +74,10 @@ public class BoxForIndexTransformer extends AbstractTransformer {
 			nodes.addAll( transpiler.transform( forIn.getInitializer(), context, ReturnValueContext.EMPTY ) );
 		}
 
-		// push two nulls onto the stack in order to initialize our strategy for keeping
-		// the stack height consistent
-		// this is to allow the statement to return an expression in the case of a
-		// BoxScript execution
-		nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+		var varStore = tracker.storeNewVariable( Opcodes.ASTORE );
 		nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
 
+		AsmHelper.addDebugLabel( nodes, "BoxForIndex - goto firstLoop" );
 		nodes.add( new JumpInsnNode( Opcode.GOTO, firstLoop ) );
 
 		AsmHelper.addDebugLabel( nodes, "BoxForIndex - loopStart" );
@@ -93,8 +91,7 @@ public class BoxForIndexTransformer extends AbstractTransformer {
 		AsmHelper.addDebugLabel( nodes, "BoxForIndex - firstLoop" );
 		nodes.add( firstLoop );
 
-		nodes.add( new InsnNode( Opcodes.SWAP ) );
-		nodes.add( new InsnNode( Opcodes.POP ) );
+		nodes.addAll( varStore.nodes() );
 
 		AsmHelper.addDebugLabel( nodes, "BoxForIndex - condition" );
 		if ( forIn.getCondition() != null ) {
@@ -114,21 +111,24 @@ public class BoxForIndexTransformer extends AbstractTransformer {
 			nodes.add( new LdcInsnNode( 1 ) );
 		}
 
+		AsmHelper.addDebugLabel( nodes, "BoxForIndex - goto loopend" );
 		nodes.add( new JumpInsnNode( Opcodes.IFEQ, loopEnd ) );
 
 		AsmHelper.addDebugLabel( nodes, "BoxForIndex - body" );
 		nodes.addAll( transpiler.transform( forIn.getBody(), context, ReturnValueContext.VALUE_OR_NULL ) );
 
+		AsmHelper.addDebugLabel( nodes, "BoxForIndex - goto loopStart" );
 		nodes.add( new JumpInsnNode( Opcode.GOTO, loopStart ) );
 
 		AsmHelper.addDebugLabel( nodes, "BoxForIndex - breakTarget" );
 		nodes.add( breakTarget );
 
-		nodes.add( new InsnNode( Opcodes.SWAP ) );
-		nodes.add( new InsnNode( Opcodes.POP ) );
+		nodes.addAll( varStore.nodes() );
 
 		AsmHelper.addDebugLabel( nodes, "BoxForIndex - loopEnd" );
 		nodes.add( loopEnd );
+
+		nodes.add( new VarInsnNode( Opcodes.ALOAD, varStore.index() ) );
 
 		if ( returnValueContext.empty ) {
 			nodes.add( new InsnNode( Opcodes.POP ) );
@@ -140,7 +140,7 @@ public class BoxForIndexTransformer extends AbstractTransformer {
 
 		AsmHelper.addDebugLabel( nodes, "BoxForIndex - done" );
 
-		return nodes;
+		return AsmHelper.addLineNumberLabels( nodes, node );
 	}
 
 }

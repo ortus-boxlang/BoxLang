@@ -92,7 +92,7 @@ public class HttpManager {
 				}
 			};
 		} catch ( InterruptedException e ) {
-			throw new BoxRuntimeException( e.getMessage(), e );
+			throw new BoxRuntimeException( "The request was interrupted", "InterruptedException", e );
 		}
 	}
 

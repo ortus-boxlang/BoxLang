@@ -68,7 +68,26 @@ public class BinaryDecode extends BIF {
 		}
 		// Base64 encoding
 		else if ( encodingKey.equals( Key.encodingBase64 ) ) {
-			return Base64.getDecoder().decode( ref );
+			try {
+				return Base64.getDecoder().decode( ref );
+			} catch ( java.lang.IllegalArgumentException e ) {
+				String initialRef = ref;
+				try {
+					// Try decoding via UU if artificially/incorrectly padded
+					// TODO: This is a code smell, but it is a workaround for BL-820 caused by jwtCFML
+					while ( ref.substring( ref.length() - 1 ).equals( "=" ) ) {
+						ref = ref.substring( 0, ref.length() - 1 );
+					}
+					return Base64.getMimeDecoder().decode( ref );
+				} catch ( java.lang.IllegalArgumentException e2 ) {
+					throw new BoxRuntimeException(
+					    String.format(
+					        "The string argument [%s] is not a valid Base64 encoded string for the function BinaryDecode",
+					        initialRef
+					    )
+					);
+				}
+			}
 		}
 		// Base64 URL encoding
 		else if ( encodingKey.equals( Key.encodingBase64Url ) ) {

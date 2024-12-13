@@ -19,6 +19,7 @@
 
 package ortus.boxlang.runtime.bifs.global.binary;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Base64;
@@ -117,6 +118,22 @@ public class BinaryDecodeTest {
 		    context );
 
 		assertTrue( variables.get( result ) instanceof byte[] );
+	}
+
+	@DisplayName( "It tests the member function for BinaryDecode with invalid padding" )
+	@Test
+	public void testBinaryDecodeJWT() {
+		String jwt = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9====";
+
+		variables.put( Key.of( "base64String" ), jwt );
+		instance.executeSource(
+		    """
+		    result = BinaryDecode( base64String, "base64" );
+		    """,
+		    context );
+
+		assertTrue( variables.get( result ) instanceof byte[] );
+		assertEquals( "{\"typ\":\"JWT\",\"alg\":\"HS512\"}", new String( ( byte[] ) variables.get( result ) ) );
 	}
 
 }

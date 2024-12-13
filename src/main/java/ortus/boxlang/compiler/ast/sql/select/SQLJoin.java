@@ -14,6 +14,8 @@
  */
 package ortus.boxlang.compiler.ast.sql.select;
 
+import java.util.Map;
+
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.sql.SQLNode;
@@ -39,8 +41,11 @@ public class SQLJoin extends SQLNode {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code of the statement
 	 */
-	protected SQLJoin( SQLJoinType type, SQLTable table, SQLExpression on, Position position, String sourceText ) {
+	public SQLJoin( SQLJoinType type, SQLTable table, SQLExpression on, Position position, String sourceText ) {
 		super( position, sourceText );
+		setType( type );
+		setTable( table );
+		setOn( on );
 	}
 
 	/**
@@ -84,7 +89,11 @@ public class SQLJoin extends SQLNode {
 	 * Set the ON expression
 	 */
 	public void setOn( SQLExpression on ) {
-		if ( !on.isBoolean() ) {
+		if ( on == null ) {
+			this.on = null;
+			return;
+		}
+		if ( !on.isBoolean( null ) ) {
 			throw new BoxRuntimeException( "ON clause must be a boolean expression" );
 		}
 		replaceChildren( this.on, on );
@@ -102,5 +111,19 @@ public class SQLJoin extends SQLNode {
 	public BoxNode accept( ReplacingBoxVisitor v ) {
 		// TODO Auto-generated method stub
 		throw new UnsupportedOperationException( "Unimplemented method 'accept'" );
+	}
+
+	@Override
+	public Map<String, Object> toMap() {
+		Map<String, Object> map = super.toMap();
+
+		map.put( "type", enumToMap( type ) );
+		map.put( "table", table.toMap() );
+		if ( on != null ) {
+			map.put( "on", on.toMap() );
+		} else {
+			map.put( "on", null );
+		}
+		return map;
 	}
 }

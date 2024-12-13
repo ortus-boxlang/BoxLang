@@ -14,11 +14,15 @@
  */
 package ortus.boxlang.compiler.ast.sql.select.expression.operation;
 
+import java.util.Map;
+
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLExpression;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
+import ortus.boxlang.runtime.jdbc.qoq.QoQExecution;
+import ortus.boxlang.runtime.operators.Compare;
 
 /**
  * Abstract Node class representing SQL BETWEEN operation
@@ -31,17 +35,20 @@ public class SQLBetweenOperation extends SQLExpression {
 
 	private SQLExpression	right;
 
+	private boolean			not;
+
 	/**
 	 * Constructor
 	 *
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code of the statement
 	 */
-	protected SQLBetweenOperation( SQLExpression expression, SQLExpression left, SQLExpression right, Position position, String sourceText ) {
+	public SQLBetweenOperation( SQLExpression expression, SQLExpression left, SQLExpression right, boolean not, Position position, String sourceText ) {
 		super( position, sourceText );
 		setExpression( expression );
 		setLeft( left );
 		setRight( right );
+		setNot( not );
 	}
 
 	/**
@@ -93,10 +100,57 @@ public class SQLBetweenOperation extends SQLExpression {
 	}
 
 	/**
-	 * Check if the expression evaluates to a boolean value
+	 * Get the not
 	 */
-	public boolean isBoolean() {
+	public boolean isNot() {
+		return not;
+	}
+
+	/**
+	 * Set the not
+	 */
+	public void setNot( boolean not ) {
+		this.not = not;
+	}
+
+	/**
+	 * Runtime check if the expression evaluates to a boolean value and works for columns as well
+	 * 
+	 * @param QoQExec Query execution state
+	 * 
+	 * @return true if the expression evaluates to a boolean value
+	 */
+	public boolean isBoolean( QoQExecution QoQExec ) {
 		return true;
+	}
+
+	/**
+	 * Evaluate the expression
+	 */
+	public Object evaluate( QoQExecution QoQExec, int[] intersection ) {
+		Object	leftValue		= left.evaluate( QoQExec, intersection );
+		Object	rightValue		= right.evaluate( QoQExec, intersection );
+		Object	expressionValue	= expression.evaluate( QoQExec, intersection );
+		// The ^ not inverses the result if the not flag is true
+		return doBetween( leftValue, rightValue, expressionValue ) ^ not;
+	}
+
+	/**
+	 * Helper for evaluating an expression as a number
+	 * 
+	 * @param left  the left operand value
+	 * @param right the right operand value
+	 * @param value the value to check if it's between the left and right operands
+	 * 
+	 * @return true if the value is between the left and right operands
+	 */
+	private boolean doBetween( Object left, Object right, Object value ) {
+		int result = Compare.invoke( left, value, true );
+		if ( result == 1 ) {
+			return false;
+		}
+		result = Compare.invoke( value, right, true );
+		return result != 1;
 	}
 
 	@Override
@@ -109,6 +163,16 @@ public class SQLBetweenOperation extends SQLExpression {
 	public BoxNode accept( ReplacingBoxVisitor v ) {
 		// TODO Auto-generated method stub
 		throw new UnsupportedOperationException( "Unimplemented method 'accept'" );
+	}
+
+	@Override
+	public Map<String, Object> toMap() {
+		Map<String, Object> map = super.toMap();
+
+		map.put( "expression", expression.toMap() );
+		map.put( "left", left.toMap() );
+		map.put( "right", right.toMap() );
+		return map;
 	}
 
 }

@@ -21,7 +21,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.async.tasks.IScheduler;
@@ -43,7 +42,7 @@ public class SchedulerService extends BaseService {
 	/**
 	 * Logger
 	 */
-	private static final Logger		logger		= LoggerFactory.getLogger( SchedulerService.class );
+	private Logger					logger;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -67,12 +66,20 @@ public class SchedulerService extends BaseService {
 	 */
 
 	/**
+	 * The configuration load event is fired when the runtime loads the configuration
+	 */
+	@Override
+	public void onConfigurationLoad() {
+		this.logger = runtime.getLoggingService().getLogger( "scheduler" );
+	}
+
+	/**
 	 * The startup event is fired when the runtime starts up
 	 */
 	@Override
 	public void onStartup() {
 		BoxRuntime.timerUtil.start( "schedulerservice-startup" );
-		logger.debug( "+ Starting up Scheduler Service..." );
+		this.logger.info( "+ Starting up Scheduler Service..." );
 
 		// Register the Global Scheduler
 		// This will look in the configuration for the global scheduler and start it up
@@ -87,7 +94,7 @@ public class SchedulerService extends BaseService {
 		);
 
 		// Let it be known!
-		logger.info( "+ Scheduler Service started in [{}] ms", BoxRuntime.timerUtil.stopAndGetMillis( "schedulerservice-startup" ) );
+		this.logger.info( "+ Scheduler Service started in [{}] ms", BoxRuntime.timerUtil.stopAndGetMillis( "schedulerservice-startup" ) );
 	}
 
 	/**
@@ -105,7 +112,7 @@ public class SchedulerService extends BaseService {
 		// Call shutdown on each scheduler in parallel
 		schedulers.values().parallelStream().forEach( scheduler -> shutdownScheduler( scheduler, false, 0L ) );
 		// Log it
-		logger.debug( "+ Scheduler Service shutdown" );
+		this.logger.info( "+ Scheduler Service shutdown" );
 	}
 
 	/**
@@ -126,7 +133,7 @@ public class SchedulerService extends BaseService {
 		    .filter( scheduler -> !scheduler.hasStarted() )
 		    // Start them up
 		    .forEach( scheduler -> {
-			    logger.debug( "+ Starting up scheduler [{}] ...", scheduler.getName() );
+			    this.logger.info( "+ Starting up scheduler [{}] ...", scheduler.getSchedulerName() );
 			    scheduler.startup();
 			    // Announce it
 			    announce(
@@ -205,10 +212,11 @@ public class SchedulerService extends BaseService {
 	 * @return The scheduler
 	 */
 	public IScheduler registerScheduler( IScheduler scheduler, Boolean force ) {
-		if ( this.schedulers.containsKey( Key.of( scheduler.getName() ) ) && !force ) {
-			throw new BoxRuntimeException( "A scheduler with the name [" + scheduler.getName() + "] already exists" );
+		if ( this.schedulers.containsKey( Key.of( scheduler.getSchedulerName() ) ) && !force ) {
+			throw new BoxRuntimeException( "A scheduler with the name [" + scheduler.getSchedulerName() + "] already exists" );
 		}
-		this.schedulers.put( Key.of( scheduler.getName() ), scheduler );
+		this.schedulers.put( Key.of( scheduler.getSchedulerName() ), scheduler );
+		this.logger.info( "+ Registered scheduler [{}]", scheduler.getSchedulerName() );
 		// Announce it
 		announce(
 		    BoxEvent.ON_SCHEDULER_REGISTRATION,
@@ -227,11 +235,8 @@ public class SchedulerService extends BaseService {
 	 * @return
 	 */
 	public IScheduler loadScheduler( Key name, IScheduler scheduler ) {
-
-		// System.out.println( "Loading scheduler [" + name + "]" );
-
 		// Register it
-		registerScheduler( scheduler.setName( name.getName() ), true );
+		registerScheduler( scheduler.setSchedulerName( name.getName() ), true );
 
 		// Configure it
 		scheduler.configure();
@@ -334,7 +339,7 @@ public class SchedulerService extends BaseService {
 	 * @param timeout   The timeout in milliseconds to wait for the scheduler to shutdown
 	 */
 	private void shutdownScheduler( IScheduler scheduler, Boolean force, Long timeout ) {
-		logger.debug( "+ Shutting down scheduler [{}]", scheduler.getName() );
+		this.logger.info( "+ Shutting down scheduler [{}]", scheduler.getSchedulerName() );
 		// Announce it
 		announce(
 		    BoxEvent.ON_SCHEDULER_SHUTDOWN,

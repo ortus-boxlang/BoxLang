@@ -22,6 +22,8 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.commons.lang3.StringUtils;
+
 /**
  * This class represents a java fully qualified name (FQN) for a class or package.
  * It handles all the edge cases of dealing with file paths and package names.
@@ -186,8 +188,11 @@ public class FQN {
 		fqn	= normalizeDots( fqn );
 
 		// Remove any non alpha-numeric chars.
-		fqn	= fqn.replaceAll( "[^a-zA-Z0-9$\\.]", "__" );
+		fqn	= RegexBuilder
+		    .of( fqn, RegexBuilder.PACKAGE_NAMES )
+		    .replaceAllAndGet( "__" );
 
+		// Short circuit if empty
 		if ( fqn.isEmpty() ) {
 			return new String[] {};
 		}
@@ -214,7 +219,7 @@ public class FQN {
 		// parse fqn into array, loop over array and clean/normalize parts
 		return Arrays.stream( fqn.split( "\\." ) )
 		    // if starts with number, prefix with _
-		    .map( s -> s.matches( "^\\d.*" ) ? "_" + s : s )
+		    .map( s -> RegexBuilder.of( s, RegexBuilder.STARTS_WITH_DIGIT ).matches() ? "_" + s : s )
 		    .map( s -> {
 			    if ( RESERVED_WORDS.contains( s ) ) {
 				    return "_" + s;
@@ -229,18 +234,20 @@ public class FQN {
 	 * - Remove any double dots.
 	 * - Trim trailing period.
 	 * - Trim leading period.
-	 * 
+	 *
 	 * @param fqn The string to normalize.
-	 * 
+	 *
 	 * @return The normalized string.
 	 */
 	protected String normalizeDots( String fqn ) {
 		// Replace .. with .
-		fqn = fqn.replaceAll( "\\.\\.", "." );
+		fqn = RegexBuilder.of( fqn, RegexBuilder.TWO_DOTS ).replaceAllAndGet( "." );
+
 		// trim trailing period
 		if ( fqn.endsWith( "." ) ) {
 			fqn = fqn.substring( 0, fqn.length() - 1 );
 		}
+
 		// trim leading period
 		if ( fqn.startsWith( "." ) ) {
 			fqn = fqn.substring( 1 );
@@ -276,17 +283,14 @@ public class FQN {
 			fqn = fqn.substring( 0, fqn.length() - 1 );
 		}
 
-		// Take out periods in folder names
-		fqn	= fqn.replaceAll( "\\.", "" );
-		// Replace / with .
-		fqn	= fqn.replaceAll( "/", "." );
-		// Remove any : from Windows drives
-		fqn	= fqn.replaceAll( ":", "_" );
-		// Replace \ with .
-		fqn	= fqn.replaceAll( "\\\\", "." );
-
+		// Replace all periods with an emtpy string in fqn
+		fqn	= StringUtils.remove( fqn, "." );
+		// Take out slashes to . and backslashes to .
+		fqn	= StringUtils.replace( fqn, "/", "." );
+		fqn	= StringUtils.replace( fqn, "\\", "." );
+		// Take out colons to _
+		fqn	= StringUtils.replace( fqn, ":", "_" );
 		return fqn;
-
 	}
 
 	/**

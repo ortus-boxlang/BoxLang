@@ -33,6 +33,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.Struct;
 
 public class ParamTest {
 
@@ -177,6 +178,29 @@ public class ParamTest {
 		          """,
 		    context );
 		assertThat( variables.getAsString( result ) ).isEqualTo( "foo" );
+	}
+
+	@DisplayName( "It can param a struct to a default value" )
+	@Test
+	public void testParamStructOnMissing() {
+		instance.executeSource(
+		    """
+		    	param variables.result = {};
+		    """,
+		    context );
+		assertThat( variables.getAsStruct( result ) ).isEqualTo( Struct.of() );
+	}
+
+	@DisplayName( "It skips paraming a struct with values" )
+	@Test
+	public void testParamStructWithValues() {
+		instance.executeSource(
+		    """
+		    variables.result = { "foo": "bar" };
+		      	param variables.result = {};
+		      """,
+		    context );
+		assertThat( variables.getAsStruct( result ) ).isEqualTo( Struct.of( "foo", "bar" ) );
 	}
 
 }

@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -31,7 +32,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import org.apache.commons.lang3.StringUtils;
 
 import com.sun.jdi.AbsentInformationException;
 import com.sun.jdi.ClassNotLoadedException;
@@ -81,30 +85,35 @@ import ortus.boxlang.runtime.types.util.JSONUtil;
 
 public class BoxLangDebugger {
 
-	public VirtualMachine						vm;
-	private OutputStream						debugAdapterOutput;
-	Map<String, List<Breakpoint>>				breakpoints;
-	private List<ReferenceType>					vmClasses;
-	private Status								status;
-	private DebugAdapter						debugAdapter;
-	private InputStream							vmInput;
-	private InputStream							vmErrorInput;
+	public VirtualMachine								vm;
+	private OutputStream								debugAdapterOutput;
+	Map<String, List<Breakpoint>>						breakpoints;
+	private List<ReferenceType>							vmClasses;
+	private Status										status;
+	private DebugAdapter								debugAdapter;
+	private InputStream									vmInput;
+	private InputStream									vmErrorInput;
 
-	public Map<String, SourceMap>				sourceMaps			= new HashMap<String, SourceMap>();
-	public static Map<String, SourceMap>		sourceMapsFromFQN	= new HashMap<String, SourceMap>();
+	public Map<String, SourceMap>						sourceMaps			= new HashMap<String, SourceMap>();
+	public static Map<String, SourceMap>				sourceMapsFromFQN	= new HashMap<String, SourceMap>();
 
-	private ClassType							keyClassRef			= null;
-	private IVMInitializationStrategy			initStrat;
-	private Map<Integer, CachedThreadReference>	cachedThreads		= new HashMap<Integer, CachedThreadReference>();
-	private Map<Integer, EventSet>				eventSets			= new HashMap<Integer, EventSet>();
-	private IStepStrategy						stepStrategy;
-	private ExceptionRequest					exceptionRequest;
-	private boolean								any;
-	private String								matcher;
-	private ReferenceType						boxLangExceptionRef;
+	private ClassType									keyClassRef			= null;
+	private IVMInitializationStrategy					initStrat;
+	private Map<Integer, CachedThreadReference>			cachedThreads		= new HashMap<Integer, CachedThreadReference>();
+	private Map<Integer, EventSet>						eventSets			= new HashMap<Integer, EventSet>();
+	private IStepStrategy								stepStrategy;
+	private ExceptionRequest							exceptionRequest;
+	private boolean										any;
+	private String										matcher;
+	private ReferenceType								boxLangExceptionRef;
 
-	private int									SUSPEND_POLICY		= ThreadStartRequest.SUSPEND_EVENT_THREAD;
-	private MethodExitRequest					methodExitRequest	= null;
+	private int											SUSPEND_POLICY		= ThreadStartRequest.SUSPEND_EVENT_THREAD;
+	private MethodExitRequest							methodExitRequest	= null;
+
+	private static final Pattern						NON_WORD_PATTERN	= Pattern.compile( "\\W" );
+
+	private boolean										vmUsesJavaBoxpiler	= false;
+	private Map<String, Map<Integer, List<Location>>>	locations			= new HashMap();
 
 	public enum Status {
 		NOT_STARTED,
@@ -122,6 +131,10 @@ public class BoxLangDebugger {
 		vmClasses				= new ArrayList<>();
 		this.status				= Status.NOT_STARTED;
 		this.debugAdapter		= debugAdapter;
+	}
+
+	public boolean isJavaBoxpiler() {
+		return vmUsesJavaBoxpiler;
 	}
 
 	public void initialize() {
@@ -379,7 +392,7 @@ public class BoxLangDebugger {
 		BoxLangDebugger.sourceMapsFromFQN	= new HashMap<String, SourceMap>();
 		this.cachedThreads					= new HashMap<Integer, CachedThreadReference>();
 		this.eventSets						= new HashMap<Integer, EventSet>();
-
+		this.locations						= new HashMap();
 	}
 
 	public boolean hasSeen( long variableReference ) {
@@ -445,18 +458,47 @@ public class BoxLangDebugger {
 		return matchingThreadRef.frames();
 	}
 
-	public record StackFrameTuple( StackFrame stackFrame, Location location, int id, Map<LocalVariable, Value> values, ThreadReference thread ) {
+	public record StackFrameTuple( BoxLangDebugger debugger, StackFrame stackFrame, Location location, int id, Map<LocalVariable, Value> values,
+	    ThreadReference thread ) {
+
+		private static Pattern isTemplate;
+
+		static {
+			isTemplate = Pattern.compile( "(.cfs|.cfm|.bx|.bxs)$" );
+		}
 
 		public String sourceFile() {
-			var sourceMap = sourceMapsFromFQN.get( this.location().declaringType().name() );
+			if ( debugger.vmUsesJavaBoxpiler ) {
+				return sourceMapsFromFQN.get( this.location().declaringType().name() ).getSource();
+			}
 
-			return sourceMap.getSource();
+			try {
+				return location.sourceName();
+			} catch ( AbsentInformationException e ) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
+			return "";
 		}
 
 		public int sourceLine() {
-			SourceMap sourceMap = sourceMapsFromFQN.get( this.location().declaringType().name() );
+			if ( debugger.vmUsesJavaBoxpiler ) {
 
-			return sourceMap.convertJavaLineToSourceLine( this.location().lineNumber() );
+				SourceMap sourceMap = sourceMapsFromFQN.get( this.location().declaringType().name() );
+
+				return sourceMap.convertJavaLineToSourceLine( this.location().lineNumber() );
+			}
+
+			return location.lineNumber();
+		}
+
+		public String getFileName() {
+			return Path.of( sourceFile() ).getFileName().toString();
+		}
+
+		public boolean isTemplate() {
+			return isTemplate.matcher( sourceFile() ).find();
 		}
 	}
 
@@ -521,7 +563,7 @@ public class BoxLangDebugger {
 		int threadId = ( int ) thread.uniqueID();
 
 		if ( !this.cachedThreads.containsKey( threadId ) ) {
-			CachedThreadReference ref = new CachedThreadReference( thread );
+			CachedThreadReference ref = new CachedThreadReference( this, thread );
 
 			this.cachedThreads.put( threadId, ref );
 		}
@@ -586,7 +628,7 @@ public class BoxLangDebugger {
 	}
 
 	private boolean isBoxlangThread( ThreadReference threadRef ) {
-		return threadRef.name().matches( "BL-Thread" );
+		return StringUtils.containsIgnoreCase( threadRef.name(), "BL-Thread" );
 	}
 
 	private void handleExceptionEvent( EventSet eventSet, ExceptionEvent exceptionEvent ) {
@@ -637,7 +679,7 @@ public class BoxLangDebugger {
 			return;
 		}
 
-		this.stepStrategy.checkStepEvent( new CachedThreadReference( stepEvent.thread() ) )
+		this.stepStrategy.checkStepEvent( new CachedThreadReference( this, stepEvent.thread() ) )
 		    .ifPresentOrElse( ( sft ) -> {
 			    new StoppedEvent( "step", ( int ) stepEvent.thread().uniqueID() ).send( this.debugAdapterOutput );
 
@@ -661,7 +703,32 @@ public class BoxLangDebugger {
 		    .forEach( ( refType ) -> {
 			    vmClasses.add( refType );
 			    findSourceMapByFQN( threadRef, refType.name() );
+
+			    try {
+				    for ( var loc : refType.allLineLocations() ) {
+					    trackLocation( loc );
+				    }
+			    } catch ( AbsentInformationException e ) {
+				    // TODO Auto-generated catch block
+				    e.printStackTrace();
+			    }
 		    } );
+	}
+
+	private void trackLocation( Location loc ) throws AbsentInformationException {
+		String lcased = loc.sourceName().toLowerCase();
+
+		if ( !locations.containsKey( lcased ) ) {
+			locations.put( lcased, new HashMap<Integer, List<Location>>() );
+		}
+
+		var map = locations.get( lcased );
+
+		if ( !map.containsKey( loc.lineNumber() ) ) {
+			map.put( loc.lineNumber(), new ArrayList<Location>() );
+		}
+
+		map.get( loc.lineNumber() ).add( loc );
 	}
 
 	private void handleClassPrepareEvent( EventSet eventSet, ClassPrepareEvent event ) {
@@ -669,6 +736,17 @@ public class BoxLangDebugger {
 		if ( event.referenceType().name().contains( "BoxLangException" ) ) {
 			this.boxLangExceptionRef = event.referenceType();
 			this.configureExceptionBreakpoints( this.any, this.matcher );
+		}
+
+		if ( event.referenceType().name().contains( "boxgenerated" ) ) {
+			try {
+				for ( var loc : event.referenceType().allLineLocations() ) {
+					trackLocation( loc );
+				}
+			} catch ( AbsentInformationException e ) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 
 		vmClasses.add( event.referenceType() );
@@ -824,9 +902,11 @@ public class BoxLangDebugger {
 			    .value();
 
 			return calledName + " (lambda)";
+		} else if ( tuple.isTemplate() ) {
+			return tuple.getFileName();
 		}
 
-		return null;
+		return tuple.location().method().name();
 	}
 
 	public WrappedValue upateVariableByReference( int variableReference, String key, String value ) {
@@ -871,8 +951,17 @@ public class BoxLangDebugger {
 	}
 
 	private void handleBreakPointEvent( EventSet eventSet, BreakpointEvent bpe ) throws IncompatibleThreadStateException, AbsentInformationException {
+		String	sourcePath	= bpe.location().sourceName();
+		int		lineNumber	= bpe.location().lineNumber();
+
+		if ( vmUsesJavaBoxpiler ) {
+			SourceMap map = findSourceMapByFQN( bpe.thread(), bpe.location().declaringType().name() );
+			sourcePath	= map.source.toLowerCase();
+			lineNumber	= -1;
+		}
+
 		this.status = Status.STOPPED;
-		this.debugAdapter.sendStoppedEventForBreakpoint( bpe );
+		this.debugAdapter.sendStoppedEventForBreakpoint( ( int ) bpe.thread().uniqueID(), sourcePath, lineNumber );
 		clearCachedThreads();
 		this.cacheOrGetThread( ( int ) bpe.thread().uniqueID() );
 		trackThreadEvent( bpe.thread(), eventSet );
@@ -907,78 +996,103 @@ public class BoxLangDebugger {
 		for ( String fileName : this.breakpoints.keySet() ) {
 
 			for ( Breakpoint breakpoint : this.breakpoints.get( fileName ) ) {
-				List<ReferenceType> matchingTypes = getMatchingReferenceTypes( fileName );
 
-				if ( matchingTypes.size() == 0 ) {
-					continue;
-				}
+				List<Location> locations = findLocation( fileName, breakpoint );
 
-				for ( ReferenceType vmClass : matchingTypes ) {
-					try {
-						SourceMap sourceMap = findSourceMapByFQN( this.vm.allThreads().getFirst(), vmClass.name() );
-
-						if ( sourceMap == null ) {
-							continue;
-						}
-
-						SourceMapRecord foundMapRecord = sourceMap.findClosestSourceMapRecord( breakpoint.line );
-
-						if ( foundMapRecord == null ) {
-							continue;
-						}
-
-						String sourceName = normalizeName( foundMapRecord.javaSourceClassName );
-
-						if ( !sourceName.equals( normalizeName( vmClass.name() ) ) ) {
-							continue;
-						}
-
-						Location foundLoc = null;
-						for ( Location loc : vmClass.allLineLocations() ) {
-							if ( loc.lineNumber() >= foundMapRecord.javaSourceLineStart && loc.lineNumber() <= foundMapRecord.javaSourceLineEnd ) {
-								foundLoc = loc;
-								break;
-							}
-						}
-
-						if ( foundLoc == null ) {
-							continue;
-						}
-
-						BreakpointRequest bpReq = vm.eventRequestManager().createBreakpointRequest( foundLoc );
-						bpReq.setSuspendPolicy( SUSPEND_POLICY );
-						bpReq.enable();
-
-					} catch ( BoxRuntimeException e ) {
-						e.printStackTrace();
-					} catch ( AbsentInformationException e ) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-				}
+				locations.stream().limit( 1 ).forEach( location -> {
+					BreakpointRequest bpReq = vm.eventRequestManager().createBreakpointRequest( location );
+					bpReq.setSuspendPolicy( SUSPEND_POLICY );
+					bpReq.enable();
+				} );
 			}
 		}
 	}
 
+	private List<Location> findLocation( String fileName, Breakpoint breakpoint ) {
+
+		if ( vmUsesJavaBoxpiler ) {
+			List<ReferenceType> matchingTypes = getMatchingReferenceTypes( fileName );
+
+			return matchingTypes.stream().map( referenceType -> findLocationUsingJavaBoxpiler( referenceType, breakpoint ) ).toList();
+		}
+
+		String lcased = fileName.toLowerCase();
+
+		if ( !locations.containsKey( lcased ) ) {
+			return new ArrayList();
+		}
+
+		var map = locations.get( lcased );
+
+		if ( !map.containsKey( breakpoint.line ) ) {
+			return new ArrayList();
+		}
+
+		return map.get( breakpoint.line );
+	}
+
+	private Location findLocationUsingJavaBoxpiler( ReferenceType vmClass, Breakpoint breakpoint ) {
+		SourceMap sourceMap = findSourceMapByFQN( this.vm.allThreads().getFirst(), vmClass.name() );
+
+		if ( sourceMap == null ) {
+			return null;
+		}
+
+		SourceMapRecord foundMapRecord = sourceMap.findClosestSourceMapRecord( breakpoint.line );
+
+		if ( foundMapRecord == null ) {
+			return null;
+		}
+
+		String sourceName = normalizeName( foundMapRecord.javaSourceClassName );
+
+		if ( !sourceName.equals( normalizeName( vmClass.name() ) ) ) {
+			return null;
+		}
+
+		try {
+			for ( Location loc : vmClass.allLineLocations() ) {
+				if ( loc.lineNumber() >= foundMapRecord.javaSourceLineStart && loc.lineNumber() <= foundMapRecord.javaSourceLineEnd ) {
+					return loc;
+				}
+			}
+		} catch ( AbsentInformationException e ) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return null;
+		}
+
+		return null;
+	}
+
 	private List<ReferenceType> getMatchingReferenceTypes( String fileName ) {
 		String lCaseFileName = fileName.toLowerCase();
+		if ( vmUsesJavaBoxpiler ) {
 
-		if ( !this.sourceMaps.containsKey( lCaseFileName ) ) {
-			return new ArrayList<ReferenceType>();
+			if ( !this.sourceMaps.containsKey( lCaseFileName ) ) {
+				return new ArrayList<ReferenceType>();
+			}
+
+			SourceMap	map				= this.sourceMaps.get( lCaseFileName );
+
+			Set<String>	referenceTypes	= new HashSet<String>();
+
+			for ( SourceMapRecord record : map.sourceMapRecords ) {
+				referenceTypes.add( normalizeName( record.javaSourceClassName ) );
+			}
+
+			return vmClasses.stream().filter( ( rt ) -> referenceTypes.contains( normalizeName( rt.name() ) ) ).collect( Collectors.toList() );
 		}
 
-		SourceMap	map				= this.sourceMaps.get( lCaseFileName );
+		String	normalizedFileName	= normalizeName( fileName );
 
-		Set<String>	referenceTypes	= new HashSet<String>();
+		var		x					= vmClasses.stream().filter( rt -> normalizeName( rt.name() ).contains( "appbxs" ) ).collect( Collectors.toList() );
+		;
 
-		for ( SourceMapRecord record : map.sourceMapRecords ) {
-			referenceTypes.add( normalizeName( record.javaSourceClassName ) );
-		}
-
-		return vmClasses.stream().filter( ( rt ) -> referenceTypes.contains( normalizeName( rt.name() ) ) ).collect( Collectors.toList() );
+		return vmClasses.stream().filter( rt -> normalizeName( rt.name() ).equals( normalizedFileName ) ).collect( Collectors.toList() );
 	}
 
 	private String normalizeName( String className ) {
-		return className.replaceAll( "\\W", "" ).toLowerCase();
+		return NON_WORD_PATTERN.matcher( className ).replaceAll( "" ).toLowerCase();
 	}
 }

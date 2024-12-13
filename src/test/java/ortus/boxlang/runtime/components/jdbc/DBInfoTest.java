@@ -34,7 +34,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.global.jdbc.BaseJDBCTest;
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.jdbc.DataSource;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
@@ -47,14 +50,21 @@ public class DBInfoTest extends BaseJDBCTest {
 
 	static Key			result	= new Key( "result" );
 	static DataSource	MySQLDataSource;
+	static BoxRuntime	instance;
+	IBoxContext			context;
 
 	@BeforeAll
 	public static void additionalSetup() {
-		getDatasource().execute( "CREATE TABLE admins ( id INTEGER PRIMARY KEY, name VARCHAR(155) )" );
+		instance = BoxRuntime.getInstance( true );
+		IBoxContext setUpContext = new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+
+		getDatasource().execute( "CREATE TABLE admins ( id INTEGER PRIMARY KEY, name VARCHAR(155) )", setUpContext );
 		getDatasource().execute(
-		    "CREATE TABLE projects ( id INTEGER PRIMARY KEY, name VARCHAR(155), leadDev INTEGER, CONSTRAINT devID FOREIGN KEY (leadDev) REFERENCES admins(id) )" );
+		    "CREATE TABLE projects ( id INTEGER PRIMARY KEY, name VARCHAR(155), leadDev INTEGER, CONSTRAINT devID FOREIGN KEY (leadDev) REFERENCES admins(id) )",
+		    setUpContext );
 		getDatasource().execute(
-		    "CREATE PROCEDURE FOO(IN S_MONTH INTEGER, IN S_YEAR INTEGER, OUT TOTAL DECIMAL(10,2)) PARAMETER STYLE JAVA READS SQL DATA LANGUAGE JAVA EXTERNAL NAME 'com.example.sales.calculateRevenueByMonth'" );
+		    "CREATE PROCEDURE FOO(IN S_MONTH INTEGER, IN S_YEAR INTEGER, OUT TOTAL DECIMAL(10,2)) PARAMETER STYLE JAVA READS SQL DATA LANGUAGE JAVA EXTERNAL NAME 'com.example.sales.calculateRevenueByMonth'",
+		    setUpContext );
 	}
 
 	@DisplayName( "It requires a non-null `type` argument matching a valid type" )

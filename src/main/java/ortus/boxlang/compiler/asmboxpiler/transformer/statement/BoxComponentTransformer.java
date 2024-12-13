@@ -48,8 +48,6 @@ public class BoxComponentTransformer extends AbstractTransformer {
 			throw new IllegalStateException();
 		}
 
-		transpiler.incrementComponentCounter();
-
 		MethodContextTracker	tracker	= trackerOption.get();
 		List<AbstractInsnNode>	nodes	= new ArrayList<>();
 		nodes.addAll( tracker.loadCurrentContext() );
@@ -76,7 +74,9 @@ public class BoxComponentTransformer extends AbstractTransformer {
 		nodes.addAll( transpiler.transformAnnotations( attributes, true, false ) );
 
 		// Component.ComponentBody
+		transpiler.incrementComponentCounter();
 		nodes.addAll( generateBodyNodes( boxComponent.getBody() ) );
+		transpiler.decrementComponentCounter();
 
 		nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
 		    Type.getInternalName( IBoxContext.class ),
@@ -85,15 +85,7 @@ public class BoxComponentTransformer extends AbstractTransformer {
 		        Type.getType( Component.ComponentBody.class ) ),
 		    true ) );
 
-		if ( boxComponent.getBody() == null || boxComponent.getBody().size() == 0 ) {
-			nodes.add( new InsnNode( Opcodes.POP ) );
-
-			transpiler.decrementComponentCounter();
-
-			return nodes;
-		}
-
-		if ( transpiler.canReturn() ) {
+		if ( transpiler.isInsideComponent() ) {
 			LabelNode ifLabel = new LabelNode();
 
 			nodes.add( new InsnNode( Opcodes.DUP ) );
@@ -110,6 +102,34 @@ public class BoxComponentTransformer extends AbstractTransformer {
 
 			nodes.add( new JumpInsnNode( Opcodes.IFEQ, ifLabel ) );
 
+			nodes.add( new InsnNode( Opcodes.ARETURN ) );
+
+			AsmHelper.addDebugLabel( nodes, "BoxComponent - isInsideComponent ifLabel" );
+			nodes.add( ifLabel );
+
+			if ( returnContext != ReturnValueContext.VALUE && returnContext != ReturnValueContext.VALUE_OR_NULL ) {
+				nodes.add( new InsnNode( Opcodes.POP ) );
+			}
+
+			return AsmHelper.addLineNumberLabels( nodes, node );
+		} else if ( transpiler.canReturn() ) {
+			LabelNode ifLabel = new LabelNode();
+
+			nodes.add( new InsnNode( Opcodes.DUP ) );
+
+			nodes.add(
+			    new MethodInsnNode(
+			        Opcodes.INVOKEVIRTUAL,
+			        Type.getInternalName( Component.BodyResult.class ),
+			        "isEarlyExit",
+			        Type.getMethodDescriptor( Type.BOOLEAN_TYPE ),
+			        false
+			    )
+			);
+
+			AsmHelper.addDebugLabel( nodes, "BoxComponent - canReturn ifeq ifLabel" );
+			nodes.add( new JumpInsnNode( Opcodes.IFEQ, ifLabel ) );
+
 			nodes.add(
 			    new MethodInsnNode(
 			        Opcodes.INVOKEVIRTUAL,
@@ -122,12 +142,21 @@ public class BoxComponentTransformer extends AbstractTransformer {
 
 			nodes.add( new InsnNode( Opcodes.ARETURN ) );
 
+			AsmHelper.addDebugLabel( nodes, "BoxComponent - canReturn ifLabel" );
 			nodes.add( ifLabel );
+			if ( returnContext != ReturnValueContext.VALUE && returnContext != ReturnValueContext.VALUE_OR_NULL ) {
+				nodes.add( new InsnNode( Opcodes.POP ) );
+			}
+		} else {
+			// remove the body result because we decided not to use it.
+			if ( returnContext != ReturnValueContext.VALUE && returnContext != ReturnValueContext.VALUE_OR_NULL ) {
+				nodes.add( new InsnNode( Opcodes.POP ) );
+			}
 		}
-		nodes.add( new InsnNode( Opcodes.POP ) );
-		transpiler.decrementComponentCounter();
 
-		return nodes;
+		AsmHelper.addDebugLabel( nodes, "BoxComponent - done" );
+
+		return AsmHelper.addLineNumberLabels( nodes, node );
 	}
 
 	private List<AbstractInsnNode> generateBodyNodes( List<BoxStatement> body ) {
@@ -161,6 +190,7 @@ public class BoxComponentTransformer extends AbstractTransformer {
 		    + "$ComponentBodyLambda_" + transpiler.incrementAndGetLambdaCounter() + ";" );
 
 		ClassNode	classNode	= new ClassNode();
+		classNode.visitSource( transpiler.getProperty( "filePath" ), null );
 
 		AsmHelper.init( classNode, false, type, Type.getType( Object.class ), methodVisitor -> {
 		}, Type.getType( Component.ComponentBody.class ) );
@@ -168,13 +198,20 @@ public class BoxComponentTransformer extends AbstractTransformer {
 		AsmHelper.methodWithContextAndClassLocator( classNode, "process", Type.getType( IBoxContext.class ), Type.getType( Component.BodyResult.class ), false,
 		    transpiler, false,
 		    () -> {
-			    List<AbstractInsnNode> nodes = new ArrayList<>();
+			    List<AbstractInsnNode> nodes	= new ArrayList<>();
+			    List<AbstractInsnNode> bodyNodes = body.stream()
+			        .flatMap( statement -> transpiler.transform( statement, TransformerContext.NONE ).stream() )
+			        .toList();
+
+			    // nodes.addAll(
+			    // body.stream()
+			    // .flatMap( statement -> transpiler.transform( statement, TransformerContext.NONE ).stream() )
+			    // .toList()
+			    // );
 
 			    nodes.addAll(
-			        body.stream()
-			            .flatMap( statement -> transpiler.transform( statement, TransformerContext.NONE ).stream() )
-			            .toList()
-			    );
+			        AsmHelper.methodLengthGuard(
+			            type, bodyNodes, classNode, "process", Type.getType( IBoxContext.class ), Type.getType( Component.BodyResult.class ), transpiler ) );
 
 			    nodes.add(
 			        new FieldInsnNode( Opcodes.GETSTATIC,

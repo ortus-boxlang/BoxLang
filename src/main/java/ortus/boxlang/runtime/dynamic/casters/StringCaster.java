@@ -17,23 +17,32 @@
  */
 package ortus.boxlang.runtime.dynamic.casters;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.Locale;
+import java.util.stream.Collectors;
+
+import org.apache.commons.io.ByteOrderMark;
+import org.apache.commons.io.input.BOMInputStream;
 
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.XML;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
+import ortus.boxlang.runtime.util.FileSystemUtil;
 
 /**
  * I handle casting anything to a string
@@ -117,11 +126,37 @@ public class StringCaster implements IBoxCaster {
 			}
 		}
 		object = DynamicObject.unWrap( object );
+		Charset charset = null;
+		if ( encoding != null ) {
+			charset = Charset.forName( encoding );
+		}
 		if ( object instanceof Key key ) {
 			return key.getName();
 		}
 		if ( object instanceof String str ) {
 			return str;
+		}
+		if ( object instanceof InputStream is ) {
+			try (
+			    BOMInputStream inputStream = BOMInputStream.builder()
+			        .setInputStream( is )
+			        .setByteOrderMarks( ByteOrderMark.UTF_8, ByteOrderMark.UTF_16BE, ByteOrderMark.UTF_16LE, ByteOrderMark.UTF_32BE,
+			            ByteOrderMark.UTF_32LE )
+			        .setInclude( false )
+			        .get() ) {
+				InputStreamReader inputReader = null;
+				if ( charset != null ) {
+					inputReader = new InputStreamReader( inputStream, charset );
+				} else {
+					inputReader = new InputStreamReader( inputStream );
+				}
+				try ( BufferedReader reader = new BufferedReader( inputReader ) ) {
+					return reader.lines().collect( Collectors.joining( FileSystemUtil.LINE_SEPARATOR ) );
+				}
+
+			} catch ( Exception e ) {
+				throw new BoxCastException( "Failed to read input stream as a string.", e );
+			}
 		}
 		if ( object instanceof Boolean bool ) {
 			return bool ? "true" : "false";
@@ -200,8 +235,8 @@ public class StringCaster implements IBoxCaster {
 			return object.toString();
 		}
 		if ( object instanceof byte[] b ) {
-			if ( encoding != null && !encoding.isEmpty() ) {
-				return new String( b, java.nio.charset.Charset.forName( encoding ) );
+			if ( charset != null ) {
+				return new String( b, charset );
 			} else {
 				return new String( b );
 			}

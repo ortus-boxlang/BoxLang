@@ -45,7 +45,7 @@ public class Dump extends Component {
 		declaredAttributes = new Attribute[] {
 		    new Attribute( Key.var, "any" ),
 		    new Attribute( Key.label, "string", "" ),
-		    new Attribute( Key.top, "numeric", 0 ),
+		    new Attribute( Key.top, "numeric" ),
 		    new Attribute( Key.expand, "boolean" ),
 		    new Attribute( Key.abort, "any", false ),
 		    new Attribute( Key.output, "string", Set.of( Validator.NON_EMPTY ) ),
@@ -94,11 +94,13 @@ public class Dump extends Component {
 			attributes.put( Key.abort, true );
 		}
 
+		Object top = attributes.get( Key.top );
+
 		DumpUtil.dump(
 		    context,
 		    DynamicObject.unWrap( attributes.get( Key.var ) ),
 		    attributes.getAsString( Key.label ),
-		    IntegerCaster.cast( attributes.get( Key.top ) ),
+		    top == null ? null : IntegerCaster.cast( top ),
 		    attributes.getAsBoolean( Key.expand ),
 		    BooleanCaster.cast( attributes.get( Key.abort ) ),
 		    attributes.getAsString( Key.output ),

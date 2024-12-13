@@ -58,28 +58,29 @@ public class BoxIfElseTransformer extends AbstractTransformer {
 		    Type.getMethodDescriptor( Type.BOOLEAN_TYPE ),
 		    false ) );
 		LabelNode ifLabel = new LabelNode();
+		AsmHelper.addDebugLabel( nodes, "BoxIfElse - goto iflabel" );
 		nodes.add( new JumpInsnNode( Opcodes.IFEQ, ifLabel ) );
 		nodes.addAll( transpiler.transform( ifElse.getThenBody(), TransformerContext.NONE, returnContext ) );
 
-		if ( ifElse.getElseBody() == null ) {
-			LabelNode elseLabel = new LabelNode();
-			nodes.add( new JumpInsnNode( Opcodes.GOTO, elseLabel ) );
-			nodes.add( ifLabel );
-			if ( returnContext == ReturnValueContext.VALUE_OR_NULL ) {
-				nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
-			}
-			nodes.add( elseLabel );
-		} else if ( ifElse.getElseBody() != null ) {
-			LabelNode elseLabel = new LabelNode();
-			nodes.add( new JumpInsnNode( Opcodes.GOTO, elseLabel ) );
-			nodes.add( ifLabel );
+		LabelNode elseLabel = new LabelNode();
+		AsmHelper.addDebugLabel( nodes, "BoxIfElse - goto elselabel" );
+		nodes.add( new JumpInsnNode( Opcodes.GOTO, elseLabel ) );
+
+		AsmHelper.addDebugLabel( nodes, "BoxIfElse - ifLabel" );
+		nodes.add( ifLabel );
+
+		if ( ifElse.getElseBody() != null ) {
 			nodes.addAll( transpiler.transform( ifElse.getElseBody(), TransformerContext.NONE, returnContext ) );
-			nodes.add( elseLabel );
-		} else {
-			nodes.add( ifLabel );
+		} else if ( returnContext == ReturnValueContext.VALUE_OR_NULL ) {
+			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
 		}
 
-		return nodes;
+		AsmHelper.addDebugLabel( nodes, "BoxIfElse - elseLabel" );
+		nodes.add( elseLabel );
+
+		AsmHelper.addDebugLabel( nodes, "BoxIfElse - end" );
+
+		return AsmHelper.addLineNumberLabels( nodes, node );
 
 	}
 

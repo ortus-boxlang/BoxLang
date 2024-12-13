@@ -1,4 +1,3 @@
-
 /**
  * [BoxLang]
  *
@@ -16,7 +15,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ortus.boxlang.runtime.bifs.global.list;
 
 import ortus.boxlang.runtime.bifs.BIF;
@@ -30,13 +28,14 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.ListUtil;
+import ortus.boxlang.runtime.util.RegexBuilder;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.STRING, name = "ListQualify" )
 
 public class ListQualify extends BIF {
 
-	private final String elementsChar = "char";
+	private static final String ELEMENTS_CHAR = "char";
 
 	/**
 	 * Constructor
@@ -59,17 +58,16 @@ public class ListQualify extends BIF {
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.list The list to qualify.
-	 * 
+	 *
 	 * @argument.qualifier The string to insert at the beginning and end of each element.
-	 * 
+	 *
 	 * @argument.delimiter The delimiter used in the list.
-	 * 
+	 *
 	 * @argument.elements The elements to qualify. If set to "char", only elements that are all alphabetic characters will be qualified.
-	 * 
+	 *
 	 * @argument.includeEmptyFields If true, empty fields will be qualified.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-
 		String	elements	= arguments.getAsString( Key.elements );
 		String	qualifier	= arguments.getAsString( Key.qualifier );
 
@@ -81,8 +79,9 @@ public class ListQualify extends BIF {
 		            arguments.getAsBoolean( Key.includeEmptyFields ),
 		            true
 		        ).stream().map( item -> {
-			        if ( elements.equals( elementsChar ) ? StringCaster.cast( item ).matches( "^[a-zA-Z]*$" ) : true ) {
-				        return qualifier + item + qualifier;
+
+			        if ( elements.equals( ELEMENTS_CHAR ) ? RegexBuilder.of( StringCaster.cast( item ), RegexBuilder.ALPHA ).matches() : true ) {
+				        return new StringBuilder( qualifier ).append( item ).append( qualifier ).toString();
 			        } else {
 				        return item;
 			        }

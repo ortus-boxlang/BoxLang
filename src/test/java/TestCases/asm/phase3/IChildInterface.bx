@@ -1,9 +1,0 @@
-interface extends="IParentInterface" {
-	default function childDefaultMethod() {
-		return "childDefaultMethod";
-	}
-	default function parentOverrideMe() {
-		return "parentOverrideMeChild";
-	}
-	function childMethod();
-}

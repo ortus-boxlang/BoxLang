@@ -14,11 +14,14 @@
  */
 package ortus.boxlang.compiler.ast.sql.select.expression.literal;
 
+import java.util.Map;
+
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLExpression;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
+import ortus.boxlang.runtime.jdbc.qoq.QoQExecution;
 
 /**
  * Abstract Node class representing SQL boolean
@@ -33,7 +36,7 @@ public class SQLBooleanLiteral extends SQLExpression {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code of the statement
 	 */
-	protected SQLBooleanLiteral( boolean value, Position position, String sourceText ) {
+	public SQLBooleanLiteral( boolean value, Position position, String sourceText ) {
 		super( position, sourceText );
 		setValue( value );
 	}
@@ -59,10 +62,21 @@ public class SQLBooleanLiteral extends SQLExpression {
 	}
 
 	/**
-	 * Check if the expression evaluates to a boolean value
+	 * Runtime check if the expression evaluates to a boolean value and works for columns as well
+	 * 
+	 * @param QoQExec Query execution state
+	 * 
+	 * @return true if the expression evaluates to a boolean value
 	 */
-	public boolean isBoolean() {
+	public boolean isBoolean( QoQExecution QoQExec ) {
 		return true;
+	}
+
+	/**
+	 * Evaluate the expression
+	 */
+	public Object evaluate( QoQExecution QoQExec, int[] intersection ) {
+		return value;
 	}
 
 	@Override
@@ -75,6 +89,14 @@ public class SQLBooleanLiteral extends SQLExpression {
 	public BoxNode accept( ReplacingBoxVisitor v ) {
 		// TODO Auto-generated method stub
 		throw new UnsupportedOperationException( "Unimplemented method 'accept'" );
+	}
+
+	@Override
+	public Map<String, Object> toMap() {
+		Map<String, Object> map = super.toMap();
+
+		map.put( "value", value );
+		return map;
 	}
 
 }

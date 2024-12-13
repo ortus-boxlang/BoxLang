@@ -9,4 +9,8 @@ component {
 		return "I was called!";
 	}
 
+	function hashCode(){
+		return 42;
+	}
+
 }

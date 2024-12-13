@@ -51,16 +51,19 @@ public class Tan extends BIF {
 	 * @argument.number The angle in radians to calculate the tangent of
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Number value = arguments.getAsNumber( Key.number );
-		if ( value instanceof BigDecimal bd ) {
-			return tan( bd, MathUtil.getMathContext() );
-		}
-		return StrictMath.tan( value.doubleValue() );
+		return _invoke( arguments.getAsNumber( Key.number ) );
 	}
 
 	public static BigDecimal tan( BigDecimal x, MathContext mc ) {
 		BigDecimal	sinX	= Sin.sin( x, mc );
 		BigDecimal	cosX	= Cos.cos( x, mc );
 		return sinX.divide( cosX, mc );
+	}
+
+	public static Number _invoke( Number value ) {
+		if ( value instanceof BigDecimal bd ) {
+			return tan( bd, MathUtil.getMathContext() );
+		}
+		return StrictMath.tan( value.doubleValue() );
 	}
 }

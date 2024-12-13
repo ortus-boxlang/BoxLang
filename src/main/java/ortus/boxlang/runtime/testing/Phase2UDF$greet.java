@@ -159,7 +159,7 @@ public class Phase2UDF$greet extends UDF {
 		    Key.of( "Greeting" ),
 		    Concat.invoke(
 		        "Hello ",
-		        context.scopeFindNearby( Key.of( "name" ), null ).value()
+		        context.scopeFindNearby( Key.of( "name" ), null, false ).value()
 		    )
 		);
 
@@ -167,17 +167,17 @@ public class Phase2UDF$greet extends UDF {
 		Referencer.getAndInvoke(
 		    context,
 		    // Object
-		    context.scopeFindNearby( Key.of( "out" ), null ).value(),
+		    context.scopeFindNearby( Key.of( "out" ), null, false ).value(),
 		    // Method
 		    Key.of( "println" ),
 		    // Arguments
 		    new Object[] {
-		        "Inside UDF, race scope lookup finds: " + context.scopeFindNearby( Key.of( "race" ), null ).value()
+		        "Inside UDF, race scope lookup finds: " + context.scopeFindNearby( Key.of( "race" ), null, false ).value()
 		    },
 		    false
 		);
 
-		return context.scopeFindNearby( Key.of( "greeting" ), null ).value();
+		return context.scopeFindNearby( Key.of( "greeting" ), null, false ).value(); 
 	}
 
 	// ITemplateRunnable implementation methods

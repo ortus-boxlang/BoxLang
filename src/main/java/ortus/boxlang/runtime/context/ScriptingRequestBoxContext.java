@@ -188,7 +188,7 @@ public class ScriptingRequestBoxContext extends RequestBoxContext {
 	 *
 	 */
 	@Override
-	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow ) {
+	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow, boolean forAssign ) {
 
 		// In query loop?
 		var querySearch = queryFindNearby( key );
@@ -199,7 +199,7 @@ public class ScriptingRequestBoxContext extends RequestBoxContext {
 		// In Variables scope? (thread-safe lookup and get)
 		Object result = variablesScope.getRaw( key );
 		// Null means not found
-		if ( isDefined( result ) ) {
+		if ( isDefined( result, forAssign ) ) {
 			// Unwrap the value now in case it was really actually null for real
 			return new ScopeSearchResult( variablesScope, Struct.unWrapNull( result ), key );
 		}
@@ -208,7 +208,7 @@ public class ScriptingRequestBoxContext extends RequestBoxContext {
 			return null;
 		}
 
-		return scopeFind( key, defaultScope );
+		return scopeFind( key, defaultScope, forAssign );
 	}
 
 	/**
@@ -223,8 +223,8 @@ public class ScriptingRequestBoxContext extends RequestBoxContext {
 	 *
 	 */
 	@Override
-	public ScopeSearchResult scopeFind( Key key, IScope defaultScope ) {
-		return super.scopeFind( key, defaultScope );
+	public ScopeSearchResult scopeFind( Key key, IScope defaultScope, boolean forAssign ) {
+		return super.scopeFind( key, defaultScope, forAssign );
 	}
 
 	/**

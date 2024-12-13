@@ -35,7 +35,6 @@ import com.github.javaparser.ast.expr.IntegerLiteralExpr;
 import com.github.javaparser.ast.expr.LambdaExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
-import com.github.javaparser.ast.expr.StringLiteralExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.EmptyStmt;
 import com.github.javaparser.ast.stmt.ReturnStmt;
@@ -61,8 +60,9 @@ import ortus.boxlang.compiler.ast.statement.BoxProperty;
 import ortus.boxlang.compiler.ast.statement.BoxReturnType;
 import ortus.boxlang.compiler.ast.statement.BoxType;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
+import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxStringLiteralTransformer;
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
-import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.javaproxy.InterfaceProxyService;
 import ortus.boxlang.runtime.types.Array;
@@ -272,7 +272,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 				return documentation;
 			}
 
-			public Key getName() {
+			public Key bxGetName() {
 				return this.name;
 			}
 
@@ -478,7 +478,10 @@ public class BoxClassTransformer extends AbstractTransformer {
 			    .filter( it -> it.toLowerCase().startsWith( "java:" ) )
 			    .map( it -> it.substring( 5 ) )
 			    .collect( BLCollector.toArray() );
-			var		interfaceProxyDefinition	= InterfaceProxyService.generateDefinition( new ScriptingRequestBoxContext(), implementsArray );
+
+			// var interfaceProxyDefinition = InterfaceProxyService.generateDefinition( new ScriptingRequestBoxContext(), implementsArray );
+			var		interfaceProxyDefinition	= InterfaceProxyService.generateDefinition( BoxRuntime.getInstance().getRuntimeContext(), implementsArray );
+
 			// TODO: Remove methods that already have a @overrideJava UDF definition to avoid duplicates
 			interfaces.addAll( interfaceProxyDefinition.interfaces() );
 			interfaceMethods = ProxyTransformer.generateInterfaceMethods( interfaceProxyDefinition.methods(), "this" );
@@ -657,7 +660,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 		for ( Map.Entry<String, BoxExpression> entry : transpiler.getKeys().entrySet() ) {
 			MethodCallExpr methodCallExpr = new MethodCallExpr( new NameExpr( "Key" ), "of" );
 			if ( entry.getValue() instanceof BoxStringLiteral str ) {
-				methodCallExpr.addArgument( new StringLiteralExpr( str.getValue() ) );
+				methodCallExpr.addArgument( BoxStringLiteralTransformer.transform( str.getValue() ) );
 			} else if ( entry.getValue() instanceof BoxIntegerLiteral id ) {
 				methodCallExpr.addArgument( new IntegerLiteralExpr( id.getValue() ) );
 			} else {

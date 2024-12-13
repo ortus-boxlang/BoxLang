@@ -230,16 +230,16 @@ expr:
     | unary_operator expr
     | expr PIPE2 expr
     | expr ( STAR | DIV | MOD) expr
-    | expr ( PLUS | MINUS) expr
-    | expr ( LT2 | GT2 | AMP | PIPE) expr
+    | expr (PLUS | MINUS) expr
+    // | expr ( LT2 | GT2 | AMP | PIPE) expr
     | expr ( LT | LT_EQ | GT | GT_EQ) expr
     | expr (
         ASSIGN
         | EQ
         | NOT_EQ1
         | NOT_EQ2
-        | IS_
         | IS_ NOT_
+        | IS_
         // | IS_ NOT_? DISTINCT_ FROM_
         // | IN_
         | LIKE_
@@ -254,8 +254,7 @@ expr:
     //| OPEN_PAR expr (COMMA expr)* CLOSE_PAR
     // | CAST_ OPEN_PAR expr AS_ type_name CLOSE_PAR
     // | expr COLLATE_ collation_name
-    | expr NOT_? (LIKE_ | GLOB_ | REGEXP_ | MATCH_) expr (ESCAPE_ expr)?
-    | expr ( ISNULL_ | NOTNULL_ | NOT_ NULL_)
+    | expr NOT_? LIKE_ expr (ESCAPE_ expr)?
     | expr IS_ NOT_? expr
     | expr NOT_? BETWEEN_ expr AND_ expr
     | expr NOT_? IN_ (
@@ -340,23 +339,31 @@ reindex_stmt:
 //select_stmt:    common_table_stmt? select_core (compound_operator select_core)* order_by_stmt? limit_stmt?;
 
 select_stmt:
-    select_core (UNION_ ALL_? select_core)* order_by_stmt? limit_stmt?
+    select_core (union)* order_by_stmt? limit_stmt?
+;
+
+union:
+    UNION_ ALL_? select_core
 ;
 
 join_clause:
     table (join_operator table join_constraint?)*
 ;
 
-select_core: (
-        SELECT_ (DISTINCT_ /*| ALL_*/)? result_column (COMMA result_column)* (
-            FROM_ (table (COMMA table)* | join_clause)
-        )? (WHERE_ whereExpr = expr)? (
-            GROUP_ BY_ groupByExpr += expr (COMMA groupByExpr += expr)* (
-                HAVING_ havingExpr = expr
-            )?
-        )? //(WINDOW_ window_name AS_ window_defn ( COMMA window_name AS_ window_defn)*)?
-    )
+select_core:
+    SELECT_ top? (DISTINCT_ /*| ALL_*/)? result_column (COMMA result_column)* (
+        FROM_ (table (COMMA table)* | join_clause)
+    )? (WHERE_ whereExpr = expr)? (
+        GROUP_ BY_ groupByExpr += expr (COMMA groupByExpr += expr)* (
+            HAVING_ havingExpr = expr
+        )?
+    )? limit_stmt?
+    //(WINDOW_ window_name AS_ window_defn ( COMMA window_name AS_ window_defn)*)?
     // | values_clause
+;
+
+top:
+    TOP NUMERIC_LITERAL
 ;
 
 factored_select_stmt:
@@ -581,7 +588,7 @@ unary_operator:
     MINUS
     | PLUS
     // | TILDE
-    | NOT_
+    | BANG
 ;
 
 error_message:
@@ -853,6 +860,6 @@ table_function_name:
 any_name:
     IDENTIFIER
     | keyword
-    | STRING_LITERAL
-    | OPEN_PAR any_name CLOSE_PAR
+    // | STRING_LITERAL
+    //| OPEN_PAR any_name CLOSE_PAR
 ;

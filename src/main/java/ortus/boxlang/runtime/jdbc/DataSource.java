@@ -23,6 +23,7 @@ import com.zaxxer.hikari.HikariDataSource;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.segments.DatasourceConfig;
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
@@ -244,7 +245,15 @@ public class DataSource implements Comparable<DataSource> {
 	 */
 	public ExecutedQuery execute( String query ) {
 		try ( Connection conn = getConnection() ) {
-			return execute( query, conn );
+			return execute( query, conn, null );
+		} catch ( SQLException e ) {
+			throw new DatabaseException( e.getMessage(), e );
+		}
+	}
+
+	public ExecutedQuery execute( String query, IBoxContext context ) {
+		try ( Connection conn = getConnection() ) {
+			return execute( query, conn, context );
 		} catch ( SQLException e ) {
 			throw new DatabaseException( e.getMessage(), e );
 		}
@@ -263,25 +272,25 @@ public class DataSource implements Comparable<DataSource> {
 	 * @return An array of Structs, each representing a row of the result set (if any). If there are no results (say, for an UPDATE statement), an empty
 	 *         array is returned.
 	 */
-	public ExecutedQuery execute( String query, Connection conn ) {
+	public ExecutedQuery execute( String query, Connection conn, IBoxContext context ) {
 		PendingQuery pendingQuery = new PendingQuery( query, new ArrayList<>() );
-		return pendingQuery.execute( conn );
+		return pendingQuery.execute( conn, context );
 	}
 
 	/**
 	 * Execute a query with a List of parameters on a given connection.
 	 */
-	public ExecutedQuery execute( String query, List<QueryParameter> parameters, Connection conn ) {
+	public ExecutedQuery execute( String query, List<QueryParameter> parameters, Connection conn, IBoxContext context ) {
 		PendingQuery pendingQuery = new PendingQuery( query, parameters );
-		return pendingQuery.execute( conn );
+		return pendingQuery.execute( conn, context );
 	}
 
 	/**
 	 * Execute a query with a List of parameters on the default connection.
 	 */
-	public ExecutedQuery execute( String query, List<QueryParameter> parameters ) {
+	public ExecutedQuery execute( String query, List<QueryParameter> parameters, IBoxContext context ) {
 		try ( Connection conn = getConnection() ) {
-			return execute( query, parameters, conn );
+			return execute( query, parameters, conn, context );
 		} catch ( SQLException e ) {
 			throw new DatabaseException( e.getMessage(), e );
 		}
@@ -290,17 +299,17 @@ public class DataSource implements Comparable<DataSource> {
 	/**
 	 * Execute a query with an array of parameters on a given connection.
 	 */
-	public ExecutedQuery execute( String query, Array parameters, Connection conn ) {
+	public ExecutedQuery execute( String query, Array parameters, Connection conn, IBoxContext context ) {
 		PendingQuery pendingQuery = new PendingQuery( query, parameters, new QueryOptions( new Struct() ) );
-		return pendingQuery.execute( conn );
+		return pendingQuery.execute( conn, context );
 	}
 
 	/**
 	 * Execute a query with an array of parameters on the default connection.
 	 */
-	public ExecutedQuery execute( String query, Array parameters ) {
+	public ExecutedQuery execute( String query, Array parameters, IBoxContext context ) {
 		try ( Connection conn = getConnection() ) {
-			return execute( query, parameters, conn );
+			return execute( query, parameters, conn, context );
 		} catch ( SQLException e ) {
 			throw new DatabaseException( e.getMessage(), e );
 		}
@@ -309,17 +318,17 @@ public class DataSource implements Comparable<DataSource> {
 	/**
 	 * Execute a query with a struct of parameters on a given connection.
 	 */
-	public ExecutedQuery execute( String query, IStruct parameters, Connection conn ) {
+	public ExecutedQuery execute( String query, IStruct parameters, Connection conn, IBoxContext context ) {
 		PendingQuery pendingQuery = new PendingQuery( query, parameters, new QueryOptions( new Struct() ) );
-		return pendingQuery.execute( conn );
+		return pendingQuery.execute( conn, context );
 	}
 
 	/**
 	 * Execute a query with a struct of parameters on the default connection.
 	 */
-	public ExecutedQuery execute( String query, IStruct parameters ) {
+	public ExecutedQuery execute( String query, IStruct parameters, IBoxContext context ) {
 		try ( Connection conn = getConnection() ) {
-			return execute( query, parameters, conn );
+			return execute( query, parameters, conn, context );
 		} catch ( SQLException e ) {
 			throw new DatabaseException( e.getMessage(), e );
 		}

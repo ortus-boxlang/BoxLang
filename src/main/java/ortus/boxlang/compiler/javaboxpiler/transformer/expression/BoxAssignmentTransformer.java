@@ -73,7 +73,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			String				template	= """
 			                                  Referencer.setDeep(
 			                                  	${contextName},
-			                                  	${contextName}.scopeFindNearby( LocalScope.name, null ),
+			                                  	${contextName}.scopeFindNearby( LocalScope.name, null, true ),
 			                                  	null,
 			                                  	${accessKey}
 			                                  )
@@ -213,7 +213,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 				    idl.getPosition(), idl.getSourceText() );
 			}
 
-			String baseObjTemplate = "${contextName}.scopeFindNearby( ${accessKey}, ${contextName}.getDefaultAssignmentScope() ),";
+			String baseObjTemplate = "${contextName}.scopeFindNearby( ${accessKey}, ${contextName}.getDefaultAssignmentScope(), true ),";
 			// imported.foo needs to swap out the furthest left object
 			if ( transpiler.matchesImport( id.getName() ) && isBoxSyntax ) {
 				baseObjTemplate = "classLocator.load( ${contextName}, \"${accessName}\", imports ),";
@@ -242,7 +242,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			                                    )
 			                                    """;
 		} else {
-			if ( accessKeys.size() == 0 ) {
+			if ( accessKeys.size() == 0 && ! ( left instanceof BoxScope ) ) {
 				throw new ExpressionException( "You cannot assign a value to " + left.getClass().getSimpleName(), left.getPosition(), left.getSourceText() );
 			}
 			values.put( "furthestLeft", transpiler.transform( furthestLeft, TransformerContext.NONE ).toString() );
@@ -260,6 +260,17 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			           	${accessKeys}
 			           )
 			           """;
+			if ( accessKeys.size() == 0 ) {
+				template = """
+				           Referencer.setDeep(
+				           	${contextName},
+				           	${hasFinal},
+				           	${mustBeScopeName},
+				           	${furthestLeft},
+				           	${right}
+				           )
+				           """;
+			}
 		}
 
 		Node javaExpr = parseExpression( template, values );
@@ -286,7 +297,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			accessKey = createKey( id.getName() );
 			values.put( "accessKey", accessKey.toString() );
 			String obj = PlaceholderHelper.resolve(
-			    "${contextName}.scopeFindNearby( ${accessKey}, ${contextName}.getDefaultAssignmentScope() ).scope()",
+			    "${contextName}.scopeFindNearby( ${accessKey}, ${contextName}.getDefaultAssignmentScope(), true ).scope()",
 			    values );
 			values.put( "obj", obj );
 

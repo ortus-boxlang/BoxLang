@@ -49,7 +49,10 @@ public class Floor extends BIF {
 	 * @argument.value The number to return the absolute value of
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Number number = arguments.getAsNumber( Key.number );
+		return _invoke( arguments.getAsNumber( Key.number ) );
+	}
+
+	public static Number _invoke( Number number ) {
 		if ( number instanceof BigDecimal bd ) {
 			return bd.setScale( 0, RoundingMode.FLOOR );
 		}

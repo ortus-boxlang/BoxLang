@@ -23,7 +23,6 @@ import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.JumpInsnNode;
 import org.objectweb.asm.tree.LabelNode;
-import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
@@ -40,6 +39,7 @@ import ortus.boxlang.compiler.ast.statement.BoxDo;
 import ortus.boxlang.compiler.ast.statement.BoxForIn;
 import ortus.boxlang.compiler.ast.statement.BoxForIndex;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
+import ortus.boxlang.compiler.ast.statement.BoxSwitch;
 import ortus.boxlang.compiler.ast.statement.BoxWhile;
 import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
@@ -62,6 +62,10 @@ public class BoxContinueTransformer extends AbstractTransformer {
 			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
 		}
 
+		// if ( returnContext == ReturnValueContext.VALUE || returnContext == ReturnValueContext.VALUE_OR_NULL || exitsAllowed.equals( ExitsAllowed.FUNCTION ) ) {
+		// nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+		// }
+
 		MethodContextTracker	tracker			= transpiler.getCurrentMethodContextTracker().get();
 		BoxNode					labelTarget		= tracker.getStringLabel( continueNode.getLabel() );
 		LabelNode				currentBreak	= tracker.getContinue( labelTarget != null ? labelTarget : getTargetAncestor( continueNode ) );
@@ -71,26 +75,26 @@ public class BoxContinueTransformer extends AbstractTransformer {
 				nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
 			}
 			nodes.add( new JumpInsnNode( Opcodes.GOTO, currentBreak ) );
-			return nodes;
+			return AsmHelper.addLineNumberLabels( nodes, node );
 		}
 
 		if ( exitsAllowed.equals( ExitsAllowed.COMPONENT ) ) {
-			nodes.add( new LdcInsnNode( "" ) );
+			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
 			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
 			    Type.getInternalName( Component.BodyResult.class ),
-			    "ofBreak",
+			    "ofContinue",
 			    Type.getMethodDescriptor( Type.getType( Component.BodyResult.class ), Type.getType( String.class ) ),
 			    false )
 			);
 			nodes.add( new InsnNode( Opcodes.ARETURN ) );
-			return nodes;
+			return AsmHelper.addLineNumberLabels( nodes, node );
 		} else if ( exitsAllowed.equals( ExitsAllowed.LOOP ) ) {
 			nodes.add( new JumpInsnNode( Opcodes.GOTO, currentBreak ) );
-			return nodes;
+			return AsmHelper.addLineNumberLabels( nodes, node );
 			// template = "if(true) break " + breakLabel + ";";
 		} else if ( exitsAllowed.equals( ExitsAllowed.FUNCTION ) ) {
 			nodes.add( new InsnNode( Opcodes.ARETURN ) );
-			return nodes;
+			return AsmHelper.addLineNumberLabels( nodes, node );
 		}
 
 		throw new RuntimeException( "Cannot continue from current location - processing: " + transpiler.getProperty( "relativePath" ) );
@@ -101,10 +105,6 @@ public class BoxContinueTransformer extends AbstractTransformer {
 	public BoxNode getTargetAncestor( BoxNode node ) {
 		return node.getFirstNodeOfTypes( BoxFunctionDeclaration.class, BoxClosure.class, BoxLambda.class, BoxComponent.class, BoxDo.class,
 		    BoxForIndex.class, BoxForIn.class,
-		    BoxWhile.class );
-	}
-
-	private boolean isLoop( BoxNode node ) {
-		return node instanceof BoxForIndex;
+		    BoxWhile.class, BoxSwitch.class );
 	}
 }

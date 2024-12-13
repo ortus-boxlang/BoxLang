@@ -15,16 +15,20 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.global.jdbc.BaseJDBCTest;
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.jdbc.DataSource;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.Query;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 
 public class StoredProcTest extends BaseJDBCTest {
 
+	static BoxRuntime	instance;
 	static Key			result	= new Key( "result" );
 
 	private DataSource	mysqlDatasource;
@@ -52,7 +56,9 @@ public class StoredProcTest extends BaseJDBCTest {
 
 	@BeforeAll
 	public static void setUpStoredProc() {
-		DataSource ds = getDatasource();
+		instance = BoxRuntime.getInstance( true );
+		IBoxContext	setUpContext	= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		DataSource	ds				= getDatasource();
 		ds.execute(
 		    """
 		    CREATE PROCEDURE withInParam( IN TOTAL Integer )
@@ -60,7 +66,8 @@ public class StoredProcTest extends BaseJDBCTest {
 		    READS SQL DATA
 		    LANGUAGE JAVA
 		    EXTERNAL NAME 'ortus.boxlang.runtime.components.jdbc.StoredProcTest.withInParam'
-		    """
+		    """,
+		    setUpContext
 		);
 		ds.execute(
 		    """
@@ -69,7 +76,8 @@ public class StoredProcTest extends BaseJDBCTest {
 		    READS SQL DATA
 		    LANGUAGE JAVA
 		    EXTERNAL NAME 'ortus.boxlang.runtime.components.jdbc.StoredProcTest.withOutParam'
-		    """
+		    """,
+		    setUpContext
 		);
 		ds.execute(
 		    """
@@ -79,14 +87,16 @@ public class StoredProcTest extends BaseJDBCTest {
 		    LANGUAGE JAVA
 		    EXTERNAL NAME 'ortus.boxlang.runtime.components.jdbc.StoredProcTest.withResultSet'
 		    DYNAMIC RESULT SETS 1
-		    """
+		    """,
+		    setUpContext
 		);
 		ds.execute(
 		    """
 		    CREATE PROCEDURE doNothing()
 		    PARAMETER STYLE JAVA READS SQL DATA LANGUAGE JAVA EXTERNAL NAME
 		    'ortus.boxlang.runtime.components.jdbc.StoredProcTest.doNothing'
-		    """
+		    """,
+		    setUpContext
 		);
 	}
 
@@ -114,7 +124,8 @@ public class StoredProcTest extends BaseJDBCTest {
 		    	WHERE name <> companyName
 		    	order by name desc;
 		    END$$
-		       """
+		       """,
+		    context
 		);
 		mysqlDatasource.execute(
 		    """
@@ -123,7 +134,8 @@ public class StoredProcTest extends BaseJDBCTest {
 		      `name` text NOT NULL,
 		      `active` tinyint(1) NOT NULL DEFAULT '1'
 		    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-		           """
+		           """,
+		    context
 		);
 		mysqlDatasource.execute(
 		    """
@@ -132,7 +144,8 @@ public class StoredProcTest extends BaseJDBCTest {
 		    (2, 'SEGA', 0),
 		    (3, 'Sony', 1),
 		    (4, 'Microsoft', 1);
-		         """
+		         """,
+		    context
 		);
 	}
 

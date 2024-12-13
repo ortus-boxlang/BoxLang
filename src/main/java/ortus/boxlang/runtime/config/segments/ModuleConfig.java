@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.config.segments;
 
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
+import ortus.boxlang.runtime.config.util.PropertyHelper;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.scopes.Key;
@@ -40,9 +41,9 @@ public class ModuleConfig implements IConfigSegment {
 	public String	name;
 
 	/**
-	 * Whether the module is disabled or not
+	 * Whether the module is enabled or not
 	 */
-	public Boolean	disabled	= false;
+	public Boolean	enabled		= true;
 
 	/**
 	 * The settings for the module as a struct
@@ -70,13 +71,8 @@ public class ModuleConfig implements IConfigSegment {
 	 * @return Return itself for chaining
 	 */
 	public ModuleConfig process( IStruct config ) {
-		// Check if the module is enabled
-		if ( config.containsKey( "disabled" ) ) {
-			this.disabled = BooleanCaster.cast( PlaceholderHelper.resolve( config.getOrDefault( "disabled", false ) ) );
-		}
-
-		// Store the settings
-		this.settings = StructCaster.cast( config.getOrDefault( Key.settings, new Struct() ) );
+		this.enabled	= BooleanCaster.cast( PropertyHelper.processString( config, Key.enabled, "true" ) );
+		this.settings	= StructCaster.cast( config.getOrDefault( Key.settings, new Struct() ) );
 		// Process placeholders
 		this.settings.forEach( ( key, value ) -> {
 			if ( value instanceof String ) {
@@ -97,7 +93,7 @@ public class ModuleConfig implements IConfigSegment {
 	public IStruct asStruct() {
 		return Struct.of(
 		    Key._NAME, this.name,
-		    Key.disabled, this.disabled,
+		    Key.enabled, this.enabled,
 		    Key.settings, new Struct( this.settings )
 		);
 	}

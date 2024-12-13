@@ -242,4 +242,15 @@ public enum QueryColumnType {
 				return OTHER;
 		}
 	}
+
+	/**
+	 * Does this represent a type that can be treated as a string?
+	 * 
+	 * @param type The type to check.
+	 * 
+	 * @return true if the type can be treated as a string.
+	 */
+	public static boolean isStringType( QueryColumnType type ) {
+		return type == VARCHAR || type == CHAR || type == TIME;
+	}
 }

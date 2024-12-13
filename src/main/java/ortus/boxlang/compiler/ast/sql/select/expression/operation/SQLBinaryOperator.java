@@ -28,7 +28,10 @@ public enum SQLBinaryOperator {
 	GREATERTHAN,
 	GREATERTHANOREQUAL,
 	AND,
-	OR;
+	OR,
+	LIKE,
+	NOTLIKE,
+	CONCAT;
 
 	public String getSymbol() {
 		switch ( this ) {
@@ -58,6 +61,12 @@ public enum SQLBinaryOperator {
 				return "AND";
 			case OR :
 				return "OR";
+			case LIKE :
+				return "LIKE";
+			case NOTLIKE :
+				return "NOT LIKE";
+			case CONCAT :
+				return "||";
 			default :
 				return "";
 		}

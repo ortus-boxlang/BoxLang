@@ -117,7 +117,7 @@ public class LambdaBoxContext extends FunctionBoxContext {
 	/**
 	 * Search for a variable in "nearby" scopes
 	 */
-	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow ) {
+	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow, boolean forAssign ) {
 
 		if ( key.equals( localScope.getName() ) ) {
 			return new ScopeSearchResult( localScope, localScope, key, true );
@@ -129,14 +129,14 @@ public class LambdaBoxContext extends FunctionBoxContext {
 
 		Object result = localScope.getRaw( key );
 		// Null means not found
-		if ( isDefined( result ) ) {
+		if ( isDefined( result, forAssign ) ) {
 			// Unwrap the value now in case it was really actually null for real
 			return new ScopeSearchResult( localScope, Struct.unWrapNull( result ), key );
 		}
 
 		result = argumentsScope.getRaw( key );
 		// Null means not found
-		if ( isDefined( result ) ) {
+		if ( isDefined( result, forAssign ) ) {
 			// Unwrap the value now in case it was really actually null for real
 			return new ScopeSearchResult( argumentsScope, Struct.unWrapNull( result ), key );
 		}
@@ -192,8 +192,8 @@ public class LambdaBoxContext extends FunctionBoxContext {
 	}
 
 	@Override
-	public ScopeSearchResult scopeFind( Key key, IScope defaultScope ) {
-		return parent.scopeFind( key, defaultScope );
+	public ScopeSearchResult scopeFind( Key key, IScope defaultScope, boolean forAssign ) {
+		return parent.scopeFind( key, defaultScope, forAssign );
 	}
 
 	/**

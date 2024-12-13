@@ -56,16 +56,20 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 	// @formatter:on
 	@Override
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnContext ) throws IllegalStateException {
-		BoxFunctionDeclaration	function		= ( BoxFunctionDeclaration ) node;
-		TransformerContext		safe			= function.getName().equalsIgnoreCase( "isnull" ) ? TransformerContext.SAFE : context;
+		BoxFunctionDeclaration	function	= ( BoxFunctionDeclaration ) node;
+		TransformerContext		safe		= function.getName().equalsIgnoreCase( "isnull" ) ? TransformerContext.SAFE : context;
 
-		Type					type			= Type.getType( "L" + transpiler.getProperty( "packageName" ).replace( '.', '/' )
+		if ( transpiler.hasCompiledFunction( function.getName() ) ) {
+			throw new IllegalStateException( "Cannot define multiple functions with the same name: " + function.getName() );
+		}
+
+		Type			type			= Type.getType( "L" + transpiler.getProperty( "packageName" ).replace( '.', '/' )
 		    + "/" + transpiler.getProperty( "classname" )
 		    + "$Func_" + function.getName() + ";" );
 
-		BoxReturnType			boxReturnType	= function.getType();
-		BoxType					returnType		= BoxType.Any;
-		String					fqn				= null;
+		BoxReturnType	boxReturnType	= function.getType();
+		BoxType			returnType		= BoxType.Any;
+		String			fqn				= null;
 		if ( boxReturnType != null ) {
 			returnType = boxReturnType.getType();
 			if ( returnType.equals( BoxType.Fqn ) ) {
@@ -77,9 +81,22 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		BoxAccessModifier	access			= function.getAccessModifier() == null ? BoxAccessModifier.Public : function.getAccessModifier();
 
 		ClassNode			classNode		= new ClassNode();
-		classNode.visitSource( transpiler.getProperty( "filePath" ), null );
-		AsmHelper.init( classNode, true, type, Type.getType( UDF.class ), methodVisitor -> {
+		AsmHelper.init( classNode, true, type, Type.getType( UDF.class ), cv -> {
+			cv.visitSource( transpiler.getProperty( "filePath" ), null );
+			cv.visitNestHost( transpiler.getProperty( "enclosingClassInternalName" ) );
+			cv.visitInnerClass( type.getInternalName(), transpiler.getProperty( "enclosingClassInternalName" ),
+			    "Func_" + function.getName(),
+			    Opcodes.ACC_PUBLIC );
+		}, methodVisitor -> {
 		} );
+
+		ClassNode owningClass = transpiler.getOwningClass();
+		if ( owningClass != null ) {
+			owningClass.visitInnerClass( type.getInternalName(), transpiler.getProperty( "enclosingClassInternalName" ),
+			    "Func_" + function.getName(),
+			    Opcodes.ACC_PUBLIC );
+		}
+
 		transpiler.setAuxiliary( type.getClassName(), classNode );
 
 		AsmHelper.addStaticFieldGetter( classNode,
@@ -152,13 +169,13 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		    () -> {
 
 			    if ( function.getBody() == null ) {
-				    return AsmHelper.addLineNumberLabels( new ArrayList<AbstractInsnNode>(), node );
+				    return new ArrayList<AbstractInsnNode>();
 			    }
 
-			    return AsmHelper.addLineNumberLabels( function.getBody()
+			    return function.getBody()
 			        .stream()
 			        .flatMap( statement -> transpiler.transform( statement, safe, ReturnValueContext.EMPTY ).stream() )
-			        .collect( Collectors.toList() ), node );
+			        .collect( Collectors.toList() );
 		    } );
 		transpiler.decrementfunctionBodyCounter();
 
@@ -225,7 +242,7 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 			    Type.getDescriptor( List.class ) );
 		} );
 
-		List<AbstractInsnNode> nodes = new ArrayList<AbstractInsnNode>();
+		List<AbstractInsnNode> nodes = new ArrayList<>();
 
 		nodes.addAll( transpiler.getCurrentMethodContextTracker().get().loadCurrentContext() );
 		nodes.add(
@@ -247,6 +264,14 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
 		}
 
-		return nodes;
+		if ( !function.getModifiers().contains( BoxMethodDeclarationModifier.STATIC ) ) {
+			transpiler.addUDFRegistration( function.getName(), nodes );
+		}
+
+		if ( function.getModifiers().contains( BoxMethodDeclarationModifier.STATIC ) ) {
+			return nodes;
+		} else {
+			return new ArrayList<>();
+		}
 	}
 }

@@ -86,10 +86,9 @@ public class BoxLangBIFProxy extends BIF {
 		    context.getFunctionParentContext(),
 		    Key.invoke,
 		    arguments,
-		    null,
+		    this.target,
 		    null
 		);
-		fContext.setThisClass( this.target );
 		fContext.pushTemplate( this.target );
 
 		try {

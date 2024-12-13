@@ -17,6 +17,8 @@
  */
 package ortus.boxlang.runtime.interop.proxies;
 
+import java.util.Set;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,6 +27,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Function;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.RequestThreadManager;
 
 /**
@@ -62,6 +65,16 @@ public abstract class BaseProxy {
 	 * The thread manager for this proxy.
 	 */
 	protected RequestThreadManager	threadManager;
+
+	private static final Set<Key>	javaLangObjectPublicMethods	= Set.of(
+	    Key.getClass,
+	    Key._hashCode,
+	    Key.equals,
+	    Key.toString,
+	    Key.notify,
+	    Key.notifyAll,
+	    Key.wait
+	);
 
 	/**
 	 * Constructor for the proxy.
@@ -120,14 +133,51 @@ public abstract class BaseProxy {
 	 * @param args    The arguments to pass to the function
 	 *
 	 * @return The result of the function
+	 * 
+	 * @throws InterruptedException
 	 */
-	protected Object invoke( Key method, Object... args ) {
-		return getDynamicTarget().dereferenceAndInvoke(
-		    this.context,
-		    method,
-		    args,
-		    false
-		);
+	protected Object invoke( Key method, Object... args ) throws InterruptedException {
+		IClassRunnable target = getDynamicTarget();
+		// We need to handle the case where a proxy being passed around in the JDK code could have methods like .toString() call on them, with the expectation that
+		// the method will exist, since that is true of all Java objects extending `java.lang.Object`.
+		if ( javaLangObjectPublicMethods.contains( method ) && !target.getThisScope().containsKey( method ) ) {
+			if ( method.equals( Key.getClass ) ) {
+				return target.getClass();
+			} else if ( method.equals( Key._hashCode ) ) {
+				return target.hashCode();
+			} else if ( method.equals( Key.equals ) ) {
+				return target.equals( args[ 0 ] );
+			} else if ( method.equals( Key.toString ) ) {
+				return target.toString();
+			} else if ( method.equals( Key.notify ) ) {
+				target.notify();
+				return null;
+			} else if ( method.equals( Key.notifyAll ) ) {
+				target.notifyAll();
+				return null;
+			} else if ( method.equals( Key.wait ) ) {
+				if ( args.length == 0 ) {
+					target.wait();
+				} else if ( args.length == 1 ) {
+					target.wait( ( Long ) args[ 0 ] );
+				} else if ( args.length == 2 ) {
+					target.wait( ( Long ) args[ 0 ], ( Integer ) args[ 1 ] );
+				} else {
+					throw new BoxRuntimeException( "Unknown method: " + method );
+				}
+				return null;
+			} else {
+				throw new BoxRuntimeException( "Unknown method: " + method );
+			}
+
+		} else {
+			return target.dereferenceAndInvoke(
+			    this.context,
+			    method,
+			    args,
+			    false
+			);
+		}
 	}
 
 	/**
@@ -136,20 +186,17 @@ public abstract class BaseProxy {
 	 * @param args The arguments to pass to the function
 	 *
 	 * @return The result of the function
+	 * 
+	 * @throws InterruptedException
 	 */
-	protected Object invoke( Object... args ) {
+	protected Object invoke( Object... args ) throws InterruptedException {
 		if ( isFunctionTarget() ) {
 			return this.context.invokeFunction(
 			    this.target,
 			    args
 			);
 		} else {
-			return getDynamicTarget().dereferenceAndInvoke(
-			    this.context,
-			    this.defaultMethod,
-			    args,
-			    false
-			);
+			return invoke( this.defaultMethod, args );
 		}
 	}
 

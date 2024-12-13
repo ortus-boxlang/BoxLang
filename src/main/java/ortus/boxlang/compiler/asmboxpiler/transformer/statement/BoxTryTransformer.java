@@ -44,6 +44,7 @@ import ortus.boxlang.compiler.ast.statement.BoxTryCatch;
 import ortus.boxlang.runtime.context.CatchBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 
 public class BoxTryTransformer extends AbstractTransformer {
@@ -67,12 +68,15 @@ public class BoxTryTransformer extends AbstractTransformer {
 		LabelNode				finallyStartLabel	= new LabelNode();
 		LabelNode				finallyEndLabel		= new LabelNode();
 
+		AsmHelper.addDebugLabel( nodes, "BoxTryBlock" );
+
 		nodes.add( tryStartLabel );
 
 		nodes.addAll( generateBodyNodesWithInlinedFinally( context, returnValueContext, boxTry.getTryBody(), boxTry.getFinallyBody(), () -> tryEndLabel ) );
 
 		// if we hit this instruction we have successfully executed the try body and inlined finally code
 		// we can skip to the end of this construct
+		AsmHelper.addDebugLabel( nodes, "BoxTryBlock goto finallyEndLabel" );
 		nodes.add( new JumpInsnNode( Opcodes.GOTO, finallyEndLabel ) );
 
 		if ( boxTry.getCatches().size() > 0 ) {
@@ -82,6 +86,14 @@ public class BoxTryTransformer extends AbstractTransformer {
 
 			var eVar = tracker.storeNewVariable( Opcodes.ASTORE );
 			nodes.addAll( eVar.nodes() );
+
+			nodes.add( new VarInsnNode( Opcodes.ALOAD, eVar.index() ) );
+			nodes.add( new TypeInsnNode( Opcodes.INSTANCEOF, Type.getInternalName( AbortException.class ) ) );
+			LabelNode abortLabel = new LabelNode();
+			nodes.add( new JumpInsnNode( Opcodes.IFEQ, abortLabel ) );
+			nodes.add( new VarInsnNode( Opcodes.ALOAD, eVar.index() ) );
+			nodes.add( new InsnNode( Opcodes.ATHROW ) );
+			nodes.add( abortLabel );
 
 			for ( BoxTryCatch catchNode : boxTry.getCatches() ) {
 				nodes.addAll(
@@ -101,13 +113,15 @@ public class BoxTryTransformer extends AbstractTransformer {
 				}
 			}
 			nodes.addAll( AsmHelper.transformBodyExpressions( transpiler, boxTry.getFinallyBody(), context, returnValueContext ) );
-			nodes.add( new JumpInsnNode( Opcodes.GOTO, finallyEndLabel ) );
+			nodes.add( new VarInsnNode( Opcodes.ALOAD, eVar.index() ) );
+			nodes.add( new InsnNode( Opcodes.ATHROW ) );
 		}
 
 		TryCatchBlockNode catchHandler = new TryCatchBlockNode( tryStartLabel, tryEndLabel, finallyStartLabel,
 		    null );
 		tracker.addTryCatchBlock( catchHandler );
 
+		AsmHelper.addDebugLabel( nodes, "BoxTry - finallyStartLabel" );
 		nodes.add( finallyStartLabel );
 
 		var errorVarStore = tracker.storeNewVariable( Opcodes.ASTORE );
@@ -119,11 +133,12 @@ public class BoxTryTransformer extends AbstractTransformer {
 
 		nodes.add( new InsnNode( Opcodes.ATHROW ) );
 
+		AsmHelper.addDebugLabel( nodes, "BoxTry - FinallyEndLabel" );
 		nodes.add( finallyEndLabel );
 
 		tracker.addTryCatchBlock( new TryCatchBlockNode( tryStartLabel, tryEndLabel, finallyStartLabel, null ) );
 
-		return nodes;
+		return AsmHelper.addLineNumberLabels( nodes, node );
 
 	}
 
@@ -169,6 +184,8 @@ public class BoxTryTransformer extends AbstractTransformer {
 		    context,
 		    returnValueContext
 		) );
+
+		AsmHelper.addDebugLabel( nodes, "BoxTryBlock - END" );
 
 		return nodes;
 	}

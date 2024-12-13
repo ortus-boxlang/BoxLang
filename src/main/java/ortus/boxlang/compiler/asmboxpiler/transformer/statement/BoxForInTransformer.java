@@ -26,6 +26,7 @@ import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.JumpInsnNode;
 import org.objectweb.asm.tree.LabelNode;
+import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.TypeInsnNode;
 import org.objectweb.asm.tree.VarInsnNode;
@@ -44,6 +45,7 @@ import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxAssignmentModifier;
 import ortus.boxlang.compiler.ast.expression.BoxAssignmentOperator;
 import ortus.boxlang.compiler.ast.statement.BoxForIn;
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.CollectionCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.types.Query;
@@ -65,13 +67,14 @@ public class BoxForInTransformer extends AbstractTransformer {
 			throw new IllegalStateException();
 		}
 
-		MethodContextTracker	tracker		= trackerOption.get();
+		MethodContextTracker	tracker			= trackerOption.get();
 
-		LabelNode				loopStart	= new LabelNode();
-		LabelNode				loopEnd		= new LabelNode();
-		LabelNode				breakTarget	= new LabelNode();
+		LabelNode				loopStart		= new LabelNode();
+		LabelNode				loopEnd			= new LabelNode();
+		LabelNode				breakTarget		= new LabelNode();
+		LabelNode				continueTarget	= new LabelNode();
 
-		tracker.setContinue( forIn, loopStart );
+		tracker.setContinue( forIn, continueTarget );
 		tracker.setBreak( forIn, breakTarget );
 		if ( forIn.getLabel() != null ) {
 			tracker.setStringLabel( forIn.getLabel(), forIn );
@@ -113,6 +116,29 @@ public class BoxForInTransformer extends AbstractTransformer {
 		nodes.addAll( isStructVar.nodes() );
 
 		// need to register query loop
+		// ${contextName}.registerQueryLoop( (Query) ${collectionName}, 0 );
+		nodes.add( new VarInsnNode( Opcodes.ILOAD, isQueryVar.index() ) );
+		LabelNode endQueryLabel = new LabelNode();
+		nodes.add( new JumpInsnNode( Opcodes.IFEQ, endQueryLabel ) );
+		// push context
+		nodes.addAll( tracker.loadCurrentContext() );
+		// push collection
+		nodes.add( new VarInsnNode( Opcodes.ALOAD, collectionVar.index() ) );
+		nodes.add( new TypeInsnNode( Opcodes.CHECKCAST, Type.getInternalName( Query.class ) ) );
+		// push constant 0
+		nodes.add( new LdcInsnNode( 0 ) );
+		// invoke regiserQueryLoop
+		nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
+		    Type.getInternalName( IBoxContext.class ),
+		    "registerQueryLoop",
+		    Type.getMethodDescriptor(
+		        Type.VOID_TYPE,
+		        Type.getType( Query.class ),
+		        Type.INT_TYPE
+		    ),
+		    true
+		) );
+		nodes.add( endQueryLabel );
 
 		// create iterator
 		nodes.add( new VarInsnNode( Opcodes.ALOAD, collectionVar.index() ) );
@@ -138,20 +164,13 @@ public class BoxForInTransformer extends AbstractTransformer {
 		VarStore iteratorVar = tracker.storeNewVariable( Opcodes.ASTORE );
 		nodes.addAll( iteratorVar.nodes() );
 
-		// push two nulls onto the stack in order to initialize our strategy for keeping the stack height consistent
-		// this is to allow the statement to return an expression in the case of a BoxScript execution
-		if ( returnValueContext == ReturnValueContext.VALUE_OR_NULL ) {
-			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
-			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
-		}
+		nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
 
 		nodes.add( loopStart );
 
+		var varStore = tracker.storeNewVariable( Opcodes.ASTORE );
 		// every iteration we will swap the values and pop in order to remove the older value
-		if ( returnValueContext == ReturnValueContext.VALUE_OR_NULL ) {
-			nodes.add( new InsnNode( Opcodes.SWAP ) );
-			nodes.add( new InsnNode( Opcodes.POP ) );
-		}
+		nodes.addAll( varStore.nodes() );
 
 		nodes.add( new VarInsnNode( Opcodes.ALOAD, iteratorVar.index() ) );
 		nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
@@ -170,20 +189,69 @@ public class BoxForInTransformer extends AbstractTransformer {
 
 		nodes.addAll( expressionPos.end() );
 
-		nodes.addAll( transpiler.transform( forIn.getBody(), context, returnValueContext ) );
+		nodes.addAll( transpiler.transform( forIn.getBody(), context, ReturnValueContext.VALUE_OR_NULL ) );
+
+		nodes.add( continueTarget );
+
+		// increment query loop
+		nodes.add( new VarInsnNode( Opcodes.ILOAD, isQueryVar.index() ) );
+		LabelNode endQueryIncrementLabel = new LabelNode();
+		nodes.add( new JumpInsnNode( Opcodes.IFEQ, endQueryIncrementLabel ) );
+		// push context
+		nodes.addAll( tracker.loadCurrentContext() );
+		// push collection
+		nodes.add( new VarInsnNode( Opcodes.ALOAD, collectionVar.index() ) );
+		nodes.add( new TypeInsnNode( Opcodes.CHECKCAST, Type.getInternalName( Query.class ) ) );
+		// invoke regiserQueryLoop
+		nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
+		    Type.getInternalName( IBoxContext.class ),
+		    "incrementQueryLoop",
+		    Type.getMethodDescriptor(
+		        Type.VOID_TYPE,
+		        Type.getType( Query.class )
+		    ),
+		    true
+		) );
+		nodes.add( endQueryIncrementLabel );
 
 		nodes.add( new JumpInsnNode( Opcodes.GOTO, loopStart ) );
 
 		nodes.add( breakTarget );
-		// every iteration we will swap the values and pop in order to remove the older value
-		if ( returnValueContext == ReturnValueContext.VALUE_OR_NULL ) {
-			nodes.add( new InsnNode( Opcodes.SWAP ) );
-			nodes.add( new InsnNode( Opcodes.POP ) );
-		}
-		// increment query loop
+
+		nodes.addAll( varStore.nodes() );
+
 		nodes.add( loopEnd );
 
-		return nodes;
+		// unregister query loop
+		nodes.add( new VarInsnNode( Opcodes.ILOAD, isQueryVar.index() ) );
+		LabelNode unRegisterQueryLabel = new LabelNode();
+		nodes.add( new JumpInsnNode( Opcodes.IFEQ, unRegisterQueryLabel ) );
+		// push context
+		nodes.addAll( tracker.loadCurrentContext() );
+		// push collection
+		nodes.add( new VarInsnNode( Opcodes.ALOAD, collectionVar.index() ) );
+		nodes.add( new TypeInsnNode( Opcodes.CHECKCAST, Type.getInternalName( Query.class ) ) );
+		// invoke regiserQueryLoop
+		nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
+		    Type.getInternalName( IBoxContext.class ),
+		    "unregisterQueryLoop",
+		    Type.getMethodDescriptor(
+		        Type.VOID_TYPE,
+		        Type.getType( Query.class )
+		    ),
+		    true
+		) );
+		nodes.add( unRegisterQueryLabel );
+
+		nodes.add( new VarInsnNode( Opcodes.ALOAD, varStore.index() ) );
+
+		if ( returnValueContext.empty ) {
+			nodes.add( new InsnNode( Opcodes.POP ) );
+		}
+
+		AsmHelper.addDebugLabel( nodes, "BoxForIn - end" );
+
+		return AsmHelper.addLineNumberLabels( nodes, node );
 	}
 
 	private List<AbstractInsnNode> assignVar( BoxForIn forIn, int iteratorIndex, TransformerContext context ) {

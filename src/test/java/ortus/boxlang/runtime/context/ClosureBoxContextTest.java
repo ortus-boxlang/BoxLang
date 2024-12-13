@@ -87,7 +87,7 @@ public class ClosureBoxContextTest {
 		assertThat( variablesScope ).isEqualTo( declaringDeclaringContext.getScopeNearby( VariablesScope.name ) );
 
 		// ambiguous finds local scope
-		assertThat( context.scopeFindNearby( ambiguous, null ).value() ).isEqualTo( "local scope ambiguous" );
+		assertThat( context.scopeFindNearby( ambiguous, null, false ).value() ).isEqualTo( "local scope ambiguous" );
 
 		// local.ambiguous works
 		assertThat( context.getScopeNearby( LocalScope.name ).get( ambiguous ) ).isEqualTo( "local scope ambiguous" );
@@ -97,15 +97,15 @@ public class ClosureBoxContextTest {
 		assertThat( context.getScopeNearby( ArgumentsScope.name ).get( ambiguous ) ).isEqualTo( "arguments scope ambiguous" );
 
 		// find var in local
-		assertThat( context.scopeFindNearby( localOnly, null ).value() ).isEqualTo( "local scope only" );
+		assertThat( context.scopeFindNearby( localOnly, null, false ).value() ).isEqualTo( "local scope only" );
 		// find var in arguments
-		assertThat( context.scopeFindNearby( argsOnly, null ).value() ).isEqualTo( "arguments scope only" );
+		assertThat( context.scopeFindNearby( argsOnly, null, false ).value() ).isEqualTo( "arguments scope only" );
 		// find var in variables
-		assertThat( context.scopeFindNearby( variablesOnly, null ).value() ).isEqualTo( "declaring declaring variables scope only" );
+		assertThat( context.scopeFindNearby( variablesOnly, null, false ).value() ).isEqualTo( "declaring declaring variables scope only" );
 		// find var in declaring scope
-		assertThat( context.scopeFindNearby( declaringOnly, null ).value() ).isEqualTo( "declaring scope only" );
+		assertThat( context.scopeFindNearby( declaringOnly, null, false ).value() ).isEqualTo( "declaring scope only" );
 		// find var in declaring closure's declaring scope
-		assertThat( context.scopeFindNearby( declaringDeclaringOnly, null ).value() ).isEqualTo( "declaring declaring scope only" );
+		assertThat( context.scopeFindNearby( declaringDeclaringOnly, null, false ).value() ).isEqualTo( "declaring declaring scope only" );
 	}
 
 	@Test

@@ -14,10 +14,14 @@
  */
 package ortus.boxlang.compiler.ast.sql.select.expression;
 
+import java.util.Map;
+
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
+import ortus.boxlang.runtime.jdbc.qoq.QoQExecution;
+import ortus.boxlang.runtime.types.QueryColumnType;
 
 /**
  * Abstract Node class representing SQL parenthetical expression
@@ -32,7 +36,7 @@ public class SQLParenthesis extends SQLExpression {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code of the statement
 	 */
-	protected SQLParenthesis( SQLExpression expression, Position position, String sourceText ) {
+	public SQLParenthesis( SQLExpression expression, Position position, String sourceText ) {
 		super( position, sourceText );
 		setExpression( expression );
 	}
@@ -54,10 +58,39 @@ public class SQLParenthesis extends SQLExpression {
 	}
 
 	/**
-	 * Check if the expression evaluates to a boolean value
+	 * Runtime check if the expression evaluates to a boolean value and works for columns as well
+	 * 
+	 * @param QoQExec Query execution state
+	 * 
+	 * @return true if the expression evaluates to a boolean value
 	 */
-	public boolean isBoolean() {
-		return expression.isBoolean();
+	public boolean isBoolean( QoQExecution QoQExec ) {
+		return expression.isBoolean( QoQExec );
+	}
+
+	/**
+	 * Runtime check if the expression evaluates to a numeric value and works for columns as well
+	 * 
+	 * @param QoQExec Query execution state
+	 * 
+	 * @return true if the expression evaluates to a numeric value
+	 */
+	public boolean isNumeric( QoQExecution QoQExec ) {
+		return expression.isNumeric( QoQExec );
+	}
+
+	/**
+	 * What type does this expression evaluate to
+	 */
+	public QueryColumnType getType( QoQExecution QoQExec ) {
+		return expression.getType( QoQExec );
+	}
+
+	/**
+	 * Evaluate the expression
+	 */
+	public Object evaluate( QoQExecution QoQExec, int[] intersection ) {
+		return expression.evaluate( QoQExec, intersection );
 	}
 
 	@Override
@@ -70,6 +103,14 @@ public class SQLParenthesis extends SQLExpression {
 	public BoxNode accept( ReplacingBoxVisitor v ) {
 		// TODO Auto-generated method stub
 		throw new UnsupportedOperationException( "Unimplemented method 'accept'" );
+	}
+
+	@Override
+	public Map<String, Object> toMap() {
+		Map<String, Object> map = super.toMap();
+
+		map.put( "expression", expression.toMap() );
+		return map;
 	}
 
 }

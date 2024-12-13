@@ -121,12 +121,7 @@ public abstract class BaseApplicationListener {
 	 */
 	protected IStruct						settings					= Struct.of(
 	    "applicationTimeout", runtime.getConfiguration().applicationTimeout,
-	    // CLIENT WILL BE REMOVED IN BOXLANG
-	    // Kept here for now
-	    "clientManagement", false,
-	    "clientStorage", "cookie",
-	    "clientTimeout", 1,
-	    // END: CLIENT
+	    "classPaths", new Array(),
 	    "componentPaths", new Array(),
 	    "customTagPaths", new Array(),
 	    "datasource", runtime.getConfiguration().defaultDatasource,
@@ -161,7 +156,7 @@ public abstract class BaseApplicationListener {
 	/**
 	 * Logger
 	 */
-	private static final Logger				logger						= LoggerFactory.getLogger( BaseApplicationListener.class );
+	protected static final Logger			logger						= LoggerFactory.getLogger( BaseApplicationListener.class );
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -204,6 +199,13 @@ public abstract class BaseApplicationListener {
 	 */
 	public Application getApplication() {
 		return this.application;
+	}
+
+	/**
+	 * Gets the Request Context
+	 */
+	public RequestBoxContext getRequestContext() {
+		return this.context;
 	}
 
 	/**
@@ -258,6 +260,10 @@ public abstract class BaseApplicationListener {
 			// also remove any session context
 			context.removeParentContext( SessionBoxContext.class );
 		}
+
+		BoxRuntime.getInstance().getInterceptorService().announce( BoxEvent.ON_APPLICATION_DEFINED, Struct.of(
+		    "listener", this
+		) );
 	}
 
 	/**
@@ -275,7 +281,7 @@ public abstract class BaseApplicationListener {
 		}
 
 		// We are in app mode
-		URL[]				loadPathsUrls	= getJavaSettingsLoadPaths( context.getParentOfType( ApplicationBoxContext.class ) );
+		URL[]				loadPathsUrls	= getJavaSettingsLoadPaths( context );
 		String				loaderCacheKey	= EncryptionUtil.hash( Arrays.toString( loadPathsUrls ) );
 		DynamicClassLoader	target			= this.application.getClassLoader( loaderCacheKey );
 		if ( target == null ) {
@@ -289,11 +295,11 @@ public abstract class BaseApplicationListener {
 	 * This reads the javaSettings.loadPaths, expands them, and returns them as URLs of
 	 * jars and classes
 	 *
-	 * @param appContext The application context
+	 * @param requestContext The request context which can contain all the necessary information to expand the paths
 	 *
 	 * @return The expanded load paths as URLs
 	 */
-	public URL[] getJavaSettingsLoadPaths( ApplicationBoxContext appContext ) {
+	public URL[] getJavaSettingsLoadPaths( RequestBoxContext requestContext ) {
 		// Get the source location to resolve pathing
 		String				source					= StringCaster.cast( this.settings.get( Key.source ) );
 		ResolvedFilePath	listenerResolvedPath	= ResolvedFilePath.of( source );
@@ -304,7 +310,7 @@ public abstract class BaseApplicationListener {
 		IStruct				javaSettings			= this.settings.getAsStruct( Key.javaSettings );
 		Array				loadPaths				= ArrayCaster.cast( javaSettings.getOrDefault( Key.loadPaths, new Array() ) )
 		    .stream()
-		    .map( item -> FileSystemUtil.expandPath( appContext, ( String ) item, listenerResolvedPath ).absolutePath().toString() )
+		    .map( item -> FileSystemUtil.expandPath( requestContext, ( String ) item, listenerResolvedPath ).absolutePath().toString() )
 		    .collect( BLCollector.toArray() );
 
 		// Inflate them to what we need now
@@ -316,7 +322,7 @@ public abstract class BaseApplicationListener {
 	 * discovered and passed app context
 	 */
 	private void createOrUpdateClassLoaderPaths() {
-		this.application.startupClassLoaderPaths( this.context.getParentOfType( ApplicationBoxContext.class ) );
+		this.application.startupClassLoaderPaths( this.context );
 	}
 
 	/**
@@ -429,13 +435,15 @@ public abstract class BaseApplicationListener {
 	}
 
 	/**
-	 * Intializes a new session, also called by every new request via the {@link BaseApplicationListener#defineApplication} method
+	 * Initializes a new session, also called by every new request via the {@link BaseApplicationListener#defineApplication} method
 	 *
 	 * @param newID The new session identifier
 	 */
 	public void initializeSession( Key newID ) {
-		ApplicationBoxContext	appContext		= this.context.getParentOfType( ApplicationBoxContext.class );
-		Session					targetSession	= appContext.getApplication().getOrCreateSession( newID );
+		Session targetSession = this.context
+		    .getApplicationContext()
+		    .getApplication()
+		    .getOrCreateSession( newID );
 		this.context.removeParentContext( SessionBoxContext.class );
 		this.context.injectTopParentContext( new SessionBoxContext( targetSession ) );
 		targetSession.start( this.context );

@@ -81,6 +81,11 @@ public class LoggingConfig implements IConfigSegment {
 	public Key						defaultEncoder		= DEFAULT_ENCODER;
 
 	/**
+	 * Status printer on load
+	 */
+	public boolean					statusPrinterOnLoad	= false;
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Methods
 	 * --------------------------------------------------------------------------
@@ -102,12 +107,25 @@ public class LoggingConfig implements IConfigSegment {
 	 */
 	@Override
 	public IConfigSegment process( IStruct config ) {
-		this.logsDirectory	= PropertyHelper.processString( config, Key.logsDirectory, this.logsDirectory );
-		this.maxLogDays		= PropertyHelper.processInteger( config, Key.maxLogDays, this.maxLogDays );
-		this.maxFileSize	= PropertyHelper.processString( config, Key.maxFileSize, this.maxFileSize );
-		this.totalCapSize	= PropertyHelper.processString( config, Key.totalCapSize, this.totalCapSize );
-		this.rootLevel		= LogLevel.valueOf( PropertyHelper.processString( config, Key.rootLevel, this.rootLevel.getName(), VALID_LOG_LEVELS ), false );
-		this.defaultEncoder	= Key.of( PropertyHelper.processString( config, Key.defaultEncoder, DEFAULT_ENCODER.getName(), VALID_ENCODERS ) );
+		this.logsDirectory			= PropertyHelper.processString( config, Key.logsDirectory, this.logsDirectory );
+		this.maxLogDays				= PropertyHelper.processInteger( config, Key.maxLogDays, this.maxLogDays );
+		this.maxFileSize			= PropertyHelper.processString( config, Key.maxFileSize, this.maxFileSize );
+		this.totalCapSize			= PropertyHelper.processString( config, Key.totalCapSize, this.totalCapSize );
+		this.statusPrinterOnLoad	= PropertyHelper.processBoolean( config, Key.statusPrinterOnLoad, this.statusPrinterOnLoad );
+		this.rootLevel				= LogLevel.valueOf( PropertyHelper.processString( config, Key.rootLevel, this.rootLevel.getName(), VALID_LOG_LEVELS ),
+		    false );
+		this.defaultEncoder			= Key.of( PropertyHelper.processString( config, Key.defaultEncoder, DEFAULT_ENCODER.getName(), VALID_ENCODERS ) );
+		// process loggers now
+		PropertyHelper
+		    .processToStruct( config, Key.loggers )
+		    .entrySet()
+		    .forEach( entry -> {
+			    if ( entry.getValue() instanceof IStruct castedStruct ) {
+				    LoggerConfig loggerConfig = new LoggerConfig( entry.getKey(), this ).process( castedStruct );
+				    this.loggers.put( entry.getKey(), loggerConfig );
+			    }
+		    } );
+
 		return this;
 	}
 
@@ -116,13 +134,18 @@ public class LoggingConfig implements IConfigSegment {
 	 */
 	@Override
 	public IStruct asStruct() {
+		IStruct loggersCopy = new Struct();
+		this.loggers.entrySet()
+		    .forEach( entry -> loggersCopy.put( entry.getKey(), ( ( LoggerConfig ) entry.getValue() ).asStruct() ) );
+
 		return Struct.of(
 		    Key.defaultEncoder, this.defaultEncoder.getName(),
 		    Key.logsDirectory, this.logsDirectory,
-		    Key.loggers, this.loggers,
+		    Key.loggers, loggersCopy,
 		    Key.maxLogDays, this.maxLogDays,
 		    Key.maxFileSize, this.maxFileSize,
 		    Key.rootLevel, this.rootLevel.getName(),
+		    Key.statusPrinterOnLoad, this.statusPrinterOnLoad,
 		    Key.totalCapSize, this.totalCapSize
 		);
 	}

@@ -25,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.Key;
@@ -147,6 +148,22 @@ public class PropertyHelper {
 	public static Integer processInteger( IStruct config, Key key, Integer defaultValue ) {
 		if ( config.containsKey( key ) ) {
 			return IntegerCaster.cast( PlaceholderHelper.resolve( config.get( key ) ) );
+		}
+		return defaultValue;
+	}
+
+	/**
+	 * Process an incoming string, and do replacements and return the value as a boolean
+	 *
+	 * @param config       The configuration object
+	 * @param key          The target key to look and process
+	 * @param defaultValue The default value to return if the key is not found
+	 *
+	 * @return The integer value
+	 */
+	public static boolean processBoolean( IStruct config, Key key, boolean defaultValue ) {
+		if ( config.containsKey( key ) ) {
+			return BooleanCaster.cast( PlaceholderHelper.resolve( config.get( key ) ) );
 		}
 		return defaultValue;
 	}

@@ -38,6 +38,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
@@ -89,8 +90,12 @@ public class BoxClassSupport {
 			}
 			if ( hasAccessors( thisClass ) ) {
 				// Don't override UDFs from a parent class which may already be defined
-				context.registerUDF( property.generatedGetter(), false );
-				context.registerUDF( property.generatedSetter(), false );
+				if ( thisClass.getGetterLookup().containsKey( property.getterName() ) ) {
+					context.registerUDF( property.generatedGetter(), false );
+				}
+				if ( thisClass.getSetterLookup().containsKey( property.setterName() ) ) {
+					context.registerUDF( property.generatedSetter(), false );
+				}
 			}
 		}
 	}
@@ -117,7 +122,7 @@ public class BoxClassSupport {
 	 * @return The string representation
 	 */
 	public static String asString( IClassRunnable thisClass ) {
-		return "Class: " + thisClass.getName().getName();
+		return "Class: " + thisClass.bxGetName().getName();
 	}
 
 	/**
@@ -179,7 +184,7 @@ public class BoxClassSupport {
 	public static void setSuper( IClassRunnable thisClass, IClassRunnable _super ) {
 		thisClass._setSuper( _super );
 		_super.setChild( thisClass );
-		// This runs before the psedu constructor and init, so the base class will override anything it declares
+		// This runs before the pseudo constructor and init, so the base class will override anything it declares
 		thisClass.getVariablesScope().addAll( _super.getVariablesScope().getWrapped() );
 		thisClass.getThisScope().addAll( _super.getThisScope().getWrapped() );
 
@@ -229,6 +234,10 @@ public class BoxClassSupport {
 	 * @return The assigned value
 	 */
 	public static Object assign( IClassRunnable thisClass, IBoxContext context, Key key, Object value ) {
+
+		// This would only matter if we called super.myField and we'd want the bottom class's this scope
+		thisClass = thisClass.getBottomClass();
+
 		// If invokeImplicitAccessor is enabled, and the key is a property, invoke the setter method.
 		// This may call either a generated setter or a user-defined setter
 		if ( thisClass.canInvokeImplicitAccessor( context ) && thisClass.getProperties().containsKey( key ) ) {
@@ -258,6 +267,9 @@ public class BoxClassSupport {
 		if ( key.equals( BoxMeta.key ) ) {
 			return thisClass.getBoxMeta();
 		}
+
+		// This would only matter if we called super.myField and we'd want the bottom class's this scope
+		thisClass = thisClass.getBottomClass();
 
 		// If invokeImplicitAccessor is enabled, and the key is a property, invoke the getter method.
 		// This may call either a generated getter or a user-defined getter
@@ -299,9 +311,12 @@ public class BoxClassSupport {
 	 */
 	public static Object dereferenceAndInvoke( IClassRunnable thisClass, IBoxContext context, Key name, Object[] positionalArguments, Boolean safe ) {
 		// Where to look for the functions
+		// This should always be the "bottom" class since "super" is the only way to get a direct reference to a parent class
 		BaseScope scope = thisClass.getThisScope();
 		// we are a super class, so we reached here via super.method()
 		if ( thisClass.getChild() != null ) {
+			// Don't use getBottomClass() as we want to get the actual UDFs at this level.
+			// When the UDF runs, the scopes it "sees" will still be from the bottom (except super, of course)
 			scope = thisClass.getVariablesScope();
 		}
 
@@ -319,7 +334,6 @@ public class BoxClassSupport {
 			    null
 			);
 
-			functionContext.setThisClass( thisClass );
 			return function.invoke( functionContext );
 		}
 
@@ -383,9 +397,12 @@ public class BoxClassSupport {
 	 */
 	public static Object dereferenceAndInvoke( IClassRunnable thisClass, IBoxContext context, Key name, Map<Key, Object> namedArguments, Boolean safe ) {
 		// Where to look for the functions
+		// This should always be the "bottom" class since "super" is the only way to get a direct reference to a parent class
 		BaseScope scope = thisClass.getThisScope();
 		// we are a super class, so we reached here via super.method()
 		if ( thisClass.getChild() != null ) {
+			// Don't use getBottomClass() as we want to get the actual UDFs at this level.
+			// When the UDF runs, the scopes it "sees" will still be from the bottom (except super, of course)
 			scope = thisClass.getVariablesScope();
 		}
 
@@ -403,7 +420,6 @@ public class BoxClassSupport {
 			    null
 			);
 
-			functionContext.setThisClass( thisClass );
 			return function.invoke( functionContext );
 		}
 
@@ -471,7 +487,7 @@ public class BoxClassSupport {
 				functions.add( fun.getMetaData() );
 			}
 		}
-		meta.put( "name", thisClass.getName().getName() );
+		meta.put( "name", thisClass.bxGetName().getName() );
 		meta.put( "accessors", hasAccessors( thisClass ) );
 		meta.put( "functions", Array.fromList( functions ) );
 
@@ -502,8 +518,8 @@ public class BoxClassSupport {
 		}
 		meta.put( "properties", properties );
 		meta.put( "type", "Component" );
-		meta.put( "name", thisClass.getName().getName() );
-		meta.put( "fullname", thisClass.getName().getName() );
+		meta.put( "name", thisClass.bxGetName().getName() );
+		meta.put( "fullname", thisClass.bxGetName().getName() );
 		meta.put( "path", thisClass.getRunnablePath().absolutePath().toString() );
 		meta.put( "persisent", false );
 
@@ -737,7 +753,7 @@ public class BoxClassSupport {
 	 * @throws BoxValidationException If the class does not satisfy the interface
 	 */
 	public static void validateAbstractMethods( IClassRunnable thisClass, Map<Key, AbstractFunction> abstractMethods ) {
-		String className = thisClass.getName().getName();
+		String className = thisClass.bxGetName().getName();
 
 		// Having an onMissingMethod() UDF is the golden ticket to implementing any interface
 		if ( thisClass.getThisScope().get( Key.onMissingMethod ) instanceof Function ) {
@@ -759,6 +775,41 @@ public class BoxClassSupport {
 				        + abstractMethod.getValue().getSourceObjectType() + " [" + abstractMethod.getValue().getSourceObjectName() + "]." );
 			}
 		}
+	}
+
+	/**
+	 * Given a UDF instance, resolve the actual class it was declared in. A method may be inherited by a child class, and copied down into the child class's
+	 * variables scope, but at runtime, the class it uses as `super` needs to be relative to the current location.
+	 */
+	public static IClassRunnable resolveClassForUDF( IClassRunnable thisClass, Function udf ) {
+		// If null, then skip all our logic
+		if ( thisClass == null ) {
+			return null;
+		}
+
+		// This logic is only for UDFs, not closure, lambdas, etc
+		if ( ! ( udf instanceof UDF ) ) {
+			return thisClass;
+		}
+
+		// Where was this function origionally defined
+		Class<?> enclosingClass = udf.getClass().getEnclosingClass();
+
+		// If the enclosing class is the same as the current class, then we're good
+		if ( enclosingClass == thisClass.getClass() ) {
+			return thisClass;
+		}
+
+		// Otherwise, let's climb the supers (if they even exist) and see if one of them declared it
+		IClassRunnable thisSuper = thisClass.getSuper();
+		while ( thisSuper != null ) {
+			if ( enclosingClass == thisSuper.getClass() ) {
+				return thisSuper;
+			}
+			thisSuper = thisSuper.getSuper();
+		}
+		// If the original class and no supers were the enclosing class, then this is prolly a mixin. Just return the original value.
+		return thisClass;
 	}
 
 }

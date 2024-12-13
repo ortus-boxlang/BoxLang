@@ -22,6 +22,8 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import ortus.boxlang.runtime.util.RegexBuilder;
+
 public class RegexUtil {
 
 	// POSIX Pattern
@@ -89,37 +91,30 @@ public class RegexUtil {
 	 * Perl regex allows abitrary curly braces in the regex. This function escapes the curly braces that are not part of valid quantifiers.
 	 * Ex: {{foobar}}
 	 * which is not a valid quantifier, will be escaped to \{\{foobar\}\}
-	 * 
+	 *
 	 * @param input The regular expression string
-	 * 
+	 *
 	 * @return The escaped regular expression string
 	 */
 	/**
 	 * @param input The regular expression string
-	 * 
+	 *
 	 * @return The escaped regular expression string
 	 */
 	public static String replaceNonQuantiferCurlyBraces( String input ) {
 		// Regular expression to match valid quantifiers like {2,4}, {3}, {,5}, etc.
-		String			quantifierRegex		= "\\{\\d*,?\\d*\\}";
-
-		// Pattern to match valid quantifiers
-		Pattern			quantifierPattern	= Pattern.compile( quantifierRegex );
-
-		// Matcher for the input string
-		Matcher			matcher				= quantifierPattern.matcher( input );
-
+		Matcher			matcher			= RegexBuilder.of( input, RegexBuilder.REGEX_QUANTIFIER ).matcher();
 		// Create a StringBuilder to build the final output
-		StringBuilder	escapedString		= new StringBuilder();
-
+		StringBuilder	escapedString	= new StringBuilder();
 		// Index to keep track of the position in the input string
-		int				lastIndex			= 0;
+		int				lastIndex		= 0;
 
 		while ( matcher.find() ) {
 			// Append text between matches and escape curly braces in that portion
-			String betweenMatches = input.substring( lastIndex, matcher.start() )
-			    .replaceAll( "(?<!\\\\)\\{", "\\\\{" ) // Escape '{' if not already escaped
-			    .replaceAll( "(?<!\\\\)\\}", "\\\\}" ); // Escape '}' if not already escaped
+			String betweenMatches = RegexBuilder.of( input.substring( lastIndex, matcher.start() ) )
+			    .replaceAll( RegexBuilder.REGEX_QUANTIFIER_START, "\\\\{" ) // Escape '{' if not already escaped
+			    .replaceAll( RegexBuilder.REGEX_QUANTIFIER_END, "\\\\}" ) // Escape '}' if not already escaped
+			    .get();
 
 			escapedString.append( betweenMatches );
 
@@ -131,9 +126,12 @@ public class RegexUtil {
 		}
 
 		// Append and escape any remaining text after the last match
-		escapedString.append( input.substring( lastIndex )
-		    .replaceAll( "(?<!\\\\)\\{", "\\\\{" ) // Escape '{' if not already escaped
-		    .replaceAll( "(?<!\\\\)\\}", "\\\\}" ) ); // Escape '}' if not already escaped
+		escapedString.append(
+		    RegexBuilder.of( input.substring( lastIndex ) )
+		        .replaceAll( RegexBuilder.REGEX_QUANTIFIER_START, "\\\\{" ) // Escape '{' if not already escaped
+		        .replaceAll( RegexBuilder.REGEX_QUANTIFIER_END, "\\\\}" ) // Escape '}' if not already escaped
+		        .get()
+		);
 
 		return escapedString.toString();
 	}

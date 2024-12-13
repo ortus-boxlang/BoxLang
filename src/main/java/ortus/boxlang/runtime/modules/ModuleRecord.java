@@ -33,8 +33,6 @@ import java.util.UUID;
 import java.util.regex.Matcher;
 
 import org.apache.commons.io.FilenameUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.async.tasks.IScheduler;
@@ -55,9 +53,9 @@ import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.jdbc.drivers.DriverShim;
 import ortus.boxlang.runtime.jdbc.drivers.IJDBCDriver;
 import ortus.boxlang.runtime.loader.DynamicClassLoader;
+import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
-import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.ThisScope;
@@ -67,6 +65,7 @@ import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.services.IService;
 import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.services.ModuleService;
+import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.DynamicFunction;
@@ -76,6 +75,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.StructUtil;
 import ortus.boxlang.runtime.util.DataNavigator;
 import ortus.boxlang.runtime.util.EncryptionUtil;
+import ortus.boxlang.runtime.util.RegexBuilder;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 /**
@@ -121,9 +121,9 @@ public class ModuleRecord {
 	public String				mapping;
 
 	/**
-	 * If the module is disabled for activation, defaults to false
+	 * If the module is enabled for activation, defaults to false
 	 */
-	public boolean				disabled					= false;
+	public boolean				enabled						= true;
 
 	/**
 	 * Flag to indicate if the module has been activated or not yet
@@ -219,7 +219,7 @@ public class ModuleRecord {
 	 */
 	public IClassRunnable		moduleConfig;
 
-	/*
+	/**
 	 * --------------------------------------------------------------------------
 	 * Private Properties
 	 * --------------------------------------------------------------------------
@@ -238,11 +238,16 @@ public class ModuleRecord {
 	/**
 	 * Logger
 	 */
-	private static final Logger	logger						= LoggerFactory.getLogger( ModuleRecord.class );
+	private BoxLangLogger		logger;
 
-	/*
+	/**
+	 * Runtime
+	 */
+	private BoxRuntime			runtime;
+
+	/**
 	 * --------------------------------------------------------------------------
-	 * Constructors
+	 * Constructor(s)
 	 * --------------------------------------------------------------------------
 	 */
 
@@ -252,6 +257,9 @@ public class ModuleRecord {
 	 * @param physicalPath The physical path of the module
 	 */
 	public ModuleRecord( String physicalPath ) {
+		this.runtime	= BoxRuntime.getInstance();
+		this.logger		= this.runtime.getLoggingService().getLogger( "modules" );
+
 		Path	directoryPath	= Path.of( physicalPath );
 		Path	boxjsonPath		= directoryPath.resolve( MODULE_CONFIG_FILE );
 
@@ -262,7 +270,7 @@ public class ModuleRecord {
 			    .from( "boxlang" )
 			    .ifPresent( "moduleName", value -> this.name = Key.of( value ) )
 			    .ifPresent( "minimumVersion",
-			        value -> BoxRuntime.getInstance().getModuleService().verifyModuleAndBoxLangVersion( ( String ) value, directoryPath )
+			        value -> this.runtime.getModuleService().verifyModuleAndBoxLangVersion( ( String ) value, directoryPath )
 			    );
 		}
 
@@ -294,9 +302,8 @@ public class ModuleRecord {
 	 * @return The ModuleRecord
 	 */
 	public ModuleRecord loadDescriptor( IBoxContext context ) {
-		BoxRuntime	runtime			= BoxRuntime.getInstance();
-		Path		descriptorPath	= physicalPath.resolve( ModuleService.MODULE_DESCRIPTOR );
-		String		packageName		= MODULE_PACKAGE_NAME + this.name.getNameNoCase() + EncryptionUtil.hash( physicalPath.toString() );
+		Path	descriptorPath	= physicalPath.resolve( ModuleService.MODULE_DESCRIPTOR );
+		String	packageName		= MODULE_PACKAGE_NAME + this.name.getNameNoCase() + EncryptionUtil.hash( physicalPath.toString() );
 
 		// Load the Class, Construct it and store it
 		this.moduleConfig = ( IClassRunnable ) DynamicObject.of(
@@ -304,7 +311,7 @@ public class ModuleRecord {
 		        ResolvedFilePath.of(
 		            null,
 		            null,
-		            packageName.replaceAll( "\\.", Matcher.quoteReplacement( File.separator ) ) + File.separator + ModuleService.MODULE_DESCRIPTOR,
+		            packageName.replace( ".", Matcher.quoteReplacement( File.separator ) ) + File.separator + ModuleService.MODULE_DESCRIPTOR,
 		            descriptorPath
 		        ),
 		        context
@@ -321,12 +328,12 @@ public class ModuleRecord {
 		this.author			= ( String ) thisScope.getOrDefault( Key.author, "" );
 		this.description	= ( String ) thisScope.getOrDefault( Key.description, "" );
 		this.webURL			= ( String ) thisScope.getOrDefault( Key.webURL, "" );
-		this.disabled		= ( Boolean ) thisScope.getOrDefault( Key.disabled, false );
+		this.enabled		= ( Boolean ) thisScope.getOrDefault( Key.enabled, true );
 
 		// Verify if we disabled the loading of the module in the runtime config
-		if ( runtime.getConfiguration().modules.containsKey( this.name ) ) {
-			ModuleConfig config = ( ModuleConfig ) runtime.getConfiguration().modules.get( this.name );
-			this.disabled = config.disabled;
+		if ( this.runtime.getConfiguration().modules.containsKey( this.name ) ) {
+			ModuleConfig config = ( ModuleConfig ) this.runtime.getConfiguration().modules.get( this.name );
+			this.enabled = config.enabled;
 		}
 
 		// Do we have a custom mapping to override?
@@ -357,9 +364,9 @@ public class ModuleRecord {
 		 */
 
 		variablesScope.put( Key.moduleRecord, this );
-		variablesScope.put( Key.boxRuntime, BoxRuntime.getInstance() );
-		variablesScope.put( Key.interceptorService, BoxRuntime.getInstance().getInterceptorService() );
-		variablesScope.put( Key.log, LoggerFactory.getLogger( this.moduleConfig.getClass() ) );
+		variablesScope.put( Key.boxRuntime, this.runtime );
+		variablesScope.put( Key.interceptorService, this.runtime.getInterceptorService() );
+		variablesScope.put( Key.log, this.logger );
 
 		return this;
 	}
@@ -376,14 +383,13 @@ public class ModuleRecord {
 		// Convenience References
 		ThisScope			thisScope			= this.moduleConfig.getThisScope();
 		VariablesScope		variablesScope		= this.moduleConfig.getVariablesScope();
-		BoxRuntime			runtime				= BoxRuntime.getInstance();
-		InterceptorService	interceptorService	= runtime.getInterceptorService();
-		FunctionService		functionService		= runtime.getFunctionService();
-		ComponentService	componentService	= runtime.getComponentService();
+		InterceptorService	interceptorService	= this.runtime.getInterceptorService();
+		FunctionService		functionService		= this.runtime.getFunctionService();
+		ComponentService	componentService	= this.runtime.getComponentService();
 
-		// Register the module mapping in the runtime
+		// Register the module mapping in the this.runtime
 		// Called first in case this is used in the `configure` method
-		runtime.getConfiguration().registerMapping( this.mapping, this.path );
+		this.runtime.getConfiguration().registerMapping( this.mapping, this.path );
 
 		// Create the module class loader and seed it with the physical path to the module
 		// This traverses the module and looks for *.class files to load (NOT JARs)
@@ -393,11 +399,11 @@ public class ModuleRecord {
 			this.classLoader = new DynamicClassLoader(
 			    this.name,
 			    this.physicalPath.toUri().toURL(),
-			    runtime.getRuntimeLoader(),
+			    this.runtime.getRuntimeLoader(),
 			    false
 			);
 		} catch ( MalformedURLException e ) {
-			logger.error( "Error creating module [{}] class loader.", this.name, e );
+			this.logger.error( "Error creating module [{}] class loader.", this.name, e );
 			throw new BoxRuntimeException( "Error creating module [" + this.name + "] class loader", e );
 		}
 
@@ -408,7 +414,7 @@ public class ModuleRecord {
 			try {
 				this.classLoader.addURLs( DynamicClassLoader.getJarURLs( libsPath ) );
 			} catch ( IOException e ) {
-				logger.error( "Error while seeding the module [{}] class loader with the libs folder.", this.name, e );
+				this.logger.error( "Error while seeding the module [{}] class loader with the libs folder.", this.name, e );
 				throw new BoxRuntimeException( "Error while seeding the module [" + this.name + "] class loader with the libs folder", e );
 			}
 		}
@@ -427,8 +433,8 @@ public class ModuleRecord {
 		this.settings = ( Struct ) variablesScope.getAsStruct( Key.settings );
 
 		// Append any module settings found in the runtime configuration
-		if ( runtime.getConfiguration().modules.containsKey( this.name ) ) {
-			ModuleConfig config = ( ModuleConfig ) runtime.getConfiguration().modules.get( this.name );
+		if ( this.runtime.getConfiguration().modules.containsKey( this.name ) ) {
+			ModuleConfig config = ( ModuleConfig ) this.runtime.getConfiguration().modules.get( this.name );
 			StructUtil.deepMerge( this.settings, config.settings, true );
 		}
 
@@ -465,7 +471,7 @@ public class ModuleRecord {
 		ServiceLoader.load( IService.class, this.classLoader )
 		    .stream()
 		    .map( ServiceLoader.Provider::get )
-		    .forEach( service -> runtime.putGlobalService( service.getName(), service ) );
+		    .forEach( service -> this.runtime.putGlobalService( service.getName(), service ) );
 
 		// Load any JDBC drivers into the JVM
 		ServiceLoader.load( Driver.class, this.classLoader )
@@ -483,7 +489,7 @@ public class ModuleRecord {
 		ServiceLoader.load( IJDBCDriver.class, this.classLoader )
 		    .stream()
 		    .map( ServiceLoader.Provider::get )
-		    .forEach( driver -> runtime.getDataSourceService().registerDriver( driver ) );
+		    .forEach( driver -> this.runtime.getDataSourceService().registerDriver( driver ) );
 
 		// Do we have any Java BIFs to load?
 		ServiceLoader.load( BIF.class, this.classLoader )
@@ -501,13 +507,13 @@ public class ModuleRecord {
 		ServiceLoader.load( IScheduler.class, this.classLoader )
 		    .stream()
 		    .map( ServiceLoader.Provider::get )
-		    .forEach( scheduler -> runtime.getSchedulerService().loadScheduler( Key.of( scheduler.getName() + "@" + this.name ), scheduler ) );
+		    .forEach( scheduler -> this.runtime.getSchedulerService().loadScheduler( Key.of( scheduler.getSchedulerName() + "@" + this.name ), scheduler ) );
 
 		// Do we have any Java ICacheProviders to register in the CacheService
 		ServiceLoader.load( ICacheProvider.class, this.classLoader )
 		    .stream()
 		    .map( ServiceLoader.Provider::type )
-		    .forEach( provider -> runtime.getCacheService().registerProvider( Key.of( provider.getSimpleName() ), provider ) );
+		    .forEach( provider -> this.runtime.getCacheService().registerProvider( Key.of( provider.getSimpleName() ), provider ) );
 
 		// Do we have any Java IInterceptor to register in the InterceptorService
 		ServiceLoader.load( IInterceptor.class, this.classLoader )
@@ -531,7 +537,7 @@ public class ModuleRecord {
 	public ModuleRecord unload( IBoxContext context ) {
 		// Convenience References
 		ThisScope			thisScope			= this.moduleConfig.getThisScope();
-		InterceptorService	interceptorService	= BoxRuntime.getInstance().getInterceptorService();
+		InterceptorService	interceptorService	= this.runtime.getInterceptorService();
 
 		// Call the onLoad() method if it exists in the descriptor
 		if ( thisScope.containsKey( Key.onUnload ) ) {
@@ -543,7 +549,7 @@ public class ModuleRecord {
 				    false
 				);
 			} catch ( Exception e ) {
-				logger.error( "Error while unloading module [{}]", this.name, e );
+				this.logger.error( "Error while unloading module [{}]", this.name, e );
 			}
 		}
 
@@ -565,7 +571,7 @@ public class ModuleRecord {
 		try {
 			this.classLoader.close();
 		} catch ( IOException e ) {
-			logger.error( "Error while closing the DynamicClassLoader for module [{}]", this.name, e );
+			this.logger.error( "Error while closing the DynamicClassLoader for module [{}]", this.name, e );
 		} finally {
 			this.classLoader = null;
 		}
@@ -602,7 +608,7 @@ public class ModuleRecord {
 	public ModuleRecord activate( IBoxContext context ) {
 		// Convenience References
 		ThisScope			thisScope			= this.moduleConfig.getThisScope();
-		InterceptorService	interceptorService	= BoxRuntime.getInstance().getInterceptorService();
+		InterceptorService	interceptorService	= this.runtime.getInterceptorService();
 
 		/*
 		 * --------------------------------------------------------------------------
@@ -694,12 +700,12 @@ public class ModuleRecord {
 	 */
 
 	/**
-	 * If the module is disabled for activation
+	 * If the module is enabled for activation
 	 *
-	 * @return {@code true} if the module is disabled for activation, {@code false} otherwise
+	 * @return {@code true} if the module is enabled for activation, {@code false} otherwise
 	 */
-	public boolean isDisabled() {
-		return disabled;
+	public boolean isEnabled() {
+		return enabled;
 	}
 
 	/**
@@ -731,7 +737,7 @@ public class ModuleRecord {
 		    "author", author,
 		    "customInterceptionPoints", Array.copyOf( customInterceptionPoints ),
 		    "description", description,
-		    "disabled", disabled,
+		    "enabled", enabled,
 		    "Id", id,
 		    "interceptors", Array.copyOf( interceptors ),
 		    "invocationPath", invocationPath,
@@ -765,13 +771,12 @@ public class ModuleRecord {
 
 		// Skip directories and non CFC/BX files
 		// We are not doing recursive registration for the moment.
-		if ( targetFile.isDirectory() || !targetFile.getName().matches( "^.*\\.(cfc|bx)$" ) ) {
+		if ( targetFile.isDirectory() || !RegexBuilder.of( targetFile.getName(), RegexBuilder.CFC_OR_BX_FILE ).matches() ) {
 			return this;
 		}
 
 		// Nice References
-		BoxRuntime				runtime				= BoxRuntime.getInstance();
-		ComponentService		componentService	= runtime.getComponentService();
+		ComponentService		componentService	= this.runtime.getComponentService();
 		// Try to load the BoxLang class and proxy
 		Key						className			= Key.of( FilenameUtils.getBaseName( targetFile.getAbsolutePath() ) );
 		IClassRunnable			oComponent			= loadClassRunnable( targetFile, ModuleService.MODULE_COMPONENTS, context );
@@ -811,7 +816,7 @@ public class ModuleRecord {
 		// Get Name Delegate
 		oComponent.getVariablesScope().put( Key.getName, new DynamicFunction(
 		    Key.getName,
-		    ( context1, fnc ) -> oComponent.getName()
+		    ( context1, fnc ) -> oComponent.bxGetName()
 		) );
 
 		/**
@@ -822,7 +827,7 @@ public class ModuleRecord {
 
 		IStruct				annotations			= oComponent.getBoxMeta().getMeta().getAsStruct( Key.annotations );
 		ComponentDescriptor	descriptor			= new ComponentDescriptor(
-		    oComponent.getName(),
+		    oComponent.bxGetName(),
 		    oComponent.getClass(),
 		    this.name.getName(),
 		    null,
@@ -835,7 +840,7 @@ public class ModuleRecord {
 		// Register all components with their aliases
 		for ( Key thisAlias : componentAliases ) {
 			componentService.registerComponent( descriptor, thisAlias, true );
-			logger.info(
+			this.logger.info(
 			    "> Registered Module [{}] Component [{}] with alias [{}]",
 			    this.name.getName(),
 			    className.getName(),
@@ -860,13 +865,12 @@ public class ModuleRecord {
 
 		// Skip directories and non CFC/BX files
 		// We are not doing recursive registration for the moment.
-		if ( targetFile.isDirectory() || !targetFile.getName().matches( "^.*\\.(cfc|bx)$" ) ) {
+		if ( targetFile.isDirectory() || !RegexBuilder.of( targetFile.getName(), RegexBuilder.CFC_OR_BX_FILE ).matches() ) {
 			return this;
 		}
 
 		// Nice References
-		BoxRuntime		runtime			= BoxRuntime.getInstance();
-		FunctionService	functionService	= runtime.getFunctionService();
+		FunctionService	functionService	= this.runtime.getFunctionService();
 		// Try to load the BoxLang class
 		Key				className		= Key.of( FilenameUtils.getBaseName( targetFile.getAbsolutePath() ) );
 		IClassRunnable	oBIF			= loadClassRunnable( targetFile, ModuleService.MODULE_BIFS, context );
@@ -892,7 +896,7 @@ public class ModuleRecord {
 			    bifAlias,
 			    true
 			);
-			logger.info(
+			this.logger.info(
 			    "> Registered Module [{}] BIF [{}] with alias [{}]",
 			    this.name.getName(),
 			    className.getName(),
@@ -924,7 +928,7 @@ public class ModuleRecord {
 			        bifDescriptor
 			    )
 			);
-			logger.info(
+			this.logger.info(
 			    "> Registered Module [{}] MemberMethod [{}]",
 			    this.name.getName(),
 			    memberMethod
@@ -975,7 +979,7 @@ public class ModuleRecord {
 			return Array.of(
 			    Struct.of(
 			        // Default member name for class ArrayFoo with BoxType of Array is just foo()
-			        Key._NAME, className.getNameNoCase().replaceAll( boxType.getKey().getNameNoCase(), "" ),
+			        Key._NAME, className.getNameNoCase().replace( boxType.getKey().getNameNoCase(), "" ),
 			        Key.objectArgument, "",
 			        Key.type, boxType
 			    )
@@ -1009,7 +1013,7 @@ public class ModuleRecord {
 				// Prepare the record now
 				BoxLangType boxType = BoxLangType.valueOf( type.getNameNoCase() );
 				memberRecord.put( Key.type, boxType );
-				memberRecord.computeIfAbsent( Key._NAME, k -> className.getNameNoCase().replaceAll( type.getNameNoCase(), "" )
+				memberRecord.computeIfAbsent( Key._NAME, k -> className.getNameNoCase().replace( type.getNameNoCase(), "" )
 				);
 				memberRecord.putIfAbsent( Key.objectArgument, "" );
 				result.push( memberRecord );
@@ -1075,7 +1079,7 @@ public class ModuleRecord {
 		            null,
 		            null,
 		            ( this.invocationPath + "." + conventionsPath )
-		                .replaceAll( "\\.", Matcher.quoteReplacement( File.separator ) )
+		                .replace( ".", Matcher.quoteReplacement( File.separator ) )
 		                + File.separator
 		                + FilenameUtils.getBaseName( targetFile.getAbsolutePath() ),
 		            targetFile.toPath()
@@ -1093,19 +1097,28 @@ public class ModuleRecord {
 		 * - boxRuntime : BoxLangRuntime
 		 * - log : A logger
 		 * - functionService : The BoxLang FunctionService
+		 * - componentService : The BoxLang ComponentService
 		 * - interceptorService : The BoxLang InterceptorService
+		 * - cacheService : The BoxLang CacheService
+		 * - asyncService : The BoxLang AsyncService
+		 * - schedulerService : The BoxLang SchedulerService
+		 * - dataSourceService : The BoxLang DataSourceService
 		 * - moduleRecord : The ModuleRecord instance
 		 */
 
-		BoxRuntime			runtime				= BoxRuntime.getInstance();
-		FunctionService		functionService		= runtime.getFunctionService();
-		InterceptorService	interceptorService	= runtime.getInterceptorService();
+		FunctionService		functionService		= this.runtime.getFunctionService();
+		InterceptorService	interceptorService	= this.runtime.getInterceptorService();
 
 		oTargetObject.getVariablesScope().put( Key.moduleRecord, this );
-		oTargetObject.getVariablesScope().put( Key.boxRuntime, runtime );
+		oTargetObject.getVariablesScope().put( Key.boxRuntime, this.runtime );
 		oTargetObject.getVariablesScope().put( Key.functionService, functionService );
+		oTargetObject.getVariablesScope().put( Key.componentService, this.runtime.getComponentService() );
 		oTargetObject.getVariablesScope().put( Key.interceptorService, interceptorService );
-		oTargetObject.getVariablesScope().put( Key.log, LoggerFactory.getLogger( oTargetObject.getClass() ) );
+		oTargetObject.getVariablesScope().put( Key.asyncService, this.runtime.getAsyncService() );
+		oTargetObject.getVariablesScope().put( Key.schedulerService, this.runtime.getSchedulerService() );
+		oTargetObject.getVariablesScope().put( Key.datasourceService, this.runtime.getDataSourceService() );
+		oTargetObject.getVariablesScope().put( Key.cacheService, this.runtime.getCacheService() );
+		oTargetObject.getVariablesScope().put( Key.log, this.logger );
 
 		return oTargetObject;
 	}

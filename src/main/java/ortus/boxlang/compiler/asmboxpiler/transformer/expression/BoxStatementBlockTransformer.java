@@ -44,12 +44,11 @@ public class BoxStatementBlockTransformer extends AbstractTransformer {
 
 		if ( boxStatementBlock.getBody().size() == 0 && ReturnValueContext.VALUE_OR_NULL == returnContext ) {
 			nodes.add( new InsnNode( Opcode.ACONST_NULL ) );
-			return nodes;
+			return AsmHelper.addLineNumberLabels( nodes, node );
 		}
 
 		nodes.addAll( AsmHelper.transformBodyExpressions( transpiler, boxStatementBlock.getBody(), context, returnContext ) );
 
-		return nodes;
-		// return AsmHelper.addLineNumberLabels( nodes, node );
+		return AsmHelper.addLineNumberLabels( nodes, node );
 	}
 }

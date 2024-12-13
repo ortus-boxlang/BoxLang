@@ -57,7 +57,7 @@ public class Compare implements IOperator {
 	 * @param right         The right operand
 	 * @param caseSensitive Whether to compare strings case sensitive
 	 *
-	 * @return 1 if greater than, -1 if less than, = if equal
+	 * @return 1 if greater than, -1 if less than, 0 if equal
 	 */
 	public static int invoke( Object left, Object right, Boolean caseSensitive ) {
 		return attempt( left, right, caseSensitive, true );
@@ -71,7 +71,7 @@ public class Compare implements IOperator {
 	 * @param caseSensitive Whether to compare strings case sensitive
 	 * @param fail          True to throw an exception if the left and right arguments cannot be compared
 	 *
-	 * @return 1 if greater than, -1 if less than, = if equal
+	 * @return 1 if greater than, -1 if less than, 0 if equal
 	 */
 	public static Integer attempt( Object left, Object right, Boolean caseSensitive, boolean fail ) {
 		return attempt( left, right, caseSensitive, fail, Locale.US );
@@ -86,7 +86,7 @@ public class Compare implements IOperator {
 	 * @param fail          True to throw an exception if the left and right arguments cannot be compared
 	 * @param locale        The locale to use for comparison
 	 *
-	 * @return 1 if greater than, -1 if less than, = if equal
+	 * @return 1 if greater than, -1 if less than, 0 if equal
 	 */
 	@SuppressWarnings( "unchecked" )
 	public static Integer attempt( Object left, Object right, Boolean caseSensitive, boolean fail, Locale locale ) {

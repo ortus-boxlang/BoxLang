@@ -46,10 +46,9 @@ class InterceptorServiceTest {
 
 	@BeforeEach
 	public void setupBeforeEach() {
-
 		Mockito.doReturn( new ScriptingRequestBoxContext() ).when( runtime ).getRuntimeContext();
-
 		service = new InterceptorService( runtime );
+		service.onConfigurationLoad();
 	}
 
 	@DisplayName( "Test it can get an instance of the service" )

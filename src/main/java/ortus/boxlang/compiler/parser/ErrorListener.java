@@ -12,6 +12,7 @@ import ortus.boxlang.compiler.ast.Issue;
 import ortus.boxlang.compiler.ast.Point;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.Source;
+import ortus.boxlang.runtime.util.RegexBuilder;
 
 public class ErrorListener extends BaseErrorListener {
 
@@ -64,7 +65,7 @@ public class ErrorListener extends BaseErrorListener {
 	 */
 	private String[] getSourceLines() {
 		if ( this.sourceLines == null ) {
-			this.sourceLines = this.sourceToParse.getCode().replaceAll( "\\r", "" ).split( "\n" );
+			this.sourceLines = RegexBuilder.stripCarriageReturns( this.sourceToParse.getCode() ).split( "\n" );
 		}
 		return this.sourceLines;
 	}

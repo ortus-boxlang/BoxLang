@@ -177,7 +177,8 @@ public class SystemExecute extends BIF {
 			);
 		} catch ( InterruptedException ie ) {
 			throw new BoxRuntimeException(
-			    "An error occurred while attempting to wait for process completion",
+			    "The process was interrupted while waiting for the command to complete",
+			    "InterruptedException",
 			    ie
 			);
 		}

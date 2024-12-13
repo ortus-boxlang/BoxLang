@@ -81,12 +81,22 @@ public class LoggerConfig implements IConfigSegment {
 	 * @param loggingConfig The logging configuration
 	 */
 	public LoggerConfig( String name, LoggingConfig loggingConfig ) {
-		this.name			= new Key( name );
+		this( new Key( name ), loggingConfig );
+	}
+
+	/**
+	 * Constructor
+	 *
+	 * @param name          The name of the logger
+	 * @param loggingConfig The logging configuration
+	 */
+	public LoggerConfig( Key name, LoggingConfig loggingConfig ) {
+		this.name			= name;
 		this.loggingConfig	= loggingConfig;
 	}
 
 	@Override
-	public IConfigSegment process( IStruct config ) {
+	public LoggerConfig process( IStruct config ) {
 		this.level				= LogLevel.valueOf( PropertyHelper.processString( config, Key.level, this.loggingConfig.rootLevel.getName() ), false );
 		this.appender			= Key.of( PropertyHelper.processString( config, Key.appender, DEFAULT_APPENDER.getName(), VALID_APPENDERS ) );
 		this.encoder			= Key.of(

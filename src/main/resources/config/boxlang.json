@@ -68,6 +68,8 @@
 	"customTagsDirectory": [
 		"${boxlang-home}/customTags"
 	],
+	// A collection of directories to lookup box classes in (.bx files), they must be absolute paths
+	"classPaths": [],
 	// A collection of directories we will class load all Java *.jar files from
 	"javaLibraryPaths": [
 		"${boxlang-home}/lib"
@@ -95,13 +97,16 @@
 		// Default Encoder for file appenders.
 		// The available options are "text" and "json"
 		"defaultEncoder": "text",
+		// Activate the status printer on load to print out the logging configuration
+		// Turn on to debug LogBack and BoxLang logging configurations
+		"statusPrinterOnLoad": false,
 		// A collection of pre-defined loggers and their configurations
 		"loggers": {
 			// The runtime main and default log
 			"runtime": {
 				// Valid values are in order of severity: ERROR, WARN, INFO, DEBUG, TRACE, OFF
 				// Leave out if it should inherit from the root logger
-				//"level": "WARN",
+				"level": "INFO",
 				// Valid values are: "file", "console",
 				// Coming soon: "smtp", "socket", "db", "syslog" or "java class name"
 				// Please note that we only use Rolling File Appenders
@@ -112,13 +117,64 @@
 				"encoder": "text",
 				// Additive logging: true means that this logger will inherit the appenders from the root logger
 				// If false, it will only use the appenders defined in this logger
-				"additive": true
+				"additive": false
 			},
-			// The modules log
+			// All async operations and facilities will log here.
+			"async": {
+				// Valid values are in order of severity: ERROR, WARN, INFO, DEBUG, TRACE, OFF
+				// Leave out if it should inherit from the root logger
+				"level": "INFO",
+				// Valid values are: "file", "console",
+				// Coming soon: "smtp", "socket", "db", "syslog" or "java class name"
+				// Please note that we only use Rolling File Appenders
+				"appender": "file",
+				// Use the defaults from the runtime
+				"appenderArguments": {},
+				// The available options are "text" and "json"
+				"encoder": "text",
+				// Additive logging: true means that this logger will inherit the appenders from the root logger
+				// If false, it will only use the appenders defined in this logger
+				"additive": false
+			},
+			// All cache operations and facilities will log here.
+			"cache": {
+				// Valid values are in order of severity: ERROR, WARN, INFO, DEBUG, TRACE, OFF
+				// Leave out if it should inherit from the root logger
+				"level": "WARN",
+				// Valid values are: "file", "console",
+				// Coming soon: "smtp", "socket", "db", "syslog" or "java class name"
+				// Please note that we only use Rolling File Appenders
+				"appender": "file",
+				// Use the defaults from the runtime
+				"appenderArguments": {},
+				// The available options are "text" and "json"
+				"encoder": "text",
+				// Additive logging: true means that this logger will inherit the appenders from the root logger
+				// If false, it will only use the appenders defined in this logger
+				"additive": false
+			},
+			// The datasource log is used by the creation, debugging, and management of datasources
+			"datasource": {
+				// Valid values are in order of severity: ERROR, WARN, INFO, DEBUG, TRACE, OFF
+				// Leave out if it should inherit from the root logger
+				"level": "WARN",
+				// Valid values are: "file", "console",
+				// Coming soon: "smtp", "socket", "db", "syslog" or "java class name"
+				// Please note that we only use Rolling File Appenders
+				"appender": "file",
+				// Use the defaults from the runtime
+				"appenderArguments": {},
+				// The available options are "text" and "json"
+				"encoder": "text",
+				// Additive logging: true means that this logger will inherit the appenders from the root logger
+				// If false, it will only use the appenders defined in this logger
+				"additive": false
+			},
+			// The modules log is used by the module service and records all module activity
 			"modules": {
 				// Valid values are in order of severity: ERROR, WARN, INFO, DEBUG, TRACE, OFF
 				// Leave out if it should inherit from the root logger
-				//"level": "WARN",
+				"level": "INFO",
 				// Valid values are: "file", "console",
 				// Coming soon: "smtp", "socket", "db", "syslog" or "java class name"
 				// Please note that we only use Rolling File Appenders
@@ -129,13 +185,13 @@
 				"encoder": "text",
 				// Additive logging: true means that this logger will inherit the appenders from the root logger
 				// If false, it will only use the appenders defined in this logger
-				"additive": true
+				"additive": false
 			},
-			// All applications will use this logger
+			// All applications will use this logger for any custom logging
 			"application": {
 				// Valid values are in order of severity: ERROR, WARN, INFO, DEBUG, TRACE, OFF
 				// Leave out if it should inherit from the root logger
-				"level": "TRACE",
+				"level": "WARN",
 				// Valid values are: "file", "console",
 				// Coming soon: "smtp", "socket", "db", "syslog" or "java class name"
 				// Please note that we only use Rolling File Appenders
@@ -146,9 +202,9 @@
 				"encoder": "text",
 				// Additive logging: true means that this logger will inherit the appenders from the root logger
 				// If false, it will only use the appenders defined in this logger
-				"additive": true
+				"additive": false
 			},
-			// All scheduled tasks logging
+			// All scheduled tasks logging will go here
 			"scheduler": {
 				// Valid values are in order of severity: ERROR, WARN, INFO, DEBUG, TRACE, OFF
 				// Leave out if it should inherit from the root logger
@@ -163,7 +219,7 @@
 				"encoder": "text",
 				// Additive logging: true means that this logger will inherit the appenders from the root logger
 				// If false, it will only use the appenders defined in this logger
-				"additive": true
+				"additive": false
 			}
 		}
 	},
@@ -172,7 +228,7 @@
 	"experimental": {
 		// This choose the compiler to use for the runtime
 		// Valid values are: "java", "asm"
-		"compiler": "java",
+		"compiler": "asm",
 		// If enabled, it will generate AST JSON data under the project's /grapher/data folder
 		"ASTCapture": false
 	},
@@ -285,6 +341,24 @@
 				"useLastAccessTimeouts": false
 			}
 		},
+		// Stores all dynamic regular expressions used in the runtime
+		"bxRegex": {
+			"provider": "BoxCacheProvider",
+			"properties": {
+				"evictCount": 1,
+				"evictionPolicy": "LRU",
+				"freeMemoryPercentageThreshold": 0,
+				"maxObjects": 500,
+				// 30 minutes ifnot used
+				"defaultLastAccessTimeout": 1800,
+				// 60 minutes default
+				"defaultTimeout": 3600,
+				"objectStore": "ConcurrentSoftReferenceStore",
+				"reapFrequency": 120,
+				"resetTimeoutOnAccess": false,
+				"useLastAccessTimeouts": true
+			}
+		},
 		"bxImports": {
 			"provider": "BoxCacheProvider",
 			"properties": {
@@ -393,13 +467,13 @@
 	/**
 	 * The BoxLang module settings
 	 * The key is the module name and the value is a struct of settings for that specific module
-	 * The `disabled` property is a boolean that determines if the module should be enabled or not
+	 * The `enabled` property is a boolean that determines if the module should be enabled or not.  Default is true
 	 * The `settings` property is a struct of settings that are specific to the module and will be override the module settings
 	 */
 	"modules": {
 		// The Compat Module
 		// "compat": {
-		// 	"disabled": false,
+		// 	"enabled": true,
 		// 	"settings": {
 		// 		"isLucee": true,
 		// 		"isAdobe": true

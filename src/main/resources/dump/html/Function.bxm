@@ -25,7 +25,7 @@
 			>
 				<!--- Modifiers --->
 				<tr>
-					<th 
+					<th
 						aria-expanded="true"
 						data-bx-toggle="onoff"
 						scope="row"
@@ -43,7 +43,7 @@
 
 				<!--- Arguments --->
 				<tr>
-					<th 
+					<th
 						aria-expanded="true"
 						data-bx-toggle="onoff"
 						scope="row"
@@ -82,7 +82,7 @@
 															#encodeForHTML( thisArg.name() )#
 														</td>
 														<td>
-															#writedump( var: thisArg.defaultValue(), top: top, expand: expand )#
+															#writedump( var: thisArg.defaultValue(), top: isNull( top ) ? null : top - 1, expand: expand )#
 														</td>
 														<td>
 															#encodeForHTML( argHint )#
@@ -103,7 +103,7 @@
 				<!--- Annotations --->
 				<bx:if md.annotations>
 				<tr>
-					<th 
+					<th
 						aria-expanded="true"
 						data-bx-toggle="onoff"
 						scope="row"

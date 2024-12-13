@@ -1,0 +1,3 @@
+function mixed() {
+	return "mixed up";
+}

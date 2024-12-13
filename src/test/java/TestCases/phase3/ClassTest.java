@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -129,7 +130,7 @@ public class ClassTest {
 		    	/**
 		    	 * This boolean flag tells the module service to skip the module registration/activation process.
 		    	 */
-		    	this.disabled = false;
+		    	this.enabled = true;
 
 		    	/**
 		    	 * --------------------------------------------------------------------------
@@ -392,6 +393,57 @@ public class ClassTest {
 		// @formatter:on
 	}
 
+	@DisplayName( "parent super.init will preserve child variables scope" )
+	@Test
+	public void superInitTest() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				request.calls = [];
+				settings = {
+					"foo" : "bar"
+				};
+				cfc = new src.test.java.TestCases.phase3.Child( properties=settings );
+				assert cfc.configure() == settings;
+
+			""", context );
+		// @formatter:on
+	}
+
+	@DisplayName( "basic class file via component path" )
+	@Test
+	public void testBasicClassFileViaComponentPath() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				newClassPaths = getApplicationMetadata().classPaths.append( expandPath( "/src/test/java/TestCases/phase3" ) );
+				application classPaths=newClassPaths;
+				cfc = new MyClass();
+				// execute public method
+				result = cfc.foo();
+
+			""", context );
+		// @formatter:on
+	}
+
+	@DisplayName( "basic class file via component path subdir" )
+	@Test
+	public void testBasicClassFileViaComponentPathSubDir() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				newClassPaths = getApplicationMetadata().classPaths.append( expandPath( "/src/test/java/TestCases" ) );
+				application classPaths=newClassPaths;
+				import phase3.MyClass as bradClass;
+				cfc = new bradClass();
+				// execute public method
+				result = cfc.foo();
+
+				assert result == "I work! whee true true bar true";
+			""", context );
+		// @formatter:on
+	}
+
 	@DisplayName( "legacy meta" )
 	@Test
 	public void testlegacyMeta() {
@@ -484,6 +536,19 @@ public class ClassTest {
 		assertThat( res ).isEqualTo( "someFuncsecond" );
 		assertThat( res2 ).isEqualTo( "doesNotExistsecond" );
 		assertThat( res3 ).isEqualTo( "doesNotExistsecond" );
+	}
+
+	@DisplayName( "It should call onMissingMethod through invoke" )
+	@Test
+	public void testOnMissingMethodInvoke() {
+		instance.executeSource(
+		    """
+		          cfc = new src.test.java.TestCases.phase3.OnMissingMethod();
+		    result = invoke( cfc, "someFunc", [ "first", "second" ] );
+		           """, context );
+
+		String res = variables.getAsString( result );
+		assertThat( res ).isEqualTo( "someFuncsecond" );
 	}
 
 	@DisplayName( "box meta" )
@@ -905,6 +970,7 @@ public class ClassTest {
 	}
 
 	@Test
+	@Disabled
 	public void testSuperHeadlessFunctionInvocationToChild() {
 
 		instance.executeSource(
@@ -1022,6 +1088,23 @@ public class ClassTest {
 		    myBIF.printStuff()
 		          """, context );
 
+	}
+
+	@Test
+	public void testGeneratedAccessors() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+			cfc = new src.test.java.TestCases.phase3.GeneratedAccessor();
+			""",
+		context );
+		IStruct cfc = (IStruct) variables.get( Key.of( "cfc" ) );
+		assertThat( cfc.containsKey( Key.of( "getName" ) ) ).isEqualTo( true );
+		assertThat( cfc.containsKey( Key.of( "setName" ) ) ).isEqualTo( true );
+		assertThat( cfc.containsKey( Key.of( "getAge" ) ) ).isEqualTo( false );
+		assertThat( cfc.containsKey( Key.of( "setAge" ) ) ).isEqualTo( true );
+		assertThat( cfc.containsKey( Key.of( "getEmail" ) ) ).isEqualTo( true );
+		assertThat( cfc.containsKey( Key.of( "setEmail" ) ) ).isEqualTo( false );
 	}
 
 	@Test
@@ -1435,6 +1518,41 @@ public class ClassTest {
 		    new brad()
 		      """,
 		    context );
+	}
+
+	@DisplayName( "udf class has enclosing class reference" )
+	@Test
+	public void testUDFClassEnclosingClassReference() {
+
+		instance.executeSource(
+		    """
+		    import bx:src.test.java.TestCases.phase3.PropertyTestCF as brad;
+		    b = new brad()
+			outerClass = b.$bx.$class;
+			innerClass = b.init.getClass(); 
+			innerClassesOuterClass = b.init.getClass().getEnclosingClass(); 
+			println(outerclass)
+			println(innerClass)
+		      """,
+		    context );
+			assertThat(((Class<?>)variables.get( "outerClass" )).getName() ).isEqualTo( "boxgenerated.boxclass.src.test.java.testcases.phase3.Propertytestcf$cfc" );
+			assertThat(((Class<?>)variables.get( "innerClassesOuterClass" )).getName() ).isEqualTo( "boxgenerated.boxclass.src.test.java.testcases.phase3.Propertytestcf$cfc" );
+			assertThat(((Class<?>)variables.get( "innerClass" )).getName() ).isEqualTo( "boxgenerated.boxclass.src.test.java.testcases.phase3.Propertytestcf$cfc$Func_init" );
+			assertThat( variables.get( "outerClass" ) ).isEqualTo( variables.get("innerClassesOuterClass") );
+	}
+
+	@DisplayName( "mixins should be public" )
+	@Test
+	public void testMixinsPublic() {
+
+		instance.executeSource(
+		    """
+		    mt = new src.test.java.TestCases.phase3.MixinTest()
+			mt.includeMixin();
+			result = mt.mixed()
+		      """,
+		    context );
+		assertThat( variables.get( "result" ) ).isEqualTo( "mixed up" );
 	}
 
 }

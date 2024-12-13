@@ -20,6 +20,9 @@ package ortus.boxlang.runtime.async.tasks;
 import java.time.LocalDateTime;
 import java.util.concurrent.ScheduledFuture;
 
+import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
+
 /**
  * The task record holds all the information of a living task in the scheduler.
  */
@@ -86,5 +89,25 @@ public class TaskRecord {
 		this.group			= group;
 		this.task			= task;
 		this.registeredAt	= LocalDateTime.now( task.getTimezone() );
+	}
+
+	/**
+	 * Return the record as a struct
+	 */
+	public IStruct asStruct() {
+		return Struct.of(
+		    "name", name,
+		    "group", group,
+		    "task", task,
+		    "future", future,
+		    "scheduledAt", scheduledAt,
+		    "registeredAt", registeredAt,
+		    "disabled", disabled,
+		    "error", error,
+		    "errorMessage", errorMessage,
+		    "stacktrace", stacktrace,
+		    "inetHost", inetHost,
+		    "localIp", localIp
+		);
 	}
 }

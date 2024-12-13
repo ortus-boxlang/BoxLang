@@ -96,7 +96,7 @@ public class CatchBoxContext extends BaseBoxContext {
 	 * @return The value of the key if found
 	 *
 	 */
-	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow ) {
+	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow, boolean forAssign ) {
 
 		// In query loop?
 		var querySearch = queryFindNearby( key );
@@ -107,7 +107,7 @@ public class CatchBoxContext extends BaseBoxContext {
 		// In Variables scope? (thread-safe lookup and get)
 		Object result = variablesScope.getRaw( key );
 		// Null means not found
-		if ( isDefined( result ) ) {
+		if ( isDefined( result, forAssign ) ) {
 			// Unwrap the value now in case it was really actually null for real
 			return new ScopeSearchResult( variablesScope, Struct.unWrapNull( result ), key );
 		}
@@ -117,10 +117,10 @@ public class CatchBoxContext extends BaseBoxContext {
 		}
 
 		if ( parent != null ) {
-			return parent.scopeFindNearby( key, defaultScope );
+			return parent.scopeFindNearby( key, defaultScope, forAssign );
 		}
 
-		return scopeFind( key, defaultScope );
+		return scopeFind( key, defaultScope, forAssign );
 	}
 
 	/**
@@ -135,10 +135,10 @@ public class CatchBoxContext extends BaseBoxContext {
 	 * @return The value of the key if found
 	 *
 	 */
-	public ScopeSearchResult scopeFind( Key key, IScope defaultScope ) {
+	public ScopeSearchResult scopeFind( Key key, IScope defaultScope, boolean forAssign ) {
 
 		if ( parent != null ) {
-			return parent.scopeFind( key, defaultScope );
+			return parent.scopeFind( key, defaultScope, forAssign );
 		}
 
 		// Default scope requested for missing keys

@@ -95,10 +95,9 @@ public class BoxLangComponentProxy extends Component {
 		    context.getFunctionParentContext(),
 		    Key.invoke,
 		    arguments,
-		    null,
+		    this.target,
 		    null
 		);
-		fContext.setThisClass( this.target );
 		fContext.pushTemplate( this.target );
 		try {
 			var bodyResult = this.bxFunction.invoke( fContext );

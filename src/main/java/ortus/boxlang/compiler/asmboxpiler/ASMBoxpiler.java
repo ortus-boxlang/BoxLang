@@ -3,6 +3,8 @@ package ortus.boxlang.compiler.asmboxpiler;
 import java.io.File;
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.function.BiConsumer;
 
@@ -18,6 +20,7 @@ import ortus.boxlang.compiler.ast.BoxInterface;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
 import ortus.boxlang.compiler.ast.visitor.QueryEscapeSingleQuoteVisitor;
+import ortus.boxlang.compiler.parser.Parser;
 import ortus.boxlang.compiler.parser.ParsingResult;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
@@ -101,13 +104,26 @@ public class ASMBoxpiler extends Boxpiler {
 		node.accept( new QueryEscapeSingleQuoteVisitor() );
 		doCompileClassInfo( transpiler( classInfo ), classInfo, node, ( fqn, classNode ) -> {
 			ClassWriter classWriter = new ClassWriter( ClassWriter.COMPUTE_FRAMES );
-			if ( DEBUG ) {
-				classNode.accept( new CheckClassAdapter( new TraceClassVisitor( classWriter, new PrintWriter( System.out ) ) ) );
-			} else {
-				classNode.accept( classWriter );
+			try {
+				if ( DEBUG ) {
+					classNode.accept( new CheckClassAdapter( new TraceClassVisitor( classWriter, new PrintWriter( System.out ) ) ) );
+				} else {
+					classNode.accept( classWriter );
+				}
+				byte[] bytes = classWriter.toByteArray();
+				diskClassUtil.writeBytes( classInfo.classPoolName(), fqn, "class", bytes );
+			} catch ( Exception e ) {
+				StringWriter out = new StringWriter();
+				classNode.accept( new CheckClassAdapter( new TraceClassVisitor( classWriter, new PrintWriter( out ) ) ) );
+
+				try {
+					e.printStackTrace( new PrintWriter( out ) );
+					this.logger.error( out.toString() );
+				} catch ( Exception ex ) {
+					this.logger.error( "Unabel to output ASM error info: " + ex.getMessage() );
+				}
+				throw e;
 			}
-			byte[] bytes = classWriter.toByteArray();
-			diskClassUtil.writeBytes( classInfo.classPoolName(), fqn, "class", bytes );
 		} );
 	}
 
@@ -151,6 +167,17 @@ public class ASMBoxpiler extends Boxpiler {
 
 	@Override
 	public List<byte[]> compileTemplateBytes( ResolvedFilePath resolvedFilePath ) {
-		throw new UnsupportedOperationException( "Unimplemented method 'compileTemplateBytes'" );
+		Path		path		= resolvedFilePath.absolutePath();
+		ClassInfo	classInfo	= null;
+		// file extension is .bx or .cfc
+		if ( path.toString().endsWith( ".bx" ) || path.toString().endsWith( ".cfc" ) ) {
+			classInfo = ClassInfo.forClass( resolvedFilePath, Parser.detectFile( path.toFile() ), this );
+		} else {
+			classInfo = ClassInfo.forTemplate( resolvedFilePath, Parser.detectFile( path.toFile() ), this );
+		}
+		var classPool = getClassPool( classInfo.classPoolName() );
+		classPool.putIfAbsent( classInfo.fqn().toString(), classInfo );
+		compileClassInfo( classInfo.classPoolName(), classInfo.fqn().toString() );
+		return diskClassUtil.readClassBytes( classInfo.classPoolName(), classInfo.fqn().toString() );
 	}
 }

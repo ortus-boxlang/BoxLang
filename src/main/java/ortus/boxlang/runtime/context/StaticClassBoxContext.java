@@ -82,7 +82,7 @@ public class StaticClassBoxContext extends BaseBoxContext {
 	 * @return The search result
 	 */
 	@Override
-	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow ) {
+	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow, boolean forAssign ) {
 
 		if ( key.equals( ThisScope.name ) ) {
 			throw new BoxRuntimeException( "Cannot access this scope in a static context" );
@@ -107,7 +107,7 @@ public class StaticClassBoxContext extends BaseBoxContext {
 		}
 
 		// A component cannot see nearby scopes above it
-		return parent.scopeFind( key, defaultScope );
+		return parent.scopeFind( key, defaultScope, forAssign );
 
 	}
 
@@ -120,9 +120,9 @@ public class StaticClassBoxContext extends BaseBoxContext {
 	 * @return The search result
 	 */
 	@Override
-	public ScopeSearchResult scopeFind( Key key, IScope defaultScope ) {
+	public ScopeSearchResult scopeFind( Key key, IScope defaultScope, boolean forAssign ) {
 		// The FunctionBoxContext has no "global" scopes, so just defer to parent
-		return parent.scopeFind( key, defaultScope );
+		return parent.scopeFind( key, defaultScope, forAssign );
 	}
 
 	/**

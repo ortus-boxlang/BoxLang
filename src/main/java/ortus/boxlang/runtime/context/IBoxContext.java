@@ -113,12 +113,14 @@ public interface IBoxContext extends IBoxAttachable, Serializable {
 	 * If defaultScope is not null, it will return a record with the default scope
 	 * and null value if the key is not found
 	 *
-	 * @param key The key to search for
+	 * @param key          The key to search for
+	 * @param defaultScope The default scope to return if the key is not found
+	 * @param forAssign    true, this is for an assignment operation
 	 *
 	 * @return The value of the key if found
 	 *
 	 */
-	public ScopeSearchResult scopeFind( Key key, IScope defaultScope );
+	public ScopeSearchResult scopeFind( Key key, IScope defaultScope, boolean forAssign );
 
 	/**
 	 * Try to get the requested key from an unknown scope
@@ -130,12 +132,14 @@ public interface IBoxContext extends IBoxAttachable, Serializable {
 	 * If defaultScope is not null, it will return a record with the default scope
 	 * and null value if the key is not found
 	 *
-	 * @param key The key to search for
+	 * @param key          The key to search for
+	 * @param defaultScope The default scope to return if the key is not found
+	 * @param forAssign    true, this is for an assignment operation
 	 *
 	 * @return The value of the key if found
 	 *
 	 */
-	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope );
+	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean forAssign );
 
 	/**
 	 * Try to get the requested key from an unkonwn scope but not delegating to
@@ -145,12 +149,13 @@ public interface IBoxContext extends IBoxAttachable, Serializable {
 	 * @param defaultScope The default scope to return if the key is not found
 	 * @param shallow      true, do not delegate to parent or default scope if not
 	 *                     found
+	 * @param forAssign    true, this is for an assignment operation
 	 *
 	 * @return The result of the search. Null if performing a shallow search and
 	 *         nothing was fond
 	 *
 	 */
-	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow );
+	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow, boolean forAssign );
 
 	/**
 	 * Invoke a function call such as foo() using positional args. Will check for a
@@ -714,6 +719,6 @@ public interface IBoxContext extends IBoxAttachable, Serializable {
 	 *
 	 * @return True if the value is defined, else false
 	 */
-	public boolean isDefined( Object value );
+	public boolean isDefined( Object value, boolean forAssign );
 
 }

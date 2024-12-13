@@ -26,6 +26,7 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.InsnNode;
+import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
@@ -91,7 +92,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			nodes.add( new InsnNode( Opcodes.POP ) );
 		}
 
-		return nodes;
+		return AsmHelper.addLineNumberLabels( nodes, node );
 	}
 
 	public List<AbstractInsnNode> transformEquals( BoxExpression left, List<AbstractInsnNode> jRight, BoxAssignmentOperator op,
@@ -122,7 +123,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			List<AbstractInsnNode> nodes = new ArrayList<>();
 			tracker.ifPresent( t -> nodes.addAll( t.loadCurrentContext() ) );
 
-			nodes.addAll( transpiler.transform( left, null ) );
+			nodes.addAll( transpiler.transform( left, null, ReturnValueContext.VALUE_OR_NULL ) );
 
 			nodes.addAll( jRight );
 
@@ -258,10 +259,12 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 				    "getDefaultAssignmentScope",
 				    Type.getMethodDescriptor( Type.getType( IScope.class ) ),
 				    true ) );
+				nodes.add( new LdcInsnNode( true ) );
 				nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
 				    Type.getInternalName( IBoxContext.class ),
 				    "scopeFindNearby",
-				    Type.getMethodDescriptor( Type.getType( IBoxContext.ScopeSearchResult.class ), Type.getType( Key.class ), Type.getType( IScope.class ) ),
+				    Type.getMethodDescriptor( Type.getType( IBoxContext.ScopeSearchResult.class ), Type.getType( Key.class ), Type.getType( IScope.class ),
+				        Type.BOOLEAN_TYPE ),
 				    true ) );
 			}
 
@@ -283,7 +286,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			    false ) );
 
 		} else {
-			if ( accessKeys.size() == 0 ) {
+			if ( accessKeys.size() == 0 && ! ( left instanceof BoxScope ) ) {
 				throw new ExpressionException( "You cannot assign a value to " + left.getClass().getSimpleName(), left.getPosition(), left.getSourceText() );
 			}
 			/*
@@ -339,7 +342,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 
 		Optional<MethodContextTracker>	tracker	= transpiler.getCurrentMethodContextTracker();
 		List<AbstractInsnNode>			nodes	= new ArrayList<>();
-		List<AbstractInsnNode>			right	= transpiler.transform( assigment.getRight(), TransformerContext.NONE );
+		List<AbstractInsnNode>			right	= transpiler.transform( assigment.getRight(), TransformerContext.NONE, ReturnValueContext.VALUE );
 
 		/*
 		 * ${operation}.invoke(${contextName},
@@ -363,12 +366,13 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			    "getDefaultAssignmentScope",
 			    Type.getMethodDescriptor( Type.getType( IScope.class ) ),
 			    true ) );
+			nodes.add( new LdcInsnNode( true ) );
 			nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
 			    Type.getInternalName( IBoxContext.class ),
 			    "scopeFindNearby",
 			    Type.getMethodDescriptor( Type.getType( IBoxContext.ScopeSearchResult.class ),
 			        Type.getType( Key.class ),
-			        Type.getType( IScope.class ) ),
+			        Type.getType( IScope.class ), Type.BOOLEAN_TYPE ),
 			    true ) );
 			nodes.add( new MethodInsnNode( Opcodes.INVOKEVIRTUAL,
 			    Type.getInternalName( IBoxContext.ScopeSearchResult.class ),
@@ -378,7 +382,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 
 			nodes.addAll( accessKey );
 		} else if ( assigment.getLeft() instanceof BoxAccess objectAccess ) {
-			nodes.addAll( transpiler.transform( objectAccess.getContext(), TransformerContext.NONE ) );
+			nodes.addAll( transpiler.transform( objectAccess.getContext(), TransformerContext.NONE, ReturnValueContext.VALUE_OR_NULL ) );
 
 			List<AbstractInsnNode> accessKey;
 			// DotAccess just uses the string directly, array access allows any expression
@@ -452,13 +456,15 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		    "name",
 		    Type.getDescriptor( Key.class ) ) );
 		nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+		nodes.add( new LdcInsnNode( true ) );
 
 		nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
 		    Type.getInternalName( IBoxContext.class ),
 		    "scopeFindNearby",
 		    Type.getMethodDescriptor( Type.getType( IBoxContext.ScopeSearchResult.class ),
 		        Type.getType( Key.class ),
-		        Type.getType( IScope.class ) ),
+		        Type.getType( IScope.class ),
+		        Type.BOOLEAN_TYPE ),
 		    true ) );
 
 		nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );

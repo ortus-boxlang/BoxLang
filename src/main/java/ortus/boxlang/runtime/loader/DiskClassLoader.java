@@ -29,6 +29,7 @@ import org.objectweb.asm.tree.ClassNode;
 import ortus.boxlang.compiler.ClassInfo;
 import ortus.boxlang.compiler.IBoxpiler;
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.util.RegexBuilder;
 
 /**
  * Disk Class Loader for our Class Infos
@@ -67,7 +68,7 @@ public class DiskClassLoader extends URLClassLoader {
 		super( urls, parent );
 		this.boxPiler				= boxpiler;
 		this.classPoolName			= classPoolName;
-		this.classPoolDiskPrefix	= classPoolName.replaceAll( "[^a-zA-Z0-9]", "_" );
+		this.classPoolDiskPrefix	= RegexBuilder.of( classPoolName, RegexBuilder.NON_ALPHANUMERIC ).replaceAllAndGet( "_" );
 		this.diskStore				= diskStore.resolve( classPoolDiskPrefix );
 
 		// Init disk store
@@ -112,12 +113,12 @@ public class DiskClassLoader extends URLClassLoader {
 
 	/**
 	 * Abstract out the logic for determining if a class needs to be compiled
-	 * 
+	 *
 	 * @param classInfo the class info, may be null if there is none
 	 * @param diskPath  the path to the class file on disk, may not exist
 	 * @param name      the fully qualified class name
 	 * @param baseName  the base name of the class
-	 * 
+	 *
 	 * @return true if the class needs to be compiled
 	 */
 	private boolean needsCompile( ClassInfo classInfo, Path diskPath, String name, String baseName ) {

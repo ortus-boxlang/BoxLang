@@ -89,6 +89,24 @@ public class DumpTest {
 		assertThat( baos.toString() ).contains( "My Value" );
 	}
 
+	@DisplayName( "It can dump BL tag 2" )
+	@Test
+	public void testCanDumpBLTag2() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		    	<bx:try>
+					<bx:throw message="inner" />
+					<bx:catch type="any">
+						<bx:dump var="#bxCatch#" />
+					</bx:catch>
+				</bx:try>
+		    """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		// @formatter:on
+		assertThat( baos.toString() ).contains( "inner" );
+	}
+
 	@DisplayName( "It can dump script" )
 	@Test
 	public void testCanDumpScript() {

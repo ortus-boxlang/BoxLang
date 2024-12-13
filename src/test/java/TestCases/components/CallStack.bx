@@ -1,0 +1,11 @@
+class {
+
+	function run() {
+		return nested();
+	}
+
+	function nested() {
+		return callStackGet();
+	}
+
+}

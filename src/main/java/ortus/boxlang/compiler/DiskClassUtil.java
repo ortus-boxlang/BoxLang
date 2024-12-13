@@ -26,6 +26,7 @@ import java.util.List;
 
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.JSONUtil;
+import ortus.boxlang.runtime.util.RegexBuilder;
 
 /**
  * Contains some utilities for working with non-class files in the class generation dir
@@ -57,10 +58,29 @@ public class DiskClassUtil {
 		return generateDiskpath( classPoolName, name, "json" ).toFile().exists();
 	}
 
+	/**
+	 * Generate a disk path for a class file
+	 *
+	 * @param classPoolName class pool name
+	 * @param name          class name
+	 * @param extension     file extension
+	 *
+	 * @return The path to the file
+	 */
 	private Path generateDiskpath( String classPoolName, String name, String extension ) {
-		return Paths.get( diskStore.toString(), classPoolName.replaceAll( "[^a-zA-Z0-9]", "_" ), name.replace( ".", File.separator ) + "." + extension );
+		return Paths.get(
+		    diskStore.toString(),
+		    RegexBuilder.of( classPoolName, RegexBuilder.NON_ALPHANUMERIC ).replaceAllAndGet( "_" ),
+		    new StringBuilder( name.replace( ".", File.separator ) ).append( "." ).append( extension ).toString()
+		);
 	}
 
+	/**
+	 * Write line numbers to disk
+	 *
+	 * @param fqn            The fully qualified name of the class
+	 * @param lineNumberJSON The JSON representation of the line numbers
+	 */
 	public void writeLineNumbers( String classPoolName, String fqn, String lineNumberJSON ) {
 		if ( lineNumberJSON == null ) {
 			return;
@@ -74,7 +94,6 @@ public class DiskClassUtil {
 	 *
 	 * @returns array of maps. Null if not found.
 	 */
-	@SuppressWarnings( "unchecked" )
 	public SourceMap readLineNumbers( String classPoolName, String fqn ) {
 		if ( !hasLineNumbers( classPoolName, fqn ) ) {
 			return null;
@@ -117,9 +136,9 @@ public class DiskClassUtil {
 
 	/**
 	 * Read the bytes from the class file and all inner classes from disk and return them
-	 * 
+	 *
 	 * @param fqn The fully qualified name of the class
-	 * 
+	 *
 	 * @return A list of byte arrays, one for each class file
 	 */
 	public List<byte[]> readClassBytes( String classPoolName, String fqn ) {
@@ -149,6 +168,13 @@ public class DiskClassUtil {
 		return bytes;
 	}
 
+	/**
+	 * Checkf if the file is a Java bytecode file or source file
+	 *
+	 * @param sourceFile The file to check
+	 *
+	 * @return true if the file is a Java bytecode file
+	 */
 	public boolean isJavaBytecode( File sourceFile ) {
 		try ( FileInputStream fis = new FileInputStream( sourceFile );
 		    DataInputStream dis = new DataInputStream( fis ) ) {
@@ -156,12 +182,8 @@ public class DiskClassUtil {
 			if ( dis.available() < 4 ) {
 				return false;
 			}
-			if ( dis.readInt() == 0xCAFEBABE ) {
-				// The class file does start with the magic number
-				return true;
-			}
-
-			return false;
+			// Are we the Java Magic number?
+			return dis.readInt() == 0xCAFEBABE;
 		} catch ( IOException e ) {
 			throw new RuntimeException( "Failed to read file", e );
 		}

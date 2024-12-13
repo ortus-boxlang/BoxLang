@@ -23,6 +23,7 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -340,13 +341,65 @@ public class XML implements Serializable, IStruct {
 		}
 	}
 
+	public Set<Key> getReferencableKeys() {
+		return getReferencableKeys( true );
+	}
+
+	public Set<Key> getReferencableKeys( boolean withChildren ) {
+		Set<Key> keys = new HashSet<>();
+		switch ( node.getNodeType() ) {
+			case Node.DOCUMENT_NODE :
+				keys.add( Key.XMLRoot );
+				keys.add( Key.XMLComment );
+				return keys;
+			case Node.ELEMENT_NODE :
+				keys.add( Key.XMLText );
+				keys.add( Key.XMLChildren );
+				keys.add( Key.XMLAttributes );
+				keys.add( Key.XMLNsPrefix );
+				keys.add( Key.XMLNsURI );
+				keys.add( Key.XMLComment );
+				if ( withChildren ) {
+					keys.addAll( getXMLChildrenAsList().stream().map( XML::getXMLName ).map( Key::of ).collect( Collectors.toSet() ) );
+				}
+				return keys;
+			case Node.ATTRIBUTE_NODE :
+				return getXMLAttributes().keySet();
+			case Node.TEXT_NODE :
+				return keys;
+			case Node.CDATA_SECTION_NODE :
+				return keys;
+			case Node.ENTITY_REFERENCE_NODE :
+				return keys;
+			case Node.ENTITY_NODE :
+				return keys;
+			case Node.PROCESSING_INSTRUCTION_NODE :
+				return keys;
+			case Node.COMMENT_NODE :
+				return keys;
+			case Node.DOCUMENT_TYPE_NODE :
+				return keys;
+			case Node.DOCUMENT_FRAGMENT_NODE :
+				return keys;
+			case Node.NOTATION_NODE :
+				return keys;
+			default :
+				return keys;
+		}
+	}
+
+	public Object getDumpRepresentation() {
+		IStruct dump = new Struct();
+		getReferencableKeys( false ).stream().forEach( key -> dump.put( key, dereference( null, key, true ) ) );
+		return dump;
+	}
+
 	/***************************
 	 * IReferencable implementation
 	 ****************************/
 
 	@Override
 	public Object dereference( IBoxContext context, Key name, Boolean safe ) {
-
 		// Special check for $bx
 		if ( name.equals( BoxMeta.key ) ) {
 			return getBoxMeta();
@@ -577,7 +630,7 @@ public class XML implements Serializable, IStruct {
 
 	@Override
 	public Object getRaw( Key key ) {
-		return getFirstChildOfName( key.getName() );
+		return dereference( null, key, true );
 	}
 
 	@Override
@@ -597,7 +650,7 @@ public class XML implements Serializable, IStruct {
 
 	@Override
 	public boolean containsKey( Object key ) {
-		return getFirstChildOfName( KeyCaster.cast( key ).getName() ) != null;
+		return containsKey( KeyCaster.cast( key ) );
 	}
 
 	@Override
@@ -654,7 +707,7 @@ public class XML implements Serializable, IStruct {
 
 	@Override
 	public Set<Key> keySet() {
-		return getXMLChildrenAsList().stream().map( XML::getXMLName ).map( Key::of ).collect( Collectors.toSet() );
+		return getReferencableKeys( true );
 	}
 
 	@Override
@@ -699,12 +752,13 @@ public class XML implements Serializable, IStruct {
 
 	@Override
 	public boolean containsKey( String key ) {
-		return getFirstChildOfName( key ) != null;
+		return containsKey( KeyCaster.cast( key ) );
 	}
 
 	@Override
 	public boolean containsKey( Key key ) {
-		return containsKey( key.getName() );
+		Set<Key> keys = keySet();
+		return keys.contains( key );
 	}
 
 	@Override
