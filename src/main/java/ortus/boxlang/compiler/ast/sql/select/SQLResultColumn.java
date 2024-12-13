@@ -21,6 +21,7 @@ import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.sql.SQLNode;
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLColumn;
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLExpression;
+import ortus.boxlang.compiler.ast.sql.select.expression.SQLFunction;
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLStarExpression;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
@@ -113,6 +114,18 @@ public class SQLResultColumn extends SQLNode {
 	 */
 	public boolean isStarExpression() {
 		return expression instanceof SQLStarExpression;
+	}
+
+	/**
+	 * Does this column contain an aggregate function?
+	 * 
+	 * @return true if the column contains an aggregate function
+	 */
+	public boolean hasAggregate() {
+		if ( expression instanceof SQLFunction f && f.isAggregate() ) {
+			return true;
+		}
+		return expression.getDescendantsOfType( SQLFunction.class, f -> f.isAggregate() ).size() > 0;
 	}
 
 	@Override

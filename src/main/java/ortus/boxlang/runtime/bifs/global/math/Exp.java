@@ -51,11 +51,7 @@ public class Exp extends BIF {
 	 * @argument.number The number to calculate the exponent for.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Number value = arguments.getAsNumber( Key.number );
-		if ( value instanceof BigDecimal bd ) {
-			return exp( bd, MathUtil.getMathContext() );
-		}
-		return StrictMath.exp( value.doubleValue() );
+		return _invoke( arguments.getAsNumber( Key.number ) );
 	}
 
 	/**
@@ -80,4 +76,12 @@ public class Exp extends BIF {
 
 		return result;
 	}
+
+	public static Number _invoke( Number num ) {
+		if ( num instanceof BigDecimal bd ) {
+			return exp( bd, MathUtil.getMathContext() );
+		}
+		return StrictMath.exp( num.doubleValue() );
+	}
+
 }

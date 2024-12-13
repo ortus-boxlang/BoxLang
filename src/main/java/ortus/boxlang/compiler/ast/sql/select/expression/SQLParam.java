@@ -21,7 +21,7 @@ import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
-import ortus.boxlang.runtime.jdbc.qoq.QoQExecutionService.QoQExecution;
+import ortus.boxlang.runtime.jdbc.qoq.QoQExecution;
 import ortus.boxlang.runtime.types.QueryColumnType;
 
 /**
@@ -110,14 +110,14 @@ public class SQLParam extends SQLExpression {
 	 * What type does this expression evaluate to
 	 */
 	public QueryColumnType getType( QoQExecution QoQExec ) {
-		return QueryColumnType.fromSQLType( QoQExec.params().get( index ).type() );
+		return QueryColumnType.fromSQLType( QoQExec.getParams().get( index ).type() );
 	}
 
 	/**
 	 * Evaluate the expression
 	 */
-	public Object evaluate( QoQExecution QoQExec, int i ) {
-		return QoQExec.params().get( index ).value();
+	public Object evaluate( QoQExecution QoQExec, int[] intersection ) {
+		return QoQExec.getParams().get( index ).value();
 	}
 
 	@Override

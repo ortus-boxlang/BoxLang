@@ -21,7 +21,7 @@ import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.sql.select.SQLTable;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
-import ortus.boxlang.runtime.jdbc.qoq.QoQExecutionService.QoQExecution;
+import ortus.boxlang.runtime.jdbc.qoq.QoQExecution;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
@@ -60,7 +60,7 @@ public class SQLStarExpression extends SQLExpression {
 	/**
 	 * Evaluate the expression
 	 */
-	public Object evaluate( QoQExecution QoQExec, int i ) {
+	public Object evaluate( QoQExecution QoQExec, int[] intersection ) {
 		throw new BoxRuntimeException( "Cannot evaluate a * expression" );
 	}
 

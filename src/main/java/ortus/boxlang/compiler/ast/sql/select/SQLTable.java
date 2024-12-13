@@ -35,16 +35,22 @@ public class SQLTable extends SQLNode {
 	private Key		alias;
 
 	/**
+	 * Encounter order of the table in the query. This should match the position of the table in the tableLookup map later
+	 */
+	private int		index;
+
+	/**
 	 * Constructor
 	 *
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code of the statement
 	 */
-	public SQLTable( String schema, String name, String alias, Position position, String sourceText ) {
+	public SQLTable( String schema, String name, String alias, int index, Position position, String sourceText ) {
 		super( position, sourceText );
 		setSchema( schema );
 		setName( name );
 		setAlias( alias );
+		setIndex( index );
 	}
 
 	/**
@@ -87,6 +93,20 @@ public class SQLTable extends SQLNode {
 	 */
 	public void setAlias( String alias ) {
 		this.alias = ( alias == null ) ? null : Key.of( alias );
+	}
+
+	/**
+	 * Get the table index
+	 */
+	public int getIndex() {
+		return index;
+	}
+
+	/**
+	 * Set the table index
+	 */
+	public void setIndex( int index ) {
+		this.index = index;
 	}
 
 	public boolean isCalled( Key name ) {

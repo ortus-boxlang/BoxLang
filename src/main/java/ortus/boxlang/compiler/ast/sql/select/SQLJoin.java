@@ -43,6 +43,9 @@ public class SQLJoin extends SQLNode {
 	 */
 	public SQLJoin( SQLJoinType type, SQLTable table, SQLExpression on, Position position, String sourceText ) {
 		super( position, sourceText );
+		setType( type );
+		setTable( table );
+		setOn( on );
 	}
 
 	/**
@@ -86,6 +89,10 @@ public class SQLJoin extends SQLNode {
 	 * Set the ON expression
 	 */
 	public void setOn( SQLExpression on ) {
+		if ( on == null ) {
+			this.on = null;
+			return;
+		}
 		if ( !on.isBoolean( null ) ) {
 			throw new BoxRuntimeException( "ON clause must be a boolean expression" );
 		}

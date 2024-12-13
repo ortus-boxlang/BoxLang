@@ -21,7 +21,7 @@ import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLExpression;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
-import ortus.boxlang.runtime.jdbc.qoq.QoQExecutionService.QoQExecution;
+import ortus.boxlang.runtime.jdbc.qoq.QoQExecution;
 import ortus.boxlang.runtime.operators.Compare;
 
 /**
@@ -127,10 +127,10 @@ public class SQLBetweenOperation extends SQLExpression {
 	/**
 	 * Evaluate the expression
 	 */
-	public Object evaluate( QoQExecution QoQExec, int i ) {
-		Object	leftValue		= left.evaluate( QoQExec, i );
-		Object	rightValue		= right.evaluate( QoQExec, i );
-		Object	expressionValue	= expression.evaluate( QoQExec, i );
+	public Object evaluate( QoQExecution QoQExec, int[] intersection ) {
+		Object	leftValue		= left.evaluate( QoQExec, intersection );
+		Object	rightValue		= right.evaluate( QoQExec, intersection );
+		Object	expressionValue	= expression.evaluate( QoQExec, intersection );
 		// The ^ not inverses the result if the not flag is true
 		return doBetween( leftValue, rightValue, expressionValue ) ^ not;
 	}

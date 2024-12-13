@@ -22,7 +22,7 @@ import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLExpression;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
-import ortus.boxlang.runtime.jdbc.qoq.QoQExecutionService.QoQExecution;
+import ortus.boxlang.runtime.jdbc.qoq.QoQExecution;
 import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
@@ -122,22 +122,22 @@ public class SQLUnaryOperation extends SQLExpression {
 	/**
 	 * Evaluate the expression
 	 */
-	public Object evaluate( QoQExecution QoQExec, int i ) {
+	public Object evaluate( QoQExecution QoQExec, int[] intersection ) {
 		// Implement each unary operator
 		switch ( operator ) {
 			case ISNOTNULL :
-				return expression.evaluate( QoQExec, i ) != null;
+				return expression.evaluate( QoQExec, intersection ) != null;
 			case ISNULL :
-				return expression.evaluate( QoQExec, i ) != null;
+				return expression.evaluate( QoQExec, intersection ) != null;
 			case MINUS :
 				ensureNumericOperand( QoQExec );
-				return -evalAsNumber( expression, QoQExec, i );
+				return -evalAsNumber( expression, QoQExec, intersection );
 			case NOT :
 				ensureBooleanOperand( QoQExec );
-				return ! ( ( boolean ) expression.evaluate( QoQExec, i ) );
+				return ! ( ( boolean ) expression.evaluate( QoQExec, intersection ) );
 			case PLUS :
 				ensureNumericOperand( QoQExec );
-				return expression.evaluate( QoQExec, i );
+				return expression.evaluate( QoQExec, intersection );
 			default :
 				throw new BoxRuntimeException( "Unknown binary operator: " + operator );
 
@@ -175,8 +175,8 @@ public class SQLUnaryOperation extends SQLExpression {
 	 * 
 	 * @return
 	 */
-	private double evalAsNumber( SQLExpression expression, QoQExecution QoQExec, int i ) {
-		return ( ( Number ) expression.evaluate( QoQExec, i ) ).doubleValue();
+	private double evalAsNumber( SQLExpression expression, QoQExecution QoQExec, int[] intersection ) {
+		return ( ( Number ) expression.evaluate( QoQExec, intersection ) ).doubleValue();
 	}
 
 	@Override

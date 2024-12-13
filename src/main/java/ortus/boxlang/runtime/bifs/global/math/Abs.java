@@ -49,7 +49,10 @@ public class Abs extends BIF {
 	 * @argument.value The number to return the absolute value of
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Number num = arguments.getAsNumber( Key.value );
+		return _invoke( arguments.getAsNumber( Key.value ) );
+	}
+
+	public static Number _invoke( Number num ) {
 		if ( num instanceof BigDecimal bd ) {
 			return bd.abs( MathUtil.getMathContext() );
 		}

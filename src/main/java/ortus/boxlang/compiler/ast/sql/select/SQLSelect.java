@@ -226,6 +226,15 @@ public class SQLSelect extends SQLNode {
 		return getLimit().getValue().longValue();
 	}
 
+	/**
+	 * Does this SELECT statement have an aggregate result?
+	 * 
+	 * @return true if the result contains an aggregate function
+	 */
+	public boolean hasAggregateResult() {
+		return getResultColumns().stream().anyMatch( SQLResultColumn::hasAggregate );
+	}
+
 	@Override
 	public void accept( VoidBoxVisitor v ) {
 		// TODO Auto-generated method stub

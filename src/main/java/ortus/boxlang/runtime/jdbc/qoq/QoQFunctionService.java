@@ -18,7 +18,30 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.compiler.ast.sql.select.expression.SQLExpression;
+import ortus.boxlang.runtime.jdbc.qoq.functions.aggregate.Max;
+import ortus.boxlang.runtime.jdbc.qoq.functions.scalar.Abs;
+import ortus.boxlang.runtime.jdbc.qoq.functions.scalar.Acos;
+import ortus.boxlang.runtime.jdbc.qoq.functions.scalar.Asin;
+import ortus.boxlang.runtime.jdbc.qoq.functions.scalar.Atan;
+import ortus.boxlang.runtime.jdbc.qoq.functions.scalar.Ceiling;
+import ortus.boxlang.runtime.jdbc.qoq.functions.scalar.Coalesce;
+import ortus.boxlang.runtime.jdbc.qoq.functions.scalar.Concat;
+import ortus.boxlang.runtime.jdbc.qoq.functions.scalar.Cos;
+import ortus.boxlang.runtime.jdbc.qoq.functions.scalar.Exp;
+import ortus.boxlang.runtime.jdbc.qoq.functions.scalar.Floor;
+import ortus.boxlang.runtime.jdbc.qoq.functions.scalar.IsNull;
+import ortus.boxlang.runtime.jdbc.qoq.functions.scalar.Length;
+import ortus.boxlang.runtime.jdbc.qoq.functions.scalar.Lower;
+import ortus.boxlang.runtime.jdbc.qoq.functions.scalar.Ltrim;
+import ortus.boxlang.runtime.jdbc.qoq.functions.scalar.Mod;
+import ortus.boxlang.runtime.jdbc.qoq.functions.scalar.Power;
+import ortus.boxlang.runtime.jdbc.qoq.functions.scalar.Rtrim;
+import ortus.boxlang.runtime.jdbc.qoq.functions.scalar.Sin;
+import ortus.boxlang.runtime.jdbc.qoq.functions.scalar.Sqrt;
+import ortus.boxlang.runtime.jdbc.qoq.functions.scalar.Tan;
+import ortus.boxlang.runtime.jdbc.qoq.functions.scalar.Trim;
+import ortus.boxlang.runtime.jdbc.qoq.functions.scalar.Upper;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -31,15 +54,56 @@ public class QoQFunctionService {
 	private static Map<Key, QoQFunction> functions = new HashMap<Key, QoQFunction>();
 
 	static {
-		register( Key.of( "upper" ), args -> StringCaster.cast( args.get( 0 ) ).toUpperCase(), QueryColumnType.VARCHAR );
+
+		// Scalar
+		register( Upper.INSTANCE );
+		register( Lower.INSTANCE );
+		register( Abs.INSTANCE );
+		register( Acos.INSTANCE );
+		register( Asin.INSTANCE );
+		register( Atan.INSTANCE );
+		register( Ceiling.INSTANCE );
+		register( Coalesce.INSTANCE );
+		register( Concat.INSTANCE );
+		register( Cos.INSTANCE );
+		register( Exp.INSTANCE );
+		register( Floor.INSTANCE );
+		register( IsNull.INSTANCE );
+		register( Length.INSTANCE );
+		register( Lower.INSTANCE );
+		register( Ltrim.INSTANCE );
+		register( Mod.INSTANCE );
+		register( Power.INSTANCE );
+		register( Rtrim.INSTANCE );
+		register( Sin.INSTANCE );
+		register( Sqrt.INSTANCE );
+		register( Tan.INSTANCE );
+		register( Trim.INSTANCE );
+		register( Upper.INSTANCE );
+
+		// Aggregate
+		register( Max.INSTANCE );
 	}
 
 	private QoQFunctionService() {
-
 	}
 
-	public static void register( Key name, java.util.function.Function<List<Object>, Object> function, QueryColumnType returnType ) {
-		functions.put( name, QoQFunction.of( function, returnType ) );
+	public static void register( Key name, java.util.function.Function<List<Object>, Object> function, QueryColumnType returnType, int requiredParams ) {
+		functions.put( name, QoQFunction.of( function, returnType, requiredParams ) );
+	}
+
+	public static void registerAggregate( Key name, java.util.function.BiFunction<List<SQLExpression>, QoQExecution, Object> function,
+	    QueryColumnType returnType,
+	    int requiredParams ) {
+		functions.put( name, QoQFunction.ofAggregate( function, returnType, requiredParams ) );
+	}
+
+	public static void register( QoQScalarFunctionDef functionDef ) {
+		register( functionDef.getName(), functionDef, functionDef.getReturnType(), functionDef.getMinArgs() );
+	}
+
+	public static void register( QoQAggregateFunctionDef functionDef ) {
+		registerAggregate( functionDef.getName(), functionDef, functionDef.getReturnType(), functionDef.getMinArgs() );
 	}
 
 	public static void unregister( Key name ) {
@@ -53,19 +117,31 @@ public class QoQFunctionService {
 		return functions.get( name );
 	}
 
-	public record QoQFunction( java.util.function.Function<List<Object>, Object> callable, QueryColumnType returnType ) {
+	public record QoQFunction(
+	    java.util.function.Function<List<Object>, Object> callable,
+	    java.util.function.BiFunction<List<SQLExpression>, QoQExecution, Object> aggregateCallable,
+	    QueryColumnType returnType,
+	    int requiredParams ) {
 
-		static QoQFunction of( java.util.function.Function<List<Object>, Object> callable, QueryColumnType returnType ) {
-			return new QoQFunction( callable, returnType );
+		static QoQFunction of( java.util.function.Function<List<Object>, Object> callable, QueryColumnType returnType, int requiredParams ) {
+			return new QoQFunction( callable, null, returnType, requiredParams );
+		}
+
+		static QoQFunction ofAggregate( java.util.function.BiFunction<List<SQLExpression>, QoQExecution, Object> callable, QueryColumnType returnType,
+		    int requiredParams ) {
+			return new QoQFunction( null, callable, returnType, requiredParams );
 		}
 
 		public Object invoke( List<Object> arguments ) {
 			return callable.apply( arguments );
 		}
 
-		public QueryColumnType getReturnType() {
-			return returnType;
+		public Object invokeAggregate( List<SQLExpression> arguments, QoQExecution QoQExec ) {
+			return aggregateCallable.apply( arguments, QoQExec );
 		}
 
+		public boolean isAggregate() {
+			return aggregateCallable != null;
+		}
 	}
 }

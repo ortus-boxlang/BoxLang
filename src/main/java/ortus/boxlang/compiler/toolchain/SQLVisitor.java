@@ -8,6 +8,7 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.sql.select.SQLJoin;
+import ortus.boxlang.compiler.ast.sql.select.SQLJoinType;
 import ortus.boxlang.compiler.ast.sql.select.SQLResultColumn;
 import ortus.boxlang.compiler.ast.sql.select.SQLSelect;
 import ortus.boxlang.compiler.ast.sql.select.SQLSelectStatement;
@@ -51,6 +52,7 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 
 	private final SQLParser	tools;
 	private int				bindCount	= 0;
+	private int				tableIndex	= 0;
 
 	public SQLVisitor( SQLParser tools ) {
 		this.tools = tools;
@@ -165,6 +167,22 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 		List<SQLExpression>		groupBys		= null;
 		SQLExpression			having			= null;
 
+		if ( !ctx.table().isEmpty() ) {
+			var firstTable = ctx.table().get( 0 );
+			table = ( SQLTable ) visit( firstTable );
+		}
+
+		// TODO: handle joins
+		// Treat "FROM table1, table2" as a join
+		if ( ctx.table() != null && ctx.table().size() > 1 ) {
+			joins = new ArrayList<SQLJoin>();
+			for ( int i = 1; i < ctx.table().size(); i++ ) {
+				var			tableCtx	= ctx.table().get( i );
+				SQLTable	joinTable	= ( SQLTable ) visit( tableCtx );
+				joins.add( new SQLJoin( SQLJoinType.INNER, joinTable, null, tools.getPosition( tableCtx ), tools.getSourceText( tableCtx ) ) );
+			}
+		}
+
 		// limit before order by, can have one per unioned table
 		if ( ctx.limit_stmt() != null ) {
 			limit = NUMERIC_LITERAL( ctx.limit_stmt().NUMERIC_LITERAL() );
@@ -172,11 +190,6 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 		// each
 		if ( ctx.top() != null ) {
 			limit = NUMERIC_LITERAL( ctx.top().NUMERIC_LITERAL() );
-		}
-
-		if ( !ctx.table().isEmpty() ) {
-			var firstTable = ctx.table().get( 0 );
-			table = ( SQLTable ) visit( firstTable );
 		}
 
 		if ( ctx.whereExpr != null ) {
@@ -189,8 +202,6 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 
 		// TODO: handle additional tables as joins
 
-		// TODO: handle joins
-
 		// Do this after all joins above so we know the tables available to us
 		final SQLTable		finalTable	= table;
 		final List<SQLJoin>	finalJoins	= joins;
@@ -199,16 +210,14 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 		var	result	= new SQLSelect( distinct, resultColumns, table, joins, where, groupBys, having, limit, pos, src );
 		var	cols	= result.getDescendantsOfType( SQLColumn.class, c -> c.getTable() == null );
 		if ( cols.size() > 0 ) {
-			if ( joins != null && !joins.isEmpty() ) {
-				tools.reportError( "Column reference must have table prefix to disambiguate.", pos );
-			} else {
-				if ( table == null ) {
-					tools.reportError( "This QoQ has column references, but there is no table!", pos );
-				} else {
-					cols.forEach( c -> c.setTable( finalTable ) );
-				}
+			if ( table == null && ( joins == null || joins.isEmpty() ) ) {
+				tools.reportError( "This QoQ has column references, but there is no table!", pos );
+			} else if ( joins == null || joins.isEmpty() ) {
+				// If there is only one table, we know what it is now
+				cols.forEach( c -> c.setTable( finalTable ) );
 			}
 		}
+
 		return result;
 	}
 
@@ -236,7 +245,7 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 			alias = ctx.table_alias().getText();
 		}
 
-		return new SQLTable( schema, name, alias, pos, src );
+		return new SQLTable( schema, name, alias, tableIndex++, pos, src );
 	}
 
 	/**
@@ -290,7 +299,7 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 		boolean	ascending	= true;
 
 		if ( ctx.asc_desc() != null ) {
-			ascending = ctx.asc_desc().DESC_() != null;
+			ascending = ctx.asc_desc().DESC_() == null;
 		}
 
 		return new SQLOrderBy( visitExpr( ctx.expr(), table, joins ), ascending, pos, src );

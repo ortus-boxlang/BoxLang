@@ -54,11 +54,7 @@ public class Cos extends BIF {
 	 * @argument.number The number to calculate the cosine of (in radians).
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Number num = arguments.getAsNumber( Key.number );
-		if ( num instanceof BigDecimal bd ) {
-			return cos( bd, MathUtil.getMathContext() );
-		}
-		return StrictMath.cos( num.doubleValue() );
+		return _invoke( arguments.getAsNumber( Key.number ) );
 	}
 
 	/**
@@ -73,4 +69,12 @@ public class Cos extends BIF {
 	public static BigDecimal cos( BigDecimal x, MathContext mc ) {
 		return new BigDecimal( StrictMath.cos( x.doubleValue() ) );
 	}
+
+	public static Number _invoke( Number num ) {
+		if ( num instanceof BigDecimal bd ) {
+			return cos( bd, MathUtil.getMathContext() );
+		}
+		return StrictMath.cos( num.doubleValue() );
+	}
+
 }

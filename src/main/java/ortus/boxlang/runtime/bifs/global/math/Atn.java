@@ -53,11 +53,7 @@ public class Atn extends BIF {
 	 * @argument.number The number to calculate the arc tangent of
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Number num = arguments.getAsNumber( Key.number );
-		if ( num instanceof BigDecimal bd ) {
-			return atan( bd, MathUtil.getMathContext() );
-		}
-		return StrictMath.atan( num.doubleValue() );
+		return _invoke( arguments.getAsNumber( Key.number ) );
 	}
 
 	/**
@@ -68,7 +64,7 @@ public class Atn extends BIF {
 	 * 
 	 * @return The arc tangent of x.
 	 */
-	private BigDecimal atan( BigDecimal x, MathContext mc ) {
+	private static BigDecimal atan( BigDecimal x, MathContext mc ) {
 		BigDecimal	result		= BigDecimal.ZERO;
 		BigDecimal	term		= x;
 		BigDecimal	xSquared	= x.multiply( x, mc );
@@ -86,5 +82,12 @@ public class Atn extends BIF {
 		}
 
 		return result;
+	}
+
+	public static Number _invoke( Number num ) {
+		if ( num instanceof BigDecimal bd ) {
+			return atan( bd, MathUtil.getMathContext() );
+		}
+		return StrictMath.atan( num.doubleValue() );
 	}
 }

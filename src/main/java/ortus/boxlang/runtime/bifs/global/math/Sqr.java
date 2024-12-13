@@ -49,7 +49,10 @@ public class Sqr extends BIF {
 	 * @argument.value The number to return the square root of
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Number number = arguments.getAsNumber( Key.value );
+		return _invoke( arguments.getAsNumber( Key.value ) );
+	}
+
+	public static Number _invoke( Number number ) {
 		if ( number instanceof BigDecimal bd ) {
 			return bd.sqrt( MathUtil.getMathContext() );
 		}

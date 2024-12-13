@@ -22,7 +22,7 @@ import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLExpression;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
-import ortus.boxlang.runtime.jdbc.qoq.QoQExecutionService.QoQExecution;
+import ortus.boxlang.runtime.jdbc.qoq.QoQExecution;
 import ortus.boxlang.runtime.operators.EqualsEquals;
 
 /**
@@ -109,10 +109,10 @@ public class SQLInOperation extends SQLExpression {
 	/**
 	 * Evaluate the expression
 	 */
-	public Object evaluate( QoQExecution QoQExec, int i ) {
-		Object value = expression.evaluate( QoQExec, i );
+	public Object evaluate( QoQExecution QoQExec, int[] intersection ) {
+		Object value = expression.evaluate( QoQExec, intersection );
 		for ( SQLExpression v : values ) {
-			if ( EqualsEquals.invoke( value, v.evaluate( QoQExec, i ), true ) ) {
+			if ( EqualsEquals.invoke( value, v.evaluate( QoQExec, intersection ), true ) ) {
 				return !not;
 			}
 		}

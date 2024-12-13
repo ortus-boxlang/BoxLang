@@ -22,7 +22,7 @@ import ortus.boxlang.compiler.ast.sql.select.SQLTable;
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLExpression;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
-import ortus.boxlang.runtime.jdbc.qoq.QoQExecutionService.QoQExecution;
+import ortus.boxlang.runtime.jdbc.qoq.QoQExecution;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.QueryColumnType;
 
@@ -65,6 +65,17 @@ public class SQLNumberLiteral extends SQLExpression {
 	}
 
 	/**
+	 * Runtime check if the expression evaluates to a numeric value and works for columns as well
+	 * 
+	 * @param QoQExec Query execution state
+	 * 
+	 * @return true if the expression evaluates to a numeric value
+	 */
+	public boolean isNumeric( QoQExecution QoQExec ) {
+		return true;
+	}
+
+	/**
 	 * What type does this expression evaluate to
 	 */
 	public QueryColumnType getType( QoQExecution QoQExec ) {
@@ -74,7 +85,7 @@ public class SQLNumberLiteral extends SQLExpression {
 	/**
 	 * Evaluate the expression
 	 */
-	public Object evaluate( QoQExecution QoQExec, int i ) {
+	public Object evaluate( QoQExecution QoQExec, int[] intersection ) {
 		return value;
 	}
 

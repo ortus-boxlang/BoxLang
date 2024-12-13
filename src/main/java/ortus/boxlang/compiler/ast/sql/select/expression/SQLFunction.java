@@ -22,8 +22,9 @@ import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
-import ortus.boxlang.runtime.jdbc.qoq.QoQExecutionService.QoQExecution;
+import ortus.boxlang.runtime.jdbc.qoq.QoQExecution;
 import ortus.boxlang.runtime.jdbc.qoq.QoQFunctionService;
+import ortus.boxlang.runtime.jdbc.qoq.QoQFunctionService.QoQFunction;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.QueryColumnType;
 
@@ -112,17 +113,33 @@ public class SQLFunction extends SQLExpression {
 	}
 
 	/**
+	 * Is function aggregate
+	 */
+	public boolean isAggregate() {
+		return QoQFunctionService.getFunction( name ).isAggregate();
+	}
+
+	/**
 	 * What type does this expression evaluate to
 	 */
 	public QueryColumnType getType( QoQExecution QoQExec ) {
-		return QoQFunctionService.getFunction( name ).getReturnType();
+		return QoQFunctionService.getFunction( name ).returnType();
 	}
 
 	/**
 	 * Evaluate the expression
 	 */
-	public Object evaluate( QoQExecution QoQExec, int i ) {
-		return QoQFunctionService.getFunction( name ).invoke( arguments.stream().map( a -> a.evaluate( QoQExec, i ) ).toList() );
+	public Object evaluate( QoQExecution QoQExec, int[] intersection ) {
+		QoQFunction function = QoQFunctionService.getFunction( name );
+		if ( function.requiredParams() > arguments.size() ) {
+			throw new RuntimeException(
+			    "QoQ Function [" + name + "] expects at least" + function.requiredParams() + " arguments, but got " + arguments.size() );
+		}
+		if ( function.isAggregate() ) {
+			return function.invokeAggregate( arguments, QoQExec );
+		} else {
+			return function.invoke( arguments.stream().map( a -> a.evaluate( QoQExec, intersection ) ).toList() );
+		}
 	}
 
 	@Override

@@ -20,7 +20,7 @@ import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
-import ortus.boxlang.runtime.jdbc.qoq.QoQExecutionService.QoQExecution;
+import ortus.boxlang.runtime.jdbc.qoq.QoQExecution;
 import ortus.boxlang.runtime.types.QueryColumnType;
 
 /**
@@ -89,8 +89,8 @@ public class SQLParenthesis extends SQLExpression {
 	/**
 	 * Evaluate the expression
 	 */
-	public Object evaluate( QoQExecution QoQExec, int i ) {
-		return expression.evaluate( QoQExec, i );
+	public Object evaluate( QoQExecution QoQExec, int[] intersection ) {
+		return expression.evaluate( QoQExec, intersection );
 	}
 
 	@Override

@@ -24,7 +24,7 @@ import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.jdbc.qoq.LikeOperation;
-import ortus.boxlang.runtime.jdbc.qoq.QoQExecutionService.QoQExecution;
+import ortus.boxlang.runtime.jdbc.qoq.QoQExecution;
 import ortus.boxlang.runtime.operators.Compare;
 import ortus.boxlang.runtime.operators.Concat;
 import ortus.boxlang.runtime.operators.EqualsEquals;
@@ -190,72 +190,102 @@ public class SQLBinaryOperation extends SQLExpression {
 	/**
 	 * Evaluate the expression
 	 */
-	public Object evaluate( QoQExecution QoQExec, int i ) {
+	public Object evaluate( QoQExecution QoQExec, int[] intersection ) {
 		Object	leftValue;
 		Object	rightValue;
+		Double	leftNum;
+		Double	rightNum;
 		int		compareResult;
 		// Implement each binary operator
 		switch ( operator ) {
 			case DIVIDE :
 				ensureNumericOperands( QoQExec );
-				return evalAsNumber( left, QoQExec, i ) / evalAsNumber( right, QoQExec, i );
+				leftNum = evalAsNumber( left, QoQExec, intersection );
+				rightNum = evalAsNumber( right, QoQExec, intersection );
+				if ( leftNum == null || rightNum == null ) {
+					return null;
+				}
+				if ( rightNum.doubleValue() == 0 ) {
+					throw new BoxRuntimeException( "Division by zero" );
+				}
+				return leftNum / rightNum;
 			case EQUAL :
-				leftValue = left.evaluate( QoQExec, i );
-				rightValue = right.evaluate( QoQExec, i );
+				leftValue = left.evaluate( QoQExec, intersection );
+				rightValue = right.evaluate( QoQExec, intersection );
 				return EqualsEquals.invoke( leftValue, rightValue, true );
 			case GREATERTHAN :
-				return Compare.invoke( left.evaluate( QoQExec, i ), right.evaluate( QoQExec, i ), true ) == 1;
+				return Compare.invoke( left.evaluate( QoQExec, intersection ), right.evaluate( QoQExec, intersection ), true ) == 1;
 			case GREATERTHANOREQUAL :
-				compareResult = Compare.invoke( left.evaluate( QoQExec, i ), right.evaluate( QoQExec, i ), true );
+				compareResult = Compare.invoke( left.evaluate( QoQExec, intersection ), right.evaluate( QoQExec, intersection ), true );
 				return compareResult == 1 || compareResult == 0;
 			case LESSTHAN :
-				return Compare.invoke( left.evaluate( QoQExec, i ), right.evaluate( QoQExec, i ), true ) == -1;
+				return Compare.invoke( left.evaluate( QoQExec, intersection ), right.evaluate( QoQExec, intersection ), true ) == -1;
 			case LESSTHANOREQUAL :
-				compareResult = Compare.invoke( left.evaluate( QoQExec, i ), right.evaluate( QoQExec, i ), true );
+				compareResult = Compare.invoke( left.evaluate( QoQExec, intersection ), right.evaluate( QoQExec, intersection ), true );
 				return compareResult == -1 || compareResult == 0;
 			case MINUS :
 				ensureNumericOperands( QoQExec );
-				return evalAsNumber( left, QoQExec, i ) - evalAsNumber( right, QoQExec, i );
+				leftNum = evalAsNumber( left, QoQExec, intersection );
+				rightNum = evalAsNumber( right, QoQExec, intersection );
+				if ( leftNum == null || rightNum == null ) {
+					return null;
+				}
+				return leftNum - rightNum;
 			case MODULO :
 				ensureNumericOperands( QoQExec );
-				return evalAsNumber( left, QoQExec, i ) % evalAsNumber( right, QoQExec, i );
+				leftNum = evalAsNumber( left, QoQExec, intersection );
+				rightNum = evalAsNumber( right, QoQExec, intersection );
+				if ( leftNum == null || rightNum == null ) {
+					return null;
+				}
+				return leftNum % rightNum;
 			case MULTIPLY :
 				ensureNumericOperands( QoQExec );
-				return evalAsNumber( left, QoQExec, i ) * evalAsNumber( right, QoQExec, i );
+				leftNum = evalAsNumber( left, QoQExec, intersection );
+				rightNum = evalAsNumber( right, QoQExec, intersection );
+				if ( leftNum == null || rightNum == null ) {
+					return null;
+				}
+				return leftNum * rightNum;
 			case NOTEQUAL :
-				leftValue = left.evaluate( QoQExec, i );
-				rightValue = right.evaluate( QoQExec, i );
+				leftValue = left.evaluate( QoQExec, intersection );
+				rightValue = right.evaluate( QoQExec, intersection );
 				return !EqualsEquals.invoke( leftValue, rightValue, true );
 			case AND :
 				ensureBooleanOperands( QoQExec );
-				leftValue = left.evaluate( QoQExec, i );
+				leftValue = left.evaluate( QoQExec, intersection );
 				// Short circuit, don't eval right if left is false
 				if ( ( Boolean ) leftValue ) {
-					return ( Boolean ) right.evaluate( QoQExec, i );
+					return ( Boolean ) right.evaluate( QoQExec, intersection );
 				} else {
 					return false;
 				}
 			case OR :
 				ensureBooleanOperands( QoQExec );
-				if ( ( Boolean ) left.evaluate( QoQExec, i ) ) {
+				if ( ( Boolean ) left.evaluate( QoQExec, intersection ) ) {
 					return true;
 				}
-				if ( ( Boolean ) right.evaluate( QoQExec, i ) ) {
+				if ( ( Boolean ) right.evaluate( QoQExec, intersection ) ) {
 					return true;
 				}
 				return false;
 			case PLUS :
 				if ( left.isNumeric( QoQExec ) && right.isNumeric( QoQExec ) ) {
-					return evalAsNumber( left, QoQExec, i ) + evalAsNumber( right, QoQExec, i );
+					leftNum		= evalAsNumber( left, QoQExec, intersection );
+					rightNum	= evalAsNumber( right, QoQExec, intersection );
+					if ( leftNum == null || rightNum == null ) {
+						return null;
+					}
+					return leftNum + rightNum;
 				} else {
-					return Concat.invoke( left.evaluate( QoQExec, i ), right.evaluate( QoQExec, i ) );
+					return Concat.invoke( left.evaluate( QoQExec, intersection ), right.evaluate( QoQExec, intersection ) );
 				}
 			case LIKE :
-				return doLike( QoQExec, i );
+				return doLike( QoQExec, intersection );
 			case NOTLIKE :
-				return !doLike( QoQExec, i );
+				return !doLike( QoQExec, intersection );
 			case CONCAT :
-				return Concat.invoke( left.evaluate( QoQExec, i ), right.evaluate( QoQExec, i ) );
+				return Concat.invoke( left.evaluate( QoQExec, intersection ), right.evaluate( QoQExec, intersection ) );
 			default :
 				throw new BoxRuntimeException( "Unknown binary operator: " + operator );
 		}
@@ -264,12 +294,12 @@ public class SQLBinaryOperation extends SQLExpression {
 	/**
 	 * Implement LIKE so we can reuse for NOT LIKE
 	 */
-	private boolean doLike( QoQExecution QoQExec, int i ) {
-		String	leftValueStr	= StringCaster.cast( left.evaluate( QoQExec, i ) );
-		String	rightValueStr	= StringCaster.cast( right.evaluate( QoQExec, i ) );
+	private boolean doLike( QoQExecution QoQExec, int[] intersection ) {
+		String	leftValueStr	= StringCaster.cast( left.evaluate( QoQExec, intersection ) );
+		String	rightValueStr	= StringCaster.cast( right.evaluate( QoQExec, intersection ) );
 		String	escapeValue		= null;
 		if ( escape != null ) {
-			escapeValue = StringCaster.cast( escape.evaluate( QoQExec, i ) );
+			escapeValue = StringCaster.cast( escape.evaluate( QoQExec, intersection ) );
 		}
 		return LikeOperation.invoke( leftValueStr, rightValueStr, escapeValue );
 	}
@@ -311,8 +341,8 @@ public class SQLBinaryOperation extends SQLExpression {
 	 * 
 	 * @return
 	 */
-	private double evalAsNumber( SQLExpression expression, QoQExecution QoQExec, int i ) {
-		return ( ( Number ) expression.evaluate( QoQExec, i ) ).doubleValue();
+	private double evalAsNumber( SQLExpression expression, QoQExecution QoQExec, int[] intersection ) {
+		return ( ( Number ) expression.evaluate( QoQExec, intersection ) ).doubleValue();
 	}
 
 	@Override

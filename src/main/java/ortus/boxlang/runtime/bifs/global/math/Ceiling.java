@@ -50,7 +50,10 @@ public class Ceiling extends BIF {
 	 * @argument.number The number for which to find the ceiling value.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Number num = arguments.getAsNumber( Key.number );
+		return _invoke( arguments.getAsNumber( Key.number ) );
+	}
+
+	public static Number _invoke( Number num ) {
 		if ( num instanceof BigDecimal bd ) {
 			return bd.setScale( 0, RoundingMode.CEILING );
 		}

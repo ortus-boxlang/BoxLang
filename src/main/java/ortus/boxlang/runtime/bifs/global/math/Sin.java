@@ -50,11 +50,7 @@ public class Sin extends BIF {
 	 * @argument.number The number to calculate the sine of, entered in radians.
 	 */
 	public Number _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Number value = arguments.getAsNumber( Key.number );
-		if ( value instanceof BigDecimal bd ) {
-			return sin( bd, MathUtil.getMathContext() );
-		}
-		return StrictMath.sin( value.doubleValue() );
+		return _invoke( arguments.getAsNumber( Key.number ) );
 	}
 
 	/**
@@ -69,6 +65,13 @@ public class Sin extends BIF {
 	 */
 	public static BigDecimal sin( BigDecimal x, MathContext mc ) {
 		return new BigDecimal( StrictMath.sin( x.doubleValue() ) );
+	}
+
+	public static Number _invoke( Number value ) {
+		if ( value instanceof BigDecimal bd ) {
+			return sin( bd, MathUtil.getMathContext() );
+		}
+		return StrictMath.sin( value.doubleValue() );
 	}
 
 }

@@ -82,15 +82,18 @@ public class QoQParseTest {
 	public void testRunQoQ() {
 		instance.executeSource(
 		    """
-		          myQry = queryNew( "col,col2", "varchar,integer", [["foo",42],["bar",9001]] )
-		                  q = queryExecute( "
-		    select upper('test') as val
-		         ",
-		               	[],
-		               	{ dbType : "query" }
-		               );
-		            println( q )
-		               """,
+		                qryEmployees = queryNew( "name,age,dept", "varchar,integer,varchar", [["brad",44,"IT"],["luis",43,"Exec"],["Jon",45,"IT"]] )
+		                qryDept = queryNew( "name,code", "varchar,integer", [["IT",404],["Exec",200]] )
+		                        q = queryExecute( "
+		          select e.*, d.code
+		       from qryEmployees e, qryDept d
+		    where e.dept = d.name
+		               ",
+		                     	[],
+		                     	{ dbType : "query" }
+		                     );
+		                  println( q )
+		                     """,
 		    context );
 	}
 
