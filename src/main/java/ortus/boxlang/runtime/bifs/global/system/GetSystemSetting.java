@@ -24,6 +24,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 @BoxBIF
@@ -42,8 +43,11 @@ public class GetSystemSetting extends BIF {
 
 	/**
 	 * Retrieve a Java System property or environment value by name.
+	 * <p>
 	 * It looks at properties first then environment variables second.
-	 *
+	 * <p>
+	 * Please note that the property or environment variable name is case-sensitive.
+	 * <p>
 	 * You can also pass a default value to return if the property or environment variable is not found.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
@@ -56,27 +60,25 @@ public class GetSystemSetting extends BIF {
 	public String _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Key		key				= Key.of( arguments.getAsString( Key.key ) );
 		String	defaultValue	= arguments.getAsString( Key.defaultValue );
-		IStruct	system			= context.getScope( Key.server ).getAsStruct( Key.system );
-		IStruct	environment		= system.getAsStruct( Key.environment );
-		IStruct	properties		= system.getAsStruct( Key.properties );
 
-		// Get from properties first
+		IStruct	properties		= context.computeAttachmentIfAbsent( Key.properties, attachmentKey -> new Struct( System.getProperties() ) );
+		IStruct	env				= context.computeAttachmentIfAbsent( Key.environment, attachmentKey -> new Struct( System.getenv() ) );
+
+		// Properties take precedence over environment variables
 		String	value			= properties.getAsString( key );
-		// If not null, return it
 		if ( value != null ) {
 			return value;
 		}
 
-		// If null, try the environment
-		value = environment.getAsString( key );
-		// If not null, return it
+		// If the property was not found, try to get the environment variable
+		value = env.getAsString( key );
 		if ( value != null ) {
 			return value;
 		}
 
 		// If still null, return the default value if it was provided else throw an exception
 		if ( defaultValue == null ) {
-			throw new BoxRuntimeException( "System property or environment variable not found: " + key );
+			throw new BoxRuntimeException( "System property or environment variable not found: " + key.getName() );
 		}
 
 		return defaultValue;
