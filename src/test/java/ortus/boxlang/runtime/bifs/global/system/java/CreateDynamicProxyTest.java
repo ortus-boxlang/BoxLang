@@ -75,6 +75,30 @@ public class CreateDynamicProxyTest {
 		assertThat( context.getScope( ServerScope.name ).get( "runnableProxyFired" ) ).isEqualTo( true );
 	}
 
+	@DisplayName( "It allows java.lang.Object methods" )
+	@Test
+	public void testAllowsObjectMethods() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				import java:java.lang.Thread;
+
+				jRunnable = CreateDynamicProxy(
+					"src.test.java.ortus.boxlang.runtime.dynamic.javaproxy.BoxClassRunnable",
+					"java.lang.Runnable"
+				);
+
+				// Should defer to the Object class
+				result = jRunnable.toString();
+				// Actually exists in the CFC
+				result2 = jRunnable.hashCode();
+		       """,
+		context );
+		// @formatter:on
+		assertThat( variables.getAsString( result ) ).contains( "Boxclassrunnable$cfc@" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( 42 );
+	}
+
 	@DisplayName( "It creates a proxy with multiple interfaces" )
 	@Test
 	public void testCreatesMultipleProxies() {
