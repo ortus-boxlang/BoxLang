@@ -57,8 +57,8 @@ import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
 import ortus.boxlang.compiler.ast.statement.BoxReturnType;
 import ortus.boxlang.compiler.ast.statement.BoxType;
 import ortus.boxlang.compiler.parser.BoxSourceType;
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.javaproxy.InterfaceProxyService;
 import ortus.boxlang.runtime.loader.ImportDefinition;
@@ -125,7 +125,10 @@ public class BoxClassTransformer {
 			    .filter( it -> it.toLowerCase().startsWith( "java:" ) )
 			    .map( it -> it.substring( 5 ) )
 			    .collect( BLCollector.toArray() );
-			var		interfaceProxyDefinition	= InterfaceProxyService.generateDefinition( new ScriptingRequestBoxContext(), implementsArray );
+
+			// var interfaceProxyDefinition = InterfaceProxyService.generateDefinition( new ScriptingRequestBoxContext(), implementsArray );
+			var		interfaceProxyDefinition	= InterfaceProxyService.generateDefinition( BoxRuntime.getInstance().getRuntimeContext(), implementsArray );
+
 			// TODO: Remove methods that already have a @overrideJava UDF definition to avoid duplicates
 			interfaces.addAll( interfaceProxyDefinition.interfaces().stream().map( iface -> Type.getType( "L" + iface.replace( '.', '/' ) + ";" ) ).toList() );
 			interfaceMethods = interfaceProxyDefinition.methods().stream()

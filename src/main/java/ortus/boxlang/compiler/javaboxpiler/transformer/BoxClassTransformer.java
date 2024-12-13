@@ -61,8 +61,8 @@ import ortus.boxlang.compiler.ast.statement.BoxReturnType;
 import ortus.boxlang.compiler.ast.statement.BoxType;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
 import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxStringLiteralTransformer;
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
-import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.javaproxy.InterfaceProxyService;
 import ortus.boxlang.runtime.types.Array;
@@ -478,7 +478,10 @@ public class BoxClassTransformer extends AbstractTransformer {
 			    .filter( it -> it.toLowerCase().startsWith( "java:" ) )
 			    .map( it -> it.substring( 5 ) )
 			    .collect( BLCollector.toArray() );
-			var		interfaceProxyDefinition	= InterfaceProxyService.generateDefinition( new ScriptingRequestBoxContext(), implementsArray );
+
+			// var interfaceProxyDefinition = InterfaceProxyService.generateDefinition( new ScriptingRequestBoxContext(), implementsArray );
+			var		interfaceProxyDefinition	= InterfaceProxyService.generateDefinition( BoxRuntime.getInstance().getRuntimeContext(), implementsArray );
+
 			// TODO: Remove methods that already have a @overrideJava UDF definition to avoid duplicates
 			interfaces.addAll( interfaceProxyDefinition.interfaces() );
 			interfaceMethods = ProxyTransformer.generateInterfaceMethods( interfaceProxyDefinition.methods(), "this" );

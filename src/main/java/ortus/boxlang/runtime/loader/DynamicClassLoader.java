@@ -179,6 +179,7 @@ public class DynamicClassLoader extends URLClassLoader {
 		}
 
 		logger.trace( "[{}] Discovering class: [{}] from thread [{}]", this.nameAsKey.getName(), className, Thread.currentThread().getName() );
+		logger.trace( "The context class loader is [{}]", Thread.currentThread().getContextClassLoader().getName() );
 
 		// 1. Check the loaded cache first and return if found
 		Class<?> cachedClass = this.loadedClasses.get( className );
@@ -212,6 +213,7 @@ public class DynamicClassLoader extends URLClassLoader {
 			// 4. If not found in JARs, delegate to parent class loader
 			try {
 				logger.trace( "[{}].[{}] : Class not found locally, trying the parent...", this.nameAsKey.getName(), className );
+				logger.trace( "The context class loader is [{}]", Thread.currentThread().getContextClassLoader().getName() );
 				cachedClass = getDynamicParent().loadClass( className );
 				logger.trace( "[{}].[{}] : Class found in parent on thread [{}]", this.nameAsKey.getName(), className, Thread.currentThread().getName() );
 			} catch ( ClassNotFoundException parentException ) {

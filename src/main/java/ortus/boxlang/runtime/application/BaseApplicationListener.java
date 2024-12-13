@@ -156,7 +156,7 @@ public abstract class BaseApplicationListener {
 	/**
 	 * Logger
 	 */
-	private static final Logger				logger						= LoggerFactory.getLogger( BaseApplicationListener.class );
+	protected static final Logger			logger						= LoggerFactory.getLogger( BaseApplicationListener.class );
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -175,8 +175,6 @@ public abstract class BaseApplicationListener {
 		this.interceptorPool = new InterceptorPool( Key.appListener, BoxRuntime.getInstance() )
 		    .registerInterceptionPoint( REQUEST_INTERCEPTION_POINTS );
 
-		logger.trace( "===> Setting the context classLoader to the runtime loader during BaseAppListener Constructor via [{}]",
-		    Thread.currentThread().getName() );
 		// Ensure our thread is at least using the runtime CL. If there is an application defined later, this may get updated to a more specific request CL.
 		Thread.currentThread().setContextClassLoader( BoxRuntime.getInstance().getRuntimeLoader() );
 	}
