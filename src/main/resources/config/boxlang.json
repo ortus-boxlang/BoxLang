@@ -97,6 +97,9 @@
 		// Default Encoder for file appenders.
 		// The available options are "text" and "json"
 		"defaultEncoder": "text",
+		// Activate the status printer on load to print out the logging configuration
+		// Turn on to debug LogBack and BoxLang logging configurations
+		"statusPrinterOnLoad": false,
 		// A collection of pre-defined loggers and their configurations
 		"loggers": {
 			// The runtime main and default log
@@ -148,7 +151,7 @@
 				"encoder": "text",
 				// Additive logging: true means that this logger will inherit the appenders from the root logger
 				// If false, it will only use the appenders defined in this logger
-				"additive": true
+				"additive": false
 			},
 			// The datasource log is used by the creation, debugging, and management of datasources
 			"datasource": {
@@ -165,7 +168,7 @@
 				"encoder": "text",
 				// Additive logging: true means that this logger will inherit the appenders from the root logger
 				// If false, it will only use the appenders defined in this logger
-				"additive": true
+				"additive": false
 			},
 			// The modules log is used by the module service and records all module activity
 			"modules": {

@@ -660,6 +660,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		sqltype								= Key.of( "sqltype" );
 	public static final Key		stackTrace							= Key.of( "stackTrace" );
 	public static final Key		start								= Key.of( "start" );
+	public static final Key		statusPrinterOnLoad					= Key.of( "statusPrinterOnLoad" );
 	public static final Key		startRow							= Key.of( "startRow" );
 	public static final Key		startTicks							= Key.of( "startTicks" );
 	public static final Key		startTime							= Key.of( "startTime" );
