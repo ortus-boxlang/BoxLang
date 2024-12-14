@@ -1555,4 +1555,16 @@ public class ClassTest {
 		assertThat( variables.get( "result" ) ).isEqualTo( "mixed up" );
 	}
 
+
+	@DisplayName( "class locator usage in static initializer" )
+	@Test
+	@Disabled( "BL-848" )
+	public void testClassLocatorInStaticInitializer() {
+		instance.executeSource(
+		    """
+		    new src.test.java.TestCases.phase3.ClassLocatorInStaticInitializer()
+		      """,
+		    context );
+	}
+
 }
