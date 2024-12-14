@@ -21,6 +21,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import ortus.boxlang.compiler.ast.sql.SQLNode;
 import ortus.boxlang.compiler.ast.sql.select.SQLJoin;
@@ -101,18 +102,22 @@ public class QoQExecutionService {
 				String		tableVarName	= table.getVariableName();
 				tableLookup.put( table, getSourceQuery( context, tableVarName ) );
 			}
+			hasTable = true;
 		}
 
 		// This holds the AST and the runtime values for the query
-		QoQExecution				QoQExec			= QoQExecution.of(
+		QoQExecution	QoQExec			= QoQExecution.of(
 		    selectStatement,
 		    tableLookup,
 		    statement instanceof QoQPreparedStatement qp ? qp.getParameters() : null
 		);
 
-		var							intersections	= QoQIntersectionGenerator.createIntersectionStream( QoQExec );
+		Stream<int[]>	intersections	= null;
+		if ( hasTable ) {
+			intersections = QoQIntersectionGenerator.createIntersectionStream( QoQExec );
+		}
 
-		Map<Key, TypedResultColumn>	resultColumns	= calculateResultColumns( QoQExec );
+		Map<Key, TypedResultColumn> resultColumns = calculateResultColumns( QoQExec );
 		calculateOrderBys( QoQExec );
 
 		Query			target			= buildTargetQuery( QoQExec );
