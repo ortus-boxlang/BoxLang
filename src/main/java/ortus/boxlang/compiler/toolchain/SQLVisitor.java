@@ -32,6 +32,7 @@ import ortus.boxlang.compiler.ast.sql.select.expression.operation.SQLInOperation
 import ortus.boxlang.compiler.ast.sql.select.expression.operation.SQLUnaryOperation;
 import ortus.boxlang.compiler.ast.sql.select.expression.operation.SQLUnaryOperator;
 import ortus.boxlang.compiler.parser.SQLParser;
+import ortus.boxlang.parser.antlr.SQLGrammar;
 import ortus.boxlang.parser.antlr.SQLGrammar.ExprContext;
 import ortus.boxlang.parser.antlr.SQLGrammar.Literal_valueContext;
 import ortus.boxlang.parser.antlr.SQLGrammar.Ordering_termContext;
@@ -167,27 +168,32 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 		List<SQLExpression>		groupBys		= null;
 		SQLExpression			having			= null;
 
+		TableContext			firstTable;
 		if ( !ctx.table().isEmpty() ) {
-			var firstTable = ctx.table().get( 0 );
-			table = ( SQLTable ) visit( firstTable );
-		}
+			firstTable	= ctx.table().get( 0 );
+			table		= ( SQLTable ) visit( firstTable );
 
-		// TODO: handle joins
-		// Treat "FROM table1, table2" as a join
-		if ( ctx.table() != null && ctx.table().size() > 1 ) {
-			joins = new ArrayList<SQLJoin>();
-			for ( int i = 1; i < ctx.table().size(); i++ ) {
-				var			tableCtx	= ctx.table().get( i );
-				SQLTable	joinTable	= ( SQLTable ) visit( tableCtx );
-				joins.add( new SQLJoin( SQLJoinType.INNER, joinTable, null, tools.getPosition( tableCtx ), tools.getSourceText( tableCtx ) ) );
+			if ( ctx.table().size() > 1 ) {
+				// from table1, table2 is treated as a join with no `on` clause
+				joins = new ArrayList<SQLJoin>();
+				for ( int i = 1; i < ctx.table().size(); i++ ) {
+					var			tableCtx	= ctx.table().get( i );
+					SQLTable	joinTable	= ( SQLTable ) visit( tableCtx );
+					joins.add( new SQLJoin( SQLJoinType.FULL, joinTable, null, tools.getPosition( tableCtx ), tools.getSourceText( tableCtx ) ) );
+				}
 			}
+		} else if ( ctx.join_clause() != null ) {
+			firstTable	= ctx.join_clause().table();
+			table		= ( SQLTable ) visit( firstTable );
+			joins		= buildJoins( ctx.join_clause(), table );
 		}
 
 		// limit before order by, can have one per unioned table
 		if ( ctx.limit_stmt() != null ) {
 			limit = NUMERIC_LITERAL( ctx.limit_stmt().NUMERIC_LITERAL() );
 		}
-		// each
+
+		// each select can have a top
 		if ( ctx.top() != null ) {
 			limit = NUMERIC_LITERAL( ctx.top().NUMERIC_LITERAL() );
 		}
@@ -199,8 +205,6 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 		// TODO: group by
 
 		// TODO: having
-
-		// TODO: handle additional tables as joins
 
 		// Do this after all joins above so we know the tables available to us
 		final SQLTable		finalTable	= table;
@@ -219,6 +223,49 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 		}
 
 		return result;
+	}
+
+	public List<SQLJoin> buildJoins( SQLGrammar.Join_clauseContext ctx, SQLTable table ) {
+		var joins = new ArrayList<SQLJoin>();
+		for ( var joinCtx : ctx.join() ) {
+			var			pos			= tools.getPosition( joinCtx );
+			var			src			= tools.getSourceText( joinCtx );
+			var			joinTable	= ( SQLTable ) visit( joinCtx.table() );
+			var			typeCtx		= joinCtx.join_operator();
+			boolean		hasOn		= joinCtx.join_constraint() != null;
+			String		joinText	= tools.getSourceText( typeCtx );
+			// If left, right, full, or cross are not specified, we default to inner
+			SQLJoinType	type		= SQLJoinType.INNER;
+			if ( typeCtx.LEFT_() != null ) {
+				if ( !hasOn ) {
+					tools.reportError( "[" + joinText + "] must have an ON clause", tools.getPosition( typeCtx ) );
+				}
+				type = SQLJoinType.LEFT;
+			} else if ( typeCtx.RIGHT_() != null ) {
+				if ( !hasOn ) {
+					tools.reportError( "[" + joinText + "] must have an ON clause", tools.getPosition( typeCtx ) );
+				}
+				type = SQLJoinType.RIGHT;
+			} else if ( typeCtx.FULL_() != null ) {
+				if ( !hasOn ) {
+					tools.reportError( "[" + joinText + "] must have an ON clause", tools.getPosition( typeCtx ) );
+				}
+				type = SQLJoinType.FULL;
+			} else if ( typeCtx.CROSS_() != null ) {
+				if ( hasOn ) {
+					tools.reportError( "[" + joinText + "] cannot have an ON clause", tools.getPosition( typeCtx ) );
+				}
+				type = SQLJoinType.CROSS;
+			}
+			// Leave expression null here. I need to get the JOIN into the list of joins FIRST so the expression
+			// visitors can correctly match the table names. Well add the expression later
+			SQLJoin thisJoin = new SQLJoin( type, joinTable, null, pos, src );
+			joins.add( thisJoin );
+			if ( hasOn ) {
+				thisJoin.setOn( visitExpr( joinCtx.join_constraint().expr(), table, joins ) );
+			}
+		}
+		return joins;
 	}
 
 	/**

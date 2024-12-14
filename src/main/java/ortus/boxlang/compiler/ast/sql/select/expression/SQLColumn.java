@@ -113,10 +113,15 @@ public class SQLColumn extends SQLExpression {
 	 * Evaluate the expression
 	 */
 	public Object evaluate( QoQExecution QoQExec, int[] intersection ) {
-		var tableFinal = getTableFinal( QoQExec );
+		var	tableFinal	= getTableFinal( QoQExec );
 		// System.out.println( "getting SQL column: " + name.getName() + " from table: " + tableFinal.getName() + " with index: " + tableFinal.getIndex() );
 		// System.out.println( "intersection: " + Arrays.toString( intersection ) );
-		return QoQExec.getTableLookup().get( tableFinal ).getCell( name, intersection[ tableFinal.getIndex() ] - 1 );
+		int	rowNum		= intersection[ tableFinal.getIndex() ];
+		// This means an outer join matched nothing
+		if ( rowNum == 0 ) {
+			return null;
+		}
+		return QoQExec.getTableLookup().get( tableFinal ).getCell( name, rowNum - 1 );
 	}
 
 	/**

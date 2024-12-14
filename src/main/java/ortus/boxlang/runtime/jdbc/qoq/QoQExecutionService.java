@@ -16,14 +16,11 @@ package ortus.boxlang.runtime.jdbc.qoq;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Supplier;
-import java.util.stream.Stream;
 
 import ortus.boxlang.compiler.ast.sql.SQLNode;
 import ortus.boxlang.compiler.ast.sql.select.SQLJoin;
@@ -113,13 +110,19 @@ public class QoQExecutionService {
 		    statement instanceof QoQPreparedStatement qp ? qp.getParameters() : null
 		);
 
-		var							intersections	= createCartesianStream( QoQExec );
+		var							intersections	= QoQIntersectionGenerator.createIntersectionStream( QoQExec );
 
 		Map<Key, TypedResultColumn>	resultColumns	= calculateResultColumns( QoQExec );
 		calculateOrderBys( QoQExec );
 
 		Query			target			= buildTargetQuery( QoQExec );
 
+		// print out arrays
+		/*
+		 * intersections.forEach( i -> System.out.println( Arrays.toString( i ) ) );
+		 * if ( true )
+		 * return target;
+		 */
 		// Process one select
 		// TODO: refactor this out
 		SQLSelect		select			= selectStatement.getSelect();
@@ -148,12 +151,13 @@ public class QoQExecutionService {
 		// enforce top/limit for this select. This would be a "top N" clause in the select or a "limit N" clause BEFORE the order by, which
 		// could exist or all selects in a union.
 		if ( canEarlyLimit && thisSelectLimit > -1 ) {
-			intersections = intersections.limit( Math.min( thisSelectLimit, QoQExec.getTotalCombinations() ) );
+			intersections = intersections.limit( thisSelectLimit );
 
 		}
 
 		// 1-based index!
 		intersections.forEach( intersection -> {
+			// System.out.println( Arrays.toString( intersection ) );
 			// Evaluate the where expression
 			if ( where == null || ( Boolean ) where.evaluate( QoQExec, intersection ) ) {
 				Object[]	values	= new Object[ resultColumns.size() ];
@@ -262,16 +266,19 @@ public class QoQExecutionService {
 		for ( SQLResultColumn resultColumn : QoQExec.select.getSelect().getResultColumns() ) {
 			// For *, expand all columns in the query
 			if ( resultColumn.isStarExpression() ) {
+				// The same table joined more than once will still have separate SQLTable instances in the AST.
+				// If we have a specific alias such as t.* this will still match since the correct SQLTable reference will be associated with the result column
 				SQLTable	starTable		= ( ( SQLStarExpression ) resultColumn.getExpression() ).getTable();
 				Key			tableName		= starTable == null ? null : starTable.getName();
-				var			matchingTables	= QoQExec.tableLookup.keySet().stream().filter( t -> tableName == null || tableName.equals( t.getName() ) )
+
+				var			matchingTables	= QoQExec.tableLookup.keySet().stream().filter( t -> starTable == null || starTable == t )
 				    .toList();
+
 				if ( matchingTables.isEmpty() ) {
 					throw new DatabaseException(
 					    "The table alias [" + tableName + "] in the result column [" + resultColumn.getSourceText() + "] is does not match a table." );
 				}
 				matchingTables.stream().forEach( t -> {
-					System.out.println( "Expanding * for table: " + t.getName() );
 					var thisTable = QoQExec.tableLookup.get( t );
 					for ( Key key : thisTable.getColumns().keySet() ) {
 						resultColumns.put( key,
@@ -305,57 +312,6 @@ public class QoQExecutionService {
 		} else {
 			throw new DatabaseException( "The QoQ table name [" + tableVarName + "] cannot be found as a variable." );
 		}
-	}
-
-	/**
-	 * Create all possible intercections of the tables as a stream of int arrays
-	 */
-	public static Stream<int[]> createCartesianStream( QoQExecution QoQExec ) {
-		Map<SQLTable, Query>	tableLookup	= QoQExec.tableLookup;
-		int						numTables	= tableLookup.size();
-		// I hold the number of rows in each corresponding query. table lookup is a linked array, so it contains the tables in encounter order from the query
-		int[]					rowCounts	= new int[ numTables ];
-		// Tracks what row we're on for each table
-		int[]					current		= new int[ numTables ];
-		Arrays.fill( current, 1 );
-		int i = 0;
-		for ( Query table : tableLookup.values() ) {
-			rowCounts[ i++ ] = table.size();
-		}
-
-		// Total number of combinations, which is all recordcounts multiplied together
-		int totalCombinations = Arrays.stream( rowCounts ).reduce( 1, ( a, b ) -> a * b );
-		QoQExec.setTotalCombinations( totalCombinations );
-		Supplier<int[]>	supplier	= () -> {
-										int[] indices = Arrays.copyOf( current, numTables );
-										// FWIW, the last time this supplier runs, we will increment nothing
-										for ( int j = 0; j < numTables; j++ ) {
-											// Stop incrementing each table when we reach the end of the table
-											if ( current[ j ] < rowCounts[ j ] ) {
-												current[ j ]++;
-												// As soon as we increment any table, we're done.
-												// This ensure we hit every possible combo by only changing one index at a time.
-												break;
-											} else {
-												// The first column always resets, all other colmns reset if their previous column just reset
-												if ( j == 0 || current[ j - 1 ] == 1 ) {
-													current[ j ] = 1;
-												}
-											}
-										}
-										return indices;
-									};
-
-		// Limit the stream to the total number of combos
-		Stream<int[]>	theStream	= Stream.generate( supplier ).limit( totalCombinations );
-
-		// Tweak this based on size of intersections to process
-		if ( totalCombinations > 50 ) {
-			// The supplier above MUST be called in order, so we can't parallelize it due to stupid Java behaviors of pre-loading supplier calls.
-			// Collect the values and then create a new stream from the list
-			theStream = theStream.toList().stream().parallel();
-		}
-		return theStream;
 	}
 
 	public record TypedResultColumn( QueryColumnType type, SQLResultColumn resultColumn ) {

@@ -82,18 +82,28 @@ public class QoQParseTest {
 	public void testRunQoQ() {
 		instance.executeSource(
 		    """
-		                qryEmployees = queryNew( "name,age,dept", "varchar,integer,varchar", [["brad",44,"IT"],["luis",43,"Exec"],["Jon",45,"IT"]] )
-		                qryDept = queryNew( "name,code", "varchar,integer", [["IT",404],["Exec",200]] )
-		                        q = queryExecute( "
-		          select e.*, d.code
-		       from qryEmployees e, qryDept d
-		    where e.dept = d.name
-		               ",
-		                     	[],
-		                     	{ dbType : "query" }
-		                     );
-		                  println( q )
-		                     """,
+		                 qryEmployees = queryNew(
+		     	"name,age,dept,supervisor",
+		     	"varchar,integer,varchar,varchar",
+		     	[
+		     		["luis",43,"Exec","luis"],
+		     		["brad",44,"IT","luis"],
+		     		["Jon",45,"HR","luis"]
+		     		]
+		     	)
+		                 qryDept = queryNew( "name,code", "varchar,integer", [["IT",404],["Exec",200],["Janitor",200]] )
+		                         q = queryExecute( "
+		           select e.*, s.name as supName, d.name as deptname
+		        from qryEmployees e
+		     inner join qryEmployees s on e.supervisor = s.name
+		      full join qryDept d on e.dept = d.name
+		    where d.name in ('IT','HR')
+		                ",
+		                      	[],
+		                      	{ dbType : "query" }
+		                      );
+		                   println( q )
+		                      """,
 		    context );
 	}
 

@@ -35,7 +35,6 @@ public class QoQExecution {
 	public Map<Key, TypedResultColumn>	resultColumns		= null;
 	public Map<SQLTable, Query>			tableLookup;
 	public List<ParamItem>				params;
-	public int							totalCombinations	= 0;
 	public List<NameAndDirection>		orderByColumns		= null;
 	public Set<Key>						additionalColumns	= null;
 
@@ -56,14 +55,6 @@ public class QoQExecution {
 
 	public static QoQExecution of( SQLSelectStatement select, Map<SQLTable, Query> tableLookup, List<ParamItem> params ) {
 		return new QoQExecution( select, tableLookup, params );
-	}
-
-	public void setTotalCombinations( int totalCombinations ) {
-		this.totalCombinations = totalCombinations;
-	}
-
-	public int getTotalCombinations() {
-		return totalCombinations;
 	}
 
 	public SQLSelectStatement getSelect() {

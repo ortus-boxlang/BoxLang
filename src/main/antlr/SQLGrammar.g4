@@ -347,7 +347,11 @@ union:
 ;
 
 join_clause:
-    table (join_operator table join_constraint?)*
+    table join+
+;
+
+join:
+    join_operator table join_constraint?
 ;
 
 select_core:
@@ -406,7 +410,7 @@ result_column:
 join_operator:
     // COMMA
     //  | NATURAL_? ((LEFT_ | RIGHT_ | FULL_) OUTER_? | INNER_ | CROSS_)? JOIN_
-    (INNER_)? JOIN_
+    ((LEFT_ | RIGHT_ | FULL_) OUTER_? | INNER_ | CROSS_)? JOIN_
 ;
 
 join_constraint:
