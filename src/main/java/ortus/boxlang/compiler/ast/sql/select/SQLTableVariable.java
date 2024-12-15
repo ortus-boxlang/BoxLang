@@ -70,7 +70,7 @@ public class SQLTableVariable extends SQLTable {
 	public void setName( String name ) {
 		this.name = Key.of( name );
 	}
-	
+
 	public boolean isCalled( Key name ) {
 		return this.name.equals( name ) || ( alias != null && alias.equals( name ) );
 	}
