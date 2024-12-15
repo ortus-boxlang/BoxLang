@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLExpression;
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.jdbc.qoq.functions.aggregate.Max;
 import ortus.boxlang.runtime.jdbc.qoq.functions.scalar.Abs;
 import ortus.boxlang.runtime.jdbc.qoq.functions.scalar.Acos;
@@ -90,6 +91,15 @@ public class QoQFunctionService {
 
 	public static void register( Key name, java.util.function.Function<List<Object>, Object> function, QueryColumnType returnType, int requiredParams ) {
 		functions.put( name, QoQFunction.of( function, returnType, requiredParams ) );
+	}
+
+	public static void registerCustom( Key name, ortus.boxlang.runtime.types.Function function, QueryColumnType returnType, int requiredParams,
+	    IBoxContext context ) {
+		functions.put( name, QoQFunction.of(
+		    ( List<Object> arguments ) -> context.invokeFunction( function, arguments.toArray() ),
+		    returnType,
+		    requiredParams
+		) );
 	}
 
 	public static void registerAggregate( Key name, java.util.function.BiFunction<List<SQLExpression>, QoQSelectExecution, Object> function,

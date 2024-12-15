@@ -206,4 +206,27 @@ public class QoQParseTest {
 		    context );
 	}
 
+	@Test
+	public void testcustomFunc() {
+		instance.executeSource(
+		    """
+		       import ortus.boxlang.runtime.jdbc.qoq.QoQFunctionService;
+		       import ortus.boxlang.runtime.scopes.Key;
+		       import ortus.boxlang.runtime.types.QueryColumnType;
+
+		    // Register a custom function
+		       QoQFunctionService.registerCustom( Key.of("reverse"), ::reverse, QueryColumnType.VARCHAR, 1, getBoxContext() );
+
+		                           q = queryExecute( "
+		                  select reverse( 'Brad' ) as rev
+		                                  ",
+		                                        	[],
+		                                        	{ dbType : "query" }
+		                                        );
+		                                     println( q )
+
+		                                        """,
+		    context );
+	}
+
 }
