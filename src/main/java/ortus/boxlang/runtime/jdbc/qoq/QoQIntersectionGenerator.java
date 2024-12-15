@@ -37,9 +37,9 @@ public class QoQIntersectionGenerator {
 	/**
 	 * Create all possible intersections of the tables as a stream of int arrays
 	 */
-	public static Stream<int[]> createIntersectionStream( QoQExecution QoQExec ) {
+	public static Stream<int[]> createIntersectionStream( QoQSelectExecution QoQExec ) {
 		Map<SQLTable, Query>	tableLookup			= QoQExec.tableLookup;
-		Query					firstTable			= tableLookup.get( QoQExec.select.getSelect().getTable() );
+		Query					firstTable			= tableLookup.get( QoQExec.getSelect().getTable() );
 		// This is just an estimation of the total number of combinations
 		// Streams make it hard to get an exact count without collecting the stream, so we'll just guess
 		int						totalCombinations	= firstTable.size();
@@ -49,8 +49,8 @@ public class QoQIntersectionGenerator {
 		    .mapToObj( i -> new int[] { i } );
 
 		// If we have one or more joins, we need to create a stream of all possible intersections
-		if ( QoQExec.select.getSelect().getJoins() != null ) {
-			for ( SQLJoin thisJoin : QoQExec.select.getSelect().getJoins() ) {
+		if ( QoQExec.getSelect().getJoins() != null ) {
+			for ( SQLJoin thisJoin : QoQExec.getSelect().getJoins() ) {
 				var	joinType	= thisJoin.getType();
 				var	joinTable	= tableLookup.get( thisJoin.getTable() );
 				var	joinOn		= thisJoin.getOn();
@@ -78,7 +78,7 @@ public class QoQIntersectionGenerator {
 		return theStream;
 	}
 
-	private static Stream<int[]> handleCrossOrInnerJoin( Stream<int[]> theStream, Query joinTable, SQLExpression joinOn, QoQExecution QoQExec ) {
+	private static Stream<int[]> handleCrossOrInnerJoin( Stream<int[]> theStream, Query joinTable, SQLExpression joinOn, QoQSelectExecution QoQExec ) {
 		theStream = theStream.flatMap( i -> IntStream.rangeClosed( 1, joinTable.size() ).mapToObj( j -> {
 			int[] newIntersection = Arrays.copyOf( i, i.length + 1 );
 			newIntersection[ i.length ] = j;
@@ -90,7 +90,7 @@ public class QoQIntersectionGenerator {
 		return theStream;
 	}
 
-	private static Stream<int[]> handleLeftJoin( Stream<int[]> theStream, Query joinTable, SQLExpression joinOn, QoQExecution QoQExec ) {
+	private static Stream<int[]> handleLeftJoin( Stream<int[]> theStream, Query joinTable, SQLExpression joinOn, QoQSelectExecution QoQExec ) {
 		return theStream.flatMap( i -> {
 			Stream<int[]>	newStream		= IntStream.rangeClosed( 1, joinTable.size() ).mapToObj( j -> {
 												int[] newIntersection = Arrays.copyOf( i, i.length + 1 );
@@ -107,7 +107,7 @@ public class QoQIntersectionGenerator {
 		} );
 	}
 
-	private static Stream<int[]> handleRightJoin( Stream<int[]> theStream, Query joinTable, SQLExpression joinOn, QoQExecution QoQExec ) {
+	private static Stream<int[]> handleRightJoin( Stream<int[]> theStream, Query joinTable, SQLExpression joinOn, QoQSelectExecution QoQExec ) {
 		List<int[]>		leftRows	= theStream.collect( Collectors.toList() ); // Collect the left rows to avoid reusing the stream
 		Stream<int[]>	rightStream	= IntStream.rangeClosed( 1, joinTable.size() ).mapToObj( j -> new int[] { j } );
 		return rightStream.flatMap( j -> {
@@ -129,7 +129,7 @@ public class QoQIntersectionGenerator {
 		} );
 	}
 
-	private static Stream<int[]> handleFullOuterJoin( Stream<int[]> theStream, Query joinTable, SQLExpression joinOn, QoQExecution QoQExec ) {
+	private static Stream<int[]> handleFullOuterJoin( Stream<int[]> theStream, Query joinTable, SQLExpression joinOn, QoQSelectExecution QoQExec ) {
 		List<int[]>			leftRows		= theStream.collect( Collectors.toList() ); // Collect the left rows to avoid reusing the stream
 		Stream<int[]>		rightStream		= IntStream.rangeClosed( 1, joinTable.size() ).mapToObj( j -> new int[] { j } );
 

@@ -21,7 +21,7 @@ import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLExpression;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
-import ortus.boxlang.runtime.jdbc.qoq.QoQExecution;
+import ortus.boxlang.runtime.jdbc.qoq.QoQSelectExecution;
 import ortus.boxlang.runtime.types.QueryColumnType;
 
 /**
@@ -65,14 +65,14 @@ public class SQLStringLiteral extends SQLExpression {
 	/**
 	 * What type does this expression evaluate to
 	 */
-	public QueryColumnType getType( QoQExecution QoQExec ) {
+	public QueryColumnType getType( QoQSelectExecution QoQExec ) {
 		return QueryColumnType.VARCHAR;
 	}
 
 	/**
 	 * Evaluate the expression
 	 */
-	public Object evaluate( QoQExecution QoQExec, int[] intersection ) {
+	public Object evaluate( QoQSelectExecution QoQExec, int[] intersection ) {
 		return value;
 	}
 

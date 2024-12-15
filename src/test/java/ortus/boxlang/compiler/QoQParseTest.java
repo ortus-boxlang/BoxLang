@@ -107,4 +107,43 @@ public class QoQParseTest {
 		    context );
 	}
 
+	@Test
+	public void testRunQoQUnion() {
+		instance.executeSource(
+		    """
+		                 qryDept = queryNew( "name,code", "varchar,integer", [["IT",404],["Exec",200],["Janitor",200]] )
+		                q = queryExecute( "
+		                select name as col from qryDept
+		          union all select 'bar' as sfd
+		       union select 'foo' as col
+		    order by col desc
+		                        ",
+		                              	[],
+		                              	{ dbType : "query" }
+		                              );
+		                           println( q )
+		                              """,
+		    context );
+	}
+
+	@Test
+	public void testSubquery() {
+		instance.executeSource(
+		    """
+		                  q = queryExecute( "
+		         select col as brad from (
+		        			select 'foo' as col
+		    			union select 'bar'
+		       ) as t
+		    order by brad asc
+
+		                         ",
+		                               	[],
+		                               	{ dbType : "query" }
+		                               );
+		                            println( q )
+		                               """,
+		    context );
+	}
+
 }

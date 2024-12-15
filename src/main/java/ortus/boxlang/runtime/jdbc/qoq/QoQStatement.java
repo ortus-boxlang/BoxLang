@@ -178,7 +178,7 @@ public class QoQStatement implements java.sql.Statement {
 		SQLSelectStatement select = ( SQLSelectStatement ) QoQExecutionService.parseSQL( sql );
 
 		// execute the query
-		result = QoQExecutionService.executeSelect( context, select, this );
+		result = QoQExecutionService.executeSelectStatement( context, select, this );
 		return true;
 	}
 

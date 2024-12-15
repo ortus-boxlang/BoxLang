@@ -13,6 +13,10 @@ import ortus.boxlang.compiler.ast.sql.select.SQLResultColumn;
 import ortus.boxlang.compiler.ast.sql.select.SQLSelect;
 import ortus.boxlang.compiler.ast.sql.select.SQLSelectStatement;
 import ortus.boxlang.compiler.ast.sql.select.SQLTable;
+import ortus.boxlang.compiler.ast.sql.select.SQLTableSubQuery;
+import ortus.boxlang.compiler.ast.sql.select.SQLTableVariable;
+import ortus.boxlang.compiler.ast.sql.select.SQLUnion;
+import ortus.boxlang.compiler.ast.sql.select.SQLUnionType;
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLColumn;
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLCountFunction;
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLExpression;
@@ -42,7 +46,9 @@ import ortus.boxlang.parser.antlr.SQLGrammar.Select_coreContext;
 import ortus.boxlang.parser.antlr.SQLGrammar.Select_stmtContext;
 import ortus.boxlang.parser.antlr.SQLGrammar.Sql_stmtContext;
 import ortus.boxlang.parser.antlr.SQLGrammar.Sql_stmt_listContext;
+import ortus.boxlang.parser.antlr.SQLGrammar.SubqueryContext;
 import ortus.boxlang.parser.antlr.SQLGrammar.TableContext;
+import ortus.boxlang.parser.antlr.SQLGrammar.Table_or_subqueryContext;
 import ortus.boxlang.parser.antlr.SQLGrammarBaseVisitor;
 import ortus.boxlang.runtime.scopes.Key;
 
@@ -124,7 +130,7 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 		var					src			= tools.getSourceText( ctx );
 
 		SQLSelect			select		= null;
-		List<SQLSelect>		unions		= null;
+		List<SQLUnion>		unions		= null;
 		List<SQLOrderBy>	orderBys	= null;
 		SQLNumberLiteral	limit		= null;
 
@@ -141,7 +147,27 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 			limit = NUMERIC_LITERAL( ctx.limit_stmt().NUMERIC_LITERAL() );
 		}
 
-		// TODO: handle unions
+		if ( ctx.union() != null && !ctx.union().isEmpty() ) {
+			int numCols = select.getResultColumns().size();
+			unions = new ArrayList<SQLUnion>();
+			int numSelect = 2;
+			for ( var unionCtx : ctx.union() ) {
+				SQLUnionType unionType = unionCtx.ALL_() != null ? SQLUnionType.ALL : SQLUnionType.DISTINCT;
+				if ( unionType == SQLUnionType.ALL && unionCtx.DISTINCT_() != null ) {
+					tools.reportError( "Cannot have both ALL and DISTINCT in a UNION", tools.getPosition( unionCtx ) );
+				}
+				var unionSelect = ( SQLSelect ) visit( unionCtx.select_core() );
+				if ( unionSelect.getResultColumns().size() != numCols ) {
+					tools.reportError(
+					    "All SELECT statements in a UNION must have the same number of columns.  Select number " + numSelect + " has "
+					        + unionSelect.getResultColumns().size() + " column(s) but the original select has " + numCols + " column(s).",
+					    tools.getPosition( unionCtx ) );
+				}
+				unions.add( new SQLUnion( unionSelect, unionType, tools.getPosition( unionCtx ), tools.getSourceText( unionCtx ) ) );
+				numSelect++;
+			}
+
+		}
 
 		return new SQLSelectStatement( select, unions, orderBys, limit, pos, src );
 	}
@@ -156,34 +182,34 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 	 */
 	@Override
 	public SQLSelect visitSelect_core( Select_coreContext ctx ) {
-		var						pos				= tools.getPosition( ctx );
-		var						src				= tools.getSourceText( ctx );
+		var							pos				= tools.getPosition( ctx );
+		var							src				= tools.getSourceText( ctx );
 
-		boolean					distinct		= ctx.DISTINCT_() != null;
-		SQLNumberLiteral		limit			= null;
-		List<SQLResultColumn>	resultColumns	= null;
-		SQLTable				table			= null;
-		List<SQLJoin>			joins			= null;
-		SQLExpression			where			= null;
-		List<SQLExpression>		groupBys		= null;
-		SQLExpression			having			= null;
+		boolean						distinct		= ctx.DISTINCT_() != null;
+		SQLNumberLiteral			limit			= null;
+		List<SQLResultColumn>		resultColumns	= null;
+		SQLTable					table			= null;
+		List<SQLJoin>				joins			= null;
+		SQLExpression				where			= null;
+		List<SQLExpression>			groupBys		= null;
+		SQLExpression				having			= null;
 
-		TableContext			firstTable;
-		if ( !ctx.table().isEmpty() ) {
-			firstTable	= ctx.table().get( 0 );
+		Table_or_subqueryContext	firstTable;
+		if ( !ctx.table_or_subquery().isEmpty() ) {
+			firstTable	= ctx.table_or_subquery().get( 0 );
 			table		= ( SQLTable ) visit( firstTable );
 
-			if ( ctx.table().size() > 1 ) {
+			if ( ctx.table_or_subquery().size() > 1 ) {
 				// from table1, table2 is treated as a join with no `on` clause
 				joins = new ArrayList<SQLJoin>();
-				for ( int i = 1; i < ctx.table().size(); i++ ) {
-					var			tableCtx	= ctx.table().get( i );
+				for ( int i = 1; i < ctx.table_or_subquery().size(); i++ ) {
+					var			tableCtx	= ctx.table_or_subquery().get( i );
 					SQLTable	joinTable	= ( SQLTable ) visit( tableCtx );
 					joins.add( new SQLJoin( SQLJoinType.FULL, joinTable, null, tools.getPosition( tableCtx ), tools.getSourceText( tableCtx ) ) );
 				}
 			}
 		} else if ( ctx.join_clause() != null ) {
-			firstTable	= ctx.join_clause().table();
+			firstTable	= ctx.join_clause().table_or_subquery();
 			table		= ( SQLTable ) visit( firstTable );
 			joins		= buildJoins( ctx.join_clause(), table );
 		}
@@ -230,7 +256,7 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 		for ( var joinCtx : ctx.join() ) {
 			var			pos			= tools.getPosition( joinCtx );
 			var			src			= tools.getSourceText( joinCtx );
-			var			joinTable	= ( SQLTable ) visit( joinCtx.table() );
+			var			joinTable	= ( SQLTable ) visit( joinCtx.table_or_subquery() );
 			var			typeCtx		= joinCtx.join_operator();
 			boolean		hasOn		= joinCtx.join_constraint() != null;
 			String		joinText	= tools.getSourceText( typeCtx );
@@ -277,7 +303,24 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 	 * @return the AST node representing the class or interface
 	 */
 	@Override
-	public SQLTable visitTable( TableContext ctx ) {
+	public SQLTable visitTable_or_subquery( Table_or_subqueryContext ctx ) {
+		if ( ctx.table() != null ) {
+			return visitTable( ctx.table() );
+		} else {
+			return visitSubquery( ctx.subquery() );
+		}
+	}
+
+	/**
+	 * Visit the class or interface context to generate the AST node for the
+	 * top level node
+	 *
+	 * @param ctx the parse tree
+	 *
+	 * @return the AST node representing the class or interface
+	 */
+	@Override
+	public SQLTableVariable visitTable( TableContext ctx ) {
 		var		pos		= tools.getPosition( ctx );
 		var		src		= tools.getSourceText( ctx );
 		String	schema	= null;
@@ -292,7 +335,24 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 			alias = ctx.table_alias().getText();
 		}
 
-		return new SQLTable( schema, name, alias, tableIndex++, pos, src );
+		return new SQLTableVariable( schema, name, alias, tableIndex++, pos, src );
+	}
+
+	/**
+	 * Visit the class or interface context to generate the AST node for the
+	 * top level node
+	 *
+	 * @param ctx the parse tree
+	 *
+	 * @return the AST node representing the class or interface
+	 */
+	@Override
+	public SQLTableSubQuery visitSubquery( SubqueryContext ctx ) {
+		var					pos		= tools.getPosition( ctx );
+		var					src		= tools.getSourceText( ctx );
+		SQLSelectStatement	select	= ( SQLSelectStatement ) visit( ctx.select_stmt() );
+
+		return new SQLTableSubQuery( select, ctx.table_alias().getText(), tableIndex++, pos, src );
 	}
 
 	/**

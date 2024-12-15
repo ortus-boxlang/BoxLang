@@ -343,20 +343,20 @@ select_stmt:
 ;
 
 union:
-    UNION_ ALL_? select_core
+    UNION_ ALL_? DISTINCT_? select_core
 ;
 
 join_clause:
-    table join+
+    table_or_subquery join+
 ;
 
 join:
-    join_operator table join_constraint?
+    join_operator table_or_subquery join_constraint?
 ;
 
 select_core:
     SELECT_ top? (DISTINCT_ /*| ALL_*/)? result_column (COMMA result_column)* (
-        FROM_ (table (COMMA table)* | join_clause)
+        FROM_ (table_or_subquery (COMMA table_or_subquery)* | join_clause)
     )? (WHERE_ whereExpr = expr)? (
         GROUP_ BY_ groupByExpr += expr (COMMA groupByExpr += expr)* (
             HAVING_ havingExpr = expr
@@ -388,17 +388,13 @@ table:
     (schema_name DOT)? table_name (AS_? table_alias)?
 ;
 
-table_or_subquery: (
-        (schema_name DOT)? table_name (AS_? table_alias)? (
-            INDEXED_ BY_ index_name
-            | NOT_ INDEXED_
-        )?
-    )
-    | (schema_name DOT)? table_function_name OPEN_PAR expr (COMMA expr)* CLOSE_PAR (
-        AS_? table_alias
-    )?
-    | OPEN_PAR (table_or_subquery (COMMA table_or_subquery)* | join_clause) CLOSE_PAR
-    | OPEN_PAR select_stmt CLOSE_PAR (AS_? table_alias)?
+subquery:
+    OPEN_PAR select_stmt CLOSE_PAR AS_? table_alias
+;
+
+table_or_subquery:
+    table
+    | subquery
 ;
 
 result_column:
@@ -580,6 +576,7 @@ expr_asc_desc:
 ;
 
 //TODO BOTH OF THESE HAVE TO BE REWORKED TO FOLLOW THE SPEC
+
 initial_select:
     select_stmt
 ;

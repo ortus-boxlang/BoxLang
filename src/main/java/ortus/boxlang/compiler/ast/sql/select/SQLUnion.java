@@ -12,24 +12,24 @@
  * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package ortus.boxlang.compiler.ast.sql.select.expression;
+package ortus.boxlang.compiler.ast.sql.select;
 
 import java.util.Map;
 
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
-import ortus.boxlang.compiler.ast.sql.select.SQLTable;
+import ortus.boxlang.compiler.ast.sql.SQLNode;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
-import ortus.boxlang.runtime.jdbc.qoq.QoQSelectExecution;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
- * Abstract Node class representing SQL * expression
+ * Abstract Node class representing SQL UNION statement
  */
-public class SQLStarExpression extends SQLExpression {
+public class SQLUnion extends SQLNode {
 
-	private SQLTable table;
+	private SQLSelect		select;
+
+	private SQLUnionType	type;
 
 	/**
 	 * Constructor
@@ -37,31 +37,40 @@ public class SQLStarExpression extends SQLExpression {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code of the statement
 	 */
-	public SQLStarExpression( SQLTable table, Position position, String sourceText ) {
+	public SQLUnion( SQLSelect select, SQLUnionType type, Position position, String sourceText ) {
 		super( position, sourceText );
-		setTable( table );
+		setSelect( select );
+		setType( type );
 	}
 
 	/**
-	 * Get the table
+	 * Get the SELECT statement
 	 */
-	public SQLTable getTable() {
-		return table;
+	public SQLSelect getSelect() {
+		return select;
 	}
 
 	/**
-	 * Set the table
+	 * Set the SELECT statement
 	 */
-	public void setTable( SQLTable table ) {
-		// This node has no parent/child relationship, it's just a reference
-		this.table = table;
+	public void setSelect( SQLSelect select ) {
+		replaceChildren( this.select, select );
+		this.select = select;
+		select.setParent( this );
 	}
 
 	/**
-	 * Evaluate the expression
+	 * Get the type of the UNION
 	 */
-	public Object evaluate( QoQSelectExecution QoQExec, int[] intersection ) {
-		throw new BoxRuntimeException( "Cannot evaluate a * expression" );
+	public SQLUnionType getType() {
+		return type;
+	}
+
+	/**
+	 * Set the type of the UNION
+	 */
+	public void setType( SQLUnionType type ) {
+		this.type = type;
 	}
 
 	@Override
@@ -80,11 +89,9 @@ public class SQLStarExpression extends SQLExpression {
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = super.toMap();
 
-		if ( table != null ) {
-			map.put( "table", table.toMap() );
-		} else {
-			map.put( "table", null );
-		}
+		map.put( "select", select.toMap() );
+		map.put( "type", enumToMap( type ) );
+
 		return map;
 	}
 

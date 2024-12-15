@@ -14,14 +14,15 @@
  */
 package ortus.boxlang.runtime.jdbc.qoq;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import ortus.boxlang.compiler.ast.sql.select.SQLSelect;
 import ortus.boxlang.compiler.ast.sql.select.SQLSelectStatement;
 import ortus.boxlang.compiler.ast.sql.select.SQLTable;
 import ortus.boxlang.runtime.jdbc.qoq.QoQExecutionService.NameAndDirection;
-import ortus.boxlang.runtime.jdbc.qoq.QoQExecutionService.TypedResultColumn;
 import ortus.boxlang.runtime.jdbc.qoq.QoQPreparedStatement.ParamItem;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Query;
@@ -29,14 +30,15 @@ import ortus.boxlang.runtime.types.Query;
 /**
  * A wrapper class to hold together both the SQL AST being executed as well as the runtime values for a given execution of the query
  */
-public class QoQExecution {
+public class QoQSelectStatementExecution {
 
-	public SQLSelectStatement			select;
-	public Map<Key, TypedResultColumn>	resultColumns		= null;
-	public Map<SQLTable, Query>			tableLookup;
-	public List<ParamItem>				params;
-	public List<NameAndDirection>		orderByColumns		= null;
-	public Set<Key>						additionalColumns	= null;
+	public SQLSelectStatement		selectStatement;
+	public Set<Key>					resultColumnNames	= null;
+	public List<ParamItem>			params;
+	public List<NameAndDirection>	orderByColumns		= null;
+	public Set<Key>					additionalColumns	= null;
+	public List<QoQSelectExecution>	selects				= new ArrayList<QoQSelectExecution>();
+	QoQStatement					JDBCStatement;
 
 	/**
 	 * Constructor
@@ -47,34 +49,30 @@ public class QoQExecution {
 	 * 
 	 * @return
 	 */
-	private QoQExecution( SQLSelectStatement select, Map<SQLTable, Query> tableLookup, List<ParamItem> params ) {
-		this.select			= select;
-		this.tableLookup	= tableLookup;
-		this.params			= params;
+	private QoQSelectStatementExecution( SQLSelectStatement selectStatement, List<ParamItem> params, QoQStatement JDBCStatement ) {
+		this.selectStatement	= selectStatement;
+		this.params				= params;
+		this.JDBCStatement		= JDBCStatement;
 	}
 
-	public static QoQExecution of( SQLSelectStatement select, Map<SQLTable, Query> tableLookup, List<ParamItem> params ) {
-		return new QoQExecution( select, tableLookup, params );
+	public static QoQSelectStatementExecution of( SQLSelectStatement selectStatement, List<ParamItem> params, QoQStatement JDBCStatement ) {
+		return new QoQSelectStatementExecution( selectStatement, params, JDBCStatement );
 	}
 
-	public SQLSelectStatement getSelect() {
-		return select;
-	}
-
-	public Map<SQLTable, Query> getTableLookup() {
-		return tableLookup;
+	public SQLSelectStatement getSelectStatement() {
+		return selectStatement;
 	}
 
 	public List<ParamItem> getParams() {
 		return params;
 	}
 
-	public Map<Key, TypedResultColumn> getResultColumns() {
-		return resultColumns;
+	public Set<Key> getResultColumnName() {
+		return resultColumnNames;
 	}
 
-	public void setResultColumns( Map<Key, TypedResultColumn> resultColumns ) {
-		this.resultColumns = resultColumns;
+	public void setResultColumnNames( Set<Key> resultColumnNames ) {
+		this.resultColumnNames = resultColumnNames;
 	}
 
 	public List<NameAndDirection> getOrderByColumns() {
@@ -85,12 +83,32 @@ public class QoQExecution {
 		this.orderByColumns = orderByColumns;
 	}
 
+	public List<QoQSelectExecution> getSelects() {
+		return selects;
+	}
+
 	public Set<Key> getAdditionalColumns() {
 		return additionalColumns;
 	}
 
 	public void setAdditionalColumns( Set<Key> additionalColumns ) {
 		this.additionalColumns = additionalColumns;
+	}
+
+	public QoQSelectStatementExecution addSelect( QoQSelectExecution select ) {
+		select.setQoQSelectStatementExecution( this );
+		selects.add( select );
+		return this;
+	}
+
+	public QoQSelectExecution newQoQSelectExecution( SQLSelect select, Map<SQLTable, Query> tableLookup ) {
+		var QoQExec = QoQSelectExecution.of( select, tableLookup );
+		addSelect( QoQExec );
+		return QoQExec;
+	}
+
+	public QoQStatement getJDBCStatement() {
+		return JDBCStatement;
 	}
 
 }

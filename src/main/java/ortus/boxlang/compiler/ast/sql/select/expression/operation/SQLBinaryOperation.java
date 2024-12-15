@@ -24,7 +24,7 @@ import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.jdbc.qoq.LikeOperation;
-import ortus.boxlang.runtime.jdbc.qoq.QoQExecution;
+import ortus.boxlang.runtime.jdbc.qoq.QoQSelectExecution;
 import ortus.boxlang.runtime.operators.Compare;
 import ortus.boxlang.runtime.operators.Concat;
 import ortus.boxlang.runtime.operators.EqualsEquals;
@@ -150,14 +150,14 @@ public class SQLBinaryOperation extends SQLExpression {
 	 * 
 	 * @return true if the expression evaluates to a boolean value
 	 */
-	public boolean isBoolean( QoQExecution QoQExec ) {
+	public boolean isBoolean( QoQSelectExecution QoQExec ) {
 		return booleanOperators.contains( operator );
 	}
 
 	/**
 	 * What type does this expression evaluate to
 	 */
-	public QueryColumnType getType( QoQExecution QoQExec ) {
+	public QueryColumnType getType( QoQSelectExecution QoQExec ) {
 		// If this is a boolean operation, then we're a bit
 		if ( isBoolean( QoQExec ) ) {
 			return QueryColumnType.BIT;
@@ -183,14 +183,14 @@ public class SQLBinaryOperation extends SQLExpression {
 	 * 
 	 * @return true if the expression evaluates to a numeric value
 	 */
-	public boolean isNumeric( QoQExecution QoQExec ) {
+	public boolean isNumeric( QoQSelectExecution QoQExec ) {
 		return getType( QoQExec ) == QueryColumnType.DOUBLE;
 	}
 
 	/**
 	 * Evaluate the expression
 	 */
-	public Object evaluate( QoQExecution QoQExec, int[] intersection ) {
+	public Object evaluate( QoQSelectExecution QoQExec, int[] intersection ) {
 		Object	leftValue;
 		Object	rightValue;
 		Double	leftNum;
@@ -294,7 +294,7 @@ public class SQLBinaryOperation extends SQLExpression {
 	/**
 	 * Implement LIKE so we can reuse for NOT LIKE
 	 */
-	private boolean doLike( QoQExecution QoQExec, int[] intersection ) {
+	private boolean doLike( QoQSelectExecution QoQExec, int[] intersection ) {
 		String	leftValueStr	= StringCaster.cast( left.evaluate( QoQExec, intersection ) );
 		String	rightValueStr	= StringCaster.cast( right.evaluate( QoQExec, intersection ) );
 		String	escapeValue		= null;
@@ -309,7 +309,7 @@ public class SQLBinaryOperation extends SQLExpression {
 	 * 
 	 * @return true if the left and right operands are boolean expressions or bit columns
 	 */
-	private void ensureBooleanOperands( QoQExecution QoQExec ) {
+	private void ensureBooleanOperands( QoQSelectExecution QoQExec ) {
 		// These checks may or may not work. If we can't get away with this, then we can boolean cast the values
 		// but SQL doesn't really have the same concept of truthiness and mostly expects to always get booleans from boolean columns or boolean expressions
 		if ( !left.isBoolean( QoQExec ) ) {
@@ -323,7 +323,7 @@ public class SQLBinaryOperation extends SQLExpression {
 	/**
 	 * Reusable helper method to ensure that the left and right operands are numeric expressions or numeric columns
 	 */
-	private void ensureNumericOperands( QoQExecution QoQExec ) {
+	private void ensureNumericOperands( QoQSelectExecution QoQExec ) {
 		if ( !left.isNumeric( QoQExec ) ) {
 			throw new BoxRuntimeException( "Left side of a math [" + operator.getSymbol() + "] operation must be a numeric expression or numeric column" );
 		}
@@ -341,7 +341,7 @@ public class SQLBinaryOperation extends SQLExpression {
 	 * 
 	 * @return
 	 */
-	private double evalAsNumber( SQLExpression expression, QoQExecution QoQExec, int[] intersection ) {
+	private double evalAsNumber( SQLExpression expression, QoQSelectExecution QoQExec, int[] intersection ) {
 		return ( ( Number ) expression.evaluate( QoQExec, intersection ) ).doubleValue();
 	}
 

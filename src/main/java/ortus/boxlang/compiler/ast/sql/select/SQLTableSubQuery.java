@@ -12,24 +12,22 @@
  * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package ortus.boxlang.compiler.ast.sql.select.expression;
+package ortus.boxlang.compiler.ast.sql.select;
 
 import java.util.Map;
 
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
-import ortus.boxlang.compiler.ast.sql.select.SQLTable;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
-import ortus.boxlang.runtime.jdbc.qoq.QoQSelectExecution;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.scopes.Key;
 
 /**
- * Abstract Node class representing SQL * expression
+ * Class representing SQL table as a sub query
  */
-public class SQLStarExpression extends SQLExpression {
+public class SQLTableSubQuery extends SQLTable {
 
-	private SQLTable table;
+	private SQLSelectStatement selectStatement;
 
 	/**
 	 * Constructor
@@ -37,31 +35,29 @@ public class SQLStarExpression extends SQLExpression {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code of the statement
 	 */
-	public SQLStarExpression( SQLTable table, Position position, String sourceText ) {
-		super( position, sourceText );
-		setTable( table );
+	public SQLTableSubQuery( SQLSelectStatement selectStatement, String alias, int index, Position position, String sourceText ) {
+		super( alias, index, position, sourceText );
+		setSelectStatement( selectStatement );
 	}
 
 	/**
-	 * Get the table
+	 * Get the select statement
 	 */
-	public SQLTable getTable() {
-		return table;
+	public SQLSelectStatement getSelectStatement() {
+		return selectStatement;
 	}
 
 	/**
-	 * Set the table
+	 * Set the select statement
 	 */
-	public void setTable( SQLTable table ) {
-		// This node has no parent/child relationship, it's just a reference
-		this.table = table;
+	public void setSelectStatement( SQLSelectStatement selectStatement ) {
+		replaceChildren( this.selectStatement, selectStatement );
+		this.selectStatement = selectStatement;
+		this.selectStatement.setParent( this );
 	}
 
-	/**
-	 * Evaluate the expression
-	 */
-	public Object evaluate( QoQSelectExecution QoQExec, int[] intersection ) {
-		throw new BoxRuntimeException( "Cannot evaluate a * expression" );
+	public boolean isCalled( Key name ) {
+		return alias.equals( name );
 	}
 
 	@Override
@@ -80,11 +76,7 @@ public class SQLStarExpression extends SQLExpression {
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = super.toMap();
 
-		if ( table != null ) {
-			map.put( "table", table.toMap() );
-		} else {
-			map.put( "table", null );
-		}
+		map.put( "selectStatement", selectStatement.toMap() );
 		return map;
 	}
 

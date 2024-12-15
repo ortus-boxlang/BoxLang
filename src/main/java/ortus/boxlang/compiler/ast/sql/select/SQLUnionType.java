@@ -12,19 +12,22 @@
  * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package ortus.boxlang.runtime.jdbc.qoq;
+package ortus.boxlang.compiler.ast.sql.select;
 
-import java.util.List;
+public enum SQLUnionType {
 
-import ortus.boxlang.compiler.ast.sql.select.expression.SQLExpression;
+	ALL,
+	DISTINCT;
 
-/**
- * I am the abstract class for QoQ function definitions
- */
-public abstract class QoQAggregateFunctionDef implements IQoQFunctionDef, java.util.function.BiFunction<List<SQLExpression>, QoQSelectExecution, Object> {
-
-	public boolean isAggregate() {
-		return true;
+	public String getSymbol() {
+		switch ( this ) {
+			case ALL :
+				return "UNION ALL";
+			case DISTINCT :
+				return "UNION";
+			default :
+				throw new IllegalStateException( "Unknown union type: " + this );
+		}
 	}
 
 }

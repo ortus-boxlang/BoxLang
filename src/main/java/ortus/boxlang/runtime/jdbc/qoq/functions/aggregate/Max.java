@@ -19,7 +19,7 @@ import java.util.List;
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLExpression;
 import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
 import ortus.boxlang.runtime.jdbc.qoq.QoQAggregateFunctionDef;
-import ortus.boxlang.runtime.jdbc.qoq.QoQExecution;
+import ortus.boxlang.runtime.jdbc.qoq.QoQSelectExecution;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.QueryColumnType;
 
@@ -45,7 +45,7 @@ public class Max extends QoQAggregateFunctionDef {
 	}
 
 	@Override
-	public Object apply( List<SQLExpression> args, QoQExecution QoQExec ) {
+	public Object apply( List<SQLExpression> args, QoQSelectExecution QoQExec ) {
 		return ortus.boxlang.runtime.bifs.global.math.Atn._invoke( NumberCaster.cast( args.get( 0 ) ) );
 	}
 

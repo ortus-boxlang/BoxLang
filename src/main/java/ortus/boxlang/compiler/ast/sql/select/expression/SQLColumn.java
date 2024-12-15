@@ -22,7 +22,7 @@ import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.sql.select.SQLTable;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
-import ortus.boxlang.runtime.jdbc.qoq.QoQExecution;
+import ortus.boxlang.runtime.jdbc.qoq.QoQSelectExecution;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -79,7 +79,7 @@ public class SQLColumn extends SQLExpression {
 	/**
 	 * Get the table, performing runtime lookup if necessary
 	 */
-	public SQLTable getTableFinal( QoQExecution QoQExec ) {
+	public SQLTable getTableFinal( QoQSelectExecution QoQExec ) {
 		var t = getTable();
 		if ( t != null ) {
 			return t;
@@ -105,14 +105,14 @@ public class SQLColumn extends SQLExpression {
 	/**
 	 * What type does this expression evaluate to
 	 */
-	public QueryColumnType getType( QoQExecution QoQExec ) {
+	public QueryColumnType getType( QoQSelectExecution QoQExec ) {
 		return QoQExec.getTableLookup().get( getTableFinal( QoQExec ) ).getColumns().get( name ).getType();
 	}
 
 	/**
 	 * Evaluate the expression
 	 */
-	public Object evaluate( QoQExecution QoQExec, int[] intersection ) {
+	public Object evaluate( QoQSelectExecution QoQExec, int[] intersection ) {
 		var	tableFinal	= getTableFinal( QoQExec );
 		// System.out.println( "getting SQL column: " + name.getName() + " from table: " + tableFinal.getName() + " with index: " + tableFinal.getIndex() );
 		// System.out.println( "intersection: " + Arrays.toString( intersection ) );
@@ -131,7 +131,7 @@ public class SQLColumn extends SQLExpression {
 	 * 
 	 * @return true if the expression evaluates to a boolean value
 	 */
-	public boolean isBoolean( QoQExecution QoQExec ) {
+	public boolean isBoolean( QoQSelectExecution QoQExec ) {
 		return getType( QoQExec ) == QueryColumnType.BIT;
 	}
 
@@ -142,7 +142,7 @@ public class SQLColumn extends SQLExpression {
 	 * 
 	 * @return true if the expression evaluates to a numeric value
 	 */
-	public boolean isNumeric( QoQExecution QoQExec ) {
+	public boolean isNumeric( QoQSelectExecution QoQExec ) {
 		return numericTypes.contains( getType( QoQExec ) );
 	}
 

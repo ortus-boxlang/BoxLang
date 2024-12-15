@@ -16,7 +16,7 @@ package ortus.boxlang.compiler.ast.sql.select.expression;
 
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.sql.SQLNode;
-import ortus.boxlang.runtime.jdbc.qoq.QoQExecution;
+import ortus.boxlang.runtime.jdbc.qoq.QoQSelectExecution;
 import ortus.boxlang.runtime.types.QueryColumnType;
 
 /**
@@ -48,7 +48,7 @@ public abstract class SQLExpression extends SQLNode {
 	 * 
 	 * @return true if the expression evaluates to a boolean value
 	 */
-	public boolean isBoolean( QoQExecution QoQExec ) {
+	public boolean isBoolean( QoQSelectExecution QoQExec ) {
 		return false;
 	}
 
@@ -59,14 +59,14 @@ public abstract class SQLExpression extends SQLNode {
 	 * 
 	 * @return true if the expression evaluates to a numeric value
 	 */
-	public boolean isNumeric( QoQExecution QoQExec ) {
+	public boolean isNumeric( QoQSelectExecution QoQExec ) {
 		return false;
 	}
 
 	/**
 	 * What type does this expression evaluate to
 	 */
-	public QueryColumnType getType( QoQExecution QoQExec ) {
+	public QueryColumnType getType( QoQSelectExecution QoQExec ) {
 		if ( isBoolean( QoQExec ) ) {
 			return QueryColumnType.BIT;
 		}
@@ -76,6 +76,6 @@ public abstract class SQLExpression extends SQLNode {
 	/**
 	 * Evaluate the expression
 	 */
-	public abstract Object evaluate( QoQExecution QoQExec, int[] intersection );
+	public abstract Object evaluate( QoQSelectExecution QoQExec, int[] intersection );
 
 }

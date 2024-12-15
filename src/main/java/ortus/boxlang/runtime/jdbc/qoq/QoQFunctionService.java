@@ -92,7 +92,7 @@ public class QoQFunctionService {
 		functions.put( name, QoQFunction.of( function, returnType, requiredParams ) );
 	}
 
-	public static void registerAggregate( Key name, java.util.function.BiFunction<List<SQLExpression>, QoQExecution, Object> function,
+	public static void registerAggregate( Key name, java.util.function.BiFunction<List<SQLExpression>, QoQSelectExecution, Object> function,
 	    QueryColumnType returnType,
 	    int requiredParams ) {
 		functions.put( name, QoQFunction.ofAggregate( function, returnType, requiredParams ) );
@@ -119,7 +119,7 @@ public class QoQFunctionService {
 
 	public record QoQFunction(
 	    java.util.function.Function<List<Object>, Object> callable,
-	    java.util.function.BiFunction<List<SQLExpression>, QoQExecution, Object> aggregateCallable,
+	    java.util.function.BiFunction<List<SQLExpression>, QoQSelectExecution, Object> aggregateCallable,
 	    QueryColumnType returnType,
 	    int requiredParams ) {
 
@@ -127,7 +127,7 @@ public class QoQFunctionService {
 			return new QoQFunction( callable, null, returnType, requiredParams );
 		}
 
-		static QoQFunction ofAggregate( java.util.function.BiFunction<List<SQLExpression>, QoQExecution, Object> callable, QueryColumnType returnType,
+		static QoQFunction ofAggregate( java.util.function.BiFunction<List<SQLExpression>, QoQSelectExecution, Object> callable, QueryColumnType returnType,
 		    int requiredParams ) {
 			return new QoQFunction( null, callable, returnType, requiredParams );
 		}
@@ -136,7 +136,7 @@ public class QoQFunctionService {
 			return callable.apply( arguments );
 		}
 
-		public Object invokeAggregate( List<SQLExpression> arguments, QoQExecution QoQExec ) {
+		public Object invokeAggregate( List<SQLExpression> arguments, QoQSelectExecution QoQExec ) {
 			return aggregateCallable.apply( arguments, QoQExec );
 		}
 

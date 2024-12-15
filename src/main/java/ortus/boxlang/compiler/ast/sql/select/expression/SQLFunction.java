@@ -22,9 +22,9 @@ import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
-import ortus.boxlang.runtime.jdbc.qoq.QoQExecution;
 import ortus.boxlang.runtime.jdbc.qoq.QoQFunctionService;
 import ortus.boxlang.runtime.jdbc.qoq.QoQFunctionService.QoQFunction;
+import ortus.boxlang.runtime.jdbc.qoq.QoQSelectExecution;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.QueryColumnType;
 
@@ -97,7 +97,7 @@ public class SQLFunction extends SQLExpression {
 	 * 
 	 * @return true if the expression evaluates to a boolean value
 	 */
-	public boolean isBoolean( QoQExecution QoQExec ) {
+	public boolean isBoolean( QoQSelectExecution QoQExec ) {
 		return getType( QoQExec ) == QueryColumnType.BIT;
 	}
 
@@ -108,7 +108,7 @@ public class SQLFunction extends SQLExpression {
 	 * 
 	 * @return true if the expression evaluates to a numeric value
 	 */
-	public boolean isNumeric( QoQExecution QoQExec ) {
+	public boolean isNumeric( QoQSelectExecution QoQExec ) {
 		return numericTypes.contains( getType( QoQExec ) );
 	}
 
@@ -122,14 +122,14 @@ public class SQLFunction extends SQLExpression {
 	/**
 	 * What type does this expression evaluate to
 	 */
-	public QueryColumnType getType( QoQExecution QoQExec ) {
+	public QueryColumnType getType( QoQSelectExecution QoQExec ) {
 		return QoQFunctionService.getFunction( name ).returnType();
 	}
 
 	/**
 	 * Evaluate the expression
 	 */
-	public Object evaluate( QoQExecution QoQExec, int[] intersection ) {
+	public Object evaluate( QoQSelectExecution QoQExec, int[] intersection ) {
 		QoQFunction function = QoQFunctionService.getFunction( name );
 		if ( function.requiredParams() > arguments.size() ) {
 			throw new RuntimeException(

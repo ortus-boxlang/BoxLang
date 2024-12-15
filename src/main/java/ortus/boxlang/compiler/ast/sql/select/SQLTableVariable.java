@@ -12,24 +12,24 @@
  * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package ortus.boxlang.compiler.ast.sql.select.expression;
+package ortus.boxlang.compiler.ast.sql.select;
 
 import java.util.Map;
 
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
-import ortus.boxlang.compiler.ast.sql.select.SQLTable;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
-import ortus.boxlang.runtime.jdbc.qoq.QoQSelectExecution;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.scopes.Key;
 
 /**
- * Abstract Node class representing SQL * expression
+ * Class representing SQL table as a variable name
  */
-public class SQLStarExpression extends SQLExpression {
+public class SQLTableVariable extends SQLTable {
 
-	private SQLTable table;
+	private String	schema;
+
+	private Key		name;
 
 	/**
 	 * Constructor
@@ -37,31 +37,50 @@ public class SQLStarExpression extends SQLExpression {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code of the statement
 	 */
-	public SQLStarExpression( SQLTable table, Position position, String sourceText ) {
-		super( position, sourceText );
-		setTable( table );
+	public SQLTableVariable( String schema, String name, String alias, int index, Position position, String sourceText ) {
+		super( alias, index, position, sourceText );
+		setSchema( schema );
+		setName( name );
 	}
 
 	/**
-	 * Get the table
+	 * Get the schema name
 	 */
-	public SQLTable getTable() {
-		return table;
+	public String getSchema() {
+		return schema;
 	}
 
 	/**
-	 * Set the table
+	 * Set the schema name
 	 */
-	public void setTable( SQLTable table ) {
-		// This node has no parent/child relationship, it's just a reference
-		this.table = table;
+	public void setSchema( String schema ) {
+		this.schema = schema;
 	}
 
 	/**
-	 * Evaluate the expression
+	 * Get the table name
 	 */
-	public Object evaluate( QoQSelectExecution QoQExec, int[] intersection ) {
-		throw new BoxRuntimeException( "Cannot evaluate a * expression" );
+	public Key getName() {
+		return name;
+	}
+
+	/**
+	 * Set the table name
+	 */
+	public void setName( String name ) {
+		this.name = Key.of( name );
+	}
+	
+	public boolean isCalled( Key name ) {
+		return this.name.equals( name ) || ( alias != null && alias.equals( name ) );
+	}
+
+	public String getVariableName() {
+		if ( schema != null ) {
+			return schema + "." + name.getName();
+		} else {
+			return name.getName();
+		}
 	}
 
 	@Override
@@ -80,10 +99,16 @@ public class SQLStarExpression extends SQLExpression {
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = super.toMap();
 
-		if ( table != null ) {
-			map.put( "table", table.toMap() );
+		if ( schema != null ) {
+			map.put( "schema", schema );
 		} else {
-			map.put( "table", null );
+			map.put( "schema", null );
+		}
+		map.put( "name", name.getName() );
+		if ( alias != null ) {
+			map.put( "alias", alias.getName() );
+		} else {
+			map.put( "alias", null );
 		}
 		return map;
 	}
