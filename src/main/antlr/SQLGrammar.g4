@@ -260,6 +260,7 @@ expr:
     | expr NOT_? IN_ (
         // OPEN_PAR (select_stmt | expr ( COMMA expr)*)? CLOSE_PAR
         OPEN_PAR (expr ( COMMA expr)*)? CLOSE_PAR
+        | subquery_no_alias
         // | ( schema_name DOT)? table_name
         // | (schema_name DOT)? table_function_name OPEN_PAR (expr (COMMA expr)*)? CLOSE_PAR
     )
@@ -390,6 +391,10 @@ table:
 
 subquery:
     OPEN_PAR select_stmt CLOSE_PAR AS_? table_alias
+;
+
+subquery_no_alias:
+    OPEN_PAR select_stmt CLOSE_PAR
 ;
 
 table_or_subquery:

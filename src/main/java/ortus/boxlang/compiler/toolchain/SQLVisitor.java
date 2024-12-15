@@ -33,6 +33,7 @@ import ortus.boxlang.compiler.ast.sql.select.expression.operation.SQLBetweenOper
 import ortus.boxlang.compiler.ast.sql.select.expression.operation.SQLBinaryOperation;
 import ortus.boxlang.compiler.ast.sql.select.expression.operation.SQLBinaryOperator;
 import ortus.boxlang.compiler.ast.sql.select.expression.operation.SQLInOperation;
+import ortus.boxlang.compiler.ast.sql.select.expression.operation.SQLInSubQueryOperation;
 import ortus.boxlang.compiler.ast.sql.select.expression.operation.SQLUnaryOperation;
 import ortus.boxlang.compiler.ast.sql.select.expression.operation.SQLUnaryOperator;
 import ortus.boxlang.compiler.parser.SQLParser;
@@ -350,7 +351,7 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 	public SQLTableSubQuery visitSubquery( SubqueryContext ctx ) {
 		var					pos		= tools.getPosition( ctx );
 		var					src		= tools.getSourceText( ctx );
-		SQLSelectStatement	select	= ( SQLSelectStatement ) visit( ctx.select_stmt() );
+		SQLSelectStatement	select	= ( SQLSelectStatement ) new SQLVisitor( tools ).visit( ctx.select_stmt() );
 
 		return new SQLTableSubQuery( select, ctx.table_alias().getText(), tableIndex++, pos, src );
 	}
@@ -472,9 +473,17 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 			}
 			return new SQLParam( name, index, pos, src );
 		} else if ( ctx.IN_() != null ) {
-			SQLExpression		expr	= visitExpr( ctx.expr( 0 ), table, joins );
-			List<SQLExpression>	values	= ctx.expr().stream().skip( 1 ).map( e -> visitExpr( e, table, joins ) ).toList();
-			return new SQLInOperation( expr, values, ctx.NOT_() != null, pos, src );
+			SQLExpression expr = visitExpr( ctx.expr( 0 ), table, joins );
+			if ( ctx.subquery_no_alias() != null ) {
+				SQLSelectStatement subquery = ( SQLSelectStatement ) new SQLVisitor( tools ).visit( ctx.subquery_no_alias().select_stmt() );
+				if ( subquery.getSelect().getResultColumns().size() != 1 ) {
+					tools.reportError( "Subquery in IN clause must return exactly one column", pos );
+				}
+				return new SQLInSubQueryOperation( expr, subquery, ctx.NOT_() != null, pos, src );
+			} else {
+				List<SQLExpression> values = ctx.expr().stream().skip( 1 ).map( e -> visitExpr( e, table, joins ) ).toList();
+				return new SQLInOperation( expr, values, ctx.NOT_() != null, pos, src );
+			}
 		} else if ( ctx.LIKE_() != null ) {
 			SQLBinaryOperator	op		= ctx.NOT_() != null ? SQLBinaryOperator.NOTLIKE : SQLBinaryOperator.LIKE;
 			SQLExpression		escape	= null;

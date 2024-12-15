@@ -146,4 +146,64 @@ public class QoQParseTest {
 		    context );
 	}
 
+	@Test
+	public void testSubquery2() {
+		instance.executeSource(
+		    """
+		                 qryEmployees = queryNew(
+		     	"name,age,dept,supervisor",
+		     	"varchar,integer,varchar,varchar",
+		     	[
+		     		["luis",43,"Exec","luis"],
+		     		["brad",44,"IT","luis"],
+		     		["Jon",45,"HR","luis"]
+		     		]
+		     	)
+		                 qryDept = queryNew( "name,code", "varchar,integer", [["IT",404],["Exec",200],["Janitor",200]] )
+		                         q = queryExecute( "
+		           select e.*, s.name as supName, d.name as deptname
+		        from (select * from qryEmployees) e
+		     inner join (select * from qryEmployees) s on e.supervisor = s.name
+		      full join (select * from qryDept) d on e.dept = d.name
+		    where d.name in ('IT','HR')
+		                ",
+		                      	[],
+		                      	{ dbType : "query" }
+		                      );
+		                   println( q )
+		                      """,
+		    context );
+	}
+
+	@Test
+	public void testInSubquery() {
+		instance.executeSource(
+		    """
+
+		    qryMen = queryNew( "name", "varchar", [["Luis"],["Jon"],["Brad"]] )
+		    qryAll = queryNew( "name", "varchar", [["Luis"],["Jon"],["Brad"],["Esme"],["Myrna"]] )
+		                     q = queryExecute( "
+		            select *
+		    	 from qryAll
+		    	 where name in ( select name from qryMen )
+
+		                            ",
+		                                  	[],
+		                                  	{ dbType : "query" }
+		                                  );
+		                               println( q )
+		                     q = queryExecute( "
+		            select *
+		    	 from qryAll
+		    	 where name not in ( select name from qryMen )
+
+		                            ",
+		                                  	[],
+		                                  	{ dbType : "query" }
+		                                  );
+		                               println( q )
+		                                  """,
+		    context );
+	}
+
 }

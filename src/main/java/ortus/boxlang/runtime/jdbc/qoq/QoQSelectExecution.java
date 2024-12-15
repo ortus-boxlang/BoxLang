@@ -20,6 +20,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import ortus.boxlang.compiler.ast.sql.select.SQLResultColumn;
 import ortus.boxlang.compiler.ast.sql.select.SQLSelect;
@@ -41,10 +42,12 @@ import ortus.boxlang.runtime.types.exceptions.DatabaseException;
  */
 public class QoQSelectExecution {
 
-	public SQLSelect					select;
-	public Map<Key, TypedResultColumn>	resultColumns	= null;
-	public Map<SQLTable, Query>			tableLookup;
-	public QoQSelectStatementExecution	selectStatementExecution;
+	public SQLSelect						select;
+	public Map<Key, TypedResultColumn>		resultColumns			= null;
+	public Map<SQLTable, Query>				tableLookup;
+	public QoQSelectStatementExecution		selectStatementExecution;
+
+	private Map<SQLSelectStatement, Query>	independentSubQueries	= new ConcurrentHashMap<SQLSelectStatement, Query>();
 
 	/**
 	 * Constructor
@@ -181,6 +184,21 @@ public class QoQSelectExecution {
 		}
 		QoQStmtExec.setOrderByColumns( orderByColumns );
 		QoQStmtExec.setAdditionalColumns( additionalColumns );
+	}
+
+	/**
+	 * Indepenant sub queries are not based on the context of the outer query and can be cached here.
+	 * 
+	 * @param subquery
+	 * 
+	 * @return
+	 */
+	public Query getIndepententSubQuery( SQLSelectStatement subquery ) {
+		return independentSubQueries.computeIfAbsent(
+		    subquery,
+		    sq -> QoQExecutionService.executeSelectStatement( selectStatementExecution.getJDBCStatement().getContext(), sq,
+		        selectStatementExecution.getJDBCStatement() )
+		);
 	}
 
 }

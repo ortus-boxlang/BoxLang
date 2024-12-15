@@ -38,7 +38,7 @@ public class QoQSelectStatementExecution {
 	public List<NameAndDirection>	orderByColumns		= null;
 	public Set<Key>					additionalColumns	= null;
 	public List<QoQSelectExecution>	selects				= new ArrayList<QoQSelectExecution>();
-	QoQStatement					JDBCStatement;
+	public QoQStatement				JDBCStatement;
 
 	/**
 	 * Constructor
