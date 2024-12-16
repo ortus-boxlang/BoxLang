@@ -1990,6 +1990,16 @@ public class DynamicInteropService {
 			}
 		}
 
+		// Check if the namedArguments has the `argumentCollection` key.
+		// And if it's an Array, delegeate to the positional arguments
+		// This use-case can come from invoke( javaObject, "method", [1, 2, 3] )
+		if ( namedArguments.containsKey( Key.argumentCollection ) ) {
+			Object argumentCollection = namedArguments.get( Key.argumentCollection );
+			if ( argumentCollection instanceof Array castedArray ) {
+				return dereferenceAndInvoke( dynamicObject, targetClass, targetInstance, context, name, castedArray.toArray(), safe );
+			}
+		}
+
 		throw new BoxRuntimeException( "Methods on Java objects cannot be called with named arguments" );
 	}
 

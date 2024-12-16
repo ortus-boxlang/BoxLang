@@ -20,7 +20,8 @@ package ortus.boxlang.runtime.components.system;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import org.junit.jupiter.api.AfterAll;
+import java.util.LinkedHashMap;
+
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -30,6 +31,7 @@ import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
@@ -46,28 +48,43 @@ public class InvokeTest {
 		instance = BoxRuntime.getInstance( true );
 	}
 
-	@AfterAll
-	public static void teardown() {
-
-	}
-
 	@BeforeEach
 	public void setupEach() {
 		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
 		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
+	@DisplayName( "Call a Java Class" )
+	@Test
+	public void testInvokeJavaClass() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		       result = invoke(
+		    		createObject( "java", "java.util.LinkedHashMap"),
+		    		"init",
+		    		[ 3, 5 ]
+		    	)
+		    """,
+		    context );
+		// @formatter:on
+		DynamicObject sut = ( DynamicObject ) variables.get( result );
+		assertThat( sut.unWrap() ).isInstanceOf( LinkedHashMap.class );
+	}
+
 	@DisplayName( "It can invoke in current context" )
 	@Test
 	public void testInvokeCurrentContext() {
+		// @formatter:off
 		instance.executeSource(
 		    """
-		    function foo() {
-		    	return "bar";
-		    }
-		       invoke method="foo" returnVariable="result";
-		       """,
+				function foo() {
+					return "bar";
+				}
+				invoke method="foo" returnVariable="result";
+		    """,
 		    context );
+		// @formatter:on
 		assertThat( variables.get( result ) ).isEqualTo( "bar" );
 	}
 

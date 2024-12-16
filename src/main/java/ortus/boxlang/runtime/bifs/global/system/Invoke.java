@@ -21,11 +21,13 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
@@ -89,7 +91,16 @@ public class Invoke extends BIF {
 			throw new BoxValidationException( "The instance parameter must be a Box Class, referencable struct or the name of a Box Class to instantiate." );
 		}
 
-		// Invoke the method on the Box Class instance
+		// ALERT!
+		// Special Case: If the instance is a DynamicObject and the method is "init", we need to call the constructor
+		if ( actualInstance instanceof DynamicObject castedDo && methodname.equals( Key.init ) ) {
+			// The incoming args must be an array or throw an exception
+			if ( ! ( args instanceof Array castedArray ) ) {
+				throw new BoxValidationException( "The arguments must be an array in order to execute the Java constructor." );
+			}
+			return castedDo.invokeConstructor( context, castedArray.toArray() );
+		}
+
 		return actualInstance.dereferenceAndInvoke( context, methodname, argCollection, false );
 
 	}
