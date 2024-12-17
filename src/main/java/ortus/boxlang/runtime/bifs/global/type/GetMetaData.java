@@ -51,7 +51,11 @@ public class GetMetaData extends BIF {
 		// Do we have a DynamicObject?
 		// If so, we need to invoke the constructor to get the actual object
 		if ( value instanceof DynamicObject doObject ) {
-			value = doObject.invokeConstructor( context ).unWrap();
+			if ( doObject.hasInstance() ) {
+				value = doObject.unWrap();
+			} else {
+				value = doObject.invokeConstructor( context ).unWrap();
+			}
 		}
 
 		// Functions have a legacy metadata view that matches CF engines
