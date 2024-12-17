@@ -21,8 +21,10 @@ import java.util.Map;
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLExpression;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.jdbc.qoq.functions.aggregate.Avg;
+import ortus.boxlang.runtime.jdbc.qoq.functions.aggregate.GroupConcat;
 import ortus.boxlang.runtime.jdbc.qoq.functions.aggregate.Max;
 import ortus.boxlang.runtime.jdbc.qoq.functions.aggregate.Min;
+import ortus.boxlang.runtime.jdbc.qoq.functions.aggregate.StringAgg;
 import ortus.boxlang.runtime.jdbc.qoq.functions.aggregate.Sum;
 import ortus.boxlang.runtime.jdbc.qoq.functions.scalar.Abs;
 import ortus.boxlang.runtime.jdbc.qoq.functions.scalar.Acos;
@@ -94,6 +96,8 @@ public class QoQFunctionService {
 		register( Convert.INSTANCE );
 		register( Sum.INSTANCE );
 		register( Avg.INSTANCE );
+		register( GroupConcat.INSTANCE );
+		register( StringAgg.INSTANCE );
 	}
 
 	private QoQFunctionService() {

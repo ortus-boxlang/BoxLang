@@ -319,7 +319,7 @@ public class QoQParseTest {
 		           	)
 
 		        q = queryExecute( "
-		    select  upper( dept) as dept, count(1), max(name), min(name)
+		    select  upper( dept) as dept, count(1), max(name), min(name), GROUP_CONCAT( name) as names, GROUP_CONCAT( name, ' | ') as namesPipe
 		    from qryEmployees as t
 		    group by dept
 		                                        ",
