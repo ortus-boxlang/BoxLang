@@ -46,6 +46,7 @@ public class QoQSelectExecution {
 	public Map<Key, TypedResultColumn>		resultColumns			= null;
 	public Map<SQLTable, Query>				tableLookup;
 	public QoQSelectStatementExecution		selectStatementExecution;
+	public Map<String, List<int[]>>			partitions				= new ConcurrentHashMap<String, List<int[]>>();
 
 	private Map<SQLSelectStatement, Query>	independentSubQueries	= new ConcurrentHashMap<SQLSelectStatement, Query>();
 
@@ -199,6 +200,18 @@ public class QoQSelectExecution {
 		    sq -> QoQExecutionService.executeSelectStatement( selectStatementExecution.getJDBCStatement().getContext(), sq,
 		        selectStatementExecution.getJDBCStatement() )
 		);
+	}
+
+	public void addPartition( String partitionName, int[] partition ) {
+		partitions.computeIfAbsent( partitionName, p -> new ArrayList<int[]>() ).add( partition );
+	}
+
+	public List<int[]> getPartition( String partitionName ) {
+		return partitions.get( partitionName );
+	}
+
+	public Map<String, List<int[]>> getPartitions() {
+		return partitions;
 	}
 
 }

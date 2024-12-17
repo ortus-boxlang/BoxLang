@@ -20,14 +20,19 @@ import java.util.Map;
 
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLExpression;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.jdbc.qoq.functions.aggregate.Avg;
 import ortus.boxlang.runtime.jdbc.qoq.functions.aggregate.Max;
+import ortus.boxlang.runtime.jdbc.qoq.functions.aggregate.Min;
+import ortus.boxlang.runtime.jdbc.qoq.functions.aggregate.Sum;
 import ortus.boxlang.runtime.jdbc.qoq.functions.scalar.Abs;
 import ortus.boxlang.runtime.jdbc.qoq.functions.scalar.Acos;
 import ortus.boxlang.runtime.jdbc.qoq.functions.scalar.Asin;
 import ortus.boxlang.runtime.jdbc.qoq.functions.scalar.Atan;
+import ortus.boxlang.runtime.jdbc.qoq.functions.scalar.Cast;
 import ortus.boxlang.runtime.jdbc.qoq.functions.scalar.Ceiling;
 import ortus.boxlang.runtime.jdbc.qoq.functions.scalar.Coalesce;
 import ortus.boxlang.runtime.jdbc.qoq.functions.scalar.Concat;
+import ortus.boxlang.runtime.jdbc.qoq.functions.scalar.Convert;
 import ortus.boxlang.runtime.jdbc.qoq.functions.scalar.Cos;
 import ortus.boxlang.runtime.jdbc.qoq.functions.scalar.Exp;
 import ortus.boxlang.runtime.jdbc.qoq.functions.scalar.Floor;
@@ -84,36 +89,45 @@ public class QoQFunctionService {
 
 		// Aggregate
 		register( Max.INSTANCE );
+		register( Min.INSTANCE );
+		register( Cast.INSTANCE );
+		register( Convert.INSTANCE );
+		register( Sum.INSTANCE );
+		register( Avg.INSTANCE );
 	}
 
 	private QoQFunctionService() {
 	}
 
-	public static void register( Key name, java.util.function.Function<List<Object>, Object> function, QueryColumnType returnType, int requiredParams ) {
-		functions.put( name, QoQFunction.of( function, returnType, requiredParams ) );
+	public static void register( Key name, java.util.function.BiFunction<List<Object>, List<SQLExpression>, Object> function, IQoQFunctionDef functionDef,
+	    QueryColumnType returnType, int requiredParams ) {
+		functions.put( name, QoQFunction.of( function, functionDef, returnType, requiredParams ) );
 	}
 
 	public static void registerCustom( Key name, ortus.boxlang.runtime.types.Function function, QueryColumnType returnType, int requiredParams,
 	    IBoxContext context ) {
 		functions.put( name, QoQFunction.of(
-		    ( List<Object> arguments ) -> context.invokeFunction( function, arguments.toArray() ),
+		    // TODO: do we pass the expressions here?
+		    ( List<Object> arguments, List<SQLExpression> expressions ) -> context.invokeFunction( function, arguments.toArray() ),
+		    null,
 		    returnType,
 		    requiredParams
 		) );
 	}
 
-	public static void registerAggregate( Key name, java.util.function.BiFunction<List<SQLExpression>, QoQSelectExecution, Object> function,
+	public static void registerAggregate( Key name, java.util.function.BiFunction<List<Object[]>, List<SQLExpression>, Object> function,
+	    IQoQFunctionDef functionDef,
 	    QueryColumnType returnType,
 	    int requiredParams ) {
-		functions.put( name, QoQFunction.ofAggregate( function, returnType, requiredParams ) );
+		functions.put( name, QoQFunction.ofAggregate( function, functionDef, returnType, requiredParams ) );
 	}
 
 	public static void register( QoQScalarFunctionDef functionDef ) {
-		register( functionDef.getName(), functionDef, functionDef.getReturnType(), functionDef.getMinArgs() );
+		register( functionDef.getName(), functionDef, functionDef, null, functionDef.getMinArgs() );
 	}
 
 	public static void register( QoQAggregateFunctionDef functionDef ) {
-		registerAggregate( functionDef.getName(), functionDef, functionDef.getReturnType(), functionDef.getMinArgs() );
+		registerAggregate( functionDef.getName(), functionDef, functionDef, null, functionDef.getMinArgs() );
 	}
 
 	public static void unregister( Key name ) {
@@ -128,30 +142,42 @@ public class QoQFunctionService {
 	}
 
 	public record QoQFunction(
-	    java.util.function.Function<List<Object>, Object> callable,
-	    java.util.function.BiFunction<List<SQLExpression>, QoQSelectExecution, Object> aggregateCallable,
+	    java.util.function.BiFunction<List<Object>, List<SQLExpression>, Object> callable,
+	    java.util.function.BiFunction<List<Object[]>, List<SQLExpression>, Object> aggregateCallable,
+	    IQoQFunctionDef functionDef,
 	    QueryColumnType returnType,
 	    int requiredParams ) {
 
-		static QoQFunction of( java.util.function.Function<List<Object>, Object> callable, QueryColumnType returnType, int requiredParams ) {
-			return new QoQFunction( callable, null, returnType, requiredParams );
-		}
-
-		static QoQFunction ofAggregate( java.util.function.BiFunction<List<SQLExpression>, QoQSelectExecution, Object> callable, QueryColumnType returnType,
+		static QoQFunction of( java.util.function.BiFunction<List<Object>, List<SQLExpression>, Object> callable, IQoQFunctionDef functionDef,
+		    QueryColumnType returnType,
 		    int requiredParams ) {
-			return new QoQFunction( null, callable, returnType, requiredParams );
+			return new QoQFunction( callable, null, functionDef, returnType, requiredParams );
 		}
 
-		public Object invoke( List<Object> arguments ) {
-			return callable.apply( arguments );
+		static QoQFunction ofAggregate( java.util.function.BiFunction<List<Object[]>, List<SQLExpression>, Object> callable, IQoQFunctionDef functionDef,
+		    QueryColumnType returnType,
+		    int requiredParams ) {
+			return new QoQFunction( null, callable, functionDef, returnType, requiredParams );
 		}
 
-		public Object invokeAggregate( List<SQLExpression> arguments, QoQSelectExecution QoQExec ) {
-			return aggregateCallable.apply( arguments, QoQExec );
+		public Object invoke( List<Object> arguments, List<SQLExpression> expressions ) {
+			return callable.apply( arguments, expressions );
+		}
+
+		public Object invokeAggregate( List<Object[]> arguments, List<SQLExpression> expressions ) {
+			return aggregateCallable.apply( arguments, expressions );
 		}
 
 		public boolean isAggregate() {
 			return aggregateCallable != null;
 		}
+
+		public QueryColumnType returnType( QoQSelectExecution QoQExec, List<SQLExpression> expressions ) {
+			if ( functionDef != null ) {
+				return functionDef.getReturnType( QoQExec, expressions );
+			}
+			return returnType;
+		}
 	}
+
 }

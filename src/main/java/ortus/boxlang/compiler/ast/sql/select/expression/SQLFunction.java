@@ -123,7 +123,7 @@ public class SQLFunction extends SQLExpression {
 	 * What type does this expression evaluate to
 	 */
 	public QueryColumnType getType( QoQSelectExecution QoQExec ) {
-		return QoQFunctionService.getFunction( name ).returnType();
+		return QoQFunctionService.getFunction( name ).returnType( QoQExec, arguments );
 	}
 
 	/**
@@ -133,13 +133,33 @@ public class SQLFunction extends SQLExpression {
 		QoQFunction function = QoQFunctionService.getFunction( name );
 		if ( function.requiredParams() > arguments.size() ) {
 			throw new RuntimeException(
-			    "QoQ Function [" + name + "] expects at least" + function.requiredParams() + " arguments, but got " + arguments.size() );
+			    "QoQ Function " + name + "() expects at least" + function.requiredParams() + " arguments, but got " + arguments.size() );
 		}
 		if ( function.isAggregate() ) {
-			return function.invokeAggregate( arguments, QoQExec );
+			throw new RuntimeException( "QoQ Function " + name + "() is an aggregate function and cannot be used in a non-aggregate context" );
 		} else {
-			return function.invoke( arguments.stream().map( a -> a.evaluate( QoQExec, intersection ) ).toList() );
+			return function.invoke( arguments.stream().map( a -> a.evaluate( QoQExec, intersection ) ).toList(), arguments );
 		}
+	}
+
+	/**
+	 * Evaluate the expression aginst a partition of data
+	 */
+	public Object evaluateAggregate( QoQSelectExecution QoQExec, List<int[]> intersections ) {
+		if ( intersections.isEmpty() ) {
+			return null;
+		}
+		QoQFunction function = QoQFunctionService.getFunction( name );
+		if ( function.isAggregate() ) {
+			return function.invokeAggregate(
+			    arguments.stream().map( a -> buildAggregateValues( QoQExec, intersections, a ) ).toList(), arguments );
+		} else {
+			return function.invoke( arguments.stream().map( a -> a.evaluateAggregate( QoQExec, intersections ) ).toList(), arguments );
+		}
+	}
+
+	protected Object[] buildAggregateValues( QoQSelectExecution QoQExec, List<int[]> intersections, SQLExpression argument ) {
+		return intersections.stream().map( i -> argument.evaluate( QoQExec, i ) ).filter( v -> v != null ).toArray();
 	}
 
 	@Override

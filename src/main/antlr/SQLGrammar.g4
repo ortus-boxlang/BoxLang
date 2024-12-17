@@ -249,10 +249,13 @@ expr:
     ) expr
     | expr AND_ expr
     | expr OR_ expr
+    // Special handling of cast to allow cast( foo as number)
+    | CAST_ OPEN_PAR expr AS_ (name | STRING_LITERAL) CLOSE_PAR
+    // special handling of convert to allow convert( foo, number ) or convert( foo, 'number' )
+    | CONVERT_ OPEN_PAR expr COMMA (name | STRING_LITERAL) CLOSE_PAR
     | function_name OPEN_PAR ((DISTINCT_? expr ( COMMA expr)*) | STAR)? CLOSE_PAR // filter_clause? over_clause?
     | OPEN_PAR expr CLOSE_PAR
     //| OPEN_PAR expr (COMMA expr)* CLOSE_PAR
-    // | CAST_ OPEN_PAR expr AS_ type_name CLOSE_PAR
     // | expr COLLATE_ collation_name
     | expr NOT_? LIKE_ expr (ESCAPE_ expr)?
     | expr IS_ NOT_? expr
@@ -631,6 +634,7 @@ keyword:
     | CASCADE_
     | CASE_
     | CAST_
+    | CONVERT_
     | CHECK_
     | COLLATE_
     | COLUMN_

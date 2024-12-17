@@ -14,6 +14,7 @@
  */
 package ortus.boxlang.compiler.ast.sql.select.expression.literal;
 
+import java.util.List;
 import java.util.Map;
 
 import ortus.boxlang.compiler.ast.BoxNode;
@@ -86,6 +87,13 @@ public class SQLNumberLiteral extends SQLExpression {
 	 * Evaluate the expression
 	 */
 	public Object evaluate( QoQSelectExecution QoQExec, int[] intersection ) {
+		return value;
+	}
+
+	/**
+	 * Evaluate the expression aginst a partition of data
+	 */
+	public Object evaluateAggregate( QoQSelectExecution QoQExec, List<int[]> intersections ) {
 		return value;
 	}
 

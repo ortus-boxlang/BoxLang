@@ -16,7 +16,9 @@ package ortus.boxlang.runtime.jdbc.qoq.functions.scalar;
 
 import java.util.List;
 
+import ortus.boxlang.compiler.ast.sql.select.expression.SQLExpression;
 import ortus.boxlang.runtime.jdbc.qoq.QoQScalarFunctionDef;
+import ortus.boxlang.runtime.jdbc.qoq.QoQSelectExecution;
 import ortus.boxlang.runtime.operators.Modulus;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.QueryColumnType;
@@ -33,7 +35,7 @@ public class Mod extends QoQScalarFunctionDef {
 	}
 
 	@Override
-	public QueryColumnType getReturnType() {
+	public QueryColumnType getReturnType( QoQSelectExecution QoQExec, List<SQLExpression> expressions ) {
 		return QueryColumnType.DOUBLE;
 	}
 
@@ -43,7 +45,7 @@ public class Mod extends QoQScalarFunctionDef {
 	}
 
 	@Override
-	public Object apply( List<Object> args ) {
+	public Object apply( List<Object> args, List<SQLExpression> expressions ) {
 		Object	left	= args.get( 0 );
 		Object	right	= args.get( 1 );
 		if ( left == null || right == null ) {

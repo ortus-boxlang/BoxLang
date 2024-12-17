@@ -52,6 +52,7 @@ import ortus.boxlang.parser.antlr.SQLGrammar.TableContext;
 import ortus.boxlang.parser.antlr.SQLGrammar.Table_or_subqueryContext;
 import ortus.boxlang.parser.antlr.SQLGrammarBaseVisitor;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.QueryColumnType;
 
 /**
  * This class is responsible for creating the SQL AST from the ANTLR generated parse tree.
@@ -229,9 +230,17 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 			where = visitExpr( ctx.whereExpr, table, joins );
 		}
 
-		// TODO: group by
+		// group by
+		if ( ctx.groupByExpr != null && !ctx.groupByExpr.isEmpty() ) {
+			SQLTable		finalTable	= table;
+			List<SQLJoin>	finalJoins	= joins;
+			groupBys = ctx.groupByExpr.stream().map( expr -> visitExpr( expr, finalTable, finalJoins ) ).toList();
+		}
 
-		// TODO: having
+		// having
+		if ( ctx.havingExpr != null ) {
+			having = visitExpr( ctx.havingExpr, table, joins );
+		}
 
 		// Do this after all joins above so we know the tables available to us
 		final SQLTable		finalTable	= table;
@@ -239,11 +248,16 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 		resultColumns = ctx.result_column().stream().map( col -> visitResult_column( col, finalTable, finalJoins ) ).toList();
 
 		var	result	= new SQLSelect( distinct, resultColumns, table, joins, where, groupBys, having, limit, pos, src );
+
 		var	cols	= result.getDescendantsOfType( SQLColumn.class, c -> c.getTable() == null );
 		if ( cols.size() > 0 ) {
-			if ( table == null && ( joins == null || joins.isEmpty() ) ) {
-				tools.reportError( "This QoQ has column references, but there is no table!", pos );
-			} else if ( joins == null || joins.isEmpty() ) {
+			if ( table == null && joins == null ) {
+				// Only report an error if there are no issues already
+				// because this can get tripped up by parsing that simply failed too soon and didn't finish
+				if ( tools.issues.size() == 0 ) {
+					tools.reportError( "This QoQ has column references, but there is no table!", pos );
+				}
+			} else if ( joins == null ) {
 				// If there is only one table, we know what it is now
 				cols.forEach( c -> c.setTable( finalTable ) );
 			}
@@ -451,6 +465,31 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 			return binarySimple( ctx.expr( 0 ), ctx.expr( 1 ), SQLBinaryOperator.AND, pos, src, table, joins );
 		} else if ( ctx.OR_() != null ) {
 			return binarySimple( ctx.expr( 0 ), ctx.expr( 1 ), SQLBinaryOperator.OR, pos, src, table, joins );
+		} else if ( ctx.CAST_() != null || ctx.CONVERT_() != null ) {
+			// CAST( expr AS type )
+			Key					functionName	= ctx.CONVERT_() != null ? Key.convert : Key.cast;
+			List<SQLExpression>	arguments		= new ArrayList<SQLExpression>();
+
+			// Add expr as first arg
+			arguments.add( visitExpr( ctx.expr( 0 ), table, joins ) );
+
+			// Add type as second arg
+			// We allow both varchar or 'varchar'
+			SQLStringLiteral type;
+			if ( ctx.STRING_LITERAL() != null ) {
+				type = processStringLiteral( ctx.STRING_LITERAL() );
+			} else {
+				type = new SQLStringLiteral( ctx.name().getText(), tools.getPosition( ctx.name() ), tools.getSourceText( ctx.name() ) );
+			}
+			// validate the type here
+			try {
+				QueryColumnType.fromString( type.getValue() );
+			} catch ( IllegalArgumentException e ) {
+				tools.reportError( "Invalid type for " + functionName.getName() + ": " + type.getValue(), pos );
+			}
+			arguments.add( type );
+
+			return new SQLFunction( functionName, arguments, pos, src );
 		} else if ( ctx.function_name() != null ) {
 			Key					functionName	= Key.of( ctx.function_name().getText() );
 			boolean				hasDistinct		= ctx.DISTINCT_() != null;
@@ -560,15 +599,21 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 		} else if ( ctx.FALSE_() != null ) {
 			return new SQLBooleanLiteral( false, pos, src );
 		} else if ( ctx.STRING_LITERAL() != null ) {
-			String str = ctx.STRING_LITERAL().getText();
-			// strip quote chars
-			str	= str.substring( 1, str.length() - 1 );
-			// unescape `''` inside string
-			str	= str.replace( "''", "'" );
-			return new SQLStringLiteral( str, pos, src );
+			return processStringLiteral( ctx.STRING_LITERAL() );
 		} else {
 			throw new UnsupportedOperationException( "Unimplemented literal expression: " + src );
 		}
+	}
+
+	private SQLStringLiteral processStringLiteral( TerminalNode ctx ) {
+		var		pos	= tools.getPosition( ctx );
+
+		String	str	= ctx.getText();
+		// strip quote chars
+		str	= str.substring( 1, str.length() - 1 );
+		// unescape `''` inside string
+		str	= str.replace( "''", "'" );
+		return new SQLStringLiteral( str, pos, str );
 	}
 
 	/**

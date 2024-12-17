@@ -14,6 +14,9 @@
  */
 package ortus.boxlang.runtime.jdbc.qoq;
 
+import java.util.List;
+
+import ortus.boxlang.compiler.ast.sql.select.expression.SQLExpression;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.QueryColumnType;
 
@@ -24,7 +27,7 @@ public interface IQoQFunctionDef {
 
 	abstract public Key getName();
 
-	abstract public QueryColumnType getReturnType();
+	abstract public QueryColumnType getReturnType( QoQSelectExecution QoQExec, List<SQLExpression> expressions );
 
 	abstract public int getMinArgs();
 

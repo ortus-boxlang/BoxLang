@@ -14,6 +14,7 @@
  */
 package ortus.boxlang.compiler.ast.sql.select.expression.operation;
 
+import java.util.List;
 import java.util.Map;
 
 import ortus.boxlang.compiler.ast.BoxNode;
@@ -122,6 +123,16 @@ public class SQLInSubQueryOperation extends SQLExpression {
 			}
 		}
 		return not;
+	}
+
+	/**
+	 * Evaluate the expression aginst a partition of data
+	 */
+	public Object evaluateAggregate( QoQSelectExecution QoQExec, List<int[]> intersections ) {
+		if ( intersections.isEmpty() ) {
+			return false;
+		}
+		return evaluate( QoQExec, intersections.get( 0 ) );
 	}
 
 	@Override

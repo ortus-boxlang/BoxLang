@@ -16,6 +16,7 @@ package ortus.boxlang.runtime.jdbc.qoq;
 
 import java.sql.SQLException;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -35,6 +36,7 @@ import ortus.boxlang.compiler.parser.SQLParser;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.operators.Compare;
 import ortus.boxlang.runtime.scopes.Key;
@@ -142,7 +144,10 @@ public class QoQExecutionService {
 
 	public static Query executeSelect( IBoxContext context, SQLSelect select, QoQStatement statement, QoQSelectStatementExecution QoQStmtExec,
 	    boolean firstSelect ) {
-		boolean					canEarlyLimit	= QoQStmtExec.getSelectStatement().getOrderBys() == null;
+		// If there is a group by or aggregate function, we will need to partiton the query
+		boolean					isAggregate		= select.hasAggregateResult() || select.getGroupBys() != null;
+		// If there is no order by, and no aggregate, we can limit the results early by stopping as soon as the limit is reached
+		boolean					canEarlyLimit	= !isAggregate && QoQStmtExec.getSelectStatement().getOrderBys() == null;
 		Map<SQLTable, Query>	tableLookup		= new LinkedHashMap<SQLTable, Query>();
 		// This boolean expression will be used to filter the records we keep
 		SQLExpression			where			= select.getWhere();
@@ -194,8 +199,9 @@ public class QoQExecutionService {
 		// We have one or more tables, so build our stream of intersections, processing our joins as needed
 		Stream<int[]> intersections = QoQIntersectionGenerator.createIntersectionStream( QoQExec );
 
-		if ( select.hasAggregateResult() ) {
-
+		// If we have a where clause, add it as a filter to the stream
+		if ( where != null ) {
+			intersections = intersections.filter( intersection -> ( Boolean ) where.evaluate( QoQExec, intersection ) );
 		}
 
 		// Enforce top/limit for this select. This would be a "top N" clause in the select or a "limit N" clause BEFORE the order by, which
@@ -204,25 +210,71 @@ public class QoQExecutionService {
 			intersections = intersections.limit( thisSelectLimit );
 		}
 
-		// If we have a where clause, add it as a filter to the stream
-		if ( where != null ) {
-			intersections = intersections.filter( intersection -> ( Boolean ) where.evaluate( QoQExec, intersection ) );
+		if ( select.hasAggregateResult() || select.getGroupBys() != null ) {
+			return executeAggregateSelect( QoQExec, target, intersections );
 		}
 
-		// Process/create the rows for the final query.
+		// No partitioning, just create the final result set
 		intersections.forEach( intersection -> {
 			// System.out.println( Arrays.toString( intersection ) );
 			Object[]	values	= new Object[ resultColumns.size() ];
 			int			colPos	= 0;
 			// Build up row data as native array
 			for ( Key key : resultColumns.keySet() ) {
-				SQLResultColumn	resultColumn	= resultColumns.get( key ).resultColumn;
-				Object			value			= resultColumn.getExpression().evaluate( QoQExec, intersection );
-				values[ colPos++ ] = value;
+				values[ colPos++ ] = resultColumns.get( key ).resultColumn.getExpression().evaluate( QoQExec, intersection );
 			}
 			target.addRow( values );
 		} );
 
+		return target;
+	}
+
+	/**
+	 * Create query partitioned by group by and aggregate functions
+	 * 
+	 * @param qoQExec       the query execution state
+	 * @param resultColumns the result columns
+	 * 
+	 * @return
+	 */
+	private static Query executeAggregateSelect( QoQSelectExecution QoQExec, Query target, Stream<int[]> intersections ) {
+		Map<Key, TypedResultColumn>	resultColumns	= QoQExec.getResultColumns();
+		List<SQLExpression>			groupBys		= QoQExec.getSelect().getGroupBys();
+		SQLExpression				having			= QoQExec.getSelect().getHaving();
+
+		// Build up our partitions
+		intersections.forEach( intersection -> {
+			String partitionKey;
+			if ( groupBys != null ) {
+				StringBuilder sb = new StringBuilder();
+				for ( SQLExpression expression : groupBys ) {
+					// TODO: hash large values
+					sb.append( StringCaster.cast( expression.evaluate( QoQExec, intersection ) ) );
+				}
+				partitionKey = sb.toString();
+			} else {
+				partitionKey = "ALL";
+			}
+			QoQExec.addPartition( partitionKey, intersection );
+		} );
+
+		var partitionStream = QoQExec.getPartitions().values().stream();
+		if ( QoQExec.getPartitions().size() > 50 ) {
+			partitionStream = partitionStream.parallel();
+		}
+
+		if ( having != null ) {
+			partitionStream = partitionStream.filter( partition -> ( Boolean ) having.evaluateAggregate( QoQExec, partition ) );
+		}
+
+		partitionStream.forEach( partition -> {
+			Object[]	values	= new Object[ resultColumns.size() ];
+			int			colPos	= 0;
+			for ( Key key : resultColumns.keySet() ) {
+				values[ colPos++ ] = resultColumns.get( key ).resultColumn.getExpression().evaluateAggregate( QoQExec, partition );
+			}
+			target.addRow( values );
+		} );
 		return target;
 	}
 

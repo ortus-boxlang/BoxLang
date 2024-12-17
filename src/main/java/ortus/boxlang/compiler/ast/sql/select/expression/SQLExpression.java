@@ -14,6 +14,8 @@
  */
 package ortus.boxlang.compiler.ast.sql.select.expression;
 
+import java.util.List;
+
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.sql.SQLNode;
 import ortus.boxlang.runtime.jdbc.qoq.QoQSelectExecution;
@@ -77,5 +79,10 @@ public abstract class SQLExpression extends SQLNode {
 	 * Evaluate the expression
 	 */
 	public abstract Object evaluate( QoQSelectExecution QoQExec, int[] intersection );
+
+	/**
+	 * Evaluate the expression aginst a partition of data
+	 */
+	public abstract Object evaluateAggregate( QoQSelectExecution QoQExec, List<int[]> intersections );
 
 }

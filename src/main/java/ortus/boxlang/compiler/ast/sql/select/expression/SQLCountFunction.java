@@ -19,11 +19,10 @@ import java.util.Map;
 
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
-import ortus.boxlang.compiler.ast.sql.select.SQLTable;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
+import ortus.boxlang.runtime.jdbc.qoq.QoQSelectExecution;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.QueryColumnType;
 
 /**
@@ -61,8 +60,19 @@ public class SQLCountFunction extends SQLFunction {
 	/**
 	 * What type does this expression evaluate to
 	 */
-	public QueryColumnType getType( Map<SQLTable, Query> tableLookup ) {
+	public QueryColumnType getType( QoQSelectExecution QoQExec ) {
 		return QueryColumnType.INTEGER;
+	}
+
+	/**
+	 * Runtime check if the expression evaluates to a boolean value and works for columns as well
+	 * 
+	 * @param QoQExec Query execution state
+	 * 
+	 * @return true if the expression evaluates to a boolean value
+	 */
+	public boolean isBoolean( QoQSelectExecution QoQExec ) {
+		return false;
 	}
 
 	/**
@@ -72,8 +82,31 @@ public class SQLCountFunction extends SQLFunction {
 	 * 
 	 * @return true if the expression evaluates to a numeric value
 	 */
-	public boolean isNumeric( Map<SQLTable, Query> tableLookup ) {
+	public boolean isNumeric( QoQSelectExecution QoQExec ) {
 		return true;
+	}
+
+	/**
+	 * Is function aggregate
+	 */
+	public boolean isAggregate() {
+		return true;
+	}
+
+	/**
+	 * Evaluate the expression
+	 */
+	public Object evaluate( QoQSelectExecution QoQExec, int[] intersection ) {
+		throw new RuntimeException( "QoQ Function count() is an aggregate function and cannot be used in a non-aggregate context" );
+	}
+
+	/**
+	 * Evaluate the expression aginst a partition of data
+	 */
+	public Object evaluateAggregate( QoQSelectExecution QoQExec, List<int[]> intersections ) {
+		// TODO: handle distinct
+		var values = buildAggregateValues( QoQExec, intersections, getArguments().get( 0 ) );
+		return values.length;
 	}
 
 	@Override

@@ -14,6 +14,7 @@
  */
 package ortus.boxlang.compiler.ast.sql.select.expression;
 
+import java.util.List;
 import java.util.Map;
 
 import ortus.boxlang.compiler.ast.BoxNode;
@@ -91,6 +92,13 @@ public class SQLParenthesis extends SQLExpression {
 	 */
 	public Object evaluate( QoQSelectExecution QoQExec, int[] intersection ) {
 		return expression.evaluate( QoQExec, intersection );
+	}
+
+	/**
+	 * Evaluate the expression aginst a partition of data
+	 */
+	public Object evaluateAggregate( QoQSelectExecution QoQExec, List<int[]> intersections ) {
+		return expression.evaluateAggregate( QoQExec, intersections );
 	}
 
 	@Override

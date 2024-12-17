@@ -17,17 +17,22 @@ package ortus.boxlang.runtime.jdbc.qoq.functions.scalar;
 import java.util.List;
 
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLExpression;
-import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.compiler.ast.sql.select.expression.literal.SQLStringLiteral;
+import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
 import ortus.boxlang.runtime.jdbc.qoq.QoQScalarFunctionDef;
 import ortus.boxlang.runtime.jdbc.qoq.QoQSelectExecution;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.QueryColumnType;
 
-public class Trim extends QoQScalarFunctionDef {
+public class Cast extends QoQScalarFunctionDef {
 
-	private static final Key					name		= Key.of( "Trim" );
+	private static final Key					name			= Key.of( "cast" );
 
-	public static final QoQScalarFunctionDef	INSTANCE	= new Trim();
+	public static final QoQScalarFunctionDef	INSTANCE		= new Cast();
+
+	private static final IBoxContext			runtimeContext	= BoxRuntime.getInstance().getRuntimeContext();
 
 	@Override
 	public Key getName() {
@@ -36,17 +41,20 @@ public class Trim extends QoQScalarFunctionDef {
 
 	@Override
 	public QueryColumnType getReturnType( QoQSelectExecution QoQExec, List<SQLExpression> expressions ) {
-		return QueryColumnType.VARCHAR;
+		// Parser forces the second arg to always be a string literal
+		return QueryColumnType.fromString( ( ( SQLStringLiteral ) expressions.get( 1 ) ).getValue() );
 	}
 
 	@Override
 	public int getMinArgs() {
-		return 1;
+		return 2;
 	}
 
 	@Override
 	public Object apply( List<Object> args, List<SQLExpression> expressions ) {
-		return StringCaster.cast( args.get( 0 ) ).trim();
+		Object	value	= args.get( 0 );
+		String	type	= QueryColumnType.fromString( ( ( SQLStringLiteral ) expressions.get( 1 ) ).getValue() ).toString();
+		return GenericCaster.cast( runtimeContext, value, type );
 	}
 
 }
