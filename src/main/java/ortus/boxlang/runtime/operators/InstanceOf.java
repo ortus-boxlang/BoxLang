@@ -51,8 +51,8 @@ public class InstanceOf implements IOperator {
 		if ( left == null ) {
 			return false;
 		}
-		IClassRunnable	boxClass	= null;
 
+		IClassRunnable	boxClass	= null;
 		String			type		= StringCaster.cast( right );
 
 		left = DynamicObject.unWrap( left );
@@ -67,6 +67,10 @@ public class InstanceOf implements IOperator {
 		}
 
 		// Perform exact Java type check
+		// Check if it's a class or instance of a class
+		if ( left instanceof Class<?> castedLeft && looseClassCheck( castedLeft.getName(), type ) ) {
+			return true;
+		}
 		if ( looseClassCheck( left.getClass().getName(), type ) ) {
 			return true;
 		}
