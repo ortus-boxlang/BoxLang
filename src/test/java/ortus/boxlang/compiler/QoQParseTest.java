@@ -307,28 +307,30 @@ public class QoQParseTest {
 	public void testAggregateGroup() {
 		instance.executeSource(
 		    """
-		              qryEmployees = queryNew(
-		        	"name,age,dept,supervisor",
-		        	"varchar,integer,varchar,varchar",
-		        	[
-		        		["luis",43,"Exec","luis"],
-		        		["brad",44,"IT","luis"],
-		        		["jacob",35,"IT","luis"],
-		        		["Jon",45,"HR","luis"]
-		           		]
-		           	)
+		                    qryEmployees = queryNew(
+		              	"name,age,dept,supervisor",
+		              	"varchar,integer,varchar,varchar",
+		              	[
+		              		["luis",43,"Exec","luis"],
+		              		["brad",44,"IT","luis"],
+		              		["jacob",35,"IT","luis"],
+		              		["Jon",45,"HR","luis"]
+		                 		]
+		                 	)
 
-		        q = queryExecute( "
-		    select  upper( dept) as dept, count(1), max(name), min(name), GROUP_CONCAT( name) as names, GROUP_CONCAT( name, ' | ') as namesPipe
-		    from qryEmployees as t
-		    group by dept
-		                                        ",
-		                                              	[],
-		                                              	{ dbType : "query" }
-		                                              );
-		                                           println( q )
+		              q = queryExecute( "
+		          select  upper( dept) as dept, count(1), max(name), min(name), GROUP_CONCAT( name) as names, GROUP_CONCAT( name, ' | ') as namesPipe
+		          from qryEmployees as t
+		          group by dept
+		       having (count(1)+1) > 1
+		    order by count(1) desc
+		                                              ",
+		                                                    	[],
+		                                                    	{ dbType : "query" }
+		                                                    );
+		                                                 println( q )
 
-		                                              """,
+		                                                    """,
 		    context );
 	}
 
