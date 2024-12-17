@@ -72,6 +72,24 @@ public class InvokeTest {
 		assertThat( sut.unWrap() ).isInstanceOf( LinkedHashMap.class );
 	}
 
+	@DisplayName( "Call a Java Class with constructor coercion" )
+	@Test
+	public void testInvokeJavaClassWithCoercion() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		       result = invoke(
+		    		createObject( "java", "java.util.LinkedHashMap"),
+		    		"init",
+		    		[ "3", 5 ]
+		    	)
+		    """,
+		    context );
+		// @formatter:on
+		DynamicObject sut = ( DynamicObject ) variables.get( result );
+		assertThat( sut.unWrap() ).isInstanceOf( LinkedHashMap.class );
+	}
+
 	@DisplayName( "It can invoke in current context" )
 	@Test
 	public void testInvokeCurrentContext() {
