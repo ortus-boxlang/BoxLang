@@ -17,6 +17,7 @@ package ortus.boxlang.runtime.bifs.global.type;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -46,6 +47,12 @@ public class GetMetaData extends BIF {
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object value = arguments.get( Key.value );
+
+		// Do we have a DynamicObject?
+		// If so, we need to invoke the constructor to get the actual object
+		if ( value instanceof DynamicObject doObject ) {
+			value = doObject.invokeConstructor( context ).unWrap();
+		}
 
 		// Functions have a legacy metadata view that matches CF engines
 		if ( value instanceof IType bxObject ) {
