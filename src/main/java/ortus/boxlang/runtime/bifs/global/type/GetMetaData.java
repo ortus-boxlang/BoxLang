@@ -48,22 +48,19 @@ public class GetMetaData extends BIF {
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object value = arguments.get( Key.value );
 
-		// Do we have a DynamicObject?
-		// If so, we need to invoke the constructor to get the actual object
-		if ( value instanceof DynamicObject doObject ) {
-			if ( doObject.hasInstance() ) {
-				value = doObject.unWrap();
-			} else {
-				value = doObject.invokeConstructor( context ).unWrap();
-			}
-		}
+		// DynamicObject instances need to be unwrapped to get the metadata
+		value = DynamicObject.unWrap( value );
 
 		// Functions have a legacy metadata view that matches CF engines
 		if ( value instanceof IType bxObject ) {
 			return bxObject.getBoxMeta().getMeta();
 		}
 
-		// All other types return the class
+		// All other types return the class of the value to match CF engines
+		if ( value instanceof Class ) {
+			return value;
+		}
+
 		return value.getClass();
 	}
 

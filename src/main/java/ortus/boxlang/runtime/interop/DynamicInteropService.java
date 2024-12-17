@@ -814,6 +814,18 @@ public class DynamicInteropService {
 	}
 
 	/**
+	 * Verifies if the class has a public or public static field with the given name and no case-sensitivity (upper case)
+	 *
+	 * @param targetClass The class to check
+	 * @param fieldName   The name of the field to check
+	 *
+	 * @return True if the field exists, false otherwise
+	 */
+	public static Boolean hasPublicFieldNoCase( Class<?> targetClass, String fieldName ) {
+		return getPublicFieldNamesNoCase( targetClass ).contains( fieldName.toUpperCase() );
+	}
+
+	/**
 	 * Get an array of fields of all the public fields for the given class
 	 *
 	 * @param targetClass The class to get the fields for
@@ -828,6 +840,17 @@ public class DynamicInteropService {
 	}
 
 	/**
+	 * Get an array of fields of all the public fields for the given class
+	 *
+	 * @param targetClass The class to get the fields for
+	 *
+	 * @return The fields in the class
+	 */
+	public static Field[] getPublicFields( Class<?> targetClass ) {
+		return targetClass.getFields();
+	}
+
+	/**
 	 * Get a stream of fields of all the public fields for the given class
 	 *
 	 * @param targetClass The class to get the fields for
@@ -836,6 +859,17 @@ public class DynamicInteropService {
 	 */
 	public static Stream<Field> getFieldsAsStream( Class<?> targetClass ) {
 		return Stream.of( getFields( targetClass ) );
+	}
+
+	/**
+	 * Get a stream of fields of all the public fields for the given class
+	 *
+	 * @param targetClass The class to get the fields for
+	 *
+	 * @return The stream of fields in the class
+	 */
+	public static Stream<Field> getPublicFieldsAsStream( Class<?> targetClass ) {
+		return Stream.of( getPublicFields( targetClass ) );
 	}
 
 	/**
@@ -864,7 +898,20 @@ public class DynamicInteropService {
 		    .map( Field::getName )
 		    .map( String::toUpperCase )
 		    .toList();
+	}
 
+	/**
+	 * Get a list of field names for the given class with no case-sensitivity (upper case)
+	 *
+	 * @param targetClass The class to get the fields for
+	 *
+	 * @return A list of field names
+	 */
+	public static List<String> getPublicFieldNamesNoCase( Class<?> targetClass ) {
+		return getPublicFieldsAsStream( targetClass )
+		    .map( Field::getName )
+		    .map( String::toUpperCase )
+		    .toList();
 	}
 
 	/**
@@ -1670,7 +1717,7 @@ public class DynamicInteropService {
 			}
 			return s.substring( index - 1, index );
 			// Special logic for native arrays. Possibly move to helper
-		} else if ( hasFieldNoCase( targetClass, name.getName() ) ) {
+		} else if ( hasAccessibleField( targetInstance, targetClass, name.getName() ) ) {
 			// If we have the field, return its value, even if it's null
 			return getField( targetClass, targetInstance, name.getName() ).orElse( null );
 		} else if ( hasClassNoCase( targetClass, name.getName() ) ) {
@@ -1716,6 +1763,23 @@ public class DynamicInteropService {
 			    )
 			);
 		}
+	}
+
+	private static boolean hasAccessibleField( Object targetInstance, Class<?> targetClass, String fieldName ) {
+		// Get all fields on the class
+		Optional<Field> possibleMatch = getFieldsAsStream( targetClass ).filter( field -> field.getName().equalsIgnoreCase( fieldName ) ).findFirst();
+		// If the field doesn't exist, early exit
+		if ( !possibleMatch.isPresent() ) {
+			return false;
+		}
+		Field field = possibleMatch.get();
+		// As sort-of dumb work around for a BoxClass's ability to reference super.protectedField when extending java, we'll assume it's accessible if accessing on a BoxClass and the field is from this class
+		// This doesn't really test the true calling context, but we'd need to proxy to the actual box class for that to work.
+		if ( targetInstance instanceof IClassRunnable && !field.getDeclaringClass().equals( targetInstance.getClass() ) ) {
+			return true;
+		}
+		// For all other cases, we'll just check if the field is public
+		return Modifier.isPublic( field.getModifiers() );
 	}
 
 	/**
