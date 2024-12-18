@@ -223,8 +223,10 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		mergeDocsIntoAnnotations( annotations, node.getDocumentation() );
 
 		// Disable Accessors by default in CFML, unless there is a parent class, in which case don't add so we can inherit
+		// Also, if this is a persistent ORM entity, then leave as-is because accessors needs to be enabled anyway
 		if ( annotations.stream().noneMatch( a -> a.getKey().getValue().equalsIgnoreCase( "accessors" ) )
-		    && annotations.stream().noneMatch( a -> a.getKey().getValue().equalsIgnoreCase( "extends" ) ) ) {
+		    && annotations.stream().noneMatch( a -> a.getKey().getValue().equalsIgnoreCase( "extends" ) )
+		    && annotations.stream().noneMatch( a -> a.getKey().getValue().equalsIgnoreCase( "persistent" ) ) ) {
 			// @output true
 			annotations.add(
 			    new BoxAnnotation(
