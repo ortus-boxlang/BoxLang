@@ -23,6 +23,9 @@ import ortus.boxlang.compiler.ast.sql.select.expression.SQLExpression;
  */
 public abstract class QoQScalarFunctionDef implements IQoQFunctionDef, java.util.function.BiFunction<List<Object>, List<SQLExpression>, Object> {
 
+	/**
+	 * Is this function an aggregate function
+	 */
 	public boolean isAggregate() {
 		return false;
 	}

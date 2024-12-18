@@ -103,11 +103,29 @@ public class QoQFunctionService {
 	private QoQFunctionService() {
 	}
 
+	/**
+	 * Register a scalar function via a BiFunction
+	 * 
+	 * @param name           The name of the function
+	 * @param function       The function to execute
+	 * @param functionDef    The function definition
+	 * @param returnType     The return type of the function
+	 * @param requiredParams The number of required parameters
+	 */
 	public static void register( Key name, java.util.function.BiFunction<List<Object>, List<SQLExpression>, Object> function, IQoQFunctionDef functionDef,
 	    QueryColumnType returnType, int requiredParams ) {
 		functions.put( name, QoQFunction.of( function, functionDef, returnType, requiredParams ) );
 	}
 
+	/**
+	 * Register a custom function based on a UDF or closure
+	 * 
+	 * @param name           The name of the function
+	 * @param function       The function to execute
+	 * @param returnType     The return type of the function
+	 * @param requiredParams The number of required parameters
+	 * @param context        The context to execute the function in
+	 */
 	public static void registerCustom( Key name, ortus.boxlang.runtime.types.Function function, QueryColumnType returnType, int requiredParams,
 	    IBoxContext context ) {
 		functions.put( name, QoQFunction.of(
@@ -119,6 +137,15 @@ public class QoQFunctionService {
 		) );
 	}
 
+	/**
+	 * Register an aggregate function via a BiFunction
+	 * 
+	 * @param name           The name of the function
+	 * @param function       The function to execute
+	 * @param functionDef    The function definition
+	 * @param returnType     The return type of the function
+	 * @param requiredParams The number of required parameters
+	 */
 	public static void registerAggregate( Key name, java.util.function.BiFunction<List<Object[]>, List<SQLExpression>, Object> function,
 	    IQoQFunctionDef functionDef,
 	    QueryColumnType returnType,
@@ -126,18 +153,40 @@ public class QoQFunctionService {
 		functions.put( name, QoQFunction.ofAggregate( function, functionDef, returnType, requiredParams ) );
 	}
 
+	/**
+	 * Register a custom aggregate function
+	 * 
+	 * @param functionDef The function definition
+	 */
 	public static void register( QoQScalarFunctionDef functionDef ) {
 		register( functionDef.getName(), functionDef, functionDef, null, functionDef.getMinArgs() );
 	}
 
+	/**
+	 * Register a custom aggregate function
+	 * 
+	 * @param functionDef The function definition
+	 */
 	public static void register( QoQAggregateFunctionDef functionDef ) {
 		registerAggregate( functionDef.getName(), functionDef, functionDef, null, functionDef.getMinArgs() );
 	}
 
+	/**
+	 * Unregister a function
+	 * 
+	 * @param name The name of the function
+	 */
 	public static void unregister( Key name ) {
 		functions.remove( name );
 	}
 
+	/**
+	 * Get a function by name
+	 * 
+	 * @param name The name of the function
+	 * 
+	 * @return The function
+	 */
 	public static QoQFunction getFunction( Key name ) {
 		if ( !functions.containsKey( name ) ) {
 			throw new BoxRuntimeException( "Function [" + name + "] not found" );
@@ -145,6 +194,9 @@ public class QoQFunctionService {
 		return functions.get( name );
 	}
 
+	/**
+	 * Represens a function and its definition
+	 */
 	public record QoQFunction(
 	    java.util.function.BiFunction<List<Object>, List<SQLExpression>, Object> callable,
 	    java.util.function.BiFunction<List<Object[]>, List<SQLExpression>, Object> aggregateCallable,
@@ -152,30 +204,78 @@ public class QoQFunctionService {
 	    QueryColumnType returnType,
 	    int requiredParams ) {
 
+		/**
+		 * static factory method to create scalar function
+		 * 
+		 * @param callable       The function to execute
+		 * @param functionDef    The function definition
+		 * @param returnType     The return type of the function
+		 * @param requiredParams The number of required parameters
+		 * 
+		 * @return The function
+		 */
 		static QoQFunction of( java.util.function.BiFunction<List<Object>, List<SQLExpression>, Object> callable, IQoQFunctionDef functionDef,
 		    QueryColumnType returnType,
 		    int requiredParams ) {
 			return new QoQFunction( callable, null, functionDef, returnType, requiredParams );
 		}
 
+		/**
+		 * static factory method to create aggregate function
+		 * 
+		 * @param callable       The function to execute
+		 * @param functionDef    The function definition
+		 * @param returnType     The return type of the function
+		 * @param requiredParams The number of required parameters
+		 * 
+		 */
 		static QoQFunction ofAggregate( java.util.function.BiFunction<List<Object[]>, List<SQLExpression>, Object> callable, IQoQFunctionDef functionDef,
 		    QueryColumnType returnType,
 		    int requiredParams ) {
 			return new QoQFunction( null, callable, functionDef, returnType, requiredParams );
 		}
 
+		/**
+		 * Invoke the scalar function
+		 * 
+		 * @param arguments   evaluated args
+		 * @param expressions expressions
+		 * 
+		 * @return the result of the function
+		 */
 		public Object invoke( List<Object> arguments, List<SQLExpression> expressions ) {
 			return callable.apply( arguments, expressions );
 		}
 
+		/**
+		 * Invoke the aggregate function
+		 * 
+		 * @param arguments   evaluated args
+		 * @param expressions expressions
+		 * 
+		 * @return the result of the function
+		 */
 		public Object invokeAggregate( List<Object[]> arguments, List<SQLExpression> expressions ) {
 			return aggregateCallable.apply( arguments, expressions );
 		}
 
+		/**
+		 * Check if the function is an aggregate function
+		 * 
+		 * @return true if the function is an aggregate function
+		 */
 		public boolean isAggregate() {
 			return aggregateCallable != null;
 		}
 
+		/**
+		 * Get the return type of the function
+		 * 
+		 * @param QoQExec     The QoQ Execution state
+		 * @param expressions The expressions
+		 * 
+		 * @return the return type of the function
+		 */
 		public QueryColumnType returnType( QoQSelectExecution QoQExec, List<SQLExpression> expressions ) {
 			if ( functionDef != null ) {
 				return functionDef.getReturnType( QoQExec, expressions );

@@ -268,8 +268,16 @@ expr:
         // | (schema_name DOT)? table_function_name OPEN_PAR (expr (COMMA expr)*)? CLOSE_PAR
     )
     //  | ((NOT_)? EXISTS_)? OPEN_PAR select_stmt CLOSE_PAR
-    //  | CASE_ expr? (WHEN_ expr THEN_ expr)+ (ELSE_ expr)? END_
+    | case_expr
     // | raise_function
+;
+
+case_expr:
+    CASE_ initial_expr = expr? case_when_then+ (ELSE_ else_expr = expr)? END_
+;
+
+case_when_then:
+    WHEN_ when_expr = expr THEN_ then_expr = expr
 ;
 
 raise_function:

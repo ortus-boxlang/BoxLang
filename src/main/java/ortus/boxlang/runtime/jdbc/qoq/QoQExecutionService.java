@@ -60,6 +60,13 @@ public class QoQExecutionService {
 	 */
 	private static final FRTransService frTransService = FRTransService.getInstance( true );
 
+	/**
+	 * Parse a SQL string into an AST
+	 * 
+	 * @param sql the SQL string
+	 * 
+	 * @return the AST
+	 */
 	public static SQLNode parseSQL( String sql ) {
 		DynamicObject	trans	= frTransService.startTransaction( "BL QoQ Parse", "" );
 		SQLParser		parser	= new SQLParser();
@@ -83,6 +90,15 @@ public class QoQExecutionService {
 		return ( SQLNode ) result.getRoot();
 	}
 
+	/**
+	 * Execute a QoQ statement
+	 * 
+	 * @param context         the context
+	 * @param selectStatement the select statement
+	 * @param statement       the QoQ statement
+	 * 
+	 * @return the query
+	 */
 	public static Query executeSelectStatement( IBoxContext context, SQLSelectStatement selectStatement, QoQStatement statement ) {
 
 		QoQSelectStatementExecution	QoQStmtExec	= QoQSelectStatementExecution.of(
@@ -153,6 +169,17 @@ public class QoQExecutionService {
 		return target;
 	}
 
+	/**
+	 * Execute a select statement
+	 * 
+	 * @param context     the context
+	 * @param select      the select
+	 * @param statement   the QoQ statement
+	 * @param QoQStmtExec the QoQ statement execution
+	 * @param firstSelect if this is the first select
+	 * 
+	 * @return the query
+	 */
 	public static Query executeSelect( IBoxContext context, SQLSelect select, QoQStatement statement, QoQSelectStatementExecution QoQStmtExec,
 	    boolean firstSelect ) {
 		// If there is a group by or aggregate function, we will need to partiton the query
@@ -269,15 +296,18 @@ public class QoQExecutionService {
 			QoQExec.addPartition( partitionKey, intersection );
 		} );
 
+		// Make stream parallel if we have a lot of partitions
 		var partitionStream = QoQExec.getPartitions().values().stream();
 		if ( QoQExec.getPartitions().size() > 50 ) {
 			partitionStream = partitionStream.parallel();
 		}
 
+		// Filter out partitions that don't match the having clause
 		if ( having != null ) {
 			partitionStream = partitionStream.filter( partition -> ( Boolean ) having.evaluateAggregate( QoQExec, partition ) );
 		}
 
+		// Build up the final result set
 		partitionStream.forEach( partition -> {
 			Object[]	values	= new Object[ resultColumns.size() ];
 			int			colPos	= 0;
@@ -360,6 +390,10 @@ public class QoQExecutionService {
 		throw new DatabaseException( "Unknown table type [" + table.getClass().getName() + "]" );
 	}
 
+	/**
+	 * Represent a result column with a runtime type
+	 * TODO: We may not need this since the expression can tell us the type directly
+	 */
 	public record TypedResultColumn( QueryColumnType type, SQLResultColumn resultColumn ) {
 
 		public static TypedResultColumn of( QueryColumnType type, SQLResultColumn resultColumn ) {
@@ -367,6 +401,7 @@ public class QoQExecutionService {
 		}
 	}
 
+	// Represent the name and order of an order by statement. This is calculated at runtime since the actual column names may be based on a *
 	public record NameAndDirection( Key name, boolean ascending ) {
 
 		public static NameAndDirection of( Key name, boolean ascending ) {

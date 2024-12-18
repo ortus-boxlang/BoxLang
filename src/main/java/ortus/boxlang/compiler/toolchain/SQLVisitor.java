@@ -17,6 +17,8 @@ import ortus.boxlang.compiler.ast.sql.select.SQLTableSubQuery;
 import ortus.boxlang.compiler.ast.sql.select.SQLTableVariable;
 import ortus.boxlang.compiler.ast.sql.select.SQLUnion;
 import ortus.boxlang.compiler.ast.sql.select.SQLUnionType;
+import ortus.boxlang.compiler.ast.sql.select.expression.SQLCase;
+import ortus.boxlang.compiler.ast.sql.select.expression.SQLCaseWhenThen;
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLColumn;
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLCountFunction;
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLExpression;
@@ -38,6 +40,7 @@ import ortus.boxlang.compiler.ast.sql.select.expression.operation.SQLUnaryOperat
 import ortus.boxlang.compiler.ast.sql.select.expression.operation.SQLUnaryOperator;
 import ortus.boxlang.compiler.parser.SQLParser;
 import ortus.boxlang.parser.antlr.SQLGrammar;
+import ortus.boxlang.parser.antlr.SQLGrammar.Case_exprContext;
 import ortus.boxlang.parser.antlr.SQLGrammar.ExprContext;
 import ortus.boxlang.parser.antlr.SQLGrammar.Literal_valueContext;
 import ortus.boxlang.parser.antlr.SQLGrammar.Ordering_termContext;
@@ -555,6 +558,8 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 		} else if ( ctx.OPEN_PAR() != null ) {
 			// Needs to run AFTER function and IN checks
 			return new SQLParenthesis( visitExpr( ctx.expr( 0 ), table, joins ), pos, src );
+		} else if ( ctx.case_expr() != null ) {
+			return visitCase( ctx.case_expr(), table, joins );
 		} else if ( ctx.unary_operator() != null ) {
 			SQLUnaryOperator op;
 			if ( ctx.unary_operator().BANG() != null ) {
@@ -570,6 +575,31 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 		} else {
 			throw new UnsupportedOperationException( "Unimplemented expression: " + src );
 		}
+	}
+
+	private SQLExpression visitCase( Case_exprContext ctx, SQLTable table, List<SQLJoin> joins ) {
+		var						pos				= tools.getPosition( ctx );
+		var						src				= tools.getSourceText( ctx );
+
+		SQLExpression			inputExpression	= null;
+		List<SQLCaseWhenThen>	whenThens		= new ArrayList<SQLCaseWhenThen>();
+		SQLExpression			elseExpression	= null;
+
+		if ( ctx.initial_expr != null ) {
+			inputExpression = visitExpr( ctx.initial_expr, table, joins );
+		}
+
+		if ( ctx.else_expr != null ) {
+			elseExpression = visitExpr( ctx.else_expr, table, joins );
+		}
+
+		for ( var whenThenCtx : ctx.case_when_then() ) {
+			SQLExpression	when	= visitExpr( whenThenCtx.when_expr, table, joins );
+			SQLExpression	then	= visitExpr( whenThenCtx.then_expr, table, joins );
+			whenThens.add( new SQLCaseWhenThen( when, then, tools.getPosition( whenThenCtx ), tools.getSourceText( whenThenCtx ) ) );
+		}
+
+		return new SQLCase( inputExpression, whenThens, elseExpression, pos, src );
 	}
 
 	/**

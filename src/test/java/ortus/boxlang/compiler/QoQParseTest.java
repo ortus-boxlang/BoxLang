@@ -359,4 +359,138 @@ public class QoQParseTest {
 		    context );
 	}
 
+	@Test
+	public void testStandardCase() {
+		instance.executeSource(
+		    """
+		                      qryEmployees = queryNew(
+		                	"name,age,dept,supervisor",
+		                	"varchar,integer,varchar,varchar",
+		                	[
+		                		["luis",43,"Exec","luis"],
+		                		["brad",44,"IT","luis"],
+		                		["jacob",35,"IT","luis"],
+		                		["Jon",45,"HR","luis"]
+		                   		]
+		                   	)
+
+		                q = queryExecute( "
+		            select  name,
+		      	case
+		    when name = 'brad' then 'me'
+		    when name = 'luis' then 'boss'
+		    when name = 'jacob' then 'Mr. Kansas City'
+		     	else 'other'
+		     end as title
+		            from qryEmployees
+		                                                ",
+		                                                      	[],
+		                                                      	{ dbType : "query" }
+		                                                      );
+		                                                   println( q )
+
+		                                                      """,
+		    context );
+	}
+
+	@Test
+	public void testStandardCaseNoElse() {
+		instance.executeSource(
+		    """
+		                      qryEmployees = queryNew(
+		                	"name,age,dept,supervisor",
+		                	"varchar,integer,varchar,varchar",
+		                	[
+		                		["luis",43,"Exec","luis"],
+		                		["brad",44,"IT","luis"],
+		                		["jacob",35,"IT","luis"],
+		                		["Jon",45,"HR","luis"]
+		                   		]
+		                   	)
+
+		                q = queryExecute( "
+		            select  name,
+		      	case
+		    when name = 'brad' then 'me'
+		    when name = 'luis' then 'boss'
+		    when name = 'jacob' then 'Mr. Kansas City'
+		     end as title
+		            from qryEmployees
+		                                                ",
+		                                                      	[],
+		                                                      	{ dbType : "query" }
+		                                                      );
+		                                                   println( q )
+
+		                                                      """,
+		    context );
+	}
+
+	@Test
+	public void testInputCase() {
+		instance.executeSource(
+		    """
+		                      qryEmployees = queryNew(
+		                	"name,age,dept,supervisor",
+		                	"varchar,integer,varchar,varchar",
+		                	[
+		                		["luis",43,"Exec","luis"],
+		                		["brad",44,"IT","luis"],
+		                		["jacob",35,"IT","luis"],
+		                		["Jon",45,"HR","luis"]
+		                   		]
+		                   	)
+
+		                q = queryExecute( "
+		            select  name,
+		      	case name
+		    when 'brad' then 'me'
+		    when 'luis' then 'boss'
+		    when 'jacob' then 'Mr. Kansas City'
+		     	else 'other'
+		     end as title
+		            from qryEmployees
+		                                                ",
+		                                                      	[],
+		                                                      	{ dbType : "query" }
+		                                                      );
+		                                                   println( q )
+
+		                                                      """,
+		    context );
+	}
+
+	@Test
+	public void testInputCaseNoElse() {
+		instance.executeSource(
+		    """
+		                      qryEmployees = queryNew(
+		                	"name,age,dept,supervisor",
+		                	"varchar,integer,varchar,varchar",
+		                	[
+		                		["luis",43,"Exec","luis"],
+		                		["brad",44,"IT","luis"],
+		                		["jacob",35,"IT","luis"],
+		                		["Jon",45,"HR","luis"]
+		                   		]
+		                   	)
+
+		                q = queryExecute( "
+		            select  name,
+		      	case name
+		    when 'brad' then 'me'
+		    when 'luis' then 'boss'
+		    when 'jacob' then 'Mr. Kansas City'
+		     end as title
+		            from qryEmployees
+		                                                ",
+		                                                      	[],
+		                                                      	{ dbType : "query" }
+		                                                      );
+		                                                   println( q )
+
+		                                                      """,
+		    context );
+	}
+
 }
