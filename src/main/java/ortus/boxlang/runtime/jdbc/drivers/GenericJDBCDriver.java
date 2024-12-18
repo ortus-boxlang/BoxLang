@@ -60,13 +60,13 @@ public class GenericJDBCDriver implements IJDBCDriver {
 	/**
 	 * The default delimiter for the addition of custom paramters to the connection URL.
 	 * This delimits the start of the custom parameters.
-	 * Example: jdbc:mysql://localhost:3306/mydb?param1=value1&param2=value2
+	 * Example: jdbc:mysql://localhost:3306/mydb?param1=value1&amp;param2=value2
 	 */
 	protected String				defaultURIDelimiter	= "?";
 
 	/**
 	 * The default delimiter for the custom parameters attached to the connection URL
-	 * Example: jdbc:mysql://localhost:3306/mydb?param1=value1&param2=value2
+	 * Example: jdbc:mysql://localhost:3306/mydb?param1=value1&amp;param2=value2
 	 * This delimits each custom parameter.
 	 */
 	protected String				defaultDelimiter	= "&";

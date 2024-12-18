@@ -98,7 +98,7 @@ public class PropertyHelper {
 	 * @param key           The target key to look and process
 	 * @param allowedValues The set of allowed values. If not allowed, throw an exception
 	 *
-	 * @throws BoxVa
+	 * @throws BoxValidationException
 	 */
 	public static String processString( IStruct config, Key key, String defaultValue, Set<String> allowedValues ) {
 		if ( config.containsKey( key ) ) {

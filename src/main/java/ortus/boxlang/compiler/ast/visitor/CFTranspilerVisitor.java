@@ -877,7 +877,7 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	 * Rewrite !foo eq bar
 	 * as !(foo eq bar)
 	 * These operators should be higher precedence than the not operator
-	 * EQ, NEQ, LT, LTE, GT, GTE, ==, !=, >, >=, <, <=
+	 * EQ, NEQ, LT, LTE, GT, GTE, ==, !=, >, >=, &lt;, &lt;=
 	 */
 	public BoxNode visit( BoxComparisonOperation node ) {
 		BoxExpression left = node.getLeft();
@@ -896,7 +896,6 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	 * Rewrite !foo eq bar
 	 * as !(foo eq bar)
 	 * These operators should be higher precedence than the not operator
-	 * &
 	 */
 	public BoxNode visit( BoxStringConcat node ) {
 		List<BoxExpression> values = node.getValues();

@@ -167,7 +167,7 @@ public class QueryParameter {
 	 * Returns whether this parameter has a null value override.
 	 * <p>
 	 * For example:
-	 * `<bx:queryparam null="true" />`
+	 * <code>&lt;bx:queryparam null="true" /&gt;</code>
 	 */
 	public boolean isNull() {
 		return this.isNullParam;

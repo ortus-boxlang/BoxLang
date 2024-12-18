@@ -87,9 +87,7 @@ public class StringUtil {
 	/**
 	 * Slugify a string for URL Safety
 	 *
-	 * @param str       Target to slugify
-	 * @param maxLength The maximum number of characters for the slug
-	 * @param allow     a regex safe list of additional characters to allow
+	 * @param str Target to slugify
 	 */
 	public static String slugify( String str ) {
 		return slugify( str, 0, "" );

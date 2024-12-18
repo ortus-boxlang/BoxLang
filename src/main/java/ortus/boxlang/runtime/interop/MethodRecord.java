@@ -25,7 +25,7 @@ import java.lang.reflect.Method;
  * This record is the one that is cached in the {@link DynamicObject} map.
  *
  * @param methodName    The name of the method
- * @param defaultMethod The method representation
+ * @param method        The method representation
  * @param methodHandle  The method handle to use for invocation
  * @param isStatic      Whether the method is static or not
  * @param argumentCount The number of arguments the method takes
@@ -36,5 +36,5 @@ public record MethodRecord(
     MethodHandle methodHandle,
     boolean isStatic,
     int argumentCount ) {
-	// A beautiful java record of our method handle
+    // A beautiful java record of our method handle
 }

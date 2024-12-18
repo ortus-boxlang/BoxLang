@@ -467,9 +467,9 @@ public abstract class BaseApplicationListener {
 	/**
 	 * Helper to Announce an event with the provided {@link IStruct} of data and the app context
 	 *
-	 * @param state   The state to announce
-	 * @param data    The data to announce
-	 * @param context The application context
+	 * @param state      The state to announce
+	 * @param data       The data to announce
+	 * @param appContext The application context
 	 */
 	public void announce( BoxEvent state, IStruct data, IBoxContext appContext ) {
 		announce( state.key(), data, appContext );

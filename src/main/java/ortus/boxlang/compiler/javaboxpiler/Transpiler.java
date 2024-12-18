@@ -185,8 +185,6 @@ public abstract class Transpiler implements ITranspiler {
 
 	/**
 	 * Increment and return the lambda counter
-	 *
-	 * @return the incremented value
 	 */
 	public void pushContextName( String name ) {
 		if ( name == null ) {

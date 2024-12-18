@@ -64,8 +64,6 @@ public class UnmodifiableQuery extends Query implements IUnmodifiable {
 	 * Create an Unmodifiable query from a Modifiable query
 	 *
 	 * @param query The Modifiable query to convert
-	 *
-	 * @return The Unmodifiable query
 	 */
 	public UnmodifiableQuery( Query query ) {
 		this();

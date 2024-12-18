@@ -288,9 +288,9 @@ public abstract class AbstractCacheProvider implements ICacheProvider {
 	}
 
 	/**
-	 * Converts the timeout to a duration.
+	 * Converts the seconds value to a duration.
 	 *
-	 * @param seconds The seconds to convert. This can be a duration, number or string representation of a number
+	 * @param timeout The seconds to convert. This can be a duration, number or string representation of a number
 	 *
 	 * @return The duration of seconds according to the seconds passed
 	 */

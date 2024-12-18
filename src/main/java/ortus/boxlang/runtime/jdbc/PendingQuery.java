@@ -49,7 +49,7 @@ import ortus.boxlang.runtime.types.util.ListUtil;
 
 /**
  * This class represents a query and any parameters/bindings before being executed.
- * After calling {@link #execute()}, it returns an {@link ExecutedQuery} with a reference to this object.
+ * After calling {@link #execute(ConnectionManager,IBoxContext)}, it returns an {@link ExecutedQuery} with a reference to this object.
  */
 public class PendingQuery {
 
@@ -123,9 +123,9 @@ public class PendingQuery {
 	/**
 	 * Creates a new PendingQuery instance from a SQL string, a list of parameters, and the original SQL string.
 	 *
-	 * @param sql         The SQL string to execute
-	 * @param parameters  A list of {@link QueryParameter} to use as bindings.
-	 * @param originalSql The original sql string. This will include named parameters if the `PendingQuery` was constructed using an {@link IStruct}.
+	 * @param sql          The SQL string to execute
+	 * @param bindings     An array or struct of {@link QueryParameter} to use as bindings.
+	 * @param queryOptions QueryOptions object denoting the options for this query.
 	 */
 	public PendingQuery( @Nonnull String sql, Object bindings, QueryOptions queryOptions ) {
 		logger.debug( "Building new PendingQuery from SQL: [{}] and options: [{}]", sql, queryOptions.toStruct() );

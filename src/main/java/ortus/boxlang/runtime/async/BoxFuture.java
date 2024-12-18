@@ -449,9 +449,7 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 	/**
 	 * Creates a new BoxFuture from a CompletableFuture
 	 *
-	 * @param <U>
-	 *
-	 * @param future The CompletableFuture to wrap
+	 * @param value The CompletableFuture to wrap
 	 *
 	 * @return A future that is already completed with the given value
 	 */
@@ -506,7 +504,7 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 	 * // Array
 	 * allApply( items, ( item ) => item.getMemento() )
 	 * // Struct: The result object is a struct of `key` and `value`
-	 * allApply( data, ( item ) => item.key & item.value.toString() )
+	 * allApply( data, ( item ) => item.key &amp; item.value.toString() )
 	 * </pre>
 	 *
 	 * @param context      The context of the current execution
@@ -535,7 +533,7 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 	 * // Array
 	 * allApply( items, ( item ) => item.getMemento() )
 	 * // Struct: The result object is a struct of `key` and `value`
-	 * allApply( data, ( item ) => item.key & item.value.toString() )
+	 * allApply( data, ( item ) => item.key &amp; item.value.toString() )
 	 * </pre>
 	 *
 	 * @param context      The context of the current execution
@@ -565,7 +563,7 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 	 * // Array
 	 * allApply( items, ( item ) => item.getMemento() )
 	 * // Struct: The result object is a struct of `key` and `value`
-	 * allApply( data, ( item ) => item.key & item.value.toString() )
+	 * allApply( data, ( item ) => item.key &amp; item.value.toString() )
 	 * </pre>
 	 *
 	 * @param context      The context of the current execution
@@ -596,7 +594,7 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 	 * // Array
 	 * allApply( items, ( item ) => item.getMemento() )
 	 * // Struct: The result object is a struct of `key` and `value`
-	 * allApply( data, ( item ) => item.key & item.value.toString() )
+	 * allApply( data, ( item ) => item.key &amp; item.value.toString() )
 	 * </pre>
 	 *
 	 * @param context      The context of the current execution

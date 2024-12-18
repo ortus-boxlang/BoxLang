@@ -103,7 +103,7 @@ public class StructMapWrapper implements IStruct, IListenable, Serializable {
 	/**
 	 * Constructor
 	 *
-	 * @param type The type of struct to create: DEFAULT, LINKED, SORTED
+	 * @param map The map to wrap
 	 *
 	 * @throws BoxRuntimeException If an invalid type is specified: DEFAULT, LINKED, SORTED
 	 */

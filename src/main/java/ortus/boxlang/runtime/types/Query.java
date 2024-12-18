@@ -110,8 +110,6 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 * Create a new query and populate it from the given JDBC ResultSet.
 	 *
 	 * @param resultSet JDBC result set.
-	 *
-	 * @return Query object
 	 */
 	public static Query fromResultSet( ResultSet resultSet ) {
 		Query query = new Query();

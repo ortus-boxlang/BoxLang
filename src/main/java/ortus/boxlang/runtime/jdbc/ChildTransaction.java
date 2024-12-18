@@ -1,10 +1,10 @@
 package ortus.boxlang.runtime.jdbc;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.sql.Connection;
 import java.util.UUID;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.scopes.Key;
 
@@ -13,10 +13,10 @@ import ortus.boxlang.runtime.scopes.Key;
  * <p>
  * Utilizes savepoints to manage the nested transaction state:
  * <ul>
- * <li>On transaction begin, a <codeBEGIN</code> savepoint is created.</li>
- * <li>On transaction commit, a <code>COMMIT</code> savepoint is created.</li>
- * <li>On transaction rollback, the transaction is rolled back to the child transaction's <code>BEGIN</code> savepoint. (Unless a savepoint name is passed, in which case the transaction is rolled back to that savepoint only.)</li>
- * <li>On transaction end, an <code>END</code> savepoint is created.</li>
+ * <li>On transaction begin, a &lt;code&gt;BEGIN&lt;code&gt; savepoint is created.</li>
+ * <li>On transaction commit, a &lt;code&gt;COMMIT&lt;code&gt; savepoint is created.</li>
+ * <li>On transaction rollback, the transaction is rolled back to the child transaction's &lt;code&gt;BEGIN&lt;code&gt; savepoint. (Unless a savepoint name is passed, in which case the transaction is rolled back to that savepoint only.)</li>
+ * <li>On transaction end, an &lt;code&gt;END&lt;code&gt; savepoint is created.</li>
  * </ul>
  * <p>
  * The savepoint names are prefixed with a unique identifier to ensure that they don't collide with savepoints created in the parent transaction.

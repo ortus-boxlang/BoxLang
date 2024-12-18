@@ -27,7 +27,6 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.CustomException;
@@ -597,7 +596,7 @@ public class Attempt<T> {
 	 * an empty {@code Attempt}.
 	 *
 	 * <p>
-	 * This method is similar to {@link #map(Function)}, but the mapping
+	 * This method is similar to {@link #map( java.util.function.Function<? super T, ? extends U> mapper )}, but the mapping
 	 * function is one whose result is already an {@code Attempt}, and if
 	 * invoked, {@code flatMap} does not wrap it within an additional
 	 * {@code Attempt}.

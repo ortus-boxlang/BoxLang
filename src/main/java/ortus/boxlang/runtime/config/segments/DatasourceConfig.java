@@ -656,7 +656,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 
 	/**
 	 * This method is used to incorporate custom parameters into the target connection string
-	 * Using default delimiters of <code>?</code> and <code>&</code>
+	 * Using default delimiters of <code>?</code> and <code>&amp;</code>
 	 *
 	 * @param target The target connection string
 	 *
