@@ -1558,7 +1558,6 @@ public class ClassTest {
 
 	@DisplayName( "class locator usage in static initializer" )
 	@Test
-	@Disabled( "BL-848" )
 	public void testClassLocatorInStaticInitializer() {
 		instance.executeSource(
 		    """
