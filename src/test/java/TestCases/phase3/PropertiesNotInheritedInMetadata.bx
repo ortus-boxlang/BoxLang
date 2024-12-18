@@ -1,0 +1,5 @@
+class extends=PropertiesNotInheritedInMetadataParent {
+	property name=childProperty;
+	property name=sharedProperty;
+
+}

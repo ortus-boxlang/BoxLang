@@ -1566,4 +1566,39 @@ public class ClassTest {
 		    context );
 	}
 
+	@DisplayName( "properties not inherited in metadata" )
+	@Test
+	public void testPropertiesNotInheritedInMetadata() {
+		instance.executeSource(
+		    """
+			c = new src.test.java.TestCases.phase3.PropertiesNotInheritedInMetadata();
+		    result = getMetaData( c )
+			result2 = c.$bx.meta
+		      """,
+		    context );
+		
+		// Legacy metadata
+		Array childProps = variables.getAsStruct( Key.of( "result" ) ).getAsArray( Key.properties );
+		assertThat( childProps ).hasSize(2);
+		assertThat( ((IStruct)childProps.get(0)).get( Key._NAME ) ).isEqualTo( "childProperty" );
+		assertThat( ((IStruct)childProps.get(1)).get( Key._NAME ) ).isEqualTo( "sharedProperty" );
+		
+		Array parentProps = variables.getAsStruct( Key.of( "result" ) ).getAsStruct(Key._EXTENDS).getAsArray( Key.properties );
+		assertThat( parentProps ).hasSize(2);
+		assertThat( ((IStruct)parentProps.get(0)).get( Key._NAME ) ).isEqualTo( "parentProperty" );
+		assertThat( ((IStruct)parentProps.get(1)).get( Key._NAME ) ).isEqualTo( "sharedProperty" );
+
+		// $bx metadata
+		childProps = variables.getAsStruct( Key.of( Key.of("result2") ) ).getAsArray( Key.properties );
+		assertThat( childProps ).hasSize(2);
+		assertThat( ((IStruct)childProps.get(0)).get( Key._NAME ) ).isEqualTo( "childProperty" );
+		assertThat( ((IStruct)childProps.get(1)).get( Key._NAME ) ).isEqualTo( "sharedProperty" );
+		
+		parentProps = variables.getAsStruct( Key.of( Key.of("result2")) ).getAsStruct(Key._EXTENDS).getAsArray( Key.properties );
+		assertThat( parentProps ).hasSize(2);
+		assertThat( ((IStruct)parentProps.get(0)).get( Key._NAME ) ).isEqualTo( "parentProperty" );
+		assertThat( ((IStruct)parentProps.get(1)).get( Key._NAME ) ).isEqualTo( "sharedProperty" );
+			
+	}
+
 }

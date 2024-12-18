@@ -35,14 +35,16 @@ import ortus.boxlang.runtime.util.DuplicationUtil;
  * @param documentation     Documentation for the property
  * @param generatedGetter   The generated getter Function
  * @param generatedSetter   The generated setter Function
+ * @param sourceType        The source type of the property
+ * @param declaringClass    The class that declares this property
  *
  */
 public record Property( Key name, String type, Object defaultValue, DefaultExpression defaultExpression, IStruct annotations, IStruct documentation,
     Key getterName, Key setterName,
-    UDF generatedGetter, UDF generatedSetter, BoxSourceType sourceType ) {
+    UDF generatedGetter, UDF generatedSetter, BoxSourceType sourceType, Class<?> declaringClass ) {
 
 	public Property( Key name, String type, Object defaultValue, DefaultExpression defaultExpression, IStruct annotations, IStruct documentation,
-	    BoxSourceType sourceType ) {
+	    BoxSourceType sourceType, Class<?> declaringClass ) {
 		// Pre-calculate the getter and setter names
 		this(
 		    name,
@@ -56,7 +58,8 @@ public record Property( Key name, String type, Object defaultValue, DefaultExpre
 		    new GeneratedGetter( Key.of( "get" + name.getName() ), name,
 		        sourceType.equals( BoxSourceType.CFSCRIPT ) || sourceType.equals( BoxSourceType.CFSCRIPT ) ? "any" : type ),
 		    new GeneratedSetter( Key.of( "set" + name.getName() ), name, type ),
-		    sourceType
+		    sourceType,
+		    declaringClass
 		);
 	}
 

@@ -790,12 +790,14 @@ public class AsmTranspiler extends Transpiler {
 			    sourceType.toUpperCase(),
 			    Type.getDescriptor( BoxSourceType.class ) ) );
 
+			javaExpr.add( new LdcInsnNode( declaringType ) );
+
 			javaExpr.add( new MethodInsnNode( Opcodes.INVOKESPECIAL,
 			    Type.getInternalName( Property.class ),
 			    "<init>",
 			    Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( Key.class ), Type.getType( String.class ), Type.getType( Object.class ),
 			        Type.getType( DefaultExpression.class ), Type.getType( IStruct.class ), Type.getType( IStruct.class ),
-			        Type.getType( BoxSourceType.class ) ),
+			        Type.getType( BoxSourceType.class ), Type.getType( Class.class ) ),
 			    false ) );
 
 			members.add( jNameKey );

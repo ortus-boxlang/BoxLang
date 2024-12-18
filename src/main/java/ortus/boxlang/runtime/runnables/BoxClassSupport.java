@@ -70,9 +70,9 @@ public class BoxClassSupport {
 	}
 
 	/**
-	 * Call the pseudo constructor
+	 * I handle creating default values for all properties defined
 	 *
-	 * @param thisClass The class to call the pseudo constructor on
+	 * @param thisClass The class to create default properties for
 	 * @param context   The context to use
 	 */
 	public static void defaultProperties( IClassRunnable thisClass, IBoxContext context ) {
@@ -495,8 +495,12 @@ public class BoxClassSupport {
 		var properties = new Array();
 		// loop over properties list and add struct for each property
 		for ( var entry : thisClass.getProperties().entrySet() ) {
-			var	property		= entry.getValue();
-			var	propertyStruct	= new Struct( IStruct.TYPES.LINKED );
+			var property = entry.getValue();
+			// Only include properties declared here, not in a parent/extends
+			if ( property.declaringClass() != thisClass.getClass() ) {
+				continue;
+			}
+			var propertyStruct = new Struct( IStruct.TYPES.LINKED );
 			propertyStruct.put( "name", property.name().getName() );
 			propertyStruct.put( "type", property.type() );
 			if ( property.hasDefaultValue() ) {
