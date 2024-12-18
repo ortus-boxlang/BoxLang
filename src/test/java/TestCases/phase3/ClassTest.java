@@ -1343,8 +1343,20 @@ public class ClassTest {
 		    """
 		       clazz = new src.test.java.TestCases.phase3.RelativeInstantiation();
 		    result = clazz.findSibling()
+			result2 = getMetadata( clazz.returnSibling() )
 		         """, context );
 		assertThat( variables.get( result ) ).isEqualTo( "bar" );
+		assertThat( variables.getAsStruct( Key.of("result2") ).getAsString(Key._NAME ) ).isEqualTo("src.test.java.TestCases.phase3.FindMe");
+	}
+
+	@Test
+	public void testRelativeSelfInstantiation() {
+		instance.executeSource(
+		    """
+		       clazz = new src.test.java.TestCases.phase3.RelativeSelfInstantiation();
+			result2 = getMetadata( clazz.clone() )
+		         """, context );
+		assertThat( variables.getAsStruct( Key.of("result2") ).getAsString(Key._NAME ) ).isEqualTo("src.test.java.TestCases.phase3.RelativeSelfInstantiation");
 	}
 
 	@Test

@@ -2,4 +2,7 @@ class {
 	function findSibling() {
 		return new FindMe().foo();
 	}
+	function returnSibling() {
+		return new FindMe();
+	}
 }

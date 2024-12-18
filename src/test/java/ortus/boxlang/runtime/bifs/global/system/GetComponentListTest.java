@@ -62,7 +62,7 @@ public class GetComponentListTest {
 		context );
 		// @formatter:on
 
-		System.out.println( variables.get( result ) );
+		// System.out.println( variables.get( result ) );
 		IStruct functions = ( IStruct ) variables.get( result );
 
 		assertThat( functions ).isNotNull();
