@@ -12,22 +12,22 @@
  * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package ortus.boxlang.runtime.jdbc.qoq.functions.scalar;
+package ortus.boxlang.runtime.jdbc.qoq.functions.aggregate;
 
 import java.util.List;
 
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLExpression;
-import ortus.boxlang.runtime.dynamic.casters.StringCaster;
-import ortus.boxlang.runtime.jdbc.qoq.QoQScalarFunctionDef;
+import ortus.boxlang.runtime.jdbc.qoq.QoQAggregateFunctionDef;
 import ortus.boxlang.runtime.jdbc.qoq.QoQSelectExecution;
+import ortus.boxlang.runtime.operators.Compare;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.QueryColumnType;
 
-public class Trim extends QoQScalarFunctionDef {
+public class Min extends QoQAggregateFunctionDef {
 
-	private static final Key					name		= Key.of( "Trim" );
+	private static final Key					name		= Key.of( "min" );
 
-	public static final QoQScalarFunctionDef	INSTANCE	= new Trim();
+	public static final QoQAggregateFunctionDef	INSTANCE	= new Min();
 
 	@Override
 	public Key getName() {
@@ -36,7 +36,8 @@ public class Trim extends QoQScalarFunctionDef {
 
 	@Override
 	public QueryColumnType getReturnType( QoQSelectExecution QoQExec, List<SQLExpression> expressions ) {
-		return QueryColumnType.VARCHAR;
+		// The return type of the function is the same as the type of the expression being aggregated
+		return expressions.get( 0 ).getType( QoQExec );
 	}
 
 	@Override
@@ -45,8 +46,17 @@ public class Trim extends QoQScalarFunctionDef {
 	}
 
 	@Override
-	public Object apply( List<Object> args, List<SQLExpression> expressions ) {
-		return StringCaster.cast( args.get( 0 ) ).trim();
+	public Object apply( List<Object[]> args, List<SQLExpression> expressions ) {
+		Object[]	input	= args.get( 0 );
+		Object		max		= input[ 0 ];
+		if ( input.length > 1 ) {
+			for ( int i = 1; i < input.length; i++ ) {
+				if ( Compare.invoke( max, input[ i ] ) > 0 ) {
+					max = input[ i ];
+				}
+			}
+		}
+		return max;
 	}
 
 }

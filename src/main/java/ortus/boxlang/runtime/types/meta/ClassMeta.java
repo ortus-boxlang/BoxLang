@@ -58,10 +58,8 @@ public class ClassMeta extends BoxMeta {
 		compileTimeMethodNames
 		    .stream()
 		    .map( variablesScope::get )
-		    .filter( entry -> entry instanceof Function )
-		    .forEach( entry -> {
-			    functions.add( ( ( FunctionMeta ) ( ( Function ) entry ).getBoxMeta() ).meta );
-		    } );
+		    .filter( Function.class::isInstance )
+		    .forEach( entry -> functions.add( ( ( FunctionMeta ) ( ( Function ) entry ).getBoxMeta() ).meta ) );
 
 		this.meta = UnmodifiableStruct.of(
 		    Key._NAME, target.bxGetName().getName(),

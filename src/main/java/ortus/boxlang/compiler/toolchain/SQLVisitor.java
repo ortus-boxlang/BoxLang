@@ -17,6 +17,8 @@ import ortus.boxlang.compiler.ast.sql.select.SQLTableSubQuery;
 import ortus.boxlang.compiler.ast.sql.select.SQLTableVariable;
 import ortus.boxlang.compiler.ast.sql.select.SQLUnion;
 import ortus.boxlang.compiler.ast.sql.select.SQLUnionType;
+import ortus.boxlang.compiler.ast.sql.select.expression.SQLCase;
+import ortus.boxlang.compiler.ast.sql.select.expression.SQLCaseWhenThen;
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLColumn;
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLCountFunction;
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLExpression;
@@ -38,6 +40,7 @@ import ortus.boxlang.compiler.ast.sql.select.expression.operation.SQLUnaryOperat
 import ortus.boxlang.compiler.ast.sql.select.expression.operation.SQLUnaryOperator;
 import ortus.boxlang.compiler.parser.SQLParser;
 import ortus.boxlang.parser.antlr.SQLGrammar;
+import ortus.boxlang.parser.antlr.SQLGrammar.Case_exprContext;
 import ortus.boxlang.parser.antlr.SQLGrammar.ExprContext;
 import ortus.boxlang.parser.antlr.SQLGrammar.Literal_valueContext;
 import ortus.boxlang.parser.antlr.SQLGrammar.Ordering_termContext;
@@ -52,6 +55,7 @@ import ortus.boxlang.parser.antlr.SQLGrammar.TableContext;
 import ortus.boxlang.parser.antlr.SQLGrammar.Table_or_subqueryContext;
 import ortus.boxlang.parser.antlr.SQLGrammarBaseVisitor;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.QueryColumnType;
 
 /**
  * This class is responsible for creating the SQL AST from the ANTLR generated parse tree.
@@ -229,9 +233,17 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 			where = visitExpr( ctx.whereExpr, table, joins );
 		}
 
-		// TODO: group by
+		// group by
+		if ( ctx.groupByExpr != null && !ctx.groupByExpr.isEmpty() ) {
+			SQLTable		finalTable	= table;
+			List<SQLJoin>	finalJoins	= joins;
+			groupBys = ctx.groupByExpr.stream().map( expr -> visitExpr( expr, finalTable, finalJoins ) ).toList();
+		}
 
-		// TODO: having
+		// having
+		if ( ctx.havingExpr != null ) {
+			having = visitExpr( ctx.havingExpr, table, joins );
+		}
 
 		// Do this after all joins above so we know the tables available to us
 		final SQLTable		finalTable	= table;
@@ -239,11 +251,16 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 		resultColumns = ctx.result_column().stream().map( col -> visitResult_column( col, finalTable, finalJoins ) ).toList();
 
 		var	result	= new SQLSelect( distinct, resultColumns, table, joins, where, groupBys, having, limit, pos, src );
+
 		var	cols	= result.getDescendantsOfType( SQLColumn.class, c -> c.getTable() == null );
 		if ( cols.size() > 0 ) {
-			if ( table == null && ( joins == null || joins.isEmpty() ) ) {
-				tools.reportError( "This QoQ has column references, but there is no table!", pos );
-			} else if ( joins == null || joins.isEmpty() ) {
+			if ( table == null && joins == null ) {
+				// Only report an error if there are no issues already
+				// because this can get tripped up by parsing that simply failed too soon and didn't finish
+				if ( tools.issues.size() == 0 ) {
+					tools.reportError( "This QoQ has column references, but there is no table!", pos );
+				}
+			} else if ( joins == null ) {
 				// If there is only one table, we know what it is now
 				cols.forEach( c -> c.setTable( finalTable ) );
 			}
@@ -325,15 +342,15 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 		var		pos		= tools.getPosition( ctx );
 		var		src		= tools.getSourceText( ctx );
 		String	schema	= null;
-		String	name	= ctx.table_name().getText();
+		String	name	= unwrapBracket( ctx.table_name().getText() );
 		String	alias	= null;
 
 		if ( ctx.schema_name() != null ) {
-			schema = ctx.schema_name().getText();
+			schema = unwrapBracket( ctx.schema_name().getText() );
 		}
 
 		if ( ctx.table_alias() != null ) {
-			alias = ctx.table_alias().getText();
+			alias = unwrapBracket( ctx.table_alias().getText() );
 		}
 
 		return new SQLTableVariable( schema, name, alias, tableIndex++, pos, src );
@@ -371,7 +388,7 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 		SQLExpression	expression;
 
 		if ( ctx.column_alias() != null ) {
-			alias = ctx.column_alias().getText();
+			alias = unwrapBracket( ctx.column_alias().getText() );
 		}
 
 		if ( ctx.STAR() != null ) {
@@ -429,14 +446,14 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 			SQLTable tableRef = null;
 			// if we have tableName.* or tAlias.* then we need to find the table reference
 			if ( ctx.table_name() != null ) {
-				String tableName = ctx.table_name().getText();
+				String tableName = unwrapBracket( ctx.table_name().getText() );
 				tableRef = findTableRef( table, joins, tableName );
 				// If we didn't find the table reference then error
 				if ( tableRef == null ) {
 					tools.reportError( "Table reference not found for " + src, pos );
 				}
 			}
-			return new SQLColumn( tableRef, ctx.column_name().getText(), pos, src );
+			return new SQLColumn( tableRef, unwrapBracket( ctx.column_name().getText() ), pos, src );
 		} else if ( ctx.literal_value() != null ) {
 			return ( SQLExpression ) visit( ctx.literal_value() );
 		} else if ( ctx.EQ() != null || ctx.ASSIGN() != null || ctx.IS_() != null ) {
@@ -451,8 +468,33 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 			return binarySimple( ctx.expr( 0 ), ctx.expr( 1 ), SQLBinaryOperator.AND, pos, src, table, joins );
 		} else if ( ctx.OR_() != null ) {
 			return binarySimple( ctx.expr( 0 ), ctx.expr( 1 ), SQLBinaryOperator.OR, pos, src, table, joins );
+		} else if ( ctx.CAST_() != null || ctx.CONVERT_() != null ) {
+			// CAST( expr AS type )
+			Key					functionName	= ctx.CONVERT_() != null ? Key.convert : Key.cast;
+			List<SQLExpression>	arguments		= new ArrayList<SQLExpression>();
+
+			// Add expr as first arg
+			arguments.add( visitExpr( ctx.expr( 0 ), table, joins ) );
+
+			// Add type as second arg
+			// We allow both varchar or 'varchar'
+			SQLStringLiteral type;
+			if ( ctx.STRING_LITERAL() != null ) {
+				type = processStringLiteral( ctx.STRING_LITERAL() );
+			} else {
+				type = new SQLStringLiteral( unwrapBracket( ctx.name().getText() ), tools.getPosition( ctx.name() ), tools.getSourceText( ctx.name() ) );
+			}
+			// validate the type here
+			try {
+				QueryColumnType.fromString( type.getValue() );
+			} catch ( IllegalArgumentException e ) {
+				tools.reportError( "Invalid type for " + functionName.getName() + ": " + type.getValue(), pos );
+			}
+			arguments.add( type );
+
+			return new SQLFunction( functionName, arguments, pos, src );
 		} else if ( ctx.function_name() != null ) {
-			Key					functionName	= Key.of( ctx.function_name().getText() );
+			Key					functionName	= Key.of( unwrapBracket( ctx.function_name().getText() ) );
 			boolean				hasDistinct		= ctx.DISTINCT_() != null;
 			List<SQLExpression>	arguments		= new ArrayList<SQLExpression>();
 			if ( ctx.STAR() != null ) {
@@ -516,6 +558,8 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 		} else if ( ctx.OPEN_PAR() != null ) {
 			// Needs to run AFTER function and IN checks
 			return new SQLParenthesis( visitExpr( ctx.expr( 0 ), table, joins ), pos, src );
+		} else if ( ctx.case_expr() != null ) {
+			return visitCase( ctx.case_expr(), table, joins );
 		} else if ( ctx.unary_operator() != null ) {
 			SQLUnaryOperator op;
 			if ( ctx.unary_operator().BANG() != null ) {
@@ -531,6 +575,45 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 		} else {
 			throw new UnsupportedOperationException( "Unimplemented expression: " + src );
 		}
+	}
+
+	private SQLExpression visitCase( Case_exprContext ctx, SQLTable table, List<SQLJoin> joins ) {
+		var						pos				= tools.getPosition( ctx );
+		var						src				= tools.getSourceText( ctx );
+
+		SQLExpression			inputExpression	= null;
+		List<SQLCaseWhenThen>	whenThens		= new ArrayList<SQLCaseWhenThen>();
+		SQLExpression			elseExpression	= null;
+
+		if ( ctx.initial_expr != null ) {
+			inputExpression = visitExpr( ctx.initial_expr, table, joins );
+		}
+
+		if ( ctx.else_expr != null ) {
+			elseExpression = visitExpr( ctx.else_expr, table, joins );
+		}
+
+		for ( var whenThenCtx : ctx.case_when_then() ) {
+			SQLExpression	when	= visitExpr( whenThenCtx.when_expr, table, joins );
+			SQLExpression	then	= visitExpr( whenThenCtx.then_expr, table, joins );
+			whenThens.add( new SQLCaseWhenThen( when, then, tools.getPosition( whenThenCtx ), tools.getSourceText( whenThenCtx ) ) );
+		}
+
+		return new SQLCase( inputExpression, whenThens, elseExpression, pos, src );
+	}
+
+	/**
+	 * Unwrap the brackets from the table or column name
+	 * 
+	 * @param text the text to unwrap
+	 * 
+	 * @return the unwrapped text
+	 */
+	private String unwrapBracket( String text ) {
+		if ( text.startsWith( "[" ) && text.endsWith( "]" ) ) {
+			return text.substring( 1, text.length() - 1 );
+		}
+		return text;
 	}
 
 	private SQLExpression binarySimple( ExprContext left, ExprContext right, SQLBinaryOperator op, Position pos, String src, SQLTable table,
@@ -560,15 +643,21 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 		} else if ( ctx.FALSE_() != null ) {
 			return new SQLBooleanLiteral( false, pos, src );
 		} else if ( ctx.STRING_LITERAL() != null ) {
-			String str = ctx.STRING_LITERAL().getText();
-			// strip quote chars
-			str	= str.substring( 1, str.length() - 1 );
-			// unescape `''` inside string
-			str	= str.replace( "''", "'" );
-			return new SQLStringLiteral( str, pos, src );
+			return processStringLiteral( ctx.STRING_LITERAL() );
 		} else {
 			throw new UnsupportedOperationException( "Unimplemented literal expression: " + src );
 		}
+	}
+
+	private SQLStringLiteral processStringLiteral( TerminalNode ctx ) {
+		var		pos	= tools.getPosition( ctx );
+
+		String	str	= ctx.getText();
+		// strip quote chars
+		str	= str.substring( 1, str.length() - 1 );
+		// unescape `''` inside string
+		str	= str.replace( "''", "'" );
+		return new SQLStringLiteral( str, pos, str );
 	}
 
 	/**

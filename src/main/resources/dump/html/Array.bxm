@@ -14,14 +14,14 @@
 					<strong>
 						<bx:if label.len() >#label# - </bx:if>
 						Array:
-						<bx:if !isNull( top ) && top lt var.len()>#top#/</bx:if>#var.len()# items
+						<bx:if !isNull( top ) && top lt var.len()>#top#/</bx:if>#var.len()#
 					</strong>
 				</caption>
 			<bx:else>
 				<caption class="bx-dhAy">
 					<strong>
 						<bx:if label.len() >#label# - </bx:if>
-						Array: #var.len()# items
+						Array: #var.len()#
 					</strong>
 				</caption>
 			</bx:if>

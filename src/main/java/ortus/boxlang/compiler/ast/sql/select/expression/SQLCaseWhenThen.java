@@ -12,25 +12,23 @@
  * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package ortus.boxlang.compiler.ast.sql.select.expression.literal;
+package ortus.boxlang.compiler.ast.sql.select.expression;
 
-import java.util.List;
 import java.util.Map;
 
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
-import ortus.boxlang.compiler.ast.sql.select.expression.SQLExpression;
+import ortus.boxlang.compiler.ast.sql.SQLNode;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
-import ortus.boxlang.runtime.jdbc.qoq.QoQSelectExecution;
-import ortus.boxlang.runtime.types.QueryColumnType;
 
 /**
- * Abstract Node class representing SQL string literal
+ * Abstract Node class representing SQL case when/then expression
  */
-public class SQLStringLiteral extends SQLExpression {
+public class SQLCaseWhenThen extends SQLNode {
 
-	private String value;
+	private SQLExpression	whenExpression;
+	private SQLExpression	thenExpression;
 
 	/**
 	 * Constructor
@@ -38,50 +36,42 @@ public class SQLStringLiteral extends SQLExpression {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code of the statement
 	 */
-	public SQLStringLiteral( String value, Position position, String sourceText ) {
+	public SQLCaseWhenThen( SQLExpression whenExpression, SQLExpression thenExpression, Position position, String sourceText ) {
 		super( position, sourceText );
-		setValue( value );
+		setWhenExpression( whenExpression );
+		setThenExpression( thenExpression );
 	}
 
 	/**
-	 * Get the value of the string literal
-	 *
-	 * @return the value of the string literal
+	 * Get the when expression
 	 */
-	public String getValue() {
-		return value;
-	}
-
-	public void setValue( String value ) {
-		this.value = value;
+	public SQLExpression getWhenExpression() {
+		return whenExpression;
 	}
 
 	/**
-	 * Check if the expression is a literal
+	 * Set the when expression
 	 */
-	public boolean isLiteral() {
-		return true;
+	public void setWhenExpression( SQLExpression whenExpression ) {
+		replaceChildren( this.whenExpression, whenExpression );
+		this.whenExpression = whenExpression;
+		this.whenExpression.setParent( this );
 	}
 
 	/**
-	 * What type does this expression evaluate to
+	 * Get the then expression
 	 */
-	public QueryColumnType getType( QoQSelectExecution QoQExec ) {
-		return QueryColumnType.VARCHAR;
+	public SQLExpression getThenExpression() {
+		return thenExpression;
 	}
 
 	/**
-	 * Evaluate the expression
+	 * Set the then expression
 	 */
-	public Object evaluate( QoQSelectExecution QoQExec, int[] intersection ) {
-		return value;
-	}
-
-	/**
-	 * Evaluate the expression aginst a partition of data
-	 */
-	public Object evaluateAggregate( QoQSelectExecution QoQExec, List<int[]> intersections ) {
-		return value;
+	public void setThenExpression( SQLExpression thenExpression ) {
+		replaceChildren( this.thenExpression, thenExpression );
+		this.thenExpression = thenExpression;
+		this.thenExpression.setParent( this );
 	}
 
 	@Override
@@ -100,7 +90,8 @@ public class SQLStringLiteral extends SQLExpression {
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = super.toMap();
 
-		map.put( "value", value );
+		map.put( "whenExpression", whenExpression.toMap() );
+		map.put( "thenExpression", thenExpression.toMap() );
 		return map;
 	}
 

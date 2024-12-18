@@ -14,6 +14,7 @@
  */
 package ortus.boxlang.compiler.ast.sql.select.expression;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -118,6 +119,16 @@ public class SQLParam extends SQLExpression {
 	 */
 	public Object evaluate( QoQSelectExecution QoQExec, int[] intersection ) {
 		return QoQExec.getSelectStatementExecution().getParams().get( index ).value();
+	}
+
+	/**
+	 * Evaluate the expression aginst a partition of data
+	 */
+	public Object evaluateAggregate( QoQSelectExecution QoQExec, List<int[]> intersections ) {
+		if ( intersections.isEmpty() ) {
+			return null;
+		}
+		return evaluate( QoQExec, intersections.get( 0 ) );
 	}
 
 	@Override

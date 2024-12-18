@@ -729,17 +729,19 @@ public class AsmTranspiler extends Transpiler {
 				} else {
 					init = List.of( new InsnNode( Opcodes.ACONST_NULL ) );
 
-					Type					type		= Type.getType( "L" + getProperty( "packageName" ).replace( '.', '/' )
+					Type		type		= Type.getType( "L" + getProperty( "packageName" ).replace( '.', '/' )
 					    + "/" + getProperty( "classname" )
 					    + "$Lambda_" + incrementAndGetLambdaCounter() + ";" );
 
-					List<AbstractInsnNode>	body		= transform( defaultAnnotation.getValue(), TransformerContext.NONE, ReturnValueContext.VALUE_OR_NULL );
-					ClassNode				classNode	= new ClassNode();
+					ClassNode	classNode	= new ClassNode();
 					AsmHelper.init( classNode, false, type, Type.getType( Object.class ), methodVisitor -> {
 					}, Type.getType( DefaultExpression.class ) );
 					AsmHelper.methodWithContextAndClassLocator( classNode, "evaluate", Type.getType( IBoxContext.class ), Type.getType( Object.class ), false,
 					    this, false,
-					    () -> body );
+					    () -> {
+						    List<AbstractInsnNode> body = transform( defaultAnnotation.getValue(), TransformerContext.NONE, ReturnValueContext.VALUE_OR_NULL );
+						    return body;
+					    } );
 					setAuxiliary( type.getClassName(), classNode );
 
 					initLambda = List.of(

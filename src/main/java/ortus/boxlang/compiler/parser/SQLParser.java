@@ -23,7 +23,6 @@ import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
-import org.antlr.v4.runtime.atn.PredictionMode;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BOMInputStream;
 
@@ -146,7 +145,7 @@ public class SQLParser extends AbstractParser {
 		addErrorListeners( lexer, parser );
 		parser.setErrorHandler( new BoxParserErrorStrategy() );
 
-		parser.getInterpreter().setPredictionMode( PredictionMode.SLL );
+		// parser.getInterpreter().setPredictionMode( PredictionMode.SLL );
 		ParserRuleContext parseTree = parser.parse();
 
 		// This must run FIRST before resetting the lexer

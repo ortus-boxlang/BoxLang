@@ -19,9 +19,9 @@
 							<bx:if label.len() >#label# - </bx:if>
 							#encodeForHTML( var.getName().getName().toUpperCase() )# Scope:
 							<bx:if var instanceof 'CGIScope'>
-								<bx:if !isNull( top ) && top lt var.getDumpKeys().size()>#top#/</bx:if>#var.getDumpKeys().size()# items
+								<bx:if !isNull( top ) && top lt var.getDumpKeys().size()>#top#/</bx:if>#var.getDumpKeys().size()#
 							<bx:else>
-								<bx:if !isNull( top ) && top lt var.len()>#top#/</bx:if>#var.len()# items
+								<bx:if !isNull( top ) && top lt var.len()>#top#/</bx:if>#var.len()#
 							</bx:if>
 						</strong>
 					</caption>
@@ -30,7 +30,7 @@
 						<strong>
 							<bx:if label.len() >#label# - </bx:if>
 							#encodeForHTML( var.getName().getName().toUpperCase() )# Scope:
-							<bx:if !isNull( top ) && top lt var.len()>#top#/</bx:if>#var.len()# items
+							<bx:if !isNull( top ) && top lt var.len()>#top#/</bx:if>#var.len()#
 						</strong>
 					</caption>
 				</bx:if>
@@ -47,7 +47,7 @@
 						<strong>
 							<bx:if label.len() >#label# - </bx:if>
 							Struct:
-							<bx:if !isNull( top ) && top lt var.len()>#top#/</bx:if>#var.len()# items
+							<bx:if !isNull( top ) && top lt var.len()>#top#/</bx:if>#var.len()#
 						</strong>
 					</caption>
 				<bx:else>
@@ -55,7 +55,7 @@
 						<strong>
 							<bx:if label.len() >#label# - </bx:if>
 							Struct:
-							<bx:if !isNull( top ) && top lt var.len()>#top#/</bx:if>#var.len()# items
+							<bx:if !isNull( top ) && top lt var.len()>#top#/</bx:if>#var.len()#
 						</strong>
 					</caption>
 				</bx:if>

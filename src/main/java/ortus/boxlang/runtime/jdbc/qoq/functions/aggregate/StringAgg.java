@@ -12,19 +12,20 @@
  * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package ortus.boxlang.runtime.jdbc.qoq;
+package ortus.boxlang.runtime.jdbc.qoq.functions.aggregate;
 
-import java.util.List;
+import ortus.boxlang.runtime.jdbc.qoq.QoQAggregateFunctionDef;
+import ortus.boxlang.runtime.scopes.Key;
 
-import ortus.boxlang.compiler.ast.sql.select.expression.SQLExpression;
+public class StringAgg extends GroupConcat {
 
-/**
- * I am the abstract class for QoQ function definitions
- */
-public abstract class QoQAggregateFunctionDef implements IQoQFunctionDef, java.util.function.BiFunction<List<Object[]>, List<SQLExpression>, Object> {
+	private static final Key					name		= Key.of( "string_agg" );
 
-	public boolean isAggregate() {
-		return true;
+	public static final QoQAggregateFunctionDef	INSTANCE	= new StringAgg();
+
+	@Override
+	public Key getName() {
+		return name;
 	}
 
 }

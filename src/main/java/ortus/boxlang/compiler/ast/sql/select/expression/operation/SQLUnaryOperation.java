@@ -14,6 +14,7 @@
  */
 package ortus.boxlang.compiler.ast.sql.select.expression.operation;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -142,6 +143,16 @@ public class SQLUnaryOperation extends SQLExpression {
 				throw new BoxRuntimeException( "Unknown binary operator: " + operator );
 
 		}
+	}
+
+	/**
+	 * Evaluate the expression aginst a partition of data
+	 */
+	public Object evaluateAggregate( QoQSelectExecution QoQExec, List<int[]> intersections ) {
+		if ( intersections.isEmpty() ) {
+			return null;
+		}
+		return evaluate( QoQExec, intersections.get( 0 ) );
 	}
 
 	/**

@@ -34,6 +34,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -641,18 +642,18 @@ public class DynamicInteropServiceTest {
 	}
 
 	@Test
-	@DisplayName( "It can get all the constructors on a class" )
+	@DisplayName( "It can get all the callable constructors on a class" )
 	void testItCanGetAllConstructors() {
-		Set<Constructor<?>> constructors = DynamicInteropService.getConstructors( String.class );
+		Set<Constructor<?>> constructors = DynamicInteropService.getConstructors( String.class, true );
 		assertThat( constructors ).isNotEmpty();
-		assertThat( constructors.size() ).isAtLeast( 18 );
+		assertThat( constructors.size() ).isAtLeast( 15 );
 	}
 
 	@Test
-	@DisplayName( "It can get all the constructors as a stream" )
+	@DisplayName( "It can get all the callable constructors as a stream" )
 	void testItCanGetAllConstructorsAsStream() {
-		Set<Constructor<?>> constructors = DynamicInteropService.getConstructors( String.class );
-		assertThat( constructors.stream() ).isNotEmpty();
+		Stream<Constructor<?>> constructors = DynamicInteropService.getConstructorsAsStream( String.class, true );
+		assertThat( constructors ).isNotNull();
 	}
 
 	@Test

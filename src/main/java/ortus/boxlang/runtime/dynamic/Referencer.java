@@ -58,7 +58,7 @@ public class Referencer {
 		if ( object instanceof DynamicObject dob ) {
 			return dob.dereference( context, key, safe );
 		} else if ( object instanceof Class clazz ) {
-			return DynamicInteropService.dereference( context, clazz, null, key, safe );
+			return DynamicInteropService.dereference( context, clazz, object, key, safe );
 		} else {
 			return DynamicInteropService.dereference( context, object.getClass(), object, key, safe );
 		}

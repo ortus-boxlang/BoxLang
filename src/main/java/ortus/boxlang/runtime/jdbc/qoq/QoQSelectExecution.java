@@ -46,6 +46,7 @@ public class QoQSelectExecution {
 	public Map<Key, TypedResultColumn>		resultColumns			= null;
 	public Map<SQLTable, Query>				tableLookup;
 	public QoQSelectStatementExecution		selectStatementExecution;
+	public Map<String, List<int[]>>			partitions				= new ConcurrentHashMap<String, List<int[]>>();
 
 	private Map<SQLSelectStatement, Query>	independentSubQueries	= new ConcurrentHashMap<SQLSelectStatement, Query>();
 
@@ -63,34 +64,77 @@ public class QoQSelectExecution {
 		this.tableLookup	= tableLookup;
 	}
 
+	/**
+	 * Factory method
+	 * 
+	 * @param select      select AST node
+	 * @param tableLookup table lookup
+	 * 
+	 * @return new QoQSelectExecution instance
+	 */
 	public static QoQSelectExecution of( SQLSelect select, Map<SQLTable, Query> tableLookup ) {
 		return new QoQSelectExecution( select, tableLookup );
 	}
 
+	/**
+	 * Get the select node
+	 */
 	public SQLSelect getSelect() {
 		return select;
 	}
 
+	/**
+	 * Get the table lookup
+	 * 
+	 * @return table lookup
+	 */
 	public Map<SQLTable, Query> getTableLookup() {
 		return tableLookup;
 	}
 
+	/**
+	 * Get the result columns
+	 * 
+	 * @return result columns
+	 */
 	public Map<Key, TypedResultColumn> getResultColumns() {
 		return resultColumns;
 	}
 
+	/**
+	 * Set the result columns
+	 * 
+	 * @param resultColumns result columns
+	 */
 	public void setResultColumns( Map<Key, TypedResultColumn> resultColumns ) {
 		this.resultColumns = resultColumns;
 	}
 
+	/**
+	 * Get the select statement execution
+	 * 
+	 * @return select statement execution
+	 */
 	public QoQSelectStatementExecution getSelectStatementExecution() {
 		return selectStatementExecution;
 	}
 
+	/**
+	 * Set the select statement execution
+	 * 
+	 * @param selectStatementExecution select statement execution
+	 */
 	public void setQoQSelectStatementExecution( QoQSelectStatementExecution selectStatementExecution ) {
 		this.selectStatementExecution = selectStatementExecution;
 	}
 
+	/**
+	 * Calculate the result columns
+	 * 
+	 * @param firstSelect whether this is the first select
+	 * 
+	 * @return result columns
+	 */
 	public Map<Key, TypedResultColumn> calculateResultColumns( boolean firstSelect ) {
 		Map<Key, TypedResultColumn> resultColumns = new LinkedHashMap<Key, TypedResultColumn>();
 		for ( SQLResultColumn resultColumn : getSelect().getResultColumns() ) {
@@ -138,6 +182,9 @@ public class QoQSelectExecution {
 		return resultColumns;
 	}
 
+	/**
+	 * Calculate the order by columns
+	 */
 	public void calculateOrderBys() {
 		var					QoQStmtExec		= selectStatementExecution;
 		SQLSelectStatement	selectStatement	= QoQStmtExec.selectStatement;
@@ -199,6 +246,36 @@ public class QoQSelectExecution {
 		    sq -> QoQExecutionService.executeSelectStatement( selectStatementExecution.getJDBCStatement().getContext(), sq,
 		        selectStatementExecution.getJDBCStatement() )
 		);
+	}
+
+	/**
+	 * Add a partition
+	 * 
+	 * @param partitionName Name of the partition
+	 * @param partition     The partition
+	 */
+	public void addPartition( String partitionName, int[] partition ) {
+		partitions.computeIfAbsent( partitionName, p -> new ArrayList<int[]>() ).add( partition );
+	}
+
+	/**
+	 * Get a partition
+	 * 
+	 * @param partitionName Name of the partition
+	 * 
+	 * @return The partition
+	 */
+	public List<int[]> getPartition( String partitionName ) {
+		return partitions.get( partitionName );
+	}
+
+	/**
+	 * Get all partitions
+	 * 
+	 * @return All partitions
+	 */
+	public Map<String, List<int[]>> getPartitions() {
+		return partitions;
 	}
 
 }

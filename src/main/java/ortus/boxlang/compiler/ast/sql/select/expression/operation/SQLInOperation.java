@@ -119,6 +119,16 @@ public class SQLInOperation extends SQLExpression {
 		return not;
 	}
 
+	/**
+	 * Evaluate the expression aginst a partition of data
+	 */
+	public Object evaluateAggregate( QoQSelectExecution QoQExec, List<int[]> intersections ) {
+		if ( intersections.isEmpty() ) {
+			return false;
+		}
+		return evaluate( QoQExec, intersections.get( 0 ) );
+	}
+
 	@Override
 	public void accept( VoidBoxVisitor v ) {
 		// TODO Auto-generated method stub

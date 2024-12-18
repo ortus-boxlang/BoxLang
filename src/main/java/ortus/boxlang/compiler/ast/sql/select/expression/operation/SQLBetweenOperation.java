@@ -14,6 +14,7 @@
  */
 package ortus.boxlang.compiler.ast.sql.select.expression.operation;
 
+import java.util.List;
 import java.util.Map;
 
 import ortus.boxlang.compiler.ast.BoxNode;
@@ -133,6 +134,16 @@ public class SQLBetweenOperation extends SQLExpression {
 		Object	expressionValue	= expression.evaluate( QoQExec, intersection );
 		// The ^ not inverses the result if the not flag is true
 		return doBetween( leftValue, rightValue, expressionValue ) ^ not;
+	}
+
+	/**
+	 * Evaluate the expression aginst a partition of data
+	 */
+	public Object evaluateAggregate( QoQSelectExecution QoQExec, List<int[]> intersections ) {
+		if ( intersections.isEmpty() ) {
+			return false;
+		}
+		return evaluate( QoQExec, intersections.get( 0 ) );
 	}
 
 	/**

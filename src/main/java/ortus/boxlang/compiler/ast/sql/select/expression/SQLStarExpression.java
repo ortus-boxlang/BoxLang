@@ -14,6 +14,7 @@
  */
 package ortus.boxlang.compiler.ast.sql.select.expression;
 
+import java.util.List;
 import java.util.Map;
 
 import ortus.boxlang.compiler.ast.BoxNode;
@@ -61,6 +62,13 @@ public class SQLStarExpression extends SQLExpression {
 	 * Evaluate the expression
 	 */
 	public Object evaluate( QoQSelectExecution QoQExec, int[] intersection ) {
+		throw new BoxRuntimeException( "Cannot evaluate a * expression" );
+	}
+
+	/**
+	 * Evaluate the expression aginst a partition of data
+	 */
+	public Object evaluateAggregate( QoQSelectExecution QoQExec, List<int[]> intersections ) {
 		throw new BoxRuntimeException( "Cannot evaluate a * expression" );
 	}
 

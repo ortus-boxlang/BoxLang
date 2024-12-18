@@ -15,8 +15,11 @@
 package ortus.boxlang.runtime.jdbc.qoq;
 
 import java.sql.SQLException;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import ortus.boxlang.compiler.ast.sql.SQLNode;
@@ -35,6 +38,7 @@ import ortus.boxlang.compiler.parser.SQLParser;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.operators.Compare;
 import ortus.boxlang.runtime.scopes.Key;
@@ -56,6 +60,13 @@ public class QoQExecutionService {
 	 */
 	private static final FRTransService frTransService = FRTransService.getInstance( true );
 
+	/**
+	 * Parse a SQL string into an AST
+	 * 
+	 * @param sql the SQL string
+	 * 
+	 * @return the AST
+	 */
 	public static SQLNode parseSQL( String sql ) {
 		DynamicObject	trans	= frTransService.startTransaction( "BL QoQ Parse", "" );
 		SQLParser		parser	= new SQLParser();
@@ -79,6 +90,15 @@ public class QoQExecutionService {
 		return ( SQLNode ) result.getRoot();
 	}
 
+	/**
+	 * Execute a QoQ statement
+	 * 
+	 * @param context         the context
+	 * @param selectStatement the select statement
+	 * @param statement       the QoQ statement
+	 * 
+	 * @return the query
+	 */
 	public static Query executeSelectStatement( IBoxContext context, SQLSelectStatement selectStatement, QoQStatement statement ) {
 
 		QoQSelectStatementExecution	QoQStmtExec	= QoQSelectStatementExecution.of(
@@ -89,14 +109,23 @@ public class QoQExecutionService {
 		Query						target		= executeSelect( context, selectStatement.getSelect(), statement, QoQStmtExec, true );
 
 		if ( selectStatement.getUnions() != null ) {
+
+			// We actually only need to de-dupe the last union, so we need to find it
+			// This is a performance optimization to avoid de-duping every union uneccessarily
+			int	lastUnion	= Stream.iterate( 0, i -> i + 1 )
+			    .limit( selectStatement.getUnions().size() )
+			    .filter( i -> selectStatement.getUnions().get( i ).getType() == SQLUnionType.DISTINCT )
+			    .reduce( ( first, second ) -> second )
+			    .orElse( -1 );
+
+			int	i			= 0;
 			for ( SQLUnion union : selectStatement.getUnions() ) {
 				Query unionQuery = executeSelect( context, union.getSelect(), statement, QoQStmtExec, false );
-				if ( union.getType() == SQLUnionType.ALL ) {
-					unionAll( target, unionQuery );
-				} else {
-					// distinct
-					unionDistinct( target, unionQuery );
+				unionAll( target, unionQuery );
+				if ( i == lastUnion ) {
+					deDupeQuery( target );
 				}
+				i++;
 			}
 		}
 
@@ -140,9 +169,23 @@ public class QoQExecutionService {
 		return target;
 	}
 
+	/**
+	 * Execute a select statement
+	 * 
+	 * @param context     the context
+	 * @param select      the select
+	 * @param statement   the QoQ statement
+	 * @param QoQStmtExec the QoQ statement execution
+	 * @param firstSelect if this is the first select
+	 * 
+	 * @return the query
+	 */
 	public static Query executeSelect( IBoxContext context, SQLSelect select, QoQStatement statement, QoQSelectStatementExecution QoQStmtExec,
 	    boolean firstSelect ) {
-		boolean					canEarlyLimit	= QoQStmtExec.getSelectStatement().getOrderBys() == null;
+		// If there is a group by or aggregate function, we will need to partiton the query
+		boolean					isAggregate		= select.hasAggregateResult() || select.getGroupBys() != null;
+		// If there is no order by, and no aggregate, we can limit the results early by stopping as soon as the limit is reached
+		boolean					canEarlyLimit	= !isAggregate && QoQStmtExec.getSelectStatement().getOrderBys() == null;
 		Map<SQLTable, Query>	tableLookup		= new LinkedHashMap<SQLTable, Query>();
 		// This boolean expression will be used to filter the records we keep
 		SQLExpression			where			= select.getWhere();
@@ -194,8 +237,9 @@ public class QoQExecutionService {
 		// We have one or more tables, so build our stream of intersections, processing our joins as needed
 		Stream<int[]> intersections = QoQIntersectionGenerator.createIntersectionStream( QoQExec );
 
-		if ( select.hasAggregateResult() ) {
-
+		// If we have a where clause, add it as a filter to the stream
+		if ( where != null ) {
+			intersections = intersections.filter( intersection -> ( Boolean ) where.evaluate( QoQExec, intersection ) );
 		}
 
 		// Enforce top/limit for this select. This would be a "top N" clause in the select or a "limit N" clause BEFORE the order by, which
@@ -204,25 +248,74 @@ public class QoQExecutionService {
 			intersections = intersections.limit( thisSelectLimit );
 		}
 
-		// If we have a where clause, add it as a filter to the stream
-		if ( where != null ) {
-			intersections = intersections.filter( intersection -> ( Boolean ) where.evaluate( QoQExec, intersection ) );
+		if ( select.hasAggregateResult() || select.getGroupBys() != null ) {
+			return executeAggregateSelect( QoQExec, target, intersections );
 		}
 
-		// Process/create the rows for the final query.
+		// No partitioning, just create the final result set
 		intersections.forEach( intersection -> {
 			// System.out.println( Arrays.toString( intersection ) );
 			Object[]	values	= new Object[ resultColumns.size() ];
 			int			colPos	= 0;
 			// Build up row data as native array
 			for ( Key key : resultColumns.keySet() ) {
-				SQLResultColumn	resultColumn	= resultColumns.get( key ).resultColumn;
-				Object			value			= resultColumn.getExpression().evaluate( QoQExec, intersection );
-				values[ colPos++ ] = value;
+				values[ colPos++ ] = resultColumns.get( key ).resultColumn.getExpression().evaluate( QoQExec, intersection );
 			}
 			target.addRow( values );
 		} );
 
+		return target;
+	}
+
+	/**
+	 * Create query partitioned by group by and aggregate functions
+	 * 
+	 * @param qoQExec       the query execution state
+	 * @param resultColumns the result columns
+	 * 
+	 * @return
+	 */
+	private static Query executeAggregateSelect( QoQSelectExecution QoQExec, Query target, Stream<int[]> intersections ) {
+		Map<Key, TypedResultColumn>	resultColumns	= QoQExec.getResultColumns();
+		List<SQLExpression>			groupBys		= QoQExec.getSelect().getGroupBys();
+		SQLExpression				having			= QoQExec.getSelect().getHaving();
+
+		// Build up our partitions
+		intersections.forEach( intersection -> {
+			String partitionKey;
+			if ( groupBys != null ) {
+				StringBuilder sb = new StringBuilder();
+				for ( SQLExpression expression : groupBys ) {
+					// TODO: hash large values
+					sb.append( StringCaster.cast( expression.evaluate( QoQExec, intersection ) ) );
+				}
+				partitionKey = sb.toString();
+			} else {
+				partitionKey = "ALL";
+			}
+			QoQExec.addPartition( partitionKey, intersection );
+		} );
+
+		// Make stream parallel if we have a lot of partitions
+		var partitionStream = QoQExec.getPartitions().values().stream();
+		if ( QoQExec.getPartitions().size() > 50 ) {
+			partitionStream = partitionStream.parallel();
+		}
+
+		// Filter out partitions that don't match the having clause
+		if ( having != null ) {
+			partitionStream = partitionStream.filter( partition -> ( Boolean ) having.evaluateAggregate( QoQExec, partition ) );
+		}
+
+		// Build up the final result set
+		partitionStream.forEach( partition -> {
+			Object[]	values	= new Object[ resultColumns.size() ];
+			int			colPos	= 0;
+			for ( Key key : resultColumns.keySet() ) {
+				values[ colPos++ ] = resultColumns.get( key ).resultColumn.getExpression().evaluateAggregate( QoQExec, partition );
+			}
+			target.addRow( values );
+		} );
 		return target;
 	}
 
@@ -244,9 +337,23 @@ public class QoQExecutionService {
 	 * @param target     the target query
 	 * @param unionQuery the query to union
 	 */
-	private static void unionDistinct( Query target, Query unionQuery ) {
-		// TODO: IMPLEMENT!
-		unionAll( target, unionQuery );
+	private static void deDupeQuery( Query target ) {
+		Set<String> seen = new HashSet<>();
+		// loop over rows, build partition key out of all values
+		for ( int i = 0; i < target.size(); i++ ) {
+			StringBuilder	sb	= new StringBuilder();
+			Object[]		row	= target.getRow( i );
+			for ( Object value : row ) {
+				sb.append( value );
+			}
+			String key = sb.toString();
+			if ( !seen.contains( key ) ) {
+				seen.add( key );
+			} else {
+				target.deleteRow( i );
+				i--;
+			}
+		}
 	}
 
 	/**
@@ -283,6 +390,10 @@ public class QoQExecutionService {
 		throw new DatabaseException( "Unknown table type [" + table.getClass().getName() + "]" );
 	}
 
+	/**
+	 * Represent a result column with a runtime type
+	 * TODO: We may not need this since the expression can tell us the type directly
+	 */
 	public record TypedResultColumn( QueryColumnType type, SQLResultColumn resultColumn ) {
 
 		public static TypedResultColumn of( QueryColumnType type, SQLResultColumn resultColumn ) {
@@ -290,6 +401,7 @@ public class QoQExecutionService {
 		}
 	}
 
+	// Represent the name and order of an order by statement. This is calculated at runtime since the actual column names may be based on a *
 	public record NameAndDirection( Key name, boolean ascending ) {
 
 		public static NameAndDirection of( Key name, boolean ascending ) {

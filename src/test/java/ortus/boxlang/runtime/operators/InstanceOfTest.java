@@ -25,21 +25,32 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.scopes.IScope;
+import ortus.boxlang.runtime.scopes.VariablesScope;
 
 public class InstanceOfTest {
 
-	IBoxContext runtimeContext = BoxRuntime.getInstance( true ).getRuntimeContext();
+	BoxRuntime	instance		= BoxRuntime.getInstance( true );
+	IBoxContext	runtimeContext	= instance.getRuntimeContext();
+	IBoxContext	context;
+	IScope		variables;
+
+	@BeforeEach
+	void setUp() {
+		context		= new ScriptingRequestBoxContext( runtimeContext );
+		variables	= context.getScopeNearby( VariablesScope.name );
+	}
 
 	@DisplayName( "It can check java type" )
 	@Test
 	void testItCanCheckType() {
-		IBoxContext context = new ScriptingRequestBoxContext( runtimeContext );
 		assertThat( InstanceOf.invoke( context, "Brad", "java.lang.String" ) ).isTrue();
 		// Lucee-only behavior
 		assertThat( InstanceOf.invoke( context, "Brad", "String" ) ).isTrue();
@@ -53,15 +64,13 @@ public class InstanceOfTest {
 	@DisplayName( "It can check java interface" )
 	@Test
 	void testItCanCheckInterface() {
-		IBoxContext context = new ScriptingRequestBoxContext( runtimeContext );
 		assertThat( InstanceOf.invoke( context, new HashMap<String, String>(), "java.util.Map" ) ).isTrue();
 	}
 
 	@DisplayName( "It can check java superinterface" )
 	@Test
 	void testItCanCheckSuperInterface() {
-		IBoxContext		context	= new ScriptingRequestBoxContext( runtimeContext );
-		List<String>	target	= new ArrayList<String>();
+		List<String> target = new ArrayList<String>();
 		assertThat( InstanceOf.invoke( context, target, "java.util.ArrayList" ) ).isTrue();
 		assertThat( InstanceOf.invoke( context, target, "java.util.List" ) ).isTrue();
 		assertThat( InstanceOf.invoke( context, target, "java.util.Collection" ) ).isTrue();
@@ -70,12 +79,39 @@ public class InstanceOfTest {
 	@DisplayName( "It can check java supertype" )
 	@Test
 	void testItCanCheckSupertype() {
-		IBoxContext			context	= new ScriptingRequestBoxContext( runtimeContext );
-		Map<String, String>	target	= new ConcurrentHashMap<String, String>();
+		Map<String, String> target = new ConcurrentHashMap<String, String>();
 		assertThat( InstanceOf.invoke( context, target, "java.util.concurrent.ConcurrentHashMap" ) ).isTrue();
 		assertThat( InstanceOf.invoke( context, target, "java.util.HashMap" ) ).isFalse();
 		assertThat( InstanceOf.invoke( context, target, "java.util.AbstractMap" ) ).isTrue();
 		assertThat( InstanceOf.invoke( context, target, "java.lang.Object" ) ).isTrue();
+	}
+
+	@DisplayName( "Can check java classes" )
+	@Test
+	void testCanCheckJavaClasses() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				target = createObject( "java", "java.util.LinkedHashMap" )
+				result = isInstanceOf( target, "java.util.LinkedHashMap" )
+			""",
+			context );
+		// @formatter:on
+		assertThat( variables.get( "result" ) ).isEqualTo( true );
+	}
+
+	@DisplayName( "Can check java class instances" )
+	@Test
+	void testCanCheckJavaClassInstances() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				target = createObject( "java", "java.util.LinkedHashMap" ).init()
+				result = isInstanceOf( target, "java.util.LinkedHashMap" )
+			""",
+			context );
+		// @formatter:on
+		assertThat( variables.get( "result" ) ).isEqualTo( true );
 	}
 
 }

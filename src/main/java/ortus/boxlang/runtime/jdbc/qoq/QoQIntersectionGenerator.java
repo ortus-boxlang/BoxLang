@@ -78,6 +78,16 @@ public class QoQIntersectionGenerator {
 		return theStream;
 	}
 
+	/**
+	 * Handle CROSS and INNER JOINs
+	 * 
+	 * @param theStream The current stream of intersections
+	 * @param joinTable The table to join
+	 * @param joinOn    The ON clause
+	 * @param QoQExec   The current QoQ execution
+	 * 
+	 * @return The new stream of intersections
+	 */
 	private static Stream<int[]> handleCrossOrInnerJoin( Stream<int[]> theStream, Query joinTable, SQLExpression joinOn, QoQSelectExecution QoQExec ) {
 		theStream = theStream.flatMap( i -> IntStream.rangeClosed( 1, joinTable.size() ).mapToObj( j -> {
 			int[] newIntersection = Arrays.copyOf( i, i.length + 1 );
@@ -90,6 +100,16 @@ public class QoQIntersectionGenerator {
 		return theStream;
 	}
 
+	/**
+	 * Handle LEFT JOINs
+	 * 
+	 * @param theStream The current stream of intersections
+	 * @param joinTable The table to join
+	 * @param joinOn    The ON clause
+	 * @param QoQExec   The current QoQ execution
+	 * 
+	 * @return The new stream of intersections
+	 */
 	private static Stream<int[]> handleLeftJoin( Stream<int[]> theStream, Query joinTable, SQLExpression joinOn, QoQSelectExecution QoQExec ) {
 		return theStream.flatMap( i -> {
 			Stream<int[]>	newStream		= IntStream.rangeClosed( 1, joinTable.size() ).mapToObj( j -> {
@@ -107,6 +127,16 @@ public class QoQIntersectionGenerator {
 		} );
 	}
 
+	/**
+	 * Handle RIGHT JOINs
+	 * 
+	 * @param theStream The current stream of intersections
+	 * @param joinTable The table to join
+	 * @param joinOn    The ON clause
+	 * @param QoQExec   The current QoQ execution
+	 * 
+	 * @return The new stream of intersections
+	 */
 	private static Stream<int[]> handleRightJoin( Stream<int[]> theStream, Query joinTable, SQLExpression joinOn, QoQSelectExecution QoQExec ) {
 		List<int[]>		leftRows	= theStream.collect( Collectors.toList() ); // Collect the left rows to avoid reusing the stream
 		Stream<int[]>	rightStream	= IntStream.rangeClosed( 1, joinTable.size() ).mapToObj( j -> new int[] { j } );
@@ -129,6 +159,16 @@ public class QoQIntersectionGenerator {
 		} );
 	}
 
+	/**
+	 * Handle FULL OUTER JOINs
+	 * 
+	 * @param theStream The current stream of intersections
+	 * @param joinTable The table to join
+	 * @param joinOn    The ON clause
+	 * @param QoQExec   The current QoQ execution
+	 * 
+	 * @return The new stream of intersections
+	 */
 	private static Stream<int[]> handleFullOuterJoin( Stream<int[]> theStream, Query joinTable, SQLExpression joinOn, QoQSelectExecution QoQExec ) {
 		List<int[]>			leftRows		= theStream.collect( Collectors.toList() ); // Collect the left rows to avoid reusing the stream
 		Stream<int[]>		rightStream		= IntStream.rangeClosed( 1, joinTable.size() ).mapToObj( j -> new int[] { j } );

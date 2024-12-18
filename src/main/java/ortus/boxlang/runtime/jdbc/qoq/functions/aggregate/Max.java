@@ -17,15 +17,15 @@ package ortus.boxlang.runtime.jdbc.qoq.functions.aggregate;
 import java.util.List;
 
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLExpression;
-import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
 import ortus.boxlang.runtime.jdbc.qoq.QoQAggregateFunctionDef;
 import ortus.boxlang.runtime.jdbc.qoq.QoQSelectExecution;
+import ortus.boxlang.runtime.operators.Compare;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.QueryColumnType;
 
 public class Max extends QoQAggregateFunctionDef {
 
-	private static final Key					name		= Key.of( "atan" );
+	private static final Key					name		= Key.of( "max" );
 
 	public static final QoQAggregateFunctionDef	INSTANCE	= new Max();
 
@@ -35,8 +35,9 @@ public class Max extends QoQAggregateFunctionDef {
 	}
 
 	@Override
-	public QueryColumnType getReturnType() {
-		return QueryColumnType.DOUBLE;
+	public QueryColumnType getReturnType( QoQSelectExecution QoQExec, List<SQLExpression> expressions ) {
+		// The return type of the function is the same as the type of the expression being aggregated
+		return expressions.get( 0 ).getType( QoQExec );
 	}
 
 	@Override
@@ -45,8 +46,17 @@ public class Max extends QoQAggregateFunctionDef {
 	}
 
 	@Override
-	public Object apply( List<SQLExpression> args, QoQSelectExecution QoQExec ) {
-		return ortus.boxlang.runtime.bifs.global.math.Atn._invoke( NumberCaster.cast( args.get( 0 ) ) );
+	public Object apply( List<Object[]> args, List<SQLExpression> expressions ) {
+		Object[]	input	= args.get( 0 );
+		Object		max		= input[ 0 ];
+		if ( input.length > 1 ) {
+			for ( int i = 1; i < input.length; i++ ) {
+				if ( Compare.invoke( max, input[ i ] ) < 0 ) {
+					max = input[ i ];
+				}
+			}
+		}
+		return max;
 	}
 
 }

@@ -283,14 +283,15 @@ public class DynamicInteropService {
 		unWrapArguments( args );
 
 		// Discover the constructor method handle using the target class and the argument type matching
-		MethodHandle constructorHandle;
+		MethodHandle	constructorHandle;
+		Class<?>[]		argumentClasses	= argumentsToClasses( args );
 		try {
 			constructorHandle = METHOD_LOOKUP.unreflectConstructor(
-			    findMatchingConstructor( context, targetClass, argumentsToClasses( args ), args )
+			    findMatchingConstructor( context, targetClass, argumentClasses, args )
 			);
 		} catch ( IllegalAccessException e ) {
 			throw new BoxRuntimeException(
-			    "Error getting constructor for class " + targetClass.getName() + " with arguments classes " + Arrays.toString( argumentsToClasses( args ) ),
+			    "Error getting constructor for class " + targetClass.getName() + " with arguments classes " + Arrays.toString( argumentClasses ),
 			    e
 			);
 		}
@@ -389,157 +390,6 @@ public class DynamicInteropService {
 	}
 
 	/**
-	 * This method is used to make sure BoxLang classes are loaded correctly with their appropriate:
-	 * - Super class
-	 * - Interfaces
-	 * - Abstract methods
-	 * - Constructor
-	 * - Imports
-	 * - Etc.
-	 *
-	 * @param context        The context to use for the constructor
-	 * @param boxClass       The class to bootstrap
-	 * @param positionalArgs The positional arguments to pass to the constructor
-	 * @param namedArgs      The named arguments to pass to the constructor
-	 * @param noInit         Whether to skip the initialization of the class or not
-	 *
-	 * @return The instance of the class
-	 */
-	@SuppressWarnings( "unchecked" )
-	private static <T> T bootstrapBLClass( IBoxContext context, IClassRunnable boxClass, Object[] positionalArgs, Map<Key, Object> namedArgs, boolean noInit ) {
-		// This class context is really only used while boostrapping the pseudoConstructor. It will NOT be used as a parent
-		// context once the boxClass is initialized. Methods called on this boxClass will have access to the variables/this scope via their
-		// FunctionBoxContext, but their parent context will be whatever context they are called from.
-		IBoxContext classContext = new ClassBoxContext( context, boxClass );
-		// Bootstrap the pseudoConstructor
-		classContext.pushTemplate( boxClass );
-
-		try {
-			// First, we load the super class if it exists
-			Object superClassObject = boxClass.getAnnotations().get( Key._EXTENDS );
-			if ( superClassObject != null ) {
-				String superClassName = StringCaster.cast( superClassObject );
-				if ( superClassName != null && superClassName.length() > 0 && !superClassName.toLowerCase().startsWith( "java:" ) ) {
-					// Recursively load the super class
-					IClassRunnable _super = ( IClassRunnable ) getClassLocator().load( classContext,
-					    superClassName,
-					    classContext.getCurrentImports()
-					)
-					    // Constructor args are NOT passed. Only the outermost class gets to use those
-					    .invokeConstructor( classContext, new Object[] { Key.noInit } )
-					    .unWrapBoxLangClass();
-
-					// Check for final annotation and throw if we're trying to extend a final class
-					if ( _super.getAnnotations().get( Key._final ) != null ) {
-						throw new BoxRuntimeException( "Cannot extend final class: " + _super.bxGetName() );
-					}
-					// Set in our super class
-					boxClass.setSuper( _super );
-				}
-			}
-
-			// Run the pseudo constructor
-			boxClass.pseudoConstructor( classContext );
-
-			// Now that UDFs are defined, let's enforce any interfaces
-			Object oInterfaces = boxClass.getAnnotations().get( Key._IMPLEMENTS );
-			if ( oInterfaces != null ) {
-				List<String> interfaceNames = ListUtil.asList( StringCaster.cast( oInterfaces ), "," )
-				    .stream()
-				    .map( String::valueOf )
-				    .map( String::trim )
-				    // ignore anything starting with java: (case insensitive)
-				    .filter( name -> !name.toLowerCase().startsWith( "java:" ) )
-				    .toList();
-
-				for ( String interfaceName : interfaceNames ) {
-					BoxInterface thisInterface = ( BoxInterface ) getClassLocator().load( classContext, interfaceName, classContext.getCurrentImports() )
-					    .unWrapBoxLangClass();
-					boxClass.registerInterface( thisInterface );
-				}
-
-			}
-
-			if ( !noInit ) {
-				if ( boxClass.getAnnotations().get( Key._ABSTRACT ) != null ) {
-					throw new AbstractClassException( "Cannot instantiate an abstract class: " + boxClass.bxGetName() );
-				}
-				if ( boxClass.getSuper() != null ) {
-					BoxClassSupport.validateAbstractMethods( boxClass, boxClass.getSuper().getAllAbstractMethods() );
-				}
-				// Call constructor
-				// look for initMethod annotation
-				Object	initMethod	= boxClass.getAnnotations().get( Key.initMethod );
-				Key		initKey;
-				if ( initMethod != null ) {
-					initKey = Key.of( StringCaster.cast( initMethod ) );
-				} else {
-					initKey = Key.init;
-				}
-				if ( boxClass.dereference( context, initKey, true ) != null ) {
-					Object result;
-					if ( positionalArgs != null ) {
-						result = boxClass.dereferenceAndInvoke( classContext, initKey, positionalArgs, false );
-					} else {
-						result = boxClass.dereferenceAndInvoke( classContext, initKey, namedArgs, false );
-					}
-					// CF returns the actual result of the constructor, but I'm not sure it makes sense or if people actually ever
-					// return anything other than "this".
-					if ( result != null ) {
-						// This cast will fail if the init returns something like a string
-						return ( T ) result;
-					}
-				} else {
-					// implicit constructor
-
-					if ( positionalArgs != null && positionalArgs.length == 1 && positionalArgs[ 0 ] instanceof IStruct named ) {
-						namedArgs = named;
-					} else if ( positionalArgs != null && positionalArgs.length > 0 ) {
-						throw new BoxRuntimeException( "Implicit constructor only accepts named args or a single Struct as a positional arg." );
-					}
-
-					if ( namedArgs != null ) {
-						if ( namedArgs.containsKey( Key.argumentCollection ) && namedArgs.get( Key.argumentCollection ) instanceof IStruct argCollection ) {
-							// Create copy of named args, merge in argCollection without overwriting, and delete arg collection key from copy of namedargs
-							namedArgs = new HashMap<>( namedArgs );
-							for ( Map.Entry<Key, Object> entry : argCollection.entrySet() ) {
-								if ( !namedArgs.containsKey( entry.getKey() ) ) {
-									namedArgs.put( entry.getKey(), entry.getValue() );
-								}
-							}
-							namedArgs.remove( Key.argumentCollection );
-						} else if ( namedArgs.containsKey( Key.argumentCollection ) && namedArgs.get( Key.argumentCollection ) instanceof Array argArray ) {
-							// Create copy of named args, merge in argCollection without overwriting, and delete arg collection key from copy of namedargs
-							namedArgs = new HashMap<>( namedArgs );
-							for ( int i = 0; i < argArray.size(); i++ ) {
-								namedArgs.put( Key.of( i + 1 ), argArray.get( i ) );
-							}
-							namedArgs.remove( Key.argumentCollection );
-						}
-						// loop over args and invoke setter methods for each
-						for ( Map.Entry<Key, Object> entry : namedArgs.entrySet() ) {
-							// not a great way to pre-create/cache these keys since they're really based on whatever crazy args the user gives us.
-							// If this becomes a performance issue, we can look at caching the expected keys in the boxClass in a map where the key is the
-							// propery
-							// name
-							// and
-							// the value is the key of the setter (basically the inverse of the setterlookup map)
-							boxClass.dereferenceAndInvoke( classContext, Key.of( "set" + entry.getKey().getName() ), new Object[] { entry.getValue() }, false );
-						}
-					}
-				}
-			}
-		} finally {
-			// This is for any output written in the pseudoconstructor that needs to be flushed
-			classContext.flushBuffer( false );
-			classContext.popTemplate();
-		}
-
-		// We have a fully initialized class, so we can return it
-		return ( T ) boxClass;
-	}
-
-	/**
 	 * Invoke can be used to invoke public methods on instances, or static methods on classes/interfaces.
 	 *
 	 * If it's determined that the method handle is static, then the target instance is ignored.
@@ -609,7 +459,13 @@ public class DynamicInteropService {
 	 *
 	 * @return The result of the method invocation
 	 */
-	public static Object invoke( IBoxContext context, DynamicObject dynamicObject, Class<?> targetClass, Object targetInstance, String methodName, Boolean safe,
+	public static Object invoke(
+	    IBoxContext context,
+	    DynamicObject dynamicObject,
+	    Class<?> targetClass,
+	    Object targetInstance,
+	    String methodName,
+	    Boolean safe,
 	    Object... arguments ) {
 		// Verify method name
 		if ( methodName == null || methodName.isEmpty() ) {
@@ -958,6 +814,18 @@ public class DynamicInteropService {
 	}
 
 	/**
+	 * Verifies if the class has a public or public static field with the given name and no case-sensitivity (upper case)
+	 *
+	 * @param targetClass The class to check
+	 * @param fieldName   The name of the field to check
+	 *
+	 * @return True if the field exists, false otherwise
+	 */
+	public static Boolean hasPublicFieldNoCase( Class<?> targetClass, String fieldName ) {
+		return getPublicFieldNamesNoCase( targetClass ).contains( fieldName.toUpperCase() );
+	}
+
+	/**
 	 * Get an array of fields of all the public fields for the given class
 	 *
 	 * @param targetClass The class to get the fields for
@@ -972,6 +840,17 @@ public class DynamicInteropService {
 	}
 
 	/**
+	 * Get an array of fields of all the public fields for the given class
+	 *
+	 * @param targetClass The class to get the fields for
+	 *
+	 * @return The fields in the class
+	 */
+	public static Field[] getPublicFields( Class<?> targetClass ) {
+		return targetClass.getFields();
+	}
+
+	/**
 	 * Get a stream of fields of all the public fields for the given class
 	 *
 	 * @param targetClass The class to get the fields for
@@ -980,6 +859,17 @@ public class DynamicInteropService {
 	 */
 	public static Stream<Field> getFieldsAsStream( Class<?> targetClass ) {
 		return Stream.of( getFields( targetClass ) );
+	}
+
+	/**
+	 * Get a stream of fields of all the public fields for the given class
+	 *
+	 * @param targetClass The class to get the fields for
+	 *
+	 * @return The stream of fields in the class
+	 */
+	public static Stream<Field> getPublicFieldsAsStream( Class<?> targetClass ) {
+		return Stream.of( getPublicFields( targetClass ) );
 	}
 
 	/**
@@ -1008,7 +898,20 @@ public class DynamicInteropService {
 		    .map( Field::getName )
 		    .map( String::toUpperCase )
 		    .toList();
+	}
 
+	/**
+	 * Get a list of field names for the given class with no case-sensitivity (upper case)
+	 *
+	 * @param targetClass The class to get the fields for
+	 *
+	 * @return A list of field names
+	 */
+	public static List<String> getPublicFieldNamesNoCase( Class<?> targetClass ) {
+		return getPublicFieldsAsStream( targetClass )
+		    .map( Field::getName )
+		    .map( String::toUpperCase )
+		    .toList();
 	}
 
 	/**
@@ -1259,13 +1162,24 @@ public class DynamicInteropService {
 	 * Get a HashSet of constructors of the given class
 	 *
 	 * @param targetClass The class to get the constructors for
+	 * @param callable    Whether to get only callable constructors (anything but private). If null or false all constructors are returned
 	 *
 	 * @return A unique set of callable constructors
 	 */
-	public static Set<Constructor<?>> getConstructors( Class<?> targetClass ) {
+	public static Set<Constructor<?>> getConstructors( Class<?> targetClass, Boolean callable ) {
 		Set<Constructor<?>> allConstructors = new HashSet<>();
+
+		// Collect all the constructors from the class and it's super classes
 		allConstructors.addAll( new HashSet<>( List.of( targetClass.getConstructors() ) ) );
 		allConstructors.addAll( new HashSet<>( List.of( targetClass.getDeclaredConstructors() ) ) );
+
+		// If callable, filter out the private constructors
+		if ( Boolean.TRUE.equals( callable ) ) {
+			allConstructors = allConstructors.stream()
+			    .filter( method -> Modifier.isPublic( method.getModifiers() ) )
+			    .collect( Collectors.toSet() );
+		}
+
 		return allConstructors;
 	}
 
@@ -1273,11 +1187,12 @@ public class DynamicInteropService {
 	 * Get a stream of constructors of the given class
 	 *
 	 * @param targetClass The class to get the constructors for
+	 * @param callable    Whether to get only callable constructors (anything but private). If null or false all constructors are returned
 	 *
 	 * @return A stream of unique callable constructors
 	 */
-	public static Stream<Constructor<?>> getConstructorsAsStream( Class<?> targetClass ) {
-		return getConstructors( targetClass ).stream();
+	public static Stream<Constructor<?>> getConstructorsAsStream( Class<?> targetClass, Boolean callable ) {
+		return getConstructors( targetClass, callable ).stream();
 	}
 
 	/**
@@ -1291,18 +1206,53 @@ public class DynamicInteropService {
 	 * @return The constructor if it exists
 	 */
 	public static Constructor<?> findMatchingConstructor( IBoxContext context, Class<?> targetClass, Class<?>[] argumentsAsClasses, Object... arguments ) {
-		return getConstructorsAsStream( targetClass )
-		    // has to have the same number of arguments
-		    .filter( constructor -> constructorHasMatchingParameterTypes( context, constructor, argumentsAsClasses, arguments ) )
-		    .findFirst()
-		    .orElseThrow( () -> new NoConstructorException(
-		        String.format(
-		            "No such constructor found in the class [%s] using [%d] arguments of types [%s]",
-		            targetClass.getName(),
-		            argumentsAsClasses.length,
-		            Arrays.toString( argumentsAsClasses )
-		        )
-		    ) );
+		List<Constructor<?>> targetConstructors = getConstructorsAsStream( targetClass, true )
+		    // Try matches using our algorithms
+		    .filter( constructor -> {
+			    // No Var Args
+			    if ( !constructor.isVarArgs() && constructor.getParameterCount() == argumentsAsClasses.length ) {
+				    return true;
+			    }
+
+			    // Check for var args as the last parameter
+			    if ( constructor.isVarArgs() ) {
+				    return argumentsAsClasses.length >= constructor.getParameterCount() - 1;
+			    }
+
+			    // No match
+			    return false;
+		    } )
+		    .toList();
+
+		// Only process if we have constructors
+		if ( !targetConstructors.isEmpty() ) {
+			// 1. Exact Match : Matches the incoming argument class types to the constructor signature
+			Constructor<?> foundConstructor = targetConstructors
+			    .stream()
+			    // Has to have the SAME arg types
+			    .filter( constructor -> constructorHasMatchingParameterTypes( context, constructor, true, argumentsAsClasses, arguments ) )
+			    .findFirst()
+			    // If no exact match, try loose coercion
+			    .or( () -> targetConstructors
+			        .stream()
+			        .filter( constructor -> constructorHasMatchingParameterTypes( context, constructor, false, argumentsAsClasses, arguments ) )
+			        .findFirst()
+			    )
+			    .orElse( null );
+
+			if ( foundConstructor != null ) {
+				return foundConstructor;
+			}
+		}
+
+		throw new NoConstructorException(
+		    String.format(
+		        "No such constructor found in the class [%s] using [%d] arguments of types [%s]",
+		        targetClass.getName(),
+		        argumentsAsClasses.length,
+		        Arrays.toString( argumentsAsClasses )
+		    )
+		);
 	}
 
 	/**
@@ -1513,24 +1463,18 @@ public class DynamicInteropService {
 		}
 
 		// 1: Exact Match first
-		Method foundMethod = targetMethods
+		return targetMethods
 		    .stream()
 		    // has to have the same argument types
 		    .filter( method -> hasMatchingParameterTypes( context, method, true, argumentsAsClasses, arguments ) )
 		    .findFirst()
+		    // 2: If no exact match, try loose coercion
+		    .or( () -> targetMethods
+		        .stream()
+		        .filter( method -> hasMatchingParameterTypes( context, method, false, argumentsAsClasses, arguments ) )
+		        .findFirst()
+		    )
 		    .orElse( null );
-
-		// 2. Loose coercion matching
-		if ( foundMethod == null ) {
-			foundMethod = targetMethods
-			    .stream()
-			    // Loose coercion matching next
-			    .filter( method -> hasMatchingParameterTypes( context, method, false, argumentsAsClasses, arguments ) )
-			    .findFirst()
-			    .orElse( null );
-		}
-
-		return foundMethod;
 	}
 
 	/**
@@ -1773,7 +1717,7 @@ public class DynamicInteropService {
 			}
 			return s.substring( index - 1, index );
 			// Special logic for native arrays. Possibly move to helper
-		} else if ( hasFieldNoCase( targetClass, name.getName() ) ) {
+		} else if ( hasAccessibleField( targetInstance, targetClass, name.getName() ) ) {
 			// If we have the field, return its value, even if it's null
 			return getField( targetClass, targetInstance, name.getName() ).orElse( null );
 		} else if ( hasClassNoCase( targetClass, name.getName() ) ) {
@@ -1819,6 +1763,23 @@ public class DynamicInteropService {
 			    )
 			);
 		}
+	}
+
+	private static boolean hasAccessibleField( Object targetInstance, Class<?> targetClass, String fieldName ) {
+		// Get all fields on the class
+		Optional<Field> possibleMatch = getFieldsAsStream( targetClass ).filter( field -> field.getName().equalsIgnoreCase( fieldName ) ).findFirst();
+		// If the field doesn't exist, early exit
+		if ( !possibleMatch.isPresent() ) {
+			return false;
+		}
+		Field field = possibleMatch.get();
+		// As sort-of dumb work around for a BoxClass's ability to reference super.protectedField when extending java, we'll assume it's accessible if accessing on a BoxClass and the field is from this class
+		// This doesn't really test the true calling context, but we'd need to proxy to the actual box class for that to work.
+		if ( targetInstance instanceof IClassRunnable && !field.getDeclaringClass().equals( targetInstance.getClass() ) ) {
+			return true;
+		}
+		// For all other cases, we'll just check if the field is public
+		return Modifier.isPublic( field.getModifiers() );
 	}
 
 	/**
@@ -1990,6 +1951,16 @@ public class DynamicInteropService {
 			}
 		}
 
+		// Check if the namedArguments has the `argumentCollection` key.
+		// And if it's an Array, delegeate to the positional arguments
+		// This use-case can come from invoke( javaObject, "method", [1, 2, 3] )
+		if ( namedArguments.containsKey( Key.argumentCollection ) ) {
+			Object argumentCollection = namedArguments.get( Key.argumentCollection );
+			if ( argumentCollection instanceof Array castedArray ) {
+				return dereferenceAndInvoke( dynamicObject, targetClass, targetInstance, context, name, castedArray.toArray(), safe );
+			}
+		}
+
 		throw new BoxRuntimeException( "Methods on Java objects cannot be called with named arguments" );
 	}
 
@@ -2062,12 +2033,6 @@ public class DynamicInteropService {
 	}
 
 	/**
-	 * --------------------------------------------------------------------------
-	 * Private Methods
-	 * --------------------------------------------------------------------------
-	 */
-
-	/**
 	 * Verifies if the target calss is an interface or not
 	 *
 	 * @param targetClass The class to check
@@ -2077,6 +2042,12 @@ public class DynamicInteropService {
 	public static boolean isInterface( Class<?> targetClass ) {
 		return targetClass.isInterface() || BoxInterface.class.isAssignableFrom( targetClass );
 	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Private Methods
+	 * --------------------------------------------------------------------------
+	 */
 
 	/**
 	 * Verifies if the method has the same parameter types as the incoming ones using our matching algorithms.
@@ -2243,6 +2214,15 @@ public class DynamicInteropService {
 			);
 		}
 
+		// Expected: Numeric and Actual: String
+		// If the expected type is a number and the actual is a string, we can TRY to coerce it
+		if ( Number.class.isAssignableFrom( expected ) && actualClass.equals( "string" ) ) {
+			// logger.debug( "Coerce attempt: Castable to Number from String " + actualClass );
+			return Optional.of(
+			    GenericCaster.cast( context, value, expectedClass, false )
+			);
+		}
+
 		// EXPECTED: FunctionInterfaces and/or SAMs
 		Class<?> functionalInterface = InterfaceProxyService.getFunctionalInterface( expected );
 		// If the target is a functional interface and the actual value is a Funcion or Runnable, coerce it
@@ -2270,26 +2250,40 @@ public class DynamicInteropService {
 	 *
 	 * @param context            The context to use for the method invocation
 	 * @param constructor        The constructor to check
+	 * @param exact              Exact matching or loose matching with coercion
 	 * @param argumentsAsClasses The arguments to check
 	 * @param arguments          The arguments to pass to the constructor
 	 *
-	 * @return True if the constructor has the same parameter types, false otherwise
+	 * @return True if the constructor has the same or coerced parameter types, false otherwise
 	 */
-	private static boolean constructorHasMatchingParameterTypes( IBoxContext context, Constructor<?> constructor, Class<?>[] argumentsAsClasses,
+	private static boolean constructorHasMatchingParameterTypes(
+	    IBoxContext context,
+	    Constructor<?> constructor,
+	    Boolean exact,
+	    Class<?>[] argumentsAsClasses,
 	    Object... arguments ) {
+
+		// Get param types to test from the constructor
 		Class<?>[] constructorParams = constructor.getParameterTypes();
 
-		// If we have a different number of parameters, then we don't have a match
-		if ( constructorParams.length != argumentsAsClasses.length ) {
-			return false;
+		// Verify assignability including primitive autoboxing
+		if ( ClassUtils.isAssignable( argumentsAsClasses, constructorParams ) ) {
+			return true;
 		}
 
-		// Verify assignability including primitive autoboxing
-		return ClassUtils.isAssignable( argumentsAsClasses, constructorParams );
+		// Let's do coercive matching if we get here. ONLY if we are not doing an exact match
+		// iterate over the constructor params and check if the arguments can be coerced to the constructor params
+		// Every argument must be coercable or it fails
+		if ( !exact ) {
+			return coerceArguments( context, constructorParams, argumentsAsClasses, arguments, constructor.isVarArgs() );
+		}
+
+		return false;
 	}
 
 	/**
 	 * Lazy load this to avoid static intitlizer deadlocks on startup
+	 * Most of this is done lazy to avoid static init deadlocks
 	 */
 	private static FunctionService getFunctionService() {
 		if ( functionService == null ) {
@@ -2304,6 +2298,7 @@ public class DynamicInteropService {
 
 	/**
 	 * Lazy load ClassLocator as well
+	 * Most of this is done lazy to avoid static init deadlocks
 	 */
 	private static ClassLocator getClassLocator() {
 		if ( classLocator == null ) {
@@ -2314,6 +2309,157 @@ public class DynamicInteropService {
 			}
 		}
 		return classLocator;
+	}
+
+	/**
+	 * This method is used to make sure BoxLang classes are loaded correctly with their appropriate:
+	 * - Super class
+	 * - Interfaces
+	 * - Abstract methods
+	 * - Constructor
+	 * - Imports
+	 * - Etc.
+	 *
+	 * @param context        The context to use for the constructor
+	 * @param boxClass       The class to bootstrap
+	 * @param positionalArgs The positional arguments to pass to the constructor
+	 * @param namedArgs      The named arguments to pass to the constructor
+	 * @param noInit         Whether to skip the initialization of the class or not
+	 *
+	 * @return The instance of the class
+	 */
+	@SuppressWarnings( "unchecked" )
+	private static <T> T bootstrapBLClass( IBoxContext context, IClassRunnable boxClass, Object[] positionalArgs, Map<Key, Object> namedArgs, boolean noInit ) {
+		// This class context is really only used while boostrapping the pseudoConstructor. It will NOT be used as a parent
+		// context once the boxClass is initialized. Methods called on this boxClass will have access to the variables/this scope via their
+		// FunctionBoxContext, but their parent context will be whatever context they are called from.
+		IBoxContext classContext = new ClassBoxContext( context, boxClass );
+		// Bootstrap the pseudoConstructor
+		classContext.pushTemplate( boxClass );
+
+		try {
+			// First, we load the super class if it exists
+			Object superClassObject = boxClass.getAnnotations().get( Key._EXTENDS );
+			if ( superClassObject != null ) {
+				String superClassName = StringCaster.cast( superClassObject );
+				if ( superClassName != null && superClassName.length() > 0 && !superClassName.toLowerCase().startsWith( "java:" ) ) {
+					// Recursively load the super class
+					IClassRunnable _super = ( IClassRunnable ) getClassLocator().load( classContext,
+					    superClassName,
+					    classContext.getCurrentImports()
+					)
+					    // Constructor args are NOT passed. Only the outermost class gets to use those
+					    .invokeConstructor( classContext, new Object[] { Key.noInit } )
+					    .unWrapBoxLangClass();
+
+					// Check for final annotation and throw if we're trying to extend a final class
+					if ( _super.getAnnotations().get( Key._final ) != null ) {
+						throw new BoxRuntimeException( "Cannot extend final class: " + _super.bxGetName() );
+					}
+					// Set in our super class
+					boxClass.setSuper( _super );
+				}
+			}
+
+			// Run the pseudo constructor
+			boxClass.pseudoConstructor( classContext );
+
+			// Now that UDFs are defined, let's enforce any interfaces
+			Object oInterfaces = boxClass.getAnnotations().get( Key._IMPLEMENTS );
+			if ( oInterfaces != null ) {
+				List<String> interfaceNames = ListUtil.asList( StringCaster.cast( oInterfaces ), "," )
+				    .stream()
+				    .map( String::valueOf )
+				    .map( String::trim )
+				    // ignore anything starting with java: (case insensitive)
+				    .filter( name -> !name.toLowerCase().startsWith( "java:" ) )
+				    .toList();
+
+				for ( String interfaceName : interfaceNames ) {
+					BoxInterface thisInterface = ( BoxInterface ) getClassLocator().load( classContext, interfaceName, classContext.getCurrentImports() )
+					    .unWrapBoxLangClass();
+					boxClass.registerInterface( thisInterface );
+				}
+
+			}
+
+			if ( !noInit ) {
+				if ( boxClass.getAnnotations().get( Key._ABSTRACT ) != null ) {
+					throw new AbstractClassException( "Cannot instantiate an abstract class: " + boxClass.bxGetName() );
+				}
+				if ( boxClass.getSuper() != null ) {
+					BoxClassSupport.validateAbstractMethods( boxClass, boxClass.getSuper().getAllAbstractMethods() );
+				}
+				// Call constructor
+				// look for initMethod annotation
+				Object	initMethod	= boxClass.getAnnotations().get( Key.initMethod );
+				Key		initKey;
+				if ( initMethod != null ) {
+					initKey = Key.of( StringCaster.cast( initMethod ) );
+				} else {
+					initKey = Key.init;
+				}
+				if ( boxClass.dereference( context, initKey, true ) != null ) {
+					Object result;
+					if ( positionalArgs != null ) {
+						result = boxClass.dereferenceAndInvoke( classContext, initKey, positionalArgs, false );
+					} else {
+						result = boxClass.dereferenceAndInvoke( classContext, initKey, namedArgs, false );
+					}
+					// CF returns the actual result of the constructor, but I'm not sure it makes sense or if people actually ever
+					// return anything other than "this".
+					if ( result != null ) {
+						// This cast will fail if the init returns something like a string
+						return ( T ) result;
+					}
+				} else {
+					// implicit constructor
+
+					if ( positionalArgs != null && positionalArgs.length == 1 && positionalArgs[ 0 ] instanceof IStruct named ) {
+						namedArgs = named;
+					} else if ( positionalArgs != null && positionalArgs.length > 0 ) {
+						throw new BoxRuntimeException( "Implicit constructor only accepts named args or a single Struct as a positional arg." );
+					}
+
+					if ( namedArgs != null ) {
+						if ( namedArgs.containsKey( Key.argumentCollection ) && namedArgs.get( Key.argumentCollection ) instanceof IStruct argCollection ) {
+							// Create copy of named args, merge in argCollection without overwriting, and delete arg collection key from copy of namedargs
+							namedArgs = new HashMap<>( namedArgs );
+							for ( Map.Entry<Key, Object> entry : argCollection.entrySet() ) {
+								if ( !namedArgs.containsKey( entry.getKey() ) ) {
+									namedArgs.put( entry.getKey(), entry.getValue() );
+								}
+							}
+							namedArgs.remove( Key.argumentCollection );
+						} else if ( namedArgs.containsKey( Key.argumentCollection ) && namedArgs.get( Key.argumentCollection ) instanceof Array argArray ) {
+							// Create copy of named args, merge in argCollection without overwriting, and delete arg collection key from copy of namedargs
+							namedArgs = new HashMap<>( namedArgs );
+							for ( int i = 0; i < argArray.size(); i++ ) {
+								namedArgs.put( Key.of( i + 1 ), argArray.get( i ) );
+							}
+							namedArgs.remove( Key.argumentCollection );
+						}
+						// loop over args and invoke setter methods for each
+						for ( Map.Entry<Key, Object> entry : namedArgs.entrySet() ) {
+							// not a great way to pre-create/cache these keys since they're really based on whatever crazy args the user gives us.
+							// If this becomes a performance issue, we can look at caching the expected keys in the boxClass in a map where the key is the
+							// propery
+							// name
+							// and
+							// the value is the key of the setter (basically the inverse of the setterlookup map)
+							boxClass.dereferenceAndInvoke( classContext, Key.of( "set" + entry.getKey().getName() ), new Object[] { entry.getValue() }, false );
+						}
+					}
+				}
+			}
+		} finally {
+			// This is for any output written in the pseudoconstructor that needs to be flushed
+			classContext.flushBuffer( false );
+			classContext.popTemplate();
+		}
+
+		// We have a fully initialized class, so we can return it
+		return ( T ) boxClass;
 	}
 
 }

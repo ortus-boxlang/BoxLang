@@ -14,6 +14,7 @@
  */
 package ortus.boxlang.compiler.ast.sql.select.expression.literal;
 
+import java.util.List;
 import java.util.Map;
 
 import ortus.boxlang.compiler.ast.BoxNode;
@@ -49,6 +50,13 @@ public class SQLNullLiteral extends SQLExpression {
 	 * Evaluate the expression
 	 */
 	public Object evaluate( QoQSelectExecution QoQExec, int[] intersection ) {
+		return null;
+	}
+
+	/**
+	 * Evaluate the expression aginst a partition of data
+	 */
+	public Object evaluateAggregate( QoQSelectExecution QoQExec, List<int[]> intersections ) {
 		return null;
 	}
 
