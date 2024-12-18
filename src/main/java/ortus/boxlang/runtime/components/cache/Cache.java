@@ -31,6 +31,7 @@ import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.Attempt;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
@@ -166,10 +167,10 @@ public class Cache extends Component {
 		String				variable			= attributes.getAsString( Key._NAME );
 		String				cacheName			= attributes.getAsString( Key.cacheName );
 		String				cacheDirectory		= attributes.getAsString( Key.directory );
-		Boolean				useCache			= attributes.getAsBoolean( Key.useCache );
-		Double				timespan			= attributes.getAsDouble( Key.timespan );
-		Double				idleTime			= attributes.getAsDouble( Key.idleTime );
-		Boolean				throwOnError		= attributes.getAsBoolean( Key.throwOnError );
+		Boolean				useCache			= BooleanCaster.cast( attributes.get( Key.useCache ) );
+		Double				timespan			= DoubleCaster.cast( attributes.get( Key.timespan ) );
+		Double				idleTime			= DoubleCaster.cast( attributes.get( Key.idleTime ) );
+		Boolean				throwOnError		= BooleanCaster.cast( attributes.get( Key.throwOnError ) );
 		ICacheProvider		cacheProvider		= null;
 		List<CacheAction>	namedCacheOps		= List.of(
 		    CacheAction.GET,
@@ -325,7 +326,7 @@ public class Cache extends Component {
 			result = castedAttempt.get();
 		}
 
-		if ( result instanceof String && attributes.getAsBoolean( Key.stripWhitespace ) ) {
+		if ( result instanceof String && BooleanCaster.cast( attributes.get( Key.stripWhitespace ) ) ) {
 			result = StringCaster.cast( result ).trim();
 		}
 

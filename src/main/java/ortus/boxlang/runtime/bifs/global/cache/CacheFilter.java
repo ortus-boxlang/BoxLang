@@ -20,6 +20,8 @@ import ortus.boxlang.runtime.cache.filters.ICacheKeyFilter;
 import ortus.boxlang.runtime.cache.filters.RegexFilter;
 import ortus.boxlang.runtime.cache.filters.WildcardFilter;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -72,8 +74,8 @@ public class CacheFilter extends BIF {
 	 * @return The cache instance that was requested by name.
 	 */
 	public ICacheKeyFilter _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Boolean	useRegex	= arguments.getAsBoolean( Key.useRegex );
-		String	filter		= arguments.getAsString( Key.filter );
+		Boolean	useRegex	= BooleanCaster.cast( arguments.get( Key.useRegex ) );
+		String	filter		= StringCaster.cast( arguments.get( Key.filter ) );
 
 		// Build the right filter
 		return useRegex ? new RegexFilter( filter ) : new WildcardFilter( filter );

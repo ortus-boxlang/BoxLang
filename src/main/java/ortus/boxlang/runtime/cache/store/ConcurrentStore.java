@@ -28,6 +28,8 @@ import org.slf4j.LoggerFactory;
 import ortus.boxlang.runtime.cache.ICacheEntry;
 import ortus.boxlang.runtime.cache.filters.ICacheKeyFilter;
 import ortus.boxlang.runtime.cache.providers.ICacheProvider;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -66,12 +68,13 @@ public class ConcurrentStore extends AbstractStore {
 	public IObjectStore init( ICacheProvider provider, IStruct config ) {
 		this.provider	= provider;
 		this.config		= config;
-		this.pool		= new ConcurrentHashMap<>( config.getAsInteger( Key.maxObjects ) / 4 );
+		int maxObject = IntegerCaster.cast( config.get( Key.maxObjects ) );
+		this.pool = new ConcurrentHashMap<>( maxObject / 4 );
 
 		logger.debug(
 		    "ConcurrentStore({}) initialized with a max size of {}",
 		    provider.getName(),
-		    config.getAsInteger( Key.maxObjects )
+		    maxObject
 		);
 		return this;
 	}
@@ -125,7 +128,8 @@ public class ConcurrentStore extends AbstractStore {
 	 * and eviction count.
 	 */
 	public synchronized void evict() {
-		if ( this.config.getAsInteger( Key.evictCount ) == 0 ) {
+		int evictCount = IntegerCaster.cast( this.config.get( Key.evictCount ) );
+		if ( evictCount == 0 ) {
 			return;
 		}
 		getPool().entrySet()
@@ -136,7 +140,7 @@ public class ConcurrentStore extends AbstractStore {
 		    // Exclude eternal objects from eviction
 		    .filter( entry -> !entry.getValue().isEternal() )
 		    // Check how many to evict according to the config count
-		    .limit( this.config.getAsInteger( Key.evictCount ) )
+		    .limit( evictCount )
 		    // Evict it & Log Stats
 		    .forEach( entry -> {
 			    logger.debug(
@@ -298,7 +302,7 @@ public class ConcurrentStore extends AbstractStore {
 			    .incrementHits()
 			    .touchLastAccessed();
 			// Is resetTimeoutOnAccess enabled? If so, jump up the creation time to increase the timeout
-			if ( this.config.getAsBoolean( Key.resetTimeoutOnAccess ) ) {
+			if ( BooleanCaster.cast( this.config.get( Key.resetTimeoutOnAccess ) ) ) {
 				results.resetCreated();
 			}
 		}

@@ -29,6 +29,8 @@ import org.slf4j.LoggerFactory;
 import ortus.boxlang.runtime.cache.ICacheEntry;
 import ortus.boxlang.runtime.cache.filters.ICacheKeyFilter;
 import ortus.boxlang.runtime.cache.providers.ICacheProvider;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -75,16 +77,17 @@ public class ConcurrentSoftReferenceStore extends AbstractStore {
 	 */
 	@Override
 	public IObjectStore init( ICacheProvider provider, IStruct config ) {
-		this.provider		= provider;
-		this.config			= config;
-		this.pool			= new ConcurrentHashMap<>( config.getAsInteger( Key.maxObjects ) / 4 );
-		this.softRefKeyMap	= new ConcurrentHashMap<>( config.getAsInteger( Key.maxObjects ) / 4 );
+		this.provider	= provider;
+		this.config		= config;
+		int maxObjects = IntegerCaster.cast( config.get( Key.maxObjects ) );
+		this.pool			= new ConcurrentHashMap<>( maxObjects / 4 );
+		this.softRefKeyMap	= new ConcurrentHashMap<>( maxObjects / 4 );
 		this.referenceQueue	= new ReferenceQueue<>();
 
 		logger.debug(
 		    "ConcurrentSoftReferenceStore({}) initialized with a max size of {}",
 		    provider.getName(),
-		    config.getAsInteger( Key.maxObjects )
+		    maxObjects
 		);
 
 		return this;
@@ -139,7 +142,8 @@ public class ConcurrentSoftReferenceStore extends AbstractStore {
 	 * and eviction count.
 	 */
 	public synchronized void evict() {
-		if ( this.config.getAsInteger( Key.evictCount ) == 0 ) {
+		int evictCount = IntegerCaster.cast( this.config.get( Key.evictCount ) );
+		if ( evictCount == 0 ) {
 			return;
 		}
 		getPool()
@@ -153,7 +157,7 @@ public class ConcurrentSoftReferenceStore extends AbstractStore {
 		    // Sort using the policy comparator
 		    .sorted( getPolicy().getComparator() )
 		    // Check how many to evict according to the config count
-		    .limit( this.config.getAsInteger( Key.evictCount ) )
+		    .limit( evictCount )
 		    // Evict it & Log Stats
 		    .forEach( entry -> {
 			    logger.debug(
@@ -340,7 +344,7 @@ public class ConcurrentSoftReferenceStore extends AbstractStore {
 			    .incrementHits()
 			    .touchLastAccessed();
 			// Is resetTimeoutOnAccess enabled? If so, jump up the creation time to increase the timeout
-			if ( this.config.getAsBoolean( Key.resetTimeoutOnAccess ) ) {
+			if ( BooleanCaster.cast( this.config.get( Key.resetTimeoutOnAccess ) ) ) {
 				results.resetCreated();
 			}
 		}
