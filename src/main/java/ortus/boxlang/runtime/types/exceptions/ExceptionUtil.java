@@ -64,16 +64,20 @@ public class ExceptionUtil {
 		if ( type.equalsIgnoreCase( "any" ) ) {
 			return true;
 		}
-		// BoxLangExceptions check the type
-		if ( e instanceof BoxLangException ble ) {
-			// Either direct match to type, or "foo.bar" matches "foo.bar.baz
-			if ( ble.type.equalsIgnoreCase( type ) || ble.type.toLowerCase().startsWith( type + "." ) )
-				return true;
-		}
+		// Check the exception and all of its causes
+		while ( e != null ) {
+			// BoxLangExceptions check the type
+			if ( e instanceof BoxLangException ble ) {
+				// Either direct match to type, or "foo.bar" matches "foo.bar.baz
+				if ( ble.type.equalsIgnoreCase( type ) || ble.type.toLowerCase().startsWith( type + "." ) )
+					return true;
+			}
 
-		// Native exceptions just check the class hierarchy
-		if ( InstanceOf.invoke( context, e, type ) ) {
-			return true;
+			// Native exceptions just check the class hierarchy
+			if ( InstanceOf.invoke( context, e, type ) ) {
+				return true;
+			}
+			e = e.getCause();
 		}
 		return false;
 	}
