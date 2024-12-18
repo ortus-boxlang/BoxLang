@@ -339,15 +339,15 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 		var		pos		= tools.getPosition( ctx );
 		var		src		= tools.getSourceText( ctx );
 		String	schema	= null;
-		String	name	= ctx.table_name().getText();
+		String	name	= unwrapBracket( ctx.table_name().getText() );
 		String	alias	= null;
 
 		if ( ctx.schema_name() != null ) {
-			schema = ctx.schema_name().getText();
+			schema = unwrapBracket( ctx.schema_name().getText() );
 		}
 
 		if ( ctx.table_alias() != null ) {
-			alias = ctx.table_alias().getText();
+			alias = unwrapBracket( ctx.table_alias().getText() );
 		}
 
 		return new SQLTableVariable( schema, name, alias, tableIndex++, pos, src );
@@ -385,7 +385,7 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 		SQLExpression	expression;
 
 		if ( ctx.column_alias() != null ) {
-			alias = ctx.column_alias().getText();
+			alias = unwrapBracket( ctx.column_alias().getText() );
 		}
 
 		if ( ctx.STAR() != null ) {
@@ -443,14 +443,14 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 			SQLTable tableRef = null;
 			// if we have tableName.* or tAlias.* then we need to find the table reference
 			if ( ctx.table_name() != null ) {
-				String tableName = ctx.table_name().getText();
+				String tableName = unwrapBracket( ctx.table_name().getText() );
 				tableRef = findTableRef( table, joins, tableName );
 				// If we didn't find the table reference then error
 				if ( tableRef == null ) {
 					tools.reportError( "Table reference not found for " + src, pos );
 				}
 			}
-			return new SQLColumn( tableRef, ctx.column_name().getText(), pos, src );
+			return new SQLColumn( tableRef, unwrapBracket( ctx.column_name().getText() ), pos, src );
 		} else if ( ctx.literal_value() != null ) {
 			return ( SQLExpression ) visit( ctx.literal_value() );
 		} else if ( ctx.EQ() != null || ctx.ASSIGN() != null || ctx.IS_() != null ) {
@@ -479,7 +479,7 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 			if ( ctx.STRING_LITERAL() != null ) {
 				type = processStringLiteral( ctx.STRING_LITERAL() );
 			} else {
-				type = new SQLStringLiteral( ctx.name().getText(), tools.getPosition( ctx.name() ), tools.getSourceText( ctx.name() ) );
+				type = new SQLStringLiteral( unwrapBracket( ctx.name().getText() ), tools.getPosition( ctx.name() ), tools.getSourceText( ctx.name() ) );
 			}
 			// validate the type here
 			try {
@@ -491,7 +491,7 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 
 			return new SQLFunction( functionName, arguments, pos, src );
 		} else if ( ctx.function_name() != null ) {
-			Key					functionName	= Key.of( ctx.function_name().getText() );
+			Key					functionName	= Key.of( unwrapBracket( ctx.function_name().getText() ) );
 			boolean				hasDistinct		= ctx.DISTINCT_() != null;
 			List<SQLExpression>	arguments		= new ArrayList<SQLExpression>();
 			if ( ctx.STAR() != null ) {
@@ -570,6 +570,20 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 		} else {
 			throw new UnsupportedOperationException( "Unimplemented expression: " + src );
 		}
+	}
+
+	/**
+	 * Unwrap the brackets from the table or column name
+	 * 
+	 * @param text the text to unwrap
+	 * 
+	 * @return the unwrapped text
+	 */
+	private String unwrapBracket( String text ) {
+		if ( text.startsWith( "[" ) && text.endsWith( "]" ) ) {
+			return text.substring( 1, text.length() - 1 );
+		}
+		return text;
 	}
 
 	private SQLExpression binarySimple( ExprContext left, ExprContext right, SQLBinaryOperator op, Position pos, String src, SQLTable table,

@@ -15,9 +15,11 @@
 package ortus.boxlang.runtime.jdbc.qoq;
 
 import java.sql.SQLException;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import ortus.boxlang.compiler.ast.sql.SQLNode;
@@ -91,14 +93,23 @@ public class QoQExecutionService {
 		Query						target		= executeSelect( context, selectStatement.getSelect(), statement, QoQStmtExec, true );
 
 		if ( selectStatement.getUnions() != null ) {
+
+			// We actually only need to de-dupe the last union, so we need to find it
+			// This is a performance optimization to avoid de-duping every union uneccessarily
+			int	lastUnion	= Stream.iterate( 0, i -> i + 1 )
+			    .limit( selectStatement.getUnions().size() )
+			    .filter( i -> selectStatement.getUnions().get( i ).getType() == SQLUnionType.DISTINCT )
+			    .reduce( ( first, second ) -> second )
+			    .orElse( -1 );
+
+			int	i			= 0;
 			for ( SQLUnion union : selectStatement.getUnions() ) {
 				Query unionQuery = executeSelect( context, union.getSelect(), statement, QoQStmtExec, false );
-				if ( union.getType() == SQLUnionType.ALL ) {
-					unionAll( target, unionQuery );
-				} else {
-					// distinct
-					unionDistinct( target, unionQuery );
+				unionAll( target, unionQuery );
+				if ( i == lastUnion ) {
+					deDupeQuery( target );
 				}
+				i++;
 			}
 		}
 
@@ -296,9 +307,23 @@ public class QoQExecutionService {
 	 * @param target     the target query
 	 * @param unionQuery the query to union
 	 */
-	private static void unionDistinct( Query target, Query unionQuery ) {
-		// TODO: IMPLEMENT!
-		unionAll( target, unionQuery );
+	private static void deDupeQuery( Query target ) {
+		Set<String> seen = new HashSet<>();
+		// loop over rows, build partition key out of all values
+		for ( int i = 0; i < target.size(); i++ ) {
+			StringBuilder	sb	= new StringBuilder();
+			Object[]		row	= target.getRow( i );
+			for ( Object value : row ) {
+				sb.append( value );
+			}
+			String key = sb.toString();
+			if ( !seen.contains( key ) ) {
+				seen.add( key );
+			} else {
+				target.deleteRow( i );
+				i--;
+			}
+		}
 	}
 
 	/**

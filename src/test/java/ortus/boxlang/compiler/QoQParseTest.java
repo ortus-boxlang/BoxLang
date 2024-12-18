@@ -40,6 +40,7 @@ public class QoQParseTest {
 	IBoxContext			context;
 	IScope				variables;
 	static Key			result	= new Key( "result" );
+	static Key			q		= new Key( "q" );
 
 	@BeforeAll
 	public static void setUp() {
@@ -95,8 +96,8 @@ public class QoQParseTest {
 		     	)
 		                 qryDept = queryNew( "name,code", "varchar,integer", [["IT",404],["Exec",200],["Janitor",200]] )
 		                         q = queryExecute( "
-		           select e.*, s.name as supName, d.name as deptname
-		        from qryEmployees e
+		           select e.*, [s].[name] as [supName], d.name as deptname
+		        from [variables].[qryEmployees] e
 		     inner join qryEmployees s on e.supervisor = s.name
 		      full join qryDept d on e.dept = d.name
 		    where d.name in ('IT','HR')
@@ -126,6 +127,30 @@ public class QoQParseTest {
 		                           println( q )
 		                              """,
 		    context );
+	}
+
+	@Test
+	public void testRunQoQUnionDistinct() {
+		instance.executeSource(
+		    """
+		             q = queryExecute( "
+		       select 'foo' as col
+		       union select 'foo'
+		    union select 'foo'
+		    union select 'foo'
+		    union select 'foo'
+		    union select 'foo'
+		    union select 'foo'  -- Actual de-duplication runs here
+		    union all select 'foo'
+		    union all select 'foo'
+		                     ",
+		                           	[],
+		                           	{ dbType : "query" }
+		                           );
+		                        println( q )
+		                           """,
+		    context );
+		assertThat( variables.getAsQuery( q ).size() ).isEqualTo( 3 );
 	}
 
 	@Test
@@ -247,14 +272,14 @@ public class QoQParseTest {
 
 		        q = queryExecute( "
 		                        select count( 1 ) count,
-		        	max(age) maxAge,
-		        	min(age) minAge,
+		        	[max](age) maxAge,
+		        	min([e].[age]) minAge,
 		        	min(age+0)+1 minAgePlusOne,
-		        	concat( 'foo', cast( min(age) as string)) aggregateInScalar,
+		        	concat( 'foo', cast( min(age) as [string])) aggregateInScalar,
 		        	concat( 'foo', cast( max(age) as string)) aggregateInScalar2,
 		      	sum( age ) sumAge,
 		    avg(age) avgAge
-		        		  from qryEmployees
+		        		  from qryEmployees [e]
 		                                        ",
 		                                              	[],
 		                                              	{ dbType : "query" }
@@ -287,7 +312,7 @@ public class QoQParseTest {
 		instance.executeSource(
 		    """
 		    q = queryExecute( "
-		       select convert( 5, string) + 4 as result, 5 as result2, convert( 5, 'string') as result3
+		       select convert( 5, [string]) + 4 as result, 5 as result2, convert( 5, 'string') as result3
 		    ",
 		                                          	[],
 		                                          	{ dbType : "query" }
