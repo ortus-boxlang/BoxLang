@@ -1,5 +1,6 @@
 class {
 	static {
-		createObject( "java", "java.io.File" )
+		createObject( "java", "java.io.File" );
+		final slashdir = createObject( "java", "java.io.File" ).separator;
 	}
 }
