@@ -374,7 +374,12 @@ public class DynamicInteropService {
 		} catch ( RuntimeException e ) {
 			throw e;
 		} catch ( Throwable e ) {
-			throw new BoxRuntimeException( "Error invoking constructor for class " + targetClass.getName(), e );
+			throw new BoxRuntimeException(
+			    "Error invoking constructor for class " + targetClass.getName() +
+			        ". Caused by " + e.getMessage(),
+			    e.getClass().getName(),
+			    e
+			);
 		}
 	}
 
@@ -536,7 +541,12 @@ public class DynamicInteropService {
 		} catch ( RuntimeException e ) {
 			throw e;
 		} catch ( Throwable e ) {
-			throw new BoxRuntimeException( "Error invoking method " + methodName + "() for class " + targetClass.getName(), e );
+			throw new BoxRuntimeException(
+			    "Error invoking method " + methodName + "() for class " + targetClass.getName() +
+			        ". Due to: " + e.getMessage(),
+			    e.getClass().getName(),
+			    e
+			);
 		}
 	}
 
@@ -578,7 +588,12 @@ public class DynamicInteropService {
 		} catch ( RuntimeException e ) {
 			throw e;
 		} catch ( Throwable e ) {
-			throw new BoxRuntimeException( "Error invoking method " + methodName + "() for class " + targetClass.getName(), e );
+			throw new BoxRuntimeException(
+			    "Error invoking method " + methodName + "() for class " + targetClass.getName() +
+			        ". Caused by " + e.getMessage(),
+			    e.getClass().getName(),
+			    e
+			);
 		}
 	}
 
@@ -657,7 +672,11 @@ public class DynamicInteropService {
 		} catch ( RuntimeException e ) {
 			throw e;
 		} catch ( Throwable e ) {
-			throw new BoxRuntimeException( "Error getting field " + fieldName + " for class " + targetClass.getName(), e );
+			throw new BoxRuntimeException(
+			    "Error getting field " + fieldName + " for class " + targetClass.getName(),
+			    e.getClass().getName(),
+			    e
+			);
 		}
 	}
 
@@ -768,7 +787,11 @@ public class DynamicInteropService {
 		} catch ( RuntimeException e ) {
 			throw e;
 		} catch ( Throwable e ) {
-			throw new BoxRuntimeException( "Error setting field " + fieldName + " for class " + targetClass.getName(), e );
+			throw new BoxRuntimeException(
+			    "Error setting field " + fieldName + " for class " + targetClass.getName(),
+			    e.getClass().getName(),
+			    e
+			);
 		}
 	}
 
