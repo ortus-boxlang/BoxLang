@@ -4161,4 +4161,42 @@ public class CoreLangTest {
 			context, BoxSourceType.CFSCRIPT );
 		assertThat( variables.getAsString( result ) ).isEqualTo( "set this time" );
 	}
+		
+
+	@DisplayName( "dump order" )
+	@Test
+	public void testDumpOrder() {
+	// @formatter:off
+	instance.executeSource(
+		"""
+			import java.time.Duration;
+
+			// Dumps to Console
+			writedump(
+				var : getModuleList(),
+				label : "Module List",
+				output : "console"
+			);
+			writeDump(
+				var : [1,2,3,4,5,6,7,8,9,10],
+				label : "Array",
+				output : "console"
+			);
+			writeDump(
+				var : {a:1,b:2,c:3,d:4,e:5,f:6,g:7,h:8,i:9,j:10},
+				label : "Struct",
+				output : "console"
+			);
+
+			writeDump(
+				var :  createObject( "java", "java.time.Instant" ).now(),
+				label : "Instant",
+				output : "console"
+			);
+
+			writeDump( var=Duration.ofHours(2).plusMinutes(30), label="Duration" );
+		""",
+		context );
+	// @formatter:on
+	}
 }
