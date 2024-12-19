@@ -21,7 +21,6 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.InsnNode;
-import org.objectweb.asm.tree.VarInsnNode;
 
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.AsmTranspiler;
@@ -47,7 +46,7 @@ public class BoxExpressionInvocationTransformer extends AbstractTransformer {
 
 		List<AbstractInsnNode>	nodes		= new ArrayList<>();
 
-		nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
+		nodes.addAll( transpiler.getCurrentMethodContextTracker().get().loadCurrentContext() );
 
 		Type invokeType = getInvocationType( invocation.getExpr() );
 

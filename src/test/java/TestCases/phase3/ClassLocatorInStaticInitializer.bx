@@ -1,6 +1,7 @@
 class {
 	static {
-		createObject( "java", "java.io.File" );
+		static.a = new src.test.java.TestCases.phase3.ConcreteClass();
+		static.x = createObject( "java", "java.io.File" );
 		final slashdir = createObject( "java", "java.io.File" ).separator;
 	}
 }

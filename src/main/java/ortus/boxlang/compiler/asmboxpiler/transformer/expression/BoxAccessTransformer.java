@@ -26,7 +26,6 @@ import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
-import org.objectweb.asm.tree.VarInsnNode;
 
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
@@ -89,7 +88,7 @@ public class BoxAccessTransformer extends AbstractTransformer {
 			// return javaExpr;
 			List<AbstractInsnNode> nodes = new ArrayList<>();
 			nodes.addAll( transpiler.transform( objectAccess.getContext(), TransformerContext.NONE, ReturnValueContext.VALUE ) );
-			nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
+			nodes.addAll( transpiler.getCurrentMethodContextTracker().get().loadCurrentContext() );
 			nodes.addAll( accessKey );
 			nodes.add( new FieldInsnNode(
 			    Opcodes.GETSTATIC,
@@ -116,7 +115,7 @@ public class BoxAccessTransformer extends AbstractTransformer {
 		} else {
 			// BoxNode parent = ( BoxNode ) objectAccess.getParent();
 			List<AbstractInsnNode> nodes = new ArrayList<>();
-			nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
+			nodes.addAll( transpiler.getCurrentMethodContextTracker().get().loadCurrentContext() );
 			nodes.addAll( transpiler.transform( objectAccess.getContext(), context, ReturnValueContext.VALUE ) );
 			nodes.addAll( accessKey );
 			nodes.add( new FieldInsnNode( Opcodes.GETSTATIC,
@@ -139,7 +138,7 @@ public class BoxAccessTransformer extends AbstractTransformer {
 			    // This prolly won't work if a query column is passed as a second param that isn't the array
 			    && ! ( parent instanceof BoxArgument barg && barg.getParent() instanceof BoxFunctionInvocation bfun
 			        && bfun.getName().toLowerCase().contains( "array" ) ) ) {
-				nodes.add( 0, new VarInsnNode( Opcodes.ALOAD, 1 ) );
+				nodes.addAll( 0, transpiler.getCurrentMethodContextTracker().get().loadCurrentContext() );
 				nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
 				    Type.getInternalName( IBoxContext.class ),
 				    "unwrapQueryColumn",

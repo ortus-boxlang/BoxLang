@@ -22,7 +22,6 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
-import org.objectweb.asm.tree.VarInsnNode;
 
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
@@ -44,7 +43,7 @@ public class BoxAssertTransformer extends AbstractTransformer {
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnContext ) throws IllegalStateException {
 		BoxAssert				boxAssert	= ( BoxAssert ) node;
 		List<AbstractInsnNode>	nodes		= new ArrayList<>();
-		nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
+		nodes.addAll( transpiler.getCurrentMethodContextTracker().get().loadCurrentContext() );
 		nodes.addAll( transpiler.transform( boxAssert.getExpression(), TransformerContext.RIGHT, ReturnValueContext.VALUE ) );
 		nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
 		    Type.getInternalName( Assert.class ),

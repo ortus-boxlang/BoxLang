@@ -1570,7 +1570,6 @@ public class ClassTest {
 
 	@DisplayName( "class locator usage in static initializer" )
 	@Test
-	@Disabled
 	public void testClassLocatorInStaticInitializer() {
 		instance.executeSource(
 		    """

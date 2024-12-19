@@ -23,7 +23,6 @@ import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
-import org.objectweb.asm.tree.VarInsnNode;
 
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
@@ -80,8 +79,8 @@ public class BoxUnaryOperationTransformer extends AbstractTransformer {
 		List<AbstractInsnNode> nodes = new ArrayList<>();
 		// for non literals, we need to identify the key being incremented/decremented and the object it lives in (which may be a scope)
 		if ( expr instanceof BoxIdentifier id && operator != BoxUnaryOperator.Not && operator != BoxUnaryOperator.Minus && operator != BoxUnaryOperator.Plus ) {
-			nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
-			nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
+			nodes.addAll( transpiler.getCurrentMethodContextTracker().get().loadCurrentContext() );
+			nodes.addAll( transpiler.getCurrentMethodContextTracker().get().loadCurrentContext() );
 			nodes.addAll( transpiler.createKey( id.getName() ) );
 			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
 			nodes.add( new LdcInsnNode( true ) );
@@ -100,7 +99,7 @@ public class BoxUnaryOperationTransformer extends AbstractTransformer {
 			nodes.add( getMethodCallTemplateCompound( operation ) );
 		} else if ( expr instanceof BoxAccess objectAccess && operator != BoxUnaryOperator.Not && operator != BoxUnaryOperator.Minus
 		    && operator != BoxUnaryOperator.Plus ) {
-			nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
+			nodes.addAll( transpiler.getCurrentMethodContextTracker().get().loadCurrentContext() );
 			nodes.addAll( transpiler.transform( objectAccess.getContext(), TransformerContext.NONE, ReturnValueContext.VALUE ) );
 			// DotAccess just uses the string directly, array access allows any expression>
 			List<AbstractInsnNode> accessKey;
