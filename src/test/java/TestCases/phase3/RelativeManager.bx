@@ -1,0 +1,12 @@
+class{
+
+
+	any function allApply(){
+		return newFuture().allApply( argumentCollection = arguments );
+	}
+
+	RelativeInstantiation function newFuture(){
+		return new tasks.Future();
+	}
+
+}
