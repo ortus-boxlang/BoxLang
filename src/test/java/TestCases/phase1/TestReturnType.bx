@@ -1,0 +1,6 @@
+class {
+
+	include 'TestReturnType.bxm';
+	this.data = getStruct();
+
+}

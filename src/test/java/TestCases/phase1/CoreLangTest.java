@@ -21,6 +21,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
+import java.lang.ref.SoftReference;
 import java.math.BigInteger;
 import java.net.http.HttpRequest.BodyPublisher;
 import java.util.Comparator;
@@ -4108,21 +4109,22 @@ public class CoreLangTest {
 	@DisplayName( "nested try catch with specific catch" )
 	@Test
 	public void testNestedTryCatchWithSpecificCatch() {
-		// @formatter:off
+		// @formatter:on
 		instance.executeSource(
 		    """
-			result = "default";
-		    try {
-		    	try {
-					throw( type = "Different", message = "boom" );
-				} catch ( Specific e ) {
-					result = "specific";
-				}
-			} catch ( any e ) {
-				result = "general";
-			}
-		    """,
+		    result = "default";
+		       try {
+		       	try {
+		    		throw( type = "Different", message = "boom" );
+		    	} catch ( Specific e ) {
+		    		result = "specific";
+		    	}
+		    } catch ( any e ) {
+		    	result = "general";
+		    }
+		       """,
 		    context );
+		// @formatter:off
 		assertThat( variables.get( result ) ).isEqualTo( "general" );
 	}
 
@@ -4140,26 +4142,27 @@ public class CoreLangTest {
 	@DisplayName( "It still sets variables in the local scope even if they are set to null" )
 	@Test
 	public void testNullStillInLocalScope() {
-		// @formatter:off
+		// @formatter:on
 		instance.executeSource(
-			"""
-				function returnsNull() {
-					return;
-				}
+		    """
+		    	function returnsNull() {
+		    		return;
+		    	}
 
-				function doesStuff() {
-					var inner = returnsNull();
-					if ( !isNull( inner ) ) {
-						return inner;
-					}
-					inner = "local value leaked to variables";
-					return "set this time";
-				}
-				result = doesStuff();
-				result = doesStuff();
-			""",
-			context, BoxSourceType.CFSCRIPT );
+		    	function doesStuff() {
+		    		var inner = returnsNull();
+		    		if ( !isNull( inner ) ) {
+		    			return inner;
+		    		}
+		    		inner = "local value leaked to variables";
+		    		return "set this time";
+		    	}
+		    	result = doesStuff();
+		    	result = doesStuff();
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
 		assertThat( variables.getAsString( result ) ).isEqualTo( "set this time" );
+		// @formatter:off
 	}
 		
 
@@ -4197,6 +4200,34 @@ public class CoreLangTest {
 			writeDump( var=Duration.ofHours(2).plusMinutes(30), label="Duration" );
 		""",
 		context );
-	// @formatter:on
+		// @formatter:on
 	}
+
+	@Test
+	public void testReturnType() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				 c = new src.test.java.TestCases.phase1.TestReturnType()
+				 result = c.data;
+			""",
+			context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
+	}
+
+	@Test
+	public void testSoftRef() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				result = createObject( "java", "java.lang.ref.SoftReference" ).init(
+					"testr"
+				);
+			""",
+			context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isInstanceOf( SoftReference.class );
+	}
+
 }
