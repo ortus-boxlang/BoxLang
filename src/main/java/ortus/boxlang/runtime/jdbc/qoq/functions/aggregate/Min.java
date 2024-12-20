@@ -48,6 +48,7 @@ public class Min extends QoQAggregateFunctionDef {
 	@Override
 	public Object apply( List<Object[]> args, List<SQLExpression> expressions ) {
 		Object[]	input	= args.get( 0 );
+
 		Object		max		= input[ 0 ];
 		if ( input.length > 1 ) {
 			for ( int i = 1; i < input.length; i++ ) {

@@ -35,17 +35,17 @@ public class IsNull extends QoQScalarFunctionDef {
 
 	@Override
 	public QueryColumnType getReturnType( QoQSelectExecution QoQExec, List<SQLExpression> expressions ) {
-		return QueryColumnType.OBJECT;
+		return expressions.get( 0 ).getType( QoQExec );
 	}
 
 	@Override
 	public int getMinArgs() {
-		return 1;
+		return 2;
 	}
 
 	@Override
 	public Object apply( List<Object> args, List<SQLExpression> expressions ) {
-		return args.get( 0 ) == null;
+		return args.get( 0 ) != null ? args.get( 0 ) : args.get( 1 );
 	}
 
 }

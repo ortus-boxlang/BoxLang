@@ -211,65 +211,32 @@ drop_stmt:
     )? any_name
 ;
 
-/*
- SQLite understands the following binary operators, in order from highest to lowest precedence:
-    ||
-    * / %
-    + -
-    << >> & |
-    < <= > >=
-    = == != <> IS IS NOT IS DISTINCT FROM IS NOT DISTINCT FROM IN LIKE GLOB MATCH REGEXP
-    AND
-    OR
- */
+predicate:
+    expr (LT | LT_EQ | GT | GT_EQ) expr
+    | expr (ASSIGN | EQ | NOT_EQ1 | NOT_EQ2 | IS_ NOT_ | IS_ | LIKE_) expr
+    | predicate AND_ predicate
+    | predicate OR_ predicate
+    | expr NOT_? LIKE_ expr (ESCAPE_ expr)?
+    | expr IS_ NOT_? expr
+    | expr NOT_? BETWEEN_ expr AND_ expr
+    | expr NOT_? IN_ (OPEN_PAR (expr ( COMMA expr)*)? CLOSE_PAR | subquery_no_alias)
+;
+
 expr:
     literal_value
     | BIND_PARAMETER
-    //| ((schema_name DOT)? table_name DOT)? column_name
     | (table_name DOT)? column_name
     | unary_operator expr
     | expr PIPE2 expr
     | expr ( STAR | DIV | MOD) expr
     | expr (PLUS | MINUS) expr
-    // | expr ( LT2 | GT2 | AMP | PIPE) expr
-    | expr ( LT | LT_EQ | GT | GT_EQ) expr
-    | expr (
-        ASSIGN
-        | EQ
-        | NOT_EQ1
-        | NOT_EQ2
-        | IS_ NOT_
-        | IS_
-        // | IS_ NOT_? DISTINCT_ FROM_
-        // | IN_
-        | LIKE_
-        // | GLOB_
-        //  | MATCH_
-        // | REGEXP_
-    ) expr
-    | expr AND_ expr
-    | expr OR_ expr
     // Special handling of cast to allow cast( foo as number)
     | CAST_ OPEN_PAR expr AS_ (name | STRING_LITERAL) CLOSE_PAR
     // special handling of convert to allow convert( foo, number ) or convert( foo, 'number' )
     | CONVERT_ OPEN_PAR expr COMMA (name | STRING_LITERAL) CLOSE_PAR
-    | function_name OPEN_PAR ((DISTINCT_? expr ( COMMA expr)*) | STAR)? CLOSE_PAR // filter_clause? over_clause?
+    | function_name OPEN_PAR ((DISTINCT_? ALL_? expr ( COMMA expr)*) | STAR)? CLOSE_PAR // filter_clause? over_clause?
     | OPEN_PAR expr CLOSE_PAR
-    //| OPEN_PAR expr (COMMA expr)* CLOSE_PAR
-    // | expr COLLATE_ collation_name
-    | expr NOT_? LIKE_ expr (ESCAPE_ expr)?
-    | expr IS_ NOT_? expr
-    | expr NOT_? BETWEEN_ expr AND_ expr
-    | expr NOT_? IN_ (
-        // OPEN_PAR (select_stmt | expr ( COMMA expr)*)? CLOSE_PAR
-        OPEN_PAR (expr ( COMMA expr)*)? CLOSE_PAR
-        | subquery_no_alias
-        // | ( schema_name DOT)? table_name
-        // | (schema_name DOT)? table_function_name OPEN_PAR (expr (COMMA expr)*)? CLOSE_PAR
-    )
-    //  | ((NOT_)? EXISTS_)? OPEN_PAR select_stmt CLOSE_PAR
     | case_expr
-    // | raise_function
 ;
 
 case_expr:
@@ -277,7 +244,7 @@ case_expr:
 ;
 
 case_when_then:
-    WHEN_ when_expr = expr THEN_ then_expr = expr
+    WHEN_ (when_expr = expr | when_predicate = predicate) THEN_ then_expr = expr
 ;
 
 raise_function:
@@ -369,9 +336,9 @@ join:
 select_core:
     SELECT_ top? (DISTINCT_ /*| ALL_*/)? result_column (COMMA result_column)* (
         FROM_ (table_or_subquery (COMMA table_or_subquery)* | join_clause)
-    )? (WHERE_ whereExpr = expr)? (
+    )? (WHERE_ whereExpr = predicate)? (
         GROUP_ BY_ groupByExpr += expr (COMMA groupByExpr += expr)* (
-            HAVING_ havingExpr = expr
+            HAVING_ havingExpr = predicate
         )?
     )? limit_stmt?
     //(WINDOW_ window_name AS_ window_defn ( COMMA window_name AS_ window_defn)*)?
@@ -426,7 +393,7 @@ join_operator:
 ;
 
 join_constraint:
-    ON_ expr
+    ON_ predicate
     //  | USING_ OPEN_PAR column_name ( COMMA column_name)* CLOSE_PAR
 ;
 
@@ -840,7 +807,7 @@ savepoint_name:
 ;
 
 table_alias:
-    any_name
+    IDENTIFIER
 ;
 
 transaction_name:

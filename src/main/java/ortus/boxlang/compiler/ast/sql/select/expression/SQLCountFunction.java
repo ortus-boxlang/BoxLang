@@ -14,6 +14,7 @@
  */
 package ortus.boxlang.compiler.ast.sql.select.expression;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -105,7 +106,19 @@ public class SQLCountFunction extends SQLFunction {
 	 */
 	public Object evaluateAggregate( QoQSelectExecution QoQExec, List<int[]> intersections ) {
 		// TODO: handle distinct
+
+		// If this is count(*), then we just return the number of intersections with no regard to whether there are nulls
+		if ( getArguments().get( 0 ) instanceof SQLStarExpression ) {
+			return intersections.size();
+		}
+		// Count the non-null values
 		var values = buildAggregateValues( QoQExec, intersections, getArguments().get( 0 ) );
+
+		// Distinct values
+		if ( isDistinct() ) {
+			// This may need a more robust comparison, we'll see.
+			values = Arrays.stream( values ).distinct().toArray();
+		}
 		return values.length;
 	}
 

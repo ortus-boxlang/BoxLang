@@ -438,10 +438,12 @@ public class SQLBinaryOperation extends SQLExpression {
 		// These checks may or may not work. If we can't get away with this, then we can boolean cast the values
 		// but SQL doesn't really have the same concept of truthiness and mostly expects to always get booleans from boolean columns or boolean expressions
 		if ( !left.isBoolean( QoQExec ) ) {
-			throw new BoxRuntimeException( "Left side of a boolean [" + operator.getSymbol() + "] operation must be a boolean expression or bit column" );
+			throw new BoxRuntimeException( "Left side of a boolean [" + operator.getSymbol() + "] operation must be a boolean expression or bit column. It is ["
+			    + left.getClass().getName() + "]" );
 		}
 		if ( !right.isBoolean( QoQExec ) ) {
-			throw new BoxRuntimeException( "Right side of a boolean [" + operator.getSymbol() + "] operation must be a boolean expression or bit column" );
+			throw new BoxRuntimeException( "Right side of a boolean [" + operator.getSymbol()
+			    + "] operation must be a boolean expression or bit column. It is [" + right.getClass().getName() + "]" );
 		}
 	}
 
@@ -450,10 +452,12 @@ public class SQLBinaryOperation extends SQLExpression {
 	 */
 	private void ensureNumericOperands( QoQSelectExecution QoQExec ) {
 		if ( !left.isNumeric( QoQExec ) ) {
-			throw new BoxRuntimeException( "Left side of a math [" + operator.getSymbol() + "] operation must be a numeric expression or numeric column" );
+			throw new BoxRuntimeException( "Left side of a math [" + operator.getSymbol()
+			    + "] operation must be a numeric expression or numeric column. It is [" + left.getClass().getName() + "]" );
 		}
 		if ( !right.isNumeric( QoQExec ) ) {
-			throw new BoxRuntimeException( "Right side of a math [" + operator.getSymbol() + "] operation must be a numeric expression or numeric column" );
+			throw new BoxRuntimeException( "Right side of a math [" + operator.getSymbol()
+			    + "] operation must be a numeric expression or numeric column. It is [" + right.getClass().getName() + "]" );
 		}
 	}
 

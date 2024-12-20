@@ -1,0 +1,8 @@
+{
+    "dependencies":{
+        "testbox":"be"
+    },
+    "installPaths":{
+        "testbox":"testbox/"
+    }
+}

@@ -68,6 +68,7 @@ public enum QueryColumnType {
 			case "nclob" :
 				return OBJECT;
 			case "bit" :
+			case "boolean" :
 				return BIT;
 			case "nchar" :
 			case "char" :
@@ -90,6 +91,7 @@ public enum QueryColumnType {
 			case "tinyint" :
 			case "smallint" :
 			case "integer" :
+			case "int" :
 				return INTEGER;
 			case "nvarchar" :
 			case "longvarchar" :

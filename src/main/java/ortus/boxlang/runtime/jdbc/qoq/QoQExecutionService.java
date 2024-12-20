@@ -1,3 +1,4 @@
+
 /**
  * [BoxLang]
  *
@@ -68,6 +69,9 @@ public class QoQExecutionService {
 	 * @return the AST
 	 */
 	public static SQLNode parseSQL( String sql ) {
+		if ( sql.indexOf( "bradtest" ) > -1 ) {
+			// System.out.println( sql );
+		}
 		DynamicObject	trans	= frTransService.startTransaction( "BL QoQ Parse", "" );
 		SQLParser		parser	= new SQLParser();
 		ParsingResult	result;
@@ -244,25 +248,36 @@ public class QoQExecutionService {
 
 		// Enforce top/limit for this select. This would be a "top N" clause in the select or a "limit N" clause BEFORE the order by, which
 		// could exist or all selects in a union.
-		if ( canEarlyLimit && thisSelectLimit > -1 ) {
+		if ( canEarlyLimit && !select.isDistinct() && thisSelectLimit > -1 ) {
 			intersections = intersections.limit( thisSelectLimit );
 		}
 
 		if ( select.hasAggregateResult() || select.getGroupBys() != null ) {
-			return executeAggregateSelect( QoQExec, target, intersections );
+			target = executeAggregateSelect( QoQExec, target, intersections );
+		} else {
+			final Query finalTarget = target;
+			// No partitioning, just create the final result set
+			intersections.forEach( intersection -> {
+				// System.out.println( Arrays.toString( intersection ) );
+				Object[]	values	= new Object[ resultColumns.size() ];
+				int			colPos	= 0;
+				// Build up row data as native array
+				for ( Key key : resultColumns.keySet() ) {
+					values[ colPos++ ] = resultColumns.get( key ).resultColumn.getExpression().evaluate( QoQExec, intersection );
+				}
+				finalTarget.addRow( values );
+			} );
 		}
 
-		// No partitioning, just create the final result set
-		intersections.forEach( intersection -> {
-			// System.out.println( Arrays.toString( intersection ) );
-			Object[]	values	= new Object[ resultColumns.size() ];
-			int			colPos	= 0;
-			// Build up row data as native array
-			for ( Key key : resultColumns.keySet() ) {
-				values[ colPos++ ] = resultColumns.get( key ).resultColumn.getExpression().evaluate( QoQExec, intersection );
-			}
-			target.addRow( values );
-		} );
+		// Apply distinct to the final result set
+		if ( select.isDistinct() ) {
+			deDupeQuery( target );
+		}
+
+		// If we have a limit for this select, apply it here.
+		if ( thisSelectLimit > -1 ) {
+			target.truncate( thisSelectLimit );
+		}
 
 		return target;
 	}
@@ -296,6 +311,18 @@ public class QoQExecutionService {
 			QoQExec.addPartition( partitionKey, intersection );
 		} );
 
+		// If there are aggregates in the select, but no group by, and no records were returned, we return a single empty rows
+		if ( groupBys == null && QoQExec.getPartitions().isEmpty() ) {
+			Object[] values = new Object[ resultColumns.size() ];
+			for ( Key key : resultColumns.keySet() ) {
+				SQLResultColumn	resultColumn	= resultColumns.get( key ).resultColumn;
+				Object			value			= resultColumn.getExpression().evaluateAggregate( QoQExec, List.of() );
+				values[ resultColumn.getOrdinalPosition() - 1 ] = value;
+			}
+			target.addRow( values );
+			return target;
+		}
+
 		// Make stream parallel if we have a lot of partitions
 		var partitionStream = QoQExec.getPartitions().values().stream();
 		if ( QoQExec.getPartitions().size() > 50 ) {
@@ -316,6 +343,7 @@ public class QoQExecutionService {
 			}
 			target.addRow( values );
 		} );
+
 		return target;
 	}
 

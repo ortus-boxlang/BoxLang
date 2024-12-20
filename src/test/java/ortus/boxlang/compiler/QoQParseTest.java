@@ -64,7 +64,7 @@ public class QoQParseTest {
 		    """
 		    select foo, bar b, bum as b2, *
 		    from mytable t
-		    where true
+		    where true = true
 		    order by t.baz
 		    limit 5
 		      """
@@ -119,6 +119,24 @@ public class QoQParseTest {
 		                select name as col from qryDept
 		          union all select 'bar' as sfd
 		       union select 'foo' as col
+		    order by col desc
+		                        ",
+		                              	[],
+		                              	{ dbType : "query" }
+		                              );
+		                           println( q )
+		                              """,
+		    context );
+	}
+
+	@Test
+	public void testRunQoQUnion2() {
+		instance.executeSource(
+		    """
+		                 qryDept = queryNew( "name,code", "varchar,integer", [["IT",404],["Exec",200],["Janitor",200]] )
+		                q = queryExecute( "
+		                select name as col from qryDept
+		          union select name from qryDept
 		    order by col desc
 		                        ",
 		                              	[],
@@ -490,6 +508,76 @@ public class QoQParseTest {
 		                                                   println( q )
 
 		                                                      """,
+		    context );
+	}
+
+	@Test
+	public void testDistinct() {
+		instance.executeSource(
+		    """
+		                 qryEmployees = queryNew(
+		           	"name,age,dept,supervisor",
+		           	"varchar,integer,varchar,varchar",
+		           	[
+		           		["luis",43,"Exec","luis"],
+		           		["brad",44,"IT","luis"],
+		           		["jacob",35,"IT","luis"],
+		           		["Jon",45,"HR","luis"]
+		              		]
+		              	)
+
+		           q = queryExecute( "
+		       select distinct dept as d
+		       from qryEmployees
+		    order by dept
+		                                           ",
+		                                                 	[],
+		                                                 	{ dbType : "query" }
+		                                                 );
+		                                              println( q )
+		                                                 """,
+		    context );
+		assertThat( variables.getAsQuery( q ).size() ).isEqualTo( 3 );
+	}
+
+	@Test
+	public void testNullAggregate() {
+		instance.executeSource(
+		    """
+
+		      qry = queryNew( 'col,col2', 'integer,integer', [
+		      	[ 0, nullValue() ],
+		      	[ nullValue(), nullValue() ],
+		      	[ 100, nullValue() ],
+		      ] );
+		      actual = QueryExecute(
+		      	sql = "SELECT sum(col) as sum, avg(col) as avg, min(col) as min, max(col) as max, sum(col2) as sum2, avg(col2) as avg2, min(col2) as min2, max(col2) as max2
+		    from qry",
+		      	options = { dbtype: 'query' }
+		      );
+		         println( actual )
+		         """,
+		    context );
+	}
+
+	@Test
+	public void testsdf() {
+		instance.executeSource(
+		    """
+		    a = queryNew("a","varchar");
+		    b = queryNew("a","varchar", [['1'],['2'],['2']]);
+
+		       actual = QueryExecute(
+		      	sql = "
+		      	select a
+		      		from a
+		      	union select a
+		      		from b",
+		      	options = { dbtype: 'query' }
+		      );
+
+		             println( actual )
+		             """,
 		    context );
 	}
 

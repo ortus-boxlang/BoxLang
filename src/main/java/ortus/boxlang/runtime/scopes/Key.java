@@ -505,6 +505,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		notify								= Key.of( "notify" );
 	public static final Key		notifyAll							= Key.of( "notifyAll" );
 	public static final Key		nulls								= Key.of( "null" );
+	public static final Key		nulls2								= Key.of( "nulls" );
 	public static final Key		number								= Key.of( "number" );
 	public static final Key		number1								= Key.of( "number1" );
 	public static final Key		number2								= Key.of( "number2" );

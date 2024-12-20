@@ -80,8 +80,9 @@ public class QueryParameter {
 	 */
 	private QueryParameter( IStruct param ) {
 		String sqltype = ( String ) param.getOrDefault( Key.sqltype, "VARCHAR" );
-		this.isNullParam	= Boolean.TRUE.equals( param.getOrDefault( Key.nulls, false ) );
-		this.isListParam	= Boolean.TRUE.equals( param.getOrDefault( Key.list, false ) );
+		// allow nulls and null
+		this.isNullParam	= BooleanCaster.cast( param.getOrDefault( Key.nulls, param.getOrDefault( Key.nulls2, false ) ) );
+		this.isListParam	= BooleanCaster.cast( param.getOrDefault( Key.list, false ) );
 
 		Object v = param.get( Key.value );
 		if ( this.isListParam ) {

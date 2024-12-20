@@ -1,7 +1,9 @@
 package ortus.boxlang.compiler.toolchain;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.antlr.v4.runtime.tree.TerminalNode;
 
@@ -45,6 +47,7 @@ import ortus.boxlang.parser.antlr.SQLGrammar.ExprContext;
 import ortus.boxlang.parser.antlr.SQLGrammar.Literal_valueContext;
 import ortus.boxlang.parser.antlr.SQLGrammar.Ordering_termContext;
 import ortus.boxlang.parser.antlr.SQLGrammar.ParseContext;
+import ortus.boxlang.parser.antlr.SQLGrammar.PredicateContext;
 import ortus.boxlang.parser.antlr.SQLGrammar.Result_columnContext;
 import ortus.boxlang.parser.antlr.SQLGrammar.Select_coreContext;
 import ortus.boxlang.parser.antlr.SQLGrammar.Select_stmtContext;
@@ -64,7 +67,7 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 
 	private final SQLParser	tools;
 	private int				bindCount	= 0;
-	private int				tableIndex	= 0;
+	private Set<String>		tableIndex	= new HashSet<String>();
 
 	public SQLVisitor( SQLParser tools ) {
 		this.tools = tools;
@@ -187,6 +190,8 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 	 */
 	@Override
 	public SQLSelect visitSelect_core( Select_coreContext ctx ) {
+
+		tableIndex = new HashSet<String>();
 		var							pos				= tools.getPosition( ctx );
 		var							src				= tools.getSourceText( ctx );
 
@@ -230,7 +235,7 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 		}
 
 		if ( ctx.whereExpr != null ) {
-			where = visitExpr( ctx.whereExpr, table, joins );
+			where = visitPredicate( ctx.whereExpr, table, joins );
 		}
 
 		// group by
@@ -242,7 +247,7 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 
 		// having
 		if ( ctx.havingExpr != null ) {
-			having = visitExpr( ctx.havingExpr, table, joins );
+			having = visitPredicate( ctx.havingExpr, table, joins );
 		}
 
 		// Do this after all joins above so we know the tables available to us
@@ -306,7 +311,7 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 			SQLJoin thisJoin = new SQLJoin( type, joinTable, null, pos, src );
 			joins.add( thisJoin );
 			if ( hasOn ) {
-				thisJoin.setOn( visitExpr( joinCtx.join_constraint().expr(), table, joins ) );
+				thisJoin.setOn( visitPredicate( joinCtx.join_constraint().predicate(), table, joins ) );
 			}
 		}
 		return joins;
@@ -353,7 +358,8 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 			alias = unwrapBracket( ctx.table_alias().getText() );
 		}
 
-		return new SQLTableVariable( schema, name, alias, tableIndex++, pos, src );
+		tableIndex.add( name.toLowerCase() );
+		return new SQLTableVariable( schema, name, alias, tableIndex.size() - 1, pos, src );
 	}
 
 	/**
@@ -370,7 +376,8 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 		var					src		= tools.getSourceText( ctx );
 		SQLSelectStatement	select	= ( SQLSelectStatement ) new SQLVisitor( tools ).visit( ctx.select_stmt() );
 
-		return new SQLTableSubQuery( select, ctx.table_alias().getText(), tableIndex++, pos, src );
+		tableIndex.add( "subquery " + tableIndex.size() );
+		return new SQLTableSubQuery( select, ctx.table_alias().getText(), tableIndex.size() - 1, pos, src );
 	}
 
 	/**
@@ -456,18 +463,6 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 			return new SQLColumn( tableRef, unwrapBracket( ctx.column_name().getText() ), pos, src );
 		} else if ( ctx.literal_value() != null ) {
 			return ( SQLExpression ) visit( ctx.literal_value() );
-		} else if ( ctx.EQ() != null || ctx.ASSIGN() != null || ctx.IS_() != null ) {
-			// IS vs IS NOT
-			SQLBinaryOperator operator = ctx.NOT_() != null ? SQLBinaryOperator.NOTEQUAL : SQLBinaryOperator.EQUAL;
-			return binarySimple( ctx.expr( 0 ), ctx.expr( 1 ), operator, pos, src, table, joins );
-		} else if ( ctx.BETWEEN_() != null ) {
-			return new SQLBetweenOperation( visitExpr( ctx.expr( 0 ), table, joins ), visitExpr( ctx.expr( 1 ), table, joins ),
-			    visitExpr( ctx.expr( 2 ), table, joins ), ctx.NOT_() != null, pos, src );
-		} else if ( ctx.AND_() != null ) {
-			// Needs to run AFTER between checks
-			return binarySimple( ctx.expr( 0 ), ctx.expr( 1 ), SQLBinaryOperator.AND, pos, src, table, joins );
-		} else if ( ctx.OR_() != null ) {
-			return binarySimple( ctx.expr( 0 ), ctx.expr( 1 ), SQLBinaryOperator.OR, pos, src, table, joins );
 		} else if ( ctx.CAST_() != null || ctx.CONVERT_() != null ) {
 			// CAST( expr AS type )
 			Key					functionName	= ctx.CONVERT_() != null ? Key.convert : Key.cast;
@@ -514,25 +509,6 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 				name = ctx.BIND_PARAMETER().getText().substring( 1 );
 			}
 			return new SQLParam( name, index, pos, src );
-		} else if ( ctx.IN_() != null ) {
-			SQLExpression expr = visitExpr( ctx.expr( 0 ), table, joins );
-			if ( ctx.subquery_no_alias() != null ) {
-				SQLSelectStatement subquery = ( SQLSelectStatement ) new SQLVisitor( tools ).visit( ctx.subquery_no_alias().select_stmt() );
-				if ( subquery.getSelect().getResultColumns().size() != 1 ) {
-					tools.reportError( "Subquery in IN clause must return exactly one column", pos );
-				}
-				return new SQLInSubQueryOperation( expr, subquery, ctx.NOT_() != null, pos, src );
-			} else {
-				List<SQLExpression> values = ctx.expr().stream().skip( 1 ).map( e -> visitExpr( e, table, joins ) ).toList();
-				return new SQLInOperation( expr, values, ctx.NOT_() != null, pos, src );
-			}
-		} else if ( ctx.LIKE_() != null ) {
-			SQLBinaryOperator	op		= ctx.NOT_() != null ? SQLBinaryOperator.NOTLIKE : SQLBinaryOperator.LIKE;
-			SQLExpression		escape	= null;
-			if ( ctx.ESCAPE_() != null ) {
-				escape = visitExpr( ctx.expr( 2 ), table, joins );
-			}
-			return new SQLBinaryOperation( visitExpr( ctx.expr( 0 ), table, joins ), visitExpr( ctx.expr( 1 ), table, joins ), op, escape, pos, src );
 		} else if ( ctx.PIPE2() != null ) {
 			return binarySimple( ctx.expr( 0 ), ctx.expr( 1 ), SQLBinaryOperator.CONCAT, pos, src, table, joins );
 		} else if ( ctx.STAR() != null ) {
@@ -545,16 +521,6 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 			return binarySimple( ctx.expr( 0 ), ctx.expr( 1 ), SQLBinaryOperator.PLUS, pos, src, table, joins );
 		} else if ( ctx.MINUS() != null ) {
 			return binarySimple( ctx.expr( 0 ), ctx.expr( 1 ), SQLBinaryOperator.MINUS, pos, src, table, joins );
-		} else if ( ctx.LT() != null ) {
-			return binarySimple( ctx.expr( 0 ), ctx.expr( 1 ), SQLBinaryOperator.LESSTHAN, pos, src, table, joins );
-		} else if ( ctx.LT_EQ() != null ) {
-			return binarySimple( ctx.expr( 0 ), ctx.expr( 1 ), SQLBinaryOperator.LESSTHANOREQUAL, pos, src, table, joins );
-		} else if ( ctx.GT() != null ) {
-			return binarySimple( ctx.expr( 0 ), ctx.expr( 1 ), SQLBinaryOperator.GREATERTHAN, pos, src, table, joins );
-		} else if ( ctx.GT_EQ() != null ) {
-			return binarySimple( ctx.expr( 0 ), ctx.expr( 1 ), SQLBinaryOperator.GREATERTHANOREQUAL, pos, src, table, joins );
-		} else if ( ctx.NOT_EQ1() != null || ctx.NOT_EQ2() != null ) {
-			return binarySimple( ctx.expr( 0 ), ctx.expr( 1 ), SQLBinaryOperator.NOTEQUAL, pos, src, table, joins );
 		} else if ( ctx.OPEN_PAR() != null ) {
 			// Needs to run AFTER function and IN checks
 			return new SQLParenthesis( visitExpr( ctx.expr( 0 ), table, joins ), pos, src );
@@ -577,6 +543,67 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 		}
 	}
 
+	/**
+	 * Visit the class or interface context to generate the AST node for the
+	 * top level node
+	 *
+	 * @param ctx the parse tree
+	 *
+	 * @return the AST node representing the class or interface
+	 */
+	public SQLExpression visitPredicate( PredicateContext ctx, SQLTable table, List<SQLJoin> joins ) {
+		var	pos	= tools.getPosition( ctx );
+		var	src	= tools.getSourceText( ctx );
+
+		if ( ctx.EQ() != null || ctx.ASSIGN() != null || ctx.IS_() != null ) {
+			// IS vs IS NOT
+			SQLBinaryOperator operator = ctx.NOT_() != null ? SQLBinaryOperator.NOTEQUAL : SQLBinaryOperator.EQUAL;
+			return binarySimple( ctx.expr( 0 ), ctx.expr( 1 ), operator, pos, src, table, joins );
+		} else if ( ctx.BETWEEN_() != null ) {
+			return new SQLBetweenOperation( visitExpr( ctx.expr( 0 ), table, joins ), visitExpr( ctx.expr( 1 ), table, joins ),
+			    visitExpr( ctx.expr( 2 ), table, joins ), ctx.NOT_() != null, pos, src );
+		} else if ( ctx.AND_() != null ) {
+			// Needs to run AFTER between checks
+			return binarySimple( ctx.predicate( 0 ), ctx.predicate( 1 ), SQLBinaryOperator.AND, pos, src, table, joins );
+		} else if ( ctx.OR_() != null ) {
+			return binarySimple( ctx.predicate( 0 ), ctx.predicate( 1 ), SQLBinaryOperator.OR, pos, src, table, joins );
+		} else if ( ctx.IN_() != null ) {
+			SQLExpression expr = visitExpr( ctx.expr( 0 ), table, joins );
+			if ( ctx.subquery_no_alias() != null ) {
+				SQLSelectStatement subquery = ( SQLSelectStatement ) new SQLVisitor( tools ).visit( ctx.subquery_no_alias().select_stmt() );
+				if ( subquery.getSelect().getResultColumns().size() != 1 ) {
+					tools.reportError( "Subquery in IN clause must return exactly one column", pos );
+				}
+				return new SQLInSubQueryOperation( expr, subquery, ctx.NOT_() != null, pos, src );
+			} else {
+				List<SQLExpression> values = ctx.expr().stream().skip( 1 ).map( e -> visitExpr( e, table, joins ) ).toList();
+				return new SQLInOperation( expr, values, ctx.NOT_() != null, pos, src );
+			}
+		} else if ( ctx.LIKE_() != null ) {
+			SQLBinaryOperator	op		= ctx.NOT_() != null ? SQLBinaryOperator.NOTLIKE : SQLBinaryOperator.LIKE;
+			SQLExpression		escape	= null;
+			if ( ctx.ESCAPE_() != null ) {
+				escape = visitExpr( ctx.expr( 2 ), table, joins );
+			}
+			return new SQLBinaryOperation( visitExpr( ctx.expr( 0 ), table, joins ), visitExpr( ctx.expr( 1 ), table, joins ), op, escape, pos, src );
+		} else if ( ctx.LT() != null ) {
+			return binarySimple( ctx.expr( 0 ), ctx.expr( 1 ), SQLBinaryOperator.LESSTHAN, pos, src, table, joins );
+		} else if ( ctx.LT_EQ() != null ) {
+			return binarySimple( ctx.expr( 0 ), ctx.expr( 1 ), SQLBinaryOperator.LESSTHANOREQUAL, pos, src, table, joins );
+		} else if ( ctx.GT() != null ) {
+			return binarySimple( ctx.expr( 0 ), ctx.expr( 1 ), SQLBinaryOperator.GREATERTHAN, pos, src, table, joins );
+		} else if ( ctx.GT_EQ() != null ) {
+			return binarySimple( ctx.expr( 0 ), ctx.expr( 1 ), SQLBinaryOperator.GREATERTHANOREQUAL, pos, src, table, joins );
+		} else if ( ctx.NOT_EQ1() != null || ctx.NOT_EQ2() != null ) {
+			return binarySimple( ctx.expr( 0 ), ctx.expr( 1 ), SQLBinaryOperator.NOTEQUAL, pos, src, table, joins );
+		} else if ( ctx.OPEN_PAR() != null ) {
+			// Needs to run AFTER function and IN checks
+			return new SQLParenthesis( visitExpr( ctx.expr( 0 ), table, joins ), pos, src );
+		} else {
+			throw new UnsupportedOperationException( "Unimplemented expression: " + src );
+		}
+	}
+
 	private SQLExpression visitCase( Case_exprContext ctx, SQLTable table, List<SQLJoin> joins ) {
 		var						pos				= tools.getPosition( ctx );
 		var						src				= tools.getSourceText( ctx );
@@ -594,8 +621,13 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 		}
 
 		for ( var whenThenCtx : ctx.case_when_then() ) {
-			SQLExpression	when	= visitExpr( whenThenCtx.when_expr, table, joins );
-			SQLExpression	then	= visitExpr( whenThenCtx.then_expr, table, joins );
+			SQLExpression when;
+			if ( whenThenCtx.when_expr != null ) {
+				when = visitExpr( whenThenCtx.when_expr, table, joins );
+			} else {
+				when = visitPredicate( whenThenCtx.when_predicate, table, joins );
+			}
+			SQLExpression then = visitExpr( whenThenCtx.then_expr, table, joins );
 			whenThens.add( new SQLCaseWhenThen( when, then, tools.getPosition( whenThenCtx ), tools.getSourceText( whenThenCtx ) ) );
 		}
 
@@ -619,6 +651,11 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 	private SQLExpression binarySimple( ExprContext left, ExprContext right, SQLBinaryOperator op, Position pos, String src, SQLTable table,
 	    List<SQLJoin> joins ) {
 		return new SQLBinaryOperation( visitExpr( left, table, joins ), visitExpr( right, table, joins ), op, pos, src );
+	}
+
+	private SQLExpression binarySimple( PredicateContext left, PredicateContext right, SQLBinaryOperator op, Position pos, String src, SQLTable table,
+	    List<SQLJoin> joins ) {
+		return new SQLBinaryOperation( visitPredicate( left, table, joins ), visitPredicate( right, table, joins ), op, pos, src );
 	}
 
 	/**

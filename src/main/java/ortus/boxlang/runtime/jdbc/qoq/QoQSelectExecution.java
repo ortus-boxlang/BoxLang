@@ -200,7 +200,17 @@ public class QoQSelectExecution {
 		for ( var orderBy : selectStatement.getOrderBys() ) {
 			SQLExpression expr = orderBy.getExpression();
 			if ( expr instanceof SQLColumn column ) {
-				var match = resultColumns.entrySet().stream().filter( rc -> column.getName().equals( rc.getKey() ) ).findFirst();
+				var match = resultColumns.entrySet().stream().filter( rc -> {
+					// Check if the column name matches the name or alias an expression in the result set, regardless of whether it's a column
+					if ( column.getName().equals( rc.getKey() ) ) {
+						return true;
+					}
+					// Check if the order by name matches the name of a column in the result set
+					if ( rc.getValue().resultColumn().getExpression() instanceof SQLColumn c ) {
+						return column.getName().equals( c.getName() );
+					}
+					return false;
+				} ).findFirst();
 				if ( match.isPresent() ) {
 					orderByColumns.add( NameAndDirection.of( match.get().getKey(), orderBy.isAscending() ) );
 					continue;
@@ -220,6 +230,11 @@ public class QoQSelectExecution {
 			if ( isUnion ) {
 				throw new DatabaseException( "The order by clause in a union query must reference a column by name that is in the select list or index." );
 			}
+
+			if ( select.isDistinct() ) {
+				throw new DatabaseException( "The order by clause in a distinct query must reference a column by name that is in the select list." );
+			}
+
 			// TODO: Figure out if this exact expression is already in the result set and use that
 			// To do this, we need something like toString() implemented to compare two expressions for equivalence
 			Key newName = Key.of( "__order_by_column_" + additionalCounter++ );

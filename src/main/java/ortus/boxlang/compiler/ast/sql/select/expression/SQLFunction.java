@@ -146,13 +146,20 @@ public class SQLFunction extends SQLExpression {
 	 * Evaluate the expression aginst a partition of data
 	 */
 	public Object evaluateAggregate( QoQSelectExecution QoQExec, List<int[]> intersections ) {
-		if ( intersections.isEmpty() ) {
+		if ( intersections.isEmpty() && isAggregate() ) {
 			return null;
 		}
 		QoQFunction function = QoQFunctionService.getFunction( name );
 		if ( function.isAggregate() ) {
+			List<Object[]> values = arguments.stream().map( a -> buildAggregateValues( QoQExec, intersections, a ) ).toList();
+			// if all arrays in the list are empty, return null
+			if ( values.stream().allMatch( v -> v.length == 0 ) ) {
+				return null;
+			}
 			return function.invokeAggregate(
-			    arguments.stream().map( a -> buildAggregateValues( QoQExec, intersections, a ) ).toList(), arguments );
+			    values,
+			    arguments
+			);
 		} else {
 			return function.invoke( arguments.stream().map( a -> a.evaluateAggregate( QoQExec, intersections ) ).toList(), arguments );
 		}
