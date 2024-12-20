@@ -59,15 +59,15 @@ import ortus.boxlang.runtime.util.RegexBuilder;
 /**
  * This type provides the core map class for Boxlang. Structs are highly versatile and are used for organizing and managing related data.
  *
- * Types of Structs in BoxLang:
+ * Types of Structs in BoxLang: <code>DEFAULT, CASE_SENSITIVE, LINKED, LINKED_CASE_SENSITIVE, SORTED, WEAK, SOFT</code>
  *
- * * Basic Structs: These are the basic structures where each key is associated with a single value. Keys are case-insensitive and can be strings or symbols.
- * * Nested Structs: Structs can contain other structs as values, allowing for a hierarchical organization of data.
- * * Case-Sensitive Structs: By default, BoxLang structs are case-insensitive. However, you can create case-sensitive structs if needed.
- * * Ordered Structs: This implementation of a Struct maintains keys in the order they were added.
- * * Sorted Structs: This implementation of a Struct maintains keys in specified sorted order.
- *
- *
+ * - DEFAULT: These are the basic structures where each key is associated with a single value. Keys are case-insensitive and can be strings or symbols.
+ * - Nested Structs: Structs can contain other structs as values, allowing for a hierarchical organization of data.
+ * - CASE_SENSITIVE: By default, BoxLang structs are case-insensitive. However, you can create case-sensitive structs if needed.
+ * - LINKED, LINKED_CASE_SENSITIVE (Ordered Structs): This implementation of a Struct maintains keys in the order they were added.
+ * - SORTED: This implementation of a Struct maintains keys in specified sorted order.
+ * - WEAK: This implementation of a Struct uses weak references for keys.
+ * - SOFT: This implementation of a Struct uses a default struct with values wrapped in a SoftReference.
  */
 public class Struct implements IStruct, IListenable, Serializable {
 
@@ -149,9 +149,9 @@ public class Struct implements IStruct, IListenable, Serializable {
 	/**
 	 * Constructor
 	 *
-	 * @param type The type of struct to create: DEFAULT, LINKED, SORTED
+	 * @param type The type of struct to create: DEFAULT, CASE_SENSITIVE, LINKED, LINKED_CASE_SENSITIVE, SORTED, WEAK, SOFT
 	 *
-	 * @throws BoxRuntimeException If an invalid type is specified: DEFAULT, LINKED, SORTED
+	 * @throws BoxRuntimeException If an invalid type is specified: DEFAULT, CASE_SENSITIVE, LINKED, LINKED_CASE_SENSITIVE, SORTED, WEAK, SOFT
 	 */
 	public Struct( TYPES type ) {
 		this.type		= type;
@@ -159,9 +159,9 @@ public class Struct implements IStruct, IListenable, Serializable {
 		// Initialize the wrapped map
 		this.wrapped	= switch ( type ) {
 							case DEFAULT, CASE_SENSITIVE, SOFT -> new ConcurrentHashMap<>( INITIAL_CAPACITY );
-							case LINKED, LINKED_CASE_SENSITIVE -> Collections.synchronizedMap( new LinkedHashMap<>( INITIAL_CAPACITY ) );
+							case LINKED, LINKED_CASE_SENSITIVE -> Collections.synchronizedMap( LinkedHashMap.newLinkedHashMap( INITIAL_CAPACITY ) );
 							case SORTED -> new ConcurrentSkipListMap<>();
-							case WEAK -> new WeakHashMap<>( INITIAL_CAPACITY );
+							case WEAK -> WeakHashMap.newWeakHashMap( INITIAL_CAPACITY );
 							default -> throw new BoxRuntimeException( "Invalid struct type [" + type.name() + "]" );
 						};
 	}
