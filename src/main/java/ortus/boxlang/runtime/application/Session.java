@@ -20,12 +20,12 @@ package ortus.boxlang.runtime.application;
 import java.io.Serializable;
 
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.events.BoxEvent;
+import ortus.boxlang.runtime.scopes.ApplicationScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.SessionScope;
+import ortus.boxlang.runtime.services.ApplicationService;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -206,37 +206,47 @@ public class Session implements Serializable {
 	 * @param listener The listener that is shutting down the session
 	 */
 	public void shutdown( BaseApplicationListener listener ) {
-		// Announce it's destruction to the runtime first
-		BoxRuntime.getInstance()
-		    .getInterceptorService()
-		    .announce( BoxEvent.ON_SESSION_DESTROYED, Struct.of(
-		        Key.session, this
-		    ) );
-
-		// Any buffer output in this context will be discarded
-		// Create a temp request context with an application context with our application listener.
-		// This will allow the application scope to be available as well as all settings from the original Application.bx
-		listener.onSessionEnd(
-		    new ScriptingRequestBoxContext(
-		        new ApplicationBoxContext(
-		            BoxRuntime.getInstance().getRuntimeContext(),
-		            listener.getApplication()
-		        ),
-		        listener
-		    ),
-		    new Object[] {
-		        // If the session scope is null, just pass an empty struct
-		        sessionScope != null ? sessionScope : Struct.of(),
-		        // Pass the application scope
-		        listener.getApplication().getApplicationScope()
-		    }
-		);
-
-		// Clear the session scope
-		if ( this.sessionScope != null ) {
-			this.sessionScope.clear();
+		// Try to get the application scope from the incoming listener, if not, we can try to go to the Application Service
+		// If that fails, we can just pass an empty struct
+		ApplicationService	appService	= BoxRuntime.getInstance().getApplicationService();
+		Application			targetApp	= listener.getApplication();
+		if ( targetApp == null && appService.hasApplication( this.applicationName ) ) {
+			targetApp = appService.getApplication( this.applicationName );
 		}
-		this.sessionScope = null;
+		ApplicationScope targetAppScope = ( targetApp != null ? targetApp.getApplicationScope() : new ApplicationScope() );
+
+		try {
+			// Announce it's destruction to the runtime first
+			BoxRuntime.getInstance()
+			    .getInterceptorService()
+			    .announce(
+			        BoxEvent.ON_SESSION_DESTROYED,
+			        Struct.of(
+			            Key.session, this,
+			            Key.application, targetAppScope
+			        )
+			    );
+
+			// Any buffer output in this context will be discarded
+			// Create a temp request context with an application context with our application listener.
+			// This will allow the application scope to be available as well as all settings from the original Application.bx
+			listener.onSessionEnd(
+			    listener.getRequestContext(),
+			    new Object[] {
+			        // If the session scope is null, just pass an empty struct
+			        sessionScope != null ? sessionScope : Struct.of(),
+			        // Pass the application scope
+			        targetAppScope
+			    }
+			);
+		} finally {
+			// Clear the session scope
+			if ( this.sessionScope != null ) {
+				this.sessionScope.clear();
+			}
+			this.sessionScope = null;
+		}
+
 	}
 
 	/**
