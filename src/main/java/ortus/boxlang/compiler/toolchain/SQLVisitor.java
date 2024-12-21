@@ -477,7 +477,8 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 			if ( ctx.STRING_LITERAL() != null ) {
 				type = processStringLiteral( ctx.STRING_LITERAL() );
 			} else {
-				type = new SQLStringLiteral( unwrapBracket( ctx.name().getText() ), tools.getPosition( ctx.name() ), tools.getSourceText( ctx.name() ) );
+				type = new SQLStringLiteral( unwrapBracket( ctx.IDENTIFIER().getText() ), tools.getPosition( ctx.IDENTIFIER() ),
+				    ctx.IDENTIFIER().getText() );
 			}
 			// validate the type here
 			try {

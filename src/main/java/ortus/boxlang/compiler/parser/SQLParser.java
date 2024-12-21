@@ -17,12 +17,18 @@ package ortus.boxlang.compiler.parser;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.atn.AmbiguityInfo;
+import org.antlr.v4.runtime.atn.DecisionInfo;
+import org.antlr.v4.runtime.atn.DecisionState;
+import org.antlr.v4.runtime.atn.PredictionMode;
+import org.antlr.v4.runtime.misc.Interval;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BOMInputStream;
 
@@ -141,12 +147,18 @@ public class SQLParser extends AbstractParser {
 		SQLGrammar parser = new SQLGrammar( new CommonTokenStream( lexer ) );
 
 		// DEBUG: Will print a trace of all parser rules visited:
-		// boxParser.setTrace( true );
 		addErrorListeners( lexer, parser );
+		// parser.setTrace( true );
 		parser.setErrorHandler( new BoxParserErrorStrategy() );
 
-		// parser.getInterpreter().setPredictionMode( PredictionMode.SLL );
+		parser.getInterpreter().setPredictionMode( PredictionMode.SLL );
+
+		// activating profiling
+		// parser.setProfile( true );
+
 		ParserRuleContext parseTree = parser.parse();
+
+		// profileParser( parser );
 
 		// This must run FIRST before resetting the lexer
 		validateParse( lexer );
@@ -177,6 +189,59 @@ public class SQLParser extends AbstractParser {
 		rootNode.associateComments( this.comments );
 
 		return rootNode;
+	}
+
+	public void profileParser( SQLGrammar parser ) {
+		PrintStream out = System.out;
+
+		out.printf( "%-35s", "rule" );
+		out.printf( "%-15s", "time" );
+		out.printf( "%-15s", "invocations" );
+		out.printf( "%-15s", "lookahead" );
+		out.printf( "%-15s", "lookahead(max)" );
+		out.printf( "%-15s%n", "errors" );
+
+		for ( DecisionInfo decisionInfo : parser.getParseInfo().getDecisionInfo() ) {
+			DecisionState	ds		= parser.getATN().getDecisionState( decisionInfo.decision );
+			String			rule	= parser.getRuleNames()[ ds.ruleIndex ];
+			if ( decisionInfo.timeInPrediction > 0 ) {
+				out.printf( "%-35s", rule );
+				out.printf( "%-15s", decisionInfo.timeInPrediction / 1_000_000D + "ms" );
+				out.printf( "%-15s", decisionInfo.invocations );
+				out.printf( "%-15s", decisionInfo.SLL_TotalLook );
+				out.printf( "%-15s", decisionInfo.SLL_MaxLook );
+				out.printf( "%-15s%n", decisionInfo.errors );
+
+				// out.printf( "%-15s", decisionInfo.ambiguities );
+				for ( AmbiguityInfo ambiguity : decisionInfo.ambiguities ) {
+					out.println();
+
+					out.println( "		**** Ambiguity ****" );
+					DecisionState	dsa					= parser.getATN().getDecisionState( ambiguity.decision );
+					String			rulea				= parser.getRuleNames()[ dsa.ruleIndex ];
+					// out.println( " rule:" + rulea );
+					// out.println( " fullCtx:" + ambiguity.fullCtx );
+
+					String			ambiguousSubstring	= ambiguity.input.getText( Interval.of( ambiguity.startIndex, ambiguity.stopIndex ) );
+					out.println( "		ambiguous text: [" + ambiguousSubstring + "]" );
+
+					out.println( "		ambigAlts:" + ambiguity.ambigAlts );
+
+					// Iterate over the configurations and print only those that match the ambiguous alternatives
+					/*
+					 * out.println( "    Configurations:" );
+					 * for ( ATNConfig config : ambiguity.configs ) {
+					 * if ( ambiguity.ambigAlts.get( config.alt ) ) {
+					 * out.println( "        State: " + config.state.stateNumber );
+					 * out.println( "        Context: " + Arrays.toString( config.context.toStrings( parser, config.state.stateNumber ) ) );
+					 * out.println( "        Alt: " + config.alt );
+					 * }
+					 * }
+					 */
+					out.println();
+				}
+			}
+		}
 	}
 
 	private void validateParse( SQLLexerCustom lexer ) {
