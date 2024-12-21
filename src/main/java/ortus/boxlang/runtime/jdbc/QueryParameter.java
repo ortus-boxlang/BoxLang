@@ -79,7 +79,7 @@ public class QueryParameter {
 	 * <li>`scale` - The scale of the parameter, used only on `double` and `decimal` types. Defaults to `null`.</li>
 	 */
 	private QueryParameter( IStruct param ) {
-		String sqltype = ( String ) param.getOrDefault( Key.sqltype, "VARCHAR" );
+		String sqltype = ( String ) param.getOrDefault( Key.sqltype, param.getOrDefault( Key.type, "VARCHAR" ) );
 		// allow nulls and null
 		this.isNullParam	= BooleanCaster.cast( param.getOrDefault( Key.nulls, param.getOrDefault( Key.nulls2, false ) ) );
 		this.isListParam	= BooleanCaster.cast( param.getOrDefault( Key.list, false ) );
@@ -134,6 +134,7 @@ public class QueryParameter {
 			case QueryColumnType.CHAR, VARCHAR -> StringCaster.cast( this.value );
 			case QueryColumnType.BINARY -> this.value; // @TODO: Will this work?
 			case QueryColumnType.BIT -> BooleanCaster.cast( this.value );
+			case QueryColumnType.BOOLEAN -> BooleanCaster.cast( this.value );
 			case QueryColumnType.TIME -> DateTimeCaster.cast( this.value, context );
 			case QueryColumnType.DATE -> DateTimeCaster.cast( this.value, context );
 			case QueryColumnType.TIMESTAMP -> new java.sql.Timestamp( DateTimeCaster.cast( this.value, context ).toEpochMillis() );

@@ -227,8 +227,13 @@ expr:
     | BIND_PARAMETER
     | (table_name DOT)? column_name
     | unary_operator expr
+    // concat operator
     | expr PIPE2 expr
-    | expr ( STAR | DIV | MOD) expr
+    // bitwise operators
+    | expr (CARET | AMP | PIPE) expr
+    // math operators
+    | expr (STAR | DIV | MOD) expr
+    // math or maybe concat operators
     | expr (PLUS | MINUS) expr
     // Special handling of cast to allow cast( foo as number)
     | CAST_ OPEN_PAR expr AS_ (name | STRING_LITERAL) CLOSE_PAR
@@ -571,7 +576,7 @@ recursive_select:
 unary_operator:
     MINUS
     | PLUS
-    // | TILDE
+    | TILDE
     | BANG
 ;
 
@@ -763,7 +768,7 @@ schema_name:
 ;
 
 table_name:
-    any_name
+    IDENTIFIER
 ;
 
 table_or_index_name:
@@ -771,7 +776,7 @@ table_or_index_name:
 ;
 
 column_name:
-    any_name
+    IDENTIFIER
 ;
 
 collation_name:

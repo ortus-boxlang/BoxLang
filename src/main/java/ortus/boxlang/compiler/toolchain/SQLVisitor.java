@@ -498,6 +498,12 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 				arguments = ctx.expr().stream().map( e -> visitExpr( e, table, joins ) ).toList();
 			}
 			if ( functionName.equals( Key.count ) ) {
+				if ( arguments.size() == 0 ) {
+					tools.reportError( "COUNT() must have at least one argument", pos );
+				}
+				if ( arguments.size() > 1 ) {
+					tools.reportError( "COUNT() can only have one argument", pos );
+				}
 				return new SQLCountFunction( functionName, arguments, hasDistinct, pos, src );
 			} else {
 				return new SQLFunction( functionName, arguments, pos, src );
@@ -521,6 +527,12 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 			return binarySimple( ctx.expr( 0 ), ctx.expr( 1 ), SQLBinaryOperator.PLUS, pos, src, table, joins );
 		} else if ( ctx.MINUS() != null ) {
 			return binarySimple( ctx.expr( 0 ), ctx.expr( 1 ), SQLBinaryOperator.MINUS, pos, src, table, joins );
+		} else if ( ctx.PIPE() != null ) {
+			return binarySimple( ctx.expr( 0 ), ctx.expr( 1 ), SQLBinaryOperator.BITWISE_OR, pos, src, table, joins );
+		} else if ( ctx.AMP() != null ) {
+			return binarySimple( ctx.expr( 0 ), ctx.expr( 1 ), SQLBinaryOperator.BITWISE_AND, pos, src, table, joins );
+		} else if ( ctx.CARET() != null ) {
+			return binarySimple( ctx.expr( 0 ), ctx.expr( 1 ), SQLBinaryOperator.BITWISE_XOR, pos, src, table, joins );
 		} else if ( ctx.OPEN_PAR() != null ) {
 			// Needs to run AFTER function and IN checks
 			return new SQLParenthesis( visitExpr( ctx.expr( 0 ), table, joins ), pos, src );
@@ -534,6 +546,8 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 				op = SQLUnaryOperator.MINUS;
 			} else if ( ctx.unary_operator().PLUS() != null ) {
 				op = SQLUnaryOperator.PLUS;
+			} else if ( ctx.unary_operator().TILDE() != null ) {
+				op = SQLUnaryOperator.BITWISE_NOT;
 			} else {
 				throw new UnsupportedOperationException( "Unimplemented unary operator: " + ctx.unary_operator().getText() );
 			}

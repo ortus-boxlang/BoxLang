@@ -21,6 +21,8 @@ import java.util.Set;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLExpression;
+import ortus.boxlang.compiler.ast.sql.select.expression.literal.SQLNullLiteral;
+import ortus.boxlang.compiler.ast.sql.select.expression.literal.SQLStringLiteral;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
@@ -232,12 +234,39 @@ public class SQLBinaryOperation extends SQLExpression {
 					return null;
 				}
 				return leftNum - rightNum;
+			case BITWISE_AND :
+				ensureNumericOperands( QoQExec );
+				leftNum = evalAsNumber( left, QoQExec, intersection );
+				rightNum = evalAsNumber( right, QoQExec, intersection );
+				if ( leftNum == null || rightNum == null ) {
+					return null;
+				}
+				return leftNum.intValue() & rightNum.intValue();
+			case BITWISE_OR :
+				ensureNumericOperands( QoQExec );
+				leftNum = evalAsNumber( left, QoQExec, intersection );
+				rightNum = evalAsNumber( right, QoQExec, intersection );
+				if ( leftNum == null || rightNum == null ) {
+					return null;
+				}
+				return leftNum.intValue() | rightNum.intValue();
+			case BITWISE_XOR :
+				ensureNumericOperands( QoQExec );
+				leftNum = evalAsNumber( left, QoQExec, intersection );
+				rightNum = evalAsNumber( right, QoQExec, intersection );
+				if ( leftNum == null || rightNum == null ) {
+					return null;
+				}
+				return leftNum.intValue() ^ rightNum.intValue();
 			case MODULO :
 				ensureNumericOperands( QoQExec );
 				leftNum = evalAsNumber( left, QoQExec, intersection );
 				rightNum = evalAsNumber( right, QoQExec, intersection );
 				if ( leftNum == null || rightNum == null ) {
 					return null;
+				}
+				if ( rightNum.doubleValue() == 0 ) {
+					throw new BoxRuntimeException( "Division by zero" );
 				}
 				return leftNum % rightNum;
 			case MULTIPLY :
@@ -271,7 +300,9 @@ public class SQLBinaryOperation extends SQLExpression {
 				}
 				return false;
 			case PLUS :
-				if ( left.isNumeric( QoQExec ) && right.isNumeric( QoQExec ) ) {
+				// If both sides are numeric, or null
+				// This ensure null + 5 is still math.
+				if ( ( left.isNumeric( QoQExec ) || left instanceof SQLNullLiteral ) && ( right.isNumeric( QoQExec ) || right instanceof SQLNullLiteral ) ) {
 					leftNum		= evalAsNumber( left, QoQExec, intersection );
 					rightNum	= evalAsNumber( right, QoQExec, intersection );
 					if ( leftNum == null || rightNum == null ) {
@@ -343,12 +374,39 @@ public class SQLBinaryOperation extends SQLExpression {
 					return null;
 				}
 				return leftNum - rightNum;
+			case BITWISE_AND :
+				ensureNumericOperands( QoQExec );
+				leftNum = evalAsNumberAggregate( left, QoQExec, intersections );
+				rightNum = evalAsNumberAggregate( right, QoQExec, intersections );
+				if ( leftNum == null || rightNum == null ) {
+					return null;
+				}
+				return leftNum.intValue() & rightNum.intValue();
+			case BITWISE_OR :
+				ensureNumericOperands( QoQExec );
+				leftNum = evalAsNumberAggregate( left, QoQExec, intersections );
+				rightNum = evalAsNumberAggregate( right, QoQExec, intersections );
+				if ( leftNum == null || rightNum == null ) {
+					return null;
+				}
+				return leftNum.intValue() | rightNum.intValue();
+			case BITWISE_XOR :
+				ensureNumericOperands( QoQExec );
+				leftNum = evalAsNumberAggregate( left, QoQExec, intersections );
+				rightNum = evalAsNumberAggregate( right, QoQExec, intersections );
+				if ( leftNum == null || rightNum == null ) {
+					return null;
+				}
+				return leftNum.intValue() ^ rightNum.intValue();
 			case MODULO :
 				ensureNumericOperands( QoQExec );
 				leftNum = evalAsNumberAggregate( left, QoQExec, intersections );
 				rightNum = evalAsNumberAggregate( right, QoQExec, intersections );
 				if ( leftNum == null || rightNum == null ) {
 					return null;
+				}
+				if ( rightNum.doubleValue() == 0 ) {
+					throw new BoxRuntimeException( "Division by zero" );
 				}
 				return leftNum % rightNum;
 			case MULTIPLY :
@@ -449,13 +507,15 @@ public class SQLBinaryOperation extends SQLExpression {
 
 	/**
 	 * Reusable helper method to ensure that the left and right operands are numeric expressions or numeric columns
+	 * nulls are ok in math operations
+	 * Strings we'll let slide too since "" casts to a 0
 	 */
 	private void ensureNumericOperands( QoQSelectExecution QoQExec ) {
-		if ( !left.isNumeric( QoQExec ) ) {
+		if ( !left.isNumeric( QoQExec ) && ! ( left instanceof SQLNullLiteral ) && ! ( left instanceof SQLStringLiteral ) ) {
 			throw new BoxRuntimeException( "Left side of a math [" + operator.getSymbol()
 			    + "] operation must be a numeric expression or numeric column. It is [" + left.getClass().getName() + "]" );
 		}
-		if ( !right.isNumeric( QoQExec ) ) {
+		if ( !right.isNumeric( QoQExec ) && ! ( right instanceof SQLNullLiteral ) && ! ( right instanceof SQLStringLiteral ) ) {
 			throw new BoxRuntimeException( "Right side of a math [" + operator.getSymbol()
 			    + "] operation must be a numeric expression or numeric column. It is [" + right.getClass().getName() + "]" );
 		}
@@ -470,8 +530,24 @@ public class SQLBinaryOperation extends SQLExpression {
 	 * 
 	 * @return
 	 */
-	private double evalAsNumber( SQLExpression expression, QoQSelectExecution QoQExec, int[] intersection ) {
-		return ( ( Number ) expression.evaluate( QoQExec, intersection ) ).doubleValue();
+	private Double evalAsNumber( SQLExpression expression, QoQSelectExecution QoQExec, int[] intersection ) {
+		Object	value	= expression.evaluate( QoQExec, intersection );
+		Number	nValue	= 0;
+		if ( value == null ) {
+			nValue = null;
+		} else if ( value instanceof Number n ) {
+			nValue = n;
+		} else if ( value instanceof String s ) {
+			if ( s.isEmpty() ) {
+				nValue = 0;
+			} else {
+				throw new BoxRuntimeException( "Cannot string as a number: [" + s + "]" );
+			}
+		}
+		if ( nValue == null ) {
+			return null;
+		}
+		return nValue.doubleValue();
 	}
 
 	/**
@@ -483,8 +559,24 @@ public class SQLBinaryOperation extends SQLExpression {
 	 * 
 	 * @return
 	 */
-	private double evalAsNumberAggregate( SQLExpression expression, QoQSelectExecution QoQExec, List<int[]> intersections ) {
-		return ( ( Number ) expression.evaluateAggregate( QoQExec, intersections ) ).doubleValue();
+	private Double evalAsNumberAggregate( SQLExpression expression, QoQSelectExecution QoQExec, List<int[]> intersections ) {
+		Object	value	= expression.evaluateAggregate( QoQExec, intersections );
+		Number	nValue	= 0;
+		if ( value == null ) {
+			nValue = null;
+		} else if ( value instanceof Number n ) {
+			nValue = n;
+		} else if ( value instanceof String s ) {
+			if ( s.isEmpty() ) {
+				nValue = 0;
+			} else {
+				throw new BoxRuntimeException( "Cannot string as a number: [" + s + "]" );
+			}
+		}
+		if ( nValue == null ) {
+			return null;
+		}
+		return nValue.doubleValue();
 	}
 
 	@Override

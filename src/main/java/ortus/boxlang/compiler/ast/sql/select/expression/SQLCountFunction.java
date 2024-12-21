@@ -105,7 +105,6 @@ public class SQLCountFunction extends SQLFunction {
 	 * Evaluate the expression aginst a partition of data
 	 */
 	public Object evaluateAggregate( QoQSelectExecution QoQExec, List<int[]> intersections ) {
-		// TODO: handle distinct
 
 		// If this is count(*), then we just return the number of intersections with no regard to whether there are nulls
 		if ( getArguments().get( 0 ) instanceof SQLStarExpression ) {

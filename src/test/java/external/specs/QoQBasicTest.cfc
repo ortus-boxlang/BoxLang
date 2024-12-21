@@ -2,6 +2,8 @@
 * Copied from test\tickets\LDEV3042.cfc in Lucee
 * and test\tickets\LDEV4627.cfc
 * and test\tickets\LDEV4641.cfc
+* and test\tickets\LDEV4695.cfc
+* and test\tickets\LDEV4691.cfc
 */
 component extends="testbox.system.BaseSpec"{
 
@@ -24,6 +26,7 @@ component extends="testbox.system.BaseSpec"{
 			[ 'Amy Merryweather',58,'Amy@company.com','Executive',false,12,2,createDate(2008,3,21),true,nullValue(),'PURPLE' ]
 		] );
 	}
+
 	function run( testResults , testBox ) {
 
 		describe( 'QofQ' , function(){
@@ -631,6 +634,57 @@ component extends="testbox.system.BaseSpec"{
 				});
 	
 	
+			});
+			
+			it( title='QoQ error with types and subselect' , body=function() {
+				var q = queryNew("navid, type, url", "varchar,decimal,VarChar",
+					[{
+							"navid": 200,
+							"type": 1,
+							"url": "football"
+						}
+					]
+				);
+				query name="local.res" dbtype="query" {
+					echo("
+						select 	navid, type, url
+						from 	local.q
+						where 	url = 'football'
+								and type = 1
+								and left( navid, 3 ) in (
+									select 	navid
+									from 	local.q
+									where 	type = 1
+											and url = 'football')
+					");
+				}
+				expect( res.recordcount ).toBe( 1 );
+			});
+
+			it( title='QoQ check decimal types scale are preserved' , body=function() {
+						var dec = 5.57;
+						var q1 = QueryNew( "id,dec", "integer,decimal" );
+						q1.addRow( { id: 1, dec: dec } );
+						var q2 = QueryNew( "id,str", "integer,varchar" );
+						q2.addRow( { id: 1, str: "testing" } );
+
+						var q3sql = "
+							select  q1.*
+							from    q1, q2
+							where   q1.id = q2.id
+						";
+						var q3 = QueryExecute( q3sql, {}, {dbtype: "query"} );
+						// q3.dec should be 5.57. It was 6 instead.
+						expect( q3.dec ).toBe( dec );
+
+						var q4sql = "
+							select  *
+							from    q1, q2
+							where   q1.id = q2.id
+						";
+						var q4 = QueryExecute( q4sql, {}, {dbtype: "query"} );
+						// q4.dec should be 5.57. It was 6 instead.
+						expect( q4.dec ).toBe( dec );
 			});
 			
 		});

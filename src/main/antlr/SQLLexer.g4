@@ -18,6 +18,7 @@ COMMA: ',';
 ASSIGN: '=';
 STAR: '*';
 PLUS: '+';
+CARET: '^';
 MINUS: '-';
 TILDE: '~';
 PIPE2: '||';
@@ -205,7 +206,7 @@ IDENTIFIER:
     '"' (~'"' | '""')* '"'
     | '`' (~'`' | '``')* '`'
     | '[' ~']'* ']'
-    | [A-Z_\u007F-\uFFFF] [A-Z_0-9\u007F-\uFFFF]*
+    | [A-Z$_\u007F-\uFFFF] [A-Z$_0-9\u007F-\uFFFF]*
 ;
 
 NUMERIC_LITERAL: ((DIGIT+ ('.' DIGIT*)?) | ('.' DIGIT+)) ('E' [-+]? DIGIT+)? | '0x' HEX_DIGIT+;

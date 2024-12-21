@@ -39,11 +39,13 @@ import ortus.boxlang.runtime.jdbc.qoq.functions.scalar.Cos;
 import ortus.boxlang.runtime.jdbc.qoq.functions.scalar.Exp;
 import ortus.boxlang.runtime.jdbc.qoq.functions.scalar.Floor;
 import ortus.boxlang.runtime.jdbc.qoq.functions.scalar.IsNull;
+import ortus.boxlang.runtime.jdbc.qoq.functions.scalar.Left;
 import ortus.boxlang.runtime.jdbc.qoq.functions.scalar.Length;
 import ortus.boxlang.runtime.jdbc.qoq.functions.scalar.Lower;
 import ortus.boxlang.runtime.jdbc.qoq.functions.scalar.Ltrim;
 import ortus.boxlang.runtime.jdbc.qoq.functions.scalar.Mod;
 import ortus.boxlang.runtime.jdbc.qoq.functions.scalar.Power;
+import ortus.boxlang.runtime.jdbc.qoq.functions.scalar.Right;
 import ortus.boxlang.runtime.jdbc.qoq.functions.scalar.Rtrim;
 import ortus.boxlang.runtime.jdbc.qoq.functions.scalar.Sin;
 import ortus.boxlang.runtime.jdbc.qoq.functions.scalar.Sqrt;
@@ -88,6 +90,8 @@ public class QoQFunctionService {
 		register( Tan.INSTANCE );
 		register( Trim.INSTANCE );
 		register( Upper.INSTANCE );
+		register( Left.INSTANCE );
+		register( Right.INSTANCE );
 
 		// Aggregate
 		register( Max.INSTANCE );

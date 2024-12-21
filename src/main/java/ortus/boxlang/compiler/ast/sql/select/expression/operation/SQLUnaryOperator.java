@@ -19,6 +19,7 @@ public enum SQLUnaryOperator {
 	PLUS,
 	MINUS,
 	NOT,
+	BITWISE_NOT,
 	ISNULL,
 	ISNOTNULL;
 
@@ -34,6 +35,8 @@ public enum SQLUnaryOperator {
 				return "IS NULL";
 			case ISNOTNULL :
 				return "IS NOT NULL";
+			case BITWISE_NOT :
+				return "~";
 			default :
 				return "";
 		}

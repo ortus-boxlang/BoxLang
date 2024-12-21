@@ -19,6 +19,7 @@ import static com.google.common.truth.Truth.assertThat;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.compiler.parser.ParsingResult;
@@ -561,23 +562,23 @@ public class QoQParseTest {
 	}
 
 	@Test
+	@Disabled
 	public void testsdf() {
 		instance.executeSource(
 		    """
-		    a = queryNew("a","varchar");
-		    b = queryNew("a","varchar", [['1'],['2'],['2']]);
+		    q = queryNew("id","numeric",[[1]]);
 
-		       actual = QueryExecute(
-		      	sql = "
-		      	select a
-		      		from a
-		      	union select a
-		      		from b",
-		      	options = { dbtype: 'query' }
+		      queryExecute("
+		      	select id
+		      	from q
+		      	where id= :id
+		      	",
+		      	{
+		      		'id': {type="integer", value=""}
+		      	},
+		      	{dbtype:"query"}
 		      );
-
-		             println( actual )
-		             """,
+		                 """,
 		    context );
 	}
 

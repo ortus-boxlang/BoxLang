@@ -78,7 +78,7 @@ public class IntegerCaster implements IBoxCaster {
 		String theValue = StringCaster.cast( object, fail );
 		if ( theValue == null ) {
 			if ( fail ) {
-				throw new BoxCastException( String.format( "Can't cast %s to a int.", theValue ) );
+				throw new BoxCastException( String.format( "Can't cast [%s] to a int.", theValue ) );
 			} else {
 				return null;
 			}
@@ -87,7 +87,7 @@ public class IntegerCaster implements IBoxCaster {
 			return Integer.valueOf( theValue );
 		}
 		if ( fail ) {
-			throw new BoxCastException( String.format( "Can't cast %s to a int.", theValue ) );
+			throw new BoxCastException( String.format( "Can't cast [%s] to a int.", theValue ) );
 		} else {
 			return null;
 		}

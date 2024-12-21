@@ -26,6 +26,7 @@ public enum QueryColumnType {
 
 	BIGINT( Types.BIGINT ),
 	BINARY( Types.BINARY ),
+	BOOLEAN( Types.BOOLEAN ),
 	BIT( Types.BIT ),
 	CHAR( Types.CHAR ),
 	DATE( Types.DATE ),
@@ -68,8 +69,10 @@ public enum QueryColumnType {
 			case "nclob" :
 				return OBJECT;
 			case "bit" :
-			case "boolean" :
 				return BIT;
+			case "boolean" :
+			case "bool" :
+				return BOOLEAN;
 			case "nchar" :
 			case "char" :
 				return CHAR;
@@ -85,6 +88,7 @@ public enum QueryColumnType {
 			case "float" :
 			case "double" :
 			case "numeric" :
+			case "number" :
 				return DOUBLE;
 			case "idstamp" :
 				return CHAR;
@@ -148,6 +152,8 @@ public enum QueryColumnType {
 				return "other";
 			case NULL :
 				return "null";
+			case BOOLEAN :
+				return "boolean";
 			default :
 				throw new IllegalArgumentException( "Unknown QueryColumnType: " + this );
 		}
@@ -173,7 +179,7 @@ public enum QueryColumnType {
 			case Types.BLOB :
 				return OBJECT;
 			case Types.BOOLEAN :
-				return BIT;
+				return BOOLEAN;
 			case Types.CHAR :
 				return VARCHAR;
 			case Types.CLOB :

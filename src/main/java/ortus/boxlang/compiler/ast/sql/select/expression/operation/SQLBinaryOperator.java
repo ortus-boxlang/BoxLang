@@ -17,6 +17,9 @@ package ortus.boxlang.compiler.ast.sql.select.expression.operation;
 public enum SQLBinaryOperator {
 
 	PLUS,
+	BITWISE_AND,
+	BITWISE_OR,
+	BITWISE_XOR,
 	MINUS,
 	MULTIPLY,
 	DIVIDE,
@@ -67,6 +70,12 @@ public enum SQLBinaryOperator {
 				return "NOT LIKE";
 			case CONCAT :
 				return "||";
+			case BITWISE_XOR :
+				return "^";
+			case BITWISE_AND :
+				return "&";
+			case BITWISE_OR :
+				return "|";
 			default :
 				return "";
 		}

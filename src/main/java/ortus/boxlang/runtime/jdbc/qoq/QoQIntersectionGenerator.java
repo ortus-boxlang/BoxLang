@@ -184,7 +184,7 @@ public class QoQIntersectionGenerator {
 																																							newIntersection[ i.length ] = j;
 																																							return newIntersection;
 																																						} )
-												    .filter( j -> ( Boolean ) joinOn.evaluate( QoQExec, j ) );
+												    .filter( j -> joinOn == null || ( Boolean ) joinOn.evaluate( QoQExec, j ) );
 												List<int[]>		newStreamList	= newStream.collect( Collectors.toList() );
 												if ( newStreamList.isEmpty() ) {
 													int[] leftOnlyIntersection = Arrays.copyOf( i, i.length + 1 );
@@ -205,7 +205,7 @@ public class QoQIntersectionGenerator {
 																																							newIntersection[ i.length ] = j[ 0 ];
 																																							return newIntersection;
 																																						} )
-												    .filter( joint -> ( Boolean ) joinOn.evaluate( QoQExec, joint ) );
+												    .filter( joint -> joinOn == null || ( Boolean ) joinOn.evaluate( QoQExec, joint ) );
 												List<int[]>		newStreamList	= newStream.collect( Collectors.toList() );
 												if ( newStreamList.isEmpty() ) {
 													int[] rightOnlyIntersection = new int[ leftRows.get( 0 ).length + 1 ];

@@ -17,17 +17,18 @@ package ortus.boxlang.runtime.jdbc.qoq.functions.scalar;
 import java.util.List;
 
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLExpression;
-import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
+import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.jdbc.qoq.QoQScalarFunctionDef;
 import ortus.boxlang.runtime.jdbc.qoq.QoQSelectExecution;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.QueryColumnType;
 
-public class Power extends QoQScalarFunctionDef {
+public class Right extends QoQScalarFunctionDef {
 
-	private static final Key					name		= Key.of( "power" );
+	private static final Key					name		= Key.of( "right" );
 
-	public static final QoQScalarFunctionDef	INSTANCE	= new Power();
+	public static final QoQScalarFunctionDef	INSTANCE	= new Right();
 
 	@Override
 	public Key getName() {
@@ -36,7 +37,7 @@ public class Power extends QoQScalarFunctionDef {
 
 	@Override
 	public QueryColumnType getReturnType( QoQSelectExecution QoQExec, List<SQLExpression> expressions ) {
-		return QueryColumnType.DOUBLE;
+		return QueryColumnType.VARCHAR;
 	}
 
 	@Override
@@ -46,19 +47,12 @@ public class Power extends QoQScalarFunctionDef {
 
 	@Override
 	public Object apply( List<Object> args, List<SQLExpression> expressions ) {
-		Object	left	= args.get( 0 );
-		Object	right	= args.get( 1 );
-		if ( left == null || right == null ) {
-			return null;
+		String	value	= StringCaster.cast( args.get( 0 ) );
+		int		length	= IntegerCaster.cast( args.get( 1 ) );
+		if ( length > value.length() ) {
+			length = value.length();
 		}
-		// empty strings are treated as 0 in sql math
-		if ( left instanceof String s && s.isEmpty() ) {
-			left = 0;
-		}
-		if ( right instanceof String s && s.isEmpty() ) {
-			right = 0;
-		}
-		return Math.pow( NumberCaster.cast( left ).doubleValue(), NumberCaster.cast( right ).doubleValue() );
+		return value.substring( value.length() - length );
 	}
 
 }

@@ -51,6 +51,13 @@ public class Mod extends QoQScalarFunctionDef {
 		if ( left == null || right == null ) {
 			return null;
 		}
+		// empty strings are treated as 0 in sql math
+		if ( left instanceof String s && s.isEmpty() ) {
+			left = 0;
+		}
+		if ( right instanceof String s && s.isEmpty() ) {
+			right = 0;
+		}
 		// Modulus does its own casting
 		return Modulus.invoke( left, right );
 	}

@@ -69,9 +69,6 @@ public class QoQExecutionService {
 	 * @return the AST
 	 */
 	public static SQLNode parseSQL( String sql ) {
-		if ( sql.indexOf( "bradtest" ) > -1 ) {
-			// System.out.println( sql );
-		}
 		DynamicObject	trans	= frTransService.startTransaction( "BL QoQ Parse", "" );
 		SQLParser		parser	= new SQLParser();
 		ParsingResult	result;
@@ -302,7 +299,8 @@ public class QoQExecutionService {
 				StringBuilder sb = new StringBuilder();
 				for ( SQLExpression expression : groupBys ) {
 					// TODO: hash large values
-					sb.append( StringCaster.cast( expression.evaluate( QoQExec, intersection ) ) );
+					Object cellValue = expression.evaluate( QoQExec, intersection );
+					sb.append( StringCaster.cast( cellValue == null ? "<<NULL>>" : cellValue ) );
 				}
 				partitionKey = sb.toString();
 			} else {

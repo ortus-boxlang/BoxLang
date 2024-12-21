@@ -344,6 +344,20 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	}
 
 	/**
+	 * Get the QueryColumn object for a column
+	 * Throws an exception if the column doesn't exist
+	 * 
+	 * This method for CF/Lucee compat
+	 *
+	 * @param name column name
+	 *
+	 * @return QueryColumn object
+	 */
+	public QueryColumn getColumn( String name ) {
+		return getColumn( Key.of( name ) );
+	}
+
+	/**
 	 * Get data for a row as an array. 0-based index!
 	 * Array is passed by reference and changes made to it will be reflected in the
 	 * query.
