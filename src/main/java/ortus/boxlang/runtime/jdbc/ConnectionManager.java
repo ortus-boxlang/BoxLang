@@ -595,6 +595,9 @@ public class ConnectionManager {
 	 * Shutdown the ConnectionManager and release any resources.
 	 */
 	public void shutdown() {
+		this.datasources.forEach( ( key, datasource ) -> {
+			datasource.shutdown();
+		} );
 		this.datasources.clear();
 	}
 
