@@ -28,6 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.List;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -155,6 +156,22 @@ public class QueryTest extends BaseJDBCTest {
 		assertEquals( 77, michael.get( "id" ) );
 		assertEquals( "Michael Born", michael.get( "name" ) );
 		assertEquals( "Developer", michael.get( "role" ) );
+	}
+
+	@Disabled( "Unimplemented" )
+	@DisplayName( "It can execute a query with a list queryparam" )
+	@Test
+	public void testListBindings() {
+		getInstance().executeSource(
+		    """
+		        <cfquery name="result">
+		        SELECT * FROM developers WHERE id IN (<cfqueryparam value=[ 77, 1, 42 ], list="true">)
+		        </cfquery>
+		    """,
+		    context );
+		assertThat( getVariables().get( result ) ).isInstanceOf( Query.class );
+		ortus.boxlang.runtime.types.Query query = getVariables().getAsQuery( result );
+		assertEquals( 3, query.size() );
 	}
 
 	@DisplayName( "It can execute a query on a named datasource" )

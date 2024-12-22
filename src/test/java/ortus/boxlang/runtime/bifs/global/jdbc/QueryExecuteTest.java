@@ -155,6 +155,23 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		assertEquals( "Developer", michael.get( "role" ) );
 	}
 
+	@Disabled( "Unimplemented" )
+	@DisplayName( "It can execute a query with a list binding" )
+	@Test
+	public void testListBindings() {
+		instance.executeSource(
+		    """
+		    result = queryExecute(
+		        "SELECT * FROM developers WHERE id IN (:ids)",
+		        { "ids" : { value: "77,1,42", list : true } }
+		    );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
+		Query query = variables.getAsQuery( result );
+		assertEquals( 3, query.size() );
+	}
+
 	@DisplayName( "It can execute a query with struct bindings on the default datasource" )
 	@Test
 	public void testStructBindings() {
