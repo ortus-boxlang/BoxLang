@@ -24,6 +24,7 @@ import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.Struct;
@@ -86,8 +87,12 @@ public class QueryParameter {
 
 		Object v = param.get( Key.value );
 		if ( this.isListParam ) {
-			v		= ListUtil.asList( ( String ) v, ( String ) param.getOrDefault( Key.separator, "," ) );
-			sqltype	= "ARRAY";
+			sqltype = "ARRAY";
+			if ( v instanceof Array ) {
+				// do nothing?
+			} else {
+				v = ListUtil.asList( ( String ) v, ( String ) param.getOrDefault( Key.separator, "," ) );
+			}
 		}
 
 		this.value		= this.isNullParam ? null : v;
