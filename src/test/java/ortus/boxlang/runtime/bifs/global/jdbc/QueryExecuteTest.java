@@ -156,14 +156,31 @@ public class QueryExecuteTest extends BaseJDBCTest {
 	}
 
 	@Disabled( "Unimplemented" )
-	@DisplayName( "It can execute a query with a list binding" )
+	@DisplayName( "It can execute a query with a (string) list binding" )
 	@Test
-	public void testListBindings() {
+	public void testListStringBindings() {
 		instance.executeSource(
 		    """
 		    result = queryExecute(
 		        "SELECT * FROM developers WHERE id IN (:ids)",
 		        { "ids" : { value: "77,1,42", list : true } }
+		    );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
+		Query query = variables.getAsQuery( result );
+		assertEquals( 3, query.size() );
+	}
+
+	@Disabled( "Unimplemented" )
+	@DisplayName( "It can execute a query with an (array) list binding" )
+	@Test
+	public void testListArrayBindings() {
+		instance.executeSource(
+		    """
+		    result = queryExecute(
+		        "SELECT * FROM developers WHERE id IN (:ids)",
+		        { "ids" : { value: [77, 1, 42], list : true } }
 		    );
 		    """,
 		    context );
