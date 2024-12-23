@@ -32,6 +32,8 @@ import ortus.boxlang.runtime.types.util.MathUtil;
  */
 public class NumberCaster implements IBoxCaster {
 
+	public static boolean booleansAreNumbers = false;
+
 	/**
 	 * Tests to see if the value can be cast to a Number.
 	 * Returns a {@code CastAttempt<T>} which will contain the result if casting was
@@ -91,19 +93,23 @@ public class NumberCaster implements IBoxCaster {
 			return new BigDecimal( num.doubleValue(), MathUtil.getMathContext() );
 		}
 
-		if ( object instanceof Boolean bool ) {
-			return bool ? 1 : 0;
-		}
+		// Only here for compat. This "hidden setting" can be toggled by the compat module
+		if ( booleansAreNumbers ) {
+			if ( object instanceof Boolean bool ) {
+				return bool ? 1 : 0;
+			}
 
-		if ( object instanceof String str ) {
-			// String true and yes are truthy
-			if ( str.equalsIgnoreCase( "true" ) || str.equalsIgnoreCase( "yes" ) ) {
-				return 1;
-				// String false and no are truthy
-			} else if ( str.equalsIgnoreCase( "false" ) || str.equalsIgnoreCase( "no" ) ) {
-				return 0;
+			if ( object instanceof String str ) {
+				// String true and yes are truthy
+				if ( str.equalsIgnoreCase( "true" ) || str.equalsIgnoreCase( "yes" ) ) {
+					return 1;
+					// String false and no are truthy
+				} else if ( str.equalsIgnoreCase( "false" ) || str.equalsIgnoreCase( "no" ) ) {
+					return 0;
+				}
 			}
 		}
+
 		// Try to parse the string as a Number
 		String	stringValue	= StringCaster.cast( object, false );
 		Number	result		= parseNumber( stringValue );

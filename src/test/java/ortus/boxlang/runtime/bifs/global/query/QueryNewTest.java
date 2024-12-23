@@ -231,8 +231,6 @@ public class QueryNewTest {
 		    import java.util.Arrays;
 
 		       result = QueryNew( "column1", "VarChar", [ [], [ "a" ] ] )
-		       println( Arrays.toString( result.getData().get(0) ) )
-		       println( Arrays.toString( result.getData().get(1) ) )
 		         """,
 		    context );
 		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
