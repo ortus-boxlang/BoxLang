@@ -25,6 +25,8 @@ import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 import ortus.boxlang.runtime.jdbc.qoq.QoQSelectExecution;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Query;
+import ortus.boxlang.runtime.types.QueryColumn;
 import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
@@ -39,6 +41,12 @@ public class SQLColumn extends SQLExpression {
 	private SQLTable							table;
 
 	private Key									name;
+
+	// THIS DATA IS SPECIFIC TO THE EXECUTION. IF WE START CACHING THIS AST, REWORK THIS TO BE STORED ELSEWHERE
+	private List<Object[]>						data			= null;
+	private int									tableIndex		= -1;
+	private int									colIndex		= -1;
+	private QueryColumnType						type			= null;
 
 	/**
 	 * Constructor
@@ -96,6 +104,41 @@ public class SQLColumn extends SQLExpression {
 	}
 
 	/**
+	 * Get the table, performing runtime lookup if necessary
+	 */
+	public void ensureData( QoQSelectExecution QoQExec ) {
+		if ( data != null ) {
+			return;
+		}
+
+		synchronized ( this ) {
+			var t = getTable();
+			if ( data != null ) {
+				return;
+			}
+			if ( t == null ) {
+				// Abmiguity, we need to find the table
+				var tables = QoQExec.getTableLookup().entrySet();
+				for ( var tableSet : tables ) {
+					if ( tableSet.getValue().getColumns().containsKey( name ) ) {
+						t = tableSet.getKey();
+					}
+				}
+				if ( t == null ) {
+					throw new BoxRuntimeException( "Column " + name + " is ambiguous and not found in any table." );
+				}
+			}
+			tableIndex = t.getIndex();
+			Query		table	= QoQExec.getTableLookup().get( t );
+			// Cache this data for future use
+			QueryColumn	column	= table.getColumns().get( name );
+			colIndex	= column.getIndex();
+			type		= column.getType();
+			data		= table.getData();
+		}
+	}
+
+	/**
 	 * Set the table
 	 */
 	public void setTable( SQLTable table ) {
@@ -107,22 +150,35 @@ public class SQLColumn extends SQLExpression {
 	 * What type does this expression evaluate to
 	 */
 	public QueryColumnType getType( QoQSelectExecution QoQExec ) {
-		return QoQExec.getTableLookup().get( getTableFinal( QoQExec ) ).getColumns().get( name ).getType();
+		ensureData( QoQExec );
+		return type;
+		// return QoQExec.getTableLookup().get( getTableFinal( QoQExec ) ).getColumns().get( name ).getType();
 	}
 
 	/**
 	 * Evaluate the expression
 	 */
 	public Object evaluate( QoQSelectExecution QoQExec, int[] intersection ) {
-		var	tableFinal	= getTableFinal( QoQExec );
-		// System.out.println( "getting SQL column: " + name.getName() + " from table: " + tableFinal.getName() + " with index: " + tableFinal.getIndex() );
-		// System.out.println( "intersection: " + Arrays.toString( intersection ) );
-		int	rowNum		= intersection[ tableFinal.getIndex() ];
+		ensureData( QoQExec );
+		int rowNum = intersection[ tableIndex ];
+
 		// This means an outer join matched nothing
 		if ( rowNum == 0 ) {
 			return null;
 		}
-		return QoQExec.getTableLookup().get( tableFinal ).getCell( name, rowNum - 1 );
+
+		return data.get( intersection[ tableIndex ] - 1 )[ colIndex ];
+		/*
+		 * var tableFinal = getTableFinal( QoQExec );
+		 * // System.out.println( "getting SQL column: " + name.getName() + " from table: " + tableFinal.getName() + " with index: " + tableFinal.getIndex() );
+		 * // System.out.println( "intersection: " + Arrays.toString( intersection ) );
+		 * int rowNum = intersection[ tableFinal.getIndex() ];
+		 * // This means an outer join matched nothing
+		 * if ( rowNum == 0 ) {
+		 * return null;
+		 * }
+		 * return QoQExec.getTableLookup().get( tableFinal ).getCell( name, rowNum - 1 );
+		 */
 	}
 
 	/**

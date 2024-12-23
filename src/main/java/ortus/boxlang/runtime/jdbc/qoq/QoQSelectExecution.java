@@ -270,7 +270,10 @@ public class QoQSelectExecution {
 	 * @param partition     The partition
 	 */
 	public void addPartition( String partitionName, int[] partition ) {
-		partitions.computeIfAbsent( partitionName, p -> new ArrayList<int[]>() ).add( partition );
+		List<int[]> thisPartition = partitions.computeIfAbsent( partitionName, p -> new ArrayList<int[]>() );
+		synchronized ( thisPartition ) {
+			thisPartition.add( partition );
+		}
 	}
 
 	/**

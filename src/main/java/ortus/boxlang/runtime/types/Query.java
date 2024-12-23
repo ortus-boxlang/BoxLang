@@ -62,7 +62,8 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	/**
 	 * Query data as List of arrays
 	 */
-	private List<Object[]>				data				= Collections.synchronizedList( new ArrayList<Object[]>() );
+	// private List<Object[]> data = Collections.synchronizedList( new ArrayList<Object[]>() );
+	private List<Object[]>				data				= new ArrayList<Object[]>();
 
 	/**
 	 * Map of column definitions
@@ -787,7 +788,9 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 
 	@Override
 	public boolean remove( Object o ) {
-		return data.remove( o );
+		synchronized ( data ) {
+			return data.remove( o );
+		}
 	}
 
 	@Override
@@ -805,12 +808,16 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 
 	@Override
 	public boolean removeAll( Collection<?> c ) {
-		return data.removeAll( c );
+		synchronized ( data ) {
+			return data.removeAll( c );
+		}
 	}
 
 	@Override
 	public boolean retainAll( Collection<?> c ) {
-		return data.retainAll( c );
+		synchronized ( data ) {
+			return data.retainAll( c );
+		}
 	}
 
 	@Override
@@ -972,7 +979,8 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 
 	@Override
 	public int hashCode() {
-		return computeHashCode( IType.createIdentitySetForType() );
+		return super.hashCode();
+		// return computeHashCode( IType.createIdentitySetForType() );
 	}
 
 	@Override
