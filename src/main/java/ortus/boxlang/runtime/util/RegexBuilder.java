@@ -78,6 +78,7 @@ public class RegexBuilder {
 	public static final Pattern	VALID_VARIABLENAME		= Pattern.compile( "^[a-zA-Z_][a-zA-Z0-9_]*$" );
 	public static final Pattern	WHITESPACE				= Pattern.compile( "\\s" );
 	public static final Pattern	ZIPCODE					= Pattern.compile( "\\d{5}([ -]?\\d{4})?" );
+	public static final Pattern	SQL_PARAMETER			= Pattern.compile( ":\\w+" );
 
 	/**
 	 * Build a matcher for the given pattern lookup

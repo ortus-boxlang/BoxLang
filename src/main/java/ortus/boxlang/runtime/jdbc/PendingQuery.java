@@ -21,7 +21,6 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javax.annotation.Nonnull;
@@ -47,6 +46,7 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 import ortus.boxlang.runtime.types.util.ListUtil;
+import ortus.boxlang.runtime.util.RegexBuilder;
 
 /**
  * This class represents a query and any parameters/bindings before being executed.
@@ -66,13 +66,6 @@ public class PendingQuery {
 	 * The InterceptorService instance to use for announcing events.
 	 */
 	private static final InterceptorService		interceptorService	= BoxRuntime.getInstance().getInterceptorService();
-
-	/**
-	 * A pattern to match named parameters in the SQL string.
-	 * 
-	 * @TODO: Move to RegexBuilder constant class.
-	 */
-	private static final Pattern				pattern				= Pattern.compile( ":\\w+" );
 
 	/**
 	 * Prefix for cache queries
@@ -255,7 +248,7 @@ public class PendingQuery {
 	 */
 	private List<QueryParameter> buildParameterList( @Nonnull IStruct parameters ) {
 		List<QueryParameter>	params	= new ArrayList<>();
-		Matcher					matcher	= pattern.matcher( sql );
+		Matcher					matcher	= RegexBuilder.SQL_PARAMETER.matcher( sql );
 		while ( matcher.find() ) {
 			String paramName = matcher.group();
 			paramName = paramName.substring( 1 );
@@ -289,7 +282,7 @@ public class PendingQuery {
 				// }
 			}
 		}
-		this.sql = pattern.matcher( sql ).replaceAll( "?" );
+		this.sql = RegexBuilder.of( sql, RegexBuilder.SQL_PARAMETER ).replaceAllAndGet( "?" );
 		return sql;
 	}
 
@@ -464,7 +457,6 @@ public class PendingQuery {
 			// The param index starts from 1
 			int parameterIndex = 1;
 			for ( QueryParameter param : this.parameters ) {
-				// QueryParameter param = this.parameters.get( i - 1 );
 				Integer scaleOrLength = param.getScaleOrLength();
 				if ( param.isListParam() ) {
 					Array list = ( Array ) param.getValue();

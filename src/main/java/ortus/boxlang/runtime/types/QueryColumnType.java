@@ -259,6 +259,16 @@ public enum QueryColumnType {
 		}
 	}
 
+	/**
+	 * Convert a value to the appropriate SQL type.
+	 * <p>
+	 * 
+	 * @TODO: This may better belong in a Caster class.
+	 * 
+	 * @param type    The query column type to convert to.
+	 * @param value   The value to convert.
+	 * @param context The context in which the conversion is taking place. Useful for localization.
+	 */
 	public static Object toSQLType( QueryColumnType type, Object value, IBoxContext context ) {
 		if ( value == null ) {
 			return null;

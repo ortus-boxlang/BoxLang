@@ -251,6 +251,12 @@ public class DataSource implements Comparable<DataSource> {
 		}
 	}
 
+	/**
+	 * Execute a query on the default connection, within the specific context.
+	 * 
+	 * @param query   The SQL query to execute.
+	 * @param context The boxlang context for localization. Useful for localization; i.e., queries with date or time values.
+	 */
 	public ExecutedQuery execute( String query, IBoxContext context ) {
 		try ( Connection conn = getConnection() ) {
 			return execute( query, conn, context );
