@@ -420,6 +420,25 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	}
 
 	/**
+	 * Add a row to the query. If the array has fewer items than columns in the query, add nulls for the missing values.
+	 *
+	 * @param row row data as array of objects
+	 *
+	 * @return this query
+	 */
+	public int addRowDefaultMissing( Object[] row ) {
+		if ( row.length < columns.size() ) {
+			Object[] newRow = new Object[ columns.size() ];
+			System.arraycopy( row, 0, newRow, 0, row.length );
+			for ( int i = row.length; i < columns.size(); i++ ) {
+				newRow[ i ] = null;
+			}
+			row = newRow;
+		}
+		return addRow( row );
+	}
+
+	/**
 	 * Add a row to the query
 	 *
 	 * @param row row data as a BoxLang array
@@ -427,7 +446,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 * @return this query
 	 */
 	public int addRow( Array row ) {
-		return addRow( row.toArray() );
+		return addRowDefaultMissing( row.toArray() );
 	}
 
 	/**

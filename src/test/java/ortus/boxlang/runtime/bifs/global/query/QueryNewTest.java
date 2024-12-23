@@ -222,4 +222,26 @@ public class QueryNewTest {
 		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
 		assertThat( variables.get( "columnList" ) ).isEqualTo( "id,name" );
 	}
+
+	@DisplayName( "It defaults missing data" )
+	@Test
+	public void testDefaultsMissingData() {
+		instance.executeSource(
+		    """
+		    import java.util.Arrays;
+
+		       result = QueryNew( "column1", "VarChar", [ [], [ "a" ] ] )
+		       println( Arrays.toString( result.getData().get(0) ) )
+		       println( Arrays.toString( result.getData().get(1) ) )
+		         """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
+		Query qry = variables.getAsQuery( result );
+		assertThat( qry.size() ).isEqualTo( 2 );
+		assertThat( qry.getRow( 0 ).length ).isEqualTo( 1 );
+		assertThat( qry.getRow( 0 )[ 0 ] ).isNull();
+		assertThat( qry.getRow( 1 ).length ).isEqualTo( 1 );
+		assertThat( qry.getRow( 1 )[ 0 ] ).isEqualTo( "a" );
+	}
+
 }
