@@ -67,7 +67,7 @@ public class TestExecution extends TestBase {
 		                             break;
 		                           }
 		                        }
-		                        if(!a % 2 == 0) {
+		                        if(!(a % 2 == 0)) {
 		                        }
 		                        a +=1;
 

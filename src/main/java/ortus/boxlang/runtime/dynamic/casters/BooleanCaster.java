@@ -61,6 +61,19 @@ public class BooleanCaster implements IBoxCaster {
 	}
 
 	/**
+	 * Tests to see if the value can be cast to a boolean.
+	 * Returns a {@code CastAttempt<T>} which will contain the result if casting was successful,
+	 * or can be interrogated to proceed otherwise.
+	 *
+	 * @param object The value to cast to a boolean
+	 *
+	 * @return The boolean value
+	 */
+	public static CastAttempt<Boolean> attempt( Object object, Boolean loose ) {
+		return CastAttempt.ofNullable( cast( object, false, loose ) );
+	}
+
+	/**
 	 * Used to cast anything to a boolean, throwing exception if we fail
 	 *
 	 * @param object The value to cast to a boolean

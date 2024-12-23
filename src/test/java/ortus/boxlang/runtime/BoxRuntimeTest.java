@@ -156,7 +156,7 @@ public class BoxRuntimeTest {
 		                          	 break;
 		                             }
 		                          }
-		                          if(!a % 2 == 0) {
+		                          if(!(a % 2 == 0)) {
 		                          }
 		                          a +=1;
 

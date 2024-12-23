@@ -38,15 +38,4 @@ public class NegateTest {
 		assertThat( Negate.invoke( "-5" ) ).isEqualTo( 5 );
 	}
 
-	@DisplayName( "It can mathematically negate a boolean" )
-	@Test
-	void testItCanNegateBoolean() {
-		assertThat( Negate.invoke( true ) ).isEqualTo( -1 );
-		assertThat( Negate.invoke( false ) ).isEqualTo( 0 );
-		assertThat( Negate.invoke( "true" ) ).isEqualTo( -1 );
-		assertThat( Negate.invoke( "false" ) ).isEqualTo( 0 );
-		assertThat( Negate.invoke( "yes" ) ).isEqualTo( -1 );
-		assertThat( Negate.invoke( "no" ) ).isEqualTo( 0 );
-	}
-
 }

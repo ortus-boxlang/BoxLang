@@ -93,6 +93,23 @@ public class IsNumericTest {
 		assertThat( ( Boolean ) variables.get( Key.of( "struct" ) ) ).isFalse();
 	}
 
+	@DisplayName( "It returns false for booleans" )
+	@Test
+	public void testBooleans() {
+		instance.executeSource(
+		    """
+		    booltrue = IsNumeric( true )
+		    boolfalse = IsNumeric( false )
+		    stringtrue = IsNumeric( "true" )
+		    stringfalse = IsNumeric( "false" )
+		       """,
+		    context );
+		assertThat( variables.getAsBoolean( Key.of( "booltrue" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "boolfalse" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "stringtrue" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "stringfalse" ) ) ).isFalse();
+	}
+
 	@DisplayName( "It tests the BIF IsNumeric with locale arguments" )
 	@Test
 	public void testWithLocale() {
