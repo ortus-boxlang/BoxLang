@@ -19,6 +19,14 @@ package ortus.boxlang.runtime.types;
 
 import java.sql.Types;
 
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.BigIntegerCaster;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
+import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
+import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+
 /**
  * Represents a column type in a Query object.
  */
@@ -249,6 +257,28 @@ public enum QueryColumnType {
 			default :
 				return OTHER;
 		}
+	}
+
+	public static Object toSQLType( QueryColumnType type, Object value, IBoxContext context ) {
+		if ( value == null ) {
+			return null;
+		}
+		return switch ( type ) {
+			case QueryColumnType.INTEGER -> IntegerCaster.cast( value );
+			case QueryColumnType.BIGINT -> BigIntegerCaster.cast( value );
+			case QueryColumnType.DOUBLE -> DoubleCaster.cast( value );
+			case QueryColumnType.DECIMAL -> DoubleCaster.cast( value );
+			case QueryColumnType.CHAR, VARCHAR -> StringCaster.cast( value );
+			case QueryColumnType.BINARY -> value; // @TODO: Will this work?
+			case QueryColumnType.BIT -> BooleanCaster.cast( value );
+			case QueryColumnType.BOOLEAN -> BooleanCaster.cast( value );
+			case QueryColumnType.TIME -> DateTimeCaster.cast( value, context );
+			case QueryColumnType.DATE -> DateTimeCaster.cast( value, context );
+			case QueryColumnType.TIMESTAMP -> new java.sql.Timestamp( DateTimeCaster.cast( value, context ).toEpochMillis() );
+			case QueryColumnType.OBJECT -> value;
+			case QueryColumnType.OTHER -> value;
+			case QueryColumnType.NULL -> null;
+		};
 	}
 
 	/**

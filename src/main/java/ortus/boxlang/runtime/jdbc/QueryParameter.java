@@ -15,13 +15,8 @@
 package ortus.boxlang.runtime.jdbc;
 
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.BigIntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
-import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
-import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
-import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
-import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
@@ -37,6 +32,11 @@ import ortus.boxlang.runtime.util.RegexBuilder;
 public class QueryParameter {
 
 	/**
+	 * The parameter name.
+	 */
+	private final String			name;
+
+	/**
 	 * The parameter value.
 	 */
 	private final Object			value;
@@ -45,6 +45,11 @@ public class QueryParameter {
 	 * The SQL type of the parameter. Defaults to `VARCHAR`.
 	 */
 	private final QueryColumnType	type;
+
+	/**
+	 * Unmodified, uncasted SQL type of the parameter as a string. (With the cf_sql_ prefix removed.)
+	 */
+	private final String			sqltype;
 
 	/**
 	 * The maximum length of the parameter. Defaults to `null`.
@@ -79,7 +84,7 @@ public class QueryParameter {
 	 * <li>`maxLength` - The maximum length of the parameter. Defaults to `null`.</li>
 	 * <li>`scale` - The scale of the parameter, used only on `double` and `decimal` types. Defaults to `null`.</li>
 	 */
-	private QueryParameter( IStruct param ) {
+	private QueryParameter( String name, IStruct param ) {
 		String sqltype = ( String ) param.getOrDefault( Key.sqltype, param.getOrDefault( Key.type, "VARCHAR" ) );
 		// allow nulls and null
 		this.isNullParam	= BooleanCaster.cast( param.getOrDefault( Key.nulls, param.getOrDefault( Key.nulls2, false ) ) );
@@ -87,7 +92,6 @@ public class QueryParameter {
 
 		Object v = param.get( Key.value );
 		if ( this.isListParam ) {
-			sqltype = "ARRAY";
 			if ( v instanceof Array ) {
 				// do nothing?
 			} else {
@@ -95,10 +99,10 @@ public class QueryParameter {
 			}
 		}
 
+		this.name		= name;
 		this.value		= this.isNullParam ? null : v;
-		this.type		= QueryColumnType.fromString(
-		    RegexBuilder.of( sqltype, RegexBuilder.CF_SQL ).replaceAllAndGet( "" )
-		);
+		this.sqltype	= RegexBuilder.of( sqltype, RegexBuilder.CF_SQL ).replaceAllAndGet( "" ).toUpperCase().trim();
+		this.type		= QueryColumnType.fromString( this.sqltype );
 		this.maxLength	= param.getAsInteger( Key.maxLength );
 		this.scale		= param.getAsInteger( Key.scale );
 	}
@@ -110,18 +114,53 @@ public class QueryParameter {
 	 * null, list, or maxLength/scale properties.
 	 */
 	public static QueryParameter fromAny( Object value ) {
+		return QueryParameter.fromAny( null, value );
+	}
+
+	/**
+	 * Construct a new QueryParameter from a given name and value.
+	 * <p>
+	 * If the value is an IStruct, it will be used as the construction arguments to {@link QueryParameter#QueryParameter(IStruct)}. Otherwise, the QueryParameter will be constructed with the value as the `value`
+	 * property of the IStruct, and no sqltype,
+	 * null, list, or maxLength/scale properties.
+	 * 
+	 * @param name  The parameter name. Null is completely valid.
+	 * @param value The parameter value.
+	 */
+	public static QueryParameter fromAny( String name, Object value ) {
 		CastAttempt<IStruct> castAsStruct = StructCaster.attempt( value );
 		if ( castAsStruct.wasSuccessful() ) {
-			return new QueryParameter( castAsStruct.getOrFail() );
+			return new QueryParameter( name, castAsStruct.getOrFail() );
 		}
-		return new QueryParameter( Struct.of( "value", value ) );
+		return new QueryParameter( name, Struct.of( "value", value ) );
+	}
+
+	/**
+	 * Retrieve the parameter name.
+	 */
+	public String getName() {
+		return this.name;
+	}
+
+	/**
+	 * Is this a list parameter?
+	 */
+	public boolean isListParam() {
+		return this.isListParam;
+	}
+
+	/**
+	 * Is this parameter specifically typed as 'null'?
+	 */
+	public boolean isNullParam() {
+		return this.isNullParam;
 	}
 
 	/**
 	 * Retrieve the parameter value.
 	 */
 	public Object getValue() {
-		return value;
+		return this.value;
 	}
 
 	/**
@@ -131,22 +170,14 @@ public class QueryParameter {
 		if ( this.value == null ) {
 			return null;
 		}
-		return switch ( this.type ) {
-			case QueryColumnType.INTEGER -> IntegerCaster.cast( this.value );
-			case QueryColumnType.BIGINT -> BigIntegerCaster.cast( this.value );
-			case QueryColumnType.DOUBLE -> DoubleCaster.cast( this.value );
-			case QueryColumnType.DECIMAL -> DoubleCaster.cast( this.value );
-			case QueryColumnType.CHAR, VARCHAR -> StringCaster.cast( this.value );
-			case QueryColumnType.BINARY -> this.value; // @TODO: Will this work?
-			case QueryColumnType.BIT -> BooleanCaster.cast( this.value );
-			case QueryColumnType.BOOLEAN -> BooleanCaster.cast( this.value );
-			case QueryColumnType.TIME -> DateTimeCaster.cast( this.value, context );
-			case QueryColumnType.DATE -> DateTimeCaster.cast( this.value, context );
-			case QueryColumnType.TIMESTAMP -> new java.sql.Timestamp( DateTimeCaster.cast( this.value, context ).toEpochMillis() );
-			case QueryColumnType.OBJECT -> this.value;
-			case QueryColumnType.OTHER -> this.value;
-			case QueryColumnType.NULL -> null;
-		};
+		return QueryColumnType.toSQLType( this.type, this.value, context );
+	}
+
+	/**
+	 * Retrieve the QueryColumnType of the parameter.
+	 */
+	public QueryColumnType getType() {
+		return this.type;
 	}
 
 	/**

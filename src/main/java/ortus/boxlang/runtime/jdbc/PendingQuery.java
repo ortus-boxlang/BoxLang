@@ -42,6 +42,7 @@ import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
+import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
@@ -68,6 +69,8 @@ public class PendingQuery {
 
 	/**
 	 * A pattern to match named parameters in the SQL string.
+	 * 
+	 * @TODO: Move to RegexBuilder constant class.
 	 */
 	private static final Pattern				pattern				= Pattern.compile( ":\\w+" );
 
@@ -152,6 +155,7 @@ public class PendingQuery {
 		this.sql			= eventArgs.getAsString( Key.sql );
 		this.originalSql	= eventArgs.getAsString( Key.sql );
 		this.parameters		= processBindings( eventArgs.get( Key.of( "bindings" ) ) );
+		this.sql			= massageSQL();
 		this.queryOptions	= eventArgs.getAs( QueryOptions.class, Key.options );
 
 		// Create a cache key with a default or via the passed options.
@@ -259,10 +263,34 @@ public class PendingQuery {
 			if ( paramValue == null ) {
 				throw new DatabaseException( "Missing param in query: [" + paramName + "]. SQL: " + sql );
 			}
-			params.add( QueryParameter.fromAny( paramValue ) );
+			params.add( QueryParameter.fromAny( paramName, paramValue ) );
 		}
-		this.sql = matcher.replaceAll( "?" );
 		return params;
+	}
+
+	/**
+	 * Massage the SQL string in case of list parameters.
+	 */
+	private String massageSQL() {
+		if ( parameters.isEmpty() ) {
+			return sql;
+		}
+		for ( QueryParameter p : parameters ) {
+			if ( p.isListParam() ) {
+				Array	v				= ( Array ) p.getValue();
+				String	sqlReplacement	= v.stream().map( param -> "?" ).collect( Collectors.joining( "," ) );
+				String	placeholder		= ":" + p.getName();
+
+				// Matcher parenPattern = Pattern.compile( "\\(\\s+" + placeholder + "\\s+\\)" ).matcher( sql );
+				// if ( !parenPattern.find() ) {
+				// sql = sql.replaceFirst( placeholder, "(" + sqlReplacement + ")" );
+				// } else {
+				sql = sql.replaceFirst( placeholder, sqlReplacement );
+				// }
+			}
+		}
+		this.sql = pattern.matcher( sql ).replaceAll( "?" );
+		return sql;
 	}
 
 	/**
@@ -434,14 +462,30 @@ public class PendingQuery {
 
 		if ( statement instanceof PreparedStatement preparedStatement ) {
 			// The param index starts from 1
-			for ( int i = 1; i <= this.parameters.size(); i++ ) {
-				QueryParameter	param			= this.parameters.get( i - 1 );
-				Integer			scaleOrLength	= param.getScaleOrLength();
-				if ( scaleOrLength == null ) {
-					preparedStatement.setObject( i, param.toSQLType( context ), param.getSqlTypeAsInt() );
+			int parameterIndex = 1;
+			for ( QueryParameter param : this.parameters ) {
+				// QueryParameter param = this.parameters.get( i - 1 );
+				Integer scaleOrLength = param.getScaleOrLength();
+				if ( param.isListParam() ) {
+					Array list = ( Array ) param.getValue();
+					for ( Object value : list ) {
+						Object casted = QueryColumnType.toSQLType( param.getType(), value, context );
+						if ( scaleOrLength == null ) {
+							preparedStatement.setObject( parameterIndex, casted, param.getSqlTypeAsInt() );
+						} else {
+							preparedStatement.setObject( parameterIndex, casted, param.getSqlTypeAsInt(),
+							    scaleOrLength );
+						}
+						parameterIndex++;
+					}
 				} else {
-					preparedStatement.setObject( i, param.toSQLType( context ), param.getSqlTypeAsInt(), scaleOrLength );
+					if ( scaleOrLength == null ) {
+						preparedStatement.setObject( parameterIndex, param.toSQLType( context ), param.getSqlTypeAsInt() );
+					} else {
+						preparedStatement.setObject( parameterIndex, param.toSQLType( context ), param.getSqlTypeAsInt(), scaleOrLength );
+					}
 				}
+				parameterIndex++;
 			}
 		}
 	}

@@ -158,14 +158,14 @@ public class QueryTest extends BaseJDBCTest {
 		assertEquals( "Developer", michael.get( "role" ) );
 	}
 
-	@Disabled( "Unimplemented" )
+	@Disabled( "Parsing error!" )
 	@DisplayName( "It can execute a query with a list queryparam" )
 	@Test
 	public void testListBindings() {
 		getInstance().executeSource(
 		    """
 		        <cfquery name="result">
-		        SELECT * FROM developers WHERE id IN <cfqueryparam value=[ 77, 1, 42 ], list="true">
+		        SELECT * FROM developers WHERE id IN <cfqueryparam value="77,1,42", list="true">
 		        </cfquery>
 		    """,
 		    context );

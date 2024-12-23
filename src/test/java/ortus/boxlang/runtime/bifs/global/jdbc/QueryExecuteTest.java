@@ -155,7 +155,6 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		assertEquals( "Developer", michael.get( "role" ) );
 	}
 
-	@Disabled( "Unimplemented" )
 	@DisplayName( "It can execute a query with a (string) list binding" )
 	@Test
 	public void testListStringBindings() {
@@ -172,7 +171,6 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		assertEquals( 3, query.size() );
 	}
 
-	@Disabled( "Unimplemented" )
 	@DisplayName( "It can execute a query with an (array) list binding" )
 	@Test
 	public void testListArrayBindings() {
