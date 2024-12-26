@@ -15,12 +15,14 @@
  */
 package ortus.boxlang.runtime.jdbc.qoq;
 
-import java.sql.SQLException;
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import ortus.boxlang.compiler.ast.sql.SQLNode;
@@ -41,7 +43,6 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
-import ortus.boxlang.runtime.operators.Compare;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
@@ -130,19 +131,10 @@ public class QoQExecutionService {
 			}
 		}
 
-		// TODO: Implement a sort that doesn't turn the query into a list of structs and back again
+		// Apply our sort
 		if ( QoQStmtExec.getOrderByColumns() != null ) {
-			target.sort( ( row1, row2 ) -> {
-				var orderBys = QoQStmtExec.getOrderByColumns();
-				for ( var orderBy : orderBys ) {
-					var	name	= orderBy.name;
-					int	result	= Compare.invoke( row1.get( name ), row2.get( name ) );
-					if ( result != 0 ) {
-						return orderBy.ascending ? result : -result;
-					}
-				}
-				return 0;
-			} );
+			sort( target, QoQStmtExec.getOrderByColumns() );
+
 			// These were just here for sorting. Nuke them now.
 			if ( QoQStmtExec.getAdditionalColumns() != null ) {
 				for ( Key key : QoQStmtExec.getAdditionalColumns() ) {
@@ -151,18 +143,7 @@ public class QoQExecutionService {
 			}
 		}
 
-		// This is the maxRows in the query options. It takes priority.
-		Long overallSelectLimit;
-		try {
-			overallSelectLimit = statement.getLargeMaxRows();
-		} catch ( SQLException e ) {
-			throw new DatabaseException( "Error getting max rows from statement", e );
-		}
-		// If that wasn't set, use the limit clause AFTER the order by (which could apply at the end of a union)
-		if ( overallSelectLimit == -1 ) {
-			overallSelectLimit = selectStatement.getLimitValue();
-		}
-
+		Long overallSelectLimit = QoQStmtExec.getOverallSelectLimit();
 		// If we have a limit for the final select, apply it here.
 		if ( overallSelectLimit > -1 ) {
 			target.truncate( overallSelectLimit );
@@ -192,6 +173,13 @@ public class QoQExecutionService {
 		SQLExpression			where			= select.getWhere();
 		boolean					hasTable		= select.getTable() != null;
 		Long					thisSelectLimit	= select.getLimitValue();
+		// If we can early limit, and there are no unions, apply the select statement limit here, if smaller
+		if ( canEarlyLimit && QoQStmtExec.getSelectStatement().getUnions() == null ) {
+			Long overallSelectLimit = QoQStmtExec.getOverallSelectLimit();
+			if ( overallSelectLimit > -1 && ( thisSelectLimit == -1 || overallSelectLimit < thisSelectLimit ) ) {
+				thisSelectLimit = overallSelectLimit;
+			}
+		}
 
 		if ( hasTable ) {
 			// Tables are added in the order of their index, which represents the encounter-order in the SQL
@@ -220,11 +208,12 @@ public class QoQExecutionService {
 		}
 
 		// Create empty query object to hold result
-		Query target = buildTargetQuery( QoQExec );
+		Query target;
 
 		// If there are no tables, and we are just selecting out literal values, we can just add the row and return
 		// This code path ignores the where clause and top/limit. While technically vaid, it is not a common use case.
 		if ( !hasTable ) {
+			target = buildTargetQuery( QoQExec, 1 );
 			Object[] values = new Object[ resultColumns.size() ];
 			for ( Key key : resultColumns.keySet() ) {
 				SQLResultColumn	resultColumn	= resultColumns.get( key ).resultColumn;
@@ -234,6 +223,8 @@ public class QoQExecutionService {
 			target.addRow( values );
 			return target;
 		}
+		// initial size is sum of all rows in all tables
+		target = buildTargetQuery( QoQExec, tableLookup.values().stream().mapToInt( Query::size ).sum() );
 
 		// We have one or more tables, so build our stream of intersections, processing our joins as needed
 		Stream<int[]> intersections = QoQIntersectionGenerator.createIntersectionStream( QoQExec );
@@ -248,7 +239,6 @@ public class QoQExecutionService {
 		if ( canEarlyLimit && !select.isDistinct() && thisSelectLimit > -1 ) {
 			intersections = intersections.limit( thisSelectLimit );
 		}
-
 		if ( select.hasAggregateResult() || select.getGroupBys() != null ) {
 			target = executeAggregateSelect( QoQExec, target, intersections );
 		} else {
@@ -264,6 +254,7 @@ public class QoQExecutionService {
 				}
 				finalTarget.addRow( values );
 			} );
+			( ( ArrayList<?> ) target.getData() ).trimToSize();
 		}
 
 		// Apply distinct to the final result set
@@ -318,6 +309,7 @@ public class QoQExecutionService {
 				values[ resultColumn.getOrdinalPosition() - 1 ] = value;
 			}
 			target.addRow( values );
+			( ( ArrayList<?> ) target.getData() ).trimToSize();
 			return target;
 		}
 
@@ -341,6 +333,7 @@ public class QoQExecutionService {
 			}
 			target.addRow( values );
 		} );
+		( ( ArrayList<?> ) target.getData() ).trimToSize();
 
 		return target;
 	}
@@ -364,22 +357,45 @@ public class QoQExecutionService {
 	 * @param unionQuery the query to union
 	 */
 	private static void deDupeQuery( Query target ) {
-		Set<String> seen = new HashSet<>();
-		// loop over rows, build partition key out of all values
-		for ( int i = 0; i < target.size(); i++ ) {
-			StringBuilder	sb	= new StringBuilder();
-			Object[]		row	= target.getRow( i );
+		Map<String, Object>	seen						= new ConcurrentHashMap<>();
+		Object				concurrentHashMapsAreDumb	= new Object();
+		Object[][]			newData						= new Object[ target.size() ][];
+		Object[][]			oldData						= target.getData().toArray( new Object[ 0 ][] );
+		AtomicInteger		newSize						= new AtomicInteger( 0 );
+		int					estimatedRowSize			= target.getColumns().size() * 15;
+
+		// Stream over indices and directly remove rows if they're duplicates
+		IntStream			stream						= IntStream.range( 0, target.size() );
+		if ( target.size() > 100 ) {
+			stream = stream.parallel();
+		}
+		stream.forEach( i -> {
+			StringBuilder	sb	= new StringBuilder( estimatedRowSize );
+			Object[]		row	= oldData[ i ];
 			for ( Object value : row ) {
 				sb.append( value );
 			}
 			String key = sb.toString();
-			if ( !seen.contains( key ) ) {
-				seen.add( key );
-			} else {
-				target.deleteRow( i );
-				i--;
+			if ( seen.putIfAbsent( key, concurrentHashMapsAreDumb ) == null ) {
+				newData[ newSize.getAndIncrement() ] = row;
 			}
-		}
+		} );
+
+		Object[][] finalData = new Object[ newSize.get() ][];
+		System.arraycopy( newData, 0, finalData, 0, newSize.get() );
+		target.setData( new ArrayList<>( Arrays.asList( finalData ) ) );
+	}
+
+	private static void sort( Query target, List<NameAndDirection> orderBys ) {
+		target.sortData( ( row1, row2 ) -> {
+			for ( NameAndDirection orderBy : orderBys ) {
+				int result = QoQCompare.invoke( orderBy.type, row1[ orderBy.position ], row2[ orderBy.position ] );
+				if ( result != 0 ) {
+					return orderBy.ascending ? result : -result;
+				}
+			}
+			return 0;
+		} );
 	}
 
 	/**
@@ -389,9 +405,9 @@ public class QoQExecutionService {
 	 * 
 	 * @return the target query
 	 */
-	private static Query buildTargetQuery( QoQSelectExecution QoQExec ) {
+	private static Query buildTargetQuery( QoQSelectExecution QoQExec, int initialSize ) {
 		Map<Key, TypedResultColumn>	resultColumns	= QoQExec.getResultColumns();
-		Query						target			= new Query();
+		Query						target			= new Query( initialSize );
 		for ( Key key : resultColumns.keySet() ) {
 			target.addColumn( key, resultColumns.get( key ).type );
 		}
@@ -420,18 +436,18 @@ public class QoQExecutionService {
 	 * Represent a result column with a runtime type
 	 * TODO: We may not need this since the expression can tell us the type directly
 	 */
-	public record TypedResultColumn( QueryColumnType type, SQLResultColumn resultColumn ) {
+	public record TypedResultColumn( QueryColumnType type, int position, SQLResultColumn resultColumn ) {
 
-		public static TypedResultColumn of( QueryColumnType type, SQLResultColumn resultColumn ) {
-			return new TypedResultColumn( type, resultColumn );
+		public static TypedResultColumn of( QueryColumnType type, int position, SQLResultColumn resultColumn ) {
+			return new TypedResultColumn( type, position, resultColumn );
 		}
 	}
 
 	// Represent the name and order of an order by statement. This is calculated at runtime since the actual column names may be based on a *
-	public record NameAndDirection( Key name, boolean ascending ) {
+	public record NameAndDirection( Key name, QueryColumnType type, int position, boolean ascending ) {
 
-		public static NameAndDirection of( Key name, boolean ascending ) {
-			return new NameAndDirection( name, ascending );
+		public static NameAndDirection of( Key name, QueryColumnType type, int position, boolean ascending ) {
+			return new NameAndDirection( name, type, position, ascending );
 		}
 	}
 

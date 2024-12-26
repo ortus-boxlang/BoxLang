@@ -15,6 +15,7 @@
 package ortus.boxlang.runtime.jdbc.qoq;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -75,6 +76,7 @@ public class QoQIntersectionGenerator {
 		if ( totalCombinations > 50 ) {
 			theStream = theStream.parallel();
 		}
+
 		return theStream;
 	}
 
@@ -219,7 +221,7 @@ public class QoQIntersectionGenerator {
 											} );
 
 		// Combine LEFT JOIN and RIGHT JOIN results and remove duplicates using a Set
-		Set<List<Integer>>	seen			= new HashSet<>();
+		Set<List<Integer>>	seen			= Collections.synchronizedSet( new HashSet<>() );
 		return Stream.concat( leftJoinStream, rightJoinStream )
 		    .filter( arr -> seen.add( Arrays.stream( arr ).boxed().collect( Collectors.toList() ) ) ); // Remove duplicates
 	}

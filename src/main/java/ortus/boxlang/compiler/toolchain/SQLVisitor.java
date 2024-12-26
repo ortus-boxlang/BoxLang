@@ -215,7 +215,7 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 				for ( int i = 1; i < ctx.table_or_subquery().size(); i++ ) {
 					var			tableCtx	= ctx.table_or_subquery().get( i );
 					SQLTable	joinTable	= ( SQLTable ) visit( tableCtx );
-					joins.add( new SQLJoin( SQLJoinType.FULL, joinTable, null, tools.getPosition( tableCtx ), tools.getSourceText( tableCtx ) ) );
+					joins.add( new SQLJoin( SQLJoinType.CROSS, joinTable, null, tools.getPosition( tableCtx ), tools.getSourceText( tableCtx ) ) );
 				}
 			}
 		} else if ( ctx.join_clause() != null ) {

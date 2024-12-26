@@ -31,6 +31,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -63,7 +64,11 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 * Query data as List of arrays
 	 */
 	// private List<Object[]> data = Collections.synchronizedList( new ArrayList<Object[]>() );
-	private List<Object[]>				data				= new ArrayList<Object[]>();
+	private List<Object[]>				data;
+
+	protected AtomicInteger				size				= new AtomicInteger( 0 );
+
+	private int							actualSize			= 0;
 
 	/**
 	 * Map of column definitions
@@ -95,16 +100,42 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 *
 	 * @param meta Struct of metadata, most likely JDBC metadata such as sql, cache parameters, etc.
 	 */
-	public Query( IStruct meta ) {
+	public Query( IStruct meta, int initialSize ) {
 		this.functionService	= BoxRuntime.getInstance().getFunctionService();
 		this.metadata			= meta == null ? new Struct( IStruct.TYPES.SORTED ) : meta;
+		if ( initialSize > 0 ) {
+			this.data	= new ArrayList<Object[]>( initialSize );
+			// add nulls and increment for each row
+			actualSize	= initialSize;
+			for ( int i = 0; i < initialSize; i++ ) {
+				data.add( null );
+			}
+		} else {
+			this.data = new ArrayList<Object[]>();
+		}
+	}
+
+	/**
+	 * Create a new query with additional metadata
+	 *
+	 * @param meta Struct of metadata, most likely JDBC metadata such as sql, cache parameters, etc.
+	 */
+	public Query( IStruct meta ) {
+		this( meta, 0 );
 	}
 
 	/**
 	 * Create a new query with a default (empty) metadata struct
 	 */
 	public Query() {
-		this( new Struct( IStruct.TYPES.SORTED ) );
+		this( new Struct( IStruct.TYPES.SORTED ), 0 );
+	}
+
+	/**
+	 * Create a new query with a default (empty) metadata struct
+	 */
+	public Query( int initialSize ) {
+		this( new Struct( IStruct.TYPES.SORTED ), initialSize );
 	}
 
 	/**
@@ -205,6 +236,12 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		return data;
 	}
 
+	public void setData( List<Object[]> data ) {
+		this.data = data;
+		size.set( data.size() );
+		actualSize = data.size();
+	}
+
 	/**
 	 * Add a column to the query, populated with nulls
 	 *
@@ -240,10 +277,10 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 			}
 		}
 		columns.put( name, createQueryColumn( name, type, newColIndex ) );
-		if ( !data.isEmpty() ) {
+		if ( size.get() > 0 ) {
 			// loop over data and replace each array with a new array having an additional
 			// null at the end
-			for ( int i = 0; i < data.size(); i++ ) {
+			for ( int i = 0; i < size.get(); i++ ) {
 				Object[]	row		= data.get( i );
 				Object[]	newRow	= new Object[ row.length + 1 ];
 				System.arraycopy( row, 0, newRow, 0, row.length );
@@ -258,7 +295,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 			for ( Object columnDatum : columnData ) {
 				Object[] row = new Object[ columns.size() ];
 				row[ newColIndex ] = columnDatum;
-				data.add( row );
+				addRow( row );
 			}
 		}
 		return this;
@@ -289,8 +326,8 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 */
 	public Object[] getColumnData( Key name ) {
 		int			index		= getColumn( name ).getIndex();
-		Object[]	columnData	= new Object[ data.size() ];
-		for ( int i = 0; i < data.size(); i++ ) {
+		Object[]	columnData	= new Object[ size.get() ];
+		for ( int i = 0; i < size.get(); i++ ) {
 			columnData[ i ] = data.get( i )[ index ];
 		}
 		return columnData;
@@ -394,9 +431,10 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		}
 
 		// Insert the rows
-		synchronized ( this ) {
+		synchronized ( data ) {
 			for ( int i = 0; i < target.size(); i++ ) {
 				data.add( position + i, target.getRow( i ) );
+				size.incrementAndGet();
 			}
 		}
 
@@ -412,11 +450,19 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 */
 	public int addRow( Object[] row ) {
 		// TODO: validate types
-		int newRow;
-		synchronized ( this ) {
-			data.add( row );
-			newRow = data.size();
+		int newRow = size.incrementAndGet();
+		if ( actualSize < newRow + 50 ) {
+			synchronized ( data ) {
+				if ( actualSize < newRow + 50 ) {
+					// Add 200 more rows with nulls
+					for ( int i = 0; i < 200; i++ ) {
+						data.add( null );
+					}
+					actualSize = actualSize + 200;
+				}
+			}
 		}
+		data.set( newRow - 1, row );
 		return newRow;
 	}
 
@@ -541,7 +587,9 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 */
 	public Query deleteRow( int index ) {
 		validateRow( index );
+		size.decrementAndGet();
 		data.remove( index );
+		actualSize = data.size();
 		return this;
 	}
 
@@ -654,8 +702,8 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 * @param index row index, 0-based
 	 */
 	public void validateRow( int index ) {
-		if ( index < 0 || index >= data.size() ) {
-			throw new BoxRuntimeException( "Row index " + index + " is out of bounds for query of size " + data.size() );
+		if ( index < 0 || index >= size.get() ) {
+			throw new BoxRuntimeException( "Row index " + index + " is out of bounds for query of size " + size.get() );
 		}
 	}
 
@@ -705,17 +753,40 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		    .collect( Collectors.toList() );
 	}
 
+	public void sortData( Comparator<? super Object[]> comparator ) {
+		Stream<Object[]> stream;
+		truncateInternal();
+		if ( size() > 50 ) {
+			stream = getData().parallelStream();
+		} else {
+			stream = getData().stream();
+		}
+		this.data = stream.sorted( comparator ).collect( Collectors.toList() );
+	}
+
 	/**
 	 * Truncate the query to a specific number of rows
 	 * This method does not lock the query and would allow other modifications or access while trimming the rows, whcih is not an atomic operation.
 	 */
 	public Query truncate( long rows ) {
-		rows = Math.max( 0, rows );
+		synchronized ( data ) {
+			truncateInternal();
+			rows = Math.max( 0, rows );
+			// loop and remove all rows over the count
+			while ( size.get() > rows ) {
+				data.remove( size.decrementAndGet() - 1 );
+				actualSize--;
+			}
+			return this;
+		}
+	}
+
+	private void truncateInternal() {
 		// loop and remove all rows over the count
-		while ( data.size() > rows ) {
+		while ( data.size() > size.get() ) {
 			data.remove( data.size() - 1 );
 		}
-		return this;
+		actualSize = data.size();
 	}
 
 	/***************************
@@ -723,7 +794,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 ****************************/
 	@Override
 	public int size() {
-		return data.size();
+		return size.get();
 	}
 
 	@Override
@@ -745,7 +816,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 
 			@Override
 			public boolean hasNext() {
-				return index < data.size();
+				return index < size.get();
 			}
 
 			@Override
@@ -759,12 +830,14 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 
 	@Override
 	public Object[] toArray() {
-		return data.toArray();
+		// return data as an array, but limit this to size.get
+		return data.subList( 0, size.get() ).toArray();
 	}
 
 	@Override
 	public <T> T[] toArray( T[] a ) {
-		return data.toArray( a );
+		// same as toArray
+		return data.subList( 0, size.get() ).toArray( a );
 	}
 
 	/**
@@ -789,7 +862,10 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	@Override
 	public boolean remove( Object o ) {
 		synchronized ( data ) {
-			return data.remove( o );
+			size.decrementAndGet();
+			var result = data.remove( o );
+			actualSize = data.size();
+			return result;
 		}
 	}
 
@@ -809,20 +885,32 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	@Override
 	public boolean removeAll( Collection<?> c ) {
 		synchronized ( data ) {
-			return data.removeAll( c );
+			truncateInternal();
+			boolean result = data.removeAll( c );
+			size.set( data.size() );
+			actualSize = data.size();
+			return result;
 		}
 	}
 
 	@Override
 	public boolean retainAll( Collection<?> c ) {
 		synchronized ( data ) {
-			return data.retainAll( c );
+			truncateInternal();
+			boolean result = data.retainAll( c );
+			size.set( data.size() );
+			actualSize = data.size();
+			return result;
 		}
 	}
 
 	@Override
 	public void clear() {
-		data.clear();
+		synchronized ( data ) {
+			size.set( 0 );
+			actualSize = 0;
+			data.clear();
+		}
 	}
 
 	/***************************
@@ -887,7 +975,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	public String asString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append( "[\n" );
-		for ( int i = 0; i < data.size(); i++ ) {
+		for ( int i = 0; i < size.get(); i++ ) {
 			if ( i > 0 ) {
 				sb.append( ",\n" );
 			}
@@ -910,7 +998,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 * Returns a IntStream of the indexes
 	 */
 	public IntStream intStream() {
-		return IntStream.range( 0, data.size() );
+		return IntStream.range( 0, size.get() );
 	}
 
 	/**
@@ -930,7 +1018,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		this.metadata.putIfAbsent( Key.cacheProvider, null );
 		this.metadata.computeIfAbsent( Key.cacheTimeout, key -> Duration.ZERO );
 		this.metadata.computeIfAbsent( Key.cacheLastAccessTimeout, key -> Duration.ZERO );
-		this.metadata.computeIfAbsent( Key.recordCount, key -> data.size() );
+		this.metadata.computeIfAbsent( Key.recordCount, key -> size.get() );
 		this.metadata.computeIfAbsent( Key.columns, key -> this.getColumns() );
 		this.metadata.computeIfAbsent( Key.columnList, key -> this.getColumnList() );
 		this.metadata.computeIfAbsent( Key._HASHCODE, key -> this.hashCode() );
@@ -989,13 +1077,18 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 			return 0;
 		}
 		visited.add( this );
-		int result = 1;
+		int	result	= 1;
+		int	row		= 1;
 		for ( Object value : data.toArray() ) {
+			if ( row > size.get() ) {
+				break;
+			}
 			if ( value instanceof IType ) {
 				result = 31 * result + ( ( IType ) value ).computeHashCode( visited );
 			} else {
 				result = 31 * result + ( value == null ? 0 : value.hashCode() );
 			}
+			row++;
 		}
 		return result;
 	}
@@ -1017,7 +1110,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 */
 	public Array asArrayOfStructs() {
 		Array arr = new Array();
-		for ( int i = 0; i < data.size(); i++ ) {
+		for ( int i = 0; i < size.get(); i++ ) {
 			arr.add( getRowAsStruct( i ) );
 		}
 		return arr;

@@ -157,10 +157,11 @@ public class QoQSelectExecution {
 						resultColumns.put( key,
 						    TypedResultColumn.of(
 						        thisTable.getColumns().get( key ).getType(),
+						        resultColumns.size(),
 						        new SQLResultColumn(
 						            new SQLColumn( t, key.getName(), null, null ),
 						            null,
-						            resultColumns.size() + 1,
+						            resultColumns.size(),
 						            null,
 						            null
 						        )
@@ -169,9 +170,9 @@ public class QoQSelectExecution {
 					}
 				} );
 				// Non-star columns are named after the column, or given a column_0, column_1, etc name
-			} else {
+			} else if ( !resultColumns.containsKey( resultColumn.getResultColumnName() ) ) {
 				resultColumns.put( resultColumn.getResultColumnName(),
-				    TypedResultColumn.of( resultColumn.getExpression().getType( this ), resultColumn ) );
+				    TypedResultColumn.of( resultColumn.getExpression().getType( this ), resultColumns.size(), resultColumn ) );
 			}
 		}
 		setResultColumns( resultColumns );
@@ -212,7 +213,8 @@ public class QoQSelectExecution {
 					return false;
 				} ).findFirst();
 				if ( match.isPresent() ) {
-					orderByColumns.add( NameAndDirection.of( match.get().getKey(), orderBy.isAscending() ) );
+					orderByColumns.add(
+					    NameAndDirection.of( match.get().getKey(), match.get().getValue().type(), match.get().getValue().position(), orderBy.isAscending() ) );
 					continue;
 				}
 			} else if ( expr instanceof SQLNumberLiteral num ) {
@@ -222,9 +224,29 @@ public class QoQSelectExecution {
 					throw new DatabaseException( "The column index [" + index + "] in the order by clause is out of range as there are only "
 					    + numOriginalResulColumns + " column(s)." );
 				}
-				orderByColumns.add( NameAndDirection.of( resultColumns.keySet().toArray( new Key[ 0 ] )[ index - 1 ], orderBy.isAscending() ) );
+				orderByColumns.add(
+				    NameAndDirection.of(
+				        resultColumns.keySet().toArray( new Key[ 0 ] )[ index - 1 ],
+				        resultColumns.values().toArray( new TypedResultColumn[ 0 ] )[ index - 1 ].type(),
+				        index - 1,
+				        orderBy.isAscending()
+				    )
+				);
 				continue;
+			} else {
+				// Loop over result columns like above, but compare the tostring() representations to look for a match
+				var match = resultColumns.entrySet()
+				    .stream()
+				    .filter( rc -> expr.toString().equals( rc.getValue().resultColumn().getExpression().toString() ) )
+				    .findFirst();
+
+				if ( match.isPresent() ) {
+					orderByColumns.add(
+					    NameAndDirection.of( match.get().getKey(), match.get().getValue().type(), match.get().getValue().position(), orderBy.isAscending() ) );
+					continue;
+				}
 			}
+
 			// TODO: This isn't quite right as a literal expression is technically OK in the order by of a union query, even though it's fairly useless.
 			// We need the query sort to be rewritten to eval expressions on the fly for that to work however. Not worth addressing at the moment.
 			if ( isUnion ) {
@@ -237,10 +259,12 @@ public class QoQSelectExecution {
 
 			// TODO: Figure out if this exact expression is already in the result set and use that
 			// To do this, we need something like toString() implemented to compare two expressions for equivalence
-			Key newName = Key.of( "__order_by_column_" + additionalCounter++ );
+			Key	newName		= Key.of( "__order_by_column_" + additionalCounter++ );
+			int	newColPos	= resultColumns.size();
 			resultColumns.put( newName,
-			    TypedResultColumn.of( QueryColumnType.OBJECT, new SQLResultColumn( expr, newName.getName(), resultColumns.size() + 1, null, null ) ) );
-			orderByColumns.add( NameAndDirection.of( newName, orderBy.isAscending() ) );
+			    TypedResultColumn.of( QueryColumnType.OBJECT, newColPos,
+			        new SQLResultColumn( expr, newName.getName(), newColPos, null, null ) ) );
+			orderByColumns.add( NameAndDirection.of( newName, expr.getType( this ), newColPos, orderBy.isAscending() ) );
 			additionalColumns.add( newName );
 
 		}

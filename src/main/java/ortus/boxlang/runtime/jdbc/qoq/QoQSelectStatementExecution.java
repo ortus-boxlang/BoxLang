@@ -14,6 +14,7 @@
  */
 package ortus.boxlang.runtime.jdbc.qoq;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +27,7 @@ import ortus.boxlang.runtime.jdbc.qoq.QoQExecutionService.NameAndDirection;
 import ortus.boxlang.runtime.jdbc.qoq.QoQPreparedStatement.ParamItem;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Query;
+import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 
 /**
  * A wrapper class to hold together both the SQL AST being executed as well as the runtime values for a given execution of the query
@@ -183,6 +185,29 @@ public class QoQSelectStatementExecution {
 	 */
 	public QoQStatement getJDBCStatement() {
 		return JDBCStatement;
+	}
+
+	/**
+	 * Get the overall select limit
+	 * 
+	 * @return The overall select limit
+	 */
+	public Long getOverallSelectLimit() {
+		Long overallSelectLimit = -1L;
+		// This is the maxRows in the query options.
+		try {
+			overallSelectLimit = JDBCStatement.getLargeMaxRows();
+		} catch ( SQLException e ) {
+			throw new DatabaseException( "Error getting max rows from statement", e );
+		}
+		// If that wasn't set, use the limit clause AFTER the order by (which could apply at the end of a union)
+		if ( overallSelectLimit == -1 ) {
+			overallSelectLimit = selectStatement.getLimitValue();
+		} else if ( selectStatement.getLimitValue() > -1 ) {
+			// If both are set, take the smaller of the two
+			overallSelectLimit = Math.min( selectStatement.getLimitValue(), overallSelectLimit );
+		}
+		return overallSelectLimit;
 	}
 
 }

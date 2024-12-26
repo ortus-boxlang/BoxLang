@@ -123,8 +123,7 @@ public class SQLCountFunction extends SQLFunction {
 
 	@Override
 	public void accept( VoidBoxVisitor v ) {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException( "Unimplemented method 'accept'" );
+		v.visit( this );
 	}
 
 	@Override

@@ -21,8 +21,8 @@ import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
+import ortus.boxlang.runtime.jdbc.qoq.QoQCompare;
 import ortus.boxlang.runtime.jdbc.qoq.QoQSelectExecution;
-import ortus.boxlang.runtime.operators.Compare;
 import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
@@ -198,14 +198,13 @@ public class SQLCase extends SQLExpression {
 		}
 
 		for ( SQLCaseWhenThen whenThen : whenThens ) {
-			Boolean	result;
-			Object	caseValue;
+			Object caseValue;
 			if ( intersection != null ) {
 				caseValue = whenThen.getWhenExpression().evaluate( QoQExec, intersection );
 			} else {
 				caseValue = whenThen.getWhenExpression().evaluateAggregate( QoQExec, intersections );
 			}
-			if ( Compare.invoke( inputValue, caseValue ) == 0 ) {
+			if ( QoQCompare.invoke( inputExpression.getType( QoQExec ), inputValue, caseValue ) == 0 ) {
 				return whenThen.getThenExpression().evaluate( QoQExec, intersection );
 			}
 		}
@@ -217,8 +216,7 @@ public class SQLCase extends SQLExpression {
 
 	@Override
 	public void accept( VoidBoxVisitor v ) {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException( "Unimplemented method 'accept'" );
+		v.visit( this );
 	}
 
 	@Override

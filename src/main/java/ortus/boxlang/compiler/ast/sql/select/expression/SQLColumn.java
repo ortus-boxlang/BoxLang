@@ -21,6 +21,7 @@ import java.util.Set;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.sql.select.SQLTable;
+import ortus.boxlang.compiler.ast.sql.select.SQLTableVariable;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 import ortus.boxlang.runtime.jdbc.qoq.QoQSelectExecution;
@@ -132,6 +133,10 @@ public class SQLColumn extends SQLExpression {
 			Query		table	= QoQExec.getTableLookup().get( t );
 			// Cache this data for future use
 			QueryColumn	column	= table.getColumns().get( name );
+			if ( column == null ) {
+				throw new BoxRuntimeException(
+				    "Column " + name + " not found in table " + ( t instanceof SQLTableVariable tv ? tv.getName() : t.getAlias() ) );
+			}
 			colIndex	= column.getIndex();
 			type		= column.getType();
 			data		= table.getData();
@@ -215,8 +220,7 @@ public class SQLColumn extends SQLExpression {
 
 	@Override
 	public void accept( VoidBoxVisitor v ) {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException( "Unimplemented method 'accept'" );
+		v.visit( this );
 	}
 
 	@Override

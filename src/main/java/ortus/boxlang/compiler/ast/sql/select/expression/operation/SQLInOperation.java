@@ -22,8 +22,8 @@ import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLExpression;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
+import ortus.boxlang.runtime.jdbc.qoq.QoQCompare;
 import ortus.boxlang.runtime.jdbc.qoq.QoQSelectExecution;
-import ortus.boxlang.runtime.operators.EqualsEquals;
 
 /**
  * Abstract Node class representing SQL IN operation
@@ -112,7 +112,7 @@ public class SQLInOperation extends SQLExpression {
 	public Object evaluate( QoQSelectExecution QoQExec, int[] intersection ) {
 		Object value = expression.evaluate( QoQExec, intersection );
 		for ( SQLExpression v : values ) {
-			if ( EqualsEquals.invoke( value, v.evaluate( QoQExec, intersection ), true ) ) {
+			if ( QoQCompare.invoke( expression.getType( QoQExec ), value, v.evaluate( QoQExec, intersection ) ) == 0 ) {
 				return !not;
 			}
 		}
@@ -131,8 +131,7 @@ public class SQLInOperation extends SQLExpression {
 
 	@Override
 	public void accept( VoidBoxVisitor v ) {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException( "Unimplemented method 'accept'" );
+		v.visit( this );
 	}
 
 	@Override

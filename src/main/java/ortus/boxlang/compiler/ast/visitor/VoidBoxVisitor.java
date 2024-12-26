@@ -55,6 +55,25 @@ import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxStructLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxTernaryOperation;
 import ortus.boxlang.compiler.ast.expression.BoxUnaryOperation;
+import ortus.boxlang.compiler.ast.sql.select.expression.SQLCase;
+import ortus.boxlang.compiler.ast.sql.select.expression.SQLCaseWhenThen;
+import ortus.boxlang.compiler.ast.sql.select.expression.SQLColumn;
+import ortus.boxlang.compiler.ast.sql.select.expression.SQLCountFunction;
+import ortus.boxlang.compiler.ast.sql.select.expression.SQLExpression;
+import ortus.boxlang.compiler.ast.sql.select.expression.SQLFunction;
+import ortus.boxlang.compiler.ast.sql.select.expression.SQLOrderBy;
+import ortus.boxlang.compiler.ast.sql.select.expression.SQLParam;
+import ortus.boxlang.compiler.ast.sql.select.expression.SQLParenthesis;
+import ortus.boxlang.compiler.ast.sql.select.expression.SQLStarExpression;
+import ortus.boxlang.compiler.ast.sql.select.expression.literal.SQLBooleanLiteral;
+import ortus.boxlang.compiler.ast.sql.select.expression.literal.SQLNullLiteral;
+import ortus.boxlang.compiler.ast.sql.select.expression.literal.SQLNumberLiteral;
+import ortus.boxlang.compiler.ast.sql.select.expression.literal.SQLStringLiteral;
+import ortus.boxlang.compiler.ast.sql.select.expression.operation.SQLBetweenOperation;
+import ortus.boxlang.compiler.ast.sql.select.expression.operation.SQLBinaryOperation;
+import ortus.boxlang.compiler.ast.sql.select.expression.operation.SQLInOperation;
+import ortus.boxlang.compiler.ast.sql.select.expression.operation.SQLInSubQueryOperation;
+import ortus.boxlang.compiler.ast.sql.select.expression.operation.SQLUnaryOperation;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxAssert;
@@ -375,6 +394,84 @@ public abstract class VoidBoxVisitor {
 	}
 
 	public void visit( BoxFunctionalMemberAccess node ) {
+		visitChildren( node );
+	}
+
+	// SQL AST Nodes
+
+	public void visit( SQLBooleanLiteral node ) {
+		visitChildren( node );
+	}
+
+	public void visit( SQLNullLiteral node ) {
+		visitChildren( node );
+	}
+
+	public void visit( SQLNumberLiteral node ) {
+		visitChildren( node );
+	}
+
+	public void visit( SQLStringLiteral node ) {
+		visitChildren( node );
+	}
+
+	public void visit( SQLBetweenOperation node ) {
+		visitChildren( node );
+	}
+
+	public void visit( SQLBinaryOperation node ) {
+		visitChildren( node );
+	}
+
+	public void visit( SQLInOperation node ) {
+		visitChildren( node );
+	}
+
+	public void visit( SQLInSubQueryOperation node ) {
+		visitChildren( node );
+	}
+
+	public void visit( SQLUnaryOperation node ) {
+		visitChildren( node );
+	}
+
+	public void visit( SQLCase node ) {
+		visitChildren( node );
+	}
+
+	public void visit( SQLCaseWhenThen node ) {
+		visitChildren( node );
+	}
+
+	public void visit( SQLColumn node ) {
+		visitChildren( node );
+	}
+
+	public void visit( SQLCountFunction node ) {
+		visitChildren( node );
+	}
+
+	public void visit( SQLExpression node ) {
+		visitChildren( node );
+	}
+
+	public void visit( SQLFunction node ) {
+		visitChildren( node );
+	}
+
+	public void visit( SQLOrderBy node ) {
+		visitChildren( node );
+	}
+
+	public void visit( SQLParam node ) {
+		visitChildren( node );
+	}
+
+	public void visit( SQLParenthesis node ) {
+		visitChildren( node );
+	}
+
+	public void visit( SQLStarExpression node ) {
 		visitChildren( node );
 	}
 

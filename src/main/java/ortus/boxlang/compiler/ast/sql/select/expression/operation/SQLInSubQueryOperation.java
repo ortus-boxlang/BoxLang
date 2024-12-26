@@ -23,8 +23,8 @@ import ortus.boxlang.compiler.ast.sql.select.SQLSelectStatement;
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLExpression;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
+import ortus.boxlang.runtime.jdbc.qoq.QoQCompare;
 import ortus.boxlang.runtime.jdbc.qoq.QoQSelectExecution;
-import ortus.boxlang.runtime.operators.EqualsEquals;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Query;
 
@@ -118,7 +118,7 @@ public class SQLInSubQueryOperation extends SQLExpression {
 		Query	subResult			= QoQExec.getIndepententSubQuery( subquery );
 		Key		firstAndOnlyColName	= subResult.getColumns().keySet().iterator().next();
 		for ( Object v : subResult.getColumnData( firstAndOnlyColName ) ) {
-			if ( EqualsEquals.invoke( value, v, true ) ) {
+			if ( QoQCompare.invoke( expression.getType( QoQExec ), value, v ) == 0 ) {
 				return !not;
 			}
 		}
@@ -137,8 +137,7 @@ public class SQLInSubQueryOperation extends SQLExpression {
 
 	@Override
 	public void accept( VoidBoxVisitor v ) {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException( "Unimplemented method 'accept'" );
+		v.visit( this );
 	}
 
 	@Override
