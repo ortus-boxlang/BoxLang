@@ -4230,4 +4230,17 @@ public class CoreLangTest {
 		assertThat( variables.get( result ) ).isInstanceOf( SoftReference.class );
 	}
 
+	@Test
+	public void testSwithStructKey() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				result = { switch: "" }
+			""",
+			context, BoxSourceType.CFSCRIPT );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
+		assertThat( variables.getAsStruct( result ) ).containsKey( Key.of( "switch" ) );
+	}
+
 }

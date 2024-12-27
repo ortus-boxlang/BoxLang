@@ -1005,8 +1005,10 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 		    .orElseGet( () -> Optional.ofNullable( ctx.ILLEGAL_IDENTIFIER() ).map( fqn -> ( BoxExpression ) new BoxIdentifier( src, pos, src ) )
 		        .orElseGet( () -> Optional.ofNullable( ctx.reservedOperators() ).map( resOp -> resOp.accept( this ) )
 		            .orElseGet( () -> Optional.ofNullable( ctx.stringLiteral() ).map( str -> str.accept( this ) )
-		                .orElseGet(
-		                    () -> Optional.ofNullable( ctx.fqn() ).map( fqn -> fqn.accept( this ) ).orElse( new BoxIntegerLiteral( src, pos, src ) ) ) ) ) );
+		                .orElseGet( () -> Optional.ofNullable( ctx.SWITCH() ).map( swtch -> ( BoxExpression ) new BoxIdentifier( src, pos, src ) )
+		                    .orElseGet(
+		                        () -> Optional.ofNullable( ctx.fqn() ).map( fqn -> fqn.accept( this ) )
+		                            .orElse( new BoxIntegerLiteral( src, pos, src ) ) ) ) ) ) );
 	}
 
 	@Override

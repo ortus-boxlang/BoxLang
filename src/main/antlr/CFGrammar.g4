@@ -479,6 +479,7 @@ structKey
     | INTEGER_LITERAL
     | ILLEGAL_IDENTIFIER
     | fqn
+    | SWITCH
     ;
 
 new: NEW preFix? (fqn | stringLiteral) LPAREN argumentList? RPAREN
