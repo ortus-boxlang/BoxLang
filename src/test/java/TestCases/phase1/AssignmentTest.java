@@ -204,4 +204,17 @@ public class AssignmentTest {
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "test2" );
 	}
 
+	@DisplayName( "quoted assignment 2" )
+	@Test
+	public void testQuotedAssignment2() {
+		instance.executeSource(
+		    """
+		    resultKey = "result";
+		    "#resultKey#" = "test";
+		            """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "test" );
+
+	}
+
 }

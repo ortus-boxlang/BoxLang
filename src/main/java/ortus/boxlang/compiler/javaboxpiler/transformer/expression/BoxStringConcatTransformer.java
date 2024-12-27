@@ -55,6 +55,11 @@ public class BoxStringConcatTransformer extends AbstractTransformer {
 		Node			javaExpr;
 		if ( interpolation.getValues().size() == 1 ) {
 			javaExpr = transpiler.transform( interpolation.getValues().get( 0 ), TransformerContext.RIGHT );
+			// force a string cast
+			NameExpr		nameExpr		= new NameExpr( "StringCaster" );
+			MethodCallExpr	methodCallExpr	= new MethodCallExpr( nameExpr, "cast" );
+			methodCallExpr.addArgument( ( Expression ) javaExpr );
+			javaExpr = methodCallExpr;
 		} else {
 
 			List<Expression>	operands		= interpolation.getValues()
