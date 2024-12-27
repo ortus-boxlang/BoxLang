@@ -129,7 +129,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			template = """
 			           ExpressionInterpreter.setVariable(
 			           ${contextName},
-			           ${left},
+			           StringCaster.cast( ${left} ),
 			           ${right}
 			           )
 			           	""";

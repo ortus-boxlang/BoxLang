@@ -71,6 +71,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		_NUMERIC							= Key.of( "numeric" );
 	public static final Key		_PACKAGE							= Key.of( "package" );
 	public static final Key		_QUERY								= Key.of( "query" );
+	public static final Key		step								= Key.of( "step" );
 	public static final Key		_STRING								= Key.of( "string" );
 	public static final Key		_STRUCT								= Key.of( "struct" );
 	public static final Key		_super								= Key.of( "super" );

@@ -51,6 +51,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.Referencer;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.operators.Concat;
 import ortus.boxlang.runtime.operators.Divide;
 import ortus.boxlang.runtime.operators.Minus;
@@ -116,7 +117,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			/*
 			 * ExpressionInterpreter.setVariable(
 			 * ${contextName},
-			 * ${left},
+			 * StringCaster.cast( ${left} ),
 			 * ${right}
 			 * );
 			 */
@@ -124,6 +125,12 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			tracker.ifPresent( t -> nodes.addAll( t.loadCurrentContext() ) );
 
 			nodes.addAll( transpiler.transform( left, null, ReturnValueContext.VALUE_OR_NULL ) );
+
+			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+			    Type.getInternalName( StringCaster.class ),
+			    "cast",
+			    Type.getMethodDescriptor( Type.getType( String.class ), Type.getType( Object.class ) ),
+			    false ) );
 
 			nodes.addAll( jRight );
 

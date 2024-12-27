@@ -67,10 +67,10 @@ public class Loop extends Component {
 		    new Attribute( Key.startRow, "integer", Set.of( Validator.min( 1 ) ) ),
 		    new Attribute( Key.endRow, "integer", Set.of( Validator.min( 1 ) ) ),
 		    new Attribute( Key.label, "string", Set.of( Validator.NON_EMPTY ) ),
-		    new Attribute( Key.times, "integer", Set.of( Validator.min( 0 ) ) )
+		    new Attribute( Key.times, "integer", Set.of( Validator.min( 0 ) ) ),
+		    new Attribute( Key.step, "number", 1 )
 
 			/**
-			 * step
 			 * array
 			 * characters
 			 */
@@ -106,6 +106,7 @@ public class Loop extends Component {
 		Object				queryOrName			= attributes.get( Key.query );
 		String				label				= attributes.getAsString( Key.label );
 		Integer				times				= attributes.getAsInteger( Key.times );
+		Number				step				= attributes.getAsNumber( Key.step );
 
 		if ( times != null ) {
 			return _invokeTimes( context, times, item, index, body, executionState, label );
@@ -114,7 +115,7 @@ public class Loop extends Component {
 			return _invokeArray( context, array, item, index, body, executionState, label );
 		}
 		if ( to != null && from != null ) {
-			return _invokeRange( context, from, to, index, body, executionState, label );
+			return _invokeRange( context, from, to, step, index, body, executionState, label );
 		}
 		if ( file != null ) {
 			return _invokeFile( context, file, index, body, executionState, label );
@@ -233,9 +234,10 @@ public class Loop extends Component {
 		return DEFAULT_RETURN;
 	}
 
-	private BodyResult _invokeRange( IBoxContext context, Double from, Double to, String index, ComponentBody body, IStruct executionState, String label ) {
+	private BodyResult _invokeRange( IBoxContext context, Double from, Double to, Number step, String index, ComponentBody body, IStruct executionState,
+	    String label ) {
 		// Loop over array, executing body every time
-		for ( int i = from.intValue(); i <= to.intValue(); i++ ) {
+		for ( int i = from.intValue(); i <= to.intValue(); i = i + step.intValue() ) {
 			// Set the index and item variables
 			ExpressionInterpreter.setVariable( context, index, i );
 			// Run the code inside of the output loop

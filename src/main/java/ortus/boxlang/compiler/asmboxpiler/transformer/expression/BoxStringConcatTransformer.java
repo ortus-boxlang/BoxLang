@@ -32,7 +32,6 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxStringConcat;
-import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.operators.Concat;
 
 public class BoxStringConcatTransformer extends AbstractTransformer {
@@ -45,15 +44,7 @@ public class BoxStringConcatTransformer extends AbstractTransformer {
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnContext ) throws IllegalStateException {
 		BoxStringConcat interpolation = ( BoxStringConcat ) node;
 		if ( interpolation.getValues().size() == 1 ) {
-			List<AbstractInsnNode> nodes = new ArrayList<>();
-			nodes.addAll( transpiler.transform( interpolation.getValues().get( 0 ), TransformerContext.NONE, returnContext ) );
-			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
-			    Type.getInternalName( StringCaster.class ),
-			    "cast",
-			    Type.getMethodDescriptor( Type.getType( String.class ), Type.getType( Object.class ) ),
-			    false ) );
-			return AsmHelper.addLineNumberLabels( nodes, node );
-
+			return transpiler.transform( interpolation.getValues().get( 0 ), TransformerContext.NONE, returnContext );
 		} else {
 			List<AbstractInsnNode> nodes = new ArrayList<>();
 			nodes.addAll( AsmHelper.array( Type.getType( Object.class ), interpolation.getValues(),
