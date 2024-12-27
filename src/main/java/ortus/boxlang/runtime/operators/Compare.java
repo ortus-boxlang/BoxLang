@@ -109,9 +109,13 @@ public class Compare implements IOperator {
 
 		// Date comparison
 		if ( DateTimeCaster.isKnownDateClass( left ) || DateTimeCaster.isKnownDateClass( right ) ) {
-			DateTime	ref		= DateTimeCaster.cast( left );
-			DateTime	target	= DateTimeCaster.cast( right );
-			return ref.compareTo( target );
+			CastAttempt<DateTime> ref = DateTimeCaster.attempt( left );
+			if ( ref.wasSuccessful() ) {
+				CastAttempt<DateTime> target = DateTimeCaster.attempt( right );
+				if ( target.wasSuccessful() ) {
+					return ref.get().compareTo( target.get() );
+				}
+			}
 		}
 
 		// Numeric comparison

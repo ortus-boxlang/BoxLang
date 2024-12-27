@@ -4231,7 +4231,7 @@ public class CoreLangTest {
 	}
 
 	@Test
-	public void testSwithStructKey() {
+	public void testSwitchStructKey() {
 		// @formatter:off
 		instance.executeSource(
 			"""
@@ -4241,6 +4241,18 @@ public class CoreLangTest {
 		// @formatter:on
 		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
 		assertThat( variables.getAsStruct( result ) ).containsKey( Key.of( "switch" ) );
+	}
+
+	@Test
+	public void testDateCOmpare() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				result = now() is "now"
+			""",
+			context );
+		// @formatter:on
+		assertThat( variables.getAsBoolean( result ) ).isFalse();
 	}
 
 }
