@@ -233,6 +233,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 * @return list of arrays of data
 	 */
 	public List<Object[]> getData() {
+		truncateInternal();
 		return data;
 	}
 
@@ -567,6 +568,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 * @param name the name of the column to delete
 	 */
 	public void deleteColumn( Key name ) {
+		truncateInternal();
 		QueryColumn	column	= getColumn( name );
 		int			index	= column.getIndex();
 		columns.remove( name );
@@ -774,7 +776,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 			rows = Math.max( 0, rows );
 			// loop and remove all rows over the count
 			while ( size.get() > rows ) {
-				data.remove( size.decrementAndGet() - 1 );
+				data.remove( size.decrementAndGet() );
 				actualSize--;
 			}
 			return this;
@@ -799,7 +801,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 
 	@Override
 	public boolean isEmpty() {
-		return data.isEmpty();
+		return size.get() == 0;
 	}
 
 	@Override

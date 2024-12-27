@@ -174,7 +174,7 @@ public class QoQExecutionService {
 		boolean					hasTable		= select.getTable() != null;
 		Long					thisSelectLimit	= select.getLimitValue();
 		// If we can early limit, and there are no unions, apply the select statement limit here, if smaller
-		if ( canEarlyLimit && QoQStmtExec.getSelectStatement().getUnions() == null ) {
+		if ( canEarlyLimit && !select.isDistinct() && QoQStmtExec.getSelectStatement().getUnions() == null ) {
 			Long overallSelectLimit = QoQStmtExec.getOverallSelectLimit();
 			if ( overallSelectLimit > -1 && ( thisSelectLimit == -1 || overallSelectLimit < thisSelectLimit ) ) {
 				thisSelectLimit = overallSelectLimit;
