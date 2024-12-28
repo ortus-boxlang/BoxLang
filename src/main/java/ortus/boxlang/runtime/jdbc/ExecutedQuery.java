@@ -119,22 +119,19 @@ public final class ExecutedQuery {
 				} catch ( SQLException t ) {
 					logger.error( "Error getting update count", t );
 				}
-			}
-			// @TODO: Test this conditional around the result set...
-			// if( !hasResults ){}
-			try ( ResultSet keys = statement.getGeneratedKeys() ) {
-				if ( keys != null && keys.next() ) {
-					generatedKey = keys.getObject( 1 );
-				}
-			} catch ( SQLException e ) {
-				// @TODO: drop the message check, since it doesn't support alternate languages.
-				if ( e.getMessage().contains( "The statement must be executed before any results can be obtained." ) ) {
-					logger.info(
-					    "SQL Server threw an error when attempting to retrieve generated keys. Am ignoring the error - no action is required. Error : [{}]",
-					    e.getMessage() );
-				} else {
-					// @TODO Add in more info to this
-					throw new DatabaseException( e.getMessage(), e );
+				try ( ResultSet keys = statement.getGeneratedKeys() ) {
+					if ( keys != null && keys.next() ) {
+						generatedKey = keys.getObject( 1 );
+					}
+				} catch ( SQLException e ) {
+					// @TODO: drop the message check, since it doesn't support alternate languages.
+					if ( e.getMessage().contains( "The statement must be executed before any results can be obtained." ) ) {
+						logger.info(
+						    "SQL Server threw an error when attempting to retrieve generated keys. Am ignoring the error - no action is required. Error : [{}]",
+						    e.getMessage() );
+					} else {
+						logger.warn( "Error getting generated keys", e );
+					}
 				}
 			}
 		} catch ( NullPointerException e ) {
