@@ -145,9 +145,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	    "autoCommit", true,
 	    // Register mbeans or not. By default, this is true
 	    // However, if you are using JMX, you can set this to true to get some additional monitoring information
-	    "registerMbeans", true,
-	    // Prep the custom properties
-	    "custom", new Struct()
+	    "registerMbeans", true
 	);
 
 	// List of keys to NOT set dynamically. All keys not in this list will use `addDataSourceProperty` to set the property and pass it to the JDBC driver.
@@ -386,6 +384,9 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 				this.properties.put( entry.getKey(), entry.getValue() );
 			}
 		} );
+
+		// Prep custom properties.
+		this.properties.putIfAbsent( Key.custom, new Struct() );
 
 		// Merge defaults into the properties
 		DEFAULTS
