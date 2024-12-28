@@ -478,8 +478,8 @@ public class QueryTest extends BaseJDBCTest {
 	public void testParamAttribute() {
 		getInstance().executeSource(
 		    """
-		        <bx:query name="result" params="#{ id : '1', id2: { value : "77" } }#">
-		        SELECT * FROM developers WHERE id = :id OR id = :id2
+		        <bx:query name="result" params="#{ id : '1', again: { value : "77" } }#">
+		        SELECT * FROM developers WHERE id = :id OR id = :again
 		        </bx:query>
 		    """,
 		    getContext(), BoxSourceType.BOXTEMPLATE );
