@@ -487,6 +487,23 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		assertEquals( 1, query.size() );
 	}
 
+	@DisplayName( "DELETE queries put the affected recordCount in query meta" )
+	@Test
+	public void testDeleteQueryResult() {
+		instance.executeSource(
+		    """
+		    result = queryExecute(
+		        "DELETE FROM developers WHERE id = :id",
+		        { "id" : 1 },
+		        { "result" : "queryResults" }
+		    );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
+		IStruct query = variables.getAsStruct( Key.of( "queryResults" ) );
+		assertEquals( 1, query.get( Key.recordCount ) );
+	}
+
 	@DisplayName( "It closes connection on completion" )
 	@Test
 	public void testConnectionClose() {

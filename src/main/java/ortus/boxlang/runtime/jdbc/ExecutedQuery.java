@@ -93,6 +93,7 @@ public final class ExecutedQuery {
 	public static ExecutedQuery fromPendingQuery( @Nonnull PendingQuery pendingQuery, @Nonnull Statement statement, long executionTime, boolean hasResults ) {
 		Object	generatedKey	= null;
 		Query	results			= null;
+		int		recordCount		= 0;
 
 		if ( statement instanceof QoQStatement qs ) {
 			results = qs.getQueryResult();
@@ -103,14 +104,30 @@ public final class ExecutedQuery {
 				throw new DatabaseException( e.getMessage(), e );
 			}
 		}
+		if ( hasResults ) {
+			recordCount = results.size();
+		}
 
 		// Capture generated keys, if any.
 		try {
+			if ( !hasResults ) {
+				try {
+					int affectedCount = statement.getUpdateCount();
+					if ( affectedCount > -1 ) {
+						recordCount = affectedCount;
+					}
+				} catch ( SQLException t ) {
+					logger.error( "Error getting update count", t );
+				}
+			}
+			// @TODO: Test this conditional around the result set...
+			// if( !hasResults ){}
 			try ( ResultSet keys = statement.getGeneratedKeys() ) {
 				if ( keys != null && keys.next() ) {
 					generatedKey = keys.getObject( 1 );
 				}
 			} catch ( SQLException e ) {
+				// @TODO: drop the message check, since it doesn't support alternate languages.
 				if ( e.getMessage().contains( "The statement must be executed before any results can be obtained." ) ) {
 					logger.info(
 					    "SQL Server threw an error when attempting to retrieve generated keys. Am ignoring the error - no action is required. Error : [{}]",
@@ -138,7 +155,8 @@ public final class ExecutedQuery {
 		    "cacheKey", pendingQuery.getCacheKey(),
 		    "sql", pendingQuery.getOriginalSql(),
 		    "sqlParameters", Array.fromList( pendingQuery.getParameterValues() ),
-		    "executionTime", executionTime
+		    "executionTime", executionTime,
+		    "recordCount", recordCount
 		);
 
 		if ( generatedKey != null ) {
