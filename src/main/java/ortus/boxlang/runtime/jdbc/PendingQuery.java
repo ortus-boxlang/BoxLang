@@ -273,21 +273,25 @@ public class PendingQuery {
 		if ( parameters.isEmpty() ) {
 			return sql;
 		}
+		// Replace the params as we go, so we can process positionally in the order they appear in the SQL string.
+		String tempPlaceholder = "____QUESTION_MARK____";
 		for ( QueryParameter p : parameters ) {
+			String sqlReplacement = tempPlaceholder;
 			if ( p.isListParam() ) {
-				Array	v				= ( Array ) p.getValue();
-				String	sqlReplacement	= v.stream().map( param -> "?" ).collect( Collectors.joining( "," ) );
-				String	placeholder		= ":" + p.getName();
-
-				// Matcher parenPattern = Pattern.compile( "\\(\\s+" + placeholder + "\\s+\\)" ).matcher( sql );
-				// if ( !parenPattern.find() ) {
-				// sql = sql.replaceFirst( placeholder, "(" + sqlReplacement + ")" );
-				// } else {
-				sql = sql.replaceFirst( placeholder, sqlReplacement );
-				// }
+				Array v = ( Array ) p.getValue();
+				sqlReplacement = v.stream().map( param -> tempPlaceholder ).collect( Collectors.joining( "," ) );
+			}
+			String placeholder = "\\?";
+			if ( p.getName() != null ) {
+				placeholder	= ":" + p.getName();
+				// If this is a named param, replace all instances of it
+				sql			= RegexBuilder.of( sql, placeholder ).replaceAllAndGet( sqlReplacement );
+			} else {
+				// If it's a positional param, replace the first instance
+				sql = RegexBuilder.of( sql, placeholder ).replaceFirstAndGet( sqlReplacement );
 			}
 		}
-		this.sql = RegexBuilder.of( sql, RegexBuilder.SQL_PARAMETER ).replaceAllAndGet( "?" );
+		this.sql = RegexBuilder.of( sql, tempPlaceholder ).replaceAllAndGet( "?" );
 		return sql;
 	}
 

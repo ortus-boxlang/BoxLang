@@ -58,8 +58,8 @@ public class QueryParam extends Component {
 		String tokenReplacement = "?";
 		if ( attributes.containsKey( Key.list ) && BooleanCaster.cast( attributes.get( Key.list ) ) ) {
 			Object val = attributes.get( Key.value );
-			if ( val instanceof String ) {
-				tokenReplacement = buildPlaceholderTokenList( Array.fromString( ( String ) val, attributes.getAsString( Key.separator ) ) );
+			if ( val instanceof String sVal ) {
+				tokenReplacement = buildPlaceholderTokenList( Array.fromString( sVal, attributes.getAsString( Key.separator ) ) );
 			} else if ( val instanceof Array ) {
 				tokenReplacement = buildPlaceholderTokenList( ( Array ) val );
 			}

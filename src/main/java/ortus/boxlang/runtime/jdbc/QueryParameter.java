@@ -17,6 +17,7 @@ package ortus.boxlang.runtime.jdbc;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
@@ -89,13 +90,18 @@ public class QueryParameter {
 		// allow nulls and null
 		this.isNullParam	= BooleanCaster.cast( param.getOrDefault( Key.nulls, param.getOrDefault( Key.nulls2, false ) ) );
 		this.isListParam	= BooleanCaster.cast( param.getOrDefault( Key.list, false ) );
+		String separator = StringCaster.cast( param.getOrDefault( Key.separator, "," ) );
+		// Allow a name key in the struct if passed as an array of structs
+		if ( name == null ) {
+			name = ( String ) param.getAsString( Key._NAME );
+		}
 
 		Object v = param.get( Key.value );
 		if ( this.isListParam ) {
 			if ( v instanceof Array ) {
 				// do nothing?
 			} else {
-				v = ListUtil.asList( ( String ) v, ( String ) param.getOrDefault( Key.separator, "," ) );
+				v = ListUtil.asList( ( String ) v, ( String ) param.getOrDefault( Key.separator, separator ) );
 			}
 		}
 
