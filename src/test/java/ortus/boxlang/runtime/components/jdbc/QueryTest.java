@@ -28,7 +28,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.List;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -158,18 +157,35 @@ public class QueryTest extends BaseJDBCTest {
 		assertEquals( "Developer", michael.get( "role" ) );
 	}
 
-	@Disabled( "Parsing error!" )
-	@DisplayName( "It can execute a query with a list queryparam" )
+	@DisplayName( "It can execute a query with an array queryparam" )
 	@Test
-	public void testListBindings() {
+	public void testListArrayBinding() {
 		getInstance().executeSource(
 		    """
+		        <cfset ids = [77, 1, 42] />
 		        <cfquery name="result">
-		        SELECT * FROM developers WHERE id IN <cfqueryparam value="77,1,42", list="true">
+		        SELECT * FROM developers WHERE id IN (<cfqueryparam value="#ids#" list="true">)
 		        </cfquery>
 		    """,
-		    context );
-		assertThat( getVariables().get( result ) ).isInstanceOf( Query.class );
+		    context,
+		    BoxSourceType.CFTEMPLATE );
+		assertThat( getVariables().get( result ) ).isInstanceOf( ortus.boxlang.runtime.types.Query.class );
+		ortus.boxlang.runtime.types.Query query = getVariables().getAsQuery( result );
+		assertEquals( 3, query.size() );
+	}
+
+	@DisplayName( "It can execute a query with a list queryparam" )
+	@Test
+	public void testListStringBinding() {
+		getInstance().executeSource(
+		    """
+		        <cfquery name="result" maxrows="3">
+		        SELECT * FROM developers WHERE role IN (<cfqueryparam value="Developer,CEO,QA" list="true">)
+		        </cfquery>
+		    """,
+		    context,
+		    BoxSourceType.CFTEMPLATE );
+		assertThat( getVariables().get( result ) ).isInstanceOf( ortus.boxlang.runtime.types.Query.class );
 		ortus.boxlang.runtime.types.Query query = getVariables().getAsQuery( result );
 		assertEquals( 3, query.size() );
 	}

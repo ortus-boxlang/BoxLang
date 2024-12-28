@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.cache.providers.ICacheProvider;
+import ortus.boxlang.runtime.components.jdbc.QueryParam;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.Attempt;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
@@ -262,7 +263,11 @@ public class PendingQuery {
 	}
 
 	/**
-	 * Massage the SQL string in case of list parameters.
+	 * Massage the SQL string, replacing named parameters (`:name`) with positional placeholders (`?`).
+	 * 
+	 * Query params do not insert named params, they insert positional params, and they already take care of inserting the correct number of placeholder tokens.
+	 * 
+	 * @see {@link QueryParam#_invoke} for queryparam placeholder token insertion
 	 */
 	private String massageSQL() {
 		if ( parameters.isEmpty() ) {

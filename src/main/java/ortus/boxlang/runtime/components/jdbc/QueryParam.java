@@ -17,11 +17,15 @@
  */
 package ortus.boxlang.runtime.components.jdbc;
 
+import java.util.stream.Collectors;
+
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 
 @BoxComponent( allowsBody = false )
@@ -51,8 +55,23 @@ public class QueryParam extends Component {
 		}
 		// Set our data into the Query component for it to use
 		parentState.getAsArray( Key.queryParams ).add( attributes );
-		context.writeToBuffer( "?", true );
+		String tokenReplacement = "?";
+		if ( attributes.containsKey( Key.list ) && BooleanCaster.cast( attributes.get( Key.list ) ) ) {
+			Object val = attributes.get( Key.value );
+			if ( val instanceof String ) {
+				tokenReplacement = buildPlaceholderTokenList( Array.fromString( ( String ) val, attributes.getAsString( Key.separator ) ) );
+			} else if ( val instanceof Array ) {
+				tokenReplacement = buildPlaceholderTokenList( ( Array ) val );
+			}
+		}
+		context.writeToBuffer( tokenReplacement, true );
 		return DEFAULT_RETURN;
 	}
 
+	private String buildPlaceholderTokenList( Array listValue ) {
+		return ( ( Array ) listValue )
+		    .stream()
+		    .map( v -> "?" )
+		    .collect( Collectors.joining( "," ) );
+	}
 }
