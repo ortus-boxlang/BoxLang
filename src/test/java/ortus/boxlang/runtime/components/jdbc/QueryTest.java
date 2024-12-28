@@ -473,4 +473,33 @@ public class QueryTest extends BaseJDBCTest {
 		assertThat( queryMeta4.getAsBoolean( Key.cached ) ).isEqualTo( false );
 	}
 
+	@DisplayName( "It can pass params as a struct in a query attribute" )
+	@Test
+	public void testParamAttribute() {
+		getInstance().executeSource(
+		    """
+		        <bx:query name="result" params="#{ id : '1', id2: { value : "77" } }#">
+		        SELECT * FROM developers WHERE id = :id OR id = :id2
+		        </bx:query>
+		    """,
+		    getContext(), BoxSourceType.BOXTEMPLATE );
+		assertThat( getVariables().get( result ) ).isInstanceOf( ortus.boxlang.runtime.types.Query.class );
+		ortus.boxlang.runtime.types.Query query = getVariables().getAsQuery( result );
+		assertEquals( 2, query.size() );
+	}
+
+	@DisplayName( "It throws if mutually exclusive param sources are used" )
+	@Test
+	public void testParamAttributeThrow() {
+		IllegalArgumentException e = assertThrows( IllegalArgumentException.class, () -> getInstance().executeSource(
+		    """
+		        <bx:query name="result" params="#{ id : '1', id2: { value : "77" } }#">
+		        SELECT * FROM developers WHERE id = <bx:queryparam value="1">
+		        </bx:query>
+		    """,
+		    getContext(), BoxSourceType.BOXTEMPLATE ) );
+
+		assertThat( e.getMessage() ).contains( "Cannot specify both query parameters in the body and as an attribute" );
+		assertNull( getVariables().get( result ) );
+	}
 }
