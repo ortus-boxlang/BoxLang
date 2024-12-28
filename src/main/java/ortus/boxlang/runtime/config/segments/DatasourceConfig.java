@@ -188,6 +188,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	 */
 	public DatasourceConfig() {
 		// Default all things
+		this.properties.putIfAbsent( Key.custom, new Struct() );
 	}
 
 	/**
@@ -208,6 +209,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	 */
 	public DatasourceConfig( Key name, IStruct properties ) {
 		this.name = name;
+		this.properties.putIfAbsent( Key.custom, new Struct() );
 		processProperties( properties );
 	}
 
@@ -219,8 +221,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	 * @param properties The datasource configuration properties.
 	 */
 	public DatasourceConfig( IStruct properties ) {
-		processProperties( properties );
-		this.name = Key.of( "unnamed_" + UUID.randomUUID().toString() );
+		this( Key.of( "unnamed_" + UUID.randomUUID().toString() ), properties );
 	}
 
 	/**
@@ -230,6 +231,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	 */
 	public DatasourceConfig( Key name ) {
 		this.name = name;
+		this.properties.putIfAbsent( Key.custom, new Struct() );
 	}
 
 	/**
@@ -384,9 +386,6 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 				this.properties.put( entry.getKey(), entry.getValue() );
 			}
 		} );
-
-		// Prep custom properties.
-		this.properties.putIfAbsent( Key.custom, new Struct() );
 
 		// Merge defaults into the properties
 		DEFAULTS
