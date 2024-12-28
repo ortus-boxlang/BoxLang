@@ -4236,11 +4236,14 @@ public class CoreLangTest {
 		instance.executeSource(
 			"""
 				result = { switch: "" }
+				result.switch = "brad"
+				result2 = result.switch;
 			""",
 			context, BoxSourceType.CFSCRIPT );
 		// @formatter:on
 		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
 		assertThat( variables.getAsStruct( result ) ).containsKey( Key.of( "switch" ) );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "brad" );
 	}
 
 	@Test
