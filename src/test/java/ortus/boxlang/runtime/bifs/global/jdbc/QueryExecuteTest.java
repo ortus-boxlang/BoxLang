@@ -172,9 +172,9 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		assertEquals( 3, query.size() );
 	}
 
-	@DisplayName( "It can execute a query with an (array) list binding" )
+	@DisplayName( "It can execute a query with a named (array) list binding" )
 	@Test
-	public void testListArrayBindings() {
+	public void testListArrayNamedBindings() {
 		instance.executeSource(
 		    """
 		    result = queryExecute(
@@ -186,6 +186,70 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
 		Query query = variables.getAsQuery( result );
 		assertEquals( 3, query.size() );
+	}
+
+	@DisplayName( "It can execute a query with an (array) list binding" )
+	@Test
+	public void testListArrayPositionalBinding() {
+		instance.executeSource(
+		    """
+		    result = queryExecute(
+		        "SELECT * FROM developers WHERE id IN (?)",
+		        [ { value: [77, 1, 42], list : true } ]
+		    );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
+		Query query = variables.getAsQuery( result );
+		assertEquals( 3, query.size() );
+	}
+
+	@DisplayName( "It can reuse named query parameters" )
+	@Test
+	public void testParamReuse() {
+		instance.executeSource(
+		    """
+		    result = queryExecute(
+		        "SELECT * FROM developers WHERE id = :id OR name=:id",
+		        { id: 77 }
+		    );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
+		Query query = variables.getAsQuery( result );
+		assertEquals( 1, query.size() );
+	}
+
+	@DisplayName( "It can use various query params types (list and non-list) in a single SQL query" )
+	@Test
+	public void testParameterTypeMix() {
+		instance.executeSource(
+		    """
+		    result = queryExecute(
+		        "SELECT * FROM developers WHERE id = ? OR id IN (?)",
+		        [ 77, { value: [1, 42], list : true } ]
+		    );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
+		Query query = variables.getAsQuery( result );
+		assertEquals( 3, query.size() );
+	}
+
+	@DisplayName( "It can grab a queryparam name from a parameter array" )
+	@Test
+	public void testNamedParamInsideParamArray() {
+		instance.executeSource(
+		    """
+		    result = queryExecute(
+		        "SELECT * FROM developers WHERE id = :foo",
+		        [ { name: "foo", value: "1" } ]
+		    );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
+		Query query = variables.getAsQuery( result );
+		assertEquals( 1, query.size() );
 	}
 
 	@DisplayName( "It can execute a query with struct bindings on the default datasource" )

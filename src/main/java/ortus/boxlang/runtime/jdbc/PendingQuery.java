@@ -485,8 +485,8 @@ public class PendingQuery {
 					} else {
 						preparedStatement.setObject( parameterIndex, param.toSQLType( context ), param.getSqlTypeAsInt(), scaleOrLength );
 					}
+					parameterIndex++;
 				}
-				parameterIndex++;
 			}
 		}
 	}
