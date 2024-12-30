@@ -38,6 +38,7 @@ import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.SourceFile;
 import ortus.boxlang.compiler.javaboxpiler.JavaBoxpiler;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.StructCasterLoose;
 import ortus.boxlang.runtime.dynamic.casters.ThrowableCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.operators.InstanceOf;
@@ -450,15 +451,29 @@ public class ExceptionUtil {
 		if ( target == null ) {
 			return null;
 		}
-		IStruct result = Struct.of(
-		    Key.message, target.getMessage(),
-		    Key.stackTrace, ExceptionUtil.getStackTraceAsString( target ),
-		    Key.tagContext, ExceptionUtil.buildTagContext( target ),
-		    Key.cause, throwableToStruct( target.getCause() )
-		);
-		if ( target instanceof BoxLangException ble ) {
-			result.addAll( ble.dataAsStruct() );
+
+		// All getter methods will be called on the target, which will get all custom fields
+		// regardless of what the actual class is
+		IStruct result = StructCasterLoose.cast( target );
+		result.put( Key.tagContext, ExceptionUtil.buildTagContext( target ) );
+		result.put( Key.stackTrace, ExceptionUtil.getStackTraceAsString( target ) );
+		result.put( Key.cause, throwableToStruct( target.getCause() ) );
+
+		// Ensure we have a type field
+		if ( !result.containsKey( Key.type ) ) {
+			result.put( Key.type, target.getClass().getName() );
 		}
+
+		if ( result.containsKey( Key.suppressed ) && result.get( Key.suppressed ) instanceof Array sa && sa.isEmpty() ) {
+			result.remove( Key.suppressed );
+		}
+		if ( result.containsKey( Key.cause ) && result.get( Key.cause ) == null ) {
+			result.remove( Key.cause );
+		}
+		if ( result.containsKey( Key.localizedMessage ) ) {
+			result.remove( Key.localizedMessage );
+		}
+
 		return result;
 	}
 }

@@ -552,10 +552,10 @@ public class CFTemplateTest {
 
 		assertThat( ce.getMessage() ).isEqualTo( "my message" );
 		assertThat( ce.getCause() ).isNull();
-		assertThat( ce.detail ).isEqualTo( "my detail" );
-		assertThat( ce.errorCode ).isEqualTo( "42" );
-		assertThat( ce.extendedInfo ).isInstanceOf( Array.class );
-		assertThat( ce.type ).isEqualTo( "my.type" );
+		assertThat( ce.getDetail() ).isEqualTo( "my detail" );
+		assertThat( ce.getErrorCode() ).isEqualTo( "42" );
+		assertThat( ce.getExtendedInfo() ).isInstanceOf( Array.class );
+		assertThat( ce.getType() ).isEqualTo( "my.type" );
 
 	}
 
@@ -569,10 +569,10 @@ public class CFTemplateTest {
 
 		assertThat( ce.getMessage() ).isEqualTo( "my message" );
 		assertThat( ce.getCause() ).isNull();
-		assertThat( ce.detail ).isEqualTo( "my detail" );
-		assertThat( ce.errorCode ).isEqualTo( "42" );
-		assertThat( ce.extendedInfo ).isInstanceOf( Array.class );
-		assertThat( ce.type ).isEqualTo( "my.type" );
+		assertThat( ce.getDetail() ).isEqualTo( "my detail" );
+		assertThat( ce.getErrorCode() ).isEqualTo( "42" );
+		assertThat( ce.getExtendedInfo() ).isInstanceOf( Array.class );
+		assertThat( ce.getType() ).isEqualTo( "my.type" );
 	}
 
 	@Test
@@ -592,10 +592,10 @@ public class CFTemplateTest {
 
 		assertThat( ce.getMessage() ).isEqualTo( "my message" );
 		assertThat( ce.getCause() ).isNull();
-		assertThat( ce.detail ).isEqualTo( "my detail" );
-		assertThat( ce.errorCode ).isEqualTo( "42" );
-		assertThat( ce.extendedInfo ).isInstanceOf( Array.class );
-		assertThat( ce.type ).isEqualTo( "my.type" );
+		assertThat( ce.getDetail() ).isEqualTo( "my detail" );
+		assertThat( ce.getErrorCode() ).isEqualTo( "42" );
+		assertThat( ce.getExtendedInfo() ).isInstanceOf( Array.class );
+		assertThat( ce.getType() ).isEqualTo( "my.type" );
 	}
 
 	@Test
@@ -615,10 +615,10 @@ public class CFTemplateTest {
 
 		assertThat( ce.getMessage() ).isEqualTo( "my message" );
 		assertThat( ce.getCause() ).isNull();
-		assertThat( ce.detail ).isEqualTo( "my detail" );
-		assertThat( ce.errorCode ).isEqualTo( "42" );
-		assertThat( ce.extendedInfo ).isInstanceOf( Array.class );
-		assertThat( ce.type ).isEqualTo( "my.type" );
+		assertThat( ce.getDetail() ).isEqualTo( "my detail" );
+		assertThat( ce.getErrorCode() ).isEqualTo( "42" );
+		assertThat( ce.getExtendedInfo() ).isInstanceOf( Array.class );
+		assertThat( ce.getType() ).isEqualTo( "my.type" );
 	}
 
 	@Test
@@ -639,8 +639,8 @@ public class CFTemplateTest {
 
 		assertThat( ce.getMessage() ).isEqualTo( "my message" );
 		assertThat( ce.getCause() ).isNull();
-		assertThat( ce.detail ).isEqualTo( "my detail" );
-		assertThat( ce.type ).isEqualTo( "custom" );
+		assertThat( ce.getDetail() ).isEqualTo( "my detail" );
+		assertThat( ce.getType() ).isEqualTo( "custom" );
 	}
 
 	@Test

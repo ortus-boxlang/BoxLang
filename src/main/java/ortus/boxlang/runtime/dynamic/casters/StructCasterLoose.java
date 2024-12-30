@@ -76,9 +76,12 @@ public class StructCasterLoose implements IBoxCaster {
 		}
 		object = DynamicObject.unWrap( object );
 
-		IStruct result = StructCaster.cast( object, false );
-		if ( result != null ) {
-			return result;
+		// Struct caster calls Exception Util, which calls us, so avoid a stack overflow here
+		if ( ! ( object instanceof Throwable ) ) {
+			IStruct result = StructCaster.cast( object, false );
+			if ( result != null ) {
+				return result;
+			}
 		}
 
 		// If it's a random Java class, then turn it into a struct!!
@@ -88,13 +91,13 @@ public class StructCasterLoose implements IBoxCaster {
 			dynObject.getFieldsAsStream()
 			    .filter( field -> Modifier.isPublic( field.getModifiers() ) )
 			    .forEach( field -> {
-				    thisResult.put( field.getName(), dynObject.getField( field.getName() ) );
+				    thisResult.put( field.getName(), dynObject.getField( field.getName() ).get() );
 			    } );
 			// also add fields for all public methods starting with "get" that take no arguments
 			dynObject.getMethodNames( true ).forEach( methodName -> {
 				Method m;
 				if ( methodName.startsWith( "get" ) && Modifier.isPublic( ( m = dynObject.getMethod( methodName, true ) ).getModifiers() )
-				    && m.getParameterCount() == 0 ) {
+				    && m.getParameterCount() == 0 && !methodName.equals( "getClass" ) ) {
 					thisResult.put( methodName.substring( 3 ), dynObject.invoke( BoxRuntime.getInstance().getRuntimeContext(), methodName ) );
 				}
 			} );

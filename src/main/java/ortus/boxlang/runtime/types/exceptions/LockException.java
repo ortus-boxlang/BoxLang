@@ -25,17 +25,14 @@ import ortus.boxlang.runtime.types.IStruct;
  */
 public class LockException extends BoxLangException {
 
-	public static final Key	LockNameKey			= Key.of( "LockName" );
-	public static final Key	LockOperationKey	= Key.of( "LockOperation" );
-
 	/**
 	 * Name of affected lock (if the lock is unnamed, the value is "anonymous").
 	 */
-	public String			lockName			= "";
+	protected String	lockName		= "";
 	/**
 	 * Operation that failed (Timeout, Create Mutex, or Unknown).
 	 */
-	public String			lockOperation		= "";
+	protected String	lockOperation	= "";
 
 	/**
 	 * Constructor
@@ -85,8 +82,8 @@ public class LockException extends BoxLangException {
 
 	public IStruct dataAsStruct() {
 		IStruct result = super.dataAsStruct();
-		result.put( LockNameKey, lockName );
-		result.put( LockOperationKey, lockOperation );
+		result.put( Key.lockName, lockName );
+		result.put( Key.lockOperation, lockOperation );
 		return result;
 	}
 

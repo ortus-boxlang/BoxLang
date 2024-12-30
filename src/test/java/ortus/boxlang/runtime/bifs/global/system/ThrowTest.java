@@ -123,11 +123,11 @@ public class ThrowTest {
 		assertThat( e.getMessage() ).isEqualTo( "boom message" );
 		assertThat( e.getCause() ).isNotNull();
 		assertThat( e.getCause() ).isInstanceOf( java.lang.Exception.class );
-		assertThat( e.detail ).isEqualTo( "boom detail" );
-		assertThat( e.errorCode ).isEqualTo( "boom code" );
-		assertThat( e.type ).isEqualTo( "boom.type" );
-		assertThat( e.extendedInfo ).isInstanceOf( Array.class );
-		assertThat( ( ( Array ) e.extendedInfo ).toArray( new String[ 0 ] ) ).isEqualTo( new String[] { "boom", "extended", "info" } );
+		assertThat( e.getDetail() ).isEqualTo( "boom detail" );
+		assertThat( e.getErrorCode() ).isEqualTo( "boom code" );
+		assertThat( e.getType() ).isEqualTo( "boom.type" );
+		assertThat( e.getExtendedInfo() ).isInstanceOf( Array.class );
+		assertThat( ( ( Array ) e.getExtendedInfo() ).toArray( new String[ 0 ] ) ).isEqualTo( new String[] { "boom", "extended", "info" } );
 	}
 
 	@Test

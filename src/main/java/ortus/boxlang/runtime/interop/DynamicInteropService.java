@@ -72,6 +72,7 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.AbstractClassException;
 import ortus.boxlang.runtime.types.exceptions.BoxLangException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.CustomException;
 import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.NoConstructorException;
@@ -123,14 +124,18 @@ public class DynamicInteropService {
 	 * --------------------------------------------------------------------------
 	 */
 
+	/**
+	 * These keys are always available on all throwables. If the key is not found, then we return an empty string
+	 */
 	private static final Set<Key>									exceptionKeys		= new HashSet<>( Arrays.asList(
-	    BoxLangException.messageKey,
-	    BoxLangException.detailKey,
-	    BoxLangException.typeKey,
-	    BoxLangException.tagContextKey,
-	    BoxRuntimeException.ExtendedInfoKey,
+	    Key.message,
+	    Key.detail,
+	    Key.type,
+	    Key.tagContext,
+	    Key.extendedinfo,
 	    Key.stackTrace,
-	    Key.cause
+	    Key.cause,
+	    Key.errorcode
 	) );
 
 	/**
@@ -1702,7 +1707,7 @@ public class DynamicInteropService {
 			return arr[ index - 1 ];
 		} else if ( targetInstance instanceof Throwable t && exceptionKeys.contains( name ) ) {
 			// Throwable.message always delegates through to the message field
-			if ( name.equals( BoxLangException.messageKey ) ) {
+			if ( name.equals( Key.message ) ) {
 				return t.getMessage();
 			} else if ( name.equals( Key.cause ) ) {
 				return t.getCause();
@@ -1711,14 +1716,16 @@ public class DynamicInteropService {
 				PrintWriter		pw	= new PrintWriter( sw );
 				t.printStackTrace( pw );
 				return sw.toString();
-			} else if ( name.equals( BoxLangException.tagContextKey ) ) {
+			} else if ( name.equals( Key.tagContext ) ) {
 				return ExceptionUtil.buildTagContext( t );
 			} else if ( targetInstance instanceof BoxLangException ble ) {
-				if ( name.equals( BoxLangException.detailKey ) ) {
+				if ( name.equals( Key.detail ) ) {
 					return ble.getDetail();
-				} else if ( name.equals( BoxLangException.typeKey ) ) {
+				} else if ( name.equals( Key.type ) ) {
 					return ble.getType();
-				} else if ( ble instanceof BoxRuntimeException bre && name.equals( BoxRuntimeException.ExtendedInfoKey ) ) {
+				} else if ( targetInstance instanceof CustomException ce && name.equals( Key.errorcode ) ) {
+					return ce.getErrorCode();
+				} else if ( ble instanceof BoxRuntimeException bre && name.equals( Key.extendedinfo ) ) {
 					return bre.getExtendedInfo();
 				} else {
 					return "";

@@ -26,7 +26,7 @@ package ortus.boxlang.runtime.types.exceptions;
  */
 public class AbortException extends RuntimeException {
 
-	public String type = "request";
+	protected String type = "request";
 
 	/**
 	 * Constructor

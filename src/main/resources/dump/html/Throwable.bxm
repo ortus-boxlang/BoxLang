@@ -2,39 +2,25 @@
 	expandRoot = expand ?: true;
 </bx:script>
 <bx:import prefix="java" name="ortus.boxlang.runtime.types.exceptions.ExceptionUtil">
+<bx:set exStruct = ExceptionUtil.throwableToStruct( var )>
 <!--- Throwable template --->
 <bx:output>
-	<bx:set isBXError = var instanceof "ortus.boxlang.runtime.types.exceptions.BoxLangException">
 	<div class="bx-dump">
 
 		<table class="bx-table-red" title="#posInCode#">
-			<bx:if isBXError>
-				<caption
-					role="button"
-					tabindex="0"
-					<bx:if expandRoot>open aria-expanded="true"<bx:else>aria-expanded="false"</bx:if>
-					data-bx-toggle="siblings"
-				>
-					<strong>
-						<bx:if label.len() >#label# - </bx:if>
-						Error: #encodeForHTML( var.getType() )#
-					</strong>
-				</caption>
-			<bx:else>
-				<caption
-					role="button"
-					tabindex="0"
-					<bx:if expandRoot>open aria-expanded="true"<bx:else>aria-expanded="false"</bx:if>
-					data-bx-toggle="siblings"
-				>
-					<strong>
-						<bx:if label.len() >#label# - </bx:if>
-						Error: #var.getClass().getName()#
-					</strong>
-				</caption>
-			</bx:if>
+			<caption
+				role="button"
+				tabindex="0"
+				<bx:if expandRoot>open aria-expanded="true"<bx:else>aria-expanded="false"</bx:if>
+				data-bx-toggle="siblings"
+			>
+				<strong>
+					<bx:if label.len() >#label# - </bx:if>
+					Error: #encodeForHTML( exStruct.type )#
+				</strong>
+			</caption>
 
-			<!--- Throwable BODY --->
+			<!--- force message at the top --->
 			<tbody
 				<bx:if !expandRoot>class="d-none"</bx:if>
 			>
@@ -50,134 +36,15 @@
 					</th>
 					<td>
 						<div class="bx-onoff">
-							#encodeForHTML( var.getMessage() )#
+							#encodeForHTML( exStruct.message )#
 						</div>
 					</td>
 				</tr>
-
-				<bx:if isBXError>
-					<tr>
-						<th
-							aria-expanded="true"
-							data-bx-toggle="onoff"
-							scope="row"
-							valign="top"
-							tabindex="0"
-						>
-							Detail
-						</th>
-						<td>
-							<div class="bx-onoff">
-								#encodeForHTML( var.getDetail() ?: "n/a" )#
-							</div>
-						</td>
-					</tr>
-					<tr>
-						<th
-							aria-expanded="true"
-							data-bx-toggle="onoff"
-							scope="row"
-							valign="top"
-							tabindex="0"
-						>
-							Tag Context
-						</th>
-						<td>
-							<div class="bx-onoff">
-								<bx:dump var="#var.getTagContext()#">
-							</div>
-						</td>
-					</tr>
-					<!--- TODO: Details from other exception subclasses --->
-					<bx:if var instanceof "ortus.boxlang.runtime.types.exceptions.DatabaseException">
-						<tr>
-							<th
-								aria-expanded="true"
-								data-bx-toggle="onoff"
-								scope="row"
-								valign="top"
-								tabindex="0"
-							>
-								SQL
-							</th>
-							<td>
-								<div class="bx-onoff">
-									<bx:dump var="#var.getSQL()#">
-								</div>
-							</td>
-						</tr>
-
-						<tr>
-							<th
-								aria-expanded="true"
-								data-bx-toggle="onoff"
-								scope="row"
-								valign="top"
-								tabindex="0"
-							>
-								Query Error
-							</th>
-							<td>
-								<div class="bx-onoff">
-									<bx:dump var="#var.getQueryError()#">
-								</div>
-							</td>
-						</tr>
-
-						<tr>
-							<th
-								aria-expanded="true"
-								data-bx-toggle="onoff"
-								scope="row"
-								valign="top"
-								tabindex="0"
-							>
-								Where
-							</th>
-							<td>
-								<div class="bx-onoff">
-									<bx:dump var="#var.getWhere()#">
-								</div>
-							</td>
-						</tr>
-
-						<tr>
-							<th
-								aria-expanded="true"
-								data-bx-toggle="onoff"
-								scope="row"
-								valign="top"
-								tabindex="0"
-							>
-								SQL State
-							</th>
-							<td>
-								<div class="bx-onoff">
-									<bx:dump var="#var.getSQLState()#">
-								</div>
-							</td>
-						</tr>
-
-						<tr>
-							<th
-								aria-expanded="true"
-								data-bx-toggle="onoff"
-								scope="row"
-								valign="top"
-								tabindex="0"
-							>
-								Native Error Code
-							</th>
-							<td>
-								<div class="bx-onoff">
-									<bx:dump var="#var.getNativeErrorCode()#">
-								</div>
-							</td>
-						</tr>
+				<!--- This will include all fields on the throwable that had a getter --->
+				<bx:loop collection="#exStruct#" item="thisKey">				
+					<bx:if listFindNoCase( "stackTrace,message,type", thisKey )>
+						<bx:continue>
 					</bx:if>
-				</bx:if>
-
-				<bx:if var.getCause() != null >
 					<tr>
 						<th
 							aria-expanded="true"
@@ -186,16 +53,16 @@
 							valign="top"
 							tabindex="0"
 						>
-							Cause
+							#encodeForHTML( UCFirst( thisKey ) )#
 						</th>
 						<td>
 							<div class="bx-onoff">
-								<bx:dump var="#var.getCause()#">
+								<bx:dump var="#exStruct[ thisKey ]#">
 							</div>
 						</td>
 					</tr>
-				</bx:if>
-
+				</bx:loop>
+				<!--- force stacktrace to the bottom --->
 				<tr>
 					<th
 						aria-expanded="true"
@@ -208,10 +75,29 @@
 					</th>
 					<td>
 						<div class="bx-onoff">
-							<pre>#encodeForHTML( ExceptionUtil.getStackTraceAsString( var ) )#</pre>
+							<pre>#encodeForHTML( exStruct.stackTrace )#</pre>
 						</div>
 					</td>
 				</tr>
+				<!--- force cause to the bottom --->
+				<bx:if structKeyExists( exStruct, "cause" )>
+					<tr>
+						<th
+							aria-expanded="true"
+							data-bx-toggle="onoff"
+							scope="row"
+							valign="top"
+							tabindex="0"
+						>
+								Cause
+						</th>
+						<td>
+							<div class="bx-onoff">
+								<bx:dump var="#exStruct.cause#">
+							</div>
+						</td>
+					</tr>
+				</bx:if>
 			</tbody>
 		</table>
 	</div>

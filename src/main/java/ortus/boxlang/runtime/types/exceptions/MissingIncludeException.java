@@ -25,12 +25,10 @@ import ortus.boxlang.runtime.types.IStruct;
  */
 public class MissingIncludeException extends BoxLangException {
 
-	public static final Key	MissingFileNameKey	= Key.of( "missingFileName" );
-
 	/**
 	 * Name of file that could not be included.
 	 */
-	public String			missingFileName		= "";
+	protected String missingFileName = "";
 
 	/**
 	 * Constructor
@@ -66,7 +64,7 @@ public class MissingIncludeException extends BoxLangException {
 
 	public IStruct dataAsStruct() {
 		IStruct result = super.dataAsStruct();
-		result.put( MissingFileNameKey, missingFileName );
+		result.put( Key.missingFileName, missingFileName );
 		return result;
 	}
 

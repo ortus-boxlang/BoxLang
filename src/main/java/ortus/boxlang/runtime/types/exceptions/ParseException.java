@@ -28,7 +28,7 @@ import ortus.boxlang.runtime.types.IStruct;
  */
 public class ParseException extends BoxRuntimeException {
 
-	List<Issue> issues;
+	protected List<Issue> issues;
 
 	/**
 	 * Constructor
