@@ -464,8 +464,13 @@ public class ExceptionUtil {
 			result.put( Key.type, target.getClass().getName() );
 		}
 
-		if ( result.containsKey( Key.suppressed ) && result.get( Key.suppressed ) instanceof Array sa && sa.isEmpty() ) {
-			result.remove( Key.suppressed );
+		if ( result.containsKey( Key.suppressed ) ) {
+			Object oSuppressed = result.get( Key.suppressed );
+			if ( oSuppressed != null && oSuppressed.getClass().isArray() ) {
+				if ( ( ( Object[] ) oSuppressed ).length == 0 ) {
+					result.remove( Key.suppressed );
+				}
+			}
 		}
 		if ( result.containsKey( Key.cause ) && result.get( Key.cause ) == null ) {
 			result.remove( Key.cause );

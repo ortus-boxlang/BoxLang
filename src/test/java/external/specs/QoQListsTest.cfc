@@ -9,10 +9,7 @@ component extends="testbox.system.BaseSpec"{
 		variables.interestingStringsAsAList = "a,c,e";
 		variables.interestingStringsAsAQuotedList = "'a','c','e'";
 
-		variables.queryWithDataIn = Query(
-			id: [ 1 , 2 , 3 , 4 , 5 ],
-			value: [ 'a' , 'b' , 'c' , 'd' , 'e' ]
-		);
+		variables.queryWithDataIn = QueryNew('id,value', 'integer,varchar',[[1,'a'],[2,'b'],[3,'c'],[4,'d'],[5,'e']]);
 	}
 
 	function run( testResults , testBox ) {
