@@ -387,4 +387,21 @@ public class LoopTest {
 		    context, BoxSourceType.CFTEMPLATE );
 	}
 
+	@Test
+	public void testLoopCondition() {
+		instance.executeSource(
+		    """
+		     function foo( required string name ) {
+		     	loop condition=arguments.name == "brad" {
+		    return getFunctionCalledName();
+		     		break;
+		     	}
+		     }
+
+		     result = foo( "brad" );
+		           		  """,
+		    context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.getAsString( Key.of( "result" ) ) ).isEqualTo( "foo" );
+	}
+
 }

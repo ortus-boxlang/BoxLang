@@ -20,17 +20,20 @@ package ortus.boxlang.runtime.components.system;
 
 import java.util.Collection;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.components.util.LoopUtil;
+import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.Closure;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -170,7 +173,14 @@ public class Loop extends Component {
 
 	private BodyResult _invokeCondition( IBoxContext context, Function condition, ComponentBody body, IStruct executionState, String label ) {
 		// Loop over array, executing body every time
-		while ( BooleanCaster.cast( context.invokeFunction( condition ) ) ) {
+		Supplier<Boolean>	cond				= () -> BooleanCaster.cast( context.invokeFunction( condition ) );
+		// If our loop is inside a function, we need to use the original context to execute the condition, otherwise
+		// arguments and local scope lookups will be incorrect
+		IBoxContext			declaringContext	= ( ( Closure ) condition ).getDeclaringContext();
+		if ( declaringContext instanceof FunctionBoxContext fbc ) {
+			cond = () -> BooleanCaster.cast( condition._invoke( fbc ) );
+		}
+		while ( cond.get() ) {
 			// Run the code inside of the output loop
 			BodyResult bodyResult = processBody( context, body );
 			// IF there was a return statement inside our body, we early exit now
