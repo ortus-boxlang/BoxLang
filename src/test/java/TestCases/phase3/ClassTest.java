@@ -1600,6 +1600,16 @@ public class ClassTest {
 		    context );
 	}
 
+	@DisplayName( "Class with include" )
+	@Test
+	public void testClassWithInclude() {
+		instance.executeSource(
+		    """
+		    new src.test.java.TestCases.phase3.ClassWithInclude()
+		      """,
+		    context );
+	}
+
 	@DisplayName( "properties not inherited in metadata" )
 	@Test
 	public void testPropertiesNotInheritedInMetadata() {
