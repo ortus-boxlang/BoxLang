@@ -83,7 +83,8 @@ public class BaseJDBCTest {
 			    "host", "localhost",
 			    "port", "3306",
 			    "driver", "mysql",
-			    "database", "mysqlDB"
+			    "database", "mysqlDB",
+			    "custom", "allowMultiQueries=true"
 			) );
 			instance.getConfiguration().datasources.put(
 			    mysqlName,

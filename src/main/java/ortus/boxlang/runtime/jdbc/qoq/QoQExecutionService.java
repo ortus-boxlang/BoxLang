@@ -73,7 +73,7 @@ public class QoQExecutionService {
 		DynamicObject	trans	= frTransService.startTransaction( "BL QoQ Parse", "" );
 		SQLParser		parser	= new SQLParser();
 		ParsingResult	result;
-
+		// System.out.println( "Parsing SQL: " + sql );
 		try {
 			result = parser.parse( sql );
 		} finally {

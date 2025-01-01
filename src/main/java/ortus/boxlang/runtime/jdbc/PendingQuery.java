@@ -19,8 +19,9 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
-import java.util.regex.Matcher;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.annotation.Nonnull;
@@ -30,11 +31,11 @@ import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.cache.providers.ICacheProvider;
-import ortus.boxlang.runtime.components.jdbc.QueryParam;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.Attempt;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.scopes.Key;
@@ -44,14 +45,14 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.Struct;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 import ortus.boxlang.runtime.types.util.ListUtil;
-import ortus.boxlang.runtime.util.RegexBuilder;
 
 /**
- * This class represents a query and any parameters/bindings before being executed.
- * After calling {@link #execute(ConnectionManager,IBoxContext)}, it returns an {@link ExecutedQuery} with a reference to this object.
+ * This class represents a query and any parameters/bindings before being
+ * executed.
+ * After calling {@link #execute(ConnectionManager,IBoxContext)}, it returns an
+ * {@link ExecutedQuery} with a reference to this object.
  */
 public class PendingQuery {
 
@@ -76,21 +77,33 @@ public class PendingQuery {
 	/**
 	 * The SQL string to execute.
 	 * <p>
-	 * If this SQL has parameters, they should be represented either as question marks (`?`)
+	 * If this SQL has parameters, they should be represented either as question
+	 * marks (`?`)
 	 * or as named bindings, prefixed with a colon (`:`)
 	 */
 	private @Nonnull String						sql;
 
+	private List<String>						SQLWithParamTokens	= new ArrayList<>();
 	/**
-	 * The original SQL provided to the constructor. When constructing a `PendingQuery` with an
-	 * {@link IStruct} instance, the named parameters — prefixed with a colon (`:`) in the SQL string —
-	 * are replaced with question marks to work with the JDBC query. The SQL string with question marks
-	 * is set as `sql` and the original SQL provided with named parameters is set as `originalSql`.
+	 * SQL string broken up into segments so we can build a fully
+	 */
+	private @Nonnull String						SQLWithParamValues;
+
+	/**
+	 * The original SQL provided to the constructor. When constructing a
+	 * `PendingQuery` with an
+	 * {@link IStruct} instance, the named parameters — prefixed with a colon (`:`)
+	 * in the SQL string —
+	 * are replaced with question marks to work with the JDBC query. The SQL string
+	 * with question marks
+	 * is set as `sql` and the original SQL provided with named parameters is set as
+	 * `originalSql`.
 	 */
 	private @Nonnull final String				originalSql;
 
 	/**
-	 * A List of QueryParameter instances. The store the value and SQL type of the parameters, in order.
+	 * A List of QueryParameter instances. The store the value and SQL type of the
+	 * parameters, in order.
 	 *
 	 * @see QueryParameter
 	 */
@@ -102,7 +115,8 @@ public class PendingQuery {
 	private QueryOptions						queryOptions;
 
 	/**
-	 * The cache key for this query, determined from the combined hash of the SQL string and parameter values.
+	 * The cache key for this query, determined from the combined hash of the SQL
+	 * string and parameter values.
 	 */
 	private String								cacheKey;
 
@@ -118,47 +132,51 @@ public class PendingQuery {
 	 */
 
 	/**
-	 * Creates a new PendingQuery instance from a SQL string, a list of parameters, and the original SQL string.
+	 * Creates a new PendingQuery instance from a SQL string, a list of parameters,
+	 * and the original SQL string.
 	 *
 	 * @param sql          The SQL string to execute
-	 * @param bindings     An array or struct of {@link QueryParameter} to use as bindings.
+	 * @param bindings     An array or struct of {@link QueryParameter} to use as
+	 *                     bindings.
 	 * @param queryOptions QueryOptions object denoting the options for this query.
 	 */
 	public PendingQuery( @Nonnull String sql, Object bindings, QueryOptions queryOptions ) {
 		logger.debug( "Building new PendingQuery from SQL: [{}] and options: [{}]", sql, queryOptions.toStruct() );
 
 		/**
-		 * `onQueryBuild()` interception: Use this to modify query parameters or options before the query is executed.
+		 * `onQueryBuild()` interception: Use this to modify query parameters or options
+		 * before the query is executed.
 		 *
 		 * The event args will contain the following keys:
 		 *
 		 * - sql : The original SQL string
 		 * - parameters : The parameters to be used in the query
 		 * - pendingQuery : The BoxLang query class used to build and execute queries
-		 * - options : The QueryOptions class populated with query options from `queryExecute()` or `<bx:query>`
+		 * - options : The QueryOptions class populated with query options from
+		 * `queryExecute()` or `<bx:query>`
 		 */
 		IStruct eventArgs = Struct.of(
 		    "sql", sql.trim(),
 		    "bindings", bindings,
 		    "pendingQuery", this,
-		    "options", queryOptions
-		);
+		    "options", queryOptions );
 		interceptorService.announce( BoxEvent.ON_QUERY_BUILD, eventArgs );
 
 		// We set instance data from the event args so interceptors can modify them.
-		this.sql			= eventArgs.getAsString( Key.sql );
-		this.originalSql	= eventArgs.getAsString( Key.sql );
-		this.parameters		= processBindings( eventArgs.get( Key.of( "bindings" ) ) );
-		this.sql			= massageSQL();
-		this.queryOptions	= eventArgs.getAs( QueryOptions.class, Key.options );
+		this.sql				= eventArgs.getAsString( Key.sql );
+		this.SQLWithParamValues	= this.sql;
+		this.originalSql		= eventArgs.getAsString( Key.sql );
+		this.parameters			= processBindings( eventArgs.get( Key.of( "bindings" ) ) );
+		this.queryOptions		= eventArgs.getAs( QueryOptions.class, Key.options );
 
 		// Create a cache key with a default or via the passed options.
-		this.cacheKey		= getOrComputeCacheKey();
-		this.cacheProvider	= BoxRuntime.getInstance().getCacheService().getCache( this.queryOptions.cacheProvider );
+		this.cacheKey			= getOrComputeCacheKey();
+		this.cacheProvider		= BoxRuntime.getInstance().getCacheService().getCache( this.queryOptions.cacheProvider );
 	}
 
 	/**
-	 * Creates a new PendingQuery instance from a SQL string and a list of parameters.
+	 * Creates a new PendingQuery instance from a SQL string and a list of
+	 * parameters.
 	 * This constructor uses the provided SQL string as the original SQL.
 	 *
 	 * @param sql        The SQL string to execute
@@ -176,7 +194,10 @@ public class PendingQuery {
 	/**
 	 * Returns the cache key for this query.
 	 * <p>
-	 * If a custom cache key was provided in the query options, it will be used. Otherwise, a cache key will be generated from a combined hash of the SQL string,parameter values, and relevant query options such as the `datasource`, `username`, and
+	 * If a custom cache key was provided in the query options, it will be used.
+	 * Otherwise, a cache key will be generated from a combined hash of the SQL
+	 * string,parameter values, and relevant query options such as the `datasource`,
+	 * `username`, and
 	 * `password`.
 	 */
 	private String getOrComputeCacheKey() {
@@ -204,10 +225,13 @@ public class PendingQuery {
 	}
 
 	/**
-	 * Processes the bindings provided to the constructor and returns a list of {@link QueryParameter} instances.
-	 * Will also modify the SQL string to replace named parameters with positional placeholders.
+	 * Processes the bindings provided to the constructor and returns a list of
+	 * {@link QueryParameter} instances.
+	 * Will also modify the SQL string to replace named parameters with positional
+	 * placeholders.
 	 *
-	 * @param bindings The bindings to process. This can be an {@link Array} of values or a {@link IStruct} of named parameters.
+	 * @param bindings The bindings to process. This can be an {@link Array} of
+	 *                 values or a {@link IStruct} of named parameters.
 	 *
 	 * @return A list of {@link QueryParameter} instances.
 	 */
@@ -217,82 +241,236 @@ public class PendingQuery {
 		}
 		CastAttempt<Array> castAsArray = ArrayCaster.attempt( bindings );
 		if ( castAsArray.wasSuccessful() ) {
-			return buildParameterList( castAsArray.getOrFail() );
+			Array castedArray = castAsArray.get();
+			// Short circuit for empty arrays to simplify our checks below
+			if ( castedArray.isEmpty() ) {
+				return new ArrayList<>();
+			}
+			// An array could be an array of structs where a name is specified in each struct, which we massage back into a struct
+			int		foundNames		= 0;
+			IStruct	possibleStruct	= Struct.of();
+			for ( Object item : castedArray ) {
+				CastAttempt<IStruct> itemStructAttempt = StructCaster.attempt( item );
+				if ( itemStructAttempt.wasSuccessful() ) {
+					IStruct itemStruct = itemStructAttempt.get();
+					if ( itemStruct.containsKey( Key._NAME ) ) {
+						foundNames++;
+						possibleStruct.put( Key.of( itemStruct.get( Key._NAME ) ), itemStruct );
+					}
+				}
+			}
+			// All items in the array are structs with names
+			if ( foundNames == castedArray.size() ) {
+				return buildParameterList( null, possibleStruct );
+			} else if ( foundNames > 0 ) {
+				throw new DatabaseException( "Invalid query params passed as array of structs. Some structs have a name, some do not." );
+			}
+			// No structs with names were found, or possbly no structs were found at all!
+			return buildParameterList( castedArray, null );
 		}
 
 		CastAttempt<IStruct> castAsStruct = StructCaster.attempt( bindings );
 		if ( castAsStruct.wasSuccessful() ) {
-			return buildParameterList( castAsStruct.getOrFail() );
+			return buildParameterList( null, castAsStruct.get() );
 		}
 
 		// We always have bindings, since we exit early if there are none
 		String className = bindings.getClass().getName();
-		throw new BoxRuntimeException( "Invalid type for params. Expected array or struct. Received: " + className );
+		throw new DatabaseException( "Invalid type for query params. Expected array or struct. Received: " + className );
 	}
 
 	/**
-	 * Process an array of query bindings into a list of {@link QueryParameter} instances.
-	 *
-	 * @param parameters An {@link Array} of `queryparam` {@link IStruct} instances to convert to {@link QueryParameter} instances and use as bindings.
-	 */
-	private List<QueryParameter> buildParameterList( @Nonnull Array parameters ) {
-		return parameters.stream().map( QueryParameter::fromAny ).collect( Collectors.toList() );
-	}
-
-	/**
-	 * Process a struct of named query bindings into a list of {@link QueryParameter} instances.
+	 * Process a struct of named query bindings into a list of
+	 * {@link QueryParameter} instances.
 	 * <p>
-	 * Also performs SQL string replacement to convert named parameters to positional placeholders.
+	 * Also performs SQL string replacement to convert named parameters to
+	 * positional placeholders.
 	 *
 	 * @param sql        The SQL string to execute
-	 * @param parameters An `IStruct` of `String` `name` to either an `Object` `value` or a `queryparam` `IStruct`.
+	 * @param parameters An `IStruct` of `String` `name` to either an `Object`
+	 *                   `value` or a `queryparam` `IStruct`.
 	 */
-	private List<QueryParameter> buildParameterList( @Nonnull IStruct parameters ) {
-		List<QueryParameter>	params	= new ArrayList<>();
-		Matcher					matcher	= RegexBuilder.SQL_PARAMETER.matcher( sql );
-		while ( matcher.find() ) {
-			String paramName = matcher.group();
-			paramName = paramName.substring( 1 );
-			Object paramValue = parameters.get( paramName );
-			if ( paramValue == null ) {
-				throw new DatabaseException( "Missing param in query: [" + paramName + "]. SQL: " + sql );
-			}
-			params.add( QueryParameter.fromAny( paramName, paramValue ) );
+	@SuppressWarnings( { "null", "unchecked" } )
+	private List<QueryParameter> buildParameterList( Array positionalParameters, IStruct namedParameters ) {
+		List<QueryParameter> params = new ArrayList<>();
+		// Short circuit for no parameters
+		if ( positionalParameters == null && namedParameters == null ) {
+			return params;
+		} else if ( positionalParameters != null && positionalParameters.isEmpty() ) {
+			return params;
+		} else if ( namedParameters != null && namedParameters.isEmpty() ) {
+			return params;
 		}
-		return params;
-	}
 
-	/**
-	 * Massage the SQL string, replacing named parameters (`:name`) with positional placeholders (`?`).
-	 * 
-	 * Query params do not insert named params, they insert positional params, and they already take care of inserting the correct number of placeholder tokens.
-	 * 
-	 * @see {@link QueryParam#_invoke} for queryparam placeholder token insertion
-	 */
-	private String massageSQL() {
-		if ( parameters.isEmpty() ) {
-			return sql;
-		}
-		// Replace the params as we go, so we can process positionally in the order they appear in the SQL string.
-		String tempPlaceholder = "____QUESTION_MARK____";
-		for ( QueryParameter p : parameters ) {
-			String sqlReplacement = tempPlaceholder;
-			if ( p.isListParam() ) {
-				Array v = ( Array ) p.getValue();
-				sqlReplacement = v.stream().map( param -> tempPlaceholder ).collect( Collectors.joining( "," ) );
+		boolean			isPositional		= positionalParameters != null;
+		String			SQL					= this.sql;
+		// This is the SQL string with the named parameters replaced with positional placeholders
+		StringBuilder	newSQL				= new StringBuilder();
+		// This is the name of the current named parameter being processed
+		StringBuilder	paramName			= new StringBuilder();
+		// This is the current SQL token being processed. We'll save these for later when we apply the parameters.
+		// We could techincally finalize this string now, but we'd end up casting all the values twice which seems inefficient.
+		StringBuilder	SQLWithParamToken	= new StringBuilder();
+		// Track the named params we encounter for validation below
+		Set<Key>		foundNamedParams	= new HashSet<>();
+
+		// 0 = Default state, processing SQL
+		// 1 = Inside a string literal
+		// 2 = Inside a single line comment
+		// 3 = Inside a multi-line comment
+		// 4 = Inside a named parameter
+		int				state				= 0;
+
+		// This should always match params.size(), but is a little easier to use
+		int				paramsEncountered	= 0;
+		// Pop this into a lambda so we can re-use it for the last named parameter
+		Runnable		processNamed		= () -> {
+												SQLWithParamTokens.add( SQLWithParamToken.toString() );
+												SQLWithParamToken.setLength( 0 );
+												Key finalParamName = Key.of( paramName.toString() );
+												if ( isPositional ) {
+													throw new DatabaseException(
+													    "Named parameter [:" + finalParamName.getName() + "] found in query with positional parameters." );
+												} else {
+													if ( namedParameters.containsKey( finalParamName ) ) {
+														QueryParameter newParam = QueryParameter.fromAny( namedParameters.get( finalParamName ) );
+														foundNamedParams.add( finalParamName );
+														params.add( newParam );
+														// List params add ?, ?, ? etc. to the SQL string
+														if ( newParam.isListParam() ) {
+															List<Object> values = ( List<Object> ) newParam.getValue();
+															newSQL.append( values.stream().map( v -> "?" ).collect( Collectors.joining( ", " ) ) );
+														} else {
+															newSQL.append( "?" );
+														}
+													} else {
+														throw new DatabaseException(
+														    "Named parameter [:" + finalParamName.getName() + "] not provided to query." );
+													}
+												}
+											};
+
+		for ( int i = 0; i < SQL.length(); i++ ) {
+			char c = SQL.charAt( i );
+
+			switch ( state ) {
+				// Default state, processing SQL
+				case 0 : {
+					if ( c == '\'' ) {
+						// If we've reached a ' then we're inside a string literal
+						state = 1;
+					} else if ( c == '-' && i < SQL.length() - 1 && SQL.charAt( i + 1 ) == '-' ) {
+						// If we've reached a -- then we're inside a single line comment
+						state = 2;
+					} else if ( c == '/' && i < SQL.length() - 1 && SQL.charAt( i + 1 ) == '*' ) {
+						// If we've reached a /* then we're inside a multi-line comment
+						state = 3;
+					} else if ( c == '?' ) {
+						// We've encountered a positional parameter
+						paramsEncountered++;
+						if ( isPositional ) {
+							if ( paramsEncountered > positionalParameters.size() ) {
+								throw new DatabaseException( "Too few positional parameters [" + positionalParameters.size()
+								    + "] provided for query having at least [" + paramsEncountered + "] '?' char(s)." );
+							}
+
+							SQLWithParamTokens.add( SQLWithParamToken.toString() );
+							SQLWithParamToken.setLength( 0 );
+							var				newParam	= QueryParameter.fromAny( positionalParameters.get( paramsEncountered - 1 ) );
+							List<Object>	values;
+							// List params add ?, ?, ? etc. to the SQL string
+							if ( newParam.isListParam() && ( values = ( List<Object> ) newParam.getValue() ).size() > 1 ) {
+								newSQL.append( "?, ".repeat( values.size() - 1 ) );
+							}
+							params.add( newParam );
+							// append here and break so the ? doesn't go into the SQLWithParamToken
+							newSQL.append( c );
+							break;
+						} else {
+							throw new DatabaseException( "Positional parameter [?] found in query with named parameters." );
+						}
+					} else if ( c == ':' ) {
+						// We've encountered a named parameter
+						state = 4;
+						// Do not append anything
+						break;
+					}
+					newSQL.append( c );
+					SQLWithParamToken.append( c );
+					break;
+				}
+				// Inside a string literal
+				case 1 : {
+					// If we've reached the ending ' and it wasn't escaped as \' then we're done
+					if ( c == '\'' && ( i == SQL.length() - 1 || SQL.charAt( i + 1 ) != '\'' ) ) {
+						state = 0;
+						// if we reached ' but the next char is also ' then this is just an escaped ''
+						// Append them both and move on
+					} else if ( c == '\'' && i < SQL.length() - 1 && SQL.charAt( i + 1 ) == '\'' ) {
+						newSQL.append( c ); // Append the first single quote
+						SQLWithParamToken.append( c );
+						c = SQL.charAt( ++i ); // Skip the next single quote
+					}
+					newSQL.append( c );
+					SQLWithParamToken.append( c );
+					break;
+				}
+				// Inside a single line comment
+				case 2 : {
+					if ( c == '\n' || c == '\r' ) {
+						state = 0;
+					}
+					newSQL.append( c );
+					SQLWithParamToken.append( c );
+					break;
+				}
+				// Inside a multi-line comment
+				case 3 : {
+					if ( c == '*' && i < SQL.length() - 1 && SQL.charAt( i + 1 ) == '/' ) {
+						state = 0;
+						newSQL.append( c );
+						SQLWithParamToken.append( c );
+						c = SQL.charAt( ++i );
+					}
+					newSQL.append( c );
+					SQLWithParamToken.append( c );
+					break;
+				}
+				// Inside a named parameter
+				case 4 : {
+					if ( ! ( Character.isLetterOrDigit( c ) || c == '_' ) ) {
+						processNamed.run();
+						paramName.setLength( 0 );
+						// reset the state and backup to re-precess the next char again
+						state = 0;
+						i--;
+						break;
+					}
+					paramName.append( c );
+					break;
+				}
 			}
-			String placeholder = "\\?";
-			if ( p.getName() != null ) {
-				placeholder	= ":" + p.getName();
-				// If this is a named param, replace all instances of it
-				sql			= RegexBuilder.of( sql, placeholder ).replaceAllAndGet( sqlReplacement );
-			} else {
-				// If it's a positional param, replace the first instance
-				sql = RegexBuilder.of( sql, placeholder ).replaceFirstAndGet( sqlReplacement );
-			}
 		}
-		this.sql = RegexBuilder.of( sql, tempPlaceholder ).replaceAllAndGet( "?" );
-		return sql;
+
+		// If named param is the last thing in the query
+		if ( state == 4 ) {
+			processNamed.run();
+		}
+
+		// Make sure positional params were all used
+		if ( isPositional && positionalParameters.size() > paramsEncountered ) {
+			throw new DatabaseException( "Too many positional parameters [" + positionalParameters.size()
+			    + "] provided for query having only [" + paramsEncountered + "] '?' char(s)." );
+		} else if ( !isPositional && namedParameters.keySet().size() != foundNamedParams.size() ) {
+			// Make sure all named params were used
+			Set<Key> missingParams = new HashSet<>( namedParameters.keySet() );
+			missingParams.removeAll( foundNamedParams );
+			throw new DatabaseException( "Named parameter(s) [" + missingParams + "] provided to query were not used." );
+		}
+
+		SQLWithParamTokens.add( SQLWithParamToken.toString() );
+		this.sql = newSQL.toString();
+		return params;
 	}
 
 	/**
@@ -305,27 +483,50 @@ public class PendingQuery {
 	}
 
 	/**
+	 * Return final SQL with paramter values
+	 * 
+	 * @return
+	 */
+	public @Nonnull String getSQLWithParamValues() {
+		return this.SQLWithParamValues;
+	}
+
+	/**
 	 * Returns a list of parameter `Object` values from the `List<QueryParameter>`.
+	 * If a parameter is a list type, its values are expanded into the main list.
 	 *
 	 * @return A list of parameter values as `Object`s.
 	 */
 	public @Nonnull List<Object> getParameterValues() {
-		return this.parameters.stream().map( QueryParameter::getValue ).collect( Collectors.toList() );
+		List<Object> values = new ArrayList<>();
+		for ( QueryParameter param : this.parameters ) {
+			if ( param.isListParam() ) {
+				values.addAll( ( List<?> ) param.getValue() );
+			} else {
+				values.add( param.getValue() );
+			}
+		}
+		return values;
 	}
 
 	/**
-	 * Executes the PendingQuery using the provided ConnectionManager and returns the results in an {@link ExecutedQuery} instance.
+	 * Executes the PendingQuery using the provided ConnectionManager and returns
+	 * the results in an {@link ExecutedQuery} instance.
 	 *
-	 * @param connectionManager The ConnectionManager instance to use for getting connections from the current context.
+	 * @param connectionManager The ConnectionManager instance to use for getting
+	 *                          connections from the current context.
 	 *
-	 * @throws DatabaseException If a {@link SQLException} occurs, wraps it in a DatabaseException and throws.
+	 * @throws DatabaseException If a {@link SQLException} occurs, wraps it in a
+	 *                           DatabaseException and throws.
 	 *
-	 * @return An ExecutedQuery instance with the results of this JDBC execution, as well as a link to this PendingQuery instance.
+	 * @return An ExecutedQuery instance with the results of this JDBC execution, as
+	 *         well as a link to this PendingQuery instance.
 	 *
 	 * @see ExecutedQuery
 	 */
 	public @Nonnull ExecutedQuery execute( ConnectionManager connectionManager, IBoxContext context ) {
-		// We do an early cache check here to avoid the overhead of creating a connection if we already have a matching cached query.
+		// We do an early cache check here to avoid the overhead of creating a
+		// connection if we already have a matching cached query.
 		if ( isCacheable() ) {
 			logger.debug( "Checking cache for query: {}", this.cacheKey );
 			Attempt<Object> cachedQuery = cacheProvider.get( this.cacheKey );
@@ -346,26 +547,33 @@ public class PendingQuery {
 	}
 
 	/**
-	 * Executes the PendingQuery on a given {@link Connection} and returns the results in an {@link ExecutedQuery} instance.
+	 * Executes the PendingQuery on a given {@link Connection} and returns the
+	 * results in an {@link ExecutedQuery} instance.
 	 *
-	 * @param connection The Connection instance to use for executing the query. It is the responsibility of the caller to close the connection after this method returns.
+	 * @param connection The Connection instance to use for executing the query. It
+	 *                   is the responsibility of the caller to close the connection
+	 *                   after this method returns.
 	 *
-	 * @throws DatabaseException If a {@link SQLException} occurs, wraps it in a DatabaseException and throws.
+	 * @throws DatabaseException If a {@link SQLException} occurs, wraps it in a
+	 *                           DatabaseException and throws.
 	 *
-	 * @return An ExecutedQuery instance with the results of this JDBC execution, as well as a link to this PendingQuery instance.
+	 * @return An ExecutedQuery instance with the results of this JDBC execution, as
+	 *         well as a link to this PendingQuery instance.
 	 *
 	 * @see ExecutedQuery
 	 */
 	public @Nonnull ExecutedQuery execute( Connection connection, IBoxContext context ) {
 		if ( isCacheable() ) {
-			// we use separate get() and set() calls over a .getOrSet() so we can run `.setIsCached()` on discovered/cached results.
+			// we use separate get() and set() calls over a .getOrSet() so we can run
+			// `.setIsCached()` on discovered/cached results.
 			Attempt<Object> cachedQuery = this.cacheProvider.get( this.cacheKey );
 			if ( cachedQuery.isPresent() ) {
 				return respondWithCachedQuery( ( ExecutedQuery ) cachedQuery.get() );
 			}
 
 			ExecutedQuery executedQuery = executeStatement( connection, context );
-			this.cacheProvider.set( this.cacheKey, executedQuery, this.queryOptions.cacheTimeout, this.queryOptions.cacheLastAccessTimeout );
+			this.cacheProvider.set( this.cacheKey, executedQuery, this.queryOptions.cacheTimeout,
+			    this.queryOptions.cacheLastAccessTimeout );
 			return executedQuery;
 		}
 		return executeStatement( connection, context );
@@ -374,45 +582,42 @@ public class PendingQuery {
 	/**
 	 * Generate and execute a JDBC statement using the provided connection.
 	 * <p>
-	 * * If query parameters are present, a {@link PreparedStatement} will be utilized and populated with the paremeter bindings. Otherwise, a standard {@link Statement} object will be used.
+	 * * If query parameters are present, a {@link PreparedStatement} will be
+	 * utilized and populated with the paremeter bindings. Otherwise, a standard
+	 * {@link Statement} object will be used.
 	 * * Will announce a `PRE_QUERY_EXECUTE` event before executing the query.
 	 */
 	private ExecutedQuery executeStatement( Connection connection, IBoxContext context ) {
 		try {
-			ArrayList<ExecutedQuery> queries = new ArrayList<>();
-			for ( String sqlStatement : this.sql.split( ";" ) ) {
-				try (
-				    Statement statement = this.parameters.isEmpty()
-				        ? connection.createStatement()
-				        : connection.prepareStatement( this.sql, Statement.RETURN_GENERATED_KEYS ); ) {
 
-					applyParameters( statement, context );
-					applyStatementOptions( statement );
+			String sqlStatement = this.sql;
+			try (
+			    Statement statement = this.parameters.isEmpty()
+			        ? connection.createStatement()
+			        : connection.prepareStatement( sqlStatement, Statement.RETURN_GENERATED_KEYS ); ) {
 
-					interceptorService.announce(
-					    BoxEvent.PRE_QUERY_EXECUTE,
-					    Struct.of(
-					        "sql", this.sql,
-					        "bindings", getParameterValues(),
-					        "pendingQuery", this
-					    )
-					);
+				applyParameters( statement, context );
+				applyStatementOptions( statement );
 
-					long	startTick	= System.currentTimeMillis();
-					boolean	hasResults	= statement instanceof PreparedStatement preparedStatement
-					    ? preparedStatement.execute()
-					    : statement.execute( sqlStatement, Statement.RETURN_GENERATED_KEYS );
-					long	endTick		= System.currentTimeMillis();
+				interceptorService.announce(
+				    BoxEvent.PRE_QUERY_EXECUTE,
+				    Struct.of(
+				        "sql", sqlStatement,
+				        "bindings", getParameterValues(),
+				        "pendingQuery", this ) );
 
-					queries.add( ExecutedQuery.fromPendingQuery(
-					    this,
-					    statement,
-					    endTick - startTick,
-					    hasResults
-					) );
-				}
+				long	startTick	= System.currentTimeMillis();
+				boolean	hasResults	= statement instanceof PreparedStatement preparedStatement
+				    ? preparedStatement.execute()
+				    : statement.execute( sqlStatement, Statement.RETURN_GENERATED_KEYS );
+				long	endTick		= System.currentTimeMillis();
+
+				return ExecutedQuery.fromPendingQuery(
+				    this,
+				    statement,
+				    endTick - startTick,
+				    hasResults );
 			}
-			return queries.getFirst();
 		} catch ( SQLException e ) {
 			String detail = "";
 			if ( e.getCause() != null ) {
@@ -426,15 +631,17 @@ public class PendingQuery {
 			    originalSql,
 			    null, // queryError
 			    ListUtil.asString( Array.fromList( this.getParameterValues() ), "," ), // where
-			    e
-			);
+			    e );
 		}
 	}
 
 	/**
-	 * Helper method to respond with an ExecutedQuery instance from the given query cache lookup.
+	 * Helper method to respond with an ExecutedQuery instance from the given query
+	 * cache lookup.
 	 * <p>
-	 * This method assumes cachedQuery.isPresent() has already been checked, and populates the ExecutedQuery instance with the query cache metadata, such as cacheKey, cacheProvider, etc.
+	 * This method assumes cachedQuery.isPresent() has already been checked, and
+	 * populates the ExecutedQuery instance with the query cache metadata, such as
+	 * cacheKey, cacheProvider, etc.
 	 */
 	private ExecutedQuery respondWithCachedQuery( ExecutedQuery cachedQuery ) {
 		logger.debug( "Query is present, returning cached result: {}", this.cacheKey );
@@ -443,8 +650,7 @@ public class PendingQuery {
 		    "cacheKey", this.cacheKey,
 		    "cacheProvider", this.cacheProvider.getName().toString(),
 		    "cacheTimeout", this.queryOptions.cacheTimeout,
-		    "cacheLastAccessTimeout", this.queryOptions.cacheLastAccessTimeout
-		);
+		    "cacheLastAccessTimeout", this.queryOptions.cacheLastAccessTimeout );
 		Query	results		= cachedQuery.getResults();
 		Struct	queryMeta	= new Struct( cachedQuery.getQueryMeta() );
 		queryMeta.addAll( cacheMeta );
@@ -453,9 +659,11 @@ public class PendingQuery {
 	}
 
 	/**
-	 * Apply the parameter bindings to the provided {@link Statement} instance.
-	 * <p>
-	 * Will only take action if 1) there are parameters to apply, and 2) the Statement object is a PreparedStatement.
+	 * If this is a paramaterized query, apply the parameters to the provided statement.
+	 * We will also take this opportunity to finalize the list of SQL tokens with the
+	 * final param values to build the effective SQL string.
+	 * 
+	 * @throws SQLException
 	 */
 	private void applyParameters( Statement statement, IBoxContext context ) throws SQLException {
 		if ( this.parameters.isEmpty() ) {
@@ -463,14 +671,22 @@ public class PendingQuery {
 		}
 
 		if ( statement instanceof PreparedStatement preparedStatement ) {
+			StringBuilder	SQLWithParamValues	= new StringBuilder();
 			// The param index starts from 1
-			int parameterIndex = 1;
+			int				parameterIndex		= 1;
+			int				SQLParamIndex		= 0;
 			for ( QueryParameter param : this.parameters ) {
+				SQLWithParamValues.append( SQLWithParamTokens.get( SQLParamIndex ) );
 				Integer scaleOrLength = param.getScaleOrLength();
 				if ( param.isListParam() ) {
-					Array list = ( Array ) param.getValue();
+					var		i		= 1;
+					Array	list	= ( Array ) param.getValue();
 					for ( Object value : list ) {
 						Object casted = QueryColumnType.toSQLType( param.getType(), value, context );
+						emitValueToSQL( SQLWithParamValues, casted, param.getType() );
+						if ( i < list.size() ) {
+							SQLWithParamValues.append( ", " );
+						}
 						if ( scaleOrLength == null ) {
 							preparedStatement.setObject( parameterIndex, casted, param.getSqlTypeAsInt() );
 						} else {
@@ -478,23 +694,51 @@ public class PendingQuery {
 							    scaleOrLength );
 						}
 						parameterIndex++;
+						i++;
 					}
 				} else {
+					Object value = param.toSQLType( context );
+					emitValueToSQL( SQLWithParamValues, value, param.getType() );
 					if ( scaleOrLength == null ) {
-						preparedStatement.setObject( parameterIndex, param.toSQLType( context ), param.getSqlTypeAsInt() );
+						preparedStatement.setObject( parameterIndex, value, param.getSqlTypeAsInt() );
 					} else {
-						preparedStatement.setObject( parameterIndex, param.toSQLType( context ), param.getSqlTypeAsInt(), scaleOrLength );
+						preparedStatement.setObject( parameterIndex, value, param.getSqlTypeAsInt(),
+						    scaleOrLength );
 					}
 					parameterIndex++;
 				}
+				SQLParamIndex++;
 			}
+			SQLWithParamValues.append( SQLWithParamTokens.get( SQLParamIndex ) );
+			this.SQLWithParamValues = SQLWithParamValues.toString();
+			SQLWithParamTokens.clear();
+		}
+	}
+
+	/**
+	 * Emit a value to the SQL string, quoting it if necessary.
+	 * 
+	 * @param SQLWithParamValues The SQL string to append the value to.
+	 * @param value              The value to append.
+	 * @param type               The type of the value.
+	 */
+	private void emitValueToSQL( StringBuilder SQLWithParamValues, Object value, QueryColumnType type ) {
+		boolean quoted = type == QueryColumnType.VARCHAR || type == QueryColumnType.CHAR || type == QueryColumnType.TIME || type == QueryColumnType.DATE
+		    || type == QueryColumnType.TIMESTAMP || QueryColumnType.OBJECT == type || QueryColumnType.OTHER == type;
+		if ( quoted ) {
+			SQLWithParamValues.append( "'" );
+		}
+		SQLWithParamValues.append( StringCaster.attempt( value ).getOrSupply( () -> String.valueOf( value ) ) );
+		if ( quoted ) {
+			SQLWithParamValues.append( "'" );
 		}
 	}
 
 	/**
 	 * Apply query options to the provided {@link Statement} instance.
 	 * <p>
-	 * Any query options which pass through to the JDBC Statement interface will be applied here. This includes `queryTimeout`, `maxRows`, and `fetchSize`.
+	 * Any query options which pass through to the JDBC Statement interface will be
+	 * applied here. This includes `queryTimeout`, `maxRows`, and `fetchSize`.
 	 */
 	private void applyStatementOptions( Statement statement ) throws SQLException {
 		IStruct options = this.queryOptions.toStruct();
@@ -520,7 +764,8 @@ public class PendingQuery {
 		/**
 		 * TODO: Implement the following options:
 		 * ormoptions
-		 * username and password : To evaluate later due to security concerns of overriding datasources, not going to implement unless requested
+		 * username and password : To evaluate later due to security concerns of
+		 * overriding datasources, not going to implement unless requested
 		 * clientInfo : Part of the connection: get/setClientInfo()
 		 */
 	}

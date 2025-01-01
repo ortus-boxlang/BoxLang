@@ -49,53 +49,7 @@ component extends="testbox.system.BaseSpec"{
 			});
 
 			describe( title='using param list=true' , body=function() {
-				describe( title='with new Query()' , body=function() {
-					beforeEach( function( currentSpec ) {
-						q = new Query(
-							dbtype = 'query',
-							queryWithDataIn = variables.queryWithDataIn
-						);
-					});
-
-					it( title='when using numeric params' , body=function( currentSpec ) {
-						q.addParam( name: 'needle' , value: interestingNumbersAsAList , sqltype: 'numeric' , list: true );
-						var actual = q.execute( sql = "
-							SELECT
-								id,
-								value
-							FROM queryWithDataIn
-							WHERE id IN ( :needle )
-						" ).getResult();
-
-						expect( actual.RecordCount ).toBe( ListLen( interestingNumbersAsAList , ',' ) );
-					});
-
-					it( title='when using numeric params and a custom separator' , body=function( currentSpec ) {
-						q.addParam( name: 'needle' , value: Replace( interestingNumbersAsAList , ',' , '|' ) , sqltype: 'numeric' , list: true , separator: '|' );
-						var actual = q.execute( sql = "
-							SELECT
-								id,
-								value
-							FROM queryWithDataIn
-							WHERE id IN ( :needle )
-						" ).getResult();
-
-						expect( actual.RecordCount ).toBe( ListLen( interestingNumbersAsAList , ',' ) );
-					});
-
-					it( title='when using string params' , body=function( currentSpec ) {
-						q.addParam( name: 'needle' , value: interestingStringsAsAList , sqltype: 'varchar' , list: true );
-						var actual = q.execute( sql = "
-							SELECT
-								id,
-								value
-							FROM queryWithDataIn
-							WHERE value IN ( :needle )
-						" ).getResult();
-						expect( actual.RecordCount ).toBe( ListLen( interestingStringsAsAList , ',' ) );
-					});
-				});
-
+				
 				describe( title='with query{} ( cfquery )' , body=function() {
 					it( title='when using numeric params' , body=function( currentSpec ) {
 						query

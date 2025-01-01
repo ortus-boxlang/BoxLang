@@ -90,13 +90,9 @@ public class QueryParameter {
 		// allow nulls and null
 		this.isNullParam	= BooleanCaster.cast( param.getOrDefault( Key.nulls, param.getOrDefault( Key.nulls2, false ) ) );
 		this.isListParam	= BooleanCaster.cast( param.getOrDefault( Key.list, false ) );
-		String separator = StringCaster.cast( param.getOrDefault( Key.separator, "," ) );
-		// Allow a name key in the struct if passed as an array of structs
-		if ( name == null ) {
-			name = ( String ) param.getAsString( Key._NAME );
-		}
+		String	separator	= StringCaster.cast( param.getOrDefault( Key.separator, "," ) );
 
-		Object v = param.get( Key.value );
+		Object	v			= param.get( Key.value );
 		if ( this.isListParam ) {
 			if ( v instanceof Array ) {
 				// do nothing?

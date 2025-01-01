@@ -110,6 +110,34 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		assertEquals( 1, query.size() );
 	}
 
+	@EnabledIf( "tools.JDBCTestUtils#hasMySQLModule" )
+	@DisplayName( "It can execute multiple statements in a single queryExecute() call" )
+	@Test
+	public void testMultipleStatements() {
+		assertDoesNotThrow( () -> instance.executeStatement(
+		    """
+		           result = queryExecute( '
+		     	   TRUNCATE TABLE developers;
+		               INSERT INTO developers (id) VALUES (111);
+		               INSERT INTO developers (id) VALUES (222);
+		               SELECT * FROM developers;
+		               INSERT INTO developers (id) VALUES (333);
+		               INSERT INTO developers (id) VALUES (444);
+		               ',
+		      [],
+		      { "datasource" : "mysqldatasource" }
+		           );
+		    """, context )
+		);
+		Object multiStatementQueryReturn = variables.get( Key.of( "result" ) );
+		assertThat( multiStatementQueryReturn ).isInstanceOf( Query.class );
+		assertEquals( 2, ( ( Query ) multiStatementQueryReturn ).size(), "For compatibility, the last result should be returned" );
+
+		Query newTableRows = ( Query ) instance
+		    .executeStatement( "queryExecute( 'SELECT * FROM developers WHERE id IN (111,222)', [],{ 'datasource' : 'mysqldatasource' } );", context );
+		assertEquals( 2, newTableRows.size() );
+	}
+
 	@DisplayName( "It can execute a query with no bindings on the default datasource" )
 	@Test
 	public void testSimpleExecute() {
@@ -328,7 +356,7 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		    """,
 		    context ) );
 
-		assertThat( e.getMessage() ).isEqualTo( "Missing param in query: [id]. SQL: SELECT * FROM developers WHERE id = :id" );
+		assertThat( e.getMessage() ).isEqualTo( "Named parameter [:id] not provided to query." );
 		assertNull( variables.get( result ) );
 	}
 
@@ -505,7 +533,7 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		IStruct result = StructCaster.cast( resultObject );
 
 		assertThat( result ).containsKey( Key.sql );
-		assertEquals( "SELECT * FROM developers WHERE role = ?", result.getAsString( Key.sql ) );
+		assertEquals( "SELECT * FROM developers WHERE role = 'Developer'", result.getAsString( Key.sql ) );
 
 		assertThat( result ).containsKey( Key.sqlParameters );
 		assertEquals( Array.of( "Developer" ), result.getAsArray( Key.sqlParameters ) );
@@ -641,28 +669,6 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
 		IStruct meta = variables.getAsStruct( result );
 		assertThat( DoubleCaster.cast( meta.get( Key.generatedKey ), false ) ).isEqualTo( 1.0d );
-	}
-
-	@DisplayName( "It can execute multiple statements in a single queryExecute() call like Lucee" )
-	@Test
-	public void testMultipleStatements() {
-		// ACF 2023 will throw an error on this type of fooferall, but Lucee is fine with it and IMHO we should support it.
-		assertDoesNotThrow( () -> instance.executeStatement(
-		    """
-		           result = queryExecute( '
-		               SELECT * FROM developers;
-		               INSERT INTO developers (id) VALUES (111);
-		               INSERT INTO developers (id) VALUES (222)
-		               '
-		           );
-		    """, context )
-		);
-		Object multiStatementQueryReturn = variables.get( Key.of( "result" ) );
-		assertThat( multiStatementQueryReturn ).isInstanceOf( Query.class );
-		assertEquals( 4, ( ( Query ) multiStatementQueryReturn ).size(), "For compatibility, only the first result should be returned" );
-
-		Query newTableRows = ( Query ) instance.executeStatement( "queryExecute( 'SELECT * FROM developers WHERE id IN (111,222)' );", context );
-		assertEquals( 2, newTableRows.size() );
 	}
 
 	@DisplayName( "It can return cached query results within the cache timeout" )

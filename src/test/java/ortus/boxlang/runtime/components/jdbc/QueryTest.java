@@ -391,7 +391,7 @@ public class QueryTest extends BaseJDBCTest {
 		IStruct result = StructCaster.cast( resultObject );
 
 		assertThat( result ).containsKey( Key.sql );
-		assertEquals( "SELECT * FROM developers WHERE role = ?", result.getAsString( Key.sql ) );
+		assertEquals( "SELECT * FROM developers WHERE role = 'Developer'", result.getAsString( Key.sql ) );
 
 		assertThat( result ).containsKey( Key.cached );
 		assertThat( result.getAsBoolean( Key.cached ) ).isEqualTo( false );

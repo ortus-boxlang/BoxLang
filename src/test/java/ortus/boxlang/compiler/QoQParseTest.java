@@ -19,9 +19,9 @@ import static com.google.common.truth.Truth.assertThat;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.compiler.parser.ParsingResult;
 import ortus.boxlang.compiler.parser.SQLParser;
 import ortus.boxlang.runtime.BoxRuntime;
@@ -68,12 +68,10 @@ public class QoQParseTest {
 		    where true = true
 		    order by t.baz
 		    limit 5
-		      """
-		);
+		      """ );
 		IStruct			data	= Struct.of(
 		    "file", null,
-		    "result", result
-		);
+		    "result", result );
 		BoxRuntime.getInstance().announce( "onParse", data );
 
 		assertThat( result ).isNotNull();
@@ -566,20 +564,27 @@ public class QoQParseTest {
 	public void testsdf() {
 		instance.executeSource(
 		    """
-		    q = queryNew("id","numeric",[[1]]);
+		       queryWithDataIn = QueryNew('id,value', 'integer,varchar',[[1,'a'],[2,'b'],[3,'c'],[4,'d'],[5,'e']]);
+		     actual = QueryExecute(
+		     				params = [
+		     					{ value: 3  },
+		     					{ value: '3,4' , sqltype: 'numeric' , list = true }
+		     				],
+		     				options = {
+		     					dbtype: 'query'
+		     				},
+		     				sql = "
+		     					SELECT
+		     						id,
+		     						value
+		     					FROM queryWithDataIn
+		     					WHERE id = ?
+		     		and id IN ( ? )
+		    "	);
 
-		      queryExecute("
-		      	select id
-		      	from q
-		      	where id= :id
-		      	",
-		      	{
-		      		'id': {type="integer", value=""}
-		      	},
-		      	{dbtype:"query"}
-		      );
-		                 """,
-		    context );
+		     			println(actual)
+		                   			                          """,
+		    context, BoxSourceType.CFSCRIPT );
 	}
 
 }
