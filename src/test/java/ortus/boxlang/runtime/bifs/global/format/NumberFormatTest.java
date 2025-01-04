@@ -261,4 +261,16 @@ public class NumberFormatTest {
 		assertEquals( variables.getAsString( result ), "12,345" );
 	}
 
+	// https://ortussolutions.atlassian.net/browse/BL-899
+	@DisplayName( "It tests the BIF LSNumberFormat will not add leading zeroes to int < 10" )
+	@Test
+	public void testLeadingZeros() {
+		instance.executeSource(
+		    """
+		    result = LSnumberFormat( 1 );
+		    """,
+		    context );
+		assertEquals( "1", variables.getAsString( result ) );
+	}
+
 }
