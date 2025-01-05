@@ -898,9 +898,12 @@ public class AsmHelper {
 		    false );
 		tracker.storeNewVariable( Opcodes.ASTORE ).nodes().forEach( ( node ) -> node.accept( methodVisitor ) );
 
-		supplier.get().forEach( node -> node.accept( methodVisitor ) );
+		var nodes = supplier.get();
 
-		if ( implicityReturnNull && !returnType.equals( Type.VOID_TYPE ) ) {
+		nodes.forEach( node -> node.accept( methodVisitor ) );
+
+		if ( ( implicityReturnNull && !returnType.equals( Type.VOID_TYPE ) )
+		    || ( nodes.size() == 0 && !returnType.equals( Type.VOID_TYPE ) ) ) {
 			// push a null onto the stack so that we can return it if there isn't an explicity return
 			methodVisitor.visitInsn( Opcodes.ACONST_NULL );
 		}

@@ -168,6 +168,22 @@ public class BoxRuntimeTest {
 
 	}
 
+	@DisplayName( "It can execute an empty script" )
+	@Test
+	public void testItCanRunAnEmptyScript() {
+
+		BoxRuntime	instance	= BoxRuntime.getInstance( true );
+		IBoxContext	context		= new ScriptingRequestBoxContext();
+
+		instance.executeSource(
+		    """
+		    // Testing code here
+		    """,
+		    context
+		);
+
+	}
+
 	@DisplayName( "It can get the default file extensions" )
 	@Test
 	public void testItCanGetTheDefaultFileExtensions() {
