@@ -47,7 +47,7 @@ jobs:
           gradle-version: "8.7"
 
       - name: Install TestBox
-        - uses: Ortus-Solutions/commandbox-action@v1.0.3
+        uses: Ortus-Solutions/commandbox-action@v1.0.3
         with:
           cmd: install testbox@be src/test/resources --verbose --noSave
 
