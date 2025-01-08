@@ -231,7 +231,9 @@ public abstract class Boxpiler implements IBoxpiler {
 		var			classPool	= getClassPool( classInfo.classPoolName() );
 		classPool.putIfAbsent( classInfo.fqn().toString(), classInfo );
 		// If the new class is newer than the one on disk, recompile it
-		if ( classPool.get( classInfo.fqn().toString() ).lastModified() < classInfo.lastModified() ) {
+		long	lastModified	= classPool.get( classInfo.fqn().toString() ).lastModified();
+		long	lastModified2	= classInfo.lastModified();
+		if ( ( lastModified > 0 ) && ( lastModified2 > 0 ) && ( lastModified != lastModified2 ) ) {
 			try {
 				// Don't know if this does anything, but calling it for good measure
 				classPool.get( classInfo.fqn().toString() ).getClassLoader().close();
@@ -276,7 +278,9 @@ public abstract class Boxpiler implements IBoxpiler {
 		var			classPool	= getClassPool( classInfo.classPoolName() );
 		classPool.putIfAbsent( classInfo.fqn().toString(), classInfo );
 		// If the new class is newer than the one on disk, recompile it
-		if ( classPool.get( classInfo.fqn().toString() ).lastModified() < classInfo.lastModified() ) {
+		long	lastModified	= classPool.get( classInfo.fqn().toString() ).lastModified();
+		long	lastModified2	= classInfo.lastModified();
+		if ( ( lastModified > 0 ) && ( lastModified2 > 0 ) && ( lastModified != lastModified2 ) ) {
 			try {
 				// Don't know if this does anything, but calling it for good measure
 				classPool.get( classInfo.fqn().toString() ).getClassLoader().close();

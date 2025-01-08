@@ -24,7 +24,6 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.TestFactory;
 
@@ -61,13 +60,20 @@ public class TestBoxTest {
 	}
 
 	@TestFactory
-	@Disabled
 	Stream<DynamicTest> runDynamicTests() {
 
 		// @formatter:off
 		instance.executeSource(
 		    """
-			application name="testbox runner" mappings={"/testbox":expandPath("/src/test/resources/testbox")};
+			testboxDir = expandPath("/src/test/resources/testbox");
+			if( !directoryExists( testboxDir ) ) {
+				// Assumes CommandBox is installed.  Avoid this by installing TestBox yourself via another means before running the tests
+				println( "Installing TestBox into: " & testboxDir );
+				response = systemExecute( name = "box", arguments = [ "install", "testbox@be", "src/test/resources", "--verbose", "--noSave" ], timeout=60 );
+				println( response );
+			}
+
+			application name="testbox runner" mappings={"/testbox":testboxDir};
 
 			result = new testbox.system.TestBox().runRaw(  directory='src.test.java.external.specs' ).getMemento();
 

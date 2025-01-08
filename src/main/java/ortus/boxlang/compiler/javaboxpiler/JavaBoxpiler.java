@@ -18,7 +18,9 @@
 package ortus.boxlang.compiler.javaboxpiler;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
@@ -32,8 +34,12 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import javax.tools.DiagnosticCollector;
+import javax.tools.FileObject;
+import javax.tools.ForwardingJavaFileManager;
 import javax.tools.JavaCompiler;
+import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
+import javax.tools.SimpleJavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
@@ -172,7 +178,7 @@ public class JavaBoxpiler extends Boxpiler {
 	public void compileClassInfo( String classPoolName, String FQN ) {
 		if ( BoxRuntime.getInstance().inDebugMode() ) {
 			// Some debugging to help testing
-			System.out.println( "Compiling " + FQN );
+			System.out.println( "Java BoxPiler Compiling " + FQN );
 		}
 		ClassInfo classInfo = getClassPool( classPoolName ).get( FQN );
 		if ( classInfo == null ) {
@@ -186,12 +192,12 @@ public class JavaBoxpiler extends Boxpiler {
 				return;
 			}
 			ParsingResult result = parseOrFail( sourceFile );
-			compileSource( generateJavaSource( result.getRoot(), classInfo ), classInfo.fqn().toString(), classPoolName );
+			compileSource( generateJavaSource( result.getRoot(), classInfo ), classInfo.fqn().toString(), classPoolName, classInfo.lastModified() );
 		} else if ( classInfo.source() != null ) {
 			ParsingResult result = parseOrFail( classInfo.source(), classInfo.sourceType(), classInfo.isClass() );
-			compileSource( generateJavaSource( result.getRoot(), classInfo ), classInfo.fqn().toString(), classPoolName );
+			compileSource( generateJavaSource( result.getRoot(), classInfo ), classInfo.fqn().toString(), classPoolName, classInfo.lastModified() );
 		} else if ( classInfo.interfaceProxyDefinition() != null ) {
-			compileSource( generateProxyJavaSource( classInfo ), classInfo.fqn().toString(), classPoolName );
+			compileSource( generateProxyJavaSource( classInfo ), classInfo.fqn().toString(), classPoolName, classInfo.lastModified() );
 		} else {
 			throw new BoxRuntimeException( "Unknown class info type: " + classInfo.toString() );
 		}
@@ -204,7 +210,7 @@ public class JavaBoxpiler extends Boxpiler {
 	 * @param fqn        The fully qualified name of the class
 	 */
 	@SuppressWarnings( "unused" )
-	private void compileSource( String javaSource, String fqn, String classPoolName ) {
+	private void compileSource( String javaSource, String fqn, String classPoolName, Long lastModifiedDate ) {
 		DynamicObject trans = frTransService.startTransaction( "Java Compilation", fqn );
 
 		// This is just for debugging. Remove later.
@@ -214,12 +220,45 @@ public class JavaBoxpiler extends Boxpiler {
 			DiagnosticCollector<JavaFileObject>	diagnostics			= new DiagnosticCollector<>();
 
 			// Get the standard file manager
-			StandardJavaFileManager				fileManager			= compiler.getStandardFileManager( diagnostics, null, null );
-
+			StandardJavaFileManager				standardFileManager	= compiler.getStandardFileManager( diagnostics, null, null );
 			// Set the location where .class files should be written
 			String								classPoolDiskPrefix	= RegexBuilder.of( classPoolName, RegexBuilder.NON_ALPHANUMERIC ).replaceAllAndGet( "_" );
 
-			fileManager.setLocation( StandardLocation.CLASS_OUTPUT, Arrays.asList( classGenerationDirectory.resolve( classPoolDiskPrefix ).toFile() ) );
+			standardFileManager.setLocation( StandardLocation.CLASS_OUTPUT, Arrays.asList( classGenerationDirectory.resolve( classPoolDiskPrefix ).toFile() ) );
+			JavaFileManager					fileManager		= new ForwardingJavaFileManager<StandardJavaFileManager>( standardFileManager ) {
+
+																@Override
+																public JavaFileObject getJavaFileForOutput( Location location, String className,
+																    JavaFileObject.Kind kind, FileObject sibling ) throws IOException {
+																	SimpleJavaFileObject	d;
+																	JavaFileObject			f	= this.fileManager.getJavaFileForOutput( location, className,
+																	    kind, sibling );
+																	return new SimpleJavaFileObject( f.toUri(), kind ) {
+
+																														@Override
+																														public OutputStream openOutputStream()
+																														    throws IOException {
+																															return new FileOutputStream(
+																															    f.toUri().getPath() ) {
+
+																																												@Override
+																																												public void close()
+																																												    throws IOException {
+																																													super.close();
+																																													if ( lastModifiedDate > 0 ) {
+																																														Paths
+																																														    .get(
+																																														        f.toUri() )
+																																														    .toFile()
+																																														    .setLastModified(
+																																														        lastModifiedDate );
+																																													}
+																																												}
+																																											};
+																														}
+																													};
+																}
+															};
 
 			String							javaRT			= System.getProperty( "java.class.path" );
 			String							jarPath			= Paths.get( getClass().getProtectionDomain().getCodeSource().getLocation().toURI() ).toString();
@@ -327,4 +366,39 @@ public class JavaBoxpiler extends Boxpiler {
 		return diskClassUtil.readClassBytes( classInfo.classPoolName(), classInfo.fqn().toString() );
 	}
 
+	/*
+	 * private static class CustomOutputStream extends OutputStream {
+	 * 
+	 * private final OutputStream delegate;
+	 * private final Path path;
+	 * private final Instant customModifiedDate;
+	 * 
+	 * public CustomOutputStream( OutputStream delegate, Path path, Instant customModifiedDate ) {
+	 * this.delegate = delegate;
+	 * this.path = path;
+	 * this.customModifiedDate = customModifiedDate;
+	 * }
+	 * 
+	 * @Override
+	 * public void write( int b ) throws IOException {
+	 * delegate.write( b );
+	 * }
+	 * 
+	 * @Override
+	 * public void write( byte[] b ) throws IOException {
+	 * delegate.write( b );
+	 * }
+	 * 
+	 * @Override
+	 * public void write( byte[] b, int off, int len ) throws IOException {
+	 * delegate.write( b, off, len );
+	 * }
+	 * 
+	 * @Override
+	 * public void close() throws IOException {
+	 * delegate.close();
+	 * Files.setLastModifiedTime( path, FileTime.from( customModifiedDate ) );
+	 * }
+	 * }
+	 */
 }

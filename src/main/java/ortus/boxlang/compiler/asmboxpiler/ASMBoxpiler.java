@@ -22,6 +22,7 @@ import ortus.boxlang.compiler.ast.BoxScript;
 import ortus.boxlang.compiler.ast.visitor.QueryEscapeSingleQuoteVisitor;
 import ortus.boxlang.compiler.parser.Parser;
 import ortus.boxlang.compiler.parser.ParsingResult;
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
@@ -75,6 +76,10 @@ public class ASMBoxpiler extends Boxpiler {
 
 	@Override
 	public void compileClassInfo( String classPoolName, String FQN ) {
+		if ( BoxRuntime.getInstance().inDebugMode() ) {
+			// Some debugging to help testing
+			System.out.println( "ASM BoxPiler Compiling " + FQN );
+		}
 		ClassInfo classInfo = getClassPool( classPoolName ).get( FQN );
 		if ( classInfo == null ) {
 			throw new BoxRuntimeException( "ClassInfo not found for " + FQN );

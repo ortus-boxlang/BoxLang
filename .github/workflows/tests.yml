@@ -46,6 +46,11 @@ jobs:
         with:
           gradle-version: "8.7"
 
+      - name: Install TestBox
+        - uses: Ortus-Solutions/commandbox-action@v1.0.3
+        with:
+          cmd: install testbox@be src/test/resources --verbose --noSave
+
       # - name: Setup Database and Fixtures
       #   run: |
       #     sudo systemctl start mysql.service
