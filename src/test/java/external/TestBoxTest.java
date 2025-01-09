@@ -123,7 +123,7 @@ public class TestBoxTest {
 				return acc.append( mapSuites( bundle.suiteStats )
 					// Slap the bundle name on the front of each spec from all the nested suites
 					.map( s => {
-						s.name = bundle.path & ' - ' & s.name;
+						s.name = bundle.path.replace('src.test.java.external.specs.', '') & ' - ' & s.name;
 						return s;
 					} ), true );
 			}, [] );
