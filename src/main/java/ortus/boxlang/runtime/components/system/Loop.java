@@ -246,8 +246,17 @@ public class Loop extends Component {
 
 	private BodyResult _invokeRange( IBoxContext context, Double from, Double to, Number step, String index, ComponentBody body, IStruct executionState,
 	    String label ) {
+		double											toD			= to.doubleValue();
+		double											fromD		= from.doubleValue();
+		double											stepD		= step.doubleValue();
+		// If step is positive, we loop until we're greater than or equal to the "to" value, otherwise we loop until we're less than or equal to the "to" value
+		java.util.function.Function<Double, Boolean>	condition	= stepD > 0 ? i -> i <= toD : i -> i >= toD;
+		// Prevent infinite loops
+		if ( stepD == 0 ) {
+			return DEFAULT_RETURN;
+		}
 		// Loop over array, executing body every time
-		for ( int i = from.intValue(); i <= to.intValue(); i = i + step.intValue() ) {
+		for ( double i = fromD; condition.apply( i ); i = i + stepD ) {
 			// Set the index and item variables
 			ExpressionInterpreter.setVariable( context, index, i );
 			// Run the code inside of the output loop

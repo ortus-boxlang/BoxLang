@@ -392,16 +392,68 @@ public class LoopTest {
 		instance.executeSource(
 		    """
 		     function foo( required string name ) {
-		     	loop condition=arguments.name == "brad" {
+		    	 loop condition=arguments.name == "brad" {
 		    return getFunctionCalledName();
-		     		break;
-		     	}
+		    		 break;
+		    	 }
 		     }
 
 		     result = foo( "brad" );
-		           		  """,
+		    				 """,
 		    context, BoxSourceType.BOXSCRIPT );
 		assertThat( variables.getAsString( Key.of( "result" ) ) ).isEqualTo( "foo" );
+	}
+
+	@Test
+	public void testLoopToFrom() {
+		instance.executeSource(
+		    """
+		    	result = ""
+		    	loop from="1" to="5" step="1" index="i" {
+		    		result &= i;
+		    	}
+		    """,
+		    context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.getAsString( Key.of( "result" ) ) ).isEqualTo( "12345" );
+	}
+
+	@Test
+	public void testLoopToFromNegativeStep() {
+		instance.executeSource(
+		    """
+		    	result = ""
+		    	loop from="5" to="1" step="-1" index="i" {
+		    		result &= i;
+		    	}
+		    """,
+		    context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.getAsString( Key.of( "result" ) ) ).isEqualTo( "54321" );
+	}
+
+	@Test
+	public void testLoopToFromZeroStep() {
+		instance.executeSource(
+		    """
+		    	result = ""
+		    	loop from="1" to="5" step="0" index="i" {
+		    		result &= i;
+		    	}
+		    """,
+		    context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.getAsString( Key.of( "result" ) ) ).isEqualTo( "" );
+	}
+
+	@Test
+	public void testLoopToFromDecimalStep() {
+		instance.executeSource(
+		    """
+		    	result = ""
+		    	loop from="1" to="10" step="1.5" index="i" {
+		    		result = result.listAppend(i)
+		    	}
+		    """,
+		    context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.getAsString( Key.of( "result" ) ) ).isEqualTo( "1,2.5,4,5.5,7,8.5,10" );
 	}
 
 }
