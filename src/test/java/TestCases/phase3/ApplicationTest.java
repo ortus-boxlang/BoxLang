@@ -295,4 +295,38 @@ public class ApplicationTest {
 		assertThat( zone.getId() ).isEqualTo( "America/Los_Angeles" );
 	}
 
+	@DisplayName( "Can update application without name" )
+	@Test
+	public void testUpdateApplicationWithoutName() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		        application
+					name="testUpdateApplicationWithoutName"
+					sessionmanagement="true";
+
+				firstSessionID = session.sessionID;
+
+				newMappings = {
+					"/UpdateApplicationWithoutName" : "/src/test/resources/libs/"
+				}
+
+				application
+					action        ="update"
+					mappings      ="#newMappings#";
+
+				secondSessionID = session.sessionID;
+
+				result = GetApplicationMetadata();
+			""", context );
+		// @formatter:on
+
+		IStruct result = variables.getAsStruct( Key.result );
+		assertThat( result.get( Key._NAME ) ).isEqualTo( "testUpdateApplicationWithoutName" );
+		assertThat( result.get( Key.mappings ) ).isNotNull();
+		assertThat( result.get( Key.mappings ) ).isInstanceOf( IStruct.class );
+		assertThat( result.getAsStruct( Key.mappings ).get( "/UpdateApplicationWithoutName" ) ).isEqualTo( "/src/test/resources/libs/" );
+		assertThat( variables.get( Key.of( "firstSessionID" ) ) ).isEqualTo( variables.get( Key.of( "secondSessionID" ) ) );
+	}
+
 }
