@@ -23,6 +23,7 @@ import java.math.BigInteger;
 import org.apache.commons.lang3.math.NumberUtils;
 
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 import ortus.boxlang.runtime.types.util.MathUtil;
 
@@ -43,8 +44,21 @@ public class NumberCaster implements IBoxCaster {
 	 *
 	 * @return The Number value
 	 */
+	public static CastAttempt<Number> attempt( Object object, boolean castDates ) {
+		return CastAttempt.ofNullable( cast( object, false, castDates ) );
+	}
+
+	/**
+	 * Tests to see if the value can be cast to a Number.
+	 * Returns a {@code CastAttempt<T>} which will contain the result if casting was
+	 * was successfull, or can be interogated to proceed otherwise.
+	 *
+	 * @param object The value to cast to a Number
+	 *
+	 * @return The Number value
+	 */
 	public static CastAttempt<Number> attempt( Object object ) {
-		return CastAttempt.ofNullable( cast( object, false ) );
+		return attempt( object, false );
 	}
 
 	/**
@@ -59,6 +73,17 @@ public class NumberCaster implements IBoxCaster {
 	}
 
 	/**
+	 * Used to cast anything to a Number, throwing exception if we fail
+	 *
+	 * @param object The value to cast to a Number
+	 *
+	 * @return The Number value
+	 */
+	public static Number cast( boolean castDates, Object object ) {
+		return cast( object, true, castDates );
+	}
+
+	/**
 	 * Used to cast anything to a Number
 	 *
 	 * @param object The value to cast to a Number
@@ -67,6 +92,18 @@ public class NumberCaster implements IBoxCaster {
 	 * @return The Number value
 	 */
 	public static Number cast( Object object, Boolean fail ) {
+		return cast( object, fail, false );
+	}
+
+	/**
+	 * Used to cast anything to a Number
+	 *
+	 * @param object The value to cast to a Number
+	 * @param fail   If true, throw exception if we fail
+	 *
+	 * @return The Number value
+	 */
+	public static Number cast( Object object, Boolean fail, boolean castDates ) {
 		if ( object == null ) {
 			return 0;
 		}
@@ -108,6 +145,11 @@ public class NumberCaster implements IBoxCaster {
 					return 0;
 				}
 			}
+		}
+
+		if ( castDates && DateTimeCaster.isKnownDateClass( object ) ) {
+			DateTime dObject = DateTimeCaster.cast( object );
+			return dObject.toEpochMillis();
 		}
 
 		// Try to parse the string as a Number
