@@ -22,6 +22,8 @@ import java.util.Map;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Query;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.StructMapWrapper;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
@@ -88,6 +90,11 @@ public class StructCaster implements IBoxCaster {
 
 		if ( object instanceof Map<?, ?> map ) {
 			return StructMapWrapper.of( ( Map<Object, Object> ) map );
+		}
+
+		// Special Productivity Hack: If it's a Query object, take the first row and return it as a struct
+		if ( object instanceof Query query ) {
+			return query.isEmpty() ? new Struct() : query.getRowAsStruct( 0 );
 		}
 
 		if ( fail ) {

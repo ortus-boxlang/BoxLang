@@ -19,6 +19,7 @@
 
 package ortus.boxlang.runtime.bifs.global.struct;
 
+import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -106,6 +107,30 @@ public class StructKeyExistsTest {
 		    """,
 		    context );
 		assertTrue( variables.getAsBoolean( result ) );
+	}
+
+	@DisplayName( "It can work on a query row object" )
+	@Test
+	public void testQueryRow() {
+		instance.executeSource(
+		    """
+		    q = queryNew("col1,col2","string, integer", [ "foo", 42 ]);
+		      	result = structKeyExists( q, "col1" );
+		      """,
+		    context );
+		assertThat( variables.getAsBoolean( result ) ).isTrue();
+	}
+
+	@DisplayName( "It can work on a query row object that's empty and return an empty struct" )
+	@Test
+	public void testEmptyQueryRow() {
+		instance.executeSource(
+		    """
+		    q = queryNew("col1,col2","string, integer");
+		      	result = structKeyExists( q, "col1" );
+		      """,
+		    context );
+		assertThat( variables.getAsBoolean( result ) ).isFalse();
 	}
 
 }
