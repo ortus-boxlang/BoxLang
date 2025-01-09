@@ -33,6 +33,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.exceptions.UnmodifiableException;
@@ -110,7 +111,7 @@ public class QueryTest {
 	@DisplayName( "Query Column assignment" )
 	@Disabled( "Issue with member function vs java method" )
 	@Test
-	public void testColumnAssignemtnQuery() {
+	public void testColumnAssignmentQuery() {
 
 		// @formatter:off
 		instance.executeSource(
@@ -226,6 +227,24 @@ public class QueryTest {
 		    	myQry.addColumn("brad")
 		    """,
 		    context ) );
+	}
+
+	@Test
+	public void testQueryColumnToArrayBIF() {
+
+		instance.executeSource(
+		    """
+		      	myQry = queryNew( "col,col2", "numeric,varchar", [ [ 1, "brad,luis" ], [ 2, "" ], [ 3, "" ] ] );
+		    colAvg = arrayAvg( myQry.col );
+		    valList = listToArray( myQry.col2 );
+
+		      """,
+		    context );
+		assertThat( variables.getAsNumber( Key.of( "colAvg" ) ).intValue() ).isEqualTo( 2 );
+		assertThat( variables.get( Key.of( "valList" ) ) ).isInstanceOf( Array.class );
+		assertThat( variables.getAsArray( Key.of( "valList" ) ).size() ).isEqualTo( 2 );
+		assertThat( variables.getAsArray( Key.of( "valList" ) ).get( 0 ) ).isEqualTo( "brad" );
+		assertThat( variables.getAsArray( Key.of( "valList" ) ).get( 1 ) ).isEqualTo( "luis" );
 	}
 
 }
