@@ -54,11 +54,11 @@ jobs:
       #     mysql -u${{ env.DB_USER }} -p${{ env.DB_PASSWORD }} < test-harness/tests/resources/coolblog.sql
 
       - name: Setup CommandBox CLI Linux
-        if: ${{ matrix.os }} != 'windows-latest'
+        if: ${{ matrix.os != 'windows-latest' }}
         uses: Ortus-Solutions/setup-commandbox@v2.0.1
 
       - name: Setup CommandBox CLI Windows
-        if: ${{ matrix.os }} == 'windows-latest'
+        if: ${{ matrix.os == 'windows-latest' }}
         run: choco install commandbox
         
       - name: Install TestBox
