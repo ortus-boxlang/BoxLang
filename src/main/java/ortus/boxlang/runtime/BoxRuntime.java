@@ -1145,14 +1145,14 @@ public class BoxRuntime implements java.io.Closeable {
 			// Load the class
 			Class<IBoxRunnable> targetClass = RunnableLoader.getInstance().loadClass(
 			    ResolvedFilePath.of( Paths.get( templatePath ) ),
-			    this.runtimeContext );
+			    context );
 			executeClass( targetClass, templatePath, context, args );
 		} else {
 			// Load the template
-			BoxTemplate targetTemplate = RunnableLoader.getInstance().loadTemplateAbsolute(
-			    this.runtimeContext,
-			    ResolvedFilePath.of( Paths.get( templatePath ) ) );
-			executeTemplate( targetTemplate, context );
+			BoxTemplate targetTemplate = RunnableLoader.getInstance().loadTemplateRelative(
+			    context,
+			    templatePath );
+			executeTemplate( targetTemplate, templatePath, context );
 		}
 	}
 
@@ -1312,14 +1312,28 @@ public class BoxRuntime implements java.io.Closeable {
 	 * @param context  The context to execute the template in
 	 */
 	public void executeTemplate( BoxTemplate template, IBoxContext context ) {
-		String templatePath = template.getRunnablePath().absolutePath().toString();
+		executeTemplate( template, template.getRunnablePath().absolutePath().toString(), context );
+	}
+
+	/**
+	 * Execute a single template in an existing context using an already-loaded
+	 * template runnable
+	 *
+	 * @param template A template to execute
+	 * @param context  The context to execute the template in
+	 */
+	public void executeTemplate( BoxTemplate template, String templatePath, IBoxContext context ) {
 		instance.logger.debug( "Executing template [{}]", template.getRunnablePath() );
 
-		IBoxContext				scriptingContext	= ensureRequestTypeContext( context,
-		    template.getRunnablePath().absolutePath().toUri() );
-		BaseApplicationListener	listener			= scriptingContext.getParentOfType( RequestBoxContext.class )
+		IBoxContext scriptingContext;
+		try {
+			scriptingContext = ensureRequestTypeContext( context, new URI( templatePath ) );
+		} catch ( URISyntaxException e ) {
+			throw new BoxRuntimeException( "Invalid template path to execute.", e );
+		}
+		BaseApplicationListener	listener		= scriptingContext.getParentOfType( RequestBoxContext.class )
 		    .getApplicationListener();
-		Throwable				errorToHandle		= null;
+		Throwable				errorToHandle	= null;
 		RequestBoxContext.setCurrent( scriptingContext.getParentOfType( RequestBoxContext.class ) );
 		ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
 		try {

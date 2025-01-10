@@ -21,6 +21,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 /**
  * I represent a default Application listener
@@ -32,8 +33,8 @@ public class ApplicationDefaultListener extends BaseApplicationListener {
 	 *
 	 * @param context The context to use
 	 */
-	public ApplicationDefaultListener( RequestBoxContext context ) {
-		super( context );
+	public ApplicationDefaultListener( RequestBoxContext context, ResolvedFilePath baseTemplatePath ) {
+		super( context, baseTemplatePath );
 	}
 
 	/**

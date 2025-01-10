@@ -40,6 +40,8 @@ import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.util.BoxFQN;
+import ortus.boxlang.runtime.util.FileSystemUtil;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 /**
@@ -217,38 +219,37 @@ public class ApplicationService extends BaseService {
 	public BaseApplicationListener createApplicationListener( RequestBoxContext context, URI template ) {
 		BaseApplicationListener		listener;
 		ApplicationDescriptorSearch	searchResult	= null;
+		ResolvedFilePath			templatePath	= null;
 		if ( template != null ) {
 
 			// Look for an Application descriptor based on our lookup rules
 			String	directoryOfTemplate	= null;
 			String	packagePath			= "";
-			String	rootMapping			= context.getConfig().getAsStruct( Key.mappings )
-			    .getAsString( Key._slash );
 			if ( template.isAbsolute() ) {
+				templatePath		= ResolvedFilePath.of( template.getPath() );
 				directoryOfTemplate	= new File( template ).getParent();
 				searchResult		= fileLookup( directoryOfTemplate );
 			} else {
-				directoryOfTemplate = new File( template.toString() ).getParent();
-				while ( directoryOfTemplate != null ) {
-					if ( directoryOfTemplate.equals( File.separator ) ) {
-						searchResult = fileLookup( rootMapping );
-					} else {
-						searchResult = fileLookup( Paths.get( rootMapping, directoryOfTemplate ).toString() );
-					}
+				// This may not be the actual absolute path of the file if we're including a file which is being
+				// resolved via a mapping declared in the Application class, which we haven't yet created
+
+				templatePath = FileSystemUtil.expandPath( context, template.getPath().toString() );
+				Path	rootPath			= Paths.get( templatePath.mappingPath() );
+				Path	currentDirectory	= templatePath.absolutePath().getParent();
+				while ( currentDirectory != null && ( currentDirectory.startsWith( rootPath ) || currentDirectory.equals( rootPath ) ) ) {
+					searchResult = fileLookup( currentDirectory.toString() );
 					if ( searchResult != null ) {
-						// set packagePath to the relative path from the rootMapping to the
-						// directoryOfTemplate with slashes replaced with dots
-						packagePath = directoryOfTemplate.replace( File.separator, "." );
-						if ( packagePath.endsWith( "." ) ) {
-							packagePath = packagePath.substring( 0, packagePath.length() - 1 );
+						// Combine the mapping name with the relative path still left to the template
+						String mappingDotPath = templatePath.mappingName().equals( "/" ) ? ""
+						    : templatePath.mappingName().substring( 1 ).replace( File.separator, "." );
+						if ( !mappingDotPath.isBlank() && !mappingDotPath.endsWith( "." ) ) {
+							mappingDotPath += ".";
 						}
-						// trim leading .
-						if ( packagePath.startsWith( "." ) ) {
-							packagePath = packagePath.substring( 1 );
-						}
+						packagePath = new BoxFQN(
+						    mappingDotPath + currentDirectory.toString().substring( rootPath.toString().length() ).replace( File.separator, "." ) ).toString();
 						break;
 					}
-					directoryOfTemplate = new File( directoryOfTemplate ).getParent();
+					currentDirectory = currentDirectory.getParent();
 				}
 			}
 			// If we found an Application class, instantiate it
@@ -259,8 +260,8 @@ public class ApplicationService extends BaseService {
 					    RunnableLoader.getInstance()
 					        .loadClass(
 					            ResolvedFilePath.of(
-					                "/",
-					                rootMapping,
+					                templatePath.mappingName(),
+					                templatePath.mappingPath(),
 					                packagePath.replace( ".", File.separator ) + File.separator
 					                    + searchResult.path().getFileName(),
 					                searchResult.path() ),
@@ -268,28 +269,29 @@ public class ApplicationService extends BaseService {
 					    // We do NOT invoke init() on the Application class for CF compat
 					    .invokeConstructor( context, Key.noInit )
 					    .getTargetInstance(),
-					    context );
+					    context,
+					    templatePath );
 				} else {
 					// If we found a template, return a new empty ApplicationListener
 					listener = new ApplicationTemplateListener(
 					    RunnableLoader.getInstance().loadTemplateAbsolute(
 					        context,
 					        ResolvedFilePath.of(
-					            "/",
-					            rootMapping,
+					            templatePath.mappingName(),
+					            templatePath.mappingPath(),
 					            packagePath.replace( ".", File.separator )
 					                + File.separator
 					                + searchResult.path().getFileName(),
 					            searchResult.path() ) ),
-					    context );
+					    context, templatePath );
 				}
 			} else {
 				// If we didn't find an Application, return a new empty ApplicationListener
-				listener = new ApplicationDefaultListener( context );
+				listener = new ApplicationDefaultListener( context, templatePath );
 			}
 		} else {
 			// If we didn't have a template, return a new empty ApplicationListener
-			listener = new ApplicationDefaultListener( context );
+			listener = new ApplicationDefaultListener( context, templatePath );
 		}
 
 		// Announce event so modules can hook in

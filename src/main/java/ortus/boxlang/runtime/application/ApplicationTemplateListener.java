@@ -22,6 +22,7 @@ import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.runnables.BoxTemplate;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 /**
  * I represent an Application listener that wraps an Application template
@@ -38,8 +39,8 @@ public class ApplicationTemplateListener extends BaseApplicationListener {
 	 *
 	 * @param listener An Application class instance
 	 */
-	public ApplicationTemplateListener( BoxTemplate listener, RequestBoxContext context ) {
-		super( context );
+	public ApplicationTemplateListener( BoxTemplate listener, RequestBoxContext context, ResolvedFilePath baseTemplatePath ) {
+		super( context, baseTemplatePath );
 		this.listener = listener;
 		// Store the template path in the settings map
 		this.settings.put( Key.source, listener.getRunnablePath().absolutePath().toString() );
@@ -55,8 +56,6 @@ public class ApplicationTemplateListener extends BaseApplicationListener {
 	@Override
 	public void onRequest( IBoxContext context, Object[] args ) {
 		super.onRequest( context, args );
-		// Run Application template
-		listener.invoke( context );
 		// Then include the requested template
 		context.includeTemplate( ( String ) args[ 0 ] );
 	}
@@ -64,6 +63,8 @@ public class ApplicationTemplateListener extends BaseApplicationListener {
 	@Override
 	public boolean onRequestStart( IBoxContext context, Object[] args ) {
 		super.onRequestStart( context, args );
+		// Run Application template
+		listener.invoke( context );
 		return true;
 	}
 

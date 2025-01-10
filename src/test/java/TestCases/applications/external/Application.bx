@@ -1,0 +1,8 @@
+class {
+
+	request.externalapplicationbxran = true;
+	
+	function onRequestStart() {
+		request.externalonRequestStart = true;
+	}
+}

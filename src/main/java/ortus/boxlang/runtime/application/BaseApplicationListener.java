@@ -87,6 +87,14 @@ public abstract class BaseApplicationListener {
 	protected InterceptorPool				interceptorPool;
 
 	/**
+	 * The template, if any, which initiated this request.
+	 * For a web request, this is the URI
+	 * For a scripting request, this is the file being executed
+	 * Null for ad-hoc code execution.
+	 */
+	protected ResolvedFilePath				baseTemplatePath			= null;
+
+	/**
 	 * The available request pool interceptors
 	 */
 	private static final Key[]				REQUEST_INTERCEPTION_POINTS	= List.of(
@@ -169,8 +177,9 @@ public abstract class BaseApplicationListener {
 	 *
 	 * @param context The request context
 	 */
-	protected BaseApplicationListener( RequestBoxContext context ) {
-		this.context = context;
+	protected BaseApplicationListener( RequestBoxContext context, ResolvedFilePath baseTemplatePath ) {
+		this.context			= context;
+		this.baseTemplatePath	= baseTemplatePath;
 		context.setApplicationListener( this );
 		this.interceptorPool = new InterceptorPool( Key.appListener, BoxRuntime.getInstance() )
 		    .registerInterceptionPoint( REQUEST_INTERCEPTION_POINTS );
@@ -936,5 +945,9 @@ public abstract class BaseApplicationListener {
 		);
 
 		return true;
+	}
+
+	public ResolvedFilePath getBaseTemplatePath() {
+		return this.baseTemplatePath;
 	}
 }

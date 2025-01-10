@@ -20,7 +20,9 @@ package ortus.boxlang.runtime.bifs.global.system;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 @BoxBIF
 public class GetBaseTemplatePath extends BIF {
@@ -40,6 +42,14 @@ public class GetBaseTemplatePath extends BIF {
 	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		return context.findBaseTemplate().absolutePath().toString();
+		RequestBoxContext requestContext = context.getRequestContext();
+		if ( requestContext == null ) {
+			return "";
+		}
+		ResolvedFilePath basepath = requestContext.getApplicationListener().getBaseTemplatePath();
+		if ( basepath == null ) {
+			return "";
+		}
+		return basepath.absolutePath().toString();
 	}
 }
