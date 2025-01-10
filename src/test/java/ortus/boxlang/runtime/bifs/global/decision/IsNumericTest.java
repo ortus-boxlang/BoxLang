@@ -142,4 +142,21 @@ public class IsNumericTest {
 		assertFalse( variables.getAsBoolean( Key.of( "result" ) ) );
 	}
 
+	@DisplayName( "It will return false for a boolean value" )
+	@Test
+	public void testBooleanFalse() {
+		instance.executeSource(
+		    """
+		    	result = isNumeric( true )
+		    """,
+		    context );
+		assertFalse( variables.getAsBoolean( Key.of( "result" ) ) );
+		instance.executeSource(
+		    """
+		    	result = isNumeric( false )
+		    """,
+		    context );
+		assertFalse( variables.getAsBoolean( Key.of( "result" ) ) );
+	}
+
 }
