@@ -77,6 +77,20 @@ public class GetBaseTemplatePathTest {
 
 	}
 
+	@Test
+	public void testAppClassInMappingSub() {
+		instance.getConfiguration().mappings.put( "/secret", new java.io.File( "src/test/java/TestCases/applications/external" ).getAbsolutePath() );
+		context = getContext( "src/test/java/TestCases/applications/appClass/", "secret/sub1/index.bxm" );
+		instance.executeTemplate(
+		    "secret/sub1/index.bxm",
+		    context );
+
+		IScope	request		= context.getScopeNearby( RequestScope.name );
+		String	actualPath	= new java.io.File( "src/test/java/TestCases/applications/external/sub1/index.bxm" ).getAbsolutePath();
+		assertThat( request.get( "externalindexbxmBasePath" ) ).isEqualTo( actualPath );
+		assertThat( request.get( "externalincludexmBasePath" ) ).isEqualTo( actualPath );
+	}
+
 	private IBoxContext getContext( String rootPath, String template ) {
 		try {
 			return new ScriptingRequestBoxContext( new ConfigOverrideBoxContext( instance.getRuntimeContext(), config -> {
