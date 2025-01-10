@@ -52,7 +52,6 @@ public class IsNumericTest {
 
 	@AfterAll
 	public static void teardown() {
-
 	}
 
 	@BeforeEach
