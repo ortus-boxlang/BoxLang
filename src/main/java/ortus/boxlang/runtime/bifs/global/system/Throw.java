@@ -35,7 +35,7 @@ public class Throw extends BIF {
 	public Throw() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( false, "String", Key.message ),
+		    new Argument( false, "any", Key.message ),
 		    new Argument( false, "String", Key.type ),
 		    new Argument( false, "String", Key.detail ),
 		    new Argument( false, "String", Key.errorcode ),
@@ -64,7 +64,11 @@ public class Throw extends BIF {
 	 *                  CustomException will be thrown and this object will be used as the cause.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Throwable	exceptionToThrow;
+		Throwable exceptionToThrow;
+		if ( arguments.get( Key.message ) instanceof Throwable ) {
+			arguments.put( Key.object, arguments.get( Key.message ) );
+			arguments.put( Key.message, null );
+		}
 		String		message			= arguments.getAsString( Key.message );
 		String		detail			= arguments.getAsString( Key.detail );
 		String		errorcode		= arguments.getAsString( Key.errorcode );

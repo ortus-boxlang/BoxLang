@@ -187,4 +187,22 @@ public class ThrowTest {
 		assertThat( variables.get( Key.of( "type" ) ) ).isEqualTo( "DivideByZero" );
 	}
 
+	@Test
+	public void testThrowObjectUnnamed() {
+		//@formatter:off
+		instance.executeSource( """
+		try {
+			throw( type="MyCustomException" );
+		} catch ( e ) {
+			try{
+				throw( e );
+			} catch( e2 ) {
+				type = e2.type;
+			}
+		}
+		""", context, BoxSourceType.CFSCRIPT );
+		//@formatter:on
+		assertThat( variables.get( Key.of( "type" ) ) ).isEqualTo( "MyCustomException" );
+	}
+
 }
