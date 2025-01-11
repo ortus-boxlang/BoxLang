@@ -22,9 +22,6 @@ package ortus.boxlang.runtime.bifs.global.system;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,6 +35,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.util.FileSystemUtil;
 
 public class SessionInvalidateTest {
 
@@ -83,12 +81,8 @@ public class SessionInvalidateTest {
 	@DisplayName( "It tests onSessionEnd" )
 	@Test
 	public void testOnSessionEnd() {
-		try {
-			context = new ScriptingRequestBoxContext( instance.getRuntimeContext(),
-			    new URI( "src/test/java/ortus/boxlang/runtime/bifs/global/system/testApp/index.bxm" ) );
-		} catch ( URISyntaxException e ) {
-			throw new RuntimeException( e );
-		}
+		context = new ScriptingRequestBoxContext( instance.getRuntimeContext(),
+		    FileSystemUtil.createFileUri( "src/test/java/ortus/boxlang/runtime/bifs/global/system/testApp/index.bxm" ) );
 		instance.executeSource(
 		    """
 		    	application.brad = "wood";

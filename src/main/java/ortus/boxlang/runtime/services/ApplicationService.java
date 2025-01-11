@@ -221,19 +221,18 @@ public class ApplicationService extends BaseService {
 		ApplicationDescriptorSearch	searchResult	= null;
 		ResolvedFilePath			templatePath	= null;
 		if ( template != null ) {
-
 			// Look for an Application descriptor based on our lookup rules
 			String	directoryOfTemplate	= null;
 			String	packagePath			= "";
 			if ( template.isAbsolute() ) {
-				templatePath		= ResolvedFilePath.of( template.getPath() );
+				templatePath		= ResolvedFilePath.of( Paths.get( template ) );
 				directoryOfTemplate	= new File( template ).getParent();
 				searchResult		= fileLookup( directoryOfTemplate );
 			} else {
 				// This may not be the actual absolute path of the file if we're including a file which is being
 				// resolved via a mapping declared in the Application class, which we haven't yet created
 
-				templatePath = FileSystemUtil.expandPath( context, template.getPath().toString() );
+				templatePath = FileSystemUtil.expandPath( context, template.getPath() );
 				Path	rootPath			= Paths.get( templatePath.mappingPath() );
 				Path	currentDirectory	= templatePath.absolutePath().getParent();
 				while ( currentDirectory != null && ( currentDirectory.startsWith( rootPath ) || currentDirectory.equals( rootPath ) ) ) {

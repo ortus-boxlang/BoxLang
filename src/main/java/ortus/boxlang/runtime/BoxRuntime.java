@@ -88,6 +88,7 @@ import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 import ortus.boxlang.runtime.types.exceptions.MissingIncludeException;
 import ortus.boxlang.runtime.types.util.MathUtil;
 import ortus.boxlang.runtime.util.EncryptionUtil;
+import ortus.boxlang.runtime.util.FileSystemUtil;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 import ortus.boxlang.runtime.util.Timer;
 
@@ -1326,11 +1327,7 @@ public class BoxRuntime implements java.io.Closeable {
 		instance.logger.debug( "Executing template [{}]", template.getRunnablePath() );
 
 		IBoxContext scriptingContext;
-		try {
-			scriptingContext = ensureRequestTypeContext( context, new URI( templatePath ) );
-		} catch ( URISyntaxException e ) {
-			throw new BoxRuntimeException( "Invalid template path to execute.", e );
-		}
+		scriptingContext = ensureRequestTypeContext( context, FileSystemUtil.createFileUri( templatePath ) );
 		BaseApplicationListener	listener		= scriptingContext.getParentOfType( RequestBoxContext.class )
 		    .getApplicationListener();
 		Throwable				errorToHandle	= null;

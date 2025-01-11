@@ -20,9 +20,6 @@ package ortus.boxlang.runtime.bifs.global.system;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,6 +34,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.RequestScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.util.FileSystemUtil;
 
 public class GetBaseTemplatePathTest {
 
@@ -92,14 +90,9 @@ public class GetBaseTemplatePathTest {
 	}
 
 	private IBoxContext getContext( String rootPath, String template ) {
-		try {
-			return new ScriptingRequestBoxContext( new ConfigOverrideBoxContext( instance.getRuntimeContext(), config -> {
-				config.getAsStruct( Key.mappings ).put( "/", new java.io.File( rootPath ).getAbsolutePath() );
-				return config;
-			} ), new URI( template ) );
-		} catch ( URISyntaxException e ) {
-			throw new RuntimeException( e );
-		}
+		return new ScriptingRequestBoxContext( new ConfigOverrideBoxContext( instance.getRuntimeContext(), config -> {
+			config.getAsStruct( Key.mappings ).put( "/", new java.io.File( rootPath ).getAbsolutePath() );
+			return config;
+		} ), FileSystemUtil.createFileUri( template ) );
 	}
-
 }

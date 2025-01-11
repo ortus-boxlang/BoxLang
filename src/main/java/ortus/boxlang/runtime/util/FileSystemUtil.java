@@ -1187,4 +1187,35 @@ public final class FileSystemUtil {
 		return true;
 	}
 
+	/**
+	 * Creates a URI from a file path string
+	 * 
+	 * @param input the file path string
+	 * 
+	 * @return the URI
+	 * 
+	 * @throws Exception
+	 */
+	public static URI createFileUri( String input ) {
+		try {
+			if ( input.startsWith( "/" ) || input.contains( ":" ) ) {
+				// Absolute path: ensure "file://" scheme starts with "file:///"
+				// Convert backslashes to forward slashes and prepend "file:///"
+				if ( input.matches( "^[A-Za-z]:.*" ) ) {
+					// Windows absolute path (e.g., C:\path\to\file)
+					input = "file:///" + input.replace( "\\", "/" );
+				} else {
+					// Unix-style absolute path (e.g., /path/to/file)
+					input = "file://" + input.replace( "\\", "/" );
+				}
+				return new URI( input );
+			} else {
+				// Relative path: just replace backslashes with forward slashes
+				return new URI( input.replace( "\\", "/" ) );
+			}
+		} catch ( URISyntaxException e ) {
+			throw new RuntimeException( "The provided file path [" + input + "] is not a valid URI.", e );
+		}
+	}
+
 }
