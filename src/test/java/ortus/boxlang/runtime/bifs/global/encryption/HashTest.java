@@ -35,6 +35,9 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
+
+import java.util.Objects;
 
 public class HashTest {
 
@@ -175,6 +178,18 @@ public class HashTest {
 		var result = variables.get( Key.of( "result" ) );
 		assertThat( result ).isInstanceOf( String.class );
 		assertThat( variables.getAsString( Key.of( "result" ) ).length() ).isEqualTo( 32 );
+	}
+
+	@DisplayName( "Tests quick hash algorithm" )
+	@Test
+	public void testQuickHash() {
+		instance.executeSource(
+		    """
+		    result = hash( "foo", "quick" );
+		    """,
+		    context );
+		assertThat( variables.getAsString( Key.of( "result" ) ).length() ).isEqualTo( 16 );
+		assertThat( variables.getAsString( Key.of( "result" ) ) ).isEqualTo( "4d780c14822d4653" );
 	}
 
 	@DisplayName( "It will provide a consistent output and handle iterations correctly" )
