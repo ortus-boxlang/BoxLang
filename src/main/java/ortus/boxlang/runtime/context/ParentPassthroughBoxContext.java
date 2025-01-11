@@ -20,7 +20,6 @@ package ortus.boxlang.runtime.context;
 import java.util.Map;
 import java.util.function.Predicate;
 
-import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
@@ -140,10 +139,6 @@ public abstract class ParentPassthroughBoxContext extends BaseBoxContext {
 
 	public Object invokeFunction( Object function ) {
 		return getParent().invokeFunction( function );
-	}
-
-	public Component.BodyResult invokeComponent( Key name, IStruct attributes, Component.ComponentBody componentBody ) {
-		return getParent().invokeComponent( name, attributes, componentBody );
 	}
 
 	public IBoxContext pushComponent( IStruct executionState ) {

@@ -1312,4 +1312,18 @@ public class BoxTemplateTest {
 		assertThat( variables.getAsString( Key.output ).trim() ).isEqualTo( "<" );
 	}
 
+	@Test
+	public void testAccessBXCatchInOutput() {
+		instance.executeSource(
+		    """
+		    <bx:try>
+		    	<bx:include template="#p#.bxm">
+		    	<bx:catch type="any">
+		    		<bx:output>#bxcatch.message#sdf</bx:output>
+		    	</bx:catch>
+		    </bx:try>
+		           """,
+		    context, BoxSourceType.BOXTEMPLATE );
+	}
+
 }
