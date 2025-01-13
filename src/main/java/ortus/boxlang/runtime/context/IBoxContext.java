@@ -688,6 +688,13 @@ public interface IBoxContext extends IBoxAttachable, Serializable {
 	public ModuleRecord getModuleRecord( Key name );
 
 	/**
+	 * This is an optional method on contexts which require shutdown outside of its constructor
+	 */
+	public default void shutdown() {
+		// Default is nothing
+	}
+
+	/**
 	 * This is an optional method on contexts which require startup outside of its constructor
 	 */
 	public default void startup() {
