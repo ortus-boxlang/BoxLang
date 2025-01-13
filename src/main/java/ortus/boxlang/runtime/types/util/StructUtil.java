@@ -448,7 +448,8 @@ public class StructUtil {
 		    .stream()
 		    .filter( entry -> {
 			    String stringKey = entry.getKey().getName().toLowerCase();
-			    return StringUtils.right( stringKey, keyLength ).equals( key.toLowerCase() );
+				// We look for the key at the end of the string ( nested ) or at the beginning of the string for top-level keys
+			    return StringUtils.right( stringKey, keyLength ).equals( key.toLowerCase() ) || StringUtils.left( stringKey, keyLength ).equals( key.toLowerCase() );
 		    } )
 		    .map( entry -> {
 			    Struct	returnStruct	= new Struct( Struct.TYPES.LINKED );
@@ -573,17 +574,9 @@ public class StructUtil {
 		return new Struct(
 		    struct.getType(),
 		    struct.entrySet().stream()
+		        .filter( entry -> entry.getValue() != null )
 		        .flatMap( StructUtil::flattenEntry )
-		        .collect(
-		            Collectors.toMap(
-		                entry -> entry.getKey(),
-		                entry -> entry.getValue(),
-		                ( v1, v2 ) -> {
-			                throw new BoxRuntimeException( "An exception occurred while flattening the struct" );
-		                },
-		                LinkedHashMap<Key, Object>::new
-		            )
-		        )
+		        .collect( LinkedHashMap<Key, Object>::new, ( m, entry ) -> m.put( entry.getKey(), entry.getValue() ), LinkedHashMap::putAll )
 		);
 	}
 
