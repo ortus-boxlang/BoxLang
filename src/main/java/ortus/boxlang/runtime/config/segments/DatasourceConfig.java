@@ -42,7 +42,8 @@ import ortus.boxlang.runtime.types.util.StructUtil;
  * A BoxLang datasource configuration.
  *
  * <p>
- * Inside a boxlang.json configuration file, a single datasource configuration might look something like this:
+ * Inside a boxlang.json configuration file, a single datasource configuration
+ * might look something like this:
  *
  * <pre>
  * "myMysql": {
@@ -102,13 +103,13 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	    // Adobe CF notation (url)
 	    Key.URL,
 	    // HikariConfig notation
-	    Key.jdbcURL
-	);
+	    Key.jdbcURL );
 
 	/**
 	 * BoxLang Datasource Default configuration values
 	 * These are applied to ALL datasources
-	 * Please note that most of them rely on Hikari defaults but we use seconds in BoxLang to match CFConfig standards
+	 * Please note that most of them rely on Hikari defaults but we use seconds in
+	 * BoxLang to match CFConfig standards
 	 * <p>
 	 * References
 	 * https://github.com/brettwooldridge/HikariCP/wiki/MySQL-Configuration
@@ -116,41 +117,55 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	private static final IStruct	DEFAULTS						= Struct.of(
 	    // The maximum number of connections.
 	    // Hikari: maximumPoolSize
-	    "maxConnections", 10,
+	    "maxConnections", 15,
 	    // The minimum number of connections
-	    // Hikari: minimumIdle
-	    "minConnections", 10,
-	    // Maximum time to wait for a successful connection, in seconds ( 1 Second )
-	    "connectionTimeout", 1,
-	    // The maximum number of idle time in seconds ( 10 Minutes = 600 )
-	    // • Refers to the maximum amount of time a connection can remain idle in the pool before it is eligible for eviction.
-	    // •If a connection is idle for longer than this time, it can be closed and removed from the pool, helping to free up resources.
-	    // • This setting only affects connections that are not in use and have exceeded the idle duration specified.
+	    // Hikari: minimumIdle, try to stick to 80% of maxConnections
+	    "minConnections", 12,
+	    // Maximum time to wait for a successful connection, in seconds ( 5 Seconds )
+	    "connectionTimeout", 5,
+	    // The maximum number of idle time in seconds ( 5 Minutes = 300 )
+	    // • Refers to the maximum amount of time a connection can remain idle in the
+	    // pool before it is eligible for eviction.
+	    // • If a connection is idle for longer than this time, it can be closed and
+	    // removed from the pool, helping to free up resources.
+	    // • This setting only affects connections that are not in use and have exceeded
+	    // the idle duration specified.
 	    // In Seconds
-	    "idleTimeout", 600,
+	    "idleTimeout", 300,
 	    // This property controls the maximum lifetime of a connection in the pool.
-	    // An in-use connection will never be retired, only when it is closed will it then be removed
-	    // We strongly recommend setting this value, and it should be several seconds shorter than any database
+	    // An in-use connection will never be retired, only when it is closed will it
+	    // then be removed
+	    // We strongly recommend setting this value, and it should be several seconds
+	    // shorter than any database
 	    // or infrastructure imposed connection time limit
 	    // 30 minutes by default = 1800000ms = 1800 seconds
+	    // Match this with your database server’s timeout for connections (e.g., MySQL’s
+	    // wait_timeout)
 	    // In Seconds
 	    "maxLifetime", 1800,
-	    // This property controls how frequently HikariCP will attempt to keep a connection alive, in order to prevent it from being timed out by the database
+	    // This property controls how frequently HikariCP will attempt to keep a
+	    // connection alive, in order to prevent it from being timed out by the database
 	    // or network infrastructure
-	    // This value must be less than the maxLifetime value. A "keepalive" will only occur on an idle connectionThis value must be less than the maxLifetime
-	    // value. A "keepalive" will only occur on an idle connection ( 10 Minutes = 600 seconds = 600,000 ms )
+	    // This value must be less than the maxLifetime value. A "keepalive" will only
+	    // occur on an idle connectionThis value must be less than the maxLifetime
+	    // value. A "keepalive" will only occur on an idle connection ( 10 Minutes = 600
+	    // seconds = 600,000 ms )
 	    // In Seconds
 	    "keepaliveTime", 600,
 	    // The default auto-commit state of connections created by this pool
 	    "autoCommit", true,
 	    // Register mbeans or not. By default, this is true
-	    // However, if you are using JMX, you can set this to true to get some additional monitoring information
-	    "registerMbeans", true
-	);
+	    // However, if you are using JMX, you can set this to true to get some
+	    // additional monitoring information
+	    "registerMbeans", true,
+	    // Leak detection threshold in seconds
+	    "leakDetectionThreshold", 3 );
 
-	// List of keys to NOT set dynamically. All keys not in this list will use `addDataSourceProperty` to set the property and pass it to the JDBC driver.
+	// List of keys to NOT set dynamically. All keys not in this list will use
+	// `addDataSourceProperty` to set the property and pass it to the JDBC driver.
 	// Please use the hikariConfig setters for any hikari-specific properties.
 	private List<Key>				RESERVED_CONNECTION_PROPERTIES	= List.of(
+	    Key.leakDetectionThreshold,
 	    Key.autoCommit,
 	    Key.connectionString,
 	    Key.connectionTestQuery,
@@ -169,8 +184,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	    Key.password,
 	    Key.poolName,
 	    Key.port,
-	    Key.username
-	);
+	    Key.username );
 
 	/**
 	 * Logger
@@ -253,7 +267,8 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	public static String discoverDriverFromJdbcUrl( String jdbcURL ) {
 		logger.debug( "Attempting to determine driver from JDBC URL: {}", jdbcURL );
 
-		// check that the URL is not empty, that it has at least one : and that it starts with jdbc:
+		// check that the URL is not empty, that it has at least one : and that it
+		// starts with jdbc:
 		if ( jdbcURL == null || jdbcURL.isEmpty() || !jdbcURL.contains( ":" ) || !jdbcURL.startsWith( "jdbc:" ) ) {
 			return "";
 		}
@@ -324,7 +339,8 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	}
 
 	/**
-	 * Get the original name of the datasource - this is NOT unique and should not be used for identification.
+	 * Get the original name of the datasource - this is NOT unique and should not
+	 * be used for identification.
 	 *
 	 * @return The original name of the datasource.
 	 */
@@ -333,7 +349,8 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	}
 
 	/**
-	 * Processes the state of the configuration segment from the configuration struct.
+	 * Processes the state of the configuration segment from the configuration
+	 * struct.
 	 * <p>
 	 * Each segment is processed individually from the initial configuration struct.
 	 * This is so we can handle cascading overrides from configuration loading.
@@ -440,8 +457,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 		    "name", this.name.getName(),
 		    "onTheFly", this.onTheFly,
 		    "uniqueName", this.getUniqueName().getName(),
-		    "properties", new Struct( this.properties )
-		);
+		    "properties", new Struct( this.properties ) );
 	}
 
 	/**
@@ -459,7 +475,8 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	 *
 	 * @param otherConfig The other DatasourceConfig object to compare
 	 *
-	 * @return A negative integer, zero, or a positive integer as this object is less than, equal to, or greater than the specified object.
+	 * @return A negative integer, zero, or a positive integer as this object is
+	 *         less than, equal to, or greater than the specified object.
 	 */
 	@Override
 	public int compareTo( DatasourceConfig otherConfig ) {
@@ -488,29 +505,35 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	 * Build a HikariConfig object from the datasource properties configuration.
 	 *
 	 * <ol>
-	 * <li>Configure HikariCP-specific properties, i.e. <code>jdbcUrl</code>, <code>username</code>, <code>password</code>, etc, using the appropriate
+	 * <li>Configure HikariCP-specific properties, i.e. <code>jdbcUrl</code>,
+	 * <code>username</code>, <code>password</code>, etc, using the appropriate
 	 * setter methods on the HikariConfig object.</li>
-	 * <li>Import all other properties as generic DataSource properties. Vendor-specific properties, i.e. for Derby, Oracle, etc, such as
+	 * <li>Import all other properties as generic DataSource properties.
+	 * Vendor-specific properties, i.e. for Derby, Oracle, etc, such as
 	 * <code>"derby.locks.deadlockTimeout"</code>.</li>
 	 * </ul>
 	 *
 	 */
 	public HikariConfig toHikariConfig() {
 
-		// At this point, if no driver can be determined from the 'driver' or 'type' keys or JDBC url key(s),
+		// At this point, if no driver can be determined from the 'driver' or 'type'
+		// keys or JDBC url key(s),
 		// we need to throw an exception because we can't proceed.
 		if ( this.properties.getOrDefault( Key.driver, "" ).toString().isBlank() ) {
-			throw new IllegalArgumentException( "Datasource configuration must contain a 'driver', or a valid JDBC connection string in 'url'." );
+			throw new IllegalArgumentException(
+			    "Datasource configuration must contain a 'driver', or a valid JDBC connection string in 'url'." );
 		}
 
 		DatasourceService	datasourceService	= BoxRuntime.getInstance().getDataSourceService();
 		HikariConfig		result				= new HikariConfig();
 		// If we can't find the driver, we default to the generic driver
-		IJDBCDriver			driverOrDefault		= datasourceService.hasDriver( getDriver() ) ? datasourceService.getDriver( getDriver() )
+		IJDBCDriver			driverOrDefault		= datasourceService.hasDriver( getDriver() )
+		    ? datasourceService.getDriver( getDriver() )
 		    : datasourceService.getGenericDriver();
 
 		// Incorporate the driver's default properties
-		driverOrDefault.getDefaultProperties().entrySet().stream().forEach( entry -> this.properties.putIfAbsent( entry.getKey(), entry.getValue() ) );
+		driverOrDefault.getDefaultProperties().entrySet().stream()
+		    .forEach( entry -> this.properties.putIfAbsent( entry.getKey(), entry.getValue() ) );
 
 		// Make sure the `custom` property is a struct: Normalize it
 		if ( this.properties.get( Key.custom ) instanceof String castedCustomParams ) {
@@ -518,7 +541,8 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 		}
 		// Incorporate the driver's default 'custom' properties
 		IStruct customParams = this.properties.getAsStruct( Key.custom );
-		driverOrDefault.getDefaultCustomParams().entrySet().stream().forEach( entry -> customParams.putIfAbsent( entry.getKey(), entry.getValue() ) );
+		driverOrDefault.getDefaultCustomParams().entrySet().stream()
+		    .forEach( entry -> customParams.putIfAbsent( entry.getKey(), entry.getValue() ) );
 		this.properties.put( Key.custom, customParams );
 
 		// Build out the JDBC URL according to the driver chosen or url chosen
@@ -534,8 +558,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 		// Connection timeouts in seconds, but Hikari uses milliseconds
 		if ( properties.containsKey( Key.connectionTimeout ) ) {
 			result.setConnectionTimeout(
-			    LongCaster.cast( properties.get( Key.connectionTimeout ), false ) * 1000
-			);
+			    LongCaster.cast( properties.get( Key.connectionTimeout ), false ) * 1000 );
 		}
 		if ( properties.containsKey( Key.minConnections ) ) {
 			result.setMinimumIdle( IntegerCaster.cast( properties.get( Key.minConnections ), false ) );
@@ -550,18 +573,15 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 		}
 		if ( properties.containsKey( Key.idleTimeout ) ) {
 			result.setIdleTimeout(
-			    LongCaster.cast( properties.get( Key.idleTimeout ), false ) * 1000
-			);
+			    LongCaster.cast( properties.get( Key.idleTimeout ), false ) * 1000 );
 		}
 		if ( properties.containsKey( Key.keepaliveTime ) ) {
 			result.setKeepaliveTime(
-			    LongCaster.cast( properties.get( Key.keepaliveTime ), false ) * 1000
-			);
+			    LongCaster.cast( properties.get( Key.keepaliveTime ), false ) * 1000 );
 		}
 		if ( properties.containsKey( Key.maxLifetime ) ) {
 			result.setMaxLifetime(
-			    LongCaster.cast( properties.get( Key.maxLifetime ), false ) * 1000
-			);
+			    LongCaster.cast( properties.get( Key.maxLifetime ), false ) * 1000 );
 		}
 		if ( properties.containsKey( Key.connectionTestQuery ) ) {
 			result.setConnectionTestQuery( properties.getAsString( Key.connectionTestQuery ) );
@@ -575,6 +595,9 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 		if ( properties.containsKey( Key.poolName ) ) {
 			result.setPoolName( properties.getAsString( Key.poolName ) );
 		}
+		if ( properties.containsKey( Key.leakDetectionThreshold ) ) {
+			result.setLeakDetectionThreshold( LongCaster.cast( properties.get( Key.leakDetectionThreshold ), false ) * 1000 );
+		}
 
 		// ADD NON-RESERVED PROPERTIES
 		// as Hikari properties
@@ -586,9 +609,11 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	}
 
 	/**
-	 * Retrieve the connection string from the properties, or build it from the appropriate driver module.
+	 * Retrieve the connection string from the properties, or build it from the
+	 * appropriate driver module.
 	 *
-	 * If any of these properties are found, they will be returned as-is, in the following order:
+	 * If any of these properties are found, they will be returned as-is, in the
+	 * following order:
 	 * <ul>
 	 * <li><code>connectionString</code></li>
 	 * <li><code>URL</code></li>
@@ -596,28 +621,33 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	 * <li><code>dsn</code> - Special case used on placeholder replacements</li>
 	 * </ul>
 	 *
-	 * If none of these properties are found then we delegate to a registered driver in the
+	 * If none of these properties are found then we delegate to a registered driver
+	 * in the
 	 * datasource service. If none, can be found, we use the generic JDBC Driver.
 	 *
 	 * @param driver The JDBC driver to use
 	 *
-	 * @return JDBC connection string, e.g. <code>jdbc:mysql://localhost:3306/foo?useSSL=false</code>
+	 * @return JDBC connection string, e.g.
+	 *         <code>jdbc:mysql://localhost:3306/foo?useSSL=false</code>
 	 */
 	private String getOrBuildConnectionString( IJDBCDriver driver ) {
 		// 1. Attempt to find the connection string from the properties first.
 		String connectionString = replaceConnectionPlaceholders( getConnectionString() );
 
-		// 2. If the attempt was empty, then try to find the connection string from the DSN cfconfig element
+		// 2. If the attempt was empty, then try to find the connection string from the
+		// DSN cfconfig element
 		if ( connectionString.isEmpty() && this.properties.containsKey( Key.dsn ) ) {
 			connectionString = replaceConnectionPlaceholders( this.properties.getAsString( Key.dsn ) );
 		}
 
-		// 3. If the attempt was empty, then try to build the connection string from the driver
+		// 3. If the attempt was empty, then try to build the connection string from the
+		// driver
 		// This adds all the placeholders and custom parameters via the driver
 		if ( connectionString.isEmpty() ) {
 			connectionString = replaceConnectionPlaceholders( driver.buildConnectionURL( this ) );
 		} else {
-			connectionString = addCustomParams( connectionString, driver.getDefaultURIDelimiter(), driver.getDefaultDelimiter() );
+			connectionString = addCustomParams( connectionString, driver.getDefaultURIDelimiter(),
+			    driver.getDefaultDelimiter() );
 		}
 
 		// Finalize with custom params
@@ -625,7 +655,8 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	}
 
 	/**
-	 * This method is used to incorporate custom parameters into the target connection string.
+	 * This method is used to incorporate custom parameters into the target
+	 * connection string.
 	 *
 	 * @param target       The target connection string
 	 * @param URIDelimiter The URI delimiter to use
@@ -655,7 +686,8 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	}
 
 	/**
-	 * This method is used to incorporate custom parameters into the target connection string
+	 * This method is used to incorporate custom parameters into the target
+	 * connection string
 	 * Using default delimiters of <code>?</code> and <code>&amp;</code>
 	 *
 	 * @param target The target connection string
@@ -667,7 +699,8 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	}
 
 	/**
-	 * This method is used to replace placeholders in the connection string with the appropriate values.
+	 * This method is used to replace placeholders in the connection string with the
+	 * appropriate values.
 	 * <p>
 	 * The placeholders are:
 	 * <ul>
@@ -689,16 +722,13 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 		// Replace placeholders
 		target	= target.replace(
 		    "{host}",
-		    StringCaster.cast( this.properties.getOrDefault( Key.host, "NOT_FOUND" ), true )
-		);
+		    StringCaster.cast( this.properties.getOrDefault( Key.host, "NOT_FOUND" ), true ) );
 		target	= target.replace(
 		    "{port}",
-		    StringCaster.cast( this.properties.getOrDefault( Key.port, 0 ), true )
-		);
+		    StringCaster.cast( this.properties.getOrDefault( Key.port, 0 ), true ) );
 		target	= target.replace(
 		    "{database}",
-		    StringCaster.cast( this.properties.getOrDefault( Key.database, "NOT_FOUND" ), true )
-		);
+		    StringCaster.cast( this.properties.getOrDefault( Key.database, "NOT_FOUND" ), true ) );
 
 		return target;
 	}

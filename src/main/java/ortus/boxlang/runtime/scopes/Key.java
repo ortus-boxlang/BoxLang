@@ -427,6 +427,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		language							= Key.of( "language" );
 	public static final Key		lastVisit							= Key.of( "lastVisit" );
 	public static final Key		leaveIndex							= Key.of( "leaveIndex" );
+	public static final Key		leakDetectionThreshold							= Key.of( "leakDetectionThreshold" );
 	public static final Key		len									= Key.of( "len" );
 	public static final Key		length								= Key.of( "length" );
 	public static final Key		level								= Key.of( "level" );
