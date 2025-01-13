@@ -43,7 +43,7 @@ public class Invoke extends BIF {
 	public Invoke() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "any", Key.instance ),
+		    new Argument( true, "any", Key.object ),
 		    new Argument( true, "string", Key.methodname ),
 		    new Argument( false, "any", Key.arguments )
 		};
@@ -63,7 +63,7 @@ public class Invoke extends BIF {
 	 * @argument.arguments An array of positional arguments or a struct of named arguments to pass into the method.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Object	instance		= arguments.get( Key.instance );
+		Object	instance		= arguments.get( Key.object );
 		Key		methodname		= Key.of( arguments.getAsString( Key.methodname ) );
 		Object	args			= arguments.get( Key.arguments );
 		IStruct	argCollection	= Struct.of();
