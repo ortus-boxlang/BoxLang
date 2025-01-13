@@ -506,7 +506,7 @@ public class Application {
 		}
 
 		// Announce it globally
-		RequestBoxContext requestContext = new ScriptingRequestBoxContext( BoxRuntime.getInstance().getRuntimeContext() );
+		RequestBoxContext requestContext = this.getStartingListener().getRequestContext();
 		BoxRuntime.getInstance().getInterceptorService().announce( Key.onApplicationEnd, Struct.of(
 		    "application", this,
 		    "context", requestContext
