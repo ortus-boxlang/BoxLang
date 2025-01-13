@@ -12,7 +12,7 @@ plugins {
 	id "application"
 	id 'antlr'
 	// For source code formatting
-	id "com.diffplug.spotless" version "6.25.0"
+	id "com.diffplug.spotless" version "7.0.1"
 	// For building shadow jars with jdk 17 ONLY
     //id 'com.github.johnrengelman.shadow' version '8.1.1'
     // For building shadow jars using JDK 21 +, they had to fork
