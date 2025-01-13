@@ -490,9 +490,13 @@ public class BoxTemplateParser extends AbstractParser {
 			for ( var attr : attributes ) {
 				if ( attr.getKey().getValue().equalsIgnoreCase( "condition" ) ) {
 					BoxExpression condition = attr.getValue();
+					// parse as CF script expression and update value
+					// In reality, we could just re-parse the source text for all expression types, but there's really no need unless it was a string or interpolated string.
 					if ( condition instanceof BoxStringLiteral str ) {
-						// parse as Box script expression and update value
 						condition = parseBoxExpression( str.getValue(), condition.getPosition() );
+					} else if ( condition instanceof BoxStringInterpolation stri ) {
+						// Strip "" from around the string
+						condition = parseBoxExpression( stri.getSourceText().substring( 1, stri.getSourceText().length() - 1 ), condition.getPosition() );
 					}
 					BoxExpression newCondition = new BoxClosure(
 					    List.of(),

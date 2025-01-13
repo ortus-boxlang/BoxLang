@@ -456,4 +456,32 @@ public class LoopTest {
 		assertThat( variables.getAsString( Key.of( "result" ) ) ).isEqualTo( "1,2.5,4,5.5,7,8.5,10" );
 	}
 
+	@Test
+	public void testLoopConditionMixCF() {
+		instance.executeSource(
+		    """
+		    <cfset i = 1>
+		    <cfset dataSize = 5>
+		    <cfloop condition="#i# LTE #dataSize#">
+		    	<cfoutput>#i#</cfoutput>
+		    	<cfset i++>
+		    </cfloop>
+		    """,
+		    context, BoxSourceType.CFTEMPLATE );
+	}
+
+	@Test
+	public void testLoopConditionMix() {
+		instance.executeSource(
+		    """
+		    <bx:set i = 1>
+		    <bx:set dataSize = 5>
+		    <bx:loop condition="#i# LTE #dataSize#">
+		    	<bx:output>#i#</bx:output>
+		    	<bx:set i++>
+		    </bx:loop>
+		    """,
+		    context, BoxSourceType.BOXTEMPLATE );
+	}
+
 }
