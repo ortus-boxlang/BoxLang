@@ -1645,4 +1645,14 @@ public class ClassTest {
 
 	}
 
+	@Test
+	@Disabled( "BL-926" )
+	public void testUserASMError() {
+		instance.executeSource(
+		    """
+		    new src.test.java.TestCases.phase3.ASMError()
+		      """,
+		    context );
+	}
+
 }
