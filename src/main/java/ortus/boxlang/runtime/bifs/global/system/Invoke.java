@@ -64,7 +64,7 @@ public class Invoke extends BIF {
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object	instance		= arguments.get( Key.object );
-		Key		method		= Key.of( arguments.getAsString( Key.method ) );
+		Key		method			= Key.of( arguments.getAsString( Key.method ) );
 		Object	args			= arguments.get( Key.arguments );
 		IStruct	argCollection	= Struct.of();
 
