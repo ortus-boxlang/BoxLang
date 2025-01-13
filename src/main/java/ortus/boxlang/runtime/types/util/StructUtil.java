@@ -448,8 +448,9 @@ public class StructUtil {
 		    .stream()
 		    .filter( entry -> {
 			    String stringKey = entry.getKey().getName().toLowerCase();
-				// We look for the key at the end of the string ( nested ) or at the beginning of the string for top-level keys
-			    return StringUtils.right( stringKey, keyLength ).equals( key.toLowerCase() ) || StringUtils.left( stringKey, keyLength ).equals( key.toLowerCase() );
+			    // We look for the key at the end of the string ( nested ) or at the beginning of the string for top-level keys
+			    return StringUtils.right( stringKey, keyLength ).equals( key.toLowerCase() )
+			        || StringUtils.left( stringKey, keyLength ).equals( key.toLowerCase() );
 		    } )
 		    .map( entry -> {
 			    Struct	returnStruct	= new Struct( Struct.TYPES.LINKED );

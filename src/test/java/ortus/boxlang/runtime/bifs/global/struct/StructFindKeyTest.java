@@ -223,7 +223,7 @@ public class StructFindKeyTest {
 		//@formatter:on
 		assertTrue( variables.get( result ) instanceof Array );
 		assertEquals( 1, variables.getAsArray( result ).size() );
-		assertEquals( 1, variables.getAsArray( Key.of( "resultTop") ).size() );
+		assertEquals( 1, variables.getAsArray( Key.of( "resultTop" ) ).size() );
 	}
 
 }
