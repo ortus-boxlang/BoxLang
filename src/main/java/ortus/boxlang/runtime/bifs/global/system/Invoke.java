@@ -44,7 +44,7 @@ public class Invoke extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "any", Key.object ),
-		    new Argument( true, "string", Key.methodname ),
+		    new Argument( true, "string", Key.method ),
 		    new Argument( false, "any", Key.arguments )
 		};
 	}
@@ -58,13 +58,13 @@ public class Invoke extends BIF {
 	 * @argument.instance Instance of a Box Class or name of one to instantiate. If an empty string is provided, the method will be invoked within the
 	 *                    same template or Box Class.
 	 *
-	 * @argument.methodname The name of the method to invoke
+	 * @argument.method The name of the method to invoke
 	 *
 	 * @argument.arguments An array of positional arguments or a struct of named arguments to pass into the method.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object	instance		= arguments.get( Key.object );
-		Key		methodname		= Key.of( arguments.getAsString( Key.methodname ) );
+		Key		method		= Key.of( arguments.getAsString( Key.method ) );
 		Object	args			= arguments.get( Key.arguments );
 		IStruct	argCollection	= Struct.of();
 
@@ -76,7 +76,7 @@ public class Invoke extends BIF {
 		CastAttempt<String> stringCasterAttempt = StringCaster.attempt( instance );
 		// Empty string just calls local function in the existing context (box class or template)
 		if ( stringCasterAttempt.wasSuccessful() && stringCasterAttempt.get().isEmpty() ) {
-			return context.invokeFunction( methodname, argCollection );
+			return context.invokeFunction( method, argCollection );
 		}
 
 		// If we had a non-empty string, create the Box Class instance
@@ -93,7 +93,7 @@ public class Invoke extends BIF {
 
 		// ALERT!
 		// Special Case: If the instance is a DynamicObject and the method is "init", we need to call the constructor
-		if ( actualInstance instanceof DynamicObject castedDo && methodname.equals( Key.init ) ) {
+		if ( actualInstance instanceof DynamicObject castedDo && method.equals( Key.init ) ) {
 			// The incoming args must be an array or throw an exception
 			if ( ! ( args instanceof Array castedArray ) ) {
 				throw new BoxValidationException( "The arguments must be an array in order to execute the Java constructor." );
@@ -101,7 +101,7 @@ public class Invoke extends BIF {
 			return castedDo.invokeConstructor( context, castedArray.toArray() );
 		}
 
-		return actualInstance.dereferenceAndInvoke( context, methodname, argCollection, false );
+		return actualInstance.dereferenceAndInvoke( context, method, argCollection, false );
 
 	}
 }

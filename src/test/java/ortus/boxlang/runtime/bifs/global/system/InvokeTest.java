@@ -106,7 +106,7 @@ public class InvokeTest {
 		    			 variables.result = arguments;
 		    		 }
 		    createArgs()
-		    		 invoke( object="", methodName="meh", arguments=args );
+		    		 invoke( object="", method="meh", arguments=args );
 		    	 """,
 		    context );
 
@@ -129,7 +129,7 @@ public class InvokeTest {
 		    		variables.result = arguments;
 		    	}
 		    	createArgs('hello world')
-		    	invoke( object="", methodName="meh", arguments=args );
+		    	invoke( object="", method="meh", arguments=args );
 		    """,
 		    context );
 
