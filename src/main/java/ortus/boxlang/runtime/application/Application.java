@@ -35,7 +35,6 @@ import ortus.boxlang.runtime.cache.providers.ICacheProvider;
 import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
-import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.LongCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
@@ -371,13 +370,14 @@ public class Application {
 	/**
 	 * Get a session by ID for this application, creating if neccessary if not found
 	 *
-	 * @param ID The ID of the session
+	 * @param ID      The ID of the session
+	 * @param context The context of the request that is creating/getting the session
 	 *
 	 * @return The session object
 	 */
-	public Session getOrCreateSession( Key ID ) {
+	public Session getOrCreateSession( Key ID, RequestBoxContext context ) {
 		Duration	timeoutDuration	= null;
-		Object		sessionTimeout	= this.startingListener.getSettings().get( Key.sessionTimeout );
+		Object		sessionTimeout	= context.getConfigItems( Key.applicationSettings, Key.sessionTimeout );
 
 		// Duration is the default, but if not, we will use the number as seconds
 		// Which is what the cache providers expect
@@ -507,17 +507,21 @@ public class Application {
 
 		// Announce it globally
 		RequestBoxContext requestContext = this.getStartingListener().getRequestContext();
-		BoxRuntime.getInstance().getInterceptorService().announce( Key.onApplicationEnd, Struct.of(
-		    "application", this,
-		    "context", requestContext
-		) );
+		try {
+			BoxRuntime.getInstance().getInterceptorService().announce( Key.onApplicationEnd, Struct.of(
+			    "application", this,
+			    "context", requestContext
+			) );
+		} catch ( Exception e ) {
+			logger.error( "Error announcing onApplicationEnd", e );
+		}
 
-		// Shutdown all sessions
+		// Shutdown all sessions if NOT in a cluster
 		if ( !BooleanCaster.cast( this.startingListener.getSettings().get( Key.sessionCluster ) ) ) {
 			sessionsCache.getKeysStream( sessionCacheFilter )
 			    .parallel()
 			    .map( Key::of )
-			    .map( this::getOrCreateSession )
+			    .map( sessionKey -> ( Session ) sessionsCache.get( sessionKey.getName() ).get() )
 			    .forEach( session -> session.shutdown( this.getStartingListener() ) );
 		}
 
@@ -532,11 +536,15 @@ public class Application {
 
 		// Announce it to the listener
 		if ( this.startingListener != null ) {
-			// Any buffer output in this context will be discarded
-			this.startingListener.onApplicationEnd(
-			    requestContext,
-			    new Object[] { applicationScope }
-			);
+			try {
+				// Any buffer output in this context will be discarded
+				this.startingListener.onApplicationEnd(
+				    requestContext,
+				    new Object[] { applicationScope }
+				);
+			} catch ( Exception e ) {
+				logger.error( "Error calling onApplicationEnd", e );
+			}
 		}
 
 		// Clear out the data
