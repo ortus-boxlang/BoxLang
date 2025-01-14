@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.application;
 
 import java.io.Serializable;
+import java.time.Duration;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -74,6 +75,11 @@ public class Session implements Serializable {
 	private Key					applicationName	= null;
 
 	/**
+	 * The timeout for this session
+	 */
+	private Duration			timeout;
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Constructor(s)
 	 * --------------------------------------------------------------------------
@@ -84,9 +90,11 @@ public class Session implements Serializable {
 	 *
 	 * @param ID          The ID of this session
 	 * @param application The application that this session belongs to
+	 * @param timeout     The timeout for this session when created
 	 */
-	public Session( Key ID, Application application ) {
+	public Session( Key ID, Application application, Duration timeout ) {
 		this.ID					= ID;
+		this.timeout			= timeout;
 		this.applicationName	= application.getName();
 		this.sessionScope		= new SessionScope();
 		DateTime timeNow = new DateTime();
@@ -206,6 +214,13 @@ public class Session implements Serializable {
 	}
 
 	/**
+	 * Get the registered timeout for this session
+	 */
+	public Duration getTimeout() {
+		return this.timeout;
+	}
+
+	/**
 	 * Shutdown the session
 	 *
 	 * @param listener The listener that is shutting down the session
@@ -286,6 +301,28 @@ public class Session implements Serializable {
 		    Key.isNew, this.isNew,
 		    Key.applicationName, this.applicationName
 		);
+	}
+
+	/**
+	 * Verifies if the session has expired or not
+	 */
+	/**
+	 * Has this application expired.
+	 * We look at the application start time and the application timeout to determine if it has expired
+	 *
+	 * @return True if the application has expired, false otherwise
+	 */
+	public boolean isExpired() {
+		// If the session scope doesn't have a last visit, then it's expired
+		if ( this.sessionScope == null || !this.sessionScope.containsKey( Key.lastVisit ) ) {
+			return true;
+		}
+
+		// If the start time + the duration is before now, then it's expired
+		DateTime lastVisit = ( DateTime ) this.sessionScope.get( Key.lastVisit );
+		// Example: 10:00 + 1 hour = 11:00, now is 11:01, so it's expired : true
+		// Example: 10:00 + 1 hour = 11:00, now is 10:59, so it's not expired : false
+		return lastVisit.plus( this.timeout ).isBefore( new DateTime() );
 	}
 
 }

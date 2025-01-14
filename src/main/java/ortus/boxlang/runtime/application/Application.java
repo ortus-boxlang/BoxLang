@@ -389,23 +389,25 @@ public class Application {
 		} else {
 			timeoutDuration = Duration.ofSeconds( LongCaster.cast( sessionTimeout ) );
 		}
+		// Dumb Java! It needs a final variable to use in the lambda
+		final Duration	finalTimeoutDuration	= timeoutDuration;
 
 		// logger.debug( "**** getOrCreateSession {} Timeout {} ", ID, timeoutDuration );
 
 		// Get or create the session
-		Session targetSession = ( Session ) this.sessionsCache.getOrSet(
+		Session			targetSession			= ( Session ) this.sessionsCache.getOrSet(
 		    cacheKey,
-		    () -> new Session( ID, this ),
+		    () -> new Session( ID, this, finalTimeoutDuration ),
 		    timeoutDuration,
 		    timeoutDuration
 		);
 
 		// Is the session still valid?
-		if ( targetSession.isShutdown() ) {
+		if ( targetSession.isShutdown() || targetSession.isExpired() ) {
 			// If not, remove it
 			this.sessionsCache.clear( cacheKey );
 			// And create a new one
-			targetSession = new Session( ID, this );
+			targetSession = new Session( ID, this, finalTimeoutDuration );
 			this.sessionsCache.set( cacheKey, targetSession, timeoutDuration, timeoutDuration );
 		}
 
