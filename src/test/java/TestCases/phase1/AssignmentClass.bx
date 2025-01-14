@@ -1,0 +1,10 @@
+class {
+    
+    function init(){
+        variables.a = this.a = "test"
+    }
+
+    function getA(){
+        return variables.a;
+    }
+}

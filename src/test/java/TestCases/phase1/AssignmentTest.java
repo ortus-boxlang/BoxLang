@@ -217,4 +217,19 @@ public class AssignmentTest {
 
 	}
 
+	@DisplayName( "multiple assignment" )
+	@Test
+	public void testMultipleAssignment() {
+		instance.executeSource(
+		    """
+		       thing = new src.test.java.TestCases.phase1.AssignmentClass();
+		    vara = thing.getA();
+		    thisA = thing.a;
+		               """,
+		    context );
+		assertThat( variables.get( "varA" ) ).isEqualTo( "test" );
+		assertThat( variables.get( "thisA" ) ).isEqualTo( "test" );
+
+	}
+
 }
