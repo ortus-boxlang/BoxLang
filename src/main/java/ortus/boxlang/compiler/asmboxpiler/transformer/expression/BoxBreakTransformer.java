@@ -90,18 +90,12 @@ public class BoxBreakTransformer extends AbstractTransformer {
 			nodes.add( new InsnNode( Opcodes.ARETURN ) );
 			return AsmHelper.addLineNumberLabels( nodes, node );
 		} else if ( exitsAllowed.equals( ExitsAllowed.LOOP ) ) {
-			// template = "if(true) break " + breakLabel + ";";
-			nodes.add( new InsnNode( Opcodes.ARETURN ) );
+			nodes.add( new InsnNode( transpiler.canReturn() ? Opcodes.ARETURN : Opcodes.RETURN ) );
 			return AsmHelper.addLineNumberLabels( nodes, node );
 		} else if ( exitsAllowed.equals( ExitsAllowed.FUNCTION ) ) {
 			nodes.add( new InsnNode( Opcodes.ARETURN ) );
 			return AsmHelper.addLineNumberLabels( nodes, node );
-		} else {
-			// template = "if(true) return;";
 		}
-		// if ( currentBreak == null ) {
-		// throw new RuntimeException( "Cannot break from current location" );
-		// }
 
 		throw new RuntimeException( "Cannot break from current location" );
 
