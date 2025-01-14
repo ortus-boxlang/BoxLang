@@ -46,6 +46,9 @@ public class Upper extends QoQScalarFunctionDef {
 
 	@Override
 	public Object apply( List<Object> args, List<SQLExpression> expressions ) {
+		if ( args.get( 0 ) == null ) {
+			return null;
+		}
 		return StringCaster.cast( args.get( 0 ) ).toUpperCase();
 	}
 

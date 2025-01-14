@@ -95,12 +95,12 @@ public class QoQFunctionService {
 		register( Upper.INSTANCE );
 		register( Left.INSTANCE );
 		register( Right.INSTANCE );
+		register( Cast.INSTANCE );
+		register( Convert.INSTANCE );
 
 		// Aggregate
 		register( Max.INSTANCE );
 		register( Min.INSTANCE );
-		register( Cast.INSTANCE );
-		register( Convert.INSTANCE );
 		register( Sum.INSTANCE );
 		register( Avg.INSTANCE );
 		register( GroupConcat.INSTANCE );

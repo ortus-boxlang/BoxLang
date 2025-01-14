@@ -604,26 +604,14 @@ public class QoQParseTest {
 	public void testsdf() {
 		instance.executeSource(
 		    """
-		       queryWithDataIn = QueryNew('id,value', 'integer,varchar',[[1,'a'],[2,'b'],[3,'c'],[4,'d'],[5,'e']]);
-		     actual = QueryExecute(
-		     				params = [
-		     					{ value: 3  },
-		     					{ value: '3,4' , sqltype: 'numeric' , list = true }
-		     				],
-		     				options = {
-		     					dbtype: 'query'
-		     				},
-		     				sql = "
-		     					SELECT
-		     						id,
-		     						value
-		     					FROM queryWithDataIn
-		     					WHERE id = ?
-		     		and id IN ( ? )
-		    "	);
+		        q = QueryExecute("
+		        				select 1 ^ 2
+		       ",
+		    [],
+		    { dbType : "query" } );
 
-		     			println(actual)
-		                   			                          """,
+		        			println(q)
+		                      			                          """,
 		    context, BoxSourceType.CFSCRIPT );
 	}
 
