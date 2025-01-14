@@ -42,7 +42,7 @@ public class BoxValidationException extends BoxRuntimeException {
 	 * @param message The message
 	 */
 	public BoxValidationException( Key caller, Validatable record, String message ) {
-		this( "Input [" + record.name().getName() + "] for [" + caller.getName() + "] " + message, null );
+		this( "Input [" + record.name().getName() + "] for component [" + caller.getName() + "] " + message, null );
 	}
 
 	/**
