@@ -399,6 +399,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		interfaces							= Key.of( "interfaces" );
 	public static final Key		interrupted							= Key.of( "interrupted" );
 	public static final Key		interval							= Key.of( "interval" );
+	public static final Key		isNew								= Key.of( "isNew" );
 	public static final Key		invoke								= Key.of( "invoke" );
 	public static final Key		invokeArgs							= Key.of( "invokeArgs" );
 	public static final Key		invokeImplicitAccessor				= Key.of( "invokeImplicitAccessor" );

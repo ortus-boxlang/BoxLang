@@ -362,6 +362,8 @@ public class Application {
 			        .get( key )
 			        .ifPresent( session -> ( ( Session ) session ).shutdown( this.startingListener ) );
 
+			    logger.debug( "Session storage cache [{}] shutdown and removed session [{}]", targetCache.getName(), key );
+
 			    return false;
 		    }, BoxEvent.BEFORE_CACHE_ELEMENT_REMOVED.key() );
 		logger.debug( "Session storage cache [{}] created for the application [{}]", sessionCacheName, this.name );
@@ -378,6 +380,7 @@ public class Application {
 	public Session getOrCreateSession( Key ID, RequestBoxContext context ) {
 		Duration	timeoutDuration	= null;
 		Object		sessionTimeout	= context.getConfigItems( Key.applicationSettings, Key.sessionTimeout );
+		String		cacheKey		= Session.buildCacheKey( ID, this.name );
 
 		// Duration is the default, but if not, we will use the number as seconds
 		// Which is what the cache providers expect
@@ -390,12 +393,23 @@ public class Application {
 		// logger.debug( "**** getOrCreateSession {} Timeout {} ", ID, timeoutDuration );
 
 		// Get or create the session
-		return ( Session ) this.sessionsCache.getOrSet(
-		    Session.buildCacheKey( ID, this.name ),
+		Session targetSession = ( Session ) this.sessionsCache.getOrSet(
+		    cacheKey,
 		    () -> new Session( ID, this ),
 		    timeoutDuration,
 		    timeoutDuration
 		);
+
+		// Is the session still valid?
+		if ( targetSession.isShutdown() ) {
+			// If not, remove it
+			this.sessionsCache.clear( cacheKey );
+			// And create a new one
+			targetSession = new Session( ID, this );
+			this.sessionsCache.set( cacheKey, targetSession, timeoutDuration, timeoutDuration );
+		}
+
+		return targetSession;
 	}
 
 	/**

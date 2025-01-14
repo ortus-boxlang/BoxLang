@@ -64,6 +64,11 @@ public class Session implements Serializable {
 	private boolean				isNew			= true;
 
 	/**
+	 * Flag for when session has been shutdown
+	 */
+	private boolean				isShutdown		= false;
+
+	/**
 	 * The application name linked to
 	 */
 	private Key					applicationName	= null;
@@ -244,9 +249,18 @@ public class Session implements Serializable {
 			if ( this.sessionScope != null ) {
 				this.sessionScope.clear();
 			}
-			this.sessionScope = null;
+			this.sessionScope	= null;
+			this.isNew			= true;
+			this.isShutdown		= true;
 		}
 
+	}
+
+	/**
+	 * Tests if the session is still active or shutdown
+	 */
+	public boolean isShutdown() {
+		return this.isShutdown;
 	}
 
 	/**
@@ -255,10 +269,10 @@ public class Session implements Serializable {
 	@Override
 	public String toString() {
 		return "Session{" +
-		    "ID=" + ID +
-		    ", sessionScope=" + sessionScope +
-		    ", isNew=" + isNew +
-		    ", applicationName=" + applicationName +
+		    "ID=" + this.ID +
+		    ", sessionScope=" + this.sessionScope.toString() +
+		    ", isNew=" + this.isNew +
+		    ", applicationName=" + this.applicationName +
 		    '}';
 	}
 
@@ -269,7 +283,7 @@ public class Session implements Serializable {
 		return Struct.of(
 		    Key.id, this.ID,
 		    Key.scope, this.sessionScope,
-		    "isNew", isNew,
+		    Key.isNew, this.isNew,
 		    Key.applicationName, this.applicationName
 		);
 	}
