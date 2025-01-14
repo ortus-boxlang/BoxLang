@@ -461,11 +461,6 @@ public class PendingQuery {
 		if ( isPositional && positionalParameters.size() > paramsEncountered ) {
 			throw new DatabaseException( "Too many positional parameters [" + positionalParameters.size()
 			    + "] provided for query having only [" + paramsEncountered + "] '?' char(s)." );
-		} else if ( !isPositional && namedParameters.keySet().size() != foundNamedParams.size() ) {
-			// Make sure all named params were used
-			Set<Key> missingParams = new HashSet<>( namedParameters.keySet() );
-			missingParams.removeAll( foundNamedParams );
-			throw new DatabaseException( "Named parameter(s) [" + missingParams + "] provided to query were not used." );
 		}
 
 		SQLWithParamTokens.add( SQLWithParamToken.toString() );
@@ -484,7 +479,7 @@ public class PendingQuery {
 
 	/**
 	 * Return final SQL with paramter values
-	 * 
+	 *
 	 * @return
 	 */
 	public @Nonnull String getSQLWithParamValues() {
@@ -662,7 +657,7 @@ public class PendingQuery {
 	 * If this is a paramaterized query, apply the parameters to the provided statement.
 	 * We will also take this opportunity to finalize the list of SQL tokens with the
 	 * final param values to build the effective SQL string.
-	 * 
+	 *
 	 * @throws SQLException
 	 */
 	private void applyParameters( Statement statement, IBoxContext context ) throws SQLException {
@@ -717,7 +712,7 @@ public class PendingQuery {
 
 	/**
 	 * Emit a value to the SQL string, quoting it if necessary.
-	 * 
+	 *
 	 * @param SQLWithParamValues The SQL string to append the value to.
 	 * @param value              The value to append.
 	 * @param type               The type of the value.
