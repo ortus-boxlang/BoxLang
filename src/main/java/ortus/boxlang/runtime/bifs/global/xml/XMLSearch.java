@@ -28,6 +28,8 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -68,30 +70,35 @@ public class XMLSearch extends BIF {
 	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		XML				xml			= arguments.getAsXML( Key.XMLNode );
-		String			xpathString	= arguments.getAsString( Key.xpath );
-		final IStruct	params		= arguments.getAsStruct( Key.params );
+		XML				xml				= arguments.getAsXML( Key.XMLNode );
+		String			xpathString		= arguments.getAsString( Key.xpath );
+		final IStruct	params			= arguments.getAsStruct( Key.params );
+
+		// Create an XPathFactory
+		XPathFactory	xPathFactory	= XPathFactory.newInstance();
+
+		// Create an XPath object
+		XPath			xpath			= xPathFactory.newXPath();
+
+		xpath.setXPathVariableResolver( new XPathVariableResolver() {
+
+			public Object resolveVariable( QName variableName ) {
+				return params.get( Key.of( variableName.getLocalPart() ) );
+			}
+		} );
+
+		XPathExpression expression;
 		try {
-
-			// Create an XPathFactory
-			XPathFactory	xPathFactory	= XPathFactory.newInstance();
-
-			// Create an XPath object
-			XPath			xpath			= xPathFactory.newXPath();
-
-			xpath.setXPathVariableResolver( new XPathVariableResolver() {
-
-				public Object resolveVariable( QName variableName ) {
-					return params.get( Key.of( variableName.getLocalPart() ) );
-				}
-			} );
-
 			// TODO: cache compiled expressions
-			XPathExpression	expression	= xpath.compile( xpathString );
+			expression = xpath.compile( xpathString );
+		} catch ( XPathExpressionException e ) {
+			throw new BoxRuntimeException( "Error compiling XPath: " + xpathString, e );
+		}
 
+		try {
 			// Evaluate the XPath expression on the Document
-			Object			result		= expression.evaluate( xml.getNode(), XPathConstants.NODESET );
-			Array			results		= new Array();
+			Object	result	= expression.evaluate( xml.getNode(), XPathConstants.NODESET );
+			Array	results	= new Array();
 			// Process the result
 			if ( result instanceof NodeList nodeList ) {
 				for ( int i = 0; i < nodeList.getLength(); i++ ) {
@@ -100,10 +107,23 @@ public class XMLSearch extends BIF {
 			}
 			return results;
 
-		} catch (
-
-		XPathExpressionException e ) {
-			throw new BoxRuntimeException( "Invalid XPath: " + xpathString, e );
+		} catch ( XPathExpressionException e ) {
+			// The API here is freaking worthless. It's impossible to tell what kind of return type you'll get without doing your own manual pre-parsing of the xpath string.
+			// So, we have to just try it as a nodeset and if that fails, guess what it should have been by analyzing the error message. Pathetic.
+			String message = e.getMessage() == null ? "" : e.getMessage();
+			try {
+				if ( message.indexOf( "#BOOLEAN" ) != -1 ) {
+					return BooleanCaster.cast( expression.evaluate( xml.getNode(), XPathConstants.BOOLEAN ) );
+				} else if ( message.indexOf( "#NUMBER" ) != -1 ) {
+					return NumberCaster.cast( expression.evaluate( xml.getNode(), XPathConstants.NUMBER ) );
+				} else if ( message.indexOf( "#STRING" ) != -1 ) {
+					return expression.evaluate( xml.getNode(), XPathConstants.STRING );
+				} else {
+					throw e;
+				}
+			} catch ( XPathExpressionException e1 ) {
+				throw new BoxRuntimeException( "Error evaluating XPath: " + xpathString, e1 );
+			}
 		}
 	}
 
