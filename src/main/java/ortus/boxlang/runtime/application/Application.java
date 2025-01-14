@@ -518,10 +518,10 @@ public class Application {
 
 		// Shutdown all sessions if NOT in a cluster
 		if ( !BooleanCaster.cast( this.startingListener.getSettings().get( Key.sessionCluster ) ) ) {
-			sessionsCache.getKeysStream( sessionCacheFilter )
+			this.sessionsCache.getKeysStream( sessionCacheFilter )
 			    .parallel()
 			    .map( Key::of )
-			    .map( sessionKey -> ( Session ) sessionsCache.get( sessionKey.getName() ).get() )
+			    .map( sessionKey -> ( Session ) this.sessionsCache.get( sessionKey.getName() ).get() )
 			    .forEach( session -> session.shutdown( this.getStartingListener() ) );
 		}
 
