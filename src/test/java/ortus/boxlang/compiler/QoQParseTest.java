@@ -255,22 +255,61 @@ public class QoQParseTest {
 	public void testcustomFunc() {
 		instance.executeSource(
 		    """
-		       import ortus.boxlang.runtime.jdbc.qoq.QoQFunctionService;
-		       import ortus.boxlang.runtime.scopes.Key;
-		       import ortus.boxlang.runtime.types.QueryColumnType;
+		       // Register a custom function
+		    queryRegisterFunction( "reverse", ::reverse, "varchar" )
 
-		    // Register a custom function
-		       QoQFunctionService.registerCustom( Key.of("reverse"), ::reverse, QueryColumnType.VARCHAR, 1, getBoxContext() );
+		                              q = queryExecute( "
+		                     select reverse( 'Brad' ) as rev
+		                                     ",
+		                                           	[],
+		                                           	{ dbType : "query" }
+		                                           );
+		                                        println( q )
 
-		                           q = queryExecute( "
-		                  select reverse( 'Brad' ) as rev
-		                                  ",
-		                                        	[],
-		                                        	{ dbType : "query" }
-		                                        );
-		                                     println( q )
+		                                           """,
+		    context );
+	}
 
-		                                        """,
+	@Test
+	public void testcustomFuncAggregate() {
+		instance.executeSource(
+		    """
+		       // Register a custom aggregate function
+		    queryRegisterFunction(  "arrayToList", ::arrayToList, "varchar", "aggregate" )
+
+		       qryAll = queryNew( "name", "varchar", [["Luis"],["Jon"],["Brad"],["Esme"],["Myrna"]] )
+		                              q = queryExecute( "
+		                     select arrayToList( name ) as names
+		         from qryAll
+		                                     ",
+		                                           	[],
+		                                           	{ dbType : "query" }
+		                                           );
+		                                        println( q )
+
+		                                           """,
+		    context );
+	}
+
+	@Test
+	public void testcustomFuncAggregateUDF() {
+		instance.executeSource(
+		    """
+		         // Register a custom aggregate function
+		    queryRegisterFunction(  "fullNameList", (firsts,lasts)->firsts.reduce( (acc,first,i)=>acc.listAppend( first & ' ' & lasts[i] ), "" ), "varchar", "aggregate" )
+
+		         qryAll = queryNew( "first,last", "varchar,varchar", [["Luis","Majano"],["Jon","Clausen"],["Brad","Wood"],["Esme","Acevedo"],["Myrna","Nelly"]] )
+		                                q = queryExecute( "
+		                       select fullNameList( first, last ) as fullNames,
+		       group_concat( first + ' ' + last ) as fullNames2
+		       from qryAll
+		                                       ",
+		                                             	[],
+		                                             	{ dbType : "query" }
+		                                             );
+		                                          println( q )
+
+		                                             """,
 		    context );
 	}
 

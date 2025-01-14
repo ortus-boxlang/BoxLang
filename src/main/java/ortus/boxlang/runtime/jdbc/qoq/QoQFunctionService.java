@@ -145,6 +145,26 @@ public class QoQFunctionService {
 	}
 
 	/**
+	 * Register a custom aggregate function based on a UDF or closure
+	 * 
+	 * @param name           The name of the function
+	 * @param function       The function to execute
+	 * @param returnType     The return type of the function
+	 * @param requiredParams The number of required parameters
+	 * @param context        The context to execute the function in
+	 */
+	public static void registerCustomAggregate( Key name, ortus.boxlang.runtime.types.Function function, QueryColumnType returnType, int requiredParams,
+	    IBoxContext context ) {
+		functions.put( name, QoQFunction.ofAggregate(
+		    // TODO: do we pass the expressions here?
+		    ( List<Object[]> arguments, List<SQLExpression> expressions ) -> context.invokeFunction( function, arguments.toArray() ),
+		    null,
+		    returnType,
+		    requiredParams
+		) );
+	}
+
+	/**
 	 * Register an aggregate function via a BiFunction
 	 * 
 	 * @param name           The name of the function
