@@ -333,7 +333,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 		uniqueName.append( "_" );
 
 		// Hash the properties
-		uniqueName.append( properties.hashCode() );
+		uniqueName.append( Math.abs( properties.hashCode() ) );
 
 		return Key.of( uniqueName.toString() );
 	}
