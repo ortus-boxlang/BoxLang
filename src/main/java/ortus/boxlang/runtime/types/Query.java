@@ -153,19 +153,32 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		try {
 			ResultSetMetaData	resultSetMetaData	= resultSet.getMetaData();
 			int					columnCount			= resultSetMetaData.getColumnCount();
+			// This will map which column in the JDBC result corresponds with the ordinal position of each query column
+			List<Integer>		columnMapList		= new ArrayList<>();
 
 			// The column count starts from 1
 			for ( int i = 1; i <= columnCount; i++ ) {
-				query.addColumn(
-				    Key.of( resultSetMetaData.getColumnLabel( i ) ),
-				    QueryColumnType.fromSQLType( resultSetMetaData.getColumnType( i ) ) );
+				Key colName = Key.of( resultSetMetaData.getColumnLabel( i ) );
+				// If we haven't hit this column name before....
+				if ( !query.hasColumn( colName ) ) {
+					// Add it
+					query.addColumn(
+					    colName,
+					    QueryColumnType.fromSQLType( resultSetMetaData.getColumnType( i ) ) );
+					// And remember this col possition as where the data will come from
+					columnMapList.add( i );
+				}
 			}
 
+			// Native array for super fast access
+			int[] columnMap = columnMapList.stream().mapToInt( i -> i ).toArray();
+			// Update, may be smaller now if there were duplicate column names
+			columnCount = columnMap.length;
 			while ( resultSet.next() ) {
-				IStruct row = new Struct( IStruct.TYPES.LINKED );
-				for ( int i = 1; i <= columnCount; i++ ) {
-					String columnName = resultSetMetaData.getColumnLabel( i );
-					row.put( columnName, resultSet.getObject( columnName ) );
+				Object[] row = new Object[ columnCount ];
+				for ( int i = 0; i < columnCount; i++ ) {
+					// Get the data in the JDBC column based on our column map
+					row[ i ] = resultSet.getObject( columnMap[ i ] );
 				}
 				query.addRow( row );
 			}
