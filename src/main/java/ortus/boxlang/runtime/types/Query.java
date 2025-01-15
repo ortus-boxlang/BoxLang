@@ -162,9 +162,9 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 			}
 
 			while ( resultSet.next() ) {
-				Object[] row = new Object[ columnCount ];
+				IStruct row = new Struct( IStruct.TYPES.LINKED );
 				for ( int i = 1; i <= columnCount; i++ ) {
-					row[ i - 1 ] = resultSet.getObject( i );
+					row.put( resultSetMetaData.getColumnLabel( i ), resultSet.getObject( resultSetMetaData.getColumnLabel( i ) ) );
 				}
 				query.addRow( row );
 			}

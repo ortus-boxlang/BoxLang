@@ -779,6 +779,22 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		assertEquals( Duration.ofMinutes( 30 ), result.get( Key.cacheLastAccessTimeout ) );
 	}
 
+	@DisplayName( "It can properly handle duplicate column names in the result set" )
+	@Test
+	public void testDuplicateColumnResultSets() {
+		instance.executeStatement(
+		    """
+		        result = queryExecute( "SELECT name, CURRENT_DATE AS name, id, role FROM developers WHERE id=1" );
+		    """, context );
+		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
+		Query query = variables.getAsQuery( result );
+		assertEquals( 1, query.size() );
+		IStruct firstRow = query.getRowAsStruct( 0 );
+		assertThat( firstRow.get( Key._NAME ) ).isEqualTo( "Luis Majano" );
+		assertThat( firstRow.get( Key.id ) ).isEqualTo( 1 );
+		assertThat( firstRow.get( Key.of( "role" ) ) ).isEqualTo( "CEO" );
+	}
+
 	@Disabled( "Not implemented" )
 	@DisplayName( "It only keeps the first resultSet and discards the rest like Lucee" )
 	@Test
