@@ -164,7 +164,8 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 			while ( resultSet.next() ) {
 				IStruct row = new Struct( IStruct.TYPES.LINKED );
 				for ( int i = 1; i <= columnCount; i++ ) {
-					row.put( resultSetMetaData.getColumnLabel( i ), resultSet.getObject( resultSetMetaData.getColumnLabel( i ) ) );
+					String columnName = resultSetMetaData.getColumnLabel( i );
+					row.put( columnName, resultSet.getObject( columnName ) );
 				}
 				query.addRow( row );
 			}
@@ -539,7 +540,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		Object		o;
 		for ( QueryColumn column : columns.values() ) {
 			// Missing keys in the struct go in the query as an empty string (CF compat)
-			rowData[ i ] = ( o = row.get( column.getName() ) ) == null ? "" : o;
+			rowData[ i ] = row.containsKey( column.getName() ) ? row.get( column.getName() ) : "";
 			i++;
 		}
 		// We're ignoring extra keys in the struct that aren't query columns. Lucee
