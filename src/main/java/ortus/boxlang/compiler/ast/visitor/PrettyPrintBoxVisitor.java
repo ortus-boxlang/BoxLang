@@ -1680,7 +1680,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 				print( ">" );
 			}
 		} else {
-			// print( "bx:" );
+			print( "bx:" );
 			print( node.getName() );
 			for ( var attr : node.getAttributes() ) {
 				print( " " );

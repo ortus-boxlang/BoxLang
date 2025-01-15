@@ -73,7 +73,7 @@ public class TestBoxTest {
 				println( response );
 			}
 
-			application name="testbox runner" mappings={"/testbox":testboxDir};
+			bx:application name="testbox runner" mappings={"/testbox":testboxDir};
 
 			result = new testbox.system.TestBox().runRaw(  directory='src.test.java.external.specs' ).getMemento();
 

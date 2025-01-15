@@ -64,7 +64,7 @@ public class SaveContentTest {
 		instance.executeSource(
 		    """
 		       	echo( "before" );
-		          saveContent variable="result" {
+		          bx:saveContent variable="result" {
 		       	echo( "Hello World" );
 		       }
 		    echo( "after" );

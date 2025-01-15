@@ -85,7 +85,7 @@ public class LogTest {
 	public void testComponentScript() {
 		instance.executeSource(
 		    """
-		    log text="Hello Logger!" file="bxlog";
+		    bx:log text="Hello Logger!" file="bxlog";
 		    """,
 		    context, BoxSourceType.BOXSCRIPT );
 		assertTrue( StringUtils.contains( outContent.toString(), "Hello Logger!" ) );

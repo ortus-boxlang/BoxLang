@@ -238,11 +238,11 @@ public class LoopTest {
 	public void testLoopTimes() {
 		instance.executeSource(
 		    """
-		    result = "";
-		    	loop times=5 {
-		    		result &= "*";
-		    	}
-		          """,
+		       result = "";
+		    bx:loop times=5 {
+		       		result &= "*";
+		       	}
+		             """,
 		    context, BoxSourceType.BOXSCRIPT );
 
 		assertThat( variables.getAsString( Key.of( "result" ) ) ).isEqualTo( "*****" );
@@ -252,11 +252,11 @@ public class LoopTest {
 	public void testLoopZeroTimes() {
 		instance.executeSource(
 		    """
-		    result = "";
-		    	loop times=0 {
-		    		result &= "*";
-		    	}
-		          """,
+		       result = "";
+		    bx:loop times=0 {
+		       		result &= "*";
+		       	}
+		             """,
 		    context, BoxSourceType.BOXSCRIPT );
 
 		assertThat( variables.getAsString( Key.of( "result" ) ) ).isEqualTo( "" );
@@ -266,11 +266,11 @@ public class LoopTest {
 	public void testLoopTimesIndex() {
 		instance.executeSource(
 		    """
-		    result = "";
-		    	loop times=5 index="i" {
-		    		result &= i;
-		    	}
-		          """,
+		       result = "";
+		    bx:loop times=5 index="i" {
+		       		result &= i;
+		       	}
+		             """,
 		    context, BoxSourceType.BOXSCRIPT );
 
 		assertThat( variables.getAsString( Key.of( "result" ) ) ).isEqualTo( "12345" );
@@ -280,11 +280,11 @@ public class LoopTest {
 	public void testLoopTimesItem() {
 		instance.executeSource(
 		    """
-		    result = "";
-		    	loop times=5 item="i" {
-		    		result &= i;
-		    	}
-		          """,
+		       result = "";
+		    bx:loop times=5 item="i" {
+		       		result &= i;
+		       	}
+		             """,
 		    context, BoxSourceType.BOXSCRIPT );
 
 		assertThat( variables.getAsString( Key.of( "result" ) ) ).isEqualTo( "12345" );
@@ -391,15 +391,15 @@ public class LoopTest {
 	public void testLoopCondition() {
 		instance.executeSource(
 		    """
-		     function foo( required string name ) {
-		    	 loop condition=arguments.name == "brad" {
-		    return getFunctionCalledName();
-		    		 break;
-		    	 }
-		     }
+		       function foo( required string name ) {
+		    bx:loop condition=arguments.name == "brad" {
+		      return getFunctionCalledName();
+		      		 break;
+		      	 }
+		       }
 
-		     result = foo( "brad" );
-		    				 """,
+		       result = foo( "brad" );
+		      				 """,
 		    context, BoxSourceType.BOXSCRIPT );
 		assertThat( variables.getAsString( Key.of( "result" ) ) ).isEqualTo( "foo" );
 	}
@@ -409,7 +409,7 @@ public class LoopTest {
 		instance.executeSource(
 		    """
 		    	result = ""
-		    	loop from="1" to="5" step="1" index="i" {
+		    	bx:loop from="1" to="5" step="1" index="i" {
 		    		result &= i;
 		    	}
 		    """,
@@ -422,7 +422,7 @@ public class LoopTest {
 		instance.executeSource(
 		    """
 		    	result = ""
-		    	loop from="5" to="1" step="-1" index="i" {
+		    	bx:loop from="5" to="1" step="-1" index="i" {
 		    		result &= i;
 		    	}
 		    """,
@@ -435,7 +435,7 @@ public class LoopTest {
 		instance.executeSource(
 		    """
 		    	result = ""
-		    	loop from="1" to="5" step="0" index="i" {
+		    	bx:loop from="1" to="5" step="0" index="i" {
 		    		result &= i;
 		    	}
 		    """,
@@ -448,7 +448,7 @@ public class LoopTest {
 		instance.executeSource(
 		    """
 		    	result = ""
-		    	loop from="1" to="10" step="1.5" index="i" {
+		    	bx:loop from="1" to="10" step="1.5" index="i" {
 		    		result = result.listAppend(i)
 		    	}
 		    """,

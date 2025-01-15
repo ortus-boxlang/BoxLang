@@ -99,7 +99,7 @@ public class InvokeTest {
 				function foo() {
 					return "bar";
 				}
-				invoke method="foo" returnVariable="result";
+				bx:invoke method="foo" returnVariable="result";
 		    """,
 		    context );
 		// @formatter:on
@@ -167,9 +167,9 @@ public class InvokeTest {
 	public void testInvokeExistingClass() {
 		instance.executeSource(
 		    """
-		    myClass = new src.test.java.ortus.boxlang.runtime.components.system.InvokeTest()
-		         invoke class="#myClass#" method="foo" returnVariable="result" ;
-		         """,
+		       myClass = new src.test.java.ortus.boxlang.runtime.components.system.InvokeTest()
+		    bx:invoke class="#myClass#" method="foo" returnVariable="result" ;
+		            """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "bar" );
 	}
@@ -179,8 +179,8 @@ public class InvokeTest {
 	public void testInvokeCreatedClass() {
 		instance.executeSource(
 		    """
-		    	 invoke class="src.test.java.ortus.boxlang.runtime.components.system.InvokeTest" method="foo" returnVariable="result" ;
-		    """,
+		    bx:invoke class="src.test.java.ortus.boxlang.runtime.components.system.InvokeTest" method="foo" returnVariable="result" ;
+		      """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "bar" );
 	}
@@ -190,8 +190,8 @@ public class InvokeTest {
 	public void testTranspile() {
 		instance.executeSource(
 		    """
-		    	 invoke component="src.test.java.ortus.boxlang.runtime.components.system.InvokeTest" method="foo" returnVariable="result" ;
-		    """,
+		    invoke component="src.test.java.ortus.boxlang.runtime.components.system.InvokeTest" method="foo" returnVariable="result" ;
+		      """,
 		    context, BoxSourceType.CFSCRIPT );
 		assertThat( variables.get( result ) ).isEqualTo( "bar" );
 	}
@@ -206,7 +206,7 @@ public class InvokeTest {
 		        		return "bar";
 		        	}
 		        }
-		    	invoke class="#myStr#" method="foo" returnVariable="result" ;
+		    	bx:invoke class="#myStr#" method="foo" returnVariable="result" ;
 		    """,
 		    context, BoxSourceType.BOXSCRIPT );
 		assertThat( variables.get( result ) ).isEqualTo( "bar" );
@@ -306,7 +306,7 @@ public class InvokeTest {
 		    			 variables.result = arguments;
 		    		 }
 		    createArgs()
-		    		 invoke method="meh" argumentCollection="#args#";
+		    		 bx:invoke method="meh" argumentCollection="#args#";
 		    	 """,
 		    context );
 
@@ -330,7 +330,7 @@ public class InvokeTest {
 		    		variables.result = arguments;
 		    	}
 		    	createArgs('hello world')
-		       		 invoke method="meh" argumentCollection="#args#";
+		       		 bx:invoke method="meh" argumentCollection="#args#";
 		    """,
 		    context );
 

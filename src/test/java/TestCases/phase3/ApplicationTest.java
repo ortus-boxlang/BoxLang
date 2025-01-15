@@ -66,7 +66,7 @@ public class ApplicationTest {
 		// @formatter:off
 		instance.executeSource(
 		    """
-		        application name="myAppsdfsdf" sessionmanagement="true";
+		        bx:application name="myAppsdfsdf" sessionmanagement="true";
 
 				result = application;
 				result2 = session;
@@ -93,7 +93,7 @@ public class ApplicationTest {
 		// @formatter:off
 		instance.executeSource(
 		    """
-		        application name="myAppsdfsdf2" sessionmanagement="true";
+		        bx:application name="myAppsdfsdf2" sessionmanagement="true";
 				result = GetApplicationMetadata();
 			""", context );
 		// @formatter:on
@@ -128,7 +128,7 @@ public class ApplicationTest {
 		    """
 				import java.lang.Thread;
 
-		        application name="myJavaApp" javaSettings={
+		        bx:application name="myJavaApp" javaSettings={
 					loadPaths = [ "/src/test/resources/libs" ],
 					reloadOnChange = true
 				 };
@@ -175,7 +175,7 @@ public class ApplicationTest {
 		// @formatter:off
 		instance.executeSource(
 		    """
-		        application name="myJavaApp" javaSettings={
+		        bx:application name="myJavaApp" javaSettings={
 					loadPaths = [ "/src/test/resources/libs/helloworld.jar" ],
 					reloadOnChange = true
 				 };
@@ -193,7 +193,7 @@ public class ApplicationTest {
 		// @formatter:off
 		instance.executeSource(
 		    """
-		        application name="myJavaApp" javaSettings={
+		        bx:application name="myJavaApp" javaSettings={
 					loadPaths = [ "\\src\\test\\resources\\libs\\helloworld.jar" ],
 					reloadOnChange = true
 				 };
@@ -220,7 +220,7 @@ public class ApplicationTest {
 		// @formatter:off
 		instance.executeSource(
 		    """
-		        application name="myJavaApp" javaSettings={
+		        bx:application name="myJavaApp" javaSettings={
 					loadPaths = [ "libs/helloworld.jar" ],
 					reloadOnChange = true
 				 };
@@ -238,7 +238,7 @@ public class ApplicationTest {
 		// @formatter:off
 		instance.executeSource(
 		    """
-		        application
+		        bx:application
 					name="myJavaAppWithMappings"
 					mappings = { "/javalib": "/src/test/resources/libs/" }
 					javaSettings={
@@ -259,7 +259,7 @@ public class ApplicationTest {
 		// @formatter:off
 		instance.executeSource(
 		    """
-		        application
+		        bx:application
 					name="myAppWithDatasource"
 					datasources = { 
 						mysql = {
@@ -284,7 +284,7 @@ public class ApplicationTest {
 		// @formatter:off
 		instance.executeSource(
 		    """
-		        application
+		        bx:application
 					name="myAppWithDatasource"
 					timezone="America/Los_Angeles";
 			""", context );
@@ -301,7 +301,7 @@ public class ApplicationTest {
 		// @formatter:off
 		instance.executeSource(
 		    """
-		        application
+		        bx:application
 					name="testUpdateApplicationWithoutName"
 					sessionmanagement="true";
 
@@ -311,7 +311,7 @@ public class ApplicationTest {
 					"/UpdateApplicationWithoutName" : "/src/test/resources/libs/"
 				}
 
-				application
+				bx:application
 					action        ="update"
 					mappings      ="#newMappings#";
 

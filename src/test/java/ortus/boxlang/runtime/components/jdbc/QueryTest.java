@@ -280,7 +280,7 @@ public class QueryTest extends BaseJDBCTest {
 	public void testReturnTypeStruct() {
 		getInstance().executeSource(
 		    """
-		    query name="result" returntype="struct" columnKey="role" {
+		    bx:query name="result" returntype="struct" columnKey="role" {
 		    	echo( "SELECT * FROM developers ORDER BY id" );
 		    };
 		    """,
@@ -327,7 +327,7 @@ public class QueryTest extends BaseJDBCTest {
 	public void testMissingColumnKey() {
 		BoxRuntimeException e = assertThrows( BoxRuntimeException.class, () -> getInstance().executeSource(
 		    """
-		    query name="result" returntype="struct" {
+		    bx:query name="result" returntype="struct" {
 		    	echo( "SELECT * FROM developers ORDER BY id" );
 		    };
 		    """,

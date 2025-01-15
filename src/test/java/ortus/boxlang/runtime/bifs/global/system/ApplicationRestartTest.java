@@ -67,7 +67,7 @@ public class ApplicationRestartTest {
 	void testItCanStopAnApplication() {
 
 		instance.executeSource( """
-		                        application name="unit-test1" sessionmanagement="true";
+		                        bx:application name="unit-test1" sessionmanagement="true";
 		                           """, context );
 
 		Application targetApp = context.getParentOfType( ApplicationBoxContext.class ).getApplication();

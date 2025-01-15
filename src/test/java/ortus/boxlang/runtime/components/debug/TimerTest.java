@@ -99,10 +99,10 @@ public class TimerTest {
 	public void testComponentBX() {
 		instance.executeSource(
 		    """
-		    timer type="comment" label="TimeIt"{
-		    	sleep(1);
-		    }
-		       """,
+		    bx:timer type="comment" label="TimeIt"{
+		      	sleep(1);
+		      }
+		         """,
 		    context, BoxSourceType.BOXSCRIPT );
 
 		assertTrue( baos.toString().length() > 0 );
@@ -115,10 +115,10 @@ public class TimerTest {
 	public void testComponentVariable() {
 		instance.executeSource(
 		    """
-		    timer variable="result"{
-		    	sleep(1);
-		    }
-		       """,
+		    bx:timer variable="result"{
+		      	sleep(1);
+		      }
+		         """,
 		    context, BoxSourceType.BOXSCRIPT );
 
 		assertTrue( variables.get( result ) instanceof Long );
@@ -130,10 +130,10 @@ public class TimerTest {
 	public void testComponentVariableNS() {
 		instance.executeSource(
 		    """
-		    timer variable="result" unit="nano"{
-		    	sleep(1);
-		    }
-		       """,
+		    bx:timer variable="result" unit="nano"{
+		      	sleep(1);
+		      }
+		         """,
 		    context, BoxSourceType.BOXSCRIPT );
 
 		assertTrue( variables.get( result ) instanceof Long );
@@ -145,10 +145,10 @@ public class TimerTest {
 	public void testComponentVariableMicroSec() {
 		instance.executeSource(
 		    """
-		    timer variable="result" unit="micro"{
-		    	sleep(1);
-		    }
-		       """,
+		    bx:timer variable="result" unit="micro"{
+		      	sleep(1);
+		      }
+		         """,
 		    context, BoxSourceType.BOXSCRIPT );
 
 		assertTrue( variables.get( result ) instanceof Long );
@@ -160,10 +160,10 @@ public class TimerTest {
 	public void testComponentVariableSec() {
 		instance.executeSource(
 		    """
-		    timer variable="result" unit="second"{
-		    	sleep(1);
-		    }
-		       """,
+		    bx:timer variable="result" unit="second"{
+		      	sleep(1);
+		      }
+		         """,
 		    context, BoxSourceType.BOXSCRIPT );
 
 		assertTrue( variables.get( result ) instanceof Long );
@@ -175,10 +175,10 @@ public class TimerTest {
 	public void testComponentLabelOnly() {
 		instance.executeSource(
 		    """
-		    timer label="TimeIt"{
-		    	sleep(1);
-		    }
-		       """,
+		    bx:timer label="TimeIt"{
+		      	sleep(1);
+		      }
+		         """,
 		    context, BoxSourceType.BOXSCRIPT );
 
 		assertTrue( baos.toString() instanceof String );
@@ -192,10 +192,10 @@ public class TimerTest {
 	public void testComponentVariableDebug() {
 		instance.executeSource(
 		    """
-		    timer type="debug" label="TimeIt"{
-		    	sleep(1);
-		    }
-		       """,
+		    bx:timer type="debug" label="TimeIt"{
+		      	sleep(1);
+		      }
+		         """,
 		    context, BoxSourceType.BOXSCRIPT );
 
 		assertTrue( ExpressionInterpreter.getVariable( context, "request.debugInfo", true ) instanceof IStruct );
@@ -240,10 +240,10 @@ public class TimerTest {
 	public void testStopwatchVariable() {
 		instance.executeSource(
 		    """
-		    stopwatch variable="result"{
-		    	sleep(1);
-		    }
-		       """,
+		    bx:stopwatch variable="result"{
+		      	sleep(1);
+		      }
+		         """,
 		    context, BoxSourceType.BOXSCRIPT );
 
 		assertTrue( variables.get( result ) instanceof Long );
@@ -255,10 +255,10 @@ public class TimerTest {
 	public void testStopWatchLabelOnly() {
 		instance.executeSource(
 		    """
-		    stopwatch label="TimeIt"{
-		    	sleep(1);
-		    }
-		       """,
+		    bx:stopwatch label="TimeIt"{
+		      	sleep(1);
+		      }
+		         """,
 		    context, BoxSourceType.BOXSCRIPT );
 
 		assertTrue( baos.toString().length() > 0 );

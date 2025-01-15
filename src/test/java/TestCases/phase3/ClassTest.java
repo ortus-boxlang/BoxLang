@@ -417,7 +417,7 @@ public class ClassTest {
 		instance.executeSource(
 		    """
 				newClassPaths = getApplicationMetadata().classPaths.append( expandPath( "/src/test/java/TestCases/phase3" ) );
-				application classPaths=newClassPaths;
+				bx:application classPaths=newClassPaths;
 				cfc = new MyClass();
 				// execute public method
 				result = cfc.foo();
@@ -433,7 +433,7 @@ public class ClassTest {
 		instance.executeSource(
 		    """
 				newClassPaths = getApplicationMetadata().classPaths.append( expandPath( "/src/test/java/TestCases" ) );
-				application classPaths=newClassPaths;
+				bx:application classPaths=newClassPaths;
 				import phase3.MyClass as bradClass;
 				cfc = new bradClass();
 				// execute public method

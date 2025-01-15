@@ -230,18 +230,18 @@ public class BoxTemplateTest {
 	public void testComponentIslandBufferOrder() {
 		instance.executeSource(
 		    """
-		      setting enableOutputOnly=true;
-		        	echo( "I am a script" )
+		    bx:setting enableOutputOnly=true;
+		          	echo( "I am a script" )
 
-		        	```
-		        	<!--- Now I can do templating --->
-		        	<bx:output>hello</bx:output>
-		        	```
+		          	```
+		          	<!--- Now I can do templating --->
+		          	<bx:output>hello</bx:output>
+		          	```
 
-		        	// Now I am back in scripts
-		        	echo( "scripts again" )
-		    result = getBoxContext().getBuffer().toString()
-		        """, context, BoxSourceType.BOXSCRIPT );
+		          	// Now I am back in scripts
+		          	echo( "scripts again" )
+		      result = getBoxContext().getBuffer().toString()
+		          """, context, BoxSourceType.BOXSCRIPT );
 		assertThat( variables.get( result ) ).isEqualTo( "I am a scripthelloscripts again" );
 	}
 
@@ -789,26 +789,26 @@ public class BoxTemplateTest {
 	public void testGenericComponentsInScript() {
 		instance.executeSource(
 		    """
-		    http url="http://google.com" throwOnTimeout=true {
-		    	foo = "bar";
-		    	baz=true;
-		    }
+		       bx:http url="http://google.com" throwOnTimeout=true {
+		       	foo = "bar";
+		       	baz=true;
+		       }
 
-		    http url="http://google.com" throwOnTimeout=true;
+		    bx:http url="http://google.com" throwOnTimeout=true;
 
-		                  """,
+		                     """,
 		    context, BoxSourceType.BOXSCRIPT );
 	}
 
 	@Test
-	public void testNonExistentcComponentsInScript() {
+	public void testNonExistentComponentsInScript() {
 		Throwable e = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
 		    """
-		    brad {
-		    }
-		          """,
+		    bx:brad {
+		      }
+		            """,
 		    context, BoxSourceType.BOXSCRIPT ) );
-		assertThat( e.getMessage() ).contains( "[brad] was not located" );
+		assertThat( e.getMessage() ).contains( "[brad] could not be found" );
 	}
 
 	@Test
@@ -896,13 +896,13 @@ public class BoxTemplateTest {
 	public void testLoopConditionScript() {
 		instance.executeSource(
 		    """
-		      result = "";
-		    counter=0;
-		    		 loop condition="counter LT 5" {
-		    			 counter++
-		    			result &= counter
-		    	}
-		    	""", context, BoxSourceType.BOXSCRIPT );
+		         result = "";
+		       counter=0;
+		    bx:loop condition="counter LT 5" {
+		       			 counter++
+		       			result &= counter
+		       	}
+		       	""", context, BoxSourceType.BOXSCRIPT );
 		assertThat( variables.get( result ) ).isEqualTo( "12345" );
 	}
 
@@ -910,13 +910,13 @@ public class BoxTemplateTest {
 	public void testLoopConditionExprScript() {
 		instance.executeSource(
 		    """
-		      result = "";
-		    counter=0;
-		    		 loop condition="#counter LT 5#" {
-		    			 counter++
-		    			result &= counter
-		    	}
-		    	""", context, BoxSourceType.BOXSCRIPT );
+		         result = "";
+		       counter=0;
+		    bx:loop condition="#counter LT 5#" {
+		       			 counter++
+		       			result &= counter
+		       	}
+		       	""", context, BoxSourceType.BOXSCRIPT );
 		assertThat( variables.get( result ) ).isEqualTo( "12345" );
 	}
 

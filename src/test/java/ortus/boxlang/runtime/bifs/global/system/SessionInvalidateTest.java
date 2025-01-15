@@ -64,12 +64,12 @@ public class SessionInvalidateTest {
 	public void testBif() {
 		instance.executeSource(
 		    """
-		    application name="unit-test-sm" sessionmanagement="true";
-		         session.foo = "bar";
-		         initialSession = duplicate( session );
-		         SessionInvalidate();
-		         result = session;
-		         """,
+		    bx:application name="unit-test-sm" sessionmanagement="true";
+		           session.foo = "bar";
+		           initialSession = duplicate( session );
+		           SessionInvalidate();
+		           result = session;
+		           """,
 		    context );
 		IStruct initialSession = variables.getAsStruct( Key.of( "initialSession" ) );
 		assertFalse( variables.getAsStruct( result ).containsKey( Key.of( "foo" ) ) );

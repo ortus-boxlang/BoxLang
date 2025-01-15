@@ -447,11 +447,18 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 
 	@Override
 	public BoxNode visitComponent( ComponentContext ctx ) {
-		var					pos			= tools.getPosition( ctx );
-		var					src			= tools.getSourceText( ctx );
+		var		pos	= tools.getPosition( ctx );
+		var		src	= tools.getSourceText( ctx );
 
-		String				name		= ctx.componentName().getText();
-		List<BoxAnnotation>	attributes	= Optional.ofNullable( ctx.componentAttribute() )
+		String	name;
+		// Any identifer prefixed with bx:
+		if ( ctx.componentName() != null ) {
+			name = ctx.componentName().getText();
+		} else {
+			// specical component name's like transaction which are allowed to not have bx: in front
+			name = ctx.specialComponentName().getText();
+		}
+		List<BoxAnnotation> attributes = Optional.ofNullable( ctx.componentAttribute() )
 		    .map( attributeList -> attributeList.stream().map( attribute -> ( BoxAnnotation ) attribute.accept( this ) ).collect( Collectors.toList() ) )
 		    .orElse( Collections.emptyList() );
 

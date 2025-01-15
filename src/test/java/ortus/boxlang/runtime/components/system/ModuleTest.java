@@ -18,7 +18,14 @@
 
 package ortus.boxlang.runtime.components.system;
 
-import org.junit.jupiter.api.*;
+import static com.google.common.truth.Truth.assertThat;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -26,8 +33,6 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
-
-import static com.google.common.truth.Truth.assertThat;
 
 public class ModuleTest {
 
@@ -92,9 +97,9 @@ public class ModuleTest {
 
 		instance.executeSource(
 		    """
-		    brad="wood";
-		       module template="src/test/java/ortus/boxlang/runtime/components/system/MyTag.cfm" foo="bar";
-		              """,
+		       brad="wood";
+		    bx:module template="src/test/java/ortus/boxlang/runtime/components/system/MyTag.cfm" foo="bar";
+		                 """,
 		    context );
 		assertThat( buffer.toString().replaceAll( "\\s", "" ) ).isEqualTo( "alwaysMyTagstartbarwood" );
 		assertThat( variables.getAsString( result ) ).isEqualTo( "hey you guys" );

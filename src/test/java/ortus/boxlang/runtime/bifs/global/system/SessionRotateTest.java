@@ -64,7 +64,7 @@ public class SessionRotateTest {
 		// @formatter:off
 		instance.executeSource(
 		    """
-		     	application name="unit-test-sm" sessionmanagement="true";
+				bx:application name="unit-test-sm" sessionmanagement="true";
 
 				session.foo = "bar";
 				initialSession = duplicate( session );

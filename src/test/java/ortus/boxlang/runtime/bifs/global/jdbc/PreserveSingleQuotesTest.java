@@ -66,7 +66,7 @@ public class PreserveSingleQuotesTest extends BaseJDBCTest {
 	public void testNormalScript() {
 		instance.executeSource(
 		    """
-		    query name="result" {
+		    bx:query name="result" {
 		    	echo( "SELECT *
 		    	FROM developers
 		    	WHERE name = 'Bob O''Reily' ")
@@ -84,7 +84,7 @@ public class PreserveSingleQuotesTest extends BaseJDBCTest {
 		    sql = "SELECT *
 		    	FROM developers
 		    	WHERE name = 'Bob O''Reily'";
-		       query name="result" {
+		       bx:query name="result" {
 		    	   echo( preserveSingleQuotes( sql ) )
 		       }
 		    		  """,
@@ -97,13 +97,13 @@ public class PreserveSingleQuotesTest extends BaseJDBCTest {
 	public void testNameSQLInterpolatedScript() {
 		instance.executeSource(
 		    """
-		      name = "Bob O'Reily";
-		    	query name="result" {
-		    	 echo( "SELECT *
-		    FROM developers
-		    WHERE name = '#name#'" )
-		    	}
-		    		""",
+		       name = "Bob O'Reily";
+		    bx:query name="result" {
+		     	 echo( "SELECT *
+		     FROM developers
+		     WHERE name = '#name#'" )
+		     	}
+		     		""",
 		    context, BoxSourceType.BOXSCRIPT );
 		assertThat( variables.getAsQuery( result ).size() ).isEqualTo( 1 );
 		assertThat( variables.getAsQuery( result ).getRowAsStruct( 0 ).get( "name" ) ).isEqualTo( "Bob O'Reily" );
@@ -114,7 +114,7 @@ public class PreserveSingleQuotesTest extends BaseJDBCTest {
 		instance.executeSource(
 		    """
 		    name = "Bob O'Reily";
-		    query name="result" {
+		    bx:query name="result" {
 		    	echo( "SELECT *
 		    	FROM developers
 		    	WHERE name = '" & name & "'" )

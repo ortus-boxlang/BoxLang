@@ -67,9 +67,9 @@ public class SessionStartTimeTest {
 		}
 		instance.executeSource(
 		    """
-		    application name="unit-test-sm" sessionmanagement="true";
-		         result = sessionStartTime();
-		         """,
+		    bx:application name="unit-test-sm" sessionmanagement="true";
+		           result = sessionStartTime();
+		           """,
 		    context );
 
 		assertTrue( variables.get( result ) instanceof DateTime );

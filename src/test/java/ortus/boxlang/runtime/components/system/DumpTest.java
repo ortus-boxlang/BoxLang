@@ -113,7 +113,7 @@ public class DumpTest {
 		// @formatter:off
 		instance.executeSource(
 		    """
-		       	dump var="My Value" format="html";
+		       	bx:dump var="My Value" format="html";
 		    """,
 		    context );
 		// @formatter:on

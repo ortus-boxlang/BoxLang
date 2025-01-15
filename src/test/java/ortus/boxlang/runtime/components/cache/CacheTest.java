@@ -119,7 +119,7 @@ public class CacheTest {
 	public void testComponentScript() {
 		instance.executeSource(
 		    """
-		    cache action="cache" name="result" key="foo" value="bar";
+		    bx:cache action="cache" name="result" key="foo" value="bar";
 		    """,
 		    context, BoxSourceType.BOXSCRIPT );
 
@@ -133,11 +133,11 @@ public class CacheTest {
 	public void testComponentPut() {
 		instance.executeSource(
 		    """
-		       cache action="put" key="foo" value="bar";
-		    cache action="get" key="foo" name="result";
-		       cache action="put" key="foo" value="baz";
-		    cache action="get" key="foo" name="result2";
-		       """,
+		    bx:cache action="put" key="foo" value="bar";
+		    bx:cache action="get" key="foo" name="result";
+		    bx:cache action="put" key="foo" value="baz";
+		    bx:cache action="get" key="foo" name="result2";
+		         """,
 		    context, BoxSourceType.BOXSCRIPT );
 
 		assertTrue( variables.get( result ) instanceof String );
@@ -151,10 +151,10 @@ public class CacheTest {
 	public void testComponentScriptComplex() {
 		instance.executeSource(
 		    """
-		    myStruct = { "foo" : "bar" };
-		       cache action="put" name="result" key="foo" value="#myStruct#";
-		    cache action="get" key="foo" name="result";
-		       """,
+		       myStruct = { "foo" : "bar" };
+		    bx:cache action="put" name="result" key="foo" value="#myStruct#";
+		    bx: cache action="get" key="foo" name="result";
+		          """,
 		    context, BoxSourceType.BOXSCRIPT );
 
 		assertTrue( variables.get( result ) instanceof IStruct );
@@ -256,9 +256,9 @@ public class CacheTest {
 		variables.put( Key.cacheName, testCacheKey.getName() );
 		instance.executeSource(
 		    """
-		       cache action="put" key="foo" cachename="#cachename#" value="bar";
-		    cache action="get" key="foo" cachename="#cachename#" name="result";
-		       cache action="flush" key="foo";
+		       bx:cache action="put" key="foo" cachename="#cachename#" value="bar";
+		    bx:cache action="get" key="foo" cachename="#cachename#" name="result";
+		       bx:cache action="flush" key="foo";
 		       """,
 		    context, BoxSourceType.BOXSCRIPT );
 

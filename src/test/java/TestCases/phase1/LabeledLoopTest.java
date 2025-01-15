@@ -180,13 +180,13 @@ public class LabeledLoopTest {
 
 		instance.executeSource(
 		    """
-		    result = 0
-		    	loop condition="true" label="mylabel" {
-		    		result ++
-		    		break mylabel;
-		    		result ++
-		    	}
-		         """,
+		       result = 0
+		    bx:loop condition="true" label="mylabel" {
+		       		result ++
+		       		break mylabel;
+		       		result ++
+		       	}
+		            """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( 1 );
 	}
