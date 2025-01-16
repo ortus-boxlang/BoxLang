@@ -220,21 +220,14 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	 * @return
 	 */
 	protected Object ensureReturnType( IBoxContext context, Object value ) {
-		// CF doesn't enforce return types on null returns. I think that is a bug, but we'd need a compat layer to make existing CF code work.
 		if ( value == null ) {
 			return null;
 		}
 		CastAttempt<Object> typeCheck = GenericCaster.attempt( context, value, getReturnType(), true );
 		if ( !typeCheck.wasSuccessful() ) {
-			String actualType;
-			if ( value == null ) {
-				actualType = "null";
-			} else {
-				actualType = value.getClass().getName();
-			}
 			throw new BoxRuntimeException(
 			    String.format( "The return value of the function [%s] is of type [%s] does not match the declared type of [%s]",
-			        getName().getName(), actualType, getReturnType() )
+			        getName().getName(), value.getClass().getName(), getReturnType() )
 			);
 		}
 		if ( typeCheck.get() instanceof NullValue ) {
