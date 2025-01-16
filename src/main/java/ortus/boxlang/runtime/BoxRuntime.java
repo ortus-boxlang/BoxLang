@@ -53,12 +53,9 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.context.RuntimeBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
-import ortus.boxlang.runtime.interceptors.ASTCapture;
-import ortus.boxlang.runtime.interceptors.Logging;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.loader.DynamicClassLoader;
@@ -366,20 +363,6 @@ public class BoxRuntime implements java.io.Closeable {
 
 		// Reconfigure the logging services
 		this.loggingService.reconfigure();
-
-		// AST Capture experimental feature
-		BooleanCaster.attempt(
-		    this.configuration.experimental.getOrDefault( "ASTCapture", false ) ).ifSuccessful(
-		        astCapture -> {
-			        if ( astCapture ) {
-				        this.interceptorService.register(
-				            DynamicObject.of( new ASTCapture( false, true ) ),
-				            Key.onParse );
-			        }
-		        } );
-
-		// Load core logger and other core interceptions
-		this.interceptorService.register( new Logging( this ) );
 	}
 
 	/**

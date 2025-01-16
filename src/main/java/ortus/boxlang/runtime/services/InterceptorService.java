@@ -17,11 +17,18 @@
  */
 package ortus.boxlang.runtime.services;
 
+import java.util.ServiceLoader;
+
 import org.slf4j.Logger;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
+import ortus.boxlang.runtime.events.IInterceptor;
+import ortus.boxlang.runtime.events.Interceptor;
 import ortus.boxlang.runtime.events.InterceptorPool;
+import ortus.boxlang.runtime.interceptors.ASTCapture;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
 
 /**
@@ -75,6 +82,45 @@ public class InterceptorService extends InterceptorPool implements IService {
 	@Override
 	public void onConfigurationLoad() {
 		this.logger = runtime.getLoggingService().getLogger( "runtime" );
+
+		// AST Capture experimental feature
+		BooleanCaster.attempt(
+		    this.runtime.getConfiguration().experimental.getOrDefault( "ASTCapture", false ) )
+		    .ifSuccessful(
+		        astCapture -> {
+			        if ( astCapture ) {
+				        register( DynamicObject.of( new ASTCapture( false, true ) ), Key.onParse );
+			        }
+		        } );
+
+		// Auto-Load all interceptors found in the runtime classloader
+		ServiceLoader.load( IInterceptor.class, this.runtime.getRuntimeLoader() )
+		    .stream()
+		    // Only load interceptors that are set to auto-load by default or by configuration
+		    .filter( provider -> canLoadInterceptor( provider.type() ) )
+		    // Register the interceptor
+		    .map( ServiceLoader.Provider::get )
+		    .forEach( this::register );
+	}
+
+	/**
+	 * This method encapsulates the logic to determine if an interceptor can be loaded or not.
+	 *
+	 * @param targetClass The class of the interceptor to be loaded
+	 *
+	 * @return True if the interceptor can be loaded, false otherwise
+	 */
+	public boolean canLoadInterceptor( Class<? extends IInterceptor> targetClass ) {
+		// Check the @Interceptor annotation config properties
+		// AutoLoad defaults to true if the annotation is not found.
+		if ( targetClass.isAnnotationPresent( Interceptor.class ) ) {
+			Interceptor annotation = targetClass.getAnnotation( Interceptor.class );
+			if ( !annotation.autoLoad() ) {
+				logger.debug( "Interceptor [{}] is set to not auto-load, skipping.", targetClass.getName() );
+				return false;
+			}
+		}
+		return true;
 	}
 
 	/**

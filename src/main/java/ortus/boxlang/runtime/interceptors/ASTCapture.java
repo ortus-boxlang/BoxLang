@@ -17,23 +17,35 @@
  */
 package ortus.boxlang.runtime.interceptors;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
+
 import ortus.boxlang.compiler.parser.ParsingResult;
 import ortus.boxlang.runtime.events.BaseInterceptor;
 import ortus.boxlang.runtime.events.InterceptionPoint;
+import ortus.boxlang.runtime.events.Interceptor;
 import ortus.boxlang.runtime.types.IStruct;
-
-import java.io.IOException;
-import java.nio.file.*;
 
 /**
  * An interceptor that captures the AST and outputs it to the console or a file
  */
+@Interceptor( autoLoad = false )
 public class ASTCapture extends BaseInterceptor {
 
 	private boolean		toConsole	= false;
 	private boolean		toFile		= false;
 	// Default to current working directory
 	private final Path	filePath	= Paths.get( "./grapher/data/" );
+
+	/**
+	 * No-arg Constructor
+	 */
+	public ASTCapture() {
+	}
 
 	/**
 	 * Constructor

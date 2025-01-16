@@ -19,10 +19,16 @@ package ortus.boxlang.runtime.interop.proxies;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import ortus.boxlang.runtime.events.Interceptor;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
+@Interceptor( autoLoad = false )
 public class IInterceptorLambda extends BaseProxy implements ortus.boxlang.runtime.events.IInterceptorLambda {
+
+	public IInterceptorLambda() {
+		super();
+	}
 
 	public IInterceptorLambda( Object target, IBoxContext context, String method ) {
 		super( target, context, method );
