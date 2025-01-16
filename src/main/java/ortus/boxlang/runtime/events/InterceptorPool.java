@@ -38,6 +38,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.AbortException;
 
 /**
  * An InterceptorPool is a pool of interceptors that can be used to intercept events
@@ -591,15 +592,15 @@ public class InterceptorPool {
 	public void announce( Key state, IStruct data, IBoxContext context ) {
 		if ( hasState( state ) ) {
 			// logger.trace( "InterceptorService.announce() - announcing {}", state.getName() );
-
 			try {
 				getState( state ).announce( data, context );
+			} catch ( AbortException e ) {
+				throw e;
 			} catch ( Exception e ) {
 				String errorMessage = String.format( "Errors announcing [%s] interception", state.getName() );
 				logger.error( errorMessage, e );
 				throw new BoxRuntimeException( errorMessage, e );
 			}
-
 			// logger.trace( "Finished announcing {}", state.getName() );
 		} else {
 			// logger.trace( "InterceptorService.announce() - No state found for: {}", state.getName() );
