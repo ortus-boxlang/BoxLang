@@ -660,13 +660,13 @@ public class XML implements Serializable, IStruct {
 
 	@Override
 	public Object put( Key key, Object value ) {
-		if ( ! ( value instanceof Node ) ) {
+		if ( ! ( value instanceof Node ) && ! ( value instanceof XML ) ) {
 			throw new BoxRuntimeException(
 			    String.format(
-			        "The value passed [%s] is not a Node instance", value.toString() )
+			        "The value passed [%s] is not a Node or XML instance", value.toString() )
 			);
 		}
-		value = ( ( Node ) value ).cloneNode( true );
+		value = value instanceof Node ? ( ( Node ) value ).cloneNode( true ) : ( ( XML ) value ).getNode().cloneNode( true );
 		if ( documentOnlyKeys.contains( key ) ) {
 			if ( key.equals( Key.XMLRoot ) ) {
 				this.node = ( Node ) value;

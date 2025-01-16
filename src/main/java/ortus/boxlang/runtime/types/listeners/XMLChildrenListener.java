@@ -53,12 +53,12 @@ public class XMLChildrenListener implements IChangeListener {
 			parentNode.removeChild( childNodeList.item( index ) );
 		} else if ( newValue != null && oldValue == null ) {
 			if ( childNodeList.item( index ) == null ) {
-				parentNode.appendChild( ( Node ) newValue );
+				parentNode.appendChild( newValue instanceof Node ? ( Node ) newValue : ( ( XML ) newValue ).getNode() );
 			} else {
-				parentNode.insertBefore( ( Node ) newValue, childNodeList.item( index ) );
+				parentNode.insertBefore( newValue instanceof Node ? ( Node ) newValue : ( ( XML ) newValue ).getNode(), childNodeList.item( index ) );
 			}
 		} else if ( newValue == null && oldValue != null ) {
-			parentNode.removeChild( ( Node ) oldValue );
+			parentNode.removeChild( oldValue instanceof Node ? ( Node ) oldValue : ( ( XML ) oldValue ).getNode() );
 		}
 		return null;
 	}
