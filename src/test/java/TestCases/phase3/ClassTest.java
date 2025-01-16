@@ -1351,7 +1351,6 @@ public class ClassTest {
 		assertThat( variables.getAsStruct( Key.of( "result2" ) ).getAsString( Key._NAME ) ).isEqualTo( "src.test.java.TestCases.phase3.FindMe" );
 	}
 
-	@Disabled( "Brad Fix this pretty please!!" )
 	@Test
 	public void testRelativeInstantiationWithLoop() {
 		// @formatter:off

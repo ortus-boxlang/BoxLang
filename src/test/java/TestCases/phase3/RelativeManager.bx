@@ -5,7 +5,7 @@ class{
 		return newFuture().allApply( argumentCollection = arguments );
 	}
 
-	RelativeInstantiation function newFuture(){
+	Future function newFuture(){
 		return new tasks.Future();
 	}
 
