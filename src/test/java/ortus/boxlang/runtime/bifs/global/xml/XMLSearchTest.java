@@ -153,4 +153,33 @@ public class XMLSearchTest {
 		assertThat( variables.get( result ) ).isEqualTo( 19.99 );
 	}
 
+	@DisplayName( "It can search when namespaces are present" )
+	@Test
+	void testNamespaceSearching() {
+		//@formatter:off
+		instance.executeSource(
+		    """
+		    xmlObj = xmlParse( '
+			   <SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"
+			   xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+			   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+			   <SOAP-ENV:Header>
+				   <ns1:MessageHeader xmlns:ns1="http://www.ebxml.org/namespaces/messageHeader">
+					   <ns1:From>
+						   <ns1:PartyId ns1:type="urn:x12.org:IO5:01">Ortus Solutions</ns1:PartyId>
+					   </ns1:From>
+					   <ns1:Action>Testing</ns1:Action>
+				   </ns1:MessageHeader>
+			   </SOAP-ENV:Header>
+		   </SOAP-ENV:Envelope>  
+			' );
+			result = xmlSearch( xmlObj.xmlRoot, ".//SOAP-ENV:Header" )
+		            """,
+		    context );
+			//@formatter:on
+
+		assertThat( variables.get( result ) ).isInstanceOf( Array.class );
+		assertThat( variables.getAsArray( result ).size() ).isEqualTo( 1 );
+	}
+
 }
