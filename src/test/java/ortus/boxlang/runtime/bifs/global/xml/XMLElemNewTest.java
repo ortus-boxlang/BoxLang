@@ -25,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.w3c.dom.NamedNodeMap;
@@ -127,6 +128,89 @@ public class XMLElemNewTest {
 		assertTrue( variables.get( result ) instanceof String );
 		assertEquals( "BoxLang", variables.getAsString( result ) );
 
+	}
+
+	@DisplayName( "Tests some typing and abstraction of XML objects" )
+	@Test
+	@Disabled
+	void testTyping() {
+		//@formatter:off
+		instance.executeSource(
+		    """
+			xml function createXMLNode(
+				required xml parent,
+				required string name,
+				any value,
+				struct attributes = {},
+				struct children   = {}
+			){
+				var newNode = xmlElemNew( arguments.parent, arguments.name );
+				if ( !isNull( arguments.value ) && isSimpleValue( arguments.value ) ) {
+					newNode.xmlText = arguments.value;
+				} else if ( !isNull( arguments.value ) && isStruct( arguments.value ) ) {
+					arguments.attributes = arguments.value;
+				}
+				arguments.attributes
+					.keyArray()
+					.each( function( key ){
+						if ( !isNull( attributes[ key ] ) ) {
+							newNode.xmlAttributes[ key ] = attributes[ key ];
+						}
+					} );
+				if ( !arguments.children.isEmpty() ) {
+					appendChildNodes( parent = newNode, children = arguments.children );
+				}
+				arrayAppend( parent.xmlChildren, newNode );
+				return parent.xmlChildren[ parent.xmlChildren.len() ];
+			}
+
+			void function appendChildNodes( required xml parent, required struct children ){
+				arguments.children
+					.keyArray()
+					.filter( ( childName ) => !isNull( children[ childName ] ) )
+					.each( function( childName ){
+						if ( !isStruct( children[ childName ] ) ) {
+							createXMLNode(
+								parent = parent,
+								name   = childName,
+								value  = children[ childName ]
+							);
+						} else {
+							var nodeArgs         = children[ childName ];
+							nodeArgs[ "parent" ] = parent;
+							nodeArgs[ "name" ]   = childName;
+							createXMLNode( argumentCollection = nodeArgs );
+						}
+					} );
+			}
+
+			xmlObj = xmlParse( "<Ortus></Ortus>" );
+			createXMLNode( xmlObj.xmlRoot, "BoxLang", "Rocks!" );
+			// createXMLNode( 
+			// 	xmlObj.xmlRoot.BoxLang,
+			// 	{
+			// 		"Developers" : {
+			// 			"Majano" : {
+			// 				attributes : {
+			// 					"firstName" : "Luis",
+			// 					"lastName" : "Majano"
+			// 				}
+			// 			}
+			// 		}
+
+			// 	},
+			// 	{
+			// 		"tagline" : "Boxlang is good, better, best"
+			// 	}
+			// );
+				printLine( toString( xmlObj ) );
+		         """,
+		    context );
+		// @formatter:on
+		// assertTrue( variables.get( result ) instanceof String );
+		// assertTrue( variables.get( result ) instanceof String );
+		// assertEquals( "BoxLang", variables.getAsString( result ) );
+		// assertEquals( "Ortus", variables.getAsString( result ) );
 	}
 
 }

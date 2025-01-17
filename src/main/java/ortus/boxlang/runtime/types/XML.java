@@ -50,6 +50,8 @@ import org.w3c.dom.Notation;
 import org.w3c.dom.ProcessingInstruction;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+import org.w3c.dom.Attr;
+import org.w3c.dom.Element;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
@@ -243,13 +245,21 @@ public class XML implements Serializable, IStruct {
 	 * @return the attributes of this XML node as a struct
 	 */
 	public IStruct getXMLAttributes() {
-		// TODO: attach change listener to the struct so changes in the struct will be reflected in the XML
-		IStruct			attributes	= new Struct( IStruct.TYPES.LINKED );
+		Struct			attributes	= new Struct( IStruct.TYPES.LINKED );
 		NamedNodeMap	attrs		= node.getAttributes();
 		for ( int i = 0; i < attrs.getLength(); i++ ) {
 			Node attr = attrs.item( i );
 			attributes.put( Key.of( attr.getNodeName() ), attr.getNodeValue() );
 		}
+		attributes.registerChangeListener( ( key, newValue, oldValue ) -> {
+			if ( newValue == null ) {
+				node.getAttributes().removeNamedItem( key.getName() );
+			} else {
+				( ( Element ) node ).setAttribute( key.getName(), StringCaster.cast( newValue ) );
+			}
+			return newValue;
+		} );
+
 		return attributes;
 	}
 

@@ -312,4 +312,32 @@ class XMLTest {
 		assertThat( variables.get( result ) ).isEqualTo( "<![CDATA[<BoxLang/>]]>" );
 	}
 
+	@DisplayName( "It can assign an XML Atrribute" )
+	@Test
+	void testAssignXMLAttributes() {
+		instance.executeSource(
+		    """
+		    xmlObj = xmlParse( '<Ortus></Ortus>' );
+		    xmlObj.xmlRoot.xmlAttributes.Product = "BoxLang";
+		    result = xmlObj.xmlRoot.xmlAttributes;
+		         """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Struct.class );
+		assertThat( variables.getAsStruct( result ).get( "Product" ) ).isEqualTo( "BoxLang" );
+	}
+
+	@DisplayName( "It can remove an XML Atrribute" )
+	@Test
+	void testRemoveXMLAttributes() {
+		instance.executeSource(
+		    """
+		       xmlObj = xmlParse( '<Ortus Product="BoxLang"></Ortus>' );
+		    structDelete( xmlObj.xmlRoot.xmlAttributes, "Product" );
+		       result = xmlObj.xmlRoot.xmlAttributes;
+		            """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Struct.class );
+		assertThat( variables.getAsStruct( result ).get( "Product" ) ).isEqualTo( null );
+	}
+
 }
