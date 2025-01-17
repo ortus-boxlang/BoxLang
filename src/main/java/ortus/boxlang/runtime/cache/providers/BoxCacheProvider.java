@@ -34,6 +34,8 @@ import ortus.boxlang.runtime.cache.filters.ICacheKeyFilter;
 import ortus.boxlang.runtime.cache.store.IObjectStore;
 import ortus.boxlang.runtime.config.segments.CacheConfig;
 import ortus.boxlang.runtime.dynamic.Attempt;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.CacheService;
@@ -131,11 +133,11 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 		// Enable reporting
 		this.reportingEnabled			= true;
 		// Default Max Size
-		this.maxObjects					= config.properties.getAsInteger( Key.maxObjects );
+		this.maxObjects					= IntegerCaster.cast( config.properties.get( Key.maxObjects ) );
 		// Store default timeouts
-		this.defaultTimeout				= Duration.ofSeconds( config.properties.getAsInteger( Key.defaultTimeout ).longValue() );
-		this.defaultLastAccessTimeout	= Duration.ofSeconds( config.properties.getAsInteger( Key.defaultLastAccessTimeout ).longValue() );
-		Long frequency = config.properties.getAsInteger( Key.reapFrequency ).longValue();
+		this.defaultTimeout				= Duration.ofSeconds( IntegerCaster.cast( config.properties.get( Key.defaultTimeout ) ).longValue() );
+		this.defaultLastAccessTimeout	= Duration.ofSeconds( IntegerCaster.cast( config.properties.get( Key.defaultLastAccessTimeout ) ).longValue() );
+		Long frequency = IntegerCaster.cast( config.properties.get( Key.reapFrequency ) ).longValue();
 
 		// Create the reaping scheduled task using the CacheService executor
 		this.reapingFuture = this.cacheService.getTaskScheduler()
@@ -280,7 +282,7 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 			    }
 
 			    // Last Access Timeout
-			    if ( config.properties.getAsBoolean( Key.useLastAccessTimeouts ) &&
+			    if ( BooleanCaster.cast( config.properties.get( Key.useLastAccessTimeouts ) ) &&
 			        entry.lastAccessTimeout() > 0 &&
 			        entry.lastAccessed().plusSeconds( entry.lastAccessTimeout() ).isBefore( rightNow ) ) {
 				    clear( entry.key().getName() );

@@ -21,11 +21,13 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
@@ -41,8 +43,8 @@ public class Invoke extends BIF {
 	public Invoke() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "any", Key.instance ),
-		    new Argument( true, "string", Key.methodname ),
+		    new Argument( true, "any", Key.object ),
+		    new Argument( true, "string", Key.method ),
 		    new Argument( false, "any", Key.arguments )
 		};
 	}
@@ -56,13 +58,13 @@ public class Invoke extends BIF {
 	 * @argument.instance Instance of a Box Class or name of one to instantiate. If an empty string is provided, the method will be invoked within the
 	 *                    same template or Box Class.
 	 *
-	 * @argument.methodname The name of the method to invoke
+	 * @argument.method The name of the method to invoke
 	 *
 	 * @argument.arguments An array of positional arguments or a struct of named arguments to pass into the method.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Object	instance		= arguments.get( Key.instance );
-		Key		methodname		= Key.of( arguments.getAsString( Key.methodname ) );
+		Object	instance		= arguments.get( Key.object );
+		Key		method			= Key.of( arguments.getAsString( Key.method ) );
 		Object	args			= arguments.get( Key.arguments );
 		IStruct	argCollection	= Struct.of();
 
@@ -74,7 +76,7 @@ public class Invoke extends BIF {
 		CastAttempt<String> stringCasterAttempt = StringCaster.attempt( instance );
 		// Empty string just calls local function in the existing context (box class or template)
 		if ( stringCasterAttempt.wasSuccessful() && stringCasterAttempt.get().isEmpty() ) {
-			return context.invokeFunction( methodname, argCollection );
+			return context.invokeFunction( method, argCollection );
 		}
 
 		// If we had a non-empty string, create the Box Class instance
@@ -89,8 +91,17 @@ public class Invoke extends BIF {
 			throw new BoxValidationException( "The instance parameter must be a Box Class, referencable struct or the name of a Box Class to instantiate." );
 		}
 
-		// Invoke the method on the Box Class instance
-		return actualInstance.dereferenceAndInvoke( context, methodname, argCollection, false );
+		// ALERT!
+		// Special Case: If the instance is a DynamicObject and the method is "init", we need to call the constructor
+		if ( actualInstance instanceof DynamicObject castedDo && method.equals( Key.init ) ) {
+			// The incoming args must be an array or throw an exception
+			if ( ! ( args instanceof Array castedArray ) ) {
+				throw new BoxValidationException( "The arguments must be an array in order to execute the Java constructor." );
+			}
+			return castedDo.invokeConstructor( context, castedArray.toArray() );
+		}
+
+		return actualInstance.dereferenceAndInvoke( context, method, argCollection, false );
 
 	}
 }

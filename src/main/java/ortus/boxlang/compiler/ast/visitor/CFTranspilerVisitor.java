@@ -223,8 +223,10 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		mergeDocsIntoAnnotations( annotations, node.getDocumentation() );
 
 		// Disable Accessors by default in CFML, unless there is a parent class, in which case don't add so we can inherit
+		// Also, if this is a persistent ORM entity, then leave as-is because accessors needs to be enabled anyway
 		if ( annotations.stream().noneMatch( a -> a.getKey().getValue().equalsIgnoreCase( "accessors" ) )
-		    && annotations.stream().noneMatch( a -> a.getKey().getValue().equalsIgnoreCase( "extends" ) ) ) {
+		    && annotations.stream().noneMatch( a -> a.getKey().getValue().equalsIgnoreCase( "extends" ) )
+		    && annotations.stream().noneMatch( a -> a.getKey().getValue().equalsIgnoreCase( "persistent" ) ) ) {
 			// @output true
 			annotations.add(
 			    new BoxAnnotation(
@@ -877,7 +879,7 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	 * Rewrite !foo eq bar
 	 * as !(foo eq bar)
 	 * These operators should be higher precedence than the not operator
-	 * EQ, NEQ, LT, LTE, GT, GTE, ==, !=, >, >=, <, <=
+	 * EQ, NEQ, LT, LTE, GT, GTE, ==, !=, >, >=, &lt;, &lt;=
 	 */
 	public BoxNode visit( BoxComparisonOperation node ) {
 		BoxExpression left = node.getLeft();
@@ -896,7 +898,6 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	 * Rewrite !foo eq bar
 	 * as !(foo eq bar)
 	 * These operators should be higher precedence than the not operator
-	 * &
 	 */
 	public BoxNode visit( BoxStringConcat node ) {
 		List<BoxExpression> values = node.getValues();

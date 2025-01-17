@@ -23,6 +23,7 @@ import java.util.Locale;
 import org.apache.commons.lang3.StringUtils;
 
 import ortus.boxlang.runtime.dynamic.casters.BigDecimalCaster;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
@@ -108,9 +109,13 @@ public class Compare implements IOperator {
 
 		// Date comparison
 		if ( DateTimeCaster.isKnownDateClass( left ) || DateTimeCaster.isKnownDateClass( right ) ) {
-			DateTime	ref		= DateTimeCaster.cast( left );
-			DateTime	target	= DateTimeCaster.cast( right );
-			return ref.compareTo( target );
+			CastAttempt<DateTime> ref = DateTimeCaster.attempt( left );
+			if ( ref.wasSuccessful() ) {
+				CastAttempt<DateTime> target = DateTimeCaster.attempt( right );
+				if ( target.wasSuccessful() ) {
+					return ref.get().compareTo( target.get() );
+				}
+			}
 		}
 
 		// Numeric comparison
@@ -132,19 +137,21 @@ public class Compare implements IOperator {
 			}
 		}
 
+		// Check boolean
+		CastAttempt<Boolean> leftBooleanAttempt = BooleanCaster.attempt( left, false );
+		if ( leftBooleanAttempt.wasSuccessful() ) {
+			CastAttempt<Boolean> rightBooleanAttempt = BooleanCaster.attempt( right, false );
+
+			if ( rightBooleanAttempt.wasSuccessful() ) {
+				return Boolean.compare( leftBooleanAttempt.get(), rightBooleanAttempt.get() );
+			}
+		}
+
 		// String comparison
 		if ( left instanceof String || right instanceof String ) {
 			if ( !caseSensitive ) {
 				left	= StringUtils.lowerCase( left.toString(), locale );
 				right	= StringUtils.lowerCase( right.toString(), locale );
-			} else {
-				// Assume that if the case sensitive argument is passed as false, dates are not expected
-				if ( DateTimeCaster.attempt( left ).wasSuccessful() && DateTimeCaster.attempt( right ).wasSuccessful() ) {
-					// TODO: This is potentially slow with multiple failures - we need to add some validation methods in to the DateTime cast attempt
-					DateTime	ref		= DateTimeCaster.cast( left );
-					DateTime	target	= DateTimeCaster.cast( right );
-					return ref.compareTo( target );
-				}
 			}
 
 			return StringCompare.invoke( StringCaster.cast( left ), StringCaster.cast( right ), caseSensitive );
@@ -152,7 +159,8 @@ public class Compare implements IOperator {
 		}
 
 		// Fallback, see if both objects are comparable
-		if ( left instanceof Comparable && right instanceof Comparable ) {
+		if ( left instanceof Comparable && right instanceof Comparable
+		    && ( left.getClass().isAssignableFrom( right.getClass() ) || right.getClass().isAssignableFrom( left.getClass() ) ) ) {
 			return caseSensitive
 			    && left instanceof Key keyLeft
 			    && right instanceof Key keyRight

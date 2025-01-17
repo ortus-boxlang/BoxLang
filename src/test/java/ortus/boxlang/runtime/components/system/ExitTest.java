@@ -173,7 +173,7 @@ public class ExitTest {
 		    result = "";
 		       request.exitWhen="start"
 		       request.exitMethod="exitTag"
-		          module template="src/test/java/ortus/boxlang/runtime/components/system/ExitTests/module.bxm" {
+		        bx:module template="src/test/java/ortus/boxlang/runtime/components/system/ExitTests/module.bxm" {
 		         result &= "body";
 		       }
 		       result &= "aftermodule";
@@ -186,7 +186,7 @@ public class ExitTest {
 		    	 request.loopCount=0;
 		    result = "";
 		       request.exitMethod="exitTemplate"
-		          module template="src/test/java/ortus/boxlang/runtime/components/system/ExitTests/module.bxm" {
+		          bx:module template="src/test/java/ortus/boxlang/runtime/components/system/ExitTests/module.bxm" {
 		         result &= "body";
 		       }
 		       result &= "aftermodule";
@@ -199,7 +199,7 @@ public class ExitTest {
 		    	 request.loopCount=0;
 		    result = "";
 		       request.exitMethod="loop"
-		          module template="src/test/java/ortus/boxlang/runtime/components/system/ExitTests/module.bxm" {
+		          bx:module template="src/test/java/ortus/boxlang/runtime/components/system/ExitTests/module.bxm" {
 		         result &= "body";
 		       }
 		                     """,
@@ -215,7 +215,7 @@ public class ExitTest {
 		    result = "";
 		       request.exitWhen="end"
 		       request.exitMethod="exitTag"
-		          module template="src/test/java/ortus/boxlang/runtime/components/system/ExitTests/module.bxm" {
+		    bx:module template="src/test/java/ortus/boxlang/runtime/components/system/ExitTests/module.bxm" {
 		         result &= "body";
 		       }
 		       result &= "aftermodule";
@@ -228,7 +228,7 @@ public class ExitTest {
 		    	 request.loopCount=0;
 		    result = "";
 		       request.exitMethod="exitTemplate"
-		          module template="src/test/java/ortus/boxlang/runtime/components/system/ExitTests/module.bxm" {
+		          bx:module template="src/test/java/ortus/boxlang/runtime/components/system/ExitTests/module.bxm" {
 		         result &= "body";
 		       }
 		       result &= "aftermodule";
@@ -241,7 +241,7 @@ public class ExitTest {
 		    request.loopCount=0;
 		    result = "";
 		    request.exitMethod="loop"
-		    module template="src/test/java/ortus/boxlang/runtime/components/system/ExitTests/module.bxm" {
+		    bx:module template="src/test/java/ortus/boxlang/runtime/components/system/ExitTests/module.bxm" {
 		    	result &= "body";
 		    }
 		    result &= "aftermodule";

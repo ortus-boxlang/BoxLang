@@ -18,14 +18,15 @@
 package ortus.boxlang.runtime.application;
 
 import java.io.Serializable;
+import java.time.Duration;
 
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.events.BoxEvent;
+import ortus.boxlang.runtime.scopes.ApplicationScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.SessionScope;
+import ortus.boxlang.runtime.services.ApplicationService;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -64,9 +65,19 @@ public class Session implements Serializable {
 	private boolean				isNew			= true;
 
 	/**
+	 * Flag for when session has been shutdown
+	 */
+	private boolean				isShutdown		= false;
+
+	/**
 	 * The application name linked to
 	 */
 	private Key					applicationName	= null;
+
+	/**
+	 * The timeout for this session
+	 */
+	private Duration			timeout;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -79,9 +90,11 @@ public class Session implements Serializable {
 	 *
 	 * @param ID          The ID of this session
 	 * @param application The application that this session belongs to
+	 * @param timeout     The timeout for this session when created
 	 */
-	public Session( Key ID, Application application ) {
+	public Session( Key ID, Application application, Duration timeout ) {
 		this.ID					= ID;
+		this.timeout			= timeout;
 		this.applicationName	= application.getName();
 		this.sessionScope		= new SessionScope();
 		DateTime timeNow = new DateTime();
@@ -201,42 +214,68 @@ public class Session implements Serializable {
 	}
 
 	/**
+	 * Get the registered timeout for this session
+	 */
+	public Duration getTimeout() {
+		return this.timeout;
+	}
+
+	/**
 	 * Shutdown the session
 	 *
 	 * @param listener The listener that is shutting down the session
 	 */
 	public void shutdown( BaseApplicationListener listener ) {
-		// Announce it's destruction to the runtime first
-		BoxRuntime.getInstance()
-		    .getInterceptorService()
-		    .announce( BoxEvent.ON_SESSION_DESTROYED, Struct.of(
-		        Key.session, this
-		    ) );
-
-		// Any buffer output in this context will be discarded
-		// Create a temp request context with an application context with our application listener.
-		// This will allow the application scope to be available as well as all settings from the original Application.bx
-		listener.onSessionEnd(
-		    new ScriptingRequestBoxContext(
-		        new ApplicationBoxContext(
-		            BoxRuntime.getInstance().getRuntimeContext(),
-		            listener.getApplication()
-		        ),
-		        listener
-		    ),
-		    new Object[] {
-		        // If the session scope is null, just pass an empty struct
-		        sessionScope != null ? sessionScope : Struct.of(),
-		        // Pass the application scope
-		        listener.getApplication().getApplicationScope()
-		    }
-		);
-
-		// Clear the session scope
-		if ( this.sessionScope != null ) {
-			this.sessionScope.clear();
+		// Try to get the application scope from the incoming listener, if not, we can try to go to the Application Service
+		// If that fails, we can just pass an empty struct
+		ApplicationService	appService	= BoxRuntime.getInstance().getApplicationService();
+		Application			targetApp	= listener.getApplication();
+		if ( targetApp == null && appService.hasApplication( this.applicationName ) ) {
+			targetApp = appService.getApplication( this.applicationName );
 		}
-		this.sessionScope = null;
+		ApplicationScope targetAppScope = ( targetApp != null ? targetApp.getApplicationScope() : new ApplicationScope() );
+
+		try {
+			// Announce it's destruction to the runtime first
+			BoxRuntime.getInstance()
+			    .getInterceptorService()
+			    .announce(
+			        BoxEvent.ON_SESSION_DESTROYED,
+			        Struct.of(
+			            Key.session, this,
+			            Key.application, targetAppScope
+			        )
+			    );
+
+			// Any buffer output in this context will be discarded
+			// Create a temp request context with an application context with our application listener.
+			// This will allow the application scope to be available as well as all settings from the original Application.bx
+			listener.onSessionEnd(
+			    listener.getRequestContext(),
+			    new Object[] {
+			        // If the session scope is null, just pass an empty struct
+			        sessionScope != null ? sessionScope : Struct.of(),
+			        // Pass the application scope
+			        targetAppScope
+			    }
+			);
+		} finally {
+			// Clear the session scope
+			if ( this.sessionScope != null ) {
+				this.sessionScope.clear();
+			}
+			this.sessionScope	= null;
+			this.isNew			= true;
+			this.isShutdown		= true;
+		}
+
+	}
+
+	/**
+	 * Tests if the session is still active or shutdown
+	 */
+	public boolean isShutdown() {
+		return this.isShutdown;
 	}
 
 	/**
@@ -245,10 +284,10 @@ public class Session implements Serializable {
 	@Override
 	public String toString() {
 		return "Session{" +
-		    "ID=" + ID +
-		    ", sessionScope=" + sessionScope +
-		    ", isNew=" + isNew +
-		    ", applicationName=" + applicationName +
+		    "ID=" + this.ID +
+		    ", sessionScope=" + this.sessionScope.toString() +
+		    ", isNew=" + this.isNew +
+		    ", applicationName=" + this.applicationName +
 		    '}';
 	}
 
@@ -259,9 +298,31 @@ public class Session implements Serializable {
 		return Struct.of(
 		    Key.id, this.ID,
 		    Key.scope, this.sessionScope,
-		    "isNew", isNew,
+		    Key.isNew, this.isNew,
 		    Key.applicationName, this.applicationName
 		);
+	}
+
+	/**
+	 * Verifies if the session has expired or not
+	 */
+	/**
+	 * Has this application expired.
+	 * We look at the application start time and the application timeout to determine if it has expired
+	 *
+	 * @return True if the application has expired, false otherwise
+	 */
+	public boolean isExpired() {
+		// If the session scope doesn't have a last visit, then it's expired
+		if ( this.sessionScope == null || !this.sessionScope.containsKey( Key.lastVisit ) ) {
+			return true;
+		}
+
+		// If the start time + the duration is before now, then it's expired
+		DateTime lastVisit = ( DateTime ) this.sessionScope.get( Key.lastVisit );
+		// Example: 10:00 + 1 hour = 11:00, now is 11:01, so it's expired : true
+		// Example: 10:00 + 1 hour = 11:00, now is 10:59, so it's not expired : false
+		return lastVisit.plus( this.timeout ).isBefore( new DateTime() );
 	}
 
 }

@@ -3,8 +3,7 @@
 	<div class="bx-dump" title="#encodeForHTML( posInCode )#">
 		<span class="bx-dwSv">
 			<span class="bx-dhSv">
-				<bx:if label.len() >#label# - </bx:if>
-				NULL:
+				<bx:if label.len() >#label#: </bx:if>
 			</span>
 			<span>
 				<em>&lt;null&gt;</em>

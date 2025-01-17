@@ -27,12 +27,10 @@ import ortus.boxlang.runtime.types.IStruct;
  */
 public class BoxRuntimeException extends BoxLangException {
 
-	public static final Key	ExtendedInfoKey	= Key.extendedinfo;
-
 	/**
 	 * Custom error message; information that the default exception handler does not display.
 	 */
-	public Object			extendedInfo	= "";
+	protected Object extendedInfo = "";
 
 	/**
 	 * Constructor
@@ -110,7 +108,7 @@ public class BoxRuntimeException extends BoxLangException {
 
 	public IStruct dataAsStruct() {
 		IStruct result = super.dataAsStruct();
-		result.put( ExtendedInfoKey, this.extendedInfo );
+		result.put( Key.extendedinfo, this.extendedInfo );
 		return result;
 	}
 }

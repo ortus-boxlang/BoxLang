@@ -16,7 +16,9 @@ package ortus.boxlang.runtime.jdbc.qoq.functions.scalar;
 
 import java.util.List;
 
+import ortus.boxlang.compiler.ast.sql.select.expression.SQLExpression;
 import ortus.boxlang.runtime.jdbc.qoq.QoQScalarFunctionDef;
+import ortus.boxlang.runtime.jdbc.qoq.QoQSelectExecution;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.QueryColumnType;
 
@@ -32,18 +34,18 @@ public class IsNull extends QoQScalarFunctionDef {
 	}
 
 	@Override
-	public QueryColumnType getReturnType() {
-		return QueryColumnType.OBJECT;
+	public QueryColumnType getReturnType( QoQSelectExecution QoQExec, List<SQLExpression> expressions ) {
+		return expressions.get( 0 ).getType( QoQExec );
 	}
 
 	@Override
 	public int getMinArgs() {
-		return 1;
+		return 2;
 	}
 
 	@Override
-	public Object apply( List<Object> args ) {
-		return args.get( 0 ) == null;
+	public Object apply( List<Object> args, List<SQLExpression> expressions ) {
+		return args.get( 0 ) != null ? args.get( 0 ) : args.get( 1 );
 	}
 
 }

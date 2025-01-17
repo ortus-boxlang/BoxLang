@@ -20,7 +20,7 @@
 			>
 				<!--- CLASS toString --->
 				<tr>
-					<th 
+					<th
 						aria-expanded="true"
 						data-bx-toggle="onoff"
 						scope="row"
@@ -79,18 +79,18 @@
 									</thead>
 									<tbody>
 										<bx:script>
-											for( field in fields ) {
+											for( variables.field in fields ) {
 												```
 													<tr>
 														<td>
-															<strong>#encodeForHTML( field.getName() )#</strong>
+															<strong>#encodeForHTML( variables.field.getName() )#</strong>
 														</td>
 														<td>
-															<pre><code>#encodeForHTML( field.toString() )#</code></pre>
+															<pre><code>#encodeForHTML( variables.field.toString() )#</code></pre>
 														</td>
 														<td>
 															<bx:try>
-																#encodeForHTML( field.get( var ) )#
+																#encodeForHTML( variables.field.get( var ) )#
 																<bx:catch>
 																	<em>--- Not Available ---</em>
 																</bx:catch>
@@ -131,12 +131,12 @@
 									</thead>
 									<tbody>
 										<bx:script>
-											for( annotation in annotations ) {
+											for( variables.annotation in annotations ) {
 												```
 													<tr>
-														<td>#annotation.annotationType().toString()#</td>
+														<td>#variables.annotation.annotationType().toString()#</td>
 														<td>
-															<pre><code>#encodeForHTML( annotation.toString() )#</code></pre>
+															<pre><code>#encodeForHTML( variables.annotation.toString() )#</code></pre>
 														</td>
 													</tr>
 												```
@@ -172,11 +172,11 @@
 									</thead>
 									<tbody>
 										<bx:script>
-											for( constructor in constructors ) {
+											for( variables.constructor in constructors ) {
 												```
 													<tr>
 														<td>
-															<pre><code>#encodeForHTML( constructor.toString() )#</code></pre>
+															<pre><code>#encodeForHTML( variables.constructor.toString() )#</code></pre>
 														</td>
 													</tr>
 												```
@@ -205,8 +205,8 @@
 							<bx:script>
 								import java.util.Arrays;
 								import java.util.Comparator;
-								methods = Arrays.stream( var.getClass().getDeclaredMethods() )
-									.sorted( Comparator.comparing( m -> m.getName() ) )
+								variables.methods = Arrays.stream( var.getClass().getDeclaredMethods() )
+									.sorted( Comparator.comparing( m -> arguments.m.getName() ) )
 									.toList();
 							</bx:script>
 							<table class="bx-table-default">
@@ -215,14 +215,14 @@
 								</thead>
 								<tbody>
 									<bx:script>
-										for( method in methods ) {
+										for( variables.method in methods ) {
 											```
 												<tr>
 													<td>
-														<strong>#encodeForHTML( method.getName() )#</strong>
+														<strong>#encodeForHTML( variables.method.getName() )#</strong>
 													</td>
 													<td>
-														<pre><code>#encodeForHTML( method.toString() )#</code></pre>
+														<pre><code>#encodeForHTML( variables.method.toString() )#</code></pre>
 													</td>
 												</tr>
 											```

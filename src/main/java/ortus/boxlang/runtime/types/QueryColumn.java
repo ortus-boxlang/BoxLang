@@ -147,6 +147,19 @@ public class QueryColumn implements IReferenceable, Serializable {
 	}
 
 	/**
+	 * Get the value of a cell in this column
+	 * 
+	 * This method for CF/Lucee compat
+	 *
+	 * @param row The row to get, 0-based index
+	 *
+	 * @return The value of the cell
+	 */
+	public Object get( int row, Object defaultValue ) {
+		return getCell( row );
+	}
+
+	/**
 	 * Get all data in a column as a Java Object[]
 	 * Data is copied, so re-assignments into the array will not be reflected in the query.
 	 * Mutating a complex object in the array will be reflected in the query.
@@ -222,7 +235,13 @@ public class QueryColumn implements IReferenceable, Serializable {
 		}
 
 		// If dereferencing a query column with a NON number like qry.col["key"], then we get the value at the "current" row and dererence it
-		return Referencer.get( context, getCell( query.getRowFromContext( context ) ), name, safe );
+		int		row			= query.getRowFromContext( context );
+		Object	cellValue	= getCell( row );
+		if ( cellValue == null ) {
+			throw new BoxRuntimeException(
+			    "Cannot dereference the key [" + name.getName() + "()] on the null value in row " + ( row + 1 ) + " of column [" + this.name.getName() + "]" );
+		}
+		return Referencer.get( context, cellValue, name, safe );
 
 	}
 
@@ -230,14 +249,26 @@ public class QueryColumn implements IReferenceable, Serializable {
 	public Object dereferenceAndInvoke( IBoxContext context, Key name, Object[] positionalArguments, Boolean safe ) {
 		// qry.col.method() will ALWAYS get the value from the current row and call the method on that cell value
 		// Unlike Lucee/Adobe, we'll never call the method on the query column itself
-		return DynamicInteropService.invoke( context, getCell( query.getRowFromContext( context ) ), name.getName(), safe, positionalArguments );
+		int		row			= query.getRowFromContext( context );
+		Object	cellValue	= getCell( row );
+		if ( cellValue == null ) {
+			throw new BoxRuntimeException(
+			    "Cannot invoke method [" + name.getName() + "()] on the null value in row " + ( row + 1 ) + " of column [" + this.name.getName() + "]" );
+		}
+		return DynamicInteropService.invoke( context, cellValue, name.getName(), safe, positionalArguments );
 	}
 
 	@Override
 	public Object dereferenceAndInvoke( IBoxContext context, Key name, Map<Key, Object> namedArguments, Boolean safe ) {
 		// qry.col.method() will ALWAYS get the value from the current row and call the method on that cell value
 		// Unlike Lucee/Adobe, we'll never call the method on the query column itself
-		return DynamicInteropService.invoke( context, getCell( query.getRowFromContext( context ) ), name.getName(), safe, namedArguments );
+		int		row			= query.getRowFromContext( context );
+		Object	cellValue	= getCell( row );
+		if ( cellValue == null ) {
+			throw new BoxRuntimeException(
+			    "Cannot invoke method [" + name.getName() + "()] on the null value in row " + ( row + 1 ) + " of column [" + this.name.getName() + "]" );
+		}
+		return DynamicInteropService.invoke( context, cellValue, name.getName(), safe, namedArguments );
 	}
 
 	@Override

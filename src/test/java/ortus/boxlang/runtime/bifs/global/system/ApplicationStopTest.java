@@ -66,8 +66,8 @@ public class ApplicationStopTest {
 
 		runtime.executeSource(
 		    """
-		    application name="unit-test3" sessionmanagement="true";
-		       """,
+		    bx:application name="unit-test3" sessionmanagement="true";
+		         """,
 		    context );
 
 		Application targetApp = context.getParentOfType( ApplicationBoxContext.class ).getApplication();

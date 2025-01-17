@@ -13,7 +13,7 @@
 				>
 					<strong>
 						<bx:if label.len() >#label# - </bx:if>
-						#var.getClass().getSimpleName()#:
+						#var.getClass().getName()#:
 						<bx:if !isNull( top ) && top lt var.size()>#top#/</bx:if>#var.size()# items
 					</strong>
 				</caption>
@@ -21,7 +21,7 @@
 				<caption>
 					<strong>
 						<bx:if label.len() >#label# - </bx:if>
-						#var.getClass().getSimpleName()#:
+						#var.getClass().getName()#:
 						<bx:if !isNull( top ) && top lt var.size()>#top#/</bx:if>#var.size()# items
 					</strong>
 				</caption>

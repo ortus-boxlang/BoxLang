@@ -238,7 +238,7 @@ public class DataSourceTest {
 				    context
 				);
 			} );
-			assertEquals( "Missing param in query: [name]. SQL: SELECT * FROM developers WHERE name = :name", exception.getMessage() );
+			assertEquals( "Named parameter [:name] not provided to query.", exception.getMessage() );
 		} catch ( SQLException e ) {
 			throw new RuntimeException( e );
 		}

@@ -22,8 +22,8 @@ import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLExpression;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
-import ortus.boxlang.runtime.jdbc.qoq.QoQExecution;
-import ortus.boxlang.runtime.operators.EqualsEquals;
+import ortus.boxlang.runtime.jdbc.qoq.QoQCompare;
+import ortus.boxlang.runtime.jdbc.qoq.QoQSelectExecution;
 
 /**
  * Abstract Node class representing SQL IN operation
@@ -102,27 +102,36 @@ public class SQLInOperation extends SQLExpression {
 	 * 
 	 * @return true if the expression evaluates to a boolean value
 	 */
-	public boolean isBoolean( QoQExecution QoQExec ) {
+	public boolean isBoolean( QoQSelectExecution QoQExec ) {
 		return true;
 	}
 
 	/**
 	 * Evaluate the expression
 	 */
-	public Object evaluate( QoQExecution QoQExec, int[] intersection ) {
+	public Object evaluate( QoQSelectExecution QoQExec, int[] intersection ) {
 		Object value = expression.evaluate( QoQExec, intersection );
 		for ( SQLExpression v : values ) {
-			if ( EqualsEquals.invoke( value, v.evaluate( QoQExec, intersection ), true ) ) {
+			if ( QoQCompare.invoke( expression.getType( QoQExec ), value, v.evaluate( QoQExec, intersection ) ) == 0 ) {
 				return !not;
 			}
 		}
 		return not;
 	}
 
+	/**
+	 * Evaluate the expression aginst a partition of data
+	 */
+	public Object evaluateAggregate( QoQSelectExecution QoQExec, List<int[]> intersections ) {
+		if ( intersections.isEmpty() ) {
+			return false;
+		}
+		return evaluate( QoQExec, intersections.get( 0 ) );
+	}
+
 	@Override
 	public void accept( VoidBoxVisitor v ) {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException( "Unimplemented method 'accept'" );
+		v.visit( this );
 	}
 
 	@Override

@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 import ortus.boxlang.runtime.types.exceptions.BoxLangException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
@@ -100,32 +101,21 @@ public class NumberCasterTest {
 		assertThat( result.doubleValue() ).isEqualTo( 12345 );
 	}
 
-	@DisplayName( "It can cast a boolean to a Number" )
+	@DisplayName( "It will NOT cast a boolean to a Number" )
 	@Test
 	void testItCanCastABoolean() {
-		Number result = NumberCaster.cast( true );
-		assertThat( result ).isInstanceOf( Integer.class );
-		assertThat( result.doubleValue() ).isEqualTo( 1 );
+		assertThrows( BoxCastException.class, () -> NumberCaster.cast( true ) );
 
-		result = NumberCaster.cast( false );
-		assertThat( result ).isInstanceOf( Integer.class );
-		assertThat( result.doubleValue() ).isEqualTo( 0 );
+		assertThrows( BoxCastException.class, () -> NumberCaster.cast( false ) );
 
-		result = NumberCaster.cast( "true" );
-		assertThat( result ).isInstanceOf( Integer.class );
-		assertThat( result.doubleValue() ).isEqualTo( 1 );
+		assertThrows( BoxCastException.class, () -> NumberCaster.cast( "true" ) );
 
-		result = NumberCaster.cast( "false" );
-		assertThat( result ).isInstanceOf( Integer.class );
-		assertThat( result.doubleValue() ).isEqualTo( 0 );
+		assertThrows( BoxCastException.class, () -> NumberCaster.cast( "false" ) );
 
-		result = NumberCaster.cast( "yes" );
-		assertThat( result ).isInstanceOf( Integer.class );
-		assertThat( result.doubleValue() ).isEqualTo( 1 );
+		assertThrows( BoxCastException.class, () -> NumberCaster.cast( "yes" ) );
 
-		result = NumberCaster.cast( "no" );
-		assertThat( result ).isInstanceOf( Integer.class );
-		assertThat( result.doubleValue() ).isEqualTo( 0 );
+		assertThrows( BoxCastException.class, () -> NumberCaster.cast( "no" ) );
+
 	}
 
 	@DisplayName( "It can attempt to cast" )

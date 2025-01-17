@@ -70,8 +70,8 @@ public class ApplicationStartTimeTest {
 
 		instance.executeSource(
 		    """
-		    application name="unit-test2" sessionmanagement="true";
-		       """,
+		    bx:application name="unit-test2" sessionmanagement="true";
+		         """,
 		    context );
 
 		Application targetApp = context.getParentOfType( ApplicationBoxContext.class ).getApplication();

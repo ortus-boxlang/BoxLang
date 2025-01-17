@@ -203,7 +203,9 @@ public class ConnectionManager {
 	}
 
 	/**
-	 * Set the active transaction for this request/thread/BoxLang context.
+	 * Close the active transaction for this request/thread/BoxLang context.
+	 * 
+	 * In case of nested transactions, will close the inner transaction and update the reference to the parent transaction. Otherwise will close the outer (only) transaction and nullify the reference.
 	 */
 	public ConnectionManager endTransaction() {
 		this.transaction.end();
@@ -595,7 +597,20 @@ public class ConnectionManager {
 	 * Shutdown the ConnectionManager and release any resources.
 	 */
 	public void shutdown() {
+		this.datasources.forEach( ( key, datasource ) -> {
+			datasource.shutdown();
+		} );
 		this.datasources.clear();
+
+		if ( this.defaultDatasource != null ) {
+			this.defaultDatasource.shutdown();
+			this.defaultDatasource = null;
+		}
+
+		if ( this.transaction != null ) {
+			this.transaction.end();
+			this.transaction = null;
+		}
 	}
 
 	/**

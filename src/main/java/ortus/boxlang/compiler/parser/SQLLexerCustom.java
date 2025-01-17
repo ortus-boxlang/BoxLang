@@ -16,8 +16,10 @@ package ortus.boxlang.compiler.parser;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import org.antlr.v4.runtime.CharStream;
+import org.antlr.v4.runtime.CommonToken;
 import org.antlr.v4.runtime.Token;
 
 import ortus.boxlang.parser.antlr.SQLLexer;
@@ -31,12 +33,32 @@ public class SQLLexerCustom extends SQLLexer {
 	/**
 	 * The error listener
 	 */
-	ErrorListener	errorListener;
+	ErrorListener						errorListener;
 
 	/**
 	 * The parser
 	 */
-	SQLParser		parser;
+	SQLParser							parser;
+
+	/**
+	 * A reference to the last token
+	 */
+	Token								lastToken			= null;
+
+	/**
+	 * A flag to check if we are in a cast
+	 */
+	int									inCast				= 0;
+
+	/**
+	 * These tokens are not function names. cast and convert have a special rule to match them, so they don't use the FUNCTION_NAME token type
+	 */
+	private static final Set<Integer>	notFunctionNames	= Set.of( NOT_, AND_, WHERE_, HAVING_, FROM_, IN_, ON_, CAST_, CONVERT_ );
+
+	/**
+	 * ASCII Character code for left parenthesis
+	 */
+	private int							LPAREN_Char_Code	= 40;
 
 	/**
 	 * Constructor
@@ -178,6 +200,43 @@ public class SQLLexerCustom extends SQLLexer {
 			}
 		}
 		return results;
+	}
+
+	public Token nextToken() {
+		Token nextToken = super.nextToken();
+
+		if ( lastToken == null ) {
+			return setLastToken( nextToken );
+		}
+
+		if ( nextToken.getType() == OPEN_PAR && lastToken.getType() == CAST_ || inCast > 0 ) {
+			inCast++;
+		}
+
+		if ( nextToken.getType() == CLOSE_PAR && inCast > 0 ) {
+			inCast--;
+		}
+
+		// Any token after AS is an identifier
+		if ( lastToken.getType() == SQLLexer.AS_ && nextToken.getType() != SQLLexer.SPACES && inCast == 0 ) {
+			( ( CommonToken ) nextToken ).setType( IDENTIFIER );
+			return setLastToken( nextToken );
+		}
+
+		// detect function calls and set the token type to FUNCTION_NAME
+		if ( getInputStream().LA( 1 ) == LPAREN_Char_Code && !notFunctionNames.contains( nextToken.getType() ) ) {
+			( ( CommonToken ) nextToken ).setType( SQLLexer.FUNCTION_NAME );
+			return setLastToken( nextToken );
+		}
+
+		return setLastToken( nextToken );
+	}
+
+	private Token setLastToken( Token token ) {
+		if ( token.getChannel() != HIDDEN ) {
+			lastToken = token;
+		}
+		return token;
 	}
 
 }

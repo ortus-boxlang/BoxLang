@@ -22,9 +22,9 @@ import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
-import ortus.boxlang.runtime.jdbc.qoq.QoQExecution;
 import ortus.boxlang.runtime.jdbc.qoq.QoQFunctionService;
 import ortus.boxlang.runtime.jdbc.qoq.QoQFunctionService.QoQFunction;
+import ortus.boxlang.runtime.jdbc.qoq.QoQSelectExecution;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.QueryColumnType;
 
@@ -97,7 +97,7 @@ public class SQLFunction extends SQLExpression {
 	 * 
 	 * @return true if the expression evaluates to a boolean value
 	 */
-	public boolean isBoolean( QoQExecution QoQExec ) {
+	public boolean isBoolean( QoQSelectExecution QoQExec ) {
 		return getType( QoQExec ) == QueryColumnType.BIT;
 	}
 
@@ -108,7 +108,7 @@ public class SQLFunction extends SQLExpression {
 	 * 
 	 * @return true if the expression evaluates to a numeric value
 	 */
-	public boolean isNumeric( QoQExecution QoQExec ) {
+	public boolean isNumeric( QoQSelectExecution QoQExec ) {
 		return numericTypes.contains( getType( QoQExec ) );
 	}
 
@@ -122,30 +122,56 @@ public class SQLFunction extends SQLExpression {
 	/**
 	 * What type does this expression evaluate to
 	 */
-	public QueryColumnType getType( QoQExecution QoQExec ) {
-		return QoQFunctionService.getFunction( name ).returnType();
+	public QueryColumnType getType( QoQSelectExecution QoQExec ) {
+		return QoQFunctionService.getFunction( name ).returnType( QoQExec, arguments );
 	}
 
 	/**
 	 * Evaluate the expression
 	 */
-	public Object evaluate( QoQExecution QoQExec, int[] intersection ) {
+	public Object evaluate( QoQSelectExecution QoQExec, int[] intersection ) {
 		QoQFunction function = QoQFunctionService.getFunction( name );
 		if ( function.requiredParams() > arguments.size() ) {
 			throw new RuntimeException(
-			    "QoQ Function [" + name + "] expects at least" + function.requiredParams() + " arguments, but got " + arguments.size() );
+			    "QoQ Function " + name + "() expects at least" + function.requiredParams() + " arguments, but got " + arguments.size() );
 		}
 		if ( function.isAggregate() ) {
-			return function.invokeAggregate( arguments, QoQExec );
+			throw new RuntimeException( "QoQ Function " + name + "() is an aggregate function and cannot be used in a non-aggregate context" );
 		} else {
-			return function.invoke( arguments.stream().map( a -> a.evaluate( QoQExec, intersection ) ).toList() );
+			return function.invoke( arguments.stream().map( a -> a.evaluate( QoQExec, intersection ) ).toList(), arguments );
 		}
+	}
+
+	/**
+	 * Evaluate the expression aginst a partition of data
+	 */
+	public Object evaluateAggregate( QoQSelectExecution QoQExec, List<int[]> intersections ) {
+		if ( intersections.isEmpty() && isAggregate() ) {
+			return null;
+		}
+		QoQFunction function = QoQFunctionService.getFunction( name );
+		if ( function.isAggregate() ) {
+			List<Object[]> values = arguments.stream().map( a -> buildAggregateValues( QoQExec, intersections, a ) ).toList();
+			// if all arrays in the list are empty, return null
+			if ( values.stream().allMatch( v -> v.length == 0 ) ) {
+				return null;
+			}
+			return function.invokeAggregate(
+			    values,
+			    arguments
+			);
+		} else {
+			return function.invoke( arguments.stream().map( a -> a.evaluateAggregate( QoQExec, intersections ) ).toList(), arguments );
+		}
+	}
+
+	protected Object[] buildAggregateValues( QoQSelectExecution QoQExec, List<int[]> intersections, SQLExpression argument ) {
+		return intersections.stream().map( i -> argument.evaluate( QoQExec, i ) ).filter( v -> v != null ).toArray();
 	}
 
 	@Override
 	public void accept( VoidBoxVisitor v ) {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException( "Unimplemented method 'accept'" );
+		v.visit( this );
 	}
 
 	@Override

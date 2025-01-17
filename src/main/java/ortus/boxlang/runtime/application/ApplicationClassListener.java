@@ -31,6 +31,7 @@ import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.util.BLCollector;
 import ortus.boxlang.runtime.util.EncryptionUtil;
 import ortus.boxlang.runtime.util.FileSystemUtil;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 /**
  * I represent an Application listener that wraps an Application class instance, delegting to it, where possible and providing default
@@ -49,8 +50,8 @@ public class ApplicationClassListener extends BaseApplicationListener {
 	 * @param listener An Application class instance
 	 * @param context  The context to use
 	 */
-	public ApplicationClassListener( IClassRunnable listener, RequestBoxContext context ) {
-		super( context );
+	public ApplicationClassListener( IClassRunnable listener, RequestBoxContext context, ResolvedFilePath baseTemplatePath ) {
+		super( context, baseTemplatePath );
 		this.listener = listener;
 
 		// Copy all the settings from the Application class to the settings map

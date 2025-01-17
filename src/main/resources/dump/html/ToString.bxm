@@ -6,7 +6,7 @@
 			<bx:if label.len() >
 				#encodeForHTML( label )#
 			<bx:else>
-				#var.getClass().getName()#
+				#var.getClass().getCanonicalName()#
 			</bx:if>
 		</span>
 		<span>

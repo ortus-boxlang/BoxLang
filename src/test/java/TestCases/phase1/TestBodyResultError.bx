@@ -1,0 +1,10 @@
+class {
+	
+	function foo() {
+		lock name="foo" throwontimeout=true timeout=5 {
+			return;
+		}
+	}
+
+	foo();
+}

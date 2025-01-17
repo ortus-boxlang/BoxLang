@@ -215,7 +215,7 @@ public class QoQPreparedStatement extends QoQStatement implements java.sql.Prepa
 		SQLSelectStatement select = ( SQLSelectStatement ) QoQExecutionService.parseSQL( sql );
 
 		// execute the query
-		result = QoQExecutionService.executeSelect( context, select, this );
+		result = QoQExecutionService.executeSelectStatement( context, select, this );
 		return true;
 	}
 

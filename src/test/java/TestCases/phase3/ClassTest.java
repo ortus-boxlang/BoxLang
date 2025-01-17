@@ -417,7 +417,7 @@ public class ClassTest {
 		instance.executeSource(
 		    """
 				newClassPaths = getApplicationMetadata().classPaths.append( expandPath( "/src/test/java/TestCases/phase3" ) );
-				application classPaths=newClassPaths;
+				bx:application classPaths=newClassPaths;
 				cfc = new MyClass();
 				// execute public method
 				result = cfc.foo();
@@ -433,7 +433,7 @@ public class ClassTest {
 		instance.executeSource(
 		    """
 				newClassPaths = getApplicationMetadata().classPaths.append( expandPath( "/src/test/java/TestCases" ) );
-				application classPaths=newClassPaths;
+				bx:application classPaths=newClassPaths;
 				import phase3.MyClass as bradClass;
 				cfc = new bradClass();
 				// execute public method
@@ -1339,12 +1339,44 @@ public class ClassTest {
 
 	@Test
 	public void testRelativeInstantiation() {
+		// @formatter:off
 		instance.executeSource(
 		    """
-		       clazz = new src.test.java.TestCases.phase3.RelativeInstantiation();
-		    result = clazz.findSibling()
-		         """, context );
+		    	clazz = new src.test.java.TestCases.phase3.RelativeInstantiation();
+				result = clazz.findSibling()
+				result2 = getMetadata( clazz.returnSibling() )
+		    """, context );
+		// @formatter:on
 		assertThat( variables.get( result ) ).isEqualTo( "bar" );
+		assertThat( variables.getAsStruct( Key.of( "result2" ) ).getAsString( Key._NAME ) ).isEqualTo( "src.test.java.TestCases.phase3.FindMe" );
+	}
+
+	// @Disabled( "Brad Fix this pretty please!!" )
+	@Test
+	public void testRelativeInstantiationWithLoop() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		    	manager = new src.test.java.TestCases.phase3.RelativeManager()
+				data = [1,2,3,4,5]
+				result = manager.allApply( data )
+		    """, context );
+		// @formatter:on
+		Array target = variables.getAsArray( result );
+		System.out.println( target );
+	}
+
+	@Test
+	public void testRelativeSelfInstantiation() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		        clazz = new src.test.java.TestCases.phase3.RelativeSelfInstantiation();
+		   		result2 = getMetadata( clazz.clone() )
+		    """, context );
+		// @formatter:on
+		assertThat( variables.getAsStruct( Key.of( "result2" ) ).getAsString( Key._NAME ) )
+		    .isEqualTo( "src.test.java.TestCases.phase3.RelativeSelfInstantiation" );
 	}
 
 	@Test
@@ -1526,19 +1558,38 @@ public class ClassTest {
 
 		instance.executeSource(
 		    """
-		    import bx:src.test.java.TestCases.phase3.PropertyTestCF as brad;
-		    b = new brad()
-			outerClass = b.$bx.$class;
-			innerClass = b.init.getClass(); 
-			innerClassesOuterClass = b.init.getClass().getEnclosingClass(); 
-			println(outerclass)
-			println(innerClass)
-		      """,
+		       import bx:src.test.java.TestCases.phase3.PropertyTestCF as brad;
+		       b = new brad()
+		    outerClass = b.$bx.$class;
+		    innerClass = b.init.getClass();
+		    innerClassesOuterClass = b.init.getClass().getEnclosingClass();
+		    println(outerclass)
+		    println(innerClass)
+		         """,
 		    context );
-			assertThat(((Class<?>)variables.get( "outerClass" )).getName() ).isEqualTo( "boxgenerated.boxclass.src.test.java.testcases.phase3.Propertytestcf$cfc" );
-			assertThat(((Class<?>)variables.get( "innerClassesOuterClass" )).getName() ).isEqualTo( "boxgenerated.boxclass.src.test.java.testcases.phase3.Propertytestcf$cfc" );
-			assertThat(((Class<?>)variables.get( "innerClass" )).getName() ).isEqualTo( "boxgenerated.boxclass.src.test.java.testcases.phase3.Propertytestcf$cfc$Func_init" );
-			assertThat( variables.get( "outerClass" ) ).isEqualTo( variables.get("innerClassesOuterClass") );
+		assertThat( ( ( Class<?> ) variables.get( "outerClass" ) ).getName() )
+		    .isEqualTo( "boxgenerated.boxclass.src.test.java.testcases.phase3.Propertytestcf$cfc" );
+		assertThat( ( ( Class<?> ) variables.get( "innerClassesOuterClass" ) ).getName() )
+		    .isEqualTo( "boxgenerated.boxclass.src.test.java.testcases.phase3.Propertytestcf$cfc" );
+		assertThat( ( ( Class<?> ) variables.get( "innerClass" ) ).getName() )
+		    .isEqualTo( "boxgenerated.boxclass.src.test.java.testcases.phase3.Propertytestcf$cfc$Func_init" );
+		assertThat( variables.get( "outerClass" ) ).isEqualTo( variables.get( "innerClassesOuterClass" ) );
+	}
+
+	@DisplayName( "udf class has enclosing class reference" )
+	@Test
+	public void testUDFClassEnclosingClassReferenceInTemplate() {
+
+		instance.executeSource(
+		    """
+		    function test(){
+
+		     }
+		         result = test.getClass().getEnclosingClass();
+		                """,
+		    context );
+
+		assertThat( variables.get( result ) ).isNotNull();
 	}
 
 	@DisplayName( "mixins should be public" )
@@ -1547,12 +1598,77 @@ public class ClassTest {
 
 		instance.executeSource(
 		    """
-		    mt = new src.test.java.TestCases.phase3.MixinTest()
-			mt.includeMixin();
-			result = mt.mixed()
-		      """,
+		       mt = new src.test.java.TestCases.phase3.MixinTest()
+		    mt.includeMixin();
+		    result = mt.mixed()
+		         """,
 		    context );
 		assertThat( variables.get( "result" ) ).isEqualTo( "mixed up" );
+	}
+
+	@DisplayName( "class locator usage in static initializer" )
+	@Test
+	public void testClassLocatorInStaticInitializer() {
+		instance.executeSource(
+		    """
+		    new src.test.java.TestCases.phase3.ClassLocatorInStaticInitializer()
+		      """,
+		    context );
+	}
+
+	@DisplayName( "Class with include" )
+	@Test
+	public void testClassWithInclude() {
+		instance.executeSource(
+		    """
+		    new src.test.java.TestCases.phase3.ClassWithInclude()
+		      """,
+		    context );
+	}
+
+	@DisplayName( "properties not inherited in metadata" )
+	@Test
+	public void testPropertiesNotInheritedInMetadata() {
+		instance.executeSource(
+		    """
+		    c = new src.test.java.TestCases.phase3.PropertiesNotInheritedInMetadata();
+		       result = getMetaData( c )
+		    result2 = c.$bx.meta
+		         """,
+		    context );
+
+		// Legacy metadata
+		Array childProps = variables.getAsStruct( Key.of( "result" ) ).getAsArray( Key.properties );
+		assertThat( childProps ).hasSize( 2 );
+		assertThat( ( ( IStruct ) childProps.get( 0 ) ).get( Key._NAME ) ).isEqualTo( "childProperty" );
+		assertThat( ( ( IStruct ) childProps.get( 1 ) ).get( Key._NAME ) ).isEqualTo( "sharedProperty" );
+
+		Array parentProps = variables.getAsStruct( Key.of( "result" ) ).getAsStruct( Key._EXTENDS ).getAsArray( Key.properties );
+		assertThat( parentProps ).hasSize( 2 );
+		assertThat( ( ( IStruct ) parentProps.get( 0 ) ).get( Key._NAME ) ).isEqualTo( "parentProperty" );
+		assertThat( ( ( IStruct ) parentProps.get( 1 ) ).get( Key._NAME ) ).isEqualTo( "sharedProperty" );
+
+		// $bx metadata
+		childProps = variables.getAsStruct( Key.of( Key.of( "result2" ) ) ).getAsArray( Key.properties );
+		assertThat( childProps ).hasSize( 2 );
+		assertThat( ( ( IStruct ) childProps.get( 0 ) ).get( Key._NAME ) ).isEqualTo( "childProperty" );
+		assertThat( ( ( IStruct ) childProps.get( 1 ) ).get( Key._NAME ) ).isEqualTo( "sharedProperty" );
+
+		parentProps = variables.getAsStruct( Key.of( Key.of( "result2" ) ) ).getAsStruct( Key._EXTENDS ).getAsArray( Key.properties );
+		assertThat( parentProps ).hasSize( 2 );
+		assertThat( ( ( IStruct ) parentProps.get( 0 ) ).get( Key._NAME ) ).isEqualTo( "parentProperty" );
+		assertThat( ( ( IStruct ) parentProps.get( 1 ) ).get( Key._NAME ) ).isEqualTo( "sharedProperty" );
+
+	}
+
+	@Test
+	public void testUserASMError() {
+		instance.executeSource(
+		    """
+
+		    new src.test.java.TestCases.phase3.ASMError()
+		      """,
+		    context );
 	}
 
 }

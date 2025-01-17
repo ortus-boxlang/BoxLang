@@ -60,6 +60,25 @@ import ortus.boxlang.compiler.ast.expression.BoxStructLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxStructType;
 import ortus.boxlang.compiler.ast.expression.BoxTernaryOperation;
 import ortus.boxlang.compiler.ast.expression.BoxUnaryOperation;
+import ortus.boxlang.compiler.ast.sql.select.SQLTableVariable;
+import ortus.boxlang.compiler.ast.sql.select.expression.SQLCase;
+import ortus.boxlang.compiler.ast.sql.select.expression.SQLCaseWhenThen;
+import ortus.boxlang.compiler.ast.sql.select.expression.SQLColumn;
+import ortus.boxlang.compiler.ast.sql.select.expression.SQLCountFunction;
+import ortus.boxlang.compiler.ast.sql.select.expression.SQLFunction;
+import ortus.boxlang.compiler.ast.sql.select.expression.SQLOrderBy;
+import ortus.boxlang.compiler.ast.sql.select.expression.SQLParam;
+import ortus.boxlang.compiler.ast.sql.select.expression.SQLParenthesis;
+import ortus.boxlang.compiler.ast.sql.select.expression.SQLStarExpression;
+import ortus.boxlang.compiler.ast.sql.select.expression.literal.SQLBooleanLiteral;
+import ortus.boxlang.compiler.ast.sql.select.expression.literal.SQLNullLiteral;
+import ortus.boxlang.compiler.ast.sql.select.expression.literal.SQLNumberLiteral;
+import ortus.boxlang.compiler.ast.sql.select.expression.literal.SQLStringLiteral;
+import ortus.boxlang.compiler.ast.sql.select.expression.operation.SQLBetweenOperation;
+import ortus.boxlang.compiler.ast.sql.select.expression.operation.SQLBinaryOperation;
+import ortus.boxlang.compiler.ast.sql.select.expression.operation.SQLInOperation;
+import ortus.boxlang.compiler.ast.sql.select.expression.operation.SQLInSubQueryOperation;
+import ortus.boxlang.compiler.ast.sql.select.expression.operation.SQLUnaryOperation;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxAssert;
@@ -1661,7 +1680,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 				print( ">" );
 			}
 		} else {
-			// print( "bx:" );
+			print( "bx:" );
 			print( node.getName() );
 			for ( var attr : node.getAttributes() ) {
 				print( " " );
@@ -1735,6 +1754,215 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			}
 			print( ")" );
 		}
+		printPostComments( node );
+	}
+
+	// SQL AST Nodes
+
+	public void visit( SQLBooleanLiteral node ) {
+		printPreComments( node );
+		print( String.valueOf( node.getValue() ) );
+		printPostComments( node );
+	}
+
+	public void visit( SQLNullLiteral node ) {
+		printPreComments( node );
+		print( "null" );
+		printPostComments( node );
+	}
+
+	public void visit( SQLNumberLiteral node ) {
+		printPreComments( node );
+		print( String.valueOf( node.getValue() ) );
+		printPostComments( node );
+	}
+
+	public void visit( SQLStringLiteral node ) {
+		printPreComments( node );
+		print( "'" );
+		print( node.getValue().replace( "'", "''" ) );
+		print( "'" );
+		printPostComments( node );
+	}
+
+	public void visit( SQLBetweenOperation node ) {
+		printPreComments( node );
+		node.getExpression().accept( this );
+		if ( node.isNot() ) {
+			print( " not" );
+		}
+		print( " between " );
+		node.getLeft().accept( this );
+		print( " and " );
+		node.getRight().accept( this );
+		printPostComments( node );
+	}
+
+	public void visit( SQLBinaryOperation node ) {
+		printPreComments( node );
+		node.getLeft().accept( this );
+		print( " " );
+		print( node.getOperator().getSymbol() );
+		print( " " );
+		node.getRight().accept( this );
+		printPostComments( node );
+	}
+
+	public void visit( SQLInOperation node ) {
+		printPreComments( node );
+		node.getExpression().accept( this );
+		if ( node.isNot() ) {
+			print( " not" );
+		}
+		print( " in (" );
+		int size = node.getValues().size();
+		if ( size > 0 ) {
+			print( " " );
+		}
+		for ( int i = 0; i < size; i++ ) {
+			node.getValues().get( i ).accept( this );
+			if ( i < size - 1 ) {
+				print( ", " );
+			}
+		}
+		if ( size > 0 ) {
+			print( " " );
+		}
+		print( ")" );
+		printPostComments( node );
+	}
+
+	public void visit( SQLInSubQueryOperation node ) {
+		printPreComments( node );
+		node.getExpression().accept( this );
+		if ( node.isNot() ) {
+			print( " not" );
+		}
+		print( " in (" );
+		node.getSubQuery().accept( this );
+		print( ")" );
+		printPostComments( node );
+	}
+
+	public void visit( SQLUnaryOperation node ) {
+		printPreComments( node );
+		print( node.getOperator().getSymbol() );
+		node.getExpression().accept( this );
+		printPostComments( node );
+	}
+
+	public void visit( SQLCase node ) {
+		printPreComments( node );
+		print( "case" );
+		if ( node.getInputExpression() != null ) {
+			print( " " );
+			node.getInputExpression().accept( this );
+		}
+		increaseIndent();
+		for ( var whenThen : node.getWhenThens() ) {
+			whenThen.accept( this );
+		}
+		if ( node.getElseExpression() != null ) {
+			print( " else " );
+			node.getElseExpression().accept( this );
+		}
+		decreaseIndent();
+		print( " end" );
+		printPostComments( node );
+	}
+
+	public void visit( SQLCaseWhenThen node ) {
+		printPreComments( node );
+		print( " when " );
+		node.getWhenExpression().accept( this );
+		print( " then " );
+		node.getThenExpression().accept( this );
+		printPostComments( node );
+	}
+
+	public void visit( SQLColumn node ) {
+		printPreComments( node );
+		// TODO, actually track in the SQLColumn node what we had for the original table reference
+		if ( node.getTable() != null && node.getTable() instanceof SQLTableVariable stv ) {
+			print( stv.getAlias() != null ? stv.getAlias().getName() : stv.getName().getName() );
+			print( "." );
+		}
+		print( node.getName().getName() );
+		printPostComments( node );
+	}
+
+	public void visit( SQLCountFunction node ) {
+		printPreComments( node );
+		print( "count( " );
+		if ( node.isDistinct() ) {
+			print( "distinct " );
+		}
+		node.getArguments().get( 0 ).accept( this );
+		print( " )" );
+		printPostComments( node );
+	}
+
+	public void visit( SQLFunction node ) {
+		printPreComments( node );
+		print( node.getName().getName() );
+		print( "(" );
+		int size = node.getArguments().size();
+		if ( size > 0 ) {
+			print( " " );
+		}
+		for ( int i = 0; i < size; i++ ) {
+			node.getArguments().get( i ).accept( this );
+			if ( i < size - 1 ) {
+				print( ", " );
+			}
+		}
+		if ( size > 0 ) {
+			print( " " );
+		}
+		print( ")" );
+		printPostComments( node );
+	}
+
+	public void visit( SQLOrderBy node ) {
+		printPreComments( node );
+		node.getExpression().accept( this );
+		if ( !node.isAscending() ) {
+			print( " desc" );
+		}
+		printPostComments( node );
+	}
+
+	public void visit( SQLParam node ) {
+		printPreComments( node );
+		if ( node.getName() != null ) {
+			print( ":" );
+			print( node.getName() );
+		} else {
+			// I need this to be a unique for each ordered param
+			print( "? /* position: " );
+			print( String.valueOf( node.getPosition() ) );
+			print( " */" );
+
+		}
+		printPostComments( node );
+	}
+
+	public void visit( SQLParenthesis node ) {
+		printPreComments( node );
+		print( "( " );
+		node.getExpression().accept( this );
+		print( " )" );
+		printPostComments( node );
+	}
+
+	public void visit( SQLStarExpression node ) {
+		printPreComments( node );
+		// TODO, actually track in the SQLColumn node what we had for the original table reference
+		if ( node.getTable() != null && node.getTable() instanceof SQLTableVariable stv ) {
+			print( stv.getAlias() != null ? stv.getAlias().getName() : stv.getName().getName() );
+			print( "." );
+		}
+		print( "*" );
 		printPostComments( node );
 	}
 

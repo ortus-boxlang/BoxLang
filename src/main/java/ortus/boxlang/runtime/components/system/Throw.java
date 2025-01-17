@@ -36,7 +36,7 @@ public class Throw extends Component {
 	public Throw() {
 		super();
 		declaredAttributes = new Attribute[] {
-		    new Attribute( Key.message, "String" ),
+		    new Attribute( Key.message, "any" ),
 		    new Attribute( Key.type, "String" ),
 		    new Attribute( Key.detail, "String" ),
 		    new Attribute( Key.errorcode, "String" ),

@@ -94,7 +94,7 @@ public class DirectoryTest {
 		assertFalse( FileSystemUtil.exists( targetDirectory ) );
 		instance.executeSource(
 		    """
-		    directory action="Create" directory="#destination#";
+		    bx:directory action="Create" directory="#destination#";
 		    """,
 		    context );
 		assertTrue( FileSystemUtil.exists( targetDirectory ) );
@@ -125,8 +125,8 @@ public class DirectoryTest {
 		FileSystemUtil.write( testFile, "copy directory test!" );
 		instance.executeSource(
 		    """
-		    directory action="copy" directory="#source#" destination="#destination#";
-		    """,
+		    bx:directory action="copy" directory="#source#" destination="#destination#";
+		      """,
 		    context );
 		assertTrue( FileSystemUtil.exists( targetDirectory ) );
 		assertTrue( FileSystemUtil.exists( testFile ) );
@@ -143,8 +143,8 @@ public class DirectoryTest {
 		    RuntimeException.class,
 		    () -> instance.executeSource(
 		        """
-		        directory action="Create" directory="#destination#" createPath=false;
-		             """,
+		        bx:directory action="Create" directory="#destination#" createPath=false;
+		                  """,
 		        context )
 		);
 	}
@@ -156,8 +156,8 @@ public class DirectoryTest {
 		assertFalse( FileSystemUtil.exists( targetDirectory ) );
 		instance.executeSource(
 		    """
-		    directory action="Create" directory="#destination#";
-		      """,
+		    bx:directory action="Create" directory="#destination#";
+		        """,
 		    context );
 		assertTrue( FileSystemUtil.exists( targetDirectory ) );
 		assertThrows(
@@ -216,9 +216,9 @@ public class DirectoryTest {
 		assertTrue( FileSystemUtil.exists( testDirectory ) );
 		instance.executeSource(
 		    """
-		    println(variables.testDirectory)
-		       directory action="List" directory="#variables.testDirectory#" name="result" recurse=false listInfo="all";
-		       """,
+		       println(variables.testDirectory)
+		    bx:directory action="List" directory="#variables.testDirectory#" name="result" recurse=false listInfo="all";
+		          """,
 		    context );
 		var result = variables.get( Key.of( "result" ) );
 		assertTrue( result instanceof Query );
@@ -242,9 +242,9 @@ public class DirectoryTest {
 		// Test for BL-202
 		instance.executeSource(
 		    """
-		    println(variables.testDirectory)
-		       directory directory="#variables.testDirectory#" name="result" recurse=false;
-		       """,
+		       println(variables.testDirectory)
+		    bx:directory directory="#variables.testDirectory#" name="result" recurse=false;
+		          """,
 		    context );
 		result = variables.get( Key.of( "result" ) );
 		assertTrue( result instanceof Query );
@@ -278,9 +278,9 @@ public class DirectoryTest {
 		assertTrue( FileSystemUtil.exists( testDirectory ) );
 		instance.executeSource(
 		    """
-		    println(variables.testDirectory)
-		       directory action="List" directory="#variables.testDirectory#" name="result" recurse=true listInfo="name";
-		       """,
+		       println(variables.testDirectory)
+		    bx:directory action="List" directory="#variables.testDirectory#" name="result" recurse=true listInfo="name";
+		          """,
 		    context );
 		var result = variables.get( Key.of( "result" ) );
 		assertTrue( result instanceof Query );

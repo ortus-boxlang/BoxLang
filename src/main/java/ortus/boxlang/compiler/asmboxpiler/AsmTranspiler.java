@@ -441,12 +441,14 @@ public class AsmTranspiler extends Transpiler {
 		Type type = Type.getType( "L" + getProperty( "packageName" ).replace( '.', '/' ) + "/" + getProperty( "classname" ) + ";" );
 		setProperty( "classType", type.getDescriptor() );
 		setProperty( "classTypeInternal", type.getInternalName() );
-		ClassNode	classNode		= new ClassNode();
-		String		mappingName		= getProperty( "mappingName" );
-		String		mappingPath		= getProperty( "mappingPath" );
-		String		relativePath	= getProperty( "relativePath" );
-		Source		source			= boxScript.getPosition().getSource();
-		String		filePath		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath() : "unknown";
+		ClassNode classNode = new ClassNode();
+		setOwningClass( classNode );
+		setProperty( "enclosingClassInternalName", type.getInternalName() );
+		String	mappingName		= getProperty( "mappingName" );
+		String	mappingPath		= getProperty( "mappingPath" );
+		String	relativePath	= getProperty( "relativePath" );
+		Source	source			= boxScript.getPosition().getSource();
+		String	filePath		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath() : "unknown";
 		setProperty( "filePath", filePath );
 		classNode.visitSource( filePath, null );
 
@@ -729,17 +731,19 @@ public class AsmTranspiler extends Transpiler {
 				} else {
 					init = List.of( new InsnNode( Opcodes.ACONST_NULL ) );
 
-					Type					type		= Type.getType( "L" + getProperty( "packageName" ).replace( '.', '/' )
+					Type		type		= Type.getType( "L" + getProperty( "packageName" ).replace( '.', '/' )
 					    + "/" + getProperty( "classname" )
 					    + "$Lambda_" + incrementAndGetLambdaCounter() + ";" );
 
-					List<AbstractInsnNode>	body		= transform( defaultAnnotation.getValue(), TransformerContext.NONE, ReturnValueContext.VALUE_OR_NULL );
-					ClassNode				classNode	= new ClassNode();
+					ClassNode	classNode	= new ClassNode();
 					AsmHelper.init( classNode, false, type, Type.getType( Object.class ), methodVisitor -> {
 					}, Type.getType( DefaultExpression.class ) );
 					AsmHelper.methodWithContextAndClassLocator( classNode, "evaluate", Type.getType( IBoxContext.class ), Type.getType( Object.class ), false,
 					    this, false,
-					    () -> body );
+					    () -> {
+						    List<AbstractInsnNode> body = transform( defaultAnnotation.getValue(), TransformerContext.NONE, ReturnValueContext.VALUE_OR_NULL );
+						    return body;
+					    } );
 					setAuxiliary( type.getClassName(), classNode );
 
 					initLambda = List.of(
@@ -788,12 +792,14 @@ public class AsmTranspiler extends Transpiler {
 			    sourceType.toUpperCase(),
 			    Type.getDescriptor( BoxSourceType.class ) ) );
 
+			javaExpr.add( new LdcInsnNode( declaringType ) );
+
 			javaExpr.add( new MethodInsnNode( Opcodes.INVOKESPECIAL,
 			    Type.getInternalName( Property.class ),
 			    "<init>",
 			    Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( Key.class ), Type.getType( String.class ), Type.getType( Object.class ),
 			        Type.getType( DefaultExpression.class ), Type.getType( IStruct.class ), Type.getType( IStruct.class ),
-			        Type.getType( BoxSourceType.class ) ),
+			        Type.getType( BoxSourceType.class ), Type.getType( Class.class ) ),
 			    false ) );
 
 			members.add( jNameKey );

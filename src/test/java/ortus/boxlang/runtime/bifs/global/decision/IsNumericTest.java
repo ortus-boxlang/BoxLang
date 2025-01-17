@@ -52,7 +52,6 @@ public class IsNumericTest {
 
 	@AfterAll
 	public static void teardown() {
-
 	}
 
 	@BeforeEach
@@ -93,6 +92,23 @@ public class IsNumericTest {
 		assertThat( ( Boolean ) variables.get( Key.of( "struct" ) ) ).isFalse();
 	}
 
+	@DisplayName( "It returns false for booleans" )
+	@Test
+	public void testBooleans() {
+		instance.executeSource(
+		    """
+		    booltrue = IsNumeric( true )
+		    boolfalse = IsNumeric( false )
+		    stringtrue = IsNumeric( "true" )
+		    stringfalse = IsNumeric( "false" )
+		       """,
+		    context );
+		assertThat( variables.getAsBoolean( Key.of( "booltrue" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "boolfalse" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "stringtrue" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "stringfalse" ) ) ).isFalse();
+	}
+
 	@DisplayName( "It tests the BIF IsNumeric with locale arguments" )
 	@Test
 	public void testWithLocale() {
@@ -120,6 +136,23 @@ public class IsNumericTest {
 		    """
 		    	myDate = createObject("java", "java.sql.Date").valueOf("2011-03-24")
 		    	result = isNumeric(myDate)
+		    """,
+		    context );
+		assertFalse( variables.getAsBoolean( Key.of( "result" ) ) );
+	}
+
+	@DisplayName( "It will return false for a boolean value" )
+	@Test
+	public void testBooleanFalse() {
+		instance.executeSource(
+		    """
+		    	result = isNumeric( true )
+		    """,
+		    context );
+		assertFalse( variables.getAsBoolean( Key.of( "result" ) ) );
+		instance.executeSource(
+		    """
+		    	result = isNumeric( false )
 		    """,
 		    context );
 		assertFalse( variables.getAsBoolean( Key.of( "result" ) ) );

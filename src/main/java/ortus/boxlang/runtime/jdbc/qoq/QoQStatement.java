@@ -35,6 +35,10 @@ public class QoQStatement implements java.sql.Statement {
 		this.connection	= connection;
 	}
 
+	public IBoxContext getContext() {
+		return context;
+	}
+
 	public ResultSet executeQuery( String sql ) throws SQLException {
 		throw new UnsupportedOperationException();
 	}
@@ -178,7 +182,7 @@ public class QoQStatement implements java.sql.Statement {
 		SQLSelectStatement select = ( SQLSelectStatement ) QoQExecutionService.parseSQL( sql );
 
 		// execute the query
-		result = QoQExecutionService.executeSelect( context, select, this );
+		result = QoQExecutionService.executeSelectStatement( context, select, this );
 		return true;
 	}
 

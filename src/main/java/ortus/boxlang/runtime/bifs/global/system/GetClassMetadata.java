@@ -48,6 +48,7 @@ public class GetClassMetadata extends BIF {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
+	 * @argument.path The path to the class or interface or an instance of the object to get the metadata for.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object path = arguments.get( Key.path );

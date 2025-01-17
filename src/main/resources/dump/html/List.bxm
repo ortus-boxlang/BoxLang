@@ -13,14 +13,15 @@
 				>
 					<strong>
 						<bx:if label.len() >#label# - </bx:if>
-						#var.getClass().getSimpleName()#: #var.size()# items
+						#var.getClass().getName()#
+						<bx:if !isNull( top ) && top lt var.size()>#top#/</bx:if>#var.size()#
 					</strong>
 				</caption>
 			<bx:else>
-				<caption>
+			<caption class="bx-dhAy">
 					<strong>
 						<bx:if label.len() >#label# - </bx:if>
-						#var.getClass().getSimpleName()#: #var.size()# items
+						#var.getClass().getSimpleName()#
 					</strong>
 				</caption>
 			</bx:if>
@@ -30,7 +31,7 @@
 				<bx:script>
 					for ( i = 0; i < var.size(); i++ ) {
 						// Top limit only if > 0
-						if( !isNull( top ) && i > top ) {
+						if( !isNull( top ) && i >= top ) {
 							break;
 						}
 						```

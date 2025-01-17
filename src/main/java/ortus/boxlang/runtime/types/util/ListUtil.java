@@ -80,6 +80,7 @@ public class ListUtil {
 		return list.stream()
 		    // map nulls to empty string since the string caster won't do this
 		    .map( s -> s == null ? "" : s )
+		    .map( v -> v instanceof Array arrayValue ? "'" + arrayValue.toString() + "'" : v )
 		    .map( StringCaster::cast )
 		    .collect( Collectors.joining( list.containsDelimiters ? "" : delimiter ) );
 	}

@@ -111,4 +111,46 @@ public class XMLSearchTest {
 		    .isEqualTo( "luis" );
 	}
 
+	@DisplayName( "It can search string" )
+	@Test
+	public void testCanSearchString() {
+		instance.executeSource(
+		    """
+		    xml = '<Conditions NotBefore="2018-08-24T10:54:19.464Z" NotOnOrAfter="2018-08-24T11:54:19.464Z"></Conditions>';
+
+		    result = XmlSearch(xml, "string(/Conditions/@NotBefore)");
+		         """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( String.class );
+		assertThat( variables.get( result ) ).isEqualTo( "2018-08-24T10:54:19.464Z" );
+	}
+
+	@DisplayName( "It can search boolean" )
+	@Test
+	public void testCanSearchBoolean() {
+		instance.executeSource(
+		    """
+		    xml = '<Conditions IsActive="true"></Conditions>';
+
+		    result = XmlSearch(xml, "boolean(/Conditions/@IsActive)");
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Boolean.class );
+		assertThat( variables.get( result ) ).isEqualTo( true );
+	}
+
+	@DisplayName( "It can search numeric" )
+	@Test
+	public void testCanSearchNumeric() {
+		instance.executeSource(
+		    """
+		    xml = '<Item Price="19.99"></Item>';
+
+		    result = XmlSearch(xml, "number(/Item/@Price)");
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Double.class );
+		assertThat( variables.get( result ) ).isEqualTo( 19.99 );
+	}
+
 }

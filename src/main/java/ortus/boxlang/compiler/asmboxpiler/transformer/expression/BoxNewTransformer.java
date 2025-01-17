@@ -26,7 +26,6 @@ import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
-import org.objectweb.asm.tree.VarInsnNode;
 
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
@@ -51,9 +50,14 @@ public class BoxNewTransformer extends AbstractTransformer {
 		BoxNew					boxNew	= ( BoxNew ) node;
 
 		List<AbstractInsnNode>	nodes	= new ArrayList<>();
-		nodes.add( new VarInsnNode( Opcodes.ALOAD, 2 ) );
+		// nodes.add( new VarInsnNode( Opcodes.ALOAD, 2 ) );
+		nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+		    Type.getInternalName( ClassLocator.class ),
+		    "getInstance",
+		    Type.getMethodDescriptor( Type.getType( ClassLocator.class ) ),
+		    false ) );
 
-		nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
+		nodes.addAll( transpiler.getCurrentMethodContextTracker().get().loadCurrentContext() );
 		nodes.add( new LdcInsnNode( "" ) ); // TODO: how to set this?
 		nodes.addAll( transpiler.transform( boxNew.getExpression(), TransformerContext.NONE, ReturnValueContext.VALUE ) );
 		nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
@@ -82,7 +86,7 @@ public class BoxNewTransformer extends AbstractTransformer {
 		        Type.getType( List.class ) ),
 		    false ) );
 
-		nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
+		nodes.addAll( transpiler.getCurrentMethodContextTracker().get().loadCurrentContext() );
 
 		nodes.addAll( AsmHelper.callDynamicObjectInvokeConstructor( transpiler, boxNew.getArguments(), context ) );
 

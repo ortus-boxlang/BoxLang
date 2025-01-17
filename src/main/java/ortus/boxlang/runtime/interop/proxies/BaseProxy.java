@@ -77,6 +77,12 @@ public abstract class BaseProxy {
 	);
 
 	/**
+	 * No-arg constructor for the proxy.
+	 */
+	protected BaseProxy() {
+	}
+
+	/**
 	 * Constructor for the proxy.
 	 *
 	 * @param target  The target function / object to wrap.
@@ -133,7 +139,7 @@ public abstract class BaseProxy {
 	 * @param args    The arguments to pass to the function
 	 *
 	 * @return The result of the function
-	 * 
+	 *
 	 * @throws InterruptedException
 	 */
 	protected Object invoke( Key method, Object... args ) throws InterruptedException {
@@ -186,7 +192,7 @@ public abstract class BaseProxy {
 	 * @param args The arguments to pass to the function
 	 *
 	 * @return The result of the function
-	 * 
+	 *
 	 * @throws InterruptedException
 	 */
 	protected Object invoke( Object... args ) throws InterruptedException {

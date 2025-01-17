@@ -1,0 +1,8 @@
+class {
+
+	request.applicationbxran = true;
+	
+	function onRequestStart() {
+		request.onRequestStart = true;
+	}
+}

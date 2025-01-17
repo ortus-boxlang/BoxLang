@@ -1,0 +1,9 @@
+class {
+	RelativeSelfInstantiation function init() {
+		return this;
+	}
+
+	function clone() {
+		return new RelativeSelfInstantiation();
+	}
+}

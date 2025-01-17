@@ -93,56 +93,92 @@ public final class ExecutedQuery {
 	public static ExecutedQuery fromPendingQuery( @Nonnull PendingQuery pendingQuery, @Nonnull Statement statement, long executionTime, boolean hasResults ) {
 		Object	generatedKey	= null;
 		Query	results			= null;
+		int		recordCount		= 0;
+		int		affectedCount	= -1;
 
 		if ( statement instanceof QoQStatement qs ) {
 			results = qs.getQueryResult();
 		} else {
-			try ( ResultSet rs = statement.getResultSet() ) {
-				results = Query.fromResultSet( rs );
-			} catch ( SQLException e ) {
-				throw new DatabaseException( e.getMessage(), e );
-			}
-		}
-
-		// Capture generated keys, if any.
-		try {
-			try ( ResultSet keys = statement.getGeneratedKeys() ) {
-				if ( keys != null && keys.next() ) {
-					generatedKey = keys.getObject( 1 );
-				}
-			} catch ( SQLException e ) {
-				if ( e.getMessage().contains( "The statement must be executed before any results can be obtained." ) ) {
-					logger.info(
-					    "SQL Server threw an error when attempting to retrieve generated keys. Am ignoring the error - no action is required. Error : [{}]",
-					    e.getMessage() );
+			// Loop over results until we find a result set, or run out of results
+			while ( true ) {
+				if ( hasResults ) {
+					try ( ResultSet rs = statement.getResultSet() ) {
+						results		= Query.fromResultSet( rs );
+						recordCount	= results.size();
+						break;
+					} catch ( SQLException e ) {
+						throw new DatabaseException( e.getMessage(), e );
+					}
 				} else {
-					// @TODO Add in more info to this
-					throw new DatabaseException( e.getMessage(), e );
+
+					// Capture generated keys, if any.
+					try {
+						try {
+							affectedCount = statement.getUpdateCount();
+							if ( affectedCount > -1 ) {
+								recordCount = affectedCount;
+								try ( ResultSet keys = statement.getGeneratedKeys() ) {
+									if ( keys != null && keys.next() ) {
+										generatedKey = keys.getObject( 1 );
+									}
+								} catch ( SQLException e ) {
+									// @TODO: drop the message check, since it doesn't support alternate languages.
+									if ( e.getMessage().contains( "The statement must be executed before any results can be obtained." ) ) {
+										logger.info(
+										    "SQL Server threw an error when attempting to retrieve generated keys. Am ignoring the error - no action is required. Error : [{}]",
+										    e.getMessage() );
+									} else {
+										logger.warn( "Error getting generated keys", e );
+									}
+								}
+							}
+						} catch ( SQLException t ) {
+							logger.error( "Error getting update count", t );
+						}
+					} catch ( NullPointerException e ) {
+						// This is likely due to Hikari wrapping a null ResultSet.
+						// There should not be a null ResultSet returned from getGeneratedKeys
+						// (https://docs.oracle.com/javase/8/docs/api/java/sql/Statement.html#getGeneratedKeys--)
+						// but some JDBC drivers do anyway.
+						// Since Hikari wraps the null value, we can't get access to it,
+						// so instead we have to catch it here and ignore it.
+						// We do check the message to try to be very particular about what NullPointerExceptions we are catching
+						if ( !e.getMessage().equals( "Cannot invoke \"java.sql.ResultSet.next()\" because \"this.delegate\" is null" ) ) {
+							throw e;
+						}
+					}
 				}
-			}
-		} catch ( NullPointerException e ) {
-			// This is likely due to Hikari wrapping a null ResultSet.
-			// There should not be a null ResultSet returned from getGeneratedKeys
-			// (https://docs.oracle.com/javase/8/docs/api/java/sql/Statement.html#getGeneratedKeys--)
-			// but some JDBC drivers do anyway.
-			// Since Hikari wraps the null value, we can't get access to it,
-			// so instead we have to catch it here and ignore it.
-			// We do check the message to try to be very particular about what NullPointerExceptions we are catching
-			if ( !e.getMessage().equals( "Cannot invoke \"java.sql.ResultSet.next()\" because \"this.delegate\" is null" ) ) {
-				throw e;
-			}
+				// If we have no results and no affected count, we're done.
+				if ( !hasResults && affectedCount == -1 ) {
+					break;
+				}
+
+				// Otherwise, look for another result set or update count.
+				try {
+					hasResults = statement.getMoreResults();
+				} catch ( SQLException e ) {
+					break;
+				}
+
+			} // /while
 		}
 
 		IStruct queryMeta = Struct.of(
 		    "cached", false,
 		    "cacheKey", pendingQuery.getCacheKey(),
-		    "sql", pendingQuery.getOriginalSql(),
+		    "sql", pendingQuery.getSQLWithParamValues(),
 		    "sqlParameters", Array.fromList( pendingQuery.getParameterValues() ),
-		    "executionTime", executionTime
+		    "executionTime", executionTime,
+		    "recordCount", recordCount
 		);
 
 		if ( generatedKey != null ) {
 			queryMeta.put( "generatedKey", generatedKey );
+		}
+
+		// If we only had an update or insert, we need an empty query object to return
+		if ( results == null ) {
+			results = new Query();
 		}
 
 		// important that we set the metadata on the Query object for later getBoxMeta(), i.e. $bx.meta calls.

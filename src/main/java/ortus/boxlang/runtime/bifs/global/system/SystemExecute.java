@@ -34,6 +34,7 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
+import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -113,21 +114,30 @@ public class SystemExecute extends BIF {
 												} );
 
 		cmd.add( bin );
-		if ( args instanceof String ) {
-			// ensure we preserve any spaces in
-			Matcher matches = Pattern.compile( "[^\\s\"']+|\"[^\"]*\"|'[^']*'" ).matcher( StringCaster.cast( args ) );
-			matches.reset();
-			while ( matches.find() )
-				cmd.add( matches.group() );
-		} else if ( args instanceof Array ) {
-			ArrayCaster.cast( args ).stream().forEach( arg -> cmd.add( StringCaster.cast( arg ) ) );
-		} else {
-			throw new BoxRuntimeException(
-			    String.format(
-			        "The provided process arguments provided [%s] could not be parsed in to command arguments",
-			        args.toString()
-			    )
-			);
+		if ( args != null ) {
+			CastAttempt<String> strAttempt = StringCaster.attempt( args );
+			// If the args are a simple value, parse out each argument
+			if ( strAttempt.wasSuccessful() ) {
+				// ensure we preserve any spaces in
+				Matcher matches = Pattern.compile( "[^\\s\"']+|\"[^\"]*\"|'[^']*'" ).matcher( strAttempt.get() );
+				matches.reset();
+				while ( matches.find() ) {
+					cmd.add( matches.group() );
+				}
+			} else {
+				// If args are an array, use the array values as arguments directly
+				CastAttempt<Array> arrAttempt = ArrayCaster.attempt( args );
+				if ( arrAttempt.wasSuccessful() ) {
+					arrAttempt.get().stream().forEach( arg -> cmd.add( StringCaster.cast( arg ) ) );
+				} else {
+					throw new BoxRuntimeException(
+					    String.format(
+					        "The provided process arguments provided [%s] could not be parsed in to command arguments",
+					        args.toString()
+					    )
+					);
+				}
+			}
 		}
 
 		ProcessBuilder processBuilder = new ProcessBuilder( cmd );

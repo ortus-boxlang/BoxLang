@@ -20,17 +20,20 @@ package ortus.boxlang.runtime.components.system;
 
 import java.util.Collection;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.components.util.LoopUtil;
+import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.Closure;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -67,10 +70,10 @@ public class Loop extends Component {
 		    new Attribute( Key.startRow, "integer", Set.of( Validator.min( 1 ) ) ),
 		    new Attribute( Key.endRow, "integer", Set.of( Validator.min( 1 ) ) ),
 		    new Attribute( Key.label, "string", Set.of( Validator.NON_EMPTY ) ),
-		    new Attribute( Key.times, "integer", Set.of( Validator.min( 0 ) ) )
+		    new Attribute( Key.times, "integer", Set.of( Validator.min( 0 ) ) ),
+		    new Attribute( Key.step, "number", 1 )
 
 			/**
-			 * step
 			 * array
 			 * characters
 			 */
@@ -106,6 +109,7 @@ public class Loop extends Component {
 		Object				queryOrName			= attributes.get( Key.query );
 		String				label				= attributes.getAsString( Key.label );
 		Integer				times				= attributes.getAsInteger( Key.times );
+		Number				step				= attributes.getAsNumber( Key.step );
 
 		if ( times != null ) {
 			return _invokeTimes( context, times, item, index, body, executionState, label );
@@ -114,7 +118,7 @@ public class Loop extends Component {
 			return _invokeArray( context, array, item, index, body, executionState, label );
 		}
 		if ( to != null && from != null ) {
-			return _invokeRange( context, from, to, index, body, executionState, label );
+			return _invokeRange( context, from, to, step, index, body, executionState, label );
 		}
 		if ( file != null ) {
 			return _invokeFile( context, file, index, body, executionState, label );
@@ -169,7 +173,14 @@ public class Loop extends Component {
 
 	private BodyResult _invokeCondition( IBoxContext context, Function condition, ComponentBody body, IStruct executionState, String label ) {
 		// Loop over array, executing body every time
-		while ( BooleanCaster.cast( context.invokeFunction( condition ) ) ) {
+		Supplier<Boolean>	cond				= () -> BooleanCaster.cast( context.invokeFunction( condition ) );
+		// If our loop is inside a function, we need to use the original context to execute the condition, otherwise
+		// arguments and local scope lookups will be incorrect
+		IBoxContext			declaringContext	= ( ( Closure ) condition ).getDeclaringContext();
+		if ( declaringContext instanceof FunctionBoxContext fbc ) {
+			cond = () -> BooleanCaster.cast( condition._invoke( fbc ) );
+		}
+		while ( cond.get() ) {
 			// Run the code inside of the output loop
 			BodyResult bodyResult = processBody( context, body );
 			// IF there was a return statement inside our body, we early exit now
@@ -233,9 +244,19 @@ public class Loop extends Component {
 		return DEFAULT_RETURN;
 	}
 
-	private BodyResult _invokeRange( IBoxContext context, Double from, Double to, String index, ComponentBody body, IStruct executionState, String label ) {
+	private BodyResult _invokeRange( IBoxContext context, Double from, Double to, Number step, String index, ComponentBody body, IStruct executionState,
+	    String label ) {
+		double											toD			= to.doubleValue();
+		double											fromD		= from.doubleValue();
+		double											stepD		= step.doubleValue();
+		// If step is positive, we loop until we're greater than or equal to the "to" value, otherwise we loop until we're less than or equal to the "to" value
+		java.util.function.Function<Double, Boolean>	condition	= stepD > 0 ? i -> i <= toD : i -> i >= toD;
+		// Prevent infinite loops
+		if ( stepD == 0 ) {
+			return DEFAULT_RETURN;
+		}
 		// Loop over array, executing body every time
-		for ( int i = from.intValue(); i <= to.intValue(); i++ ) {
+		for ( double i = fromD; condition.apply( i ); i = i + stepD ) {
 			// Set the index and item variables
 			ExpressionInterpreter.setVariable( context, index, i );
 			// Run the code inside of the output loop

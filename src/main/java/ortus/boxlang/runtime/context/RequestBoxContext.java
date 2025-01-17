@@ -243,7 +243,7 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 		// Since we've hit a code path that requires the applicationListener, we'll create it if it doesn't exist
 		// using our default one. It will likely get replaced, but for now can provide default values.
 		if ( this.applicationListener == null ) {
-			this.applicationListener = new ApplicationDefaultListener( this );
+			this.applicationListener = new ApplicationDefaultListener( this, null );
 		}
 		return this.applicationListener;
 	}

@@ -19,6 +19,14 @@ package ortus.boxlang.runtime.types;
 
 import java.sql.Types;
 
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.BigIntegerCaster;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
+import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
+import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+
 /**
  * Represents a column type in a Query object.
  */
@@ -26,6 +34,7 @@ public enum QueryColumnType {
 
 	BIGINT( Types.BIGINT ),
 	BINARY( Types.BINARY ),
+	BOOLEAN( Types.BOOLEAN ),
 	BIT( Types.BIT ),
 	CHAR( Types.CHAR ),
 	DATE( Types.DATE ),
@@ -69,6 +78,9 @@ public enum QueryColumnType {
 				return OBJECT;
 			case "bit" :
 				return BIT;
+			case "boolean" :
+			case "bool" :
+				return BOOLEAN;
 			case "nchar" :
 			case "char" :
 				return CHAR;
@@ -84,12 +96,14 @@ public enum QueryColumnType {
 			case "float" :
 			case "double" :
 			case "numeric" :
+			case "number" :
 				return DOUBLE;
 			case "idstamp" :
 				return CHAR;
 			case "tinyint" :
 			case "smallint" :
 			case "integer" :
+			case "int" :
 				return INTEGER;
 			case "nvarchar" :
 			case "longvarchar" :
@@ -146,6 +160,8 @@ public enum QueryColumnType {
 				return "other";
 			case NULL :
 				return "null";
+			case BOOLEAN :
+				return "boolean";
 			default :
 				throw new IllegalArgumentException( "Unknown QueryColumnType: " + this );
 		}
@@ -171,7 +187,7 @@ public enum QueryColumnType {
 			case Types.BLOB :
 				return OBJECT;
 			case Types.BOOLEAN :
-				return BIT;
+				return BOOLEAN;
 			case Types.CHAR :
 				return VARCHAR;
 			case Types.CLOB :
@@ -241,6 +257,38 @@ public enum QueryColumnType {
 			default :
 				return OTHER;
 		}
+	}
+
+	/**
+	 * Convert a value to the appropriate SQL type.
+	 * <p>
+	 * 
+	 * @TODO: This may better belong in a Caster class.
+	 * 
+	 * @param type    The query column type to convert to.
+	 * @param value   The value to convert.
+	 * @param context The context in which the conversion is taking place. Useful for localization.
+	 */
+	public static Object toSQLType( QueryColumnType type, Object value, IBoxContext context ) {
+		if ( value == null ) {
+			return null;
+		}
+		return switch ( type ) {
+			case QueryColumnType.INTEGER -> IntegerCaster.cast( value );
+			case QueryColumnType.BIGINT -> BigIntegerCaster.cast( value );
+			case QueryColumnType.DOUBLE -> DoubleCaster.cast( value );
+			case QueryColumnType.DECIMAL -> DoubleCaster.cast( value );
+			case QueryColumnType.CHAR, VARCHAR -> StringCaster.cast( value );
+			case QueryColumnType.BINARY -> value; // @TODO: Will this work?
+			case QueryColumnType.BIT -> BooleanCaster.cast( value );
+			case QueryColumnType.BOOLEAN -> BooleanCaster.cast( value );
+			case QueryColumnType.TIME -> DateTimeCaster.cast( value, context );
+			case QueryColumnType.DATE -> DateTimeCaster.cast( value, context );
+			case QueryColumnType.TIMESTAMP -> new java.sql.Timestamp( DateTimeCaster.cast( value, context ).toEpochMillis() );
+			case QueryColumnType.OBJECT -> value;
+			case QueryColumnType.OTHER -> value;
+			case QueryColumnType.NULL -> null;
+		};
 	}
 
 	/**

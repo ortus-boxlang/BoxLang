@@ -34,6 +34,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.util.JSONUtil;
 import ortus.boxlang.runtime.util.EncryptionUtil;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 
 @BoxBIF
 @BoxBIF( alias = "Hash40" )
@@ -45,6 +46,7 @@ import ortus.boxlang.runtime.util.EncryptionUtil;
 public class Hash extends BIF {
 
 	private static final String		DEFAULT_ALGORITHM	= "MD5";
+	private static final String		QUICK_ALGORITHM		= "quick";
 	private static final String		DEFAULT_ENCODING	= "utf-8";
 	private static final Integer	DEFAULT_ITERATIONS	= 1;
 
@@ -75,7 +77,7 @@ public class Hash extends BIF {
 	 *
 	 * @argument.input The item to be hashed
 	 *
-	 * @argument.algorithm The supported {@link java.security.MessageDigest } algorithm (case-insensitive)
+	 * @argument.algorithm The supported {@link java.security.MessageDigest } algorithm (case-insensitive) or "quick" for an insecure 64-bit hash
 	 *
 	 * @argument.encoding Applicable to strings ( default "utf-8" )
 	 *
@@ -83,12 +85,17 @@ public class Hash extends BIF {
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		hashItem = arguments.get( Key.input );
-		byte[]	hashBytes		= null;
-		Integer	iterations		= arguments.getAsInteger( Key.numIterations );
-		String	algorithm		= arguments.getAsString( Key.algorithm );
-		String	charset			= arguments.getAsString( Key.encoding );
+		byte[]	hashBytes			= null;
+		Integer	iterations			= arguments.getAsInteger( Key.numIterations );
+		String	algorithm			= arguments.getAsString( Key.algorithm );
+		String	charset				= arguments.getAsString( Key.encoding );
+		boolean	isQuickAlgorithm	= algorithm.trim().toLowerCase() == QUICK_ALGORITHM;
 
-		Key		bifMethodKey	= arguments.getAsKey( BIF.__functionName );
+		if ( isQuickAlgorithm ) {
+			return EncryptionUtil.generate64BitHash( StringCaster.cast( hashItem ), 16 );
+		}
+
+		Key bifMethodKey = arguments.getAsKey( BIF.__functionName );
 		if ( bifMethodKey.equals( Key.hash40 ) ) {
 			algorithm = "SHA1";
 		}

@@ -73,6 +73,10 @@ public class IsNumeric extends BIF {
 			return false;
 		}
 		Locale locale = LocalizationUtil.parseLocaleFromContext( context, arguments );
+		// We can't use the number caster on booleans when the booleansAreNumbers setting is set to true
+		if ( value instanceof Boolean ) {
+			return false;
+		}
 		return GenericCaster.attempt( context, value, "numeric" ).wasSuccessful()
 		    ? true
 		    : StringCaster.attempt( value ).wasSuccessful()

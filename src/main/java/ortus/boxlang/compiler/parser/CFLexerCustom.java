@@ -239,7 +239,7 @@ public class CFLexerCustom extends CFLexer {
 				// reserved operators after a dot are just identifiers
 				// foo.var
 				// bar.GT()
-				if ( dotty && operatorWords.contains( nextToken.getType() ) ) {
+				if ( dotty && ( operatorWords.contains( nextToken.getType() ) || nextToken.getType() == CFLexer.SWITCH ) ) {
 					( ( CommonToken ) nextToken ).setType( IDENTIFIER );
 					// reserved operators (other than NOT) before an open parenthesis are just identifiers
 					// LT()

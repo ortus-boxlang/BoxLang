@@ -27,7 +27,6 @@ import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.JumpInsnNode;
 import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.MethodInsnNode;
-import org.objectweb.asm.tree.VarInsnNode;
 
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
@@ -189,7 +188,7 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 												    generateBinaryMethodCallNodes( Elvis.class, Object.class, left, right );
 
 												case InstanceOf -> // "InstanceOf.invoke(${contextName},${left},${right})";
-												    generateBinaryMethodCallNodesWithContext( InstanceOf.class, Boolean.class, left, right );
+												    generateBinaryMethodCallNodesWithContext( transpiler, InstanceOf.class, Boolean.class, left, right );
 
 												case Contains -> // "Contains.invoke(${left},${right})";
 												    generateBinaryMethodCallNodes( Contains.class, Boolean.class, left, right );
@@ -198,7 +197,7 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 												    generateBinaryMethodCallNodes( NotContains.class, Boolean.class, left, right );
 
 												case CastAs -> // "CastAs.invoke(${contextName},${left},${right})";
-												    generateBinaryMethodCallNodesWithContext( CastAs.class, Object.class, left, right );
+												    generateBinaryMethodCallNodesWithContext( transpiler, CastAs.class, Object.class, left, right );
 
 												case BitwiseAnd -> // "BitwiseAnd.invoke(${left},${right})";
 												    generateBinaryMethodCallNodes( BitwiseAnd.class, Number.class, left, right );
@@ -243,10 +242,11 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 	}
 
 	@Nonnull
-	private static List<AbstractInsnNode> generateBinaryMethodCallNodesWithContext( Class<?> dispatcher, Class<?> returned, List<AbstractInsnNode> left,
+	private static List<AbstractInsnNode> generateBinaryMethodCallNodesWithContext( Transpiler transpiler, Class<?> dispatcher, Class<?> returned,
+	    List<AbstractInsnNode> left,
 	    List<AbstractInsnNode> right ) {
 		List<AbstractInsnNode> nodes = new ArrayList<>();
-		nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
+		nodes.addAll( transpiler.getCurrentMethodContextTracker().get().loadCurrentContext() );
 		nodes.addAll( left );
 		nodes.addAll( right );
 		nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,

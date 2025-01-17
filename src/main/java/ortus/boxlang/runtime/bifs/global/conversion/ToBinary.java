@@ -17,6 +17,8 @@
  */
 package ortus.boxlang.runtime.bifs.global.conversion;
 
+import com.fasterxml.jackson.core.Base64Variants;
+
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
@@ -48,16 +50,24 @@ public class ToBinary extends BIF {
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.base64_or_object A string containing base64-encoded data.
-	 * 
+	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object base64_or_object = arguments.get( Key.base64_or_object );
 
 		if ( base64_or_object instanceof byte[] b ) {
-			return base64_or_object;
+			return b;
 		}
 
-		String string = StringCaster.cast( base64_or_object );
-		return java.util.Base64.getDecoder().decode( string );
+		String	string	= StringCaster.cast( base64_or_object ).trim();
+
+		// Add padding if necessary
+		int		padding	= string.length() % 4;
+		if ( padding != 0 ) {
+			string = string + "=".repeat( 4 - padding ); // Add padding
+		}
+
+		// return java.util.Base64.getDecoder().decode( string );
+		return Base64Variants.getDefaultVariant().decode( string );
 	}
 }

@@ -135,7 +135,7 @@ public class DiskClassLoader extends URLClassLoader {
 		// There is a class file cached on disk
 		if ( hasClass( diskPath ) ) {
 			// If the class file is older than the source file
-			if ( classInfo != null && classInfo.lastModified() > diskPath.toFile().lastModified() ) {
+			if ( classInfo != null && classInfo.lastModified() > 0 && classInfo.lastModified() != diskPath.toFile().lastModified() ) {
 				return true;
 			}
 			return false;
@@ -174,7 +174,7 @@ public class DiskClassLoader extends URLClassLoader {
 			return false;
 		}
 		// If source file is modified after class file
-		if ( lastModified > diskPath.toFile().lastModified() ) {
+		if ( lastModified > 0 && lastModified != diskPath.toFile().lastModified() ) {
 			return false;
 		}
 

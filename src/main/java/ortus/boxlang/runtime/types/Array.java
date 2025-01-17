@@ -56,7 +56,7 @@ import ortus.boxlang.runtime.types.meta.GenericMeta;
 import ortus.boxlang.runtime.types.meta.IChangeListener;
 import ortus.boxlang.runtime.types.meta.IListenable;
 import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableArray;
-import ortus.boxlang.runtime.types.util.BLCollector;
+import ortus.boxlang.runtime.types.util.ListUtil;
 import ortus.boxlang.runtime.util.RegexBuilder;
 
 /**
@@ -182,9 +182,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 		}
 
 		// Split the string by comma and trim the values
-		return Arrays.stream( list.split( delimiter ) )
-		    .map( String::trim )
-		    .collect( BLCollector.toArray() );
+		return ListUtil.asList( list, delimiter );
 	}
 
 	/**

@@ -25,34 +25,28 @@ import ortus.boxlang.runtime.types.IStruct;
  */
 public class DatabaseException extends BoxLangException {
 
-	public static final Key	NativeErrorCodeKey	= Key.of( "nativeErrorCode" );
-	public static final Key	SQLStateKey			= Key.of( "SQLState" );
-	public static final Key	SqlKey				= Key.of( "SQL" );
-	public static final Key	queryErrorKey		= Key.of( "queryError" );
-	public static final Key	whereKey			= Key.of( "where" );
-
 	/**
 	 * Native error code associated with exception. Database drivers typically provide error codes to diagnose failing
 	 * database operations. Default value is -1.
 	 */
-	public String			nativeErrorCode		= "";
+	protected String	nativeErrorCode	= "";
 	/**
 	 * SQLState associated with exception. Database drivers typically provide error codes to help diagnose failing database
 	 * operations. Default value is 1.
 	 */
-	public String			SQLState			= "";
+	protected String	SQLState		= "";
 	/**
 	 * The SQL statement sent to the data source.
 	 */
-	public String			SQL					= "";
+	protected String	SQL				= "";
 	/**
 	 * The error message as reported by the database driver.
 	 */
-	public String			queryError			= "";
+	protected String	queryError		= "";
 	/**
 	 * If the query uses the queryparam component, query parameter name-value pairs.
 	 */
-	public String			where				= "";
+	protected String	where			= "";
 
 	/**
 	 * Constructor
@@ -155,11 +149,11 @@ public class DatabaseException extends BoxLangException {
 
 	public IStruct dataAsStruct() {
 		IStruct result = super.dataAsStruct();
-		result.put( NativeErrorCodeKey, nativeErrorCode );
-		result.put( SQLStateKey, SQLState );
-		result.put( SqlKey, SQL );
-		result.put( queryErrorKey, queryError );
-		result.put( whereKey, where );
+		result.put( Key.nativeErrorCode, nativeErrorCode );
+		result.put( Key.SQLState, SQLState );
+		result.put( Key.sql, SQL );
+		result.put( Key.queryError, queryError );
+		result.put( Key.where, where );
 		return result;
 	}
 

@@ -26,6 +26,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.async.executors.ExecutorRecord;
 import ortus.boxlang.runtime.cache.filters.WildcardFilter;
 import ortus.boxlang.runtime.config.segments.CacheConfig;
@@ -37,6 +38,7 @@ import ortus.boxlang.runtime.types.IStruct;
 
 public class BoxCacheProviderTest {
 
+	static BoxRuntime		instance;
 	static BoxCacheProvider	boxCache;
 	static CacheConfig		config			= new CacheConfig();
 	static CacheService		cacheService	= Mockito.mock( CacheService.class );
@@ -44,8 +46,9 @@ public class BoxCacheProviderTest {
 
 	@BeforeAll
 	static void setup() {
+		instance = BoxRuntime.getInstance( true );
 		Mockito.when( cacheService.getTaskScheduler() ).thenReturn( executorRecord );
-		Mockito.when( cacheService.getRuntime() ).thenReturn( Mockito.mock( ortus.boxlang.runtime.BoxRuntime.class ) );
+		Mockito.when( cacheService.getRuntime() ).thenReturn( instance );
 
 		boxCache = new BoxCacheProvider();
 		boxCache.configure( cacheService, config );

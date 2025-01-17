@@ -53,12 +53,9 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.context.RuntimeBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
-import ortus.boxlang.runtime.interceptors.ASTCapture;
-import ortus.boxlang.runtime.interceptors.Logging;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.loader.DynamicClassLoader;
@@ -88,6 +85,7 @@ import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 import ortus.boxlang.runtime.types.exceptions.MissingIncludeException;
 import ortus.boxlang.runtime.types.util.MathUtil;
 import ortus.boxlang.runtime.util.EncryptionUtil;
+import ortus.boxlang.runtime.util.FileSystemUtil;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 import ortus.boxlang.runtime.util.Timer;
 
@@ -365,20 +363,6 @@ public class BoxRuntime implements java.io.Closeable {
 
 		// Reconfigure the logging services
 		this.loggingService.reconfigure();
-
-		// AST Capture experimental feature
-		BooleanCaster.attempt(
-		    this.configuration.experimental.getOrDefault( "ASTCapture", false ) ).ifSuccessful(
-		        astCapture -> {
-			        if ( astCapture ) {
-				        this.interceptorService.register(
-				            DynamicObject.of( new ASTCapture( false, true ) ),
-				            Key.onParse );
-			        }
-		        } );
-
-		// Load core logger and other core interceptions
-		this.interceptorService.register( new Logging( this ) );
 	}
 
 	/**
@@ -485,6 +469,16 @@ public class BoxRuntime implements java.io.Closeable {
 		loadConfiguration( debugMode, this.configPath );
 		// Anythying below might use configuration items
 
+		// Ensure home assets
+		ensureHomeAssets();
+
+		// Load the Dynamic Class Loader for the runtime
+		this.runtimeLoader = new DynamicClassLoader(
+		    Key.runtime,
+		    getConfiguration().getJavaLibraryPaths(),
+		    this.getClass().getClassLoader(),
+		    true );
+
 		// Announce it to the services
 		this.interceptorService.onConfigurationLoad();
 		this.asyncService.onConfigurationLoad();
@@ -496,17 +490,8 @@ public class BoxRuntime implements java.io.Closeable {
 		this.schedulerService.onConfigurationLoad();
 		this.dataSourceService.onConfigurationLoad();
 
-		// Ensure home assets
-		ensureHomeAssets();
-
-		// Load the Dynamic Class Loader for the runtime
-		this.runtimeLoader	= new DynamicClassLoader(
-		    Key.runtime,
-		    getConfiguration().getJavaLibraryPaths(),
-		    this.getClass().getClassLoader(),
-		    true );
 		// Startup the right Compiler
-		this.boxpiler		= chooseBoxpiler();
+		this.boxpiler = chooseBoxpiler();
 		// Seed Mathematical Precision for the runtime
 		MathUtil.setHighPrecisionMath( getConfiguration().useHighPrecisionMath );
 
@@ -1145,14 +1130,14 @@ public class BoxRuntime implements java.io.Closeable {
 			// Load the class
 			Class<IBoxRunnable> targetClass = RunnableLoader.getInstance().loadClass(
 			    ResolvedFilePath.of( Paths.get( templatePath ) ),
-			    this.runtimeContext );
+			    context );
 			executeClass( targetClass, templatePath, context, args );
 		} else {
 			// Load the template
-			BoxTemplate targetTemplate = RunnableLoader.getInstance().loadTemplateAbsolute(
-			    this.runtimeContext,
-			    ResolvedFilePath.of( Paths.get( templatePath ) ) );
-			executeTemplate( targetTemplate, context );
+			BoxTemplate targetTemplate = RunnableLoader.getInstance().loadTemplateRelative(
+			    context,
+			    templatePath );
+			executeTemplate( targetTemplate, templatePath, context );
 		}
 	}
 
@@ -1312,14 +1297,24 @@ public class BoxRuntime implements java.io.Closeable {
 	 * @param context  The context to execute the template in
 	 */
 	public void executeTemplate( BoxTemplate template, IBoxContext context ) {
-		String templatePath = template.getRunnablePath().absolutePath().toString();
+		executeTemplate( template, template.getRunnablePath().absolutePath().toString(), context );
+	}
+
+	/**
+	 * Execute a single template in an existing context using an already-loaded
+	 * template runnable
+	 *
+	 * @param template A template to execute
+	 * @param context  The context to execute the template in
+	 */
+	public void executeTemplate( BoxTemplate template, String templatePath, IBoxContext context ) {
 		instance.logger.debug( "Executing template [{}]", template.getRunnablePath() );
 
-		IBoxContext				scriptingContext	= ensureRequestTypeContext( context,
-		    template.getRunnablePath().absolutePath().toUri() );
-		BaseApplicationListener	listener			= scriptingContext.getParentOfType( RequestBoxContext.class )
+		IBoxContext scriptingContext;
+		scriptingContext = ensureRequestTypeContext( context, FileSystemUtil.createFileUri( templatePath ) );
+		BaseApplicationListener	listener		= scriptingContext.getParentOfType( RequestBoxContext.class )
 		    .getApplicationListener();
-		Throwable				errorToHandle		= null;
+		Throwable				errorToHandle	= null;
 		RequestBoxContext.setCurrent( scriptingContext.getParentOfType( RequestBoxContext.class ) );
 		ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
 		try {

@@ -16,8 +16,10 @@ package ortus.boxlang.runtime.jdbc.qoq.functions.scalar;
 
 import java.util.List;
 
+import ortus.boxlang.compiler.ast.sql.select.expression.SQLExpression;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.jdbc.qoq.QoQScalarFunctionDef;
+import ortus.boxlang.runtime.jdbc.qoq.QoQSelectExecution;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.QueryColumnType;
 
@@ -33,7 +35,7 @@ public class Trim extends QoQScalarFunctionDef {
 	}
 
 	@Override
-	public QueryColumnType getReturnType() {
+	public QueryColumnType getReturnType( QoQSelectExecution QoQExec, List<SQLExpression> expressions ) {
 		return QueryColumnType.VARCHAR;
 	}
 
@@ -43,7 +45,10 @@ public class Trim extends QoQScalarFunctionDef {
 	}
 
 	@Override
-	public Object apply( List<Object> args ) {
+	public Object apply( List<Object> args, List<SQLExpression> expressions ) {
+		if ( args.get( 0 ) == null ) {
+			return null;
+		}
 		return StringCaster.cast( args.get( 0 ) ).trim();
 	}
 

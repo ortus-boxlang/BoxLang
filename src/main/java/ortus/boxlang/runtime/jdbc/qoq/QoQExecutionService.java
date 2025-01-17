@@ -1,3 +1,4 @@
+
 /**
  * [BoxLang]
  *
@@ -14,15 +15,14 @@
  */
 package ortus.boxlang.runtime.jdbc.qoq;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.function.Supplier;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import ortus.boxlang.compiler.ast.sql.SQLNode;
@@ -31,17 +31,18 @@ import ortus.boxlang.compiler.ast.sql.select.SQLResultColumn;
 import ortus.boxlang.compiler.ast.sql.select.SQLSelect;
 import ortus.boxlang.compiler.ast.sql.select.SQLSelectStatement;
 import ortus.boxlang.compiler.ast.sql.select.SQLTable;
-import ortus.boxlang.compiler.ast.sql.select.expression.SQLColumn;
+import ortus.boxlang.compiler.ast.sql.select.SQLTableSubQuery;
+import ortus.boxlang.compiler.ast.sql.select.SQLTableVariable;
+import ortus.boxlang.compiler.ast.sql.select.SQLUnion;
+import ortus.boxlang.compiler.ast.sql.select.SQLUnionType;
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLExpression;
-import ortus.boxlang.compiler.ast.sql.select.expression.SQLStarExpression;
-import ortus.boxlang.compiler.ast.sql.select.expression.literal.SQLNumberLiteral;
 import ortus.boxlang.compiler.parser.ParsingResult;
 import ortus.boxlang.compiler.parser.SQLParser;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
-import ortus.boxlang.runtime.operators.Compare;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
@@ -61,11 +62,18 @@ public class QoQExecutionService {
 	 */
 	private static final FRTransService frTransService = FRTransService.getInstance( true );
 
+	/**
+	 * Parse a SQL string into an AST
+	 * 
+	 * @param sql the SQL string
+	 * 
+	 * @return the AST
+	 */
 	public static SQLNode parseSQL( String sql ) {
 		DynamicObject	trans	= frTransService.startTransaction( "BL QoQ Parse", "" );
 		SQLParser		parser	= new SQLParser();
 		ParsingResult	result;
-
+		// System.out.println( "Parsing SQL: " + sql );
 		try {
 			result = parser.parse( sql );
 		} finally {
@@ -84,53 +92,128 @@ public class QoQExecutionService {
 		return ( SQLNode ) result.getRoot();
 	}
 
-	public static Query executeSelect( IBoxContext context, SQLSelectStatement selectStatement, QoQStatement statement ) throws SQLException {
-		Map<SQLTable, Query>	tableLookup	= new LinkedHashMap<SQLTable, Query>();
-		boolean					hasTable	= selectStatement.getSelect().getTable() != null;
-		Query					source		= null;
+	/**
+	 * Execute a QoQ statement
+	 * 
+	 * @param context         the context
+	 * @param selectStatement the select statement
+	 * @param statement       the QoQ statement
+	 * 
+	 * @return the query
+	 */
+	public static Query executeSelectStatement( IBoxContext context, SQLSelectStatement selectStatement, QoQStatement statement ) {
 
-		// TODO: Process all joins
-		if ( hasTable ) {
-			String tableVarName = selectStatement.getSelect().getTable().getVariableName();
-			source = getSourceQuery( context, tableVarName );
-			// TODO: ensure tables are added in the order of their index, which represents the encounter-order in the SQL
-			tableLookup.put( selectStatement.getSelect().getTable(), source );
+		QoQSelectStatementExecution	QoQStmtExec	= QoQSelectStatementExecution.of(
+		    selectStatement,
+		    statement instanceof QoQPreparedStatement qp ? qp.getParameters() : null,
+		    statement );
+
+		Query						target		= executeSelect( context, selectStatement.getSelect(), statement, QoQStmtExec, true );
+
+		if ( selectStatement.getUnions() != null ) {
+
+			// We actually only need to de-dupe the last union, so we need to find it
+			// This is a performance optimization to avoid de-duping every union uneccessarily
+			int	lastUnion	= Stream.iterate( 0, i -> i + 1 )
+			    .limit( selectStatement.getUnions().size() )
+			    .filter( i -> selectStatement.getUnions().get( i ).getType() == SQLUnionType.DISTINCT )
+			    .reduce( ( first, second ) -> second )
+			    .orElse( -1 );
+
+			int	i			= 0;
+			for ( SQLUnion union : selectStatement.getUnions() ) {
+				Query unionQuery = executeSelect( context, union.getSelect(), statement, QoQStmtExec, false );
+				unionAll( target, unionQuery );
+				if ( i == lastUnion ) {
+					deDupeQuery( target );
+				}
+				i++;
+			}
 		}
 
-		// Register joins
-		if ( selectStatement.getSelect().getJoins() != null ) {
-			for ( SQLJoin thisJoin : selectStatement.getSelect().getJoins() ) {
-				SQLTable	table			= thisJoin.getTable();
-				String		tableVarName	= table.getVariableName();
-				tableLookup.put( table, getSourceQuery( context, tableVarName ) );
+		// Apply our sort
+		if ( QoQStmtExec.getOrderByColumns() != null ) {
+			sort( target, QoQStmtExec.getOrderByColumns() );
+
+			// These were just here for sorting. Nuke them now.
+			if ( QoQStmtExec.getAdditionalColumns() != null ) {
+				for ( Key key : QoQStmtExec.getAdditionalColumns() ) {
+					target.deleteColumn( key );
+				}
+			}
+		}
+
+		Long overallSelectLimit = QoQStmtExec.getOverallSelectLimit();
+		// If we have a limit for the final select, apply it here.
+		if ( overallSelectLimit > -1 ) {
+			target.truncate( overallSelectLimit );
+		}
+		return target;
+	}
+
+	/**
+	 * Execute a select statement
+	 * 
+	 * @param context     the context
+	 * @param select      the select
+	 * @param statement   the QoQ statement
+	 * @param QoQStmtExec the QoQ statement execution
+	 * @param firstSelect if this is the first select
+	 * 
+	 * @return the query
+	 */
+	public static Query executeSelect( IBoxContext context, SQLSelect select, QoQStatement statement, QoQSelectStatementExecution QoQStmtExec,
+	    boolean firstSelect ) {
+		// If there is a group by or aggregate function, we will need to partiton the query
+		boolean					isAggregate		= select.hasAggregateResult() || select.getGroupBys() != null;
+		// If there is no order by, and no aggregate, we can limit the results early by stopping as soon as the limit is reached
+		boolean					canEarlyLimit	= !isAggregate && QoQStmtExec.getSelectStatement().getOrderBys() == null;
+		Map<SQLTable, Query>	tableLookup		= new LinkedHashMap<SQLTable, Query>();
+		// This boolean expression will be used to filter the records we keep
+		SQLExpression			where			= select.getWhere();
+		boolean					hasTable		= select.getTable() != null;
+		Long					thisSelectLimit	= select.getLimitValue();
+		// If we can early limit, and there are no unions, apply the select statement limit here, if smaller
+		if ( canEarlyLimit && !select.isDistinct() && QoQStmtExec.getSelectStatement().getUnions() == null ) {
+			Long overallSelectLimit = QoQStmtExec.getOverallSelectLimit();
+			if ( overallSelectLimit > -1 && ( thisSelectLimit == -1 || overallSelectLimit < thisSelectLimit ) ) {
+				thisSelectLimit = overallSelectLimit;
+			}
+		}
+
+		if ( hasTable ) {
+			// Tables are added in the order of their index, which represents the encounter-order in the SQL
+			tableLookup.put( select.getTable(), getSourceQuery( context, QoQStmtExec, select.getTable() ) );
+
+			// Register joins
+			if ( select.getJoins() != null ) {
+				for ( SQLJoin thisJoin : select.getJoins() ) {
+					SQLTable table = thisJoin.getTable();
+					tableLookup.put( table, getSourceQuery( context, QoQStmtExec, table ) );
+				}
 			}
 		}
 
 		// This holds the AST and the runtime values for the query
-		QoQExecution				QoQExec			= QoQExecution.of(
-		    selectStatement,
-		    tableLookup,
-		    statement instanceof QoQPreparedStatement qp ? qp.getParameters() : null
+		QoQSelectExecution			QoQExec			= QoQStmtExec.newQoQSelectExecution(
+		    select,
+		    tableLookup
 		);
+		// Calculate the result columns for this select
+		Map<Key, TypedResultColumn>	resultColumns	= QoQExec.calculateResultColumns( firstSelect );
 
-		var							intersections	= createCartesianStream( QoQExec );
+		// If this is the first select, (not a union) calculate order bys, which may modify the result columns
+		if ( firstSelect ) {
+			QoQExec.calculateOrderBys();
+		}
 
-		Map<Key, TypedResultColumn>	resultColumns	= calculateResultColumns( QoQExec );
-		calculateOrderBys( QoQExec );
+		// Create empty query object to hold result
+		Query target;
 
-		Query			target			= buildTargetQuery( QoQExec );
-
-		// Process one select
-		// TODO: refactor this out
-		SQLSelect		select			= selectStatement.getSelect();
-
-		Long			thisSelectLimit	= select.getLimitValue();
-		// This boolean expression will be used to filter the records we keep
-		SQLExpression	where			= select.getWhere();
-		boolean			canEarlyLimit	= selectStatement.getOrderBys() == null;
-
-		// Just selecting out literal values
+		// If there are no tables, and we are just selecting out literal values, we can just add the row and return
+		// This code path ignores the where clause and top/limit. While technically vaid, it is not a common use case.
 		if ( !hasTable ) {
+			target = buildTargetQuery( QoQExec, 1 );
 			Object[] values = new Object[ resultColumns.size() ];
 			for ( Key key : resultColumns.keySet() ) {
 				SQLResultColumn	resultColumn	= resultColumns.get( key ).resultColumn;
@@ -140,105 +223,179 @@ public class QoQExecutionService {
 			target.addRow( values );
 			return target;
 		}
+		// initial size is sum of all rows in all tables
+		target = buildTargetQuery( QoQExec, tableLookup.values().stream().mapToInt( Query::size ).sum() );
 
-		if ( select.hasAggregateResult() ) {
+		// We have one or more tables, so build our stream of intersections, processing our joins as needed
+		Stream<int[]> intersections = QoQIntersectionGenerator.createIntersectionStream( QoQExec );
 
+		// If we have a where clause, add it as a filter to the stream
+		if ( where != null ) {
+			intersections = intersections.filter( intersection -> ( Boolean ) where.evaluate( QoQExec, intersection ) );
 		}
 
-		// enforce top/limit for this select. This would be a "top N" clause in the select or a "limit N" clause BEFORE the order by, which
+		// Enforce top/limit for this select. This would be a "top N" clause in the select or a "limit N" clause BEFORE the order by, which
 		// could exist or all selects in a union.
-		if ( canEarlyLimit && thisSelectLimit > -1 ) {
-			intersections = intersections.limit( Math.min( thisSelectLimit, QoQExec.getTotalCombinations() ) );
-
+		if ( canEarlyLimit && !select.isDistinct() && thisSelectLimit > -1 ) {
+			intersections = intersections.limit( thisSelectLimit );
 		}
-
-		// 1-based index!
-		intersections.forEach( intersection -> {
-			// Evaluate the where expression
-			if ( where == null || ( Boolean ) where.evaluate( QoQExec, intersection ) ) {
+		if ( select.hasAggregateResult() || select.getGroupBys() != null ) {
+			target = executeAggregateSelect( QoQExec, target, intersections );
+		} else {
+			final Query finalTarget = target;
+			// No partitioning, just create the final result set
+			intersections.forEach( intersection -> {
+				// System.out.println( Arrays.toString( intersection ) );
 				Object[]	values	= new Object[ resultColumns.size() ];
 				int			colPos	= 0;
+				// Build up row data as native array
 				for ( Key key : resultColumns.keySet() ) {
-					SQLResultColumn	resultColumn	= resultColumns.get( key ).resultColumn;
-					Object			value			= resultColumn.getExpression().evaluate( QoQExec, intersection );
-					values[ colPos++ ] = value;
+					values[ colPos++ ] = resultColumns.get( key ).resultColumn.getExpression().evaluate( QoQExec, intersection );
 				}
-				target.addRow( values );
-			}
-		} );
-
-		// TODO: Implement a sort that doesn't turn the query into a list of structs and back again
-		if ( QoQExec.getOrderByColumns() != null ) {
-			target.sort( ( row1, row2 ) -> {
-				var orderBys = QoQExec.getOrderByColumns();
-				for ( var orderBy : orderBys ) {
-					var	name	= orderBy.name;
-					int	result	= Compare.invoke( row1.get( name ), row2.get( name ) );
-					if ( result != 0 ) {
-						return orderBy.ascending ? result : -result;
-					}
-				}
-				return 0;
+				finalTarget.addRow( values );
 			} );
-			// These were just here for sorting. Nuke them now.
-			if ( QoQExec.getAdditionalColumns() != null ) {
-				for ( Key key : QoQExec.getAdditionalColumns() ) {
-					target.deleteColumn( key );
-				}
-			}
+			( ( ArrayList<?> ) target.getData() ).trimToSize();
 		}
 
-		// This is the maxRows in the query options. It takes priority.
-		Long overallSelectLimit = statement.getLargeMaxRows();
-		// If that wasn't set, use the limit clause AFTER the order by (which could apply at the end of a union)
-		if ( overallSelectLimit == -1 ) {
-			overallSelectLimit = selectStatement.getLimitValue();
+		// Apply distinct to the final result set
+		if ( select.isDistinct() ) {
+			deDupeQuery( target );
 		}
 
-		// If we have a limit for the final select, apply it here.
-		if ( overallSelectLimit > -1 ) {
-			target.truncate( overallSelectLimit );
+		// If we have a limit for this select, apply it here.
+		if ( thisSelectLimit > -1 ) {
+			target.truncate( thisSelectLimit );
 		}
+
 		return target;
 	}
 
-	private static void calculateOrderBys( QoQExecution qoQExec ) {
-		SQLSelectStatement selectStatement = qoQExec.select;
-		if ( selectStatement.getOrderBys() == null ) {
-			return;
-		}
-		Set<Key>					additionalColumns	= new LinkedHashSet<Key>();
-		Map<Key, TypedResultColumn>	resultColumns		= qoQExec.getResultColumns();
-		List<NameAndDirection>		orderByColumns		= new ArrayList<NameAndDirection>();
-		int							additionalCounter	= 1;
-		for ( var orderBy : selectStatement.getOrderBys() ) {
-			SQLExpression expr = orderBy.getExpression();
-			if ( expr instanceof SQLColumn column ) {
-				var match = resultColumns.entrySet().stream().filter( rc -> column.getName().equals( rc.getKey() ) ).findFirst();
-				if ( match.isPresent() ) {
-					orderByColumns.add( NameAndDirection.of( match.get().getKey(), orderBy.isAscending() ) );
-					continue;
-				}
-			} else if ( expr instanceof SQLNumberLiteral num ) {
-				// This is a number literal, which is a 1-based index into the result set
-				int index = num.getValue().intValue();
-				if ( index < 1 || index > resultColumns.size() ) {
-					throw new DatabaseException( "The column index [" + index + "] in the order by clause is out of range." );
-				}
-				orderByColumns.add( NameAndDirection.of( resultColumns.keySet().toArray( new Key[ 0 ] )[ index - 1 ], orderBy.isAscending() ) );
-				continue;
-			}
-			// TODO: Figure out if this exact expression is already in the result set and use that
-			// To do this, we need something like toString() implemented to compare two expressions for equivalence
-			Key newName = Key.of( "__order_by_column_" + additionalCounter++ );
-			resultColumns.put( newName,
-			    TypedResultColumn.of( QueryColumnType.OBJECT, new SQLResultColumn( expr, newName.getName(), resultColumns.size() + 1, null, null ) ) );
-			orderByColumns.add( NameAndDirection.of( newName, orderBy.isAscending() ) );
-			additionalColumns.add( newName );
+	/**
+	 * Create query partitioned by group by and aggregate functions
+	 * 
+	 * @param qoQExec       the query execution state
+	 * @param resultColumns the result columns
+	 * 
+	 * @return
+	 */
+	private static Query executeAggregateSelect( QoQSelectExecution QoQExec, Query target, Stream<int[]> intersections ) {
+		Map<Key, TypedResultColumn>	resultColumns	= QoQExec.getResultColumns();
+		List<SQLExpression>			groupBys		= QoQExec.getSelect().getGroupBys();
+		SQLExpression				having			= QoQExec.getSelect().getHaving();
 
+		// Build up our partitions
+		intersections.forEach( intersection -> {
+			String partitionKey;
+			if ( groupBys != null ) {
+				StringBuilder sb = new StringBuilder();
+				for ( SQLExpression expression : groupBys ) {
+					// TODO: hash large values
+					Object cellValue = expression.evaluate( QoQExec, intersection );
+					sb.append( StringCaster.cast( cellValue == null ? "<<NULL>>" : cellValue ) );
+				}
+				partitionKey = sb.toString();
+			} else {
+				partitionKey = "ALL";
+			}
+			QoQExec.addPartition( partitionKey, intersection );
+		} );
+
+		// If there are aggregates in the select, but no group by, and no records were returned, we return a single empty rows
+		if ( groupBys == null && QoQExec.getPartitions().isEmpty() ) {
+			Object[] values = new Object[ resultColumns.size() ];
+			for ( Key key : resultColumns.keySet() ) {
+				SQLResultColumn	resultColumn	= resultColumns.get( key ).resultColumn;
+				Object			value			= resultColumn.getExpression().evaluateAggregate( QoQExec, List.of() );
+				values[ resultColumn.getOrdinalPosition() - 1 ] = value;
+			}
+			target.addRow( values );
+			( ( ArrayList<?> ) target.getData() ).trimToSize();
+			return target;
 		}
-		qoQExec.setOrderByColumns( orderByColumns );
-		qoQExec.setAdditionalColumns( additionalColumns );
+
+		// Make stream parallel if we have a lot of partitions
+		var partitionStream = QoQExec.getPartitions().values().stream();
+		if ( QoQExec.getPartitions().size() > 50 ) {
+			partitionStream = partitionStream.parallel();
+		}
+
+		// Filter out partitions that don't match the having clause
+		if ( having != null ) {
+			partitionStream = partitionStream.filter( partition -> ( Boolean ) having.evaluateAggregate( QoQExec, partition ) );
+		}
+
+		// Build up the final result set
+		partitionStream.forEach( partition -> {
+			Object[]	values	= new Object[ resultColumns.size() ];
+			int			colPos	= 0;
+			for ( Key key : resultColumns.keySet() ) {
+				values[ colPos++ ] = resultColumns.get( key ).resultColumn.getExpression().evaluateAggregate( QoQExec, partition );
+			}
+			target.addRow( values );
+		} );
+		( ( ArrayList<?> ) target.getData() ).trimToSize();
+
+		return target;
+	}
+
+	/**
+	 * Union two queries together, keeping all rows
+	 * 
+	 * @param target     the target query
+	 * @param unionQuery the query to union
+	 */
+	private static void unionAll( Query target, Query unionQuery ) {
+		for ( int i = 0; i < unionQuery.size(); i++ ) {
+			target.addRow( unionQuery.getRow( i ) );
+		}
+	}
+
+	/**
+	 * Union two queries together, keeping only distinct rows
+	 * 
+	 * @param target     the target query
+	 * @param unionQuery the query to union
+	 */
+	private static void deDupeQuery( Query target ) {
+		Map<String, Object>	seen						= new ConcurrentHashMap<>();
+		Object				concurrentHashMapsAreDumb	= new Object();
+		Object[][]			newData						= new Object[ target.size() ][];
+		Object[][]			oldData						= target.getData().toArray( new Object[ 0 ][] );
+		AtomicInteger		newSize						= new AtomicInteger( 0 );
+		int					estimatedRowSize			= target.getColumns().size() * 15;
+
+		// Stream over indices and directly remove rows if they're duplicates
+		IntStream			stream						= IntStream.range( 0, target.size() );
+		if ( target.size() > 100 ) {
+			stream = stream.parallel();
+		}
+		stream.forEach( i -> {
+			StringBuilder	sb	= new StringBuilder( estimatedRowSize );
+			Object[]		row	= oldData[ i ];
+			for ( Object value : row ) {
+				sb.append( value );
+			}
+			String key = sb.toString();
+			if ( seen.putIfAbsent( key, concurrentHashMapsAreDumb ) == null ) {
+				newData[ newSize.getAndIncrement() ] = row;
+			}
+		} );
+
+		Object[][] finalData = new Object[ newSize.get() ][];
+		System.arraycopy( newData, 0, finalData, 0, newSize.get() );
+		target.setData( new ArrayList<>( Arrays.asList( finalData ) ) );
+	}
+
+	private static void sort( Query target, List<NameAndDirection> orderBys ) {
+		target.sortData( ( row1, row2 ) -> {
+			for ( NameAndDirection orderBy : orderBys ) {
+				int result = QoQCompare.invoke( orderBy.type, row1[ orderBy.position ], row2[ orderBy.position ] );
+				if ( result != 0 ) {
+					return orderBy.ascending ? result : -result;
+				}
+			}
+			return 0;
+		} );
 	}
 
 	/**
@@ -248,127 +405,49 @@ public class QoQExecutionService {
 	 * 
 	 * @return the target query
 	 */
-	private static Query buildTargetQuery( QoQExecution QoQExec ) {
+	private static Query buildTargetQuery( QoQSelectExecution QoQExec, int initialSize ) {
 		Map<Key, TypedResultColumn>	resultColumns	= QoQExec.getResultColumns();
-		Query						target			= new Query();
+		Query						target			= new Query( initialSize );
 		for ( Key key : resultColumns.keySet() ) {
 			target.addColumn( key, resultColumns.get( key ).type );
 		}
 		return target;
 	}
 
-	private static Map<Key, TypedResultColumn> calculateResultColumns( QoQExecution QoQExec ) {
-		Map<Key, TypedResultColumn> resultColumns = new LinkedHashMap<Key, TypedResultColumn>();
-		for ( SQLResultColumn resultColumn : QoQExec.select.getSelect().getResultColumns() ) {
-			// For *, expand all columns in the query
-			if ( resultColumn.isStarExpression() ) {
-				SQLTable	starTable		= ( ( SQLStarExpression ) resultColumn.getExpression() ).getTable();
-				Key			tableName		= starTable == null ? null : starTable.getName();
-				var			matchingTables	= QoQExec.tableLookup.keySet().stream().filter( t -> tableName == null || tableName.equals( t.getName() ) )
-				    .toList();
-				if ( matchingTables.isEmpty() ) {
-					throw new DatabaseException(
-					    "The table alias [" + tableName + "] in the result column [" + resultColumn.getSourceText() + "] is does not match a table." );
-				}
-				matchingTables.stream().forEach( t -> {
-					System.out.println( "Expanding * for table: " + t.getName() );
-					var thisTable = QoQExec.tableLookup.get( t );
-					for ( Key key : thisTable.getColumns().keySet() ) {
-						resultColumns.put( key,
-						    TypedResultColumn.of(
-						        thisTable.getColumns().get( key ).getType(),
-						        new SQLResultColumn(
-						            new SQLColumn( t, key.getName(), null, null ),
-						            null,
-						            resultColumns.size() + 1,
-						            null,
-						            null
-						        )
-						    )
-						);
-					}
-				} );
-				// Non-star columns are named after the column, or given a column_0, column_1, etc name
+	private static Query getSourceQuery( IBoxContext context, QoQSelectStatementExecution QoQStmtExec, SQLTable table ) {
+		if ( table instanceof SQLTableVariable tableVar ) {
+			String	tableVarName	= tableVar.getVariableName();
+			Object	oSource			= ExpressionInterpreter.getVariable( context, tableVarName, false );
+			if ( oSource instanceof Query qSource ) {
+				return qSource;
+			} else if ( oSource == null ) {
+				throw new DatabaseException( "The QoQ table name [" + tableVarName + "] cannot be found as a variable." );
 			} else {
-				resultColumns.put( resultColumn.getResultColumnName(),
-				    TypedResultColumn.of( resultColumn.getExpression().getType( QoQExec ), resultColumn ) );
+				throw new DatabaseException(
+				    "The QoQ table name [" + tableVarName + "] is not of type query, but instead is [" + oSource.getClass().getName() + "]" );
 			}
+		} else if ( table instanceof SQLTableSubQuery tableSub ) {
+			return executeSelectStatement( context, tableSub.getSelectStatement(), QoQStmtExec.getJDBCStatement() );
 		}
-		QoQExec.setResultColumns( resultColumns );
-		return resultColumns;
-	}
-
-	private static Query getSourceQuery( IBoxContext context, String tableVarName ) {
-		Object oSource = ExpressionInterpreter.getVariable( context, tableVarName, false );
-		if ( oSource instanceof Query qSource ) {
-			return qSource;
-		} else {
-			throw new DatabaseException( "The QoQ table name [" + tableVarName + "] cannot be found as a variable." );
-		}
+		throw new DatabaseException( "Unknown table type [" + table.getClass().getName() + "]" );
 	}
 
 	/**
-	 * Create all possible intercections of the tables as a stream of int arrays
+	 * Represent a result column with a runtime type
+	 * TODO: We may not need this since the expression can tell us the type directly
 	 */
-	public static Stream<int[]> createCartesianStream( QoQExecution QoQExec ) {
-		Map<SQLTable, Query>	tableLookup	= QoQExec.tableLookup;
-		int						numTables	= tableLookup.size();
-		// I hold the number of rows in each corresponding query. table lookup is a linked array, so it contains the tables in encounter order from the query
-		int[]					rowCounts	= new int[ numTables ];
-		// Tracks what row we're on for each table
-		int[]					current		= new int[ numTables ];
-		Arrays.fill( current, 1 );
-		int i = 0;
-		for ( Query table : tableLookup.values() ) {
-			rowCounts[ i++ ] = table.size();
-		}
+	public record TypedResultColumn( QueryColumnType type, int position, SQLResultColumn resultColumn ) {
 
-		// Total number of combinations, which is all recordcounts multiplied together
-		int totalCombinations = Arrays.stream( rowCounts ).reduce( 1, ( a, b ) -> a * b );
-		QoQExec.setTotalCombinations( totalCombinations );
-		Supplier<int[]>	supplier	= () -> {
-										int[] indices = Arrays.copyOf( current, numTables );
-										// FWIW, the last time this supplier runs, we will increment nothing
-										for ( int j = 0; j < numTables; j++ ) {
-											// Stop incrementing each table when we reach the end of the table
-											if ( current[ j ] < rowCounts[ j ] ) {
-												current[ j ]++;
-												// As soon as we increment any table, we're done.
-												// This ensure we hit every possible combo by only changing one index at a time.
-												break;
-											} else {
-												// The first column always resets, all other colmns reset if their previous column just reset
-												if ( j == 0 || current[ j - 1 ] == 1 ) {
-													current[ j ] = 1;
-												}
-											}
-										}
-										return indices;
-									};
-
-		// Limit the stream to the total number of combos
-		Stream<int[]>	theStream	= Stream.generate( supplier ).limit( totalCombinations );
-
-		// Tweak this based on size of intersections to process
-		if ( totalCombinations > 50 ) {
-			// The supplier above MUST be called in order, so we can't parallelize it due to stupid Java behaviors of pre-loading supplier calls.
-			// Collect the values and then create a new stream from the list
-			theStream = theStream.toList().stream().parallel();
-		}
-		return theStream;
-	}
-
-	public record TypedResultColumn( QueryColumnType type, SQLResultColumn resultColumn ) {
-
-		public static TypedResultColumn of( QueryColumnType type, SQLResultColumn resultColumn ) {
-			return new TypedResultColumn( type, resultColumn );
+		public static TypedResultColumn of( QueryColumnType type, int position, SQLResultColumn resultColumn ) {
+			return new TypedResultColumn( type, position, resultColumn );
 		}
 	}
 
-	public record NameAndDirection( Key name, boolean ascending ) {
+	// Represent the name and order of an order by statement. This is calculated at runtime since the actual column names may be based on a *
+	public record NameAndDirection( Key name, QueryColumnType type, int position, boolean ascending ) {
 
-		public static NameAndDirection of( Key name, boolean ascending ) {
-			return new NameAndDirection( name, ascending );
+		public static NameAndDirection of( Key name, QueryColumnType type, int position, boolean ascending ) {
+			return new NameAndDirection( name, type, position, ascending );
 		}
 	}
 

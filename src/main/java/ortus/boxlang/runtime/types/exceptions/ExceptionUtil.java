@@ -38,6 +38,7 @@ import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.SourceFile;
 import ortus.boxlang.compiler.javaboxpiler.JavaBoxpiler;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.StructCasterLoose;
 import ortus.boxlang.runtime.dynamic.casters.ThrowableCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.operators.InstanceOf;
@@ -64,16 +65,20 @@ public class ExceptionUtil {
 		if ( type.equalsIgnoreCase( "any" ) ) {
 			return true;
 		}
-		// BoxLangExceptions check the type
-		if ( e instanceof BoxLangException ble ) {
-			// Either direct match to type, or "foo.bar" matches "foo.bar.baz
-			if ( ble.type.equalsIgnoreCase( type ) || ble.type.toLowerCase().startsWith( type + "." ) )
-				return true;
-		}
+		// Check the exception and all of its causes
+		while ( e != null ) {
+			// BoxLangExceptions check the type
+			if ( e instanceof BoxLangException ble ) {
+				// Either direct match to type, or "foo.bar" matches "foo.bar.baz
+				if ( ble.type.equalsIgnoreCase( type ) || ble.type.toLowerCase().startsWith( type + "." ) )
+					return true;
+			}
 
-		// Native exceptions just check the class hierarchy
-		if ( InstanceOf.invoke( context, e, type ) ) {
-			return true;
+			// Native exceptions just check the class hierarchy
+			if ( InstanceOf.invoke( context, e, type ) ) {
+				return true;
+			}
+			e = e.getCause();
 		}
 		return false;
 	}
@@ -446,15 +451,34 @@ public class ExceptionUtil {
 		if ( target == null ) {
 			return null;
 		}
-		IStruct result = Struct.of(
-		    Key.message, target.getMessage(),
-		    Key.stackTrace, ExceptionUtil.getStackTraceAsString( target ),
-		    Key.tagContext, ExceptionUtil.buildTagContext( target ),
-		    Key.cause, throwableToStruct( target.getCause() )
-		);
-		if ( target instanceof BoxLangException ble ) {
-			result.addAll( ble.dataAsStruct() );
+
+		// All getter methods will be called on the target, which will get all custom fields
+		// regardless of what the actual class is
+		IStruct result = StructCasterLoose.cast( target );
+		result.put( Key.tagContext, ExceptionUtil.buildTagContext( target ) );
+		result.put( Key.stackTrace, ExceptionUtil.getStackTraceAsString( target ) );
+		result.put( Key.cause, throwableToStruct( target.getCause() ) );
+
+		// Ensure we have a type field
+		if ( !result.containsKey( Key.type ) ) {
+			result.put( Key.type, target.getClass().getName() );
 		}
+
+		if ( result.containsKey( Key.suppressed ) ) {
+			Object oSuppressed = result.get( Key.suppressed );
+			if ( oSuppressed != null && oSuppressed.getClass().isArray() ) {
+				if ( ( ( Object[] ) oSuppressed ).length == 0 ) {
+					result.remove( Key.suppressed );
+				}
+			}
+		}
+		if ( result.containsKey( Key.cause ) && result.get( Key.cause ) == null ) {
+			result.remove( Key.cause );
+		}
+		if ( result.containsKey( Key.localizedMessage ) ) {
+			result.remove( Key.localizedMessage );
+		}
+
 		return result;
 	}
 }

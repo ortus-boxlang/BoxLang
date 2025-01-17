@@ -1,0 +1,8 @@
+class {
+
+	request.applicationbxsub2ran = true;
+	
+	function onRequestStart() {
+		request.onRequestStartsub2 = true;
+	}
+}

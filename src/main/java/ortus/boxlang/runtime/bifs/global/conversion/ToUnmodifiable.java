@@ -64,17 +64,20 @@ public class ToUnmodifiable extends BIF {
 		if ( castedArray.wasSuccessful() ) {
 			return castedArray.get().toUnmodifiable();
 		}
+
+		// Queries
+		var castedQuery = QueryCaster.attempt( inputValue );
+		if ( castedQuery.wasSuccessful() ) {
+			return castedQuery.get().toUnmodifiable();
+		}
+
 		// Structs
 		var castedStruct = StructCaster.attempt( inputValue );
 		if ( castedStruct.wasSuccessful() ) {
 			// This cast is not safe. Need to add .toUnmodifiable() to the IStruct interface
 			return ( ( Struct ) castedStruct.get() ).toUnmodifiable();
 		}
-		// Queries
-		var castedQuery = QueryCaster.attempt( inputValue );
-		if ( castedQuery.wasSuccessful() ) {
-			return castedQuery.get().toUnmodifiable();
-		}
+
 		// Exceptions
 		throw new BoxRuntimeException( "Cannot convert value to Unmodifiable type as it is not a struct, array or query" );
 

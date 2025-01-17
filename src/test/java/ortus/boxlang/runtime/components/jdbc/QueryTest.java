@@ -157,6 +157,39 @@ public class QueryTest extends BaseJDBCTest {
 		assertEquals( "Developer", michael.get( "role" ) );
 	}
 
+	@DisplayName( "It can execute a query with an array queryparam" )
+	@Test
+	public void testListArrayBinding() {
+		getInstance().executeSource(
+		    """
+		        <cfset ids = [77, 1, 42] />
+		        <cfquery name="result">
+		        SELECT * FROM developers WHERE id IN (<cfqueryparam value="#ids#" list="true">)
+		        </cfquery>
+		    """,
+		    context,
+		    BoxSourceType.CFTEMPLATE );
+		assertThat( getVariables().get( result ) ).isInstanceOf( ortus.boxlang.runtime.types.Query.class );
+		ortus.boxlang.runtime.types.Query query = getVariables().getAsQuery( result );
+		assertEquals( 3, query.size() );
+	}
+
+	@DisplayName( "It can execute a query with a list queryparam" )
+	@Test
+	public void testListStringBinding() {
+		getInstance().executeSource(
+		    """
+		        <cfquery name="result" maxrows="3">
+		        SELECT * FROM developers WHERE role IN (<cfqueryparam value="Developer,CEO,QA" list="true">)
+		        </cfquery>
+		    """,
+		    context,
+		    BoxSourceType.CFTEMPLATE );
+		assertThat( getVariables().get( result ) ).isInstanceOf( ortus.boxlang.runtime.types.Query.class );
+		ortus.boxlang.runtime.types.Query query = getVariables().getAsQuery( result );
+		assertEquals( 3, query.size() );
+	}
+
 	@DisplayName( "It can execute a query on a named datasource" )
 	@Test
 	public void testNamedDataSource() {
@@ -247,7 +280,7 @@ public class QueryTest extends BaseJDBCTest {
 	public void testReturnTypeStruct() {
 		getInstance().executeSource(
 		    """
-		    query name="result" returntype="struct" columnKey="role" {
+		    bx:query name="result" returntype="struct" columnKey="role" {
 		    	echo( "SELECT * FROM developers ORDER BY id" );
 		    };
 		    """,
@@ -294,7 +327,7 @@ public class QueryTest extends BaseJDBCTest {
 	public void testMissingColumnKey() {
 		BoxRuntimeException e = assertThrows( BoxRuntimeException.class, () -> getInstance().executeSource(
 		    """
-		    query name="result" returntype="struct" {
+		    bx:query name="result" returntype="struct" {
 		    	echo( "SELECT * FROM developers ORDER BY id" );
 		    };
 		    """,
@@ -358,7 +391,7 @@ public class QueryTest extends BaseJDBCTest {
 		IStruct result = StructCaster.cast( resultObject );
 
 		assertThat( result ).containsKey( Key.sql );
-		assertEquals( "SELECT * FROM developers WHERE role = ?", result.getAsString( Key.sql ) );
+		assertEquals( "SELECT * FROM developers WHERE role = 'Developer'", result.getAsString( Key.sql ) );
 
 		assertThat( result ).containsKey( Key.cached );
 		assertThat( result.getAsBoolean( Key.cached ) ).isEqualTo( false );
@@ -440,4 +473,33 @@ public class QueryTest extends BaseJDBCTest {
 		assertThat( queryMeta4.getAsBoolean( Key.cached ) ).isEqualTo( false );
 	}
 
+	@DisplayName( "It can pass params as a struct in a query attribute" )
+	@Test
+	public void testParamAttribute() {
+		getInstance().executeSource(
+		    """
+		        <bx:query name="result" params="#{ id : '1', again: { value : "77" } }#">
+		        SELECT * FROM developers WHERE id = :id OR id = :again
+		        </bx:query>
+		    """,
+		    getContext(), BoxSourceType.BOXTEMPLATE );
+		assertThat( getVariables().get( result ) ).isInstanceOf( ortus.boxlang.runtime.types.Query.class );
+		ortus.boxlang.runtime.types.Query query = getVariables().getAsQuery( result );
+		assertEquals( 2, query.size() );
+	}
+
+	@DisplayName( "It throws if mutually exclusive param sources are used" )
+	@Test
+	public void testParamAttributeThrow() {
+		IllegalArgumentException e = assertThrows( IllegalArgumentException.class, () -> getInstance().executeSource(
+		    """
+		        <bx:query name="result" params="#{ id : '1', id2: { value : "77" } }#">
+		        SELECT * FROM developers WHERE id = <bx:queryparam value="1">
+		        </bx:query>
+		    """,
+		    getContext(), BoxSourceType.BOXTEMPLATE ) );
+
+		assertThat( e.getMessage() ).contains( "Cannot specify both query parameters in the body and as an attribute" );
+		assertNull( getVariables().get( result ) );
+	}
 }

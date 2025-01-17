@@ -19,18 +19,21 @@ public enum SQLJoinType {
 	INNER,
 	LEFT,
 	RIGHT,
-	FULL;
+	FULL,
+	CROSS;
 
 	public String getSymbol() {
 		switch ( this ) {
 			case INNER :
 				return "INNER JOIN";
 			case LEFT :
-				return "LEFT JOIN";
+				return "LEFT OUTER JOIN";
 			case RIGHT :
-				return "RIGHT JOIN";
+				return "RIGHT OUTER JOIN";
 			case FULL :
-				return "FULL JOIN";
+				return "FULL OUTER JOIN";
+			case CROSS :
+				return "CROSS JOIN";
 			default :
 				throw new IllegalStateException( "Unknown join type: " + this );
 		}

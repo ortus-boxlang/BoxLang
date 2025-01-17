@@ -18,9 +18,7 @@
 package ortus.boxlang.runtime.context;
 
 import java.util.Map;
-import java.util.function.Predicate;
 
-import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.ScopeWrapper;
@@ -35,7 +33,7 @@ import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 /**
  * This context represents the context of a template execution in BoxLang
  */
-public class CatchBoxContext extends BaseBoxContext {
+public class CatchBoxContext extends ParentPassthroughBoxContext {
 
 	/**
 	 * The variables scope
@@ -197,116 +195,10 @@ public class CatchBoxContext extends BaseBoxContext {
 	}
 
 	/**
-	 * Get the default variable assignment scope for this context
-	 *
-	 * @return The scope reference to use
-	 */
-	public IScope getDefaultAssignmentScope() {
-		// parent is never null
-		return getParent().getDefaultAssignmentScope();
-	}
-
-	/**
 	 * rethrows the closest exception
 	 */
 	public void rethrow() {
 		ExceptionUtil.throwException( exception );
-	}
-
-	/**
-	 * Most of these methods just delegate to the parent context so the catch context is mostly invisible.
-	 */
-
-	public IBoxContext writeToBuffer( Object o ) {
-		if ( o == null ) {
-			return this;
-		}
-		getParent().writeToBuffer( o );
-		return this;
-	}
-
-	public IBoxContext writeToBuffer( Object o, boolean force ) {
-		if ( o == null ) {
-			return this;
-		}
-		getParent().writeToBuffer( o, force );
-		return this;
-	}
-
-	public Boolean canOutput() {
-		return getParent().canOutput();
-	}
-
-	public IBoxContext flushBuffer( boolean force ) {
-		getParent().flushBuffer( force );
-		return this;
-	}
-
-	public IBoxContext clearBuffer() {
-		getParent().clearBuffer();
-		return this;
-	}
-
-	public StringBuffer getBuffer() {
-		return getParent().getBuffer();
-	}
-
-	public IBoxContext pushBuffer( StringBuffer buffer ) {
-		getParent().pushBuffer( buffer );
-		return this;
-	}
-
-	public IBoxContext popBuffer() {
-		getParent().popBuffer();
-		return this;
-	}
-
-	public Object invokeFunction( Key name, Object[] positionalArguments ) {
-		return getParent().invokeFunction( name, positionalArguments );
-	}
-
-	public Object invokeFunction( Key name, Map<Key, Object> namedArguments ) {
-		return getParent().invokeFunction( name, namedArguments );
-	}
-
-	public Object invokeFunction( Key name ) {
-		return getParent().invokeFunction( name );
-	}
-
-	public Object invokeFunction( Object function, Object[] positionalArguments ) {
-		return getParent().invokeFunction( function, positionalArguments );
-	}
-
-	public Object invokeFunction( Object function, Map<Key, Object> namedArguments ) {
-		return getParent().invokeFunction( function, namedArguments );
-	}
-
-	public Object invokeFunction( Object function ) {
-		return getParent().invokeFunction( function );
-	}
-
-	public Component.BodyResult invokeComponent( Key name, IStruct attributes, Component.ComponentBody componentBody ) {
-		return getParent().invokeComponent( name, attributes, componentBody );
-	}
-
-	public IBoxContext pushComponent( IStruct executionState ) {
-		return getParent().pushComponent( executionState );
-	}
-
-	public IBoxContext popComponent() {
-		return getParent().popComponent();
-	}
-
-	public IStruct[] getComponents() {
-		return getParent().getComponents();
-	}
-
-	public IStruct findClosestComponent( Key name ) {
-		return getParent().findClosestComponent( name );
-	}
-
-	public IStruct findClosestComponent( Key name, Predicate<IStruct> predicate ) {
-		return getParent().findClosestComponent( name, predicate );
 	}
 
 }

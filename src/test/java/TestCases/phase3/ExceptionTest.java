@@ -58,12 +58,35 @@ public class ExceptionTest {
 	@Test
 	public void testBoxMeta() {
 
+		// TODO: I'm not sure what the point of this test is. It seems I got distracted before adding the actual assertions?
 		instance.executeStatement(
 		    """
 		    include "src/test/java/TestCases/phase3/ExceptionThrower.cfs";
 		       """, context );
 
 		assertThat( "" ).isEqualTo( "" );
+
+	}
+
+	@Test
+	public void testCatchInnerType() {
+
+		instance.executeStatement(
+		    """
+		    try{
+		    	try {
+		    	throw( type="inner", message="inner" )
+		    	} catch( e ) {
+		    		throw ( type="outer", message="outer", object=e )
+		    	}
+		    } catch( inner e ) {
+		    	result = e
+		    }
+		          """, context );
+
+		Throwable t = ( Throwable ) variables.get( result );
+		assertThat( t.getMessage() ).isEqualTo( "outer" );
+		assertThat( t.getCause().getMessage() ).isEqualTo( "inner" );
 
 	}
 

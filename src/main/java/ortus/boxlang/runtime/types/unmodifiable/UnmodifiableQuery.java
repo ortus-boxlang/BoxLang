@@ -64,8 +64,6 @@ public class UnmodifiableQuery extends Query implements IUnmodifiable {
 	 * Create an Unmodifiable query from a Modifiable query
 	 *
 	 * @param query The Modifiable query to convert
-	 *
-	 * @return The Unmodifiable query
 	 */
 	public UnmodifiableQuery( Query query ) {
 		this();
@@ -74,9 +72,14 @@ public class UnmodifiableQuery extends Query implements IUnmodifiable {
 			super.addColumn( columnInfo.getValue().getName(), columnInfo.getValue().getType(), null );
 		}
 		// then copy data
+		int i = 1;
 		for ( Object[] row : query.getData() ) {
+			if ( i > query.size() ) {
+				break;
+			}
 			Object[] duplicatedRow = row.clone();
 			super.addRow( duplicatedRow );
+			i++;
 		}
 	}
 
@@ -328,9 +331,14 @@ public class UnmodifiableQuery extends Query implements IUnmodifiable {
 			q.addColumn( columnInfo.getValue().getName(), columnInfo.getValue().getType(), null );
 		}
 		// then copy data
+		int i = 1;
 		for ( Object[] row : getData() ) {
+			if ( i > size.get() ) {
+				break;
+			}
 			Object[] duplicatedRow = row.clone();
 			q.addRow( duplicatedRow );
+			i++;
 		}
 
 		return q;

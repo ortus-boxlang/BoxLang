@@ -25,7 +25,6 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
-import org.objectweb.asm.tree.VarInsnNode;
 
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
@@ -47,7 +46,7 @@ public class BoxBufferOutputTransformer extends AbstractTransformer {
 		BoxBufferOutput			bufferOuput	= ( BoxBufferOutput ) node;
 
 		List<AbstractInsnNode>	nodes		= new ArrayList<>();
-		nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
+		nodes.addAll( transpiler.getCurrentMethodContextTracker().get().loadCurrentContext() );
 		nodes
 		    .addAll( transpiler.transform( bufferOuput.getExpression(), TransformerContext.NONE, ReturnValueContext.VALUE_OR_NULL ) );
 		nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,

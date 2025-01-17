@@ -298,7 +298,7 @@ public class Transaction implements ITransaction {
 				);
 				announce( BoxEvent.ON_TRANSACTION_RELEASE, releaseEventData );
 
-				if ( this.connection.getAutoCommit() ) {
+				if ( !this.connection.getAutoCommit() ) {
 					this.connection.setAutoCommit( true );
 				}
 

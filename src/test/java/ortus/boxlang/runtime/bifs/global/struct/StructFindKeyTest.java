@@ -195,4 +195,35 @@ public class StructFindKeyTest {
 		assertEquals( StructCaster.cast( variables.getAsArray( result ).get( 0 ) ).get( Key.value ), 5 );
 	}
 
+	@DisplayName( "It tests the BIF StructFindKey with a null values in the struct" )
+	@Test
+	public void testsFindKeyWithNulls() {
+		//@formatter:off
+		instance.executeSource(
+		    """
+		      myStruct = {
+				horse: nullValue(),
+				bird: {
+					total: nullValue()
+				},
+				cow: {
+					total: 12
+				},
+				pig: {
+					total: 5
+				},
+				cat: {
+					total: 3
+				}
+			};
+		    result = StructFindKey( myStruct, "pig.total" );
+			resultTop = StructFindKey( myStruct, "cat" );
+		""",
+		context );
+		//@formatter:on
+		assertTrue( variables.get( result ) instanceof Array );
+		assertEquals( 1, variables.getAsArray( result ).size() );
+		assertEquals( 1, variables.getAsArray( Key.of( "resultTop" ) ).size() );
+	}
+
 }

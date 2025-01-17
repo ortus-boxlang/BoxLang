@@ -21,6 +21,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
+import java.lang.ref.SoftReference;
 import java.math.BigInteger;
 import java.net.http.HttpRequest.BodyPublisher;
 import java.util.Comparator;
@@ -30,6 +31,7 @@ import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
@@ -4108,21 +4110,22 @@ public class CoreLangTest {
 	@DisplayName( "nested try catch with specific catch" )
 	@Test
 	public void testNestedTryCatchWithSpecificCatch() {
-		// @formatter:off
+		// @formatter:on
 		instance.executeSource(
 		    """
-			result = "default";
-		    try {
-		    	try {
-					throw( type = "Different", message = "boom" );
-				} catch ( Specific e ) {
-					result = "specific";
-				}
-			} catch ( any e ) {
-				result = "general";
-			}
-		    """,
+		    result = "default";
+		       try {
+		       	try {
+		    		throw( type = "Different", message = "boom" );
+		    	} catch ( Specific e ) {
+		    		result = "specific";
+		    	}
+		    } catch ( any e ) {
+		    	result = "general";
+		    }
+		       """,
 		    context );
+		// @formatter:off
 		assertThat( variables.get( result ) ).isEqualTo( "general" );
 	}
 
@@ -4140,25 +4143,132 @@ public class CoreLangTest {
 	@DisplayName( "It still sets variables in the local scope even if they are set to null" )
 	@Test
 	public void testNullStillInLocalScope() {
+		// @formatter:on
+		instance.executeSource(
+		    """
+		    	function returnsNull() {
+		    		return;
+		    	}
+
+		    	function doesStuff() {
+		    		var inner = returnsNull();
+		    		if ( !isNull( inner ) ) {
+		    			return inner;
+		    		}
+		    		inner = "local value leaked to variables";
+		    		return "set this time";
+		    	}
+		    	result = doesStuff();
+		    	result = doesStuff();
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "set this time" );
+		// @formatter:off
+	}
+		
+
+	@DisplayName( "dump order" )
+	@Test
+	public void testDumpOrder() {
+	// @formatter:off
+	instance.executeSource(
+		"""
+			import java.time.Duration;
+
+			// Dumps to Console
+			writedump(
+				var : getModuleList(),
+				label : "Module List",
+				output : "console"
+			);
+			writeDump(
+				var : [1,2,3,4,5,6,7,8,9,10],
+				label : "Array",
+				output : "console"
+			);
+			writeDump(
+				var : {a:1,b:2,c:3,d:4,e:5,f:6,g:7,h:8,i:9,j:10},
+				label : "Struct",
+				output : "console"
+			);
+
+			writeDump(
+				var :  createObject( "java", "java.time.Instant" ).now(),
+				label : "Instant",
+				output : "console"
+			);
+
+			writeDump( var=Duration.ofHours(2).plusMinutes(30), label="Duration" );
+		""",
+		context );
+		// @formatter:on
+	}
+
+	@Test
+	public void testReturnType() {
 		// @formatter:off
 		instance.executeSource(
 			"""
-				function returnsNull() {
-					return;
-				}
+				 c = new src.test.java.TestCases.phase1.TestReturnType()
+				 result = c.data;
+			""",
+			context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
+	}
 
-				function doesStuff() {
-					var inner = returnsNull();
-					if ( !isNull( inner ) ) {
-						return inner;
-					}
-					inner = "local value leaked to variables";
-					return "set this time";
-				}
-				result = doesStuff();
-				result = doesStuff();
+	@Test
+	public void testSoftRef() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				result = createObject( "java", "java.lang.ref.SoftReference" ).init(
+					"testr"
+				);
+			""",
+			context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isInstanceOf( SoftReference.class );
+	}
+
+	@Test
+	public void testSwitchStructKey() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				result = { switch: "" }
+				result.switch = "brad"
+				result2 = result.switch;
 			""",
 			context, BoxSourceType.CFSCRIPT );
-		assertThat( variables.getAsString( result ) ).isEqualTo( "set this time" );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
+		assertThat( variables.getAsStruct( result ) ).containsKey( Key.of( "switch" ) );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "brad" );
 	}
+
+	@Test
+	public void testDateCOmpare() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				result = now() is "now"
+			""",
+			context );
+		// @formatter:on
+		assertThat( variables.getAsBoolean( result ) ).isFalse();
+	}
+
+	@Test
+	@Disabled( "BL-909" )
+	public void testBodyResultError() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				new src.test.java.TestCases.phase1.TestBodyResultError();
+			""",
+			context );
+		// @formatter:on
+	}
+
 }

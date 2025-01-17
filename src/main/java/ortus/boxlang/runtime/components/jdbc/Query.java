@@ -126,8 +126,14 @@ public class Query extends Component {
 			return bodyResult;
 		}
 
-		String			sql				= buffer.toString();
-		Array			bindings		= executionState.getAsArray( Key.queryParams );
+		String	sql			= buffer.toString();
+		Object	bindings	= executionState.getAsArray( Key.queryParams );
+		if ( attributes.containsKey( Key.params ) && attributes.get( Key.params ) != null ) {
+			if ( ( ( Array ) bindings ).size() > 0 ) {
+				throw new IllegalArgumentException( "Cannot specify both query parameters in the body and as an attribute." );
+			}
+			bindings = attributes.get( Key.params );
+		}
 		PendingQuery	pendingQuery	= new PendingQuery( sql, bindings, options );
 
 		ExecutedQuery	executedQuery;

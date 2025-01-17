@@ -25,18 +25,17 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
+import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.modules.ModuleRecord;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
@@ -59,7 +58,7 @@ public class InterceptorPool {
 	/**
 	 * Logger
 	 */
-	private static final Logger					logger				= LoggerFactory.getLogger( InterceptorPool.class );
+	private BoxLangLogger						logger;
 
 	/**
 	 * The list of interception points we can listen for
@@ -329,7 +328,7 @@ public class InterceptorPool {
 		// - ModuleRecord : The ModuleRecord instance, if passed
 		oInterceptor.getVariablesScope().put( Key._NAME, name );
 		oInterceptor.getVariablesScope().put( Key.properties, properties );
-		oInterceptor.getVariablesScope().put( Key.log, LoggerFactory.getLogger( oInterceptor.getClass() ) );
+		oInterceptor.getVariablesScope().put( Key.log, getLogger() );
 		oInterceptor.getVariablesScope().put( Key.interceptorService, this );
 		oInterceptor.getVariablesScope().put( Key.boxRuntime, this.runtime );
 
@@ -476,6 +475,15 @@ public class InterceptorPool {
 	 * @return The same pool
 	 */
 	public InterceptorPool register( DynamicObject interceptor, Key... states ) {
+
+		if ( getLogger().isTraceEnabled() ) {
+			getLogger().trace(
+			    "=> Registering interceptor [{}] with states: {}",
+			    interceptor.getClass().getName(),
+			    states
+			);
+		}
+
 		Arrays.stream( states )
 		    .forEach( state -> registerState( state ).register( interceptor ) );
 		return this;
@@ -590,19 +598,17 @@ public class InterceptorPool {
 	 */
 	public void announce( Key state, IStruct data, IBoxContext context ) {
 		if ( hasState( state ) ) {
-			// logger.trace( "InterceptorService.announce() - announcing {}", state.getName() );
-
 			try {
 				getState( state ).announce( data, context );
+			} catch ( AbortException e ) {
+				throw e;
 			} catch ( Exception e ) {
 				String errorMessage = String.format( "Errors announcing [%s] interception", state.getName() );
-				logger.error( errorMessage, e );
+				getLogger().error( errorMessage, e );
 				throw new BoxRuntimeException( errorMessage, e );
 			}
-
-			// logger.trace( "Finished announcing {}", state.getName() );
 		} else {
-			// logger.trace( "InterceptorService.announce() - No state found for: {}", state.getName() );
+			getLogger().trace( "InterceptorService.announce() - No state found for: {}", state.getName() );
 		}
 	}
 
@@ -686,7 +692,7 @@ public class InterceptorPool {
 					return data;
 				} catch ( Exception e ) {
 					String errorMessage = String.format( "Errors announcing [%s] interception", state.getName() );
-					logger.error( errorMessage, e );
+					getLogger().error( errorMessage, e );
 					throw new BoxRuntimeException( errorMessage, e );
 				}
 			} );
@@ -695,4 +701,17 @@ public class InterceptorPool {
 		return null;
 	}
 
+	/**
+	 * Get the runtime logger for interceptors
+	 */
+	public BoxLangLogger getLogger() {
+		if ( this.logger == null ) {
+			synchronized ( this ) {
+				if ( this.logger == null ) {
+					this.logger = this.runtime.getLoggingService().getLogger( "runtime" );
+				}
+			}
+		}
+		return this.logger;
+	}
 }

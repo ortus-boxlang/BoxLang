@@ -34,6 +34,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
 
+import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
@@ -109,6 +110,34 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		assertEquals( 1, query.size() );
 	}
 
+	@EnabledIf( "tools.JDBCTestUtils#hasMySQLModule" )
+	@DisplayName( "It can execute multiple statements in a single queryExecute() call" )
+	@Test
+	public void testMultipleStatements() {
+		assertDoesNotThrow( () -> instance.executeStatement(
+		    """
+		           result = queryExecute( '
+		     	   TRUNCATE TABLE developers;
+		               INSERT INTO developers (id) VALUES (111);
+		               INSERT INTO developers (id) VALUES (222);
+		               SELECT * FROM developers;
+		               INSERT INTO developers (id) VALUES (333);
+		               INSERT INTO developers (id) VALUES (444);
+		               ',
+		      [],
+		      { "datasource" : "mysqldatasource" }
+		           );
+		    """, context )
+		);
+		Object multiStatementQueryReturn = variables.get( Key.of( "result" ) );
+		assertThat( multiStatementQueryReturn ).isInstanceOf( Query.class );
+		assertEquals( 2, ( ( Query ) multiStatementQueryReturn ).size(), "For compatibility, the last result should be returned" );
+
+		Query newTableRows = ( Query ) instance
+		    .executeStatement( "queryExecute( 'SELECT * FROM developers WHERE id IN (111,222)', [],{ 'datasource' : 'mysqldatasource' } );", context );
+		assertEquals( 2, newTableRows.size() );
+	}
+
 	@DisplayName( "It can execute a query with no bindings on the default datasource" )
 	@Test
 	public void testSimpleExecute() {
@@ -153,6 +182,102 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		assertEquals( 77, michael.get( "id" ) );
 		assertEquals( "Michael Born", michael.get( "name" ) );
 		assertEquals( "Developer", michael.get( "role" ) );
+	}
+
+	@DisplayName( "It can execute a query with a (string) list binding" )
+	@Test
+	public void testListStringBindings() {
+		instance.executeSource(
+		    """
+		    result = queryExecute(
+		        "SELECT * FROM developers WHERE id IN (:ids)",
+		        { "ids" : { value: "77,1,42", list : true } }
+		    );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
+		Query query = variables.getAsQuery( result );
+		assertEquals( 3, query.size() );
+	}
+
+	@DisplayName( "It can execute a query with a named (array) list binding" )
+	@Test
+	public void testListArrayNamedBindings() {
+		instance.executeSource(
+		    """
+		    result = queryExecute(
+		        "SELECT * FROM developers WHERE id IN (:ids)",
+		        { "ids" : { value: [77, 1, 42], list : true } }
+		    );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
+		Query query = variables.getAsQuery( result );
+		assertEquals( 3, query.size() );
+	}
+
+	@DisplayName( "It can execute a query with an (array) list binding" )
+	@Test
+	public void testListArrayPositionalBinding() {
+		instance.executeSource(
+		    """
+		    result = queryExecute(
+		        "SELECT * FROM developers WHERE id IN (?)",
+		        [ { value: [77, 1, 42], list : true } ]
+		    );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
+		Query query = variables.getAsQuery( result );
+		assertEquals( 3, query.size() );
+	}
+
+	@DisplayName( "It can reuse named query parameters" )
+	@Test
+	public void testParamReuse() {
+		instance.executeSource(
+		    """
+		    result = queryExecute(
+		        "SELECT * FROM developers WHERE id = :id OR name=:id",
+		        { id: 77 }
+		    );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
+		Query query = variables.getAsQuery( result );
+		assertEquals( 1, query.size() );
+	}
+
+	@DisplayName( "It can use various query params types (list and non-list) in a single SQL query" )
+	@Test
+	public void testParameterTypeMix() {
+		instance.executeSource(
+		    """
+		    result = queryExecute(
+		        "SELECT * FROM developers WHERE id = ? OR id IN (?)",
+		        [ 77, { value: [1, 42], list : true } ]
+		    );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
+		Query query = variables.getAsQuery( result );
+		assertEquals( 3, query.size() );
+	}
+
+	@DisplayName( "It can grab a queryparam name from a parameter array" )
+	@Test
+	public void testNamedParamInsideParamArray() {
+		instance.executeSource(
+		    """
+		    result = queryExecute(
+		        "SELECT * FROM developers WHERE id = :foo",
+		        [ { name: "foo", value: "1" } ]
+		    );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
+		Query query = variables.getAsQuery( result );
+		assertEquals( 1, query.size() );
 	}
 
 	@DisplayName( "It can execute a query with struct bindings on the default datasource" )
@@ -231,7 +356,7 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		    """,
 		    context ) );
 
-		assertThat( e.getMessage() ).isEqualTo( "Missing param in query: [id]. SQL: SELECT * FROM developers WHERE id = :id" );
+		assertThat( e.getMessage() ).isEqualTo( "Named parameter [:id] not provided to query." );
 		assertNull( variables.get( result ) );
 	}
 
@@ -408,7 +533,7 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		IStruct result = StructCaster.cast( resultObject );
 
 		assertThat( result ).containsKey( Key.sql );
-		assertEquals( "SELECT * FROM developers WHERE role = ?", result.getAsString( Key.sql ) );
+		assertEquals( "SELECT * FROM developers WHERE role = 'Developer'", result.getAsString( Key.sql ) );
 
 		assertThat( result ).containsKey( Key.sqlParameters );
 		assertEquals( Array.of( "Developer" ), result.getAsArray( Key.sqlParameters ) );
@@ -453,6 +578,23 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
 		Query query = variables.getAsQuery( result );
 		assertEquals( 1, query.size() );
+	}
+
+	@DisplayName( "DELETE queries put the affected recordCount in query meta" )
+	@Test
+	public void testDeleteQueryResult() {
+		instance.executeSource(
+		    """
+		    result = queryExecute(
+		        "DELETE FROM developers WHERE id = :id",
+		        { "id" : 1 },
+		        { "result" : "queryResults" }
+		    );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
+		IStruct query = variables.getAsStruct( Key.of( "queryResults" ) );
+		assertEquals( 1, query.get( Key.recordCount ) );
 	}
 
 	@DisplayName( "It closes connection on completion" )
@@ -511,26 +653,22 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		assertEquals( "Jon", query.getRowAsStruct( 2 ).get( Key._NAME ) );
 	}
 
-	@DisplayName( "It can execute multiple statements in a single queryExecute() call like Lucee" )
+	@EnabledIf( "tools.JDBCTestUtils#hasMSSQLModule" )
+	@DisplayName( "It sets generatedKey in query meta" )
 	@Test
-	public void testMultipleStatements() {
-		// ACF 2023 will throw an error on this type of fooferall, but Lucee is fine with it and IMHO we should support it.
-		assertDoesNotThrow( () -> instance.executeStatement(
+	public void testGeneratedKey() {
+		instance.executeStatement(
 		    """
-		           result = queryExecute( '
-		               SELECT * FROM developers;
-		               INSERT INTO developers (id) VALUES (111);
-		               INSERT INTO developers (id) VALUES (222)
-		               '
-		           );
-		    """, context )
-		);
-		Object multiStatementQueryReturn = variables.get( Key.of( "result" ) );
-		assertThat( multiStatementQueryReturn ).isInstanceOf( Query.class );
-		assertEquals( 4, ( ( Query ) multiStatementQueryReturn ).size(), "For compatibility, only the first result should be returned" );
-
-		Query newTableRows = ( Query ) instance.executeStatement( "queryExecute( 'SELECT * FROM developers WHERE id IN (111,222)' );", context );
-		assertEquals( 2, newTableRows.size() );
+		        queryExecute(
+		        	"INSERT INTO generatedKeyTest (name) VALUES ( 'Michael' )",
+		        	{},
+		        	{ "result": "variables.result", "datasource" : "MSSQLdatasource" }
+		        );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
+		IStruct meta = variables.getAsStruct( result );
+		assertThat( DoubleCaster.cast( meta.get( Key.generatedKey ), false ) ).isEqualTo( 1.0d );
 	}
 
 	@DisplayName( "It can return cached query results within the cache timeout" )
@@ -639,6 +777,22 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		assertEquals( "adminDevs", result.getAsString( Key.cacheKey ) );
 		assertEquals( Duration.ofHours( 1 ), result.get( Key.cacheTimeout ) );
 		assertEquals( Duration.ofMinutes( 30 ), result.get( Key.cacheLastAccessTimeout ) );
+	}
+
+	@DisplayName( "It can properly handle duplicate column names in the result set" )
+	@Test
+	public void testDuplicateColumnResultSets() {
+		instance.executeStatement(
+		    """
+		        result = queryExecute( "SELECT name, CURRENT_DATE AS name, id, role FROM developers WHERE id=1" );
+		    """, context );
+		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
+		Query query = variables.getAsQuery( result );
+		assertEquals( 1, query.size() );
+		IStruct firstRow = query.getRowAsStruct( 0 );
+		assertThat( firstRow.get( Key._NAME ) ).isEqualTo( "Luis Majano" );
+		assertThat( firstRow.get( Key.id ) ).isEqualTo( 1 );
+		assertThat( firstRow.get( Key.of( "role" ) ) ).isEqualTo( "CEO" );
 	}
 
 	@Disabled( "Not implemented" )

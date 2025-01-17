@@ -27,14 +27,12 @@ import ortus.boxlang.runtime.types.IStruct;
  */
 public class ExpressionException extends BoxRuntimeException {
 
-	public static final Key	ErrNumberKey	= Key.of( "ErrNumber" );
-
 	/**
 	 * Internal expression error number.
 	 */
-	public String			errNumber		= null;
-	public Position			position		= null;
-	public String			sourceText		= null;
+	protected String	errNumber	= null;
+	protected Position	position	= null;
+	protected String	sourceText	= null;
 
 	/**
 	 * Constructor
@@ -76,7 +74,7 @@ public class ExpressionException extends BoxRuntimeException {
 
 	public IStruct dataAsStruct() {
 		IStruct result = super.dataAsStruct();
-		result.put( ErrNumberKey, errNumber );
+		result.put( Key.errNumber, errNumber );
 		return result;
 	}
 

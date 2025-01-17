@@ -238,11 +238,11 @@ public class LoopTest {
 	public void testLoopTimes() {
 		instance.executeSource(
 		    """
-		    result = "";
-		    	loop times=5 {
-		    		result &= "*";
-		    	}
-		          """,
+		       result = "";
+		    bx:loop times=5 {
+		       		result &= "*";
+		       	}
+		             """,
 		    context, BoxSourceType.BOXSCRIPT );
 
 		assertThat( variables.getAsString( Key.of( "result" ) ) ).isEqualTo( "*****" );
@@ -252,11 +252,11 @@ public class LoopTest {
 	public void testLoopZeroTimes() {
 		instance.executeSource(
 		    """
-		    result = "";
-		    	loop times=0 {
-		    		result &= "*";
-		    	}
-		          """,
+		       result = "";
+		    bx:loop times=0 {
+		       		result &= "*";
+		       	}
+		             """,
 		    context, BoxSourceType.BOXSCRIPT );
 
 		assertThat( variables.getAsString( Key.of( "result" ) ) ).isEqualTo( "" );
@@ -266,11 +266,11 @@ public class LoopTest {
 	public void testLoopTimesIndex() {
 		instance.executeSource(
 		    """
-		    result = "";
-		    	loop times=5 index="i" {
-		    		result &= i;
-		    	}
-		          """,
+		       result = "";
+		    bx:loop times=5 index="i" {
+		       		result &= i;
+		       	}
+		             """,
 		    context, BoxSourceType.BOXSCRIPT );
 
 		assertThat( variables.getAsString( Key.of( "result" ) ) ).isEqualTo( "12345" );
@@ -280,11 +280,11 @@ public class LoopTest {
 	public void testLoopTimesItem() {
 		instance.executeSource(
 		    """
-		    result = "";
-		    	loop times=5 item="i" {
-		    		result &= i;
-		    	}
-		          """,
+		       result = "";
+		    bx:loop times=5 item="i" {
+		       		result &= i;
+		       	}
+		             """,
 		    context, BoxSourceType.BOXSCRIPT );
 
 		assertThat( variables.getAsString( Key.of( "result" ) ) ).isEqualTo( "12345" );
@@ -316,6 +316,172 @@ public class LoopTest {
 		    """,
 		    context, BoxSourceType.BOXTEMPLATE );
 		assertThat( variables.getAsString( Key.of( "result" ) ) ).isEqualTo( "123" );
+	}
+
+	@Test
+	public void testLoopFromTo() {
+		instance.executeSource(
+		    """
+		    	<bx:set result = "" >
+		    	<bx:loop from="1" to="10" index="i">
+		    		<bx:set result &= i>
+		    	</bx:loop>
+		    """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.getAsString( Key.of( "result" ) ) ).isEqualTo( "12345678910" );
+	}
+
+	@Test
+	public void testLoopFromToStep() {
+		instance.executeSource(
+		    """
+		    	<bx:set result = "" >
+		    	<bx:loop from="1" to="10" index="i" step="2">
+		    		<bx:set result &= i>
+		    	</bx:loop>
+		    """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.getAsString( Key.of( "result" ) ) ).isEqualTo( "13579" );
+	}
+
+	@Test
+	public void testLoopFromToStepContens() {
+		instance.executeSource(
+		    """
+		    <!--- encrypt, decrypt methods --->
+		    <cffunction name="contensEncrypt" access="public" returntype="string" hint="cfusion_encrypt counterpart" output="false">
+		    		<cfargument name="sToEncrypt" type="string" required="true">
+		    		<cfargument name="sEncKey" type="string" required="true">
+		    		<cfset var iIndex = "">
+		    		<cfset var sResult = "">
+
+		    		<cfset arguments.sEncKey = repeatString(arguments.sEncKey, ceiling(len(arguments.sToEncrypt) / len(arguments.sEncKey)))>
+		    		<cfloop from="1" to="#len(arguments.sToEncrypt)#" index="iIndex">
+		    			<cfset sResult = sResult & rJustify(formatBaseN(bitXOR(asc(mid(arguments.sToEncrypt, iIndex, 1)), asc(mid(arguments.sEncKey, iIndex, 1))), 16), 2)>
+		    		</cfloop>
+		    		<cfreturn replace(sResult, " ", "0", "all")>
+		    	</cffunction>
+
+
+		    	<cffunction name="contensDecrypt" access="public" returntype="any" hint="cfusion_decrypt counterpart" output="false">
+		    		<cfargument name="sToEncrypt" type="string" required="true">
+		    		<cfargument name="sEncKey" type="string" required="true">
+		    		<cfset var i = "">
+		    		<cfset var sResult = "">
+
+		    		<cftry>
+		    			<cfset arguments.sEncKey = repeatString(arguments.sEncKey, ceiling(len(arguments.sToEncrypt) / 2 / len(arguments.sEncKey)))>
+		    			<cfloop from="2" to="#len(arguments.sToEncrypt)#" index="i" step="2">
+		    				<cfset sResult = sResult & chr(bitXOR(inputBaseN(mid(arguments.sToEncrypt, i-1, 2), 16), asc(mid(arguments.sEncKey, i/2, 1))))>
+		    			</cfloop>
+		    			<cfcatch>
+		    				<cfreturn cfcatch>
+		    			</cfcatch>
+		    		</cftry>
+		    		<cfreturn sResult>
+		    	</cffunction>
+
+		    	<cfset encr = contensEncrypt("test", "test")>
+		    	<cfoutput>#contensDecrypt(encr, "test")#</cfoutput>
+		    		""",
+		    context, BoxSourceType.CFTEMPLATE );
+	}
+
+	@Test
+	public void testLoopCondition() {
+		instance.executeSource(
+		    """
+		       function foo( required string name ) {
+		    bx:loop condition=arguments.name == "brad" {
+		      return getFunctionCalledName();
+		      		 break;
+		      	 }
+		       }
+
+		       result = foo( "brad" );
+		      				 """,
+		    context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.getAsString( Key.of( "result" ) ) ).isEqualTo( "foo" );
+	}
+
+	@Test
+	public void testLoopToFrom() {
+		instance.executeSource(
+		    """
+		    	result = ""
+		    	bx:loop from="1" to="5" step="1" index="i" {
+		    		result &= i;
+		    	}
+		    """,
+		    context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.getAsString( Key.of( "result" ) ) ).isEqualTo( "12345" );
+	}
+
+	@Test
+	public void testLoopToFromNegativeStep() {
+		instance.executeSource(
+		    """
+		    	result = ""
+		    	bx:loop from="5" to="1" step="-1" index="i" {
+		    		result &= i;
+		    	}
+		    """,
+		    context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.getAsString( Key.of( "result" ) ) ).isEqualTo( "54321" );
+	}
+
+	@Test
+	public void testLoopToFromZeroStep() {
+		instance.executeSource(
+		    """
+		    	result = ""
+		    	bx:loop from="1" to="5" step="0" index="i" {
+		    		result &= i;
+		    	}
+		    """,
+		    context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.getAsString( Key.of( "result" ) ) ).isEqualTo( "" );
+	}
+
+	@Test
+	public void testLoopToFromDecimalStep() {
+		instance.executeSource(
+		    """
+		    	result = ""
+		    	bx:loop from="1" to="10" step="1.5" index="i" {
+		    		result = result.listAppend(i)
+		    	}
+		    """,
+		    context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.getAsString( Key.of( "result" ) ) ).isEqualTo( "1,2.5,4,5.5,7,8.5,10" );
+	}
+
+	@Test
+	public void testLoopConditionMixCF() {
+		instance.executeSource(
+		    """
+		    <cfset i = 1>
+		    <cfset dataSize = 5>
+		    <cfloop condition="#i# LTE #dataSize#">
+		    	<cfoutput>#i#</cfoutput>
+		    	<cfset i++>
+		    </cfloop>
+		    """,
+		    context, BoxSourceType.CFTEMPLATE );
+	}
+
+	@Test
+	public void testLoopConditionMix() {
+		instance.executeSource(
+		    """
+		    <bx:set i = 1>
+		    <bx:set dataSize = 5>
+		    <bx:loop condition="#i# LTE #dataSize#">
+		    	<bx:output>#i#</bx:output>
+		    	<bx:set i++>
+		    </bx:loop>
+		    """,
+		    context, BoxSourceType.BOXTEMPLATE );
 	}
 
 }

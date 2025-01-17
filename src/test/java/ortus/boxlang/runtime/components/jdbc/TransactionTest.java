@@ -19,17 +19,20 @@
 
 package ortus.boxlang.runtime.components.jdbc;
 
+import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import static com.google.common.truth.Truth.assertThat;
+
 import ortus.boxlang.runtime.bifs.global.jdbc.BaseJDBCTest;
+import ortus.boxlang.runtime.context.IJDBCCapableContext;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests the basics of the transaction component, especially attribute validation.
@@ -121,6 +124,9 @@ public class TransactionTest extends BaseJDBCTest {
 		Query theResult = ( Query ) getInstance()
 		    .executeStatement( "queryExecute( 'SELECT * FROM developers WHERE id IN (111)' );", getContext() );
 		assertThat( theResult.size() ).isEqualTo( 1 );
+
+		// The connection manager won't close connections if it thinks they are from an active transaction.
+		assertThat( ( ( IJDBCCapableContext ) getContext() ).getConnectionManager().isInTransaction() ).isFalse();
 	}
 
 	@DisplayName( "Emits transactional events" )

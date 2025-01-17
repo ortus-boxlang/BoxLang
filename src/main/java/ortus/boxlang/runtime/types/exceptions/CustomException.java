@@ -27,12 +27,10 @@ import ortus.boxlang.runtime.types.IStruct;
  */
 public class CustomException extends BoxRuntimeException {
 
-	public static final Key	ErrorCodeKey	= Key.of( "errorCode" );
-
 	/**
 	 * Applies to type = "custom". String error code.
 	 */
-	public String			errorCode		= "";
+	protected String errorCode = "";
 
 	/**
 	 * Constructor
@@ -106,7 +104,7 @@ public class CustomException extends BoxRuntimeException {
 	@Override
 	public IStruct dataAsStruct() {
 		IStruct result = super.dataAsStruct();
-		result.put( ErrorCodeKey, errorCode );
+		result.put( Key.errorcode, errorCode );
 		return result;
 	}
 

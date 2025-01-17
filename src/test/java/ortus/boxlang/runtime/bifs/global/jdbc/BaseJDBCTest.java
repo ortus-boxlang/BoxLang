@@ -18,6 +18,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.services.DatasourceService;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 import tools.JDBCTestUtils;
 
 public class BaseJDBCTest {
@@ -56,6 +57,13 @@ public class BaseJDBCTest {
 			);
 			datasourceService.register( mssqlName, mssqlDatasource );
 			JDBCTestUtils.ensureTestTableExists( mssqlDatasource, setUpContext );
+
+			try {
+				mssqlDatasource.execute( "DROP TABLE generatedKeyTest", setUpContext );
+				mssqlDatasource.execute( "CREATE TABLE generatedKeyTest( id INT IDENTITY(1,1) PRIMARY KEY, name VARCHAR(155))", setUpContext );
+			} catch ( DatabaseException e ) {
+				// Ignore the exception if the table already exists
+			}
 		}
 
 		if ( JDBCTestUtils.hasMySQLModule() ) {
@@ -75,7 +83,8 @@ public class BaseJDBCTest {
 			    "host", "localhost",
 			    "port", "3306",
 			    "driver", "mysql",
-			    "database", "mysqlDB"
+			    "database", "mysqlDB",
+			    "custom", "allowMultiQueries=true"
 			) );
 			instance.getConfiguration().datasources.put(
 			    mysqlName,

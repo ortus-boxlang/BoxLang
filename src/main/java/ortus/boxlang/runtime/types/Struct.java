@@ -59,15 +59,15 @@ import ortus.boxlang.runtime.util.RegexBuilder;
 /**
  * This type provides the core map class for Boxlang. Structs are highly versatile and are used for organizing and managing related data.
  *
- * Types of Structs in BoxLang:
+ * Types of Structs in BoxLang: <code>DEFAULT, CASE_SENSITIVE, LINKED, LINKED_CASE_SENSITIVE, SORTED, WEAK, SOFT</code>
  *
- * * Basic Structs: These are the basic structures where each key is associated with a single value. Keys are case-insensitive and can be strings or symbols.
- * * Nested Structs: Structs can contain other structs as values, allowing for a hierarchical organization of data.
- * * Case-Sensitive Structs: By default, BoxLang structs are case-insensitive. However, you can create case-sensitive structs if needed.
- * * Ordered Structs: This implementation of a Struct maintains keys in the order they were added.
- * * Sorted Structs: This implementation of a Struct maintains keys in specified sorted order.
- *
- *
+ * - DEFAULT: These are the basic structures where each key is associated with a single value. Keys are case-insensitive and can be strings or symbols.
+ * - Nested Structs: Structs can contain other structs as values, allowing for a hierarchical organization of data.
+ * - CASE_SENSITIVE: By default, BoxLang structs are case-insensitive. However, you can create case-sensitive structs if needed.
+ * - LINKED, LINKED_CASE_SENSITIVE (Ordered Structs): This implementation of a Struct maintains keys in the order they were added.
+ * - SORTED: This implementation of a Struct maintains keys in specified sorted order.
+ * - WEAK: This implementation of a Struct uses weak references for keys.
+ * - SOFT: This implementation of a Struct uses a default struct with values wrapped in a SoftReference.
  */
 public class Struct implements IStruct, IListenable, Serializable {
 
@@ -149,9 +149,9 @@ public class Struct implements IStruct, IListenable, Serializable {
 	/**
 	 * Constructor
 	 *
-	 * @param type The type of struct to create: DEFAULT, LINKED, SORTED
+	 * @param type The type of struct to create: DEFAULT, CASE_SENSITIVE, LINKED, LINKED_CASE_SENSITIVE, SORTED, WEAK, SOFT
 	 *
-	 * @throws BoxRuntimeException If an invalid type is specified: DEFAULT, LINKED, SORTED
+	 * @throws BoxRuntimeException If an invalid type is specified: DEFAULT, CASE_SENSITIVE, LINKED, LINKED_CASE_SENSITIVE, SORTED, WEAK, SOFT
 	 */
 	public Struct( TYPES type ) {
 		this.type		= type;
@@ -159,9 +159,9 @@ public class Struct implements IStruct, IListenable, Serializable {
 		// Initialize the wrapped map
 		this.wrapped	= switch ( type ) {
 							case DEFAULT, CASE_SENSITIVE, SOFT -> new ConcurrentHashMap<>( INITIAL_CAPACITY );
-							case LINKED, LINKED_CASE_SENSITIVE -> Collections.synchronizedMap( new LinkedHashMap<>( INITIAL_CAPACITY ) );
+							case LINKED, LINKED_CASE_SENSITIVE -> Collections.synchronizedMap( LinkedHashMap.newLinkedHashMap( INITIAL_CAPACITY ) );
 							case SORTED -> new ConcurrentSkipListMap<>();
-							case WEAK -> new WeakHashMap<>( INITIAL_CAPACITY );
+							case WEAK -> WeakHashMap.newWeakHashMap( INITIAL_CAPACITY );
 							default -> throw new BoxRuntimeException( "Invalid struct type [" + type.name() + "]" );
 						};
 	}
@@ -421,7 +421,7 @@ public class Struct implements IStruct, IListenable, Serializable {
 	@Override
 	public Object get( Object key ) {
 		if ( key instanceof Key keyKey ) {
-			return unWrapNull(
+			return unWrapNullInternal(
 			    isCaseSensitive()
 			        ? wrapped.get( keySet().stream().filter( k -> KeyCaster.cast( k ).equalsWithCase( keyKey ) ).findFirst().orElse( Key.EMPTY ) )
 			        : wrapped.get( keyKey )
@@ -442,7 +442,7 @@ public class Struct implements IStruct, IListenable, Serializable {
 	 */
 	public Object get( String key ) {
 		Key keyObj = Key.of( key );
-		return unWrapNull(
+		return unWrapNullInternal(
 		    isCaseSensitive()
 		        ? wrapped.get( keySet().stream().filter( k -> KeyCaster.cast( k ).equalsWithCase( keyObj ) ).findFirst().orElse( Key.EMPTY ) )
 		        : wrapped.get( keyObj )
@@ -459,10 +459,10 @@ public class Struct implements IStruct, IListenable, Serializable {
 	 */
 	public Object getOrDefault( Key key, Object defaultValue ) {
 		return isCaseSensitive()
-		    ? unWrapNull(
+		    ? unWrapNullInternal(
 		        wrapped.getOrDefault( keySet().stream().filter( k -> KeyCaster.cast( k ).equalsWithCase( key ) ).findFirst().orElse( Key.EMPTY ), defaultValue )
 		    )
-		    : unWrapNull( wrapped.getOrDefault( key, defaultValue ) );
+		    : unWrapNullInternal( wrapped.getOrDefault( key, defaultValue ) );
 
 	}
 
@@ -676,7 +676,7 @@ public class Struct implements IStruct, IListenable, Serializable {
 	@Override
 	public Collection<Object> values() {
 		return wrapped.values().stream()
-		    .map( entry -> unWrapNull( entry ) )
+		    .map( entry -> unWrapNullInternal( entry ) )
 		    .collect( Collectors.toList() );
 	}
 
@@ -686,7 +686,7 @@ public class Struct implements IStruct, IListenable, Serializable {
 	@Override
 	public Set<Entry<Key, Object>> entrySet() {
 		return wrapped.entrySet().stream()
-		    .map( entry -> new SimpleEntry<>( entry.getKey(), unWrapNull( entry.getValue() ) ) )
+		    .map( entry -> new SimpleEntry<>( entry.getKey(), unWrapNullInternal( entry.getValue() ) ) )
 		    .collect( Collectors.toCollection( LinkedHashSet::new ) );
 	}
 
@@ -868,7 +868,7 @@ public class Struct implements IStruct, IListenable, Serializable {
 			    String.format( "The key [%s] was not found in the struct. Valid keys are (%s)", key.getName(), getKeysAsStrings() ), this
 			);
 		}
-		return unWrapNull( value );
+		return unWrapNullInternal( value );
 	}
 
 	/**
@@ -1011,14 +1011,25 @@ public class Struct implements IStruct, IListenable, Serializable {
 	 *
 	 * @return The unwrapped value which can be null
 	 */
-	@SuppressWarnings( "unchecked" )
 	public static Object unWrapNull( Object value ) {
 		if ( value instanceof NullValue ) {
 			return null;
 		}
-		return value instanceof SoftReference
-		    ? ( ( SoftReference<Object> ) value ).get()
-		    : value;
+		return value;
+	}
+
+	/**
+	 * Unwrap null values from the NullValue class
+	 *
+	 * @param value The value to unwrap
+	 *
+	 * @return The unwrapped value which can be null
+	 */
+	protected Object unWrapNullInternal( Object value ) {
+		if ( value instanceof NullValue ) {
+			return null;
+		}
+		return isSoftReferenced() && value instanceof SoftReference sr ? sr.get() : value;
 	}
 
 	/**

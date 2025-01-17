@@ -50,6 +50,8 @@ import org.w3c.dom.Notation;
 import org.w3c.dom.ProcessingInstruction;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+import org.w3c.dom.Attr;
+import org.w3c.dom.Element;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
@@ -57,6 +59,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.KeyCaster;
 import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.interop.DynamicInteropService;
 import ortus.boxlang.runtime.scopes.IntKey;
 import ortus.boxlang.runtime.scopes.Key;
@@ -108,6 +111,12 @@ public class XML implements Serializable, IStruct {
 	 * Serial version UID
 	 */
 	private static final long		serialVersionUID	= 1L;
+
+	/**
+	 * CDATA contstants
+	 */
+	public static final String		cdataStart			= "<![CDATA[";
+	public static final String		cdataEnd			= "]]>";
 
 	/**
 	 * Create a new XML Document from the given string
@@ -236,13 +245,21 @@ public class XML implements Serializable, IStruct {
 	 * @return the attributes of this XML node as a struct
 	 */
 	public IStruct getXMLAttributes() {
-		// TODO: attach change listener to the struct so changes in the struct will be reflected in the XML
-		IStruct			attributes	= new Struct( IStruct.TYPES.LINKED );
+		Struct			attributes	= new Struct( IStruct.TYPES.LINKED );
 		NamedNodeMap	attrs		= node.getAttributes();
 		for ( int i = 0; i < attrs.getLength(); i++ ) {
 			Node attr = attrs.item( i );
 			attributes.put( Key.of( attr.getNodeName() ), attr.getNodeValue() );
 		}
+		attributes.registerChangeListener( ( key, newValue, oldValue ) -> {
+			if ( newValue == null ) {
+				node.getAttributes().removeNamedItem( key.getName() );
+			} else {
+				( ( Element ) node ).setAttribute( key.getName(), StringCaster.cast( newValue ) );
+			}
+			return newValue;
+		} );
+
 		return attributes;
 	}
 
@@ -542,7 +559,14 @@ public class XML implements Serializable, IStruct {
 
 	@Override
 	public Object assign( IBoxContext context, Key name, Object value ) {
-		put( name, value );
+		if ( name.equals( Key.XMLText ) ) {
+			getNode().setTextContent( StringCaster.cast( value ) );
+		} else if ( name.equals( Key.XMLCdata ) ) {
+			node.setTextContent( cdataStart + StringCaster.cast( value ) + cdataEnd );
+		} else {
+			put( name, value );
+		}
+
 		return this;
 	}
 
@@ -660,13 +684,13 @@ public class XML implements Serializable, IStruct {
 
 	@Override
 	public Object put( Key key, Object value ) {
-		if ( ! ( value instanceof Node ) ) {
+		if ( ! ( value instanceof Node ) && ! ( value instanceof XML ) ) {
 			throw new BoxRuntimeException(
 			    String.format(
-			        "The value passed [%s] is not a Node instance", value.toString() )
+			        "The value passed [%s] is not a Node or XML instance", value.toString() )
 			);
 		}
-		value = ( ( Node ) value ).cloneNode( true );
+		value = value instanceof Node ? ( ( Node ) value ).cloneNode( true ) : ( ( XML ) value ).getNode().cloneNode( true );
 		if ( documentOnlyKeys.contains( key ) ) {
 			if ( key.equals( Key.XMLRoot ) ) {
 				this.node = ( Node ) value;

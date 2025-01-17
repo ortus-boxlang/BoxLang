@@ -16,8 +16,10 @@ package ortus.boxlang.runtime.jdbc.qoq.functions.scalar;
 
 import java.util.List;
 
+import ortus.boxlang.compiler.ast.sql.select.expression.SQLExpression;
 import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
 import ortus.boxlang.runtime.jdbc.qoq.QoQScalarFunctionDef;
+import ortus.boxlang.runtime.jdbc.qoq.QoQSelectExecution;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.QueryColumnType;
 
@@ -33,7 +35,7 @@ public class Power extends QoQScalarFunctionDef {
 	}
 
 	@Override
-	public QueryColumnType getReturnType() {
+	public QueryColumnType getReturnType( QoQSelectExecution QoQExec, List<SQLExpression> expressions ) {
 		return QueryColumnType.DOUBLE;
 	}
 
@@ -43,11 +45,18 @@ public class Power extends QoQScalarFunctionDef {
 	}
 
 	@Override
-	public Object apply( List<Object> args ) {
+	public Object apply( List<Object> args, List<SQLExpression> expressions ) {
 		Object	left	= args.get( 0 );
 		Object	right	= args.get( 1 );
 		if ( left == null || right == null ) {
 			return null;
+		}
+		// empty strings are treated as 0 in sql math
+		if ( left instanceof String s && s.isEmpty() ) {
+			left = 0;
+		}
+		if ( right instanceof String s && s.isEmpty() ) {
+			right = 0;
 		}
 		return Math.pow( NumberCaster.cast( left ).doubleValue(), NumberCaster.cast( right ).doubleValue() );
 	}

@@ -85,7 +85,7 @@ public class XMLElemNew extends BIF {
 					xmlString = "<" + childName + "/>";
 				}
 
-				return builder.parse( new InputSource( new StringReader( xmlString ) ) );
+				return new XML( builder.parse( new InputSource( new StringReader( xmlString ) ) ) );
 
 			} catch ( ParserConfigurationException e ) {
 				throw new BoxRuntimeException( "Error creating XML parser", e );
@@ -96,10 +96,10 @@ public class XMLElemNew extends BIF {
 			}
 		} else if ( namespace != null ) {
 			Document ownerDocument = documentNode.getOwnerDocument() == null ? ( Document ) documentNode : documentNode.getOwnerDocument();
-			return ownerDocument.createElementNS( namespace, childName );
+			return new XML( ownerDocument.createElementNS( namespace, childName ) );
 		} else {
 			Document ownerDocument = documentNode.getOwnerDocument() == null ? ( Document ) documentNode : documentNode.getOwnerDocument();
-			return ownerDocument.createElement( childName );
+			return new XML( ownerDocument.createElement( childName ) );
 		}
 
 	}

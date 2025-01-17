@@ -35,6 +35,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
@@ -52,8 +53,16 @@ jobs:
       #     mysql -u${{ env.DB_USER }} -p${{ env.DB_PASSWORD }} -e 'CREATE DATABASE mementifier;'
       #     mysql -u${{ env.DB_USER }} -p${{ env.DB_PASSWORD }} < test-harness/tests/resources/coolblog.sql
 
-      #- name: Setup CommandBox CLI
-      #  uses: Ortus-Solutions/setup-commandbox@v2.0.1
+      - name: Setup CommandBox CLI Linux
+        if: ${{ matrix.os != 'windows-latest' }}
+        uses: Ortus-Solutions/setup-commandbox@v2.0.1
+
+      - name: Setup CommandBox CLI Windows
+        if: ${{ matrix.os == 'windows-latest' }}
+        run: choco install commandbox
+        
+      - name: Install TestBox
+        run: box install testbox@be src/test/resources --verbose --noSave
 
       # Not Needed in this module
       #- name: Setup Environment For Testing Process

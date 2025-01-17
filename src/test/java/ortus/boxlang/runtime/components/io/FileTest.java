@@ -111,7 +111,7 @@ public class FileTest {
 		variables.put( Key.of( "testFile" ), Path.of( testTextFile ).toAbsolutePath().toString() );
 		instance.executeSource(
 		    """
-		    file action="write" file="#testFile#" output="I am writing!";
+		    bx:file action="write" file="#testFile#" output="I am writing!";
 		    """,
 		    context, BoxSourceType.BOXSCRIPT );
 
@@ -159,7 +159,7 @@ public class FileTest {
 		variables.put( Key.of( "testFile" ), Path.of( testTextFile ).toAbsolutePath().toString() );
 		instance.executeSource(
 		    """
-		    file action="read" file="#testFile#" variable="readVariable"; variable="readVariable"
+		    bx:file action="read" file="#testFile#" variable="readVariable"; variable="readVariable"
 		    """,
 		    context, BoxSourceType.BOXSCRIPT );
 
@@ -177,7 +177,7 @@ public class FileTest {
 		variables.put( Key.of( "testFile" ), Path.of( testBinaryFile ).toAbsolutePath().toString() );
 		instance.executeSource(
 		    """
-		    file action="readBinary" file="#testFile#" variable="readVariable";
+		    bx:file action="readBinary" file="#testFile#" variable="readVariable";
 		    """,
 		    context, BoxSourceType.BOXSCRIPT );
 
@@ -195,7 +195,7 @@ public class FileTest {
 		variables.put( Key.of( "testFile" ), Path.of( testTextFile ).toAbsolutePath().toString() );
 		instance.executeSource(
 		    """
-		    file action="delete" file="#testFile#";
+		    bx:file action="delete" file="#testFile#";
 		    """,
 		    context, BoxSourceType.BOXSCRIPT );
 
@@ -249,7 +249,7 @@ public class FileTest {
 		variables.put( Key.of( "newFile" ), Path.of( copiedFile ).toAbsolutePath().toString() );
 		instance.executeSource(
 		    """
-		    file action="copy" source="#testFile#" destination="#newFile#";
+		    bx:file action="copy" source="#testFile#" destination="#newFile#";
 		    """,
 		    context, BoxSourceType.BOXSCRIPT );
 
@@ -312,7 +312,7 @@ public class FileTest {
 		variables.put( Key.of( "newFile" ), Path.of( movedFile ).toAbsolutePath().toString() );
 		instance.executeSource(
 		    """
-		    file action="move" source="#testFile#" destination="#newFile#";
+		    bx:file action="move" source="#testFile#" destination="#newFile#";
 		    """,
 		    context, BoxSourceType.BOXSCRIPT );
 
@@ -375,7 +375,7 @@ public class FileTest {
 		variables.put( Key.of( "newFile" ), Path.of( movedFile ).toAbsolutePath().toString() );
 		instance.executeSource(
 		    """
-		    file action="rename" source="#testFile#" destination="#newFile#";
+		    bx:file action="rename" source="#testFile#" destination="#newFile#";
 		    """,
 		    context, BoxSourceType.BOXSCRIPT );
 
@@ -393,7 +393,7 @@ public class FileTest {
 		variables.put( Key.of( "testFile" ), Path.of( testTextFile ).toAbsolutePath().toString() );
 		instance.executeSource(
 		    """
-		    file action="append" file="#testFile#" output="!";
+		    bx:file action="append" file="#testFile#" output="!";
 		    """,
 		    context, BoxSourceType.BOXSCRIPT );
 

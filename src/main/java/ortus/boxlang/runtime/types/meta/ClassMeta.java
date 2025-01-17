@@ -58,10 +58,8 @@ public class ClassMeta extends BoxMeta {
 		compileTimeMethodNames
 		    .stream()
 		    .map( variablesScope::get )
-		    .filter( entry -> entry instanceof Function )
-		    .forEach( entry -> {
-			    functions.add( ( ( FunctionMeta ) ( ( Function ) entry ).getBoxMeta() ).meta );
-		    } );
+		    .filter( Function.class::isInstance )
+		    .forEach( entry -> functions.add( ( ( FunctionMeta ) ( ( Function ) entry ).getBoxMeta() ).meta ) );
 
 		this.meta = UnmodifiableStruct.of(
 		    Key._NAME, target.bxGetName().getName(),
@@ -72,14 +70,17 @@ public class ClassMeta extends BoxMeta {
 		    Key._IMPLEMENTS, UnmodifiableArray.fromList( target.getInterfaces().stream().map( iface -> iface.getBoxMeta().getMeta() ).toList() ),
 		    Key.functions, UnmodifiableArray.fromList( functions ),
 		    Key._HASHCODE, target.hashCode(),
-		    Key.properties, UnmodifiableArray.of( target.getProperties().entrySet().stream().map( entry -> UnmodifiableStruct.of(
-		        Key._NAME, entry.getKey().getName(),
-		        Key.nameAsKey, entry.getKey(),
-		        Key.type, entry.getValue().type(),
-		        Key.defaultValue, entry.getValue().getDefaultValueForMeta(),
-		        Key.annotations, UnmodifiableStruct.fromStruct( entry.getValue().annotations() ),
-		        Key.documentation, UnmodifiableStruct.fromStruct( entry.getValue().documentation() )
-		    ) ).toArray() ),
+		    Key.properties,
+		    // Only include properties that are declared in the class
+		    UnmodifiableArray.of( target.getProperties().entrySet().stream().filter( p -> p.getValue().declaringClass() == target.getClass() )
+		        .map( entry -> UnmodifiableStruct.of(
+		            Key._NAME, entry.getKey().getName(),
+		            Key.nameAsKey, entry.getKey(),
+		            Key.type, entry.getValue().type(),
+		            Key.defaultValue, entry.getValue().getDefaultValueForMeta(),
+		            Key.annotations, UnmodifiableStruct.fromStruct( entry.getValue().annotations() ),
+		            Key.documentation, UnmodifiableStruct.fromStruct( entry.getValue().documentation() )
+		        ) ).toArray() ),
 		    Key.type, "Component",
 		    Key.fullname, target.bxGetName().getName(),
 		    Key.path, target.getRunnablePath().absolutePath().toString()

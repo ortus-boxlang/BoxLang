@@ -125,10 +125,24 @@ public class DiskClassUtil {
 	 * @param bytes     The bytes to write
 	 */
 	public void writeBytes( String classPoolName, String fqn, String extension, byte[] bytes ) {
+		writeBytes( classPoolName, fqn, extension, bytes, 0L );
+	}
+
+	/**
+	 * Write a file to the directory configured for BoxLang
+	 *
+	 * @param fqn       The fully qualified name of the class
+	 * @param extension The extension of the file
+	 * @param bytes     The bytes to write
+	 */
+	public void writeBytes( String classPoolName, String fqn, String extension, byte[] bytes, long lastModifiedDate ) {
 		Path diskPath = generateDiskpath( classPoolName, fqn, extension );
 		diskPath.toFile().getParentFile().mkdirs();
 		try {
 			Files.write( diskPath, bytes );
+			if ( lastModifiedDate > 0 ) {
+				diskPath.toFile().setLastModified( lastModifiedDate );
+			}
 		} catch ( IOException e ) {
 			throw new BoxRuntimeException( "Unable to write Java Sourece file to disk", e );
 		}

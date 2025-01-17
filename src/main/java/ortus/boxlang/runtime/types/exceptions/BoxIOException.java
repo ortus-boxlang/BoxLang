@@ -20,8 +20,6 @@ package ortus.boxlang.runtime.types.exceptions;
 import java.io.IOException;
 import java.nio.file.FileSystemException;
 
-import ortus.boxlang.runtime.scopes.Key;
-
 /**
  * This exception is thrown when an IO operation fails.
  *
@@ -29,7 +27,6 @@ import ortus.boxlang.runtime.scopes.Key;
  */
 public class BoxIOException extends BoxRuntimeException {
 
-	public static final Key		ErrorCodeKey			= Key.errorcode;
 	private static final String	ACCESS_DENIED			= "AccessDeniedException";
 	private static final String	ATOMIC_MOVE_DENIED		= "AtomicMoveNotSupportedException";
 	private static final String	FILE_ALREADY_EXISTS		= "FileAlreadyExistsException";

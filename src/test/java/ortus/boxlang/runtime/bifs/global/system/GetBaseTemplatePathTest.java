@@ -20,26 +20,21 @@ package ortus.boxlang.runtime.bifs.global.system;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import java.nio.file.Path;
-import java.time.LocalDateTime;
-import java.util.List;
-
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.context.ConfigOverrideBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
-import ortus.boxlang.runtime.loader.ImportDefinition;
-import ortus.boxlang.runtime.runnables.BoxTemplate;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.RequestScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
-import ortus.boxlang.runtime.util.ResolvedFilePath;
+import ortus.boxlang.runtime.util.FileSystemUtil;
 
 public class GetBaseTemplatePathTest {
 
@@ -67,72 +62,37 @@ public class GetBaseTemplatePathTest {
 	@DisplayName( "It gets base template path" )
 	@Test
 	public void testBaseTemplate() {
-		context.pushTemplate( new BoxTemplate() {
 
-			@Override
-			public List<ImportDefinition> getImports() {
-				return null;
-			}
-
-			@Override
-			public void _invoke( IBoxContext context ) {
-			}
-
-			@Override
-			public long getRunnableCompileVersion() {
-				return 1;
-			}
-
-			@Override
-			public LocalDateTime getRunnableCompiledOn() {
-				return null;
-			}
-
-			@Override
-			public Object getRunnableAST() {
-				return null;
-			}
-
-			@Override
-			public ResolvedFilePath getRunnablePath() {
-				return ResolvedFilePath.of( Path.of( "/tmp/test.bxs" ) );
-			}
-
-			public BoxSourceType getSourceType() {
-				return BoxSourceType.BOXSCRIPT;
-			}
-
-		} );
-
-		instance.executeSource(
-		    """
-		    result = getBaseTemplatePath();
-		     """,
+		context = getContext( "src/test/java/TestCases/applications/appClass/", "sub2/index.bxm" );
+		instance.executeTemplate(
+		    "sub2/index.bxm",
 		    context );
-		assertThat( variables.get( result ).toString().contains( "test.bxs" ) ).isTrue();
 
-		instance.executeSource(
-		    """
-		    // TODO: Move to compat module if/when CFTranspilerVisitor moves there
-		       result = getTemplatePath();
-		        """,
-		    context, BoxSourceType.CFSCRIPT );
-		assertThat( variables.get( result ).toString().contains( "test.bxs" ) ).isTrue();
+		IScope	request		= context.getScopeNearby( RequestScope.name );
+		String	actualPath	= new java.io.File( "src/test/java/TestCases/applications/appClass/sub2/index.bxm" ).getAbsolutePath();
+		assertThat( request.get( "indexbxmBasePath" ) ).isEqualTo( actualPath );
+		assertThat( request.get( "includexmBasePath" ) ).isEqualTo( actualPath );
 
-		context.popTemplate();
 	}
 
-	@DisplayName( "It gets base template path in include" )
 	@Test
-	public void testBaseTemplateInclude() {
-
-		instance.executeSource(
-		    """
-		    include "src/test/java/ortus/boxlang/runtime/bifs/global/system/BaseTest1.cfs";
-		     """,
+	public void testAppClassInMappingSub() {
+		instance.getConfiguration().mappings.put( "/secret", new java.io.File( "src/test/java/TestCases/applications/external" ).getAbsolutePath() );
+		context = getContext( "src/test/java/TestCases/applications/appClass/", "secret/sub1/index.bxm" );
+		instance.executeTemplate(
+		    "secret/sub1/index.bxm",
 		    context );
-		assertThat( variables.get( result ) ).isInstanceOf( String.class );
-		assertThat( variables.getAsString( result ).contains( "BaseTest3.cfs" ) ).isTrue();
+
+		IScope	request		= context.getScopeNearby( RequestScope.name );
+		String	actualPath	= new java.io.File( "src/test/java/TestCases/applications/external/sub1/index.bxm" ).getAbsolutePath();
+		assertThat( request.get( "externalindexbxmBasePath" ) ).isEqualTo( actualPath );
+		assertThat( request.get( "externalincludexmBasePath" ) ).isEqualTo( actualPath );
 	}
 
+	private IBoxContext getContext( String rootPath, String template ) {
+		return new ScriptingRequestBoxContext( new ConfigOverrideBoxContext( instance.getRuntimeContext(), config -> {
+			config.getAsStruct( Key.mappings ).put( "/", new java.io.File( rootPath ).getAbsolutePath() );
+			return config;
+		} ), FileSystemUtil.createFileUri( template ) );
+	}
 }

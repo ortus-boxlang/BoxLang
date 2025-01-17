@@ -78,6 +78,7 @@ public class RegexBuilder {
 	public static final Pattern	VALID_VARIABLENAME		= Pattern.compile( "^[a-zA-Z_][a-zA-Z0-9_]*$" );
 	public static final Pattern	WHITESPACE				= Pattern.compile( "\\s" );
 	public static final Pattern	ZIPCODE					= Pattern.compile( "\\d{5}([ -]?\\d{4})?" );
+	public static final Pattern	SQL_PARAMETER			= Pattern.compile( ":\\w+" );
 
 	/**
 	 * Build a matcher for the given pattern lookup
@@ -257,6 +258,39 @@ public class RegexBuilder {
 		}
 
 		/**
+		 * Replace first occurrence of the pattern in the input string with the replacement string
+		 *
+		 * @param pattern     The pattern to match against
+		 * @param replacement The replacement string
+		 *
+		 * @return The input string with all occurrences of the pattern replaced with the replacement string
+		 */
+		public RegexMatcher replaceFirst( String replacement ) {
+			Objects.requireNonNull( replacement, "Replacement cannot be null" );
+			this.input = this.pattern
+			    .matcher( this.input )
+			    .replaceFirst( replacement );
+			return this;
+		}
+
+		/**
+		 * Replace first occurrence of the pattern in the input string with the replacement string
+		 *
+		 * @param pattern     The pattern to match against
+		 * @param replacement The replacement string
+		 *
+		 * @return The input string with all occurrences of the pattern replaced with the replacement string
+		 */
+		public RegexMatcher replaceFirst( Pattern pattern, String replacement ) {
+			Objects.requireNonNull( pattern, "Pattern cannot be null" );
+			Objects.requireNonNull( replacement, "Replacement cannot be null" );
+			this.input = pattern
+			    .matcher( this.input )
+			    .replaceFirst( replacement );
+			return this;
+		}
+
+		/**
 		 * Replace all occurrences of the pattern in the input string with the replacement string
 		 *
 		 * @param replacement The replacement string
@@ -276,6 +310,28 @@ public class RegexBuilder {
 		 */
 		public String replaceAllAndGet( Pattern pattern, String replacement ) {
 			return this.replaceAll( pattern, replacement ).get();
+		}
+
+		/**
+		 * Replace first occurrence of the pattern in the input string with the replacement string
+		 *
+		 * @param replacement The replacement string
+		 *
+		 * @return The input string with all occurrences of the pattern replaced with the replacement string
+		 */
+		public String replaceFirstAndGet( Pattern pattern, String replacement ) {
+			return this.replaceFirst( pattern, replacement ).get();
+		}
+
+		/**
+		 * Replace first occurrence of the pattern in the input string with the replacement string
+		 *
+		 * @param replacement The replacement string
+		 *
+		 * @return The input string with all occurrences of the pattern replaced with the replacement string
+		 */
+		public String replaceFirstAndGet( String replacement ) {
+			return this.replaceFirst( replacement ).get();
 		}
 
 		/**

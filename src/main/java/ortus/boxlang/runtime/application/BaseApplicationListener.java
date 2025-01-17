@@ -87,6 +87,14 @@ public abstract class BaseApplicationListener {
 	protected InterceptorPool				interceptorPool;
 
 	/**
+	 * The template, if any, which initiated this request.
+	 * For a web request, this is the URI
+	 * For a scripting request, this is the file being executed
+	 * Null for ad-hoc code execution.
+	 */
+	protected ResolvedFilePath				baseTemplatePath			= null;
+
+	/**
 	 * The available request pool interceptors
 	 */
 	private static final Key[]				REQUEST_INTERCEPTION_POINTS	= List.of(
@@ -169,8 +177,9 @@ public abstract class BaseApplicationListener {
 	 *
 	 * @param context The request context
 	 */
-	protected BaseApplicationListener( RequestBoxContext context ) {
-		this.context = context;
+	protected BaseApplicationListener( RequestBoxContext context, ResolvedFilePath baseTemplatePath ) {
+		this.context			= context;
+		this.baseTemplatePath	= baseTemplatePath;
 		context.setApplicationListener( this );
 		this.interceptorPool = new InterceptorPool( Key.appListener, BoxRuntime.getInstance() )
 		    .registerInterceptionPoint( REQUEST_INTERCEPTION_POINTS );
@@ -344,7 +353,7 @@ public abstract class BaseApplicationListener {
 		else {
 			if ( sessionManagementEnabled ) {
 				// Ensure we have the right session (app name could have changed)
-				existingSessionContext.updateSession( this.application.getOrCreateSession( this.context.getSessionID() ) );
+				existingSessionContext.updateSession( this.application.getOrCreateSession( this.context.getSessionID(), this.context ) );
 				// Only starts the first time
 				existingSessionContext.getSession().start( this.context );
 			} else {
@@ -443,7 +452,7 @@ public abstract class BaseApplicationListener {
 		Session targetSession = this.context
 		    .getApplicationContext()
 		    .getApplication()
-		    .getOrCreateSession( newID );
+		    .getOrCreateSession( newID, this.context );
 		this.context.removeParentContext( SessionBoxContext.class );
 		this.context.injectTopParentContext( new SessionBoxContext( targetSession ) );
 		targetSession.start( this.context );
@@ -467,9 +476,9 @@ public abstract class BaseApplicationListener {
 	/**
 	 * Helper to Announce an event with the provided {@link IStruct} of data and the app context
 	 *
-	 * @param state   The state to announce
-	 * @param data    The data to announce
-	 * @param context The application context
+	 * @param state      The state to announce
+	 * @param data       The data to announce
+	 * @param appContext The application context
 	 */
 	public void announce( BoxEvent state, IStruct data, IBoxContext appContext ) {
 		announce( state.key(), data, appContext );
@@ -936,5 +945,9 @@ public abstract class BaseApplicationListener {
 		);
 
 		return true;
+	}
+
+	public ResolvedFilePath getBaseTemplatePath() {
+		return this.baseTemplatePath;
 	}
 }

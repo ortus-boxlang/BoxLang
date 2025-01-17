@@ -32,7 +32,7 @@ import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 public class SQLSelectStatement extends SQLStatement {
 
 	private SQLSelect			select;
-	private List<SQLSelect>		unions;
+	private List<SQLUnion>		unions;
 	private List<SQLOrderBy>	orderBys;
 	private SQLNumberLiteral	limit;
 
@@ -42,7 +42,7 @@ public class SQLSelectStatement extends SQLStatement {
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code of the statement
 	 */
-	public SQLSelectStatement( SQLSelect select, List<SQLSelect> unions, List<SQLOrderBy> orderBys, SQLNumberLiteral limit, Position position,
+	public SQLSelectStatement( SQLSelect select, List<SQLUnion> unions, List<SQLOrderBy> orderBys, SQLNumberLiteral limit, Position position,
 	    String sourceText ) {
 		super( position, sourceText );
 		setSelect( select );
@@ -72,7 +72,7 @@ public class SQLSelectStatement extends SQLStatement {
 	/**
 	 * Set the UNIONed SELECT statements
 	 */
-	public void setUnions( List<SQLSelect> unions ) {
+	public void setUnions( List<SQLUnion> unions ) {
 		replaceChildren( this.unions, unions );
 		this.unions = unions;
 		if ( unions != null ) {
@@ -83,7 +83,7 @@ public class SQLSelectStatement extends SQLStatement {
 	/**
 	 * Get the UNIONed SELECT statements
 	 */
-	public List<SQLSelect> getUnions() {
+	public List<SQLUnion> getUnions() {
 		return unions;
 	}
 
@@ -151,7 +151,7 @@ public class SQLSelectStatement extends SQLStatement {
 
 		map.put( "select", select.toMap() );
 		if ( unions != null ) {
-			map.put( "unions", unions.stream().map( SQLSelect::toMap ).toList() );
+			map.put( "unions", unions.stream().map( SQLUnion::toMap ).toList() );
 		} else {
 			map.put( "unions", null );
 		}

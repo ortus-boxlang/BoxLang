@@ -1,0 +1,3 @@
+<bx:set request.externalindexbxmsub1ran = true>
+<bx:set request.externalindexbxmBasePath = getBaseTemplatePath()>
+<bx:include template="include.bxm" >

@@ -14,15 +14,17 @@
  */
 package ortus.boxlang.compiler.ast.sql.select.expression.operation;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLExpression;
+import ortus.boxlang.compiler.ast.sql.select.expression.literal.SQLNullLiteral;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
-import ortus.boxlang.runtime.jdbc.qoq.QoQExecution;
+import ortus.boxlang.runtime.jdbc.qoq.QoQSelectExecution;
 import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
@@ -90,14 +92,14 @@ public class SQLUnaryOperation extends SQLExpression {
 	 * 
 	 * @return true if the expression evaluates to a boolean value
 	 */
-	public boolean isBoolean( QoQExecution QoQExec ) {
+	public boolean isBoolean( QoQSelectExecution QoQExec ) {
 		return booleanOperators.contains( operator );
 	}
 
 	/**
 	 * What type does this expression evaluate to
 	 */
-	public QueryColumnType getType( QoQExecution QoQExec ) {
+	public QueryColumnType getType( QoQSelectExecution QoQExec ) {
 		// If this is a boolean operation, then we're a bit
 		if ( isBoolean( QoQExec ) ) {
 			return QueryColumnType.BIT;
@@ -115,14 +117,14 @@ public class SQLUnaryOperation extends SQLExpression {
 	 * 
 	 * @return true if the expression evaluates to a numeric value
 	 */
-	public boolean isNumeric( QoQExecution QoQExec ) {
+	public boolean isNumeric( QoQSelectExecution QoQExec ) {
 		return getType( QoQExec ) == QueryColumnType.DOUBLE;
 	}
 
 	/**
 	 * Evaluate the expression
 	 */
-	public Object evaluate( QoQExecution QoQExec, int[] intersection ) {
+	public Object evaluate( QoQSelectExecution QoQExec, int[] intersection ) {
 		// Implement each unary operator
 		switch ( operator ) {
 			case ISNOTNULL :
@@ -138,6 +140,41 @@ public class SQLUnaryOperation extends SQLExpression {
 			case PLUS :
 				ensureNumericOperand( QoQExec );
 				return expression.evaluate( QoQExec, intersection );
+			case BITWISE_NOT :
+				ensureNumericOperand( QoQExec );
+				Number value = evalAsNumber( expression, QoQExec, intersection );
+				if ( value == null ) {
+					return null;
+				}
+				return ~value.intValue();
+			default :
+				throw new BoxRuntimeException( "Unknown binary operator: " + operator );
+
+		}
+	}
+
+	/**
+	 * Evaluate the expression aginst a partition of data
+	 */
+	public Object evaluateAggregate( QoQSelectExecution QoQExec, List<int[]> intersections ) {
+		// Implement each unary operator
+		switch ( operator ) {
+			case ISNOTNULL :
+				return expression.evaluateAggregate( QoQExec, intersections ) != null;
+			case ISNULL :
+				return expression.evaluateAggregate( QoQExec, intersections ) != null;
+			case MINUS :
+				ensureNumericOperand( QoQExec );
+				return -evalAsNumberAggregate( expression, QoQExec, intersections );
+			case NOT :
+				ensureBooleanOperand( QoQExec );
+				return ! ( ( boolean ) expression.evaluateAggregate( QoQExec, intersections ) );
+			case PLUS :
+				ensureNumericOperand( QoQExec );
+				return expression.evaluateAggregate( QoQExec, intersections );
+			case BITWISE_NOT :
+				ensureNumericOperand( QoQExec );
+				return ~evalAsNumberAggregate( expression, QoQExec, intersections ).intValue();
 			default :
 				throw new BoxRuntimeException( "Unknown binary operator: " + operator );
 
@@ -149,7 +186,7 @@ public class SQLUnaryOperation extends SQLExpression {
 	 * 
 	 * @return true if the left and right operands are boolean expressions or bit columns
 	 */
-	private void ensureBooleanOperand( QoQExecution QoQExec ) {
+	private void ensureBooleanOperand( QoQSelectExecution QoQExec ) {
 		// These checks may or may not work. If we can't get away with this, then we can boolean cast the values
 		// but SQL doesn't really have the same concept of truthiness and mostly expects to always get booleans from boolean columns or boolean expressions
 		if ( !expression.isBoolean( QoQExec ) ) {
@@ -160,8 +197,8 @@ public class SQLUnaryOperation extends SQLExpression {
 	/**
 	 * Reusable helper method to ensure that the left and right operands are numeric expressions or numeric columns
 	 */
-	private void ensureNumericOperand( QoQExecution QoQExec ) {
-		if ( !expression.isNumeric( QoQExec ) ) {
+	private void ensureNumericOperand( QoQSelectExecution QoQExec ) {
+		if ( !expression.isNumeric( QoQExec ) && ! ( expression instanceof SQLNullLiteral ) ) {
 			throw new BoxRuntimeException( "Unary operation [" + operator.getSymbol() + "] must be a numeric expression or numeric column" );
 		}
 	}
@@ -175,14 +212,34 @@ public class SQLUnaryOperation extends SQLExpression {
 	 * 
 	 * @return
 	 */
-	private double evalAsNumber( SQLExpression expression, QoQExecution QoQExec, int[] intersection ) {
-		return ( ( Number ) expression.evaluate( QoQExec, intersection ) ).doubleValue();
+	private Double evalAsNumber( SQLExpression expression, QoQSelectExecution QoQExec, int[] intersection ) {
+		Number value = ( Number ) expression.evaluate( QoQExec, intersection );
+		if ( value == null ) {
+			return null;
+		}
+		return value.doubleValue();
+	}
+
+	/**
+	 * Helper for evaluating an expression as a number
+	 * 
+	 * @param tableLookup
+	 * @param expression
+	 * @param i
+	 * 
+	 * @return
+	 */
+	private Double evalAsNumberAggregate( SQLExpression expression, QoQSelectExecution QoQExec, List<int[]> intersections ) {
+		Number value = ( Number ) expression.evaluateAggregate( QoQExec, intersections );
+		if ( value == null ) {
+			return null;
+		}
+		return value.doubleValue();
 	}
 
 	@Override
 	public void accept( VoidBoxVisitor v ) {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException( "Unimplemented method 'accept'" );
+		v.visit( this );
 	}
 
 	@Override

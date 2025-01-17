@@ -30,7 +30,9 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxNode;
+import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxReturn;
+import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
 
 public class BoxReturnTransformer extends AbstractTransformer {
@@ -53,9 +55,12 @@ public class BoxReturnTransformer extends AbstractTransformer {
 			return AsmHelper.addLineNumberLabels( nodes, node );
 		}
 
+		BoxNode	firstFound		= node.getFirstNodeOfTypes( BoxFunctionDeclaration.class, BoxComponent.class );
+		boolean	preferFunction	= firstFound instanceof BoxFunctionDeclaration;
+
 		if ( boxReturn.getExpression() == null ) {
 			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
-		} else if ( transpiler.isInsideComponent() ) {
+		} else if ( transpiler.isInsideComponent() && !preferFunction ) {
 			nodes.addAll( transpiler.transform( boxReturn.getExpression(), TransformerContext.NONE, ReturnValueContext.VALUE_OR_NULL ) );
 			nodes.add(
 			    new MethodInsnNode(

@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.interceptors;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.events.BaseInterceptor;
 import ortus.boxlang.runtime.events.InterceptionPoint;
+import ortus.boxlang.runtime.events.Interceptor;
 import ortus.boxlang.runtime.logging.LoggingService;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
@@ -27,12 +28,20 @@ import ortus.boxlang.runtime.types.IStruct;
 /**
  * A BoxLang interceptor that provides logging capabilities
  */
+@Interceptor( autoLoad = true )
 public class Logging extends BaseInterceptor {
 
 	private static final String	DEFAULT_LOGGER	= "application";
 
 	private LoggingService		loggingService;
 	private BoxRuntime			runtime;
+
+	/**
+	 * No-Arg Constructor
+	 */
+	public Logging() {
+		this( BoxRuntime.getInstance() );
+	}
 
 	/**
 	 * Constructor

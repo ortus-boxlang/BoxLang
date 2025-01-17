@@ -156,7 +156,7 @@ public class BoxRuntimeTest {
 		                          	 break;
 		                             }
 		                          }
-		                          if(!a % 2 == 0) {
+		                          if(!(a % 2 == 0)) {
 		                          }
 		                          a +=1;
 
@@ -165,6 +165,22 @@ public class BoxRuntimeTest {
 		                          """;
 		instance.executeSource( src, context );
 		assertThat( context.getScopeNearby( VariablesScope.name ).containsKey( Key.of( "system" ) ) ).isTrue();
+
+	}
+
+	@DisplayName( "It can execute an empty script" )
+	@Test
+	public void testItCanRunAnEmptyScript() {
+
+		BoxRuntime	instance	= BoxRuntime.getInstance( true );
+		IBoxContext	context		= new ScriptingRequestBoxContext();
+
+		instance.executeSource(
+		    """
+		    // Testing code here
+		    """,
+		    context
+		);
 
 	}
 

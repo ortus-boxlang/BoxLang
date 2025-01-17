@@ -109,6 +109,13 @@ public final class EncryptionUtil {
 	private static HashMap<Key, Random>	randomStore						= new HashMap<Key, Random>();
 
 	/**
+	 * Quick 64 bit hash properties
+	 */
+	private static final long[]			byteTable						= generateHashLookupTable();
+	private static final long			HSTART							= 0xBB40E64DA205B064L;
+	private static final long			HMULT							= 7664345821815920749L;
+
+	/**
 	 * Supported key algorithms
 	 * <a href="https://docs.oracle.com/en/java/javase/17/docs/specs/security/standard-names.html#keyfactory-algorithms">key factory algorithms</a>
 	 */
@@ -808,6 +815,51 @@ public final class EncryptionUtil {
 	private static boolean isECBMode( String algorithm ) {
 		String[] algorithmParts = StringUtils.split( algorithm, "/" );
 		return algorithmParts.length > 1 && algorithmParts[ 1 ].equals( "ECB" );
+	}
+
+	/**
+	 * Creates an insecure but very fast 64 bit hash of a string
+	 * 
+	 * @param hashItem the string to hash
+	 */
+	public static String generate64BitHash( CharSequence hashItem ) {
+		return generate64BitHash( hashItem, Character.MAX_RADIX );
+	}
+
+	/**
+	 * Creates an insecure but very fast 64 bit hash of a string
+	 * 
+	 * @param hashItem the string to hash
+	 * @param size     the radix to use for the final length of the hash
+	 */
+	public static String generate64BitHash( CharSequence hashItem, int size ) {
+		long			h		= HSTART;
+		final long		hmult	= HMULT;
+		final long[]	ht		= byteTable;
+		final int		len		= hashItem.length();
+		for ( int i = 0; i < len; i++ ) {
+			char ch = hashItem.charAt( i );
+			h	= ( h * hmult ) ^ ht[ ch & 0xff ];
+			h	= ( h * hmult ) ^ ht[ ( ch >>> 8 ) & 0xff ];
+		}
+		return Long.toString( h < 0 ? 0 - h : h, size );
+	}
+
+	/**
+	 * Creates a lookup table for 64 bit hashes
+	 */
+	private static final long[] generateHashLookupTable() {
+		long[]	_byteTable	= new long[ 256 ];
+		long	h			= 0x544B2FBACAAF1684L;
+		for ( int i = 0; i < 256; i++ ) {
+			for ( int j = 0; j < 31; j++ ) {
+				h	= ( h >>> 7 ) ^ h;
+				h	= ( h << 11 ) ^ h;
+				h	= ( h >>> 10 ) ^ h;
+			}
+			_byteTable[ i ] = h;
+		}
+		return _byteTable;
 	}
 
 }

@@ -205,7 +205,7 @@ public final class LocalizationUtil {
 		NUMBER_FORMAT_PATTERNS.put( Key.of( "+" ), "+0;-0" );
 		NUMBER_FORMAT_PATTERNS.put( Key.of( "-" ), " 0;-0" );
 		NUMBER_FORMAT_PATTERNS.put( Key.dollarFormat, "$#,##0.00;($#,##0.00)" );
-		NUMBER_FORMAT_PATTERNS.put( DEFAULT_NUMBER_FORMAT_KEY, "#,#00.#" );
+		NUMBER_FORMAT_PATTERNS.put( DEFAULT_NUMBER_FORMAT_KEY, "#,##0.#" );
 	}
 
 	public static final String					CURRENCY_TYPE_LOCAL				= "local";

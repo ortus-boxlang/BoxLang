@@ -1,5 +1,22 @@
 class {
+
+	property name="name";
+
+	RelativeInstantiation function init( string item = "nothing" ){
+		variables.name = arguments.item;
+		return this;
+	}
+
 	function findSibling() {
 		return new FindMe().foo();
+	}
+	function returnSibling() {
+		return new FindMe();
+	}
+
+	function allApply( items ){
+		return arguments
+			.items
+			.map( item => new RelativeInstantiation( item ) )
 	}
 }

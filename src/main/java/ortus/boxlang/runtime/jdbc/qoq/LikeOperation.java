@@ -77,7 +77,7 @@ public class LikeOperation {
 	 * Create a pattern from the patternToSearchFor
 	 */
 	private static Pattern createPattern( String patternToSearchFor, String escape ) {
-		var	patternCacheKey	= patternToSearchFor + escape == null ? "" : escape;
+		var	patternCacheKey	= patternToSearchFor + ( escape == null ? "" : escape );
 		var	pattern			= patterns.get( patternCacheKey );
 		if ( pattern != null )
 			return pattern;
@@ -130,6 +130,7 @@ public class LikeOperation {
 
 			}
 			try {
+				System.out.println( "compiling LIKE Pattern: " + sb.toString() );
 				patterns.put( patternCacheKey, pattern = Pattern.compile( sb.toString(), Pattern.DOTALL ) );
 			} catch ( PatternSyntaxException e ) {
 				throw new DatabaseException( "Invalid LIKE pattern [" + patternToSearchFor + "] has been specified in a LIKE conditional", e );

@@ -14,20 +14,23 @@
  */
 package ortus.boxlang.compiler.ast.sql.select.expression.operation;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLExpression;
+import ortus.boxlang.compiler.ast.sql.select.expression.literal.SQLNullLiteral;
+import ortus.boxlang.compiler.ast.sql.select.expression.literal.SQLStringLiteral;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
+import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.jdbc.qoq.LikeOperation;
-import ortus.boxlang.runtime.jdbc.qoq.QoQExecution;
-import ortus.boxlang.runtime.operators.Compare;
+import ortus.boxlang.runtime.jdbc.qoq.QoQCompare;
+import ortus.boxlang.runtime.jdbc.qoq.QoQSelectExecution;
 import ortus.boxlang.runtime.operators.Concat;
-import ortus.boxlang.runtime.operators.EqualsEquals;
 import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
@@ -150,14 +153,14 @@ public class SQLBinaryOperation extends SQLExpression {
 	 * 
 	 * @return true if the expression evaluates to a boolean value
 	 */
-	public boolean isBoolean( QoQExecution QoQExec ) {
+	public boolean isBoolean( QoQSelectExecution QoQExec ) {
 		return booleanOperators.contains( operator );
 	}
 
 	/**
 	 * What type does this expression evaluate to
 	 */
-	public QueryColumnType getType( QoQExecution QoQExec ) {
+	public QueryColumnType getType( QoQSelectExecution QoQExec ) {
 		// If this is a boolean operation, then we're a bit
 		if ( isBoolean( QoQExec ) ) {
 			return QueryColumnType.BIT;
@@ -169,7 +172,7 @@ public class SQLBinaryOperation extends SQLExpression {
 		// Plus returns a string if the left and right operand were a string, otherwise it's a math operation.
 		if ( operator == SQLBinaryOperator.PLUS ) {
 			return QueryColumnType.isStringType( left.getType( QoQExec ) )
-			    && QueryColumnType.isStringType( right.getType( QoQExec ) )
+			    || QueryColumnType.isStringType( right.getType( QoQExec ) )
 			        ? QueryColumnType.VARCHAR
 			        : QueryColumnType.DOUBLE;
 		}
@@ -183,14 +186,14 @@ public class SQLBinaryOperation extends SQLExpression {
 	 * 
 	 * @return true if the expression evaluates to a numeric value
 	 */
-	public boolean isNumeric( QoQExecution QoQExec ) {
+	public boolean isNumeric( QoQSelectExecution QoQExec ) {
 		return getType( QoQExec ) == QueryColumnType.DOUBLE;
 	}
 
 	/**
 	 * Evaluate the expression
 	 */
-	public Object evaluate( QoQExecution QoQExec, int[] intersection ) {
+	public Object evaluate( QoQSelectExecution QoQExec, int[] intersection ) {
 		Object	leftValue;
 		Object	rightValue;
 		Double	leftNum;
@@ -199,7 +202,7 @@ public class SQLBinaryOperation extends SQLExpression {
 		// Implement each binary operator
 		switch ( operator ) {
 			case DIVIDE :
-				ensureNumericOperands( QoQExec );
+				// ensureNumericOperands( QoQExec );
 				leftNum = evalAsNumber( left, QoQExec, intersection );
 				rightNum = evalAsNumber( right, QoQExec, intersection );
 				if ( leftNum == null || rightNum == null ) {
@@ -212,35 +215,70 @@ public class SQLBinaryOperation extends SQLExpression {
 			case EQUAL :
 				leftValue = left.evaluate( QoQExec, intersection );
 				rightValue = right.evaluate( QoQExec, intersection );
-				return EqualsEquals.invoke( leftValue, rightValue, true );
+				return QoQCompare.invoke( left.getType( QoQExec ), leftValue, rightValue ) == 0;
 			case GREATERTHAN :
-				return Compare.invoke( left.evaluate( QoQExec, intersection ), right.evaluate( QoQExec, intersection ), true ) == 1;
+				leftValue = left.evaluate( QoQExec, intersection );
+				rightValue = right.evaluate( QoQExec, intersection );
+				return QoQCompare.invoke( left.getType( QoQExec ), leftValue, rightValue ) == 1;
 			case GREATERTHANOREQUAL :
-				compareResult = Compare.invoke( left.evaluate( QoQExec, intersection ), right.evaluate( QoQExec, intersection ), true );
+				leftValue = left.evaluate( QoQExec, intersection );
+				rightValue = right.evaluate( QoQExec, intersection );
+				compareResult = QoQCompare.invoke( left.getType( QoQExec ), leftValue, rightValue );
 				return compareResult == 1 || compareResult == 0;
 			case LESSTHAN :
-				return Compare.invoke( left.evaluate( QoQExec, intersection ), right.evaluate( QoQExec, intersection ), true ) == -1;
+				leftValue = left.evaluate( QoQExec, intersection );
+				rightValue = right.evaluate( QoQExec, intersection );
+				return QoQCompare.invoke( left.getType( QoQExec ), leftValue, rightValue ) == -1;
 			case LESSTHANOREQUAL :
-				compareResult = Compare.invoke( left.evaluate( QoQExec, intersection ), right.evaluate( QoQExec, intersection ), true );
+				leftValue = left.evaluate( QoQExec, intersection );
+				rightValue = right.evaluate( QoQExec, intersection );
+				compareResult = QoQCompare.invoke( left.getType( QoQExec ), leftValue, rightValue );
 				return compareResult == -1 || compareResult == 0;
 			case MINUS :
-				ensureNumericOperands( QoQExec );
+				// ensureNumericOperands( QoQExec );
 				leftNum = evalAsNumber( left, QoQExec, intersection );
 				rightNum = evalAsNumber( right, QoQExec, intersection );
 				if ( leftNum == null || rightNum == null ) {
 					return null;
 				}
 				return leftNum - rightNum;
-			case MODULO :
-				ensureNumericOperands( QoQExec );
+			case BITWISE_AND :
+				// ensureNumericOperands( QoQExec );
 				leftNum = evalAsNumber( left, QoQExec, intersection );
 				rightNum = evalAsNumber( right, QoQExec, intersection );
 				if ( leftNum == null || rightNum == null ) {
 					return null;
 				}
+				return leftNum.intValue() & rightNum.intValue();
+			case BITWISE_OR :
+				// ensureNumericOperands( QoQExec );
+				leftNum = evalAsNumber( left, QoQExec, intersection );
+				rightNum = evalAsNumber( right, QoQExec, intersection );
+				if ( leftNum == null || rightNum == null ) {
+					return null;
+				}
+				return leftNum.intValue() | rightNum.intValue();
+			case BITWISE_XOR :
+				// ensureNumericOperands( QoQExec );
+				leftNum = evalAsNumber( left, QoQExec, intersection );
+				rightNum = evalAsNumber( right, QoQExec, intersection );
+				if ( leftNum == null || rightNum == null ) {
+					return null;
+				}
+				return leftNum.intValue() ^ rightNum.intValue();
+			case MODULO :
+				// ensureNumericOperands( QoQExec );
+				leftNum = evalAsNumber( left, QoQExec, intersection );
+				rightNum = evalAsNumber( right, QoQExec, intersection );
+				if ( leftNum == null || rightNum == null ) {
+					return null;
+				}
+				if ( rightNum.doubleValue() == 0 ) {
+					throw new BoxRuntimeException( "Division by zero" );
+				}
 				return leftNum % rightNum;
 			case MULTIPLY :
-				ensureNumericOperands( QoQExec );
+				// ensureNumericOperands( QoQExec );
 				leftNum = evalAsNumber( left, QoQExec, intersection );
 				rightNum = evalAsNumber( right, QoQExec, intersection );
 				if ( leftNum == null || rightNum == null ) {
@@ -250,9 +288,9 @@ public class SQLBinaryOperation extends SQLExpression {
 			case NOTEQUAL :
 				leftValue = left.evaluate( QoQExec, intersection );
 				rightValue = right.evaluate( QoQExec, intersection );
-				return !EqualsEquals.invoke( leftValue, rightValue, true );
+				return QoQCompare.invoke( left.getType( QoQExec ), leftValue, rightValue ) != 0;
 			case AND :
-				ensureBooleanOperands( QoQExec );
+				// ensureBooleanOperands( QoQExec );
 				leftValue = left.evaluate( QoQExec, intersection );
 				// Short circuit, don't eval right if left is false
 				if ( ( Boolean ) leftValue ) {
@@ -261,7 +299,7 @@ public class SQLBinaryOperation extends SQLExpression {
 					return false;
 				}
 			case OR :
-				ensureBooleanOperands( QoQExec );
+				// ensureBooleanOperands( QoQExec );
 				if ( ( Boolean ) left.evaluate( QoQExec, intersection ) ) {
 					return true;
 				}
@@ -270,7 +308,9 @@ public class SQLBinaryOperation extends SQLExpression {
 				}
 				return false;
 			case PLUS :
-				if ( left.isNumeric( QoQExec ) && right.isNumeric( QoQExec ) ) {
+				// If both sides are numeric, or null
+				// This ensure null + 5 is still math.
+				if ( ( left.isNumeric( QoQExec ) || left instanceof SQLNullLiteral ) && ( right.isNumeric( QoQExec ) || right instanceof SQLNullLiteral ) ) {
 					leftNum		= evalAsNumber( left, QoQExec, intersection );
 					rightNum	= evalAsNumber( right, QoQExec, intersection );
 					if ( leftNum == null || rightNum == null ) {
@@ -292,9 +332,151 @@ public class SQLBinaryOperation extends SQLExpression {
 	}
 
 	/**
+	 * Evaluate the expression aginst a partition of data
+	 */
+	public Object evaluateAggregate( QoQSelectExecution QoQExec, List<int[]> intersections ) {
+		if ( intersections.isEmpty() ) {
+			if ( isBoolean( QoQExec ) ) {
+				return false;
+			} else {
+				return null;
+			}
+		}
+		Object	leftValue;
+		Object	rightValue;
+		Double	leftNum;
+		Double	rightNum;
+		int		compareResult;
+		// Implement each binary operator
+		switch ( operator ) {
+			case DIVIDE :
+				// ensureNumericOperands( QoQExec );
+				leftNum = evalAsNumberAggregate( left, QoQExec, intersections );
+				rightNum = evalAsNumberAggregate( right, QoQExec, intersections );
+				if ( leftNum == null || rightNum == null ) {
+					return null;
+				}
+				if ( rightNum.doubleValue() == 0 ) {
+					throw new BoxRuntimeException( "Division by zero" );
+				}
+				return leftNum / rightNum;
+			case EQUAL :
+				leftValue = left.evaluateAggregate( QoQExec, intersections );
+				rightValue = right.evaluateAggregate( QoQExec, intersections );
+				return QoQCompare.invoke( left.getType( QoQExec ), leftValue, rightValue ) == 0;
+			case GREATERTHAN :
+				return QoQCompare.invoke( left.getType( QoQExec ), left.evaluateAggregate( QoQExec, intersections ),
+				    right.evaluateAggregate( QoQExec, intersections ) ) == 1;
+			case GREATERTHANOREQUAL :
+				compareResult = QoQCompare.invoke( left.getType( QoQExec ), left.evaluateAggregate( QoQExec, intersections ),
+				    right.evaluateAggregate( QoQExec, intersections ) );
+				return compareResult == 1 || compareResult == 0;
+			case LESSTHAN :
+				return QoQCompare.invoke( left.getType( QoQExec ), left.evaluateAggregate( QoQExec, intersections ),
+				    right.evaluateAggregate( QoQExec, intersections ) ) == -1;
+			case LESSTHANOREQUAL :
+				compareResult = QoQCompare.invoke( left.getType( QoQExec ), left.evaluateAggregate( QoQExec, intersections ),
+				    right.evaluateAggregate( QoQExec, intersections ) );
+				return compareResult == -1 || compareResult == 0;
+			case MINUS :
+				// ensureNumericOperands( QoQExec );
+				leftNum = evalAsNumberAggregate( left, QoQExec, intersections );
+				rightNum = evalAsNumberAggregate( right, QoQExec, intersections );
+				if ( leftNum == null || rightNum == null ) {
+					return null;
+				}
+				return leftNum - rightNum;
+			case BITWISE_AND :
+				// ensureNumericOperands( QoQExec );
+				leftNum = evalAsNumberAggregate( left, QoQExec, intersections );
+				rightNum = evalAsNumberAggregate( right, QoQExec, intersections );
+				if ( leftNum == null || rightNum == null ) {
+					return null;
+				}
+				return leftNum.intValue() & rightNum.intValue();
+			case BITWISE_OR :
+				// ensureNumericOperands( QoQExec );
+				leftNum = evalAsNumberAggregate( left, QoQExec, intersections );
+				rightNum = evalAsNumberAggregate( right, QoQExec, intersections );
+				if ( leftNum == null || rightNum == null ) {
+					return null;
+				}
+				return leftNum.intValue() | rightNum.intValue();
+			case BITWISE_XOR :
+				// ensureNumericOperands( QoQExec );
+				leftNum = evalAsNumberAggregate( left, QoQExec, intersections );
+				rightNum = evalAsNumberAggregate( right, QoQExec, intersections );
+				if ( leftNum == null || rightNum == null ) {
+					return null;
+				}
+				return leftNum.intValue() ^ rightNum.intValue();
+			case MODULO :
+				// ensureNumericOperands( QoQExec );
+				leftNum = evalAsNumberAggregate( left, QoQExec, intersections );
+				rightNum = evalAsNumberAggregate( right, QoQExec, intersections );
+				if ( leftNum == null || rightNum == null ) {
+					return null;
+				}
+				if ( rightNum.doubleValue() == 0 ) {
+					throw new BoxRuntimeException( "Division by zero" );
+				}
+				return leftNum % rightNum;
+			case MULTIPLY :
+				// ensureNumericOperands( QoQExec );
+				leftNum = evalAsNumberAggregate( left, QoQExec, intersections );
+				rightNum = evalAsNumberAggregate( right, QoQExec, intersections );
+				if ( leftNum == null || rightNum == null ) {
+					return null;
+				}
+				return leftNum * rightNum;
+			case NOTEQUAL :
+				leftValue = left.evaluateAggregate( QoQExec, intersections );
+				rightValue = right.evaluateAggregate( QoQExec, intersections );
+				return QoQCompare.invoke( left.getType( QoQExec ), leftValue, rightValue ) != 0;
+			case AND :
+				// ensureBooleanOperands( QoQExec );
+				leftValue = left.evaluateAggregate( QoQExec, intersections );
+				// Short circuit, don't eval right if left is false
+				if ( ( Boolean ) leftValue ) {
+					return ( Boolean ) right.evaluateAggregate( QoQExec, intersections );
+				} else {
+					return false;
+				}
+			case OR :
+				// ensureBooleanOperands( QoQExec );
+				if ( ( Boolean ) left.evaluateAggregate( QoQExec, intersections ) ) {
+					return true;
+				}
+				if ( ( Boolean ) right.evaluateAggregate( QoQExec, intersections ) ) {
+					return true;
+				}
+				return false;
+			case PLUS :
+				if ( left.isNumeric( QoQExec ) && right.isNumeric( QoQExec ) ) {
+					leftNum		= evalAsNumberAggregate( left, QoQExec, intersections );
+					rightNum	= evalAsNumberAggregate( right, QoQExec, intersections );
+					if ( leftNum == null || rightNum == null ) {
+						return null;
+					}
+					return leftNum + rightNum;
+				} else {
+					return Concat.invoke( left.evaluateAggregate( QoQExec, intersections ), right.evaluateAggregate( QoQExec, intersections ) );
+				}
+			case LIKE :
+				return doLikeAggregate( QoQExec, intersections );
+			case NOTLIKE :
+				return !doLikeAggregate( QoQExec, intersections );
+			case CONCAT :
+				return Concat.invoke( left.evaluateAggregate( QoQExec, intersections ), right.evaluateAggregate( QoQExec, intersections ) );
+			default :
+				throw new BoxRuntimeException( "Unknown binary operator: " + operator );
+		}
+	}
+
+	/**
 	 * Implement LIKE so we can reuse for NOT LIKE
 	 */
-	private boolean doLike( QoQExecution QoQExec, int[] intersection ) {
+	private boolean doLike( QoQSelectExecution QoQExec, int[] intersection ) {
 		String	leftValueStr	= StringCaster.cast( left.evaluate( QoQExec, intersection ) );
 		String	rightValueStr	= StringCaster.cast( right.evaluate( QoQExec, intersection ) );
 		String	escapeValue		= null;
@@ -305,30 +487,49 @@ public class SQLBinaryOperation extends SQLExpression {
 	}
 
 	/**
+	 * Implement LIKE so we can reuse for NOT LIKE
+	 */
+	private boolean doLikeAggregate( QoQSelectExecution QoQExec, List<int[]> intersections ) {
+		String	leftValueStr	= StringCaster.cast( left.evaluateAggregate( QoQExec, intersections ) );
+		String	rightValueStr	= StringCaster.cast( right.evaluateAggregate( QoQExec, intersections ) );
+		String	escapeValue		= null;
+		if ( escape != null ) {
+			escapeValue = StringCaster.cast( escape.evaluateAggregate( QoQExec, intersections ) );
+		}
+		return LikeOperation.invoke( leftValueStr, rightValueStr, escapeValue );
+	}
+
+	/**
 	 * Reusable helper method to ensure that the left and right operands are boolean expressions or bit columns
 	 * 
 	 * @return true if the left and right operands are boolean expressions or bit columns
 	 */
-	private void ensureBooleanOperands( QoQExecution QoQExec ) {
+	private void ensureBooleanOperands( QoQSelectExecution QoQExec ) {
 		// These checks may or may not work. If we can't get away with this, then we can boolean cast the values
 		// but SQL doesn't really have the same concept of truthiness and mostly expects to always get booleans from boolean columns or boolean expressions
 		if ( !left.isBoolean( QoQExec ) ) {
-			throw new BoxRuntimeException( "Left side of a boolean [" + operator.getSymbol() + "] operation must be a boolean expression or bit column" );
+			throw new BoxRuntimeException( "Left side of a boolean [" + operator.getSymbol() + "] operation must be a boolean expression or bit column. It is ["
+			    + left.getClass().getName() + "]" );
 		}
 		if ( !right.isBoolean( QoQExec ) ) {
-			throw new BoxRuntimeException( "Right side of a boolean [" + operator.getSymbol() + "] operation must be a boolean expression or bit column" );
+			throw new BoxRuntimeException( "Right side of a boolean [" + operator.getSymbol()
+			    + "] operation must be a boolean expression or bit column. It is [" + right.getClass().getName() + "]" );
 		}
 	}
 
 	/**
 	 * Reusable helper method to ensure that the left and right operands are numeric expressions or numeric columns
+	 * nulls are ok in math operations
+	 * Strings we'll let slide too since "" casts to a 0
 	 */
-	private void ensureNumericOperands( QoQExecution QoQExec ) {
-		if ( !left.isNumeric( QoQExec ) ) {
-			throw new BoxRuntimeException( "Left side of a math [" + operator.getSymbol() + "] operation must be a numeric expression or numeric column" );
+	private void ensureNumericOperands( QoQSelectExecution QoQExec ) {
+		if ( !left.isNumeric( QoQExec ) && ! ( left instanceof SQLNullLiteral ) && ! ( left instanceof SQLStringLiteral ) ) {
+			throw new BoxRuntimeException( "Left side of a math [" + operator.getSymbol()
+			    + "] operation must be a numeric expression or numeric column. It is [" + left.getClass().getName() + "]" );
 		}
-		if ( !right.isNumeric( QoQExec ) ) {
-			throw new BoxRuntimeException( "Right side of a math [" + operator.getSymbol() + "] operation must be a numeric expression or numeric column" );
+		if ( !right.isNumeric( QoQExec ) && ! ( right instanceof SQLNullLiteral ) && ! ( right instanceof SQLStringLiteral ) ) {
+			throw new BoxRuntimeException( "Right side of a math [" + operator.getSymbol()
+			    + "] operation must be a numeric expression or numeric column. It is [" + right.getClass().getName() + "]" );
 		}
 	}
 
@@ -341,14 +542,62 @@ public class SQLBinaryOperation extends SQLExpression {
 	 * 
 	 * @return
 	 */
-	private double evalAsNumber( SQLExpression expression, QoQExecution QoQExec, int[] intersection ) {
-		return ( ( Number ) expression.evaluate( QoQExec, intersection ) ).doubleValue();
+	private Double evalAsNumber( SQLExpression expression, QoQSelectExecution QoQExec, int[] intersection ) {
+		Object	value	= expression.evaluate( QoQExec, intersection );
+		Number	nValue	= 0;
+		if ( value == null ) {
+			nValue = null;
+		} else if ( value instanceof Number n ) {
+			nValue = n;
+		} else if ( value instanceof String s ) {
+			if ( s.isEmpty() ) {
+				nValue = 0;
+			} else {
+				throw new BoxRuntimeException( "Cannot string as a number: [" + s + "]" );
+			}
+		} else {
+			nValue = NumberCaster.cast( value );
+		}
+		if ( nValue == null ) {
+			return null;
+		}
+		return nValue.doubleValue();
+	}
+
+	/**
+	 * Helper for evaluating an expression as a number
+	 * 
+	 * @param tableLookup
+	 * @param expression
+	 * @param i
+	 * 
+	 * @return
+	 */
+	private Double evalAsNumberAggregate( SQLExpression expression, QoQSelectExecution QoQExec, List<int[]> intersections ) {
+		Object	value	= expression.evaluateAggregate( QoQExec, intersections );
+		Number	nValue	= 0;
+		if ( value == null ) {
+			nValue = null;
+		} else if ( value instanceof Number n ) {
+			nValue = n;
+		} else if ( value instanceof String s ) {
+			if ( s.isEmpty() ) {
+				nValue = 0;
+			} else {
+				throw new BoxRuntimeException( "Cannot string as a number: [" + s + "]" );
+			}
+		} else {
+			nValue = NumberCaster.cast( value );
+		}
+		if ( nValue == null ) {
+			return null;
+		}
+		return nValue.doubleValue();
 	}
 
 	@Override
 	public void accept( VoidBoxVisitor v ) {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException( "Unimplemented method 'accept'" );
+		v.visit( this );
 	}
 
 	@Override

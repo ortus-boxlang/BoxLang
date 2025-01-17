@@ -19,6 +19,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
 import ortus.boxlang.runtime.BoxRuntime;
@@ -77,10 +78,15 @@ public class DataSource implements Comparable<DataSource> {
 		);
 		// Retrieve and store the potentially modified configuration from the event.
 		this.configuration = eventParams.getAs( DatasourceConfig.class, Key.of( "config" ) );
+		HikariConfig hikariConfig = null;
 		try {
-			this.hikariDataSource = new HikariDataSource( this.configuration.toHikariConfig() );
+			hikariConfig			= this.configuration.toHikariConfig();
+			this.hikariDataSource	= new HikariDataSource( hikariConfig );
 		} catch ( RuntimeException e ) {
-			throw new BoxRuntimeException( "Unable to create datasource connection: " + e.getMessage(), e );
+			String message = hikariConfig != null
+			    ? "Unable to create datasource connection to URL [" + hikariConfig.getJdbcUrl() + "] : "
+			    : "Unable to create datasource connection: ";
+			throw new BoxRuntimeException( message + e.getMessage(), e );
 		}
 	}
 
@@ -251,6 +257,12 @@ public class DataSource implements Comparable<DataSource> {
 		}
 	}
 
+	/**
+	 * Execute a query on the default connection, within the specific context.
+	 * 
+	 * @param query   The SQL query to execute.
+	 * @param context The boxlang context for localization. Useful for localization; i.e., queries with date or time values.
+	 */
 	public ExecutedQuery execute( String query, IBoxContext context ) {
 		try ( Connection conn = getConnection() ) {
 			return execute( query, conn, context );

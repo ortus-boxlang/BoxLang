@@ -105,15 +105,15 @@ public class FileTesterTest {
 		// instance.useJavaBoxpiler();
 		instance.executeSource(
 		    """
-		    y = []
-		       savecontent variable="x" {
-		       	if( true ){
-		       		loop array="#y#" index = "i" {
+		       y = []
+		    bx:savecontent variable="x" {
+		          	if( true ){
+		    		bx:loop array="#y#" index = "i" {
 
-		       		}
-		       	}
-		       }
-		                                     """,
+		          		}
+		          	}
+		          }
+		                                        """,
 		    context );
 	}
 

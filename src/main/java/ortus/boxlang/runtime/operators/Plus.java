@@ -43,8 +43,8 @@ public class Plus implements IOperator {
 	 * @return The the sum
 	 */
 	public static Number invoke( Object left, Object right ) {
-		Number	nLeft	= NumberCaster.cast( left );
-		Number	nRight	= NumberCaster.cast( right );
+		Number	nLeft	= NumberCaster.cast( true, left );
+		Number	nRight	= NumberCaster.cast( true, right );
 		// A couple shortcuts-- if both operands are integers or longs within a certain range, we can just add them safely
 		// If these checks turn into a performance overhead, we can remove them, but I was hoping it would be worth it since
 		// BigDecimals are over twice the heap usage of a Double (~64 bits vs ~24 bits)

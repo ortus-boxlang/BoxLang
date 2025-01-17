@@ -230,18 +230,18 @@ public class BoxTemplateTest {
 	public void testComponentIslandBufferOrder() {
 		instance.executeSource(
 		    """
-		      setting enableOutputOnly=true;
-		        	echo( "I am a script" )
+		    bx:setting enableOutputOnly=true;
+		          	echo( "I am a script" )
 
-		        	```
-		        	<!--- Now I can do templating --->
-		        	<bx:output>hello</bx:output>
-		        	```
+		          	```
+		          	<!--- Now I can do templating --->
+		          	<bx:output>hello</bx:output>
+		          	```
 
-		        	// Now I am back in scripts
-		        	echo( "scripts again" )
-		    result = getBoxContext().getBuffer().toString()
-		        """, context, BoxSourceType.BOXSCRIPT );
+		          	// Now I am back in scripts
+		          	echo( "scripts again" )
+		      result = getBoxContext().getBuffer().toString()
+		          """, context, BoxSourceType.BOXSCRIPT );
 		assertThat( variables.get( result ) ).isEqualTo( "I am a scripthelloscripts again" );
 	}
 
@@ -569,10 +569,10 @@ public class BoxTemplateTest {
 
 		assertThat( ce.getMessage() ).isEqualTo( "my message" );
 		assertThat( ce.getCause() ).isNull();
-		assertThat( ce.detail ).isEqualTo( "my detail" );
-		assertThat( ce.errorCode ).isEqualTo( "42" );
-		assertThat( ce.extendedInfo ).isInstanceOf( Array.class );
-		assertThat( ce.type ).isEqualTo( "my.type" );
+		assertThat( ce.getDetail() ).isEqualTo( "my detail" );
+		assertThat( ce.getErrorCode() ).isEqualTo( "42" );
+		assertThat( ce.getExtendedInfo() ).isInstanceOf( Array.class );
+		assertThat( ce.getType() ).isEqualTo( "my.type" );
 
 	}
 
@@ -593,10 +593,10 @@ public class BoxTemplateTest {
 
 		assertThat( ce.getMessage() ).isEqualTo( "my message" );
 		assertThat( ce.getCause() ).isNull();
-		assertThat( ce.detail ).isEqualTo( "my detail" );
-		assertThat( ce.errorCode ).isEqualTo( "42" );
-		assertThat( ce.extendedInfo ).isInstanceOf( Array.class );
-		assertThat( ce.type ).isEqualTo( "my.type" );
+		assertThat( ce.getDetail() ).isEqualTo( "my detail" );
+		assertThat( ce.getErrorCode() ).isEqualTo( "42" );
+		assertThat( ce.getExtendedInfo() ).isInstanceOf( Array.class );
+		assertThat( ce.getType() ).isEqualTo( "my.type" );
 	}
 
 	@Test
@@ -617,8 +617,8 @@ public class BoxTemplateTest {
 
 		assertThat( ce.getMessage() ).isEqualTo( "my message" );
 		assertThat( ce.getCause() ).isNull();
-		assertThat( ce.detail ).isEqualTo( "my detail" );
-		assertThat( ce.type ).isEqualTo( "custom" );
+		assertThat( ce.getDetail() ).isEqualTo( "my detail" );
+		assertThat( ce.getType() ).isEqualTo( "custom" );
 	}
 
 	@Test
@@ -789,26 +789,26 @@ public class BoxTemplateTest {
 	public void testGenericComponentsInScript() {
 		instance.executeSource(
 		    """
-		    http url="http://google.com" throwOnTimeout=true {
-		    	foo = "bar";
-		    	baz=true;
-		    }
+		       bx:http url="http://google.com" throwOnTimeout=true {
+		       	foo = "bar";
+		       	baz=true;
+		       }
 
-		    http url="http://google.com" throwOnTimeout=true;
+		    bx:http url="http://google.com" throwOnTimeout=true;
 
-		                  """,
+		                     """,
 		    context, BoxSourceType.BOXSCRIPT );
 	}
 
 	@Test
-	public void testNonExistentcComponentsInScript() {
+	public void testNonExistentComponentsInScript() {
 		Throwable e = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
 		    """
-		    brad {
-		    }
-		          """,
+		    bx:brad {
+		      }
+		            """,
 		    context, BoxSourceType.BOXSCRIPT ) );
-		assertThat( e.getMessage() ).contains( "[brad] was not located" );
+		assertThat( e.getMessage() ).contains( "[brad] could not be found" );
 	}
 
 	@Test
@@ -896,13 +896,13 @@ public class BoxTemplateTest {
 	public void testLoopConditionScript() {
 		instance.executeSource(
 		    """
-		      result = "";
-		    counter=0;
-		    		 loop condition="counter LT 5" {
-		    			 counter++
-		    			result &= counter
-		    	}
-		    	""", context, BoxSourceType.BOXSCRIPT );
+		         result = "";
+		       counter=0;
+		    bx:loop condition="counter LT 5" {
+		       			 counter++
+		       			result &= counter
+		       	}
+		       	""", context, BoxSourceType.BOXSCRIPT );
 		assertThat( variables.get( result ) ).isEqualTo( "12345" );
 	}
 
@@ -910,13 +910,13 @@ public class BoxTemplateTest {
 	public void testLoopConditionExprScript() {
 		instance.executeSource(
 		    """
-		      result = "";
-		    counter=0;
-		    		 loop condition="#counter LT 5#" {
-		    			 counter++
-		    			result &= counter
-		    	}
-		    	""", context, BoxSourceType.BOXSCRIPT );
+		         result = "";
+		       counter=0;
+		    bx:loop condition="#counter LT 5#" {
+		       			 counter++
+		       			result &= counter
+		       	}
+		       	""", context, BoxSourceType.BOXSCRIPT );
 		assertThat( variables.get( result ) ).isEqualTo( "12345" );
 	}
 
@@ -1310,6 +1310,20 @@ public class BoxTemplateTest {
 		    context, BoxSourceType.BOXTEMPLATE );
 		assertThat( variables.get( result ) ).isEqualTo( "bar" );
 		assertThat( variables.getAsString( Key.output ).trim() ).isEqualTo( "<" );
+	}
+
+	@Test
+	public void testAccessBXCatchInOutput() {
+		instance.executeSource(
+		    """
+		    <bx:try>
+		    	<bx:include template="#p#.bxm">
+		    	<bx:catch type="any">
+		    		<bx:output>#bxcatch.message#sdf</bx:output>
+		    	</bx:catch>
+		    </bx:try>
+		           """,
+		    context, BoxSourceType.BOXTEMPLATE );
 	}
 
 }

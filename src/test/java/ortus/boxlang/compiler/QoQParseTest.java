@@ -19,8 +19,10 @@ import static com.google.common.truth.Truth.assertThat;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.compiler.parser.ParsingResult;
 import ortus.boxlang.compiler.parser.SQLParser;
 import ortus.boxlang.runtime.BoxRuntime;
@@ -30,6 +32,8 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Query;
+import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.Struct;
 
 public class QoQParseTest {
@@ -38,6 +42,7 @@ public class QoQParseTest {
 	IBoxContext			context;
 	IScope				variables;
 	static Key			result	= new Key( "result" );
+	static Key			q		= new Key( "q" );
 
 	@BeforeAll
 	public static void setUp() {
@@ -61,15 +66,13 @@ public class QoQParseTest {
 		    """
 		    select foo, bar b, bum as b2, *
 		    from mytable t
-		    where true
+		    where true = true
 		    order by t.baz
 		    limit 5
-		      """
-		);
+		      """ );
 		IStruct			data	= Struct.of(
 		    "file", null,
-		    "result", result
-		);
+		    "result", result );
 		BoxRuntime.getInstance().announce( "onParse", data );
 
 		assertThat( result ).isNotNull();
@@ -82,19 +85,534 @@ public class QoQParseTest {
 	public void testRunQoQ() {
 		instance.executeSource(
 		    """
-		                qryEmployees = queryNew( "name,age,dept", "varchar,integer,varchar", [["brad",44,"IT"],["luis",43,"Exec"],["Jon",45,"IT"]] )
-		                qryDept = queryNew( "name,code", "varchar,integer", [["IT",404],["Exec",200]] )
-		                        q = queryExecute( "
-		          select e.*, d.code
-		       from qryEmployees e, qryDept d
-		    where e.dept = d.name
-		               ",
-		                     	[],
-		                     	{ dbType : "query" }
-		                     );
-		                  println( q )
-		                     """,
+		                 qryEmployees = queryNew(
+		     	"name,age,dept,supervisor",
+		     	"varchar,integer,varchar,varchar",
+		     	[
+		     		["luis",43,"Exec","luis"],
+		     		["brad",44,"IT","luis"],
+		     		["Jon",45,"HR","luis"]
+		     		]
+		     	)
+		                 qryDept = queryNew( "name,code", "varchar,integer", [["IT",404],["Exec",200],["Janitor",200]] )
+		                         q = queryExecute( "
+		           select e.*, [s].[name] as [supName], d.name as deptname
+		        from [variables].[qryEmployees] e
+		     inner join qryEmployees s on e.supervisor = s.name
+		      full join qryDept d on e.dept = d.name
+		    where d.name in ('IT','HR')
+		                ",
+		                      	[],
+		                      	{ dbType : "query" }
+		                      );
+		                   println( q )
+		                      """,
 		    context );
+	}
+
+	@Test
+	public void testRunQoQUnion() {
+		instance.executeSource(
+		    """
+		                 qryDept = queryNew( "name,code", "varchar,integer", [["IT",404],["Exec",200],["Janitor",200]] )
+		                q = queryExecute( "
+		                select name as col from qryDept
+		          union all select 'bar' as sfd
+		       union select 'foo' as col
+		    order by col desc
+		                        ",
+		                              	[],
+		                              	{ dbType : "query" }
+		                              );
+		                           println( q )
+		                              """,
+		    context );
+	}
+
+	@Test
+	public void testRunQoQUnion2() {
+		instance.executeSource(
+		    """
+		                 qryDept = queryNew( "name,code", "varchar,integer", [["IT",404],["Exec",200],["Janitor",200]] )
+		                q = queryExecute( "
+		                select name as col from qryDept
+		          union select name from qryDept
+		    order by col desc
+		                        ",
+		                              	[],
+		                              	{ dbType : "query" }
+		                              );
+		                           println( q )
+		                              """,
+		    context );
+	}
+
+	@Test
+	public void testRunQoQUnionDistinct() {
+		instance.executeSource(
+		    """
+		             q = queryExecute( "
+		       select 'foo' as col
+		       union select 'foo'
+		    union select 'foo'
+		    union select 'foo'
+		    union select 'foo'
+		    union select 'foo'
+		    union select 'foo'  -- Actual de-duplication runs here
+		    union all select 'foo'
+		    union all select 'foo'
+		                     ",
+		                           	[],
+		                           	{ dbType : "query" }
+		                           );
+		                        println( q )
+		                           """,
+		    context );
+		assertThat( variables.getAsQuery( q ).size() ).isEqualTo( 3 );
+	}
+
+	@Test
+	public void testSubquery() {
+		instance.executeSource(
+		    """
+		                  q = queryExecute( "
+		         select col as brad from (
+		        			select 'foo' as col
+		    			union select 'bar'
+		       ) as t
+		    order by brad asc
+
+		                         ",
+		                               	[],
+		                               	{ dbType : "query" }
+		                               );
+		                            println( q )
+		                               """,
+		    context );
+	}
+
+	@Test
+	public void testSubquery2() {
+		instance.executeSource(
+		    """
+		                 qryEmployees = queryNew(
+		     	"name,age,dept,supervisor",
+		     	"varchar,integer,varchar,varchar",
+		     	[
+		     		["luis",43,"Exec","luis"],
+		     		["brad",44,"IT","luis"],
+		     		["Jon",45,"HR","luis"]
+		     		]
+		     	)
+		                 qryDept = queryNew( "name,code", "varchar,integer", [["IT",404],["Exec",200],["Janitor",200]] )
+		                         q = queryExecute( "
+		           select e.*, s.name as supName, d.name as deptname
+		        from (select * from qryEmployees) e
+		     inner join (select * from qryEmployees) s on e.supervisor = s.name
+		      full join (select * from qryDept) d on e.dept = d.name
+		    where d.name in ('IT','HR')
+		                ",
+		                      	[],
+		                      	{ dbType : "query" }
+		                      );
+		                   println( q )
+		                      """,
+		    context );
+	}
+
+	@Test
+	public void testInSubquery() {
+		instance.executeSource(
+		    """
+
+		    qryMen = queryNew( "name", "varchar", [["Luis"],["Jon"],["Brad"]] )
+		    qryAll = queryNew( "name", "varchar", [["Luis"],["Jon"],["Brad"],["Esme"],["Myrna"]] )
+		                     q = queryExecute( "
+		            select *
+		    	 from qryAll
+		    	 where name in ( select name from qryMen )
+
+		                            ",
+		                                  	[],
+		                                  	{ dbType : "query" }
+		                                  );
+		                               println( q )
+		                     q = queryExecute( "
+		            select *
+		    	 from qryAll
+		    	 where name not in ( select name from qryMen )
+
+		                            ",
+		                                  	[],
+		                                  	{ dbType : "query" }
+		                                  );
+		                               println( q )
+		                                  """,
+		    context );
+	}
+
+	@Test
+	public void testcustomFunc() {
+		instance.executeSource(
+		    """
+		       // Register a custom function
+		    queryRegisterFunction( "reverse", ::reverse, "varchar" )
+
+		                              q = queryExecute( "
+		                     select reverse( 'Brad' ) as rev
+		                                     ",
+		                                           	[],
+		                                           	{ dbType : "query" }
+		                                           );
+		                                        println( q )
+
+		                                           """,
+		    context );
+	}
+
+	@Test
+	public void testcustomFuncAggregate() {
+		instance.executeSource(
+		    """
+		       // Register a custom aggregate function
+		    queryRegisterFunction(  "arrayToList", ::arrayToList, "varchar", "aggregate" )
+
+		       qryAll = queryNew( "name", "varchar", [["Luis"],["Jon"],["Brad"],["Esme"],["Myrna"]] )
+		                              q = queryExecute( "
+		                     select arrayToList( name ) as names
+		         from qryAll
+		                                     ",
+		                                           	[],
+		                                           	{ dbType : "query" }
+		                                           );
+		                                        println( q )
+
+		                                           """,
+		    context );
+	}
+
+	@Test
+	public void testcustomFuncAggregateUDF() {
+		instance.executeSource(
+		    """
+		         // Register a custom aggregate function
+		    queryRegisterFunction(  "fullNameList", (firsts,lasts)->firsts.reduce( (acc,first,i)=>acc.listAppend( first & ' ' & lasts[i] ), "" ), "varchar", "aggregate" )
+
+		         qryAll = queryNew( "first,last", "varchar,varchar", [["Luis","Majano"],["Jon","Clausen"],["Brad","Wood"],["Esme","Acevedo"],["Myrna","Nelly"]] )
+		                                q = queryExecute( "
+		                       select fullNameList( first, last ) as fullNames,
+		       group_concat( first + ' ' + last ) as fullNames2
+		       from qryAll
+		                                       ",
+		                                             	[],
+		                                             	{ dbType : "query" }
+		                                             );
+		                                          println( q )
+
+		                                             """,
+		    context );
+	}
+
+	@Test
+	public void testAggregate() {
+		instance.executeSource(
+		    """
+		              qryEmployees = queryNew(
+		        	"name,age,dept,supervisor",
+		        	"varchar,integer,varchar,varchar",
+		        	[
+		        		["luis",43,"Exec","luis"],
+		        		["brad",44,"IT","luis"],
+		        		["Jon",45,"HR","luis"]
+		           		]
+		           	)
+
+		        q = queryExecute( "
+		                        select count( 1 ) count,
+		        	[max](age) maxAge,
+		        	min([e].[age]) minAge,
+		        	min(age+0)+1 minAgePlusOne,
+		        	concat( 'foo', cast( min(age) as [string])) aggregateInScalar,
+		        	concat( 'foo', cast( max(age) as string)) aggregateInScalar2,
+		      	sum( age ) sumAge,
+		    avg(age) avgAge
+		        		  from qryEmployees [e]
+		                                        ",
+		                                              	[],
+		                                              	{ dbType : "query" }
+		                                              );
+		                                           println( q )
+
+		                                              """,
+		    context );
+	}
+
+	@Test
+	public void testCast() {
+		instance.executeSource(
+		    """
+		    q = queryExecute( "
+		       select cast( 5 as string) + 4 as result, 5 as result2, cast( 5 as 'string') as result3
+		    ",
+		                                          	[],
+		                                          	{ dbType : "query" }
+		                                          );
+		    						  println( q )
+		    						  result = q
+
+		                                          """,
+		    context );
+		Query q = variables.getAsQuery( result );
+		assertThat( q.getColumn( result ).getType() ).isEqualTo( QueryColumnType.VARCHAR );
+		assertThat( q.getColumn( Key.of( "result2" ) ).getType() ).isEqualTo( QueryColumnType.DOUBLE );
+		assertThat( q.getColumn( Key.of( "result3" ) ).getType() ).isEqualTo( QueryColumnType.VARCHAR );
+		instance.executeSource(
+		    """
+		    q = queryExecute( "
+		       select convert( 5, [string]) + 4 as result, 5 as result2, convert( 5, 'string') as result3
+		    ",
+		                                          	[],
+		                                          	{ dbType : "query" }
+		                                          );
+		    						  println( q )
+		    						  result = q
+
+		                                          """,
+		    context );
+		q = variables.getAsQuery( result );
+		assertThat( q.getColumn( result ).getType() ).isEqualTo( QueryColumnType.VARCHAR );
+		assertThat( q.getColumn( Key.of( "result2" ) ).getType() ).isEqualTo( QueryColumnType.DOUBLE );
+		assertThat( q.getColumn( Key.of( "result3" ) ).getType() ).isEqualTo( QueryColumnType.VARCHAR );
+	}
+
+	@Test
+	public void testAggregateGroup() {
+		instance.executeSource(
+		    """
+		                    qryEmployees = queryNew(
+		              	"name,age,dept,supervisor",
+		              	"varchar,integer,varchar,varchar",
+		              	[
+		              		["luis",43,"Exec","luis"],
+		              		["brad",44,"IT","luis"],
+		              		["jacob",35,"IT","luis"],
+		              		["Jon",45,"HR","luis"]
+		                 		]
+		                 	)
+
+		              q = queryExecute( "
+		          select  upper( dept) as dept, count(1), max(name), min(name), GROUP_CONCAT( name) as names, GROUP_CONCAT( name, ' | ') as namesPipe
+		          from qryEmployees as t
+		          group by dept
+		       having (count(1)+1) > 1
+		    order by count(1) desc
+		                                              ",
+		                                                    	[],
+		                                                    	{ dbType : "query" }
+		                                                    );
+		                                                 println( q )
+
+		                                                    """,
+		    context );
+	}
+
+	@Test
+	public void testStandardCase() {
+		instance.executeSource(
+		    """
+		                      qryEmployees = queryNew(
+		                	"name,age,dept,supervisor",
+		                	"varchar,integer,varchar,varchar",
+		                	[
+		                		["luis",43,"Exec","luis"],
+		                		["brad",44,"IT","luis"],
+		                		["jacob",35,"IT","luis"],
+		                		["Jon",45,"HR","luis"]
+		                   		]
+		                   	)
+
+		                q = queryExecute( "
+		            select  name,
+		      	case
+		    when name = 'brad' then 'me'
+		    when name = 'luis' then 'boss'
+		    when name = 'jacob' then 'Mr. Kansas City'
+		     	else 'other'
+		     end as title
+		            from qryEmployees
+		                                                ",
+		                                                      	[],
+		                                                      	{ dbType : "query" }
+		                                                      );
+		                                                   println( q )
+
+		                                                      """,
+		    context );
+	}
+
+	@Test
+	public void testStandardCaseNoElse() {
+		instance.executeSource(
+		    """
+		                      qryEmployees = queryNew(
+		                	"name,age,dept,supervisor",
+		                	"varchar,integer,varchar,varchar",
+		                	[
+		                		["luis",43,"Exec","luis"],
+		                		["brad",44,"IT","luis"],
+		                		["jacob",35,"IT","luis"],
+		                		["Jon",45,"HR","luis"]
+		                   		]
+		                   	)
+
+		                q = queryExecute( "
+		            select  name,
+		      	case
+		    when name = 'brad' then 'me'
+		    when name = 'luis' then 'boss'
+		    when name = 'jacob' then 'Mr. Kansas City'
+		     end as title
+		            from qryEmployees
+		                                                ",
+		                                                      	[],
+		                                                      	{ dbType : "query" }
+		                                                      );
+		                                                   println( q )
+
+		                                                      """,
+		    context );
+	}
+
+	@Test
+	public void testInputCase() {
+		instance.executeSource(
+		    """
+		                      qryEmployees = queryNew(
+		                	"name,age,dept,supervisor",
+		                	"varchar,integer,varchar,varchar",
+		                	[
+		                		["luis",43,"Exec","luis"],
+		                		["brad",44,"IT","luis"],
+		                		["jacob",35,"IT","luis"],
+		                		["Jon",45,"HR","luis"]
+		                   		]
+		                   	)
+
+		                q = queryExecute( "
+		            select  name,
+		      	case name
+		    when 'brad' then 'me'
+		    when 'luis' then 'boss'
+		    when 'jacob' then 'Mr. Kansas City'
+		     	else 'other'
+		     end as title
+		            from qryEmployees
+		                                                ",
+		                                                      	[],
+		                                                      	{ dbType : "query" }
+		                                                      );
+		                                                   println( q )
+
+		                                                      """,
+		    context );
+	}
+
+	@Test
+	public void testInputCaseNoElse() {
+		instance.executeSource(
+		    """
+		                      qryEmployees = queryNew(
+		                	"name,age,dept,supervisor",
+		                	"varchar,integer,varchar,varchar",
+		                	[
+		                		["luis",43,"Exec","luis"],
+		                		["brad",44,"IT","luis"],
+		                		["jacob",35,"IT","luis"],
+		                		["Jon",45,"HR","luis"]
+		                   		]
+		                   	)
+
+		                q = queryExecute( "
+		            select  name,
+		      	case name
+		    when 'brad' then 'me'
+		    when 'luis' then 'boss'
+		    when 'jacob' then 'Mr. Kansas City'
+		     end as title
+		            from qryEmployees
+		                                                ",
+		                                                      	[],
+		                                                      	{ dbType : "query" }
+		                                                      );
+		                                                   println( q )
+
+		                                                      """,
+		    context );
+	}
+
+	@Test
+	public void testDistinct() {
+		instance.executeSource(
+		    """
+		                 qryEmployees = queryNew(
+		           	"name,age,dept,supervisor",
+		           	"varchar,integer,varchar,varchar",
+		           	[
+		           		["luis",43,"Exec","luis"],
+		           		["brad",44,"IT","luis"],
+		           		["jacob",35,"IT","luis"],
+		           		["Jon",45,"HR","luis"]
+		              		]
+		              	)
+
+		           q = queryExecute( "
+		       select distinct dept as d
+		       from qryEmployees
+		    order by dept
+		                                           ",
+		                                                 	[],
+		                                                 	{ dbType : "query" }
+		                                                 );
+		                                              println( q )
+		                                                 """,
+		    context );
+		assertThat( variables.getAsQuery( q ).size() ).isEqualTo( 3 );
+	}
+
+	@Test
+	public void testNullAggregate() {
+		instance.executeSource(
+		    """
+
+		      qry = queryNew( 'col,col2', 'integer,integer', [
+		      	[ 0, nullValue() ],
+		      	[ nullValue(), nullValue() ],
+		      	[ 100, nullValue() ],
+		      ] );
+		      actual = QueryExecute(
+		      	sql = "SELECT sum(col) as sum, avg(col) as avg, min(col) as min, max(col) as max, sum(col2) as sum2, avg(col2) as avg2, min(col2) as min2, max(col2) as max2
+		    from qry",
+		      	options = { dbtype: 'query' }
+		      );
+		         println( actual )
+		         """,
+		    context );
+	}
+
+	@Test
+	@Disabled
+	public void testsdf() {
+		instance.executeSource(
+		    """
+		        q = QueryExecute("
+		        				select 1 ^ 2
+		       ",
+		    [],
+		    { dbType : "query" } );
+
+		        			println(q)
+		                      			                          """,
+		    context, BoxSourceType.CFSCRIPT );
 	}
 
 }

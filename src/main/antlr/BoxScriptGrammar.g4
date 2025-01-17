@@ -22,8 +22,11 @@ identifier: IDENTIFIER | reservedKeyword
 componentName
     :
     // Ask the component service if the component exists and verify that this context is actually a component.
-    { isComponent(_input) }? identifier
-    //identifier
+    // { isComponent(_input) }? identifier
+    identifier
+    ;
+
+specialComponentName: TRANSACTION | LOCK | THREAD | ABORT | EXIT | PARAM
     ;
 
 // These are reserved words in the lexer, but are allowed to be an indentifer (variable name, method name)
@@ -92,6 +95,11 @@ reservedKeyword
     | VAR
     | WHEN
     | WHILE
+    | TRANSACTION
+    | LOCK
+    | THREAD
+    | ABORT
+    | EXIT
     ;
 
 reservedOperators
@@ -313,9 +321,11 @@ not: NOT expression
 
 // bx:http url="google.com" {}?
 component
-    :
-    // COMPONENT_PREFIX componentName componentAttribute* (normalStatementBlock | SEMICOLON)
-    componentName componentAttribute* (normalStatementBlock | SEMICOLON)
+    : (( COMPONENT_PREFIX componentName) | specialComponentName) componentAttribute* (
+        normalStatementBlock
+        | SEMICOLON
+    )
+    //componentName componentAttribute* (normalStatementBlock | SEMICOLON)
     ;
 
 componentAttribute: identifier ((EQUALSIGN | COLON) expression)?

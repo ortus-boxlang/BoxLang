@@ -983,4 +983,16 @@ public class OperatorsTest {
 		assertThat( result ).isEqualTo( false );
 	}
 
+	@DisplayName( "It can add numbers to a date" )
+	@Test
+	public void testAddNumberToDate() {
+		instance.executeSource( """
+		                        	thisNow = now();
+		                        	thisNowMillis = thisNow.getTime();
+		                        	result = thisNow + 0;
+		                        """, context );
+		assertThat( variables.get( resultKey ) ).isEqualTo( variables.get( Key.of( "thisNowMillis" ) ) );
+
+	}
+
 }

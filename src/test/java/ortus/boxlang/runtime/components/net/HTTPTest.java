@@ -84,8 +84,8 @@ public class HTTPTest {
 		String baseURL = wmRuntimeInfo.getHttpBaseUrl();
 
 		instance.executeSource( String.format( """
-		                                        http url="%s" {
-		                                            httpparam type="header" name="User-Agent" value="Mozilla";
+		                                        bx:http url="%s" {
+		                                            bx:httpparam type="header" name="User-Agent" value="Mozilla";
 		                                       }
 		                                       result = bxhttp;
 		                                        """, baseURL + "/posts/1" ),
@@ -104,7 +104,7 @@ public class HTTPTest {
 	public void testCookiesInQuery( WireMockRuntimeInfo wmRuntimeInfo ) {
 		stubFor( get( "/cookies" ).willReturn( ok().withHeader( "Set-Cookie", "foo=bar;path=/;secure;samesite=none;httponly" ) ) );
 
-		instance.executeSource( String.format( "http url=\"%s\" {}", wmRuntimeInfo.getHttpBaseUrl() + "/cookies" ),
+		instance.executeSource( String.format( "bx:http url=\"%s\" {}", wmRuntimeInfo.getHttpBaseUrl() + "/cookies" ),
 		    context );
 
 		assertThat( variables.get( bxhttp ) ).isInstanceOf( IStruct.class );
@@ -127,7 +127,7 @@ public class HTTPTest {
 		    .withHeader( "Set-Cookie", "one=two;max-age=2592000;domain=example.com" )
 		) );
 
-		instance.executeSource( String.format( "http url=\"%s\" {}", wmRuntimeInfo.getHttpBaseUrl() + "/cookies" ),
+		instance.executeSource( String.format( "bx:http url=\"%s\" {}", wmRuntimeInfo.getHttpBaseUrl() + "/cookies" ),
 		    context );
 
 		assertThat( variables.get( bxhttp ) ).isInstanceOf( IStruct.class );
@@ -152,9 +152,9 @@ public class HTTPTest {
 		        .willReturn( created().withBody( "{\"id\": 1, \"name\": \"foobar\", \"body\": \"lorem ipsum dolor\"}" ) ) );
 
 		instance.executeSource( String.format( """
-		                                       http method="POST" url="%s" {
-		                                       	httpparam type="formfield" name="name" value="foobar";
-		                                       	httpparam type="formfield" name="body" value="lorem ipsum dolor";
+		                                       bx:http method="POST" url="%s" {
+		                                       	bx:httpparam type="formfield" name="name" value="foobar";
+		                                       	bx:httpparam type="formfield" name="body" value="lorem ipsum dolor";
 		                                       }
 		                                       """, wmRuntimeInfo.getHttpBaseUrl() + "/posts" ), context );
 
@@ -177,9 +177,9 @@ public class HTTPTest {
 
 		// @formatter:off
 		instance.executeSource( String.format( """
-			http method="POST" url="%s" {
-				httpparam type="formfield" name="tags" value="tag-a";
-				httpparam type="formfield" name="tags" value="tag-b";
+			bx:http method="POST" url="%s" {
+				bx:httpparam type="formfield" name="tags" value="tag-a";
+				bx:httpparam type="formfield" name="tags" value="tag-b";
 			}
 		""", wmRuntimeInfo.getHttpBaseUrl() + "/posts" ), context );
 		// @formatter:on
@@ -202,8 +202,8 @@ public class HTTPTest {
 		        .willReturn( created().withBody( "{\"id\": 1, \"name\": \"foobar\", \"body\": \"lorem ipsum dolor\"}" ) ) );
 
 		instance.executeSource( String.format( """
-		                                       http method="POST" url="%s" {
-		                                       	httpparam type="body" value="#JSONSerialize( { 'name': 'foobar', 'body': 'lorem ipsum dolor' } )#";
+		                                       bx:http method="POST" url="%s" {
+		                                       	bx:httpparam type="body" value="#JSONSerialize( { 'name': 'foobar', 'body': 'lorem ipsum dolor' } )#";
 		                                       }
 		                                       """, wmRuntimeInfo.getHttpBaseUrl() + "/posts" ), context );
 
@@ -381,8 +381,8 @@ public class HTTPTest {
 
 		instance.executeSource(
 		    String.format( """
-		                    http url="%s" {
-		                   	 httpparam type="url" name="userId" value=1;
+		                    bx:http url="%s" {
+		                   	 bx:httpparam type="url" name="userId" value=1;
 		                   }
 		                   result = bxhttp;
 		                    """, wmRuntimeInfo.getHttpBaseUrl() + "/posts" ),
@@ -433,8 +433,8 @@ public class HTTPTest {
 	public void testBadGateway() {
 		// @formatter:off
 		instance.executeSource( """
-			http method="GET" url="https://does-not-exist.also-does-not-exist" {
-				httpparam type="header" name="User-Agent" value="HyperCFML/7.5.2";
+			bx:http method="GET" url="https://does-not-exist.also-does-not-exist" {
+				bx:httpparam type="header" name="User-Agent" value="HyperCFML/7.5.2";
 			}
 			result = bxhttp;
 		""", context );
@@ -469,8 +469,8 @@ public class HTTPTest {
 		String baseURL = wmRuntimeInfo.getHttpBaseUrl();
 		// @formatter:off
 		instance.executeSource( String.format( """
-			http timeout="1" method="GET" url="%s" {
-				httpparam type="header" name="User-Agent" value="HyperCFML/7.5.2";
+			bx:http timeout="1" method="GET" url="%s" {
+				bx:httpparam type="header" name="User-Agent" value="HyperCFML/7.5.2";
 			}
 			result = bxhttp;
 		""", baseURL + "/timeout" ), context );
@@ -508,8 +508,8 @@ public class HTTPTest {
 		String baseURL = wmRuntimeInfo.getHttpBaseUrl();
 		// @formatter:off
 		instance.executeSource( String.format( """
-			http method="POST" url="%s" {
-				httpparam type="file" name="photo" file="/src/test/resources/chuck_norris.jpg";
+			bx:http method="POST" url="%s" {
+				bx:httpparam type="file" name="photo" file="/src/test/resources/chuck_norris.jpg";
 			}
 			result = bxhttp;
 		""", baseURL + "/files" ), context );
@@ -549,9 +549,9 @@ public class HTTPTest {
 		String baseURL = wmRuntimeInfo.getHttpBaseUrl();
 		// @formatter:off
 		instance.executeSource( String.format( """
-			http method="POST" url="%s" {
-				httpparam type="file" name="photo" file="/src/test/resources/chuck_norris.jpg";
-				httpparam type="formfield" name="joke" value="Chuck Norris can divide by zero.";
+			bx:http method="POST" url="%s" {
+				bx:httpparam type="file" name="photo" file="/src/test/resources/chuck_norris.jpg";
+				bx:httpparam type="formfield" name="joke" value="Chuck Norris can divide by zero.";
 			}
 			result = bxhttp;
 		""", baseURL + "/multipart" ), context );

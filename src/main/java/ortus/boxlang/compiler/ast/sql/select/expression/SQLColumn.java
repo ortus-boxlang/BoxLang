@@ -14,16 +14,20 @@
  */
 package ortus.boxlang.compiler.ast.sql.select.expression;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.sql.select.SQLTable;
+import ortus.boxlang.compiler.ast.sql.select.SQLTableVariable;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
-import ortus.boxlang.runtime.jdbc.qoq.QoQExecution;
+import ortus.boxlang.runtime.jdbc.qoq.QoQSelectExecution;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Query;
+import ortus.boxlang.runtime.types.QueryColumn;
 import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
@@ -38,6 +42,12 @@ public class SQLColumn extends SQLExpression {
 	private SQLTable							table;
 
 	private Key									name;
+
+	// THIS DATA IS SPECIFIC TO THE EXECUTION. IF WE START CACHING THIS AST, REWORK THIS TO BE STORED ELSEWHERE
+	private List<Object[]>						data			= null;
+	private int									tableIndex		= -1;
+	private int									colIndex		= -1;
+	private QueryColumnType						type			= null;
 
 	/**
 	 * Constructor
@@ -79,7 +89,7 @@ public class SQLColumn extends SQLExpression {
 	/**
 	 * Get the table, performing runtime lookup if necessary
 	 */
-	public SQLTable getTableFinal( QoQExecution QoQExec ) {
+	public SQLTable getTableFinal( QoQSelectExecution QoQExec ) {
 		var t = getTable();
 		if ( t != null ) {
 			return t;
@@ -95,6 +105,45 @@ public class SQLColumn extends SQLExpression {
 	}
 
 	/**
+	 * Get the table, performing runtime lookup if necessary
+	 */
+	public void ensureData( QoQSelectExecution QoQExec ) {
+		if ( data != null ) {
+			return;
+		}
+
+		synchronized ( this ) {
+			var t = getTable();
+			if ( data != null ) {
+				return;
+			}
+			if ( t == null ) {
+				// Abmiguity, we need to find the table
+				var tables = QoQExec.getTableLookup().entrySet();
+				for ( var tableSet : tables ) {
+					if ( tableSet.getValue().getColumns().containsKey( name ) ) {
+						t = tableSet.getKey();
+					}
+				}
+				if ( t == null ) {
+					throw new BoxRuntimeException( "Column " + name + " is ambiguous and not found in any table." );
+				}
+			}
+			tableIndex = t.getIndex();
+			Query		table	= QoQExec.getTableLookup().get( t );
+			// Cache this data for future use
+			QueryColumn	column	= table.getColumns().get( name );
+			if ( column == null ) {
+				throw new BoxRuntimeException(
+				    "Column " + name + " not found in table " + ( t instanceof SQLTableVariable tv ? tv.getName() : t.getAlias() ) );
+			}
+			colIndex	= column.getIndex();
+			type		= column.getType();
+			data		= table.getData();
+		}
+	}
+
+	/**
 	 * Set the table
 	 */
 	public void setTable( SQLTable table ) {
@@ -105,18 +154,46 @@ public class SQLColumn extends SQLExpression {
 	/**
 	 * What type does this expression evaluate to
 	 */
-	public QueryColumnType getType( QoQExecution QoQExec ) {
-		return QoQExec.getTableLookup().get( getTableFinal( QoQExec ) ).getColumns().get( name ).getType();
+	public QueryColumnType getType( QoQSelectExecution QoQExec ) {
+		ensureData( QoQExec );
+		return type;
+		// return QoQExec.getTableLookup().get( getTableFinal( QoQExec ) ).getColumns().get( name ).getType();
 	}
 
 	/**
 	 * Evaluate the expression
 	 */
-	public Object evaluate( QoQExecution QoQExec, int[] intersection ) {
-		var tableFinal = getTableFinal( QoQExec );
-		// System.out.println( "getting SQL column: " + name.getName() + " from table: " + tableFinal.getName() + " with index: " + tableFinal.getIndex() );
-		// System.out.println( "intersection: " + Arrays.toString( intersection ) );
-		return QoQExec.getTableLookup().get( tableFinal ).getCell( name, intersection[ tableFinal.getIndex() ] - 1 );
+	public Object evaluate( QoQSelectExecution QoQExec, int[] intersection ) {
+		ensureData( QoQExec );
+		int rowNum = intersection[ tableIndex ];
+
+		// This means an outer join matched nothing
+		if ( rowNum == 0 ) {
+			return null;
+		}
+
+		return data.get( intersection[ tableIndex ] - 1 )[ colIndex ];
+		/*
+		 * var tableFinal = getTableFinal( QoQExec );
+		 * // System.out.println( "getting SQL column: " + name.getName() + " from table: " + tableFinal.getName() + " with index: " + tableFinal.getIndex() );
+		 * // System.out.println( "intersection: " + Arrays.toString( intersection ) );
+		 * int rowNum = intersection[ tableFinal.getIndex() ];
+		 * // This means an outer join matched nothing
+		 * if ( rowNum == 0 ) {
+		 * return null;
+		 * }
+		 * return QoQExec.getTableLookup().get( tableFinal ).getCell( name, rowNum - 1 );
+		 */
+	}
+
+	/**
+	 * Evaluate the expression aginst a partition of data
+	 */
+	public Object evaluateAggregate( QoQSelectExecution QoQExec, List<int[]> intersections ) {
+		if ( intersections.isEmpty() ) {
+			return null;
+		}
+		return evaluate( QoQExec, intersections.get( 0 ) );
 	}
 
 	/**
@@ -126,7 +203,7 @@ public class SQLColumn extends SQLExpression {
 	 * 
 	 * @return true if the expression evaluates to a boolean value
 	 */
-	public boolean isBoolean( QoQExecution QoQExec ) {
+	public boolean isBoolean( QoQSelectExecution QoQExec ) {
 		return getType( QoQExec ) == QueryColumnType.BIT;
 	}
 
@@ -137,14 +214,13 @@ public class SQLColumn extends SQLExpression {
 	 * 
 	 * @return true if the expression evaluates to a numeric value
 	 */
-	public boolean isNumeric( QoQExecution QoQExec ) {
+	public boolean isNumeric( QoQSelectExecution QoQExec ) {
 		return numericTypes.contains( getType( QoQExec ) );
 	}
 
 	@Override
 	public void accept( VoidBoxVisitor v ) {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException( "Unimplemented method 'accept'" );
+		v.visit( this );
 	}
 
 	@Override

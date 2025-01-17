@@ -286,4 +286,58 @@ class XMLTest {
 		assertTrue( variables.getAsBoolean( result ) );
 	}
 
+	@DisplayName( "It can assign XMLText" )
+	@Test
+	void testAssignXMLText() {
+		instance.executeSource(
+		    """
+		    xmlObj = xmlParse( '<Ortus></Ortus>' );
+		    xmlObj.xmlRoot.xmlText = "BoxLang";
+		    result = xmlObj.xmlRoot.xmlText;
+		         """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "BoxLang" );
+	}
+
+	@DisplayName( "It can assign XMLCDATA" )
+	@Test
+	void testAssignXMLCDATA() {
+		instance.executeSource(
+		    """
+		    xmlObj = xmlParse( '<Ortus></Ortus>' );
+		    xmlObj.xmlRoot.xmlCDATA = "<BoxLang/>";
+		    result = xmlObj.xmlRoot.xmlCDATA;
+		         """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "<![CDATA[<BoxLang/>]]>" );
+	}
+
+	@DisplayName( "It can assign an XML Atrribute" )
+	@Test
+	void testAssignXMLAttributes() {
+		instance.executeSource(
+		    """
+		    xmlObj = xmlParse( '<Ortus></Ortus>' );
+		    xmlObj.xmlRoot.xmlAttributes.Product = "BoxLang";
+		    result = xmlObj.xmlRoot.xmlAttributes;
+		         """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Struct.class );
+		assertThat( variables.getAsStruct( result ).get( "Product" ) ).isEqualTo( "BoxLang" );
+	}
+
+	@DisplayName( "It can remove an XML Atrribute" )
+	@Test
+	void testRemoveXMLAttributes() {
+		instance.executeSource(
+		    """
+		       xmlObj = xmlParse( '<Ortus Product="BoxLang"></Ortus>' );
+		    structDelete( xmlObj.xmlRoot.xmlAttributes, "Product" );
+		       result = xmlObj.xmlRoot.xmlAttributes;
+		            """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Struct.class );
+		assertThat( variables.getAsStruct( result ).get( "Product" ) ).isEqualTo( null );
+	}
+
 }

@@ -20,7 +20,8 @@ package ortus.boxlang.runtime.components.system;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import org.junit.jupiter.api.AfterAll;
+import java.util.LinkedHashMap;
+
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -30,6 +31,7 @@ import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
@@ -46,28 +48,61 @@ public class InvokeTest {
 		instance = BoxRuntime.getInstance( true );
 	}
 
-	@AfterAll
-	public static void teardown() {
-
-	}
-
 	@BeforeEach
 	public void setupEach() {
 		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
 		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
+	@DisplayName( "Call a Java Class" )
+	@Test
+	public void testInvokeJavaClass() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		       result = invoke(
+		    		createObject( "java", "java.util.LinkedHashMap"),
+		    		"init",
+		    		[ 3, 5 ]
+		    	)
+		    """,
+		    context );
+		// @formatter:on
+		DynamicObject sut = ( DynamicObject ) variables.get( result );
+		assertThat( sut.unWrap() ).isInstanceOf( LinkedHashMap.class );
+	}
+
+	@DisplayName( "Call a Java Class with constructor coercion" )
+	@Test
+	public void testInvokeJavaClassWithCoercion() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		       result = invoke(
+		    		createObject( "java", "java.util.LinkedHashMap"),
+		    		"init",
+		    		[ "3", 5 ]
+		    	)
+		    """,
+		    context );
+		// @formatter:on
+		DynamicObject sut = ( DynamicObject ) variables.get( result );
+		assertThat( sut.unWrap() ).isInstanceOf( LinkedHashMap.class );
+	}
+
 	@DisplayName( "It can invoke in current context" )
 	@Test
 	public void testInvokeCurrentContext() {
+		// @formatter:off
 		instance.executeSource(
 		    """
-		    function foo() {
-		    	return "bar";
-		    }
-		       invoke method="foo" returnVariable="result";
-		       """,
+				function foo() {
+					return "bar";
+				}
+				bx:invoke method="foo" returnVariable="result";
+		    """,
 		    context );
+		// @formatter:on
 		assertThat( variables.get( result ) ).isEqualTo( "bar" );
 	}
 
@@ -132,9 +167,9 @@ public class InvokeTest {
 	public void testInvokeExistingClass() {
 		instance.executeSource(
 		    """
-		    myClass = new src.test.java.ortus.boxlang.runtime.components.system.InvokeTest()
-		         invoke class="#myClass#" method="foo" returnVariable="result" ;
-		         """,
+		       myClass = new src.test.java.ortus.boxlang.runtime.components.system.InvokeTest()
+		    bx:invoke class="#myClass#" method="foo" returnVariable="result" ;
+		            """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "bar" );
 	}
@@ -144,8 +179,8 @@ public class InvokeTest {
 	public void testInvokeCreatedClass() {
 		instance.executeSource(
 		    """
-		    	 invoke class="src.test.java.ortus.boxlang.runtime.components.system.InvokeTest" method="foo" returnVariable="result" ;
-		    """,
+		    bx:invoke class="src.test.java.ortus.boxlang.runtime.components.system.InvokeTest" method="foo" returnVariable="result" ;
+		      """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "bar" );
 	}
@@ -155,8 +190,8 @@ public class InvokeTest {
 	public void testTranspile() {
 		instance.executeSource(
 		    """
-		    	 invoke component="src.test.java.ortus.boxlang.runtime.components.system.InvokeTest" method="foo" returnVariable="result" ;
-		    """,
+		    invoke component="src.test.java.ortus.boxlang.runtime.components.system.InvokeTest" method="foo" returnVariable="result" ;
+		      """,
 		    context, BoxSourceType.CFSCRIPT );
 		assertThat( variables.get( result ) ).isEqualTo( "bar" );
 	}
@@ -171,7 +206,7 @@ public class InvokeTest {
 		        		return "bar";
 		        	}
 		        }
-		    	invoke class="#myStr#" method="foo" returnVariable="result" ;
+		    	bx:invoke class="#myStr#" method="foo" returnVariable="result" ;
 		    """,
 		    context, BoxSourceType.BOXSCRIPT );
 		assertThat( variables.get( result ) ).isEqualTo( "bar" );
@@ -271,7 +306,7 @@ public class InvokeTest {
 		    			 variables.result = arguments;
 		    		 }
 		    createArgs()
-		    		 invoke method="meh" argumentCollection="#args#";
+		    		 bx:invoke method="meh" argumentCollection="#args#";
 		    	 """,
 		    context );
 
@@ -295,7 +330,7 @@ public class InvokeTest {
 		    		variables.result = arguments;
 		    	}
 		    	createArgs('hello world')
-		       		 invoke method="meh" argumentCollection="#args#";
+		       		 bx:invoke method="meh" argumentCollection="#args#";
 		    """,
 		    context );
 

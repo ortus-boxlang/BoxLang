@@ -1,0 +1,8 @@
+<bx:script>
+	struct function getStruct() {
+		return {
+			foo = "bar",
+			baz = "bum"
+		};
+	}
+</bx:script>

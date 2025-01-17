@@ -204,4 +204,32 @@ public class AssignmentTest {
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "test2" );
 	}
 
+	@DisplayName( "quoted assignment 2" )
+	@Test
+	public void testQuotedAssignment2() {
+		instance.executeSource(
+		    """
+		    resultKey = "result";
+		    "#resultKey#" = "test";
+		            """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "test" );
+
+	}
+
+	@DisplayName( "multiple assignment" )
+	@Test
+	public void testMultipleAssignment() {
+		instance.executeSource(
+		    """
+		       thing = new src.test.java.TestCases.phase1.AssignmentClass();
+		    vara = thing.getA();
+		    thisA = thing.a;
+		               """,
+		    context );
+		assertThat( variables.get( "varA" ) ).isEqualTo( "test" );
+		assertThat( variables.get( "thisA" ) ).isEqualTo( "test" );
+
+	}
+
 }

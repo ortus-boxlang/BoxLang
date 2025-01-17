@@ -24,6 +24,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.global.decision.IsObject;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 
@@ -76,9 +77,17 @@ public class StructCasterLoose implements IBoxCaster {
 		}
 		object = DynamicObject.unWrap( object );
 
-		IStruct result = StructCaster.cast( object, false );
-		if ( result != null ) {
-			return result;
+		// Struct caster calls Exception Util, which calls us, so avoid a stack overflow here
+		if ( ! ( object instanceof Throwable ) ) {
+			IStruct result = StructCaster.cast( object, false );
+			if ( result != null ) {
+				return result;
+			}
+		}
+
+		// Special Productivity Hack: If it's a Query object, take the first row and return it as a struct
+		if ( object instanceof Query query ) {
+			return query.isEmpty() ? new Struct() : query.getRowAsStruct( 0 );
 		}
 
 		// If it's a random Java class, then turn it into a struct!!
@@ -88,13 +97,13 @@ public class StructCasterLoose implements IBoxCaster {
 			dynObject.getFieldsAsStream()
 			    .filter( field -> Modifier.isPublic( field.getModifiers() ) )
 			    .forEach( field -> {
-				    thisResult.put( field.getName(), dynObject.getField( field.getName() ) );
+				    thisResult.put( field.getName(), dynObject.getField( field.getName() ).get() );
 			    } );
 			// also add fields for all public methods starting with "get" that take no arguments
 			dynObject.getMethodNames( true ).forEach( methodName -> {
 				Method m;
 				if ( methodName.startsWith( "get" ) && Modifier.isPublic( ( m = dynObject.getMethod( methodName, true ) ).getModifiers() )
-				    && m.getParameterCount() == 0 ) {
+				    && m.getParameterCount() == 0 && !methodName.equals( "getClass" ) ) {
 					thisResult.put( methodName.substring( 3 ), dynObject.invoke( BoxRuntime.getInstance().getRuntimeContext(), methodName ) );
 				}
 			} );

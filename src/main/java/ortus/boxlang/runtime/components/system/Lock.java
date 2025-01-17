@@ -136,7 +136,7 @@ public class Lock extends Component {
 					throw new LockException( "Timeout of [" + timeout + "] seconds reached while waiting to acquire lock [" + lockName + "]", lockName,
 					    "timeout" );
 				} else {
-					// No need to release anything, because we never aquired it!s
+					// No need to release anything, because we never aquired it!
 					return DEFAULT_RETURN;
 				}
 			}

@@ -518,6 +518,9 @@ public class ModuleRecord {
 		// Do we have any Java IInterceptor to register in the InterceptorService
 		ServiceLoader.load( IInterceptor.class, this.classLoader )
 		    .stream()
+		    // Only load interceptors that are set to auto-load by default or by configuration
+		    .filter( provider -> interceptorService.canLoadInterceptor( provider.type() ) )
+		    // Register the interceptor
 		    .map( ServiceLoader.Provider::get )
 		    .forEach( interceptorService::register );
 

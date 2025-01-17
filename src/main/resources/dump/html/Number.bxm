@@ -3,7 +3,7 @@
 	<span class="bx-dwSv">
 		<span class="bx-dhSv">
 			<bx:if label.len() >#label# - </bx:if>
-			Number:
+			Number <small>[#var.getClass().getSimpleName()#]</small>:
 		</span>
 		<span> #encodeForHTML( var )#</span>
 	</span>

@@ -35,7 +35,6 @@ import ortus.boxlang.runtime.cache.providers.ICacheProvider;
 import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
-import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.LongCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
@@ -363,6 +362,8 @@ public class Application {
 			        .get( key )
 			        .ifPresent( session -> ( ( Session ) session ).shutdown( this.startingListener ) );
 
+			    logger.debug( "Session storage cache [{}] shutdown and removed session [{}]", targetCache.getName(), key );
+
 			    return false;
 		    }, BoxEvent.BEFORE_CACHE_ELEMENT_REMOVED.key() );
 		logger.debug( "Session storage cache [{}] created for the application [{}]", sessionCacheName, this.name );
@@ -371,13 +372,15 @@ public class Application {
 	/**
 	 * Get a session by ID for this application, creating if neccessary if not found
 	 *
-	 * @param ID The ID of the session
+	 * @param ID      The ID of the session
+	 * @param context The context of the request that is creating/getting the session
 	 *
 	 * @return The session object
 	 */
-	public Session getOrCreateSession( Key ID ) {
+	public Session getOrCreateSession( Key ID, RequestBoxContext context ) {
 		Duration	timeoutDuration	= null;
-		Object		sessionTimeout	= this.startingListener.getSettings().get( Key.sessionTimeout );
+		Object		sessionTimeout	= context.getConfigItems( Key.applicationSettings, Key.sessionTimeout );
+		String		cacheKey		= Session.buildCacheKey( ID, this.name );
 
 		// Duration is the default, but if not, we will use the number as seconds
 		// Which is what the cache providers expect
@@ -386,16 +389,29 @@ public class Application {
 		} else {
 			timeoutDuration = Duration.ofSeconds( LongCaster.cast( sessionTimeout ) );
 		}
+		// Dumb Java! It needs a final variable to use in the lambda
+		final Duration	finalTimeoutDuration	= timeoutDuration;
 
 		// logger.debug( "**** getOrCreateSession {} Timeout {} ", ID, timeoutDuration );
 
 		// Get or create the session
-		return ( Session ) this.sessionsCache.getOrSet(
-		    Session.buildCacheKey( ID, this.name ),
-		    () -> new Session( ID, this ),
+		Session			targetSession			= ( Session ) this.sessionsCache.getOrSet(
+		    cacheKey,
+		    () -> new Session( ID, this, finalTimeoutDuration ),
 		    timeoutDuration,
 		    timeoutDuration
 		);
+
+		// Is the session still valid?
+		if ( targetSession.isShutdown() || targetSession.isExpired() ) {
+			// If not, remove it
+			this.sessionsCache.clear( cacheKey );
+			// And create a new one
+			targetSession = new Session( ID, this, finalTimeoutDuration );
+			this.sessionsCache.set( cacheKey, targetSession, timeoutDuration, timeoutDuration );
+		}
+
+		return targetSession;
 	}
 
 	/**
@@ -506,18 +522,22 @@ public class Application {
 		}
 
 		// Announce it globally
-		RequestBoxContext requestContext = new ScriptingRequestBoxContext( BoxRuntime.getInstance().getRuntimeContext() );
-		BoxRuntime.getInstance().getInterceptorService().announce( Key.onApplicationEnd, Struct.of(
-		    "application", this,
-		    "context", requestContext
-		) );
+		RequestBoxContext requestContext = this.getStartingListener().getRequestContext();
+		try {
+			BoxRuntime.getInstance().getInterceptorService().announce( Key.onApplicationEnd, Struct.of(
+			    "application", this,
+			    "context", requestContext
+			) );
+		} catch ( Exception e ) {
+			logger.error( "Error announcing onApplicationEnd", e );
+		}
 
-		// Shutdown all sessions
+		// Shutdown all sessions if NOT in a cluster
 		if ( !BooleanCaster.cast( this.startingListener.getSettings().get( Key.sessionCluster ) ) ) {
-			sessionsCache.getKeysStream( sessionCacheFilter )
+			this.sessionsCache.getKeysStream( sessionCacheFilter )
 			    .parallel()
 			    .map( Key::of )
-			    .map( this::getOrCreateSession )
+			    .map( sessionKey -> ( Session ) this.sessionsCache.get( sessionKey.getName() ).get() )
 			    .forEach( session -> session.shutdown( this.getStartingListener() ) );
 		}
 
@@ -532,11 +552,15 @@ public class Application {
 
 		// Announce it to the listener
 		if ( this.startingListener != null ) {
-			// Any buffer output in this context will be discarded
-			this.startingListener.onApplicationEnd(
-			    requestContext,
-			    new Object[] { applicationScope }
-			);
+			try {
+				// Any buffer output in this context will be discarded
+				this.startingListener.onApplicationEnd(
+				    requestContext,
+				    new Object[] { applicationScope }
+				);
+			} catch ( Exception e ) {
+				logger.error( "Error calling onApplicationEnd", e );
+			}
 		}
 
 		// Clear out the data
