@@ -441,12 +441,14 @@ public class AsmTranspiler extends Transpiler {
 		Type type = Type.getType( "L" + getProperty( "packageName" ).replace( '.', '/' ) + "/" + getProperty( "classname" ) + ";" );
 		setProperty( "classType", type.getDescriptor() );
 		setProperty( "classTypeInternal", type.getInternalName() );
-		ClassNode	classNode		= new ClassNode();
-		String		mappingName		= getProperty( "mappingName" );
-		String		mappingPath		= getProperty( "mappingPath" );
-		String		relativePath	= getProperty( "relativePath" );
-		Source		source			= boxScript.getPosition().getSource();
-		String		filePath		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath() : "unknown";
+		ClassNode classNode = new ClassNode();
+		setOwningClass( classNode );
+		setProperty( "enclosingClassInternalName", type.getInternalName() );
+		String	mappingName		= getProperty( "mappingName" );
+		String	mappingPath		= getProperty( "mappingPath" );
+		String	relativePath	= getProperty( "relativePath" );
+		Source	source			= boxScript.getPosition().getSource();
+		String	filePath		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath() : "unknown";
 		setProperty( "filePath", filePath );
 		classNode.visitSource( filePath, null );
 

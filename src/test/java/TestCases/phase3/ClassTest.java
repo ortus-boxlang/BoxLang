@@ -1575,6 +1575,22 @@ public class ClassTest {
 		assertThat( variables.get( "outerClass" ) ).isEqualTo( variables.get( "innerClassesOuterClass" ) );
 	}
 
+	@DisplayName( "udf class has enclosing class reference" )
+	@Test
+	public void testUDFClassEnclosingClassReferenceInTemplate() {
+
+		instance.executeSource(
+		    """
+		    function test(){
+
+		     }
+		         result = test.getClass().getEnclosingClass();
+		                """,
+		    context );
+
+		assertThat( variables.get( result ) ).isNotNull();
+	}
+
 	@DisplayName( "mixins should be public" )
 	@Test
 	public void testMixinsPublic() {
