@@ -57,6 +57,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.KeyCaster;
 import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.interop.DynamicInteropService;
 import ortus.boxlang.runtime.scopes.IntKey;
 import ortus.boxlang.runtime.scopes.Key;
@@ -108,6 +109,12 @@ public class XML implements Serializable, IStruct {
 	 * Serial version UID
 	 */
 	private static final long		serialVersionUID	= 1L;
+
+	/**
+	 * CDATA contstants
+	 */
+	public static final String		cdataStart			= "<![CDATA[";
+	public static final String		cdataEnd			= "]]>";
 
 	/**
 	 * Create a new XML Document from the given string
@@ -542,7 +549,14 @@ public class XML implements Serializable, IStruct {
 
 	@Override
 	public Object assign( IBoxContext context, Key name, Object value ) {
-		put( name, value );
+		if ( name.equals( Key.XMLText ) ) {
+			getNode().setTextContent( StringCaster.cast( value ) );
+		} else if ( name.equals( Key.XMLCdata ) ) {
+			node.setTextContent( cdataStart + StringCaster.cast( value ) + cdataEnd );
+		} else {
+			put( name, value );
+		}
+
 		return this;
 	}
 

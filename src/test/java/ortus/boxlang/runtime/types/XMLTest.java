@@ -286,4 +286,30 @@ class XMLTest {
 		assertTrue( variables.getAsBoolean( result ) );
 	}
 
+	@DisplayName( "It can assign XMLText" )
+	@Test
+	void testAssignXMLText() {
+		instance.executeSource(
+		    """
+		    xmlObj = xmlParse( '<Ortus></Ortus>' );
+		    xmlObj.xmlRoot.xmlText = "BoxLang";
+		    result = xmlObj.xmlRoot.xmlText;
+		         """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "BoxLang" );
+	}
+
+	@DisplayName( "It can assign XMLCDATA" )
+	@Test
+	void testAssignXMLCDATA() {
+		instance.executeSource(
+		    """
+		    xmlObj = xmlParse( '<Ortus></Ortus>' );
+		    xmlObj.xmlRoot.xmlCDATA = "<BoxLang/>";
+		    result = xmlObj.xmlRoot.xmlCDATA;
+		         """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "<![CDATA[<BoxLang/>]]>" );
+	}
+
 }
