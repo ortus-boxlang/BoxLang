@@ -120,6 +120,8 @@ public class XML implements Serializable, IStruct {
 	public static final String		cdataStart			= "<![CDATA[";
 	public static final String		cdataEnd			= "]]>";
 
+	public static final String		xmlnsSeparator		= ":";
+
 	/**
 	 * Create a new XML Document from the given string
 	 */
@@ -515,7 +517,7 @@ public class XML implements Serializable, IStruct {
 			        ( 
 						child.getPrefix() != null
 			            &&
-			        	StringUtils.replace( child.getNodeName(), child.getPrefix() + ":", "" ).equalsIgnoreCase( childName ) 
+			        	StringUtils.replace( child.getNodeName(), child.getPrefix() + xmlnsSeparator, StringUtils.EMPTY ).equalsIgnoreCase( childName ) 
 					) 
 				)
 			) {
