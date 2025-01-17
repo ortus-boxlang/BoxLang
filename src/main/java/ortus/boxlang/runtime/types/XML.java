@@ -39,6 +39,8 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
+import org.apache.commons.lang3.StringUtils;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.DocumentType;
 import org.w3c.dom.Entity;
@@ -503,16 +505,23 @@ public class XML implements Serializable, IStruct {
 		NodeList children = node.getChildNodes();
 		for ( int i = 0; i < children.getLength(); i++ ) {
 			Node child = children.item( i );
-			if ( child.getNodeType() == Node.ELEMENT_NODE
+			//@formatter:off
+			if ( 
+				child.getNodeType() == Node.ELEMENT_NODE
 			    &&
-			    ( child.getNodeName().equalsIgnoreCase( childName )
+			    ( 
+					child.getNodeName().equalsIgnoreCase( childName )
 			        ||
-					// For some reason `getPrefix` is not always populated with parsed xml, so we have to manually split the name
-			        ( child.getNodeName().split( ":" ).length > 1
+			        ( 
+						child.getPrefix() != null
 			            &&
-			            child.getNodeName().split( ":" )[ 1 ].equalsIgnoreCase( childName ) ) ) ) {
+			        	StringUtils.replace( child.getNodeName(), child.getPrefix() + ":", "" ).equalsIgnoreCase( childName ) 
+					) 
+				)
+			) {
 				return new XML( child );
 			}
+			//@formatter:on
 		}
 		return null;
 	}
