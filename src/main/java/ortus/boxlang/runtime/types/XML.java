@@ -503,20 +503,14 @@ public class XML implements Serializable, IStruct {
 		NodeList children = node.getChildNodes();
 		for ( int i = 0; i < children.getLength(); i++ ) {
 			Node child = children.item( i );
-			if ( 
-				child.getNodeType() == Node.ELEMENT_NODE 
-				&& 
-				( 
-					child.getNodeName().equalsIgnoreCase( childName ) 
-					||
+			if ( child.getNodeType() == Node.ELEMENT_NODE
+			    &&
+			    ( child.getNodeName().equalsIgnoreCase( childName )
+			        ||
 					// For some reason `getPrefix` is not always populated with parsed xml, so we have to manually split the name
-					(
-						child.getNodeName().split( ":" ).length > 1
-						&&
-						child.getNodeName().split( ":" )[ 1 ].equalsIgnoreCase( childName )
-					)
-				) 
-			) {
+			        ( child.getNodeName().split( ":" ).length > 1
+			            &&
+			            child.getNodeName().split( ":" )[ 1 ].equalsIgnoreCase( childName ) ) ) ) {
 				return new XML( child );
 			}
 		}

@@ -325,16 +325,17 @@ class XMLTest {
 		assertThat( variables.get( result ) ).isInstanceOf( Struct.class );
 		assertThat( variables.getAsStruct( result ).get( "Product" ) ).isEqualTo( "BoxLang" );
 	}
+
 	@DisplayName( "It can assign an XML Atrribute" )
 	@Test
 	void testChangeXMLAttributes() {
 		instance.executeSource(
 		    """
-		    xmlObj = xmlParse( '<Ortus Product="BoxLang"></Ortus>' );
-		    initial = xmlObj.xmlRoot.xmlAttributes.Product;
-			xmlObj.xmlRoot.xmlAttributes.Product = "BoxLang Rocks!";
-			result = xmlObj.xmlRoot.xmlAttributes.Product;
-		         """,
+		       xmlObj = xmlParse( '<Ortus Product="BoxLang"></Ortus>' );
+		       initial = xmlObj.xmlRoot.xmlAttributes.Product;
+		    xmlObj.xmlRoot.xmlAttributes.Product = "BoxLang Rocks!";
+		    result = xmlObj.xmlRoot.xmlAttributes.Product;
+		            """,
 		    context );
 		assertThat( variables.getAsString( Key.of( "initial" ) ) ).isEqualTo( "BoxLang" );
 		assertThat( variables.getAsString( result ) ).isEqualTo( "BoxLang Rocks!" );
@@ -384,11 +385,12 @@ class XMLTest {
 		    context );
 			//@formatter:on
 
-			assertThat( variables.getAsString( Key.of( "envelopePrefix" ) ) ).isEqualTo( "SOAP-ENV" );
-			assertThat( variables.getAsString( Key.of( "envelopeName" ) ) ).isEqualTo( "SOAP-ENV:Envelope" );
-			assertThat( variables.get( Key.of( "envelopeAttributes" ) ) ).isInstanceOf( Struct.class );
-			assertThat( variables.getAsStruct( Key.of( "envelopeAttributes" ) ).get( Key.of( "xmlns:SOAP-ENV" ) ) ).isEqualTo( "http://schemas.xmlsoap.org/soap/envelope/" );
-			assertThat( variables.getAsString( Key.of( "headerPrefix" ) ) ).isEqualTo( "SOAP-ENV" );
+		assertThat( variables.getAsString( Key.of( "envelopePrefix" ) ) ).isEqualTo( "SOAP-ENV" );
+		assertThat( variables.getAsString( Key.of( "envelopeName" ) ) ).isEqualTo( "SOAP-ENV:Envelope" );
+		assertThat( variables.get( Key.of( "envelopeAttributes" ) ) ).isInstanceOf( Struct.class );
+		assertThat( variables.getAsStruct( Key.of( "envelopeAttributes" ) ).get( Key.of( "xmlns:SOAP-ENV" ) ) )
+		    .isEqualTo( "http://schemas.xmlsoap.org/soap/envelope/" );
+		assertThat( variables.getAsString( Key.of( "headerPrefix" ) ) ).isEqualTo( "SOAP-ENV" );
 	}
 
 }
