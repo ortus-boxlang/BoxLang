@@ -469,6 +469,16 @@ public class BoxRuntime implements java.io.Closeable {
 		loadConfiguration( debugMode, this.configPath );
 		// Anythying below might use configuration items
 
+		// Ensure home assets
+		ensureHomeAssets();
+
+		// Load the Dynamic Class Loader for the runtime
+		this.runtimeLoader = new DynamicClassLoader(
+		    Key.runtime,
+		    getConfiguration().getJavaLibraryPaths(),
+		    this.getClass().getClassLoader(),
+		    true );
+
 		// Announce it to the services
 		this.interceptorService.onConfigurationLoad();
 		this.asyncService.onConfigurationLoad();
@@ -480,17 +490,8 @@ public class BoxRuntime implements java.io.Closeable {
 		this.schedulerService.onConfigurationLoad();
 		this.dataSourceService.onConfigurationLoad();
 
-		// Ensure home assets
-		ensureHomeAssets();
-
-		// Load the Dynamic Class Loader for the runtime
-		this.runtimeLoader	= new DynamicClassLoader(
-		    Key.runtime,
-		    getConfiguration().getJavaLibraryPaths(),
-		    this.getClass().getClassLoader(),
-		    true );
 		// Startup the right Compiler
-		this.boxpiler		= chooseBoxpiler();
+		this.boxpiler = chooseBoxpiler();
 		// Seed Mathematical Precision for the runtime
 		MathUtil.setHighPrecisionMath( getConfiguration().useHighPrecisionMath );
 
