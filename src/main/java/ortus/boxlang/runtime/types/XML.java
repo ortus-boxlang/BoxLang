@@ -604,7 +604,7 @@ public class XML implements Serializable, IStruct {
 			transformer.transform( new DOMSource( node ), new StreamResult( writer ) );
 
 			// Get the XML string from the StringWriter
-			return writer.toString();
+			return writer.toString().trim();
 		} catch ( TransformerException e ) {
 			throw new BoxRuntimeException( "Error converting XML node to string", e );
 		}
