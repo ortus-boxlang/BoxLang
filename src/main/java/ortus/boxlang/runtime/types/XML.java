@@ -125,7 +125,7 @@ public class XML implements Serializable, IStruct {
 
 		this.type = TYPES.DEFAULT;
 
-		DocumentBuilderFactory	factory	= DocumentBuilderFactory.newInstance();
+		DocumentBuilderFactory	factory	= DocumentBuilderFactory.newNSInstance();
 		DocumentBuilder			builder;
 		try {
 			builder = factory.newDocumentBuilder();
