@@ -399,19 +399,17 @@ class XMLTest {
 
 		instance.executeSource(
 		    """
-		    xmlObj = xmlParse( '<Ortus></Ortus>' );
-		    result = toString( xmlObj.xmlRoot );
-			result2 = xmlObj.xmlRoot.toString();
-			xmlObj = xmlParse( '<Ortus><Product>BoxLang</Product></Ortus>' );
-			result3 = toString( xmlObj.xmlRoot.Product );
-		         """,
+		       xmlObj = xmlParse( '<Ortus></Ortus>' );
+		       result = toString( xmlObj.xmlRoot );
+		    result2 = xmlObj.xmlRoot.toString();
+		    xmlObj = xmlParse( '<Ortus><Product>BoxLang</Product></Ortus>' );
+		    result3 = toString( xmlObj.xmlRoot.Product );
+		            """,
 		    context );
 		assertThat( variables.getAsString( result ) ).isEqualTo( "<?xml version=\"1.0\" encoding=\"UTF-8\"?><Ortus/>" );
 		assertThat( variables.get( result ) ).isEqualTo( variables.get( Key.of( "result2" ) ) );
 		assertThat( variables.getAsString( Key.of( "result3" ) ) ).isEqualTo( "<?xml version=\"1.0\" encoding=\"UTF-8\"?><Product>BoxLang</Product>" );
 
 	}
-
-	
 
 }
