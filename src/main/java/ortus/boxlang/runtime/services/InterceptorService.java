@@ -19,8 +19,6 @@ package ortus.boxlang.runtime.services;
 
 import java.util.ServiceLoader;
 
-import org.slf4j.Logger;
-
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
@@ -29,6 +27,7 @@ import ortus.boxlang.runtime.events.Interceptor;
 import ortus.boxlang.runtime.events.InterceptorPool;
 import ortus.boxlang.runtime.interceptors.ASTCapture;
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.scopes.Key;
 
 /**
@@ -50,9 +49,9 @@ public class InterceptorService extends InterceptorPool implements IService {
 	 */
 
 	/**
-	 * Logger
+	 * The interceptor logger goes into the `runtime` category
 	 */
-	private Logger logger;
+	private BoxLangLogger logger;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -81,7 +80,8 @@ public class InterceptorService extends InterceptorPool implements IService {
 	 */
 	@Override
 	public void onConfigurationLoad() {
-		this.logger = runtime.getLoggingService().getLogger( "runtime" );
+		// Startup the logger
+		getLogger();
 
 		// AST Capture experimental feature
 		BooleanCaster.attempt(
@@ -116,7 +116,7 @@ public class InterceptorService extends InterceptorPool implements IService {
 		if ( targetClass.isAnnotationPresent( Interceptor.class ) ) {
 			Interceptor annotation = targetClass.getAnnotation( Interceptor.class );
 			if ( !annotation.autoLoad() ) {
-				logger.debug( "Interceptor [{}] is set to not auto-load, skipping.", targetClass.getName() );
+				getLogger().debug( "Interceptor [{}] is set to not auto-load, skipping.", targetClass.getName() );
 				return false;
 			}
 		}
@@ -128,7 +128,7 @@ public class InterceptorService extends InterceptorPool implements IService {
 	 */
 	@Override
 	public void onStartup() {
-		logger.debug( "InterceptorService.onStartup()" );
+		getLogger().debug( "InterceptorService.onStartup()" );
 	}
 
 	/**
@@ -138,7 +138,7 @@ public class InterceptorService extends InterceptorPool implements IService {
 	 */
 	@Override
 	public void onShutdown( Boolean force ) {
-		logger.debug( "InterceptorService.onShutdown()" );
+		getLogger().debug( "InterceptorService.onShutdown()" );
 	}
 
 }
