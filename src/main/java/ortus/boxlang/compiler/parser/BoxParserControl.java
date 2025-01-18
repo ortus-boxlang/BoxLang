@@ -1,110 +1,106 @@
 package ortus.boxlang.compiler.parser;
 
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.ABSTRACT;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.AND;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.ANY;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.ARRAY;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.AS;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.ASSERT;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.BOOLEAN;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.BREAK;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.CASE;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.CASTAS;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.CATCH;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.CLASS;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.CONTAIN;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.CONTAINS;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.CONTINUE;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.DEFAULT;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.DO;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.DOES;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.ELIF;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.ELSE;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.EQ;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.EQUAL;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.EQV;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.FALSE;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.FINAL;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.FINALLY;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.FOR;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.FUNCTION;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.GE;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.GREATER;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.GT;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.GTE;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.IDENTIFIER;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.IF;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.IMP;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.IMPORT;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.IN;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.INCLUDE;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.INSTANCEOF;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.INTERFACE;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.IS;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.JAVA;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.LE;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.LESS;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.LPAREN;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.LT;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.LTE;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.MESSAGE;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.MOD;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.NEQ;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.NEW;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.NOT;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.NULL;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.NUMERIC;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.OR;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.PACKAGE;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.PARAM;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.PRIVATE;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.PROPERTY;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.PUBLIC;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.QUERY;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.REMOTE;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.REQUEST;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.REQUIRED;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.RETHROW;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.RETURN;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.SERVER;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.SETTING;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.STATIC;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.STRING;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.STRUCT;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.THAN;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.THROW;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.TO;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.TRUE;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.TRY;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.TYPE;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.VAR;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.VARIABLES;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.WHEN;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.WHILE;
-import static ortus.boxlang.parser.antlr.BoxScriptGrammar.XOR;
-import static ortus.boxlang.runtime.BoxRuntime.getInstance;
+import static ortus.boxlang.parser.antlr.BoxGrammar.ABSTRACT;
+import static ortus.boxlang.parser.antlr.BoxGrammar.AND;
+import static ortus.boxlang.parser.antlr.BoxGrammar.ANY;
+import static ortus.boxlang.parser.antlr.BoxGrammar.ARRAY;
+import static ortus.boxlang.parser.antlr.BoxGrammar.AS;
+import static ortus.boxlang.parser.antlr.BoxGrammar.ASSERT;
+import static ortus.boxlang.parser.antlr.BoxGrammar.BOOLEAN;
+import static ortus.boxlang.parser.antlr.BoxGrammar.BREAK;
+import static ortus.boxlang.parser.antlr.BoxGrammar.CASE;
+import static ortus.boxlang.parser.antlr.BoxGrammar.CASTAS;
+import static ortus.boxlang.parser.antlr.BoxGrammar.CATCH;
+import static ortus.boxlang.parser.antlr.BoxGrammar.CLASS;
+import static ortus.boxlang.parser.antlr.BoxGrammar.CONTAIN;
+import static ortus.boxlang.parser.antlr.BoxGrammar.CONTAINS;
+import static ortus.boxlang.parser.antlr.BoxGrammar.CONTINUE;
+import static ortus.boxlang.parser.antlr.BoxGrammar.DEFAULT;
+import static ortus.boxlang.parser.antlr.BoxGrammar.DO;
+import static ortus.boxlang.parser.antlr.BoxGrammar.DOES;
+import static ortus.boxlang.parser.antlr.BoxGrammar.ELSE;
+import static ortus.boxlang.parser.antlr.BoxGrammar.EQ;
+import static ortus.boxlang.parser.antlr.BoxGrammar.EQUAL;
+import static ortus.boxlang.parser.antlr.BoxGrammar.EQV;
+import static ortus.boxlang.parser.antlr.BoxGrammar.FALSE;
+import static ortus.boxlang.parser.antlr.BoxGrammar.FINAL;
+import static ortus.boxlang.parser.antlr.BoxGrammar.FINALLY;
+import static ortus.boxlang.parser.antlr.BoxGrammar.FOR;
+import static ortus.boxlang.parser.antlr.BoxGrammar.FUNCTION;
+import static ortus.boxlang.parser.antlr.BoxGrammar.GE;
+import static ortus.boxlang.parser.antlr.BoxGrammar.GREATER;
+import static ortus.boxlang.parser.antlr.BoxGrammar.GT;
+import static ortus.boxlang.parser.antlr.BoxGrammar.GTE;
+import static ortus.boxlang.parser.antlr.BoxGrammar.IDENTIFIER;
+import static ortus.boxlang.parser.antlr.BoxGrammar.IF;
+import static ortus.boxlang.parser.antlr.BoxGrammar.IMP;
+import static ortus.boxlang.parser.antlr.BoxGrammar.IMPORT;
+import static ortus.boxlang.parser.antlr.BoxGrammar.IN;
+import static ortus.boxlang.parser.antlr.BoxGrammar.INCLUDE;
+import static ortus.boxlang.parser.antlr.BoxGrammar.INSTANCEOF;
+import static ortus.boxlang.parser.antlr.BoxGrammar.INTERFACE;
+import static ortus.boxlang.parser.antlr.BoxGrammar.IS;
+import static ortus.boxlang.parser.antlr.BoxGrammar.JAVA;
+import static ortus.boxlang.parser.antlr.BoxGrammar.LE;
+import static ortus.boxlang.parser.antlr.BoxGrammar.LESS;
+import static ortus.boxlang.parser.antlr.BoxGrammar.LPAREN;
+import static ortus.boxlang.parser.antlr.BoxGrammar.LT;
+import static ortus.boxlang.parser.antlr.BoxGrammar.LTE;
+import static ortus.boxlang.parser.antlr.BoxGrammar.MESSAGE;
+import static ortus.boxlang.parser.antlr.BoxGrammar.MOD;
+import static ortus.boxlang.parser.antlr.BoxGrammar.NEQ;
+import static ortus.boxlang.parser.antlr.BoxGrammar.NEW;
+import static ortus.boxlang.parser.antlr.BoxGrammar.NOT;
+import static ortus.boxlang.parser.antlr.BoxGrammar.NULL;
+import static ortus.boxlang.parser.antlr.BoxGrammar.NUMERIC;
+import static ortus.boxlang.parser.antlr.BoxGrammar.OR;
+import static ortus.boxlang.parser.antlr.BoxGrammar.PACKAGE;
+import static ortus.boxlang.parser.antlr.BoxGrammar.PARAM;
+import static ortus.boxlang.parser.antlr.BoxGrammar.PRIVATE;
+import static ortus.boxlang.parser.antlr.BoxGrammar.PROPERTY;
+import static ortus.boxlang.parser.antlr.BoxGrammar.PUBLIC;
+import static ortus.boxlang.parser.antlr.BoxGrammar.QUERY;
+import static ortus.boxlang.parser.antlr.BoxGrammar.REMOTE;
+import static ortus.boxlang.parser.antlr.BoxGrammar.REQUEST;
+import static ortus.boxlang.parser.antlr.BoxGrammar.REQUIRED;
+import static ortus.boxlang.parser.antlr.BoxGrammar.RETHROW;
+import static ortus.boxlang.parser.antlr.BoxGrammar.RETURN;
+import static ortus.boxlang.parser.antlr.BoxGrammar.SERVER;
+import static ortus.boxlang.parser.antlr.BoxGrammar.SETTING;
+import static ortus.boxlang.parser.antlr.BoxGrammar.STATIC;
+import static ortus.boxlang.parser.antlr.BoxGrammar.STRING;
+import static ortus.boxlang.parser.antlr.BoxGrammar.STRUCT;
+import static ortus.boxlang.parser.antlr.BoxGrammar.THAN;
+import static ortus.boxlang.parser.antlr.BoxGrammar.THROW;
+import static ortus.boxlang.parser.antlr.BoxGrammar.TO;
+import static ortus.boxlang.parser.antlr.BoxGrammar.TRUE;
+import static ortus.boxlang.parser.antlr.BoxGrammar.TRY;
+import static ortus.boxlang.parser.antlr.BoxGrammar.TYPE;
+import static ortus.boxlang.parser.antlr.BoxGrammar.VAR;
+import static ortus.boxlang.parser.antlr.BoxGrammar.VARIABLES;
+import static ortus.boxlang.parser.antlr.BoxGrammar.WHEN;
+import static ortus.boxlang.parser.antlr.BoxGrammar.WHILE;
+import static ortus.boxlang.parser.antlr.BoxGrammar.XOR;
 
 import java.util.Set;
 
 import org.antlr.v4.runtime.Parser;
 import org.antlr.v4.runtime.TokenStream;
 
-import ortus.boxlang.runtime.services.ComponentService;
-
 public abstract class BoxParserControl extends Parser {
 
-	private static final Set<Integer>	identifiers			= Set.of( IDENTIFIER, ABSTRACT, AND, ANY, ARRAY, AS, ASSERT, BOOLEAN, BREAK, CASE, CASTAS, CATCH,
+	private static final Set<Integer>	identifiers	= Set.of( IDENTIFIER, ABSTRACT, AND, ANY, ARRAY, AS, ASSERT, BOOLEAN, BREAK, CASE, CASTAS, CATCH,
 	    CLASS,
-	    CONTAIN, CONTAINS, CONTINUE, DEFAULT, DO, DOES, ELIF, ELSE, EQ, EQUAL, EQV, FALSE, FINAL, FINALLY, FOR, FUNCTION, GE, GREATER, GT, GTE, IF, IMP, IMPORT,
+	    CONTAIN, CONTAINS, CONTINUE, DEFAULT, DO, DOES, ELSE, EQ, EQUAL, EQV, FALSE, FINAL, FINALLY, FOR, FUNCTION, GE, GREATER, GT, GTE, IF, IMP, IMPORT,
 	    IN, INCLUDE, INSTANCEOF, INTERFACE, IS, JAVA, LE, LESS, LT, LTE, MESSAGE, MOD, NEQ, NEW, NOT, NULL, NUMERIC, OR, PACKAGE, PARAM, PRIVATE, PROPERTY,
 	    PUBLIC, QUERY, REMOTE, REQUEST, REQUIRED, RETHROW, RETURN, SERVER, SETTING, STATIC, STRING, STRUCT, THAN, THROW, TO, TRUE, TRY, TYPE, VAR, VARIABLES,
 	    WHEN, WHILE, XOR );
 
-	private static final Set<Integer>	types				= Set.of(
+	private static final Set<Integer>	types		= Set.of(
 	    NUMERIC, STRING, BOOLEAN, CLASS, INTERFACE, ARRAY, STRUCT, QUERY, ANY, FUNCTION
 	);
 
-	private final ComponentService		componentService	= getInstance().getComponentService();
+	// private final ComponentService componentService = getInstance().getComponentService();
 
 	public BoxParserControl( TokenStream input ) {
 		super( input );
@@ -193,7 +189,14 @@ public abstract class BoxParserControl extends Parser {
 	 * @return true if this should be seen as a VAR expression and not an identifier
 	 */
 	protected boolean isAssignmentModifier( TokenStream input ) {
+		System.out.println( "isAssignmentModifier" );
+
 		int thisType = input.LT( 1 ).getType();
+		System.out.println( "thisType: " + thisType );
+		System.out.println( "LT(2): " + input.LT( 2 ).getType() );
+		System.out
+		    .println( "( thisType == VAR || thisType == FINAL || thisType == STATIC ): " + ( thisType == VAR || thisType == FINAL || thisType == STATIC ) );
+		System.out.println( "identifiers.contains( input.LT( 2 ).getType() ): " + identifiers.contains( input.LT( 2 ).getType() ) );
 		return ( thisType == VAR || thisType == FINAL || thisType == STATIC ) && identifiers.contains( input.LT( 2 ).getType() );
 	}
 

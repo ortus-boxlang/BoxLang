@@ -61,92 +61,92 @@ import ortus.boxlang.compiler.ast.statement.BoxType;
 import ortus.boxlang.compiler.ast.statement.BoxWhile;
 import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
 import ortus.boxlang.compiler.ast.statement.component.BoxTemplateIsland;
-import ortus.boxlang.compiler.parser.BoxScriptParser;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.AssertContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.AtomsContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.BoxClassContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.BreakContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.CaseContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.CatchesContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.ClassBodyContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.ClassBodyStatementContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.ClassOrInterfaceContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.ComponentAttributeContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.ComponentContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.ComponentIslandContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.ContinueContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.DoContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.EmptyStatementBlockContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprAddContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprAndContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprArrayAccessContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprArrayLiteralContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprAssignContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprBAndContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprBXorContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprBinaryContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprBitShiftContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprBorContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprCastAsContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprCatContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprDotFloatContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprDotOrColonAccessContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprElvisContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprEqualContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprFunctionCallContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprIdentifierContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprInstanceOfContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprLiteralsContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprMultContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprNewContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprNotContainsContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprOrContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprOutStringContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprPostfixContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprPowerContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprPrecedenceContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprPrefixContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprRelationalContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprStatAnonymousFunctionContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprStatInvocableContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprTernaryContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprUnaryContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExprXorContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.ExpressionContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.FinallyBlockContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.ForContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.FunctionContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.FunctionOrStatementContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.FunctionParamContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.FunctionParamListContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.FunctionSignatureContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.IfContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.ImportStatementContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.IncludeContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.InterfaceContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.InvocableContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.ModifierContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.NormalStatementBlockContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.NotContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.ParamContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.PostAnnotationContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.PreAnnotationContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.PropertyContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.RethrowContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.ReturnContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.ScriptContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.SimpleStatementContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.StatementBlockContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.StatementContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.StatementOrBlockContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.StaticInitializerContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.StructExpressionContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.SwitchContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.ThrowContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.TryContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammar.WhileContext;
-import ortus.boxlang.parser.antlr.BoxScriptGrammarBaseVisitor;
+import ortus.boxlang.compiler.parser.BoxParser;
+import ortus.boxlang.parser.antlr.BoxGrammar;
+import ortus.boxlang.parser.antlr.BoxGrammar.AssertContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.AtomsContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.BoxClassContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.BreakContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.CaseContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.CatchesContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.ClassBodyContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.ClassBodyStatementContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.ClassOrInterfaceContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.ComponentAttributeContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.ComponentContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.ComponentIslandContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.ContinueContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.DoContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.EmptyStatementBlockContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.ExprAddContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.ExprAndContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.ExprArrayAccessContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.ExprArrayLiteralContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.ExprAssignContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.ExprBAndContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.ExprBXorContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.ExprBinaryContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.ExprBitShiftContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.ExprBorContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.ExprCastAsContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.ExprCatContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.ExprDotFloatContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.ExprDotOrColonAccessContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.ExprElvisContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.ExprEqualContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.ExprFunctionCallContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.ExprIdentifierContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.ExprInstanceOfContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.ExprLiteralsContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.ExprMultContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.ExprNewContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.ExprNotContainsContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.ExprOrContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.ExprOutStringContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.ExprPostfixContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.ExprPowerContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.ExprPrecedenceContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.ExprPrefixContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.ExprRelationalContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.ExprStatAnonymousFunctionContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.ExprStatInvocableContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.ExprTernaryContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.ExprUnaryContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.ExprXorContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.ExpressionContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.FinallyBlockContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.ForContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.FunctionContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.FunctionOrStatementContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.FunctionParamContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.FunctionParamListContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.FunctionSignatureContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.IfContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.ImportStatementContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.IncludeContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.InterfaceContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.InvocableContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.ModifierContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.NormalStatementBlockContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.NotContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.ParamContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.PostAnnotationContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.PreAnnotationContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.PropertyContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.RethrowContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.ReturnContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.ScriptContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.SimpleStatementContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.StatementBlockContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.StatementContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.StatementOrBlockContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.StaticInitializerContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.StructExpressionContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.SwitchContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.ThrowContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.TryContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.WhileContext;
+import ortus.boxlang.parser.antlr.BoxGrammarBaseVisitor;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.services.ComponentService;
 
@@ -162,13 +162,13 @@ import ortus.boxlang.runtime.services.ComponentService;
  * We create a standardized AST here, from whence we can then perform further
  * analysis and transformations and eventually code generation, should that be the end goal.
  */
-public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
+public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 
-	private final BoxScriptParser		tools;
+	private final BoxParser				tools;
 	private final BoxExpressionVisitor	expressionVisitor;
 	public ComponentService				componentService	= BoxRuntime.getInstance().getComponentService();
 
-	public BoxVisitor( BoxScriptParser tools ) {
+	public BoxVisitor( BoxParser tools ) {
 		this.tools				= tools;
 		this.expressionVisitor	= new BoxExpressionVisitor( tools, this );
 	}
@@ -201,15 +201,15 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 
 	@Override
 	public BoxNode visitImportStatement( ImportStatementContext ctx ) {
-		var									pos		= tools.getPosition( ctx );
-		var									src		= tools.getSourceText( ctx );
+		var							pos		= tools.getPosition( ctx );
+		var							src		= tools.getSourceText( ctx );
 
-		var									prefix	= Optional.ofNullable( ctx.preFix() ).map( ParseTree::getText ).orElse( "" );
-		BoxScriptGrammar.ImportFQNContext	fqn		= ctx.importFQN();
-		BoxExpression						expr	= new BoxFQN( prefix + fqn.getText(), tools.getPosition( fqn ),
+		var							prefix	= Optional.ofNullable( ctx.preFix() ).map( ParseTree::getText ).orElse( "" );
+		BoxGrammar.ImportFQNContext	fqn		= ctx.importFQN();
+		BoxExpression				expr	= new BoxFQN( prefix + fqn.getText(), tools.getPosition( fqn ),
 		    tools.getSourceText( ctx.preFix() != null ? ctx.preFix() : fqn, fqn ) );
 
-		BoxIdentifier						alias	= Optional.ofNullable( ctx.identifier() ).map( id -> ( BoxIdentifier ) id.accept( expressionVisitor ) )
+		BoxIdentifier				alias	= Optional.ofNullable( ctx.identifier() ).map( id -> ( BoxIdentifier ) id.accept( expressionVisitor ) )
 		    .orElse( null );
 
 		return new BoxImport( expr, alias, pos, src );
@@ -308,15 +308,15 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 
 	@Override
 	public BoxNode visitStatement( StatementContext ctx ) {
-		List<Function<BoxScriptGrammar.StatementContext, ParserRuleContext>> functions = Arrays.asList( StatementContext::importStatement,
-		    BoxScriptGrammar.StatementContext::do_, StatementContext::for_, StatementContext::if_, BoxScriptGrammar.StatementContext::switch_,
-		    StatementContext::try_, StatementContext::while_, BoxScriptGrammar.StatementContext::expressionStatement, StatementContext::include,
-		    StatementContext::component, BoxScriptGrammar.StatementContext::statementBlock, StatementContext::simpleStatement,
-		    BoxScriptGrammar.StatementContext::componentIsland, StatementContext::throw_,
+		List<Function<BoxGrammar.StatementContext, ParserRuleContext>> functions = Arrays.asList( StatementContext::importStatement,
+		    BoxGrammar.StatementContext::do_, StatementContext::for_, StatementContext::if_, BoxGrammar.StatementContext::switch_,
+		    StatementContext::try_, StatementContext::while_, BoxGrammar.StatementContext::expressionStatement, StatementContext::include,
+		    StatementContext::component, BoxGrammar.StatementContext::statementBlock, StatementContext::simpleStatement,
+		    BoxGrammar.StatementContext::componentIsland, StatementContext::throw_,
 		    StatementContext::emptyStatementBlock );
 
 		// Iterate over the functions
-		for ( Function<BoxScriptGrammar.StatementContext, ParserRuleContext> function : functions ) {
+		for ( Function<BoxGrammar.StatementContext, ParserRuleContext> function : functions ) {
 			ParserRuleContext result = function.apply( ctx );
 			if ( result != null ) {
 				return result.accept( this );
@@ -525,12 +525,12 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 	@Override
 	public BoxNode visitSimpleStatement( SimpleStatementContext ctx ) {
 
-		List<Function<BoxScriptGrammar.SimpleStatementContext, ParserRuleContext>> functions = Arrays.asList( SimpleStatementContext::break_,
-		    BoxScriptGrammar.SimpleStatementContext::continue_, SimpleStatementContext::rethrow, BoxScriptGrammar.SimpleStatementContext::assert_,
-		    SimpleStatementContext::param, SimpleStatementContext::return_, BoxScriptGrammar.SimpleStatementContext::not );
+		List<Function<BoxGrammar.SimpleStatementContext, ParserRuleContext>> functions = Arrays.asList( SimpleStatementContext::break_,
+		    BoxGrammar.SimpleStatementContext::continue_, SimpleStatementContext::rethrow, BoxGrammar.SimpleStatementContext::assert_,
+		    SimpleStatementContext::param, SimpleStatementContext::return_, BoxGrammar.SimpleStatementContext::not );
 
 		// Iterate over the functions
-		for ( Function<BoxScriptGrammar.SimpleStatementContext, ParserRuleContext> function : functions ) {
+		for ( Function<BoxGrammar.SimpleStatementContext, ParserRuleContext> function : functions ) {
 			ParserRuleContext result = function.apply( ctx );
 			if ( result != null ) {
 				return result.accept( this );
@@ -544,8 +544,8 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 
 	@Override
 	public BoxNode visitComponentIsland( ComponentIslandContext ctx ) {
-		return new BoxTemplateIsland( tools.parseBoxTemplateStatements( ctx.componentIslandBody().getText(), tools.getPosition( ctx.componentIslandBody() ) ),
-		    tools.getPosition( ctx.componentIslandBody() ), tools.getSourceText( ctx.componentIslandBody() ) );
+		return new BoxTemplateIsland( tools.toAst( null, ctx.template().template_statements() ),
+		    tools.getPosition( ctx.template() ), tools.getSourceText( ctx.template() ) );
 	}
 
 	@Override
@@ -1009,24 +1009,24 @@ public class BoxVisitor extends BoxScriptGrammarBaseVisitor<BoxNode> {
 		return ( index >= 0 && index < list.size() ) ? list.get( index ) : null;
 	}
 
-	private BoxFunctionDeclaration buildFunction( List<BoxScriptGrammar.PreAnnotationContext> preAnnotations,
-	    List<BoxScriptGrammar.PostAnnotationContext> postAnnotations, String name, FunctionSignatureContext functionSignature,
-	    BoxScriptGrammar.NormalStatementBlockContext statementBlock, ParserRuleContext ctx ) {
+	private BoxFunctionDeclaration buildFunction( List<BoxGrammar.PreAnnotationContext> preAnnotations,
+	    List<BoxGrammar.PostAnnotationContext> postAnnotations, String name, FunctionSignatureContext functionSignature,
+	    BoxGrammar.NormalStatementBlockContext statementBlock, ParserRuleContext ctx ) {
 
-		var										pos					= tools.getPosition( ctx );
-		var										src					= tools.getSourceText( ctx );
+		var									pos					= tools.getPosition( ctx );
+		var									src					= tools.getSourceText( ctx );
 
-		BoxReturnType							returnType;
+		BoxReturnType						returnType;
 
-		List<BoxArgumentDeclaration>			args				= new ArrayList<>();
-		List<BoxAnnotation>						annotations			= new ArrayList<>();
-		List<BoxDocumentationAnnotation>		documentation		= new ArrayList<>();
-		List<BoxAnnotation>						annToRemove			= new ArrayList<>();
-		List<BoxMethodDeclarationModifier>		modifiers			= new ArrayList<>();
-		BoxAccessModifier						visibility			= null;
-		List<BoxStatement>						body;
+		List<BoxArgumentDeclaration>		args				= new ArrayList<>();
+		List<BoxAnnotation>					annotations			= new ArrayList<>();
+		List<BoxDocumentationAnnotation>	documentation		= new ArrayList<>();
+		List<BoxAnnotation>					annToRemove			= new ArrayList<>();
+		List<BoxMethodDeclarationModifier>	modifiers			= new ArrayList<>();
+		BoxAccessModifier					visibility			= null;
+		List<BoxStatement>					body;
 
-		List<BoxScriptGrammar.ModifierContext>	modifierContexts	= Optional.ofNullable( functionSignature.modifier() ).orElse( Collections.emptyList() );
+		List<BoxGrammar.ModifierContext>	modifierContexts	= Optional.ofNullable( functionSignature.modifier() ).orElse( Collections.emptyList() );
 
 		// Resolve modifiers and access qualifiers, in any order
 		for ( ModifierContext modifierContext : modifierContexts ) {

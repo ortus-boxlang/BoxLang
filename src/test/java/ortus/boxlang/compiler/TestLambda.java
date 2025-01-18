@@ -34,7 +34,7 @@ import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxExpressionStatement;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
-import ortus.boxlang.compiler.parser.BoxScriptParser;
+import ortus.boxlang.compiler.parser.BoxParser;
 import ortus.boxlang.compiler.parser.Parser;
 import ortus.boxlang.compiler.parser.ParsingResult;
 
@@ -61,7 +61,7 @@ public class TestLambda extends TestBase {
 		                          ( required string param1='default' key="value1",
 		                            required string param2='default' key="value2" ) key="Brad" -> {return param1}
 		                           """;
-		BoxScriptParser	parser	= new BoxScriptParser();
+		BoxParser		parser	= new BoxParser();
 		ParsingResult	result	= parser.parse( code );
 		assertTrue( result.isCorrect() );
 		BoxScript script = ( BoxScript ) result.getRoot();

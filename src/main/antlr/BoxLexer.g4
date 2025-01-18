@@ -1,4 +1,4 @@
-lexer grammar CFLexer;
+lexer grammar BoxLexer;
 
 // $antlr-format alignTrailingComments true
 // $antlr-format maxEmptyLinesToKeep 1
@@ -53,8 +53,9 @@ options {
 	public boolean isTagStart() {
 		boolean result = lastModeWas( hashMode, 1 ) 
 			&& _modeStack.contains(DEFAULT_TEMPLATE_MODE) 
-			&& ( _input.LA( 1 ) == 99 || _input.LA( 1 ) == 67 ) // c or C 
-			&& ( _input.LA( 2 ) == 102 || _input.LA( 2 ) == 70 ); // f or F
+			&& ( _input.LA( 1 ) == 98 || _input.LA( 1 ) == 66 ) // b or B 
+			&& ( _input.LA( 2 ) == 120 || _input.LA( 2 ) == 88 )// x or X
+			&&  _input.LA( 2 ) == 58; // colon char (:) 
 
 		if( result ) {
 			// pop mode until we're back to the default template mode
@@ -68,9 +69,10 @@ options {
 	public boolean isTagEnd() {
 		boolean result = lastModeWas( hashMode, 1 ) 
 			&& _modeStack.contains(DEFAULT_TEMPLATE_MODE) 
-			&& _input.LA( 1 ) == 47 // a forwardslash char (/)
-			&& ( _input.LA( 2 ) == 99 || _input.LA( 2 ) == 67 ) // c or C 
-			&& ( _input.LA( 3 ) == 102 || _input.LA( 3 ) == 70 ); // f or F
+			&& _input.LA( 1 ) == 47  // a forwardslash char (/)
+			&& ( _input.LA( 1 ) == 98 || _input.LA( 1 ) == 66 ) // b or B 
+			&& ( _input.LA( 2 ) == 120 || _input.LA( 2 ) == 88 )// x or X
+			&&  _input.LA( 2 ) == 58; // colon char (:) 
 
 		if( result ) {
 			// pop mode until we're back to the default template mode
@@ -95,7 +97,7 @@ options {
 	private boolean isExpressionComplete() {
 		return parenCount == 0 && braceCount == 0 && bracketCount == 0;
 	}
-	
+
 }
 
 /*
@@ -152,92 +154,92 @@ COMPONENT_CLOSE_EQUAL:
     '>=' {isExpressionComplete() && _modeStack.contains(TEMPLATE_EXPRESSION_MODE_COMPONENT)}? -> popMode, popMode, popMode, popMode, popMode
 ;
 
-// Comments can live inside script expressions, if we're inside a component/tag (CF/Lucee compat only)
-COMMENT_START10:
-    '<!---' {_modeStack.contains(TEMPLATE_COMPONENT_MODE)}? -> pushMode(TEMPLATE_COMMENT_QUIET), channel(HIDDEN), type(COMMENT_START)
-;
-
 fragment COMPONENT_WHITESPACE2: [ \t\r\n]*;
 SCRIPT_END_BODY:
-    '</' COMPONENT_WHITESPACE2 'cfscript' COMPONENT_WHITESPACE2 '>' {_modeStack.contains(TEMPLATE_XFSCRIPT)}? -> popMode, popMode
+    '</' COMPONENT_WHITESPACE2 'bx:script' COMPONENT_WHITESPACE2 '>' {_modeStack.contains(TEMPLATE_BXSCRIPT)}? -> popMode, popMode
 ;
 
-// Try and detect truncated expressions in tag code '<cf' 
+// Try and detect truncated expressions in tag code '<bx:' 
 UNEXPECTED_EXPRESSION_END: '<' {isTagStart()}? -> pushMode(TEMPLATE_POSSIBLE_COMPONENT);
-// Try and detect truncated expressions in tag code '</cf' 
+// Try and detect truncated expressions in tag code '</bx:' 
 UNEXPECTED_EXPRESSION_SLASH_END:
     '<' {isTagEnd()}? -> type(UNEXPECTED_EXPRESSION_END), pushMode(TEMPLATE_POSSIBLE_COMPONENT)
 ;
 
-ABSTRACT   : 'ABSTRACT';
-ANY        : 'ANY';
-ARRAY      : 'ARRAY';
-AS         : 'AS';
-BOOLEAN    : 'BOOLEAN';
-BREAK      : 'BREAK';
-CASE       : 'CASE';
-CASTAS     : 'CASTAS';
-CATCH      : 'CATCH';
-CONTAIN    : 'CONTAIN';
-CONTAINS   : 'CONTAINS';
-CONTINUE   : 'CONTINUE';
-DEFAULT    : 'DEFAULT';
-DO         : 'DO';
-DOES       : 'DOES';
-ELSEIF     : 'ELSEIF';
-ELSE       : 'ELSE';
-EQV        : 'EQV';
-FALSE      : 'FALSE';
-FINAL      : 'FINAL';
-FINALLY    : 'FINALLY';
-FOR        : 'FOR';
-FUNCTION   : 'FUNCTION';
-GREATER    : 'GREATER';
-IF         : 'IF';
-IMP        : 'IMP';
-IMPORT     : 'IMPORT';
-IN         : 'IN';
-INCLUDE    : 'INCLUDE';
-INSTANCEOF : 'INSTANCEOF';
-INTERFACE  : 'INTERFACE';
-IS         : 'IS';
-JAVA       : 'JAVA';
-LESS       : 'LESS';
-MESSAGE    : 'MESSAGE';
-MOD        : 'MOD';
-NEW        : 'NEW';
-NULL       : 'NULL';
-NUMERIC    : 'NUMERIC';
-PARAM      : 'PARAM';
-PACKAGE    : 'PACKAGE';
-PRIVATE    : 'PRIVATE';
-PROPERTY   : 'PROPERTY';
-PUBLIC     : 'PUBLIC';
-QUERY      : 'QUERY';
-REMOTE     : 'REMOTE';
-REQUIRED   : 'REQUIRED';
-RETHROW    : 'RETHROW';
-RETURN     : 'RETURN';
-REQUEST    : 'REQUEST';
-SERVER     : 'SERVER';
-SETTING    : 'SETTING';
-STATIC     : 'STATIC';
-STRING     : 'STRING';
-STRUCT     : 'STRUCT';
-SWITCH     : 'SWITCH';
-THAN       : 'THAN';
-THROW      : 'THROW';
-TO         : 'TO';
-TRUE       : 'TRUE';
-TRY        : 'TRY';
-TYPE       : 'TYPE';
-VAR        : 'VAR';
-VARIABLES  : 'VARIABLES';
-WHEN       : 'WHEN';
-WHILE      : 'WHILE';
-XOR        : 'XOR';
+ABORT       : 'ABORT';
+ABSTRACT    : 'ABSTRACT';
+ANY         : 'ANY';
+ARRAY       : 'ARRAY';
+AS          : 'AS';
+ASSERT      : 'ASSERT';
+BOOLEAN     : 'BOOLEAN';
+BREAK       : 'BREAK';
+CASE        : 'CASE';
+CASTAS      : 'CASTAS';
+CATCH       : 'CATCH';
+CONTAIN     : 'CONTAIN';
+CONTAINS    : 'CONTAINS';
+CONTINUE    : 'CONTINUE';
+DEFAULT     : 'DEFAULT';
+DO          : 'DO';
+DOES        : 'DOES';
+ELSE        : 'ELSE';
+EQV         : 'EQV';
+EXIT        : 'EXIT';
+FALSE       : 'FALSE';
+FINAL       : 'FINAL';
+FINALLY     : 'FINALLY';
+FOR         : 'FOR';
+FUNCTION    : 'FUNCTION';
+GREATER     : 'GREATER';
+IF          : 'IF';
+IMP         : 'IMP';
+IMPORT      : 'IMPORT';
+IN          : 'IN';
+INCLUDE     : 'INCLUDE';
+INSTANCEOF  : 'INSTANCEOF';
+INTERFACE   : 'INTERFACE';
+IS          : 'IS';
+JAVA        : 'JAVA';
+LESS        : 'LESS';
+LOCK        : 'LOCK';
+MESSAGE     : 'MESSAGE';
+MOD         : 'MOD';
+NEW         : 'NEW';
+NULL        : 'NULL';
+NUMERIC     : 'NUMERIC';
+PARAM       : 'PARAM';
+PACKAGE     : 'PACKAGE';
+PRIVATE     : 'PRIVATE';
+PROPERTY    : 'PROPERTY';
+PUBLIC      : 'PUBLIC';
+QUERY       : 'QUERY';
+REMOTE      : 'REMOTE';
+REQUIRED    : 'REQUIRED';
+RETHROW     : 'RETHROW';
+RETURN      : 'RETURN';
+REQUEST     : 'REQUEST';
+SERVER      : 'SERVER';
+SETTING     : 'SETTING';
+STATIC      : 'STATIC';
+STRING      : 'STRING';
+STRUCT      : 'STRUCT';
+SWITCH      : 'SWITCH';
+THAN        : 'THAN';
+THREAD      : 'THREAD';
+THROW       : 'THROW';
+TO          : 'TO';
+TRANSACTION : 'TRANSACTION';
+TRUE        : 'TRUE';
+TRY         : 'TRY';
+TYPE        : 'TYPE';
+VAR         : 'VAR';
+VARIABLES   : 'VARIABLES';
+WHEN        : 'WHEN';
+WHILE       : 'WHILE';
+XOR         : 'XOR';
 
-COMPONENT: 'COMPONENT';
+CLASS: 'CLASS';
 
 AND    : 'AND';
 AMPAMP : '&&';
@@ -316,9 +318,7 @@ BITWISE_SIGNED_LEFT_SHIFT    : 'b<<';
 BITWISE_SIGNED_RIGHT_SHIFT   : 'b>>';
 BITWISE_UNSIGNED_RIGHT_SHIFT : 'b>>>';
 
-// This totally should not be allowed in script, but Lucee allows it and it's in code :/
-
-TAG_COMMENT_START: '<!---' -> pushMode(TAG_COMMENT), channel(HIDDEN);
+COMPONENT_PREFIX: 'bx:';
 
 // ANY NEW LEXER RULES FOR AN ENGLISH WORD NEEDS ADDED TO THE identifer RULE IN THE PARSER
 
@@ -338,14 +338,15 @@ OPEN_QUOTE: '"' -> pushMode(quotesMode);
 
 OPEN_SINGLE: '\'' -> type(OPEN_QUOTE), pushMode(squotesMode);
 
-fragment DIGIT     : [0-9];
-fragment DOT_FLOAT : '.' DIGIT+ ([e] [+-]? DIGIT+)? | DIGIT+ [e] [+-]? DIGIT+;
-FLOAT_LITERAL      : DIGIT+ DOT_FLOAT;
-DOT_FLOAT_LITERAL  : DOT_FLOAT;
-INTEGER_LITERAL    : DIGIT+;
-
+fragment DIGIT: [0-9];
+fragment DOT_FLOAT:
+    '.' INTEGER_LITERAL ([e] [+-]? INTEGER_LITERAL)?
+    | INTEGER_LITERAL [e] [+-]? INTEGER_LITERAL
+;
+FLOAT_LITERAL                  : INTEGER_LITERAL DOT_FLOAT;
+DOT_FLOAT_LITERAL              : DOT_FLOAT;
+INTEGER_LITERAL                : DIGIT+ ([_]? DIGIT)*;
 fragment ID_BODY               : [a-z_$]+ ( [_]+ | [a-z]+ | DIGIT)*;
-PREFIXEDIDENTIFIER             : 'CF' ID_BODY;
 IDENTIFIER                     : ID_BODY;
 DOT_NUMBER_PREFIXED_IDENTIFIER : DOT_FLOAT ID_BODY;
 ILLEGAL_IDENTIFIER             : DIGIT+ ID_BODY;
@@ -356,26 +357,6 @@ COMPONENT_ISLAND_START: '```' -> pushMode(componentIsland), pushMode(DEFAULT_TEM
 // However, we don't want the lexer to throw an error, we want the parser to
 // throw an error. So, we eat bad characters into their own token
 BADC: .;
-
-// *********************************************************************************************************************
-
-mode TAG_COMMENT;
-
-// If we reach an "ending" comment, but there are 2 or more TAG_COMMENT modes on the stack, this is
-// just the end of a nested comment so we emit a TAG_COMMENT_TEXT token instead.
-TAG_COMMENT_END_BUT_NOT_REALLY:
-    '--->' {countModes(TAG_COMMENT) > 1}? -> type(TAG_COMMENT_TEXT), popMode, channel(HIDDEN)
-;
-
-TAG_COMMENT_END: '--->' -> popMode, channel(HIDDEN);
-
-TAG_COMMENT_START2:
-    '<!---' -> pushMode(TAG_COMMENT), type(TAG_COMMENT_START), channel(HIDDEN)
-;
-
-TAG_COMMENT_TEXT: .+? -> channel(HIDDEN);
-
-// *********************************************************************************************************************
 
 mode componentIsland;
 
@@ -422,10 +403,12 @@ COMMENT_START: '<!---' -> pushMode(TEMPLATE_COMMENT_MODE);
 
 TEMPLATE_WS: (' ' | '\t' | '\r'? '\n')+;
 
-SCRIPT_OPEN: '<cfscript' .*? '>' -> pushMode(TEMPLATE_XFSCRIPT), pushMode(DEFAULT_SCRIPT_MODE);
+SCRIPT_OPEN:
+    '<bx:script' .*? '>' -> pushMode(TEMPLATE_BXSCRIPT), pushMode(DEFAULT_SCRIPT_MODE)
+;
 
 OUTPUT_START:
-    '<cfoutput' -> pushMode(TEMPLATE_POSSIBLE_COMPONENT), pushMode(TEMPLATE_COMPONENT_MODE), pushMode(TEMPLATE_OUTPUT_MODE)
+    '<bx:output' -> pushMode(TEMPLATE_POSSIBLE_COMPONENT), pushMode(TEMPLATE_COMPONENT_MODE), pushMode(TEMPLATE_OUTPUT_MODE)
 ;
 
 COMPONENT_OPEN: '<' -> pushMode(TEMPLATE_POSSIBLE_COMPONENT);
@@ -482,7 +465,7 @@ TEMPLATE_COMPONENT : 'component' -> pushMode( TEMPLATE_COMPONENT_MODE );
 TEMPLATE_INTERFACE : 'interface' -> pushMode( TEMPLATE_COMPONENT_MODE );
 TEMPLATE_FUNCTION  : 'function'  -> pushMode( TEMPLATE_COMPONENT_MODE );
 TEMPLATE_ARGUMENT  : 'argument'  -> pushMode( TEMPLATE_COMPONENT_MODE );
-// cfquery doesn't have a dedicated AST node, but we need to pretend we're in a cfoutput when we enter a cfquery.
+// bx:query doesn't have a dedicated AST node, but we need to pretend we're in a bx:output when we enter a bx:query.
 TEMPLATE_QUERY:
     'query' {isQuery=true;} -> type(COMPONENT_NAME), pushMode( TEMPLATE_COMPONENT_MODE )
 ;
@@ -534,7 +517,7 @@ fragment COMPONENT_NameStartChar: [a-z_];
 // *********************************************************************************************************************
 mode TEMPLATE_COMPONENT_MODE;
 
-// Comments can live inside of a tag <cfTag <!--- comment ---> foo=bar >
+// Comments can live inside of a tag <bx:Tag <!--- comment ---> foo=bar >
 COMMENT_START1:
     '<!---' -> pushMode(TEMPLATE_COMMENT_QUIET), channel(HIDDEN), type(COMMENT_START)
 ;
@@ -585,7 +568,7 @@ mode TEMPLATE_END_COMPONENT;
 TEMPLATE_IF2        : 'if'        -> type(TEMPLATE_IF);
 TEMPLATE_COMPONENT2 : 'component' -> type(TEMPLATE_COMPONENT);
 TEMPLATE_FUNCTION2  : 'function'  -> type(TEMPLATE_FUNCTION);
-// If we're ending a cfquery, we need to use the special exit below with the extra pop out of output mode
+// If we're ending a bx:query, we need to use the special exit below with the extra pop out of output mode
 TEMPLATE_QUERY2: 'query' {isQuery=true;} -> type(COMPONENT_NAME);
 
 // popping back to: POSSIBLE_COMPONENT -> DEFAULT_MODE -> OUTPUT_MODE -> COMPONENT -> POSSIBLE_COMPONENT -> DEFAULT_MODE
@@ -611,7 +594,7 @@ TEMPLATE_DEFAULTCASE2 : 'defaultcase' -> type(TEMPLATE_DEFAULTCASE);
 COMPONENT_WHITESPACE_OUTPUT3: [ \t\r\n] -> skip;
 
 COMPONENT_NAME2: COMPONENT_NameStartChar COMPONENT_NameChar* -> type(COMPONENT_NAME);
-// If we're coming out of a cfquery, then pop 2 extra times to get out of the output mode and additional default template mode
+// If we're coming out of a bx:query, then pop 2 extra times to get out of the output mode and additional default template mode
 COMPONENT_CLOSE2: '>' {isQuery}? -> popMode, popMode, popMode, popMode, type(COMPONENT_CLOSE);
 // all other ending tags
 COMPONENT_CLOSE23: '>' -> popMode, popMode, type(COMPONENT_CLOSE);
@@ -627,12 +610,12 @@ TEMPLATE_OPEN_QUOTE2: '"' -> type(OPEN_QUOTE), pushMode(quotesMode);
 
 TEMPLATE_OPEN_SINGLE: '\'' -> type(OPEN_QUOTE), pushMode(squotesMode);
 
-// If we're in a cfoutput tag, don't pop as far and stay in outut mode
+// If we're in a bx:output tag, don't pop as far and stay in output mode
 COMPONENT_CLOSE_OUTPUT2:
     '>' {lastModeWas(TEMPLATE_OUTPUT_MODE,1)}? -> popMode, pushMode(DEFAULT_TEMPLATE_MODE), type( COMPONENT_CLOSE )
 ;
 
-// If we're in a cfoutput tag, pop all the way out of the component
+// If we're in a bx:output tag, pop all the way out of the component
 COMPONENT_SLASH_CLOSE2:
     '/>' {lastModeWas(TEMPLATE_OUTPUT_MODE,1)}? -> popMode, popMode, popMode, type( COMPONENT_SLASH_CLOSE )
 ;
@@ -657,7 +640,7 @@ mode TEMPLATE_UNQUOTED_VALUE_MODE;
 // first whitespace pops all the way out of ATTVALUE back to component mode
 COMPONENT_WHITESPACE_OUTPUT4: [ \t\r\n] -> popMode, popMode, skip;
 
-// If we're in a cfoutput tag, don't pop as far and stay in outut mode
+// If we're in a bx:output tag, don't pop as far and stay in outut mode
 COMPONENT_CLOSE_OUTPUT3:
     '>' {lastModeWas(TEMPLATE_OUTPUT_MODE,2)}? -> popMode, popMode, pushMode(DEFAULT_TEMPLATE_MODE), type( COMPONENT_CLOSE)
 ;
@@ -670,7 +653,7 @@ COMPONENT_CLOSE7:
 // If we find the end of the component, pop all the way out of the component
 COMPONENT_CLOSE3: '>' -> popMode, popMode, popMode, popMode, popMode, type(COMPONENT_CLOSE);
 
-// If we're in a cfoutput tag, pop all the way out of the component
+// If we're in a bx:output tag, pop all the way out of the component
 COMPONENT_SLASH_CLOSE5:
     '/>' {lastModeWas(TEMPLATE_OUTPUT_MODE,1)}? -> popMode, popMode, popMode, popMode, type( COMPONENT_SLASH_CLOSE )
 ;
@@ -688,7 +671,7 @@ mode TEMPLATE_EXPRESSION_MODE_COMPONENT;
 DUMMY: .;
 
 // *********************************************************************************************************************
-mode TEMPLATE_XFSCRIPT;
+mode TEMPLATE_BXSCRIPT;
 
 // This mode is only used for tracking on the stack, it will never match any chars
 DUMMY2: .;
@@ -696,8 +679,8 @@ DUMMY2: .;
 // *********************************************************************************************************************
 mode TEMPLATE_POSSIBLE_COMPONENT;
 
-PREFIX       : 'cf'  {isQuery=false;} -> pushMode(TEMPLATE_COMPONENT_NAME_MODE);
-SLASH_PREFIX : '/cf' {isQuery=false;} -> pushMode(TEMPLATE_END_COMPONENT);
+PREFIX       : 'bx:'  {isQuery=false;} -> pushMode(TEMPLATE_COMPONENT_NAME_MODE);
+SLASH_PREFIX : '/bx:' {isQuery=false;} -> pushMode(TEMPLATE_END_COMPONENT);
 
 COMPONENT_OPEN2: '<' -> type(COMPONENT_OPEN);
 

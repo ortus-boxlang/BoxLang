@@ -1,13 +1,11 @@
-parser grammar BoxScriptGrammar;
-
-// Please note that this is still a WIP, but is essentially complete
+parser grammar BoxGrammar;
 
 // $antlr-format alignTrailingComments true, columnLimit 150, minEmptyLines 1, maxEmptyLinesToKeep 1, reflowComments false, useTab false
 // $antlr-format allowShortBlocksOnASingleLine true, alignSemicolons hanging, alignColons hanging
 // $antlr-format alignColons hanging, allowShortRulesOnASingleLine on, alignFirstTokens on
 
 options {
-    tokenVocab = BoxScriptLexer;
+    tokenVocab = BoxLexer;
     superClass = BoxParserControl;
 }
 
@@ -19,11 +17,7 @@ options {
 identifier: IDENTIFIER | reservedKeyword
     ;
 
-componentName
-    :
-    // Ask the component service if the component exists and verify that this context is actually a component.
-    // { isComponent(_input) }? identifier
-    identifier
+componentName: identifier
     ;
 
 specialComponentName: TRANSACTION | LOCK | THREAD | ABORT | EXIT | PARAM
@@ -49,11 +43,11 @@ reservedKeyword
     | DO
     | DOES
     | ELSE
+    // | ELSE IF? // TODO: May have to special case this :(
     | FALSE
     | FINAL
     | FINALLY
     | FOR
-    // | FUNCTION TODO: Brad
     | FUNCTION
     | IF
     | IMPORT
@@ -70,14 +64,12 @@ reservedKeyword
     | PARAM
     | PRIVATE
     | PROPERTY
-    //| PROPERTY TODO: Brad
     | PUBLIC
     | QUERY
     | REMOTE
     | REQUEST
     | REQUIRED
     | RETHROW
-    //| RETURN TODO: Brad
     | RETURN
     | SERVER
     | SETTING
@@ -90,8 +82,8 @@ reservedKeyword
     | TRUE
     | TRY
     | TYPE
-    | VARIABLES
     | VAR
+    | VARIABLES
     | WHEN
     | WHILE
     | TRANSACTION
@@ -133,7 +125,7 @@ classOrInterface: SEMICOLON* (boxClass | interface)
     ;
 
 // This is the top level rule for a script of statements.
-script: SEMICOLON* functionOrStatement* EOF
+script: SEMICOLON* functionOrStatement*
     ;
 
 // Used for tests, to force the parser to look at all tokens and not just stop at the first expression
@@ -201,8 +193,7 @@ functionParamList: functionParam (COMMA functionParam)* COMMA?
 functionParam: REQUIRED? type? identifier (EQUALSIGN expression)? postAnnotation*
     ;
 
-// @MyAnnotation "value". This is BL specific, so it's disabled in the CF grammar, but defined here
-// in the base grammar for better rule reuse.
+// @foo "bar"
 preAnnotation: AT fqn annotation*
     ;
 
@@ -249,8 +240,7 @@ property: preAnnotation* PROPERTY postAnnotation* SEMICOLON+
     ;
 
 // /** Comment */
-javadoc: JAVADOC_COMMENT
-    ;
+// javadoc: JAVADOC_COMMENT;
 
 // function() {} or () => {} or () -> {}
 anonymousFunction
@@ -324,7 +314,6 @@ component
         normalStatementBlock
         | SEMICOLON
     )
-    //componentName componentAttribute* (normalStatementBlock | SEMICOLON)
     ;
 
 componentAttribute: identifier ((EQUALSIGN | COLON) expression)?
@@ -452,10 +441,7 @@ case: (CASE expression | DEFAULT) COLON statementOrBlock*
  <bx:set components="here">
  ```
  */
-componentIsland: COMPONENT_ISLAND_START componentIslandBody COMPONENT_ISLAND_END
-    ;
-
-componentIslandBody: COMPONENT_ISLAND_BODY*
+componentIsland: COMPONENT_ISLAND_START template COMPONENT_ISLAND_END
     ;
 
 /*
@@ -507,10 +493,15 @@ structMembers: structMember (COMMA structMember)* COMMA?
 structMember: structKey (COLON | EQUALSIGN) expression
     ;
 
-structKey: identifier | stringLiteral | reservedOperators | INTEGER_LITERAL | ILLEGAL_IDENTIFIER
+structKey
+    : identifier
+    | stringLiteral
+    | reservedOperators
+    | INTEGER_LITERAL
+    | ILLEGAL_IDENTIFIER
+    | SWITCH
     ;
 
-// new java:String( param1 )
 new: NEW preFix? (fqn | stringLiteral) LPAREN argumentList? RPAREN
     ;
 
@@ -545,10 +536,10 @@ expression
 // Note the use of labels allows our visitor to know what it is visiting without complicated token checking etc
 el2
     : ILLEGAL_IDENTIFIER                                                    # exprIllegalIdentifier // 50foo
-    | LPAREN expression RPAREN                                              # exprPrecedence        // (foo)
+    | LPAREN expression RPAREN                                              # exprPrecedence        // ( foo )
     | new                                                                   # exprNew               // new foo.bar.Baz()
     | el2 LPAREN argumentList? RPAREN                                       # exprFunctionCall      // foo(bar, baz)
-    | el2 (QM? DOT | COLONCOLON) el2                                        # exprDotOrColonAccess  // xc.y?.z or foo::bar recursive
+    | el2 (QM? DOT | COLONCOLON) el2                                        # exprDotOrColonAccess  // xc.y?.z or foo::bar recursive and Adobe's stupid foo..bar bug they allow
     | el2 QM? DOT_FLOAT_LITERAL                                             # exprDotFloat          // foo.50
     | el2 QM? DOT_NUMBER_PREFIXED_IDENTIFIER                                # exprDotFloatID        // foo.50bar
     | el2 LBRACKET expression RBRACKET                                      # exprArrayAccess       // foo[bar]
@@ -569,7 +560,6 @@ el2
     | el2 XOR el2         # exprXor        // foo XOR bar
     | el2 INSTANCEOF el2  # exprInstanceOf // InstanceOf operator
     | el2 AMPERSAND el2   # exprCat        // foo & bar - string concatenation
-
     // TODO: Maybe need to merge these three sets of ops as they are all given equal precedence in the original grammar
     | el2 binOps el2                   # exprBinary      // foo eqv bar
     | el2 relOps el2                   # exprRelational  // foo > bar
@@ -599,9 +589,7 @@ el2
         | SLASHEQUAL
         | MODEQUAL
         | CONCATEQUAL
-    ) expression # exprAssign // foo = bar
-
-    // the var is only a modifer for certain expressions, otherwise it's a variable declaration
+    ) expression                                                       # exprAssign     // foo = bar
     | { isAssignmentModifier(_input) }? assignmentModifier+ expression # exprVarDecl    // var foo = bar or final foo = bar
     | identifier                                                       # exprIdentifier // foo
     ;
@@ -645,4 +633,308 @@ binOps: EQV | IMP | CONTAINS | NOT CONTAINS
     ;
 
 preFix: identifier COLON
+    ;
+
+// ##################################
+// ###      TEMPLATE RULES        ###
+// ##################################
+
+// Top-level template rule.  Consists of imports and other statements.
+template: template_statements EOF?
+    ;
+
+// <b>My Name is #qry.name#.</b> We can match as much non interpolated text but we need each
+// interpolated expression to be its own rule to ensure they output in the right order.
+template_textContent
+    : (template_nonInterpolatedText | template_comment)+
+    | ( template_comment* template_interpolatedExpression template_comment*)
+    ;
+
+// <!--- comment ---> or <!--- comment <!--- nested comment ---> comment --->
+template_comment: COMMENT_START (COMMENT_TEXT | COMMENT_START)* COMMENT_END
+    ;
+
+// ANYTHING
+template_componentName: COMPONENT_NAME
+    ;
+
+// <bx:ANYTHING ... >
+template_genericOpenComponent
+    : COMPONENT_OPEN PREFIX template_componentName template_attribute* COMPONENT_CLOSE
+    ;
+
+// <bx:ANYTHING />
+template_genericOpenCloseComponent
+    : COMPONENT_OPEN PREFIX template_componentName template_attribute* COMPONENT_SLASH_CLOSE
+    ;
+
+// </bx:ANYTHING>
+template_genericCloseComponent
+    : COMPONENT_OPEN SLASH_PREFIX template_componentName COMPONENT_CLOSE
+    ;
+
+template_interpolatedExpression: ICHAR expression ICHAR
+    ;
+
+// Any text to be directly output
+template_nonInterpolatedText: ( COMPONENT_OPEN | CONTENT_TEXT | template_whitespace)+
+    ;
+
+template_whitespace: TEMPLATE_WS+
+    ;
+
+template_attribute
+    :
+    // foo="bar" foo=bar
+    template_attributeName COMPONENT_EQUALS template_attributeValue?
+    // foo (value will default to empty string)
+    | template_attributeName
+    ;
+
+// any attributes once we've gotten past the component name
+template_attributeName: ATTRIBUTE_NAME
+    ;
+
+// foo or.... "foo" or... 'foo' or... "#foo#" or... #foo#
+template_attributeValue: template_unquotedValue | ICHAR el2 ICHAR | stringLiteral
+    ;
+
+// foo
+template_unquotedValue: UNQUOTED_VALUE_PART+
+    ;
+
+// Normal set of statements that can be anywhere.  Doesn't include imports.
+template_statements: ( template_statement | template_script | template_textContent)*
+    ;
+
+template_statement
+    : template_boxImport
+    | template_function
+    // <bx:ANYTHING />
+    | template_genericOpenCloseComponent
+    // <bx:ANYTHING ... >
+    | template_genericOpenComponent
+    // </bx:ANYTHING>
+    | template_genericCloseComponent
+    | template_set
+    | template_return
+    | template_if
+    | template_try
+    | template_output
+    | template_while
+    | template_break
+    | template_continue
+    | template_include
+    | template_rethrow
+    | template_throw
+    | template_switch
+    ;
+
+template_function
+    :
+    // <bx:function name="foo" >
+    COMPONENT_OPEN PREFIX TEMPLATE_FUNCTION template_attribute* COMPONENT_CLOSE
+    // zero or more <bx:argument ... >
+    (template_whitespace | template_comment)* (
+        template_argument (template_whitespace | template_comment)*
+    )*
+    // code inside function
+    body = template_statements
+    // </bx:function>
+    COMPONENT_OPEN SLASH_PREFIX TEMPLATE_FUNCTION COMPONENT_CLOSE
+    ;
+
+template_argument
+    :
+    // <bx:argument name="param">
+    COMPONENT_OPEN PREFIX TEMPLATE_ARGUMENT template_attribute* (
+        COMPONENT_SLASH_CLOSE
+        | COMPONENT_CLOSE
+    )
+    ;
+
+template_set
+    :
+    // <bx:set expression> <bx:set expression />
+    COMPONENT_OPEN PREFIX TEMPLATE_SET expression (COMPONENT_SLASH_CLOSE | COMPONENT_CLOSE)
+    ;
+
+// <bx:script> statements... </bx:script>
+template_script: SCRIPT_OPEN script SCRIPT_END_BODY
+    ;
+
+/*
+ <bx:return>
+ <bx:return />
+ <bx:return expression>
+ <bx:return expression />
+ <bx:return 10/5 >
+ <bx:return 20 / 7 />
+ */
+template_return
+    : COMPONENT_OPEN PREFIX TEMPLATE_RETURN expression? (COMPONENT_SLASH_CLOSE | COMPONENT_CLOSE)
+    ;
+
+template_if
+    :
+    // <bx:if ... >`
+    COMPONENT_OPEN PREFIX TEMPLATE_IF ifCondition = expression COMPONENT_CLOSE thenBody = template_statements
+    // Any number of <bx:elseif ... >
+    (
+        COMPONENT_OPEN PREFIX TEMPLATE_ELSEIF elseIfCondition += expression elseIfComponentClose += COMPONENT_CLOSE elseThenBody +=
+            template_statements
+    )*
+    // One optional <bx:else>
+    (
+        COMPONENT_OPEN PREFIX TEMPLATE_ELSE (COMPONENT_CLOSE | COMPONENT_SLASH_CLOSE) elseBody = template_statements
+    )?
+    // Closing </bx:if>
+    COMPONENT_OPEN SLASH_PREFIX TEMPLATE_IF COMPONENT_CLOSE
+    ;
+
+template_try
+    :
+    // <bx:try>
+    COMPONENT_OPEN PREFIX TEMPLATE_TRY COMPONENT_CLOSE
+    // code inside try
+    template_statements
+    // <bx:catch> (zero or more)
+    (template_catchBlock template_statements)*
+    // <bx:finally> (zero or one)
+    template_finallyBlock? template_statements
+    // </bx:try>
+    COMPONENT_OPEN SLASH_PREFIX TEMPLATE_TRY COMPONENT_CLOSE
+    ;
+
+/*
+ <bx:catch type="..."> ... </bx:catch>
+ <bx:catch type="..." />
+ */
+template_catchBlock
+    : (
+        // <bx:catch type="...">
+        COMPONENT_OPEN PREFIX TEMPLATE_CATCH template_attribute* COMPONENT_CLOSE
+        // code in catch
+        template_statements
+        // </bx:catch>
+        COMPONENT_OPEN SLASH_PREFIX TEMPLATE_CATCH COMPONENT_CLOSE
+    )
+    | COMPONENT_OPEN PREFIX TEMPLATE_CATCH template_attribute* COMPONENT_SLASH_CLOSE
+    ;
+
+template_finallyBlock
+    :
+    // <bx:finally>
+    COMPONENT_OPEN PREFIX TEMPLATE_FINALLY COMPONENT_CLOSE
+    // code in finally
+    template_statements
+    // </bx:finally>
+    COMPONENT_OPEN SLASH_PREFIX TEMPLATE_FINALLY COMPONENT_CLOSE
+    ;
+
+template_output
+    :
+    // <bx:output> ...
+    OUTPUT_START template_attribute* COMPONENT_CLOSE
+    // code in output
+    template_statements
+    // </bx:output>
+    COMPONENT_OPEN SLASH_PREFIX OUTPUT_END
+    |
+    // <bx:output />
+    OUTPUT_START template_attribute* COMPONENT_SLASH_CLOSE
+    ;
+
+/*
+ <bx:import componentlib="..." prefix="...">
+ <bx:import name="com.foo.Bar">
+ <bx:import prefix="java"
+ name="com.foo.*">
+ <bx:import prefix="java" name="com.foo.Bar" alias="bradLib">
+ */
+template_boxImport
+    : COMPONENT_OPEN PREFIX TEMPLATE_IMPORT template_attribute* (
+        COMPONENT_CLOSE
+        | COMPONENT_SLASH_CLOSE
+    )
+    ;
+
+template_while
+    :
+    // <bx:while condition="" >
+    COMPONENT_OPEN PREFIX TEMPLATE_WHILE template_attribute* COMPONENT_CLOSE
+    // code inside while
+    template_statements
+    // </bx:while>
+    COMPONENT_OPEN SLASH_PREFIX TEMPLATE_WHILE COMPONENT_CLOSE
+    ;
+
+// <bx:break> or... <bx:break />
+template_break
+    : COMPONENT_OPEN PREFIX TEMPLATE_BREAK label = template_attributeName? (
+        COMPONENT_CLOSE
+        | COMPONENT_SLASH_CLOSE
+    )
+    ;
+
+// <bx:continue> or... <bx:continue />
+template_continue
+    : COMPONENT_OPEN PREFIX TEMPLATE_CONTINUE label = template_attributeName? (
+        COMPONENT_CLOSE
+        | COMPONENT_SLASH_CLOSE
+    )
+    ;
+
+// <bx:include template="..."> or... <bx:include template="..." />
+template_include
+    : COMPONENT_OPEN PREFIX TEMPLATE_INCLUDE template_attribute* (
+        COMPONENT_CLOSE
+        | COMPONENT_SLASH_CLOSE
+    )
+    ;
+
+// <bx:rethrow> or... <bx:rethrow />
+template_rethrow
+    : COMPONENT_OPEN PREFIX TEMPLATE_RETHROW (COMPONENT_CLOSE | COMPONENT_SLASH_CLOSE)
+    ;
+
+// <bx:throw message="..." detail="..."> or... <bx:throw />
+template_throw
+    : COMPONENT_OPEN PREFIX TEMPLATE_THROW template_attribute* (
+        COMPONENT_CLOSE
+        | COMPONENT_SLASH_CLOSE
+    )
+    ;
+
+template_switch
+    :
+    // <bx:switch expression="...">
+    COMPONENT_OPEN PREFIX TEMPLATE_SWITCH template_attribute* COMPONENT_CLOSE
+    // <bx:case> or <bx:defaultcase>
+    template_switchBody
+    // </bx:try>
+    COMPONENT_OPEN SLASH_PREFIX TEMPLATE_SWITCH COMPONENT_CLOSE
+    ;
+
+template_switchBody
+    : (template_statement | template_script | template_textContent | template_case)*
+    ;
+
+template_case
+    : (
+        // <bx:case value="...">
+        COMPONENT_OPEN PREFIX TEMPLATE_CASE template_attribute* COMPONENT_CLOSE
+        // code in case
+        template_statements
+        // </bx:case>
+        COMPONENT_OPEN SLASH_PREFIX TEMPLATE_CASE COMPONENT_CLOSE
+    )
+    | (
+        // <bx:defaultcase>
+        COMPONENT_OPEN PREFIX TEMPLATE_DEFAULTCASE COMPONENT_CLOSE
+        // code in default case
+        template_statements
+        // </bx:defaultcase >
+        COMPONENT_OPEN SLASH_PREFIX TEMPLATE_DEFAULTCASE COMPONENT_CLOSE
+    )
     ;

@@ -67,11 +67,11 @@ public class Parser {
 				isScript	= false;
 			}
 			case BOXSCRIPT -> {
-				parser		= new BoxScriptParser();
+				parser		= new BoxParser();
 				isScript	= true;
 			}
 			case BOXTEMPLATE -> {
-				parser		= new BoxTemplateParser();
+				parser		= new BoxParser();
 				isScript	= false;
 			}
 			default -> {
@@ -135,11 +135,11 @@ public class Parser {
 				isScript	= false;
 			}
 			case BOXSCRIPT -> {
-				parser		= new BoxScriptParser();
+				parser		= new BoxParser();
 				isScript	= true;
 			}
 			case BOXTEMPLATE -> {
-				parser		= new BoxTemplateParser();
+				parser		= new BoxParser();
 				isScript	= false;
 			}
 			default -> {
@@ -170,7 +170,7 @@ public class Parser {
 	 */
 	public ParsingResult parseExpression( String code ) {
 		try {
-			ParsingResult	result	= new BoxScriptParser().parseExpression( code );
+			ParsingResult	result	= new BoxParser().parseExpression( code );
 
 			IStruct			data	= Struct.of(
 			    "code", code,
@@ -184,7 +184,7 @@ public class Parser {
 	}
 
 	public ParsingResult parseStatement( String code ) throws IOException {
-		ParsingResult	result	= new BoxScriptParser().parseStatement( code );
+		ParsingResult	result	= new BoxParser().parseStatement( code );
 
 		IStruct			data	= Struct.of(
 		    "code", code,
