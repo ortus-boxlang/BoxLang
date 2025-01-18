@@ -79,11 +79,13 @@ public class StructFindKeyTest {
 		    	}
 		    };
 		       result = StructFindKey( myStruct, "total" );
+		    emptyResult = StructFindKey( myStruct, "bird", "all" );
 		       """,
 		    context );
 
 		assertTrue( variables.get( result ) instanceof Array );
 		assertEquals( variables.getAsArray( result ).size(), 1 );
+		assertEquals( variables.getAsArray( Key.of( "emptyResult" ) ).size(), 0 );
 		instance.executeSource(
 		    """
 		    myStruct = {

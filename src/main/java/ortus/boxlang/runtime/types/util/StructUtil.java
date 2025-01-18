@@ -456,7 +456,7 @@ public class StructUtil {
 			    Struct	returnStruct	= new Struct( Struct.TYPES.LINKED );
 			    String	keyName			= entry.getKey().getName();
 			    String[] keyParts		= entry.getKey().getName().split( "\\." );
-			    String	flatMapParent	= keyName.substring( 0, keyName.lastIndexOf( "." ) );
+			    String	flatMapParent	= keyName.lastIndexOf( "." ) > -1 ? keyName.substring( 0, keyName.lastIndexOf( "." ) ) : "";
 			    returnStruct.put(
 			        Key.owner,
 			        keyParts.length > 1
