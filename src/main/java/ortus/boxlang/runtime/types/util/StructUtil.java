@@ -462,16 +462,17 @@ public class StructUtil {
 			        keyParts.length > 1
 			            ? unFlattenKeys(
 			                flatMap.entrySet().stream()
-								.filter( mapEntry -> mapEntry.getKey().getName().length() >= flatMapParent.length() && mapEntry.getKey().getName().substring( 0, flatMapParent.length() ).equals( flatMapParent ) )
-								.map( mapEntry -> {
-									String keyname = mapEntry.getKey().getName();
-									String resultKeyName = keyname.substring( flatMapParent.length() + 1 );
-									return new AbstractMap.SimpleEntry<Key, Object>(
-										Key.of( resultKeyName ), mapEntry.getValue() 
-									);
-								}
-								)
-								.collect( BLCollector.toStruct() ),
+			                    .filter( mapEntry -> mapEntry.getKey().getName().length() >= flatMapParent.length()
+			                        && mapEntry.getKey().getName().substring( 0, flatMapParent.length() ).equals( flatMapParent ) )
+			                    .map( mapEntry -> {
+				                    String keyname = mapEntry.getKey().getName();
+				                    String resultKeyName = keyname.substring( flatMapParent.length() + 1 );
+				                    return new AbstractMap.SimpleEntry<Key, Object>(
+				                        Key.of( resultKeyName ), mapEntry.getValue()
+				                    );
+			                    }
+			                    )
+			                    .collect( BLCollector.toStruct() ),
 			                true,
 			                false
 			            )
