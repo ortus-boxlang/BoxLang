@@ -28,10 +28,10 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.semver4j.Semver;
-import org.slf4j.Logger;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.events.BoxEvent;
+import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.modules.ModuleRecord;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
@@ -76,9 +76,9 @@ public class ModuleService extends BaseService {
 	private List<Path>				modulePaths							= new ArrayList<>();
 
 	/**
-	 * Logger
+	 * Modules Logger
 	 */
-	private Logger					logger;
+	private BoxLangLogger			logger;
 
 	/**
 	 * Module registry
@@ -626,38 +626,40 @@ public class ModuleService extends BaseService {
 	}
 
 	/**
-	 * --------------------------------------------------------------------------
-	 * Private Methods
-	 * --------------------------------------------------------------------------
-	 */
-
-	/**
 	 * This method scans all possible module locations and builds the module registry
 	 * of all modules found. This method doesn't activate the modules, it just registers them.
 	 * Duplicate modules are not allowed, first one wins.
 	 */
-	private void buildRegistry() {
+	public void buildRegistry() {
 		this.modulePaths
 		    .stream()
-		    // Walks the path and returns a stream of discovered modules for this path
-		    .flatMap( path -> {
-			    try {
-				    return Files.walk( path, 1 );
-			    } catch ( IOException e ) {
-				    throw new BoxRuntimeException( "Error walking module path: " + path.toString(), e );
-			    }
-		    } )
-		    // Exclude the path if it is a root path in the `modulePaths` list
-		    .filter( filePath -> !this.modulePaths.contains( filePath ) )
-		    // Only module folders
-		    .filter( Files::isDirectory )
-		    // Only where a ModuleConfig.bx exists in the root
-		    .filter( filePath -> Files.exists( filePath.resolve( MODULE_DESCRIPTOR ) ) )
-		    // Filter out already registered modules
-		    .filter( filePath -> !this.registry.containsKey( Key.of( filePath.getFileName().toString() ) ) )
-		    // Convert each filePath to a discovered ModuleRecord
-		    .map( filePath -> new ModuleRecord( filePath.toString() ) )
-		    // Collect the stream into the module registry
-		    .forEach( moduleRecord -> this.registry.put( moduleRecord.name, moduleRecord ) );
+		    .forEach( this::buildRegistryFromPath );
+	}
+
+	/**
+	 * This method scans a single module path and builds the module registry
+	 *
+	 * @param modulePath The path to scan for modules
+	 */
+	public void buildRegistryFromPath( Path modulePath ) {
+		try {
+			Files.walk( modulePath, 1 )
+			    // Exclude the path if it is a root path in the `modulePaths` list
+			    .filter( filePath -> !this.modulePaths.contains( filePath ) )
+			    // Only module folders
+			    .filter( Files::isDirectory )
+			    // Only where a ModuleConfig.bx exists in the root
+			    .filter( filePath -> Files.exists( filePath.resolve( MODULE_DESCRIPTOR ) ) )
+			    // Filter out already registered modules
+			    .filter( filePath -> !this.registry.containsKey( Key.of( filePath.getFileName().toString() ) ) )
+			    // Convert each filePath to a discovered ModuleRecord
+			    .map( filePath -> new ModuleRecord( filePath.toString() ) )
+			    // Collect the stream into the module registry
+			    .forEach( moduleRecord -> this.registry.put( moduleRecord.name, moduleRecord ) );
+		} catch ( IOException e ) {
+			String message = "Error walking and registering module path: " + modulePath.toString();
+			this.logger.error( message, e );
+			throw new BoxRuntimeException( message, e );
+		}
 	}
 }
