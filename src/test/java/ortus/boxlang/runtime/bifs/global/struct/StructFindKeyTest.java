@@ -36,6 +36,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.IStruct;
 
 public class StructFindKeyTest {
@@ -195,35 +196,38 @@ public class StructFindKeyTest {
 		assertEquals( StructCaster.cast( variables.getAsArray( result ).get( 0 ) ).get( Key.value ), 5 );
 	}
 
-	@DisplayName( "It tests the BIF StructFindKey with a null values in the struct" )
+	@DisplayName( "It tests the owner values" )
 	@Test
-	public void testsFindKeyWithNulls() {
+	public void testOwnerValues() {
 		//@formatter:off
 		instance.executeSource(
 		    """
-		      myStruct = {
-				horse: nullValue(),
-				bird: {
-					total: nullValue()
-				},
-				cow: {
-					total: 12
-				},
-				pig: {
-					total: 5
-				},
-				cat: {
-					total: 3
-				}
-			};
-		    result = StructFindKey( myStruct, "pig.total" );
-			resultTop = StructFindKey( myStruct, "cat" );
+			myStruct = {
+			horse: nullValue(),
+			bird: {
+				total: nullValue()
+			},
+			cow: {
+				total: 12
+			},
+			pig: {
+				total: 5
+			},
+			cat: {
+				total: 3
+			}
+		};
+		result = StructFindKey( myStruct, "pig.total" );
+		resultTop = StructFindKey( myStruct, "cat" );
+		resultOwner = resultTop.first().owner;
 		""",
 		context );
 		//@formatter:on
 		assertTrue( variables.get( result ) instanceof Array );
 		assertEquals( 1, variables.getAsArray( result ).size() );
 		assertEquals( 1, variables.getAsArray( Key.of( "resultTop" ) ).size() );
+		assertEquals( Struct.class, variables.get( Key.of( "resultOwner" ) ).getClass() );
+		assertEquals( 3, StructCaster.cast( variables.get( Key.of( "resultOwner" ) ) ).getAsInteger( Key.of( "total" ) ) );
 	}
 
 }

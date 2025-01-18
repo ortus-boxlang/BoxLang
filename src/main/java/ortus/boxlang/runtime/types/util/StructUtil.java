@@ -456,10 +456,11 @@ public class StructUtil {
 			    Struct	returnStruct	= new Struct( Struct.TYPES.LINKED );
 			    String	keyName			= entry.getKey().getName();
 			    String[] keyParts		= entry.getKey().getName().split( "\\." );
+			    String	flatMapParent	= keyName.substring( 0, keyName.lastIndexOf( "." ) );
 			    returnStruct.put(
 			        Key.owner,
 			        keyParts.length > 1
-			            ? flatMap.get( Key.of( keyName.substring( 0, keyName.lastIndexOf( "." ) ) ) )
+			            ? unFlattenKeys( flatMap, true, false ).get( Key.of( flatMapParent ) )
 			            : struct
 			    );
 			    returnStruct.put(
