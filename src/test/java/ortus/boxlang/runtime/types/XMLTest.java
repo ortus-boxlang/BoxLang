@@ -341,6 +341,24 @@ class XMLTest {
 		assertThat( variables.getAsString( result ) ).isEqualTo( "BoxLang Rocks!" );
 	}
 
+	@DisplayName( "It can use the member function keyExists on a node" )
+	@Test
+	@Disabled
+	void testKeyExistsMember() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+			xmlText = "<Ortus><Products><Product>BoxLang</Product><Product>CommandBox</Product><Product>Coldbox</Product></Products></Ortus>";
+			parsed = xmlParse( xmlText );
+			result = parsed.xmlRoot.xmlChildren.filter( (child ) => child.keyExists( "Product" ) );
+			""",
+			context
+		);
+		// @formatter:on
+		assertThat( variables.get( result ) ).isInstanceOf( Array.class );
+		assertThat( variables.getAsArray( result ).size() ).isEqualTo( 1 );
+	}
+
 	@DisplayName( "It can remove an XML Atrribute" )
 	@Test
 	void testRemoveXMLAttributes() {
