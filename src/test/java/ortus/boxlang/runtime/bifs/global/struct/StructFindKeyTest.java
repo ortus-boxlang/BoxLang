@@ -205,7 +205,26 @@ public class StructFindKeyTest {
 			myStruct = {
 			horse: nullValue(),
 			bird: {
-				total: nullValue()
+				total: nullValue(),
+				species : {
+					parrot: {
+						size : "large",
+						total: 1,
+						names : [
+							"Polly",
+							"Jack",
+							"Fred"
+						]
+					},
+					finch: {
+						size : "small",
+						total: 2
+					},
+					duck: {
+						size : "large",
+						total: 3
+					},
+				}
 			},
 			cow: {
 				total: 12
@@ -220,6 +239,10 @@ public class StructFindKeyTest {
 		result = StructFindKey( myStruct, "pig.total" );
 		resultTop = StructFindKey( myStruct, "cat" );
 		resultOwner = resultTop.first().owner;
+		resultNested = structFindKey( myStruct, "size", "all" );
+		nestedOwner = resultNested.first().owner;
+		resultParrotNames = structFindKey( myStruct, "bird.species.parrot.names", "all" );
+		parrotResult = resultParrotNames.first();
 		""",
 		context );
 		//@formatter:on
@@ -228,6 +251,14 @@ public class StructFindKeyTest {
 		assertEquals( 1, variables.getAsArray( Key.of( "resultTop" ) ).size() );
 		assertEquals( Struct.class, variables.get( Key.of( "resultOwner" ) ).getClass() );
 		assertEquals( 3, StructCaster.cast( variables.get( Key.of( "resultOwner" ) ) ).getAsInteger( Key.of( "total" ) ) );
+		assertEquals( Array.class, variables.get( Key.of( "resultNested" ) ).getClass() );
+		assertEquals( 3, variables.getAsArray( Key.of( "resultNested" ) ).size() );
+		assertEquals( Struct.class, variables.get( Key.of( "nestedOwner" ) ).getClass() );
+		assertTrue( StructCaster.cast( variables.get( Key.of( "nestedOwner" ) ) ).containsKey( Key.of( "size" ) ) );
+		assertTrue( StructCaster.cast( variables.get( Key.of( "nestedOwner" ) ) ).containsKey( Key.of( "total" ) ) );
+		assertEquals( Array.class, variables.get( Key.of( "resultParrotNames" ) ).getClass() );
+		assertEquals( 1, variables.getAsArray( Key.of( "resultParrotNames" ) ).size() );
+		assertEquals( Array.class, variables.getAsStruct( Key.of( "parrotResult" ) ).get( Key.value ).getClass() );
 	}
 
 }
