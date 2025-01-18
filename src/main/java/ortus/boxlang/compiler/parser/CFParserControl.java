@@ -167,7 +167,7 @@ public abstract class CFParserControl extends Parser {
 		// SomeComp CLASS="dfdsffds"
 		//
 		// NB: It is possible that we could just check LT(1) == "PARAM" - but it is not clear to
-		// me that PARAM always should be parsed using its own rule. If so, you can simplify this	
+		// me that PARAM always should be parsed using its own rule. If so, you can simplify this
 		// method by just checking for PARAM.
 
 		if ( isType( input.LT( 2 ).getType() ) ) {
