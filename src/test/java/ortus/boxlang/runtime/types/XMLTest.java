@@ -343,7 +343,6 @@ class XMLTest {
 
 	@DisplayName( "It can use the member function keyExists on a node" )
 	@Test
-	@Disabled
 	void testKeyExistsMember() {
 		// @formatter:off
 		instance.executeSource(

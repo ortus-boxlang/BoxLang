@@ -29,6 +29,7 @@ import ortus.boxlang.runtime.types.IStruct;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.STRUCT )
+@BoxMember( type = BoxLangType.XML, name = "keyExists" )
 
 public class StructKeyExists extends BIF {
 
