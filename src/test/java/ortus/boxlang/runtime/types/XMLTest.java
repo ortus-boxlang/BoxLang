@@ -412,4 +412,30 @@ class XMLTest {
 
 	}
 
+	@DisplayName( "It can clone an node and append it to another xmlObject" )
+	@Test
+	void testNodeCloningAndAppend() {
+
+		//@formatter:off
+		instance.executeSource(
+		    """
+			xmlObj = xmlParse( '<Ortus></Ortus>' );
+			xmlContent = xmlParse( '<Products><Product>BoxLang</Product><Product>CommandBox</Product><Product>Coldbox</Product></Products>' );
+			target = xmlElemNew( xmlObj, "Products" );
+			xmlContent.xmlRoot.xmlChildren.each( ( node ) => {
+				target.appendChild(
+					target
+						.getOwnerDocument()
+						.importNode( node.cloneNode( javacast( "boolean", true ) ), javacast( "boolean", true ) )
+				)
+			} );
+			xmlObj.xmlRoot.xmlChildren.append( target );
+			result = xmlObj.xmlRoot.Products.xmlChildren.len();
+			""",
+		context );
+		//@formatter:off
+		assertThat( variables.getAsInteger( result ) ).isEqualTo( 3 );
+
+	}
+
 }

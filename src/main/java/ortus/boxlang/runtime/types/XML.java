@@ -856,4 +856,36 @@ public class XML implements Serializable, IStruct {
 		return this;
 	}
 
+	/**
+	 * Pass-through methods to the underlying node
+	 */
+
+	/**
+	 * Retrieves the owner document of the node.
+	 */
+	public Node getOwnerDocument() {
+		return node.getOwnerDocument();
+	}
+
+	/**
+	 * Retrieves the parent node of the node.
+	 */
+	public Node cloneNode( boolean deep ) {
+		return node.cloneNode( deep );
+	}
+
+	/**
+	 * Appends a node to the end of the list of children of this node.
+	 */
+	public void appendChild( Node newChild ) {
+		node.appendChild( newChild );
+	}
+
+	/**
+	 * Replaces a child node within this node.
+	 */
+	public void replaceChild( Node newChild, Node oldChild ) {
+		node.replaceChild( newChild, oldChild );
+	}
+
 }
