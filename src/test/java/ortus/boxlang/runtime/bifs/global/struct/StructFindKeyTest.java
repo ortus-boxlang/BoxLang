@@ -240,7 +240,8 @@ public class StructFindKeyTest {
 		};
 		result = StructFindKey( myStruct, "pig.total" );
 		resultTop = StructFindKey( myStruct, "cat" );
-		resultOwner = resultTop.first().owner;
+		resultCat = resultTop.first();
+		resultOwner = resultCat.owner;
 		resultNested = structFindKey( myStruct, "size", "all" );
 		nestedOwner = resultNested.first().owner;
 		resultParrotNames = structFindKey( myStruct, "bird.species.parrot.names", "all" );
@@ -252,7 +253,8 @@ public class StructFindKeyTest {
 		assertEquals( 1, variables.getAsArray( result ).size() );
 		assertEquals( 1, variables.getAsArray( Key.of( "resultTop" ) ).size() );
 		assertEquals( Struct.class, variables.get( Key.of( "resultOwner" ) ).getClass() );
-		assertEquals( 3, StructCaster.cast( variables.get( Key.of( "resultOwner" ) ) ).getAsInteger( Key.of( "total" ) ) );
+		assertEquals( variables.getAsStruct( Key.of( "resultCat" ) ).getAsStruct( Key.of( "value" ) ),
+		    variables.getAsStruct( Key.of( "resultOwner" ) ).getAsStruct( Key.of( "cat" ) ) );
 		assertEquals( Array.class, variables.get( Key.of( "resultNested" ) ).getClass() );
 		assertEquals( 3, variables.getAsArray( Key.of( "resultNested" ) ).size() );
 		assertEquals( Struct.class, variables.get( Key.of( "nestedOwner" ) ).getClass() );

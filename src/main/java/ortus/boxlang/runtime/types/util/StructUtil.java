@@ -29,6 +29,7 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.ArrayList;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -442,52 +443,72 @@ public class StructUtil {
 	 * @return
 	 */
 	public static Stream<IStruct> findKey( IStruct struct, String key ) {
-		int		keyLength	= key.length();
-		IStruct	flatMap		= toFlatMap( struct );
-		return flatMap.entrySet()
-		    .stream()
-		    .filter( entry -> {
-			    String stringKey = entry.getKey().getName().toLowerCase();
-			    // We look for the key at the end of the string ( nested ) or at the beginning of the string for top-level keys
-			    return StringUtils.right( stringKey, keyLength ).equals( key.toLowerCase() )
-			        || StringUtils.left( stringKey, keyLength ).equals( key.toLowerCase() );
-		    } )
-		    .map( entry -> {
-			    Struct	returnStruct	= new Struct( Struct.TYPES.LINKED );
-			    String	keyName			= entry.getKey().getName();
-			    String[] keyParts		= entry.getKey().getName().split( "\\." );
-			    String	flatMapParent	= keyName.lastIndexOf( "." ) > -1 ? keyName.substring( 0, keyName.lastIndexOf( "." ) ) : "";
-			    returnStruct.put(
-			        Key.owner,
-			        keyParts.length > 1
-			            ? unFlattenKeys(
-			                flatMap.entrySet().stream()
-			                    .filter( mapEntry -> mapEntry.getKey().getName().length() >= flatMapParent.length()
-			                        && mapEntry.getKey().getName().substring( 0, flatMapParent.length() ).equals( flatMapParent ) )
-			                    .map( mapEntry -> {
-				                    String keyname = mapEntry.getKey().getName();
-				                    String resultKeyName = keyname.substring( flatMapParent.length() + 1 );
-				                    return new AbstractMap.SimpleEntry<Key, Object>(
-				                        Key.of( resultKeyName ), mapEntry.getValue()
-				                    );
-			                    }
-			                    )
-			                    .collect( BLCollector.toStruct() ),
-			                true,
-			                false
-			            )
-			            : struct
-			    );
-			    returnStruct.put(
-			        Key.path,
-			        "." + keyName
-			    );
-			    returnStruct.put(
-			        Key.value,
-			        entry.getValue()
-			    );
-			    return returnStruct;
-		    } );
+		int					keyLength	= key.length();
+		String[]			keyParts	= key.toLowerCase().split( "\\." );
+		IStruct				flatMap		= toFlatMap( struct );
+		ArrayList<IStruct>	results		= new ArrayList<IStruct>();
+
+		// If we have a single key and find it in the root add that result first
+		if ( keyParts.length == 1 && struct.containsKey( Key.of( key ) ) ) {
+			results.add(
+			    Struct.of(
+			        Key.owner, struct,
+			        Key.path, "." + key.toLowerCase(),
+			        Key.value, struct.get( Key.of( key ) )
+			    )
+			);
+		}
+
+		// Now add any results that are nested
+		results.addAll(
+		    flatMap.entrySet()
+		        .stream()
+		        .filter( entry -> {
+			        Array splitParts = Array.of( entry.getKey().getName().toLowerCase().split( "\\." ) );
+			        String stringKey = entry.getKey().getName().toLowerCase();
+			        return splitParts.size() > 1
+			            ? splitParts.get( splitParts.size() - 1 ).equals( key.toLowerCase() ) || stringKey.equals( key.toLowerCase() )
+			            : stringKey.equals( key.toLowerCase() );
+		        } )
+		        .map( entry -> {
+			        Struct returnStruct	= new Struct( Struct.TYPES.LINKED );
+			        String keyName		= entry.getKey().getName();
+			        String[] entryKeyParts = entry.getKey().getName().split( "\\." );
+			        String flatMapParent = keyName.lastIndexOf( "." ) > -1 ? keyName.substring( 0, keyName.lastIndexOf( "." ) ) : "";
+			        returnStruct.put(
+			            Key.owner,
+			            entryKeyParts.length > 1
+			                ? unFlattenKeys(
+			                    flatMap.entrySet().stream()
+			                        .filter( mapEntry -> mapEntry.getKey().getName().length() >= flatMapParent.length()
+			                            && mapEntry.getKey().getName().substring( 0, flatMapParent.length() ).equals( flatMapParent ) )
+			                        .map( mapEntry -> {
+				                        String keyname = mapEntry.getKey().getName();
+				                        String resultKeyName = keyname.substring( flatMapParent.length() + 1 );
+				                        return new AbstractMap.SimpleEntry<Key, Object>(
+				                            Key.of( resultKeyName ), mapEntry.getValue()
+				                        );
+			                        }
+			                        )
+			                        .collect( BLCollector.toStruct() ),
+			                    true,
+			                    false
+			                )
+			                : struct
+			        );
+			        returnStruct.put(
+			            Key.path,
+			            "." + keyName
+			        );
+			        returnStruct.put(
+			            Key.value,
+			            entry.getValue()
+			        );
+			        return returnStruct;
+		        } ).collect( Collectors.toList() )
+		);
+
+		return results.stream();
 
 	}
 
