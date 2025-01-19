@@ -189,14 +189,11 @@ public abstract class BoxParserControl extends Parser {
 	 * @return true if this should be seen as a VAR expression and not an identifier
 	 */
 	protected boolean isAssignmentModifier( TokenStream input ) {
-		System.out.println( "isAssignmentModifier" );
-
 		int thisType = input.LT( 1 ).getType();
 		System.out.println( "thisType: " + thisType );
 		System.out.println( "LT(2): " + input.LT( 2 ).getType() );
 		System.out
 		    .println( "( thisType == VAR || thisType == FINAL || thisType == STATIC ): " + ( thisType == VAR || thisType == FINAL || thisType == STATIC ) );
-		System.out.println( "identifiers.contains( input.LT( 2 ).getType() ): " + identifiers.contains( input.LT( 2 ).getType() ) );
 		return ( thisType == VAR || thisType == FINAL || thisType == STATIC ) && identifiers.contains( input.LT( 2 ).getType() );
 	}
 
