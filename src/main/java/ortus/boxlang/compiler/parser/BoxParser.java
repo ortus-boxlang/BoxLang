@@ -519,9 +519,9 @@ public class BoxParser extends AbstractParser {
 		while ( token.getType() != Token.EOF ) {
 
 			// uncomment this to see all tokens as they were sent from out custom lexer
-			if ( token.getChannel() != Token.HIDDEN_CHANNEL ) {
-				System.out.println( token.toString() + " " + BoxLexer.VOCABULARY.getSymbolicName( token.getType() ) );
-			}
+			// if ( token.getChannel() != Token.HIDDEN_CHANNEL ) {
+			// System.out.println( token.toString() + " " + BoxLexer.VOCABULARY.getSymbolicName( token.getType() ) );
+			// }
 
 			if ( token.getType() == BoxLexer.JAVADOC_COMMENT ) {
 				ParsingResult result = docParser.parse( null, token.getText() );

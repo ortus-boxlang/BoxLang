@@ -190,10 +190,10 @@ public abstract class BoxParserControl extends Parser {
 	 */
 	protected boolean isAssignmentModifier( TokenStream input ) {
 		int thisType = input.LT( 1 ).getType();
-		System.out.println( "thisType: " + thisType );
-		System.out.println( "LT(2): " + input.LT( 2 ).getType() );
-		System.out
-		    .println( "( thisType == VAR || thisType == FINAL || thisType == STATIC ): " + ( thisType == VAR || thisType == FINAL || thisType == STATIC ) );
+		// System.out.println( "thisType: " + thisType );
+		// System.out.println( "LT(2): " + input.LT( 2 ).getType() );
+		// System.out
+		// .println( "( thisType == VAR || thisType == FINAL || thisType == STATIC ): " + ( thisType == VAR || thisType == FINAL || thisType == STATIC ) );
 		return ( thisType == VAR || thisType == FINAL || thisType == STATIC ) && identifiers.contains( input.LT( 2 ).getType() );
 	}
 
