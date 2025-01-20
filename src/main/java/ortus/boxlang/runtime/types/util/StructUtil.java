@@ -468,7 +468,8 @@ public class StructUtil {
 			        String stringKey = entry.getKey().getName().toLowerCase();
 			        return splitParts.length > 1
 			            ? splitParts[ splitParts.length - 1 ].equals( key.toLowerCase() ) || stringKey.equals( key.toLowerCase() )
-			            : results.stream().filter( result -> result.get( Key.value ).equals(  entry.getValue() ) ).count() == 0 &&  stringKey.equals( key.toLowerCase() );
+			            : results.stream().filter( result -> result.get( Key.value ).equals( entry.getValue() ) ).count() == 0
+			                && stringKey.equals( key.toLowerCase() );
 		        } )
 		        .map( entry -> {
 			        Struct returnStruct	= new Struct( Struct.TYPES.LINKED );
