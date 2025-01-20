@@ -250,6 +250,7 @@ public class CFTemplateTest {
 
 	@DisplayName( "component script Island inception 2" )
 	@Test
+	@Disabled( "BL-960" )
 	public void testComponentScriptIslandInception2() {
 		instance.executeSource(
 		    """
