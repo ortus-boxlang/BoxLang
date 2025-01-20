@@ -469,7 +469,19 @@ public class StructUtil {
 			        return splitParts.length > 1
 			            ? splitParts[ splitParts.length - 1 ].equals( key.toLowerCase() ) || stringKey.equals( key.toLowerCase() )
 			            // For single keys make sure we check that it wasn't added above
-			            : results.stream().filter( result -> result.get( Key.value ).equals( entry.getValue() ) ).count() == 0
+			            : results.stream()
+			                .filter(
+			                    result -> {
+				                    Object resultObj = result.get( Key.value );
+				                    Object entryObj = entry.getValue();
+				                    if ( resultObj == null ) {
+					                    return entry.getValue() == null;
+				                    } else {
+					                    return entryObj != null ? resultObj.equals( entryObj ) : false;
+				                    }
+			                    }
+			                )
+			                .count() == 0
 			                && stringKey.equals( key.toLowerCase() );
 		        } )
 		        .map( entry -> {

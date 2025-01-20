@@ -274,18 +274,22 @@ public class StructFindKeyTest {
 		instance.executeSource(
 		    """
 			myStruct = {
+				fruits : nullValue(),
 				animals: [
 					{
 						type: "dog",
-						age: 12
+						age: 12,
+						breed: "collie"
 					},
 					{
 						type: "cat",
-						age: 3
+						age: 3,
+						breed: "siamese"
 					},
 					{
 						type: "pig",
-						age: 5
+						age: 5,
+						breed: nullValue()
 					}
 				]
 			};
