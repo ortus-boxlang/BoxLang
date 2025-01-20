@@ -78,28 +78,28 @@ public class DumpUtil {
 	/**
 	 * This is used to track objects that have been dumped to prevent infinite recursion.
 	 */
-	private static final ThreadLocal<Set<Integer>>		dumpedObjects			= ThreadLocal.withInitial( HashSet::new );
+	private static final ThreadLocal<Set<Integer>>				dumpedObjects			= ThreadLocal.withInitial( HashSet::new );
 
 	/**
 	 * This is used to cache the templates for dumping objects.
 	 */
-	private static final ConcurrentMap<String, String>	dumpTemplateCache		= new ConcurrentHashMap<>();
+	private static final ConcurrentMap<String, DumpTemplate>	dumpTemplateCache		= new ConcurrentHashMap<>();
 
 	/**
 	 * This is used to cache the templates for dumping objects.
 	 */
-	private static final Logger							logger					= LoggerFactory.getLogger( DumpUtil.class );
+	private static final Logger									logger					= LoggerFactory.getLogger( DumpUtil.class );
 
 	/**
 	 * This is the base path for the templates when using the HTML format.
 	 * This inside of the jar as a resource. {@see resources/dump/html}
 	 */
-	private static final String							TEMPLATES_BASE_PATH		= "/dump/html/";
+	private static final String									TEMPLATES_BASE_PATH		= "/dump/html/";
 
 	/**
 	 * This is the default template name to use when the target object does not have a template.
 	 */
-	private static final String							DEFAULT_DUMP_TEMPLATE	= "Class.bxm";
+	private static final String									DEFAULT_DUMP_TEMPLATE	= "Class.bxm";
 
 	/**
 	 *
@@ -357,13 +357,18 @@ public class DumpUtil {
 
 		// Prep variables to use for dumping
 		String			posInCode		= "";
-		String			dumpTemplate	= null;
+		DumpTemplate	dumpTemplate	= null;
 		StringBuffer	buffer			= null;
 		String			templateName	= discoverTemplateName( target, context );
 
 		try {
 			// Get and Compile the Dump template to execute.
 			dumpTemplate = getDumpTemplate( context, templateName );
+		} catch ( Throwable t ) {
+			throw new BoxRuntimeException( "Error loading dump template [" + templateName + "]", t );
+		}
+
+		try {
 			// Just using this so I can have my own variables scope to use.
 			IBoxContext dumpContext = new ContainerBoxContext( context );
 			// This is expensive, so only do it on the outer dump
@@ -372,8 +377,8 @@ public class DumpUtil {
 				context.pushBuffer( buffer );
 				posInCode = ExceptionUtil.getCurrentPositionInCode();
 				// This assumes HTML output. Needs to be dynamic as XML or plain text output wouldn't have CSS
-				dumpContext.writeToBuffer( "<style>" + getDumpTemplate( context, "Dump.css" ) + "</style>", true );
-				dumpContext.writeToBuffer( "<script>" + getDumpTemplate( context, "Dump.js" ) + "</script>", true );
+				dumpContext.writeToBuffer( "<style>" + getDumpTemplate( context, "Dump.css" ).source() + "</style>", true );
+				dumpContext.writeToBuffer( "<script>" + getDumpTemplate( context, "Dump.js" ).source() + "</script>", true );
 			}
 
 			// Place the variables in the scope
@@ -389,7 +394,9 @@ public class DumpUtil {
 			    ) );
 
 			// Execute the dump template
-			context.getRuntime().executeSource( dumpTemplate, dumpContext, BoxSourceType.BOXTEMPLATE );
+			context.getRuntime().executeSource( dumpTemplate.source(), dumpContext, BoxSourceType.BOXTEMPLATE );
+		} catch ( Throwable t ) {
+			throw new BoxRuntimeException( "Error executing dump template [" + dumpTemplate.path() + "]", t );
 		} finally {
 			// Clean up the dumped objects
 			dumped.remove( thisHashCode );
@@ -476,7 +483,7 @@ public class DumpUtil {
 	 *
 	 * @return The compiled dump template
 	 */
-	private static String getDumpTemplate( IBoxContext context, String dumpTemplateName ) {
+	private static DumpTemplate getDumpTemplate( IBoxContext context, String dumpTemplateName ) {
 		String dumpTemplatePath = TEMPLATES_BASE_PATH + dumpTemplateName;
 
 		// Bypass caching in debug mode for easier testing
@@ -500,7 +507,7 @@ public class DumpUtil {
 	 *
 	 * @return The dump template
 	 */
-	private static String computeDumpTemplate( String dumpTemplatePath, IBoxContext context ) {
+	private static DumpTemplate computeDumpTemplate( String dumpTemplatePath, IBoxContext context ) {
 		Objects.requireNonNull( dumpTemplatePath, "dumpTemplatePath cannot be null" );
 
 		// Try by resource first
@@ -525,8 +532,11 @@ public class DumpUtil {
 
 		// \\A is the beginning of the input boundary so it reads the entire file in one go.
 		try ( Scanner s = new Scanner( dumpTemplate ).useDelimiter( "\\A" ) ) {
-			return s.hasNext() ? s.next() : "";
+			return new DumpTemplate( dumpTemplatePath, s.hasNext() ? s.next() : "" );
 		}
+	}
+
+	public record DumpTemplate( String path, String source ) {
 	}
 
 }
