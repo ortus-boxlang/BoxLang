@@ -274,21 +274,19 @@ public class BoxTemplateTest {
 	public void testComponentScriptIslandInception2() {
 		instance.executeSource(
 		    """
-		    <bx:output>
-		           <bx:set result = "one">
-		         <bx:script>
-		         	result &= " two";
-		       collection = [1]
-		       for( foo in collection ) {
-		       	```
-		       		<bx:set result &= " three">
-		       	```
-		       }
-		         	result &= " four"
-		         </bx:script>
-		         <bx:set result &= " five">
-		      </bx:output>
-		                          """, context, BoxSourceType.BOXTEMPLATE );
+		        <bx:set result = "one">
+		      <bx:script>
+		      	result &= " two";
+		    collection = [1]
+		    for( foo in collection ) {
+		    	```
+		    		<bx:set result &= " three">
+		    	```
+		    }
+		      	result &= " four"
+		      </bx:script>
+		      <bx:set result &= " five">
+		                       """, context, BoxSourceType.BOXTEMPLATE );
 
 		assertThat( variables.get( result ) ).isEqualTo( "one two three four five" );
 	}
