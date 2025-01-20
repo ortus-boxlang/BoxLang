@@ -239,9 +239,10 @@ public class StructFindKeyTest {
 			}
 		};
 		result = StructFindKey( myStruct, "pig.total" );
-		resultTop = StructFindKey( myStruct, "cat" );
-		resultCat = resultTop.first();
-		resultOwner = resultCat.owner;
+		resultTop = StructFindKey( myStruct, "bird", "all" );
+		resultTopLength = resultTop.len();
+		resultBird = resultTop.first();
+		resultOwner = resultBird.owner;
 		resultNested = structFindKey( myStruct, "size", "all" );
 		nestedOwner = resultNested.first().owner;
 		resultParrotNames = structFindKey( myStruct, "bird.species.parrot.names", "all" );
@@ -253,8 +254,9 @@ public class StructFindKeyTest {
 		assertEquals( 1, variables.getAsArray( result ).size() );
 		assertEquals( 1, variables.getAsArray( Key.of( "resultTop" ) ).size() );
 		assertEquals( Struct.class, variables.get( Key.of( "resultOwner" ) ).getClass() );
-		assertEquals( variables.getAsStruct( Key.of( "resultCat" ) ).getAsStruct( Key.of( "value" ) ),
-		    variables.getAsStruct( Key.of( "resultOwner" ) ).getAsStruct( Key.of( "cat" ) ) );
+		assertEquals( 1, variables.getAsInteger( Key.of( "resultTopLength" ) ) );
+		assertEquals( variables.getAsStruct( Key.of( "resultBird" ) ).getAsStruct( Key.of( "value" ) ),
+		    variables.getAsStruct( Key.of( "resultOwner" ) ).getAsStruct( Key.of( "bird" ) ) );
 		assertEquals( Array.class, variables.get( Key.of( "resultNested" ) ).getClass() );
 		assertEquals( 3, variables.getAsArray( Key.of( "resultNested" ) ).size() );
 		assertEquals( Struct.class, variables.get( Key.of( "nestedOwner" ) ).getClass() );
@@ -263,6 +265,37 @@ public class StructFindKeyTest {
 		assertEquals( Array.class, variables.get( Key.of( "resultParrotNames" ) ).getClass() );
 		assertEquals( 1, variables.getAsArray( Key.of( "resultParrotNames" ) ).size() );
 		assertEquals( Array.class, variables.getAsStruct( Key.of( "parrotResult" ) ).get( Key.value ).getClass() );
+	}
+
+	@DisplayName( "It tests top level struct find with arrays" )
+	@Test
+	public void testTopLevelArrays() {
+		//@formatter:off
+		instance.executeSource(
+		    """
+			myStruct = {
+				animals: [
+					{
+						type: "dog",
+						age: 12
+					},
+					{
+						type: "cat",
+						age: 3
+					},
+					{
+						type: "pig",
+						age: 5
+					}
+				]
+			};
+			result = StructFindKey( myStruct, "animals", "all" );
+			""",
+		context );
+		//@formatter:on
+		assertTrue( variables.get( result ) instanceof Array );
+		assertEquals( 1, variables.getAsArray( result ).size() );
+
 	}
 
 }
