@@ -78,28 +78,24 @@
 										</tr>
 									</thead>
 									<tbody>
-										<bx:script>
-											for( variables.field in fields ) {
-												```
-													<tr>
-														<td>
-															<strong>#encodeForHTML( variables.field.getName() )#</strong>
-														</td>
-														<td>
-															<pre><code>#encodeForHTML( variables.field.toString() )#</code></pre>
-														</td>
-														<td>
-															<bx:try>
-																#encodeForHTML( variables.field.get( var ) )#
-																<bx:catch>
-																	<em>--- Not Available ---</em>
-																</bx:catch>
-															</bx:try>
-														</td>
-													</tr>
-												```
-											}
-										</bx:script>
+										<bx:loop collection="#fields#" item="variables.field">
+											<tr>
+												<td>
+													<strong>#encodeForHTML( variables.field.getName() )#</strong>
+												</td>
+												<td>
+													<pre><code>#encodeForHTML( variables.field.toString() )#</code></pre>
+												</td>
+												<td>
+													<bx:try>
+														#encodeForHTML( variables.field.get( var ) )#
+														<bx:catch>
+															<em>--- Not Available ---</em>
+														</bx:catch>
+													</bx:try>
+												</td>
+											</tr>
+										</bx:loop>
 									</tbody>
 								</table>
 							</div>
@@ -130,18 +126,14 @@
 										</tr>
 									</thead>
 									<tbody>
-										<bx:script>
-											for( variables.annotation in annotations ) {
-												```
-													<tr>
-														<td>#variables.annotation.annotationType().toString()#</td>
-														<td>
-															<pre><code>#encodeForHTML( variables.annotation.toString() )#</code></pre>
-														</td>
-													</tr>
-												```
-												}
-										</bx:script>
+										<bx:loop collection="#annotations#" item="variables.annotation">
+											<tr>
+												<td>#variables.annotation.annotationType().toString()#</td>
+												<td>
+													<pre><code>#encodeForHTML( variables.annotation.toString() )#</code></pre>
+												</td>
+											</tr>
+										</bx:loop>
 									</tbody>
 								</table>
 							</div>
@@ -171,17 +163,13 @@
 										</tr>
 									</thead>
 									<tbody>
-										<bx:script>
-											for( variables.constructor in constructors ) {
-												```
-													<tr>
-														<td>
-															<pre><code>#encodeForHTML( variables.constructor.toString() )#</code></pre>
-														</td>
-													</tr>
-												```
-												}
-										</bx:script>
+										<bx:loop collection="#constructors#" item="variables.constructor">
+											<tr>
+												<td>
+													<pre><code>#encodeForHTML( variables.constructor.toString() )#</code></pre>
+												</td>
+											</tr>
+										</bx:loop>
 									</tbody>
 								</table>
 							</div>
@@ -214,20 +202,16 @@
 									<tr><th>Name</th><th>Signature</th></tr>
 								</thead>
 								<tbody>
-									<bx:script>
-										for( variables.method in methods ) {
-											```
-												<tr>
-													<td>
-														<strong>#encodeForHTML( variables.method.getName() )#</strong>
-													</td>
-													<td>
-														<pre><code>#encodeForHTML( variables.method.toString() )#</code></pre>
-													</td>
-												</tr>
-											```
-										}
-									</bx:script>
+									<bx:loop collection="#methods#" item="variables.method">
+										<tr>
+											<td>
+												<strong>#encodeForHTML( variables.method.getName() )#</strong>
+											</td>
+											<td>
+												<pre><code>#encodeForHTML( variables.method.toString() )#</code></pre>
+											</td>
+										</tr>
+									</bx:loop>
 								</tbody>
 							</table>
 						</div>

@@ -67,30 +67,26 @@
 										</tr>
 									</thead>
 									<tbody>
-										<bx:script>
-											for( thisArg in args ) {
-												argHint = thisArg.documentation().hint ?: thisArg.annotations().hint ?: ""
-												```
-													<tr>
-														<td>
-															#encodeForHTML( thisArg.required() )#
-														</td>
-														<td>
-															#encodeForHTML( thisArg.type() )#
-														</td>
-														<td>
-															#encodeForHTML( thisArg.name() )#
-														</td>
-														<td>
-															#writedump( var: thisArg.defaultValue(), top: isNull( top ) ? null : top - 1, expand: expand )#
-														</td>
-														<td>
-															#encodeForHTML( argHint )#
-														</td>
-													</tr>
-												```
-												}
-										</bx:script>
+										<bx:loop collection="#args#" item="thisArg">
+											<bx:set argHint = thisArg.documentation().hint ?: thisArg.annotations().hint ?: "">
+											<tr>
+												<td>
+													#encodeForHTML( thisArg.required() )#
+												</td>
+												<td>
+													#encodeForHTML( thisArg.type() )#
+												</td>
+												<td>
+													#encodeForHTML( thisArg.name() )#
+												</td>
+												<td>
+													#writedump( var: thisArg.defaultValue(), top: isNull( top ) ? null : top - 1, expand: expand )#
+												</td>
+												<td>
+													#encodeForHTML( argHint )#
+												</td>
+											</tr>
+										</bx:loop>
 									</tbody>
 								</table>
 							<bx:else>
@@ -123,20 +119,16 @@
 									</tr>
 								</thead>
 								<tbody>
-									<bx:script>
-										for( thisAnnotation in annotations ) {
-											```
-												<tr>
-													<td>
-														<strong>#encodeForHTML( thisAnnotation )#</strong>
-													</td>
-													<td>
-														#writeDump( annotations[ thisAnnotation ] )#
-													</td>
-												</tr>
-											```
-											}
-									</bx:script>
+									<bx:loop collection="#annotations#" item="thisAnnotation">
+										<tr>
+											<td>
+												<strong>#encodeForHTML( thisAnnotation )#</strong>
+											</td>
+											<td>
+												#writeDump( annotations[ thisAnnotation ] )#
+											</td>
+										</tr>
+									</bx:loop>
 								</tbody>
 							</table>
 						</div>

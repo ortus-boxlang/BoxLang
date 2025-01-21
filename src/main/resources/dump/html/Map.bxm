@@ -14,7 +14,7 @@
 					<strong>
 						<bx:if label.len() >#label# - </bx:if>
 						#var.getClass().getName()#:
-						<bx:if !isNull( top ) && top lt var.size()>#top#/</bx:if>#var.size()# items
+						<bx:if !isNull( top ) && top lt var.size()>#top#/</bx:if>#var.size()# item(s)
 					</strong>
 				</caption>
 			<bx:else>
@@ -22,21 +22,18 @@
 					<strong>
 						<bx:if label.len() >#label# - </bx:if>
 						#var.getClass().getName()#:
-						<bx:if !isNull( top ) && top lt var.size()>#top#/</bx:if>#var.size()# items
+						<bx:if !isNull( top ) && top lt var.size()>#top#/</bx:if>#var.size()# item(s)
 					</strong>
 				</caption>
 			</bx:if>
 			<tbody
 				<bx:if !expandRoot>class="d-none"</bx:if>
 			>
-				<bx:script>
-					index = 1;
-					for ( key in var ) {
-						// Top limit only if > 0
-						if( !isNull( top ) && index++ > top ) {
-							break;
-						}
-						```
+				<bx:set index = 1>
+				<bx:loop collection="#var#" item="key">
+					<bx:if  !isNull( top ) and index++ GT top >
+						<bx:break>
+					</bx:if>
 						<bx:if NOT isCustomFunction( var[ key ] ) >
 							<tr>
 								<th
@@ -55,9 +52,7 @@
 								</td>
 							</tr>
 						</bx:if>
-						```
-					}
-				</bx:script>
+				</bx:loop>
 			</tbody>
 		</table>
 	</div>
