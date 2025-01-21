@@ -25,7 +25,6 @@ import java.io.IOException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -270,7 +269,6 @@ public class BoxTemplateTest {
 
 	@DisplayName( "component script Island inception 2" )
 	@Test
-	@Disabled( "BL-960" )
 	public void testComponentScriptIslandInception2() {
 		instance.executeSource(
 		    """

@@ -266,7 +266,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 				    "getDefaultAssignmentScope",
 				    Type.getMethodDescriptor( Type.getType( IScope.class ) ),
 				    true ) );
-				nodes.add( new LdcInsnNode( true ) );
+				nodes.add( new LdcInsnNode( 1 ) );
 				nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
 				    Type.getInternalName( IBoxContext.class ),
 				    "scopeFindNearby",
@@ -373,7 +373,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			    "getDefaultAssignmentScope",
 			    Type.getMethodDescriptor( Type.getType( IScope.class ) ),
 			    true ) );
-			nodes.add( new LdcInsnNode( true ) );
+			nodes.add( new LdcInsnNode( 1 ) );
 			nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
 			    Type.getInternalName( IBoxContext.class ),
 			    "scopeFindNearby",
@@ -463,7 +463,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		    "name",
 		    Type.getDescriptor( Key.class ) ) );
 		nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
-		nodes.add( new LdcInsnNode( true ) );
+		nodes.add( new LdcInsnNode( 1 ) );
 
 		nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
 		    Type.getInternalName( IBoxContext.class ),
