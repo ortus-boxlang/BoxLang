@@ -61,6 +61,16 @@ public class RunThreadInContextTest {
 	}
 
 	@Test
+	public void testCanRunCodeInContextReturnResult() {
+		instance.executeSource(
+		    """
+		    result = runThreadInContext( context=getBoxContext(), callback=()=>"ran");
+		    """,
+		    context );
+		assert ( variables.get( result ).equals( "ran" ) );
+	}
+
+	@Test
 	public void testCanRunCodeInApplication() {
 		instance.executeSource(
 		    """
