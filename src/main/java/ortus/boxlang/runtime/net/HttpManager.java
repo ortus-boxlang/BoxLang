@@ -52,7 +52,11 @@ public class HttpManager {
 	 */
 	public static HttpClient getClient() {
 		if ( instance == null ) {
-			instance = HttpClient.newHttpClient();
+			synchronized ( HttpManager.class ) {
+				if ( instance == null ) {
+					instance = HttpClient.newHttpClient();
+				}
+			}
 		}
 		return instance;
 	}

@@ -50,6 +50,7 @@ import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
+import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.net.HTTPStatusReasons;
 import ortus.boxlang.runtime.net.HttpManager;
 import ortus.boxlang.runtime.net.HttpRequestMultipartBody;
@@ -148,21 +149,25 @@ public class HTTP extends Component {
 	 *
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
+		// Keeps track of the HTTPParams
 		executionState.put( Key.HTTPParams, new Array() );
 
+		// Process the component for HTTPParams
 		BodyResult bodyResult = processBody( context, body );
+
 		// IF there was a return statement inside our body, we early exit now
 		if ( bodyResult.isEarlyExit() ) {
 			return bodyResult;
 		}
 
-		String	variableName	= StringCaster.cast( attributes.getOrDefault( Key.result, "bxhttp" ) );
+		// Prepare invocation of the HTTP request
+		String	variableName	= attributes.getAsString( Key.result );
 		String	theURL			= attributes.getAsString( Key.URL );
-		String	method			= StringCaster.cast( attributes.getOrDefault( Key.method, "GET" ) ).toUpperCase();
+		String	method			= attributes.getAsString( Key.method ).toUpperCase();
 		Array	params			= executionState.getAsArray( Key.HTTPParams );
 		Struct	HTTPResult		= new Struct();
+		URI		targetURI		= null;
 
-		URI		uri				= null;
 		try {
 			HttpRequest.Builder			builder			= HttpRequest.newBuilder();
 			URIBuilder					uriBuilder		= new URIBuilder( theURL );
@@ -170,6 +175,7 @@ public class HTTP extends Component {
 			List<IStruct>				formFields		= new ArrayList<>();
 			List<IStruct>				files			= new ArrayList<>();
 			builder.header( "User-Agent", "BoxLang" );
+
 			for ( Object p : params ) {
 				IStruct	param	= StructCaster.cast( p );
 				String	type	= param.getAsString( Key.type );
@@ -247,24 +253,43 @@ public class HTTP extends Component {
 			}
 
 			builder.method( method, bodyPublisher );
-			uri = uriBuilder.build();
-			builder.uri( uri );
-			HttpRequest								request			= builder.build();
-			HttpClient								client			= HttpManager.getClient();
-			CompletableFuture<HttpResponse<String>>	inflightRequest	= client.sendAsync( request, HttpResponse.BodyHandlers.ofString() );
+			targetURI = uriBuilder.build();
+			builder.uri( targetURI );
+			HttpRequest	targetHTTPRequest	= builder.build();
+			HttpClient	client				= HttpManager.getClient();
+
+			// Announce the HTTP request
+			interceptorService.announce( BoxEvent.ON_HTTP_REQUEST, Struct.of(
+			    "httpClient", client,
+			    "httpRequest", targetHTTPRequest,
+			    "targetURI", targetURI,
+			    "attributes", attributes
+			) );
+
+			// Announce the HTTP request
+			CompletableFuture<HttpResponse<String>>	inflightRequest	= client.sendAsync( targetHTTPRequest, HttpResponse.BodyHandlers.ofString() );
 			CompletableFuture<HttpResponse<String>>	winner			= inflightRequest;
 			if ( attributes.containsKey( Key.timeout ) ) {
 				winner = inflightRequest.applyToEither( HttpManager.getTimeoutRequestAsync( attributes.getAsInteger( Key.timeout ) ), result -> result );
 			}
-			HttpResponse<String>	response			= winner.get();
+			HttpResponse<String> response = winner.get();
 
-			HttpHeaders				httpHeaders			= Optional.ofNullable( response.headers() )
+			// Announce the HTTP RAW response
+			// Useful for debugging and pre-processing and timing, since the other events are after the response is processed
+			interceptorService.announce( BoxEvent.ON_HTTP_RAW_RESPONSE, Struct.of(
+			    "response", response
+			) );
+
+			// Start Processing Results
+			HttpHeaders	httpHeaders			= Optional
+			    .ofNullable( response.headers() )
 			    .orElse( HttpHeaders.of( Map.of(), ( a, b ) -> true ) );
-			IStruct					headers				= transformToResponseHeaderStruct(
-			    httpHeaders.map() );
-			String					httpVersionString	= response.version() == HttpClient.Version.HTTP_1_1 ? "HTTP/1.1" : "HTTP/2";
-			String					statusCodeString	= String.valueOf( response.statusCode() );
-			String					statusText			= HTTPStatusReasons.getReasonForStatus( response.statusCode() );
+			IStruct		headers				= transformToResponseHeaderStruct(
+			    httpHeaders.map()
+			);
+			String		httpVersionString	= response.version() == HttpClient.Version.HTTP_1_1 ? "HTTP/1.1" : "HTTP/2";
+			String		statusCodeString	= String.valueOf( response.statusCode() );
+			String		statusText			= HTTPStatusReasons.getReasonForStatus( response.statusCode() );
 
 			headers.put( Key.HTTP_Version, httpVersionString );
 			headers.put( Key.status_code, statusCodeString );
@@ -292,8 +317,13 @@ public class HTTP extends Component {
 			} );
 			HTTPResult.put( Key.cookies, generateCookiesQuery( headers ) );
 
-			// Set the result back into the page
+			// Set the result back into the page using the variable name
 			ExpressionInterpreter.setVariable( context, variableName, HTTPResult );
+
+			// Announce the HTTP response
+			interceptorService.announce( BoxEvent.ON_HTTP_RESPONSE, Struct.of(
+			    "result", HTTPResult
+			) );
 
 			return DEFAULT_RETURN;
 		} catch ( ExecutionException e ) {
@@ -306,8 +336,8 @@ public class HTTP extends Component {
 				HTTPResult.put( Key.statusText, "Bad Gateway" );
 				HTTPResult.put( Key.status_text, "Bad Gateway" );
 				HTTPResult.put( Key.fileContent, "Connection Failure" );
-				if ( uri != null ) {
-					HTTPResult.put( Key.errorDetail, String.format( "Unknown host: %s: Name or service not known.", uri.getHost() ) );
+				if ( targetURI != null ) {
+					HTTPResult.put( Key.errorDetail, String.format( "Unknown host: %s: Name or service not known.", targetURI.getHost() ) );
 				} else {
 					HTTPResult.put( Key.errorDetail, String.format( "Unknown host: %s: Name or service not known.", theURL ) );
 				}
@@ -317,6 +347,7 @@ public class HTTP extends Component {
 			}
 			return DEFAULT_RETURN;
 		} catch ( InterruptedException e ) {
+			Thread.currentThread().interrupt();
 			throw new BoxRuntimeException( "The request was interrupted", "InterruptedException", e );
 		} catch ( URISyntaxException | IOException e ) {
 			throw new BoxRuntimeException( e.getMessage(), e );

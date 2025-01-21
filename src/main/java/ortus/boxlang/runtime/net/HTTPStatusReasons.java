@@ -17,9 +17,9 @@
  */
 package ortus.boxlang.runtime.net;
 
-import java.util.Map;
-
 import static java.util.Map.entry;
+
+import java.util.Map;
 
 public class HTTPStatusReasons {
 
@@ -99,6 +99,13 @@ public class HTTPStatusReasons {
 	    entry( 511, "Network Authentication Required" )
 	);
 
+	/**
+	 * Returns the reason for the given status code.
+	 *
+	 * @param status The status code.
+	 *
+	 * @return The reason for the status code.
+	 */
 	public static String getReasonForStatus( int status ) {
 		return REASONS.getOrDefault( status, UNKNOWN_STATUS );
 	}
