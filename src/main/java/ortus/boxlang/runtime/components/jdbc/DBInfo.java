@@ -516,11 +516,16 @@ public class DBInfo extends Component {
 	 * @throws SQLException
 	 */
 	private void buildQueryColumns( Query result, ResultSetMetaData resultSetMetaData ) throws SQLException {
-		int columnCount = resultSetMetaData.getColumnCount();
+		int	columnCount		= resultSetMetaData.getColumnCount();
+		int	emptyCounter	= 0;
 		// The column count starts from 1
 		for ( int i = 1; i <= columnCount; i++ ) {
+			String label = resultSetMetaData.getColumnLabel( i );
+			if ( label.isBlank() ) {
+				label = "column_" + ( emptyCounter++ );
+			}
 			result.addColumn(
-			    Key.of( resultSetMetaData.getColumnLabel( i ) ),
+			    Key.of( label ),
 			    QueryColumnType.fromSQLType( resultSetMetaData.getColumnType( i ) )
 			);
 		}

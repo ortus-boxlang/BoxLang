@@ -156,9 +156,14 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 			// This will map which column in the JDBC result corresponds with the ordinal position of each query column
 			List<Integer>		columnMapList		= new ArrayList<>();
 
+			int					emptyCounter		= 0;
 			// The column count starts from 1
 			for ( int i = 1; i <= columnCount; i++ ) {
-				Key colName = Key.of( resultSetMetaData.getColumnLabel( i ) );
+				String label = resultSetMetaData.getColumnLabel( i );
+				if ( label.isBlank() ) {
+					label = "column_" + ( emptyCounter++ );
+				}
+				Key colName = Key.of( label );
 				// If we haven't hit this column name before....
 				if ( !query.hasColumn( colName ) ) {
 					// Add it
