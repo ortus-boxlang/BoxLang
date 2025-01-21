@@ -45,6 +45,16 @@
 		},
 		{
 			"type": "java",
+			"name": "Run ANTLR Profiling",
+			"request": "launch",
+			"mainClass": "ortus.boxlang.compiler.ANTLRProfiler",
+			"projectName": "boxlang",
+			"args": [
+				"${file}"
+			]
+		},
+		{
+			"type": "java",
 			"name": "Print AST",
 			"request": "launch",
 			"mainClass": "ortus.boxlang.runtime.BoxRunner",
