@@ -464,11 +464,25 @@ public class StructUtil {
 		    flatMap.entrySet()
 		        .stream()
 		        .filter( entry -> {
-			        Array splitParts = Array.of( entry.getKey().getName().toLowerCase().split( "\\." ) );
+			        String[] splitParts = entry.getKey().getName().toLowerCase().split( "\\." );
 			        String stringKey = entry.getKey().getName().toLowerCase();
-			        return splitParts.size() > 1
-			            ? splitParts.get( splitParts.size() - 1 ).equals( key.toLowerCase() ) || stringKey.equals( key.toLowerCase() )
-			            : stringKey.equals( key.toLowerCase() );
+			        return splitParts.length > 1
+			            ? splitParts[ splitParts.length - 1 ].equals( key.toLowerCase() ) || stringKey.equals( key.toLowerCase() )
+			            // For single keys make sure we check that it wasn't added above
+			            : results.stream()
+			                .filter(
+			                    result -> {
+				                    Object resultObj = result.get( Key.value );
+				                    Object entryObj = entry.getValue();
+				                    if ( resultObj == null ) {
+					                    return entry.getValue() == null;
+				                    } else {
+					                    return entryObj != null ? resultObj.equals( entryObj ) : false;
+				                    }
+			                    }
+			                )
+			                .count() == 0
+			                && stringKey.equals( key.toLowerCase() );
 		        } )
 		        .map( entry -> {
 			        Struct returnStruct	= new Struct( Struct.TYPES.LINKED );

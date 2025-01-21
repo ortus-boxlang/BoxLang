@@ -248,6 +248,28 @@ public class CFTemplateTest {
 		assertThat( variables.get( result ) ).isEqualTo( "one two three four five six seven" );
 	}
 
+	@DisplayName( "component script Island inception 2" )
+	@Test
+	public void testComponentScriptIslandInception2() {
+		instance.executeSource(
+		    """
+		        <cfset result = "one">
+		      <cfscript>
+		      	result &= " two";
+		    collection = [1]
+		    for( foo in collection ) {
+		    	```
+		    		<cfset result &= " three">
+		    	```
+		    }
+		      	result &= " four"
+		      </cfscript>
+		      <cfset result &= " five">
+		                       """, context, BoxSourceType.CFTEMPLATE );
+
+		assertThat( variables.get( result ) ).isEqualTo( "one two three four five" );
+	}
+
 	@Test
 	public void testTryCatch1() {
 		instance.executeSource(

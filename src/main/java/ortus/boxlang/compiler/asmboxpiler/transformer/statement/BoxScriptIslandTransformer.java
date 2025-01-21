@@ -28,7 +28,6 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxNode;
-import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.statement.BoxScriptIsland;
 
 public class BoxScriptIslandTransformer extends AbstractTransformer {
@@ -42,9 +41,8 @@ public class BoxScriptIslandTransformer extends AbstractTransformer {
 		BoxScriptIsland			scriptIsland	= ( BoxScriptIsland ) node;
 
 		List<AbstractInsnNode>	nodes			= new ArrayList<>();
-		for ( BoxStatement statement : scriptIsland.getStatements() ) {
-			nodes.addAll( transpiler.transform( statement, context, returnContext ) );
-		}
+
+		nodes.addAll( AsmHelper.transformBodyExpressions( transpiler, scriptIsland.getStatements(), context, returnContext ) );
 
 		return AsmHelper.addLineNumberLabels( nodes, node );
 	}

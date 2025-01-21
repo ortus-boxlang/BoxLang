@@ -33,7 +33,7 @@
 							<bx:break/>
 						</bx:if>
 						<tr>
-							<bx:loop array="#var.columnList.listToArray()#" index="column">
+							<bx:loop array="#var.getColumns().keyArray()#" index="column">
 								<td>
 									<bx:if isSimpleValue( var[ column ] )>
 										#encodeForHTML( var[ column ] )#

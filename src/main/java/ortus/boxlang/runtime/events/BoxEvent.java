@@ -196,6 +196,13 @@ public enum BoxEvent {
 	POST_MODULE_UNLOAD( "postModuleUnload" ),
 
 	/**
+	 * HTTP Events
+	 */
+	ON_HTTP_REQUEST( "onHTTPRequest" ),
+	ON_HTTP_RAW_RESPONSE( "onHTTPRawResponse" ),
+	ON_HTTP_RESPONSE( "onHTTPResponse" ),
+
+	/**
 	 * Module Service Events
 	 */
 	ON_MODULE_SERVICE_STARTUP( "onModuleServiceStartup" ),

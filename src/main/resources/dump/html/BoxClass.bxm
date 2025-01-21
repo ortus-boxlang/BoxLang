@@ -116,20 +116,16 @@
 									</tr>
 								</thead>
 								<tbody>
-									<bx:script>
-										for( thisAnnotation in annotations ) {
-											```
-												<tr>
-													<td>
-														<strong>#encodeForHTML( thisAnnotation )#</strong>
-													</td>
-													<td>
-														#writeDump( annotations[ thisAnnotation ] )#
-													</td>
-												</tr>
-											```
-											}
-									</bx:script>
+									<bx:loop collection="#annotations#" item="thisAnnotation">
+										<tr>
+											<td>
+												<strong>#encodeForHTML( thisAnnotation )#</strong>
+											</td>
+											<td>
+												#writeDump( annotations[ thisAnnotation ] )#
+											</td>
+										</tr>
+									</bx:loop>
 								</tbody>
 							</table>
 						</div>
