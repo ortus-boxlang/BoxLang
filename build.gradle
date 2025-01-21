@@ -386,13 +386,6 @@ publishing {
 						organizationUrl = "https://www.ortussolutions.com"
 					}
 					developer {
-						id = "gpickin"
-						name = "Gavin Pickin"
-						email = "gavin@ortussolutions.com"
-						organization = "Ortus Solutions, Corp"
-						organizationUrl = "https://www.ortussolutions.com"
-					}
-					developer {
 						id = "ericpeterson"
 						name = "Eric Peterson"
 						email = "eric@ortussolutions.com"
