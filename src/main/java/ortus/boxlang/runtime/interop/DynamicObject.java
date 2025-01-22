@@ -36,6 +36,7 @@ import ortus.boxlang.runtime.runnables.BoxInterface;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.NoMethodException;
+import ortus.boxlang.runtime.types.util.BooleanRef;
 
 /**
  * This class is used to represent a BX/Java Class and invoke methods on classes using invoke dynamic.
@@ -495,7 +496,7 @@ public class DynamicObject implements IReferenceable, Serializable {
 	 *
 	 */
 	public Method findMatchingMethod( IBoxContext context, String methodName, Class<?>[] argumentsAsClasses, Object... arguments ) {
-		return DynamicInteropService.findMatchingMethod( context, this.targetClass, methodName, argumentsAsClasses, arguments );
+		return DynamicInteropService.findMatchingMethod( context, this.targetClass, methodName, argumentsAsClasses, BooleanRef.of( true ), arguments );
 	}
 
 	/**

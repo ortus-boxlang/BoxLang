@@ -34,6 +34,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeAll;
@@ -59,6 +60,7 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxLangException;
 import ortus.boxlang.runtime.types.exceptions.NoFieldException;
 import ortus.boxlang.runtime.types.exceptions.NoMethodException;
+import ortus.boxlang.runtime.types.util.BooleanRef;
 
 public class DynamicInteropServiceTest {
 
@@ -285,26 +287,31 @@ public class DynamicInteropServiceTest {
 		Method method = null;
 
 		// True Check
-		method = DynamicInteropService.findMatchingMethod( context, InvokeDynamicFields.class, "GetNAME", new Class[] {}, new Object[] {} );
+		method = DynamicInteropService.findMatchingMethod( context, InvokeDynamicFields.class, "GetNAME", new Class[] {}, BooleanRef.of( true ),
+		    new Object[] {} );
 		assertThat( method.getName() ).isEqualTo( "getName" );
-		method = DynamicInteropService.findMatchingMethod( context, InvokeDynamicFields.class, "getNoW", new Class[] {}, new Object[] {} );
+		method = DynamicInteropService.findMatchingMethod( context, InvokeDynamicFields.class, "getNoW", new Class[] {}, BooleanRef.of( true ),
+		    new Object[] {} );
 		assertThat( method.getName() ).isEqualTo( "getNow" );
-		method = DynamicInteropService.findMatchingMethod( context, InvokeDynamicFields.class, "setName", new Class[] { String.class },
+		method = DynamicInteropService.findMatchingMethod( context, InvokeDynamicFields.class, "setName", new Class[] { String.class }, BooleanRef.of( true ),
 		    new Object[] { "hola" } );
 		assertThat( method.getName() ).isEqualTo( "setName" );
-		method = DynamicInteropService.findMatchingMethod( context, InvokeDynamicFields.class, "HELLO", new Class[] {}, new Object[] {} );
+		method = DynamicInteropService.findMatchingMethod( context, InvokeDynamicFields.class, "HELLO", new Class[] {}, BooleanRef.of( true ),
+		    new Object[] {} );
 		assertThat( method.getName() ).isEqualTo( "hello" );
-		method = DynamicInteropService.findMatchingMethod( context, InvokeDynamicFields.class, "HELLO", new Class[] { String.class }, new Object[] { "hola" } );
+		method = DynamicInteropService.findMatchingMethod( context, InvokeDynamicFields.class, "HELLO", new Class[] { String.class }, BooleanRef.of( true ),
+		    new Object[] { "hola" } );
 		assertThat( method.getName() ).isEqualTo( "hello" );
 		method = DynamicInteropService.findMatchingMethod( context, InvokeDynamicFields.class, "HELLO", new Class[] { String.class, int.class },
+		    BooleanRef.of( true ),
 		    new Object[] { "hola", 1 } );
 		assertThat( method.getName() ).isEqualTo( "hello" );
 
 		// False Check
-		method = DynamicInteropService.findMatchingMethod( context, InvokeDynamicFields.class, "getName", new Class[] { String.class },
+		method = DynamicInteropService.findMatchingMethod( context, InvokeDynamicFields.class, "getName", new Class[] { String.class }, BooleanRef.of( true ),
 		    new Object[] { "hola" } );
 		assertThat( method ).isNull();
-		method = DynamicInteropService.findMatchingMethod( context, InvokeDynamicFields.class, "BogusName", new Class[] { String.class },
+		method = DynamicInteropService.findMatchingMethod( context, InvokeDynamicFields.class, "BogusName", new Class[] { String.class }, BooleanRef.of( true ),
 		    new Object[] { "hola" } );
 		assertThat( method ).isNull();
 	}
@@ -843,6 +850,42 @@ public class DynamicInteropServiceTest {
 
 		var result = variables.get( Key.result );
 		System.out.println( result );
+	}
+
+	@DisplayName( "It can pass BL array to T[] argument" )
+	@Test
+	void testItCanPassBLArrayToTArray() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				import java.util.Arrays;
+
+				result = Arrays.stream( [ 1,2,3 ] )
+			""", context);
+		// @formatter:on
+
+		assertThat( variables.get( Key.result ) ).isNotNull();
+		assertThat( variables.get( Key.result ) ).isInstanceOf( IntStream.class );
+		assertThat( ( ( IntStream ) variables.get( Key.result ) ).toArray() ).isEqualTo( new int[] { 1, 2, 3 } );
+
+	}
+
+	@SuppressWarnings( "unchecked" )
+	@DisplayName( "It can pass BL String array to T[] argument" )
+	@Test
+	void testItCanPassBLStringArrayToTArray() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				import java.util.Arrays;
+
+				result = Arrays.stream( [ "brad", "luis", "jon" ] )
+			""", context);
+		// @formatter:on
+
+		assertThat( variables.get( Key.result ) ).isNotNull();
+		assertThat( variables.get( Key.result ) ).isInstanceOf( Stream.class );
+		assertThat( ( ( Stream<String> ) variables.get( Key.result ) ).toArray() ).isEqualTo( new String[] { "brad", "luis", "jon" } );
 	}
 
 }

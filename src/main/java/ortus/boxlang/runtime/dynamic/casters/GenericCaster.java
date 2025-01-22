@@ -158,10 +158,14 @@ public class GenericCaster implements IBoxCaster {
 				Object[] incomingArray = incomingList.toArray();
 				result = castNativeArrayToNativeArray( context, incomingArray, newType, fail, newTypeClass );
 			} else {
-				throw new BoxCastException(
-				    String.format( "You asked for type %s, but input %s cannot be cast to an array.", type,
-				        object.getClass().getName() )
-				);
+				if ( fail ) {
+					throw new BoxCastException(
+					    String.format( "You asked for type %s, but input %s cannot be cast to an array.", type,
+					        object.getClass().getName() )
+					);
+				} else {
+					return null;
+				}
 			}
 			if ( convertToArray ) {
 				// unsafe cast to Object[] is OK here because the convertToArray flag will never be true
@@ -328,8 +332,16 @@ public class GenericCaster implements IBoxCaster {
 	private static Object castNativeArrayToNativeArray( IBoxContext context, Object object, String newType, boolean fail, Class<?> newTypeClass ) {
 		int		len		= java.lang.reflect.Array.getLength( object );
 		Object	result	= java.lang.reflect.Array.newInstance( newTypeClass, len );
+		System.out.println( "newTypeClass: " + newTypeClass );
+		System.out.println( "newType: " + newType );
 		for ( int i = len - 1; i >= 0; i-- ) {
-			Object v = GenericCaster.cast( context, java.lang.reflect.Array.get( object, i ), newType, fail );
+			Object	oldV	= java.lang.reflect.Array.get( object, i );
+			Object	v		= GenericCaster.cast( context, oldV, newType, fail );
+			// If the casting failed and we are casting to a primitive or the old value was null, return null because we cannot continue
+			// (primitive arrays cannot contain nulls)
+			if ( v == null && ( newTypeClass.isPrimitive() || oldV != null ) ) {
+				return null;
+			}
 			java.lang.reflect.Array.set( result, i, v );
 		}
 		return result;
