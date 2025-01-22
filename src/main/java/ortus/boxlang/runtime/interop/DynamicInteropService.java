@@ -2211,6 +2211,11 @@ public class DynamicInteropService {
 		String	expectedClass	= expected.getSimpleName().toLowerCase();
 		String	actualClass		= actual.getSimpleName().toLowerCase();
 
+		// Check if we have a boxed type and we just need an unboxed type. We can't unbox it here since we need to return an Object, but the unboxing will happen automatically when it's used
+		if ( PRIMITIVE_MAP.containsKey( actual ) && PRIMITIVE_MAP.get( actual ).equals( expected ) ) {
+			return Optional.of( value );
+		}
+
 		// Primitive to Wrapper Type
 		expected	= WRAPPERS_MAP.getOrDefault( expected, expected );
 		actual		= WRAPPERS_MAP.getOrDefault( actual, actual );
@@ -2239,12 +2244,14 @@ public class DynamicInteropService {
 		}
 
 		// EXPECTED: BOOLEAN
-		// If it's a boolean and the actual is in the booleanTargets list, we can coerce it
+		// If we expect a boolean, we can coerce it from a boolean, number or string
 		if ( Boolean.class.isAssignableFrom( expected )
 		    &&
-		    booleanTargets.contains( actualClass )
-		    &&
-		    Number.class.isAssignableFrom( actual ) ) {
+		    ( Boolean.class.isAssignableFrom( actual )
+		        ||
+		        booleanTargets.contains( actualClass )
+		        ||
+		        Number.class.isAssignableFrom( actual ) ) ) {
 
 			// logger.debug( "Coerce attempt: Castable to boolean " + actualClass );
 			CastAttempt<Boolean> booleanAttempt = BooleanCaster.attempt( value );

@@ -55,7 +55,7 @@ public class GenericProxy extends BaseProxy implements InvocationHandler {
 
 			// Use use the default invocations
 			if ( method != null ) {
-				return coerceReturnValue( invoke( Key.of( method.getName() ), args ), method.getReturnType(), method.getName() );
+				return coerceReturnValue( invoke( args ), method.getReturnType(), method.getName() );
 			} else {
 				return invoke( args );
 			}
@@ -75,7 +75,7 @@ public class GenericProxy extends BaseProxy implements InvocationHandler {
 	 * @return The coerced return value
 	 */
 	private Object coerceReturnValue( Object returnValue, Class<?> returnType, String methodName ) {
-		if ( returnType == null ) {
+		if ( returnValue == null ) {
 			return returnValue;
 		}
 		Object[]	args	= new Object[] { returnValue };
