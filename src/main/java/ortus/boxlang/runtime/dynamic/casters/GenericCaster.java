@@ -332,8 +332,6 @@ public class GenericCaster implements IBoxCaster {
 	private static Object castNativeArrayToNativeArray( IBoxContext context, Object object, String newType, boolean fail, Class<?> newTypeClass ) {
 		int		len		= java.lang.reflect.Array.getLength( object );
 		Object	result	= java.lang.reflect.Array.newInstance( newTypeClass, len );
-		System.out.println( "newTypeClass: " + newTypeClass );
-		System.out.println( "newType: " + newType );
 		for ( int i = len - 1; i >= 0; i-- ) {
 			Object	oldV	= java.lang.reflect.Array.get( object, i );
 			Object	v		= GenericCaster.cast( context, oldV, newType, fail );
