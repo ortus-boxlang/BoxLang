@@ -15,6 +15,7 @@
 package ortus.boxlang.runtime.bifs.global.system.java;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -29,6 +30,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.ServerScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class CreateDynamicProxyTest {
 
@@ -99,30 +101,46 @@ public class CreateDynamicProxyTest {
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( 42 );
 	}
 
-	@DisplayName( "It creates a proxy with multiple interfaces" )
+	@DisplayName( "It casts output to match interface method return type" )
 	@Test
-	public void testCreatesMultipleProxies() {
+	public void testCastsOutputToMatchInterfaceMethodReturnType() {
 		// @formatter:off
 		instance.executeSource(
 		    """
-				import java:java.lang.Thread;
+				import java.util.Arrays;
+				import java.util.stream.Collectors;
+				jStream = Arrays.stream( [ "foo", "bar" ] )
 
-				jRunnable = CreateDynamicProxy(
-					"src.test.java.ortus.boxlang.runtime.dynamic.javaproxy.BoxClassRunnable",
-					[ "java.lang.Runnable", "java.util.concurrent.Callable" ]
+				proxy = CreateDynamicProxy(
+					"src.test.java.ortus.boxlang.runtime.bifs.global.system.java.ToLongFunction",
+					[ "java.util.function.ToLongFunction" ]
 				);
-
-				jthread = new java:Thread( jRunnable );
-				jthread.start();
-				sleep( 500 );
-
-				result = jRunnable.call();
-
+				result = jStream.collect( Collectors.summingLong( proxy ) );
+				println( result)
 		       """,
 		context );
 		// @formatter:on
+		assertThat( variables.get( Key.of( "result" ) ) ).isEqualTo( 84 );
 
-		assertThat( context.getScope( ServerScope.name ).get( "runnableProxyFired" ) ).isEqualTo( true );
-		assertThat( variables.get( result ) ).isEqualTo( "I was called!" );
+		BoxRuntimeException e = assertThrows( BoxRuntimeException.class,
+		// @formatter:off
+		()->instance.executeSource(
+		    """
+				import java.util.Arrays;
+				import java.util.stream.Collectors;
+				jStream = Arrays.stream( [ "foo", "bar" ] )
+
+				proxy = CreateDynamicProxy(
+					"src.test.java.ortus.boxlang.runtime.bifs.global.system.java.ToLongFunctionInvalidReturn",
+					[ "java.util.function.ToLongFunction" ]
+				);
+				result = jStream.collect( Collectors.summingLong( proxy ) );
+				println( result)
+		       """,
+		        context ) );
+		// @formatter:on
+
+		assertThat( e.getCause().getMessage() ).contains( "could not be coerced" );
 	}
+
 }

@@ -21,8 +21,10 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.interop.DynamicInteropService;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.util.BooleanRef;
 
 /**
  * A generic proxy allows you to wrap any object and call any method on it from Java/BoxLang
@@ -48,15 +50,42 @@ public class GenericProxy extends BaseProxy implements InvocationHandler {
 			// If we have a class and an incoming method proxy, run it
 			if ( isClassRunnableTarget() && method != null ) {
 				// Invoke the method
-				return invoke( Key.of( method.getName() ), args );
+				return coerceReturnValue( invoke( Key.of( method.getName() ), args ), method.getReturnType(), method.getName() );
 			}
 
 			// Use use the default invocations
-			return invoke( args );
+			if ( method != null ) {
+				return coerceReturnValue( invoke( Key.of( method.getName() ), args ), method.getReturnType(), method.getName() );
+			} else {
+				return invoke( args );
+			}
 		} catch ( Exception e ) {
 			getLogger().error( "Error invoking GenericProxy", e );
 			throw new BoxRuntimeException( "Error invoking GenericProxy", e );
 		}
+	}
+
+	/**
+	 * Force return value to be what the interface requires
+	 * 
+	 * @param returnValue The value being returned
+	 * @param returnType  The return type of the method
+	 * @param methodName  The name of the method (or error handling)
+	 * 
+	 * @return The coerced return value
+	 */
+	private Object coerceReturnValue( Object returnValue, Class<?> returnType, String methodName ) {
+		if ( returnType == null ) {
+			return returnValue;
+		}
+		Object[]	args	= new Object[] { returnValue };
+		boolean		success	= DynamicInteropService.coerceArguments( context, new Class<?>[] { returnType }, new Class<?>[] { returnValue.getClass() }, args,
+		    false, BooleanRef.of( true ) );
+		if ( !success ) {
+			throw new BoxRuntimeException( "Proxied method [ " + methodName + "() ] returned a value of type [ " + returnValue.getClass().getName()
+			    + " ] which could not be coerced to [ " + returnType.getName() + " ] in order to match the interface method signature." );
+		}
+		return args[ 0 ];
 	}
 
 }

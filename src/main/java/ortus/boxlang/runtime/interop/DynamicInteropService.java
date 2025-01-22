@@ -2144,7 +2144,7 @@ public class DynamicInteropService {
 	 *
 	 * @return True if the arguments were coerced, false otherwise
 	 */
-	private static Boolean coerceArguments(
+	public static Boolean coerceArguments(
 	    IBoxContext context,
 	    Class<?>[] methodParams,
 	    Class<?>[] argumentsAsClasses,
@@ -2222,18 +2222,20 @@ public class DynamicInteropService {
 		// Use the expected caster to coerce the value to the actual type
 		if ( Number.class.isAssignableFrom( expected ) && Number.class.isAssignableFrom( actual ) ) {
 			// logger.debug( "Coerce attempt: Both numbers, using generic caster to " + expectedClass );
-			return Optional.of(
-			    GenericCaster.cast( context, value, expectedClass, false )
-			);
+			CastAttempt<Object> numberAttempt = GenericCaster.attempt( context, value, expectedClass );
+			if ( numberAttempt.wasSuccessful() ) {
+				return numberAttempt.toOptional();
+			}
 		}
 
 		// EXPECTED: Key
 		// To help with interacting with core BL classes, if the target method requires a Key then cast simple values
 		if ( Key.class.isAssignableFrom( expected ) ) {
 			// logger.debug( "Coerce attempt: Both numbers, using generic caster to " + expectedClass );
-			return Optional.of(
-			    KeyCaster.cast( value, false )
-			);
+			CastAttempt<Key> keyAttempt = KeyCaster.attempt( value );
+			if ( keyAttempt.wasSuccessful() ) {
+				return keyAttempt.toOptional();
+			}
 		}
 
 		// EXPECTED: BOOLEAN
@@ -2245,27 +2247,29 @@ public class DynamicInteropService {
 		    Number.class.isAssignableFrom( actual ) ) {
 
 			// logger.debug( "Coerce attempt: Castable to boolean " + actualClass );
-
-			return Optional.of(
-			    BooleanCaster.cast( value, false )
-			);
+			CastAttempt<Boolean> booleanAttempt = BooleanCaster.attempt( value );
+			if ( booleanAttempt.wasSuccessful() ) {
+				return booleanAttempt.toOptional();
+			}
 		}
 
 		// EXPECTED: STRING
 		if ( expectedClass.equals( "string" ) ) {
 			// logger.debug( "Coerce attempt: Castable to String " + actualClass );
-			return Optional.of(
-			    StringCaster.cast( value, false )
-			);
+			CastAttempt<String> stringAttempt = StringCaster.attempt( value );
+			if ( stringAttempt.wasSuccessful() ) {
+				return stringAttempt.toOptional();
+			}
 		}
 
 		// Expected: Numeric and Actual: String
 		// If the expected type is a number and the actual is a string, we can TRY to coerce it
 		if ( Number.class.isAssignableFrom( expected ) && actualClass.equals( "string" ) ) {
 			// logger.debug( "Coerce attempt: Castable to Number from String " + actualClass );
-			return Optional.of(
-			    GenericCaster.cast( context, value, expectedClass, false )
-			);
+			CastAttempt<Object> numberAttempt = GenericCaster.attempt( context, value, expectedClass );
+			if ( numberAttempt.wasSuccessful() ) {
+				return numberAttempt.toOptional();
+			}
 		}
 
 		// Allow Arrays to be coerced to native arrays

@@ -272,7 +272,7 @@ public class GenericCaster implements IBoxCaster {
 			}
 		}
 
-		if ( type.equals( "stream" ) ) {
+		if ( type.equals( "stream" ) && ! ( object instanceof IClassRunnable ) ) {
 			// No real "casting" to do, just return it if it is one
 			if ( object instanceof Stream ) {
 				return object;

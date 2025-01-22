@@ -324,9 +324,9 @@ public abstract class Transpiler implements ITranspiler {
 	public int registerKey( BoxExpression key ) {
 		String name;
 		if ( key instanceof BoxStringLiteral str ) {
-			name = str.getValue();
+			name = "string___" + str.getValue();
 		} else if ( key instanceof BoxIntegerLiteral intr ) {
-			name = intr.getValue();
+			name = "integer___" + intr.getValue();
 		} else {
 			throw new IllegalStateException( "Key must be a string or integer literal" );
 		}
