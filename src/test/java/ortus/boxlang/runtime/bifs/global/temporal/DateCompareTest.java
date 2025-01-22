@@ -190,4 +190,16 @@ public class DateCompareTest {
 		assertThat( comparison ).isEqualTo( 1 );
 	}
 
+	@DisplayName( "It can compare two zero-value time strings" )
+	@Test
+	public void testCompareZeroTime() {
+		instance.executeSource(
+		    """
+		    result = dateCompare( "00:00:00", "00:00:00" );
+		    """,
+		    context );
+		Integer comparison = variables.getAsInteger( Key.of( "result" ) );
+		assertThat( comparison ).isEqualTo( 0 );
+	}
+
 }
