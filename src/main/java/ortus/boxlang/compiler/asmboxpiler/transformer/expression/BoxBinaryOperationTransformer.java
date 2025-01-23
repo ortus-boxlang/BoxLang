@@ -16,6 +16,7 @@ package ortus.boxlang.compiler.asmboxpiler.transformer.expression;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
 import javax.annotation.Nonnull;
 
@@ -29,6 +30,7 @@ import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
+import ortus.boxlang.compiler.asmboxpiler.MethodContextTracker;
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
@@ -72,6 +74,7 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 		TransformerContext		safe		= operation.getOperator() == BoxBinaryOperator.Elvis ? TransformerContext.SAFE : context;
 		List<AbstractInsnNode>	left		= transpiler.transform( operation.getLeft(), safe, ReturnValueContext.VALUE );
 		List<AbstractInsnNode>	right		= transpiler.transform( operation.getRight(), context, ReturnValueContext.VALUE );
+		MethodContextTracker	tracker		= transpiler.getCurrentMethodContextTracker().get();
 
 		List<AbstractInsnNode>	nodes		= switch ( operation.getOperator() ) {
 												case Plus -> // "Plus.invoke(${left},${right})";
@@ -184,8 +187,24 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 												case Implies -> // "Implies.invoke(${left},${right})";
 												    generateBinaryMethodCallNodes( Implies.class, Object.class, left, right );
 
-												case Elvis -> // "Elvis.invoke(${left},${right})";
-												    generateBinaryMethodCallNodes( Elvis.class, Object.class, left, right );
+												case Elvis -> {// "Elvis.invoke(${left},${right})";
+													List<AbstractInsnNode> elvisNodes = new ArrayList<>();
+													elvisNodes.addAll( tracker.loadCurrentContext() );
+													elvisNodes.addAll( AsmHelper.generateArgumentProducerLambda( transpiler, () -> left ) );
+													elvisNodes.addAll( AsmHelper.generateArgumentProducerLambda( transpiler, () -> right ) );
+													elvisNodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+													    Type.getInternalName( Elvis.class ),
+													    "invoke",
+													    Type.getMethodDescriptor(
+													        Type.getType( Object.class ),
+													        Type.getType( IBoxContext.class ),
+													        Type.getType( Function.class ),
+													        Type.getType( Function.class )
+													    ),
+													    false ) );
+
+													yield elvisNodes;
+												}
 
 												case InstanceOf -> // "InstanceOf.invoke(${contextName},${left},${right})";
 												    generateBinaryMethodCallNodesWithContext( transpiler, InstanceOf.class, Boolean.class, left, right );
