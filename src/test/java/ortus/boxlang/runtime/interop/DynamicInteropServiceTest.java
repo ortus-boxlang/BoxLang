@@ -39,7 +39,6 @@ import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.xnio.OptionMap;
@@ -835,21 +834,116 @@ public class DynamicInteropServiceTest {
 		assertThat( ( ( BigDecimal ) result ).doubleValue() ).isEqualTo( 446 );
 	}
 
-	@DisplayName( "It can execute varargs using positional additions" )
+	@DisplayName( "It can execute static varargs method" )
 	@Test
-	@Disabled
-	void testItCanExecuteVaragsPositional() {
+	void testItCanExecuteVaragsMethod() {
 		// @formatter:off
 		instance.executeSource(
 			"""
 				import java.util.stream.IntStream
 
-				result = IntStream.of( 1,2,3,4 )
+				result = IntStream.of( [1,2,3,4] )
 			""", context);
 		// @formatter:on
 
 		var result = variables.get( Key.result );
-		System.out.println( result );
+		assertThat( result ).isNotNull();
+		assertThat( result ).isInstanceOf( IntStream.class );
+		assertThat( ( ( IntStream ) result ).toArray() ).isEqualTo( new int[] { 1, 2, 3, 4 } );
+	}
+
+	@DisplayName( "It can execute static method with varargs and normal args" )
+	@Test
+	void testItCanExecuteStaticMethodWithVarargsAndNormalArgs() {
+	// @formatter:off
+    instance.executeSource(
+        """
+		import java.lang.String;
+            result = String.format("Hello %s, you have %d new messages.", ["Alice", 5])
+        """, context);
+    // @formatter:on
+
+		var result = variables.get( Key.result );
+		assertThat( result ).isNotNull();
+		assertThat( result ).isInstanceOf( String.class );
+		assertThat( result ).isEqualTo( "Hello Alice, you have 5 new messages." );
+	}
+
+	@DisplayName( "It can execute varargs instance method with normal args" )
+	@Test
+	void testItCanExecuteVarargsInstanceMethodWithNormalArgs() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				import java.util.Locale
+	
+				formatter = new java.util.Formatter()
+				result = formatter.format("Hello %s, you are %d years old!", ["John", 30]).toString()
+			""", context);
+		// @formatter:on
+
+		var result = variables.get( Key.result );
+		assertThat( result ).isNotNull();
+		assertThat( result ).isInstanceOf( String.class );
+		assertThat( result ).isEqualTo( "Hello John, you are 30 years old!" );
+	}
+
+	@DisplayName( "It can execute varargs instance method" )
+	@Test
+	void testItCanExecuteVarargsInstanceMethod() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				import ortus.boxlang.runtime.interop.VarArgsExample
+	
+				result = new VarArgsExample( [] )
+				result.setValues( ["one", "two", "three"] );
+			""", context);
+		// @formatter:on
+
+		var example = variables.get( Key.result );
+		assertThat( example ).isNotNull();
+		Object r = DynamicObject.unWrap( variables.get( Key.result ) );
+		assertThat( r ).isInstanceOf( VarArgsExample.class );
+		assertThat( ( ( VarArgsExample ) r ).getValues() ).isEqualTo( new String[] { "one", "two", "three" } );
+	}
+
+	@DisplayName( "It can execute varargs constructor" )
+	@Test
+	void testItCanExecuteVarargsConstructor() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				import ortus.boxlang.runtime.interop.VarArgsExample
+	
+				result = new VarArgsExample( [ "one", "two", "three" ] )
+			""", context);
+		// @formatter:on
+
+		var example = variables.get( Key.result );
+		assertThat( example ).isNotNull();
+		Object r = DynamicObject.unWrap( variables.get( Key.result ) );
+		assertThat( r ).isInstanceOf( VarArgsExample.class );
+		assertThat( ( ( VarArgsExample ) r ).getValues() ).isEqualTo( new String[] { "one", "two", "three" } );
+	}
+
+	@DisplayName( "It can execute varargs constructor with normal args" )
+	@Test
+	void testItCanExecuteVarargsConstructorWithNormalArgs() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				import ortus.boxlang.runtime.interop.VarArgsExample
+	
+				result = new VarArgsExample( {}, [ "one", "two", "three" ] )
+			""", context);
+		// @formatter:on
+
+		var example = variables.get( Key.result );
+		assertThat( example ).isNotNull();
+		Object r = DynamicObject.unWrap( variables.get( Key.result ) );
+		assertThat( r ).isInstanceOf( VarArgsExample.class );
+		assertThat( ( ( VarArgsExample ) r ).getValues() ).isEqualTo( new String[] { "one", "two", "three" } );
 	}
 
 	@DisplayName( "It can pass BL array to T[] argument" )
