@@ -793,6 +793,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		XMLParent							= Key.of( "XMLParent" );
 	public static final Key		XMLRoot								= Key.of( "XMLRoot" );
 	public static final Key		XMLText								= Key.of( "XMLText" );
+	public static final Key		XMLString							= Key.of( "XMLString" );
 	public static final Key		XMLType								= Key.of( "XMLType" );
 	public static final Key		XMLValue							= Key.of( "XMLValue" );
 	public static final Key		xpath								= Key.of( "xpath" );

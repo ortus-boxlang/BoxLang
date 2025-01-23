@@ -24,6 +24,8 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.XML;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+
 @BoxBIF
 public class XMLParse extends BIF {
 
@@ -33,7 +35,7 @@ public class XMLParse extends BIF {
 	public XMLParse() {
 		super();
 		this.declaredArguments = new Argument[] {
-		    new Argument( true, "string", Key.XML )
+		    new Argument( false, "string", Key.XML )
 		};
 	}
 
@@ -46,6 +48,13 @@ public class XMLParse extends BIF {
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String xml = arguments.getAsString( Key.XML );
+		if ( xml == null && arguments.containsKey( Key.XMLText ) ) {
+			xml = arguments.getAsString( Key.XMLText );
+		} else if ( xml == null && arguments.containsKey( Key.XMLString ) ) {
+			xml = arguments.getAsString( Key.XMLString );
+		} else if ( xml == null ) {
+			throw new BoxRuntimeException( "Required argument XML is missing for function xmlParse" );
+		}
 
 		// Is not XML. Must be file or URL
 		if ( !xml.trim().startsWith( "<" ) ) {
