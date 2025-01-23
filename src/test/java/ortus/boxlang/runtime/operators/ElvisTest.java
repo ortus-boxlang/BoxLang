@@ -22,13 +22,17 @@ import static com.google.common.truth.Truth.assertThat;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.context.BaseBoxContext;
+import ortus.boxlang.runtime.context.IBoxContext;
+
 public class ElvisTest {
 
 	@DisplayName( "It can null coalesce" )
 	@Test
 	void testItNullCoalesce() {
-		assertThat( Elvis.invoke( "left", "right" ) ).isEqualTo( "left" );
-		assertThat( Elvis.invoke( null, "right" ) ).isEqualTo( "right" );
+		IBoxContext context = new BaseBoxContext();
+		assertThat( Elvis.invoke( context, "left", ( c ) -> "right" ) ).isEqualTo( "left" );
+		assertThat( Elvis.invoke( context, null, ( c ) -> "right" ) ).isEqualTo( "right" );
 
 	}
 

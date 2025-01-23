@@ -138,18 +138,7 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 
 												elvisExpr.addArgument( new NameExpr( transpiler.peekContextName() ) );
 
-												// create the left argument
-												String lambdaContextName = "lambdaContext" + transpiler.incrementAndGetLambdaContextCounter();
-												transpiler.pushContextName( lambdaContextName );
-												transpiler.popContextName();
-
-												LambdaExpr lambda = new LambdaExpr();
-												lambda.setParameters( new NodeList<>(
-												    new Parameter( new UnknownType(), lambdaContextName ) ) );
-												BlockStmt body = new BlockStmt();
-												body.addStatement( new ReturnStmt( ( Expression ) left ) );
-												lambda.setBody( body );
-												elvisExpr.addArgument( lambda );
+												elvisExpr.addArgument( left );
 
 												// creat ethe right argument
 												String rightLambdaContextName = "lambdaContext" + transpiler.incrementAndGetLambdaContextCounter();

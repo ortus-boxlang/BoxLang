@@ -190,7 +190,7 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 												case Elvis -> {// "Elvis.invoke(${left},${right})";
 													List<AbstractInsnNode> elvisNodes = new ArrayList<>();
 													elvisNodes.addAll( tracker.loadCurrentContext() );
-													elvisNodes.addAll( AsmHelper.generateArgumentProducerLambda( transpiler, () -> left ) );
+													elvisNodes.addAll( left );
 													elvisNodes.addAll( AsmHelper.generateArgumentProducerLambda( transpiler, () -> right ) );
 													elvisNodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
 													    Type.getInternalName( Elvis.class ),
@@ -198,7 +198,7 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 													    Type.getMethodDescriptor(
 													        Type.getType( Object.class ),
 													        Type.getType( IBoxContext.class ),
-													        Type.getType( Function.class ),
+													        Type.getType( Object.class ),
 													        Type.getType( Function.class )
 													    ),
 													    false ) );

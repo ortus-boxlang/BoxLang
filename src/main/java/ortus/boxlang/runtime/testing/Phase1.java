@@ -99,7 +99,7 @@ public class Phase1 extends BoxTemplate {
 		serverScope.assign(
 		    context,
 		    Key.of( "counter" ),
-		    Elvis.invoke( serverScope.dereference( context, Key.of( "counter" ), true ), 0 )
+		    Elvis.invoke( context, serverScope.dereference( context, Key.of( "counter" ), true ), ( c ) -> 0 )
 		);
 
 		requestScope.assign( context, Key.of( "running" ), true );
