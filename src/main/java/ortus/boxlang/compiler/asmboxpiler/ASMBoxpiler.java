@@ -116,7 +116,7 @@ public class ASMBoxpiler extends Boxpiler {
 					classNode.accept( classWriter );
 				}
 				byte[] bytes = classWriter.toByteArray();
-				diskClassUtil.writeBytes( classInfo.classPoolName(), fqn, "class", bytes );
+				diskClassUtil.writeBytes( classInfo.classPoolName(), fqn, "class", bytes, classInfo.lastModified() );
 			} catch ( Exception e ) {
 				StringWriter out = new StringWriter();
 				classNode.accept( new CheckClassAdapter( new TraceClassVisitor( classWriter, new PrintWriter( out ) ) ) );
