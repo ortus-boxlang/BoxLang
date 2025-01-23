@@ -38,6 +38,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.Base64;
+
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 
@@ -573,6 +575,40 @@ public class HTTPTest {
 
 		Assertions.assertTrue( bxhttp.containsKey( Key.fileContent ) );
 		assertThat( bxhttp.get( Key.fileContent ) ).isEqualTo( "{\"success\": true }" );
+	}
+
+	@DisplayName( "It can process a basic authentication request" )
+	@Test
+	public void testBasicAuth( WireMockRuntimeInfo wmRuntimeInfo ) {
+		String	username			= "admin";
+		String	password			= "password";
+		String	base64Credentials	= Base64.getEncoder().encodeToString( ( username + ":" + password ).getBytes() );
+		stubFor(
+		    get( "/posts/1" )
+		        .willReturn( ok()
+		            .withHeader( "Authorization", "Basic " + base64Credentials )
+		            .withHeader( "Content-Type", "application/json; charset=utf-8" )
+		            .withBody(
+		                """
+		                {
+		                  "userId": 1,
+		                  "id": 1,
+		                  "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
+		                  "body": "quia et suscipit\\nsuscipit recusandae consequuntur expedita et cum\\nreprehenderit molestiae ut ut quas totam\\nnostrum rerum est autem sunt rem eveniet architecto"
+		                }
+		                """ ) ) );
+
+		instance.executeSource(
+		    String.format( """
+		                     <cfhttp result="result" url="%s" username="%s" password="%s"></bxhttp>
+		                   """,
+		        wmRuntimeInfo.getHttpBaseUrl() + "/posts/1",
+		        username,
+		        password
+		    ),
+		    context, BoxSourceType.CFTEMPLATE );
+
+		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
 	}
 
 }

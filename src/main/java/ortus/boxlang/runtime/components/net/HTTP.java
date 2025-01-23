@@ -31,6 +31,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -69,6 +70,10 @@ import ortus.boxlang.runtime.validation.Validator;
 
 @BoxComponent( allowsBody = true )
 public class HTTP extends Component {
+
+	private final static String	BASIC_AUTH_DELIMITER	= ":";
+	private static final String	AUTHMODE_BASIC			= "BASIC";
+	private static final String	AUTHMODE_NTLM			= "NTLM";
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -131,9 +136,10 @@ public class HTTP extends Component {
 		    new Attribute( Key.path, "string", Set.of( Validator.requires( Key.file ) ) ),
 		    new Attribute( Key.clientCert, "string" ),
 		    new Attribute( Key.compression, "string" ),
-		    new Attribute( Key.authType, "string", "BASIC", Set.of( Validator.REQUIRED, Validator.NON_EMPTY, Validator.valueOneOf( "BASIC", "NTLM" ) ) ),
-		    new Attribute( Key.domain, "string" ),
-		    new Attribute( Key.workstation, "string" ),
+		    new Attribute( Key.authType, "string", AUTHMODE_BASIC,
+		        Set.of( Validator.REQUIRED, Validator.NON_EMPTY, Validator.valueOneOf( AUTHMODE_BASIC, AUTHMODE_NTLM ) ) ),
+		    new Attribute( Key.domain, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
+		    new Attribute( Key.workstation, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
 		    new Attribute( Key.cachedWithin, "string" ),
 		    new Attribute( Key.encodeUrl, "boolean", true, Set.of( Validator.TYPE ) ),
 		};
@@ -167,6 +173,7 @@ public class HTTP extends Component {
 		Array	params			= executionState.getAsArray( Key.HTTPParams );
 		Struct	HTTPResult		= new Struct();
 		URI		targetURI		= null;
+		String	authMode		= attributes.getAsString( Key.authType ).toUpperCase();
 
 		try {
 			HttpRequest.Builder			builder			= HttpRequest.newBuilder();
@@ -175,6 +182,18 @@ public class HTTP extends Component {
 			List<IStruct>				formFields		= new ArrayList<>();
 			List<IStruct>				files			= new ArrayList<>();
 			builder.header( "User-Agent", "BoxLang" );
+			if ( attributes.get( Key.username ) != null && attributes.get( Key.password ) != null ) {
+				if ( authMode.equals( AUTHMODE_BASIC ) ) {
+					String	auth		= attributes.getAsString( Key.username )
+					    + BASIC_AUTH_DELIMITER
+					    + StringCaster.cast( attributes.getOrDefault( Key.password, "" ) );
+					String	encodedAuth	= Base64.getEncoder().encodeToString( auth.getBytes() );
+				} else if ( authMode.equals( AUTHMODE_NTLM ) ) {
+					// TODO: This will need to be implemented as separate type of smb request
+					throw new BoxRuntimeException( "NTLM authentication is not currently supported." );
+				}
+				System.out.println( "Using HTTP Basic Auth" );
+			}
 
 			for ( Object p : params ) {
 				IStruct	param	= StructCaster.cast( p );
