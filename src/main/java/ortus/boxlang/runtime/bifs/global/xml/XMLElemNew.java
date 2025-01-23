@@ -39,6 +39,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.XML;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.ValidationUtil;
 
 @BoxBIF
 public class XMLElemNew extends BIF {
@@ -73,6 +74,12 @@ public class XMLElemNew extends BIF {
 		String	namespace		= arguments.getAsString( Key.namespace );
 
 		Node	documentNode	= xmlObject.getNode();
+
+		// Backward compat for the weird ACF and Lucee method signature
+		if ( ValidationUtil.isValidURL( childName ) ) {
+			childName	= namespace;
+			namespace	= arguments.getAsString( Key.childname );
+		}
 
 		if ( documentNode == null ) {
 			String xmlString = null;

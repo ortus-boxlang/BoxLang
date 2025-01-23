@@ -130,6 +130,25 @@ public class XMLElemNewTest {
 
 	}
 
+	@DisplayName( "It can accept namespace arg as second argument" )
+	@Test
+	public void testNameSpaceTwo() {
+		instance.executeSource(
+		    """
+		    envelope = xmlParse( "<soapenv:Envelope xmlns:soapenv=""http://schemas.xmlsoap.org/soap/envelope/""><soapenv:Header/><soapenv:Body/></soapenv:Envelope>" );
+		    soapBody    = envelope.xmlRoot[ "soapenv:Body" ];
+		    result = xmlElemNew(
+		       soapBody,
+		       "http://services.rccl.com/Interfaces/GroupList",
+		       "getGroupList"
+		    );
+		           """,
+		    context );
+		assertTrue( variables.get( result ) instanceof XML );
+		// assertEquals( "BoxLang", variables.getAsString( result ) );
+
+	}
+
 	@DisplayName( "Tests some typing and abstraction of XML objects" )
 	@Test
 	@Disabled
