@@ -1671,4 +1671,13 @@ public class ClassTest {
 		    context );
 	}
 
+	@Test
+	public void testUserStaticError() {
+		instance.executeSource(
+		    """
+		    new src.test.java.TestCases.phase3.StaticError()
+		      """,
+		    context );
+	}
+
 }

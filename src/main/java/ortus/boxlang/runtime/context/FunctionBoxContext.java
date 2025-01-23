@@ -464,10 +464,18 @@ public class FunctionBoxContext extends BaseBoxContext {
 	@Override
 	public IScope getDefaultAssignmentScope() {
 		// CF Source sets into variable scope. BoxLang defaults to local scope
-		return getFunction().getSourceType().equals( BoxSourceType.CFSCRIPT )
-		    || getFunction().getSourceType().equals( BoxSourceType.CFTEMPLATE )
-		        ? getScopeNearby( VariablesScope.name )
-		        : localScope;
+		var sourceType = getFunction().getSourceType();
+		if ( sourceType.equals( BoxSourceType.CFSCRIPT ) || sourceType.equals( BoxSourceType.CFTEMPLATE ) ) {
+			// If we are in a static initializer or a function not in a class at all, defer to the parent
+			if ( getParent() instanceof StaticClassBoxContext || !isInClass() ) {
+				return getParent().getDefaultAssignmentScope();
+			} else {
+				// Otherwise, non-static functions in a class use the closest variables scope
+				return getScopeNearby( VariablesScope.name );
+			}
+		} else {
+			return localScope;
+		}
 	}
 
 	/**
