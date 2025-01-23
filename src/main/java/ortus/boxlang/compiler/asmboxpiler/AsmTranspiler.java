@@ -164,9 +164,9 @@ import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 public class AsmTranspiler extends Transpiler {
 
-	protected static final Logger					logger						= LoggerFactory.getLogger( ASMBoxpiler.class );
+	protected static final Logger			logger					= LoggerFactory.getLogger( ASMBoxpiler.class );
 
-	private static final int[]						STACK_SIZE_DELTA			= {
+	private static final int[]				STACK_SIZE_DELTA		= {
 	    0, // nop = 0 (0x0)
 	    1, // aconst_null = 1 (0x1)
 	    1, // iconst_m1 = 2 (0x2)
@@ -371,14 +371,12 @@ public class AsmTranspiler extends Transpiler {
 	    Integer.MIN_VALUE // jsr_w = 201 (0xc9)
 	};
 
-	private static HashMap<Class<?>, Transformer>	registry					= new HashMap<>();
-	private static final String						EXTENDS_ANNOTATION_MARKER	= "overrideJava";
+	private HashMap<Class<?>, Transformer>	registry				= new HashMap<>();
 
-	private List<AbstractInsnNode>					UDFDeclarations				= new ArrayList<>();
-	private List<AbstractInsnNode>					staticUDFDeclarations		= new ArrayList<>();
+	private List<AbstractInsnNode>			UDFDeclarations			= new ArrayList<>();
+	private List<AbstractInsnNode>			staticUDFDeclarations	= new ArrayList<>();
 
 	public AsmTranspiler() {
-		// TODO: instance write to static field. Seems like an oversight in Java version (retained until clarified).
 		registry.put( BoxStringLiteral.class, new BoxStringLiteralTransformer( this ) );
 		registry.put( BoxIntegerLiteral.class, new BoxIntegerLiteralTransformer( this ) );
 		registry.put( BoxExpressionStatement.class, new BoxExpressionStatementTransformer( this ) );
