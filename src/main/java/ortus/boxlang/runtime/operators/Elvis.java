@@ -34,8 +34,8 @@ import ortus.boxlang.runtime.context.IBoxContext;
  */
 public class Elvis implements IOperator {
 
-	public static Object invoke(Object left, Object right) {
-		if (left != null) {
+	public static Object invoke( Object left, Object right ) {
+		if ( left != null ) {
 			return left;
 		} else {
 			return right;
@@ -50,11 +50,11 @@ public class Elvis implements IOperator {
 	 *
 	 * @return The result of the ternary operation
 	 */
-	public static Object invoke(IBoxContext context, Function<IBoxContext, Object> left,
-			Function<IBoxContext, Object> right) {
-		Object leftResult = left.apply(context);
+	public static Object invoke( IBoxContext context, Function<IBoxContext, Object> left,
+	    Function<IBoxContext, Object> right ) {
+		Object leftResult = left.apply( context );
 
-		return leftResult != null ? leftResult : right.apply(context);
+		return leftResult != null ? leftResult : right.apply( context );
 	}
 
 }
