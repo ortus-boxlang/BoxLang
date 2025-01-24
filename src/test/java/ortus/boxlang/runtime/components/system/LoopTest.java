@@ -519,4 +519,20 @@ public class LoopTest {
 		assertThat( variables.get( result ) ).isEqualTo( 0 );
 	}
 
+	@Test
+	public void testDoInTry() {
+		instance.executeSource(
+		    """
+		       try{
+		    do{
+
+		    }while( false )
+		    }
+		    catch( any e ){
+
+		    }
+		                  """,
+		    context, BoxSourceType.BOXSCRIPT );
+	}
+
 }

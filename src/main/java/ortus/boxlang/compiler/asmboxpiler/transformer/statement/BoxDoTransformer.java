@@ -42,7 +42,7 @@ public class BoxDoTransformer extends AbstractTransformer {
 	}
 
 	@Override
-	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnContext ) throws IllegalStateException {
+	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnValueContext ) throws IllegalStateException {
 		BoxDo					boxDo			= ( BoxDo ) node;
 
 		LabelNode				start			= new LabelNode();
@@ -71,7 +71,6 @@ public class BoxDoTransformer extends AbstractTransformer {
 		nodes.add( new InsnNode( Opcodes.POP ) );
 
 		nodes.addAll( transpiler.transform( boxDo.getBody(), TransformerContext.NONE, ReturnValueContext.VALUE_OR_NULL ) );
-
 		nodes.add( continueLabel );
 
 		nodes.addAll( transpiler.transform( boxDo.getCondition(), TransformerContext.RIGHT, ReturnValueContext.VALUE ) );
@@ -89,8 +88,12 @@ public class BoxDoTransformer extends AbstractTransformer {
 
 		nodes.add( end );
 
-		// every iteration we will swap the values and pop in order to remove the older value
-		if ( returnContext == ReturnValueContext.EMPTY || returnContext == ReturnValueContext.EMPTY_UNLESS_JUMPING ) {
+		// One last swap and pop - for old time's sake
+		// If we don't do this we will be leaving an old value on the stack
+		nodes.add( new InsnNode( Opcodes.SWAP ) );
+		nodes.add( new InsnNode( Opcodes.POP ) );
+
+		if ( returnValueContext.empty ) {
 			nodes.add( new InsnNode( Opcodes.POP ) );
 		}
 
