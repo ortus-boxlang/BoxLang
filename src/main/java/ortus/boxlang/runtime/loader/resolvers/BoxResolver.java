@@ -417,8 +417,7 @@ public class BoxResolver extends BaseResolver {
 					Path targetPath = findExistingPathWithValidExtension( parentPath, slashName );
 					if ( targetPath != null ) {
 
-						ResolvedFilePath newResolvedFilePath = resolvedFilePath
-						    .newFromRelative( parentPath.relativize( Paths.get( targetPath.toString() ) ).toString() );
+						ResolvedFilePath newResolvedFilePath = FileSystemUtil.contractPath( context, targetPath.toString(), resolvedFilePath.mappingName() );
 
 						return Optional.of( new ClassLocation(
 						    newResolvedFilePath.getBoxFQN().getClassName(),

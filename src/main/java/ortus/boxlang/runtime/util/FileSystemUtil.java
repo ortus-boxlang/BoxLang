@@ -1004,18 +1004,58 @@ public final class FileSystemUtil {
 	 * @return The contracted path represented in a ResolvedFilePath record. (The contracted path will be in the relativePath property)
 	 */
 	public static ResolvedFilePath contractPath( IBoxContext context, String path ) {
-		String					finalPath				= Path.of( path ).normalize().toString().replace( "\\", "/" );
-		Map.Entry<Key, String>	matchingMappingEntry	= context.getConfig()
-		    .getAsStruct( Key.mappings )
+		return contractPath( context, path, null );
+	}
+
+	/**
+	 * Tries to match a given absolute path to mappings in the environment and will return a path that is contracted by the shortest matched mapping. If there are no matches, returns the absolute path it was given.
+	 *
+	 * @param context          The context in which the BIF is being invoked.
+	 * @param path             The path to contract
+	 * @param preferredMapping A mapping to check for a match first
+	 *
+	 * @return The contracted path represented in a ResolvedFilePath record. (The contracted path will be in the relativePath property)
+	 */
+	public static ResolvedFilePath contractPath( IBoxContext context, String path, String preferredMapping ) {
+		String	finalPath	= Path.of( path ).normalize().toString().replace( "\\", "/" );
+		IStruct	mappings	= context.getConfig().getAsStruct( Key.mappings );
+
+		if ( preferredMapping != null && mappings.get( Key.of( preferredMapping ) ) != null ) {
+			String mappingDirectory = mappings.getAsString( Key.of( preferredMapping ) );
+			mappingDirectory = Path.of( mappingDirectory ).normalize().toString().replace( "\\", "/" );
+			if ( File.separator.equals( "/" ) ? finalPath.startsWith( mappingDirectory )
+			    : StringUtils.startsWithIgnoreCase( finalPath, mappingDirectory ) ) {
+				String contractedPath = finalPath.replace( mappingDirectory, "" );
+				if ( !contractedPath.startsWith( "/" ) ) {
+					contractedPath = "/" + contractedPath;
+				}
+
+				if ( !preferredMapping.equals( "/" ) ) {
+					// Add mapping name back to relative path (which is inside of mapping root)
+					contractedPath = preferredMapping + contractedPath;
+				}
+
+				return ResolvedFilePath.of(
+				    preferredMapping,
+				    mappingDirectory,
+				    contractedPath,
+				    Path.of( finalPath )
+				);
+			}
+
+		}
+
+		Map.Entry<Key, String> matchingMappingEntry = mappings
 		    .entrySet()
 		    .stream()
-		    .sorted( Comparator.comparingInt( entry -> entry.getKey().getName().length() ) )
+		    // negating length comparator to sort in descending order (checking longest match first)
+		    .sorted( Comparator.comparingInt( entry -> -entry.getKey().getName().length() ) )
 		    .map( entry -> new AbstractMap.SimpleEntry<Key, String>( entry.getKey(),
 		        Path.of( entry.getValue().toString() ).normalize().toString().replace( "\\", "/" ) ) )
 		    .filter( entry -> {
-															    return File.separator.equals( "/" ) ? finalPath.startsWith( entry.getValue() )
-															        : StringUtils.startsWithIgnoreCase( finalPath, entry.getValue() );
-														    } )
+			    return File.separator.equals( "/" ) ? finalPath.startsWith( entry.getValue() )
+			        : StringUtils.startsWithIgnoreCase( finalPath, entry.getValue() );
+		    } )
 		    .findFirst()
 		    .orElse( null );
 
@@ -1024,6 +1064,13 @@ public final class FileSystemUtil {
 			if ( !contractedPath.startsWith( "/" ) ) {
 				contractedPath = "/" + contractedPath;
 			}
+
+			String mappingName = matchingMappingEntry.getKey().getName();
+			if ( !mappingName.equals( "/" ) ) {
+				// Add mapping name back to relative path (which is inside of mapping root)
+				contractedPath = mappingName + contractedPath;
+			}
+
 			return ResolvedFilePath.of(
 			    matchingMappingEntry.getKey().getName(),
 			    matchingMappingEntry.getValue(),
