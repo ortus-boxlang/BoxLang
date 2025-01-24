@@ -16,6 +16,7 @@
 package ortus.boxlang.runtime.bifs.global.temporal;
 
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 
@@ -95,7 +96,6 @@ public class DateTimeFormat extends BIF {
 
 		// LS Subclass locales
 		Locale locale = LocalizationUtil.parseLocaleFromContext( context, arguments );
-
 		// Apply our runtime timezone to our initial reference
 		ref = new DateTime( ref.getWrapped().withZoneSameInstant( timezone ) );
 

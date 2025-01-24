@@ -148,19 +148,21 @@ public class DateTimeFormatTest {
 	public void testDateTimeFormatTZChange() {
 		instance.executeSource(
 		    """
-		    setTimezone( "America/New_York" );
-		    ref = now();
-		          result1 = dateTimeFormat( ref, "v" );
-		       setTimezone( "America/Los_Angeles" );
-		          result2 = dateTimeFormat( ref, "v" );
-		          resultHours = dateTimeFormat( ref, "HH" );
-		          """,
+		       setTimezone( "America/New_York" );
+		       ref = now();
+		             result1 = dateTimeFormat( ref, "v" );
+		    	  result1Hours = dateTimeFormat( ref, "HH" );
+		    setTimezone( "America/Los_Angeles" );
+
+		             result2 = dateTimeFormat( ref, "v" );
+		             result2Hours = dateTimeFormat( ref, "HH" );
+		             """,
 		    context );
 		DateTime	dateRef	= variables.getAsDateTime( Key.of( "ref" ) );
 		String		result1	= variables.getAsString( Key.of( "result1" ) );
 		String		result2	= variables.getAsString( Key.of( "result2" ) );
 		assertNotEquals( result1, result2 );
-		assertNotEquals( variables.getAsString( Key.of( "resultHours" ) ), StringCaster.cast( dateRef.getWrapped().getHour() ) );
+		assertNotEquals( variables.getAsString( Key.of( "result2Hours" ) ), variables.getAsString( Key.of( "result1Hours" ) ) );
 	}
 
 	@DisplayName( "It tests the BIF will retain locale awareness" )

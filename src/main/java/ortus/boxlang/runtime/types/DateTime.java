@@ -258,7 +258,17 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	 * @param dateTime A local date time object
 	 */
 	public DateTime( LocalDateTime dateTime ) {
-		this( ZonedDateTime.of( dateTime, ZoneId.systemDefault() ) );
+		this( dateTime, ZoneId.systemDefault() );
+	}
+
+	/**
+	 * Constructor to create DateTime from a LocalDateTime object with a specified timezone
+	 * 
+	 * @param dateTime A local date time object
+	 * @param timezone The timezone to use
+	 */
+	public DateTime( LocalDateTime dateTime, ZoneId timezone ) {
+		this( ZonedDateTime.of( dateTime, timezone ) );
 	}
 
 	/**
