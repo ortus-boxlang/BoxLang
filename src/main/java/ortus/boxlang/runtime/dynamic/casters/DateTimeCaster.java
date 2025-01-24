@@ -283,7 +283,7 @@ public class DateTimeCaster implements IBoxCaster {
 			return new DateTime( DateUtils.parseDateStrictly( targetString, COMMON_PATTERNS ), timezone );
 		} catch ( java.text.ParseException e ) {
 			try {
-				return new DateTime( targetString );
+				return new DateTime( targetString, timezone );
 			} catch ( Throwable e2 ) {
 				if ( fail ) {
 					throw new BoxCastException( "Can't cast [" + targetString + "] to a DateTime." );
