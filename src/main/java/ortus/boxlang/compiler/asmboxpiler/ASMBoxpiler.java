@@ -89,7 +89,6 @@ public class ASMBoxpiler extends Boxpiler {
 			File sourceFile = classInfo.resolvedFilePath().absolutePath().toFile();
 			// Check if the source file contains Java bytecode by reading the first few bytes
 			if ( diskClassUtil.isJavaBytecode( sourceFile ) ) {
-				System.out.println( "Loading bytecode direct from pre-compiled source file for " + FQN );
 				classInfo.getClassLoader().defineClasses( FQN, sourceFile );
 				return;
 			}
