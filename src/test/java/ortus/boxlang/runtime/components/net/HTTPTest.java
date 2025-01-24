@@ -609,6 +609,8 @@ public class HTTPTest {
 		    context, BoxSourceType.CFTEMPLATE );
 
 		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
+		IStruct bxhttp = variables.getAsStruct( result );
+		assertThat( bxhttp.getAsString( Key.header ) ).contains( "authorization: Basic " + base64Credentials );
 	}
 
 }

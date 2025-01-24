@@ -188,11 +188,11 @@ public class HTTP extends Component {
 					    + BASIC_AUTH_DELIMITER
 					    + StringCaster.cast( attributes.getOrDefault( Key.password, "" ) );
 					String	encodedAuth	= Base64.getEncoder().encodeToString( auth.getBytes() );
+					builder.header( "Authorization", "Basic " + encodedAuth );
 				} else if ( authMode.equals( AUTHMODE_NTLM ) ) {
 					// TODO: This will need to be implemented as separate type of smb request
 					throw new BoxRuntimeException( "NTLM authentication is not currently supported." );
 				}
-				System.out.println( "Using HTTP Basic Auth" );
 			}
 
 			for ( Object p : params ) {
