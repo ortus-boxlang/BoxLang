@@ -90,7 +90,17 @@
 													<bx:try>
 														#encodeForHTML( variables.field.get( var ) )#
 														<bx:catch>
-															<em>--- Not Available ---</em>
+															<bx:try>
+																<bx:set value = variables.field.get( var )>
+																<bx:if value != null >
+																	[#encodeForHTML( value.getClass().getName() )#<bx:if value instanceof 'java.lang.Class'>&lt;#encodeForHTML( value.getName() )#&gt;</bx:if>]
+																<bx:else>
+																	[Null]
+																</bx:if>
+																<bx:catch>																	
+																	<em>--- Not Available ---</em>
+																</bx:catch>
+															</bx:try>
 														</bx:catch>
 													</bx:try>
 												</td>
