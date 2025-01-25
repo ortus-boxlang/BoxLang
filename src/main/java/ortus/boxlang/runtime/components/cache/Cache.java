@@ -43,8 +43,15 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.validation.Validator;
 
+import org.slf4j.Logger;
+
 @BoxComponent( allowsBody = true )
 public class Cache extends Component {
+	
+	/**
+	 * Logger
+	 */
+	private final Logger logger = runtime.getLoggingService().getLogger( "cache" );
 
 	/**
 	 * Enumeration of all possible `type` attribute values.
@@ -274,16 +281,24 @@ public class Cache extends Component {
 					if ( variable == null ) {
 						throw new BoxRuntimeException( "A variable name is required when specifying the cache action [get]" );
 					}
-					result = cacheProvider.getQuiet( cacheKeyName );
+					result = !throwOnError ? cacheProvider.getQuiet( cacheKeyName ) : cacheProvider.get( cacheKeyName );
 					break;
 				}
 				case PUT : {
-					cacheProvider.set(
-					    cacheKeyName,
-					    value == null ? processCacheBody( context, body ) : value,
-					    timeout,
-					    lastAccessTimeout
-					);
+					try{
+						cacheProvider.set(
+							cacheKeyName,
+							value == null ? processCacheBody( context, body ) : value,
+							timeout,
+							lastAccessTimeout
+						);
+					} catch( Throwable e ){
+						if ( throwOnError ) {
+							throw new BoxRuntimeException( "An error occurred while attempting to set the cache value", e );
+						} else {
+							logger.warn( "An error occurred while attempting to flush the cache", e );
+						}
+					}
 					break;
 				}
 				case CACHE :
@@ -300,9 +315,21 @@ public class Cache extends Component {
 				}
 				case FLUSH : {
 					if ( key != null ) {
-						cacheProvider.clear( key );
+						if( throwOnError ){
+							cacheProvider.clear( key );	
+						} else {
+							cacheProvider.clearQuiet( key );
+						}
 					} else {
-						cacheProvider.clearAll();
+						try{
+							cacheProvider.clearAll();
+						} catch( Throwable e ){
+							if ( throwOnError ) {
+								throw new BoxRuntimeException( "An error occurred while attempting to flush the cache", e );
+							} else {
+								logger.warn( "An error occurred while attempting to flush the cache", e );
+							}
+						}
 					}
 					break;
 				}
@@ -310,7 +337,11 @@ public class Cache extends Component {
 					if ( key == null ) {
 						throw new BoxRuntimeException( "The cache method [delete] was specified but no key was provided for deletion" );
 					}
-					cacheProvider.clear( key );
+					if( throwOnError ){
+						cacheProvider.clear( key );	
+					} else {
+						cacheProvider.clearQuiet( key );
+					}
 					break;
 				}
 				default : {
