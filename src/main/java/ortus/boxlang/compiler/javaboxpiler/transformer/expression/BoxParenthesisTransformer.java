@@ -39,7 +39,6 @@ public class BoxParenthesisTransformer extends AbstractTransformer {
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxParenthesis		parenthesis	= ( BoxParenthesis ) node;
 		Expression			expr		= ( Expression ) transpiler.transform( parenthesis.getExpression() );
-		String				side		= context == TransformerContext.NONE ? "" : "(" + context.toString() + ") ";
 		Map<String, String>	values		= new HashMap<>() {
 
 											{

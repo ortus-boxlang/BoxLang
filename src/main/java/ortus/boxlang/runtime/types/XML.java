@@ -52,7 +52,6 @@ import org.w3c.dom.Notation;
 import org.w3c.dom.ProcessingInstruction;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
-import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
 
 import ortus.boxlang.runtime.BoxRuntime;

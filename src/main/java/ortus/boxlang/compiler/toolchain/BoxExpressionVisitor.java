@@ -930,8 +930,9 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 
 	@Override
 	public BoxExpression visitArgument( ArgumentContext ctx ) {
-		var	pos	= tools.getPosition( ctx );
-		var	src	= tools.getSourceText( ctx );
+		// Debugging variables
+		// var	pos	= tools.getPosition( ctx );
+		// var	src	= tools.getSourceText( ctx );
 		if ( ctx.namedArgument() != null ) {
 			return ctx.namedArgument().accept( this );
 		}

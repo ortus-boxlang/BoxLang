@@ -41,7 +41,6 @@ public class BoxStaticMethodInvocationTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxStaticMethodInvocation	invocation	= ( BoxStaticMethodInvocation ) node;
-		String						side		= context == TransformerContext.NONE ? "" : "(" + context.toString() + ") ";
 		BoxExpression				baseObject	= invocation.getObj();
 		Expression					expr;
 

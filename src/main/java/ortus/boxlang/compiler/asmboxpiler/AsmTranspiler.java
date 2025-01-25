@@ -591,7 +591,7 @@ public class AsmTranspiler extends Transpiler {
 		Transformer transformer = registry.get( node.getClass() );
 		if ( transformer != null ) {
 			try {
-				List<AbstractInsnNode> nodes = new ArrayList( transformer.transform( node, context, returnValueContext ) );
+				List<AbstractInsnNode> nodes = new ArrayList<AbstractInsnNode>( transformer.transform( node, context, returnValueContext ) );
 
 				if ( isUnsplittable( node ) ) {
 					nodes = nodes.stream().filter( n -> ! ( n instanceof DividerNode ) ).collect( Collectors.toList() );

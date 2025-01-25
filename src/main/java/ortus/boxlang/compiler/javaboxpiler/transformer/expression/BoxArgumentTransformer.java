@@ -53,7 +53,6 @@ public class BoxArgumentTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxArgument			arg			= ( BoxArgument ) node;
-		String				side		= context == TransformerContext.NONE ? "" : "(" + context.toString() + ") ";
 		Expression			expr		= ( Expression ) transpiler.transform( arg.getValue(), context );
 		// TODO handle named parameters
 		Map<String, String>	values		= new HashMap<>() {

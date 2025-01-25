@@ -31,8 +31,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.ArrayList;
 
-import org.apache.commons.lang3.StringUtils;
-
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
@@ -443,7 +441,6 @@ public class StructUtil {
 	 * @return
 	 */
 	public static Stream<IStruct> findKey( IStruct struct, String key ) {
-		int					keyLength	= key.length();
 		String[]			keyParts	= key.toLowerCase().split( "\\." );
 		IStruct				flatMap		= toFlatMap( struct );
 		ArrayList<IStruct>	results		= new ArrayList<IStruct>();

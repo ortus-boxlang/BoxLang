@@ -40,7 +40,6 @@ public class BoxMethodInvocationTransformer extends AbstractTransformer {
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxMethodInvocation	invocation	= ( BoxMethodInvocation ) node;
 		Boolean				safe		= invocation.isSafe() || context == TransformerContext.SAFE;
-		String				side		= context == TransformerContext.NONE ? "" : "(" + context.toString() + ") ";
 
 		Expression			expr		= ( Expression ) transpiler.transform( invocation.getObj(),
 		    context );

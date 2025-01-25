@@ -68,15 +68,10 @@ public class TestClosure extends TestBase {
 				if ( it instanceof BoxExpressionStatement exp && exp.getExpression() instanceof BoxClosure closure ) {
 					Assertions.assertEquals( 1, closure.getArgs().size() );
 					Assertions.assertEquals( 1, closure.getAnnotations().size() );
-
-					BoxArgumentDeclaration arg;
 					Assertions.assertEquals( 1, closure.getArgs().get( 0 ).getAnnotations().size() );
-
 				}
 			} );
 		} );
-
-		CompilationUnit javaAST = ( CompilationUnit ) transformClosure( code );
 	}
 
 	@Test

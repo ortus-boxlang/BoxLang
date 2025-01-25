@@ -24,9 +24,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.google.common.io.Files;
 
 import ortus.boxlang.runtime.config.util.PropertyHelper;
@@ -70,11 +67,6 @@ public class SecurityConfig implements IConfigSegment {
 	 * Private Properties
 	 * --------------------------------------------------------------------------
 	 */
-
-	/**
-	 * Logger
-	 */
-	private static final Logger	logger								= LoggerFactory.getLogger( SecurityConfig.class );
 
 	/**
 	 * Maps of allowed BIFs so lookups get faster as we go

@@ -159,7 +159,6 @@ public class Cache extends Component {
 	 * @attribute.port - Legacy CFML attributes. Not implemented
 	 *
 	 */
-	@SuppressWarnings( { "unchecked" } )
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
 		CacheAction			cacheAction			= CacheAction.fromString( attributes.getAsString( Key.action ) );
 		String				key					= attributes.getAsString( Key.key );

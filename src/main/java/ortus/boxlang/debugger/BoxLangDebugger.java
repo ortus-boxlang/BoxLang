@@ -113,7 +113,7 @@ public class BoxLangDebugger {
 	private static final Pattern						NON_WORD_PATTERN	= Pattern.compile( "\\W" );
 
 	private boolean										vmUsesJavaBoxpiler	= false;
-	private Map<String, Map<Integer, List<Location>>>	locations			= new HashMap();
+	private Map<String, Map<Integer, List<Location>>>	locations			= new HashMap<String, Map<Integer, List<Location>>>();
 
 	public enum Status {
 		NOT_STARTED,
@@ -392,7 +392,7 @@ public class BoxLangDebugger {
 		BoxLangDebugger.sourceMapsFromFQN	= new HashMap<String, SourceMap>();
 		this.cachedThreads					= new HashMap<Integer, CachedThreadReference>();
 		this.eventSets						= new HashMap<Integer, EventSet>();
-		this.locations						= new HashMap();
+		this.locations						= new HashMap<String, Map<Integer, List<Location>>>();
 	}
 
 	public boolean hasSeen( long variableReference ) {
@@ -1019,13 +1019,13 @@ public class BoxLangDebugger {
 		String lcased = fileName.toLowerCase();
 
 		if ( !locations.containsKey( lcased ) ) {
-			return new ArrayList();
+			return new ArrayList<Location>();
 		}
 
 		var map = locations.get( lcased );
 
 		if ( !map.containsKey( breakpoint.line ) ) {
-			return new ArrayList();
+			return new ArrayList<Location>();
 		}
 
 		return map.get( breakpoint.line );
