@@ -21,10 +21,8 @@ import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 import javax.xml.xpath.XPathVariableResolver;
-import javax.xml.xpath.XPathFactoryConfigurationException;
 
 import org.w3c.dom.NodeList;
-import org.w3c.dom.Document;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;

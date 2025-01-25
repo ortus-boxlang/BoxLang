@@ -119,6 +119,9 @@ public class AsmHelper {
 		return nodes;
 	}
 
+	/***
+	 * Only used for manually debugging
+	 */
 	private static List<AbstractInsnNode> generateSetOfCompileTimeMethodNames( Transpiler transpiler, BoxClass boxClass ) {
 		List<List<AbstractInsnNode>>	methodKeyLists	= boxClass.getDescendantsOfType( BoxFunctionDeclaration.class )
 		    .stream()

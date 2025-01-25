@@ -603,26 +603,26 @@ public class AsmTranspiler extends Transpiler {
 
 				return nodes;
 			} catch ( Exception e ) {
-				this.logger.error( "Error transforming:" + node.getClass().toString() );
+				logger.error( "Error transforming:" + node.getClass().toString() );
 				if ( getProperty( "filePath" ) != null ) {
-					this.logger.error( "	file: " + getProperty( "filePath" ) );
+					logger.error( "	file: " + getProperty( "filePath" ) );
 				} else {
-					this.logger.error( "	file: unkown" );
+					logger.error( "	file: unkown" );
 				}
 
 				if ( node.getPosition() != null ) {
-					this.logger.error( "	position: " + node.getPosition().toString() );
+					logger.error( "	position: " + node.getPosition().toString() );
 				} else {
-					this.logger.error( "	position: unkown" );
+					logger.error( "	position: unkown" );
 				}
 
 				if ( node.getSourceText() != null ) {
-					this.logger.error( "	source: " + node.getSourceText() );
+					logger.error( "	source: " + node.getSourceText() );
 				} else {
-					this.logger.error( "	source: unkown" );
+					logger.error( "	source: unkown" );
 				}
 
-				this.logger.error( e.getMessage() );
+				logger.error( e.getMessage() );
 				throw e;
 			}
 			// if ( ASMBoxpiler.DEBUG ) {
@@ -1050,6 +1050,9 @@ public class AsmTranspiler extends Transpiler {
 		return nodes;
 	}
 
+	/**
+	 * Only used for manually debugging
+	 */
 	private List<AbstractInsnNode> generateMapOfAbstractMethodNames( BoxClass boxClass ) {
 		List<List<AbstractInsnNode>>	methodKeyLists	= boxClass.getDescendantsOfType( BoxFunctionDeclaration.class )
 		    .stream()
@@ -1078,6 +1081,9 @@ public class AsmTranspiler extends Transpiler {
 		return nodes;
 	}
 
+	/**
+	 * Only used for manually debugging
+	 */
 	private List<AbstractInsnNode> generateSetOfCompileTimeMethodNames( BoxClass boxClass ) {
 		List<List<AbstractInsnNode>>	methodKeyLists	= boxClass.getDescendantsOfType( BoxFunctionDeclaration.class )
 		    .stream()

@@ -503,7 +503,7 @@ public class SQLBinaryOperation extends SQLExpression {
 	 * Reusable helper method to ensure that the left and right operands are boolean expressions or bit columns
 	 * 
 	 * @return true if the left and right operands are boolean expressions or bit columns
-	 * @TODO: This is unused - can we remove?
+	 * TODO: This is unused - can we remove?
 	 */
 	private void ensureBooleanOperands( QoQSelectExecution QoQExec ) {
 		// These checks may or may not work. If we can't get away with this, then we can boolean cast the values
@@ -522,7 +522,7 @@ public class SQLBinaryOperation extends SQLExpression {
 	 * Reusable helper method to ensure that the left and right operands are numeric expressions or numeric columns
 	 * nulls are ok in math operations
 	 * Strings we'll let slide too since "" casts to a 0
-	 * @TODO: This is unused - can we remove?
+	 * TODO: This is unused - can we remove?
 	 */
 	private void ensureNumericOperands( QoQSelectExecution QoQExec ) {
 		if ( !left.isNumeric( QoQExec ) && ! ( left instanceof SQLNullLiteral ) && ! ( left instanceof SQLStringLiteral ) ) {

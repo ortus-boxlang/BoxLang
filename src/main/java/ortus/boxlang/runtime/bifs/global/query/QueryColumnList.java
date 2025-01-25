@@ -22,7 +22,6 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
-import ortus.boxlang.runtime.types.util.ListUtil;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.QUERY )

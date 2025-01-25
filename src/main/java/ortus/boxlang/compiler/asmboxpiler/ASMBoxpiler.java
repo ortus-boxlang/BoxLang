@@ -122,9 +122,9 @@ public class ASMBoxpiler extends Boxpiler {
 
 				try {
 					e.printStackTrace( new PrintWriter( out ) );
-					this.logger.error( out.toString() );
+					logger.error( out.toString() );
 				} catch ( Exception ex ) {
-					this.logger.error( "Unabel to output ASM error info: " + ex.getMessage() );
+					logger.error( "Unabel to output ASM error info: " + ex.getMessage() );
 				}
 				throw e;
 			}

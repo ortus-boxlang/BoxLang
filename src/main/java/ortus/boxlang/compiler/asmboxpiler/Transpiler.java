@@ -49,12 +49,15 @@ public abstract class Transpiler implements ITranspiler {
 	private int												lambdaCounter			= 0;
 	private int												componentCounter		= 0;
 	private int												functionBodyCounter		= 0;
-	private Map<String, LabelNode>							breaks					= new LinkedHashMap<>();
-	private Map<String, LabelNode>							continues				= new LinkedHashMap<>();
 	private List<ImportDefinition>							imports					= new ArrayList<>();
 	private List<MethodContextTracker>						methodContextTrackers	= new ArrayList<MethodContextTracker>();
 	private List<BoxStaticInitializer>						staticInitializers		= new ArrayList<>();
 	private ClassNode										owningClassNode			= null;
+	/**
+	 * Manually debugging properties
+	 */
+	 private Map<String, LabelNode>							breaks					= new LinkedHashMap<>();
+	 private Map<String, LabelNode>							continues				= new LinkedHashMap<>();
 
 	/**
 	 * Set a property

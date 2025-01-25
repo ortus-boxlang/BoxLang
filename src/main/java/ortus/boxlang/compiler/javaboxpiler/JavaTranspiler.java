@@ -184,7 +184,7 @@ public class JavaTranspiler extends Transpiler {
 
 	static Logger						logger					= LoggerFactory.getLogger( JavaTranspiler.class );
 
-	private HashMap<Class, Transformer>	registry				= new HashMap<>();
+	private HashMap<Class<?>, Transformer>	registry				= new HashMap<>();
 	private List<Statement>				statements				= new ArrayList<>();
 	private Map<Key, CompilationUnit>	UDFcallables			= new HashMap<Key, CompilationUnit>();
 	private List<CompilationUnit>		callables				= new ArrayList<>();

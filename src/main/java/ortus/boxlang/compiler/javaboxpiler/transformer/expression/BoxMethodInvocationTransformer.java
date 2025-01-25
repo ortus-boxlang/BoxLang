@@ -52,7 +52,6 @@ public class BoxMethodInvocationTransformer extends AbstractTransformer {
 											}
 										};
 
-		String				target		= null;
 		for ( int i = 0; i < invocation.getArguments().size(); i++ ) {
 			Expression expr2 = ( Expression ) transpiler.transform( ( BoxNode ) invocation.getArguments().get( i ), context );
 			values.put( "arg" + i, expr2.toString() );
