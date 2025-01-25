@@ -563,7 +563,7 @@ spotless {
     java {
 		target fileTree( "." ) {
             include "**/*.java"
-            exclude "**/build/**", "bin/**", "examples/**", "src/main/java/ortus/boxlang/runtime/testing/**", "src/main/gen/**", "src/main/antlr/gen"
+            exclude "**/build/**", "bin/**", "examples/**", "src/main/java/ortus/boxlang/runtime/testing/**", "src/main/gen/**", "src/main/antlr/gen", "modules/**"
         }
         eclipse().configFile( "workbench/ortus-java-style.xml" )
 		toggleOffOn()
@@ -653,9 +653,4 @@ task bumpBetaVersion {
 task getDependencies( type: Copy ) {
   from sourceSets.main.runtimeClasspath
   into 'build/dependencies/'
-}
-spotless{
-	java{
-		targetExclude 'modules/**'
-	}
 }
