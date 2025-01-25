@@ -102,10 +102,6 @@ public class HTTP extends Component {
 		        Validator.NON_EMPTY,
 		        Validator.valueOneOf( "GET", "POST", "PUT", "DELETE", "HEAD", "TRACE", "OPTIONS", "PATCH" )
 		    ) ),
-		    new Attribute( Key.proxyServer, "string" ),
-		    new Attribute( Key.proxyPort, "string" ),
-		    new Attribute( Key.proxyUser, "string" ),
-		    new Attribute( Key.proxyPassword, "string" ),
 		    new Attribute( Key.username, "string" ),
 		    new Attribute( Key.password, "string" ),
 		    new Attribute( Key.userAgent, "string", "BoxLang" ),
@@ -123,11 +119,6 @@ public class HTTP extends Component {
 		        Validator.REQUIRED,
 		        Validator.NON_EMPTY
 		    ) ),
-		    new Attribute( Key.delimiter, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
-		    new Attribute( Key._NAME, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
-		    new Attribute( Key.columns, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
-		    new Attribute( Key.firstRowAsHeaders, "boolean", Set.of( Validator.NOT_IMPLEMENTED ) ),
-		    new Attribute( Key.textQualifier, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
 		    new Attribute( Key.file, "string", Set.of( Validator.requires( Key.path ) ) ),
 		    new Attribute( Key.multipart, "boolean", false, Set.of( Validator.TYPE ) ),
 		    new Attribute( Key.multipartType, "string", "form-data",
@@ -138,10 +129,24 @@ public class HTTP extends Component {
 		    new Attribute( Key.compression, "string" ),
 		    new Attribute( Key.authType, "string", AUTHMODE_BASIC,
 		        Set.of( Validator.REQUIRED, Validator.NON_EMPTY, Validator.valueOneOf( AUTHMODE_BASIC, AUTHMODE_NTLM ) ) ),
-		    new Attribute( Key.domain, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
-		    new Attribute( Key.workstation, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
 		    new Attribute( Key.cachedWithin, "string" ),
 		    new Attribute( Key.encodeUrl, "boolean", true, Set.of( Validator.TYPE ) ),
+			// Currently unimplemented attributes
+			// Alt name for result
+		    new Attribute( Key._NAME, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
+			// CSV parsing
+		    new Attribute( Key.delimiter, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
+		    new Attribute( Key.columns, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
+		    new Attribute( Key.firstRowAsHeaders, "boolean", Set.of( Validator.NOT_IMPLEMENTED ) ),
+		    new Attribute( Key.textQualifier, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
+			// Proxy server
+		    new Attribute( Key.proxyServer, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
+		    new Attribute( Key.proxyPort, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
+		    new Attribute( Key.proxyUser, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
+		    new Attribute( Key.proxyPassword, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
+			// NTLM
+		    new Attribute( Key.domain, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
+		    new Attribute( Key.workstation, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
 		};
 	}
 
