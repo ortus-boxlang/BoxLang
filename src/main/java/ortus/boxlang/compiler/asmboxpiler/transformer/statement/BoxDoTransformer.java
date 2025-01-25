@@ -24,6 +24,7 @@ import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.JumpInsnNode;
 import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.MethodInsnNode;
+import org.objectweb.asm.tree.VarInsnNode;
 
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.MethodContextTracker;
@@ -47,31 +48,38 @@ public class BoxDoTransformer extends AbstractTransformer {
 
 		LabelNode				start			= new LabelNode();
 		LabelNode				end				= new LabelNode();
+		LabelNode				breakTarget		= new LabelNode();
 		LabelNode				continueLabel	= new LabelNode();
 		List<AbstractInsnNode>	nodes			= new ArrayList<>();
 
 		MethodContextTracker	tracker			= transpiler.getCurrentMethodContextTracker().get();
 
-		tracker.setBreak( boxDo, end );
+		tracker.setBreak( boxDo, breakTarget );
 		tracker.setContinue( boxDo, continueLabel );
 
 		if ( boxDo.getLabel() != null ) {
 			tracker.setStringLabel( boxDo.getLabel(), boxDo );
 		}
 
-		// push two nulls onto the stack in order to initialize our strategy for keeping the stack height consistent
-		// this is to allow the statement to return an expression in the case of a BoxScript execution
+		var varStore = tracker.storeNewVariable( Opcodes.ASTORE );
+
 		nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
-		nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+		nodes.addAll( varStore.nodes() );
 
 		nodes.add( start );
 
-		// every iteration we will swap the values and pop in order to remove the older value
-		nodes.add( new InsnNode( Opcodes.SWAP ) );
-		nodes.add( new InsnNode( Opcodes.POP ) );
-
 		nodes.addAll( transpiler.transform( boxDo.getBody(), TransformerContext.NONE, ReturnValueContext.VALUE_OR_NULL ) );
+
+		nodes.add( new JumpInsnNode( Opcodes.GOTO, continueLabel ) );
+
+		nodes.add( breakTarget );
+
+		nodes.addAll( varStore.nodes() );
+
+		nodes.add( new JumpInsnNode( Opcodes.GOTO, end ) );
+
 		nodes.add( continueLabel );
+		nodes.addAll( varStore.nodes() );
 
 		nodes.addAll( transpiler.transform( boxDo.getCondition(), TransformerContext.RIGHT, ReturnValueContext.VALUE ) );
 		nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
@@ -88,10 +96,7 @@ public class BoxDoTransformer extends AbstractTransformer {
 
 		nodes.add( end );
 
-		// One last swap and pop - for old time's sake
-		// If we don't do this we will be leaving an old value on the stack
-		nodes.add( new InsnNode( Opcodes.SWAP ) );
-		nodes.add( new InsnNode( Opcodes.POP ) );
+		nodes.add( new VarInsnNode( Opcodes.ALOAD, varStore.index() ) );
 
 		if ( returnValueContext.empty ) {
 			nodes.add( new InsnNode( Opcodes.POP ) );
