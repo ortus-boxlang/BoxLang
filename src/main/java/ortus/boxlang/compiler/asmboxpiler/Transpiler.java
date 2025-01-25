@@ -56,8 +56,8 @@ public abstract class Transpiler implements ITranspiler {
 	/**
 	 * Manually debugging properties
 	 */
-	 private Map<String, LabelNode>							breaks					= new LinkedHashMap<>();
-	 private Map<String, LabelNode>							continues				= new LinkedHashMap<>();
+	private Map<String, LabelNode>							breaks					= new LinkedHashMap<>();
+	private Map<String, LabelNode>							continues				= new LinkedHashMap<>();
 
 	/**
 	 * Set a property

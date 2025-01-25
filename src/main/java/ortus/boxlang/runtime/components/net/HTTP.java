@@ -131,20 +131,20 @@ public class HTTP extends Component {
 		        Set.of( Validator.REQUIRED, Validator.NON_EMPTY, Validator.valueOneOf( AUTHMODE_BASIC, AUTHMODE_NTLM ) ) ),
 		    new Attribute( Key.cachedWithin, "string" ),
 		    new Attribute( Key.encodeUrl, "boolean", true, Set.of( Validator.TYPE ) ),
-			// Currently unimplemented attributes
-			// Alt name for result
+		    // Currently unimplemented attributes
+		    // Alt name for result
 		    new Attribute( Key._NAME, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
-			// CSV parsing
+		    // CSV parsing
 		    new Attribute( Key.delimiter, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
 		    new Attribute( Key.columns, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
 		    new Attribute( Key.firstRowAsHeaders, "boolean", Set.of( Validator.NOT_IMPLEMENTED ) ),
 		    new Attribute( Key.textQualifier, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
-			// Proxy server
+		    // Proxy server
 		    new Attribute( Key.proxyServer, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
 		    new Attribute( Key.proxyPort, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
 		    new Attribute( Key.proxyUser, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
 		    new Attribute( Key.proxyPassword, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
-			// NTLM
+		    // NTLM
 		    new Attribute( Key.domain, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
 		    new Attribute( Key.workstation, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
 		};

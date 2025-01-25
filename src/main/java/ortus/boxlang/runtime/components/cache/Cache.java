@@ -47,7 +47,7 @@ import org.slf4j.Logger;
 
 @BoxComponent( allowsBody = true )
 public class Cache extends Component {
-	
+
 	/**
 	 * Logger
 	 */
@@ -285,14 +285,14 @@ public class Cache extends Component {
 					break;
 				}
 				case PUT : {
-					try{
+					try {
 						cacheProvider.set(
-							cacheKeyName,
-							value == null ? processCacheBody( context, body ) : value,
-							timeout,
-							lastAccessTimeout
+						    cacheKeyName,
+						    value == null ? processCacheBody( context, body ) : value,
+						    timeout,
+						    lastAccessTimeout
 						);
-					} catch( Throwable e ){
+					} catch ( Throwable e ) {
 						if ( throwOnError ) {
 							throw new BoxRuntimeException( "An error occurred while attempting to set the cache value", e );
 						} else {
@@ -315,15 +315,15 @@ public class Cache extends Component {
 				}
 				case FLUSH : {
 					if ( key != null ) {
-						if( throwOnError ){
-							cacheProvider.clear( key );	
+						if ( throwOnError ) {
+							cacheProvider.clear( key );
 						} else {
 							cacheProvider.clearQuiet( key );
 						}
 					} else {
-						try{
+						try {
 							cacheProvider.clearAll();
-						} catch( Throwable e ){
+						} catch ( Throwable e ) {
 							if ( throwOnError ) {
 								throw new BoxRuntimeException( "An error occurred while attempting to flush the cache", e );
 							} else {
@@ -337,8 +337,8 @@ public class Cache extends Component {
 					if ( key == null ) {
 						throw new BoxRuntimeException( "The cache method [delete] was specified but no key was provided for deletion" );
 					}
-					if( throwOnError ){
-						cacheProvider.clear( key );	
+					if ( throwOnError ) {
+						cacheProvider.clear( key );
 					} else {
 						cacheProvider.clearQuiet( key );
 					}

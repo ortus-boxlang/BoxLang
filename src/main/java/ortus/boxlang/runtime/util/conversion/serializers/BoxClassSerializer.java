@@ -46,7 +46,7 @@ import ortus.boxlang.runtime.types.util.BLCollector;
 public class BoxClassSerializer implements ValueWriter {
 
 	// ThreadLocal to keep track of seen structs in the current thread
-	private static final ThreadLocal<Set<IClassRunnable>>	visitedClasses	= ThreadLocal.withInitial( HashSet::new );
+	private static final ThreadLocal<Set<IClassRunnable>> visitedClasses = ThreadLocal.withInitial( HashSet::new );
 
 	/**
 	 * Inflate an annotation value into an Array
