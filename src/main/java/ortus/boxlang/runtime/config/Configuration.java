@@ -169,6 +169,11 @@ public class Configuration implements IConfigSegment {
 	public Boolean				setDomainCookies				= true;
 
 	/**
+	 * Trusted cache setting - if enabled, once compiled a template will never be inspected for changes
+	 */
+	public Boolean				trustedCache					= false;
+
+	/**
 	 * A sorted struct of mappings
 	 */
 	public IStruct				mappings						= new Struct( Struct.KEY_LENGTH_LONGEST_FIRST_COMPARATOR );
@@ -476,6 +481,11 @@ public class Configuration implements IConfigSegment {
 			} else {
 				logger.warn( "The [runtime.defaultCache] configuration is not a JSON Object, ignoring it." );
 			}
+		}
+
+		// Process default cache configuration
+		if ( config.containsKey( Key.trustedCache ) ) {
+			this.trustedCache = config.getAsBoolean( Key.trustedCache );
 		}
 
 		// Process declared cache configurations
