@@ -31,6 +31,7 @@ import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
@@ -46,6 +47,7 @@ import ortus.boxlang.runtime.types.exceptions.AbstractClassException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 import ortus.boxlang.runtime.types.meta.ClassMeta;
+import ortus.boxlang.runtime.util.FileSystemUtil;
 
 public class ClassTest {
 
@@ -1678,6 +1680,48 @@ public class ClassTest {
 		    new src.test.java.TestCases.phase3.StaticError()
 		      """,
 		    context );
+	}
+
+	@Test
+	public void testTrustedCache() {
+
+		BoxRuntime instance = BoxRuntime.getInstance( true );
+		instance.getConfiguration().trustedCache = true;
+		IBoxContext	context			= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+
+		//@formatter:off
+		String		executionSource			= """
+			request.calls = []; 
+			cfc = new src.test.java.TestCases.phase3.Child();
+		""";
+		String touchSource = "bx:execute variable=\"execResult\" name=\"touch\" arguments=\"#expandPath( '/src/test/java/TestCases/phase3/Child.cfc' )#\";";
+		if( FileSystemUtil.IS_WINDOWS ){
+			touchSource = "bx:execute variable=\"execResult\" name=\"powershell\" arguments=\"(ls #expandPath( '/src/test/java/TestCases/phase3/Child.cfc' )#).LastWriteTime = Get-Date\";";
+		}
+		//@formatter:on
+		instance.executeSource(
+		    touchSource,
+		    context );
+		long startTime = System.nanoTime();
+		instance.executeSource(
+		    executionSource,
+		    context );
+		long firstRunTime = System.nanoTime() - startTime;
+		// System.out.println( "First Trusted Cache run time: " + firstRunTime );
+		instance.executeSource(
+		    touchSource,
+		    context );
+		startTime = System.nanoTime();
+		instance.executeSource(
+		    executionSource,
+		    context );
+
+		long secondRunTime = System.nanoTime() - startTime;
+		instance.getConfiguration().trustedCache = false;
+		// System.out.println( "Second Trusted Cache run time: " + secondRunTime );
+
+		// The second run should be less than 1.5% of the first run
+		assertThat( DoubleCaster.cast( secondRunTime / firstRunTime ) ).isLessThan( .015 );
 	}
 
 }

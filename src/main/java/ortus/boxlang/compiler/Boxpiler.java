@@ -50,6 +50,8 @@ public abstract class Boxpiler implements IBoxpiler {
 	 */
 	protected Path									classGenerationDirectory;
 
+	protected BoxRuntime							runtime			= BoxRuntime.getInstance();
+
 	public Boxpiler() {
 		this.classGenerationDirectory	= Paths.get( BoxRuntime.getInstance().getConfiguration().classGenerationDirectory );
 		this.diskClassUtil				= new DiskClassUtil( classGenerationDirectory );
@@ -214,7 +216,6 @@ public abstract class Boxpiler implements IBoxpiler {
 		var			classPool	= getClassPool( classInfo.classPoolName() );
 		classPool.putIfAbsent( classInfo.fqn().toString(), classInfo );
 		classInfo = classPool.get( classInfo.fqn().toString() );
-
 		return classInfo.getDiskClass();
 	}
 
@@ -233,7 +234,9 @@ public abstract class Boxpiler implements IBoxpiler {
 		// If the new class is newer than the one on disk, recompile it
 		long	lastModified	= classPool.get( classInfo.fqn().toString() ).lastModified();
 		long	lastModified2	= classInfo.lastModified();
-		if ( ( lastModified > 0 ) && ( lastModified2 > 0 ) && ( lastModified != lastModified2 ) ) {
+		// This needs to be tested at decision time since the setting may have changed in the runtime since the compiler was created
+		Boolean	trustedCache	= runtime.getConfiguration().trustedCache;
+		if ( ( lastModified > 0 ) && ( lastModified2 > 0 ) && !trustedCache && ( lastModified != lastModified2 ) ) {
 			try {
 				// Don't know if this does anything, but calling it for good measure
 				classPool.get( classInfo.fqn().toString() ).getClassLoader().close();
@@ -280,7 +283,9 @@ public abstract class Boxpiler implements IBoxpiler {
 		// If the new class is newer than the one on disk, recompile it
 		long	lastModified	= classPool.get( classInfo.fqn().toString() ).lastModified();
 		long	lastModified2	= classInfo.lastModified();
-		if ( ( lastModified > 0 ) && ( lastModified2 > 0 ) && ( lastModified != lastModified2 ) ) {
+		// This needs to be tested at decision time since the setting may have changed in the runtime since the compiler was created
+		Boolean	trustedCache	= runtime.getConfiguration().trustedCache;
+		if ( ( lastModified > 0 ) && ( lastModified2 > 0 ) && !trustedCache && ( lastModified != lastModified2 ) ) {
 			try {
 				// Don't know if this does anything, but calling it for good measure
 				classPool.get( classInfo.fqn().toString() ).getClassLoader().close();
