@@ -556,6 +556,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		path								= Key.of( "path" );
 	public static final Key		path_info							= Key.of( "path_info" );
 	public static final Key		path_translated						= Key.of( "path_translated" );
+	public static final Key		prompt								= Key.of( "prompt" );
 	public static final Key		pattern								= Key.of( "pattern" );
 	public static final Key		pid									= Key.of( "pid" );
 	public static final Key		placeholders						= Key.of( "placeholders" );
@@ -571,6 +572,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		processBody							= Key.of( "processBody" );
 	public static final Key		properties							= Key.of( "properties" );
 	public static final Key		protocol							= Key.of( "protocol" );
+	public static final Key		print								= Key.of( "print" );
+	public static final Key		println								= Key.of( "println" );
 	public static final Key		proxyPassword						= Key.of( "proxyPassword" );
 	public static final Key		proxyPort							= Key.of( "proxyPort" );
 	public static final Key		proxyServer							= Key.of( "proxyServer" );

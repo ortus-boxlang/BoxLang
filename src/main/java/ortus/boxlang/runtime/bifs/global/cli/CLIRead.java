@@ -23,31 +23,44 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 @BoxBIF
-public class CLIExit extends BIF {
+public class CLIRead extends BIF {
 
 	/**
 	 * Constructor
 	 */
-	public CLIExit() {
+	public CLIRead() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( false, "numeric", Key.exitCode, 0 )
+		    new Argument( false, "string", Key.prompt )
 		};
 	}
 
 	/**
-	 * Exits the CLI with the specified exit code.
+	 * Reads a line of text from the CLI.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.exitCode By convention, a nonzero status code, indicates abnormal termination. Deault code is 0.
+	 * @return The line of text read from the CLI.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		System.exit( arguments.getAsInteger( Key.exitCode ) );
-		return null;
+		// Get the prompt string.
+		String prompt = arguments.getAsString( Key.prompt );
+		// If not null, print the prompt.
+		if ( prompt != null ) {
+			functionService.getGlobalFunction( Key.println )
+			    .invoke( context, new Object[] { prompt }, false, Key.println );
+		}
+
+		// Read a line of text from the CLI using a scanner
+		try ( java.util.Scanner scanner = new java.util.Scanner( System.in ) ) {
+			return scanner.nextLine();
+		} catch ( Exception e ) {
+			throw new BoxRuntimeException( "Error reading from the CLI", e );
+		}
 	}
 
 }
