@@ -28,7 +28,7 @@ import ortus.boxlang.runtime.util.ResolvedFilePath;
 public abstract class Boxpiler implements IBoxpiler {
 
 	/**
-	 * Logger
+	 * Logger Instance
 	 */
 	protected static final Logger					logger			= BoxRuntime.getInstance().getLoggingService().getLogger( Boxpiler.class.getSimpleName() );
 	/**
