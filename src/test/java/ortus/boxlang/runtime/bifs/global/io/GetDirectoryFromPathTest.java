@@ -19,6 +19,7 @@
 
 package ortus.boxlang.runtime.bifs.global.io;
 
+import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -84,7 +85,26 @@ public class GetDirectoryFromPathTest {
 		       """,
 		    context );
 		assertTrue( variables.get( Key.of( "result" ) ) instanceof String );
-		assertEquals( variables.getAsString( Key.of( "result" ) ), Path.of( tmpDirectory ).toAbsolutePath().toString() + File.separator );
+		assertEquals( variables.getAsString( result ), Path.of( tmpDirectory ).toAbsolutePath().toString() + File.separator );
+	}
+
+	@DisplayName( "It tests relative paths" )
+	@Test
+	@Ignore
+	public void testRelativePath() {
+		instance.executeSource(
+		    """
+		    result = getDirectoryFromPath( "/index.bxm" );
+		       """,
+		    context );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "/" );
+
+		instance.executeSource(
+		    """
+		    result = getDirectoryFromPath( "../index.bxm" );
+		       """,
+		    context );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "../" );
 	}
 
 }
