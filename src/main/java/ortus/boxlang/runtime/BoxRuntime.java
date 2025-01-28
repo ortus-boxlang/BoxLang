@@ -357,7 +357,7 @@ public class BoxRuntime implements java.io.Closeable {
 		// Finally verify if we overwrote the debugmode in one of the configs above
 		if ( debugMode == null ) {
 			this.debugMode = this.configuration.debugMode;
-			this.logger.debug( "+ DebugMode detected in config, overriding to {}", this.debugMode );
+			this.loggingService.getRootLogger().debug( "+ DebugMode detected in config, overriding to {}", this.debugMode );
 		} else {
 			// Make sure our runtime debug mode propagates or the logging service reconfiguration will reset the log levels to the defaults
 			this.configuration.debugMode = debugMode;
