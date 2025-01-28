@@ -278,6 +278,9 @@ public class LoggingService {
 	 */
 	public LoggingService configureBasic( Boolean debugMode ) {
 		ILoggerFactory loggerFactory = LoggerFactory.getILoggerFactory();
+		if ( debugMode == null ) {
+			debugMode = false;
+		}
 
 		if ( debugMode ) {
 			DEFAULT_LOG_LEVEL = LEVEL_DEBUG;
