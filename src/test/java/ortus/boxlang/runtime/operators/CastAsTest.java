@@ -234,6 +234,12 @@ public class CastAsTest {
 		assertThat( CastAs.invoke( context, "2D16E20C-91FA-4B3C-9233C6398852077A", "UUID" ) ).isEqualTo( "2D16E20C-91FA-4B3C-9233C6398852077A" );
 	}
 
+	@DisplayName( "It can cast to Email" )
+	@Test
+	void testItCanCastToEmail() {
+		assertThat( CastAs.invoke( context, "brad@bradwood.com", "Email" ) ).isEqualTo( "brad@bradwood.com" );
+	}
+
 	@DisplayName( "It can cast Array to array" )
 	@Test
 	void testItCanCastArrayToArray() {
