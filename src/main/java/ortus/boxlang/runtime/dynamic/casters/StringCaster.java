@@ -260,8 +260,6 @@ public class StringCaster implements IBoxCaster {
 
 		// This gets toggled in compat module to match CF engines and will allow class instances to be
 		// passed directly to string BIFs and for string member functions to work on class instances.
-		System.out.println( "castClassesToStrings: " + castClassesToStrings );
-		System.out.println( "object instanceof Class: " + ( object instanceof Class ) );
 		if ( castClassesToStrings && object instanceof Class co ) {
 			return co.getName();
 		}
