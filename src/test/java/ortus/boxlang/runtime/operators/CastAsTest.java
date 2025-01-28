@@ -222,6 +222,18 @@ public class CastAsTest {
 		).isTrue();
 	}
 
+	@DisplayName( "It can cast to GUID" )
+	@Test
+	void testItCanCastToGUID() {
+		assertThat( CastAs.invoke( context, "2D16E20C-91FA-4B3C-9233-C6398852077A", "GUID" ) ).isEqualTo( "2D16E20C-91FA-4B3C-9233-C6398852077A" );
+	}
+
+	@DisplayName( "It can cast to UUID" )
+	@Test
+	void testItCanCastToUUID() {
+		assertThat( CastAs.invoke( context, "2D16E20C-91FA-4B3C-9233C6398852077A", "UUID" ) ).isEqualTo( "2D16E20C-91FA-4B3C-9233C6398852077A" );
+	}
+
 	@DisplayName( "It can cast Array to array" )
 	@Test
 	void testItCanCastArrayToArray() {
