@@ -240,6 +240,12 @@ public class CastAsTest {
 		assertThat( CastAs.invoke( context, "brad@bradwood.com", "Email" ) ).isEqualTo( "brad@bradwood.com" );
 	}
 
+	@DisplayName( "It can cast to Binary" )
+	@Test
+	void testItCanCastToBinary() {
+		assertThat( CastAs.invoke( context, "test".getBytes(), "Binary" ) ).isEqualTo( "test".getBytes() );
+	}
+
 	@DisplayName( "It can cast Array to array" )
 	@Test
 	void testItCanCastArrayToArray() {

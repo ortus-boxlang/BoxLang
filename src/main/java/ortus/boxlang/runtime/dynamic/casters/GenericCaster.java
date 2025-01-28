@@ -267,6 +267,10 @@ public class GenericCaster implements IBoxCaster {
 			return EmailCaster.cast( object, fail );
 		}
 
+		if ( type.equals( "binary" ) ) {
+			return BinaryCaster.cast( object, fail );
+		}
+
 		if ( type.startsWith( "function:" ) && type.length() > 9 ) {
 			// strip off class name from "function:com.foo.Bar"
 			return FunctionCaster.cast( object, originalCaseType.substring( 9 ), fail );
