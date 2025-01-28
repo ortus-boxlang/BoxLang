@@ -30,6 +30,7 @@ import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxScript;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
@@ -38,7 +39,9 @@ import ortus.boxlang.runtime.types.exceptions.ParseException;
 
 public class Parser {
 
-	private static BoxRuntime runtime = BoxRuntime.getInstance();
+	private static BoxRuntime			runtime	= BoxRuntime.getInstance();
+
+	private static final BoxLangLogger	logger	= runtime.getLoggingService().getLogger( Parser.class.getSimpleName() );
 
 	/**
 	 * Parse a script file
@@ -290,7 +293,7 @@ public class Parser {
 				}
 			}
 		}
-		System.out.println( "Could not detect file type for file: " + file.getAbsolutePath() );
+		logger.debug( "Could not detect file type for file: " + file.getAbsolutePath() );
 		return BoxSourceType.CFSCRIPT;
 	}
 

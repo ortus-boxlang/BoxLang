@@ -10,9 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import ortus.boxlang.compiler.javaboxpiler.JavaBoxpiler;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.compiler.parser.Parser;
 import ortus.boxlang.compiler.parser.ParsingResult;
@@ -32,7 +30,7 @@ public abstract class Boxpiler implements IBoxpiler {
 	/**
 	 * Logger
 	 */
-	protected static final Logger					logger			= LoggerFactory.getLogger( JavaBoxpiler.class );
+	protected static final Logger					logger			= BoxRuntime.getInstance().getLoggingService().getLogger( Boxpiler.class.getSimpleName() );
 	/**
 	 * Keeps track of the classes we've compiled
 	 */

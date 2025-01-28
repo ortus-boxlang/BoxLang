@@ -25,6 +25,7 @@ import ortus.boxlang.compiler.parser.ParsingResult;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
+import ortus.boxlang.runtime.util.Timer;
 
 public class ASMBoxpiler extends Boxpiler {
 
@@ -76,10 +77,12 @@ public class ASMBoxpiler extends Boxpiler {
 
 	@Override
 	public void compileClassInfo( String classPoolName, String FQN ) {
+		Timer timer = null;
 		if ( BoxRuntime.getInstance().inDebugMode() ) {
-			// Some debugging to help testing
-			System.out.println( "ASM BoxPiler Compiling " + FQN );
+			timer = new Timer();
+			timer.start( FQN );
 		}
+		logger.debug( "ASM BoxPiler Compiling " + FQN );
 		ClassInfo classInfo = getClassPool( classPoolName ).get( FQN );
 		if ( classInfo == null ) {
 			throw new BoxRuntimeException( "ClassInfo not found for " + FQN );
@@ -98,9 +101,17 @@ public class ASMBoxpiler extends Boxpiler {
 			ParsingResult result = parseOrFail( classInfo.source(), classInfo.sourceType(), classInfo.isClass() );
 			doWriteClassInfo( result.getRoot(), classInfo );
 		} else if ( classInfo.interfaceProxyDefinition() != null ) {
+			if ( timer != null )
+				timer.stop( FQN );
 			throw new UnsupportedOperationException();
 		} else {
+			if ( timer != null )
+				timer.stop( FQN );
 			throw new BoxRuntimeException( "Unknown class info type: " + classInfo.toString() );
+		}
+
+		if ( timer != null ) {
+			logger.trace( "ASM BoxPiler Compiled " + FQN + " in " + timer.stop( FQN ) );
 		}
 	}
 

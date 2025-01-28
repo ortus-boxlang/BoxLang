@@ -26,6 +26,7 @@ import java.nio.file.Paths;
 import ortus.boxlang.compiler.parser.Parser;
 import ortus.boxlang.compiler.parser.ParsingResult;
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
@@ -33,6 +34,8 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  * TODO: Not sure where this class should eventually live.
  */
 public class CFTranspiler {
+
+	private static final BoxLangLogger logger = BoxRuntime.getInstance().getLoggingService().getLogger( CFTranspiler.class.getSimpleName() );
 
 	public static void main( String[] args ) {
 		BoxRuntime runtime = BoxRuntime.getInstance();
@@ -69,7 +72,7 @@ public class CFTranspiler {
 			}
 
 			if ( !sourcePath.toFile().exists() ) {
-				System.out.println( "Source Path does not exist: " + sourcePath.toString() );
+				logger.error( "Source Path does not exist: " + sourcePath.toString() );
 				System.exit( 1 );
 			}
 			if ( target == null ) {
@@ -81,7 +84,7 @@ public class CFTranspiler {
 			}
 
 			if ( sourcePath.toFile().isDirectory() ) {
-				System.out.println( "Transpiling all .cfm/.cfc/.cfs files in " + sourcePath.toString() + " to " + targetPath.toString() );
+				logger.debug( "Transpiling all .cfm/.cfc/.cfs files in " + sourcePath.toString() + " to " + targetPath.toString() );
 				// Transpile all .cfm, .cfs, and .cfc files in sourcePath to targetPath
 				final Path finalTargetPath = targetPath;
 				try {
@@ -135,10 +138,10 @@ public class CFTranspiler {
 		} catch ( IOException e ) {
 			// folder already exists
 		}
-		System.out.println( "Writing " + targetPath.toString() );
+		logger.debug( "Writing " + targetPath.toString() );
 		ParsingResult result = new Parser().parse( sourcePath.toFile() );
 		if ( result.isCorrect() ) {
-			// System.out.println( result.getRoot().toString() );
+			// logger.debug( result.getRoot().toString() );
 			try {
 				Files.write( targetPath, result.getRoot().toString().getBytes( StandardCharsets.UTF_8 ) );
 			} catch ( IOException e ) {
@@ -146,8 +149,8 @@ public class CFTranspiler {
 			}
 
 		} else {
-			System.out.println( "Parsing failed for " + sourcePath.toString() );
-			result.getIssues().forEach( System.out::println );
+			logger.error( "Parsing failed for " + sourcePath.toString() );
+			result.getIssues().forEach( issue -> logger.error( issue.toString() ) );
 			if ( stopOnError ) {
 				System.exit( 1 );
 			}

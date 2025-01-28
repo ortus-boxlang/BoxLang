@@ -66,6 +66,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 import ortus.boxlang.runtime.util.RegexBuilder;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
+import ortus.boxlang.runtime.util.Timer;
 
 /**
  * This class uses the Java compiler to turn a BoxLang script into a Java class
@@ -176,10 +177,12 @@ public class JavaBoxpiler extends Boxpiler {
 
 	@Override
 	public void compileClassInfo( String classPoolName, String FQN ) {
+		Timer timer = null;
 		if ( BoxRuntime.getInstance().inDebugMode() ) {
-			// Some debugging to help testing
-			System.out.println( "Java BoxPiler Compiling " + FQN );
+			timer = new Timer();
+			timer.start( FQN );
 		}
+		logger.debug( "Java BoxPiler Compiling " + FQN );
 		ClassInfo classInfo = getClassPool( classPoolName ).get( FQN );
 		if ( classInfo == null ) {
 			throw new BoxRuntimeException( "ClassInfo not found for " + FQN );
@@ -199,7 +202,12 @@ public class JavaBoxpiler extends Boxpiler {
 		} else if ( classInfo.interfaceProxyDefinition() != null ) {
 			compileSource( generateProxyJavaSource( classInfo ), classInfo.fqn().toString(), classPoolName, classInfo.lastModified() );
 		} else {
+			if ( timer != null )
+				timer.stop( FQN );
 			throw new BoxRuntimeException( "Unknown class info type: " + classInfo.toString() );
+		}
+		if ( timer != null ) {
+			logger.trace( "Java BoxPiler Compiled " + FQN + " in " + timer.stop( FQN ) );
 		}
 	}
 

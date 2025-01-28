@@ -78,7 +78,14 @@ public class LoggingService {
 	 * --------------------------------------------------------------------------
 	 */
 
-	public static final String						DEFAULT_LOG_LEVEL	= "info";
+	public static final String						LEVEL_TRACE			= "trace";
+	public static final String						LEVEL_DEBUG			= "debug";
+	public static final String						LEVEL_INFO			= "info";
+	public static final String						LEVEL_WARN			= "warn";
+	public static final String						LEVEL_ERROR			= "error";
+	public static final String						LEVEL_FATAL			= "fatal";
+
+	public static String							DEFAULT_LOG_LEVEL	= LEVEL_INFO;
 	public static final String						DEFAULT_LOG_TYPE	= "Application";
 	public static final String						DEFAULT_LOG_FILE	= "runtime.log";
 	public static final String						DEFAULT_APPLICATION	= "no-application";
@@ -271,6 +278,10 @@ public class LoggingService {
 	 */
 	public LoggingService configureBasic( Boolean debugMode ) {
 		ILoggerFactory loggerFactory = LoggerFactory.getILoggerFactory();
+
+		if ( debugMode ) {
+			DEFAULT_LOG_LEVEL = LEVEL_DEBUG;
+		}
 
 		// Are we in Servlet mode or not? If we are not, then we have to build the logger context
 		if ( loggerFactory instanceof LoggerContext ) {
@@ -653,7 +664,7 @@ public class LoggingService {
 		// Check if we have the logger configuration or else build a vanilla one
 		LoggerConfig	loggerConfig	= ( LoggerConfig ) this.runtime
 		    .getConfiguration().logging.loggers
-		    .computeIfAbsent( loggerKey, key -> new LoggerConfig( key.getNameNoCase(), this.runtime.getConfiguration().logging ) );
+		        .computeIfAbsent( loggerKey, key -> new LoggerConfig( key.getNameNoCase(), this.runtime.getConfiguration().logging ) );
 		Level			configLevel		= Level.toLevel( LogLevel.valueOf( loggerConfig.level.getName(), false ).getName() );
 
 		// Seed the properties
