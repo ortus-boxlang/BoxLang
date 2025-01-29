@@ -61,7 +61,7 @@ jobs:
   #############################################
   build:
     uses: ./.github/workflows/release.yml
-    needs: [tests, format]
+    needs: [format, tests]
     secrets: inherit
     permissions:
       checks: write
