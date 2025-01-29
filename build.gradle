@@ -20,7 +20,7 @@ plugins {
 	// For dependency updates
 	id 'com.github.ben-manes.versions' version '0.52.0'
 	// For building service loader files
-    id "com.github.harbby.gradle.serviceloader" version "1.1.8"
+    id "com.github.harbby.gradle.serviceloader" version "1.1.9"
 	// Maven Publisher
 	id 'maven-publish'
 	id 'signing'
