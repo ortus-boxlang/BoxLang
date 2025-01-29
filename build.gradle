@@ -3,6 +3,7 @@ import org.apache.tools.ant.filters.ReplaceTokens
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 import java.text.SimpleDateFormat
+import java.lang.management.ManagementFactory
 
 // https://docs.gradle.org/current/userguide/building_java_projects.html#sec:java_packaging
 plugins {
@@ -586,6 +587,26 @@ task parseBifDocs( type: Javadoc, dependsOn: compileJava ) {
 /**
  * Test Task Customizations
  */
+task createHeapDump {
+    doLast {
+		def name = ManagementFactory.getRuntimeMXBean().getName()
+        def pid = name.split("@")[0]
+        if (pid != null) {
+            def timestamp = new Date().format("yyyyMMddHHmmss")
+            def dumpFileName = "build/heapdumps/${timestamp}/heapdump.hprof"
+			exec {
+				commandLine 'mkdir', '-p', 'build/heapdumps/' + timestamp
+			}
+            exec {
+                commandLine 'jmap', '-dump:live,file=' + dumpFileName, pid
+            }
+            println "Heap dump created: $dumpFileName"
+        } else {
+            println "PID not provided. Cannot create heap dump."
+        }
+    }
+}
+
 test {
 	// IMPORTANT: Do not leave this uncommented and commit or all tests locally will run on the specified compiler
 	// systemProperty 'boxlang.experimental.compiler', System.getProperty('boxlang.experimental.compiler', "java")
@@ -596,6 +617,9 @@ test {
 	}
 	dependsOn compileJava, compileTestJava
 	//exclude '**/resources/**'
+
+	// Uncomment to take a heap dump after the conclusion of tests
+	// finalizedBy( createHeapDump )
 }
 
 /**
