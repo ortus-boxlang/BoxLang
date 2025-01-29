@@ -28,7 +28,9 @@ import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.net.http.HttpTimeoutException;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -131,6 +133,11 @@ public class HTTP extends Component {
 		        Set.of( Validator.REQUIRED, Validator.NON_EMPTY, Validator.valueOneOf( AUTHMODE_BASIC, AUTHMODE_NTLM ) ) ),
 		    new Attribute( Key.cachedWithin, "string" ),
 		    new Attribute( Key.encodeUrl, "boolean", true, Set.of( Validator.TYPE ) ),
+		    // Proxy server
+		    new Attribute( Key.proxyServer, "string", Set.of( Validator.requires( Key.proxyPort ) ) ),
+		    new Attribute( Key.proxyPort, "integer", Set.of( Validator.requires( Key.proxyServer ) ) ),
+		    new Attribute( Key.proxyUser, "string", Set.of( Validator.requires( Key.proxyPassword ) ) ),
+		    new Attribute( Key.proxyPassword, "string", Set.of( Validator.requires( Key.proxyUser ) ) ),
 		    // Currently unimplemented attributes
 		    // Alt name for result
 		    new Attribute( Key._NAME, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
@@ -139,11 +146,6 @@ public class HTTP extends Component {
 		    new Attribute( Key.columns, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
 		    new Attribute( Key.firstRowAsHeaders, "boolean", Set.of( Validator.NOT_IMPLEMENTED ) ),
 		    new Attribute( Key.textQualifier, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
-		    // Proxy server
-		    new Attribute( Key.proxyServer, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
-		    new Attribute( Key.proxyPort, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
-		    new Attribute( Key.proxyUser, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
-		    new Attribute( Key.proxyPassword, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
 		    // NTLM
 		    new Attribute( Key.domain, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
 		    new Attribute( Key.workstation, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
@@ -279,8 +281,13 @@ public class HTTP extends Component {
 			builder.method( method, bodyPublisher );
 			targetURI = uriBuilder.build();
 			builder.uri( targetURI );
+
+			if ( attributes.containsKey( Key.timeout ) ) {
+				builder.timeout( Duration.ofSeconds( attributes.getAsInteger( Key.timeout ) ) );
+			}
+
 			HttpRequest	targetHTTPRequest	= builder.build();
-			HttpClient	client				= HttpManager.getClient();
+			HttpClient	client				= attributes.containsKey( Key.proxyServer ) ? HttpManager.getProxyClient( attributes ) : HttpManager.getClient();
 
 			// Announce the HTTP request
 			interceptorService.announce( BoxEvent.ON_HTTP_REQUEST, Struct.of(
@@ -290,13 +297,11 @@ public class HTTP extends Component {
 			    "attributes", attributes
 			) );
 
+			// TODO : should we move the catch block below and add an `exceptionally` handler for the future?
+			CompletableFuture<HttpResponse<String>>	future		= client.sendAsync( targetHTTPRequest, HttpResponse.BodyHandlers.ofString() );
+
 			// Announce the HTTP request
-			CompletableFuture<HttpResponse<String>>	inflightRequest	= client.sendAsync( targetHTTPRequest, HttpResponse.BodyHandlers.ofString() );
-			CompletableFuture<HttpResponse<String>>	winner			= inflightRequest;
-			if ( attributes.containsKey( Key.timeout ) ) {
-				winner = inflightRequest.applyToEither( HttpManager.getTimeoutRequestAsync( attributes.getAsInteger( Key.timeout ) ), result -> result );
-			}
-			HttpResponse<String> response = winner.get();
+			HttpResponse<String>					response	= future.get(); // block and wait for the response
 
 			// Announce the HTTP RAW response
 			// Useful for debugging and pre-processing and timing, since the other events are after the response is processed
@@ -366,8 +371,16 @@ public class HTTP extends Component {
 					HTTPResult.put( Key.errorDetail, String.format( "Unknown host: %s: Name or service not known.", theURL ) );
 				}
 				ExpressionInterpreter.setVariable( context, variableName, HTTPResult );
-			} else {
-				throw new BoxRuntimeException( innerException.getMessage() );
+			} else if ( innerException instanceof HttpTimeoutException ) {
+				HTTPResult.put( Key.responseHeader, Struct.EMPTY );
+				HTTPResult.put( Key.header, "" );
+				HTTPResult.put( Key.statusCode, 408 );
+				HTTPResult.put( Key.status_code, 408 );
+				HTTPResult.put( Key.statusText, "Request Timeout" );
+				HTTPResult.put( Key.status_text, "Request Timeout" );
+				HTTPResult.put( Key.fileContent, "Request Timeout" );
+				HTTPResult.put( Key.errorDetail, "The request timed out after " + attributes.getAsInteger( Key.timeout ) + " second(s)" );
+				ExpressionInterpreter.setVariable( context, variableName, HTTPResult );
 			}
 			return DEFAULT_RETURN;
 		} catch ( InterruptedException e ) {

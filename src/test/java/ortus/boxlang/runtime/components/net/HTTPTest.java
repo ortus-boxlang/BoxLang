@@ -31,14 +31,14 @@ import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.google.common.truth.Truth.assertThat;
 
+import java.util.Base64;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
-import java.util.Base64;
 
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
@@ -496,7 +496,7 @@ public class HTTPTest {
 		assertThat( bxhttp.get( Key.fileContent ) ).isEqualTo( "Request Timeout" );
 
 		Assertions.assertTrue( bxhttp.containsKey( Key.errorDetail ) );
-		assertThat( bxhttp.get( Key.errorDetail ) ).isEqualTo( "Request timed out after 1 second." );
+		assertThat( bxhttp.get( Key.errorDetail ) ).isEqualTo( "The request timed out after 1 second(s)" );
 	}
 
 	@DisplayName( "It can handle files" )
