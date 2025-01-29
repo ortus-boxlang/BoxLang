@@ -520,9 +520,9 @@ public class ModuleRecord {
 		    .stream()
 		    // Only load interceptors that are set to auto-load by default or by configuration
 		    .filter( provider -> interceptorService.canLoadInterceptor( provider.type() ) )
-		    // Register the interceptor
+		    // Register the interceptor with the module settings
 		    .map( ServiceLoader.Provider::get )
-		    .forEach( interceptorService::register );
+		    .forEach( targetInterceptor -> interceptorService.register( targetInterceptor, this.settings ) );
 
 		// Finalize Registration
 		this.registeredOn = Instant.now();
