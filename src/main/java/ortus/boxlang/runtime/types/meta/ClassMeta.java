@@ -64,8 +64,8 @@ public class ClassMeta extends BoxMeta {
 		this.meta = Struct.of(
 		    Key._NAME, target.bxGetName().getName(),
 		    Key.nameAsKey, target.bxGetName(),
-		    Key.documentation, Struct.of( target.getDocumentation() ),
-		    Key.annotations, Struct.of( target.getAnnotations() ),
+		    Key.documentation, new Struct( target.getDocumentation() ),
+		    Key.annotations, new Struct( target.getAnnotations() ),
 		    Key._EXTENDS, target.getSuper() != null ? target.getSuper().getBoxMeta().getMeta() : Struct.EMPTY,
 		    Key._IMPLEMENTS, UnmodifiableArray.fromList( target.getInterfaces().stream().map( iface -> iface.getBoxMeta().getMeta() ).toList() ),
 		    Key.functions, UnmodifiableArray.fromList( functions ),
