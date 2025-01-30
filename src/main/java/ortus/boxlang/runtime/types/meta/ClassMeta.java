@@ -61,11 +61,11 @@ public class ClassMeta extends BoxMeta {
 		    .filter( Function.class::isInstance )
 		    .forEach( entry -> functions.add( ( ( FunctionMeta ) ( ( Function ) entry ).getBoxMeta() ).meta ) );
 
-		this.meta = UnmodifiableStruct.of(
+		this.meta = Struct.of(
 		    Key._NAME, target.bxGetName().getName(),
 		    Key.nameAsKey, target.bxGetName(),
-		    Key.documentation, UnmodifiableStruct.fromStruct( target.getDocumentation() ),
-		    Key.annotations, UnmodifiableStruct.fromStruct( target.getAnnotations() ),
+		    Key.documentation, Struct.of( target.getDocumentation() ),
+		    Key.annotations, Struct.of( target.getAnnotations() ),
 		    Key._EXTENDS, target.getSuper() != null ? target.getSuper().getBoxMeta().getMeta() : Struct.EMPTY,
 		    Key._IMPLEMENTS, UnmodifiableArray.fromList( target.getInterfaces().stream().map( iface -> iface.getBoxMeta().getMeta() ).toList() ),
 		    Key.functions, UnmodifiableArray.fromList( functions ),
