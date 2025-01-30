@@ -287,7 +287,9 @@ public class HTTP extends Component {
 			}
 
 			HttpRequest	targetHTTPRequest	= builder.build();
-			HttpClient	client				= attributes.containsKey( Key.proxyServer ) ? HttpManager.getProxyClient( attributes ) : HttpManager.getClient();
+			HttpClient	client				= attributes.containsKey( Key.proxyServer ) || !attributes.getAsBoolean( Key.redirect )
+			    ? HttpManager.getCustomClient( attributes )
+			    : HttpManager.getClient();
 
 			// Announce the HTTP request
 			interceptorService.announce( BoxEvent.ON_HTTP_REQUEST, Struct.of(

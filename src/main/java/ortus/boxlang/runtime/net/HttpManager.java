@@ -61,7 +61,7 @@ public class HttpManager {
 		if ( instance == null ) {
 			synchronized ( HttpManager.class ) {
 				if ( instance == null ) {
-					instance = HttpClient.newHttpClient();
+					instance = HttpClient.newBuilder().followRedirects( HttpClient.Redirect.NORMAL ).build();
 				}
 			}
 		}
@@ -69,13 +69,13 @@ public class HttpManager {
 	}
 
 	/**
-	 * Get a new HttpClient instance with the proxy parameter attributes.
+	 * Get a new HttpClient instance custom attributes including proxy client connection and redirect enforcement.
 	 * 
 	 * @param attributes
 	 * 
 	 * @return
 	 */
-	public static HttpClient getProxyClient( IStruct attributes ) {
+	public static HttpClient getCustomClient( IStruct attributes ) {
 		HttpClient.Builder builder = HttpClient.newBuilder();
 		if ( attributes.containsKey( Key.proxyServer ) ) {
 			builder.proxy( ProxySelector.of( new InetSocketAddress( attributes.getAsString( Key.proxyServer ), attributes.getAsInteger( Key.proxyPort ) ) ) ); // Set proxy host & port
@@ -94,6 +94,9 @@ public class HttpManager {
 			if ( attributes.containsKey( Key.timeout ) ) {
 				builder.connectTimeout( Duration.ofSeconds( attributes.getAsInteger( Key.timeout ) ) );
 			}
+		}
+		if ( !attributes.getAsBoolean( Key.redirect ) ) {
+			builder.followRedirects( HttpClient.Redirect.NEVER );
 		}
 		return builder.build();
 	}
