@@ -139,6 +139,12 @@ public final class EncryptionUtil {
 	);
 
 	/**
+	 * URL Encoding properties
+	 */
+	public static final String			URL_SPACE						= "%20";
+	public static final String			URL_PLUS_REGEX					= "\\+";
+
+	/**
 	 * Performs a hash of an object using the default algorithm
 	 *
 	 * @param object The object to be hashed
@@ -348,7 +354,7 @@ public final class EncryptionUtil {
 	}
 
 	/**
-	 * URL encodes a string. We use the default encoding
+	 * URL encodes a string with the specified encoding string
 	 *
 	 * @param target   The string to encode
 	 * @param encoding The encoding to use
@@ -356,11 +362,19 @@ public final class EncryptionUtil {
 	 * @return returns the URL encoded string
 	 */
 	public static String urlEncode( String target, String encoding ) {
-		try {
-			return URLEncoder.encode( target, encoding );
-		} catch ( UnsupportedEncodingException e ) {
-			throw new BoxRuntimeException( e.getMessage() );
-		}
+		return urlEncode( target, Charset.forName( encoding ) );
+	}
+
+	/**
+	 * URL encodes a string with the specified encoding Charset - replacing URLEncoder's '+' with '%20'
+	 *
+	 * @param target   The string to encode
+	 * @param encoding The encoding to use
+	 *
+	 * @return returns the URL encoded string
+	 */
+	public static String urlEncode( String target, Charset encoding ) {
+		return URLEncoder.encode( target, encoding ).replaceAll( URL_PLUS_REGEX, URL_SPACE );
 	}
 
 	/**

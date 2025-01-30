@@ -23,7 +23,6 @@ import java.net.ConnectException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLConnection;
-import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
@@ -66,6 +65,7 @@ import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
+import ortus.boxlang.runtime.util.EncryptionUtil;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 import ortus.boxlang.runtime.validation.Validator;
@@ -223,19 +223,19 @@ public class HTTP extends Component {
 					// @TODO move URLEncoder.encode usage a non-deprecated method
 					case "cgi" -> builder.header( param.getAsString( Key._NAME ),
 					    BooleanCaster.cast( param.getOrDefault( Key.encoded, false ) )
-					        ? java.net.URLEncoder.encode( param.getAsString( Key.value ), StandardCharsets.UTF_8 )
+					        ? EncryptionUtil.urlEncode( param.getAsString( Key.value ) )
 					        : StringCaster.cast( param.get( Key.value ) )
 					);
 					case "file" -> files.add( param );
 					case "url" -> uriBuilder.addParameter(
 					    param.getAsString( Key._NAME ),
 					    BooleanCaster.cast( param.getOrDefault( Key.encoded, false ) )
-					        ? URLEncoder.encode( StringCaster.cast( param.get( Key.value ) ), StandardCharsets.UTF_8 )
+					        ? EncryptionUtil.urlEncode( StringCaster.cast( param.get( Key.value ) ), StandardCharsets.UTF_8 )
 					        : StringCaster.cast( param.get( Key.value ) )
 					);
 					case "formfield" -> formFields.add( param );
 					case "cookie" -> builder.header( "Cookie",
-					    param.getAsString( Key._NAME ) + "=" + URLEncoder.encode( param.getAsString( Key.value ), StandardCharsets.UTF_8 ) );
+					    param.getAsString( Key._NAME ) + "=" + EncryptionUtil.urlEncode( param.getAsString( Key.value ), StandardCharsets.UTF_8 ) );
 					default -> throw new BoxRuntimeException( "Unhandled HTTPParam type: " + type );
 				}
 			}
@@ -268,7 +268,7 @@ public class HTTP extends Component {
 				        .map( formField -> {
 					        String value = formField.getAsString( Key.value );
 					        if ( BooleanCaster.cast( formField.getOrDefault( Key.encoded, false ) ) ) {
-						        value = URLEncoder.encode( value, StandardCharsets.UTF_8 );
+						        value = EncryptionUtil.urlEncode( value, StandardCharsets.UTF_8 );
 					        }
 					        return formField.getAsString( Key._name ) + "=" + value;
 				        } )
