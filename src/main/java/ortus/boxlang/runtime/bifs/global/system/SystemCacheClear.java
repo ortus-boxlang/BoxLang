@@ -17,6 +17,8 @@
  */
 package ortus.boxlang.runtime.bifs.global.system;
 
+import java.util.Set;
+
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -24,9 +26,19 @@ import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.validation.Validator;
 
 @BoxBIF
 public class SystemCacheClear extends BIF {
+
+	/**
+	 * Valid caches
+	 */
+	private static final String[]	VALID_CACHES	= new String[] {
+	    "all", "template", "page", "component", "cfc", "class", "customtag", "ct", "query", "object", "tag", "function"
+	};
+
+	private static final String		DEFAULT_CACHE	= "all";
 
 	/**
 	 * Constructor
@@ -34,40 +46,46 @@ public class SystemCacheClear extends BIF {
 	public SystemCacheClear() {
 		super();
 		this.declaredArguments = new Argument[] {
-		    new Argument( false, "string", Key.cacheName )
+		    new Argument( false, "string", Key.cacheName, DEFAULT_CACHE, Set.of( Validator.valueOneOf( VALID_CACHES ) ) )
 		};
 	}
 
 	/**
-	 * For Lucee compat right now. We'll see if we need to do anything else.
+	 * Clears many of the caches in the runtime. By default with no arguments, it will clear all caches.
+	 *
+	 * The following caches can be cleared:
+	 *
+	 * <ul>
+	 * <li><code>all</code> - Clear everything</li>
+	 * <li><code>template</code> or <code>page</code> - Clear the compiled class pools</li>
+	 * <li><code>class</code> - Clear the class path resolvers</li>
+	 * <li><code>query</code> - Clear the default cache region</li>
+	 * <li><code>object</code> - Clear the default cache region</li>
+	 * </ul>
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 */
-	@SuppressWarnings( "null" )
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String cacheName = arguments.getAsString( Key.cacheName );
-		cacheName = cacheName == null ? null : cacheName.toLowerCase();
-		boolean clearAll = cacheName == null || cacheName.equals( "all" );
+		String	cacheName	= arguments.getAsString( Key.cacheName ).toLowerCase();
+		boolean	clearAll	= cacheName.equals( DEFAULT_CACHE );
+
+		// Page Pool region
 		if ( clearAll || cacheName.equals( "template" ) || cacheName.equals( "page" ) ) {
 			RunnableLoader.getInstance().getBoxpiler().clearPagePool();
 		}
+
+		// Class resolvers: component, cfc, left for compat
 		if ( clearAll || cacheName.equals( "component" ) || cacheName.equals( "cfc" ) || cacheName.equals( "class" ) ) {
-			// TODO: The BoxResolver maintains the cache internally
+			runtime.getClassLocator().clear();
 		}
+
+		// All of these are stored in the "default" cache region
 		if ( clearAll || cacheName.equals( "query" ) || cacheName.equals( "object" ) ) {
-			// TODO: Will we have this?
+			runtime.getCacheService().getDefaultCache().clearAll();
 		}
-		if ( clearAll || cacheName.equals( "tag" ) ) {
-			// I don't think this appiles to BoxLang as tags aren't an object which are transient
-		}
-		if ( clearAll || cacheName.equals( "function" ) ) {
-			// TODO: Will we have this?
-		}
-		if ( clearAll || cacheName.equals( "customtag" ) || cacheName.equals( "ct" ) ) {
-			// TODO: Will we have this?
-		}
+
 		return null;
 	}
 }
