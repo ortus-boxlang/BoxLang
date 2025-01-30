@@ -18,14 +18,14 @@ import static com.google.common.truth.Truth.assertThat;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.nio.file.Files;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.compiler.parser.AbstractParser;
@@ -41,10 +41,37 @@ import ortus.boxlang.runtime.scopes.VariablesScope;
 
 public class ANTLRParserProfilingTest {
 
-	static BoxRuntime	instance;
-	IBoxContext			context;
-	IScope				variables;
-	static Key			result	= new Key( "result" );
+	record BenchMarkRecord(
+	    Class<? extends AbstractParser> parserClass,
+	    String fileName,
+	    String csvName,
+	    String benchMarkName ) {
+
+	}
+
+	static Map<String, BenchMarkRecord>	benchMarks	= new HashMap<String, BenchMarkRecord>();
+	static BoxRuntime					instance;
+	IBoxContext							context;
+	IScope								variables;
+	static Key							result		= new Key( "result" );
+
+	static {
+		benchMarks.put( "ClassA", new BenchMarkRecord(
+		    CFParser.class,
+		    "src/test/java/ortus/boxlang/compiler/parserprofiling/ClassA.cfc",
+		    "src/test/java/ortus/boxlang/compiler/parserprofiling/ClassA.csv",
+		    "src/test/java/ortus/boxlang/compiler/parserprofiling/ClassA_benchmark.csv"
+		)
+		);
+
+		benchMarks.put( "ClassABoxLang", new BenchMarkRecord(
+		    BoxParser.class,
+		    "src/test/java/ortus/boxlang/compiler/parserprofiling/ClassA_BoxLang.bx",
+		    "src/test/java/ortus/boxlang/compiler/parserprofiling/ClassA_BoxLang.csv",
+		    "src/test/java/ortus/boxlang/compiler/parserprofiling/ClassA_BoxLang_benchmark.csv"
+		)
+		);
+	}
 
 	@BeforeAll
 	public static void setUp() {
@@ -63,33 +90,10 @@ public class ANTLRParserProfilingTest {
 	}
 
 	@Test
-	@Disabled
+	// @Disabled
 	public void generateBenchMarks() {
-		record BenchMarkRecord(
-		    Class<? extends AbstractParser> parserClass,
-		    String fileName,
-		    String csvName,
-		    String benchMarkName ) {
 
-		}
-		List<BenchMarkRecord> benchMarks = new ArrayList<BenchMarkRecord>();
-		benchMarks.add( new BenchMarkRecord(
-		    CFParser.class,
-		    "src/test/java/ortus/boxlang/compiler/parserprofiling/ClassA.cfc",
-		    "src/test/java/ortus/boxlang/compiler/parserprofiling/ClassA.csv",
-		    "src/test/java/ortus/boxlang/compiler/parserprofiling/ClassA_benchmark.csv"
-		)
-		);
-
-		benchMarks.add( new BenchMarkRecord(
-		    CFParser.class,
-		    "src/test/java/ortus/boxlang/compiler/parserprofiling/ClassA_BoxLang.bx",
-		    "src/test/java/ortus/boxlang/compiler/parserprofiling/ClassA_BoxLang.csv",
-		    "src/test/java/ortus/boxlang/compiler/parserprofiling/ClassA_BoxLang_benchmark.csv"
-		)
-		);
-
-		for ( BenchMarkRecord rec : benchMarks ) {
+		for ( BenchMarkRecord rec : benchMarks.values() ) {
 			try {
 				AbstractParser parser = ( AbstractParser ) rec.parserClass.getConstructor().newInstance();
 				parser.setDebugMode( true );
@@ -99,6 +103,13 @@ public class ANTLRParserProfilingTest {
 				File	csvFile			= new File( rec.csvName );
 				File	benchMarkFile	= new File( rec.benchMarkName );
 
+				try {
+
+					Files.delete( benchMarkFile.toPath() );
+				} catch ( Exception e ) {
+					// pass
+				}
+
 				csvFile.renameTo( benchMarkFile );
 			} catch ( Exception e ) {
 				// TODO Auto-generated catch block
@@ -106,6 +117,24 @@ public class ANTLRParserProfilingTest {
 			}
 		}
 
+	}
+
+	private boolean runTest( BenchMarkRecord benchmark ) {
+		try {
+			AbstractParser parser = ( AbstractParser ) benchmark.parserClass.getConstructor().newInstance();
+			parser.setDebugMode( true );
+
+			ParsingResult res = parser.parse( new File( benchmark.fileName ), true );
+			parser.getProfilingResults().writeCSV( "src/test/java/ortus/boxlang/compiler/parserprofiling" );
+
+			assertThat( res.isCorrect() ).isTrue();
+			boolean areEqual = FileUtils.contentEquals( new File( benchmark.benchMarkName ),
+			    new File( benchmark.csvName ) );
+
+			return areEqual;
+		} catch ( Exception e ) {
+			return false;
+		}
 	}
 
 	@Test
@@ -123,14 +152,7 @@ public class ANTLRParserProfilingTest {
 
 	@Test
 	public void testBoxLangClassA() throws IOException {
-		BoxParser parser = new BoxParser();
-		parser.setDebugMode( true );
-		ParsingResult res = parser.parse( new File( "src/test/java/ortus/boxlang/compiler/parserprofiling/ClassA_BoxLang.bx" ), true );
-		parser.getProfilingResults().writeCSV( "src/test/java/ortus/boxlang/compiler/parserprofiling" );
-
-		assertThat( res.isCorrect() ).isTrue();
-		boolean areEqual = FileUtils.contentEquals( new File( "src/test/java/ortus/boxlang/compiler/parserprofiling/ClassA_benchmark.csv" ),
-		    new File( "src/test/java/ortus/boxlang/compiler/parserprofiling/ClassA_BoxLang.csv" ) );
+		boolean areEqual = runTest( benchMarks.get( "ClassABoxLang" ) );
 		assertThat( areEqual ).isTrue();
 	}
 
