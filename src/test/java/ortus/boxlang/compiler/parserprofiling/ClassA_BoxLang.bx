@@ -1,0 +1,53 @@
+class accessors = true output = false {
+
+	property name="radius" x="numeric";
+
+	property name="x";
+
+	property name="z";
+
+	property name="foo";
+
+	property name="foox";
+
+	property name="fooxsefef";
+
+	property y numeric;
+
+
+	// test
+	public void function main( array args ) {
+
+		var i = 4;
+		if( args.len() ){
+			println( args[ 2 ] ); // at the end of the line
+		}
+		else {
+			printLn( "no args" );
+		}
+	}
+
+	public void function init( numeric radius = 1 ) {
+		variables.radius = radius;
+		
+		return;
+	}
+
+	public Circle[] function x() {
+		return [
+			new Circle()
+		];
+	}
+
+	public numeric function getCircumference() {
+		return radius * 2 * Pi();
+	}
+
+	public string function toString( required string color ) {
+		return "The circle of radius #radius# has a circumference of #getCircumference()# and is the color #color#";
+	}
+
+	public string function testfunc( required numeric a, required numeric b ){
+        return 4;
+    }
+}
