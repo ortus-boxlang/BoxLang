@@ -252,7 +252,8 @@ public class BoxResolver extends BaseResolver {
 			    ClassLocator.TYPE_BX,
 			    RunnableLoader.getInstance().loadClass( resolvedFilePath, context ),
 			    moduleName.getName(),
-			    false
+			    true,
+			    context.getApplicationName()
 			) );
 		}
 
@@ -335,6 +336,7 @@ public class BoxResolver extends BaseResolver {
 				    Path absolutePath = Path
 				        .of( StringUtils.replaceOnceIgnoreCase( slashName, entry.getKey().getName(), entry.getValue() + "/" ) + "." + extension )
 				        .normalize();
+
 				    // Verify that the file exists
 				    absolutePath = FileSystemUtil.pathExistsCaseInsensitive( absolutePath );
 				    if ( absolutePath != null ) {
@@ -379,7 +381,8 @@ public class BoxResolver extends BaseResolver {
 			        ClassLocator.TYPE_BX,
 			        loadClass ? RunnableLoader.getInstance().loadClass( possibleMatch, context ) : null,
 			        "",
-			        false
+			        true,
+			        context.getApplicationName()
 			    );
 		    } )
 		    // Find the first one or return empty
@@ -416,9 +419,11 @@ public class BoxResolver extends BaseResolver {
 					// See if path exists in this parent directory with a valid extension
 					Path targetPath = findExistingPathWithValidExtension( parentPath, slashName );
 					if ( targetPath != null ) {
-
-						ResolvedFilePath newResolvedFilePath = FileSystemUtil.contractPath( context, targetPath.toString(), resolvedFilePath.mappingName() );
-
+						ResolvedFilePath newResolvedFilePath = FileSystemUtil.contractPath(
+						    context,
+						    targetPath.toString(),
+						    resolvedFilePath.mappingName()
+						);
 						return Optional.of( new ClassLocation(
 						    newResolvedFilePath.getBoxFQN().getClassName(),
 						    targetPath.toAbsolutePath().toString(),
@@ -426,7 +431,8 @@ public class BoxResolver extends BaseResolver {
 						    ClassLocator.TYPE_BX,
 						    loadClass ? RunnableLoader.getInstance().loadClass( newResolvedFilePath, context ) : null,
 						    "",
-						    false
+						    true,
+						    context.getApplicationName()
 						) );
 					}
 				}
@@ -479,7 +485,8 @@ public class BoxResolver extends BaseResolver {
 		    ClassLocator.TYPE_BX,
 		    loadClass ? RunnableLoader.getInstance().loadClass( newResolvedFilePath, context ) : null,
 		    "",
-		    false
+		    true,
+		    context.getApplicationName()
 		) );
 
 	}

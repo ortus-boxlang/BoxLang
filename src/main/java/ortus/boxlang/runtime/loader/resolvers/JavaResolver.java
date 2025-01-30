@@ -216,7 +216,8 @@ public class JavaResolver extends BaseResolver {
 		        ClassLocator.TYPE_JAVA,
 		        clazz,
 		        moduleName.getName(),
-		        true
+		        true,
+		        context.getApplicationName()
 		    )
 		);
 	}
@@ -246,7 +247,8 @@ public class JavaResolver extends BaseResolver {
 			        ClassLocator.TYPE_JAVA,
 			        clazz,
 			        null,
-			        true
+			        true,
+			        context.getApplicationName()
 			    )
 			);
 		} catch ( ClassNotFoundException e ) {
