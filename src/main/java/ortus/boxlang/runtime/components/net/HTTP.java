@@ -222,7 +222,10 @@ public class HTTP extends Component {
 					}
 					// @TODO move URLEncoder.encode usage a non-deprecated method
 					case "cgi" -> builder.header( param.getAsString( Key._NAME ),
-					    java.net.URLEncoder.encode( param.getAsString( Key.value ), StandardCharsets.UTF_8 ) );
+					    BooleanCaster.cast( param.getOrDefault( Key.encoded, false ) )
+					        ? java.net.URLEncoder.encode( param.getAsString( Key.value ), StandardCharsets.UTF_8 )
+					        : StringCaster.cast( param.get( Key.value ) )
+					);
 					case "file" -> files.add( param );
 					case "url" -> uriBuilder.addParameter(
 					    param.getAsString( Key._NAME ),
@@ -264,7 +267,7 @@ public class HTTP extends Component {
 				    formFields.stream()
 				        .map( formField -> {
 					        String value = formField.getAsString( Key.value );
-					        if ( BooleanCaster.cast( formField.getOrDefault( Key.encoded, true ) ) ) {
+					        if ( BooleanCaster.cast( formField.getOrDefault( Key.encoded, false ) ) ) {
 						        value = URLEncoder.encode( value, StandardCharsets.UTF_8 );
 					        }
 					        return formField.getAsString( Key._name ) + "=" + value;
