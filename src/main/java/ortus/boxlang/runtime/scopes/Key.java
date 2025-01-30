@@ -149,6 +149,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		caseSensitive						= Key.of( "caseSensitive" );
 	public static final Key		cast								= Key.of( "cast" );
 	public static final Key		category							= Key.of( "category" );
+	public static final Key		classResolverCache					= Key.of( "classResolverCache" );
 	public static final Key		cause								= Key.of( "cause" );
 	public static final Key		cert_cookie							= Key.of( "cert_cookie" );
 	public static final Key		cert_flags							= Key.of( "cert_flags" );

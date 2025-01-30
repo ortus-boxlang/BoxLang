@@ -19,10 +19,7 @@ package ortus.boxlang.runtime.loader;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
 
-import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Optional;
 
@@ -109,34 +106,19 @@ public class ClassLocatorTest {
 	@DisplayName( "It can load native Java classes and add to the resolver cache" )
 	@Test
 	public void testCanLoadJavaClassesWithCaching() throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException {
+		// Start our tests
+		String targetClass = "java.lang.String";
+		locator.clear();
+		assertThat( locator.size() ).isEqualTo( 0 );
 
-		BoxRuntime		spyRuntime		= spy( runtime );
-		ClassLocator	testLocator		= spy( spyRuntime.getClassLocator() );
-		Field			runtimeField	= testLocator.getClass().getDeclaredField( "runtime" );
+		DynamicObject target = locator.load( new ScriptingRequestBoxContext(), targetClass, "java", true );
 
-		try {
-			when( spyRuntime.inDebugMode() ).thenReturn( false );
-			runtimeField.setAccessible( true );
-			runtimeField.set( testLocator, spyRuntime );
+		target.invokeConstructor( null, "Hola ClassLoader" );
+		assertThat( target.getTargetInstance() ).isEqualTo( "Hola ClassLoader" );
 
-			// Start our tests
-			String targetClass = "java.lang.String";
-			testLocator.clear();
-			assertThat( testLocator.size() ).isEqualTo( 0 );
-
-			DynamicObject target = testLocator.load( new ScriptingRequestBoxContext(), targetClass, "java", true );
-
-			target.invokeConstructor( null, "Hola ClassLoader" );
-			assertThat( target.getTargetInstance() ).isEqualTo( "Hola ClassLoader" );
-
-			assertThat( target ).isNotNull();
-			assertThat( target.getTargetClass() ).isEqualTo( String.class );
-			assertThat( testLocator.size() ).isEqualTo( 1 );
-		} finally {
-			// Reset the runtime field in the locator
-			runtimeField.setAccessible( true );
-			runtimeField.set( locator, runtime );
-		}
+		assertThat( target ).isNotNull();
+		assertThat( target.getTargetClass() ).isEqualTo( String.class );
+		assertThat( locator.size() ).isEqualTo( 1 );
 	}
 
 	@DisplayName( "It can safe load non-existent classes without throwing an exception" )

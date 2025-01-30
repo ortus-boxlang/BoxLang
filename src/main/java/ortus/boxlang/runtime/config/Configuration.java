@@ -92,6 +92,12 @@ public class Configuration implements IConfigSegment {
 	public Boolean				debugMode						= false;
 
 	/**
+	 * Turn on/off the resolver cache for Class Locators of Java/Box classes
+	 * {@code true} by default
+	 */
+	public Boolean				classResolverCache				= true;
+
+	/**
 	 * The Timezone to use for the runtime;
 	 * Uses the Java Timezone format: {@code America/New_York}
 	 * Uses the default system timezone if not set
@@ -309,6 +315,11 @@ public class Configuration implements IConfigSegment {
 		}
 		if ( config.containsKey( "debuggingEnabled" ) ) {
 			this.debugMode = BooleanCaster.cast( PlaceholderHelper.resolve( config.get( "debuggingEnabled" ) ) );
+		}
+
+		// Class Resolver Cache
+		if ( config.containsKey( "classResolverCache" ) ) {
+			this.classResolverCache = BooleanCaster.cast( PlaceholderHelper.resolve( config.get( "classResolverCache" ) ) );
 		}
 
 		// Compiler
@@ -885,6 +896,7 @@ public class Configuration implements IConfigSegment {
 		    Key.classPaths, Array.fromList( this.classPaths ),
 		    Key.datasources, datsourcesCopy,
 		    Key.debugMode, this.debugMode,
+		    Key.classResolverCache, this.classResolverCache,
 		    Key.defaultDatasource, this.defaultDatasource,
 		    Key.defaultRemoteMethodReturnFormat, this.defaultRemoteMethodReturnFormat,
 		    Key.executors, executorsCopy,

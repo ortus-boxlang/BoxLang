@@ -525,7 +525,7 @@ public class ClassLocator extends ClassLoader {
 		    .toString();
 
 		// Are we in debug mode, if so disable caching
-		if ( runtime.inDebugMode() ) {
+		if ( !runtime.getConfiguration().classResolverCache ) {
 			useCaching = false;
 		}
 		final boolean			finalUseCaching	= useCaching;
@@ -732,8 +732,8 @@ public class ClassLocator extends ClassLoader {
 		    .append( name )
 		    .toString();
 
-		// Are we in debug mode, if so disable caching
-		if ( runtime.inDebugMode() ) {
+		// Verify resolver cache setting
+		if ( !runtime.getConfiguration().classResolverCache ) {
 			useCaching = false;
 		}
 		final boolean			finalUseCaching	= useCaching;
