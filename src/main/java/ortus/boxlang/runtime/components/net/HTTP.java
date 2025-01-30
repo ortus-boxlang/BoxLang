@@ -226,7 +226,7 @@ public class HTTP extends Component {
 					case "file" -> files.add( param );
 					case "url" -> uriBuilder.addParameter(
 					    param.getAsString( Key._NAME ),
-					    BooleanCaster.cast( param.getOrDefault( Key.encoded, true ) )
+					    BooleanCaster.cast( param.getOrDefault( Key.encoded, false ) )
 					        ? URLEncoder.encode( StringCaster.cast( param.get( Key.value ) ), StandardCharsets.UTF_8 )
 					        : StringCaster.cast( param.get( Key.value ) )
 					);
