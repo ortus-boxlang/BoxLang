@@ -428,7 +428,7 @@ public class JSONSerializeTest {
 		// @formatter:on
 
 		var json = variables.getAsString( result );
-		assertThat( json ).isEqualTo( "{ }" );
+		assertThat( json ).isEqualTo( "{}" );
 	}
 
 	@DisplayName( "It can handle recursion of structs" )

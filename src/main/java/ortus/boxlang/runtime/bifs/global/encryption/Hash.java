@@ -27,6 +27,7 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -34,7 +35,6 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.util.JSONUtil;
 import ortus.boxlang.runtime.util.EncryptionUtil;
-import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 
 @BoxBIF
 @BoxBIF( alias = "Hash40" )
@@ -111,7 +111,7 @@ public class Hash extends BIF {
 				hashBytes = SerializationUtils.serialize( ( java.io.Serializable ) hashItem );
 			} catch ( SerializationException ns ) {
 				try {
-					hashBytes = JSONUtil.getJSONBuilder().asString( hashItem ).getBytes();
+					hashBytes = JSONUtil.getJSONBuilder( false ).asString( hashItem ).getBytes();
 				} catch ( IOException e ) {
 					throw new BoxIOException( "The object provided could not be serialized to a byte array", e );
 				}

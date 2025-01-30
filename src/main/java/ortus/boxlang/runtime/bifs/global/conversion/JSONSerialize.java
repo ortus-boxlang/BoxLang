@@ -127,7 +127,7 @@ public class JSONSerialize extends BIF {
 
 		// Serialize the object to JSON
 		try {
-			return JSONUtil.getJSONBuilder().asString( obj );
+			return JSONUtil.getJSONBuilder( false ).asString( obj );
 		} catch ( IOException e ) {
 			throw new BoxRuntimeException( "Error serializing to JSON", e );
 		}
