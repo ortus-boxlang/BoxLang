@@ -226,11 +226,6 @@ public class Configuration implements IConfigSegment {
 	public String				defaultRemoteMethodReturnFormat	= "json";
 
 	/**
-	 * Default cache registration
-	 */
-	public CacheConfig			defaultCache					= new CacheConfig();
-
-	/**
 	 * The modules configuration
 	 */
 	public IStruct				modules							= new Struct();
@@ -475,18 +470,12 @@ public class Configuration implements IConfigSegment {
 		}
 
 		// Process default cache configuration
-		if ( config.containsKey( Key.defaultCache ) ) {
-			if ( config.get( Key.defaultCache ) instanceof IStruct castedMap ) {
-				this.defaultCache = new CacheConfig().processProperties( castedMap );
-			} else {
-				logger.warn( "The [runtime.defaultCache] configuration is not a JSON Object, ignoring it." );
-			}
-		}
-
-		// Process default cache configuration
 		if ( config.containsKey( Key.trustedCache ) ) {
 			this.trustedCache = config.getAsBoolean( Key.trustedCache );
 		}
+
+		// Setup a default cache, using the default cache configuration as it always needs to be present
+		this.caches.put( Key.defaultCache, new CacheConfig() );
 
 		// Process declared cache configurations
 		if ( config.containsKey( Key.caches ) ) {
@@ -495,11 +484,6 @@ public class Configuration implements IConfigSegment {
 				castedCaches
 				    .entrySet()
 				    .forEach( entry -> {
-					    // We ignore `default` caches, not accepted in boxlang.
-					    if ( entry.getKey().equals( Key._DEFAULT ) ) {
-						    return;
-					    }
-
 					    if ( entry.getValue() instanceof IStruct castedStruct ) {
 						    CacheConfig cacheConfig = new CacheConfig( KeyCaster.cast( entry.getKey() ) ).process( castedStruct );
 						    this.caches.put( cacheConfig.name, cacheConfig );
@@ -901,7 +885,6 @@ public class Configuration implements IConfigSegment {
 		    Key.classPaths, Array.fromList( this.classPaths ),
 		    Key.datasources, datsourcesCopy,
 		    Key.debugMode, this.debugMode,
-		    Key.defaultCache, this.defaultCache.toStruct(),
 		    Key.defaultDatasource, this.defaultDatasource,
 		    Key.defaultRemoteMethodReturnFormat, this.defaultRemoteMethodReturnFormat,
 		    Key.executors, executorsCopy,

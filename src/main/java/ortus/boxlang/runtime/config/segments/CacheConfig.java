@@ -93,7 +93,7 @@ public class CacheConfig {
 
 	/**
 	 * --------------------------------------------------------------------------
-	 * Methods
+	 * Constructor(s)
 	 * --------------------------------------------------------------------------
 	 */
 
@@ -144,6 +144,12 @@ public class CacheConfig {
 	public CacheConfig( String name ) {
 		this( Key.of( name ) );
 	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Methods
+	 * --------------------------------------------------------------------------
+	 */
 
 	/**
 	 * Processes the configuration struct. Each segment is processed individually from the initial configuration struct.

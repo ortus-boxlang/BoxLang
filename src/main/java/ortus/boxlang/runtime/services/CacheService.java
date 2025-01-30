@@ -148,13 +148,9 @@ public class CacheService extends BaseService {
 		BoxRuntime.timerUtil.start( "cacheservice-startup" );
 		logger.debug( "+ Starting up Cache Service..." );
 
-		// Create the default cache according to the configuration settings
-		createDefaultCache( Key._DEFAULT, getRuntime().getConfiguration().defaultCache );
-
-		// Create now all the registerd configured caches async
+		// Create now all the registerd configured caches
 		this.runtime.getConfiguration().caches
 		    .entrySet()
-		    .parallelStream()
 		    .forEach( entry -> {
 			    CacheConfig config = ( CacheConfig ) entry.getValue();
 			    createCache( entry.getKey(), config.provider, config.properties );
