@@ -93,7 +93,6 @@ reservedKeyword
     | VARIABLES
     | WHEN
     | WHILE
-    | XOR
     | PREFIXEDIDENTIFIER // cfSomething
     ;
 

@@ -17,16 +17,15 @@
  */
 package ortus.boxlang.runtime.net;
 
-import ortus.boxlang.runtime.net.NameValuePair;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 public class URIBuilder {
 

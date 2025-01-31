@@ -32,7 +32,6 @@ import ortus.boxlang.runtime.types.exceptions.BoxCastException;
  * I handle casting anything to a Struct, except I'll also cast any Java classes which are not a built in datatype into a struct, using the public
  * fields as the keys and the values as the values.
  */
-@SuppressWarnings( "unchecked" )
 public class StructCasterLoose implements IBoxCaster {
 
 	/**

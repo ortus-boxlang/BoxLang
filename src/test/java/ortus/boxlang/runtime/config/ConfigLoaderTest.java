@@ -78,10 +78,10 @@ class ConfigLoaderTest {
 		assertThat( config.caches ).isNotEmpty();
 
 		// Default Cache Checks
-		CacheConfig defaultCache = ( CacheConfig ) config.defaultCache;
+		CacheConfig defaultCache = ( CacheConfig ) config.caches.get( "default" );
 		assertThat( defaultCache ).isNotNull();
-		assertThat( defaultCache.name.getNameNoCase() ).isEqualTo( "DEFAULT" );
-		assertThat( defaultCache.provider.getNameNoCase() ).isEqualTo( "BOXCACHEPROVIDER" );
+		assertThat( defaultCache.name ).isEqualTo( Key.of( "DEFAULT" ) );
+		assertThat( defaultCache.provider ).isEqualTo( Key.of( "BOXCACHEPROVIDER" ) );
 		assertThat( defaultCache.properties ).isNotNull();
 		assertThat( defaultCache.properties.get( "maxObjects" ) ).isEqualTo( 1000 );
 		assertThat( defaultCache.properties.get( "reapFrequency" ) ).isEqualTo( 120 );
@@ -90,14 +90,14 @@ class ConfigLoaderTest {
 		assertThat( defaultCache.properties.get( "useLastAccessTimeouts" ) ).isEqualTo( true );
 
 		// Import Cache Checks
-		CacheConfig importCache = ( CacheConfig ) config.caches.get( "bxImports" );
-		assertThat( importCache.provider.getNameNoCase() ).isEqualTo( "BOXCACHEPROVIDER" );
-		assertThat( importCache.properties ).isNotNull();
-		assertThat( importCache.properties.get( "maxObjects" ) ).isEqualTo( 200 );
-		assertThat( importCache.properties.get( "reapFrequency" ) ).isEqualTo( 120 );
-		assertThat( importCache.properties.get( "evictionPolicy" ) ).isEqualTo( "LRU" );
-		assertThat( importCache.properties.get( "objectStore" ) ).isEqualTo( "ConcurrentStore" );
-		assertThat( importCache.properties.get( "useLastAccessTimeouts" ) ).isEqualTo( true );
+		CacheConfig regexCache = ( CacheConfig ) config.caches.get( "bxRegex" );
+		assertThat( regexCache.provider ).isEqualTo( Key.of( "BOXCACHEPROVIDER" ) );
+		assertThat( regexCache.properties ).isNotNull();
+		assertThat( regexCache.properties.get( "maxObjects" ) ).isEqualTo( 500 );
+		assertThat( regexCache.properties.get( "reapFrequency" ) ).isEqualTo( 120 );
+		assertThat( regexCache.properties.get( "evictionPolicy" ) ).isEqualTo( "LRU" );
+		assertThat( regexCache.properties.get( "objectStore" ) ).isEqualTo( "ConcurrentSoftReferenceStore" );
+		assertThat( regexCache.properties.get( "useLastAccessTimeouts" ) ).isEqualTo( true );
 	}
 
 	@DisplayName( "It can register a new mapping" )
@@ -186,25 +186,25 @@ class ConfigLoaderTest {
 
 		// Cache Checks
 		assertThat( config.caches ).isNotEmpty();
-		assertThat( config.caches ).hasSize( 1 );
+		assertThat( config.caches ).hasSize( 3 );
 
 		// Default Cache Checks
-		CacheConfig defaultCache = ( CacheConfig ) config.defaultCache;
+		CacheConfig defaultCache = ( CacheConfig ) config.caches.get( "default" );
 		assertThat( defaultCache ).isNotNull();
-		assertThat( defaultCache.name.getNameNoCase() ).isEqualTo( "DEFAULT" );
-		assertThat( defaultCache.provider.getNameNoCase() ).isEqualTo( "BOXCACHEPROVIDER" );
+		assertThat( defaultCache.name ).isEqualTo( Key.of( "DEFAULT" ) );
+		assertThat( defaultCache.provider ).isEqualTo( Key.of( "BOXCACHEPROVIDER" ) );
 		assertThat( defaultCache.properties ).isNotNull();
 		assertThat( defaultCache.properties.get( "maxObjects" ) ).isEqualTo( 1000 );
-		assertThat( defaultCache.properties.get( "reapFrequency" ) ).isEqualTo( 2 );
+		assertThat( defaultCache.properties.get( "reapFrequency" ) ).isEqualTo( 120 );
 		assertThat( defaultCache.properties.get( "evictionPolicy" ) ).isEqualTo( "LRU" );
 		assertThat( defaultCache.properties.get( "objectStore" ) ).isEqualTo( "ConcurrentSoftReferenceStore" );
 		assertThat( defaultCache.properties.get( "useLastAccessTimeouts" ) ).isEqualTo( true );
 
 		// Import Cache Checks
-		CacheConfig importCache = ( CacheConfig ) config.caches.get( "bxImports" );
-		assertThat( importCache.provider.getNameNoCase() ).isEqualTo( "BOXCACHEPROVIDER" );
-		assertThat( importCache.properties ).isNotNull();
-		assertThat( importCache.properties.get( "maxObjects" ) ).isEqualTo( 200 );
+		CacheConfig regexCacheConfig = ( CacheConfig ) config.caches.get( "bxRegex" );
+		assertThat( regexCacheConfig.provider ).isEqualTo( Key.of( "BOXCACHEPROVIDER" ) );
+		assertThat( regexCacheConfig.properties ).isNotNull();
+		assertThat( regexCacheConfig.properties.get( "maxObjects" ) ).isEqualTo( 200 );
 	}
 
 	@DisplayName( "It can merge environmental properties in to the config" )
@@ -231,10 +231,10 @@ class ConfigLoaderTest {
 		assertThat( config.caches ).isNotEmpty();
 
 		// Default Cache Checks
-		CacheConfig defaultCache = ( CacheConfig ) config.defaultCache;
+		CacheConfig defaultCache = ( CacheConfig ) config.caches.get( "default" );
 		assertThat( defaultCache ).isNotNull();
-		assertThat( defaultCache.name.getNameNoCase() ).isEqualTo( "DEFAULT" );
-		assertThat( defaultCache.provider.getNameNoCase() ).isEqualTo( "BOXCACHEPROVIDER" );
+		assertThat( defaultCache.name ).isEqualTo( Key.of( "DEFAULT" ) );
+		assertThat( defaultCache.provider ).isEqualTo( Key.of( "BOXCACHEPROVIDER" ) );
 		assertThat( defaultCache.properties ).isNotNull();
 		assertThat( defaultCache.properties.get( "maxObjects" ) ).isEqualTo( 1000 );
 		assertThat( defaultCache.properties.get( "reapFrequency" ) ).isEqualTo( 120 );
@@ -243,14 +243,14 @@ class ConfigLoaderTest {
 		assertThat( defaultCache.properties.get( "useLastAccessTimeouts" ) ).isEqualTo( true );
 
 		// Import Cache Checks
-		CacheConfig importCache = ( CacheConfig ) config.caches.get( "bxImports" );
-		assertThat( importCache.provider.getNameNoCase() ).isEqualTo( "BOXCACHEPROVIDER" );
-		assertThat( importCache.properties ).isNotNull();
-		assertThat( importCache.properties.get( "maxObjects" ) ).isEqualTo( 200 );
-		assertThat( importCache.properties.get( "reapFrequency" ) ).isEqualTo( 120 );
-		assertThat( importCache.properties.get( "evictionPolicy" ) ).isEqualTo( "LRU" );
-		assertThat( importCache.properties.get( "objectStore" ) ).isEqualTo( "ConcurrentStore" );
-		assertThat( importCache.properties.get( "useLastAccessTimeouts" ) ).isEqualTo( true );
+		CacheConfig regexCache = ( CacheConfig ) config.caches.get( "bxRegex" );
+		assertThat( regexCache.provider ).isEqualTo( Key.of( "BOXCACHEPROVIDER" ) );
+		assertThat( regexCache.properties ).isNotNull();
+		assertThat( regexCache.properties.get( "maxObjects" ) ).isEqualTo( 200 );
+		assertThat( regexCache.properties.get( "reapFrequency" ) ).isEqualTo( 120 );
+		assertThat( regexCache.properties.get( "evictionPolicy" ) ).isEqualTo( "LRU" );
+		assertThat( regexCache.properties.get( "objectStore" ) ).isEqualTo( "ConcurrentStore" );
+		assertThat( regexCache.properties.get( "useLastAccessTimeouts" ) ).isEqualTo( true );
 
 		// Check the debug mode
 		assertThat( config.security.allowedFileOperationExtensions ).isInstanceOf( List.class );

@@ -7,7 +7,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http: //www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -156,9 +156,14 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 			// This will map which column in the JDBC result corresponds with the ordinal position of each query column
 			List<Integer>		columnMapList		= new ArrayList<>();
 
+			int					emptyCounter		= 0;
 			// The column count starts from 1
 			for ( int i = 1; i <= columnCount; i++ ) {
-				Key colName = Key.of( resultSetMetaData.getColumnLabel( i ) );
+				String label = resultSetMetaData.getColumnLabel( i );
+				if ( label.isBlank() ) {
+					label = "column_" + ( emptyCounter++ );
+				}
+				Key colName = Key.of( label );
 				// If we haven't hit this column name before....
 				if ( !query.hasColumn( colName ) ) {
 					// Add it
@@ -399,7 +404,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	/**
 	 * Get the QueryColumn object for a column
 	 * Throws an exception if the column doesn't exist
-	 * 
+	 *
 	 * This method for CF/Lucee compat
 	 *
 	 * @param name column name
@@ -1022,8 +1027,8 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 *
 	 * Will populate the following keys if they don't already exist:
 	 * - recordCount: Number of rows in the query
-	 * - columns: List of column names
-	 * - _HASHCODE: Hashcode of the query
+	 * - columns : List of column names
+	 * - _HASHCODE : Hashcode of the query
 	 *
 	 * @return The metadata as a struct
 	 */

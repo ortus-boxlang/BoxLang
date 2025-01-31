@@ -30,6 +30,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class ExceptionTest {
 
@@ -87,6 +88,27 @@ public class ExceptionTest {
 		Throwable t = ( Throwable ) variables.get( result );
 		assertThat( t.getMessage() ).isEqualTo( "outer" );
 		assertThat( t.getCause().getMessage() ).isEqualTo( "inner" );
+
+	}
+
+	@Test
+	public void detailAndExtendedInfoStrings() {
+
+		// @formatter:off
+		instance.executeStatement(
+		"""
+			try{
+				a = b;
+			} catch( any e ) {
+				result = e;
+			}
+			assert( structKeyExists( result, "detail" ) );
+			assert( structKeyExists( result, "extendedInfo" ) );
+		""", context );
+		// @formatter:on
+		BoxRuntimeException t = ( BoxRuntimeException ) variables.get( result );
+		assertThat( t.getDetail() ).isEqualTo( "" );
+		assertThat( t.getExtendedInfo() ).isEqualTo( "" );
 
 	}
 

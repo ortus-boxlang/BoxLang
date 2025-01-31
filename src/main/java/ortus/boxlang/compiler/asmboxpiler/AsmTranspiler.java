@@ -164,9 +164,9 @@ import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 public class AsmTranspiler extends Transpiler {
 
-	protected static final Logger					logger						= LoggerFactory.getLogger( ASMBoxpiler.class );
+	protected static final Logger			logger					= LoggerFactory.getLogger( ASMBoxpiler.class );
 
-	private static final int[]						STACK_SIZE_DELTA			= {
+	private static final int[]				STACK_SIZE_DELTA		= {
 	    0, // nop = 0 (0x0)
 	    1, // aconst_null = 1 (0x1)
 	    1, // iconst_m1 = 2 (0x2)
@@ -371,14 +371,12 @@ public class AsmTranspiler extends Transpiler {
 	    Integer.MIN_VALUE // jsr_w = 201 (0xc9)
 	};
 
-	private static HashMap<Class<?>, Transformer>	registry					= new HashMap<>();
-	private static final String						EXTENDS_ANNOTATION_MARKER	= "overrideJava";
+	private HashMap<Class<?>, Transformer>	registry				= new HashMap<>();
 
-	private List<AbstractInsnNode>					UDFDeclarations				= new ArrayList<>();
-	private List<AbstractInsnNode>					staticUDFDeclarations		= new ArrayList<>();
+	private List<AbstractInsnNode>			UDFDeclarations			= new ArrayList<>();
+	private List<AbstractInsnNode>			staticUDFDeclarations	= new ArrayList<>();
 
 	public AsmTranspiler() {
-		// TODO: instance write to static field. Seems like an oversight in Java version (retained until clarified).
 		registry.put( BoxStringLiteral.class, new BoxStringLiteralTransformer( this ) );
 		registry.put( BoxIntegerLiteral.class, new BoxIntegerLiteralTransformer( this ) );
 		registry.put( BoxExpressionStatement.class, new BoxExpressionStatementTransformer( this ) );
@@ -593,7 +591,7 @@ public class AsmTranspiler extends Transpiler {
 		Transformer transformer = registry.get( node.getClass() );
 		if ( transformer != null ) {
 			try {
-				List<AbstractInsnNode> nodes = new ArrayList( transformer.transform( node, context, returnValueContext ) );
+				List<AbstractInsnNode> nodes = new ArrayList<AbstractInsnNode>( transformer.transform( node, context, returnValueContext ) );
 
 				if ( isUnsplittable( node ) ) {
 					nodes = nodes.stream().filter( n -> ! ( n instanceof DividerNode ) ).collect( Collectors.toList() );
@@ -605,26 +603,26 @@ public class AsmTranspiler extends Transpiler {
 
 				return nodes;
 			} catch ( Exception e ) {
-				this.logger.error( "Error transforming:" + node.getClass().toString() );
+				logger.error( "Error transforming:" + node.getClass().toString() );
 				if ( getProperty( "filePath" ) != null ) {
-					this.logger.error( "	file: " + getProperty( "filePath" ) );
+					logger.error( "	file: " + getProperty( "filePath" ) );
 				} else {
-					this.logger.error( "	file: unkown" );
+					logger.error( "	file: unkown" );
 				}
 
 				if ( node.getPosition() != null ) {
-					this.logger.error( "	position: " + node.getPosition().toString() );
+					logger.error( "	position: " + node.getPosition().toString() );
 				} else {
-					this.logger.error( "	position: unkown" );
+					logger.error( "	position: unkown" );
 				}
 
 				if ( node.getSourceText() != null ) {
-					this.logger.error( "	source: " + node.getSourceText() );
+					logger.error( "	source: " + node.getSourceText() );
 				} else {
-					this.logger.error( "	source: unkown" );
+					logger.error( "	source: unkown" );
 				}
 
-				this.logger.error( e.getMessage() );
+				logger.error( e.getMessage() );
 				throw e;
 			}
 			// if ( ASMBoxpiler.DEBUG ) {
@@ -1052,6 +1050,9 @@ public class AsmTranspiler extends Transpiler {
 		return nodes;
 	}
 
+	/**
+	 * Only used for manually debugging
+	 */
 	private List<AbstractInsnNode> generateMapOfAbstractMethodNames( BoxClass boxClass ) {
 		List<List<AbstractInsnNode>>	methodKeyLists	= boxClass.getDescendantsOfType( BoxFunctionDeclaration.class )
 		    .stream()
@@ -1080,6 +1081,9 @@ public class AsmTranspiler extends Transpiler {
 		return nodes;
 	}
 
+	/**
+	 * Only used for manually debugging
+	 */
 	private List<AbstractInsnNode> generateSetOfCompileTimeMethodNames( BoxClass boxClass ) {
 		List<List<AbstractInsnNode>>	methodKeyLists	= boxClass.getDescendantsOfType( BoxFunctionDeclaration.class )
 		    .stream()

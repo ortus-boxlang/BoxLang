@@ -10,7 +10,7 @@ component accessors="true" extends="GrandParent" {
     }
 
     private void function setupFrameworkDefaults() {
-      request.calls.append( "running parent setupFrameworkDefaults()" );
+      request?.calls?.append( "running parent setupFrameworkDefaults()" );
     }
 
 	function parentFunction(){

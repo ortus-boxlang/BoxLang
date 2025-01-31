@@ -23,14 +23,16 @@ import java.net.ConnectException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLConnection;
-import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.net.http.HttpTimeoutException;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -50,6 +52,7 @@ import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
+import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.net.HTTPStatusReasons;
 import ortus.boxlang.runtime.net.HttpManager;
 import ortus.boxlang.runtime.net.HttpRequestMultipartBody;
@@ -62,12 +65,17 @@ import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
+import ortus.boxlang.runtime.util.EncryptionUtil;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 import ortus.boxlang.runtime.validation.Validator;
 
 @BoxComponent( allowsBody = true )
 public class HTTP extends Component {
+
+	private final static String	BASIC_AUTH_DELIMITER	= ":";
+	private static final String	AUTHMODE_BASIC			= "BASIC";
+	private static final String	AUTHMODE_NTLM			= "NTLM";
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -96,10 +104,6 @@ public class HTTP extends Component {
 		        Validator.NON_EMPTY,
 		        Validator.valueOneOf( "GET", "POST", "PUT", "DELETE", "HEAD", "TRACE", "OPTIONS", "PATCH" )
 		    ) ),
-		    new Attribute( Key.proxyServer, "string" ),
-		    new Attribute( Key.proxyPort, "string" ),
-		    new Attribute( Key.proxyUser, "string" ),
-		    new Attribute( Key.proxyPassword, "string" ),
 		    new Attribute( Key.username, "string" ),
 		    new Attribute( Key.password, "string" ),
 		    new Attribute( Key.userAgent, "string", "BoxLang" ),
@@ -117,11 +121,6 @@ public class HTTP extends Component {
 		        Validator.REQUIRED,
 		        Validator.NON_EMPTY
 		    ) ),
-		    new Attribute( Key.delimiter, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
-		    new Attribute( Key._NAME, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
-		    new Attribute( Key.columns, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
-		    new Attribute( Key.firstRowAsHeaders, "boolean", Set.of( Validator.NOT_IMPLEMENTED ) ),
-		    new Attribute( Key.textQualifier, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
 		    new Attribute( Key.file, "string", Set.of( Validator.requires( Key.path ) ) ),
 		    new Attribute( Key.multipart, "boolean", false, Set.of( Validator.TYPE ) ),
 		    new Attribute( Key.multipartType, "string", "form-data",
@@ -130,11 +129,26 @@ public class HTTP extends Component {
 		    new Attribute( Key.path, "string", Set.of( Validator.requires( Key.file ) ) ),
 		    new Attribute( Key.clientCert, "string" ),
 		    new Attribute( Key.compression, "string" ),
-		    new Attribute( Key.authType, "string", "BASIC", Set.of( Validator.REQUIRED, Validator.NON_EMPTY, Validator.valueOneOf( "BASIC", "NTLM" ) ) ),
-		    new Attribute( Key.domain, "string" ),
-		    new Attribute( Key.workstation, "string" ),
+		    new Attribute( Key.authType, "string", AUTHMODE_BASIC,
+		        Set.of( Validator.REQUIRED, Validator.NON_EMPTY, Validator.valueOneOf( AUTHMODE_BASIC, AUTHMODE_NTLM ) ) ),
 		    new Attribute( Key.cachedWithin, "string" ),
 		    new Attribute( Key.encodeUrl, "boolean", true, Set.of( Validator.TYPE ) ),
+		    // Proxy server
+		    new Attribute( Key.proxyServer, "string", Set.of( Validator.requires( Key.proxyPort ) ) ),
+		    new Attribute( Key.proxyPort, "integer", Set.of( Validator.requires( Key.proxyServer ) ) ),
+		    new Attribute( Key.proxyUser, "string", Set.of( Validator.requires( Key.proxyPassword ) ) ),
+		    new Attribute( Key.proxyPassword, "string", Set.of( Validator.requires( Key.proxyUser ) ) ),
+		    // Currently unimplemented attributes
+		    // Alt name for result
+		    new Attribute( Key._NAME, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
+		    // CSV parsing
+		    new Attribute( Key.delimiter, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
+		    new Attribute( Key.columns, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
+		    new Attribute( Key.firstRowAsHeaders, "boolean", Set.of( Validator.NOT_IMPLEMENTED ) ),
+		    new Attribute( Key.textQualifier, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
+		    // NTLM
+		    new Attribute( Key.domain, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
+		    new Attribute( Key.workstation, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
 		};
 	}
 
@@ -148,21 +162,26 @@ public class HTTP extends Component {
 	 *
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
+		// Keeps track of the HTTPParams
 		executionState.put( Key.HTTPParams, new Array() );
 
+		// Process the component for HTTPParams
 		BodyResult bodyResult = processBody( context, body );
+
 		// IF there was a return statement inside our body, we early exit now
 		if ( bodyResult.isEarlyExit() ) {
 			return bodyResult;
 		}
 
-		String	variableName	= StringCaster.cast( attributes.getOrDefault( Key.result, "bxhttp" ) );
+		// Prepare invocation of the HTTP request
+		String	variableName	= attributes.getAsString( Key.result );
 		String	theURL			= attributes.getAsString( Key.URL );
-		String	method			= StringCaster.cast( attributes.getOrDefault( Key.method, "GET" ) ).toUpperCase();
+		String	method			= attributes.getAsString( Key.method ).toUpperCase();
 		Array	params			= executionState.getAsArray( Key.HTTPParams );
 		Struct	HTTPResult		= new Struct();
+		URI		targetURI		= null;
+		String	authMode		= attributes.getAsString( Key.authType ).toUpperCase();
 
-		URI		uri				= null;
 		try {
 			HttpRequest.Builder			builder			= HttpRequest.newBuilder();
 			URIBuilder					uriBuilder		= new URIBuilder( theURL );
@@ -170,6 +189,19 @@ public class HTTP extends Component {
 			List<IStruct>				formFields		= new ArrayList<>();
 			List<IStruct>				files			= new ArrayList<>();
 			builder.header( "User-Agent", "BoxLang" );
+			if ( attributes.get( Key.username ) != null && attributes.get( Key.password ) != null ) {
+				if ( authMode.equals( AUTHMODE_BASIC ) ) {
+					String	auth		= attributes.getAsString( Key.username )
+					    + BASIC_AUTH_DELIMITER
+					    + StringCaster.cast( attributes.getOrDefault( Key.password, "" ) );
+					String	encodedAuth	= Base64.getEncoder().encodeToString( auth.getBytes() );
+					builder.header( "Authorization", "Basic " + encodedAuth );
+				} else if ( authMode.equals( AUTHMODE_NTLM ) ) {
+					// TODO: This will need to be implemented as separate type of smb request
+					throw new BoxRuntimeException( "NTLM authentication is not currently supported." );
+				}
+			}
+
 			for ( Object p : params ) {
 				IStruct	param	= StructCaster.cast( p );
 				String	type	= param.getAsString( Key.type );
@@ -190,17 +222,20 @@ public class HTTP extends Component {
 					}
 					// @TODO move URLEncoder.encode usage a non-deprecated method
 					case "cgi" -> builder.header( param.getAsString( Key._NAME ),
-					    java.net.URLEncoder.encode( param.getAsString( Key.value ), StandardCharsets.UTF_8 ) );
+					    BooleanCaster.cast( param.getOrDefault( Key.encoded, false ) )
+					        ? EncryptionUtil.urlEncode( param.getAsString( Key.value ) )
+					        : StringCaster.cast( param.get( Key.value ) )
+					);
 					case "file" -> files.add( param );
 					case "url" -> uriBuilder.addParameter(
 					    param.getAsString( Key._NAME ),
-					    BooleanCaster.cast( param.getOrDefault( Key.encoded, true ) )
-					        ? URLEncoder.encode( StringCaster.cast( param.get( Key.value ) ), StandardCharsets.UTF_8 )
+					    BooleanCaster.cast( param.getOrDefault( Key.encoded, false ) )
+					        ? EncryptionUtil.urlEncode( StringCaster.cast( param.get( Key.value ) ), StandardCharsets.UTF_8 )
 					        : StringCaster.cast( param.get( Key.value ) )
 					);
 					case "formfield" -> formFields.add( param );
 					case "cookie" -> builder.header( "Cookie",
-					    param.getAsString( Key._NAME ) + "=" + URLEncoder.encode( param.getAsString( Key.value ), StandardCharsets.UTF_8 ) );
+					    param.getAsString( Key._NAME ) + "=" + EncryptionUtil.urlEncode( param.getAsString( Key.value ), StandardCharsets.UTF_8 ) );
 					default -> throw new BoxRuntimeException( "Unhandled HTTPParam type: " + type );
 				}
 			}
@@ -232,8 +267,8 @@ public class HTTP extends Component {
 				    formFields.stream()
 				        .map( formField -> {
 					        String value = formField.getAsString( Key.value );
-					        if ( BooleanCaster.cast( formField.getOrDefault( Key.encoded, true ) ) ) {
-						        value = URLEncoder.encode( value, StandardCharsets.UTF_8 );
+					        if ( BooleanCaster.cast( formField.getOrDefault( Key.encoded, false ) ) ) {
+						        value = EncryptionUtil.urlEncode( value, StandardCharsets.UTF_8 );
 					        }
 					        return formField.getAsString( Key._name ) + "=" + value;
 				        } )
@@ -247,24 +282,48 @@ public class HTTP extends Component {
 			}
 
 			builder.method( method, bodyPublisher );
-			uri = uriBuilder.build();
-			builder.uri( uri );
-			HttpRequest								request			= builder.build();
-			HttpClient								client			= HttpManager.getClient();
-			CompletableFuture<HttpResponse<String>>	inflightRequest	= client.sendAsync( request, HttpResponse.BodyHandlers.ofString() );
-			CompletableFuture<HttpResponse<String>>	winner			= inflightRequest;
-			if ( attributes.containsKey( Key.timeout ) ) {
-				winner = inflightRequest.applyToEither( HttpManager.getTimeoutRequestAsync( attributes.getAsInteger( Key.timeout ) ), result -> result );
-			}
-			HttpResponse<String>	response			= winner.get();
+			targetURI = uriBuilder.build();
+			builder.uri( targetURI );
 
-			HttpHeaders				httpHeaders			= Optional.ofNullable( response.headers() )
+			if ( attributes.containsKey( Key.timeout ) ) {
+				builder.timeout( Duration.ofSeconds( attributes.getAsInteger( Key.timeout ) ) );
+			}
+
+			HttpRequest	targetHTTPRequest	= builder.build();
+			HttpClient	client				= attributes.containsKey( Key.proxyServer ) || !attributes.getAsBoolean( Key.redirect )
+			    ? HttpManager.getCustomClient( attributes )
+			    : HttpManager.getClient();
+
+			// Announce the HTTP request
+			interceptorService.announce( BoxEvent.ON_HTTP_REQUEST, Struct.of(
+			    "httpClient", client,
+			    "httpRequest", targetHTTPRequest,
+			    "targetURI", targetURI,
+			    "attributes", attributes
+			) );
+
+			// TODO : should we move the catch block below and add an `exceptionally` handler for the future?
+			CompletableFuture<HttpResponse<String>>	future		= client.sendAsync( targetHTTPRequest, HttpResponse.BodyHandlers.ofString() );
+
+			// Announce the HTTP request
+			HttpResponse<String>					response	= future.get(); // block and wait for the response
+
+			// Announce the HTTP RAW response
+			// Useful for debugging and pre-processing and timing, since the other events are after the response is processed
+			interceptorService.announce( BoxEvent.ON_HTTP_RAW_RESPONSE, Struct.of(
+			    "response", response
+			) );
+
+			// Start Processing Results
+			HttpHeaders	httpHeaders			= Optional
+			    .ofNullable( response.headers() )
 			    .orElse( HttpHeaders.of( Map.of(), ( a, b ) -> true ) );
-			IStruct					headers				= transformToResponseHeaderStruct(
-			    httpHeaders.map() );
-			String					httpVersionString	= response.version() == HttpClient.Version.HTTP_1_1 ? "HTTP/1.1" : "HTTP/2";
-			String					statusCodeString	= String.valueOf( response.statusCode() );
-			String					statusText			= HTTPStatusReasons.getReasonForStatus( response.statusCode() );
+			IStruct		headers				= transformToResponseHeaderStruct(
+			    httpHeaders.map()
+			);
+			String		httpVersionString	= response.version() == HttpClient.Version.HTTP_1_1 ? "HTTP/1.1" : "HTTP/2";
+			String		statusCodeString	= String.valueOf( response.statusCode() );
+			String		statusText			= HTTPStatusReasons.getReasonForStatus( response.statusCode() );
 
 			headers.put( Key.HTTP_Version, httpVersionString );
 			headers.put( Key.status_code, statusCodeString );
@@ -292,8 +351,13 @@ public class HTTP extends Component {
 			} );
 			HTTPResult.put( Key.cookies, generateCookiesQuery( headers ) );
 
-			// Set the result back into the page
+			// Set the result back into the page using the variable name
 			ExpressionInterpreter.setVariable( context, variableName, HTTPResult );
+
+			// Announce the HTTP response
+			interceptorService.announce( BoxEvent.ON_HTTP_RESPONSE, Struct.of(
+			    "result", HTTPResult
+			) );
 
 			return DEFAULT_RETURN;
 		} catch ( ExecutionException e ) {
@@ -306,17 +370,26 @@ public class HTTP extends Component {
 				HTTPResult.put( Key.statusText, "Bad Gateway" );
 				HTTPResult.put( Key.status_text, "Bad Gateway" );
 				HTTPResult.put( Key.fileContent, "Connection Failure" );
-				if ( uri != null ) {
-					HTTPResult.put( Key.errorDetail, String.format( "Unknown host: %s: Name or service not known.", uri.getHost() ) );
+				if ( targetURI != null ) {
+					HTTPResult.put( Key.errorDetail, String.format( "Unknown host: %s: Name or service not known.", targetURI.getHost() ) );
 				} else {
 					HTTPResult.put( Key.errorDetail, String.format( "Unknown host: %s: Name or service not known.", theURL ) );
 				}
 				ExpressionInterpreter.setVariable( context, variableName, HTTPResult );
-			} else {
-				throw new BoxRuntimeException( innerException.getMessage() );
+			} else if ( innerException instanceof HttpTimeoutException ) {
+				HTTPResult.put( Key.responseHeader, Struct.EMPTY );
+				HTTPResult.put( Key.header, "" );
+				HTTPResult.put( Key.statusCode, 408 );
+				HTTPResult.put( Key.status_code, 408 );
+				HTTPResult.put( Key.statusText, "Request Timeout" );
+				HTTPResult.put( Key.status_text, "Request Timeout" );
+				HTTPResult.put( Key.fileContent, "Request Timeout" );
+				HTTPResult.put( Key.errorDetail, "The request timed out after " + attributes.getAsInteger( Key.timeout ) + " second(s)" );
+				ExpressionInterpreter.setVariable( context, variableName, HTTPResult );
 			}
 			return DEFAULT_RETURN;
 		} catch ( InterruptedException e ) {
+			Thread.currentThread().interrupt();
 			throw new BoxRuntimeException( "The request was interrupted", "InterruptedException", e );
 		} catch ( URISyntaxException | IOException e ) {
 			throw new BoxRuntimeException( e.getMessage(), e );

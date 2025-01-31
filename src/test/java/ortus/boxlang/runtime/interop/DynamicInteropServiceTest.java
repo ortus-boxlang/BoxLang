@@ -34,11 +34,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.xnio.OptionMap;
@@ -59,6 +59,7 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxLangException;
 import ortus.boxlang.runtime.types.exceptions.NoFieldException;
 import ortus.boxlang.runtime.types.exceptions.NoMethodException;
+import ortus.boxlang.runtime.types.util.BooleanRef;
 
 public class DynamicInteropServiceTest {
 
@@ -285,26 +286,31 @@ public class DynamicInteropServiceTest {
 		Method method = null;
 
 		// True Check
-		method = DynamicInteropService.findMatchingMethod( context, InvokeDynamicFields.class, "GetNAME", new Class[] {}, new Object[] {} );
+		method = DynamicInteropService.findMatchingMethod( context, InvokeDynamicFields.class, "GetNAME", new Class[] {}, BooleanRef.of( true ),
+		    new Object[] {} );
 		assertThat( method.getName() ).isEqualTo( "getName" );
-		method = DynamicInteropService.findMatchingMethod( context, InvokeDynamicFields.class, "getNoW", new Class[] {}, new Object[] {} );
+		method = DynamicInteropService.findMatchingMethod( context, InvokeDynamicFields.class, "getNoW", new Class[] {}, BooleanRef.of( true ),
+		    new Object[] {} );
 		assertThat( method.getName() ).isEqualTo( "getNow" );
-		method = DynamicInteropService.findMatchingMethod( context, InvokeDynamicFields.class, "setName", new Class[] { String.class },
+		method = DynamicInteropService.findMatchingMethod( context, InvokeDynamicFields.class, "setName", new Class[] { String.class }, BooleanRef.of( true ),
 		    new Object[] { "hola" } );
 		assertThat( method.getName() ).isEqualTo( "setName" );
-		method = DynamicInteropService.findMatchingMethod( context, InvokeDynamicFields.class, "HELLO", new Class[] {}, new Object[] {} );
+		method = DynamicInteropService.findMatchingMethod( context, InvokeDynamicFields.class, "HELLO", new Class[] {}, BooleanRef.of( true ),
+		    new Object[] {} );
 		assertThat( method.getName() ).isEqualTo( "hello" );
-		method = DynamicInteropService.findMatchingMethod( context, InvokeDynamicFields.class, "HELLO", new Class[] { String.class }, new Object[] { "hola" } );
+		method = DynamicInteropService.findMatchingMethod( context, InvokeDynamicFields.class, "HELLO", new Class[] { String.class }, BooleanRef.of( true ),
+		    new Object[] { "hola" } );
 		assertThat( method.getName() ).isEqualTo( "hello" );
 		method = DynamicInteropService.findMatchingMethod( context, InvokeDynamicFields.class, "HELLO", new Class[] { String.class, int.class },
+		    BooleanRef.of( true ),
 		    new Object[] { "hola", 1 } );
 		assertThat( method.getName() ).isEqualTo( "hello" );
 
 		// False Check
-		method = DynamicInteropService.findMatchingMethod( context, InvokeDynamicFields.class, "getName", new Class[] { String.class },
+		method = DynamicInteropService.findMatchingMethod( context, InvokeDynamicFields.class, "getName", new Class[] { String.class }, BooleanRef.of( true ),
 		    new Object[] { "hola" } );
 		assertThat( method ).isNull();
-		method = DynamicInteropService.findMatchingMethod( context, InvokeDynamicFields.class, "BogusName", new Class[] { String.class },
+		method = DynamicInteropService.findMatchingMethod( context, InvokeDynamicFields.class, "BogusName", new Class[] { String.class }, BooleanRef.of( true ),
 		    new Object[] { "hola" } );
 		assertThat( method ).isNull();
 	}
@@ -828,21 +834,152 @@ public class DynamicInteropServiceTest {
 		assertThat( ( ( BigDecimal ) result ).doubleValue() ).isEqualTo( 446 );
 	}
 
-	@DisplayName( "It can execute varargs using positional additions" )
+	@DisplayName( "It can execute static varargs method" )
 	@Test
-	@Disabled
-	void testItCanExecuteVaragsPositional() {
+	void testItCanExecuteVaragsMethod() {
 		// @formatter:off
 		instance.executeSource(
 			"""
 				import java.util.stream.IntStream
 
-				result = IntStream.of( 1,2,3,4 )
+				result = IntStream.of( [1,2,3,4] )
 			""", context);
 		// @formatter:on
 
 		var result = variables.get( Key.result );
-		System.out.println( result );
+		assertThat( result ).isNotNull();
+		assertThat( result ).isInstanceOf( IntStream.class );
+		assertThat( ( ( IntStream ) result ).toArray() ).isEqualTo( new int[] { 1, 2, 3, 4 } );
+	}
+
+	@DisplayName( "It can execute static method with varargs and normal args" )
+	@Test
+	void testItCanExecuteStaticMethodWithVarargsAndNormalArgs() {
+	// @formatter:off
+    instance.executeSource(
+        """
+		import java.lang.String;
+            result = String.format("Hello %s, you have %d new messages.", ["Alice", 5])
+        """, context);
+    // @formatter:on
+
+		var result = variables.get( Key.result );
+		assertThat( result ).isNotNull();
+		assertThat( result ).isInstanceOf( String.class );
+		assertThat( result ).isEqualTo( "Hello Alice, you have 5 new messages." );
+	}
+
+	@DisplayName( "It can execute varargs instance method with normal args" )
+	@Test
+	void testItCanExecuteVarargsInstanceMethodWithNormalArgs() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				import java.util.Locale
+	
+				formatter = new java.util.Formatter()
+				result = formatter.format("Hello %s, you are %d years old!", ["John", 30]).toString()
+			""", context);
+		// @formatter:on
+
+		var result = variables.get( Key.result );
+		assertThat( result ).isNotNull();
+		assertThat( result ).isInstanceOf( String.class );
+		assertThat( result ).isEqualTo( "Hello John, you are 30 years old!" );
+	}
+
+	@DisplayName( "It can execute varargs instance method" )
+	@Test
+	void testItCanExecuteVarargsInstanceMethod() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				import ortus.boxlang.runtime.interop.VarArgsExample
+	
+				result = new VarArgsExample( [] )
+				result.setValues( ["one", "two", "three"] );
+			""", context);
+		// @formatter:on
+
+		var example = variables.get( Key.result );
+		assertThat( example ).isNotNull();
+		Object r = DynamicObject.unWrap( variables.get( Key.result ) );
+		assertThat( r ).isInstanceOf( VarArgsExample.class );
+		assertThat( ( ( VarArgsExample ) r ).getValues() ).isEqualTo( new String[] { "one", "two", "three" } );
+	}
+
+	@DisplayName( "It can execute varargs constructor" )
+	@Test
+	void testItCanExecuteVarargsConstructor() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				import ortus.boxlang.runtime.interop.VarArgsExample
+	
+				result = new VarArgsExample( [ "one", "two", "three" ] )
+			""", context);
+		// @formatter:on
+
+		var example = variables.get( Key.result );
+		assertThat( example ).isNotNull();
+		Object r = DynamicObject.unWrap( variables.get( Key.result ) );
+		assertThat( r ).isInstanceOf( VarArgsExample.class );
+		assertThat( ( ( VarArgsExample ) r ).getValues() ).isEqualTo( new String[] { "one", "two", "three" } );
+	}
+
+	@DisplayName( "It can execute varargs constructor with normal args" )
+	@Test
+	void testItCanExecuteVarargsConstructorWithNormalArgs() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				import ortus.boxlang.runtime.interop.VarArgsExample
+	
+				result = new VarArgsExample( {}, [ "one", "two", "three" ] )
+			""", context);
+		// @formatter:on
+
+		var example = variables.get( Key.result );
+		assertThat( example ).isNotNull();
+		Object r = DynamicObject.unWrap( variables.get( Key.result ) );
+		assertThat( r ).isInstanceOf( VarArgsExample.class );
+		assertThat( ( ( VarArgsExample ) r ).getValues() ).isEqualTo( new String[] { "one", "two", "three" } );
+	}
+
+	@DisplayName( "It can pass BL array to T[] argument" )
+	@Test
+	void testItCanPassBLArrayToTArray() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				import java.util.Arrays;
+
+				result = Arrays.stream( [ 1,2,3 ] )
+			""", context);
+		// @formatter:on
+
+		assertThat( variables.get( Key.result ) ).isNotNull();
+		assertThat( variables.get( Key.result ) ).isInstanceOf( IntStream.class );
+		assertThat( ( ( IntStream ) variables.get( Key.result ) ).toArray() ).isEqualTo( new int[] { 1, 2, 3 } );
+
+	}
+
+	@SuppressWarnings( "unchecked" )
+	@DisplayName( "It can pass BL String array to T[] argument" )
+	@Test
+	void testItCanPassBLStringArrayToTArray() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				import java.util.Arrays;
+
+				result = Arrays.stream( [ "brad", "luis", "jon" ] )
+			""", context);
+		// @formatter:on
+
+		assertThat( variables.get( Key.result ) ).isNotNull();
+		assertThat( variables.get( Key.result ) ).isInstanceOf( Stream.class );
+		assertThat( ( ( Stream<String> ) variables.get( Key.result ) ).toArray() ).isEqualTo( new String[] { "brad", "luis", "jon" } );
 	}
 
 }

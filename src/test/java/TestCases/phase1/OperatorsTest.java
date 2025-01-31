@@ -995,4 +995,21 @@ public class OperatorsTest {
 
 	}
 
+	@DisplayName( "It can add numbers to a date" )
+	@Test
+	public void testElvisInfunction() {
+		instance.executeSource( """
+		                        		                        	function doStuff(
+		                          struct config,
+		                          numeric age
+		                        ){
+		                          return arguments.age ?: config.max_age;
+		                        }
+
+		                        result = doStuff( age=10 );
+		                        		                        """, context );
+		assertThat( variables.get( resultKey ) ).isEqualTo( 10 );
+
+	}
+
 }

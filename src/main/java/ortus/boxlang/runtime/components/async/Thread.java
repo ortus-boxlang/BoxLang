@@ -42,11 +42,6 @@ import ortus.boxlang.runtime.validation.Validator;
 public class Thread extends Component {
 
 	/**
-	 * Logger
-	 */
-	private static final Logger logger = LoggerFactory.getLogger( Thread.class );
-
-	/**
 	 * --------------------------------------------------------------------------
 	 * Constructor(s)
 	 * --------------------------------------------------------------------------

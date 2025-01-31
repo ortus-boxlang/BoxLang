@@ -130,7 +130,6 @@ public class LikeOperation {
 
 			}
 			try {
-				System.out.println( "compiling LIKE Pattern: " + sb.toString() );
 				patterns.put( patternCacheKey, pattern = Pattern.compile( sb.toString(), Pattern.DOTALL ) );
 			} catch ( PatternSyntaxException e ) {
 				throw new DatabaseException( "Invalid LIKE pattern [" + patternToSearchFor + "] has been specified in a LIKE conditional", e );

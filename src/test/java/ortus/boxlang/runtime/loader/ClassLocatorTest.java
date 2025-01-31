@@ -30,7 +30,6 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
-import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
 import ortus.boxlang.runtime.loader.resolvers.BoxResolver;
 import ortus.boxlang.runtime.types.exceptions.BoxLangException;
 
@@ -106,20 +105,19 @@ public class ClassLocatorTest {
 	@DisplayName( "It can load native Java classes and add to the resolver cache" )
 	@Test
 	public void testCanLoadJavaClassesWithCaching() {
+		// Start our tests
 		String targetClass = "java.lang.String";
-
 		locator.clear();
 		assertThat( locator.size() ).isEqualTo( 0 );
 
 		DynamicObject target = locator.load( new ScriptingRequestBoxContext(), targetClass, "java", true );
+
 		target.invokeConstructor( null, "Hola ClassLoader" );
 		assertThat( target.getTargetInstance() ).isEqualTo( "Hola ClassLoader" );
 
 		assertThat( target ).isNotNull();
 		assertThat( target.getTargetClass() ).isEqualTo( String.class );
 		assertThat( locator.size() ).isEqualTo( 1 );
-		assertThat( locator.hasClass( "java:" + targetClass ) ).isTrue();
-		assertThat( locator.classSet() ).containsAnyIn( new Object[] { "java:" + targetClass } );
 	}
 
 	@DisplayName( "It can safe load non-existent classes without throwing an exception" )
@@ -155,7 +153,9 @@ public class ClassLocatorTest {
 		        ClassLocator.TYPE_JAVA,
 		        String.class,
 		        null,
-		        false
+		        false,
+		        "appName",
+		        null
 		    )
 		);
 		assertThat( locator.hasClass( targetClass ) ).isTrue();

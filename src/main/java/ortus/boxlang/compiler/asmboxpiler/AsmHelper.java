@@ -119,6 +119,9 @@ public class AsmHelper {
 		return nodes;
 	}
 
+	/***
+	 * Only used for manually debugging
+	 */
 	private static List<AbstractInsnNode> generateSetOfCompileTimeMethodNames( Transpiler transpiler, BoxClass boxClass ) {
 		List<List<AbstractInsnNode>>	methodKeyLists	= boxClass.getDescendantsOfType( BoxFunctionDeclaration.class )
 		    .stream()
@@ -918,6 +921,71 @@ public class AsmHelper {
 		methodVisitor.visitLabel( endContextLabel );
 		methodVisitor.visitEnd();
 		transpiler.popMethodContextTracker();
+	}
+
+	public static List<AbstractInsnNode> generateArgumentProducerLambda( Transpiler transpiler, Supplier<List<AbstractInsnNode>> nodeSupplier ) {
+		Type		type		= Type.getType( "L" + transpiler.getProperty( "packageName" ).replace( '.', '/' )
+		    + "/" + transpiler.getProperty( "classname" )
+		    + "$Lambda_" + transpiler.incrementAndGetLambdaCounter() + ";" );
+
+		ClassNode	classNode	= new ClassNode();
+
+		classNode.visit(
+		    Opcodes.V21,
+		    Opcodes.ACC_PUBLIC,
+		    type.getInternalName(),
+		    null,
+		    Type.getInternalName( Object.class ),
+		    new String[] { Type.getInternalName( java.util.function.Function.class ) } );
+
+		MethodVisitor initVisitor = classNode.visitMethod( Opcodes.ACC_PUBLIC,
+		    "<init>",
+		    Type.getMethodDescriptor( Type.VOID_TYPE ),
+		    null,
+		    null );
+		initVisitor.visitCode();
+		initVisitor.visitVarInsn( Opcodes.ALOAD, 0 );
+		initVisitor.visitMethodInsn( Opcodes.INVOKESPECIAL,
+		    Type.getInternalName( Object.class ),
+		    "<init>",
+		    Type.getMethodDescriptor( Type.VOID_TYPE ),
+		    false );
+		initVisitor.visitInsn( Opcodes.RETURN );
+		initVisitor.visitEnd();
+
+		// MethodContextTracker t = new MethodContextTracker( false );
+		// transpiler.addMethodContextTracker( t );
+		// Object evaluate( IBoxContext context );
+		MethodVisitor methodVisitor = classNode.visitMethod(
+		    Opcodes.ACC_PUBLIC,
+		    "apply",
+		    Type.getMethodDescriptor( Type.getType( Object.class ), Type.getType( Object.class ) ),
+		    null,
+		    null );
+		methodVisitor.visitCode();
+
+		// t.trackNewContext();
+
+		nodeSupplier.get().forEach( n -> n.accept( methodVisitor ) );
+
+		methodVisitor.visitInsn( Opcodes.ARETURN );
+		methodVisitor.visitMaxs( 0, 0 );
+		methodVisitor.visitEnd();
+
+		// transpiler.popMethodContextTracker();
+
+		transpiler.setAuxiliary( type.getClassName(), classNode );
+
+		List<AbstractInsnNode> nodes = new ArrayList<AbstractInsnNode>();
+
+		nodes.add( new TypeInsnNode( Opcodes.NEW, type.getInternalName() ) );
+		nodes.add( new InsnNode( Opcodes.DUP ) );
+		nodes.add( new MethodInsnNode( Opcodes.INVOKESPECIAL,
+		    type.getInternalName(),
+		    "<init>",
+		    Type.getMethodDescriptor( Type.VOID_TYPE ),
+		    false ) );
+		return nodes;
 	}
 
 	public static List<AbstractInsnNode> array( Type type, List<List<AbstractInsnNode>> values ) {

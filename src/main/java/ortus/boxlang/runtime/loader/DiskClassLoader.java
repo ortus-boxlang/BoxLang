@@ -153,10 +153,6 @@ public class DiskClassLoader extends URLClassLoader {
 	 * @return true if class exists on disk
 	 */
 	public boolean hasClass( String name ) {
-		// Don't use disk cache if we are in debug mode
-		if ( BoxRuntime.getInstance().inDebugMode() ) {
-			return false;
-		}
 		return generateDiskPath( name ).toFile().exists();
 	}
 

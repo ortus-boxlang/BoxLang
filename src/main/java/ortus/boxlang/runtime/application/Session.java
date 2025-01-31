@@ -287,7 +287,9 @@ public class Session implements Serializable {
 		    "ID=" + this.ID +
 		    ", sessionScope=" + this.sessionScope.toString() +
 		    ", isNew=" + this.isNew +
+		    ", isShutdown=" + this.isShutdown +
 		    ", applicationName=" + this.applicationName +
+		    ", timeout=" + this.timeout +
 		    '}';
 	}
 
@@ -299,16 +301,14 @@ public class Session implements Serializable {
 		    Key.id, this.ID,
 		    Key.scope, this.sessionScope,
 		    Key.isNew, this.isNew,
+		    Key.isShutdown, this.isShutdown,
+		    Key.timeout, this.timeout,
 		    Key.applicationName, this.applicationName
 		);
 	}
 
 	/**
 	 * Verifies if the session has expired or not
-	 */
-	/**
-	 * Has this application expired.
-	 * We look at the application start time and the application timeout to determine if it has expired
 	 *
 	 * @return True if the application has expired, false otherwise
 	 */

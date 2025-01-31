@@ -92,6 +92,17 @@ public class Configuration implements IConfigSegment {
 	public Boolean				debugMode						= false;
 
 	/**
+	 * Turn on/off the resolver cache for Class Locators of Java/Box classes
+	 * {@code true} by default
+	 */
+	public Boolean				classResolverCache				= true;
+
+	/**
+	 * Trusted cache setting - if enabled, once compiled a template will never be inspected for changes
+	 */
+	public Boolean				trustedCache					= false;
+
+	/**
 	 * The Timezone to use for the runtime;
 	 * Uses the Java Timezone format: {@code America/New_York}
 	 * Uses the default system timezone if not set
@@ -221,11 +232,6 @@ public class Configuration implements IConfigSegment {
 	public String				defaultRemoteMethodReturnFormat	= "json";
 
 	/**
-	 * Default cache registration
-	 */
-	public CacheConfig			defaultCache					= new CacheConfig();
-
-	/**
 	 * The modules configuration
 	 */
 	public IStruct				modules							= new Struct();
@@ -304,16 +310,26 @@ public class Configuration implements IConfigSegment {
 		this.originalConfig = config;
 
 		// Debug Mode || Debbuging Enabled (cfconfig)
-		if ( config.containsKey( "debugMode" ) ) {
-			this.debugMode = BooleanCaster.cast( PlaceholderHelper.resolve( config.get( "debugMode" ) ) );
+		if ( config.containsKey( Key.debugMode ) ) {
+			this.debugMode = BooleanCaster.cast( PlaceholderHelper.resolve( config.get( Key.debugMode ) ) );
 		}
-		if ( config.containsKey( "debuggingEnabled" ) ) {
-			this.debugMode = BooleanCaster.cast( PlaceholderHelper.resolve( config.get( "debuggingEnabled" ) ) );
+		if ( config.containsKey( Key.debuggingEnabled ) ) {
+			this.debugMode = BooleanCaster.cast( PlaceholderHelper.resolve( config.get( Key.debuggingEnabled ) ) );
+		}
+
+		// Class Resolver Cache
+		if ( config.containsKey( Key.classResolverCache ) ) {
+			this.classResolverCache = BooleanCaster.cast( PlaceholderHelper.resolve( config.get( Key.classResolverCache ) ) );
+		}
+
+		// Trusted Cache
+		if ( config.containsKey( Key.trustedCache ) ) {
+			this.trustedCache = BooleanCaster.cast( PlaceholderHelper.resolve( config.get( Key.trustedCache ) ) );
 		}
 
 		// Compiler
-		if ( config.containsKey( "classGenerationDirectory" ) ) {
-			this.classGenerationDirectory = PlaceholderHelper.resolve( config.get( "classGenerationDirectory" ) );
+		if ( config.containsKey( Key.classGenerationDirectory ) ) {
+			this.classGenerationDirectory = PlaceholderHelper.resolve( config.get( Key.classGenerationDirectory ) );
 		}
 
 		// Timezone
@@ -469,14 +485,8 @@ public class Configuration implements IConfigSegment {
 			    .resolve( config.get( Key.defaultRemoteMethodReturnFormat ) ).toLowerCase();
 		}
 
-		// Process default cache configuration
-		if ( config.containsKey( Key.defaultCache ) ) {
-			if ( config.get( Key.defaultCache ) instanceof IStruct castedMap ) {
-				this.defaultCache = new CacheConfig().processProperties( castedMap );
-			} else {
-				logger.warn( "The [runtime.defaultCache] configuration is not a JSON Object, ignoring it." );
-			}
-		}
+		// Setup a default cache, using the default cache configuration as it always needs to be present
+		this.caches.put( Key.defaultCache, new CacheConfig() );
 
 		// Process declared cache configurations
 		if ( config.containsKey( Key.caches ) ) {
@@ -485,11 +495,6 @@ public class Configuration implements IConfigSegment {
 				castedCaches
 				    .entrySet()
 				    .forEach( entry -> {
-					    // We ignore `default` caches, not accepted in boxlang.
-					    if ( entry.getKey().equals( Key._DEFAULT ) ) {
-						    return;
-					    }
-
 					    if ( entry.getValue() instanceof IStruct castedStruct ) {
 						    CacheConfig cacheConfig = new CacheConfig( KeyCaster.cast( entry.getKey() ) ).process( castedStruct );
 						    this.caches.put( cacheConfig.name, cacheConfig );
@@ -891,7 +896,7 @@ public class Configuration implements IConfigSegment {
 		    Key.classPaths, Array.fromList( this.classPaths ),
 		    Key.datasources, datsourcesCopy,
 		    Key.debugMode, this.debugMode,
-		    Key.defaultCache, this.defaultCache.toStruct(),
+		    Key.classResolverCache, this.classResolverCache,
 		    Key.defaultDatasource, this.defaultDatasource,
 		    Key.defaultRemoteMethodReturnFormat, this.defaultRemoteMethodReturnFormat,
 		    Key.executors, executorsCopy,

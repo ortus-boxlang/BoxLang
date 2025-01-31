@@ -17,13 +17,7 @@
  */
 package ortus.boxlang.runtime.bifs.global.system;
 
-import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
@@ -58,15 +52,6 @@ import ortus.boxlang.runtime.validation.Validator;
 @BoxMember( type = BoxLangType.XML, name = "dump" )
 @BoxMember( type = BoxLangType.CUSTOM, name = "dump" )
 public class Dump extends BIF {
-
-	private static final ThreadLocal<Set<Integer>>		dumpedObjects		= ThreadLocal.withInitial( HashSet::new );
-
-	private static final ConcurrentMap<String, String>	dumpTemplateCache	= new ConcurrentHashMap<>();
-
-	private static final Logger							logger				= LoggerFactory.getLogger( Dump.class );
-
-	// This is hard-coded for now. Needs to be dynamic for other dump formats like plain text, etc
-	private static final String							TEMPLATES_BASE_PATH	= "/dump/html/";
 
 	/**
 	 * Constructor

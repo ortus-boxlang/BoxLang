@@ -53,8 +53,8 @@ options {
 	public boolean isTagStart() {
 		boolean result = lastModeWas( hashMode, 1 ) 
 			&& _modeStack.contains(DEFAULT_TEMPLATE_MODE) 
-			&& ( _input.LA( 1 ) == 99 || _input.LA( 1 ) == 67 ) 
-			&& ( _input.LA( 2 ) == 102 || _input.LA( 2 ) == 70 );
+			&& ( _input.LA( 1 ) == 99 || _input.LA( 1 ) == 67 ) // c or C 
+			&& ( _input.LA( 2 ) == 102 || _input.LA( 2 ) == 70 ); // f or F
 
 		if( result ) {
 			// pop mode until we're back to the default template mode
@@ -68,9 +68,9 @@ options {
 	public boolean isTagEnd() {
 		boolean result = lastModeWas( hashMode, 1 ) 
 			&& _modeStack.contains(DEFAULT_TEMPLATE_MODE) 
-			&& _input.LA( 1 ) == 47 
-			&& ( _input.LA( 2 ) == 99 || _input.LA( 2 ) == 67 ) 
-			&& ( _input.LA( 3 ) == 102 || _input.LA( 3 ) == 70 );
+			&& _input.LA( 1 ) == 47 // a forwardslash char (/)
+			&& ( _input.LA( 2 ) == 99 || _input.LA( 2 ) == 67 ) // c or C 
+			&& ( _input.LA( 3 ) == 102 || _input.LA( 3 ) == 70 ); // f or F
 
 		if( result ) {
 			// pop mode until we're back to the default template mode

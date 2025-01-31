@@ -36,7 +36,6 @@ CONTINUE    : 'CONTINUE';
 DEFAULT     : 'DEFAULT';
 DO          : 'DO';
 DOES        : 'DOES';
-ELIF        : 'ELIF';
 ELSE        : 'ELSE';
 EQV         : 'EQV';
 EXIT        : 'EXIT';

@@ -520,9 +520,9 @@ public class ModuleRecord {
 		    .stream()
 		    // Only load interceptors that are set to auto-load by default or by configuration
 		    .filter( provider -> interceptorService.canLoadInterceptor( provider.type() ) )
-		    // Register the interceptor
+		    // Register the interceptor with the module settings
 		    .map( ServiceLoader.Provider::get )
-		    .forEach( interceptorService::register );
+		    .forEach( targetInterceptor -> interceptorService.register( targetInterceptor, this.settings ) );
 
 		// Finalize Registration
 		this.registeredOn = Instant.now();
@@ -1014,7 +1014,7 @@ public class ModuleRecord {
 				}
 
 				// Prepare the record now
-				BoxLangType boxType = BoxLangType.valueOf( type.getNameNoCase() );
+				BoxLangType boxType = BoxLangType.valueOf( type.getName().toUpperCase() );
 				memberRecord.put( Key.type, boxType );
 				memberRecord.computeIfAbsent( Key._NAME, k -> className.getNameNoCase().replace( type.getNameNoCase(), "" )
 				);

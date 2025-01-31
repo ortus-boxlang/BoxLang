@@ -192,6 +192,7 @@ public class BIFDescriptor {
 	 * @param context             The context
 	 * @param positionalArguments The positional arguments
 	 * @param isMember            Is this a member BIF?
+	 * @param name                The name of the BIF
 	 *
 	 * @return The result of the invocation
 	 */

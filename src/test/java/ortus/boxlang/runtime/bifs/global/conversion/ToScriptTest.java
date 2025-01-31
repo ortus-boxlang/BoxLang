@@ -82,7 +82,7 @@ public class ToScriptTest {
 		    result = toScript( [ 1, 2, 3 ], "myVar" )
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( "myVar = [ 1, 2, 3 ];" );
+		assertThat( variables.get( result ) ).isEqualTo( "myVar = [1,2,3];" );
 	}
 
 	@Test

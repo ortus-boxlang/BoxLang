@@ -95,7 +95,6 @@ public class DateTimeFormat extends BIF {
 
 		// LS Subclass locales
 		Locale locale = LocalizationUtil.parseLocaleFromContext( context, arguments );
-
 		// Apply our runtime timezone to our initial reference
 		ref = new DateTime( ref.getWrapped().withZoneSameInstant( timezone ) );
 

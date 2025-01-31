@@ -272,7 +272,7 @@ public class UnmodifiableStruct extends Struct implements IUnmodifiable {
 	 * @param map
 	 */
 	private void _addAll( Map<? extends Object, ? extends Object> map ) {
-		var entryStream = map.entrySet().parallelStream();
+		var entryStream = map.entrySet().stream();
 		// With a linked hashmap we need to maintain order - which is a tiny bit slower
 		if ( type.equals( TYPES.LINKED ) ) {
 			entryStream.forEachOrdered( entry -> {

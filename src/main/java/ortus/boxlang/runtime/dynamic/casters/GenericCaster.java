@@ -158,10 +158,14 @@ public class GenericCaster implements IBoxCaster {
 				Object[] incomingArray = incomingList.toArray();
 				result = castNativeArrayToNativeArray( context, incomingArray, newType, fail, newTypeClass );
 			} else {
-				throw new BoxCastException(
-				    String.format( "You asked for type %s, but input %s cannot be cast to an array.", type,
-				        object.getClass().getName() )
-				);
+				if ( fail ) {
+					throw new BoxCastException(
+					    String.format( "You asked for type %s, but input %s cannot be cast to an array.", type,
+					        object.getClass().getName() )
+					);
+				} else {
+					return null;
+				}
 			}
 			if ( convertToArray ) {
 				// unsafe cast to Object[] is OK here because the convertToArray flag will never be true
@@ -251,6 +255,22 @@ public class GenericCaster implements IBoxCaster {
 			return KeyCaster.cast( object, fail );
 		}
 
+		if ( type.equals( "uuid" ) ) {
+			return UUIDCaster.cast( object, fail );
+		}
+
+		if ( type.equals( "guid" ) ) {
+			return GUIDCaster.cast( object, fail );
+		}
+
+		if ( type.equals( "email" ) ) {
+			return EmailCaster.cast( object, fail );
+		}
+
+		if ( type.equals( "binary" ) ) {
+			return BinaryCaster.cast( object, fail );
+		}
+
 		if ( type.startsWith( "function:" ) && type.length() > 9 ) {
 			// strip off class name from "function:com.foo.Bar"
 			return FunctionCaster.cast( object, originalCaseType.substring( 9 ), fail );
@@ -268,7 +288,7 @@ public class GenericCaster implements IBoxCaster {
 			}
 		}
 
-		if ( type.equals( "stream" ) ) {
+		if ( type.equals( "stream" ) && ! ( object instanceof IClassRunnable ) ) {
 			// No real "casting" to do, just return it if it is one
 			if ( object instanceof Stream ) {
 				return object;
@@ -329,7 +349,13 @@ public class GenericCaster implements IBoxCaster {
 		int		len		= java.lang.reflect.Array.getLength( object );
 		Object	result	= java.lang.reflect.Array.newInstance( newTypeClass, len );
 		for ( int i = len - 1; i >= 0; i-- ) {
-			Object v = GenericCaster.cast( context, java.lang.reflect.Array.get( object, i ), newType, fail );
+			Object	oldV	= java.lang.reflect.Array.get( object, i );
+			Object	v		= GenericCaster.cast( context, oldV, newType, fail );
+			// If the casting failed and we are casting to a primitive or the old value was null, return null because we cannot continue
+			// (primitive arrays cannot contain nulls)
+			if ( v == null && ( newTypeClass.isPrimitive() || oldV != null ) ) {
+				return null;
+			}
 			java.lang.reflect.Array.set( result, i, v );
 		}
 		return result;

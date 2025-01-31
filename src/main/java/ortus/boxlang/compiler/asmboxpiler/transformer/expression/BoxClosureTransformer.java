@@ -152,7 +152,7 @@ public class BoxClosureTransformer extends AbstractTransformer {
 		AsmHelper.methodWithContextAndClassLocator( classNode, "_invoke", Type.getType( FunctionBoxContext.class ), Type.getType( Object.class ), false,
 		    transpiler, isBlock,
 		    () -> {
-			    List<AbstractInsnNode> bodyNodes = new ArrayList();
+			    List<AbstractInsnNode> bodyNodes = new ArrayList<AbstractInsnNode>();
 
 			    BoxNode				body		= boxClosure.getBody();
 

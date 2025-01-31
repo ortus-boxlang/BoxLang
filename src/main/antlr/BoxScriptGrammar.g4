@@ -48,7 +48,6 @@ reservedKeyword
     | DEFAULT
     | DO
     | DOES
-    | ELIF
     | ELSE
     | FALSE
     | FINAL

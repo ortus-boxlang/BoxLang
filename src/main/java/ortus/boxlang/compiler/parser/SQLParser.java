@@ -50,6 +50,9 @@ import ortus.boxlang.runtime.types.exceptions.BoxIOException;
  */
 public class SQLParser extends AbstractParser {
 
+	/**
+	 * Visitor for expressions - it is only used for manually debugging
+	 */
 	private SQLVisitor expressionVisitor = new SQLVisitor( this );
 
 	/**

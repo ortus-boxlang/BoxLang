@@ -28,12 +28,6 @@ import ortus.boxlang.runtime.util.EncryptionUtil;
 public class Rand extends BIF {
 
 	/**
-	 * Random number generator
-	 */
-	private final static Random	randomGenerator	= new Random();
-	private static Object		visitedSeed		= null;
-
-	/**
 	 * Constructor
 	 */
 	public Rand() {

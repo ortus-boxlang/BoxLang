@@ -25,6 +25,7 @@ import ortus.boxlang.compiler.parser.ParsingResult;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
+import ortus.boxlang.runtime.util.Timer;
 
 public class ASMBoxpiler extends Boxpiler {
 
@@ -76,10 +77,12 @@ public class ASMBoxpiler extends Boxpiler {
 
 	@Override
 	public void compileClassInfo( String classPoolName, String FQN ) {
+		Timer timer = null;
 		if ( BoxRuntime.getInstance().inDebugMode() ) {
-			// Some debugging to help testing
-			System.out.println( "ASM BoxPiler Compiling " + FQN );
+			timer = new Timer();
+			timer.start( FQN );
 		}
+		logger.debug( "ASM BoxPiler Compiling " + FQN );
 		ClassInfo classInfo = getClassPool( classPoolName ).get( FQN );
 		if ( classInfo == null ) {
 			throw new BoxRuntimeException( "ClassInfo not found for " + FQN );
@@ -89,7 +92,6 @@ public class ASMBoxpiler extends Boxpiler {
 			File sourceFile = classInfo.resolvedFilePath().absolutePath().toFile();
 			// Check if the source file contains Java bytecode by reading the first few bytes
 			if ( diskClassUtil.isJavaBytecode( sourceFile ) ) {
-				System.out.println( "Loading bytecode direct from pre-compiled source file for " + FQN );
 				classInfo.getClassLoader().defineClasses( FQN, sourceFile );
 				return;
 			}
@@ -99,9 +101,17 @@ public class ASMBoxpiler extends Boxpiler {
 			ParsingResult result = parseOrFail( classInfo.source(), classInfo.sourceType(), classInfo.isClass() );
 			doWriteClassInfo( result.getRoot(), classInfo );
 		} else if ( classInfo.interfaceProxyDefinition() != null ) {
+			if ( timer != null )
+				timer.stop( FQN );
 			throw new UnsupportedOperationException();
 		} else {
+			if ( timer != null )
+				timer.stop( FQN );
 			throw new BoxRuntimeException( "Unknown class info type: " + classInfo.toString() );
+		}
+
+		if ( timer != null ) {
+			logger.trace( "ASM BoxPiler Compiled " + FQN + " in " + timer.stop( FQN ) );
 		}
 	}
 
@@ -116,16 +126,16 @@ public class ASMBoxpiler extends Boxpiler {
 					classNode.accept( classWriter );
 				}
 				byte[] bytes = classWriter.toByteArray();
-				diskClassUtil.writeBytes( classInfo.classPoolName(), fqn, "class", bytes );
+				diskClassUtil.writeBytes( classInfo.classPoolName(), fqn, "class", bytes, classInfo.lastModified() );
 			} catch ( Exception e ) {
 				StringWriter out = new StringWriter();
 				classNode.accept( new CheckClassAdapter( new TraceClassVisitor( classWriter, new PrintWriter( out ) ) ) );
 
 				try {
 					e.printStackTrace( new PrintWriter( out ) );
-					this.logger.error( out.toString() );
+					logger.error( out.toString() );
 				} catch ( Exception ex ) {
-					this.logger.error( "Unabel to output ASM error info: " + ex.getMessage() );
+					logger.error( "Unabel to output ASM error info: " + ex.getMessage() );
 				}
 				throw e;
 			}

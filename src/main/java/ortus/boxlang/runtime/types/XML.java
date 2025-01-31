@@ -39,6 +39,8 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
+import org.apache.commons.lang3.StringUtils;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.DocumentType;
 import org.w3c.dom.Entity;
@@ -50,7 +52,6 @@ import org.w3c.dom.Notation;
 import org.w3c.dom.ProcessingInstruction;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
-import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
 
 import ortus.boxlang.runtime.BoxRuntime;
@@ -118,6 +119,8 @@ public class XML implements Serializable, IStruct {
 	public static final String		cdataStart			= "<![CDATA[";
 	public static final String		cdataEnd			= "]]>";
 
+	public static final String		xmlnsSeparator		= ":";
+
 	/**
 	 * Create a new XML Document from the given string
 	 */
@@ -125,7 +128,7 @@ public class XML implements Serializable, IStruct {
 
 		this.type = TYPES.DEFAULT;
 
-		DocumentBuilderFactory	factory	= DocumentBuilderFactory.newInstance();
+		DocumentBuilderFactory	factory	= DocumentBuilderFactory.newNSInstance();
 		DocumentBuilder			builder;
 		try {
 			builder = factory.newDocumentBuilder();
@@ -503,9 +506,23 @@ public class XML implements Serializable, IStruct {
 		NodeList children = node.getChildNodes();
 		for ( int i = 0; i < children.getLength(); i++ ) {
 			Node child = children.item( i );
-			if ( child.getNodeType() == Node.ELEMENT_NODE && child.getNodeName().equalsIgnoreCase( childName ) ) {
+			//@formatter:off
+			if ( 
+				child.getNodeType() == Node.ELEMENT_NODE
+			    &&
+			    ( 
+					child.getNodeName().equalsIgnoreCase( childName )
+			        ||
+			        ( 
+						child.getPrefix() != null
+			            &&
+			        	StringUtils.replace( child.getNodeName(), child.getPrefix() + xmlnsSeparator, StringUtils.EMPTY ).equalsIgnoreCase( childName ) 
+					) 
+				)
+			) {
 				return new XML( child );
 			}
+			//@formatter:on
 		}
 		return null;
 	}
@@ -586,7 +603,7 @@ public class XML implements Serializable, IStruct {
 			transformer.transform( new DOMSource( node ), new StreamResult( writer ) );
 
 			// Get the XML string from the StringWriter
-			return writer.toString();
+			return writer.toString().trim();
 		} catch ( TransformerException e ) {
 			throw new BoxRuntimeException( "Error converting XML node to string", e );
 		}
@@ -836,6 +853,38 @@ public class XML implements Serializable, IStruct {
 		        node -> isCaseSensitive() ? node.getNodeName() == key.getName() : key.equals( Key.of( key.getName() ) )
 		    ).forEach( node -> parentNode.removeChild( node ) );
 		return this;
+	}
+
+	/**
+	 * Pass-through methods to the underlying node
+	 */
+
+	/**
+	 * Retrieves the owner document of the node.
+	 */
+	public Node getOwnerDocument() {
+		return node.getOwnerDocument();
+	}
+
+	/**
+	 * Retrieves the parent node of the node.
+	 */
+	public Node cloneNode( boolean deep ) {
+		return node.cloneNode( deep );
+	}
+
+	/**
+	 * Appends a node to the end of the list of children of this node.
+	 */
+	public void appendChild( Node newChild ) {
+		node.appendChild( newChild );
+	}
+
+	/**
+	 * Replaces a child node within this node.
+	 */
+	public void replaceChild( Node newChild, Node oldChild ) {
+		node.replaceChild( newChild, oldChild );
 	}
 
 }

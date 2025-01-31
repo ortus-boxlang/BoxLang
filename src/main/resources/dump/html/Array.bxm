@@ -28,13 +28,11 @@
 			<tbody
 				<bx:if !expandRoot>class="d-none"</bx:if>
 			>
-				<bx:script>
-					for ( i = 1; i <= var.len(); i++ ) {
-						// Top limit only if > 0
-						if( !isNull( top ) && i > top ) {
-							break;
-						}
-						```
+				<bx:loop array="#var#" index="i" item="value">
+						<!--- Top limit only if > 0 --->
+						<bx:if  !isNull( top ) and i GT top >
+							<bx:break>
+						</bx:if>
 						<tr>
 							<th
 								aria-expanded="true"
@@ -48,16 +46,14 @@
 							<td>
 								<div class="bx-onoff">
 									<bx:set dump(
-										var : var[ i ],
+										var : value,
 										top : isNull( top ) ? null : top - 1,
 										expand : expand ?: null
 									)>
 								</div>
 							</td>
 						</tr>
-						```
-					}
-				</bx:script>
+					</bx:loop>
 			</tbody>
 		</table>
 	</div>

@@ -49,6 +49,8 @@ import ortus.boxlang.runtime.util.FileSystemUtil;
  */
 public class StringCaster implements IBoxCaster {
 
+	public static boolean castClassesToStrings = false;
+
 	/**
 	 * Tests to see if the value can be cast to a string.
 	 * Returns a {@code CastAttempt<T>} which will contain the result if casting was
@@ -254,6 +256,12 @@ public class StringCaster implements IBoxCaster {
 
 		if ( object instanceof InetSocketAddress inet ) {
 			return inet.toString();
+		}
+
+		// This gets toggled in compat module to match CF engines and will allow class instances to be
+		// passed directly to string BIFs and for string member functions to work on class instances.
+		if ( castClassesToStrings && object instanceof Class co ) {
+			return co.getName();
 		}
 
 		// Do we throw?

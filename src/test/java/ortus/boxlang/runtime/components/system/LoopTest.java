@@ -484,4 +484,55 @@ public class LoopTest {
 		    context, BoxSourceType.BOXTEMPLATE );
 	}
 
+	@Test
+	public void testContinueInDoWhile() {
+		instance.executeSource(
+		    """
+		    i = 0;
+		         do {
+		    i++;
+		    continue;
+		      }while( i < 5 )
+
+		      result = i
+		               """,
+		    context, BoxSourceType.BOXSCRIPT );
+
+		assertThat( variables.get( result ) ).isEqualTo( 5 );
+	}
+
+	@Test
+	public void testBreakInDoWhile() {
+		instance.executeSource(
+		    """
+		     i = 0;
+		          do {
+		    break;
+		     i++;
+		     continue;
+		       }while( i < 5 )
+
+		       result = i
+		                """,
+		    context, BoxSourceType.BOXSCRIPT );
+
+		assertThat( variables.get( result ) ).isEqualTo( 0 );
+	}
+
+	@Test
+	public void testDoInTry() {
+		instance.executeSource(
+		    """
+		       try{
+		    do{
+
+		    }while( false )
+		    }
+		    catch( any e ){
+
+		    }
+		                  """,
+		    context, BoxSourceType.BOXSCRIPT );
+	}
+
 }

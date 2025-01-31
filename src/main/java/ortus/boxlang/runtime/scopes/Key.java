@@ -149,6 +149,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		caseSensitive						= Key.of( "caseSensitive" );
 	public static final Key		cast								= Key.of( "cast" );
 	public static final Key		category							= Key.of( "category" );
+	public static final Key		classResolverCache					= Key.of( "classResolverCache" );
 	public static final Key		cause								= Key.of( "cause" );
 	public static final Key		cert_cookie							= Key.of( "cert_cookie" );
 	public static final Key		cert_flags							= Key.of( "cert_flags" );
@@ -230,6 +231,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		days								= Key.of( "days" );
 	public static final Key		debugInfo							= Key.of( "debugInfo" );
 	public static final Key		debugMode							= Key.of( "debugMode" );
+	public static final Key		debuggingEnabled					= Key.of( "debuggingEnabled" );
 	public static final Key		deep								= Key.of( "deep" );
 	public static final Key		defaultCache						= Key.of( "defaultCache" );
 	public static final Key		defaultDatasource					= Key.of( "defaultDatasource" );
@@ -290,6 +292,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		encodingHex							= Key.of( "Hex" );
 	public static final Key		encodingUU							= Key.of( "UU" );
 	public static final Key		end									= Key.of( "end" );
+	public static final Key		exitCode							= Key.of( "exitCode" );
 	public static final Key		endRow								= Key.of( "endRow" );
 	public static final Key		enforceExplicitOutput				= Key.of( "enforceExplicitOutput" );
 	public static final Key		entryPath							= Key.of( "entryPath" );
@@ -402,6 +405,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		isNew								= Key.of( "isNew" );
 	public static final Key		invoke								= Key.of( "invoke" );
 	public static final Key		invokeArgs							= Key.of( "invokeArgs" );
+	public static final Key		isShutdown							= Key.of( "isShutdown" );
 	public static final Key		invokeImplicitAccessor				= Key.of( "invokeImplicitAccessor" );
 	public static final Key		ip									= Key.of( "ip" );
 	public static final Key		iso									= Key.of( "iso" );
@@ -555,6 +559,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		path								= Key.of( "path" );
 	public static final Key		path_info							= Key.of( "path_info" );
 	public static final Key		path_translated						= Key.of( "path_translated" );
+	public static final Key		prompt								= Key.of( "prompt" );
 	public static final Key		pattern								= Key.of( "pattern" );
 	public static final Key		pid									= Key.of( "pid" );
 	public static final Key		placeholders						= Key.of( "placeholders" );
@@ -570,6 +575,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		processBody							= Key.of( "processBody" );
 	public static final Key		properties							= Key.of( "properties" );
 	public static final Key		protocol							= Key.of( "protocol" );
+	public static final Key		print								= Key.of( "print" );
+	public static final Key		println								= Key.of( "println" );
 	public static final Key		proxyPassword						= Key.of( "proxyPassword" );
 	public static final Key		proxyPort							= Key.of( "proxyPort" );
 	public static final Key		proxyServer							= Key.of( "proxyServer" );
@@ -743,6 +750,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		totalCapSize						= Key.of( "totalCapSize" );
 	public static final Key		trace								= Key.of( "trace" );
 	public static final Key		trim								= Key.of( "trim" );
+	public static final Key		trustedCache						= Key.of( "trustedCache" );
 	public static final Key		type								= Key.of( "type" );
 	public static final Key		typename							= Key.of( "typename" );
 	public static final Key		unit								= Key.of( "unit" );
@@ -793,6 +801,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		XMLParent							= Key.of( "XMLParent" );
 	public static final Key		XMLRoot								= Key.of( "XMLRoot" );
 	public static final Key		XMLText								= Key.of( "XMLText" );
+	public static final Key		XMLString							= Key.of( "XMLString" );
 	public static final Key		XMLType								= Key.of( "XMLType" );
 	public static final Key		XMLValue							= Key.of( "XMLValue" );
 	public static final Key		xpath								= Key.of( "xpath" );
@@ -920,7 +929,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public Key( String name ) {
 		this.name			= name;
 		this.originalValue	= name;
-		this.nameNoCase		= name.toUpperCase();
+		this.nameNoCase		= name.toLowerCase();
 		this.hashCode		= this.nameNoCase.hashCode();
 	}
 
@@ -932,8 +941,14 @@ public class Key implements Comparable<Key>, Serializable {
 	public Key( String name, Object originalValue ) {
 		this.name			= name;
 		this.originalValue	= originalValue;
-		this.nameNoCase		= name.toUpperCase();
-		this.hashCode		= this.nameNoCase.hashCode();
+		this.nameNoCase		= name.toLowerCase();
+		// For "simple" keys, we'll use the nocase name hash code as our key's hashcode
+		// for complex values (like accessing a hashmap with a complex key), we'll use the original value's hashcode
+		if ( originalValue instanceof String || originalValue instanceof Integer ) {
+			this.hashCode = this.nameNoCase.hashCode();
+		} else {
+			this.hashCode = originalValue.hashCode();
+		}
 	}
 
 	/**
@@ -972,17 +987,22 @@ public class Key implements Comparable<Key>, Serializable {
 	 */
 	@Override
 	public boolean equals( Object obj ) {
+
 		// Same object
 		if ( this == obj ) {
 			return true;
 		}
 
-		if ( obj != null && obj instanceof Key castedKey ) {
+		if ( obj == null ) {
+			return false;
+		}
+
+		if ( obj instanceof Key castedKey ) {
 			// Same key name
 			return hashCode() == castedKey.hashCode();
 		}
 
-		return false;
+		return getOriginalValue().equals( obj );
 	}
 
 	/**

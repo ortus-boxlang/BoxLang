@@ -22,6 +22,7 @@ import java.util.Set;
 import ortus.boxlang.runtime.config.util.PropertyHelper;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.logging.LogLevel;
+import ortus.boxlang.runtime.logging.LoggingService;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -36,7 +37,7 @@ public class LoggerConfig implements IConfigSegment {
 	 */
 	public static final Set<String>	VALID_APPENDERS		= Set.of( "console", "file" );
 	public static final Key			DEFAULT_APPENDER	= Key.file;
-	public static final Key			DEFAULT_LOG_LEVEL	= Key.trace;
+	public static final Key			DEFAULT_LOG_LEVEL	= Key.of( LoggingService.DEFAULT_LOG_LEVEL );
 
 	/**
 	 * The unique name of the logger.

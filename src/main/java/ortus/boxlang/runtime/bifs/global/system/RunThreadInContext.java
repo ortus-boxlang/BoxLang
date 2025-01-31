@@ -90,8 +90,6 @@ public class RunThreadInContext extends BIF {
 			throw new BoxValidationException( "Context or applicationName is required." );
 		}
 
-		newContext.invokeFunction( callback );
-
-		return null;
+		return newContext.invokeFunction( callback );
 	}
 }

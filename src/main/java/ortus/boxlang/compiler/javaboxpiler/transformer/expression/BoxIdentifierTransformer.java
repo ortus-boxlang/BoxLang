@@ -37,7 +37,6 @@ public class BoxIdentifierTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxIdentifier		identifier	= ( BoxIdentifier ) node;
-		String				side		= context == TransformerContext.NONE ? "" : "(" + context.toString() + ") ";
 		Node				accessKey	= createKey( identifier.getName() );
 		String				template;
 		Map<String, String>	values		= new HashMap<>() {

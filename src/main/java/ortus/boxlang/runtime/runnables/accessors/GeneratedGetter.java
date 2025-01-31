@@ -38,12 +38,13 @@ import ortus.boxlang.runtime.util.ResolvedFilePath;
  */
 public class GeneratedGetter extends UDF {
 
-	private static final Argument[]	EMPTY_ARGUMENTS	= new Argument[ 0 ];
-	private static final IStruct	documentation	= Struct.of( "hint", "I am a generated getter method." );
+	private static final Argument[]			EMPTY_ARGUMENTS		= new Argument[ 0 ];
+	private static final IStruct			documentation		= Struct.of( "hint", "I am a generated getter method." );
+	private static final ResolvedFilePath	unknownResolvedPath	= ResolvedFilePath.of( Path.of( "unknown" ) );
 
-	private final Key				name;
-	private final Key				variable;
-	private final String			returnType;
+	private final Key						name;
+	private final Key						variable;
+	private final String					returnType;
 
 	/**
 	 * Constructor
@@ -152,7 +153,7 @@ public class GeneratedGetter extends UDF {
 
 	@Override
 	public ResolvedFilePath getRunnablePath() {
-		return ResolvedFilePath.of( Path.of( "unknown" ) );
+		return unknownResolvedPath;
 	}
 
 	@Override

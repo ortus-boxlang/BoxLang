@@ -29,8 +29,8 @@ import org.slf4j.LoggerFactory;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
+import ortus.boxlang.runtime.loader.ClassLocation;
 import ortus.boxlang.runtime.loader.ClassLocator;
-import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
 import ortus.boxlang.runtime.loader.DynamicClassLoader;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.scopes.Key;
@@ -216,7 +216,9 @@ public class JavaResolver extends BaseResolver {
 		        ClassLocator.TYPE_JAVA,
 		        clazz,
 		        moduleName.getName(),
-		        true
+		        true,
+		        context.getApplicationName(),
+		        null
 		    )
 		);
 	}
@@ -246,7 +248,9 @@ public class JavaResolver extends BaseResolver {
 			        ClassLocator.TYPE_JAVA,
 			        clazz,
 			        null,
-			        true
+			        true,
+			        context.getApplicationName(),
+			        null
 			    )
 			);
 		} catch ( ClassNotFoundException e ) {

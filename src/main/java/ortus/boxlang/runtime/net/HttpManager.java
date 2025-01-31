@@ -17,17 +17,24 @@
  */
 package ortus.boxlang.runtime.net;
 
+import java.net.Authenticator;
+import java.net.InetSocketAddress;
+import java.net.PasswordAuthentication;
+import java.net.ProxySelector;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.SSLSession;
 
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class HttpManager {
@@ -52,9 +59,46 @@ public class HttpManager {
 	 */
 	public static HttpClient getClient() {
 		if ( instance == null ) {
-			instance = HttpClient.newHttpClient();
+			synchronized ( HttpManager.class ) {
+				if ( instance == null ) {
+					instance = HttpClient.newBuilder().followRedirects( HttpClient.Redirect.NORMAL ).build();
+				}
+			}
 		}
 		return instance;
+	}
+
+	/**
+	 * Get a new HttpClient instance custom attributes including proxy client connection and redirect enforcement.
+	 * 
+	 * @param attributes
+	 * 
+	 * @return
+	 */
+	public static HttpClient getCustomClient( IStruct attributes ) {
+		HttpClient.Builder builder = HttpClient.newBuilder();
+		if ( attributes.containsKey( Key.proxyServer ) ) {
+			builder.proxy( ProxySelector.of( new InetSocketAddress( attributes.getAsString( Key.proxyServer ), attributes.getAsInteger( Key.proxyPort ) ) ) ); // Set proxy host & port
+
+			if ( attributes.containsKey( Key.proxyUser ) && attributes.containsKey( Key.proxyPassword ) ) {
+				String	proxyUser		= attributes.getAsString( Key.proxyUser );
+				String	proxyPassword	= attributes.getAsString( Key.proxyPassword );
+				builder.authenticator( new Authenticator() {
+
+					@Override
+					protected PasswordAuthentication getPasswordAuthentication() {
+						return new PasswordAuthentication( proxyUser, proxyPassword.toCharArray() );
+					}
+				} );
+			}
+			if ( attributes.containsKey( Key.timeout ) ) {
+				builder.connectTimeout( Duration.ofSeconds( attributes.getAsInteger( Key.timeout ) ) );
+			}
+		}
+		if ( !attributes.getAsBoolean( Key.redirect ) ) {
+			builder.followRedirects( HttpClient.Redirect.NEVER );
+		}
+		return builder.build();
 	}
 
 	public static CompletableFuture<HttpResponse<String>> getTimeoutRequestAsync( int timeout ) {

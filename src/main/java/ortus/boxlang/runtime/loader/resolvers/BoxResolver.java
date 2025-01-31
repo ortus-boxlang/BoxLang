@@ -29,11 +29,10 @@ import org.apache.commons.lang3.StringUtils;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.loader.ClassLocation;
 import ortus.boxlang.runtime.loader.ClassLocator;
-import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.modules.ModuleRecord;
-import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.ModuleService;
 import ortus.boxlang.runtime.types.IStruct;
@@ -250,9 +249,11 @@ public class BoxResolver extends BaseResolver {
 			    targetPath.toAbsolutePath().toString(),
 			    resolvedFilePath.getBoxFQN().getPackageString(),
 			    ClassLocator.TYPE_BX,
-			    RunnableLoader.getInstance().loadClass( resolvedFilePath, context ),
+			    null,
 			    moduleName.getName(),
-			    false
+			    true,
+			    context.getApplicationName(),
+			    resolvedFilePath
 			) );
 		}
 
@@ -335,6 +336,7 @@ public class BoxResolver extends BaseResolver {
 				    Path absolutePath = Path
 				        .of( StringUtils.replaceOnceIgnoreCase( slashName, entry.getKey().getName(), entry.getValue() + "/" ) + "." + extension )
 				        .normalize();
+
 				    // Verify that the file exists
 				    absolutePath = FileSystemUtil.pathExistsCaseInsensitive( absolutePath );
 				    if ( absolutePath != null ) {
@@ -377,9 +379,11 @@ public class BoxResolver extends BaseResolver {
 			        possibleMatch.absolutePath().toAbsolutePath().toString(),
 			        possibleMatch.getBoxFQN().getPackageString(),
 			        ClassLocator.TYPE_BX,
-			        loadClass ? RunnableLoader.getInstance().loadClass( possibleMatch, context ) : null,
+			        null,
 			        "",
-			        false
+			        true,
+			        context.getApplicationName(),
+			        possibleMatch
 			    );
 		    } )
 		    // Find the first one or return empty
@@ -416,18 +420,21 @@ public class BoxResolver extends BaseResolver {
 					// See if path exists in this parent directory with a valid extension
 					Path targetPath = findExistingPathWithValidExtension( parentPath, slashName );
 					if ( targetPath != null ) {
-
-						ResolvedFilePath newResolvedFilePath = resolvedFilePath
-						    .newFromRelative( parentPath.relativize( Paths.get( targetPath.toString() ) ).toString() );
-
+						ResolvedFilePath newResolvedFilePath = FileSystemUtil.contractPath(
+						    context,
+						    targetPath.toString(),
+						    resolvedFilePath.mappingName()
+						);
 						return Optional.of( new ClassLocation(
 						    newResolvedFilePath.getBoxFQN().getClassName(),
 						    targetPath.toAbsolutePath().toString(),
 						    newResolvedFilePath.getBoxFQN().getPackageString(),
 						    ClassLocator.TYPE_BX,
-						    loadClass ? RunnableLoader.getInstance().loadClass( newResolvedFilePath, context ) : null,
+						    null,
 						    "",
-						    false
+						    true,
+						    context.getApplicationName(),
+						    newResolvedFilePath
 						) );
 					}
 				}
@@ -472,15 +479,16 @@ public class BoxResolver extends BaseResolver {
 		Path				foundPath			= result.get();
 
 		ResolvedFilePath	newResolvedFilePath	= ResolvedFilePath.of( "", "", slashName, foundPath );
-
 		return Optional.of( new ClassLocation(
 		    newResolvedFilePath.getBoxFQN().getClassName(),
 		    foundPath.toAbsolutePath().toString(),
 		    newResolvedFilePath.getBoxFQN().getPackageString(),
 		    ClassLocator.TYPE_BX,
-		    loadClass ? RunnableLoader.getInstance().loadClass( newResolvedFilePath, context ) : null,
+		    null,
 		    "",
-		    false
+		    true,
+		    context.getApplicationName(),
+		    newResolvedFilePath
 		) );
 
 	}

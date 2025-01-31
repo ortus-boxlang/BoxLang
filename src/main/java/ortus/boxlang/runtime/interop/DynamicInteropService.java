@@ -48,6 +48,7 @@ import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.context.ClassBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
+import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
@@ -80,6 +81,7 @@ import ortus.boxlang.runtime.types.exceptions.NoFieldException;
 import ortus.boxlang.runtime.types.exceptions.NoMethodException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.GenericMeta;
+import ortus.boxlang.runtime.types.util.BooleanRef;
 import ortus.boxlang.runtime.types.util.ListUtil;
 import ortus.boxlang.runtime.types.util.ObjectRef;
 
@@ -290,10 +292,10 @@ public class DynamicInteropService {
 		// Discover the constructor method handle using the target class and the argument type matching
 		MethodHandle	constructorHandle;
 		Class<?>[]		argumentClasses	= argumentsToClasses( args );
+		Constructor<?>	constructor;
 		try {
-			constructorHandle = METHOD_LOOKUP.unreflectConstructor(
-			    findMatchingConstructor( context, targetClass, argumentClasses, args )
-			);
+			constructor			= findMatchingConstructor( context, targetClass, argumentClasses, args );
+			constructorHandle	= METHOD_LOOKUP.unreflectConstructor( constructor );
 		} catch ( IllegalAccessException e ) {
 			throw new BoxRuntimeException(
 			    "Error getting constructor for class " + targetClass.getName() + " with arguments classes " + Arrays.toString( argumentClasses ),
@@ -307,8 +309,9 @@ public class DynamicInteropService {
 		// Invoke Dynamic tries to do argument coercion, so we need to convert the arguments to the right types
 		MethodHandle	constructorInvoker	= callSite.dynamicInvoker();
 		try {
+
 			@SuppressWarnings( "unchecked" )
-			T thisInstance = ( T ) constructorInvoker.invokeWithArguments( args );
+			T thisInstance = ( T ) constructorInvoker.invokeWithArguments( expandVarargs( args, constructor.isVarArgs(), false ) );
 
 			// If this is a Box Class, some additional initialization is needed
 			if ( thisInstance instanceof IClassRunnable boxClass ) {
@@ -536,13 +539,15 @@ public class DynamicInteropService {
 			    methodRecord.method().getParameterTypes(),
 			    argumentClasses,
 			    arguments,
-			    methodRecord.method().isVarArgs()
+			    methodRecord.method().isVarArgs(),
+			    BooleanRef.of( true )
 			);
 
 			// Execute
 			return methodRecord.isStatic()
-			    ? methodRecord.methodHandle().invokeWithArguments( arguments )
-			    : methodRecord.methodHandle().bindTo( targetInstance ).invokeWithArguments( arguments );
+			    ? methodRecord.methodHandle().invokeWithArguments( expandVarargs( arguments, methodRecord.method().isVarArgs(), false ) )
+			    : methodRecord.methodHandle().bindTo( targetInstance )
+			        .invokeWithArguments( expandVarargs( arguments, methodRecord.method().isVarArgs(), true ) );
 		} catch ( RuntimeException e ) {
 			throw e;
 		} catch ( Throwable e ) {
@@ -553,6 +558,42 @@ public class DynamicInteropService {
 			    e
 			);
 		}
+	}
+
+	/**
+	 * Take an array of arguments, and if the method is using varargs, expand the array at the end
+	 * 
+	 * @param arguments The arguments to expand
+	 * @param isVarargs Whether the method is varargs
+	 * 
+	 * @return The expanded arguments
+	 */
+	public static Object[] expandVarargs( Object[] arguments, boolean isVarargs, boolean isInstance ) {
+		// If it's not varargs, or it's an instance method, then just return the arguments
+		// I don't understand why instance method don't want the varargs expanded, but this is what makes the tests pass
+		if ( !isVarargs || isInstance ) {
+			return arguments;
+		}
+		if ( arguments.length == 0 ) {
+			throw new BoxRuntimeException( "Varargs method requires at least one argument." );
+		}
+		Object[]	lastArgumentValues;
+		Object		lastArgument	= arguments[ arguments.length - 1 ];
+		if ( lastArgument instanceof Array arr ) {
+			lastArgumentValues = arr.toArray();
+		} else if ( lastArgument == null ) {
+			throw new BoxRuntimeException( "Varargs method requires an non-null array as the last argument." );
+		} else if ( lastArgument.getClass().isArray() ) {
+			// convert the array to an Object array
+			lastArgumentValues = ArrayCaster.cast( lastArgument ).toArray();
+		} else {
+			throw new BoxRuntimeException( "Varargs method requires an array as the last argument.  You passed [" + lastArgument.getClass().getName() + "]" );
+		}
+
+		Object[] expandedArgs = new Object[ arguments.length - 1 + lastArgumentValues.length ];
+		System.arraycopy( arguments, 0, expandedArgs, 0, arguments.length - 1 ); // Copy all but the last argument
+		System.arraycopy( lastArgumentValues, 0, expandedArgs, arguments.length - 1, lastArgumentValues.length ); // Copy the last argument
+		return expandedArgs;
 	}
 
 	/**
@@ -582,14 +623,15 @@ public class DynamicInteropService {
 		    methodRecord.method().getParameterTypes(),
 		    argumentClasses,
 		    arguments,
-		    methodRecord.method().isVarArgs()
+		    methodRecord.method().isVarArgs(),
+		    BooleanRef.of( true )
 		);
 
 		// Discover and Execute it baby!
 		try {
 			return methodRecord
 			    .methodHandle()
-			    .invokeWithArguments( arguments );
+			    .invokeWithArguments( expandVarargs( arguments, methodRecord.method().isVarArgs(), false ) );
 		} catch ( RuntimeException e ) {
 			throw e;
 		} catch ( Throwable e ) {
@@ -1077,8 +1119,12 @@ public class DynamicInteropService {
 		if ( methodRecord == null || !handlesCacheEnabled ) {
 			synchronized ( cacheKey.intern() ) {
 				if ( methodRecord == null || !handlesCacheEnabled ) {
-					methodRecord = discoverMethodHandle( context, dynamicObject, targetClass, targetInstance, methodName, argumentsAsClasses, arguments );
-					methodHandleCache.put( cacheKey, methodRecord );
+					BooleanRef isCachable = new BooleanRef( true );
+					methodRecord = discoverMethodHandle( context, dynamicObject, targetClass, targetInstance, methodName, argumentsAsClasses, isCachable,
+					    arguments );
+					if ( isCachable.get() ) {
+						methodHandleCache.put( cacheKey, methodRecord );
+					}
 				}
 			}
 		}
@@ -1098,6 +1144,7 @@ public class DynamicInteropService {
 	 * @param methodName         The name of the method to discover
 	 * @param argumentsAsClasses The array of arguments as classes to map
 	 * @param arguments          The arguments to pass to the method
+	 * @param isCachable         A reference to a boolean to set if the method handle is cachable
 	 *
 	 * @throws NoMethodException If the method cannot be found by any means
 	 *
@@ -1111,6 +1158,7 @@ public class DynamicInteropService {
 	    Object targetInstance,
 	    String methodName,
 	    Class<?>[] argumentsAsClasses,
+	    BooleanRef isCachable,
 	    Object... arguments ) {
 
 		// Our target we must find using our dynamic rules:
@@ -1118,7 +1166,7 @@ public class DynamicInteropService {
 		// - argument count
 		// - argument class asignability
 		// - argument coercion
-		Method			targetMethod	= findMatchingMethod( context, targetClass, methodName, argumentsAsClasses, arguments );
+		Method			targetMethod	= findMatchingMethod( context, targetClass, methodName, argumentsAsClasses, isCachable, arguments );
 		MethodHandle	targetHandle;
 
 		// If we are calling an instance method, but have no instance, and have the dynamicobject reference, then initialize it if there is a no-arg constructor
@@ -1137,7 +1185,7 @@ public class DynamicInteropService {
 		// Verify we can access the method, if we can't then we need to go up the inheritance chain to find it or die
 		// This happens when objects implement default method interfaces usually
 		try {
-			targetMethod = checkAccess( context, targetClass, targetInstance, targetMethod, methodName, argumentsAsClasses, arguments );
+			targetMethod = checkAccess( context, targetClass, targetInstance, targetMethod, methodName, argumentsAsClasses, isCachable, arguments );
 		} catch ( NoMethodException e ) {
 			throw new BoxRuntimeException( "Error checking method access" + methodName + " for class " + targetClass.getName(), e );
 		}
@@ -1236,20 +1284,7 @@ public class DynamicInteropService {
 	public static Constructor<?> findMatchingConstructor( IBoxContext context, Class<?> targetClass, Class<?>[] argumentsAsClasses, Object... arguments ) {
 		List<Constructor<?>> targetConstructors = getConstructorsAsStream( targetClass, true )
 		    // Try matches using our algorithms
-		    .filter( constructor -> {
-			    // No Var Args
-			    if ( !constructor.isVarArgs() && constructor.getParameterCount() == argumentsAsClasses.length ) {
-				    return true;
-			    }
-
-			    // Check for var args as the last parameter
-			    if ( constructor.isVarArgs() ) {
-				    return argumentsAsClasses.length >= constructor.getParameterCount() - 1;
-			    }
-
-			    // No match
-			    return false;
-		    } )
+		    .filter( constructor -> constructor.getParameterCount() == argumentsAsClasses.length )
 		    .toList();
 
 		// Only process if we have constructors
@@ -1313,21 +1348,22 @@ public class DynamicInteropService {
 	    Method targetMethod,
 	    String methodName,
 	    Class<?>[] argumentsAsClasses,
+	    BooleanRef isCachable,
 	    Object... arguments ) {
 
 		if ( targetMethod != null ) {
 			boolean isStatic = Modifier.isStatic( targetMethod.getModifiers() );
 			if ( !targetMethod.canAccess( isStatic ? null : targetInstance ) ) {
 				// 1. Let's try to find it by interfaces first as it could be a default method
-				var methodByInterface = findMatchingMethodByInterfaces( context, targetClass, methodName, argumentsAsClasses, arguments );
+				var methodByInterface = findMatchingMethodByInterfaces( context, targetClass, methodName, argumentsAsClasses, isCachable, arguments );
 				if ( methodByInterface != null ) {
 					return methodByInterface;
 				}
 
 				// 2. Try to get the method from the parent class of the targetClass until we can access or we die
 				Class<?> superClass = targetClass.getSuperclass();
-				targetMethod = findMatchingMethod( context, superClass, methodName, argumentsAsClasses, arguments );
-				return checkAccess( context, superClass, targetInstance, targetMethod, methodName, argumentsAsClasses, arguments );
+				targetMethod = findMatchingMethod( context, superClass, methodName, argumentsAsClasses, isCachable, arguments );
+				return checkAccess( context, superClass, targetInstance, targetMethod, methodName, argumentsAsClasses, isCachable, arguments );
 			}
 		}
 		return targetMethod;
@@ -1467,22 +1503,12 @@ public class DynamicInteropService {
 	    Class<?> targetClass,
 	    String methodName,
 	    Class<?>[] argumentsAsClasses,
+	    BooleanRef isCachable,
 	    Object... arguments ) {
 		// Try to get the methods that match by name and number of arguments first.
 		List<Method> targetMethods = getMethodsAsStream( targetClass, true )
 		    .filter( method -> method.getName().equalsIgnoreCase( methodName ) )
-		    .filter( method -> {
-			    // No Var Args
-			    if ( !method.isVarArgs() && method.getParameterCount() == argumentsAsClasses.length ) {
-				    return true;
-			    }
-			    // Check for var args
-			    if ( method.isVarArgs() ) {
-				    return argumentsAsClasses.length >= method.getParameterCount() - 1;
-			    }
-			    // no match
-			    return false;
-		    } )
+		    .filter( method -> method.getParameterCount() == argumentsAsClasses.length )
 		    .toList();
 
 		// If list is empty return false
@@ -1494,12 +1520,12 @@ public class DynamicInteropService {
 		return targetMethods
 		    .stream()
 		    // has to have the same argument types
-		    .filter( method -> hasMatchingParameterTypes( context, method, true, argumentsAsClasses, arguments ) )
+		    .filter( method -> hasMatchingParameterTypes( context, method, true, argumentsAsClasses, isCachable, arguments ) )
 		    .findFirst()
 		    // 2: If no exact match, try loose coercion
 		    .or( () -> targetMethods
 		        .stream()
-		        .filter( method -> hasMatchingParameterTypes( context, method, false, argumentsAsClasses, arguments ) )
+		        .filter( method -> hasMatchingParameterTypes( context, method, false, argumentsAsClasses, isCachable, arguments ) )
 		        .findFirst()
 		    )
 		    .orElse( null );
@@ -1517,12 +1543,13 @@ public class DynamicInteropService {
 	 * @return The matched method signature or null if not found
 	 */
 	public static Method findMatchingMethodByInterfaces( IBoxContext context, Class<?> targetClass, String methodName, Class<?>[] argumentsAsClasses,
+	    BooleanRef isCachable,
 	    Object... arguments ) {
 		// Since we haven't found the method in the class, we need to try to find it in the interfaces
 		// since interfaces have default methods and we can't access them directly
 		Class<?>[] interfaces = targetClass.getInterfaces();
 		return Arrays.stream( interfaces )
-		    .map( interfaceClass -> findMatchingMethod( context, interfaceClass, methodName, argumentsAsClasses, arguments ) )
+		    .map( interfaceClass -> findMatchingMethod( context, interfaceClass, methodName, argumentsAsClasses, isCachable, arguments ) )
 		    .filter( Objects::nonNull )
 		    .findFirst()
 		    .orElse( null );
@@ -1677,8 +1704,8 @@ public class DynamicInteropService {
 
 		// Double check because a java super dereference from a boxClass will have a different targetClass.
 		if ( Map.class.isAssignableFrom( targetClass ) && targetInstance instanceof Map ) {
-			// If it's a raw Map, then we use the original value as the key
-			return ( ( Map<Object, Object> ) targetInstance ).get( name.getOriginalValue() );
+			// If it's a raw Map, then we use the key, whose equals() method will defer to the original values's equals() method.
+			return ( ( Map<Object, Object> ) targetInstance ).get( name );
 			// Special logic so we can treat exceptions as referencable. Possibly move to helper
 		} else if ( targetInstance instanceof List list ) {
 			Integer index = Array.validateAndGetIntForDereference( name, list.size(), safe );
@@ -2100,6 +2127,7 @@ public class DynamicInteropService {
 	    Method method,
 	    Boolean exact,
 	    Class<?>[] argumentsAsClasses,
+	    BooleanRef isCachable,
 	    Object... arguments ) {
 
 		// Get param types to test
@@ -2114,7 +2142,7 @@ public class DynamicInteropService {
 		// iterate over the method params and check if the arguments can be coerced to the method params
 		// Every argument must be coercable or it fails
 		if ( !exact ) {
-			return coerceArguments( context, methodParams, argumentsAsClasses, arguments, method.isVarArgs() );
+			return coerceArguments( context, methodParams, argumentsAsClasses, arguments, method.isVarArgs(), isCachable );
 		}
 
 		return false;
@@ -2131,12 +2159,13 @@ public class DynamicInteropService {
 	 *
 	 * @return True if the arguments were coerced, false otherwise
 	 */
-	private static Boolean coerceArguments(
+	public static Boolean coerceArguments(
 	    IBoxContext context,
 	    Class<?>[] methodParams,
 	    Class<?>[] argumentsAsClasses,
 	    Object[] arguments,
-	    Boolean isVarArgs ) {
+	    Boolean isVarArgs,
+	    BooleanRef isCachable ) {
 		var coerced = false;
 		for ( int i = 0; i < methodParams.length; i++ ) {
 			// bail if i has exceeded the lengh of arguments
@@ -2158,18 +2187,21 @@ public class DynamicInteropService {
 
 			// If this method is a var args method and we are at the last argument
 			// and the argument is an array, we need to convert it to the varargs type
-			if ( isVarArgs && i == methodParams.length - 1 && arguments[ i ] instanceof Array castedArray ) {
-				// Get the component type of the varargs
-				// Convert the primitive type to the wrapper type
-				Class<?> varArgType = WRAPPERS_MAP.getOrDefault( methodParams[ i ].getComponentType(), methodParams[ i ].getComponentType() );
-				// create an array of the varargs type
-				arguments[ i ]	= castedArray.toVarArgsArray( varArgType );
-				coerced			= true;
-				continue;
+			if ( isVarArgs && i == methodParams.length - 1 ) {
+				// System.out.println( "Varargs attempt to cast " + arguments[ i ].getClass().getName() + " to " + getReadableType( methodParams[ i ] ) );
+				CastAttempt<Object> castedArray = GenericCaster.attempt( context, arguments[ i ], getReadableType( methodParams[ i ] ) );
+				if ( castedArray.wasSuccessful() ) {
+					coerced			= true;
+					arguments[ i ]	= castedArray.get();
+					continue;
+				} else {
+					coerced = false;
+					break;
+				}
 			}
 
 			// Else we need to coerce the argument
-			Optional<?> attempt = coerceAttempt( context, methodParams[ i ], argumentsAsClasses[ i ], arguments[ i ], isVarArgs );
+			Optional<?> attempt = coerceAttempt( context, methodParams[ i ], argumentsAsClasses[ i ], arguments[ i ], isCachable );
 			if ( attempt.isPresent() ) {
 				coerced			= true;
 				arguments[ i ]	= attempt.get();
@@ -2192,9 +2224,14 @@ public class DynamicInteropService {
 	 *
 	 * @return The coerced value or empty if it can't be coerced
 	 */
-	private static Optional<?> coerceAttempt( IBoxContext context, Class<?> expected, Class<?> actual, Object value, Boolean isVarArgs ) {
+	private static Optional<?> coerceAttempt( IBoxContext context, Class<?> expected, Class<?> actual, Object value, BooleanRef isCachable ) {
 		String	expectedClass	= expected.getSimpleName().toLowerCase();
 		String	actualClass		= actual.getSimpleName().toLowerCase();
+
+		// Check if we have a boxed type and we just need an unboxed type. We can't unbox it here since we need to return an Object, but the unboxing will happen automatically when it's used
+		if ( PRIMITIVE_MAP.containsKey( actual ) && PRIMITIVE_MAP.get( actual ).equals( expected ) ) {
+			return Optional.of( value );
+		}
 
 		// Primitive to Wrapper Type
 		expected	= WRAPPERS_MAP.getOrDefault( expected, expected );
@@ -2207,50 +2244,85 @@ public class DynamicInteropService {
 		// Use the expected caster to coerce the value to the actual type
 		if ( Number.class.isAssignableFrom( expected ) && Number.class.isAssignableFrom( actual ) ) {
 			// logger.debug( "Coerce attempt: Both numbers, using generic caster to " + expectedClass );
-			return Optional.of(
-			    GenericCaster.cast( context, value, expectedClass, false )
-			);
+			CastAttempt<Object> numberAttempt = GenericCaster.attempt( context, value, expectedClass );
+			if ( numberAttempt.wasSuccessful() ) {
+				return numberAttempt.toOptional();
+			}
 		}
 
 		// EXPECTED: Key
 		// To help with interacting with core BL classes, if the target method requires a Key then cast simple values
 		if ( Key.class.isAssignableFrom( expected ) ) {
 			// logger.debug( "Coerce attempt: Both numbers, using generic caster to " + expectedClass );
-			return Optional.of(
-			    KeyCaster.cast( value, false )
-			);
+			CastAttempt<Key> keyAttempt = KeyCaster.attempt( value );
+			if ( keyAttempt.wasSuccessful() ) {
+				return keyAttempt.toOptional();
+			}
 		}
 
 		// EXPECTED: BOOLEAN
-		// If it's a boolean and the actual is in the booleanTargets list, we can coerce it
+		// If we expect a boolean, we can coerce it from a boolean, number or string
 		if ( Boolean.class.isAssignableFrom( expected )
 		    &&
-		    booleanTargets.contains( actualClass )
-		    &&
-		    Number.class.isAssignableFrom( actual ) ) {
+		    ( Boolean.class.isAssignableFrom( actual )
+		        ||
+		        booleanTargets.contains( actualClass )
+		        ||
+		        Number.class.isAssignableFrom( actual ) ) ) {
 
 			// logger.debug( "Coerce attempt: Castable to boolean " + actualClass );
-
-			return Optional.of(
-			    BooleanCaster.cast( value, false )
-			);
+			CastAttempt<Boolean> booleanAttempt = BooleanCaster.attempt( value );
+			if ( booleanAttempt.wasSuccessful() ) {
+				return booleanAttempt.toOptional();
+			}
 		}
 
 		// EXPECTED: STRING
 		if ( expectedClass.equals( "string" ) ) {
 			// logger.debug( "Coerce attempt: Castable to String " + actualClass );
-			return Optional.of(
-			    StringCaster.cast( value, false )
-			);
+			CastAttempt<String> stringAttempt = StringCaster.attempt( value );
+			if ( stringAttempt.wasSuccessful() ) {
+				return stringAttempt.toOptional();
+			}
 		}
 
 		// Expected: Numeric and Actual: String
 		// If the expected type is a number and the actual is a string, we can TRY to coerce it
 		if ( Number.class.isAssignableFrom( expected ) && actualClass.equals( "string" ) ) {
 			// logger.debug( "Coerce attempt: Castable to Number from String " + actualClass );
-			return Optional.of(
-			    GenericCaster.cast( context, value, expectedClass, false )
-			);
+			CastAttempt<Object> numberAttempt = GenericCaster.attempt( context, value, expectedClass );
+			if ( numberAttempt.wasSuccessful() ) {
+				return numberAttempt.toOptional();
+			}
+		}
+
+		// Allow Arrays to be coerced to native arrays
+		if ( value instanceof Array arr && expected.isArray() ) {
+
+			// Start with a short circuit check for Object[], which is easy
+			if ( expected.getComponentType() == Object.class ) {
+				// It's not safe to cache this method handle as other incoming arrays may not be castable to the same type
+				isCachable.set( false );
+				return Optional.of( arr.toArray() );
+			} else {
+				// For other specific types of native arrays, see if we can coerce the elements
+				// This will be String[] or int[][], etc
+				String				readableType	= getReadableType( expected );
+				CastAttempt<Object>	attempt			= GenericCaster.attempt( context, arr, readableType );
+				if ( attempt.wasSuccessful() ) {
+					// It's not safe to cache this method handle as other incoming arrays may not be castable to the same type
+					isCachable.set( false );
+
+					// array casting can give back an Array instance or a native array depending on whether the type was primitive or not
+					Object newArr = attempt.get();
+					// If it's a BL array, get the native array out of it
+					if ( newArr instanceof Array nar ) {
+						return Optional.of( nar.toArray() );
+					}
+					// Otherwise, it's already a native array
+					return Optional.of( newArr );
+				}
+			}
 		}
 
 		// EXPECTED: FunctionInterfaces and/or SAMs
@@ -2269,6 +2341,28 @@ public class DynamicInteropService {
 		// logger.debug( "Coerce attempt FAILED for [" + expected + "] from [" + actual + "] with value [" + value.toString() + "]" );
 
 		return Optional.empty();
+	}
+
+	/**
+	 * Small util for creating human readable name for type. Specifically will take a native array and give you String[] or int[][] etc
+	 * 
+	 * @param clazz The class to get the readable type for
+	 * 
+	 * @return The readable type
+	 */
+	private static String getReadableType( Class<?> clazz ) {
+		if ( !clazz.isArray() ) {
+			return clazz.getSimpleName(); // Return the class name if it's not an array
+		}
+
+		StringBuilder arrayType = new StringBuilder();
+		while ( clazz.isArray() ) {
+			arrayType.append( "[]" ); // Append "[]" for each array dimension
+			clazz = clazz.getComponentType(); // Get the component type
+		}
+
+		arrayType.insert( 0, clazz.isPrimitive() ? clazz.getName() : clazz.getSimpleName() ); // Add base type
+		return arrayType.toString();
 	}
 
 	/**
@@ -2305,7 +2399,7 @@ public class DynamicInteropService {
 		// iterate over the constructor params and check if the arguments can be coerced to the constructor params
 		// Every argument must be coercable or it fails
 		if ( !exact ) {
-			return coerceArguments( context, constructorParams, argumentsAsClasses, arguments, constructor.isVarArgs() );
+			return coerceArguments( context, constructorParams, argumentsAsClasses, arguments, constructor.isVarArgs(), BooleanRef.of( true ) );
 		}
 
 		return false;

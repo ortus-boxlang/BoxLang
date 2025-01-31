@@ -61,7 +61,6 @@ public class BoxParserErrorStrategy extends ParserErrorStrategy {
 																			put( BoxScriptGrammar.DOES, "Statement" );
 																			put( BoxScriptGrammar.DOT, "'.' accessor" );
 																			put( BoxScriptGrammar.DOT_FLOAT_LITERAL, "Number" );
-																			put( BoxScriptGrammar.ELIF, "Elif clause" );
 																			put( BoxScriptGrammar.ELSE, "Else clause" );
 																			put( BoxScriptGrammar.ELVIS, "Operator" );
 																			put( BoxScriptGrammar.EQ, "Operator" );
@@ -223,7 +222,7 @@ public class BoxParserErrorStrategy extends ParserErrorStrategy {
 	private static final IntervalSet			keywordIDENTIFIERS	= new IntervalSet( BoxScriptGrammar.ABSTRACT, BoxScriptGrammar.AND, BoxScriptGrammar.ANY,
 	    BoxScriptGrammar.ARRAY, BoxScriptGrammar.AS, BoxScriptGrammar.ASSERT, BoxScriptGrammar.BOOLEAN, BoxScriptGrammar.BREAK, BoxScriptGrammar.CASE,
 	    BoxScriptGrammar.CASTAS, BoxScriptGrammar.CATCH, BoxScriptGrammar.CLASS, BoxScriptGrammar.CONTAIN, BoxScriptGrammar.CONTAINS, BoxScriptGrammar.CONTINUE,
-	    BoxScriptGrammar.DEFAULT, BoxScriptGrammar.DO, BoxScriptGrammar.DOES, BoxScriptGrammar.ELIF, BoxScriptGrammar.ELSE, BoxScriptGrammar.EQ,
+	    BoxScriptGrammar.DEFAULT, BoxScriptGrammar.DO, BoxScriptGrammar.DOES, BoxScriptGrammar.ELSE, BoxScriptGrammar.EQ,
 	    BoxScriptGrammar.EQUAL, BoxScriptGrammar.EQV, BoxScriptGrammar.FALSE, BoxScriptGrammar.FINAL, BoxScriptGrammar.FINALLY, BoxScriptGrammar.FOR,
 	    BoxScriptGrammar.FUNCTION, BoxScriptGrammar.GE, BoxScriptGrammar.GREATER, BoxScriptGrammar.GT, BoxScriptGrammar.GTE, BoxScriptGrammar.IF,
 	    BoxScriptGrammar.IMP, BoxScriptGrammar.IMPORT, BoxScriptGrammar.IN, BoxScriptGrammar.INCLUDE, BoxScriptGrammar.INSTANCEOF, BoxScriptGrammar.INTERFACE,

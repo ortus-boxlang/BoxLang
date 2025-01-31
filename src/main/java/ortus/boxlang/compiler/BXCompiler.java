@@ -26,6 +26,7 @@ import java.nio.file.Paths;
 import java.util.List;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ParseException;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
@@ -35,6 +36,8 @@ import ortus.boxlang.runtime.util.ResolvedFilePath;
  * TODO: Not sure where this class should eventually live.
  */
 public class BXCompiler {
+
+	private static final BoxLangLogger logger = BoxRuntime.getInstance().getLoggingService().getLogger( BXCompiler.class.getSimpleName() );
 
 	public static void main( String[] args ) {
 		BoxRuntime runtime = BoxRuntime.getInstance();
@@ -103,7 +106,7 @@ public class BXCompiler {
 			}
 
 			if ( !sourcePath.toFile().exists() ) {
-				System.out.println( "Source Path does not exist: " + sourcePath.toString() );
+				logger.warn( "Source Path does not exist: " + sourcePath.toString() );
 				System.exit( 1 );
 			}
 			// source path must be equal to or a subdirectory of the base path
@@ -120,7 +123,7 @@ public class BXCompiler {
 			}
 
 			if ( sourcePath.toFile().isDirectory() ) {
-				System.out.println( "Transpiling all .cfm files in " + sourcePath.toString() + " to " + targetPath.toString() );
+				logger.debug( "Transpiling all .cfm files in " + sourcePath.toString() + " to " + targetPath.toString() );
 				// compile all .cfm, .cfs, and .cfc files in sourcePath to targetPath
 				final Path finalTargetPath = targetPath;
 				try {
@@ -174,7 +177,7 @@ public class BXCompiler {
 		} catch ( IOException e ) {
 			// folder already exists
 		}
-		System.out.println( "Writing " + targetPath.toString() );
+		logger.debug( "Writing " + targetPath.toString() );
 		List<byte[]> bytesList = null;
 		try {
 			// calculate relative path by replacing the base path with an empty string
@@ -186,7 +189,7 @@ public class BXCompiler {
 			if ( stopOnError ) {
 				throw e;
 			} else {
-				System.err.println( "Error compiling " + sourcePath.toString() + ": " + e.getMessage() );
+				logger.error( "Error compiling " + sourcePath.toString() + ": " + e.getMessage() );
 				return;
 			}
 		}

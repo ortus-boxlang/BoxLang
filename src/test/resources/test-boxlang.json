@@ -9,21 +9,23 @@
 	],
 	// A collection of directories we will class load all Java *.jar files from
 	"javaLibraryPaths": [],
-	"defaultCache": {
-		"evictCount": 1,
-		"evictionPolicy": "LRU",
-		"freeMemoryPercentageThreshold": 0,
-		"maxObjects": 1000,
-		"defaultLastAccessTimeout": 30,
-		"defaultTimeout": 120,
-		"objectStore": "ConcurrentSoftReferenceStore",
-		"reapFrequency": 2,
-		"resetTimeoutOnAccess": false,
-		"useLastAccessTimeouts": true
-	},
 	"caches": {
-		"default": {},
-		"bxImports": {
+		"default": {
+			"provider": "BoxCacheProvider",
+			"properties": {
+				"evictCount": 1,
+				"evictionPolicy": "LRU",
+				"freeMemoryPercentageThreshold": 0,
+				"maxObjects": 1000,
+				"defaultLastAccessTimeout": 30,
+				"defaultTimeout": 120,
+				"objectStore": "ConcurrentSoftReferenceStore",
+				"reapFrequency": 120,
+				"resetTimeoutOnAccess": false,
+				"useLastAccessTimeouts": true
+			}
+		},
+		"bxRegex": {
 			"provider": "BoxCacheProvider",
 			"properties": {
 				"evictCount": 1,
@@ -33,7 +35,7 @@
 				"defaultLastAccessTimeout": 30,
 				"defaultTimeout": 60,
 				"objectStore": "ConcurrentStore",
-				"reapFrequency": 2,
+				"reapFrequency": 120,
 				"resetTimeoutOnAccess": false,
 				"useLastAccessTimeouts": true
 			}

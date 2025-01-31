@@ -17,11 +17,17 @@ package ortus.boxlang.compiler.javaboxpiler.transformer.expression;
 import javax.annotation.Nonnull;
 
 import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.NodeList;
+import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.expr.BinaryExpr;
 import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.LambdaExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.UnaryExpr;
+import com.github.javaparser.ast.stmt.BlockStmt;
+import com.github.javaparser.ast.stmt.ReturnStmt;
+import com.github.javaparser.ast.type.UnknownType;
 
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxBinaryOperation;
@@ -125,8 +131,31 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 											case Implies -> // "Implies.invoke(${left},${right})";
 											    generateBinaryMethodCallExpr( "Implies", left, right );
 
-											case Elvis -> // "Elvis.invoke(${left},${right})";
-											    generateBinaryMethodCallExpr( "Elvis", left, right );
+											case Elvis -> {// "Elvis.invoke(${left},${right})";
+												NameExpr		elvisNameExpression	= new NameExpr( "Elvis" );
+
+												MethodCallExpr	elvisExpr			= new MethodCallExpr( elvisNameExpression, "invoke" );
+
+												elvisExpr.addArgument( new NameExpr( transpiler.peekContextName() ) );
+
+												elvisExpr.addArgument( left );
+
+												// creat ethe right argument
+												String rightLambdaContextName = "lambdaContext" + transpiler.incrementAndGetLambdaContextCounter();
+												transpiler.pushContextName( rightLambdaContextName );
+												transpiler.popContextName();
+
+												LambdaExpr rightLambda = new LambdaExpr();
+												rightLambda.setParameters( new NodeList<>(
+												    new Parameter( new UnknownType(), rightLambdaContextName ) ) );
+												BlockStmt rightBody = new BlockStmt();
+												rightBody.addStatement( new ReturnStmt( ( Expression ) right ) );
+												rightLambda.setBody( rightBody );
+
+												elvisExpr.addArgument( rightLambda );
+
+												yield elvisExpr;
+											}
 
 											case InstanceOf -> // "InstanceOf.invoke(${contextName},${left},${right})";
 											    generateBinaryMethodCallExpr( "InstanceOf", transpiler.peekContextName(), left, right );

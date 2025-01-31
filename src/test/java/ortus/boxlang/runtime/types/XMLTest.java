@@ -326,6 +326,38 @@ class XMLTest {
 		assertThat( variables.getAsStruct( result ).get( "Product" ) ).isEqualTo( "BoxLang" );
 	}
 
+	@DisplayName( "It can assign an XML Atrribute" )
+	@Test
+	void testChangeXMLAttributes() {
+		instance.executeSource(
+		    """
+		       xmlObj = xmlParse( '<Ortus Product="BoxLang"></Ortus>' );
+		       initial = xmlObj.xmlRoot.xmlAttributes.Product;
+		    xmlObj.xmlRoot.xmlAttributes.Product = "BoxLang Rocks!";
+		    result = xmlObj.xmlRoot.xmlAttributes.Product;
+		            """,
+		    context );
+		assertThat( variables.getAsString( Key.of( "initial" ) ) ).isEqualTo( "BoxLang" );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "BoxLang Rocks!" );
+	}
+
+	@DisplayName( "It can use the member function keyExists on a node" )
+	@Test
+	void testKeyExistsMember() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+			xmlText = "<Ortus><Products><Product>BoxLang</Product><Product>CommandBox</Product><Product>Coldbox</Product></Products></Ortus>";
+			parsed = xmlParse( xmlText );
+			result = parsed.xmlRoot.xmlChildren.filter( (child ) => child.keyExists( "Product" ) );
+			""",
+			context
+		);
+		// @formatter:on
+		assertThat( variables.get( result ) ).isInstanceOf( Array.class );
+		assertThat( variables.getAsArray( result ).size() ).isEqualTo( 1 );
+	}
+
 	@DisplayName( "It can remove an XML Atrribute" )
 	@Test
 	void testRemoveXMLAttributes() {
@@ -338,6 +370,89 @@ class XMLTest {
 		    context );
 		assertThat( variables.get( result ) ).isInstanceOf( Struct.class );
 		assertThat( variables.getAsStruct( result ).get( "Product" ) ).isEqualTo( null );
+	}
+
+	@DisplayName( "It has the correct values when namespaces are present" )
+	@Test
+	void testNameSpaceValues() {
+		//@formatter:off
+		instance.executeSource(
+		    """
+		    xmlObj = xmlParse( '
+			   <SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"
+			   xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+			   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+			   <SOAP-ENV:Header>
+				   <ns1:MessageHeader xmlns:ns1="http://www.ebxml.org/namespaces/messageHeader">
+					   <ns1:From>
+						   <ns1:PartyId ns1:type="urn:x12.org:IO5:01">Ortus Solutions</ns1:PartyId>
+					   </ns1:From>
+					   <ns1:Action>Testing</ns1:Action>
+				   </ns1:MessageHeader>
+			   </SOAP-ENV:Header>
+		   </SOAP-ENV:Envelope>  
+			' );
+			envelope = xmlObj.xmlRoot;
+			envelopePrefix = envelope.xmlNsPrefix;
+			envelopeName = envelope.xmlName;
+			envelopeAttributes = envelope.xmlAttributes;
+			header = xmlObj.xmlRoot.Header;
+			headerPrefix = header.xmlNsPrefix;
+		            """,
+		    context );
+			//@formatter:on
+
+		assertThat( variables.getAsString( Key.of( "envelopePrefix" ) ) ).isEqualTo( "SOAP-ENV" );
+		assertThat( variables.getAsString( Key.of( "envelopeName" ) ) ).isEqualTo( "SOAP-ENV:Envelope" );
+		assertThat( variables.get( Key.of( "envelopeAttributes" ) ) ).isInstanceOf( Struct.class );
+		assertThat( variables.getAsStruct( Key.of( "envelopeAttributes" ) ).get( Key.of( "xmlns:SOAP-ENV" ) ) )
+		    .isEqualTo( "http://schemas.xmlsoap.org/soap/envelope/" );
+		assertThat( variables.getAsString( Key.of( "headerPrefix" ) ) ).isEqualTo( "SOAP-ENV" );
+	}
+
+	@DisplayName( "It can correctly stringify XML objects" )
+	@Test
+	void testStringification() {
+
+		instance.executeSource(
+		    """
+		       xmlObj = xmlParse( '<Ortus></Ortus>' );
+		       result = toString( xmlObj.xmlRoot );
+		    result2 = xmlObj.xmlRoot.toString();
+		    xmlObj = xmlParse( '<Ortus><Product>BoxLang</Product></Ortus>' );
+		    result3 = toString( xmlObj.xmlRoot.Product );
+		            """,
+		    context );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "<?xml version=\"1.0\" encoding=\"UTF-8\"?><Ortus/>" );
+		assertThat( variables.get( result ) ).isEqualTo( variables.get( Key.of( "result2" ) ) );
+		assertThat( variables.getAsString( Key.of( "result3" ) ) ).isEqualTo( "<?xml version=\"1.0\" encoding=\"UTF-8\"?><Product>BoxLang</Product>" );
+
+	}
+
+	@DisplayName( "It can clone an node and append it to another xmlObject" )
+	@Test
+	void testNodeCloningAndAppend() {
+
+		//@formatter:off
+		instance.executeSource(
+		    """
+			xmlObj = xmlParse( '<Ortus></Ortus>' );
+			xmlContent = xmlParse( '<Products><Product>BoxLang</Product><Product>CommandBox</Product><Product>Coldbox</Product></Products>' );
+			target = xmlElemNew( xmlObj, "Products" );
+			xmlContent.xmlRoot.xmlChildren.each( ( node ) => {
+				target.appendChild(
+					target
+						.getOwnerDocument()
+						.importNode( node.cloneNode( javacast( "boolean", true ) ), javacast( "boolean", true ) )
+				)
+			} );
+			xmlObj.xmlRoot.xmlChildren.append( target );
+			result = xmlObj.xmlRoot.Products.xmlChildren.len();
+			""",
+		context );
+		//@formatter:off
+		assertThat( variables.getAsInteger( result ) ).isEqualTo( 3 );
+
 	}
 
 }

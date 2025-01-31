@@ -31,6 +31,8 @@ import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.google.common.truth.Truth.assertThat;
 
+import java.util.Base64;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -494,7 +496,7 @@ public class HTTPTest {
 		assertThat( bxhttp.get( Key.fileContent ) ).isEqualTo( "Request Timeout" );
 
 		Assertions.assertTrue( bxhttp.containsKey( Key.errorDetail ) );
-		assertThat( bxhttp.get( Key.errorDetail ) ).isEqualTo( "Request timed out after 1 second." );
+		assertThat( bxhttp.get( Key.errorDetail ) ).isEqualTo( "The request timed out after 1 second(s)" );
 	}
 
 	@DisplayName( "It can handle files" )
@@ -573,6 +575,42 @@ public class HTTPTest {
 
 		Assertions.assertTrue( bxhttp.containsKey( Key.fileContent ) );
 		assertThat( bxhttp.get( Key.fileContent ) ).isEqualTo( "{\"success\": true }" );
+	}
+
+	@DisplayName( "It can process a basic authentication request" )
+	@Test
+	public void testBasicAuth( WireMockRuntimeInfo wmRuntimeInfo ) {
+		String	username			= "admin";
+		String	password			= "password";
+		String	base64Credentials	= Base64.getEncoder().encodeToString( ( username + ":" + password ).getBytes() );
+		stubFor(
+		    get( "/posts/1" )
+		        .willReturn( ok()
+		            .withHeader( "Authorization", "Basic " + base64Credentials )
+		            .withHeader( "Content-Type", "application/json; charset=utf-8" )
+		            .withBody(
+		                """
+		                {
+		                  "userId": 1,
+		                  "id": 1,
+		                  "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
+		                  "body": "quia et suscipit\\nsuscipit recusandae consequuntur expedita et cum\\nreprehenderit molestiae ut ut quas totam\\nnostrum rerum est autem sunt rem eveniet architecto"
+		                }
+		                """ ) ) );
+
+		instance.executeSource(
+		    String.format( """
+		                     <cfhttp result="result" url="%s" username="%s" password="%s"></bxhttp>
+		                   """,
+		        wmRuntimeInfo.getHttpBaseUrl() + "/posts/1",
+		        username,
+		        password
+		    ),
+		    context, BoxSourceType.CFTEMPLATE );
+
+		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
+		IStruct bxhttp = variables.getAsStruct( result );
+		assertThat( bxhttp.getAsString( Key.header ) ).contains( "authorization: Basic " + base64Credentials );
 	}
 
 }

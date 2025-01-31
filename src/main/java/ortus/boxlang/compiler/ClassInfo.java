@@ -90,7 +90,7 @@ public record ClassInfo(
 		    "void",
 		    sourceType,
 		    null,
-		    resolvedFilePath.absolutePath().toFile().lastModified(),
+		    isTrustedCache() ? 0 : resolvedFilePath.absolutePath().toFile().lastModified(),
 		    new DiskClassLoader[ 1 ],
 		    null,
 		    boxpiler,
@@ -106,7 +106,7 @@ public record ClassInfo(
 		    null,
 		    sourceType,
 		    null,
-		    resolvedFilePath.absolutePath().toFile().lastModified(),
+		    isTrustedCache() ? 0 : resolvedFilePath.absolutePath().toFile().lastModified(),
 		    new DiskClassLoader[ 1 ],
 		    null,
 		    boxpiler,
@@ -229,4 +229,7 @@ public record ClassInfo(
 		}
 	}
 
+	public static boolean isTrustedCache() {
+		return BoxRuntime.getInstance().getConfiguration().trustedCache;
+	}
 }

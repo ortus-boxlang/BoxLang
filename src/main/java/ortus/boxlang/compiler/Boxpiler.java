@@ -10,9 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import ortus.boxlang.compiler.javaboxpiler.JavaBoxpiler;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.compiler.parser.Parser;
 import ortus.boxlang.compiler.parser.ParsingResult;
@@ -30,9 +28,9 @@ import ortus.boxlang.runtime.util.ResolvedFilePath;
 public abstract class Boxpiler implements IBoxpiler {
 
 	/**
-	 * Logger
+	 * Logger Instance
 	 */
-	protected static final Logger					logger			= LoggerFactory.getLogger( JavaBoxpiler.class );
+	protected static final Logger					logger			= BoxRuntime.getInstance().getLoggingService().getLogger( Boxpiler.class.getSimpleName() );
 	/**
 	 * Keeps track of the classes we've compiled
 	 */
@@ -49,6 +47,8 @@ public abstract class Boxpiler implements IBoxpiler {
 	 * The directory where the generated classes are stored
 	 */
 	protected Path									classGenerationDirectory;
+
+	protected BoxRuntime							runtime			= BoxRuntime.getInstance();
 
 	public Boxpiler() {
 		this.classGenerationDirectory	= Paths.get( BoxRuntime.getInstance().getConfiguration().classGenerationDirectory );
@@ -214,7 +214,6 @@ public abstract class Boxpiler implements IBoxpiler {
 		var			classPool	= getClassPool( classInfo.classPoolName() );
 		classPool.putIfAbsent( classInfo.fqn().toString(), classInfo );
 		classInfo = classPool.get( classInfo.fqn().toString() );
-
 		return classInfo.getDiskClass();
 	}
 
@@ -233,7 +232,9 @@ public abstract class Boxpiler implements IBoxpiler {
 		// If the new class is newer than the one on disk, recompile it
 		long	lastModified	= classPool.get( classInfo.fqn().toString() ).lastModified();
 		long	lastModified2	= classInfo.lastModified();
-		if ( ( lastModified > 0 ) && ( lastModified2 > 0 ) && ( lastModified != lastModified2 ) ) {
+		// This needs to be tested at decision time since the setting may have changed in the runtime since the compiler was created
+		Boolean	trustedCache	= runtime.getConfiguration().trustedCache;
+		if ( ( lastModified > 0 ) && ( lastModified2 > 0 ) && !trustedCache && ( lastModified != lastModified2 ) ) {
 			try {
 				// Don't know if this does anything, but calling it for good measure
 				classPool.get( classInfo.fqn().toString() ).getClassLoader().close();
@@ -280,7 +281,9 @@ public abstract class Boxpiler implements IBoxpiler {
 		// If the new class is newer than the one on disk, recompile it
 		long	lastModified	= classPool.get( classInfo.fqn().toString() ).lastModified();
 		long	lastModified2	= classInfo.lastModified();
-		if ( ( lastModified > 0 ) && ( lastModified2 > 0 ) && ( lastModified != lastModified2 ) ) {
+		// This needs to be tested at decision time since the setting may have changed in the runtime since the compiler was created
+		Boolean	trustedCache	= runtime.getConfiguration().trustedCache;
+		if ( ( lastModified > 0 ) && ( lastModified2 > 0 ) && !trustedCache && ( lastModified != lastModified2 ) ) {
 			try {
 				// Don't know if this does anything, but calling it for good measure
 				classPool.get( classInfo.fqn().toString() ).getClassLoader().close();

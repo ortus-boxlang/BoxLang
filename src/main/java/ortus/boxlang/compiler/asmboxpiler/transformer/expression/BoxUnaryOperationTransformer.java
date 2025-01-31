@@ -83,7 +83,7 @@ public class BoxUnaryOperationTransformer extends AbstractTransformer {
 			nodes.addAll( transpiler.getCurrentMethodContextTracker().get().loadCurrentContext() );
 			nodes.addAll( transpiler.createKey( id.getName() ) );
 			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
-			nodes.add( new LdcInsnNode( true ) );
+			nodes.add( new LdcInsnNode( 1 ) );
 			nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
 			    Type.getInternalName( IBoxContext.class ),
 			    "scopeFindNearby",

@@ -39,7 +39,6 @@ public class BoxFunctionInvocationTransformer extends AbstractTransformer {
 		String					methodName			= function.getName();
 		boolean					isSafeMethodCall	= methodName.equalsIgnoreCase( "isnull" );
 		TransformerContext		safe				= isSafeMethodCall ? TransformerContext.SAFE : context;
-		String					side				= safe == TransformerContext.NONE ? "" : "(" + safe.toString() + ") ";
 
 		// logger.trace( side + node.getSourceText() );
 

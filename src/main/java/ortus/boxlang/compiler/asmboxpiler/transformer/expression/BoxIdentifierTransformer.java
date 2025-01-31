@@ -63,7 +63,7 @@ public class BoxIdentifierTransformer extends AbstractTransformer {
 			} else {
 				nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
 			}
-			nodes.add( new LdcInsnNode( false ) );
+			nodes.add( new LdcInsnNode( 0 ) );
 			nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
 			    Type.getInternalName( IBoxContext.class ),
 			    "scopeFindNearby",

@@ -48,7 +48,7 @@ public class BoxRuntimeException extends BoxLangException {
 	 * @param cause   The cause
 	 */
 	public BoxRuntimeException( String message, Throwable cause ) {
-		this( message, null, null, cause );
+		this( message, null, "", cause );
 	}
 
 	/**
@@ -69,7 +69,7 @@ public class BoxRuntimeException extends BoxLangException {
 	 * @param cause   The cause
 	 */
 	public BoxRuntimeException( String message, String type, Throwable cause ) {
-		this( message, null, type, null, cause );
+		this( message, null, type, "", cause );
 	}
 
 	/**
@@ -94,7 +94,7 @@ public class BoxRuntimeException extends BoxLangException {
 	 */
 	public BoxRuntimeException( String message, String detail, String type, Object extendedInfo, Throwable cause ) {
 		super( message, detail, type, cause );
-		this.extendedInfo = extendedInfo;
+		this.extendedInfo = extendedInfo == null ? "" : extendedInfo;
 	}
 
 	/**

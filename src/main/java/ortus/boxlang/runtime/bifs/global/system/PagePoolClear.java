@@ -34,11 +34,10 @@ public class PagePoolClear extends BIF {
 	}
 
 	/**
-	 * For Lucee compat right now. We'll see if we need to do anything else.
+	 * Clears all the compiled classes from the Boxpiler's page pool.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		RunnableLoader.getInstance().getBoxpiler().clearPagePool();

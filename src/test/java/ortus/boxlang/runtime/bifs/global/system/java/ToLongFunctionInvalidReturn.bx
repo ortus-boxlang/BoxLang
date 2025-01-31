@@ -1,0 +1,16 @@
+/**
+ * Functional interface that maps to java.util.function.ToLongFunction
+ * See https://docs.oracle.com/javase/8/docs/api/java/util/function/ToLongFunction.html
+ */
+class {
+
+
+	/**
+	 * Functional interface for the apply functionional interface
+	 */
+	function applyAsLong( required value ){
+		// Return non-Long value, which cannot be coerced
+		return "sdf"
+	}
+
+}

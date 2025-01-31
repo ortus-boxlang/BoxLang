@@ -17,11 +17,16 @@
  */
 package ortus.boxlang.runtime.operators;
 
+import java.util.function.Function;
+
+import ortus.boxlang.runtime.context.IBoxContext;
+
 /**
  * Performs elvis operator (null coaslescing)
  * {@code expr ?: expr}
  *
- * Note: Any deferencing performed in the evaluation of of the left operand must be done safely
+ * Note: Any deferencing performed in the evaluation of of the left operand must
+ * be done safely
  * So,
  * {@code foo.bar ?: expr}
  * must be the equivalent of
@@ -29,12 +34,16 @@ package ortus.boxlang.runtime.operators;
  */
 public class Elvis implements IOperator {
 
-	public static Object invoke( Object left, Object right ) {
-		if ( left != null ) {
-			return left;
-		} else {
-			return right;
-		}
+	/**
+	 *
+	 * @param condition Boollean to evaluate
+	 * @param ifTrue    Value to use if condition is true
+	 * @param ifFalse   Value to use if condition is false
+	 *
+	 * @return The result of the ternary operation
+	 */
+	public static Object invoke( IBoxContext context, Object left, Function<IBoxContext, Object> right ) {
+		return left != null ? left : right.apply( context );
 	}
 
 }

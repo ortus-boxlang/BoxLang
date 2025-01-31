@@ -38,7 +38,6 @@ public class BoxScopeTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxScope			scope		= ( BoxScope ) node;
-		String				side		= context == TransformerContext.NONE ? "" : "(" + context.toString() + ") ";
 		Map<String, String>	values		= new HashMap<>() {
 
 											{

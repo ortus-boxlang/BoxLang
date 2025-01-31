@@ -25,7 +25,6 @@ import java.io.IOException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -247,7 +246,6 @@ public class BoxTemplateTest {
 
 	@DisplayName( "component script Island inception" )
 	@Test
-	@Disabled( "This can't work without re-working the lexers to 'count' the island blocks." )
 	public void testComponentScriptIslandInception() {
 		instance.executeSource(
 		    """
@@ -267,6 +265,28 @@ public class BoxTemplateTest {
 		                      """, context, BoxSourceType.BOXSCRIPT );
 
 		assertThat( variables.get( result ) ).isEqualTo( "one two three four five six seven" );
+	}
+
+	@DisplayName( "component script Island inception 2" )
+	@Test
+	public void testComponentScriptIslandInception2() {
+		instance.executeSource(
+		    """
+		        <bx:set result = "one">
+		      <bx:script>
+		      	result &= " two";
+		    collection = [1]
+		    for( foo in collection ) {
+		    	```
+		    		<bx:set result &= " three">
+		    	```
+		    }
+		      	result &= " four"
+		      </bx:script>
+		      <bx:set result &= " five">
+		                       """, context, BoxSourceType.BOXTEMPLATE );
+
+		assertThat( variables.get( result ) ).isEqualTo( "one two three four five" );
 	}
 
 	@Test

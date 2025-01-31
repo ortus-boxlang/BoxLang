@@ -38,8 +38,8 @@ import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.loader.ClassLocation;
 import ortus.boxlang.runtime.loader.ClassLocator;
-import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
 import ortus.boxlang.runtime.loader.DynamicClassLoader;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.types.IStruct;
@@ -74,7 +74,7 @@ public class JavaResolverTest extends AbstractResolverTest {
 		Optional<ClassLocation>	classLocation	= javaResolver.findFromSystem( className, new ArrayList<>(), context );
 
 		assertThat( classLocation.isPresent() ).isTrue();
-		assertThat( classLocation.get().clazz() ).isEqualTo( Map.Entry.class );
+		assertThat( classLocation.get().clazz( context ) ).isEqualTo( Map.Entry.class );
 		assertThat( classLocation.get().name() ).isEqualTo( "Entry" );
 		assertThat( classLocation.get().packageName() ).isEqualTo( "java.util" );
 		assertThat( classLocation.get().type() ).isEqualTo( ClassLocator.TYPE_JAVA );
@@ -88,7 +88,7 @@ public class JavaResolverTest extends AbstractResolverTest {
 		Optional<ClassLocation>	classLocation	= javaResolver.findFromSystem( className, new ArrayList<>(), context );
 
 		assertThat( classLocation.isPresent() ).isTrue();
-		assertThat( classLocation.get().clazz() ).isEqualTo( IStruct.TYPES.class );
+		assertThat( classLocation.get().clazz( context ) ).isEqualTo( IStruct.TYPES.class );
 		assertThat( classLocation.get().name() ).isEqualTo( "TYPES" );
 		assertThat( classLocation.get().packageName() ).isEqualTo( "ortus.boxlang.runtime.types" );
 		assertThat( classLocation.get().type() ).isEqualTo( ClassLocator.TYPE_JAVA );
@@ -102,7 +102,7 @@ public class JavaResolverTest extends AbstractResolverTest {
 		Optional<ClassLocation>	classLocation	= javaResolver.findFromSystem( className, new ArrayList<>(), context );
 
 		assertThat( classLocation.isPresent() ).isTrue();
-		assertThat( classLocation.get().clazz() ).isEqualTo( ConsoleHandler.class );
+		assertThat( classLocation.get().clazz( context ) ).isEqualTo( ConsoleHandler.class );
 		assertThat( classLocation.get().name() ).isEqualTo( "ConsoleHandler" );
 		assertThat( classLocation.get().packageName() ).isEqualTo( "java.util.logging" );
 		assertThat( classLocation.get().type() ).isEqualTo( ClassLocator.TYPE_JAVA );
@@ -116,7 +116,7 @@ public class JavaResolverTest extends AbstractResolverTest {
 		Optional<ClassLocation>	classLocation	= javaResolver.findFromSystem( className, new ArrayList<>(), context );
 
 		assertThat( classLocation.isPresent() ).isTrue();
-		assertThat( classLocation.get().clazz() ).isEqualTo( ClassUtils.class );
+		assertThat( classLocation.get().clazz( context ) ).isEqualTo( ClassUtils.class );
 		assertThat( classLocation.get().name() ).isEqualTo( "ClassUtils" );
 		assertThat( classLocation.get().packageName() ).isEqualTo( "org.apache.commons.lang3" );
 		assertThat( classLocation.get().type() ).isEqualTo( ClassLocator.TYPE_JAVA );
@@ -130,7 +130,7 @@ public class JavaResolverTest extends AbstractResolverTest {
 		Optional<ClassLocation>	classLocation	= javaResolver.findFromSystem( className, new ArrayList<>(), context );
 
 		assertThat( classLocation.isPresent() ).isTrue();
-		assertThat( classLocation.get().clazz() ).isEqualTo( HashSet.class );
+		assertThat( classLocation.get().clazz( context ) ).isEqualTo( HashSet.class );
 		assertThat( classLocation.get().name() ).isEqualTo( "HashSet" );
 		assertThat( classLocation.get().packageName() ).isEqualTo( "java.util" );
 		assertThat( classLocation.get().type() ).isEqualTo( ClassLocator.TYPE_JAVA );
@@ -149,7 +149,7 @@ public class JavaResolverTest extends AbstractResolverTest {
 		System.out.println( classLocation );
 
 		assertThat( classLocation.isPresent() ).isTrue();
-		assertThat( classLocation.get().clazz() ).isEqualTo( HashSet.class );
+		assertThat( classLocation.get().clazz( context ) ).isEqualTo( HashSet.class );
 		assertThat( classLocation.get().name() ).isEqualTo( "HashSet" );
 		assertThat( classLocation.get().packageName() ).isEqualTo( "java.util" );
 		assertThat( classLocation.get().type() ).isEqualTo( ClassLocator.TYPE_JAVA );

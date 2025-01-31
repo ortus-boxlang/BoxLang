@@ -17,8 +17,6 @@
  */
 package ortus.boxlang.runtime.bifs.global.system;
 
-import java.io.UnsupportedEncodingException;
-
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
@@ -28,6 +26,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
+import ortus.boxlang.runtime.util.EncryptionUtil;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.STRING )
@@ -54,11 +53,7 @@ public class URLEncodedFormat extends BIF {
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String str = StringCaster.cast( arguments.get( Key.string ) );
-		try {
-			// W3C says to use UTF-8 for all encoding: http://www.w3.org/TR/html40/appendix/notes.html#non-ascii-chars
-			return java.net.URLEncoder.encode( str, "utf-8" );
-		} catch ( UnsupportedEncodingException e ) {
-			return str;
-		}
+		// W3C says to use UTF-8 for all encoding: http://www.w3.org/TR/html40/appendix/notes.html#non-ascii-chars
+		return EncryptionUtil.urlEncode( str );
 	}
 }

@@ -3,6 +3,7 @@ import org.apache.tools.ant.filters.ReplaceTokens
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 import java.text.SimpleDateFormat
+import java.lang.management.ManagementFactory
 
 // https://docs.gradle.org/current/userguide/building_java_projects.html#sec:java_packaging
 plugins {
@@ -12,15 +13,15 @@ plugins {
 	id "application"
 	id 'antlr'
 	// For source code formatting
-	id "com.diffplug.spotless" version "7.0.1"
+	id "com.diffplug.spotless" version "7.0.2"
 	// For building shadow jars with jdk 17 ONLY
     //id 'com.github.johnrengelman.shadow' version '8.1.1'
     // For building shadow jars using JDK 21 +, they had to fork
     id "io.github.goooler.shadow" version "8.1.8"
 	// For dependency updates
-	id 'com.github.ben-manes.versions' version '0.51.0'
+	id 'com.github.ben-manes.versions' version '0.52.0'
 	// For building service loader files
-    id "com.github.harbby.gradle.serviceloader" version "1.1.8"
+    id "com.github.harbby.gradle.serviceloader" version "1.1.9"
 	// Maven Publisher
 	id 'maven-publish'
 	id 'signing'
@@ -92,7 +93,7 @@ repositories {
  */
 dependencies {
     // Testing Dependencies
-    testImplementation "org.junit.jupiter:junit-jupiter:5.+"
+    testImplementation "org.junit.jupiter:junit-jupiter:5.11.3"
 	testImplementation "org.mockito:mockito-core:5.+"
 	testImplementation "com.google.truth:truth:1.+"
 	testImplementation "commons-cli:commons-cli:1.9.0"
@@ -136,7 +137,7 @@ dependencies {
 	// https://mvnrepository.com/artifact/org.ow2.asm/asm-util
 	implementation 'org.ow2.asm:asm-util:9.7.1'
 	// https://mvnrepository.com/artifact/org.semver4j/semver4j
-	implementation 'org.semver4j:semver4j:5.5.0'
+	implementation 'org.semver4j:semver4j:5.6.0'
 
 }
 
@@ -231,14 +232,6 @@ shadowJar {
 		exclude( dependency( "ch.qos.logback:.*:.*" ) )
 		exclude( dependency( "com.zaxxer:.*:.*" ) )
 		exclude( dependency( "com.fasterxml.jackson.jr:.*:.*" ) )
-	}
-}
-
-test {
-	systemProperty 'boxlang.experimental.compiler', System.getProperty('boxlang.experimental.compiler', "java")
-
-	testLogging {
-		events "FAILED", "STANDARD_ERROR"
 	}
 }
 
@@ -390,13 +383,6 @@ publishing {
 						id = "jbeers"
 						name = "Jacob Beers"
 						email = "jbeers@ortussolutions.com"
-						organization = "Ortus Solutions, Corp"
-						organizationUrl = "https://www.ortussolutions.com"
-					}
-					developer {
-						id = "gpickin"
-						name = "Gavin Pickin"
-						email = "gavin@ortussolutions.com"
 						organization = "Ortus Solutions, Corp"
 						organizationUrl = "https://www.ortussolutions.com"
 					}
@@ -563,7 +549,7 @@ spotless {
     java {
 		target fileTree( "." ) {
             include "**/*.java"
-            exclude "**/build/**", "bin/**", "examples/**", "src/main/java/ortus/boxlang/runtime/testing/**", "src/main/gen/**", "src/main/antlr/gen"
+            exclude "**/build/**", "bin/**", "examples/**", "src/main/java/ortus/boxlang/runtime/testing/**", "src/main/gen/**", "src/main/antlr/gen", "modules/**"
         }
         eclipse().configFile( "workbench/ortus-java-style.xml" )
 		toggleOffOn()
@@ -601,13 +587,39 @@ task parseBifDocs( type: Javadoc, dependsOn: compileJava ) {
 /**
  * Test Task Customizations
  */
+task createHeapDump {
+    doLast {
+		def name = ManagementFactory.getRuntimeMXBean().getName()
+        def pid = name.split("@")[0]
+        if (pid != null) {
+            def timestamp = new Date().format("yyyyMMddHHmmss")
+            def dumpFileName = "build/heapdumps/${timestamp}/heapdump.hprof"
+			exec {
+				commandLine 'mkdir', '-p', 'build/heapdumps/' + timestamp
+			}
+            exec {
+                commandLine 'jmap', '-dump:live,file=' + dumpFileName, pid
+            }
+            println "Heap dump created: $dumpFileName"
+        } else {
+            println "PID not provided. Cannot create heap dump."
+        }
+    }
+}
+
 test {
+	// IMPORTANT: Do not leave this uncommented and commit or all tests locally will run on the specified compiler
+	// systemProperty 'boxlang.experimental.compiler', System.getProperty('boxlang.experimental.compiler', "java")
 	useJUnitPlatform()
 	testLogging {
 		showStandardStreams = true
+		events "FAILED", "STANDARD_ERROR"
 	}
 	dependsOn compileJava, compileTestJava
 	//exclude '**/resources/**'
+
+	// Uncomment to take a heap dump after the conclusion of tests
+	// finalizedBy( createHeapDump )
 }
 
 /**
@@ -653,9 +665,4 @@ task bumpBetaVersion {
 task getDependencies( type: Copy ) {
   from sourceSets.main.runtimeClasspath
   into 'build/dependencies/'
-}
-spotless{
-	java{
-		targetExclude 'modules/**'
-	}
 }

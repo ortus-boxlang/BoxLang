@@ -23,8 +23,8 @@ import ortus.boxlang.runtime.types.Closure;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Lambda;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableArray;
-import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableStruct;
 
 /**
  * This class represents BoxLang metadata for a function
@@ -36,7 +36,6 @@ public class FunctionMeta extends BoxMeta {
 	private Function	target;
 	public Object		AST;
 	public Class<?>		$class;
-	// TODO: Make this into an actual class to allow modification on the fly of metadata
 	public IStruct		meta;
 
 	/**
@@ -52,7 +51,7 @@ public class FunctionMeta extends BoxMeta {
 		Object[]	params	= new Object[ target.getArguments().length ];
 		int			i		= 0;
 		for ( Argument argument : target.getArguments() ) {
-			params[ i++ ] = UnmodifiableStruct.of(
+			params[ i++ ] = Struct.of(
 			    Key._NAME, argument.name().getName(),
 			    Key.nameAsKey, argument.name(),
 			    Key.required, argument.required(),
@@ -63,7 +62,7 @@ public class FunctionMeta extends BoxMeta {
 			);
 		}
 		// Assemble the metadata
-		this.meta = UnmodifiableStruct.of(
+		this.meta = Struct.of(
 		    Key._NAME, target.getName().getName(),
 		    Key.nameAsKey, target.getName(),
 		    Key.returnType, target.getReturnType(),

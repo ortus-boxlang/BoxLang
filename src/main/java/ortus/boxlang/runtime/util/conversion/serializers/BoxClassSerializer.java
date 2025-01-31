@@ -23,9 +23,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.jr.ob.api.ValueWriter;
 import com.fasterxml.jackson.jr.ob.impl.JSONWriter;
@@ -48,13 +45,8 @@ import ortus.boxlang.runtime.types.util.BLCollector;
  */
 public class BoxClassSerializer implements ValueWriter {
 
-	/**
-	 * Logger
-	 */
-	private static final Logger								logger			= LoggerFactory.getLogger( BoxClassSerializer.class );
-
 	// ThreadLocal to keep track of seen structs in the current thread
-	private static final ThreadLocal<Set<IClassRunnable>>	visitedClasses	= ThreadLocal.withInitial( HashSet::new );
+	private static final ThreadLocal<Set<IClassRunnable>> visitedClasses = ThreadLocal.withInitial( HashSet::new );
 
 	/**
 	 * Inflate an annotation value into an Array

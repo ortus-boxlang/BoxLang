@@ -22,6 +22,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
 
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.BoxRuntime;
@@ -30,6 +32,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.Array;
 
 /**
  * [BoxLang]
@@ -183,6 +186,82 @@ public class TestExecution extends TestBase {
 
 		assertThat( variables.get( Key.of( "test4" ) ) ).isEqualTo( "Brad \"the guy\" Wood" );
 		assertThat( variables.get( Key.of( "test5" ) ) ).isEqualTo( "Luis 'the man' Majano" );
+	}
+
+	@DisplayName( "can execute a function with nested calls to the same method" )
+	@Test
+	@Disabled
+	void testNestingWithClosuresAndHighIteration() {
+
+		BoxRuntime	instance	= BoxRuntime.getInstance( true );
+		IBoxContext	context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		IScope		variables	= context.getScopeNearby( VariablesScope.name );
+
+		//@formatter:off
+		instance.executeSource(
+		"""
+		resultArray = [];
+		function describe( name, callback ) {
+			if( resultArray.len() >= 1000 ){
+				resultArray.clear();
+			}
+			resultArray.append( name & " is " & callback() );
+		}
+
+		function it( name, callback ) {
+			return name & callback();
+		}
+
+		function run() {
+			describe( "Ortus", function() {
+				it( "is a cool company", function() {
+					return "cool";
+				} );
+				it( "is a smart company", function() {
+					return "smart";
+				} );
+				describe( "employees", function() {
+					it ( "are smart", function() {
+						describe( "Luis", function(){
+							it( "is smart", function() {
+								return "smart";
+							} );
+						} );
+						describe( "Brad", function(){
+							it( "is smart", function() {
+								return "smart";
+							} );
+						} );
+					} );
+					it( "are cool", function() {
+						describe( "Luis", function(){
+							it( "is cool", function() {
+								return "cool";
+							} );
+						} );
+						describe( "Brad", function(){
+							it( "is cool", function() {
+								return "cool";
+							} );
+						} );
+					} );
+				} );
+			} );
+		}
+		start = getTickCount();
+		for( i = 0; i < 1000000; i++ ) {
+			run();
+		}
+		result = getTickCount() - start;
+		println( "Loop executed in " & (getTickCount() - start) & "ms" );
+
+		""",
+		context );
+		//@formatter:off
+
+		assertThat( variables.get( Key.of( "resultArray" ) ) ).isInstanceOf( Array.class );
+		// In Lucee  it takes around 15 seconds to execute the same loop - Adobe is 35s so they are much worse than BL
+		assertThat( variables.getAsInteger( Key.of( "result" ) ) ).isLessThan( 20000 );
 	}
 
 }

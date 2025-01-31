@@ -21,10 +21,8 @@
 			<tbody
 				<bx:if !expandRoot>class="d-none"</bx:if>
 			>
-				<bx:script>
-					theCollection = var.getDumpRepresentation();
-					for ( key in theCollection ) {
-						```
+					<bx:set theCollection = var.getDumpRepresentation()>
+					<bx:loop collection="#theCollection#" item="key">
 						<bx:if NOT isCustomFunction( theCollection[ key ] ) >
 							<tr>
 								<th
@@ -43,9 +41,7 @@
 								</td>
 							</tr>
 						</bx:if>
-						```
-					}
-				</bx:script>
+					</bx:loop>
 			</tbody>
 		</table>
 	</div>

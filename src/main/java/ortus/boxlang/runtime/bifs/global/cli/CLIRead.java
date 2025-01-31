@@ -1,0 +1,66 @@
+/**
+ * [BoxLang]
+ *
+ * Copyright [2023] [Ortus Solutions, Corp]
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package ortus.boxlang.runtime.bifs.global.cli;
+
+import ortus.boxlang.runtime.bifs.BIF;
+import ortus.boxlang.runtime.bifs.BoxBIF;
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.scopes.ArgumentsScope;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+
+@BoxBIF
+public class CLIRead extends BIF {
+
+	/**
+	 * Constructor
+	 */
+	public CLIRead() {
+		super();
+		declaredArguments = new Argument[] {
+		    new Argument( false, "string", Key.prompt )
+		};
+	}
+
+	/**
+	 * Reads a line of text from the CLI.
+	 *
+	 * @param context   The context in which the BIF is being invoked.
+	 * @param arguments Argument scope for the BIF.
+	 *
+	 * @return The line of text read from the CLI.
+	 */
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
+		// Get the prompt string.
+		String prompt = arguments.getAsString( Key.prompt );
+		// If not null, print the prompt.
+		if ( prompt != null ) {
+			functionService.getGlobalFunction( Key.println )
+			    .invoke( context, new Object[] { prompt }, false, Key.println );
+		}
+
+		// Read a line of text from the CLI using a scanner
+		try ( java.util.Scanner scanner = new java.util.Scanner( System.in ) ) {
+			return scanner.nextLine();
+		} catch ( Exception e ) {
+			throw new BoxRuntimeException( "Error reading from the CLI", e );
+		}
+	}
+
+}

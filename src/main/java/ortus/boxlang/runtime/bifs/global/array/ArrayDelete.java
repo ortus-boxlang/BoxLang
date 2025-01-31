@@ -88,7 +88,7 @@ public class ArrayDelete extends BIF {
 	 */
 	private boolean isCaseSensitive( Key functionName ) {
 		// Check if the functionName ends with "noCase" with no case sensitivity
-		return StringUtils.endsWithIgnoreCase( functionName.getNameNoCase(), "NoCase" ) ? false : true;
+		return StringUtils.endsWithIgnoreCase( functionName.getName(), "NoCase" ) ? false : true;
 	}
 
 }

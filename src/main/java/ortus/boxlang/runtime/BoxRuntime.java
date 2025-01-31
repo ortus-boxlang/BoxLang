@@ -37,7 +37,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.compiler.ClassInfo;
 import ortus.boxlang.compiler.IBoxpiler;
@@ -358,7 +357,10 @@ public class BoxRuntime implements java.io.Closeable {
 		// Finally verify if we overwrote the debugmode in one of the configs above
 		if ( debugMode == null ) {
 			this.debugMode = this.configuration.debugMode;
-			this.logger.info( "+ DebugMode detected in config, overriding to {}", this.debugMode );
+			this.loggingService.getRootLogger().debug( "+ DebugMode detected in config, overriding to {}", this.debugMode );
+		} else {
+			// Make sure our runtime debug mode propagates or the logging service reconfiguration will reset the log levels to the defaults
+			this.configuration.debugMode = debugMode;
 		}
 
 		// Reconfigure the logging services
@@ -441,14 +443,13 @@ public class BoxRuntime implements java.io.Closeable {
 		timerUtil.start( "runtime-startup" );
 
 		// Startup the Logging Service: Unique as it's not an IService
-		this.loggingService	= LoggingService.getInstance( this ).configureBasic( debugMode );
+		this.loggingService = LoggingService.getInstance( this ).configureBasic( debugMode );
 
 		// Startup basic logging
 		// Here is where LogBack looks via ServiceLoader for a `Configurator` class
 		// Which in our case is our {@link LoggingConfigurator} class.
-		this.logger			= LoggerFactory.getLogger( BoxRuntime.class );
 		// We can now log the startup
-		this.logger.info( "+ Starting up BoxLang Runtime" );
+		this.loggingService.getRootLogger().info( "+ Starting up BoxLang Runtime" );
 
 		// Create the Runtime Services
 		this.interceptorService	= new InterceptorService( this );
@@ -468,6 +469,9 @@ public class BoxRuntime implements java.io.Closeable {
 		// Load the configurations and overrides
 		loadConfiguration( debugMode, this.configPath );
 		// Anythying below might use configuration items
+
+		// Assign the logger now that we have a configuration and directory paths to create new loggers
+		this.logger = this.loggingService.getLogger( BoxRuntime.class.getSimpleName() );
 
 		// Ensure home assets
 		ensureHomeAssets();

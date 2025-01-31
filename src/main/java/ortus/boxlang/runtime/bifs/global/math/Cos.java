@@ -31,9 +31,12 @@ import ortus.boxlang.runtime.types.util.MathUtil;
 @BoxMember( type = BoxLangType.NUMERIC )
 public class Cos extends BIF {
 
-	private static final BigDecimal	MINUS_ONE	= BigDecimal.valueOf( -1 );
-	private static final BigDecimal	THRESHOLD	= new BigDecimal( "1E-10" );
-	private static final BigDecimal	TWO_PI		= BigDecimal.valueOf( 2 * StrictMath.PI );
+	/**
+	 * Public utility constants
+	 */
+	public static final BigDecimal	MINUS_ONE	= BigDecimal.valueOf( -1 );
+	public static final BigDecimal	THRESHOLD	= new BigDecimal( "1E-10" );
+	public static final BigDecimal	TWO_PI		= BigDecimal.valueOf( 2 * StrictMath.PI );
 
 	/**
 	 * Constructor

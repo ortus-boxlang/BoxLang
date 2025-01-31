@@ -53,7 +53,7 @@ public class AdapterProtocolMessageReader {
 		this.logger.info( "Received command {}", name );
 		this.logger.info( "Received command {}", json );
 
-		Class parseTarget = this.parseMap.get( name.toLowerCase() );
+		Class<?> parseTarget = this.parseMap.get( name.toLowerCase() );
 
 		if ( parseTarget != null ) {
 			IAdapterProtocolMessage message = ( IAdapterProtocolMessage ) JSONUtil.fromJSON( parseTarget, json );

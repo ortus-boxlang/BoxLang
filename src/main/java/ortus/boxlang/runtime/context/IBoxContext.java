@@ -629,6 +629,18 @@ public interface IBoxContext extends IBoxAttachable, Serializable {
 	public ApplicationBoxContext getApplicationContext();
 
 	/**
+	 * This is a convenience method to get the running application's name from the context if any.
+	 * This will give you the name in a case-insensitive manner.
+	 * If there is no application context, it will return an empty string
+	 *
+	 * @return The application name or an empty string if not running in an application context
+	 */
+	public default String getApplicationName() {
+		ApplicationBoxContext app = getApplicationContext();
+		return app != null ? app.getApplication().getName().getNameNoCase() : "";
+	}
+
+	/**
 	 * Convenience method to retrieve a single config item
 	 *
 	 * @param itemKey the object key to retrieve

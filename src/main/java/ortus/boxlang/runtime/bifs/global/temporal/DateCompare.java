@@ -66,7 +66,7 @@ public class DateCompare extends BIF {
 		DateTime	date2		= DateTimeCaster.cast( arguments.get( Key.date2 ), true, timezone, context );
 
 		if ( datePart == null ) {
-			return date1.toEpochMillis().compareTo( date2.toEpochMillis() );
+			return date1.getWrapped().compareTo( date2.getWrapped() );
 		} else {
 			if ( datePart.equals( "m" ) ) {
 				datePart = "M";

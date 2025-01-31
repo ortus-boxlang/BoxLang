@@ -34,7 +34,7 @@ import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxDocumentationAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
-import ortus.boxlang.compiler.parser.BoxScriptParser;
+import ortus.boxlang.compiler.parser.BoxParser;
 import ortus.boxlang.compiler.parser.DocParser;
 import ortus.boxlang.compiler.parser.Parser;
 import ortus.boxlang.compiler.parser.ParsingResult;
@@ -105,7 +105,7 @@ public class TestUDF extends TestBase {
 	@Test
 	public void userDefinedFunctionDocumentation() throws IOException {
 
-		BoxScriptParser	parser	= new BoxScriptParser();
+		BoxParser		parser	= new BoxParser();
 		String			code	= """
 		                          /**
 		                          * This function does cool stuff
@@ -158,7 +158,7 @@ public class TestUDF extends TestBase {
 	@Test
 	public void userDefinedFunctionArguments() throws IOException {
 
-		BoxScriptParser	parser	= new BoxScriptParser();
+		BoxParser		parser	= new BoxParser();
 		ParsingResult	result	= parser.parse(
 
 		    """
@@ -199,7 +199,7 @@ public class TestUDF extends TestBase {
 	@Test
 	public void userDefinedFunctionArgumentsAnnotation() throws IOException {
 
-		BoxScriptParser	parser	= new BoxScriptParser();
+		BoxParser		parser	= new BoxParser();
 		ParsingResult	result	= parser.parse(
 
 		    """

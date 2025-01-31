@@ -92,7 +92,7 @@ public abstract class BoxLangException extends RuntimeException {
 	 */
 	public BoxLangException( String message, String detail, String type, Throwable cause ) {
 		super( message );
-		this.detail	= detail;
+		this.detail	= detail == null ? "" : detail;
 		this.type	= type;
 		if ( cause != null ) {
 			initCause( cause );

@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.dynamic;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -784,6 +785,13 @@ public class Attempt<T> {
 	public Attempt<T> setSimpleEval( Boolean eval ) {
 		this.simpleEval = eval;
 		return this;
+	}
+
+	/**
+	 * Convert this attempt to a standard Java Optional
+	 */
+	public Optional<T> toOptional() {
+		return Optional.ofNullable( this.value );
 	}
 
 }

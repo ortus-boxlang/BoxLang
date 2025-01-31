@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
-import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
+import ortus.boxlang.runtime.loader.ClassLocation;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.modules.ModuleRecord;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
@@ -315,7 +315,7 @@ public class InterceptorPool {
 		}
 
 		// Load the Interceptor by it's class, Construct it and assign it to the record
-		IClassRunnable oInterceptor = ( IClassRunnable ) DynamicObject.of( classLocation.get().clazz() )
+		IClassRunnable oInterceptor = ( IClassRunnable ) DynamicObject.of( classLocation.get().clazz( context ) )
 		    .invokeConstructor( context )
 		    .getTargetInstance();
 

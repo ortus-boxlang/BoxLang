@@ -21,7 +21,6 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
-import ortus.boxlang.runtime.util.FileSystemUtil;
 
 @BoxBIF
 
@@ -48,7 +47,7 @@ public class GetDirectoryFromPath extends BIF {
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		// Note: I can't trust the Path object as it won't treat a drive root as a folder, and returns
 		// null for some parents that are valid. So we're just doing string parsing for now.
-		String path = FileSystemUtil.expandPath( context, arguments.getAsString( Key.path ) ).absolutePath().toString();
+		String path = arguments.getAsString( Key.path );
 		if ( path.endsWith( "/" ) || path.endsWith( "\\" ) ) {
 			return path;
 		}

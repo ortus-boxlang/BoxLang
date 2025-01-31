@@ -39,6 +39,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.XML;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.util.XMLNamespaceResolver;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.XML )
@@ -79,6 +80,10 @@ public class XMLSearch extends BIF {
 
 		// Create an XPath object
 		XPath			xpath			= xPathFactory.newXPath();
+
+		if ( xml.getNode().getPrefix() != null ) {
+			xpath.setNamespaceContext( new XMLNamespaceResolver( xml.getNode().getOwnerDocument() ) );
+		}
 
 		xpath.setXPathVariableResolver( new XPathVariableResolver() {
 
