@@ -19,11 +19,91 @@ options {
 identifier: IDENTIFIER | reservedKeyword
     ;
 
+strictIdentifier: IDENTIFIER;
+
+looseIdentifier: IDENTIFIER | semiReserved;
+
+    // identifier: IDENTIFIER | reservedKeyword
+    // ;
+
+semiReserved: 
+// ABSTRACT
+ANY
+    // | ANY
+    // | ARRAY
+    // | AS
+    // | ASSERT
+    // | BOOLEAN
+    // | BREAK
+
+    // | CASE
+    // | CASTAS
+    // | CATCH
+    // | CLASS
+    // | CONTAIN
+    // | CONTAINS
+    // | CONTINUE
+    // | DEFAULT
+    // | DO
+    // | DOES
+    // | ELSE
+    // | FALSE
+    // | FINAL
+    // | FINALLY
+    // | FOR
+    // | FUNCTION TODO: Brad
+    // | FUNCTION
+    // | IF
+    // | IMPORT
+    // | IN
+    | INCLUDE
+    // | INSTANCEOF
+    // | INTERFACE
+    // | JAVA
+    | MESSAGE
+    // | NEW
+    | NULL
+    // | NUMERIC
+    // | PACKAGE
+    // | PARAM
+    | PRIVATE
+    // | PROPERTY
+    //| PROPERTY TODO: Brad
+    // | PUBLIC
+    // | QUERY
+    // | REMOTE
+    | REQUEST
+    // | REQUIRED
+    // | RETHROW
+    //| RETURN TODO: Brad
+    // | RETURN
+    | SERVER
+    | SETTING
+    // | STATIC
+    // | STRING
+    // | STRUCT
+    // | SWITCH --> Could possibly be a var name, but not a function/method name
+    | THROW
+    // | TO
+    // | TRUE
+    // | TRY
+    | TYPE
+    | VARIABLES
+    // | VAR
+    // | WHEN
+    // | WHILE
+    // | TRANSACTION
+    // | LOCK
+    // | THREAD
+    // | ABORT
+    // | EXIT
+    ;
+
 componentName
     :
     // Ask the component service if the component exists and verify that this context is actually a component.
     // { isComponent(_input) }? identifier
-    identifier
+    strictIdentifier
     ;
 
 specialComponentName: TRANSACTION | LOCK | THREAD | ABORT | EXIT | PARAM
@@ -174,7 +254,13 @@ interface
     ;
 
 // UDF or abstractFunction
-function: functionSignature postAnnotation* ( ( normalStatementBlock? SEMICOLON*) | SEMICOLON)
+function
+    : functionHeader normalStatementBlock SEMICOLON*
+    | functionHeader SEMICOLON
+    ;
+
+functionHeader
+    : preAnnotation* modifier* returnType? FUNCTION identifier LPAREN functionParamList? RPAREN postAnnotation*
     ;
 
 // public String myFunction( String foo, String bar )
@@ -210,7 +296,7 @@ arrayLiteral: LBRACKET expressionList? RBRACKET
     ;
 
 // foo=bar baz="bum"
-postAnnotation: identifier ((EQUALSIGN | COLON) attributeSimple)?
+postAnnotation: ( identifier ) ((EQUALSIGN | COLON) attributeSimple)?
     ;
 
 // This allows [1, 2, 3], "foo", or foo Adobe allows more chars than an identifer, Lucee allows darn
@@ -258,7 +344,7 @@ anonymousFunction
     // function( param, param ) {}
     FUNCTION LPAREN functionParamList? RPAREN (postAnnotation)* normalStatementBlock # closureFunc
     // ( param, param ) => {}, param => {} (param, param) -> {}, param -> {}
-    | (LPAREN functionParamList? RPAREN | identifier) (postAnnotation)* op = (ARROW | ARROW_RIGHT) statementOrBlock # lambdaFunc
+    | (LPAREN functionParamList? RPAREN | strictIdentifier) (postAnnotation)* op = (ARROW | ARROW_RIGHT) statementOrBlock # lambdaFunc
     ;
 
 // { statement; statement; }
@@ -404,11 +490,11 @@ assert: ASSERT expression
     ;
 
 // break label;
-break: BREAK identifier?
+break: BREAK strictIdentifier?
     ;
 
 // continue label
-continue: CONTINUE identifier?
+continue: CONTINUE strictIdentifier?
     ;
 
 /*
@@ -507,7 +593,7 @@ structMembers: structMember (COMMA structMember)* COMMA?
 structMember: structKey (COLON | EQUALSIGN) expression
     ;
 
-structKey: identifier | stringLiteral | reservedOperators | INTEGER_LITERAL | ILLEGAL_IDENTIFIER
+structKey: strictIdentifier | stringLiteral | reservedOperators | INTEGER_LITERAL | ILLEGAL_IDENTIFIER
     ;
 
 // new java:String( param1 )
@@ -515,7 +601,7 @@ new: NEW preFix? (fqn | stringLiteral) LPAREN argumentList? RPAREN
     ;
 
 // foo.bar.Baz
-fqn: (identifier DOT)* identifier
+fqn: ((identifier) DOT)* identifier
     ;
 
 expressionStatement
@@ -603,7 +689,7 @@ el2
 
     // the var is only a modifer for certain expressions, otherwise it's a variable declaration
     | { isAssignmentModifier(_input) }? assignmentModifier+ expression # exprVarDecl    // var foo = bar or final foo = bar
-    | identifier                                                       # exprIdentifier // foo
+    | looseIdentifier                                                       # exprIdentifier // foo
     ;
 
 // Use this instead of redoing it as arrayValues, arguments etc.
