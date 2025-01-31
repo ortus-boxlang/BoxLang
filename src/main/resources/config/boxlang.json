@@ -32,6 +32,14 @@
 	// Which will produce lots of debug output and metrics
 	// Also the debugging error template will be used if turned on
 	"debugMode": false,
+	// This enables the class locations cache for the runtime.  It's used when resolving class paths
+	// mostly using mappings, per request mappings, etc.
+	// We recommend you always enable this setting, unless debugging a very specific issue
+	"classResolverCache": true,
+	// This enables the runnable loader's cache on disk for compiled BoxLang classes
+	// This means that it will load a Boxlang class and never inspect the file again
+	// Turn this on for production, but off for development so you can see your changes
+	"trustedCache": false,
 	// The default timezone for the runtime; defaults to the JVM timezone if empty
 	// Please use the IANA timezone database values
 	"timezone": "",

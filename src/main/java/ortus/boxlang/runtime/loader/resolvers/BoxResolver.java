@@ -30,11 +30,10 @@ import org.apache.commons.lang3.StringUtils;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.loader.ClassLocation;
 import ortus.boxlang.runtime.loader.ClassLocator;
-import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.modules.ModuleRecord;
-import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.ModuleService;
 import ortus.boxlang.runtime.types.IStruct;
@@ -253,7 +252,7 @@ public class BoxResolver extends BaseResolver {
 				    targetPath.toAbsolutePath().toString(),
 				    resolvedFilePath.getBoxFQN().getPackageString(),
 				    ClassLocator.TYPE_BX,
-				    RunnableLoader.getInstance().loadClass( resolvedFilePath, context ),
+				    null,
 				    moduleName.getName(),
 				    true,
 				    context.getApplicationName(),
@@ -387,7 +386,7 @@ public class BoxResolver extends BaseResolver {
 				        possibleMatch.absolutePath().toAbsolutePath().toString(),
 				        possibleMatch.getBoxFQN().getPackageString(),
 				        ClassLocator.TYPE_BX,
-				        loadClass ? RunnableLoader.getInstance().loadClass( possibleMatch, context ) : null,
+				        null,
 				        "",
 				        true,
 				        context.getApplicationName(),
@@ -442,7 +441,7 @@ public class BoxResolver extends BaseResolver {
 							    targetPath.toAbsolutePath().toString(),
 							    newResolvedFilePath.getBoxFQN().getPackageString(),
 							    ClassLocator.TYPE_BX,
-							    loadClass ? RunnableLoader.getInstance().loadClass( newResolvedFilePath, context ) : null,
+							    null,
 							    "",
 							    true,
 							    context.getApplicationName(),
@@ -501,7 +500,7 @@ public class BoxResolver extends BaseResolver {
 			    foundPath.toAbsolutePath().toString(),
 			    newResolvedFilePath.getBoxFQN().getPackageString(),
 			    ClassLocator.TYPE_BX,
-			    loadClass ? RunnableLoader.getInstance().loadClass( newResolvedFilePath, context ) : null,
+			    null,
 			    "",
 			    true,
 			    context.getApplicationName(),

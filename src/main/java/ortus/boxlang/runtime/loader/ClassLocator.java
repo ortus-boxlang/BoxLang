@@ -420,7 +420,7 @@ public class ClassLocator extends ClassLoader {
 		// If not, use our system lookup order
 		if ( resolverDelimiterPos == -1 ) {
 			ClassLocation target = resolveFromSystem( context, name, true, imports, true );
-			return ( target == null ) ? null : DynamicObject.of( target.clazz(), context );
+			return ( target == null ) ? null : DynamicObject.of( target.clazz( context ), context );
 		} else {
 			// If there is a resolver prefix, carve it off and use it directly/
 			String	resolverPrefix	= name.substring( 0, resolverDelimiterPos );
@@ -543,7 +543,7 @@ public class ClassLocator extends ClassLoader {
 		    } );
 
 		if ( resolvedClass.isPresent() ) {
-			return DynamicObject.of( resolvedClass.get().clazz(), context );
+			return DynamicObject.of( resolvedClass.get().clazz( context ), context );
 		}
 
 		if ( throwException ) {
@@ -636,7 +636,7 @@ public class ClassLocator extends ClassLoader {
 		    ? Optional.empty()
 		    : Optional.of(
 		        DynamicObject.of(
-		            location.clazz(),
+		            location.clazz( context ),
 		            context
 		        )
 		    );
@@ -692,7 +692,7 @@ public class ClassLocator extends ClassLoader {
 		try {
 			return ( target == null )
 			    ? super.findClass( name )
-			    : target.clazz();
+			    : target.clazz( context );
 		} catch ( ClassNotFoundException e ) {
 			throw new ClassNotFoundBoxLangException( String.format( "The requested class [%s] was not found.", name ) );
 		}
@@ -732,7 +732,7 @@ public class ClassLocator extends ClassLoader {
 		    .append( name )
 		    .toString();
 
-		// Verify resolver cache setting
+		// No Setting, No Full Caching
 		if ( !runtime.getConfiguration().classResolverCache ) {
 			useCaching = false;
 		}
@@ -752,6 +752,7 @@ public class ClassLocator extends ClassLoader {
 			    return target;
 		    } );
 
+		// If we got it, return it
 		if ( resolvedClass.isPresent() ) {
 			return resolvedClass.get();
 		}
@@ -812,58 +813,6 @@ public class ClassLocator extends ClassLoader {
 	 */
 	public void clearClassLoaders() {
 		this.classLoaders.clear();
-	}
-
-	/**
-	 * --------------------------------------------------------------------------
-	 * ClassLocation Record
-	 * --------------------------------------------------------------------------
-	 */
-
-	/**
-	 * This record represents a class location in the application
-	 *
-	 * @param name        The name of the class
-	 * @param path        The fully qualified path to the class
-	 * @param packageName The package the class belongs to
-	 * @param type        The type of class it is: 1. Box class (this.BX_TYPE), 2. Java class (this.JAVA_TYPE)
-	 * @param clazz       The class object that represents the loaded class
-	 * @param module      The module the class belongs to, null if none
-	 * @param application The application the class belongs to, null if none
-	 */
-	public record ClassLocation(
-	    String name,
-	    String path,
-	    String packageName,
-	    int type,
-	    Class<?> clazz,
-	    String module,
-	    Boolean cacheable,
-	    String application ) {
-
-		/**
-		 * Verify if the class is from a module
-		 */
-		Boolean isFromModule() {
-			return module != null;
-		}
-
-		/**
-		 * Show the state of this record as a string
-		 */
-		@Override
-		public String toString() {
-			return String.format(
-			    "ClassLocation [name=%s, path=%s, packageName=%s, type=%s, clazz=%s, module=%s, cacheable=%s]",
-			    name,
-			    path,
-			    packageName,
-			    type,
-			    clazz,
-			    module,
-			    cacheable
-			);
-		}
 	}
 
 }

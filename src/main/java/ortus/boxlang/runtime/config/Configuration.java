@@ -95,7 +95,12 @@ public class Configuration implements IConfigSegment {
 	 * Turn on/off the resolver cache for Class Locators of Java/Box classes
 	 * {@code true} by default
 	 */
-	public Boolean				classResolverCache				= false;
+	public Boolean				classResolverCache				= true;
+
+	/**
+	 * Trusted cache setting - if enabled, once compiled a template will never be inspected for changes
+	 */
+	public Boolean				trustedCache					= false;
 
 	/**
 	 * The Timezone to use for the runtime;
@@ -173,11 +178,6 @@ public class Configuration implements IConfigSegment {
 	 * {@code true} by default
 	 */
 	public Boolean				setDomainCookies				= true;
-
-	/**
-	 * Trusted cache setting - if enabled, once compiled a template will never be inspected for changes
-	 */
-	public Boolean				trustedCache					= false;
 
 	/**
 	 * A sorted struct of mappings
@@ -310,21 +310,26 @@ public class Configuration implements IConfigSegment {
 		this.originalConfig = config;
 
 		// Debug Mode || Debbuging Enabled (cfconfig)
-		if ( config.containsKey( "debugMode" ) ) {
-			this.debugMode = BooleanCaster.cast( PlaceholderHelper.resolve( config.get( "debugMode" ) ) );
+		if ( config.containsKey( Key.debugMode ) ) {
+			this.debugMode = BooleanCaster.cast( PlaceholderHelper.resolve( config.get( Key.debugMode ) ) );
 		}
-		if ( config.containsKey( "debuggingEnabled" ) ) {
-			this.debugMode = BooleanCaster.cast( PlaceholderHelper.resolve( config.get( "debuggingEnabled" ) ) );
+		if ( config.containsKey( Key.debuggingEnabled ) ) {
+			this.debugMode = BooleanCaster.cast( PlaceholderHelper.resolve( config.get( Key.debuggingEnabled ) ) );
 		}
 
 		// Class Resolver Cache
-		if ( config.containsKey( "classResolverCache" ) ) {
-			this.classResolverCache = BooleanCaster.cast( PlaceholderHelper.resolve( config.get( "classResolverCache" ) ) );
+		if ( config.containsKey( Key.classResolverCache ) ) {
+			this.classResolverCache = BooleanCaster.cast( PlaceholderHelper.resolve( config.get( Key.classResolverCache ) ) );
+		}
+
+		// Trusted Cache
+		if ( config.containsKey( Key.trustedCache ) ) {
+			this.trustedCache = BooleanCaster.cast( PlaceholderHelper.resolve( config.get( Key.trustedCache ) ) );
 		}
 
 		// Compiler
-		if ( config.containsKey( "classGenerationDirectory" ) ) {
-			this.classGenerationDirectory = PlaceholderHelper.resolve( config.get( "classGenerationDirectory" ) );
+		if ( config.containsKey( Key.classGenerationDirectory ) ) {
+			this.classGenerationDirectory = PlaceholderHelper.resolve( config.get( Key.classGenerationDirectory ) );
 		}
 
 		// Timezone
@@ -478,11 +483,6 @@ public class Configuration implements IConfigSegment {
 		if ( config.containsKey( Key.defaultRemoteMethodReturnFormat ) ) {
 			this.defaultRemoteMethodReturnFormat = PlaceholderHelper
 			    .resolve( config.get( Key.defaultRemoteMethodReturnFormat ) ).toLowerCase();
-		}
-
-		// Process default cache configuration
-		if ( config.containsKey( Key.trustedCache ) ) {
-			this.trustedCache = config.getAsBoolean( Key.trustedCache );
 		}
 
 		// Setup a default cache, using the default cache configuration as it always needs to be present

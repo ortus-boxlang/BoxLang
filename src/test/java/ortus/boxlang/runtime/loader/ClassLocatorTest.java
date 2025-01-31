@@ -20,18 +20,17 @@ package ortus.boxlang.runtime.loader;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
-import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
 import ortus.boxlang.runtime.loader.resolvers.BoxResolver;
 import ortus.boxlang.runtime.types.exceptions.BoxLangException;
 
@@ -105,9 +104,8 @@ public class ClassLocatorTest {
 	}
 
 	@DisplayName( "It can load native Java classes and add to the resolver cache" )
-	@Disabled( "Disabled until we can consolidate trustedCache and resolverCache" )
 	@Test
-	public void testCanLoadJavaClassesWithCaching() throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException {
+	public void testCanLoadJavaClassesWithCaching() {
 		// Start our tests
 		String targetClass = "java.lang.String";
 		locator.clear();
@@ -157,7 +155,8 @@ public class ClassLocatorTest {
 		        String.class,
 		        null,
 		        false,
-		        "appName"
+		        "appName",
+		        Instant.now()
 		    )
 		);
 		assertThat( locator.hasClass( targetClass ) ).isTrue();

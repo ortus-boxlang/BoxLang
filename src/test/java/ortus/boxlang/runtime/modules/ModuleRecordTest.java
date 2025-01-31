@@ -36,7 +36,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.segments.ModuleConfig;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
-import ortus.boxlang.runtime.loader.ClassLocator.ClassLocation;
+import ortus.boxlang.runtime.loader.ClassLocation;
 import ortus.boxlang.runtime.loader.resolvers.JavaResolver;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -231,11 +231,11 @@ class ModuleRecordTest {
 		// JavaResolver can find the class explicitly
 		Optional<ClassLocation> classLocation = javaResolver.findFromModules( "HelloWorld@test", List.of(), context );
 		assertThat( classLocation.isPresent() ).isTrue();
-		assertThat( classLocation.get().clazz().getName() ).isEqualTo( "HelloWorld" );
+		assertThat( classLocation.get().clazz( context ).getName() ).isEqualTo( "HelloWorld" );
 		// JavaResolver can find the class by discovery, it should interrogate all modules for it.
 		classLocation = javaResolver.findFromModules( "HelloWorld", List.of(), context );
 		assertThat( classLocation.isPresent() ).isTrue();
-		assertThat( classLocation.get().clazz().getName() ).isEqualTo( "HelloWorld" );
+		assertThat( classLocation.get().clazz( context ).getName() ).isEqualTo( "HelloWorld" );
 
 		// Test the bif
 		// @formatter:off
