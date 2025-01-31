@@ -95,7 +95,7 @@ public class Configuration implements IConfigSegment {
 	 * Turn on/off the resolver cache for Class Locators of Java/Box classes
 	 * {@code true} by default
 	 */
-	public Boolean				classResolverCache				= true;
+	public Boolean				classResolverCache				= false;
 
 	/**
 	 * The Timezone to use for the runtime;
