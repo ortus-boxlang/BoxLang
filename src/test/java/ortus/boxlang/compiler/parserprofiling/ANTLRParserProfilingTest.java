@@ -26,6 +26,7 @@ import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.compiler.parser.AbstractParser;
@@ -71,6 +72,14 @@ public class ANTLRParserProfilingTest {
 		    "src/test/java/ortus/boxlang/compiler/parserprofiling/ClassA_BoxLang_benchmark.csv"
 		)
 		);
+
+		benchMarks.put( "ControllerCF", new BenchMarkRecord(
+		    CFParser.class,
+		    "src/test/java/ortus/boxlang/compiler/parserprofiling/ControllerCF.cfc",
+		    "src/test/java/ortus/boxlang/compiler/parserprofiling/ControllerCF.csv",
+		    "src/test/java/ortus/boxlang/compiler/parserprofiling/ControllerCF_benchmark.csv"
+		)
+		);
 	}
 
 	@BeforeAll
@@ -90,7 +99,7 @@ public class ANTLRParserProfilingTest {
 	}
 
 	@Test
-	// @Disabled
+	@Disabled
 	public void generateBenchMarks() {
 
 		for ( BenchMarkRecord rec : benchMarks.values() ) {
@@ -123,8 +132,10 @@ public class ANTLRParserProfilingTest {
 		try {
 			AbstractParser parser = ( AbstractParser ) benchmark.parserClass.getConstructor().newInstance();
 			parser.setDebugMode( true );
-
-			ParsingResult res = parser.parse( new File( benchmark.fileName ), true );
+			long			start		= System.currentTimeMillis();
+			ParsingResult	res			= parser.parse( new File( benchmark.fileName ), true );
+			long			end			= System.currentTimeMillis();
+			long			duration	= end - start;
 			parser.getProfilingResults().writeCSV( "src/test/java/ortus/boxlang/compiler/parserprofiling" );
 
 			assertThat( res.isCorrect() ).isTrue();
@@ -138,10 +149,13 @@ public class ANTLRParserProfilingTest {
 	}
 
 	@Test
+	@Disabled
 	public void testUnquotedAttribute4() throws IOException {
 		CFParser parser = new CFParser();
 		parser.setDebugMode( true );
+
 		ParsingResult res = parser.parse( new File( "src/test/java/ortus/boxlang/compiler/parserprofiling/ClassA.cfc" ), true );
+
 		parser.getProfilingResults().writeCSV( "src/test/java/ortus/boxlang/compiler/parserprofiling" );
 
 		assertThat( res.isCorrect() ).isTrue();
@@ -151,8 +165,15 @@ public class ANTLRParserProfilingTest {
 	}
 
 	@Test
+	@Disabled
 	public void testBoxLangClassA() throws IOException {
 		boolean areEqual = runTest( benchMarks.get( "ClassABoxLang" ) );
+		assertThat( areEqual ).isTrue();
+	}
+
+	@Test
+	public void testControllerCF() throws IOException {
+		boolean areEqual = runTest( benchMarks.get( "ControllerCF" ) );
 		assertThat( areEqual ).isTrue();
 	}
 

@@ -23,81 +23,37 @@ strictIdentifier: IDENTIFIER;
 
 looseIdentifier: IDENTIFIER | semiReserved;
 
-    // identifier: IDENTIFIER | reservedKeyword
-    // ;
-
 semiReserved: 
-// ABSTRACT
-ANY
-    // | ANY
-    // | ARRAY
-    // | AS
-    // | ASSERT
-    // | BOOLEAN
-    // | BREAK
-
-    // | CASE
-    // | CASTAS
-    // | CATCH
-    // | CLASS
-    // | CONTAIN
-    // | CONTAINS
-    // | CONTINUE
-    // | DEFAULT
-    // | DO
-    // | DOES
-    // | ELSE
-    // | FALSE
-    // | FINAL
-    // | FINALLY
-    // | FOR
-    // | FUNCTION TODO: Brad
-    // | FUNCTION
-    // | IF
-    // | IMPORT
-    // | IN
+    ANY
     | INCLUDE
-    // | INSTANCEOF
-    // | INTERFACE
-    // | JAVA
     | MESSAGE
-    // | NEW
     | NULL
-    // | NUMERIC
-    // | PACKAGE
-    // | PARAM
     | PRIVATE
-    // | PROPERTY
-    //| PROPERTY TODO: Brad
-    // | PUBLIC
-    // | QUERY
-    // | REMOTE
     | REQUEST
-    // | REQUIRED
-    // | RETHROW
-    //| RETURN TODO: Brad
-    // | RETURN
     | SERVER
     | SETTING
-    // | STATIC
-    // | STRING
-    // | STRUCT
-    // | SWITCH --> Could possibly be a var name, but not a function/method name
     | THROW
-    // | TO
-    // | TRUE
-    // | TRY
     | TYPE
     | VARIABLES
-    // | VAR
-    // | WHEN
-    // | WHILE
-    // | TRANSACTION
-    // | LOCK
-    // | THREAD
-    // | ABORT
-    // | EXIT
-    ;
+    | DEFAULT
+    | ARRAY
+    | CONTAINS
+    | QUERY
+    | VAR
+    | BOOLEAN
+    | JAVA
+    | STRING
+    | STATIC
+    | WHEN
+    | INSTANCEOF
+    | PARAM
+    | REQUIRED
+    | STRUCT
+    | SETTING
+    | NEW
+    | PACKAGE
+    | PUBLIC;
+
 
 componentName
     :
@@ -221,7 +177,7 @@ testExpression: expression EOF
     ;
 
 // import java:foo.bar.Baz as myAlias;
-importStatement: IMPORT preFix? importFQN ( AS identifier)? SEMICOLON*
+importStatement: IMPORT preFix? importFQN ( AS strictIdentifier)? SEMICOLON*
     ;
 
 importFQN: fqn (DOT STAR)?
@@ -260,19 +216,19 @@ function
     ;
 
 functionHeader
-    : preAnnotation* modifier* returnType? FUNCTION identifier LPAREN functionParamList? RPAREN postAnnotation*
+    : preAnnotation* modifier* returnType? FUNCTION strictIdentifier LPAREN functionParamList? RPAREN postAnnotation*
     ;
 
 // public String myFunction( String foo, String bar )
 functionSignature
-    : preAnnotation* modifier* returnType? FUNCTION identifier LPAREN functionParamList? RPAREN
+    : preAnnotation* modifier* returnType? FUNCTION strictIdentifier LPAREN functionParamList? RPAREN
     ;
 
 modifier: accessModifier | DEFAULT | STATIC | ABSTRACT | FINAL
     ;
 
 // String function foo() or MyClass function foo()
-returnType: type | identifier
+returnType: type | strictIdentifier
     ;
 
 // private String function foo()
@@ -284,7 +240,7 @@ functionParamList: functionParam (COMMA functionParam)* COMMA?
     ;
 
 // required String param1="default" inject="something"
-functionParam: REQUIRED? type? identifier (EQUALSIGN expression)? postAnnotation*
+functionParam: REQUIRED? type? looseIdentifier (EQUALSIGN expression)? postAnnotation*
     ;
 
 // @MyAnnotation "value". This is BL specific, so it's disabled in the CF grammar, but defined here
@@ -296,13 +252,13 @@ arrayLiteral: LBRACKET expressionList? RBRACKET
     ;
 
 // foo=bar baz="bum"
-postAnnotation: ( identifier ) ((EQUALSIGN | COLON) attributeSimple)?
+postAnnotation: ( looseIdentifier ) ((EQUALSIGN | COLON) attributeSimple)?
     ;
 
 // This allows [1, 2, 3], "foo", or foo Adobe allows more chars than an identifer, Lucee allows darn
 // near anything, but ANTLR is incapable of matching any tokens until the next whitespace. The
 // literalExpression is just a BoxLang flourish to allow for more flexible expressions.
-attributeSimple: annotation | identifier | fqn
+attributeSimple: annotation | strictIdentifier | fqn
     ;
 
 annotation: atoms | stringLiteral | structExpression | arrayLiteral
@@ -413,7 +369,7 @@ component
     //componentName componentAttribute* (normalStatementBlock | SEMICOLON)
     ;
 
-componentAttribute: identifier ((EQUALSIGN | COLON) expression)?
+componentAttribute: strictIdentifier ((EQUALSIGN | COLON) expression)?
     ;
 
 // Arguments are zero or more named args, or zero or more positional args, but not both (validated in the AST-building stage).
@@ -631,6 +587,12 @@ expression
 // Note the use of labels allows our visitor to know what it is visiting without complicated token checking etc
 el2
     : ILLEGAL_IDENTIFIER                                                    # exprIllegalIdentifier // 50foo
+
+    // additions
+    | semiReserved DOT el2                                             # zzza          // foo.50
+    | semiReserved                                             # zzzb          // foo.50
+    // end additions
+
     | LPAREN expression RPAREN                                              # exprPrecedence        // (foo)
     | new                                                                   # exprNew               // new foo.bar.Baz()
     | el2 LPAREN argumentList? RPAREN                                       # exprFunctionCall      // foo(bar, baz)
@@ -689,7 +651,7 @@ el2
 
     // the var is only a modifer for certain expressions, otherwise it's a variable declaration
     | { isAssignmentModifier(_input) }? assignmentModifier+ expression # exprVarDecl    // var foo = bar or final foo = bar
-    | looseIdentifier                                                       # exprIdentifier // foo
+    | strictIdentifier                                                       # exprIdentifier // foo
     ;
 
 // Use this instead of redoing it as arrayValues, arguments etc.

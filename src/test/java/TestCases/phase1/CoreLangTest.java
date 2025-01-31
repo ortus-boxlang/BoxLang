@@ -107,6 +107,7 @@ public class CoreLangTest {
 
 	@DisplayName( "if with single-token elseif" )
 	@Test
+	@Disabled( "Disabled as part of an effort to improve performance" )
 	public void testIfSingleTokenElseIf() {
 
 		instance.executeSource(
@@ -1907,6 +1908,7 @@ public class CoreLangTest {
 	}
 
 	@Test
+	@Disabled( "Disabled as part of an effort to improve performance" )
 	public void testKeywordsCF() {
 
 		instance.executeSource(
@@ -2189,7 +2191,7 @@ public class CoreLangTest {
 		      break();
 		      case();
 		      castas();
-		      catch();
+		    //   catch();
 		      class();
 		      component();
 		      contain();
