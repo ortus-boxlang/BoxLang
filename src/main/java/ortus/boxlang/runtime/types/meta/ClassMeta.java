@@ -28,7 +28,6 @@ import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableArray;
-import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableStruct;
 
 /**
  * This class represents generic BoxLang metadata for a an object which has no object-specifc properties
@@ -73,13 +72,13 @@ public class ClassMeta extends BoxMeta {
 		    Key.properties,
 		    // Only include properties that are declared in the class
 		    UnmodifiableArray.of( target.getProperties().entrySet().stream().filter( p -> p.getValue().declaringClass() == target.getClass() )
-		        .map( entry -> UnmodifiableStruct.of(
+		        .map( entry -> Struct.of(
 		            Key._NAME, entry.getKey().getName(),
 		            Key.nameAsKey, entry.getKey(),
 		            Key.type, entry.getValue().type(),
 		            Key.defaultValue, entry.getValue().getDefaultValueForMeta(),
-		            Key.annotations, UnmodifiableStruct.fromStruct( entry.getValue().annotations() ),
-		            Key.documentation, UnmodifiableStruct.fromStruct( entry.getValue().documentation() )
+		            Key.annotations, new Struct( entry.getValue().annotations() ),
+		            Key.documentation, new Struct( entry.getValue().documentation() )
 		        ) ).toArray() ),
 		    Key.type, "Component",
 		    Key.fullname, target.bxGetName().getName(),
