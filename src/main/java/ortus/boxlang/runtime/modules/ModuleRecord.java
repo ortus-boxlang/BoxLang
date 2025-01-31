@@ -1014,7 +1014,7 @@ public class ModuleRecord {
 				}
 
 				// Prepare the record now
-				BoxLangType boxType = BoxLangType.valueOf( type.getNameNoCase() );
+				BoxLangType boxType = BoxLangType.valueOf( type.getName().toUpperCase() );
 				memberRecord.put( Key.type, boxType );
 				memberRecord.computeIfAbsent( Key._NAME, k -> className.getNameNoCase().replace( type.getNameNoCase(), "" )
 				);

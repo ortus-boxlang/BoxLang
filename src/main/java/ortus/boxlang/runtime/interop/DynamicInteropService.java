@@ -1704,8 +1704,8 @@ public class DynamicInteropService {
 
 		// Double check because a java super dereference from a boxClass will have a different targetClass.
 		if ( Map.class.isAssignableFrom( targetClass ) && targetInstance instanceof Map ) {
-			// If it's a raw Map, then we use the original value as the key
-			return ( ( Map<Object, Object> ) targetInstance ).get( name.getOriginalValue() );
+			// If it's a raw Map, then we use the key, whose equals() method will defer to the original values's equals() method.
+			return ( ( Map<Object, Object> ) targetInstance ).get( name );
 			// Special logic so we can treat exceptions as referencable. Possibly move to helper
 		} else if ( targetInstance instanceof List list ) {
 			Integer index = Array.validateAndGetIntForDereference( name, list.size(), safe );

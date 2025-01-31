@@ -3502,16 +3502,14 @@ public class CoreLangTest {
 	public void testExecuteTemplate() {
 		instance.executeTemplate(
 		    "src/test/java/TestCases/phase1/files/index.bxs",
-		    new String[] {}
-		);
+		    new String[] {} );
 	}
 
 	@Test
 	public void testExecuteClass() {
 		instance.executeTemplate(
 		    "src/test/java/TestCases/phase1/files/Runner.bx",
-		    new String[] { "myArg" }
-		);
+		    new String[] { "myArg" } );
 	}
 
 	@Test
@@ -3565,7 +3563,8 @@ public class CoreLangTest {
 		assertThat( tagContext.get( 0 ) ).isInstanceOf( IStruct.class );
 		IStruct tagContextStruct = ( IStruct ) tagContext.get( 0 );
 		assertThat( tagContextStruct.get( Key.of( "line" ) ) ).isEqualTo( 2 );
-		assertThat( tagContextStruct.getAsString( Key.of( "template" ) ) ).ignoringCase().contains( "TagContextLineMapping.bxs" );
+		assertThat( tagContextStruct.getAsString( Key.of( "template" ) ) ).ignoringCase()
+		    .contains( "TagContextLineMapping.bxs" );
 		String code[] = tagContextStruct.getAsString( Key.of( "codePrintPlain" ) ).split( "\n" );
 		assertThat( code[ 1 ] ).contains( "for( foo in null ) {" );
 	}
@@ -4269,6 +4268,32 @@ public class CoreLangTest {
 			""",
 			context );
 		// @formatter:on
+	}
+
+	@Test
+	public void testDotAccess() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+			import ortus.boxlang.runtime.scopes.Key;
+				ref = {
+					"foo"     : "bar",
+				};
+
+				hashMap = createObject( "java", "java.util.HashMap" );
+				hashMap.putAll( ref );
+				
+				result1 = isNull( hashMap[ "foo" ] );
+				result12 = hashMap[ "foo" ] ;
+				result3 = isNull( hashMap.foo );
+				result4 = hashMap.foo;
+			""",
+			context );
+		// @formatter:on
+		assertThat( variables.getAsBoolean( Key.of( "result1" ) ) ).isFalse();
+		assertThat( variables.get( Key.of( "result12" ) ) ).isEqualTo( "bar" );
+		assertThat( variables.getAsBoolean( Key.of( "result3" ) ) ).isFalse();
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "bar" );
 	}
 
 }

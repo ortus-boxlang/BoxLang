@@ -80,8 +80,8 @@ class ConfigLoaderTest {
 		// Default Cache Checks
 		CacheConfig defaultCache = ( CacheConfig ) config.caches.get( "default" );
 		assertThat( defaultCache ).isNotNull();
-		assertThat( defaultCache.name.getNameNoCase() ).isEqualTo( "DEFAULT" );
-		assertThat( defaultCache.provider.getNameNoCase() ).isEqualTo( "BOXCACHEPROVIDER" );
+		assertThat( defaultCache.name ).isEqualTo( Key.of( "DEFAULT" ) );
+		assertThat( defaultCache.provider ).isEqualTo( Key.of( "BOXCACHEPROVIDER" ) );
 		assertThat( defaultCache.properties ).isNotNull();
 		assertThat( defaultCache.properties.get( "maxObjects" ) ).isEqualTo( 1000 );
 		assertThat( defaultCache.properties.get( "reapFrequency" ) ).isEqualTo( 120 );
@@ -91,7 +91,7 @@ class ConfigLoaderTest {
 
 		// Import Cache Checks
 		CacheConfig regexCache = ( CacheConfig ) config.caches.get( "bxRegex" );
-		assertThat( regexCache.provider.getNameNoCase() ).isEqualTo( "BOXCACHEPROVIDER" );
+		assertThat( regexCache.provider ).isEqualTo( Key.of( "BOXCACHEPROVIDER" ) );
 		assertThat( regexCache.properties ).isNotNull();
 		assertThat( regexCache.properties.get( "maxObjects" ) ).isEqualTo( 500 );
 		assertThat( regexCache.properties.get( "reapFrequency" ) ).isEqualTo( 120 );
@@ -191,8 +191,8 @@ class ConfigLoaderTest {
 		// Default Cache Checks
 		CacheConfig defaultCache = ( CacheConfig ) config.caches.get( "default" );
 		assertThat( defaultCache ).isNotNull();
-		assertThat( defaultCache.name.getNameNoCase() ).isEqualTo( "DEFAULT" );
-		assertThat( defaultCache.provider.getNameNoCase() ).isEqualTo( "BOXCACHEPROVIDER" );
+		assertThat( defaultCache.name ).isEqualTo( Key.of( "DEFAULT" ) );
+		assertThat( defaultCache.provider ).isEqualTo( Key.of( "BOXCACHEPROVIDER" ) );
 		assertThat( defaultCache.properties ).isNotNull();
 		assertThat( defaultCache.properties.get( "maxObjects" ) ).isEqualTo( 1000 );
 		assertThat( defaultCache.properties.get( "reapFrequency" ) ).isEqualTo( 120 );
@@ -202,7 +202,7 @@ class ConfigLoaderTest {
 
 		// Import Cache Checks
 		CacheConfig regexCacheConfig = ( CacheConfig ) config.caches.get( "bxRegex" );
-		assertThat( regexCacheConfig.provider.getNameNoCase() ).isEqualTo( "BOXCACHEPROVIDER" );
+		assertThat( regexCacheConfig.provider ).isEqualTo( Key.of( "BOXCACHEPROVIDER" ) );
 		assertThat( regexCacheConfig.properties ).isNotNull();
 		assertThat( regexCacheConfig.properties.get( "maxObjects" ) ).isEqualTo( 200 );
 	}
@@ -233,8 +233,8 @@ class ConfigLoaderTest {
 		// Default Cache Checks
 		CacheConfig defaultCache = ( CacheConfig ) config.caches.get( "default" );
 		assertThat( defaultCache ).isNotNull();
-		assertThat( defaultCache.name.getNameNoCase() ).isEqualTo( "DEFAULT" );
-		assertThat( defaultCache.provider.getNameNoCase() ).isEqualTo( "BOXCACHEPROVIDER" );
+		assertThat( defaultCache.name ).isEqualTo( Key.of( "DEFAULT" ) );
+		assertThat( defaultCache.provider ).isEqualTo( Key.of( "BOXCACHEPROVIDER" ) );
 		assertThat( defaultCache.properties ).isNotNull();
 		assertThat( defaultCache.properties.get( "maxObjects" ) ).isEqualTo( 1000 );
 		assertThat( defaultCache.properties.get( "reapFrequency" ) ).isEqualTo( 120 );
@@ -244,7 +244,7 @@ class ConfigLoaderTest {
 
 		// Import Cache Checks
 		CacheConfig regexCache = ( CacheConfig ) config.caches.get( "bxRegex" );
-		assertThat( regexCache.provider.getNameNoCase() ).isEqualTo( "BOXCACHEPROVIDER" );
+		assertThat( regexCache.provider ).isEqualTo( Key.of( "BOXCACHEPROVIDER" ) );
 		assertThat( regexCache.properties ).isNotNull();
 		assertThat( regexCache.properties.get( "maxObjects" ) ).isEqualTo( 200 );
 		assertThat( regexCache.properties.get( "reapFrequency" ) ).isEqualTo( 120 );

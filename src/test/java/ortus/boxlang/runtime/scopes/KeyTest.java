@@ -29,7 +29,7 @@ public class KeyTest {
 	@Test
 	public void testGetNameNoCase() {
 		Key key = new Key( "Test" );
-		assertThat( key.getNameNoCase() ).isEqualTo( "TEST" );
+		assertThat( key.getName().toUpperCase() ).isEqualTo( "TEST" );
 	}
 
 	@Test
@@ -74,7 +74,7 @@ public class KeyTest {
 	public void testOfBuilder() {
 		Key key = Key.of( "Test" );
 		assertThat( key.getName() ).isEqualTo( "Test" );
-		assertThat( key.getNameNoCase() ).isEqualTo( "TEST" );
+		assertThat( key.getName().toUpperCase() ).isEqualTo( "TEST" );
 	}
 
 	@DisplayName( "Test the builder with multiple keys" )

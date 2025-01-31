@@ -429,7 +429,7 @@ public class LoggingService {
 		BoxLangLogger oLogger = getLogger( logger );
 
 		// Log according to the level
-		switch ( targetLogLevel.getNameNoCase() ) {
+		switch ( targetLogLevel.getName().toUpperCase() ) {
 			// No fatal in SL4J
 			case "FATAL" -> oLogger.error( message );
 			case "ERROR" -> oLogger.error( message );
@@ -662,12 +662,12 @@ public class LoggingService {
 	 */
 	private BoxLangLogger createLogger( Key loggerKey, String loggerFilePath ) {
 		LoggerContext	targetContext	= getLoggerContext();
-		Logger			oLogger			= targetContext.getLogger( loggerKey.getNameNoCase() );
+		Logger			oLogger			= targetContext.getLogger( loggerKey.getName().toUpperCase() );
 
 		// Check if we have the logger configuration or else build a vanilla one
 		LoggerConfig	loggerConfig	= ( LoggerConfig ) this.runtime
 		    .getConfiguration().logging.loggers
-		    .computeIfAbsent( loggerKey, key -> new LoggerConfig( key.getNameNoCase(), this.runtime.getConfiguration().logging ) );
+		        .computeIfAbsent( loggerKey, key -> new LoggerConfig( key.getName().toUpperCase(), this.runtime.getConfiguration().logging ) );
 		Level			configLevel		= Level.toLevel( LogLevel.valueOf( loggerConfig.level.getName(), false ).getName() );
 
 		// Seed the properties

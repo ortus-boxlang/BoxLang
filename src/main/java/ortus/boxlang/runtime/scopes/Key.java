@@ -929,7 +929,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public Key( String name ) {
 		this.name			= name;
 		this.originalValue	= name;
-		this.nameNoCase		= name.toUpperCase();
+		this.nameNoCase		= name.toLowerCase();
 		this.hashCode		= this.nameNoCase.hashCode();
 	}
 
@@ -941,8 +941,14 @@ public class Key implements Comparable<Key>, Serializable {
 	public Key( String name, Object originalValue ) {
 		this.name			= name;
 		this.originalValue	= originalValue;
-		this.nameNoCase		= name.toUpperCase();
-		this.hashCode		= this.nameNoCase.hashCode();
+		this.nameNoCase		= name.toLowerCase();
+		// For "simple" keys, we'll use the nocase name hash code as our key's hashcode
+		// for complex values (like accessing a hashmap with a complex key), we'll use the original value's hashcode
+		if ( originalValue instanceof String || originalValue instanceof Integer ) {
+			this.hashCode = this.nameNoCase.hashCode();
+		} else {
+			this.hashCode = originalValue.hashCode();
+		}
 	}
 
 	/**
@@ -981,17 +987,22 @@ public class Key implements Comparable<Key>, Serializable {
 	 */
 	@Override
 	public boolean equals( Object obj ) {
+
 		// Same object
 		if ( this == obj ) {
 			return true;
 		}
 
-		if ( obj != null && obj instanceof Key castedKey ) {
+		if ( obj == null ) {
+			return false;
+		}
+
+		if ( obj instanceof Key castedKey ) {
 			// Same key name
 			return hashCode() == castedKey.hashCode();
 		}
 
-		return false;
+		return getOriginalValue().equals( obj );
 	}
 
 	/**

@@ -121,7 +121,7 @@ public class ArrayFind extends BIF {
 	 */
 	private boolean isCaseSensitive( Key functionName ) {
 		// Check if the functionName ends with "noCase" with no case sensitivity
-		return StringUtils.endsWithIgnoreCase( functionName.getNameNoCase(), "NoCase" ) ? false : true;
+		return StringUtils.endsWithIgnoreCase( functionName.getName(), "NoCase" ) ? false : true;
 	}
 
 	/**
@@ -133,7 +133,7 @@ public class ArrayFind extends BIF {
 	 */
 	private boolean isBooleanReturn( Key functionName ) {
 		// Check if the functionName ends with "noCase" with no case sensitivity
-		return StringUtils.containsIgnoreCase( functionName.getNameNoCase(), "contains" ) ? true : false;
+		return StringUtils.containsIgnoreCase( functionName.getName(), "contains" ) ? true : false;
 	}
 
 }
