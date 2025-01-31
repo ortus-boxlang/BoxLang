@@ -73,7 +73,7 @@ public class BoxResolverTest extends AbstractResolverTest {
 		assertThat( classLocation.get().name() ).isEqualTo( "User" );
 		assertThat( classLocation.get().packageName() ).isEqualTo( "tests.components" );
 
-		IClassRunnable targetClass = ( IClassRunnable ) DynamicObject.of( classLocation.get().clazz() )
+		IClassRunnable targetClass = ( IClassRunnable ) DynamicObject.of( classLocation.get().clazz( context ) )
 		    .invokeConstructor( context )
 		    .getTargetInstance();
 		assertThat( targetClass ).isNotNull();
