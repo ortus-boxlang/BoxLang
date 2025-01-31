@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.loader.resolvers;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -217,7 +218,8 @@ public class JavaResolver extends BaseResolver {
 		        clazz,
 		        moduleName.getName(),
 		        true,
-		        context.getApplicationName()
+		        context.getApplicationName(),
+		        Instant.now()
 		    )
 		);
 	}
@@ -248,7 +250,8 @@ public class JavaResolver extends BaseResolver {
 			        clazz,
 			        null,
 			        true,
-			        context.getApplicationName()
+			        context.getApplicationName(),
+			        Instant.now()
 			    )
 			);
 		} catch ( ClassNotFoundException e ) {
