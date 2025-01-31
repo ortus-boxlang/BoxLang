@@ -18,8 +18,6 @@
  */
 package ortus.boxlang.runtime.loader;
 
-import java.time.Instant;
-
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
@@ -27,15 +25,15 @@ import ortus.boxlang.runtime.util.ResolvedFilePath;
 /**
  * This record represents a class location in the application
  *
- * @param name         The name of the class
- * @param path         The fully absolute path to the class
- * @param packageName  The package the class belongs to
- * @param type         The type of class it is: 1. Box class (this.BX_TYPE), 2. Java class (this.JAVA_TYPE)
- * @param clazz        The class object that represents the loaded class
- * @param module       The module the class belongs to, null if none
- * @param cacheable    If the class is cacheable or not
- * @param application  The application the class belongs to, null if none
- * @param lastModified The last modified date of the class on disk
+ * @param name             The name of the class
+ * @param path             The fully absolute path to the class
+ * @param packageName      The package the class belongs to
+ * @param type             The type of class it is: 1. Box class (this.BX_TYPE), 2. Java class (this.JAVA_TYPE)
+ * @param clazz            The class object that represents the loaded class
+ * @param module           The module the class belongs to, null if none
+ * @param cacheable        If the class is cacheable or not
+ * @param application      The application the class belongs to, null if none
+ * @param resolvedFilePath The resolved file path
  */
 public record ClassLocation(
     String name,
@@ -46,7 +44,7 @@ public record ClassLocation(
     String module,
     Boolean cacheable,
     String application,
-    Instant lastModified ) {
+    ResolvedFilePath resolvedFilePath ) {
 
 	/**
 	 * Verify if the class is from a module
@@ -66,7 +64,7 @@ public record ClassLocation(
 			return clazz;
 		}
 		// BoxLang we delegate to the loader
-		return RunnableLoader.getInstance().loadClass( ResolvedFilePath.of( path() ), context );
+		return RunnableLoader.getInstance().loadClass( resolvedFilePath, context );
 	}
 
 	/**

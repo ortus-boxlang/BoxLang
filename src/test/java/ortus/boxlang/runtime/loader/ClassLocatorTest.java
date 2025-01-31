@@ -20,7 +20,6 @@ package ortus.boxlang.runtime.loader;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -156,7 +155,7 @@ public class ClassLocatorTest {
 		        null,
 		        false,
 		        "appName",
-		        Instant.now()
+		        null
 		    )
 		);
 		assertThat( locator.hasClass( targetClass ) ).isTrue();

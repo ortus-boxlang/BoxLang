@@ -18,7 +18,6 @@
 package ortus.boxlang.runtime.loader.resolvers;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -37,7 +36,6 @@ import ortus.boxlang.runtime.modules.ModuleRecord;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.ModuleService;
 import ortus.boxlang.runtime.types.IStruct;
-import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
@@ -246,21 +244,17 @@ public class BoxResolver extends BaseResolver {
 		Path			targetPath		= findExistingPathWithValidExtension( moduleRecord.physicalPath, finalSlashName );
 		if ( targetPath != null ) {
 			ResolvedFilePath resolvedFilePath = ResolvedFilePath.of( targetPath );
-			try {
-				return Optional.of( new ClassLocation(
-				    resolvedFilePath.getBoxFQN().getClassName(),
-				    targetPath.toAbsolutePath().toString(),
-				    resolvedFilePath.getBoxFQN().getPackageString(),
-				    ClassLocator.TYPE_BX,
-				    null,
-				    moduleName.getName(),
-				    true,
-				    context.getApplicationName(),
-				    Files.getLastModifiedTime( targetPath ).toInstant()
-				) );
-			} catch ( IOException e ) {
-				throw new BoxIOException( e );
-			}
+			return Optional.of( new ClassLocation(
+			    resolvedFilePath.getBoxFQN().getClassName(),
+			    targetPath.toAbsolutePath().toString(),
+			    resolvedFilePath.getBoxFQN().getPackageString(),
+			    ClassLocator.TYPE_BX,
+			    null,
+			    moduleName.getName(),
+			    true,
+			    context.getApplicationName(),
+			    resolvedFilePath
+			) );
 		}
 
 		return Optional.empty();
@@ -380,21 +374,17 @@ public class BoxResolver extends BaseResolver {
 		    .map( possibleMatch -> {
 			    // System.out.println( "found: " + possibleMatch.absolutePath().toAbsolutePath().toString() );
 			    // System.out.println( "found package: " + possibleMatch.getPackage().toString() );
-			    try {
-				    return new ClassLocation(
-				        possibleMatch.getBoxFQN().getClassName(),
-				        possibleMatch.absolutePath().toAbsolutePath().toString(),
-				        possibleMatch.getBoxFQN().getPackageString(),
-				        ClassLocator.TYPE_BX,
-				        null,
-				        "",
-				        true,
-				        context.getApplicationName(),
-				        Files.getLastModifiedTime( possibleMatch.absolutePath() ).toInstant()
-				    );
-			    } catch ( IOException e ) {
-				    throw new BoxIOException( e );
-			    }
+			    return new ClassLocation(
+			        possibleMatch.getBoxFQN().getClassName(),
+			        possibleMatch.absolutePath().toAbsolutePath().toString(),
+			        possibleMatch.getBoxFQN().getPackageString(),
+			        ClassLocator.TYPE_BX,
+			        null,
+			        "",
+			        true,
+			        context.getApplicationName(),
+			        possibleMatch
+			    );
 		    } )
 		    // Find the first one or return empty
 		    .findFirst();
@@ -435,21 +425,17 @@ public class BoxResolver extends BaseResolver {
 						    targetPath.toString(),
 						    resolvedFilePath.mappingName()
 						);
-						try {
-							return Optional.of( new ClassLocation(
-							    newResolvedFilePath.getBoxFQN().getClassName(),
-							    targetPath.toAbsolutePath().toString(),
-							    newResolvedFilePath.getBoxFQN().getPackageString(),
-							    ClassLocator.TYPE_BX,
-							    null,
-							    "",
-							    true,
-							    context.getApplicationName(),
-							    Files.getLastModifiedTime( targetPath ).toInstant()
-							) );
-						} catch ( IOException e ) {
-							throw new BoxIOException( e );
-						}
+						return Optional.of( new ClassLocation(
+						    newResolvedFilePath.getBoxFQN().getClassName(),
+						    targetPath.toAbsolutePath().toString(),
+						    newResolvedFilePath.getBoxFQN().getPackageString(),
+						    ClassLocator.TYPE_BX,
+						    null,
+						    "",
+						    true,
+						    context.getApplicationName(),
+						    newResolvedFilePath
+						) );
 					}
 				}
 			}
@@ -493,22 +479,17 @@ public class BoxResolver extends BaseResolver {
 		Path				foundPath			= result.get();
 
 		ResolvedFilePath	newResolvedFilePath	= ResolvedFilePath.of( "", "", slashName, foundPath );
-
-		try {
-			return Optional.of( new ClassLocation(
-			    newResolvedFilePath.getBoxFQN().getClassName(),
-			    foundPath.toAbsolutePath().toString(),
-			    newResolvedFilePath.getBoxFQN().getPackageString(),
-			    ClassLocator.TYPE_BX,
-			    null,
-			    "",
-			    true,
-			    context.getApplicationName(),
-			    Files.getLastModifiedTime( foundPath ).toInstant()
-			) );
-		} catch ( IOException e ) {
-			throw new BoxIOException( e );
-		}
+		return Optional.of( new ClassLocation(
+		    newResolvedFilePath.getBoxFQN().getClassName(),
+		    foundPath.toAbsolutePath().toString(),
+		    newResolvedFilePath.getBoxFQN().getPackageString(),
+		    ClassLocator.TYPE_BX,
+		    null,
+		    "",
+		    true,
+		    context.getApplicationName(),
+		    newResolvedFilePath
+		) );
 
 	}
 
