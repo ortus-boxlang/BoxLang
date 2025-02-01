@@ -60,8 +60,11 @@ public class BoxReturnTransformer extends AbstractTransformer {
 
 		if ( boxReturn.getExpression() == null ) {
 			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
-		} else if ( transpiler.isInsideComponent() && !preferFunction ) {
+		} else {
 			nodes.addAll( transpiler.transform( boxReturn.getExpression(), TransformerContext.NONE, ReturnValueContext.VALUE_OR_NULL ) );
+		}
+
+		if ( transpiler.isInsideComponent() && !preferFunction ) {
 			nodes.add(
 			    new MethodInsnNode(
 			        Opcodes.INVOKESTATIC,
@@ -71,8 +74,6 @@ public class BoxReturnTransformer extends AbstractTransformer {
 			        false
 			    )
 			);
-		} else {
-			nodes.addAll( transpiler.transform( boxReturn.getExpression(), TransformerContext.NONE, ReturnValueContext.VALUE_OR_NULL ) );
 		}
 		nodes.add( new InsnNode( Opcodes.ARETURN ) );
 		return AsmHelper.addLineNumberLabels( nodes, node );

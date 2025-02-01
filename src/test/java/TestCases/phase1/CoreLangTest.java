@@ -31,7 +31,6 @@ import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
@@ -4259,7 +4258,6 @@ public class CoreLangTest {
 	}
 
 	@Test
-	@Disabled( "BL-909" )
 	public void testBodyResultError() {
 		// @formatter:off
 		instance.executeSource(
@@ -4295,5 +4293,4 @@ public class CoreLangTest {
 		assertThat( variables.getAsBoolean( Key.of( "result3" ) ) ).isFalse();
 		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "bar" );
 	}
-
 }
