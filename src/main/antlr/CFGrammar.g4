@@ -16,7 +16,43 @@ options {
  }
 
 // foo
-identifier: IDENTIFIER | reservedKeyword
+identifier: IDENTIFIER | semiReservedKeyword
+    ;
+
+semiReservedKeyword:
+    ANY
+    | INCLUDE
+    | MESSAGE
+    | NULL
+    | PRIVATE
+    | REQUEST
+    | SERVER
+    | SETTING
+    | THROW
+    | TYPE
+    | VARIABLES
+    | DEFAULT
+    | PREFIXEDIDENTIFIER // cfSomething
+    | ARRAY
+    | COMPONENT
+    | CONTAINS
+    | QUERY
+    | VAR
+    | BOOLEAN
+    | JAVA
+    | STRING
+    | STATIC
+    | WHEN
+    | INSTANCEOF
+    | PARAM
+    | REQUIRED
+    | STRUCT
+    | SETTING
+    | NEW
+    | PACKAGE
+    | PUBLIC
+    | NUMERIC
+    | INTERFACE
     ;
 
 componentName
@@ -315,7 +351,7 @@ argument: (namedArgument | positionalArgument)
  func(
  'foo' : bar, 'baz' : qux )
  */
-namedArgument: (identifier | stringLiteral) (EQUALSIGN | COLON) expression
+namedArgument: (identifier | stringLiteral | reservedKeyword) (EQUALSIGN | COLON) expression
     ;
 
 // func( foo, bar, baz )
@@ -475,6 +511,7 @@ structKey
     : identifier
     | stringLiteral
     | reservedOperators
+    | reservedKeyword
     | INTEGER_LITERAL
     | ILLEGAL_IDENTIFIER
     | fqn
@@ -516,6 +553,7 @@ expression
 el2
     : ILLEGAL_IDENTIFIER                                                    # exprIllegalIdentifier // 50foo
     | LPAREN expression RPAREN                                              # exprPrecedence        // ( foo )
+    | semiReservedKeyword LPAREN argumentList? RPAREN                       # exprFunctionCallReserved      // foo(bar, baz)
     | new                                                                   # exprNew               // new foo.bar.Baz()
     | el2 LPAREN argumentList? RPAREN                                       # exprFunctionCall      // foo(bar, baz)
     | el2 (QM? DOT DOT? | COLONCOLON) el2                                   # exprDotOrColonAccess  // xc.y?.z or foo::bar recursive and Adobe's stupid foo..bar bug they allow

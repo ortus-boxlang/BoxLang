@@ -19,6 +19,41 @@ options {
 identifier: IDENTIFIER | reservedKeyword
     ;
 
+strictIdentifier: IDENTIFIER;
+
+looseIdentifier: IDENTIFIER | semiReserved;
+
+semiReserved: 
+    ANY
+    | INCLUDE
+    | MESSAGE
+    | NULL
+    | PRIVATE
+    | REQUEST
+    | SERVER
+    | SETTING
+    | THROW
+    | TYPE
+    | VARIABLES
+    | DEFAULT
+    | ARRAY
+    | CONTAINS
+    | QUERY
+    | VAR
+    | BOOLEAN
+    | JAVA
+    | STRING
+    | STATIC
+    | WHEN
+    | INSTANCEOF
+    | PARAM
+    | REQUIRED
+    | STRUCT
+    | SETTING
+    | NEW
+    | PACKAGE
+    | PUBLIC;
+
 componentName
     :
     // Ask the component service if the component exists and verify that this context is actually a component.

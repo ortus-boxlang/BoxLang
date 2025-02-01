@@ -104,6 +104,7 @@ import ortus.boxlang.parser.antlr.CFGrammar.ExprDotOrColonAccessContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprElvisContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprEqualContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprFunctionCallContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ExprFunctionCallReservedContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprHeadlessContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprIdentifierContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprIllegalIdentifierContext;
@@ -184,6 +185,21 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 
 	public BoxExpression visitExprStatInvocable( ExprStatInvocableContext ctx ) {
 		return ctx.el2().accept( this );
+	}
+
+	public BoxExpression visitExprFunctionCallReserved( ExprFunctionCallReservedContext ctx ) {
+		var	pos		= tools.getPosition( ctx );
+		var	src		= tools.getSourceText( ctx );
+		var	name	= ctx.semiReservedKeyword().children.getFirst().toString();
+		var	args	= Optional.ofNullable( ctx.argumentList() )
+		    .map( argumentList -> argumentList.argument().stream().map( arg -> ( BoxArgument ) arg.accept( this ) ).toList() )
+		    .orElse( Collections.emptyList() );
+
+		if ( args.size() > 1 ) {
+			checkArgTypes( ctx.argumentList(), args );
+		}
+
+		return new BoxFunctionInvocation( name, args, pos, src );
 	}
 
 	/**
@@ -868,6 +884,8 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 		BoxExpression	name;
 		if ( ctx.identifier() != null ) {
 			name = new BoxStringLiteral( ctx.identifier().getText(), pos, src );
+		} else if ( ctx.reservedKeyword() != null ) {
+			name = new BoxStringLiteral( ctx.reservedKeyword().getText(), pos, src );
 		} else {
 			name = ctx.stringLiteral().accept( this );
 		}
@@ -1004,12 +1022,13 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 		var	src	= tools.getSourceText( ctx );
 		return Optional.ofNullable( ctx.identifier() ).map( id -> id.accept( this ) )
 		    .orElseGet( () -> Optional.ofNullable( ctx.ILLEGAL_IDENTIFIER() ).map( fqn -> ( BoxExpression ) new BoxIdentifier( src, pos, src ) )
-		        .orElseGet( () -> Optional.ofNullable( ctx.reservedOperators() ).map( resOp -> resOp.accept( this ) )
-		            .orElseGet( () -> Optional.ofNullable( ctx.stringLiteral() ).map( str -> str.accept( this ) )
-		                .orElseGet( () -> Optional.ofNullable( ctx.SWITCH() ).map( swtch -> ( BoxExpression ) new BoxIdentifier( src, pos, src ) )
-		                    .orElseGet(
-		                        () -> Optional.ofNullable( ctx.fqn() ).map( fqn -> fqn.accept( this ) )
-		                            .orElse( new BoxIntegerLiteral( src, pos, src ) ) ) ) ) ) );
+		        .orElseGet( () -> Optional.ofNullable( ctx.reservedKeyword() ).map( resOp -> ( BoxExpression ) new BoxIdentifier( src, pos, src ) )
+		            .orElseGet( () -> Optional.ofNullable( ctx.reservedOperators() ).map( resOp -> resOp.accept( this ) )
+		                .orElseGet( () -> Optional.ofNullable( ctx.stringLiteral() ).map( str -> str.accept( this ) )
+		                    .orElseGet( () -> Optional.ofNullable( ctx.SWITCH() ).map( swtch -> ( BoxExpression ) new BoxIdentifier( src, pos, src ) )
+		                        .orElseGet(
+		                            () -> Optional.ofNullable( ctx.fqn() ).map( fqn -> fqn.accept( this ) )
+		                                .orElse( new BoxIntegerLiteral( src, pos, src ) ) ) ) ) ) ) );
 	}
 
 	@Override

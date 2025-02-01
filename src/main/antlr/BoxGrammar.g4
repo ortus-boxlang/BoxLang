@@ -14,8 +14,47 @@ options {
  }
 
 // foo
-identifier: IDENTIFIER | reservedKeyword
+identifier: IDENTIFIER | semiReservedKeyword
     ;
+
+semiReservedKeyword:
+    ANY
+    | INCLUDE
+    | MESSAGE
+    | NULL
+    | PRIVATE
+    | REQUEST
+    | SERVER
+    | SETTING
+    | THROW
+    | TYPE
+    | VARIABLES
+    | DEFAULT
+    | ARRAY
+    | CONTAINS
+    | QUERY
+    | VAR
+    | BOOLEAN
+    | JAVA
+    | STRING
+    | STATIC
+    | WHEN
+    | INSTANCEOF
+    | PARAM
+    | REQUIRED
+    | STRUCT
+    | SETTING
+    | NEW
+    | PACKAGE
+    | PUBLIC
+    | CLASS
+    | NUMERIC
+    | TO
+    | INTERFACE
+    | THREAD
+    | FUNCTION
+    ;
+
 
 componentName: identifier
     ;
@@ -333,7 +372,7 @@ argument: (namedArgument | positionalArgument)
  func(
  'foo' : bar, 'baz' : qux )
  */
-namedArgument: (identifier | stringLiteral) (EQUALSIGN | COLON) expression
+namedArgument: (identifier | stringLiteral | reservedKeyword) (EQUALSIGN | COLON) expression
     ;
 
 // func( foo, bar, baz )
@@ -496,6 +535,7 @@ structMember: structKey (COLON | EQUALSIGN) expression
 structKey
     : identifier
     | stringLiteral
+    | reservedKeyword
     | reservedOperators
     | INTEGER_LITERAL
     | ILLEGAL_IDENTIFIER
@@ -536,6 +576,9 @@ expression
 // Note the use of labels allows our visitor to know what it is visiting without complicated token checking etc
 el2
     : ILLEGAL_IDENTIFIER                                                    # exprIllegalIdentifier // 50foo
+    // additions
+    | semiReservedKeyword LPAREN argumentList? RPAREN                                       # exprFunctionCallReserved      // foo(bar, baz)
+    //
     | LPAREN expression RPAREN                                              # exprPrecedence        // ( foo )
     | new                                                                   # exprNew               // new foo.bar.Baz()
     | el2 LPAREN argumentList? RPAREN                                       # exprFunctionCall      // foo(bar, baz)
