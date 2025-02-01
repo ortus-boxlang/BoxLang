@@ -105,13 +105,13 @@ public class ApplicationClassListener extends BaseApplicationListener {
 				cbc.includeTemplate( ( String ) args[ 0 ] );
 				cbc.flushBuffer( false );
 			} catch ( AbortException e ) {
-				cbc.flushBuffer( true );
+				cbc.flushBuffer( false );
 				throw e;
 			} catch ( Throwable e ) {
-				cbc.flushBuffer( true );
+				cbc.flushBuffer( false );
 				throw e;
 			} finally {
-				cbc.flushBuffer( true );
+				cbc.flushBuffer( false );
 			}
 		}
 	}
