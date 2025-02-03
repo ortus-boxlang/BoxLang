@@ -4293,4 +4293,21 @@ public class CoreLangTest {
 		assertThat( variables.getAsBoolean( Key.of( "result3" ) ) ).isFalse();
 		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "bar" );
 	}
+
+	@Test
+	public void testNumericKey() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+			myStr = {
+				1 : "brad"
+			}
+			myKey = (3*5)-14;
+			result = myStr[ myKey ];
+			""",
+			context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( "brad" );
+	}
+
 }
