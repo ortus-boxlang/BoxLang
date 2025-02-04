@@ -4310,4 +4310,26 @@ public class CoreLangTest {
 		assertThat( variables.get( result ) ).isEqualTo( "brad" );
 	}
 
+	@Test
+	public void testStructPut() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+			myStruct = {
+				"foo" : "bar"
+			};
+			result = structReduce(
+				myStruct,
+				function( indexMap, key, value ){
+					println( key & " - " & key.getClass().getName())
+					indexMap.put( key, value );
+					return indexMap;
+				},
+				{}
+			);
+			""",
+			context );
+		// @formatter:on
+	}
+
 }
