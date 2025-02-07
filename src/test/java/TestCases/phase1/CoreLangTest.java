@@ -4332,4 +4332,39 @@ public class CoreLangTest {
 		// @formatter:on
 	}
 
+	@Test
+	public void testTryFinallyReturn() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+			val = 0;
+
+			function t(){
+				try{
+					try{
+						return "first" & val++
+					}
+					finally {
+						return "second" & val++
+					}
+				}
+				finally{
+					return "third" & val
+				}
+			}
+
+			result1 = t();
+			result2 = t();
+			result3 = t();
+			result4 = t();
+			""",
+			context );
+		// @formatter:on
+
+		assertThat( variables.get( "result1" ) ).isEqualTo( "third2" );
+		assertThat( variables.get( "result2" ) ).isEqualTo( "third4" );
+		assertThat( variables.get( "result3" ) ).isEqualTo( "third6" );
+		assertThat( variables.get( "result4" ) ).isEqualTo( "third8" );
+	}
+
 }

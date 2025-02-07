@@ -16,15 +16,19 @@
 package ortus.boxlang.compiler.asmboxpiler.transformer.expression;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
+import org.objectweb.asm.tree.VarInsnNode;
 
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
+import ortus.boxlang.compiler.asmboxpiler.MethodContextTracker;
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
@@ -44,6 +48,7 @@ public class BoxReturnTransformer extends AbstractTransformer {
 	@Override
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnContext ) throws IllegalStateException {
 		BoxReturn				boxReturn	= ( BoxReturn ) node;
+		MethodContextTracker	tracker		= transpiler.getCurrentMethodContextTracker().get();
 
 		List<AbstractInsnNode>	nodes		= new ArrayList<>();
 
@@ -75,7 +80,35 @@ public class BoxReturnTransformer extends AbstractTransformer {
 			    )
 			);
 		}
+
+		// store our return value (null or an expression) before we evaluate our finally blocks
+		var varStore = tracker.storeNewVariable( Opcodes.ASTORE );
+		nodes.addAll( varStore.nodes() );
+
+		// start iterating through our return blocks
+		var reversed = tracker.getFinallyBodies().stream().collect( Collectors.toList() );
+
+		Collections.reverse( reversed );
+
+		var returnDepth = tracker.getReturnDepth();
+		tracker.incrementReturnDepth();
+
+		reversed.stream().skip( returnDepth ).forEach( finallyBody -> {
+			nodes.addAll( AsmHelper.transformBodyExpressions(
+			    transpiler,
+			    finallyBody,
+			    context,
+			    returnContext
+			) );
+		} );
+
+		tracker.decrementReturnDepth();
+		// finish iterating through return blocks
+
+		// load our original value to return
+		nodes.add( new VarInsnNode( Opcodes.ALOAD, varStore.index() ) );
 		nodes.add( new InsnNode( Opcodes.ARETURN ) );
+
 		return AsmHelper.addLineNumberLabels( nodes, node );
 	}
 
