@@ -153,7 +153,7 @@ include: INCLUDE expression
 
 // class {}
 boxClass
-    : importStatement* preAnnotation* ABSTRACT? FINAL? CLASS postAnnotation* LBRACE property* classBody RBRACE
+    : importStatement* preAnnotation* ABSTRACT? FINAL? CLASS postAnnotation* LBRACE property* classBody RBRACE EOF
     ;
 
 classBody: classBodyStatement*

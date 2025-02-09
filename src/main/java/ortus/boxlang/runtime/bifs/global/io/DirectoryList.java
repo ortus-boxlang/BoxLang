@@ -25,6 +25,7 @@ import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import ortus.boxlang.runtime.operators.Compare;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -126,7 +127,7 @@ public class DirectoryList extends BIF {
 
 		return switch ( returnType ) {
 			case "name" -> listingToNames( listing );
-			case "query" -> listingToQuery( listing );
+			case "query" -> listingToQuery( listing, arguments.getAsString( Key.sort ) );
 			case "querynames" -> listingToQueryNames( listing, Paths.get( directoryPath ) );
 			default -> listingToPaths( listing );
 		};
@@ -141,7 +142,7 @@ public class DirectoryList extends BIF {
 		return ArrayCaster.cast( listing.map( item -> item.getFileName().toString() ).toArray() );
 	}
 
-	public Query listingToQuery( Stream<Path> listing ) {
+	public Query listingToQuery( Stream<Path> listing, String sort ) {
 		Query listingQuery = new Query();
 		listingQuery
 		    .addColumn( Key._NAME, QueryColumnType.VARCHAR )
@@ -169,6 +170,20 @@ public class DirectoryList extends BIF {
 				throw new BoxIOException( e );
 			}
 		} );
+
+		if ( sort != null ) {
+			String[]	sortDirectives	= sort.split( " " );
+			String		column			= sortDirectives[ 0 ];
+			String		direction		= sortDirectives.length > 1 ? sortDirectives[ 1 ].toLowerCase() : "asc";
+			int			columnIndex		= listingQuery.getColumnIndex( Key.of( column ) );
+			if ( columnIndex > -1 ) {
+				listingQuery.sortData( ( rowA, rowB ) -> {
+					Object	aValue	= rowA[ columnIndex ];
+					Object	bValue	= rowB[ columnIndex ];
+					return direction.equals( "desc" ) ? Compare.invoke( bValue, aValue, false ) : Compare.invoke( aValue, bValue, false );
+				} );
+			}
+		}
 
 		return listingQuery;
 	}
