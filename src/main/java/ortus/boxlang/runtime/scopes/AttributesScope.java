@@ -17,17 +17,19 @@
  */
 package ortus.boxlang.runtime.scopes;
 
+import ortus.boxlang.runtime.types.IStruct;
+
 /**
- * Local scope implementation in BoxLang
+ * Attributes scope implementation in BoxLang
  */
-public class LocalScope extends BaseScope {
+public class AttributesScope extends BaseScope {
 
 	/**
 	 * --------------------------------------------------------------------------
 	 * Public Properties
 	 * --------------------------------------------------------------------------
 	 */
-	public static final Key name = Key.of( "local" );
+	public static final Key name = Key.of( "attributes" );
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -35,8 +37,13 @@ public class LocalScope extends BaseScope {
 	 * --------------------------------------------------------------------------
 	 */
 
-	public LocalScope() {
-		super( LocalScope.name );
+	public AttributesScope() {
+		super( AttributesScope.name );
+	}
+
+	public AttributesScope( IStruct attributes ) {
+		this();
+		putAll( attributes );
 	}
 
 	/**

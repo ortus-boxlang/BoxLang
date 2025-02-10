@@ -282,16 +282,16 @@ public class ThreadTest {
 	@DisplayName( "It can access the this scope inside a thread created by a class" )
 	@Test
 	public void testThreadThisScope() {
-	// @formatter:off
-	instance.executeSource(
-		"""
-			myThreadingClass = new src.test.bx.MyThreadingClass()
-			result = myThreadingClass.execute();
-		""",
-		context, BoxSourceType.CFSCRIPT );
-	IStruct asStruct = variables.getAsStruct( result );
-	assertThat( asStruct.get( Key.error ) ).isNull();
-}
+		// @formatter:off
+		instance.executeSource(
+			"""
+				myThreadingClass = new src.test.bx.MyThreadingClass()
+				result = myThreadingClass.execute();
+			""",
+			context, BoxSourceType.CFSCRIPT );
+		IStruct asStruct = variables.getAsStruct( result );
+		assertThat( asStruct.get( Key.error ) ).isNull();
+	}
 
 	@DisplayName( "It can access the super scope inside a thread created by a class" )
 	@Test
@@ -306,5 +306,34 @@ public class ThreadTest {
 		IStruct asStruct = variables.getAsStruct( result );
 		assertThat( asStruct.get( Key.error ) ).isNull();
 	}
+
+	@DisplayName( "It can access the super scope inside a thread created by a class" )
+	@Test
+	public void testThreadAttributeCollection() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+			function test() {
+				var threadId = createUUID();
+				collection = { action="run", name=threadId, threadId=threadId };
+
+				cfthread( attributeCollection="#collection#" ) {
+					request.threadId = threadId;
+				}
+
+				cfthread( action="join", name="#threadId#" );
+				if( (cfthread[ threadId ].error ?: '' ).len() ) {
+					throw cfthread[ threadId ].error;
+				}
+				return threadId;
+			}
+			request.threadId = '';
+			actualThreadId = test();
+			result = request.threadId;
+			""",
+			context, BoxSourceType.CFSCRIPT );
+			assertThat( variables.get( result ) ).isEqualTo(variables.get( Key.of( "actualThreadId" ) ));
+	}
+
 
 }

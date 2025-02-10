@@ -124,7 +124,7 @@ public class Thread extends Component {
 	private void run( IBoxContext context, String name, String priority, IStruct attributes, ComponentBody body ) {
 		RequestThreadManager	threadManager	= context.getParentOfType( RequestBoxContext.class ).getThreadManager();
 		final Key				nameKey			= RequestThreadManager.ensureThreadName( name );
-		ThreadBoxContext		tContext		= threadManager.createThreadContext( context, nameKey );
+		ThreadBoxContext		tContext		= threadManager.createThreadContext( context, nameKey, attributes );
 
 		// Startup the thread
 		threadManager.startThread(
@@ -156,9 +156,7 @@ public class Thread extends Component {
 				        java.lang.Thread.interrupted()
 				    );
 			    }
-		    },
-		    // The Struct of data to bind into the thread's scope
-		    attributes
+		    }
 		);
 
 	}

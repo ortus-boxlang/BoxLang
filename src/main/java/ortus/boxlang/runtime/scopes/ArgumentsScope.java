@@ -22,7 +22,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 
 /**
- * Variables scope implementation in BoxLang
+ * Arguments scope implementation in BoxLang
  */
 public class ArgumentsScope extends BaseScope {
 
