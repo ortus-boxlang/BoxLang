@@ -169,8 +169,8 @@
 												#writeDump(
 													var : variablesScope[ prop.name ] ?: null,
 													top : isNull( top ) ? null : top - 1,
-													expand : expand,
-													showUDFs : showUDFs
+													expand : variables?.expand,
+													showUDFs : variables?.showUDFs
 												)#
 											</td>
 										</tr>
@@ -224,8 +224,8 @@
 												#writeDump(
 													var : dataProperty ?: null,
 													top : isNull( top ) ? null : top - 1,
-													expand : expand,
-													showUDFs : showUDFs
+													expand : variables?.expand,
+													showUDFs : variables?.showUDFs
 												)#
 											</td>
 										</tr>
@@ -273,7 +273,11 @@
 											<strong>#encodeForHTML( methodName )#</strong>
 										</td>
 										<td>
-											#writeDump( var : thisMethod ?: null, top : isNull( top ) ? null : top - 1, expand : expand ?: false )#
+											#writeDump( 
+												var : thisMethod ?: null,
+												top : isNull( top ) ? null : top - 1,
+												expand : variables?.expand
+											)#
 										</td>
 									</tr>
 								</bx:loop>
@@ -323,7 +327,11 @@
 													<strong>#encodeForHTML( methodName )#</strong>
 												</td>
 												<td>
-													#writeDump( var : thisMethod ?: null, top : isNull( top ) ? null : top - 1, expand : expand )#
+													#writeDump(
+														var : thisMethod ?: null,
+														top : isNull( top ) ? null : top - 1,
+														expand : variables?.expand
+													)#
 												</td>
 											</tr>
 										</bx:loop>
@@ -374,7 +382,11 @@
 													<strong>#encodeForHTML( methodName )#</strong>
 												</td>
 												<td>
-													#writeDump( var : thisMethod ?: null, top : isNull( top ) ? null : top - 1, expand : expand )#
+													#writeDump(
+														var : thisMethod ?: null,
+														top : isNull( top ) ? null : top - 1,
+														expand : variables?.expand
+													)#
 												</td>
 											</tr>
 										</bx:loop>
