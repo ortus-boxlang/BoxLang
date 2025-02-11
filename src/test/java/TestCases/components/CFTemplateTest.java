@@ -1575,7 +1575,6 @@ public class CFTemplateTest {
 	}
 
 	@Test
-	@Disabled( "BL-1036" )
 	public void testBreakInLoop() {
 		instance.executeSource(
 		    """

@@ -80,7 +80,11 @@ public class BoxBreakTransformer extends AbstractTransformer {
 		}
 
 		if ( exitsAllowed.equals( ExitsAllowed.COMPONENT ) ) {
-			nodes.add( new LdcInsnNode( "" ) );
+			if ( breakNode.getLabel() != null ) {
+				nodes.add( new LdcInsnNode( breakNode.getLabel().toLowerCase() ) );
+			} else {
+				nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+			}
 			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
 			    Type.getInternalName( Component.BodyResult.class ),
 			    "ofBreak",
