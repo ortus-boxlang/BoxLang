@@ -1740,20 +1740,20 @@ public class DynamicInteropService {
 			}
 			return list.get( index - 1 );
 		} else if ( targetInstance != null && targetInstance.getClass().isArray() ) {
-			Object[] arr = ( ( Object[] ) targetInstance );
+			int arrLen = java.lang.reflect.Array.getLength( targetInstance );
 			if ( name.equals( lengthKey ) ) {
-				return arr.length;
+				return arrLen;
 			}
 
-			Integer index = Array.validateAndGetIntForDereference( name, arr.length, safe );
+			Integer index = Array.validateAndGetIntForDereference( name, arrLen, safe );
 			// non-existant indexes or keys which could not be turned into an int return null when dereferencing safely
-			if ( safe && ( index == null || Math.abs( index ) > arr.length || index == 0 ) ) {
+			if ( safe && ( index == null || Math.abs( index ) > arrLen || index == 0 ) ) {
 				return null;
 			}
 			if ( index < 0 ) {
-				return arr[ arr.length + index ];
+				return java.lang.reflect.Array.get( targetInstance, arrLen + index );
 			}
-			return arr[ index - 1 ];
+			return java.lang.reflect.Array.get( targetInstance, index - 1 );
 		} else if ( targetInstance instanceof Throwable t && exceptionKeys.contains( name ) ) {
 			// Throwable.message always delegates through to the message field
 			if ( name.equals( Key.message ) ) {
@@ -2079,9 +2079,16 @@ public class DynamicInteropService {
 		if ( IReferenceable.class.isAssignableFrom( targetClass ) && targetInstance != null && targetInstance instanceof IReferenceable ref ) {
 			return ref.assign( context, name, value );
 		} else if ( targetInstance != null && targetInstance.getClass().isArray() ) {
-			Object[]	arr		= ( ( Object[] ) targetInstance );
-			Integer		index	= Array.validateAndGetIntForAssign( name, arr.length, true );
-			arr[ index - 1 ] = value;
+			int			arrLen		= java.lang.reflect.Array.getLength( targetInstance );
+			Integer		index		= Array.validateAndGetIntForAssign( name, arrLen, true );
+			Class<?>	arrayType	= targetInstance.getClass().getComponentType();
+
+			// Attempt to cast the value to the array type. This allows a string "C" to be set into a char[] array, or a int 42 to be set into a long[] array
+			if ( value != null && !value.getClass().isAssignableFrom( arrayType ) ) {
+				value = GenericCaster.cast( context, value, arrayType.getName() );
+			}
+
+			java.lang.reflect.Array.set( targetInstance, index - 1, value );
 			return value;
 		} else if ( targetInstance instanceof List list ) {
 			Integer index = Array.validateAndGetIntForAssign( name, list.size(), false );

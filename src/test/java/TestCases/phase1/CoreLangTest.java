@@ -4367,4 +4367,21 @@ public class CoreLangTest {
 		assertThat( variables.get( "result4" ) ).isEqualTo( "third8" );
 	}
 
+	@Test
+	public void testNativeArrayAccess() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+			charArray = "test".toCharArray();
+			result = charArray[ 1 ];
+			charArray[ 1 ] = 'b';
+			result2 = toString( charArray );
+			""",
+			context );
+		// @formatter:on
+
+		assertThat( variables.get( result ) ).isEqualTo( 't' );
+		assertThat( variables.get( "result2" ) ).isEqualTo( "best" );
+	}
+
 }
