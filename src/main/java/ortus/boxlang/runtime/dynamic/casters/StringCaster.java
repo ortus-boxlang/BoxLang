@@ -30,7 +30,6 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.time.LocalTime;
 import java.time.ZoneId;
-import java.util.Arrays;
 import java.util.Locale;
 import java.util.stream.Collectors;
 
@@ -127,6 +126,7 @@ public class StringCaster implements IBoxCaster {
 				return null;
 			}
 		}
+
 		object = DynamicObject.unWrap( object );
 		Charset charset = null;
 		if ( encoding != null ) {
@@ -167,7 +167,14 @@ public class StringCaster implements IBoxCaster {
 			return chr.toString();
 		}
 		if ( object instanceof Character[] ca ) {
-			return Arrays.toString( ca );
+			char[] charArray = new char[ ca.length ];
+			for ( int i = 0; i < ca.length; i++ ) {
+				charArray[ i ] = ca[ i ];
+			}
+			return new String( charArray );
+		}
+		if ( object instanceof char[] ca ) {
+			return new String( ca );
 		}
 		if ( object instanceof Path path ) {
 			return path.toString();
