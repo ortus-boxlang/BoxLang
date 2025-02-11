@@ -4216,6 +4216,33 @@ public class CoreLangTest {
 	}
 
 	@Test
+	public void testFinallyWithReturn() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				num = 0;
+
+				function increment(){
+					try{
+						return num;
+					}
+					finally{
+						num++;
+					}
+				}
+
+
+				echo( increment() );
+				echo( increment() );
+				echo( increment() );
+				result = increment();
+			""",
+			context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( 3 );
+	}
+
+	@Test
 	public void testSoftRef() {
 		// @formatter:off
 		instance.executeSource(
