@@ -25,6 +25,7 @@ import java.io.IOException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -1344,6 +1345,20 @@ public class BoxTemplateTest {
 		    </bx:try>
 		           """,
 		    context, BoxSourceType.BOXTEMPLATE );
+	}
+
+	@Test
+	@Disabled( "BL-1036" )
+	public void testBreakInLoop() {
+		instance.executeSource(
+		    """
+		    <bx:loop condition="true">
+		    	<bx:break>
+		    </bx:loop>
+		    <bx:set result = "after loop">
+		                  """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.get( result ) ).isEqualTo( "after loop" );
 	}
 
 }

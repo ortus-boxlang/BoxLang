@@ -1574,4 +1574,17 @@ public class CFTemplateTest {
 		assertThat( variables.getAsString( Key.output ).trim() ).isEqualTo( "<" );
 	}
 
+	@Test
+	@Disabled( "BL-1036" )
+	public void testBreakInLoop() {
+		instance.executeSource(
+		    """
+		    <cfloop condition="true">
+		    	<cfbreak>
+		    </cfloop>
+		    <cfset result = "after loop">
+		                  """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.get( result ) ).isEqualTo( "after loop" );
+	}
 }
