@@ -182,7 +182,7 @@ public class QueryAddColumnTest {
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "" );
 	}
 
-	@DisplayName( "Add a complex column for complex data")
+	@DisplayName( "Add a complex column for complex data" )
 	@Test
 	public void testAddColumnWithComplexData() {
 		// @formatter:off
