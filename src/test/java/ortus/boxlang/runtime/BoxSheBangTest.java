@@ -19,15 +19,16 @@ package ortus.boxlang.runtime;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 
 public class BoxSheBangTest {
 
 	@DisplayName( "It can execute a shebang script" )
 	@Test
-	@Disabled
+	@DisabledOnOs( OS.WINDOWS ) // Disables test execution on Windows
 	public void testSheBang() {
 		String		testScript	= "src/test/bx/TestSheBang.sh";
 		String[]	args		= { testScript };
