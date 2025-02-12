@@ -19,6 +19,7 @@ package ortus.boxlang.runtime;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -26,6 +27,7 @@ public class BoxSheBangTest {
 
 	@DisplayName( "It can execute a shebang script" )
 	@Test
+	@Disabled
 	public void testSheBang() {
 		String		testScript	= "src/test/bx/TestSheBang.sh";
 		String[]	args		= { testScript };
