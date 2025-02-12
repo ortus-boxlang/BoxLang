@@ -4411,4 +4411,18 @@ public class CoreLangTest {
 		assertThat( variables.get( "result2" ) ).isEqualTo( "best" );
 	}
 
+	@Test
+	public void testImplicitJavaGetter() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+			result = createObject("java","java.net.InetAddress").getLocalHost().getHostName();
+			result2 = createObject("java","java.net.InetAddress").localhost.getHostName();
+			""",
+			context );
+		// @formatter:on
+
+		assertThat( variables.get( result ) ).isEqualTo( variables.get( Key.of( "result2" ) ) );
+	}
+
 }
