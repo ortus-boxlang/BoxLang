@@ -93,38 +93,41 @@ public class StructCasterLoose implements IBoxCaster {
 		if ( IsObject.isObject( object ) ) {
 			IStruct			thisResult	= new Struct();
 			DynamicObject	dynObject;
+
+			// Get the fields and methods of the class
+			dynObject = DynamicObject.of( object );
+			dynObject.getFieldsAsStream()
+			    .filter( field -> Modifier.isPublic( field.getModifiers() ) )
+			    .forEach( field -> {
+				    thisResult.put( field.getName(), dynObject.getField( field.getName() ).get() );
+			    } );
+			// also add fields for all public methods starting with "get" that take no arguments
+			dynObject.getMethodNames( true ).forEach( methodName -> {
+				Method m;
+				if ( methodName.startsWith( "get" ) && Modifier.isPublic( ( m = dynObject.getMethod( methodName, true ) ).getModifiers() )
+				    && m.getParameterCount() == 0 && !methodName.equals( "getClass" ) ) {
+					thisResult.put( methodName.substring( 3 ), dynObject.invoke( BoxRuntime.getInstance().getRuntimeContext(), methodName ) );
+				}
+			} );
+
 			// Force the overloaded method expecting a class.
+			// Get the static methods and fields of the Class that the Class represents
 			if ( object instanceof Class clazz ) {
-				dynObject = DynamicObject.of( clazz );
-				dynObject.getFieldsAsStream()
+				DynamicObject dynObject2 = DynamicObject.of( clazz );
+				dynObject2.getFieldsAsStream()
 				    // get public, static fields
 				    .filter( field -> Modifier.isPublic( field.getModifiers() ) && Modifier.isStatic( field.getModifiers() ) )
 				    .forEach( field -> {
-					    thisResult.put( field.getName(), dynObject.getField( field.getName() ).get() );
+					    thisResult.put( field.getName(), dynObject2.getField( field.getName() ).get() );
 				    } );
 				// also add fields for all public methods starting with "get" that take no arguments
-				dynObject.getMethodNames( true ).forEach( methodName -> {
+				dynObject2.getMethodNames( true ).forEach( methodName -> {
 					if ( methodName.startsWith( "get" ) ) {
-						Method	m			= dynObject.getMethod( methodName, true );
+						Method	m			= dynObject2.getMethod( methodName, true );
 						int		modifiers	= m.getModifiers();
 						if ( Modifier.isPublic( modifiers ) && Modifier.isStatic( modifiers ) && m.getParameterCount() == 0 ) {
-							thisResult.put( methodName.substring( 3 ), dynObject.invokeStatic( BoxRuntime.getInstance().getRuntimeContext(), methodName ) );
+							thisResult.put( methodName.substring( 3 ), dynObject2.invokeStatic( BoxRuntime.getInstance().getRuntimeContext(), methodName ) );
 						}
-					}
-				} );
-			} else {
-				dynObject = DynamicObject.of( object );
-				dynObject.getFieldsAsStream()
-				    .filter( field -> Modifier.isPublic( field.getModifiers() ) )
-				    .forEach( field -> {
-					    thisResult.put( field.getName(), dynObject.getField( field.getName() ).get() );
-				    } );
-				// also add fields for all public methods starting with "get" that take no arguments
-				dynObject.getMethodNames( true ).forEach( methodName -> {
-					Method m;
-					if ( methodName.startsWith( "get" ) && Modifier.isPublic( ( m = dynObject.getMethod( methodName, true ) ).getModifiers() )
-					    && m.getParameterCount() == 0 && !methodName.equals( "getClass" ) ) {
-						thisResult.put( methodName.substring( 3 ), dynObject.invoke( BoxRuntime.getInstance().getRuntimeContext(), methodName ) );
 					}
 				} );
 			}

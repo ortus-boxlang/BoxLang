@@ -4416,13 +4416,18 @@ public class CoreLangTest {
 		// @formatter:off
 		instance.executeSource(
 			"""
+			// Call static methods on the class
 			result = createObject("java","java.net.InetAddress").getLocalHost().getHostName();
 			result2 = createObject("java","java.net.InetAddress").localhost.getHostName();
+			// but also interact directly with the Class instance
+			result3 = getMetadata( createObject("java","java.net.InetAddress") ).getName();
+			result4 = getMetadata( createObject("java","java.net.InetAddress") ).name;
 			""",
 			context );
 		// @formatter:on
 
 		assertThat( variables.get( result ) ).isEqualTo( variables.get( Key.of( "result2" ) ) );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( variables.get( Key.of( "result4" ) ) );
 	}
 
 }
