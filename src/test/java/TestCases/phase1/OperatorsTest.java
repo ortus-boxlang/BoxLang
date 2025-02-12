@@ -33,8 +33,8 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
-import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 
 public class OperatorsTest {
 
@@ -683,7 +683,7 @@ public class OperatorsTest {
 	public void testTernaryTrueLazyEvaluation() {
 
 		Object result = instance.executeStatement( """
-		                                           			"false" castas "boolean" ? "a" castas "boolean" : "0" castas "boolean";
+		                                           			("false" castas "boolean") ? ("a" castas "boolean") : ("0" castas "boolean");
 		                                           """, context );
 		assertThat( result ).isEqualTo( false );
 	}
@@ -693,7 +693,7 @@ public class OperatorsTest {
 	public void testTernaryFalseLazyEvaluation() {
 
 		Object result = instance.executeStatement( """
-		                                           			"true" castas "boolean" ? "false" castas "boolean" : "x" castas "boolean";
+		                                           			("true" castas "boolean") ? ("false" castas "boolean") : ("x" castas "boolean");
 		                                           """, context );
 		assertThat( result ).isEqualTo( false );
 	}
@@ -733,11 +733,18 @@ public class OperatorsTest {
 	@DisplayName( "castAs" )
 	@Test
 	public void testCastAs() {
-		assertThrows( KeyNotFoundException.class, () -> instance.executeStatement( "5 castAs sdf", context ) );
+		assertThrows( BoxCastException.class, () -> instance.executeStatement( "5 castAs sdf", context ) );
 
 		Object result = instance.executeStatement( "5 castAs 'String'", context );
 		assertThat( result ).isEqualTo( "5" );
 		assertThat( result.getClass().getName() ).isEqualTo( "java.lang.String" );
+
+		result = instance.executeStatement( "5 castAs String", context );
+		assertThat( result ).isEqualTo( "5" );
+		assertThat( result.getClass().getName() ).isEqualTo( "java.lang.String" );
+
+		result = instance.executeStatement( "[1,2,3] castAs int[]", context );
+		assertThat( result ).isEqualTo( new int[] { 1, 2, 3 } );
 	}
 
 	@DisplayName( "assert" )

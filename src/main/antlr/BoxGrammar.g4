@@ -565,7 +565,7 @@ el2
     | el2 relOps el2                   # exprRelational  // foo > bar
     | el2 (EQ | EQUAL | EQEQ | IS) el2 # exprEqual       // foo == bar
     | el2 ELVIS el2                    # exprElvis       // Elvis operator
-    | el2 CASTAS el2                   # exprCastAs      // CastAs operator
+    | el2 CASTAS (type | el2)          # exprCastAs      // CastAs operator
     | el2 DOES NOT CONTAIN el2         # exprNotContains // foo DOES NOT CONTAIN bar
     | el2 (AND | AMPAMP) el2           # exprAnd         // foo AND bar
     | el2 (OR | PIPEPIPE) el2          # exprOr          // foo OR bar

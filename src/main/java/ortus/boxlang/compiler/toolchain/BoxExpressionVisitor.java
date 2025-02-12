@@ -712,10 +712,19 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 
 	@Override
 	public BoxExpression visitExprCastAs( ExprCastAsContext ctx ) {
-		var	pos		= tools.getPosition( ctx );
-		var	src		= tools.getSourceText( ctx );
-		var	left	= ctx.el2( 0 ).accept( this );
-		var	right	= ctx.el2( 1 ).accept( this );
+		var				pos		= tools.getPosition( ctx );
+		var				src		= tools.getSourceText( ctx );
+		var				left	= ctx.el2( 0 ).accept( this );
+		BoxExpression	right;
+		// 5 castas string
+		if ( ctx.type() != null ) {
+			right = new BoxStringLiteral( ctx.type().getText(), tools.getPosition( ctx.type() ), tools.getSourceText( ctx.type() ) );
+		} else {
+			// 5 castas "string"
+			// 5 castas "#myType#"
+			// 5 castas (any.runtime() ?: expression)
+			right = ctx.el2( 1 ).accept( this );
+		}
 		return new BoxBinaryOperation( left, BoxBinaryOperator.CastAs, right, pos, src );
 	}
 
