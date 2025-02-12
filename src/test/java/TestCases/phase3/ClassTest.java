@@ -219,7 +219,7 @@ public class ClassTest {
 				 * @brad wood
 				 * @luis
 				 */
-				@foo "bar"
+				@foo( bar )
 				class accessors=true singleton gavin="pickin" inject {
 
 					property numeric age default=1;

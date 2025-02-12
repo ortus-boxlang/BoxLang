@@ -237,21 +237,27 @@ public class UDFFunctionTest {
 
 		instance.executeSource(
 		    """
-		      @myRealAnnotation
-		      @anotherAnnotation "brad"
-		      @anotherAnnotation2 42
-		      @anotherAnnotation3 true
-		      @anotherAnnotation4 [1,2,3]
-		      @anotherAnnotation5 { foo : 'bar' }
-		    @letsGetFunky "brad" 42 true [1,2,3] { foo : 'bar' }
-		         public String function foo(
-		         	required string param1 hint="My param",
-		         	numeric param2=42 luis="majano"
-		         ) hint="my UDF" output=true brad="wood" {
-		           return "value";
-		         }
-		         result = foo(5);
-		             """,
+		        @myRealAnnotation
+		        @anotherAnnotation( brad )
+		        @anotherAnnotation2( 42 )
+		        @anotherAnnotation3( true )
+		        @anotherAnnotation4( [1,2,3] )
+		        @anotherAnnotation5( { foo : 'bar' } )
+		        @letsGetFunky(
+		    brad,
+		    42,
+		    true,
+		    [1,2,3],
+		    { foo : 'bar' }
+		     )
+		           public String function foo(
+		           	required string param1 hint="My param",
+		           	numeric param2=42 luis="majano"
+		           ) hint="my UDF" output=true brad="wood" {
+		             return "value";
+		           }
+		           result = foo(5);
+		               """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "value" );
 		UDF		UDFfoo	= ( ( UDF ) variables.get( foo ) );
@@ -1037,8 +1043,8 @@ public class UDFFunctionTest {
 		    	 * @event.brad wood
 		    	 * @eventgavin pickin
 		    	 */
-		    	@event.luis "majano"
-		    	@eventjon "clausen"
+		    	@event.luis( majano )
+		    	@eventjon( "clausen" )
 		    	void function preEvent( event ) eventesme="acevado" {}
 
 		    	result = getMetadata( preEvent );

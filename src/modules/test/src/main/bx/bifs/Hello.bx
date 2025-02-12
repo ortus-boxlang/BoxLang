@@ -17,8 +17,8 @@
  * - interceptorService : The BoxLang InterceptorService
  * - moduleRecord : The ModuleRecord instance
  */
-@BoxBIF 'moduleHelloWorld'
-@BoxMember { "string" : { name : "foo" }, "array" : {} }
+@BoxBIF( 'moduleHelloWorld' )
+@BoxMember( { "string" : { name : "foo" }, "array" : {} } )
 class{
 
 	/**

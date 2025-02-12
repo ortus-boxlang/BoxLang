@@ -7,7 +7,7 @@ class accessors=true {
      * @brad wood
      * @luis
      */
-    @preanno "myValue" "anothervalue"
+    @preanno( myValue, "anothervalue" )
     property string anotherprop;
 
     @ID 
