@@ -165,8 +165,6 @@ public class BoxRunner {
 			System.out.println( "+++ BoxRunner executed in " + timer.stop( "BoxRunner" ) );
 		}
 
-		System.exit( exitCode );
-
 		return exitCode;
 	}
 
