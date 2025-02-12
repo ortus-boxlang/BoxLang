@@ -116,8 +116,8 @@ public class TestUDF extends TestBase {
 		                          * @author Brad Wood
 		                          * @returns Only the coolest value ever
 		                          */
-		                          @myAnnotation "value" "another value"
-		                          @name.foo "bar"
+		                          @myAnnotation( value, "another value" )
+		                          @name.foo( "bar" )
 		                          string function greet( required string name='Brad' inject="myService" ) key="value" keyOnly {
 		                            return "Brad";
 		                          }
@@ -162,8 +162,8 @@ public class TestUDF extends TestBase {
 		ParsingResult	result	= parser.parse(
 
 		    """
-		    @myAnnotation "value" "another value"
-		               	@name.foo "bar"
+		    @myAnnotation( value, "another value" )
+		               	@name.foo( bar )
 		               	string function greet( required string name='Brad' inject="myService" ) key="value" keyOnly {
 		               	  return "Brad";
 		               	}
@@ -203,10 +203,10 @@ public class TestUDF extends TestBase {
 		ParsingResult	result	= parser.parse(
 
 		    """
-		    @param1.key "value"
-		    @param1.brad "wood"
-		    @param2.key "value"
-		    @param2.luis "majano"
+		    @param1.key( value )
+		    @param1.brad( wood )
+		    @param2.key( "value" )
+		    @param2.luis( "majano" )
 		    function foo(
 		    required string param1="default",
 		      param2

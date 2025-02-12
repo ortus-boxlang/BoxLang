@@ -815,11 +815,6 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 		if ( ctx.annotation() != null ) {
 			return ctx.annotation().accept( this );
 		}
-		if ( ctx.identifier() != null ) {
-			// Converting an identifier to a string literal here in the AST removes ambiguity, but also loses the
-			// lexical context of the original source code.
-			return new BoxStringLiteral( ctx.identifier().getText(), pos, src );
-		}
 		// Converting an fqn to a string literal here in the AST removes ambiguity, but also loses the
 		// lexical context of the original source code.
 		return new BoxStringLiteral( ctx.fqn().getText(), pos, src );
@@ -837,6 +832,14 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 
 		if ( ctx.stringLiteral() != null ) {
 			return ctx.stringLiteral().accept( this );
+		}
+
+		// Annotations like
+		// @MyAnnotation foobar
+		// is treated as
+		// @MyAnnotation "foobar"
+		if ( ctx.identifier() != null ) {
+			return new BoxStringLiteral( ctx.identifier().getText(), tools.getPosition( ctx.identifier() ), ctx.identifier().getText() );
 		}
 		// Then it must be this
 		return ctx.arrayLiteral().accept( this );

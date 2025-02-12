@@ -13,10 +13,10 @@ import java.lang.System;
  * @brad wood
  * @luis
  */
-@foo "bar"
-@multiAnno "one" "two" "three"
-@arrayAnno [ "one", "two", "three" ]
-@structAnno { "one"="two", three:"four" }
+@foo( bar )
+@multiAnno( one, two, "three" )
+@arrayAnno( [ "one", "two", "three" ] )
+@structAnno( { "one"="two", three:"four" } )
 class singleton gavin="pickin" inject {
 
     property name;

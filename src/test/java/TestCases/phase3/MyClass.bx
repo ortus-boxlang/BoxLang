@@ -14,7 +14,8 @@ import java.lang.System;
  * @luis
  * @_itwontlikeme~`!@#$%^&*()-=+[]{}\|'";:,.<>/?*áéíóúüñ formbuilderV2Form
  */
-@foo "bar"
+@foo( "bar" )
+@baz( bum )
 class singleton gavin="pickin" inject {
 
     /**@test*/

@@ -193,8 +193,9 @@ functionParamList: functionParam (COMMA functionParam)* COMMA?
 functionParam: REQUIRED? type? identifier (EQUALSIGN expression)? postAnnotation*
     ;
 
-// @foo "bar"
-preAnnotation: AT fqn annotation*
+// @foo
+// @foo( bar, "brad wood" )
+preAnnotation: AT fqn ( LPAREN annotation (COMMA annotation)* RPAREN)?
     ;
 
 arrayLiteral: LBRACKET expressionList? RBRACKET
@@ -207,10 +208,10 @@ postAnnotation: identifier ((EQUALSIGN | COLON) attributeSimple)?
 // This allows [1, 2, 3], "foo", or foo Adobe allows more chars than an identifer, Lucee allows darn
 // near anything, but ANTLR is incapable of matching any tokens until the next whitespace. The
 // literalExpression is just a BoxLang flourish to allow for more flexible expressions.
-attributeSimple: annotation | identifier | fqn
+attributeSimple: annotation | fqn
     ;
 
-annotation: atoms | stringLiteral | structExpression | arrayLiteral
+annotation: atoms | stringLiteral | structExpression | arrayLiteral | identifier
     ;
 
 type
