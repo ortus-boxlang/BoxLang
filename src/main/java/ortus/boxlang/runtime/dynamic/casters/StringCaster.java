@@ -48,7 +48,8 @@ import ortus.boxlang.runtime.util.FileSystemUtil;
  */
 public class StringCaster implements IBoxCaster {
 
-	public static boolean castClassesToStrings = false;
+	public static boolean	castClassesToStrings	= false;
+	public static boolean	castThrowablesToStrings	= false;
 
 	/**
 	 * Tests to see if the value can be cast to a string.
@@ -269,6 +270,11 @@ public class StringCaster implements IBoxCaster {
 		// passed directly to string BIFs and for string member functions to work on class instances.
 		if ( castClassesToStrings && object instanceof Class co ) {
 			return co.getName();
+		}
+
+		if ( castThrowablesToStrings && object instanceof Throwable t ) {
+			// Lucee returns a huge blob of HTML. Adobe just does this. We'll copy Adobe for now since this is really just for compat.
+			return t.getClass().getName() + ": " + t.getMessage();
 		}
 
 		// Do we throw?
