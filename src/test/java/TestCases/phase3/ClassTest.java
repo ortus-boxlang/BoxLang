@@ -1724,4 +1724,21 @@ public class ClassTest {
 		assertThat( DoubleCaster.cast( secondRunTime / firstRunTime ) ).isLessThan( .015 );
 	}
 
+	@Test
+	public void testOuputInApplication() {
+		instance.executeSource(
+		    """
+		    bx:savecontent variable="result" {
+		       	new src.test.java.TestCases.phase3.Application().run()
+		    }
+
+		    bx:savecontent variable="result2" {
+		       	new src.test.java.TestCases.phase3.NotApplication().run()
+		    }
+		         """,
+		    context );
+		assertThat( variables.get( "result" ) ).isEqualTo( "Hello BradHello World" );
+		assertThat( variables.get( "result2" ) ).isEqualTo( "" );
+	}
+
 }

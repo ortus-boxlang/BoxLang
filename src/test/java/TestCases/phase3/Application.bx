@@ -1,0 +1,9 @@
+class {
+
+	writeOutput("Hello Brad");
+
+	function run() {
+		writeOutput("Hello World");
+	}
+
+}

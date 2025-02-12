@@ -45,6 +45,7 @@ import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.ClassMeta;
 import ortus.boxlang.runtime.util.ArgumentUtil;
+import ortus.boxlang.runtime.util.BoxFQN;
 
 /**
  * The methods in this class are an extension of IClassRunnable. They are here for better readability
@@ -139,7 +140,9 @@ public class BoxClassSupport {
 			    thisClass.getAnnotations()
 			        .getOrDefault(
 			            Key.output,
-			            false
+			            // output defaults to true for Application.bx, but false for all others
+			            // Strip just the class name from the FQN foo.com.bar.Application
+			            new BoxFQN( thisClass.bxGetName().getName() ).getClassName().equalsIgnoreCase( "application" )
 			        )
 			) );
 		}
