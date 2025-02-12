@@ -92,7 +92,7 @@ public class BoxRunner {
 	 * @throws IOException
 	 * @throws JSONObjectException
 	 */
-	public static void main( String[] args ) throws JSONObjectException, IOException {
+	public static int main( String[] args ) {
 		Timer		timer	= new Timer();
 
 		// Parse CLI options with Env Overrides
@@ -166,6 +166,8 @@ public class BoxRunner {
 		}
 
 		System.exit( exitCode );
+
+		return exitCode;
 	}
 
 	/**
@@ -331,7 +333,7 @@ public class BoxRunner {
 			}
 
 			// Is it a shebang script to execute
-			if ( actionCommand == null && isShebangScript( currentExt ) ) {
+			if ( actionCommand == null && isShebangScript( current ) ) {
 				file = getSheBangScript( current );
 				continue;
 			}
