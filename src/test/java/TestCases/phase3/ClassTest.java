@@ -1742,4 +1742,24 @@ public class ClassTest {
 		assertThat( variables.get( "result2" ) ).isEqualTo( "" );
 	}
 
+	@Test
+	public void testCFCNameSameAsType() {
+		instance.executeSource(
+		    """
+		       function expectsAString( email address ) {
+		    	return address.ucase()
+		    }
+
+		       function expectsAClass( email address ) {
+		    	return address.getHost()
+		    }
+
+		    result = expectsAString( "brad@bradwood.com" );
+		    result2 = expectsAClass( new src.test.java.TestCases.phase3.Email( email : "brad@bradwood.com" ) );
+		            """,
+		    context );
+		assertThat( variables.get( "result" ) ).isEqualTo( "BRAD@BRADWOOD.COM" );
+		assertThat( variables.get( "result2" ) ).isEqualTo( "bradwood.com" );
+	}
+
 }

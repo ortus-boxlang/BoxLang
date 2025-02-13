@@ -1,0 +1,7 @@
+class {
+	property String email;
+
+	function getHost(){
+		return variables.email.listRest( '@' );
+	}
+}
