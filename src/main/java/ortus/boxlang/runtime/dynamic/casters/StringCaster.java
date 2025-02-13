@@ -190,6 +190,11 @@ public class StringCaster implements IBoxCaster {
 		if ( object instanceof java.util.Date date ) {
 			return date.toString();
 		}
+		if ( object instanceof java.time.Duration duration ) {
+			long	millisecondsInADay		= 86400 * 1000;
+			Float	durationAsDayProportion	= ( ( float ) duration.toMillis() / millisecondsInADay );
+			return durationAsDayProportion.toString();
+		}
 		if ( object instanceof Instant instant ) {
 			return instant.toString();
 		}
