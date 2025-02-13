@@ -182,8 +182,9 @@ public class GenericCaster implements IBoxCaster {
 		if ( object instanceof IClassRunnable ) {
 			if ( InstanceOf.invoke( context, object, type ) ) {
 				return object;
-			} else if ( type.equals( "component" ) || type.equals( "class" ) || type.equals( "struct" ) || type.equals( "structloose" ) ) {
-				// Any Box Class is also considered of type "component" or "class" or "struct" or "structloose"
+			} else if ( type.equals( "component" ) || type.equals( "class" ) || type.equals( "struct" ) || type.equals( "structloose" )
+			    || type.equals( "modifiablestruct" ) ) {
+				// Any Box Class is also considered of type "component" or "class" or "struct" or "structloose" or "modifiablestruct"
 				return object;
 			} else if ( fail ) {
 				throw new BoxCastException( String.format( "Could not cast object [%s] to type [%s]", object.getClass().getSimpleName(), type ) );
