@@ -1,7 +1,6 @@
 package com.ortussolutions.interceptors;
 
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.events.BaseInterceptor;
 import ortus.boxlang.runtime.events.InterceptionPoint;
@@ -19,8 +18,7 @@ public class ExampleInterceptor extends BaseInterceptor {
 	 */
 	@Override
 	public void configure( IStruct properties ) {
-		this.properties	= properties;
-		this.logger		= LoggerFactory.getLogger( this.getClass() );
+		this.properties = properties;
 	}
 
 	/**
