@@ -71,9 +71,9 @@ public class RegexBuilder {
 	public static final Pattern	URL						= Pattern.compile( "^(https?|ftp|file)://([A-Za-z0-90.]*)/?([-a-zA-Z0-9.+&@#/]+)?(\\??[^\\s]*)$" );
 	public static final Pattern	UPPERCASE_GROUP			= Pattern.compile( "([A-Z])" );
 	public static final Pattern	UUID_V4					= Pattern
-	    .compile( "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[89abAB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}" );
+	    .compile( "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}" );
 	public static final Pattern	UUID_PATTERN			= Pattern
-	    .compile( "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[89abAB][a-fA-F0-9]{3}[a-fA-F0-9]{12}" );
+	    .compile( "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{16}" );
 	public static final Pattern	VOWELS					= Pattern.compile( "^[aeiou].*" );
 	public static final Pattern	VALID_VARIABLENAME		= Pattern.compile( "^[a-zA-Z_][a-zA-Z0-9_]*$" );
 	public static final Pattern	WHITESPACE				= Pattern.compile( "\\s" );
