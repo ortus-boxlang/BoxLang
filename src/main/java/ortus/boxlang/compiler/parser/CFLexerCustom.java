@@ -84,6 +84,11 @@ public class CFLexerCustom extends CFLexer {
 	private int							LPAREN_Char_Code				= 40;
 
 	/**
+	 * ASCII Character code for period
+	 */
+	private int							DOT_Char_Code					= 46;
+
+	/**
 	 * The mode for the lexer to start in
 	 */
 	private int							defaultMode;
@@ -234,6 +239,12 @@ public class CFLexerCustom extends CFLexer {
 				    nextToken.getStartIndex(), nextToken.getStopIndex() - 1 );
 				componentCloseToken.setText( ">" );
 				return setLastToken( componentCloseToken );
+
+			case CFLexer.STATIC :
+				if ( nextNonWhiteSpaceCharIs( DOT_Char_Code ) ) {
+					( ( CommonToken ) nextToken ).setType( IDENTIFIER );
+				}
+				return setLastToken( nextToken );
 
 			default :
 				// reserved operators after a dot are just identifiers

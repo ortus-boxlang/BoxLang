@@ -5,6 +5,8 @@ class {
 		static foo = 9000;
 		'123' = 456;
 		final brad = "wood"
+		final static.finalStatic = "finalStatic";
+		final static finalStatic2 = "finalStatic2";
 	}
 
 	static.foo = 42;

@@ -1178,6 +1178,8 @@ public class ClassTest {
 		                        result8 = src.test.java.TestCases.phase3.StaticTest::123;
 		                        result9 = src.test.java.TestCases.phase3.StaticTest2::getInstance().getStaticBrad();
 		                        result10 = src.test.java.TestCases.phase3.StaticTest2::getInstance().thisStaticBrad;
+								result11 = src.test.java.TestCases.phase3.StaticTest::finalStatic;
+								result12 = src.test.java.TestCases.phase3.StaticTest::finalStatic2;
 		                                                                                                                      """, context,
 		    BoxSourceType.BOXSCRIPT );
 		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( 9000 );
@@ -1189,6 +1191,8 @@ public class ClassTest {
 		assertThat( variables.get( Key.of( "result8" ) ) ).isEqualTo( 456 );
 		assertThat( variables.get( Key.of( "result9" ) ) ).isEqualTo( "wood" );
 		assertThat( variables.get( Key.of( "result10" ) ) ).isEqualTo( "wood" );
+		assertThat( variables.get( Key.of( "result11" ) ) ).isEqualTo( "finalStatic" );
+		assertThat( variables.get( Key.of( "result12" ) ) ).isEqualTo( "finalStatic2" );
 	}
 
 	@Test
