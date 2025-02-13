@@ -27,7 +27,6 @@ public class BiConsumer<T, U> extends BaseProxy implements java.util.function.Bi
 
 	public BiConsumer( Object target, IBoxContext context, String method ) {
 		super( target, context, method );
-		prepLogger( BiConsumer.class );
 	}
 
 	@Override

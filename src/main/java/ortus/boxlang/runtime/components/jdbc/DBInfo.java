@@ -28,9 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
@@ -39,6 +37,7 @@ import ortus.boxlang.runtime.context.IJDBCCapableContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 import ortus.boxlang.runtime.jdbc.ConnectionManager;
 import ortus.boxlang.runtime.jdbc.DataSource;
+import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
@@ -53,9 +52,9 @@ import ortus.boxlang.runtime.validation.Validator;
 public class DBInfo extends Component {
 
 	/**
-	 * Logger
+	 * Runtime logger
 	 */
-	private Logger logger = LoggerFactory.getLogger( DBInfo.class );
+	private static final BoxLangLogger logger = BoxRuntime.getInstance().getLoggingService().getRuntimeLogger();
 
 	/**
 	 * Enumeration of all possible `type` attribute values.

@@ -22,9 +22,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.Configuration;
 import ortus.boxlang.runtime.context.ApplicationBoxContext;
@@ -40,6 +37,7 @@ import ortus.boxlang.runtime.events.InterceptorPool;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.loader.DynamicClassLoader;
+import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.SessionScope;
@@ -164,7 +162,7 @@ public abstract class BaseApplicationListener {
 	/**
 	 * Logger
 	 */
-	protected static final Logger			logger						= LoggerFactory.getLogger( BaseApplicationListener.class );
+	protected BoxLangLogger					logger;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -178,14 +176,13 @@ public abstract class BaseApplicationListener {
 	 * @param context The request context
 	 */
 	protected BaseApplicationListener( RequestBoxContext context, ResolvedFilePath baseTemplatePath ) {
+		this.logger				= runtime.getLoggingService().getLogger( "application" );
 		this.context			= context;
 		this.baseTemplatePath	= baseTemplatePath;
 		context.setApplicationListener( this );
-		this.interceptorPool = new InterceptorPool( Key.appListener, BoxRuntime.getInstance() )
-		    .registerInterceptionPoint( REQUEST_INTERCEPTION_POINTS );
-
+		this.interceptorPool = new InterceptorPool( Key.appListener, runtime ).registerInterceptionPoint( REQUEST_INTERCEPTION_POINTS );
 		// Ensure our thread is at least using the runtime CL. If there is an application defined later, this may get updated to a more specific request CL.
-		Thread.currentThread().setContextClassLoader( BoxRuntime.getInstance().getRuntimeLoader() );
+		Thread.currentThread().setContextClassLoader( runtime.getRuntimeLoader() );
 	}
 
 	/**

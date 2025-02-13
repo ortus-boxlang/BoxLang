@@ -10,7 +10,6 @@ public class Supplier<T> extends BaseProxy implements java.util.function.Supplie
 
 	public Supplier( Object target, IBoxContext context, String method ) {
 		super( target, context, method );
-		prepLogger( Supplier.class );
 	}
 
 	@SuppressWarnings( "unchecked" )

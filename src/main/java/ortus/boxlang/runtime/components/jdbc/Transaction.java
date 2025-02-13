@@ -20,9 +20,7 @@ package ortus.boxlang.runtime.components.jdbc;
 import java.sql.Connection;
 import java.util.Set;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
@@ -31,6 +29,7 @@ import ortus.boxlang.runtime.context.IJDBCCapableContext;
 import ortus.boxlang.runtime.jdbc.ConnectionManager;
 import ortus.boxlang.runtime.jdbc.DataSource;
 import ortus.boxlang.runtime.jdbc.ITransaction;
+import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -43,7 +42,7 @@ public class Transaction extends Component {
 	/**
 	 * Logger
 	 */
-	private Logger log = LoggerFactory.getLogger( Transaction.class );
+	private static final BoxLangLogger logger = BoxRuntime.getInstance().getLoggingService().getLogger( "datasource" );
 
 	/**
 	 * Constructor
@@ -141,11 +140,11 @@ public class Transaction extends Component {
 				bodyResult = processBody( context, body );
 				transaction.commit();
 			} catch ( DatabaseException e ) {
-				log.error( "Encountered generic exception while processing transaction; rolling back", e );
+				logger.error( "Encountered generic exception while processing transaction; rolling back", e );
 				transaction.rollback();
 				throw new DatabaseException( e.getMessage(), e );
 			} catch ( Throwable e ) {
-				log.error( "Encountered database exception while processing transaction; rolling back", e );
+				logger.error( "Encountered database exception while processing transaction; rolling back", e );
 				transaction.rollback();
 				throw new BoxRuntimeException( e.getMessage(), e );
 			} finally {

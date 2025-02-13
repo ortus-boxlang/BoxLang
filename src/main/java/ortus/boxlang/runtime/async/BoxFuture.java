@@ -28,11 +28,10 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.Attempt;
+import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
@@ -50,7 +49,7 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 	/**
 	 * Logger
 	 */
-	private static final Logger logger = LoggerFactory.getLogger( BoxFuture.class );
+	private BoxLangLogger logger;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -63,6 +62,7 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 	 */
 	public BoxFuture() {
 		super();
+		this.logger = BoxRuntime.getInstance().getLoggingService().getLogger( "async" );
 	}
 
 	/**
@@ -207,7 +207,7 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 		try {
 			return Attempt.of( get( timeout, DateTimeHelper.toTimeUnit( unit ) ) );
 		} catch ( InterruptedException | ExecutionException | TimeoutException e ) {
-			logger.error( "Error executing get() on a future", e );
+			this.logger.error( "Error executing get() on a future", e );
 			return Attempt.of( e );
 		}
 	}
@@ -417,7 +417,8 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 	 * @result A future that will return the results in an array
 	 */
 	public static BoxFuture<Array> all( IBoxContext context, Object... futures ) {
-		BoxFuture<?>[] aFutures = futuresWrap( context, futures );
+		BoxFuture<?>[]		aFutures	= futuresWrap( context, futures );
+		final BoxLangLogger	allLogger	= BoxRuntime.getInstance().getLoggingService().getLogger( "async" );
 
 		// Send to allOf() for execution
 		return ( BoxFuture<Array> ) allOf( aFutures )
@@ -427,7 +428,7 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 				        try {
 					        return future.get();
 				        } catch ( InterruptedException | ExecutionException e ) {
-					        logger.error( "Error executing get() on a future", e );
+					        allLogger.error( "Error executing get() on a future", e );
 					        throw new CompletionException( e );
 				        }
 			        } )
@@ -617,7 +618,8 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 	    Object unit,
 	    Executor executor ) {
 		// Timeunit conversion
-		TimeUnit timeUnit = DateTimeHelper.toTimeUnit( unit );
+		TimeUnit			timeUnit	= DateTimeHelper.toTimeUnit( unit );
+		final BoxLangLogger	allLogger	= BoxRuntime.getInstance().getLoggingService().getLogger( "async" );
 
 		// Array Mapping
 		if ( items instanceof Array castedArray ) {
@@ -642,7 +644,7 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 				    try {
 					    return future.get( timeout, timeUnit );
 				    } catch ( InterruptedException | ExecutionException | TimeoutException e ) {
-					    logger.error( "Error executing get() on a future", e );
+					    allLogger.error( "Error executing get() on a future", e );
 					    throw new CompletionException( e );
 				    }
 			    } )
@@ -672,7 +674,7 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 				    try {
 					    return ( IStruct ) future.get( timeout, timeUnit );
 				    } catch ( InterruptedException | ExecutionException | TimeoutException e ) {
-					    logger.error( "Error executing get() on a future", e );
+					    allLogger.error( "Error executing get() on a future", e );
 					    throw new CompletionException( e );
 				    }
 			    } )

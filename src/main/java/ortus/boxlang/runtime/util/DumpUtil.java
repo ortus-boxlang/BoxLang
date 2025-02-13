@@ -40,9 +40,6 @@ import java.util.concurrent.ConcurrentMap;
 
 import javax.annotation.Nullable;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.components.jdbc.Query;
 import ortus.boxlang.runtime.context.ContainerBoxContext;
@@ -84,11 +81,6 @@ public class DumpUtil {
 	 * This is used to cache the templates for dumping objects.
 	 */
 	private static final ConcurrentMap<String, DumpTemplate>	dumpTemplateCache		= new ConcurrentHashMap<>();
-
-	/**
-	 * This is used to cache the templates for dumping objects.
-	 */
-	private static final Logger									logger					= LoggerFactory.getLogger( DumpUtil.class );
 
 	/**
 	 * This is the base path for the templates when using the HTML format.

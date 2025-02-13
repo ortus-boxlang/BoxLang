@@ -20,13 +20,11 @@ import java.sql.Savepoint;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.events.BoxEvent;
+import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -41,30 +39,30 @@ public class Transaction implements ITransaction {
 	/**
 	 * Logger
 	 */
-	private static final Logger	logger					= LoggerFactory.getLogger( Transaction.class );
+	private static final BoxLangLogger	logger					= BoxRuntime.getInstance().getLoggingService().getLogger( "datasource" );
 
 	/**
 	 * The context associated with this transaction.
 	 */
-	private IBoxContext			context;
+	private IBoxContext					context;
 
 	/**
 	 * The underlying JDBC connection.
 	 */
-	private Connection			connection;
+	private Connection					connection;
 
 	/**
 	 * The datasource associated with this transaction.
 	 */
-	private DataSource			datasource;
+	private DataSource					datasource;
 
 	/**
 	 * The transaction isolation level
 	 */
-	private Integer				isolationLevel			= null;
+	private Integer						isolationLevel			= null;
 
 	/** The original transaction isolation level */
-	private Integer				originalIsolationLevel	= null;
+	private Integer						originalIsolationLevel	= null;
 
 	/**
 	 * Stores the savepoints used in this transaction, referenced from <code>transactionSetSavepoint( "mySavepoint" )</code> and
@@ -73,7 +71,7 @@ public class Transaction implements ITransaction {
 	 * Each savepoint name uses a Key to avoid case sensitivity issues with the lookup, and each JDBC savepoint is created with the name in UPPERCASE for
 	 * the same reason.
 	 */
-	private Map<Key, Savepoint>	savepoints				= new HashMap<>();
+	private Map<Key, Savepoint>			savepoints				= new HashMap<>();
 
 	/**
 	 * --------------------------------------------------------------------------

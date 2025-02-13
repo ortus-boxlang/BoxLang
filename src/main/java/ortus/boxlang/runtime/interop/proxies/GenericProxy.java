@@ -33,7 +33,6 @@ public class GenericProxy extends BaseProxy implements InvocationHandler {
 
 	public GenericProxy( Object target, IBoxContext context, String method ) {
 		super( target, context, method );
-		prepLogger( GenericProxy.class );
 	}
 
 	/**
@@ -67,11 +66,11 @@ public class GenericProxy extends BaseProxy implements InvocationHandler {
 
 	/**
 	 * Force return value to be what the interface requires
-	 * 
+	 *
 	 * @param returnValue The value being returned
 	 * @param returnType  The return type of the method
 	 * @param methodName  The name of the method (or error handling)
-	 * 
+	 *
 	 * @return The coerced return value
 	 */
 	private Object coerceReturnValue( Object returnValue, Class<?> returnType, String methodName ) {

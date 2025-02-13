@@ -11,7 +11,6 @@ public class Predicate<T> extends BaseProxy implements java.util.function.Predic
 
 	public Predicate( Object target, IBoxContext context, String method ) {
 		super( target, context, method );
-		prepLogger( Predicate.class );
 	}
 
 	@Override

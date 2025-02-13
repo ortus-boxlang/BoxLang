@@ -19,9 +19,6 @@ package ortus.boxlang.runtime.scopes;
 
 import java.util.List;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.types.IStruct;
@@ -42,8 +39,6 @@ import ortus.boxlang.runtime.util.NetworkUtil;
  * </p>
  */
 public class ServerScope extends BaseScope {
-
-	private static final Logger		logger				= LoggerFactory.getLogger( ServerScope.class );
 
 	/**
 	 * These keys cannot be set once the scope is initialized
@@ -93,8 +88,6 @@ public class ServerScope extends BaseScope {
 		    )
 		);
 		this.initialized = true;
-
-		logger.debug( "Server Scope Constructed and Initialized" );
 
 		return this;
 	}

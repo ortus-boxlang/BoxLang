@@ -17,9 +17,6 @@
  */
 package ortus.boxlang.runtime.context;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.Configuration;
 import ortus.boxlang.runtime.events.BoxEvent;
@@ -45,22 +42,20 @@ public class RuntimeBoxContext extends BaseBoxContext {
 	 * --------------------------------------------------------------------------
 	 */
 
-	private static final Logger	logger			= LoggerFactory.getLogger( RuntimeBoxContext.class );
-
 	/**
 	 * The variables scope
 	 */
-	protected IScope			serverScope		= new ServerScope();
+	protected IScope		serverScope		= new ServerScope();
 
 	/**
 	 * Box Runtime
 	 */
-	private BoxRuntime			runtime			= BoxRuntime.getInstance();
+	private BoxRuntime		runtime			= BoxRuntime.getInstance();
 
 	/**
 	 * Runtime configuration
 	 */
-	private Configuration		runtimeConfig	= runtime.getConfiguration();
+	private Configuration	runtimeConfig	= runtime.getConfiguration();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -102,8 +97,6 @@ public class RuntimeBoxContext extends BaseBoxContext {
 		        "serverScope", this.serverScope
 		    )
 		);
-
-		logger.debug( "Runtime Box Context started" );
 	}
 
 	/**

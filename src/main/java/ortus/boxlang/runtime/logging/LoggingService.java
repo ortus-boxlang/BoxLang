@@ -444,6 +444,15 @@ public class LoggingService {
 	}
 
 	/**
+	 * Get the runtime logger
+	 *
+	 * @return The runtime logger
+	 */
+	public BoxLangLogger getRuntimeLogger() {
+		return getLogger( DEFAULT_LOG_FILE );
+	}
+
+	/**
 	 * Get a logger by registered name.
 	 * If the logger doesn't exist, it will auto-register it and load it
 	 * using the name as the file name in the logs directory.
@@ -667,7 +676,7 @@ public class LoggingService {
 		// Check if we have the logger configuration or else build a vanilla one
 		LoggerConfig	loggerConfig	= ( LoggerConfig ) this.runtime
 		    .getConfiguration().logging.loggers
-		    .computeIfAbsent( loggerKey, key -> new LoggerConfig( key.getName().toUpperCase(), this.runtime.getConfiguration().logging ) );
+		        .computeIfAbsent( loggerKey, key -> new LoggerConfig( key.getName().toUpperCase(), this.runtime.getConfiguration().logging ) );
 		Level			configLevel		= Level.toLevel( LogLevel.valueOf( loggerConfig.level.getName(), false ).getName() );
 
 		// Seed the properties

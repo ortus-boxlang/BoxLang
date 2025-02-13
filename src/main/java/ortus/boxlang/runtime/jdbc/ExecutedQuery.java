@@ -27,12 +27,10 @@ import java.util.Map;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.jdbc.qoq.QoQStatement;
+import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.types.Array;
@@ -48,8 +46,7 @@ import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 public final class ExecutedQuery {
 
 	private static final InterceptorService	interceptorService	= BoxRuntime.getInstance().getInterceptorService();
-
-	private static final Logger				logger				= LoggerFactory.getLogger( ExecutedQuery.class );
+	private static final BoxLangLogger		logger				= BoxRuntime.getInstance().getLoggingService().getLogger( "datasource" );
 
 	/**
 	 * A Query object holding the results of the query.

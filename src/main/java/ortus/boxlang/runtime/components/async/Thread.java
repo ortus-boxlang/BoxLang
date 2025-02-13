@@ -20,7 +20,6 @@ package ortus.boxlang.runtime.components.async;
 import java.util.Set;
 
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
@@ -138,7 +137,7 @@ public class Thread extends Component {
 		    () -> {
 			    StringBuffer buffer		= new StringBuffer();
 			    Throwable	exception	= null;
-			    Logger		logger		= LoggerFactory.getLogger( Thread.class );
+			    Logger		logger		= runtime.getLoggingService().getLogger( "async" );
 			    try {
 				    processBody( tContext, body, buffer );
 			    } catch ( AbortException e ) {

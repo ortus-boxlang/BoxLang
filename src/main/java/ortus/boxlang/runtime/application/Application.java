@@ -40,6 +40,7 @@ import ortus.boxlang.runtime.dynamic.casters.LongCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.loader.DynamicClassLoader;
+import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.scopes.ApplicationScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.CacheService;
@@ -95,9 +96,9 @@ public class Application {
 	private BaseApplicationListener			startingListener				= null;
 
 	/**
-	 * Logger
+	 * The application logger
 	 */
-	private static final Logger				logger							= LoggerFactory.getLogger( Application.class );
+	private BoxLangLogger				logger;
 
 	/**
 	 * Application cache key filter for it's sessions
@@ -147,6 +148,7 @@ public class Application {
 	 * @param name The name of the application
 	 */
 	public Application( Key name ) {
+		this.logger = BoxRuntime.getInstance().getLoggingService().getLogger( "application" );
 		this.name = name;
 		prepApplication();
 	}

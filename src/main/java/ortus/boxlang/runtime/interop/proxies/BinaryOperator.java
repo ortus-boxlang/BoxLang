@@ -27,7 +27,6 @@ public class BinaryOperator<T> extends BaseProxy implements java.util.function.B
 
 	public BinaryOperator( Object target, IBoxContext context, String method ) {
 		super( target, context, method );
-		prepLogger( BinaryOperator.class );
 	}
 
 	@SuppressWarnings( "unchecked" )

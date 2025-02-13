@@ -11,7 +11,6 @@ public class ToIntFunction<T> extends BaseProxy implements java.util.function.To
 
 	public ToIntFunction( Object target, IBoxContext context, String method ) {
 		super( target, context, method );
-		prepLogger( ToIntFunction.class );
 	}
 
 	@Override

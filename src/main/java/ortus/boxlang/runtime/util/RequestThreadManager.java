@@ -24,9 +24,6 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ThreadBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
@@ -86,11 +83,6 @@ public class RequestThreadManager {
 	 * TODO: Move to SingleThreadExecutors for better control
 	 */
 	private static final ThreadGroup	THREAD_GROUP				= new ThreadGroup( "BL-Threads" );
-
-	/**
-	 * Logger
-	 */
-	private static final Logger			logger						= LoggerFactory.getLogger( RequestThreadManager.class );
 
 	/**
 	 * Registers a thread with the manager

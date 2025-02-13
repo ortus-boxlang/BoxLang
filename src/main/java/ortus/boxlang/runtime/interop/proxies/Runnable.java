@@ -10,7 +10,6 @@ public class Runnable extends BaseProxy implements java.lang.Runnable {
 
 	public Runnable( Object target, IBoxContext context, String method ) {
 		super( target, context, method );
-		prepLogger( Runnable.class );
 	}
 
 	@Override

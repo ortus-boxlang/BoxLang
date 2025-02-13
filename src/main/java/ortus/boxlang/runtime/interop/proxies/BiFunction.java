@@ -27,7 +27,6 @@ public class BiFunction<T, U, R> extends BaseProxy implements java.util.function
 
 	public BiFunction( Object target, IBoxContext context, String method ) {
 		super( target, context, method );
-		prepLogger( BiFunction.class );
 	}
 
 	@SuppressWarnings( "unchecked" )

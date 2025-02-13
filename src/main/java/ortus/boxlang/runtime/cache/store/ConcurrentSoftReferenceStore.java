@@ -23,9 +23,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Stream;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import ortus.boxlang.runtime.cache.ICacheEntry;
 import ortus.boxlang.runtime.cache.filters.ICacheKeyFilter;
 import ortus.boxlang.runtime.cache.providers.ICacheProvider;
@@ -40,11 +37,6 @@ import ortus.boxlang.runtime.types.Struct;
  * Naturally the store is ordered by {@code created} timestamp and can be used for concurrent access.
  */
 public class ConcurrentSoftReferenceStore extends AbstractStore {
-
-	/**
-	 * Logger
-	 */
-	private static final Logger									logger	= LoggerFactory.getLogger( ConcurrentSoftReferenceStore.class );
 
 	/**
 	 * The concurrent pool of objects based on a soft reference
@@ -84,12 +76,6 @@ public class ConcurrentSoftReferenceStore extends AbstractStore {
 		this.softRefKeyMap	= new ConcurrentHashMap<>( maxObjects / 4 );
 		this.referenceQueue	= new ReferenceQueue<>();
 
-		logger.debug(
-		    "ConcurrentSoftReferenceStore({}) initialized with a max size of {}",
-		    provider.getName(),
-		    maxObjects
-		);
-
 		return this;
 	}
 
@@ -115,10 +101,6 @@ public class ConcurrentSoftReferenceStore extends AbstractStore {
 	 */
 	public void shutdown() {
 		getPool().clear();
-		logger.debug(
-		    "ConcurrentSoftReferenceStore({}) was shutdown",
-		    provider.getName()
-		);
 	}
 
 	/**
@@ -130,10 +112,6 @@ public class ConcurrentSoftReferenceStore extends AbstractStore {
 	 * @return The number of objects flushed
 	 */
 	public int flush() {
-		logger.debug(
-		    "ConcurrentSoftReferenceStore({}) was flushed",
-		    provider.getName()
-		);
 		return 0;
 	}
 
@@ -160,11 +138,6 @@ public class ConcurrentSoftReferenceStore extends AbstractStore {
 		    .limit( evictCount )
 		    // Evict it & Log Stats
 		    .forEach( entry -> {
-			    logger.debug(
-			        "ConcurrentSoftReferenceStore({}) evicted [{}]",
-			        provider.getName(),
-			        entry.key()
-			    );
 			    getPool().remove( entry.key() );
 			    getProvider().getStats().recordEviction();
 		    } );

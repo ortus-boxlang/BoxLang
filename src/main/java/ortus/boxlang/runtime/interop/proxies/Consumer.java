@@ -27,7 +27,6 @@ public class Consumer<T> extends BaseProxy implements java.util.function.Consume
 
 	public Consumer( Object target, IBoxContext context, String method ) {
 		super( target, context, method );
-		prepLogger( Consumer.class );
 	}
 
 	@Override

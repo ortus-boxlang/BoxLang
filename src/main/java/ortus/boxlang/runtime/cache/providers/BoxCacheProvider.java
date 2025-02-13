@@ -25,9 +25,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.cache.BoxCacheEntry;
 import ortus.boxlang.runtime.cache.ICacheEntry;
 import ortus.boxlang.runtime.cache.filters.ICacheKeyFilter;
@@ -37,6 +35,7 @@ import ortus.boxlang.runtime.dynamic.Attempt;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
+import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.CacheService;
 import ortus.boxlang.runtime.types.Array;
@@ -63,9 +62,9 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 	 */
 
 	/**
-	 * Logger
+	 * The provider logger
 	 */
-	private static final Logger	logger	= LoggerFactory.getLogger( BoxCacheProvider.class );
+	private BoxLangLogger		logger;
 
 	/**
 	 * The object store we will use for caching
@@ -119,6 +118,9 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 	 */
 	@Override
 	public synchronized ICacheProvider configure( CacheService cacheService, CacheConfig config ) {
+		// Prep the logger
+		this.logger = BoxRuntime.getInstance().getLoggingService().getLogger( "cache" );
+
 		// Super size me!
 		super.configure( cacheService, config );
 
