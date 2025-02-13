@@ -611,7 +611,7 @@ public final class LocalizationUtil {
 			} catch ( java.time.format.DateTimeParseException e ) {
 				throw new BoxRuntimeException(
 				    String.format(
-				        "The the date time value of [%s] could not be parsed as a valid date or datetime locale of [%s]",
+				        "The date time value of [%s] could not be parsed as a valid date or datetime locale of [%s]",
 				        dateTime,
 				        locale.getDisplayName()
 				    ), e );
@@ -658,7 +658,7 @@ public final class LocalizationUtil {
 			} catch ( Exception x ) {
 				throw new BoxRuntimeException(
 				    String.format(
-				        "The the date time value of [%s] could not be parsed as a valid date or datetime locale of [%s]",
+				        "The date time value of [%s] could not be parsed as a valid date or datetime locale of [%s]",
 				        dateTime,
 				        locale.getDisplayName()
 				    ), x );
@@ -666,7 +666,7 @@ public final class LocalizationUtil {
 		} catch ( Exception e ) {
 			throw new BoxRuntimeException(
 			    String.format(
-			        "The the date time value of [%s] could not be parsed with a locale of [%s]",
+			        "The date time value of [%s] could not be parsed with a locale of [%s]",
 			        dateTime,
 			        locale.getDisplayName()
 			    ), e );

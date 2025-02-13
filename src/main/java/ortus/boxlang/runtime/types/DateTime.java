@@ -263,7 +263,7 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 
 	/**
 	 * Constructor to create DateTime from a LocalDateTime object with a specified timezone
-	 * 
+	 *
 	 * @param dateTime A local date time object
 	 * @param timezone The timezone to use
 	 */
@@ -326,14 +326,14 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 			} catch ( Exception x ) {
 				throw new BoxRuntimeException(
 				    String.format(
-				        "The the date time value of [%s] could not be parsed as a valid date or datetime",
+				        "The date time value of [%s] could not be parsed as a valid date or datetime",
 				        dateTime
 				    ), x );
 			}
 		} catch ( Exception e ) {
 			throw new BoxRuntimeException(
 			    String.format(
-			        "The the date time value of [%s] could not be parsed using the mask [%s]",
+			        "The date time value of [%s] could not be parsed using the mask [%s]",
 			        dateTime,
 			        mask
 			    ), e );
