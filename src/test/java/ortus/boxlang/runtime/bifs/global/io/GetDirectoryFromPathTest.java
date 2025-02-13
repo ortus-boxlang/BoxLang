@@ -74,6 +74,18 @@ public class GetDirectoryFromPathTest {
 		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
+	@DisplayName( "it returns a single slash for null" )
+	@Test
+	public void testNullPath() {
+		instance.executeSource(
+		    """
+		    result = getDirectoryFromPath( javacast( "null", "" ) );
+		       """,
+		    context );
+		assertTrue( variables.get( Key.of( "result" ) ) instanceof String );
+		assertEquals( variables.getAsString( result ), "/" );
+	}
+
 	@DisplayName( "It tests the BIF GetDirectoryFromPath" )
 	@Test
 	@Ignore
