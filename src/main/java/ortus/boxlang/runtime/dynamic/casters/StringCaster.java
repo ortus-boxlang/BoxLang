@@ -190,11 +190,6 @@ public class StringCaster implements IBoxCaster {
 		if ( object instanceof java.util.Date date ) {
 			return date.toString();
 		}
-		if ( object instanceof java.time.Duration duration ) {
-			long	millisecondsInADay		= 86400 * 1000;
-			Float	durationAsDayProportion	= ( ( float ) duration.toMillis() / millisecondsInADay );
-			return durationAsDayProportion.toString();
-		}
 		if ( object instanceof Instant instant ) {
 			return instant.toString();
 		}
@@ -224,6 +219,19 @@ public class StringCaster implements IBoxCaster {
 		}
 		if ( object instanceof java.util.Calendar targetCalendar ) {
 			return targetCalendar.getTime().toString();
+		}
+
+		if ( object instanceof java.time.Duration targetDuration ) {
+			BigDecimal	days		= BigDecimal.valueOf( targetDuration.toDays() );
+			BigDecimal	hours		= BigDecimal.valueOf( targetDuration.toHoursPart() );
+			BigDecimal	minutes		= BigDecimal.valueOf( targetDuration.toMinutesPart() );
+			BigDecimal	seconds		= BigDecimal.valueOf( targetDuration.toSecondsPart() );
+			BigDecimal	nanos		= BigDecimal.valueOf( targetDuration.toNanosPart(), 9 );
+			BigDecimal	totalDays	= days.add( hours.divide( BigDecimal.valueOf( 24 ), 15, BigDecimal.ROUND_HALF_UP ) )
+			    .add( minutes.divide( BigDecimal.valueOf( 1440 ), 15, BigDecimal.ROUND_HALF_UP ) )
+			    .add( seconds.divide( BigDecimal.valueOf( 86400 ), 15, BigDecimal.ROUND_HALF_UP ) )
+			    .add( nanos.divide( BigDecimal.valueOf( 86400 * 1_000_000_000L ), 15, BigDecimal.ROUND_HALF_UP ) );
+			return totalDays.toString();
 		}
 		// End date classes
 

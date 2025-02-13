@@ -4447,4 +4447,18 @@ public class CoreLangTest {
 		assertThat( variables.getAsStruct( result ).get( "test" ) ).isEqualTo( "test" );
 	}
 
+	@Test
+	public void testTimespanAsString() {
+		// @formatter:off
+		instance.executeSource(
+					"""
+					result = createTimespan(1,1,1,1) castas string
+					println( result )
+					""",
+					context );
+		// @formatter:on
+
+		assertThat( variables.get( result ).toString() ).startsWith( "1.04237" );
+	}
+
 }
