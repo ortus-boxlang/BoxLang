@@ -898,7 +898,7 @@ public class Struct implements IStruct, IListenable, Serializable {
 				    getFunctionContextThisInterfaceForInvoke()
 				);
 				return function.invoke( fContext );
-			} else if ( memberDescriptor == null ) {
+			} else if ( memberDescriptor == null && !DynamicInteropService.hasMethodNoCase( this.getClass(), name.getName() ) ) {
 				throw new BoxRuntimeException(
 				    "key '" + name.getName() + "' of type  '" + value.getClass().getName() + "'  is not a function " );
 			}
