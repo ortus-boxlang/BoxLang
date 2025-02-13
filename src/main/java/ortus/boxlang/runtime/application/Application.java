@@ -98,7 +98,7 @@ public class Application {
 	/**
 	 * The application logger
 	 */
-	private BoxLangLogger				logger;
+	private BoxLangLogger					logger;
 
 	/**
 	 * Application cache key filter for it's sessions
@@ -148,8 +148,8 @@ public class Application {
 	 * @param name The name of the application
 	 */
 	public Application( Key name ) {
-		this.logger = BoxRuntime.getInstance().getLoggingService().getLogger( "application" );
-		this.name = name;
+		this.logger	= BoxRuntime.getInstance().getLoggingService().getLogger( "application" );
+		this.name	= name;
 		prepApplication();
 	}
 
