@@ -240,7 +240,7 @@ jobs:
           then
             gradle bumpPatchVersion --stacktrace --console=plain
           else
-            gradle bumpBetaVersion --stacktrace --console=plain
+            gradle bumpRCVersion --stacktrace --console=plain
           fi
           git pull
 

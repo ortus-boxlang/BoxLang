@@ -147,15 +147,19 @@ project.ext.bumpVersion = {
 	boolean major = false,
 	boolean minor = false,
 	boolean patch = false,
-	boolean beta = false ->
+	boolean beta = false,
+	boolean rc = false ->
 
 	def propertiesFile = file( './gradle.properties' );
 	def properties = new Properties();
 
 	properties.load( propertiesFile.newDataInputStream() )
-	def versionTarget = major ? 0 : minor ? 1 : 2
+	def versionTarget = major ? 0 : minor ? 1 : beta ? 2 : 3
 
 	def currentVersion = properties.getProperty( 'version' )
+	// 1.1.0 -> -> [ 1, 1, 0 ]
+	// 1.0.0-beta1 -> [ 1, 0, 0-beta1 ]
+	// 1.0.0-rc.1 -> [ 1, 0, 0-rc, 1 ]
 	def versionParts = currentVersion.split( '\\.' )
 	if( !beta ){
 		def newPathVersion = versionParts[ versionTarget ].toInteger() + 1
@@ -174,6 +178,8 @@ project.ext.bumpVersion = {
 		// Now we get the beta number
 		def betaNumber = betaString.split( 'beta' )[ 1 ].toInteger() + 1
 		newVersion = currentVersion.split( '-' )[ 0 ] + "-beta${betaNumber}"
+	} else if( rc ){
+		newVersion = "${versionParts[ 0 ]}.${versionParts[ 1 ]}.${versionParts[ 2 ]}.${versionParts[3]}"
 	}
 
 	properties.setProperty( 'version', newVersion )
@@ -664,7 +670,7 @@ task bumpMinorVersion {
  */
 task bumpPatchVersion {
 	doLast{
-		bumpVersion( false, false, true )
+		bumpVersion( false, false, true, false, false )
 	}
 }
 
@@ -673,7 +679,15 @@ task bumpPatchVersion {
  */
 task bumpBetaVersion {
 	doLast{
-		bumpVersion( false, false, false, true )
+		bumpVersion( false, false, false, true, false )
+	}
+}
+/**
+ * Bump the rc version number
+ */
+task bumpRCVersion {
+	doLast{
+		bumpVersion( false, false, false, false, true )
 	}
 }
 
