@@ -4307,22 +4307,51 @@ public class CoreLangTest {
 			import ortus.boxlang.runtime.scopes.Key;
 				ref = {
 					"foo"     : "bar",
+					"Brad"     : "bar",
 				};
 
 				hashMap = createObject( "java", "java.util.HashMap" );
 				hashMap.putAll( ref );
-				
+
 				result1 = isNull( hashMap[ "foo" ] );
-				result12 = hashMap[ "foo" ] ;
+				result1b = isNull( hashMap[ "brad" ] );
+
+				result2 = hashMap[ "foo" ];
+				result2b = hashMap[ "brad" ];
+
 				result3 = isNull( hashMap.foo );
+				result3b = isNull( hashMap.brad );
+
 				result4 = hashMap.foo;
+				result4b = hashMap.brad;
+
+				result5 = structKeyExists( hashMap, "foo" );
+				result5b = structKeyExists( hashMap, "brad" );
+
+				result6 = structKeyExists( hashMap, "FOO" );
+				result6b = structKeyExists( hashMap, "BRAD" );
 			""",
 			context );
 		// @formatter:on
+
 		assertThat( variables.getAsBoolean( Key.of( "result1" ) ) ).isFalse();
-		assertThat( variables.get( Key.of( "result12" ) ) ).isEqualTo( "bar" );
+		assertThat( variables.getAsBoolean( Key.of( "result1b" ) ) ).isFalse();
+
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "bar" );
+		assertThat( variables.get( Key.of( "result2b" ) ) ).isEqualTo( "bar" );
+
 		assertThat( variables.getAsBoolean( Key.of( "result3" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "result3b" ) ) ).isFalse();
+
 		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "bar" );
+		assertThat( variables.get( Key.of( "result4b" ) ) ).isEqualTo( "bar" );
+
+		assertThat( variables.getAsBoolean( Key.of( "result5" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "result5b" ) ) ).isTrue();
+
+		assertThat( variables.getAsBoolean( Key.of( "result6" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "result6b" ) ) ).isTrue();
+
 	}
 
 	@Test
@@ -4352,7 +4381,7 @@ public class CoreLangTest {
 			result = structReduce(
 				myStruct,
 				function( indexMap, key, value ){
-					println( key & " - " & key.getClass().getName())
+					//println( key & " - " & key.getClass().getName())
 					indexMap.put( key, value );
 					return indexMap;
 				},
@@ -4457,12 +4486,29 @@ public class CoreLangTest {
 		instance.executeSource(
 					"""
 					result = createTimespan(1,1,1,1) castas string
-					println( result )
 					""",
 					context );
 		// @formatter:on
 
 		assertThat( variables.get( result ).toString() ).startsWith( "1.04237" );
+	}
+
+	@Test
+	public void testNullFromMapPut() {
+		// @formatter:off
+		instance.executeSource(
+				"""
+					headers     = createObject( "java", "java.util.LinkedHashMap" ).init();
+					headers.put( "Content-Type", "application/json" );
+					result = headers[ "Content-Type" ];
+					result2 = headers[ "content-type" ];
+					println( result )
+				""",
+				context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( "application/json" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "application/json" );
+
 	}
 
 }

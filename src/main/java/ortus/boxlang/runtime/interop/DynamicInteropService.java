@@ -71,6 +71,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.IType;
 import ortus.boxlang.runtime.types.JavaMethod;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.StructMapWrapper;
 import ortus.boxlang.runtime.types.exceptions.AbstractClassException;
 import ortus.boxlang.runtime.types.exceptions.BoxLangException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -1725,9 +1726,22 @@ public class DynamicInteropService {
 		}
 
 		// Double check because a java super dereference from a boxClass will have a different targetClass.
-		if ( Map.class.isAssignableFrom( targetClass ) && targetInstance instanceof Map ) {
-			// If it's a raw Map, then we use the key, whose equals() method will defer to the original values's equals() method.
-			return ( ( Map<Object, Object> ) targetInstance ).get( name );
+		if ( Map.class.isAssignableFrom( targetClass ) && targetInstance instanceof Map map ) {
+			// If it's a raw Map, we may need to get creative since it's possible to have a mix of Key and String instances in some cases,
+			// but the map itself may also have a completelyk different key class
+			var structMapWrap = StructMapWrapper.of( map );
+			if ( structMapWrap.containsKey( name ) ) {
+				return structMapWrap.get( name );
+			}
+
+			throw new KeyNotFoundException(
+			    String.format( "The Map [%s] has no key [%s]. The existing keys are [%s]",
+			        ClassUtils.getCanonicalName( targetClass ),
+			        name.getName(),
+			        map.keySet().stream().map( Object::toString ).collect( Collectors.joining( ", " ) )
+			    )
+			);
+
 			// Special logic so we can treat exceptions as referencable. Possibly move to helper
 		} else if ( targetInstance instanceof List list ) {
 			Integer index = Array.validateAndGetIntForDereference( name, list.size(), safe );
