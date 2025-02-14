@@ -74,7 +74,7 @@ build.finalizedBy( shadowJar )
 
 /**
  * Custom task that creates a build/module folders
- * - Copies the build/libs/BoxLangModuleTemplate-1.0.0-all.jar to build/module/libs/BoxLangModuleTemplate-1.0.0-all.jar
+ * - Copies the build/libs/BoxLangModuleTemplate-1.0.0.jar to build/module/libs/BoxLangModuleTemplate-1.0.0.jar
  * - Copies the src/main/bx/** to build/module/ folder.
  */
 task createModuleStructure( type: Copy ) {

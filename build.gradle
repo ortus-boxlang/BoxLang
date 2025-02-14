@@ -219,9 +219,17 @@ jar {
 	// Exclude the following directories from the final built JAR
 	exclude '**/ortus/boxlang/tools/**'
 }
+
+// This is needed so gradle can find the shadowJar tasks
+tasks.named( "startScripts" ) {
+    dependsOn tasks.named( "shadowJar" )
+}
+tasks.named( "startShadowScripts" ) {
+    dependsOn tasks.named( "jar" )
+}
 shadowJar {
 	archiveBaseName = "boxlang"
-	//archiveClassifier = ""
+	archiveClassifier = ""
     mergeServiceFiles()
 
 	// Antlr unecessary files
@@ -269,7 +277,7 @@ task createDistributionFile( type: Zip ){
 	}
 
 	from( 'build/libs' ) {
-		include 'boxlang-' + version + '-all.jar'
+		include 'boxlang-' + version + '.jar'
 		into 'lib'
 	}
 
@@ -287,7 +295,7 @@ task libsToDistro( type: Copy ) {
 	dependsOn build, createDistributionFile
 
 	from( 'build/libs' ) {
-		include 'boxlang-' + version + '-all.jar'
+		include 'boxlang-' + version + '.jar'
 		include 'boxlang-' + version + '-javadoc.jar'
 	}
 
@@ -301,11 +309,11 @@ task libsToDistro( type: Copy ) {
 
 		if( branch == 'development' ){
 			Files.copy( file( "build/distributions/boxlang-${version}.zip" ).toPath(), file( "build/evergreen/boxlang-snapshot.zip" ).toPath(), StandardCopyOption.REPLACE_EXISTING )
-			Files.copy( file( "build/distributions/boxlang-${version}-all.jar" ).toPath(), file( "build/evergreen/boxlang-snapshot-all.jar" ).toPath(), StandardCopyOption.REPLACE_EXISTING )
+			Files.copy( file( "build/distributions/boxlang-${version}.jar" ).toPath(), file( "build/evergreen/boxlang-snapshot.jar" ).toPath(), StandardCopyOption.REPLACE_EXISTING )
 			Files.copy( file( "build/resources/main/META-INF/boxlang/version.properties" ).toPath(), file( "build/evergreen/version-snapshot.properties" ).toPath(), StandardCopyOption.REPLACE_EXISTING )
 	   } else {
 			Files.copy( file( "build/distributions/boxlang-${version}.zip" ).toPath(), file( "build/evergreen/boxlang-latest.zip" ).toPath(), StandardCopyOption.REPLACE_EXISTING )
-			Files.copy( file( "build/distributions/boxlang-${version}-all.jar" ).toPath(), file( "build/evergreen/boxlang-latest-all.jar" ).toPath(), StandardCopyOption.REPLACE_EXISTING )
+			Files.copy( file( "build/distributions/boxlang-${version}.jar" ).toPath(), file( "build/evergreen/boxlang-latest.jar" ).toPath(), StandardCopyOption.REPLACE_EXISTING )
 			Files.copy( file( "build/resources/main/META-INF/boxlang/version.properties" ).toPath(), file( "build/evergreen/version-latest.properties" ).toPath(), StandardCopyOption.REPLACE_EXISTING )
 	   }
 
