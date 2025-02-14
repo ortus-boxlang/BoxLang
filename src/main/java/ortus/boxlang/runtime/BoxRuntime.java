@@ -494,7 +494,7 @@ public class BoxRuntime implements java.io.Closeable {
 		this.schedulerService.onConfigurationLoad();
 		this.dataSourceService.onConfigurationLoad();
 
-		// Startup the right Compiler
+		// Startup the right Compiler according to settings
 		this.boxpiler = chooseBoxpiler();
 		// Seed Mathematical Precision for the runtime
 		MathUtil.setHighPrecisionMath( getConfiguration().useHighPrecisionMath );
@@ -1042,17 +1042,19 @@ public class BoxRuntime implements java.io.Closeable {
 	/**
 	 * Switch the runtime to generate java source and compile via the JDK
 	 */
-	public void useJavaBoxpiler() {
-		RunnableLoader.getInstance().selectBoxPiler( JavaBoxpiler.class );
+	public IBoxpiler useJavaBoxpiler() {
 		this.boxpiler = JavaBoxpiler.getInstance();
+		RunnableLoader.getInstance().selectBoxPiler( this.boxpiler );
+		return this.boxpiler;
 	}
 
 	/**
 	 * Switch the runtime to generate bytecode directly via ASM
 	 */
-	public void useASMBoxPiler() {
-		RunnableLoader.getInstance().selectBoxPiler( ASMBoxpiler.class );
+	public IBoxpiler useASMBoxPiler() {
 		this.boxpiler = ASMBoxpiler.getInstance();
+		RunnableLoader.getInstance().selectBoxPiler( this.boxpiler );
+		return this.boxpiler;
 	}
 
 	/**
@@ -1611,10 +1613,10 @@ public class BoxRuntime implements java.io.Closeable {
 		ClassInfo		classInfo	= ClassInfo.forTemplate(
 		    ResolvedFilePath.of( "", "", Path.of( filePath ).getParent().toString(), filePath ),
 		    BoxSourceType.BOXSCRIPT,
-		    this.boxpiler );
-		ParsingResult	result		= boxpiler.parseOrFail( Path.of( filePath ).toFile() );
-
-		boxpiler.printTranspiledCode( result, classInfo, System.out );
+		    this.boxpiler
+		);
+		ParsingResult	result		= this.boxpiler.parseOrFail( Path.of( filePath ).toFile() );
+		this.boxpiler.printTranspiledCode( result, classInfo, System.out );
 	}
 
 	/**
@@ -1624,7 +1626,7 @@ public class BoxRuntime implements java.io.Closeable {
 	 *
 	 */
 	public void printSourceAST( String source ) {
-		ParsingResult result = boxpiler.parseOrFail( source, BoxSourceType.BOXSCRIPT, false );
+		ParsingResult result = this.boxpiler.parseOrFail( source, BoxSourceType.BOXSCRIPT, false );
 		System.out.println( result.getRoot().toJSON() );
 	}
 
@@ -1665,18 +1667,18 @@ public class BoxRuntime implements java.io.Closeable {
 
 	/**
 	 * Choose the Boxpiler implementation to use according to the configuration
+	 * We only support two direct implementations, Java and ASM
+	 * Later on we need to inspect the class path for specific files if we want this configurable.
 	 *
 	 * @return The Boxpiler implementation to use
 	 */
 	private IBoxpiler chooseBoxpiler() {
 		switch ( ( String ) this.configuration.experimental.getOrDefault( "compiler", "asm" ) ) {
-			case "asm" :
-				useASMBoxPiler();
-				return ASMBoxpiler.getInstance();
 			case "java" :
+				return useJavaBoxpiler();
+			case "asm" :
 			default :
-				useJavaBoxpiler();
-				return JavaBoxpiler.getInstance();
+				return useASMBoxPiler();
 		}
 	}
 
