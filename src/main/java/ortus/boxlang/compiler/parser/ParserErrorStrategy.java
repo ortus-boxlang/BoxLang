@@ -25,7 +25,7 @@ public abstract class ParserErrorStrategy extends DefaultErrorStrategy {
 		} else {
 			input = "<unknown input>";
 		}
-		String msg = escapeWSAndQuote( input ) + " is nonsensical here";
+		String msg = "Invalid syntax near: " + escapeWSAndQuote( input );
 		recognizer.notifyErrorListeners( e.getOffendingToken(), msg, e );
 	}
 
