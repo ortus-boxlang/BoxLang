@@ -32,8 +32,6 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.interop.proxies.BaseProxy;
 import ortus.boxlang.runtime.loader.ClassLocator;
-import ortus.boxlang.runtime.runnables.IClassRunnable;
-import ortus.boxlang.runtime.runnables.IProxyRunnable;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.util.EncryptionUtil;
 
@@ -68,30 +66,6 @@ public class InterfaceProxyService {
 	    "ToIntFunction",
 	    "ToLongFunction"
 	);
-
-	/**
-	 * --------------------------------------------------------------------------
-	 * Proxy Methods
-	 * --------------------------------------------------------------------------
-	 */
-
-	/**
-	 * Create a proxy class that wraps a Box class and implements the given interfaces
-	 *
-	 * @param context    The current context
-	 * @param boxClass   The box class to wrap
-	 * @param interfaces The array of interfaces to implement
-	 *
-	 * @return The proxy
-	 */
-	public static IProxyRunnable createProxy( IBoxContext context, IClassRunnable boxClass, Array interfaces ) {
-		var				definition	= generateDefinition( context, interfaces );
-		DynamicObject	proxyClass	= DynamicObject.of( BoxRuntime.getInstance().getCompiler().compileInterfaceProxy( context, definition ) );
-		proxyClass.invokeConstructor( context );
-		IProxyRunnable proxy = ( IProxyRunnable ) proxyClass.getTargetInstance();
-		proxy.setBXProxy( boxClass );
-		return proxy;
-	}
 
 	/**
 	 * Turn an array of interfaces into a proxy definition
