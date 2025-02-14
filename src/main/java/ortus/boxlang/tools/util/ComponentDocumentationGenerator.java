@@ -126,7 +126,7 @@ public class ComponentDocumentationGenerator {
 		if ( !FileSystemUtil.exists( componentFile ) ) {
 			Key		componentKey		= Key.of( name );
 			Element	javadocElement		= docElements.stream()
-			    .filter( elem -> componentKey.equals( Key.of( elem.getSimpleName() ) )
+			    .filter( elem -> componentKey.equals( Key.of( elem.getSimpleName().toString() ) )
 			        ||
 			        Stream.of( elem.getAnnotationsByType( BoxComponent.class ) )
 			            .filter(

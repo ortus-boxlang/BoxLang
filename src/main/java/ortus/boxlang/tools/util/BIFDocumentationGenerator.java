@@ -167,7 +167,14 @@ public class BIFDocumentationGenerator {
 		if ( !FileSystemUtil.exists( bifFile ) ) {
 			Key		bifKey			= Key.of( name );
 			Element	javadocElement	= docElements.stream()
-			    .filter( elem -> bifKey.equals( Key.of( elem.getSimpleName() ) )
+			    .peek( elem -> {
+										    if ( bifKey.getName().toLowerCase().equals( "getsystemsetting" ) ) {
+											    System.out
+											        .println( "BIF:" + bifKey.getName() + "|Javadoc Element:" + elem.getSimpleName().toString() + "|Equals:"
+											            + bifKey.equals( Key.of( elem.getSimpleName().toString() ) ) );
+										    }
+									    } )
+			    .filter( elem -> bifKey.equals( Key.of( elem.getSimpleName().toString() ) )
 			        ||
 			        Stream.of( elem.getAnnotationsByType( BoxBIF.class ) )
 			            .filter(
@@ -178,7 +185,7 @@ public class BIFDocumentationGenerator {
 			if ( javadocElement != null ) {
 				if ( Stream.of( javadocElement.getAnnotationsByType( BoxBIF.class ) )
 				    .filter(
-				        annotation -> bifKey.equals( Key.of( javadocElement.getSimpleName() ) ) ? annotation.alias().equals( "" )
+				        annotation -> bifKey.equals( Key.of( javadocElement.getSimpleName().toString() ) ) ? annotation.alias().equals( "" )
 				            : bifKey.equals( Key.of( annotation.alias() ) )
 				    )
 				    .filter(
