@@ -14,10 +14,8 @@ plugins {
 	id 'antlr'
 	// For source code formatting
 	id "com.diffplug.spotless" version "7.0.2"
-	// For building shadow jars with jdk 17 ONLY
-    //id 'com.github.johnrengelman.shadow' version '8.1.1'
-    // For building shadow jars using JDK 21 +, they had to fork
-    id "io.github.goooler.shadow" version "8.1.8"
+	// Shadow
+	id "com.gradleup.shadow" version "9.0.0-beta8"
 	// For dependency updates
 	id 'com.github.ben-manes.versions' version '0.52.0'
 	// For building service loader files
@@ -223,11 +221,22 @@ jar {
 }
 shadowJar {
 	archiveBaseName = "boxlang"
+	//archiveClassifier = ""
     mergeServiceFiles()
+
+	// Antlr unecessary files
 	exclude "com/ibm/icu/**"
+	// Ortus Java Parser and testing
+	exclude 'ortus/boxlang/compiler/javaboxpiler/**'
+	exclude 'ortus/boxlang/tools/**'
+	exclude 'ortus/boxlang/runtime/testing/**'
+	// Java Parser
+	exclude 'com/github/javaparser/**'
+	exclude 'org/javassist/**'
+	exclude 'com/google/**'
+	exclude 'org/checkerframework/**'
+
 	minimize{
-		exclude 'ortus/boxlang/tools/**'
-		exclude 'ortus/boxlang/runtime/testing/**'
 		exclude( dependency( "org.slf4j:.*:.*" ) )
 		exclude( dependency( "ch.qos.logback:.*:.*" ) )
 		exclude( dependency( "com.zaxxer:.*:.*" ) )
@@ -311,6 +320,7 @@ build.finalizedBy( libsToDistro )
 publishing {
     publications {
         shadow( MavenPublication ) { publication ->
+
 			artifact shadowJar
 			artifact javadocJar
 			artifact sourcesJar
@@ -428,7 +438,7 @@ nmcp {
 }
 
 /**
- * Digital Signing of assets
+ * Digital Signing of assets using the ortus GPG Key
  */
 signing {
 	def signingKey = System.getenv("GPG_KEY") ?: project.findProperty("signing.keyId")
