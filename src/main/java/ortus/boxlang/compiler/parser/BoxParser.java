@@ -329,6 +329,11 @@ public class BoxParser extends AbstractParser {
 		    isScript ? BoxLexerCustom.DEFAULT_SCRIPT_MODE : BoxLexerCustom.DEFAULT_TEMPLATE_MODE, errorListener, this );
 		BoxGrammar		parser	= new BoxGrammar( new CommonTokenStream( lexer ) );
 
+		if ( this.debugMode ) {
+			this.profilingResults = new ParserProfilingResults( this.sourceToParse, parser );
+			parser.setProfile( true );
+		}
+
 		// DEBUG: Will print a trace of all parser rules visited:
 		// boxParser.setTrace( true );
 		addErrorListeners( lexer, parser );
