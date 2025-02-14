@@ -27,8 +27,6 @@ import java.util.List;
 
 import org.apache.commons.lang3.ClassUtils;
 
-import ortus.boxlang.compiler.IBoxpiler;
-import ortus.boxlang.compiler.javaboxpiler.JavaBoxpiler;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
@@ -48,11 +46,6 @@ public class InterfaceProxyService {
 	 * Our class locator
 	 */
 	private static final ClassLocator	classLocator	= BoxRuntime.getInstance().getClassLocator();
-
-	/**
-	 * BoxPiler
-	 */
-	private static final IBoxpiler		boxpiler		= JavaBoxpiler.getInstance();
 
 	/**
 	 * We create several proxies for core Java classes to make them easier to work with.
@@ -93,7 +86,7 @@ public class InterfaceProxyService {
 	 */
 	public static IProxyRunnable createProxy( IBoxContext context, IClassRunnable boxClass, Array interfaces ) {
 		var				definition	= generateDefinition( context, interfaces );
-		DynamicObject	proxyClass	= DynamicObject.of( boxpiler.compileInterfaceProxy( context, definition ) );
+		DynamicObject	proxyClass	= DynamicObject.of( BoxRuntime.getInstance().getCompiler().compileInterfaceProxy( context, definition ) );
 		proxyClass.invokeConstructor( context );
 		IProxyRunnable proxy = ( IProxyRunnable ) proxyClass.getTargetInstance();
 		proxy.setBXProxy( boxClass );
