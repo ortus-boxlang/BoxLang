@@ -3620,6 +3620,8 @@ public class CoreLangTest {
 
 		pool.put( "foo", "bar" );
 		 pool.put( "test", now() );
+		 fooValue = pool.get( "foo" );
+		 fooValueBracket = pool[ "foo" ];
 
 		assert pool.size() == 2;
 
@@ -3630,6 +3632,8 @@ public class CoreLangTest {
 		context );
 	// @formatter:on
 		assertThat( variables.get( result ) ).isEqualTo( 0 );
+		assertThat( variables.get( Key.of( "fooValue" ) ) ).isEqualTo( "bar" );
+		assertThat( variables.get( Key.of( "fooValueBracket" ) ) ).isEqualTo( "bar" );
 	}
 
 	@DisplayName( "ArrayList clear calls" )

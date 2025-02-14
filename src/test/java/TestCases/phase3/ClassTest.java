@@ -20,6 +20,8 @@ package TestCases.phase3;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.io.PrintStream;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -1193,6 +1195,74 @@ public class ClassTest {
 		assertThat( variables.get( Key.of( "result10" ) ) ).isEqualTo( "wood" );
 		assertThat( variables.get( Key.of( "result11" ) ) ).isEqualTo( "finalStatic" );
 		assertThat( variables.get( Key.of( "result12" ) ) ).isEqualTo( "finalStatic2" );
+	}	
+
+	@Test
+	public void testStaticStaticFromScript() {
+		instance.executeSource( """
+		                        include "/src/test/java/TestCases/phase3/TestStaticFromScript.bxs";
+		                        """, context,
+		    BoxSourceType.BOXSCRIPT );
+		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( 9000 );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "static9000" );
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "brad" );
+		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( "wood" );
+		assertThat( variables.get( Key.of( "result6" ) ) ).isEqualTo( "luis" );
+		assertThat( variables.get( Key.of( "result7" ) ) ).isEqualTo( "Hello" );
+		assertThat( variables.get( Key.of( "result8" ) ) ).isEqualTo( 456 );
+		assertThat( variables.get( Key.of( "result9" ) ) ).isEqualTo( "wood" );
+		assertThat( variables.get( Key.of( "result10" ) ) ).isEqualTo( "wood" );
+		assertThat( variables.get( Key.of( "result11" ) ) ).isEqualTo( "finalStatic" );
+		assertThat( variables.get( Key.of( "result12" ) ) ).isEqualTo( "finalStatic2" );
+	}
+
+	@Test
+	public void testStaticReferenceOnVariable() {
+		instance.executeSource( """
+			import src.test.java.TestCases.phase3.StaticTest;
+			import src.test.java.TestCases.phase3.StaticTest2;
+			// Unlike Java where imports are just symbols for the compiler, they are actual value objects we can pass around.
+			myStaticVar = StaticTest;
+			myStaticVar2 = StaticTest2;
+
+			result1 = myStaticVar::foo;
+			result2 = myStaticVar::myStaticFunc();
+			result4 =  myStaticVar::scoped;
+			result5 = myStaticVar::unscoped;
+			result6 = myStaticVar::again;
+			myStaticUDF   = myStaticVar::sayHello;
+			result7   =  myStaticUDF();
+			result8 = myStaticVar::123;
+			result9 = myStaticVar2::getInstance().getStaticBrad();
+			result10 = myStaticVar2::getInstance().thisStaticBrad;
+			result11 = myStaticVar::finalStatic;
+			result12 = myStaticVar::finalStatic2;
+
+			javaStaticClassVar = createObject( 'java', 'java.lang.System' );
+			result13 = javaStaticClassVar::out;
+
+			result14 = java.lang.System::getProperty( 'java.version' );
+
+			// create structs that mimic the path
+			java.lang.System = createObject( 'java', 'java.lang.String' );
+			// java.lang.System is a reference to our String class.
+			result15 = java.lang.System::valueOf( true );
+		            """, context,
+		    BoxSourceType.BOXSCRIPT );
+		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( 9000 );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "static9000" );
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "brad" );
+		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( "wood" );
+		assertThat( variables.get( Key.of( "result6" ) ) ).isEqualTo( "luis" );
+		assertThat( variables.get( Key.of( "result7" ) ) ).isEqualTo( "Hello" );
+		assertThat( variables.get( Key.of( "result8" ) ) ).isEqualTo( 456 );
+		assertThat( variables.get( Key.of( "result9" ) ) ).isEqualTo( "wood" );
+		assertThat( variables.get( Key.of( "result10" ) ) ).isEqualTo( "wood" );
+		assertThat( variables.get( Key.of( "result11" ) ) ).isEqualTo( "finalStatic" );
+		assertThat( variables.get( Key.of( "result12" ) ) ).isEqualTo( "finalStatic2" );
+		assertThat( variables.get( Key.of( "result13" ) ) ).isInstanceOf( PrintStream.class );
+		assertThat( variables.get( Key.of( "result14" ) ) ).isEqualTo( System.getProperty( "java.version" ) );
+		assertThat( variables.get( Key.of( "result15" ) ) ).isEqualTo( "true" );
 	}
 
 	@Test

@@ -1,0 +1,12 @@
+result1 = StaticTest::foo;
+result2 = StaticTest::myStaticFunc();
+result4 =  StaticTest::scoped;
+result5 = StaticTest::unscoped;
+result6 = StaticTest::again;
+myStaticUDF   = StaticTest::sayHello;
+result7   =  myStaticUDF();
+result8 = StaticTest::123;
+result9 = StaticTest2::getInstance().getStaticBrad();
+result10 = StaticTest2::getInstance().thisStaticBrad;
+result11 = StaticTest::finalStatic;
+result12 = StaticTest::finalStatic2;

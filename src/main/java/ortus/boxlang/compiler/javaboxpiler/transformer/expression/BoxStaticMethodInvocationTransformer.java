@@ -47,9 +47,14 @@ public class BoxStaticMethodInvocationTransformer extends AbstractTransformer {
 		if ( baseObject instanceof BoxFQN fqn ) {
 			expr = BoxStringLiteralTransformer.transform( fqn.getValue() );
 		} else if ( baseObject instanceof BoxIdentifier id ) {
-			// TODO: What if we have foo::bar() but foo is the name of a variable AND ALSO the name of an accessible Box Class?
-			// Do we treat "foo" as a FQN class name or a variable in that case??
-			expr = ( Expression ) transpiler.transform( id, context );
+
+			// In BL code, this could be an import, but in CF it's just a string
+			if ( transpiler.matchesImport( id.getName() ) && transpiler.getProperty( "sourceType" ).toLowerCase().startsWith( "box" ) ) {
+				expr = ( Expression ) transpiler.transform( id, context );
+			} else {
+				expr = BoxStringLiteralTransformer.transform( id.getName() );
+			}
+
 		} else {
 			// foo()::bar()
 			expr = ( Expression ) transpiler.transform( baseObject, context );
