@@ -18,13 +18,16 @@ repositories {
 dependencies {
 	// Add also the root runtime dependencies
 	compileOnly project( ':' )
-	compileOnly 'org.slf4j:slf4j-api:2.0.16'
+	implementation 'org.slf4j:slf4j-api:2.0.16'
+	implementation 'ch.qos.logback:logback-classic:1.5.16'
 
     // Testing Dependencies
 	testImplementation project( ':' )
     testImplementation "org.junit.jupiter:junit-jupiter:5.+"
 	testImplementation "org.mockito:mockito-core:5.+"
 	testImplementation "com.google.truth:truth:1.+"
+	// Explicitly declare the JUnit platform launcher (to avoid deprecation)
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher"
 }
 
 compileJava {

@@ -35,9 +35,9 @@ public abstract class BaseInterceptor implements IInterceptor {
 	protected IStruct		properties	= new Struct();
 
 	/**
-	 * The logger
+	 * The runtime logger
 	 */
-	protected BoxLangLogger	logger;
+	protected BoxLangLogger	logger		= BoxRuntime.getInstance().getLoggingService().getRuntimeLogger();
 
 	/**
 	 * This method is called by the BoxLang runtime to configure the interceptor
@@ -46,8 +46,7 @@ public abstract class BaseInterceptor implements IInterceptor {
 	 * @param properties The properties to configure the interceptor with (if any)
 	 */
 	public void configure( IStruct properties ) {
-		this.properties	= properties;
-		this.logger		= getRuntime().getLoggingService().getLogger( "runtime" );
+		this.properties = properties;
 	}
 
 	/**
