@@ -471,7 +471,7 @@ public class BoxRuntime implements java.io.Closeable {
 		// Anythying below might use configuration items
 
 		// Assign the logger now that we have a configuration and directory paths to create new loggers
-		this.logger = this.loggingService.getLogger( BoxRuntime.class.getSimpleName() );
+		this.logger = this.loggingService.getRuntimeLogger();
 
 		// Ensure home assets
 		ensureHomeAssets();
