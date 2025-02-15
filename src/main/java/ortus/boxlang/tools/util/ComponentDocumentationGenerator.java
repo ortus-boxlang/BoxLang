@@ -153,7 +153,8 @@ public class ComponentDocumentationGenerator {
 							description = ( ( BlockTagTree ) specificDescription ).toString()
 							    .replace( '@' + ( ( BlockTagTree ) specificDescription ).getTagName(), "" ).trim();
 						} else {
-							description = ( commentTree.getFirstSentence().toString() + "\n\n"
+							description = ( commentTree.getFirstSentence().stream().map( sentence -> sentence.toString() ).collect( Collectors.joining( "" ) )
+							    + "\n\n"
 							    + commentTree.getPreamble().toString() ).trim();
 						}
 						attributesExclude = ArrayCaster.cast( commentTree.getBlockTags().stream()

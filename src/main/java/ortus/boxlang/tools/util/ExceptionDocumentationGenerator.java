@@ -36,7 +36,7 @@ public class ExceptionDocumentationGenerator {
 		    .forEach( elem -> {
 			    DocCommentTree commentTree = docsEnvironment.getDocTrees().getDocCommentTree( elem );
 			    String		description	= "";
-			    description = ( commentTree.getFirstSentence().toString() + "\n\n"
+			    description = ( commentTree.getFirstSentence().stream().map( sentence -> sentence.toString() ).collect( Collectors.joining( "" ) ) + "\n\n"
 			        + commentTree.getPreamble().toString() + commentTree.getBody().toString().trim() ).trim();
 
 			    exceptionsData.put( Key.of( elem.getSimpleName().toString() ), description );
