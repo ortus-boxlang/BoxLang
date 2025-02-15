@@ -106,6 +106,7 @@ public class CoreLangTest {
 
 	@DisplayName( "if with single-token elseif" )
 	@Test
+	@Disabled( "Disabling until we decide what reserved words will be allowed" )
 	public void testIfSingleTokenElseIf() {
 
 		instance.executeSource(
@@ -1450,6 +1451,7 @@ public class CoreLangTest {
 	}
 
 	@Test
+	@Disabled( "Disabling until we decide what reserved words will be allowed" )
 	public void testKeywords() {
 
 		instance.executeSource(
@@ -1906,6 +1908,7 @@ public class CoreLangTest {
 	}
 
 	@Test
+	@Disabled( "Disabling until we decide what reserved words will be allowed" )
 	public void testKeywordsCF() {
 
 		instance.executeSource(

@@ -493,7 +493,8 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 		var				pos		= tools.getPosition( ctx );
 		var				src		= tools.getSourceText( ctx );
 
-		BoxFQN			name	= new BoxFQN( ctx.identifier().getText(), tools.getPosition( ctx.identifier() ), tools.getSourceText( ctx.identifier() ) );
+		BoxFQN			name	= new BoxFQN( ctx.identifier().getText(), tools.getPosition( ctx.identifier() ),
+		    tools.getSourceText( ctx.identifier() ) );
 		BoxExpression	value	= Optional.ofNullable( ctx.expression() ).map( expression -> expression.accept( expressionVisitor ) ).orElse( null );
 
 		return new BoxAnnotation( name, value, pos, src );
@@ -846,7 +847,8 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 		var				pos		= tools.getPosition( ctx );
 		var				src		= tools.getSourceText( ctx );
 
-		BoxFQN			name	= new BoxFQN( ctx.identifier().getText(), tools.getPosition( ctx.identifier() ), tools.getSourceText( ctx.identifier() ) );
+		BoxFQN			name	= new BoxFQN( ctx.identifier().getText(), tools.getPosition( ctx.identifier() ),
+		    tools.getSourceText( ctx.identifier() ) );
 		BoxExpression	value	= Optional.ofNullable( ctx.attributeSimple() ).map( attr -> attr.accept( expressionVisitor ) ).orElse( null );
 
 		return new BoxAnnotation( name, value, pos, src );
