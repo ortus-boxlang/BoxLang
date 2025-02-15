@@ -688,12 +688,18 @@ public class ModuleRecord {
 			throw new BoxRuntimeException( "Module " + this.id + " is not executable. It must have a 'main' method" );
 		}
 
-		this.moduleConfig.dereferenceAndInvoke(
-		    context,
-		    Key.main,
-		    new Object[] { Array.fromArray( args ) },
-		    false
-		);
+		try {
+			this.moduleConfig.dereferenceAndInvoke(
+			    context,
+			    Key.main,
+			    new Object[] { Array.fromArray( args ) },
+			    false
+			);
+		} catch ( Exception e ) {
+			runtime.getLoggingService().getExceptionLogger().error( e.getMessage(), e );
+			throw new BoxRuntimeException( e.getMessage(), e );
+		}
+
 	}
 
 	/**

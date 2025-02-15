@@ -1274,6 +1274,9 @@ public class BoxRuntime implements java.io.Closeable {
 				scriptingContext.flushBuffer( false );
 
 				if ( errorToHandle != null ) {
+					// Log it
+					instance.getLoggingService().getExceptionLogger().error( errorToHandle.getMessage(), errorToHandle );
+
 					try {
 						if ( !listener.onError( scriptingContext, new Object[] { errorToHandle, "" } ) ) {
 							throw errorToHandle;
@@ -1314,11 +1317,14 @@ public class BoxRuntime implements java.io.Closeable {
 	 * @param context  The context to execute the template in
 	 */
 	public void executeTemplate( BoxTemplate template, String templatePath, IBoxContext context ) {
-		instance.logger.debug( "Executing template [{}]", template.getRunnablePath() );
+		if ( instance.logger.isDebugEnabled() ) {
+			instance.logger.debug( "Executing template [{}]", template.getRunnablePath() );
+		}
 
 		IBoxContext scriptingContext;
 		scriptingContext = ensureRequestTypeContext( context, FileSystemUtil.createFileUri( templatePath ) );
-		BaseApplicationListener	listener		= scriptingContext.getParentOfType( RequestBoxContext.class )
+		BaseApplicationListener	listener		= scriptingContext
+		    .getParentOfType( RequestBoxContext.class )
 		    .getApplicationListener();
 		Throwable				errorToHandle	= null;
 		RequestBoxContext.setCurrent( scriptingContext.getParentOfType( RequestBoxContext.class ) );
@@ -1359,6 +1365,7 @@ public class BoxRuntime implements java.io.Closeable {
 		} catch ( Exception e ) {
 			errorToHandle = e;
 		} finally {
+
 			try {
 				listener.onRequestEnd( scriptingContext, new Object[] { templatePath } );
 			} catch ( Throwable e ) {
@@ -1368,6 +1375,9 @@ public class BoxRuntime implements java.io.Closeable {
 			scriptingContext.flushBuffer( false );
 
 			if ( errorToHandle != null ) {
+				// Log it
+				instance.getLoggingService().getExceptionLogger().error( errorToHandle.getMessage(), errorToHandle );
+
 				try {
 					if ( !listener.onError( scriptingContext, new Object[] { errorToHandle, "" } ) ) {
 						throw errorToHandle;
@@ -1430,6 +1440,7 @@ public class BoxRuntime implements java.io.Closeable {
 	 * @param source  A string of the statement to execute
 	 * @param context The context to execute the source in
 	 *
+	 * @return The result of the execution, if any, or null
 	 */
 	public Object executeStatement( BoxScript scriptRunnable, IBoxContext context ) {
 		IBoxContext scriptingContext = ensureRequestTypeContext( context );
@@ -1492,7 +1503,9 @@ public class BoxRuntime implements java.io.Closeable {
 	 *
 	 * @param source  A string of source to execute
 	 * @param context The context to execute the source in
+	 * @param type    The type of source to execute. Available options are: BOXSCRIPT, BOXTEMPLATE, CFSCRIPT, CFTEMPLATE
 	 *
+	 * @return The result of the execution, if any, or null
 	 */
 	public Object executeSource( String source, IBoxContext context, BoxSourceType type ) {
 		// Debugging Timers
