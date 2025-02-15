@@ -17,10 +17,12 @@ package ortus.boxlang.runtime.bifs.global.decision;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.DateTime;
+import ortus.boxlang.runtime.types.IType;
 
 @BoxBIF
 public class IsSimpleValue extends BIF {
@@ -46,11 +48,24 @@ public class IsSimpleValue extends BIF {
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object value = arguments.get( Key.value );
+		if ( value == null ) {
+			return false;
+		}
 		// Even though CF will auto cast a string buffer to a string, isSimpleValue() still returns false. Go figure.
 		if ( value instanceof StringBuffer || value instanceof StringBuilder ) {
 			return false;
 		}
-		return value != null && GenericCaster.attempt( context, value, "string" ).wasSuccessful();
+
+		ArgumentsScope isObjectArgs = new ArgumentsScope();
+		isObjectArgs.put( Key.value, value );
+
+		Boolean	isObjectCastable	= BooleanCaster
+		    .cast( runtime.getFunctionService().getGlobalFunction( Key.of( "IsObject" ) ).invoke( context, isObjectArgs, false, Key.of( "IsObject" ) ) );
+
+		Boolean	isBLType			= value instanceof IType;
+		Boolean	isDate				= value instanceof DateTime;
+
+		return isDate || ( !isBLType && !isObjectCastable );
 	}
 
 }
