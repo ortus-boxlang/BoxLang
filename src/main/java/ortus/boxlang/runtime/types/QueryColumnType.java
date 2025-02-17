@@ -116,6 +116,7 @@ public enum QueryColumnType {
 			case "time" :
 				return TIME;
 			case "timestamp" :
+			case "datetime" :
 				return TIMESTAMP;
 			case "varchar" :
 			case "string" :
@@ -262,9 +263,9 @@ public enum QueryColumnType {
 	/**
 	 * Convert a value to the appropriate SQL type.
 	 * <p>
-	 * 
+	 *
 	 * @TODO: This may better belong in a Caster class.
-	 * 
+	 *
 	 * @param type    The query column type to convert to.
 	 * @param value   The value to convert.
 	 * @param context The context in which the conversion is taking place. Useful for localization.
@@ -293,9 +294,9 @@ public enum QueryColumnType {
 
 	/**
 	 * Does this represent a type that can be treated as a string?
-	 * 
+	 *
 	 * @param type The type to check.
-	 * 
+	 *
 	 * @return true if the type can be treated as a string.
 	 */
 	public static boolean isStringType( QueryColumnType type ) {
