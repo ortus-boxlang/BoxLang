@@ -36,14 +36,14 @@ import ortus.boxlang.runtime.scopes.VariablesScope;
 
 public class DecryptTest {
 
-	static BoxRuntime instance;
-	IBoxContext context;
-	IScope variables;
-	static Key result = new Key("result");
+	static BoxRuntime	instance;
+	IBoxContext			context;
+	IScope				variables;
+	static Key			result	= new Key( "result" );
 
 	@BeforeAll
 	public static void setUp() {
-		instance = BoxRuntime.getInstance(true);
+		instance = BoxRuntime.getInstance( true );
 	}
 
 	@AfterAll
@@ -52,85 +52,85 @@ public class DecryptTest {
 
 	@BeforeEach
 	public void setupEach() {
-		context = new ScriptingRequestBoxContext(instance.getRuntimeContext());
-		variables = context.getScopeNearby(VariablesScope.name);
+		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
-	@DisplayName("It tests the BIF Decrypt")
+	@DisplayName( "It tests the BIF Decrypt" )
 	@Test
 	public void testBif() {
 		instance.executeSource(
-				"""
-						   key = generateSecretKey();
-						encrypted = Encrypt( "foo", key );
-						   result = Decrypt( encrypted, key );
-						   """,
-				context);
-		assertTrue(variables.get(result) instanceof String);
+		    """
+		       key = generateSecretKey();
+		    encrypted = Encrypt( "foo", key );
+		       result = Decrypt( encrypted, key );
+		       """,
+		    context );
+		assertTrue( variables.get( result ) instanceof String );
 		assertEquals(
-				"foo",
-				variables.getAsString(result));
+		    "foo",
+		    variables.getAsString( result ) );
 
 		instance.executeSource(
-				"""
-						key = generateSecretKey( "Blowfish" );
-						encrypted = Encrypt( "foo", key, "Blowfish", "Hex" );
-						   result = Decrypt( encrypted, key, "Blowfish", "Hex" );
-						   """,
-				context);
-		assertTrue(variables.get(result) instanceof String);
+		    """
+		    key = generateSecretKey( "Blowfish" );
+		    encrypted = Encrypt( "foo", key, "Blowfish", "Hex" );
+		       result = Decrypt( encrypted, key, "Blowfish", "Hex" );
+		       """,
+		    context );
+		assertTrue( variables.get( result ) instanceof String );
 		assertEquals(
-				"foo",
-				variables.getAsString(result));
+		    "foo",
+		    variables.getAsString( result ) );
 
 		instance.executeSource(
-				"""
-						key = generateSecretKey( "AES" );
-						encrypted = Encrypt( "foo", key, "AES/ECB/PKCS5Padding", "Hex" );
-						   result = Decrypt( encrypted, key, "AES/ECB/PKCS5Padding", "Hex" );
-						   """,
-				context);
-		assertTrue(variables.get(result) instanceof String);
+		    """
+		    key = generateSecretKey( "AES" );
+		    encrypted = Encrypt( "foo", key, "AES/ECB/PKCS5Padding", "Hex" );
+		       result = Decrypt( encrypted, key, "AES/ECB/PKCS5Padding", "Hex" );
+		       """,
+		    context );
+		assertTrue( variables.get( result ) instanceof String );
 		assertEquals(
-				"foo",
-				variables.getAsString(result));
+		    "foo",
+		    variables.getAsString( result ) );
 
 		instance.executeSource(
-				"""
-						key = generateSecretKey( "DESede" );
-						encrypted = Encrypt( "foo", key, "DESede/ECB/PKCS5Padding", "Hex" );
-						   result = Decrypt( encrypted, key, "DESede/ECB/PKCS5Padding", "Hex" );
-						   """,
-				context);
-		assertTrue(variables.get(result) instanceof String);
+		    """
+		    key = generateSecretKey( "DESede" );
+		    encrypted = Encrypt( "foo", key, "DESede/ECB/PKCS5Padding", "Hex" );
+		       result = Decrypt( encrypted, key, "DESede/ECB/PKCS5Padding", "Hex" );
+		       """,
+		    context );
+		assertTrue( variables.get( result ) instanceof String );
 		assertEquals(
-				"foo",
-				variables.getAsString(result));
+		    "foo",
+		    variables.getAsString( result ) );
 
 	}
 
-	@DisplayName("It tests textual salt values")
+	@DisplayName( "It tests textual salt values" )
 	@Test
 	public void testSaltValues() {
 		instance.executeSource(
-				"""
-						key = "oeY9XnYhS4ERqBeMDkcmVw==";
-						salt = "foo";
-						result = decrypt( "FE54Rn9W0YoZteRe1aV1qg==", key, "AES", "base64", salt );
-							""", context);
+		    """
+		    key = "oeY9XnYhS4ERqBeMDkcmVw==";
+		    salt = "foo";
+		    result = decrypt( "FE54Rn9W0YoZteRe1aV1qg==", key, "AES", "base64", salt );
+		    	""", context );
 
-		assertTrue(variables.get(result) instanceof String);
-		assertEquals("foobar", variables.getAsString(result));
+		assertTrue( variables.get( result ) instanceof String );
+		assertEquals( "foobar", variables.getAsString( result ) );
 
 		instance.executeSource(
-				"""
-						key = "oeY9XnYhS4ERqBeMDkcmVw==";
-						salt = "foo";
-						result = decrypt( "mE7BeU2ljKYNWkbKKwqkIA==", key, "AES/CBC/PKCS5Padding", "base64", salt );
-							""", context);
+		    """
+		    key = "oeY9XnYhS4ERqBeMDkcmVw==";
+		    salt = "foo";
+		    result = decrypt( "mE7BeU2ljKYNWkbKKwqkIA==", key, "AES/CBC/PKCS5Padding", "base64", salt );
+		    	""", context );
 
-		assertTrue(variables.get(result) instanceof String);
-		assertEquals("foobar", variables.getAsString(result));
+		assertTrue( variables.get( result ) instanceof String );
+		assertEquals( "foobar", variables.getAsString( result ) );
 
 	}
 

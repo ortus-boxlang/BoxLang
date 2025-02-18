@@ -104,11 +104,10 @@ public final class EncryptionUtil {
 	 */
 	public final static int				DEFAULT_ENCRYPTION_ITERATIONS	= 1000;
 
-
 	/**
 	 * The IV size required by FBMA algorithms
 	 */
-	public static final int FBMA_IV_SIZE = 16;
+	public static final int				FBMA_IV_SIZE					= 16;
 
 	/**
 	 * Base64 validation methods
