@@ -38,6 +38,7 @@ import ortus.boxlang.compiler.ast.expression.BoxAssignmentOperator;
 import ortus.boxlang.compiler.ast.expression.BoxBinaryOperation;
 import ortus.boxlang.compiler.ast.expression.BoxBinaryOperator;
 import ortus.boxlang.compiler.ast.expression.BoxBooleanLiteral;
+import ortus.boxlang.compiler.ast.expression.BoxClosure;
 import ortus.boxlang.compiler.ast.expression.BoxComparisonOperation;
 import ortus.boxlang.compiler.ast.expression.BoxComparisonOperator;
 import ortus.boxlang.compiler.ast.expression.BoxDotAccess;
@@ -45,7 +46,6 @@ import ortus.boxlang.compiler.ast.expression.BoxExpressionInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
 import ortus.boxlang.compiler.ast.expression.BoxFunctionInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
-import ortus.boxlang.compiler.ast.expression.BoxLambda;
 import ortus.boxlang.compiler.ast.expression.BoxMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxNew;
 import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
@@ -170,7 +170,6 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		BIFReturnTypeFixSet.add( "structinsert" );
 		BIFReturnTypeFixSet.add( "structdelete" );
 		BIFReturnTypeFixSet.add( "structappend" );
-		BIFReturnTypeFixSet.add( "structget" );
 		BIFReturnTypeFixSet.add( "querysetrow" );
 		BIFReturnTypeFixSet.add( "querydeleterow" );
 		BIFReturnTypeFixSet.add( "querysort" );
@@ -499,7 +498,7 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		    )
 		);
 
-		var lambda = new BoxLambda(
+		var closure = new BoxClosure(
 		    // arg1, arg2, etc for as many args to the original BIF, or the actual arg names if using named args
 		    generateIIFEArgs( args ),
 		    // annotations
@@ -514,9 +513,9 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		    null
 		);
 
-		// wrap up the lambda as an IIFE
+		// wrap up the closure as an IIFE
 		return new BoxExpressionInvocation(
-		    new BoxParenthesis( lambda, null, null ),
+		    new BoxParenthesis( closure, null, null ),
 		    args,
 		    null,
 		    null
@@ -701,7 +700,7 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		    List.of(
 		        new BoxArgument(
 		            // (arr) -> '"' & arr & '"'
-		            new BoxLambda(
+		            new BoxClosure(
 		                List.of(
 		                    new BoxArgumentDeclaration( true, "any", "arr", null, List.of(), List.of(), null, null )
 		                ),

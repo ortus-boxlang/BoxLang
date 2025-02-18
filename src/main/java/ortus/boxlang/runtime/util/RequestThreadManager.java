@@ -24,14 +24,10 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ThreadBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.scopes.LocalScope;
 import ortus.boxlang.runtime.scopes.ThreadScope;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.DateTime;
@@ -87,11 +83,6 @@ public class RequestThreadManager {
 	 * TODO: Move to SingleThreadExecutors for better control
 	 */
 	private static final ThreadGroup	THREAD_GROUP				= new ThreadGroup( "BL-Threads" );
-
-	/**
-	 * Logger
-	 */
-	private static final Logger			logger						= LoggerFactory.getLogger( RequestThreadManager.class );
 
 	/**
 	 * Registers a thread with the manager
@@ -257,9 +248,9 @@ public class RequestThreadManager {
 	 *
 	 * @return The thread context
 	 */
-	public ThreadBoxContext createThreadContext( IBoxContext context, Key name ) {
+	public ThreadBoxContext createThreadContext( IBoxContext context, Key name, IStruct attributes ) {
 		// Generate a new thread context of execution
-		return new ThreadBoxContext( context, this, name );
+		return new ThreadBoxContext( context, this, name, attributes );
 	}
 
 	/**
@@ -273,7 +264,7 @@ public class RequestThreadManager {
 	 *
 	 * @return The thread instance already started
 	 */
-	public Thread startThread( ThreadBoxContext context, Key name, String priority, Runnable task, IStruct attributes ) {
+	public Thread startThread( ThreadBoxContext context, Key name, String priority, Runnable task ) {
 		// Create a new thread definition
 		java.lang.Thread thread = new java.lang.Thread(
 		    // Use the BoxLang thread group
@@ -292,9 +283,6 @@ public class RequestThreadManager {
 		} );
 		// Register the thread in the context
 		context.setThread( thread );
-		// Store the attributes in the local scope of the thread
-		LocalScope local = ( LocalScope ) context.getScopeNearby( LocalScope.name );
-		local.put( Key.attributes, attributes );
 		// Finally we tell the thread manager about itself
 		registerThread( name, context );
 		// Up up and away

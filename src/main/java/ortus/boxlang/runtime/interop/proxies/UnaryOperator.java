@@ -10,7 +10,6 @@ public class UnaryOperator<T> extends BaseProxy implements java.util.function.Un
 
 	public UnaryOperator( Object target, IBoxContext context, String method ) {
 		super( target, context, method );
-		prepLogger( UnaryOperator.class );
 	}
 
 	@SuppressWarnings( "unchecked" )

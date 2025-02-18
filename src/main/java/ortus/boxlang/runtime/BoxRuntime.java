@@ -471,7 +471,7 @@ public class BoxRuntime implements java.io.Closeable {
 		// Anythying below might use configuration items
 
 		// Assign the logger now that we have a configuration and directory paths to create new loggers
-		this.logger = this.loggingService.getLogger( BoxRuntime.class.getSimpleName() );
+		this.logger = this.loggingService.getRuntimeLogger();
 
 		// Ensure home assets
 		ensureHomeAssets();
@@ -494,7 +494,7 @@ public class BoxRuntime implements java.io.Closeable {
 		this.schedulerService.onConfigurationLoad();
 		this.dataSourceService.onConfigurationLoad();
 
-		// Startup the right Compiler
+		// Startup the right Compiler according to settings
 		this.boxpiler = chooseBoxpiler();
 		// Seed Mathematical Precision for the runtime
 		MathUtil.setHighPrecisionMath( getConfiguration().useHighPrecisionMath );
@@ -1042,17 +1042,19 @@ public class BoxRuntime implements java.io.Closeable {
 	/**
 	 * Switch the runtime to generate java source and compile via the JDK
 	 */
-	public void useJavaBoxpiler() {
-		RunnableLoader.getInstance().selectBoxPiler( JavaBoxpiler.class );
+	public IBoxpiler useJavaBoxpiler() {
 		this.boxpiler = JavaBoxpiler.getInstance();
+		RunnableLoader.getInstance().selectBoxPiler( this.boxpiler );
+		return this.boxpiler;
 	}
 
 	/**
 	 * Switch the runtime to generate bytecode directly via ASM
 	 */
-	public void useASMBoxPiler() {
-		RunnableLoader.getInstance().selectBoxPiler( ASMBoxpiler.class );
+	public IBoxpiler useASMBoxPiler() {
 		this.boxpiler = ASMBoxpiler.getInstance();
+		RunnableLoader.getInstance().selectBoxPiler( this.boxpiler );
+		return this.boxpiler;
 	}
 
 	/**
@@ -1272,6 +1274,9 @@ public class BoxRuntime implements java.io.Closeable {
 				scriptingContext.flushBuffer( false );
 
 				if ( errorToHandle != null ) {
+					// Log it
+					instance.getLoggingService().getExceptionLogger().error( errorToHandle.getMessage(), errorToHandle );
+
 					try {
 						if ( !listener.onError( scriptingContext, new Object[] { errorToHandle, "" } ) ) {
 							throw errorToHandle;
@@ -1312,11 +1317,14 @@ public class BoxRuntime implements java.io.Closeable {
 	 * @param context  The context to execute the template in
 	 */
 	public void executeTemplate( BoxTemplate template, String templatePath, IBoxContext context ) {
-		instance.logger.debug( "Executing template [{}]", template.getRunnablePath() );
+		if ( instance.logger.isDebugEnabled() ) {
+			instance.logger.debug( "Executing template [{}]", template.getRunnablePath() );
+		}
 
 		IBoxContext scriptingContext;
 		scriptingContext = ensureRequestTypeContext( context, FileSystemUtil.createFileUri( templatePath ) );
-		BaseApplicationListener	listener		= scriptingContext.getParentOfType( RequestBoxContext.class )
+		BaseApplicationListener	listener		= scriptingContext
+		    .getParentOfType( RequestBoxContext.class )
 		    .getApplicationListener();
 		Throwable				errorToHandle	= null;
 		RequestBoxContext.setCurrent( scriptingContext.getParentOfType( RequestBoxContext.class ) );
@@ -1357,6 +1365,7 @@ public class BoxRuntime implements java.io.Closeable {
 		} catch ( Exception e ) {
 			errorToHandle = e;
 		} finally {
+
 			try {
 				listener.onRequestEnd( scriptingContext, new Object[] { templatePath } );
 			} catch ( Throwable e ) {
@@ -1366,6 +1375,9 @@ public class BoxRuntime implements java.io.Closeable {
 			scriptingContext.flushBuffer( false );
 
 			if ( errorToHandle != null ) {
+				// Log it
+				instance.getLoggingService().getExceptionLogger().error( errorToHandle.getMessage(), errorToHandle );
+
 				try {
 					if ( !listener.onError( scriptingContext, new Object[] { errorToHandle, "" } ) ) {
 						throw errorToHandle;
@@ -1428,6 +1440,7 @@ public class BoxRuntime implements java.io.Closeable {
 	 * @param source  A string of the statement to execute
 	 * @param context The context to execute the source in
 	 *
+	 * @return The result of the execution, if any, or null
 	 */
 	public Object executeStatement( BoxScript scriptRunnable, IBoxContext context ) {
 		IBoxContext scriptingContext = ensureRequestTypeContext( context );
@@ -1490,7 +1503,9 @@ public class BoxRuntime implements java.io.Closeable {
 	 *
 	 * @param source  A string of source to execute
 	 * @param context The context to execute the source in
+	 * @param type    The type of source to execute. Available options are: BOXSCRIPT, BOXTEMPLATE, CFSCRIPT, CFTEMPLATE
 	 *
+	 * @return The result of the execution, if any, or null
 	 */
 	public Object executeSource( String source, IBoxContext context, BoxSourceType type ) {
 		// Debugging Timers
@@ -1611,10 +1626,10 @@ public class BoxRuntime implements java.io.Closeable {
 		ClassInfo		classInfo	= ClassInfo.forTemplate(
 		    ResolvedFilePath.of( "", "", Path.of( filePath ).getParent().toString(), filePath ),
 		    BoxSourceType.BOXSCRIPT,
-		    this.boxpiler );
-		ParsingResult	result		= boxpiler.parseOrFail( Path.of( filePath ).toFile() );
-
-		boxpiler.printTranspiledCode( result, classInfo, System.out );
+		    this.boxpiler
+		);
+		ParsingResult	result		= this.boxpiler.parseOrFail( Path.of( filePath ).toFile() );
+		this.boxpiler.printTranspiledCode( result, classInfo, System.out );
 	}
 
 	/**
@@ -1624,7 +1639,7 @@ public class BoxRuntime implements java.io.Closeable {
 	 *
 	 */
 	public void printSourceAST( String source ) {
-		ParsingResult result = boxpiler.parseOrFail( source, BoxSourceType.BOXSCRIPT, false );
+		ParsingResult result = this.boxpiler.parseOrFail( source, BoxSourceType.BOXSCRIPT, false );
 		System.out.println( result.getRoot().toJSON() );
 	}
 
@@ -1665,18 +1680,18 @@ public class BoxRuntime implements java.io.Closeable {
 
 	/**
 	 * Choose the Boxpiler implementation to use according to the configuration
+	 * We only support two direct implementations, Java and ASM
+	 * Later on we need to inspect the class path for specific files if we want this configurable.
 	 *
 	 * @return The Boxpiler implementation to use
 	 */
 	private IBoxpiler chooseBoxpiler() {
 		switch ( ( String ) this.configuration.experimental.getOrDefault( "compiler", "asm" ) ) {
-			case "asm" :
-				useASMBoxPiler();
-				return ASMBoxpiler.getInstance();
 			case "java" :
+				return useJavaBoxpiler();
+			case "asm" :
 			default :
-				useJavaBoxpiler();
-				return JavaBoxpiler.getInstance();
+				return useASMBoxPiler();
 		}
 	}
 

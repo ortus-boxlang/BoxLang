@@ -17,7 +17,6 @@ package ortus.boxlang.runtime.bifs.global.async;
 import java.util.Set;
 
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
@@ -74,7 +73,7 @@ public class ThreadNew extends BIF {
 		IStruct					attributes		= arguments.getAsStruct( Key.attributes );
 		RequestThreadManager	threadManager	= context.getParentOfType( RequestBoxContext.class ).getThreadManager();
 		final Key				nameKey			= RequestThreadManager.ensureThreadName( name );
-		ThreadBoxContext		tContext		= threadManager.createThreadContext( context, nameKey );
+		ThreadBoxContext		tContext		= threadManager.createThreadContext( context, nameKey, attributes );
 
 		// Startup the thread
 		return threadManager.startThread(
@@ -88,7 +87,7 @@ public class ThreadNew extends BIF {
 		    () -> {
 			    StringBuffer buffer		= new StringBuffer();
 			    Throwable	exception	= null;
-			    Logger		logger		= LoggerFactory.getLogger( ThreadNew.class );
+			    Logger		logger		= runtime.getLoggingService().getLogger( "async" );
 			    try {
 				    // Execute the function using the thread context
 				    tContext.invokeFunction( task );
@@ -107,9 +106,7 @@ public class ThreadNew extends BIF {
 				        java.lang.Thread.interrupted()
 				    );
 			    }
-		    },
-		    // The Struct of data to bind into the thread's scope
-		    attributes
+		    }
 		);
 	}
 

@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.context;
 
 import ortus.boxlang.runtime.jdbc.ConnectionManager;
+import ortus.boxlang.runtime.scopes.AttributesScope;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.LocalScope;
@@ -47,6 +48,11 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 	 * The thread local scope
 	 */
 	protected IScope				localScope;
+
+	/**
+	 * The thread attributes scope
+	 */
+	protected IScope				attributesScope;
 
 	/**
 	 * The parent's variables scope
@@ -89,14 +95,15 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 	 * @param threadManager The thread manager
 	 * @param threadName    The name of the thread
 	 */
-	public ThreadBoxContext( IBoxContext parent, RequestThreadManager threadManager, Key threadName ) {
+	public ThreadBoxContext( IBoxContext parent, RequestThreadManager threadManager, Key threadName, IStruct attributes ) {
 		super( parent );
 		this.threadManager		= threadManager;
 		this.threadName			= threadName;
 		this.connectionManager	= new ConnectionManager( this );
-		localScope				= new LocalScope();
+		this.localScope			= new LocalScope();
+		this.attributesScope	= new AttributesScope( attributes );
 
-		variablesScope			= parent.getScopeNearby( VariablesScope.name );
+		this.variablesScope		= parent.getScopeNearby( VariablesScope.name );
 	}
 
 	/**
@@ -123,6 +130,8 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 		if ( nearby ) {
 			scopes.getAsStruct( Key.contextual ).put( LocalScope.name, localScope );
 			scopes.getAsStruct( Key.contextual ).put( Key.thread, threadManager.getThreadMeta( threadName ) );
+			scopes.getAsStruct( Key.contextual ).put( Key.attributes, attributesScope );
+
 			// A thread has special permission to "see" the variables and this scope from its parent,
 			// even though it's not "nearby" to any other scopes
 			scopes.getAsStruct( Key.contextual ).put( VariablesScope.name, variablesScope );
@@ -162,11 +171,20 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 			return new ScopeSearchResult( localScope, localScope, key, true );
 		}
 
+		if ( key.equals( AttributesScope.name ) ) {
+			return new ScopeSearchResult( attributesScope, attributesScope, key, true );
+		}
+
 		Object result = localScope.getRaw( key );
-		// Null means not found
 		if ( isDefined( result, forAssign ) ) {
 			// Unwrap the value now in case it was really actually null for real
 			return new ScopeSearchResult( localScope, Struct.unWrapNull( result ), key );
+		}
+
+		// attributesScope
+		result = attributesScope.getRaw( key );
+		if ( isDefined( result, forAssign ) ) {
+			return new ScopeSearchResult( attributesScope, Struct.unWrapNull( result ), key );
 		}
 
 		result = variablesScope.getRaw( key );
@@ -271,6 +289,10 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 		// Check the scopes I know about
 		if ( name.equals( localScope.getName() ) ) {
 			return this.localScope;
+		}
+
+		if ( name.equals( AttributesScope.name ) ) {
+			return this.attributesScope;
 		}
 
 		if ( name.equals( VariablesScope.name ) ) {

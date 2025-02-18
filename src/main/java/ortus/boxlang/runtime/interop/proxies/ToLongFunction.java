@@ -11,7 +11,6 @@ public class ToLongFunction<T> extends BaseProxy implements java.util.function.T
 
 	public ToLongFunction( Object target, IBoxContext context, String method ) {
 		super( target, context, method );
-		prepLogger( ToLongFunction.class );
 	}
 
 	@Override

@@ -175,6 +175,36 @@ public class GenericCaster implements IBoxCaster {
 			return result;
 		}
 
+		// We will fall back to an instanceof check below as a last resort if we don't recognize the type being validated
+		// but we need a special case here such that if the incoming value is a Box Class instance, we FORCE an instanceof check.
+		// This allows Box Class names who just happen to be the same as one of our pre-defined types like "String" or "Email".
+		// The downside is a Box Class named String.bx would be accepted for an argument typed as "String", but there's no real way around the ambiguity.
+		if ( object instanceof IClassRunnable ) {
+			if ( InstanceOf.invoke( context, object, type ) ) {
+				return object;
+			} else if ( type.equals( "component" ) || type.equals( "class" ) || type.equals( "struct" ) || type.equals( "structloose" )
+			    || type.equals( "modifiablestruct" ) ) {
+				// Any Box Class is also considered of type "component" or "class" or "struct" or "structloose" or "modifiablestruct"
+				return object;
+			} else if ( fail ) {
+				throw new BoxCastException( String.format( "Could not cast object [%s] to type [%s]", object.getClass().getSimpleName(), type ) );
+			} else {
+				return null;
+			}
+
+		}
+
+		if ( type.equals( "component" ) || type.equals( "class" ) ) {
+
+			// If it was a class, we will have caught it above. Nothing to do now but fail.
+
+			if ( fail ) {
+				throw new BoxCastException( String.format( "Cannot cast %s, to a %s.", object.getClass().getName(), type ) );
+			} else {
+				return null;
+			}
+		}
+
 		if ( type.equals( "string" ) ) {
 			return StringCaster.cast( object, fail );
 		}
@@ -305,18 +335,6 @@ public class GenericCaster implements IBoxCaster {
 
 			if ( fail ) {
 				throw new BoxCastException( String.format( "Cannot cast %s, to a Stream.", object.getClass().getName() ) );
-			} else {
-				return null;
-			}
-		}
-
-		if ( type.equals( "component" ) || type.equals( "class" ) ) {
-			// No real "casting" to do, just return it if it is one
-			if ( object instanceof IClassRunnable ) {
-				return object;
-			}
-			if ( fail ) {
-				throw new BoxCastException( String.format( "Cannot cast %s, to a %s.", object.getClass().getName(), type ) );
 			} else {
 				return null;
 			}

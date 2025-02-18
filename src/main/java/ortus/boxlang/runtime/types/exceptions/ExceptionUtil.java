@@ -34,9 +34,11 @@ import org.apache.commons.text.StringEscapeUtils;
 
 import ortus.boxlang.compiler.DiskClassUtil;
 import ortus.boxlang.compiler.IBoxpiler;
+import ortus.boxlang.compiler.SourceMap;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.SourceFile;
 import ortus.boxlang.compiler.javaboxpiler.JavaBoxpiler;
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.StructCasterLoose;
 import ortus.boxlang.runtime.dynamic.casters.ThrowableCaster;
@@ -193,7 +195,13 @@ public class ExceptionUtil {
 						BLFileName = element.getFileName();
 					}
 
-					var sourceMap = JavaBoxpiler.getInstance().getSourceMapFromFQN( IBoxpiler.getBaseFQN( element.getClassName() ) );
+					IBoxpiler	boxpiler	= BoxRuntime.getInstance().getCompiler();
+					SourceMap	sourceMap	= null;
+
+					if ( boxpiler instanceof JavaBoxpiler ) {
+						sourceMap = boxpiler.getSourceMapFromFQN( IBoxpiler.getBaseFQN( element.getClassName() ) );
+					}
+
 					if ( sourceMap != null ) {
 						lineNo		= sourceMap.convertJavaLineToSourceLine( element.getLineNumber() );
 						BLFileName	= sourceMap.getSource();

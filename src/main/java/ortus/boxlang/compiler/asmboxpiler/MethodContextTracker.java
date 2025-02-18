@@ -14,19 +14,22 @@ import org.objectweb.asm.tree.TryCatchBlockNode;
 import org.objectweb.asm.tree.VarInsnNode;
 
 import ortus.boxlang.compiler.ast.BoxNode;
+import ortus.boxlang.compiler.ast.BoxStatement;
 
 public class MethodContextTracker {
 
-	private int						varCount			= 0;
-	private int						unusedStackEntries	= 0;
-	private List<Integer>			contextStack		= new ArrayList<Integer>();
-	private List<TryCatchBlockNode>	tryCatchBlockNodes	= new ArrayList<TryCatchBlockNode>();
-	private Map<String, LabelNode>	breaks				= new LinkedHashMap<>();
-	private Map<String, LabelNode>	continues			= new LinkedHashMap<>();
-	private final CompilationType	type;
-	private Map<BoxNode, LabelNode>	nodeBreaks			= new LinkedHashMap<>();
-	private Map<BoxNode, LabelNode>	nodeContinues		= new LinkedHashMap<>();
-	private Map<String, BoxNode>	stringLabel			= new LinkedHashMap<>();
+	private int							varCount			= 0;
+	private int							unusedStackEntries	= 0;
+	private int							returnDepth			= 0;
+	private List<Integer>				contextStack		= new ArrayList<Integer>();
+	private List<TryCatchBlockNode>		tryCatchBlockNodes	= new ArrayList<TryCatchBlockNode>();
+	private List<List<BoxStatement>>	finallyBodies		= new ArrayList<List<BoxStatement>>();
+	private Map<String, LabelNode>		breaks				= new LinkedHashMap<>();
+	private Map<String, LabelNode>		continues			= new LinkedHashMap<>();
+	private final CompilationType		type;
+	private Map<BoxNode, LabelNode>		nodeBreaks			= new LinkedHashMap<>();
+	private Map<BoxNode, LabelNode>		nodeContinues		= new LinkedHashMap<>();
+	private Map<String, BoxNode>		stringLabel			= new LinkedHashMap<>();
 
 	public enum CompilationType {
 		BoxClass,
@@ -45,6 +48,30 @@ public class MethodContextTracker {
 	public MethodContextTracker( CompilationType type, boolean isStatic ) {
 		this.type	= type;
 		varCount	= isStatic ? -1 : 0;
+	}
+
+	public int getReturnDepth() {
+		return this.returnDepth;
+	}
+
+	public void incrementReturnDepth() {
+		this.returnDepth += 1;
+	}
+
+	public void decrementReturnDepth() {
+		this.returnDepth -= 1;
+	}
+
+	public List<List<BoxStatement>> getFinallyBodies() {
+		return this.finallyBodies;
+	}
+
+	public void addFinallyBody( List<BoxStatement> finallyBody ) {
+		this.finallyBodies.add( finallyBody );
+	}
+
+	public void popFinallyBody() {
+		this.finallyBodies.removeLast();
 	}
 
 	public boolean canReturn() {

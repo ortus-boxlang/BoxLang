@@ -26,9 +26,6 @@ import java.util.stream.Collectors;
 
 import javax.annotation.Nonnull;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.cache.providers.ICacheProvider;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -38,6 +35,7 @@ import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
+import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.types.Array;
@@ -62,7 +60,7 @@ public class PendingQuery {
 	 * --------------------------------------------------------------------------
 	 */
 
-	private static final Logger					logger				= LoggerFactory.getLogger( PendingQuery.class );
+	private static final BoxLangLogger			logger				= BoxRuntime.getInstance().getLoggingService().getLogger( "datasource" );
 
 	/**
 	 * The InterceptorService instance to use for announcing events.

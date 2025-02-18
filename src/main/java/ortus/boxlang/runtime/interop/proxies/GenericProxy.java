@@ -33,7 +33,6 @@ public class GenericProxy extends BaseProxy implements InvocationHandler {
 
 	public GenericProxy( Object target, IBoxContext context, String method ) {
 		super( target, context, method );
-		prepLogger( GenericProxy.class );
 	}
 
 	/**
@@ -67,11 +66,11 @@ public class GenericProxy extends BaseProxy implements InvocationHandler {
 
 	/**
 	 * Force return value to be what the interface requires
-	 * 
+	 *
 	 * @param returnValue The value being returned
 	 * @param returnType  The return type of the method
 	 * @param methodName  The name of the method (or error handling)
-	 * 
+	 *
 	 * @return The coerced return value
 	 */
 	private Object coerceReturnValue( Object returnValue, Class<?> returnType, String methodName ) {
@@ -79,7 +78,8 @@ public class GenericProxy extends BaseProxy implements InvocationHandler {
 			return returnValue;
 		}
 		Object[]	args	= new Object[] { returnValue };
-		boolean		success	= DynamicInteropService.coerceArguments( context, new Class<?>[] { returnType }, new Class<?>[] { returnValue.getClass() }, args,
+		boolean		success	= DynamicInteropService.coerceArguments( context, DynamicInteropService.unBoxTypes( new Class<?>[] { returnType } ),
+		    DynamicInteropService.unBoxTypes( new Class<?>[] { returnValue.getClass() } ), args,
 		    false, BooleanRef.of( true ) );
 		if ( !success ) {
 			throw new BoxRuntimeException( "Proxied method [ " + methodName + "() ] returned a value of type [ " + returnValue.getClass().getName()

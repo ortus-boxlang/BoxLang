@@ -1346,4 +1346,17 @@ public class BoxTemplateTest {
 		    context, BoxSourceType.BOXTEMPLATE );
 	}
 
+	@Test
+	public void testBreakInLoop() {
+		instance.executeSource(
+		    """
+		    <bx:loop condition="true">
+		    	<bx:break>
+		    </bx:loop>
+		    <bx:set result = "after loop">
+		                  """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.get( result ) ).isEqualTo( "after loop" );
+	}
+
 }

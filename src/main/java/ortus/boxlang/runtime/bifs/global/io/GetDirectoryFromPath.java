@@ -48,6 +48,11 @@ public class GetDirectoryFromPath extends BIF {
 		// Note: I can't trust the Path object as it won't treat a drive root as a folder, and returns
 		// null for some parents that are valid. So we're just doing string parsing for now.
 		String path = arguments.getAsString( Key.path );
+
+		if ( path == null ) {
+			return "/";
+		}
+
 		if ( path.endsWith( "/" ) || path.endsWith( "\\" ) ) {
 			return path;
 		}

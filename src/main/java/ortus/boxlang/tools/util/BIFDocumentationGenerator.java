@@ -60,7 +60,6 @@ public class BIFDocumentationGenerator {
 		List<Element>	docElements	= docsEnvironment.getSpecifiedElements()
 		    .stream()
 		    .filter( elem -> elem.getAnnotationsByType( BoxBIF.class ).length > 0 )
-		    // .peek( elem -> elem.getSimpleName() )
 		    .map( elem -> ( Element ) elem )
 		    .collect( Collectors.toList() );
 
@@ -167,7 +166,7 @@ public class BIFDocumentationGenerator {
 		if ( !FileSystemUtil.exists( bifFile ) ) {
 			Key		bifKey			= Key.of( name );
 			Element	javadocElement	= docElements.stream()
-			    .filter( elem -> bifKey.equals( Key.of( elem.getSimpleName() ) )
+			    .filter( elem -> bifKey.equals( Key.of( elem.getSimpleName().toString() ) )
 			        ||
 			        Stream.of( elem.getAnnotationsByType( BoxBIF.class ) )
 			            .filter(
@@ -178,7 +177,7 @@ public class BIFDocumentationGenerator {
 			if ( javadocElement != null ) {
 				if ( Stream.of( javadocElement.getAnnotationsByType( BoxBIF.class ) )
 				    .filter(
-				        annotation -> bifKey.equals( Key.of( javadocElement.getSimpleName() ) ) ? annotation.alias().equals( "" )
+				        annotation -> bifKey.equals( Key.of( javadocElement.getSimpleName().toString() ) ) ? annotation.alias().equals( "" )
 				            : bifKey.equals( Key.of( annotation.alias() ) )
 				    )
 				    .filter(
@@ -208,8 +207,9 @@ public class BIFDocumentationGenerator {
 							description = ( ( BlockTagTree ) specificDescription ).toString()
 							    .replace( '@' + ( ( BlockTagTree ) specificDescription ).getTagName(), "" ).trim();
 						} else {
-							description = ( commentTree.getFirstSentence().toString() + "\n\n"
-							    + commentTree.getBody().stream().map( tag -> tag.toString() ).collect( Collectors.joining( "\n" ) ) ).trim();
+							description = ( commentTree.getFirstSentence().stream().map( sentence -> sentence.toString() ).collect( Collectors.joining( "" ) )
+							    + "\n\n"
+							    + commentTree.getBody().stream().map( tag -> tag.toString() ).collect( Collectors.joining( "" ) ) ).trim();
 						}
 
 						argumentsExclude = ArrayCaster.cast( commentTree.getBlockTags().stream()

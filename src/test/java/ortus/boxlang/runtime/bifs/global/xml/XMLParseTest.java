@@ -82,4 +82,16 @@ public class XMLParseTest {
 		assertThat( variables.get( result ) ).isInstanceOf( XML.class );
 	}
 
+	@DisplayName( "It can parse XML with an inaccessible DTD URL" )
+	@Test
+	public void testCanParseWithInaccessibleDTD() {
+		instance.executeSource(
+		    """
+		    result = XMLParse( '<!DOCTYPE root SYSTEM "http://www.mach-ii.com/dtds/mach-ii_1_9_0.dtd"><root><brad name="wood" /></root>' );
+		    """,
+		    context
+		);
+		assertThat( variables.get( result ) ).isInstanceOf( XML.class );
+	}
+
 }

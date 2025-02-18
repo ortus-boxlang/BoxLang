@@ -944,7 +944,7 @@ public class Key implements Comparable<Key>, Serializable {
 		this.nameNoCase		= name.toLowerCase();
 		// For "simple" keys, we'll use the nocase name hash code as our key's hashcode
 		// for complex values (like accessing a hashmap with a complex key), we'll use the original value's hashcode
-		if ( originalValue instanceof String || originalValue instanceof Integer ) {
+		if ( originalValue instanceof String || originalValue instanceof Number ) {
 			this.hashCode = this.nameNoCase.hashCode();
 		} else {
 			this.hashCode = originalValue.hashCode();

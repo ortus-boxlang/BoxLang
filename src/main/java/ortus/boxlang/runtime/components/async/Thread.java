@@ -20,7 +20,6 @@ package ortus.boxlang.runtime.components.async;
 import java.util.Set;
 
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
@@ -124,7 +123,7 @@ public class Thread extends Component {
 	private void run( IBoxContext context, String name, String priority, IStruct attributes, ComponentBody body ) {
 		RequestThreadManager	threadManager	= context.getParentOfType( RequestBoxContext.class ).getThreadManager();
 		final Key				nameKey			= RequestThreadManager.ensureThreadName( name );
-		ThreadBoxContext		tContext		= threadManager.createThreadContext( context, nameKey );
+		ThreadBoxContext		tContext		= threadManager.createThreadContext( context, nameKey, attributes );
 
 		// Startup the thread
 		threadManager.startThread(
@@ -138,7 +137,7 @@ public class Thread extends Component {
 		    () -> {
 			    StringBuffer buffer		= new StringBuffer();
 			    Throwable	exception	= null;
-			    Logger		logger		= LoggerFactory.getLogger( Thread.class );
+			    Logger		logger		= runtime.getLoggingService().getLogger( "async" );
 			    try {
 				    processBody( tContext, body, buffer );
 			    } catch ( AbortException e ) {
@@ -156,9 +155,7 @@ public class Thread extends Component {
 				        java.lang.Thread.interrupted()
 				    );
 			    }
-		    },
-		    // The Struct of data to bind into the thread's scope
-		    attributes
+		    }
 		);
 
 	}

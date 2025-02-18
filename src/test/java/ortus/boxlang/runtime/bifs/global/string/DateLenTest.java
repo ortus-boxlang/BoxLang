@@ -79,4 +79,17 @@ public class DateLenTest {
 		assertThat( variables.get( result ) ).isEqualTo( variables.getAsInteger( Key.of( "actualLen" ) ) );
 	}
 
+	@DisplayName( "It can return the length from a duration or timespan" )
+	@Test
+	public void testLenTimespan() {
+		instance.executeSource(
+		// @formatter:off
+		    """
+			result = len( createTimespan( 1, 1, 0, 0 ) );
+		    """,
+			// @formatter:on
+		    context );
+		assertThat( variables.get( result ) ).isNotEqualTo( 0 );
+	}
+
 }

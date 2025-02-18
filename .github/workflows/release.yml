@@ -153,14 +153,22 @@ jobs:
           SOURCE_DIR: "build/docs/javadoc"
           DEST_DIR: "boxlang/${{ env.VERSION }}"
 
-      # Publish to Maven Central + Github ONLY on Beta/Final Releases
-      - name: Publish Package (Maven+Github)
+      # Publish to GitHub
+      - name: Publish to Github Packages
         if: env.SNAPSHOT == 'false'
         run: |
           gradle publish --no-daemon --no-parallel
-          gradle publishAllPublicationsToCentralPortal
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GPG_KEY: ${{ secrets.GPG_KEY }}
+          GPG_PASSWORD: ${{ secrets.GPG_PASSWORD }}
+
+      # Publish to Maven Central
+      - name: Publish to Maven Central
+        if: env.SNAPSHOT == 'false'
+        run: |
+          gradle publishAllPublicationsToCentralPortal --stacktrace --info
+        env:
           GPG_KEY: ${{ secrets.GPG_KEY }}
           GPG_PASSWORD: ${{ secrets.GPG_PASSWORD }}
           MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
@@ -232,7 +240,7 @@ jobs:
           then
             gradle bumpPatchVersion --stacktrace --console=plain
           else
-            gradle bumpBetaVersion --stacktrace --console=plain
+            gradle bumpRCVersion --stacktrace --console=plain
           fi
           git pull
 

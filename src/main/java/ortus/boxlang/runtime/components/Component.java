@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.components;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.ComponentService;
 import ortus.boxlang.runtime.services.FunctionService;
@@ -52,6 +53,12 @@ public abstract class Component {
 	}
 
 	/**
+	 * --------------------------------------------------------------------------
+	 * Properties
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
 	 * The name of the component
 	 */
 	protected Key					name;
@@ -82,11 +89,28 @@ public abstract class Component {
 	protected InterceptorService	interceptorService	= BoxRuntime.getInstance().getInterceptorService();
 
 	/**
+	 * Runtime Logger
+	 */
+	protected BoxLangLogger			logger				= BoxRuntime.getInstance().getLoggingService().getRuntimeLogger();
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Constructor
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
 	 * A base component
 	 */
 	protected Component() {
 
 	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Methods
+	 * --------------------------------------------------------------------------
+	 */
 
 	/**
 	 * Set name

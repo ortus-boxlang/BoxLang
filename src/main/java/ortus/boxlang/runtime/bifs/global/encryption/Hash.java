@@ -89,7 +89,7 @@ public class Hash extends BIF {
 		Integer	iterations			= arguments.getAsInteger( Key.numIterations );
 		String	algorithm			= arguments.getAsString( Key.algorithm );
 		String	charset				= arguments.getAsString( Key.encoding );
-		boolean	isQuickAlgorithm	= algorithm.trim().toLowerCase() == QUICK_ALGORITHM;
+		boolean	isQuickAlgorithm	= algorithm.trim().toLowerCase().equals( QUICK_ALGORITHM );
 
 		if ( isQuickAlgorithm ) {
 			return EncryptionUtil.generate64BitHash( StringCaster.cast( hashItem ), 16 );

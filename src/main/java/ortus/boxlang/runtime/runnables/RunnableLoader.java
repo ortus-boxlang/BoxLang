@@ -21,8 +21,6 @@ import java.nio.file.Path;
 import java.util.Set;
 
 import ortus.boxlang.compiler.IBoxpiler;
-import ortus.boxlang.compiler.asmboxpiler.ASMBoxpiler;
-import ortus.boxlang.compiler.javaboxpiler.JavaBoxpiler;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.Configuration;
@@ -52,7 +50,7 @@ public class RunnableLoader {
 	private static RunnableLoader		instance;
 
 	/**
-	 * The Boxpiler to use
+	 * The Boxpiler to use: ASM or Java
 	 */
 	private IBoxpiler					boxpiler;
 
@@ -73,7 +71,6 @@ public class RunnableLoader {
 	 * Private constructor
 	 */
 	private RunnableLoader() {
-		this.boxpiler = JavaBoxpiler.getInstance();
 	}
 
 	/**
@@ -97,14 +94,10 @@ public class RunnableLoader {
 	/**
 	 * Select the Boxpiler implementation to use when generating bytecode
 	 *
-	 * @param clazz The class of the Boxpiler to use
+	 * @param boxpiler The Boxpiler interface to use
 	 */
-	public void selectBoxPiler( Class<?> clazz ) {
-		if ( JavaBoxpiler.class.isAssignableFrom( clazz ) ) {
-			this.boxpiler = JavaBoxpiler.getInstance();
-		} else if ( ASMBoxpiler.class.isAssignableFrom( clazz ) ) {
-			this.boxpiler = ASMBoxpiler.getInstance();
-		}
+	public void selectBoxPiler( IBoxpiler boxpiler ) {
+		this.boxpiler = boxpiler;
 	}
 
 	/**

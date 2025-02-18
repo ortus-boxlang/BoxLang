@@ -17,7 +17,7 @@ set APP_HOME=%DIRNAME%..
 @rem ##  Script + App Info Here
 @rem ##############################################################################
 set BX_CLASS=ortus.boxlang.compiler.BXCompiler
-set CLASSPATH="%APP_HOME%\lib\boxlang-1.0.0-beta3-all.jar %BX_CLASS%"
+set CLASSPATH="%APP_HOME%\lib\boxlang-1.0.0-beta3.jar %BX_CLASS%"
 
 
 @rem Add default JVM options here. You can also use JAVA_OPTS and BOXLANG_OPTS to pass JVM options to this script.

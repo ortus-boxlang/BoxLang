@@ -1,7 +1,7 @@
 /**
  * We use this class for testing serializations
  */
-@jsonExclude "anotherprop, anotherProp2"
+@jsonExclude( "anotherprop, anotherProp2" )
 class{
 
 	property String name;

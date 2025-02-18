@@ -20,10 +20,11 @@ package ortus.boxlang.runtime.interop.proxies;
 import java.util.Set;
 
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Function;
@@ -59,7 +60,7 @@ public abstract class BaseProxy {
 	/**
 	 * The logger for this proxy.
 	 */
-	protected Logger				logger;
+	protected BoxLangLogger			logger;
 
 	/**
 	 * The thread manager for this proxy.
@@ -115,7 +116,7 @@ public abstract class BaseProxy {
 		this.context		= context;
 		this.appContext		= context.getParentOfType( ApplicationBoxContext.class );
 		this.threadManager	= new RequestThreadManager();
-		prepLogger( BaseProxy.class );
+		this.logger			= BoxRuntime.getInstance().getLoggingService().getRuntimeLogger();
 	}
 
 	/**
@@ -245,15 +246,6 @@ public abstract class BaseProxy {
 	 */
 	protected Key getDefaultMethod() {
 		return this.defaultMethod;
-	}
-
-	/**
-	 * Prep logger for class
-	 *
-	 * @param clazz
-	 */
-	protected void prepLogger( Class<?> clazz ) {
-		this.logger = LoggerFactory.getLogger( clazz );
 	}
 
 	/**

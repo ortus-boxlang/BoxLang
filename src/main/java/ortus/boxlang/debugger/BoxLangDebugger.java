@@ -589,6 +589,7 @@ public class BoxLangDebugger {
 			if ( event instanceof MethodExitEvent mee ) {
 				this.methodExitRequest.disable();
 				lookForBoxLangClasses( mee.thread() );
+				setAllBreakpoints();
 
 				eventSet.resume();
 			} else if ( event instanceof VMDeathEvent de ) {
@@ -715,6 +716,43 @@ public class BoxLangDebugger {
 		    } );
 	}
 
+	private void clearOldLocations( ReferenceType rt ) {
+		try {
+			String lcased = rt.sourceName().toLowerCase();
+
+			if ( !locations.containsKey( lcased ) ) {
+				locations.put( lcased, new HashMap<Integer, List<Location>>() );
+			}
+
+			var map = locations.get( lcased );
+
+			for ( List<Location> locs : map.values() ) {
+				List<Location> toRemove = new ArrayList<Location>();
+
+				for ( Location loc : locs ) {
+					if ( !loc.sourceName().equalsIgnoreCase( rt.sourceName() ) ) {
+						continue;
+					}
+
+					if ( !loc.declaringType().name().equalsIgnoreCase( rt.name() ) ) {
+						continue;
+					}
+
+					if ( rt.classLoader().uniqueID() == loc.declaringType().classLoader().uniqueID() ) {
+						continue;
+					}
+
+					toRemove.add( loc );
+				}
+				locs.removeAll( toRemove );
+			}
+
+		} catch ( AbsentInformationException e ) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
 	private void trackLocation( Location loc ) throws AbsentInformationException {
 		String lcased = loc.sourceName().toLowerCase();
 
@@ -740,6 +778,7 @@ public class BoxLangDebugger {
 
 		if ( event.referenceType().name().contains( "boxgenerated" ) ) {
 			try {
+				clearOldLocations( event.referenceType() );
 				for ( var loc : event.referenceType().allLineLocations() ) {
 					trackLocation( loc );
 				}

@@ -38,13 +38,13 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.LocaleUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
@@ -57,7 +57,10 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  **/
 public final class LocalizationUtil {
 
-	private static Logger							logger			= LoggerFactory.getLogger( LocalizationUtil.class );
+	/**
+	 * The runtime logger
+	 */
+	private static final BoxLangLogger				logger			= BoxRuntime.getInstance().getLoggingService().getRuntimeLogger();
 
 	/**
 	 * A struct of common locale constants
@@ -95,6 +98,9 @@ public final class LocalizationUtil {
 		COMMON_LOCALES.put( Key.of( "United States" ), buildLocale( "en", "US" ) );
 	}
 
+	/**
+	 * More Lookups
+	 */
 	public static final Array					ISO_COUNTRIES	= new Array( Locale.getISOCountries() );
 	public static final Array					ISO_LANGUAGES	= new Array( Locale.getISOLanguages() );
 
@@ -575,7 +581,7 @@ public final class LocalizationUtil {
 	 * @param dateTime the date time string to parse
 	 * @param locale   the locale
 	 * @param timezone the timezone
-	 * 
+	 *
 	 * @return
 	 */
 	public static ZonedDateTime parseFromString( String dateTime, Locale locale, ZoneId timezone ) {
@@ -605,7 +611,7 @@ public final class LocalizationUtil {
 			} catch ( java.time.format.DateTimeParseException e ) {
 				throw new BoxRuntimeException(
 				    String.format(
-				        "The the date time value of [%s] could not be parsed as a valid date or datetime locale of [%s]",
+				        "The date time value of [%s] could not be parsed as a valid date or datetime locale of [%s]",
 				        dateTime,
 				        locale.getDisplayName()
 				    ), e );
@@ -652,7 +658,7 @@ public final class LocalizationUtil {
 			} catch ( Exception x ) {
 				throw new BoxRuntimeException(
 				    String.format(
-				        "The the date time value of [%s] could not be parsed as a valid date or datetime locale of [%s]",
+				        "The date time value of [%s] could not be parsed as a valid date or datetime locale of [%s]",
 				        dateTime,
 				        locale.getDisplayName()
 				    ), x );
@@ -660,7 +666,7 @@ public final class LocalizationUtil {
 		} catch ( Exception e ) {
 			throw new BoxRuntimeException(
 			    String.format(
-			        "The the date time value of [%s] could not be parsed with a locale of [%s]",
+			        "The date time value of [%s] could not be parsed with a locale of [%s]",
 			        dateTime,
 			        locale.getDisplayName()
 			    ), e );

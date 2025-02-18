@@ -74,7 +74,7 @@ public class LoggingService {
 
 	/**
 	 * --------------------------------------------------------------------------
-	 * Public Properties
+	 * Public Constants
 	 * --------------------------------------------------------------------------
 	 */
 
@@ -85,11 +85,12 @@ public class LoggingService {
 	public static final String						LEVEL_ERROR			= "error";
 	public static final String						LEVEL_FATAL			= "fatal";
 
-	public static String							DEFAULT_LOG_LEVEL	= LEVEL_INFO;
 	public static final String						DEFAULT_LOG_TYPE	= "Application";
 	public static final String						DEFAULT_LOG_FILE	= "runtime.log";
 	public static final String						DEFAULT_APPLICATION	= "no-application";
 	public static final String						CONTEXT_NAME		= "BoxLang";
+	// This one is not final, because the runtime can switch it if in debug mode.
+	public static String							DEFAULT_LOG_LEVEL	= LEVEL_INFO;
 
 	/**
 	 * The log format for the BoxLang runtime
@@ -441,6 +442,22 @@ public class LoggingService {
 		}
 
 		return instance;
+	}
+
+	/**
+	 * Alias to get the runtime logger
+	 *
+	 * @return The runtime logger
+	 */
+	public BoxLangLogger getRuntimeLogger() {
+		return getLogger( DEFAULT_LOG_FILE );
+	}
+
+	/**
+	 * Alias to get the exception logger
+	 */
+	public BoxLangLogger getExceptionLogger() {
+		return getLogger( "exception" );
 	}
 
 	/**

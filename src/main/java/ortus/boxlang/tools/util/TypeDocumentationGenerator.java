@@ -95,7 +95,8 @@ public class TypeDocumentationGenerator {
 						        DocCommentTree commentTree = docsEnvironment.getDocTrees().getDocCommentTree( typeClass );
 						        String	description	= "";
 						        if ( commentTree != null ) {
-							        description = ( commentTree.getFirstSentence().toString() + "\n\n"
+							        description = ( commentTree.getFirstSentence().stream().map( sentence -> sentence.toString() )
+							            .collect( Collectors.joining( "" ) ) + "\n\n"
 							            + commentTree.getPreamble().toString() + commentTree.getBody().toString().trim() ).trim();
 						        }
 						        typesData.put( typeKey, new Struct( StructUtil.getCommonComparators().get( Key.of( "textAsc" ) ) ) );
@@ -112,8 +113,11 @@ public class TypeDocumentationGenerator {
 							                    functionBlock.getSimpleName().toString() ),
 							                Struct.of(
 							                    Key.description,
-							                    functionComments != null ? ( functionComments.getFirstSentence().toString() + "\n\n"
-							                        + functionComments.getPreamble().toString() + functionComments.getBody().toString().trim() ).trim() : "",
+							                    functionComments != null
+							                        ? ( functionComments.getFirstSentence().stream().map( sentence -> sentence.toString() )
+							                            .collect( Collectors.joining( "" ) ) + "\n\n"
+							                            + functionComments.getPreamble().toString() + functionComments.getBody().toString().trim() ).trim()
+							                        : "",
 							                    Key.arguments,
 							                    functionBlock.getParameters().size() > 0
 							                        ? functionBlock.getParameters()
@@ -213,7 +217,8 @@ public class TypeDocumentationGenerator {
 						description = ( ( BlockTagTree ) specificDescription ).toString()
 						    .replace( '@' + ( ( BlockTagTree ) specificDescription ).getTagName(), "" ).trim();
 					} else {
-						description = ( commentTree.getFirstSentence().toString() + "\n\n"
+						description = ( commentTree.getFirstSentence().stream().map( sentence -> sentence.toString() ).collect( Collectors.joining( "" ) )
+						    + "\n\n"
 						    + commentTree.getPreamble().toString() + commentTree.getBody().toString().trim() ).trim();
 					}
 					memberData.put( Key.description, description );

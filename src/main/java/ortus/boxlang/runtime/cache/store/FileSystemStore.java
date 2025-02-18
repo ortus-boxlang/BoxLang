@@ -27,8 +27,6 @@ import java.util.stream.Stream;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.cache.BoxCacheEntry;
 import ortus.boxlang.runtime.cache.ICacheEntry;
@@ -48,11 +46,6 @@ import ortus.boxlang.runtime.util.FileSystemUtil;
  * Each object is stored in a separate file.
  */
 public class FileSystemStore extends AbstractStore {
-
-	/**
-	 * Logger
-	 */
-	private static final Logger			logger				= LoggerFactory.getLogger( FileSystemStore.class );
 
 	/**
 	 * The extension for the cache files
@@ -96,11 +89,6 @@ public class FileSystemStore extends AbstractStore {
 			throw new BoxIOException( e );
 		}
 
-		logger.debug(
-		    "FileSystemStore({}) initialized with a max size of {}",
-		    provider.getName(),
-		    IntegerCaster.cast( config.get( Key.maxObjects ) )
-		);
 		return this;
 	}
 
@@ -146,10 +134,6 @@ public class FileSystemStore extends AbstractStore {
 	 * object saving. This method is called when the cache provider is stopped.
 	 */
 	public void shutdown() {
-		logger.debug(
-		    "FileSystemStore({}) was shutdown",
-		    provider.getName()
-		);
 	}
 
 	/**
@@ -161,10 +145,6 @@ public class FileSystemStore extends AbstractStore {
 	 * @return The number of objects flushed
 	 */
 	public int flush() {
-		logger.debug(
-		    "FileSystemStore({}) was flushed",
-		    provider.getName()
-		);
 		return 0;
 	}
 
@@ -187,11 +167,6 @@ public class FileSystemStore extends AbstractStore {
 		    .limit( evictCount )
 		    // Evict it & Log Stats
 		    .forEach( entry -> {
-			    logger.debug(
-			        "FileSystemStore({}) evicted [{}]",
-			        provider.getName(),
-			        entry.key().getName()
-			    );
 			    try {
 				    Files.delete( Path.of( entry.metadata().getAsString( Key.path ) ) );
 			    } catch ( IOException e ) {

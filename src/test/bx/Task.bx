@@ -1,13 +1,13 @@
-@simple "hello"
-@arrayComplex [ "hello", "world" ]
-@arrayTest [ 1,2,3 ]
-@structTest { name : "luis", age : 1 }
+@simple( hello )
+@arrayComplex( [ "hello", "world" ] )
+@arrayTest( [ 1,2,3 ] )
+@structTest( { name : "luis", age : 1 } )
 class inject hello="word"{
 
-	@simple "hello"
-	@arrayComplex [ "hello", "world" ]
-	@arrayTest [ 1,2,3 ]
-	@structTest { name : "luis", age : 1 }
+	@simple( hello )
+	@arrayComplex( [ "hello", "world" ] )
+	@arrayTest( [ 1,2,3 ] )
+	@structTest( { name : "luis", age : 1 } )
 	property foo;
 	property firstName;
 	property lastName;

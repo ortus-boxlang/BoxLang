@@ -98,14 +98,21 @@ public class ExpressionInterpreter {
 		} else {
 			// Unscoped variable like foo.bar. This finds the first part of the expression
 			ref = context.scopeFindNearby( refName, ( safe ? context.getDefaultAssignmentScope() : null ), false ).value();
-			if ( ref == null && !safe ) {
-				throw new KeyNotFoundException( "Variable [" + refName + "] not found." );
+			if ( ref == null ) {
+				if ( safe ) {
+					return null;
+				} else {
+					throw new KeyNotFoundException( "Variable [" + refName + "] not found." );
+				}
 			}
 		}
 
 		// loop over remaining items and use the dereferencer to find them all.
 		for ( int i = 1; i < parts.length; i++ ) {
 			ref = Referencer.get( context, ref, Key.of( parts[ i ] ), safe );
+			if ( ref == null ) {
+				return null;
+			}
 		}
 		return ref;
 	}

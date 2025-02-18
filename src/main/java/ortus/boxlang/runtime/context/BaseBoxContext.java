@@ -31,6 +31,7 @@ import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.FunctionCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.loader.ImportDefinition;
+import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.modules.ModuleRecord;
 import ortus.boxlang.runtime.runnables.BoxInterface;
 import ortus.boxlang.runtime.runnables.BoxTemplate;
@@ -130,6 +131,11 @@ public class BaseBoxContext implements IBoxContext {
 	private final IBoxAttachable				attachable			= new Attachable();
 
 	/**
+	 * Context Logger
+	 */
+	private final BoxLangLogger					logger;
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Constructors
 	 * --------------------------------------------------------------------------
@@ -142,6 +148,7 @@ public class BaseBoxContext implements IBoxContext {
 	 * @param parent The parent context
 	 */
 	public BaseBoxContext( IBoxContext parent ) {
+		this.logger				= BoxRuntime.getInstance().getLoggingService().getRuntimeLogger();
 		this.parent				= parent;
 		this.functionService	= BoxRuntime.getInstance().getFunctionService();
 		this.componentService	= BoxRuntime.getInstance().getComponentService();
@@ -160,6 +167,13 @@ public class BaseBoxContext implements IBoxContext {
 	 * Getters & Setters
 	 * --------------------------------------------------------------------------
 	 */
+
+	/**
+	 * Get the context logger
+	 */
+	public BoxLangLogger getLogger() {
+		return this.logger;
+	}
 
 	/**
 	 * Push a template to the stack

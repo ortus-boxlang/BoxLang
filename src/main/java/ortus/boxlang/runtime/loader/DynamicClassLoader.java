@@ -34,7 +34,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.global.type.NullValue;
@@ -476,7 +475,7 @@ public class DynamicClassLoader extends URLClassLoader {
 		if ( logger == null ) {
 			synchronized ( DynamicClassLoader.class ) {
 				if ( logger == null ) {
-					logger = LoggerFactory.getLogger( DynamicClassLoader.class );
+					logger = BoxRuntime.getInstance().getLoggingService().getRuntimeLogger();
 				}
 			}
 		}

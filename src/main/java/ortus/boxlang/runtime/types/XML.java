@@ -40,9 +40,9 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
 import org.apache.commons.lang3.StringUtils;
-
 import org.w3c.dom.Document;
 import org.w3c.dom.DocumentType;
+import org.w3c.dom.Element;
 import org.w3c.dom.Entity;
 import org.w3c.dom.EntityReference;
 import org.w3c.dom.NamedNodeMap;
@@ -52,7 +52,6 @@ import org.w3c.dom.Notation;
 import org.w3c.dom.ProcessingInstruction;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
-import org.w3c.dom.Element;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
@@ -129,8 +128,14 @@ public class XML implements Serializable, IStruct {
 		this.type = TYPES.DEFAULT;
 
 		DocumentBuilderFactory	factory	= DocumentBuilderFactory.newNSInstance();
+
 		DocumentBuilder			builder;
 		try {
+			// Disable DTD validation
+			factory.setFeature( "http://apache.org/xml/features/nonvalidating/load-external-dtd", false );
+			factory.setFeature( "http://xml.org/sax/features/validation", false );
+			factory.setFeature( "http://apache.org/xml/features/disallow-doctype-decl", false );
+
 			builder = factory.newDocumentBuilder();
 		} catch ( ParserConfigurationException e ) {
 			throw new BoxRuntimeException( "Error creating XML document builder", e );

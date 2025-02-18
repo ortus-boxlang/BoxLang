@@ -126,7 +126,7 @@ public class ComponentDocumentationGenerator {
 		if ( !FileSystemUtil.exists( componentFile ) ) {
 			Key		componentKey		= Key.of( name );
 			Element	javadocElement		= docElements.stream()
-			    .filter( elem -> componentKey.equals( Key.of( elem.getSimpleName() ) )
+			    .filter( elem -> componentKey.equals( Key.of( elem.getSimpleName().toString() ) )
 			        ||
 			        Stream.of( elem.getAnnotationsByType( BoxComponent.class ) )
 			            .filter(
@@ -153,7 +153,8 @@ public class ComponentDocumentationGenerator {
 							description = ( ( BlockTagTree ) specificDescription ).toString()
 							    .replace( '@' + ( ( BlockTagTree ) specificDescription ).getTagName(), "" ).trim();
 						} else {
-							description = ( commentTree.getFirstSentence().toString() + "\n\n"
+							description = ( commentTree.getFirstSentence().stream().map( sentence -> sentence.toString() ).collect( Collectors.joining( "" ) )
+							    + "\n\n"
 							    + commentTree.getPreamble().toString() ).trim();
 						}
 						attributesExclude = ArrayCaster.cast( commentTree.getBlockTags().stream()

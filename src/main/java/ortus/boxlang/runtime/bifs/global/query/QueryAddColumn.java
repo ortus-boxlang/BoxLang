@@ -30,12 +30,14 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 @BoxMember( type = BoxLangType.QUERY )
 public class QueryAddColumn extends BIF {
 
+	private static final String DEFAULT_TYPE = "object";
+
 	public QueryAddColumn() {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, Argument.QUERY, Key.query ),
 		    new Argument( true, Argument.STRING, Key.columnName ),
-		    new Argument( false, Argument.ANY, Key.datatype, "Varchar" ),
+		    new Argument( false, Argument.ANY, Key.datatype, DEFAULT_TYPE ),
 		    new Argument( false, Argument.ARRAY, Key.array, new Array() )
 		};
 	}
@@ -50,7 +52,7 @@ public class QueryAddColumn extends BIF {
 	 *
 	 * @argument.columnName The name of the column to add.
 	 *
-	 * @argument.datatype The column data type of the new column or the array to populate the column with as a shortcut for "varchar".
+	 * @argument.datatype The column data type of the new column or the array to populate the column with a generic type of anything.
 	 *
 	 * @argument.arrayName The one-dimensional array used to populate the column.
 	 */
@@ -65,10 +67,10 @@ public class QueryAddColumn extends BIF {
 			throw new BoxRuntimeException( "Column '" + columnName + "' already exists in the query." );
 		}
 
-		// Do we have an array for a column type as a shortcut for "varchar", or normal type?
+		// Do we have an array for a column type as a shortcut?
 		if ( arguments.get( Key.datatype ) instanceof Array castedArray ) {
 			array		= castedArray;
-			columnType	= "Varchar";
+			columnType	= DEFAULT_TYPE;
 		} else {
 			columnType = arguments.getAsString( Key.datatype );
 		}

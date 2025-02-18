@@ -170,7 +170,7 @@ public class StructMapWrapper implements IStruct, IListenable, Serializable {
 	 * @return {@code true} if this map contains a mapping for the specified
 	 */
 	public boolean containsKey( String key ) {
-		return wrapped.containsKey( key );
+		return containsKey( Key.of( key ) );
 	}
 
 	/**
@@ -181,7 +181,22 @@ public class StructMapWrapper implements IStruct, IListenable, Serializable {
 	 * @return {@code true} if this map contains a mapping for the specified
 	 */
 	public boolean containsKey( Key key ) {
-		return wrapped.containsKey( key.getOriginalValue() );
+		boolean exists = wrapped.containsKey( key.getOriginalValue() );
+		if ( exists ) {
+			return true;
+		}
+		exists = wrapped.containsKey( key );
+		if ( exists ) {
+			return true;
+		}
+
+		String stringKey = key.getName();
+		for ( Object oKey : wrapped.keySet() ) {
+			if ( oKey instanceof String string && string.equalsIgnoreCase( stringKey ) ) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**
@@ -195,7 +210,7 @@ public class StructMapWrapper implements IStruct, IListenable, Serializable {
 		if ( key instanceof Key keyKey ) {
 			return containsKey( keyKey );
 		}
-		return wrapped.containsKey( key );
+		return containsKey( Key.of( key ) );
 	}
 
 	/**
@@ -218,7 +233,7 @@ public class StructMapWrapper implements IStruct, IListenable, Serializable {
 	 * @return the value to which the specified key is mapped or null if not found
 	 */
 	public Object get( Key key ) {
-		return wrapped.get( key.getOriginalValue() );
+		return Struct.unWrapNull( getRaw( key ) );
 	}
 
 	/**
@@ -230,7 +245,7 @@ public class StructMapWrapper implements IStruct, IListenable, Serializable {
 	 */
 	@Override
 	public Object get( String key ) {
-		return wrapped.get( Key.of( key ) );
+		return get( Key.of( key ) );
 	}
 
 	/**
@@ -243,9 +258,9 @@ public class StructMapWrapper implements IStruct, IListenable, Serializable {
 	@Override
 	public Object get( Object key ) {
 		if ( key instanceof Key keyKey ) {
-			return wrapped.get( keyKey.getOriginalValue() );
+			return get( keyKey );
 		}
-		return wrapped.get( key );
+		return get( Key.of( key ) );
 	}
 
 	/**
@@ -291,9 +306,28 @@ public class StructMapWrapper implements IStruct, IListenable, Serializable {
 	 *
 	 * @return The value of the key or a NullValue object, null means the key didn't exist *
 	 */
-	public Object getRaw( Key key ) {
-		return wrapped.get( key.getOriginalValue() );
+	public Object getRaw( Key name ) {
+		Object result = wrapped.get( name.getOriginalValue() );
+		if ( result != null ) {
+			return result;
+		}
 
+		// ok, fall back and see if it's a Key instance stored directly in the map
+		result = wrapped.get( name );
+		if ( result != null ) {
+			return result;
+		}
+
+		// Fall back and see if it's a string, but a diffefrent case. This code path will only have been hit with the
+		// syntax foo.bar or foo.[ "bar" ] which generally has the expectation of being case insensitive since structs are inherently case insensitive
+		String stringKey = name.getName();
+		for ( Object key : wrapped.keySet() ) {
+			if ( key instanceof String string && string.equalsIgnoreCase( stringKey ) ) {
+				return wrapped.get( key );
+			}
+		}
+
+		return null;
 	}
 
 	/**

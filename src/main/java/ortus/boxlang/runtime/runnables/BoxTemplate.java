@@ -76,7 +76,7 @@ public abstract class BoxTemplate implements ITemplateRunnable {
 				throw e;
 			}
 		} catch ( Throwable e ) {
-			context.flushBuffer( true );
+			context.flushBuffer( false );
 			throw e;
 		} finally {
 			context.popTemplate();

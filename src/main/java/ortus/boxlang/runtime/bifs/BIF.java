@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.bifs;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.events.BoxEvent;
+import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.AsyncService;
@@ -49,14 +50,14 @@ public abstract class BIF {
 	public static final Key			__functionName		= Key.__functionName;
 
 	/**
+	 * The runtime instance
+	 */
+	protected BoxRuntime			runtime				= BoxRuntime.getInstance();
+
+	/**
 	 * BIF Arguments
 	 */
 	protected Argument[]			declaredArguments	= new Argument[] {};
-
-	/**
-	 * The runtime instance. This is public for a unit test to use
-	 */
-	public BoxRuntime				runtime				= BoxRuntime.getInstance();
 
 	/**
 	 * The function service helper
@@ -87,6 +88,11 @@ public abstract class BIF {
 	 * The module service helper
 	 */
 	protected ModuleService			moduleService		= BoxRuntime.getInstance().getModuleService();
+
+	/**
+	 * Runtime Logger
+	 */
+	protected BoxLangLogger			logger				= BoxRuntime.getInstance().getLoggingService().getRuntimeLogger();
 
 	/**
 	 * Invoke the BIF with the given arguments

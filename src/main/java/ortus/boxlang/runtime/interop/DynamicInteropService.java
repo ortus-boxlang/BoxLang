@@ -25,6 +25,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -70,6 +71,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.IType;
 import ortus.boxlang.runtime.types.JavaMethod;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.StructMapWrapper;
 import ortus.boxlang.runtime.types.exceptions.AbstractClassException;
 import ortus.boxlang.runtime.types.exceptions.BoxLangException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -108,6 +110,12 @@ import ortus.boxlang.runtime.types.util.ObjectRef;
  * - {@code invoke( String methodName, Object... args )} - Invoke a method on the instance of the class
  */
 public class DynamicInteropService {
+
+	public static enum MATCH_TYPE {
+		EXACT,
+		ASSIGNABLE,
+		COERCE
+	}
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -536,8 +544,8 @@ public class DynamicInteropService {
 			// Coerce the arguments to the right types before execution.
 			coerceArguments(
 			    context,
-			    methodRecord.method().getParameterTypes(),
-			    argumentClasses,
+			    unBoxTypes( methodRecord.method().getParameterTypes() ),
+			    unBoxTypes( argumentClasses ),
 			    arguments,
 			    methodRecord.method().isVarArgs(),
 			    BooleanRef.of( true )
@@ -620,8 +628,8 @@ public class DynamicInteropService {
 		// Coerce the arguments to the right types
 		coerceArguments(
 		    context,
-		    methodRecord.method().getParameterTypes(),
-		    argumentClasses,
+		    unBoxTypes( methodRecord.method().getParameterTypes() ),
+		    unBoxTypes( argumentClasses ),
 		    arguments,
 		    methodRecord.method().isVarArgs(),
 		    BooleanRef.of( true )
@@ -1293,13 +1301,21 @@ public class DynamicInteropService {
 			Constructor<?> foundConstructor = targetConstructors
 			    .stream()
 			    // Has to have the SAME arg types
-			    .filter( constructor -> constructorHasMatchingParameterTypes( context, constructor, true, argumentsAsClasses, arguments ) )
+			    .filter(
+			        constructor -> hasMatchingParameterTypes( context, constructor, MATCH_TYPE.EXACT, argumentsAsClasses, BooleanRef.of( true ), arguments ) )
 			    .findFirst()
 			    // If no exact match, try loose coercion
 			    .or( () -> targetConstructors
 			        .stream()
-			        .filter( constructor -> constructorHasMatchingParameterTypes( context, constructor, false, argumentsAsClasses, arguments ) )
+			        .filter( constructor -> hasMatchingParameterTypes( context, constructor, MATCH_TYPE.ASSIGNABLE, argumentsAsClasses, BooleanRef.of( true ),
+			            arguments ) )
 			        .findFirst()
+			        .or( () -> targetConstructors
+			            .stream()
+			            .filter( constructor -> hasMatchingParameterTypes( context, constructor, MATCH_TYPE.COERCE, argumentsAsClasses, BooleanRef.of( true ),
+			                arguments ) )
+			            .findFirst()
+			        )
 			    )
 			    .orElse( null );
 
@@ -1384,14 +1400,16 @@ public class DynamicInteropService {
 		Collections.addAll( allMethods, targetClass.getMethods() );
 		Collections.addAll( allMethods, targetClass.getDeclaredMethods() );
 
+		var methodStream = allMethods.stream();
 		// If callable, filter out the private methods
 		if ( Boolean.TRUE.equals( callable ) ) {
-			allMethods = allMethods.stream()
-			    .filter( method -> Modifier.isPublic( method.getModifiers() ) )
-			    .collect( Collectors.toSet() );
+			methodStream = methodStream.filter( method -> Modifier.isPublic( method.getModifiers() ) );
 		}
 
-		return allMethods;
+		// Filter out bridge methods
+		methodStream = methodStream.filter( method -> !method.isBridge() );
+
+		return methodStream.collect( Collectors.toSet() );
 	}
 
 	/**
@@ -1520,13 +1538,18 @@ public class DynamicInteropService {
 		return targetMethods
 		    .stream()
 		    // has to have the same argument types
-		    .filter( method -> hasMatchingParameterTypes( context, method, true, argumentsAsClasses, isCachable, arguments ) )
+		    .filter( method -> hasMatchingParameterTypes( context, method, MATCH_TYPE.EXACT, argumentsAsClasses, isCachable, arguments ) )
 		    .findFirst()
 		    // 2: If no exact match, try loose coercion
 		    .or( () -> targetMethods
 		        .stream()
-		        .filter( method -> hasMatchingParameterTypes( context, method, false, argumentsAsClasses, isCachable, arguments ) )
+		        .filter( method -> hasMatchingParameterTypes( context, method, MATCH_TYPE.ASSIGNABLE, argumentsAsClasses, isCachable, arguments ) )
 		        .findFirst()
+		        .or( () -> targetMethods
+		            .stream()
+		            .filter( method -> hasMatchingParameterTypes( context, method, MATCH_TYPE.COERCE, argumentsAsClasses, isCachable, arguments ) )
+		            .findFirst()
+		        )
 		    )
 		    .orElse( null );
 	}
@@ -1703,9 +1726,22 @@ public class DynamicInteropService {
 		}
 
 		// Double check because a java super dereference from a boxClass will have a different targetClass.
-		if ( Map.class.isAssignableFrom( targetClass ) && targetInstance instanceof Map ) {
-			// If it's a raw Map, then we use the key, whose equals() method will defer to the original values's equals() method.
-			return ( ( Map<Object, Object> ) targetInstance ).get( name );
+		if ( Map.class.isAssignableFrom( targetClass ) && targetInstance instanceof Map map ) {
+			// If it's a raw Map, we may need to get creative since it's possible to have a mix of Key and String instances in some cases,
+			// but the map itself may also have a completelyk different key class
+			var structMapWrap = StructMapWrapper.of( map );
+			if ( structMapWrap.containsKey( name ) ) {
+				return structMapWrap.get( name );
+			}
+
+			throw new KeyNotFoundException(
+			    String.format( "The Map [%s] has no key [%s]. The existing keys are [%s]",
+			        ClassUtils.getCanonicalName( targetClass ),
+			        name.getName(),
+			        map.keySet().stream().map( Object::toString ).collect( Collectors.joining( ", " ) )
+			    )
+			);
+
 			// Special logic so we can treat exceptions as referencable. Possibly move to helper
 		} else if ( targetInstance instanceof List list ) {
 			Integer index = Array.validateAndGetIntForDereference( name, list.size(), safe );
@@ -1718,20 +1754,20 @@ public class DynamicInteropService {
 			}
 			return list.get( index - 1 );
 		} else if ( targetInstance != null && targetInstance.getClass().isArray() ) {
-			Object[] arr = ( ( Object[] ) targetInstance );
+			int arrLen = java.lang.reflect.Array.getLength( targetInstance );
 			if ( name.equals( lengthKey ) ) {
-				return arr.length;
+				return arrLen;
 			}
 
-			Integer index = Array.validateAndGetIntForDereference( name, arr.length, safe );
+			Integer index = Array.validateAndGetIntForDereference( name, arrLen, safe );
 			// non-existant indexes or keys which could not be turned into an int return null when dereferencing safely
-			if ( safe && ( index == null || Math.abs( index ) > arr.length || index == 0 ) ) {
+			if ( safe && ( index == null || Math.abs( index ) > arrLen || index == 0 ) ) {
 				return null;
 			}
 			if ( index < 0 ) {
-				return arr[ arr.length + index ];
+				return java.lang.reflect.Array.get( targetInstance, arrLen + index );
 			}
-			return arr[ index - 1 ];
+			return java.lang.reflect.Array.get( targetInstance, index - 1 );
 		} else if ( targetInstance instanceof Throwable t && exceptionKeys.contains( name ) ) {
 			// Throwable.message always delegates through to the message field
 			if ( name.equals( Key.message ) ) {
@@ -2057,9 +2093,16 @@ public class DynamicInteropService {
 		if ( IReferenceable.class.isAssignableFrom( targetClass ) && targetInstance != null && targetInstance instanceof IReferenceable ref ) {
 			return ref.assign( context, name, value );
 		} else if ( targetInstance != null && targetInstance.getClass().isArray() ) {
-			Object[]	arr		= ( ( Object[] ) targetInstance );
-			Integer		index	= Array.validateAndGetIntForAssign( name, arr.length, true );
-			arr[ index - 1 ] = value;
+			int			arrLen		= java.lang.reflect.Array.getLength( targetInstance );
+			Integer		index		= Array.validateAndGetIntForAssign( name, arrLen, true );
+			Class<?>	arrayType	= targetInstance.getClass().getComponentType();
+
+			// Attempt to cast the value to the array type. This allows a string "C" to be set into a char[] array, or a int 42 to be set into a long[] array
+			if ( value != null && !value.getClass().isAssignableFrom( arrayType ) ) {
+				value = GenericCaster.cast( context, value, arrayType.getName() );
+			}
+
+			java.lang.reflect.Array.set( targetInstance, index - 1, value );
 			return value;
 		} else if ( targetInstance instanceof List list ) {
 			Integer index = Array.validateAndGetIntForAssign( name, list.size(), false );
@@ -2124,8 +2167,8 @@ public class DynamicInteropService {
 	 */
 	private static boolean hasMatchingParameterTypes(
 	    IBoxContext context,
-	    Method method,
-	    Boolean exact,
+	    Executable method,
+	    MATCH_TYPE matchType,
 	    Class<?>[] argumentsAsClasses,
 	    BooleanRef isCachable,
 	    Object... arguments ) {
@@ -2133,19 +2176,34 @@ public class DynamicInteropService {
 		// Get param types to test
 		Class<?>[] methodParams = method.getParameterTypes();
 
-		// Verify assignability including primitive autoboxing
-		if ( ClassUtils.isAssignable( argumentsAsClasses, methodParams ) ) {
-			return true;
-		}
+		// unbox types here so we can do a proper comparison
+		unBoxTypes( methodParams );
+		unBoxTypes( argumentsAsClasses );
 
-		// Let's do coercive matching if we get here.
-		// iterate over the method params and check if the arguments can be coerced to the method params
-		// Every argument must be coercable or it fails
-		if ( !exact ) {
-			return coerceArguments( context, methodParams, argumentsAsClasses, arguments, method.isVarArgs(), isCachable );
+		switch ( matchType ) {
+			case EXACT :
+				return Arrays.equals( methodParams, argumentsAsClasses );
+			case ASSIGNABLE :
+				return ClassUtils.isAssignable( argumentsAsClasses, methodParams );
+			case COERCE :
+				return coerceArguments( context, methodParams, argumentsAsClasses, arguments, method.isVarArgs(), isCachable );
 		}
 
 		return false;
+	}
+
+	/**
+	 * Turn int into Integer, boolean into Boolean, etc
+	 * 
+	 * @param types The types to unbox, modified by reference
+	 */
+	public static Class<?>[] unBoxTypes( Class<?>[] types ) {
+		for ( int i = 0; i < types.length; i++ ) {
+			if ( types[ i ] != null ) {
+				types[ i ] = WRAPPERS_MAP.getOrDefault( types[ i ], types[ i ] );
+			}
+		}
+		return types;
 	}
 
 	/**
@@ -2232,10 +2290,6 @@ public class DynamicInteropService {
 		if ( PRIMITIVE_MAP.containsKey( actual ) && PRIMITIVE_MAP.get( actual ).equals( expected ) ) {
 			return Optional.of( value );
 		}
-
-		// Primitive to Wrapper Type
-		expected	= WRAPPERS_MAP.getOrDefault( expected, expected );
-		actual		= WRAPPERS_MAP.getOrDefault( actual, actual );
 
 		// logger.debug( "Starting Coerce attempt for [" + expected + "] from [" + actual + "] with value [" + value.toString() + "]" );
 
@@ -2363,46 +2417,6 @@ public class DynamicInteropService {
 
 		arrayType.insert( 0, clazz.isPrimitive() ? clazz.getName() : clazz.getSimpleName() ); // Add base type
 		return arrayType.toString();
-	}
-
-	/**
-	 * Verifies if the constructor has the same parameter types as the incoming ones
-	 * using our matching algorithms.
-	 * - Exact Match : Matches the incoming argument class types to the constructor signature
-	 * - Discovery : Matches the incoming argument class types to the constructor signature by discovery of matching argument counts
-	 * - Coercive : Matches the incoming argument class types to the constructor signature by coercion of the argument types
-	 *
-	 * @param context            The context to use for the method invocation
-	 * @param constructor        The constructor to check
-	 * @param exact              Exact matching or loose matching with coercion
-	 * @param argumentsAsClasses The arguments to check
-	 * @param arguments          The arguments to pass to the constructor
-	 *
-	 * @return True if the constructor has the same or coerced parameter types, false otherwise
-	 */
-	private static boolean constructorHasMatchingParameterTypes(
-	    IBoxContext context,
-	    Constructor<?> constructor,
-	    Boolean exact,
-	    Class<?>[] argumentsAsClasses,
-	    Object... arguments ) {
-
-		// Get param types to test from the constructor
-		Class<?>[] constructorParams = constructor.getParameterTypes();
-
-		// Verify assignability including primitive autoboxing
-		if ( ClassUtils.isAssignable( argumentsAsClasses, constructorParams ) ) {
-			return true;
-		}
-
-		// Let's do coercive matching if we get here. ONLY if we are not doing an exact match
-		// iterate over the constructor params and check if the arguments can be coerced to the constructor params
-		// Every argument must be coercable or it fails
-		if ( !exact ) {
-			return coerceArguments( context, constructorParams, argumentsAsClasses, arguments, constructor.isVarArgs(), BooleanRef.of( true ) );
-		}
-
-		return false;
 	}
 
 	/**

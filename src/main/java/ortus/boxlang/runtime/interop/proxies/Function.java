@@ -27,7 +27,6 @@ public class Function<T, R> extends BaseProxy implements java.util.function.Func
 
 	public Function( Object target, IBoxContext context, String method ) {
 		super( target, context, method );
-		prepLogger( Function.class );
 	}
 
 	@SuppressWarnings( "unchecked" )

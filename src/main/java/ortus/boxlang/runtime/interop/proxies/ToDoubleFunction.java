@@ -11,7 +11,6 @@ public class ToDoubleFunction<T> extends BaseProxy implements java.util.function
 
 	public ToDoubleFunction( Object target, IBoxContext context, String method ) {
 		super( target, context, method );
-		prepLogger( ToDoubleFunction.class );
 	}
 
 	@Override

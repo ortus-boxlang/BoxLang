@@ -85,6 +85,11 @@ public class BoxRunner {
 	private static final List<String>	ALLOWED_TEMPLATE_EXECUTIONS	= List.of( ".cfm", ".cfs", ".bxm", ".bx", ".bxs" );
 
 	/**
+	 * An exit code indicator for the BoxRunner
+	 */
+	public static int					exitCode					= 0;
+
+	/**
 	 * Main entry point for the BoxLang runtime.
 	 *
 	 * @param args The command-line arguments
@@ -92,7 +97,7 @@ public class BoxRunner {
 	 * @throws IOException
 	 * @throws JSONObjectException
 	 */
-	public static void main( String[] args ) throws JSONObjectException, IOException {
+	public static void main( String[] args ) {
 		Timer		timer	= new Timer();
 
 		// Parse CLI options with Env Overrides
@@ -165,6 +170,7 @@ public class BoxRunner {
 			System.out.println( "+++ BoxRunner executed in " + timer.stop( "BoxRunner" ) );
 		}
 
+		BoxRunner.exitCode = exitCode;
 		System.exit( exitCode );
 	}
 
@@ -331,7 +337,7 @@ public class BoxRunner {
 			}
 
 			// Is it a shebang script to execute
-			if ( actionCommand == null && isShebangScript( currentExt ) ) {
+			if ( actionCommand == null && isShebangScript( current ) ) {
 				file = getSheBangScript( current );
 				continue;
 			}

@@ -42,7 +42,7 @@ cd "$SAVED" >/dev/null
 APP_NAME="bxCFTranspiler"
 APP_BASE_NAME=`basename "$0"`
 BX_CLASS=ortus.boxlang.compiler.BXCompiler
-CLASSPATH='$APP_HOME/lib/boxlang-@version@-all.jar $BX_CLASS'
+CLASSPATH='$APP_HOME/lib/boxlang-@version@.jar $BX_CLASS'
 # Add default JVM options here. You can also use JAVA_OPTS and BOXLANG_OPTS to pass JVM options to this script.
 DEFAULT_JVM_OPTS=""
 

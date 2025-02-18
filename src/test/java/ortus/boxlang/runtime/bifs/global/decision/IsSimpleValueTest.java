@@ -81,6 +81,9 @@ public class IsSimpleValueTest {
 	public void testFalseConditions() {
 		// True, if value is a string, number, Boolean, or date/time value; False, otherwise.
 		// @formatter:off
+		// For testing in compat mode you  can uncomment these two lines
+		// StringCaster.castClassesToStrings = true;
+		// StringCaster.castThrowablesToStrings = true;
 		instance.executeSource(
 		    """
 				aStruct     = isSimpleValue( {} );
@@ -89,6 +92,11 @@ public class IsSimpleValueTest {
 				aNull        = isSimpleValue( value = nullValue() );
 				aJavaClass = isSimpleValue( value = createObject( 'java', "java.util.HashMap" ) );
 				aJavaString  = isSimpleValue( value = createObject( 'java', "java.lang.String" ) );
+				try{
+					a = b;
+				} catch( any e ){
+					anException = isSimpleValue( e );
+				}
 		    """,
 			context
 		);
@@ -102,6 +110,7 @@ public class IsSimpleValueTest {
 		assertThat( ( Boolean ) variables.get( Key.of( "aNull" ) ) ).isFalse();
 		assertThat( ( Boolean ) variables.get( Key.of( "aJavaString" ) ) ).isFalse();
 		assertThat( ( Boolean ) variables.get( Key.of( "aJavaClass" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "anException" ) ) ).isFalse();
 	}
 
 }

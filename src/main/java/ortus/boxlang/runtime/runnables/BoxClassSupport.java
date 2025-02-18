@@ -24,6 +24,7 @@ import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.context.BaseBoxContext;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ImportDefinition;
@@ -45,6 +46,7 @@ import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.ClassMeta;
 import ortus.boxlang.runtime.util.ArgumentUtil;
+import ortus.boxlang.runtime.util.BoxFQN;
 
 /**
  * The methods in this class are an extension of IClassRunnable. They are here for better readability
@@ -139,7 +141,9 @@ public class BoxClassSupport {
 			    thisClass.getAnnotations()
 			        .getOrDefault(
 			            Key.output,
-			            false
+			            // output defaults to true for Application.bx, but false for all others
+			            // Strip just the class name from the FQN foo.com.bar.Application
+			            new BoxFQN( thisClass.bxGetName().getName() ).getClassName().equalsIgnoreCase( "application" )
 			        )
 			) );
 		}
@@ -741,6 +745,18 @@ public class BoxClassSupport {
 			return dynO;
 		}
 		if ( obj instanceof String str ) {
+			// This could be a variable reference, or a class name. Let's find out.
+			Object variableRef = ExpressionInterpreter.getVariable( context, str, true );
+			// We found a variable of this name. What is it?
+			if ( variableRef != null ) {
+				if ( variableRef instanceof DynamicObject dynO ) {
+					return dynO;
+				}
+				if ( variableRef instanceof Class c ) {
+					return DynamicObject.of( c );
+				}
+				// If there is a var, but it's not a static class refernce, then we'll just ignore it now and move on to our class loading attempt
+			}
 			return BoxRuntime.getInstance().getClassLocator().load( context, str, imports );
 		}
 		throw new BoxRuntimeException( "Cannot load class for static access.  Did you try to statically dereference an instance on accident?  Type provided: "

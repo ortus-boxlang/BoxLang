@@ -65,7 +65,6 @@ public class FileTesterTest {
 	@DisplayName( "Test valueList() to queryColumnData().toList()" )
 	@Test
 	public void testTestbox() {
-		// instance.useJavaBoxpiler();
 		instance.executeSource(
 		    """
 		      function(){
@@ -81,7 +80,6 @@ public class FileTesterTest {
 	@DisplayName( "Test valueList() to queryColumnData().toList()" )
 	@Test
 	public void closureArg() {
-		// instance.useJavaBoxpiler();
 		instance.executeSource(
 		    """
 		       a = [ "null" ];
@@ -102,7 +100,6 @@ public class FileTesterTest {
 	@DisplayName( "Test valueList() to queryColumnData().toList()" )
 	@Test
 	public void testSaveContent() {
-		// instance.useJavaBoxpiler();
 		instance.executeSource(
 		    """
 		       y = []
@@ -120,7 +117,6 @@ public class FileTesterTest {
 	@DisplayName( "Test valueList() to queryColumnData().toList()" )
 	@Test
 	public void testSuperInit() {
-		// instance.useJavaBoxpiler();
 		instance.executeSource(
 		    """
 		    a = new src.test.java.ortus.boxlang.compiler.Child();
@@ -131,7 +127,6 @@ public class FileTesterTest {
 	@DisplayName( "Test valueList() to queryColumnData().toList()" )
 	@Test
 	public void x() {
-		// instance.useJavaBoxpiler();
 		instance.executeSource(
 		    """
 		    a = expand ?: true
@@ -165,7 +160,6 @@ public class FileTesterTest {
 	@DisplayName( "Test valueList() to queryColumnData().toList()" )
 	@Test
 	public void testContinueInSwitch() {
-		// instance.useJavaBoxpiler();
 		instance.executeSource(
 		    """
 		    				<cfoutput>
@@ -186,7 +180,6 @@ public class FileTesterTest {
 	@DisplayName( "Test valueList() to queryColumnData().toList()" )
 	@Test
 	public void testCompileIssue1() {
-		// instance.useJavaBoxpiler();
 		instance.executeSource(
 		    """
 		    a = new src.test.java.ortus.boxlang.compiler.CompileIssue1();
@@ -197,7 +190,6 @@ public class FileTesterTest {
 	@DisplayName( "Test valueList() to queryColumnData().toList()" )
 	@Test
 	public void zzz() {
-		// instance.useJavaBoxpiler();
 		instance.executeSource(
 		    """
 		    a = 0
@@ -218,7 +210,6 @@ public class FileTesterTest {
 	@DisplayName( "Test valueList() to queryColumnData().toList()" )
 	@Test
 	public void switchBreak() {
-		// instance.useJavaBoxpiler();
 		// @formatter:off
 		instance.executeSource("""
 			a = 1;

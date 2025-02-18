@@ -20,9 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.segments.DatasourceConfig;
 import ortus.boxlang.runtime.context.ApplicationBoxContext;
@@ -30,6 +27,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
+import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.DatasourceService;
 import ortus.boxlang.runtime.types.IStruct;
@@ -53,34 +51,34 @@ public class ConnectionManager {
 	/**
 	 * Logger
 	 */
-	private static final Logger		logger							= LoggerFactory.getLogger( ConnectionManager.class );
+	private static final BoxLangLogger	logger							= BoxRuntime.getInstance().getLoggingService().getLogger( "datasource" );
 
 	/**
 	 * The active transaction (if any) for this request/thread/BoxLang context.
 	 */
-	private ITransaction			transaction;
+	private ITransaction				transaction;
 
 	/**
 	 * The context this ConnectionManager is associated with.
 	 */
-	private IBoxContext				context;
+	private IBoxContext					context;
 
 	/**
 	 * A default datasource, that can be set manully mostly for testing purpose mostly
 	 */
-	private DataSource				defaultDatasource				= null;
+	private DataSource					defaultDatasource				= null;
 
 	/**
 	 * A concurrent map of datasources registered with the manager.
 	 */
-	private Map<Key, DataSource>	datasources						= new ConcurrentHashMap<>();
+	private Map<Key, DataSource>		datasources						= new ConcurrentHashMap<>();
 
 	/**
 	 * The DatasourceService instance
 	 */
-	private DatasourceService		datasourceService				= BoxRuntime.getInstance().getDataSourceService();
+	private DatasourceService			datasourceService				= BoxRuntime.getInstance().getDataSourceService();
 
-	private static final Key[]		TRANSACTION_INTERCEPTION_POINTS	= List.of(
+	private static final Key[]			TRANSACTION_INTERCEPTION_POINTS	= List.of(
 	    Key.onTransactionBegin,
 	    Key.onTransactionEnd,
 	    Key.onTransactionAcquire,
@@ -188,9 +186,9 @@ public class ConnectionManager {
 		if ( isInTransaction() ) {
 			/**
 			 * Opens a nested (child) transaction within the current transaction context, and overwrites our transaction reference to point to the new nested transaction.
-			 * 
+			 *
 			 * This means that until the child transaction is closed, ALL transactional methods will operate upon the child transaction, not the parent.
-			 * 
+			 *
 			 * Once the child transaction is closed, the parent transaction will be restored as the active transaction, and all transactional methods will operate upon the original (parent) transaction.
 			 */
 			this.transaction = new ChildTransaction( this.transaction );
@@ -204,7 +202,7 @@ public class ConnectionManager {
 
 	/**
 	 * Close the active transaction for this request/thread/BoxLang context.
-	 * 
+	 *
 	 * In case of nested transactions, will close the inner transaction and update the reference to the parent transaction. Otherwise will close the outer (only) transaction and nullify the reference.
 	 */
 	public ConnectionManager endTransaction() {

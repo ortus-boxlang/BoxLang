@@ -35,7 +35,6 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
@@ -60,7 +59,7 @@ jobs:
       - name: Setup CommandBox CLI Windows
         if: ${{ matrix.os == 'windows-latest' }}
         run: choco install commandbox
-        
+
       - name: Install TestBox
         run: box install testbox@be src/test/resources --verbose --noSave
 

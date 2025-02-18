@@ -14,10 +14,8 @@ plugins {
 	id 'antlr'
 	// For source code formatting
 	id "com.diffplug.spotless" version "7.0.2"
-	// For building shadow jars with jdk 17 ONLY
-    //id 'com.github.johnrengelman.shadow' version '8.1.1'
-    // For building shadow jars using JDK 21 +, they had to fork
-    id "io.github.goooler.shadow" version "8.1.8"
+	// Shadow
+	id "com.gradleup.shadow" version "9.0.0-beta8"
 	// For dependency updates
 	id 'com.github.ben-manes.versions' version '0.52.0'
 	// For building service loader files
@@ -97,11 +95,11 @@ dependencies {
 	testImplementation "org.mockito:mockito-core:5.+"
 	testImplementation "com.google.truth:truth:1.+"
 	testImplementation "commons-cli:commons-cli:1.9.0"
-	// https://wiremock.org/
-	testImplementation "org.wiremock:wiremock:3.10.0"
-	// https://mvnrepository.com/artifact/org.apache.derby/derby
+	testImplementation "org.wiremock:wiremock:3.12.0"
 	testImplementation 'org.apache.derby:derby:10.17.1.0'
 	testImplementation 'io.undertow:undertow-core:2.3.18.Final'
+	// Explicitly declare the JUnit platform launcher (to avoid deprecation)
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher"
 
 	// Antlr
 	antlr "org.antlr:antlr4:$antlrVersion"
@@ -149,15 +147,19 @@ project.ext.bumpVersion = {
 	boolean major = false,
 	boolean minor = false,
 	boolean patch = false,
-	boolean beta = false ->
+	boolean beta = false,
+	boolean rc = false ->
 
 	def propertiesFile = file( './gradle.properties' );
 	def properties = new Properties();
 
 	properties.load( propertiesFile.newDataInputStream() )
-	def versionTarget = major ? 0 : minor ? 1 : 2
+	def versionTarget = major ? 0 : minor ? 1 : beta ? 2 : 3
 
 	def currentVersion = properties.getProperty( 'version' )
+	// 1.1.0 -> -> [ 1, 1, 0 ]
+	// 1.0.0-beta1 -> [ 1, 0, 0-beta1 ]
+	// 1.0.0-rc.1 -> [ 1, 0, 0-rc, 1 ]
 	def versionParts = currentVersion.split( '\\.' )
 	if( !beta ){
 		def newPathVersion = versionParts[ versionTarget ].toInteger() + 1
@@ -176,6 +178,8 @@ project.ext.bumpVersion = {
 		// Now we get the beta number
 		def betaNumber = betaString.split( 'beta' )[ 1 ].toInteger() + 1
 		newVersion = currentVersion.split( '-' )[ 0 ] + "-beta${betaNumber}"
+	} else if( rc ){
+		newVersion = "${versionParts[ 0 ]}.${versionParts[ 1 ]}.${versionParts[ 2 ]}.${versionParts[3]}"
 	}
 
 	properties.setProperty( 'version', newVersion )
@@ -221,13 +225,31 @@ jar {
 	// Exclude the following directories from the final built JAR
 	exclude '**/ortus/boxlang/tools/**'
 }
+
+// This is needed so gradle can find the shadowJar tasks
+tasks.named( "startScripts" ) {
+    dependsOn tasks.named( "shadowJar" )
+}
+tasks.named( "startShadowScripts" ) {
+    dependsOn tasks.named( "jar" )
+}
 shadowJar {
 	archiveBaseName = "boxlang"
+	archiveClassifier = ""
     mergeServiceFiles()
+
+	// Antlr unecessary files
 	exclude "com/ibm/icu/**"
+	exclude 'ortus/boxlang/tools/**'
+	exclude 'ortus/boxlang/runtime/testing/**'
+	// Java Parser: Remove when we are reading to remove it.
+	//exclude 'ortus/boxlang/compiler/javaboxpiler/**'
+	// exclude 'com/github/javaparser/**'
+	// exclude 'org/javassist/**'
+	// exclude 'com/google/**'
+	// exclude 'org/checkerframework/**'
+
 	minimize{
-		exclude 'ortus/boxlang/tools/**'
-		exclude 'ortus/boxlang/runtime/testing/**'
 		exclude( dependency( "org.slf4j:.*:.*" ) )
 		exclude( dependency( "ch.qos.logback:.*:.*" ) )
 		exclude( dependency( "com.zaxxer:.*:.*" ) )
@@ -260,7 +282,7 @@ task createDistributionFile( type: Zip ){
 	}
 
 	from( 'build/libs' ) {
-		include 'boxlang-' + version + '-all.jar'
+		include 'boxlang-' + version + '.jar'
 		into 'lib'
 	}
 
@@ -278,7 +300,7 @@ task libsToDistro( type: Copy ) {
 	dependsOn build, createDistributionFile
 
 	from( 'build/libs' ) {
-		include 'boxlang-' + version + '-all.jar'
+		include 'boxlang-' + version + '.jar'
 		include 'boxlang-' + version + '-javadoc.jar'
 	}
 
@@ -292,10 +314,12 @@ task libsToDistro( type: Copy ) {
 
 		if( branch == 'development' ){
 			Files.copy( file( "build/distributions/boxlang-${version}.zip" ).toPath(), file( "build/evergreen/boxlang-snapshot.zip" ).toPath(), StandardCopyOption.REPLACE_EXISTING )
-			Files.copy( file( "build/distributions/boxlang-${version}-all.jar" ).toPath(), file( "build/evergreen/boxlang-snapshot-all.jar" ).toPath(), StandardCopyOption.REPLACE_EXISTING )
+			Files.copy( file( "build/distributions/boxlang-${version}.jar" ).toPath(), file( "build/evergreen/boxlang-snapshot.jar" ).toPath(), StandardCopyOption.REPLACE_EXISTING )
+			Files.copy( file( "build/resources/main/META-INF/boxlang/version.properties" ).toPath(), file( "build/evergreen/version-snapshot.properties" ).toPath(), StandardCopyOption.REPLACE_EXISTING )
 	   } else {
 			Files.copy( file( "build/distributions/boxlang-${version}.zip" ).toPath(), file( "build/evergreen/boxlang-latest.zip" ).toPath(), StandardCopyOption.REPLACE_EXISTING )
-			Files.copy( file( "build/distributions/boxlang-${version}-all.jar" ).toPath(), file( "build/evergreen/boxlang-latest-all.jar" ).toPath(), StandardCopyOption.REPLACE_EXISTING )
+			Files.copy( file( "build/distributions/boxlang-${version}.jar" ).toPath(), file( "build/evergreen/boxlang-latest.jar" ).toPath(), StandardCopyOption.REPLACE_EXISTING )
+			Files.copy( file( "build/resources/main/META-INF/boxlang/version.properties" ).toPath(), file( "build/evergreen/version-latest.properties" ).toPath(), StandardCopyOption.REPLACE_EXISTING )
 	   }
 
 		println "+ Libs have been moved to the distribution and evergreen folders"
@@ -309,6 +333,7 @@ build.finalizedBy( libsToDistro )
 publishing {
     publications {
         shadow( MavenPublication ) { publication ->
+
 			artifact shadowJar
 			artifact javadocJar
 			artifact sourcesJar
@@ -426,7 +451,7 @@ nmcp {
 }
 
 /**
- * Digital Signing of assets
+ * Digital Signing of assets using the ortus GPG Key
  */
 signing {
 	def signingKey = System.getenv("GPG_KEY") ?: project.findProperty("signing.keyId")
@@ -645,7 +670,7 @@ task bumpMinorVersion {
  */
 task bumpPatchVersion {
 	doLast{
-		bumpVersion( false, false, true )
+		bumpVersion( false, false, true, false, false )
 	}
 }
 
@@ -654,7 +679,15 @@ task bumpPatchVersion {
  */
 task bumpBetaVersion {
 	doLast{
-		bumpVersion( false, false, false, true )
+		bumpVersion( false, false, false, true, false )
+	}
+}
+/**
+ * Bump the rc version number
+ */
+task bumpRCVersion {
+	doLast{
+		bumpVersion( false, false, false, false, true )
 	}
 }
 

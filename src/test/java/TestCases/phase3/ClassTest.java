@@ -20,6 +20,8 @@ package TestCases.phase3;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.io.PrintStream;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -219,7 +221,7 @@ public class ClassTest {
 				 * @brad wood
 				 * @luis
 				 */
-				@foo "bar"
+				@foo( bar )
 				class accessors=true singleton gavin="pickin" inject {
 
 					property numeric age default=1;
@@ -596,6 +598,7 @@ public class ClassTest {
 		assertThat( meta.get( Key.of( "annotations" ) ) instanceof IStruct ).isTrue();
 		var annos = meta.getAsStruct( Key.of( "annotations" ) );
 		assertThat( annos.getAsString( Key.of( "foo" ) ).trim() ).isEqualTo( "bar" );
+		assertThat( annos.getAsString( Key.of( "baz" ) ).trim() ).isEqualTo( "bum" );
 		// assertThat( annos.getAsString( Key.of( "implements" ) ).trim() ).isEqualTo( "Luis,Jorge" );
 		assertThat( annos.getAsString( Key.of( "singleton" ) ).trim() ).isEqualTo( "" );
 		assertThat( annos.getAsString( Key.of( "gavin" ) ).trim() ).isEqualTo( "pickin" );
@@ -1177,6 +1180,8 @@ public class ClassTest {
 		                        result8 = src.test.java.TestCases.phase3.StaticTest::123;
 		                        result9 = src.test.java.TestCases.phase3.StaticTest2::getInstance().getStaticBrad();
 		                        result10 = src.test.java.TestCases.phase3.StaticTest2::getInstance().thisStaticBrad;
+								result11 = src.test.java.TestCases.phase3.StaticTest::finalStatic;
+								result12 = src.test.java.TestCases.phase3.StaticTest::finalStatic2;
 		                                                                                                                      """, context,
 		    BoxSourceType.BOXSCRIPT );
 		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( 9000 );
@@ -1188,6 +1193,76 @@ public class ClassTest {
 		assertThat( variables.get( Key.of( "result8" ) ) ).isEqualTo( 456 );
 		assertThat( variables.get( Key.of( "result9" ) ) ).isEqualTo( "wood" );
 		assertThat( variables.get( Key.of( "result10" ) ) ).isEqualTo( "wood" );
+		assertThat( variables.get( Key.of( "result11" ) ) ).isEqualTo( "finalStatic" );
+		assertThat( variables.get( Key.of( "result12" ) ) ).isEqualTo( "finalStatic2" );
+	}	
+
+	@Test
+	public void testStaticStaticFromScript() {
+		instance.executeSource( """
+		                        include "/src/test/java/TestCases/phase3/TestStaticFromScript.bxs";
+		                        """, context,
+		    BoxSourceType.BOXSCRIPT );
+		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( 9000 );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "static9000" );
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "brad" );
+		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( "wood" );
+		assertThat( variables.get( Key.of( "result6" ) ) ).isEqualTo( "luis" );
+		assertThat( variables.get( Key.of( "result7" ) ) ).isEqualTo( "Hello" );
+		assertThat( variables.get( Key.of( "result8" ) ) ).isEqualTo( 456 );
+		assertThat( variables.get( Key.of( "result9" ) ) ).isEqualTo( "wood" );
+		assertThat( variables.get( Key.of( "result10" ) ) ).isEqualTo( "wood" );
+		assertThat( variables.get( Key.of( "result11" ) ) ).isEqualTo( "finalStatic" );
+		assertThat( variables.get( Key.of( "result12" ) ) ).isEqualTo( "finalStatic2" );
+	}
+
+	@Test
+	public void testStaticReferenceOnVariable() {
+		instance.executeSource( """
+			import src.test.java.TestCases.phase3.StaticTest;
+			import src.test.java.TestCases.phase3.StaticTest2;
+			// Unlike Java where imports are just symbols for the compiler, they are actual value objects we can pass around.
+			myStaticVar = StaticTest;
+			myStaticVar2 = StaticTest2;
+
+			result1 = myStaticVar::foo;
+			result2 = myStaticVar::myStaticFunc();
+			result4 =  myStaticVar::scoped;
+			result5 = myStaticVar::unscoped;
+			result6 = myStaticVar::again;
+			myStaticUDF   = myStaticVar::sayHello;
+			result7   =  myStaticUDF();
+			result8 = myStaticVar::123;
+			result9 = myStaticVar2::getInstance().getStaticBrad();
+			result10 = myStaticVar2::getInstance().thisStaticBrad;
+			result11 = myStaticVar::finalStatic;
+			result12 = myStaticVar::finalStatic2;
+
+			javaStaticClassVar = createObject( 'java', 'java.lang.System' );
+			result13 = javaStaticClassVar::out;
+
+			result14 = java.lang.System::getProperty( 'java.version' );
+
+			// create structs that mimic the path
+			java.lang.System = createObject( 'java', 'java.lang.String' );
+			// java.lang.System is a reference to our String class.
+			result15 = java.lang.System::valueOf( true );
+		            """, context,
+		    BoxSourceType.BOXSCRIPT );
+		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( 9000 );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "static9000" );
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "brad" );
+		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( "wood" );
+		assertThat( variables.get( Key.of( "result6" ) ) ).isEqualTo( "luis" );
+		assertThat( variables.get( Key.of( "result7" ) ) ).isEqualTo( "Hello" );
+		assertThat( variables.get( Key.of( "result8" ) ) ).isEqualTo( 456 );
+		assertThat( variables.get( Key.of( "result9" ) ) ).isEqualTo( "wood" );
+		assertThat( variables.get( Key.of( "result10" ) ) ).isEqualTo( "wood" );
+		assertThat( variables.get( Key.of( "result11" ) ) ).isEqualTo( "finalStatic" );
+		assertThat( variables.get( Key.of( "result12" ) ) ).isEqualTo( "finalStatic2" );
+		assertThat( variables.get( Key.of( "result13" ) ) ).isInstanceOf( PrintStream.class );
+		assertThat( variables.get( Key.of( "result14" ) ) ).isEqualTo( System.getProperty( "java.version" ) );
+		assertThat( variables.get( Key.of( "result15" ) ) ).isEqualTo( "true" );
 	}
 
 	@Test
@@ -1722,6 +1797,43 @@ public class ClassTest {
 
 		// The second run should be less than 1.5% of the first run
 		assertThat( DoubleCaster.cast( secondRunTime / firstRunTime ) ).isLessThan( .015 );
+	}
+
+	@Test
+	public void testOuputInApplication() {
+		instance.executeSource(
+		    """
+		    bx:savecontent variable="result" {
+		       	new src.test.java.TestCases.phase3.Application().run()
+		    }
+
+		    bx:savecontent variable="result2" {
+		       	new src.test.java.TestCases.phase3.NotApplication().run()
+		    }
+		         """,
+		    context );
+		assertThat( variables.get( "result" ) ).isEqualTo( "Hello BradHello World" );
+		assertThat( variables.get( "result2" ) ).isEqualTo( "" );
+	}
+
+	@Test
+	public void testCFCNameSameAsType() {
+		instance.executeSource(
+		    """
+		       function expectsAString( email address ) {
+		    	return address.ucase()
+		    }
+
+		       function expectsAClass( email address ) {
+		    	return address.getHost()
+		    }
+
+		    result = expectsAString( "brad@bradwood.com" );
+		    result2 = expectsAClass( new src.test.java.TestCases.phase3.Email( email : "brad@bradwood.com" ) );
+		            """,
+		    context );
+		assertThat( variables.get( "result" ) ).isEqualTo( "BRAD@BRADWOOD.COM" );
+		assertThat( variables.get( "result2" ) ).isEqualTo( "bradwood.com" );
 	}
 
 }

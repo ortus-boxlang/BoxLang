@@ -23,9 +23,9 @@
  * - processBody( context, body, [buffer] ) : Process the body of a component
  * - getName() : Get the name of the component
  */
-@BoxComponent 'HolaComponent'
-@AllowsBody true
-@RequiresBody false
+@BoxComponent( 'HolaComponent' )
+@AllowsBody( true )
+@RequiresBody( false )
 class{
 
 	/**

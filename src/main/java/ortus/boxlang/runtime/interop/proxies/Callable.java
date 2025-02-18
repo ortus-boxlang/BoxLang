@@ -27,7 +27,6 @@ public class Callable extends BaseProxy implements java.util.concurrent.Callable
 
 	public Callable( Object target, IBoxContext context, String method ) {
 		super( target, context, method );
-		prepLogger( Callable.class );
 	}
 
 	@Override

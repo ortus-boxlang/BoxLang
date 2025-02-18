@@ -28,7 +28,6 @@ public class Comparator<T> extends BaseProxy implements java.util.Comparator<T> 
 
 	public Comparator( Object target, IBoxContext context, String method ) {
 		super( target, context, method );
-		prepLogger( Comparator.class );
 	}
 
 	@Override

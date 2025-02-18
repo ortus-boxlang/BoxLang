@@ -30,7 +30,6 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.time.LocalTime;
 import java.time.ZoneId;
-import java.util.Arrays;
 import java.util.Locale;
 import java.util.stream.Collectors;
 
@@ -49,7 +48,8 @@ import ortus.boxlang.runtime.util.FileSystemUtil;
  */
 public class StringCaster implements IBoxCaster {
 
-	public static boolean castClassesToStrings = false;
+	public static boolean	castClassesToStrings	= false;
+	public static boolean	castThrowablesToStrings	= false;
 
 	/**
 	 * Tests to see if the value can be cast to a string.
@@ -127,6 +127,7 @@ public class StringCaster implements IBoxCaster {
 				return null;
 			}
 		}
+
 		object = DynamicObject.unWrap( object );
 		Charset charset = null;
 		if ( encoding != null ) {
@@ -167,7 +168,14 @@ public class StringCaster implements IBoxCaster {
 			return chr.toString();
 		}
 		if ( object instanceof Character[] ca ) {
-			return Arrays.toString( ca );
+			char[] charArray = new char[ ca.length ];
+			for ( int i = 0; i < ca.length; i++ ) {
+				charArray[ i ] = ca[ i ];
+			}
+			return new String( charArray );
+		}
+		if ( object instanceof char[] ca ) {
+			return new String( ca );
 		}
 		if ( object instanceof Path path ) {
 			return path.toString();
@@ -211,6 +219,19 @@ public class StringCaster implements IBoxCaster {
 		}
 		if ( object instanceof java.util.Calendar targetCalendar ) {
 			return targetCalendar.getTime().toString();
+		}
+
+		if ( object instanceof java.time.Duration targetDuration ) {
+			BigDecimal	days		= BigDecimal.valueOf( targetDuration.toDays() );
+			BigDecimal	hours		= BigDecimal.valueOf( targetDuration.toHoursPart() );
+			BigDecimal	minutes		= BigDecimal.valueOf( targetDuration.toMinutesPart() );
+			BigDecimal	seconds		= BigDecimal.valueOf( targetDuration.toSecondsPart() );
+			BigDecimal	nanos		= BigDecimal.valueOf( targetDuration.toNanosPart(), 9 );
+			BigDecimal	totalDays	= days.add( hours.divide( BigDecimal.valueOf( 24 ), 15, BigDecimal.ROUND_HALF_UP ) )
+			    .add( minutes.divide( BigDecimal.valueOf( 1440 ), 15, BigDecimal.ROUND_HALF_UP ) )
+			    .add( seconds.divide( BigDecimal.valueOf( 86400 ), 15, BigDecimal.ROUND_HALF_UP ) )
+			    .add( nanos.divide( BigDecimal.valueOf( 86400 * 1_000_000_000L ), 15, BigDecimal.ROUND_HALF_UP ) );
+			return totalDays.toString();
 		}
 		// End date classes
 
@@ -262,6 +283,11 @@ public class StringCaster implements IBoxCaster {
 		// passed directly to string BIFs and for string member functions to work on class instances.
 		if ( castClassesToStrings && object instanceof Class co ) {
 			return co.getName();
+		}
+
+		if ( castThrowablesToStrings && object instanceof Throwable t ) {
+			// Lucee returns a huge blob of HTML. Adobe just does this. We'll copy Adobe for now since this is really just for compat.
+			return t.getClass().getName() + ": " + t.getMessage();
 		}
 
 		// Do we throw?

@@ -160,6 +160,7 @@ public class IsValidTest {
 	@Test
 	public void testGuid() {
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'guid', createGUID() )" ) ).isTrue();
+		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'guid', '00000000-0000-0000-0000-000000000000' )" ) ).isTrue();
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'guid', createUUID() )" ) ).isFalse();
 	}
 
@@ -338,6 +339,7 @@ public class IsValidTest {
 		    // trues
 		    createuuid = isValid( 'uuid', createUUID() );
 		    result     = isValid( 'uuid', '8BC22B08-53A4-4876-A4E08CD9690DBF2C' );
+		    result2     = isValid( 'uuid', '00000000-0000-0000-0000000000000000' );
 
 		    // falsies
 		    // guid         = isValid( 'uuid', createGUID() );

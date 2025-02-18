@@ -31,11 +31,11 @@ import java.util.zip.GZIPOutputStream;
 import java.util.zip.ZipEntry;
 
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.DateTime;
@@ -60,7 +60,7 @@ public class ZipUtil {
 	/**
 	 * Logger
 	 */
-	private static final Logger logger = LoggerFactory.getLogger( ZipUtil.class );
+	private static final BoxLangLogger logger = BoxRuntime.getInstance().getLoggingService().getRuntimeLogger();
 
 	/**
 	 * --------------------------------------------------------------------------

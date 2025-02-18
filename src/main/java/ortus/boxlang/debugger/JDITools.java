@@ -1,5 +1,6 @@
 package ortus.boxlang.debugger;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -19,6 +20,7 @@ import com.sun.jdi.IntegerValue;
 import com.sun.jdi.InvalidTypeException;
 import com.sun.jdi.InvocationException;
 import com.sun.jdi.LocalVariable;
+import com.sun.jdi.LongValue;
 import com.sun.jdi.Method;
 import com.sun.jdi.ObjectReference;
 import com.sun.jdi.ReferenceType;
@@ -199,6 +201,15 @@ public class JDITools {
 		 */
 		public DoubleValue asDoubleValue() {
 			return ( DoubleValue ) value;
+		}
+
+		/**
+		 * Convenience method for casting to a DoubleValue.
+		 * 
+		 * @return
+		 */
+		public LongValue asLongValue() {
+			return ( LongValue ) value;
 		}
 
 		/**
@@ -453,6 +464,15 @@ public class JDITools {
 		} else if ( val instanceof DoubleValue doubleVal ) {
 			var.value	= StringCaster.cast( doubleVal.doubleValue() );
 			var.type	= "numeric";
+		} else if ( val instanceof LongValue longValue ) {
+			var.value	= StringCaster.cast( longValue.longValue() );
+			var.type	= "numeric";
+		} else if ( val instanceof BigDecimal bigDecimal ) {
+			var.value	= StringCaster.cast( bigDecimal.doubleValue() );
+			var.type	= "numeric";
+		} else if ( wrapped.isOfType( "ortus.boxlang.runtime.types.DateTime" ) ) {
+			var.value	= wrapped.invoke( "toISOString" ).value.toString();
+			var.type	= "DateTime";
 		} else if ( wrapped.isOfType( "java.lang.Boolean" ) ) {
 			var.value	= StringCaster.cast( wrapped.property( "value" ).asBooleanValue().booleanValue() );
 			var.type	= "boolean";
@@ -461,6 +481,13 @@ public class JDITools {
 			var.type	= "numeric";
 		} else if ( wrapped.isOfType( "java.lang.double" ) ) {
 			var.value	= StringCaster.cast( wrapped.property( "value" ).asDoubleValue().doubleValue() );
+			var.type	= "numeric";
+		} else if ( wrapped.isOfType( "java.lang.Long" ) ) {
+			var.value	= StringCaster.cast( wrapped.property( "value" ).asLongValue().longValue() );
+			var.type	= "numeric";
+		} else if ( wrapped.isOfType( "java.math.BigDecimal" ) ) {
+			DoubleValue dv = ( DoubleValue ) wrapped.invoke( "doubleValue" ).value();
+			var.value	= StringCaster.cast( dv.doubleValue() );
 			var.type	= "numeric";
 		} else if ( wrapped.isOfType( "ortus.boxlang.runtime.types.array" ) ) {
 			var.type				= "array";

@@ -31,7 +31,6 @@ import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
@@ -3621,6 +3620,8 @@ public class CoreLangTest {
 
 		pool.put( "foo", "bar" );
 		 pool.put( "test", now() );
+		 fooValue = pool.get( "foo" );
+		 fooValueBracket = pool[ "foo" ];
 
 		assert pool.size() == 2;
 
@@ -3631,6 +3632,8 @@ public class CoreLangTest {
 		context );
 	// @formatter:on
 		assertThat( variables.get( result ) ).isEqualTo( 0 );
+		assertThat( variables.get( Key.of( "fooValue" ) ) ).isEqualTo( "bar" );
+		assertThat( variables.get( Key.of( "fooValueBracket" ) ) ).isEqualTo( "bar" );
 	}
 
 	@DisplayName( "ArrayList clear calls" )
@@ -4217,6 +4220,33 @@ public class CoreLangTest {
 	}
 
 	@Test
+	public void testFinallyWithReturn() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				num = 0;
+
+				function increment(){
+					try{
+						return num;
+					}
+					finally{
+						num++;
+					}
+				}
+
+
+				echo( increment() );
+				echo( increment() );
+				echo( increment() );
+				result = increment();
+			""",
+			context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( 3 );
+	}
+
+	@Test
 	public void testSoftRef() {
 		// @formatter:off
 		instance.executeSource(
@@ -4259,7 +4289,6 @@ public class CoreLangTest {
 	}
 
 	@Test
-	@Disabled( "BL-909" )
 	public void testBodyResultError() {
 		// @formatter:off
 		instance.executeSource(
@@ -4278,22 +4307,208 @@ public class CoreLangTest {
 			import ortus.boxlang.runtime.scopes.Key;
 				ref = {
 					"foo"     : "bar",
+					"Brad"     : "bar",
 				};
 
 				hashMap = createObject( "java", "java.util.HashMap" );
 				hashMap.putAll( ref );
-				
+
 				result1 = isNull( hashMap[ "foo" ] );
-				result12 = hashMap[ "foo" ] ;
+				result1b = isNull( hashMap[ "brad" ] );
+
+				result2 = hashMap[ "foo" ];
+				result2b = hashMap[ "brad" ];
+
 				result3 = isNull( hashMap.foo );
+				result3b = isNull( hashMap.brad );
+
 				result4 = hashMap.foo;
+				result4b = hashMap.brad;
+
+				result5 = structKeyExists( hashMap, "foo" );
+				result5b = structKeyExists( hashMap, "brad" );
+
+				result6 = structKeyExists( hashMap, "FOO" );
+				result6b = structKeyExists( hashMap, "BRAD" );
 			""",
 			context );
 		// @formatter:on
+
 		assertThat( variables.getAsBoolean( Key.of( "result1" ) ) ).isFalse();
-		assertThat( variables.get( Key.of( "result12" ) ) ).isEqualTo( "bar" );
+		assertThat( variables.getAsBoolean( Key.of( "result1b" ) ) ).isFalse();
+
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "bar" );
+		assertThat( variables.get( Key.of( "result2b" ) ) ).isEqualTo( "bar" );
+
 		assertThat( variables.getAsBoolean( Key.of( "result3" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "result3b" ) ) ).isFalse();
+
 		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "bar" );
+		assertThat( variables.get( Key.of( "result4b" ) ) ).isEqualTo( "bar" );
+
+		assertThat( variables.getAsBoolean( Key.of( "result5" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "result5b" ) ) ).isTrue();
+
+		assertThat( variables.getAsBoolean( Key.of( "result6" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "result6b" ) ) ).isTrue();
+
+	}
+
+	@Test
+	public void testNumericKey() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+			myStr = {
+				1 : "brad"
+			}
+			myKey = (3*5)-14;
+			result = myStr[ myKey ];
+			""",
+			context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( "brad" );
+	}
+
+	@Test
+	public void testStructPut() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+			myStruct = {
+				"foo" : "bar"
+			};
+			result = structReduce(
+				myStruct,
+				function( indexMap, key, value ){
+					//println( key & " - " & key.getClass().getName())
+					indexMap.put( key, value );
+					return indexMap;
+				},
+				{}
+			);
+			""",
+			context );
+		// @formatter:on
+	}
+
+	@Test
+	public void testTryFinallyReturn() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+			val = 0;
+
+			function t(){
+				try{
+					try{
+						return "first" & val++
+					}
+					finally {
+						return "second" & val++
+					}
+				}
+				finally{
+					return "third" & val
+				}
+			}
+
+			result1 = t();
+			result2 = t();
+			result3 = t();
+			result4 = t();
+			""",
+			context );
+		// @formatter:on
+
+		assertThat( variables.get( "result1" ) ).isEqualTo( "third2" );
+		assertThat( variables.get( "result2" ) ).isEqualTo( "third4" );
+		assertThat( variables.get( "result3" ) ).isEqualTo( "third6" );
+		assertThat( variables.get( "result4" ) ).isEqualTo( "third8" );
+	}
+
+	@Test
+	public void testNativeArrayAccess() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+			charArray = "test".toCharArray();
+			result = charArray[ 1 ];
+			charArray[ 1 ] = 'b';
+			result2 = toString( charArray );
+			""",
+			context );
+		// @formatter:on
+
+		assertThat( variables.get( result ) ).isEqualTo( 't' );
+		assertThat( variables.get( "result2" ) ).isEqualTo( "best" );
+	}
+
+	@Test
+	public void testImplicitJavaGetter() {
+		// @formatter:off
+			instance.executeSource(
+				"""
+				// Call static methods on the class
+				result = createObject("java","java.net.InetAddress").getLocalHost().getHostName();
+				result2 = createObject("java","java.net.InetAddress").localhost.getHostName();
+				// but also interact directly with the Class instance
+				result3 = getMetadata( createObject("java","java.net.InetAddress") ).getName();
+				result4 = getMetadata( createObject("java","java.net.InetAddress") ).name;
+				""",
+				context );
+			// @formatter:on
+
+		assertThat( variables.get( result ) ).isEqualTo( variables.get( Key.of( "result2" ) ) );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( variables.get( Key.of( "result4" ) ) );
+	}
+
+	@Test
+	public void testNativeJavaStructMethodWithMatchingNonFunctionKey() {
+		// @formatter:off
+				instance.executeSource(
+					"""
+					result = {
+						put : "foo"
+					};
+
+					result.put('test','test')
+					""",
+					context );
+				// @formatter:on
+		assertThat( variables.getAsStruct( result ) ).containsKey( Key.of( "test" ) );
+		assertThat( variables.getAsStruct( result ).get( "test" ) ).isEqualTo( "test" );
+	}
+
+	@Test
+	public void testTimespanAsString() {
+		// @formatter:off
+		instance.executeSource(
+					"""
+					result = createTimespan(1,1,1,1) castas string
+					""",
+					context );
+		// @formatter:on
+
+		assertThat( variables.get( result ).toString() ).startsWith( "1.04237" );
+	}
+
+	@Test
+	public void testNullFromMapPut() {
+		// @formatter:off
+		instance.executeSource(
+				"""
+					headers     = createObject( "java", "java.util.LinkedHashMap" ).init();
+					headers.put( "Content-Type", "application/json" );
+					result = headers[ "Content-Type" ];
+					result2 = headers[ "content-type" ];
+					println( result )
+				""",
+				context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( "application/json" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "application/json" );
+
 	}
 
 }

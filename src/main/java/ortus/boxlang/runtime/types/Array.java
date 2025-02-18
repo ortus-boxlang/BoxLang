@@ -950,7 +950,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 
 		if ( index == 0 ) {
 			throw new BoxRuntimeException( String.format(
-			    "Arrays cannot be accesse by an index of 0.", index, size
+			    "Arrays cannot be accessed by an index of 0.", index, size
 			) );
 		}
 

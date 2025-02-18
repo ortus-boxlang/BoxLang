@@ -148,7 +148,8 @@ public class BoxTryTransformer extends AbstractTransformer {
 	    List<BoxStatement> codeBody,
 	    List<BoxStatement> finallyBody,
 	    Supplier<AbstractInsnNode> inBetween ) {
-		List<AbstractInsnNode> nodes = new ArrayList<AbstractInsnNode>();
+		MethodContextTracker	tracker	= transpiler.getCurrentMethodContextTracker().get();
+		List<AbstractInsnNode>	nodes	= new ArrayList<AbstractInsnNode>();
 
 		if ( codeBody.size() == 0 && finallyBody.size() == 0 ) {
 			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
@@ -165,12 +166,14 @@ public class BoxTryTransformer extends AbstractTransformer {
 			return nodes;
 		}
 
+		tracker.addFinallyBody( finallyBody );
 		nodes.addAll( AsmHelper.transformBodyExpressions(
 		    transpiler,
 		    codeBody,
 		    context,
 		    finallyBody.size() > 0 ? ReturnValueContext.EMPTY : returnValueContext
 		) );
+		tracker.popFinallyBody();
 
 		AbstractInsnNode inBetweenNode = inBetween.get();
 

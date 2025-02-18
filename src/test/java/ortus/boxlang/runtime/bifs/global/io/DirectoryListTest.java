@@ -20,6 +20,7 @@
 package ortus.boxlang.runtime.bifs.global.io;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -34,6 +35,7 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.QueryCaster;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
@@ -170,6 +172,31 @@ public class DirectoryListTest {
 			}
 
 		}
+
+	}
+
+	@DisplayName( "It tests the BIF DirectoryList with a column sort directive" )
+	@Test
+	public void testQueryDirectoryListQueryColumnSort() {
+		variables.put( Key.of( "testDirectory" ), Path.of( testDirectory ).toAbsolutePath().toString() );
+		assertTrue( FileSystemUtil.exists( testDirectory ) );
+		instance.executeSource(
+		    """
+		       result = directoryList( variables.testDirectory, false, "query", "*", "name desc" );
+		    result2 = directoryList( variables.testDirectory, false, "query", "*", "type asc" );
+		       """,
+		    context );
+		var result = variables.get( Key.of( "result" ) );
+		assertTrue( result instanceof Query );
+		Query listing = QueryCaster.cast( result );
+		assertTrue( listing.size() == 2 );
+		assertEquals( "test.txt", listing.getColumnData( Key._name )[ 0 ] );
+
+		var result2 = variables.get( Key.of( "result2" ) );
+		assertTrue( result2 instanceof Query );
+		Query listing2 = QueryCaster.cast( result2 );
+		assertTrue( listing2.size() == 2 );
+		assertEquals( "Dir", listing2.getColumnData( Key.type )[ 0 ] );
 
 	}
 

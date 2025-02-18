@@ -18,7 +18,7 @@
 package ortus.boxlang.runtime.scopes;
 
 /**
- * Variables scope implementation in BoxLang
+ * Local scope implementation in BoxLang
  */
 public class LocalScope extends BaseScope {
 

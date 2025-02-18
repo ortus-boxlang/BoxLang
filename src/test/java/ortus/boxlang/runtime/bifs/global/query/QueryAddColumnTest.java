@@ -21,7 +21,6 @@ package ortus.boxlang.runtime.bifs.global.query;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -45,11 +44,6 @@ public class QueryAddColumnTest {
 	@BeforeAll
 	public static void setUp() {
 		instance = BoxRuntime.getInstance( true );
-	}
-
-	@AfterAll
-	public static void teardown() {
-
 	}
 
 	@BeforeEach
@@ -186,6 +180,28 @@ public class QueryAddColumnTest {
 		assertThat( variables.get( result ) ).isEqualTo( 2 );
 		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( "" );
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "" );
+	}
+
+	@DisplayName( "Add a complex column for complex data" )
+	@Test
+	public void testAddColumnWithComplexData() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				result = QueryNew( "id", "varchar" );
+				queryAddRow( result );
+				queryAddColumn( result, "complex", [] );
+				querySetCell( result, "id", "example1" );
+				querySetCell( result, "complex", {"liftoff": [10,9,8]} );
+
+				println( result );
+		    """,
+		    context );
+		// @formatter:on
+
+		assertThat( variables.get( Key.of( "result" ) ) ).isNotNull();
+		assertThat( variables.get( Key.of( "result" ) ).toString() ).contains( "liftoff" );
+
 	}
 
 }

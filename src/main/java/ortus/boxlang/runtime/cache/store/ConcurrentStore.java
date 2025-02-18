@@ -22,9 +22,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Stream;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import ortus.boxlang.runtime.cache.ICacheEntry;
 import ortus.boxlang.runtime.cache.filters.ICacheKeyFilter;
 import ortus.boxlang.runtime.cache.providers.ICacheProvider;
@@ -41,14 +38,9 @@ import ortus.boxlang.runtime.types.Struct;
 public class ConcurrentStore extends AbstractStore {
 
 	/**
-	 * Logger
-	 */
-	private static final Logger					logger	= LoggerFactory.getLogger( ConcurrentStore.class );
-
-	/**
 	 * The pool that holds the objects
 	 */
-	private ConcurrentHashMap<Key, ICacheEntry>	pool;
+	private ConcurrentHashMap<Key, ICacheEntry> pool;
 
 	/**
 	 * Constructor
@@ -71,11 +63,6 @@ public class ConcurrentStore extends AbstractStore {
 		int maxObject = IntegerCaster.cast( config.get( Key.maxObjects ) );
 		this.pool = new ConcurrentHashMap<>( maxObject / 4 );
 
-		logger.debug(
-		    "ConcurrentStore({}) initialized with a max size of {}",
-		    provider.getName(),
-		    maxObject
-		);
 		return this;
 	}
 
@@ -101,10 +88,6 @@ public class ConcurrentStore extends AbstractStore {
 	 */
 	public void shutdown() {
 		getPool().clear();
-		logger.debug(
-		    "ConcurrentStore({}) was shutdown",
-		    provider.getName()
-		);
 	}
 
 	/**
@@ -116,10 +99,6 @@ public class ConcurrentStore extends AbstractStore {
 	 * @return The number of objects flushed
 	 */
 	public int flush() {
-		logger.debug(
-		    "ConcurrentStore({}) was flushed",
-		    provider.getName()
-		);
 		return 0;
 	}
 
@@ -143,11 +122,6 @@ public class ConcurrentStore extends AbstractStore {
 		    .limit( evictCount )
 		    // Evict it & Log Stats
 		    .forEach( entry -> {
-			    logger.debug(
-			        "ConcurrentStore({}) evicted [{}]",
-			        provider.getName(),
-			        entry.getKey()
-			    );
 			    getPool().remove( entry.getKey() );
 			    getProvider().getStats().recordEviction();
 		    } );

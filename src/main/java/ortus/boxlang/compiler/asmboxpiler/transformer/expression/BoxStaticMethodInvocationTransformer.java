@@ -62,7 +62,13 @@ public class BoxStaticMethodInvocationTransformer extends AbstractTransformer {
 		if ( baseObject instanceof BoxFQN fqn ) {
 			nodes.add( new LdcInsnNode( fqn.getValue() ) );
 		} else if ( baseObject instanceof BoxIdentifier id ) {
-			nodes.addAll( transpiler.transform( id, context, ReturnValueContext.VALUE ) );
+
+			if ( transpiler.matchesImport( id.getName() ) && transpiler.getProperty( "sourceType" ).toLowerCase().startsWith( "box" ) ) {
+				nodes.addAll( transpiler.transform( id, context, ReturnValueContext.VALUE ) );
+			} else {
+				nodes.add( new LdcInsnNode( id.getName() ) );
+			}
+
 		} else {
 			nodes.addAll( transpiler.transform( baseObject, context, ReturnValueContext.VALUE ) );
 			// throw new ExpressionException( "Unexpected base token in static method access.", baseObject );

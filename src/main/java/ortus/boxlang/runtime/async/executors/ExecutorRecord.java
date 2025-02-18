@@ -27,10 +27,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.async.tasks.ScheduledTask;
+import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.services.AsyncService;
 import ortus.boxlang.runtime.services.AsyncService.ExecutorType;
 import ortus.boxlang.runtime.types.IStruct;
@@ -48,11 +47,6 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 public record ExecutorRecord( ExecutorService executor, String name, ExecutorType type, Integer maxThreads ) {
 
 	/**
-	 * Logger
-	 */
-	private static final Logger logger = LoggerFactory.getLogger( ExecutorRecord.class );
-
-	/**
 	 * Get the executor service casted as a {@link BoxScheduledExecutor}
 	 *
 	 * @return The executor service
@@ -62,12 +56,19 @@ public record ExecutorRecord( ExecutorService executor, String name, ExecutorTyp
 	}
 
 	/**
+	 * Get the executor logger
+	 */
+	public BoxLangLogger getLogger() {
+		return BoxRuntime.getInstance().getLoggingService().getLogger( "async" );
+	}
+
+	/**
 	 * Calls the `shutdown` of the executor - which is non blocking
 	 */
 	public void shutdownQuiet() {
 		if ( executor == null )
 			return;
-		logger.info( "Executor ({}) shuttingdown quiet", this.name );
+		getLogger().info( "Executor ({}) shuttingdown quiet", this.name );
 		this.executor.shutdown();
 	}
 
@@ -87,28 +88,28 @@ public record ExecutorRecord( ExecutorService executor, String name, ExecutorTyp
 		// Disable new tasks from being submitted
 		this.executor.shutdown();
 		try {
-			logger.info( "Executor ({}) shutdown executed, waiting for tasks to finalize...", this.name );
+			getLogger().info( "Executor ({}) shutdown executed, waiting for tasks to finalize...", this.name );
 
 			// Wait for tasks to terminate
 			if ( !this.executor.awaitTermination( timeout, unit ) ) {
-				logger.info( "Executor tasks did not shutdown, forcibly shutting down executor ({})...", this.name );
+				getLogger().info( "Executor tasks did not shutdown, forcibly shutting down executor ({})...", this.name );
 
 				// Cancel all tasks forcibly
 				List<Runnable> taskList = this.executor.shutdownNow();
 
-				logger.info( "Tasks waiting execution on executor ({}) -> tasks({})", this.name, taskList.size() );
+				getLogger().info( "Tasks waiting execution on executor ({}) -> tasks({})", this.name, taskList.size() );
 
 				// Wait again now forcibly
 				if ( !this.executor.awaitTermination( timeout, unit ) ) {
-					logger.error( "Executor ({}) did not terminate even gracefully :(", this.name );
+					getLogger().error( "Executor ({}) did not terminate even gracefully :(", this.name );
 				}
 			} else {
-				logger.info( "Executor ({}) shutdown complete", this.name );
+				getLogger().info( "Executor ({}) shutdown complete", this.name );
 			}
 		}
 		// Catch if exceptions or interrupted
 		catch ( InterruptedException e ) {
-			logger.error( "Executor ({}) shutdown interrupted or exception thrown ({}) :)", this.name, e.getMessage() );
+			getLogger().error( "Executor ({}) shutdown interrupted or exception thrown ({}) :)", this.name, e.getMessage() );
 			// force it down!
 			this.executor.shutdownNow();
 			// Preserve interrupt status

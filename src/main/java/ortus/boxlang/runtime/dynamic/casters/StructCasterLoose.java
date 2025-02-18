@@ -92,7 +92,10 @@ public class StructCasterLoose implements IBoxCaster {
 		// If it's a random Java class, then turn it into a struct!!
 		if ( IsObject.isObject( object ) ) {
 			IStruct			thisResult	= new Struct();
-			DynamicObject	dynObject	= DynamicObject.of( object );
+			DynamicObject	dynObject;
+
+			// Get the fields and methods of the class
+			dynObject = DynamicObject.of( object );
 			dynObject.getFieldsAsStream()
 			    .filter( field -> Modifier.isPublic( field.getModifiers() ) )
 			    .forEach( field -> {
@@ -106,6 +109,29 @@ public class StructCasterLoose implements IBoxCaster {
 					thisResult.put( methodName.substring( 3 ), dynObject.invoke( BoxRuntime.getInstance().getRuntimeContext(), methodName ) );
 				}
 			} );
+
+			// Force the overloaded method expecting a class.
+			// Get the static methods and fields of the Class that the Class represents
+			if ( object instanceof Class clazz ) {
+				DynamicObject dynObject2 = DynamicObject.of( clazz );
+				dynObject2.getFieldsAsStream()
+				    // get public, static fields
+				    .filter( field -> Modifier.isPublic( field.getModifiers() ) && Modifier.isStatic( field.getModifiers() ) )
+				    .forEach( field -> {
+					    thisResult.put( field.getName(), dynObject2.getField( field.getName() ).get() );
+				    } );
+				// also add fields for all public methods starting with "get" that take no arguments
+				dynObject2.getMethodNames( true ).forEach( methodName -> {
+					if ( methodName.startsWith( "get" ) ) {
+						Method	m			= dynObject2.getMethod( methodName, true );
+						int		modifiers	= m.getModifiers();
+						if ( Modifier.isPublic( modifiers ) && Modifier.isStatic( modifiers ) && m.getParameterCount() == 0 ) {
+							thisResult.put( methodName.substring( 3 ), dynObject2.invokeStatic( BoxRuntime.getInstance().getRuntimeContext(), methodName ) );
+						}
+					}
+				} );
+			}
+
 			return thisResult;
 		}
 

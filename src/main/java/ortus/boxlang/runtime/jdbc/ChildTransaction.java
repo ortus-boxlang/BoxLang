@@ -3,9 +3,8 @@ package ortus.boxlang.runtime.jdbc;
 import java.sql.Connection;
 import java.util.UUID;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.scopes.Key;
 
 /**
@@ -26,28 +25,28 @@ public class ChildTransaction implements ITransaction {
 	/**
 	 * Logger
 	 */
-	private static final Logger	logger	= LoggerFactory.getLogger( ChildTransaction.class );
+	private static final BoxLangLogger	logger	= BoxRuntime.getInstance().getLoggingService().getLogger( "datasource" );
 	/**
 	 * The parent transaction.
 	 */
-	private ITransaction		parent;
+	private ITransaction				parent;
 
 	/**
 	 * The prefix for savepoints created in this transaction.
 	 * <p>
 	 * This is used to ensure that savepoints created in this transaction are unique, i.e. they don't collide with the parent transaction's savepoints.
-	 * 
+	 *
 	 */
-	private final String		savepointPrefix;
+	private final String				savepointPrefix;
 
 	/**
 	 * --------------------------------------------------------------------------
 	 * Key constants used for savepoints demarcating the start and end of a child (nested) transaction.
 	 * --------------------------------------------------------------------------
 	 */
-	private static final Key	BEGIN	= Key.of( "BEGIN" );
-	private static final Key	END		= Key.of( "END" );
-	private static final Key	COMMIT	= Key.of( "COMMIT" );
+	private static final Key			BEGIN	= Key.of( "BEGIN" );
+	private static final Key			END		= Key.of( "END" );
+	private static final Key			COMMIT	= Key.of( "COMMIT" );
 
 	/**
 	 * Construct a nested transaction, attaching the given @param parent transaction.

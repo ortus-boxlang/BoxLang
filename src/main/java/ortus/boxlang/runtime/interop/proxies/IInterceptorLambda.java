@@ -32,7 +32,6 @@ public class IInterceptorLambda extends BaseProxy implements ortus.boxlang.runti
 
 	public IInterceptorLambda( Object target, IBoxContext context, String method ) {
 		super( target, context, method );
-		prepLogger( IInterceptorLambda.class );
 	}
 
 	@Override
