@@ -19,6 +19,7 @@
 package ortus.boxlang.runtime.bifs.global.encryption;
 
 import java.nio.charset.Charset;
+import java.util.Arrays;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
@@ -78,9 +79,21 @@ public class Decrypt extends BIF {
 		if ( algorithm == null ) {
 			algorithm = EncryptionUtil.DEFAULT_ENCRYPTION_ALGORITHM;
 		}
-		String	encoding	= arguments.getAsString( Key.encoding );
-		byte[]	IVorSalt	= null;
+		String	encoding		= arguments.getAsString( Key.encoding );
+		Charset	encodingCharset	= Charset.forName( EncryptionUtil.DEFAULT_CHARSET );
+		byte[]	IVorSalt		= null;
 		if ( arguments.get( Key.IVorSalt ) != null ) {
+
+			if ( arguments.get( Key.IVorSalt ) instanceof String ivString
+			    && EncryptionUtil.isFBMAlgorithm( algorithm )
+			    && ivString.getBytes().length != EncryptionUtil.FBMA_IV_SIZE ) {
+				byte[]	bytes			= ivString.getBytes( encodingCharset );
+				byte[]	fixedSizeBytes	= new byte[ EncryptionUtil.FBMA_IV_SIZE ];
+				Arrays.fill( fixedSizeBytes, ( byte ) 0 );
+				System.arraycopy( bytes, 0, fixedSizeBytes, 0, Math.min( bytes.length, EncryptionUtil.FBMA_IV_SIZE ) );
+				arguments.put( Key.IVorSalt, fixedSizeBytes );
+			}
+
 			IVorSalt = arguments.get( Key.IVorSalt ) instanceof byte[] ? ( byte[] ) arguments.get( Key.IVorSalt )
 			    : arguments.getAsString( Key.IVorSalt ).getBytes( Charset.forName( EncryptionUtil.DEFAULT_CHARSET ) );
 		}
