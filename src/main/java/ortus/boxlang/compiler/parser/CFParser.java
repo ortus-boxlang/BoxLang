@@ -254,7 +254,7 @@ public class CFParser extends AbstractParser {
 		CFLexerCustom	lexer		= new CFLexerCustom( CharStreams.fromStream( inputStream, StandardCharsets.UTF_8 ),
 		    CFLexerCustom.DEFAULT_SCRIPT_MODE, errorListener, this );
 		CFGrammar		parser		= new CFGrammar( new CommonTokenStream( lexer ) );
-		// parser.getInterpreter().setPredictionMode( org.antlr.v4.runtime.atn.PredictionMode.SLL );
+		parser.getInterpreter().setPredictionMode( org.antlr.v4.runtime.atn.PredictionMode.SLL );
 		addErrorListeners( lexer, parser );
 		parser.setErrorHandler( new BoxParserErrorStrategy() );
 
@@ -298,7 +298,7 @@ public class CFParser extends AbstractParser {
 		CFLexerCustom	lexer		= new CFLexerCustom( CharStreams.fromStream( inputStream, StandardCharsets.UTF_8 ),
 		    CFLexerCustom.DEFAULT_SCRIPT_MODE, errorListener, this );
 		CFGrammar		parser		= new CFGrammar( new CommonTokenStream( lexer ) );
-		// parser.getInterpreter().setPredictionMode( org.antlr.v4.runtime.atn.PredictionMode.SLL );
+		parser.getInterpreter().setPredictionMode( org.antlr.v4.runtime.atn.PredictionMode.SLL );
 		addErrorListeners( lexer, parser );
 		parser.setErrorHandler( new BoxParserErrorStrategy() );
 		CFGrammar.FunctionOrStatementContext parseTree = parser.functionOrStatement();
@@ -343,7 +343,7 @@ public class CFParser extends AbstractParser {
 		// boxParser.setTrace( true );
 		addErrorListeners( lexer, parser );
 		parser.setErrorHandler( new BoxParserErrorStrategy() );
-		// parser.getInterpreter().setPredictionMode( org.antlr.v4.runtime.atn.PredictionMode.SLL );
+		parser.getInterpreter().setPredictionMode( org.antlr.v4.runtime.atn.PredictionMode.SLL );
 
 		// activating profiling
 		// parser.setProfile( true );

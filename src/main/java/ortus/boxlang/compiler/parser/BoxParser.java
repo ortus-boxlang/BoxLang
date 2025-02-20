@@ -246,7 +246,7 @@ public class BoxParser extends AbstractParser {
 		BoxLexerCustom	lexer		= new BoxLexerCustom( CharStreams.fromStream( inputStream, StandardCharsets.UTF_8 ),
 		    BoxLexerCustom.DEFAULT_SCRIPT_MODE, errorListener, this );
 		BoxGrammar		parser		= new BoxGrammar( new CommonTokenStream( lexer ) );
-		// parser.getInterpreter().setPredictionMode( org.antlr.v4.runtime.atn.PredictionMode.SLL );
+		parser.getInterpreter().setPredictionMode( org.antlr.v4.runtime.atn.PredictionMode.SLL );
 		addErrorListeners( lexer, parser );
 		parser.setErrorHandler( new BoxParserErrorStrategy() );
 
@@ -290,7 +290,7 @@ public class BoxParser extends AbstractParser {
 		BoxLexerCustom	lexer		= new BoxLexerCustom( CharStreams.fromStream( inputStream, StandardCharsets.UTF_8 ),
 		    BoxLexerCustom.DEFAULT_SCRIPT_MODE, errorListener, this );
 		BoxGrammar		parser		= new BoxGrammar( new CommonTokenStream( lexer ) );
-		// parser.getInterpreter().setPredictionMode( org.antlr.v4.runtime.atn.PredictionMode.SLL );
+		parser.getInterpreter().setPredictionMode( org.antlr.v4.runtime.atn.PredictionMode.SLL );
 		addErrorListeners( lexer, parser );
 		parser.setErrorHandler( new BoxParserErrorStrategy() );
 		BoxGrammar.FunctionOrStatementContext parseTree = parser.functionOrStatement();
@@ -335,7 +335,7 @@ public class BoxParser extends AbstractParser {
 		// boxParser.setTrace( true );
 		addErrorListeners( lexer, parser );
 		parser.setErrorHandler( new BoxParserErrorStrategy() );
-		// parser.getInterpreter().setPredictionMode( org.antlr.v4.runtime.atn.PredictionMode.SLL );
+		parser.getInterpreter().setPredictionMode( org.antlr.v4.runtime.atn.PredictionMode.SLL );
 
 		ParserRuleContext parseTree = null;
 
