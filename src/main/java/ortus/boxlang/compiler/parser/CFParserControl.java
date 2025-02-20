@@ -2,10 +2,7 @@ package ortus.boxlang.compiler.parser;
 
 import static ortus.boxlang.parser.antlr.CFGrammar.ABSTRACT;
 import static ortus.boxlang.parser.antlr.CFGrammar.AND;
-import static ortus.boxlang.parser.antlr.CFGrammar.ANY;
-import static ortus.boxlang.parser.antlr.CFGrammar.ARRAY;
 import static ortus.boxlang.parser.antlr.CFGrammar.AS;
-import static ortus.boxlang.parser.antlr.CFGrammar.BOOLEAN;
 import static ortus.boxlang.parser.antlr.CFGrammar.BREAK;
 import static ortus.boxlang.parser.antlr.CFGrammar.CASE;
 import static ortus.boxlang.parser.antlr.CFGrammar.CASTAS;
@@ -49,13 +46,11 @@ import static ortus.boxlang.parser.antlr.CFGrammar.LESS;
 import static ortus.boxlang.parser.antlr.CFGrammar.LPAREN;
 import static ortus.boxlang.parser.antlr.CFGrammar.LT;
 import static ortus.boxlang.parser.antlr.CFGrammar.LTE;
-import static ortus.boxlang.parser.antlr.CFGrammar.MESSAGE;
 import static ortus.boxlang.parser.antlr.CFGrammar.MOD;
 import static ortus.boxlang.parser.antlr.CFGrammar.NEQ;
 import static ortus.boxlang.parser.antlr.CFGrammar.NEW;
 import static ortus.boxlang.parser.antlr.CFGrammar.NOT;
 import static ortus.boxlang.parser.antlr.CFGrammar.NULL;
-import static ortus.boxlang.parser.antlr.CFGrammar.NUMERIC;
 import static ortus.boxlang.parser.antlr.CFGrammar.OR;
 import static ortus.boxlang.parser.antlr.CFGrammar.PACKAGE;
 import static ortus.boxlang.parser.antlr.CFGrammar.PARAM;
@@ -63,25 +58,17 @@ import static ortus.boxlang.parser.antlr.CFGrammar.PREFIXEDIDENTIFIER;
 import static ortus.boxlang.parser.antlr.CFGrammar.PRIVATE;
 import static ortus.boxlang.parser.antlr.CFGrammar.PROPERTY;
 import static ortus.boxlang.parser.antlr.CFGrammar.PUBLIC;
-import static ortus.boxlang.parser.antlr.CFGrammar.QUERY;
 import static ortus.boxlang.parser.antlr.CFGrammar.REMOTE;
-import static ortus.boxlang.parser.antlr.CFGrammar.REQUEST;
 import static ortus.boxlang.parser.antlr.CFGrammar.REQUIRED;
 import static ortus.boxlang.parser.antlr.CFGrammar.RETHROW;
 import static ortus.boxlang.parser.antlr.CFGrammar.RETURN;
-import static ortus.boxlang.parser.antlr.CFGrammar.SERVER;
-import static ortus.boxlang.parser.antlr.CFGrammar.SETTING;
 import static ortus.boxlang.parser.antlr.CFGrammar.STATIC;
-import static ortus.boxlang.parser.antlr.CFGrammar.STRING;
-import static ortus.boxlang.parser.antlr.CFGrammar.STRUCT;
 import static ortus.boxlang.parser.antlr.CFGrammar.THAN;
 import static ortus.boxlang.parser.antlr.CFGrammar.THROW;
 import static ortus.boxlang.parser.antlr.CFGrammar.TO;
 import static ortus.boxlang.parser.antlr.CFGrammar.TRUE;
 import static ortus.boxlang.parser.antlr.CFGrammar.TRY;
-import static ortus.boxlang.parser.antlr.CFGrammar.TYPE;
 import static ortus.boxlang.parser.antlr.CFGrammar.VAR;
-import static ortus.boxlang.parser.antlr.CFGrammar.VARIABLES;
 import static ortus.boxlang.parser.antlr.CFGrammar.WHEN;
 import static ortus.boxlang.parser.antlr.CFGrammar.WHILE;
 import static ortus.boxlang.parser.antlr.CFGrammar.XOR;
@@ -96,17 +83,15 @@ import ortus.boxlang.runtime.services.ComponentService;
 
 public abstract class CFParserControl extends Parser {
 
-	private static final Set<Integer>	identifiers			= Set.of( IDENTIFIER, PREFIXEDIDENTIFIER, ABSTRACT, AND, ANY, ARRAY, AS, BOOLEAN, BREAK, CASE,
+	private static final Set<Integer>	identifiers			= Set.of( IDENTIFIER, PREFIXEDIDENTIFIER, ABSTRACT, AND, AS, BREAK, CASE,
 	    CASTAS, CATCH,
 	    COMPONENT, CONTAIN, CONTAINS, CONTINUE, DEFAULT, DO, DOES, ELSEIF, ELSE, EQ, EQUAL, EQV, FALSE, FINAL, FINALLY, FOR, FUNCTION, GE, GREATER, GT, GTE, IF,
 	    IMP,
-	    IMPORT, IN, INCLUDE, INSTANCEOF, INTERFACE, IS, JAVA, LE, LESS, LT, LTE, MESSAGE, MOD, NEQ, NEW, NOT, NULL, NUMERIC, OR, PACKAGE, PARAM, PRIVATE,
-	    PROPERTY, PUBLIC, QUERY, REMOTE, REQUEST, REQUIRED, RETHROW, RETURN, SERVER, SETTING, STATIC, STRING, STRUCT, THAN, THROW, TO, TRUE, TRY, TYPE, VAR,
-	    VARIABLES, WHEN, WHILE, XOR );
+	    IMPORT, IN, INCLUDE, INSTANCEOF, INTERFACE, IS, JAVA, LE, LESS, LT, LTE, MOD, NEQ, NEW, NOT, NULL, OR, PACKAGE, PARAM, PRIVATE,
+	    PROPERTY, PUBLIC, REMOTE, REQUIRED, RETHROW, RETURN, STATIC, THAN, THROW, TO, TRUE, TRY, VAR,
+	    WHEN, WHILE, XOR );
 
-	private static final Set<Integer>	types				= Set.of(
-	    NUMERIC, STRING, BOOLEAN, COMPONENT, INTERFACE, ARRAY, STRUCT, QUERY, ANY, FUNCTION
-	);
+	private static final Set<Integer>	types				= Set.of( COMPONENT, INTERFACE, FUNCTION );
 	private final ComponentService		componentService	= getInstance().getComponentService();
 
 	public CFParserControl( TokenStream input ) {

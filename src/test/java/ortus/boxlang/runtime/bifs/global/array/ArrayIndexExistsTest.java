@@ -104,7 +104,7 @@ public class ArrayIndexExistsTest {
 	public void testIndexIsNull() {
 		instance.executeSource(
 		    """
-		    arr = [ 1, 2, null ];
+		    arr = [ 1, 2, null, true, false ];
 		    result = ArrayIndexExists( arr, 3 );
 		    """,
 		    context );

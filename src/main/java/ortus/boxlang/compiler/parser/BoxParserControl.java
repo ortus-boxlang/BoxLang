@@ -2,11 +2,8 @@ package ortus.boxlang.compiler.parser;
 
 import static ortus.boxlang.parser.antlr.BoxGrammar.ABSTRACT;
 import static ortus.boxlang.parser.antlr.BoxGrammar.AND;
-import static ortus.boxlang.parser.antlr.BoxGrammar.ANY;
-import static ortus.boxlang.parser.antlr.BoxGrammar.ARRAY;
 import static ortus.boxlang.parser.antlr.BoxGrammar.AS;
 import static ortus.boxlang.parser.antlr.BoxGrammar.ASSERT;
-import static ortus.boxlang.parser.antlr.BoxGrammar.BOOLEAN;
 import static ortus.boxlang.parser.antlr.BoxGrammar.BREAK;
 import static ortus.boxlang.parser.antlr.BoxGrammar.CASE;
 import static ortus.boxlang.parser.antlr.BoxGrammar.CASTAS;
@@ -46,38 +43,28 @@ import static ortus.boxlang.parser.antlr.BoxGrammar.LESS;
 import static ortus.boxlang.parser.antlr.BoxGrammar.LPAREN;
 import static ortus.boxlang.parser.antlr.BoxGrammar.LT;
 import static ortus.boxlang.parser.antlr.BoxGrammar.LTE;
-import static ortus.boxlang.parser.antlr.BoxGrammar.MESSAGE;
 import static ortus.boxlang.parser.antlr.BoxGrammar.MOD;
 import static ortus.boxlang.parser.antlr.BoxGrammar.NEQ;
 import static ortus.boxlang.parser.antlr.BoxGrammar.NEW;
 import static ortus.boxlang.parser.antlr.BoxGrammar.NOT;
 import static ortus.boxlang.parser.antlr.BoxGrammar.NULL;
-import static ortus.boxlang.parser.antlr.BoxGrammar.NUMERIC;
 import static ortus.boxlang.parser.antlr.BoxGrammar.OR;
 import static ortus.boxlang.parser.antlr.BoxGrammar.PACKAGE;
 import static ortus.boxlang.parser.antlr.BoxGrammar.PARAM;
 import static ortus.boxlang.parser.antlr.BoxGrammar.PRIVATE;
 import static ortus.boxlang.parser.antlr.BoxGrammar.PROPERTY;
 import static ortus.boxlang.parser.antlr.BoxGrammar.PUBLIC;
-import static ortus.boxlang.parser.antlr.BoxGrammar.QUERY;
 import static ortus.boxlang.parser.antlr.BoxGrammar.REMOTE;
-import static ortus.boxlang.parser.antlr.BoxGrammar.REQUEST;
 import static ortus.boxlang.parser.antlr.BoxGrammar.REQUIRED;
 import static ortus.boxlang.parser.antlr.BoxGrammar.RETHROW;
 import static ortus.boxlang.parser.antlr.BoxGrammar.RETURN;
-import static ortus.boxlang.parser.antlr.BoxGrammar.SERVER;
-import static ortus.boxlang.parser.antlr.BoxGrammar.SETTING;
 import static ortus.boxlang.parser.antlr.BoxGrammar.STATIC;
-import static ortus.boxlang.parser.antlr.BoxGrammar.STRING;
-import static ortus.boxlang.parser.antlr.BoxGrammar.STRUCT;
 import static ortus.boxlang.parser.antlr.BoxGrammar.THAN;
 import static ortus.boxlang.parser.antlr.BoxGrammar.THROW;
 import static ortus.boxlang.parser.antlr.BoxGrammar.TO;
 import static ortus.boxlang.parser.antlr.BoxGrammar.TRUE;
 import static ortus.boxlang.parser.antlr.BoxGrammar.TRY;
-import static ortus.boxlang.parser.antlr.BoxGrammar.TYPE;
 import static ortus.boxlang.parser.antlr.BoxGrammar.VAR;
-import static ortus.boxlang.parser.antlr.BoxGrammar.VARIABLES;
 import static ortus.boxlang.parser.antlr.BoxGrammar.WHEN;
 import static ortus.boxlang.parser.antlr.BoxGrammar.WHILE;
 import static ortus.boxlang.parser.antlr.BoxGrammar.XOR;
@@ -89,15 +76,15 @@ import org.antlr.v4.runtime.TokenStream;
 
 public abstract class BoxParserControl extends Parser {
 
-	private static final Set<Integer>	identifiers	= Set.of( IDENTIFIER, ABSTRACT, AND, ANY, ARRAY, AS, ASSERT, BOOLEAN, BREAK, CASE, CASTAS, CATCH,
+	private static final Set<Integer>	identifiers	= Set.of( IDENTIFIER, ABSTRACT, AND, AS, ASSERT, BREAK, CASE, CASTAS, CATCH,
 	    CLASS,
 	    CONTAIN, CONTAINS, CONTINUE, DEFAULT, DO, DOES, ELSE, EQ, EQUAL, EQV, FALSE, FINAL, FINALLY, FOR, FUNCTION, GE, GREATER, GT, GTE, IF, IMP, IMPORT,
-	    IN, INCLUDE, INSTANCEOF, INTERFACE, IS, JAVA, LE, LESS, LT, LTE, MESSAGE, MOD, NEQ, NEW, NOT, NULL, NUMERIC, OR, PACKAGE, PARAM, PRIVATE, PROPERTY,
-	    PUBLIC, QUERY, REMOTE, REQUEST, REQUIRED, RETHROW, RETURN, SERVER, SETTING, STATIC, STRING, STRUCT, THAN, THROW, TO, TRUE, TRY, TYPE, VAR, VARIABLES,
+	    IN, INCLUDE, INSTANCEOF, INTERFACE, IS, JAVA, LE, LESS, LT, LTE, MOD, NEQ, NEW, NOT, NULL, OR, PACKAGE, PARAM, PRIVATE, PROPERTY,
+	    PUBLIC, REMOTE, REQUIRED, RETHROW, RETURN, STATIC, THAN, THROW, TO, TRUE, TRY, VAR,
 	    WHEN, WHILE, XOR );
 
 	private static final Set<Integer>	types		= Set.of(
-	    NUMERIC, STRING, BOOLEAN, CLASS, INTERFACE, ARRAY, STRUCT, QUERY, ANY, FUNCTION
+	    CLASS, INTERFACE, FUNCTION
 	);
 
 	// private final ComponentService componentService = getInstance().getComponentService();

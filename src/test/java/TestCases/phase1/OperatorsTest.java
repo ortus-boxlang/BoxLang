@@ -769,6 +769,9 @@ public class OperatorsTest {
 		Object result = instance.executeStatement( "5==5", context );
 		assertThat( result ).isEqualTo( true );
 
+		result = instance.executeStatement( "5 EQUAL 5", context );
+		assertThat( result ).isEqualTo( true );
+
 		result = instance.executeStatement( "'5'==5", context );
 		assertThat( result ).isEqualTo( true );
 
@@ -777,6 +780,27 @@ public class OperatorsTest {
 
 		result = instance.executeStatement( "'brad'==5", context );
 		assertThat( result ).isEqualTo( false );
+
+	}
+
+	@DisplayName( "comparison inequality" )
+	@Test
+	public void testComparisonInequality() {
+
+		Object result = instance.executeStatement( "5!=5", context );
+		assertThat( result ).isEqualTo( false );
+
+		result = instance.executeStatement( "5 NEQ 5", context );
+		assertThat( result ).isEqualTo( false );
+
+		result = instance.executeStatement( "'5'!=5", context );
+		assertThat( result ).isEqualTo( false );
+
+		result = instance.executeStatement( "'brad' NEQ 'brad'", context );
+		assertThat( result ).isEqualTo( false );
+
+		result = instance.executeStatement( "'brad' NOT EQUAL 5", context );
+		assertThat( result ).isEqualTo( true );
 
 	}
 

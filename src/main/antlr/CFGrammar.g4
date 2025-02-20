@@ -16,108 +16,20 @@ options {
  }
 
 // foo
-identifier: IDENTIFIER | reservedKeyword
+identifier: IDENTIFIER
     ;
 
 componentName
     :
     // Ask the component service if the component exists and verify that this context is actually a component.
     { isComponent(_input) }? identifier
+    | PARAM
     ;
 
 prefixedComponentName
     :
     // Ask the component service if the component exists and verify that this context is actually a component.
     { isComponent(_input) }? PREFIXEDIDENTIFIER
-    ;
-
-// These are reserved words in the lexer, but are allowed to be an indentifer (variable name, method name)
-reservedKeyword
-    : ABSTRACT
-    | ANY
-    | ARRAY
-    | AS
-    | BOOLEAN
-    | BREAK
-    | CASE
-    | CASTAS
-    | CATCH
-    | COMPONENT
-    | CONTAIN
-    | CONTAINS
-    | CONTINUE
-    | DEFAULT
-    | DO
-    | DOES
-    | ELSEIF
-    | ELSE IF? // TODO: May have to special case this :(
-    | FALSE
-    | FINAL
-    | FINALLY
-    | FOR
-    | FUNCTION
-    | IF
-    | IMPORT
-    | IN
-    | INCLUDE
-    | INSTANCEOF
-    | INTERFACE
-    | JAVA
-    | MESSAGE
-    | NEW
-    | NULL
-    | NUMERIC
-    | PACKAGE
-    | PARAM
-    | PRIVATE
-    | PROPERTY
-    | PUBLIC
-    | QUERY
-    | REMOTE
-    | REQUEST
-    | REQUIRED
-    | RETHROW
-    | RETURN
-    | SERVER
-    | SETTING
-    | STATIC
-    | STRING
-    | STRUCT
-    // | SWITCH --> Could possibly be a var name, but not a function/method name
-    | THROW
-    | TO
-    | TRUE
-    | TRY
-    | TYPE
-    | VAR
-    | VARIABLES
-    | WHEN
-    | WHILE
-    | PREFIXEDIDENTIFIER // cfSomething
-    ;
-
-reservedOperators
-    : NOT
-    | OR
-    | EQ
-    | EQUAL
-    | NEQ
-    | XOR
-    | THAN
-    | NEQ
-    | MOD
-    | IS
-    | LE
-    | LESS
-    | LT
-    | LTE
-    | IMP
-    | EQV
-    | AND
-    | GE
-    | GREATER
-    | GT
-    | GTE
     ;
 
 // ANY NEW LEXER RULES IN DEFAULT MODE FOR WORDS NEED ADDED HERE
@@ -202,24 +114,19 @@ arrayLiteral: LBRACKET expressionList? RBRACKET
 postAnnotation: identifier ((EQUALSIGN | COLON) attributeSimple)?
     ;
 
-// This allows [1, 2, 3], "foo", or foo Adobe allows more chars than an identifer, Lucee allows darn
-// near anything, but ANTLR is incapable of matching any tokens until the next whitespace. The
-// literalExpression is just a BoxLang flourish to allow for more flexible expressions.
-attributeSimple: annotation | identifier | fqn
+// This allows [1, 2, 3], "foo", or foo
+attributeSimple: annotation | fqn
     ;
 
 annotation: atoms | stringLiteral | structExpression | arrayLiteral
     ;
 
-type
-    : (NUMERIC | STRING | BOOLEAN | COMPONENT | INTERFACE | ARRAY | STRUCT | QUERY | fqn | ANY) (
-        LBRACKET RBRACKET
-    )?
+type: ( FUNCTION | COMPONENT | INTERFACE | fqn) ( LBRACKET RBRACKET)?
     ;
 
 // Allow any statement or a function.
 // TODO: This may need to be changed if functions are allowed inside of functions
-functionOrStatement: function | statement
+functionOrStatement: statement
     ;
 
 // property name="foo" type="string" default="bar" inject="something";
@@ -254,6 +161,7 @@ statementOrBlock: emptyStatementBlock | statement
 statement
     : SEMICOLON* (
         importStatement
+        | function
         | if
         | switch
         | try
@@ -295,7 +203,7 @@ component
         normalStatementBlock
         | SEMICOLON?
     )
-    | componentName componentAttribute* (normalStatementBlock | SEMICOLON)
+    | componentName (componentAttribute COMMA?)* (normalStatementBlock | SEMICOLON)
     ;
 
 componentAttribute: identifier ((EQUALSIGN | COLON) expression)?
@@ -446,8 +354,7 @@ finallyBlock: FINALLY normalStatementBlock
  or...
  'foo'
  */
-stringLiteral
-    : OPEN_QUOTE (stringLiteralPart | ICHAR (expression | reservedOperators) ICHAR)* CLOSE_QUOTE
+stringLiteral: OPEN_QUOTE (stringLiteralPart | ICHAR expression ICHAR)* CLOSE_QUOTE
     ;
 
 stringLiteralPart: STRING_LITERAL | HASHHASH
@@ -471,14 +378,7 @@ structMembers: structMember (COMMA structMember)* COMMA?
 structMember: structKey (COLON | EQUALSIGN) expression
     ;
 
-structKey
-    : identifier
-    | stringLiteral
-    | reservedOperators
-    | INTEGER_LITERAL
-    | ILLEGAL_IDENTIFIER
-    | fqn
-    | SWITCH
+structKey: identifier | stringLiteral | INTEGER_LITERAL | ILLEGAL_IDENTIFIER | fqn | SWITCH
     ;
 
 new: NEW preFix? (fqn | stringLiteral) LPAREN argumentList? RPAREN
@@ -591,6 +491,7 @@ relOps
     | LTSIGN
     | LESS THAN
     | NEQ
+    | NOT EQUAL
     | IS NOT
     | BANGEQUAL
     | LESSTHANGREATERTHAN

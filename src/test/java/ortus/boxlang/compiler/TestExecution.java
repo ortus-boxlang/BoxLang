@@ -75,7 +75,7 @@ public class TestExecution extends TestBase {
 		                        a +=1;
 
 		                        }
-		                        assert(variables["a"] == 10);
+		                        assert variables["a"] == 10;
 		                        """ );
 
 	}
@@ -90,7 +90,7 @@ public class TestExecution extends TestBase {
 		                        variables.a = 0;
 		                                                               for(a = 0; a < 10; a=a+1){
 		                                                               }
-		                                        assert(variables["a"] == 10);
+		                                        assert variables["a"] == 10;
 		                                                               """ );
 
 	}

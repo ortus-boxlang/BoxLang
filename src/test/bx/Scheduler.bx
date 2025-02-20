@@ -3,7 +3,7 @@
  * will be dynamically loaded, decorated and modified to
  * work as a native Java BoxLang Scheduler.
  */
-@BoxScheduler "My Custom Scheduler"
+@BoxScheduler( "My Custom Scheduler" )
 class {
 
 	/**

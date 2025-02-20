@@ -222,11 +222,13 @@ public class ErrorListener extends BaseErrorListener {
 			markTwain	= charPositionInLine;
 			trimmedLine	= offensiveLine.substring( 0, windowSize - mark.length() ) + mark;
 		} else if ( trimLeft && trimRight ) {
-
 			markTwain = charPositionInLine - slimness;
 			var	s		= charPositionInLine - slimness;
-			var	trimmed	= offensiveLine.substring( s, Math.min( s + windowSize, fatness - 1 ) );
-			trimmedLine = mark + trimmed.substring( mark.length(), mark.length() + windowSize - 2 * mark.length() ) + mark;
+			var	stop	= Math.min( s + windowSize, fatness - 1 );
+			if ( s < stop ) {
+				var trimmed = offensiveLine.substring( s, stop );
+				trimmedLine = mark + trimmed.substring( mark.length(), mark.length() + windowSize - 2 * mark.length() ) + mark;
+			}
 		}
 
 		var fullMessage = errorMessage + "\n" + trimmedLine + "\n" + " ".repeat( markTwain ) + "^".repeat( tokenLength );

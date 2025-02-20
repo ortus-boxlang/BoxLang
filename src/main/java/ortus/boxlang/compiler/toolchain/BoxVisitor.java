@@ -313,7 +313,7 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 		    StatementContext::try_, StatementContext::while_, BoxGrammar.StatementContext::expressionStatement, StatementContext::include,
 		    StatementContext::component, BoxGrammar.StatementContext::statementBlock, StatementContext::simpleStatement,
 		    BoxGrammar.StatementContext::componentIsland, StatementContext::throw_,
-		    StatementContext::emptyStatementBlock );
+		    StatementContext::emptyStatementBlock, StatementContext::function );
 
 		// Iterate over the functions
 		for ( Function<BoxGrammar.StatementContext, ParserRuleContext> function : functions ) {

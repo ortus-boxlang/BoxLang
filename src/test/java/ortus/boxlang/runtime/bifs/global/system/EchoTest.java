@@ -121,7 +121,7 @@ public class EchoTest {
 		    """
 
 		         echo( "pre func" )
-		      @output true
+		      @output( true )
 		       function foo() output=true {
 		           echo( "Hello World" )
 		       }

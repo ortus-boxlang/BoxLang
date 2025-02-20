@@ -246,6 +246,7 @@ public class BoxParser extends AbstractParser {
 		BoxLexerCustom	lexer		= new BoxLexerCustom( CharStreams.fromStream( inputStream, StandardCharsets.UTF_8 ),
 		    BoxLexerCustom.DEFAULT_SCRIPT_MODE, errorListener, this );
 		BoxGrammar		parser		= new BoxGrammar( new CommonTokenStream( lexer ) );
+		// parser.getInterpreter().setPredictionMode( org.antlr.v4.runtime.atn.PredictionMode.SLL );
 		addErrorListeners( lexer, parser );
 		parser.setErrorHandler( new BoxParserErrorStrategy() );
 
@@ -289,6 +290,7 @@ public class BoxParser extends AbstractParser {
 		BoxLexerCustom	lexer		= new BoxLexerCustom( CharStreams.fromStream( inputStream, StandardCharsets.UTF_8 ),
 		    BoxLexerCustom.DEFAULT_SCRIPT_MODE, errorListener, this );
 		BoxGrammar		parser		= new BoxGrammar( new CommonTokenStream( lexer ) );
+		// parser.getInterpreter().setPredictionMode( org.antlr.v4.runtime.atn.PredictionMode.SLL );
 		addErrorListeners( lexer, parser );
 		parser.setErrorHandler( new BoxParserErrorStrategy() );
 		BoxGrammar.FunctionOrStatementContext parseTree = parser.functionOrStatement();
@@ -333,6 +335,7 @@ public class BoxParser extends AbstractParser {
 		// boxParser.setTrace( true );
 		addErrorListeners( lexer, parser );
 		parser.setErrorHandler( new BoxParserErrorStrategy() );
+		// parser.getInterpreter().setPredictionMode( org.antlr.v4.runtime.atn.PredictionMode.SLL );
 
 		ParserRuleContext parseTree = null;
 
@@ -519,9 +522,12 @@ public class BoxParser extends AbstractParser {
 		while ( token.getType() != Token.EOF ) {
 
 			// uncomment this to see all tokens as they were sent from out custom lexer
-			// if ( token.getChannel() != Token.HIDDEN_CHANNEL ) {
-			// System.out.println( token.toString() + " " + BoxLexer.VOCABULARY.getSymbolicName( token.getType() ) );
-			// }
+
+			/*
+			 * if ( token.getChannel() != Token.HIDDEN_CHANNEL ) {
+			 * System.out.println( token.toString() + " " + BoxLexer.VOCABULARY.getSymbolicName( token.getType() ) );
+			 * }
+			 */
 
 			if ( token.getType() == BoxLexer.JAVADOC_COMMENT ) {
 				ParsingResult result = docParser.parse( null, token.getText() );
@@ -1418,6 +1424,8 @@ public class BoxParser extends AbstractParser {
 			}
 			case BoxStringLiteral ignored -> {
 			}
+			case BoxStringInterpolation ignored -> {
+			}
 			case BoxBooleanLiteral ignored -> {
 			}
 			case BoxArrayLiteral ignored -> {
@@ -1462,6 +1470,8 @@ public class BoxParser extends AbstractParser {
 			case BoxDotAccess ignored -> {
 			}
 			case BoxStringLiteral ignored -> {
+			}
+			case BoxStringInterpolation ignored -> {
 			}
 			case BoxArrayLiteral ignored -> {
 			}
