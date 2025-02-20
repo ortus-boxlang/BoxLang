@@ -308,15 +308,16 @@ BANG : '!';
 OR       : 'OR';
 PIPEPIPE : '||';
 
-AMPERSAND   : '&';
-ARROW       : '->';
-AT          : '@';
-BACKSLASH   : '\\';
-COMMA       : ',';
-COLON       : ':';
-COLONCOLON  : '::';
-DOT         : '.';
-ELVIS       : '?:';
+AMPERSAND  : '&';
+ARROW      : '->';
+AT         : '@';
+BACKSLASH  : '\\';
+COMMA      : ',';
+COLON      : ':';
+COLONCOLON : '::';
+DOT        : '.';
+// CF allows for null ? : 'default'
+ELVIS       : '?' [ \t\r\n]* ':';
 EQUALSIGN   : '=';
 LBRACE      : '{' { incrementBraceCount(); };
 RBRACE      : '}' { decrementBraceCount(); };

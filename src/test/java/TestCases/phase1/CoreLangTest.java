@@ -2072,6 +2072,22 @@ public class CoreLangTest {
 	}
 
 	@Test
+	public void testCrazyKeywordExample() {
+		instance.executeSource(
+		    """
+		    if = "brad"
+		    when = "wood"
+		    function try( else, return ) {
+		    return return & else;
+		    }
+		    while = "try";
+		    result = variables[ while ]( if, when )
+		       """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "woodbrad" );
+	}
+
+	@Test
 	public void testKeywords() {
 
 		instance.executeSource(

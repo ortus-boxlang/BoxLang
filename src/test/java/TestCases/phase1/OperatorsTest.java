@@ -1043,4 +1043,14 @@ public class OperatorsTest {
 
 	}
 
+	@DisplayName( "It can add numbers to a date" )
+	@Test
+	public void testElvisWithSpace() {
+		instance.executeSource( """
+		                        		result = null ? : 'brad'
+		                        """, context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( resultKey ) ).isEqualTo( "brad" );
+
+	}
+
 }
