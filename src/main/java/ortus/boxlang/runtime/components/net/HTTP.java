@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.components.net;
 import java.io.File;
 import java.io.IOException;
 import java.net.ConnectException;
+import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLConnection;
@@ -362,7 +363,7 @@ public class HTTP extends Component {
 			return DEFAULT_RETURN;
 		} catch ( ExecutionException e ) {
 			Throwable innerException = e.getCause();
-			if ( innerException instanceof ConnectException ) {
+			if ( innerException instanceof SocketException ) {
 				HTTPResult.put( Key.responseHeader, Struct.EMPTY );
 				HTTPResult.put( Key.header, "" );
 				HTTPResult.put( Key.statusCode, 502 );
@@ -370,10 +371,14 @@ public class HTTP extends Component {
 				HTTPResult.put( Key.statusText, "Bad Gateway" );
 				HTTPResult.put( Key.status_text, "Bad Gateway" );
 				HTTPResult.put( Key.fileContent, "Connection Failure" );
-				if ( targetURI != null ) {
-					HTTPResult.put( Key.errorDetail, String.format( "Unknown host: %s: Name or service not known.", targetURI.getHost() ) );
+				if ( innerException instanceof ConnectException ) {
+					if ( targetURI != null ) {
+						HTTPResult.put( Key.errorDetail, String.format( "Unknown host: %s: Name or service not known.", targetURI.getHost() ) );
+					} else {
+						HTTPResult.put( Key.errorDetail, String.format( "Unknown host: %s: Name or service not known.", theURL ) );
+					}
 				} else {
-					HTTPResult.put( Key.errorDetail, String.format( "Unknown host: %s: Name or service not known.", theURL ) );
+					HTTPResult.put( Key.errorDetail, "Connection Failure: " + innerException.getMessage() );
 				}
 				ExpressionInterpreter.setVariable( context, variableName, HTTPResult );
 			} else if ( innerException instanceof HttpTimeoutException ) {
@@ -386,6 +391,9 @@ public class HTTP extends Component {
 				HTTPResult.put( Key.fileContent, "Request Timeout" );
 				HTTPResult.put( Key.errorDetail, "The request timed out after " + attributes.getAsInteger( Key.timeout ) + " second(s)" );
 				ExpressionInterpreter.setVariable( context, variableName, HTTPResult );
+			} else {
+				// retrhow any unknown exception types
+				throw new BoxRuntimeException( "An error occurred while processing the HTTP request", "ExecutionException", innerException );
 			}
 			return DEFAULT_RETURN;
 		} catch ( InterruptedException e ) {
