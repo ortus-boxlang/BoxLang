@@ -40,6 +40,7 @@ import java.time.temporal.TemporalField;
 import java.time.temporal.TemporalQuery;
 import java.time.temporal.TemporalUnit;
 import java.time.temporal.ValueRange;
+import java.util.Date;
 import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -1017,6 +1018,15 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	@Override
 	public Instant toInstant() {
 		return this.wrapped.toInstant();
+	}
+
+	/**
+	 * Get a java.util.Date instance from this DateTime
+	 * 
+	 * @return The java.util.Date instance
+	 */
+	public Date toDate() {
+		return Date.from( toInstant() );
 	}
 
 	@Override
