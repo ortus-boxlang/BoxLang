@@ -28,9 +28,11 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 
@@ -150,6 +152,42 @@ public class StructUtilTest {
 		System.out.println( finalSettings );
 		assertThat( finalSettings.getAsStruct( Key.of( "transpiler" ) ).get( "forceOutputTrue" ) ).isEqualTo( true );
 		assertThat( finalSettings.getAsStruct( Key.of( "transpiler" ) ).get( "upperCaseKeys" ) ).isEqualTo( false );
+
+	}
+
+	@DisplayName( "Can deep merge two arrays with the right-hand side becoming assignment" )
+	@Test
+	void testStructMergeArrayIntegrity() {
+
+		//@formatter:off
+		instance.executeSource(
+		    """
+				settings = {
+					mailServers = []
+				};
+
+				overrides = {
+					"mailServers" : [
+						{
+							"tls": false,
+							"password": "",
+							"idleTimeout": "10000",
+							"lifeTimeout": "60000",
+							"port": "25",
+							"username": "",
+							"ssl": false,
+							"smtp": "127.0.0.1"
+						}
+					]
+				};
+		       """,
+		    context );
+		//@formatter:on
+		IStruct	finalSettings		= StructUtil.deepMerge( variables.getAsStruct( Key.of( "settings" ) ), variables.getAsStruct( Key.of( "overrides" ) ),
+		    true );
+		Array	finalMailServers	= finalSettings.getAsArray( Key.of( "mailServers" ) );
+		assertThat( finalMailServers.get( 0 ) ).isInstanceOf( IStruct.class );
+		assertThat( StructCaster.cast( finalMailServers.get( 0 ) ).get( Key.of( "smtp" ) ) ).isEqualTo( "127.0.0.1" );
 
 	}
 
