@@ -1,16 +1,23 @@
 package ortus.boxlang.runtime.bifs.global.system;
 
-import org.junit.jupiter.api.*;
+import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.assertThrows;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
-
-import static com.google.common.truth.Truth.assertThat;
-import static org.junit.Assert.assertThrows;
 
 public class GetSystemSettingTest {
 
@@ -79,6 +86,21 @@ public class GetSystemSettingTest {
 			    """,
 			    context );
 		} );
+	}
+
+	@Test
+	public void testDefaultComplexValue() {
+		instance.executeSource(
+		    """
+		    result = getSystemSetting( "sdf", [1,2,3] )
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Array.class );
+		Array arr = variables.getAsArray( result );
+		assertThat( arr.size() ).isEqualTo( 3 );
+		assertThat( arr.get( 0 ) ).isEqualTo( 1 );
+		assertThat( arr.get( 1 ) ).isEqualTo( 2 );
+		assertThat( arr.get( 2 ) ).isEqualTo( 3 );
 	}
 
 }

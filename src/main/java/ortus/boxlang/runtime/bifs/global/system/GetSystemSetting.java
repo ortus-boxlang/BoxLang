@@ -37,7 +37,7 @@ public class GetSystemSetting extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "String", Key.key ),
-		    new Argument( false, "String", Key.defaultValue )
+		    new Argument( false, "Any", Key.defaultValue )
 		};
 	}
 
@@ -57,9 +57,9 @@ public class GetSystemSetting extends BIF {
 	 *
 	 * @argument.defaultValue The default value to return if the property or environment variable is not found
 	 */
-	public String _invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Key		key				= Key.of( arguments.getAsString( Key.key ) );
-		String	defaultValue	= arguments.getAsString( Key.defaultValue );
+		Object	defaultValue	= arguments.get( Key.defaultValue );
 
 		IStruct	properties		= context.computeAttachmentIfAbsent( Key.properties, attachmentKey -> new Struct( System.getProperties() ) );
 		IStruct	env				= context.computeAttachmentIfAbsent( Key.environment, attachmentKey -> new Struct( System.getenv() ) );
