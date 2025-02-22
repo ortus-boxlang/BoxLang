@@ -363,8 +363,7 @@ public class HTTP extends Component {
 					HTTPResult.put( Key.mimetype, contentTypeParts[ 0 ] );
 				}
 				if ( contentTypeParts.length > 1 ) {
-					String charset = contentTypeParts[ 1 ].replace( "charset=", "" );
-					HTTPResult.put( Key.charset, charset );
+					HTTPResult.put( Key.charset, extractCharset( contentType ) );
 				}
 			} );
 			HTTPResult.put( Key.cookies, generateCookiesQuery( headers ) );
