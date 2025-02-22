@@ -18,6 +18,7 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -99,7 +100,12 @@ public class QueryNew extends BIF {
 			rowData		= castedRowData;
 			columnNames	= new Array();
 			if ( !castedRowData.isEmpty() ) {
-				columnNames = Array.fromList( StructCaster.cast( castedRowData.get( 0 ) ).getKeysAsStrings() );
+				if ( StructCaster.attempt( castedRowData.get( 0 ) ).wasSuccessful() ) {
+					// If the first element is a struct, then use the keys as column names
+					columnNames = Array.fromList( StructCaster.cast( castedRowData.get( 0 ) ).getKeysAsStrings() );
+				} else {
+					castedRowData.stream().map( StringCaster::cast ).forEach( columnNames::add );
+				}
 			}
 		} else {
 			throw new BoxRuntimeException( "The [columnList] must be a string, or an array of data, or" );
