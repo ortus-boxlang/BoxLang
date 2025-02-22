@@ -225,7 +225,8 @@ public class HTTPTest {
 		stubFor(
 		    get( "/image" )
 		        .willReturn(
-		            ok().withHeader( "Content-Type", "image/jpeg" ).withBody( ( byte[] ) FileSystemUtil.read( "src/test/resources/chuck_norris.jpg" ) ) ) );
+		            ok().withHeader( "Content-Type", "image/jpeg; charset=utf-8" )
+		                .withBody( ( byte[] ) FileSystemUtil.read( "src/test/resources/chuck_norris.jpg" ) ) ) );
 
 		// @formatter:off
 		instance.executeSource( String.format( 
