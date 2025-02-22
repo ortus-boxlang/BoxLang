@@ -233,7 +233,9 @@ public class HTTPTest {
 		// @formatter:off
 		instance.executeSource( String.format( 
 			"""
-			bx:http method="GET" getAsBinary=true url="%s" {}
+			bx:http method="GET" getAsBinary=true url="%s" {
+				bx:httpparam type="header" name="Host" value="boxlang.io";
+			}
 			""", 
 			wmRuntimeInfo.getHttpBaseUrl() + "/image" ), 
 			context 

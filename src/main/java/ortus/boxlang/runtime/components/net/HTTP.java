@@ -175,6 +175,11 @@ public class HTTP extends Component {
 	 *
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
+		// Allow for restricted headers to be set
+		if ( System.getProperty( "jdk.httpclient.allowRestrictedHeaders" ) == null ) {
+			System.setProperty( "jdk.httpclient.allowRestrictedHeaders", "host,content-length" );
+		}
+
 		// Keeps track of the HTTPParams
 		executionState.put( Key.HTTPParams, new Array() );
 
