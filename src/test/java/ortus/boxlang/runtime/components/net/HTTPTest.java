@@ -251,6 +251,36 @@ public class HTTPTest {
 		assertThat( body ).isInstanceOf( byte[].class );
 	}
 
+	@DisplayName( "It can send binary content" )
+	@Test
+	public void testBinarySend( WireMockRuntimeInfo wmRuntimeInfo ) {
+		stubFor(
+		    post( "/image" )
+		        .willReturn(
+		            ok()
+		        )
+		);
+
+		// @formatter:off
+		variables.put(  Key.of( "fileContent" ), FileSystemUtil.read( "src/test/resources/chuck_norris.jpg" ) );
+		instance.executeSource( String.format( 
+			"""
+			bx:http method="POST" url="%s" {
+				bx:httpparam type="body" value="#fileContent#";
+			}
+			""", 
+			wmRuntimeInfo.getHttpBaseUrl() + "/image" ), 
+			context 
+		);
+		// @formatter:on
+
+		assertThat( variables.get( bxhttp ) ).isInstanceOf( IStruct.class );
+
+		IStruct res = variables.getAsStruct( bxhttp );
+		assertThat( res.get( Key.statusCode ) ).isEqualTo( 200 );
+		assertThat( res.get( Key.statusText ) ).isEqualTo( "OK" );
+	}
+
 	@DisplayName( "Will throw an error if binary is returned and getAsBinary is never" )
 	@Test
 	public void testBinaryThrow( WireMockRuntimeInfo wmRuntimeInfo ) {

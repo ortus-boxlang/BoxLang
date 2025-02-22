@@ -234,7 +234,13 @@ public class HTTP extends Component {
 						if ( bodyPublisher != null ) {
 							throw new BoxRuntimeException( "Cannot use a body httpparam with an existing http body: " + bodyPublisher.toString() );
 						}
-						bodyPublisher = HttpRequest.BodyPublishers.ofString( param.getAsString( Key.value ) );
+						if ( param.get( Key.value ) instanceof byte[] bodyBytes ) {
+							bodyPublisher = HttpRequest.BodyPublishers.ofByteArray( bodyBytes );
+						} else if ( StringCaster.attempt( param.get( Key.value ) ).wasSuccessful() ) {
+							bodyPublisher = HttpRequest.BodyPublishers.ofString( StringCaster.cast( param.get( Key.value ) ) );
+						} else {
+							throw new BoxRuntimeException( "The body attribute provided is not a valid string nor a binary object." );
+						}
 					}
 					case "xml" -> {
 						if ( bodyPublisher != null ) {
