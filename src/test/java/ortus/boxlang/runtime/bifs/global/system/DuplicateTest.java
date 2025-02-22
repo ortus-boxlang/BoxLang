@@ -541,6 +541,30 @@ public class DuplicateTest {
 		    context );
 	}
 
+	@DisplayName( "It can test member functions" )
+	@Test
+	public void testMemberMethods() {
+		//@formatter:off
+		instance.executeSource(
+		    """
+			testStruct = { "foo": "bar" };
+			testArray = [ "foo", "bar" ];
+			testQuery = queryNew( [ "foo", "bar" ] );
+			testDate = now();
+			dupeStruct = testStruct.duplicate();
+			assert dupeStruct == testStruct;
+			dupeArray = testArray.duplicate();
+			assert dupeArray == testArray;
+			dupeQuery = testQuery.duplicate();
+			assert dupeQuery.columnArray().len() == 2;
+			dupeDate = testDate.duplicate();
+			assert dupeDate == testDate;
+		    """,
+		    context );
+		// @formatter:on
+
+	}
+
 	@Disabled( "Performance benchmark test on a struct" )
 	@Test
 	public void benchmarkStruct() {
