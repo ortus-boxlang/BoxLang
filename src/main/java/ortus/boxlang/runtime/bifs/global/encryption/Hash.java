@@ -18,6 +18,9 @@ package ortus.boxlang.runtime.bifs.global.encryption;
 import java.io.IOException;
 import java.nio.charset.Charset;
 
+import org.apache.commons.lang3.SerializationException;
+import org.apache.commons.lang3.SerializationUtils;
+
 import com.fasterxml.jackson.jr.ob.JSONObjectException;
 
 import ortus.boxlang.runtime.bifs.BIF;
@@ -29,6 +32,8 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
+import ortus.boxlang.runtime.types.exceptions.BoxIOException;
+import ortus.boxlang.runtime.types.util.JSONUtil;
 import ortus.boxlang.runtime.util.EncryptionUtil;
 import ortus.boxlang.runtime.util.conversion.ObjectMarshaller;
 
@@ -99,8 +104,23 @@ public class Hash extends BIF {
 			hashBytes = itemBytes;
 		} else if ( hashItem instanceof String itemString ) {
 			hashBytes = itemString.getBytes( Charset.forName( charset ) );
+		} else if ( hashItem instanceof java.io.Serializable ) {
+			try {
+				hashBytes = SerializationUtils.serialize( ( java.io.Serializable ) hashItem );
+			} catch ( SerializationException ns ) {
+				try {
+					hashBytes = JSONUtil.getJSONBuilder( false ).asString( hashItem ).getBytes();
+				} catch ( IOException e ) {
+					throw new BoxIOException( "The object provided could not be serialized to a byte array", e );
+				}
+			}
 		} else {
-			hashBytes = ObjectMarshaller.serialize( context, hashItem );
+			try {
+				hashBytes = ObjectMarshaller.serialize( context, hashItem );
+			} catch ( BoxIOException e ) {
+				// fallback to a stringification and get the bytes if serialization fails
+				hashBytes = hashItem.toString().getBytes( Charset.forName( arguments.getAsString( Key.encoding ) ) );
+			}
 		}
 
 		return EncryptionUtil.hash( hashBytes, algorithm, iterations );
