@@ -29,6 +29,7 @@ import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpTimeoutException;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -40,6 +41,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import ortus.boxlang.runtime.components.Attribute;
@@ -304,10 +307,10 @@ public class HTTP extends Component {
 			) );
 
 			// TODO : should we move the catch block below and add an `exceptionally` handler for the future?
-			CompletableFuture<HttpResponse<String>>	future		= client.sendAsync( targetHTTPRequest, HttpResponse.BodyHandlers.ofString() );
+			CompletableFuture<HttpResponse<byte[]>>	future		= client.sendAsync( targetHTTPRequest, HttpResponse.BodyHandlers.ofByteArray() );
 
 			// Announce the HTTP request
-			HttpResponse<String>					response	= future.get(); // block and wait for the response
+			HttpResponse<byte[]>					response	= future.get(); // block and wait for the response
 
 			// Announce the HTTP RAW response
 			// Useful for debugging and pre-processing and timing, since the other events are after the response is processed
@@ -316,15 +319,29 @@ public class HTTP extends Component {
 			) );
 
 			// Start Processing Results
-			HttpHeaders	httpHeaders			= Optional
+			HttpHeaders	httpHeaders		= Optional
 			    .ofNullable( response.headers() )
 			    .orElse( HttpHeaders.of( Map.of(), ( a, b ) -> true ) );
-			IStruct		headers				= transformToResponseHeaderStruct(
+			IStruct		headers			= transformToResponseHeaderStruct(
 			    httpHeaders.map()
 			);
-			String		httpVersionString	= response.version() == HttpClient.Version.HTTP_1_1 ? "HTTP/1.1" : "HTTP/2";
-			String		statusCodeString	= String.valueOf( response.statusCode() );
-			String		statusText			= HTTPStatusReasons.getReasonForStatus( response.statusCode() );
+
+			Object		responseBody	= null;
+			if ( response.body() != null ) {
+				String contentType = headers.getAsString( Key.of( "content-type" ) );
+				if ( FileSystemUtil.isBinaryMimeType( contentType ) ) {
+					responseBody = response.body();
+				} else {
+					var charset = contentType != null && contentType.contains( "charset=" )
+					    ? extractCharset( contentType )
+					    : "UTF-8";
+					responseBody = new String( response.body(), Charset.forName( charset ) );
+				}
+			}
+
+			String	httpVersionString	= response.version() == HttpClient.Version.HTTP_1_1 ? "HTTP/1.1" : "HTTP/2";
+			String	statusCodeString	= String.valueOf( response.statusCode() );
+			String	statusText			= HTTPStatusReasons.getReasonForStatus( response.statusCode() );
 
 			headers.put( Key.HTTP_Version, httpVersionString );
 			headers.put( Key.status_code, statusCodeString );
@@ -337,7 +354,7 @@ public class HTTP extends Component {
 			HTTPResult.put( Key.status_code, response.statusCode() );
 			HTTPResult.put( Key.statusText, statusText );
 			HTTPResult.put( Key.status_text, statusText );
-			HTTPResult.put( Key.fileContent, response.statusCode() == 408 ? "Request Timeout" : response.body() );
+			HTTPResult.put( Key.fileContent, response.statusCode() == 408 ? "Request Timeout" : responseBody );
 			HTTPResult.put( Key.errorDetail, response.statusCode() == 408 ? response.body() : "" );
 			Optional<String> contentTypeHeader = httpHeaders.firstValue( "Content-Type" );
 			contentTypeHeader.ifPresent( ( contentType ) -> {
@@ -525,5 +542,19 @@ public class HTTP extends Component {
 		}
 
 		return responseHeaders;
+	}
+
+	private static String extractCharset( String contentType ) {
+		if ( contentType == null || contentType.isEmpty() ) {
+			return null;
+		}
+
+		Pattern	pattern	= Pattern.compile( "charset=([a-zA-Z0-9-]+)" );
+		Matcher	matcher	= pattern.matcher( contentType );
+
+		if ( matcher.find() ) {
+			return matcher.group( 1 );
+		}
+		return null;
 	}
 }

@@ -604,12 +604,28 @@ public final class FileSystemUtil {
 	 * @throws IOException
 	 */
 	public static Boolean isBinaryFile( String filePath ) {
-		String mimeType = getMimeType( filePath );
+		return isBinaryMimeType( getMimeType( filePath ) );
+	}
+
+	/**
+	 * Tests whether a given mime type is a binary mime type
+	 * 
+	 * @param mimeType
+	 * 
+	 * @return
+	 */
+	public static Boolean isBinaryMimeType( String mimeType ) {
 		// if we can't determine a mimetype from a path we assume the file is text (
 		// e.g. a friendly URL )
 		if ( mimeType == null ) {
 			return false;
 		}
+
+		// if this is a content-type header we need to strip the charset
+		if ( mimeType.split( ";" ).length > 1 ) {
+			mimeType = mimeType.split( ";" )[ 0 ];
+		}
+
 		Object[] mimeParts = mimeType.split( "/" );
 
 		return !TEXT_MIME_PREFIXES.contains( mimeParts[ 0 ] )

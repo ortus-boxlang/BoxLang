@@ -52,6 +52,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
+import ortus.boxlang.runtime.util.FileSystemUtil;
 
 @WireMockTest
 public class HTTPTest {
@@ -216,6 +217,33 @@ public class HTTPTest {
 		assertThat( res.get( Key.statusText ) ).isEqualTo( "Created" );
 		String body = res.getAsString( Key.fileContent );
 		assertThat( body ).isEqualTo( "{\"id\": 1, \"name\": \"foobar\", \"body\": \"lorem ipsum dolor\"}" );
+	}
+
+	@DisplayName( "It can return and retain binary content" )
+	@Test
+	public void testBinaryReturn( WireMockRuntimeInfo wmRuntimeInfo ) {
+		stubFor(
+		    get( "/image" )
+		        .willReturn(
+		            ok().withHeader( "Content-Type", "image/jpeg" ).withBody( ( byte[] ) FileSystemUtil.read( "src/test/resources/chuck_norris.jpg" ) ) ) );
+
+		// @formatter:off
+		instance.executeSource( String.format( 
+			"""
+			bx:http method="GET" url="%s" {}
+			""", 
+			wmRuntimeInfo.getHttpBaseUrl() + "/image" ), 
+			context 
+		);
+		// @formatter:on
+
+		assertThat( variables.get( bxhttp ) ).isInstanceOf( IStruct.class );
+
+		IStruct res = variables.getAsStruct( bxhttp );
+		assertThat( res.get( Key.statusCode ) ).isEqualTo( 200 );
+		assertThat( res.get( Key.statusText ) ).isEqualTo( "OK" );
+		Object body = res.get( Key.fileContent );
+		assertThat( body ).isInstanceOf( byte[].class );
 	}
 
 	@DisplayName( "It can make HTTP call ACF script" )
