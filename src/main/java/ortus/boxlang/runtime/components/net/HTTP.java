@@ -77,9 +77,18 @@ import ortus.boxlang.runtime.validation.Validator;
 @BoxComponent( allowsBody = true )
 public class HTTP extends Component {
 
-	private final static String	BASIC_AUTH_DELIMITER	= ":";
-	private static final String	AUTHMODE_BASIC			= "BASIC";
-	private static final String	AUTHMODE_NTLM			= "NTLM";
+	private final static String		BASIC_AUTH_DELIMITER	= ":";
+	private static final String		AUTHMODE_BASIC			= "BASIC";
+	private static final String		AUTHMODE_NTLM			= "NTLM";
+
+	private static ArrayList<Key>	BINARY_ACCEPT_VALUES	= new ArrayList<Key>() {
+
+																{
+																	add( Key.of( "auto" ) );
+																	add( Key.of( "true" ) );
+																	add( Key.of( "yes" ) );
+																}
+															};
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -119,7 +128,7 @@ public class HTTP extends Component {
 		    new Attribute( Key.getAsBinary, "string", "auto", Set.of(
 		        Validator.REQUIRED,
 		        Validator.NON_EMPTY,
-		        Validator.valueOneOf( "auto", "no", "yes", "never" )
+		        Validator.valueOneOf( "true", "false", "auto", "no", "yes", "never" )
 		    ) ),
 		    new Attribute( Key.result, "string", "bxhttp", Set.of(
 		        Validator.REQUIRED,
@@ -169,8 +178,13 @@ public class HTTP extends Component {
 		// Keeps track of the HTTPParams
 		executionState.put( Key.HTTPParams, new Array() );
 
+		Key			binaryOperator		= Key.of( attributes.getAsString( Key.getAsBinary ) );
+		Boolean		isBinaryAccepted	= BINARY_ACCEPT_VALUES
+		    .stream()
+		    .anyMatch( value -> value.equals( binaryOperator ) );
+
 		// Process the component for HTTPParams
-		BodyResult bodyResult = processBody( context, body );
+		BodyResult	bodyResult			= processBody( context, body );
 
 		// IF there was a return statement inside our body, we early exit now
 		if ( bodyResult.isEarlyExit() ) {
@@ -328,9 +342,13 @@ public class HTTP extends Component {
 
 			Object		responseBody	= null;
 			if ( response.body() != null ) {
-				String contentType = headers.getAsString( Key.of( "content-type" ) );
-				if ( FileSystemUtil.isBinaryMimeType( contentType ) ) {
+				String	contentType			= headers.getAsString( Key.of( "content-type" ) );
+				Boolean	isBinaryContentType	= FileSystemUtil.isBinaryMimeType( contentType );
+				if ( isBinaryAccepted && isBinaryContentType ) {
 					responseBody = response.body();
+				} else if ( isBinaryContentType && !isBinaryAccepted ) {
+					throw new BoxRuntimeException(
+					    "Cannot accept binary content type with getAsBinary attributes set to [" + attributes.getAsString( Key.getAsBinary ) + "]" );
 				} else {
 					var charset = contentType != null && contentType.contains( "charset=" )
 					    ? extractCharset( contentType )

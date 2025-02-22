@@ -30,6 +30,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.ok;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Base64;
 
@@ -52,6 +53,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
 @WireMockTest
@@ -231,7 +233,7 @@ public class HTTPTest {
 		// @formatter:off
 		instance.executeSource( String.format( 
 			"""
-			bx:http method="GET" url="%s" {}
+			bx:http method="GET" getAsBinary=true url="%s" {}
 			""", 
 			wmRuntimeInfo.getHttpBaseUrl() + "/image" ), 
 			context 
@@ -245,6 +247,27 @@ public class HTTPTest {
 		assertThat( res.get( Key.statusText ) ).isEqualTo( "OK" );
 		Object body = res.get( Key.fileContent );
 		assertThat( body ).isInstanceOf( byte[].class );
+	}
+
+	@DisplayName( "Will throw an error if binary is returned and getAsBinary is never" )
+	@Test
+	public void testBinaryThrow( WireMockRuntimeInfo wmRuntimeInfo ) {
+		stubFor(
+		    get( "/image" )
+		        .willReturn(
+		            ok().withHeader( "Content-Type", "image/jpeg; charset=utf-8" )
+		                .withBody( ( byte[] ) FileSystemUtil.read( "src/test/resources/chuck_norris.jpg" ) ) ) );
+
+		// @formatter:off
+		assertThrows( BoxRuntimeException.class, () -> instance.executeSource( String.format( 
+			"""
+			bx:http method="GET" getAsBinary="never" url="%s" {}
+			""", 
+			wmRuntimeInfo.getHttpBaseUrl() + "/image" ), 
+			context 
+		) );
+		// @formatter:on
+
 	}
 
 	@DisplayName( "It can make HTTP call ACF script" )
