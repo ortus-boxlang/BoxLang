@@ -21,6 +21,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
 @BoxBIF
@@ -36,7 +37,7 @@ public class DirectoryCopy extends BIF {
 		    new Argument( true, "string", Key.source ),
 		    new Argument( true, "string", Key.destination ),
 		    new Argument( false, "boolean", Key.recurse, false ),
-		    new Argument( false, "string", Key.filter, "*" ),
+		    new Argument( false, "any", Key.filter, "*" ),
 		    new Argument( false, "boolean", Key.createPath, true )
 		};
 	}
@@ -67,13 +68,18 @@ public class DirectoryCopy extends BIF {
 
 		destinationPath = FileSystemUtil.expandPath( context, destinationPath ).absolutePath().toString();
 
+		if ( arguments.get( Key.filter ) instanceof Function filterFunction ) {
+			arguments.put( Key.filter, FileSystemUtil.createPathFilterPredicate( context, filterFunction ) );
+		}
+
 		FileSystemUtil.copyDirectory(
 		    sourcePath,
 		    destinationPath,
 		    arguments.getAsBoolean( Key.recurse ),
-		    arguments.getAsString( Key.filter ),
+		    arguments.get( Key.filter ),
 		    arguments.getAsBoolean( Key.createPath )
 		);
+
 		return null;
 	}
 

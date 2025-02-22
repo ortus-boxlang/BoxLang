@@ -61,6 +61,7 @@ import org.apache.commons.lang3.SystemUtils;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
@@ -68,6 +69,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.DateTime;
+import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
@@ -508,7 +510,11 @@ public final class FileSystemUtil {
 		}
 	}
 
-	public static void copyDirectory( String source, String destination, Boolean recurse, String filter,
+	public static void copyDirectory(
+	    String source,
+	    String destination,
+	    Boolean recurse,
+	    Object filter,
 	    Boolean createPaths ) {
 		Path	start	= Path.of( source );
 		Path	end		= Path.of( destination );
@@ -519,8 +525,17 @@ public final class FileSystemUtil {
 				throw new BoxIOException( e );
 			}
 		}
+
 		if ( Files.isDirectory( start ) ) {
-			listDirectory( source, recurse, filter, "name", recurse ? "all" : "file" ).forEachOrdered( path -> {
+			Stream<Path> directoryListing = null;
+			if ( filter instanceof String filterString ) {
+				directoryListing = listDirectory( source, recurse, filterString, "name", recurse ? "all" : "file" );
+			} else if ( filter instanceof java.util.function.Predicate<?> filterPredicate ) {
+				directoryListing = listDirectory( source, recurse, createPaths ? filterPredicate : null, "name", recurse ? "all" : "file" );
+			} else {
+				throw new BoxRuntimeException( "The filter argument to the method DirectoryCopy filter must either be a string or function/closure" );
+			}
+			directoryListing.forEachOrdered( path -> {
 				Path	targetPath		= Path.of( path.toString().replace( source, destination ) );
 				Path	targetParent	= targetPath.getParent();
 				if ( recurse && !Files.exists( targetParent ) ) {
@@ -1263,6 +1278,18 @@ public final class FileSystemUtil {
 		} catch ( URISyntaxException e ) {
 			throw new RuntimeException( "The provided file path [" + input + "] is not a valid URI.", e );
 		}
+	}
+
+	/**
+	 * Creates a filter predicate for a directory stream based on the provided closure.
+	 *
+	 * @param context The context in which the BIF is being invoked.
+	 * @param closure The closure to use for filtering.
+	 *
+	 * @return A predicate that filters paths based on the closure.
+	 */
+	public static java.util.function.Predicate<Path> createPathFilterPredicate( IBoxContext context, Function closure ) {
+		return path -> BooleanCaster.cast( context.invokeFunction( closure, new Object[] { path.toString() } ) );
 	}
 
 }

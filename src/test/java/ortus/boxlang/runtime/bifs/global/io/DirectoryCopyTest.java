@@ -141,6 +141,27 @@ public class DirectoryCopyTest {
 		assertTrue( FileSystemUtil.exists( destination + "/nested/further/test.md" ) );
 	}
 
+	@DisplayName( "It tests the BIF DirectoryCopy with Function Filter" )
+	@Test
+	public void testFunctionFilteredDirectoryCopy() {
+
+		variables.put( Key.of( "source" ), Path.of( source ).toAbsolutePath().toString() );
+		variables.put( Key.of( "destination" ), Path.of( destination ).toAbsolutePath().toString() );
+		assertTrue( FileSystemUtil.exists( source ) );
+		assertFalse( FileSystemUtil.exists( destination ) );
+		instance.executeSource(
+		    """
+		    directoryCopy( source, destination, true, ( path ) -> listLast( path, "." ) == "md" );
+		    """,
+		    context );
+		assertTrue( FileSystemUtil.exists( destination ) );
+		assertFalse( FileSystemUtil.exists( destination + "/test.txt" ) );
+		assertTrue( FileSystemUtil.exists( destination + "/nested" ) );
+		assertFalse( FileSystemUtil.exists( destination + "/nested/test.txt" ) );
+		assertTrue( FileSystemUtil.exists( destination + "/nested/further" ) );
+		assertTrue( FileSystemUtil.exists( destination + "/nested/further/test.md" ) );
+	}
+
 	@DisplayName( "It tests the BIF DirectoryCopy with Recursion" )
 	@Test
 	public void testRecursiveDirectoryCopy() {
