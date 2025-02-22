@@ -35,7 +35,20 @@ public class IntegerCaster implements IBoxCaster {
 	 * @return The value
 	 */
 	public static CastAttempt<Integer> attempt( Object object ) {
-		return CastAttempt.ofNullable( cast( object, false ) );
+		return attempt( object, false );
+	}
+
+	/**
+	 * Tests to see if the value can be cast.
+	 * Returns a {@code CastAttempt<T>} which will contain the result if casting was
+	 * was successfull, or can be interogated to proceed otherwise.
+	 *
+	 * @param object The value to cast
+	 *
+	 * @return The value
+	 */
+	public static CastAttempt<Integer> attempt( Object object, boolean allowTruncate ) {
+		return CastAttempt.ofNullable( cast( allowTruncate, object, false ) );
 	}
 
 	/**
@@ -46,7 +59,29 @@ public class IntegerCaster implements IBoxCaster {
 	 * @return The value
 	 */
 	public static Integer cast( Object object ) {
-		return cast( object, true );
+		return cast( false, object, true );
+	}
+
+	/**
+	 * Used to cast anything, throwing exception if we fail
+	 *
+	 * @param object The value to cast
+	 *
+	 * @return The value
+	 */
+	public static Integer cast( boolean allowTruncate, Object object ) {
+		return cast( allowTruncate, object, true );
+	}
+
+	/**
+	 * Used to cast anything, throwing exception if we fail
+	 *
+	 * @param object The value to cast
+	 *
+	 * @return The value
+	 */
+	public static Integer cast( Object object, Boolean fail ) {
+		return cast( false, object, fail );
 	}
 
 	/**
@@ -57,7 +92,7 @@ public class IntegerCaster implements IBoxCaster {
 	 *
 	 * @return The value, or null when cannot be cast
 	 */
-	public static Integer cast( Object object, Boolean fail ) {
+	public static Integer cast( boolean allowTruncate, Object object, Boolean fail ) {
 		if ( object == null ) {
 			if ( fail ) {
 				throw new BoxCastException( "Can't cast null to a int." );
@@ -69,47 +104,39 @@ public class IntegerCaster implements IBoxCaster {
 		object = DynamicObject.unWrap( object );
 
 		if ( object instanceof Number num ) {
-			return Integer.valueOf( num.intValue() );
+			return handleNumber( num, allowTruncate, fail );
 		}
 		if ( object instanceof Boolean bool ) {
 			return Integer.valueOf( bool ? 1 : 0 );
 		}
 
-		String theValue = StringCaster.cast( object, fail );
-		if ( theValue == null ) {
-			if ( fail ) {
-				throw new BoxCastException( String.format( "Can't cast [%s] to a int.", theValue ) );
-			} else {
-				return null;
-			}
-		}
-		if ( isInteger( theValue ) ) {
-			return Integer.valueOf( theValue );
+		Number num = NumberCaster.cast( object, false );
+		if ( num != null ) {
+			return handleNumber( num, allowTruncate, fail );
 		}
 		if ( fail ) {
-			throw new BoxCastException( String.format( "Can't cast [%s] to a int.", theValue ) );
+			throw new BoxCastException( String.format( "Can't cast [%s] to a int.", object ) );
 		} else {
 			return null;
 		}
 
 	}
 
-	/**
-	 * Determine whether the provided string is castable to an integer.
-	 *
-	 * @param value A probably-hopefully integer string, with an optional plus/minus sign.
-	 *
-	 * @return true if all string characters are digits. False for empty string, null, floats, alpha characters, etc.
-	 */
-	public static boolean isInteger( String value ) {
-		if ( value == null )
-			return false;
-
-		String toParse = value;
-		if ( value.startsWith( "-" ) || value.startsWith( "+" ) ) {
-			toParse = toParse.substring( 1 );
+	private static Integer handleNumber( Number num, boolean allowTruncate, boolean fail ) {
+		if ( allowTruncate ) {
+			return Integer.valueOf( num.intValue() );
+		} else {
+			// check if there is a decimal portion
+			if ( num.doubleValue() % 1 != 0 ) {
+				if ( fail ) {
+					throw new BoxCastException( String.format( "Can't cast [%s] to a int.", num ) );
+				} else {
+					return null;
+				}
+			} else {
+				return Integer.valueOf( num.intValue() );
+			}
 		}
-		return !toParse.isEmpty() && toParse.chars().allMatch( Character::isDigit );
 	}
 
 }

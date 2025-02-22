@@ -17,6 +17,7 @@ package ortus.boxlang.runtime.util;
 import org.apache.commons.lang3.math.NumberUtils;
 
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
+import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.operators.GreaterThanEqual;
@@ -89,7 +90,12 @@ public class ValidationUtil {
 	 * @return Boolean indicating whether the given string is a valid integer
 	 */
 	public static boolean isValidInteger( Object value ) {
-		return value instanceof Integer || ( value instanceof String stringVal && NumberUtils.isDigits( stringVal ) );
+		// Our integer caster will cast a boolean to an integer, but I really don't think that should count here. ACF/Lucee agree here.
+		if ( value instanceof Boolean ) {
+			return false;
+		}
+
+		return IntegerCaster.attempt( value ).wasSuccessful();
 	}
 
 	/**

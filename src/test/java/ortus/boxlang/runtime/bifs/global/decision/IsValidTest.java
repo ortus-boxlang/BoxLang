@@ -169,18 +169,26 @@ public class IsValidTest {
 	public void testInteger() {
 		instance.executeSource(
 		    """
-		    // trues
-		    int       = isValid( 'integer', 123 );
-		    // falsies
-		    bool      = isValid( 'integer', true );
-		    float     = isValid( 'integer', 123.45 );
-		    stringval = isValid( 'integer', '3x' );
-		    """,
+		            // trues
+		       int       = isValid( 'integer', 123 );
+		       intWithDec = isValid( 'integer', 123.0 );
+		       stringInt = isValid( 'integer', "123" );
+		       stringIntWithDec = isValid( 'integer', "123.0" );
+		       // falsies
+		       bool      = isValid( 'integer', true );
+		       float     = isValid( 'integer', 123.45 );
+		       stringval = isValid( 'integer', '3x' );
+		    stringWithDec = isValid( 'integer', '3.5' );
+		            """,
 		    context );
 		assertThat( ( Boolean ) variables.get( Key.of( "int" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "intWithDec" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "stringInt" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "stringIntWithDec" ) ) ).isTrue();
 		assertThat( ( Boolean ) variables.get( Key.of( "bool" ) ) ).isFalse();
 		assertThat( ( Boolean ) variables.get( Key.of( "float" ) ) ).isFalse();
 		assertThat( ( Boolean ) variables.get( Key.of( "stringval" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "stringWithDec" ) ) ).isFalse();
 	}
 
 	@DisplayName( "It works on Numerics" )

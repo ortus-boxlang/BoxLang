@@ -46,7 +46,7 @@ public class IsLeapYear extends BIF {
 	 * @argument.year Number representing the year to test.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		return Year.isLeap( IntegerCaster.cast( arguments.get( Key.year ), true ) );
+		return Year.isLeap( IntegerCaster.cast( true, arguments.get( Key.year ), true ) );
 	}
 
 }

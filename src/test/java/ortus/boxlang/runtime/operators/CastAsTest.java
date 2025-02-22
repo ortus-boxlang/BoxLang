@@ -125,12 +125,6 @@ public class CastAsTest {
 		assertThat( CastAs.invoke( context, "-2147483647", "int" ).getClass().getName() ).isEqualTo( "java.lang.Integer" );
 		assertThat( CastAs.invoke( context, "+2147483647", "int" ).getClass().getName() ).isEqualTo( "java.lang.Integer" );
 		assertThat( CastAs.invoke( context, true, "int" ).getClass().getName() ).isEqualTo( "java.lang.Integer" );
-		assertThat(
-		    EqualsEquals.invoke(
-		        CastAs.invoke( context, 5.7, "int" ),
-		        5
-		    )
-		).isTrue();
 
 		assertThrows( BoxRuntimeException.class, () -> {
 			CastAs.invoke( context, "xy", "int" );
@@ -154,12 +148,6 @@ public class CastAsTest {
 	void testItCanCastToLong() {
 		assertThat( CastAs.invoke( context, 5, "long" ).getClass().getName() ).isEqualTo( "java.lang.Long" );
 		assertThat( CastAs.invoke( context, true, "long" ).getClass().getName() ).isEqualTo( "java.lang.Long" );
-		assertThat(
-		    EqualsEquals.invoke(
-		        CastAs.invoke( context, 5.7, "long" ),
-		        5
-		    )
-		).isTrue();
 	}
 
 	@DisplayName( "It can cast to float" )
@@ -201,12 +189,6 @@ public class CastAsTest {
 	void testItCanCastToShort() {
 		assertThat( CastAs.invoke( context, 5, "short" ).getClass().getName() ).isEqualTo( "java.lang.Short" );
 		assertThat( CastAs.invoke( context, true, "short" ).getClass().getName() ).isEqualTo( "java.lang.Short" );
-		assertThat(
-		    EqualsEquals.invoke(
-		        CastAs.invoke( context, 5.7, "short" ),
-		        5
-		    )
-		).isTrue();
 	}
 
 	@DisplayName( "It can cast to string" )

@@ -35,7 +35,20 @@ public class LongCaster implements IBoxCaster {
 	 * @return The value
 	 */
 	public static CastAttempt<Long> attempt( Object object ) {
-		return CastAttempt.ofNullable( cast( object, false ) );
+		return attempt( object, false );
+	}
+
+	/**
+	 * Tests to see if the value can be cast.
+	 * Returns a {@code CastAttempt<T>} which will contain the result if casting was
+	 * was successfull, or can be interogated to proceed otherwise.
+	 *
+	 * @param object The value to cast
+	 *
+	 * @return The value
+	 */
+	public static CastAttempt<Long> attempt( Object object, boolean allowTruncate ) {
+		return CastAttempt.ofNullable( cast( allowTruncate, object, false ) );
 	}
 
 	/**
@@ -50,6 +63,17 @@ public class LongCaster implements IBoxCaster {
 	}
 
 	/**
+	 * Used to cast anything, throwing exception if we fail
+	 *
+	 * @param object The value to cast
+	 *
+	 * @return The value
+	 */
+	public static Long cast( Object object, Boolean fail ) {
+		return cast( false, object, fail );
+	}
+
+	/**
 	 * Used to cast anything
 	 *
 	 * @param object The value to cast
@@ -57,7 +81,7 @@ public class LongCaster implements IBoxCaster {
 	 *
 	 * @return The value, or null when cannot be cast
 	 */
-	public static Long cast( Object object, Boolean fail ) {
+	public static Long cast( boolean allowTruncate, Object object, Boolean fail ) {
 		if ( object == null ) {
 			if ( fail ) {
 				throw new BoxCastException( "Can't cast null to a long." );
@@ -69,21 +93,39 @@ public class LongCaster implements IBoxCaster {
 		object = DynamicObject.unWrap( object );
 
 		if ( object instanceof Number num ) {
-			return Long.valueOf( num.longValue() );
+			return handleNumber( num, allowTruncate, fail );
 		}
 		if ( object instanceof Boolean bool ) {
 			return Long.valueOf( bool ? 1 : 0 );
 		}
 
-		CastAttempt<Number> number = NumberCaster.attempt( object );
-		if ( number.wasSuccessful() ) {
-			return number.get().longValue();
-		} else if ( fail ) {
-			throw new BoxCastException( "Can't cast " + object.getClass().getName() + " to a long." );
+		Number num = NumberCaster.cast( object, false );
+		if ( num != null ) {
+			return handleNumber( num, allowTruncate, fail );
+		}
+		if ( fail ) {
+			throw new BoxCastException( String.format( "Can't cast [%s] to a long.", object ) );
 		} else {
 			return null;
 		}
 
+	}
+
+	private static Long handleNumber( Number num, boolean allowTruncate, boolean fail ) {
+		if ( allowTruncate ) {
+			return Long.valueOf( num.longValue() );
+		} else {
+			// check if there is a decimal portion
+			if ( num.doubleValue() % 1 != 0 ) {
+				if ( fail ) {
+					throw new BoxCastException( String.format( "Can't cast [%s] to a long.", num ) );
+				} else {
+					return null;
+				}
+			} else {
+				return Long.valueOf( num.longValue() );
+			}
+		}
 	}
 
 }

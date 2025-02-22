@@ -18,6 +18,7 @@ package ortus.boxlang.runtime.bifs.global.io;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -62,8 +63,9 @@ public class FileRead extends BIF {
 		String	filePath			= arguments.getAsString( Key.filepath );
 
 		if ( charsetOrBufferSize != null ) {
-			if ( IntegerCaster.isInteger( charsetOrBufferSize ) ) {
-				bufferSize = IntegerCaster.cast( charsetOrBufferSize );
+			CastAttempt<Integer> castAttempt = IntegerCaster.attempt( charsetOrBufferSize );
+			if ( castAttempt.wasSuccessful() ) {
+				bufferSize = castAttempt.get();
 			} else {
 				charset = charsetOrBufferSize;
 			}

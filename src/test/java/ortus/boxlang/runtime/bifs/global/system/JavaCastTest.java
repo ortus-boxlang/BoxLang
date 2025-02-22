@@ -136,9 +136,13 @@ public class JavaCastTest {
 		instance.executeSource(
 		    """
 		    result = javaCast('int', '42');
+		    result2 = javaCast('int', 1.2);
+		    result3 = javaCast('int', '1.2');
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( 42 );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( 1 );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( 1 );
 	}
 
 	@DisplayName( "It casts a string to long" )
@@ -147,9 +151,28 @@ public class JavaCastTest {
 		instance.executeSource(
 		    """
 		    result = javaCast('long', '42');
+		    result2 = javaCast('long', 1.2);
+		    result3 = javaCast('long', '1.2');
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( 42L );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( 1L );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( 1L );
+	}
+
+	@DisplayName( "It casts a string to short" )
+	@Test
+	public void testItCastsStringToShort() {
+		instance.executeSource(
+		    """
+		    result = javaCast('short', '42');
+		    result2 = javaCast('short', 1.2);
+		    result3 = javaCast('short', '1.2');
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( ( short ) 42 );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( ( short ) 1 );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( ( short ) 1 );
 	}
 
 	@DisplayName( "It casts a string to float" )
