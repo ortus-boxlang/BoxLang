@@ -497,7 +497,7 @@ public final class FileSystemUtil {
 			    + "] cannot be created because the parent directory [" + end.getParent().toAbsolutePath().toString()
 			    + "] does not exist.  To prevent this error set the createPath argument to true." );
 		} else if ( Files.exists( end ) ) {
-			throw new BoxRuntimeException( "The target directory [" + end.toAbsolutePath().toString() + "] already exists" );
+			throw new BoxRuntimeException( "The target path of [" + end.toAbsolutePath().toString() + "] already exists" );
 		} else {
 			try {
 				if ( createPath ) {
