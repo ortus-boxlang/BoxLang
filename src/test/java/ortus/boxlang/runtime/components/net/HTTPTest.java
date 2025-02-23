@@ -299,7 +299,6 @@ public class HTTPTest {
 			context 
 		) );
 		// @formatter:on
-
 	}
 
 	@DisplayName( "It can make HTTP call ACF script" )

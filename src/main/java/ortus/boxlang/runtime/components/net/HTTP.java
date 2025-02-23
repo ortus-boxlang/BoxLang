@@ -81,14 +81,15 @@ public class HTTP extends Component {
 	private static final String		AUTHMODE_BASIC			= "BASIC";
 	private static final String		AUTHMODE_NTLM			= "NTLM";
 
-	private static ArrayList<Key>	BINARY_ACCEPT_VALUES	= new ArrayList<Key>() {
+	protected static ArrayList<Key>	BINARY_REQUEST_VALUES	= new ArrayList<Key>() {
 
 																{
-																	add( Key.of( "auto" ) );
 																	add( Key.of( "true" ) );
 																	add( Key.of( "yes" ) );
 																}
 															};
+
+	protected static Key			BINARY_NEVER			= Key.of( "never" );
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -184,9 +185,10 @@ public class HTTP extends Component {
 		executionState.put( Key.HTTPParams, new Array() );
 
 		Key			binaryOperator		= Key.of( attributes.getAsString( Key.getAsBinary ) );
-		Boolean		isBinaryAccepted	= BINARY_ACCEPT_VALUES
+		Boolean		isBinaryRequested	= BINARY_REQUEST_VALUES
 		    .stream()
 		    .anyMatch( value -> value.equals( binaryOperator ) );
+		Boolean		isBinaryNever		= binaryOperator.equals( BINARY_NEVER );
 
 		// Process the component for HTTPParams
 		BodyResult	bodyResult			= processBody( context, body );
@@ -355,11 +357,10 @@ public class HTTP extends Component {
 			if ( response.body() != null ) {
 				String	contentType			= headers.getAsString( Key.of( "content-type" ) );
 				Boolean	isBinaryContentType	= FileSystemUtil.isBinaryMimeType( contentType );
-				if ( isBinaryAccepted && isBinaryContentType ) {
+				if ( ( isBinaryRequested || isBinaryContentType ) && !isBinaryNever ) {
 					responseBody = response.body();
-				} else if ( isBinaryContentType && !isBinaryAccepted ) {
-					throw new BoxRuntimeException(
-					    "Cannot accept binary content type with getAsBinary attributes set to [" + attributes.getAsString( Key.getAsBinary ) + "]" );
+				} else if ( isBinaryNever && isBinaryContentType ) {
+					throw new BoxRuntimeException( "The response is a binary type, but the getAsBinary attribute was set to 'never'" );
 				} else {
 					var charset = contentType != null && contentType.contains( "charset=" )
 					    ? extractCharset( contentType )
