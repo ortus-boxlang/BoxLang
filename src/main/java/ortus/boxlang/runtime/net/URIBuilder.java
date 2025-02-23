@@ -70,15 +70,19 @@ public class URIBuilder {
 	}
 
 	public URI build() throws URISyntaxException {
-		return new URI(
+		URI baseURI = new URI(
 		    this.scheme,
 		    this.userInfo,
 		    this.host,
 		    this.port != null ? this.port : -1,
-		    this.path,
-		    this.queryParams.stream().map( ( NameValuePair::toString ) ).collect( Collectors.joining( "&" ) ),
+		    "",
+		    null,
 		    this.fragment
 		);
+		// We use resolve to build the final URI to prevent double-encoding
+		return this.queryParams.size() > 0
+		    ? baseURI.resolve( this.path + "?" + this.queryParams.stream().map( ( NameValuePair::toString ) ).collect( Collectors.joining( "&" ) ) )
+		    : baseURI.resolve( this.path );
 	}
 
 	private List<NameValuePair> parseQueryString( String queryString ) {
