@@ -277,12 +277,26 @@ public final class EncryptionUtil {
 	 * @return returns the HMAC encoded string
 	 */
 	public static String hmac( byte[] encryptItem, String key, String algorithm, String encoding ) {
-		Charset charset = Charset.forName( encoding );
+		byte[] keyBytes = key.getBytes( Charset.forName( encoding ) );
+		return hmac( encryptItem, keyBytes, algorithm );
+	}
+
+	/**
+	 * HMAC encodes a byte array using the default encoding
+	 *
+	 * @param encryptItem The byte array to encode
+	 * @param key         The key to use
+	 * @param algorithm   The algorithm to use
+	 * @param encoding    The encoding to use
+	 *
+	 * @return returns the HMAC encoded string
+	 */
+	public static String hmac( byte[] encryptItem, byte[] key, String algorithm ) {
 		// Attempt to keep the correct casing on the key
 		algorithm = ( String ) KEY_ALGORITHMS.getOrDefault( Key.of( algorithm ), algorithm );
 		try {
 			Mac				mac			= Mac.getInstance( algorithm );
-			SecretKeySpec	secretKey	= new SecretKeySpec( key.getBytes( charset ), algorithm );
+			SecretKeySpec	secretKey	= new SecretKeySpec( key, algorithm );
 			mac.init( secretKey );
 			mac.reset();
 			return digestToString( mac.doFinal( encryptItem ) );
@@ -314,6 +328,22 @@ public final class EncryptionUtil {
 	 * HMAC encodes an object using the default encoding
 	 *
 	 * @param input     The object to encode
+	 * @param key       The binary key to use
+	 * @param algorithm The algorithm to use
+	 * @param encoding  The encoding to use
+	 *
+	 * @return returns the HMAC encoded string
+	 */
+	public static String hmac( Object input, byte[] key, String algorithm, String encoding ) {
+		byte[] encryptItem = convertToByteArray( input, encoding );
+		return hmac( encryptItem, key, algorithm );
+
+	}
+
+	/**
+	 * HMAC encodes an object using the default encoding
+	 *
+	 * @param input     The object to encode
 	 * @param key       The key to use
 	 * @param algorithm The algorithm to use
 	 * @param encoding  The encoding to use
@@ -324,8 +354,10 @@ public final class EncryptionUtil {
 		Charset	charset		= Charset.forName( encoding );
 		byte[]	encryptItem	= null;
 
-		if ( input instanceof String ) {
-			encryptItem = StringCaster.cast( input ).getBytes( charset );
+		if ( input instanceof String inputString ) {
+			encryptItem = inputString.getBytes( charset );
+		} else if ( input instanceof byte[] inputBytes ) {
+			encryptItem = inputBytes;
 		} else {
 			encryptItem = input.toString().getBytes( charset );
 		}
@@ -727,13 +759,28 @@ public final class EncryptionUtil {
 	}
 
 	/**
-	 * Converts a generic object to a byte array
+	 * Converts a generic object to a byte array using the default encoding
 	 *
-	 * @param obj
+	 * @param obj The object to convert
 	 *
 	 * @return
 	 */
 	public static byte[] convertToByteArray( Object obj ) {
+		return convertToByteArray( obj, DEFAULT_ENCRYPTION_ENCODING );
+	}
+
+	/**
+	 * Converts a generic object to a byte array
+	 *
+	 * @param obj      The object to convert
+	 * @param encoding The encoding to use
+	 *
+	 * @return
+	 */
+	public static byte[] convertToByteArray( Object obj, String encoding ) {
+		if ( obj instanceof byte[] byteObj ) {
+			return byteObj;
+		}
 		if ( obj instanceof String ) {
 			try {
 				return StringCaster.cast( obj ).getBytes( EncryptionUtil.DEFAULT_CHARSET );

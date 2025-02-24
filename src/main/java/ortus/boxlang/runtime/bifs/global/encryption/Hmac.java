@@ -23,6 +23,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.EncryptionUtil;
 
 @BoxBIF
@@ -44,7 +45,7 @@ public class Hmac extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "any", Key.input ),
-		    new Argument( true, "string", Key.key ),
+		    new Argument( true, "any", Key.key ),
 		    new Argument( false, "string", Key.algorithm, DEFAULT_ALGORITHM ),
 		    new Argument( false, "string", Key.encoding, DEFAULT_ENCODING ),
 		    new Argument( false, "integer", Key.numIterations, DEFAULT_ITERATIONS )
@@ -66,11 +67,17 @@ public class Hmac extends BIF {
 	 * @argument.iterations The number of iterations to re-digest the object ( default 1 );
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		hashItem = arguments.get( Key.input );
-		String	key			= arguments.getAsString( Key.key );
+		Object	hashItem	= arguments.get( Key.input );
+		Object	key			= arguments.get( Key.key );
 		String	algorithm	= arguments.getAsString( Key.algorithm );
 		String	encoding	= arguments.getAsString( Key.encoding );
 
-		return EncryptionUtil.hmac( hashItem, key, algorithm, encoding );
+		if ( key instanceof byte[] byteKey ) {
+			return EncryptionUtil.hmac( hashItem, byteKey, algorithm, encoding );
+		} else if ( key instanceof String stringKey ) {
+			return EncryptionUtil.hmac( hashItem, stringKey, algorithm, encoding );
+		} else {
+			throw new BoxRuntimeException( "Invalid key supplied to function [hmac]. Key must be a binary object or string" );
+		}
 	}
 }

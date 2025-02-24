@@ -154,6 +154,27 @@ public class HmacTest {
 		assertThat( variables.getAsString( Key.of( "result" ) ).length() ).isEqualTo( referenceMac.length() );
 	}
 
+	@DisplayName( "It tests the BIF Hmac with a binary key" )
+	@Test
+	public void testHmacWithBinaryKey() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				secretKey = "D2tM2Q1gY300pUfutYJvqOcfVa/PpkEPuzYFQoi3ZM0=";
+				result = lcase( hmac(
+				"foo",
+				toBinary( secretKey ),
+				"HMACSHA256",
+				"UTF-8"
+				) );
+		    """,
+		    context );
+		// @formatter:on
+		var result = variables.get( Key.of( "result" ) );
+		assertThat( result ).isInstanceOf( String.class );
+		assertThat( variables.getAsString( Key.of( "result" ) ) ).isEqualTo( "3483aeb10dab06f29b8037366fdf819b5c0c09a99213cae50a3474d4edbbd400" );
+	}
+
 	@DisplayName( "It tests that an invalid algorithm will throw an error" )
 	@Test
 	public void testHmacAlgorithmError() {
