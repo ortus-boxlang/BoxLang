@@ -207,4 +207,13 @@ public class ModuleTest {
 		assertThat( buffer.toString().trim() ).isEqualTo( "This is the Brad tag bar" );
 	}
 
+	@Test
+	public void testCanAccessVariablesScopeFromFunction() {
+		instance.executeSource(
+		    """
+		    <bx:module name="AccessVariablesScopeFromFunction">
+		    		  """,
+		    context, BoxSourceType.BOXTEMPLATE );
+	}
+
 }
