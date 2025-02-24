@@ -79,4 +79,15 @@ public class URIBuilderTest {
 		    result.toString() );
 	}
 
+	@DisplayName( "Tests that the URI Builder will decode allowed RFC 3986 characters " )
+	@Test
+	void testDecodeAllowedPathCharacters() throws URISyntaxException {
+		URIBuilder	builder	= new URIBuilder(
+		    "http://localhost:8080/chaos-monkey/exam%2520p%20%20%20le%20%28fo%252Fo%29%2B%2C%21%40%23%24%25%5E%26%2A%28%29_%2B~%20%3B%3A.txt" );
+		URI			result	= builder.build();
+
+		assertEquals( "http://localhost:8080/chaos-monkey/exam%2520p%20%20%20le%20(fo%252Fo)+,!@%23$%25%5E&*()_+~%20;:.txt",
+		    result.toString() );
+	}
+
 }
