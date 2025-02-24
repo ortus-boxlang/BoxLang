@@ -144,7 +144,7 @@ public class CFLexerCustom extends CFLexer {
 	 * Keywords that legtimatley have trailing (
 	 */
 	private static final Set<Integer>	keywordsThatComeBeforeLParen	= Set.of( CATCH, FOR, FUNCTION, IF, WHILE, SWITCH, NOT, AND, EQ, EQUAL, EQV, GE, GT,
-	    GTE, IMP, IS, LE, LT, LTE, MOD, NEQ, OR, THAN, XOR ); // , ASSERT -without assert here, you can't use an expression wrapped in parens
+	    GTE, IMP, IS, LE, LT, LTE, MOD, NEQ, OR, THAN, XOR, IN ); // , ASSERT -without assert here, you can't use an expression wrapped in parens
 
 	/**
 	 * The mode for the lexer to start in
@@ -393,6 +393,17 @@ public class CFLexerCustom extends CFLexer {
 						if ( debug )
 							System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because last token was the end of an operator" );
 
+						isIdentifier = true;
+					} else if ( lastTokenWas( FUNCTION ) ) {
+						// function in() {}
+						if ( debug )
+							System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because last token was function" );
+						isIdentifier = true;
+					} else if ( nextTokenType == IN && !lastTokenWas( IDENTIFIER ) ) {
+						// in() is a function call
+						// but for( item in ( [] ) ) is not
+						if ( debug )
+							System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because it is not preceded by an identifier" );
 						isIdentifier = true;
 					} else if ( nextNonWhiteSpaceCharIs( ',' ) ) {
 						// followed by a ,

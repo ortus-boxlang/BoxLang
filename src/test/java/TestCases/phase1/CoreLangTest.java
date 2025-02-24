@@ -2108,6 +2108,43 @@ public class CoreLangTest {
 	}
 
 	@Test
+	public void testInBeforeParens() {
+		instance.executeSource(
+		    """
+		    prop.aliases ="foo,bar";
+		    result = ""
+		    for( alias in ( prop.aliases ?: "" ).listToArray() ) {
+		    	result &= alias;
+		    }
+		    function in() {
+		    	result2 = "in";
+		    }
+		    in();
+		    	""",
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "foobar" );
+	}
+
+	@Test
+	public void testInBeforeParensCF() {
+		instance.executeSource(
+		    """
+		    prop.aliases ="foo,bar";
+		    result = ""
+		    for( alias in ( prop.aliases ?: "" ).listToArray() ) {
+		    	result &= alias;
+		    }
+		    function in() {
+		    	result2 = "in";
+		    }
+		    in();
+		             	""",
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "foobar" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "in" );
+	}
+
+	@Test
 	public void testKeywords() {
 
 		instance.executeSource(
