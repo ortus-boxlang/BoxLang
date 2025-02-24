@@ -68,11 +68,16 @@ public class HTTPTest {
 	@BeforeAll
 	public static void setUp() {
 		instance = BoxRuntime.getInstance( true );
+		if ( FileSystemUtil.exists( "src/test/resources/tmp/http_tests" ) ) {
+			FileSystemUtil.deleteDirectory( "src/test/resources/tmp/http_tests", true );
+		}
 	}
 
 	@AfterAll
 	public static void teardown() {
-
+		if ( FileSystemUtil.exists( "src/test/resources/tmp/http_tests" ) ) {
+			FileSystemUtil.deleteDirectory( "src/test/resources/tmp/http_tests", true );
+		}
 	}
 
 	@BeforeEach
@@ -249,6 +254,54 @@ public class HTTPTest {
 		assertThat( res.get( Key.statusText ) ).isEqualTo( "OK" );
 		Object body = res.get( Key.fileContent );
 		assertThat( body ).isInstanceOf( byte[].class );
+	}
+
+	@DisplayName( "It can write out a binary file using the file name in the disposition header" )
+	@Test
+	public void testBinaryFileWrite( WireMockRuntimeInfo wmRuntimeInfo ) {
+		stubFor(
+		    get( "/image" )
+		        .willReturn(
+		            ok().withHeader( "Content-Type", "image/jpeg; charset=utf-8" )
+		                .withHeader( "Content-Disposition", "attachment; filename=\"chuck_norris_dl.jpg\"" )
+		                .withBody( ( byte[] ) FileSystemUtil.read( "src/test/resources/chuck_norris.jpg" ) ) ) );
+
+		// @formatter:off
+		instance.executeSource( String.format( 
+			"""
+			bx:http method="GET" getAsBinary=true url="%s" path="src/test/resources/tmp/http_tests" {}
+			""", 
+			wmRuntimeInfo.getHttpBaseUrl() + "/image" ), 
+			context 
+		);
+		// @formatter:on
+
+		assertThat( variables.get( bxhttp ) ).isNull();
+		assertThat( FileSystemUtil.exists( "src/test/resources/tmp/http_tests/chuck_norris_dl.jpg" ) ).isTrue();
+	}
+
+	@DisplayName( "It can write out a binary file using a specified filename" )
+	@Test
+	public void testBinaryFileWriteWithName( WireMockRuntimeInfo wmRuntimeInfo ) {
+		stubFor(
+		    get( "/image" )
+		        .willReturn(
+		            ok().withHeader( "Content-Type", "image/jpeg; charset=utf-8" )
+		                .withHeader( "Content-Disposition", "attachment; filename=\"chuck_norris_dl.jpg\"" )
+		                .withBody( ( byte[] ) FileSystemUtil.read( "src/test/resources/chuck_norris.jpg" ) ) ) );
+
+		// @formatter:off
+		instance.executeSource( String.format( 
+			"""
+			bx:http method="GET" getAsBinary=true url="%s" path="src/test/resources/tmp/http_tests" file="chuck.jpg" {}
+			""", 
+			wmRuntimeInfo.getHttpBaseUrl() + "/image" ), 
+			context 
+		);
+		// @formatter:on
+
+		assertThat( variables.get( bxhttp ) ).isNull();
+		assertThat( FileSystemUtil.exists( "src/test/resources/tmp/http_tests/chuck.jpg" ) ).isTrue();
 	}
 
 	@DisplayName( "It can send binary content" )

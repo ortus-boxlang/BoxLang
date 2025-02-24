@@ -31,6 +31,7 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpTimeoutException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -135,12 +136,24 @@ public class HTTP extends Component {
 		        Validator.REQUIRED,
 		        Validator.NON_EMPTY
 		    ) ),
-		    new Attribute( Key.file, "string", Set.of( Validator.requires( Key.path ) ) ),
+		    new Attribute( Key.file, "string", Set.of(
+		        Validator.requires( Key.path ),
+		        ( cxt, comp, attr, attrs ) -> {
+			        if ( !attrs.containsKey( Key.path ) ) {
+				        return;
+			        }
+			        String attrValue	= attrs.getAsString( attr.name() );
+			        Boolean isGetRequest = attrs.getAsString( Key.method ).toUpperCase().equals( "GET" );
+			        if ( !isGetRequest && ( attrValue == null || attrValue.trim().isEmpty() ) ) {
+				        throw new BoxValidationException( comp, attr, "is required with a path is specified and the method is not GET" );
+			        }
+		        }
+		    ) ),
 		    new Attribute( Key.multipart, "boolean", false, Set.of( Validator.TYPE ) ),
 		    new Attribute( Key.multipartType, "string", "form-data",
 		        Set.of( Validator.REQUIRED, Validator.NON_EMPTY, Validator.valueOneOf( "form-data", "related" ) ) ),
 		    new Attribute( Key.clientCertPassword, "string" ),
-		    new Attribute( Key.path, "string", Set.of( Validator.requires( Key.file ) ) ),
+		    new Attribute( Key.path, "string" ),
 		    new Attribute( Key.clientCert, "string" ),
 		    new Attribute( Key.compression, "string" ),
 		    new Attribute( Key.authType, "string", AUTHMODE_BASIC,
@@ -206,6 +219,13 @@ public class HTTP extends Component {
 		Struct	HTTPResult		= new Struct();
 		URI		targetURI		= null;
 		String	authMode		= attributes.getAsString( Key.authType ).toUpperCase();
+		String	outputDirectory	= attributes.getAsString( Key.path );
+		if ( outputDirectory != null ) {
+			ResolvedFilePath outputPath = FileSystemUtil.expandPath( context, outputDirectory );
+			if ( outputPath != null ) {
+				outputDirectory = outputPath.absolutePath().toString();
+			}
+		}
 
 		try {
 			HttpRequest.Builder			builder			= HttpRequest.newBuilder();
@@ -357,15 +377,45 @@ public class HTTP extends Component {
 			if ( response.body() != null ) {
 				String	contentType			= headers.getAsString( Key.of( "content-type" ) );
 				Boolean	isBinaryContentType	= FileSystemUtil.isBinaryMimeType( contentType );
+				String	charset				= null;
 				if ( ( isBinaryRequested || isBinaryContentType ) && !isBinaryNever ) {
 					responseBody = response.body();
 				} else if ( isBinaryNever && isBinaryContentType ) {
 					throw new BoxRuntimeException( "The response is a binary type, but the getAsBinary attribute was set to 'never'" );
 				} else {
-					var charset = contentType != null && contentType.contains( "charset=" )
+					charset			= contentType != null && contentType.contains( "charset=" )
 					    ? extractCharset( contentType )
 					    : "UTF-8";
-					responseBody = new String( response.body(), Charset.forName( charset ) );
+					responseBody	= new String( response.body(), Charset.forName( charset ) );
+				}
+				if ( outputDirectory != null ) {
+					String fileName = attributes.getAsString( Key.file );
+					if ( fileName == null || fileName.trim().isEmpty() ) {
+						String dispositionHeader = headers.getAsString( Key.of( "content-disposition" ) );
+						if ( dispositionHeader != null ) {
+							Pattern	pattern	= Pattern.compile( "filename=\"?([^\";]+)\"?" );
+							Matcher	matcher	= pattern.matcher( dispositionHeader );
+							if ( matcher.find() ) {
+								fileName = matcher.group( 1 );
+							}
+						} else {
+							fileName = Path.of( targetURI.getPath() ).getFileName().toString();
+						}
+
+						if ( fileName == null || fileName.trim().isEmpty() ) {
+							throw new BoxRuntimeException( "Unable to determine filename from response" );
+						}
+					}
+
+					String destinationPath = Path.of( outputDirectory, fileName ).toAbsolutePath().toString();
+
+					if ( responseBody instanceof String responseString ) {
+						FileSystemUtil.write( destinationPath, responseString, charset, true );
+					} else if ( responseBody instanceof byte[] responseBytes ) {
+						FileSystemUtil.write( destinationPath, responseBytes, true );
+					}
+					return DEFAULT_RETURN;
+
 				}
 			}
 
