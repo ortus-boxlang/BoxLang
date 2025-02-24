@@ -68,4 +68,15 @@ public class URIBuilderTest {
 		assertEquals( "http://localhost:8080/test?prefix=A6953938-B4ED-4506-B878ADFB7E67A6E2%2Fone%2F&delimiter=%2F", result.toString() );
 	}
 
+	@DisplayName( "Tests that the URI Builder will adhere to RFC 3986 and not throw an error with allowed path characters" )
+	@Test
+	void testAllowedPathCharacters() throws URISyntaxException {
+		URIBuilder	builder	= new URIBuilder(
+		    "http://localhost:8080/chaos-monkey/exam%2520p%20%20%20le%20(fo%252Fo)+,!@%23$%25%5E&*()_+~%20;:.txt" );
+		URI			result	= builder.build();
+
+		assertEquals( "http://localhost:8080/chaos-monkey/exam%2520p%20%20%20le%20(fo%252Fo)+,!@%23$%25%5E&*()_+~%20;:.txt",
+		    result.toString() );
+	}
+
 }
