@@ -323,9 +323,13 @@ public class CFLexerCustom extends CFLexer {
 						// any true is the keyword except foo.true, and true() and true : (unless it's in a case statement or ternary operator)
 						// any false is the keyword except foo.false, and false() and false : (unless it's in a case statement or ternary operator)
 						isIdentifier = false;
-					} else if ( endingOperatorWords.contains( nextTokenType ) && nextNonWhiteSpaceCharIs( '(' )
+					} else if ( endingOperatorWords.contains( nextTokenType ) && nextTokenType != NOT && nextNonWhiteSpaceCharIs( '(' )
 					    && tokensThatDoNoPreceedeOperators.contains( lastToken.getType() ) ) {
 						// <bx:if and( param ) >
+						// but ignore <bx:if not( param ) >
+						if ( debug )
+							System.out.println( "Switching [" + nextToken.getText()
+							    + "] token to identifer because it is a binary operator name which appears to be a function call" );
 						isIdentifier = true;
 					} else if ( ( nextTokenType == BREAK || nextTokenType == CASE ) && inSwitchBody ) {
 						// switch( foo ) { case 1: break; }

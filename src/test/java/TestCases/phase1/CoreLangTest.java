@@ -2088,6 +2088,16 @@ public class CoreLangTest {
 	}
 
 	@Test
+	public void testNotCannotBeHeadlessFunctionCall() {
+		instance.executeSource(
+		    """
+		    if( NOT (1 IS 2) ){
+		    }
+		      """,
+		    context, BoxSourceType.CFSCRIPT );
+	}
+
+	@Test
 	public void testKeywords() {
 
 		instance.executeSource(
