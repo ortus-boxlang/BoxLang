@@ -112,6 +112,8 @@ public class StringCasterTest {
 		    .isEqualTo( "1.12345789123456789123456789123456789123456789" );
 		assertThat( StringCaster.cast( new BigDecimal( "1.0000000000000000000000000000000000000000000" ) ) )
 		    .isEqualTo( "1" );
+		assertThat( StringCaster.cast( new BigDecimal( "10" ) ) )
+		    .isEqualTo( "10" );
 	}
 
 	@DisplayName( "It can cast a byte array to a string" )

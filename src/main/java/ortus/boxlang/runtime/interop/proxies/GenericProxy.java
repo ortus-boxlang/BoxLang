@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.interop.proxies;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicInteropService;
@@ -80,7 +81,7 @@ public class GenericProxy extends BaseProxy implements InvocationHandler {
 		Object[]	args	= new Object[] { returnValue };
 		boolean		success	= DynamicInteropService.coerceArguments( context, DynamicInteropService.unBoxTypes( new Class<?>[] { returnType } ),
 		    DynamicInteropService.unBoxTypes( new Class<?>[] { returnValue.getClass() } ), args,
-		    false, BooleanRef.of( true ) );
+		    false, BooleanRef.of( true ), new AtomicInteger( 0 ) );
 		if ( !success ) {
 			throw new BoxRuntimeException( "Proxied method [ " + methodName + "() ] returned a value of type [ " + returnValue.getClass().getName()
 			    + " ] which could not be coerced to [ " + returnType.getName() + " ] in order to match the interface method signature." );

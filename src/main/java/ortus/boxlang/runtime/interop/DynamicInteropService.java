@@ -31,6 +31,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -39,6 +40,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -86,6 +88,7 @@ import ortus.boxlang.runtime.types.meta.GenericMeta;
 import ortus.boxlang.runtime.types.util.BooleanRef;
 import ortus.boxlang.runtime.types.util.ListUtil;
 import ortus.boxlang.runtime.types.util.ObjectRef;
+import ortus.boxlang.runtime.util.Pair;
 
 /**
  * This class is used to provide a way to dynamically and efficiently interact with the java layer from the within a BoxLang environment.
@@ -112,8 +115,11 @@ import ortus.boxlang.runtime.types.util.ObjectRef;
 public class DynamicInteropService {
 
 	public static enum MATCH_TYPE {
+	    // This is an exact match of class name. So Map == Map, but HashMap != Map, etc
 		EXACT,
+	    // This is an assignable match of class name. So Map == Map, and HashMap == Map, etc
 		ASSIGNABLE,
+	    // This is a coercion of the VALUE to match the required type, so 1 == "1" and "yes" == true, etc
 		COERCE
 	}
 
@@ -548,7 +554,8 @@ public class DynamicInteropService {
 			    unBoxTypes( argumentClasses ),
 			    arguments,
 			    methodRecord.method().isVarArgs(),
-			    BooleanRef.of( true )
+			    BooleanRef.of( true ),
+			    new AtomicInteger( 0 )
 			);
 
 			// Execute
@@ -632,7 +639,8 @@ public class DynamicInteropService {
 		    unBoxTypes( argumentClasses ),
 		    arguments,
 		    methodRecord.method().isVarArgs(),
-		    BooleanRef.of( true )
+		    BooleanRef.of( true ),
+		    new AtomicInteger( 0 )
 		);
 
 		// Discover and Execute it baby!
@@ -1302,18 +1310,35 @@ public class DynamicInteropService {
 			    .stream()
 			    // Has to have the SAME arg types
 			    .filter(
-			        constructor -> hasMatchingParameterTypes( context, constructor, MATCH_TYPE.EXACT, argumentsAsClasses, BooleanRef.of( true ), arguments ) )
+			        constructor -> hasMatchingParameterTypes( context, constructor, MATCH_TYPE.EXACT, argumentsAsClasses, BooleanRef.of( true ), null,
+			            arguments ) )
 			    .findFirst()
 			    // If no exact match, try loose coercion
 			    .or( () -> targetConstructors
 			        .stream()
 			        .filter( constructor -> hasMatchingParameterTypes( context, constructor, MATCH_TYPE.ASSIGNABLE, argumentsAsClasses, BooleanRef.of( true ),
-			            arguments ) )
+			            null, arguments ) )
 			        .findFirst()
 			        .or( () -> targetConstructors
 			            .stream()
-			            .filter( constructor -> hasMatchingParameterTypes( context, constructor, MATCH_TYPE.COERCE, argumentsAsClasses, BooleanRef.of( true ),
-			                arguments ) )
+			            // Test the methods. Return null for a non-match. For matching methods, return the method and the match score
+			            .map( constructor -> {
+				            var matchScore = new AtomicInteger( 0 );
+				            if ( hasMatchingParameterTypes( context, constructor, MATCH_TYPE.COERCE, argumentsAsClasses, BooleanRef.of( true ), matchScore,
+				                arguments ) ) {
+					            return new Pair<Constructor<?>, AtomicInteger>( constructor, matchScore );
+				            } else {
+					            return null;
+				            }
+
+			            } )
+			            // remove our non-matches
+			            .filter( constructor -> constructor != null )
+			            // sort based on best match
+			            .sorted( Comparator.comparingInt( pair -> pair.getSecond().get() ) )
+			            // map our stream back to just the method
+			            .map( Pair::getFirst )
+			            // get the first one
 			            .findFirst()
 			        )
 			    )
@@ -1538,16 +1563,32 @@ public class DynamicInteropService {
 		return targetMethods
 		    .stream()
 		    // has to have the same argument types
-		    .filter( method -> hasMatchingParameterTypes( context, method, MATCH_TYPE.EXACT, argumentsAsClasses, isCachable, arguments ) )
+		    .filter( method -> hasMatchingParameterTypes( context, method, MATCH_TYPE.EXACT, argumentsAsClasses, isCachable, null, arguments ) )
 		    .findFirst()
 		    // 2: If no exact match, try loose coercion
 		    .or( () -> targetMethods
 		        .stream()
-		        .filter( method -> hasMatchingParameterTypes( context, method, MATCH_TYPE.ASSIGNABLE, argumentsAsClasses, isCachable, arguments ) )
+		        .filter( method -> hasMatchingParameterTypes( context, method, MATCH_TYPE.ASSIGNABLE, argumentsAsClasses, isCachable, null, arguments ) )
 		        .findFirst()
 		        .or( () -> targetMethods
 		            .stream()
-		            .filter( method -> hasMatchingParameterTypes( context, method, MATCH_TYPE.COERCE, argumentsAsClasses, isCachable, arguments ) )
+		            // Test the methods. Return null for a non-match. For matching methods, return the method and the match score
+		            .map( method -> {
+			            var matchScore = new AtomicInteger( 0 );
+			            if ( hasMatchingParameterTypes( context, method, MATCH_TYPE.COERCE, argumentsAsClasses, isCachable, matchScore, arguments ) ) {
+				            return new Pair<Method, AtomicInteger>( method, matchScore );
+			            } else {
+				            return null;
+			            }
+
+		            } )
+		            // remove our non-matches
+		            .filter( method -> method != null )
+		            // sort based on best match
+		            .sorted( Comparator.comparingInt( pair -> pair.getSecond().get() ) )
+		            // map our stream back to just the method
+		            .map( Pair::getFirst )
+		            // get the first one
 		            .findFirst()
 		        )
 		    )
@@ -2162,6 +2203,8 @@ public class DynamicInteropService {
 	 * @param argumentsAsClasses The arguments to check
 	 * @param arguments          The arguments to pass to the method
 	 * @param exact              Exact matching or loose matching with coercion
+	 * @param isCachable         If the method lookup is cachable
+	 * @param matchScore         The score of the match (only needed for coerce type). The int will be incremented by the level of coercion needed to match. A lower score is a better match.
 	 *
 	 * @return True if the method has the same parameter types, false otherwise
 	 */
@@ -2171,6 +2214,7 @@ public class DynamicInteropService {
 	    MATCH_TYPE matchType,
 	    Class<?>[] argumentsAsClasses,
 	    BooleanRef isCachable,
+	    AtomicInteger matchScore,
 	    Object... arguments ) {
 
 		// Get param types to test
@@ -2186,7 +2230,7 @@ public class DynamicInteropService {
 			case ASSIGNABLE :
 				return ClassUtils.isAssignable( argumentsAsClasses, methodParams );
 			case COERCE :
-				return coerceArguments( context, methodParams, argumentsAsClasses, arguments, method.isVarArgs(), isCachable );
+				return coerceArguments( context, methodParams, argumentsAsClasses, arguments, method.isVarArgs(), isCachable, matchScore );
 		}
 
 		return false;
@@ -2223,7 +2267,8 @@ public class DynamicInteropService {
 	    Class<?>[] argumentsAsClasses,
 	    Object[] arguments,
 	    Boolean isVarArgs,
-	    BooleanRef isCachable ) {
+	    BooleanRef isCachable,
+	    AtomicInteger matchScore ) {
 		var coerced = false;
 		for ( int i = 0; i < methodParams.length; i++ ) {
 			// bail if i has exceeded the lengh of arguments
@@ -2259,7 +2304,7 @@ public class DynamicInteropService {
 			}
 
 			// Else we need to coerce the argument
-			Optional<?> attempt = coerceAttempt( context, methodParams[ i ], argumentsAsClasses[ i ], arguments[ i ], isCachable );
+			Optional<?> attempt = coerceAttempt( context, methodParams[ i ], argumentsAsClasses[ i ], arguments[ i ], isCachable, matchScore );
 			if ( attempt.isPresent() ) {
 				coerced			= true;
 				arguments[ i ]	= attempt.get();
@@ -2282,12 +2327,14 @@ public class DynamicInteropService {
 	 *
 	 * @return The coerced value or empty if it can't be coerced
 	 */
-	private static Optional<?> coerceAttempt( IBoxContext context, Class<?> expected, Class<?> actual, Object value, BooleanRef isCachable ) {
+	private static Optional<?> coerceAttempt( IBoxContext context, Class<?> expected, Class<?> actual, Object value, BooleanRef isCachable,
+	    AtomicInteger matchScore ) {
 		String	expectedClass	= expected.getSimpleName().toLowerCase();
 		String	actualClass		= actual.getSimpleName().toLowerCase();
 
 		// Check if we have a boxed type and we just need an unboxed type. We can't unbox it here since we need to return an Object, but the unboxing will happen automatically when it's used
 		if ( PRIMITIVE_MAP.containsKey( actual ) && PRIMITIVE_MAP.get( actual ).equals( expected ) ) {
+			// Do not increment matchScore. This is basically a perfect match.
 			return Optional.of( value );
 		}
 
@@ -2300,6 +2347,8 @@ public class DynamicInteropService {
 			// logger.debug( "Coerce attempt: Both numbers, using generic caster to " + expectedClass );
 			CastAttempt<Object> numberAttempt = GenericCaster.attempt( context, value, expectedClass );
 			if ( numberAttempt.wasSuccessful() ) {
+				// Assigable from one number to another is a very close match, increment 1
+				matchScore.addAndGet( 1 );
 				return numberAttempt.toOptional();
 			}
 		}
@@ -2310,6 +2359,8 @@ public class DynamicInteropService {
 			// logger.debug( "Coerce attempt: Both numbers, using generic caster to " + expectedClass );
 			CastAttempt<Key> keyAttempt = KeyCaster.attempt( value );
 			if ( keyAttempt.wasSuccessful() ) {
+				// Type casting is a looser match, increment 2
+				matchScore.addAndGet( 2 );
 				return keyAttempt.toOptional();
 			}
 		}
@@ -2327,6 +2378,8 @@ public class DynamicInteropService {
 			// logger.debug( "Coerce attempt: Castable to boolean " + actualClass );
 			CastAttempt<Boolean> booleanAttempt = BooleanCaster.attempt( value );
 			if ( booleanAttempt.wasSuccessful() ) {
+				// Type casting is a looser match, increment 2
+				matchScore.addAndGet( 2 );
 				return booleanAttempt.toOptional();
 			}
 		}
@@ -2336,6 +2389,8 @@ public class DynamicInteropService {
 			// logger.debug( "Coerce attempt: Castable to String " + actualClass );
 			CastAttempt<String> stringAttempt = StringCaster.attempt( value );
 			if ( stringAttempt.wasSuccessful() ) {
+				// Type casting is a looser match, increment 2
+				matchScore.addAndGet( 2 );
 				return stringAttempt.toOptional();
 			}
 		}
@@ -2346,6 +2401,8 @@ public class DynamicInteropService {
 			// logger.debug( "Coerce attempt: Castable to Number from String " + actualClass );
 			CastAttempt<Object> numberAttempt = GenericCaster.attempt( context, value, expectedClass );
 			if ( numberAttempt.wasSuccessful() ) {
+				// Type casting from string to number is an even looser match, increment 3
+				matchScore.addAndGet( 3 );
 				return numberAttempt.toOptional();
 			}
 		}
@@ -2357,6 +2414,8 @@ public class DynamicInteropService {
 			if ( expected.getComponentType() == Object.class ) {
 				// It's not safe to cache this method handle as other incoming arrays may not be castable to the same type
 				isCachable.set( false );
+				// Type casting from array to array is loose-ish match, increment 2
+				matchScore.addAndGet( 2 );
 				return Optional.of( arr.toArray() );
 			} else {
 				// For other specific types of native arrays, see if we can coerce the elements
@@ -2364,6 +2423,8 @@ public class DynamicInteropService {
 				String				readableType	= getReadableType( expected );
 				CastAttempt<Object>	attempt			= GenericCaster.attempt( context, arr, readableType );
 				if ( attempt.wasSuccessful() ) {
+					// Type casting from array to array is loose-ish match, increment 2
+					matchScore.addAndGet( 2 );
 					// It's not safe to cache this method handle as other incoming arrays may not be castable to the same type
 					isCachable.set( false );
 
@@ -2384,6 +2445,10 @@ public class DynamicInteropService {
 		// If the target is a functional interface and the actual value is a Funcion or Runnable, coerce it
 		// To the functional interface
 		if ( functionalInterface != null && ( value instanceof IClassRunnable || value instanceof Function ) ) {
+
+			// Type casting from Class or Function to functional interface is a loose-ish match, increment 2
+			matchScore.addAndGet( 2 );
+
 			// logger.debug( "Coerce attempt: Castable to Functional Interface " + actualClass );
 			return Optional.of(
 			    InterfaceProxyService.isCoreProxy( expected.getSimpleName() )
