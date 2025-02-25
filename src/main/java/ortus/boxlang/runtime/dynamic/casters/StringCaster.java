@@ -247,7 +247,10 @@ public class StringCaster implements IBoxCaster {
 		if ( object instanceof Integer || object instanceof Long || object instanceof Short || object instanceof Byte || object instanceof BigInteger ) {
 			return object.toString();
 		}
-		if ( object instanceof BigDecimal || object instanceof Float || object instanceof Double ) {
+		if ( object instanceof BigDecimal bd ) {
+			return bd.stripTrailingZeros().toString();
+		}
+		if ( object instanceof Float || object instanceof Double ) {
 			String result = object.toString();
 			if ( result.endsWith( ".0" ) ) {
 				return result.substring( 0, result.length() - 2 );

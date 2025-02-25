@@ -5172,19 +5172,33 @@ public class CoreLangTest {
 
 	@Test
 	public void testNullFromMapPut() {
-		// @formatter:off
-		instance.executeSource(
-				"""
-					headers     = createObject( "java", "java.util.LinkedHashMap" ).init();
-					headers.put( "Content-Type", "application/json" );
-					result = headers[ "Content-Type" ];
-					result2 = headers[ "content-type" ];
-					println( result )
-				""",
-				context );
-		// @formatter:on
+	// @formatter:off
+	instance.executeSource(
+			"""
+				headers     = createObject( "java", "java.util.LinkedHashMap" ).init();
+				headers.put( "Content-Type", "application/json" );
+				result = headers[ "Content-Type" ];
+				result2 = headers[ "content-type" ];
+			""",
+			context );
+	// @formatter:on
 		assertThat( variables.get( result ) ).isEqualTo( "application/json" );
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "application/json" );
+
+	}
+
+	@Test
+	public void testStripBigDecimalZeros() {
+	// @formatter:off
+	instance.executeSource(
+			"""
+			minutesValid = 1 / 60;
+			expiresSeconds = minutesValid * 60;
+			result = "" & expiresSeconds
+			""",
+			context );
+	// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( "1" );
 
 	}
 
