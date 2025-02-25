@@ -617,7 +617,7 @@ public final class FileSystemUtil {
 	public static Boolean isBinaryMimeType( String mimeType ) {
 		// if we can't determine a mimetype from a path we assume the file is text (
 		// e.g. a friendly URL )
-		if ( mimeType == null ) {
+		if ( mimeType == null || mimeType.split( "/" ).length == 1 ) {
 			return false;
 		}
 

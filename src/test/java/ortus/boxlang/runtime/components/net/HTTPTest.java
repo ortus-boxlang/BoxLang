@@ -256,6 +256,35 @@ public class HTTPTest {
 		assertThat( body ).isInstanceOf( byte[].class );
 	}
 
+	@DisplayName( "Will treat random content types as string contents" )
+	@Test
+	public void testRandomContentTypes( WireMockRuntimeInfo wmRuntimeInfo ) {
+		stubFor(
+		    get( "/blah" )
+		        .willReturn(
+		            ok().withHeader( "Content-Type", "blah; charset=utf-8" )
+		                .withBody( "Hello world!" ) ) );
+
+		// @formatter:off
+		instance.executeSource( String.format( 
+			"""
+			bx:http method="GET" url="%s" {}
+			""", 
+			wmRuntimeInfo.getHttpBaseUrl() + "/blah" ), 
+			context 
+		);
+		// @formatter:on
+
+		assertThat( variables.get( bxhttp ) ).isInstanceOf( IStruct.class );
+
+		IStruct res = variables.getAsStruct( bxhttp );
+		assertThat( res.get( Key.statusCode ) ).isEqualTo( 200 );
+		assertThat( res.get( Key.statusText ) ).isEqualTo( "OK" );
+		Object body = res.get( Key.fileContent );
+		assertThat( body ).isInstanceOf( String.class );
+		assertThat( ( String ) body ).isEqualTo( "Hello world!" );
+	}
+
 	@DisplayName( "It can write out a binary file using the file name in the disposition header" )
 	@Test
 	public void testBinaryFileWrite( WireMockRuntimeInfo wmRuntimeInfo ) {
