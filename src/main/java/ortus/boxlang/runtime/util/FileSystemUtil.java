@@ -67,7 +67,6 @@ import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.InterceptorService;
-import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
@@ -81,64 +80,72 @@ public final class FileSystemUtil {
 	/**
 	 * Flag for whether FS is case sensitive or not to short circuit case insensitive path resolution
 	 */
-	private static boolean				isCaseSensitiveFS		= caseSensitivityCheck();
+	private static boolean					isCaseSensitiveFS		= caseSensitivityCheck();
 
 	/**
 	 * The default charset for file operations in BoxLang
 	 */
-	public static final Charset			DEFAULT_CHARSET			= StandardCharsets.UTF_8;
+	public static final Charset				DEFAULT_CHARSET			= StandardCharsets.UTF_8;
 
 	/**
 	 * MimeType suffixes which denote files which should be treated as text - e.g.
 	 * application/json, application/xml, etc
 	 */
-	public static final Array			TEXT_MIME_SUFFIXES		= new Array(
-	    new Object[] {
-	        "json",
-	        "xml",
-	        "javascript",
-	        "plain"
-	    } );
+	public static final ArrayList<String>	TEXT_MIME_SUFFIXES		= new ArrayList<String>() {
+
+																		{
+																			add( "json" );
+																			add( "xml" );
+																			add( "javascript" );
+																			add( "plain" );
+																			add( "pkcs" );
+																			add( "x-x509" );
+																			add( "x-pem" );
+																			add( "x-x509" );
+																		}
+																	};
 
 	/**
 	 * MimeType prefixes which denote text files - e.g. text/plain, text/x-yaml
 	 */
-	public static final Array			TEXT_MIME_PREFIXES		= new Array(
-	    new Object[] {
-	        "text"
-	    } );
+	public static final ArrayList<String>	TEXT_MIME_PREFIXES		= new ArrayList<String>() {
+
+																		{
+																			add( "text" );
+																		}
+																	};
 
 	/**
 	 * Octal representations for Posix strings to octals
 	 * Thanks to
 	 * http://www.java2s.com/example/java-utility-method/posix/tooctalfilemode-set-posixfilepermission-permissions-64fb4.html
 	 */
-	private static final int			OWNER_READ_FILEMODE		= 0400;
-	private static final int			OWNER_WRITE_FILEMODE	= 0200;
-	private static final int			OWNER_EXEC_FILEMODE		= 0100;
-	private static final int			GROUP_READ_FILEMODE		= 0040;
-	private static final int			GROUP_WRITE_FILEMODE	= 0020;
-	private static final int			GROUP_EXEC_FILEMODE		= 0010;
-	private static final int			OTHERS_READ_FILEMODE	= 0004;
-	private static final int			OTHERS_WRITE_FILEMODE	= 0002;
-	private static final int			OTHERS_EXEC_FILEMODE	= 0001;
+	private static final int				OWNER_READ_FILEMODE		= 0400;
+	private static final int				OWNER_WRITE_FILEMODE	= 0200;
+	private static final int				OWNER_EXEC_FILEMODE		= 0100;
+	private static final int				GROUP_READ_FILEMODE		= 0040;
+	private static final int				GROUP_WRITE_FILEMODE	= 0020;
+	private static final int				GROUP_EXEC_FILEMODE		= 0010;
+	private static final int				OTHERS_READ_FILEMODE	= 0004;
+	private static final int				OTHERS_WRITE_FILEMODE	= 0002;
+	private static final int				OTHERS_EXEC_FILEMODE	= 0001;
 
 	/**
 	 * The Necessary constants for the file mode
 	 */
-	public static final boolean			IS_WINDOWS				= SystemUtils.IS_OS_WINDOWS;
+	public static final boolean				IS_WINDOWS				= SystemUtils.IS_OS_WINDOWS;
 
 	/**
 	 * The OS line separator
 	 */
-	public static final String			LINE_SEPARATOR			= System.getProperty( "line.separator" );
+	public static final String				LINE_SEPARATOR			= System.getProperty( "line.separator" );
 
 	/**
 	 * A starting file slash prefix
 	 */
-	public static final String			SLASH_PREFIX			= "/";
+	public static final String				SLASH_PREFIX			= "/";
 
-	private static InterceptorService	interceptorService		= BoxRuntime.getInstance().getInterceptorService();
+	private static InterceptorService		interceptorService		= BoxRuntime.getInstance().getInterceptorService();
 
 	/**
 	 * Returns the contents of a file
@@ -626,10 +633,10 @@ public final class FileSystemUtil {
 			mimeType = mimeType.split( ";" )[ 0 ];
 		}
 
-		Object[] mimeParts = mimeType.split( "/" );
+		String[] mimeParts = mimeType.split( "/" );
 
 		return !TEXT_MIME_PREFIXES.contains( mimeParts[ 0 ] )
-		    && !TEXT_MIME_SUFFIXES.contains( mimeParts[ mimeParts.length - 1 ] );
+		    && !TEXT_MIME_SUFFIXES.stream().anyMatch( suffix -> mimeParts[ 1 ].startsWith( StringCaster.cast( suffix ).toLowerCase() ) );
 	}
 
 	/**

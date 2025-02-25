@@ -51,6 +51,8 @@ public class FileReadTest {
 	static String		testURLFile		= "https://raw.githubusercontent.com/ColdBox/coldbox-platform/development/license.txt";
 	static String		testURLImage	= "https://ortus-public.s3.amazonaws.com/logos/ortus-medium.jpg";
 	static String		testBinaryFile	= "src/test/resources/tmp/fileReadTest/test.jpg";
+	static String		testKeyFile		= "src/test/resources/tmp/fileReadTest/test.key";
+	static String		testCertFile	= "src/test/resources/tmp/fileReadTest/test.pem";
 	static String		tmpDirectory	= "src/test/resources/tmp/fileReadTest";
 
 	@BeforeAll
@@ -59,6 +61,14 @@ public class FileReadTest {
 
 		if ( !FileSystemUtil.exists( testTextFile ) ) {
 			FileSystemUtil.write( testTextFile, "file read test!".getBytes( "UTF-8" ), true );
+		}
+
+		if ( !FileSystemUtil.exists( testKeyFile ) ) {
+			FileSystemUtil.write( testKeyFile, "-----BEGIN PRIVATE KEY-----".getBytes( "UTF-8" ), true );
+		}
+
+		if ( !FileSystemUtil.exists( testCertFile ) ) {
+			FileSystemUtil.write( testCertFile, "-----BEGIN CERTIFICATE-----".getBytes( "UTF-8" ), true );
 		}
 
 		if ( !FileSystemUtil.exists( testBinaryFile ) ) {
@@ -178,6 +188,30 @@ public class FileReadTest {
 		    context );
 		Object result = variables.get( Key.of( "result" ) );
 		assertTrue( result instanceof byte[] );
+	}
+
+	@DisplayName( "Will correctly detect common cert extensions as text" )
+	@Test
+	public void testCertExtensions() {
+		variables.put( Key.of( "testFile" ), Path.of( testKeyFile ).toAbsolutePath().toString() );
+		instance.executeSource(
+		    """
+		    result = fileRead( variables.testFile );
+		    """,
+		    context );
+		Object result = variables.get( Key.of( "result" ) );
+		assertTrue( result instanceof String );
+		assertThat( result ).isEqualTo( "-----BEGIN PRIVATE KEY-----" );
+
+		variables.put( Key.of( "testFile" ), Path.of( testCertFile ).toAbsolutePath().toString() );
+		instance.executeSource(
+		    """
+		    result = fileRead( variables.testFile );
+		    """,
+		    context );
+		result = variables.get( Key.of( "result" ) );
+		assertTrue( result instanceof String );
+		assertThat( result ).isEqualTo( "-----BEGIN CERTIFICATE-----" );
 	}
 
 }
