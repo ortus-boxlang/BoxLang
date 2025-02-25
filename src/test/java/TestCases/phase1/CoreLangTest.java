@@ -2111,16 +2111,21 @@ public class CoreLangTest {
 	public void testInBeforeParens() {
 		instance.executeSource(
 		    """
-		    prop.aliases ="foo,bar";
-		    result = ""
-		    for( alias in ( prop.aliases ?: "" ).listToArray() ) {
-		    	result &= alias;
-		    }
-		    function in() {
-		    	result2 = "in";
-		    }
-		    in();
-		    	""",
+		       prop.aliases ="foo,bar";
+		       result = ""
+		       for( alias in ( prop.aliases ?: "" ).listToArray() ) {
+		       	result &= alias;
+		       }
+		       function in() {
+		       	result2 = "in";
+		       }
+		       in();
+		    (()->{
+		    	```
+		    	<bx:set var in = "data">
+		    	```
+		    })()
+		       	""",
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "foobar" );
 	}
@@ -2129,16 +2134,21 @@ public class CoreLangTest {
 	public void testInBeforeParensCF() {
 		instance.executeSource(
 		    """
-		    prop.aliases ="foo,bar";
-		    result = ""
-		    for( alias in ( prop.aliases ?: "" ).listToArray() ) {
-		    	result &= alias;
-		    }
-		    function in() {
-		    	result2 = "in";
-		    }
-		    in();
-		             	""",
+		     	    prop.aliases ="foo,bar";
+		     	    result = ""
+		     	    for( alias in ( prop.aliases ?: "" ).listToArray() ) {
+		     	    	result &= alias;
+		     	    }
+		     	    function in() {
+		     	    	result2 = "in";
+		     	    }
+		     	    in();
+		    (()->{
+		    	```
+		    	<cfset var in = "data">
+		    	```
+		    })()
+		     	             	""",
 		    context, BoxSourceType.CFSCRIPT );
 		assertThat( variables.get( result ) ).isEqualTo( "foobar" );
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "in" );

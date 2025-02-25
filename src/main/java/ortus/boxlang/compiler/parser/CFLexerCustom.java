@@ -38,7 +38,7 @@ import ortus.boxlang.runtime.services.ComponentService;
 @SuppressWarnings( "unchecked" )
 public class CFLexerCustom extends CFLexer {
 
-	public static boolean						debug					= false;
+	public static boolean						debug					= true;
 
 	/**
 	 * If the last token was an elseif
@@ -96,7 +96,7 @@ public class CFLexerCustom extends CFLexer {
 		List<String> operators = Arrays.asList(
 		    "AND", "&&", "EQ", "EQUAL", "==", "GT", ">", "GTE", "GE", ">=", "LT", "<", "LTE", "LE", "<=",
 		    "NEQ", "!=", "<>", "OR", "||", "&", "=", "?:", "=>", "-", "%", "^", "?", "/", "*", "&=", "+=", "-=", "*=", "/=", "%=", "+",
-		    "++", "===", "!==", "b|", "b&", "b^", "b~", "b<<", "b>>", "b>>>", "IS", "LESS", "GREATER", "DOES", "INSTANCEOF", "IN", "CONTAINS"
+		    "++", "===", "!==", "b|", "b&", "b^", "b~", "b<<", "b>>", "b>>>", "IS", "LESS", "GREATER", "DOES", "INSTANCEOF", "CONTAINS"
 		);
 
 		for ( String op : operators ) {
@@ -316,12 +316,16 @@ public class CFLexerCustom extends CFLexer {
 					    && !lastTokenWas( DOT )
 					    && ( !nextNonWhiteSpaceCharIs( ':' ) || lastTokenOneOf( new int[] { CASE, QM } ) ) ) {
 						// any null but foo.null, null.foo, and null() and null = foo and null : (unless it's in a case statement or ternary operator)
+						if ( debug )
+							System.out.println( "NOT Switching [" + nextToken.getText() + "] token to identifer because 1" );
 						isIdentifier = false;
 					} else if ( ( nextTokenType == FALSE || nextTokenType == TRUE ) && !nextNonWhiteSpaceCharIs( '(' )
 					    && !lastTokenWas( DOT )
 					    && ( !nextNonWhiteSpaceCharIs( ':' ) || lastTokenOneOf( new int[] { CASE, QM } ) ) ) {
 						// any true is the keyword except foo.true, and true() and true : (unless it's in a case statement or ternary operator)
 						// any false is the keyword except foo.false, and false() and false : (unless it's in a case statement or ternary operator)
+						if ( debug )
+							System.out.println( "NOT Switching [" + nextToken.getText() + "] token to identifer because 2" );
 						isIdentifier = false;
 					} else if ( endingOperatorWords.contains( nextTokenType ) && nextTokenType != NOT && nextNonWhiteSpaceCharIs( '(' )
 					    && tokensThatDoNoPreceedeOperators.contains( lastToken.getType() ) ) {
@@ -333,6 +337,8 @@ public class CFLexerCustom extends CFLexer {
 						isIdentifier = true;
 					} else if ( ( nextTokenType == BREAK || nextTokenType == CASE ) && inSwitchBody ) {
 						// switch( foo ) { case 1: break; }
+						if ( debug )
+							System.out.println( "NOT Switching [" + nextToken.getText() + "] token to identifer because 3" );
 						isIdentifier = false;
 					} else if ( nextTokenType == RETURN && !lastTokenWas( DOT ) &&
 					    ( nextNonWhiteSpaceCharIsOneOf( new int[] { '(', '{', '[', ';',
@@ -345,6 +351,8 @@ public class CFLexerCustom extends CFLexer {
 						// return {}
 						// return -4
 						// { return }
+						if ( debug )
+							System.out.println( "NOT Switching [" + nextToken.getText() + "] token to identifer because 4" );
 						isIdentifier = false;
 					} else if ( nextTokenType == PARAM && ( ( lastTokenWas( DOT ) || lastTokenWas( LPAREN ) || nextNonWhiteSpaceCharIs( ')' ) )
 					    || ! ( nextNonWhiteSpaceCharIsOneOf( new int[] { '\'', '"' } ) || nextNonWhiteSpaceIsAnyChar() ) ) ) {
@@ -357,21 +365,29 @@ public class CFLexerCustom extends CFLexer {
 					} else if ( nextTokenType == FUNCTION && !lastTokenWas( DOT ) && nextNonWhiteSpaceCharIs( '(' ) ) {
 						// foo = function() {}
 						// foo( value, function(){} )
+						if ( debug )
+							System.out.println( "NOT Switching [" + nextToken.getText() + "] token to identifer because 5" );
 						isIdentifier = false;
 					} else if ( nextTokenType == REQUIRED && !lastTokenWas( DOT ) && getParenCount() > 0 && nextNonWhiteSpaceIsAnyChar() ) {
 						// function foo( required string bar )
+						if ( debug )
+							System.out.println( "NOT Switching [" + nextToken.getText() + "] token to identifer because 6" );
 						isIdentifier = false;
 					} else if ( nextTokenType == VAR && !lastTokenWas( DOT )
 					    && ( nextNonWhiteSpaceIsAnyChar() || nextNonWhiteSpaceCharIs( '\'' ) || nextNonWhiteSpaceCharIs( '"' ) )
 					    && !nextNonWhiteSpaceCharsAre( operatorStartingChars )
 					    && ( lastToken != null && !operatorEndingTokens.contains( lastToken.getType() ) ) ) {
 						// var foo = "bar"
+						if ( debug )
+							System.out.println( "NOT Switching [" + nextToken.getText() + "] token to identifer because 7" );
 						isIdentifier = false;
 					} else if ( nextTokenType == NEW && !lastTokenWas( DOT )
 					    && ( nextNonWhiteSpaceIsAnyChar() || nextNonWhiteSpaceCharIs( '\'' ) || nextNonWhiteSpaceCharIs( '"' ) )
 					    && !nextNonWhiteSpaceCharsAre( operatorStartingChars ) ) {
 						// foo = new Bar() is fine
 						// but ignore "new is 1" because there is an operator after new
+						if ( debug )
+							System.out.println( "NOT Switching [" + nextToken.getText() + "] token to identifer because 8" );
 						isIdentifier = false;
 					} else if ( nextNonWhiteSpaceCharIs( ':' ) && ! ( nextTokenType == DEFAULT && inSwitchBody ) ) {
 						// left side of a : which is usually { foo : bar }

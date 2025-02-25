@@ -83,7 +83,7 @@ public class BoxLexerCustom extends BoxLexer {
 		List<String> operators = Arrays.asList(
 		    "AND", "&&", "EQ", "EQUAL", "==", "GT", ">", "GTE", "GE", ">=", "LT", "<", "LTE", "LE", "<=",
 		    "NEQ", "!=", "<>", "OR", "||", "&", "=", "?:", "=>", "-", "%", "^", "?", "/", "*", "&=", "+=", "-=", "*=", "/=", "%=", "+",
-		    "++", "===", "!==", "b|", "b&", "b^", "b~", "b<<", "b>>", "b>>>", "IS", "LESS", "GREATER", "DOES", "INSTANCEOF", "IN"
+		    "++", "===", "!==", "b|", "b&", "b^", "b~", "b<<", "b>>", "b>>>", "IS", "LESS", "GREATER", "DOES", "INSTANCEOF", "CONTAINS"
 		);
 
 		for ( String op : operators ) {
