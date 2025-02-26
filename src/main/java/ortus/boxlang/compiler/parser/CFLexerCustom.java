@@ -38,7 +38,7 @@ import ortus.boxlang.runtime.services.ComponentService;
 @SuppressWarnings( "unchecked" )
 public class CFLexerCustom extends CFLexer {
 
-	public static boolean						debug					= true;
+	public static boolean						debug					= false;
 
 	/**
 	 * If the last token was an elseif
