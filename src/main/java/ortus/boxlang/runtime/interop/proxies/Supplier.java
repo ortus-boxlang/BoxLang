@@ -17,6 +17,8 @@ public class Supplier<T> extends BaseProxy implements java.util.function.Supplie
 	public T get() {
 		try {
 			return ( T ) invoke();
+		} catch ( BoxRuntimeException e ) {
+			throw e;
 		} catch ( Exception e ) {
 			getLogger().error( "Error invoking Supplier", e );
 			throw new BoxRuntimeException( "Error invoking Supplier", e );
