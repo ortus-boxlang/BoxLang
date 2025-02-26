@@ -51,6 +51,11 @@ public class CFLexerCustom extends CFLexer {
 	Boolean										inComponentCloseEqual	= false;
 
 	/**
+	 * A reference to the last component close equal token
+	 */
+	Token										lastComponentCloseEqual	= null;
+
+	/**
 	 * Are we in the body of a switch statement
 	 */
 	Boolean										inSwitchBody			= false;
@@ -61,9 +66,14 @@ public class CFLexerCustom extends CFLexer {
 	int											switchCurlyCount		= 0;
 
 	/**
-	 * A reference to the last component close equal token
+	 * Are we inside of the parens of a for statement
 	 */
-	Token										lastComponentCloseEqual	= null;
+	Boolean										inForParen				= false;
+
+	/**
+	 * Count of parenthesis after a for
+	 */
+	int											forParenCount			= 0;
 
 	/**
 	 * A reference to the last elseif token
@@ -316,29 +326,28 @@ public class CFLexerCustom extends CFLexer {
 					    && !lastTokenWas( DOT )
 					    && ( !nextNonWhiteSpaceCharIs( ':' ) || lastTokenOneOf( new int[] { CASE, QM } ) ) ) {
 						// any null but foo.null, null.foo, and null() and null = foo and null : (unless it's in a case statement or ternary operator)
-						if ( debug )
-							System.out.println( "NOT Switching [" + nextToken.getText() + "] token to identifer because 1" );
 						isIdentifier = false;
 					} else if ( ( nextTokenType == FALSE || nextTokenType == TRUE ) && !nextNonWhiteSpaceCharIs( '(' )
 					    && !lastTokenWas( DOT )
 					    && ( !nextNonWhiteSpaceCharIs( ':' ) || lastTokenOneOf( new int[] { CASE, QM } ) ) ) {
 						// any true is the keyword except foo.true, and true() and true : (unless it's in a case statement or ternary operator)
 						// any false is the keyword except foo.false, and false() and false : (unless it's in a case statement or ternary operator)
-						if ( debug )
-							System.out.println( "NOT Switching [" + nextToken.getText() + "] token to identifer because 2" );
 						isIdentifier = false;
 					} else if ( endingOperatorWords.contains( nextTokenType ) && nextTokenType != NOT && nextNonWhiteSpaceCharIs( '(' )
-					    && tokensThatDoNoPreceedeOperators.contains( lastToken.getType() ) ) {
+					    && lastToken != null && tokensThatDoNoPreceedeOperators.contains( lastToken.getType() ) ) {
 						// <bx:if and( param ) >
 						// but ignore <bx:if not( param ) >
 						if ( debug )
 							System.out.println( "Switching [" + nextToken.getText()
 							    + "] token to identifer because it is a binary operator name which appears to be a function call" );
 						isIdentifier = true;
+					} else if ( inForParen && nextCharsAreWord( "IN" ) ) {
+						// for( param in foo )
+						isIdentifier = true;
+						if ( debug )
+							System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because it's before the IN a for in statement" );
 					} else if ( ( nextTokenType == BREAK || nextTokenType == CASE ) && inSwitchBody ) {
 						// switch( foo ) { case 1: break; }
-						if ( debug )
-							System.out.println( "NOT Switching [" + nextToken.getText() + "] token to identifer because 3" );
 						isIdentifier = false;
 					} else if ( nextTokenType == RETURN && !lastTokenWas( DOT ) &&
 					    ( nextNonWhiteSpaceCharIsOneOf( new int[] { '(', '{', '[', ';',
@@ -351,8 +360,6 @@ public class CFLexerCustom extends CFLexer {
 						// return {}
 						// return -4
 						// { return }
-						if ( debug )
-							System.out.println( "NOT Switching [" + nextToken.getText() + "] token to identifer because 4" );
 						isIdentifier = false;
 					} else if ( nextTokenType == PARAM && ( ( lastTokenWas( DOT ) || lastTokenWas( LPAREN ) || nextNonWhiteSpaceCharIs( ')' ) )
 					    || ! ( nextNonWhiteSpaceCharIsOneOf( new int[] { '\'', '"' } ) || nextNonWhiteSpaceIsAnyChar() ) ) ) {
@@ -365,29 +372,21 @@ public class CFLexerCustom extends CFLexer {
 					} else if ( nextTokenType == FUNCTION && !lastTokenWas( DOT ) && nextNonWhiteSpaceCharIs( '(' ) ) {
 						// foo = function() {}
 						// foo( value, function(){} )
-						if ( debug )
-							System.out.println( "NOT Switching [" + nextToken.getText() + "] token to identifer because 5" );
 						isIdentifier = false;
 					} else if ( nextTokenType == REQUIRED && !lastTokenWas( DOT ) && getParenCount() > 0 && nextNonWhiteSpaceIsAnyChar() ) {
 						// function foo( required string bar )
-						if ( debug )
-							System.out.println( "NOT Switching [" + nextToken.getText() + "] token to identifer because 6" );
 						isIdentifier = false;
 					} else if ( nextTokenType == VAR && !lastTokenWas( DOT )
 					    && ( nextNonWhiteSpaceIsAnyChar() || nextNonWhiteSpaceCharIs( '\'' ) || nextNonWhiteSpaceCharIs( '"' ) )
 					    && !nextNonWhiteSpaceCharsAre( operatorStartingChars )
 					    && ( lastToken != null && !operatorEndingTokens.contains( lastToken.getType() ) ) ) {
 						// var foo = "bar"
-						if ( debug )
-							System.out.println( "NOT Switching [" + nextToken.getText() + "] token to identifer because 7" );
 						isIdentifier = false;
 					} else if ( nextTokenType == NEW && !lastTokenWas( DOT )
 					    && ( nextNonWhiteSpaceIsAnyChar() || nextNonWhiteSpaceCharIs( '\'' ) || nextNonWhiteSpaceCharIs( '"' ) )
 					    && !nextNonWhiteSpaceCharsAre( operatorStartingChars ) ) {
 						// foo = new Bar() is fine
 						// but ignore "new is 1" because there is an operator after new
-						if ( debug )
-							System.out.println( "NOT Switching [" + nextToken.getText() + "] token to identifer because 8" );
 						isIdentifier = false;
 					} else if ( nextNonWhiteSpaceCharIs( ':' ) && ! ( nextTokenType == DEFAULT && inSwitchBody ) ) {
 						// left side of a : which is usually { foo : bar }
@@ -439,7 +438,6 @@ public class CFLexerCustom extends CFLexer {
 					        && ( ( ( nextTokenType == IF || nextTokenType == PREFIXEDIDENTIFIER || nextTokenType == SWITCH ) && nextNonWhiteSpaceCharIs( '(' ) )
 					            || ( nextTokenType == TRY && nextNonWhiteSpaceCharIs( '{' ) )
 					            || ( nextTokenType == INCLUDE || nextTokenType == THROW || nextTokenType == VAR || nextTokenType == DEFAULT ) ) ) ) {
-
 						// preceeded by a :
 						// but myLabel : for() is fine
 						// and myLabel : while()
@@ -544,6 +542,9 @@ public class CFLexerCustom extends CFLexer {
 		if ( token.getType() == SWITCH ) {
 			inSwitchBody = true;
 		}
+		if ( token.getType() == FOR ) {
+			inForParen = true;
+		}
 		if ( inSwitchBody && token.getType() == LBRACE ) {
 			switchCurlyCount++;
 		}
@@ -551,6 +552,17 @@ public class CFLexerCustom extends CFLexer {
 			switchCurlyCount--;
 			if ( switchCurlyCount == 0 ) {
 				inSwitchBody = false;
+			}
+		}
+		if ( inForParen ) {
+			if ( token.getType() == LPAREN ) {
+				forParenCount++;
+			}
+			if ( token.getType() == RPAREN ) {
+				forParenCount--;
+				if ( forParenCount == 0 ) {
+					inForParen = false;
+				}
 			}
 		}
 		return token;

@@ -58,6 +58,16 @@ public class BoxLexerCustom extends BoxLexer {
 	int											switchCurlyCount		= 0;
 
 	/**
+	 * Are we inside of the parens of a for statement
+	 */
+	Boolean										inForParen				= false;
+
+	/**
+	 * Count of parenthesis after a for
+	 */
+	int											forParenCount			= 0;
+
+	/**
 	 * A reference to the last token
 	 */
 	Token										lastToken				= null;
@@ -70,7 +80,7 @@ public class BoxLexerCustom extends BoxLexer {
 	    LTE,
 	    LE, LTESIGN, NEQ, BANGEQUAL, LESSTHANGREATERTHAN, OR, PIPEPIPE, AMPERSAND, ELVIS, EQUALSIGN, ARROW_RIGHT, MINUS, PERCENT, POWER, QM, SLASH, STAR,
 	    CONCATEQUAL, PLUSEQUAL, MINUSEQUAL, STAREQUAL, SLASHEQUAL, MODEQUAL, PLUS, /* PLUSPLUS, */TEQ, TENQ, BITWISE_OR, BITWISE_AND, BITWISE_XOR,
-	    BITWISE_COMPLEMENT, BITWISE_SIGNED_LEFT_SHIFT, BITWISE_SIGNED_RIGHT_SHIFT, BITWISE_UNSIGNED_RIGHT_SHIFT, NOT, THAN, TO, INSTANCEOF, IN, IS );
+	    BITWISE_COMPLEMENT, BITWISE_SIGNED_LEFT_SHIFT, BITWISE_SIGNED_RIGHT_SHIFT, BITWISE_UNSIGNED_RIGHT_SHIFT, NOT, THAN, TO, INSTANCEOF, IN, CONTAINS, IS );
 
 	/**
 	 * Tokens that can be used as labeled loops
@@ -314,6 +324,11 @@ public class BoxLexerCustom extends BoxLexer {
 							System.out.println( "Switching [" + nextToken.getText()
 							    + "] token to identifer because it is a binary operator name which appears to be a function call" );
 						isIdentifier = true;
+					} else if ( inForParen && nextCharsAreWord( "IN" ) ) {
+						// for( param in foo )
+						isIdentifier = true;
+						if ( debug )
+							System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because it's before the IN a for in statement" );
 					} else if ( ( nextTokenType == BREAK || nextTokenType == CASE ) && inSwitchBody ) {
 						// switch( foo ) { case 1: break; }
 						isIdentifier = false;
@@ -404,7 +419,7 @@ public class BoxLexerCustom extends BoxLexer {
 					    && ! ( inSwitchBody
 					        && ( ( ( nextTokenType == IF || nextTokenType == SWITCH ) && nextNonWhiteSpaceCharIs( '(' ) )
 					            || ( nextTokenType == TRY && nextNonWhiteSpaceCharIs( '{' ) )
-					            || ( nextTokenType == INCLUDE || nextTokenType == THROW || nextTokenType == VAR ) ) ) ) {
+					            || ( nextTokenType == INCLUDE || nextTokenType == THROW || nextTokenType == VAR || nextTokenType == DEFAULT ) ) ) ) {
 						// preceeded by a :
 						// but myLabel : for() is fine
 						// and myLabel : while()
@@ -425,6 +440,7 @@ public class BoxLexerCustom extends BoxLexer {
 						isIdentifier = true;
 					} else if ( nextNonWhiteSpaceCharIs( '[' ) && nextTokenType != IN ) {
 						// var[ 'foo' ]
+						// but ignore for( item in [ 1, 2, 3 ] )
 						if ( debug )
 							System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because next char is a right bracket" );
 						isIdentifier = true;
@@ -505,6 +521,9 @@ public class BoxLexerCustom extends BoxLexer {
 		if ( token.getType() == SWITCH ) {
 			inSwitchBody = true;
 		}
+		if ( token.getType() == FOR ) {
+			inForParen = true;
+		}
 		if ( inSwitchBody && token.getType() == LBRACE ) {
 			switchCurlyCount++;
 		}
@@ -512,6 +531,17 @@ public class BoxLexerCustom extends BoxLexer {
 			switchCurlyCount--;
 			if ( switchCurlyCount == 0 ) {
 				inSwitchBody = false;
+			}
+		}
+		if ( inForParen ) {
+			if ( token.getType() == LPAREN ) {
+				forParenCount++;
+			}
+			if ( token.getType() == RPAREN ) {
+				forParenCount--;
+				if ( forParenCount == 0 ) {
+					inForParen = false;
+				}
 			}
 		}
 		return token;
@@ -728,6 +758,8 @@ public class BoxLexerCustom extends BoxLexer {
 	 */
 	private int skipWhiteSpace( int pos ) {
 		int nextChar = getInputStream().LA( pos );
+
+		// skip whitespace
 		while ( Character.isWhitespace( nextChar ) ) {
 			nextChar = getInputStream().LA( ++pos );
 		}

@@ -2134,24 +2134,54 @@ public class CoreLangTest {
 	public void testInBeforeParensCF() {
 		instance.executeSource(
 		    """
-		     	    prop.aliases ="foo,bar";
-		     	    result = ""
-		     	    for( alias in ( prop.aliases ?: "" ).listToArray() ) {
-		     	    	result &= alias;
-		     	    }
-		     	    function in() {
-		     	    	result2 = "in";
-		     	    }
-		     	    in();
+		    		 prop.aliases ="foo,bar";
+		    		 result = ""
+		    		 for( alias in ( prop.aliases ?: "" ).listToArray() ) {
+		    			 result &= alias;
+		    		 }
+		    		 function in() {
+		    			 result2 = "in";
+		    		 }
+		    		 in();
 		    (()->{
 		    	```
 		    	<cfset var in = "data">
 		    	```
 		    })()
-		     	             	""",
+		    					  """,
 		    context, BoxSourceType.CFSCRIPT );
 		assertThat( variables.get( result ) ).isEqualTo( "foobar" );
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "in" );
+	}
+
+	@Test
+	public void testForVarKeywordInLoop() {
+		instance.executeSource(
+		    """
+		    variables.result = "";
+		       (()=>{
+		    	   queryParams = ["foo","bar"];
+		    	   for ( var param in queryParams ) {
+		    		variables.result &= param;
+		    	   } })()
+		    						 """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "foobar" );
+	}
+
+	@Test
+	public void testForVarKeywordInLoopCF() {
+		instance.executeSource(
+		    """
+		    variables.result = "";
+		       (()=>{
+		    	   queryParams = ["foo","bar"];
+		    	   for ( var param in queryParams ) {
+		    		variables.result &= param;
+		    	   } })()
+		    						 """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "foobar" );
 	}
 
 	@Test
