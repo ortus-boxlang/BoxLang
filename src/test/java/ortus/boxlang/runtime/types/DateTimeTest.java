@@ -34,6 +34,7 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.dynamic.casters.LongCaster;
 
 public class DateTimeTest {
@@ -177,6 +178,30 @@ public class DateTimeTest {
 		assertThat( Long.signum( -1l ) ).isEqualTo( -1 );
 		initialDateTime.modify( "q", -1l );
 		assertThat( initialQuarter ).isEqualTo( LongCaster.cast( initialDateTime.format( "Q" ) ) );
+	}
+
+	@DisplayName( "Tests DateTime equality" )
+	@Test
+	void testEquality() {
+		java.util.Date	epoch		= new java.util.Date( 0 );
+		DateTime		dateTime1	= DateTimeCaster.cast( epoch );
+		DateTime		dateTime2	= DateTimeCaster.cast( "1970-01-01T00:00:00Z" );
+		assertThat( dateTime1.isEqual( dateTime2 ) ).isTrue();
+		assertThat( dateTime1.equals( dateTime2 ) ).isTrue();
+		assertThat( dateTime1.compareTo( dateTime2 ) ).isEqualTo( 0 );
+		// @formatter:off
+		instance.executeSource(
+		"""
+			utcBaseDate = createObject( 'java', 'java.util.Date' ).init( javacast( 'long', 0 ) );
+			dateOne = dateAdd( 's', 1567296000, utcBaseDate );
+			dateTwo = parseDateTime( '2019-09-01T00:00:00Z' );
+			assert dateOne.toEpochMillis() == dateTwo.toEpochMillis();
+			assert dateOne.isEqual( dateTwo );
+			assert dateOne.equals( dateTwo );
+		""", 
+		context 
+		);
+		// @formatter:on
 	}
 
 	@DisplayName( "Test getTime() helper" )

@@ -55,6 +55,7 @@ import ortus.boxlang.runtime.bifs.BoxMemberExpose;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
+import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.interop.DynamicInteropService;
 import ortus.boxlang.runtime.scopes.Key;
@@ -556,13 +557,18 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	@Override
 	@BoxMemberExpose
 	public boolean equals( Object obj ) {
-		if ( this == obj )
-			return true;
-		if ( obj == null || getClass() != obj.getClass() )
+		if ( obj == null ) {
 			return false;
-		DateTime other = ( DateTime ) obj;
-		return Objects.equals( wrapped, other.wrapped ) &&
-		    Objects.equals( formatter, other.formatter );
+		} else if ( obj instanceof DateTime castDateTime ) {
+			return this.isEqual( castDateTime.getWrapped() );
+		} else {
+			CastAttempt<DateTime> attempt = DateTimeCaster.attempt( obj );
+			if ( attempt.wasSuccessful() ) {
+				return this.isEqual( attempt.get().getWrapped() );
+			} else {
+				return false;
+			}
+		}
 	}
 
 	/**
