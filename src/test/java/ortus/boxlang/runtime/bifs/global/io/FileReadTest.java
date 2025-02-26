@@ -122,7 +122,7 @@ public class FileReadTest {
 		assertThat( result ).contains( System.getProperty( "line.separator" ) );
 	}
 
-	@DisplayName( "It tests the ability to read a URL binary file" )
+	@DisplayName( "It tests that a URL binary file read by fileRead wil return a string" )
 	@Test
 	public void testURLBinaryFileRead() {
 		variables.put( Key.of( "testFile" ), testURLImage );
@@ -132,7 +132,7 @@ public class FileReadTest {
 		    """,
 		    context );
 		Object result = variables.get( Key.of( "result" ) );
-		assertTrue( result instanceof byte[] );
+		assertThat( result ).isInstanceOf( String.class );
 	}
 
 	@DisplayName( "It tests the ability to read a text file with a charset arg" )
@@ -177,7 +177,7 @@ public class FileReadTest {
 		assertThat( result ).isEqualTo( "file read test!" );
 	}
 
-	@DisplayName( "It tests the ability to read a binary file" )
+	@DisplayName( "It tests the ability to read a binary file and return it as a string" )
 	@Test
 	public void testBinaryFileRead() {
 		variables.put( Key.of( "testFile" ), Path.of( testBinaryFile ).toAbsolutePath().toString() );
@@ -187,7 +187,20 @@ public class FileReadTest {
 		    """,
 		    context );
 		Object result = variables.get( Key.of( "result" ) );
-		assertTrue( result instanceof byte[] );
+		assertThat( result ).isInstanceOf( String.class );
+	}
+
+	@DisplayName( "It tests that fileReadBinary will return a byte array" )
+	@Test
+	public void testBinaryFileReadBIF() {
+		variables.put( Key.of( "testFile" ), Path.of( testBinaryFile ).toAbsolutePath().toString() );
+		instance.executeSource(
+		    """
+		    result = fileReadBinary( variables.testFile );
+		    """,
+		    context );
+		Object result = variables.get( Key.of( "result" ) );
+		assertThat( result ).isInstanceOf( byte[].class );
 	}
 
 	@DisplayName( "Will correctly detect common cert extensions as text" )

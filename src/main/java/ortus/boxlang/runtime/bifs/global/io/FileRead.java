@@ -29,6 +29,8 @@ import ortus.boxlang.runtime.util.FileSystemUtil;
 @BoxBIF( alias = "FileReadBinary" )
 public class FileRead extends BIF {
 
+	public static final Key stringOnlyBif = Key.of( "FileRead" );
+
 	/**
 	 * Constructor
 	 */
@@ -61,6 +63,7 @@ public class FileRead extends BIF {
 		String	charset				= arguments.getAsString( Key.charset );
 		Integer	bufferSize			= arguments.getAsInteger( Key.buffersize );
 		String	filePath			= arguments.getAsString( Key.filepath );
+		Key		bifMethodKey		= arguments.getAsKey( BIF.__functionName );
 
 		if ( charsetOrBufferSize != null ) {
 			CastAttempt<Integer> castAttempt = IntegerCaster.attempt( charsetOrBufferSize );
@@ -75,7 +78,7 @@ public class FileRead extends BIF {
 			filePath = FileSystemUtil.expandPath( context, filePath ).absolutePath().toString();
 		}
 
-		return FileSystemUtil.read( filePath, charset, bufferSize );
+		return FileSystemUtil.read( filePath, charset, bufferSize, bifMethodKey.equals( stringOnlyBif ) );
 
 	}
 

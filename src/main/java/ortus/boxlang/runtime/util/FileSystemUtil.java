@@ -153,27 +153,30 @@ public final class FileSystemUtil {
 	 * @param filePath
 	 * @param charset
 	 * @param bufferSize
+	 * @param resultsAsString
 	 *
 	 * @return Object - Strings without a buffersize arg return the contents, with a
 	 *         buffersize arg a Buffered reader is returned, binary files return the
-	 *         byte array
+	 *         byte array unless `resultsAsString` is true, in which case a string will always be returned
 	 *
 	 * @throws IOException
 	 */
-	public static Object read( String filePath, String charset, Integer bufferSize ) {
+	public static Object read( String filePath, String charset, Integer bufferSize, boolean resultsAsString ) {
 		Path	path	= null;
-		Boolean	isURL	= false;
+		boolean	isURL	= false;
 		if ( filePath.substring( 0, 4 ).equalsIgnoreCase( "http" ) ) {
 			isURL = true;
 		} else {
 			path = Path.of( filePath );
 		}
 
+		boolean allowBinary = !resultsAsString;
+
 		try {
 			if ( isURL ) {
 				try {
 					URL fileURL = URI.create( filePath ).toURL();
-					if ( isBinaryFile( filePath ) ) {
+					if ( allowBinary && isBinaryFile( filePath ) ) {
 						return IOUtils.toByteArray( fileURL.openStream() );
 					} else {
 						return StringCaster.cast( fileURL.openStream(), charset, true );
@@ -185,7 +188,7 @@ public final class FileSystemUtil {
 				}
 
 			} else {
-				if ( isBinaryFile( filePath ) ) {
+				if ( allowBinary && isBinaryFile( filePath ) ) {
 					return Files.readAllBytes( path );
 				} else if ( bufferSize == null ) {
 					return StringCaster.cast( Files.newInputStream( path ), charset, true );
@@ -216,6 +219,23 @@ public final class FileSystemUtil {
 		} catch ( IOException e ) {
 			throw new BoxIOException( e );
 		}
+	}
+
+	/**
+	 * Returns the contents of a file
+	 *
+	 * @param filePath
+	 * @param charset
+	 * @param bufferSize
+	 *
+	 * @return Object - Strings without a buffersize arg return the contents, with a
+	 *         buffersize arg a Buffered reader is returned, binary files return the
+	 *         byte array
+	 *
+	 * @throws IOException
+	 */
+	public static Object read( String filePath, String charset, Integer bufferSize ) {
+		return read( filePath, charset, bufferSize, false );
 	}
 
 	/**
