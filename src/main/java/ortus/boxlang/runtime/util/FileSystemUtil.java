@@ -982,8 +982,9 @@ public final class FileSystemUtil {
 		// If the incoming path does NOT start with a /, then we make it relative to the current template (if there is one)
 		if ( !isAbsolute && !path.startsWith( SLASH_PREFIX ) ) {
 			if ( basePath != null ) {
-				Path template = basePath.absolutePath();
-				if ( template != null ) {
+				// There are codepaths where ad-hoc source code has a source path of "unknown". That's not really ideal, but
+				// if we try to process this, we'll get crazy errors.
+				if ( basePath.absolutePath() != null && !basePath.absolutePath().toString().equals( "unknown" ) ) {
 					return basePath.newFromRelative( path );
 				}
 			}
