@@ -18,7 +18,6 @@
 package ortus.boxlang.runtime.components.system;
 
 import java.io.File;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -203,7 +202,7 @@ public class Module extends Component {
 		    context.getConfig()
 		        .getAsArray( Key.customTagsDirectory )
 		        .stream()
-		        .map( entry -> ResolvedFilePath.of( "", entry.toString(), null, ( Path ) null ) )
+		        .map( entry -> ResolvedFilePath.of( "", entry.toString(), entry.toString(), entry.toString() ) )
 		        .toList()
 		);
 		// Add in mappings to search
@@ -212,7 +211,8 @@ public class Module extends Component {
 		        .getAsStruct( Key.mappings )
 		        .entrySet()
 		        .stream()
-		        .map( entry -> ResolvedFilePath.of( entry.getKey().getName(), entry.getValue().toString(), null, ( Path ) null ) )
+		        .map( entry -> ResolvedFilePath.of( entry.getKey().getName(), entry.getValue().toString(), entry.getValue().toString(),
+		            entry.getValue().toString() ) )
 		        .toList()
 		);
 
@@ -230,7 +230,7 @@ public class Module extends Component {
 				            entry.mappingName(),
 				            entry.mappingPath(),
 				            tagPath,
-				            new File( entry.mappingPath(), tagPath ).toPath()
+				            new File( entry.absolutePath().toString(), tagPath ).toPath()
 				        )
 				    );
 			    }
@@ -238,6 +238,7 @@ public class Module extends Component {
 		    } )
 		    .filter( possibleMatch -> possibleMatch.absolutePath().toFile().exists() )
 		    .findFirst()
-		    .orElseThrow( () -> new BoxRuntimeException( "Could not find custom tag [" + name + "]" ) );
+		    .orElseThrow( () -> new BoxRuntimeException( "Could not find custom tag [" + name + "]. Paths searched: ["
+		        + pathToSearch.stream().map( p -> p.absolutePath().toString() ).collect( java.util.stream.Collectors.joining( ", " ) ) + "]" ) );
 	}
 }
