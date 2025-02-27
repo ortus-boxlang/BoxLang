@@ -134,4 +134,20 @@ public class DateAddTest {
 		assertThat( IntegerCaster.cast( original.format( "d" ) ) ).isEqualTo( 31 );
 	}
 
+	@DisplayName( "It tests the BIF DateAdd with a decimal as the number argument" )
+	@Test
+	public void testBifWithDecimalNumber() {
+		instance.executeSource(
+		    """
+		    epochDate = parseDateTime( "1970-01-01T00:00:00.000Z" );
+		       updatedDate = dateAdd( "s", 500/1000, epochDate );
+		    result = dateTimeFormat( updatedDate, "yyyy-MM-dd'T'HH:mm:ss.SSSX", "UTC" );
+		       """,
+		    context );
+		// 1970-01-01T00:01:00.000Z
+		Object result = variables.get( Key.of( "result" ) );
+		assertThat( result ).isInstanceOf( String.class );
+		assertThat( result ).isEqualTo( "1970-01-01T00:00:01.000Z" );
+	}
+
 }
