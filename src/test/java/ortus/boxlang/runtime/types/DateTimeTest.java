@@ -36,11 +36,15 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.dynamic.casters.LongCaster;
+import ortus.boxlang.runtime.scopes.IScope;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.VariablesScope;
 
 public class DateTimeTest {
 
 	static BoxRuntime	instance;
 	IBoxContext			context;
+	IScope				variables;
 
 	@BeforeAll
 	public static void setUp() {
@@ -49,7 +53,8 @@ public class DateTimeTest {
 
 	@BeforeEach
 	public void setupEach() {
-		context = new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
 	@DisplayName( "Test Constructors" )
@@ -193,14 +198,18 @@ public class DateTimeTest {
 		instance.executeSource(
 		"""
 			utcBaseDate = createObject( 'java', 'java.util.Date' ).init( javacast( 'long', 0 ) );
-			dateOne = dateAdd( 's', 1567296000, utcBaseDate );
+			dateOne = dateAdd( 'l', 1567296000000, utcBaseDate );
 			dateTwo = parseDateTime( '2019-09-01T00:00:00Z' );
-			assert dateOne.toEpochMillis() == dateTwo.toEpochMillis();
-			assert dateOne.isEqual( dateTwo );
-			assert dateOne.equals( dateTwo );
+			println( dateTimeFormat( dateOne, "iso8601" ) );
+			println( dateFormat( dateTwo, "iso8601" ) );
 		""", 
 		context 
 		);
+		DateTime date1 = variables.getAsDateTime( Key.of( "dateOne" ) );
+		DateTime date2 = variables.getAsDateTime( Key.of( "dateTwo" ) );
+		assertThat( date1.toEpochMillis() ).isEqualTo( date2.toEpochMillis() );
+		assertThat( date1.isEqual( date2 ) ).isTrue();
+		assertThat( date1.equals( date2 ) ).isTrue();
 		// @formatter:on
 	}
 

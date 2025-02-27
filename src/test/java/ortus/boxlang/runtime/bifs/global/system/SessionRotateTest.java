@@ -19,6 +19,7 @@
 
 package ortus.boxlang.runtime.bifs.global.system;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -81,7 +82,8 @@ public class SessionRotateTest {
 		IStruct initialSession = variables.getAsStruct( Key.of( "initialSession" ) );
 		assertTrue( variables.getAsStruct( result ).containsKey( Key.of( "foo" ) ) );
 		assertNotEquals( initialSession.getAsString( Key.of( "jsessionID" ) ), variables.getAsStruct( result ).getAsString( Key.of( "jsessionID" ) ) );
-		assertNotEquals( initialSession.getAsDateTime( Key.of( "timeCreated" ) ), variables.getAsStruct( result ).getAsDateTime( Key.of( "timeCreated" ) ) );
+		assertFalse(
+		    initialSession.getAsDateTime( Key.of( "timeCreated" ) ).equals( variables.getAsStruct( result ).getAsDateTime( Key.of( "timeCreated" ) ) ) );
 		assertNotEquals( initialSession.getAsString( Key.of( "sessionid" ) ), variables.getAsStruct( result ).getAsString( Key.of( "sessionid" ) ) );
 	}
 
