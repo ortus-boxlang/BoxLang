@@ -40,6 +40,11 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 public class Compare implements IOperator {
 
 	/**
+	 * Flag to allow compat to set the comparison mode for dates to loose
+	 */
+	public static boolean lenientDateComparison = false;
+
+	/**
 	 * Invokes the comparison
 	 *
 	 * @param left  The left operand
@@ -113,7 +118,17 @@ public class Compare implements IOperator {
 			if ( ref.wasSuccessful() ) {
 				CastAttempt<DateTime> target = DateTimeCaster.attempt( right );
 				if ( target.wasSuccessful() ) {
-					return ref.get().compareTo( target.get() );
+					if ( !lenientDateComparison ) {
+						// the chrono date time will return a numeric comparator rather than 0,1,-1
+						int comparison = ref.get().compareTo( target.get() );
+						return comparison == 0 ? 0 : ( comparison < 0 ? -1 : 1 );
+					} else {
+						DateTime	date1			= ref.get();
+						DateTime	date2			= target.get();
+						boolean		refIsBefore		= date1.getWrapped().isBefore( date2.getWrapped() );
+						boolean		datesAreEqual	= date1.getWrapped().isEqual( date2.getWrapped() );
+						return datesAreEqual ? 0 : ( refIsBefore ? -1 : 1 );
+					}
 				}
 			}
 		}
