@@ -37,6 +37,7 @@ import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 import ortus.boxlang.runtime.types.exceptions.CustomException;
+import ortus.boxlang.runtime.util.FileSystemUtil;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 @BoxComponent( allowsBody = true )
@@ -202,7 +203,8 @@ public class Module extends Component {
 		    context.getConfig()
 		        .getAsArray( Key.customTagsDirectory )
 		        .stream()
-		        .map( entry -> ResolvedFilePath.of( "", entry.toString(), entry.toString(), entry.toString() ) )
+		        .map( entry -> ResolvedFilePath.of( "", entry.toString(), entry.toString(),
+		            FileSystemUtil.expandPath( context, entry.toString() ).absolutePath() ) )
 		        .toList()
 		);
 		// Add in mappings to search
