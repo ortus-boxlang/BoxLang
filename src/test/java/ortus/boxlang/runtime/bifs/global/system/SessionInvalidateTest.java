@@ -67,6 +67,7 @@ public class SessionInvalidateTest {
 		    bx:application name="unit-test-sm" sessionmanagement="true";
 		           session.foo = "bar";
 		           initialSession = duplicate( session );
+		     sleep( 1000 );
 		           SessionInvalidate();
 		           result = session;
 		           """,

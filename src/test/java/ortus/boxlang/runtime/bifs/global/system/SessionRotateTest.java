@@ -70,7 +70,7 @@ public class SessionRotateTest {
 				session.foo = "bar";
 				initialSession = duplicate( session );
 		    	println( initialSession.asString() )
-
+				sleep( 1000 );
 				SessionRotate();
 				result = session;
 
