@@ -18,24 +18,39 @@
 package ortus.boxlang.runtime.bifs.global.temporal;
 
 import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
-import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.DateTime;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.LocalizationUtil;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.DATETIME, name = "compare" )
 @BoxMember( type = BoxLangType.DATETIME, name = "compareTo" )
 public class DateCompare extends BIF {
+
+	HashMap<Key, ChronoUnit> datePartMap = new HashMap<Key, ChronoUnit>() {
+
+		{
+			put( Key.of( "y" ), ChronoUnit.YEARS );
+			put( Key.of( "yyyy" ), ChronoUnit.YEARS );
+			put( Key.of( "m" ), ChronoUnit.MONTHS );
+			put( Key.of( "d" ), ChronoUnit.DAYS );
+			put( Key.of( "h" ), ChronoUnit.HOURS );
+			put( Key.of( "n" ), ChronoUnit.MINUTES );
+			put( Key.of( "s" ), ChronoUnit.SECONDS );
+		}
+	};
 
 	/**
 	 * Constructor
@@ -68,11 +83,14 @@ public class DateCompare extends BIF {
 		if ( datePart == null ) {
 			return date1.getWrapped().compareTo( date2.getWrapped() );
 		} else {
-			if ( datePart.equals( "m" ) ) {
-				datePart = "M";
+			Key partKey = Key.of( datePart );
+			if ( !datePartMap.containsKey( partKey ) ) {
+				throw new BoxRuntimeException( "Invalid datepart: " + datePart );
 			}
-			return IntegerCaster.cast( date1.format( datePart ) ).compareTo( IntegerCaster.cast( date2.format( datePart ) ) );
+			// Between is reversed so it will return negative numbers if date1 is before date2
+			long diff = datePartMap.get( partKey ).between( date2.getWrapped(), date1.getWrapped() );
 
+			return diff == 0 ? 0 : ( diff > 0 ? 1 : -1 );
 		}
 	}
 
