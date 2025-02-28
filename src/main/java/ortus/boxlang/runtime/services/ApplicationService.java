@@ -141,8 +141,10 @@ public class ApplicationService extends BaseService {
 	public void shutdownApplication( Key name ) {
 		Application thisApp = this.applications.get( name );
 		if ( thisApp != null ) {
-			thisApp.shutdown( false );
+			// remove it first so no one else can access it while it's shutting down
 			this.applications.remove( name );
+			// nuke it
+			thisApp.shutdown( false );
 		}
 
 		logger.trace( "ApplicationService.shutdownApplication() - {}", name );
