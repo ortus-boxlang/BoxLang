@@ -185,6 +185,8 @@ public class PlaceholderHelper {
 			}
 
 			return object;
+		} else if ( ! ( object instanceof String ) ) {
+			return object;
 		}
 
 		return ( T ) resolve( object );
