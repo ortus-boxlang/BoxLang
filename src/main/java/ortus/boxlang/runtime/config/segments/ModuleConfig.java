@@ -75,11 +75,7 @@ public class ModuleConfig implements IConfigSegment {
 		this.settings	= StructCaster.cast( config.getOrDefault( Key.settings, new Struct() ) );
 		// Process placeholders
 		this.settings.forEach( ( key, value ) -> {
-			if ( value instanceof String ) {
-				this.settings.put( key, PlaceholderHelper.resolve( value ) );
-			} else {
-				this.settings.put( key, value );
-			}
+			this.settings.put( key, PlaceholderHelper.resolveAll( value ) );
 		} );
 
 		return this;

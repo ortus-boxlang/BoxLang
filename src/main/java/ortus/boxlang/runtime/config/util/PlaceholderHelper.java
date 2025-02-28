@@ -23,6 +23,8 @@ import java.util.regex.Pattern;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -160,6 +162,32 @@ public class PlaceholderHelper {
 	 */
 	public static String resolve( Object input ) {
 		return resolve( StringCaster.cast( input ) );
+	}
+
+	/**
+	 * Recursively replace all placeholders throughout a tree made up of BoxLang Arrays and Structs
+	 *
+	 * @param input The Object to Resolve
+	 *
+	 * @return The Resolved tree
+	 *
+	 */
+	public static <T> T resolveAll( T object ) {
+		if ( object instanceof Struct struct ) {
+			for ( Key key : struct.keySet() ) {
+				struct.put( key, PlaceholderHelper.resolveAll( struct.get( key ) ) );
+			}
+
+			return object;
+		} else if ( object instanceof Array array ) {
+			for ( int i = 0; i < array.size(); i++ ) {
+				array.set( i, PlaceholderHelper.resolveAll( array.get( i ) ) );
+			}
+
+			return object;
+		}
+
+		return ( T ) resolve( object );
 	}
 
 	/**
