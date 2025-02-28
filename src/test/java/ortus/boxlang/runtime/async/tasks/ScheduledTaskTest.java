@@ -28,6 +28,7 @@ import java.util.stream.Stream;
 
 import javax.management.InvalidAttributeValueException;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.DynamicTest;
@@ -39,13 +40,28 @@ import org.mockito.Mockito;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.async.executors.BoxScheduledExecutor;
 import ortus.boxlang.runtime.async.executors.ExecutorRecord;
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.scopes.IScope;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.services.AsyncService;
 import ortus.boxlang.runtime.types.util.DateTimeHelper;
 
 class ScheduledTaskTest {
 
-	ScheduledTask task;
+	ScheduledTask		task;
+
+	static BoxRuntime	instance;
+	IBoxContext			context;
+	IScope				variables;
+	static Key			result	= new Key( "result" );
+
+	@BeforeAll
+	public static void setUp() {
+		instance = BoxRuntime.getInstance( true );
+	}
 
 	@BeforeEach
 	public void setupBeforeEach() {
@@ -54,11 +70,13 @@ class ScheduledTaskTest {
 		    new BoxScheduledExecutor( 20 ),
 		    "test",
 		    AsyncService.ExecutorType.SCHEDULED,
-		    20
-		);
+		    20 );
 
-		task	= new ScheduledTask( "test", executor ).setTimezone( "America/Chicago" );
-		task	= Mockito.spy( task );
+		task		= new ScheduledTask( "test", executor ).setTimezone( "America/Chicago" );
+		task		= Mockito.spy( task );
+
+		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
 	@DisplayName( "It can create the scheduled task with the right timezone" )
@@ -142,8 +160,7 @@ class ScheduledTaskTest {
 				        var t = task.every( 5, timeUnit );
 				        assertEquals( 5, t.getPeriod() );
 				        assertEquals( timeUnit, t.getTimeUnit() );
-			        }
-			    ) );
+			        } ) );
 		}
 
 		@DisplayName( "can register using everyMinute()" )
@@ -302,8 +319,7 @@ class ScheduledTaskTest {
 
 				        assertThat( task.getPeriod() ).isEqualTo( 604800 );
 				        assertThat( task.getTimeUnit().toString().toLowerCase() ).isEqualTo( "seconds" );
-			        }
-			    ) );
+			        } ) );
 		}
 	}
 
@@ -441,5 +457,21 @@ class ScheduledTaskTest {
 			task.endOn( mockNow.format( DateTimeHelper.ISO_DATE_ONLY ) );
 			assertThat( task.isConstrained() ).isTrue();
 		}
+	}
+
+	@Test
+	public void testCanExecuteBoxLangFunction() {
+		instance.executeSource(
+		    """
+		    	result = "";
+		    	arg = () => { result = "what" };
+		    	task = ExecutorGet( "boxlang-tasks" ).newTask( "printTest" )
+		    	task.call( arg )
+		    	task.start();
+		    	sleep(1000)
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "what" );
+
 	}
 }
