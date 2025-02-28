@@ -1019,8 +1019,7 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 			boolean	missing	= !functionService.hasGlobalFunction( name );
 			if ( isQoQ( node ) ) {
 				name	= "queryExecute (QoQ)";
-				// hard coded for now since we don't support
-				missing	= true;
+				missing	= false;
 			}
 			featuresUsed.add(
 			    new FeatureUsed( name, FeatureType.BIF, module, missing, node.getPosition() )
@@ -1049,7 +1048,7 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 			if ( isQoQ( node ) ) {
 				name	= "query (QoQ)";
 				// hard coded for now since we don't support
-				missing	= true;
+				missing	= false;
 			}
 			featuresUsed.add(
 			    new FeatureUsed( name, FeatureType.COMPONENT, module, missing, node.getPosition() )
