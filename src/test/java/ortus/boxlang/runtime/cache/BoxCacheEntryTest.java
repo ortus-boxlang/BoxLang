@@ -32,6 +32,7 @@ import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class BoxCacheEntryTest {
 
@@ -117,7 +118,7 @@ public class BoxCacheEntryTest {
 		    ObjectInputStream ois = new ObjectInputStream( bis ) ) {
 			inflatedEntry = ( BoxCacheEntry ) ois.readObject();
 		} catch ( IOException | ClassNotFoundException e ) {
-			e.printStackTrace();
+			throw new BoxRuntimeException( "Failed to deserialize BoxCacheEntry", e );
 		}
 
 		assertThat( inflatedEntry.cacheName() ).isEqualTo( Key.of( "default" ) );
@@ -128,6 +129,9 @@ public class BoxCacheEntryTest {
 		assertThat( inflatedEntry.lastAccessTimeout() ).isEqualTo( 0 );
 		assertThat( inflatedEntry.created() ).isNotNull();
 		assertThat( inflatedEntry.hits() ).isEqualTo( 0L );
+
+		inflatedEntry.setHits( 1l );
+		assertThat( inflatedEntry.hits() ).isEqualTo( 1L );
 
 	}
 }
