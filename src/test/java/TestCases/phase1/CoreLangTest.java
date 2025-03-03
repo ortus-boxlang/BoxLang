@@ -2185,6 +2185,38 @@ public class CoreLangTest {
 	}
 
 	@Test
+	public void testFunctionFunctionFunctionCF() {
+		// @formatter:off
+		instance.executeSource(
+				"""
+					function function function( function function ){
+						return function;
+					}
+					result = variables["function"]( () -> "yeah!" )();
+
+				""",
+				context, BoxSourceType.CFSCRIPT );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( "yeah!" );
+	}
+
+	@Test
+	public void testFunctionFunctionFunction() {
+		// @formatter:off
+		instance.executeSource(
+				"""
+					function function function( function function ){
+						return function;
+					}
+					result = variables["function"]( () -> "yeah!" )();
+
+				""",
+				context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( "yeah!" );
+	}
+
+	@Test
 	public void testKeywords() {
 
 		instance.executeSource(
@@ -5219,15 +5251,15 @@ public class CoreLangTest {
 
 	@Test
 	public void testStripBigDecimalZeros() {
-	// @formatter:off
-	instance.executeSource(
-			"""
-			minutesValid = 1 / 60;
-			expiresSeconds = minutesValid * 60;
-			result = "" & expiresSeconds
-			""",
-			context );
-	// @formatter:on
+		// @formatter:off
+		instance.executeSource(
+				"""
+				minutesValid = 1 / 60;
+				expiresSeconds = minutesValid * 60;
+				result = "" & expiresSeconds
+				""",
+				context );
+		// @formatter:on
 		assertThat( variables.get( result ) ).isEqualTo( "1" );
 
 	}

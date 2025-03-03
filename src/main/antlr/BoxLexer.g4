@@ -388,7 +388,7 @@ fragment DOT_FLOAT:
 FLOAT_LITERAL                  : INTEGER_LITERAL DOT_FLOAT;
 DOT_FLOAT_LITERAL              : DOT_FLOAT;
 INTEGER_LITERAL                : DIGIT+ ([_]? DIGIT)*;
-fragment ID_BODY               : [a-z_$]+ ( [_]+ | [a-z]+ | DIGIT)*;
+fragment ID_BODY               : [a-z_$]+ ( [a-z_$]+ | DIGIT)*;
 IDENTIFIER                     : ID_BODY;
 DOT_NUMBER_PREFIXED_IDENTIFIER : DOT_FLOAT ID_BODY;
 ILLEGAL_IDENTIFIER             : DIGIT+ ID_BODY;

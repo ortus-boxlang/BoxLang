@@ -352,7 +352,7 @@ public class BoxLexerCustom extends BoxLexer {
 						if ( debug )
 							System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because it's not an actual param statement" );
 						isIdentifier = true;
-					} else if ( nextTokenType == FUNCTION && !lastTokenWas( DOT ) && nextNonWhiteSpaceCharIs( '(' ) ) {
+					} else if ( nextTokenType == FUNCTION && !lastTokenWas( DOT ) && nextNonWhiteSpaceCharIs( '(' ) && !lastTokenWas( FUNCTION ) ) {
 						// foo = function() {}
 						// foo( value, function(){} )
 						isIdentifier = false;
@@ -371,6 +371,11 @@ public class BoxLexerCustom extends BoxLexer {
 						// foo = new Bar() is fine
 						// but ignore "new is 1" because there is an operator after new
 						isIdentifier = false;
+					} else if ( nextTokenType == FUNCTION && !isFunctionDeclaration( nextToken ) ) {
+						// function function foo();
+						if ( debug )
+							System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because it is not a function declaration" );
+						isIdentifier = true;
 					} else if ( nextNonWhiteSpaceCharIs( ':' ) && ! ( nextTokenType == DEFAULT && inSwitchBody ) ) {
 						// left side of a : which is usually { foo : bar }
 						// however, ignore default: in a switch body.
@@ -718,10 +723,10 @@ public class BoxLexerCustom extends BoxLexer {
 
 		int	pos			= skipWhiteSpace( 1 );
 		int	nextChar	= getInputStream().LA( pos++ );
-		if ( !Character.isAlphabetic( nextChar ) ) {
+		if ( ! ( Character.isAlphabetic( nextChar ) || nextChar == '_' || nextChar == '$' ) ) {
 			return false;
 		}
-		while ( Character.isAlphabetic( nextChar ) || Character.isDigit( nextChar ) || nextChar == '_' ) {
+		while ( Character.isAlphabetic( nextChar ) || Character.isDigit( nextChar ) || nextChar == '_' || nextChar == '$' ) {
 			nextChar = getInputStream().LA( pos++ );
 		}
 		nextChar = getInputStream().LA( skipWhiteSpace( pos - 1 ) );
