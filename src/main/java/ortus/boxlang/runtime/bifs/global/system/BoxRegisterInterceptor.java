@@ -55,6 +55,8 @@ public class BoxRegisterInterceptor extends BIF {
 	 *
 	 * @argument.interceptor This can be a class or a closure/lambda that will listen to global events
 	 *
+	 * @argument.states An array of events to listen to along side the points discovered in the incoming interceptor
+	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object	interceptor	= arguments.get( Key.interceptor );
