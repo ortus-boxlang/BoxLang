@@ -33,6 +33,7 @@ import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.modules.ModuleRecord;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.AbortException;
@@ -713,5 +714,29 @@ public class InterceptorPool {
 			}
 		}
 		return this.logger;
+	}
+
+	/**
+	 * Inflates an array or string of states into a list of keys
+	 *
+	 * @param states The states to inflate
+	 *
+	 * @return The list of keys representing the states
+	 */
+	public static Key[] inflateStates( Object states ) {
+		// If it's a string, make it into an array
+		if ( states instanceof String castedString ) {
+			states = Array.fromString( castedString );
+		}
+
+		// If already an array, make sure they are keys
+		if ( states instanceof Array castedArray ) {
+			return castedArray
+			    .stream()
+			    .map( Key::of )
+			    .toArray( Key[]::new );
+		}
+
+		return new Key[ 0 ];
 	}
 }
