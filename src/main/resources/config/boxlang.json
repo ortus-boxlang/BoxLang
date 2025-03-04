@@ -51,9 +51,6 @@
 	// By default BoxLang uses high-precision mathematics via BigDecimal operations
 	// You can turn this off here for all applications
 	"useHighPrecisionMath": true,
-	// If true, you can call implicit accessors/mutators on object properties. By default it is enabled
-	// You can turn it on here for all applications or in the Application.cfc
-	"invokeImplicitAccessor": true,
 	// Use Timespan syntax: "days, hours, minutes, seconds"
 	"applicationTimeout": "0,0,0,0",
 	// The request timeout for a request in seconds; 0 means no timeout

@@ -122,9 +122,9 @@ public class Configuration implements IConfigSegment {
 
 	/**
 	 * Invoke implicit getters and setters when using the implicit accessor
-	 * {@code true} by default
+	 * {@code true} by default (defaulted in the BoxClassSupport class where it's used)
 	 */
-	public Boolean				invokeImplicitAccessor			= true;
+	public Boolean				invokeImplicitAccessor			= null;
 
 	/**
 	 * Use high precision math for all math operations, else it relies on Double
