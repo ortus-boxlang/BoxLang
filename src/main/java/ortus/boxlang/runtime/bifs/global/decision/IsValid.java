@@ -107,6 +107,7 @@ public class IsValid extends BIF {
 	 *
 	 * @argument.pattern The pattern to validate the value against
 	 */
+	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		IsValidType	type	= IsValidType.fromString( arguments.getAsString( Key.type ) );
 		Object		min		= arguments.get( Key.min );

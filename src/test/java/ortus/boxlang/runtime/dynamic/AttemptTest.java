@@ -25,8 +25,6 @@ import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -34,8 +32,7 @@ import ortus.boxlang.runtime.types.exceptions.NoElementException;
 
 public class AttemptTest {
 
-	private Attempt<Object>	attempt;
-	private IBoxContext		context	= new ScriptingRequestBoxContext();
+	private Attempt<Object> attempt;
 
 	@DisplayName( "Test creation with no values" )
 	@Test

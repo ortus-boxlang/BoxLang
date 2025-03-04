@@ -25,7 +25,6 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Struct;
@@ -35,11 +34,13 @@ import ortus.boxlang.runtime.types.exceptions.NoElementException;
 import ortus.boxlang.runtime.util.ValidationUtil;
 
 /**
- * This class is a fluent class inspired by Java optionals. It allows for a more
- * fluent way to handle truthy and falsey values in BoxLang with functional aspects.
+ * This class is a fluent class inspired by Java optionals.
  * <p>
  * It is useful when you have a value that could be null or not, and you want to
  * handle it in a more functional way.
+ * <p>
+ * You can even attach validation rules to the attempt to verify if the value is
+ * valid or not before using it.
  * <p>
  * Attemps are also Unmodifiable, so you can chain methods to handle the value in a
  * more functional way, but it never mutates the original value.
@@ -52,11 +53,13 @@ public class Attempt<T> {
 	 * |--------------------------------------------------------------------------
 	 */
 
-	protected static final Attempt<?>	EMPTY		= new Attempt<>();
+	/**
+	 * An empty attempt
+	 */
+	protected static final Attempt<?>	EMPTY	= new Attempt<>();
 
 	/**
 	 * The target value to evaluate
-	 * This can be a truthy or falsey value
 	 */
 	protected final T					value;
 
@@ -64,12 +67,6 @@ public class Attempt<T> {
 	 * Validation Record
 	 */
 	protected ValidationRecord			validationRecord;
-
-	/**
-	 * Simple eval for the attempt
-	 * No truthy or validation checks
-	 */
-	protected Boolean					simpleEval	= false;
 
 	/**
 	 * |--------------------------------------------------------------------------
@@ -86,7 +83,6 @@ public class Attempt<T> {
 
 	/**
 	 * Constructor for an attempt with the incoming value
-	 * This can be anything, a truthy or falsey or null
 	 */
 	protected Attempt( T value ) {
 		this.value				= value;
@@ -129,12 +125,11 @@ public class Attempt<T> {
 	 * <p>
 	 * The validation rules are:
 	 * - Type validation
-	 * - Range validation
+	 * - Range validation (min, max)
 	 * - Regex pattern validation
 	 * - Custom validation function
 	 * <p>
 	 */
-
 	private record ValidationRecord(
 	    String type,
 	    Double min,
@@ -414,7 +409,7 @@ public class Attempt<T> {
 	 *
 	 * @return True if the attempt is empty
 	 */
-	public boolean ifFailed() {
+	public boolean hasFailed() {
 		return isEmpty();
 	}
 
@@ -431,28 +426,13 @@ public class Attempt<T> {
 	/**
 	 * Verifies if the attempt is empty or not using the following rules:
 	 * - If the value is null, it is empty
-	 * - If the value is castable to BoxLang Boolean, evaluate it
-	 * - If the value is an object, it is not empty
+	 * - Else it is not empty
 	 */
 	public boolean isPresent() {
-
 		// If null, we have our answer already
 		if ( this.value == null ) {
 			return false;
 		}
-
-		// If we have a simple eval, we are done
-		if ( this.simpleEval ) {
-			return true;
-		}
-
-		// Verify truthy/falsey values
-		var castAttempt = BooleanCaster.attempt( this.value );
-		if ( castAttempt.wasSuccessful() ) {
-			return castAttempt.get();
-		}
-
-		// Else we have an object
 		return true;
 	}
 
@@ -506,6 +486,15 @@ public class Attempt<T> {
 			consumer.run();
 		}
 		return this;
+	}
+
+	/**
+	 * Alias to ifEmpty() but more fluent
+	 *
+	 * @param consumer The consumer to run
+	 */
+	public Attempt<T> ifFailed( Runnable consumer ) {
+		return ifEmpty( consumer );
 	}
 
 	/**
@@ -775,16 +764,6 @@ public class Attempt<T> {
 		}
 
 		return empty();
-	}
-
-	/**
-	 * Set the attempt to a simple evaluation
-	 *
-	 * @param eval True if the attempt is a simple evaluation, false otherwise
-	 */
-	public Attempt<T> setSimpleEval( Boolean eval ) {
-		this.simpleEval = eval;
-		return this;
 	}
 
 	/**
