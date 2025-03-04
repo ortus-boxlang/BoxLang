@@ -100,15 +100,15 @@ public class Len extends BIF {
 			return q.size();
 		}
 
+		CastAttempt<Array> arrayAttempt = ArrayCaster.attempt( object );
+		if ( arrayAttempt.wasSuccessful() ) {
+			return arrayAttempt.get().size();
+		}
+
 		// Dates are all handled inside the string caster, since they only have a "length" as a string
 		CastAttempt<String> stringAttempt = StringCaster.attempt( object );
 		if ( stringAttempt.wasSuccessful() ) {
 			return stringAttempt.get().length();
-		}
-
-		CastAttempt<Array> arrayAttempt = ArrayCaster.attempt( object );
-		if ( arrayAttempt.wasSuccessful() ) {
-			return arrayAttempt.get().size();
 		}
 
 		CastAttempt<IStruct> structAttempt = StructCaster.attempt( object );

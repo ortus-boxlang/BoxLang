@@ -33,7 +33,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 
-public class ArrayLenTest {
+public class LenTest {
 
 	static BoxRuntime	instance;
 	IBoxContext			context;
@@ -151,6 +151,20 @@ public class ArrayLenTest {
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( 3 );
+	}
+
+	@DisplayName( "It returns the length of the bytearray" )
+	@Test
+	public void testItReturnsByteArrayLength() {
+		instance.executeSource(
+		    """
+		    ba = [230, 188, 162] castas byte[];
+		    result = len( ba );
+		    result2 = ba castas string;
+		            """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 3 );
+		assertThat( variables.get( result2 ) ).isEqualTo( "漢" );
 	}
 
 }
