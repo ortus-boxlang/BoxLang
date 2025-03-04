@@ -310,6 +310,10 @@ public class GenericCaster implements IBoxCaster {
 			return GUIDCaster.cast( object, fail );
 		}
 
+		if ( type.equals( "variablename" ) ) {
+			return VariableNameCaster.cast( object, fail );
+		}
+
 		if ( type.equals( "email" ) ) {
 			return EmailCaster.cast( object, fail );
 		}

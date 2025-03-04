@@ -5307,6 +5307,32 @@ public class CoreLangTest {
 				context );
 		// @formatter:on
 		assertThat( variables.get( result ) ).isEqualTo( "1" );
+	}
+
+	@Test
+	public void testVariableNameCast() {
+		// @formatter:off
+		instance.executeSource(
+				"""
+				variableName function foo( variableName bar ) {
+					return bar;
+				}
+				result = foo( "$brad" );
+				""",
+				context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( "$brad" );
+
+		assertThrows( BoxRuntimeException.class, () -> {
+			instance.executeSource(
+			    """
+			    variableName function foo( variableName bar ) {
+			    	return bar;
+			    }
+			    result = foo( 1 );
+			    """,
+			    context );
+		} );
 
 	}
 
