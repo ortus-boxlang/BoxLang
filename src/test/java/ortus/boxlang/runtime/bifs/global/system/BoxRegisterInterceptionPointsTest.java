@@ -49,7 +49,7 @@ public class BoxRegisterInterceptionPointsTest {
 
 	@AfterAll
 	public static void teardown() {
-		interceptorService.clearInterceptionStates();
+		interceptorService.removeInterceptionPoint( Key.of( "onCustomOrder" ), Key.of( "onCustomOrder2" ) );
 	}
 
 	@BeforeEach

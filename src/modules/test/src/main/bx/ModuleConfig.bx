@@ -59,6 +59,11 @@ class{
 	this.enabled = true;
 
 	/**
+	 * The module dependencies that this module needs to be activated before this module is activated
+	 */
+	this.dependencies = [];
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Module Methods
 	 * --------------------------------------------------------------------------
