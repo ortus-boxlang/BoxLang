@@ -14,6 +14,7 @@
  */
 package ortus.boxlang.compiler.asmboxpiler.transformer.statement;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -87,15 +88,47 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 
 		BoxAccessModifier	access			= function.getAccessModifier() == null ? BoxAccessModifier.Public : function.getAccessModifier();
 
-		ClassNode			classNode		= new ClassNode();
-		AsmHelper.init( classNode, true, type, Type.getType( UDF.class ), cv -> {
-			cv.visitSource( transpiler.getProperty( "filePath" ), null );
-			cv.visitNestHost( transpiler.getProperty( "enclosingClassInternalName" ) );
-			cv.visitInnerClass( type.getInternalName(), transpiler.getProperty( "enclosingClassInternalName" ),
-			    "Func_" + function.getName(),
-			    Opcodes.ACC_PUBLIC );
-		}, methodVisitor -> {
-		} );
+		Type				superClass		= Type.getType( UDF.class );
+		ClassNode			classNode		= AsmHelper.initializeClassDefinition( type, superClass, null );
+
+		classNode.visitSource( transpiler.getProperty( "filePath" ), null );
+		classNode.visitNestHost( transpiler.getProperty( "enclosingClassInternalName" ) );
+		classNode.visitInnerClass( type.getInternalName(), transpiler.getProperty( "enclosingClassInternalName" ),
+		    "Func_" + function.getName(),
+		    Opcodes.ACC_PUBLIC );
+
+		AsmHelper.addGetInstance( classNode, type );
+
+		AsmHelper.addConstructor(
+		    classNode,
+		    true,
+		    superClass,
+		    new Type[] { Type.BOOLEAN_TYPE },
+		    ( mv ) -> {
+			    new LdcInsnNode( shouldDefaultOutput( function ) ? 1 : 0 ).accept( mv );
+		    },
+		    ( mv ) -> {
+		    }
+		);
+
+		AsmHelper.addStaticFieldGetter( classNode,
+		    type,
+		    "compileVersion",
+		    "getRunnableCompileVersion",
+		    Type.LONG_TYPE,
+		    1L );
+		AsmHelper.addStaticFieldGetter( classNode,
+		    type,
+		    "compiledOn",
+		    "getRunnableCompiledOn",
+		    Type.getType( LocalDateTime.class ),
+		    null );
+		AsmHelper.addStaticFieldGetter( classNode,
+		    type,
+		    "ast",
+		    "getRunnableAST",
+		    Type.getType( Object.class ),
+		    null );
 
 		ClassNode owningClass = transpiler.getOwningClass();
 		if ( owningClass != null ) {
@@ -252,12 +285,11 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		List<AbstractInsnNode> nodes = new ArrayList<>();
 
 		nodes.addAll( transpiler.getCurrentMethodContextTracker().get().loadCurrentContext() );
-		nodes.add( new LdcInsnNode( shouldDefaultOutput( function ) ? 1 : 0 ) );
 		nodes.add(
 		    new MethodInsnNode( Opcodes.INVOKESTATIC,
 		        type.getInternalName(),
 		        "getInstance",
-		        Type.getMethodDescriptor( type, Type.BOOLEAN_TYPE ),
+		        Type.getMethodDescriptor( type ),
 		        false )
 		);
 		nodes.add(

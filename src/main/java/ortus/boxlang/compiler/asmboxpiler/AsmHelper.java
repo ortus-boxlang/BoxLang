@@ -517,11 +517,25 @@ public class AsmHelper {
 		init( classVisitor, singleton, type, superClass, null, onConstruction, interfaces );
 	}
 
+	public static ClassNode initializeClassDefinition( Type type, Type superType, Type[] interfaces ) {
+		ClassNode classNode = new ClassNode();
+
+		classNode.visit(
+		    Opcodes.V21,
+		    Opcodes.ACC_PUBLIC,
+		    type.getInternalName(),
+		    null,
+		    superType.getInternalName(),
+		    interfaces == null || interfaces.length == 0 ? null : Arrays.stream( interfaces ).map( Type::getInternalName ).toArray( String[]::new ) );
+
+		return classNode;
+	}
+
 	public static void init( ClassVisitor classVisitor, boolean singleton, Type type, Type superClass, Consumer<ClassVisitor> postVisit,
 	    Consumer<MethodVisitor> onConstruction,
 	    Type... interfaces ) {
 		classVisitor.visit(
-		    Opcodes.V17,
+		    Opcodes.V21,
 		    Opcodes.ACC_PUBLIC,
 		    type.getInternalName(),
 		    null,
@@ -557,7 +571,29 @@ public class AsmHelper {
 		    null );
 	}
 
-	private static void addConstructor( ClassVisitor classVisitor, boolean isPublic, Type superClass, Consumer<MethodVisitor> onConstruction ) {
+	public static void addConstructor(
+	    ClassVisitor classVisitor,
+	    boolean isPublic,
+	    Type superClass,
+	    Consumer<MethodVisitor> onConstruction ) {
+		addConstructor(
+		    classVisitor,
+		    isPublic,
+		    superClass,
+		    new Type[] {},
+		    mv -> {
+		    },
+		    onConstruction
+		);
+	}
+
+	public static void addConstructor(
+	    ClassVisitor classVisitor,
+	    boolean isPublic,
+	    Type superClass,
+	    Type[] superArgumentTypes,
+	    Consumer<MethodVisitor> preSuper,
+	    Consumer<MethodVisitor> onConstruction ) {
 		MethodVisitor methodVisitor = classVisitor.visitMethod( isPublic ? Opcodes.ACC_PUBLIC : Opcodes.ACC_PRIVATE,
 		    "<init>",
 		    Type.getMethodDescriptor( Type.VOID_TYPE ),
@@ -565,17 +601,18 @@ public class AsmHelper {
 		    null );
 		methodVisitor.visitCode();
 		methodVisitor.visitVarInsn( Opcodes.ALOAD, 0 );
+		preSuper.accept( methodVisitor );
 		methodVisitor.visitMethodInsn( Opcodes.INVOKESPECIAL,
 		    superClass.getInternalName(),
 		    "<init>",
-		    Type.getMethodDescriptor( Type.VOID_TYPE ),
+		    Type.getMethodDescriptor( Type.VOID_TYPE, superArgumentTypes ),
 		    false );
 		onConstruction.accept( methodVisitor );
 		methodVisitor.visitInsn( Opcodes.RETURN );
 		methodVisitor.visitEnd();
 	}
 
-	private static void addGetInstance( ClassVisitor classVisitor, Type type ) {
+	public static void addGetInstance( ClassVisitor classVisitor, Type type ) {
 		FieldVisitor fieldVisitor = classVisitor.visitField(
 		    Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC,
 		    "instance",
