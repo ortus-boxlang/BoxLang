@@ -512,7 +512,7 @@ public class CFLexerCustom extends CFLexer {
 						if ( debug )
 							System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because it is up against an ending )" );
 						isIdentifier = true;
-					} else if ( lastTokenWas( RETURN ) && nextTokenType != NEW ) {
+					} else if ( lastTokenWas( RETURN ) && nextTokenType != NEW && nextTokenType != NOT ) {
 						// The token is a varible being returned
 						// return package;
 						if ( debug )

@@ -496,7 +496,7 @@ public class BoxLexerCustom extends BoxLexer {
 						if ( debug )
 							System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because it is a script component" );
 						isIdentifier = true;
-					} else if ( lastTokenWas( RETURN ) && nextTokenType != NEW ) {
+					} else if ( lastTokenWas( RETURN ) && nextTokenType != NEW && nextTokenType != NOT ) {
 						// The token is a varible being returned
 						// return package;
 						if ( debug )

@@ -2263,6 +2263,36 @@ public class CoreLangTest {
 	}
 
 	@Test
+	public void testReturnNot() {
+		// @formatter:off
+		instance.executeSource(
+				"""
+					function foo(){
+						return NOT len( "brad" );
+					}
+					result = foo();
+				""",
+				context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( false );
+	}
+
+	@Test
+	public void testReturnNotCF() {
+		// @formatter:off
+		instance.executeSource(
+				"""
+					function foo(){
+						return NOT len( "brad" );
+					}
+					result = foo();
+				""",
+				context, BoxSourceType.CFSCRIPT );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( false );
+	}
+
+	@Test
 	public void testKeywords() {
 
 		instance.executeSource(
