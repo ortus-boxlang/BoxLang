@@ -102,14 +102,15 @@ public class EchoTest {
 		instance.executeSource(
 		    """
 
-		         echo( "pre func" )
-		      // output defaults to false in BoxLang
-		       function foo() {
-		           echo( "Hello World" )
-		       }
-		    foo()
-		         echo( "post func" )
-		         """,
+		          echo( "pre func" )
+		       // output defaults to false in BoxLang
+		    @output( false )
+		        function foo() {
+		            echo( "Hello World" )
+		        }
+		     foo()
+		          echo( "post func" )
+		          """,
 		    context );
 		assertThat( new String( outContent.toByteArray() ) ).contains( "pre funcpost func" );
 	}

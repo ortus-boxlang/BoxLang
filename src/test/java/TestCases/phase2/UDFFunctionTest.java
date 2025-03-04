@@ -98,7 +98,7 @@ public class UDFFunctionTest {
 		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "foo" );
 		// Defaults
 		assertThat( meta.get( Key.of( "hint" ) ) ).isEqualTo( "" );
-		assertThat( meta.get( Key.of( "output" ) ) ).isEqualTo( false );
+		assertThat( meta.get( Key.of( "output" ) ) ).isEqualTo( true );
 		assertThat( meta.get( Key.of( "returnType" ) ) ).isEqualTo( "Any" );
 		assertThat( meta.get( Key.of( "access" ) ) ).isEqualTo( "public" );
 

@@ -90,6 +90,11 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	private Boolean				canOutput			= null;
 
 	/**
+	 * Default can output
+	 */
+	private boolean				defaultOutput		= true;
+
+	/**
 	 * Serialization version
 	 */
 	private static final long	serialVersionUID	= 1L;
@@ -104,6 +109,15 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	 * Constructor
 	 */
 	protected Function() {
+	}
+
+	/**
+	 * Constructor that can set the output default
+	 * 
+	 * @param defaultOutput
+	 */
+	protected Function( boolean defaultOutput ) {
+		this.defaultOutput = defaultOutput;
 	}
 
 	/**
@@ -458,7 +472,7 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 
 		// Default based on source type
 		if ( this.canOutput == null ) {
-			this.canOutput = getSourceType().equals( BoxSourceType.CFSCRIPT ) || getSourceType().equals( BoxSourceType.CFTEMPLATE ) ? true : false;
+			this.canOutput = getSourceType().equals( BoxSourceType.CFSCRIPT ) || getSourceType().equals( BoxSourceType.CFTEMPLATE ) ? true : getDefaultOutput();
 		}
 
 		return this.canOutput;
@@ -507,4 +521,14 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	public boolean requiresStrictArguments() {
 		return false;
 	}
+
+	/**
+	 * If there is no explicit output annotation on this function, what should the default be?
+	 * 
+	 * @return true if the function should output by default
+	 */
+	protected boolean getDefaultOutput() {
+		return defaultOutput;
+	}
+
 }

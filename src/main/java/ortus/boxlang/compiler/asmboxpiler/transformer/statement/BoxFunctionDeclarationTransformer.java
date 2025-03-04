@@ -14,8 +14,10 @@
  */
 package ortus.boxlang.compiler.asmboxpiler.transformer.statement;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.objectweb.asm.Opcodes;
@@ -24,6 +26,7 @@ import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.InsnNode;
+import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
@@ -31,12 +34,17 @@ import ortus.boxlang.compiler.asmboxpiler.AsmTranspiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
+import ortus.boxlang.compiler.ast.BoxScript;
+import ortus.boxlang.compiler.ast.BoxTemplate;
 import ortus.boxlang.compiler.ast.statement.BoxAccessModifier;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
 import ortus.boxlang.compiler.ast.statement.BoxReturnType;
+import ortus.boxlang.compiler.ast.statement.BoxScriptIsland;
 import ortus.boxlang.compiler.ast.statement.BoxType;
+import ortus.boxlang.compiler.ast.statement.component.BoxTemplateIsland;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -80,15 +88,47 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 
 		BoxAccessModifier	access			= function.getAccessModifier() == null ? BoxAccessModifier.Public : function.getAccessModifier();
 
-		ClassNode			classNode		= new ClassNode();
-		AsmHelper.init( classNode, true, type, Type.getType( UDF.class ), cv -> {
-			cv.visitSource( transpiler.getProperty( "filePath" ), null );
-			cv.visitNestHost( transpiler.getProperty( "enclosingClassInternalName" ) );
-			cv.visitInnerClass( type.getInternalName(), transpiler.getProperty( "enclosingClassInternalName" ),
-			    "Func_" + function.getName(),
-			    Opcodes.ACC_PUBLIC );
-		}, methodVisitor -> {
-		} );
+		Type				superClass		= Type.getType( UDF.class );
+		ClassNode			classNode		= AsmHelper.initializeClassDefinition( type, superClass, null );
+
+		classNode.visitSource( transpiler.getProperty( "filePath" ), null );
+		classNode.visitNestHost( transpiler.getProperty( "enclosingClassInternalName" ) );
+		classNode.visitInnerClass( type.getInternalName(), transpiler.getProperty( "enclosingClassInternalName" ),
+		    "Func_" + function.getName(),
+		    Opcodes.ACC_PUBLIC );
+
+		AsmHelper.addGetInstance( classNode, type );
+
+		AsmHelper.addConstructor(
+		    classNode,
+		    true,
+		    superClass,
+		    new Type[] { Type.BOOLEAN_TYPE },
+		    ( mv ) -> {
+			    new LdcInsnNode( shouldDefaultOutput( function ) ? 1 : 0 ).accept( mv );
+		    },
+		    ( mv ) -> {
+		    }
+		);
+
+		AsmHelper.addStaticFieldGetter( classNode,
+		    type,
+		    "compileVersion",
+		    "getRunnableCompileVersion",
+		    Type.LONG_TYPE,
+		    1L );
+		AsmHelper.addStaticFieldGetter( classNode,
+		    type,
+		    "compiledOn",
+		    "getRunnableCompiledOn",
+		    Type.getType( LocalDateTime.class ),
+		    null );
+		AsmHelper.addStaticFieldGetter( classNode,
+		    type,
+		    "ast",
+		    "getRunnableAST",
+		    Type.getType( Object.class ),
+		    null );
 
 		ClassNode owningClass = transpiler.getOwningClass();
 		if ( owningClass != null ) {
@@ -273,5 +313,15 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		} else {
 			return new ArrayList<>();
 		}
+	}
+
+	private boolean shouldDefaultOutput( BoxFunctionDeclaration function ) {
+		// If the closest ancestor is a script, then the default output is true
+		@SuppressWarnings( "unchecked" )
+		BoxNode	ancestor		= function.getFirstNodeOfTypes( BoxTemplate.class, BoxScript.class, BoxExpression.class, BoxScriptIsland.class,
+		    BoxTemplateIsland.class );
+		boolean	defaultOutput	= ancestor == null || !Set.of( BoxTemplate.class, BoxTemplateIsland.class ).contains( ancestor.getClass() );
+
+		return defaultOutput;
 	}
 }
