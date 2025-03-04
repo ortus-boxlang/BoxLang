@@ -333,9 +333,8 @@ public class BoxLexerCustom extends BoxLexer {
 						// switch( foo ) { case 1: break; }
 						isIdentifier = false;
 					} else if ( nextTokenType == RETURN && !lastTokenWas( DOT ) &&
-					    ( nextNonWhiteSpaceCharIsOneOf( new int[] { '(', '{', '[', ';',
-					        '}', '\'', '"' } )
-					        || nextNonWhiteSpaceIsAnyChar() || nextNonWhiteSpaceIsAnyDigit() || nextNonWhiteSpaceCharIs( '-' ) ) ) {
+					    ( nextNonWhiteSpaceCharIsOneOf( new int[] { '(', '{', '[', ';', '}', '\'', '"', '-', '_', '$' } ) || nextNonWhiteSpaceIsAnyChar()
+					        || nextNonWhiteSpaceIsAnyDigit() ) ) {
 						// return foo;
 						// return 42
 						// return (foo)

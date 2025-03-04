@@ -2217,6 +2217,52 @@ public class CoreLangTest {
 	}
 
 	@Test
+	public void testReturnIdentifier() {
+		// @formatter:off
+		instance.executeSource(
+				"""
+					function foo(){
+						var _bar = "brad";
+						return _bar;
+					}
+					result = foo();
+					
+					function foo2(){
+						var $bar = "brad";
+						return $bar;
+					}
+					result2 = foo2();
+				""",
+				context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( "brad" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "brad" );
+	}
+
+	@Test
+	public void testReturnIdentifierCF() {
+		// @formatter:off
+		instance.executeSource(
+				"""
+					function foo(){
+						var _bar = "brad";
+						return _bar;
+					}
+					result = foo();
+					
+					function foo2(){
+						var $bar = "brad";
+						return $bar;
+					}
+					result2 = foo2();
+				""",
+				context, BoxSourceType.CFSCRIPT );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( "brad" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "brad" );
+	}
+
+	@Test
 	public void testKeywords() {
 
 		instance.executeSource(

@@ -350,15 +350,16 @@ public class CFLexerCustom extends CFLexer {
 						// switch( foo ) { case 1: break; }
 						isIdentifier = false;
 					} else if ( nextTokenType == RETURN && !lastTokenWas( DOT ) &&
-					    ( nextNonWhiteSpaceCharIsOneOf( new int[] { '(', '{', '[', ';',
-					        '}', '\'', '"' } )
-					        || nextNonWhiteSpaceIsAnyChar() || nextNonWhiteSpaceIsAnyDigit() || nextNonWhiteSpaceCharIs( '-' ) ) ) {
+					    ( nextNonWhiteSpaceCharIsOneOf( new int[] { '(', '{', '[', ';', '}', '\'', '"', '-', '_', '$' } ) || nextNonWhiteSpaceIsAnyChar()
+					        || nextNonWhiteSpaceIsAnyDigit() ) ) {
 						// return foo;
 						// return 42
 						// return (foo)
 						// return []
 						// return {}
 						// return -4
+						// return _foo;
+						// return $foo;
 						// { return }
 						isIdentifier = false;
 					} else if ( nextTokenType == PARAM && ( ( lastTokenWas( DOT ) || lastTokenWas( LPAREN ) || nextNonWhiteSpaceCharIs( ')' ) )
