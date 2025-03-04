@@ -1837,7 +1837,6 @@ public class ClassTest {
 	}
 
 	@Test
-	@Disabled( "BL-1154" )
 	public void testInvokeImplicitAccessors() {
 		instance.executeSource(
 		    """
