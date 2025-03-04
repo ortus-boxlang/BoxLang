@@ -61,7 +61,7 @@ public class QueryEach extends BIF {
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		ListUtil.each(
-		    arguments.getAsQuery( Key.query ).toStructArray(),
+		    arguments.getAsQuery( Key.query ).toArrayOfStructs(),
 		    arguments.getAsFunction( Key.callback ),
 		    context,
 		    arguments.getAsBoolean( Key.parallel ),

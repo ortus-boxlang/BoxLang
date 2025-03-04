@@ -54,14 +54,14 @@ public class QueryMap extends BIF {
 	 * @argument.callback The function to invoke for each item. The function will be passed 3 arguments: the row, the currentRow, the query. You can alternatively pass a Java Function which will only receive the 1st arg.
 	 *
 	 * @argument.parallel Specifies whether the items can be executed in parallel
-	 * 
+	 *
 	 * @argument.maxThreads The maximum number of threads to use when parallel = true
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Query	query			= arguments.getAsQuery( Key.query );
 
 		Array	mappedResult	= ListUtil.map(
-		    query.toStructArray(),
+		    query.toArrayOfStructs(),
 		    arguments.getAsFunction( Key.callback ),
 		    context,
 		    arguments.getAsBoolean( Key.parallel ),

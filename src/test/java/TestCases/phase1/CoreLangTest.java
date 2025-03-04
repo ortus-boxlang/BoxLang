@@ -2226,7 +2226,7 @@ public class CoreLangTest {
 						return _bar;
 					}
 					result = foo();
-					
+
 					function foo2(){
 						var $bar = "brad";
 						return $bar;
@@ -2249,7 +2249,7 @@ public class CoreLangTest {
 						return _bar;
 					}
 					result = foo();
-					
+
 					function foo2(){
 						var $bar = "brad";
 						return $bar;
@@ -3647,7 +3647,7 @@ public class CoreLangTest {
 		    	["Jaime","El Salvador"],
 		    	["Esme","Mexico"]
 		    ])
-		    .toStructArray()
+		    .toArrayOfStructs()
 		    .map( .name )
 
 		      	""",
@@ -4952,7 +4952,7 @@ public class CoreLangTest {
 		assertThat( variables.getAsString( result ) ).isEqualTo( "set this time" );
 		// @formatter:off
 	}
-		
+
 
 	@DisplayName( "dump order" )
 	@Test

@@ -55,7 +55,7 @@ public class QueryReduce extends BIF {
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return ListUtil.reduce(
-		    arguments.getAsQuery( Key.query ).toStructArray(),
+		    arguments.getAsQuery( Key.query ).toArrayOfStructs(),
 		    arguments.getAsFunction( Key.callback ),
 		    context,
 		    arguments.get( Key.initialValue )

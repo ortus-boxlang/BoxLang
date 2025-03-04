@@ -235,7 +235,7 @@ public final class ExecutedQuery {
 	 * @return An Array of Structs representing the Query
 	 */
 	public @Nonnull Array getResultsAsArray() {
-		return this.results.toStructArray();
+		return this.results.toArrayOfStructs();
 	}
 
 	/**
