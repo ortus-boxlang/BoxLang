@@ -3,6 +3,9 @@ class {
 	property name="age";
 	property name="supervisor";
 
+	this.supervisor = "jon";
+	this.name = "default name"
+
 	function setAge( numeric age ) {
 		this.age = age;
 	}

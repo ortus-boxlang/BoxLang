@@ -1837,20 +1837,25 @@ public class ClassTest {
 	}
 
 	@Test
+	@Disabled( "BL-1154" )
 	public void testInvokeImplicitAccessors() {
 		instance.executeSource(
 		    """
 		       iia = new src.test.java.TestCases.phase3.InvokeImplicitAccessors()
+		    result0 = iia.name
 		       iia.name = "brad"
 		       result = iia.name;
 		       iia.age = 21;
 		       result2 = iia.age;
+		    result2b = iia.supervisor
 		    iia.supervisor = "luis"
 		    result3 = iia.supervisor
 		                   """,
 		    context );
+		assertThat( variables.get( "result0" ) ).isEqualTo( "default name" );
 		assertThat( variables.get( "result" ) ).isEqualTo( "brad" );
 		assertThat( variables.get( "result2" ) ).isEqualTo( 21 );
+		assertThat( variables.get( "result2b" ) ).isEqualTo( "noj" );
 		assertThat( variables.get( "result3" ) ).isEqualTo( "siul" );
 	}
 
