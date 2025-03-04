@@ -933,7 +933,7 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		componentMap.put( "menu", "" );
 		componentMap.put( "menuitem", "" );
 		componentMap.put( "messagebox", "" );
-		componentMap.put( "module", "" );
+		componentMap.put( "component", "" );
 		componentMap.put( "ntauthenticate", "" );
 		componentMap.put( "oauth", "" );
 		componentMap.put( "object", "" );

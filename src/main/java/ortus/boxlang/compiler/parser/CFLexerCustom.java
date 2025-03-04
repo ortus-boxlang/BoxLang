@@ -456,7 +456,7 @@ public class CFLexerCustom extends CFLexer {
 						isIdentifier = true;
 					} else if ( nextNonWhiteSpaceCharIs( '(' )
 					    && ( ( !keywordsThatComeBeforeLParen.contains( nextTokenType ) || ( nextTokenType == CATCH && !lastTokenWas( RBRACE ) ) ) )
-					    && ! ( nextTokenType == PREFIXEDIDENTIFIER && componentService.hasComponent( nextToken.getText().substring( 2 ) ) ) ) {
+					    && ! ( nextTokenType == PREFIXEDIDENTIFIER && isComponent( nextToken.getText().substring( 2 ) ) ) ) {
 						// next char is a (
 						// but some tokens like function() or if() are exceptions
 						// catch() is allowed only if the previous token wasn't } which implies it's not actually part of a try/catch block
@@ -519,8 +519,7 @@ public class CFLexerCustom extends CFLexer {
 							System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because it is a variable being returned" );
 						isIdentifier = true;
 					} else if ( nextTokenType == PREFIXEDIDENTIFIER
-					    && ( !nextNonWhiteSpaceCharIs( '(' )
-					        || !componentService.hasComponent( nextToken.getText().substring( 2 ) ) ) ) {
+					    && ( !nextNonWhiteSpaceCharIs( '(' ) || !isComponent( nextToken.getText().substring( 2 ) ) ) ) {
 						// The token is not an a CF component call
 						// cfsomething function() {}
 						if ( debug )
@@ -827,4 +826,14 @@ public class CFLexerCustom extends CFLexer {
 		return pos;
 	}
 
+	/**
+	 * Check if the next characters are the start of a component call
+	 * 
+	 * @param text the text to check
+	 * 
+	 * @return true if the next characters are a component call
+	 */
+	private boolean isComponent( String text ) {
+		return componentService.hasComponent( text ) || text.equalsIgnoreCase( "module" );
+	}
 }

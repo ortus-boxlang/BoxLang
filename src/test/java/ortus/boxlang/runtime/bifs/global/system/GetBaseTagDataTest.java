@@ -61,8 +61,8 @@ public class GetBaseTagDataTest {
 		instance.executeSource(
 		    """
 		    <bx:set thisIsCaller = true>
-		    <bx:module template="/src/test/java/ortus/boxlang/runtime/bifs/global/system/TestCustomTag.bxm" level="outer">
-		    	<bx:module name="TestCustomTag" level="middle">
+		    <bx:component template="/src/test/java/ortus/boxlang/runtime/bifs/global/system/TestCustomTag.bxm" level="outer">
+		    	<bx:component name="TestCustomTag" level="middle">
 		    		<bx:_TestCustomTag level="inner">
 		    			<bx:loop times="1">
 		    				<bx:savecontent variable="whatever">
@@ -76,8 +76,8 @@ public class GetBaseTagDataTest {
 		    				</bx:savecontent>
 		    			</bx:loop>
 		    		</bx:_TestCustomTag>
-		    	</bx:module>
-		    </bx:module>
+		    	</bx:component>
+		    </bx:component>
 		                           	    	       """,
 		    context, BoxSourceType.BOXTEMPLATE );
 

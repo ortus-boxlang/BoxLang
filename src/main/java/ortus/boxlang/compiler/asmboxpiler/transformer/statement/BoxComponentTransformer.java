@@ -64,7 +64,7 @@ public class BoxComponentTransformer extends AbstractTransformer {
 			        null,
 			        null )
 			);
-			componentName = "module";
+			componentName = "component";
 		}
 
 		// create key of component name

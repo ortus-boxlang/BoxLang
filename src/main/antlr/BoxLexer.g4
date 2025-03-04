@@ -503,10 +503,8 @@ mode TEMPLATE_COMPONENT_NAME_MODE;
 
 // The rule of thumb here is that we are doing direct handling of any components for which we have a
 // dedicated AST node for. All other components will be handled generically
-TEMPLATE_COMPONENT : 'component' -> pushMode( TEMPLATE_COMPONENT_MODE );
-TEMPLATE_INTERFACE : 'interface' -> pushMode( TEMPLATE_COMPONENT_MODE );
-TEMPLATE_FUNCTION  : 'function'  -> pushMode( TEMPLATE_COMPONENT_MODE );
-TEMPLATE_ARGUMENT  : 'argument'  -> pushMode( TEMPLATE_COMPONENT_MODE );
+TEMPLATE_FUNCTION : 'function' -> pushMode( TEMPLATE_COMPONENT_MODE );
+TEMPLATE_ARGUMENT : 'argument' -> pushMode( TEMPLATE_COMPONENT_MODE );
 // bx:query doesn't have a dedicated AST node, but we need to pretend we're in a bx:output when we enter a bx:query.
 TEMPLATE_QUERY:
     'query' {isQuery=true;} -> type(COMPONENT_NAME), pushMode( TEMPLATE_COMPONENT_MODE )
@@ -603,9 +601,8 @@ COMPONENT_WHITESPACE_OUTPUT: [ \t\r\n] -> skip;
 // *********************************************************************************************************************
 mode TEMPLATE_END_COMPONENT;
 
-TEMPLATE_IF2        : 'if'        -> type(TEMPLATE_IF);
-TEMPLATE_COMPONENT2 : 'component' -> type(TEMPLATE_COMPONENT);
-TEMPLATE_FUNCTION2  : 'function'  -> type(TEMPLATE_FUNCTION);
+TEMPLATE_IF2       : 'if'       -> type(TEMPLATE_IF);
+TEMPLATE_FUNCTION2 : 'function' -> type(TEMPLATE_FUNCTION);
 // If we're ending a bx:query, we need to use the special exit below with the extra pop out of output mode
 TEMPLATE_QUERY2: 'query' {isQuery=true;} -> type(COMPONENT_NAME);
 
@@ -613,7 +610,6 @@ TEMPLATE_QUERY2: 'query' {isQuery=true;} -> type(COMPONENT_NAME);
 OUTPUT_END:
     'output' COMPONENT_WHITESPACE_OUTPUT3* '>' -> popMode, popMode, popMode, popMode, popMode, popMode
 ;
-TEMPLATE_INTERFACE2   : 'interface'   -> type(TEMPLATE_INTERFACE);
 TEMPLATE_TRY2         : 'try'         -> type(TEMPLATE_TRY);
 TEMPLATE_CATCH2       : 'catch'       -> type(TEMPLATE_CATCH);
 TEMPLATE_FINALLY2     : 'finally'     -> type(TEMPLATE_FINALLY);

@@ -1111,7 +1111,7 @@ public class BoxTemplateTest {
 	public void testUnquotedAttributeValues() {
 		instance.executeSource(
 		    """
-		    <bx:module template="src/test/java/TestCases/components/echoTag.cfm" foo="bar" foo2 = "bar2" brad=wood luis = majano >
+		    <bx:component template="src/test/java/TestCases/components/echoTag.cfm" foo="bar" foo2 = "bar2" brad=wood luis = majano >
 		    <bx:set result = variables>
 
 		          """,
@@ -1123,7 +1123,7 @@ public class BoxTemplateTest {
 
 		instance.executeSource(
 		    """
-		    <bx:module template="src/test/java/TestCases/components/echoTag.cfm" foo=bar >
+		    <bx:component template="src/test/java/TestCases/components/echoTag.cfm" foo=bar >
 		    <bx:set result = variables>
 		          """,
 		    context, BoxSourceType.BOXTEMPLATE );
@@ -1131,7 +1131,7 @@ public class BoxTemplateTest {
 
 		instance.executeSource(
 		    """
-		    <bx:module template="src/test/java/TestCases/components/echoTag.cfm" foo=bar>
+		    <bx:component template="src/test/java/TestCases/components/echoTag.cfm" foo=bar>
 		    <bx:set result = variables>
 		          """,
 		    context, BoxSourceType.BOXTEMPLATE );
@@ -1139,7 +1139,7 @@ public class BoxTemplateTest {
 
 		instance.executeSource(
 		    """
-		    <bx:module template="src/test/java/TestCases/components/echoTag.cfm" foo=bar/>
+		    <bx:component template="src/test/java/TestCases/components/echoTag.cfm" foo=bar/>
 		    <bx:set result = variables>
 		          """,
 		    context, BoxSourceType.BOXTEMPLATE );
@@ -1147,7 +1147,7 @@ public class BoxTemplateTest {
 
 		instance.executeSource(
 		    """
-		    <bx:module template="src/test/java/TestCases/components/echoTag.cfm" foo=bar />
+		    <bx:component template="src/test/java/TestCases/components/echoTag.cfm" foo=bar />
 		    <bx:set result = variables>
 		          """,
 		    context, BoxSourceType.BOXTEMPLATE );
@@ -1155,7 +1155,7 @@ public class BoxTemplateTest {
 
 		instance.executeSource(
 		    """
-		    <bx:module template="src/test/java/TestCases/components/echoTag.cfm" foo= >
+		    <bx:component template="src/test/java/TestCases/components/echoTag.cfm" foo= >
 		    <bx:set result = variables>
 		          """,
 		    context, BoxSourceType.BOXTEMPLATE );
@@ -1163,7 +1163,7 @@ public class BoxTemplateTest {
 
 		instance.executeSource(
 		    """
-		    <bx:module template="src/test/java/TestCases/components/echoTag.cfm" foo=>
+		    <bx:component template="src/test/java/TestCases/components/echoTag.cfm" foo=>
 		    <bx:set result = variables>
 		          """,
 		    context, BoxSourceType.BOXTEMPLATE );
@@ -1171,7 +1171,7 @@ public class BoxTemplateTest {
 
 		instance.executeSource(
 		    """
-		    <bx:module template="src/test/java/TestCases/components/echoTag.cfm" foo= />
+		    <bx:component template="src/test/java/TestCases/components/echoTag.cfm" foo= />
 		    <bx:set result = variables>
 		          """,
 		    context, BoxSourceType.BOXTEMPLATE );
@@ -1179,7 +1179,7 @@ public class BoxTemplateTest {
 
 		instance.executeSource(
 		    """
-		    <bx:module template="src/test/java/TestCases/components/echoTag.cfm" foo=/>
+		    <bx:component template="src/test/java/TestCases/components/echoTag.cfm" foo=/>
 		    <bx:set result = variables>
 		          """,
 		    context, BoxSourceType.BOXTEMPLATE );
@@ -1187,7 +1187,7 @@ public class BoxTemplateTest {
 
 		instance.executeSource(
 		    """
-		    <bx:module template="src/test/java/TestCases/components/echoTag.cfm" foo>
+		    <bx:component template="src/test/java/TestCases/components/echoTag.cfm" foo>
 		    <bx:set result = variables>
 		          """,
 		    context, BoxSourceType.BOXTEMPLATE );
@@ -1195,7 +1195,7 @@ public class BoxTemplateTest {
 
 		instance.executeSource(
 		    """
-		    <bx:module template="src/test/java/TestCases/components/echoTag.cfm" foo />
+		    <bx:component template="src/test/java/TestCases/components/echoTag.cfm" foo />
 		    <bx:set result = variables>
 		          """,
 		    context, BoxSourceType.BOXTEMPLATE );
@@ -1203,7 +1203,7 @@ public class BoxTemplateTest {
 
 		instance.executeSource(
 		    """
-		    <bx:module template="src/test/java/TestCases/components/echoTag.cfm" foo/>
+		    <bx:component template="src/test/java/TestCases/components/echoTag.cfm" foo/>
 		    <bx:set result = variables>
 		          """,
 		    context, BoxSourceType.BOXTEMPLATE );
@@ -1211,7 +1211,7 @@ public class BoxTemplateTest {
 
 		instance.executeSource(
 		    """
-		    <bx:module template="src/test/java/TestCases/components/echoTag.cfm" foo=800.123.1234>
+		    <bx:component template="src/test/java/TestCases/components/echoTag.cfm" foo=800.123.1234>
 		    <bx:set result = variables>
 		          """,
 		    context, BoxSourceType.BOXTEMPLATE );
@@ -1219,7 +1219,7 @@ public class BoxTemplateTest {
 
 		instance.executeSource(
 		    """
-		    <bx:module template="src/test/java/TestCases/components/echoTag.cfm" foo= df234v~!@#$%^<[];':"\\{}|/&*()_-=` >
+		    <bx:component template="src/test/java/TestCases/components/echoTag.cfm" foo= df234v~!@#$%^<[];':"\\{}|/&*()_-=` >
 		    <bx:set result = variables>
 		          """,
 		    context, BoxSourceType.BOXTEMPLATE );

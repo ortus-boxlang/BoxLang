@@ -135,7 +135,7 @@ public class ComponentDescriptor {
 					this.componentInstance = ( ( Component ) DynamicObject.of( this.componentClass )
 					    .invokeConstructor( ( IBoxContext ) null, new Object[] {} )
 					    .getTargetInstance() )
-					    .setName( name );
+					        .setName( name );
 					interceptorService.announce(
 					    BoxEvent.ON_COMPONENT_INSTANCE,
 					    new Struct(
@@ -197,7 +197,7 @@ public class ComponentDescriptor {
 	 */
 	public BodyResult invoke( IBoxContext context, IStruct attributes, Component.ComponentBody componentBody ) {
 		// the module component has special handling of attributes
-		if ( name.equals( Key.module ) ) {
+		if ( name.equals( Key.component ) ) {
 			return invokeModule( context, attributes, componentBody );
 		}
 		Component component = getComponent();

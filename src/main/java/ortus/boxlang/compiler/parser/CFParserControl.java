@@ -133,7 +133,7 @@ public abstract class CFParserControl extends Parser {
 		}
 
 		// It is not a component if it is not registered in the component service
-		if ( !componentService.hasComponent( tokText ) ) {
+		if ( !componentService.hasComponent( tokText ) && !tokText.equalsIgnoreCase( "module" ) ) {
 			return false;
 		}
 

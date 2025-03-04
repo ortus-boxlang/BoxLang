@@ -24,7 +24,6 @@ import java.util.List;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
-import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.CustomTagBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.runnables.BoxTemplate;
@@ -41,7 +40,7 @@ import ortus.boxlang.runtime.util.FileSystemUtil;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 @BoxComponent( allowsBody = true )
-public class Module extends Component {
+public class Component extends ortus.boxlang.runtime.components.Component {
 
 	/**
 	 * List of valid class extensions
@@ -54,7 +53,7 @@ public class Module extends Component {
 	 * --------------------------------------------------------------------------
 	 */
 
-	public Module() {
+	public Component() {
 		super();
 		declaredAttributes = new Attribute[] {
 		    new Attribute( Key.template, "string" ),
