@@ -200,6 +200,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		context								= Key.of( "context" );
 	public static final Key		context_path						= Key.of( "context_path" );
 	public static final Key		contextual							= Key.of( "contextual" );
+	public static final Key		connectionLimit						= Key.of( "connectionLimit" );
 	public static final Key		conversionType						= Key.of( "conversionType" );
 	public static final Key		convert								= Key.of( "convert" );
 	public static final Key		cookies								= Key.of( "cookies" );
