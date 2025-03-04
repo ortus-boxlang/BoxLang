@@ -36,14 +36,16 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 @BoxBIF( alias = "ArrayLen" )
 @BoxBIF( alias = "StringLen" )
 @BoxBIF( alias = "QueryRecordCount" )
+@BoxMember( type = BoxLangType.ARRAY )
 @BoxMember( type = BoxLangType.STRING )
 @BoxMember( type = BoxLangType.STRUCT, name = "count" )
 @BoxMember( type = BoxLangType.STRUCT, name = "len" )
-@BoxMember( type = BoxLangType.ARRAY )
 @BoxMember( type = BoxLangType.QUERY )
 @BoxMember( type = BoxLangType.DATETIME, name = "len" )
 @BoxMember( type = BoxLangType.DATE, name = "len" )
 public class Len extends BIF {
+
+	private static Key stringLenKey = Key.of( "StringLen" );
 
 	/**
 	 * Constructor
@@ -100,9 +102,11 @@ public class Len extends BIF {
 			return q.size();
 		}
 
-		CastAttempt<Array> arrayAttempt = ArrayCaster.attempt( object );
-		if ( arrayAttempt.wasSuccessful() ) {
-			return arrayAttempt.get().size();
+		if ( !arguments.getAsKey( __functionName ).equals( stringLenKey ) ) {
+			CastAttempt<Array> arrayAttempt = ArrayCaster.attempt( object );
+			if ( arrayAttempt.wasSuccessful() ) {
+				return arrayAttempt.get().size();
+			}
 		}
 
 		// Dates are all handled inside the string caster, since they only have a "length" as a string

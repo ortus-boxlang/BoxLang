@@ -161,10 +161,14 @@ public class LenTest {
 		    ba = [230, 188, 162] castas byte[];
 		    result = len( ba );
 		    result2 = ba castas string;
-		            """,
+		    result3 = stringLen(ba)
+		    result4 = ba.len();
+		                     """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( 3 );
 		assertThat( variables.get( result2 ) ).isEqualTo( "漢" );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( 1 );
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( 3 );
 	}
 
 }
