@@ -1872,4 +1872,13 @@ public class ClassTest {
 		assertThat( variables.get( "result3" ) ).isEqualTo( "luis" );
 	}
 
+	@Test
+	public void testSemiAfteAnnotation() {
+		instance.executeSource(
+		    """
+		    new src.test.java.TestCases.phase3.SemiAfteAnnotation()
+		                """,
+		    context );
+	}
+
 }
