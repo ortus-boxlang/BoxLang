@@ -419,6 +419,7 @@ public class BoxTemplateTest {
 		        .getAsStruct( Key.annotations )
 		        .getAsString( Key.of( "intent:depricated" ) )
 		).isEqualTo( "true" );
+		assertThat( variables.getAsStruct( Key.of( "md" ) ).getAsBoolean( Key.output ) ).isFalse();
 	}
 
 	@DisplayName( "component import" )

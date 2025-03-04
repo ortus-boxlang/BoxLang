@@ -404,6 +404,7 @@ public class CFTemplateTest {
 		        .getAsStruct( Key.annotations )
 		        .getAsString( Key.of( "intent:depricated" ) )
 		).isEqualTo( "true" );
+		assertThat( variables.getAsStruct( Key.of( "md" ) ).getAsBoolean( Key.output ) ).isTrue();
 	}
 
 	@DisplayName( "component import" )

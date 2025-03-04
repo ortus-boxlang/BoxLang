@@ -30,4 +30,11 @@ public abstract class UDF extends Function {
 		super();
 	}
 
+	/**
+	 * Constructor that sets output
+	 */
+	protected UDF( boolean defaultOutput ) {
+		super( defaultOutput );
+	}
+
 }

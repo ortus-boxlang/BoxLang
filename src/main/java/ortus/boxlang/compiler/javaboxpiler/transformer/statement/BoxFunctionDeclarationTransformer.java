@@ -17,6 +17,7 @@ package ortus.boxlang.compiler.javaboxpiler.transformer.statement;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.github.javaparser.ParseResult;
 import com.github.javaparser.ast.CompilationUnit;
@@ -30,13 +31,18 @@ import com.github.javaparser.ast.stmt.EmptyStmt;
 import com.github.javaparser.ast.stmt.ReturnStmt;
 import com.github.javaparser.ast.stmt.Statement;
 
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
+import ortus.boxlang.compiler.ast.BoxScript;
 import ortus.boxlang.compiler.ast.BoxStatement;
+import ortus.boxlang.compiler.ast.BoxTemplate;
 import ortus.boxlang.compiler.ast.statement.BoxAccessModifier;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
 import ortus.boxlang.compiler.ast.statement.BoxReturnType;
+import ortus.boxlang.compiler.ast.statement.BoxScriptIsland;
 import ortus.boxlang.compiler.ast.statement.BoxType;
+import ortus.boxlang.compiler.ast.statement.component.BoxTemplateIsland;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
 import ortus.boxlang.compiler.javaboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.TransformerContext;
@@ -102,7 +108,7 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 			}
 
 			private ${classname}() {
-				super();
+				super(${defaultOutput});
 			}
 
 			public static synchronized ${classname} getInstance() {
@@ -168,7 +174,13 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 			access = BoxAccessModifier.Public;
 		}
 
-		Map<String, String> values = Map.ofEntries(
+		// If the closest ancestor is a script, then the default output is true
+		@SuppressWarnings( "unchecked" )
+		BoxNode				ancestor		= function.getFirstNodeOfTypes( BoxTemplate.class, BoxScript.class, BoxExpression.class, BoxScriptIsland.class,
+		    BoxTemplateIsland.class );
+		boolean				defaultOutput	= ancestor == null || !Set.of( BoxTemplate.class, BoxTemplateIsland.class ).contains( ancestor.getClass() );
+
+		Map<String, String>	values			= Map.ofEntries(
 		    Map.entry( "packageName", packageName ),
 		    Map.entry( "className", className ),
 		    Map.entry( "access", access.toString().toUpperCase() ),
@@ -177,7 +189,8 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		    Map.entry( "returnType", returnType.equals( BoxType.Fqn ) ? fqn : returnType.name() ),
 		    Map.entry( "enclosingClassName", enclosingClassName ),
 		    Map.entry( "compiledOnTimestamp", transpiler.getDateTime( LocalDateTime.now() ) ),
-		    Map.entry( "compileVersion", "1L" )
+		    Map.entry( "compileVersion", "1L" ),
+		    Map.entry( "defaultOutput", String.valueOf( defaultOutput ) )
 		);
 		transpiler.pushContextName( "context" );
 

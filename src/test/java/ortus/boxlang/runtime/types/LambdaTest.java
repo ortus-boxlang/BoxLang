@@ -250,7 +250,7 @@ public class LambdaTest {
 		IStruct		meta		= lambda.getMetaData();
 		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "Lambda" );
 		assertThat( meta.get( Key.of( "returnType" ) ) ).isEqualTo( "any" );
-		assertThat( meta.get( Key.of( "output" ) ) ).isEqualTo( false );
+		assertThat( meta.get( Key.of( "output" ) ) ).isEqualTo( true );
 		assertThat( meta.get( Key.of( "hint" ) ) ).isEqualTo( "" );
 		assertThat( meta.get( Key.of( "access" ) ) ).isEqualTo( "public" );
 		assertThat( meta.get( Key.of( "closure" ) ) ).isEqualTo( false );

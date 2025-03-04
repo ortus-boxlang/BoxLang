@@ -71,7 +71,8 @@ public class FunctionMeta extends BoxMeta {
 		    Key.annotations, target.getAnnotations(),
 		    Key.parameters, new UnmodifiableArray( params ),
 		    Key.closure, target instanceof Closure,
-		    Key.lambda, target instanceof Lambda
+		    Key.lambda, target instanceof Lambda,
+		    Key.output, target.canOutput( null )
 		);
 	}
 
