@@ -76,6 +76,21 @@ public class DumpTest {
 		assertThat( baos.toString() ).contains( "String" );
 	}
 
+	@DisplayName( "It can dump tag" )
+	@Test
+	public void testCanDumpXMLName() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		       	<cfdump var="#XMLParse( '<root><item attr="value" /></root>' ).root#" format="html">
+		    """,
+		    context, BoxSourceType.CFTEMPLATE );
+		// @formatter:on
+		assertThat( baos.toString() ).contains( "root" );
+		assertThat( baos.toString() ).contains( "item" );
+		System.out.println( baos.toString() );
+	}
+
 	@DisplayName( "It can dump tag struct" )
 	@Test
 	public void testCanDumpTagStruct() {

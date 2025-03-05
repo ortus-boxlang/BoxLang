@@ -378,6 +378,7 @@ public class XML implements Serializable, IStruct {
 				keys.add( Key.XMLComment );
 				return keys;
 			case Node.ELEMENT_NODE :
+				keys.add( Key.XMLName );
 				keys.add( Key.XMLText );
 				keys.add( Key.XMLChildren );
 				keys.add( Key.XMLAttributes );
@@ -391,21 +392,13 @@ public class XML implements Serializable, IStruct {
 			case Node.ATTRIBUTE_NODE :
 				return getXMLAttributes().keySet();
 			case Node.TEXT_NODE :
-				return keys;
 			case Node.CDATA_SECTION_NODE :
-				return keys;
 			case Node.ENTITY_REFERENCE_NODE :
-				return keys;
 			case Node.ENTITY_NODE :
-				return keys;
 			case Node.PROCESSING_INSTRUCTION_NODE :
-				return keys;
 			case Node.COMMENT_NODE :
-				return keys;
 			case Node.DOCUMENT_TYPE_NODE :
-				return keys;
 			case Node.DOCUMENT_FRAGMENT_NODE :
-				return keys;
 			case Node.NOTATION_NODE :
 				return keys;
 			default :
