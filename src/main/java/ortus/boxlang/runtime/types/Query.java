@@ -37,6 +37,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.bifs.BoxMemberExpose;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
@@ -866,6 +867,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 *
 	 * @return Array of structs representing the query data
 	 */
+	@BoxMemberExpose
 	public Array toArrayOfStructs() {
 		Array arr = new Array();
 		for ( int i = 0; i < size.get(); i++ ) {
