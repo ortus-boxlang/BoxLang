@@ -140,6 +140,11 @@ public class Transaction implements ITransaction {
 				);
 				announce( BoxEvent.ON_TRANSACTION_ACQUIRE, eventData );
 			} catch ( SQLException e ) {
+				try {
+					this.connection.close();
+				} catch ( SQLException e2 ) {
+					logger.error( "Failed to close connection after failed transaction start: {}", e2.getMessage() );
+				}
 				throw new DatabaseException( "Failed to begin transaction:", e );
 			}
 		}

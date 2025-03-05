@@ -563,11 +563,11 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 		if ( properties.containsKey( Key.minConnections ) ) {
 			result.setMinimumIdle( IntegerCaster.cast( properties.get( Key.minConnections ), false ) );
 		}
-		if ( properties.containsKey( Key.maxConnections ) ) {
+		if ( properties.containsKey( Key.maxConnections ) && IntegerCaster.attempt( properties.get( Key.maxConnections ) ).wasSuccessful() ) {
 			result.setMaximumPoolSize( IntegerCaster.cast( properties.get( Key.maxConnections ), false ) );
 		}
 		// CFConfig Specifc alias
-		if ( properties.containsKey( Key.connectionLimit ) ) {
+		if ( properties.containsKey( Key.connectionLimit ) && IntegerCaster.attempt( properties.get( Key.connectionLimit ) ).wasSuccessful() ) {
 			result.setMaximumPoolSize( IntegerCaster.cast( properties.get( Key.connectionLimit ), false ) );
 		}
 
