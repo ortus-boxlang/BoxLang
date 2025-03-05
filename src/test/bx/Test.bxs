@@ -1,9 +1,14 @@
-request.test = "luis"
+test = new Scheduler()
 
-println( request );
+println( "created scheduler #test.getSchedulerName()#" )
+println( "scheduler is running: " & test.hasStarted() )
 
-// task = new Task();
-// invoke( task, "setFoo", { foo : "bar" } );
-// result = invoke( task, "getFoo" );
+test.configure()
 
-// println( result );
+println( "scheduler configured" )
+println( "registered tasks: #test.getRegisteredTasks().toString()#")
+println( test.getTaskStats() )
+
+test.startup();
+
+sleep( 5000 )

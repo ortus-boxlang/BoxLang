@@ -609,6 +609,15 @@ public class BaseScheduler implements IScheduler {
 	}
 
 	/**
+	 * Is it running: Alias to hasStarted()
+	 *
+	 * @return true if running, false if not
+	 */
+	public Boolean isRunning() {
+		return this.started;
+	}
+
+	/**
 	 * Get when it was started. If not started, then it will return null
 	 */
 	public Instant getStartedAt() {
