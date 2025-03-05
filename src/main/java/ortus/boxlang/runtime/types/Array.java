@@ -230,7 +230,6 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	 *
 	 * @return The Array
 	 */
-	@BoxMemberExpose
 	public static Array of( Object... values ) {
 		return fromArray( values );
 	}
@@ -242,7 +241,6 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	 *
 	 * @return The Array
 	 */
-	@BoxMemberExpose
 	public static Array copyOf( List<?> arr ) {
 		Array newArr = new Array();
 		// loop over list and add all elements
