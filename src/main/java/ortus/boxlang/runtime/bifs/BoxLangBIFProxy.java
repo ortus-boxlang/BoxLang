@@ -89,13 +89,8 @@ public class BoxLangBIFProxy extends BIF {
 		    this.target,
 		    null
 		);
-		fContext.pushTemplate( this.target );
 
-		try {
-			return this.bxFunction.invoke( fContext );
-		} finally {
-			fContext.popTemplate();
-		}
+		return this.bxFunction.invoke( fContext );
 	}
 
 }
