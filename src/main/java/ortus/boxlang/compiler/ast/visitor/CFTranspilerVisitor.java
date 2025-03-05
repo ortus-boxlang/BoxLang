@@ -88,6 +88,7 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	private static Set<String>						BIFReturnTypeFixSet			= new HashSet<>();
 	private static Map<String, String>				BIFMap						= new HashMap<>();
 	private static Map<String, String>				identifierMap				= new HashMap<>();
+	private static Map<String, String>				componentMap				= new HashMap<>();
 	private static Map<String, Map<String, String>>	componentAttrMap			= new HashMap<>();
 	private static Key								transpilerKey				= Key.of( "transpiler" );
 	private static Key								upperCaseKeysKey			= Key.of( "upperCaseKeys" );
@@ -144,6 +145,11 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		identifierMap.put( "cfquery", "bxquery" );
 		identifierMap.put( "cfdocument", "bxdocument" );
 		identifierMap.put( "cfstoredproc", "bxstoredproc" );
+
+		/**
+		 * These are components that have been renamed
+		 */
+		componentMap.put( "module", "component" );
 
 		/*
 		 * Outer string is name of component
@@ -797,10 +803,15 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	}
 
 	/**
+	 * Rename components and attributes
 	 * Rename enablecfoutputonly attribute on cfsetting tag
 	 */
 	@Override
 	public BoxNode visit( BoxComponent node ) {
+		if ( componentMap.containsKey( node.getName().toLowerCase() ) ) {
+			node.setName( componentMap.get( node.getName().toLowerCase() ) );
+		}
+
 		if ( componentAttrMap.containsKey( node.getName().toLowerCase() ) ) {
 			var					attrs	= node.getAttributes();
 			Map<String, String>	attrMap	= componentAttrMap.get( node.getName().toLowerCase() );

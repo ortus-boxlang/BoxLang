@@ -68,7 +68,7 @@ public class BoxComponentTransformer extends AbstractTransformer {
 			        null,
 			        null )
 			);
-			componentName = "module";
+			componentName = "component";
 		}
 
 		if ( hasBody ) {

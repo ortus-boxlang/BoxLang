@@ -64,14 +64,15 @@ public class StringMapTest {
 	public void testBIF() {
 		instance.executeSource(
 		    """
-		        nums = "12345";
+		          nums = "12345";
 
-		        function mapFn( value, i ){
-		            return value * 2;
-		        };
+		          function mapFn( value, i ){
+		              return value * 2;
+		          };
 
-		        result = StringMap( nums, mapFn );
-		    """,
+		          result = StringMap( nums, mapFn );
+		    println( result );
+		      """,
 		    context );
 		Array result = ListUtil.asList( variables.getAsString( Key.of( "result" ) ), "" );
 		assertThat( result.size() ).isEqualTo( 6 );

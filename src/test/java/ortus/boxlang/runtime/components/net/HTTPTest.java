@@ -30,6 +30,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.ok;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Base64;
 
@@ -52,6 +53,8 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.FileSystemUtil;
 
 @WireMockTest
 public class HTTPTest {
@@ -65,11 +68,16 @@ public class HTTPTest {
 	@BeforeAll
 	public static void setUp() {
 		instance = BoxRuntime.getInstance( true );
+		if ( FileSystemUtil.exists( "src/test/resources/tmp/http_tests" ) ) {
+			FileSystemUtil.deleteDirectory( "src/test/resources/tmp/http_tests", true );
+		}
 	}
 
 	@AfterAll
 	public static void teardown() {
-
+		if ( FileSystemUtil.exists( "src/test/resources/tmp/http_tests" ) ) {
+			FileSystemUtil.deleteDirectory( "src/test/resources/tmp/http_tests", true );
+		}
 	}
 
 	@BeforeEach
@@ -216,6 +224,163 @@ public class HTTPTest {
 		assertThat( res.get( Key.statusText ) ).isEqualTo( "Created" );
 		String body = res.getAsString( Key.fileContent );
 		assertThat( body ).isEqualTo( "{\"id\": 1, \"name\": \"foobar\", \"body\": \"lorem ipsum dolor\"}" );
+	}
+
+	@DisplayName( "It can return and retain binary content" )
+	@Test
+	public void testBinaryReturn( WireMockRuntimeInfo wmRuntimeInfo ) {
+		stubFor(
+		    get( "/image" )
+		        .willReturn(
+		            ok().withHeader( "Content-Type", "image/jpeg; charset=utf-8" )
+		                .withBody( ( byte[] ) FileSystemUtil.read( "src/test/resources/chuck_norris.jpg" ) ) ) );
+
+		// @formatter:off
+		instance.executeSource( String.format( 
+			"""
+			bx:http method="GET" getAsBinary=true url="%s" {
+				bx:httpparam type="header" name="Host" value="boxlang.io";
+			}
+			""", 
+			wmRuntimeInfo.getHttpBaseUrl() + "/image" ), 
+			context 
+		);
+		// @formatter:on
+
+		assertThat( variables.get( bxhttp ) ).isInstanceOf( IStruct.class );
+
+		IStruct res = variables.getAsStruct( bxhttp );
+		assertThat( res.get( Key.statusCode ) ).isEqualTo( 200 );
+		assertThat( res.get( Key.statusText ) ).isEqualTo( "OK" );
+		Object body = res.get( Key.fileContent );
+		assertThat( body ).isInstanceOf( byte[].class );
+	}
+
+	@DisplayName( "Will treat random content types as string contents" )
+	@Test
+	public void testRandomContentTypes( WireMockRuntimeInfo wmRuntimeInfo ) {
+		stubFor(
+		    get( "/blah" )
+		        .willReturn(
+		            ok().withHeader( "Content-Type", "blah; charset=utf-8" )
+		                .withBody( "Hello world!" ) ) );
+
+		// @formatter:off
+		instance.executeSource( String.format( 
+			"""
+			bx:http method="GET" url="%s" {}
+			""", 
+			wmRuntimeInfo.getHttpBaseUrl() + "/blah" ), 
+			context 
+		);
+		// @formatter:on
+
+		assertThat( variables.get( bxhttp ) ).isInstanceOf( IStruct.class );
+
+		IStruct res = variables.getAsStruct( bxhttp );
+		assertThat( res.get( Key.statusCode ) ).isEqualTo( 200 );
+		assertThat( res.get( Key.statusText ) ).isEqualTo( "OK" );
+		Object body = res.get( Key.fileContent );
+		assertThat( body ).isInstanceOf( String.class );
+		assertThat( ( String ) body ).isEqualTo( "Hello world!" );
+	}
+
+	@DisplayName( "It can write out a binary file using the file name in the disposition header" )
+	@Test
+	public void testBinaryFileWrite( WireMockRuntimeInfo wmRuntimeInfo ) {
+		stubFor(
+		    get( "/image" )
+		        .willReturn(
+		            ok().withHeader( "Content-Type", "image/jpeg; charset=utf-8" )
+		                .withHeader( "Content-Disposition", "attachment; filename=\"chuck_norris_dl.jpg\"" )
+		                .withBody( ( byte[] ) FileSystemUtil.read( "src/test/resources/chuck_norris.jpg" ) ) ) );
+
+		// @formatter:off
+		instance.executeSource( String.format( 
+			"""
+			bx:http method="GET" getAsBinary=true url="%s" path="src/test/resources/tmp/http_tests" {}
+			""", 
+			wmRuntimeInfo.getHttpBaseUrl() + "/image" ), 
+			context 
+		);
+		// @formatter:on
+
+		assertThat( variables.get( bxhttp ) ).isNull();
+		assertThat( FileSystemUtil.exists( "src/test/resources/tmp/http_tests/chuck_norris_dl.jpg" ) ).isTrue();
+	}
+
+	@DisplayName( "It can write out a binary file using a specified filename" )
+	@Test
+	public void testBinaryFileWriteWithName( WireMockRuntimeInfo wmRuntimeInfo ) {
+		stubFor(
+		    get( "/image" )
+		        .willReturn(
+		            ok().withHeader( "Content-Type", "image/jpeg; charset=utf-8" )
+		                .withHeader( "Content-Disposition", "attachment; filename=\"chuck_norris_dl.jpg\"" )
+		                .withBody( ( byte[] ) FileSystemUtil.read( "src/test/resources/chuck_norris.jpg" ) ) ) );
+
+		// @formatter:off
+		instance.executeSource( String.format( 
+			"""
+			bx:http method="GET" getAsBinary=true url="%s" path="src/test/resources/tmp/http_tests" file="chuck.jpg" {}
+			""", 
+			wmRuntimeInfo.getHttpBaseUrl() + "/image" ), 
+			context 
+		);
+		// @formatter:on
+
+		assertThat( variables.get( bxhttp ) ).isNull();
+		assertThat( FileSystemUtil.exists( "src/test/resources/tmp/http_tests/chuck.jpg" ) ).isTrue();
+	}
+
+	@DisplayName( "It can send binary content" )
+	@Test
+	public void testBinarySend( WireMockRuntimeInfo wmRuntimeInfo ) {
+		stubFor(
+		    post( "/image" )
+		        .willReturn(
+		            ok()
+		        )
+		);
+
+		// @formatter:off
+		variables.put(  Key.of( "fileContent" ), FileSystemUtil.read( "src/test/resources/chuck_norris.jpg" ) );
+		instance.executeSource( String.format( 
+			"""
+			bx:http method="POST" url="%s" {
+				bx:httpparam type="body" value="#fileContent#";
+			}
+			""", 
+			wmRuntimeInfo.getHttpBaseUrl() + "/image" ), 
+			context 
+		);
+		// @formatter:on
+
+		assertThat( variables.get( bxhttp ) ).isInstanceOf( IStruct.class );
+
+		IStruct res = variables.getAsStruct( bxhttp );
+		assertThat( res.get( Key.statusCode ) ).isEqualTo( 200 );
+		assertThat( res.get( Key.statusText ) ).isEqualTo( "OK" );
+	}
+
+	@DisplayName( "Will throw an error if binary is returned and getAsBinary is never" )
+	@Test
+	public void testBinaryThrow( WireMockRuntimeInfo wmRuntimeInfo ) {
+		stubFor(
+		    get( "/image" )
+		        .willReturn(
+		            ok().withHeader( "Content-Type", "image/jpeg; charset=utf-8" )
+		                .withBody( ( byte[] ) FileSystemUtil.read( "src/test/resources/chuck_norris.jpg" ) ) ) );
+
+		// @formatter:off
+		assertThrows( BoxRuntimeException.class, () -> instance.executeSource( String.format( 
+			"""
+			bx:http method="GET" getAsBinary="never" url="%s" {}
+			""", 
+			wmRuntimeInfo.getHttpBaseUrl() + "/image" ), 
+			context 
+		) );
+		// @formatter:on
 	}
 
 	@DisplayName( "It can make HTTP call ACF script" )

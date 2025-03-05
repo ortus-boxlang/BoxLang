@@ -14,107 +14,13 @@ options {
  }
 
 // foo
-identifier: IDENTIFIER | reservedKeyword
+identifier: IDENTIFIER
     ;
 
 componentName: identifier
     ;
 
 specialComponentName: TRANSACTION | LOCK | THREAD | ABORT | EXIT | PARAM
-    ;
-
-// These are reserved words in the lexer, but are allowed to be an indentifer (variable name, method name)
-reservedKeyword
-    : ABSTRACT
-    | ANY
-    | ARRAY
-    | AS
-    | ASSERT
-    | BOOLEAN
-    | BREAK
-    | CASE
-    | CASTAS
-    | CATCH
-    | CLASS
-    | CONTAIN
-    | CONTAINS
-    | CONTINUE
-    | DEFAULT
-    | DO
-    | DOES
-    | ELSE
-    // | ELSE IF? // TODO: May have to special case this :(
-    | FALSE
-    | FINAL
-    | FINALLY
-    | FOR
-    | FUNCTION
-    | IF
-    | IMPORT
-    | IN
-    | INCLUDE
-    | INSTANCEOF
-    | INTERFACE
-    | JAVA
-    | MESSAGE
-    | NEW
-    | NULL
-    | NUMERIC
-    | PACKAGE
-    | PARAM
-    | PRIVATE
-    | PROPERTY
-    | PUBLIC
-    | QUERY
-    | REMOTE
-    | REQUEST
-    | REQUIRED
-    | RETHROW
-    | RETURN
-    | SERVER
-    | SETTING
-    | STATIC
-    | STRING
-    | STRUCT
-    // | SWITCH --> Could possibly be a var name, but not a function/method name
-    | THROW
-    | TO
-    | TRUE
-    | TRY
-    | TYPE
-    | VAR
-    | VARIABLES
-    | WHEN
-    | WHILE
-    | TRANSACTION
-    | LOCK
-    | THREAD
-    | ABORT
-    | EXIT
-    ;
-
-reservedOperators
-    : NOT
-    | OR
-    | EQ
-    | EQUAL
-    | NEQ
-    | XOR
-    | THAN
-    | NEQ
-    | MOD
-    | IS
-    | LE
-    | LESS
-    | LT
-    | LTE
-    | IMP
-    | EQV
-    | AND
-    | GE
-    | GREATER
-    | GT
-    | GTE
     ;
 
 // ANY NEW LEXER RULES IN DEFAULT MODE FOR WORDS NEED ADDED HERE
@@ -195,7 +101,7 @@ functionParam: REQUIRED? type? identifier (EQUALSIGN expression)? postAnnotation
 
 // @foo
 // @foo( bar, "brad wood" )
-preAnnotation: AT fqn ( LPAREN annotation (COMMA annotation)* RPAREN)?
+preAnnotation: AT fqn ( LPAREN annotation (COMMA annotation)* RPAREN)? SEMICOLON*
     ;
 
 arrayLiteral: LBRACKET expressionList? RBRACKET
@@ -205,29 +111,14 @@ arrayLiteral: LBRACKET expressionList? RBRACKET
 postAnnotation: identifier ((EQUALSIGN | COLON) attributeSimple)?
     ;
 
-// This allows [1, 2, 3], "foo", or foo Adobe allows more chars than an identifer, Lucee allows darn
-// near anything, but ANTLR is incapable of matching any tokens until the next whitespace. The
-// literalExpression is just a BoxLang flourish to allow for more flexible expressions.
+// This allows [1, 2, 3], "foo", or foo 
 attributeSimple: annotation | fqn
     ;
 
 annotation: atoms | stringLiteral | structExpression | arrayLiteral | identifier
     ;
 
-type
-    : (
-        NUMERIC
-        | STRING
-        | BOOLEAN
-        | CLASS
-        | INTERFACE
-        | ARRAY
-        | STRUCT
-        | QUERY
-        | fqn
-        | ANY
-        | FUNCTION (COLON samClass = fqn)?
-    ) (LBRACKET RBRACKET)?
+type: ( CLASS | INTERFACE | fqn | FUNCTION (COLON samClass = fqn)?) (LBRACKET RBRACKET)?
     ;
 
 // Allow any statement or a function.
@@ -270,6 +161,7 @@ statementOrBlock: emptyStatementBlock | statement
 statement
     : SEMICOLON* (
         importStatement
+        | function
         | if
         | switch
         | try
@@ -469,8 +361,7 @@ finallyBlock: FINALLY normalStatementBlock
  or...
  'foo'
  */
-stringLiteral
-    : OPEN_QUOTE (stringLiteralPart | ICHAR (expression | reservedOperators) ICHAR)* CLOSE_QUOTE
+stringLiteral: OPEN_QUOTE (stringLiteralPart | ICHAR expression ICHAR)* CLOSE_QUOTE
     ;
 
 stringLiteralPart: STRING_LITERAL | HASHHASH
@@ -494,13 +385,7 @@ structMembers: structMember (COMMA structMember)* COMMA?
 structMember: structKey (COLON | EQUALSIGN) expression
     ;
 
-structKey
-    : identifier
-    | stringLiteral
-    | reservedOperators
-    | INTEGER_LITERAL
-    | ILLEGAL_IDENTIFIER
-    | SWITCH
+structKey: identifier | stringLiteral | INTEGER_LITERAL | ILLEGAL_IDENTIFIER | SWITCH
     ;
 
 new: NEW preFix? (fqn | stringLiteral) LPAREN argumentList? RPAREN
@@ -625,6 +510,7 @@ relOps
     | LTSIGN
     | LESS THAN
     | NEQ
+    | NOT EQUAL
     | IS NOT
     | BANGEQUAL
     | LESSTHANGREATERTHAN

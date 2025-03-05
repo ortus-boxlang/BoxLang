@@ -35,6 +35,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.util.JSONUtil;
 import ortus.boxlang.runtime.util.EncryptionUtil;
+import ortus.boxlang.runtime.util.conversion.ObjectMarshaller;
 
 @BoxBIF
 @BoxBIF( alias = "Hash40" )
@@ -99,13 +100,10 @@ public class Hash extends BIF {
 		if ( bifMethodKey.equals( Key.hash40 ) ) {
 			algorithm = "SHA1";
 		}
-
-		if ( hashItem instanceof String ) {
-			hashBytes = arguments
-			    .getAsString( Key.input )
-			    .getBytes(
-			        Charset.forName( charset )
-			    );
+		if ( hashItem instanceof byte[] itemBytes ) {
+			hashBytes = itemBytes;
+		} else if ( hashItem instanceof String itemString ) {
+			hashBytes = itemString.getBytes( Charset.forName( charset ) );
 		} else if ( hashItem instanceof java.io.Serializable ) {
 			try {
 				hashBytes = SerializationUtils.serialize( ( java.io.Serializable ) hashItem );
@@ -117,7 +115,12 @@ public class Hash extends BIF {
 				}
 			}
 		} else {
-			hashBytes = hashItem.toString().getBytes( Charset.forName( arguments.getAsString( Key.encoding ) ) );
+			try {
+				hashBytes = ObjectMarshaller.serialize( context, hashItem );
+			} catch ( BoxIOException e ) {
+				// fallback to a stringification and get the bytes if serialization fails
+				hashBytes = hashItem.toString().getBytes( Charset.forName( arguments.getAsString( Key.encoding ) ) );
+			}
 		}
 
 		return EncryptionUtil.hash( hashBytes, algorithm, iterations );

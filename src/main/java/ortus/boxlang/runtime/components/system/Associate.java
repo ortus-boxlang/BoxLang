@@ -64,10 +64,10 @@ public class Associate extends Component {
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
 		String	baseTag				= attributes.getAsString( Key.baseTag );
 		Key		dataCollectionName	= Key.of( attributes.getAsString( Key.dataCollection ) );
-		IStruct	childState			= context.findClosestComponent( Key.module );
+		IStruct	childState			= context.findClosestComponent( Key.component );
 		IStruct	childAttributes		= childState.getAsStruct( Key.attributes ).getAsStruct( Key.attributes );
 
-		IStruct	parentState			= context.findClosestComponent( Key.module,
+		IStruct	parentState			= context.findClosestComponent( Key.component,
 		    ( s ) -> s != childState && s.getAsKey( Key.customTagName ).equals( Key.of( baseTag ) ) );
 		if ( parentState == null ) {
 			throw new RuntimeException( "Associate component is not nested in the body of a custom tag named [" + baseTag + "]" );

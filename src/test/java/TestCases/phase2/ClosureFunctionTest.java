@@ -79,7 +79,7 @@ public class ClosureFunctionTest {
 		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "Closure" );
 		// Defaults
 		assertThat( meta.get( Key.of( "hint" ) ) ).isEqualTo( "" );
-		assertThat( meta.get( Key.of( "output" ) ) ).isEqualTo( false );
+		assertThat( meta.get( Key.of( "output" ) ) ).isEqualTo( true );
 		assertThat( meta.get( Key.of( "returnType" ) ) ).isEqualTo( "any" );
 		assertThat( meta.get( Key.of( "access" ) ) ).isEqualTo( "public" );
 
@@ -105,7 +105,7 @@ public class ClosureFunctionTest {
 		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "Closure" );
 		// Defaults
 		assertThat( meta.get( Key.of( "hint" ) ) ).isEqualTo( "" );
-		assertThat( meta.get( Key.of( "output" ) ) ).isEqualTo( false );
+		assertThat( meta.get( Key.of( "output" ) ) ).isEqualTo( true );
 		assertThat( meta.get( Key.of( "returnType" ) ) ).isEqualTo( "any" );
 		assertThat( meta.get( Key.of( "access" ) ) ).isEqualTo( "public" );
 
@@ -129,7 +129,7 @@ public class ClosureFunctionTest {
 		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "Closure" );
 		// Defaults
 		assertThat( meta.get( Key.of( "hint" ) ) ).isEqualTo( "" );
-		assertThat( meta.get( Key.of( "output" ) ) ).isEqualTo( false );
+		assertThat( meta.get( Key.of( "output" ) ) ).isEqualTo( true );
 		assertThat( meta.get( Key.of( "returnType" ) ) ).isEqualTo( "any" );
 		assertThat( meta.get( Key.of( "access" ) ) ).isEqualTo( "public" );
 
@@ -153,7 +153,7 @@ public class ClosureFunctionTest {
 		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "Closure" );
 		// Defaults
 		assertThat( meta.get( Key.of( "hint" ) ) ).isEqualTo( "" );
-		assertThat( meta.get( Key.of( "output" ) ) ).isEqualTo( false );
+		assertThat( meta.get( Key.of( "output" ) ) ).isEqualTo( true );
 		assertThat( meta.get( Key.of( "returnType" ) ) ).isEqualTo( "any" );
 		assertThat( meta.get( Key.of( "access" ) ) ).isEqualTo( "public" );
 

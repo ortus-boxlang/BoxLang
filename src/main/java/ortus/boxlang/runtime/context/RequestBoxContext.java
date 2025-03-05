@@ -27,6 +27,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.application.ApplicationDefaultListener;
 import ortus.boxlang.runtime.application.BaseApplicationListener;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.jdbc.ConnectionManager;
@@ -39,6 +40,7 @@ import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
+import ortus.boxlang.runtime.types.util.ListUtil;
 import ortus.boxlang.runtime.util.LocalizationUtil;
 import ortus.boxlang.runtime.util.RequestThreadManager;
 
@@ -403,6 +405,10 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 		ArrayCaster.attempt( appSettings.get( Key.customTagPaths ) )
 		    .ifPresent( customTagPaths -> config.getAsArray( Key.customTagsDirectory ).addAll( customTagPaths ) );
 
+		// See if it's a comma-delimted list
+		StringCaster.attempt( appSettings.get( Key.customTagPaths ) )
+		    .ifPresent( customTagPaths -> config.getAsArray( Key.customTagsDirectory ).addAll( ListUtil.asList( customTagPaths, "," ) ) );
+
 		// Add in classPaths and componentPaths (for CF compat) to the classPaths array
 		ArrayCaster.attempt( appSettings.get( Key.classPaths ) )
 		    .ifPresent( classPaths -> config.getAsArray( Key.classPaths ).addAll( classPaths ) );
@@ -410,6 +416,10 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 		// TODO: move componentPaths logic to compat
 		ArrayCaster.attempt( appSettings.get( Key.componentPaths ) )
 		    .ifPresent( componentPaths -> config.getAsArray( Key.classPaths ).addAll( componentPaths ) );
+
+		// See if it's a comma-delimted list
+		StringCaster.attempt( appSettings.get( Key.componentPaths ) )
+		    .ifPresent( componentPaths -> config.getAsArray( Key.classPaths ).addAll( ListUtil.asList( componentPaths, "," ) ) );
 
 		// OTHER OVERRIDES go here
 

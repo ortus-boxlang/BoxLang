@@ -85,7 +85,7 @@ public class ModuleTest {
 		instance.executeSource(
 		    """
 		    <bx:set brad="wood">
-		       <bx:module template="src/test/java/ortus/boxlang/runtime/components/system/MyTag.cfm" foo="bar">
+		       <bx:component template="src/test/java/ortus/boxlang/runtime/components/system/MyTag.cfm" foo="bar">
 		               """,
 		    context, BoxSourceType.BOXTEMPLATE );
 		assertThat( buffer.toString().replaceAll( "\\s", "" ) ).isEqualTo( "alwaysMyTagstartbarwood" );
@@ -98,7 +98,7 @@ public class ModuleTest {
 		instance.executeSource(
 		    """
 		       brad="wood";
-		    bx:module template="src/test/java/ortus/boxlang/runtime/components/system/MyTag.cfm" foo="bar";
+		    bx:component template="src/test/java/ortus/boxlang/runtime/components/system/MyTag.cfm" foo="bar";
 		                 """,
 		    context );
 		assertThat( buffer.toString().replaceAll( "\\s", "" ) ).isEqualTo( "alwaysMyTagstartbarwood" );
@@ -201,10 +201,19 @@ public class ModuleTest {
 	public void testCanRunCustomTagNameBL() {
 		instance.executeSource(
 		    """
-		    <bx:module name="brad" foo="bar">
+		    <bx:component name="brad" foo="bar">
 		    		  """,
 		    context, BoxSourceType.BOXTEMPLATE );
 		assertThat( buffer.toString().trim() ).isEqualTo( "This is the Brad tag bar" );
+	}
+
+	@Test
+	public void testCanAccessVariablesScopeFromFunction() {
+		instance.executeSource(
+		    """
+		    <bx:component name="AccessVariablesScopeFromFunction">
+		    		  """,
+		    context, BoxSourceType.BOXTEMPLATE );
 	}
 
 }

@@ -113,7 +113,7 @@ public class QueryTest {
 
 		assertInstanceOf( Iterator.class, qry.iterator() );
 
-		Array stArray = qry.toStructArray();
+		Array stArray = qry.toArrayOfStructs();
 		assertInstanceOf( Array.class, stArray );
 		assertThat( stArray.size() ).isEqualTo( 2 );
 	}

@@ -69,8 +69,7 @@ public class DecryptTest {
 		assertTrue( variables.get( result ) instanceof String );
 		assertEquals(
 		    "foo",
-		    variables.getAsString( result )
-		);
+		    variables.getAsString( result ) );
 
 		instance.executeSource(
 		    """
@@ -82,8 +81,7 @@ public class DecryptTest {
 		assertTrue( variables.get( result ) instanceof String );
 		assertEquals(
 		    "foo",
-		    variables.getAsString( result )
-		);
+		    variables.getAsString( result ) );
 
 		instance.executeSource(
 		    """
@@ -95,8 +93,7 @@ public class DecryptTest {
 		assertTrue( variables.get( result ) instanceof String );
 		assertEquals(
 		    "foo",
-		    variables.getAsString( result )
-		);
+		    variables.getAsString( result ) );
 
 		instance.executeSource(
 		    """
@@ -108,8 +105,32 @@ public class DecryptTest {
 		assertTrue( variables.get( result ) instanceof String );
 		assertEquals(
 		    "foo",
-		    variables.getAsString( result )
-		);
+		    variables.getAsString( result ) );
+
+	}
+
+	@DisplayName( "It tests textual salt values" )
+	@Test
+	public void testSaltValues() {
+		instance.executeSource(
+		    """
+		    key = "oeY9XnYhS4ERqBeMDkcmVw==";
+		    salt = "foo";
+		    result = decrypt( "FE54Rn9W0YoZteRe1aV1qg==", key, "AES", "base64", salt );
+		    	""", context );
+
+		assertTrue( variables.get( result ) instanceof String );
+		assertEquals( "foobar", variables.getAsString( result ) );
+
+		instance.executeSource(
+		    """
+		    key = "oeY9XnYhS4ERqBeMDkcmVw==";
+		    salt = "foo";
+		    result = decrypt( "mE7BeU2ljKYNWkbKKwqkIA==", key, "AES/CBC/PKCS5Padding", "base64", salt );
+		    	""", context );
+
+		assertTrue( variables.get( result ) instanceof String );
+		assertEquals( "foobar", variables.getAsString( result ) );
 
 	}
 

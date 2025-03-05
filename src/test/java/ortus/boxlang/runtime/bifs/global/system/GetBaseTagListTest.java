@@ -60,9 +60,9 @@ public class GetBaseTagListTest {
 		instance.executeSource(
 		    """
 		    <!--- Adobe calls this "cf_TestCustomTag", but Lucee calls it "cfmodule".  We're copying Adobe. --->
-		    <bx:module template="/src/test/java/ortus/boxlang/runtime/bifs/global/system/TestCustomTag.bxm">
+		    <bx:component template="/src/test/java/ortus/boxlang/runtime/bifs/global/system/TestCustomTag.bxm">
 		    <!--- Adobe calls this "cf_TestCustomTag", but Lucee calls it "cfmodule".  We're copying Adobe. --->
-		    <bx:module name="TestCustomTag">
+		    <bx:component name="TestCustomTag">
 		    	<bx:_TestCustomTag>
 		    		<bx:loop times="1">
 		    			<bx:savecontent variable="whatever">
@@ -72,8 +72,8 @@ public class GetBaseTagListTest {
 		    			</bx:savecontent>
 		    		</bx:loop>
 		    	</bx:_TestCustomTag>
-		    </bx:module>
-		    </bx:module>
+		    </bx:component>
+		    </bx:component>
 		                      	    	       """,
 		    context, BoxSourceType.BOXTEMPLATE );
 

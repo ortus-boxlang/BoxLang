@@ -5,7 +5,7 @@
 	<div class="bx-dump">
 		<table class="bx-table-primary" title="#posInCode#">
 
-			<bx:if var instanceof "ortus.boxlang.runtime.scopes.IScope" >
+			<bx:if variables.var instanceof "ortus.boxlang.runtime.scopes.IScope" >
 				<bx:set dumpTitle = "#encodeForHTML( var.getName().getName().toUpperCase() )# Scope:">
 			<bx:else>
 				<bx:set dumpTitle = "Struct:">

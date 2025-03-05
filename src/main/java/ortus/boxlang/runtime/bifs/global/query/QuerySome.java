@@ -58,7 +58,7 @@ public class QuerySome extends BIF {
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return ListUtil.some(
-		    arguments.getAsQuery( Key.query ).toStructArray(),
+		    arguments.getAsQuery( Key.query ).toArrayOfStructs(),
 		    arguments.getAsFunction( Key.callback ),
 		    context,
 		    arguments.getAsBoolean( Key.parallel ),

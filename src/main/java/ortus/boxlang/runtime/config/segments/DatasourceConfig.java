@@ -117,10 +117,10 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	private static final IStruct	DEFAULTS						= Struct.of(
 	    // The maximum number of connections.
 	    // Hikari: maximumPoolSize
-	    "maxConnections", 15,
-	    // The minimum number of connections
-	    // Hikari: minimumIdle, try to stick to 80% of maxConnections
-	    "minConnections", 12,
+	    "maxConnections", 100,
+	    // Keeps at least 10 idle connections open
+	    // Hikari: minimumIdle
+	    "minConnections", 10,
 	    // Maximum time to wait for a successful connection, in seconds ( 5 Seconds )
 	    "connectionTimeout", 5,
 	    // The maximum number of idle time in seconds ( 5 Minutes = 300 )
@@ -565,6 +565,10 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 		}
 		if ( properties.containsKey( Key.maxConnections ) ) {
 			result.setMaximumPoolSize( IntegerCaster.cast( properties.get( Key.maxConnections ), false ) );
+		}
+		// CFConfig Specifc alias
+		if ( properties.containsKey( Key.connectionLimit ) ) {
+			result.setMaximumPoolSize( IntegerCaster.cast( properties.get( Key.connectionLimit ), false ) );
 		}
 
 		// We also support these HikariConfig-specific properties

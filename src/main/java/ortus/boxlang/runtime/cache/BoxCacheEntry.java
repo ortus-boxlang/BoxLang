@@ -173,6 +173,14 @@ public class BoxCacheEntry implements ICacheEntry {
 	}
 
 	/**
+	 * Reset the hit count
+	 **/
+	public ICacheEntry setHits( long hits ) {
+		this.hits.set( hits );
+		return this;
+	}
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Interface Methods
 	 * --------------------------------------------------------------------------

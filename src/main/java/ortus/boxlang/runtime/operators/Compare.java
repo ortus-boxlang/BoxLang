@@ -22,15 +22,18 @@ import java.util.Locale;
 
 import org.apache.commons.lang3.StringUtils;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.dynamic.casters.BigDecimalCaster;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
+import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.DateTime;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
@@ -38,6 +41,13 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  * Compares numbers as numbers, compares strings case insensitive
  */
 public class Compare implements IOperator {
+
+	private static BoxRuntime	runtime					= BoxRuntime.getInstance();
+
+	/**
+	 * Flag to allow compat to set the comparison mode for dates to loose
+	 */
+	public static boolean		lenientDateComparison	= false;
 
 	/**
 	 * Invokes the comparison
@@ -113,7 +123,26 @@ public class Compare implements IOperator {
 			if ( ref.wasSuccessful() ) {
 				CastAttempt<DateTime> target = DateTimeCaster.attempt( right );
 				if ( target.wasSuccessful() ) {
-					return ref.get().compareTo( target.get() );
+					if ( !lenientDateComparison ) {
+						// the chrono date time will return a numeric comparator rather than 0,1,-1
+						int comparison = ref.get().compareTo( target.get() );
+						return comparison == 0 ? 0 : ( comparison < 0 ? -1 : 1 );
+					} else {
+						Key dateCompareKey = Key.of( "DateCompare" );
+						return IntegerCaster.cast(
+						    runtime.getFunctionService().getGlobalFunction( dateCompareKey ).invoke(
+						        runtime.getRuntimeContext(),
+						        Struct.of(
+						            Key.date1, ref.get(),
+						            Key.date2, target.get(),
+						            Key.datepart, "s"
+						        ),
+						        false,
+						        dateCompareKey
+						    )
+						);
+
+					}
 				}
 			}
 		}

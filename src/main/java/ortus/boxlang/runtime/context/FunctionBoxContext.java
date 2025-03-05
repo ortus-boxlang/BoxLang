@@ -436,12 +436,9 @@ public class FunctionBoxContext extends BaseBoxContext {
 			return parent.getScope( name );
 		} else {
 
-			if ( shallow ) {
-				return null;
-			}
-
-			// The FunctionBoxContext has no "global" scopes, so just defer to parent
-			return parent.getScopeNearby( name );
+			// functions not in a class, are sort of see-through and we'll defer to the parent context (which could be a script, custom tag, etc)
+			// Pass along the shallow flag
+			return parent.getScopeNearby( name, shallow );
 		}
 	}
 

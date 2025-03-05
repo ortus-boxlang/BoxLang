@@ -862,16 +862,16 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	}
 
 	/**
-	 * Get the data as a Boxlang Array of Structs. Useful for queries with
-	 * `returntype: "array"`.
+	 * Convert this query to an array of structs.
+	 *
+	 * @return Array of structs representing the query data
 	 */
-	public Array toStructArray() {
-		Iterator<IStruct>	it			= iterator();
-		Array				structArray	= new Array();
-		while ( it.hasNext() ) {
-			structArray.add( it.next() );
+	public Array toArrayOfStructs() {
+		Array arr = new Array();
+		for ( int i = 0; i < size.get(); i++ ) {
+			arr.add( getRowAsStruct( i ) );
 		}
-		return structArray;
+		return arr;
 	}
 
 	@Override
@@ -1125,23 +1125,16 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	}
 
 	/**
-	 * Convert this query to an array of structs.
-	 *
-	 * @return An array of structs representing the query
+	 * Convert to a String representation
 	 */
-	public Array asArrayOfStructs() {
-		Array arr = new Array();
-		for ( int i = 0; i < size.get(); i++ ) {
-			arr.add( getRowAsStruct( i ) );
-		}
-		return arr;
-	}
-
 	@Override
 	public String toString() {
 		return asString();
 	}
 
+	/**
+	 * Get the column names as an array
+	 */
 	public Array getColumnNames() {
 		return getColumnArray();
 	}

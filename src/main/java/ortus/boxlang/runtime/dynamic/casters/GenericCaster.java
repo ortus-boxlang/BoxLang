@@ -121,6 +121,23 @@ public class GenericCaster implements IBoxCaster {
 	 * @return The value, or null when cannot be cast or if the type was "null" or "void"
 	 */
 	public static Object cast( IBoxContext context, Object object, Object oType, Boolean fail ) {
+		return cast( false, context, object, oType, fail );
+	}
+
+	/**
+	 * Used to cast anything. Note, when fail is set to false, it is not possible to differentiate between
+	 * a failed cast and a successful cast to type "null" or "void". The same ambiguity exists for an input
+	 * of null and a type of "any". For these cases, use the attempt() method and check the optional
+	 * for a NullValue() instance.
+	 *
+	 * @param object The value to cast
+	 * @param oType  The type to cast to
+	 * @param fail   True to throw exception when failing.
+	 *
+	 * @return The value, or null when cannot be cast or if the type was "null" or "void"
+	 */
+	public static Object cast( boolean allowTruncate, IBoxContext context, Object object, Object oType, Boolean fail ) {
+
 		String	originalCaseType	= StringCaster.cast( oType );
 		String	type				= originalCaseType.toLowerCase();
 
@@ -233,13 +250,13 @@ public class GenericCaster implements IBoxCaster {
 			return ByteCaster.cast( object, fail );
 		}
 		if ( type.equals( "int" ) || type.equals( "integer" ) ) {
-			return IntegerCaster.cast( object, fail );
+			return IntegerCaster.cast( allowTruncate, object, fail );
 		}
 		if ( type.equals( "long" ) ) {
-			return LongCaster.cast( object, fail );
+			return LongCaster.cast( allowTruncate, object, fail );
 		}
 		if ( type.equals( "short" ) ) {
-			return ShortCaster.cast( object, fail );
+			return ShortCaster.cast( allowTruncate, object, fail );
 		}
 		if ( type.equals( "float" ) ) {
 			return FloatCaster.cast( object, fail );
@@ -291,6 +308,10 @@ public class GenericCaster implements IBoxCaster {
 
 		if ( type.equals( "guid" ) ) {
 			return GUIDCaster.cast( object, fail );
+		}
+
+		if ( type.equals( "variablename" ) ) {
+			return VariableNameCaster.cast( object, fail );
 		}
 
 		if ( type.equals( "email" ) ) {

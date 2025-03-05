@@ -480,7 +480,6 @@ public class BoxClassTransformer {
 			        .flatMap( statement -> transpiler.transform( statement, TransformerContext.NONE, ReturnValueContext.EMPTY ).stream() )
 			        .collect( Collectors.toList() );
 			    psuedoBody.addAll( transpiler.getUDFRegistrations() );
-			    psuedoBody.addAll( body );
 
 			    psuedoBody.add( new VarInsnNode( Opcodes.ALOAD, 0 ) );
 			    psuedoBody.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
@@ -493,6 +492,8 @@ public class BoxClassTransformer {
 			            false
 			        )
 			    );
+
+			    psuedoBody.addAll( body );
 
 			    return psuedoBody;
 		    }

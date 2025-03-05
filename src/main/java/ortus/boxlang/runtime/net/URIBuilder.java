@@ -19,7 +19,6 @@ package ortus.boxlang.runtime.net;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -29,40 +28,23 @@ import javax.annotation.Nullable;
 
 public class URIBuilder {
 
-	private @Nullable String				scheme;
-	private @Nullable String				userInfo;
-	private @Nullable String				host;
-	private @Nullable Integer				port;
-	private @Nullable String				path;
+	private @Nullable String				basePath;
 	private @Nonnull List<NameValuePair>	queryParams;
-	private @Nonnull String					fragment;
-	private @Nonnull Charset				charset;
 
 	public URIBuilder() throws URISyntaxException {
 		this( "" );
 	}
 
 	public URIBuilder( @Nonnull String string ) throws URISyntaxException {
-		this( string, Charset.defaultCharset() );
-	}
-
-	public URIBuilder( @Nonnull String string, @Nonnull Charset charset ) throws URISyntaxException {
-		this( URI.create( string ), charset );
+		String[] pathParts = string.split( "\\?" );
+		this.basePath		= string = pathParts[ 0 ];
+		this.queryParams	= pathParts.length > 1
+		    ? parseQueryString( pathParts[ 1 ] )
+		    : new ArrayList<NameValuePair>();
 	}
 
 	public URIBuilder( @Nonnull URI uri ) throws URISyntaxException {
-		this( uri, Charset.defaultCharset() );
-	}
-
-	public URIBuilder( @Nonnull URI uri, @Nonnull Charset charset ) throws URISyntaxException {
-		this.scheme			= uri.getScheme();
-		this.userInfo		= uri.getUserInfo();
-		this.host			= uri.getHost();
-		this.port			= uri.getPort();
-		this.path			= uri.getPath();
-		this.charset		= charset;
-		this.queryParams	= parseQueryString( uri.getQuery() );
-		this.fragment		= uri.getFragment();
+		this( uri.toString() );
 	}
 
 	public void addParameter( @Nonnull String name, @Nullable String value ) {
@@ -70,15 +52,11 @@ public class URIBuilder {
 	}
 
 	public URI build() throws URISyntaxException {
-		return new URI(
-		    this.scheme,
-		    this.userInfo,
-		    this.host,
-		    this.port != null ? this.port : -1,
-		    this.path,
-		    this.queryParams.stream().map( ( NameValuePair::toString ) ).collect( Collectors.joining( "&" ) ),
-		    this.fragment
-		);
+		String URIString = this.basePath;
+		if ( this.queryParams.size() > 0 ) {
+			URIString += "?" + this.queryParams.stream().map( ( NameValuePair::toString ) ).collect( Collectors.joining( "&" ) );
+		}
+		return new URI( URIString );
 	}
 
 	private List<NameValuePair> parseQueryString( String queryString ) {

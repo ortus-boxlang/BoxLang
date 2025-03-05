@@ -29,6 +29,7 @@ import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -980,6 +981,44 @@ public class DynamicInteropServiceTest {
 		assertThat( variables.get( Key.result ) ).isNotNull();
 		assertThat( variables.get( Key.result ) ).isInstanceOf( Stream.class );
 		assertThat( ( ( Stream<String> ) variables.get( Key.result ) ).toArray() ).isEqualTo( new String[] { "brad", "luis", "jon" } );
+	}
+
+	@Test
+	void testMatchClostestConstructorArgs() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				import java.util.Date;
+				result = new Date( 0 );
+			""", context);
+		// @formatter:on
+		assertThat( variables.get( Key.result ) ).isNotNull();
+		Object theResult = DynamicObject.unWrap( variables.get( Key.result ) );
+		assertThat( theResult ).isInstanceOf( Date.class );
+		assertThat( ( ( Date ) theResult ).getTime() ).isEqualTo( 0 );
+		new Date( 0 );
+	}
+
+	@Test
+	void testMatchClostestMethodArgs() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				import ortus.boxlang.runtime.interop.TestClassOverloadedMethods;
+				import java.math.BigDecimal;
+
+				result = TestClassOverloadedMethods.go( 5 );
+				result2 = TestClassOverloadedMethods.go( javacast( 'long', 5 ) );
+				result3 = TestClassOverloadedMethods.go( "5" );
+				result4 = TestClassOverloadedMethods.go( javacast( 'char', '5' ) );
+				result5 = TestClassOverloadedMethods.go( BigDecimal.valueOf( 5 ) );
+			""", context);
+		// @formatter:on
+		assertThat( variables.get( Key.result ) ).isEqualTo( "Integer boxed" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "long" );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( "String" );
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "char" );
+		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( "BigDecimal" );
 	}
 
 }

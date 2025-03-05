@@ -19,8 +19,8 @@ public class InlineStrategy implements IVMInitializationStrategy {
 	public VirtualMachine initialize() throws Exception {
 		LaunchingConnector				launchingConnector	= Bootstrap.virtualMachineManager().defaultConnector();
 		Map<String, Connector.Argument>	arguments			= launchingConnector.defaultArguments();
-
-		arguments.get( "options" ).setValue( "-cp " + System.getProperty( "java.class.path" ) );
+		String							cp					= System.getProperty( "java.class.path" );
+		arguments.get( "options" ).setValue( "-cp \"" + cp + "\"" );
 		arguments.get( "main" ).setValue( "ortus.boxlang.runtime.BoxRunner" + " " + this.program );
 
 		return launchingConnector.launch( arguments );

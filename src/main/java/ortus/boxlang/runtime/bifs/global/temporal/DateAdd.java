@@ -15,12 +15,14 @@
 
 package ortus.boxlang.runtime.bifs.global.temporal;
 
+import java.math.RoundingMode;
 import java.time.ZoneId;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.BigDecimalCaster;
 import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -40,7 +42,7 @@ public class DateAdd extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "string", Key.datepart ),
-		    new Argument( true, "long", Key.number ),
+		    new Argument( true, "number", Key.number ),
 		    new Argument( true, "any", Key.date )
 		};
 	}
@@ -60,9 +62,9 @@ public class DateAdd extends BIF {
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		ZoneId		timezone	= LocalizationUtil.parseZoneId( null, context );
 		DateTime	ref			= DateTimeCaster.cast( arguments.get( Key.date ), true, timezone, true, context );
-		return ref.modify(
+		return ref.clone().modify(
 		    arguments.getAsString( Key.datepart ),
-		    arguments.getAsLong( Key.number )
+		    BigDecimalCaster.cast( arguments.get( Key.number ) ).setScale( 0, RoundingMode.HALF_UP ).longValue()
 		);
 	}
 

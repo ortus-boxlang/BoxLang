@@ -61,13 +61,14 @@ import org.apache.commons.lang3.SystemUtils;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.InterceptorService;
-import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.DateTime;
+import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
@@ -79,64 +80,72 @@ public final class FileSystemUtil {
 	/**
 	 * Flag for whether FS is case sensitive or not to short circuit case insensitive path resolution
 	 */
-	private static boolean				isCaseSensitiveFS		= caseSensitivityCheck();
+	private static boolean					isCaseSensitiveFS		= caseSensitivityCheck();
 
 	/**
 	 * The default charset for file operations in BoxLang
 	 */
-	public static final Charset			DEFAULT_CHARSET			= StandardCharsets.UTF_8;
+	public static final Charset				DEFAULT_CHARSET			= StandardCharsets.UTF_8;
 
 	/**
 	 * MimeType suffixes which denote files which should be treated as text - e.g.
 	 * application/json, application/xml, etc
 	 */
-	public static final Array			TEXT_MIME_SUFFIXES		= new Array(
-	    new Object[] {
-	        "json",
-	        "xml",
-	        "javascript",
-	        "plain"
-	    } );
+	public static final ArrayList<String>	TEXT_MIME_SUFFIXES		= new ArrayList<String>() {
+
+																		{
+																			add( "json" );
+																			add( "xml" );
+																			add( "javascript" );
+																			add( "plain" );
+																			add( "pkcs" );
+																			add( "x-x509" );
+																			add( "x-pem" );
+																			add( "x-x509" );
+																		}
+																	};
 
 	/**
 	 * MimeType prefixes which denote text files - e.g. text/plain, text/x-yaml
 	 */
-	public static final Array			TEXT_MIME_PREFIXES		= new Array(
-	    new Object[] {
-	        "text"
-	    } );
+	public static final ArrayList<String>	TEXT_MIME_PREFIXES		= new ArrayList<String>() {
+
+																		{
+																			add( "text" );
+																		}
+																	};
 
 	/**
 	 * Octal representations for Posix strings to octals
 	 * Thanks to
 	 * http://www.java2s.com/example/java-utility-method/posix/tooctalfilemode-set-posixfilepermission-permissions-64fb4.html
 	 */
-	private static final int			OWNER_READ_FILEMODE		= 0400;
-	private static final int			OWNER_WRITE_FILEMODE	= 0200;
-	private static final int			OWNER_EXEC_FILEMODE		= 0100;
-	private static final int			GROUP_READ_FILEMODE		= 0040;
-	private static final int			GROUP_WRITE_FILEMODE	= 0020;
-	private static final int			GROUP_EXEC_FILEMODE		= 0010;
-	private static final int			OTHERS_READ_FILEMODE	= 0004;
-	private static final int			OTHERS_WRITE_FILEMODE	= 0002;
-	private static final int			OTHERS_EXEC_FILEMODE	= 0001;
+	private static final int				OWNER_READ_FILEMODE		= 0400;
+	private static final int				OWNER_WRITE_FILEMODE	= 0200;
+	private static final int				OWNER_EXEC_FILEMODE		= 0100;
+	private static final int				GROUP_READ_FILEMODE		= 0040;
+	private static final int				GROUP_WRITE_FILEMODE	= 0020;
+	private static final int				GROUP_EXEC_FILEMODE		= 0010;
+	private static final int				OTHERS_READ_FILEMODE	= 0004;
+	private static final int				OTHERS_WRITE_FILEMODE	= 0002;
+	private static final int				OTHERS_EXEC_FILEMODE	= 0001;
 
 	/**
 	 * The Necessary constants for the file mode
 	 */
-	public static final boolean			IS_WINDOWS				= SystemUtils.IS_OS_WINDOWS;
+	public static final boolean				IS_WINDOWS				= SystemUtils.IS_OS_WINDOWS;
 
 	/**
 	 * The OS line separator
 	 */
-	public static final String			LINE_SEPARATOR			= System.getProperty( "line.separator" );
+	public static final String				LINE_SEPARATOR			= System.getProperty( "line.separator" );
 
 	/**
 	 * A starting file slash prefix
 	 */
-	public static final String			SLASH_PREFIX			= "/";
+	public static final String				SLASH_PREFIX			= "/";
 
-	private static InterceptorService	interceptorService		= BoxRuntime.getInstance().getInterceptorService();
+	private static InterceptorService		interceptorService		= BoxRuntime.getInstance().getInterceptorService();
 
 	/**
 	 * Returns the contents of a file
@@ -144,27 +153,30 @@ public final class FileSystemUtil {
 	 * @param filePath
 	 * @param charset
 	 * @param bufferSize
+	 * @param resultsAsString
 	 *
 	 * @return Object - Strings without a buffersize arg return the contents, with a
 	 *         buffersize arg a Buffered reader is returned, binary files return the
-	 *         byte array
+	 *         byte array unless `resultsAsString` is true, in which case a string will always be returned
 	 *
 	 * @throws IOException
 	 */
-	public static Object read( String filePath, String charset, Integer bufferSize ) {
+	public static Object read( String filePath, String charset, Integer bufferSize, boolean resultsAsString ) {
 		Path	path	= null;
-		Boolean	isURL	= false;
+		boolean	isURL	= false;
 		if ( filePath.substring( 0, 4 ).equalsIgnoreCase( "http" ) ) {
 			isURL = true;
 		} else {
 			path = Path.of( filePath );
 		}
 
+		boolean allowBinary = !resultsAsString;
+
 		try {
 			if ( isURL ) {
 				try {
 					URL fileURL = URI.create( filePath ).toURL();
-					if ( isBinaryFile( filePath ) ) {
+					if ( allowBinary && isBinaryFile( filePath ) ) {
 						return IOUtils.toByteArray( fileURL.openStream() );
 					} else {
 						return StringCaster.cast( fileURL.openStream(), charset, true );
@@ -176,7 +188,7 @@ public final class FileSystemUtil {
 				}
 
 			} else {
-				if ( isBinaryFile( filePath ) ) {
+				if ( allowBinary && isBinaryFile( filePath ) ) {
 					return Files.readAllBytes( path );
 				} else if ( bufferSize == null ) {
 					return StringCaster.cast( Files.newInputStream( path ), charset, true );
@@ -207,6 +219,23 @@ public final class FileSystemUtil {
 		} catch ( IOException e ) {
 			throw new BoxIOException( e );
 		}
+	}
+
+	/**
+	 * Returns the contents of a file
+	 *
+	 * @param filePath
+	 * @param charset
+	 * @param bufferSize
+	 *
+	 * @return Object - Strings without a buffersize arg return the contents, with a
+	 *         buffersize arg a Buffered reader is returned, binary files return the
+	 *         byte array
+	 *
+	 * @throws IOException
+	 */
+	public static Object read( String filePath, String charset, Integer bufferSize ) {
+		return read( filePath, charset, bufferSize, false );
 	}
 
 	/**
@@ -495,7 +524,7 @@ public final class FileSystemUtil {
 			    + "] cannot be created because the parent directory [" + end.getParent().toAbsolutePath().toString()
 			    + "] does not exist.  To prevent this error set the createPath argument to true." );
 		} else if ( Files.exists( end ) ) {
-			throw new BoxRuntimeException( "The target directory [" + end.toAbsolutePath().toString() + "] already exists" );
+			throw new BoxRuntimeException( "The target path of [" + end.toAbsolutePath().toString() + "] already exists" );
 		} else {
 			try {
 				if ( createPath ) {
@@ -508,7 +537,11 @@ public final class FileSystemUtil {
 		}
 	}
 
-	public static void copyDirectory( String source, String destination, Boolean recurse, String filter,
+	public static void copyDirectory(
+	    String source,
+	    String destination,
+	    Boolean recurse,
+	    Object filter,
 	    Boolean createPaths ) {
 		Path	start	= Path.of( source );
 		Path	end		= Path.of( destination );
@@ -519,8 +552,17 @@ public final class FileSystemUtil {
 				throw new BoxIOException( e );
 			}
 		}
+
 		if ( Files.isDirectory( start ) ) {
-			listDirectory( source, recurse, filter, "name", recurse ? "all" : "file" ).forEachOrdered( path -> {
+			Stream<Path> directoryListing = null;
+			if ( filter instanceof String filterString ) {
+				directoryListing = listDirectory( source, recurse, filterString, "name", recurse ? "all" : "file" );
+			} else if ( filter instanceof java.util.function.Predicate<?> filterPredicate ) {
+				directoryListing = listDirectory( source, recurse, createPaths ? filterPredicate : null, "name", recurse ? "all" : "file" );
+			} else {
+				throw new BoxRuntimeException( "The filter argument to the method DirectoryCopy filter must either be a string or function/closure" );
+			}
+			directoryListing.forEachOrdered( path -> {
 				Path	targetPath		= Path.of( path.toString().replace( source, destination ) );
 				Path	targetParent	= targetPath.getParent();
 				if ( recurse && !Files.exists( targetParent ) ) {
@@ -589,16 +631,32 @@ public final class FileSystemUtil {
 	 * @throws IOException
 	 */
 	public static Boolean isBinaryFile( String filePath ) {
-		String mimeType = getMimeType( filePath );
+		return isBinaryMimeType( getMimeType( filePath ) );
+	}
+
+	/**
+	 * Tests whether a given mime type is a binary mime type
+	 * 
+	 * @param mimeType
+	 * 
+	 * @return
+	 */
+	public static Boolean isBinaryMimeType( String mimeType ) {
 		// if we can't determine a mimetype from a path we assume the file is text (
 		// e.g. a friendly URL )
-		if ( mimeType == null ) {
+		if ( mimeType == null || mimeType.split( "/" ).length == 1 ) {
 			return false;
 		}
-		Object[] mimeParts = mimeType.split( "/" );
+
+		// if this is a content-type header we need to strip the charset
+		if ( mimeType.split( ";" ).length > 1 ) {
+			mimeType = mimeType.split( ";" )[ 0 ];
+		}
+
+		String[] mimeParts = mimeType.split( "/" );
 
 		return !TEXT_MIME_PREFIXES.contains( mimeParts[ 0 ] )
-		    && !TEXT_MIME_SUFFIXES.contains( mimeParts[ mimeParts.length - 1 ] );
+		    && !TEXT_MIME_SUFFIXES.stream().anyMatch( suffix -> mimeParts[ 1 ].startsWith( StringCaster.cast( suffix ).toLowerCase() ) );
 	}
 
 	/**
@@ -924,8 +982,9 @@ public final class FileSystemUtil {
 		// If the incoming path does NOT start with a /, then we make it relative to the current template (if there is one)
 		if ( !isAbsolute && !path.startsWith( SLASH_PREFIX ) ) {
 			if ( basePath != null ) {
-				Path template = basePath.absolutePath();
-				if ( template != null ) {
+				// There are codepaths where ad-hoc source code has a source path of "unknown". That's not really ideal, but
+				// if we try to process this, we'll get crazy errors.
+				if ( basePath.absolutePath() != null && !basePath.absolutePath().toString().equals( "unknown" ) ) {
 					return basePath.newFromRelative( path );
 				}
 			}
@@ -1263,6 +1322,18 @@ public final class FileSystemUtil {
 		} catch ( URISyntaxException e ) {
 			throw new RuntimeException( "The provided file path [" + input + "] is not a valid URI.", e );
 		}
+	}
+
+	/**
+	 * Creates a filter predicate for a directory stream based on the provided closure.
+	 *
+	 * @param context The context in which the BIF is being invoked.
+	 * @param closure The closure to use for filtering.
+	 *
+	 * @return A predicate that filters paths based on the closure.
+	 */
+	public static java.util.function.Predicate<Path> createPathFilterPredicate( IBoxContext context, Function closure ) {
+		return path -> BooleanCaster.cast( context.invokeFunction( closure, new Object[] { path.toString() } ) );
 	}
 
 }

@@ -67,6 +67,7 @@ public class SessionInvalidateTest {
 		    bx:application name="unit-test-sm" sessionmanagement="true";
 		           session.foo = "bar";
 		           initialSession = duplicate( session );
+		     sleep( 1000 );
 		           SessionInvalidate();
 		           result = session;
 		           """,
@@ -74,7 +75,8 @@ public class SessionInvalidateTest {
 		IStruct initialSession = variables.getAsStruct( Key.of( "initialSession" ) );
 		assertFalse( variables.getAsStruct( result ).containsKey( Key.of( "foo" ) ) );
 		assertNotEquals( initialSession.getAsString( Key.of( "jsessionID" ) ), variables.getAsStruct( result ).getAsString( Key.of( "jsessionID" ) ) );
-		assertNotEquals( initialSession.getAsDateTime( Key.of( "timeCreated" ) ), variables.getAsStruct( result ).getAsDateTime( Key.of( "timeCreated" ) ) );
+		assertFalse(
+		    initialSession.getAsDateTime( Key.of( "timeCreated" ) ).equals( variables.getAsStruct( result ).getAsDateTime( Key.of( "timeCreated" ) ) ) );
 		assertNotEquals( initialSession.getAsString( Key.of( "sessionid" ) ), variables.getAsStruct( result ).getAsString( Key.of( "sessionid" ) ) );
 	}
 

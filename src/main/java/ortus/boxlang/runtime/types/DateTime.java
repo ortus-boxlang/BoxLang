@@ -40,6 +40,7 @@ import java.time.temporal.TemporalField;
 import java.time.temporal.TemporalQuery;
 import java.time.temporal.TemporalUnit;
 import java.time.temporal.ValueRange;
+import java.util.Date;
 import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -54,6 +55,7 @@ import ortus.boxlang.runtime.bifs.BoxMemberExpose;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
+import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.interop.DynamicInteropService;
 import ortus.boxlang.runtime.scopes.Key;
@@ -555,13 +557,18 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	@Override
 	@BoxMemberExpose
 	public boolean equals( Object obj ) {
-		if ( this == obj )
-			return true;
-		if ( obj == null || getClass() != obj.getClass() )
+		if ( obj == null ) {
 			return false;
-		DateTime other = ( DateTime ) obj;
-		return Objects.equals( wrapped, other.wrapped ) &&
-		    Objects.equals( formatter, other.formatter );
+		} else if ( obj instanceof DateTime castDateTime ) {
+			return this.isEqual( castDateTime.getWrapped() );
+		} else {
+			CastAttempt<DateTime> attempt = DateTimeCaster.attempt( obj );
+			if ( attempt.wasSuccessful() ) {
+				return this.isEqual( attempt.get().getWrapped() );
+			} else {
+				return false;
+			}
+		}
 	}
 
 	/**
@@ -1017,6 +1024,15 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	@Override
 	public Instant toInstant() {
 		return this.wrapped.toInstant();
+	}
+
+	/**
+	 * Get a java.util.Date instance from this DateTime
+	 * 
+	 * @return The java.util.Date instance
+	 */
+	public Date toDate() {
+		return Date.from( toInstant() );
 	}
 
 	@Override

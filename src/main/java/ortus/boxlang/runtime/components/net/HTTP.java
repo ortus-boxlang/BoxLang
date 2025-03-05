@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.components.net;
 import java.io.File;
 import java.io.IOException;
 import java.net.ConnectException;
+import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLConnection;
@@ -28,7 +29,9 @@ import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpTimeoutException;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -39,6 +42,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import ortus.boxlang.runtime.components.Attribute;
@@ -73,9 +78,19 @@ import ortus.boxlang.runtime.validation.Validator;
 @BoxComponent( allowsBody = true )
 public class HTTP extends Component {
 
-	private final static String	BASIC_AUTH_DELIMITER	= ":";
-	private static final String	AUTHMODE_BASIC			= "BASIC";
-	private static final String	AUTHMODE_NTLM			= "NTLM";
+	private final static String		BASIC_AUTH_DELIMITER	= ":";
+	private static final String		AUTHMODE_BASIC			= "BASIC";
+	private static final String		AUTHMODE_NTLM			= "NTLM";
+
+	protected static ArrayList<Key>	BINARY_REQUEST_VALUES	= new ArrayList<Key>() {
+
+																{
+																	add( Key.of( "true" ) );
+																	add( Key.of( "yes" ) );
+																}
+															};
+
+	protected static Key			BINARY_NEVER			= Key.of( "never" );
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -115,18 +130,30 @@ public class HTTP extends Component {
 		    new Attribute( Key.getAsBinary, "string", "auto", Set.of(
 		        Validator.REQUIRED,
 		        Validator.NON_EMPTY,
-		        Validator.valueOneOf( "auto", "no", "yes", "never" )
+		        Validator.valueOneOf( "true", "false", "auto", "no", "yes", "never" )
 		    ) ),
 		    new Attribute( Key.result, "string", "bxhttp", Set.of(
 		        Validator.REQUIRED,
 		        Validator.NON_EMPTY
 		    ) ),
-		    new Attribute( Key.file, "string", Set.of( Validator.requires( Key.path ) ) ),
+		    new Attribute( Key.file, "string", Set.of(
+		        Validator.requires( Key.path ),
+		        ( cxt, comp, attr, attrs ) -> {
+			        if ( !attrs.containsKey( Key.path ) ) {
+				        return;
+			        }
+			        String attrValue	= attrs.getAsString( attr.name() );
+			        Boolean isGetRequest = attrs.getAsString( Key.method ).toUpperCase().equals( "GET" );
+			        if ( !isGetRequest && ( attrValue == null || attrValue.trim().isEmpty() ) ) {
+				        throw new BoxValidationException( comp, attr, "is required with a path is specified and the method is not GET" );
+			        }
+		        }
+		    ) ),
 		    new Attribute( Key.multipart, "boolean", false, Set.of( Validator.TYPE ) ),
 		    new Attribute( Key.multipartType, "string", "form-data",
 		        Set.of( Validator.REQUIRED, Validator.NON_EMPTY, Validator.valueOneOf( "form-data", "related" ) ) ),
 		    new Attribute( Key.clientCertPassword, "string" ),
-		    new Attribute( Key.path, "string", Set.of( Validator.requires( Key.file ) ) ),
+		    new Attribute( Key.path, "string" ),
 		    new Attribute( Key.clientCert, "string" ),
 		    new Attribute( Key.compression, "string" ),
 		    new Attribute( Key.authType, "string", AUTHMODE_BASIC,
@@ -162,11 +189,22 @@ public class HTTP extends Component {
 	 *
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
+		// Allow for restricted headers to be set
+		if ( System.getProperty( "jdk.httpclient.allowRestrictedHeaders" ) == null ) {
+			System.setProperty( "jdk.httpclient.allowRestrictedHeaders", "host,content-length" );
+		}
+
 		// Keeps track of the HTTPParams
 		executionState.put( Key.HTTPParams, new Array() );
 
+		Key			binaryOperator		= Key.of( attributes.getAsString( Key.getAsBinary ) );
+		Boolean		isBinaryRequested	= BINARY_REQUEST_VALUES
+		    .stream()
+		    .anyMatch( value -> value.equals( binaryOperator ) );
+		Boolean		isBinaryNever		= binaryOperator.equals( BINARY_NEVER );
+
 		// Process the component for HTTPParams
-		BodyResult bodyResult = processBody( context, body );
+		BodyResult	bodyResult			= processBody( context, body );
 
 		// IF there was a return statement inside our body, we early exit now
 		if ( bodyResult.isEarlyExit() ) {
@@ -181,6 +219,13 @@ public class HTTP extends Component {
 		Struct	HTTPResult		= new Struct();
 		URI		targetURI		= null;
 		String	authMode		= attributes.getAsString( Key.authType ).toUpperCase();
+		String	outputDirectory	= attributes.getAsString( Key.path );
+		if ( outputDirectory != null ) {
+			ResolvedFilePath outputPath = FileSystemUtil.expandPath( context, outputDirectory );
+			if ( outputPath != null ) {
+				outputDirectory = outputPath.absolutePath().toString();
+			}
+		}
 
 		try {
 			HttpRequest.Builder			builder			= HttpRequest.newBuilder();
@@ -211,7 +256,13 @@ public class HTTP extends Component {
 						if ( bodyPublisher != null ) {
 							throw new BoxRuntimeException( "Cannot use a body httpparam with an existing http body: " + bodyPublisher.toString() );
 						}
-						bodyPublisher = HttpRequest.BodyPublishers.ofString( param.getAsString( Key.value ) );
+						if ( param.get( Key.value ) instanceof byte[] bodyBytes ) {
+							bodyPublisher = HttpRequest.BodyPublishers.ofByteArray( bodyBytes );
+						} else if ( StringCaster.attempt( param.get( Key.value ) ).wasSuccessful() ) {
+							bodyPublisher = HttpRequest.BodyPublishers.ofString( StringCaster.cast( param.get( Key.value ) ) );
+						} else {
+							throw new BoxRuntimeException( "The body attribute provided is not a valid string nor a binary object." );
+						}
 					}
 					case "xml" -> {
 						if ( bodyPublisher != null ) {
@@ -303,10 +354,10 @@ public class HTTP extends Component {
 			) );
 
 			// TODO : should we move the catch block below and add an `exceptionally` handler for the future?
-			CompletableFuture<HttpResponse<String>>	future		= client.sendAsync( targetHTTPRequest, HttpResponse.BodyHandlers.ofString() );
+			CompletableFuture<HttpResponse<byte[]>>	future		= client.sendAsync( targetHTTPRequest, HttpResponse.BodyHandlers.ofByteArray() );
 
 			// Announce the HTTP request
-			HttpResponse<String>					response	= future.get(); // block and wait for the response
+			HttpResponse<byte[]>					response	= future.get(); // block and wait for the response
 
 			// Announce the HTTP RAW response
 			// Useful for debugging and pre-processing and timing, since the other events are after the response is processed
@@ -315,15 +366,62 @@ public class HTTP extends Component {
 			) );
 
 			// Start Processing Results
-			HttpHeaders	httpHeaders			= Optional
+			HttpHeaders	httpHeaders		= Optional
 			    .ofNullable( response.headers() )
 			    .orElse( HttpHeaders.of( Map.of(), ( a, b ) -> true ) );
-			IStruct		headers				= transformToResponseHeaderStruct(
+			IStruct		headers			= transformToResponseHeaderStruct(
 			    httpHeaders.map()
 			);
-			String		httpVersionString	= response.version() == HttpClient.Version.HTTP_1_1 ? "HTTP/1.1" : "HTTP/2";
-			String		statusCodeString	= String.valueOf( response.statusCode() );
-			String		statusText			= HTTPStatusReasons.getReasonForStatus( response.statusCode() );
+
+			Object		responseBody	= null;
+			if ( response.body() != null ) {
+				String	contentType			= headers.getAsString( Key.of( "content-type" ) );
+				Boolean	isBinaryContentType	= FileSystemUtil.isBinaryMimeType( contentType );
+				String	charset				= null;
+				if ( ( isBinaryRequested || isBinaryContentType ) && !isBinaryNever ) {
+					responseBody = response.body();
+				} else if ( isBinaryNever && isBinaryContentType ) {
+					throw new BoxRuntimeException( "The response is a binary type, but the getAsBinary attribute was set to 'never'" );
+				} else {
+					charset			= contentType != null && contentType.contains( "charset=" )
+					    ? extractCharset( contentType )
+					    : "UTF-8";
+					responseBody	= new String( response.body(), Charset.forName( charset ) );
+				}
+				if ( outputDirectory != null ) {
+					String fileName = attributes.getAsString( Key.file );
+					if ( fileName == null || fileName.trim().isEmpty() ) {
+						String dispositionHeader = headers.getAsString( Key.of( "content-disposition" ) );
+						if ( dispositionHeader != null ) {
+							Pattern	pattern	= Pattern.compile( "filename=\"?([^\";]+)\"?" );
+							Matcher	matcher	= pattern.matcher( dispositionHeader );
+							if ( matcher.find() ) {
+								fileName = matcher.group( 1 );
+							}
+						} else {
+							fileName = Path.of( targetURI.getPath() ).getFileName().toString();
+						}
+
+						if ( fileName == null || fileName.trim().isEmpty() ) {
+							throw new BoxRuntimeException( "Unable to determine filename from response" );
+						}
+					}
+
+					String destinationPath = Path.of( outputDirectory, fileName ).toAbsolutePath().toString();
+
+					if ( responseBody instanceof String responseString ) {
+						FileSystemUtil.write( destinationPath, responseString, charset, true );
+					} else if ( responseBody instanceof byte[] responseBytes ) {
+						FileSystemUtil.write( destinationPath, responseBytes, true );
+					}
+					return DEFAULT_RETURN;
+
+				}
+			}
+
+			String	httpVersionString	= response.version() == HttpClient.Version.HTTP_1_1 ? "HTTP/1.1" : "HTTP/2";
+			String	statusCodeString	= String.valueOf( response.statusCode() );
+			String	statusText			= HTTPStatusReasons.getReasonForStatus( response.statusCode() );
 
 			headers.put( Key.HTTP_Version, httpVersionString );
 			headers.put( Key.status_code, statusCodeString );
@@ -336,7 +434,7 @@ public class HTTP extends Component {
 			HTTPResult.put( Key.status_code, response.statusCode() );
 			HTTPResult.put( Key.statusText, statusText );
 			HTTPResult.put( Key.status_text, statusText );
-			HTTPResult.put( Key.fileContent, response.statusCode() == 408 ? "Request Timeout" : response.body() );
+			HTTPResult.put( Key.fileContent, response.statusCode() == 408 ? "Request Timeout" : responseBody );
 			HTTPResult.put( Key.errorDetail, response.statusCode() == 408 ? response.body() : "" );
 			Optional<String> contentTypeHeader = httpHeaders.firstValue( "Content-Type" );
 			contentTypeHeader.ifPresent( ( contentType ) -> {
@@ -345,8 +443,7 @@ public class HTTP extends Component {
 					HTTPResult.put( Key.mimetype, contentTypeParts[ 0 ] );
 				}
 				if ( contentTypeParts.length > 1 ) {
-					String charset = contentTypeParts[ 1 ].replace( "charset=", "" );
-					HTTPResult.put( Key.charset, charset );
+					HTTPResult.put( Key.charset, extractCharset( contentType ) );
 				}
 			} );
 			HTTPResult.put( Key.cookies, generateCookiesQuery( headers ) );
@@ -362,7 +459,7 @@ public class HTTP extends Component {
 			return DEFAULT_RETURN;
 		} catch ( ExecutionException e ) {
 			Throwable innerException = e.getCause();
-			if ( innerException instanceof ConnectException ) {
+			if ( innerException instanceof SocketException ) {
 				HTTPResult.put( Key.responseHeader, Struct.EMPTY );
 				HTTPResult.put( Key.header, "" );
 				HTTPResult.put( Key.statusCode, 502 );
@@ -370,10 +467,14 @@ public class HTTP extends Component {
 				HTTPResult.put( Key.statusText, "Bad Gateway" );
 				HTTPResult.put( Key.status_text, "Bad Gateway" );
 				HTTPResult.put( Key.fileContent, "Connection Failure" );
-				if ( targetURI != null ) {
-					HTTPResult.put( Key.errorDetail, String.format( "Unknown host: %s: Name or service not known.", targetURI.getHost() ) );
+				if ( innerException instanceof ConnectException ) {
+					if ( targetURI != null ) {
+						HTTPResult.put( Key.errorDetail, String.format( "Unknown host: %s: Name or service not known.", targetURI.getHost() ) );
+					} else {
+						HTTPResult.put( Key.errorDetail, String.format( "Unknown host: %s: Name or service not known.", theURL ) );
+					}
 				} else {
-					HTTPResult.put( Key.errorDetail, String.format( "Unknown host: %s: Name or service not known.", theURL ) );
+					HTTPResult.put( Key.errorDetail, "Connection Failure: " + innerException.getMessage() );
 				}
 				ExpressionInterpreter.setVariable( context, variableName, HTTPResult );
 			} else if ( innerException instanceof HttpTimeoutException ) {
@@ -386,6 +487,9 @@ public class HTTP extends Component {
 				HTTPResult.put( Key.fileContent, "Request Timeout" );
 				HTTPResult.put( Key.errorDetail, "The request timed out after " + attributes.getAsInteger( Key.timeout ) + " second(s)" );
 				ExpressionInterpreter.setVariable( context, variableName, HTTPResult );
+			} else {
+				// retrhow any unknown exception types
+				throw new BoxRuntimeException( "An error occurred while processing the HTTP request", "ExecutionException", innerException );
 			}
 			return DEFAULT_RETURN;
 		} catch ( InterruptedException e ) {
@@ -517,5 +621,19 @@ public class HTTP extends Component {
 		}
 
 		return responseHeaders;
+	}
+
+	private static String extractCharset( String contentType ) {
+		if ( contentType == null || contentType.isEmpty() ) {
+			return null;
+		}
+
+		Pattern	pattern	= Pattern.compile( "charset=([a-zA-Z0-9-]+)" );
+		Matcher	matcher	= pattern.matcher( contentType );
+
+		if ( matcher.find() ) {
+			return matcher.group( 1 );
+		}
+		return null;
 	}
 }

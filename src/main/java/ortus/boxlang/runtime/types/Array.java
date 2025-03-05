@@ -195,6 +195,15 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	}
 
 	/**
+	 * Create an Array from a List
+	 *
+	 * @param list The List to create the Array from
+	 */
+	public static Array copyFromList( List<? extends Object> list ) {
+		return new Array( new ArrayList<>( list ) );
+	}
+
+	/**
 	 * Create an array from a Set<String>
 	 *
 	 * @param set The set to create the Array from

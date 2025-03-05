@@ -3,8 +3,7 @@
  * will be dynamically loaded, decorated and modified to
  * work as a native Java BoxLang Scheduler.
  */
-@BoxScheduler "My Custom Scheduler"
-class {
+class extends="java:ortus.boxlang.runtime.async.tasks.BaseScheduler" {
 
 	/**
 	 * The configure method is called by the BoxLang runtime
@@ -15,7 +14,7 @@ class {
 	function configure(){
 
 		// Define a lambda task
-		task( "My Task" )
+		super.task( "My Task" )
 			.call( () -> {
 				println( "I am a lambda task: #now()#" );
 			} )
@@ -38,6 +37,7 @@ class {
 	/**
 	 * Called after the scheduler has registered all schedules
 	 */
+	@overrideJava
 	function onStartup(){
 		println( "I have started!" & getName() );
 	}

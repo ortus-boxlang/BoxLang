@@ -197,7 +197,7 @@ public class ComponentDescriptor {
 	 */
 	public BodyResult invoke( IBoxContext context, IStruct attributes, Component.ComponentBody componentBody ) {
 		// the module component has special handling of attributes
-		if ( name.equals( Key.module ) ) {
+		if ( name.equals( Key.component ) ) {
 			return invokeModule( context, attributes, componentBody );
 		}
 		Component component = getComponent();

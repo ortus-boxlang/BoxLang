@@ -71,8 +71,9 @@ public class BoxAnnounceTest {
 	void testItCanAnnounceNonExistentEventWithData() {
 		instance.executeSource(
 		    """
-		    result = boxAnnounce( "invalid", { "foo": "bar" } );
-		    """,
+		       result = boxAnnounce( "invalid", { "foo": "bar" } );
+		    result = boxAnnounce( "invalid", { "foo": "bar" }, "request" );
+		       """,
 		    context );
 		assertThat( ( Boolean ) variables.get( result ) ).isEqualTo( true );
 	}

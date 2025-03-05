@@ -305,7 +305,7 @@ public class CFVisitor extends CFGrammarBaseVisitor<BoxNode> {
 		    StatementContext::for_, StatementContext::if_, StatementContext::switch_, StatementContext::try_, StatementContext::while_,
 		    StatementContext::expressionStatement, StatementContext::include, StatementContext::component, StatementContext::statementBlock,
 		    StatementContext::simpleStatement, StatementContext::componentIsland, StatementContext::throw_,
-		    StatementContext::emptyStatementBlock );
+		    StatementContext::emptyStatementBlock, StatementContext::function );
 
 		// Iterate over the functions
 		for ( Function<StatementContext, ParserRuleContext> function : functions ) {
@@ -860,8 +860,7 @@ public class CFVisitor extends CFGrammarBaseVisitor<BoxNode> {
 
 	@Override
 	public BoxNode visitFunctionOrStatement( FunctionOrStatementContext ctx ) {
-		return Optional.ofNullable( ctx.statement() ).map( stmt -> stmt.accept( this ) )
-		    .orElseGet( () -> Optional.ofNullable( ctx.function() ).map( func -> func.accept( this ) ).orElse( null ) );
+		return ctx.statement().accept( this );
 	}
 
 	public BoxNode visitErrorNode( ErrorNode node ) {

@@ -980,8 +980,9 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			print( "@" );
 			node.getKey().accept( this );
 			if ( node.getValue() != null ) {
-				print( " " );
+				print( "( " );
 				node.getValue().accept( this );
+				print( " )" );
 			}
 		}
 		printPostComments( node );

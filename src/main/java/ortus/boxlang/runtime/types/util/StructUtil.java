@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.types.util;
 
 import java.util.AbstractMap;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -29,7 +30,6 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.ArrayList;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
@@ -594,10 +594,10 @@ public class StructUtil {
 		    entry -> {
 			    if ( entry.getValue() instanceof IStruct mergeStruct && recipient.get( entry.getKey() ) instanceof IStruct recipStruct ) {
 				    StructUtil.deepMerge( recipStruct, mergeStruct, override );
-			    } else if ( entry.getValue() instanceof Array merageArray && recipient.get( entry.getKey() ) instanceof Array recipArray ) {
-				    merageArray.stream().forEach( item -> {
-					    if ( !recipArray.contains( entry.getValue() ) ) {
-						    recipArray.add( entry.getValue() );
+			    } else if ( entry.getValue() instanceof Array mergeArray && recipient.get( entry.getKey() ) instanceof Array recipArray ) {
+				    mergeArray.stream().forEach( item -> {
+					    if ( !recipArray.contains( item ) ) {
+						    recipArray.add( item );
 					    }
 				    } );
 			    } else {

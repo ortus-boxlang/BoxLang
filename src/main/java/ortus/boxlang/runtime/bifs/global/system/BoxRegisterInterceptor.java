@@ -55,10 +55,12 @@ public class BoxRegisterInterceptor extends BIF {
 	 *
 	 * @argument.interceptor This can be a class or a closure/lambda that will listen to global events
 	 *
+	 * @argument.states An array of events to listen to along side the points discovered in the incoming interceptor
+	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object	interceptor	= arguments.get( Key.interceptor );
-		Key[]	states		= inflateStates( arguments.get( Key.states ) );
+		Key[]	states		= InterceptorPool.inflateStates( arguments.get( Key.states ) );
 
 		// Register a boxClass
 		if ( interceptor instanceof IClassRunnable boxClass ) {
@@ -91,27 +93,4 @@ public class BoxRegisterInterceptor extends BIF {
 		return true;
 	}
 
-	/**
-	 * Inflates an array or string of states into a list of keys
-	 *
-	 * @param states The states to inflate
-	 *
-	 * @return The list of keys representing the states
-	 */
-	public static Key[] inflateStates( Object states ) {
-		// If it's a string, make it into an array
-		if ( states instanceof String castedString ) {
-			states = Array.fromString( castedString );
-		}
-
-		// If already an array, make sure they are keys
-		if ( states instanceof Array castedArray ) {
-			return castedArray
-			    .stream()
-			    .map( Key::of )
-			    .toArray( Key[]::new );
-		}
-
-		return new Key[ 0 ];
-	}
 }

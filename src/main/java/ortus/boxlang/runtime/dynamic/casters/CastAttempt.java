@@ -45,7 +45,6 @@ public final class CastAttempt<T> extends Attempt<T> {
 	 */
 	private CastAttempt() {
 		super();
-		this.simpleEval = true;
 	}
 
 	/**
@@ -55,7 +54,6 @@ public final class CastAttempt<T> extends Attempt<T> {
 	 */
 	private CastAttempt( T value ) {
 		super( Objects.requireNonNull( value ) );
-		this.simpleEval = true;
 	}
 
 	/**

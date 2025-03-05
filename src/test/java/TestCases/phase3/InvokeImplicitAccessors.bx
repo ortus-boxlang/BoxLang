@@ -1,0 +1,21 @@
+class {
+	property name="name";
+	property name="age";
+	property name="supervisor";
+
+	this.supervisor = "jon";
+	this.name = "default name"
+
+	function setAge( numeric age ) {
+		this.age = age;
+	}
+
+	function getAge() {
+		return this.age;
+	}
+
+	function setSupervisor( String supervisor ) {
+		variables.supervisor = arguments.supervisor.reverse();
+	}
+
+}

@@ -23,6 +23,7 @@ import java.util.List;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
+import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.JumpInsnNode;
 import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.MethodInsnNode;
@@ -70,6 +71,10 @@ public class BoxTernaryOperationTransformer extends AbstractTransformer {
 		nodes.add( ifLabel );
 		nodes.addAll( whenFalse );
 		nodes.add( elseLabel );
+
+		if ( returnContext.empty ) {
+			nodes.add( new InsnNode( Opcodes.POP ) );
+		}
 
 		return AsmHelper.addLineNumberLabels( nodes, node );
 	}

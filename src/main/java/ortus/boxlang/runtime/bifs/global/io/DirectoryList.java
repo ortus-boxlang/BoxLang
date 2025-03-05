@@ -24,7 +24,6 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
-import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.operators.Compare;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -114,7 +113,7 @@ public class DirectoryList extends BIF {
 		}
 
 		if ( arguments.get( Key.filter ) instanceof Function ) {
-			arguments.put( Key.filter, createPredicate( context, ( Function ) arguments.get( Key.filter ) ) );
+			arguments.put( Key.filter, FileSystemUtil.createPathFilterPredicate( context, ( Function ) arguments.get( Key.filter ) ) );
 		}
 
 		Stream<Path> listing = FileSystemUtil.listDirectory(
@@ -226,10 +225,6 @@ public class DirectoryList extends BIF {
 		}
 
 		return attributes;
-	}
-
-	private java.util.function.Predicate<Path> createPredicate( IBoxContext context, Function closure ) {
-		return path -> BooleanCaster.cast( context.invokeFunction( closure, new Object[] { path.toString() } ) );
 	}
 
 }

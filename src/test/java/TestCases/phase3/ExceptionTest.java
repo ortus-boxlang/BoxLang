@@ -102,8 +102,8 @@ public class ExceptionTest {
 			} catch( any e ) {
 				result = e;
 			}
-			assert( structKeyExists( result, "detail" ) );
-			assert( structKeyExists( result, "extendedInfo" ) );
+			assert structKeyExists( result, "detail" );
+			assert structKeyExists( result, "extendedInfo" );
 		""", context );
 		// @formatter:on
 		BoxRuntimeException t = ( BoxRuntimeException ) variables.get( result );

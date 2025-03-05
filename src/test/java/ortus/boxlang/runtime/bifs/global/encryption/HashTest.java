@@ -230,4 +230,16 @@ public class HashTest {
 		assertThat( variables.getAsString( Key.of( "result" ) ) ).isEqualTo( "58113448b78dec752c533eba7f5eab99" );
 	}
 
+	@DisplayName( "It tests that a hash of a string and its bytes will be equal" )
+	@Test
+	public void hashStringAndBytesEqual() {
+		instance.executeSource(
+		    """
+		    testString = "Hash me baby!";
+		          assert hash( testString ) == hash( testString.getBytes() );
+		          """,
+		    context );
+
+	}
+
 }

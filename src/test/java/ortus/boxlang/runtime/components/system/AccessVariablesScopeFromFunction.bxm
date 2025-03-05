@@ -1,0 +1,13 @@
+<bx:script>
+	function addData() {
+		variables.data.each( function(key, value) {
+			variables.data.append( { "#key#-length": len( value) });
+		} );
+	}
+
+	variables[ "data" ] = {
+		"key": "value"
+	};
+
+	addData();
+</bx:script>

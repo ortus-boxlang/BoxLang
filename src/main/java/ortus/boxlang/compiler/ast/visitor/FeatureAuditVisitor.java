@@ -933,7 +933,7 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		componentMap.put( "menu", "" );
 		componentMap.put( "menuitem", "" );
 		componentMap.put( "messagebox", "" );
-		componentMap.put( "module", "" );
+		componentMap.put( "component", "" );
 		componentMap.put( "ntauthenticate", "" );
 		componentMap.put( "oauth", "" );
 		componentMap.put( "object", "" );
@@ -1019,8 +1019,7 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 			boolean	missing	= !functionService.hasGlobalFunction( name );
 			if ( isQoQ( node ) ) {
 				name	= "queryExecute (QoQ)";
-				// hard coded for now since we don't support
-				missing	= true;
+				missing	= false;
 			}
 			featuresUsed.add(
 			    new FeatureUsed( name, FeatureType.BIF, module, missing, node.getPosition() )
@@ -1049,7 +1048,7 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 			if ( isQoQ( node ) ) {
 				name	= "query (QoQ)";
 				// hard coded for now since we don't support
-				missing	= true;
+				missing	= false;
 			}
 			featuresUsed.add(
 			    new FeatureUsed( name, FeatureType.COMPONENT, module, missing, node.getPosition() )

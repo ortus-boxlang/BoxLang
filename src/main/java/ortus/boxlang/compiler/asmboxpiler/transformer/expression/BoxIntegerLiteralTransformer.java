@@ -15,6 +15,7 @@
 package ortus.boxlang.compiler.asmboxpiler.transformer.expression;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.objectweb.asm.Opcodes;
@@ -40,41 +41,45 @@ public class BoxIntegerLiteralTransformer extends AbstractTransformer {
 
 	@Override
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnContext ) throws IllegalStateException {
-		BoxIntegerLiteral	literal	= ( BoxIntegerLiteral ) node;
-		int					len		= literal.getValue().length();
+		BoxIntegerLiteral		literal	= ( BoxIntegerLiteral ) node;
+		int						len		= literal.getValue().length();
+		List<AbstractInsnNode>	nodes	= new ArrayList<>();
 		// 10 or fewer chars can use an int literal
 		if ( len < 10 ) {
-			return List.of(
-			    new LdcInsnNode( Integer.valueOf( literal.getValue() ) ),
-			    new MethodInsnNode( Opcodes.INVOKESTATIC,
-			        Type.getInternalName( Integer.class ),
-			        "valueOf",
-			        Type.getMethodDescriptor( Type.getType( Integer.class ), Type.INT_TYPE ),
-			        false
-			    )
+			nodes.add(
+			    new LdcInsnNode( Integer.valueOf( literal.getValue() ) ) );
+			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+			    Type.getInternalName( Integer.class ),
+			    "valueOf",
+			    Type.getMethodDescriptor( Type.getType( Integer.class ), Type.INT_TYPE ),
+			    false
+			)
 			);
 		} else if ( len <= 19 ) {
-			return List.of(
-			    new LdcInsnNode( Long.valueOf( literal.getValue() ) ),
-			    new MethodInsnNode( Opcodes.INVOKESTATIC,
-			        Type.getInternalName( Long.class ),
-			        "valueOf",
-			        Type.getMethodDescriptor( Type.getType( Long.class ), Type.LONG_TYPE ),
-			        false
-			    )
-			);
+			nodes.add(
+			    new LdcInsnNode( Long.valueOf( literal.getValue() ) ) );
+			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+			    Type.getInternalName( Long.class ),
+			    "valueOf",
+			    Type.getMethodDescriptor( Type.getType( Long.class ), Type.LONG_TYPE ),
+			    false
+			) );
+		} else {
+			nodes.add( new TypeInsnNode( Opcodes.NEW, Type.getInternalName( BigDecimal.class ) ) );
+			nodes.add( new InsnNode( Opcodes.DUP ) );
+			nodes.add( new LdcInsnNode( literal.getValue() ) );
+			nodes.add( new MethodInsnNode( Opcodes.INVOKESPECIAL,
+			    Type.getInternalName( BigDecimal.class ),
+			    "<init>",
+			    Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( String.class ) ),
+			    false
+			) );
 		}
 
-		return List.of(
-		    new TypeInsnNode( Opcodes.NEW, Type.getInternalName( BigDecimal.class ) ),
-		    new InsnNode( Opcodes.DUP ),
-		    new LdcInsnNode( literal.getValue() ),
-		    new MethodInsnNode( Opcodes.INVOKESPECIAL,
-		        Type.getInternalName( BigDecimal.class ),
-		        "<init>",
-		        Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( String.class ) ),
-		        false
-		    )
-		);
+		if ( returnContext.empty ) {
+			nodes.add( new InsnNode( Opcodes.POP ) );
+		}
+
+		return nodes;
 	}
 }

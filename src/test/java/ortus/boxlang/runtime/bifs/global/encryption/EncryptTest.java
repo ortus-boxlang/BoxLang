@@ -196,4 +196,29 @@ public class EncryptTest {
 		);
 	}
 
+	@DisplayName( "It tests textual salt values" )
+	@Test
+	public void testSaltValues() {
+		instance.executeSource(
+		    """
+		    key = "oeY9XnYhS4ERqBeMDkcmVw==";
+		    salt = "foo";
+		    result = encrypt( "foobar", key, "AES", "base64", salt );
+		    	""", context );
+
+		assertTrue( variables.get( result ) instanceof String );
+		assertEquals( "FE54Rn9W0YoZteRe1aV1qg==", variables.getAsString( result ) );
+
+		instance.executeSource(
+		    """
+		    key = "oeY9XnYhS4ERqBeMDkcmVw==";
+		    salt = "foo";
+		    result = encrypt( "foobar", key, "AES/CBC/PKCS5Padding", "base64", salt );
+		    	""", context );
+
+		assertTrue( variables.get( result ) instanceof String );
+		assertEquals( "mE7BeU2ljKYNWkbKKwqkIA==", variables.getAsString( result ) );
+
+	}
+
 }

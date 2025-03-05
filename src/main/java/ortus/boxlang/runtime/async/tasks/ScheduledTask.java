@@ -51,10 +51,12 @@ import ortus.boxlang.runtime.types.util.StringUtil;
 import ortus.boxlang.runtime.util.Timer;
 
 /**
- * The ScheduledTask class is a {@link Runnable} that is used by the schedulers to execute tasks
+ * The ScheduledTask class is a {@link Runnable} that is used by the schedulers
+ * to execute tasks
  * in a more human and fluent approach.
  *
- * A task can be represented either by a {@link DynamicObject} or a Java {@link Callable} Lambda.
+ * A task can be represented either by a {@link DynamicObject} or a Java
+ * {@link Callable} Lambda.
  *
  * You can use this class to create scheduled tasks in a human and friendly way!
  */
@@ -82,7 +84,9 @@ public class ScheduledTask implements Runnable {
 	private ExecutorRecord							executor			= null;
 
 	/**
-	 * The task as a {@link DynamicObject} or a {@link java.util.concurrent.Callable} Lambda that will be executed by the task
+	 * The task as a {@link DynamicObject} or a
+	 * {@link java.util.concurrent.Callable} Lambda that will be executed by the
+	 * task
 	 * Must implement the run() method or use the {@code method} property
 	 */
 	private Object									task;
@@ -103,13 +107,15 @@ public class ScheduledTask implements Runnable {
 	private TimeUnit								initialDelayTimeUnit;
 
 	/**
-	 * A fixed time period of execution of the tasks in this schedule. It does not wait for tasks to finish,
+	 * A fixed time period of execution of the tasks in this schedule. It does not
+	 * wait for tasks to finish,
 	 * tasks are fired exactly at that time period.
 	 */
 	private long									period				= 0L;
 
 	/**
-	 * The delay to use when using scheduleWithFixedDelay(), so tasks execute after this delay once completed
+	 * The delay to use when using scheduleWithFixedDelay(), so tasks execute after
+	 * this delay once completed
 	 */
 	private long									spacedDelay			= 0L;
 
@@ -129,7 +135,8 @@ public class ScheduledTask implements Runnable {
 	private Boolean									disabled			= false;
 
 	/**
-	 * A lambda, that if registered, determines if this task will be sent for scheduling or not.
+	 * A lambda, that if registered, determines if this task will be sent for
+	 * scheduling or not.
 	 * It is both evaluated at scheduling and at runtime.
 	 */
 	private Predicate<ScheduledTask>				whenPredicate;
@@ -166,7 +173,8 @@ public class ScheduledTask implements Runnable {
 
 	/**
 	 * By default tasks execute in an interval frequency which can cause tasks to
-	 * stack if they take longer than their periods ( fire immediately after completion ).
+	 * stack if they take longer than their periods ( fire immediately after
+	 * completion ).
 	 * With this boolean flag turned on, the schedulers don't kick off the
 	 * intervals until the tasks finish executing. Meaning no stacking.
 	 */
@@ -204,7 +212,8 @@ public class ScheduledTask implements Runnable {
 	private Boolean									scheduled			= false;
 
 	/**
-	 * This task can be assigned to a task scheduler or be executed on its own at runtime
+	 * This task can be assigned to a task scheduler or be executed on its own at
+	 * runtime
 	 */
 	private BaseScheduler							scheduler			= null;
 
@@ -214,13 +223,15 @@ public class ScheduledTask implements Runnable {
 	private IStruct									meta				= new Struct();
 
 	/**
-	 * The collection of stats for the task: { name, created, lastRun, nextRun, totalRuns, totalFailures, totalSuccess, lastResult, neverRun,
+	 * The collection of stats for the task: { name, created, lastRun, nextRun,
+	 * totalRuns, totalFailures, totalSuccess, lastResult, neverRun,
 	 * lastExecutionTime }
 	 */
 	private IStruct									stats;
 
 	/**
-	 * The timezone this task runs under, by default we use the timezone defined in the schedulers
+	 * The timezone this task runs under, by default we use the timezone defined in
+	 * the schedulers
 	 */
 	private ZoneId									timezone			= ZoneId.systemDefault();
 
@@ -266,7 +277,8 @@ public class ScheduledTask implements Runnable {
 	 */
 
 	/**
-	 * Creates a new ScheduledTask with a name and a named group and it's accompanying executor
+	 * Creates a new ScheduledTask with a name and a named group and it's
+	 * accompanying executor
 	 *
 	 * @param name      The name of the task
 	 * @param group     The group of the task
@@ -325,7 +337,8 @@ public class ScheduledTask implements Runnable {
 	}
 
 	/**
-	 * Creates a new ScheduledTask with a name and the default "empty" group and a scheduler
+	 * Creates a new ScheduledTask with a name and the default "empty" group and a
+	 * scheduler
 	 *
 	 * @param name      The name of the task
 	 * @param scheduler The scheduler we are bound to
@@ -342,7 +355,8 @@ public class ScheduledTask implements Runnable {
 	 */
 
 	/**
-	 * This method verifies if the running task is constrained to run on specific valid constraints:
+	 * This method verifies if the running task is constrained to run on specific
+	 * valid constraints:
 	 *
 	 * - when
 	 * - dayOfTheMonth
@@ -355,7 +369,8 @@ public class ScheduledTask implements Runnable {
 	 * - endOnDateTime
 	 * - startTime and/or endTime
 	 *
-	 * This method is called by the `run()` method at runtime to determine if the task can be ran at that point in time
+	 * This method is called by the `run()` method at runtime to determine if the
+	 * task can be ran at that point in time
 	 */
 
 	/**
@@ -367,9 +382,11 @@ public class ScheduledTask implements Runnable {
 	}
 
 	/**
-	 * This is a convenience method to execute the task manually if needed by forcing execution.
+	 * This is a convenience method to execute the task manually if needed by
+	 * forcing execution.
 	 *
-	 * @param force Whether to force execution or not. It ignores if the task is disabled or constrained
+	 * @param force Whether to force execution or not. It ignores if the task is
+	 *              disabled or constrained
 	 */
 	public void run( Boolean force ) {
 		debugLog( String.format( "run( force: %b )", force ) );
@@ -394,8 +411,7 @@ public class ScheduledTask implements Runnable {
 			// Before Interceptors : From global to local
 			this.interceptorService.announce(
 			    BoxEvent.SCHEDULER_BEFORE_ANY_TASK,
-			    Struct.of( "task", this )
-			);
+			    Struct.of( "task", this ) );
 			if ( hasScheduler() ) {
 				getScheduler().beforeAnyTask( this );
 			}
@@ -406,7 +422,8 @@ public class ScheduledTask implements Runnable {
 			// Execution by type
 			switch ( task ) {
 				case DynamicObject castedTask -> {
-					this.stats.put( "lastResult", Optional.ofNullable( castedTask.invoke( BoxRuntime.getInstance().getRuntimeContext(), method ) ) );
+					this.stats.put( "lastResult", Optional
+					    .ofNullable( castedTask.invoke( BoxRuntime.getInstance().getRuntimeContext(), method ) ) );
 				}
 				case Callable<?> castedTask -> {
 					this.stats.put( "lastResult", Optional.ofNullable( castedTask.call() ) );
@@ -423,9 +440,7 @@ public class ScheduledTask implements Runnable {
 					        castedTask.getName(), // the function name
 					        new Object[] {}, // no args
 					        null, // No class, lambda/closure
-					        null
-					    )
-					);
+					        null ) );
 				}
 				default -> {
 					throw new IllegalArgumentException( "Task is not a DynamicObject or a Callable or a Runnable" );
@@ -444,8 +459,7 @@ public class ScheduledTask implements Runnable {
 			}
 			this.interceptorService.announce(
 			    BoxEvent.SCHEDULER_AFTER_ANY_TASK,
-			    Struct.of( "task", this, "result", result )
-			);
+			    Struct.of( "task", this, "result", result ) );
 
 			// Store successes and call success interceptor : From global to local
 			( ( AtomicInteger ) this.stats.get( "totalSuccess" ) ).incrementAndGet();
@@ -457,8 +471,7 @@ public class ScheduledTask implements Runnable {
 			}
 			this.interceptorService.announce(
 			    BoxEvent.SCHEDULER_ON_ANY_TASK_SUCCESS,
-			    Struct.of( "task", this, "result", result )
-			);
+			    Struct.of( "task", this, "result", result ) );
 
 		} catch ( Exception e ) {
 			// store failures
@@ -478,10 +491,10 @@ public class ScheduledTask implements Runnable {
 				}
 				this.interceptorService.announce(
 				    BoxEvent.SCHEDULER_ON_ANY_TASK_ERROR,
-				    Struct.of( "task", this, "exception", e )
-				);
+				    Struct.of( "task", this, "exception", e ) );
 
-				// After Tasks Interceptor with the exception as the last result : From global to local
+				// After Tasks Interceptor with the exception as the last result : From global
+				// to local
 				if ( afterTask != null ) {
 					afterTask.accept( this, Optional.of( e ) );
 				}
@@ -490,20 +503,17 @@ public class ScheduledTask implements Runnable {
 				}
 				this.interceptorService.announce(
 				    BoxEvent.SCHEDULER_AFTER_ANY_TASK,
-				    Struct.of( "task", this, "result", Optional.of( e ) )
-				);
+				    Struct.of( "task", this, "result", Optional.of( e ) ) );
 			} catch ( Exception afterException ) {
 				// Log it, so it doesn't go to ether and executor doesn't die.
 				logger.error(
 				    "Error running task ({}) after/error handlers : {}",
 				    name,
-				    afterException.getMessage()
-				);
+				    afterException.getMessage() );
 				logger.error(
 				    "Stacktrace for task ({}) after/error handlers : {}",
 				    name,
-				    afterException.getStackTrace()
-				);
+				    afterException.getStackTrace() );
 			}
 		} finally {
 			// Store finalization stats
@@ -527,10 +537,13 @@ public class ScheduledTask implements Runnable {
 	}
 
 	/**
-	 * This method registers the task into the executor and sends it for execution and scheduling.
-	 * This will not register the task for execution if the disabled flag or the constraints allow it.
+	 * This method registers the task into the executor and sends it for execution
+	 * and scheduling.
+	 * This will not register the task for execution if the disabled flag or the
+	 * constraints allow it.
 	 *
-	 * @return A ScheduledFuture from where you can monitor the task, an empty ScheduledFuture if the task was not registered
+	 * @return A ScheduledFuture from where you can monitor the task, an empty
+	 *         ScheduledFuture if the task was not registered
 	 */
 	public ScheduledFuture<?> start() {
 		// If we have overlaps and the spaced delay is 0 then grab it from the period
@@ -564,9 +577,8 @@ public class ScheduledTask implements Runnable {
 		        "period", this.period,
 		        "spacedDelay", this.spacedDelay,
 		        "timeUnit", this.timeUnit,
-		        "type", this.spacedDelay > 0 ? "scheduleWithFixedDelay" : this.period > 0 ? "scheduleAtFixedRate" : "runOnce"
-		    )
-		);
+		        "type", this.spacedDelay > 0 ? "scheduleWithFixedDelay"
+		            : this.period > 0 ? "scheduleAtFixedRate" : "runOnce" ) );
 
 		try {
 			// Startup a spaced frequency task: no overlaps
@@ -575,8 +587,7 @@ public class ScheduledTask implements Runnable {
 				    this,
 				    this.initialDelay,
 				    this.spacedDelay,
-				    this.timeUnit
-				);
+				    this.timeUnit );
 			}
 
 			// Startup a task with a frequency period
@@ -585,16 +596,14 @@ public class ScheduledTask implements Runnable {
 				    this,
 				    this.initialDelay,
 				    this.period,
-				    this.timeUnit
-				);
+				    this.timeUnit );
 			}
 
 			// Start off a one-off task
 			return getExecutor().scheduledExecutor().schedule(
 			    this,
 			    this.initialDelay,
-			    this.timeUnit
-			);
+			    this.timeUnit );
 		} finally {
 			this.scheduled = true;
 		}
@@ -604,7 +613,8 @@ public class ScheduledTask implements Runnable {
 	 * --------------------------------------------------------------------------
 	 * Life - Cycle Methods
 	 * --------------------------------------------------------------------------
-	 * You can register lambda callbacks to execute before and after the task is executed
+	 * You can register lambda callbacks to execute before and after the task is
+	 * executed
 	 * and also register a lambda to execute when the task is successful or fails.
 	 */
 
@@ -665,7 +675,8 @@ public class ScheduledTask implements Runnable {
 	 */
 
 	/**
-	 * This method is used to register the callable DynamicObject on this scheduled task.
+	 * This method is used to register the callable DynamicObject on this scheduled
+	 * task.
 	 *
 	 * @param task The DynamicObject to register with a run() method
 	 *
@@ -676,10 +687,12 @@ public class ScheduledTask implements Runnable {
 	}
 
 	/**
-	 * This method is used to register the callable DynamicObject/Callable lambda on this scheduled task.
+	 * This method is used to register the callable DynamicObject/Callable lambda on
+	 * this scheduled task.
 	 *
 	 * @param task   The DynamicObject/Functional Lambda to register
-	 * @param method The method to execute in the DynamicObject/Functional Lambda, by default it is run()
+	 * @param method The method to execute in the DynamicObject/Functional Lambda,
+	 *               by default it is run()
 	 *
 	 * @return The ScheduledTask instance
 	 */
@@ -688,7 +701,8 @@ public class ScheduledTask implements Runnable {
 	}
 
 	/**
-	 * This method is used to register the callable Callable Lambda on this scheduled task.
+	 * This method is used to register the callable Callable Lambda on this
+	 * scheduled task.
 	 *
 	 * @param task The Callable Lambda to register
 	 *
@@ -739,11 +753,14 @@ public class ScheduledTask implements Runnable {
 		// If the task is an IReferenceable then wrap them in a DynamicObject
 		if ( task instanceof IReferenceable castedTask ) {
 			task = DynamicObject.of( castedTask );
+			setMethod( method == null ? "run" : method );
+		} else if ( task instanceof Function func ) {
+			task = func;
 		}
 
 		// Store them up!
 		setTask( task );
-		setMethod( method == null ? "run" : method );
+		// setMethod( method == null ? "run" : method );
 
 		return this;
 	}
@@ -755,7 +772,8 @@ public class ScheduledTask implements Runnable {
 	 */
 
 	/**
-	 * This method verifies if the running task is constrained to run on specific valid constraints:
+	 * This method verifies if the running task is constrained to run on specific
+	 * valid constraints:
 	 *
 	 * - when
 	 * - dayOfTheMonth
@@ -768,20 +786,24 @@ public class ScheduledTask implements Runnable {
 	 * - endOnDateTime
 	 * - startTime and/or endTime
 	 *
-	 * This method is called by the `run()` method at runtime to determine if the task can be ran at that point in time
+	 * This method is called by the `run()` method at runtime to determine if the
+	 * task can be ran at that point in time
 	 */
 	public boolean isConstrained() {
 		debugLog( "isConstrained" );
 
 		var now = getNow();
 
-		// When lambda that dictates if the task can be scheduled/ran: true => yes, false => no
+		// When lambda that dictates if the task can be scheduled/ran: true => yes,
+		// false => no
 		if ( whenPredicate != null && whenPredicate.test( this ) == false ) {
 			return true;
 		}
 
-		// Do we have a day of the month constraint? and the same as the running date/time? Else skip it
-		// If the day assigned is greater than the days in the month, then we let it thru
+		// Do we have a day of the month constraint? and the same as the running
+		// date/time? Else skip it
+		// If the day assigned is greater than the days in the month, then we let it
+		// thru
 		// as the user intended to run it at the end of the month
 		if ( dayOfTheMonth > 0 &&
 		    now.getDayOfMonth() != dayOfTheMonth &&
@@ -833,8 +855,10 @@ public class ScheduledTask implements Runnable {
 
 		// Do we have we have a start time and / or end time constraint
 		if ( startTime.length() > 0 || endTime.length() > 0 ) {
-			LocalDateTime	targetStartTime	= DateTimeHelper.parse( now + "T" + ( startTime.length() > 0 ? startTime : "00:00:00" ) );
-			LocalDateTime	targetEndTime	= DateTimeHelper.parse( now + "T" + ( endTime.length() > 0 ? endTime : "23:59:59" ) );
+			LocalDateTime	targetStartTime	= DateTimeHelper
+			    .parse( now + "T" + ( startTime.length() > 0 ? startTime : "00:00:00" ) );
+			LocalDateTime	targetEndTime	= DateTimeHelper
+			    .parse( now + "T" + ( endTime.length() > 0 ? endTime : "23:59:59" ) );
 
 			if ( now.isBefore( targetStartTime ) || now.isAfter( targetEndTime ) ) {
 				return true;
@@ -857,10 +881,13 @@ public class ScheduledTask implements Runnable {
 	}
 
 	/**
-	 * Set when this task should start execution on. By default it starts automatically.
+	 * Set when this task should start execution on. By default it starts
+	 * automatically.
 	 *
-	 * @param date The date when this task should start execution on => yyyy-mm-dd format is preferred.
-	 * @param time The specific time using 24 hour format => HH:mm, defaults to 00:00
+	 * @param date The date when this task should start execution on => yyyy-mm-dd
+	 *             format is preferred.
+	 * @param time The specific time using 24 hour format => HH:mm, defaults to
+	 *             00:00
 	 */
 	public ScheduledTask startOn( String date, String time ) {
 		debugLog( "startOn", Struct.of( "date", date, "time", time ) );
@@ -871,9 +898,11 @@ public class ScheduledTask implements Runnable {
 	}
 
 	/**
-	 * Set when this task should start execution on. By default it starts automatically.
+	 * Set when this task should start execution on. By default it starts
+	 * automatically.
 	 *
-	 * @param date The date when this task should start execution on => yyyy-mm-dd format is preferred.
+	 * @param date The date when this task should start execution on => yyyy-mm-dd
+	 *             format is preferred.
 	 */
 	public ScheduledTask startOn( String date ) {
 		return startOn( date, "00:00" );
@@ -896,8 +925,10 @@ public class ScheduledTask implements Runnable {
 	/**
 	 * Set when this task should stop execution on. By default it never ends.
 	 *
-	 * @param date The date when this task should stop execution on => yyyy-mm-dd format is preferred.
-	 * @param time The specific time using 24 hour format => HH:mm, defaults to 00:00
+	 * @param date The date when this task should stop execution on => yyyy-mm-dd
+	 *             format is preferred.
+	 * @param time The specific time using 24 hour format => HH:mm, defaults to
+	 *             00:00
 	 */
 	public ScheduledTask endOn( String date, String time ) {
 		debugLog( "endOn", Struct.of( "date", date, "time", time ) );
@@ -910,7 +941,8 @@ public class ScheduledTask implements Runnable {
 	/**
 	 * Set when this task should stop execution on. By default it never ends.
 	 *
-	 * @param date The date when this task should stop execution on => yyyy-mm-dd format is preferred.
+	 * @param date The date when this task should stop execution on => yyyy-mm-dd
+	 *             format is preferred.
 	 */
 	public ScheduledTask endOn( String date ) {
 		return endOn( date, "00:00" );
@@ -952,12 +984,17 @@ public class ScheduledTask implements Runnable {
 	 */
 
 	/**
-	 * Set an initial delay in the running of the task that will be registered with this schedule
+	 * Set an initial delay in the running of the task that will be registered with
+	 * this schedule
 	 *
 	 * @param delay      The delay that will be used before executing the task
-	 * @param timeUnit   The time unit to use, available units are: days, hours, microseconds, milliseconds, minutes, nanoseconds, and seconds. The
+	 * @param timeUnit   The time unit to use, available units are: days, hours,
+	 *                   microseconds, milliseconds, minutes, nanoseconds, and
+	 *                   seconds. The
 	 *                   default is milliseconds
-	 * @param overwrites Boolean to overwrite delay and delayTimeUnit even if value is already set, this is helpful if the delay is set later in the
+	 * @param overwrites Boolean to overwrite delay and delayTimeUnit even if value
+	 *                   is already set, this is helpful if the delay is set later
+	 *                   in the
 	 *                   chain when creating the task - defaults to false
 	 */
 	public ScheduledTask delay(
@@ -970,9 +1007,7 @@ public class ScheduledTask implements Runnable {
 		    Struct.of(
 		        "delay", delay,
 		        "timeUnit", timeUnit,
-		        "overwrites", overwrites
-		    )
-		);
+		        "overwrites", overwrites ) );
 
 		if ( overwrites || this.initialDelay == 0 ) {
 			this.initialDelay			= delay;
@@ -987,10 +1022,13 @@ public class ScheduledTask implements Runnable {
 	}
 
 	/**
-	 * Set an initial delay in the running of the task that will be registered with this schedule in milliseconds
+	 * Set an initial delay in the running of the task that will be registered with
+	 * this schedule in milliseconds
 	 *
 	 * @param delay    The delay that will be used before executing the task
-	 * @param timeunit The time unit to use, available units are: days, hours, microseconds, milliseconds, minutes, nanoseconds, and seconds. The default
+	 * @param timeunit The time unit to use, available units are: days, hours,
+	 *                 microseconds, milliseconds, minutes, nanoseconds, and
+	 *                 seconds. The default
 	 *
 	 * @return The ScheduledTask instance
 	 */
@@ -999,7 +1037,8 @@ public class ScheduledTask implements Runnable {
 	}
 
 	/**
-	 * Set an initial delay in the running of the task that will be registered with this schedule in milliseconds
+	 * Set an initial delay in the running of the task that will be registered with
+	 * this schedule in milliseconds
 	 *
 	 * @param delay The delay that will be used before executing the task
 	 *
@@ -1012,15 +1051,17 @@ public class ScheduledTask implements Runnable {
 	/**
 	 * Run the task every custom spaced delay of execution, meaning no overlaps
 	 *
-	 * @param spacedDelay The delay that will be used before executing the task with no overlaps
-	 * @param timeUnit    The time unit to use, available units are: days, hours, microseconds, milliseconds, minutes, nanoseconds, and seconds.
+	 * @param spacedDelay The delay that will be used before executing the task with
+	 *                    no overlaps
+	 * @param timeUnit    The time unit to use, available units are: days, hours,
+	 *                    microseconds, milliseconds, minutes, nanoseconds, and
+	 *                    seconds.
 	 *                    The default is milliseconds
 	 */
 	public ScheduledTask spacedDelay( long spacedDelay, TimeUnit timeUnit ) {
 		debugLog(
 		    "spacedDelay",
-		    Struct.of( "spacedDelay", spacedDelay, "timeUnit", timeUnit )
-		);
+		    Struct.of( "spacedDelay", spacedDelay, "timeUnit", timeUnit ) );
 		this.spacedDelay	= spacedDelay;
 		this.timeUnit		= timeUnit;
 		return this;
@@ -1031,8 +1072,10 @@ public class ScheduledTask implements Runnable {
 	}
 
 	/**
-	 * Calling this method prevents task frequencies to overlap. By default all tasks are executed with an
-	 * interval but could potentially overlap if they take longer to execute than the period.
+	 * Calling this method prevents task frequencies to overlap. By default all
+	 * tasks are executed with an
+	 * interval but could potentially overlap if they take longer to execute than
+	 * the period.
 	 */
 	public ScheduledTask withNoOverlaps() {
 		debugLog( "withNoOverlaps" );
@@ -1044,7 +1087,9 @@ public class ScheduledTask implements Runnable {
 	 * BoxLang proxy
 	 *
 	 * @param period   The period of execution
-	 * @param timeunit The time unit to use, available units are: days, hours, microseconds, milliseconds, minutes, nanoseconds, and seconds. The default
+	 * @param timeunit The time unit to use, available units are: days, hours,
+	 *                 microseconds, milliseconds, minutes, nanoseconds, and
+	 *                 seconds. The default
 	 *
 	 * @return The ScheduledTask instance
 	 */
@@ -1057,7 +1102,9 @@ public class ScheduledTask implements Runnable {
 	 * Run the task every custom period of execution
 	 *
 	 * @param period   The period of execution
-	 * @param timeUnit The time unit to use, available units are: days, hours, microseconds, milliseconds, minutes, nanoseconds, and seconds. The default
+	 * @param timeUnit The time unit to use, available units are: days, hours,
+	 *                 microseconds, milliseconds, minutes, nanoseconds, and
+	 *                 seconds. The default
 	 *                 is milliseconds
 	 */
 	public ScheduledTask every( long period, TimeUnit timeUnit ) {
@@ -1200,7 +1247,8 @@ public class ScheduledTask implements Runnable {
 	 * Run the task weekly on the given day of the week and time
 	 *
 	 * @param dayOfWeek The day of the week from 1 (Monday) -> 7 (Sunday)
-	 * @param time      The specific time using 24 hour format => HH:mm, defaults to midnight
+	 * @param time      The specific time using 24 hour format => HH:mm, defaults to
+	 *                  midnight
 	 *
 	 * @throws InvalidAttributeValueException When the time format is invalid
 	 *
@@ -1265,7 +1313,8 @@ public class ScheduledTask implements Runnable {
 	 * Run the task every month on a specific day and time
 	 *
 	 * @param day  Which day of the month
-	 * @param time The specific time using 24 hour format => HH:mm, defaults to midnight
+	 * @param time The specific time using 24 hour format => HH:mm, defaults to
+	 *             midnight
 	 *
 	 * @throws InvalidAttributeValueException When the time format is invalid
 	 *
@@ -1313,7 +1362,8 @@ public class ScheduledTask implements Runnable {
 	/**
 	 * Run the task on the first Monday of every month
 	 *
-	 * @param time The specific time using 24 hour format => HH:mm, defaults to midnight
+	 * @param time The specific time using 24 hour format => HH:mm, defaults to
+	 *             midnight
 	 *
 	 * @throws InvalidAttributeValueException When the time format is invalid
 	 */
@@ -1354,7 +1404,8 @@ public class ScheduledTask implements Runnable {
 	/**
 	 * Run the task on the last business day of the month
 	 *
-	 * @param time The specific time using 24 hour format => HH:mm, defaults to midnight
+	 * @param time The specific time using 24 hour format => HH:mm, defaults to
+	 *             midnight
 	 *
 	 * @throws InvalidAttributeValueException When the time format is invalid
 	 */
@@ -1410,7 +1461,8 @@ public class ScheduledTask implements Runnable {
 	 *
 	 * @param month The month in numeric format 1-12
 	 * @param day   Which day of the month
-	 * @param time  The specific time using 24 hour format => HH:mm, defaults to 00:00
+	 * @param time  The specific time using 24 hour format => HH:mm, defaults to
+	 *              00:00
 	 *
 	 * @throws InvalidAttributeValueException When the time format is invalid
 	 */
@@ -1457,7 +1509,8 @@ public class ScheduledTask implements Runnable {
 	/**
 	 * Run the task on saturday and sundays
 	 *
-	 * @param time The specific time using 24 hour format => HH:mm, defaults to 00:00
+	 * @param time The specific time using 24 hour format => HH:mm, defaults to
+	 *             00:00
 	 *
 	 * @throws InvalidAttributeValueException When the time format is invalid
 	 */
@@ -1501,7 +1554,8 @@ public class ScheduledTask implements Runnable {
 	/**
 	 * Set the period to be from Monday - Friday
 	 *
-	 * @param time The specific time using 24 hour format => HH:mm, defaults to 00:00
+	 * @param time The specific time using 24 hour format => HH:mm, defaults to
+	 *             00:00
 	 *
 	 * @throws InvalidAttributeValueException When the time format is invalid
 	 */
@@ -1547,7 +1601,8 @@ public class ScheduledTask implements Runnable {
 	 *
 	 * @throws InvalidAttributeValueException
 	 *
-	 * @param time The specific time using 24 hour format => HH:mm, defaults to 00:00
+	 * @param time The specific time using 24 hour format => HH:mm, defaults to
+	 *             00:00
 	 */
 	public ScheduledTask onMondays( String time ) throws InvalidAttributeValueException {
 		debugLog( "onMondays", Struct.of( "time", time ) );
@@ -1566,7 +1621,8 @@ public class ScheduledTask implements Runnable {
 	 *
 	 * @throws InvalidAttributeValueException
 	 *
-	 * @param time The specific time using 24 hour format => HH:mm, defaults to 00:00
+	 * @param time The specific time using 24 hour format => HH:mm, defaults to
+	 *             00:00
 	 */
 	public ScheduledTask onTuesdays( String time ) throws InvalidAttributeValueException {
 		debugLog( "onTuesdays", Struct.of( "time", time ) );
@@ -1587,7 +1643,8 @@ public class ScheduledTask implements Runnable {
 	 *
 	 * @throws InvalidAttributeValueException
 	 *
-	 * @param time The specific time using 24 hour format => HH:mm, defaults to 00:00
+	 * @param time The specific time using 24 hour format => HH:mm, defaults to
+	 *             00:00
 	 */
 	public ScheduledTask onWednesdays( String time ) throws InvalidAttributeValueException {
 		debugLog( "onWednesdays", Struct.of( "time", time ) );
@@ -1608,7 +1665,8 @@ public class ScheduledTask implements Runnable {
 	 *
 	 * @throws InvalidAttributeValueException
 	 *
-	 * @param time The specific time using 24 hour format => HH:mm, defaults to 00:00
+	 * @param time The specific time using 24 hour format => HH:mm, defaults to
+	 *             00:00
 	 */
 	public ScheduledTask onThursdays( String time ) throws InvalidAttributeValueException {
 		debugLog( "onThursdays", Struct.of( "time", time ) );
@@ -1629,7 +1687,8 @@ public class ScheduledTask implements Runnable {
 	 *
 	 * @throws InvalidAttributeValueException
 	 *
-	 * @param time The specific time using 24 hour format => HH:mm, defaults to 00:00
+	 * @param time The specific time using 24 hour format => HH:mm, defaults to
+	 *             00:00
 	 */
 	public ScheduledTask onFridays( String time ) throws InvalidAttributeValueException {
 		debugLog( "onFridays", Struct.of( "time", time ) );
@@ -1650,7 +1709,8 @@ public class ScheduledTask implements Runnable {
 	 *
 	 * @throws InvalidAttributeValueException
 	 *
-	 * @param time The specific time using 24 hour format => HH:mm, defaults to 00:00
+	 * @param time The specific time using 24 hour format => HH:mm, defaults to
+	 *             00:00
 	 */
 	public ScheduledTask onSaturdays( String time ) throws InvalidAttributeValueException {
 		debugLog( "onSaturdays", Struct.of( "time", time ) );
@@ -1671,7 +1731,8 @@ public class ScheduledTask implements Runnable {
 	 *
 	 * @throws InvalidAttributeValueException
 	 *
-	 * @param time The specific time using 24 hour format => HH:mm, defaults to 00:00
+	 * @param time The specific time using 24 hour format => HH:mm, defaults to
+	 *             00:00
 	 */
 	public ScheduledTask onSundays( String time ) throws InvalidAttributeValueException {
 		debugLog( "onSundays", Struct.of( "time", time ) );
@@ -1757,7 +1818,8 @@ public class ScheduledTask implements Runnable {
 
 	/**
 	 * This method is called to set the next run time of the task
-	 * so it can process start/end times to calculate the next run on the passed initial date-time
+	 * so it can process start/end times to calculate the next run on the passed
+	 * initial date-time
 	 *
 	 * @param now The initial next run date time
 	 *
@@ -1793,7 +1855,8 @@ public class ScheduledTask implements Runnable {
 	}
 
 	/**
-	 * This method is called ALWAYS after a task runs, wether in failure or success but used internally for
+	 * This method is called ALWAYS after a task runs, wether in failure or success
+	 * but used internally for
 	 * any type of cleanups
 	 */
 	public void cleanupTaskRun() {
@@ -1802,7 +1865,8 @@ public class ScheduledTask implements Runnable {
 	}
 
 	/**
-	 * This method calculates the next run date according to initial and recurrent scenarios.
+	 * This method calculates the next run date according to initial and recurrent
+	 * scenarios.
 	 */
 	private synchronized void setNextRunTime() {
 		// Prep vars
@@ -1827,12 +1891,11 @@ public class ScheduledTask implements Runnable {
 		        "firstBusinessDay", this.firstBusinessDay,
 		        "lastBusinessDay", this.lastBusinessDay,
 		        "taskTime", this.taskTime,
-		        "initialNextRun", initialNextRun == null ? "null" : initialNextRun.toString()
-		    )
-		);
+		        "initialNextRun", initialNextRun == null ? "null" : initialNextRun.toString() ) );
 
 		// First and Last business days are special cases
-		// It overrides the incoming next run date time to be the first or last business day of the month
+		// It overrides the incoming next run date time to be the first or last business
+		// day of the month
 		if ( this.firstBusinessDay ) {
 			nextRun = DateTimeHelper.getFirstBusinessDayOfTheMonth( this.taskTime, true, getTimezone() );
 		} else if ( this.lastBusinessDay ) {
@@ -1850,11 +1913,13 @@ public class ScheduledTask implements Runnable {
 		// If we have run this task already and have already a task run
 		// then calculate it via the period and timeUnit
 		else if ( initialNextRun != null ) {
-			// Calculate the amount of time to add to the next run time based on period or the spaced delay
+			// Calculate the amount of time to add to the next run time based on period or
+			// the spaced delay
 			// Which is what the task operates on, either one.
 			var amount = this.spacedDelay != 0 ? this.spacedDelay : this.period;
 			// if overlaps are allowed task is immediately scheduled
-			if ( this.spacedDelay == 0 && ( ( AtomicLong ) this.stats.get( "lastExecutionTime" ) ).get() / 1000 > this.period ) {
+			if ( this.spacedDelay == 0
+			    && ( ( AtomicLong ) this.stats.get( "lastExecutionTime" ) ).get() / 1000 > this.period ) {
 				amount = 0;
 			}
 			nextRun = DateTimeHelper.dateTimeAdd( nextRun, amount, this.timeUnit );
@@ -1870,10 +1935,14 @@ public class ScheduledTask implements Runnable {
 	 * calls setInitialNextRunTime, then sets the timeUnit to seconds
 	 * and the period based on a value to convert to seconds.
 	 *
-	 * @param now              The current time to use for calculating the initial delay
-	 * @param nextRun          The first run time to use for calculating the initial delay
-	 * @param periodValue      The value to use when calculating the period to seconds
-	 * @param periodMultiplier The multiplier to use when calculating the period to seconds
+	 * @param now              The current time to use for calculating the initial
+	 *                         delay
+	 * @param nextRun          The first run time to use for calculating the initial
+	 *                         delay
+	 * @param periodValue      The value to use when calculating the period to
+	 *                         seconds
+	 * @param periodMultiplier The multiplier to use when calculating the period to
+	 *                         seconds
 	 */
 	private void setInitialDelayPeriodAndTimeUnit(
 	    LocalDateTime now,
@@ -1886,9 +1955,7 @@ public class ScheduledTask implements Runnable {
 		        "now", now,
 		        "nextRun", nextRun,
 		        "periodValue", periodValue,
-		        "periodMultiplier", periodMultiplier
-		    )
-		);
+		        "periodMultiplier", periodMultiplier ) );
 
 		// Get the duration time for the next run and delay accordingly
 		this.delay(
@@ -1896,8 +1963,7 @@ public class ScheduledTask implements Runnable {
 		        .between( now, nextRun )
 		        .getSeconds(),
 		    TimeUnit.SECONDS,
-		    true
-		);
+		    true );
 
 		// Set the period to be every hour in seconds
 		this.period		= periodValue.toSeconds( periodMultiplier );
@@ -1924,7 +1990,8 @@ public class ScheduledTask implements Runnable {
 	}
 
 	/**
-	 * Call this method periodically in a long-running task to check to see if the thread has been interrupted.
+	 * Call this method periodically in a long-running task to check to see if the
+	 * thread has been interrupted.
 	 *
 	 * @throws InterruptedException - When the thread has been interrupted
 	 */
@@ -1949,8 +2016,7 @@ public class ScheduledTask implements Runnable {
 			    "group: ", getGroup(),
 			    "name: ", getName(),
 			    "caller: ", caller,
-			    "args", args == null ? "<no args>" : args.toString()
-			);
+			    "args", args == null ? "<no args>" : args.toString() );
 
 			logger.trace( message.toString() );
 		}
@@ -2019,15 +2085,18 @@ public class ScheduledTask implements Runnable {
 	 *
 	 * @param task the task to set
 	 *
-	 * @throws IllegalArgumentException When the task is not a DynamicObject or a Callable Lambda
+	 * @throws IllegalArgumentException When the task is not a DynamicObject or a
+	 *                                  Callable Lambda
 	 *
 	 * @return The ScheduledTask instance
 	 */
 	public ScheduledTask setTask( Object task ) {
-		if ( task instanceof DynamicObject || task instanceof Callable || task instanceof Runnable ) {
+		if ( task instanceof DynamicObject || task instanceof Callable || task instanceof Runnable
+		    || task instanceof Function ) {
 			this.task = task;
 		} else {
-			throw new IllegalArgumentException( "Task must be a DynamicObject or a Callable or Runnable Lambda" );
+			throw new IllegalArgumentException(
+			    "Task must be a DynamicObject or a Callable or Runnable Lambda or BoxLang Function" );
 		}
 		return this;
 	}
@@ -2088,7 +2157,8 @@ public class ScheduledTask implements Runnable {
 
 	/**
 	 * Get a fixed time period of execution of the tasks in this schedule.
-	 * It does not wait for tasks to finish; tasks are fired exactly at that time period.
+	 * It does not wait for tasks to finish; tasks are fired exactly at that time
+	 * period.
 	 */
 	public long getPeriod() {
 		return this.period;
@@ -2096,7 +2166,8 @@ public class ScheduledTask implements Runnable {
 
 	/**
 	 * Set a fixed time period of execution of the tasks in this schedule.
-	 * It does not wait for tasks to finish; tasks are fired exactly at that time period.
+	 * It does not wait for tasks to finish; tasks are fired exactly at that time
+	 * period.
 	 */
 	public ScheduledTask setPeriod( long period ) {
 		this.period = period;
@@ -2104,14 +2175,16 @@ public class ScheduledTask implements Runnable {
 	}
 
 	/**
-	 * Get the delay to use when using scheduleWithFixedDelay(), so tasks execute after this delay once completed.
+	 * Get the delay to use when using scheduleWithFixedDelay(), so tasks execute
+	 * after this delay once completed.
 	 */
 	public long getSpacedDelay() {
 		return this.spacedDelay;
 	}
 
 	/**
-	 * Set the delay to use when using scheduleWithFixedDelay(), so tasks execute after this delay once completed.
+	 * Set the delay to use when using scheduleWithFixedDelay(), so tasks execute
+	 * after this delay once completed.
 	 */
 	public ScheduledTask setSpacedDelay( long spacedDelay ) {
 		this.spacedDelay = spacedDelay;
@@ -2302,8 +2375,10 @@ public class ScheduledTask implements Runnable {
 	/**
 	 * Get a boolean flag that turns off task stacking.
 	 * By default, tasks execute in an interval frequency which can cause tasks to
-	 * stack if they take longer than their periods (fire immediately after completion).
-	 * With this flag turned on, the schedulers don't kick off the intervals until the tasks finish executing, meaning no stacking.
+	 * stack if they take longer than their periods (fire immediately after
+	 * completion).
+	 * With this flag turned on, the schedulers don't kick off the intervals until
+	 * the tasks finish executing, meaning no stacking.
 	 */
 	public Boolean isNoOverlaps() {
 		return this.noOverlaps;
@@ -2321,8 +2396,10 @@ public class ScheduledTask implements Runnable {
 	/**
 	 * Set a boolean flag that turns off task stacking.
 	 * By default, tasks execute in an interval frequency which can cause tasks to
-	 * stack if they take longer than their periods (fire immediately after completion).
-	 * With this flag turned on, the schedulers don't kick off the intervals until the tasks finish executing, meaning no stacking.
+	 * stack if they take longer than their periods (fire immediately after
+	 * completion).
+	 * With this flag turned on, the schedulers don't kick off the intervals until
+	 * the tasks finish executing, meaning no stacking.
 	 */
 	public ScheduledTask setNoOverlaps( Boolean noOverlaps ) {
 		this.noOverlaps = noOverlaps;
@@ -2464,14 +2541,16 @@ public class ScheduledTask implements Runnable {
 	}
 
 	/**
-	 * Get the timezone this task runs under. By default, we use the timezone defined in the schedulers.
+	 * Get the timezone this task runs under. By default, we use the timezone
+	 * defined in the schedulers.
 	 */
 	public ZoneId getTimezone() {
 		return this.timezone;
 	}
 
 	/**
-	 * Set the timezone this task runs under. By default, we use the timezone defined in the schedulers.
+	 * Set the timezone this task runs under. By default, we use the timezone
+	 * defined in the schedulers.
 	 *
 	 * @param timezone The timezone to set as a ZoneId
 	 */

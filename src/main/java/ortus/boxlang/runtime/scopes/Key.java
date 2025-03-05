@@ -200,6 +200,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		context								= Key.of( "context" );
 	public static final Key		context_path						= Key.of( "context_path" );
 	public static final Key		contextual							= Key.of( "contextual" );
+	public static final Key		connectionLimit						= Key.of( "connectionLimit" );
 	public static final Key		conversionType						= Key.of( "conversionType" );
 	public static final Key		convert								= Key.of( "convert" );
 	public static final Key		cookies								= Key.of( "cookies" );
@@ -349,6 +350,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		generatedContent					= Key.of( "generatedContent" );
 	public static final Key		generatedKey						= Key.of( "generatedKey" );
 	public static final Key		generic								= Key.of( "generic" );
+	public static final Key		global								= Key.of( "global" );
 	public static final Key		getAsBinary							= Key.of( "getAsBinary" );
 	public static final Key		getClass							= Key.of( "getClass" );
 	public static final Key		getFileInfo							= Key.of( "getFileInfo" );
@@ -557,6 +559,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		parameters							= Key.of( "parameters" );
 	public static final Key		params								= Key.of( "params" );
 	public static final Key		path								= Key.of( "path" );
+	public static final Key		poolname							= Key.of( "poolname" );
 	public static final Key		path_info							= Key.of( "path_info" );
 	public static final Key		path_translated						= Key.of( "path_translated" );
 	public static final Key		prompt								= Key.of( "prompt" );

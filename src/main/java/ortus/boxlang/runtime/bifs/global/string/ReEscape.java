@@ -46,8 +46,15 @@ public class ReEscape extends BIF {
 	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String string = arguments.getAsString( Key.string );
-		return java.util.regex.Pattern.quote( string );
+		String			string			= arguments.getAsString( Key.string );
+		StringBuilder	escapedString	= new StringBuilder();
+		for ( char c : string.toCharArray() ) {
+			if ( "\\.^$|()[]{}*+?".indexOf( c ) != -1 ) {
+				escapedString.append( '\\' );
+			}
+			escapedString.append( c );
+		}
+		return escapedString.toString();
 	}
 
 }

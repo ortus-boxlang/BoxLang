@@ -37,7 +37,7 @@ public class TestRecover {
 		                                             """;
 
 		CFParser		parser	= new CFParser();
-		ParsingResult	result	= parser.parse( code );
+		ParsingResult	result	= parser.parse( code, true, true );
 		assertTrue( result.isCorrect() );
 	}
 
@@ -53,7 +53,7 @@ public class TestRecover {
 		                                             """;
 
 		CFParser		parser	= new CFParser();
-		ParsingResult	result	= parser.parse( code );
+		ParsingResult	result	= parser.parse( code, true, true );
 		assertTrue( result.isCorrect() );
 	}
 
@@ -88,6 +88,56 @@ public class TestRecover {
 
 		CFParser		parser	= new CFParser();
 		ParsingResult	result	= parser.parse( code );
+		assertTrue( result.isCorrect() );
+	}
+
+	@Test
+
+	public void testRecoverInArgs2() throws IOException {
+		String			code	= """
+		                                                                                       function /** */ // test
+		                                     						   f(
+		                          // test
+		                                     						   /** */ // test
+		                                                       param1,
+		                          // test
+		                                                       /** */ // test
+		                                                       required
+		                                    /** */  // test
+		                                      string /** */  // test
+		                                       param2="default"
+		                          // test
+		                           /** */  // test
+		                                                         ) {
+		                                                                                       }
+		                                                                                       """;
+
+		CFParser		parser	= new CFParser();
+		ParsingResult	result	= parser.parse( code );
+		System.out.println( result.getIssues() );
+		assertTrue( result.isCorrect() );
+	}
+
+	@Test
+
+	public void testRecoverInArgs3() throws IOException {
+		String			code	= """
+		                                                                            function // test
+		                          						   f(
+		                          						   // test
+		                                            param1,
+		                                            // test
+		                                            required
+		                          // test
+		                           string // test
+		                            param2="default" // test
+		                                              ) {
+		                                                                            }
+		                                                                            """;
+
+		CFParser		parser	= new CFParser();
+		ParsingResult	result	= parser.parse( code );
+		System.out.println( result.getIssues() );
 		assertTrue( result.isCorrect() );
 	}
 

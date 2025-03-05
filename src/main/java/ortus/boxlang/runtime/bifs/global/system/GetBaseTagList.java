@@ -48,7 +48,7 @@ public class GetBaseTagList extends BIF {
 		    .asList( context.getComponents() )
 		    .stream()
 		    .map( s -> {
-			    if ( s.get( Key._NAME ).equals( Key.module ) ) {
+			    if ( s.get( Key._NAME ).equals( Key.component ) ) {
 				    String templatePath	= s.getAsString( Key.customTagPath );
 				    // get first two chars of the file extension
 				    String type			= templatePath.substring( templatePath.lastIndexOf( '.' ) + 1, templatePath.lastIndexOf( '.' ) + 3 );

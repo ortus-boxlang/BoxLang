@@ -18,14 +18,12 @@
 package ortus.boxlang.runtime.components.system;
 
 import java.io.File;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
-import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.CustomTagBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.runnables.BoxTemplate;
@@ -38,10 +36,11 @@ import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 import ortus.boxlang.runtime.types.exceptions.CustomException;
+import ortus.boxlang.runtime.util.FileSystemUtil;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 @BoxComponent( allowsBody = true )
-public class Module extends Component {
+public class Component extends ortus.boxlang.runtime.components.Component {
 
 	/**
 	 * List of valid class extensions
@@ -54,7 +53,7 @@ public class Module extends Component {
 	 * --------------------------------------------------------------------------
 	 */
 
-	public Module() {
+	public Component() {
 		super();
 		declaredAttributes = new Attribute[] {
 		    new Attribute( Key.template, "string" ),
@@ -203,7 +202,8 @@ public class Module extends Component {
 		    context.getConfig()
 		        .getAsArray( Key.customTagsDirectory )
 		        .stream()
-		        .map( entry -> ResolvedFilePath.of( "", entry.toString(), null, ( Path ) null ) )
+		        .map( entry -> ResolvedFilePath.of( "", entry.toString(), entry.toString(),
+		            FileSystemUtil.expandPath( context, entry.toString() ).absolutePath() ) )
 		        .toList()
 		);
 		// Add in mappings to search
@@ -212,7 +212,8 @@ public class Module extends Component {
 		        .getAsStruct( Key.mappings )
 		        .entrySet()
 		        .stream()
-		        .map( entry -> ResolvedFilePath.of( entry.getKey().getName(), entry.getValue().toString(), null, ( Path ) null ) )
+		        .map( entry -> ResolvedFilePath.of( entry.getKey().getName(), entry.getValue().toString(), entry.getValue().toString(),
+		            entry.getValue().toString() ) )
 		        .toList()
 		);
 
@@ -230,7 +231,7 @@ public class Module extends Component {
 				            entry.mappingName(),
 				            entry.mappingPath(),
 				            tagPath,
-				            new File( entry.mappingPath(), tagPath ).toPath()
+				            new File( entry.absolutePath().toString(), tagPath ).toPath()
 				        )
 				    );
 			    }
@@ -238,6 +239,7 @@ public class Module extends Component {
 		    } )
 		    .filter( possibleMatch -> possibleMatch.absolutePath().toFile().exists() )
 		    .findFirst()
-		    .orElseThrow( () -> new BoxRuntimeException( "Could not find custom tag [" + name + "]" ) );
+		    .orElseThrow( () -> new BoxRuntimeException( "Could not find custom tag [" + name + "]. Paths searched: ["
+		        + pathToSearch.stream().map( p -> p.absolutePath().toString() ).collect( java.util.stream.Collectors.joining( ", " ) ) + "]" ) );
 	}
 }

@@ -37,6 +37,7 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.HexFormat;
 import java.util.Random;
+import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
 import javax.crypto.BadPaddingException;
@@ -102,6 +103,17 @@ public final class EncryptionUtil {
 	 * Default iterations to perform during encryption - the minimum recomended by NIST
 	 */
 	public final static int				DEFAULT_ENCRYPTION_ITERATIONS	= 1000;
+
+	/**
+	 * The IV size required by FBMA algorithms
+	 */
+	public static final int				FBMA_IV_SIZE					= 16;
+
+	/**
+	 * Base64 validation methods
+	 */
+	private static final String			BASE_64_REGEX_PATTERN			= "^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$";
+	private static final Pattern		BASE_64_PATTERN					= Pattern.compile( BASE_64_REGEX_PATTERN );
 
 	/**
 	 * Threadsafe instances of Random and Secure random instances which are used by the getRandom method
@@ -265,12 +277,26 @@ public final class EncryptionUtil {
 	 * @return returns the HMAC encoded string
 	 */
 	public static String hmac( byte[] encryptItem, String key, String algorithm, String encoding ) {
-		Charset charset = Charset.forName( encoding );
+		byte[] keyBytes = key.getBytes( Charset.forName( encoding ) );
+		return hmac( encryptItem, keyBytes, algorithm );
+	}
+
+	/**
+	 * HMAC encodes a byte array using the default encoding
+	 *
+	 * @param encryptItem The byte array to encode
+	 * @param key         The key to use
+	 * @param algorithm   The algorithm to use
+	 * @param encoding    The encoding to use
+	 *
+	 * @return returns the HMAC encoded string
+	 */
+	public static String hmac( byte[] encryptItem, byte[] key, String algorithm ) {
 		// Attempt to keep the correct casing on the key
 		algorithm = ( String ) KEY_ALGORITHMS.getOrDefault( Key.of( algorithm ), algorithm );
 		try {
 			Mac				mac			= Mac.getInstance( algorithm );
-			SecretKeySpec	secretKey	= new SecretKeySpec( key.getBytes( charset ), algorithm );
+			SecretKeySpec	secretKey	= new SecretKeySpec( key, algorithm );
 			mac.init( secretKey );
 			mac.reset();
 			return digestToString( mac.doFinal( encryptItem ) );
@@ -302,6 +328,22 @@ public final class EncryptionUtil {
 	 * HMAC encodes an object using the default encoding
 	 *
 	 * @param input     The object to encode
+	 * @param key       The binary key to use
+	 * @param algorithm The algorithm to use
+	 * @param encoding  The encoding to use
+	 *
+	 * @return returns the HMAC encoded string
+	 */
+	public static String hmac( Object input, byte[] key, String algorithm, String encoding ) {
+		byte[] encryptItem = convertToByteArray( input, encoding );
+		return hmac( encryptItem, key, algorithm );
+
+	}
+
+	/**
+	 * HMAC encodes an object using the default encoding
+	 *
+	 * @param input     The object to encode
 	 * @param key       The key to use
 	 * @param algorithm The algorithm to use
 	 * @param encoding  The encoding to use
@@ -312,8 +354,10 @@ public final class EncryptionUtil {
 		Charset	charset		= Charset.forName( encoding );
 		byte[]	encryptItem	= null;
 
-		if ( input instanceof String ) {
-			encryptItem = StringCaster.cast( input ).getBytes( charset );
+		if ( input instanceof String inputString ) {
+			encryptItem = inputString.getBytes( charset );
+		} else if ( input instanceof byte[] inputBytes ) {
+			encryptItem = inputBytes;
 		} else {
 			encryptItem = input.toString().getBytes( charset );
 		}
@@ -332,10 +376,10 @@ public final class EncryptionUtil {
 	 */
 	public static String base64Encode( Object item, Charset charset ) {
 		byte[] encodeItem = null;
-		if ( item instanceof byte[] ) {
-			encodeItem = ( byte[] ) item;
-		} else if ( item instanceof String ) {
-			encodeItem = StringCaster.cast( item ).getBytes( charset );
+		if ( item instanceof byte[] byteArray ) {
+			encodeItem = byteArray;
+		} else if ( item instanceof String strItem ) {
+			encodeItem = strItem.getBytes( charset );
 		} else {
 			encodeItem = item.toString().getBytes( charset );
 		}
@@ -584,6 +628,7 @@ public final class EncryptionUtil {
 				if ( ivsSize > 0 ) {
 					System.arraycopy( initVectorOrSalt, 0, result, 0, ivsSize );
 				}
+
 				cipher.doFinal( objectBytes, 0, objectBytes.length, result, ivsSize );
 
 				return encodeObject( result, encoding );
@@ -714,13 +759,28 @@ public final class EncryptionUtil {
 	}
 
 	/**
-	 * Converts a generic object to a byte array
+	 * Converts a generic object to a byte array using the default encoding
 	 *
-	 * @param obj
+	 * @param obj The object to convert
 	 *
 	 * @return
 	 */
 	public static byte[] convertToByteArray( Object obj ) {
+		return convertToByteArray( obj, DEFAULT_ENCRYPTION_ENCODING );
+	}
+
+	/**
+	 * Converts a generic object to a byte array
+	 *
+	 * @param obj      The object to convert
+	 * @param encoding The encoding to use
+	 *
+	 * @return
+	 */
+	public static byte[] convertToByteArray( Object obj, String encoding ) {
+		if ( obj instanceof byte[] byteObj ) {
+			return byteObj;
+		}
 		if ( obj instanceof String ) {
 			try {
 				return StringCaster.cast( obj ).getBytes( EncryptionUtil.DEFAULT_CHARSET );
@@ -791,7 +851,7 @@ public final class EncryptionUtil {
 	 *
 	 * @return
 	 */
-	private static boolean isPBEAlgorithm( String algorithm ) {
+	public static boolean isPBEAlgorithm( String algorithm ) {
 		return StringUtils.startsWithIgnoreCase( algorithm, "PBE" );
 	}
 
@@ -802,7 +862,7 @@ public final class EncryptionUtil {
 	 *
 	 * @return
 	 */
-	private static boolean isFBMAlgorithm( String algorithm ) {
+	public static boolean isFBMAlgorithm( String algorithm ) {
 		String[] algorithmParts = StringUtils.split( algorithm, "/" );
 		return algorithm.indexOf( "/" ) > -1 && !StringUtils.startsWithIgnoreCase( algorithmParts[ 1 ], "ECB" );
 	}
@@ -838,6 +898,17 @@ public final class EncryptionUtil {
 	 */
 	public static String generate64BitHash( CharSequence hashItem ) {
 		return generate64BitHash( hashItem, Character.MAX_RADIX );
+	}
+
+	/**
+	 * Tests whether a string is already Base64 encoded
+	 * 
+	 * @param input
+	 * 
+	 * @return
+	 */
+	public static boolean isBase64( String input ) {
+		return BASE_64_PATTERN.matcher( input ).matches();
 	}
 
 	/**

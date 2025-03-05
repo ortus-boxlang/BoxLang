@@ -18,12 +18,14 @@
 package ortus.boxlang.compiler;
 
 import java.io.IOException;
+import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import ortus.boxlang.compiler.ast.visitor.FeatureAuditVisitor;
 import ortus.boxlang.compiler.parser.Parser;
@@ -41,10 +43,10 @@ public class FeatureAudit {
 		BoxRuntime runtime = BoxRuntime.getInstance();
 		// This must be run after the runtime is loaded, but before we parse any files.
 		FeatureAuditVisitor.setupRuntimeStubs();
-		Map<String, List<FeatureAuditVisitor.FeatureUsed>>			results				= new HashMap<>();
-		Map<String, List<FeatureAuditVisitor.AggregateFeatureUsed>>	aggregateResults	= new HashMap<>();
+		Map<String, List<FeatureAuditVisitor.FeatureUsed>>			results				= new ConcurrentHashMap<>();
+		Map<String, List<FeatureAuditVisitor.AggregateFeatureUsed>>	aggregateResults	= new ConcurrentHashMap<>();
 		StringBuffer												reportText			= new StringBuffer();
-		Map<String, Integer>										filesProcessed		= new HashMap<>();
+		Map<String, Integer>										filesProcessed		= new ConcurrentHashMap<>();
 
 		try {
 			String	source		= ".";
@@ -128,7 +130,7 @@ public class FeatureAudit {
 				System.out.println();
 				try {
 					final Path finalSourcePath = sourcePath;
-					Files.walk( finalSourcePath )
+					Files.walk( finalSourcePath, FileVisitOption.FOLLOW_LINKS )
 					    .parallel()
 					    .filter( Files::isRegularFile )
 					    .forEach( path -> {

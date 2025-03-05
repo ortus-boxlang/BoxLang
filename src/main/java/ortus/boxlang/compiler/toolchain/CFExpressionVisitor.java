@@ -133,7 +133,6 @@ import ortus.boxlang.parser.antlr.CFGrammar.NamedArgumentContext;
 import ortus.boxlang.parser.antlr.CFGrammar.NewContext;
 import ortus.boxlang.parser.antlr.CFGrammar.PositionalArgumentContext;
 import ortus.boxlang.parser.antlr.CFGrammar.RelOpsContext;
-import ortus.boxlang.parser.antlr.CFGrammar.ReservedOperatorsContext;
 import ortus.boxlang.parser.antlr.CFGrammar.StringLiteralContext;
 import ortus.boxlang.parser.antlr.CFGrammar.StringLiteralPartContext;
 import ortus.boxlang.parser.antlr.CFGrammar.StructExpressionContext;
@@ -728,11 +727,7 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 		if ( ctx.annotation() != null ) {
 			return ctx.annotation().accept( this );
 		}
-		if ( ctx.identifier() != null ) {
-			// Converting an identifier to a string literal here in the AST removes ambiguity, but also loses the
-			// lexical context of the original source code.
-			return new BoxStringLiteral( ctx.identifier().getText(), pos, src );
-		}
+
 		// Converting an fqn to a string literal here in the AST removes ambiguity, but also loses the
 		// lexical context of the original source code.
 		return new BoxStringLiteral( ctx.fqn().getText(), pos, src );
@@ -940,11 +935,6 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 	}
 
 	@Override
-	public BoxExpression visitReservedOperators( ReservedOperatorsContext ctx ) {
-		return new BoxIdentifier( ctx.getText(), tools.getPosition( ctx ), ctx.getText() );
-	}
-
-	@Override
 	public BoxExpression visitLiterals( LiteralsContext ctx ) {
 		return Optional.ofNullable( ctx.stringLiteral() ).map( c -> c.accept( this ) ).orElseGet( () -> ctx.structExpression().accept( this ) );
 	}
@@ -956,12 +946,12 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 		var	quoteChar	= ctx.getText().substring( 0, 1 );
 		var	text		= ctx.getText().substring( 1, ctx.getText().length() - 1 );
 
-		if ( ctx.expression().isEmpty() && ctx.reservedOperators().isEmpty() ) {
+		if ( ctx.expression().isEmpty() ) {
 			return new BoxStringLiteral( tools.escapeStringLiteral( quoteChar, text ), pos, src );
 		}
 
 		var parts = ctx.children.stream()
-		    .filter( it -> it instanceof StringLiteralPartContext || it instanceof ExpressionContext || it instanceof ReservedOperatorsContext )
+		    .filter( it -> it instanceof StringLiteralPartContext || it instanceof ExpressionContext )
 		    .map( it -> it instanceof StringLiteralPartContext
 		        ? new BoxStringLiteral( tools.escapeStringLiteral( quoteChar, tools.getSourceText( ( ParserRuleContext ) it ) ),
 		            tools.getPosition( ( ParserRuleContext ) it ), tools.getSourceText( ( ParserRuleContext ) it ) )
@@ -1004,12 +994,11 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 		var	src	= tools.getSourceText( ctx );
 		return Optional.ofNullable( ctx.identifier() ).map( id -> id.accept( this ) )
 		    .orElseGet( () -> Optional.ofNullable( ctx.ILLEGAL_IDENTIFIER() ).map( fqn -> ( BoxExpression ) new BoxIdentifier( src, pos, src ) )
-		        .orElseGet( () -> Optional.ofNullable( ctx.reservedOperators() ).map( resOp -> resOp.accept( this ) )
-		            .orElseGet( () -> Optional.ofNullable( ctx.stringLiteral() ).map( str -> str.accept( this ) )
-		                .orElseGet( () -> Optional.ofNullable( ctx.SWITCH() ).map( swtch -> ( BoxExpression ) new BoxIdentifier( src, pos, src ) )
-		                    .orElseGet(
-		                        () -> Optional.ofNullable( ctx.fqn() ).map( fqn -> fqn.accept( this ) )
-		                            .orElse( new BoxIntegerLiteral( src, pos, src ) ) ) ) ) ) );
+		        .orElseGet( () -> Optional.ofNullable( ctx.stringLiteral() ).map( str -> str.accept( this ) )
+		            .orElseGet( () -> Optional.ofNullable( ctx.SWITCH() ).map( swtch -> ( BoxExpression ) new BoxIdentifier( src, pos, src ) )
+		                .orElseGet(
+		                    () -> Optional.ofNullable( ctx.fqn() ).map( fqn -> fqn.accept( this ) )
+		                        .orElse( new BoxIntegerLiteral( src, pos, src ) ) ) ) ) );
 	}
 
 	@Override

@@ -47,7 +47,7 @@ public abstract class BoxTemplate implements ITemplateRunnable {
 	public void invoke( IBoxContext context ) {
 		BoxRuntime	runtime		= BoxRuntime.getInstance();
 		boolean		isInModule	= context.getComponents().length > 0
-		    && context.getComponents()[ context.getComponents().length - 1 ].getAsKey( Key._NAME ).equals( Key.module );
+		    && context.getComponents()[ context.getComponents().length - 1 ].getAsKey( Key._NAME ).equals( Key.component );
 		context.pushTemplate( this );
 		try {
 			// Announcements

@@ -62,13 +62,38 @@ public class ReEscapeTest {
 		    result = reEscape('*.{}[]exam?ple');
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( "\\Q*.{}[]exam?ple\\E" );
+		assertThat( variables.get( result ) ).isEqualTo( "\\*\\.\\{\\}\\[\\]exam\\?ple" );
 
 		instance.executeSource(
 		    """
 		    result = reEscape('boxlang?[]^');
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( "\\Qboxlang?[]^\\E" );
+		assertThat( variables.get( result ) ).isEqualTo( "boxlang\\?\\[\\]\\^" );
 	}
+
+	@Test
+	public void testReEscapeMoreStuff() {
+		instance.executeSource(
+		    """
+		    result = ReEscape( "[]{}()" );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "\\[\\]\\{\\}\\(\\)" );
+	}
+
+	@Test
+	public void testRealExample() {
+		instance.executeSource(
+		    """
+		    result = ReReplace( "[:upper:]", reEscape( "[:upper:]" ), "****" );
+		    result2 = ReReplace( "[:upper:]", "\\[:upper:\\]", "****" );
+		    result3 = ReReplace( "[:upper:]", "\\Q[:upper:]\\E", "****" );
+		      """,
+		    context );
+		assertThat( variables.get( new Key( "result" ) ) ).isEqualTo( "****" );
+		assertThat( variables.get( new Key( "result2" ) ) ).isEqualTo( "****" );
+		assertThat( variables.get( new Key( "result3" ) ) ).isEqualTo( "[:upper:]" );
+	}
+
 }

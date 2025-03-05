@@ -1450,363 +1450,1211 @@ public class CoreLangTest {
 	}
 
 	@Test
+	public void testFunctionStartingWithOpertorKeyword() {
+
+		instance.executeSource(
+		    """
+		    if ( NOT len( 5 ) ) {
+
+		    }
+		     """,
+		    context );
+
+	}
+
+	@Test
+	public void testVarBeforeOperator() {
+
+		instance.executeSource(
+		    """
+
+		    variables.var = "brad"
+		    var instanceof "string"
+
+		     """,
+		    context );
+
+	}
+
+	@Test
+	public void testVarAfterOperator() {
+
+		instance.executeSource(
+		    """
+		    variables.var = "brad"
+
+		      for ( key in var ) {
+
+		      }
+		    		 """,
+		    context );
+
+	}
+
+	@Test
+	public void testComponentWithKeywordName() {
+
+		instance.executeSource(
+		    """
+		    bx:transaction {}
+		    			""",
+		    context );
+
+	}
+
+	@Test
+	public void testFunctionNamedKeyword() {
+
+		instance.executeSource(
+		    """
+		    function instanceOf( required Any classPath ) {}
+		    		""",
+		    context );
+
+	}
+
+	@Test
+	public void testKeywordAsLastFunctionParameter() {
+
+		instance.executeSource(
+		    """
+		    function getProperty( required Any property ) {}
+		    	  """,
+		    context );
+
+	}
+
+	@Test
+	public void testKeywordAfterColonInCase() {
+		instance.executeSource(
+		    """
+		    switch( "test" ){
+		    	case "x":
+		    		try{} catch( any e ){}
+		    	case "y":
+		    		if(true) {}
+		    	case 'z':
+		    		include "test.cfm";
+		    }
+		    	  """,
+		    context );
+	}
+
+	@Test
+	public void testKeywordAfterColonInCaseCF() {
+		instance.executeSource(
+		    """
+		    switch( "test" ){
+		    	case "x":
+		    		try{} catch( any e ){}
+		    	case "y":
+		    		if(true) {}
+		    	case 'z':
+		    		include "test.cfm";
+		    }
+		       	  """,
+		    context, BoxSourceType.CFSCRIPT );
+	}
+
+	@Test
+	public void testFunctionStartingWithOpertorKeywordCF() {
+
+		instance.executeSource(
+		    """
+		    if ( NOT len( 5 ) ) {
+
+		    }
+		     """,
+		    context, BoxSourceType.CFSCRIPT );
+
+	}
+
+	@Test
+	public void testVarBeforeOperatorCF() {
+
+		instance.executeSource(
+		    """
+
+		    variables.var = "brad"
+		    var eq "string"
+
+		     """,
+		    context, BoxSourceType.CFSCRIPT );
+
+	}
+
+	@Test
+	public void testVarAfterOperatorCF() {
+
+		instance.executeSource(
+		    """
+		    variables.var = "brad"
+
+		      for ( key in var ) {
+
+		      }
+		    		 """,
+		    context, BoxSourceType.CFSCRIPT );
+
+	}
+
+	@Test
+	public void testComponentWithKeywordNameCF() {
+
+		instance.executeSource(
+		    """
+		    transaction {}
+		    			""",
+		    context, BoxSourceType.CFSCRIPT );
+
+	}
+
+	@Test
+	public void testFunctionNamedKeywordCF() {
+
+		instance.executeSource(
+		    """
+		    function instanceOf( required Any classPath ) {}
+		    		""",
+		    context, BoxSourceType.CFSCRIPT );
+
+	}
+
+	@Test
+	public void testKeywordAsLastFunctionParameterCF() {
+
+		instance.executeSource(
+		    """
+		    function getProperty( required Any property ) {}
+		    	  """,
+		    context, BoxSourceType.CFSCRIPT );
+
+	}
+
+	@Test
+	public void testOperatorNextToken() {
+		instance.executeSource(
+		    """
+		    if ( 1 NEQ -1 ) {}
+		    	  """,
+		    context );
+	}
+
+	@Test
+	public void testOperatorNextTokenCF() {
+		instance.executeSource(
+		    """
+		    if ( 1 NEQ -1 ) {}
+		    	  """,
+		    context, BoxSourceType.CFSCRIPT );
+	}
+
+	@Test
+	public void testComponentNameInExpression() {
+		instance.executeSource(
+		    """
+		    <cfset cfhttp = {}>
+		       <cfset result = cfhttp>
+		    	 """,
+		    context, BoxSourceType.CFTEMPLATE );
+	}
+
+	@Test
+	public void testNullEquals() {
+		instance.executeSource(
+		    """
+		    queryWithDataIn = Querynew( 'id', 'integer', [[ 1 ]] );
+
+		    query
+		    		name = 'actual'
+		    		dbtype = 'query' {
+
+		    		WriteOutput( "
+
+		    			SELECT
+		    				COALESCE(
+		    		" );
+
+		    		queryparam
+		    			value = 1
+		    			sqltype = 'integer'
+		    			null = true;
+
+		    		WriteOutput( " , 'isnull' ) AS value,
+		    				COALESCE( NULL , 'isnull' ) AS control
+		    			FROM queryWithDataIn
+		    		" );
+		    	}
+
+		     """,
+		    context, BoxSourceType.CFSCRIPT );
+	}
+
+	@Test
+	public void testReturnKeyword() {
+		instance.executeSource(
+		    """
+		    <cffunction name="getComponentPath">
+		    	<cfscript>
+		    	return package;
+		    	</cfscript>
+		    </cffunction>
+		     """,
+		    context, BoxSourceType.CFTEMPLATE );
+	}
+
+	@Test
+	public void testPrefixedIdentifierAsType() {
+		instance.executeSource(
+		    """
+		    CFMappingHelper function addCustomTagPath( required path ){
+		    }
+		       """,
+		    context, BoxSourceType.CFSCRIPT );
+	}
+
+	@Test
+	public void testParamCalledFunction() {
+		instance.executeSource(
+		    """
+		    function execute( required Function callback ){}
+		      """,
+		    context );
+	}
+
+	@Test
+	public void testParamCalledFunctionCF() {
+		instance.executeSource(
+		    """
+		    function execute( required Function callback ){}
+		      """,
+		    context, BoxSourceType.CFSCRIPT );
+	}
+
+	@Test
+	public void testForInArrayLiteral() {
+		instance.executeSource(
+		    """
+		    for ( claim in [ 'iat', 'exp', 'nbf' ] ) {
+		    	 }
+		     """,
+		    context );
+	}
+
+	@Test
+	public void testOperatorFollowedByParensCF() {
+		instance.executeSource(
+		    """
+		    if( 5 EQ ( 6 ) ) {}
+		     """,
+		    context, BoxSourceType.CFSCRIPT );
+	}
+
+	@Test
+	public void testOperatorFollowedByParens() {
+		instance.executeSource(
+		    """
+		    if( 5 EQ ( 6 ) ) {}
+		     """,
+		    context );
+	}
+
+	@Test
+	public void testForInArrayLiteralCF() {
+		instance.executeSource(
+		    """
+		    for ( claim in [ 'iat', 'exp', 'nbf' ] ) {
+		    	 }
+		     """,
+		    context, BoxSourceType.CFSCRIPT );
+	}
+
+	@Test
+	public void testCommaInLockCF() {
+		instance.executeSource(
+		    """
+		    lock
+		    	name          ="foo",
+		    	timeout       = "10"
+		    	throwOnTimeout="true"
+		    	type          ="exclusive" {}
+		     """,
+		    context, BoxSourceType.CFSCRIPT );
+	}
+
+	@Test
+	public void testNestedExpressionHashInTemplateOutput() {
+		instance.executeSource(
+		    """
+		    	<bx:script>
+		    		function foo(text) {
+		    	 return text;
+		     }
+		       rc = {
+		    	brad : "wood"
+		       }
+		       br = "br"
+		       bar = "brad"
+		    	</bx:script>
+		    	   <bx:output>
+		    #foo( #bar# )#
+		    #foo( "#bar#" )#
+		    #rc['#br#ad']#
+		    	   </bx:output>
+		    		   """,
+		    context, BoxSourceType.BOXTEMPLATE );
+	}
+
+	@Test
+	public void testNestedExpressionHashInTemplateOutputCF() {
+		instance.executeSource(
+		    """
+		           <cfscript>
+		        	   function foo(text) {
+		        	return text;
+		        }
+		          bar = "brad"
+		       rc = {
+		    	brad : "wood"
+		       }
+		       br = "br"
+		           </cfscript>
+		        	  <cfoutput>
+		       #foo( #bar# )#
+		       #foo( "#bar#" )#
+		    #rc['#br#ad']#
+		        	  </cfoutput>
+		        		  """,
+		    context, BoxSourceType.CFTEMPLATE );
+	}
+
+	@Test
+	public void testNestedExpressionModes() {
+		instance.executeSource(
+		    """
+		    	<bx:output>
+		    		<bx:script>
+		    			i = 1;
+		    			if( true ) {
+		    				```
+		    					#i#
+		    				```
+		    			}
+		    		</bx:script>
+		    	</bx:output>
+		    """,
+		    context, BoxSourceType.BOXTEMPLATE );
+	}
+
+	@Test
+	public void testNestedExpressionModesCF() {
+		instance.executeSource(
+		    """
+		    	<cfoutput>
+		    		<cfscript>
+		    			i = 1;
+		    			if( true ) {
+		    				```
+		    					#i#
+		    				```
+		    			}
+		    		</cfscript>
+		    	</cfoutput>
+		    """,
+		    context, BoxSourceType.CFTEMPLATE );
+	}
+
+	@Test
+	public void testCaseWithDefault() {
+		instance.executeSource(
+		    """
+		    switch ( 5 ) {
+		    	case "nolock":
+		    	default:
+		    }
+		      """,
+		    context, BoxSourceType.CFSCRIPT );
+	}
+
+	@Test
+	public void testKeywordInBrackets() {
+		instance.executeSource(
+		    """
+		    foo.brad = "wood"
+		    package = "brad"
+		    foo[ package ]
+		    	""",
+		    context, BoxSourceType.CFSCRIPT );
+	}
+
+	@Test
+	public void testPackageContains() {
+		instance.executeSource(
+		    """
+		    variables["package"] = "brad"
+		    if( package contains 'ad' ) {}
+		    	""",
+		    context, BoxSourceType.CFSCRIPT );
+	}
+
+	@Test
+	public void testStringInterpolationAccess() {
+		instance.executeSource(
+		    """
+		    bar = "brad"
+		    result = "foo#bar#baz".ucase()
+		    result2 = "foo#bar#baz"['ucase']()
+		    	""",
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "FOOBRADBAZ" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "FOOBRADBAZ" );
+	}
+
+	@Test
+	public void testStringInterpolationAccessCF() {
+		instance.executeSource(
+		    """
+		    bar = "brad"
+		    result = "foo#bar#baz".ucase()
+		    result2 = "foo#bar#baz"['ucase']()
+		    	""",
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "FOOBRADBAZ" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "FOOBRADBAZ" );
+	}
+
+	@Test
+	public void testNoSpaceAfterTemplateIf() {
+		instance.executeSource(
+		    """
+		    <bx:if(true)>
+		    <bx:elseif(true)>
+		    </bx:if>
+		        """,
+		    context, BoxSourceType.BOXTEMPLATE );
+	}
+
+	@Test
+	public void testNoSpaceAfterTemplateIfCF() {
+		instance.executeSource(
+		    """
+		    <cfif(true)>
+		    <cfelseif(true)>
+		    </cfif>
+		    		  """,
+		    context, BoxSourceType.CFTEMPLATE );
+	}
+
+	@Test
+	public void testNewFollowedByOperator() {
+		instance.executeSource(
+		    """
+		    <bx:set new = 1>
+		       <bx:if true or new is 1></bx:if>
+		    		 """,
+		    context, BoxSourceType.BOXTEMPLATE );
+	}
+
+	@Test
+	public void testNewFollowedByOperatorCF() {
+		instance.executeSource(
+		    """
+		    <cfset new = 1>
+		       <cfif true or new is 1></cfif>
+		    		 """,
+		    context, BoxSourceType.CFTEMPLATE );
+	}
+
+	@Test
+	public void testTagCommentsInCFExpression() {
+		// BoxLang doesn't allow this nonsense, so there is no test for it
+		instance.executeSource( """
+		                        <cfif true AND <!--- comment ---> true ></cfif>
+		                                               		 """,
+		    context, BoxSourceType.CFTEMPLATE );
+	}
+
+	@Test
+	public void testNotEqual() {
+		instance.executeSource(
+		    """
+		    if( 1 not equal 2 ) {}
+		    	""",
+		    context, BoxSourceType.BOXSCRIPT );
+	}
+
+	@Test
+	public void testNotEqualCF() {
+		instance.executeSource(
+		    """
+		    if( 1 not equal 2 ) {}
+		    	""",
+		    context, BoxSourceType.CFSCRIPT );
+	}
+
+	@Test
+	public void testNegatedParam() {
+		instance.executeSource(
+		    """
+		    function foo() {}
+		    brad = true;
+		    foo( true, not brad )
+		    	""",
+		    context, BoxSourceType.BOXSCRIPT );
+	}
+
+	@Test
+	public void testNegatedParamCF() {
+		instance.executeSource(
+		    """
+		    function foo() {}
+		    brad = true;
+		    foo( true, not brad )
+		    	""",
+		    context, BoxSourceType.CFSCRIPT );
+	}
+
+	@Test
+	public void testIsNegativeCF() {
+		instance.executeSource(
+		    """
+		    myVar = 5
+		    if( myVar IS -1 ){}
+		    	""",
+		    context, BoxSourceType.CFSCRIPT );
+	}
+
+	@Test
+	public void testIsNegative() {
+		instance.executeSource(
+		    """
+		    myVar = 5
+		    if( myVar IS -1 ){}
+		    	""",
+		    context, BoxSourceType.BOXSCRIPT );
+	}
+
+	@Test
+	public void testVariableStartingWithOperator() {
+		instance.executeSource(
+		    """
+		    	if(false){
+		    		function foo() {
+		    			println("in foo()")
+		    		}
+		    	}
+		    	foo()
+		    """,
+		    context, BoxSourceType.BOXSCRIPT );
+	}
+
+	@Test
+	public void testVariableStartingWithOperatorCF() {
+		instance.executeSource(
+		    """
+		    	if(false){
+		    		function foo() {
+		    			println("in foo()")
+		    		}
+		    	}
+		    	foo()
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+	}
+
+	@Test
+	public void testCommaInParamAttributesCF() {
+		instance.executeSource(
+		    """
+		    param default=00000000000000000000000000000000001, name="arguments.rc.topid";
+		    	   """,
+		    context, BoxSourceType.CFSCRIPT );
+	}
+
+	@Test
+	public void testCrazyKeywordExample() {
+		instance.executeSource(
+		    """
+		    if = "brad"
+		    when = "wood"
+		    function try( else, return ) {
+		    return return & else;
+		    }
+		    while = "try";
+		    result = variables[ while ]( if, when )
+		       """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "woodbrad" );
+	}
+
+	@Test
+	public void testNotCannotBeHeadlessFunctionCall() {
+		instance.executeSource(
+		    """
+		    if( NOT (1 IS 2) ){
+		    }
+		      """,
+		    context );
+	}
+
+	@Test
+	public void testNotCannotBeHeadlessFunctionCallCF() {
+		instance.executeSource(
+		    """
+		    if( NOT (1 IS 2) ){
+		    }
+		      """,
+		    context, BoxSourceType.CFSCRIPT );
+	}
+
+	@Test
+	public void testInBeforeParens() {
+		instance.executeSource(
+		    """
+		       prop.aliases ="foo,bar";
+		       result = ""
+		       for( alias in ( prop.aliases ?: "" ).listToArray() ) {
+		       	result &= alias;
+		       }
+		       function in() {
+		       	result2 = "in";
+		       }
+		       in();
+		    (()->{
+		    	```
+		    	<bx:set var in = "data">
+		    	```
+		    })()
+		       	""",
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "foobar" );
+	}
+
+	@Test
+	public void testInBeforeParensCF() {
+		instance.executeSource(
+		    """
+		    		 prop.aliases ="foo,bar";
+		    		 result = ""
+		    		 for( alias in ( prop.aliases ?: "" ).listToArray() ) {
+		    			 result &= alias;
+		    		 }
+		    		 function in() {
+		    			 result2 = "in";
+		    		 }
+		    		 in();
+		    (()->{
+		    	```
+		    	<cfset var in = "data">
+		    	```
+		    })()
+		    					  """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "foobar" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "in" );
+	}
+
+	@Test
+	public void testForVarKeywordInLoop() {
+		instance.executeSource(
+		    """
+		    variables.result = "";
+		       (()=>{
+		    	   queryParams = ["foo","bar"];
+		    	   for ( var param in queryParams ) {
+		    		variables.result &= param;
+		    	   } })()
+		    						 """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "foobar" );
+	}
+
+	@Test
+	public void testForVarKeywordInLoopCF() {
+		instance.executeSource(
+		    """
+		    variables.result = "";
+		       (()=>{
+		    	   queryParams = ["foo","bar"];
+		    	   for ( var param in queryParams ) {
+		    		variables.result &= param;
+		    	   } })()
+		    						 """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "foobar" );
+	}
+
+	@Test
+	public void testFunctionFunctionFunctionCF() {
+		// @formatter:off
+		instance.executeSource(
+				"""
+					function function function( function function ){
+						return function;
+					}
+					result = variables["function"]( () -> "yeah!" )();
+
+				""",
+				context, BoxSourceType.CFSCRIPT );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( "yeah!" );
+	}
+
+	@Test
+	public void testFunctionFunctionFunction() {
+		// @formatter:off
+		instance.executeSource(
+				"""
+					function function function( function function ){
+						return function;
+					}
+					result = variables["function"]( () -> "yeah!" )();
+
+				""",
+				context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( "yeah!" );
+	}
+
+	@Test
+	public void testReturnIdentifier() {
+		// @formatter:off
+		instance.executeSource(
+				"""
+					function foo(){
+						var _bar = "brad";
+						return _bar;
+					}
+					result = foo();
+
+					function foo2(){
+						var $bar = "brad";
+						return $bar;
+					}
+					result2 = foo2();
+				""",
+				context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( "brad" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "brad" );
+	}
+
+	@Test
+	public void testReturnIdentifierCF() {
+		// @formatter:off
+		instance.executeSource(
+				"""
+					function foo(){
+						var _bar = "brad";
+						return _bar;
+					}
+					result = foo();
+
+					function foo2(){
+						var $bar = "brad";
+						return $bar;
+					}
+					result2 = foo2();
+				""",
+				context, BoxSourceType.CFSCRIPT );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( "brad" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "brad" );
+	}
+
+	@Test
+	public void testReturnNot() {
+		// @formatter:off
+		instance.executeSource(
+				"""
+					function foo(){
+						return NOT len( "brad" );
+					}
+					result = foo();
+				""",
+				context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( false );
+	}
+
+	@Test
+	public void testReturnNotCF() {
+		// @formatter:off
+		instance.executeSource(
+				"""
+					function foo(){
+						return NOT len( "brad" );
+					}
+					result = foo();
+				""",
+				context, BoxSourceType.CFSCRIPT );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( false );
+	}
+
+	@Test
 	public void testKeywords() {
 
 		instance.executeSource(
 		    """
-		    					  result = {
-		    						abstract : ()->'abstract',
-		    						abort : ()->'abort',
-		    						admin : ()->'admin',
-		    						any : ()->'any',
-		    						array : ()->'array',
-		    						as : ()->'as',
-		    						assert : ()->'assert',
-		    						boolean : ()->'boolean',
-		    						break : ()->'break',
-		    						case : ()->'case',
-		    						castas : ()->'castas',
-		    						catch : ()->'catch',
-		    						class : ()->'class',
-		    						component : ()->'component',
-		    						contain : ()->'contain',
-		    						contains : ()->'contains',
-		    						continue : ()->'continue',
-		    						default : ()->'default',
-		    						does : ()->'does',
-		    						do : ()->'do',
-		    						else : ()->'else',
-		    						elif : ()->'elif',
-		    						false : ()->'false',
-		    						finally : ()->'finally',
-		    						for : ()->'for',
-		    						function : ()->'function',
-		    						greater : ()->'greater',
-		    						if : ()->'if',
-		    						in : ()->'in',
-		    						import : ()->'import',
-		    						include : ()->'include',
-		    						interface : ()->'interface',
-		    						instanceof : ()->'instanceof',
-		    						is : ()->'is',
-		    						java : ()->'java',
-		    						less : ()->'less',
-		    						local : ()->'local',
-		    						lock : ()->'lock',
-		    						mod : ()->'mod',
-		    						message : ()->'message',
-		    						new : ()->'new',
-		    						null : ()->'null',
-		    						numeric : ()->'numeric',
-		    						package : ()->'package',
-		    						param : ()->'param',
-		    						private : ()->'private',
-		    						property : ()->'property',
-		    						public : ()->'public',
-		    						query : ()->'query',
-		    						remote : ()->'remote',
-		    						required : ()->'required',
-		    						request : ()->'request',
-		    						return : ()->'return',
-		    						rethrow : ()->'rethrow',
-		    						savecontent : ()->'savecontent',
-		    						setting : ()->'setting',
-		    						static : ()->'static',
-		    						string : ()->'string',
-		    						struct : ()->'struct',
-		    						//switch : ()->'switch',
-		    						than : ()->'than',
-		    						to : ()->'to',
-		    						thread : ()->'thread',
-		    						throw : ()->'throw',
-		    						type : ()->'type',
-		    						true : ()->'true',
-		    						try : ()->'try',
-		    						var : ()->'var',
-		    						when : ()->'when',
-		    						while : ()->'while',
-		    						xor : ()->'xor',
-		    						eq : ()->'eq',
-		    						eqv : ()->'eqv',
-		    						imp : ()->'imp',
-		    						and : ()->'and',
-		    						eq : ()->'eq',
-		    						equal : ()->'equal',
-		    						gt : ()->'gt',
-		    						gte : ()->'gte',
-		    						ge : ()->'ge',
-		    						lt : ()->'lt',
-		    						lte : ()->'lte',
-		    						le : ()->'le',
-		    						neq : ()->'neq',
-		    						not : ()->'not',
-		    						or : ()->'or'
 
-		    				   };
+		    var = {}
+		    var["abstract"] = "abstract"
+
+		      					  result = {
+		      						abstract : ()->'abstract',
+		      						abort : ()->'abort',
+		      						admin : ()->'admin',
+		      						any : ()->'any',
+		      						array : ()->'array',
+		      						as : ()->'as',
+		      						assert : ()->'assert',
+		      						boolean : ()->'boolean',
+		      						break : ()->'break',
+		      						case : ()->'case',
+		      						castas : ()->'castas',
+		      						catch : ()->'catch',
+		      						class : ()->'class',
+		      						component : ()->'component',
+		      						contain : ()->'contain',
+		      						contains : ()->'contains',
+		      						continue : ()->'continue',
+		      						default : ()->'default',
+		      						does : ()->'does',
+		      						do : ()->'do',
+		      						else : ()->'else',
+		      						elif : ()->'elif',
+		      						false : ()->'false',
+		      						finally : ()->'finally',
+		      						for : ()->'for',
+		      						function : ()->'function',
+		      						greater : ()->'greater',
+		      						if : ()->'if',
+		      						in : ()->'in',
+		      						import : ()->'import',
+		      						include : ()->'include',
+		      						interface : ()->'interface',
+		      						instanceof : ()->'instanceof',
+		      						is : ()->'is',
+		      						java : ()->'java',
+		      						less : ()->'less',
+		      						local : ()->'local',
+		      						lock : ()->'lock',
+		      						mod : ()->'mod',
+		      						message : ()->'message',
+		      						new : ()->'new',
+		      						null : ()->'null',
+		      						numeric : ()->'numeric',
+		      						package : ()->'package',
+		      						param : ()->'param',
+		      						private : ()->'private',
+		      						property : ()->'property',
+		      						public : ()->'public',
+		      						query : ()->'query',
+		      						remote : ()->'remote',
+		      						required : ()->'required',
+		      						request : ()->'request',
+		      						return : ()->'return',
+		      						rethrow : ()->'rethrow',
+		      						savecontent : ()->'savecontent',
+		      						setting : ()->'setting',
+		      						static : ()->'static',
+		      						string : ()->'string',
+		      						struct : ()->'struct',
+		      						switch : ()->'switch',
+		      						than : ()->'than',
+		      						to : ()->'to',
+		      						thread : ()->'thread',
+		      						throw : ()->'throw',
+		      						type : ()->'type',
+		      						true : ()->'true',
+		      						try : ()->'try',
+		      						var : ()->'var',
+		      						when : ()->'when',
+		      						while : ()->'while',
+		      						xor : ()->'xor',
+		      						eq : ()->'eq',
+		      						eqv : ()->'eqv',
+		      						imp : ()->'imp',
+		      						and : ()->'and',
+		      						eq : ()->'eq',
+		      						equal : ()->'equal',
+		      						gt : ()->'gt',
+		      						gte : ()->'gte',
+		      						ge : ()->'ge',
+		      						lt : ()->'lt',
+		      						lte : ()->'lte',
+		      						le : ()->'le',
+		      						neq : ()->'neq',
+		      						not : ()->'not',
+		      						or : ()->'or'
+
+		      				   };
 
 
-		    		  result.abstract;
-		    		  result.abort;
-		    		  result.admin;
-		    		  result.any;
-		    		  result.array;
-		    		  result.as;
-		    		  result.assert;
-		    		  result.boolean;
-		    		  result.break;
-		    		  result.case;
-		    		  result.castas;
-		    		  result.catch;
-		    		  result.class;
-		    		  result.component;
-		    		  result.contain;
-		    		  result.contains;
-		    		  result.continue;
-		    		  result.default;
-		    		  result.does;
-		    		  result.do;
-		    		  result.else;
-		    		  result.elif;
-		    		  result.false;
-		    		  result.finally;
-		    		  result.for;
-		    		  result.function;
-		    		  result.greater;
-		    		  result.if;
-		    		  result.in;
-		    		  result.import;
-		    		  result.include;
-		    		  result.interface;
-		    		  result.instanceof;
-		    		  result.is;
-		    		  result.java;
-		    		  result.less;
-		    		  result.local;
-		    		  result.lock;
-		    		  result.mod;
-		    		  result.message;
-		    		  result.new;
-		    		  result.null;
-		    		  result.numeric;
-		    		  result.package;
-		    		  result.param;
-		    		  result.private;
-		    		  result.property;
-		    		  result.public;
-		    		  result.query;
-		    		  result.remote;
-		    		  result.required;
-		    		  result.request;
-		    		  result.return;
-		    		  result.rethrow;
-		    		  result.savecontent;
-		    		  result.setting;
-		    		  result.static;
-		    		  result.string;
-		    		  result.struct;
-		    	  //    result.switch;
-		    		  result.than;
-		    		  result.to;
-		    		  result.thread;
-		    		  result.throw;
-		    		  result.type;
-		    		  result.true;
-		    		  result.try;
-		    		  result.var;
-		    		  result.when;
-		    		  result.while;
-		    		  result.xor;
-		    		  result.eq;
-		    		  result.eqv;
-		    		  result.imp;
-		    		  result.and;
-		    		  result.eq;
-		    		  result.equal;
-		    		  result.gt;
-		    		  result.gte;
-		    		  result.ge;
-		    		  result.lt;
-		    		  result.lte;
-		    		  result.le;
-		    		  result.neq;
-		    		  result.not;
-		    		  result.or;
+		      		  result.abstract;
+		      		  result.abort;
+		      		  result.admin;
+		      		  result.any;
+		      		  result.array;
+		      		  result.as;
+		      		  result.assert;
+		      		  result.boolean;
+		      		  result.break;
+		      		  result.case;
+		      		  result.castas;
+		      		  result.catch;
+		      		  result.class;
+		      		  result.component;
+		      		  result.contain;
+		      		  result.contains;
+		      		  result.continue;
+		      		  result.default;
+		      		  result.does;
+		      		  result.do;
+		      		  result.else;
+		      		  result.elif;
+		      		  result.false;
+		      		  result.finally;
+		      		  result.for;
+		      		  result.function;
+		      		  result.greater;
+		      		  result.if;
+		      		  result.in;
+		      		  result.import;
+		      		  result.include;
+		      		  result.interface;
+		      		  result.instanceof;
+		      		  result.is;
+		      		  result.java;
+		      		  result.less;
+		      		  result.local;
+		      		  result.lock;
+		      		  result.mod;
+		      		  result.message;
+		      		  result.new;
+		      		  result.null;
+		      		  result.numeric;
+		      		  result.package;
+		      		  result.param;
+		      		  result.private;
+		      		  result.property;
+		      		  result.public;
+		      		  result.query;
+		      		  result.remote;
+		      		  result.required;
+		      		  result.request;
+		      		  result.return;
+		      		  result.rethrow;
+		      		  result.savecontent;
+		      		  result.setting;
+		      		  result.static;
+		      		  result.string;
+		      		  result.struct;
+		      	      result.switch;
+		      		  result.than;
+		      		  result.to;
+		      		  result.thread;
+		      		  result.throw;
+		      		  result.type;
+		      		  result.true;
+		      		  result.try;
+		      		  result.var;
+		      		  result.when;
+		      		  result.while;
+		      		  result.xor;
+		      		  result.eq;
+		      		  result.eqv;
+		      		  result.imp;
+		      		  result.and;
+		      		  result.eq;
+		      		  result.equal;
+		      		  result.gt;
+		      		  result.gte;
+		      		  result.ge;
+		      		  result.lt;
+		      		  result.lte;
+		      		  result.le;
+		      		  result.neq;
+		      		  result.not;
+		      		  result.or;
 
-		    		result.abstract();
-		    		result.abort();
-		    		result.admin();
-		    		result.any();
-		    		result.array();
-		    		result.as();
-		    		result.assert();
-		    		result.boolean();
-		    		result.break();
-		    		result.case();
-		    		result.castas();
-		    		result.catch();
-		    		result.class();
-		    		result.component();
-		    		result.contain();
-		    		result.contains();
-		    		result.continue();
-		    		result.default();
-		    		result.does();
-		    		result.do();
-		    		result.else();
-		    		result.elif();
-		    		result.false();
-		    		result.finally();
-		    		result.for();
-		    		result.function();
-		    		result.greater();
-		    		result.if();
-		    		result.in();
-		    		result.import();
-		    		result.include();
-		    		result.interface();
-		    		result.instanceof();
-		    		result.is();
-		    		result.java();
-		    		result.less();
-		    		result.local();
-		    		result.lock();
-		    		result.mod();
-		    		result.message();
-		    		result.new();
-		    		result.null();
-		    		result.numeric();
-		    		result.package();
-		    		result.param();
-		    		result.private();
-		    		result.property();
-		    		result.public();
-		    		result.query();
-		    		result.remote();
-		    		result.required();
-		    		result.request();
-		    		result.return();
-		    		result.rethrow();
-		    		result.savecontent();
-		    		result.setting();
-		    		result.static();
-		    		result.string();
-		    		result.struct();
-		    	 //   result.switch();
-		    		result.than();
-		    		result.to();
-		    		result.thread();
-		    		result.throw();
-		    		result.type();
-		    		result.true();
-		    		result.try();
-		    		result.var();
-		    		result.when();
-		    		result.while();
-		    		result.xor();
-		    		result.eq();
-		    		result.eqv();
-		    		result.imp();
-		    		result.and();
-		    		result.eq();
-		    		result.equal();
-		    		result.gt();
-		    		result.gte();
-		    		result.ge();
-		    		result.lt();
-		    		result.lte();
-		    		result.le();
-		    		result.neq();
-		    		result.not();
-		    		result.or();
+		      		result.abstract();
+		      		result.abort();
+		      		result.admin();
+		      		result.any();
+		      		result.array();
+		      		result.as();
+		      		result.assert();
+		      		result.boolean();
+		      		result.break();
+		      		result.case();
+		      		result.castas();
+		      		result.catch();
+		      		result.class();
+		      		result.component();
+		      		result.contain();
+		      		result.contains();
+		      		result.continue();
+		      		result.default();
+		      		result.does();
+		      		result.do();
+		      		result.else();
+		      		result.elif();
+		      		result.false();
+		      		result.finally();
+		      		result.for();
+		      		result.function();
+		      		result.greater();
+		      		result.if();
+		      		result.in();
+		      		result.import();
+		      		result.include();
+		      		result.interface();
+		      		result.instanceof();
+		      		result.is();
+		      		result.java();
+		      		result.less();
+		      		result.local();
+		      		result.lock();
+		      		result.mod();
+		      		result.message();
+		      		result.new();
+		      		result.null();
+		      		result.numeric();
+		      		result.package();
+		      		result.param();
+		      		result.private();
+		      		result.property();
+		      		result.public();
+		      		result.query();
+		      		result.remote();
+		      		result.required();
+		      		result.request();
+		      		result.return();
+		      		result.rethrow();
+		      		result.savecontent();
+		      		result.setting();
+		      		result.static();
+		      		result.string();
+		      		result.struct();
+		      	    result.switch();
+		      		result.than();
+		      		result.to();
+		      		result.thread();
+		      		result.throw();
+		      		result.type();
+		      		result.true();
+		      		result.try();
+		      		result.var();
+		      		result.when();
+		      		result.while();
+		      		result.xor();
+		      		result.eq();
+		      		result.eqv();
+		      		result.imp();
+		      		result.and();
+		      		result.eq();
+		      		result.equal();
+		      		result.gt();
+		      		result.gte();
+		      		result.ge();
+		      		result.lt();
+		      		result.lte();
+		      		result.le();
+		      		result.neq();
+		      		result.not();
+		      		result.or();
 
-		    	 variables.addAll( result.getWrapped() );
+		      	 variables.addAll( result.getWrapped() );
 
-		      abstract();
-		      abort();
-		      admin();
-		      any();
-		      array();
-		      as();
-		      assert();
-		      boolean();
-		      break();
-		      case();
-		      castas();
-		      catch();
-		      class();
-		      component();
-		      contain();
-		      contains();
-		      continue();
-		      default();
-		      does();
-		      do();
-		      else();
-		      elif();
-		      false();
-		      finally();
-		      for();
-		      function();
-		      greater();
-		      if();
-		      in();
-		      import();
-		      include();
-		      interface();
-		      instanceof();
-		      is();
-		      java();
-		      less();
-		      local();
-		      lock();
-		      mod();
-		      message();
-		      new();
-		      null();
-		      numeric();
-		      package();
-		      param();
-		      private();
-		      property();
-		      public();
-		      query();
-		      remote();
-		      required();
-		      request();
-		      return();
-		      rethrow();
-		      savecontent();
-		      setting();
-		      static();
-		      string();
-		      struct();
-		    //  switch();
-		      than();
-		      to();
-		      thread();
-		     // throw(); <-- Actual throw construct
-		      type();
-		      true();
-		      try();
-		      var();
-		      when();
-		      while();
-		      xor();
-		      eq();
-		      eqv();
-		      imp();
-		      and();
-		      eq();
-		      equal();
-		      gt();
-		      gte();
-		      ge();
-		      lt();
-		      lte();
-		      le();
-		      neq();
-		      or();
-		    							   """,
+
+		    abstract();
+		    abort();
+		           admin();
+		           any();
+		           array();
+		           as();
+		           assert();
+		           boolean();
+		           break();
+		           case();
+		           castas();
+		           catch();
+		           class();
+		           component();
+		           contain();
+		           contains();
+		           continue();
+		           default();
+		           does();
+		           do();
+		           else();
+		           elif();
+		           false();
+		           finally();
+		          // for();
+		        //   function();
+		           greater();
+		         //  if();
+		           in();
+		           import();
+		           include();
+		           interface();
+		           instanceof();
+		           is();
+		           java();
+		           less();
+		           local();
+		           lock();
+		           mod();
+		           message();
+		           new();
+		           null();
+		           numeric();
+		           package();
+		           param();
+		           private();
+		           property();
+		           public();
+		           query();
+		           remote();
+		           required();
+		           request();
+		          // return();
+		           rethrow();
+		           savecontent();
+		           setting();
+		           static();
+		           string();
+		           struct();
+		          // switch();
+		           than();
+		           to();
+		           thread();
+		          // throw(); <-- Actual throw construct
+		           type();
+		           true();
+		           try();
+		           var();
+		           when();
+		         //  while();
+		           xor();
+		           eq();
+		           eqv();
+		           imp();
+		           and();
+		           eq();
+		           equal();
+		           gt();
+		           gte();
+		           ge();
+		           lt();
+		           lte();
+		           le();
+		           neq();
+		           or();
+		      							   """,
 		    context );
 
 		assertThat( variables.get( result ) ).isInstanceOf( Struct.class );
@@ -1910,6 +2758,9 @@ public class CoreLangTest {
 
 		instance.executeSource(
 		    """
+		    var = {}
+		    var["abstract"] = "abstract"
+
 		                          result = {
 		            				abstract : ()=>'abstract',
 		            				abort : ()=>'abort',
@@ -1970,7 +2821,7 @@ public class CoreLangTest {
 		            				static : ()=>'static',
 		            				string : ()=>'string',
 		            				struct : ()=>'struct',
-		            				//switch : ()=>'switch',
+		            				switch : ()=>'switch',
 		            				than : ()=>'than',
 		            				to : ()=>'to',
 		            				thread : ()=>'thread',
@@ -2060,7 +2911,7 @@ public class CoreLangTest {
 		              result.static;
 		              result.string;
 		              result.struct;
-		          //    result.switch;
+		              result.switch;
 		              result.than;
 		              result.to;
 		              result.thread;
@@ -2201,10 +3052,10 @@ public class CoreLangTest {
 		      elif();
 		      false();
 		      finally();
-		      for();
-		      function();
+		     // for();
+		     // function();
 		      greater();
-		      if();
+		     // if();
 		      in();
 		      import();
 		      include();
@@ -2229,7 +3080,7 @@ public class CoreLangTest {
 		      remote();
 		      required();
 		      request();
-		      return();
+		     // return();
 		      rethrow();
 		      savecontent();
 		      setting();
@@ -2246,7 +3097,7 @@ public class CoreLangTest {
 		      try();
 		      var();
 		      when();
-		      while();
+		    //  while();
 		      xor();
 		      eq();
 		      eqv();
@@ -2826,7 +3677,7 @@ public class CoreLangTest {
 		    	["Jaime","El Salvador"],
 		    	["Esme","Mexico"]
 		    ])
-		    .toStructArray()
+		    .toArrayOfStructs()
 		    .map( .name )
 
 		      	""",
@@ -3406,42 +4257,6 @@ public class CoreLangTest {
 		    """
 		    foo = true;
 		    	  result = NOT foo
-		    OR NOT foo
-		    OR NOT foo
-		    OR NOT foo
-		    OR NOT foo
-		    OR NOT foo
-		    OR NOT foo
-		    OR NOT foo
-		    OR NOT foo
-		    OR NOT foo
-		    OR NOT foo
-		    OR NOT foo
-		    OR NOT foo
-		    OR NOT foo
-		    OR NOT foo
-		    OR NOT foo
-		    OR NOT foo
-		    OR NOT foo
-		    OR NOT foo
-		    OR NOT foo
-		    OR NOT foo
-		    OR NOT foo
-		    OR NOT foo
-		    OR NOT foo
-		    OR NOT foo
-		    OR NOT foo
-		    OR NOT foo
-		    OR NOT foo
-		    OR NOT foo
-		    OR NOT foo
-		    OR NOT foo
-		    OR NOT foo
-		    OR NOT foo
-		    OR NOT foo
-		    OR NOT foo
-		    OR NOT foo
-		    OR NOT foo
 		    OR NOT foo;
 		      """,
 		    context, BoxSourceType.CFSCRIPT );
@@ -4167,7 +4982,7 @@ public class CoreLangTest {
 		assertThat( variables.getAsString( result ) ).isEqualTo( "set this time" );
 		// @formatter:off
 	}
-		
+
 
 	@DisplayName( "dump order" )
 	@Test
@@ -4495,19 +5310,59 @@ public class CoreLangTest {
 
 	@Test
 	public void testNullFromMapPut() {
+	// @formatter:off
+	instance.executeSource(
+			"""
+				headers     = createObject( "java", "java.util.LinkedHashMap" ).init();
+				headers.put( "Content-Type", "application/json" );
+				result = headers[ "Content-Type" ];
+				result2 = headers[ "content-type" ];
+			""",
+			context );
+	// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( "application/json" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "application/json" );
+
+	}
+
+	@Test
+	public void testStripBigDecimalZeros() {
 		// @formatter:off
 		instance.executeSource(
 				"""
-					headers     = createObject( "java", "java.util.LinkedHashMap" ).init();
-					headers.put( "Content-Type", "application/json" );
-					result = headers[ "Content-Type" ];
-					result2 = headers[ "content-type" ];
-					println( result )
+				minutesValid = 1 / 60;
+				expiresSeconds = minutesValid * 60;
+				result = "" & expiresSeconds
 				""",
 				context );
 		// @formatter:on
-		assertThat( variables.get( result ) ).isEqualTo( "application/json" );
-		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "application/json" );
+		assertThat( variables.get( result ) ).isEqualTo( "1" );
+	}
+
+	@Test
+	public void testVariableNameCast() {
+		// @formatter:off
+		instance.executeSource(
+				"""
+				variableName function foo( variableName bar ) {
+					return bar;
+				}
+				result = foo( "$brad" );
+				""",
+				context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( "$brad" );
+
+		assertThrows( BoxRuntimeException.class, () -> {
+			instance.executeSource(
+			    """
+			    variableName function foo( variableName bar ) {
+			    	return bar;
+			    }
+			    result = foo( 1 );
+			    """,
+			    context );
+		} );
 
 	}
 

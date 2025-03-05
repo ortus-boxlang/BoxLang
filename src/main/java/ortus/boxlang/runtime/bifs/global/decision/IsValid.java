@@ -45,11 +45,53 @@ public class IsValid extends BIF {
 	}
 
 	/**
-	 * Determine whether the given value is a string, numeric, or date.Arrays, structs, queries, closures, classes and components, and other complex
-	 * structures will return false.
+	 * Validates the incoming <code>value</code> against the given
+	 * <code>type</code>. If the type is a range, the value is
+	 * validated against the range. If the type is a pattern, the value is validated
+	 * against the pattern. If the type is a
+	 * date, the value is validated against the date format. If the type is a locale
+	 * date, the value is validated against the
+	 * locale date format. If the type is a regular expression, the value is
+	 * validated against the regular expression.
 	 * <p>
-	 * Note we expressly do not support the `eurodate` type, since date formats vary across EU countries. For this, prefer the `LSIsDate( date, locale )`
+	 * <strong>
+	 * Note we expressly do not support the `eurodate` type, since date formats vary
+	 * across EU countries. For this, prefer the `LSIsDate( date, locale )`
 	 * method instead.
+	 * </strong>
+	 * <p>
+	 * <h2>Valid Types</h2>
+	 * <ul>
+	 * <li>array</li>
+	 * <li>binary</li>
+	 * <li>boolean</li>
+	 * <li>component</li>
+	 * <li>creditcard</li>
+	 * <li>date</li>
+	 * <li>email</li>
+	 * <li>float</li>
+	 * <li>function</li>
+	 * <li>guid</li>
+	 * <li>integer</li>
+	 * <li>numeric</li>
+	 * <li>query</li>
+	 * <li>range</li>
+	 * <li>regex</li>
+	 * <li>regular_expression</li>
+	 * <li>social_security_number</li>
+	 * <li>ssn</li>
+	 * <li>string</li>
+	 * <li>struct</li>
+	 * <li>telephone</li>
+	 * <li>time</li>
+	 * <li>time</li>
+	 * <li>url</li>
+	 * <li>usdate</li>
+	 * <li>uuid</li>
+	 * <li>variablename</li>
+	 * <li>xml</li>
+	 * <li>zipcode</li>
+	 * </ul>
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
@@ -58,24 +100,29 @@ public class IsValid extends BIF {
 	 *
 	 * @argument.value Value to test for validaty on a given type
 	 *
-	 * @argument.min The minimum value for the range type or a pattern to validate the value against
+	 * @argument.min The minimum value for the range type or a pattern to validate
+	 *               the value against
 	 *
 	 * @argument.max The maximum value for the range type
 	 *
 	 * @argument.pattern The pattern to validate the value against
 	 */
+	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		IsValidType	type	= IsValidType.fromString( arguments.getAsString( Key.type ) );
 		Object		min		= arguments.get( Key.min );
 		String		pattern	= arguments.getAsString( Key.pattern );
 
-		// if the type is regex or regular_express, but no pattern is provided, throw an error
+		// if the type is regex or regular_express, but no pattern is provided, throw an
+		// error
 		if ( ( type == IsValidType.REGEX || type == IsValidType.REGULAR_EXPRESSION ) && pattern.isEmpty() ) {
 			// Try to get it from the `min` argument
 			if ( min != null ) {
 				pattern = min.toString();
 			} else {
-				throw new IllegalArgumentException( "The pattern argument is required for the regex and regular_expression types." );
+				throw new IllegalArgumentException(
+				    "The pattern argument is required for the regex and regular_expression types."
+				);
 			}
 		}
 
@@ -110,12 +157,10 @@ public class IsValid extends BIF {
 			case RANGE -> ValidationUtil.isValidRange(
 			    arguments.get( Key.value ),
 			    NumberCaster.cast( arguments.get( Key.min ) ),
-			    NumberCaster.cast( arguments.get( Key.max ) )
-			);
+			    NumberCaster.cast( arguments.get( Key.max ) ) );
 			case REGEX, REGULAR_EXPRESSION -> ValidationUtil.isValidPattern(
 			    castAsStringOrNull( arguments.get( Key.value ) ),
-			    pattern
-			);
+			    pattern );
 			case SSN, SOCIAL_SECURITY_NUMBER -> ValidationUtil.isValidSSN( castAsStringOrNull( arguments.get( Key.value ) ) );
 			case TELEPHONE -> ValidationUtil.isValidTelephone( castAsStringOrNull( arguments.get( Key.value ) ) );
 			case URL -> ValidationUtil.isValidURL( castAsStringOrNull( arguments.get( Key.value ) ) );
@@ -127,10 +172,18 @@ public class IsValid extends BIF {
 			    java.util.Map.of( Key.date, arguments.get( Key.value ), Key.locale, "en_US" ) );
 			case ZIPCODE -> ValidationUtil.isValidZipCode( castAsStringOrNull( arguments.get( Key.value ) ) );
 
-			default -> throw new IllegalArgumentException( "Invalid type: " + type + ". Valid types are: " + Arrays.toString( IsValidType.toArray() ) );
+			default -> throw new IllegalArgumentException(
+			    "Invalid type: " + type + ". Valid types are: " + Arrays.toString( IsValidType.toArray() ) );
 		};
 	}
 
+	/**
+	 * Helper method to cast the value to a string or null if the value is null.
+	 *
+	 * @param value The value to cast to a string or null.
+	 *
+	 * @return The value as a string or null if the value is null.
+	 */
 	public String castAsStringOrNull( Object value ) {
 		return StringCaster.cast( value, false );
 	}
@@ -250,8 +303,8 @@ public class IsValid extends BIF {
 				return IsValidType.valueOf( type.trim().toUpperCase() );
 			} catch ( IllegalArgumentException e ) {
 				throw new IllegalArgumentException(
-				    String.format( "Invalid type [%s], must be one of %s", type, Arrays.toString( IsValidType.values() ) )
-				);
+				    String.format( "Invalid type [%s], must be one of %s", type,
+				        Arrays.toString( IsValidType.values() ) ) );
 			}
 		}
 

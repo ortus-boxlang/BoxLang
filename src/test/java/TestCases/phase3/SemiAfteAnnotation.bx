@@ -1,0 +1,8 @@
+class {
+
+
+	@returnFormat(json);
+	@brad;
+	function foo() {
+	}
+}

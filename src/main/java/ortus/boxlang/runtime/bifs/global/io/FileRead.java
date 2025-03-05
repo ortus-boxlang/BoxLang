@@ -18,6 +18,7 @@ package ortus.boxlang.runtime.bifs.global.io;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -27,6 +28,8 @@ import ortus.boxlang.runtime.util.FileSystemUtil;
 @BoxBIF
 @BoxBIF( alias = "FileReadBinary" )
 public class FileRead extends BIF {
+
+	public static final Key stringOnlyBif = Key.of( "FileRead" );
 
 	/**
 	 * Constructor
@@ -60,10 +63,12 @@ public class FileRead extends BIF {
 		String	charset				= arguments.getAsString( Key.charset );
 		Integer	bufferSize			= arguments.getAsInteger( Key.buffersize );
 		String	filePath			= arguments.getAsString( Key.filepath );
+		Key		bifMethodKey		= arguments.getAsKey( BIF.__functionName );
 
 		if ( charsetOrBufferSize != null ) {
-			if ( IntegerCaster.isInteger( charsetOrBufferSize ) ) {
-				bufferSize = IntegerCaster.cast( charsetOrBufferSize );
+			CastAttempt<Integer> castAttempt = IntegerCaster.attempt( charsetOrBufferSize );
+			if ( castAttempt.wasSuccessful() ) {
+				bufferSize = castAttempt.get();
 			} else {
 				charset = charsetOrBufferSize;
 			}
@@ -73,7 +78,7 @@ public class FileRead extends BIF {
 			filePath = FileSystemUtil.expandPath( context, filePath ).absolutePath().toString();
 		}
 
-		return FileSystemUtil.read( filePath, charset, bufferSize );
+		return FileSystemUtil.read( filePath, charset, bufferSize, bifMethodKey.equals( stringOnlyBif ) );
 
 	}
 

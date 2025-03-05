@@ -20,11 +20,69 @@ options {
 }
 
 @members {
-	private int parenCount = 0;
-	private int braceCount = 0;
-	private int bracketCount = 0;
-	private boolean isQuery = false;
 
+	/**
+	* Track the number of open parens, braces, and brackets so we can determine when an expression is complete
+	* Every time we enter the expression mode, we get a new set of counters on the stack.
+	*/
+	protected java.util.ArrayDeque<int[]> expressionCountStack = new java.util.ArrayDeque<int[]>();
+
+	/**
+	 * Are we inside of a cfquery body (changes the parsing modes due to the implicit output component)
+	 */
+	protected boolean					isQuery							= false;
+
+	public void pushMode(int m) {
+		if( m == DEFAULT_SCRIPT_MODE ) {
+			// paren, brace, bracket
+			expressionCountStack.push( new int[] { 0, 0, 0 } );
+		}
+		super.pushMode(m);
+	}
+
+	public int popMode() {
+		if( _mode == DEFAULT_SCRIPT_MODE ) {
+			expressionCountStack.pop();
+		}
+		return super.popMode();
+	}
+
+	private void incrementParenCount() {
+		expressionCountStack.peek()[0]++;
+	}
+
+	private void incrementBraceCount() {
+		expressionCountStack.peek()[1]++;
+	}
+
+	private void incrementBracketCount() {
+		expressionCountStack.peek()[2]++;
+	}
+
+	private void decrementParenCount() {
+		expressionCountStack.peek()[0]--;
+	}
+
+	private void decrementBraceCount() {
+		expressionCountStack.peek()[1]--;
+	}
+
+	private void decrementBracketCount() {
+		expressionCountStack.peek()[2]--;
+	}
+
+	protected int getParenCount() {
+		return expressionCountStack.peek()[0];
+	}
+
+	private int getBraceCount() {
+		return expressionCountStack.peek()[1];
+	}
+
+	protected int getBracketCount() {
+		return expressionCountStack.peek()[2];
+	}
+	
 	private int countModes(int mode) {
 		int count = 0;
 		if( _mode == mode ) {
@@ -82,20 +140,13 @@ options {
 	}
 
 	public void reset() {
-		resetCounters();
+		expressionCountStack.clear();
 		super.reset();
 	}
 
-	public void resetCounters() {
-		parenCount = 0;
-		braceCount = 0;
-		bracketCount = 0;
-	}
-
 	private boolean isExpressionComplete() {
-		return parenCount == 0 && braceCount == 0 && bracketCount == 0;
+		return getParenCount() == 0 && getBraceCount() == 0 && getBracketCount() == 0;
 	}
-	
 }
 
 /*
@@ -170,10 +221,7 @@ UNEXPECTED_EXPRESSION_SLASH_END:
 ;
 
 ABSTRACT   : 'ABSTRACT';
-ANY        : 'ANY';
-ARRAY      : 'ARRAY';
 AS         : 'AS';
-BOOLEAN    : 'BOOLEAN';
 BREAK      : 'BREAK';
 CASE       : 'CASE';
 CASTAS     : 'CASTAS';
@@ -203,36 +251,26 @@ INTERFACE  : 'INTERFACE';
 IS         : 'IS';
 JAVA       : 'JAVA';
 LESS       : 'LESS';
-MESSAGE    : 'MESSAGE';
 MOD        : 'MOD';
 NEW        : 'NEW';
 NULL       : 'NULL';
-NUMERIC    : 'NUMERIC';
 PARAM      : 'PARAM';
 PACKAGE    : 'PACKAGE';
 PRIVATE    : 'PRIVATE';
 PROPERTY   : 'PROPERTY';
 PUBLIC     : 'PUBLIC';
-QUERY      : 'QUERY';
 REMOTE     : 'REMOTE';
 REQUIRED   : 'REQUIRED';
 RETHROW    : 'RETHROW';
 RETURN     : 'RETURN';
-REQUEST    : 'REQUEST';
-SERVER     : 'SERVER';
-SETTING    : 'SETTING';
 STATIC     : 'STATIC';
-STRING     : 'STRING';
-STRUCT     : 'STRUCT';
 SWITCH     : 'SWITCH';
 THAN       : 'THAN';
 THROW      : 'THROW';
 TO         : 'TO';
 TRUE       : 'TRUE';
 TRY        : 'TRY';
-TYPE       : 'TYPE';
 VAR        : 'VAR';
-VARIABLES  : 'VARIABLES';
 WHEN       : 'WHEN';
 WHILE      : 'WHILE';
 XOR        : 'XOR';
@@ -270,22 +308,23 @@ BANG : '!';
 OR       : 'OR';
 PIPEPIPE : '||';
 
-AMPERSAND   : '&';
-ARROW       : '->';
-AT          : '@';
-BACKSLASH   : '\\';
-COMMA       : ',';
-COLON       : ':';
-COLONCOLON  : '::';
-DOT         : '.';
-ELVIS       : '?:';
+AMPERSAND  : '&';
+ARROW      : '->';
+AT         : '@';
+BACKSLASH  : '\\';
+COMMA      : ',';
+COLON      : ':';
+COLONCOLON : '::';
+DOT        : '.';
+// CF allows for null ? : 'default'
+ELVIS       : '?' [ \t\r\n]* ':';
 EQUALSIGN   : '=';
-LBRACE      : '{' { braceCount++; };
-RBRACE      : '}' { braceCount--; };
-LPAREN      : '(' { parenCount++; };
-RPAREN      : ')' { parenCount--; };
-LBRACKET    : '[' { bracketCount++; };
-RBRACKET    : ']' { bracketCount--; };
+LBRACE      : '{' { incrementBraceCount(); };
+RBRACE      : '}' { decrementBraceCount(); };
+LPAREN      : '(' { incrementParenCount(); };
+RPAREN      : ')' { decrementParenCount(); };
+LBRACKET    : '[' { incrementBracketCount(); };
+RBRACKET    : ']' { decrementBracketCount(); };
 ARROW_RIGHT : '=>';
 MINUS       : '-';
 MINUSMINUS  : '--';
@@ -322,9 +361,11 @@ TAG_COMMENT_START: '<!---' -> pushMode(TAG_COMMENT), channel(HIDDEN);
 
 // ANY NEW LEXER RULES FOR AN ENGLISH WORD NEEDS ADDED TO THE identifer RULE IN THE PARSER
 
-ICHAR_2 : '#' {lastModeWas(TEMPLATE_ATTVALUE,2)}? -> type(ICHAR), popMode, popMode, popMode;
-ICHAR_1 : '#' {_modeStack.contains(hashMode)}? -> type(ICHAR), popMode, popMode;
-ICHAR   : '#';
+ICHAR_2: '#' {lastModeWas(TEMPLATE_ATTVALUE,2)}? -> type(ICHAR), popMode, popMode, popMode;
+ICHAR_1:
+    '#' {_modeStack.contains(hashMode) && isExpressionComplete()}? -> type (ICHAR), popMode, popMode
+;
+ICHAR: '#';
 
 WS              : (' ' | '\t' | '\f')+                              -> channel(HIDDEN);
 NEWLINE         : ('\n' | '\r')+ (' ' | '\t' | '\f' | '\n' | '\r')* -> channel(HIDDEN);
@@ -344,7 +385,7 @@ FLOAT_LITERAL      : DIGIT+ DOT_FLOAT;
 DOT_FLOAT_LITERAL  : DOT_FLOAT;
 INTEGER_LITERAL    : DIGIT+;
 
-fragment ID_BODY               : [a-z_$]+ ( [_]+ | [a-z]+ | DIGIT)*;
+fragment ID_BODY               : [a-z_$]+ ( [a-z_$]+ | DIGIT)*;
 PREFIXEDIDENTIFIER             : 'CF' ID_BODY;
 IDENTIFIER                     : ID_BODY;
 DOT_NUMBER_PREFIXED_IDENTIFIER : DOT_FLOAT ID_BODY;
@@ -489,23 +530,19 @@ TEMPLATE_QUERY:
 
 // return may or may not have an expression, so eat any leading whitespace now so it doesn't give us an expression part that's just a space
 TEMPLATE_RETURN:
-    'return' [ \t\r\n]* {resetCounters();} -> pushMode( TEMPLATE_COMPONENT_MODE ), pushMode( TEMPLATE_EXPRESSION_MODE_COMPONENT), pushMode(
-        DEFAULT_SCRIPT_MODE)
+    'return' [ \t\r\n]* -> pushMode( TEMPLATE_COMPONENT_MODE ), pushMode( TEMPLATE_EXPRESSION_MODE_COMPONENT), pushMode( DEFAULT_SCRIPT_MODE)
 ;
 
 TEMPLATE_IF:
-    'if' [ \t\r\n]+ {resetCounters();} -> pushMode( TEMPLATE_COMPONENT_MODE ), pushMode(TEMPLATE_EXPRESSION_MODE_COMPONENT), pushMode(
-        DEFAULT_SCRIPT_MODE)
+    'if' [ \t\r\n]* -> pushMode( TEMPLATE_COMPONENT_MODE ), pushMode(TEMPLATE_EXPRESSION_MODE_COMPONENT), pushMode( DEFAULT_SCRIPT_MODE)
 ;
 TEMPLATE_ELSE: 'else' -> pushMode( TEMPLATE_COMPONENT_MODE );
 TEMPLATE_ELSEIF:
-    'elseif' [ \t\r\n]+ {resetCounters();} -> pushMode( TEMPLATE_COMPONENT_MODE ), pushMode(TEMPLATE_EXPRESSION_MODE_COMPONENT), pushMode(
-        DEFAULT_SCRIPT_MODE)
+    'elseif' [ \t\r\n]* -> pushMode( TEMPLATE_COMPONENT_MODE ), pushMode(TEMPLATE_EXPRESSION_MODE_COMPONENT), pushMode( DEFAULT_SCRIPT_MODE)
 ;
 
 TEMPLATE_SET:
-    'set' [ \t\r\n]+ {resetCounters();} -> pushMode( TEMPLATE_COMPONENT_MODE ), pushMode( TEMPLATE_EXPRESSION_MODE_COMPONENT), pushMode(
-        DEFAULT_SCRIPT_MODE)
+    'set' [ \t\r\n]+ -> pushMode( TEMPLATE_COMPONENT_MODE ), pushMode( TEMPLATE_EXPRESSION_MODE_COMPONENT), pushMode( DEFAULT_SCRIPT_MODE)
 ;
 
 TEMPLATE_TRY         : 'try'         -> pushMode( TEMPLATE_COMPONENT_MODE );

@@ -62,7 +62,7 @@ public class GetBaseTagData extends BIF {
 		var	components	= Arrays
 		    .asList( context.getComponents() )
 		    .stream()
-		    .filter( s -> s.get( Key._NAME ).equals( Key.module ) && s.get( Key.customTagName ).equals( tagKey ) )
+		    .filter( s -> s.get( Key._NAME ).equals( Key.component ) && s.get( Key.customTagName ).equals( tagKey ) )
 		    .toList();
 		if ( components.isEmpty() ) {
 			throw new BoxValidationException( tagName + " not found" );

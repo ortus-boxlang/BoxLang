@@ -122,9 +122,9 @@ public class Configuration implements IConfigSegment {
 
 	/**
 	 * Invoke implicit getters and setters when using the implicit accessor
-	 * {@code true} by default
+	 * {@code true} by default (defaulted in the BoxClassSupport class where it's used)
 	 */
-	public Boolean				invokeImplicitAccessor			= true;
+	public Boolean				invokeImplicitAccessor			= null;
 
 	/**
 	 * Use high precision math for all math operations, else it relies on Double
@@ -892,8 +892,8 @@ public class Configuration implements IConfigSegment {
 		    Key.applicationTimeout, this.applicationTimeout,
 		    Key.caches, cachesCopy,
 		    Key.classGenerationDirectory, this.classGenerationDirectory,
-		    Key.customTagsDirectory, Array.fromList( this.customTagsDirectory ),
-		    Key.classPaths, Array.fromList( this.classPaths ),
+		    Key.customTagsDirectory, Array.copyFromList( this.customTagsDirectory ),
+		    Key.classPaths, Array.copyFromList( this.classPaths ),
 		    Key.datasources, datsourcesCopy,
 		    Key.debugMode, this.debugMode,
 		    Key.classResolverCache, this.classResolverCache,
@@ -903,12 +903,12 @@ public class Configuration implements IConfigSegment {
 		    Key.experimental, Struct.fromMap( this.experimental ),
 		    Key.invokeImplicitAccessor, this.invokeImplicitAccessor,
 		    Key.whitespaceCompressionEnabled, this.whitespaceCompressionEnabled,
-		    Key.javaLibraryPaths, Array.fromList( this.javaLibraryPaths ),
+		    Key.javaLibraryPaths, Array.copyFromList( this.javaLibraryPaths ),
 		    Key.locale, this.locale,
 		    Key.logging, this.logging.asStruct(),
 		    Key.mappings, mappingsCopy,
 		    Key.modules, modulesCopy,
-		    Key.modulesDirectory, Array.fromList( this.modulesDirectory ),
+		    Key.modulesDirectory, Array.copyFromList( this.modulesDirectory ),
 		    Key.originalConfig, this.originalConfig,
 		    Key.requestTimeout, this.requestTimeout,
 		    Key.sessionManagement, this.sessionManagement,

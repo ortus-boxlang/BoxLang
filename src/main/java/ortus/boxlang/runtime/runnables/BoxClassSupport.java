@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.context.BaseBoxContext;
@@ -170,7 +171,12 @@ public class BoxClassSupport {
 					if ( setting != null ) {
 						thisClass.setCanInvokeImplicitAccessor( BooleanCaster.cast( setting ) );
 					} else {
-						thisClass.setCanInvokeImplicitAccessor( false );
+						// Box classes default to true, but CF classes default to false
+						if ( thisClass.getSourceType().equals( BoxSourceType.BOXSCRIPT ) ) {
+							thisClass.setCanInvokeImplicitAccessor( true );
+						} else {
+							thisClass.setCanInvokeImplicitAccessor( false );
+						}
 					}
 				}
 			}
@@ -245,6 +251,10 @@ public class BoxClassSupport {
 		// If invokeImplicitAccessor is enabled, and the key is a property, invoke the setter method.
 		// This may call either a generated setter or a user-defined setter
 		if ( thisClass.canInvokeImplicitAccessor( context ) && thisClass.getProperties().containsKey( key ) ) {
+			// recursion avoidance
+			if ( context instanceof FunctionBoxContext fbc && fbc.isInClass() && fbc.getThisClass() == thisClass ) {
+				return thisClass.getThisScope().assign( context, key, value );
+			}
 			return BoxClassSupport.dereferenceAndInvoke( thisClass, context, thisClass.getProperties().get( key ).setterName(), new Object[] { value }, false );
 		}
 		// If there is no this key of this name, but there is a static var, then set it
@@ -278,6 +288,10 @@ public class BoxClassSupport {
 		// If invokeImplicitAccessor is enabled, and the key is a property, invoke the getter method.
 		// This may call either a generated getter or a user-defined getter
 		if ( thisClass.canInvokeImplicitAccessor( context ) && thisClass.getProperties().containsKey( key ) ) {
+			// recursion avoidance
+			if ( context instanceof FunctionBoxContext fbc && fbc.isInClass() && fbc.getThisClass() == thisClass ) {
+				return thisClass.getThisScope().dereference( context, key, safe );
+			}
 			return BoxClassSupport.dereferenceAndInvoke( thisClass, context, thisClass.getProperties().get( key ).getterName(), new Object[] {}, false );
 		}
 
