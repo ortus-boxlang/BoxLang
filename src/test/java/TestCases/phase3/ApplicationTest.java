@@ -70,12 +70,16 @@ public class ApplicationTest {
 
 				result = application;
 				result2 = session;
+				result3 = application.applicationName;
+				result4 = application.applicationName.startsWith( "myApp" );
 				startTime = ApplicationStartTime()
 			""", context );
 		// @formatter:on
 
 		assertThat( variables.get( result ) ).isInstanceOf( ApplicationScope.class );
 		assertThat( variables.get( Key.of( "result2" ) ) ).isInstanceOf( SessionScope.class );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( "myAppsdfsdf" );
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( true );
 
 		ApplicationBoxContext	appContext	= context.getParentOfType( ApplicationBoxContext.class );
 		Application				app			= appContext.getApplication();
