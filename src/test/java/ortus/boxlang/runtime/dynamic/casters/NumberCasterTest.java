@@ -137,6 +137,21 @@ public class NumberCasterTest {
 
 	}
 
+	@DisplayName( "It can attempt to cast a string prefixed with an octal" )
+	@Test
+	void testItCanCastOctals() {
+		CastAttempt<Number> attempt = NumberCaster.attempt( "08" );
+		assertThat( attempt.wasSuccessful() ).isTrue();
+		assertThat( attempt.get() ).isEqualTo( 8 );
+		assertThat( attempt.ifSuccessful( System.out::println ) );
+		// 000579
+		attempt = NumberCaster.attempt( "000579" );
+		assertThat( attempt.wasSuccessful() ).isTrue();
+		assertThat( attempt.get() ).isEqualTo( 579 );
+		assertThat( attempt.ifSuccessful( System.out::println ) );
+
+	}
+
 	@Disabled( "Ensures the performance benchmark for the attempt is met" )
 	@Test
 	void canMeetBenchmark() {
