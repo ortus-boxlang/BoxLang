@@ -65,8 +65,9 @@
 	"mappings": {
 		"/": "${user-dir}"
 	},
-	// A collection of BoxLang module directories, they must be absolute paths
+	// A collection of BoxLang module directories, they must be absolute paths or expanded paths
 	"modulesDirectory": [
+		"${user-dir}/boxlang_modules",
 		"${boxlang-home}/modules"
 	],
 	// A collection of BoxLang custom tag directories, they must be absolute paths
