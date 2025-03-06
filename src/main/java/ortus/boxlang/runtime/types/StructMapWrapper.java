@@ -36,6 +36,7 @@ import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.interop.DynamicInteropService;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.BoxInterface;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
@@ -717,6 +718,7 @@ public class StructMapWrapper implements IStruct, IListenable, Serializable {
 				    name,
 				    positionalArguments,
 				    getFunctionContextThisClassForInvoke( context ),
+				    getFunctionContextThisStaticClassForInvoke( context ),
 				    getFunctionContextThisInterfaceForInvoke()
 				);
 				return function.invoke( fContext );
@@ -755,6 +757,7 @@ public class StructMapWrapper implements IStruct, IListenable, Serializable {
 				    name,
 				    namedArguments,
 				    getFunctionContextThisClassForInvoke( context ),
+				    getFunctionContextThisStaticClassForInvoke( context ),
 				    getFunctionContextThisInterfaceForInvoke()
 				);
 				return function.invoke( fContext );
@@ -776,6 +779,15 @@ public class StructMapWrapper implements IStruct, IListenable, Serializable {
 			return cContext.getThisClass();
 		} else if ( context instanceof FunctionBoxContext fContext ) {
 			return fContext.getThisClass();
+		}
+		return null;
+	}
+
+	public DynamicObject getFunctionContextThisStaticClassForInvoke( IBoxContext context ) {
+		if ( context instanceof ClassBoxContext cContext ) {
+			return DynamicObject.of( cContext.getThisClass().getClass() );
+		} else if ( context instanceof FunctionBoxContext fContext ) {
+			return fContext.getThisStaticClass();
 		}
 		return null;
 	}

@@ -43,5 +43,13 @@ class {
 		return staticBrad;
 	}
 
+	static function IAmStatic() {
+		return ImWithStatic();
+	}
+
+	static function ImWithStatic( notProvided=static.finalStatic ) {
+		return static.scoped & notProvided;
+	}
+
 
 }

@@ -17,12 +17,10 @@
  */
 package ortus.boxlang.runtime.components;
 
-import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 
 /**
@@ -34,21 +32,14 @@ public class BoxLangComponentProxy extends Component {
 	/**
 	 * The target BoxLang BIF class we proxy to
 	 */
-	private IClassRunnable	target;
-
-	/**
-	 * The BoxLang function we proxy to
-	 */
-	private Function		bxFunction;
+	private IClassRunnable target;
 
 	/**
 	 * Constructor
 	 */
 	public BoxLangComponentProxy( IClassRunnable target ) {
 		super();
-		this.target		= target;
-		this.bxFunction	= this.target.getThisScope().getAsFunction( Key.invoke );
-		// declaredArguments = this.bxFunction.getArguments();
+		this.target = target;
 	}
 
 	/**
@@ -90,22 +81,8 @@ public class BoxLangComponentProxy extends Component {
 		arguments.put( Key.executionState, executionState );
 
 		// Execute
-		FunctionBoxContext fContext = Function.generateFunctionContext(
-		    this.bxFunction,
-		    context.getFunctionParentContext(),
-		    Key.invoke,
-		    arguments,
-		    this.target,
-		    null
-		);
-		fContext.pushTemplate( this.target );
-		try {
-			var bodyResult = this.bxFunction.invoke( fContext );
-			return ( bodyResult == null ) ? Component.DEFAULT_RETURN : ( BodyResult ) bodyResult;
-		} finally {
-			fContext.popTemplate();
-		}
-
+		var bodyResult = this.target.dereferenceAndInvoke( context, Key.invoke, arguments, false );
+		return ( bodyResult == null ) ? Component.DEFAULT_RETURN : ( BodyResult ) bodyResult;
 	}
 
 }

@@ -87,6 +87,7 @@ public class ClassVariablesScope extends VariablesScope {
 				    name,
 				    positionalArguments,
 				    getFunctionContextThisClassForInvoke( context ),
+				    null, // never going go be a static context if we're hitting the variables scope
 				    getFunctionContextThisInterfaceForInvoke()
 				);
 				return function.invoke( fContext );
@@ -134,6 +135,7 @@ public class ClassVariablesScope extends VariablesScope {
 				    name,
 				    namedArguments,
 				    getFunctionContextThisClassForInvoke( context ),
+				    null, // never going go be a static context if we're hitting the variables scope
 				    getFunctionContextThisInterfaceForInvoke()
 				);
 				return function.invoke( fContext );

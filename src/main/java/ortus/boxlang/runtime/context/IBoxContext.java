@@ -26,6 +26,7 @@ import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.modules.ModuleRecord;
 import ortus.boxlang.runtime.runnables.BoxInterface;
@@ -413,6 +414,13 @@ public interface IBoxContext extends IBoxAttachable, Serializable {
 	 * @return The class to use, or null if none
 	 */
 	public IClassRunnable getFunctionClass();
+
+	/**
+	 * Get the class, if any, for a function invocation
+	 *
+	 * @return The class to use, or null if none
+	 */
+	public DynamicObject getFunctionStaticClass();
 
 	/**
 	 * Get the interface, if any, for a function invocation

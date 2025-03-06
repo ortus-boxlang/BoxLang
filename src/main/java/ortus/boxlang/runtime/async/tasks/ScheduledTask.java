@@ -440,6 +440,7 @@ public class ScheduledTask implements Runnable {
 					        castedTask.getName(), // the function name
 					        new Object[] {}, // no args
 					        null, // No class, lambda/closure
+					        null, // No class, lambda/closure
 					        null ) );
 				}
 				default -> {

@@ -349,6 +349,7 @@ public class BoxClassSupport {
 			    name,
 			    positionalArguments,
 			    thisClass,
+			    null,
 			    null
 			);
 
@@ -435,6 +436,7 @@ public class BoxClassSupport {
 			    name,
 			    namedArguments,
 			    thisClass,
+			    null,
 			    null
 			);
 
@@ -612,6 +614,7 @@ public class BoxClassSupport {
 			    name,
 			    namedArguments,
 			    null,
+			    targetClass,
 			    null
 			);
 
@@ -639,6 +642,7 @@ public class BoxClassSupport {
 			    name,
 			    positionalArguments,
 			    null,
+			    targetClass,
 			    null
 			);
 

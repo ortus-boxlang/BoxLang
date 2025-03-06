@@ -243,6 +243,7 @@ public abstract class BoxInterface implements ITemplateRunnable, IReferenceable,
 			    name,
 			    positionalArguments,
 			    null,
+			    null,
 			    this
 			);
 			return function.invoke( functionContext );
@@ -275,6 +276,7 @@ public abstract class BoxInterface implements ITemplateRunnable, IReferenceable,
 			    context,
 			    name,
 			    namedArguments,
+			    null,
 			    null,
 			    this
 			);
