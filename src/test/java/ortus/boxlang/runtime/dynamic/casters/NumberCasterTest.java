@@ -137,7 +137,7 @@ public class NumberCasterTest {
 
 	}
 
-	@DisplayName( "It can attempt to cast a string prefixed with an octal" )
+	@DisplayName( "It can attempt to cast a string containing with an invalid octal number" )
 	@Test
 	void testItCanCastOctals() {
 		CastAttempt<Number> attempt = NumberCaster.attempt( "08" );
