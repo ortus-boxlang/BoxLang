@@ -176,6 +176,7 @@ public class HTTP extends Component {
 		    // NTLM
 		    new Attribute( Key.domain, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
 		    new Attribute( Key.workstation, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
+		    new Attribute( Key.httpVersion, "string", "HTTP/2", Set.of( Validator.valueOneOf( "HTTP/1.1", "HTTP/2" ) ) )
 		};
 	}
 
@@ -227,12 +228,19 @@ public class HTTP extends Component {
 			}
 		}
 
+		HttpClient.Version httpVersion = attributes.getAsString( Key.httpVersion ).equalsIgnoreCase( "HTTP/1.1" )
+		    ? HttpClient.Version.HTTP_1_1
+		    : HttpClient.Version.HTTP_2;
+
 		try {
 			HttpRequest.Builder			builder			= HttpRequest.newBuilder();
 			URIBuilder					uriBuilder		= new URIBuilder( theURL );
 			HttpRequest.BodyPublisher	bodyPublisher	= null;
 			List<IStruct>				formFields		= new ArrayList<>();
 			List<IStruct>				files			= new ArrayList<>();
+
+			builder.version( httpVersion );
+
 			builder.header( "User-Agent", "BoxLang" );
 			if ( attributes.get( Key.username ) != null && attributes.get( Key.password ) != null ) {
 				if ( authMode.equals( AUTHMODE_BASIC ) ) {

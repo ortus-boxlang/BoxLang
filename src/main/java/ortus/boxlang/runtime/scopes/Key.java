@@ -382,6 +382,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		https_secretkeysize					= Key.of( "https_secretkeysize" );
 	public static final Key		https_server_issuer					= Key.of( "https_server_issuer" );
 	public static final Key		https_server_subject				= Key.of( "https_server_subject" );
+	public static final Key		httpVersion							= Key.of( "httpVersion" );
 	public static final Key		id									= Key.of( "id" );
 	public static final Key		idleTime							= Key.of( "idleTime" );
 	public static final Key		ignoreCase							= Key.of( "ignoreCase" );
