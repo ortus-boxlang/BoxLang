@@ -42,22 +42,6 @@ public class IsNumeric extends BIF {
 	}
 
 	/**
-	 * Determine whether a given value can be casted to numeric.
-	 *
-	 * @param context   The context in which the BIF is being invoked.
-	 * @param arguments Argument scope for the BIF.
-	 *
-	 * @argument.string Value to test for date-ness
-	 */
-	public Object _inlvoke( IBoxContext context, ArgumentsScope arguments ) {
-		Object value = arguments.get( Key.string );
-		if ( value == null ) {
-			return false;
-		}
-		return GenericCaster.attempt( context, value, "numeric" ).wasSuccessful();
-	}
-
-	/**
 	 * Tests whether a value is numeric
 	 *
 	 * @param context   The context in which the BIF is being invoked.
