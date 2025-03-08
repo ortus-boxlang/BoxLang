@@ -34,11 +34,15 @@ class extends="java:ortus.boxlang.runtime.async.tasks.BaseScheduler" {
 
 	}
 
+	function getName(){
+		return "Test Scheduler";
+	}
+
 	/**
 	 * Called after the scheduler has registered all schedules
 	 */
 	@overrideJava
-	function onStartup(){
+	void function onStartup(){
 		println( "I have started!" & getName() );
 	}
 

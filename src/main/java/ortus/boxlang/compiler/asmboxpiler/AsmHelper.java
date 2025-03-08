@@ -1150,7 +1150,8 @@ public class AsmHelper {
 		node.visitFieldInsn( Opcodes.GETSTATIC, Type.getInternalName( Boolean.class ), "FALSE", Type.getDescriptor( Boolean.class ) );
 
 		node.visitMethodInsn( Opcodes.INVOKEVIRTUAL, type.getInternalName(), "dereferenceAndInvoke",
-		    Type.getMethodDescriptor( Type.getType( Object.class ), Type.getType( IBoxContext.class ), Type.getType( Key.class ), Type.getType( Object.class ),
+		    Type.getMethodDescriptor( Type.getType( Object.class ), Type.getType( IBoxContext.class ), Type.getType( Key.class ),
+		        Type.getType( Object[].class ),
 		        Type.getType( Boolean.class ) ),
 		    false );
 

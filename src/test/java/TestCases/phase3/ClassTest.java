@@ -31,6 +31,7 @@ import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.async.tasks.BaseScheduler;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
@@ -1885,6 +1886,19 @@ public class ClassTest {
 		    new src.test.java.TestCases.phase3.SemiAfteAnnotation()
 		                """,
 		    context );
+	}
+
+	@Test
+	public void testCanCallOverrideFromJava() {
+		instance.executeSource(
+		    """
+		    result = new src.test.bx.Scheduler()
+		                """,
+		    context );
+
+		BaseScheduler x = ( BaseScheduler ) variables.get( result );
+
+		x.onStartup();
 	}
 
 }
