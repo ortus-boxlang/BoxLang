@@ -602,4 +602,35 @@ public class IsValidTest {
 		assertThat( ( Boolean ) variables.get( Key.of( "fLambda" ) ) ).isFalse();
 	}
 
+	@DisplayName( "It can validate hex strings" )
+	@Test
+	public void testHex() {
+		instance.executeSource(
+		    """
+		    // trues
+		    hex1 = isValid( 'hex', '1234567890abcdef' );
+		    hex2 = isValid( 'hex', '1234567890ABCDEF' );
+		    hex3 = isValid( 'hex', '1A2B3C' );
+		    hex4 = isValid( 'hex', '1a2b3C' );
+		    hex5 = isValid( 'hex', '##FF0000' );
+		    hex6 = isValid( 'hex', '0xDEADBEEF' );
+
+		    // falsies
+		    hex7 = isValid( 'hex', '1234567890ABCDEFx' );
+		    hex8 = isValid( 'hex', '1G2B3C' );
+		    hex9 = isValid( 'hex', '' );
+		    """,
+		    context );
+		assertThat( ( Boolean ) variables.get( Key.of( "hex1" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "hex2" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "hex3" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "hex4" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "hex5" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "hex6" ) ) ).isTrue();
+
+		assertThat( ( Boolean ) variables.get( Key.of( "hex7" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "hex8" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "hex9" ) ) ).isFalse();
+	}
+
 }

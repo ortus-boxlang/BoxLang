@@ -136,6 +136,21 @@ public class ValidationUtil {
 	}
 
 	/**
+	 * Validates the given string is a valid hexadecimal string.
+	 * <p>
+	 * This method will validate a string that is a valid hexadecimal string, with or without a leading "0x" or "#".
+	 *
+	 * @param hex String to check for a valid hexadecimal format.
+	 *
+	 * @return Boolean indicating whether the given string is a valid hexadecimal string.
+	 */
+	public static boolean isValidHexString( String hex ) {
+		// Remove any leading "0x" or "#" if present (common in hex notation)
+		hex = hex.replaceFirst( "^(0x|#)", "" );
+		return RegexBuilder.of( hex, RegexBuilder.HEX_STRING ).matches();
+	}
+
+	/**
 	 * Validates a Social Security Number (SSN) in the format of 123-45-6789 or 123456789.
 	 * <p>
 	 * Expressly disallows certain invalid SSNs, such as 000-00-0000, 666-xx-xxxx, and 9xx-xx-xxxx, as well as a few SSNs that have been disallowed since
