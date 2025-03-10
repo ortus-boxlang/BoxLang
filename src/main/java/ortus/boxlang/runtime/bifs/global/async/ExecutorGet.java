@@ -31,12 +31,12 @@ public class ExecutorGet extends BIF {
 	public ExecutorGet() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, Argument.STRING, Key._NAME )
+		    new Argument( true, Argument.STRING, Key._NAME, "boxlang-tasks" )
 		};
 	}
 
 	/**
-	 * Get an executor by name
+	 * Get an executor by name. If no name is provided, the default executor is returned "boxlang-tasks"
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
