@@ -95,7 +95,7 @@ dependencies {
 	testImplementation "org.mockito:mockito-core:5.+"
 	testImplementation "com.google.truth:truth:1.+"
 	testImplementation "commons-cli:commons-cli:1.9.0"
-	testImplementation "org.wiremock:wiremock:3.12.0"
+	testImplementation "org.wiremock:wiremock:3.12.1"
 	testImplementation 'org.apache.derby:derby:10.17.1.0'
 	testImplementation 'io.undertow:undertow-core:2.3.18.Final'
 	// Explicitly declare the JUnit platform launcher (to avoid deprecation)
