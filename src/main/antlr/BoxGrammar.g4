@@ -305,7 +305,7 @@ rethrow: RETHROW
     ;
 
 // throw Exception;
-throw: { isThrow(_input) }? THROW expression
+throw: { isThrow(_input) }? THROW expression?
     ;
 
 /*

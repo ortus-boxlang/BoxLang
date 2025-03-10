@@ -607,7 +607,10 @@ public class CFVisitor extends CFGrammarBaseVisitor<BoxNode> {
 		var				pos		= tools.getPosition( ctx );
 		var				src		= tools.getSourceText( ctx );
 
-		BoxExpression	value	= ctx.expression().accept( expressionVisitor );
+		BoxExpression	value	= null;
+		if ( ctx.expression() != null ) {
+			value = ctx.expression().accept( expressionVisitor );
+		}
 		return new BoxThrow( value, pos, src );
 	}
 

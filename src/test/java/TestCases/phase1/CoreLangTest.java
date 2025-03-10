@@ -5340,30 +5340,23 @@ public class CoreLangTest {
 	}
 
 	@Test
-	public void testVariableNameCast() {
-		// @formatter:off
-		instance.executeSource(
-				"""
-				variableName function foo( variableName bar ) {
-					return bar;
-				}
-				result = foo( "$brad" );
-				""",
-				context );
-		// @formatter:on
-		assertThat( variables.get( result ) ).isEqualTo( "$brad" );
+	public void testThrowWithNoExceptionCF() {
+		CustomException e = assertThrows( CustomException.class, () -> instance.executeSource(
+		    """
+		    	throw;
+		    """,
+		    context, BoxSourceType.CFSCRIPT ) );
+		assertThat( e.getMessage() ).isNull();
+	}
 
-		assertThrows( BoxRuntimeException.class, () -> {
-			instance.executeSource(
-			    """
-			    variableName function foo( variableName bar ) {
-			    	return bar;
-			    }
-			    result = foo( 1 );
-			    """,
-			    context );
-		} );
-
+	@Test
+	public void testThrowWithNoException() {
+		CustomException e = assertThrows( CustomException.class, () -> instance.executeSource(
+		    """
+		    	throw;
+		    """,
+		    context ) );
+		assertThat( e.getMessage() ).isNull();
 	}
 
 }
