@@ -33,9 +33,7 @@ import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.application.BaseApplicationListener;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.loader.ImportDefinition;
@@ -58,7 +56,7 @@ public class ExpandPathTest {
 		instance = BoxRuntime.getInstance( true );
 		// Create a mapping for the test
 		instance.getConfiguration().mappings.put( "/expand/path/test",
-		    FileSystemUtil.expandPath( instance.getRuntimeContext(), "src/test/java/ortus/boxlang/runtime/bifs/global/io/" ).absolutePath().toString() );
+		    Path.of( "src/test/java/ortus/boxlang/runtime/bifs/global/io/" ).toAbsolutePath().toString() );
 	}
 
 	@BeforeEach
@@ -285,33 +283,4 @@ public class ExpandPathTest {
 			assertThat( variables.getAsString( result ) ).isEqualTo( variables.getAsString( Key.of( "badPath" ) ) );
 		}
 	}
-
-	@Test
-	public void testExpandInTemplateContext() {
-		RequestBoxContext		requestContext	= context.getParentOfType( RequestBoxContext.class );
-		BaseApplicationListener	listener		= requestContext.getApplicationListener();
-
-		Path					absoluteAppPath	= Path.of( "src/test/java/ortus/boxlang/runtime/bifs/global/io/" ).toAbsolutePath();
-
-		context.pushTemplate( ResolvedFilePath.of( absoluteAppPath.resolve( "Application.bx" ) ) );
-		// Mock the relative path
-		listener.getSettings()
-		    .put( "source", ResolvedFilePath.of( absoluteAppPath.resolve( "Application.bx" ) ).absolutePath().toString() );
-
-		// @formatter:off
-		instance.executeSource(
-		    """
-		        bx:application name="myTestExpansionApp"{}
-				result = expandPath( "/expand/path/test/models" );
-			""", context );
-		// @formatter:on
-		System.out.println( "Closest template" + context.findClosestTemplate().absolutePath().toString() );
-
-		assertThat( context.getConfig().getAsStruct( Key.mappings ) ).containsKey( Key.of( "/expand/path/test" ) );
-
-		assertThat( variables.getAsString( result ) )
-		    .isEqualTo( context.getConfig().getAsStruct( Key.mappings ).get( Key.of( "/expand/path/test" ) )
-		        + "/models" );
-	}
-
 }

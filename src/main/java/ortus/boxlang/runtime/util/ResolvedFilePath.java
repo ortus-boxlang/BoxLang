@@ -153,8 +153,7 @@ public record ResolvedFilePath( String mappingName, String mappingPath, String r
 	 */
 	public ResolvedFilePath newFromRelative( String relativePath ) {
 		String	newRelativePath;
-		// if our relative path is a file, we use the parent. Otherwise we treat it as a directory - note we can't use `Files.isDirectory` because that tests for existence
-		Path	absoluteParent	= absolutePath().getFileName().toString().contains( "." ) ? absolutePath().getParent() : absolutePath();
+		Path	absoluteParent	= absolutePath().getParent();
 		Path	newAbsolutePath	= absoluteParent.resolve( relativePath );
 
 		if ( absolutePath().toString().equals( relativePath() ) ) {
