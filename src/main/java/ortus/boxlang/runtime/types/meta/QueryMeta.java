@@ -25,7 +25,7 @@ import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableStruct;
 /**
  * This class represents the metadata of a BoxLang Query object
  */
-public class QueryMeta extends BoxMeta {
+public class QueryMeta extends BoxMeta<Query> {
 
 	@SuppressWarnings( "unused" )
 	private Query	target;

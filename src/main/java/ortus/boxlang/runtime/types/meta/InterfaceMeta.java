@@ -34,7 +34,7 @@ import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableStruct;
 /**
  * This class represents generic BoxLang metadata for a an object which has no object-specifc properties
  */
-public class InterfaceMeta extends BoxMeta {
+public class InterfaceMeta extends BoxMeta<BoxInterface> {
 
 	@SuppressWarnings( "unused" )
 	private BoxInterface	target;

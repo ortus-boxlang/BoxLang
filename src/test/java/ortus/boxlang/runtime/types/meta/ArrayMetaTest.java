@@ -54,14 +54,14 @@ public class ArrayMetaTest {
 		GenericMeta	$bx		= ( GenericMeta ) Referencer.get( context, arr, BoxMeta.key, false );
 
 		// Listens to all keys
-		$bx.registerChangeListener( ( key, newValue, oldValue ) -> {
+		$bx.registerChangeListener( ( key, newValue, oldValue, object ) -> {
 			assertThat( newValue == null ).isEqualTo( false );
 			assertThat( oldValue == null ).isEqualTo( true );
 			return newValue;
 		} );
 
 		// Listens for key 3 only
-		$bx.registerChangeListener( three, ( key, newValue, oldValue ) -> {
+		$bx.registerChangeListener( three, ( key, newValue, oldValue, object ) -> {
 			assertThat( key ).isEqualTo( three );
 			assertThat( newValue ).isEqualTo( "baz" );
 

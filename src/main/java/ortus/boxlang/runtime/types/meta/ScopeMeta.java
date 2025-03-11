@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.types.meta;
 
 import java.util.Set;
 
+import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.unmodifiable.IUnmodifiable;
@@ -27,16 +28,16 @@ import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableStruct;
 /**
  * This class represents BoxLang metadata for a Scope
  */
-public class ScopeMeta extends BoxMeta {
+public class ScopeMeta extends BoxMeta<IScope> {
 
-	private IStruct	target;
+	private IScope	target;
 	public Class<?>	$class;
 	public IStruct	meta;
 
 	/**
 	 * Constructor
 	 */
-	public ScopeMeta( IStruct target, Set<Key> finalKeySet ) {
+	public ScopeMeta( IScope target, Set<Key> finalKeySet ) {
 		super();
 		this.target	= target;
 		this.$class	= target.getClass();
@@ -56,7 +57,7 @@ public class ScopeMeta extends BoxMeta {
 	/**
 	 * Get target object this metadata is for
 	 */
-	public Object getTarget() {
+	public IScope getTarget() {
 		return target;
 	}
 

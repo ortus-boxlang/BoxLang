@@ -20,7 +20,7 @@ package ortus.boxlang.runtime.types.meta;
 import ortus.boxlang.runtime.scopes.Key;
 
 @FunctionalInterface
-public interface IChangeListener {
+public interface IChangeListener<T> {
 
 	/**
 	 * Call when a value is being changed in an IListenable
@@ -28,9 +28,10 @@ public interface IChangeListener {
 	 * @param key      The key of the value being changed. For arrays, the key will be 1-based
 	 * @param newValue The new value (null if being removed)
 	 * @param oldValue The old value (null if being added)
+	 * @param object   The object being listened to
 	 *
 	 * @return The new value to be set (you can override)
 	 */
-	Object notify( Key key, Object newValue, Object oldValue );
+	Object notify( Key key, Object newValue, Object oldValue, T object );
 
 }

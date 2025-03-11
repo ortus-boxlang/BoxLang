@@ -182,7 +182,18 @@ public class Configuration implements IConfigSegment {
 	/**
 	 * A sorted struct of mappings
 	 */
-	public IStruct				mappings						= new Struct( Struct.KEY_LENGTH_LONGEST_FIRST_COMPARATOR );
+	public IStruct				mappings						= new Struct( Struct.KEY_LENGTH_LONGEST_FIRST_COMPARATOR )
+	    // ensure all keys to this struct have a trailing slash
+	    .registerChangeListener( ( key, newValue, oldValue, object ) -> {
+		    // Only fire for new values not ending with /
+		    if ( newValue != null && !key.getName().endsWith( "/" ) ) {
+			    object.remove( key );
+			    object.put( Key.of( key.getName() + "/" ), newValue );
+			    // don't insert original key
+			    return null;
+		    }
+		    return newValue;
+	    } );
 
 	/**
 	 * An array of directories where modules are located and loaded from.
@@ -664,6 +675,11 @@ public class Configuration implements IConfigSegment {
 		if ( !mapping.getName().startsWith( "/" ) ) {
 			mapping = Key.of( "/" + mapping.getName() );
 		}
+		// Add traiing slash
+		if ( !mapping.getName().endsWith( "/" ) ) {
+			mapping = Key.of( mapping.getName() + "/" );
+		}
+
 		return this.mappings.containsKey( mapping );
 	}
 
@@ -738,6 +754,10 @@ public class Configuration implements IConfigSegment {
 		// Check if mapping has a leading slash else add it
 		if ( !mapping.getName().startsWith( "/" ) ) {
 			mapping = Key.of( "/" + mapping.getName() );
+		}
+		// Add traiing slash
+		if ( !mapping.getName().endsWith( "/" ) ) {
+			mapping = Key.of( mapping.getName() + "/" );
 		}
 
 		return this.mappings.remove( mapping ) != null;

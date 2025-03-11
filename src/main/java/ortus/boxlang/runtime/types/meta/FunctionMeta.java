@@ -30,7 +30,7 @@ import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableArray;
  * This class represents BoxLang metadata for a function
  * Future idea, implement IReferenceable to allow for metadata to be generated on the fly
  */
-public class FunctionMeta extends BoxMeta {
+public class FunctionMeta extends BoxMeta<Function> {
 
 	@SuppressWarnings( "unused" )
 	private Function	target;
@@ -79,7 +79,7 @@ public class FunctionMeta extends BoxMeta {
 	/**
 	 * Get target object this metadata is for
 	 */
-	public Object getTarget() {
+	public Function getTarget() {
 		return target;
 	}
 

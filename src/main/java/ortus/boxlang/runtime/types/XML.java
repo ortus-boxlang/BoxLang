@@ -259,7 +259,7 @@ public class XML implements Serializable, IStruct {
 			Node attr = attrs.item( i );
 			attributes.put( Key.of( attr.getNodeName() ), attr.getNodeValue() );
 		}
-		attributes.registerChangeListener( ( key, newValue, oldValue ) -> {
+		attributes.registerChangeListener( ( key, newValue, oldValue, object ) -> {
 			if ( newValue == null ) {
 				node.getAttributes().removeNamedItem( key.getName() );
 			} else {

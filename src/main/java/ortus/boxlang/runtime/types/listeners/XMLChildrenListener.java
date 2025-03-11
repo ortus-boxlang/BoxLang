@@ -22,13 +22,14 @@ import org.w3c.dom.NodeList;
 
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.XML;
 import ortus.boxlang.runtime.types.meta.IChangeListener;
 
 /**
  * Listener class to synchronize changes between XMLChildren arrays and the native nodes
  */
-public class XMLChildrenListener implements IChangeListener {
+public class XMLChildrenListener implements IChangeListener<Array> {
 
 	private final XML parent;
 
@@ -45,7 +46,7 @@ public class XMLChildrenListener implements IChangeListener {
 	 *
 	 * @return The new value to be set (you can override)
 	 */
-	public Object notify( Key key, Object newValue, Object oldValue ) {
+	public Object notify( Key key, Object newValue, Object oldValue, Array object ) {
 		Integer		index			= IntegerCaster.cast( key.getName() ) - 1;
 		Node		parentNode		= parent.getNode();
 		NodeList	childNodeList	= parent.getNode().getChildNodes();

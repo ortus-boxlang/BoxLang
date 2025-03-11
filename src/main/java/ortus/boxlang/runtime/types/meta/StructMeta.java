@@ -24,7 +24,7 @@ import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableStruct;
 /**
  * This class represents BoxLang metadata for a Struct
  */
-public class StructMeta extends BoxMeta {
+public class StructMeta extends BoxMeta<IStruct> {
 
 	private IStruct	target;
 	public Class<?>	$class;
@@ -52,7 +52,7 @@ public class StructMeta extends BoxMeta {
 	/**
 	 * Get target object this metadata is for
 	 */
-	public Object getTarget() {
+	public IStruct getTarget() {
 		return target;
 	}
 
