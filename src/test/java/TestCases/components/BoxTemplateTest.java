@@ -1360,4 +1360,17 @@ public class BoxTemplateTest {
 		assertThat( variables.get( result ) ).isEqualTo( "after loop" );
 	}
 
+	@Test
+	public void testTagFunctionAccess() {
+		instance.executeSource(
+		    """
+		    <bx:function name="hello" output="false" access="remote">
+		    	<bx:return "hi">
+		    </bx:function>
+		    <bx:set result = getMetaData( hello ).access>
+		                    """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.get( result ) ).isEqualTo( "remote" );
+	}
+
 }

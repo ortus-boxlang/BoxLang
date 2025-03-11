@@ -963,7 +963,7 @@ public class BoxParser extends AbstractParser {
 
 		name = getBoxExprAsString( findExprInAnnotations( annotations, "name", true, null, "function", getPosition( node ) ), "name", false );
 
-		String accessText = getBoxExprAsString( findExprInAnnotations( annotations, "function", false, null, null, null ), "access", true );
+		String accessText = getBoxExprAsString( findExprInAnnotations( annotations, "access", false, null, null, null ), "access", true );
 		if ( accessText != null ) {
 			accessText = accessText.toLowerCase();
 			if ( accessText.equals( "public" ) ) {
