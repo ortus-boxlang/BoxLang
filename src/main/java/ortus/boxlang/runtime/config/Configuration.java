@@ -55,6 +55,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.meta.IChangeListener;
 import ortus.boxlang.runtime.types.util.DateTimeHelper;
 import ortus.boxlang.runtime.util.DataNavigator;
 import ortus.boxlang.runtime.util.DataNavigator.Navigator;
@@ -73,6 +74,17 @@ import ortus.boxlang.runtime.util.LocalizationUtil;
  */
 public class Configuration implements IConfigSegment {
 
+	public static final IChangeListener<IStruct>	forceMappingTrailingSlash		= ( key, newValue, oldValue, object ) -> {
+																						// Only fire for new values not ending with /
+																						if ( newValue != null && !key.getName().endsWith( "/" ) ) {
+																							object.remove( key );
+																							object.put( Key.of( key.getName() + "/" ), newValue );
+																							// don't insert original key
+																							return null;
+																						}
+																						return newValue;
+																					};
+
 	/**
 	 * --------------------------------------------------------------------------
 	 * Configuration Keys
@@ -83,80 +95,80 @@ public class Configuration implements IConfigSegment {
 	 * The directory where the generated classes will be placed
 	 * The default is the system temp directory + {@code /boxlang}
 	 */
-	public String				classGenerationDirectory		= System.getProperty( "java.io.tmpdir" ) + "boxlang";
+	public String									classGenerationDirectory		= System.getProperty( "java.io.tmpdir" ) + "boxlang";
 
 	/**
 	 * The debug mode flag which turns on all kinds of debugging information
 	 * {@code false} by default
 	 */
-	public Boolean				debugMode						= false;
+	public Boolean									debugMode						= false;
 
 	/**
 	 * Turn on/off the resolver cache for Class Locators of Java/Box classes
 	 * {@code true} by default
 	 */
-	public Boolean				classResolverCache				= true;
+	public Boolean									classResolverCache				= true;
 
 	/**
 	 * Trusted cache setting - if enabled, once compiled a template will never be inspected for changes
 	 */
-	public Boolean				trustedCache					= false;
+	public Boolean									trustedCache					= false;
 
 	/**
 	 * The Timezone to use for the runtime;
 	 * Uses the Java Timezone format: {@code America/New_York}
 	 * Uses the default system timezone if not set
 	 */
-	public ZoneId				timezone						= TimeZone.getDefault().toZoneId();
+	public ZoneId									timezone						= TimeZone.getDefault().toZoneId();
 
 	/**
 	 * The default locale to use for the runtime
 	 * Uses the default system locale if not set
 	 */
-	public Locale				locale							= Locale.getDefault();
+	public Locale									locale							= Locale.getDefault();
 
 	/**
 	 * Enable whitespace compression in output. Only in use by the web runtimes currently.
 	 */
-	public boolean				whitespaceCompressionEnabled	= true;
+	public boolean									whitespaceCompressionEnabled	= true;
 
 	/**
 	 * Invoke implicit getters and setters when using the implicit accessor
 	 * {@code true} by default (defaulted in the BoxClassSupport class where it's used)
 	 */
-	public Boolean				invokeImplicitAccessor			= null;
+	public Boolean									invokeImplicitAccessor			= null;
 
 	/**
 	 * Use high precision math for all math operations, else it relies on Double
 	 * precision
 	 * {@code true} by default
 	 */
-	public Boolean				useHighPrecisionMath			= true;
+	public Boolean									useHighPrecisionMath			= true;
 
 	/**
 	 * The application timeout
 	 * {@code 0} means no timeout and is the default
 	 */
-	public Duration				applicationTimeout				= Duration.ofDays( 0 );
+	public Duration									applicationTimeout				= Duration.ofDays( 0 );
 
 	/**
 	 * The request timeout
 	 * {@code 0} means no timeout and is the default
 	 */
-	public Duration				requestTimeout					= Duration.ofSeconds( 0 );;
+	public Duration									requestTimeout					= Duration.ofSeconds( 0 );;
 
 	/**
 	 * The session timeout
 	 * {@code 30} minutes by default
 	 */
-	public Duration				sessionTimeout					= Duration.ofMinutes( 30 );
+	public Duration									sessionTimeout					= Duration.ofMinutes( 30 );
 
 	/**
 	 * This flag enables/disables session management in the runtime for all
 	 * applications by default.
 	 * {@code false} by default
 	 */
-	public Boolean				sessionManagement				= false;
+	public Boolean									sessionManagement				= false;
 
 	/**
 	 * The default session storage cache. This has to be the name of a registered
@@ -164,123 +176,114 @@ public class Configuration implements IConfigSegment {
 	 * or the keyword "memory" which indicates our internal cache.
 	 * {@code memory} is the default
 	 */
-	public String				sessionStorage					= "memory";
+	public String									sessionStorage					= "memory";
 
 	/**
 	 * This determines whether to send jSessionID cookies to the client browser.
 	 * {@code true} by default
 	 */
-	public Boolean				setClientCookies				= true;
+	public Boolean									setClientCookies				= true;
 
 	/**
 	 * Sets jSessionID cookies for a domain (not a host) Required, for applications
 	 * running on clusters
 	 * {@code true} by default
 	 */
-	public Boolean				setDomainCookies				= true;
+	public Boolean									setDomainCookies				= true;
 
 	/**
 	 * A sorted struct of mappings
 	 */
-	public IStruct				mappings						= new Struct( Struct.KEY_LENGTH_LONGEST_FIRST_COMPARATOR )
+	public IStruct									mappings						= new Struct( Struct.KEY_LENGTH_LONGEST_FIRST_COMPARATOR )
 	    // ensure all keys to this struct have a trailing slash
-	    .registerChangeListener( ( key, newValue, oldValue, object ) -> {
-		    // Only fire for new values not ending with /
-		    if ( newValue != null && !key.getName().endsWith( "/" ) ) {
-			    object.remove( key );
-			    object.put( Key.of( key.getName() + "/" ), newValue );
-			    // don't insert original key
-			    return null;
-		    }
-		    return newValue;
-	    } );
+	    .registerChangeListener( forceMappingTrailingSlash );
 
 	/**
 	 * An array of directories where modules are located and loaded from.
 	 * {@code [ /{boxlang-home}/modules ]}
 	 */
-	public List<String>			modulesDirectory				= new ArrayList<>(
+	public List<String>								modulesDirectory				= new ArrayList<>(
 	    Arrays.asList( BoxRuntime.getInstance().getRuntimeHome().toString() + "/modules" ) );
 
 	/**
 	 * An array of directories where custom tags are located and loaded from.
 	 * {@code [ /{boxlang-home}/customTags ]}
 	 */
-	public List<String>			customTagsDirectory				= new ArrayList<>(
+	public List<String>								customTagsDirectory				= new ArrayList<>(
 	    Arrays.asList( BoxRuntime.getInstance().getRuntimeHome().toString() + "/customTags" ) );
 
 	/**
 	 * An array of directories where box classes are located and loaded from.
 	 */
-	public List<String>			classPaths						= new ArrayList<>();
+	public List<String>								classPaths						= new ArrayList<>();
 
 	/**
 	 * An array of directories where jar files will be loaded from at runtime.
 	 */
-	public List<String>			javaLibraryPaths				= new ArrayList<>(
+	public List<String>								javaLibraryPaths				= new ArrayList<>(
 	    Arrays.asList( BoxRuntime.getInstance().getRuntimeHome().toString() + "/lib" ) );
 
 	/**
 	 * Cache registrations
 	 */
-	public IStruct				caches							= new Struct();
+	public IStruct									caches							= new Struct();
 
 	/**
 	 * Default datasource registration
 	 */
-	public String				defaultDatasource				= "";
+	public String									defaultDatasource				= "";
 
 	/**
 	 * Global datasource registrations
 	 */
-	public IStruct				datasources						= new Struct();
+	public IStruct									datasources						= new Struct();
 
 	/**
 	 * Default remote class method return format when executing a method from web
 	 * runtimes.
 	 * The default is JSON
 	 */
-	public String				defaultRemoteMethodReturnFormat	= "json";
+	public String									defaultRemoteMethodReturnFormat	= "json";
 
 	/**
 	 * The modules configuration
 	 */
-	public IStruct				modules							= new Struct();
+	public IStruct									modules							= new Struct();
 
 	/**
 	 * The last config struct loaded
 	 */
-	public IStruct				originalConfig					= new Struct();
+	public IStruct									originalConfig					= new Struct();
 
 	/**
 	 * A collection of all the registered global executors
 	 */
-	public IStruct				executors						= new Struct();
+	public IStruct									executors						= new Struct();
 
 	/**
 	 * Valid BoxLang class extensions
 	 */
-	public Set<String>			validClassExtensions			= new HashSet<>();
+	public Set<String>								validClassExtensions			= new HashSet<>();
 
 	/**
 	 * Valid BoxLang template extensions
 	 */
-	public Set<String>			validTemplateExtensions			= new HashSet<>();
+	public Set<String>								validTemplateExtensions			= new HashSet<>();
 
 	/**
 	 * Experimental Features
 	 */
-	public IStruct				experimental					= new Struct();
+	public IStruct									experimental					= new Struct();
 
 	/**
 	 * The security configuration
 	 */
-	public SecurityConfig		security						= new SecurityConfig();
+	public SecurityConfig							security						= new SecurityConfig();
 
 	/**
 	 * The logging configuration
 	 */
-	public LoggingConfig		logging							= new LoggingConfig();
+	public LoggingConfig							logging							= new LoggingConfig();
 
 	/**
 	 * Scheduled tasks configuration
@@ -296,7 +299,7 @@ public class Configuration implements IConfigSegment {
 	/**
 	 * Logger
 	 */
-	private static final Logger	logger							= LoggerFactory.getLogger( Configuration.class );
+	private static final Logger						logger							= LoggerFactory.getLogger( Configuration.class );
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -888,7 +891,7 @@ public class Configuration implements IConfigSegment {
 	 * @return A struct representation of the configuration segment
 	 */
 	public IStruct asStruct() {
-		IStruct mappingsCopy = new Struct( Struct.KEY_LENGTH_LONGEST_FIRST_COMPARATOR );
+		IStruct mappingsCopy = new Struct( Struct.KEY_LENGTH_LONGEST_FIRST_COMPARATOR ).registerChangeListener( forceMappingTrailingSlash );
 		mappingsCopy.putAll( this.mappings );
 
 		IStruct cachesCopy = new Struct();
