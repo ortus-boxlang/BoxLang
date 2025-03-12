@@ -833,6 +833,9 @@ public class BoxClassSupport {
 		// Where was this function origionally defined
 		Class<?> enclosingClass = udf.getClass().getEnclosingClass();
 
+		// Start at the bottom class
+		thisClass = thisClass.getBottomClass();
+
 		// If the enclosing class is the same as the current class, then we're good
 		if ( enclosingClass == thisClass.getClass() ) {
 			return thisClass;

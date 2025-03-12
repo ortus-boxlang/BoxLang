@@ -1,0 +1,18 @@
+class {
+
+	function overriddenMethod() {
+		return 'super';
+	}
+
+	function run() {
+		return runner( function () {
+			return overriddenMethod();
+		} );
+	}
+
+	function runner( function callback ) {
+		return callback();
+	}
+
+
+}
