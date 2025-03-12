@@ -367,9 +367,14 @@ public abstract class Transpiler implements ITranspiler {
 	}
 
 	public List<List<AbstractInsnNode>> getImports() {
-		return imports.stream().map( anImport -> List.<AbstractInsnNode>of( new LdcInsnNode(
-		    anImport.className() + " as " + anImport.alias()
-		) ) ).toList();
+		return imports.stream().map( anImport -> {
+			String importStr = anImport.className();
+			if ( anImport.isModuleImport() ) {
+				importStr += "@" + anImport.moduleName();
+			}
+			importStr += " as " + anImport.alias();
+			return List.<AbstractInsnNode>of( new LdcInsnNode( importStr ) );
+		} ).toList();
 	}
 
 	public boolean matchesImport( String token ) {

@@ -183,16 +183,9 @@ public class JavaResolver extends BaseResolver {
 	public Optional<ClassLocation> findFromModule( String fullyQualifiedName, Key moduleName, List<ImportDefinition> imports, IBoxContext context ) {
 		ModuleService moduleService = BoxRuntime.getInstance().getModuleService();
 
-		// Verify the module exists, else throw up, as it was an explicit call
+		// Verify the module exists, else ignore as perhaps this is a box class which is called foo@bar
 		if ( !moduleService.hasModule( moduleName ) ) {
-			throw new BoxRuntimeException(
-			    String.format(
-			        "Module requested [%s] not found when looking for [%s]. Valid modules are: [%s]",
-			        moduleName.getName(),
-			        fullyQualifiedName,
-			        moduleService.getModuleNames()
-			    )
-			);
+			return Optional.empty();
 		}
 
 		// Get the module class loader and try to load it

@@ -998,6 +998,13 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 		    .orElse( Collections.emptyList() );
 
 		BoxExpression		expr	= Optional.ofNullable( ctx.fqn() ).map( fqn -> fqn.accept( this ) ).orElseGet( () -> ctx.stringLiteral().accept( this ) );
+		// If it was new foo.bar@baz() then convert it to a string literal and append the module name
+		// we can't store an @ sign in a FQN. Or rather, we shouldn't
+		if ( ctx.moduleName() != null ) {
+			// if module name is not null, then we know expression will be a BoxFQN instance based on how the grammar works
+			String text = ( ( BoxFQN ) expr ).getValue() + "@" + ctx.moduleName().getText();
+			expr = new BoxStringLiteral( text, tools.getPosition( ctx.fqn(), ctx.moduleName() ), text );
+		}
 
 		prefix = ( BoxIdentifier ) Optional.ofNullable( ctx.preFix() ).map( preFix -> preFix.identifier().accept( this ) ).orElse( null );
 

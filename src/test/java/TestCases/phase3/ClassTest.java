@@ -1901,4 +1901,19 @@ public class ClassTest {
 		x.onStartup();
 	}
 
+	@Test
+	public void testClassWithAtSignInName() {
+		instance.executeSource(
+		    """
+		    import src.test.java.TestCases.phase3.foo@bar;
+		    import src.test.java.TestCases.phase3.foo@bar as foobar;
+
+		    new "src.test.java.TestCases.phase3.foo@bar"()
+		    new src.test.java.TestCases.phase3.foo@bar()
+		    new foo@bar()
+		    new foobar()
+		                           """,
+		    context );
+	}
+
 }

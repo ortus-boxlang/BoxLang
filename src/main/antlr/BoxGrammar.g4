@@ -42,7 +42,7 @@ testExpression: expression EOF
 importStatement: IMPORT preFix? importFQN ( AS identifier)? SEMICOLON*
     ;
 
-importFQN: fqn (DOT STAR)?
+importFQN: fqn (DOT STAR)? (AT moduleName)?
     ;
 
 // include "myFile.bxm";
@@ -388,7 +388,11 @@ structMember: structKey (COLON | EQUALSIGN) expression
 structKey: identifier | stringLiteral | INTEGER_LITERAL | ILLEGAL_IDENTIFIER | SWITCH
     ;
 
-new: NEW preFix? (fqn | stringLiteral) LPAREN argumentList? RPAREN
+new: NEW preFix? (fqn (AT moduleName)? | stringLiteral) LPAREN argumentList? RPAREN
+    ;
+
+// my-module
+moduleName: (identifier MINUS)* identifier
     ;
 
 // foo.bar.Baz

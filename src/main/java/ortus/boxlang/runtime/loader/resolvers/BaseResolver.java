@@ -258,7 +258,9 @@ public class BaseResolver implements IClassResolver {
 		// Not a multi-import, check if the class name matches the alias
 		return thisImport.isMultiImport()
 		    ? importHasMulti( context, thisImport, className )
-		    : thisImport.alias().equalsIgnoreCase( className );
+		    : thisImport.alias().equalsIgnoreCase( className )
+		        // the module name may actually be part of the class name. foo@bar.bx
+		        || ( thisImport.isModuleImport() && thisImport.alias().concat( "@" + thisImport.moduleName() ).equalsIgnoreCase( className ) );
 	}
 
 	/**
