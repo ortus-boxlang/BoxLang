@@ -534,11 +534,6 @@ public class PendingQuery {
 			return execute( connection, context );
 		} finally {
 			if ( connection != null ) {
-				try {
-					connection.close();
-				} catch ( SQLException e ) {
-					logger.warn( "An error occurred while attempting to release the connection" );
-				}
 				connectionManager.releaseConnection( connection );
 			}
 		}
