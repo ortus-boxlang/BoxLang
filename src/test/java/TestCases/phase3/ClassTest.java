@@ -1902,6 +1902,16 @@ public class ClassTest {
 	}
 
 	@Test
+	public void testMissingSuperScope() {
+		instance.executeSource(
+		    """
+		    result = new src.test.java.TestCases.phase3.MissingSuperScopeChild().run()
+		                """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "super" );
+	}
+
+	@Test
 	public void testClassWithAtSignInName() {
 		instance.executeSource(
 		    """
