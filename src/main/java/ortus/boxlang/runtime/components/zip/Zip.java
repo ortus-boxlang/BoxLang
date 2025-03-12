@@ -448,7 +448,7 @@ public class Zip extends Component {
 
 		// Optional attributes: filter, name, recurse, flatList
 		Object	filter			= attributes.get( Key.filter );
-		String	variableName	= StringCaster.cast( attributes.getOrDefault( Key._NAME, "bxzip" ) );
+		String	variableName	= StringCaster.cast( attributes.get( Key.result ) );
 		boolean	recurse			= Boolean.TRUE.equals( attributes.get( Key.recurse ) );
 		boolean	flatList		= Boolean.TRUE.equals( attributes.get( Key.flatList ) );
 
@@ -484,7 +484,7 @@ public class Zip extends Component {
 
 		// Optional attributes: charset, variable
 		Object	charset		= attributes.get( Key.charset );
-		String	variable	= StringCaster.cast( attributes.getOrDefault( Key.variable, "bxzip" ) );
+		String	variable	= StringCaster.cast( attributes.get( Key.result ) );
 
 		// Kawabunga!
 		String	content;
@@ -517,7 +517,7 @@ public class Zip extends Component {
 		}
 
 		// Optional attributes: variable
-		String	variable	= StringCaster.cast( attributes.getOrDefault( Key.variable, "bxzip" ) );
+		String	variable	= StringCaster.cast( attributes.get( Key.result ) );
 
 		// Kawabunga!
 		byte[]	content		= ZipUtil.readBinaryEntry( source, entryPath );
