@@ -26,7 +26,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -329,7 +328,6 @@ public class TransactionTest extends BaseJDBCTest {
 		);
 	}
 
-	@Disabled( "Need to fix connection management to avoid 'Connection is closed' exceptions on commit and rollback." )
 	@DisplayName( "Can commit a transaction in tag syntax" )
 	@Test
 	public void testTransactionTagSyntax() {
