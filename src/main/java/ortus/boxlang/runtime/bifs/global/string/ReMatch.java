@@ -15,6 +15,7 @@
 package ortus.boxlang.runtime.bifs.global.string;
 
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
@@ -49,7 +50,7 @@ public class ReMatch extends BIF {
 
 	/**
 	 *
-	 * Uses a regular expression (RE) to search a string for a pattern, starting from a specified position.
+	 * Uses a regular expression (RE) to search a string for a pattern.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
@@ -73,7 +74,7 @@ public class ReMatch extends BIF {
 		// Ignore non-quantifier curly braces like PERL
 		reg_expression	= RegexUtil.replaceNonQuantiferCurlyBraces( reg_expression );
 
-		Matcher	matcher	= RegexBuilder.of( string, reg_expression, noCase ).matcher();
+		Matcher	matcher	= RegexBuilder.of( string, reg_expression, noCase, Pattern.DOTALL ).matcher();
 		Array	result	= new Array();
 
 		while ( matcher.find() ) {

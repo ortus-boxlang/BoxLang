@@ -449,4 +449,17 @@ public class ReFindTest {
 		) );
 	}
 
+	@Test
+	public void testMatchLineBreak() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				result = reFind( '<!-- start child -->.*<!-- end child -->', '<!-- start child -->foo
+<!-- end child -->' );
+		    """,
+		    context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( 1 );
+	}
+
 }

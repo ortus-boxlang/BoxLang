@@ -16,6 +16,7 @@ package ortus.boxlang.runtime.bifs.global.string;
 
 import java.util.Set;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
@@ -90,7 +91,7 @@ public class ReReplace extends BIF {
 		regex	= RegexUtil.replaceNonQuantiferCurlyBraces( regex );
 
 		StringBuffer	result		= new StringBuffer();
-		Matcher			matcher		= RegexBuilder.of( string, regex, noCase ).matcher();
+		Matcher			matcher		= RegexBuilder.of( string, regex, noCase, Pattern.DOTALL ).matcher();
 		boolean			upperCase	= false;
 		boolean			lowerCase	= false;
 

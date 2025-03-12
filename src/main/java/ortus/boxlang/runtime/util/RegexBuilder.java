@@ -110,6 +110,20 @@ public class RegexBuilder {
 	 *
 	 * @param input   The input string to match against
 	 * @param pattern The pattern to match against
+	 * @param noCase  Whether the pattern should be case insensitive or not
+	 * @param flags   The flags to use when compiling the pattern
+	 *
+	 * @return A new matcher instance
+	 */
+	public static RegexMatcher of( String input, String pattern, Boolean noCase, int flags ) {
+		return new RegexMatcher( input ).match( pattern, noCase, flags );
+	}
+
+	/**
+	 * Build a matcher for the given input and string pattern
+	 *
+	 * @param input   The input string to match against
+	 * @param pattern The pattern to match against
 	 *
 	 * @return A new matcher instance
 	 */
@@ -192,17 +206,32 @@ public class RegexBuilder {
 		 * @return The matcher instance
 		 */
 		public RegexMatcher match( String pattern, Boolean noCase ) {
+			return this.match( pattern, noCase, 0 );
+		}
+
+		/**
+		 * Compile the pattern from the given string
+		 *
+		 * @param pattern The pattern to compile
+		 * @param noCase  Whether the pattern should be case insensitive or not
+		 * @param flags   The flags to use when compiling the pattern
+		 * 
+		 * @return The matcher instance
+		 */
+		public RegexMatcher match( String pattern, Boolean noCase, int flags ) {
 			Objects.requireNonNull( pattern, "Pattern cannot be null" );
 			if ( pattern.isEmpty() ) {
 				throw new IllegalArgumentException( "Pattern cannot be empty" );
 			}
 
 			// Lookup or compile the pattern into the regex cache
-			String cacheKey = EncryptionUtil.hash( pattern + noCase );
+			String	cacheKey	= EncryptionUtil.hash( pattern + noCase );
+			int		theFlags	= ( noCase ? Pattern.CASE_INSENSITIVE : 0 ) | flags;
+
 			this.pattern = ( Pattern ) BoxRuntime.getInstance()
 			    .getCacheService()
 			    .getCache( Key.bxRegex )
-			    .getOrSet( cacheKey, () -> Pattern.compile( pattern, noCase ? Pattern.CASE_INSENSITIVE : 0 ) );
+			    .getOrSet( cacheKey, () -> Pattern.compile( pattern, theFlags ) );
 
 			return this;
 		}
