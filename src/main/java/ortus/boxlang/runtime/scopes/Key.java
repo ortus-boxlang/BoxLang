@@ -255,6 +255,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		detail								= Key.of( "detail" );
 	public static final Key		dimensions							= Key.of( "dimensions" );
 	public static final Key		directory							= Key.of( "directory" );
+	public static final Key		daemon								= Key.of( "daemon" );
 	public static final Key		directoryCopy						= Key.of( "directoryCopy" );
 	public static final Key		directoryCreate						= Key.of( "directoryCreate" );
 	public static final Key		directoryDelete						= Key.of( "directoryDelete" );
@@ -736,6 +737,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		thisTag								= Key.of( "thisTag" );
 	public static final Key		thread								= Key.of( "thread" );
 	public static final Key		threadName							= Key.of( "threadName" );
+	public static final Key		threadGroup							= Key.of( "threadGroup" );
 	public static final Key		throwOnError						= Key.of( "throwOnError" );
 	public static final Key		throwOnTimeout						= Key.of( "throwOnTimeout" );
 	public static final Key		time								= Key.of( "time" );
@@ -753,6 +755,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		toString							= Key.of( "toString" );
 	public static final Key		totalCapSize						= Key.of( "totalCapSize" );
 	public static final Key		trace								= Key.of( "trace" );
+	public static final Key		targetThread						= Key.of( "targetThread" );
 	public static final Key		trim								= Key.of( "trim" );
 	public static final Key		trustedCache						= Key.of( "trustedCache" );
 	public static final Key		type								= Key.of( "type" );
@@ -782,6 +785,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		variables							= Key.of( "variables" );
 	public static final Key		variant								= Key.of( "variant" );
 	public static final Key		version								= Key.of( "version" );
+	public static final Key		virtual								= Key.of( "virtual" );
 	public static final Key		wait								= Key.of( "wait" );
 	public static final Key		warning								= Key.of( "warning" );
 	public static final Key		wddx								= Key.of( "wddx" );

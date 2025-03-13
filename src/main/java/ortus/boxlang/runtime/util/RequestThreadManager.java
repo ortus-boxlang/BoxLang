@@ -17,10 +17,10 @@
  */
 package ortus.boxlang.runtime.util;
 
-import java.lang.Thread.State;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -85,23 +85,35 @@ public class RequestThreadManager {
 	private static final ThreadGroup	THREAD_GROUP				= new ThreadGroup( "BL-Threads" );
 
 	/**
+	 * The states that a thread can be in where we update valid statuses
+	 */
+	private static final Set<String>	ACTION_STATES				= Set.of( "NOT_STARTED", "RUNNNG", "WAITING" );
+
+	/**
 	 * Registers a thread with the manager
 	 *
 	 * @param name    The name of the thread
 	 * @param context The context of the thread
 	 *
-	 * @return The thread data
+	 * @return The thread metadata
 	 */
 	public synchronized IStruct registerThread( Key name, ThreadBoxContext context ) {
 		// reject dupe thread names for this request
 		if ( threads.containsKey( name ) ) {
 			throw new RuntimeException( "Thread name [" + name + "] already in use for this request." );
 		}
-		IStruct threadMeta = Struct.of(
-		    // Lucee has childThreads
+		// The actual thread
+		Thread	targetThread	= context.getThread();
+		// Create a thread meta struct
+		IStruct	threadMeta		= Struct.of(
+		    Key.targetThread, targetThread,
+		    Key.id, targetThread.threadId(),
 		    Key._NAME, name,
 		    Key.elapsedTime, 0,
 		    Key.error, null,
+		    Key.virtual, targetThread.isVirtual(),
+		    Key.daemon, targetThread.isDaemon(),
+		    Key.threadGroup, targetThread.getThreadGroup().getName(),
 		    Key.output, "",
 		    Key.stackTrace, "",
 		    Key.interrupted, false,
@@ -112,9 +124,11 @@ public class RequestThreadManager {
 			    default -> "UNKNOWN";
 		    },
 		    Key.startTime, new DateTime(),
-		    /*
+		    /**
 		     * NOT_STARTED: The thread has been queued but is not processing yet.
 		     * RUNNNG: The thread is running normally.
+		     * BLOCKED: The thread is blocked waiting for a monitor lock.
+		     * INTERRUPTED: The thread was interrupted.
 		     * TERMINATED: The thread stopped running due to a bxthread tag with a terminate action, an error, or an administrator action.
 		     * COMPLETED: The thread ended normally.
 		     * WAITING: The thread has executed a bxthread tag with action="join", but one or more threads being joined has not completed.
@@ -140,49 +154,48 @@ public class RequestThreadManager {
 	 *
 	 * @param name The name of the thread
 	 *
-	 * @return The thread meta data
+	 * @return The thread meta data or null if not found
 	 */
 	public IStruct getThreadMeta( Key name ) {
-		IStruct threadData = threads.get( name );
+		IStruct threadData = this.threads.get( name );
 		if ( threadData == null ) {
 			return threadData;
 		}
+
+		// Only valid threads here
 		IStruct	threadMeta		= threadData.getAsStruct( Key.metadata );
 		String	threadStatus	= threadMeta.getAsString( Key.status );
 
 		// If the thread was not complete last time we looked at it, let's update the status
-		// TODO: Move this to a change listener on the struct so we only calculate these keys if we actually use them.
-		if ( threadStatus.equals( "NOT_STARTED" ) || threadStatus.equals( "RUNNNG" ) || threadStatus.equals( "WAITING" ) ) {
-			Thread	thread				= ( ( ThreadBoxContext ) threadData.get( Key.context ) ).getThread();
-			// Update thread state
-			State	currentThreadState	= thread.getState();
-			IStruct	exception			= threadMeta.getAsStruct( Key.error );
-			threadStatus = switch ( currentThreadState ) {
+		if ( ACTION_STATES.contains( threadStatus ) ) {
+			Thread	thread		= ( ( ThreadBoxContext ) threadData.get( Key.context ) ).getThread();
+			IStruct	exception	= threadMeta.getAsStruct( Key.error );
+			// Update status
+			threadStatus = switch ( thread.getState() ) {
 				case NEW -> "NOT_STARTED";
 				case RUNNABLE -> "RUNNNG";
 				case TERMINATED -> ( exception == null ? "COMPLETED" : "TERMINATED" );
-				case BLOCKED -> "WAITING";
-				case WAITING -> "WAITING";
-				case TIMED_WAITING -> "WAITING";
+				case BLOCKED -> "BLOCKED";
+				case WAITING, TIMED_WAITING -> "WAITING";
 				default -> "UNKNOWN";
 			};
 			threadMeta.put( Key.status, threadStatus );
-
 			// Update elapsed time
 			threadMeta.put( Key.elapsedTime, System.currentTimeMillis() - threadData.getAsLong( Key.startTicks ) );
-
-			// Grab stack trace, only if thread is running
-			if ( threadStatus.equals( "RUNNNG" ) || threadStatus.equals( "WAITING" ) ) {
-				StringBuilder		stackTraceBuilder	= new StringBuilder();
-				StackTraceElement[]	stackTrace			= thread.getStackTrace();
-				for ( StackTraceElement element : stackTrace ) {
-					stackTraceBuilder.append( element.toString() ).append( "\n" );
+			// Grab stack trace, only if thread is running OR waiting OR blocked
+			switch ( threadStatus ) {
+				case "RUNNNG", "WAITING", "BLOCKED" -> {
+					StringBuilder		stackTraceBuilder	= new StringBuilder();
+					StackTraceElement[]	stackTrace			= thread.getStackTrace();
+					for ( StackTraceElement element : stackTrace ) {
+						stackTraceBuilder.append( element.toString() ).append( "\n" );
+					}
+					threadMeta.put( Key.stackTrace, stackTraceBuilder.toString() );
 				}
-				threadMeta.put( Key.stackTrace, stackTraceBuilder.toString() );
-			} else {
-				threadMeta.put( Key.stackTrace, "" );
+				default -> threadMeta.put( Key.stackTrace, "" );
 			}
 		}
+
 		return threadMeta;
 	}
 
@@ -333,6 +346,50 @@ public class RequestThreadManager {
 	}
 
 	/**
+	 * Interrupt the current thread
+	 *
+	 * @param context The context in which the BIF is being invoked.
+	 *
+	 * @return true if the thread is interrupted
+	 */
+	public boolean IsThreadInterrupted( IBoxContext context ) {
+		return context
+		    .getParentOfType( ThreadBoxContext.class )
+		    .getThread()
+		    .isInterrupted();
+	}
+
+	/**
+	 * Interrupt a named thread
+	 *
+	 * @param threadName The name of the thread
+	 *
+	 * @return true if the thread is interrupted
+	 */
+	public boolean IsThreadInterrupted( Key threadName ) {
+		return ( ( ThreadBoxContext ) getThreadData( threadName ).get( Key.context ) )
+		    .getThread()
+		    .isInterrupted();
+	}
+
+	/**
+	 * Verify if a thread is alive
+	 *
+	 * @param threadName The name of the thread
+	 *
+	 * @return true if the thread is alive
+	 */
+	public boolean isThreadAlive( Key threadName ) {
+		IStruct threadData = this.threads.get( threadName );
+		if ( threadData != null ) {
+			return ( ( ThreadBoxContext ) threadData.get( Key.context ) )
+			    .getThread()
+			    .isAlive();
+		}
+		return false;
+	}
+
+	/**
 	 * Joins all threads in the request thread manager
 	 *
 	 * @param timeout The timeout for the join
@@ -394,12 +451,49 @@ public class RequestThreadManager {
 	}
 
 	/**
+	 * Interrupt ALL threads in this manager
+	 */
+	public void interruptAllThreads() {
+		for ( Key threadName : getThreadNames() ) {
+			interruptThread( threadName );
+		}
+	}
+
+	/**
+	 * Interrupt a thread by name
+	 *
+	 * @param name The name of the thread
+	 */
+	public void interruptThread( Key name ) {
+		IStruct				threadData		= getThreadData( name );
+		ThreadBoxContext	threadContext	= ( ThreadBoxContext ) threadData.get( Key.context );
+		IStruct				threadMetadata	= threadData.getAsStruct( Key.metadata );
+		// Interrupt the thread
+		threadContext.getThread().interrupt();
+		// Then we mark the thread as interrupted
+		threadMetadata.put( Key.interrupted, true );
+		// Update status
+		threadMetadata.put( Key.status, "INTERRUPTED" );
+	}
+
+	/**
 	 * Detect if at least one thread
 	 *
 	 * @return true if there are threads
 	 */
 	public boolean hasThreads() {
 		return !this.threads.isEmpty();
+	}
+
+	/**
+	 * Check if a thread exists by name
+	 *
+	 * @param name The name of the thread
+	 *
+	 * @return true if the thread exists
+	 */
+	public boolean hasThread( Key name ) {
+		return this.threads.containsKey( name );
 	}
 
 	/**
