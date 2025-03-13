@@ -1600,4 +1600,32 @@ public class CFTemplateTest {
 		    context, BoxSourceType.CFTEMPLATE );
 		assertThat( variables.get( result ) ).isEqualTo( "remote" );
 	}
+
+	@Test
+	public void testQuerySpaceOutput() {
+		instance.executeSource(
+		    """
+		    <cfset newTest = createObject("component", "src.test.java.TestCases.components.QuerySpaceOutput")>
+		    <cfdump var="#newTest.getQuery(orderby="lock_name",sortOrder="asc")#" >
+		                             """,
+		    context, BoxSourceType.CFTEMPLATE );
+	}
+
+	@Test
+	public void testQuerySpaceOutput2() {
+		instance.executeSource(
+		    """
+
+		       <cfset tbllock = queryNew("lock_name", "integer")>
+		    <Cfset arguments.orderby = "lock_name">
+		    <Cfset arguments.sortDirection = "asc">
+		       <cfquery name="qList" dbtype="query">
+		       	SELECT * FROM tbllock
+		       	WHERE 0=0
+		       	ORDER BY #arguments.orderby# #arguments.sortDirection#
+		       </cfquery>
+		                                   """,
+		    context, BoxSourceType.CFTEMPLATE );
+	}
+
 }
