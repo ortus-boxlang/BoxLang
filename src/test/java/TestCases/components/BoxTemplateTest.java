@@ -667,17 +667,20 @@ public class BoxTemplateTest {
 	public void testSwitchNonCaseStatements() {
 		Throwable e = assertThrows( ExpressionException.class, () -> instance.executeSource(
 		    """
-		             <bx:set result ="">
-		                <bx:set vegetable = "carrot" />
-		                <bx:switch expression="#vegetable#">
-		            <bx:case value="carrot">
-		            	<bx:set result ="Carrots are orange.">
-		            </bx:case>
+		           <bx:set result ="">
+		              <bx:set vegetable = "carrot" />
+		              <bx:switch expression="#vegetable#">
+		          <bx:case value="carrot">
+		          	<bx:set result ="Carrots are orange.">
+		          </bx:case>
 		    <bx:defaultcase>
 		    	<bx:set result ="You don't have any vegetables!">
 		    </bx:defaultcase>
-		                </bx:switch>
-		                                                     """, context, BoxSourceType.BOXTEMPLATE ) );
+		    <bx:defaultcase>
+		    	<bx:set result ="You don't have any vegetables!">
+		    </bx:defaultcase>
+		              </bx:switch>
+		                                                   """, context, BoxSourceType.BOXTEMPLATE ) );
 
 		assertThat( e.getMessage() ).contains( "default" );
 	}
