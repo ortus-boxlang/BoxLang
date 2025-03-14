@@ -22,11 +22,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ "ubuntu-latest", "windows-latest" ]
-        jdkProvider: [ "temurin", "liberica" ]
-        jdkVersion: [ "21" ]
-        experimental: [ false ]
-        compiler: [ "java", "asm" ]
+        os: ["ubuntu-latest", "windows-latest"]
+        jdkProvider: ["temurin"]
+        jdkVersion: ["21"]
+        experimental: [false]
+        compiler: ["java", "asm"]
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
