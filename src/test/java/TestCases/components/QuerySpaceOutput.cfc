@@ -4,11 +4,18 @@
 		<cfargument name="orderby" type="string" required="false" />
 		<cfargument name="sortDirection" type="string" required="false" default="asc" />
 
-		<cfset tbllock = queryNew("lock_name", "integer")>
+		<cfset tbllock = queryNew("lock_name,id", "integer,varchar")>
 		<cfquery name="qList" dbtype="query">
 			SELECT * FROM tbllock
 			WHERE 0=0
-			ORDER BY #arguments.orderby# #arguments.sortDirection#
+			ORDER BY 
+			<cfif structKeyExists(arguments, "orderby") and len(arguments.orderBy)>
+				<cfloop list="#arguments.orderby#" item="item">
+					#trim(item)# #arguments.sortOrder#,
+				</cfloop>
+			</cfif>
+
+			id
 		</cfquery>
 
 		<cfreturn qList />

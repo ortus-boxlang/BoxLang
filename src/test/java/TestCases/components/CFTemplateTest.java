@@ -1611,21 +1611,4 @@ public class CFTemplateTest {
 		    context, BoxSourceType.CFTEMPLATE );
 	}
 
-	@Test
-	public void testQuerySpaceOutput2() {
-		instance.executeSource(
-		    """
-
-		       <cfset tbllock = queryNew("lock_name", "integer")>
-		    <Cfset arguments.orderby = "lock_name">
-		    <Cfset arguments.sortDirection = "asc">
-		       <cfquery name="qList" dbtype="query">
-		       	SELECT * FROM tbllock
-		       	WHERE 0=0
-		       	ORDER BY #arguments.orderby# #arguments.sortDirection#
-		       </cfquery>
-		                                   """,
-		    context, BoxSourceType.CFTEMPLATE );
-	}
-
 }
