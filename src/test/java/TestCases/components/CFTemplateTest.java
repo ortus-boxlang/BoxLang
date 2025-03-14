@@ -716,9 +716,6 @@ public class CFTemplateTest {
 		    <cfdefaultcase>
 		    	<cfset result ="You don't have any vegetables!">
 		    </cfdefaultcase>
-		    <cfdefaultcase>
-		    	<cfset result ="You don't have any vegetables!">
-		    </cfdefaultcase>
 		              </cfswitch>
 		                                                   """, context, BoxSourceType.CFTEMPLATE ) );
 
