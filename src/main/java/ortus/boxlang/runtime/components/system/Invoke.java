@@ -26,8 +26,6 @@ import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
-import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
-import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
@@ -104,38 +102,43 @@ public class Invoke extends Component {
 			return bodyResult;
 		}
 
-		CastAttempt<String> stringCasterAttempt = StringCaster.attempt( instance );
-		// Empty string just calls local function in the existing context (box class or template)
-		if ( stringCasterAttempt.wasSuccessful() && stringCasterAttempt.get().isEmpty() ) {
-			result = context.invokeFunction( methodname, argCollection );
-		} else {
+		IReferenceable actualInstance;
+		if ( instance instanceof String str ) {
 
-			// If we had a non-empty string, create the Box Class instance
-			IReferenceable actualInstance;
-			if ( stringCasterAttempt.wasSuccessful() ) {
-				actualInstance = ( IClassRunnable ) classLocator.load( context, "bx:" + stringCasterAttempt.get(), context.getCurrentImports() )
-				    .invokeConstructor( context, Key.noInit )
-				    .unWrapBoxLangClass();
-			} else if ( instance instanceof IReferenceable cvs ) {
-				actualInstance = cvs;
-			} else {
-				throw new BoxValidationException( "The instance parameter must be a Box Class or the name of a Box Class to instantiate." );
-			}
-
-			// ALERT!
-			// Special Case: If the instance is a DynamicObject and the method is "init", we need to call the constructor
-			if ( actualInstance instanceof DynamicObject castedDo && methodname.equals( Key.init ) ) {
-				// The incoming args must be an array or throw an exception
-				if ( ! ( args instanceof Array castedArray ) ) {
-					throw new BoxValidationException( "The arguments must be an array in order to execute the Java constructor." );
+			// Empty string just calls local function in the existing context (box class or template)
+			if ( str.isEmpty() ) {
+				result = context.invokeFunction( methodname, argCollection );
+				if ( returnVariable != null ) {
+					ExpressionInterpreter.setVariable( context, returnVariable, result );
 				}
-				castedDo.invokeConstructor( context, castedArray.toArray() );
+
 				return DEFAULT_RETURN;
 			}
 
-			// Invoke the method on the Box Class instance
-			result = actualInstance.dereferenceAndInvoke( context, methodname, argCollection, false );
+			// If we had a non-empty string, create the Box Class instance
+			actualInstance = ( IClassRunnable ) classLocator.load( context, "bx:" + str, context.getCurrentImports() )
+			    .invokeConstructor( context, Key.noInit )
+			    .unWrapBoxLangClass();
+
+		} else if ( instance instanceof IReferenceable cvs ) {
+			actualInstance = cvs;
+		} else {
+			throw new BoxValidationException( "The instance parameter must be a Box Class or the name of a Box Class to instantiate." );
 		}
+
+		// ALERT!
+		// Special Case: If the instance is a DynamicObject and the method is "init", we need to call the constructor
+		if ( actualInstance instanceof DynamicObject castedDo && methodname.equals( Key.init ) ) {
+			// The incoming args must be an array or throw an exception
+			if ( ! ( args instanceof Array castedArray ) ) {
+				throw new BoxValidationException( "The arguments must be an array in order to execute the Java constructor." );
+			}
+			castedDo.invokeConstructor( context, castedArray.toArray() );
+			return DEFAULT_RETURN;
+		}
+
+		// Invoke the method on the Box Class instance
+		result = actualInstance.dereferenceAndInvoke( context, methodname, argCollection, false );
 
 		if ( returnVariable != null ) {
 			ExpressionInterpreter.setVariable( context, returnVariable, result );
