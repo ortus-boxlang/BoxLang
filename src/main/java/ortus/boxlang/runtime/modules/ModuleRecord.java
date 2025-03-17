@@ -47,6 +47,7 @@ import ortus.boxlang.runtime.components.Component.ComponentBody;
 import ortus.boxlang.runtime.components.ComponentDescriptor;
 import ortus.boxlang.runtime.config.segments.ModuleConfig;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.events.IInterceptor;
 import ortus.boxlang.runtime.interop.DynamicObject;
@@ -144,6 +145,11 @@ public class ModuleRecord {
 	 * The datasources to register by the module
 	 */
 	public Struct				datasources					= new Struct( Struct.TYPES.LINKED );
+
+	/**
+	 * Any module activation dependencies
+	 */
+	public Array				dependencies				= new Array();
 
 	/**
 	 * The interceptors of the module
@@ -328,7 +334,8 @@ public class ModuleRecord {
 		this.author			= ( String ) thisScope.getOrDefault( Key.author, "" );
 		this.description	= ( String ) thisScope.getOrDefault( Key.description, "" );
 		this.webURL			= ( String ) thisScope.getOrDefault( Key.webURL, "" );
-		this.enabled		= ( Boolean ) thisScope.getOrDefault( Key.enabled, true );
+		this.enabled		= BooleanCaster.cast( thisScope.getOrDefault( Key.enabled, true ) );
+		this.dependencies	= ArrayCaster.cast( thisScope.getOrDefault( Key.dependencies, Array.of() ) );
 
 		// Verify if we disabled the loading of the module in the runtime config
 		if ( this.runtime.getConfiguration().modules.containsKey( this.name ) ) {
@@ -352,7 +359,7 @@ public class ModuleRecord {
 		variablesScope.computeIfAbsent( Key.interceptors, k -> Array.of() );
 		variablesScope.computeIfAbsent( Key.customInterceptionPoints, k -> Array.of() );
 
-		/*
+		/**
 		 * --------------------------------------------------------------------------
 		 * DI Injections
 		 * --------------------------------------------------------------------------

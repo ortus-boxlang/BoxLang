@@ -234,6 +234,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		debugMode							= Key.of( "debugMode" );
 	public static final Key		debuggingEnabled					= Key.of( "debuggingEnabled" );
 	public static final Key		deep								= Key.of( "deep" );
+	public static final Key		dependencies						= Key.of( "dependencies" );
 	public static final Key		defaultCache						= Key.of( "defaultCache" );
 	public static final Key		defaultDatasource					= Key.of( "defaultDatasource" );
 	public static final Key		defaultEncoder						= Key.of( "defaultEncoder" );

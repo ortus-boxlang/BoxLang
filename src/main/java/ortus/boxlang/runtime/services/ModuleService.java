@@ -374,6 +374,17 @@ public class ModuleService extends BaseService {
 		    Struct.of( "moduleRecord", moduleRecord, "moduleName", name )
 		);
 
+		/**
+		 * |--------------------------------------------------------------------------
+		 * | Module Dependencies Activation
+		 * |--------------------------------------------------------------------------
+		 * This makes sure that all dependencies are activated before the module itself
+		 * This is a recursive call to activate all dependencies
+		 */
+		moduleRecord.dependencies
+		    .stream()
+		    .forEach( moduleName -> this.activate( Key.of( moduleName ) ) );
+
 		// Activate it
 		moduleRecord.activate( runtimeContext );
 
