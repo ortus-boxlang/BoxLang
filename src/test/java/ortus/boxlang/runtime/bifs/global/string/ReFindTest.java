@@ -462,4 +462,40 @@ public class ReFindTest {
 		assertThat( variables.get( result ) ).isEqualTo( 1 );
 	}
 
+	@Test
+	public void testAnchoringBounds() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				reg = "(^|z)([test]*)$";
+
+				result = ReFind( reg, "test", 2, true ).match
+				result2 = ReFind( reg, "test", 1, true ).match
+		    """,
+		    context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isInstanceOf( Array.class );
+		assertThat( variables.getAsArray( result ).size() ).isEqualTo( 1 );
+
+		assertThat( variables.get( Key.of( "result2" ) ) ).isInstanceOf( Array.class );
+		assertThat( variables.getAsArray( Key.of( "result2" ) ).size() ).isEqualTo( 3 );
+	}
+
+	@Test
+	public void testTransparentBounds() {
+		// @formatter:off
+	    instance.executeSource(
+	        """
+	            reg = "(?<=z)test$";
+
+	            result = ReFind( reg, "ztest", 2, true ).match;
+	        """,
+	        context );
+	    // @formatter:on
+		assertThat( variables.get( result ) ).isInstanceOf( Array.class );
+		assertThat( variables.getAsArray( result ).size() ).isEqualTo( 1 );
+		assertThat( variables.getAsArray( result ).get( 0 ) ).isEqualTo( "test" );
+
+	}
+
 }

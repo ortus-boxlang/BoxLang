@@ -97,6 +97,8 @@ public class ReFind extends BIF {
 		Matcher matcher = RegexBuilder.of( string, reg_expression, noCase, Pattern.DOTALL ).matcher();
 		if ( start > 1 ) {
 			matcher.region( start - 1, string.length() );
+			matcher.useAnchoringBounds( false );
+			matcher.useTransparentBounds( true );
 		}
 		Array result = new Array();
 
