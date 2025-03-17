@@ -18,7 +18,6 @@
 package ortus.boxlang.runtime.services;
 
 import java.io.IOException;
-import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -541,7 +540,7 @@ public class ModuleService extends BaseService {
 	/**
 	 * Add a module {@link Path} to the list of paths to search for modules.
 	 *
-	 * @param path The {@link Path} to add. It can be relative or absolute.
+	 * @param path The {@link Path} to add. It can be relative or absolute, but it must exist or it is ignored.
 	 *
 	 * @return The ModuleService instance
 	 */
@@ -554,18 +553,10 @@ public class ModuleService extends BaseService {
 		// Convert to absolute path if it's not already
 		path = path.toAbsolutePath();
 
-		// Verify if the directory exists, else create it, if we can
+		// Verify if the directory exists, else ignore it.
 		if ( !Files.exists( path ) ) {
-			try {
-				Files.createDirectories( path );
-			} catch ( IOException e ) {
-				if ( e instanceof FileSystemException && e.getMessage().contains( "Read-only file system" ) ) {
-					this.logger.warn( "ModuleService: Cannot create module path [{}] as it is on a read-only file system", path );
-					return this;
-				} else {
-					throw new BoxRuntimeException( "Error creating module path: " + path.toString(), e );
-				}
-			}
+			this.logger.debug( "ModuleService: Requested addModulePath [{}] does not exist, ignoring.", path );
+			return this;
 		}
 
 		// Verify it is a directory
