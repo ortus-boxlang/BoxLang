@@ -2480,7 +2480,7 @@ public class DynamicInteropService {
 			clazz = clazz.getComponentType(); // Get the component type
 		}
 
-		arrayType.insert( 0, clazz.isPrimitive() ? clazz.getName() : clazz.getSimpleName() ); // Add base type
+		arrayType.insert( 0, clazz.getName() ); // Add base type
 		return arrayType.toString();
 	}
 

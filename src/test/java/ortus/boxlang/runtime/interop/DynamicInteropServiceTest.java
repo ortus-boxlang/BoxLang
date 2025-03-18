@@ -1021,4 +1021,17 @@ public class DynamicInteropServiceTest {
 		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( "BigDecimal" );
 	}
 
+	@Test
+	void testNativeTypedArray() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				import ortus.boxlang.runtime.interop.TestTypedArray;
+				import ortus.boxlang.runtime.scopes.Key;
+				
+				TestTypedArray.test( [ Key.of("foo"), Key.of("bar") ] )
+			""", context);
+		// @formatter:on
+	}
+
 }
