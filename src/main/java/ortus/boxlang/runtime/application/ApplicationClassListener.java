@@ -102,6 +102,8 @@ public class ApplicationClassListener extends BaseApplicationListener {
 			// Default includes template inside the Class's context
 			ClassBoxContext cbc = new ClassBoxContext( context, listener );
 			try {
+				// Ensure our implicit onRequest() always outputs, even if the class has output=false
+				cbc.setOutputOverride( true );
 				cbc.includeTemplate( ( String ) args[ 0 ] );
 				cbc.flushBuffer( false );
 			} catch ( AbortException e ) {
@@ -112,6 +114,8 @@ public class ApplicationClassListener extends BaseApplicationListener {
 				throw e;
 			} finally {
 				cbc.flushBuffer( false );
+				// Reset this override back
+				cbc.setOutputOverride( null );
 			}
 		}
 	}
