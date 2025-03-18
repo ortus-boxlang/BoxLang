@@ -157,7 +157,7 @@ public class ClassMetadataVisitorTest {
 		var meta = visitor.getMetadata();
 		assertThat( ( ( Struct ) ( ( Struct ) meta.getAsArray( Key.functions ).get( 0 ) ).getAsArray( Key.parameters ).get( 0 ) ).getAsStruct( Key.annotations )
 		    .get( Key._DEFAULT ) )
-		        .isEqualTo( "[Runtime Expression]" );
+		    .isEqualTo( "[Runtime Expression]" );
 	}
 
 }
