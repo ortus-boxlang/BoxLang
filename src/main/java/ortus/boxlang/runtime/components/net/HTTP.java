@@ -233,8 +233,11 @@ public class HTTP extends Component {
 		    : HttpClient.Version.HTTP_2;
 
 		try {
-			HttpRequest.Builder			builder			= HttpRequest.newBuilder();
-			URIBuilder					uriBuilder		= new URIBuilder( theURL );
+			HttpRequest.Builder	builder		= HttpRequest.newBuilder();
+			URIBuilder			uriBuilder	= new URIBuilder( theURL );
+			if ( attributes.get( Key.port ) != null ) {
+				uriBuilder.setPort( attributes.getAsInteger( Key.port ) );
+			}
 			HttpRequest.BodyPublisher	bodyPublisher	= null;
 			List<IStruct>				formFields		= new ArrayList<>();
 			List<IStruct>				files			= new ArrayList<>();

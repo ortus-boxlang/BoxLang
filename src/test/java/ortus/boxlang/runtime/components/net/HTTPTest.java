@@ -109,6 +109,30 @@ public class HTTPTest {
 		assertThat( bxhttp.getAsString( Key.fileContent ).replaceAll( "\\s+", "" ) ).isEqualTo( "Done" );
 	}
 
+	@DisplayName( "It can make HTTP with port attribute" )
+	@Test
+	public void testCanMakeHTTPRequestPort( WireMockRuntimeInfo wmRuntimeInfo ) {
+		// this is the good request - it would return a 200
+		stubFor( get( "/posts/1" ).willReturn( aResponse().withBody( "Done" ).withStatus( 200 ) ) );
+
+		String baseURL = wmRuntimeInfo.getHttpBaseUrl();
+
+		instance.executeSource( String.format( """
+		                                        bx:http url="%s" port="8080" {
+		                                            bx:httpparam type="header" name="User-Agent" value="Mozilla";
+		                                       }
+		                                       result = bxhttp;
+		                                        """, baseURL + "/posts/1" ),
+		    context );
+
+		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
+		// Our port change should produce a bad gateway error
+		IStruct bxhttp = variables.getAsStruct( result );
+		assertThat( bxhttp.get( Key.statusCode ) ).isEqualTo( 502 );
+		assertThat( bxhttp.get( Key.statusText ) ).isEqualTo( "Bad Gateway" );
+		assertThat( bxhttp.getAsString( Key.fileContent ).replaceAll( "\\s+", "" ) ).isEqualTo( "ConnectionFailure" );
+	}
+
 	@DisplayName( "It parses returned cookies into a Cookies query object" )
 	@Test
 	public void testCookiesInQuery( WireMockRuntimeInfo wmRuntimeInfo ) {
