@@ -133,4 +133,14 @@ public class StructKeyExistsTest {
 		assertThat( variables.getAsBoolean( result ) ).isFalse();
 	}
 
+	@Test
+	public void testStructKeyExistsMap() {
+		instance.executeSource(
+		    """
+		    	stEnvVars = createObject("java", "java.lang.System").getenv();
+		    	result = structKeyExists(stEnvVars, "FOOBAR");
+		    """,
+		    context );
+	}
+
 }

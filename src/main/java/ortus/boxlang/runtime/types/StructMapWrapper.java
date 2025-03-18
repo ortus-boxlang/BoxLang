@@ -182,13 +182,25 @@ public class StructMapWrapper implements IStruct, IListenable<IStruct>, Serializ
 	 * @return {@code true} if this map contains a mapping for the specified
 	 */
 	public boolean containsKey( Key key ) {
+		if ( wrapped.size() == 0 ) {
+			return false;
+		}
+
 		boolean exists = wrapped.containsKey( key.getOriginalValue() );
 		if ( exists ) {
 			return true;
 		}
-		exists = wrapped.containsKey( key );
-		if ( exists ) {
-			return true;
+
+		// If it looks like this map has key for objects, then test this.
+		if ( wrapped.keySet().toArray()[ 0 ] instanceof Key ) {
+			try {
+				exists = wrapped.containsKey( key );
+				if ( exists ) {
+					return true;
+				}
+			} catch ( java.lang.ClassCastException e ) {
+				// ignore this, it's an edge case if the keys in the map are of mixed type
+			}
 		}
 
 		String stringKey = key.getName();
