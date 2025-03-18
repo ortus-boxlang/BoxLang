@@ -31,12 +31,14 @@ import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.compiler.parser.DocParser;
+import ortus.boxlang.compiler.parser.Parser;
 import ortus.boxlang.compiler.parser.ParsingResult;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.BaseBoxContext;
@@ -5357,6 +5359,51 @@ public class CoreLangTest {
 		    """,
 		    context ) );
 		assertThat( e.getMessage() ).isNull();
+	}
+
+	@Test
+	public void testGetANTLRCacheSize() {
+		instance.executeSource(
+		    """
+		    /**
+		     * test
+		     */
+		    	  function foo(){}
+		      """,
+		    context );
+		instance.executeSource(
+		    """
+		    /**
+		     * test
+		     */
+		    	  function foo(){}
+		      """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( Parser.getCacheSize() ).isGreaterThan( 0 );
+	}
+
+	@Test
+	@Disabled( "Only works when testing JUST this test" )
+	public void testClearANTLRCache() {
+		Parser.clearParseCache();
+		assertThat( Parser.getCacheSize() ).isEqualTo( 0 );
+		instance.executeSource(
+		    """
+		    /**
+		     * test
+		     */
+		    	  function foo(){}
+		      """,
+		    context );
+		instance.executeSource(
+		    """
+		    /**
+		     * test
+		     */
+		    	  function foo(){}
+		      """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( Parser.getCacheSize() ).isGreaterThan( 0 );
 	}
 
 }

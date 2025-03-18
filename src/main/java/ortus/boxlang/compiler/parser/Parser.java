@@ -303,4 +303,24 @@ public class Parser {
 		    .map( f -> f.substring( filename.lastIndexOf( "." ) + 1 ).toLowerCase() );
 	}
 
+	/**
+	 * Get the number of states stored in all the DFA cache across all parsers.
+	 * 
+	 * @return the number of states stored in all the DFA cache
+	 */
+	public static int getCacheSize() {
+		return CFParser.getCacheSize()
+		    + BoxParser.getCacheSize()
+		    + DocParser.getCacheSize();
+	}
+
+	/**
+	 * Clear the DFA cache across all parsers.
+	 */
+	public static void clearParseCache() {
+		CFParser.clearParseCache();
+		BoxParser.clearParseCache();
+		DocParser.clearParseCache();
+	}
+
 }

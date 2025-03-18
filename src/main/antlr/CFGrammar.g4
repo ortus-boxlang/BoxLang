@@ -13,7 +13,19 @@ options {
 
 @header {
 	import ortus.boxlang.compiler.parser.CFParserControl;
- }
+}
+
+// These facilitate our cache management methods
+@members {
+ 
+ 	public static DFA[] getParseCache() {
+		return CFGrammar._decisionToDFA;
+	}
+ 
+ 	public static ATN getStaticATN() {
+		return _ATN;
+	}
+}
 
 // foo
 identifier: IDENTIFIER

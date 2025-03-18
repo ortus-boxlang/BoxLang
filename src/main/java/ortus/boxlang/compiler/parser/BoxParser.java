@@ -27,6 +27,8 @@ import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.atn.ATN;
+import org.antlr.v4.runtime.dfa.DFA;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BOMInputStream;
 
@@ -1510,4 +1512,31 @@ public class BoxParser extends AbstractParser {
 	public void reportError( String message, Position position ) {
 		errorListener.semanticError( message, position );
 	}
+
+	/**
+	 * Get the number of states stored in all the DFA cache.
+	 * 
+	 * @return the number of states stored in all the DFA cache
+	 */
+	public static int getCacheSize() {
+		var	cache	= BoxGrammar.getParseCache();
+		int	size	= 0;
+		for ( int d = 0; d < cache.length; d++ ) {
+			size += cache[ d ].getStates().size();
+		}
+		return size;
+	}
+
+	/**
+	 * Clear the DFA cache.
+	 */
+	public static void clearParseCache() {
+		var	cache	= BoxGrammar.getParseCache();
+		ATN	_ATN	= BoxGrammar.getStaticATN();
+
+		for ( int d = 0; d < cache.length; d++ ) {
+			cache[ d ] = new DFA( _ATN.getDecisionState( d ), d );
+		}
+	}
+
 }

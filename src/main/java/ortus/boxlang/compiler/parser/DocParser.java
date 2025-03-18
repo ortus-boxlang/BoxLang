@@ -29,6 +29,8 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Lexer;
 import org.antlr.v4.runtime.Parser;
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.atn.ATN;
+import org.antlr.v4.runtime.dfa.DFA;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.io.IOUtils;
 
@@ -197,6 +199,32 @@ public class DocParser extends AbstractParser {
 		this.sourceToParse = source;
 		this.errorListener.setSource( this.sourceToParse );
 		return this;
+	}
+
+	/**
+	 * Get the number of states stored in all the DFA cache.
+	 * 
+	 * @return the number of states stored in all the DFA cache
+	 */
+	public static int getCacheSize() {
+		var	cache	= DocGrammar.getParseCache();
+		int	size	= 0;
+		for ( int d = 0; d < cache.length; d++ ) {
+			size += cache[ d ].getStates().size();
+		}
+		return size;
+	}
+
+	/**
+	 * Clear the DFA cache.
+	 */
+	public static void clearParseCache() {
+		var	cache	= DocGrammar.getParseCache();
+		ATN	_ATN	= DocGrammar.getStaticATN();
+
+		for ( int d = 0; d < cache.length; d++ ) {
+			cache[ d ] = new DFA( _ATN.getDecisionState( d ), d );
+		}
 	}
 
 }
