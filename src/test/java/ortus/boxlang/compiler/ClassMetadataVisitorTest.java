@@ -100,7 +100,6 @@ public class ClassMetadataVisitorTest {
 		result.getRoot().accept( visitor );
 
 		var meta = visitor.getMetadata();
-		System.out.println( meta );
 		assertThat( meta.get( Key.of( "type" ) ) ).isEqualTo( "class" );
 		assertThat( meta.get( Key.of( "fullname" ) ) ).isEqualTo( "src.test.java.ortus.boxlang.compiler.MyClassMDVistorCF" );
 		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "MyClassMDVistorCF" );
@@ -144,6 +143,21 @@ public class ClassMetadataVisitorTest {
 		assertThat( annos.getAsString( Key.of( "singleton" ) ).trim() ).isEqualTo( "" );
 		assertThat( annos.getAsString( Key.of( "gavin" ) ).trim() ).isEqualTo( "pickin" );
 		assertThat( annos.getAsString( Key.of( "inject" ) ).trim() ).isEqualTo( "" );
+	}
+
+	@Test
+	public void testMetadataVisitorCFTag() {
+		ParsingResult result = new Parser().parse( Paths.get( "src/test/java/ortus/boxlang/compiler/MyClassMDVistorCFTag.cfc" ).toAbsolutePath().toFile() );
+		if ( !result.isCorrect() ) {
+			throw new ParseException( result.getIssues(), "" );
+		}
+		ClassMetadataVisitor visitor = new ClassMetadataVisitor();
+		result.getRoot().accept( visitor );
+
+		var meta = visitor.getMetadata();
+		assertThat( ( ( Struct ) ( ( Struct ) meta.getAsArray( Key.functions ).get( 0 ) ).getAsArray( Key.parameters ).get( 0 ) ).getAsStruct( Key.annotations )
+		    .get( Key._DEFAULT ) )
+		        .isEqualTo( "[Runtime Expression]" );
 	}
 
 }
