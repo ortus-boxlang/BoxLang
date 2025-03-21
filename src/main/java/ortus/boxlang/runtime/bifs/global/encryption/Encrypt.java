@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.bifs.global.encryption;
 
 import java.nio.charset.Charset;
 import java.util.Arrays;
+import java.util.Objects;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
@@ -41,7 +42,7 @@ public class Encrypt extends BIF {
 		super();
 		// Uncomment and define declare argument to this BIF
 		declaredArguments = new Argument[] {
-		    new Argument( true, "any", Key.object ),
+		    new Argument( false, "any", Key.object ),
 		    new Argument( true, "string", Key.key ),
 		    new Argument( false, "string", Key.algorithm ),
 		    new Argument( false, "string", Key.encoding, EncryptionUtil.DEFAULT_ENCRYPTION_ENCODING ),
@@ -74,11 +75,15 @@ public class Encrypt extends BIF {
 	 * @argument.precise If set to true, the string and key will be validated before encryption to ensure conformity to the algorithm. Default is false
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
+		// Backwards compat argument named "string" is now "object"
 		if ( arguments.get( Key.string ) != null ) {
 			arguments.put( Key.object, arguments.get( Key.string ) );
 		}
-		Object	content		= arguments.get( Key.object );
-		String	algorithm	= arguments.getAsString( Key.algorithm );
+		Object content = arguments.get( Key.object );
+		// Make sure content is not null or throw an error
+		Objects.requireNonNull( content, "Content to encrypt cannot be null" );
+
+		String algorithm = arguments.getAsString( Key.algorithm );
 		if ( algorithm == null ) {
 			algorithm = EncryptionUtil.DEFAULT_ENCRYPTION_ALGORITHM;
 		}
