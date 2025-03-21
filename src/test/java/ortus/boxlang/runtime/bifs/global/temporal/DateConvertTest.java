@@ -1,4 +1,3 @@
-
 /**
  * [BoxLang]
  *
@@ -143,6 +142,28 @@ public class DateConvertTest {
 		assertNotEquals( result.getWrapped().getZone(), localZone );
 		assertEquals( result.getWrapped().getZone(), utcZone );
 		assertEquals( "1970-01-01T00:00", result.format( "yyyy-MM-dd'T'HH:mm" ) );
+	}
+
+	@DisplayName( "It tests the BIF DateConvert on a string with utc2Local on Swiss Locale" )
+	@Test
+	public void testDateConvertSwissLocale() {
+		var	utcZone		= ZoneId.of( "UTC" );
+		var	localZone	= ZoneId.of( "Europe/Zurich" );
+		var	dateRef		= "January 1 1970 00:00";
+		variables.put( Key.of( "date" ), dateRef );
+		instance.executeSource(
+		    """
+		    setLocale( "en_US" );
+		    setTimezone( "Europe/Zurich" );
+		       result = dateConvert( "utc2Local", date );
+		       """,
+		    context );
+
+		DateTime result = variables.getAsDateTime( Key.of( "result" ) );
+		assertEquals( result.getWrapped().getZone(), localZone );
+		assertNotEquals( result.getWrapped().getZone(), utcZone );
+		// Zurich is 1 hour ahead of UTC
+		assertEquals( "1970-01-01T01:00", result.format( "yyyy-MM-dd'T'HH:mm" ) );
 	}
 
 }
