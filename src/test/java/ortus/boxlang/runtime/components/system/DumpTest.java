@@ -177,4 +177,18 @@ public class DumpTest {
 		assertThat( baos.toString() ).contains( "My Value" );
 	}
 
+	@DisplayName( "It can dump an XML object" )
+	@Test
+	public void testCanDumpEmptyXML() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				<cfset myXML = xmlNew()/>
+				<cfdump var="#myXML#" format="html">
+		    """,
+		    context, BoxSourceType.CFTEMPLATE );
+		// @formatter:on
+		assertThat( baos.toString() ).contains( "xml" );
+	}
+
 }

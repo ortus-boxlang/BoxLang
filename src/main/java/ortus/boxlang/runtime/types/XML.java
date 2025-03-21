@@ -277,6 +277,9 @@ public class XML implements Serializable, IStruct {
 	 * @return the name of this XML node
 	 */
 	public String getXMLName() {
+		if ( node == null ) {
+			return "#document";
+		}
 		switch ( node.getNodeType() ) {
 			case Node.DOCUMENT_NODE :
 				return "#document";
@@ -372,6 +375,9 @@ public class XML implements Serializable, IStruct {
 
 	public Set<Key> getReferencableKeys( boolean withChildren ) {
 		Set<Key> keys = new HashSet<>();
+		if ( node == null ) {
+			return keys;
+		}
 		switch ( node.getNodeType() ) {
 			case Node.DOCUMENT_NODE :
 				keys.add( Key.XMLRoot );
