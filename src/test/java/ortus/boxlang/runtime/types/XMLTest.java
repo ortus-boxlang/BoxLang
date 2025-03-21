@@ -458,7 +458,6 @@ class XMLTest {
 
 	@DisplayName( "It can append XML children using array index notation" )
 	@Test
-	@Disabled( "Until Brad or Jacob can take a look at why this fails" )
 	public void testAppendChildrenArrayNotation() {
 		instance.executeSource(
 		    """
@@ -467,8 +466,6 @@ class XMLTest {
 			for( i = 1; i <= products.len(); i++ ){
 				product = xmlElemNew( xmlObj, "Product" );
 				product.xmlText = products[ i ];
-				// Below will pass when uncommented
-				// xmlObj.xmlRoot.Products.xmlChildren.append( product );
 				xmlObj.xmlRoot.Products.xmlChildren[ i ] = product;
 			}
 			result = xmlObj.xmlRoot.Products.xmlChildren.len();

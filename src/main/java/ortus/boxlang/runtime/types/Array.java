@@ -807,7 +807,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 				}
 			}
 		}
-		wrapped.set( index - 1, value );
+		set( index - 1, value );
 		return value;
 	}
 
