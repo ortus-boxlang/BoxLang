@@ -94,10 +94,8 @@ public class QueryParameter {
 
 		Object	v			= param.get( Key.value );
 		if ( this.isListParam ) {
-			if ( v instanceof Array ) {
-				// do nothing?
-			} else {
-				v = ListUtil.asList( ( String ) v, ( String ) param.getOrDefault( Key.separator, separator ) );
+			if ( ! ( v instanceof Array ) ) {
+				v = ListUtil.asList( StringCaster.cast( v ), StringCaster.cast( param.getOrDefault( Key.separator, separator ) ) );
 			}
 		}
 

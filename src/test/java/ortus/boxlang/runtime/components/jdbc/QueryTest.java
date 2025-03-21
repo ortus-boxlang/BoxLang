@@ -174,6 +174,36 @@ public class QueryTest extends BaseJDBCTest {
 		assertEquals( 3, query.size() );
 	}
 
+	@DisplayName( "It can execute a query a list param with a single numeric value" )
+	@Test
+	public void testListInteger() {
+		getInstance().executeSource(
+		    """
+		        <cfset ids = 42 />
+		        <cfquery name="result">
+		        SELECT * FROM developers WHERE id IN (<cfqueryparam cf_sql_type="cf_sql_integer" value="#ids#" list="true">)
+		        </cfquery>
+		    """,
+		    context,
+		    BoxSourceType.CFTEMPLATE );
+		assertThat( getVariables().get( result ) ).isInstanceOf( ortus.boxlang.runtime.types.Query.class );
+		ortus.boxlang.runtime.types.Query query = getVariables().getAsQuery( result );
+		assertEquals( 1, query.size() );
+
+		getInstance().executeSource(
+		    """
+		        <cfset ids = "42,77" />
+		        <cfquery name="result">
+		        SELECT * FROM developers WHERE id IN (<cfqueryparam cf_sql_type="cf_sql_integer" value="#ids#" list="true">)
+		        </cfquery>
+		    """,
+		    context,
+		    BoxSourceType.CFTEMPLATE );
+		assertThat( getVariables().get( result ) ).isInstanceOf( ortus.boxlang.runtime.types.Query.class );
+		query = getVariables().getAsQuery( result );
+		assertEquals( 2, query.size() );
+	}
+
 	@DisplayName( "It can execute a query with a list queryparam" )
 	@Test
 	public void testListStringBinding() {
