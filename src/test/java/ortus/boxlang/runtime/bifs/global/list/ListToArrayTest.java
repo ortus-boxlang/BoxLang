@@ -121,6 +121,13 @@ public class ListToArrayTest {
 		assertEquals( result.get( 2 ), "baz" );
 	}
 
+	@DisplayName( "It tests that a null passed will return an empty array" )
+	@Test
+	public void testsNull() {
+		Array result = ( Array ) instance.executeStatement( "listToArray( null )" );
+		assertEquals( result.size(), 0 );
+	}
+
 	@DisplayName( "It preserves spaces in strings when splitting on empty strings" )
 	@Test
 	public void testPreservesSpaces() {
