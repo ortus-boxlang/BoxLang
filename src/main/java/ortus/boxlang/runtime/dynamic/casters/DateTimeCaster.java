@@ -46,6 +46,10 @@ public class DateTimeCaster implements IBoxCaster {
 	    "dd-MMM-yyyy HH:mm:ss",         // Medium DateTime (e.g., 02-Apr-2024 21:01:00) - Might need adjustment based on locale
 	    "dd/MM/yyyy HH:mm:ss",         // Short DateTime (e.g., 02/04/2024 21:01:00) - Might need adjustment based on locale
 	    "dd.MM.yyyy HH:mm:ss",         // Short DateTime (e.g., 02.04.2024 21:01:00) - Might need adjustment based on locale
+	    "MMM dd yyyy HH:mm:ss", 	  // Med DateTime (e.g., Apr 02 2024 21:01:00) - Might need adjustment based on locale
+	    "MMM dd, yyyy HH:mm:ss", 	  // Med DateTime (e.g., Apr 02, 2024 21:01:00) - Might need adjustment based on locale
+	    "MMMM dd yyyy HH:mm:ss", 	  // Long month DateTime (e.g., April 02 2024 21:01:00) - Might need adjustment based on locale
+	    "MMMM dd, yyyy HH:mm:ss", 	  // Long month DateTime (e.g., April 02, 2024 21:01:00) - Might need adjustment based on locale
 
 	    // ISO formats
 	    "yyyy-MM-dd'T'HH:mm:ss.SSSXXX",  // Date-time with milliseconds and offset
@@ -63,6 +67,10 @@ public class DateTimeCaster implements IBoxCaster {
 	    "dd-MMM-yyyy",                   // Medium Date (e.g., 02-Apr-2024) - Might need adjustment based on locale
 	    "dd/MMM/yyyy",                   // Medium Date (e.g., 02-Apr-2024) - Might need adjustment based on locale
 	    "dd.MMM.yyyy",                   // Medium Date (e.g., 02.Apr.2024) - Might need adjustment based on locale
+	    "MMM dd yyyy",                   // Med Date (e.g., Apr 02 2024) - Might need adjustment based on locale
+	    "MMM dd, yyyy",                  // Med Date (e.g., Apr 02, 2024) - Might need adjustment based on locale
+	    "MMMM dd yyyy",                  // Long month Date (e.g., April 02 2024) - Might need adjustment based on locale
+	    "MMMM dd, yyyy",                 // Long month Date (e.g., April 02, 2024) - Might need adjustment based on locale
 
 	    "dd MM yyyy",                   // Short Date (e.g., 02.04.2024) - Might need adjustment based on locale
 	    "dd-MM-yyyy",                   // Short Date (e.g., 02-04-2024) - Might need adjustment based on locale
