@@ -146,6 +146,10 @@ public class IsValidTest {
 	public void testDate() {
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'date', '2024-01-26' )" ) ).isTrue();
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'date', '2024-01-26777' )" ) ).isFalse();
+		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'date', 'Mar 22, 2025 05:21 PM' )" ) ).isTrue();
+		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'date', 'Mar 22 2025 05:21 PM' )" ) ).isTrue();
+		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'date', 'March 22 2025 5:21 PM' )" ) ).isTrue();
+		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'date', 'March 22, 2025 05:21 PM' )" ) ).isTrue();
 	}
 
 	@DisplayName( "It works on times" )
