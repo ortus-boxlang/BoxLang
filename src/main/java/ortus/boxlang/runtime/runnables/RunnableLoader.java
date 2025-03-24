@@ -263,8 +263,12 @@ public class RunnableLoader {
 			if ( !( Boolean ) boxClass.getField( "staticInitialized" ).get() ) {
 				synchronized ( clazz ) {
 					if ( !( Boolean ) boxClass.getField( "staticInitialized" ).get() ) {
-						boxClass.invokeStatic( context, "staticInitializer",
-						    new StaticClassBoxContext( context, boxClass, BoxClassSupport.getStaticScope( context, boxClass ) ) );
+						StaticClassBoxContext	staticContext	= new StaticClassBoxContext( context, boxClass,
+						    BoxClassSupport.getStaticScope( context, boxClass ) );
+						ResolvedFilePath		staticPath		= ( ResolvedFilePath ) boxClass.getField( "path" ).get();
+						staticContext.pushTemplate( staticPath );
+						boxClass.invokeStatic( context, "staticInitializer", staticContext );
+						staticContext.popTemplate();
 						boxClass.setField( "staticInitialized", true );
 					}
 				}

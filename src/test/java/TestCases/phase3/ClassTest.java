@@ -21,6 +21,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.PrintStream;
+import java.nio.file.Paths;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -1926,4 +1927,15 @@ public class ClassTest {
 		    context );
 	}
 
+	@Test
+	public void testCurrentTemplateInStaticInitializer() {
+		instance.executeSource(
+		    """
+		       import src.test.java.TestCases.phase3.CurrentTemplateInStaticInitializer;
+		    result = CurrentTemplateInStaticInitializer.staticMethod();
+		       """,
+		    context );
+		assertThat( variables.get( "result" ) )
+		    .isEqualTo( Paths.get( "src/test/java/TestCases/phase3/CurrentTemplateInStaticInitializer.bx" ).toAbsolutePath().toString() );
+	}
 }
