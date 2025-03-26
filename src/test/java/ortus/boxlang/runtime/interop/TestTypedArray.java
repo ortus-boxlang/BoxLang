@@ -1,11 +1,13 @@
 package ortus.boxlang.runtime.interop;
 
-import ortus.boxlang.runtime.scopes.Key;
-
 public class TestTypedArray {
 
-	static public void test( Key[] keys ) {
+	static public void test( String name ) {
 
+	}
+
+	static public void test( String name, Object[] stuff, TestTypedArraySubtype[] types ) {
+		System.out.println( "Testing String, Object[], TestTypedArraySubtype[] " + name + " with size: " + types.length );
 	}
 
 }

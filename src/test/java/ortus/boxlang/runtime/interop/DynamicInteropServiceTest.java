@@ -41,6 +41,7 @@ import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.xnio.OptionMap;
@@ -1026,14 +1027,18 @@ public class DynamicInteropServiceTest {
 	}
 
 	@Test
+	@Disabled( "BL-1203 Reproduction" )
 	void testNativeTypedArray() {
 		// @formatter:off
 		instance.executeSource(
 			"""
-				import ortus.boxlang.runtime.interop.TestTypedArray;
-				import ortus.boxlang.runtime.scopes.Key;
+				import java:ortus.boxlang.runtime.scopes.Key;
+				import java:ortus.boxlang.runtime.interop.TestTypedArraySubtype;
+				variables.myTypedArray = createObject( "java", "ortus.boxlang.runtime.interop.TestTypedArray" );
+				variables.types = [];
+				[ "foo", "bar" ].each( ( key ) => arrayAppend( variables.types, new TestTypedArraySubtype( Key.of( key ) ) ) );
+				myTypedArray.test( "foo",["blah"], types );
 				
-				TestTypedArray.test( [ Key.of("foo"), Key.of("bar") ] )
 			""", context);
 		// @formatter:on		
 	}
