@@ -28,7 +28,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.JSONUtil;
 
 @BoxBIF
-@BoxMember( type = BoxLangType.STRING )
+@BoxMember( type = BoxLangType.STRING_STRICT )
 public class JSONDeserialize extends BIF {
 
 	/**

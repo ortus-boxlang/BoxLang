@@ -29,7 +29,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.NUMERIC )
-@BoxMember( type = BoxLangType.STRING )
+@BoxMember( type = BoxLangType.STRING_STRICT )
 
 public class BooleanFormat extends BIF {
 

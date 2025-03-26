@@ -21,7 +21,6 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URL;
@@ -37,7 +36,6 @@ import org.apache.commons.io.ByteOrderMark;
 import org.apache.commons.io.input.BOMInputStream;
 
 import ortus.boxlang.runtime.interop.DynamicObject;
-import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.XML;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
@@ -128,16 +126,19 @@ public class StringCaster implements IBoxCaster {
 			}
 		}
 
+		// First test with our strict test
+		String result = StringCasterStrict.cast( object, encoding, false );
+
+		if ( result != null ) {
+			return result;
+		}
+
 		object = DynamicObject.unWrap( object );
+
+		// Now fall back to our more loose tests
 		Charset charset = null;
 		if ( encoding != null ) {
 			charset = Charset.forName( encoding );
-		}
-		if ( object instanceof Key key ) {
-			return key.getName();
-		}
-		if ( object instanceof String str ) {
-			return str;
 		}
 		if ( object instanceof InputStream is ) {
 			try (
@@ -160,22 +161,6 @@ public class StringCaster implements IBoxCaster {
 			} catch ( Exception e ) {
 				throw new BoxCastException( "Failed to read input stream as a string.", e );
 			}
-		}
-		if ( object instanceof Boolean bool ) {
-			return bool ? "true" : "false";
-		}
-		if ( object instanceof Character chr ) {
-			return chr.toString();
-		}
-		if ( object instanceof Character[] ca ) {
-			char[] charArray = new char[ ca.length ];
-			for ( int i = 0; i < ca.length; i++ ) {
-				charArray[ i ] = ca[ i ];
-			}
-			return new String( charArray );
-		}
-		if ( object instanceof char[] ca ) {
-			return new String( ca );
 		}
 		if ( object instanceof Path path ) {
 			return path.toString();
@@ -235,30 +220,11 @@ public class StringCaster implements IBoxCaster {
 		}
 		// End date classes
 
-		if ( object instanceof java.util.UUID uuid ) {
-			return uuid.toString();
-		}
 		if ( object instanceof StringBuilder sb ) {
 			return sb.toString();
 		}
 		if ( object instanceof StringBuffer sb ) {
 			return sb.toString();
-		}
-		if ( object instanceof Integer || object instanceof Long || object instanceof Short || object instanceof Byte || object instanceof BigInteger ) {
-			return object.toString();
-		}
-		if ( object instanceof BigDecimal bd ) {
-			return bd.stripTrailingZeros().toPlainString();
-		}
-		if ( object instanceof Float || object instanceof Double ) {
-			String result = object.toString();
-			if ( result.endsWith( ".0" ) ) {
-				return result.substring( 0, result.length() - 2 );
-			}
-			return result;
-		}
-		if ( object instanceof Number ) {
-			return object.toString();
 		}
 		if ( object instanceof byte[] b ) {
 			if ( charset != null ) {

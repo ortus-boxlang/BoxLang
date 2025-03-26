@@ -225,6 +225,9 @@ public class GenericCaster implements IBoxCaster {
 		if ( type.equals( "string" ) ) {
 			return StringCaster.cast( object, fail );
 		}
+		if ( type.equals( "string_strict" ) ) {
+			return StringCasterStrict.cast( object, fail );
+		}
 		if ( type.equals( "double" ) ) {
 			return DoubleCaster.cast( object, fail );
 		}

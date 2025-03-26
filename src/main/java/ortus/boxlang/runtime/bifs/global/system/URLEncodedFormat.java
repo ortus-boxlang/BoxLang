@@ -29,7 +29,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.util.EncryptionUtil;
 
 @BoxBIF
-@BoxMember( type = BoxLangType.STRING )
+@BoxMember( type = BoxLangType.STRING_STRICT )
 public class URLEncodedFormat extends BIF {
 
 	/**
