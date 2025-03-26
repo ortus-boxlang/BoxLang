@@ -64,6 +64,8 @@ public class ThreadNew extends BIF {
 	 * @argument.threadName The name of the thread to track it, if not provided a default name will be generated.
 	 *
 	 * @argument.priority The priority of the thread. Possible values are "high", "low", and "normal". Default is "normal".
+	 * 
+	 * @argument.virtual If true, the thread will be a <a href="https://docs.oracle.com/en/java/javase/21/core/virtual-threads.html">virtual thread</a>. Default is false.
 	 *
 	 * @return The newly created thread object if you want to monitor it.
 	 */

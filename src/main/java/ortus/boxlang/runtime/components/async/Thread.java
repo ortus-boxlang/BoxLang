@@ -90,6 +90,8 @@ public class Thread extends Component {
 	 *
 	 * @attribute.timeout The number of milliseconds to wait for the thread to finish. If the thread does not finish within the specified time, the thread
 	 *                    is terminated. If the timeout attribute is not specified, the thread runs until it finishes.
+	 * 
+	 * @attribute.virtual If true, the thread will be a <a href="https://docs.oracle.com/en/java/javase/21/core/virtual-threads.html">virtual thread</a>. Default is false.
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
 		Key		action		= Key.of( attributes.getAsString( Key.action ) );
