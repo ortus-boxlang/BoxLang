@@ -25,8 +25,8 @@ import ortus.boxlang.runtime.types.BoxLangType;
 
 @BoxBIF
 @BoxBIF( alias = "FindNoCase" )
-@BoxMember( type = BoxLangType.STRING, name = "Find", objectArgument = "string" )
-@BoxMember( type = BoxLangType.STRING, name = "FindNoCase", objectArgument = "string" )
+@BoxMember( type = BoxLangType.STRING_STRICT, name = "Find", objectArgument = "string" )
+@BoxMember( type = BoxLangType.STRING_STRICT, name = "FindNoCase", objectArgument = "string" )
 public class Find extends BIF {
 
 	/**

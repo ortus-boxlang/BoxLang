@@ -45,7 +45,7 @@ import ortus.boxlang.runtime.validation.Validator;
 @BoxMember( type = BoxLangType.NUMERIC, name = "dump" )
 @BoxMember( type = BoxLangType.QUERY, name = "dump" )
 @BoxMember( type = BoxLangType.STRUCT, name = "dump" )
-@BoxMember( type = BoxLangType.STRING, name = "dump" )
+@BoxMember( type = BoxLangType.STRING_STRICT, name = "dump" )
 @BoxMember( type = BoxLangType.UDF, name = "dump" )
 @BoxMember( type = BoxLangType.CLOSURE, name = "dump" )
 @BoxMember( type = BoxLangType.LAMBDA, name = "dump" )

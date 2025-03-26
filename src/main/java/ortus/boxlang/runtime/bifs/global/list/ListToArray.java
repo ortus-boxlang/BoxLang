@@ -28,7 +28,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
 @BoxBIF
-@BoxMember( type = BoxLangType.STRING, name = "ListToArray" )
+@BoxMember( type = BoxLangType.STRING_STRICT, name = "ListToArray" )
 public class ListToArray extends BIF {
 
 	/**

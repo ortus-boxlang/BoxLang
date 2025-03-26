@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 @BoxBIF
-@BoxMember( type = BoxLangType.STRING, name = "Replace" )
+@BoxMember( type = BoxLangType.STRING_STRICT, name = "Replace" )
 public class Replace extends BIF {
 
 	/**

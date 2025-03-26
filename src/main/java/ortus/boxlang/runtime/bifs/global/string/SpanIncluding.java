@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.validation.Validator;
 
 @BoxBIF
-@BoxMember( type = BoxLangType.STRING, name = "SpanIncluding" )
+@BoxMember( type = BoxLangType.STRING_STRICT, name = "SpanIncluding" )
 public class SpanIncluding extends BIF {
 
 	/**

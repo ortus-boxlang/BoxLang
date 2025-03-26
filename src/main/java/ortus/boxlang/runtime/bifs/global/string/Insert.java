@@ -25,7 +25,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 @BoxBIF
-@BoxMember( type = BoxLangType.STRING, name = "Insert", objectArgument = "string" )
+@BoxMember( type = BoxLangType.STRING_STRICT, name = "Insert", objectArgument = "string" )
 public class Insert extends BIF {
 
 	/**

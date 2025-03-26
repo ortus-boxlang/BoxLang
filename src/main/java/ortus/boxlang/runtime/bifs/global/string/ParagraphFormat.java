@@ -33,7 +33,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
 @BoxBIF
-@BoxMember( type = BoxLangType.STRING, name = "ParagraphFormat" )
+@BoxMember( type = BoxLangType.STRING_STRICT, name = "ParagraphFormat" )
 
 public class ParagraphFormat extends BIF {
 

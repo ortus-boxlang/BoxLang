@@ -37,8 +37,8 @@ import ortus.boxlang.runtime.types.util.ListUtil;
 
 @BoxBIF
 @BoxBIF( alias = "ReplaceListNoCase" )
-@BoxMember( type = BoxLangType.STRING, name = "ReplaceList" )
-@BoxMember( type = BoxLangType.STRING, name = "ReplaceListNoCase" )
+@BoxMember( type = BoxLangType.STRING_STRICT, name = "ReplaceList" )
+@BoxMember( type = BoxLangType.STRING_STRICT, name = "ReplaceListNoCase" )
 
 public class ReplaceList extends BIF {
 

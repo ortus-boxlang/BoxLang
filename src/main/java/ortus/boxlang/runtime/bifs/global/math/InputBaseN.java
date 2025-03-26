@@ -30,7 +30,7 @@ import ortus.boxlang.runtime.types.util.MathUtil;
 import ortus.boxlang.runtime.validation.Validator;
 
 @BoxBIF
-@BoxMember( type = BoxLangType.STRING, name = "InputBaseN" )
+@BoxMember( type = BoxLangType.STRING_STRICT, name = "InputBaseN" )
 public class InputBaseN extends BIF {
 
 	/**

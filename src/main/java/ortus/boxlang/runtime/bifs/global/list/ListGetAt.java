@@ -28,7 +28,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
 @BoxBIF
-@BoxMember( type = BoxLangType.STRING, name = "listGetAt" )
+@BoxMember( type = BoxLangType.STRING_STRICT, name = "listGetAt" )
 
 public class ListGetAt extends BIF {
 

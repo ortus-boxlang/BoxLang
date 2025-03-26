@@ -32,8 +32,8 @@ import ortus.boxlang.runtime.validation.Validator;
 
 @BoxBIF
 @BoxBIF( alias = "reReplaceNoCase" )
-@BoxMember( type = BoxLangType.STRING, name = "ReReplace" )
-@BoxMember( type = BoxLangType.STRING, name = "ReReplaceNoCase" )
+@BoxMember( type = BoxLangType.STRING_STRICT, name = "ReReplace" )
+@BoxMember( type = BoxLangType.STRING_STRICT, name = "ReReplaceNoCase" )
 public class ReReplace extends BIF {
 
 	private static final Key reFindNoCase = Key.of( "ReReplaceNoCase" );

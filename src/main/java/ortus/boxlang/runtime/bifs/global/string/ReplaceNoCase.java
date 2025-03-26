@@ -28,7 +28,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 @BoxBIF
-@BoxMember( type = BoxLangType.STRING, name = "ReplaceNoCase" )
+@BoxMember( type = BoxLangType.STRING_STRICT, name = "ReplaceNoCase" )
 public class ReplaceNoCase extends BIF {
 
 	/**

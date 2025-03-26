@@ -28,7 +28,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.BoxLangType;
 
 @BoxBIF
-@BoxMember( type = BoxLangType.STRING, name = "StringSort" )
+@BoxMember( type = BoxLangType.STRING_STRICT, name = "StringSort" )
 
 public class StringSort extends ListSort {
 

@@ -30,12 +30,12 @@ import ortus.boxlang.runtime.types.util.ListUtil;
 
 @BoxBIF
 @BoxBIF( alias = "ListFindNoCase" )
-@BoxMember( type = BoxLangType.STRING, name = "listFind" )
-@BoxMember( type = BoxLangType.STRING, name = "listFindNoCase" )
+@BoxMember( type = BoxLangType.STRING_STRICT, name = "listFind" )
+@BoxMember( type = BoxLangType.STRING_STRICT, name = "listFindNoCase" )
 @BoxBIF( alias = "ListContains" )
 @BoxBIF( alias = "ListContainsNoCase" )
-@BoxMember( type = BoxLangType.STRING, name = "listContains" )
-@BoxMember( type = BoxLangType.STRING, name = "listContainsNoCase" )
+@BoxMember( type = BoxLangType.STRING_STRICT, name = "listContains" )
+@BoxMember( type = BoxLangType.STRING_STRICT, name = "listContainsNoCase" )
 public class ListFind extends ArrayFind {
 
 	private static final Key	listContainsKey			= new Key( "listContains" );

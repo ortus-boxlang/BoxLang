@@ -31,8 +31,8 @@ import ortus.boxlang.runtime.util.RegexBuilder;
 
 @BoxBIF
 @BoxBIF( alias = "reMatchNoCase" )
-@BoxMember( type = BoxLangType.STRING, name = "reMatch", objectArgument = "string" )
-@BoxMember( type = BoxLangType.STRING, name = "reMatchNoCase", objectArgument = "string" )
+@BoxMember( type = BoxLangType.STRING_STRICT, name = "reMatch", objectArgument = "string" )
+@BoxMember( type = BoxLangType.STRING_STRICT, name = "reMatchNoCase", objectArgument = "string" )
 public class ReMatch extends BIF {
 
 	private static final Key reMatchNoCase = Key.of( "reMatchNoCase" );

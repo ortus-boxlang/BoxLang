@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.EncryptionUtil;
 
 @BoxBIF
-@BoxMember( type = BoxLangType.STRING, name = "Hmac" )
+@BoxMember( type = BoxLangType.STRING_STRICT, name = "Hmac" )
 
 public class Hmac extends BIF {
 

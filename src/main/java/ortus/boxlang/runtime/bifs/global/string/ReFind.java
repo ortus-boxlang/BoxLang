@@ -34,8 +34,8 @@ import ortus.boxlang.runtime.validation.Validator;
 
 @BoxBIF
 @BoxBIF( alias = "reFindNoCase" )
-@BoxMember( type = BoxLangType.STRING, name = "reFind", objectArgument = "string" )
-@BoxMember( type = BoxLangType.STRING, name = "reFindNoCase", objectArgument = "string" )
+@BoxMember( type = BoxLangType.STRING_STRICT, name = "reFind", objectArgument = "string" )
+@BoxMember( type = BoxLangType.STRING_STRICT, name = "reFindNoCase", objectArgument = "string" )
 public class ReFind extends BIF {
 
 	/**
