@@ -18,6 +18,7 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.FunctionCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
@@ -68,8 +69,9 @@ public class Replace extends BIF {
 		if ( scope.equals( "one" ) ) {
 			int idx = string.indexOf( substring1 );
 			if ( idx != -1 ) {
-				return obj instanceof String
-				    ? string.substring( 0, idx ) + StringCaster.cast( obj ) + string.substring( idx + substring1.length() )
+				CastAttempt<String> castAttempt = StringCaster.attempt( obj );
+				return castAttempt.wasSuccessful()
+				    ? string.substring( 0, idx ) + castAttempt.get() + string.substring( idx + substring1.length() )
 				    : string.substring( 0, idx )
 				        + context.invokeFunction( FunctionCaster.cast( obj ),
 				            new Object[] { string.substring( idx, idx + substring1.length() ), idx + 1, string } )
