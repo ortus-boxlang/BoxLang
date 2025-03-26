@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
@@ -651,7 +652,7 @@ public class DynamicInteropServiceTest {
 	@Test
 	@DisplayName( "It can get all the callable constructors on a class" )
 	void testItCanGetAllConstructors() {
-		Set<Constructor<?>> constructors = DynamicInteropService.getConstructors( String.class, true );
+		Set<Executable> constructors = DynamicInteropService.getConstructors( String.class, true );
 		assertThat( constructors ).isNotEmpty();
 		assertThat( constructors.size() ).isAtLeast( 15 );
 	}
@@ -659,27 +660,30 @@ public class DynamicInteropServiceTest {
 	@Test
 	@DisplayName( "It can get all the callable constructors as a stream" )
 	void testItCanGetAllConstructorsAsStream() {
-		Stream<Constructor<?>> constructors = DynamicInteropService.getConstructorsAsStream( String.class, true );
+		Stream<Executable> constructors = DynamicInteropService.getConstructorsAsStream( String.class, true );
 		assertThat( constructors ).isNotNull();
 	}
 
 	@Test
 	@DisplayName( "It can find a matching constructor using argument types and length" )
 	void testItCanFindMatchingConstructor() {
+		Object[]		args		= new Object[] {};
 		// String(String original)
-		Constructor<?> constructor = DynamicInteropService.findMatchingConstructor( context, String.class, new Class[] { String.class } );
+		Constructor<?>	constructor	= DynamicInteropService.findMatchingConstructor( context, String.class, new Class[] { String.class },
+		    BooleanRef.of( true ), args );
 		assertThat( constructor ).isNotNull();
 
 		// String( StringBuider builder )
-		constructor = DynamicInteropService.findMatchingConstructor( context, String.class, new Class[] { StringBuilder.class } );
+		constructor = DynamicInteropService.findMatchingConstructor( context, String.class, new Class[] { StringBuilder.class }, BooleanRef.of( true ), args );
 		assertThat( constructor ).isNotNull();
 
 		// String( StringBuffer buffer )
-		constructor = DynamicInteropService.findMatchingConstructor( context, String.class, new Class[] { StringBuffer.class } );
+		constructor = DynamicInteropService.findMatchingConstructor( context, String.class, new Class[] { StringBuffer.class }, BooleanRef.of( true ), args );
 		assertThat( constructor ).isNotNull();
 
 		// String( byte[] bytes, Charset charset )
-		constructor = DynamicInteropService.findMatchingConstructor( context, String.class, new Class[] { byte[].class, String.class } );
+		constructor = DynamicInteropService.findMatchingConstructor( context, String.class, new Class[] { byte[].class, String.class }, BooleanRef.of( true ),
+		    args );
 		assertThat( constructor ).isNotNull();
 	}
 
@@ -1031,7 +1035,30 @@ public class DynamicInteropServiceTest {
 				
 				TestTypedArray.test( [ Key.of("foo"), Key.of("bar") ] )
 			""", context);
+		// @formatter:on		
+	}
+
+	@Test
+	void testNativeTypedArray2() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+			import java:org.apache.commons.lang3.ArrayFill;
+
+			result = ArrayFill.fill( [], "f" castas char )
+
+			result2 = ArrayFill.fill( [ "a", "b", "c" ], "f" castas char )
+
+			""", context);
 		// @formatter:on
+		assertThat( variables.get( Key.result ) ).isNotNull();
+		assertThat( variables.get( Key.result ) ).isInstanceOf( char[].class );
+		assertThat( ( char[] ) variables.get( Key.result ) ).isEqualTo( new char[] {} );
+
+		assertThat( variables.get( Key.of( "result2" ) ) ).isNotNull();
+		assertThat( variables.get( Key.of( "result2" ) ) ).isInstanceOf( char[].class );
+		assertThat( ( char[] ) variables.get( Key.of( "result2" ) ) ).isEqualTo( new char[] { 'f', 'f', 'f' } );
+
 	}
 
 }

@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.interop;
 
 import java.io.Serializable;
 import java.lang.invoke.MethodHandle;
+import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.List;
@@ -413,7 +414,7 @@ public class DynamicObject implements IReferenceable, Serializable {
 	 * @return The method object
 	 */
 	public Method getMethod( String name, Boolean callable ) {
-		return DynamicInteropService.getMethod( this.targetClass, name, callable );
+		return ( Method ) DynamicInteropService.getMethod( this.targetClass, name, callable );
 	}
 
 	/**
@@ -423,7 +424,7 @@ public class DynamicObject implements IReferenceable, Serializable {
 	 *
 	 * @return A unique set of callable methods
 	 */
-	public Set<Method> getMethods( Boolean callable ) {
+	public Set<Executable> getMethods( Boolean callable ) {
 		return DynamicInteropService.getMethods( this.targetClass, callable );
 	}
 
@@ -434,7 +435,7 @@ public class DynamicObject implements IReferenceable, Serializable {
 	 *
 	 * @return A stream of unique callable methods
 	 */
-	public Stream<Method> getMethodsAsStream( Boolean callable ) {
+	public Stream<Executable> getMethodsAsStream( Boolean callable ) {
 		return DynamicInteropService.getMethodsAsStream( this.targetClass, callable );
 	}
 

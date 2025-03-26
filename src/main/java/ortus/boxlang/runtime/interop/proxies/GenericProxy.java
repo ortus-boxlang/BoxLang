@@ -79,9 +79,16 @@ public class GenericProxy extends BaseProxy implements InvocationHandler {
 			return returnValue;
 		}
 		Object[]	args	= new Object[] { returnValue };
-		boolean		success	= DynamicInteropService.coerceArguments( context, DynamicInteropService.unBoxTypes( new Class<?>[] { returnType } ),
-		    DynamicInteropService.unBoxTypes( new Class<?>[] { returnValue.getClass() } ), args,
-		    false, BooleanRef.of( true ), new AtomicInteger( 0 ) );
+		boolean		success	= DynamicInteropService.coerceArguments(
+		    context,
+		    DynamicInteropService.unBoxTypes( new Class<?>[] { returnType } ),
+		    DynamicInteropService.unBoxTypes( new Class<?>[] { returnValue.getClass() } ),
+		    args,
+		    args,
+		    false,
+		    BooleanRef.of( true ),
+		    new AtomicInteger( 0 )
+		);
 		if ( !success ) {
 			throw new BoxRuntimeException( "Proxied method [ " + methodName + "() ] returned a value of type [ " + returnValue.getClass().getName()
 			    + " ] which could not be coerced to [ " + returnType.getName() + " ] in order to match the interface method signature." );
