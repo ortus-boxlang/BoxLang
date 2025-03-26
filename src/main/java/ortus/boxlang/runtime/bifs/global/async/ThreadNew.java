@@ -23,6 +23,7 @@ import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.context.ThreadBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -45,7 +46,8 @@ public class ThreadNew extends BIF {
 		    new Argument( true, Argument.FUNCTION, Key.runnable ),
 		    new Argument( false, Argument.STRUCT, Key.attributes, new Struct() ),
 		    new Argument( false, Argument.STRING, Key._NAME, "" ),
-		    new Argument( false, Argument.STRING, Key.priority, "normal", Set.of( Validator.valueOneOf( "high", "low", "normal" ) ) )
+		    new Argument( false, Argument.STRING, Key.priority, "normal", Set.of( Validator.valueOneOf( "high", "low", "normal" ) ) ),
+		    new Argument( false, Argument.BOOLEAN, Key.virtual, false )
 		};
 	}
 
@@ -106,7 +108,8 @@ public class ThreadNew extends BIF {
 				        java.lang.Thread.interrupted()
 				    );
 			    }
-		    }
+		    },
+		    BooleanCaster.cast( arguments.get( Key.virtual ) )
 		);
 	}
 

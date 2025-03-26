@@ -63,4 +63,28 @@ public class ThreadNewTest {
 		assertThat( variables.get( result ) ).isEqualTo( "done" );
 	}
 
+	@DisplayName( "It can start a virtual thread using the threadNew() bif" )
+	@Test
+	public void testCanStartVirtualThread() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				result = null;
+				threadNew( runnable = () => {
+					printLn( "thread is done!" );
+					sleep( 1000 );
+					result = "done";
+				}, virtual = true );
+				printLn( "thread tag done" );
+				sleep( 2000 );
+				printLn( "test is done done" );
+		    """,
+		    context,
+		    BoxSourceType.CFSCRIPT
+		);
+		// @formatter:on
+
+		assertThat( variables.get( result ) ).isEqualTo( "done" );
+	}
+
 }

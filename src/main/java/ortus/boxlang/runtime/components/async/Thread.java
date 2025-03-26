@@ -27,6 +27,7 @@ import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.context.ThreadBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
@@ -63,7 +64,8 @@ public class Thread extends Component {
 		    new Attribute( Key.priority, "string", "normal", Set.of(
 		        Validator.valueOneOf( "high", "low", "normal" )
 		    ) ),
-		    new Attribute( Key.timeout, "integer" )
+		    new Attribute( Key.timeout, "integer" ),
+		    new Attribute( Key.virtual, "boolean", false )
 		};
 	}
 
@@ -155,7 +157,8 @@ public class Thread extends Component {
 				        java.lang.Thread.interrupted()
 				    );
 			    }
-		    }
+		    },
+		    BooleanCaster.cast( attributes.get( Key.virtual ) )
 		);
 
 	}

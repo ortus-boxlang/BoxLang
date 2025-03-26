@@ -266,6 +266,10 @@ public class RequestThreadManager {
 		return new ThreadBoxContext( context, this, name, attributes );
 	}
 
+	public Thread startThread( ThreadBoxContext context, Key name, String priority, Runnable task ) {
+		return startThread( context, name, priority, task, false );
+	}
+
 	/**
 	 * Starts a thread using the given context, name, priority, task, and attributes of execution.
 	 *
@@ -277,16 +281,18 @@ public class RequestThreadManager {
 	 *
 	 * @return The thread instance already started
 	 */
-	public Thread startThread( ThreadBoxContext context, Key name, String priority, Runnable task ) {
+	public Thread startThread( ThreadBoxContext context, Key name, String priority, Runnable task, boolean virtual ) {
 		// Create a new thread definition
-		java.lang.Thread thread = new java.lang.Thread(
-		    // Use the BoxLang thread group
-		    getThreadGroup(),
-		    // The taks to run asynch
-		    task,
-		    // The internal name of the thread
-		    DEFAULT_THREAD_PREFIX + name.getName()
-		);
+		java.lang.Thread thread = virtual
+		    ? Thread.ofVirtual().name( DEFAULT_THREAD_PREFIX + name.getName() ).unstarted( task )
+		    : new java.lang.Thread(
+		        // Use the BoxLang thread group
+		        getThreadGroup(),
+		        // The taks to run asynch
+		        task,
+		        // The internal name of the thread
+		        DEFAULT_THREAD_PREFIX + name.getName()
+		    );
 
 		// Set the priority of the thread if it's not the default
 		thread.setPriority( switch ( priority ) {

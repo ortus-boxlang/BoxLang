@@ -173,6 +173,47 @@ public class ThreadTest {
 		assertThat( result3.get( Key.of( "insideThread3" ) ) ).isEqualTo( "yep" );
 	}
 
+	@Test
+	public void testHasVirtualThreadScope() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		    thread name="myThread" foo="bar" virtual="true"{
+		    	thread.insideThread = "yup";
+		    	myThread.insideThread2 = "yeah";
+		    	bxthread.myThread.insideThread3 = "yep";
+		    	sleep( 1000 )
+		    }
+		    sleep( 500 )
+		    result1 = bxthread;
+		    result2 = myThread;
+		    result3 = bxthread.myThread;
+		                 """,
+		    context );
+		// @formatter:on
+
+		assertThat( variables.get( Key.of( "result1" ) ) ).isInstanceOf( IStruct.class );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isInstanceOf( IStruct.class );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isInstanceOf( IStruct.class );
+
+		IStruct	result1	= variables.getAsStruct( Key.of( "result1" ) );
+		IStruct	result2	= variables.getAsStruct( Key.of( "result2" ) );
+		IStruct	result3	= variables.getAsStruct( Key.of( "result3" ) );
+
+		assertThat( result1.get( Key.of( "myThread" ) ) ).isInstanceOf( IStruct.class );
+		assertThat( result1.getAsStruct( Key.of( "myThread" ) ).get( Key.of( "insideThread" ) ) ).isEqualTo( "yup" );
+		assertThat( result1.getAsStruct( Key.of( "myThread" ) ).get( Key.of( "insideThread2" ) ) ).isEqualTo( "yeah" );
+		assertThat( result1.getAsStruct( Key.of( "myThread" ) ).get( Key.of( "insideThread3" ) ) ).isEqualTo( "yep" );
+
+		assertThat( result2.get( Key.of( "insideThread" ) ) ).isEqualTo( "yup" );
+		assertThat( result2.get( Key.of( "insideThread2" ) ) ).isEqualTo( "yeah" );
+		assertThat( result2.get( Key.of( "insideThread3" ) ) ).isEqualTo( "yep" );
+
+		assertThat( result3.get( Key.of( "insideThread" ) ) ).isEqualTo( "yup" );
+		assertThat( result3.get( Key.of( "insideThread2" ) ) ).isEqualTo( "yeah" );
+		assertThat( result3.get( Key.of( "insideThread3" ) ) ).isEqualTo( "yep" );
+	}
+
 	@DisplayName( "It can join thread no timeout" )
 	@Test
 	public void testCanJoinThreadNoTimeout() {
@@ -180,6 +221,23 @@ public class ThreadTest {
 		instance.executeSource(
 			"""
 			thread name="myThread" {
+				sleep( 2000 )
+			}
+			thread name="myThread" action="join";
+			result = myThread;
+					""",
+			context, BoxSourceType.CFSCRIPT );
+		// @formatter:on
+		assertThat( variables.getAsStruct( result ).get( Key.status ) ).isEqualTo( "COMPLETED" );
+	}
+
+	@DisplayName( "It can join virtual threads no timeout" )
+	@Test
+	public void testCanJoinVirtualNoTimeout() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+			thread name="myThread" virtual="true" {
 				sleep( 2000 )
 			}
 			thread name="myThread" action="join";
