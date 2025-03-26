@@ -186,7 +186,7 @@ class ConfigLoaderTest {
 
 		// Cache Checks
 		assertThat( config.caches ).isNotEmpty();
-		assertThat( config.caches ).hasSize( 3 );
+		assertThat( config.caches ).hasSize( 2 );
 
 		// Default Cache Checks
 		CacheConfig defaultCache = ( CacheConfig ) config.caches.get( "default" );

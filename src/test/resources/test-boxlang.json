@@ -34,7 +34,7 @@
 				"maxObjects": 200,
 				"defaultLastAccessTimeout": 30,
 				"defaultTimeout": 60,
-				"objectStore": "ConcurrentStore",
+				"objectStore": "ConcurrentSoftReferenceStore",
 				"reapFrequency": 120,
 				"resetTimeoutOnAccess": false,
 				"useLastAccessTimeouts": true

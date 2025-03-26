@@ -502,19 +502,29 @@ public class Configuration implements IConfigSegment {
 		// Setup a 'default' cache, using the default cache configuration as it always needs to be present
 		this.caches.put( Key._DEFAULT, new CacheConfig() );
 
-		// Process declared cache configurations
+		// Process declared cache configurations in the configuration
 		if ( config.containsKey( Key.caches ) ) {
 			if ( config.get( Key.caches ) instanceof IStruct castedCaches ) {
-				// Process each cache configuration
 				castedCaches
 				    .entrySet()
 				    .forEach( entry -> {
 					    if ( entry.getValue() instanceof IStruct castedStruct ) {
-						    CacheConfig cacheConfig = new CacheConfig( KeyCaster.cast( entry.getKey() ) ).process( castedStruct );
-						    this.caches.put( cacheConfig.name, cacheConfig );
+						    Key cacheName = KeyCaster.cast( entry.getKey() );
+						    // Treat the default cache configuration as a special case, only process properties
+						    // You can't change the name or the type of the default cache
+						    if ( cacheName.equals( Key._DEFAULT ) ) {
+							    CacheConfig defaultCacheConfig = ( CacheConfig ) this.caches.get( cacheName );
+							    castedStruct.putIfAbsent( Key.properties, new Struct() );
+							    defaultCacheConfig.processProperties( castedStruct.getAsStruct( Key.properties ) );
+						    } else {
+							    CacheConfig cacheConfig = new CacheConfig( cacheName ).process( castedStruct );
+							    this.caches.put( cacheConfig.name, cacheConfig );
+						    }
 					    } else {
-						    logger.warn( "The [caches.{}] configuration is not a JSON Object, ignoring it.",
-						        entry.getKey().getName() );
+						    logger.warn(
+						        "The [caches.{}] configuration is not a JSON Object, ignoring it.",
+						        entry.getKey().getName()
+						    );
 					    }
 				    } );
 			} else {
