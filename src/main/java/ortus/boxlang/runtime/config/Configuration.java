@@ -499,8 +499,8 @@ public class Configuration implements IConfigSegment {
 			    .resolve( config.get( Key.defaultRemoteMethodReturnFormat ) ).toLowerCase();
 		}
 
-		// Setup a default cache, using the default cache configuration as it always needs to be present
-		this.caches.put( Key.defaultCache, new CacheConfig() );
+		// Setup a 'default' cache, using the default cache configuration as it always needs to be present
+		this.caches.put( Key._DEFAULT, new CacheConfig() );
 
 		// Process declared cache configurations
 		if ( config.containsKey( Key.caches ) ) {
