@@ -107,7 +107,7 @@ public class CacheService extends BaseService {
 		this.asyncService		= runtime.getAsyncService();
 		this.interceptorService	= runtime.getInterceptorService();
 		// Register the scheduled executor service
-		this.executor			= this.asyncService.newScheduledExecutor( "cacheservice-tasks", 20 );
+		this.executor			= this.asyncService.newScheduledExecutor( "cpu-tasks" );
 	}
 
 	/**

@@ -265,7 +265,7 @@ public class ApplicationTest {
 		    """
 		        bx:application
 					name="myAppWithDatasource"
-					datasources = { 
+					datasources = {
 						mysql = {
 							database : "mysql",
 							host : "localhost",
@@ -331,6 +331,34 @@ public class ApplicationTest {
 		assertThat( result.get( Key.mappings ) ).isInstanceOf( IStruct.class );
 		assertThat( result.getAsStruct( Key.mappings ).get( "/UpdateApplicationWithoutName" ) ).isEqualTo( "/src/test/resources/libs/" );
 		assertThat( variables.get( Key.of( "firstSessionID" ) ) ).isEqualTo( variables.get( Key.of( "secondSessionID" ) ) );
+	}
+
+	@DisplayName( "Create this.caches for an application" )
+	@Test
+	public void testCreateCaches() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		        bx:application
+					action = "update"
+					caches = {
+						cache1NoProvider = {
+							// Default provider is BoxCacheProvider
+							properties : {
+							}
+						},
+						cache2 = {
+							provider : "BoxCacheProvider",
+							properties : {
+								maxEntries : 1000
+							}
+						}
+					};
+
+				println( getApplicationMetadata() );
+			""", context );
+		// @formatter:on
+
 	}
 
 }

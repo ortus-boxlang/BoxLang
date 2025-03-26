@@ -465,7 +465,7 @@ class ScheduledTaskTest {
 		    """
 		    	result = "";
 		    	arg = () => { result = "what" };
-		    	task = ExecutorGet( "boxlang-tasks" ).newTask( "printTest" )
+		    	task = ExecutorGet( "io-tasks" ).newTask( "printTest" )
 		    	task.call( arg )
 		    	task.start();
 		    	sleep(1000)
