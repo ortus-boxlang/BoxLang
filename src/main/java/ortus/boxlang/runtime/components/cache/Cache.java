@@ -23,6 +23,8 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Set;
 
+import org.slf4j.Logger;
+
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.cache.providers.ICacheProvider;
 import ortus.boxlang.runtime.components.Attribute;
@@ -42,8 +44,6 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.validation.Validator;
-
-import org.slf4j.Logger;
 
 @BoxComponent( allowsBody = true )
 public class Cache extends Component {
@@ -174,8 +174,8 @@ public class Cache extends Component {
 		String				cacheName			= attributes.getAsString( Key.cacheName );
 		String				cacheDirectory		= attributes.getAsString( Key.directory );
 		Boolean				useCache			= BooleanCaster.cast( attributes.get( Key.useCache ) );
-		Double				timespan			= DoubleCaster.cast( attributes.get( Key.timespan ) );
-		Double				idleTime			= DoubleCaster.cast( attributes.get( Key.idleTime ) );
+		Object				timespan			= attributes.get( Key.timespan );
+		Object				idleTime			= attributes.get( Key.idleTime );
 		Boolean				throwOnError		= BooleanCaster.cast( attributes.get( Key.throwOnError ) );
 		ICacheProvider		cacheProvider		= null;
 		List<CacheAction>	namedCacheOps		= List.of(
@@ -269,12 +269,25 @@ public class Cache extends Component {
 				cacheProvider = cacheService.getDefaultCache();
 			}
 
-			Duration	timeout				= timespan != null
-			    ? Duration.ofSeconds( DoubleCaster.cast( timespan * secondsInDay ).longValue() )
-			    : Duration.ofSeconds( 0l );
-			Duration	lastAccessTimeout	= idleTime != null
-			    ? Duration.ofSeconds( DoubleCaster.cast( idleTime * secondsInDay ).longValue() )
-			    : Duration.ofSeconds( 0l );
+			Duration	timeout;
+			Duration	lastAccessTimeout;
+
+			if ( timespan != null && timespan instanceof Duration castDuration ) {
+				timeout = castDuration;
+			} else {
+
+				timeout = timespan != null
+				    ? Duration.ofSeconds( DoubleCaster.cast( DoubleCaster.cast( timespan ) * secondsInDay ).longValue() )
+				    : Duration.ofSeconds( 0l );
+			}
+
+			if ( idleTime != null && idleTime instanceof Duration castDuration ) {
+				lastAccessTimeout = castDuration;
+			} else {
+				lastAccessTimeout = idleTime != null
+				    ? Duration.ofSeconds( DoubleCaster.cast( DoubleCaster.cast( idleTime ) * secondsInDay ).longValue() )
+				    : Duration.ofSeconds( 0l );
+			}
 
 			switch ( cacheAction ) {
 				case GET : {
