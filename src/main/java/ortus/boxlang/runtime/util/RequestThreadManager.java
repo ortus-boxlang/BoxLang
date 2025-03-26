@@ -266,18 +266,30 @@ public class RequestThreadManager {
 		return new ThreadBoxContext( context, this, name, attributes );
 	}
 
-	public Thread startThread( ThreadBoxContext context, Key name, String priority, Runnable task ) {
-		return startThread( context, name, priority, task, false );
-	}
-
 	/**
-	 * Starts a thread using the given context, name, priority, task, and attributes of execution.
+	 * Starts a non-virtual thread using the given context, name, priority, and task.
 	 *
 	 * @param context    The thread context to run in
 	 * @param name       The name of the thread, if empty or null, a random name is generated
 	 * @param priority   The priority of the thread, can be "high", "low", or "normal", the default is "normal"
 	 * @param task       The task to run in the thread, lambda or runnable
 	 * @param attributes The attributes to pass to the thread's local scope
+	 *
+	 * @return The thread instance already started
+	 */
+	public Thread startThread( ThreadBoxContext context, Key name, String priority, Runnable task ) {
+		return startThread( context, name, priority, task, false );
+	}
+
+	/**
+	 * Starts a thread using the given context, name, virtual, priority, task, and attributes of execution.
+	 *
+	 * @param context    The thread context to run in
+	 * @param name       The name of the thread, if empty or null, a random name is generated
+	 * @param priority   The priority of the thread, can be "high", "low", or "normal", the default is "normal"
+	 * @param task       The task to run in the thread, lambda or runnable
+	 * @param attributes The attributes to pass to the thread's local scope
+	 * @param virtual    Whether the thread is virtual or not
 	 *
 	 * @return The thread instance already started
 	 */
