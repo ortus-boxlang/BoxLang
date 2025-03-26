@@ -55,6 +55,11 @@ import ortus.boxlang.runtime.types.util.ListUtil;
 public class PendingQuery {
 
 	/**
+	 * Prefix for cache queries in BoxLang
+	 */
+	public static final String					CACHE_PREFIX		= "BL_QUERY_";
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Private Properties
 	 * --------------------------------------------------------------------------
@@ -66,11 +71,6 @@ public class PendingQuery {
 	 * The InterceptorService instance to use for announcing events.
 	 */
 	private static final InterceptorService		interceptorService	= BoxRuntime.getInstance().getInterceptorService();
-
-	/**
-	 * Prefix for cache queries
-	 */
-	private static final String					CACHE_PREFIX		= "BL_QUERY";
 
 	/**
 	 * The SQL string to execute.
@@ -189,6 +189,7 @@ public class PendingQuery {
 	 * Methods
 	 * --------------------------------------------------------------------------
 	 */
+
 	/**
 	 * Returns the cache key for this query.
 	 * <p>
@@ -197,11 +198,16 @@ public class PendingQuery {
 	 * string,parameter values, and relevant query options such as the `datasource`,
 	 * `username`, and
 	 * `password`.
+	 *
+	 * @return The cache key for this query.
 	 */
 	private String getOrComputeCacheKey() {
+		// Custom cache key provided in query options
 		if ( this.queryOptions.cacheKey != null ) {
 			return this.queryOptions.cacheKey;
 		}
+
+		// Generate a cache key from the SQL string and parameter values
 		String key = CACHE_PREFIX + this.sql.hashCode() + this.getParameterValues().hashCode();
 		if ( this.queryOptions.datasource != null ) {
 			key += this.queryOptions.datasource.hashCode();
@@ -521,12 +527,19 @@ public class PendingQuery {
 		// We do an early cache check here to avoid the overhead of creating a
 		// connection if we already have a matching cached query.
 		if ( isCacheable() ) {
-			logger.debug( "Checking cache for query: {}", this.cacheKey );
+
+			if ( logger.isDebugEnabled() ) {
+				logger.debug( "Checking cache for query: {}", this.cacheKey );
+			}
+
 			Attempt<Object> cachedQuery = cacheProvider.get( this.cacheKey );
 			if ( cachedQuery.isPresent() ) {
 				return respondWithCachedQuery( ( ExecutedQuery ) cachedQuery.get() );
 			}
-			logger.debug( "Query is NOT present, continuing to execute query: {}", this.cacheKey );
+
+			if ( logger.isDebugEnabled() ) {
+				logger.debug( "Query is NOT present, continuing to execute query: {}", this.cacheKey );
+			}
 		}
 
 		Connection connection = connectionManager.getConnection( this.queryOptions );
