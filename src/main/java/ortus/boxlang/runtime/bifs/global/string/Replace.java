@@ -84,8 +84,9 @@ public class Replace extends BIF {
 			StringBuilder	result	= new StringBuilder();
 			while ( i < string.length() ) {
 				if ( string.substring( i ).startsWith( substring1 ) ) {
-					if ( obj instanceof String ) {
-						result.append( obj );
+					CastAttempt<String> castAttempt = StringCaster.attempt( obj );
+					if ( castAttempt.wasSuccessful() ) {
+						result.append( castAttempt.get() );
 					} else {
 						result.append( context.invokeFunction( FunctionCaster.cast( obj ),
 						    new Object[] { string.substring( i, i + substring1.length() ), i + 1, string } ) );
