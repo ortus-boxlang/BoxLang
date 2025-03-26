@@ -111,9 +111,6 @@ public class StringCasterStrict implements IBoxCaster {
 
 		object = DynamicObject.unWrap( object );
 
-		System.out.println( "StringCasterStrict.cast: " + object.getClass().getName() );
-		System.out.println( "StringCasterStrict.cast2: " + object );
-
 		if ( object instanceof Key key ) {
 			return key.getName();
 		}
