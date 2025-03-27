@@ -32,6 +32,9 @@
 	// Which will produce lots of debug output and metrics
 	// Also the debugging error template will be used if turned on
 	"debugMode": false,
+	// This setting if enabled will remove all the class files from the class generation directory
+	// This is useful for debugging and testing, but not recommended for production
+	"clearClassFilesOnStartup": false,
 	// This enables the class locations cache for the runtime.  It's used when resolving class paths
 	// mostly using mappings, per request mappings, etc.
 	// We recommend you always enable this setting, unless debugging a very specific issue

@@ -168,6 +168,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		charsetOrBufferSize					= Key.of( "charsetOrBufferSize" );
 	public static final Key		childname							= Key.of( "childname" );
 	public static final Key		classGenerationDirectory			= Key.of( "classGenerationDirectory" );
+	public static final Key		clearClassFilesOnStartup			= Key.of( "clearClassFilesOnStartup" );
 	public static final Key		className							= Key.of( "className" );
 	public static final Key		classPaths							= Key.of( "classPaths" );
 	public static final Key		clazz								= Key.of( "clazz" );

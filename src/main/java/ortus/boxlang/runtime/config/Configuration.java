@@ -98,6 +98,13 @@ public class Configuration implements IConfigSegment {
 	public String									classGenerationDirectory		= System.getProperty( "java.io.tmpdir" ) + "boxlang";
 
 	/**
+	 * This setting if enabled will remove all the class files in the
+	 * {@code classGenerationDirectory} on startup
+	 * {@code false} by default
+	 */
+	public Boolean									clearClassFilesOnStartup		= false;
+
+	/**
 	 * The debug mode flag which turns on all kinds of debugging information
 	 * {@code false} by default
 	 */
@@ -344,6 +351,11 @@ public class Configuration implements IConfigSegment {
 		// Compiler
 		if ( config.containsKey( Key.classGenerationDirectory ) ) {
 			this.classGenerationDirectory = PlaceholderHelper.resolve( config.get( Key.classGenerationDirectory ) );
+		}
+
+		// Clear Class Files on Startup
+		if ( config.containsKey( Key.clearClassFilesOnStartup ) ) {
+			this.clearClassFilesOnStartup = BooleanCaster.cast( PlaceholderHelper.resolve( config.get( Key.clearClassFilesOnStartup ) ) );
 		}
 
 		// Timezone
@@ -925,6 +937,7 @@ public class Configuration implements IConfigSegment {
 		    Key.applicationTimeout, this.applicationTimeout,
 		    Key.caches, cachesCopy,
 		    Key.classGenerationDirectory, this.classGenerationDirectory,
+		    Key.clearClassFilesOnStartup, this.clearClassFilesOnStartup,
 		    Key.customTagsDirectory, Array.copyFromList( this.customTagsDirectory ),
 		    Key.classPaths, Array.copyFromList( this.classPaths ),
 		    Key.datasources, datsourcesCopy,
