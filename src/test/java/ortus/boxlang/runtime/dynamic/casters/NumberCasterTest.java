@@ -93,15 +93,6 @@ public class NumberCasterTest {
 		assertThat( result.doubleValue() ).isEqualTo( 5 );
 	}
 
-	@DisplayName( "It can cast a char array to a Number" )
-	@Test
-	@Disabled( "Disabled until Brad can take a look at this one" )
-	void testItCanCastACharArray() {
-		Number result = NumberCaster.cast( "12345".getBytes() );
-		assertThat( result ).isInstanceOf( Integer.class );
-		assertThat( result.doubleValue() ).isEqualTo( 12345 );
-	}
-
 	@DisplayName( "It will NOT cast a boolean to a Number" )
 	@Test
 	void testItCanCastABoolean() {
