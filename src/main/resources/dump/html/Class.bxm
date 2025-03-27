@@ -1,5 +1,17 @@
 <bx:script>
+	import java.lang.reflect.Modifier;
+	import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+
 	expandRoot = expand ?: true;
+	// We will be dumping out the details of a class, but there may or may not be a related instance
+	// If there is an instance, we will also dump out the toString() of that instance and field values.
+	instance = null;
+	theClass = var;
+	// If we don't have a class already, then separate the class from the instance.	
+	if( !(var instanceof 'java.lang.Class' ) ) {
+		instance = var;
+		theClass = var.getClass();
+	}
 </bx:script>
 <bx:output>
 	<div class="bx-dump">
@@ -12,30 +24,31 @@
 			>
 				<strong>
 					<bx:if label.len() >#label# - </bx:if>
-					#encodeForHTML( var.getClass().getSimpleName() )#
+					#encodeForHTML( theClass.getSimpleName() )#
 				</strong>
 			</caption>
 			<tbody
 				<bx:if !expandRoot>class="d-none"</bx:if>
 			>
-				<!--- CLASS toString --->
-				<tr>
-					<th
-						aria-expanded="true"
-						data-bx-toggle="onoff"
-						scope="row"
-						valign="top"
-						tabindex="0"
-					>
-						toString()
-					</th>
-					<td>
-						<div class="bx-onoff">
-							#encodeForHTML( var.toString() )#
-						</div>
-					</td>
-				</tr>
-
+				<bx:if !isNull( instance ) >
+					<!--- CLASS toString --->
+					<tr>
+						<th
+							aria-expanded="true"
+							data-bx-toggle="onoff"
+							scope="row"
+							valign="top"
+							tabindex="0"
+						>
+							toString()
+						</th>
+						<td>
+							<div class="bx-onoff">
+								#encodeForHTML( instance.toString() )#
+							</div>
+						</td>
+					</tr>
+				</bx:if>
 				<!--- CLASS NAME --->
 				<tr>
 					<th
@@ -49,13 +62,13 @@
 					</th>
 					<td>
 						<div class="bx-onoff">
-							<em>#encodeForHTML( var.getClass().getName() )#</em>
+							<em>#encodeForHTML( theClass.getName() )#</em>
 						</div>
 					</td>
 				</tr>
 
 				<!--- CLASS FIELDS --->
-				<bx:if var.getClass().getFields().len()>
+				<bx:if theClass.getFields().len()>
 					<tr>
 						<th
 							aria-expanded="true"
@@ -68,7 +81,7 @@
 						</th>
 						<td>
 							<div class="bx-onoff">
-								<bx:set fields = var.getClass().getFields()>
+								<bx:set fields = theClass.getFields()>
 								<table class="bx-table-default">
 									<thead>
 										<tr>
@@ -87,22 +100,23 @@
 													<pre><code>#encodeForHTML( variables.field.toString() )#</code></pre>
 												</td>
 												<td>
-													<bx:try>
-														#encodeForHTML( variables.field.get( var ) )#
-														<bx:catch>
-															<bx:try>
-																<bx:set value = variables.field.get( var )>
-																<bx:if value != null >
-																	[#encodeForHTML( value.getClass().getName() )#<bx:if value instanceof 'java.lang.Class'>&lt;#encodeForHTML( value.getName() )#&gt;</bx:if>]
-																<bx:else>
-																	[Null]
-																</bx:if>
-																<bx:catch>																	
-																	<em>--- Not Available ---</em>
-																</bx:catch>
-															</bx:try>
-														</bx:catch>
-													</bx:try>
+													<!--- check if this is static or we have an instance --->
+													<bx:if Modifier.isStatic(variables.field.getModifiers() ) or !isNull( instance ) >
+														<bx:set value = variables.field.get( instance )>
+														<bx:if isNull( value ) >
+															[Null]
+														<bx:else>
+															<bx:set stringCastAttempt = StringCaster.attempt( value )>
+															<bx:if stringCastAttempt.wasSuccessful()>
+																#encodeForHTML( stringCastAttempt.get() )#
+															<bx:else>
+																[#encodeForHTML( value.getClass().getName() )#<bx:if value instanceof 'java.lang.Class'>&lt;#encodeForHTML( value.getName() )#&gt;</bx:if>]
+															</bx:if>
+														</bx:if>
+													<bx:else>
+														<!--- We can't get instance fields without an instance --->
+														<em>N/A</em>
+													</bx:if>
 												</td>
 											</tr>
 										</bx:loop>
@@ -114,7 +128,7 @@
 				</bx:if>
 
 				<!--- CLASS annotations --->
-				<bx:if var.getClass().getDeclaredannotations().len()>
+				<bx:if theClass.getDeclaredannotations().len()>
 					<tr>
 						<th
 							aria-expanded="true"
@@ -127,7 +141,7 @@
 						</th>
 						<td>
 							<div class="bx-onoff">
-								<bx:set annotations = var.getClass().getDeclaredannotations()>
+								<bx:set annotations = theClass.getDeclaredannotations()>
 								<table class="bx-table-default">
 									<thead>
 										<tr>
@@ -152,7 +166,7 @@
 				</bx:if>
 
 				<!--- CLASS Constructors --->
-				<bx:if var.getClass().getDeclaredConstructors().len()>
+				<bx:if theClass.getDeclaredConstructors().len()>
 					<tr>
 						<th
 							aria-expanded="true"
@@ -165,7 +179,7 @@
 						</th>
 						<td>
 							<div class="bx-onoff">
-								<bx:set constructors = var.getClass().getDeclaredConstructors()>
+								<bx:set constructors = theClass.getDeclaredConstructors()>
 								<table class="bx-table-default">
 									<thead>
 										<tr>
@@ -203,7 +217,7 @@
 							<bx:script>
 								import java.util.Arrays;
 								import java.util.Comparator;
-								variables.methods = Arrays.stream( var.getClass().getDeclaredMethods() )
+								variables.methods = Arrays.stream( theClass.getDeclaredMethods() )
 									.sorted( Comparator.comparing( m -> arguments.m.getName() ) )
 									.toList();
 							</bx:script>
