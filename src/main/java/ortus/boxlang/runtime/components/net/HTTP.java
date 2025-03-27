@@ -247,7 +247,7 @@ public class HTTP extends Component {
 			builder.header( "User-Agent", "BoxLang" );
 			if ( attributes.get( Key.username ) != null && attributes.get( Key.password ) != null ) {
 				if ( authMode.equals( AUTHMODE_BASIC ) ) {
-					String	auth		= attributes.getAsString( Key.username )
+					String	auth		= ( attributes.get( Key.username ) != null ? StringCaster.cast( attributes.get( Key.username ) ) : null )
 					    + BASIC_AUTH_DELIMITER
 					    + StringCaster.cast( attributes.getOrDefault( Key.password, "" ) );
 					String	encodedAuth	= Base64.getEncoder().encodeToString( auth.getBytes() );
@@ -260,9 +260,9 @@ public class HTTP extends Component {
 
 			for ( Object p : params ) {
 				IStruct	param	= StructCaster.cast( p );
-				String	type	= param.getAsString( Key.type );
+				String	type	= StringCaster.cast( param.get( Key.type ) );
 				switch ( type.toLowerCase() ) {
-					case "header" -> builder.header( param.getAsString( Key._NAME ), param.getAsString( Key.value ) );
+					case "header" -> builder.header( StringCaster.cast( param.get( Key._NAME ) ), StringCaster.cast( param.get( Key.value ) ) );
 					case "body" -> {
 						if ( bodyPublisher != null ) {
 							throw new BoxRuntimeException( "Cannot use a body httpparam with an existing http body: " + bodyPublisher.toString() );
@@ -280,24 +280,25 @@ public class HTTP extends Component {
 							throw new BoxRuntimeException( "Cannot use a xml httpparam with an existing http body: " + bodyPublisher.toString() );
 						}
 						builder.header( "Content-Type", "text/xml" );
-						bodyPublisher = HttpRequest.BodyPublishers.ofString( param.getAsString( Key.value ) );
+						bodyPublisher = HttpRequest.BodyPublishers.ofString( StringCaster.cast( param.get( Key.value ) ) );
 					}
 					// @TODO move URLEncoder.encode usage a non-deprecated method
-					case "cgi" -> builder.header( param.getAsString( Key._NAME ),
+					case "cgi" -> builder.header( StringCaster.cast( param.get( Key._NAME ) ),
 					    BooleanCaster.cast( param.getOrDefault( Key.encoded, false ) )
-					        ? EncryptionUtil.urlEncode( param.getAsString( Key.value ) )
+					        ? EncryptionUtil.urlEncode( StringCaster.cast( param.get( Key.value ) ) )
 					        : StringCaster.cast( param.get( Key.value ) )
 					);
 					case "file" -> files.add( param );
 					case "url" -> uriBuilder.addParameter(
-					    param.getAsString( Key._NAME ),
+					    StringCaster.cast( param.get( Key._NAME ) ),
 					    BooleanCaster.cast( param.getOrDefault( Key.encoded, false ) )
 					        ? EncryptionUtil.urlEncode( StringCaster.cast( param.get( Key.value ) ), StandardCharsets.UTF_8 )
 					        : StringCaster.cast( param.get( Key.value ) )
 					);
 					case "formfield" -> formFields.add( param );
 					case "cookie" -> builder.header( "Cookie",
-					    param.getAsString( Key._NAME ) + "=" + EncryptionUtil.urlEncode( param.getAsString( Key.value ), StandardCharsets.UTF_8 ) );
+					    StringCaster.cast( param.get( Key._NAME ) ) + "="
+					        + EncryptionUtil.urlEncode( StringCaster.cast( param.get( Key.value ) ), StandardCharsets.UTF_8 ) );
 					default -> throw new BoxRuntimeException( "Unhandled HTTPParam type: " + type );
 				}
 			}
@@ -308,15 +309,15 @@ public class HTTP extends Component {
 				}
 				HttpRequestMultipartBody.Builder multipartBodyBuilder = new HttpRequestMultipartBody.Builder();
 				for ( IStruct param : files ) {
-					ResolvedFilePath	path		= FileSystemUtil.expandPath( context, param.getAsString( Key.file ) );
+					ResolvedFilePath	path		= FileSystemUtil.expandPath( context, StringCaster.cast( param.get( Key.file ) ) );
 					File				file		= path.absolutePath().toFile();
 					String				mimeType	= Optional.ofNullable( param.getAsString( Key.mimetype ) )
 					    .orElseGet( () -> URLConnection.getFileNameMap().getContentTypeFor( file.getName() ) );
-					multipartBodyBuilder.addPart( param.getAsString( Key._name ), file, mimeType, file.getName() );
+					multipartBodyBuilder.addPart( StringCaster.cast( param.get( Key._name ) ), file, mimeType, file.getName() );
 				}
 
 				for ( IStruct formField : formFields ) {
-					multipartBodyBuilder.addPart( formField.getAsString( Key._name ), formField.getAsString( Key.value ) );
+					multipartBodyBuilder.addPart( StringCaster.cast( formField.get( Key._name ) ), StringCaster.cast( formField.get( Key.value ) ) );
 				}
 				HttpRequestMultipartBody multipartBody = multipartBodyBuilder.build();
 				builder.header( "Content-Type", multipartBody.getContentType() );
@@ -328,11 +329,11 @@ public class HTTP extends Component {
 				bodyPublisher = HttpRequest.BodyPublishers.ofString(
 				    formFields.stream()
 				        .map( formField -> {
-					        String value = formField.getAsString( Key.value );
+					        String value = StringCaster.cast( formField.get( Key.value ) );
 					        if ( BooleanCaster.cast( formField.getOrDefault( Key.encoded, false ) ) ) {
 						        value = EncryptionUtil.urlEncode( value, StandardCharsets.UTF_8 );
 					        }
-					        return formField.getAsString( Key._name ) + "=" + value;
+					        return StringCaster.cast( formField.get( Key._name ) ) + "=" + value;
 				        } )
 				        .collect( Collectors.joining( "&" ) )
 				);
