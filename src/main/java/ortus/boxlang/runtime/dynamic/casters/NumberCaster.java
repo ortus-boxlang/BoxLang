@@ -153,7 +153,7 @@ public class NumberCaster implements IBoxCaster {
 		}
 
 		// Try to parse the string as a Number
-		String	stringValue	= StringCaster.cast( object, false );
+		String	stringValue	= StringCasterStrict.cast( object, false );
 		Number	result		= parseNumber( stringValue );
 		if ( result != null ) {
 			return result;
