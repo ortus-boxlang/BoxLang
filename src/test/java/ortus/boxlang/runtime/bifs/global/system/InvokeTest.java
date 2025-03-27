@@ -23,6 +23,7 @@ import static com.google.common.truth.Truth.assertThat;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -146,6 +147,24 @@ public class InvokeTest {
 		         """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "bar" );
+	}
+
+	@DisplayName( "invoke with null value generated setter" )
+	@Test
+	@Disabled( "BL-1250" )
+	public void testInvokeNullValueOnSetter() {
+		instance.executeSource(
+		    """
+		       myComponent = new src.test.java.ortus.boxlang.runtime.bifs.global.system.InvokeTest();
+		    invoke(
+		    	myComponent,
+		    	"setBaz",
+		    	null
+		    );
+		    result = myComponent.getBaz();
+		            """,
+		    context );
+		assertThat( variables.get( result ) ).isNull();
 	}
 
 	@DisplayName( "invoke on struct" )

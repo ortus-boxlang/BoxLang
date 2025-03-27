@@ -1,4 +1,6 @@
-component {
+component accessors="true"{
+
+	property name="baz" default="";
 
 	function foo() {
 		return "bar";
