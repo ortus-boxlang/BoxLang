@@ -1,0 +1,1 @@
+<cfinclude template="../../TestCases/phase2/IncludeTest.cfs">
