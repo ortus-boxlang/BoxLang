@@ -82,7 +82,7 @@ public class ASMBoxpiler extends Boxpiler {
 			timer = new Timer();
 			timer.start( FQN );
 		}
-		logger.debug( "ASM BoxPiler Compiling " + FQN );
+		// logger.debug( "ASM BoxPiler Compiling " + FQN );
 		ClassInfo classInfo = getClassPool( classPoolName ).get( FQN );
 		if ( classInfo == null ) {
 			throw new BoxRuntimeException( "ClassInfo not found for " + FQN );
