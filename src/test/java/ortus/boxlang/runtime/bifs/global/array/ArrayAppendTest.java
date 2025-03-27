@@ -111,4 +111,23 @@ public class ArrayAppendTest {
 		assertThat( ( ( Array ) variables.get( Key.of( "arr" ) ) ).get( 3 ) ).isEqualTo( 4 );
 	}
 
+	@Test
+	public void testUnwrapQueryColumn() {
+		instance.executeSource(
+		    """
+		    qResults = queryNew([
+		    	{"langisocode":"de"},
+		    	{"langisocode":"en"}
+		    ]);
+
+		    iso = [];
+
+		    bx:loop query=qResults{
+		    	ArrayAppend( iso, qResults.langisocode );
+		    }
+		      """,
+		    context );
+		assertThat( ( variables.getAsArray( Key.of( "iso" ) ) ).get( 0 ) ).isEqualTo( "de" );
+		assertThat( ( variables.getAsArray( Key.of( "iso" ) ) ).get( 1 ) ).isEqualTo( "en" );
+	}
 }
