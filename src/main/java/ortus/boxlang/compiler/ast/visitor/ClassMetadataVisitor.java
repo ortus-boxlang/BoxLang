@@ -166,7 +166,9 @@ public class ClassMetadataVisitor extends VoidBoxVisitor {
 	 */
 	@Override
 	public void visit( BoxProperty prop ) {
-		List<BoxAnnotation>	finalAnnotations	= BoxClassTransformer.normlizePropertyAnnotations( prop );
+		// This could error if we parsed a CFC originally which had additinal metadata in the property.
+		// TODO: test for this, and attempt to move the metadata to the pre annotations
+		List<BoxAnnotation>	finalAnnotations	= BoxClassTransformer.normlizePropertyAnnotations( prop, "BOXSCRIPT" );
 		BoxAnnotation		nameAnnotation		= finalAnnotations.stream().filter( it -> it.getKey().getValue().equalsIgnoreCase( "name" ) ).findFirst()
 		    .orElseThrow( () -> new ExpressionException( "Property [" + prop.getSourceText() + "] missing name annotation", prop ) );
 		BoxAnnotation		typeAnnotation		= finalAnnotations.stream().filter( it -> it.getKey().getValue().equalsIgnoreCase( "type" ) ).findFirst()

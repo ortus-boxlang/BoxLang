@@ -1,0 +1,11 @@
+class {
+
+    property string name = "luis";
+    property array array1 = [];
+    property struct test = {};
+    property lastName = "majano";
+  
+
+
+}
+

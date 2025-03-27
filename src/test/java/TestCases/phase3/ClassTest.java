@@ -698,6 +698,30 @@ public class ClassTest {
 		assertThat( prop2Docs.getAsString( Key.of( "hint" ) ).trim() ).isEqualTo( "This is my property" );
 	}
 
+	@DisplayName( "shortcut properties with defaults" )
+	@Test
+	public void testPropertiesShortcutDefault() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				cfc = new src.test.java.TestCases.phase3.PropertyShortcutDefault();
+		    """, context );
+		// @formatter:on
+
+		var	cfc		= variables.getAsClassRunnable( Key.of( "cfc" ) );
+
+		var	boxMeta	= ( ClassMeta ) cfc.getBoxMeta();
+		var	meta	= boxMeta.meta;
+
+		assertThat( meta.getAsArray( Key.of( "properties" ) ).size() ).isEqualTo( 4 );
+
+		var prop1 = ( IStruct ) meta.getAsArray( Key.of( "properties" ) ).get( 0 );
+		assertThat( prop1.get( "name" ) ).isEqualTo( "name" );
+		assertThat( prop1.get( "defaultValue" ) ).isEqualTo( "luis" );
+		assertThat( prop1.get( "type" ) ).isEqualTo( "string" );
+
+	}
+
 	@DisplayName( "properties" )
 	@Test
 	public void testPropertiesCF() {
