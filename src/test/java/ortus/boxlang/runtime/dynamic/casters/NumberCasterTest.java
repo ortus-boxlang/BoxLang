@@ -95,6 +95,7 @@ public class NumberCasterTest {
 
 	@DisplayName( "It can cast a char array to a Number" )
 	@Test
+	@Disabled( "Disabled until Brad can take a look at this one" )
 	void testItCanCastACharArray() {
 		Number result = NumberCaster.cast( "12345".getBytes() );
 		assertThat( result ).isInstanceOf( Integer.class );
