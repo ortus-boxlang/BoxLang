@@ -138,7 +138,40 @@ public class JSONDeserializeTest {
 
 		assertThat( struct.get( "five" ) ).isInstanceOf( Struct.class );
 		assertThat( struct.get( "six" ) ).isEqualTo( true );
+	}
 
+	@DisplayName( "Deserialize with member method 'fromJSON()'" )
+	@Test
+	public void testCanDeserializeWithMemberMethod() {
+		instance.executeSource(
+		    """
+		    result = '{
+		    	"one" : "wood",
+		    	"two" : null,
+		    	"three" : "42.1",
+		    	"four" : [1,2,3],
+		    	"five" : {},
+		    	"six" : true
+		    }'.fromJSON()
+		         """,
+		    context );
+
+		assertThat( variables.get( result ) ).isInstanceOf( Struct.class );
+		IStruct struct = variables.getAsStruct( result );
+		assertThat( struct.size() ).isEqualTo( 6 );
+		assertThat( struct.get( "one" ) ).isEqualTo( "wood" );
+		assertThat( struct.get( "two" ) ).isNull();
+		assertThat( struct.get( "three" ) ).isEqualTo( "42.1" );
+		assertThat( struct.get( "four" ) ).isInstanceOf( Array.class );
+
+		Array arr = struct.getAsArray( Key.of( "four" ) );
+		assertThat( arr.size() ).isEqualTo( 3 );
+		assertThat( arr.get( 0 ) ).isEqualTo( 1 );
+		assertThat( arr.get( 1 ) ).isEqualTo( 2 );
+		assertThat( arr.get( 2 ) ).isEqualTo( 3 );
+
+		assertThat( struct.get( "five" ) ).isInstanceOf( Struct.class );
+		assertThat( struct.get( "six" ) ).isEqualTo( true );
 	}
 
 	@DisplayName( "It can deserialize a array" )
