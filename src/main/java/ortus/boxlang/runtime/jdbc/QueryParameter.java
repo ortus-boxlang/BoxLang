@@ -134,7 +134,7 @@ public class QueryParameter {
 			return new QueryParameter( name, castAsStruct.getOrFail() );
 		}
 		IStruct param = Struct.of( "value", value );
-		if( value instanceof DateTime ) {
+		if ( value instanceof DateTime ) {
 			param.put( Key.sqltype, "timestamp" );
 		}
 		return new QueryParameter( name, param );
