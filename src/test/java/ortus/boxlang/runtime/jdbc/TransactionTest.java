@@ -93,7 +93,7 @@ public class TransactionTest extends BaseJDBCTest {
 		} );
 	}
 
-	@DisplayName( "Erroring transactions: the connection is properly released even if the transaction errors" )
+	@DisplayName( "Connection Handling: the connection is properly released even if the transaction errors" )
 	@Test
 	public void testErroredTransactionConnectionClose() {
 		Integer activePreTransaction = getDatasource().getPoolStats().getAsInteger( Key.of( "activeConnections" ) );
@@ -101,11 +101,47 @@ public class TransactionTest extends BaseJDBCTest {
 			getInstance().executeSource(
 			    """
 			    transaction isolation="foo" {
-			    	queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {} );
+			    	queryExecute( "INSERT INTO countries ( id, name ) VALUES ( 1, 'This table doesn't exist!' )", {} );
 			    }
 			    """,
 			    getContext() );
 		} );
+
+		Integer activePostTransaction = getDatasource().getPoolStats().getAsInteger( Key.of( "activeConnections" ) );
+		assertThat( activePostTransaction ).isEqualTo( activePreTransaction );
+	}
+
+	@DisplayName( "Connection Handling: the connection is properly released even if there's a return statement." )
+	@Test
+	public void testTransactionConnectionCloseWithReturn() {
+		Integer activePreTransaction = getDatasource().getPoolStats().getAsInteger( Key.of( "activeConnections" ) );
+		getInstance().executeSource(
+			"""
+			transaction {
+				queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {} );
+				return;
+			}
+			""",
+			getContext() );
+
+		Integer activePostTransaction = getDatasource().getPoolStats().getAsInteger( Key.of( "activeConnections" ) );
+		assertThat( activePostTransaction ).isEqualTo( activePreTransaction );
+	}
+
+	@DisplayName( "Connection Handling: the connection is properly released even if there's a break tag." )
+	@Test
+	public void testTransactionConnectionCloseWithBreakTag() {
+		Integer activePreTransaction = getDatasource().getPoolStats().getAsInteger( Key.of( "activeConnections" ) );
+		getInstance().executeSource(
+			"""
+			transaction {
+				do{
+					queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {} );
+					break;
+				} while( false );
+			}
+			""",
+			getContext() );
 
 		Integer activePostTransaction = getDatasource().getPoolStats().getAsInteger( Key.of( "activeConnections" ) );
 		assertThat( activePostTransaction ).isEqualTo( activePreTransaction );
