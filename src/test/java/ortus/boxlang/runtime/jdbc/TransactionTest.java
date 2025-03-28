@@ -116,13 +116,13 @@ public class TransactionTest extends BaseJDBCTest {
 	public void testTransactionConnectionCloseWithReturn() {
 		Integer activePreTransaction = getDatasource().getPoolStats().getAsInteger( Key.of( "activeConnections" ) );
 		getInstance().executeSource(
-			"""
-			transaction {
-				queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {} );
-				return;
-			}
-			""",
-			getContext() );
+		    """
+		    transaction {
+		    	queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {} );
+		    	return;
+		    }
+		    """,
+		    getContext() );
 
 		Integer activePostTransaction = getDatasource().getPoolStats().getAsInteger( Key.of( "activeConnections" ) );
 		assertThat( activePostTransaction ).isEqualTo( activePreTransaction );
@@ -133,15 +133,15 @@ public class TransactionTest extends BaseJDBCTest {
 	public void testTransactionConnectionCloseWithBreakTag() {
 		Integer activePreTransaction = getDatasource().getPoolStats().getAsInteger( Key.of( "activeConnections" ) );
 		getInstance().executeSource(
-			"""
-			transaction {
-				do{
-					queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {} );
-					break;
-				} while( false );
-			}
-			""",
-			getContext() );
+		    """
+		    transaction {
+		    	do{
+		    		queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {} );
+		    		break;
+		    	} while( false );
+		    }
+		    """,
+		    getContext() );
 
 		Integer activePostTransaction = getDatasource().getPoolStats().getAsInteger( Key.of( "activeConnections" ) );
 		assertThat( activePostTransaction ).isEqualTo( activePreTransaction );
