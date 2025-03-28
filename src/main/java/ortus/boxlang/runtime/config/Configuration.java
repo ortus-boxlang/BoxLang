@@ -92,6 +92,11 @@ public class Configuration implements IConfigSegment {
 	 */
 
 	/**
+	 * The runtime version
+	 */
+	public String									version;
+
+	/**
 	 * The directory where the generated classes will be placed
 	 * The default is the system temp directory + {@code /boxlang}
 	 */
@@ -351,6 +356,11 @@ public class Configuration implements IConfigSegment {
 		// Compiler
 		if ( config.containsKey( Key.classGenerationDirectory ) ) {
 			this.classGenerationDirectory = PlaceholderHelper.resolve( config.get( Key.classGenerationDirectory ) );
+		}
+
+		// Version
+		if ( config.containsKey( Key.version ) ) {
+			this.version = config.getAsString( Key.version );
 		}
 
 		// Clear Class Files on Startup

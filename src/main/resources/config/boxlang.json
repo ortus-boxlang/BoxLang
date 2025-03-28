@@ -9,6 +9,8 @@
  * ${env.variablename:defaultValue} - The value of a valid environment variable or the default value. Example: ${env.CFCONFIG_HOME:/etc/cfconfig}
  */
 {
+	// The version of the runtime
+	"version": "@build.version@",
 	// Extensions BoxLang will process as classes
 	"validClassExtensions": [
 		"bx",
