@@ -308,9 +308,14 @@ public class Transaction implements ITransaction {
 				if ( this.isolationLevel != null ) {
 					this.connection.setTransactionIsolation( this.originalIsolationLevel );
 				}
-				this.connection.close();
 			} catch ( SQLException e ) {
 				throw new DatabaseException( "Error closing connection: " + e.getMessage(), e );
+			} finally {
+				try{
+					if( this.connection != null ) this.connection.close();
+				} catch ( SQLException e ) {
+					throw new DatabaseException( "Error closing connection: " + e.getMessage(), e );
+				}
 			}
 		}
 		return this;
