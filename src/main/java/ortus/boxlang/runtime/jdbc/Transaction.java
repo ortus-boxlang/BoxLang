@@ -311,8 +311,9 @@ public class Transaction implements ITransaction {
 			} catch ( SQLException e ) {
 				throw new DatabaseException( "Error closing connection: " + e.getMessage(), e );
 			} finally {
-				try{
-					if( this.connection != null ) this.connection.close();
+				try {
+					if ( this.connection != null )
+						this.connection.close();
 				} catch ( SQLException e ) {
 					throw new DatabaseException( "Error closing connection: " + e.getMessage(), e );
 				}
