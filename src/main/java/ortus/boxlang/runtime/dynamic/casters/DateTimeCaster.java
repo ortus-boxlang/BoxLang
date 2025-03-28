@@ -57,6 +57,9 @@ public class DateTimeCaster implements IBoxCaster {
 	    "MMM dd yyyy HH:mm", 	       // Med DateTime No Seconds (e.g., Apr 02 2024 21:01) - Might need adjustment based on locale
 	    "MMM dd',' yyyy HH:mm", 	       // Med DateTime No Seconds (e.g., Apr 02 2024 21:01) - Might need adjustment based on locale
 
+	    // java.util.Date toString default format
+	    "EEE MMM dd HH:mm:ss zzz yyyy", // Default DateTime (e.g., Tue Apr 02 21:01:00 CET 2024) - Similar to DEFAULT
+
 	    // ISO formats
 	    "yyyy-MM-dd'T'HH:mm:ss.SSSXXX",  // Date-time with milliseconds and offset
 	    "yyyy-MM-dd'T'HH:mm:ss.SSS",     // Date-time with milliseconds

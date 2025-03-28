@@ -226,6 +226,15 @@ public class DateTimeCasterTest {
 	}
 
 	@Test
+	@DisplayName( "Test casting java.util.Date default toString format to DateTime" )
+	public void testDateObjToString() {
+		String		dateString	= "Tue Nov 22 11:01:51 CET 2022";
+		DateTime	result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.convertToZone( ZoneId.of( "CET" ) ).format( "EEE MMM dd HH:mm:ss zzz yyyy" ) ).isEqualTo( "Tue Nov 22 11:01:51 CET 2022" );
+	}
+
+	@Test
 	@DisplayName( "Test casting invalid string representation of date to DateTime" )
 	public void testCastInvalidString() {
 		String invalidDateString = "invalid_date_string";
