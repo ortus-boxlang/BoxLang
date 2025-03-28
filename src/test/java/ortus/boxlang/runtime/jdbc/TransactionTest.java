@@ -106,7 +106,7 @@ public class TransactionTest extends BaseJDBCTest {
 			    """,
 			    getContext() );
 		} );
-			
+
 		Integer activePostTransaction = getDatasource().getPoolStats().getAsInteger( Key.of( "activeConnections" ) );
 		assertThat( activePostTransaction ).isEqualTo( activePreTransaction );
 	}
@@ -488,7 +488,7 @@ public class TransactionTest extends BaseJDBCTest {
 		    }
 		    """,
 		    getContext() );
-			
+
 		Integer activePostTransaction = getDatasource().getPoolStats().getAsInteger( Key.of( "activeConnections" ) );
 		assertThat( activePostTransaction ).isEqualTo( activePreTransaction );
 	}
