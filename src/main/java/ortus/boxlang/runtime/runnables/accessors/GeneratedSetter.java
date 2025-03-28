@@ -51,7 +51,7 @@ public class GeneratedSetter extends UDF {
 	public GeneratedSetter( Key name, Key variable, String type ) {
 		this.name		= name;
 		this.variable	= variable;
-		this.arguments	= new Argument[] { new Argument( true, type, variable ) };
+		this.arguments	= new Argument[] { new Argument( false, type, variable ) };
 	}
 
 	/**
