@@ -234,7 +234,6 @@ public class DateTimeCasterTest {
 		assertThat( result.convertToZone( ZoneId.of( "CET" ) ).format( "EEE MMM dd HH:mm:ss zzz yyyy" ) ).isEqualTo( "Tue Nov 22 11:01:51 CET 2022" );
 	}
 
-
 	@Test
 	@DisplayName( "Test casting invalid string representation of date to DateTime" )
 	public void testCastInvalidString() {
