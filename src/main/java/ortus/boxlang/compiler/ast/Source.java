@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.compiler.ast;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -26,7 +27,9 @@ import org.apache.commons.text.StringEscapeUtils;
 /**
  * Abstract Source class to represent the origin of the code
  */
-public abstract class Source {
+public abstract class Source implements Serializable {
+
+	private static final long serialVersionUID = 1L;
 
 	/**
 	 * Abstract method to get the code as a stream
