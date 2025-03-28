@@ -46,6 +46,7 @@ public class DateTimeCaster implements IBoxCaster {
 	    "dd-MMM-yyyy HH:mm:ss",         // Medium DateTime (e.g., 02-Apr-2024 21:01:00) - Might need adjustment based on locale
 	    "dd/MM/yyyy HH:mm:ss",         // Short DateTime (e.g., 02/04/2024 21:01:00) - Might need adjustment based on locale
 	    "dd/MM/yyyy hh:mm:ss a",         // Short DateTime (e.g., 02/04/2024 04:01:00 PM) - Might need adjustment based on locale
+	    "dd/MM/yyyy hh:mm a",         // Short DateTime (e.g., 02/04/2024 04:01:00 PM) - Might need adjustment based on locale
 	    "dd.MM.yyyy HH:mm:ss",         // Short DateTime (e.g., 02.04.2024 21:01:00) - Might need adjustment based on locale
 	    "LLLL dd yyyy HH:mm:ss", 	  // Long month DateTime (e.g., April 02 2024 21:01:00) - Might need adjustment based on locale
 	    "LLLL dd',' yyyy HH:mm:ss", 	  // Long month DateTime (e.g., April 02, 2024 21:01:00) - Might need adjustment based on locale
