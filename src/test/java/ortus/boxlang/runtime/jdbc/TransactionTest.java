@@ -19,6 +19,7 @@
 
 package ortus.boxlang.runtime.jdbc;
 
+import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -86,12 +87,28 @@ public class TransactionTest extends BaseJDBCTest {
 			    """
 			    transaction isolation="foo" {
 			    	queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {} );
-			    	transactionCommit();
-			    	variables.result = queryExecute( "SELECT * FROM developers", {} );
 			    }
 			    """,
 			    getContext() );
 		} );
+	}
+
+	@DisplayName( "Erroring transactions: the connection is properly released even if the transaction errors" )
+	@Test
+	public void testErroredTransactionConnectionClose() {
+		Integer activePreTransaction = getDatasource().getPoolStats().getAsInteger( Key.of( "activeConnections" ) );
+		assertThrows( BoxRuntimeException.class, () -> {
+			getInstance().executeSource(
+			    """
+			    transaction isolation="foo" {
+			    	queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {} );
+			    }
+			    """,
+			    getContext() );
+		} );
+			
+		Integer activePostTransaction = getDatasource().getPoolStats().getAsInteger( Key.of( "activeConnections" ) );
+		assertThat( activePostTransaction ).isEqualTo( activePreTransaction );
 	}
 
 	@DisplayName( "Can commit a transaction" )
@@ -455,6 +472,25 @@ public class TransactionTest extends BaseJDBCTest {
 			    """,
 			    getContext() );
 		} );
+	}
+
+	@DisplayName( "Nested transactions: the connection is properly released on parent transaction end" )
+	@Test
+	public void testNestedTransactionConnectionClose() {
+		Integer activePreTransaction = getDatasource().getPoolStats().getAsInteger( Key.of( "activeConnections" ) );
+		getInstance().executeSource(
+		    """
+		    transaction{
+		      queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 22, 'Brad Wood', 'Developer' )", {} );
+		      transaction{
+		        queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {} );
+		      }
+		    }
+		    """,
+		    getContext() );
+			
+		Integer activePostTransaction = getDatasource().getPoolStats().getAsInteger( Key.of( "activeConnections" ) );
+		assertThat( activePostTransaction ).isEqualTo( activePreTransaction );
 	}
 
 	@DisplayName( "Nested transactions: A rollback on the child will not roll back the parent" )
