@@ -159,7 +159,7 @@ public class Transaction extends Component {
 	}
 
 	private int getIsolationLevel( String isolationLevel ) {
-		switch ( isolationLevel ) {
+		switch ( isolationLevel.toLowerCase() ) {
 			case "read_uncommitted" :
 				return Connection.TRANSACTION_READ_UNCOMMITTED;
 			case "read_committed" :
