@@ -370,7 +370,7 @@ public class DateTimeFormatTest {
 		assertThat( result ).isEqualTo( refResult );
 
 	}
-	
+
 	@DisplayName( "It tests the BIF TimeFormat with string times" )
 	@Test
 	public void testTimeFormatString() {
@@ -378,10 +378,10 @@ public class DateTimeFormatTest {
 		// Default Format
 		instance.executeSource(
 		    """
-		    setTimezone( "UTC" );
-				parsedTime = parseDateTime( "11:00" );
-		          result = timeFormat( "11:00" , "hh:mm a" );
-		          """,
+		      setTimezone( "UTC" );
+		    parsedTime = parseDateTime( "11:00" );
+		            result = timeFormat( "11:00" , "hh:mm a" );
+		            """,
 		    context );
 		DateTime parsedTime = DateTimeCaster.cast( variables.get( Key.of( "parsedTime" ) ) );
 		assertEquals( parsedTime.format( "hh:mm a" ), variables.getAsString( Key.of( "result" ) ) );
