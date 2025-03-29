@@ -218,6 +218,15 @@ public class DateTimeCasterTest {
 	}
 
 	@Test
+	@DisplayName( "Test time only value to AM/PM format" )
+	public void testTimeOnlyString() {
+		String		dateString	= "11:00";
+		DateTime	result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "hh:mm a" ) ).isEqualTo( "11:00 AM" );
+	}
+
+	@Test
 	@DisplayName( "Test casting ODBC Date string to DateTime" )
 	public void testCastODBCDateString() {
 		String		dateString	= "20240402";
