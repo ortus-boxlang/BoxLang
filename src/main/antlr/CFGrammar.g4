@@ -421,7 +421,7 @@ expression
 //
 // Precedence is implemented here by placing the highest precedence expressions at the top of the rule, and the very
 // lowest at the bottom. This is a form of precedence climbing, which is what ANTLR ends up genmerating, but
-// it saves us from teh tedious manual expansion required of LL grammars and looks more like the LALR grammars
+// it saves us from the tedious manual expansion required of LL grammars and looks more like the LALR grammars
 // that yacc/bison process.
 //
 // Note the use of labels allows our visitor to know what it is visiting without complicated token checking etc
