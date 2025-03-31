@@ -19,8 +19,6 @@ package ortus.boxlang.runtime.application;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
-import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 /**
@@ -100,26 +98,7 @@ public class ApplicationDefaultListener extends BaseApplicationListener {
 
 	@Override
 	public void onClassRequest( IBoxContext context, Object[] args ) {
-		super.onClassRequest( context, args );
-		String	className		= ( String ) args[ 0 ];
-		String	methodName		= ( String ) args[ 1 ];
-		Struct	params			= ( Struct ) args[ 2 ];
-		String	returnFormat	= ( String ) args[ 3 ];
-
-		if ( methodName == null ) {
-			classRequestNoMethod( context, className );
-			return;
-		}
-
-		invokeClassRequest(
-		    context,
-		    context.invokeFunction( Key.createObject, new Object[] { className } ),
-		    methodName,
-		    params,
-		    null,
-		    returnFormat,
-		    true
-		);
+		super.onClassRequestSimple( context, args );
 	}
 
 }

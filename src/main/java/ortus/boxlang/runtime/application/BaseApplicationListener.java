@@ -26,6 +26,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.Configuration;
 import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.IBoxContext.ScopeSearchResult;
 import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.context.SessionBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
@@ -623,6 +624,16 @@ public abstract class BaseApplicationListener {
 	 * @param args    The arguments
 	 */
 	public void onClassRequest( IBoxContext context, Object[] args ) {
+		_onClassRequest( context, args );
+	}
+
+	/**
+	 * Handle the onClassRequest event. This extra method is to get around an issue with needing to call this logic from more than one place.
+	 *
+	 * @param context The context
+	 * @param args    The arguments
+	 */
+	private void _onClassRequest( IBoxContext context, Object[] args ) {
 		logger.trace( "Fired onClassRequest ...................." );
 
 		IStruct eventArgs = Struct.of(
@@ -653,6 +664,38 @@ public abstract class BaseApplicationListener {
 	}
 
 	/**
+	 * Handle the onClassRequest event when there is no Application class. This is here to easily share
+	 * between the default and template application listeners.
+	 * 
+	 * @param context The context
+	 * @param args    The arguments
+	 */
+	protected void onClassRequestSimple( IBoxContext context, Object[] args ) {
+		_onClassRequest( context, args );
+		String				className		= ( String ) args[ 0 ];
+		Struct				params			= ( Struct ) args[ 1 ];
+
+		IClassRunnable		classInstance	= loadClassInstance( context, className );
+		String				methodName		= null;
+		ScopeSearchResult	scopeSearch		= context.scopeFind( Key.method, context.getDefaultAssignmentScope(), false );
+		if ( scopeSearch.value() != null ) {
+			methodName = StringCaster.cast( scopeSearch.value() );
+		} else {
+			classRequestNoMethod( context, classInstance );
+			return;
+		}
+
+		invokeClassRequest(
+		    context,
+		    classInstance,
+		    methodName,
+		    params,
+		    null,
+		    true
+		);
+	}
+
+	/**
 	 * Handle the invocation of a class request
 	 *
 	 * @param context               The context
@@ -665,19 +708,12 @@ public abstract class BaseApplicationListener {
 	 */
 	protected void invokeClassRequest(
 	    IBoxContext context,
-	    Object possibleClassInstance,
+	    IClassRunnable classInstance,
 	    String methodName,
 	    Struct namedParams,
 	    Object[] positionalParams,
-	    String returnFormat,
 	    boolean mustBeRemote ) {
-		// Test the class instance
-		IClassRunnable classInstance = null;
-		if ( possibleClassInstance instanceof IClassRunnable icr ) {
-			classInstance = icr;
-		} else {
-			throw new BoxRuntimeException( "The path must be a class and not an interface." );
-		}
+
 		Object result = null;
 
 		// Check method is marked as remote
@@ -693,9 +729,16 @@ public abstract class BaseApplicationListener {
 			result = classInstance.dereferenceAndInvoke( context, Key.of( methodName ), positionalParams, false );
 		}
 
+		String				returnFormat	= null;
+		ScopeSearchResult	scopeSearch		= context.scopeFind( Key.returnFormat, context.getDefaultAssignmentScope(), false );
+		if ( scopeSearch.value() != null ) {
+			returnFormat = StringCaster.cast( scopeSearch.value() );
+		}
 		// If there was no override, see if a remote method set it via annotation
 		if ( returnFormat == null ) {
-			returnFormat = Optional.ofNullable( context.getParentOfType( RequestBoxContext.class ).getAttachment( Key.returnFormat ) )
+			// Any time a remote function is executed thaty has a returnFormat annotation, this request context attachment is set.
+			// This will basically represent the returnFormat of the LAST remote function which was executed on this request.
+			returnFormat = Optional.ofNullable( context.getRequestContext().getAttachment( Key.returnFormat ) )
 			    .map( Object::toString )
 			    .orElse( null );
 		}
@@ -704,6 +747,9 @@ public abstract class BaseApplicationListener {
 		if ( returnFormat == null ) {
 			returnFormat = context.getRuntime().getConfiguration().defaultRemoteMethodReturnFormat;
 		}
+
+		// Regardless of how we found it, set it in the request context so we can use it later
+		context.getRequestContext().putAttachment( Key.returnFormat, returnFormat );
 
 		if ( result != null ) {
 			String stringResult;
@@ -753,21 +799,34 @@ public abstract class BaseApplicationListener {
 	 * @param context   The context
 	 * @param className The class name
 	 */
-	protected void classRequestNoMethod( IBoxContext context, String className ) {
+	protected void classRequestNoMethod( IBoxContext context, IClassRunnable classInstance ) {
 		// If there is no method and we're in debug mode, dump the CFC
 		if ( context.getRuntime().inDebugMode() ) {
 			context.invokeFunction(
 			    Key.dump,
 			    new Object[] {
-			        context.invokeFunction(
-			            Key.createObject,
-			            new Object[] { className }
-			        )
+			        classInstance
 			    }
 			);
 		} else {
 			context.writeToBuffer( "Method not specified, enable debug to see class details." );
 		}
+	}
+
+	/**
+	 * Helper method to create the instance of our class so we can reuse this logic.
+	 * 
+	 * @param className The class name to load
+	 * 
+	 * @return The class instance
+	 */
+	protected IClassRunnable loadClassInstance( IBoxContext context, String className ) {
+		Object possibleClassInstance = context.invokeFunction( Key.createObject, new Object[] { className } );
+		if ( possibleClassInstance instanceof IClassRunnable icr ) {
+			return icr;
+		}
+
+		throw new BoxRuntimeException( "The path must be a class and not an interface." );
 	}
 
 	/**

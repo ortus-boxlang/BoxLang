@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.application;
 
 import ortus.boxlang.runtime.context.ClassBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.IBoxContext.ScopeSearchResult;
 import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
@@ -221,13 +222,18 @@ public class ApplicationClassListener extends BaseApplicationListener {
 	@Override
 	public void onClassRequest( IBoxContext context, Object[] args ) {
 		super.onClassRequest( context, args );
-		String	className		= ( String ) args[ 0 ];
-		String	methodName		= ( String ) args[ 1 ];
-		Struct	params			= ( Struct ) args[ 2 ];
-		String	returnFormat	= ( String ) args[ 3 ];
+		String				className		= ( String ) args[ 0 ];
+		Struct				params			= ( Struct ) args[ 1 ];
 
-		if ( methodName == null ) {
-			classRequestNoMethod( context, className );
+		IClassRunnable		classInstance	= loadClassInstance( context, className );
+
+		String				methodName		= null;
+		ScopeSearchResult	scopeSearch		= context.scopeFind( Key.method, context.getDefaultAssignmentScope(), false );
+		if ( scopeSearch.value() != null ) {
+			methodName	= StringCaster.cast( scopeSearch.value() );
+			args[ 1 ]	= methodName;
+		} else {
+			classRequestNoMethod( context, classInstance );
 			return;
 		}
 		/*
@@ -240,15 +246,21 @@ public class ApplicationClassListener extends BaseApplicationListener {
 		 * Lucee sets the response content type based on the return format, but Adobe doesn't appear to set any response headers at all based on the return format
 		 */
 		if ( listener.getThisScope().get( Key.onClassRequest ) instanceof Function ) {
-			invokeClassRequest( context, listener, Key.onClassRequest.getName(), null, args, returnFormat, false );
+			invokeClassRequest(
+			    context,
+			    listener,
+			    Key.onClassRequest.getName(),
+			    null,
+			    new Object[] { className, methodName, params, classInstance },
+			    false
+			);
 		} else {
 			invokeClassRequest(
 			    context,
-			    context.invokeFunction( Key.createObject, new Object[] { className } ),
+			    classInstance,
 			    methodName,
 			    params,
 			    null,
-			    returnFormat,
 			    true
 			);
 		}
