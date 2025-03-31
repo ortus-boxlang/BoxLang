@@ -582,6 +582,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		processBody							= Key.of( "processBody" );
 	public static final Key		properties							= Key.of( "properties" );
 	public static final Key		protocol							= Key.of( "protocol" );
+	public static final Key		provider							= Key.of( "provider" );
 	public static final Key		print								= Key.of( "print" );
 	public static final Key		println								= Key.of( "println" );
 	public static final Key		proxyPassword						= Key.of( "proxyPassword" );

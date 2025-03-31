@@ -18,7 +18,9 @@
 package ortus.boxlang.runtime.cache.util;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.KeyCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.CacheService;
 import ortus.boxlang.runtime.types.IStruct;
@@ -38,17 +40,24 @@ public class CacheExistsValidator implements Validator {
 	 */
 	@Override
 	public void validate( IBoxContext context, Key caller, Validatable record, IStruct records ) {
-		var cacheName = records.get( record.name() );
+		Key						cacheName	= KeyCaster.cast( records.get( record.name() ) );
 
-		if ( cacheName instanceof String castedCacheName ) {
-			cacheName = Key.of( castedCacheName );
+		// Check if we have an application name to prefix the cache name with.
+		// Verify if it is a valid cache name or check for a global cache.
+		ApplicationBoxContext	appContext	= context.getApplicationContext();
+		if ( appContext != null ) {
+			Key appCacheName = Key.of( appContext.getApplication().buildAppCacheKey( cacheName ) );
+			if ( cacheService.hasCache( appCacheName ) ) {
+				records.put( record.name(), appCacheName );
+				return;
+			}
 		}
 
-		if ( !cacheService.hasCache( ( Key ) cacheName ) ) {
+		if ( !cacheService.hasCache( cacheName ) ) {
 			throw new BoxValidationException(
 			    caller,
 			    record,
-			    "Cache " + cacheName + " does not exist. Available caches are: " + cacheService.getRegisteredCaches()
+			    "Cache " + cacheName.getName() + " does not exist. Available caches are: " + cacheService.getRegisteredCaches()
 			);
 		}
 

@@ -23,8 +23,6 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Set;
 
-import org.slf4j.Logger;
-
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.cache.providers.ICacheProvider;
 import ortus.boxlang.runtime.components.Attribute;
@@ -37,6 +35,7 @@ import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
+import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.CacheService;
@@ -49,9 +48,14 @@ import ortus.boxlang.runtime.validation.Validator;
 public class Cache extends Component {
 
 	/**
+	 * The default cache prefix for all cache keys for templates
+	 */
+	public static final String	CACHE_PREFIX	= "BL_TEMPLATE_";
+
+	/**
 	 * Logger
 	 */
-	private final Logger logger = runtime.getLoggingService().getLogger( "cache" );
+	private final BoxLangLogger	logger			= runtime.getLoggingService().getLogger( "cache" );
 
 	/**
 	 * Enumeration of all possible `type` attribute values.
@@ -73,11 +77,8 @@ public class Cache extends Component {
 		}
 	}
 
-	public static final double		secondsInDay		= 86400d;
+	private static final double		SECONDS_IN_DAY		= 86400d;
 
-	/**
-	 * The interceptor service helper
-	 */
 	protected final CacheService	cacheService		= BoxRuntime.getInstance().getCacheService();
 
 	protected ICacheProvider		defaultCache		= cacheService.getDefaultCache();
@@ -204,7 +205,7 @@ public class Cache extends Component {
 
 		String cacheKeyName = key != null
 		    ? key
-		    : StringCaster.cast(
+		    : CACHE_PREFIX + StringCaster.cast(
 		        runtime.getFunctionService().getGlobalFunction( Key.hash40 ).invoke(
 		            context,
 		            ArgumentsScope.of(
@@ -250,7 +251,7 @@ public class Cache extends Component {
 			}
 		} else {
 			if ( cacheName != null ) {
-				cacheProvider = cacheService.getCache( Key.of( cacheName ) );
+				cacheProvider = context.getApplicationCache( cacheName );
 			} else if ( cacheDirectory != null ) {
 				Key directoryCacheKey = Key.of( cacheDirectory );
 				if ( !cacheService.hasCache( directoryCacheKey ) ) {
@@ -277,7 +278,7 @@ public class Cache extends Component {
 			} else {
 
 				timeout = timespan != null
-				    ? Duration.ofSeconds( DoubleCaster.cast( DoubleCaster.cast( timespan ) * secondsInDay ).longValue() )
+				    ? Duration.ofSeconds( DoubleCaster.cast( DoubleCaster.cast( timespan ) * SECONDS_IN_DAY ).longValue() )
 				    : Duration.ofSeconds( 0l );
 			}
 
@@ -285,7 +286,7 @@ public class Cache extends Component {
 				lastAccessTimeout = castDuration;
 			} else {
 				lastAccessTimeout = idleTime != null
-				    ? Duration.ofSeconds( DoubleCaster.cast( DoubleCaster.cast( idleTime ) * secondsInDay ).longValue() )
+				    ? Duration.ofSeconds( DoubleCaster.cast( DoubleCaster.cast( idleTime ) * SECONDS_IN_DAY ).longValue() )
 				    : Duration.ofSeconds( 0l );
 			}
 

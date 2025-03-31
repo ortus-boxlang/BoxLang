@@ -187,7 +187,6 @@ public class QueryOptions {
 
 		Integer intMaxRows = options.getAsInteger( Key.maxRows );
 		this.maxRows	= Long.valueOf( intMaxRows != null ? intMaxRows : -1 );
-
 		this.dbtype		= options.getAsString( Key.dbtype );
 
 		determineReturnType();

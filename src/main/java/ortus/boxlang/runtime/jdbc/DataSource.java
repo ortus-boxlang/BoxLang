@@ -259,7 +259,7 @@ public class DataSource implements Comparable<DataSource> {
 
 	/**
 	 * Execute a query on the default connection, within the specific context.
-	 * 
+	 *
 	 * @param query   The SQL query to execute.
 	 * @param context The boxlang context for localization. Useful for localization; i.e., queries with date or time values.
 	 */
@@ -285,7 +285,7 @@ public class DataSource implements Comparable<DataSource> {
 	 *         array is returned.
 	 */
 	public ExecutedQuery execute( String query, Connection conn, IBoxContext context ) {
-		PendingQuery pendingQuery = new PendingQuery( query, new ArrayList<>() );
+		PendingQuery pendingQuery = new PendingQuery( context, query, new ArrayList<>() );
 		return pendingQuery.execute( conn, context );
 	}
 
@@ -293,7 +293,7 @@ public class DataSource implements Comparable<DataSource> {
 	 * Execute a query with a List of parameters on a given connection.
 	 */
 	public ExecutedQuery execute( String query, List<QueryParameter> parameters, Connection conn, IBoxContext context ) {
-		PendingQuery pendingQuery = new PendingQuery( query, parameters );
+		PendingQuery pendingQuery = new PendingQuery( context, query, parameters );
 		return pendingQuery.execute( conn, context );
 	}
 
@@ -312,7 +312,7 @@ public class DataSource implements Comparable<DataSource> {
 	 * Execute a query with an array of parameters on a given connection.
 	 */
 	public ExecutedQuery execute( String query, Array parameters, Connection conn, IBoxContext context ) {
-		PendingQuery pendingQuery = new PendingQuery( query, parameters, new QueryOptions( new Struct() ) );
+		PendingQuery pendingQuery = new PendingQuery( context, query, parameters, new QueryOptions( new Struct() ) );
 		return pendingQuery.execute( conn, context );
 	}
 
@@ -331,7 +331,7 @@ public class DataSource implements Comparable<DataSource> {
 	 * Execute a query with a struct of parameters on a given connection.
 	 */
 	public ExecutedQuery execute( String query, IStruct parameters, Connection conn, IBoxContext context ) {
-		PendingQuery pendingQuery = new PendingQuery( query, parameters, new QueryOptions( new Struct() ) );
+		PendingQuery pendingQuery = new PendingQuery( context, query, parameters, new QueryOptions( new Struct() ) );
 		return pendingQuery.execute( conn, context );
 	}
 

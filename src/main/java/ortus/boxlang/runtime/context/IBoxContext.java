@@ -24,6 +24,7 @@ import java.util.function.Predicate;
 
 import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.cache.providers.ICacheProvider;
 import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.interop.DynamicObject;
@@ -34,6 +35,7 @@ import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.services.CacheService;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.UDF;
@@ -649,6 +651,30 @@ public interface IBoxContext extends IBoxAttachable, Serializable {
 	}
 
 	/**
+	 * This is a convenience method to get an application cache using the app name prefix
+	 * or if not found, it tries to find it by the name as a global cache
+	 *
+	 * @param cacheName The name of the cache to retrieve
+	 *
+	 * @return The app or global cache provider
+	 *
+	 * @throws BoxRuntimeException If the cache was not found
+	 */
+	public default ICacheProvider getApplicationCache( String cacheName ) {
+		ApplicationBoxContext	appContext		= getApplicationContext();
+		CacheService			cacheService	= getRuntime().getCacheService();
+
+		if ( appContext != null ) {
+			Key appCacheName = appContext.getApplication().buildAppCacheKey( Key.of( cacheName ) );
+			if ( cacheService.hasCache( appCacheName ) ) {
+				return cacheService.getCache( appCacheName );
+			}
+		}
+
+		return cacheService.getCache( Key.of( cacheName ) );
+	}
+
+	/**
 	 * Convenience method to retrieve a single config item
 	 *
 	 * @param itemKey the object key to retrieve
@@ -679,7 +705,6 @@ public interface IBoxContext extends IBoxAttachable, Serializable {
 
 	/**
 	 * Get the BoxLang runtime
-	 * '
 	 *
 	 * @return The runtime
 	 */

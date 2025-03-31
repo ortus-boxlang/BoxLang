@@ -1152,9 +1152,14 @@ public class BaseBoxContext implements IBoxContext {
 
 	/**
 	 * Convenience method to retrieve a config item(s). You can pass in multiple
-	 * keys
-	 * separated by commas. It will traverse the keys in order and return the last
-	 * key requested.
+	 * keys separated by commas. It will traverse the keys in order and return the last
+	 * key requested..
+	 *
+	 * <pre>
+	 * // Example:
+	 * // config = { a: { b: { c: 1 } } }
+	 * * // getConfigItems( a, b, c ) will return 1
+	 * </pre>
 	 *
 	 * @param itemKey the object key(s)
 	 *

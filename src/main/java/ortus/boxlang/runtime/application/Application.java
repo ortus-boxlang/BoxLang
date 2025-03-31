@@ -23,10 +23,8 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.cache.filters.ICacheKeyFilter;
@@ -38,6 +36,7 @@ import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.LongCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.loader.DynamicClassLoader;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
@@ -252,7 +251,15 @@ public class Application {
 	}
 
 	/**
-	 * Start the application if not already started
+	 * Start the application if not already started.
+	 *
+	 * The sequence of events is:
+	 * 1. The application start times are recorded and the application is marked as started
+	 * 2. The application listener is set
+	 * 3. The class loader paths are set
+	 * 4. The session storage is set
+	 * 5. The application is announced to the interceptor service (onApplicationStart)
+	 * 6. The application listener is called (onApplicationStart)
 	 *
 	 * @param context The context starting up the application
 	 *
@@ -279,6 +286,8 @@ public class Application {
 			this.startingListener	= context.getRequestContext().getApplicationListener();
 			// Startup the class loader
 			startupClassLoaderPaths( context.getRequestContext() );
+			// Startup the caches
+			startupAppCaches( context.getRequestContext() );
 			// Startup session storages
 			startupSessionStorage( context.getApplicationContext() );
 
@@ -298,6 +307,61 @@ public class Application {
 
 		logger.debug( "Application.start() - {}", this.name );
 		return this;
+	}
+
+	/**
+	 * Startup the application caches if any are defined in the settings of the Application.bx
+	 *
+	 * <pre>
+	 * this.caches = {
+	 *    myCache = {
+	 * 	  	provider = "memory",
+	 * 	  	properties = {
+	 * 			// Cache properties
+	 * 			maxObjects = 1000,
+	 * 			// Default timeout
+	 * 			defaultTimeout = 3600,
+	 * 			// Default last access timeout
+	 * 			defaultLastAccessTimeout = 3600,
+	 * 			// Eviction policy
+	 * 			evictionPolicy = "LRU"
+	 * 	   }
+	 *   }
+	 * }
+	 * </pre>
+	 *
+	 * @param appContext The application context
+	 */
+	public void startupAppCaches( RequestBoxContext requestContext ) {
+		StructCaster.attempt( requestContext.getConfigItems( Key.applicationSettings, Key.caches ) )
+		    .ifPresent( appCaches -> {
+			    for ( Entry<Key, Object> entry : appCaches.entrySet() ) {
+				    Key	cacheName		= buildAppCacheKey( entry.getKey() );
+				    IStruct cacheDefinition = StructCaster.cast( entry.getValue() );
+
+				    // If the cacheDefinition doesn't have a provider, default to the default provider
+				    cacheDefinition.computeIfAbsent( Key.provider, k -> Key.boxCacheProvider );
+				    cacheDefinition.computeIfAbsent( Key.properties, k -> new Struct() );
+
+				    // Register the caches with the cache service
+				    this.cacheService.createCacheIfAbsent(
+				        cacheName,
+				        Key.of( cacheDefinition.get( Key.provider ) ),
+				        StructCaster.cast( cacheDefinition.get( Key.properties ) )
+				    );
+			    }
+		    } );
+	}
+
+	/**
+	 * Build a cache key for the application
+	 *
+	 * @param cacheName The name of the cache
+	 *
+	 * @return The cache key for the application
+	 */
+	public Key buildAppCacheKey( Key cacheName ) {
+		return Key.of( this.name.getName() + ":" + cacheName.getName() );
 	}
 
 	/**

@@ -72,7 +72,7 @@ public class QueryExecute extends BIF {
 		Object			bindings		= arguments.get( Key.params );
 
 		QueryOptions	options			= new QueryOptions( optionsAsStruct );
-		PendingQuery	pendingQuery	= new PendingQuery( sql, bindings, options );
+		PendingQuery	pendingQuery	= new PendingQuery( context, sql, bindings, options );
 
 		ExecutedQuery	executedQuery;
 		// QoQ uses a special QoQ connection

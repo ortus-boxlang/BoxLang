@@ -30,6 +30,7 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.application.Application;
 import ortus.boxlang.runtime.application.BaseApplicationListener;
+import ortus.boxlang.runtime.cache.providers.ICacheProvider;
 import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.BaseBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -40,6 +41,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.SessionScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.services.CacheService;
 import ortus.boxlang.runtime.types.IStruct;
 
 public class ApplicationTest {
@@ -341,24 +343,53 @@ public class ApplicationTest {
 		    """
 		        bx:application
 					action = "update"
+					name  = "cacheTestApp"
 					caches = {
 						cache1NoProvider = {
-							// Default provider is BoxCacheProvider
 							properties : {
+								"objectStore" = "ConcurrentSoftReferenceStore",
+								"evictionPolicy" = "LFU"
 							}
 						},
 						cache2 = {
 							provider : "BoxCacheProvider",
 							properties : {
-								maxEntries : 1000
+								maxObjects : 100
 							}
 						}
 					};
 
 				println( getApplicationMetadata() );
+				result = getApplicationMetadata().caches;
+
+				cache1 = cache( "cache1NoProvider" );
+				cache2 = cache( "cache2" );
 			""", context );
 		// @formatter:on
 
+		IStruct caches = variables.getAsStruct( Key.result );
+		assertThat( caches ).isNotNull();
+		assertThat( caches.get( "cache1NoProvider" ) ).isNotNull();
+		assertThat( caches.get( "cache2" ) ).isNotNull();
+
+		ICacheProvider	cache1		= ( ICacheProvider ) variables.get( Key.of( "cache1" ) );
+		Key				cache1Name	= Key.of( "cacheTestApp" + ":" + "cache1NoProvider" );
+		ICacheProvider	cache2		= ( ICacheProvider ) variables.get( Key.of( "cache2" ) );
+		Key				cache2Name	= Key.of( "cacheTestApp" + ":" + "cache2" );
+
+		assertThat( cache1 ).isNotNull();
+		assertThat( cache1.getName() ).isEqualTo( cache1Name );
+		assertThat( cache2 ).isNotNull();
+		assertThat( cache2.getName() ).isEqualTo( cache2Name );
+
+		// Check the serviice now
+		CacheService cacheService = instance.getCacheService();
+		assertThat( cacheService.hasCache(
+		    cache1Name
+		) ).isTrue();
+		assertThat( cacheService.hasCache(
+		    cache2Name
+		) ).isTrue();
 	}
 
 }

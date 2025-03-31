@@ -479,6 +479,22 @@ public class CacheService extends BaseService {
 	}
 
 	/**
+	 * Create a new cache if not found according to the name.
+	 *
+	 * @param name       The name of the cache
+	 * @param provider   A valid cache provider
+	 * @param properties The properties to configure the cache
+	 *
+	 * @return The previously registered cache or the newly created one
+	 */
+	public ICacheProvider createCacheIfAbsent( Key name, Key provider, IStruct properties ) {
+		if ( hasCache( name ) ) {
+			return getCache( name );
+		}
+		return createCache( name, provider, properties );
+	}
+
+	/**
 	 * Create a new cache according to the name, provider and properties structure
 	 *
 	 * @param name       The name of the cache
