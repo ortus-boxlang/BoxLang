@@ -48,14 +48,25 @@ import ortus.boxlang.runtime.validation.Validator;
 public class Cache extends Component {
 
 	/**
+	 * ----------------------------------------
+	 * Public Constants
+	 * ----------------------------------------
+	 */
+
+	/**
 	 * The default cache prefix for all cache keys for templates
 	 */
 	public static final String	CACHE_PREFIX	= "BL_TEMPLATE_";
 
 	/**
-	 * Logger
+	 * Useful constant for calculating cache directives
 	 */
-	private final BoxLangLogger	logger			= runtime.getLoggingService().getLogger( "cache" );
+	public static final double		SECONDS_IN_DAY		= 86400d;
+
+	/**
+	 * The default file store we leverage
+	 */
+	public static final String			DEFAULT_FILE_STORE	= "FileSystemStore";
 
 	/**
 	 * Enumeration of all possible `type` attribute values.
@@ -77,13 +88,19 @@ public class Cache extends Component {
 		}
 	}
 
-	private static final double		SECONDS_IN_DAY		= 86400d;
+	/**
+	 * ----------------------------------------
+	 * Properties
+	 * ----------------------------------------
+	 */
+
+	private final BoxLangLogger	logger			= runtime.getLoggingService().getLogger( "cache" );
 
 	protected final CacheService	cacheService		= BoxRuntime.getInstance().getCacheService();
 
-	protected ICacheProvider		defaultCache		= cacheService.getDefaultCache();
+	protected final ICacheProvider		defaultCache		= cacheService.getDefaultCache();
 
-	private final String			defaultFileStore	= "FileSystemStore";
+
 
 	/**
 	 * Constructor
@@ -259,7 +276,7 @@ public class Cache extends Component {
 					    directoryCacheKey,
 					    Key.boxCacheProvider,
 					    Struct.of(
-					        Key.objectStore, defaultFileStore,
+					        Key.objectStore, DEFAULT_FILE_STORE,
 					        Key.directory, cacheDirectory,
 					        Key.useLastAccessTimeouts, true
 					    )
