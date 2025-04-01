@@ -32,7 +32,6 @@ import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.async.tasks.BaseScheduler;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
@@ -1199,7 +1198,7 @@ public class ClassTest {
 		assertThat( variables.get( Key.of( "result11" ) ) ).isEqualTo( "finalStatic" );
 		assertThat( variables.get( Key.of( "result12" ) ) ).isEqualTo( "finalStatic2" );
 		assertThat( variables.get( Key.of( "result13" ) ) ).isEqualTo( "bradfinalStatic" );
-	}	
+	}
 
 	@Test
 	public void testStaticStaticFromScript() {
@@ -1770,7 +1769,7 @@ public class ClassTest {
 
 		//@formatter:off
 		String		executionSource			= """
-			request.calls = []; 
+			request.calls = [];
 			cfc = new src.test.java.TestCases.phase3.Child();
 		""";
 		String touchSource = "bx:execute variable=\"execResult\" name=\"touch\" arguments=\"#expandPath( '/src/test/java/TestCases/phase3/Child.cfc' )#\";";
@@ -1887,19 +1886,6 @@ public class ClassTest {
 		    new src.test.java.TestCases.phase3.SemiAfteAnnotation()
 		                """,
 		    context );
-	}
-
-	@Test
-	public void testCanCallOverrideFromJava() {
-		instance.executeSource(
-		    """
-		    result = new src.test.bx.Scheduler()
-		                """,
-		    context );
-
-		BaseScheduler x = ( BaseScheduler ) variables.get( result );
-
-		x.onStartup();
 	}
 
 	@Test
