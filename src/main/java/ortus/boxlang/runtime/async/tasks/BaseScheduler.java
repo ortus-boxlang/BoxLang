@@ -30,10 +30,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.RandomStringUtils;
-import org.slf4j.Logger;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.async.executors.ExecutorRecord;
+import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.AsyncService;
 import ortus.boxlang.runtime.types.IStruct;
@@ -99,7 +99,7 @@ public class BaseScheduler implements IScheduler {
 	/**
 	 * Logger
 	 */
-	protected final Logger						logger;
+	protected final BoxLangLogger				logger;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -691,12 +691,31 @@ public class BaseScheduler implements IScheduler {
 	}
 
 	/**
+	 * Set the exectutor record for this scheduler
+	 *
+	 * @param executor the executor to set
+	 *
+	 * @return the scheduler object
+	 */
+	public BaseScheduler setExecutor( ExecutorRecord executor ) {
+		this.executor = executor;
+		return this;
+	}
+
+	/**
 	 * Get the executor record
 	 *
 	 * @return the executor record
 	 */
 	public ExecutorRecord getExecutor() {
 		return this.executor;
+	}
+
+	/**
+	 * Get the logger
+	 */
+	public BoxLangLogger getLogger() {
+		return this.logger;
 	}
 
 }

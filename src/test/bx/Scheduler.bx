@@ -1,9 +1,12 @@
-/**
- * A BoxLang scheduler is a BoxLang class that at runtime
- * will be dynamically loaded, decorated and modified to
- * work as a native Java BoxLang Scheduler.
- */
-class extends="java:ortus.boxlang.runtime.async.tasks.BaseScheduler" {
+class {
+
+	// Properties
+	property name="scheduler";
+	property name="runtime";
+	property name="logger";
+	property name="asyncService";
+	property name="cacheService";
+	property name="interceptorService";
 
 	/**
 	 * The configure method is called by the BoxLang runtime
@@ -12,13 +15,16 @@ class extends="java:ortus.boxlang.runtime.async.tasks.BaseScheduler" {
 	 * This is where you define your tasks and setup global configuration.
 	 */
 	function configure(){
+		// Setup Scheduler Properties
+		scheduler.setSchedulerName( "My Scheduler" )
+		scheduler.setTimezone( "UTC" )
 
 		// Define a lambda task
-		super.task( "My Task" )
+		scheduler.task( "My test Task" )
 			.call( () -> {
 				println( "I am a lambda task: #now()#" );
 			} )
-			.every( 1, "second" );
+			.every( 2, "second" );
 	}
 
 	/**
@@ -28,22 +34,17 @@ class extends="java:ortus.boxlang.runtime.async.tasks.BaseScheduler" {
 	 */
 
 	/**
-	 * Called before the scheduler is going to be shutdown
+	 * Called after the scheduler has registered all schedules
 	 */
-	function onShutdown(){
-
-	}
-
-	function getName(){
-		return "Test Scheduler";
+	void function onStartup(){
+		println( "I have started!" & scheduler.getSchedulerName() );
 	}
 
 	/**
-	 * Called after the scheduler has registered all schedules
+	 * Called before the scheduler is going to be shutdown
 	 */
-	@overrideJava
-	void function onStartup(){
-		println( "I have started!" & getName() );
+	void function onShutdown(){
+		println( "I have shutdown!" & scheduler.getSchedulerName() );
 	}
 
 	/**

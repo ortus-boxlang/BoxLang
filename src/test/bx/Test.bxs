@@ -1,14 +1,3 @@
-test = new Scheduler()
+jScheduler = new BaseScheduler()
 
-println( "created scheduler #test.getSchedulerName()#" )
-println( "scheduler is running: " & test.hasStarted() )
-
-test.configure()
-
-println( "scheduler configured" )
-println( "registered tasks: #test.getRegisteredTasks().toString()#")
-println( test.getTaskStats() )
-
-test.startup();
-
-sleep( 5000 )
+bxScheduler = new Scheduler().setScheduler( jScheduler )

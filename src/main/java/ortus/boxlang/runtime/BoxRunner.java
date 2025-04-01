@@ -22,22 +22,40 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import org.apache.commons.lang3.StringUtils;
 
 import com.fasterxml.jackson.jr.ob.JSONObjectException;
 
 import ortus.boxlang.compiler.BXCompiler;
 import ortus.boxlang.compiler.CFTranspiler;
 import ortus.boxlang.compiler.FeatureAudit;
+import ortus.boxlang.runtime.application.BaseApplicationListener;
+import ortus.boxlang.runtime.async.tasks.BoxScheduler;
+import ortus.boxlang.runtime.async.tasks.IScheduler;
 import ortus.boxlang.runtime.config.CLIOptions;
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.RequestBoxContext;
+import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.runnables.IBoxRunnable;
+import ortus.boxlang.runtime.runnables.IClassRunnable;
+import ortus.boxlang.runtime.runnables.RunnableLoader;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.services.SchedulerService;
+import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 import ortus.boxlang.runtime.util.Timer;
 
 /**
@@ -75,9 +93,15 @@ import ortus.boxlang.runtime.util.Timer;
 public class BoxRunner {
 
 	/**
-	 * A list of action commands that can be executed by the BoxRunner: compile, cftranspile, featureAudit
+	 * A list of action commands that can be executed by the BoxRunner:
+	 * compile, cftranspile, featureAudit, schedule
 	 */
-	private static final List<String>	ACTION_COMMANDS				= List.of( "compile", "cftranspile", "featureaudit" );
+	private static final List<String>	ACTION_COMMANDS				= List.of(
+	    "compile",
+	    "cftranspile",
+	    "featureaudit",
+	    "schedule"
+	);
 
 	/**
 	 * The allowed template extensions that can be executed by the BoxRunner
@@ -90,7 +114,7 @@ public class BoxRunner {
 	public static int					exitCode					= 0;
 
 	/**
-	 * Main entry point for the BoxLang runtime.
+	 * Execute the BoxLang runtime with the passed arguments.
 	 *
 	 * @param args The command-line arguments
 	 *
@@ -117,13 +141,12 @@ public class BoxRunner {
 			// Show version
 			if ( Boolean.TRUE.equals( options.showVersion() ) ) {
 				var versionInfo = boxRuntime.getVersionInfo();
-				System.out.println( "Ortus BoxLang v" + versionInfo.get( "version" ) );
-				System.out.println( "BoxLang ID: " + versionInfo.get( "boxlangId" ) );
+				System.out.println( "Ortus BoxLang™ v" + versionInfo.get( "version" ) );
+				System.out.println( "BoxLang™ ID: " + versionInfo.get( "boxlangId" ) );
 				System.out.println( "Codename: " + versionInfo.get( "codename" ) );
 				System.out.println( "Built On: " + versionInfo.get( "buildDate" ) );
-				System.out.println( "Copyright Ortus Solutions, Corp" );
+				System.out.println( "Copyright Ortus Solutions, Corp™" );
 				System.out.println( "https://boxlang.io" );
-				System.out.println( "https://ortussolutions.com" );
 			}
 			// Print AST
 			else if ( options.printAST() && options.code() != null ) {
@@ -150,7 +173,7 @@ public class BoxRunner {
 			}
 			// Action Command
 			else if ( options.actionCommand() != null ) {
-				runActionCommand( options );
+				runActionCommand( options, boxRuntime );
 			}
 			// REPL Mode: Execute code as read from the standard input of the process
 			else {
@@ -178,8 +201,9 @@ public class BoxRunner {
 	 * Run an action command based on the options passed.
 	 *
 	 * @param options The CLIOptions object with the parsed options
+	 * @param runtime The BoxRuntime object
 	 */
-	private static void runActionCommand( CLIOptions options ) {
+	private static void runActionCommand( CLIOptions options, BoxRuntime runtime ) {
 		switch ( options.actionCommand().toLowerCase() ) {
 			case "compile" :
 				BXCompiler.main( options.cliArgs().toArray( new String[ 0 ] ) );
@@ -190,8 +214,123 @@ public class BoxRunner {
 			case "featureaudit" :
 				FeatureAudit.main( options.cliArgs().toArray( new String[ 0 ] ) );
 				break;
+			case "schedule" :
+				runScheduler( options.cliArgs().getFirst(), runtime );
 			default :
 				throw new BoxRuntimeException( "Unknown action command: " + options.actionCommand() );
+		}
+	}
+
+	/**
+	 * Run the passed in scheduler path. Block, show a message and wait for the
+	 * user to ctrl+c to exit.
+	 *
+	 * @param schedulerPath The path to the scheduler to run
+	 * @param runtime       The BoxRuntime object
+	 */
+	private static void runScheduler( String schedulerPath, BoxRuntime runtime ) {
+		// Check if the scheduler path is valid
+		if ( !StringUtils.endsWithAny( schedulerPath, ".bx" ) ) {
+			throw new BoxRuntimeException( "Scheduler must be a .bx file, found: " + schedulerPath );
+		}
+
+		// Prep the execution
+		Path					targetSchedulerPath	= Paths.get( schedulerPath ).normalize().toAbsolutePath();
+		IBoxContext				runtimeContext		= runtime.getRuntimeContext();
+		IBoxContext				scriptingContext	= new ScriptingRequestBoxContext( runtimeContext, targetSchedulerPath.toUri() );
+		BaseApplicationListener	listener			= scriptingContext.getRequestContext().getApplicationListener();
+		RequestBoxContext.setCurrent( scriptingContext.getParentOfType( RequestBoxContext.class ) );
+		Throwable			errorToHandle		= null;
+		SchedulerService	schedulerService	= runtime.getSchedulerService();
+
+		// FIRE!
+		try {
+			System.out.println( "- Starting scheduler from file: [" + schedulerPath + "]" );
+
+			// Compile the scheduler
+			Class<IBoxRunnable>	targetSchedulerClass	= RunnableLoader.getInstance()
+			    .loadClass(
+			        ResolvedFilePath.of( targetSchedulerPath ),
+			        runtimeContext
+			    );
+			// Construct the scheduler
+			IClassRunnable		targetScheduler			= ( IClassRunnable ) DynamicObject.of( targetSchedulerClass )
+			    .invokeConstructor( runtimeContext )
+			    .getTargetInstance();
+			// Create the proxy
+			IScheduler			boxScheduler			= new BoxScheduler( targetScheduler, runtimeContext );
+
+			// Startup the listener
+			boolean				result					= listener.onRequestStart( scriptingContext, new Object[] { schedulerPath } );
+			if ( result ) {
+				// Register the requested scheduler
+				schedulerService.loadScheduler( Key.of( boxScheduler.getSchedulerName() ), boxScheduler );
+
+				// Show the message
+				System.out.println( "√ Scheduler registered successfully" );
+				System.out.println( "Press Ctrl+C to stop the scheduler and exit." );
+				System.out.println( "=========================================" );
+				System.out.println( "" );
+				CountDownLatch stopLatch = new CountDownLatch( 1 );
+
+				// Start the scheduler
+				boxScheduler.startup();
+
+				// Add a shutdown hook to gracefully stop the scheduler
+				Runtime.getRuntime().addShutdownHook( new Thread( () -> {
+					System.out.println( "- Shutting down scheduler..." );
+					try {
+						// Force shut it down
+						boxScheduler.shutdown( true );
+					} catch ( Exception e ) {
+						e.printStackTrace();
+					} finally {
+						stopLatch.countDown(); // release the latch so the main thread can exit
+					}
+				} ) );
+
+				// Block the main thread
+				stopLatch.await();
+			}
+		} catch ( AbortException e ) {
+			try {
+				listener.onAbort( scriptingContext, new Object[] { schedulerPath } );
+			} catch ( Throwable ae ) {
+				// Opps, an error while handling onAbort
+				errorToHandle = ae;
+			}
+			scriptingContext.flushBuffer( true );
+			if ( e.getCause() != null ) {
+				// This will always be an instance of CustomException
+				throw ( RuntimeException ) e.getCause();
+			}
+		} catch ( Exception e ) {
+			errorToHandle = e;
+		} finally {
+			try {
+				listener.onRequestEnd( scriptingContext, new Object[] { schedulerPath } );
+			} catch ( Throwable e ) {
+				// Opps, an error while handling onRequestEnd
+				errorToHandle = e;
+			}
+			scriptingContext.flushBuffer( false );
+
+			if ( errorToHandle != null ) {
+				// Log it
+				runtime.getLoggingService().getExceptionLogger().error( errorToHandle.getMessage(), errorToHandle );
+
+				try {
+					if ( !listener.onError( scriptingContext, new Object[] { errorToHandle, "" } ) ) {
+						throw errorToHandle;
+					}
+					// This is a failsafe in case the onError blows up.
+				} catch ( Throwable t ) {
+					errorToHandle.printStackTrace();
+					ExceptionUtil.throwException( t );
+				}
+			}
+			scriptingContext.flushBuffer( false );
+			RequestBoxContext.removeCurrent();
 		}
 	}
 
@@ -256,7 +395,7 @@ public class BoxRunner {
 		Boolean			debug			= null;
 		Boolean			printAST		= false;
 		List<String>	argsList		= new ArrayList<>( Arrays.asList( args ) );
-		String			current			= null;
+		String			currentArgument	= null;
 		String			file			= null;
 		String			targetModule	= null;
 		String			configFile		= null;
@@ -269,34 +408,34 @@ public class BoxRunner {
 
 		// Consume args in order via the `current` variable
 		while ( !argsList.isEmpty() ) {
-			current = argsList.remove( 0 );
+			currentArgument = argsList.remove( 0 );
 
 			// ShowVersion mode Flag, we find and break off
-			if ( current.equalsIgnoreCase( "--version" ) ) {
+			if ( currentArgument.equalsIgnoreCase( "--version" ) ) {
 				showVersion = true;
 				break;
 			}
 
 			// Debug mode Flag, we find and continue to the next argument
-			if ( current.equalsIgnoreCase( "--bx-debug" ) ) {
+			if ( currentArgument.equalsIgnoreCase( "--bx-debug" ) ) {
 				debug = true;
 				continue;
 			}
 
 			// Print AST Flag, we find and continue to the next argument
-			if ( current.equalsIgnoreCase( "--bx-printAST" ) ) {
+			if ( currentArgument.equalsIgnoreCase( "--bx-printAST" ) ) {
 				printAST = true;
 				continue;
 			}
 
 			// Transpile Flag, we find and continue to the next argument
-			if ( current.equalsIgnoreCase( "--bx-transpile" ) ) {
+			if ( currentArgument.equalsIgnoreCase( "--bx-transpile" ) ) {
 				transpile = true;
 				continue;
 			}
 
 			// Config File Flag, we find and continue to the next argument for the path
-			if ( current.equalsIgnoreCase( "--bx-config" ) ) {
+			if ( currentArgument.equalsIgnoreCase( "--bx-config" ) ) {
 				if ( argsList.isEmpty() ) {
 					throw new BoxRuntimeException( "Missing config file path with --config flag, it must be the next argument. [--config /path/boxlang.json]" );
 				}
@@ -305,7 +444,7 @@ public class BoxRunner {
 			}
 
 			// Runtime Home Flag, we find and continue to the next argument for the path
-			if ( current.equalsIgnoreCase( "--bx-home" ) ) {
+			if ( currentArgument.equalsIgnoreCase( "--bx-home" ) ) {
 				if ( argsList.isEmpty() ) {
 					throw new BoxRuntimeException( "Missing runtime home path with --home flag, it must be the next argument. [--home /path/to/boxlang-home]" );
 				}
@@ -315,7 +454,7 @@ public class BoxRunner {
 
 			// Code to execute?
 			// Mutually exclusive with template
-			if ( current.equalsIgnoreCase( "--bx-code" ) ) {
+			if ( currentArgument.equalsIgnoreCase( "--bx-code" ) ) {
 				if ( argsList.isEmpty() ) {
 					throw new BoxRuntimeException( "Missing inline code to execute with -c flag." );
 				}
@@ -323,7 +462,7 @@ public class BoxRunner {
 				break;
 			}
 
-			String[]	currentParts	= current.split( "\\." );
+			String[]	currentParts	= currentArgument.split( "\\." );
 			String		currentExt		= "";
 
 			if ( currentParts.length > 0 ) {
@@ -332,37 +471,49 @@ public class BoxRunner {
 
 			// Template to execute?
 			if ( actionCommand == null && ALLOWED_TEMPLATE_EXECUTIONS.contains( currentExt ) ) {
-				file = templateToAbsolute( current );
+				file = templateToAbsolute( currentArgument );
 				continue;
 			}
 
 			// Is it a shebang script to execute
-			if ( actionCommand == null && isShebangScript( current ) ) {
-				file = getSheBangScript( current );
+			if ( actionCommand == null && isShebangScript( currentArgument ) ) {
+				file = getSheBangScript( currentArgument );
 				continue;
 			}
 
 			// Is this a module execution
-			if ( current.startsWith( "module:" ) ) {
+			if ( currentArgument.startsWith( "module:" ) ) {
 				// Remove the prefix
-				targetModule = current.substring( 7 );
+				targetModule = currentArgument.substring( 7 );
 				continue;
 			}
 
 			// Is this an action command?
-			if ( ACTION_COMMANDS.contains( current.toLowerCase() ) ) {
-				actionCommand = current;
+			if ( ACTION_COMMANDS.contains( currentArgument.toLowerCase() ) ) {
+				actionCommand = currentArgument;
 				// Add the remaining arguments into the cliArgs and break off
 				cliArgs.addAll( argsList );
 				continue;
 			}
 
 			// add it to the list of arguments
-			cliArgs.add( current );
+			cliArgs.add( currentArgument );
 		}
 
-		return new CLIOptions( file, debug, code, configFile, printAST, transpile, runtimeHome, showVersion, cliArgs, args, targetModule, actionCommand );
-
+		return new CLIOptions(
+		    file,
+		    debug,
+		    code,
+		    configFile,
+		    printAST,
+		    transpile,
+		    runtimeHome,
+		    showVersion,
+		    cliArgs,
+		    args,
+		    targetModule,
+		    actionCommand
+		);
 	}
 
 	/**

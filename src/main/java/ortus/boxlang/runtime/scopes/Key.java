@@ -540,6 +540,12 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		onApplicationRestart				= Key.of( "onApplicationRestart" );
 	public static final Key		onApplicationStart					= Key.of( "onApplicationStart" );
 	public static final Key		onClassRequest						= Key.of( "onClassRequest" );
+	public static final Key		onShutdown							= Key.of( "onShutdown" );
+	public static final Key		onStartup							= Key.of( "onStartup" );
+	public static final Key		onAnyTaskError						= Key.of( "onAnyTaskError" );
+	public static final Key		onAnyTaskSuccess					= Key.of( "onAnyTaskSuccess" );
+	public static final Key		beforeAnyTask						= Key.of( "beforeAnyTask" );
+	public static final Key		afterAnyTask						= Key.of( "afterAnyTask" );
 	public static final Key		onError								= Key.of( "onError" );
 	public static final Key		onLoad								= Key.of( "onLoad" );
 	public static final Key		onMissingMethod						= Key.of( "onMissingMethod" );
@@ -646,6 +652,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		samesite							= Key.of( "samesite" );
 	public static final Key		scalar								= Key.of( "scalar" );
 	public static final Key		scale								= Key.of( "scale" );
+	public static final Key		scheduler							= Key.of( "scheduler" );
 	public static final Key		schedulerService					= Key.of( "schedulerService" );
 	public static final Key		scope								= Key.of( "scope" );
 	public static final Key		script_name							= Key.of( "script_name" );

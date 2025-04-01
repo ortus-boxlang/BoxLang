@@ -57,6 +57,17 @@
 		},
 		{
 			"type": "java",
+			"name": "BoxLang Test Scheduler",
+			"request": "launch",
+			"mainClass": "ortus.boxlang.runtime.BoxRunner",
+			"projectName": "boxlang",
+			"args": [
+				"schedule",
+				"src/test/bx/Scheduler.bx"
+			]
+		},
+		{
+			"type": "java",
 			"name": "BoxLang MiniServer",
 			"request": "launch",
 			"mainClass": "ortus.boxlang.web.MiniServer",
