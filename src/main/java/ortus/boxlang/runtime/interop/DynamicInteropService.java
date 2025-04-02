@@ -337,7 +337,7 @@ public class DynamicInteropService {
 		try {
 
 			@SuppressWarnings( "unchecked" )
-			T thisInstance = ( T ) constructorInvoker.invokeWithArguments( expandVarargs( castedArgumentValues, constructor.isVarArgs(), false ) );
+			T thisInstance = ( T ) constructorInvoker.invokeWithArguments( expandVarargs( castedArgumentValues, constructor.isVarArgs(), false, constructor ) );
 
 			// If this is a Box Class, some additional initialization is needed
 			if ( thisInstance instanceof IClassRunnable boxClass ) {
@@ -565,9 +565,10 @@ public class DynamicInteropService {
 
 			// Execute
 			return methodRecord.isStatic()
-			    ? methodRecord.methodHandle().invokeWithArguments( expandVarargs( castedArgumentValues, methodRecord.method().isVarArgs(), false ) )
+			    ? methodRecord.methodHandle()
+			        .invokeWithArguments( expandVarargs( castedArgumentValues, methodRecord.method().isVarArgs(), false, methodRecord.method() ) )
 			    : methodRecord.methodHandle().bindTo( targetInstance )
-			        .invokeWithArguments( expandVarargs( castedArgumentValues, methodRecord.method().isVarArgs(), true ) );
+			        .invokeWithArguments( expandVarargs( castedArgumentValues, methodRecord.method().isVarArgs(), true, methodRecord.method() ) );
 		} catch ( RuntimeException e ) {
 			throw e;
 		} catch ( Throwable e ) {
@@ -588,7 +589,19 @@ public class DynamicInteropService {
 	 * 
 	 * @return The expanded arguments
 	 */
-	public static Object[] expandVarargs( Object[] arguments, boolean isVarargs, boolean isInstance ) {
+	public static Object[] expandVarargs( Object[] arguments, boolean isVarargs, boolean isInstance, Executable executable ) {
+		int paramCount = executable.getParameterCount();
+
+		// If we are calling a vararg method, but omitted the last argument, then we need to add in the empty array here
+		if ( executable.isVarArgs() && paramCount > arguments.length ) {
+			// create new argument array with an array of the varargs type at the end
+			Object[] expandedArgs = new Object[ arguments.length + 1 ];
+			System.arraycopy( arguments, 0, expandedArgs, 0, arguments.length );
+			// The last argument is an array of the varargs type
+			expandedArgs[ arguments.length ]	= java.lang.reflect.Array.newInstance( executable.getParameterTypes()[ paramCount - 1 ].getComponentType(), 0 );
+			arguments							= expandedArgs;
+		}
+
 		// If it's not varargs, or it's an instance method, then just return the arguments
 		// I don't understand why instance method don't want the varargs expanded, but this is what makes the tests pass
 		if ( !isVarargs || isInstance ) {
@@ -651,7 +664,7 @@ public class DynamicInteropService {
 		try {
 			return methodRecord
 			    .methodHandle()
-			    .invokeWithArguments( expandVarargs( castedArgumentValues, methodRecord.method().isVarArgs(), false ) );
+			    .invokeWithArguments( expandVarargs( castedArgumentValues, methodRecord.method().isVarArgs(), false, methodRecord.method() ) );
 		} catch ( RuntimeException e ) {
 			throw e;
 		} catch ( Throwable e ) {
@@ -1622,7 +1635,10 @@ public class DynamicInteropService {
 		// Try to get the executables that match by name and number of arguments first.
 		List<Executable> targetExecutables = availableExecutables
 		    .filter( executable -> methodName == null || executable.getName().equalsIgnoreCase( methodName ) )
-		    .filter( executable -> executable.getParameterCount() == argumentsAsClasses.length )
+		    // We either need to have the same number of arguments or a varargs method with one less argument
+		    // This allows the array of varargs to be omitted when empty
+		    .filter( executable -> executable.getParameterCount() == argumentsAsClasses.length
+		        || ( executable.isVarArgs() && executable.getParameterCount() == argumentsAsClasses.length + 1 ) )
 		    .toList();
 
 		// If list is empty return false
@@ -1644,6 +1660,8 @@ public class DynamicInteropService {
 		            null,
 		            castedArgumentValues,
 		            arguments ) )
+		    // Sort first matches who's argument array is the same as the number of parameters in the executable, which will make ambiguous varargs methods sort last
+		    .sorted( Comparator.comparingInt( executable -> executable.getParameterCount() == argumentsAsClasses.length ? 0 : 1 ) )
 		    .findFirst()
 		    // 2: If no exact match, try loose coercion
 		    .or( () -> targetExecutables
@@ -1659,6 +1677,8 @@ public class DynamicInteropService {
 		                castedArgumentValues,
 		                arguments
 		            ) )
+		        // Sort first matches who's argument array is the same as the number of parameters in the executable, which will make ambiguous varargs methods sort last
+		        .sorted( Comparator.comparingInt( executable -> executable.getParameterCount() == argumentsAsClasses.length ? 0 : 1 ) )
 		        .findFirst()
 		        .or( () -> targetExecutables
 		            .stream()
@@ -2336,6 +2356,10 @@ public class DynamicInteropService {
 
 		// Get param types to test
 		Class<?>[] methodParams = method.getParameterTypes();
+		// If this is varargs, then we'll have one extra param which we need to ignore for now
+		if ( methodParams.length > argumentsAsClasses.length ) {
+			methodParams = Arrays.copyOf( methodParams, methodParams.length - 1 );
+		}
 
 		// unbox types here so we can do a proper comparison
 		unBoxTypes( methodParams );
@@ -2357,6 +2381,10 @@ public class DynamicInteropService {
 				System.arraycopy( arguments, 0, castedArgumentValues, 0, arguments.length );
 				return true;
 			case COERCE :
+				// Penalize method calls where we've omitted the varargs
+				if ( method.isVarArgs() && method.getParameterCount() > argumentsAsClasses.length ) {
+					matchScore.addAndGet( 5 );
+				}
 				return coerceArguments(
 				    context,
 				    methodParams,

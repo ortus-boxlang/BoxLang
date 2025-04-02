@@ -1063,7 +1063,38 @@ public class DynamicInteropServiceTest {
 		assertThat( variables.get( Key.of( "result2" ) ) ).isNotNull();
 		assertThat( variables.get( Key.of( "result2" ) ) ).isInstanceOf( char[].class );
 		assertThat( ( char[] ) variables.get( Key.of( "result2" ) ) ).isEqualTo( new char[] { 'f', 'f', 'f' } );
+	}
 
+	@Test
+	void testEmptyVarArgs() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+			import java.lang.String as str;
+			result = str.format("Hello, world!", []);
+			result2 = str.format("Goodbye, world!");
+			result3 = str.format("Hello, %s!", ["brad"]);
+
+			""", context);
+		// @formatter:on
+		assertThat( variables.get( Key.result ) ).isEqualTo( "Hello, world!" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "Goodbye, world!" );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( "Hello, brad!" );
+	}
+
+	@Test
+	void testAmbigiuousEmptyVarArgs() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				import ortus.boxlang.runtime.interop.TestAmbiguousVarargs;
+				result = TestAmbiguousVarargs.foo( 5, "brad", [] );
+				result2 = TestAmbiguousVarargs.foo( 5, "brad" );
+				
+			""", context);
+		// @formatter:on
+		assertThat( variables.get( Key.result ) ).isEqualTo( "Varargs method" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "Non-varargs method" );
 	}
 
 }
