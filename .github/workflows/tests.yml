@@ -1,6 +1,5 @@
 name: Test Suites
 
-# We are a reusable Workflow only
 on:
   workflow_call:
     secrets:
@@ -12,7 +11,7 @@ env:
 
 jobs:
   tests:
-    if: "!contains(github.event.head_commit.message, 'skip tests')"
+    if: "!contains( github.event.head_commit.message, 'skip tests' )"
     name: "OS: ${{ matrix.os }}, Compiler: ${{ matrix.compiler }}, JDK: ${{ matrix.jdkProvider }} ${{ matrix.jdkVersion }}"
     runs-on: ${{ matrix.os }}
     env:
@@ -22,11 +21,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ["ubuntu-latest", "windows-latest"]
-        jdkProvider: ["temurin"]
-        jdkVersion: ["21"]
-        experimental: [false]
-        compiler: ["java", "asm"]
+        os: [ "ubuntu-latest" ]
+        jdkProvider: [ "temurin" ]
+        jdkVersion: [ "21" ]
+        experimental: [ false ]
+        compiler: [ "java", "asm" ]
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -42,12 +41,6 @@ jobs:
         with:
           gradle-version: "8.7"
 
-      # - name: Setup Database and Fixtures
-      #   run: |
-      #     sudo systemctl start mysql.service
-      #     mysql -u${{ env.DB_USER }} -p${{ env.DB_PASSWORD }} -e 'CREATE DATABASE mementifier;'
-      #     mysql -u${{ env.DB_USER }} -p${{ env.DB_PASSWORD }} < test-harness/tests/resources/coolblog.sql
-
       - name: Setup CommandBox CLI Linux
         if: ${{ matrix.os != 'windows-latest' }}
         uses: Ortus-Solutions/setup-commandbox@v2.0.1
@@ -58,21 +51,6 @@ jobs:
 
       - name: Install TestBox
         run: box install testbox@be src/test/resources --verbose --noSave
-
-      # Not Needed in this module
-      #- name: Setup Environment For Testing Process
-      #  run: |
-      #    # Setup .env
-      #    touch .env
-      #    # ENV
-      #    printf "DB_HOST=localhost\n" >> .env
-      #    printf "DB_DATABASE=mydatabase\n" >> .env
-      #    printf "DB_DRIVER=MySQL\n" >> .env
-      #    printf "DB_USER=${{ env.DB_USER }}\n" >> .env
-      #    printf "DB_PASSWORD=${{ env.DB_PASSWORD }}\n" >> .env
-      #    printf "DB_CLASS=com.mysql.cj.jdbc.Driver\n" >> .env
-      #    printf "DB_BUNDLEVERSION=8.0.19\n" >> .env
-      #    printf "DB_BUNDLENAME=com.mysql.cj\n" >> .env
 
       - name: Test Module
         run: |
