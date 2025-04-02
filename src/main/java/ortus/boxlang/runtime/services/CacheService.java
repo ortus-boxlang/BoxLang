@@ -24,6 +24,7 @@ import org.slf4j.Logger;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.async.executors.ExecutorRecord;
+import ortus.boxlang.runtime.cache.BoxCache;
 import ortus.boxlang.runtime.cache.providers.BoxCacheProvider;
 import ortus.boxlang.runtime.cache.providers.CoreProviderType;
 import ortus.boxlang.runtime.cache.providers.ICacheProvider;
@@ -605,6 +606,17 @@ public class CacheService extends BaseService {
 
 		// Register it
 		this.providers.put( name, provider );
+
+		// Check for the @BoxCache annotation
+		BoxCache metadata = provider.getAnnotation( BoxCache.class );
+		if ( metadata != null ) {
+			Key aliasKey = Key.of( metadata.alias() );
+			// if the alias is not empty and not the same as the name
+			if ( !aliasKey.isEmpty() && !aliasKey.equals( name ) ) {
+				// Register the alias
+				this.providers.put( aliasKey, provider );
+			}
+		}
 
 		return this;
 	}
