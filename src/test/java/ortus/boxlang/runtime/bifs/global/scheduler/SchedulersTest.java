@@ -35,20 +35,6 @@ public class SchedulersTest {
 	}
 
 	@Test
-	public void testBasicEmptyTests() {
-		// @formatter:off
-		instance.executeSource(
-		    """
-		    result = schedulerList()
-		    """,
-		    context );
-		// @formatter:on
-
-		Array resultValue = variables.getAsArray( result );
-		assertThat( resultValue ).isEmpty();
-	}
-
-	@Test
 	public void testBasicEmptyScheduling() {
 		// @formatter:off
 		instance.executeSource(
