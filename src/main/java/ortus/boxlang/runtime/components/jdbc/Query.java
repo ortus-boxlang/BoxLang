@@ -50,7 +50,8 @@ public class Query extends Component {
 		    new Attribute( Key._NAME, "string" ),
 		    new Attribute( Key.datasource, "string" ),
 		    new Attribute( Key.returnType, "string", "query", Set.of(
-		        Validator.valueRequires( "struct", Key.columnKey )
+		        Validator.valueRequires( "struct", Key.columnKey ),
+		        Validator.valueOneOf( "query", "array", "struct" )
 		    ) ),
 		    new Attribute( Key.columnKey, "string" ),
 		    new Attribute( Key.dbtype, "string", Set.of(
@@ -87,7 +88,36 @@ public class Query extends Component {
 	 * @param attributes     The attributes to the Component
 	 * @param body           The body of the Component
 	 * @param executionState The execution state of the Component
-	 *
+	 * 
+	 * @attribute.name The name of the variable to store the query results in.
+	 * 
+	 * @attribute.datasource The datasource to execute the query against.
+	 * 
+	 * @attribute.returnType The type of the result to return. One of: `query`, `struct`, `array`.
+	 * 
+	 * @attribute.columnKey The key to use for the column names in the result struct.
+	 * 
+	 * @attribute.dbtype The type of query to execute. One of: `query`, `hql`.
+	 * 
+	 * @attribute.maxRows The maximum number of rows to return. -1 for no limit.
+	 * 
+	 * @attribute.blockfactor Maximum rows per block to fetch from the server. Ranges from 1-100.
+	 * 
+	 * @attribute.fetchSize The number of rows to fetch at a time. Ranges from 1-100.
+	 * 
+	 * @attribute.timeout The timeout for the query in seconds.
+	 * 
+	 * @attribute.cache Whether or not to cache the results of the query.
+	 * 
+	 * @attribute.cacheTimeout The timeout for the cached query, using a duration object like `createTimespan( 0, 1, 0, 0 )`.
+	 * 
+	 * @attribute.cacheLastAccessTimeout The timeout for the cached query, using a duration object like `createTimespan( 0, 1, 0, 0 )`.
+	 * 
+	 * @attribute.cacheKey The key to use for the cached query.
+	 * 
+	 * @attribute.cacheProvider String name of the cache provider to use. Defaults to the default cache provider.
+	 * 
+	 * @attribute.result The name of the variable to store the query result in.
 	 */
 	@Override
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {

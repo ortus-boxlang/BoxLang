@@ -88,13 +88,16 @@ public class QueryParam extends Component {
 	 * 
 	 * @attribute.maxLength The maximum length of the parameter
 	 * 
-	 * @attribute.scale The scale of the parameter. Defaults to 0
+	 * @attribute.scale The scale of the parameter, used only on `double` and `decimal` types. Defaults to `null`
 	 * 
-	 * @attribute.nulls Whether the parameter can be null or not.
+	 * @attribute.null Whether the parameter can be null or not.
 	 * 
 	 * @attribute.list Whether the parameter is a list or not
 	 * 
 	 * @attribute.separator The separator to use for the parameter. Defaults to a comma.
+	 * 
+	 * @attribute.sqltype The SQL type of the parameter. One of: `bigint`, `bit`, `blob`, `boolean`, `char`, `clob`, `date`, `decimal`, `double`, `float`, `int`, `integer`, `idstamp`, `longvarchar`, `money`, `numeric`, `real`, `smallint`, `string`,
+	 *                    `time`, `timestamp`, `tinyint`, `varbinary`, or `varchar`.
 	 *
 	 */
 	@Override
