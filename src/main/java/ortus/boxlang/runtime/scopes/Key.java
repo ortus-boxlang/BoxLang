@@ -653,6 +653,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		scalar								= Key.of( "scalar" );
 	public static final Key		scale								= Key.of( "scale" );
 	public static final Key		scheduler							= Key.of( "scheduler" );
+	public static final Key		schedulerStart						= Key.of( "schedulerStart" );
 	public static final Key		schedulers							= Key.of( "schedulers" );
 	public static final Key		schedulerService					= Key.of( "schedulerService" );
 	public static final Key		scope								= Key.of( "scope" );

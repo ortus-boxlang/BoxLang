@@ -27,12 +27,14 @@ import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.bifs.BIFDescriptor;
 import ortus.boxlang.runtime.cache.filters.ICacheKeyFilter;
 import ortus.boxlang.runtime.cache.filters.SessionPrefixFilter;
 import ortus.boxlang.runtime.cache.providers.ICacheProvider;
 import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.LongCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
@@ -43,6 +45,7 @@ import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.scopes.ApplicationScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.CacheService;
+import ortus.boxlang.runtime.services.SchedulerService;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -288,6 +291,8 @@ public class Application {
 			startupClassLoaderPaths( context.getRequestContext() );
 			// Startup the caches
 			startupAppCaches( context.getRequestContext() );
+			// Startup the schedulers
+			startupAppSchedulers( context.getRequestContext() );
 			// Startup session storages
 			startupSessionStorage( context.getApplicationContext() );
 
@@ -349,6 +354,40 @@ public class Application {
 				        Key.of( cacheDefinition.get( Key.provider ) ),
 				        StructCaster.cast( cacheDefinition.get( Key.properties ) )
 				    );
+			    }
+		    } );
+	}
+
+	/**
+	 * Startup the application schedulers if any are defined in the settings of the Application.bx
+	 *
+	 * <pre>
+	 * this.schedulers = [ "path.to.Scheduler", "another.Scheduler" ]
+	 * </pre>
+	 *
+	 * @param requestContext The request context
+	 */
+	public void startupAppSchedulers( RequestBoxContext requestContext ) {
+		BIFDescriptor		schedulerStart		= BoxRuntime.getInstance().getFunctionService().getGlobalFunction( Key.schedulerStart );
+		SchedulerService	schedulerService	= BoxRuntime.getInstance().getSchedulerService();
+
+		// Get the schedulers from the application settings
+		ArrayCaster
+		    .attempt( requestContext.getConfigItems( Key.applicationSettings, Key.schedulers ) )
+		    .ifPresent( appSchedulers -> {
+			    for ( Object scheduler : appSchedulers ) {
+				    // Get the scheduler class name
+				    String schedulerClassName = StringCaster.cast( scheduler );
+				    Key	schedulerClassKey	= Key.of( schedulerClassName );
+				    // If we don't have it registered by name, then register it
+				    if ( !schedulerService.hasScheduler( schedulerClassKey ) ) {
+					    schedulerStart.invoke(
+					        requestContext,
+					        new Object[] { schedulerClassName },
+					        false,
+					        Key.schedulerStart
+					    );
+				    }
 			    }
 		    } );
 	}

@@ -157,6 +157,7 @@ public abstract class BaseApplicationListener {
 	    ),
 	    "locale", runtime.getConfiguration().locale.toString(),
 	    "mappings", Struct.of(),
+	    "schedulers", new Array(),
 	    "sessionManagement", runtime.getConfiguration().sessionManagement,
 	    "sessionStorage", runtime.getConfiguration().sessionStorage,
 	    "sessionTimeout", runtime.getConfiguration().sessionTimeout,
@@ -279,6 +280,7 @@ public abstract class BaseApplicationListener {
 			createOrUpdateApplication();
 			createOrUpdateClassLoaderPaths();
 			createOrUpdateCaches();
+			createOrUpdateSchedulers();
 			createOrUpdateSessionManagement();
 		}
 		// Cleanups
@@ -355,6 +357,13 @@ public abstract class BaseApplicationListener {
 	 */
 	private void createOrUpdateCaches() {
 		this.application.startupAppCaches( this.context );
+	}
+
+	/**
+	 * Update or create the application schedulers
+	 */
+	private void createOrUpdateSchedulers() {
+		this.application.startupAppSchedulers( this.context );
 	}
 
 	/**
@@ -696,7 +705,7 @@ public abstract class BaseApplicationListener {
 	/**
 	 * Handle the onClassRequest event when there is no Application class. This is here to easily share
 	 * between the default and template application listeners.
-	 * 
+	 *
 	 * @param context The context
 	 * @param args    The arguments
 	 */
@@ -845,9 +854,9 @@ public abstract class BaseApplicationListener {
 
 	/**
 	 * Helper method to create the instance of our class so we can reuse this logic.
-	 * 
+	 *
 	 * @param className The class name to load
-	 * 
+	 *
 	 * @return The class instance
 	 */
 	protected IClassRunnable loadClassInstance( IBoxContext context, String className ) {

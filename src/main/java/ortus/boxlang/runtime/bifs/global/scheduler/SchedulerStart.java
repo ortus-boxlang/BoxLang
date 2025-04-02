@@ -70,7 +70,7 @@ public class SchedulerStart extends BIF {
 		IScheduler		scheduler		= new BoxScheduler( target, context );
 
 		// Do we have a name override?
-		if ( schedulerName != null ) {
+		if ( schedulerName != null && !schedulerName.isEmpty() ) {
 			scheduler.setSchedulerName( schedulerName );
 		}
 
@@ -78,7 +78,7 @@ public class SchedulerStart extends BIF {
 		scheduler.configure();
 
 		// Register and send for scheduling
-		return this.schedulerService.registerScheduler( scheduler, arguments.getAsBoolean( Key.force ) );
+		return this.schedulerService.registerAndStartScheduler( scheduler, arguments.getAsBoolean( Key.force ) );
 	}
 
 }

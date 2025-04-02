@@ -357,6 +357,26 @@ public class SchedulerService extends BaseService {
 	 *
 	 * @return The scheduler
 	 */
+	public IScheduler registerAndStartScheduler( IScheduler scheduler, Boolean force ) {
+		// Register the scheduler
+		registerScheduler( scheduler, force );
+
+		// Start the scheduler
+		startupScheduler( scheduler );
+
+		return scheduler;
+	}
+
+	/**
+	 * Register a scheduler with the service
+	 *
+	 * @param scheduler The IScheduler to register
+	 * @param force     If true, forces the registration of the scheduler
+	 *
+	 * @throws BoxRuntimeException If a scheduler with the same name already exists but force is false
+	 *
+	 * @return The scheduler
+	 */
 	public IScheduler registerScheduler( IScheduler scheduler, Boolean force ) {
 		Key schedulerName = scheduler.getSchedulerNameAsKey();
 

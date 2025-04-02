@@ -30,6 +30,7 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.application.Application;
 import ortus.boxlang.runtime.application.BaseApplicationListener;
+import ortus.boxlang.runtime.async.tasks.IScheduler;
 import ortus.boxlang.runtime.cache.providers.ICacheProvider;
 import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.BaseBoxContext;
@@ -42,6 +43,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.SessionScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.services.CacheService;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 
 public class ApplicationTest {
@@ -390,6 +392,38 @@ public class ApplicationTest {
 		assertThat( cacheService.hasCache(
 		    cache2Name
 		) ).isTrue();
+	}
+
+	@DisplayName( "Create this.schedulers for an application" )
+	@Test
+	public void testCreateSchedulers() {
+
+		// @formatter:off
+		instance.executeSource(
+		    """
+		        bx:application
+					action = "update"
+					name  = "schedulerTestApp"
+					schedulers = [ "src.test.bx.Scheduler" ]
+					;
+
+					result = getApplicationMetadata().schedulers
+					println( result )
+
+					println( schedulerList() )
+
+					scheduler = schedulerGet( "My-Scheduler" )
+					started = scheduler.hasStarted()
+					stats = schedulerStats( "My-Scheduler" )
+					println( stats )
+			""", context );
+		// @formatter:on
+
+		Array schedulers = variables.getAsArray( Key.result );
+		assertThat( schedulers ).isNotNull();
+		assertThat( schedulers ).hasSize( 1 );
+		assertThat( ( IScheduler ) variables.get( Key.of( "scheduler" ) ) ).isNotNull();
+		assertThat( variables.getAsBoolean( Key.of( "started" ) ) ).isTrue();
 	}
 
 }
