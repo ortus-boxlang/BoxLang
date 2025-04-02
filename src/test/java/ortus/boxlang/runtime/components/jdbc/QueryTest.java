@@ -378,7 +378,7 @@ public class QueryTest extends BaseJDBCTest {
 		    """,
 		    getContext(), BoxSourceType.CFTEMPLATE ) );
 
-		assertThat( e.getMessage() ).isEqualTo( "Unknown return type: foobar" );
+		assertThat( e.getMessage() ).startsWith( "Input [returnType] for component [Query] must be one of the following values:" );
 		assertNull( getVariables().get( result ) );
 	}
 
