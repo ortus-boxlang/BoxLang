@@ -16,7 +16,7 @@ class {
 	 */
 	function configure(){
 		// Setup Scheduler Properties
-		scheduler.setSchedulerName( "My Scheduler" )
+		scheduler.setSchedulerName( "My-Scheduler" )
 		scheduler.setTimezone( "UTC" )
 
 		// Define a lambda task
