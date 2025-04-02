@@ -653,6 +653,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		scalar								= Key.of( "scalar" );
 	public static final Key		scale								= Key.of( "scale" );
 	public static final Key		scheduler							= Key.of( "scheduler" );
+	public static final Key		schedulers							= Key.of( "schedulers" );
 	public static final Key		schedulerService					= Key.of( "schedulerService" );
 	public static final Key		scope								= Key.of( "scope" );
 	public static final Key		script_name							= Key.of( "script_name" );
@@ -739,6 +740,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		tagContext							= Key.of( "tagContext" );
 	public static final Key		tagName								= Key.of( "tagName" );
 	public static final Key		target								= Key.of( "target" );
+	public static final Key		task								= Key.of( "task" );
+	public static final Key		tasks								= Key.of( "tasks" );
 	public static final Key		template							= Key.of( "template" );
 	public static final Key		terminate							= Key.of( "terminate" );
 	public static final Key		terminated							= Key.of( "terminated" );

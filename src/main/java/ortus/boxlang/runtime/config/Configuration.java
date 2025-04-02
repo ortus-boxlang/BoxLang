@@ -42,6 +42,7 @@ import ortus.boxlang.runtime.config.segments.ExecutorConfig;
 import ortus.boxlang.runtime.config.segments.IConfigSegment;
 import ortus.boxlang.runtime.config.segments.LoggingConfig;
 import ortus.boxlang.runtime.config.segments.ModuleConfig;
+import ortus.boxlang.runtime.config.segments.SchedulerConfig;
 import ortus.boxlang.runtime.config.segments.SecurityConfig;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
@@ -286,6 +287,11 @@ public class Configuration implements IConfigSegment {
 	 * Experimental Features
 	 */
 	public IStruct									experimental					= new Struct();
+
+	/**
+	 * The scheduler configuration
+	 */
+	public SchedulerConfig							scheduler						= new SchedulerConfig();
 
 	/**
 	 * The security configuration
@@ -660,6 +666,11 @@ public class Configuration implements IConfigSegment {
 			security.process( StructCaster.cast( config.get( Key.security ) ) );
 		}
 
+		// Process our scheduler configuration
+		if ( config.containsKey( Key.scheduler ) ) {
+			scheduler.process( StructCaster.cast( config.get( Key.scheduler ) ) );
+		}
+
 		// Process our logging configuration
 		if ( config.containsKey( Key.logging ) ) {
 			logging.process( StructCaster.cast( config.get( Key.logging ) ) );
@@ -943,7 +954,6 @@ public class Configuration implements IConfigSegment {
 		    .forEach( entry -> modulesCopy.put( entry.getKey(), ( ( ModuleConfig ) entry.getValue() ).asStruct() ) );
 
 		return Struct.of(
-
 		    Key.applicationTimeout, this.applicationTimeout,
 		    Key.caches, cachesCopy,
 		    Key.classGenerationDirectory, this.classGenerationDirectory,
@@ -973,10 +983,14 @@ public class Configuration implements IConfigSegment {
 		    Key.setClientCookies, this.setClientCookies,
 		    Key.setDomainCookies, this.setDomainCookies,
 		    Key.security, this.security.asStruct(),
+		    Key.scheduler, this.scheduler.asStruct(),
 		    Key.timezone, this.timezone,
+		    Key.trustedCache, this.trustedCache,
 		    Key.useHighPrecisionMath, this.useHighPrecisionMath,
 		    Key.validExtensions, Array.fromSet( getValidExtensions() ),
 		    Key.validClassExtensions, Array.fromSet( this.validClassExtensions ),
-		    Key.validTemplateExtensions, Array.fromSet( this.validTemplateExtensions ) );
+		    Key.validTemplateExtensions, Array.fromSet( this.validTemplateExtensions ),
+		    Key.version, this.version
+		);
 	}
 }

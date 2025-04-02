@@ -17,17 +17,25 @@
  */
 package ortus.boxlang.runtime.services;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.slf4j.Logger;
-
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.async.tasks.BoxScheduler;
 import ortus.boxlang.runtime.async.tasks.IScheduler;
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.events.BoxEvent;
+import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.logging.BoxLangLogger;
+import ortus.boxlang.runtime.runnables.IBoxRunnable;
+import ortus.boxlang.runtime.runnables.IClassRunnable;
+import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 /**
  * This service manages all schedulers in the system.
@@ -40,9 +48,9 @@ public class SchedulerService extends BaseService {
 	private Map<Key, IScheduler>	schedulers	= new ConcurrentHashMap<>();
 
 	/**
-	 * Logger
+	 * The logger for this service
 	 */
-	private Logger					logger;
+	private BoxLangLogger			logger;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -83,6 +91,7 @@ public class SchedulerService extends BaseService {
 
 		// Register the Global Scheduler
 		// This will look in the configuration for the global scheduler and start it up
+		registerGlobalSchedulers();
 
 		// Startup all the schedulers
 		startupSchedulers();
@@ -95,6 +104,37 @@ public class SchedulerService extends BaseService {
 
 		// Let it be known!
 		this.logger.info( "+ Scheduler Service started in [{}] ms", BoxRuntime.timerUtil.stopAndGetMillis( "schedulerservice-startup" ) );
+	}
+
+	/**
+	 * Register all global schedulers found in the boxlang.json config
+	 */
+	public void registerGlobalSchedulers() {
+		IBoxContext runtimeContext = runtime.getRuntimeContext();
+
+		// Process the global schedulers
+		runtime.getConfiguration().scheduler.schedulers
+		    .stream()
+		    .map( schedulerPath -> {
+			    // Locate it
+			    Path targetPath = Paths.get( schedulerPath.toString() ).normalize().toAbsolutePath();
+			    // Compile the scheduler
+			    Class<IBoxRunnable> targetSchedulerClass = RunnableLoader.getInstance()
+			        .loadClass(
+			            ResolvedFilePath.of( targetPath ),
+			            runtimeContext
+			        );
+			    // Construct the scheduler
+			    IClassRunnable targetScheduler = ( IClassRunnable ) DynamicObject.of( targetSchedulerClass )
+			        .invokeConstructor( runtimeContext )
+			        .getTargetInstance();
+			    // Create the proxy
+			    return new BoxScheduler( targetScheduler, runtimeContext );
+		    } )
+		    .forEach( target -> {
+			    // Register the scheduler
+			    registerScheduler( target, true );
+		    } );
 	}
 
 	/**

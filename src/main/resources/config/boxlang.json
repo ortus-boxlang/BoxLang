@@ -267,7 +267,30 @@
 			"threads": 10
 		}
 	},
-	// You can assign a global default datasource to be used in the language
+	// BoxLang Scheduler
+	// These are managed by the SchedulerService and registered upon startup
+	// or via a boxlang schedule [scheduler.bx] call
+	"scheduler": {
+		// The default scheduler for all scheduled tasks
+		// Each scheduler can have a different executor if needed
+		"executor": "scheduled-tasks",
+		// The cache to leverage for server fixation or distribution
+		"cacheName": "default",
+		// An array of BoxLang Schedulers to register upon startup
+		// Must be an absolute path to the scheduler file
+		// You can use the ${user-dir} or ${boxlang-home} variables or any other environment variable
+		// Example: "schedulers": [ "/path/to/Scheduler.bx" ]
+		"schedulers": [],
+		// You can also define tasks manually here
+		// Every task is an object defined by a unique name
+		// The task object is a struct with the following properties:
+		// - `crontime:string` - The cron time to run the task (optional), defaults to empty string
+		// - `eventhandler:path` - The absolute path to the task event handler(optional), defaults to empty string
+		// - `exclude:any` - Comma-separated list of dates or date range (d1 to d2) on which to not execute the scheduled task
+		// - `file:name` - Name of the log file to store output of the task (optional), defaults to `scheduler`
+		// - `group:string` - The group name of the task (optional), defaults to empty string
+		"tasks": {}
+	},
 	"defaultDatasource": "",
 	// The registered global datasources in the language
 	// The key is the name of the datasource and the value is a struct of the datasource settings
