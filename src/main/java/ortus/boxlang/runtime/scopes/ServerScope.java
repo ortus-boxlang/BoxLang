@@ -131,6 +131,7 @@ public class ServerScope extends BaseScope {
 		        "cliMode", runtime.inCLIMode(),
 		        "debugMode", runtime.inDebugMode(),
 		        "jarMode", runtime.inJarMode(),
+		        "modules", new Struct(),
 		        "runtimeHome", runtime.getRuntimeHome().toString(),
 		        "version", versionInfo.get( "version" )
 		    )

@@ -24,6 +24,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.semver4j.Semver;
@@ -36,6 +37,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableStruct;
 
 /**
  * This service is in charge of managing BoxLang modules
@@ -153,6 +155,32 @@ public class ModuleService extends BaseService {
 
 		// Activate all modules
 		activateAll();
+
+		var metadata = new Struct();
+		for ( Entry<Key, ModuleRecord> entrySet : getRegistry().entrySet() ) {
+			metadata.put(
+			    entrySet.getKey().getName(),
+			    UnmodifiableStruct.of(
+			        "activatedOn", entrySet.getValue().activatedOn,
+			        "activationTime", entrySet.getValue().activationTime,
+			        "author", entrySet.getValue().author,
+			        "description", entrySet.getValue().description,
+			        "enabled", entrySet.getValue().isEnabled(),
+			        "invocationPath", entrySet.getValue().invocationPath,
+			        "mapping", entrySet.getValue().mapping,
+			        "physicalPath", entrySet.getValue().physicalPath.toString(),
+			        "registeredOn", entrySet.getValue().registeredOn,
+			        "registrationTime", entrySet.getValue().registrationTime,
+			        "version", entrySet.getValue().version
+			    )
+			);
+		}
+
+		runtime.getRuntimeContext()
+		    .getScope( Key.server )
+		    .getAsStruct( Key.boxlang )
+		    .getAsStruct( Key.modules )
+		    .addAll( metadata );
 
 		// Announce it
 		announce(
