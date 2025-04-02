@@ -206,7 +206,7 @@
 									<bx:loop collection="#thisScope#" item="dataProperty">
 										<bx:script>
 											thisData = thisScope[ dataProperty ] ?: null;
-											if( (thisData instanceOf "ortus.boxlang.runtime.types.Function") ){
+											if( isNull( thisData ) || (thisData instanceOf "ortus.boxlang.runtime.types.Function") ){
 												continue;
 											}
 										</bx:script>
