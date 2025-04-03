@@ -19,6 +19,7 @@
 
 package ortus.boxlang.runtime.components.debug;
 
+import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayOutputStream;
@@ -227,12 +228,12 @@ public class TimerTest {
 		    """,
 		    context, BoxSourceType.BOXTEMPLATE );
 
-		assertTrue( baos.toString() instanceof String );
-		assertTrue( baos.toString().length() > 0 );
-		assertTrue( baos.toString().trim().contains( "<fieldset" ) );
-		assertTrue( baos.toString().trim().contains( "<legend" ) );
-		assertTrue( baos.toString().trim().contains( "TimeIt :" ) );
-		assertTrue( baos.toString().trim().contains( "ms" ) );
+		System.out.println( baos.toString() );
+		assertThat( baos.toString().length() > 0 ).isTrue();
+		assertThat( baos.toString().trim().contains( "<fieldset" ) ).isTrue();
+		assertThat( baos.toString().trim().contains( "<legend" ) ).isTrue();
+		assertThat( baos.toString().trim().contains( "TimeIt:" ) ).isTrue();
+		assertThat( baos.toString().trim().contains( "ms" ) ).isTrue();
 	}
 
 	@DisplayName( "It tests the Component StopWatch as a variable" )
