@@ -21,7 +21,9 @@ import java.util.Set;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
+import ortus.boxlang.runtime.cache.filters.WildcardFilter;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.jdbc.PendingQuery;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -57,9 +59,10 @@ public class SystemCacheClear extends BIF {
 	 *
 	 * <ul>
 	 * <li><code>all</code> - Clear everything</li>
-	 * <li><code>template</code> or <code>page</code> - Clear the compiled class pools</li>
+	 * <li><code>page</code> - Clear the compiled class pools</li>
 	 * <li><code>class</code> - Clear the class path resolvers</li>
-	 * <li><code>query</code> - Clear the default cache region</li>
+	 * <li><code>template</code> - Clear all the templates cached using the bx:cache component</li>
+	 * <li><code>query</code> - Clears the cache storing queries</li>
 	 * <li><code>object</code> - Clear the default cache region</li>
 	 * </ul>
 	 *
@@ -72,7 +75,7 @@ public class SystemCacheClear extends BIF {
 		boolean	clearAll	= cacheName.equals( DEFAULT_CACHE );
 
 		// Page Pool region
-		if ( clearAll || cacheName.equals( "template" ) || cacheName.equals( "page" ) ) {
+		if ( clearAll || cacheName.equals( "page" ) ) {
 			RunnableLoader.getInstance().getBoxpiler().clearPagePool();
 		}
 
@@ -81,8 +84,15 @@ public class SystemCacheClear extends BIF {
 			runtime.getClassLocator().clear();
 		}
 
-		// All of these are stored in the "default" cache region
-		if ( clearAll || cacheName.equals( "query" ) || cacheName.equals( "object" ) ) {
+		// Query Caching
+		if ( clearAll || cacheName.equals( "query" ) ) {
+			runtime.getCacheService().getDefaultCache().clearAll(
+			    new WildcardFilter( PendingQuery.CACHE_PREFIX + "*", true )
+			);
+		}
+
+		// Specific caches
+		if ( clearAll || cacheName.equals( "object" ) || cacheName.equals( "template" ) ) {
 			runtime.getCacheService().getDefaultCache().clearAll();
 		}
 

@@ -18,6 +18,7 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.FunctionCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
@@ -27,7 +28,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 @BoxBIF
-@BoxMember( type = BoxLangType.STRING, name = "ReplaceNoCase" )
+@BoxMember( type = BoxLangType.STRING_STRICT, name = "ReplaceNoCase" )
 public class ReplaceNoCase extends BIF {
 
 	/**
@@ -71,8 +72,9 @@ public class ReplaceNoCase extends BIF {
 			String	lowerCaseSubstring	= substring1.toLowerCase();
 			int		idx					= lowerCaseString.indexOf( lowerCaseSubstring );
 			if ( idx != -1 ) {
-				return obj instanceof String
-				    ? string.substring( 0, idx ) + StringCaster.cast( obj ) + string.substring( idx + substring1.length() )
+				CastAttempt<String> stringCastAttempt = StringCaster.attempt( obj );
+				return stringCastAttempt.wasSuccessful()
+				    ? string.substring( 0, idx ) + stringCastAttempt.get() + string.substring( idx + substring1.length() )
 				    : string.substring( 0, idx )
 				        + context.invokeFunction( FunctionCaster.cast( obj ),
 				            new Object[] { string.substring( idx, idx + substring1.length() ), idx + 1, string } )
@@ -87,8 +89,9 @@ public class ReplaceNoCase extends BIF {
 			int				i					= 0;
 			while ( i < string.length() ) {
 				if ( lowerCaseString.substring( i ).startsWith( lowerCaseSubstring ) ) {
-					if ( obj instanceof String ) {
-						result.append( obj );
+					CastAttempt<String> stringCastAttempt = StringCaster.attempt( obj );
+					if ( stringCastAttempt.wasSuccessful() ) {
+						result.append( stringCastAttempt.get() );
 					} else {
 						result.append( context.invokeFunction( FunctionCaster.cast( obj ),
 						    new Object[] { string.substring( i, i + substring1.length() ), i + 1, string } ) );

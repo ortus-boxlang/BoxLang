@@ -31,12 +31,14 @@ import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.compiler.parser.DocParser;
+import ortus.boxlang.compiler.parser.Parser;
 import ortus.boxlang.compiler.parser.ParsingResult;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.BaseBoxContext;
@@ -5340,30 +5342,68 @@ public class CoreLangTest {
 	}
 
 	@Test
-	public void testVariableNameCast() {
-		// @formatter:off
+	public void testThrowWithNoExceptionCF() {
+		CustomException e = assertThrows( CustomException.class, () -> instance.executeSource(
+		    """
+		    	throw;
+		    """,
+		    context, BoxSourceType.CFSCRIPT ) );
+		assertThat( e.getMessage() ).isNull();
+	}
+
+	@Test
+	public void testThrowWithNoException() {
+		CustomException e = assertThrows( CustomException.class, () -> instance.executeSource(
+		    """
+		    	throw;
+		    """,
+		    context ) );
+		assertThat( e.getMessage() ).isNull();
+	}
+
+	@Test
+	public void testGetANTLRCacheSize() {
 		instance.executeSource(
-				"""
-				variableName function foo( variableName bar ) {
-					return bar;
-				}
-				result = foo( "$brad" );
-				""",
-				context );
-		// @formatter:on
-		assertThat( variables.get( result ) ).isEqualTo( "$brad" );
+		    """
+		    /**
+		     * test
+		     */
+		    	  function foo(){}
+		      """,
+		    context );
+		instance.executeSource(
+		    """
+		    /**
+		     * test
+		     */
+		    	  function foo(){}
+		      """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( Parser.getCacheSize() ).isGreaterThan( 0 );
+	}
 
-		assertThrows( BoxRuntimeException.class, () -> {
-			instance.executeSource(
-			    """
-			    variableName function foo( variableName bar ) {
-			    	return bar;
-			    }
-			    result = foo( 1 );
-			    """,
-			    context );
-		} );
-
+	@Test
+	@Disabled( "Only works when testing JUST this test" )
+	public void testClearANTLRCache() {
+		Parser.clearParseCache();
+		assertThat( Parser.getCacheSize() ).isEqualTo( 0 );
+		instance.executeSource(
+		    """
+		    /**
+		     * test
+		     */
+		    	  function foo(){}
+		      """,
+		    context );
+		instance.executeSource(
+		    """
+		    /**
+		     * test
+		     */
+		    	  function foo(){}
+		      """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( Parser.getCacheSize() ).isGreaterThan( 0 );
 	}
 
 }

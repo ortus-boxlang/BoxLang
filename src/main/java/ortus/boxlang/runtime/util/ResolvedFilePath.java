@@ -162,7 +162,7 @@ public record ResolvedFilePath( String mappingName, String mappingPath, String r
 			String	tmpAbsolutePath	= Paths.get( absolutePath().toString() ).toAbsolutePath().normalize().toString();
 			String	tmpRelativePath	= Paths.get( relativePath() ).normalize().toString();
 			Path	absoluteRoot	= Paths.get( tmpAbsolutePath.replace( tmpRelativePath, "" ) );
-			newRelativePath = absoluteRoot.relativize( newAbsolutePath ).toString();
+			newRelativePath = absoluteRoot.relativize( newAbsolutePath ).normalize().toString();
 		}
 		return ResolvedFilePath.of(
 		    mappingName,

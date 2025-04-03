@@ -57,6 +57,8 @@ public class ExpandPathTest {
 		// Create a mapping for the test
 		instance.getConfiguration().mappings.put( "/expand/path/test",
 		    Path.of( "src/test/java/ortus/boxlang/runtime/bifs/global/io/" ).toAbsolutePath().toString() );
+		instance.getConfiguration().mappings.put( "/mytest",
+		    Path.of( "src/test/java/ortus/boxlang/runtime/bifs/global/io/" ).toAbsolutePath().toString() );
 	}
 
 	@BeforeEach
@@ -131,6 +133,38 @@ public class ExpandPathTest {
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( abs );
+	}
+
+	@Test
+	public void testMappingPartialMatch() {
+		String abs = Path.of( "mytestfoo/bar" ).toAbsolutePath().toString();
+		instance.executeSource(
+		    """
+		    result = ExpandPath( "/mytestfoo/bar" );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( abs );
+
+		instance.executeSource(
+		    """
+		    println( getBoxContext().getConfig().mappings )
+		       result = ExpandPath( "/mytest/" );
+		       """,
+		    context );
+		String abs2 = Path.of( "src/test/java/ortus/boxlang/runtime/bifs/global/io/" ).toAbsolutePath().toString();
+		if ( !abs2.endsWith( File.separator ) ) {
+			abs2 += File.separator;
+		}
+		assertThat( variables.get( result ) ).isEqualTo( abs2 );
+
+		instance.executeSource(
+		    """
+		    println( getBoxContext().getConfig().mappings )
+		       result = ExpandPath( "/mytest" );
+		       """,
+		    context );
+		String abs3 = Path.of( "src/test/java/ortus/boxlang/runtime/bifs/global/io/" ).toAbsolutePath().toString();
+		assertThat( variables.get( result ) ).isEqualTo( abs3 );
 	}
 
 	@Test

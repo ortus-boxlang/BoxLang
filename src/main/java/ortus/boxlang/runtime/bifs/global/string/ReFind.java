@@ -16,6 +16,7 @@ package ortus.boxlang.runtime.bifs.global.string;
 
 import java.util.Set;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
@@ -33,8 +34,8 @@ import ortus.boxlang.runtime.validation.Validator;
 
 @BoxBIF
 @BoxBIF( alias = "reFindNoCase" )
-@BoxMember( type = BoxLangType.STRING, name = "reFind", objectArgument = "string" )
-@BoxMember( type = BoxLangType.STRING, name = "reFindNoCase", objectArgument = "string" )
+@BoxMember( type = BoxLangType.STRING_STRICT, name = "reFind", objectArgument = "string" )
+@BoxMember( type = BoxLangType.STRING_STRICT, name = "reFindNoCase", objectArgument = "string" )
 public class ReFind extends BIF {
 
 	/**
@@ -93,9 +94,11 @@ public class ReFind extends BIF {
 			start = 1;
 		}
 		// Find the first occurrence of the substring from the specified start position
-		Matcher matcher = RegexBuilder.of( string, reg_expression, noCase ).matcher();
+		Matcher matcher = RegexBuilder.of( string, reg_expression, noCase, Pattern.DOTALL ).matcher();
 		if ( start > 1 ) {
 			matcher.region( start - 1, string.length() );
+			matcher.useAnchoringBounds( false );
+			matcher.useTransparentBounds( true );
 		}
 		Array result = new Array();
 

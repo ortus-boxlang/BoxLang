@@ -21,6 +21,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.PrintStream;
+import java.nio.file.Paths;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -1182,6 +1183,7 @@ public class ClassTest {
 		                        result10 = src.test.java.TestCases.phase3.StaticTest2::getInstance().thisStaticBrad;
 								result11 = src.test.java.TestCases.phase3.StaticTest::finalStatic;
 								result12 = src.test.java.TestCases.phase3.StaticTest::finalStatic2;
+								result13 = src.test.java.TestCases.phase3.StaticTest::IAmStatic()
 		                                                                                                                      """, context,
 		    BoxSourceType.BOXSCRIPT );
 		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( 9000 );
@@ -1195,7 +1197,8 @@ public class ClassTest {
 		assertThat( variables.get( Key.of( "result10" ) ) ).isEqualTo( "wood" );
 		assertThat( variables.get( Key.of( "result11" ) ) ).isEqualTo( "finalStatic" );
 		assertThat( variables.get( Key.of( "result12" ) ) ).isEqualTo( "finalStatic2" );
-	}	
+		assertThat( variables.get( Key.of( "result13" ) ) ).isEqualTo( "bradfinalStatic" );
+	}
 
 	@Test
 	public void testStaticStaticFromScript() {
@@ -1766,7 +1769,7 @@ public class ClassTest {
 
 		//@formatter:off
 		String		executionSource			= """
-			request.calls = []; 
+			request.calls = [];
 			cfc = new src.test.java.TestCases.phase3.Child();
 		""";
 		String touchSource = "bx:execute variable=\"execResult\" name=\"touch\" arguments=\"#expandPath( '/src/test/java/TestCases/phase3/Child.cfc' )#\";";
@@ -1885,4 +1888,40 @@ public class ClassTest {
 		    context );
 	}
 
+	@Test
+	public void testMissingSuperScope() {
+		instance.executeSource(
+		    """
+		    result = new src.test.java.TestCases.phase3.MissingSuperScopeChild().run()
+		                """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "super" );
+	}
+
+	@Test
+	public void testClassWithAtSignInName() {
+		instance.executeSource(
+		    """
+		    import src.test.java.TestCases.phase3.foo@bar;
+		    import src.test.java.TestCases.phase3.foo@bar as foobar;
+
+		    new "src.test.java.TestCases.phase3.foo@bar"()
+		    new src.test.java.TestCases.phase3.foo@bar()
+		    new foo@bar()
+		    new foobar()
+		                           """,
+		    context );
+	}
+
+	@Test
+	public void testCurrentTemplateInStaticInitializer() {
+		instance.executeSource(
+		    """
+		       import src.test.java.TestCases.phase3.CurrentTemplateInStaticInitializer;
+		    result = CurrentTemplateInStaticInitializer.staticMethod();
+		       """,
+		    context );
+		assertThat( variables.get( "result" ) )
+		    .isEqualTo( Paths.get( "src/test/java/TestCases/phase3/CurrentTemplateInStaticInitializer.bx" ).toAbsolutePath().toString() );
+	}
 }

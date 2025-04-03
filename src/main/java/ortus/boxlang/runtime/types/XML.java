@@ -259,7 +259,7 @@ public class XML implements Serializable, IStruct {
 			Node attr = attrs.item( i );
 			attributes.put( Key.of( attr.getNodeName() ), attr.getNodeValue() );
 		}
-		attributes.registerChangeListener( ( key, newValue, oldValue ) -> {
+		attributes.registerChangeListener( ( key, newValue, oldValue, object ) -> {
 			if ( newValue == null ) {
 				node.getAttributes().removeNamedItem( key.getName() );
 			} else {
@@ -277,6 +277,9 @@ public class XML implements Serializable, IStruct {
 	 * @return the name of this XML node
 	 */
 	public String getXMLName() {
+		if ( node == null ) {
+			return "#document";
+		}
 		switch ( node.getNodeType() ) {
 			case Node.DOCUMENT_NODE :
 				return "#document";
@@ -372,12 +375,16 @@ public class XML implements Serializable, IStruct {
 
 	public Set<Key> getReferencableKeys( boolean withChildren ) {
 		Set<Key> keys = new HashSet<>();
+		if ( node == null ) {
+			return keys;
+		}
 		switch ( node.getNodeType() ) {
 			case Node.DOCUMENT_NODE :
 				keys.add( Key.XMLRoot );
 				keys.add( Key.XMLComment );
 				return keys;
 			case Node.ELEMENT_NODE :
+				keys.add( Key.XMLName );
 				keys.add( Key.XMLText );
 				keys.add( Key.XMLChildren );
 				keys.add( Key.XMLAttributes );
@@ -391,21 +398,13 @@ public class XML implements Serializable, IStruct {
 			case Node.ATTRIBUTE_NODE :
 				return getXMLAttributes().keySet();
 			case Node.TEXT_NODE :
-				return keys;
 			case Node.CDATA_SECTION_NODE :
-				return keys;
 			case Node.ENTITY_REFERENCE_NODE :
-				return keys;
 			case Node.ENTITY_NODE :
-				return keys;
 			case Node.PROCESSING_INSTRUCTION_NODE :
-				return keys;
 			case Node.COMMENT_NODE :
-				return keys;
 			case Node.DOCUMENT_TYPE_NODE :
-				return keys;
 			case Node.DOCUMENT_FRAGMENT_NODE :
-				return keys;
 			case Node.NOTATION_NODE :
 				return keys;
 			default :

@@ -29,6 +29,7 @@ import ortus.boxlang.runtime.services.ComponentService;
 import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.services.ModuleService;
+import ortus.boxlang.runtime.services.SchedulerService;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -83,6 +84,11 @@ public abstract class BIF {
 	 * The async service helper
 	 */
 	protected AsyncService			asyncService		= BoxRuntime.getInstance().getAsyncService();
+
+	/**
+	 * The scheduler service helper
+	 */
+	protected SchedulerService		schedulerService	= BoxRuntime.getInstance().getSchedulerService();
 
 	/**
 	 * The module service helper

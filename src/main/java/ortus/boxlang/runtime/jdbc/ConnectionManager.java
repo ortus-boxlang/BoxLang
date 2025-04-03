@@ -206,16 +206,20 @@ public class ConnectionManager {
 	 * In case of nested transactions, will close the inner transaction and update the reference to the parent transaction. Otherwise will close the outer (only) transaction and nullify the reference.
 	 */
 	public ConnectionManager endTransaction() {
-		this.transaction.end();
-		if ( this.transaction instanceof ChildTransaction childTransaction ) {
-			// inner transaction closes and we update our reference to the parent transaction.
-			logger.debug( "Ending CHILD transaction {} and repointing the context transaction to the parent transaction {}", this.transaction,
-			    childTransaction.getParent() );
-			this.transaction = childTransaction.getParent();
-		} else {
-			// parent/solo transaction closes and we nullify our reference.
-			logger.debug( "Ending transaction {}", this.transaction );
-			this.transaction = null;
+		try {
+			this.transaction.end();
+		} finally {
+			// Very important that we close down the transactional state regardless of exceptions in the transaction.end() method.
+			if ( this.transaction instanceof ChildTransaction childTransaction ) {
+				// inner transaction closes and we update our reference to the parent transaction.
+				logger.debug( "Ending CHILD transaction {} and repointing the context transaction to the parent transaction {}", this.transaction,
+				    childTransaction.getParent() );
+				this.transaction = childTransaction.getParent();
+			} else {
+				// parent/solo transaction closes and we nullify our reference.
+				logger.debug( "Ending transaction {}", this.transaction );
+				this.transaction = null;
+			}
 		}
 		return this;
 	}

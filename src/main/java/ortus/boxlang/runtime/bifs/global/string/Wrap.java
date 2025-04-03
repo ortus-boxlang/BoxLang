@@ -25,7 +25,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.util.RegexBuilder;
 
 @BoxBIF
-@BoxMember( type = BoxLangType.STRING, name = "Wrap" )
+@BoxMember( type = BoxLangType.STRING_STRICT, name = "Wrap" )
 public class Wrap extends BIF {
 
 	public Wrap() {

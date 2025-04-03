@@ -26,6 +26,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.cache.BoxCache;
 import ortus.boxlang.runtime.cache.BoxCacheEntry;
 import ortus.boxlang.runtime.cache.ICacheEntry;
 import ortus.boxlang.runtime.cache.filters.ICacheKeyFilter;
@@ -53,6 +54,7 @@ import ortus.boxlang.runtime.types.util.BLCollector;
  * - Custom
  *
  */
+@BoxCache( alias = "BoxLang", distributed = false, description = "BoxLang's native cache provider using an object store." )
 public class BoxCacheProvider extends AbstractCacheProvider {
 
 	/**

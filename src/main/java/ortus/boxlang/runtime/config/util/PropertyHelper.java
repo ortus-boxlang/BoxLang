@@ -29,6 +29,7 @@ import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
@@ -86,6 +87,34 @@ public class PropertyHelper {
 			    .stream()
 			    // Add each item to the incoming target
 			    .map( StringCaster::cast )
+			    .forEach( target::add );
+		}
+	}
+
+	/**
+	 * This processes:
+	 * - A string to a BoxLang array (comma separated or a single string)
+	 * - A JSON array to a BoxLang array
+	 *
+	 * @param config The configuration object
+	 * @param key    The target key to look and process
+	 * @param target The target array to populate with the values
+	 */
+	public static void processStringOrArrayToArray( IStruct config, Key key, Array target ) {
+		if ( config.containsKey( key ) ) {
+			// If it's a string, convert it to an array
+			if ( config.get( key ) instanceof String castedStringList ) {
+				config.put(
+				    key,
+				    ListUtil.asList( PlaceholderHelper.resolve( castedStringList ), ListUtil.DEFAULT_DELIMITER )
+				);
+			}
+
+			// For some reason we have to re-cast this through a stream. Attempting to cast it directly throws a ClassCastException
+			ArrayCaster.cast( config.get( key ) )
+			    .stream()
+			    .map( StringCaster::cast )
+			    .map( PlaceholderHelper::resolve )
 			    .forEach( target::add );
 		}
 	}

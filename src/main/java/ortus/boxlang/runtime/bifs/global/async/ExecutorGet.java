@@ -25,18 +25,26 @@ import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 @BoxBIF
 public class ExecutorGet extends BIF {
 
+	private static final String DEFAULT_EXECUTOR = "io-tasks";
+
 	/**
 	 * Constructor
 	 */
 	public ExecutorGet() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, Argument.STRING, Key._NAME )
+		    new Argument( true, Argument.STRING, Key._NAME, DEFAULT_EXECUTOR )
 		};
 	}
 
 	/**
-	 * Get an executor by name
+	 * Get an executor by name. If no name is provided, the default executor is returned "io-tasks".
+	 * BoxLang registers 3 executors by default for you:
+	 * <ul>
+	 * <li><strong>io-tasks</strong>: For IO bound tasks, which are not scheduled and uses virtual threads</li>
+	 * <li><strong>cpu-tasks</strong>: For CPU bound tasks, which can be scheduled. (20 threads by default)</li>
+	 * <li><strong>scheduled-tasks</strong>: For scheduled tasks (20 threads by default)</li>
+	 * </ul>
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.

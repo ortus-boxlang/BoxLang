@@ -205,4 +205,22 @@ public class ThrowTest {
 		assertThat( variables.get( Key.of( "type" ) ) ).isEqualTo( "MyCustomException" );
 	}
 
+	@Test
+	public void testExtendedInfoPropagation() {
+		//@formatter:off
+		instance.executeSource( """
+		try{
+			throw( message="foo", extendedInfo="bar" );
+		} catch( any e ){
+			try{
+				throw( message="validation failed", object=e );
+			} catch( any j ){
+				result = j.extendedInfo
+			}
+		}
+		""", context, BoxSourceType.CFSCRIPT );
+		//@formatter:on
+		assertThat( variables.get( Key.of( "result" ) ) ).isEqualTo( "bar" );
+	}
+
 }

@@ -28,7 +28,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 
 @BoxBIF
-@BoxMember( type = BoxLangType.STRING )
+@BoxMember( type = BoxLangType.STRING_STRICT, name = "bind" )
 public class StringBind extends BIF {
 
 	/**

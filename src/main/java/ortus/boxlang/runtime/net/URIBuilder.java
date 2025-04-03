@@ -26,6 +26,8 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+
 public class URIBuilder {
 
 	private @Nullable String				basePath;
@@ -49,6 +51,18 @@ public class URIBuilder {
 
 	public void addParameter( @Nonnull String name, @Nullable String value ) {
 		this.queryParams.add( new NameValuePair( name, value ) );
+	}
+
+	public void setPort( Integer port ) {
+		URI tempURI;
+		try {
+			tempURI	= new URI( this.basePath );
+			tempURI	= new URI( tempURI.getScheme(), tempURI.getUserInfo(), tempURI.getHost(), port, tempURI.getPath(), null, null );
+		} catch ( URISyntaxException e ) {
+			throw new BoxRuntimeException( "Invalid URI: " + this.basePath, e );
+		}
+
+		this.basePath = tempURI.toString();
 	}
 
 	public URI build() throws URISyntaxException {

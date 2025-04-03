@@ -129,4 +129,19 @@ public class ReMatchTest {
 		// @formatter:on
 	}
 
+	@Test
+	public void testMatchLineBreak() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				result = reMatchNoCase( '<!-- start child -->.*<!-- end child -->', '<!-- start child -->foo
+<!-- end child -->' );
+		    """,
+		    context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isInstanceOf( Array.class );
+		assertThat( variables.getAsArray( result ) ).hasSize( 1 );
+		assertThat( variables.getAsArray( result ).get( 0 ) ).isEqualTo( "<!-- start child -->foo\n<!-- end child -->" );
+	}
+
 }

@@ -25,7 +25,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 
 @BoxBIF
-@BoxMember( type = BoxLangType.STRING, name = "compareNoCase" )
+@BoxMember( type = BoxLangType.STRING_STRICT, name = "compareNoCase" )
 public class CompareNoCase extends BIF {
 
 	/**

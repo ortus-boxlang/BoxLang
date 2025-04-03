@@ -113,16 +113,16 @@ class ConfigLoaderTest {
 		    .toString();
 
 		config.registerMapping( "test", path );
-		assertThat( config.hasMapping( "/test" ) ).isTrue();
+		assertThat( config.hasMapping( "/test/" ) ).isTrue();
 
 		config.registerMapping( "test/boxlang", path );
-		assertThat( config.hasMapping( "/test/boxlang" ) ).isTrue();
+		assertThat( config.hasMapping( "/test/boxlang/" ) ).isTrue();
 
 		config.registerMapping( "/myMapping", path );
-		assertThat( config.hasMapping( "/myMapping" ) ).isTrue();
+		assertThat( config.hasMapping( "/myMapping/" ) ).isTrue();
 
 		// Must be in the right order
-		assertThat( config.getRegisteredMappings() ).isEqualTo( new String[] { "/test/boxlang", "/myMapping", "/test", "/" } );
+		assertThat( config.getRegisteredMappings() ).isEqualTo( new String[] { "/test/boxlang/", "/myMapping/", "/test/", "/" } );
 	}
 
 	@DisplayName( "It can unregister a mapping" )
@@ -140,14 +140,14 @@ class ConfigLoaderTest {
 
 		config.registerMapping( "test", path );
 		assertThat( config.mappings ).hasSize( 2 );
-		assertThat( config.hasMapping( "/test" ) ).isTrue();
+		assertThat( config.hasMapping( "/test/" ) ).isTrue();
 
 		config.unregisterMapping( "test" );
 		assertThat( config.mappings ).hasSize( 1 );
-		assertThat( config.hasMapping( "/test" ) ).isFalse();
+		assertThat( config.hasMapping( "/test/" ) ).isFalse();
 
 		config.registerMapping( "test", path );
-		assertThat( config.unregisterMapping( "/test" ) ).isTrue();
+		assertThat( config.unregisterMapping( "/test/" ) ).isTrue();
 
 		assertThat( config.unregisterMapping( "bogus" ) ).isFalse();
 	}
@@ -186,7 +186,7 @@ class ConfigLoaderTest {
 
 		// Cache Checks
 		assertThat( config.caches ).isNotEmpty();
-		assertThat( config.caches ).hasSize( 3 );
+		assertThat( config.caches ).hasSize( 2 );
 
 		// Default Cache Checks
 		CacheConfig defaultCache = ( CacheConfig ) config.caches.get( "default" );

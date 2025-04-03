@@ -30,6 +30,8 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.application.Application;
 import ortus.boxlang.runtime.application.BaseApplicationListener;
+import ortus.boxlang.runtime.async.tasks.IScheduler;
+import ortus.boxlang.runtime.cache.providers.ICacheProvider;
 import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.BaseBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -40,6 +42,8 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.SessionScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.services.CacheService;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 
 public class ApplicationTest {
@@ -70,12 +74,16 @@ public class ApplicationTest {
 
 				result = application;
 				result2 = session;
+				result3 = application.applicationName;
+				result4 = application.applicationName.startsWith( "myApp" );
 				startTime = ApplicationStartTime()
 			""", context );
 		// @formatter:on
 
 		assertThat( variables.get( result ) ).isInstanceOf( ApplicationScope.class );
 		assertThat( variables.get( Key.of( "result2" ) ) ).isInstanceOf( SessionScope.class );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( "myAppsdfsdf" );
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( true );
 
 		ApplicationBoxContext	appContext	= context.getParentOfType( ApplicationBoxContext.class );
 		Application				app			= appContext.getApplication();
@@ -261,7 +269,7 @@ public class ApplicationTest {
 		    """
 		        bx:application
 					name="myAppWithDatasource"
-					datasources = { 
+					datasources = {
 						mysql = {
 							database : "mysql",
 							host : "localhost",
@@ -327,6 +335,95 @@ public class ApplicationTest {
 		assertThat( result.get( Key.mappings ) ).isInstanceOf( IStruct.class );
 		assertThat( result.getAsStruct( Key.mappings ).get( "/UpdateApplicationWithoutName" ) ).isEqualTo( "/src/test/resources/libs/" );
 		assertThat( variables.get( Key.of( "firstSessionID" ) ) ).isEqualTo( variables.get( Key.of( "secondSessionID" ) ) );
+	}
+
+	@DisplayName( "Create this.caches for an application" )
+	@Test
+	public void testCreateCaches() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		        bx:application
+					action = "update"
+					name  = "cacheTestApp"
+					caches = {
+						cache1NoProvider = {
+							properties : {
+								"objectStore" = "ConcurrentSoftReferenceStore",
+								"evictionPolicy" = "LFU"
+							}
+						},
+						cache2 = {
+							provider : "BoxCacheProvider",
+							properties : {
+								maxObjects : 100
+							}
+						}
+					};
+
+				println( getApplicationMetadata() );
+				result = getApplicationMetadata().caches;
+
+				cache1 = cache( "cache1NoProvider" );
+				cache2 = cache( "cache2" );
+			""", context );
+		// @formatter:on
+
+		IStruct caches = variables.getAsStruct( Key.result );
+		assertThat( caches ).isNotNull();
+		assertThat( caches.get( "cache1NoProvider" ) ).isNotNull();
+		assertThat( caches.get( "cache2" ) ).isNotNull();
+
+		ICacheProvider	cache1		= ( ICacheProvider ) variables.get( Key.of( "cache1" ) );
+		Key				cache1Name	= Key.of( "cacheTestApp" + ":" + "cache1NoProvider" );
+		ICacheProvider	cache2		= ( ICacheProvider ) variables.get( Key.of( "cache2" ) );
+		Key				cache2Name	= Key.of( "cacheTestApp" + ":" + "cache2" );
+
+		assertThat( cache1 ).isNotNull();
+		assertThat( cache1.getName() ).isEqualTo( cache1Name );
+		assertThat( cache2 ).isNotNull();
+		assertThat( cache2.getName() ).isEqualTo( cache2Name );
+
+		// Check the serviice now
+		CacheService cacheService = instance.getCacheService();
+		assertThat( cacheService.hasCache(
+		    cache1Name
+		) ).isTrue();
+		assertThat( cacheService.hasCache(
+		    cache2Name
+		) ).isTrue();
+	}
+
+	@DisplayName( "Create this.schedulers for an application" )
+	@Test
+	public void testCreateSchedulers() {
+
+		// @formatter:off
+		instance.executeSource(
+		    """
+		        bx:application
+					action = "update"
+					name  = "schedulerTestApp"
+					schedulers = [ "src.test.bx.Scheduler" ]
+					;
+
+					result = getApplicationMetadata().schedulers
+					println( result )
+
+					println( schedulerList() )
+
+					scheduler = schedulerGet( "My-Scheduler" )
+					started = scheduler.hasStarted()
+					stats = schedulerStats( "My-Scheduler" )
+					println( stats )
+			""", context );
+		// @formatter:on
+
+		Array schedulers = variables.getAsArray( Key.result );
+		assertThat( schedulers ).isNotNull();
+		assertThat( schedulers ).hasSize( 1 );
+		assertThat( ( IScheduler ) variables.get( Key.of( "scheduler" ) ) ).isNotNull();
+		assertThat( variables.getAsBoolean( Key.of( "started" ) ) ).isTrue();
 	}
 
 }

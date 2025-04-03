@@ -149,7 +149,7 @@ public class FunctionMetaTest {
 		FunctionMeta	$bx	= ( FunctionMeta ) Referencer.get( context, udf, BoxMeta.key, false );
 
 		// A function is not listenable
-		assertThrows( BoxRuntimeException.class, () -> $bx.registerChangeListener( ( key, newValue, oldValue ) -> {
+		assertThrows( BoxRuntimeException.class, () -> $bx.registerChangeListener( ( key, newValue, oldValue, object ) -> {
 			return newValue;
 		} ) );
 

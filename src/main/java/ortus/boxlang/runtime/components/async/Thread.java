@@ -27,6 +27,7 @@ import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.context.ThreadBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
@@ -63,7 +64,8 @@ public class Thread extends Component {
 		    new Attribute( Key.priority, "string", "normal", Set.of(
 		        Validator.valueOneOf( "high", "low", "normal" )
 		    ) ),
-		    new Attribute( Key.timeout, "integer" )
+		    new Attribute( Key.timeout, "integer" ),
+		    new Attribute( Key.virtual, "boolean", false )
 		};
 	}
 
@@ -88,6 +90,8 @@ public class Thread extends Component {
 	 *
 	 * @attribute.timeout The number of milliseconds to wait for the thread to finish. If the thread does not finish within the specified time, the thread
 	 *                    is terminated. If the timeout attribute is not specified, the thread runs until it finishes.
+	 * 
+	 * @attribute.virtual If true, the thread will be a <a href="https://docs.oracle.com/en/java/javase/21/core/virtual-threads.html">virtual thread</a>. Default is false.
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
 		Key		action		= Key.of( attributes.getAsString( Key.action ) );
@@ -155,7 +159,8 @@ public class Thread extends Component {
 				        java.lang.Thread.interrupted()
 				    );
 			    }
-		    }
+		    },
+		    BooleanCaster.cast( attributes.get( Key.virtual ) )
 		);
 
 	}

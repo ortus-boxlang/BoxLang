@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.bifs.global.temporal;
 
 import java.time.ZoneId;
+import java.util.Locale;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
@@ -61,10 +62,11 @@ public class DateConvert extends BIF {
 		Key			conversion	= Key.of( arguments.getAsString( Key.conversionType ) );
 		ZoneId		localZone	= LocalizationUtil.parseZoneId( null, context );
 		ZoneId		refZone		= conversion.equals( utc2Local ) ? utcZone : localZone;
+		Locale		locale		= LocalizationUtil.parseLocaleFromContext( context, arguments );
 		Object		dateObject	= arguments.get( Key.date );
 		DateTime	dateRef		= null;
 		if ( dateObject instanceof String stringDate ) {
-			dateRef = new DateTime( stringDate, refZone );
+			dateRef = new DateTime( stringDate, locale, refZone );
 		} else {
 			dateRef = DateTimeCaster.cast( dateObject, context );
 		}

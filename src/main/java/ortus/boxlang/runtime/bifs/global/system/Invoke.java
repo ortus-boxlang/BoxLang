@@ -19,8 +19,6 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
-import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
-import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
@@ -73,16 +71,16 @@ public class Invoke extends BIF {
 			argCollection.put( Key.argumentCollection, args );
 		}
 
-		CastAttempt<String> stringCasterAttempt = StringCaster.attempt( instance );
-		// Empty string just calls local function in the existing context (box class or template)
-		if ( stringCasterAttempt.wasSuccessful() && stringCasterAttempt.get().isEmpty() ) {
-			return context.invokeFunction( method, argCollection );
-		}
-
 		// If we had a non-empty string, create the Box Class instance
 		IReferenceable actualInstance;
-		if ( stringCasterAttempt.wasSuccessful() ) {
-			actualInstance = ( IClassRunnable ) classLocator.load( context, "bx:" + stringCasterAttempt.get(), context.getCurrentImports() )
+		if ( instance instanceof String str ) {
+
+			// Empty string just calls local function in the existing context (box class or template)
+			if ( str.isEmpty() ) {
+				return context.invokeFunction( method, argCollection );
+			}
+
+			actualInstance = ( IClassRunnable ) classLocator.load( context, "bx:" + str, context.getCurrentImports() )
 			    .invokeConstructor( context, Key.noInit )
 			    .unWrapBoxLangClass();
 		} else if ( instance instanceof IReferenceable cvs ) {

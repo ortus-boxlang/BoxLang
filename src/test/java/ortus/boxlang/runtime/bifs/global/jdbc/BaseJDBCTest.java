@@ -60,9 +60,11 @@ public class BaseJDBCTest {
 
 			try {
 				mssqlDatasource.execute( "DROP TABLE generatedKeyTest", setUpContext );
+			} catch ( DatabaseException ignored ) {
+			}
+			try {
 				mssqlDatasource.execute( "CREATE TABLE generatedKeyTest( id INT IDENTITY(1,1) PRIMARY KEY, name VARCHAR(155))", setUpContext );
-			} catch ( DatabaseException e ) {
-				// Ignore the exception if the table already exists
+			} catch ( DatabaseException ignored ) {
 			}
 		}
 

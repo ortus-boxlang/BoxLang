@@ -137,7 +137,8 @@ public class BoxAccessTransformer extends AbstractTransformer {
 			    // I don't know if this will work, but I'm trying to make an exception for query columns being passed to array BIFs
 			    // This prolly won't work if a query column is passed as a second param that isn't the array
 			    && ! ( parent instanceof BoxArgument barg && barg.getParent() instanceof BoxFunctionInvocation bfun
-			        && bfun.getName().toLowerCase().startsWith( "array" ) ) ) {
+			        && bfun.getName().toLowerCase().startsWith( "array" )
+			        && bfun.getArguments().get( 0 ) == barg ) ) {
 				nodes.addAll( 0, transpiler.getCurrentMethodContextTracker().get().loadCurrentContext() );
 				nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
 				    Type.getInternalName( IBoxContext.class ),

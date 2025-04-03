@@ -42,6 +42,7 @@ import ortus.boxlang.runtime.config.segments.ExecutorConfig;
 import ortus.boxlang.runtime.config.segments.IConfigSegment;
 import ortus.boxlang.runtime.config.segments.LoggingConfig;
 import ortus.boxlang.runtime.config.segments.ModuleConfig;
+import ortus.boxlang.runtime.config.segments.SchedulerConfig;
 import ortus.boxlang.runtime.config.segments.SecurityConfig;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
@@ -55,6 +56,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.meta.IChangeListener;
 import ortus.boxlang.runtime.types.util.DateTimeHelper;
 import ortus.boxlang.runtime.util.DataNavigator;
 import ortus.boxlang.runtime.util.DataNavigator.Navigator;
@@ -73,6 +75,17 @@ import ortus.boxlang.runtime.util.LocalizationUtil;
  */
 public class Configuration implements IConfigSegment {
 
+	public static final IChangeListener<IStruct>	forceMappingTrailingSlash		= ( key, newValue, oldValue, object ) -> {
+																						// Only fire for new values not ending with /
+																						if ( newValue != null && !key.getName().endsWith( "/" ) ) {
+																							object.remove( key );
+																							object.put( Key.of( key.getName() + "/" ), newValue );
+																							// don't insert original key
+																							return null;
+																						}
+																						return newValue;
+																					};
+
 	/**
 	 * --------------------------------------------------------------------------
 	 * Configuration Keys
@@ -80,83 +93,95 @@ public class Configuration implements IConfigSegment {
 	 */
 
 	/**
+	 * The runtime version
+	 */
+	public String									version;
+
+	/**
 	 * The directory where the generated classes will be placed
 	 * The default is the system temp directory + {@code /boxlang}
 	 */
-	public String				classGenerationDirectory		= System.getProperty( "java.io.tmpdir" ) + "boxlang";
+	public String									classGenerationDirectory		= System.getProperty( "java.io.tmpdir" ) + "boxlang";
+
+	/**
+	 * This setting if enabled will remove all the class files in the
+	 * {@code classGenerationDirectory} on startup
+	 * {@code false} by default
+	 */
+	public Boolean									clearClassFilesOnStartup		= false;
 
 	/**
 	 * The debug mode flag which turns on all kinds of debugging information
 	 * {@code false} by default
 	 */
-	public Boolean				debugMode						= false;
+	public Boolean									debugMode						= false;
 
 	/**
 	 * Turn on/off the resolver cache for Class Locators of Java/Box classes
 	 * {@code true} by default
 	 */
-	public Boolean				classResolverCache				= true;
+	public Boolean									classResolverCache				= true;
 
 	/**
 	 * Trusted cache setting - if enabled, once compiled a template will never be inspected for changes
 	 */
-	public Boolean				trustedCache					= false;
+	public Boolean									trustedCache					= false;
 
 	/**
 	 * The Timezone to use for the runtime;
 	 * Uses the Java Timezone format: {@code America/New_York}
 	 * Uses the default system timezone if not set
 	 */
-	public ZoneId				timezone						= TimeZone.getDefault().toZoneId();
+	public ZoneId									timezone						= TimeZone.getDefault().toZoneId();
 
 	/**
 	 * The default locale to use for the runtime
 	 * Uses the default system locale if not set
 	 */
-	public Locale				locale							= Locale.getDefault();
+	public Locale									locale							= Locale.getDefault();
 
 	/**
 	 * Enable whitespace compression in output. Only in use by the web runtimes currently.
 	 */
-	public boolean				whitespaceCompressionEnabled	= true;
+	public boolean									whitespaceCompressionEnabled	= true;
 
 	/**
 	 * Invoke implicit getters and setters when using the implicit accessor
 	 * {@code true} by default (defaulted in the BoxClassSupport class where it's used)
 	 */
-	public Boolean				invokeImplicitAccessor			= null;
+	public Boolean									invokeImplicitAccessor			= null;
 
 	/**
 	 * Use high precision math for all math operations, else it relies on Double
 	 * precision
 	 * {@code true} by default
 	 */
-	public Boolean				useHighPrecisionMath			= true;
+	public Boolean									useHighPrecisionMath			= true;
 
 	/**
 	 * The application timeout
 	 * {@code 0} means no timeout and is the default
 	 */
-	public Duration				applicationTimeout				= Duration.ofDays( 0 );
+	public Duration									applicationTimeout				= Duration.ofDays( 0 );
 
 	/**
 	 * The request timeout
 	 * {@code 0} means no timeout and is the default
 	 */
-	public Duration				requestTimeout					= Duration.ofSeconds( 0 );;
+	public Duration									requestTimeout					= Duration.ofSeconds( 0 );;
 
 	/**
 	 * The session timeout
 	 * {@code 30} minutes by default
 	 */
-	public Duration				sessionTimeout					= Duration.ofMinutes( 30 );
+	public Duration									sessionTimeout					= Duration.ofMinutes( 30 );
 
 	/**
 	 * This flag enables/disables session management in the runtime for all
 	 * applications by default.
 	 * {@code false} by default
 	 */
-	public Boolean				sessionManagement				= false;
+	public Boolean									sessionManagement				= false;
 
 	/**
 	 * The default session storage cache. This has to be the name of a registered
@@ -164,112 +189,119 @@ public class Configuration implements IConfigSegment {
 	 * or the keyword "memory" which indicates our internal cache.
 	 * {@code memory} is the default
 	 */
-	public String				sessionStorage					= "memory";
+	public String									sessionStorage					= "memory";
 
 	/**
 	 * This determines whether to send jSessionID cookies to the client browser.
 	 * {@code true} by default
 	 */
-	public Boolean				setClientCookies				= true;
+	public Boolean									setClientCookies				= true;
 
 	/**
 	 * Sets jSessionID cookies for a domain (not a host) Required, for applications
 	 * running on clusters
 	 * {@code true} by default
 	 */
-	public Boolean				setDomainCookies				= true;
+	public Boolean									setDomainCookies				= true;
 
 	/**
 	 * A sorted struct of mappings
 	 */
-	public IStruct				mappings						= new Struct( Struct.KEY_LENGTH_LONGEST_FIRST_COMPARATOR );
+	public IStruct									mappings						= new Struct( Struct.KEY_LENGTH_LONGEST_FIRST_COMPARATOR )
+	    // ensure all keys to this struct have a trailing slash
+	    .registerChangeListener( forceMappingTrailingSlash );
 
 	/**
 	 * An array of directories where modules are located and loaded from.
 	 * {@code [ /{boxlang-home}/modules ]}
 	 */
-	public List<String>			modulesDirectory				= new ArrayList<>(
+	public List<String>								modulesDirectory				= new ArrayList<>(
 	    Arrays.asList( BoxRuntime.getInstance().getRuntimeHome().toString() + "/modules" ) );
 
 	/**
 	 * An array of directories where custom tags are located and loaded from.
 	 * {@code [ /{boxlang-home}/customTags ]}
 	 */
-	public List<String>			customTagsDirectory				= new ArrayList<>(
+	public List<String>								customTagsDirectory				= new ArrayList<>(
 	    Arrays.asList( BoxRuntime.getInstance().getRuntimeHome().toString() + "/customTags" ) );
 
 	/**
 	 * An array of directories where box classes are located and loaded from.
 	 */
-	public List<String>			classPaths						= new ArrayList<>();
+	public List<String>								classPaths						= new ArrayList<>();
 
 	/**
 	 * An array of directories where jar files will be loaded from at runtime.
 	 */
-	public List<String>			javaLibraryPaths				= new ArrayList<>(
+	public List<String>								javaLibraryPaths				= new ArrayList<>(
 	    Arrays.asList( BoxRuntime.getInstance().getRuntimeHome().toString() + "/lib" ) );
 
 	/**
 	 * Cache registrations
 	 */
-	public IStruct				caches							= new Struct();
+	public IStruct									caches							= new Struct();
 
 	/**
 	 * Default datasource registration
 	 */
-	public String				defaultDatasource				= "";
+	public String									defaultDatasource				= "";
 
 	/**
 	 * Global datasource registrations
 	 */
-	public IStruct				datasources						= new Struct();
+	public IStruct									datasources						= new Struct();
 
 	/**
 	 * Default remote class method return format when executing a method from web
 	 * runtimes.
 	 * The default is JSON
 	 */
-	public String				defaultRemoteMethodReturnFormat	= "json";
+	public String									defaultRemoteMethodReturnFormat	= "json";
 
 	/**
 	 * The modules configuration
 	 */
-	public IStruct				modules							= new Struct();
+	public IStruct									modules							= new Struct();
 
 	/**
 	 * The last config struct loaded
 	 */
-	public IStruct				originalConfig					= new Struct();
+	public IStruct									originalConfig					= new Struct();
 
 	/**
 	 * A collection of all the registered global executors
 	 */
-	public IStruct				executors						= new Struct();
+	public IStruct									executors						= new Struct();
 
 	/**
 	 * Valid BoxLang class extensions
 	 */
-	public Set<String>			validClassExtensions			= new HashSet<>();
+	public Set<String>								validClassExtensions			= new HashSet<>();
 
 	/**
 	 * Valid BoxLang template extensions
 	 */
-	public Set<String>			validTemplateExtensions			= new HashSet<>();
+	public Set<String>								validTemplateExtensions			= new HashSet<>();
 
 	/**
 	 * Experimental Features
 	 */
-	public IStruct				experimental					= new Struct();
+	public IStruct									experimental					= new Struct();
+
+	/**
+	 * The scheduler configuration
+	 */
+	public SchedulerConfig							scheduler						= new SchedulerConfig();
 
 	/**
 	 * The security configuration
 	 */
-	public SecurityConfig		security						= new SecurityConfig();
+	public SecurityConfig							security						= new SecurityConfig();
 
 	/**
 	 * The logging configuration
 	 */
-	public LoggingConfig		logging							= new LoggingConfig();
+	public LoggingConfig							logging							= new LoggingConfig();
 
 	/**
 	 * Scheduled tasks configuration
@@ -285,7 +317,7 @@ public class Configuration implements IConfigSegment {
 	/**
 	 * Logger
 	 */
-	private static final Logger	logger							= LoggerFactory.getLogger( Configuration.class );
+	private static final Logger						logger							= LoggerFactory.getLogger( Configuration.class );
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -330,6 +362,16 @@ public class Configuration implements IConfigSegment {
 		// Compiler
 		if ( config.containsKey( Key.classGenerationDirectory ) ) {
 			this.classGenerationDirectory = PlaceholderHelper.resolve( config.get( Key.classGenerationDirectory ) );
+		}
+
+		// Version
+		if ( config.containsKey( Key.version ) ) {
+			this.version = config.getAsString( Key.version );
+		}
+
+		// Clear Class Files on Startup
+		if ( config.containsKey( Key.clearClassFilesOnStartup ) ) {
+			this.clearClassFilesOnStartup = BooleanCaster.cast( PlaceholderHelper.resolve( config.get( Key.clearClassFilesOnStartup ) ) );
 		}
 
 		// Timezone
@@ -485,22 +527,32 @@ public class Configuration implements IConfigSegment {
 			    .resolve( config.get( Key.defaultRemoteMethodReturnFormat ) ).toLowerCase();
 		}
 
-		// Setup a default cache, using the default cache configuration as it always needs to be present
-		this.caches.put( Key.defaultCache, new CacheConfig() );
+		// Setup a 'default' cache, using the default cache configuration as it always needs to be present
+		this.caches.put( Key._DEFAULT, new CacheConfig() );
 
-		// Process declared cache configurations
+		// Process declared cache configurations in the configuration
 		if ( config.containsKey( Key.caches ) ) {
 			if ( config.get( Key.caches ) instanceof IStruct castedCaches ) {
-				// Process each cache configuration
 				castedCaches
 				    .entrySet()
 				    .forEach( entry -> {
 					    if ( entry.getValue() instanceof IStruct castedStruct ) {
-						    CacheConfig cacheConfig = new CacheConfig( KeyCaster.cast( entry.getKey() ) ).process( castedStruct );
-						    this.caches.put( cacheConfig.name, cacheConfig );
+						    Key cacheName = KeyCaster.cast( entry.getKey() );
+						    // Treat the default cache configuration as a special case, only process properties
+						    // You can't change the name or the type of the default cache
+						    if ( cacheName.equals( Key._DEFAULT ) ) {
+							    CacheConfig defaultCacheConfig = ( CacheConfig ) this.caches.get( cacheName );
+							    castedStruct.putIfAbsent( Key.properties, new Struct() );
+							    defaultCacheConfig.processProperties( castedStruct.getAsStruct( Key.properties ) );
+						    } else {
+							    CacheConfig cacheConfig = new CacheConfig( cacheName ).process( castedStruct );
+							    this.caches.put( cacheConfig.name, cacheConfig );
+						    }
 					    } else {
-						    logger.warn( "The [caches.{}] configuration is not a JSON Object, ignoring it.",
-						        entry.getKey().getName() );
+						    logger.warn(
+						        "The [caches.{}] configuration is not a JSON Object, ignoring it.",
+						        entry.getKey().getName()
+						    );
 					    }
 				    } );
 			} else {
@@ -614,6 +666,11 @@ public class Configuration implements IConfigSegment {
 			security.process( StructCaster.cast( config.get( Key.security ) ) );
 		}
 
+		// Process our scheduler configuration
+		if ( config.containsKey( Key.scheduler ) ) {
+			scheduler.process( StructCaster.cast( config.get( Key.scheduler ) ) );
+		}
+
 		// Process our logging configuration
 		if ( config.containsKey( Key.logging ) ) {
 			logging.process( StructCaster.cast( config.get( Key.logging ) ) );
@@ -664,6 +721,11 @@ public class Configuration implements IConfigSegment {
 		if ( !mapping.getName().startsWith( "/" ) ) {
 			mapping = Key.of( "/" + mapping.getName() );
 		}
+		// Add traiing slash
+		if ( !mapping.getName().endsWith( "/" ) ) {
+			mapping = Key.of( mapping.getName() + "/" );
+		}
+
 		return this.mappings.containsKey( mapping );
 	}
 
@@ -738,6 +800,10 @@ public class Configuration implements IConfigSegment {
 		// Check if mapping has a leading slash else add it
 		if ( !mapping.getName().startsWith( "/" ) ) {
 			mapping = Key.of( "/" + mapping.getName() );
+		}
+		// Add traiing slash
+		if ( !mapping.getName().endsWith( "/" ) ) {
+			mapping = Key.of( mapping.getName() + "/" );
 		}
 
 		return this.mappings.remove( mapping ) != null;
@@ -868,7 +934,7 @@ public class Configuration implements IConfigSegment {
 	 * @return A struct representation of the configuration segment
 	 */
 	public IStruct asStruct() {
-		IStruct mappingsCopy = new Struct( Struct.KEY_LENGTH_LONGEST_FIRST_COMPARATOR );
+		IStruct mappingsCopy = new Struct( Struct.KEY_LENGTH_LONGEST_FIRST_COMPARATOR ).registerChangeListener( forceMappingTrailingSlash );
 		mappingsCopy.putAll( this.mappings );
 
 		IStruct cachesCopy = new Struct();
@@ -888,10 +954,10 @@ public class Configuration implements IConfigSegment {
 		    .forEach( entry -> modulesCopy.put( entry.getKey(), ( ( ModuleConfig ) entry.getValue() ).asStruct() ) );
 
 		return Struct.of(
-
 		    Key.applicationTimeout, this.applicationTimeout,
 		    Key.caches, cachesCopy,
 		    Key.classGenerationDirectory, this.classGenerationDirectory,
+		    Key.clearClassFilesOnStartup, this.clearClassFilesOnStartup,
 		    Key.customTagsDirectory, Array.copyFromList( this.customTagsDirectory ),
 		    Key.classPaths, Array.copyFromList( this.classPaths ),
 		    Key.datasources, datsourcesCopy,
@@ -917,10 +983,14 @@ public class Configuration implements IConfigSegment {
 		    Key.setClientCookies, this.setClientCookies,
 		    Key.setDomainCookies, this.setDomainCookies,
 		    Key.security, this.security.asStruct(),
+		    Key.scheduler, this.scheduler.asStruct(),
 		    Key.timezone, this.timezone,
+		    Key.trustedCache, this.trustedCache,
 		    Key.useHighPrecisionMath, this.useHighPrecisionMath,
 		    Key.validExtensions, Array.fromSet( getValidExtensions() ),
 		    Key.validClassExtensions, Array.fromSet( this.validClassExtensions ),
-		    Key.validTemplateExtensions, Array.fromSet( this.validTemplateExtensions ) );
+		    Key.validTemplateExtensions, Array.fromSet( this.validTemplateExtensions ),
+		    Key.version, this.version
+		);
 	}
 }

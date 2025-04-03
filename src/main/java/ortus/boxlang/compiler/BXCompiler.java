@@ -33,7 +33,6 @@ import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 /**
  * I am a CLI tool for pre-compiling code to class files
- * TODO: Not sure where this class should eventually live.
  */
 public class BXCompiler {
 

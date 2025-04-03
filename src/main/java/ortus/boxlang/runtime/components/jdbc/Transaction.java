@@ -75,13 +75,22 @@ public class Transaction extends Component {
 	}
 
 	/**
-	 *
+	 * Demarcate or manage a JDBC transaction.
 	 *
 	 * @param context        The context in which the Component is being invoked
 	 * @param attributes     The attributes to the Component
 	 * @param body           The body of the Component
 	 * @param executionState The execution state of the Component
-	 *
+	 * 
+	 * @attribute.action When used inside a transaction block, perform some action upon an existing transaction. One of: `begin`, `commit`, `rollback`, or `setsavepoint`.
+	 * 
+	 * @attribute.isolation The isolation level to use for the transaction. Can only be set upon transaction begin. One of: `read_uncommitted`, `read_committed`, `repeatable_read`, or `serializable`.
+	 * 
+	 * @attribute.savepoint The name of the savepoint to set or rollback to. Used with `savepoint` or `rollback` actions.
+	 * 
+	 * @attribute.nested Whether or not this transaction is nested within another transaction. Default is `false`.
+	 * 
+	 * @attribute.datasource The name of the datasource to use for the transaction. If not provided, the first query execution inside the transaction will set the datasource.
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
 		boolean				isTransactionBeginning	= attributes.getAsString( Key.action ).equals( "begin" ) || body != null;
@@ -159,7 +168,7 @@ public class Transaction extends Component {
 	}
 
 	private int getIsolationLevel( String isolationLevel ) {
-		switch ( isolationLevel ) {
+		switch ( isolationLevel.toLowerCase() ) {
 			case "read_uncommitted" :
 				return Connection.TRANSACTION_READ_UNCOMMITTED;
 			case "read_committed" :

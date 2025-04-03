@@ -23,7 +23,7 @@ import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableStruct;
 /**
  * This class represents generic BoxLang metadata for a an object which has no object-specifc properties
  */
-public class GenericMeta extends BoxMeta {
+public class GenericMeta extends BoxMeta<Object> {
 
 	@SuppressWarnings( "unused" )
 	private Object	target;

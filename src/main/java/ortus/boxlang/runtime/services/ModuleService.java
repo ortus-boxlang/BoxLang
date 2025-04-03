@@ -18,13 +18,13 @@
 package ortus.boxlang.runtime.services;
 
 import java.io.IOException;
-import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.semver4j.Semver;
@@ -37,6 +37,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableStruct;
 
 /**
  * This service is in charge of managing BoxLang modules
@@ -154,6 +155,32 @@ public class ModuleService extends BaseService {
 
 		// Activate all modules
 		activateAll();
+
+		var metadata = new Struct();
+		for ( Entry<Key, ModuleRecord> entrySet : getRegistry().entrySet() ) {
+			metadata.put(
+			    entrySet.getKey().getName(),
+			    UnmodifiableStruct.of(
+			        "activatedOn", entrySet.getValue().activatedOn,
+			        "activationTime", entrySet.getValue().activationTime,
+			        "author", entrySet.getValue().author,
+			        "description", entrySet.getValue().description,
+			        "enabled", entrySet.getValue().isEnabled(),
+			        "invocationPath", entrySet.getValue().invocationPath,
+			        "mapping", entrySet.getValue().mapping,
+			        "physicalPath", entrySet.getValue().physicalPath.toString(),
+			        "registeredOn", entrySet.getValue().registeredOn,
+			        "registrationTime", entrySet.getValue().registrationTime,
+			        "version", entrySet.getValue().version
+			    )
+			);
+		}
+
+		runtime.getRuntimeContext()
+		    .getScope( Key.server )
+		    .getAsStruct( Key.boxlang )
+		    .getAsStruct( Key.modules )
+		    .addAll( metadata );
 
 		// Announce it
 		announce(
@@ -375,6 +402,17 @@ public class ModuleService extends BaseService {
 		    Struct.of( "moduleRecord", moduleRecord, "moduleName", name )
 		);
 
+		/**
+		 * |--------------------------------------------------------------------------
+		 * | Module Dependencies Activation
+		 * |--------------------------------------------------------------------------
+		 * This makes sure that all dependencies are activated before the module itself
+		 * This is a recursive call to activate all dependencies
+		 */
+		moduleRecord.dependencies
+		    .stream()
+		    .forEach( moduleName -> this.activate( Key.of( moduleName ) ) );
+
 		// Activate it
 		moduleRecord.activate( runtimeContext );
 
@@ -541,7 +579,7 @@ public class ModuleService extends BaseService {
 	/**
 	 * Add a module {@link Path} to the list of paths to search for modules.
 	 *
-	 * @param path The {@link Path} to add. It can be relative or absolute.
+	 * @param path The {@link Path} to add. It can be relative or absolute, but it must exist or it is ignored.
 	 *
 	 * @return The ModuleService instance
 	 */
@@ -554,18 +592,10 @@ public class ModuleService extends BaseService {
 		// Convert to absolute path if it's not already
 		path = path.toAbsolutePath();
 
-		// Verify if the directory exists, else create it, if we can
+		// Verify if the directory exists, else ignore it.
 		if ( !Files.exists( path ) ) {
-			try {
-				Files.createDirectories( path );
-			} catch ( IOException e ) {
-				if ( e instanceof FileSystemException && e.getMessage().contains( "Read-only file system" ) ) {
-					this.logger.warn( "ModuleService: Cannot create module path [{}] as it is on a read-only file system", path );
-					return this;
-				} else {
-					throw new BoxRuntimeException( "Error creating module path: " + path.toString(), e );
-				}
-			}
+			this.logger.debug( "ModuleService: Requested addModulePath [{}] does not exist, ignoring.", path );
+			return this;
 		}
 
 		// Verify it is a directory

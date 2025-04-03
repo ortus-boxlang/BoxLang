@@ -140,6 +140,11 @@ public class Transaction implements ITransaction {
 				);
 				announce( BoxEvent.ON_TRANSACTION_ACQUIRE, eventData );
 			} catch ( SQLException e ) {
+				try {
+					this.connection.close();
+				} catch ( SQLException e2 ) {
+					logger.error( "Failed to close connection after failed transaction start: {}", e2.getMessage() );
+				}
 				throw new DatabaseException( "Failed to begin transaction:", e );
 			}
 		}
@@ -278,24 +283,24 @@ public class Transaction implements ITransaction {
 	 * from whence it came.)
 	 */
 	public Transaction end() {
-		IStruct eventData = Struct.of(
-		    "connection", connection == null ? null : connection,
-		    "transaction", this,
-		    "context", context
-		);
-		announce( BoxEvent.ON_TRANSACTION_END, eventData );
+		try {
+			IStruct eventData = Struct.of(
+			    "connection", connection == null ? null : connection,
+			    "transaction", this,
+			    "context", context
+			);
+			announce( BoxEvent.ON_TRANSACTION_END, eventData );
 
-		if ( this.connection != null ) {
-			try {
-				logger.debug( "Ending transaction, resetting connection properties, and releasing connection to connection pool" );
+			logger.debug( "Ending transaction, resetting connection properties, and releasing connection to connection pool" );
 
-				IStruct releaseEventData = Struct.of(
-				    "transaction", this,
-				    "connection", this.connection,
-				    "context", context
-				);
-				announce( BoxEvent.ON_TRANSACTION_RELEASE, releaseEventData );
+			IStruct releaseEventData = Struct.of(
+			    "transaction", this,
+			    "connection", this.connection,
+			    "context", context
+			);
+			announce( BoxEvent.ON_TRANSACTION_RELEASE, releaseEventData );
 
+			if ( this.connection != null ) {
 				if ( !this.connection.getAutoCommit() ) {
 					this.connection.setAutoCommit( true );
 				}
@@ -303,7 +308,14 @@ public class Transaction implements ITransaction {
 				if ( this.isolationLevel != null ) {
 					this.connection.setTransactionIsolation( this.originalIsolationLevel );
 				}
-				this.connection.close();
+			}
+		} catch ( SQLException e ) {
+			throw new DatabaseException( "Error closing connection: " + e.getMessage(), e );
+		} finally {
+			try {
+				if ( this.connection != null && !connection.isClosed() ) {
+					this.connection.close();
+				}
 			} catch ( SQLException e ) {
 				throw new DatabaseException( "Error closing connection: " + e.getMessage(), e );
 			}

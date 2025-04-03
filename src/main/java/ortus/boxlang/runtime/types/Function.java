@@ -34,6 +34,7 @@ import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.BoxInterface;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.IFunctionRunnable;
@@ -414,13 +415,13 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	 * @param positionalArguments The arguments for the function
 	 */
 	public static FunctionBoxContext generateFunctionContext( Function function, IBoxContext parentContext, Key calledName, Object[] positionalArguments,
-	    IClassRunnable thisClass, BoxInterface thisInterface ) {
+	    IClassRunnable thisClass, DynamicObject thisStaticClass, BoxInterface thisInterface ) {
 		if ( function instanceof Closure clos ) {
 			return new ClosureBoxContext( parentContext, clos, calledName, positionalArguments );
 		} else if ( function instanceof Lambda lam ) {
 			return new LambdaBoxContext( parentContext, lam, calledName, positionalArguments );
 		} else {
-			return new FunctionBoxContext( parentContext, function, calledName, positionalArguments, thisClass ).setThisInterface( thisInterface );
+			return new FunctionBoxContext( parentContext, function, calledName, positionalArguments, thisClass, thisStaticClass, thisInterface );
 		}
 	}
 
@@ -433,13 +434,13 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	 * @param namedArguments The arguments for the function
 	 */
 	public static FunctionBoxContext generateFunctionContext( Function function, IBoxContext parentContext, Key calledName, Map<Key, Object> namedArguments,
-	    IClassRunnable thisClass, BoxInterface thisInterface ) {
+	    IClassRunnable thisClass, DynamicObject thisStaticClass, BoxInterface thisInterface ) {
 		if ( function instanceof Closure clos ) {
 			return new ClosureBoxContext( parentContext, clos, calledName, namedArguments );
 		} else if ( function instanceof Lambda lam ) {
 			return new LambdaBoxContext( parentContext, lam, calledName, namedArguments );
 		} else {
-			return new FunctionBoxContext( parentContext, function, calledName, namedArguments, thisClass ).setThisInterface( thisInterface );
+			return new FunctionBoxContext( parentContext, function, calledName, namedArguments, thisClass, thisStaticClass, thisInterface );
 		}
 	}
 

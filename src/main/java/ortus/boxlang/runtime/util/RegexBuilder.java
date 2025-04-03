@@ -43,6 +43,7 @@ public class RegexBuilder {
 	public static final Pattern	CREDIT_CARD_NUMBERS		= Pattern.compile( "[0-9 ,_-]+" );
 	public static final Pattern	EMAIL					= Pattern.compile( "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$" );
 	public static final Pattern	END_OF_LINE_COLONS		= Pattern.compile( ":+$" );
+	public static final Pattern	HEX_STRING				= Pattern.compile( "^[0-9A-Fa-f]+$" );
 	public static final Pattern	JAVA_PACKAGE			= Pattern.compile( "(?i)(java|javax)\\..*" );
 	public static final Pattern	LINE_ENDINGS			= Pattern.compile( "\\r?\\n" );
 	public static final Pattern	MULTILINE_START_OF_LINE	= Pattern.compile( "(?m)^" );
@@ -102,6 +103,20 @@ public class RegexBuilder {
 	 */
 	public static RegexMatcher of( String input, String pattern, Boolean noCase ) {
 		return new RegexMatcher( input ).match( pattern, noCase );
+	}
+
+	/**
+	 * Build a matcher for the given input and string pattern
+	 *
+	 * @param input   The input string to match against
+	 * @param pattern The pattern to match against
+	 * @param noCase  Whether the pattern should be case insensitive or not
+	 * @param flags   The flags to use when compiling the pattern
+	 *
+	 * @return A new matcher instance
+	 */
+	public static RegexMatcher of( String input, String pattern, Boolean noCase, int flags ) {
+		return new RegexMatcher( input ).match( pattern, noCase, flags );
 	}
 
 	/**
@@ -191,17 +206,32 @@ public class RegexBuilder {
 		 * @return The matcher instance
 		 */
 		public RegexMatcher match( String pattern, Boolean noCase ) {
+			return this.match( pattern, noCase, 0 );
+		}
+
+		/**
+		 * Compile the pattern from the given string
+		 *
+		 * @param pattern The pattern to compile
+		 * @param noCase  Whether the pattern should be case insensitive or not
+		 * @param flags   The flags to use when compiling the pattern
+		 * 
+		 * @return The matcher instance
+		 */
+		public RegexMatcher match( String pattern, Boolean noCase, int flags ) {
 			Objects.requireNonNull( pattern, "Pattern cannot be null" );
 			if ( pattern.isEmpty() ) {
 				throw new IllegalArgumentException( "Pattern cannot be empty" );
 			}
 
 			// Lookup or compile the pattern into the regex cache
-			String cacheKey = EncryptionUtil.hash( pattern + noCase );
+			String	cacheKey	= EncryptionUtil.hash( pattern + noCase );
+			int		theFlags	= ( noCase ? Pattern.CASE_INSENSITIVE : 0 ) | flags;
+
 			this.pattern = ( Pattern ) BoxRuntime.getInstance()
 			    .getCacheService()
 			    .getCache( Key.bxRegex )
-			    .getOrSet( cacheKey, () -> Pattern.compile( pattern, noCase ? Pattern.CASE_INSENSITIVE : 0 ) );
+			    .getOrSet( cacheKey, () -> Pattern.compile( pattern, theFlags ) );
 
 			return this;
 		}

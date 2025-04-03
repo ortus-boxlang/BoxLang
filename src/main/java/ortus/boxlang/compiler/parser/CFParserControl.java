@@ -196,4 +196,5 @@ public abstract class CFParserControl extends Parser {
 		int	nextType	= input.LT( 2 ).getType();
 		return thisType == THROW && nextType != LPAREN;
 	}
+
 }

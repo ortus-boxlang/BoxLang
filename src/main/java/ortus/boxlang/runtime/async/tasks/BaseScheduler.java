@@ -30,12 +30,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.RandomStringUtils;
-import org.slf4j.Logger;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.async.executors.ExecutorRecord;
+import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.AsyncService;
+import ortus.boxlang.runtime.services.SchedulerService;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -59,7 +60,7 @@ public class BaseScheduler implements IScheduler {
 	/**
 	 * An ordered struct of all the tasks this scheduler manages
 	 */
-	protected LinkedHashMap<String, TaskRecord>	tasks						= new LinkedHashMap<>( 20 );
+	protected LinkedHashMap<String, TaskRecord>	tasks		= new LinkedHashMap<>( 20 );
 
 	/**
 	 * The Scheduled Executor we are bound to
@@ -69,7 +70,7 @@ public class BaseScheduler implements IScheduler {
 	/**
 	 * The timezone for the scheduler and the tasks it creates and manages
 	 */
-	protected ZoneId							timezone					= ZoneId.systemDefault();
+	protected ZoneId							timezone	= ZoneId.systemDefault();
 
 	/**
 	 * The async service we are bound to
@@ -79,7 +80,7 @@ public class BaseScheduler implements IScheduler {
 	/**
 	 * Is the scheduler started?
 	 */
-	protected Boolean							started						= false;
+	protected Boolean							started		= false;
 
 	/**
 	 * When the scheduler was started
@@ -92,14 +93,9 @@ public class BaseScheduler implements IScheduler {
 	protected String							name;
 
 	/**
-	 * The default timeout to use when gracefully shutting down this scheduler. Default is 30 seconds.
-	 */
-	protected static final long					DEFAULT_SHUTDOWN_TIMEOUT	= 30;
-
-	/**
 	 * Logger
 	 */
-	protected final Logger						logger;
+	protected final BoxLangLogger				logger;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -405,7 +401,7 @@ public class BaseScheduler implements IScheduler {
 	 * @return The scheduler object
 	 */
 	public BaseScheduler shutdown( boolean force ) {
-		return shutdown( force, DEFAULT_SHUTDOWN_TIMEOUT );
+		return shutdown( force, SchedulerService.DEFAULT_SHUTDOWN_TIMEOUT );
 	}
 
 	/**
@@ -415,7 +411,7 @@ public class BaseScheduler implements IScheduler {
 	 * @return The scheduler object
 	 */
 	public BaseScheduler shutdown() {
-		return shutdown( false, DEFAULT_SHUTDOWN_TIMEOUT );
+		return shutdown( false, SchedulerService.DEFAULT_SHUTDOWN_TIMEOUT );
 	}
 
 	/**
@@ -691,12 +687,31 @@ public class BaseScheduler implements IScheduler {
 	}
 
 	/**
+	 * Set the exectutor record for this scheduler
+	 *
+	 * @param executor the executor to set
+	 *
+	 * @return the scheduler object
+	 */
+	public BaseScheduler setExecutor( ExecutorRecord executor ) {
+		this.executor = executor;
+		return this;
+	}
+
+	/**
 	 * Get the executor record
 	 *
 	 * @return the executor record
 	 */
 	public ExecutorRecord getExecutor() {
 		return this.executor;
+	}
+
+	/**
+	 * Get the logger
+	 */
+	public BoxLangLogger getLogger() {
+		return this.logger;
 	}
 
 }

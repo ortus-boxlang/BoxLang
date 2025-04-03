@@ -34,8 +34,8 @@ import ortus.boxlang.runtime.types.util.ListUtil;
 
 @BoxBIF
 @BoxBIF( alias = "ListValueCountNoCase" )
-@BoxMember( type = BoxLangType.STRING, name = "ListValueCount" )
-@BoxMember( type = BoxLangType.STRING, name = "ListValueCountNoCase" )
+@BoxMember( type = BoxLangType.STRING_STRICT, name = "ListValueCount" )
+@BoxMember( type = BoxLangType.STRING_STRICT, name = "ListValueCountNoCase" )
 
 public class ListValueCount extends BIF {
 

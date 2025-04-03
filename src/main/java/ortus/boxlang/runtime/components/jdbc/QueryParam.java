@@ -41,9 +41,66 @@ public class QueryParam extends Component {
 		    new Attribute( Key.list, "boolean" ),
 		    new Attribute( Key.separator, "string" )
 		};
-
 	}
 
+	/**
+	 * Used to verify or strongly type a query parameter to a valid SQL Type.
+	 * <p>
+	 * <strong>We recommend you ALWAYS use query params on any bind variables</strong>
+	 * <p>
+	 * This component is used to define a parameter to a query. It is used in conjunction with the
+	 * Query component. It is not used directly.
+	 * <p>
+	 * Valid SQL Types are
+	 * <ul>
+	 * <li>bigint</li>
+	 * <li>bit</li>
+	 * <li>blob</li>
+	 * <li>boolean</li>
+	 * <li>char</li>
+	 * <li>clob</li>
+	 * <li>date</li>
+	 * <li>decimal</li>
+	 * <li>double</li>
+	 * <li>float</li>
+	 * <li>int</li>
+	 * <li>integer</li>
+	 * <li>idstamp</li>
+	 * <li>longvarchar</li>
+	 * <li>money</li>
+	 * <li>numeric</li>
+	 * <li>real</li>
+	 * <li>smallint</li>
+	 * <li>string</li>
+	 * <li>time</li>
+	 * <li>timestamp</li>
+	 * <li>tinyint</li>
+	 * <li>varbinary</li>
+	 * <li>varchar</li>
+	 * </ul>
+	 *
+	 * @param context        The context in which the Component is being invoked
+	 * @param attributes     The attributes to the Component
+	 * @param body           The body of the Component
+	 * @param executionState The execution state of the Component
+	 *
+	 * @attribute.value The value of the parameter
+	 * 
+	 * @attribute.maxLength The maximum length of the parameter
+	 * 
+	 * @attribute.scale The scale of the parameter, used only on `double` and `decimal` types. Defaults to `null`
+	 * 
+	 * @attribute.null Whether the parameter can be null or not.
+	 * 
+	 * @attribute.list Whether the parameter is a list or not
+	 * 
+	 * @attribute.separator The separator to use for the parameter. Defaults to a comma.
+	 * 
+	 * @attribute.sqltype The SQL type of the parameter. One of: `bigint`, `bit`, `blob`, `boolean`, `char`, `clob`, `date`, `decimal`, `double`, `float`, `int`, `integer`, `idstamp`, `longvarchar`, `money`, `numeric`, `real`, `smallint`, `string`,
+	 *                    `time`, `timestamp`, `tinyint`, `varbinary`, or `varchar`.
+	 *
+	 */
+	@Override
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
 		IStruct parentState = context.findClosestComponent( Key.query );
 		if ( parentState == null ) {

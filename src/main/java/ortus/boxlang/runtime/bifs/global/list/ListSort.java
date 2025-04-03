@@ -30,7 +30,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
 @BoxBIF
-@BoxMember( type = BoxLangType.STRING, name = "listSort" )
+@BoxMember( type = BoxLangType.STRING_STRICT, name = "listSort" )
 
 public class ListSort extends ArraySort {
 

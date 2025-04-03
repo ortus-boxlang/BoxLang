@@ -1,3 +1,20 @@
+/**
+ * [BoxLang]
+ *
+ * Copyright [2023] [Ortus Solutions, Corp]
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package ortus.boxlang.compiler;
 
 import java.io.File;
@@ -25,40 +42,74 @@ import ortus.boxlang.runtime.types.exceptions.ParseException;
 import ortus.boxlang.runtime.util.FRTransService;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
+/**
+ * The `Boxpiler` class serves as an abstract base implementation of the `IBoxpiler` interface,
+ * providing core functionality for compiling BoxLang source code into Java classes. It handles
+ * parsing, validation, and compilation of BoxLang scripts, statements, templates, and classes.
+ *
+ * This class manages class pools for compiled classes, supports caching mechanisms, and ensures
+ * that generated classes are stored in a specified directory. It also integrates with the
+ * `BoxRuntime` environment for logging, configuration, and transaction management.
+ *
+ * Key features include:
+ * - Parsing BoxLang source code into Abstract Syntax Tree (AST) nodes.
+ * - Compiling BoxLang source code into Java classes for execution.
+ * - Managing class pools for efficient reuse of compiled classes.
+ * - Supporting debug mode to clean up generated class directories on startup.
+ * - Handling interface proxies for dynamic runtime behavior.
+ * - Providing source map information for debugging and error reporting.
+ *
+ * This class is designed to be extended by concrete implementations that provide additional
+ * functionality or customization for specific use cases.
+ */
 public abstract class Boxpiler implements IBoxpiler {
 
 	/**
 	 * Logger Instance
 	 */
 	protected static final Logger					logger			= BoxRuntime.getInstance().getLoggingService().getLogger( Boxpiler.class.getSimpleName() );
+
 	/**
 	 * Keeps track of the classes we've compiled
 	 */
 	protected Map<String, Map<String, ClassInfo>>	classPools		= new ConcurrentHashMap<>();
+
 	/**
 	 * The transaction service used to track subtransactions
 	 */
 	protected FRTransService						frTransService	= FRTransService.getInstance( true );
+
 	/**
 	 * The disk class util
 	 */
 	protected DiskClassUtil							diskClassUtil;
+
 	/**
 	 * The directory where the generated classes are stored
 	 */
 	protected Path									classGenerationDirectory;
 
+	/**
+	 * The BoxRuntime instance
+	 */
 	protected BoxRuntime							runtime			= BoxRuntime.getInstance();
 
+	/**
+	 * The constructor for the Boxpiler class. It initializes the class generation directory and
+	 * sets up the disk class utility. If in debug mode, it cleans out the class generation
+	 * directory on startup.
+	 */
 	public Boxpiler() {
-		this.classGenerationDirectory	= Paths.get( BoxRuntime.getInstance().getConfiguration().classGenerationDirectory );
+		this.classGenerationDirectory	= Paths.get( this.runtime.getConfiguration().classGenerationDirectory );
 		this.diskClassUtil				= new DiskClassUtil( classGenerationDirectory );
+
+		// Create the class generation directory if it doesn't exist
 		this.classGenerationDirectory.toFile().mkdirs();
 
 		// If we are in debug mode, let's clean out the class generation directory
-		if ( BoxRuntime.getInstance().inDebugMode() && Files.exists( this.classGenerationDirectory ) ) {
+		if ( this.runtime.getConfiguration().clearClassFilesOnStartup && Files.exists( this.classGenerationDirectory ) ) {
 			try {
-				logger.debug( "Running in debugmode, first startup cleaning out class generation directory: " + classGenerationDirectory );
+				logger.debug( "Running with [clearClassFilesOnStartup], cleaning out class generation directory: " + classGenerationDirectory );
 				FileUtils.cleanDirectory( classGenerationDirectory.toFile() );
 			} catch ( IOException e ) {
 				throw new BoxRuntimeException( "Error cleaning out class generation directory on first run", e );
@@ -74,9 +125,9 @@ public abstract class Boxpiler implements IBoxpiler {
 
 	/**
 	 * Get a class pool by name
-	 * 
+	 *
 	 * @param classPoolName The name of the class pool
-	 * 
+	 *
 	 * @return The class pool
 	 */
 	public Map<String, ClassInfo> getClassPool( String classPoolName ) {
@@ -85,7 +136,7 @@ public abstract class Boxpiler implements IBoxpiler {
 
 	/**
 	 * Get all class pools
-	 * 
+	 *
 	 * @return A map of class pools
 	 */
 	public Map<String, Map<String, ClassInfo>> getClassPools() {

@@ -30,8 +30,8 @@ import ortus.boxlang.runtime.types.util.ListUtil;
 
 @BoxBIF( alias = "ListFirst" )
 @BoxBIF( alias = "ListLast" )
-@BoxMember( type = BoxLangType.STRING, name = "listFirst" )
-@BoxMember( type = BoxLangType.STRING, name = "listLast" )
+@BoxMember( type = BoxLangType.STRING_STRICT, name = "listFirst" )
+@BoxMember( type = BoxLangType.STRING_STRICT, name = "listLast" )
 
 public class ListGetEndings extends BIF {
 

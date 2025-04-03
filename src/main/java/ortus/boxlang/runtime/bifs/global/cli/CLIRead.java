@@ -40,9 +40,12 @@ public class CLIRead extends BIF {
 
 	/**
 	 * Reads a line of text from the CLI.
+	 * You can optionally provide a prompt string to display before reading the input.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
+	 *
+	 * @argument.prompt An optional prompt string to display before reading input.
 	 *
 	 * @return The line of text read from the CLI.
 	 */
@@ -51,8 +54,8 @@ public class CLIRead extends BIF {
 		String prompt = arguments.getAsString( Key.prompt );
 		// If not null, print the prompt.
 		if ( prompt != null ) {
-			functionService.getGlobalFunction( Key.println )
-			    .invoke( context, new Object[] { prompt }, false, Key.println );
+			functionService.getGlobalFunction( Key.print )
+			    .invoke( context, new Object[] { prompt }, false, Key.print );
 		}
 
 		// Read a line of text from the CLI using a scanner

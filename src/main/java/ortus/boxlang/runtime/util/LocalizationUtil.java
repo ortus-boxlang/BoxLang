@@ -606,8 +606,7 @@ public final class LocalizationUtil {
 				            ? ZonedDateTime.of(
 				                LocalDateTime.of( LocalDate.parse( dateTime, getLocaleDateParsers( locale ) ), LocalTime.MIN ),
 				                timezone )
-				            : ZonedDateTime.of( LocalDate.MIN, LocalTime.parse( dateTime, getLocaleTimeParsers( locale ) ),
-				                ZoneId.systemDefault() ) ) );
+				            : ZonedDateTime.of( LocalDate.MIN, LocalTime.parse( dateTime, getLocaleTimeParsers( locale ) ), timezone ) ) );
 			} catch ( java.time.format.DateTimeParseException e ) {
 				throw new BoxRuntimeException(
 				    String.format(

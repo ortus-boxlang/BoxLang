@@ -44,8 +44,8 @@ import ortus.boxlang.runtime.types.util.ListUtil;
 @BoxMember( type = BoxLangType.CLASS, name = "toJSON" )
 @BoxMember( type = BoxLangType.QUERY, name = "toJSON" )
 @BoxMember( type = BoxLangType.STRUCT, name = "toJSON" )
-@BoxMember( type = BoxLangType.STRING, name = "listToJSON" )
-@BoxMember( type = BoxLangType.STRING, name = "toJSON" )
+@BoxMember( type = BoxLangType.STRING_STRICT, name = "listToJSON" )
+@BoxMember( type = BoxLangType.STRING_STRICT, name = "toJSON" )
 public class JSONSerialize extends BIF {
 
 	/**

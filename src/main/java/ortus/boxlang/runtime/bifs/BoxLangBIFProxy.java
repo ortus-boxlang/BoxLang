@@ -17,12 +17,10 @@
  */
 package ortus.boxlang.runtime.bifs;
 
-import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.Function;
 
 /**
  * This is a BIF that is used to proxy from a BoxLang script to a Java method
@@ -33,12 +31,7 @@ public class BoxLangBIFProxy extends BIF {
 	/**
 	 * The target BoxLang BIF class we proxy to
 	 */
-	private IClassRunnable	target;
-
-	/**
-	 * The BoxLang function we proxy to
-	 */
-	private Function		bxFunction;
+	private IClassRunnable target;
 
 	/**
 	 * Constructor
@@ -48,8 +41,7 @@ public class BoxLangBIFProxy extends BIF {
 	public BoxLangBIFProxy( IClassRunnable target ) {
 		super();
 		this.target			= target;
-		this.bxFunction		= this.target.getThisScope().getAsFunction( Key.invoke );
-		declaredArguments	= this.bxFunction.getArguments();
+		declaredArguments	= this.target.getThisScope().getAsFunction( Key.invoke ).getArguments();
 	}
 
 	/**
@@ -81,21 +73,7 @@ public class BoxLangBIFProxy extends BIF {
 		// Any AOP Stuff HERE if we need to goes here
 
 		// Execute
-		FunctionBoxContext fContext = Function.generateFunctionContext(
-		    this.bxFunction,
-		    context.getFunctionParentContext(),
-		    Key.invoke,
-		    arguments,
-		    this.target,
-		    null
-		);
-		fContext.pushTemplate( this.target );
-
-		try {
-			return this.bxFunction.invoke( fContext );
-		} finally {
-			fContext.popTemplate();
-		}
+		return this.target.dereferenceAndInvoke( context, Key.invoke, arguments, false );
 	}
 
 }

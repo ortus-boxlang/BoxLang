@@ -15,7 +15,7 @@ plugins {
 	// For source code formatting
 	id "com.diffplug.spotless" version "7.0.2"
 	// Shadow
-	id "com.gradleup.shadow" version "9.0.0-beta9"
+	id "com.gradleup.shadow" version "9.0.0-beta10"
 	// For dependency updates
 	id 'com.github.ben-manes.versions' version '0.52.0'
 	// For building service loader files
@@ -91,11 +91,11 @@ repositories {
  */
 dependencies {
     // Testing Dependencies
-    testImplementation "org.junit.jupiter:junit-jupiter:5.12.0"
+    testImplementation "org.junit.jupiter:junit-jupiter:5.12.1"
 	testImplementation "org.mockito:mockito-core:5.+"
 	testImplementation "com.google.truth:truth:1.+"
 	testImplementation "commons-cli:commons-cli:1.9.0"
-	testImplementation "org.wiremock:wiremock:3.12.0"
+	testImplementation "org.wiremock:wiremock:3.12.1"
 	testImplementation 'org.apache.derby:derby:10.17.1.0'
 	testImplementation 'io.undertow:undertow-core:2.3.18.Final'
 	// Explicitly declare the JUnit platform launcher (to avoid deprecation)
@@ -119,21 +119,21 @@ dependencies {
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-objects
 	implementation 'com.fasterxml.jackson.jr:jackson-jr-objects:2.18.3'
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-extension-javatime
-	implementation 'com.fasterxml.jackson.jr:jackson-jr-extension-javatime:2.18.2'
+	implementation 'com.fasterxml.jackson.jr:jackson-jr-extension-javatime:2.18.3'
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-stree
-	implementation 'com.fasterxml.jackson.jr:jackson-jr-stree:2.18.2'
+	implementation 'com.fasterxml.jackson.jr:jackson-jr-stree:2.18.3'
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-annotation-support
 	implementation 'com.fasterxml.jackson.jr:jackson-jr-annotation-support:2.18.3'
 	// https://mvnrepository.com/artifact/org.slf4j/slf4j-api
 	implementation 'org.slf4j:slf4j-api:2.0.17'
 	// https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
-	implementation 'ch.qos.logback:logback-classic:1.5.16'
+	implementation 'ch.qos.logback:logback-classic:1.5.18'
 	// https://mvnrepository.com/artifact/com.zaxxer/HikariCP
-	implementation 'com.zaxxer:HikariCP:6.2.1'
+	implementation 'com.zaxxer:HikariCP:6.3.0'
 	// https://mvnrepository.com/artifact/org.ow2.asm/asm-tree
 	implementation 'org.ow2.asm:asm-tree:9.7.1'
 	// https://mvnrepository.com/artifact/org.ow2.asm/asm-util
-	implementation 'org.ow2.asm:asm-util:9.7.1'
+	implementation 'org.ow2.asm:asm-util:9.8'
 	// https://mvnrepository.com/artifact/org.semver4j/semver4j
 	implementation 'org.semver4j:semver4j:5.6.0'
 
@@ -270,12 +270,6 @@ tasks.shadowDistZip.setEnabled( false )
  */
 task createDistributionFile( type: Zip ){
 	dependsOn startShadowScripts
-
-	// Copy the custom /src/main/scripts into the /bin folder but replace all the @version@ to ${version}
-	from( 'src/main/scripts' ) {
-		into 'bin'
-		filter( ReplaceTokens, tokens: [ 'version' : version ] )
-	}
 
 	from( 'build/scriptsShadow' ) {
 		into 'bin'

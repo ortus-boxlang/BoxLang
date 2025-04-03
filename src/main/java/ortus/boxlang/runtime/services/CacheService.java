@@ -24,6 +24,7 @@ import org.slf4j.Logger;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.async.executors.ExecutorRecord;
+import ortus.boxlang.runtime.cache.BoxCache;
 import ortus.boxlang.runtime.cache.providers.BoxCacheProvider;
 import ortus.boxlang.runtime.cache.providers.CoreProviderType;
 import ortus.boxlang.runtime.cache.providers.ICacheProvider;
@@ -107,7 +108,7 @@ public class CacheService extends BaseService {
 		this.asyncService		= runtime.getAsyncService();
 		this.interceptorService	= runtime.getInterceptorService();
 		// Register the scheduled executor service
-		this.executor			= this.asyncService.newScheduledExecutor( "cacheservice-tasks", 20 );
+		this.executor			= this.asyncService.newScheduledExecutor( "cpu-tasks" );
 	}
 
 	/**
@@ -479,6 +480,22 @@ public class CacheService extends BaseService {
 	}
 
 	/**
+	 * Create a new cache if not found according to the name.
+	 *
+	 * @param name       The name of the cache
+	 * @param provider   A valid cache provider
+	 * @param properties The properties to configure the cache
+	 *
+	 * @return The previously registered cache or the newly created one
+	 */
+	public ICacheProvider createCacheIfAbsent( Key name, Key provider, IStruct properties ) {
+		if ( hasCache( name ) ) {
+			return getCache( name );
+		}
+		return createCache( name, provider, properties );
+	}
+
+	/**
 	 * Create a new cache according to the name, provider and properties structure
 	 *
 	 * @param name       The name of the cache
@@ -589,6 +606,17 @@ public class CacheService extends BaseService {
 
 		// Register it
 		this.providers.put( name, provider );
+
+		// Check for the @BoxCache annotation
+		BoxCache metadata = provider.getAnnotation( BoxCache.class );
+		if ( metadata != null ) {
+			Key aliasKey = Key.of( metadata.alias() );
+			// if the alias is not empty and not the same as the name
+			if ( !aliasKey.isEmpty() && !aliasKey.equals( name ) ) {
+				// Register the alias
+				this.providers.put( aliasKey, provider );
+			}
+		}
 
 		return this;
 	}

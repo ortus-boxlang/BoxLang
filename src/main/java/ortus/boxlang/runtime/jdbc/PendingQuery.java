@@ -28,6 +28,7 @@ import javax.annotation.Nonnull;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.cache.providers.ICacheProvider;
+import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.Attempt;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
@@ -37,6 +38,7 @@ import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.services.CacheService;
 import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
@@ -55,6 +57,11 @@ import ortus.boxlang.runtime.types.util.ListUtil;
 public class PendingQuery {
 
 	/**
+	 * Prefix for cache queries in BoxLang
+	 */
+	public static final String					CACHE_PREFIX		= "BL_QUERY_";
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Private Properties
 	 * --------------------------------------------------------------------------
@@ -68,11 +75,6 @@ public class PendingQuery {
 	private static final InterceptorService		interceptorService	= BoxRuntime.getInstance().getInterceptorService();
 
 	/**
-	 * Prefix for cache queries
-	 */
-	private static final String					CACHE_PREFIX		= "BL_QUERY";
-
-	/**
 	 * The SQL string to execute.
 	 * <p>
 	 * If this SQL has parameters, they should be represented either as question
@@ -81,7 +83,14 @@ public class PendingQuery {
 	 */
 	private @Nonnull String						sql;
 
+	/**
+	 * A list of SQL tokens, which are the segments of the SQL string broken up by
+	 * parameters.
+	 * <p>
+	 * This is used to build the final SQL string with parameter values.
+	 */
 	private List<String>						SQLWithParamTokens	= new ArrayList<>();
+
 	/**
 	 * SQL string broken up into segments so we can build a fully
 	 */
@@ -124,6 +133,11 @@ public class PendingQuery {
 	private ICacheProvider						cacheProvider;
 
 	/**
+	 * The context that initiated this query.
+	 */
+	private IBoxContext							context;
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Constructor(s)
 	 * --------------------------------------------------------------------------
@@ -133,13 +147,17 @@ public class PendingQuery {
 	 * Creates a new PendingQuery instance from a SQL string, a list of parameters,
 	 * and the original SQL string.
 	 *
+	 * @param context      The context that initiated this query.
 	 * @param sql          The SQL string to execute
 	 * @param bindings     An array or struct of {@link QueryParameter} to use as
 	 *                     bindings.
 	 * @param queryOptions QueryOptions object denoting the options for this query.
 	 */
-	public PendingQuery( @Nonnull String sql, Object bindings, QueryOptions queryOptions ) {
-		logger.debug( "Building new PendingQuery from SQL: [{}] and options: [{}]", sql, queryOptions.toStruct() );
+	public PendingQuery( IBoxContext context, @Nonnull String sql, Object bindings, QueryOptions queryOptions ) {
+
+		if ( logger.isDebugEnabled() ) {
+			logger.debug( "Creating new PendingQuery from SQL: [{}] and options: [{}]", sql, queryOptions.toStruct() );
+		}
 
 		/**
 		 * `onQueryBuild()` interception: Use this to modify query parameters or options
@@ -157,7 +175,9 @@ public class PendingQuery {
 		    "sql", sql.trim(),
 		    "bindings", bindings,
 		    "pendingQuery", this,
-		    "options", queryOptions );
+		    "options", queryOptions
+		);
+
 		interceptorService.announce( BoxEvent.ON_QUERY_BUILD, eventArgs );
 
 		// We set instance data from the event args so interceptors can modify them.
@@ -169,7 +189,24 @@ public class PendingQuery {
 
 		// Create a cache key with a default or via the passed options.
 		this.cacheKey			= getOrComputeCacheKey();
-		this.cacheProvider		= BoxRuntime.getInstance().getCacheService().getCache( this.queryOptions.cacheProvider );
+		this.context			= context;
+
+		// Check if we are in an app, to try to see if we will use the app cache or global cache.
+		ApplicationBoxContext	appContext		= context.getApplicationContext();
+		CacheService			cacheService	= BoxRuntime.getInstance().getCacheService();
+
+		// If we are in an app, we will use the app cache if it exists.
+		// Otherwise, we will use the global cache.
+		if ( appContext != null ) {
+			Key appCacheName = appContext.getApplication().buildAppCacheKey( Key.of( this.queryOptions.cacheProvider ) );
+			if ( cacheService.hasCache( appCacheName ) ) {
+				this.cacheProvider = cacheService.getCache( appCacheName );
+			}
+		}
+		// Else we will use the global cache.
+		if ( this.cacheProvider == null ) {
+			this.cacheProvider = cacheService.getCache( this.queryOptions.cacheProvider );
+		}
 	}
 
 	/**
@@ -177,11 +214,12 @@ public class PendingQuery {
 	 * parameters.
 	 * This constructor uses the provided SQL string as the original SQL.
 	 *
+	 * @param context    The context that initiated this query.
 	 * @param sql        The SQL string to execute
 	 * @param parameters A list of {@link QueryParameter} to use as bindings.
 	 */
-	public PendingQuery( @Nonnull String sql, @Nonnull List<QueryParameter> parameters ) {
-		this( sql, parameters, new QueryOptions( new Struct() ) );
+	public PendingQuery( IBoxContext context, @Nonnull String sql, @Nonnull List<QueryParameter> parameters ) {
+		this( context, sql, parameters, new QueryOptions( new Struct() ) );
 	}
 
 	/**
@@ -189,6 +227,7 @@ public class PendingQuery {
 	 * Methods
 	 * --------------------------------------------------------------------------
 	 */
+
 	/**
 	 * Returns the cache key for this query.
 	 * <p>
@@ -197,11 +236,16 @@ public class PendingQuery {
 	 * string,parameter values, and relevant query options such as the `datasource`,
 	 * `username`, and
 	 * `password`.
+	 *
+	 * @return The cache key for this query.
 	 */
 	private String getOrComputeCacheKey() {
+		// Custom cache key provided in query options
 		if ( this.queryOptions.cacheKey != null ) {
 			return this.queryOptions.cacheKey;
 		}
+
+		// Generate a cache key from the SQL string and parameter values
 		String key = CACHE_PREFIX + this.sql.hashCode() + this.getParameterValues().hashCode();
 		if ( this.queryOptions.datasource != null ) {
 			key += this.queryOptions.datasource.hashCode();
@@ -521,12 +565,19 @@ public class PendingQuery {
 		// We do an early cache check here to avoid the overhead of creating a
 		// connection if we already have a matching cached query.
 		if ( isCacheable() ) {
-			logger.debug( "Checking cache for query: {}", this.cacheKey );
+
+			if ( logger.isDebugEnabled() ) {
+				logger.debug( "Checking cache for query: {}", this.cacheKey );
+			}
+
 			Attempt<Object> cachedQuery = cacheProvider.get( this.cacheKey );
 			if ( cachedQuery.isPresent() ) {
 				return respondWithCachedQuery( ( ExecutedQuery ) cachedQuery.get() );
 			}
-			logger.debug( "Query is NOT present, continuing to execute query: {}", this.cacheKey );
+
+			if ( logger.isDebugEnabled() ) {
+				logger.debug( "Query is NOT present, continuing to execute query: {}", this.cacheKey );
+			}
 		}
 
 		Connection connection = connectionManager.getConnection( this.queryOptions );

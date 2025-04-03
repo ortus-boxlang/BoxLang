@@ -225,6 +225,9 @@ public class GenericCaster implements IBoxCaster {
 		if ( type.equals( "string" ) ) {
 			return StringCaster.cast( object, fail );
 		}
+		if ( type.equals( "string_strict" ) ) {
+			return StringCasterStrict.cast( object, fail );
+		}
 		if ( type.equals( "double" ) ) {
 			return DoubleCaster.cast( object, fail );
 		}
@@ -389,7 +392,8 @@ public class GenericCaster implements IBoxCaster {
 		Object	result	= java.lang.reflect.Array.newInstance( newTypeClass, len );
 		for ( int i = len - 1; i >= 0; i-- ) {
 			Object	oldV	= java.lang.reflect.Array.get( object, i );
-			Object	v		= GenericCaster.cast( context, oldV, newType, fail );
+			// We can't be setting DynamicObjects into primitive arrays, or Java will reject the wrong type
+			Object	v		= DynamicObject.unWrap( GenericCaster.cast( context, oldV, newType, fail ) );
 			// If the casting failed and we are casting to a primitive or the old value was null, return null because we cannot continue
 			// (primitive arrays cannot contain nulls)
 			if ( v == null && ( newTypeClass.isPrimitive() || oldV != null ) ) {

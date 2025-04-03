@@ -182,7 +182,7 @@ public class JavaBoxpiler extends Boxpiler {
 			timer = new Timer();
 			timer.start( FQN );
 		}
-		logger.debug( "Java BoxPiler Compiling " + FQN );
+		// logger.debug( "Java BoxPiler Compiling " + FQN );
 		ClassInfo classInfo = getClassPool( classPoolName ).get( FQN );
 		if ( classInfo == null ) {
 			throw new BoxRuntimeException( "ClassInfo not found for " + FQN );

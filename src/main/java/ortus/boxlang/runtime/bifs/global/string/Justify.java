@@ -26,8 +26,8 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 @BoxBIF( alias = "LJustify" )
 @BoxBIF( alias = "RJustify" )
-@BoxMember( type = BoxLangType.STRING, name = "LJustify" )
-@BoxMember( type = BoxLangType.STRING, name = "RJustify" )
+@BoxMember( type = BoxLangType.STRING_STRICT, name = "LJustify" )
+@BoxMember( type = BoxLangType.STRING_STRICT, name = "RJustify" )
 
 public class Justify extends BIF {
 

@@ -25,7 +25,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 @BoxBIF
-@BoxMember( type = BoxLangType.STRING, name = "ascii" )
+@BoxMember( type = BoxLangType.STRING_STRICT, name = "ascii" )
 public class Ascii extends BIF {
 
 	/**

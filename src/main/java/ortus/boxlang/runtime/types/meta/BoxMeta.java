@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 /**
  * This is a base class for all meta types
  */
-public abstract class BoxMeta implements Serializable {
+public abstract class BoxMeta<T> implements Serializable {
 
 	/**
 	 * The key used for BoxLang meta data
@@ -38,7 +38,7 @@ public abstract class BoxMeta implements Serializable {
 	 * Get target object this metadata is for.
 	 * Implementations should return the target object.
 	 */
-	public abstract Object getTarget();
+	public abstract T getTarget();
 
 	/**
 	 * Get the meta data of the target object.
@@ -61,8 +61,8 @@ public abstract class BoxMeta implements Serializable {
 	 *
 	 * @param listener The listener to register
 	 */
-	public void registerChangeListener( IChangeListener listener ) {
-		ensureTargetListenable().registerChangeListener( listener );
+	public T registerChangeListener( IChangeListener<T> listener ) {
+		return ensureTargetListenable().registerChangeListener( listener );
 	}
 
 	/**
@@ -71,8 +71,8 @@ public abstract class BoxMeta implements Serializable {
 	 * @param key      The key to listen for changes on
 	 * @param listener The listener to register
 	 */
-	public void registerChangeListener( Key key, IChangeListener listener ) {
-		ensureTargetListenable().registerChangeListener( key, listener );
+	public T registerChangeListener( Key key, IChangeListener<T> listener ) {
+		return ensureTargetListenable().registerChangeListener( key, listener );
 	}
 
 	/**
@@ -80,8 +80,8 @@ public abstract class BoxMeta implements Serializable {
 	 *
 	 * @param listener The listener to remove
 	 */
-	public void removeChangeListener( Key key ) {
-		ensureTargetListenable().removeChangeListener( key );
+	public T removeChangeListener( Key key ) {
+		return ensureTargetListenable().removeChangeListener( key );
 	}
 
 	/**
@@ -91,7 +91,8 @@ public abstract class BoxMeta implements Serializable {
 	 *
 	 * @throws BoxRuntimeException If the target is not listenable
 	 */
-	private IListenable ensureTargetListenable() {
+	@SuppressWarnings( "unchecked" )
+	private IListenable<T> ensureTargetListenable() {
 		if ( getTarget() instanceof IListenable listenable ) {
 			return listenable;
 		} else {

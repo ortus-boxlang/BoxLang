@@ -19,6 +19,7 @@
 
 package ortus.boxlang.runtime.jdbc;
 
+import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -26,7 +27,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -87,12 +87,64 @@ public class TransactionTest extends BaseJDBCTest {
 			    """
 			    transaction isolation="foo" {
 			    	queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {} );
-			    	transactionCommit();
-			    	variables.result = queryExecute( "SELECT * FROM developers", {} );
 			    }
 			    """,
 			    getContext() );
 		} );
+	}
+
+	@DisplayName( "Connection Handling: the connection is properly released even if the transaction errors" )
+	@Test
+	public void testErroredTransactionConnectionClose() {
+		Integer activePreTransaction = getDatasource().getPoolStats().getAsInteger( Key.of( "activeConnections" ) );
+		assertThrows( BoxRuntimeException.class, () -> {
+			getInstance().executeSource(
+			    """
+			    transaction isolation="foo" {
+			    	queryExecute( "INSERT INTO countries ( id, name ) VALUES ( 1, 'This table doesn't exist!' )", {} );
+			    }
+			    """,
+			    getContext() );
+		} );
+
+		Integer activePostTransaction = getDatasource().getPoolStats().getAsInteger( Key.of( "activeConnections" ) );
+		assertThat( activePostTransaction ).isEqualTo( activePreTransaction );
+	}
+
+	@DisplayName( "Connection Handling: the connection is properly released even if there's a return statement." )
+	@Test
+	public void testTransactionConnectionCloseWithReturn() {
+		Integer activePreTransaction = getDatasource().getPoolStats().getAsInteger( Key.of( "activeConnections" ) );
+		getInstance().executeSource(
+		    """
+		    transaction {
+		    	queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {} );
+		    	return;
+		    }
+		    """,
+		    getContext() );
+
+		Integer activePostTransaction = getDatasource().getPoolStats().getAsInteger( Key.of( "activeConnections" ) );
+		assertThat( activePostTransaction ).isEqualTo( activePreTransaction );
+	}
+
+	@DisplayName( "Connection Handling: the connection is properly released even if there's a break tag." )
+	@Test
+	public void testTransactionConnectionCloseWithBreakTag() {
+		Integer activePreTransaction = getDatasource().getPoolStats().getAsInteger( Key.of( "activeConnections" ) );
+		getInstance().executeSource(
+		    """
+		    transaction {
+		    	do{
+		    		queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {} );
+		    		break;
+		    	} while( false );
+		    }
+		    """,
+		    getContext() );
+
+		Integer activePostTransaction = getDatasource().getPoolStats().getAsInteger( Key.of( "activeConnections" ) );
+		assertThat( activePostTransaction ).isEqualTo( activePreTransaction );
 	}
 
 	@DisplayName( "Can commit a transaction" )
@@ -329,7 +381,6 @@ public class TransactionTest extends BaseJDBCTest {
 		);
 	}
 
-	@Disabled( "Need to fix connection management to avoid 'Connection is closed' exceptions on commit and rollback." )
 	@DisplayName( "Can commit a transaction in tag syntax" )
 	@Test
 	public void testTransactionTagSyntax() {
@@ -457,6 +508,25 @@ public class TransactionTest extends BaseJDBCTest {
 			    """,
 			    getContext() );
 		} );
+	}
+
+	@DisplayName( "Nested transactions: the connection is properly released on parent transaction end" )
+	@Test
+	public void testNestedTransactionConnectionClose() {
+		Integer activePreTransaction = getDatasource().getPoolStats().getAsInteger( Key.of( "activeConnections" ) );
+		getInstance().executeSource(
+		    """
+		    transaction{
+		      queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 22, 'Brad Wood', 'Developer' )", {} );
+		      transaction{
+		        queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {} );
+		      }
+		    }
+		    """,
+		    getContext() );
+
+		Integer activePostTransaction = getDatasource().getPoolStats().getAsInteger( Key.of( "activeConnections" ) );
+		assertThat( activePostTransaction ).isEqualTo( activePreTransaction );
 	}
 
 	@DisplayName( "Nested transactions: A rollback on the child will not roll back the parent" )

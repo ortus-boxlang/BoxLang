@@ -17,6 +17,7 @@ package ortus.boxlang.runtime.jdbc;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
+import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.scopes.Key;
@@ -94,10 +95,8 @@ public class QueryParameter {
 
 		Object	v			= param.get( Key.value );
 		if ( this.isListParam ) {
-			if ( v instanceof Array ) {
-				// do nothing?
-			} else {
-				v = ListUtil.asList( ( String ) v, ( String ) param.getOrDefault( Key.separator, separator ) );
+			if ( ! ( v instanceof Array ) ) {
+				v = ListUtil.asList( StringCaster.cast( v ), StringCaster.cast( param.getOrDefault( Key.separator, separator ) ) );
 			}
 		}
 
@@ -134,7 +133,11 @@ public class QueryParameter {
 		if ( castAsStruct.wasSuccessful() ) {
 			return new QueryParameter( name, castAsStruct.getOrFail() );
 		}
-		return new QueryParameter( name, Struct.of( "value", value ) );
+		IStruct param = Struct.of( "value", value );
+		if ( value instanceof DateTime ) {
+			param.put( Key.sqltype, "timestamp" );
+		}
+		return new QueryParameter( name, param );
 	}
 
 	/**

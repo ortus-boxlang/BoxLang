@@ -69,14 +69,14 @@ public class StructMetaTest {
 		StructMeta	$bx		= ( StructMeta ) Referencer.get( context, str, BoxMeta.key, false );
 
 		// Listens to all keys
-		$bx.registerChangeListener( ( key, newValue, oldValue ) -> {
+		$bx.registerChangeListener( ( key, newValue, oldValue, object ) -> {
 			assertThat( newValue == null ).isEqualTo( false );
 			assertThat( oldValue == null ).isEqualTo( true );
 			return newValue;
 		} );
 
 		// Listens for key "brad" only
-		$bx.registerChangeListener( bradKey, ( key, newValue, oldValue ) -> {
+		$bx.registerChangeListener( bradKey, ( key, newValue, oldValue, object ) -> {
 			assertThat( key ).isEqualTo( bradKey );
 			assertThat( newValue ).isEqualTo( "wood" );
 

@@ -148,6 +148,23 @@ public class InvokeTest {
 		assertThat( variables.get( result ) ).isEqualTo( "bar" );
 	}
 
+	@DisplayName( "invoke with null value generated setter" )
+	@Test
+	public void testInvokeNullValueOnSetter() {
+		instance.executeSource(
+		    """
+		       myComponent = new src.test.java.ortus.boxlang.runtime.bifs.global.system.InvokeTest();
+		    invoke(
+		    	myComponent,
+		    	"setBaz",
+		    	[ null ]
+		    );
+		    result = myComponent.getBaz();
+		            """,
+		    context );
+		assertThat( variables.get( result ) ).isNull();
+	}
+
 	@DisplayName( "invoke on struct" )
 	@Test
 	public void testInvokeOnStruct() {

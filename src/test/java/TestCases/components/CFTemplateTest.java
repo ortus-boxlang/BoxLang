@@ -1587,4 +1587,28 @@ public class CFTemplateTest {
 		    context, BoxSourceType.CFTEMPLATE );
 		assertThat( variables.get( result ) ).isEqualTo( "after loop" );
 	}
+
+	@Test
+	public void testTagFunctionAccess() {
+		instance.executeSource(
+		    """
+		    <cffunction name="hello" output="false" access="remote">
+		    	<cfreturn "hi">
+		    </cffunction>
+		    <cfset result = getMetaData( hello ).access>
+		                    """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.get( result ) ).isEqualTo( "remote" );
+	}
+
+	@Test
+	public void testQuerySpaceOutput() {
+		instance.executeSource(
+		    """
+		    <cfset newTest = createObject("component", "src.test.java.TestCases.components.QuerySpaceOutput")>
+		    <cfdump var="#newTest.getQuery(orderby="lock_name",sortOrder="asc")#" >
+		                             """,
+		    context, BoxSourceType.CFTEMPLATE );
+	}
+
 }

@@ -35,6 +35,7 @@ import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
+import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.CacheService;
@@ -43,15 +44,29 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.validation.Validator;
 
-import org.slf4j.Logger;
-
 @BoxComponent( allowsBody = true )
 public class Cache extends Component {
 
 	/**
-	 * Logger
+	 * ----------------------------------------
+	 * Public Constants
+	 * ----------------------------------------
 	 */
-	private final Logger logger = runtime.getLoggingService().getLogger( "cache" );
+
+	/**
+	 * The default cache prefix for all cache keys for templates
+	 */
+	public static final String	CACHE_PREFIX		= "BL_TEMPLATE_";
+
+	/**
+	 * Useful constant for calculating cache directives
+	 */
+	public static final double	SECONDS_IN_DAY		= 86400d;
+
+	/**
+	 * The default file store we leverage
+	 */
+	public static final String	DEFAULT_FILE_STORE	= "FileSystemStore";
 
 	/**
 	 * Enumeration of all possible `type` attribute values.
@@ -73,16 +88,17 @@ public class Cache extends Component {
 		}
 	}
 
-	public static final double		secondsInDay		= 86400d;
-
 	/**
-	 * The interceptor service helper
+	 * ----------------------------------------
+	 * Properties
+	 * ----------------------------------------
 	 */
-	protected final CacheService	cacheService		= BoxRuntime.getInstance().getCacheService();
 
-	protected ICacheProvider		defaultCache		= cacheService.getDefaultCache();
+	private final BoxLangLogger		logger			= runtime.getLoggingService().getLogger( "cache" );
 
-	private final String			defaultFileStore	= "FileSystemStore";
+	protected final CacheService	cacheService	= BoxRuntime.getInstance().getCacheService();
+
+	protected final ICacheProvider	defaultCache	= cacheService.getDefaultCache();
 
 	/**
 	 * Constructor
@@ -174,8 +190,8 @@ public class Cache extends Component {
 		String				cacheName			= attributes.getAsString( Key.cacheName );
 		String				cacheDirectory		= attributes.getAsString( Key.directory );
 		Boolean				useCache			= BooleanCaster.cast( attributes.get( Key.useCache ) );
-		Double				timespan			= DoubleCaster.cast( attributes.get( Key.timespan ) );
-		Double				idleTime			= DoubleCaster.cast( attributes.get( Key.idleTime ) );
+		Object				timespan			= attributes.get( Key.timespan );
+		Object				idleTime			= attributes.get( Key.idleTime );
 		Boolean				throwOnError		= BooleanCaster.cast( attributes.get( Key.throwOnError ) );
 		ICacheProvider		cacheProvider		= null;
 		List<CacheAction>	namedCacheOps		= List.of(
@@ -204,7 +220,7 @@ public class Cache extends Component {
 
 		String cacheKeyName = key != null
 		    ? key
-		    : StringCaster.cast(
+		    : CACHE_PREFIX + StringCaster.cast(
 		        runtime.getFunctionService().getGlobalFunction( Key.hash40 ).invoke(
 		            context,
 		            ArgumentsScope.of(
@@ -250,7 +266,7 @@ public class Cache extends Component {
 			}
 		} else {
 			if ( cacheName != null ) {
-				cacheProvider = cacheService.getCache( Key.of( cacheName ) );
+				cacheProvider = context.getApplicationCache( cacheName );
 			} else if ( cacheDirectory != null ) {
 				Key directoryCacheKey = Key.of( cacheDirectory );
 				if ( !cacheService.hasCache( directoryCacheKey ) ) {
@@ -258,7 +274,7 @@ public class Cache extends Component {
 					    directoryCacheKey,
 					    Key.boxCacheProvider,
 					    Struct.of(
-					        Key.objectStore, defaultFileStore,
+					        Key.objectStore, DEFAULT_FILE_STORE,
 					        Key.directory, cacheDirectory,
 					        Key.useLastAccessTimeouts, true
 					    )
@@ -269,12 +285,25 @@ public class Cache extends Component {
 				cacheProvider = cacheService.getDefaultCache();
 			}
 
-			Duration	timeout				= timespan != null
-			    ? Duration.ofSeconds( DoubleCaster.cast( timespan * secondsInDay ).longValue() )
-			    : Duration.ofSeconds( 0l );
-			Duration	lastAccessTimeout	= idleTime != null
-			    ? Duration.ofSeconds( DoubleCaster.cast( idleTime * secondsInDay ).longValue() )
-			    : Duration.ofSeconds( 0l );
+			Duration	timeout;
+			Duration	lastAccessTimeout;
+
+			if ( timespan != null && timespan instanceof Duration castDuration ) {
+				timeout = castDuration;
+			} else {
+
+				timeout = timespan != null
+				    ? Duration.ofSeconds( DoubleCaster.cast( DoubleCaster.cast( timespan ) * SECONDS_IN_DAY ).longValue() )
+				    : Duration.ofSeconds( 0l );
+			}
+
+			if ( idleTime != null && idleTime instanceof Duration castDuration ) {
+				lastAccessTimeout = castDuration;
+			} else {
+				lastAccessTimeout = idleTime != null
+				    ? Duration.ofSeconds( DoubleCaster.cast( DoubleCaster.cast( idleTime ) * SECONDS_IN_DAY ).longValue() )
+				    : Duration.ofSeconds( 0l );
+			}
 
 			switch ( cacheAction ) {
 				case GET : {

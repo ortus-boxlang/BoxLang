@@ -24,6 +24,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.InvalidAlgorithmParameterException;
@@ -97,7 +98,7 @@ public final class EncryptionUtil {
 	/**
 	 * The default encoding to use
 	 */
-	public static final String			DEFAULT_CHARSET					= "UTF-8";
+	public static final String			DEFAULT_CHARSET					= StandardCharsets.UTF_8.name();
 
 	/**
 	 * Default iterations to perform during encryption - the minimum recomended by NIST
@@ -803,9 +804,9 @@ public final class EncryptionUtil {
 
 	/**
 	 * Retrieves an instance of the specified random generator. If an agorithm is provided the method will return a SecureRandom instance
-	 * 
+	 *
 	 * @param algorithm
-	 * 
+	 *
 	 * @return
 	 */
 	public static Random getRandom( String algorithm ) {
@@ -893,7 +894,7 @@ public final class EncryptionUtil {
 
 	/**
 	 * Creates an insecure but very fast 64 bit hash of a string
-	 * 
+	 *
 	 * @param hashItem the string to hash
 	 */
 	public static String generate64BitHash( CharSequence hashItem ) {
@@ -902,9 +903,9 @@ public final class EncryptionUtil {
 
 	/**
 	 * Tests whether a string is already Base64 encoded
-	 * 
+	 *
 	 * @param input
-	 * 
+	 *
 	 * @return
 	 */
 	public static boolean isBase64( String input ) {
@@ -913,7 +914,7 @@ public final class EncryptionUtil {
 
 	/**
 	 * Creates an insecure but very fast 64 bit hash of a string
-	 * 
+	 *
 	 * @param hashItem the string to hash
 	 * @param size     the radix to use for the final length of the hash
 	 */

@@ -1,0 +1,10 @@
+class {
+	static {
+		currentTemplate = getCurrentTemplatePath();
+	}
+
+	static function staticMethod() {
+		return static.currentTemplate;
+	}
+	
+}

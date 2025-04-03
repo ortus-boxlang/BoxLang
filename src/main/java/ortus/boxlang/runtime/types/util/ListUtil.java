@@ -123,6 +123,10 @@ public class ListUtil {
 	    Boolean wholeDelimiter,
 	    Boolean preserveDelimiters ) {
 
+		if ( list == null || list.isEmpty() ) {
+			return new Array();
+		}
+
 		String[] result = null;
 		if ( delimiter.length() == 0 ) {
 			result = list.split( "" );

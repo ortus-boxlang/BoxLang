@@ -54,8 +54,6 @@ public class StoredProc extends Component {
 		declaredAttributes = new Attribute[] {
 		    new Attribute( Key.procedure, "string", Set.of( Validator.REQUIRED, Validator.NON_EMPTY ) ),
 		    new Attribute( Key.datasource, "string" ),
-		    new Attribute( Key.username, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
-		    new Attribute( Key.password, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
 		    new Attribute( Key.blockfactor, "integer", Set.of( Validator.NOT_IMPLEMENTED ) ),
 		    new Attribute( Key.debug, "boolean", false, Set.of( Validator.NOT_IMPLEMENTED ) ),
 		    new Attribute( Key.returnCode, "boolean", false, Set.of( Validator.NOT_IMPLEMENTED ) ),
@@ -75,6 +73,14 @@ public class StoredProc extends Component {
 	 * @attribute.procedure The name of the procedure to execute.
 	 *
 	 * @attribute.datasource The name of the datasource where the stored procedure is registered.
+	 * 
+	 * @attribute.blockfactor The fetch size to use for batching rows and reducing network round trips when reading results.
+	 * 
+	 * @attribute.debug If enabled, list debugging info on each statement.
+	 * 
+	 * @attribute.returnCode If enabled, populates `bxstoredproc.statusCode` with status code returned by stored procedure.
+	 * 
+	 * @attribute.result The name of the variable to store the result set in.
 	 *
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {

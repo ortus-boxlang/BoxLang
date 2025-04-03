@@ -30,7 +30,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
 @BoxBIF
-@BoxMember( type = BoxLangType.STRING, name = "listReduce" )
+@BoxMember( type = BoxLangType.STRING_STRICT, name = "listReduce" )
 public class ListReduce extends BIF {
 
 	/**

@@ -11,7 +11,19 @@ options {
 
 @header {
 	import ortus.boxlang.compiler.parser.BoxParserControl;
- }
+}
+
+// These facilitate our cache management methods
+@members {
+ 
+ 	public static DFA[] getParseCache() {
+		return BoxGrammar._decisionToDFA;
+	}
+ 
+ 	public static ATN getStaticATN() {
+		return _ATN;
+	}
+}
 
 // foo
 identifier: IDENTIFIER
@@ -42,7 +54,7 @@ testExpression: expression EOF
 importStatement: IMPORT preFix? importFQN ( AS identifier)? SEMICOLON*
     ;
 
-importFQN: fqn (DOT STAR)?
+importFQN: fqn (DOT STAR)? (AT moduleName)?
     ;
 
 // include "myFile.bxm";
@@ -305,7 +317,7 @@ rethrow: RETHROW
     ;
 
 // throw Exception;
-throw: { isThrow(_input) }? THROW expression
+throw: { isThrow(_input) }? THROW expression?
     ;
 
 /*
@@ -388,7 +400,11 @@ structMember: structKey (COLON | EQUALSIGN) expression
 structKey: identifier | stringLiteral | INTEGER_LITERAL | ILLEGAL_IDENTIFIER | SWITCH
     ;
 
-new: NEW preFix? (fqn | stringLiteral) LPAREN argumentList? RPAREN
+new: NEW preFix? (fqn (AT moduleName)? | stringLiteral) LPAREN argumentList? RPAREN
+    ;
+
+// my-module
+moduleName: (identifier MINUS)* identifier
     ;
 
 // foo.bar.Baz
@@ -416,7 +432,7 @@ expression
 //
 // Precedence is implemented here by placing the highest precedence expressions at the top of the rule, and the very
 // lowest at the bottom. This is a form of precedence climbing, which is what ANTLR ends up genmerating, but
-// it saves us from teh tedious manual expansion required of LL grammars and looks more like the LALR grammars
+// it saves us from the tedious manual expansion required of LL grammars and looks more like the LALR grammars
 // that yacc/bison process.
 //
 // Note the use of labels allows our visitor to know what it is visiting without complicated token checking etc

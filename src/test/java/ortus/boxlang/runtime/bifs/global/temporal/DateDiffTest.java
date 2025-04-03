@@ -262,6 +262,23 @@ public class DateDiffTest {
 
 	}
 
+	// dateDiff( "d", now(), "Mar 22, 2025 05:18 PM" )
+	@DisplayName( "It tests the BIF DateDiff on a string date" )
+	@Test
+	public void testDateDiffStringDate() {
+		variables.put( "date1", new DateTime( "2024-01-20T00:59:00Z" ) );
+		variables.put( "date2", new DateTime( "2024-01-20T00:00:00Z" ).format( "MMM dd, YYYY 00:00:00" ) );
+		instance.executeSource(
+		    """
+		    setTimezone( "UTC" );
+		       result = dateDiff( "d", date1, date2 );
+		       """,
+		    context );
+		Long result = variables.getAsLong( Key.of( "result" ) );
+		assertEquals( result, 0l );
+
+	}
+
 	@DisplayName( "It tests the member DateTime.diff in Minutes" )
 	@Test
 	@Ignore

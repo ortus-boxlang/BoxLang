@@ -40,6 +40,10 @@ public class GetCurrentTemplatePath extends BIF {
 	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		return context.findClosestTemplate().absolutePath().toAbsolutePath().toString();
+		var clostestTemplate = context.findClosestTemplate();
+		if ( clostestTemplate == null ) {
+			return "";
+		}
+		return clostestTemplate.absolutePath().toAbsolutePath().toString();
 	}
 }

@@ -445,6 +445,7 @@ public class ClassMetadataVisitor extends VoidBoxVisitor {
 			}
 			return struct;
 		}
-		throw new ExpressionException( "Non-literal value in BoxExpr type: " + expr.getClass().getSimpleName(), expr );
+		return "[Runtime Expression]";
+		// throw new ExpressionException( "Non-literal value in BoxExpr type: " + expr.getClass().getSimpleName(), expr );
 	}
 }

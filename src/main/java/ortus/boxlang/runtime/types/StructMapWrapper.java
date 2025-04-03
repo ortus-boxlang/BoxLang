@@ -36,6 +36,7 @@ import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.interop.DynamicInteropService;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.BoxInterface;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
@@ -53,7 +54,7 @@ import ortus.boxlang.runtime.util.RegexBuilder;
  * Changes to this struct will be reflected in the original map and vice versa
  *
  */
-public class StructMapWrapper implements IStruct, IListenable, Serializable {
+public class StructMapWrapper implements IStruct, IListenable<IStruct>, Serializable {
 
 	/**
 	 * This is to help prevent endless recursion when converting a struct to a string. Technically, this approach only applies to structs
@@ -92,7 +93,7 @@ public class StructMapWrapper implements IStruct, IListenable, Serializable {
 	/**
 	 * Used to track change listeners. Intitialized on-demand
 	 */
-	private Map<Key, IChangeListener>				listeners;
+	private Map<Key, IChangeListener<IStruct>>		listeners;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -181,13 +182,25 @@ public class StructMapWrapper implements IStruct, IListenable, Serializable {
 	 * @return {@code true} if this map contains a mapping for the specified
 	 */
 	public boolean containsKey( Key key ) {
+		if ( wrapped.size() == 0 ) {
+			return false;
+		}
+
 		boolean exists = wrapped.containsKey( key.getOriginalValue() );
 		if ( exists ) {
 			return true;
 		}
-		exists = wrapped.containsKey( key );
-		if ( exists ) {
-			return true;
+
+		// If it looks like this map has key for objects, then test this.
+		if ( wrapped.keySet().toArray()[ 0 ] instanceof Key ) {
+			try {
+				exists = wrapped.containsKey( key );
+				if ( exists ) {
+					return true;
+				}
+			} catch ( java.lang.ClassCastException e ) {
+				// ignore this, it's an edge case if the keys in the map are of mixed type
+			}
 		}
 
 		String stringKey = key.getName();
@@ -717,6 +730,7 @@ public class StructMapWrapper implements IStruct, IListenable, Serializable {
 				    name,
 				    positionalArguments,
 				    getFunctionContextThisClassForInvoke( context ),
+				    getFunctionContextThisStaticClassForInvoke( context ),
 				    getFunctionContextThisInterfaceForInvoke()
 				);
 				return function.invoke( fContext );
@@ -755,6 +769,7 @@ public class StructMapWrapper implements IStruct, IListenable, Serializable {
 				    name,
 				    namedArguments,
 				    getFunctionContextThisClassForInvoke( context ),
+				    getFunctionContextThisStaticClassForInvoke( context ),
 				    getFunctionContextThisInterfaceForInvoke()
 				);
 				return function.invoke( fContext );
@@ -776,6 +791,15 @@ public class StructMapWrapper implements IStruct, IListenable, Serializable {
 			return cContext.getThisClass();
 		} else if ( context instanceof FunctionBoxContext fContext ) {
 			return fContext.getThisClass();
+		}
+		return null;
+	}
+
+	public DynamicObject getFunctionContextThisStaticClassForInvoke( IBoxContext context ) {
+		if ( context instanceof ClassBoxContext cContext ) {
+			return DynamicObject.of( cContext.getThisClass().getClass() );
+		} else if ( context instanceof FunctionBoxContext fContext ) {
+			return fContext.getThisStaticClass();
 		}
 		return null;
 	}
@@ -816,41 +840,44 @@ public class StructMapWrapper implements IStruct, IListenable, Serializable {
 	 */
 
 	@Override
-	public void registerChangeListener( IChangeListener listener ) {
+	public IStruct registerChangeListener( IChangeListener<IStruct> listener ) {
 		initListeners();
 		listeners.put( IListenable.ALL_KEYS, listener );
+		return this;
 	}
 
 	@Override
-	public void registerChangeListener( Key key, IChangeListener listener ) {
+	public IStruct registerChangeListener( Key key, IChangeListener<IStruct> listener ) {
 		initListeners();
 		listeners.put( key, listener );
+		return this;
 	}
 
 	@Override
-	public void removeChangeListener( Key key ) {
+	public IStruct removeChangeListener( Key key ) {
 		initListeners();
 		listeners.remove( key );
+		return this;
 	}
 
 	private Object notifyListeners( Key key, Object value ) {
 		if ( listeners == null ) {
 			return value;
 		}
-		IChangeListener listener = listeners.get( key );
+		IChangeListener<IStruct> listener = listeners.get( key );
 		if ( listener == null ) {
 			listener = listeners.get( IListenable.ALL_KEYS );
 		}
 		if ( listener == null ) {
 			return value;
 		}
-		return listener.notify( key, value, wrapped.get( key ) );
+		return listener.notify( key, value, wrapped.get( key ), this );
 
 	}
 
 	private void initListeners() {
 		if ( listeners == null ) {
-			listeners = new ConcurrentHashMap<Key, IChangeListener>();
+			listeners = new ConcurrentHashMap<Key, IChangeListener<IStruct>>();
 		}
 	}
 

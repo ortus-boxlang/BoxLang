@@ -29,7 +29,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
 @BoxBIF
-@BoxMember( type = BoxLangType.STRING, name = "listMap" )
+@BoxMember( type = BoxLangType.STRING_STRICT, name = "listMap" )
 public class ListMap extends ArrayMap {
 
 	/**

@@ -28,7 +28,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.StringUtil;
 
 @BoxBIF
-@BoxMember( type = BoxLangType.STRING, name = "JSONPrettify" )
+@BoxMember( type = BoxLangType.STRING_STRICT, name = "JSONPrettify" )
 public class JSONPrettify extends BIF {
 
 	/**

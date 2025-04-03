@@ -39,7 +39,7 @@ import ortus.boxlang.runtime.util.conversion.ObjectMarshaller;
 
 @BoxBIF
 @BoxBIF( alias = "Hash40" )
-@BoxMember( type = BoxLangType.STRING, name = "hash" )
+@BoxMember( type = BoxLangType.STRING_STRICT, name = "hash" )
 @BoxMember( type = BoxLangType.STRUCT, name = "hash" )
 @BoxMember( type = BoxLangType.ARRAY, name = "hash" )
 @BoxMember( type = BoxLangType.DATETIME, name = "hash" )

@@ -22,14 +22,14 @@ import ortus.boxlang.runtime.scopes.Key;
 /**
  * Represents a type that can register change listeners
  */
-public interface IListenable {
+public interface IListenable<T> {
 
 	public static final Key ALL_KEYS = new Key( "__$$$$$ALL_KEYS$$$$$__" );
 
-	public void registerChangeListener( IChangeListener listener );
+	public T registerChangeListener( IChangeListener<T> listener );
 
-	public void registerChangeListener( Key key, IChangeListener listener );
+	public T registerChangeListener( Key key, IChangeListener<T> listener );
 
-	public void removeChangeListener( Key key );
+	public T removeChangeListener( Key key );
 
 }

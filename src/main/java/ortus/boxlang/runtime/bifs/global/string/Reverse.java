@@ -24,7 +24,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 
 @BoxBIF
-@BoxMember( type = BoxLangType.STRING, name = "Reverse" )
+@BoxMember( type = BoxLangType.STRING_STRICT, name = "Reverse" )
 public class Reverse extends BIF {
 
 	/**

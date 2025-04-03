@@ -140,7 +140,8 @@ public final class ExecutedQuery {
 						// Since Hikari wraps the null value, we can't get access to it,
 						// so instead we have to catch it here and ignore it.
 						// We do check the message to try to be very particular about what NullPointerExceptions we are catching
-						if ( !e.getMessage().equals( "Cannot invoke \"java.sql.ResultSet.next()\" because \"this.delegate\" is null" ) ) {
+						String message = e.getMessage();
+						if ( message == null || !message.equals( "Cannot invoke \"java.sql.ResultSet.next()\" because \"this.delegate\" is null" ) ) {
 							throw e;
 						}
 					}
@@ -196,29 +197,6 @@ public final class ExecutedQuery {
 		);
 		return executedQuery;
 	}
-
-	/**
-	 * Get the query results as the configured return type.
-	 *
-	 * @param query The executed query
-	 *
-	 * @return The query results as the configured return type - either a query, array, or struct
-	 */
-	// public Object getResult( ExecutedQuery query ) {
-
-	// IType results = switch ( this.pendingQuery.getQueryOptions().returnType ) {
-	// case "query" -> query.getResults();
-	// case "array" -> query.getResultsAsArray();
-	// case "struct" -> query.getResultsAsStruct( this.columnKey );
-	// default -> throw new BoxRuntimeException( "Unknown return type: " + returnType );
-	// };
-
-	// // add in the metadata
-	// results.getBoxMeta().getMeta().put( "debug", this.getQueryMeta() );
-
-	// // then return it
-	// return results;
-	// }
 
 	/**
 	 * Returns the Query object of results of the query.

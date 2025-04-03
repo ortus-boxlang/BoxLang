@@ -28,7 +28,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
 @BoxBIF
-@BoxMember( type = BoxLangType.STRING, name = "listEach" )
+@BoxMember( type = BoxLangType.STRING_STRICT, name = "listEach" )
 
 public class ListEach extends ArrayEach {
 

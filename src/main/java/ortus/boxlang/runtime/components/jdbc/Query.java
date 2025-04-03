@@ -50,9 +50,13 @@ public class Query extends Component {
 		    new Attribute( Key._NAME, "string" ),
 		    new Attribute( Key.datasource, "string" ),
 		    new Attribute( Key.returnType, "string", "query", Set.of(
-		        Validator.valueRequires( "struct", Key.columnKey )
+		        Validator.valueRequires( "struct", Key.columnKey ),
+		        Validator.valueOneOf( "query", "array", "struct" )
 		    ) ),
 		    new Attribute( Key.columnKey, "string" ),
+		    new Attribute( Key.dbtype, "string", Set.of(
+		        Validator.NON_EMPTY, Validator.valueOneOf( "query", "hql" )
+		    ) ),
 
 		    // connection options
 		    new Attribute( Key.maxRows, "integer", -1 ),
@@ -66,43 +70,56 @@ public class Query extends Component {
 		    new Attribute( Key.cacheLastAccessTimeout, "duration" ),
 		    new Attribute( Key.cacheKey, "string" ),
 		    new Attribute( Key.cacheProvider, "string" ),
-
-		    // UNIMPLEMENTED query options:
-		    new Attribute( Key.timezone, "string", Set.of(
-		        Validator.NOT_IMPLEMENTED
-		    ) ),
-		    new Attribute( Key.dbtype, "string", Set.of(
-		        Validator.NON_EMPTY, Validator.valueOneOf( "query", "hql" )
-		    ) ),
-		    new Attribute( Key.username, "string", Set.of(
-		        Validator.NOT_IMPLEMENTED
-		    ) ),
-		    new Attribute( Key.password, "string", Set.of(
-		        Validator.NOT_IMPLEMENTED
-		    ) ),
-		    new Attribute( Key.debug, "boolean", false, Set.of(
-		        Validator.NOT_IMPLEMENTED
-		    ) ),
 		    new Attribute( Key.result, "string" ),
-		    new Attribute( Key.ormoptions, "struct", Set.of(
-		        Validator.NOT_IMPLEMENTED
-		    ) ),
+
+		    // Missing
 		    new Attribute( Key.clientInfo, "struct", Set.of(
-		        Validator.NOT_IMPLEMENTED
-		    ) ),
-		    new Attribute( Key.fetchClientInfo, "boolean", false, Set.of(
-		        Validator.NOT_IMPLEMENTED
-		    ) ),
-		    new Attribute( Key.lazy, "boolean", false, Set.of(
-		        Validator.NOT_IMPLEMENTED
-		    ) ),
-		    new Attribute( Key.psq, "boolean", false, Set.of(
 		        Validator.NOT_IMPLEMENTED
 		    ) )
 		};
-
 	}
 
+	/**
+	 * Execute a SQL query to the default or specified datasource.
+	 * <p>
+	 * <strong>We recommend you ALWAYS use query params on any bind variables</strong>
+	 *
+	 * @param context        The context in which the Component is being invoked
+	 * @param attributes     The attributes to the Component
+	 * @param body           The body of the Component
+	 * @param executionState The execution state of the Component
+	 * 
+	 * @attribute.name The name of the variable to store the query results in.
+	 * 
+	 * @attribute.datasource The datasource to execute the query against.
+	 * 
+	 * @attribute.returnType The type of the result to return. One of: `query`, `struct`, `array`.
+	 * 
+	 * @attribute.columnKey The key to use for the column names in the result struct.
+	 * 
+	 * @attribute.dbtype The type of query to execute. One of: `query`, `hql`.
+	 * 
+	 * @attribute.maxRows The maximum number of rows to return. -1 for no limit.
+	 * 
+	 * @attribute.blockfactor Maximum rows per block to fetch from the server. Ranges from 1-100.
+	 * 
+	 * @attribute.fetchSize The number of rows to fetch at a time. Ranges from 1-100.
+	 * 
+	 * @attribute.timeout The timeout for the query in seconds.
+	 * 
+	 * @attribute.cache Whether or not to cache the results of the query.
+	 * 
+	 * @attribute.cacheTimeout The timeout for the cached query, using a duration object like `createTimespan( 0, 1, 0, 0 )`.
+	 * 
+	 * @attribute.cacheLastAccessTimeout The timeout for the cached query, using a duration object like `createTimespan( 0, 1, 0, 0 )`.
+	 * 
+	 * @attribute.cacheKey The key to use for the cached query.
+	 * 
+	 * @attribute.cacheProvider String name of the cache provider to use. Defaults to the default cache provider.
+	 * 
+	 * @attribute.result The name of the variable to store the query result in.
+	 */
+	@Override
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
 		QueryOptions options = new QueryOptions( attributes );
 
@@ -134,7 +151,7 @@ public class Query extends Component {
 			}
 			bindings = attributes.get( Key.params );
 		}
-		PendingQuery	pendingQuery	= new PendingQuery( sql, bindings, options );
+		PendingQuery	pendingQuery	= new PendingQuery( context, sql, bindings, options );
 
 		ExecutedQuery	executedQuery;
 		// QoQ uses a special QoQ connection

@@ -371,6 +371,26 @@ public class DateTimeFormatTest {
 
 	}
 
+	@DisplayName( "It tests the BIF TimeFormat with string times" )
+	@Test
+	public void testTimeFormatString() {
+		String result = null;
+		// Default Format
+		instance.executeSource(
+		    """
+		      setTimezone( "UTC" );
+		    parsedTime = parseDateTime( "11:00" );
+		            result = timeFormat( "11:00" , "hh:mm a" );
+		            """,
+		    context );
+		DateTime parsedTime = DateTimeCaster.cast( variables.get( Key.of( "parsedTime" ) ) );
+		assertEquals( parsedTime.format( "hh:mm a" ), variables.getAsString( Key.of( "result" ) ) );
+		assertEquals( ZoneId.of( "UTC" ), parsedTime.getZone() );
+		result = ( String ) variables.get( Key.of( "result" ) );
+		assertThat( result ).isEqualTo( "11:00 AM" );
+
+	}
+
 	@DisplayName( "It tests the member function DateTime.format( mask, [timezone] )" )
 	@Test
 	public void testMemberFunction() {

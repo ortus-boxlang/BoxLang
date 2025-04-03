@@ -20,6 +20,8 @@ package ortus.boxlang.runtime.bifs.global.math;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import java.time.Duration;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -110,6 +112,20 @@ public class AbsTest {
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( 1 );
+	}
+
+	@Test
+	public void testDuration() {
+		instance.executeSource(
+		    """
+		    import java.time.Duration;
+		    import java.time.temporal.ChronoUnit;
+
+		    d = Duration.of( 0, ChronoUnit.SECONDS );
+		    result = d.abs();
+		            """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Duration.class );
 	}
 
 }

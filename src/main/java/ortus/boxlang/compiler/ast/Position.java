@@ -17,17 +17,20 @@
  */
 package ortus.boxlang.compiler.ast;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
  * Represents a region of code within a text
  */
-public class Position {
+public class Position implements Serializable {
 
-	private Point	start;
-	private Point	end;
-	private Source	source;
+	private static final long	serialVersionUID	= 1L;
+
+	private Point				start;
+	private Point				end;
+	private Source				source;
 
 	/**
 	 * Creates a position

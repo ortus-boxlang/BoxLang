@@ -64,14 +64,14 @@ import ortus.boxlang.runtime.util.RegexBuilder;
  *
  * BoxLang indices are one-based, so the first element is at index 1, not 0.
  */
-public class Array implements List<Object>, IType, IReferenceable, IListenable, Serializable {
+public class Array implements List<Object>, IType, IReferenceable, IListenable<Array>, Serializable {
 
 	/**
 	 * --------------------------------------------------------------------------
 	 * Public Properties
 	 * --------------------------------------------------------------------------
 	 */
-	public static final Array					EMPTY				= new UnmodifiableArray();
+	public static final Array							EMPTY				= new UnmodifiableArray();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -82,32 +82,32 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	/**
 	 * This is the array we are wrapping and enhancing for BoxLang
 	 */
-	protected final List<Object>				wrapped;
+	protected final List<Object>						wrapped;
 
 	/**
 	 * Metadata object
 	 */
-	public transient BoxMeta					$bx;
+	public transient BoxMeta							$bx;
 
 	/**
 	 * Used to track change listeners. Intitialized on-demand
 	 */
-	private transient Map<Key, IChangeListener>	listeners;
+	private transient Map<Key, IChangeListener<Array>>	listeners;
 
 	/**
 	 * Function service
 	 */
-	private static FunctionService				functionService		= BoxRuntime.getInstance().getFunctionService();
+	private static FunctionService						functionService		= BoxRuntime.getInstance().getFunctionService();
 
 	/**
 	 * Serialization ID
 	 */
-	private static final long					serialVersionUID	= 1L;
+	private static final long							serialVersionUID	= 1L;
 
 	/**
 	 * Public property to determine if the parse array contains delimiters
 	 */
-	public boolean								containsDelimiters	= false;
+	public boolean										containsDelimiters	= false;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -230,7 +230,6 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	 *
 	 * @return The Array
 	 */
-	@BoxMemberExpose
 	public static Array of( Object... values ) {
 		return fromArray( values );
 	}
@@ -242,7 +241,6 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	 *
 	 * @return The Array
 	 */
-	@BoxMemberExpose
 	public static Array copyOf( List<?> arr ) {
 		Array newArr = new Array();
 		// loop over list and add all elements
@@ -809,7 +807,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 				}
 			}
 		}
-		wrapped.set( index - 1, value );
+		set( index - 1, value );
 		return value;
 	}
 
@@ -887,21 +885,24 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 	 */
 
 	@Override
-	public void registerChangeListener( IChangeListener listener ) {
+	public Array registerChangeListener( IChangeListener<Array> listener ) {
 		initListeners();
 		listeners.put( IListenable.ALL_KEYS, listener );
+		return this;
 	}
 
 	@Override
-	public void registerChangeListener( Key key, IChangeListener listener ) {
+	public Array registerChangeListener( Key key, IChangeListener<Array> listener ) {
 		initListeners();
 		listeners.put( key, listener );
+		return this;
 	}
 
 	@Override
-	public void removeChangeListener( Key key ) {
+	public Array removeChangeListener( Key key ) {
 		initListeners();
 		listeners.remove( key );
+		return this;
 	}
 
 	/**
@@ -916,15 +917,15 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable, 
 		if ( listeners == null ) {
 			return value;
 		}
-		Key				key			= Key.of( i + 1 );
-		IChangeListener	listener	= listeners.get( key );
+		Key						key			= Key.of( i + 1 );
+		IChangeListener<Array>	listener	= listeners.get( key );
 		if ( listener == null ) {
 			listener = listeners.get( IListenable.ALL_KEYS );
 		}
 		if ( listener == null ) {
 			return value;
 		}
-		return listener.notify( key, value, i < wrapped.size() ? wrapped.get( i ) : null );
+		return listener.notify( key, value, i < wrapped.size() ? wrapped.get( i ) : null, this );
 	}
 
 	/**

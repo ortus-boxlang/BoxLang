@@ -64,6 +64,12 @@ public class ClassBoxContext extends BaseBoxContext {
 	protected IClassRunnable	thisClass;
 
 	/**
+	 * Override the outpout behavior. This is needed for implicit onRequest methods when the Application class has output=false
+	 * null means not set. non-null is the overriden value
+	 */
+	protected Boolean			outputOverride	= null;
+
+	/**
 	 * Creates a new execution context with a bounded function instance and parent context
 	 *
 	 * @param parent    The parent context
@@ -319,7 +325,18 @@ public class ClassBoxContext extends BaseBoxContext {
 	 */
 	@Override
 	public Boolean canOutput() {
+		if ( outputOverride != null ) {
+			return outputOverride;
+		}
 		return getThisClass().getBottomClass().canOutput();
+	}
+
+	/**
+	 * Set the output override
+	 */
+	public ClassBoxContext setOutputOverride( Boolean outputOverride ) {
+		this.outputOverride = outputOverride;
+		return this;
 	}
 
 	/**

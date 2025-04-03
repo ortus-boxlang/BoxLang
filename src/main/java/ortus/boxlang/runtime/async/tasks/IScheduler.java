@@ -20,6 +20,9 @@ package ortus.boxlang.runtime.async.tasks;
 import java.time.ZoneId;
 import java.util.Optional;
 
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.IStruct;
+
 /**
  * All BoxLang schedulers must implement this interface and
  * inherit from the {@code Scheduler} class.
@@ -162,6 +165,15 @@ public interface IScheduler {
 	public String getSchedulerName();
 
 	/**
+	 * Default method that returns the scheduler name as a key
+	 *
+	 * @return the scheduler name as a key
+	 */
+	public default Key getSchedulerNameAsKey() {
+		return Key.of( getSchedulerName() );
+	}
+
+	/**
 	 * Set the scheduler name
 	 *
 	 * @param name the name
@@ -185,5 +197,19 @@ public interface IScheduler {
 	 * @return the scheduler object
 	 */
 	public BaseScheduler setTimezone( ZoneId timezone );
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Utility Methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Builds out a report for all the registered tasks in this scheduler.
+	 * The key is the task name and the value is a struct with the task stats.
+	 *
+	 * @return A struct with the report: {@code { taskName: { stats } }}
+	 */
+	public IStruct getTaskStats();
 
 }

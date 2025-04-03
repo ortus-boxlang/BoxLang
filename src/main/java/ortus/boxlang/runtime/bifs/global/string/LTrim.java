@@ -24,7 +24,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 
 @BoxBIF
-@BoxMember( type = BoxLangType.STRING, name = "LTrim" )
+@BoxMember( type = BoxLangType.STRING_STRICT, name = "LTrim" )
 public class LTrim extends BIF {
 
 	/**

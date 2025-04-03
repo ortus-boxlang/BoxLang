@@ -26,6 +26,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.Configuration;
 import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.IBoxContext.ScopeSearchResult;
 import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.context.SessionBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
@@ -54,9 +55,48 @@ import ortus.boxlang.runtime.util.FileSystemUtil;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 /**
- * I represent an Application listener. I am the base class for a class-based listner, template-based listener, or default listener
+ * I represent an Application listener. I am the base class for a class-based listener, template-based listener, or default listener.
+ *
+ * A listener is a class (Application.bx) that observes and responds to specific events or actions within an application.
+ * It acts as a bridge between the application and the runtime, enabling custom behavior to be executed when certain events occur.
+ *
+ * In this context, the listener is responsible for handling application lifecycle events, request events, session events,
+ * and other application-specific actions, providing a way to customize and extend the behavior of the application.
  */
 public abstract class BaseApplicationListener {
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Constants
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * The available request pool interceptors
+	 */
+	private static final Key[]				REQUEST_INTERCEPTION_POINTS	= List.of(
+	    Key.onRequest,
+	    Key.onRequestStart,
+	    Key.onRequestEnd,
+	    Key.onAbort,
+	    Key.onClassRequest,
+	    Key.onSessionStart,
+	    Key.onSessionEnd,
+	    Key.onApplicationStart,
+	    Key.onApplicationEnd,
+	    Key.onError,
+	    Key.missingTemplate
+	).toArray( new Key[ 0 ] );
+
+	/**
+	 * Runtime
+	 */
+	private static final BoxRuntime			runtime						= BoxRuntime.getInstance();
+
+	/**
+	 * Interceptor Service
+	 */
+	private static final InterceptorService	interceptorService			= runtime.getInterceptorService();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -93,46 +133,22 @@ public abstract class BaseApplicationListener {
 	protected ResolvedFilePath				baseTemplatePath			= null;
 
 	/**
-	 * The available request pool interceptors
-	 */
-	private static final Key[]				REQUEST_INTERCEPTION_POINTS	= List.of(
-	    Key.onRequest,
-	    Key.onRequestStart,
-	    Key.onRequestEnd,
-	    Key.onAbort,
-	    Key.onClassRequest,
-	    Key.onSessionStart,
-	    Key.onSessionEnd,
-	    Key.onApplicationStart,
-	    Key.onApplicationEnd,
-	    Key.onError,
-	    Key.missingTemplate
-	).toArray( new Key[ 0 ] );
-
-	/**
-	 * Runtime
-	 */
-	private static final BoxRuntime			runtime						= BoxRuntime.getInstance();
-
-	/**
-	 * Interceptor Service
-	 */
-	private static final InterceptorService	interceptorService			= runtime.getInterceptorService();
-
-	/**
 	 * All Application settings (which are really set per-request). This includes any "expected" ones from the BoxLog core, plus any additional settings
 	 * that a module or add-on may be looking for. This also determines default values for all settings.
 	 * <p>
 	 * You can find the majority of defaults in the {@link Configuration} class.
 	 */
 	protected IStruct						settings					= Struct.of(
+	    "allowedFileOperationExtensions", runtime.getConfiguration().security.allowedFileOperationExtensions,
 	    "applicationTimeout", runtime.getConfiguration().applicationTimeout,
+	    "caches", new Struct(),
 	    "classPaths", new Array(),
 	    "componentPaths", new Array(),
 	    "customTagPaths", new Array(),
 	    "datasource", runtime.getConfiguration().defaultDatasource,
 	    "defaultDatasource", runtime.getConfiguration().defaultDatasource,
 	    "datasources", new Struct(),
+	    "disallowedFileOperationExtensions", runtime.getConfiguration().security.disallowedFileOperationExtensions,
 	    "invokeImplicitAccessor", runtime.getConfiguration().invokeImplicitAccessor,
 	    "javaSettings", Struct.of(
 	        "loadPaths", new Array(),
@@ -141,6 +157,7 @@ public abstract class BaseApplicationListener {
 	    ),
 	    "locale", runtime.getConfiguration().locale.toString(),
 	    "mappings", Struct.of(),
+	    "schedulers", new Array(),
 	    "sessionManagement", runtime.getConfiguration().sessionManagement,
 	    "sessionStorage", runtime.getConfiguration().sessionStorage,
 	    "sessionTimeout", runtime.getConfiguration().sessionTimeout,
@@ -154,9 +171,7 @@ public abstract class BaseApplicationListener {
 	    "timezone", runtime.getConfiguration().timezone.getId(),
 	    // Stil Considering if they will be core or a module
 	    "secureJson", false,
-	    "secureJsonPrefix", "",
-	    "allowedFileOperationExtensions", runtime.getConfiguration().security.allowedFileOperationExtensions,
-	    "disallowedFileOperationExtensions", runtime.getConfiguration().security.disallowedFileOperationExtensions
+	    "secureJsonPrefix", ""
 	);
 
 	/**
@@ -247,23 +262,30 @@ public abstract class BaseApplicationListener {
 	 * Define the application context. This is called every time on every request by the Application Service
 	 * to ensure that the application context is properly defined and initialized.
 	 *
+	 * <h2>Events Announced</h2>
+	 * <ul>
+	 * <li><code>onApplicationDefined</code> : Once the application is correctly created</li>
+	 * </ul>
+	 *
 	 * @see ApplicationService
 	 */
 	public void defineApplication() {
-		String appNameString = StringCaster.cast( settings.get( Key._NAME ) );
+		String appNameString = StringCaster.cast( this.settings.get( Key._NAME ) );
 
-		// Only create it if we have a name
+		// Only create it if we have a name, else there is no application
 		if ( appNameString != null && !appNameString.isEmpty() ) {
 			// Setup the app name for the listener
 			this.appName = Key.of( appNameString );
 			// Startup app and services
 			createOrUpdateApplication();
 			createOrUpdateClassLoaderPaths();
+			createOrUpdateCaches();
+			createOrUpdateSchedulers();
 			createOrUpdateSessionManagement();
-		} else {
-			// If there's no name, remove the app context
+		}
+		// Cleanups
+		else {
 			context.removeParentContext( ApplicationBoxContext.class );
-			// also remove any session context
 			context.removeParentContext( SessionBoxContext.class );
 		}
 
@@ -324,11 +346,24 @@ public abstract class BaseApplicationListener {
 	}
 
 	/**
-	 * Update or create the application class loaders according to the
-	 * discovered and passed app context
+	 * Update or create the application class loader paths
 	 */
 	private void createOrUpdateClassLoaderPaths() {
 		this.application.startupClassLoaderPaths( this.context );
+	}
+
+	/**
+	 * Update or create the application caches
+	 */
+	private void createOrUpdateCaches() {
+		this.application.startupAppCaches( this.context );
+	}
+
+	/**
+	 * Update or create the application schedulers
+	 */
+	private void createOrUpdateSchedulers() {
+		this.application.startupAppSchedulers( this.context );
 	}
 
 	/**
@@ -361,8 +396,13 @@ public abstract class BaseApplicationListener {
 	}
 
 	/**
-	 * Create or update the application according to the
-	 * discovered and passed app context
+	 * This method is called to create or update the application context.
+	 * If the application has expired, it will be shutdown and restarted.
+	 * If the application is not defined, it will be created.
+	 * <p>
+	 * Once created, it will inject a new @{link ApplicationBoxContext} into the request context.
+	 * <p>
+	 * It will call the {@link Application#start(IBoxContext)} method to start the application.
 	 */
 	private void createOrUpdateApplication() {
 		ApplicationBoxContext appContext = this.context.getParentOfType( ApplicationBoxContext.class );
@@ -623,6 +663,16 @@ public abstract class BaseApplicationListener {
 	 * @param args    The arguments
 	 */
 	public void onClassRequest( IBoxContext context, Object[] args ) {
+		_onClassRequest( context, args );
+	}
+
+	/**
+	 * Handle the onClassRequest event. This extra method is to get around an issue with needing to call this logic from more than one place.
+	 *
+	 * @param context The context
+	 * @param args    The arguments
+	 */
+	private void _onClassRequest( IBoxContext context, Object[] args ) {
 		logger.trace( "Fired onClassRequest ...................." );
 
 		IStruct eventArgs = Struct.of(
@@ -653,6 +703,38 @@ public abstract class BaseApplicationListener {
 	}
 
 	/**
+	 * Handle the onClassRequest event when there is no Application class. This is here to easily share
+	 * between the default and template application listeners.
+	 *
+	 * @param context The context
+	 * @param args    The arguments
+	 */
+	protected void onClassRequestSimple( IBoxContext context, Object[] args ) {
+		_onClassRequest( context, args );
+		String				className		= ( String ) args[ 0 ];
+		Struct				params			= ( Struct ) args[ 1 ];
+
+		IClassRunnable		classInstance	= loadClassInstance( context, className );
+		String				methodName		= null;
+		ScopeSearchResult	scopeSearch		= context.scopeFind( Key.method, context.getDefaultAssignmentScope(), false );
+		if ( scopeSearch.value() != null ) {
+			methodName = StringCaster.cast( scopeSearch.value() );
+		} else {
+			classRequestNoMethod( context, classInstance );
+			return;
+		}
+
+		invokeClassRequest(
+		    context,
+		    classInstance,
+		    methodName,
+		    params,
+		    null,
+		    true
+		);
+	}
+
+	/**
 	 * Handle the invocation of a class request
 	 *
 	 * @param context               The context
@@ -665,19 +747,12 @@ public abstract class BaseApplicationListener {
 	 */
 	protected void invokeClassRequest(
 	    IBoxContext context,
-	    Object possibleClassInstance,
+	    IClassRunnable classInstance,
 	    String methodName,
 	    Struct namedParams,
 	    Object[] positionalParams,
-	    String returnFormat,
 	    boolean mustBeRemote ) {
-		// Test the class instance
-		IClassRunnable classInstance = null;
-		if ( possibleClassInstance instanceof IClassRunnable icr ) {
-			classInstance = icr;
-		} else {
-			throw new BoxRuntimeException( "The path must be a class and not an interface." );
-		}
+
 		Object result = null;
 
 		// Check method is marked as remote
@@ -693,9 +768,16 @@ public abstract class BaseApplicationListener {
 			result = classInstance.dereferenceAndInvoke( context, Key.of( methodName ), positionalParams, false );
 		}
 
+		String				returnFormat	= null;
+		ScopeSearchResult	scopeSearch		= context.scopeFind( Key.returnFormat, context.getDefaultAssignmentScope(), false );
+		if ( scopeSearch.value() != null ) {
+			returnFormat = StringCaster.cast( scopeSearch.value() );
+		}
 		// If there was no override, see if a remote method set it via annotation
 		if ( returnFormat == null ) {
-			returnFormat = Optional.ofNullable( context.getParentOfType( RequestBoxContext.class ).getAttachment( Key.returnFormat ) )
+			// Any time a remote function is executed thaty has a returnFormat annotation, this request context attachment is set.
+			// This will basically represent the returnFormat of the LAST remote function which was executed on this request.
+			returnFormat = Optional.ofNullable( context.getRequestContext().getAttachment( Key.returnFormat ) )
 			    .map( Object::toString )
 			    .orElse( null );
 		}
@@ -704,6 +786,9 @@ public abstract class BaseApplicationListener {
 		if ( returnFormat == null ) {
 			returnFormat = context.getRuntime().getConfiguration().defaultRemoteMethodReturnFormat;
 		}
+
+		// Regardless of how we found it, set it in the request context so we can use it later
+		context.getRequestContext().putAttachment( Key.returnFormat, returnFormat );
 
 		if ( result != null ) {
 			String stringResult;
@@ -753,21 +838,34 @@ public abstract class BaseApplicationListener {
 	 * @param context   The context
 	 * @param className The class name
 	 */
-	protected void classRequestNoMethod( IBoxContext context, String className ) {
+	protected void classRequestNoMethod( IBoxContext context, IClassRunnable classInstance ) {
 		// If there is no method and we're in debug mode, dump the CFC
 		if ( context.getRuntime().inDebugMode() ) {
 			context.invokeFunction(
 			    Key.dump,
 			    new Object[] {
-			        context.invokeFunction(
-			            Key.createObject,
-			            new Object[] { className }
-			        )
+			        classInstance
 			    }
 			);
 		} else {
 			context.writeToBuffer( "Method not specified, enable debug to see class details." );
 		}
+	}
+
+	/**
+	 * Helper method to create the instance of our class so we can reuse this logic.
+	 *
+	 * @param className The class name to load
+	 *
+	 * @return The class instance
+	 */
+	protected IClassRunnable loadClassInstance( IBoxContext context, String className ) {
+		Object possibleClassInstance = context.invokeFunction( Key.createObject, new Object[] { className } );
+		if ( possibleClassInstance instanceof IClassRunnable icr ) {
+			return icr;
+		}
+
+		throw new BoxRuntimeException( "The path must be a class and not an interface." );
 	}
 
 	/**

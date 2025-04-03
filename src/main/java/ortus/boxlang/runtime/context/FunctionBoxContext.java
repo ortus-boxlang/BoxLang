@@ -160,7 +160,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 * @param positionalArguments The arguments
 	 */
 	public FunctionBoxContext( IBoxContext parent, Function function, Key functionCalledName,
-	    Object[] positionalArguments, IClassRunnable thisClass ) {
+	    Object[] positionalArguments, IClassRunnable thisClass, DynamicObject thisStaticClass, BoxInterface thisInterface ) {
 		super( parent );
 		if ( parent == null ) {
 			throw new BoxRuntimeException( "Parent context cannot be null for FunctionBoxContext" );
@@ -172,7 +172,10 @@ public class FunctionBoxContext extends BaseBoxContext {
 		this.argumentsScope		= new ArgumentsScope();
 		this.function			= function;
 		this.functionCalledName	= functionCalledName;
+
 		setThisClass( BoxClassSupport.resolveClassForUDF( thisClass, function ) );
+		setThisStaticClass( thisStaticClass );
+		setThisInterface( thisInterface );
 		pushTemplate( function );
 		try {
 			ArgumentUtil.createArgumentsScope( this, positionalArguments, function.getArguments(), this.argumentsScope,
@@ -192,7 +195,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 * @param namedArguments     The arguments
 	 */
 	public FunctionBoxContext( IBoxContext parent, Function function, Key functionCalledName,
-	    Map<Key, Object> namedArguments, IClassRunnable thisClass ) {
+	    Map<Key, Object> namedArguments, IClassRunnable thisClass, DynamicObject thisStaticClass, BoxInterface thisInterface ) {
 		super( parent );
 		if ( parent == null ) {
 			throw new BoxRuntimeException( "Parent context cannot be null for FunctionBoxContext" );
@@ -205,6 +208,8 @@ public class FunctionBoxContext extends BaseBoxContext {
 		this.function			= function;
 		this.functionCalledName	= functionCalledName;
 		setThisClass( BoxClassSupport.resolveClassForUDF( thisClass, function ) );
+		setThisStaticClass( thisStaticClass );
+		setThisInterface( thisInterface );
 		pushTemplate( function );
 		try {
 			ArgumentUtil.createArgumentsScope( this, namedArguments, function.getArguments(), this.argumentsScope,
@@ -762,6 +767,16 @@ public class FunctionBoxContext extends BaseBoxContext {
 	@Override
 	public IClassRunnable getFunctionClass() {
 		return isInClass() ? getThisClass().getBottomClass() : null;
+	}
+
+	/**
+	 * Get the class, if any, for a function invocation
+	 *
+	 * @return The class to use, or null if none
+	 */
+	@Override
+	public DynamicObject getFunctionStaticClass() {
+		return isInStaticClass() ? getThisStaticClass() : null;
 	}
 
 	/**

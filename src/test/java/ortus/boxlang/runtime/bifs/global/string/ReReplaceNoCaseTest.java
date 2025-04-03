@@ -95,4 +95,17 @@ public class ReReplaceNoCaseTest {
 		assertThat( variables.get( result ) ).isEqualTo( "TEST123" );
 	}
 
+	@Test
+	public void testMatchLineBreak() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				result = reReplace( '<!-- start child -->foo
+<!-- end child -->', '<!-- start child -->.*<!-- end child -->', 'bar' );
+		    """,
+		    context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( "bar" );
+	}
+
 }

@@ -93,14 +93,6 @@ public class NumberCasterTest {
 		assertThat( result.doubleValue() ).isEqualTo( 5 );
 	}
 
-	@DisplayName( "It can cast a char array to a Number" )
-	@Test
-	void testItCanCastACharArray() {
-		Number result = NumberCaster.cast( "12345".getBytes() );
-		assertThat( result ).isInstanceOf( Integer.class );
-		assertThat( result.doubleValue() ).isEqualTo( 12345 );
-	}
-
 	@DisplayName( "It will NOT cast a boolean to a Number" )
 	@Test
 	void testItCanCastABoolean() {
@@ -134,6 +126,21 @@ public class NumberCasterTest {
 		assertThat( attempt2.ifSuccessful( System.out::println ) );
 		assertThat( attempt2.getOrDefault( 42D ) ).isEqualTo( 42 );
 		assertThat( attempt2.getOrSupply( () -> 40D + 2D ) ).isEqualTo( 42 );
+
+	}
+
+	@DisplayName( "It can attempt to cast a string containing with an invalid octal number" )
+	@Test
+	void testItCanCastOctals() {
+		CastAttempt<Number> attempt = NumberCaster.attempt( "08" );
+		assertThat( attempt.wasSuccessful() ).isTrue();
+		assertThat( attempt.get() ).isEqualTo( 8 );
+		assertThat( attempt.ifSuccessful( System.out::println ) );
+		// 000579
+		attempt = NumberCaster.attempt( "000579" );
+		assertThat( attempt.wasSuccessful() ).isTrue();
+		assertThat( attempt.get() ).isEqualTo( 579 );
+		assertThat( attempt.ifSuccessful( System.out::println ) );
 
 	}
 

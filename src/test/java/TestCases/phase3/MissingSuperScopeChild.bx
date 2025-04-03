@@ -1,0 +1,7 @@
+class extends="MissingSuperScopeParent" {
+
+	function overriddenMethod() {
+		return super.overriddenMethod();
+	}
+	
+}

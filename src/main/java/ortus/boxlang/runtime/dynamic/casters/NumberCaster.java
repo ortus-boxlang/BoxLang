@@ -153,7 +153,7 @@ public class NumberCaster implements IBoxCaster {
 		}
 
 		// Try to parse the string as a Number
-		String	stringValue	= StringCaster.cast( object, false );
+		String	stringValue	= StringCasterStrict.cast( object, false );
 		Number	result		= parseNumber( stringValue );
 		if ( result != null ) {
 			return result;
@@ -183,7 +183,7 @@ public class NumberCaster implements IBoxCaster {
 		if ( value.endsWith( "." ) ) {
 			value = value.substring( 0, value.length() - 1 );
 		}
-		if ( NumberUtils.isCreatable( value ) ) {
+		if ( NumberUtils.isCreatable( value ) || NumberUtils.isParsable( value ) ) {
 			try {
 				int len = value.length();
 				// If there is a decimal point or scientific notation, return a BigDecimal

@@ -315,4 +315,27 @@ public class DirectoryListTest {
 		assertTrue( listing.size() == 0 );
 	}
 
+	@DisplayName( "Tests that a relative path provided will return expanded paths" )
+	@Test
+	public void testNormalization() {
+		variables.put( Key.of( "testDirectory" ), Path.of( testDirectory ).toAbsolutePath().toString() );
+		assertTrue( FileSystemUtil.exists( testDirectory ) );
+		variables.put( Key.of( "testPath" ), "src/test/resources/../../test/resources/tmp/directoryListTest/foo" );
+		instance.executeSource(
+		    """
+		    result = directoryList( variables.testPath );
+		    """,
+		    context );
+		var result = variables.get( Key.of( "result" ) );
+		assertTrue( result instanceof Array );
+		Array listing = ( Array ) result;
+		assertTrue( listing.size() == 2 );
+		for ( var i = 0; i < listing.size(); i++ ) {
+			assertTrue( listing.get( i ) instanceof String );
+		}
+		assertThat( listing.get( 0 ) ).isEqualTo( Path.of( testDirectory2 ).toAbsolutePath().toString() );
+		assertThat( listing.get( 1 ) ).isEqualTo( Path.of( testFile1 ).toAbsolutePath().toString() );
+
+	}
+
 }

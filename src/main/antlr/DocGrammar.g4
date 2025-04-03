@@ -4,6 +4,18 @@ options {
 	tokenVocab = DocLexer;
 }
 
+// These facilitate our cache management methods
+@members {
+ 
+ 	public static DFA[] getParseCache() {
+		return DocGrammar._decisionToDFA;
+	}
+ 
+ 	public static ATN getStaticATN() {
+		return _ATN;
+	}
+}
+
 documentation:
 	skipWhitespace* DOC_START skipWhitespace* documentationContent? NEWLINE? DOC_END? NEWLINE?;
 

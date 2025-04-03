@@ -90,7 +90,7 @@ public class AsyncService extends BaseService {
 	/**
 	 * Default max threads
 	 */
-	public static final int				DEFAULT_MAX_THREADS	= 20;
+	public static final int				DEFAULT_MAX_THREADS	= 10;
 
 	/**
 	 * Default timeout in seconds for shutdown and await termination

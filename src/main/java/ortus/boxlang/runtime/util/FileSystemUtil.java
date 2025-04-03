@@ -999,12 +999,28 @@ public final class FileSystemUtil {
 		    .getAsStruct( Key.mappings )
 		    .entrySet()
 		    .stream()
-		    // Don't match the root mapping yet, we'll do that below
-		    .filter( entry -> !entry.getKey().getName().equals( "/" ) && StringUtils.startsWithIgnoreCase( finalPath, entry.getKey().getName() ) )
+		    .filter( entry -> {
+															    // Don't match the root mapping yet, we'll do that below
+															    if ( entry.getKey().getName().equals( "/" ) ) {
+																    return false;
+															    }
+															    // Standard startswith check
+															    // /foo/bar/baz starts with /foo/bar
+															    if ( StringUtils.startsWithIgnoreCase( finalPath, entry.getKey().getName() ) ) {
+																    return true;
+															    }
+															    // Edge case where mapping is defined with trailing slash, but expand path was called without a trailing slash
+															    // /foo/bar "starts with" /foo/bar/
+															    if ( entry.getKey().getName().length() == finalPath.length() + 1
+															        && ( finalPath + "/" ).equalsIgnoreCase( entry.getKey().getName() ) ) {
+																    return true;
+															    }
+															    return false;
+														    } )
 		    .findFirst()
 		    .orElse( null );
 		if ( matchingMappingEntry != null ) {
-			path = path.substring( matchingMappingEntry.getKey().getName().length() );
+			path = path.substring( Math.min( matchingMappingEntry.getKey().getName().length(), path.length() ) );
 			String	matchingMapping	= matchingMappingEntry.getValue().toString();
 			Path	result			= Path.of( matchingMapping, path ).toAbsolutePath();
 

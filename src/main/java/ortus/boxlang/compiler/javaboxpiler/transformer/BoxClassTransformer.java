@@ -138,7 +138,8 @@ public class BoxClassTransformer extends AbstractTransformer {
 			// Private Static fields
 			private static final long serialVersionUID = ${compileVersion};
 			private static final List<ImportDefinition>	imports	= List.of();
-			private static final ResolvedFilePath path = ${resolvedFilePath};
+			// public so the static initializer can access it
+			public static final ResolvedFilePath path = ${resolvedFilePath};
 			private static final BoxSourceType sourceType = BoxSourceType.${sourceType};
 			private static final long compileVersion = ${compileVersion};
 			private static final LocalDateTime compiledOn = ${compiledOnTimestamp};

@@ -28,7 +28,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.BoxLangType;
 
 @BoxBIF
-@BoxMember( type = BoxLangType.STRING, name = "StringSome" )
+@BoxMember( type = BoxLangType.STRING_STRICT, name = "StringSome" )
 
 public class StringSome extends ListSome {
 

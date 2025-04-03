@@ -37,7 +37,7 @@ import ortus.boxlang.runtime.validation.Validator;
 @BoxComponent( name = "Stopwatch", allowsBody = true, requiresBody = true )
 public class Timer extends Component {
 
-	private static ortus.boxlang.runtime.util.Timer	timer		= new ortus.boxlang.runtime.util.Timer();
+	private static ortus.boxlang.runtime.util.Timer	bxTimer		= new ortus.boxlang.runtime.util.Timer();
 
 	private static final IStruct					TIME_UNITS	= Struct.of(
 	    Key.of( "nano" ), ortus.boxlang.runtime.util.Timer.TimeUnit.NANOSECONDS,
@@ -52,6 +52,7 @@ public class Timer extends Component {
 	private enum TimerType {
 
 		DEBUG,
+		DUMP,
 		COMMENT,
 		INLINE,
 		OUTLINE;
@@ -68,7 +69,7 @@ public class Timer extends Component {
 		super();
 		// Uncomment and define declare argument to this Component
 		declaredAttributes = new Attribute[] {
-		    new Attribute( Key.type, "string", Set.of( Validator.valueOneOf( "debug", "comment", "inline", "outline" ) ) ),
+		    new Attribute( Key.type, "string", Set.of( Validator.valueOneOf( "debug", "comment", "inline", "outline", "dump" ) ) ),
 		    new Attribute( Key.label, "string" ),
 		    new Attribute( Key.unit, "string", "milli", Set.of( Validator.valueOneOf( "nano", "micro", "milli", "second" ) ) ),
 		    new Attribute( Key.variable, "string" )
@@ -87,7 +88,7 @@ public class Timer extends Component {
 	 *
 	 * @component.Stopwatch.attributes.exclude type
 	 *
-	 * @attribute.type The type of output to generate. One of `debug`, `comment`, `inline`, or `outline`.
+	 * @attribute.type The type of output to generate. One of `debug`, `comment`, `inline`, or `outline` or `dump`.
 	 *
 	 * @attribute.label The label to use for the output.
 	 *
@@ -97,81 +98,122 @@ public class Timer extends Component {
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
 		String										variable			= attributes.getAsString( Key.variable );
+		String										timerType			= attributes.getAsString( Key.type );
 		String										label				= attributes.getAsString( Key.label );
 		String										precision			= attributes.getAsString( Key.unit );
 		Key											precisionKey		= Key.of( precision );
 		ortus.boxlang.runtime.util.Timer.TimeUnit	unit				= ( ortus.boxlang.runtime.util.Timer.TimeUnit ) TIME_UNITS.get( precisionKey );
 		StringBuffer								bodyOutputBuffer	= new StringBuffer();
 
+		// If we have a label, but no timer type, default to dump
+		if ( label != null && timerType == null ) {
+			timerType = "dump";
+		}
+
+		/**
+		 * --------------------------------------------------------
+		 * Time into a variable
+		 * --------------------------------------------------------
+		 */
 		if ( variable != null ) {
-			long timerResult = timer.timeItRaw( () -> processBody( context, body, bodyOutputBuffer ), unit );
+			long timerResult = bxTimer.timeItRaw( () -> processBody( context, body, bodyOutputBuffer ), unit );
 			ExpressionInterpreter.setVariable(
 			    context,
 			    variable,
 			    timerResult
 			);
-		} else if ( attributes.getAsString( Key.label ) != null && attributes.getAsString( Key.type ) == null ) {
-			String	timerResult	= timer.timeIt( () -> processBody( context, body, bodyOutputBuffer ) );
-			IStruct	result		= Struct.of( Key.of( attributes.getAsString( Key.label ) ), timerResult );
-			runtime.getFunctionService().getGlobalFunction( Key.dump ).invoke( context, new Object[] { result }, false, Key.dump );
-		} else {
-			TimerType	type		= TimerType.fromString( attributes.getAsString( Key.type ) );
-			String		timerResult	= timer.timeIt( () -> processBody( context, body, bodyOutputBuffer ),
-			    unit );
-			switch ( type ) {
-				case DEBUG :
-					if ( label == null ) {
-						label = "Timer " + UUID.randomUUID().toString();
-					}
-					Object debugInfo = ExpressionInterpreter.getVariable( context, "request.debugInfo", true );
-					if ( debugInfo == null ) {
-						ExpressionInterpreter.setVariable( context, "request.debugInfo", new Struct() );
-					}
-					StructCaster.cast( ExpressionInterpreter.getVariable( context, "request.debugInfo", true ) ).put( Key.of( label ),
-					    timerResult );
-					context.writeToBuffer( bodyOutputBuffer.toString() );
-					break;
-				case COMMENT :
-					context.writeToBuffer( toComment( label, timerResult, bodyOutputBuffer ) );
-					break;
-				case INLINE :
-					context.writeToBuffer( toInline( label, timerResult, bodyOutputBuffer ) );
-					break;
-				case OUTLINE :
-					context.writeToBuffer( toOutline( label, timerResult, bodyOutputBuffer ) );
-					break;
-			}
+			return DEFAULT_RETURN;
+		}
+
+		/**
+		 * --------------------------------------------------------
+		 * Time into different output types
+		 * --------------------------------------------------------
+		 */
+		TimerType	type		= TimerType.fromString( timerType );
+		String		timerResult	= bxTimer.timeIt( () -> processBody( context, body, bodyOutputBuffer ), unit );
+		switch ( type ) {
+			case DEBUG :
+				if ( label == null ) {
+					label = "Timer " + UUID.randomUUID().toString();
+				}
+				Object debugInfo = ExpressionInterpreter.getVariable( context, "request.debugInfo", true );
+				if ( debugInfo == null ) {
+					ExpressionInterpreter.setVariable( context, "request.debugInfo", new Struct() );
+				}
+				StructCaster.cast( ExpressionInterpreter.getVariable( context, "request.debugInfo", true ) ).put( Key.of( label ),
+				    timerResult );
+				context.writeToBuffer( bodyOutputBuffer.toString() );
+				break;
+			case DUMP :
+				if ( label == null ) {
+					label = "Timer " + UUID.randomUUID().toString();
+				}
+				IStruct result = Struct.of( Key.of( label ), timerResult );
+				runtime.getFunctionService().getGlobalFunction( Key.dump ).invoke( context, new Object[] { result }, false, Key.dump );
+				break;
+			case COMMENT :
+				context.writeToBuffer( toComment( label, timerResult, bodyOutputBuffer ) );
+				break;
+			case INLINE :
+				context.writeToBuffer( toInline( label, timerResult, bodyOutputBuffer ) );
+				break;
+			case OUTLINE :
+				context.writeToBuffer( toOutline( label, timerResult, bodyOutputBuffer ) );
+				break;
 		}
 
 		return DEFAULT_RETURN;
 	}
 
+	/**
+	 * Process a comment for the timer
+	 *
+	 * @param label        The label to use for the comment
+	 * @param result       The result of the timer
+	 * @param outputBuffer The output buffer to use for the comment
+	 *
+	 * @return The comment string
+	 */
 	private String toComment( String label, String result, StringBuffer outputBuffer ) {
-		if ( label == null ) {
-			label = "";
-		}
-		return "<!-- " + label + " : " + result + " -->" + outputBuffer.toString();
+		String labelText = ( label == null ) ? "" : label;
+		return String.format( "<!-- %s : %s -->%s", labelText, result, outputBuffer.toString() );
 	}
 
+	/**
+	 * Process an inline comment for the timer
+	 *
+	 * @param label        The label to use for the comment
+	 * @param result       The result of the timer
+	 * @param outputBuffer The output buffer to use for the comment
+	 *
+	 * @return The inline comment string
+	 */
 	private String toInline( String label, String result, StringBuffer outputBuffer ) {
-		if ( label == null ) {
-			label = "";
-		}
-		String labelOutput = label + " : " + result;
-
-		return outputBuffer.toString() + "\n" + labelOutput;
+		String labelText = ( label == null ) ? "" : label;
+		return String.format( "%s \n %s : %s", outputBuffer.toString(), labelText, result );
 	}
 
+	/**
+	 * Process an outline comment for the timer
+	 *
+	 * @param label        The label to use for the comment
+	 * @param result       The result of the timer
+	 * @param outputBuffer The output buffer to use for the comment
+	 *
+	 * @return The outline comment string
+	 */
 	private String toOutline( String label, String result, StringBuffer outputBuffer ) {
-		if ( label == null ) {
-			label = "";
-		}
-		String labelOutput = label + " : " + result;
-
-		return "<fieldset class=\"timer\">" +
-		    outputBuffer.toString() +
-		    "<legend align=\"top\">" + labelOutput + "</legend>" +
-		    "</fieldset>";
+		String			labelText	= ( label == null ) ? "" : label;
+		StringBuilder	htmlBuilder	= new StringBuilder( "<fieldset class=\"timer\">" );
+		return htmlBuilder.append( outputBuffer.toString() )
+		    .append( "<legend align=\"top\">" )
+		    .append( labelText )
+		    .append( ":" )
+		    .append( result )
+		    .append( "</legend>" )
+		    .append( "</fieldset>" )
+		    .toString();
 	}
 
 }

@@ -50,6 +50,7 @@ public enum BoxLangType {
 	NUMERIC( Key._NUMERIC ),
 	QUERY( Key._QUERY ),
 	STRING( Key._STRING ),
+	STRING_STRICT( Key.string_strict ),
 	STRUCT( Key._STRUCT ),
 	STRUCT_LOOSE( Key.structLoose ),
 	UDF( Key._UDF ),

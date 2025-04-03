@@ -164,7 +164,7 @@ public class BoxClassTransformer {
 										    }
 									    }
 									    String returnTypeString = ( boxType.equals( BoxType.Fqn ) ? fqn : boxType.getSymbol() );
-									    if ( returnTypeString.equalsIgnoreCase( "Object" ) ) {
+									    if ( returnTypeString.equalsIgnoreCase( "Object" ) || returnTypeString.equalsIgnoreCase( "any" ) ) {
 										    returnTypeString = "java.lang.Object";
 									    }
 									    // Type returnType = Type

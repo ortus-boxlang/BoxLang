@@ -218,11 +218,48 @@ public class DateTimeCasterTest {
 	}
 
 	@Test
+	@DisplayName( "Test time only value to AM/PM format" )
+	public void testTimeOnlyString() {
+		String		dateString	= "11:00";
+		DateTime	result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "hh:mm a" ) ).isEqualTo( "11:00 AM" );
+	}
+
+	@Test
 	@DisplayName( "Test casting ODBC Date string to DateTime" )
 	public void testCastODBCDateString() {
 		String		dateString	= "20240402";
 		DateTime	result		= DateTimeCaster.cast( dateString );
 		assertThat( result ).isNotNull();
+	}
+
+	@Test
+	@DisplayName( "Test casting java.util.Date default toString format to DateTime" )
+	public void testDateObjToString() {
+		String		dateString	= "Tue Nov 22 11:01:51 CET 2022";
+		DateTime	result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.convertToZone( ZoneId.of( "CET" ) ).format( "EEE MMM dd HH:mm:ss zzz yyyy" ) ).isEqualTo( "Tue Nov 22 11:01:51 CET 2022" );
+	}
+
+	@Test
+	@DisplayName( "Test casting various slash-delimited formats with time" )
+	public void testVariousSlashFormats() {
+		String		dateString	= "03/28/2025 04:32 PM";
+		DateTime	result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "MM/dd/yyyy hh:mm a" ) ).isEqualTo( "03/28/2025 04:32 PM" );
+
+		dateString	= "03/28/2025 04:32:26 PM";
+		result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "MM/dd/yyyy hh:mm:ss a" ) ).isEqualTo( "03/28/2025 04:32:26 PM" );
+
+		dateString	= "03/28/2025 16:32:26";
+		result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "MM/dd/yyyy hh:mm:ss a" ) ).isEqualTo( "03/28/2025 04:32:26 PM" );
 	}
 
 	@Test

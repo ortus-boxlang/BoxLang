@@ -37,7 +37,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 @BoxBIF( alias = "StringLen" )
 @BoxBIF( alias = "QueryRecordCount" )
 @BoxMember( type = BoxLangType.ARRAY )
-@BoxMember( type = BoxLangType.STRING )
+@BoxMember( type = BoxLangType.STRING_STRICT )
 @BoxMember( type = BoxLangType.STRUCT, name = "count" )
 @BoxMember( type = BoxLangType.STRUCT, name = "len" )
 @BoxMember( type = BoxLangType.QUERY )

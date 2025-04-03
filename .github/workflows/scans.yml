@@ -3,7 +3,7 @@ name: Anchore-Grype Security Scans
 on:
   workflow_dispatch:
   schedule:
-    # Run this against the default branch every Monday at 5:30AM
+    # Run this against the main branch every Monday at 5:30 AM
     - cron: "30 5 * * 2"
 
 permissions: write-all
@@ -14,9 +14,12 @@ env:
 jobs:
   scan:
     runs-on: ubuntu-latest
+    # Checkout the main/release branch
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+        with:
+          ref: main
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -49,15 +52,17 @@ jobs:
         run: gradle clean jar
 
       - name: Scan generated packages
-        uses: anchore/scan-action@v3
+        uses: anchore/scan-action@v6
         id: securityscan
         with:
           path: "./build/libs"
           output-format: table
+          severity-cutoff: "high"
+          by-cve: "true"
           fail-build: true
 
-      # - name: Upload Anchore Report
-      #   uses: github/codeql-action/upload-sarif@v2
-      #   with:
-      #     sarif_file: ${{ steps.imagescan.outputs.sarif }}
-      #     category: "BoxLang-Runtime-${{ github.env.BRANCH }}"
+      - name: Upload Anchore Report
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: ${{ steps.securityscan.outputs.sarif }}
+          category: "BoxLang-Runtime-${{ github.env.BRANCH }}"

@@ -25,7 +25,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 
 @BoxBIF
-@BoxMember( type = BoxLangType.STRING, name = "compare" )
+@BoxMember( type = BoxLangType.STRING_STRICT, name = "compare" )
 public class Compare extends BIF {
 
 	/**

@@ -72,6 +72,7 @@ import ortus.boxlang.compiler.ast.statement.BoxStatementBlock;
 import ortus.boxlang.compiler.ast.statement.BoxSwitch;
 import ortus.boxlang.compiler.ast.statement.BoxWhile;
 import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
+import ortus.boxlang.compiler.ast.statement.component.BoxTemplateIsland;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
@@ -972,7 +973,19 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 			BoxExpression expr = node.getExpression();
 			// only contains white space
 			if ( expr instanceof BoxStringLiteral str && str.getValue().trim().isEmpty() ) {
-				return null;
+				if ( node.getFirstAncestorOfType( BoxTemplateIsland.class ) == null
+				    // This is prolly not comprehensive. Maybe there's a better approach, but let's try to detect if we're in a componenet that's actually outputting something
+				    // The main problem here is that any whitespace COULD POTENTIALLY be significant depending on what the code is doing.
+				    // An alternative approach is to not remove the nodes here, but skip them in the actual BoxPrettyPrintVisitor which is the original for this change
+				    // But even then, we still have the problem, it just moves to another class!
+				    // Another actual approach is to look for sibling buffer output nodes and if any of them are not empty, then don't remove this one
+				    // That's still not great as there could be cousin nodes a littler further away. In reality, the best way is prolly to get all the descendants of a UDF
+				    // which are a buffer outpuot, and if all of them are whitespace, then ignore them all, but if there is any real actual output, then preserve them all. ) {
+				    && node.getFirstAncestorOfType( BoxComponent.class, n -> n.getName().equalsIgnoreCase( "query" )
+				        || n.getName().equalsIgnoreCase( "document" )
+				        || n.getName().equalsIgnoreCase( "savecontent" ) ) == null ) {
+					return null;
+				}
 			}
 		}
 		return super.visit( node );

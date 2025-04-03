@@ -29,6 +29,7 @@ import org.apache.commons.lang3.SerializationUtils;
 
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
@@ -39,7 +40,6 @@ import ortus.boxlang.runtime.types.NullValue;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
-import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 
 /**
  * This class is responsible for duplicating objects in the BoxLang runtime
@@ -55,6 +55,7 @@ public class DuplicationUtil {
 	 * @return A new object copy
 	 */
 	public static Object duplicate( Object target, Boolean deep ) {
+		target = DynamicObject.unWrap( target );
 		if ( target == null ) {
 			return null;
 		} else if ( ClassUtils.isPrimitiveOrWrapper( target.getClass() ) ) {
@@ -76,8 +77,6 @@ public class DuplicationUtil {
 		} else if ( target instanceof Function ) {
 			// functions should never be duplicated
 			return target;
-		} else if ( target instanceof Throwable t ) {
-			return ExceptionUtil.throwableToStruct( t );
 		} else if ( target instanceof Serializable ) {
 			// Once we get here duplication is deep but very slow, but many java classes like ArrayList and all HashMaps implement this class
 			// If a new type is created, add a custom routine above for duplication

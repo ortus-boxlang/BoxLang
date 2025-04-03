@@ -349,6 +349,7 @@ public class BoxClassSupport {
 			    name,
 			    positionalArguments,
 			    thisClass,
+			    null,
 			    null
 			);
 
@@ -435,6 +436,7 @@ public class BoxClassSupport {
 			    name,
 			    namedArguments,
 			    thisClass,
+			    null,
 			    null
 			);
 
@@ -612,6 +614,7 @@ public class BoxClassSupport {
 			    name,
 			    namedArguments,
 			    null,
+			    targetClass,
 			    null
 			);
 
@@ -639,6 +642,7 @@ public class BoxClassSupport {
 			    name,
 			    positionalArguments,
 			    null,
+			    targetClass,
 			    null
 			);
 
@@ -828,6 +832,9 @@ public class BoxClassSupport {
 
 		// Where was this function origionally defined
 		Class<?> enclosingClass = udf.getClass().getEnclosingClass();
+
+		// Start at the bottom class
+		thisClass = thisClass.getBottomClass();
 
 		// If the enclosing class is the same as the current class, then we're good
 		if ( enclosingClass == thisClass.getClass() ) {

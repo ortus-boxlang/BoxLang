@@ -18,7 +18,7 @@
 package ortus.boxlang.runtime.interop;
 
 import java.lang.invoke.MethodHandle;
-import java.lang.reflect.Method;
+import java.lang.reflect.Executable;
 
 /**
  * This Unmodifiable record represents an executable method handle and it's metadata.
@@ -32,7 +32,7 @@ import java.lang.reflect.Method;
  */
 public record MethodRecord(
     String methodName,
-    Method method,
+    Executable method,
     MethodHandle methodHandle,
     boolean isStatic,
     int argumentCount ) {

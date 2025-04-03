@@ -6,6 +6,7 @@ import java.util.UUID;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.scopes.Key;
+import org.apache.commons.text.RandomStringGenerator;
 
 /**
  * A child transaction object used for implementing nested JDBC transactions.
@@ -54,8 +55,13 @@ public class ChildTransaction implements ITransaction {
 	 * @param transaction The parent transaction
 	 */
 	public ChildTransaction( ITransaction parent ) {
-		this.parent				= parent;
-		this.savepointPrefix	= "CHILD_" + UUID.randomUUID().toString() + "_";
+		this.parent = parent;
+		RandomStringGenerator generator = new RandomStringGenerator.Builder()
+		    .withinRange( '0', 'z' )
+		    .filteredBy( Character::isLetterOrDigit )
+		    .build();
+
+		this.savepointPrefix = "CHILD_" + generator.generate( 12 ) + "_";
 	}
 
 	/**

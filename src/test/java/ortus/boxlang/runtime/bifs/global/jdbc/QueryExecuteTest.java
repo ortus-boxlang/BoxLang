@@ -48,6 +48,49 @@ public class QueryExecuteTest extends BaseJDBCTest {
 
 	static Key result = new Key( "result" );
 
+	@Disabled( "Couldn't get a working datetime column in the CREATE TABLE statement in JDBCTestUtils." )
+	@EnabledIf( "tools.JDBCTestUtils#hasMSSQLModule" )
+	@DisplayName( "It can pass date object params without specifying a sql type" )
+	@Test
+	public void testDateParamNoSqlType() {
+		instance.executeSource(
+		    """
+		    result = queryExecute(
+		    	"SELECT id from developers WHERE myDate <= :created",
+		    	{ "created" : now() },
+		    	{ "datasource" : "MSSQLdatasource" }
+		    );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
+		Query query = variables.getAsQuery( result );
+		assertThat( query.size() ).isGreaterThan( 0 );
+	}
+
+	@Disabled( "To fix. For some reason the @@rowcount is not returning a result set." )
+	@EnabledIf( "tools.JDBCTestUtils#hasMSSQLModule" )
+	@DisplayName( "It can retrieve a resultSet after an update statement - BL-1186. (multiple statements)" )
+	@Test
+	public void testSelectAfterUpdate() {
+		// asking for a result set from a statement that doesn't return one should return an empty query
+		instance.executeSource(
+		    """
+		       result = queryExecute( "
+		             update developers
+		             set id = '99'
+		             where id = '77';
+
+		             select @@rowcount;
+		    ", {}, { "datasource" : "MSSQLdatasource" } );
+		       """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
+		Query query = variables.getAsQuery( result );
+		assertEquals( 1, query.size() );
+		IStruct row = query.getRowAsStruct( 0 );
+		assertEquals( 99, row.get( "id" ) );
+	}
+
 	@EnabledIf( "tools.JDBCTestUtils#hasMSSQLModule" )
 	@DisplayName( "It won't throw on DROP statements like MSSQL does" )
 	@Test

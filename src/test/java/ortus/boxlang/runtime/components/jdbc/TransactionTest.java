@@ -58,6 +58,20 @@ public class TransactionTest extends BaseJDBCTest {
 		assertThat( theResult.size() ).isEqualTo( 4 );
 	}
 
+	@DisplayName( "Can use a case-insensitive isolation level" )
+	@Test
+	public void testIsolationCaseInsensitive() {
+		getInstance().executeSource(
+		    """
+		    transaction isolation="READ_COMMITTED"{
+		    	variables.result = queryExecute( "SELECT * FROM developers", {} );
+		    }
+		    """,
+		    getContext() );
+		Query theResult = ( Query ) getVariables().get( result );
+		assertThat( theResult.size() ).isEqualTo( 4 );
+	}
+
 	@DisplayName( "Throws validation error if you try to commit or rollback a non-existing transaction" )
 	@Test
 	public void testInvalidTransactionUsage() {

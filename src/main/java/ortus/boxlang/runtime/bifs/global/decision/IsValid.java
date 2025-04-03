@@ -72,6 +72,7 @@ public class IsValid extends BIF {
 	 * <li>float</li>
 	 * <li>function</li>
 	 * <li>guid</li>
+	 * <li>hex</li>
 	 * <li>integer</li>
 	 * <li>numeric</li>
 	 * <li>query</li>
@@ -121,8 +122,7 @@ public class IsValid extends BIF {
 				pattern = min.toString();
 			} else {
 				throw new IllegalArgumentException(
-				    "The pattern argument is required for the regex and regular_expression types."
-				);
+				    "The pattern argument is required for the regex and regular_expression types." );
 			}
 		}
 
@@ -151,6 +151,7 @@ public class IsValid extends BIF {
 			case GUID -> ValidationUtil.isValidGUID( castAsStringOrNull( arguments.get( Key.value ) ) );
 			case EMAIL -> ValidationUtil.isValidEmail( castAsStringOrNull( arguments.get( Key.value ) ) );
 			case FUNCTION -> ValidationUtil.isFunction( arguments.get( Key.value ) );
+			case HEX -> ValidationUtil.isValidHexString( castAsStringOrNull( arguments.get( Key.value ) ) );
 			case INTEGER -> ValidationUtil.isValidInteger( arguments.get( Key.value ) );
 			case LAMBDA -> ValidationUtil.isLambda( arguments.get( Key.value ) );
 			case NUMERIC -> ValidationUtil.isValidNumeric( arguments.get( Key.value ) );
@@ -206,6 +207,7 @@ public class IsValid extends BIF {
 		FLOAT( "float" ),
 		FUNCTION( "function" ),
 		GUID( "guid" ),
+		HEX( "hex" ),
 		INTEGER( "integer" ),
 		LAMBDA( "lambda" ),
 		NUMERIC( "numeric" ),

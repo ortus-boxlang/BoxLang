@@ -43,6 +43,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.KeyCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.interop.DynamicInteropService;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.BoxInterface;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
@@ -69,7 +70,7 @@ import ortus.boxlang.runtime.util.RegexBuilder;
  * - WEAK: This implementation of a Struct uses weak references for keys.
  * - SOFT: This implementation of a Struct uses a default struct with values wrapped in a SoftReference.
  */
-public class Struct implements IStruct, IListenable, Serializable {
+public class Struct implements IStruct, IListenable<IStruct>, Serializable {
 
 	/**
 	 * This is to help prevent endless recursion when converting a struct to a string. Technically, this approach only applies to structs
@@ -131,7 +132,7 @@ public class Struct implements IStruct, IListenable, Serializable {
 	/**
 	 * Used to track change listeners. Intitialized on-demand
 	 */
-	private Map<Key, IChangeListener>				listeners;
+	private Map<Key, IChangeListener<IStruct>>		listeners;
 
 	/**
 	 * In general, a common approach is to choose an initial capacity that is a power of two.
@@ -502,10 +503,32 @@ public class Struct implements IStruct, IListenable, Serializable {
 	 */
 	@Override
 	public Object put( Key key, Object value ) {
-		return wrapped.put(
+		return putInternal( key, value );
+	}
+
+	/**
+	 * Set a value in the struct by a Key object.
+	 * 
+	 * I exist since I can be used internally to bypass overridden put() methods in subclasses
+	 * such as ArgumentScope, which have undesirable behaviors in scenarios such as putAll().
+	 *
+	 * @param key   The key to set
+	 * @param value The value to set
+	 *
+	 * @return The previous value of the key, or null if not found
+	 */
+	protected Object putInternal( Key key, Object value ) {
+		value = notifyListeners( key, wrapNull( value ) );
+		// return of null means don't insert
+		if ( value == null ) {
+			return null;
+		}
+		Object result = wrapped.put(
 		    isCaseSensitive() && ! ( key instanceof KeyCased ) ? new KeyCased( key.getName() ) : key,
-		    notifyListeners( key, wrapNull( value ) )
+		    value
 		);
+
+		return result;
 	}
 
 	/**
@@ -532,10 +555,7 @@ public class Struct implements IStruct, IListenable, Serializable {
 	@Override
 	public Object putIfAbsent( Key key, Object value ) {
 		if ( !containsKey( key ) ) {
-			return wrapped.putIfAbsent(
-			    isCaseSensitive() && ! ( key instanceof KeyCased ) ? new KeyCased( key.getName() ) : key,
-			    notifyListeners( key, wrapNull( value ) )
-			);
+			return put( key, value );
 		}
 		return null;
 	}
@@ -606,11 +626,12 @@ public class Struct implements IStruct, IListenable, Serializable {
 		// With a linked hashmap we need to maintain order - which is a tiny bit slower
 		if ( type.equals( TYPES.LINKED ) ) {
 			entryStream.forEachOrdered( entry -> {
-				wrapped.put( entry.getKey(), ( entry.getValue() == null ) ? new NullValue() : entry.getValue() );
+				putInternal( entry.getKey(), entry.getValue() );
 			} );
 		} else {
 			entryStream.forEach( entry -> {
-				wrapped.put( entry.getKey(), ( entry.getValue() == null ) ? new NullValue() : entry.getValue() );
+				// wrapped.put( entry.getKey(), ( entry.getValue() == null ) ? new NullValue() : entry.getValue() );
+				putInternal( entry.getKey(), entry.getValue() );
 			} );
 		}
 	}
@@ -639,7 +660,7 @@ public class Struct implements IStruct, IListenable, Serializable {
 				} else {
 					key = Key.of( entry.getKey().toString() );
 				}
-				wrapped.put( key, ( entry.getValue() == null ) ? new NullValue() : entry.getValue() );
+				putInternal( key, entry.getValue() );
 			} );
 		} else {
 			entryStream.forEach( entry -> {
@@ -649,7 +670,7 @@ public class Struct implements IStruct, IListenable, Serializable {
 				} else {
 					key = Key.of( entry.getKey().toString() );
 				}
-				wrapped.put( key, ( entry.getValue() == null ) ? new NullValue() : entry.getValue() );
+				putInternal( key, entry.getValue() );
 			} );
 		}
 	}
@@ -659,7 +680,9 @@ public class Struct implements IStruct, IListenable, Serializable {
 	 */
 	@Override
 	public void clear() {
-		// TODO: handle listeners
+		if ( listeners != null ) {
+			keySet().forEach( key -> notifyListeners( key, null ) );
+		}
 		wrapped.clear();
 	}
 
@@ -895,6 +918,7 @@ public class Struct implements IStruct, IListenable, Serializable {
 				    name,
 				    positionalArguments,
 				    getFunctionContextThisClassForInvoke( context ),
+				    getFunctionContextThisStaticClassForInvoke( context ),
 				    getFunctionContextThisInterfaceForInvoke()
 				);
 				return function.invoke( fContext );
@@ -933,6 +957,7 @@ public class Struct implements IStruct, IListenable, Serializable {
 				    name,
 				    namedArguments,
 				    getFunctionContextThisClassForInvoke( context ),
+				    getFunctionContextThisStaticClassForInvoke( context ),
 				    getFunctionContextThisInterfaceForInvoke()
 				);
 				return function.invoke( fContext );
@@ -954,6 +979,15 @@ public class Struct implements IStruct, IListenable, Serializable {
 			return cContext.getThisClass();
 		} else if ( context instanceof FunctionBoxContext fContext ) {
 			return fContext.getThisClass();
+		}
+		return null;
+	}
+
+	public DynamicObject getFunctionContextThisStaticClassForInvoke( IBoxContext context ) {
+		if ( context instanceof ClassBoxContext cContext ) {
+			return DynamicObject.of( cContext.getThisClass().getClass() );
+		} else if ( context instanceof FunctionBoxContext fContext ) {
+			return fContext.getThisStaticClass();
 		}
 		return null;
 	}
@@ -1047,41 +1081,44 @@ public class Struct implements IStruct, IListenable, Serializable {
 	 */
 
 	@Override
-	public void registerChangeListener( IChangeListener listener ) {
+	public IStruct registerChangeListener( IChangeListener<IStruct> listener ) {
 		initListeners();
 		listeners.put( IListenable.ALL_KEYS, listener );
+		return this;
 	}
 
 	@Override
-	public void registerChangeListener( Key key, IChangeListener listener ) {
+	public IStruct registerChangeListener( Key key, IChangeListener<IStruct> listener ) {
 		initListeners();
 		listeners.put( key, listener );
+		return this;
 	}
 
 	@Override
-	public void removeChangeListener( Key key ) {
+	public IStruct removeChangeListener( Key key ) {
 		initListeners();
 		listeners.remove( key );
+		return this;
 	}
 
 	private Object notifyListeners( Key key, Object value ) {
 		if ( listeners == null ) {
 			return value;
 		}
-		IChangeListener listener = listeners.get( key );
+		IChangeListener<IStruct> listener = listeners.get( key );
 		if ( listener == null ) {
 			listener = listeners.get( IListenable.ALL_KEYS );
 		}
 		if ( listener == null ) {
 			return value;
 		}
-		return listener.notify( key, value, wrapped.get( key ) );
+		return listener.notify( key, value, wrapped.get( key ), this );
 
 	}
 
 	private void initListeners() {
 		if ( listeners == null ) {
-			listeners = new ConcurrentHashMap<Key, IChangeListener>();
+			listeners = new ConcurrentHashMap<Key, IChangeListener<IStruct>>();
 		}
 	}
 

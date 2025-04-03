@@ -107,10 +107,7 @@ public class DirectoryList extends BIF {
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	returnType		= arguments.getAsString( Key.listInfo ).toLowerCase();
-		String	directoryPath	= arguments.getAsString( Key.path );
-		if ( !FileSystemUtil.exists( directoryPath ) ) {
-			directoryPath = FileSystemUtil.expandPath( context, directoryPath ).absolutePath().toString();
-		}
+		String	directoryPath	= FileSystemUtil.expandPath( context, arguments.getAsString( Key.path ) ).absolutePath().toString();
 
 		if ( arguments.get( Key.filter ) instanceof Function ) {
 			arguments.put( Key.filter, FileSystemUtil.createPathFilterPredicate( context, ( Function ) arguments.get( Key.filter ) ) );

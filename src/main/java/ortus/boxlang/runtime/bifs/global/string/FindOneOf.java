@@ -31,7 +31,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 
 @BoxBIF
-@BoxMember( type = BoxLangType.STRING, name = "FindOneOf", objectArgument = "string" )
+@BoxMember( type = BoxLangType.STRING_STRICT, name = "FindOneOf", objectArgument = "string" )
 
 public class FindOneOf extends BIF {
 

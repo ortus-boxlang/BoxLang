@@ -1,5 +1,10 @@
 <bx:script>
 	expandRoot = expand ?: true;
+	try{
+		xmlType = var.getXMLType();
+	} catch( any e ){
+		xmlType = "document";
+	}
 </bx:script>
 <bx:output>
 	<div class="bx-dump">
@@ -12,7 +17,7 @@
 			>
 				<strong>
 					<bx:if label.len() >#label# - </bx:if>
-					XML #var.getXMLType()#
+					XML #xmlType#
 				</strong>
 			</caption>
 

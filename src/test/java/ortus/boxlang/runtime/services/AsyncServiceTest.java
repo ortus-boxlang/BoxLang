@@ -58,7 +58,7 @@ class AsyncServiceTest {
 	@Test
 	void testItCanStartup() {
 		asyncService.onStartup();
-		assertThat( asyncService.hasExecutor( "boxlang-tasks" ) ).isTrue();
+		assertThat( asyncService.hasExecutor( "io-tasks" ) ).isTrue();
 	}
 
 	@DisplayName( "It can get the executors map" )

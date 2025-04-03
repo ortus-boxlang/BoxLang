@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -453,6 +454,28 @@ class XMLTest {
 		//@formatter:off
 		assertThat( variables.getAsInteger( result ) ).isEqualTo( 3 );
 
+	}
+
+	@DisplayName( "It can append XML children using array index notation" )
+	@Test
+	public void testAppendChildrenArrayNotation() {
+		instance.executeSource(
+		    """
+			xmlObj = xmlParse( '<Ortus><Products></Products></Ortus>' );
+			products = [ "BoxLang", "CommandBox" ];
+			for( i = 1; i <= products.len(); i++ ){
+				product = xmlElemNew( xmlObj, "Product" );
+				product.xmlText = products[ i ];
+				xmlObj.xmlRoot.Products.xmlChildren[ i ] = product;
+			}
+			result = xmlObj.xmlRoot.Products.xmlChildren.len();
+			xmlString = toString( xmlObj );
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+
+		System.out.println( variables.get( Key.of( "xmlString" ) ) );
+		
+		assertThat( variables.getAsInteger( result ) ).isEqualTo( 2 );
 	}
 
 }

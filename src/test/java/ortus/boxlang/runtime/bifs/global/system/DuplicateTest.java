@@ -19,6 +19,7 @@
 
 package ortus.boxlang.runtime.bifs.global.system;
 
+import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -51,6 +52,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.QueryColumn;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.ParseException;
 
 public class DuplicateTest {
 
@@ -610,4 +612,29 @@ public class DuplicateTest {
 		    context );
 	}
 
+	@Test
+	public void testDuplicateException() {
+		instance.executeSource(
+		    """
+		    	result = duplicate( new java.lang.RuntimeException("boom") );
+		    """,
+		    context );
+		assertThat( variables.get( resultKey ) ).isInstanceOf( RuntimeException.class );
+	}
+
+	@Test
+	public void testDuplicateParseException() {
+		instance.executeSource(
+		    """
+		    try {
+		       	getBoxContext().getRuntime().executeSource("$%^&*()");
+		    } catch( e ){
+		    	result = duplicate( e );
+		    }
+		       """,
+		    context );
+		assertThat( variables.get( resultKey ) ).isInstanceOf( ParseException.class );
+		assertThat( ( ( Throwable ) variables.get( resultKey ) ).getMessage() ).contains( "'^' was unexpected" );
+
+	}
 }
