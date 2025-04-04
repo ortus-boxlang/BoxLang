@@ -22,7 +22,7 @@ class {
 		// Define a lambda task
 		scheduler.task( "My test Task" )
 			.call( () -> {
-				println( "I am a lambda task: #now()#" );
+				println( "I am a lambda task: #dateFormat( now(), "full" )#" );
 			} )
 			.every( 2, "second" );
 	}

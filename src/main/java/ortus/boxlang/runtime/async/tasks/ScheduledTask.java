@@ -38,6 +38,7 @@ import org.slf4j.Logger;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.async.executors.ExecutorRecord;
+import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.interop.DynamicObject;
@@ -389,6 +390,10 @@ public class ScheduledTask implements Runnable {
 	 *              disabled or constrained
 	 */
 	public void run( Boolean force ) {
+		// Set the thread context
+		RequestBoxContext requestContext = this.scheduler.getContext().getRequestContext();
+		RequestBoxContext.setCurrent( requestContext );
+
 		debugLog( String.format( "run( force: %b )", force ) );
 		String timerLabel = "task-" + System.currentTimeMillis();
 		timer.start( timerLabel );
@@ -423,7 +428,7 @@ public class ScheduledTask implements Runnable {
 			switch ( task ) {
 				case DynamicObject castedTask -> {
 					this.stats.put( "lastResult", Optional
-					    .ofNullable( castedTask.invoke( BoxRuntime.getInstance().getRuntimeContext(), method ) ) );
+					    .ofNullable( castedTask.invoke( requestContext, method ) ) );
 				}
 				case Callable<?> castedTask -> {
 					this.stats.put( "lastResult", Optional.ofNullable( castedTask.call() ) );
@@ -436,7 +441,7 @@ public class ScheduledTask implements Runnable {
 					castedTask.invoke(
 					    Function.generateFunctionContext(
 					        castedTask, // the function
-					        BoxRuntime.getInstance().getRuntimeContext(), // we use the runtime context
+					        requestContext, // we use the runtime context
 					        castedTask.getName(), // the function name
 					        new Object[] {}, // no args
 					        null, // No class, lambda/closure

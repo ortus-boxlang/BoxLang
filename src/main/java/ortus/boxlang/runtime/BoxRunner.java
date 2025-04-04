@@ -239,7 +239,7 @@ public class BoxRunner {
 		IBoxContext				runtimeContext		= runtime.getRuntimeContext();
 		IBoxContext				scriptingContext	= new ScriptingRequestBoxContext( runtimeContext, targetSchedulerPath.toUri() );
 		BaseApplicationListener	listener			= scriptingContext.getRequestContext().getApplicationListener();
-		RequestBoxContext.setCurrent( scriptingContext.getParentOfType( RequestBoxContext.class ) );
+		RequestBoxContext.setCurrent( scriptingContext.getRequestContext() );
 		Throwable			errorToHandle		= null;
 		SchedulerService	schedulerService	= runtime.getSchedulerService();
 
@@ -251,14 +251,14 @@ public class BoxRunner {
 			Class<IBoxRunnable>	targetSchedulerClass	= RunnableLoader.getInstance()
 			    .loadClass(
 			        ResolvedFilePath.of( targetSchedulerPath ),
-			        runtimeContext
+			        scriptingContext
 			    );
 			// Construct the scheduler
 			IClassRunnable		targetScheduler			= ( IClassRunnable ) DynamicObject.of( targetSchedulerClass )
-			    .invokeConstructor( runtimeContext )
+			    .invokeConstructor( scriptingContext )
 			    .getTargetInstance();
 			// Create the proxy
-			IScheduler			boxScheduler			= new BoxScheduler( targetScheduler, runtimeContext );
+			IScheduler			boxScheduler			= new BoxScheduler( targetScheduler, scriptingContext );
 
 			// Startup the listener
 			boolean				result					= listener.onRequestStart( scriptingContext, new Object[] { schedulerPath } );

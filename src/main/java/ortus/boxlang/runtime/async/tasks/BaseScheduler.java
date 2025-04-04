@@ -33,6 +33,7 @@ import org.apache.commons.lang3.RandomStringUtils;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.async.executors.ExecutorRecord;
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.AsyncService;
@@ -98,6 +99,11 @@ public class BaseScheduler implements IScheduler {
 	protected final BoxLangLogger				logger;
 
 	/**
+	 * The request context that started this scheduler
+	 */
+	protected IBoxContext						context;
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Constructors
 	 * --------------------------------------------------------------------------
@@ -109,6 +115,7 @@ public class BaseScheduler implements IScheduler {
 	 */
 	public BaseScheduler() {
 		this( "boxlang-scheduler-" + RandomStringUtils.secure().nextAlphanumeric( 10 ) );
+		this.context = BoxRuntime.getInstance().getRuntimeContext();
 	}
 
 	/**
@@ -121,16 +128,38 @@ public class BaseScheduler implements IScheduler {
 	}
 
 	/**
+	 * Create a new scheduler with a name and the default system timezone.
+	 *
+	 * @param name    The name of the scheduler
+	 * @param context The context that started this scheduler
+	 */
+	public BaseScheduler( String name, IBoxContext context ) {
+		this( name, ZoneId.systemDefault(), context );
+	}
+
+	/**
 	 * Create a new scheduler with a name and a specific timezone
 	 *
 	 * @param name     The name of the scheduler
 	 * @param timezone The timezone for the scheduler and the tasks it creates and manages
 	 */
 	public BaseScheduler( String name, ZoneId timezone ) {
+		this( name, timezone, BoxRuntime.getInstance().getRuntimeContext() );
+	}
+
+	/**
+	 * Create a new scheduler with a name and a specific timezone
+	 *
+	 * @param name     The name of the scheduler
+	 * @param timezone The timezone for the scheduler and the tasks it creates and manages
+	 * @param context  The context that started this scheduler
+	 */
+	public BaseScheduler( String name, ZoneId timezone, IBoxContext context ) {
 		this.name			= name;
 		this.timezone		= timezone;
 		this.asyncService	= BoxRuntime.getInstance().getAsyncService();
 		this.logger			= BoxRuntime.getInstance().getLoggingService().getLogger( "scheduler" );
+		this.context		= context;
 
 		// Log it
 		this.logger.info( "Created scheduler [{}] with a [{}] timezone", name, timezone.getId() );
@@ -138,9 +167,24 @@ public class BaseScheduler implements IScheduler {
 
 	/**
 	 * --------------------------------------------------------------------------
-	 * Configurator
+	 * Configurator Methods
 	 * --------------------------------------------------------------------------
 	 */
+
+	/**
+	 * Set the scheduler context manually
+	 */
+	public BaseScheduler setContext( IBoxContext context ) {
+		this.context = context;
+		return this;
+	}
+
+	/**
+	 * Get the scheduler context
+	 */
+	public IBoxContext getContext() {
+		return this.context;
+	}
 
 	/**
 	 * Usually where concrete implementations add their tasks and configs
