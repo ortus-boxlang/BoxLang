@@ -173,17 +173,17 @@ public class TransactionTest extends BaseJDBCTest {
 	public void testThrownExceptionNotMutated() {
 		getInstance().executeSource(
 		    """
-			try{
-				transaction{
-					queryExecute( "SELECT * FROM developers", {} )
-					throw( type="FooException", message="foo", extendedInfo="bar" );
-				}
-			} catch( any e ){
-				result = e.extendedInfo;
-			}
-		    """,
+		    try{
+		    	transaction{
+		    		queryExecute( "SELECT * FROM developers", {} )
+		    		throw( type="FooException", message="foo", extendedInfo="bar" );
+		    	}
+		    } catch( any e ){
+		    	result = e.extendedInfo;
+		    }
+		       """,
 		    getContext() );
-		assertThat( getVariables().get( Key.of( "result") ) ).isEqualTo( "bar" );
+		assertThat( getVariables().get( Key.of( "result" ) ) ).isEqualTo( "bar" );
 	}
 
 	@DisplayName( "automatically commits at the end of a (successful) transaction" )

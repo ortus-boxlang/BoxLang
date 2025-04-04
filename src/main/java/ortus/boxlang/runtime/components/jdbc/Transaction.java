@@ -148,7 +148,7 @@ public class Transaction extends Component {
 			try {
 				bodyResult = processBody( context, body );
 				transaction.commit();
-			} catch( BoxRuntimeException e ) {
+			} catch ( BoxRuntimeException e ) {
 				// if it is already a runtime exception throw it as-is
 				throw e;
 			} catch ( DatabaseException e ) {
