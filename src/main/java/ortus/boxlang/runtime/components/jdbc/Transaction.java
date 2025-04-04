@@ -148,6 +148,9 @@ public class Transaction extends Component {
 			try {
 				bodyResult = processBody( context, body );
 				transaction.commit();
+			} catch( BoxRuntimeException e ) {
+				// if it is already a runtime exception throw it as-is
+				throw e;
 			} catch ( DatabaseException e ) {
 				logger.error( "Encountered generic exception while processing transaction; rolling back", e );
 				transaction.rollback();
