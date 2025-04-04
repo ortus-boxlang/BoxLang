@@ -149,6 +149,8 @@ public class Transaction extends Component {
 				bodyResult = processBody( context, body );
 				transaction.commit();
 			} catch ( BoxRuntimeException e ) {
+				logger.error( "Encountered runtime exception while processing transaction; rolling back", e );
+				transaction.rollback();
 				// if it is already a runtime exception throw it as-is
 				throw e;
 			} catch ( DatabaseException e ) {
