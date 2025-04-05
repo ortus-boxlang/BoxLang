@@ -705,7 +705,7 @@ public final class LocalizationUtil {
 	public static DateTimeFormatterBuilder appendLocaleZonedDateTimeParsers( DateTimeFormatterBuilder builder, Locale locale ) {
 		// The first pattern needs to go first enclosed in optionals - otherwise some ISO dates are incorrectly parsed
 		return builder.appendPattern( "[uuuu-MM-dd'T'HH:mm:ssZ]" )
-			.appendOptional( DateTimeFormatter.ISO_ZONED_DATE_TIME.withLocale( locale ) )
+		    .appendOptional( DateTimeFormatter.ISO_ZONED_DATE_TIME.withLocale( locale ) )
 		    .appendOptional( DateTimeFormatter.ISO_ZONED_DATE_TIME )
 		    .appendOptional( DateTimeFormatter.ISO_OFFSET_DATE_TIME );
 	}
