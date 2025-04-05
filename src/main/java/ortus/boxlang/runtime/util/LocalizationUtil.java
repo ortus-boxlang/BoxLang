@@ -179,10 +179,12 @@ public final class LocalizationUtil {
 	 */
 	public static final Struct COMMON_NUMBER_FORMATTERS = new Struct( new HashMap<Key, java.text.NumberFormat>() );
 	static {
+
 		COMMON_NUMBER_FORMATTERS.put(
 		    Key.of( "USD" ),
 		    DecimalFormat.getCurrencyInstance( LocalizationUtil.COMMON_LOCALES.get( Key.of( "US" ) ) )
 		);
+
 		COMMON_NUMBER_FORMATTERS.put(
 		    Key.of( "EURO" ),
 		    DecimalFormat.getCurrencyInstance( LocalizationUtil.COMMON_LOCALES.get( Key.of( "German" ) ) )
