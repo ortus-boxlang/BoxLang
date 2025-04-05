@@ -244,6 +244,25 @@ public class ParseDateTimeTest {
 		assertThat( IntegerCaster.cast( result.format( "n" ) ) ).isEqualTo( 100000 );
 	}
 
+	@DisplayName( "It tests the BIF ParseDateTime with a full ISO including an offset which does not contain colons" )
+	@Test
+	public void testParseISOWithoutColonsInOffset() {
+		instance.executeSource(
+		    """
+		    result = ParseDateTime( date="2025-04-05T21:14:02+0000", locale="en-US" );
+		    """,
+		    context );
+		DateTime result = ( DateTime ) variables.get( Key.of( "result" ) );
+		assertThat( result ).isInstanceOf( DateTime.class );
+		assertThat( result.toString() ).isInstanceOf( String.class );
+		assertThat( IntegerCaster.cast( result.format( "yyyy" ) ) ).isEqualTo( 2025 );
+		assertThat( IntegerCaster.cast( result.format( "M" ) ) ).isEqualTo( 4 );
+		assertThat( IntegerCaster.cast( result.format( "d" ) ) ).isEqualTo( 5 );
+		assertThat( IntegerCaster.cast( result.format( "H" ) ) ).isEqualTo( 21 );
+		assertThat( IntegerCaster.cast( result.format( "m" ) ) ).isEqualTo( 14 );
+		assertThat( IntegerCaster.cast( result.format( "s" ) ) ).isEqualTo( 02 );
+	}
+
 	@DisplayName( "It tests the BIF ParseDateTime using a localized russian format" )
 	@Test
 	public void testParseDateTimeRussian() {
