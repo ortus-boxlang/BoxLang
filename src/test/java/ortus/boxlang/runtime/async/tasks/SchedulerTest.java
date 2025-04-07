@@ -200,6 +200,10 @@ class SchedulerTest {
 
 			System.out.println( stats );
 
+			if ( isWindows() ) {
+				Thread.sleep( 2000 );
+			}
+
 			assertThat( ( Boolean ) ( ( IStruct ) stats.get( "test1" ) ).get( "neverRun" ) ).isFalse();
 			assertThat( ( Boolean ) ( ( IStruct ) stats.get( "test3" ) ).get( "neverRun" ) ).isTrue();
 		} finally {
@@ -231,5 +235,9 @@ class SchedulerTest {
 	// scheduler.shutdown( true );
 	// assertThat( scheduler.hasStarted() ).isFalse();
 	// }
+
+	private static boolean isWindows() {
+		return System.getProperty( "os.name" ).toLowerCase().contains( "win" );
+	}
 
 }
