@@ -30,7 +30,6 @@ import javax.management.InvalidAttributeValueException;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Nested;
@@ -461,7 +460,6 @@ class ScheduledTaskTest {
 	}
 
 	@Test
-	@Disabled( "Until tasks can run on their own" )
 	public void testCanExecuteBoxLangFunction() {
 		instance.executeSource(
 		    """

@@ -38,6 +38,7 @@ import org.slf4j.Logger;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.async.executors.ExecutorRecord;
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.events.BoxEvent;
@@ -49,6 +50,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.util.DateTimeHelper;
 import ortus.boxlang.runtime.types.util.StringUtil;
+import ortus.boxlang.runtime.util.NetworkUtil;
 import ortus.boxlang.runtime.util.Timer;
 
 /**
@@ -272,19 +274,23 @@ public class ScheduledTask implements Runnable {
 	private InterceptorService						interceptorService	= BoxRuntime.getInstance().getInterceptorService();
 
 	/**
+	 * The initial request context for this task
+	 */
+	private IBoxContext								taskContext;
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Constructors
 	 * --------------------------------------------------------------------------
 	 */
 
 	/**
-	 * Creates a new ScheduledTask with a name and a named group and it's
-	 * accompanying executor
+	 * Creates a new ScheduledTask with all appropriate properties
 	 *
 	 * @param name      The name of the task
 	 * @param group     The group of the task
-	 * @param executor  The executor we are bound to
-	 * @param scheduler The scheduler we are bound to
+	 * @param executor  The executor we are bound to (Optional) can be null
+	 * @param scheduler The scheduler we are bound to (Optional) can be null
 	 */
 	public ScheduledTask( String name, String group, ExecutorRecord executor, BaseScheduler scheduler ) {
 		// Seed it
@@ -294,8 +300,20 @@ public class ScheduledTask implements Runnable {
 		this.scheduler	= scheduler;
 		this.logger		= BoxRuntime.getInstance().getLoggingService().getLogger( "scheduler" );
 
+		// Determine the context to use for this task
+		// - If we have a scheduler, use the scheduler context
+		// - If we have a request context on the ThreadLocal use that
+		// - Else use the default runtime context
+		if ( this.scheduler != null ) {
+			this.taskContext = this.scheduler.getContext();
+		} else if ( RequestBoxContext.getCurrent() != null ) {
+			this.taskContext = RequestBoxContext.getCurrent();
+		} else {
+			this.taskContext = BoxRuntime.getInstance().getRuntimeContext();
+		}
+
 		// Init the stats
-		this.stats		= Struct.of(
+		this.stats = Struct.of(
 		    // Save name just in case
 		    "name", name,
 		    // Save group just in case
@@ -317,14 +335,23 @@ public class ScheduledTask implements Runnable {
 		    // The latest result if any
 		    "lastResult", Optional.empty(),
 		    // If the task has never ran or not
-		    "neverRun", true
-		// Server Host
-		// "inetHost", util.discoverInetHost(),
-		// Server IP
-		// "localIp", variables.util.getServerIp()
+		    "neverRun", true,
+		    // Server Host
+		    "inetHost", NetworkUtil.getLocalHostname(),
+		    // Server IP
+		    "localIp", NetworkUtil.getLocalIPAddress()
 		);
 
 		debugLog( "constructor", Struct.of( "name", name, "group", group ) );
+	}
+
+	/**
+	 * Creates a new ScheduledTask with a name and an empty group
+	 *
+	 * @param name The name of the task
+	 */
+	public ScheduledTask( String name ) {
+		this( name, "", null, null );
 	}
 
 	/**
@@ -401,9 +428,11 @@ public class ScheduledTask implements Runnable {
 	 *              disabled or constrained
 	 */
 	public void run( Boolean force ) {
-		// Set the thread context
-		RequestBoxContext requestContext = this.scheduler.getContext().getRequestContext();
-		RequestBoxContext.setCurrent( requestContext );
+
+		// If we have a request box context, use it for the thread.
+		if ( this.taskContext instanceof RequestBoxContext castedContext ) {
+			RequestBoxContext.setCurrent( castedContext );
+		}
 
 		debugLog( String.format( "run( force: %b )", force ) );
 		String timerLabel = "task-" + System.currentTimeMillis();
@@ -439,7 +468,7 @@ public class ScheduledTask implements Runnable {
 			switch ( task ) {
 				case DynamicObject castedTask -> {
 					this.stats.put( "lastResult", Optional
-					    .ofNullable( castedTask.invoke( requestContext, method ) ) );
+					    .ofNullable( castedTask.invoke( this.taskContext, method ) ) );
 				}
 				case Callable<?> castedTask -> {
 					this.stats.put( "lastResult", Optional.ofNullable( castedTask.call() ) );
@@ -451,13 +480,15 @@ public class ScheduledTask implements Runnable {
 				case Function castedTask -> {
 					castedTask.invoke(
 					    Function.generateFunctionContext(
-					        castedTask, // the function
-					        requestContext, // we use the runtime context
-					        castedTask.getName(), // the function name
-					        new Object[] {}, // no args
-					        null, // No class, lambda/closure
-					        null, // No class, lambda/closure
-					        null ) );
+					        castedTask,
+					        this.taskContext,
+					        castedTask.getName(),
+					        new Object[] {},
+					        null,
+					        null,
+					        null
+					    )
+					);
 				}
 				default -> {
 					throw new IllegalArgumentException( "Task is not a DynamicObject or a Callable or a Runnable" );
