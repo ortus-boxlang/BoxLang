@@ -328,6 +328,17 @@ public class ScheduledTask implements Runnable {
 	}
 
 	/**
+	 * Creates a new ScheduledTask with a name and a named group
+	 *
+	 * @param name     The name of the task
+	 * @param group    The group of the task
+	 *
+	 */
+	public ScheduledTask( String name, String group ) {
+		this( name, group, null, null );
+	}
+
+	/**
 	 * Creates a new ScheduledTask with a name and the default "empty" group
 	 *
 	 * @param name     The name of the task
