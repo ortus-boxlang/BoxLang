@@ -77,8 +77,17 @@ import static ortus.boxlang.runtime.BoxRuntime.getInstance;
 import java.util.Set;
 
 import org.antlr.v4.runtime.Parser;
+import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.TokenStream;
 
+import ortus.boxlang.parser.antlr.CFGrammar.ArrayLiteralContext;
+import ortus.boxlang.parser.antlr.CFGrammar.AtomsContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ExprArrayLiteralContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ExprAssignContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ExprAtomsContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ExprLiteralsContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ExprVarDeclContext;
+import ortus.boxlang.parser.antlr.CFGrammar.LiteralsContext;
 import ortus.boxlang.runtime.services.ComponentService;
 
 public abstract class CFParserControl extends Parser {
@@ -181,6 +190,22 @@ public abstract class CFParserControl extends Parser {
 	protected boolean isAssignmentModifier( TokenStream input ) {
 		int thisType = input.LT( 1 ).getType();
 		return ( thisType == VAR || thisType == FINAL || thisType == STATIC ) && identifiers.contains( input.LT( 2 ).getType() );
+	}
+
+	/**
+	 * Determines if the last token is invocable
+	 *
+	 * @param input the token input stream
+	 *
+	 * @return true if this is invocable
+	 */
+	protected boolean isInvocable( ParserRuleContext ctx ) {
+		Class<?> el2Class = ctx.getChild( 0 ).getClass();
+		System.out.println( "isInvocable: " + el2Class.getSimpleName() );
+		// literals and assignments are expressions, but cannot be invoked so don't let this rule match.
+		return ! ( el2Class == LiteralsContext.class || el2Class == AtomsContext.class || el2Class == ArrayLiteralContext.class
+		    || el2Class == ExprLiteralsContext.class || el2Class == ExprAtomsContext.class || el2Class == ExprArrayLiteralContext.class
+		    || el2Class == ExprAssignContext.class || el2Class == ExprVarDeclContext.class );
 	}
 
 	/**

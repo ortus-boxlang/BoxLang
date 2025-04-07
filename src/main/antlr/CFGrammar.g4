@@ -400,9 +400,7 @@ new: NEW preFix? (fqn | stringLiteral) LPAREN argumentList? RPAREN
 fqn: (identifier DOT)* identifier
     ;
 
-expressionStatement
-    : anonymousFunction # exprStatAnonymousFunction // function() {} or () => {} or () -> {}
-    | el2               # exprStatInvocable
+expressionStatement: expression # ExprStat
     ;
 
 // This is used to allow for headless access to a component, such as .foo.bar.baz, which is not allowed
@@ -410,9 +408,8 @@ expressionStatement
 // param foo.bar = "baz";
 // which will allow .bar = baz to be a separate statement and think param foo is a component
 expression
-    : anonymousFunction                             # exprAnonymousFunction // function() {} or () => {} or () -> {}
-    | el2                                           # invocable
-    | DOT identifier (LPAREN argumentList? RPAREN)? # exprHeadless
+    : anonymousFunction # exprAnonymousFunction // function() {} or () => {} or () -> {}
+    | el2               # invocable
     ;
 
 // Universal expression rule. This is the top level rule for all expressions. It's left recursive, covers
@@ -429,7 +426,7 @@ el2
     : ILLEGAL_IDENTIFIER                                                    # exprIllegalIdentifier // 50foo
     | LPAREN expression RPAREN                                              # exprPrecedence        // ( foo )
     | new                                                                   # exprNew               // new foo.bar.Baz()
-    | el2 LPAREN argumentList? RPAREN                                       # exprFunctionCall      // foo(bar, baz)
+    | el2 {isInvocable(_ctx)}? LPAREN argumentList? RPAREN                  # exprFunctionCall      // foo(bar, baz)
     | el2 (QM? DOT DOT? | COLONCOLON) el2                                   # exprDotOrColonAccess  // xc.y?.z or foo::bar recursive and Adobe's stupid foo..bar bug they allow
     | el2 QM? DOT? DOT_FLOAT_LITERAL                                        # exprDotFloat          // foo.50
     | el2 QM? DOT? DOT_NUMBER_PREFIXED_IDENTIFIER                           # exprDotFloatID        // foo.50bar

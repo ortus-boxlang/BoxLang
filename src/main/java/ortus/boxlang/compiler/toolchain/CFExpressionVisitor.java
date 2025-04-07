@@ -60,7 +60,6 @@ import ortus.boxlang.compiler.ast.expression.BoxDotAccess;
 import ortus.boxlang.compiler.ast.expression.BoxExpressionInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
 import ortus.boxlang.compiler.ast.expression.BoxFunctionInvocation;
-import ortus.boxlang.compiler.ast.expression.BoxFunctionalMemberAccess;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxLambda;
@@ -104,7 +103,6 @@ import ortus.boxlang.parser.antlr.CFGrammar.ExprDotOrColonAccessContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprElvisContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprEqualContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprFunctionCallContext;
-import ortus.boxlang.parser.antlr.CFGrammar.ExprHeadlessContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprIdentifierContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprIllegalIdentifierContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprLiteralsContext;
@@ -118,7 +116,6 @@ import ortus.boxlang.parser.antlr.CFGrammar.ExprPowerContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprPrecedenceContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprPrefixContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprRelationalContext;
-import ortus.boxlang.parser.antlr.CFGrammar.ExprStatInvocableContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprTernaryContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprUnaryContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprVarDeclContext;
@@ -173,15 +170,13 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 	 *
 	 * @return the expression
 	 */
+	@Override
 	public BoxExpression visitTestExpression( TestExpressionContext ctx ) {
 		return ctx.expression().accept( this );
 	}
 
+	@Override
 	public BoxExpression visitInvocable( InvocableContext ctx ) {
-		return ctx.el2().accept( this );
-	}
-
-	public BoxExpression visitExprStatInvocable( ExprStatInvocableContext ctx ) {
 		return ctx.el2().accept( this );
 	}
 
@@ -477,19 +472,6 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 				}
 			}
 		}
-	}
-
-	@Override
-	public BoxExpression visitExprHeadless( ExprHeadlessContext ctx ) {
-		List<BoxArgument>	arguments	= null;
-		var					pos			= tools.getPosition( ctx );
-		var					src			= tools.getSourceText( ctx );
-		if ( ctx.LPAREN() != null ) {
-			arguments = Optional.ofNullable( ctx.argumentList() )
-			    .map( argumentList -> argumentList.argument().stream().map( arg -> ( BoxArgument ) arg.accept( this ) ).toList() )
-			    .orElse( Collections.emptyList() );
-		}
-		return new BoxFunctionalMemberAccess( ctx.identifier().getText(), arguments, pos, src );
 	}
 
 	@Override

@@ -108,8 +108,7 @@ import ortus.boxlang.parser.antlr.BoxGrammar.ExprPowerContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ExprPrecedenceContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ExprPrefixContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ExprRelationalContext;
-import ortus.boxlang.parser.antlr.BoxGrammar.ExprStatAnonymousFunctionContext;
-import ortus.boxlang.parser.antlr.BoxGrammar.ExprStatInvocableContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.ExprStatContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ExprTernaryContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ExprUnaryContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ExprXorContext;
@@ -637,11 +636,14 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 	// It is often easier to allow expressions to be in the statement rules, then
 	// our context tells us whether it is a statement or an expression, such as Assignment
 	// for instance.
+
+	@Override
 	public BoxNode visitInvocable( InvocableContext ctx ) {
 		return buildExprStat( ctx );
 	}
 
-	public BoxNode visitExprStatInvocable( ExprStatInvocableContext ctx ) {
+	@Override
+	public BoxNode visitExprStat( ExprStatContext ctx ) {
 		return buildExprStat( ctx );
 	}
 
@@ -797,11 +799,6 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 
 	@Override
 	public BoxNode visitExprArrayLiteral( ExprArrayLiteralContext ctx ) {
-		return buildExprStat( ctx );
-	}
-
-	@Override
-	public BoxNode visitExprStatAnonymousFunction( ExprStatAnonymousFunctionContext ctx ) {
 		return buildExprStat( ctx );
 	}
 

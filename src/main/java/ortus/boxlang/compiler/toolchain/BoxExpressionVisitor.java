@@ -129,7 +129,6 @@ import ortus.boxlang.parser.antlr.BoxGrammar.ExprPowerContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ExprPrecedenceContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ExprPrefixContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ExprRelationalContext;
-import ortus.boxlang.parser.antlr.BoxGrammar.ExprStatInvocableContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ExprTernaryContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ExprUnaryContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ExprVarDeclContext;
@@ -184,15 +183,13 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 	 *
 	 * @return the expression
 	 */
+	@Override
 	public BoxExpression visitTestExpression( TestExpressionContext ctx ) {
 		return ctx.expression().accept( this );
 	}
 
+	@Override
 	public BoxExpression visitInvocable( InvocableContext ctx ) {
-		return ctx.el2().accept( this );
-	}
-
-	public BoxExpression visitExprStatInvocable( ExprStatInvocableContext ctx ) {
 		return ctx.el2().accept( this );
 	}
 

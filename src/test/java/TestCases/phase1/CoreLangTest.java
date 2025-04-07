@@ -5406,4 +5406,42 @@ public class CoreLangTest {
 		assertThat( Parser.getCacheSize() ).isGreaterThan( 0 );
 	}
 
+	@Test
+	public void testInvocable() {
+		instance.executeSource(
+		    """
+		    outsideFunc = ()=>variables.result = "whee!"
+		    (()=>outsideFunc())();
+
+		    foo = "bar"
+		    (()=>variables.result2 = "baz")()
+
+		    foo = 'bar'
+		    (variables.result3 = 5+5)
+		    		   """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "whee!" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "baz" );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( 10 );
+	}
+
+	@Test
+	public void testInvocableCF() {
+		instance.executeSource(
+		    """
+		    //    outsideFunc = ()=>variables.result = "whee!"
+		     //   (()=>outsideFunc())();
+
+		      //  foo = "bar"
+		      //  (()=>variables.result2 = "baz")()
+
+		        foo = 'bar'
+		        (5)
+		        		   """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "whee!" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "baz" );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( 10 );
+	}
+
 }

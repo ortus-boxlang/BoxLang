@@ -411,9 +411,7 @@ moduleName: (identifier MINUS)* identifier
 fqn: (identifier DOT)* identifier
     ;
 
-expressionStatement
-    : anonymousFunction # exprStatAnonymousFunction // function() {} or () => {} or () -> {}
-    | el2               # exprStatInvocable
+expressionStatement: expression # ExprStat
     ;
 
 // This is used to allow for headless access to a component, such as .foo.bar.baz, which is not allowed
@@ -421,9 +419,20 @@ expressionStatement
 // param foo.bar = "baz";
 // which will allow .bar = baz to be a separate statement and think param foo is a component
 expression
-    : anonymousFunction                             # exprAnonymousFunction // function() {} or () => {} or () -> {}
-    | el2                                           # invocable
-    | DOT identifier (LPAREN argumentList? RPAREN)? # exprHeadless
+    : anonymousFunction # exprAnonymousFunction // function() {} or () => {} or () -> {}
+    // Evaluate assign here so that we can assign the result of an el2 to a variable
+    | el2 op = (
+        EQUALSIGN
+        | PLUSEQUAL
+        | MINUSEQUAL
+        | STAREQUAL
+        | SLASHEQUAL
+        | MODEQUAL
+        | CONCATEQUAL
+    ) expression                                                       # exprAssign  // foo = bar
+    | { isAssignmentModifier(_input) }? assignmentModifier+ expression # exprVarDecl // var foo = bar or final foo = bar
+    | el2                                                              # invocable
+    | DOT identifier (LPAREN argumentList? RPAREN)?                    # exprHeadless
     ;
 
 // Universal expression rule. This is the top level rule for all expressions. It's left recursive, covers
@@ -440,7 +449,7 @@ el2
     : ILLEGAL_IDENTIFIER                                                    # exprIllegalIdentifier // 50foo
     | LPAREN expression RPAREN                                              # exprPrecedence        // ( foo )
     | new                                                                   # exprNew               // new foo.bar.Baz()
-    | el2 LPAREN argumentList? RPAREN                                       # exprFunctionCall      // foo(bar, baz)
+    | el2 {isInvocable(_ctx)}? LPAREN argumentList? RPAREN                  # exprFunctionCall      // foo(bar, baz)
     | el2 (QM? DOT | COLONCOLON) el2                                        # exprDotOrColonAccess  // xc.y?.z or foo::bar recursive and Adobe's stupid foo..bar bug they allow
     | el2 QM? DOT_FLOAT_LITERAL                                             # exprDotFloat          // foo.50
     | el2 QM? DOT_NUMBER_PREFIXED_IDENTIFIER                                # exprDotFloatID        // foo.50bar
@@ -455,14 +464,13 @@ el2
         BITWISE_SIGNED_LEFT_SHIFT
         | BITWISE_SIGNED_RIGHT_SHIFT
         | BITWISE_UNSIGNED_RIGHT_SHIFT
-    ) el2                 # exprBitShift   // foo b<< bar
-    | el2 BITWISE_AND el2 # exprBAnd       // foo b& bar
-    | el2 BITWISE_XOR el2 # exprBXor       // foo b^ bar
-    | el2 BITWISE_OR el2  # exprBor        // foo |b bar
-    | el2 XOR el2         # exprXor        // foo XOR bar
-    | el2 INSTANCEOF el2  # exprInstanceOf // InstanceOf operator
-    | el2 AMPERSAND el2   # exprCat        // foo & bar - string concatenation
-    // TODO: Maybe need to merge these three sets of ops as they are all given equal precedence in the original grammar
+    ) el2                              # exprBitShift    // foo b<< bar
+    | el2 BITWISE_AND el2              # exprBAnd        // foo b& bar
+    | el2 BITWISE_XOR el2              # exprBXor        // foo b^ bar
+    | el2 BITWISE_OR el2               # exprBor         // foo |b bar
+    | el2 XOR el2                      # exprXor         // foo XOR bar
+    | el2 INSTANCEOF el2               # exprInstanceOf  // InstanceOf operator
+    | el2 AMPERSAND el2                # exprCat         // foo & bar - string concatenation
     | el2 binOps el2                   # exprBinary      // foo eqv bar
     | el2 relOps el2                   # exprRelational  // foo > bar
     | el2 (EQ | EQUAL | EQEQ | IS) el2 # exprEqual       // foo == bar
@@ -482,18 +490,7 @@ el2
     | literals              # exprLiterals     // "bar", [1,2,3], {foo:bar}
     | arrayLiteral          # exprArrayLiteral // [1,2,3]
     | COLONCOLON identifier # exprBIF          // Static BIF functional reference ::uCase
-    // Evaluate assign here so that we can assign the result of an el2 to a variable
-    | el2 op = (
-        EQUALSIGN
-        | PLUSEQUAL
-        | MINUSEQUAL
-        | STAREQUAL
-        | SLASHEQUAL
-        | MODEQUAL
-        | CONCATEQUAL
-    ) expression                                                       # exprAssign     // foo = bar
-    | { isAssignmentModifier(_input) }? assignmentModifier+ expression # exprVarDecl    // var foo = bar or final foo = bar
-    | identifier                                                       # exprIdentifier // foo
+    | identifier            # exprIdentifier   // foo
     ;
 
 // Use this instead of redoing it as arrayValues, arguments etc.

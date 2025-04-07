@@ -634,7 +634,7 @@ public class DuplicateTest {
 		       """,
 		    context );
 		assertThat( variables.get( resultKey ) ).isInstanceOf( ParseException.class );
-		assertThat( ( ( Throwable ) variables.get( resultKey ) ).getMessage() ).contains( "'^' was unexpected" );
+		assertThat( ( ( Throwable ) variables.get( resultKey ) ).getMessage() ).contains( "Invalid syntax" );
 
 	}
 }
