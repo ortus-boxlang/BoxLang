@@ -1,14 +1,14 @@
 ### Simple Example
 
-SQL Only Example. Assumes that a default datasource has been specified (by setting the variable this.datasource in Application.bx)
+SQL only example. Assumes that a default datasource has been specified (by setting the variable `this.datasource` in Application.bx).
 
 ```java
 qryResult = queryExecute("SELECT * FROM Employees");
 ```
 
-### Passing Query Parameters using Struct
+### Using Named Placeholders
 
-Use `:structKeyName` in your sql then pass a struct with corresponding key names.
+Use `:structKeyName` in your sql along with a struct of key/value pairs:
 
 ```java
 qryResult = queryExecute(
@@ -20,9 +20,9 @@ qryResult = queryExecute(
 );
 ```
 
-### Passing Query Parameters using Array
+### Using Positional Placeholders
 
-When passing with an array use the `?` symbol as a placeholder in your sql
+You can pass placeholders by position using an array of parameters and the question mark `?` symbol:
 
 ```java
 qryResult = queryExecute(
