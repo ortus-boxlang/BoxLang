@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.loader;
 
 import java.net.URL;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +42,7 @@ import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.util.BLCollector;
 import ortus.boxlang.runtime.util.EncryptionUtil;
 import ortus.boxlang.runtime.util.FileSystemUtil;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 /**
  * This is a Class Loader is in charge of locating Box classes in the lookup algorithm
@@ -521,6 +523,8 @@ public class ClassLocator extends ClassLoader {
 		    .append( COLON )
 		    .append( Objects.hash( context.getConfig().getAsStruct( Key.mappings ) ) )
 		    .append( COLON )
+		    .append( getTemplatePathPrefix( context ) )
+		    .append( COLON )
 		    .append( name )
 		    .toString();
 
@@ -553,6 +557,27 @@ public class ClassLocator extends ClassLoader {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Get the template path prefix for the requested resolution. This is to account for the same name of clases
+	 * that could potentially be in different packages.
+	 *
+	 * @param context The current context of execution
+	 *
+	 * @return The template path prefix
+	 */
+	private String getTemplatePathPrefix( IBoxContext context ) {
+		String				pathPrefix			= "";
+		ResolvedFilePath	resolvedFilePath	= context.findClosestTemplate();
+		if ( resolvedFilePath != null ) {
+			Path parent = resolvedFilePath.absolutePath().getParent();
+			if ( parent != null ) {
+				pathPrefix = parent.toString();
+			}
+		}
+
+		return pathPrefix;
 	}
 
 	/**
@@ -728,6 +753,8 @@ public class ClassLocator extends ClassLoader {
 		    .append( Objects.hash( imports ) )
 		    .append( COLON )
 		    .append( Objects.hash( context.getConfig().getAsStruct( Key.mappings ) ) )
+		    .append( COLON )
+		    .append( getTemplatePathPrefix( context ) )
 		    .append( COLON )
 		    .append( name )
 		    .toString();
