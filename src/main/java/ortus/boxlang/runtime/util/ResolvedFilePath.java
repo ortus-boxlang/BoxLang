@@ -19,8 +19,8 @@ package ortus.boxlang.runtime.util;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 
 /**
@@ -151,25 +151,15 @@ public record ResolvedFilePath( String mappingName, String mappingPath, String r
 	 *
 	 * @return A new ResolvedFilePath instance.
 	 */
-	public ResolvedFilePath newFromRelative( String relativePath ) {
-		String	newRelativePath;
+	public ResolvedFilePath newFromRelative( IBoxContext context, String relativePath ) {
 		Path	absoluteParent	= absolutePath().getParent();
-		Path	newAbsolutePath	= absoluteParent.resolve( relativePath );
+		// This is our new absolute path, relative to the first
+		Path	newAbsolutePath	= absoluteParent.resolve( relativePath ).toAbsolutePath().normalize();
 
-		if ( absolutePath().toString().equals( relativePath() ) ) {
-			newRelativePath = newAbsolutePath.toString();
-		} else {
-			String	tmpAbsolutePath	= Paths.get( absolutePath().toString() ).toAbsolutePath().normalize().toString();
-			String	tmpRelativePath	= Paths.get( relativePath() ).normalize().toString();
-			Path	absoluteRoot	= Paths.get( tmpAbsolutePath.replace( tmpRelativePath, "" ) );
-			newRelativePath = absoluteRoot.relativize( newAbsolutePath ).normalize().toString();
-		}
-		return ResolvedFilePath.of(
-		    mappingName,
-		    mappingPath,
-		    newRelativePath,
-		    newAbsolutePath
-		);
+		// Use contract path to find the mapping, which we'll try to default to the mapping we started with, but
+		// if the new path had ../ in it, we may need another mapping, or it may not match any mappings at all.
+		return FileSystemUtil.contractPath( context, newAbsolutePath.toString(), this.mappingName );
+
 	}
 
 	private static Path makeReal( Path path ) {

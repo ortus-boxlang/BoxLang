@@ -985,7 +985,7 @@ public final class FileSystemUtil {
 				// There are codepaths where ad-hoc source code has a source path of "unknown". That's not really ideal, but
 				// if we try to process this, we'll get crazy errors.
 				if ( basePath.absolutePath() != null && !basePath.absolutePath().toString().equals( "unknown" ) ) {
-					return basePath.newFromRelative( path );
+					return basePath.newFromRelative( context, path );
 				}
 			}
 			// No template, no problem. Slap a slash on, and we'll match it below
@@ -1106,6 +1106,10 @@ public final class FileSystemUtil {
 				}
 
 				if ( !preferredMapping.equals( "/" ) ) {
+					// Avoid double //
+					if ( preferredMapping.endsWith( "/" ) && contractedPath.startsWith( "/" ) ) {
+						contractedPath = contractedPath.substring( 1 );
+					}
 					// Add mapping name back to relative path (which is inside of mapping root)
 					contractedPath = preferredMapping + contractedPath;
 				}
