@@ -293,7 +293,7 @@ public abstract class AbstractCacheProvider implements ICacheProvider {
 	 * Converts an incoming timeout value to a duration object.
 	 * If the timeout is already a duration, it will be returned as is.
 	 *
-	 * @param timeout The seconds to convert. This can be a duration, number or string representation of a number
+	 * @param timeout      The seconds to convert. This can be a duration, number or string representation of a number
 	 * @param defaultValue The default value to use if the timeout is null or not a number
 	 *
 	 * @return The duration of seconds according to the seconds passed
@@ -307,7 +307,7 @@ public abstract class AbstractCacheProvider implements ICacheProvider {
 			return defaultValue;
 		}
 
-		if( timeout instanceof String castedString && castedString.trim().isBlank() ) {
+		if ( timeout instanceof String castedString && castedString.trim().isBlank() ) {
 			return defaultValue;
 		}
 
