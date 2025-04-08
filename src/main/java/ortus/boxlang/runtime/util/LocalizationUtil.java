@@ -611,11 +611,11 @@ public final class LocalizationUtil {
 				            : ZonedDateTime.of( LocalDate.MIN, LocalTime.parse( dateTime, getLocaleTimeParsers( locale ) ), timezone ) ) );
 			} catch ( java.time.format.DateTimeParseException e ) {
 				// this catches a conflicting offset issue with the ISO_OFFSET_DATE_TIME parser
-				// TODO:  Try to find a pattern matcher with optionals to handle all of the ISO offset formats
-				if( likelyContainsTimezone ) {
-					try{
+				// TODO: Try to find a pattern matcher with optionals to handle all of the ISO offset formats
+				if ( likelyContainsTimezone ) {
+					try {
 						return ZonedDateTime.parse( dateTime, getAltLocaleZonedDateTimeParsers( locale ) );
-					} catch( java.time.format.DateTimeParseException x ) {
+					} catch ( java.time.format.DateTimeParseException x ) {
 						throw new BoxRuntimeException(
 						    String.format(
 						        "The date time value of [%s] could not be parsed as a valid date or datetime locale of [%s]",
@@ -721,7 +721,6 @@ public final class LocalizationUtil {
 		return appendAltLocaleZonedDateTimeParsers( newLenientDateTimeFormatterBuilder(), locale ).toFormatter( locale );
 	}
 
-
 	/**
 	 * Appends the locale zoned date time parsers to a format buiilder instance
 	 *
@@ -738,7 +737,7 @@ public final class LocalizationUtil {
 	}
 
 	/**
-	 * Appends the an alt offset format locale zoned date time parsers to a format buiilder instance  this particular pattern conflicts with `DateTimeFormatter.ISO_OFFSET_DATE_TIME` so they can't be used in the same builder
+	 * Appends the an alt offset format locale zoned date time parsers to a format buiilder instance this particular pattern conflicts with `DateTimeFormatter.ISO_OFFSET_DATE_TIME` so they can't be used in the same builder
 	 *
 	 * @param builder the DateTimeFormatterBuilder instance
 	 * @param locale  the Locale object which informs the formatters/parsers
