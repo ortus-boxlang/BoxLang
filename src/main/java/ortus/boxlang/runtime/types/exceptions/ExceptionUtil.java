@@ -28,7 +28,6 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.apache.commons.text.StringEscapeUtils;
 
@@ -48,6 +47,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.util.RegexBuilder;
 
 /**
  * This exception is thrown when a cast can't be done on any type
@@ -170,12 +170,14 @@ public class ExceptionUtil {
 						argumentDefaultValue = true;
 					}
 				}
+
 				String fileName = element.toString();
 				if ( ( fileName.contains( "$cf" ) || fileName.contains( "$bx" ) )
-				    // _pseudoConstructor means we're in a class pseudoconstructor, ._invoke means we're executing the template or function. lambda$_invoke$ means we're in a lambda inside of that same tmeplate for
+				    // _pseudoConstructor means we're in a class pseudoconstructor, ._invoke means we're executing the template or function. lambda$_invoke$ means we're in a lambda inside of that same template for
 				    // function. argumentDefaultValue is true when this is next stack AFTER a call to Argument.getDefaultValue()
 				    && ( fileName.contains( "._pseudoConstructor(" ) || fileName.contains( "._invoke(" )
 				        || ( isInComponent = fileName.contains( ".lambda$_invoke$" ) ) || argumentDefaultValue ) ) {
+
 					// If we're just inside the nested lambda for a component, skip subssequent lines of the stack trace
 					if ( !skipNext.isEmpty() ) {
 						if ( fileName.startsWith( skipNext ) ) {
@@ -183,11 +185,13 @@ public class ExceptionUtil {
 						}
 						skipNext = "";
 					}
+
 					// If this stack trace line was inside of a lambda, skip the next line(s) starting with this
 					if ( isInComponent ) {
 						// take entire string up until ".lambda$_invoke$"
 						skipNext = fileName.substring( 0, fileName.indexOf( ".lambda$_invoke$" ) );
 					}
+
 					int		lineNo		= element.getLineNumber();
 					String	BLFileName	= element.getClassName();
 
@@ -206,13 +210,16 @@ public class ExceptionUtil {
 						lineNo		= sourceMap.convertJavaLineToSourceLine( element.getLineNumber() );
 						BLFileName	= sourceMap.getSource();
 					}
+
 					String	functionName	= "";
 					String	id				= "";
-					Matcher	m				= Pattern.compile( ".*\\$Func_(.*)$" ).matcher( element.getClassName() );
+					Matcher	m				= RegexBuilder.of( element.getClassName(), RegexBuilder.COMPILED_CLASSNAME_PATTERN ).matcher();
+
 					if ( m.find() ) {
 						functionName	= m.group( 1 );
 						id				= id + "()";
 					}
+
 					thisTagContext.add( Struct.of(
 					    Key.codePrintHTML, getSurroudingLinesOfCode( BLFileName, lineNo, true ),
 					    Key.codePrintPlain, getSurroudingLinesOfCode( BLFileName, lineNo, false ),
@@ -220,11 +227,14 @@ public class ExceptionUtil {
 					    Key.id, id,
 					    Key.function, functionName,
 					    Key.line, lineNo,
+					    Key.lineNumber, lineNo,
 					    Key.Raw_Trace, element.toString(),
 					    Key.template, BLFileName,
 					    Key.type, "BL",
 					    Key.depth, i
 					) );
+
+					//
 					if ( depth > 0 && tagContext.size() >= depth ) {
 						break;
 					}
@@ -240,6 +250,7 @@ public class ExceptionUtil {
 			} else if ( cause instanceof ExpressionException ee ) {
 				position = ee.getPosition();
 			}
+
 			if ( position != null ) {
 				String	fileName		= "";
 				String	codePrintHTML	= "";
@@ -257,6 +268,7 @@ public class ExceptionUtil {
 				    Key.column, position.getStart().getColumn(),
 				    Key.id, "",
 				    Key.line, position.getStart().getLine(),
+				    Key.lineNumber, position.getStart().getLine(),
 				    Key.Raw_Trace, "",
 				    Key.template, fileName,
 				    Key.type, "BL"

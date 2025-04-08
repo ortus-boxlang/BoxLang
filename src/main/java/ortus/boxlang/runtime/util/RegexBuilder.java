@@ -34,52 +34,53 @@ public class RegexBuilder {
 	 * Pattern Dictionary
 	 * Add as many patterns as needed, but make sure they are in all caps and alphabetically ordered.
 	 */
-	public static final Pattern	ALPHA					= Pattern.compile( "^[a-zA-Z]*$" );
-	public static final Pattern	CFC_OR_BX_FILE			= Pattern.compile( ".*\\.(cfc|bx)$" );
-	public static final Pattern	BACKSLASH				= Pattern.compile( "\\\\" );
-	public static final Pattern	CARRIAGE_RETURN			= Pattern.compile( "\\r" );
-	public static final Pattern	CF_SQL					= Pattern.compile( "(?i)CF_SQL_" );
-	public static final Pattern	COLON					= Pattern.compile( ":" );
-	public static final Pattern	CREDIT_CARD_NUMBERS		= Pattern.compile( "[0-9 ,_-]+" );
-	public static final Pattern	EMAIL					= Pattern.compile( "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$" );
-	public static final Pattern	END_OF_LINE_COLONS		= Pattern.compile( ":+$" );
-	public static final Pattern	HEX_STRING				= Pattern.compile( "^[0-9A-Fa-f]+$" );
-	public static final Pattern	JAVA_PACKAGE			= Pattern.compile( "(?i)(java|javax)\\..*" );
-	public static final Pattern	LINE_ENDINGS			= Pattern.compile( "\\r?\\n" );
-	public static final Pattern	MULTILINE_START_OF_LINE	= Pattern.compile( "(?m)^" );
-	public static final Pattern	MULTIPLE_SPACES			= Pattern.compile( "\\s+" );
-	public static final Pattern	NO_DIGITS				= Pattern.compile( "\\D" );
-	public static final Pattern	NON_ALPHA				= Pattern.compile( "[^a-zA-Z]" );
-	public static final Pattern	NON_ALPHANUMERIC		= Pattern.compile( "[^a-zA-Z0-9]" );
-	public static final Pattern	NUMBERS					= Pattern.compile( "^-?\\d+(\\.\\d+)?$" );
-	public static final Pattern	PACKAGE_NAMES			= Pattern.compile( "[^a-zA-Z0-9$\\.]" );
-	public static final Pattern	PERIOD					= Pattern.compile( "\\." );
-	public static final Pattern	REGEX_META				= Pattern.compile( "([\\\\$])" );
-	public static final Pattern	REGEX_QUANTIFIER		= Pattern.compile( "\\{\\d*,?\\d*\\}" );
-	public static final Pattern	REGEX_QUANTIFIER_END	= Pattern.compile( "(?<!\\\\)\\}" );
-	public static final Pattern	REGEX_QUANTIFIER_START	= Pattern.compile( "(?<!\\\\)\\{" );
-	public static final Pattern	SLASH					= Pattern.compile( "/" );
-	public static final Pattern	SQL_COMMA_SPACING		= Pattern.compile( "\\s*(?![^()]*\\))(,)\\s*" );
-	public static final Pattern	SQL_PARENTHESIS_END		= Pattern.compile( "(\\w|\\'|\"|\\`)\\)" );
-	public static final Pattern	SQL_PARENTHESIS_START	= Pattern.compile( "\\((\\w|\\'|\"|\\`)" );
-	public static final Pattern	STARTS_WITH_DIGIT		= Pattern.compile( "^\\d.*" );
-	public static final Pattern	SSN						= Pattern.compile( "^(?!219099999|078051120)(?!666|000|9\\d{2})\\d{3}(?!00)\\d{2}(?!0{4})\\d{4}$" );
-	public static final Pattern	TIMESTAMP				= Pattern.compile( "^\\{ts ([^\\}]*)\\}" );
-	public static final Pattern	TELEPHONE				= Pattern.compile(
+	public static final Pattern	ALPHA						= Pattern.compile( "^[a-zA-Z]*$" );
+	public static final Pattern	CFC_OR_BX_FILE				= Pattern.compile( ".*\\.(cfc|bx)$" );
+	public static final Pattern	BACKSLASH					= Pattern.compile( "\\\\" );
+	public static final Pattern	CARRIAGE_RETURN				= Pattern.compile( "\\r" );
+	public static final Pattern	CF_SQL						= Pattern.compile( "(?i)CF_SQL_" );
+	public static final Pattern	COLON						= Pattern.compile( ":" );
+	public static final Pattern	COMPILED_CLASSNAME_PATTERN	= Pattern.compile( ".*\\$Func_(.*)$" );
+	public static final Pattern	CREDIT_CARD_NUMBERS			= Pattern.compile( "[0-9 ,_-]+" );
+	public static final Pattern	EMAIL						= Pattern.compile( "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$" );
+	public static final Pattern	END_OF_LINE_COLONS			= Pattern.compile( ":+$" );
+	public static final Pattern	HEX_STRING					= Pattern.compile( "^[0-9A-Fa-f]+$" );
+	public static final Pattern	JAVA_PACKAGE				= Pattern.compile( "(?i)(java|javax)\\..*" );
+	public static final Pattern	LINE_ENDINGS				= Pattern.compile( "\\r?\\n" );
+	public static final Pattern	MULTILINE_START_OF_LINE		= Pattern.compile( "(?m)^" );
+	public static final Pattern	MULTIPLE_SPACES				= Pattern.compile( "\\s+" );
+	public static final Pattern	NO_DIGITS					= Pattern.compile( "\\D" );
+	public static final Pattern	NON_ALPHA					= Pattern.compile( "[^a-zA-Z]" );
+	public static final Pattern	NON_ALPHANUMERIC			= Pattern.compile( "[^a-zA-Z0-9]" );
+	public static final Pattern	NUMBERS						= Pattern.compile( "^-?\\d+(\\.\\d+)?$" );
+	public static final Pattern	PACKAGE_NAMES				= Pattern.compile( "[^a-zA-Z0-9$\\.]" );
+	public static final Pattern	PERIOD						= Pattern.compile( "\\." );
+	public static final Pattern	REGEX_META					= Pattern.compile( "([\\\\$])" );
+	public static final Pattern	REGEX_QUANTIFIER			= Pattern.compile( "\\{\\d*,?\\d*\\}" );
+	public static final Pattern	REGEX_QUANTIFIER_END		= Pattern.compile( "(?<!\\\\)\\}" );
+	public static final Pattern	REGEX_QUANTIFIER_START		= Pattern.compile( "(?<!\\\\)\\{" );
+	public static final Pattern	SLASH						= Pattern.compile( "/" );
+	public static final Pattern	SQL_COMMA_SPACING			= Pattern.compile( "\\s*(?![^()]*\\))(,)\\s*" );
+	public static final Pattern	SQL_PARENTHESIS_END			= Pattern.compile( "(\\w|\\'|\"|\\`)\\)" );
+	public static final Pattern	SQL_PARENTHESIS_START		= Pattern.compile( "\\((\\w|\\'|\"|\\`)" );
+	public static final Pattern	STARTS_WITH_DIGIT			= Pattern.compile( "^\\d.*" );
+	public static final Pattern	SSN							= Pattern.compile( "^(?!219099999|078051120)(?!666|000|9\\d{2})\\d{3}(?!00)\\d{2}(?!0{4})\\d{4}$" );
+	public static final Pattern	TIMESTAMP					= Pattern.compile( "^\\{ts ([^\\}]*)\\}" );
+	public static final Pattern	TELEPHONE					= Pattern.compile(
 	    "^(?:(?:\\+?1\\s*(?:[.-]\\s*)?)?(?:\\(\\s*([2-9]1[02-9]|[2-9][02-8]1|[2-9][02-8][02-9])\\s*\\)|([2-9]1[02-9]|[2-9][02-8]1|[2-9][02-8][02-9]))\\s*(?:[.-]\\s*)?)?([2-9]1[02-9]|[2-9][02-9]1|[2-9][02-9]{2})\\s*(?:[.-]\\s*)?([0-9]{4})(?:\\s*(?:#|x\\.?|ext\\.?|extension)\\s*(\\d+))?$" );
-	public static final Pattern	TWO_DOTS				= Pattern.compile( "\\.{2}" );
-	public static final Pattern	TWENTY_FOUR_HOUR_TIME	= Pattern.compile( "^([0-1][\\d]|2[0-3]):[0-5][\\d]$" );
-	public static final Pattern	URL						= Pattern.compile( "^(https?|ftp|file)://([A-Za-z0-90.]*)/?([-a-zA-Z0-9.+&@#/]+)?(\\??[^\\s]*)$" );
-	public static final Pattern	UPPERCASE_GROUP			= Pattern.compile( "([A-Z])" );
-	public static final Pattern	UUID_V4					= Pattern
+	public static final Pattern	TWO_DOTS					= Pattern.compile( "\\.{2}" );
+	public static final Pattern	TWENTY_FOUR_HOUR_TIME		= Pattern.compile( "^([0-1][\\d]|2[0-3]):[0-5][\\d]$" );
+	public static final Pattern	URL							= Pattern.compile( "^(https?|ftp|file)://([A-Za-z0-90.]*)/?([-a-zA-Z0-9.+&@#/]+)?(\\??[^\\s]*)$" );
+	public static final Pattern	UPPERCASE_GROUP				= Pattern.compile( "([A-Z])" );
+	public static final Pattern	UUID_V4						= Pattern
 	    .compile( "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}" );
-	public static final Pattern	UUID_PATTERN			= Pattern
+	public static final Pattern	UUID_PATTERN				= Pattern
 	    .compile( "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{16}" );
-	public static final Pattern	VOWELS					= Pattern.compile( "^[aeiou].*" );
-	public static final Pattern	VALID_VARIABLENAME		= Pattern.compile( "^[a-zA-Z_][a-zA-Z0-9_]*$" );
-	public static final Pattern	WHITESPACE				= Pattern.compile( "\\s" );
-	public static final Pattern	ZIPCODE					= Pattern.compile( "\\d{5}([ -]?\\d{4})?" );
-	public static final Pattern	SQL_PARAMETER			= Pattern.compile( ":\\w+" );
+	public static final Pattern	VOWELS						= Pattern.compile( "^[aeiou].*" );
+	public static final Pattern	VALID_VARIABLENAME			= Pattern.compile( "^[a-zA-Z_][a-zA-Z0-9_]*$" );
+	public static final Pattern	WHITESPACE					= Pattern.compile( "\\s" );
+	public static final Pattern	ZIPCODE						= Pattern.compile( "\\d{5}([ -]?\\d{4})?" );
+	public static final Pattern	SQL_PARAMETER				= Pattern.compile( ":\\w+" );
 
 	/**
 	 * Build a matcher for the given pattern lookup
@@ -215,7 +216,7 @@ public class RegexBuilder {
 		 * @param pattern The pattern to compile
 		 * @param noCase  Whether the pattern should be case insensitive or not
 		 * @param flags   The flags to use when compiling the pattern
-		 * 
+		 *
 		 * @return The matcher instance
 		 */
 		public RegexMatcher match( String pattern, Boolean noCase, int flags ) {

@@ -445,6 +445,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		lexical								= Key.of( "lexical" );
 	public static final Key		limit								= Key.of( "limit" );
 	public static final Key		line								= Key.of( "line" );
+	public static final Key		lineNumber							= Key.of( "lineNumber" );
 	public static final Key		list								= Key.of( "list" );
 	public static final Key		listener							= Key.of( "listener" );
 	public static final Key		listInfo							= Key.of( "listInfo" );
