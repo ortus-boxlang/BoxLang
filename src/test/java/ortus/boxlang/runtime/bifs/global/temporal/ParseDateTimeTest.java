@@ -250,6 +250,8 @@ public class ParseDateTimeTest {
 		instance.executeSource(
 		    """
 		    result = ParseDateTime( date="2025-04-05T21:14:02+0000", locale="en-US" );
+			// make sure our alternate offset formatting did not break
+			result2 = parseDateTime( "2025-02-27T13:00:00-05:00" );
 		    """,
 		    context );
 		DateTime result = ( DateTime ) variables.get( Key.of( "result" ) );
