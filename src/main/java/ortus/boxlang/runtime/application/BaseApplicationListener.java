@@ -793,7 +793,7 @@ public abstract class BaseApplicationListener {
 		if ( result != null ) {
 			String stringResult;
 			// switch on returnFormat
-			switch ( returnFormat ) {
+			switch ( returnFormat.toLowerCase() ) {
 				case "json" :
 					stringResult = ( String ) context.invokeFunction( Key.JSONSerialize, new Object[] { result } );
 					break;
