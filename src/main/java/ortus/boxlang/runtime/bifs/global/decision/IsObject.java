@@ -82,12 +82,12 @@ public class IsObject extends BIF {
 		}
 
 		// Arrays are not "objects"
-		if ( IsArray.isArray( obj ) ) {
+		if ( IsArray.isNativeArrayOrList( obj ) ) {
 			return false;
 		}
 
 		// Maps are not "objects"
-		if ( IsStruct.isStruct( obj ) ) {
+		if ( IsStruct.isMap( obj ) ) {
 			return false;
 		}
 

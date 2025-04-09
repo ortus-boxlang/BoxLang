@@ -81,4 +81,18 @@ public class IsArray extends BIF {
 		return isNativeArray( object ) || ArrayCaster.attempt( object ).wasSuccessful();
 	}
 
+	/**
+	 * Tests if the passed object is a native array or List interface
+	 *
+	 * @param object The object to test
+	 *
+	 * @return True if the object is a native array or List interface, false otherwise
+	 */
+	public static boolean isNativeArrayOrList( Object object ) {
+		if ( object == null ) {
+			return false;
+		}
+		return isNativeArray( object ) || object instanceof java.util.List;
+	}
+
 }

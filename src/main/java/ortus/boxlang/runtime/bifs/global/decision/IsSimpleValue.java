@@ -86,7 +86,7 @@ public class IsSimpleValue extends BIF {
 		}
 
 		// Exclude objects and boxed language types
-		if ( value instanceof IClassRunnable || value instanceof IType || IsArray.isArray( value ) || IsStruct.isStruct( value ) ) {
+		if ( value instanceof IClassRunnable || value instanceof IType ) {
 			return false;
 		}
 
