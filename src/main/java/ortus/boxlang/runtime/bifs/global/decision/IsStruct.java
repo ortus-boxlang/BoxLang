@@ -19,6 +19,7 @@ import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -65,6 +66,10 @@ public class IsStruct extends BIF {
 	 * Check if we are a native Map
 	 */
 	public static boolean isMap( Object object ) {
+		object = DynamicObject.unWrap( object );
+		if ( object == null ) {
+			return false;
+		}
 		return object instanceof java.util.Map;
 	}
 

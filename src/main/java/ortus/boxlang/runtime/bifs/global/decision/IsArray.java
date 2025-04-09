@@ -18,6 +18,7 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -64,6 +65,7 @@ public class IsArray extends BIF {
 	 * @return True if the object is a native array, false otherwise
 	 */
 	public static boolean isNativeArray( Object object ) {
+		object = DynamicObject.unWrap( object );
 		if ( object == null ) {
 			return false;
 		}
@@ -89,6 +91,7 @@ public class IsArray extends BIF {
 	 * @return True if the object is a native array or List interface, false otherwise
 	 */
 	public static boolean isNativeArrayOrList( Object object ) {
+		object = DynamicObject.unWrap( object );
 		if ( object == null ) {
 			return false;
 		}

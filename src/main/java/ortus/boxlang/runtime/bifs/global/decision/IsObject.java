@@ -17,6 +17,7 @@ package ortus.boxlang.runtime.bifs.global.decision;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -66,6 +67,13 @@ public class IsObject extends BIF {
 	 * @return True if the value is an object, false otherwise.
 	 */
 	public static boolean isObject( Object obj ) {
+		// Unwrap the object if it is a DynamicObject
+		// This is needed because the DynamicObject is a wrapper around the object
+		obj = DynamicObject.unWrap( obj );
+		if ( obj == null ) {
+			return false;
+		}
+
 		// Box Class instances are "objects"
 		if ( obj instanceof IClassRunnable ) {
 			return true;
