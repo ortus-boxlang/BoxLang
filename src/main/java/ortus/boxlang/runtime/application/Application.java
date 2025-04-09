@@ -460,14 +460,15 @@ public class Application {
 			    ICacheProvider targetCache = ( ICacheProvider ) data.get( "cache" );
 			    String		key			= ( String ) data.get( "key" );
 
-			    if ( logger.isDebugEnabled() )
-				    logger.debug( "Session cache interceptor [{}] cleared key [{}]", targetCache.getName(), key );
-
 			    targetCache
 			        .get( key )
-			        .ifPresent( session -> ( ( Session ) session ).shutdown( this.startingListener ) );
-
-			    logger.debug( "Session storage cache [{}] shutdown and removed session [{}]", targetCache.getName(), key );
+			        .ifPresent( maybeSession -> {
+				        if ( maybeSession instanceof Session castedSession ) {
+					        logger.debug( "Session storage cache [{}] shutdown session [{}]", targetCache.getName(), key );
+					        castedSession.shutdown( this.startingListener );
+					        logger.debug( "Session storage cache [{}] shutdown and removed session [{}]", targetCache.getName(), key );
+				        }
+			        } );
 
 			    return false;
 		    }, BoxEvent.BEFORE_CACHE_ELEMENT_REMOVED.key() );
