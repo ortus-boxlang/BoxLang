@@ -61,4 +61,11 @@ public class IsStruct extends BIF {
 		return attempt.wasSuccessful();
 	}
 
+	/**
+	 * Check if we are a native Map
+	 */
+	public static boolean isMap( Object object ) {
+		return object instanceof java.util.Map;
+	}
+
 }
