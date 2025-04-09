@@ -14,9 +14,12 @@
  */
 package ortus.boxlang.runtime.bifs.global.decision;
 
+import java.util.Date;
+
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -47,22 +50,47 @@ public class IsSimpleValue extends BIF {
 	 * @return True if the value is a simple value, false otherwise.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Object value = arguments.get( Key.value );
+		return isSimpleValue( arguments.get( Key.value ) );
+	}
 
+	/**
+	 * Determine whether the given value is a string, boolean, numeric, or date value.
+	 *
+	 * @param value The value to test for simple-ness.
+	 *
+	 * @return True if the value is a simple value, false otherwise.
+	 */
+	public static boolean isSimpleValue( Object value ) {
 		if ( value == null ) {
 			return false;
 		}
 
-		// Even though CF will auto cast a string buffer to a string, isSimpleValue() still returns false. Go figure.
+		// Exclude StringBuffer and StringBuilder explicitly
 		if ( value instanceof StringBuffer || value instanceof StringBuilder ) {
 			return false;
 		}
 
-		boolean	isObject		= IsObject.isObject( value );
-		boolean	isBoxLangType	= value instanceof IType;
-		boolean	isDate			= value instanceof DateTime;
+		// Check for "simple" types
+		if ( value instanceof String || value instanceof Boolean || value instanceof Number || value instanceof Character ) {
+			return true;
+		}
 
-		return isDate || ( !isBoxLangType && !isObject );
+		// Check for date/time-related types
+		if ( value instanceof Date || value instanceof DateTime ) {
+			return true;
+		}
+
+		// Check for locale/timezone
+		if ( value instanceof java.util.Locale || value instanceof java.util.TimeZone ) {
+			return true;
+		}
+
+		// Exclude objects and boxed language types
+		if ( value instanceof IClassRunnable || value instanceof IType || IsArray.isArray( value ) || IsStruct.isStruct( value ) ) {
+			return false;
+		}
+
+		return false; // Default case
 	}
 
 }

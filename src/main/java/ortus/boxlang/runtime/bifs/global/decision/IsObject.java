@@ -71,13 +71,23 @@ public class IsObject extends BIF {
 			return true;
 		}
 
-		// All other classes thatr represent a type are not "objects" (query, array, struct, XML, etc)
+		// All other classes that represent a type are not "objects" (query, array, struct, XML, etc)
 		if ( obj instanceof IType ) {
 			return false;
 		}
 
 		// These JDK classes which are used for "simple" BoxLang types are also not "objects"
-		if ( obj instanceof String || obj instanceof Number || obj instanceof Boolean ) {
+		if ( IsSimpleValue.isSimpleValue( obj ) ) {
+			return false;
+		}
+
+		// Arrays are not "objects"
+		if ( IsArray.isArray( obj ) ) {
+			return false;
+		}
+
+		// Maps are not "objects"
+		if ( IsStruct.isStruct( obj ) ) {
 			return false;
 		}
 

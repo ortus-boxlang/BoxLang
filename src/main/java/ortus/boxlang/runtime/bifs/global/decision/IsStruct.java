@@ -41,12 +41,23 @@ public class IsStruct extends BIF {
 	 * Determine whether a value is a struct
 	 *
 	 * @argument.variable The value to test for structi-ness.
-	 * 
+	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope defining the value to test.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		CastAttempt<IStruct> attempt = StructCaster.attempt( arguments.get( Key.variable ) );
+		return isStruct( arguments.get( Key.variable ) );
+	}
+
+	/**
+	 * Verify that this is a struct
+	 *
+	 * @param object The object to test
+	 *
+	 * @return True if the object is a struct, false otherwise
+	 */
+	public static boolean isStruct( Object object ) {
+		CastAttempt<IStruct> attempt = StructCaster.attempt( object );
 		return attempt.wasSuccessful();
 	}
 
