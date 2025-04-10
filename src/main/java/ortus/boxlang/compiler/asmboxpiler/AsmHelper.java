@@ -37,6 +37,7 @@ import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.expression.BoxArgument;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
+import ortus.boxlang.compiler.ast.statement.BoxExpressionStatement;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxReturnType;
 import ortus.boxlang.compiler.ast.statement.BoxType;
@@ -878,6 +879,39 @@ public class AsmHelper {
 
 		methodVisitor.visitMaxs( 0, 0 );
 		methodVisitor.visitEnd();
+	}
+
+	public static List<AbstractInsnNode> transformBodyExpressionsFromScript( Transpiler transpiler, List<BoxStatement> statements, TransformerContext context,
+	    ReturnValueContext finalReturnValueContext ) {
+
+		if ( statements.isEmpty() ) {
+			return new ArrayList<>();
+		}
+
+		ReturnValueContext	bodyContext					= ReturnValueContext.EMPTY_UNLESS_JUMPING;
+
+		BoxStatement		lastStatement				= statements.getLast();
+
+		boolean				lastStatementIsReturnable	= lastStatement instanceof BoxExpressionStatement;
+
+		if ( !lastStatementIsReturnable ) {
+			bodyContext = ReturnValueContext.EMPTY;
+		}
+
+		ReturnValueContext		finalBody	= bodyContext;
+
+		List<AbstractInsnNode>	nodes		= statements.stream().limit( statements.size() - 1 )
+		    .flatMap( child -> transpiler.transform( child, context, finalBody ).stream() )
+		    .collect( Collectors.toList() );
+
+		nodes.addAll( transpiler.transform( lastStatement, context, ReturnValueContext.VALUE_OR_NULL ) );
+
+		if ( !lastStatementIsReturnable ) {
+			nodes.add( new InsnNode( Opcodes.POP ) );
+			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+		}
+
+		return nodes;
 	}
 
 	public static List<AbstractInsnNode> transformBodyExpressions( Transpiler transpiler, List<BoxStatement> statements, TransformerContext context,

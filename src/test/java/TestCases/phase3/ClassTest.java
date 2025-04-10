@@ -556,6 +556,17 @@ public class ClassTest {
 		assertThat( res ).isEqualTo( "someFuncsecond" );
 	}
 
+	@DisplayName( "It should return null" )
+	@Test
+	public void testIncludeEvaluateReturnValue() {
+		var test = instance.executeStatement(
+		    """
+		       include "/src/test/java/TestCases/phase3/test.bxs";
+		    """, context );
+
+		assertThat( test ).isNull();
+	}
+
 	@DisplayName( "box meta" )
 	@Test
 	public void testBoxMeta() {
