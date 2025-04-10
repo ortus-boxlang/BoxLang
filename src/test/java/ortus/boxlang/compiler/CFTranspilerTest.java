@@ -387,11 +387,21 @@ public class CFTranspilerTest {
 	public void testUnquotedAttribute4() {
 		instance.executeSource(
 		    """
-		    <bx:query dbtype="query" foo=>
-		    	select 42
-		    </bx:query>
-		    	""",
+		       <bx:query dbtype="query" foo=>
+		    select 42
+		       </bx:query>
+		       	""",
 		    context, BoxSourceType.CFTEMPLATE );
+	}
+
+	@Test
+	public void testVariableRewriteInResultString() {
+		instance.executeSource(
+		    """
+		    cfhttp( url = "https://www.google.com", result = "local.cfhttp" );
+		    result = local.cfhttp;
+		      	""",
+		    context, BoxSourceType.CFSCRIPT );
 	}
 
 }
