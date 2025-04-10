@@ -412,9 +412,9 @@ public class ApplicationTest {
 
 					println( schedulerList() )
 
-					scheduler = schedulerGet( "My-Scheduler" )
+					scheduler = schedulerGet( "schedulerTestApp:src.test.bx.Scheduler" )
 					started = scheduler.hasStarted()
-					stats = schedulerStats( "My-Scheduler" )
+					stats = schedulerStats( "schedulerTestApp:src.test.bx.Scheduler" )
 					println( stats )
 			""", context );
 		// @formatter:on

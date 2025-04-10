@@ -14,7 +14,6 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
-import ortus.boxlang.runtime.types.IStruct;
 
 public class SchedulersTest {
 
@@ -64,9 +63,7 @@ public class SchedulersTest {
 
 		IScheduler	scheduler	= ( IScheduler ) variables.get( Key.of( "scheduler" ) );
 		Array		list		= variables.getAsArray( Key.of( "list" ) );
-		assertThat( list ).hasSize( 1 );
-		IStruct all = ( IStruct ) variables.get( Key.of( "all" ) );
-		assertThat( all ).hasSize( 1 );
+		assertThat( list ).contains( "My-Scheduler" );
 		assertThat( scheduler ).isEqualTo( ( IScheduler ) variables.get( result ) );
 	}
 
