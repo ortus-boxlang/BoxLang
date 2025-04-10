@@ -16,6 +16,7 @@ package ortus.boxlang.runtime.bifs.global.scheduler;
 
 import java.util.Set;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.async.tasks.BoxScheduler;
 import ortus.boxlang.runtime.async.tasks.IScheduler;
 import ortus.boxlang.runtime.bifs.BIF;
@@ -60,25 +61,45 @@ public class SchedulerStart extends BIF {
 	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String			className		= arguments.getAsString( Key.className );
-		String			schedulerName	= arguments.getAsString( Key._name );
-		boolean			force			= arguments.getAsBoolean( Key.force );
+		String	className		= arguments.getAsString( Key.className );
+		String	schedulerName	= arguments.getAsString( Key._name );
+		boolean	force			= arguments.getAsBoolean( Key.force );
 
-		IClassRunnable	target			= ( IClassRunnable ) this.functionService
+		return startScheduler( context, className, schedulerName, force );
+	}
+
+	/**
+	 * This method will create the incoming BoxLang scheduler class, register it and start it up in the scheduler service.
+	 *
+	 * @param context       The context in which the BIF is being invoked.
+	 * @param className     The className to the scheduler class to be instantiated: Example: "models.myapp.MyScheduler"
+	 * @param schedulerName The name of the scheduler to start, which overrides whatever is in the class.
+	 * @param force         If true, will force start the scheduler. Default is true
+	 *
+	 * @return The scheduler object.
+	 */
+	public static IScheduler startScheduler( IBoxContext context, String className, String schedulerName, boolean force ) {
+		// Create the scheduler class
+		IClassRunnable target = ( IClassRunnable ) BoxRuntime.getInstance()
+		    .getFunctionService()
 		    .getGlobalFunction( Key.createObject )
 		    .invoke( context, new Object[] { className }, false, Key.createObject );
-		IScheduler		scheduler		= new BoxScheduler( target, context );
+
+		// Now wrap it in a scheduler proxy
+		IScheduler scheduler = new BoxScheduler( target, context );
+
+		// Configure the scheduler for the first time
+		scheduler.configure();
 
 		// Do we have a name override?
 		if ( schedulerName != null && !schedulerName.isEmpty() ) {
 			scheduler.setSchedulerName( schedulerName );
 		}
 
-		// Configure the scheduler for the first time
-		scheduler.configure();
-
 		// Register and send for scheduling
-		return this.schedulerService.registerAndStartScheduler( scheduler, arguments.getAsBoolean( Key.force ) );
+		return BoxRuntime.getInstance()
+		    .getSchedulerService()
+		    .registerAndStartScheduler( scheduler, force );
 	}
 
 }
