@@ -1935,4 +1935,15 @@ public class ClassTest {
 		assertThat( variables.get( "result" ) )
 		    .isEqualTo( Paths.get( "src/test/java/TestCases/phase3/CurrentTemplateInStaticInitializer.bx" ).toAbsolutePath().toString() );
 	}
+
+	@Test
+	public void testStaticInitializerAboveProperties() {
+		instance.executeSource(
+		    """
+
+		    result = new src.test.java.TestCases.phase3.StaticInitializerAboveProperties();
+		       """,
+		    context );
+	}
+
 }
