@@ -561,7 +561,7 @@ public class ClassTest {
 	public void testIncludeEvaluateReturnValue() {
 		var test = instance.executeStatement(
 		    """
-		       include "/src/test/java/TestCases/phase3/test.bxs";
+		       include "/src/test/bx/includeTest.bxs";
 		    """, context );
 
 		assertThat( test ).isNull();
