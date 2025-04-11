@@ -17,17 +17,9 @@
 		// Moving to compat at final release
 		"cfc"
 	],
-	// Extensions BoxLang will process as templates.
+	// Additional Extensions BoxLang will process as templates.  The default extensions such as bxm, bxs, cfm, cfs, etc. are always processed as templates
 	// This is used by the RunnableLoader
-	"validTemplateExtensions": [
-		"bxs",
-		"bxm",
-		"bxml",
-		// Moving to compat at final release
-		"cfm",
-		"cfml",
-		"cfs"
-	],
+	"validTemplateExtensions": [],
 	// Where all generated classes will be placed
 	"classGenerationDirectory": "${boxlang-home}/classes",
 	// This puts the entire runtime in debug mode

@@ -333,6 +333,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		fileContent							= Key.of( "fileContent" );
 	public static final Key		filefield							= Key.of( "filefield" );
 	public static final Key		filepath							= Key.of( "filepath" );
+	public static final Key		fileread							= Key.of( "fileread" );
 	public static final Key		filter								= Key.of( "filter" );
 	public static final Key		find								= Key.of( "find" );
 	public static final Key		findAll								= Key.of( "findAll" );

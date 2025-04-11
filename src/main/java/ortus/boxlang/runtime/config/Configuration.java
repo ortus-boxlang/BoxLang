@@ -279,9 +279,17 @@ public class Configuration implements IConfigSegment {
 	public Set<String>								validClassExtensions			= new HashSet<>();
 
 	/**
-	 * Valid BoxLang template extensions
+	 * Valid core BoxLang template extensions.
 	 */
-	public Set<String>								validTemplateExtensions			= new HashSet<>();
+	public Set<String>								coreTemplateExtensions			= new HashSet<>(
+	    Arrays.asList( "bxs", "bxm", "bxml", "cfm", "cfml", "cfs" )
+	);
+
+	/**
+	 * Valid BoxLang template extensions.
+	 * Private because I want to force people to use getValidTemplateExtensions(), which includes the core ones
+	 */
+	private Set<String>								validTemplateExtensions			= new HashSet<>();
 
 	/**
 	 * Experimental Features
@@ -899,17 +907,30 @@ public class Configuration implements IConfigSegment {
 	public Set<String> getValidExtensions() {
 		Set<String> extensions = new HashSet<>();
 		extensions.addAll( this.validClassExtensions );
+		extensions.addAll( getValidTemplateExtensions() );
+		return extensions;
+	}
+
+	/**
+	 * This returns all valid BoxLang class extensions as a Set.
+	 * THis includes core extensions and custom extensions
+	 *
+	 * @return A list of all valid class extensions
+	 */
+	public Set<String> getValidTemplateExtensions() {
+		Set<String> extensions = new HashSet<>();
+		extensions.addAll( this.coreTemplateExtensions );
 		extensions.addAll( this.validTemplateExtensions );
 		return extensions;
 	}
 
 	/**
-	 * This returns all valid BoxLang class extensions.
+	 * This returns all valid BoxLang class extensions as a List.
 	 *
 	 * @return A list of all valid class extensions
 	 */
 	public List<String> getValidTemplateExtensionsList() {
-		return new ArrayList<>( this.validTemplateExtensions );
+		return new ArrayList<>( getValidTemplateExtensions() );
 	}
 
 	/**
@@ -989,7 +1010,7 @@ public class Configuration implements IConfigSegment {
 		    Key.useHighPrecisionMath, this.useHighPrecisionMath,
 		    Key.validExtensions, Array.fromSet( getValidExtensions() ),
 		    Key.validClassExtensions, Array.fromSet( this.validClassExtensions ),
-		    Key.validTemplateExtensions, Array.fromSet( this.validTemplateExtensions ),
+		    Key.validTemplateExtensions, Array.fromSet( getValidTemplateExtensions() ),
 		    Key.version, this.version
 		);
 	}

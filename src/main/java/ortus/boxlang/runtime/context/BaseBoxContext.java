@@ -17,10 +17,12 @@
  */
 package ortus.boxlang.runtime.context;
 
+import java.nio.file.Paths;
 import java.util.ArrayDeque;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Predicate;
 
 import ortus.boxlang.runtime.BoxRuntime;
@@ -634,11 +636,24 @@ public class BaseBoxContext implements IBoxContext {
 	 * @param templatePath A relateive template path
 	 */
 	public void includeTemplate( String templatePath ) {
+		Set<String>	VALID_TEMPLATE_EXTENSIONS	= BoxRuntime.getInstance().getConfiguration().getValidTemplateExtensions();
 
-		// Load template class, compiling if neccessary
-		BoxTemplate template = RunnableLoader.getInstance().loadTemplateRelative( this, templatePath );
+		String		ext							= "";
+		String		fileName					= Paths.get( templatePath ).getFileName().toString().toLowerCase();
+		if ( fileName.contains( "." ) ) {
+			ext = fileName.substring( fileName.lastIndexOf( "." ) + 1 );
+		}
 
-		template.invoke( this );
+		// This extension check is duplicated in the runnableLoader right now since some code paths hit the runnableLoader directly
+		if ( ext.equals( "*" ) || VALID_TEMPLATE_EXTENSIONS.contains( ext ) ) {
+			// Load template class, compiling if neccessary
+			BoxTemplate template = RunnableLoader.getInstance().loadTemplateRelative( this, templatePath );
+
+			template.invoke( this );
+		} else {
+			// If this extension is not one we compile, then just read the contents and flush it to the buffer
+			writeToBuffer( invokeFunction( Key.fileread, new Object[] { templatePath } ) );
+		}
 	}
 
 	/**

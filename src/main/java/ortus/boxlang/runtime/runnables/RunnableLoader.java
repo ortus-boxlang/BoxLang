@@ -59,7 +59,7 @@ public class RunnableLoader {
 	 *
 	 * @see Configuration#validTemplateExtensions
 	 */
-	private static final Set<String>	VALID_TEMPLATE_EXTENSIONS	= BoxRuntime.getInstance().getConfiguration().validTemplateExtensions;
+	private static final Set<String>	VALID_TEMPLATE_EXTENSIONS	= BoxRuntime.getInstance().getConfiguration().getValidTemplateExtensions();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -156,6 +156,8 @@ public class RunnableLoader {
 		if ( fileName.contains( "." ) ) {
 			ext = fileName.substring( fileName.lastIndexOf( "." ) + 1 );
 		}
+
+		// This extension check is duplicated in the BaseBoxContext.includeTemplate() right now since some code paths hit the runnableLoader directly
 		if ( ext.equals( "*" ) || VALID_TEMPLATE_EXTENSIONS.contains( ext ) ) {
 			Class<IBoxRunnable> clazz = this.boxpiler.compileTemplate( resolvedFilePath );
 			return ( BoxTemplate ) DynamicObject.of( clazz ).invokeStatic( context, "getInstance" );

@@ -100,6 +100,20 @@ public class IncludeTest {
 		assertThat( variables.get( result ) ).isEqualTo( "found the value before wood" );
 	}
 
+	@DisplayName( "can include non-compilable file extensions" )
+	@Test
+	public void testCanIncludeNonCompilableFileExtensions() {
+		instance.executeSource(
+		    """
+		    bx:savecontent variable="result" {
+		    	include "src/test/java/TestCases/phase2/NonCompilableFileExtension.txt";
+		    }
+		          """,
+		    context );
+
+		assertThat( variables.get( result ) ).isEqualTo( "<cfoutput>This will #not# compile<cfset now()></cfoutput>" );
+	}
+
 	@DisplayName( "can include file again" )
 	@Test
 	@Disabled
@@ -111,7 +125,6 @@ public class IncludeTest {
 		    include "generatePrimes3.cfs";
 		    """,
 		    context );
-
 	}
 
 }
