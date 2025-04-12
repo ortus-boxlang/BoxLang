@@ -1135,7 +1135,7 @@ public class ScheduledTask implements Runnable {
 	 * BoxLang proxy
 	 *
 	 * @param period   The period of execution
-	 * @param timeunit The time unit to use, available units are: days, hours,
+	 * @param timeUnit The time unit to use, available units are: days, hours,
 	 *                 microseconds, milliseconds, minutes, nanoseconds, and
 	 *                 seconds. The default
 	 *

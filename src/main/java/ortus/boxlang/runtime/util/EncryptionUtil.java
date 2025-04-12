@@ -288,7 +288,6 @@ public final class EncryptionUtil {
 	 * @param encryptItem The byte array to encode
 	 * @param key         The key to use
 	 * @param algorithm   The algorithm to use
-	 * @param encoding    The encoding to use
 	 *
 	 * @return returns the HMAC encoded string
 	 */
@@ -484,7 +483,6 @@ public final class EncryptionUtil {
 	 * Generate a SecretKey for the given algorithm and an optional key size
 	 *
 	 * @param algorithm The encryption algorithm
-	 * @param keySize   The key size
 	 *
 	 * @return
 	 */

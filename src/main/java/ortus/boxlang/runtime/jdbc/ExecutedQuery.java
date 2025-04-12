@@ -71,7 +71,6 @@ public final class ExecutedQuery {
 	 *
 	 * @param results      The results of the query, i.e. the actual Query object.
 	 * @param generatedKey The generated key of the query, if any.
-	 * @param queryMeta    Struct of query metadata, such as original SQL, parameters, size, and cache info.
 	 */
 	public ExecutedQuery( @Nonnull Query results, @Nullable Object generatedKey ) {
 		this.results		= results;

@@ -47,8 +47,9 @@ public class StaticClassBoxContext extends BaseBoxContext {
 	/**
 	 * Creates a new execution context with a bounded function instance and parent context
 	 *
-	 * @param parent    The parent context
-	 * @param thisClass The function instance
+	 * @param parent         The parent context
+	 * @param staticBoxClass Static class instance for a boxlang class
+	 * @param staticScope    The static scope to use
 	 */
 	public StaticClassBoxContext( IBoxContext parent, DynamicObject staticBoxClass, StaticScope staticScope ) {
 		super( parent );

@@ -20,7 +20,6 @@ package ortus.boxlang.runtime.dynamic.casters;
 import java.util.Objects;
 
 import ortus.boxlang.runtime.dynamic.Attempt;
-import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 
 /**
@@ -153,7 +152,7 @@ public final class CastAttempt<T> extends Attempt<T> {
 	 * an empty {@code Attempt}.
 	 *
 	 * <p>
-	 * This method is similar to {@link #map(Function)}, but the mapping
+	 * This method is similar to {@link #map(java.util.function.Function)}, but the mapping
 	 * function is one whose result is already an {@code Attempt}, and if
 	 * invoked, {@code flatMap} does not wrap it within an additional
 	 * {@code Attempt}.

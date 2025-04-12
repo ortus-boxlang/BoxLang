@@ -291,7 +291,6 @@ public class RegexBuilder {
 		/**
 		 * Replace first occurrence of the pattern in the input string with the replacement string
 		 *
-		 * @param pattern     The pattern to match against
 		 * @param replacement The replacement string
 		 *
 		 * @return The input string with all occurrences of the pattern replaced with the replacement string

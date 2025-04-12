@@ -35,10 +35,10 @@ import ortus.boxlang.runtime.context.IBoxContext;
 public class Elvis implements IOperator {
 
 	/**
-	 *
-	 * @param condition Boollean to evaluate
-	 * @param ifTrue    Value to use if condition is true
-	 * @param ifFalse   Value to use if condition is false
+	 * 
+	 * @param context BoxLang context in which the operation is performed
+	 * @param left    The left operand
+	 * @param right   The right operand, which is a function that takes the context as an argument
 	 *
 	 * @return The result of the ternary operation
 	 */

@@ -30,13 +30,9 @@ public class BoxStaticInitializer extends BoxStatement {
 	/**
 	 * Creates an AST for a Class
 	 *
-	 * @param imports       list of imports
-	 * @param body          list of statements
-	 * @param annotations   list of annotations
-	 * @param documentation list of documentation annotations
-	 * @param properties    list of properties
-	 * @param position      position in the source file
-	 * @param sourceText    the source text
+	 * @param body       list of statements
+	 * @param position   position in the source file
+	 * @param sourceText the source text
 	 *
 	 * @see Position
 	 * @see BoxStatement

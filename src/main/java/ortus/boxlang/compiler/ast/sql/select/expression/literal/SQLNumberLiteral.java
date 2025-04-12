@@ -100,7 +100,7 @@ public class SQLNumberLiteral extends SQLExpression {
 	/**
 	 * Runtime check if the expression evaluates to a numeric value and works for columns as well
 	 * 
-	 * @param QoQExec Query execution state
+	 * @param tableLookup Table lookup for the expression
 	 * 
 	 * @return true if the expression evaluates to a numeric value
 	 */

@@ -1437,8 +1437,8 @@ public class BoxRuntime implements java.io.Closeable {
 	/**
 	 * Execute a single statement in a specific context
 	 *
-	 * @param source  A string of the statement to execute
-	 * @param context The context to execute the source in
+	 * @param scriptRunnable A runnable boxlang script to execute
+	 * @param context        The context to execute the source in
 	 *
 	 * @return The result of the execution, if any, or null
 	 */

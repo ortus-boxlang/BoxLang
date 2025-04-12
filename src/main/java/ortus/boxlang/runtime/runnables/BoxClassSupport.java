@@ -786,7 +786,8 @@ public class BoxClassSupport {
 	 * Vailidate if a given class instance satisfies the interface.
 	 * Throws a BoxValidationException if not.
 	 *
-	 * @param boxClass The class to validate
+	 * @param thisClass       The class to validate
+	 * @param abstractMethods The abstract methods for which to check the class for existence
 	 *
 	 * @throws BoxValidationException If the class does not satisfy the interface
 	 */

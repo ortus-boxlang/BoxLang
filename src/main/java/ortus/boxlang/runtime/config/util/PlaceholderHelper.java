@@ -167,7 +167,7 @@ public class PlaceholderHelper {
 	/**
 	 * Recursively replace all placeholders throughout a tree made up of BoxLang Arrays and Structs
 	 *
-	 * @param input The Object to Resolve
+	 * @param object Object to populate into tree placeholders.
 	 *
 	 * @return The Resolved tree
 	 *

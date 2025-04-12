@@ -586,7 +586,7 @@ public class Attempt<T> {
 	 * an empty {@code Attempt}.
 	 *
 	 * <p>
-	 * This method is similar to {@link #map( java.util.function.Function<? super T, ? extends U> mapper )}, but the mapping
+	 * This method is similar to {@link #map( java.util.function.Function )}, but the mapping
 	 * function is one whose result is already an {@code Attempt}, and if
 	 * invoked, {@code flatMap} does not wrap it within an additional
 	 * {@code Attempt}.
@@ -665,7 +665,6 @@ public class Attempt<T> {
 	/**
 	 * If a value is present, returns the value, otherwise throws a provided
 	 *
-	 * @param message   The message to display
 	 * @param throwable The exception to throw if the attempt is empty
 	 *
 	 * @throws NoElementException If the attempt is empty

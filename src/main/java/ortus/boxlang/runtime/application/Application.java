@@ -335,7 +335,7 @@ public class Application {
 	 * }
 	 * </pre>
 	 *
-	 * @param appContext The application context
+	 * @param requestContext The request context
 	 */
 	public void startupAppCaches( RequestBoxContext requestContext ) {
 		StructCaster.attempt( requestContext.getConfigItems( Key.applicationSettings, Key.caches ) )

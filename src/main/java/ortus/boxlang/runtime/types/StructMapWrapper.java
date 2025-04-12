@@ -315,7 +315,7 @@ public class StructMapWrapper implements IStruct, IListenable<IStruct>, Serializ
 	/**
 	 * Returns the value of the key safely, nulls will be wrapped in a NullValue still.
 	 *
-	 * @param key The key to look for
+	 * @param name Key name to retrieve.
 	 *
 	 * @return The value of the key or a NullValue object, null means the key didn't exist *
 	 */

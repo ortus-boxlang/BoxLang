@@ -188,10 +188,10 @@ public class BoxResolver extends BaseResolver {
 	 * which will look for the class in the current template directory, or using module mappings.
 	 *
 	 *
-	 * @param context   The current context of execution
-	 * @param name      The fully qualified path of the class to load
-	 * @param imports   The list of imports to use
-	 * @param loadClass When false, the class location is returned with informatino about where the class was found, but the class is not loaded and will be null.
+	 * @param context            The current context of execution
+	 * @param fullyQualifiedName The fully qualified path of the class to load
+	 * @param imports            The list of imports to use
+	 * @param loadClass          When false, the class location is returned with informatino about where the class was found, but the class is not loaded and will be null.
 	 *
 	 * @return The loaded class or null if not found
 	 */

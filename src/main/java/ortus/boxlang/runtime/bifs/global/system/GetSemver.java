@@ -49,15 +49,15 @@ public class GetSemver extends BIF {
 	 * <p>
 	 * Some of the methods provided by Semver are:
 	 * <ul>
-	 * <li>{@link Semver#compare(Semver)}: Compares two versions and returns -1, 0, or 1 if the first version is less than,
+	 * <li>{@link Semver#compareTo(Semver)}: Compares two versions and returns -1, 0, or 1 if the first version is less than,
 	 * equal to, or greater than the second version, respectively.</li>
 	 * <li>{@link Semver#satisfies(String)}: Checks if the version satisfies the given range.</li>
-	 * <li>{@link Semver#valid()}: Checks if the version is valid.</li>
-	 * <li>{@link Semver#incMajor()}: Increments the major version.</li>
-	 * <li>{@link Semver#incMinor()}: Increments the minor version.</li>
-	 * <li>{@link Semver#incPatch()}: Increments the patch version.</li>
-	 * <li>{@link Semver#incPreRelease()}: Increments the pre-release version.</li>
-	 * <li>{@link Semver#incBuild()}: Increments the build version.</li>
+	 * <li>{@link Semver#isValid(String)}: Checks if the version is valid.</li>
+	 * <li>{@link Semver#nextMajor()}: Increments the major version.</li>
+	 * <li>{@link Semver#nextMinor()}: Increments the minor version.</li>
+	 * <li>{@link Semver#nextPatch()}: Increments the patch version.</li>
+	 * <li>{@link Semver#withBuild(String)}: Set the build version.</li>
+	 * <li>{@link Semver#withPreRelease(String)}: Set the pre-release version.</li>
 	 * <li>{@link Semver#isStable()}: Checks if the version is stable.</li>
 	 * </ul>
 	 * <p>
