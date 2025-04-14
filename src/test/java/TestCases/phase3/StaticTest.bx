@@ -7,6 +7,7 @@ class {
 		final brad = "wood"
 		final static.finalStatic = "finalStatic";
 		final static finalStatic2 = "finalStatic2";
+		static.myArray = [1, 2, 3, 4, 5];
 	}
 
 	static.foo = 42;
@@ -49,6 +50,10 @@ class {
 
 	static function ImWithStatic( notProvided=static.finalStatic ) {
 		return static.scoped & notProvided;
+	}
+
+	static function getMyArray() {
+		return static.myArray;
 	}
 
 

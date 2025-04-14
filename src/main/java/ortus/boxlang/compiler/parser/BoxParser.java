@@ -1497,6 +1497,10 @@ public class BoxParser extends AbstractParser {
 			}
 			case BoxParenthesis ignored -> {
 			}
+			case BoxStaticAccess ignored -> {
+			}
+			case BoxStaticMethodInvocation ignored -> {
+			}
 			default -> errorListener.semanticError( object.getDescription() + " is not a valid construct for array access ", getPosition( ctx ) );
 		}
 	}
