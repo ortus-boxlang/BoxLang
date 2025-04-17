@@ -538,7 +538,6 @@ public abstract class ReplacingBoxVisitor {
 		for ( int i = 0; i < node.getValues().size(); i++ ) {
 			BoxExpression	value		= node.getValues().get( i );
 			BoxNode			newValue	= value.accept( this );
-			System.out.println( "Value: " + value + " NewValue: " + newValue );
 			if ( newValue != value ) {
 				node.replaceChildren( value, newValue );
 				node.getValues().set( i, ( BoxExpression ) newValue );
