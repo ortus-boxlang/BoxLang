@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.context;
 
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayDeque;
 import java.util.LinkedHashMap;
@@ -639,7 +640,17 @@ public class BaseBoxContext implements IBoxContext {
 		Set<String>	VALID_TEMPLATE_EXTENSIONS	= BoxRuntime.getInstance().getConfiguration().getValidTemplateExtensions();
 
 		String		ext							= "";
-		String		fileName					= Paths.get( templatePath ).getFileName().toString().toLowerCase();
+		// If there is double //, remove the first char
+		if ( templatePath.startsWith( "//" ) ) {
+			templatePath = templatePath.substring( 1 );
+		}
+		Path pfileName = Paths.get( templatePath ).getFileName();
+
+		if ( pfileName == null ) {
+			throw new BoxRuntimeException( "Template path [" + templatePath + "] does not have a filename" );
+		}
+
+		String fileName = pfileName.toString().toLowerCase();
 		if ( fileName.contains( "." ) ) {
 			ext = fileName.substring( fileName.lastIndexOf( "." ) + 1 );
 		}
