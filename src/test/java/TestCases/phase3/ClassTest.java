@@ -1504,6 +1504,25 @@ public class ClassTest {
 	}
 
 	@Test
+	@Disabled( "BL-1317" )
+	public void testAbstractClassMissingMethod() {
+		Throwable t = assertThrows( AbstractClassException.class, () -> instance.executeSource(
+		    """
+		    clazz = new src.test.java.TestCases.phase3.ConcreteClassNoMethod();
+		      """, context ) );
+		assertThat( t.getMessage() ).contains( "does not implement method" );
+	}
+
+	@Test
+	public void testAbstractClassWrongMethod() {
+		Throwable t = assertThrows( AbstractClassException.class, () -> instance.executeSource(
+		    """
+		    clazz = new src.test.java.TestCases.phase3.ConcreteClassWrongMethod();
+		      """, context ) );
+		assertThat( t.getMessage() ).contains( "the signature doesn't match the signature of" );
+	}
+
+	@Test
 	public void testAbstractClassCF() {
 		Throwable t = assertThrows( AbstractClassException.class, () -> instance.executeSource(
 		    """

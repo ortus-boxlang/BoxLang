@@ -1,0 +1,7 @@
+class extends="AbstractClass" {
+
+	String function abstractMethod( foo = "bar" ) {
+		return "abstractMethod";
+	}
+
+}

@@ -41,6 +41,7 @@ import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.UDF;
+import ortus.boxlang.runtime.types.exceptions.AbstractClassException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
@@ -803,13 +804,13 @@ public class BoxClassSupport {
 			if ( thisClass.getThisScope().containsKey( abstractMethod.getKey() )
 			    && thisClass.getThisScope().get( abstractMethod.getKey() ) instanceof Function classMethod ) {
 				if ( !classMethod.implementsSignature( abstractMethod.getValue() ) ) {
-					throw new BoxRuntimeException(
+					throw new AbstractClassException(
 					    "Class [" + className + "] has method [" + classMethod.signatureAsString() + "] but the signature doesn't match the signature of ["
 					        + abstractMethod.getValue().signatureAsString() + "] in " + abstractMethod.getValue().getSourceObjectType() + " ["
 					        + abstractMethod.getValue().getSourceObjectName() + "]." );
 				}
 			} else {
-				throw new BoxRuntimeException(
+				throw new AbstractClassException(
 				    "Class [" + className + "] does not implement method [" + abstractMethod.getValue().signatureAsString() + "] from "
 				        + abstractMethod.getValue().getSourceObjectType() + " [" + abstractMethod.getValue().getSourceObjectName() + "]." );
 			}
