@@ -1024,8 +1024,8 @@ public class AsmHelper {
 		initVisitor.visitInsn( Opcodes.RETURN );
 		initVisitor.visitEnd();
 
-		// MethodContextTracker t = new MethodContextTracker( false );
-		// transpiler.addMethodContextTracker( t );
+		MethodContextTracker t = new MethodContextTracker( false );
+		transpiler.addMethodContextTracker( t );
 		// Object evaluate( IBoxContext context );
 		MethodVisitor methodVisitor = classNode.visitMethod(
 		    Opcodes.ACC_PUBLIC,
@@ -1035,7 +1035,7 @@ public class AsmHelper {
 		    null );
 		methodVisitor.visitCode();
 
-		// t.trackNewContext();
+		t.trackNewContext();
 
 		nodeSupplier.get().forEach( n -> n.accept( methodVisitor ) );
 
@@ -1043,7 +1043,7 @@ public class AsmHelper {
 		methodVisitor.visitMaxs( 0, 0 );
 		methodVisitor.visitEnd();
 
-		// transpiler.popMethodContextTracker();
+		transpiler.popMethodContextTracker();
 
 		transpiler.setAuxiliary( type.getClassName(), classNode );
 

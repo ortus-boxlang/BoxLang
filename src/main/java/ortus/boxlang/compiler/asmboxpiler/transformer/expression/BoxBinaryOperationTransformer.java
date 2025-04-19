@@ -191,7 +191,9 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 													List<AbstractInsnNode> elvisNodes = new ArrayList<>();
 													elvisNodes.addAll( tracker.loadCurrentContext() );
 													elvisNodes.addAll( left );
-													elvisNodes.addAll( AsmHelper.generateArgumentProducerLambda( transpiler, () -> right ) );
+													elvisNodes.addAll( AsmHelper.generateArgumentProducerLambda( transpiler,
+													    () -> transpiler.transform( operation.getRight(), context, ReturnValueContext.VALUE ) ) );
+
 													elvisNodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
 													    Type.getInternalName( Elvis.class ),
 													    "invoke",
