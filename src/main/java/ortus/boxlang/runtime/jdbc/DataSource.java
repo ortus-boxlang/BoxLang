@@ -25,6 +25,7 @@ import com.zaxxer.hikari.HikariDataSource;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.segments.DatasourceConfig;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
@@ -202,6 +203,12 @@ public class DataSource implements Comparable<DataSource> {
 	 */
 	public Connection getConnection() {
 		try {
+			if ( IntegerCaster.cast( this.configuration.getProperties().get( Key.maxConnections ), false ) < 0 ) {
+				int maxConnections = this.hikariDataSource.getMaximumPoolSize();
+				if ( this.hikariDataSource.getHikariPoolMXBean().getActiveConnections() == maxConnections ) {
+					return this.hikariDataSource.getDataSource().getConnection();
+				}
+			}
 			return this.hikariDataSource.getConnection();
 		} catch ( SQLException e ) {
 			// @TODO: Recast as BoxSQLException?

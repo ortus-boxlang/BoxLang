@@ -404,6 +404,11 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 			}
 		} );
 
+		// CFConfig alias
+		if ( this.properties.containsKey( Key.connectionLimit ) ) {
+			this.properties.computeIfAbsent( Key.maxConnections, key -> this.properties.get( Key.connectionLimit ) );
+		}
+
 		// Merge defaults into the properties
 		DEFAULTS
 		    .entrySet()
@@ -444,6 +449,15 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	 */
 	public Key getDriver() {
 		return Key.of( this.properties.getOrDefault( Key.driver, "" ).toString() );
+	}
+
+	/**
+	 * Retrieve the configuration properties.
+	 * 
+	 * @return Struct representation of all datasource configuration properties.
+	 */
+	public IStruct getProperties() {
+		return this.properties;
 	}
 
 	/**
@@ -564,11 +578,14 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 			result.setMinimumIdle( IntegerCaster.cast( properties.get( Key.minConnections ), false ) );
 		}
 		if ( properties.containsKey( Key.maxConnections ) && IntegerCaster.attempt( properties.get( Key.maxConnections ) ).wasSuccessful() ) {
-			result.setMaximumPoolSize( IntegerCaster.cast( properties.get( Key.maxConnections ), false ) );
-		}
-		// CFConfig Specifc alias
-		if ( properties.containsKey( Key.connectionLimit ) && IntegerCaster.attempt( properties.get( Key.connectionLimit ) ).wasSuccessful() ) {
-			result.setMaximumPoolSize( IntegerCaster.cast( properties.get( Key.connectionLimit ), false ) );
+			var maxConnections = IntegerCaster.cast( properties.get( Key.maxConnections ), false );
+			if ( maxConnections < 1 ) {
+				maxConnections = DEFAULTS.getAsInteger( Key.maxConnections );
+				logger.warn(
+				    "maxConnections must be greater than 0. Resetting to default of {}; will treat datasource as a 'hybrid' pool. Requests for a new connection when pool is maxed out will return a non-pooled connection.",
+				    maxConnections );
+			}
+			result.setMaximumPoolSize( maxConnections );
 		}
 
 		// We also support these HikariConfig-specific properties
