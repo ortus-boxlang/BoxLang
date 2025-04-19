@@ -1504,7 +1504,6 @@ public class ClassTest {
 	}
 
 	@Test
-	@Disabled( "BL-1317" )
 	public void testAbstractClassMissingMethod() {
 		Throwable t = assertThrows( AbstractClassException.class, () -> instance.executeSource(
 		    """
