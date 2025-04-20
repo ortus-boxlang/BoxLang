@@ -84,6 +84,12 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	public boolean					onTheFly						= false;
 
 	/**
+	 * If true, this datasource will allow infinite connections by opening non-pooled connections once the connection pool is
+	 * exhausted (full with active connections).
+	 */
+	public boolean					allowInfiniteConnections		= false;
+
+	/**
 	 * The properties for the datasource
 	 */
 	public IStruct					properties						= new Struct( DEFAULTS );
@@ -395,6 +401,23 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	 * @return The datasource configuration object
 	 */
 	public DatasourceConfig processProperties( IStruct properties ) {
+		// CFConfig alias
+		if ( properties.containsKey( Key.connectionLimit ) ) {
+			properties.put( Key.maxConnections, properties.get( Key.connectionLimit ) );
+		}
+
+		if ( properties.containsKey( Key.maxConnections ) && IntegerCaster.attempt( properties.get( Key.maxConnections ) ).wasSuccessful() ) {
+			Integer maxConnections = IntegerCaster.cast( properties.get( Key.maxConnections ), false );
+			if ( maxConnections < 1 ) {
+				maxConnections = DEFAULTS.getAsInteger( Key.maxConnections );
+				logger.warn(
+				    "maxConnections must be greater than 0. Resetting to default of {}; will treat datasource as a 'hybrid' pool. Requests for a new connection when pool is maxed out will return a non-pooled connection.",
+				    maxConnections );
+				this.allowInfiniteConnections = true;
+			}
+			properties.put( Key.maxConnections, maxConnections );
+		}
+
 		// Process the properties into the state, merge them in one by one
 		properties.entrySet().stream().forEach( entry -> {
 			if ( entry.getValue() instanceof String castedValue ) {
@@ -403,11 +426,6 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 				this.properties.put( entry.getKey(), entry.getValue() );
 			}
 		} );
-
-		// CFConfig alias
-		if ( this.properties.containsKey( Key.connectionLimit ) ) {
-			this.properties.computeIfAbsent( Key.maxConnections, key -> this.properties.get( Key.connectionLimit ) );
-		}
 
 		// Merge defaults into the properties
 		DEFAULTS
@@ -578,14 +596,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 			result.setMinimumIdle( IntegerCaster.cast( properties.get( Key.minConnections ), false ) );
 		}
 		if ( properties.containsKey( Key.maxConnections ) && IntegerCaster.attempt( properties.get( Key.maxConnections ) ).wasSuccessful() ) {
-			var maxConnections = IntegerCaster.cast( properties.get( Key.maxConnections ), false );
-			if ( maxConnections < 1 ) {
-				maxConnections = DEFAULTS.getAsInteger( Key.maxConnections );
-				logger.warn(
-				    "maxConnections must be greater than 0. Resetting to default of {}; will treat datasource as a 'hybrid' pool. Requests for a new connection when pool is maxed out will return a non-pooled connection.",
-				    maxConnections );
-			}
-			result.setMaximumPoolSize( maxConnections );
+			result.setMaximumPoolSize( IntegerCaster.cast( properties.get( Key.maxConnections ), false ) );
 		}
 
 		// We also support these HikariConfig-specific properties

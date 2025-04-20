@@ -15,6 +15,7 @@
 package ortus.boxlang.runtime.jdbc;
 
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,7 +26,6 @@ import com.zaxxer.hikari.HikariDataSource;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.segments.DatasourceConfig;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
@@ -203,15 +203,23 @@ public class DataSource implements Comparable<DataSource> {
 	 */
 	public Connection getConnection() {
 		try {
-			if ( IntegerCaster.cast( this.configuration.getProperties().get( Key.maxConnections ), false ) < 0 ) {
+			if ( this.configuration.allowInfiniteConnections ) {
 				int maxConnections = this.hikariDataSource.getMaximumPoolSize();
 				if ( this.hikariDataSource.getHikariPoolMXBean().getActiveConnections() == maxConnections ) {
-					return this.hikariDataSource.getDataSource().getConnection();
+					return this.getUnpooledConnection();
 				}
 			}
 			return this.hikariDataSource.getConnection();
 		} catch ( SQLException e ) {
 			// @TODO: Recast as BoxSQLException?
+			throw new BoxRuntimeException( "Unable to open connection:", e );
+		}
+	}
+
+	protected Connection getUnpooledConnection() {
+		try {
+			return DriverManager.getConnection( this.hikariDataSource.getJdbcUrl(), this.hikariDataSource.getUsername(), this.hikariDataSource.getPassword() );
+		} catch ( SQLException e ) {
 			throw new BoxRuntimeException( "Unable to open connection:", e );
 		}
 	}
