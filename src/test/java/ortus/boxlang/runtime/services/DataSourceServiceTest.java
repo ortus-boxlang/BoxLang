@@ -112,7 +112,7 @@ public class DataSourceServiceTest {
 	@DisplayName( "It can remove a valid datasource and shut it down" )
 	@Test
 	void testRemoveDatasource() throws SQLException {
-		DataSource	dsn			= service.register(
+		DataSource dsn = service.register(
 		    Key.of( "foobar" ),
 		    Struct.of(
 		        "driver", "derby",
@@ -120,9 +120,10 @@ public class DataSourceServiceTest {
 		    )
 		);
 
-		Connection	connection	= dsn.getConnection();
-		assertThat( service.remove( dsn.getUniqueName() ) ).isTrue();
-		assertThat( connection.isValid( 1 ) ).isFalse();
+		try ( Connection conn = dsn.getConnection() ) {
+			assertThat( service.remove( dsn.getUniqueName() ) ).isTrue();
+			assertThat( conn.isValid( 1 ) ).isFalse();
+		}
 	}
 
 	@DisplayName( "It can clear all registered datasources" )
@@ -138,13 +139,14 @@ public class DataSourceServiceTest {
 		);
 
 		assertThat( service.has( dsn.getUniqueName() ) ).isTrue();
-		Connection connection = dsn.getConnection();
-		assertThat( connection ).isInstanceOf( Connection.class );
+		try ( Connection connection = dsn.getConnection() ) {
+			assertThat( connection ).isInstanceOf( Connection.class );
 
-		service.clear();
-		assertThat( service.has( dsn.getUniqueName() ) ).isFalse();
-		// The manager should close datasources, connection pools, and connections upon calling .clear()
-		assertThat( connection.isValid( 1 ) ).isFalse();
+			service.clear();
+			assertThat( service.has( dsn.getUniqueName() ) ).isFalse();
+			// The manager should close datasources, connection pools, and connections upon calling .clear()
+			assertThat( connection.isValid( 1 ) ).isFalse();
+		}
 	}
 
 	@DisplayName( "Verify the generic driver has been installed" )
