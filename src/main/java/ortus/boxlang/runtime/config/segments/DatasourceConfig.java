@@ -84,12 +84,6 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	public boolean					onTheFly						= false;
 
 	/**
-	 * If true, this datasource will allow infinite connections by opening non-pooled connections once the connection pool is
-	 * exhausted (full with active connections).
-	 */
-	public boolean					allowInfiniteConnections		= false;
-
-	/**
 	 * The properties for the datasource
 	 */
 	public IStruct					properties						= new Struct( DEFAULTS );
@@ -409,11 +403,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 		if ( properties.containsKey( Key.maxConnections ) && IntegerCaster.attempt( properties.get( Key.maxConnections ) ).wasSuccessful() ) {
 			Integer maxConnections = IntegerCaster.cast( properties.get( Key.maxConnections ), false );
 			if ( maxConnections < 1 ) {
-				maxConnections = DEFAULTS.getAsInteger( Key.maxConnections );
-				logger.warn(
-				    "maxConnections must be greater than 0. Resetting to default of {}; will treat datasource as a 'hybrid' pool. Requests for a new connection when pool is maxed out will return a non-pooled connection.",
-				    maxConnections );
-				this.allowInfiniteConnections = true;
+				maxConnections = Integer.MAX_VALUE;
 			}
 			properties.put( Key.maxConnections, maxConnections );
 		}

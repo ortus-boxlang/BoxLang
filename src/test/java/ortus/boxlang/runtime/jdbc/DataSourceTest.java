@@ -27,8 +27,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -421,7 +419,7 @@ public class DataSourceTest {
 	@DisplayName( "It can use a -1 or infinite connection limit" )
 	@Test
 	void testInfiniteConnections() {
-		DataSource			infiniteConnectionDS	= DataSource.fromStruct(
+		DataSource	infiniteConnectionDS	= DataSource.fromStruct(
 		    "infiniteDB",
 		    Struct.of(
 		        "database", "infiniteDB",
@@ -429,29 +427,9 @@ public class DataSourceTest {
 		        "connectionLimit", -1,
 		        "connectionString", "jdbc:derby:memory:" + "infiniteDB" + ";create=true"
 		    ) );
-		List<Connection>	acquiredConnections		= new ArrayList<>();
-		Integer				maxPooledConnections	= infiniteConnectionDS.getConfiguration().getProperties().getAsInteger( Key.maxConnections );
+		Integer		maxPooledConnections	= infiniteConnectionDS.getConfiguration().getProperties().getAsInteger( Key.maxConnections );
 
-		try {
-			for ( int i = 0; i < maxPooledConnections; i++ ) {
-				acquiredConnections.add( infiniteConnectionDS.getConnection() );
-			}
-			assertThat( acquiredConnections.size() ).isEqualTo( maxPooledConnections );
-
-			// here comes the real test!
-			for ( int i = 0; i < 10; i++ ) {
-				acquiredConnections.add( infiniteConnectionDS.getConnection() );
-			}
-
-			assertThat( acquiredConnections.size() ).isEqualTo( maxPooledConnections + 10 );
-			assertThat( infiniteConnectionDS.getPoolStats().getAsInteger( Key.of( "activeConnections" ) ) ).isEqualTo( maxPooledConnections );
-		} finally {
-			for ( Connection conn : acquiredConnections ) {
-				assertDoesNotThrow( () -> conn.close() );
-			}
-		}
-
-		assertThat( infiniteConnectionDS.getPoolStats().getAsInteger( Key.of( "activeConnections" ) ) ).isEqualTo( 0 );
+		assertThat( maxPooledConnections ).isEqualTo( Integer.MAX_VALUE );
 	}
 
 	@Disabled

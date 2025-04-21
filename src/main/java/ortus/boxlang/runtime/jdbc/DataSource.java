@@ -203,12 +203,6 @@ public class DataSource implements Comparable<DataSource> {
 	 */
 	public Connection getConnection() {
 		try {
-			if ( this.configuration.allowInfiniteConnections ) {
-				int maxConnections = this.hikariDataSource.getMaximumPoolSize();
-				if ( this.hikariDataSource.getHikariPoolMXBean().getActiveConnections() == maxConnections ) {
-					return this.getUnpooledConnection();
-				}
-			}
 			return this.hikariDataSource.getConnection();
 		} catch ( SQLException e ) {
 			// @TODO: Recast as BoxSQLException?
