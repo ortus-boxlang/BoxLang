@@ -403,9 +403,8 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 		if ( properties.containsKey( Key.maxConnections ) && IntegerCaster.attempt( properties.get( Key.maxConnections ) ).wasSuccessful() ) {
 			Integer maxConnections = IntegerCaster.cast( properties.get( Key.maxConnections ), false );
 			if ( maxConnections < 1 ) {
-				maxConnections = Integer.MAX_VALUE;
+				properties.put( Key.maxConnections, Integer.MAX_VALUE );
 			}
-			properties.put( Key.maxConnections, maxConnections );
 		}
 
 		// Process the properties into the state, merge them in one by one
