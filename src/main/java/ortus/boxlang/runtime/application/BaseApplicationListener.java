@@ -794,7 +794,7 @@ public abstract class BaseApplicationListener {
 			// switch on returnFormat
 			switch ( returnFormat.toLowerCase() ) {
 				case "json" :
-					stringResult = ( String ) context.invokeFunction( Key.JSONSerialize, new Object[] { result } );
+					stringResult = ( String ) context.invokeFunction( Key.JSONSerialize, new Object[] { result, "struct" } );
 					break;
 				case "wddx" :
 				case "xml" :
