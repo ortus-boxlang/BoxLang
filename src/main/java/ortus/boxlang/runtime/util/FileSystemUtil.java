@@ -390,12 +390,7 @@ public final class FileSystemUtil {
 
 		// Is the filter a string or a closure?
 		if ( filter instanceof String castedFilter && castedFilter.length() > 1 ) {
-			ArrayList<PathMatcher> pathMatchers = ListUtil
-			    .asList( castedFilter, "|" )
-			    .stream()
-			    .map( filterString -> FileSystems.getDefault().getPathMatcher( "glob:" + filterString ) )
-			    .collect( Collectors.toCollection( ArrayList::new ) );
-			directoryStream = directoryStream.filter( item -> pathMatchers.stream().anyMatch( pathMatcher -> pathMatcher.matches( item.getFileName() ) ) );
+			directoryStream = directoryStream.filter( item -> fileMatchesPattern( castedFilter, item.getFileName() ) );
 		}
 		// Predicate filter
 		else if ( filter instanceof java.util.function.Predicate<?> ) {
@@ -406,6 +401,16 @@ public final class FileSystemUtil {
 		return directoryStream.sorted( pathSort );
 	}
 
+	public static Boolean fileMatchesPattern( String filter, Path filePath ) {
+		ArrayList<PathMatcher> pathMatchers = ListUtil.asList( filter, "|" )
+		    .stream()
+		    .map( filterString -> FileSystems.getDefault().getPathMatcher( "glob:" + filterString ) )
+		    .collect( Collectors.toCollection( ArrayList::new ) );
+
+		return pathMatchers.stream().anyMatch( pathMatcher -> pathMatcher.matches( filePath ) );
+
+	}
+
 	/**
 	 * Matches the type of a file or directory
 	 *
@@ -414,7 +419,7 @@ public final class FileSystemUtil {
 	 *
 	 * @return a boolean as to whether the path matches the type
 	 */
-	private static Boolean matchesType( Path item, String type ) {
+	public static Boolean matchesType( Path item, String type ) {
 		switch ( type ) {
 			case "directory" :
 			case "dir" :

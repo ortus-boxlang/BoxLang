@@ -18,14 +18,18 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.file.FileSystems;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 import java.util.zip.ZipEntry;
@@ -45,6 +49,7 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.BLCollector;
+import ortus.boxlang.runtime.types.util.ListUtil;
 
 /**
  * This class provides zip utilities for the BoxLang runtime
@@ -152,7 +157,7 @@ public class ZipUtil {
 						if ( filter != null ) {
 							// String regex filter: If there is a match, we add the entry to the zip file, else we skip it
 							if ( filter instanceof String castedFilter && castedFilter.length() > 1 ) {
-								if ( !Pattern.compile( castedFilter, Pattern.CASE_INSENSITIVE ).matcher( zipEntryName ).matches() ) {
+								if ( !FileSystemUtil.fileMatchesPattern( castedFilter, Path.of( zipEntryName ) ) ) {
 									return FileVisitResult.CONTINUE;
 								}
 							}
@@ -370,7 +375,7 @@ public class ZipUtil {
 				    if ( filter != null ) {
 					    // String regex filters
 					    if ( filter instanceof String castedFilter && castedFilter.length() > 1 ) {
-						    return Pattern.compile( castedFilter, Pattern.CASE_INSENSITIVE ).matcher( entry.getName() ).matches();
+						    return FileSystemUtil.fileMatchesPattern( castedFilter, Path.of( entry.getName() ) );
 					    }
 
 					    // BoxLang function filters
@@ -550,7 +555,7 @@ public class ZipUtil {
 				    if ( filter != null ) {
 					    // Apply regex filter if present
 					    if ( filter instanceof String castedFilter && castedFilter.length() > 1 ) {
-						    return Pattern.compile( castedFilter, Pattern.CASE_INSENSITIVE ).matcher( entry.getName() ).matches();
+						    return FileSystemUtil.fileMatchesPattern( castedFilter, Path.of( entry.getName() ) );
 					    }
 
 					    // Apply BoxLang function filter if present
@@ -664,7 +669,7 @@ public class ZipUtil {
 				    if ( filter != null ) {
 					    // If the regex matches then that means we are deleting the entry, so we return false
 					    if ( filter instanceof String castedFilter && castedFilter.length() > 1 ) {
-						    return !Pattern.compile( castedFilter, Pattern.CASE_INSENSITIVE ).matcher( entry.getName() ).matches();
+						    return FileSystemUtil.fileMatchesPattern( castedFilter, Path.of( entry.getName() ) );
 					    }
 
 					    // Apply BoxLang function filter if present
