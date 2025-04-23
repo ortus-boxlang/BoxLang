@@ -75,6 +75,10 @@ import ortus.boxlang.runtime.util.LocalizationUtil;
  */
 public class Configuration implements IConfigSegment {
 
+	/**
+	 * Change listener for mappings, etc. That will force a trailing slash on the key
+	 * when the key is added to the struct.
+	 */
 	public static final IChangeListener<IStruct>	forceMappingTrailingSlash		= ( key, newValue, oldValue, object ) -> {
 																						// Only fire for new values not ending with /
 																						if ( newValue != null && !key.getName().endsWith( "/" ) ) {
@@ -312,9 +316,9 @@ public class Configuration implements IConfigSegment {
 	public LoggingConfig							logging							= new LoggingConfig();
 
 	/**
-	 * Scheduled tasks configuration
+	 * The container of runtimes configurations. Each runtime can collaborate settings by their name in this struct
 	 */
-	// public ScheduledTasksConfig scheduledTasks = new ScheduledTasksConfig();
+	public IStruct									runtimes						= new Struct();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -669,6 +673,11 @@ public class Configuration implements IConfigSegment {
 			}
 		}
 
+		// Process runtimes
+		if ( config.containsKey( Key.runtimes ) ) {
+			this.runtimes = config.getAsStruct( Key.runtimes );
+		}
+
 		// Process our security configuration
 		if ( config.containsKey( Key.security ) ) {
 			security.process( StructCaster.cast( config.get( Key.security ) ) );
@@ -974,6 +983,10 @@ public class Configuration implements IConfigSegment {
 		this.modules.entrySet()
 		    .forEach( entry -> modulesCopy.put( entry.getKey(), ( ( ModuleConfig ) entry.getValue() ).asStruct() ) );
 
+		IStruct runtimesCopy = new Struct();
+		this.runtimes.entrySet()
+		    .forEach( entry -> runtimesCopy.put( entry.getKey(), entry.getValue() ) );
+
 		return Struct.of(
 		    Key.applicationTimeout, this.applicationTimeout,
 		    Key.caches, cachesCopy,
@@ -998,6 +1011,7 @@ public class Configuration implements IConfigSegment {
 		    Key.modulesDirectory, Array.copyFromList( this.modulesDirectory ),
 		    Key.originalConfig, this.originalConfig,
 		    Key.requestTimeout, this.requestTimeout,
+		    Key.runtimes, runtimesCopy,
 		    Key.sessionManagement, this.sessionManagement,
 		    Key.sessionStorage, this.sessionStorage,
 		    Key.sessionTimeout, this.sessionTimeout,
