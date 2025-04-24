@@ -994,6 +994,13 @@ public class BoxRuntime implements java.io.Closeable {
 	}
 
 	/**
+	 * Alias to use strings
+	 */
+	public IService getGlobalService( String name ) {
+		return getGlobalService( Key.of( name ) );
+	}
+
+	/**
 	 * Has a global service been set
 	 *
 	 * @param name The name of the service to check
@@ -1002,6 +1009,13 @@ public class BoxRuntime implements java.io.Closeable {
 	 */
 	public boolean hasGlobalService( Key name ) {
 		return this.globalServices.containsKey( name );
+	}
+
+	/**
+	 * Alias to use strings
+	 */
+	public boolean hasGlobalService( String name ) {
+		return hasGlobalService( Key.of( name ) );
 	}
 
 	/**
@@ -1015,6 +1029,13 @@ public class BoxRuntime implements java.io.Closeable {
 		return this.globalServices.put( name, service );
 	}
 
+	/***
+	 * Alias to use strings
+	 */
+	public IService putGlobalService( String name, IService service ) {
+		return putGlobalService( Key.of( name ), service );
+	}
+
 	/**
 	 * Remove a global service from the runtime
 	 *
@@ -1024,6 +1045,13 @@ public class BoxRuntime implements java.io.Closeable {
 	 */
 	public IService removeGlobalService( Key name ) {
 		return this.globalServices.remove( name );
+	}
+
+	/**
+	 * Alias to use strings
+	 */
+	public IService removeGlobalService( String name ) {
+		return removeGlobalService( Key.of( name ) );
 	}
 
 	/**
