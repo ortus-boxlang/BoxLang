@@ -609,17 +609,6 @@ task generateTechnicalDocumentation( type: Javadoc ) {
 }
 
 /**
- * Generate/Scaffold technical documentation
- */
-task parseBifDocs( type: Javadoc, dependsOn: compileJava ) {
-	options.addBooleanOption( "Xdoclint:none", true )
-	exclude '**/boxlang/parser/**'
-	options.addBooleanOption( 'html5', true )
-	options.doclet = "ortus.boxlang.tools.doclets.BIFDoclet"
-    options.docletpath = rootProject.files( 'bin/main' ).asList()
-}
-
-/**
  * Test Task Customizations
  */
 task createHeapDump {
