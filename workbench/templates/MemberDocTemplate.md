@@ -1,1 +1,0 @@
-* `.{MemberName}()` - {MemberDescription}
