@@ -1611,4 +1611,14 @@ public class CFTemplateTest {
 		    context, BoxSourceType.CFTEMPLATE );
 	}
 
+	@Test
+	@Disabled( "BL-1338" )
+	public void testEmptyScriptBlock() {
+		instance.executeSource(
+		    """
+		    <cfinclude template="src/test/java/TestCases/components/TestEmptyScriptBlock.cfm">
+		      """,
+		    context, BoxSourceType.CFTEMPLATE );
+	}
+
 }

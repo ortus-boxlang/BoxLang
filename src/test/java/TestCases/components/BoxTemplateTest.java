@@ -25,6 +25,7 @@ import java.io.IOException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -1371,6 +1372,16 @@ public class BoxTemplateTest {
 		                    """,
 		    context, BoxSourceType.BOXTEMPLATE );
 		assertThat( variables.get( result ) ).isEqualTo( "remote" );
+	}
+
+	@Test
+	@Disabled( "BL-1338" )
+	public void testEmptyScriptBlock() {
+		instance.executeSource(
+		    """
+		    <bx:include template="src/test/java/TestCases/components/TestEmptyScriptBlock.bxm">
+		      """,
+		    context, BoxSourceType.BOXTEMPLATE );
 	}
 
 }
