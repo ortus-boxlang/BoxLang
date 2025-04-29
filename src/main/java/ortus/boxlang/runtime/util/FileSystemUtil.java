@@ -1078,12 +1078,12 @@ public final class FileSystemUtil {
 				if ( originalPath.startsWith( "/" ) && !Files.exists( originalPathPath ) && !originalPathPath.getParent().toString().equals( "/" ) ) {
 					System.out.println( "We are in the conditional now... " );
 					String[]	pathParts	= originalPath.substring( 1, originalPath.length() - 1 ).split( "/" );
-					String tld = "/" + pathParts[ 0 ];
-					boolean tldExists = Files.exists( Path.of( tld ) );
+					String		tld			= "/" + pathParts[ 0 ];
+					boolean		tldExists	= Files.exists( Path.of( tld ) );
 					if ( tldExists ) {
 						return ResolvedFilePath.of( originalPathPath );
 					}
-				} else if( Files.exists( originalPathPath ) ) {
+				} else if ( Files.exists( originalPathPath ) ) {
 					return ResolvedFilePath.of( originalPathPath );
 				}
 			} else {

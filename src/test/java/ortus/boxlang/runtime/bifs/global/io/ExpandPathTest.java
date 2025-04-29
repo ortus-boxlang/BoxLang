@@ -314,7 +314,6 @@ public class ExpandPathTest {
 		instance.executeSource( """
 		                        	result = expandPath('/tmp')
 		                        """, context );
-								
 
 		assertThat( variables.getAsString( result ) )
 		    .isEqualTo( ResolvedFilePath.of( "/tmp" ).absolutePath().toString() );
