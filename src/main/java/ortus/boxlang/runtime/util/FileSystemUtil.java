@@ -517,21 +517,48 @@ public final class FileSystemUtil {
 
 	}
 
+	/**
+	 * Moves a file from source to destination
+	 * @param source      the source file path
+	 * @param destination the destination file path
+	 */
 	public static void move( String source, String destination ) {
 		move( source, destination, true );
 	}
 
-	public static void move( String source, String destination, boolean createPath ) {
+	/**
+	 * Moves a file from source to destination
+	 * @param source      the source file path
+	 * @param destination the destination file path
+	 * @param createPath  whether to create the parent directory if it does not exist
+	 */
+	public static void move( String source, String destination, boolean createPath ){
+		move( source, destination, createPath, false );
+	}
+
+	/**
+	 * Moves a file from source to destination
+	 * @param source      the source file path
+	 * @param destination the destination file path
+	 * @param createPath  whether to create the parent directory if it does not exist
+	 * @param overwrite  whether to overwrite the destination file if it exists
+	 */
+	public static void move( String source, String destination, boolean createPath, boolean overwrite ) {
 		Path	start	= Path.of( source );
 		Path	end		= Path.of( destination );
 		if ( !createPath && !Files.exists( end.getParent() ) ) {
 			throw new BoxRuntimeException( "The directory [" + end.toAbsolutePath().toString()
 			    + "] cannot be created because the parent directory [" + end.getParent().toAbsolutePath().toString()
 			    + "] does not exist.  To prevent this error set the createPath argument to true." );
-		} else if ( Files.exists( end ) ) {
-			throw new BoxRuntimeException( "The target path of [" + end.toAbsolutePath().toString() + "] already exists" );
 		} else {
 			try {
+				if( Files.exists( end ) ){
+					if ( !overwrite ) {
+						throw new BoxRuntimeException( "The target path of [" + end.toAbsolutePath().toString() + "] already exists" );
+					} else {
+						Files.delete( end );
+					}
+				}
 				if ( createPath ) {
 					Files.createDirectories( end.getParent() );
 				}

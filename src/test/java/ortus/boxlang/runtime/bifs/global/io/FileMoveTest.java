@@ -113,4 +113,23 @@ public class FileMoveTest {
 		);
 	}
 
+	@DisplayName( "It tests the BIF FileMove default overwrite argument will throw an error if the file exists" )
+	@Test
+	public void testBifDefaultOverwrite() {
+		variables.put( Key.of( "targetFile" ), Path.of( source ).toAbsolutePath().toString() );
+		variables.put( Key.of( "destinationFile" ), Path.of( destination ).toAbsolutePath().toString() );
+		FileSystemUtil.write( variables.getAsString( Key.of( "destinationFile") ), "This file already exists" );
+		assertTrue( FileSystemUtil.exists( source ) );
+		assertTrue( FileSystemUtil.exists( destination ) );
+
+		assertThrows(
+		    BoxRuntimeException.class,
+		    () -> instance.executeSource(
+		        """
+					fileMove( targetFile, destinationFile );
+		        """,
+		        context )
+		);
+	}
+
 }
