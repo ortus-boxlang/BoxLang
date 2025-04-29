@@ -15,7 +15,6 @@
 
 package ortus.boxlang.runtime.bifs.global.io;
 
-
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 
 import ortus.boxlang.runtime.bifs.BIF;

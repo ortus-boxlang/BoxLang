@@ -118,7 +118,7 @@ public class FileMoveTest {
 	public void testBifDefaultOverwrite() {
 		variables.put( Key.of( "targetFile" ), Path.of( source ).toAbsolutePath().toString() );
 		variables.put( Key.of( "destinationFile" ), Path.of( destination ).toAbsolutePath().toString() );
-		FileSystemUtil.write( variables.getAsString( Key.of( "destinationFile") ), "This file already exists" );
+		FileSystemUtil.write( variables.getAsString( Key.of( "destinationFile" ) ), "This file already exists" );
 		assertTrue( FileSystemUtil.exists( source ) );
 		assertTrue( FileSystemUtil.exists( destination ) );
 
@@ -126,8 +126,8 @@ public class FileMoveTest {
 		    BoxRuntimeException.class,
 		    () -> instance.executeSource(
 		        """
-					fileMove( targetFile, destinationFile );
-		        """,
+		        fileMove( targetFile, destinationFile );
+		             """,
 		        context )
 		);
 	}

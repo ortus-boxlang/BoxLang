@@ -519,6 +519,7 @@ public final class FileSystemUtil {
 
 	/**
 	 * Moves a file from source to destination
+	 * 
 	 * @param source      the source file path
 	 * @param destination the destination file path
 	 */
@@ -528,20 +529,22 @@ public final class FileSystemUtil {
 
 	/**
 	 * Moves a file from source to destination
+	 * 
 	 * @param source      the source file path
 	 * @param destination the destination file path
 	 * @param createPath  whether to create the parent directory if it does not exist
 	 */
-	public static void move( String source, String destination, boolean createPath ){
+	public static void move( String source, String destination, boolean createPath ) {
 		move( source, destination, createPath, false );
 	}
 
 	/**
 	 * Moves a file from source to destination
+	 * 
 	 * @param source      the source file path
 	 * @param destination the destination file path
 	 * @param createPath  whether to create the parent directory if it does not exist
-	 * @param overwrite  whether to overwrite the destination file if it exists
+	 * @param overwrite   whether to overwrite the destination file if it exists
 	 */
 	public static void move( String source, String destination, boolean createPath, boolean overwrite ) {
 		Path	start	= Path.of( source );
@@ -552,7 +555,7 @@ public final class FileSystemUtil {
 			    + "] does not exist.  To prevent this error set the createPath argument to true." );
 		} else {
 			try {
-				if( Files.exists( end ) ){
+				if ( Files.exists( end ) ) {
 					if ( !overwrite ) {
 						throw new BoxRuntimeException( "The target path of [" + end.toAbsolutePath().toString() + "] already exists" );
 					} else {
