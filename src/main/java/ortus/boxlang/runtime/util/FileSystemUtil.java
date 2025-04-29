@@ -1064,24 +1064,27 @@ public final class FileSystemUtil {
 
 		}
 
+		System.out.println( "Original path path: " + originalPathPath.toString() );
+		System.out.println( "Original path exists: " + Files.exists( originalPathPath ) );
+		System.out.println( "Original path isAbsolute: " + isAbsolute );
+		System.out.println( "Original path resolved: " + ResolvedFilePath.of( originalPathPath ).absolutePath().toString() );
+		System.out.println( "File Separator is unix: " + File.separator.equals( "/" ) );
 		// If C:/foo is absolute, then great, but /foo has to actually exist on disk before I'll take it as really absolute
 		if ( isAbsolute && !originalPath.equals( "/" ) ) {
 			// detect if *nix OS file system...
 			if ( File.separator.equals( "/" ) ) {
+				System.out.println( "We are Unix now... " );
 				// ... if so the path needs to start with / AND the parent must exist (and the parent can't be /)
-				if ( originalPath.startsWith( "/" ) && !originalPathPath.getParent().toString().equals( "/" ) ) {
+				if ( originalPath.startsWith( "/" ) && !Files.exists( originalPathPath ) && !originalPathPath.getParent().toString().equals( "/" ) ) {
+					System.out.println( "We are in the conditional now... " );
 					String[]	pathParts	= originalPath.substring( 1, originalPath.length() - 1 ).split( "/" );
-					// Any part of the provided absolute path exists, then the path is already expanded
-					boolean		tldExists	= IntStream.range( 0, pathParts.length ).filter( idx -> pathParts[ idx ].length() > 0 ).mapToObj( idx -> {
-												String tld = "";
-												for ( int i = 0; i <= idx; i++ ) {
-													tld += "/" + pathParts[ i ];
-												}
-												return tld;
-											} ).anyMatch( tld -> Files.exists( Path.of( tld ) ) );
+					String tld = "/" + pathParts[ 0 ];
+					boolean tldExists = Files.exists( Path.of( tld ) );
 					if ( tldExists ) {
 						return ResolvedFilePath.of( originalPathPath );
 					}
+				} else if( Files.exists( originalPathPath ) ) {
+					return ResolvedFilePath.of( originalPathPath );
 				}
 			} else {
 				return ResolvedFilePath.of( originalPathPath );

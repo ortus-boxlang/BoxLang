@@ -306,6 +306,21 @@ public class ExpandPathTest {
 	}
 
 	@Test
+	public void testUnixTmp() {
+		if ( FileSystemUtil.IS_WINDOWS ) {
+			return;
+		}
+
+		instance.executeSource( """
+		                        	result = expandPath('/tmp')
+		                        """, context );
+								
+
+		assertThat( variables.getAsString( result ) )
+		    .isEqualTo( ResolvedFilePath.of( "/tmp" ).absolutePath().toString() );
+	}
+
+	@Test
 	public void testInvalidWindowsPath() {
 		if ( FileSystemUtil.IS_WINDOWS ) {
 			instance.executeSource(
