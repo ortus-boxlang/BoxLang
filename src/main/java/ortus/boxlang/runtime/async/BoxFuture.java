@@ -43,12 +43,12 @@ import ortus.boxlang.runtime.types.util.DateTimeHelper;
 /**
  * This is the BoxLang version of a CompletableFuture to allow for more
  * dynamic goodness and fluent features.
+ *
+ * This class extends CompletableFuture and adds some additional methods.
  */
 public class BoxFuture<T> extends CompletableFuture<T> {
 
-	/**
-	 * Logger
-	 */
+	// The logger for this class
 	private BoxLangLogger logger;
 
 	/**
