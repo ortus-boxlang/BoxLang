@@ -30,7 +30,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.util.EncryptionUtil;
 
 @BoxBIF
-@BoxBIF( alias = "EncryptBinary" )
+@BoxBIF( alias = "DecryptBinary" )
 
 public class Decrypt extends BIF {
 
