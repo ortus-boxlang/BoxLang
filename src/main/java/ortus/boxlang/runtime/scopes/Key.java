@@ -849,12 +849,14 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		isolation							= Key.of( "isolation" );
 	public static final Key		nested								= Key.of( "nested" );
 	public static final Key		onTheFly							= Key.of( "onTheFly" );
+	public static final Key		passphrase							= Key.of( "passphrase" );
 	public static final Key		password							= Key.of( "password" );
 	public static final Key		port								= Key.of( "port" );
 	public static final Key		procedure							= Key.of( "procedure" );
 	public static final Key		procResult							= Key.of( "procResult" );
 	public static final Key		resultSet							= Key.of( "resultSet" );
 	public static final Key		returnCode							= Key.of( "returnCode" );
+	public static final Key		salt								= Key.of( "salt" );
 	public static final Key		savepoint							= Key.of( "savepoint" );
 	public static final Key		table								= Key.of( "table" );
 	public static final Key		username							= Key.of( "username" );
