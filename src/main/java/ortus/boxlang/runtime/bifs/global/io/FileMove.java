@@ -35,6 +35,7 @@ public class FileMove extends BIF {
 	 */
 	public FileMove() {
 		super();
+
 		declaredArguments = new Argument[] {
 		    new Argument( true, Argument.STRING, Key.source ),
 		    new Argument( true, Argument.STRING, Key.destination ),
