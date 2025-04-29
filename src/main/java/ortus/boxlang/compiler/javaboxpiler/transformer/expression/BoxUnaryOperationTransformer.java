@@ -73,7 +73,8 @@ public class BoxUnaryOperationTransformer extends AbstractTransformer {
 		}
 
 		// for non literals, we need to identify the key being incremented/decremented and the object it lives in (which may be a scope)
-		if ( expr instanceof BoxIdentifier id && operator != BoxUnaryOperator.Not && operator != BoxUnaryOperator.Minus && operator != BoxUnaryOperator.Plus ) {
+		if ( expr instanceof BoxIdentifier id && operator != BoxUnaryOperator.Not && operator != BoxUnaryOperator.Minus && operator != BoxUnaryOperator.Plus
+		    && operator != BoxUnaryOperator.BitwiseComplement ) {
 			Node accessKey;
 			template	= getMethodCallTemplateCompound( operation );
 			accessKey	= createKey( id.getName() );
@@ -83,7 +84,7 @@ public class BoxUnaryOperationTransformer extends AbstractTransformer {
 			    values );
 			values.put( "obj", obj );
 		} else if ( expr instanceof BoxAccess objectAccess && operator != BoxUnaryOperator.Not && operator != BoxUnaryOperator.Minus
-		    && operator != BoxUnaryOperator.Plus ) {
+		    && operator != BoxUnaryOperator.Plus && operator != BoxUnaryOperator.BitwiseComplement ) {
 			Node accessKey;
 			template = getMethodCallTemplateCompound( operation );
 			values.put( "obj", transpiler.transform( objectAccess.getContext() ).toString() );
