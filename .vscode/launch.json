@@ -80,7 +80,7 @@
 		},
 		{
 			"type": "java",
-			"name": "BoxRunner",
+			"name": "REPL",
 			"request": "launch",
 			"mainClass": "ortus.boxlang.runtime.BoxRunner",
 			"projectName": "boxlang"

@@ -20,7 +20,9 @@ package ortus.boxlang.runtime.bifs.global.cli;
 import static com.google.common.truth.Truth.assertThat;
 
 import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -39,10 +41,21 @@ public class CLIReadTest {
 	IBoxContext			context;
 	IScope				variables;
 	Key					result	= Key.result;
+	static InputStream	originalIn;
 
 	@BeforeAll
 	public static void setUp() {
+		originalIn = System.in;
+		String					simulatedInput	= "Hello, World!\nAnotherWorld\n";
+		ByteArrayInputStream	inputStream		= new ByteArrayInputStream( simulatedInput.getBytes() );
+		System.setIn( inputStream );
 		instance = BoxRuntime.getInstance( true );
+	}
+
+	@AfterEach
+	public void tearDown() {
+		// Reset System.in to avoid issues with reused input streams
+		System.setIn( originalIn );
 	}
 
 	@BeforeEach
@@ -54,10 +67,6 @@ public class CLIReadTest {
 	@DisplayName( "It can read from the system with no prompt" )
 	@Test
 	public void testRead() {
-		String					simulatedInput	= "Hello, World!\n";
-		ByteArrayInputStream	inputStream		= new ByteArrayInputStream( simulatedInput.getBytes() );
-		System.setIn( inputStream );
-
 		// Execute the source
 		instance.executeSource(
 		    """
@@ -70,16 +79,13 @@ public class CLIReadTest {
 	@DisplayName( "It can read from the system with a prompt" )
 	@Test
 	public void testReadWithPrompt() {
-		String					simulatedInput	= "Hello, World!\n";
-		ByteArrayInputStream	inputStream		= new ByteArrayInputStream( simulatedInput.getBytes() );
-		System.setIn( inputStream );
 		// Execute the source
 		instance.executeSource(
 		    """
 		    	result = CLIRead( "Enter a value: " )
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( "Hello, World!" );
+		assertThat( variables.get( result ) ).isEqualTo( "AnotherWorld" );
 	}
 
 }
