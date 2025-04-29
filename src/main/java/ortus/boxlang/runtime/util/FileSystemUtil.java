@@ -1087,7 +1087,9 @@ public final class FileSystemUtil {
 					return ResolvedFilePath.of( originalPathPath );
 				}
 			} else {
+
 				return ResolvedFilePath.of( originalPathPath );
+
 			}
 		}
 
