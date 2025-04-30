@@ -5442,4 +5442,14 @@ public class CoreLangTest {
 		assertThat( Parser.getCacheSize() ).isGreaterThan( 0 );
 	}
 
+	@Test
+	public void testClearsdfANTLRCache() {
+		instance.executeSource(
+		    """
+		    	myVar = "Brad";
+		    ( (a)->println( myVar ?: a ) )( "Luis" )
+		    		  """,
+		    context, BoxSourceType.BOXSCRIPT );
+	}
+
 }
