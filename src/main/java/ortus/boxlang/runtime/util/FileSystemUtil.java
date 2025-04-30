@@ -50,7 +50,6 @@ import java.util.Comparator;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.apache.commons.io.ByteOrderMark;
@@ -200,7 +199,7 @@ public final class FileSystemUtil {
 					        .setByteOrderMarks( ByteOrderMark.UTF_8, ByteOrderMark.UTF_16BE, ByteOrderMark.UTF_16LE, ByteOrderMark.UTF_32BE,
 					            ByteOrderMark.UTF_32LE )
 					        .setInclude( false )
-					        .get() 
+					        .get()
 						) {
 							InputStreamReader inputReader = null;
 							if ( charset != null ) {
@@ -519,7 +518,7 @@ public final class FileSystemUtil {
 
 	/**
 	 * Moves a file from source to destination
-	 * 
+	 *
 	 * @param source      the source file path
 	 * @param destination the destination file path
 	 */
@@ -529,7 +528,7 @@ public final class FileSystemUtil {
 
 	/**
 	 * Moves a file from source to destination
-	 * 
+	 *
 	 * @param source      the source file path
 	 * @param destination the destination file path
 	 * @param createPath  whether to create the parent directory if it does not exist
@@ -540,7 +539,7 @@ public final class FileSystemUtil {
 
 	/**
 	 * Moves a file from source to destination
-	 * 
+	 *
 	 * @param source      the source file path
 	 * @param destination the destination file path
 	 * @param createPath  whether to create the parent directory if it does not exist
@@ -671,9 +670,9 @@ public final class FileSystemUtil {
 
 	/**
 	 * Tests whether a given mime type is a binary mime type
-	 * 
+	 *
 	 * @param mimeType
-	 * 
+	 *
 	 * @return
 	 */
 	public static Boolean isBinaryMimeType( String mimeType ) {
@@ -1011,7 +1010,6 @@ public final class FileSystemUtil {
 		String	originalPath		= path;
 		Path	originalPathPath	= null;
 		originalPathPath = Path.of( originalPath );
-
 		boolean isAbsolute = originalPathPath.isAbsolute();
 
 		// If the incoming path does NOT start with a /, then we make it relative to the current template (if there is one)
@@ -1064,19 +1062,20 @@ public final class FileSystemUtil {
 
 		}
 
-		System.out.println( "Original path path: " + originalPathPath.toString() );
-		System.out.println( "Original path exists: " + Files.exists( originalPathPath ) );
-		System.out.println( "Original path isAbsolute: " + isAbsolute );
-		System.out.println( "Original path resolved: " + ResolvedFilePath.of( originalPathPath ).absolutePath().toString() );
-		System.out.println( "File Separator is unix: " + File.separator.equals( "/" ) );
+		// System.out.println( "Original path path: " + originalPathPath.toString() );
+		// System.out.println( "Original path exists: " + Files.exists( originalPathPath ) );
+		// System.out.println( "Original path isAbsolute: " + isAbsolute );
+		// System.out.println( "Original path resolved: " + ResolvedFilePath.of( originalPathPath ).absolutePath().toString() );
+		// System.out.println( "File Separator is unix: " + File.separator.equals( "/" ) );
+
 		// If C:/foo is absolute, then great, but /foo has to actually exist on disk before I'll take it as really absolute
 		if ( isAbsolute && !originalPath.equals( "/" ) ) {
 			// detect if *nix OS file system...
 			if ( File.separator.equals( "/" ) ) {
-				System.out.println( "We are Unix now... " );
+				// System.out.println( "We are Unix now... " );
 				// ... if so the path needs to start with / AND the parent must exist (and the parent can't be /)
 				if ( originalPath.startsWith( "/" ) && !Files.exists( originalPathPath ) && !originalPathPath.getParent().toString().equals( "/" ) ) {
-					System.out.println( "We are in the conditional now... " );
+					// System.out.println( "We are in the conditional now... " );
 					String[]	pathParts	= originalPath.substring( 1, originalPath.length() - 1 ).split( "/" );
 					String		tld			= "/" + pathParts[ 0 ];
 					boolean		tldExists	= Files.exists( Path.of( tld ) );
@@ -1355,11 +1354,11 @@ public final class FileSystemUtil {
 
 	/**
 	 * Creates a URI from a file path string
-	 * 
+	 *
 	 * @param input the file path string
-	 * 
+	 *
 	 * @return the URI
-	 * 
+	 *
 	 * @throws Exception
 	 */
 	public static URI createFileUri( String input ) {

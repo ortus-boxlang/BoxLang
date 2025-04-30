@@ -108,7 +108,7 @@
 			"mainClass": "ortus.boxlang.runtime.BoxRunner",
 			"projectName": "boxlang",
 			"args": [
-				"test"
+				"module:test"
 			]
 		}
 	],

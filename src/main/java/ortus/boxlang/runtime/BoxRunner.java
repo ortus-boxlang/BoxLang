@@ -31,6 +31,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.fasterxml.jackson.jr.ob.JSONObjectException;
@@ -462,16 +463,10 @@ public class BoxRunner {
 				break;
 			}
 
-			String[]	currentParts	= currentArgument.split( "\\." );
-			String		currentExt		= "";
-
-			if ( currentParts.length > 0 ) {
-				currentExt = "." + currentParts[ currentParts.length - 1 ];
-			}
-
 			// Template to execute?
-			if ( actionCommand == null && ALLOWED_TEMPLATE_EXECUTIONS.contains( currentExt ) ) {
-				file = templateToAbsolute( currentArgument );
+			Path targetPath = getExecutableTemplate( currentArgument );
+			if ( actionCommand == null && Files.exists( targetPath ) ) {
+				file = targetPath.toString();
 				continue;
 			}
 
@@ -514,6 +509,31 @@ public class BoxRunner {
 		    targetModule,
 		    actionCommand
 		);
+	}
+
+	/**
+	 * Verifies if the passed in path is a valid template for execution
+	 *
+	 * @param path The path to the template
+	 *
+	 * @return Whether or not the template is valid for execution
+	 */
+	private static Path getExecutableTemplate( String path ) {
+		String extension = FilenameUtils.getExtension( path );
+
+		// Do we have the extension? If not, let's assume it's a class
+		if ( extension.isEmpty() ) {
+			extension	= "bx";
+			path		+= ".bx";
+		}
+
+		// Check if the extension is allowed or not
+		if ( !ALLOWED_TEMPLATE_EXECUTIONS.contains( "." + extension ) ) {
+			return Path.of( path );
+		}
+
+		// Check if the file exists
+		return Path.of( templateToAbsolute( path ) );
 	}
 
 	/**
