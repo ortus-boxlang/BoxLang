@@ -291,16 +291,17 @@ public class Application {
 			startupClassLoaderPaths( context.getRequestContext() );
 			// Startup the caches
 			startupAppCaches( context.getRequestContext() );
-			// Startup the schedulers
-			startupAppSchedulers( context.getRequestContext() );
 			// Startup session storages
 			startupSessionStorage( context.getApplicationContext() );
 
 			// Announce it globally
-			BoxRuntime.getInstance().getInterceptorService().announce( Key.onApplicationStart, Struct.of(
-			    "application", this,
-			    "listener", this.startingListener
-			) );
+			BoxRuntime.getInstance().getInterceptorService().announce(
+			    Key.onApplicationStart,
+			    Struct.of(
+			        "application", this,
+			        "listener", this.startingListener
+			    )
+			);
 
 			// Announce it to the listener
 			if ( startingListener != null ) {
@@ -308,6 +309,9 @@ public class Application {
 			} else {
 				logger.debug( "No listener found for application [{}]", this.name );
 			}
+
+			// Startup the schedulers so the application can use them
+			startupAppSchedulers( context.getRequestContext() );
 		}
 
 		logger.debug( "Application.start() - {}", this.name );
