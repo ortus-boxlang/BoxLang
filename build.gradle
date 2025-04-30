@@ -42,7 +42,7 @@ ext {
 if (branch == 'development') {
     // If the branch is 'development', ensure the version ends with '-snapshot'
     // This replaces any existing prerelease identifier with '-snapshot'
-    version = version.contains('-') ? version.replaceAll(/-.*/, '-snapshot') : "${version}-snapshot"
+    version = version.contains('-') ? version.replaceAll(/-.*/, '-snapshot') : "${version}-snapshot".toString()
 }
 
 /**
@@ -480,7 +480,7 @@ javadoc {
 }
 
 task zipJavadocs( type: Zip ) {
-	group = "documentation"
+	group "documentation"
 	from javadoc.destinationDir
 	archiveFileName = "boxlang-javadocs-${version}.zip"
 	destinationDirectory = file( "$buildDir/distributions" )
