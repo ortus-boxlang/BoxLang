@@ -44,9 +44,11 @@ import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
+import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.interop.DynamicInteropService;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.FunctionService;
+import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
@@ -61,40 +63,42 @@ import ortus.boxlang.runtime.util.DuplicationUtil;
  */
 public class Query implements IType, IReferenceable, Collection<IStruct>, Serializable {
 
+	private static final InterceptorService	interceptorService	= BoxRuntime.getInstance().getInterceptorService();
+
 	/**
 	 * Query data as List of arrays
 	 */
 	// private List<Object[]> data = Collections.synchronizedList( new ArrayList<Object[]>() );
-	private List<Object[]>				data;
+	private List<Object[]>					data;
 
-	protected AtomicInteger				size				= new AtomicInteger( 0 );
+	protected AtomicInteger					size				= new AtomicInteger( 0 );
 
-	private int							actualSize			= 0;
+	private int								actualSize			= 0;
 
 	/**
 	 * Map of column definitions
 	 */
-	private Map<Key, QueryColumn>		columns				= Collections.synchronizedMap( new LinkedHashMap<Key, QueryColumn>() );
+	private Map<Key, QueryColumn>			columns				= Collections.synchronizedMap( new LinkedHashMap<Key, QueryColumn>() );
 
 	/**
 	 * Metadata object
 	 */
-	public transient BoxMeta			$bx;
+	public transient BoxMeta				$bx;
 
 	/**
 	 * Function service
 	 */
-	private transient FunctionService	functionService;
+	private transient FunctionService		functionService;
 
 	/**
 	 * Serialization version
 	 */
-	private static final long			serialVersionUID	= 1L;
+	private static final long				serialVersionUID	= 1L;
 
 	/**
 	 * Metadata for the query, used to populate QueryMeta
 	 */
-	private IStruct						metadata;
+	private IStruct							metadata;
 
 	/**
 	 * Create a new query with additional metadata
@@ -454,6 +458,13 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		// Insert the rows
 		synchronized ( data ) {
 			for ( int i = 0; i < target.size(); i++ ) {
+				interceptorService.announce(
+				    BoxEvent.QUERY_ADD_ROW,
+				    Struct.of(
+				        "query", this,
+				        "row", target.getRow( i )
+				    )
+				);
 				data.add( position + i, target.getRow( i ) );
 				size.incrementAndGet();
 			}
@@ -470,6 +481,13 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 * @return this query
 	 */
 	public int addRow( Object[] row ) {
+		interceptorService.announce(
+		    BoxEvent.QUERY_ADD_ROW,
+		    Struct.of(
+		        "query", this,
+		        "row", row
+		    )
+		);
 		// TODO: validate types
 		int newRow = size.incrementAndGet();
 		if ( actualSize < newRow + 50 ) {
@@ -556,7 +574,6 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		Object[]	rowData	= new Object[ columns.size() ];
 		// TODO: validate types
 		int			i		= 0;
-		Object		o;
 		for ( QueryColumn column : columns.values() ) {
 			// Missing keys in the struct go in the query as an empty string (CF compat)
 			rowData[ i ] = row.containsKey( column.getName() ) ? row.get( column.getName() ) : "";

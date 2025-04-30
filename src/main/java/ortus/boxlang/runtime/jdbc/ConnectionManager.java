@@ -176,7 +176,7 @@ public class ConnectionManager {
 	/**
 	 * Create a new transaction and set it as the active transaction for this request/thread/BoxLang context.
 	 * <p>
-	 * if a transaction already exists for this context, a nested transaction will be opened via {@link #openNestedTransaction(DataSource)}.
+	 * if a transaction already exists for this context, a nested transaction will be opened - see {@link ChildTransaction}.
 	 *
 	 * @param datasource DataSource to use if creating a new transaction.
 	 *

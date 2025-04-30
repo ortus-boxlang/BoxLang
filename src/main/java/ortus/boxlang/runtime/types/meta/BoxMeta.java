@@ -78,7 +78,7 @@ public abstract class BoxMeta<T> implements Serializable {
 	/**
 	 * Remove a change listener for a specific key
 	 *
-	 * @param listener The listener to remove
+	 * @param key The listener to remove
 	 */
 	public T removeChangeListener( Key key ) {
 		return ensureTargetListenable().removeChangeListener( key );

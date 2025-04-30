@@ -37,12 +37,7 @@ public class BoxScheduler extends BaseScheduler {
 	/**
 	 * The target BoxLang scheduler
 	 */
-	IClassRunnable	target;
-
-	/**
-	 * The request context that started this scheduler
-	 */
-	IBoxContext		context;
+	IClassRunnable target;
 
 	/**
 	 * Constructor
@@ -51,14 +46,15 @@ public class BoxScheduler extends BaseScheduler {
 	 */
 	public BoxScheduler( IClassRunnable target, IBoxContext context ) {
 		super();
-		this.context	= context;
-		this.target		= target;
+		this.target = target;
+		setContext( context );
 		prepTarget();
 	}
 
 	/**
 	 * Configure the scheduler
 	 */
+	@Override
 	public void configure() {
 		this.target.dereferenceAndInvoke(
 		    this.context,
@@ -77,6 +73,7 @@ public class BoxScheduler extends BaseScheduler {
 	/**
 	 * Called before the scheduler is going to be shutdown
 	 */
+	@Override
 	public void onShutdown() {
 		if ( this.target.getThisScope().containsKey( Key.onShutdown ) ) {
 			this.target.dereferenceAndInvoke(
@@ -93,6 +90,7 @@ public class BoxScheduler extends BaseScheduler {
 	/**
 	 * Called after the scheduler has registered all schedules
 	 */
+	@Override
 	public void onStartup() {
 		if ( this.target.getThisScope().containsKey( Key.onStartup ) ) {
 			this.target.dereferenceAndInvoke(
@@ -112,6 +110,7 @@ public class BoxScheduler extends BaseScheduler {
 	 * @param task      The task that got executed
 	 * @param exception The exception object
 	 */
+	@Override
 	public void onAnyTaskError( ScheduledTask task, Exception exception ) {
 		if ( this.target.getThisScope().containsKey( Key.onAnyTaskError ) ) {
 			this.target.dereferenceAndInvoke(
@@ -140,6 +139,7 @@ public class BoxScheduler extends BaseScheduler {
 	 * @param task   The task that got executed
 	 * @param result The result (if any) that the task produced
 	 */
+	@Override
 	public void onAnyTaskSuccess( ScheduledTask task, Optional<?> result ) {
 		if ( this.target.getThisScope().containsKey( Key.onAnyTaskSuccess ) ) {
 			this.target.dereferenceAndInvoke(
@@ -161,6 +161,7 @@ public class BoxScheduler extends BaseScheduler {
 	 *
 	 * @param task The task about to be executed
 	 */
+	@Override
 	public void beforeAnyTask( ScheduledTask task ) {
 		if ( this.target.getThisScope().containsKey( Key.beforeAnyTask ) ) {
 			this.target.dereferenceAndInvoke(
@@ -183,6 +184,7 @@ public class BoxScheduler extends BaseScheduler {
 	 *
 	 * @param result The result (if any) that the task produced
 	 */
+	@Override
 	public void afterAnyTask( ScheduledTask task, Optional<?> result ) {
 		if ( this.target.getThisScope().containsKey( Key.afterAnyTask ) ) {
 			this.target.dereferenceAndInvoke(

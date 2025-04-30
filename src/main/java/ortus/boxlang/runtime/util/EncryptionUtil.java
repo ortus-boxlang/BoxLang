@@ -288,7 +288,6 @@ public final class EncryptionUtil {
 	 * @param encryptItem The byte array to encode
 	 * @param key         The key to use
 	 * @param algorithm   The algorithm to use
-	 * @param encoding    The encoding to use
 	 *
 	 * @return returns the HMAC encoded string
 	 */
@@ -480,11 +479,49 @@ public final class EncryptionUtil {
 		}
 	}
 
+	public static SecretKey generatePBKDFKey( String algorithm, String passphrase, String salt, Integer iterations, Integer keySize ) {
+		SecretKeyFactory encryptionKey = null;
+
+		try {
+			encryptionKey = SecretKeyFactory.getInstance( algorithm );
+		} catch ( NoSuchAlgorithmException e ) {
+			throw new BoxRuntimeException(
+			    String.format(
+			        "The algorithm [%s] provided is not a valid key algorithm or it has not been loaded properly.",
+			        algorithm
+			    ),
+			    e
+			);
+
+		}
+
+		try {
+			PBEKeySpec keySpec = new PBEKeySpec(
+			    passphrase.toCharArray(),
+			    salt.getBytes( DEFAULT_CHARSET ),
+			    iterations != null ? iterations : DEFAULT_ENCRYPTION_ITERATIONS,
+			    keySize != null ? keySize : DEFAULT_ENCRYPTION_KEY_SIZE
+			);
+			return encryptionKey.generateSecret( keySpec );
+		} catch ( InvalidKeySpecException e ) {
+			throw new BoxRuntimeException(
+			    String.format(
+			        "The passphrase [%s] provided is not a valid passphrase for the algorithm [%s].",
+			        passphrase,
+			        algorithm
+			    ),
+			    e
+			);
+		} catch ( UnsupportedEncodingException e ) {
+			throw new BoxRuntimeException( "The encoding used for the salt is not supported: " + e.getMessage(), e );
+		}
+
+	}
+
 	/**
 	 * Generate a SecretKey for the given algorithm and an optional key size
 	 *
 	 * @param algorithm The encryption algorithm
-	 * @param keySize   The key size
 	 *
 	 * @return
 	 */

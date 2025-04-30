@@ -80,7 +80,7 @@
 													#encodeForHTML( thisArg.name() )#
 												</td>
 												<td>
-													#writedump( var: thisArg.defaultValue(), top: isNull( top ) ? null : top - 1, expand: expand )#
+													#writedump( var: thisArg.defaultValue(), top: isNull( top ) ? null : top - 1, expand: expand ?: null )#
 												</td>
 												<td>
 													#encodeForHTML( argHint )#

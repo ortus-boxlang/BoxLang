@@ -307,7 +307,7 @@ public class ConfigLoader {
 	/**
 	 * Filter the environment variables for BoxLang specific ones
 	 *
-	 * @param env The environment to filter
+	 * @param envCollection The environment collection to filter
 	 *
 	 * @return The filtered environment
 	 */

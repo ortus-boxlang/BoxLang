@@ -80,7 +80,7 @@ classBody: classBodyStatement*
 classBodyStatement: property | staticInitializer | functionOrStatement
     ;
 
-staticInitializer: STATIC normalStatementBlock
+staticInitializer: SEMICOLON* STATIC normalStatementBlock SEMICOLON*
     ;
 
 // interface {}

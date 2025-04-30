@@ -179,10 +179,12 @@ public final class LocalizationUtil {
 	 */
 	public static final Struct COMMON_NUMBER_FORMATTERS = new Struct( new HashMap<Key, java.text.NumberFormat>() );
 	static {
+
 		COMMON_NUMBER_FORMATTERS.put(
 		    Key.of( "USD" ),
 		    DecimalFormat.getCurrencyInstance( LocalizationUtil.COMMON_LOCALES.get( Key.of( "US" ) ) )
 		);
+
 		COMMON_NUMBER_FORMATTERS.put(
 		    Key.of( "EURO" ),
 		    DecimalFormat.getCurrencyInstance( LocalizationUtil.COMMON_LOCALES.get( Key.of( "German" ) ) )
@@ -608,6 +610,20 @@ public final class LocalizationUtil {
 				                timezone )
 				            : ZonedDateTime.of( LocalDate.MIN, LocalTime.parse( dateTime, getLocaleTimeParsers( locale ) ), timezone ) ) );
 			} catch ( java.time.format.DateTimeParseException e ) {
+				// this catches a conflicting offset issue with the ISO_OFFSET_DATE_TIME parser
+				// TODO: Try to find a pattern matcher with optionals to handle all of the ISO offset formats
+				if ( likelyContainsTimezone ) {
+					try {
+						return ZonedDateTime.parse( dateTime, getAltLocaleZonedDateTimeParsers( locale ) );
+					} catch ( java.time.format.DateTimeParseException x ) {
+						throw new BoxRuntimeException(
+						    String.format(
+						        "The date time value of [%s] could not be parsed as a valid date or datetime locale of [%s]",
+						        dateTime,
+						        locale.getDisplayName()
+						    ), x );
+					}
+				}
 				throw new BoxRuntimeException(
 				    String.format(
 				        "The date time value of [%s] could not be parsed as a valid date or datetime locale of [%s]",
@@ -695,6 +711,18 @@ public final class LocalizationUtil {
 	}
 
 	/**
+	 * Returns a localized set of ZonedDateTime parsers with the alt format
+	 * TODO: Try to find a pattern matcher with optionals to handle all of the ISO offset formats
+	 *
+	 * @param locale the Locale object which informs the formatters/parsers
+	 *
+	 * @return the localized DateTimeFormatter object
+	 */
+	public static DateTimeFormatter getAltLocaleZonedDateTimeParsers( Locale locale ) {
+		return appendAltLocaleZonedDateTimeParsers( newLenientDateTimeFormatterBuilder(), locale ).toFormatter( locale );
+	}
+
+	/**
 	 * Appends the locale zoned date time parsers to a format buiilder instance
 	 *
 	 * @param builder the DateTimeFormatterBuilder instance
@@ -703,9 +731,23 @@ public final class LocalizationUtil {
 	 * @return the builder instance
 	 */
 	public static DateTimeFormatterBuilder appendLocaleZonedDateTimeParsers( DateTimeFormatterBuilder builder, Locale locale ) {
+		// The first pattern needs to go first enclosed in optionals - otherwise some ISO dates are incorrectly parsed
 		return builder.appendOptional( DateTimeFormatter.ISO_ZONED_DATE_TIME.withLocale( locale ) )
 		    .appendOptional( DateTimeFormatter.ISO_ZONED_DATE_TIME )
 		    .appendOptional( DateTimeFormatter.ISO_OFFSET_DATE_TIME );
+	}
+
+	/**
+	 * Appends the an alt offset format locale zoned date time parsers to a format buiilder instance this particular pattern conflicts with `DateTimeFormatter.ISO_OFFSET_DATE_TIME` so they can't be used in the same builder
+	 *
+	 * @param builder the DateTimeFormatterBuilder instance
+	 * @param locale  the Locale object which informs the formatters/parsers
+	 *
+	 * @return the builder instance
+	 */
+	public static DateTimeFormatterBuilder appendAltLocaleZonedDateTimeParsers( DateTimeFormatterBuilder builder, Locale locale ) {
+		// The first pattern needs to go first enclosed in optionals - otherwise some ISO dates are incorrectly parsed
+		return builder.appendOptional( DateTimeFormatter.ofPattern( "[uuuu-MM-dd'T'HH:mm:ssX]" ) );
 	}
 
 	/**
@@ -740,7 +782,6 @@ public final class LocalizationUtil {
 		    .appendOptional( DateTimeFormatter.ofLocalizedTime( FormatStyle.MEDIUM ).withLocale( locale ) )
 		    .appendOptional( DateTimeFormatter.ofLocalizedTime( FormatStyle.LONG ).withLocale( locale ) )
 		    .appendOptional( DateTimeFormatter.ofLocalizedTime( FormatStyle.FULL ).withLocale( locale ) )
-		    // Generic styles
 		    .appendOptional(
 		        new DateTimeFormatterBuilder()
 		            .parseCaseInsensitive()

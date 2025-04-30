@@ -391,7 +391,7 @@ class XMLTest {
 					   <ns1:Action>Testing</ns1:Action>
 				   </ns1:MessageHeader>
 			   </SOAP-ENV:Header>
-		   </SOAP-ENV:Envelope>  
+		   </SOAP-ENV:Envelope>
 			' );
 			envelope = xmlObj.xmlRoot;
 			envelopePrefix = envelope.xmlNsPrefix;
@@ -474,8 +474,22 @@ class XMLTest {
 		    context, BoxSourceType.CFSCRIPT );
 
 		System.out.println( variables.get( Key.of( "xmlString" ) ) );
-		
+
 		assertThat( variables.getAsInteger( result ) ).isEqualTo( 2 );
+	}
+
+	@DisplayName( "Can do keyExists on XML nodes" )
+	@Test
+	public void testKeyExists() {
+		instance.executeSource(
+		    """
+			xmlObj = xmlParse( '<Ortus><Products></Products></Ortus>' );
+			println( xmlObj.getReferencableKeys() )
+			result = xmlObj.keyExists( "Ortus" );
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+
+		assertThat( variables.getAsBoolean( result ) ).isEqualTo( true );
 	}
 
 }

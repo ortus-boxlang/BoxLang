@@ -64,6 +64,14 @@ public class BitwiseOperatorsTest {
 		assertEquals( result, -7 );
 	}
 
+	@DisplayName( "It can BitwiseComplement variable" )
+	@Test
+	public void testBitwiseComplementVariable() {
+		variables.put( "number2", 6 );
+		Number result = ( Number ) instance.executeStatement( "b~ number2", context );
+		assertEquals( result, -7 );
+	}
+
 	@DisplayName( "It can BitwiseAnd" )
 	@Test
 	public void testBitwiseAnd() {

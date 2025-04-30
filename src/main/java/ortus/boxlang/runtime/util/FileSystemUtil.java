@@ -50,7 +50,6 @@ import java.util.Comparator;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.apache.commons.io.ByteOrderMark;
@@ -200,7 +199,7 @@ public final class FileSystemUtil {
 					        .setByteOrderMarks( ByteOrderMark.UTF_8, ByteOrderMark.UTF_16BE, ByteOrderMark.UTF_16LE, ByteOrderMark.UTF_32BE,
 					            ByteOrderMark.UTF_32LE )
 					        .setInclude( false )
-					        .get() 
+					        .get()
 						) {
 							InputStreamReader inputReader = null;
 							if ( charset != null ) {
@@ -390,12 +389,7 @@ public final class FileSystemUtil {
 
 		// Is the filter a string or a closure?
 		if ( filter instanceof String castedFilter && castedFilter.length() > 1 ) {
-			ArrayList<PathMatcher> pathMatchers = ListUtil
-			    .asList( castedFilter, "|" )
-			    .stream()
-			    .map( filterString -> FileSystems.getDefault().getPathMatcher( "glob:" + filterString ) )
-			    .collect( Collectors.toCollection( ArrayList::new ) );
-			directoryStream = directoryStream.filter( item -> pathMatchers.stream().anyMatch( pathMatcher -> pathMatcher.matches( item.getFileName() ) ) );
+			directoryStream = directoryStream.filter( item -> fileMatchesPattern( castedFilter, item.getFileName() ) );
 		}
 		// Predicate filter
 		else if ( filter instanceof java.util.function.Predicate<?> ) {
@@ -406,6 +400,16 @@ public final class FileSystemUtil {
 		return directoryStream.sorted( pathSort );
 	}
 
+	public static Boolean fileMatchesPattern( String filter, Path filePath ) {
+		ArrayList<PathMatcher> pathMatchers = ListUtil.asList( filter, "|" )
+		    .stream()
+		    .map( filterString -> FileSystems.getDefault().getPathMatcher( "glob:" + filterString ) )
+		    .collect( Collectors.toCollection( ArrayList::new ) );
+
+		return pathMatchers.stream().anyMatch( pathMatcher -> pathMatcher.matches( filePath ) );
+
+	}
+
 	/**
 	 * Matches the type of a file or directory
 	 *
@@ -414,7 +418,7 @@ public final class FileSystemUtil {
 	 *
 	 * @return a boolean as to whether the path matches the type
 	 */
-	private static Boolean matchesType( Path item, String type ) {
+	public static Boolean matchesType( Path item, String type ) {
 		switch ( type ) {
 			case "directory" :
 			case "dir" :
@@ -512,21 +516,51 @@ public final class FileSystemUtil {
 
 	}
 
+	/**
+	 * Moves a file from source to destination
+	 *
+	 * @param source      the source file path
+	 * @param destination the destination file path
+	 */
 	public static void move( String source, String destination ) {
 		move( source, destination, true );
 	}
 
+	/**
+	 * Moves a file from source to destination
+	 *
+	 * @param source      the source file path
+	 * @param destination the destination file path
+	 * @param createPath  whether to create the parent directory if it does not exist
+	 */
 	public static void move( String source, String destination, boolean createPath ) {
+		move( source, destination, createPath, false );
+	}
+
+	/**
+	 * Moves a file from source to destination
+	 *
+	 * @param source      the source file path
+	 * @param destination the destination file path
+	 * @param createPath  whether to create the parent directory if it does not exist
+	 * @param overwrite   whether to overwrite the destination file if it exists
+	 */
+	public static void move( String source, String destination, boolean createPath, boolean overwrite ) {
 		Path	start	= Path.of( source );
 		Path	end		= Path.of( destination );
 		if ( !createPath && !Files.exists( end.getParent() ) ) {
 			throw new BoxRuntimeException( "The directory [" + end.toAbsolutePath().toString()
 			    + "] cannot be created because the parent directory [" + end.getParent().toAbsolutePath().toString()
 			    + "] does not exist.  To prevent this error set the createPath argument to true." );
-		} else if ( Files.exists( end ) ) {
-			throw new BoxRuntimeException( "The target path of [" + end.toAbsolutePath().toString() + "] already exists" );
 		} else {
 			try {
+				if ( Files.exists( end ) ) {
+					if ( !overwrite ) {
+						throw new BoxRuntimeException( "The target path of [" + end.toAbsolutePath().toString() + "] already exists" );
+					} else {
+						Files.delete( end );
+					}
+				}
 				if ( createPath ) {
 					Files.createDirectories( end.getParent() );
 				}
@@ -636,9 +670,9 @@ public final class FileSystemUtil {
 
 	/**
 	 * Tests whether a given mime type is a binary mime type
-	 * 
+	 *
 	 * @param mimeType
-	 * 
+	 *
 	 * @return
 	 */
 	public static Boolean isBinaryMimeType( String mimeType ) {
@@ -976,7 +1010,6 @@ public final class FileSystemUtil {
 		String	originalPath		= path;
 		Path	originalPathPath	= null;
 		originalPathPath = Path.of( originalPath );
-
 		boolean isAbsolute = originalPathPath.isAbsolute();
 
 		// If the incoming path does NOT start with a /, then we make it relative to the current template (if there is one)
@@ -985,7 +1018,7 @@ public final class FileSystemUtil {
 				// There are codepaths where ad-hoc source code has a source path of "unknown". That's not really ideal, but
 				// if we try to process this, we'll get crazy errors.
 				if ( basePath.absolutePath() != null && !basePath.absolutePath().toString().equals( "unknown" ) ) {
-					return basePath.newFromRelative( path );
+					return basePath.newFromRelative( context, path );
 				}
 			}
 			// No template, no problem. Slap a slash on, and we'll match it below
@@ -1029,27 +1062,33 @@ public final class FileSystemUtil {
 
 		}
 
+		// System.out.println( "Original path path: " + originalPathPath.toString() );
+		// System.out.println( "Original path exists: " + Files.exists( originalPathPath ) );
+		// System.out.println( "Original path isAbsolute: " + isAbsolute );
+		// System.out.println( "Original path resolved: " + ResolvedFilePath.of( originalPathPath ).absolutePath().toString() );
+		// System.out.println( "File Separator is unix: " + File.separator.equals( "/" ) );
+
 		// If C:/foo is absolute, then great, but /foo has to actually exist on disk before I'll take it as really absolute
 		if ( isAbsolute && !originalPath.equals( "/" ) ) {
 			// detect if *nix OS file system...
 			if ( File.separator.equals( "/" ) ) {
+				// System.out.println( "We are Unix now... " );
 				// ... if so the path needs to start with / AND the parent must exist (and the parent can't be /)
-				if ( originalPath.startsWith( "/" ) && !originalPathPath.getParent().toString().equals( "/" ) ) {
+				if ( originalPath.startsWith( "/" ) && !Files.exists( originalPathPath ) && !originalPathPath.getParent().toString().equals( "/" ) ) {
+					// System.out.println( "We are in the conditional now... " );
 					String[]	pathParts	= originalPath.substring( 1, originalPath.length() - 1 ).split( "/" );
-					// Any part of the provided absolute path exists, then the path is already expanded
-					boolean		tldExists	= IntStream.range( 0, pathParts.length ).filter( idx -> pathParts[ idx ].length() > 0 ).mapToObj( idx -> {
-												String tld = "";
-												for ( int i = 0; i <= idx; i++ ) {
-													tld += "/" + pathParts[ i ];
-												}
-												return tld;
-											} ).anyMatch( tld -> Files.exists( Path.of( tld ) ) );
+					String		tld			= "/" + pathParts[ 0 ];
+					boolean		tldExists	= Files.exists( Path.of( tld ) );
 					if ( tldExists ) {
 						return ResolvedFilePath.of( originalPathPath );
 					}
+				} else if ( Files.exists( originalPathPath ) ) {
+					return ResolvedFilePath.of( originalPathPath );
 				}
 			} else {
+
 				return ResolvedFilePath.of( originalPathPath );
+
 			}
 		}
 
@@ -1106,6 +1145,10 @@ public final class FileSystemUtil {
 				}
 
 				if ( !preferredMapping.equals( "/" ) ) {
+					// Avoid double //
+					if ( preferredMapping.endsWith( "/" ) && contractedPath.startsWith( "/" ) ) {
+						contractedPath = contractedPath.substring( 1 );
+					}
 					// Add mapping name back to relative path (which is inside of mapping root)
 					contractedPath = preferredMapping + contractedPath;
 				}
@@ -1311,11 +1354,11 @@ public final class FileSystemUtil {
 
 	/**
 	 * Creates a URI from a file path string
-	 * 
+	 *
 	 * @param input the file path string
-	 * 
+	 *
 	 * @return the URI
-	 * 
+	 *
 	 * @throws Exception
 	 */
 	public static URI createFileUri( String input ) {

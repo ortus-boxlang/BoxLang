@@ -27,6 +27,7 @@ import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Function;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.util.BLCollector;
@@ -69,6 +70,15 @@ public class ApplicationClassListener extends BaseApplicationListener {
 			    return FileSystemUtil.expandPath( context, cp, listener.getRunnablePath() );
 
 		    } ).collect( BLCollector.toArray() );
+
+		// expand mapping, if they exist, in the same manner. Assume they are a string, and normalize the path
+		if ( this.settings.containsKey( Key.mappings ) ) {
+			IStruct mappings = this.settings.getAsStruct( Key.mappings );
+			for ( Key key : mappings.keySet() ) {
+				String value = String.valueOf( mappings.get( key ) );
+				mappings.put( key, FileSystemUtil.expandPath( context, value, listener.getRunnablePath() ).absolutePath().toString() );
+			}
+		}
 
 		// If there is no application name or if it's empty, make one up.
 		String appName = StringCaster.cast( this.settings.get( Key._NAME ) );

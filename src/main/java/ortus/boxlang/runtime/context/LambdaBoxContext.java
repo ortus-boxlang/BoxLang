@@ -151,6 +151,11 @@ public class LambdaBoxContext extends FunctionBoxContext {
 			return null;
 		}
 
+		// Default scope requested for missing keys
+		if ( defaultScope != null ) {
+			return new ScopeSearchResult( defaultScope, null, key );
+		}
+
 		// Lambdas don't look anywhere else!
 		throw new KeyNotFoundException(
 		    String.format( "The requested key [%s] was not located in any scope or it's undefined", key.getName() )

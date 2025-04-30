@@ -17,6 +17,7 @@ package ortus.boxlang.runtime.bifs.global.decision;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -66,18 +67,35 @@ public class IsObject extends BIF {
 	 * @return True if the value is an object, false otherwise.
 	 */
 	public static boolean isObject( Object obj ) {
+		// Unwrap the object if it is a DynamicObject
+		// This is needed because the DynamicObject is a wrapper around the object
+		obj = DynamicObject.unWrap( obj );
+		if ( obj == null ) {
+			return false;
+		}
+
 		// Box Class instances are "objects"
 		if ( obj instanceof IClassRunnable ) {
 			return true;
 		}
 
-		// All other classes thatr represent a type are not "objects" (query, array, struct, XML, etc)
+		// All other classes that represent a type are not "objects" (query, array, struct, XML, etc)
 		if ( obj instanceof IType ) {
 			return false;
 		}
 
 		// These JDK classes which are used for "simple" BoxLang types are also not "objects"
-		if ( obj instanceof String || obj instanceof Number || obj instanceof Boolean ) {
+		if ( IsSimpleValue.isSimpleValue( obj ) ) {
+			return false;
+		}
+
+		// Arrays are not "objects"
+		if ( IsArray.isNativeArrayOrList( obj ) ) {
+			return false;
+		}
+
+		// Maps are not "objects"
+		if ( IsStruct.isMap( obj ) ) {
 			return false;
 		}
 

@@ -117,7 +117,7 @@ public abstract class ReplacingBoxVisitor {
 			BoxImport	importNode	= node.getImports().get( i );
 			BoxNode		newImport	= importNode.accept( this );
 			if ( newImport != importNode ) {
-				node.replaceChildren( newImport, importNode );
+				node.replaceChildren( importNode, newImport );
 				node.getImports().set( i, ( BoxImport ) newImport );
 			}
 		}
@@ -125,7 +125,7 @@ public abstract class ReplacingBoxVisitor {
 			BoxAnnotation	annotationNode	= node.getAnnotations().get( i );
 			BoxNode			newAnnotation	= annotationNode.accept( this );
 			if ( newAnnotation != annotationNode ) {
-				node.replaceChildren( newAnnotation, annotationNode );
+				node.replaceChildren( annotationNode, newAnnotation );
 				node.getAnnotations().set( i, ( BoxAnnotation ) newAnnotation );
 			}
 		}
@@ -133,7 +133,7 @@ public abstract class ReplacingBoxVisitor {
 			BoxAnnotation	annotationNode	= node.getPostAnnotations().get( i );
 			BoxNode			newAnnotation	= annotationNode.accept( this );
 			if ( newAnnotation != annotationNode ) {
-				node.replaceChildren( newAnnotation, annotationNode );
+				node.replaceChildren( annotationNode, newAnnotation );
 				node.getPostAnnotations().set( i, ( BoxAnnotation ) newAnnotation );
 			}
 		}
@@ -141,7 +141,7 @@ public abstract class ReplacingBoxVisitor {
 			BoxDocumentationAnnotation	documentationNode	= node.getDocumentation().get( i );
 			BoxNode						newDocumentation	= documentationNode.accept( this );
 			if ( newDocumentation != documentationNode ) {
-				node.replaceChildren( newDocumentation, documentationNode );
+				node.replaceChildren( documentationNode, newDocumentation );
 				node.getDocumentation().set( i, ( BoxDocumentationAnnotation ) newDocumentation );
 			}
 		}
@@ -163,7 +163,7 @@ public abstract class ReplacingBoxVisitor {
 			BoxImport	importNode	= node.getImports().get( i );
 			BoxNode		newImport	= importNode.accept( this );
 			if ( newImport != importNode ) {
-				node.replaceChildren( newImport, importNode );
+				node.replaceChildren( importNode, newImport );
 				node.getImports().set( i, ( BoxImport ) newImport );
 			}
 		}
@@ -171,7 +171,7 @@ public abstract class ReplacingBoxVisitor {
 			BoxAnnotation	annotationNode	= node.getAnnotations().get( i );
 			BoxNode			newAnnotation	= annotationNode.accept( this );
 			if ( newAnnotation != annotationNode ) {
-				node.replaceChildren( newAnnotation, annotationNode );
+				node.replaceChildren( annotationNode, newAnnotation );
 				node.getAnnotations().set( i, ( BoxAnnotation ) newAnnotation );
 			}
 		}
@@ -179,7 +179,7 @@ public abstract class ReplacingBoxVisitor {
 			BoxDocumentationAnnotation	documentationNode	= node.getDocumentation().get( i );
 			BoxNode						newDocumentation	= documentationNode.accept( this );
 			if ( newDocumentation != documentationNode ) {
-				node.replaceChildren( newDocumentation, documentationNode );
+				node.replaceChildren( documentationNode, newDocumentation );
 				node.getDocumentation().set( i, ( BoxDocumentationAnnotation ) newDocumentation );
 			}
 		}
@@ -187,7 +187,7 @@ public abstract class ReplacingBoxVisitor {
 			BoxProperty	propertyNode	= node.getProperties().get( i );
 			BoxNode		newProperty		= propertyNode.accept( this );
 			if ( newProperty != propertyNode ) {
-				node.replaceChildren( newProperty, propertyNode );
+				node.replaceChildren( propertyNode, newProperty );
 				node.getProperties().set( i, ( BoxProperty ) newProperty );
 			}
 		}
@@ -204,7 +204,7 @@ public abstract class ReplacingBoxVisitor {
 			BoxDocumentationAnnotation	annotationNode	= node.getAnnotations().get( i );
 			BoxDocumentationAnnotation	newAnnotation	= ( BoxDocumentationAnnotation ) annotationNode.accept( this );
 			if ( newAnnotation != annotationNode ) {
-				node.replaceChildren( newAnnotation, annotationNode );
+				node.replaceChildren( annotationNode, newAnnotation );
 				node.getAnnotations().set( i, newAnnotation );
 			}
 		}
@@ -281,7 +281,7 @@ public abstract class ReplacingBoxVisitor {
 			BoxExpression	value		= node.getValues().get( i );
 			BoxNode			newValue	= value.accept( this );
 			if ( newValue != value ) {
-				node.replaceChildren( newValue, value );
+				node.replaceChildren( value, newValue );
 				node.getValues().set( i, ( BoxExpression ) newValue );
 			}
 		}
@@ -327,7 +327,7 @@ public abstract class ReplacingBoxVisitor {
 			BoxArgumentDeclaration	arg		= node.getArgs().get( i );
 			BoxNode					newArg	= arg.accept( this );
 			if ( newArg != arg ) {
-				node.replaceChildren( newArg, arg );
+				node.replaceChildren( arg, newArg );
 				node.getArgs().set( i, ( BoxArgumentDeclaration ) newArg );
 			}
 		}
@@ -335,7 +335,7 @@ public abstract class ReplacingBoxVisitor {
 			BoxAnnotation	annotation		= node.getAnnotations().get( i );
 			BoxNode			newAnnotation	= annotation.accept( this );
 			if ( newAnnotation != annotation ) {
-				node.replaceChildren( newAnnotation, annotation );
+				node.replaceChildren( annotation, newAnnotation );
 				node.getAnnotations().set( i, ( BoxAnnotation ) newAnnotation );
 			}
 		}
@@ -373,7 +373,7 @@ public abstract class ReplacingBoxVisitor {
 			BoxArgument	argument	= node.getArguments().get( i );
 			BoxNode		newArgument	= argument.accept( this );
 			if ( newArgument != argument ) {
-				node.replaceChildren( newArgument, argument );
+				node.replaceChildren( argument, newArgument );
 				node.getArguments().set( i, ( BoxArgument ) newArgument );
 			}
 		}
@@ -390,7 +390,7 @@ public abstract class ReplacingBoxVisitor {
 			BoxArgument	argument	= node.getArguments().get( i );
 			BoxNode		newArgument	= argument.accept( this );
 			if ( newArgument != argument ) {
-				node.replaceChildren( newArgument, argument );
+				node.replaceChildren( argument, newArgument );
 				node.getArguments().set( i, ( BoxArgument ) newArgument );
 			}
 		}
@@ -410,7 +410,7 @@ public abstract class ReplacingBoxVisitor {
 			BoxArgumentDeclaration	arg		= node.getArgs().get( i );
 			BoxNode					newArg	= arg.accept( this );
 			if ( newArg != arg ) {
-				node.replaceChildren( newArg, arg );
+				node.replaceChildren( arg, newArg );
 				node.getArgs().set( i, ( BoxArgumentDeclaration ) newArg );
 			}
 		}
@@ -418,7 +418,7 @@ public abstract class ReplacingBoxVisitor {
 			BoxAnnotation	annotation		= node.getAnnotations().get( i );
 			BoxNode			newAnnotation	= annotation.accept( this );
 			if ( newAnnotation != annotation ) {
-				node.replaceChildren( newAnnotation, annotation );
+				node.replaceChildren( annotation, newAnnotation );
 				node.getAnnotations().set( i, ( BoxAnnotation ) newAnnotation );
 			}
 		}
@@ -436,7 +436,7 @@ public abstract class ReplacingBoxVisitor {
 			BoxArgument	argument	= node.getArguments().get( i );
 			BoxNode		newArgument	= argument.accept( this );
 			if ( newArgument != argument ) {
-				node.replaceChildren( newArgument, argument );
+				node.replaceChildren( argument, newArgument );
 				node.getArguments().set( i, ( BoxArgument ) newArgument );
 			}
 		}
@@ -458,7 +458,7 @@ public abstract class ReplacingBoxVisitor {
 			BoxArgument	argument	= node.getArguments().get( i );
 			BoxNode		newArgument	= argument.accept( this );
 			if ( newArgument != argument ) {
-				node.replaceChildren( newArgument, argument );
+				node.replaceChildren( argument, newArgument );
 				node.getArguments().set( i, ( BoxArgument ) newArgument );
 			}
 		}
@@ -498,7 +498,7 @@ public abstract class ReplacingBoxVisitor {
 			BoxArgument	argument	= node.getArguments().get( i );
 			BoxNode		newArgument	= argument.accept( this );
 			if ( newArgument != argument ) {
-				node.replaceChildren( newArgument, argument );
+				node.replaceChildren( argument, newArgument );
 				node.getArguments().set( i, ( BoxArgument ) newArgument );
 			}
 		}
@@ -527,7 +527,7 @@ public abstract class ReplacingBoxVisitor {
 			BoxExpression	value		= node.getValues().get( i );
 			BoxNode			newValue	= value.accept( this );
 			if ( newValue != value ) {
-				node.replaceChildren( newValue, value );
+				node.replaceChildren( value, newValue );
 				node.getValues().set( i, ( BoxExpression ) newValue );
 			}
 		}
@@ -539,7 +539,7 @@ public abstract class ReplacingBoxVisitor {
 			BoxExpression	value		= node.getValues().get( i );
 			BoxNode			newValue	= value.accept( this );
 			if ( newValue != value ) {
-				node.replaceChildren( newValue, value );
+				node.replaceChildren( value, newValue );
 				node.getValues().set( i, ( BoxExpression ) newValue );
 			}
 		}
@@ -555,7 +555,7 @@ public abstract class ReplacingBoxVisitor {
 			BoxExpression	value		= node.getValues().get( i );
 			BoxNode			newValue	= value.accept( this );
 			if ( newValue != value ) {
-				node.replaceChildren( newValue, value );
+				node.replaceChildren( value, newValue );
 				node.getValues().set( i, ( BoxExpression ) newValue );
 			}
 		}
@@ -619,7 +619,7 @@ public abstract class ReplacingBoxVisitor {
 				BoxAnnotation	annotation		= node.getAnnotations().get( i );
 				BoxNode			newAnnotation	= annotation.accept( this );
 				if ( newAnnotation != annotation ) {
-					node.replaceChildren( newAnnotation, annotation );
+					node.replaceChildren( annotation, newAnnotation );
 					node.getAnnotations().set( i, ( BoxAnnotation ) newAnnotation );
 				}
 			}
@@ -629,7 +629,7 @@ public abstract class ReplacingBoxVisitor {
 				BoxDocumentationAnnotation	documentation		= node.getDocumentation().get( i );
 				BoxNode						newDocumentation	= documentation.accept( this );
 				if ( newDocumentation != documentation ) {
-					node.replaceChildren( newDocumentation, documentation );
+					node.replaceChildren( documentation, newDocumentation );
 					node.getDocumentation().set( i, ( BoxDocumentationAnnotation ) newDocumentation );
 				}
 			}
@@ -745,7 +745,7 @@ public abstract class ReplacingBoxVisitor {
 			BoxArgumentDeclaration	arg		= node.getArgs().get( i );
 			BoxNode					newArg	= arg.accept( this );
 			if ( newArg != arg ) {
-				node.replaceChildren( newArg, arg );
+				node.replaceChildren( arg, newArg );
 				node.getArgs().set( i, ( BoxArgumentDeclaration ) newArg );
 			}
 		}
@@ -763,7 +763,7 @@ public abstract class ReplacingBoxVisitor {
 			BoxAnnotation	annotation		= node.getAnnotations().get( i );
 			BoxNode			newAnnotation	= annotation.accept( this );
 			if ( newAnnotation != annotation ) {
-				node.replaceChildren( newAnnotation, annotation );
+				node.replaceChildren( annotation, newAnnotation );
 				node.getAnnotations().set( i, ( BoxAnnotation ) newAnnotation );
 			}
 		}
@@ -771,7 +771,7 @@ public abstract class ReplacingBoxVisitor {
 			BoxDocumentationAnnotation	documentation		= node.getDocumentation().get( i );
 			BoxNode						newDocumentation	= documentation.accept( this );
 			if ( newDocumentation != documentation ) {
-				node.replaceChildren( newDocumentation, documentation );
+				node.replaceChildren( documentation, newDocumentation );
 				node.getDocumentation().set( i, ( BoxDocumentationAnnotation ) newDocumentation );
 			}
 		}
@@ -845,7 +845,7 @@ public abstract class ReplacingBoxVisitor {
 			BoxAnnotation	annotation		= node.getAnnotations().get( i );
 			BoxNode			newAnnotation	= annotation.accept( this );
 			if ( newAnnotation != annotation ) {
-				node.replaceChildren( newAnnotation, annotation );
+				node.replaceChildren( annotation, newAnnotation );
 				node.getAnnotations().set( i, ( BoxAnnotation ) newAnnotation );
 			}
 		}
@@ -853,7 +853,7 @@ public abstract class ReplacingBoxVisitor {
 			BoxAnnotation	annotation		= node.getPostAnnotations().get( i );
 			BoxNode			newAnnotation	= annotation.accept( this );
 			if ( newAnnotation != annotation ) {
-				node.replaceChildren( newAnnotation, annotation );
+				node.replaceChildren( annotation, newAnnotation );
 				node.getPostAnnotations().set( i, ( BoxAnnotation ) newAnnotation );
 			}
 		}
@@ -861,7 +861,7 @@ public abstract class ReplacingBoxVisitor {
 			BoxDocumentationAnnotation	documentation		= node.getDocumentation().get( i );
 			BoxNode						newDocumentation	= documentation.accept( this );
 			if ( newDocumentation != documentation ) {
-				node.replaceChildren( newDocumentation, documentation );
+				node.replaceChildren( documentation, newDocumentation );
 				node.getDocumentation().set( i, ( BoxDocumentationAnnotation ) newDocumentation );
 			}
 		}
@@ -892,7 +892,7 @@ public abstract class ReplacingBoxVisitor {
 			BoxArgument	argument	= node.getArguments().get( i );
 			BoxNode		newArgument	= argument.accept( this );
 			if ( newArgument != argument ) {
-				node.replaceChildren( newArgument, argument );
+				node.replaceChildren( argument, newArgument );
 				node.getArguments().set( i, ( BoxArgument ) newArgument );
 			}
 		}
@@ -913,7 +913,7 @@ public abstract class ReplacingBoxVisitor {
 			BoxSwitchCase	caseNode	= node.getCases().get( i );
 			BoxNode			newCase		= caseNode.accept( this );
 			if ( newCase != caseNode ) {
-				node.replaceChildren( newCase, caseNode );
+				node.replaceChildren( caseNode, newCase );
 				node.getCases().set( i, ( BoxSwitchCase ) newCase );
 			}
 		}
@@ -991,7 +991,7 @@ public abstract class ReplacingBoxVisitor {
 			BoxTryCatch	catchNode	= node.getCatches().get( i );
 			BoxNode		newCatch	= catchNode.accept( this );
 			if ( newCatch != catchNode ) {
-				node.replaceChildren( newCatch, catchNode );
+				node.replaceChildren( catchNode, newCatch );
 				node.getCatches().set( i, ( BoxTryCatch ) newCatch );
 			}
 		}
@@ -1010,7 +1010,7 @@ public abstract class ReplacingBoxVisitor {
 			BoxExpression	type	= node.getCatchTypes().get( i );
 			BoxNode			newType	= type.accept( this );
 			if ( newType != type ) {
-				node.replaceChildren( newType, type );
+				node.replaceChildren( type, newType );
 				node.getCatchTypes().set( i, ( BoxExpression ) newType );
 			}
 		}
@@ -1037,7 +1037,7 @@ public abstract class ReplacingBoxVisitor {
 				BoxAnnotation	annotation		= node.getAttributes().get( i );
 				BoxNode			newAnnotation	= annotation.accept( this );
 				if ( newAnnotation != annotation ) {
-					node.replaceChildren( newAnnotation, annotation );
+					node.replaceChildren( annotation, newAnnotation );
 					node.getAttributes().set( i, ( BoxAnnotation ) newAnnotation );
 				}
 			}
@@ -1054,7 +1054,7 @@ public abstract class ReplacingBoxVisitor {
 			BoxStatement	statement		= statements.get( i );
 			BoxNode			newStatement	= statement.accept( this );
 			if ( newStatement != statement ) {
-				node.replaceChildren( newStatement, statement );
+				node.replaceChildren( statement, newStatement );
 				if ( newStatement != null ) {
 					statements.set( i, ( BoxStatement ) newStatement );
 				} else {

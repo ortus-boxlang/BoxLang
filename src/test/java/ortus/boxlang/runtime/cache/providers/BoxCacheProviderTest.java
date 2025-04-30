@@ -273,4 +273,12 @@ public class BoxCacheProviderTest {
 		assertThat( boxCache.getOrSet( "testKey", () -> "test" ) ).isEqualTo( "test" );
 	}
 
+	@Test
+	@DisplayName( "It can set with timeout and lastaccesstimeouts as empty strings and ues the defaults" )
+	void testSetWithTimeouts() {
+		boxCache.set( "testKey", "test", "", "" );
+		assertThat( boxCache.lookup( "testKey" ) ).isTrue();
+		assertThat( boxCache.get( "testKey" ).get() ).isEqualTo( "test" );
+	}
+
 }

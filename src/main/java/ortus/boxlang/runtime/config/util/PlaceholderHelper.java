@@ -167,11 +167,12 @@ public class PlaceholderHelper {
 	/**
 	 * Recursively replace all placeholders throughout a tree made up of BoxLang Arrays and Structs
 	 *
-	 * @param input The Object to Resolve
+	 * @param object Object to populate into tree placeholders.
 	 *
 	 * @return The Resolved tree
 	 *
 	 */
+	@SuppressWarnings( "unchecked" )
 	public static <T> T resolveAll( T object ) {
 		if ( object instanceof Struct struct ) {
 			for ( Key key : struct.keySet() ) {

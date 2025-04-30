@@ -18,11 +18,10 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
-import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
-import ortus.boxlang.runtime.types.Array;
 
 @BoxBIF
 public class IsArray extends BIF {
@@ -42,25 +41,61 @@ public class IsArray extends BIF {
 	 * Determine whether a value is an array
 	 *
 	 * @argument.value The value to test for array-ness.
-	 * 
+	 *
 	 * @argument.number If passed, the array dimension to test.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope defining the value to test.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Boolean				matchesDimension	= true;
-		CastAttempt<Array>	attempt				= ArrayCaster.attempt( arguments.get( Key.value ) );
 
-		if ( !attempt.wasSuccessful() ) {
-			return false;
-		}
+		return isArray( arguments.get( Key.value ) );
 
 		// @TODO: Implement dimension check.
 		// if( arguments.containsKey( arguments.get( Key.number) ) ){
 		// matchesDimension = attempt.get().getDimension() == arguments.get( Key.number );
 		// }
-		return matchesDimension;
+	}
+
+	/**
+	 * Test if the passed object is a native array
+	 *
+	 * @param object The object to test
+	 *
+	 * @return True if the object is a native array, false otherwise
+	 */
+	public static boolean isNativeArray( Object object ) {
+		object = DynamicObject.unWrap( object );
+		if ( object == null ) {
+			return false;
+		}
+		return object.getClass().isArray();
+	}
+
+	/**
+	 * Test if the passed object is a array
+	 *
+	 * @param object The object to test
+	 *
+	 * @return True if the object is a array, false otherwise
+	 */
+	public static boolean isArray( Object object ) {
+		return isNativeArray( object ) || ArrayCaster.attempt( object ).wasSuccessful();
+	}
+
+	/**
+	 * Tests if the passed object is a native array or List interface
+	 *
+	 * @param object The object to test
+	 *
+	 * @return True if the object is a native array or List interface, false otherwise
+	 */
+	public static boolean isNativeArrayOrList( Object object ) {
+		object = DynamicObject.unWrap( object );
+		if ( object == null ) {
+			return false;
+		}
+		return isNativeArray( object ) || object instanceof java.util.List;
 	}
 
 }

@@ -13,9 +13,9 @@ plugins {
 	id "application"
 	id 'antlr'
 	// For source code formatting
-	id "com.diffplug.spotless" version "7.0.2"
+	id "com.diffplug.spotless" version "7.0.3"
 	// Shadow
-	id "com.gradleup.shadow" version "9.0.0-beta10"
+	id "com.gradleup.shadow" version "9.0.0-beta12"
 	// For dependency updates
 	id 'com.github.ben-manes.versions' version '0.52.0'
 	// For building service loader files
@@ -24,6 +24,8 @@ plugins {
 	id 'maven-publish'
 	id 'signing'
 	id 'com.gradleup.nmcp' version "0.0.9"
+    // Download task
+    id "de.undercouch.download" version "5.6.0"
 }
 
 /**
@@ -40,7 +42,7 @@ ext {
 if (branch == 'development') {
     // If the branch is 'development', ensure the version ends with '-snapshot'
     // This replaces any existing prerelease identifier with '-snapshot'
-    version = version.contains('-') ? version.replaceAll(/-.*/, '-snapshot') : "${version}-snapshot"
+    version = version.contains('-') ? version.replaceAll(/-.*/, '-snapshot') : "${version}-snapshot".toString()
 }
 
 /**
@@ -91,11 +93,11 @@ repositories {
  */
 dependencies {
     // Testing Dependencies
-    testImplementation "org.junit.jupiter:junit-jupiter:5.12.1"
+    testImplementation "org.junit.jupiter:junit-jupiter:5.12.2"
 	testImplementation "org.mockito:mockito-core:5.+"
 	testImplementation "com.google.truth:truth:1.+"
 	testImplementation "commons-cli:commons-cli:1.9.0"
-	testImplementation "org.wiremock:wiremock:3.12.1"
+	testImplementation "org.wiremock:wiremock:3.13.0"
 	testImplementation 'org.apache.derby:derby:10.17.1.0'
 	testImplementation 'io.undertow:undertow-core:2.3.18.Final'
 	// Explicitly declare the JUnit platform launcher (to avoid deprecation)
@@ -106,24 +108,24 @@ dependencies {
 
 	// Implementation Dependencies
 	// https://mvnrepository.com/artifact/commons-io/commons-io
-	implementation "commons-io:commons-io:2.18.0"
+	implementation "commons-io:commons-io:2.19.0"
 	// https://mvnrepository.com/artifact/com.github.javaparser/javaparser-symbol-solver-core
-	implementation 'com.github.javaparser:javaparser-symbol-solver-core:3.26.3'
+	implementation 'com.github.javaparser:javaparser-symbol-solver-core:3.26.4'
 	// https://mvnrepository.com/artifact/org.apache.commons/commons-lang3
 	implementation 'org.apache.commons:commons-lang3:3.17.0'
 	// https://mvnrepository.com/artifact/org.apache.commons/commons-text
 	// Many of these classes ( e.g. StringEscapeUtils ) are currently deprecated in commons-lang and others will be moved in the future
-	implementation 'org.apache.commons:commons-text:1.13.0'
+	implementation 'org.apache.commons:commons-text:1.13.1'
 	// https://mvnrepository.com/artifact/org.apache.commons/commons-cli
 	implementation "commons-cli:commons-cli:1.9.0"
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-objects
-	implementation 'com.fasterxml.jackson.jr:jackson-jr-objects:2.18.3'
+	implementation 'com.fasterxml.jackson.jr:jackson-jr-objects:2.19.0'
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-extension-javatime
-	implementation 'com.fasterxml.jackson.jr:jackson-jr-extension-javatime:2.18.3'
+	implementation 'com.fasterxml.jackson.jr:jackson-jr-extension-javatime:2.19.0'
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-stree
 	implementation 'com.fasterxml.jackson.jr:jackson-jr-stree:2.18.3'
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-annotation-support
-	implementation 'com.fasterxml.jackson.jr:jackson-jr-annotation-support:2.18.3'
+	implementation 'com.fasterxml.jackson.jr:jackson-jr-annotation-support:2.19.0'
 	// https://mvnrepository.com/artifact/org.slf4j/slf4j-api
 	implementation 'org.slf4j:slf4j-api:2.0.17'
 	// https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
@@ -131,7 +133,7 @@ dependencies {
 	// https://mvnrepository.com/artifact/com.zaxxer/HikariCP
 	implementation 'com.zaxxer:HikariCP:6.3.0'
 	// https://mvnrepository.com/artifact/org.ow2.asm/asm-tree
-	implementation 'org.ow2.asm:asm-tree:9.7.1'
+	implementation 'org.ow2.asm:asm-tree:9.8'
 	// https://mvnrepository.com/artifact/org.ow2.asm/asm-util
 	implementation 'org.ow2.asm:asm-util:9.8'
 	// https://mvnrepository.com/artifact/org.semver4j/semver4j
@@ -506,7 +508,7 @@ compileJava {
 	// Compiler Options
 	options.incremental = true
 	options.encoding = 'UTF-8'
-	options.debug()
+	options.debug = true
 
 	// Generate the ANTLR parser before compiling
 	dependsOn generateGrammarSource, generateTestGrammarSource
@@ -575,14 +577,28 @@ spotless {
     }
 }
 
+task downloadDocGenerator( type: Download ) {
+	// Create the destination directory
+	doFirst {
+		file( "workbench/resources/libs" ).mkdirs()
+	}
+    // Configure the URL of the file to download
+    src "https://downloads.ortussolutions.com/ortussolutions/boxlang-runtimes/boxlang-doc-generator/1.0.0-snapshot/boxlang-doc-generator-1.0.0-snapshot.jar"
+    // Specify the destination directory for the downloaded file
+    dest "workbench/resources/libs/boxlang-doc-generator-1.0.0-snapshot.jar"
+    overwrite true
+    onlyIfModified false
+}
+
 /**
  * Generate/Scaffold technical documentation
  */
 task generateTechnicalDocumentation( type: Javadoc ) {
 	source = sourceSets.main.java
-	dependsOn compileJava, serviceLoaderBuild
+	dependsOn downloadDocGenerator, compileJava, serviceLoaderBuild
 	def classPaths = new ArrayList<File>( sourceSets.main.runtimeClasspath.getFiles() )
 	classPaths.addAll( sourceSets.main.java.getFiles() )
+	classPaths.addAll( files( 'workbench/resources/libs/boxlang-doc-generator-1.0.0-snapshot.jar' ) )
 	options.classpath( classPaths )
     classpath = sourceSets.main.allJava
 	options.addBooleanOption( "Xdoclint:none", true )
@@ -590,17 +606,6 @@ task generateTechnicalDocumentation( type: Javadoc ) {
 	options.addBooleanOption( 'html5', true )
 	options.doclet = "ortus.boxlang.tools.doclets.BoxLangDoclet"
     options.docletpath = classPaths
-}
-
-/**
- * Generate/Scaffold technical documentation
- */
-task parseBifDocs( type: Javadoc, dependsOn: compileJava ) {
-	options.addBooleanOption( "Xdoclint:none", true )
-	exclude '**/boxlang/parser/**'
-	options.addBooleanOption( 'html5', true )
-	options.doclet = "ortus.boxlang.tools.doclets.BIFDoclet"
-    options.docletpath = rootProject.files( 'bin/main' ).asList()
 }
 
 /**

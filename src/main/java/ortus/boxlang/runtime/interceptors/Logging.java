@@ -70,7 +70,7 @@ public class Logging extends BaseInterceptor {
 	 *
 	 * @param data The data to be passed to the interceptor
 	 *
-	 * @throws IIllegalArgumentException If the log level is not valid
+	 * @throws IllegalArgumentException If the log level is not valid
 	 */
 	@InterceptionPoint
 	public void logMessage( IStruct data ) {

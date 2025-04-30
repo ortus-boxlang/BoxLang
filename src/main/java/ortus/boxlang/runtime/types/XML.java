@@ -84,7 +84,7 @@ public class XML implements Serializable, IStruct {
 	/**
 	 * Metadata object
 	 */
-	public BoxMeta					$bx;
+	public BoxMeta<?>				$bx;
 
 	/**
 	 * The type of struct ( private so that the interface method `getType` will be used )
@@ -369,10 +369,22 @@ public class XML implements Serializable, IStruct {
 		}
 	}
 
+	/**
+	 * Get the keys that can be used to reference this XML node
+	 *
+	 * @return the keys that can be used to reference this XML node
+	 */
 	public Set<Key> getReferencableKeys() {
 		return getReferencableKeys( true );
 	}
 
+	/**
+	 * Get the keys that can be used to reference this XML node
+	 *
+	 * @param withChildren if true, include the keys of the children of this XML node
+	 *
+	 * @return the keys that can be used to reference this XML node
+	 */
 	public Set<Key> getReferencableKeys( boolean withChildren ) {
 		Set<Key> keys = new HashSet<>();
 		if ( node == null ) {
@@ -382,6 +394,9 @@ public class XML implements Serializable, IStruct {
 			case Node.DOCUMENT_NODE :
 				keys.add( Key.XMLRoot );
 				keys.add( Key.XMLComment );
+				if ( withChildren ) {
+					keys.addAll( getXMLChildrenAsList().stream().map( XML::getXMLName ).map( Key::of ).collect( Collectors.toSet() ) );
+				}
 				return keys;
 			case Node.ELEMENT_NODE :
 				keys.add( Key.XMLName );
@@ -412,6 +427,11 @@ public class XML implements Serializable, IStruct {
 		}
 	}
 
+	/**
+	 * Get the dump representation of this XML node
+	 *
+	 * @return the dump representation of this XML node
+	 */
 	public Object getDumpRepresentation() {
 		IStruct dump = new Struct();
 		getReferencableKeys( false ).stream().forEach( key -> dump.put( key, dereference( null, key, true ) ) );
@@ -511,17 +531,17 @@ public class XML implements Serializable, IStruct {
 		for ( int i = 0; i < children.getLength(); i++ ) {
 			Node child = children.item( i );
 			//@formatter:off
-			if ( 
+			if (
 				child.getNodeType() == Node.ELEMENT_NODE
 			    &&
-			    ( 
+			    (
 					child.getNodeName().equalsIgnoreCase( childName )
 			        ||
-			        ( 
+			        (
 						child.getPrefix() != null
 			            &&
-			        	StringUtils.replace( child.getNodeName(), child.getPrefix() + xmlnsSeparator, StringUtils.EMPTY ).equalsIgnoreCase( childName ) 
-					) 
+			        	StringUtils.replace( child.getNodeName(), child.getPrefix() + xmlnsSeparator, StringUtils.EMPTY ).equalsIgnoreCase( childName )
+					)
 				)
 			) {
 				return new XML( child );
@@ -628,7 +648,7 @@ public class XML implements Serializable, IStruct {
 	}
 
 	@Override
-	public BoxMeta getBoxMeta() {
+	public BoxMeta<?> getBoxMeta() {
 		if ( this.$bx == null ) {
 			// TODO: Create XML metadata class
 			this.$bx = new GenericMeta( this );

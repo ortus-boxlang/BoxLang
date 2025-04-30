@@ -195,7 +195,7 @@ public class ApplicationService extends BaseService {
 	public void onStartup() {
 		// Setup the application descriptor extensions from the runtime configuration
 		this.applicationDescriptorClassExtensions	= BoxRuntime.getInstance().getConfiguration().validClassExtensions;
-		this.applicationDescriptorExtensions		= BoxRuntime.getInstance().getConfiguration().validTemplateExtensions;
+		this.applicationDescriptorExtensions		= BoxRuntime.getInstance().getConfiguration().getValidTemplateExtensions();
 	}
 
 	/**

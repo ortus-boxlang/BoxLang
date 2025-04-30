@@ -56,30 +56,42 @@ public class IsObjectTest {
 
 	@Test
 	public void testTrueConditions() {
+		// @formatter:off
 		instance.executeSource(
 		    """
-		    result1 = isObject( new src.test.java.TestCases.phase3.Chihuahua() );
-		    result2 = isObject( new java.util.ArrayList() );
-		      """,
+				result1 = isObject( new src.test.java.TestCases.phase3.Chihuahua() );
+				result2 = isObject( new java.util.ArrayList() );
+				result3 = isObject( new java.util.HashSet() );
+				result4 = isObject( new java.security.SecureRandom() );
+		    """,
 		    context );
+		// @formatter:on
 		assertThat( variables.getAsBoolean( Key.of( "result1" ) ) ).isTrue();
-		assertThat( variables.getAsBoolean( Key.of( "result2" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "result2" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "result3" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "result4" ) ) ).isTrue();
 	}
 
 	@Test
 	public void testFalseConditions() {
+		// @formatter:off
 		instance.executeSource(
 		    """
-		    result1 = isObject( "test" );
-		    result2 = isObject( 53 );
-		    result3 = isObject( {} );
-		    result4 = isObject( [] );
-		    result5 = isObject( queryNew( "" ) );
-		    result6 = isObject( now() );
-		    result7 = isObject( true );
-		    result8 = isObject( 45.67 );
-		        """,
+				result1 = isObject( "test" );
+				result2 = isObject( 53 );
+				result3 = isObject( {} );
+				result4 = isObject( [] );
+				result5 = isObject( queryNew( "" ) );
+				result6 = isObject( now() );
+				result7 = isObject( true );
+				result8 = isObject( 45.67 );
+				result9 = isObject( new java.util.HashMap() );
+				result10 = isObject( new java.util.LinkedList() );
+				result11 = isObject( new java.util.ArrayList() );
+		           """,
 		    context );
+		// @formatter:on
+
 		assertThat( variables.getAsBoolean( Key.of( "result1" ) ) ).isFalse();
 		assertThat( variables.getAsBoolean( Key.of( "result2" ) ) ).isFalse();
 		assertThat( variables.getAsBoolean( Key.of( "result3" ) ) ).isFalse();
@@ -88,6 +100,9 @@ public class IsObjectTest {
 		assertThat( variables.getAsBoolean( Key.of( "result6" ) ) ).isFalse();
 		assertThat( variables.getAsBoolean( Key.of( "result7" ) ) ).isFalse();
 		assertThat( variables.getAsBoolean( Key.of( "result8" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "result9" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "result10" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "result11" ) ) ).isFalse();
 	}
 
 }

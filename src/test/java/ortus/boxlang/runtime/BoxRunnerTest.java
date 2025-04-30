@@ -50,4 +50,13 @@ class BoxRunnerTest {
 		assertDoesNotThrow( () -> BoxRunner.main( args ) );
 	}
 
+	@Test
+	@Disabled
+	public void testExecuteClassNoExtension() {
+		String		testTemplate	= "src/test/bx/Task";
+		String[]	args			= { testTemplate, "hola", "luis" };
+
+		BoxRunner.main( args );
+	}
+
 }

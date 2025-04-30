@@ -1,12 +1,12 @@
 package ortus.boxlang.runtime.jdbc;
 
 import java.sql.Connection;
-import java.util.UUID;
+
+import org.apache.commons.text.RandomStringGenerator;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.scopes.Key;
-import org.apache.commons.text.RandomStringGenerator;
 
 /**
  * A child transaction object used for implementing nested JDBC transactions.
@@ -52,7 +52,7 @@ public class ChildTransaction implements ITransaction {
 	/**
 	 * Construct a nested transaction, attaching the given @param parent transaction.
 	 *
-	 * @param transaction The parent transaction
+	 * @param parent The parent transaction to attach to.
 	 */
 	public ChildTransaction( ITransaction parent ) {
 		this.parent = parent;

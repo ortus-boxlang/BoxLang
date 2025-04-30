@@ -94,7 +94,7 @@ public class ArrayCaster implements IBoxCaster {
 		}
 
 		switch ( object ) {
-			case List list -> {
+			case List<?> list -> {
 				return Array.fromList( ( List<Object> ) object );
 			}
 			case ArgumentsScope args -> {

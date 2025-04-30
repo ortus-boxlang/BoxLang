@@ -535,4 +535,38 @@ public class LoopTest {
 		    context, BoxSourceType.BOXSCRIPT );
 	}
 
+	@Test
+	public void testLoopXMLKeys() {
+		instance.executeSource(
+		    """
+		    <bx:savecontent variable="sFileContent">
+		    		<root>
+		    			<sub>test</sub>
+		    		</root>
+		    </bx:savecontent>
+
+		    <bx:set oXMLData = XMLParse(sFileContent)>
+
+		    <bx:set keys = "">
+		    <bx:loop collection="#oXMLData.root#" item="key">
+		    	<bx:set keys &= key >
+		    </bx:loop>
+
+		    <bx:script>
+		    	keyList = structKeyList( oXMLData.root )
+		    	keyArray = structKeyArray( oXMLData.root ).toList()
+		    	subExists = structKeyExists( oXMLData.root, "sub" )
+		    	XMLNameExists = structKeyExists( oXMLData.root, "XMLName" )
+		    	XMLAttributesExists = structKeyExists( oXMLData.root, "XMLAttributes" )
+		    </bx:script>
+		          """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.getAsString( Key.of( "keys" ) ) ).isEqualTo( "sub" );
+		assertThat( variables.getAsString( Key.of( "keyList" ) ) ).isEqualTo( "sub" );
+		assertThat( variables.getAsString( Key.of( "keyArray" ) ) ).isEqualTo( "sub" );
+		assertThat( variables.getAsBoolean( Key.of( "subExists" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "XMLNameExists" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "XMLAttributesExists" ) ) ).isTrue();
+	}
+
 }

@@ -78,7 +78,8 @@ public class BoxUnaryOperationTransformer extends AbstractTransformer {
 
 		List<AbstractInsnNode> nodes = new ArrayList<>();
 		// for non literals, we need to identify the key being incremented/decremented and the object it lives in (which may be a scope)
-		if ( expr instanceof BoxIdentifier id && operator != BoxUnaryOperator.Not && operator != BoxUnaryOperator.Minus && operator != BoxUnaryOperator.Plus ) {
+		if ( expr instanceof BoxIdentifier id && operator != BoxUnaryOperator.Not && operator != BoxUnaryOperator.Minus && operator != BoxUnaryOperator.Plus
+		    && operator != BoxUnaryOperator.BitwiseComplement ) {
 			nodes.addAll( transpiler.getCurrentMethodContextTracker().get().loadCurrentContext() );
 			nodes.addAll( transpiler.getCurrentMethodContextTracker().get().loadCurrentContext() );
 			nodes.addAll( transpiler.createKey( id.getName() ) );
@@ -98,7 +99,7 @@ public class BoxUnaryOperationTransformer extends AbstractTransformer {
 			nodes.addAll( transpiler.createKey( id.getName() ) );
 			nodes.add( getMethodCallTemplateCompound( operation ) );
 		} else if ( expr instanceof BoxAccess objectAccess && operator != BoxUnaryOperator.Not && operator != BoxUnaryOperator.Minus
-		    && operator != BoxUnaryOperator.Plus ) {
+		    && operator != BoxUnaryOperator.Plus && operator != BoxUnaryOperator.BitwiseComplement ) {
 			nodes.addAll( transpiler.getCurrentMethodContextTracker().get().loadCurrentContext() );
 			nodes.addAll( transpiler.transform( objectAccess.getContext(), TransformerContext.NONE, ReturnValueContext.VALUE ) );
 			// DotAccess just uses the string directly, array access allows any expression>

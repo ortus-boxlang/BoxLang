@@ -737,13 +737,12 @@ public abstract class BaseApplicationListener {
 	/**
 	 * Handle the invocation of a class request
 	 *
-	 * @param context               The context
-	 * @param possibleClassInstance The possible class instance to execute
-	 * @param methodName            The method name to execute on the class
-	 * @param namedParams           The named parameters to the class
-	 * @param positionalParams      The positional parameters to the class
-	 * @param returnFormat          The return format for the class: json, wddx, xml, plain
-	 * @param mustBeRemote          If the method must be remote or not
+	 * @param context          The context
+	 * @param classInstance    The possible class instance to execute
+	 * @param methodName       The method name to execute on the class
+	 * @param namedParams      The named parameters to the class
+	 * @param positionalParams The positional parameters to the class
+	 * @param mustBeRemote     If the method must be remote or not
 	 */
 	protected void invokeClassRequest(
 	    IBoxContext context,
@@ -793,9 +792,9 @@ public abstract class BaseApplicationListener {
 		if ( result != null ) {
 			String stringResult;
 			// switch on returnFormat
-			switch ( returnFormat ) {
+			switch ( returnFormat.toLowerCase() ) {
 				case "json" :
-					stringResult = ( String ) context.invokeFunction( Key.JSONSerialize, new Object[] { result } );
+					stringResult = ( String ) context.invokeFunction( Key.JSONSerialize, new Object[] { result, "struct" } );
 					break;
 				case "wddx" :
 				case "xml" :
@@ -835,8 +834,8 @@ public abstract class BaseApplicationListener {
 	 * This will try to dump the class metadata document if debug is enabled.
 	 * Else it will return a message that the method was not specified.
 	 *
-	 * @param context   The context
-	 * @param className The class name
+	 * @param context       The context
+	 * @param classInstance The class instance
 	 */
 	protected void classRequestNoMethod( IBoxContext context, IClassRunnable classInstance ) {
 		// If there is no method and we're in debug mode, dump the CFC

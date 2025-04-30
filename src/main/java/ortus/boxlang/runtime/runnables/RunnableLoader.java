@@ -59,7 +59,7 @@ public class RunnableLoader {
 	 *
 	 * @see Configuration#validTemplateExtensions
 	 */
-	private static final Set<String>	VALID_TEMPLATE_EXTENSIONS	= BoxRuntime.getInstance().getConfiguration().validTemplateExtensions;
+	private static final Set<String>	VALID_TEMPLATE_EXTENSIONS	= BoxRuntime.getInstance().getConfiguration().getValidTemplateExtensions();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -120,8 +120,15 @@ public class RunnableLoader {
 	public BoxTemplate loadTemplateAbsolute( IBoxContext context, ResolvedFilePath resolvedFilePath ) {
 		Path result = FileSystemUtil.pathExistsCaseInsensitive( resolvedFilePath.absolutePath() );
 		if ( result == null ) {
-			throw new MissingIncludeException( "The template path [" + resolvedFilePath.absolutePath().toString() + "] could not be found.",
-			    resolvedFilePath.absolutePath().toString() );
+			String theMissingPath = resolvedFilePath.relativePath();
+			if ( theMissingPath == null ) {
+				theMissingPath = resolvedFilePath.absolutePath().toString();
+			} else {
+				// change to forward slashes
+				theMissingPath = theMissingPath.replace( "\\", "/" );
+			}
+			throw new MissingIncludeException( "The template path [" + theMissingPath + "] could not be found.",
+			    theMissingPath );
 		}
 		// If the path found on disk is not the same as the resolved path, then we need to update the resolved path
 		// This would happen on a case-sensitive file system where the incoming path had the incorrect case, but we
@@ -156,6 +163,8 @@ public class RunnableLoader {
 		if ( fileName.contains( "." ) ) {
 			ext = fileName.substring( fileName.lastIndexOf( "." ) + 1 );
 		}
+
+		// This extension check is duplicated in the BaseBoxContext.includeTemplate() right now since some code paths hit the runnableLoader directly
 		if ( ext.equals( "*" ) || VALID_TEMPLATE_EXTENSIONS.contains( ext ) ) {
 			Class<IBoxRunnable> clazz = this.boxpiler.compileTemplate( resolvedFilePath );
 			return ( BoxTemplate ) DynamicObject.of( clazz ).invokeStatic( context, "getInstance" );

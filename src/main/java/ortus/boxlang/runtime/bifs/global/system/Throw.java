@@ -20,7 +20,6 @@ package ortus.boxlang.runtime.bifs.global.system;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -80,18 +79,6 @@ public class Throw extends BIF {
 		if ( message == null && cause != null ) {
 			exceptionToThrow = cause;
 		} else {
-			if ( cause != null && cause instanceof BoxRuntimeException castCause ) {
-				if ( detail == null ) {
-					detail = castCause.getDetail();
-				}
-				if ( type == null ) {
-					type = castCause.getType();
-				}
-				if ( extendedinfo == null ) {
-					extendedinfo = castCause.getExtendedInfo();
-				}
-			}
-
 			exceptionToThrow = new CustomException(
 			    message,
 			    detail,

@@ -501,7 +501,7 @@ public class AsmTranspiler extends Transpiler {
 		    false,
 		    () -> {
 			    List<AbstractInsnNode> nodes = new ArrayList<>();
-			    List<AbstractInsnNode> body	= AsmHelper.transformBodyExpressions( this, boxScript.getStatements(), TransformerContext.NONE,
+			    List<AbstractInsnNode> body	= AsmHelper.transformBodyExpressionsFromScript( this, boxScript.getStatements(), TransformerContext.NONE,
 			        returnType == Type.VOID_TYPE ? ReturnValueContext.EMPTY : ReturnValueContext.VALUE_OR_NULL );
 			    nodes.addAll( getUDFRegistrations() );
 			    nodes.addAll( body );

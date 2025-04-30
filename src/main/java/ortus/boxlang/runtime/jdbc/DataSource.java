@@ -15,6 +15,7 @@
 package ortus.boxlang.runtime.jdbc;
 
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -205,6 +206,14 @@ public class DataSource implements Comparable<DataSource> {
 			return this.hikariDataSource.getConnection();
 		} catch ( SQLException e ) {
 			// @TODO: Recast as BoxSQLException?
+			throw new BoxRuntimeException( "Unable to open connection:", e );
+		}
+	}
+
+	protected Connection getUnpooledConnection() {
+		try {
+			return DriverManager.getConnection( this.hikariDataSource.getJdbcUrl(), this.hikariDataSource.getUsername(), this.hikariDataSource.getPassword() );
+		} catch ( SQLException e ) {
 			throw new BoxRuntimeException( "Unable to open connection:", e );
 		}
 	}

@@ -43,6 +43,7 @@ import ch.qos.logback.core.rolling.RollingFileAppender;
 import ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy;
 import ch.qos.logback.core.util.FileSize;
 import ch.qos.logback.core.util.StatusPrinter;
+import ch.qos.logback.core.util.StatusPrinter2;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.segments.LoggerConfig;
 import ortus.boxlang.runtime.scopes.Key;
@@ -340,7 +341,7 @@ public class LoggingService {
 
 		// Debugging
 		if ( this.runtime.getConfiguration().logging.statusPrinterOnLoad ) {
-			StatusPrinter.print( this.loggerContext );
+			new StatusPrinter2().print( this.loggerContext );
 		}
 
 		return instance;

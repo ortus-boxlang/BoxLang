@@ -556,6 +556,17 @@ public class ClassTest {
 		assertThat( res ).isEqualTo( "someFuncsecond" );
 	}
 
+	@DisplayName( "It should return null" )
+	@Test
+	public void testIncludeEvaluateReturnValue() {
+		var test = instance.executeStatement(
+		    """
+		       include "/src/test/bx/includeTest.bxs";
+		    """, context );
+
+		assertThat( test ).isNull();
+	}
+
 	@DisplayName( "box meta" )
 	@Test
 	public void testBoxMeta() {
@@ -1331,6 +1342,8 @@ public class ClassTest {
 		    	result7 = src.test.java.TestCases.phase3.StaticTest::123;
 		    	result9 = src.test.java.TestCases.phase3.StaticTestCF2::getInstance().getStaticBrad();
 		    	result10 = src.test.java.TestCases.phase3.StaticTestCF2::getInstance().thisStaticBrad;
+				result11 = src.test.java.TestCases.phase3.StaticTest::myArray[ 3 ];
+				result12 = src.test.java.TestCases.phase3.StaticTest::getMyArray()[ 3 ];
 		    """, context, BoxSourceType.CFSCRIPT );
 		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( 9000 );
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "static9000" );
@@ -1340,6 +1353,8 @@ public class ClassTest {
 		assertThat( variables.get( Key.of( "result7" ) ) ).isEqualTo( 456 );
 		assertThat( variables.get( Key.of( "result9" ) ) ).isEqualTo( "wood" );
 		assertThat( variables.get( Key.of( "result10" ) ) ).isEqualTo( "wood" );
+		assertThat( variables.get( Key.of( "result11" ) ) ).isEqualTo( 3 );
+		assertThat( variables.get( Key.of( "result12" ) ) ).isEqualTo( 3 );
 	}
 
 	@Test
@@ -1347,18 +1362,29 @@ public class ClassTest {
 		instance.executeSource(
 		    """
 		    import src.test.java.TestCases.phase3.StaticTest;
+		    import src.test.java.TestCases.phase3.StaticTestCF2;
 
-		       result1 = StaticTest::foo;
-		       result2 = StaticTest::myStaticFunc();
-		       result4 = StaticTest::scoped;
-		       result5 = StaticTest::unscoped;
-		       result6 = StaticTest::again;
+			result1 = StaticTest::foo;
+			result2 = StaticTest::myStaticFunc();
+			result4 = StaticTest::scoped;
+			result5 = StaticTest::unscoped;
+			result6 = StaticTest::again;
+			result7 = StaticTest::123;
+			result9 = StaticTestCF2::getInstance().getStaticBrad();
+			result10 = StaticTestCF2::getInstance().thisStaticBrad;
+			result11 = StaticTest::myArray[ 3 ];
+			result12 = StaticTest::getMyArray()[ 3 ];
 		                  """, context, BoxSourceType.BOXSCRIPT );
 		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( 9000 );
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "static9000" );
 		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "brad" );
 		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( "wood" );
 		assertThat( variables.get( Key.of( "result6" ) ) ).isEqualTo( "luis" );
+		assertThat( variables.get( Key.of( "result7" ) ) ).isEqualTo( 456 );
+		assertThat( variables.get( Key.of( "result9" ) ) ).isEqualTo( "wood" );
+		assertThat( variables.get( Key.of( "result10" ) ) ).isEqualTo( "wood" );
+		assertThat( variables.get( Key.of( "result11" ) ) ).isEqualTo( 3 );
+		assertThat( variables.get( Key.of( "result12" ) ) ).isEqualTo( 3 );
 	}
 
 	@Test
@@ -1475,6 +1501,24 @@ public class ClassTest {
 		       """, context );
 		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( "normal" );
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "abstractMethod" );
+	}
+
+	@Test
+	public void testAbstractClassMissingMethod() {
+		Throwable t = assertThrows( AbstractClassException.class, () -> instance.executeSource(
+		    """
+		    clazz = new src.test.java.TestCases.phase3.ConcreteClassNoMethod();
+		      """, context ) );
+		assertThat( t.getMessage() ).contains( "does not implement method" );
+	}
+
+	@Test
+	public void testAbstractClassWrongMethod() {
+		Throwable t = assertThrows( AbstractClassException.class, () -> instance.executeSource(
+		    """
+		    clazz = new src.test.java.TestCases.phase3.ConcreteClassWrongMethod();
+		      """, context ) );
+		assertThat( t.getMessage() ).contains( "the signature doesn't match the signature of" );
 	}
 
 	@Test
@@ -1924,4 +1968,15 @@ public class ClassTest {
 		assertThat( variables.get( "result" ) )
 		    .isEqualTo( Paths.get( "src/test/java/TestCases/phase3/CurrentTemplateInStaticInitializer.bx" ).toAbsolutePath().toString() );
 	}
+
+	@Test
+	public void testStaticInitializerAboveProperties() {
+		instance.executeSource(
+		    """
+
+		    result = new src.test.java.TestCases.phase3.StaticInitializerAboveProperties();
+		       """,
+		    context );
+	}
+
 }

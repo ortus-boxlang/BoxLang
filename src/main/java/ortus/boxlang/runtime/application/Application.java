@@ -27,7 +27,7 @@ import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.bifs.BIFDescriptor;
+import ortus.boxlang.runtime.bifs.global.scheduler.SchedulerStart;
 import ortus.boxlang.runtime.cache.filters.ICacheKeyFilter;
 import ortus.boxlang.runtime.cache.filters.SessionPrefixFilter;
 import ortus.boxlang.runtime.cache.providers.ICacheProvider;
@@ -291,16 +291,17 @@ public class Application {
 			startupClassLoaderPaths( context.getRequestContext() );
 			// Startup the caches
 			startupAppCaches( context.getRequestContext() );
-			// Startup the schedulers
-			startupAppSchedulers( context.getRequestContext() );
 			// Startup session storages
 			startupSessionStorage( context.getApplicationContext() );
 
 			// Announce it globally
-			BoxRuntime.getInstance().getInterceptorService().announce( Key.onApplicationStart, Struct.of(
-			    "application", this,
-			    "listener", this.startingListener
-			) );
+			BoxRuntime.getInstance().getInterceptorService().announce(
+			    Key.onApplicationStart,
+			    Struct.of(
+			        "application", this,
+			        "listener", this.startingListener
+			    )
+			);
 
 			// Announce it to the listener
 			if ( startingListener != null ) {
@@ -308,6 +309,9 @@ public class Application {
 			} else {
 				logger.debug( "No listener found for application [{}]", this.name );
 			}
+
+			// Startup the schedulers so the application can use them
+			startupAppSchedulers( context.getRequestContext() );
 		}
 
 		logger.debug( "Application.start() - {}", this.name );
@@ -335,7 +339,7 @@ public class Application {
 	 * }
 	 * </pre>
 	 *
-	 * @param appContext The application context
+	 * @param requestContext The request context
 	 */
 	public void startupAppCaches( RequestBoxContext requestContext ) {
 		StructCaster.attempt( requestContext.getConfigItems( Key.applicationSettings, Key.caches ) )
@@ -368,25 +372,20 @@ public class Application {
 	 * @param requestContext The request context
 	 */
 	public void startupAppSchedulers( RequestBoxContext requestContext ) {
-		BIFDescriptor		schedulerStart		= BoxRuntime.getInstance().getFunctionService().getGlobalFunction( Key.schedulerStart );
-		SchedulerService	schedulerService	= BoxRuntime.getInstance().getSchedulerService();
+		SchedulerService schedulerService = BoxRuntime.getInstance().getSchedulerService();
 
 		// Get the schedulers from the application settings
 		ArrayCaster
 		    .attempt( requestContext.getConfigItems( Key.applicationSettings, Key.schedulers ) )
 		    .ifPresent( appSchedulers -> {
-			    for ( Object scheduler : appSchedulers ) {
-				    // Get the scheduler class name
-				    String schedulerClassName = StringCaster.cast( scheduler );
-				    Key	schedulerClassKey	= Key.of( schedulerClassName );
+			    for ( Object item : appSchedulers ) {
+				    String schedulerPath	= StringCaster.cast( item );
+				    String schedulerName	= this.name.getName() + ":" + schedulerPath;
+				    Key	schedulerNameKey	= Key.of( schedulerName );
+
 				    // If we don't have it registered by name, then register it
-				    if ( !schedulerService.hasScheduler( schedulerClassKey ) ) {
-					    schedulerStart.invoke(
-					        requestContext,
-					        new Object[] { schedulerClassName },
-					        false,
-					        Key.schedulerStart
-					    );
+				    if ( !schedulerService.hasScheduler( schedulerNameKey ) ) {
+					    SchedulerStart.startScheduler( requestContext, schedulerPath, schedulerName, false );
 				    }
 			    }
 		    } );
@@ -460,14 +459,15 @@ public class Application {
 			    ICacheProvider targetCache = ( ICacheProvider ) data.get( "cache" );
 			    String		key			= ( String ) data.get( "key" );
 
-			    if ( logger.isDebugEnabled() )
-				    logger.debug( "Session cache interceptor [{}] cleared key [{}]", targetCache.getName(), key );
-
 			    targetCache
 			        .get( key )
-			        .ifPresent( session -> ( ( Session ) session ).shutdown( this.startingListener ) );
-
-			    logger.debug( "Session storage cache [{}] shutdown and removed session [{}]", targetCache.getName(), key );
+			        .ifPresent( maybeSession -> {
+				        if ( maybeSession instanceof Session castedSession ) {
+					        logger.debug( "Session storage cache [{}] shutdown session [{}]", targetCache.getName(), key );
+					        castedSession.shutdown( this.startingListener );
+					        logger.debug( "Session storage cache [{}] shutdown and removed session [{}]", targetCache.getName(), key );
+				        }
+			        } );
 
 			    return false;
 		    }, BoxEvent.BEFORE_CACHE_ELEMENT_REMOVED.key() );

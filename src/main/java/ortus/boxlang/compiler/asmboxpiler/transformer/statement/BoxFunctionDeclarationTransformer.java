@@ -304,7 +304,8 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
 		}
 
-		if ( !function.getModifiers().contains( BoxMethodDeclarationModifier.STATIC ) ) {
+		if ( !function.getModifiers().contains( BoxMethodDeclarationModifier.STATIC )
+		    && !function.getModifiers().contains( BoxMethodDeclarationModifier.ABSTRACT ) ) {
 			transpiler.addUDFRegistration( function.getName(), nodes );
 		}
 

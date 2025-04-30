@@ -79,4 +79,14 @@ public class ASMTest {
 		    context );
 	}
 
+	@Test
+	public void testSimpleImport() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		    	import java.lang.System;
+		    """, context );
+		// @formatter:on
+	}
+
 }

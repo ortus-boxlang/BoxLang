@@ -395,6 +395,18 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	 * @return The datasource configuration object
 	 */
 	public DatasourceConfig processProperties( IStruct properties ) {
+		// CFConfig alias
+		if ( properties.containsKey( Key.connectionLimit ) ) {
+			properties.put( Key.maxConnections, properties.get( Key.connectionLimit ) );
+		}
+
+		if ( properties.containsKey( Key.maxConnections ) && IntegerCaster.attempt( properties.get( Key.maxConnections ) ).wasSuccessful() ) {
+			Integer maxConnections = IntegerCaster.cast( properties.get( Key.maxConnections ), false );
+			if ( maxConnections < 1 ) {
+				properties.put( Key.maxConnections, Integer.MAX_VALUE );
+			}
+		}
+
 		// Process the properties into the state, merge them in one by one
 		properties.entrySet().stream().forEach( entry -> {
 			if ( entry.getValue() instanceof String castedValue ) {
@@ -444,6 +456,15 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	 */
 	public Key getDriver() {
 		return Key.of( this.properties.getOrDefault( Key.driver, "" ).toString() );
+	}
+
+	/**
+	 * Retrieve the configuration properties.
+	 * 
+	 * @return Struct representation of all datasource configuration properties.
+	 */
+	public IStruct getProperties() {
+		return this.properties;
 	}
 
 	/**
@@ -565,10 +586,6 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 		}
 		if ( properties.containsKey( Key.maxConnections ) && IntegerCaster.attempt( properties.get( Key.maxConnections ) ).wasSuccessful() ) {
 			result.setMaximumPoolSize( IntegerCaster.cast( properties.get( Key.maxConnections ), false ) );
-		}
-		// CFConfig Specifc alias
-		if ( properties.containsKey( Key.connectionLimit ) && IntegerCaster.attempt( properties.get( Key.connectionLimit ) ).wasSuccessful() ) {
-			result.setMaximumPoolSize( IntegerCaster.cast( properties.get( Key.connectionLimit ), false ) );
 		}
 
 		// We also support these HikariConfig-specific properties

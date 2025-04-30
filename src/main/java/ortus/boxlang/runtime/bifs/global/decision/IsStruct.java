@@ -19,6 +19,7 @@ import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -41,13 +42,35 @@ public class IsStruct extends BIF {
 	 * Determine whether a value is a struct
 	 *
 	 * @argument.variable The value to test for structi-ness.
-	 * 
+	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope defining the value to test.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		CastAttempt<IStruct> attempt = StructCaster.attempt( arguments.get( Key.variable ) );
+		return isStruct( arguments.get( Key.variable ) );
+	}
+
+	/**
+	 * Verify that this is a struct
+	 *
+	 * @param object The object to test
+	 *
+	 * @return True if the object is a struct, false otherwise
+	 */
+	public static boolean isStruct( Object object ) {
+		CastAttempt<IStruct> attempt = StructCaster.attempt( object );
 		return attempt.wasSuccessful();
+	}
+
+	/**
+	 * Check if we are a native Map
+	 */
+	public static boolean isMap( Object object ) {
+		object = DynamicObject.unWrap( object );
+		if ( object == null ) {
+			return false;
+		}
+		return object instanceof java.util.Map;
 	}
 
 }

@@ -28,6 +28,10 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 @BoxBIF
 public class CLIRead extends BIF {
 
+	// DO NOT CLOSE THIS SCANNER!
+	// Closing it would close System.in for the entire process.
+	private static final java.util.Scanner globalScanner = new java.util.Scanner( System.in );
+
 	/**
 	 * Constructor
 	 */
@@ -58,9 +62,9 @@ public class CLIRead extends BIF {
 			    .invoke( context, new Object[] { prompt }, false, Key.print );
 		}
 
-		// Read a line of text from the CLI using a scanner
-		try ( java.util.Scanner scanner = new java.util.Scanner( System.in ) ) {
-			return scanner.nextLine();
+		// Read a line of text from the CLI using the global shared scanner.
+		try {
+			return globalScanner.nextLine();
 		} catch ( Exception e ) {
 			throw new BoxRuntimeException( "Error reading from the CLI", e );
 		}

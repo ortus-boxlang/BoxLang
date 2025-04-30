@@ -29,7 +29,6 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.util.EncryptionUtil;
 
 @BoxBIF
-@BoxBIF( alias = "GeneratePDBKDFKey" )
 public class GenerateSecretKey extends BIF {
 
 	/**

@@ -31,6 +31,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.fasterxml.jackson.jr.ob.JSONObjectException;
@@ -239,7 +240,7 @@ public class BoxRunner {
 		IBoxContext				runtimeContext		= runtime.getRuntimeContext();
 		IBoxContext				scriptingContext	= new ScriptingRequestBoxContext( runtimeContext, targetSchedulerPath.toUri() );
 		BaseApplicationListener	listener			= scriptingContext.getRequestContext().getApplicationListener();
-		RequestBoxContext.setCurrent( scriptingContext.getParentOfType( RequestBoxContext.class ) );
+		RequestBoxContext.setCurrent( scriptingContext.getRequestContext() );
 		Throwable			errorToHandle		= null;
 		SchedulerService	schedulerService	= runtime.getSchedulerService();
 
@@ -251,14 +252,14 @@ public class BoxRunner {
 			Class<IBoxRunnable>	targetSchedulerClass	= RunnableLoader.getInstance()
 			    .loadClass(
 			        ResolvedFilePath.of( targetSchedulerPath ),
-			        runtimeContext
+			        scriptingContext
 			    );
 			// Construct the scheduler
 			IClassRunnable		targetScheduler			= ( IClassRunnable ) DynamicObject.of( targetSchedulerClass )
-			    .invokeConstructor( runtimeContext )
+			    .invokeConstructor( scriptingContext )
 			    .getTargetInstance();
 			// Create the proxy
-			IScheduler			boxScheduler			= new BoxScheduler( targetScheduler, runtimeContext );
+			IScheduler			boxScheduler			= new BoxScheduler( targetScheduler, scriptingContext );
 
 			// Startup the listener
 			boolean				result					= listener.onRequestStart( scriptingContext, new Object[] { schedulerPath } );
@@ -462,22 +463,16 @@ public class BoxRunner {
 				break;
 			}
 
-			String[]	currentParts	= currentArgument.split( "\\." );
-			String		currentExt		= "";
-
-			if ( currentParts.length > 0 ) {
-				currentExt = "." + currentParts[ currentParts.length - 1 ];
-			}
-
-			// Template to execute?
-			if ( actionCommand == null && ALLOWED_TEMPLATE_EXECUTIONS.contains( currentExt ) ) {
-				file = templateToAbsolute( currentArgument );
-				continue;
-			}
-
 			// Is it a shebang script to execute
 			if ( actionCommand == null && isShebangScript( currentArgument ) ) {
 				file = getSheBangScript( currentArgument );
+				continue;
+			}
+
+			// Template to execute?
+			Path targetPath = getExecutableTemplate( currentArgument );
+			if ( actionCommand == null && Files.exists( targetPath ) ) {
+				file = targetPath.toString();
 				continue;
 			}
 
@@ -514,6 +509,31 @@ public class BoxRunner {
 		    targetModule,
 		    actionCommand
 		);
+	}
+
+	/**
+	 * Verifies if the passed in path is a valid template for execution
+	 *
+	 * @param path The path to the template
+	 *
+	 * @return Whether or not the template is valid for execution
+	 */
+	private static Path getExecutableTemplate( String path ) {
+		String extension = FilenameUtils.getExtension( path );
+
+		// Do we have the extension? If not, let's assume it's a class
+		if ( extension.isEmpty() ) {
+			extension	= "bx";
+			path		+= ".bx";
+		}
+
+		// Check if the extension is allowed or not
+		if ( !ALLOWED_TEMPLATE_EXECUTIONS.contains( "." + extension ) ) {
+			return Path.of( path );
+		}
+
+		// Check if the file exists
+		return Path.of( templateToAbsolute( path ) );
 	}
 
 	/**

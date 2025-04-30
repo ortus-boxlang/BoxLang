@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.XML;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
@@ -74,6 +75,12 @@ public class CollectionCaster implements IBoxCaster {
 			}
 		}
 		object = DynamicObject.unWrap( object );
+
+		if ( object instanceof XML x ) {
+			// Only include child nodes
+			return x.getXMLChildrenAsList().stream().map( XML::getXMLName )
+			    .collect( Collectors.toList() );
+		}
 
 		if ( object instanceof IStruct str ) {
 			return str.keySet()

@@ -116,8 +116,8 @@ public class FQN {
 	/**
 	 * Construct an FQN from a prefix and a Path.
 	 *
-	 * @param prefix The prefix to add to the FQN.
-	 * @param path   The path to generate the FQN from.
+	 * @param prefixParts The prefix to add to the FQN.
+	 * @param pathParts   The path to generate the FQN from.
 	 */
 	protected void combineParts( String[] prefixParts, String[] pathParts ) {
 		this.parts = new String[ prefixParts.length + pathParts.length ];

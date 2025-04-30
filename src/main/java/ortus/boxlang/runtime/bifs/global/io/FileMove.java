@@ -15,6 +15,8 @@
 
 package ortus.boxlang.runtime.bifs.global.io;
 
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -33,9 +35,11 @@ public class FileMove extends BIF {
 	 */
 	public FileMove() {
 		super();
+
 		declaredArguments = new Argument[] {
-		    new Argument( true, "string", Key.source ),
-		    new Argument( true, "string", Key.destination )
+		    new Argument( true, Argument.STRING, Key.source ),
+		    new Argument( true, Argument.STRING, Key.destination ),
+		    new Argument( true, Argument.BOOLEAN, Key.overwrite, false )
 		};
 	}
 
@@ -48,6 +52,8 @@ public class FileMove extends BIF {
 	 * @argument.source The source file path.
 	 *
 	 * @argument.destination The destination file path.
+	 * 
+	 * @argument.overwrite Whether to overwrite the destination file if it exists. Defaults to false.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	sourcePath		= FileSystemUtil.expandPath( context, arguments.getAsString( Key.source ) ).absolutePath().toString();
@@ -56,7 +62,7 @@ public class FileMove extends BIF {
 		if ( !runtime.getConfiguration().security.isFileOperationAllowed( destinationPath ) ) {
 			throw new BoxRuntimeException( "The destination path contains an extension disallowed by the runtime security settings." );
 		}
-		FileSystemUtil.move( sourcePath, destinationPath );
+		FileSystemUtil.move( sourcePath, destinationPath, true, BooleanCaster.cast( arguments.get( Key.overwrite ) ) );
 		return null;
 	}
 

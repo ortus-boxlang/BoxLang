@@ -333,6 +333,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		fileContent							= Key.of( "fileContent" );
 	public static final Key		filefield							= Key.of( "filefield" );
 	public static final Key		filepath							= Key.of( "filepath" );
+	public static final Key		fileread							= Key.of( "fileread" );
 	public static final Key		filter								= Key.of( "filter" );
 	public static final Key		find								= Key.of( "find" );
 	public static final Key		findAll								= Key.of( "findAll" );
@@ -445,6 +446,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		lexical								= Key.of( "lexical" );
 	public static final Key		limit								= Key.of( "limit" );
 	public static final Key		line								= Key.of( "line" );
+	public static final Key		lineNumber							= Key.of( "lineNumber" );
 	public static final Key		list								= Key.of( "list" );
 	public static final Key		listener							= Key.of( "listener" );
 	public static final Key		listInfo							= Key.of( "listInfo" );
@@ -649,6 +651,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		run									= Key.of( "run" );
 	public static final Key		runnable							= Key.of( "runnable" );
 	public static final Key		runtime								= Key.of( "runtime" );
+	public static final Key		runtimes							= Key.of( "runtimes" );
 	public static final Key		samesite							= Key.of( "samesite" );
 	public static final Key		scalar								= Key.of( "scalar" );
 	public static final Key		scale								= Key.of( "scale" );
@@ -846,12 +849,14 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		isolation							= Key.of( "isolation" );
 	public static final Key		nested								= Key.of( "nested" );
 	public static final Key		onTheFly							= Key.of( "onTheFly" );
+	public static final Key		passphrase							= Key.of( "passphrase" );
 	public static final Key		password							= Key.of( "password" );
 	public static final Key		port								= Key.of( "port" );
 	public static final Key		procedure							= Key.of( "procedure" );
 	public static final Key		procResult							= Key.of( "procResult" );
 	public static final Key		resultSet							= Key.of( "resultSet" );
 	public static final Key		returnCode							= Key.of( "returnCode" );
+	public static final Key		salt								= Key.of( "salt" );
 	public static final Key		savepoint							= Key.of( "savepoint" );
 	public static final Key		table								= Key.of( "table" );
 	public static final Key		username							= Key.of( "username" );

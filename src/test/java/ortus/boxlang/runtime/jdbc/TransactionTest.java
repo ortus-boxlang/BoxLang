@@ -168,6 +168,24 @@ public class TransactionTest extends BaseJDBCTest {
 		);
 	}
 
+	@DisplayName( "tests that a thrown exception will not be mutated" )
+	@Test
+	public void testThrownExceptionNotMutated() {
+		getInstance().executeSource(
+		    """
+		    try{
+		    	transaction{
+		    		queryExecute( "SELECT * FROM developers", {} )
+		    		throw( type="FooException", message="foo", extendedInfo="bar" );
+		    	}
+		    } catch( any e ){
+		    	result = e.extendedInfo;
+		    }
+		       """,
+		    getContext() );
+		assertThat( getVariables().get( Key.of( "result" ) ) ).isEqualTo( "bar" );
+	}
+
 	@DisplayName( "automatically commits at the end of a (successful) transaction" )
 	@Test
 	public void testCommitAtEnd() {

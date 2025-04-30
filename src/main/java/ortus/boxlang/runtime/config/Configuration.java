@@ -75,6 +75,10 @@ import ortus.boxlang.runtime.util.LocalizationUtil;
  */
 public class Configuration implements IConfigSegment {
 
+	/**
+	 * Change listener for mappings, etc. That will force a trailing slash on the key
+	 * when the key is added to the struct.
+	 */
 	public static final IChangeListener<IStruct>	forceMappingTrailingSlash		= ( key, newValue, oldValue, object ) -> {
 																						// Only fire for new values not ending with /
 																						if ( newValue != null && !key.getName().endsWith( "/" ) ) {
@@ -279,9 +283,17 @@ public class Configuration implements IConfigSegment {
 	public Set<String>								validClassExtensions			= new HashSet<>();
 
 	/**
-	 * Valid BoxLang template extensions
+	 * Valid core BoxLang template extensions.
 	 */
-	public Set<String>								validTemplateExtensions			= new HashSet<>();
+	public Set<String>								coreTemplateExtensions			= new HashSet<>(
+	    Arrays.asList( "bxs", "bxm", "bxml", "cfm", "cfml", "cfs" )
+	);
+
+	/**
+	 * Valid BoxLang template extensions.
+	 * Private because I want to force people to use getValidTemplateExtensions(), which includes the core ones
+	 */
+	private Set<String>								validTemplateExtensions			= new HashSet<>();
 
 	/**
 	 * Experimental Features
@@ -304,9 +316,9 @@ public class Configuration implements IConfigSegment {
 	public LoggingConfig							logging							= new LoggingConfig();
 
 	/**
-	 * Scheduled tasks configuration
+	 * The container of runtimes configurations. Each runtime can collaborate settings by their name in this struct
 	 */
-	// public ScheduledTasksConfig scheduledTasks = new ScheduledTasksConfig();
+	public IStruct									runtimes						= new Struct();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -661,6 +673,11 @@ public class Configuration implements IConfigSegment {
 			}
 		}
 
+		// Process runtimes
+		if ( config.containsKey( Key.runtimes ) ) {
+			this.runtimes = config.getAsStruct( Key.runtimes );
+		}
+
 		// Process our security configuration
 		if ( config.containsKey( Key.security ) ) {
 			security.process( StructCaster.cast( config.get( Key.security ) ) );
@@ -899,17 +916,30 @@ public class Configuration implements IConfigSegment {
 	public Set<String> getValidExtensions() {
 		Set<String> extensions = new HashSet<>();
 		extensions.addAll( this.validClassExtensions );
+		extensions.addAll( getValidTemplateExtensions() );
+		return extensions;
+	}
+
+	/**
+	 * This returns all valid BoxLang class extensions as a Set.
+	 * THis includes core extensions and custom extensions
+	 *
+	 * @return A list of all valid class extensions
+	 */
+	public Set<String> getValidTemplateExtensions() {
+		Set<String> extensions = new HashSet<>();
+		extensions.addAll( this.coreTemplateExtensions );
 		extensions.addAll( this.validTemplateExtensions );
 		return extensions;
 	}
 
 	/**
-	 * This returns all valid BoxLang class extensions.
+	 * This returns all valid BoxLang class extensions as a List.
 	 *
 	 * @return A list of all valid class extensions
 	 */
 	public List<String> getValidTemplateExtensionsList() {
-		return new ArrayList<>( this.validTemplateExtensions );
+		return new ArrayList<>( getValidTemplateExtensions() );
 	}
 
 	/**
@@ -953,6 +983,10 @@ public class Configuration implements IConfigSegment {
 		this.modules.entrySet()
 		    .forEach( entry -> modulesCopy.put( entry.getKey(), ( ( ModuleConfig ) entry.getValue() ).asStruct() ) );
 
+		IStruct runtimesCopy = new Struct();
+		this.runtimes.entrySet()
+		    .forEach( entry -> runtimesCopy.put( entry.getKey(), entry.getValue() ) );
+
 		return Struct.of(
 		    Key.applicationTimeout, this.applicationTimeout,
 		    Key.caches, cachesCopy,
@@ -977,6 +1011,7 @@ public class Configuration implements IConfigSegment {
 		    Key.modulesDirectory, Array.copyFromList( this.modulesDirectory ),
 		    Key.originalConfig, this.originalConfig,
 		    Key.requestTimeout, this.requestTimeout,
+		    Key.runtimes, runtimesCopy,
 		    Key.sessionManagement, this.sessionManagement,
 		    Key.sessionStorage, this.sessionStorage,
 		    Key.sessionTimeout, this.sessionTimeout,
@@ -989,7 +1024,7 @@ public class Configuration implements IConfigSegment {
 		    Key.useHighPrecisionMath, this.useHighPrecisionMath,
 		    Key.validExtensions, Array.fromSet( getValidExtensions() ),
 		    Key.validClassExtensions, Array.fromSet( this.validClassExtensions ),
-		    Key.validTemplateExtensions, Array.fromSet( this.validTemplateExtensions ),
+		    Key.validTemplateExtensions, Array.fromSet( getValidTemplateExtensions() ),
 		    Key.version, this.version
 		);
 	}

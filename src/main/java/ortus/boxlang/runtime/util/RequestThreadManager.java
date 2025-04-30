@@ -269,11 +269,10 @@ public class RequestThreadManager {
 	/**
 	 * Starts a non-virtual thread using the given context, name, priority, and task.
 	 *
-	 * @param context    The thread context to run in
-	 * @param name       The name of the thread, if empty or null, a random name is generated
-	 * @param priority   The priority of the thread, can be "high", "low", or "normal", the default is "normal"
-	 * @param task       The task to run in the thread, lambda or runnable
-	 * @param attributes The attributes to pass to the thread's local scope
+	 * @param context  The thread context to run in
+	 * @param name     The name of the thread, if empty or null, a random name is generated
+	 * @param priority The priority of the thread, can be "high", "low", or "normal", the default is "normal"
+	 * @param task     The task to run in the thread, lambda or runnable
 	 *
 	 * @return The thread instance already started
 	 */
@@ -282,14 +281,13 @@ public class RequestThreadManager {
 	}
 
 	/**
-	 * Starts a thread using the given context, name, virtual, priority, task, and attributes of execution.
+	 * Starts a thread using the given context, name, virtual, priority, task, and whether it's virtual or not.
 	 *
-	 * @param context    The thread context to run in
-	 * @param name       The name of the thread, if empty or null, a random name is generated
-	 * @param priority   The priority of the thread, can be "high", "low", or "normal", the default is "normal"
-	 * @param task       The task to run in the thread, lambda or runnable
-	 * @param attributes The attributes to pass to the thread's local scope
-	 * @param virtual    Whether the thread is virtual or not
+	 * @param context  The thread context to run in
+	 * @param name     The name of the thread, if empty or null, a random name is generated
+	 * @param priority The priority of the thread, can be "high", "low", or "normal", the default is "normal"
+	 * @param task     The task to run in the thread, lambda or runnable
+	 * @param virtual  Whether the thread is virtual or not
 	 *
 	 * @return The thread instance already started
 	 */
@@ -422,7 +420,7 @@ public class RequestThreadManager {
 	/**
 	 * Join an array of thread names
 	 *
-	 * @param name    The name of the thread
+	 * @param names   Array of thread names to join.
 	 * @param timeout The timeout for the join
 	 */
 	public void joinThreads( Array names, Integer timeout ) {

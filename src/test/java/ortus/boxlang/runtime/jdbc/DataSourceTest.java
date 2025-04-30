@@ -99,22 +99,24 @@ public class DataSourceTest {
 	@DisplayName( "It can get a MySQL JDBC connection" )
 	@Test
 	void testMySQLConnection() throws SQLException {
-		DataSource	myDataSource	= DataSource.fromStruct(
+		DataSource myDataSource = DataSource.fromStruct(
 		    Key.of( "mysql" ),
 		    Struct.of(
 		        "username", "root",
 		        "password", "123456Password",
 		        "connectionString", "jdbc:mysql://localhost:3306"
 		    ) );
-		Connection	conn			= myDataSource.getConnection();
-		assertThat( conn ).isInstanceOf( Connection.class );
+		try ( Connection conn = myDataSource.getConnection() ) {
+			assertThat( conn ).isInstanceOf( Connection.class );
+		}
+		myDataSource.shutdown();
 	}
 
 	@EnabledIf( "tools.JDBCTestUtils#hasMSSQLModule" )
 	@DisplayName( "It can get a MSSQL JDBC connection" )
 	@Test
 	void testMSSQLConnection() throws SQLException {
-		DataSource	myDataSource	= DataSource.fromStruct(
+		DataSource myDataSource = DataSource.fromStruct(
 		    Key.of( "mssql" ),
 		    Struct.of(
 		        "host", "localhost",
@@ -131,21 +133,25 @@ public class DataSourceTest {
 		        "username", "sa",
 		        "password", "123456Password"
 		    ) );
-		Connection	conn			= myDataSource.getConnection();
-		assertThat( conn ).isInstanceOf( Connection.class );
+		try ( Connection conn = myDataSource.getConnection() ) {
+			assertThat( conn ).isInstanceOf( Connection.class );
+		}
+		myDataSource.shutdown();
 	}
 
 	@DisplayName( "It can get a JDBC connection regardless of key casing" )
 	@Test
 	void testDerbyConnectionFunnyKeyCasing() throws SQLException {
-		DataSource	myDataSource	= DataSource.fromStruct(
+		DataSource myDataSource = DataSource.fromStruct(
 		    Key.of( "funkyDB" ),
 		    Struct.of(
 		        "driver", "derby",
 		        "connectionString", "jdbc:derby:src/test/resources/tmp/DataSourceTests/DataSourceTest;create=true"
 		    ) );
-		Connection	conn			= myDataSource.getConnection();
-		assertThat( conn ).isInstanceOf( Connection.class );
+		try ( Connection conn = myDataSource.getConnection() ) {
+			assertThat( conn ).isInstanceOf( Connection.class );
+		}
+		myDataSource.shutdown();
 	}
 
 	@DisplayName( "It closes datasource connections on shutdown" )
@@ -407,6 +413,23 @@ public class DataSourceTest {
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( 2 );
+	}
+
+	// @Disabled( "Test failing; possibly due to modification by reference of maxConnections in configuration" )
+	@DisplayName( "It can use a -1 or infinite connection limit" )
+	@Test
+	void testInfiniteConnections() {
+		DataSource	infiniteConnectionDS	= DataSource.fromStruct(
+		    "infiniteDB",
+		    Struct.of(
+		        "database", "infiniteDB",
+		        "driver", "derby",
+		        "connectionLimit", -1,
+		        "connectionString", "jdbc:derby:memory:" + "infiniteDB" + ";create=true"
+		    ) );
+		Integer		maxPooledConnections	= infiniteConnectionDS.getConfiguration().getProperties().getAsInteger( Key.maxConnections );
+
+		assertThat( maxPooledConnections ).isEqualTo( Integer.MAX_VALUE );
 	}
 
 	@Disabled

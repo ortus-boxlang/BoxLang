@@ -20,14 +20,18 @@ package ortus.boxlang.runtime.util;
 import static com.google.common.truth.Truth.assertThat;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import ortus.boxlang.runtime.context.RequestBoxContext;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.types.Array;
+import java.io.IOException;
 
-public class ZIpUtilTest {
+public class ZipUtilTest {
 
 	String	sourceFolder	= "src/test/resources/";
 	String	destination;
@@ -45,7 +49,7 @@ public class ZIpUtilTest {
 
 	@DisplayName( "Compress without base folder" )
 	@Test
-	public void testCompressUsingDefaults() {
+	public void testCompressUsingDefaults() throws IOException {
 		ZipUtil.compress(
 		    ZipUtil.COMPRESSION_FORMAT.ZIP,
 		    sourceFolder,
@@ -61,6 +65,24 @@ public class ZIpUtilTest {
 		// System.out.println( list );
 		assertThat( list.toList() ).doesNotContain( "resources" );
 		assertThat( list.size() ).isAtLeast( 3 );
+
+		String extractedPath = "src/test/resources/tmp/ZipExtractTest";
+		// Now extract with a filter
+		ZipUtil.extractZip(
+		    destination,
+		    extractedPath,
+		    true,
+		    true,
+		    "*.jpg",
+		    null,
+		    RequestBoxContext.getCurrent()
+		);
+
+		assertThat(
+		    Files.walk( Path.of( extractedPath ).toAbsolutePath() )
+		        .filter( path -> FileSystemUtil.matchesType( path, "file" ) )
+		        .allMatch( path -> path.getFileName().toString().contains( "jpg" ) )
+		).isTrue();
 	}
 
 	@DisplayName( "Compress with base folder" )

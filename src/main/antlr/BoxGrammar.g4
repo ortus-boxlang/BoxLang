@@ -72,7 +72,7 @@ classBody: classBodyStatement*
 classBodyStatement: staticInitializer | functionOrStatement
     ;
 
-staticInitializer: STATIC normalStatementBlock
+staticInitializer: SEMICOLON* STATIC normalStatementBlock SEMICOLON*
     ;
 
 // interface {}

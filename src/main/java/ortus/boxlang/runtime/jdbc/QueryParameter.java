@@ -17,11 +17,11 @@ package ortus.boxlang.runtime.jdbc;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
-import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.Struct;
@@ -111,7 +111,8 @@ public class QueryParameter {
 	/**
 	 * Construct a new QueryParameter from a given value.
 	 * <p>
-	 * If the value is an IStruct, it will be used as the construction arguments to {@link QueryParameter#QueryParameter(IStruct)}. Otherwise, the QueryParameter will be constructed with the value as the `value` property of the IStruct, and no sqltype,
+	 * If the value is an IStruct, it will be used as the construction arguments to {@link QueryParameter#QueryParameter(String, IStruct)}. Otherwise, the QueryParameter will be constructed with the value as the `value` property of the IStruct, and no
+	 * sqltype,
 	 * null, list, or maxLength/scale properties.
 	 */
 	public static QueryParameter fromAny( Object value ) {
@@ -121,7 +122,7 @@ public class QueryParameter {
 	/**
 	 * Construct a new QueryParameter from a given name and value.
 	 * <p>
-	 * If the value is an IStruct, it will be used as the construction arguments to {@link QueryParameter#QueryParameter(IStruct)}. Otherwise, the QueryParameter will be constructed with the value as the `value`
+	 * If the value is an IStruct, it will be used as the construction arguments to {@link QueryParameter#QueryParameter(String, IStruct)}. Otherwise, the QueryParameter will be constructed with the value as the `value`
 	 * property of the IStruct, and no sqltype,
 	 * null, list, or maxLength/scale properties.
 	 * 

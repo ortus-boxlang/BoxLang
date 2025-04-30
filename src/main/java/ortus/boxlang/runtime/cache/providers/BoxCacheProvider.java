@@ -604,8 +604,8 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 		var			oldEntry			= getQuiet( key );
 
 		// Prep the timeouts
-		Duration	dTimeout			= toDuration( timeout );
-		Duration	dlastAccessTimeout	= toDuration( lastAccessTimeout );
+		Duration	dTimeout			= toDuration( timeout, this.defaultTimeout );
+		Duration	dlastAccessTimeout	= toDuration( lastAccessTimeout, this.defaultLastAccessTimeout );
 
 		// Prep new entry
 		var			boxKey				= Key.of( key );
@@ -751,8 +751,8 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 		}
 
 		// Prep the timeouts
-		Duration	dTimeout			= toDuration( timeout );
-		Duration	dlastAccessTimeout	= toDuration( lastAccessTimeout );
+		Duration	dTimeout			= toDuration( timeout, this.defaultTimeout );
+		Duration	dlastAccessTimeout	= toDuration( lastAccessTimeout, this.defaultLastAccessTimeout );
 
 		// Get the object
 		var			lockKey				= this.getName().getNameNoCase() + "-" + key;

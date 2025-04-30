@@ -2133,6 +2133,42 @@ public class CoreLangTest {
 	}
 
 	@Test
+	public void testElvisTryCatch() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		    try{
+		    	throw( message="foo", extendedInfo="bar" )
+		    } catch( any e ){
+		    	result = e.extendedInfo ?: nullValue()
+		    }
+		    """,
+		    context
+		);
+		// @formatter:on
+
+		assertThat( variables.get( result ) ).isEqualTo( "bar" );
+	}
+
+	@Test
+	public void testElvisTryCatchNullSide() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		    try{
+		    	throw( message="foo", extendedInfo="bar" )
+		    } catch( any e ){
+		    	result = e.test ?: nullValue()
+		    }
+		    """,
+		    context
+		);
+		// @formatter:on
+
+		assertThat( variables.get( result ) ).isNull();
+	}
+
+	@Test
 	public void testInBeforeParensCF() {
 		instance.executeSource(
 		    """
@@ -5404,6 +5440,16 @@ public class CoreLangTest {
 		      """,
 		    context, BoxSourceType.CFSCRIPT );
 		assertThat( Parser.getCacheSize() ).isGreaterThan( 0 );
+	}
+
+	@Test
+	public void testClearsdfANTLRCache() {
+		instance.executeSource(
+		    """
+		    	myVar = "Brad";
+		    ( (a)->println( myVar ?: a ) )( "Luis" )
+		    		  """,
+		    context, BoxSourceType.BOXSCRIPT );
 	}
 
 }

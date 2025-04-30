@@ -809,13 +809,26 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	 */
 	@Override
 	public BoxNode visit( BoxComponent node ) {
-		if ( componentMap.containsKey( node.getName().toLowerCase() ) ) {
-			node.setName( componentMap.get( node.getName().toLowerCase() ) );
+		String componentName = node.getName().toLowerCase();
+		if ( identifierMap.containsKey( "cf" + componentName ) ) {
+			String strToReplace = "cf" + componentName;
+			// Look for a "result" attribute, and if it's a string literal, replace any identifers inside with the new name
+			node.getAttributes().stream().filter( a -> a.getKey().getValue().equalsIgnoreCase( "result" ) && a.getValue() instanceof BoxStringLiteral )
+			    .forEach( a -> {
+				    BoxStringLiteral str		= ( BoxStringLiteral ) a.getValue();
+				    String			newValue	= str.getValue().replace( strToReplace, identifierMap.get( strToReplace ) );
+				    str.setValue( newValue );
+			    } );
+
 		}
 
-		if ( componentAttrMap.containsKey( node.getName().toLowerCase() ) ) {
+		if ( componentMap.containsKey( componentName ) ) {
+			node.setName( componentMap.get( componentName ) );
+		}
+
+		if ( componentAttrMap.containsKey( componentName ) ) {
 			var					attrs	= node.getAttributes();
-			Map<String, String>	attrMap	= componentAttrMap.get( node.getName().toLowerCase() );
+			Map<String, String>	attrMap	= componentAttrMap.get( componentName );
 			for ( BoxAnnotation attr : attrs ) {
 				String key = attr.getKey().getValue().toLowerCase();
 				if ( attrMap.containsKey( key ) ) {
