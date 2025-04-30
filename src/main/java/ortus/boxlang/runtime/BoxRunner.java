@@ -463,16 +463,16 @@ public class BoxRunner {
 				break;
 			}
 
+			// Is it a shebang script to execute
+			if ( actionCommand == null && isShebangScript( currentArgument ) ) {
+				file = getSheBangScript( currentArgument );
+				continue;
+			}
+
 			// Template to execute?
 			Path targetPath = getExecutableTemplate( currentArgument );
 			if ( actionCommand == null && Files.exists( targetPath ) ) {
 				file = targetPath.toString();
-				continue;
-			}
-
-			// Is it a shebang script to execute
-			if ( actionCommand == null && isShebangScript( currentArgument ) ) {
-				file = getSheBangScript( currentArgument );
 				continue;
 			}
 
