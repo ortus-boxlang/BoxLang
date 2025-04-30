@@ -73,7 +73,6 @@ public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 			}
 
 			try {
-				System.out.println( "Type: " + uType );
 				return TYPES.valueOf( uType );
 			} catch ( IllegalArgumentException e ) {
 				throw new BoxRuntimeException(
