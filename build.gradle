@@ -480,7 +480,7 @@ javadoc {
 }
 
 task zipJavadocs( type: Zip ) {
-	group "documentation"
+	group = "documentation"
 	from javadoc.destinationDir
 	archiveFileName = "boxlang-javadocs-${version}.zip"
 	destinationDirectory = file( "$buildDir/distributions" )
@@ -508,7 +508,7 @@ compileJava {
 	// Compiler Options
 	options.incremental = true
 	options.encoding = 'UTF-8'
-	options.debug()
+	options.debug = true
 
 	// Generate the ANTLR parser before compiling
 	dependsOn generateGrammarSource, generateTestGrammarSource

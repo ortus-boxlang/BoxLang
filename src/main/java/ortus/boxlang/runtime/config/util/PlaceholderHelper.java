@@ -172,6 +172,7 @@ public class PlaceholderHelper {
 	 * @return The Resolved tree
 	 *
 	 */
+	@SuppressWarnings( "unchecked" )
 	public static <T> T resolveAll( T object ) {
 		if ( object instanceof Struct struct ) {
 			for ( Key key : struct.keySet() ) {
