@@ -41,7 +41,6 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.CacheService;
 import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.types.Array;
-import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.QueryColumnType;
@@ -743,11 +742,6 @@ public class PendingQuery {
 					}
 				} else {
 					Object value = param.toSQLType( context );
-					// If there are other transformations, move this into a helper method
-					if ( value instanceof DateTime dt ) {
-						// convert to java.util.Date for SQL
-						value = dt.toDate();
-					}
 					emitValueToSQL( SQLWithParamValues, value, param.getType() );
 					if ( scaleOrLength == null ) {
 						preparedStatement.setObject( parameterIndex, value, param.getSqlTypeAsInt() );
