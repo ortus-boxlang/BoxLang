@@ -150,7 +150,8 @@ project.ext.bumpVersion = {
 	boolean minor = false,
 	boolean patch = false,
 	boolean beta = false,
-	boolean rc = false ->
+	boolean rc = false,
+	property = "version" ->
 
 	def propertiesFile = file( './gradle.properties' );
 	def properties = new Properties();
@@ -158,14 +159,9 @@ project.ext.bumpVersion = {
 	properties.load( propertiesFile.newDataInputStream() )
 	def versionTarget = major ? 0 : minor ? 1 : beta ? 2 : 3
 
-	def currentVersion = properties.getProperty( 'version' )
-	// 1.1.0 -> -> [ 1, 1, 0 ]
-	// 1.0.0-beta1 -> [ 1, 0, 0-beta1 ]
-	// 1.0.0-rc.1 -> [ 1, 0, 0-rc, 1 ]
+	def currentVersion = properties.getProperty( property )
 	def versionParts = currentVersion.split( '\\.' )
-	if( !beta ){
-		def newPathVersion = versionParts[ versionTarget ].toInteger() + 1
-	}
+	def newPathVersion = versionParts[ versionTarget ].toInteger() + 1
 	def newVersion = '';
 
 	if( patch ){
@@ -184,7 +180,7 @@ project.ext.bumpVersion = {
 		newVersion = "${versionParts[ 0 ]}.${versionParts[ 1 ]}.${versionParts[ 2 ]}.${newPathVersion}"
 	}
 
-	properties.setProperty( 'version', newVersion )
+	properties.setProperty( property, newVersion )
 	properties.store( propertiesFile.newWriter(), null )
 
 	println "Bumped version from ${currentVersion} to ${newVersion}"

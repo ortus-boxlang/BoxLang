@@ -31,7 +31,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.fasterxml.jackson.jr.ob.JSONObjectException;
@@ -470,9 +469,9 @@ public class BoxRunner {
 			}
 
 			// Template to execute?
-			Path targetPath = getExecutableTemplate( currentArgument );
-			if ( actionCommand == null && Files.exists( targetPath ) ) {
-				file = targetPath.toString();
+			String targetPath = getExecutableTemplate( currentArgument );
+			if ( actionCommand == null && targetPath != null ) {
+				file = targetPath;
 				continue;
 			}
 
@@ -514,26 +513,45 @@ public class BoxRunner {
 	/**
 	 * Verifies if the passed in path is a valid template for execution
 	 *
-	 * @param path The path to the template
+	 * @param path Possible path to the template
 	 *
-	 * @return Whether or not the template is valid for execution
+	 * @return The absolute path if it's valid and exists, null otherwise
 	 */
-	private static Path getExecutableTemplate( String path ) {
-		String extension = FilenameUtils.getExtension( path );
+	private static String getExecutableTemplate( String path ) {
+		String[]	currentParts	= path.split( "\\." );
+		String		currentExt		= "";
 
+		if ( currentParts.length > 0 ) {
+			currentExt = "." + currentParts[ currentParts.length - 1 ].toLowerCase();
+		}
 		// Do we have the extension? If not, let's assume it's a class
-		if ( extension.isEmpty() ) {
-			extension	= "bx";
-			path		+= ".bx";
+		boolean presumptiveExtension = false;
+		if ( currentExt.isEmpty() ) {
+			currentExt				= "bx";
+			path					+= ".bx";
+			presumptiveExtension	= true;
 		}
 
 		// Check if the extension is allowed or not
-		if ( !ALLOWED_TEMPLATE_EXECUTIONS.contains( "." + extension ) ) {
-			return Path.of( path );
+		if ( !ALLOWED_TEMPLATE_EXECUTIONS.contains( currentExt ) ) {
+			return null;
 		}
 
 		// Check if the file exists
-		return Path.of( templateToAbsolute( path ) );
+		String absPath = templateToAbsolute( path );
+		try {
+			Path templatePath = Paths.get( absPath );
+
+			if ( !Files.exists( templatePath ) ) {
+				if ( !presumptiveExtension ) {
+					throw new BoxRuntimeException( "The template [" + path + "] does not exist." );
+				}
+				return null;
+			}
+		} catch ( InvalidPathException e ) {
+			return null;
+		}
+		return absPath;
 	}
 
 	/**
