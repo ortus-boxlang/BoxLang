@@ -1139,7 +1139,10 @@ public final class FileSystemUtil {
 			mappingDirectory = Path.of( mappingDirectory ).normalize().toString().replace( "\\", "/" );
 			if ( File.separator.equals( "/" ) ? finalPath.startsWith( mappingDirectory )
 			    : StringUtils.startsWithIgnoreCase( finalPath, mappingDirectory ) ) {
-				String contractedPath = finalPath.replace( mappingDirectory, "" );
+
+				// strip the dir from the path
+				String contractedPath = finalPath.substring( mappingDirectory.length() );
+
 				if ( !contractedPath.startsWith( "/" ) ) {
 					contractedPath = "/" + contractedPath;
 				}
