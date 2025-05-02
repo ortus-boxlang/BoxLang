@@ -300,10 +300,6 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		        true )
 		);
 
-		if ( returnContext == ReturnValueContext.VALUE || returnContext == ReturnValueContext.VALUE_OR_NULL ) {
-			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
-		}
-
 		if ( !function.getModifiers().contains( BoxMethodDeclarationModifier.STATIC )
 		    && !function.getModifiers().contains( BoxMethodDeclarationModifier.ABSTRACT ) ) {
 			transpiler.addUDFRegistration( function.getName(), nodes );
@@ -311,9 +307,15 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 
 		if ( function.getModifiers().contains( BoxMethodDeclarationModifier.STATIC ) ) {
 			return nodes;
-		} else {
-			return new ArrayList<>();
 		}
+
+		ArrayList<AbstractInsnNode> blankResult = new ArrayList<>();
+
+		if ( returnContext == ReturnValueContext.VALUE || returnContext == ReturnValueContext.VALUE_OR_NULL ) {
+			blankResult.add( new InsnNode( Opcodes.ACONST_NULL ) );
+		}
+
+		return blankResult;
 	}
 
 	private boolean shouldDefaultOutput( BoxFunctionDeclaration function ) {
