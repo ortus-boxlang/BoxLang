@@ -146,7 +146,7 @@
 					</th>
 					<td>
 						<div class="bx-onoff">
-							<bx:if sortedProperties.isEmpty()>
+							<bx:if stuctIsEmpty(sortedProperties)>
 								<p><em>None</em></p>
 							<bx:else>
 								<table class="bx-table-default">
@@ -195,7 +195,7 @@
 					</th>
 					<td>
 						<div class="bx-onoff">
-							<bx:if thisScope.isEmpty()>
+							<bx:if stuctIsEmpty(thisScope)>
 								<p><em>None</em></p>
 							<bx:else>
 								<table class="bx-table-default">
@@ -301,7 +301,7 @@
 						</th>
 						<td>
 							<div class="bx-onoff">
-								<bx:if thisScope.isEmpty()>
+								<bx:if stuctIsEmpty(thisScope)>
 									<p><em>None</em></p>
 								<bx:else>
 									<table class="bx-table-default">
@@ -356,7 +356,7 @@
 						</th>
 						<td>
 							<div class="bx-onoff">
-								<bx:if variablesScope.isEmpty()>
+								<bx:if stuctIsEmpty(variablesScope)>
 									<p><em>None</em></p>
 								<bx:else>
 									<table class="bx-table-default">
