@@ -1657,26 +1657,43 @@ public class DynamicInteropService {
 		            null,
 		            castedArgumentValues,
 		            arguments ) )
+		    // .peek( executable -> System.out.println( "Found EXACT method [" + executable + "]" ) )
 		    // Sort first matches who's argument array is the same as the number of parameters in the executable, which will make ambiguous varargs methods sort last
 		    .sorted( Comparator.comparingInt( executable -> executable.getParameterCount() == argumentsAsClasses.length ? 0 : 1 ) )
 		    .findFirst()
 		    // 2: If no exact match, try loose coercion
 		    .or( () -> targetExecutables
 		        .stream()
-		        .filter(
-		            executable -> hasMatchingParameterTypes(
-		                context,
-		                executable,
-		                MATCH_TYPE.ASSIGNABLE,
-		                argumentsAsClasses,
-		                isCachable,
-		                null,
-		                castedArgumentValues,
-		                arguments
-		            ) )
+		        .map(
+		            executable -> {
+			            var matchScore = new AtomicInteger( 0 );
+			            if ( hasMatchingParameterTypes(
+			                context,
+			                executable,
+			                MATCH_TYPE.ASSIGNABLE,
+			                argumentsAsClasses,
+			                isCachable,
+			                matchScore,
+			                castedArgumentValues,
+			                arguments
+			            ) ) {
+				            return CoerceAttempt.of( executable, matchScore, castedArgumentValues );
+			            } else {
+				            return null;
+			            }
+		            } )
+		        // remove our non-matches
+		        .filter( executable -> executable != null )
+		        // .peek( executable -> System.out.println( "Found ASSIGNABLE method [" + executable + "]" ) )
+		        // sort based on best match
+		        .sorted( Comparator.comparingInt( coerceAttempt -> coerceAttempt.matchScore().get() ) )
 		        // Sort first matches who's argument array is the same as the number of parameters in the executable, which will make ambiguous varargs methods sort last
-		        .sorted( Comparator.comparingInt( executable -> executable.getParameterCount() == argumentsAsClasses.length ? 0 : 1 ) )
+		        // .sorted( Comparator.comparingInt( executable -> executable.getParameterCount() == argumentsAsClasses.length ? 0 : 1 ) )
 		        .findFirst()
+		        // map our stream back to just the executable
+		        .map( coerceAttempt -> {
+			        return coerceAttempt.executable();
+		        } )
 		        .or( () -> targetExecutables
 		            .stream()
 		            // Test the executables. Return null for a non-match. For matching executables, return the executable and the match score
@@ -1701,6 +1718,7 @@ public class DynamicInteropService {
 		            } )
 		            // remove our non-matches
 		            .filter( executable -> executable != null )
+		            // .peek( executable -> System.out.println( "Found COERCE method [" + executable + "]" ) )
 		            // sort based on best match
 		            .sorted( Comparator.comparingInt( coerceAttempt -> coerceAttempt.matchScore().get() ) )
 		            // get the first one
@@ -2371,8 +2389,18 @@ public class DynamicInteropService {
 				System.arraycopy( arguments, 0, castedArgumentValues, 0, arguments.length );
 				return true;
 			case ASSIGNABLE :
+				// Penalize method calls where we've omitted the varargs
+				if ( method.getParameterCount() != argumentsAsClasses.length ) {
+					matchScore.addAndGet( 10 );
+				}
 				if ( !ClassUtils.isAssignable( argumentsAsClasses, methodParams ) ) {
 					return false;
+				}
+				// Add 1 to our match score for each argument that is not an exact match
+				for ( int i = 0; i < methodParams.length; i++ ) {
+					if ( !methodParams[ i ].equals( argumentsAsClasses[ i ] ) ) {
+						matchScore.addAndGet( 1 );
+					}
 				}
 				// copy arguments into castedArgumentValues
 				System.arraycopy( arguments, 0, castedArgumentValues, 0, arguments.length );
