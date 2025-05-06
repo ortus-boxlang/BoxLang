@@ -1462,7 +1462,7 @@ public class DynamicInteropService {
 	 *
 	 * @return A unique set of callable methods
 	 */
-	public static Set<Executable> getMethods( Class<?> targetClass, Boolean callable ) {
+	public static Set<Executable> getMethods( Class<?> targetClass, boolean callable ) {
 		Set<Method> allMethods = new HashSet<>();
 
 		// Collect all the methods from the class and it's super classes
@@ -1471,12 +1471,9 @@ public class DynamicInteropService {
 
 		var methodStream = allMethods.stream();
 		// If callable, filter out the private methods
-		if ( Boolean.TRUE.equals( callable ) ) {
+		if ( callable ) {
 			methodStream = methodStream.filter( method -> Modifier.isPublic( method.getModifiers() ) );
 		}
-
-		// Filter out bridge methods
-		methodStream = methodStream.filter( method -> !method.isBridge() );
 
 		return methodStream.collect( Collectors.toSet() );
 	}
