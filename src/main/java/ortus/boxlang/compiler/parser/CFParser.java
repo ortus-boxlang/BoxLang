@@ -38,6 +38,7 @@ import ortus.boxlang.compiler.ast.BoxInterface;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
 import ortus.boxlang.compiler.ast.BoxStatement;
+import ortus.boxlang.compiler.ast.BoxStatementError;
 import ortus.boxlang.compiler.ast.BoxTemplate;
 import ortus.boxlang.compiler.ast.Issue;
 import ortus.boxlang.compiler.ast.Point;
@@ -392,6 +393,7 @@ public class CFParser extends AbstractParser {
 				}
 			}
 		} catch ( Exception e ) {
+			// e.printStackTrace();
 			// Ignore issues creating AST if the parsing already had failures
 			if ( issues.isEmpty() ) {
 				throw e;
@@ -801,7 +803,7 @@ public class CFParser extends AbstractParser {
 							}
 						}
 					} else {
-						statements.add( toAst( file, statement ) );
+						statements.add( toStatementOrError( () -> ( BoxStatement ) toAst( file, statement ), statement ) );
 					}
 				} else if ( child instanceof Template_textContentContext textContent ) {
 					statements.addAll( toAst( file, textContent ) );
@@ -819,7 +821,7 @@ public class CFParser extends AbstractParser {
 						errorListener.semanticError( "Class or Interface definitions are not allowed in script blocks", getPosition( script ) );
 					}
 				} else if ( child instanceof Template_boxImportContext importContext ) {
-					statements.add( toAst( file, importContext ) );
+					statements.add( toStatementOrError( () -> ( BoxStatement ) toAst( file, importContext ), importContext ) );
 				}
 			}
 		}
@@ -832,6 +834,20 @@ public class CFParser extends AbstractParser {
 			}
 		}
 		return statements;
+	}
+
+	public BoxStatement toStatementOrError( java.util.function.Supplier<BoxStatement> statementGenerator, ParserRuleContext node ) {
+		try {
+			return statementGenerator.get();
+		} catch ( Exception e ) {
+			if ( !issues.isEmpty() ) {
+				// If we have issues, then we are in error and should return an error node
+				return new BoxStatementError( getPosition( node ), getSourceText( node ) );
+			} else {
+				// Otherwise, throw the exception to be handled by the caller
+				throw e;
+			}
+		}
 	}
 
 	private boolean allStatementsAreWhitespace( List<BoxStatement> bodyStatements ) {

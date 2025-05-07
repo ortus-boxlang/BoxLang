@@ -18,10 +18,12 @@ import java.util.List;
 
 import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxExpression;
+import ortus.boxlang.compiler.ast.BoxExpressionError;
 import ortus.boxlang.compiler.ast.BoxInterface;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
 import ortus.boxlang.compiler.ast.BoxStatement;
+import ortus.boxlang.compiler.ast.BoxStatementError;
 import ortus.boxlang.compiler.ast.BoxStaticInitializer;
 import ortus.boxlang.compiler.ast.BoxTemplate;
 import ortus.boxlang.compiler.ast.comment.BoxDocComment;
@@ -1043,6 +1045,14 @@ public abstract class ReplacingBoxVisitor {
 			}
 		}
 		handleStatements( node.getBody(), node );
+		return node;
+	}
+
+	public BoxNode visit( BoxStatementError node ) {
+		return node;
+	}
+
+	public BoxNode visit( BoxExpressionError node ) {
 		return node;
 	}
 

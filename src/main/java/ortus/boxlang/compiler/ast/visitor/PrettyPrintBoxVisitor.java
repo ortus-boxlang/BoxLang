@@ -18,9 +18,11 @@ import java.util.Stack;
 
 import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxExpression;
+import ortus.boxlang.compiler.ast.BoxExpressionError;
 import ortus.boxlang.compiler.ast.BoxInterface;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
+import ortus.boxlang.compiler.ast.BoxStatementError;
 import ortus.boxlang.compiler.ast.BoxStaticInitializer;
 import ortus.boxlang.compiler.ast.BoxTemplate;
 import ortus.boxlang.compiler.ast.comment.BoxDocComment;
@@ -1755,6 +1757,23 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			}
 			print( ")" );
 		}
+		printPostComments( node );
+	}
+
+	/**
+	 * An invalid AST (containing error nodes) probably should not be printed out as it may be missing code.
+	 * If an error node is printed, it should be printed as the original source text.
+	 * This may or may not duplicate comments depending on whether or not the associated comments were inside the error node boundaries or not
+	 */
+	public void visit( BoxStatementError node ) {
+		printPreComments( node );
+		print( node.getSourceText() );
+		printPostComments( node );
+	}
+
+	public void visit( BoxExpressionError node ) {
+		printPreComments( node );
+		print( node.getSourceText() );
 		printPostComments( node );
 	}
 

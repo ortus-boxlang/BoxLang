@@ -27,7 +27,6 @@ import ortus.boxlang.compiler.ast.expression.BoxClosure;
 import ortus.boxlang.compiler.ast.expression.BoxDotAccess;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
-import ortus.boxlang.compiler.ast.expression.BoxNull;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxUnaryOperation;
 import ortus.boxlang.compiler.ast.expression.BoxUnaryOperator;
@@ -194,7 +193,8 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 		var					pos			= tools.getPositionStartingAt( ctx, tools.getFirstToken() );
 		var					src			= tools.getSourceText( ctx );
 
-		List<BoxStatement>	statements	= ctx.functionOrStatement().stream().map( stmt -> stmt.accept( this ) ).map( obj -> ( BoxStatement ) obj )
+		List<BoxStatement>	statements	= ctx.functionOrStatement().stream()
+		    .map( stmt -> tools.toStatementOrError( () -> ( BoxStatement ) stmt.accept( this ), stmt ) )
 		    .collect( Collectors.toList() );
 		return new BoxScript( statements, pos, src );
 	}
@@ -300,8 +300,8 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 		processIfNotNull( ctx.importStatement(), stmt -> imports.add( ( BoxImport ) stmt.accept( this ) ) );
 		processIfNotNull( ctx.preAnnotation(), stmt -> preAnnotations.add( ( BoxAnnotation ) stmt.accept( this ) ) );
 		processIfNotNull( ctx.postAnnotation(), annotation -> postAnnotations.add( ( BoxAnnotation ) annotation.accept( this ) ) );
-		processIfNotNull( ctx.function(), stmt -> body.add( ( BoxStatement ) stmt.accept( this ) ) );
-		processIfNotNull( ctx.staticInitializer(), stmt -> body.add( ( BoxStatement ) stmt.accept( this ) ) );
+		processIfNotNull( ctx.function(), stmt -> body.add( tools.toStatementOrError( () -> ( BoxStatement ) stmt.accept( this ), stmt ) ) );
+		processIfNotNull( ctx.staticInitializer(), stmt -> body.add( tools.toStatementOrError( () -> ( BoxStatement ) stmt.accept( this ), stmt ) ) );
 
 		return new BoxInterface( imports, body, preAnnotations, postAnnotations, documentation, tools.getPosition( ctx ), tools.getSourceText( ctx ) );
 	}
@@ -340,7 +340,7 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 		var				pos			= tools.getPosition( ctx );
 		var				src			= tools.getSourceText( ctx );
 		BoxExpression	condition	= ctx.expression().accept( expressionVisitor );
-		BoxStatement	body		= ( BoxStatement ) ctx.statementOrBlock().accept( this );
+		BoxStatement	body		= tools.toStatementOrError( () -> ( BoxStatement ) ctx.statementOrBlock().accept( this ), ctx.statementOrBlock() );
 		String			label		= Optional.ofNullable( ctx.preFix() ).map( preFix -> preFix.identifier().getText() ).orElse( null );
 		return new BoxDo( label, condition, body, pos, src );
 	}
@@ -349,7 +349,7 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 	public BoxNode visitFor( ForContext ctx ) {
 		var					pos			= tools.getPosition( ctx );
 		var					src			= tools.getSourceText( ctx );
-		BoxStatement		body		= ( BoxStatement ) ctx.statementOrBlock().accept( this );
+		BoxStatement		body		= tools.toStatementOrError( () -> ( BoxStatement ) ctx.statementOrBlock().accept( this ), ctx.statementOrBlock() );
 		String				label		= Optional.ofNullable( ctx.preFix() ).map( preFix -> preFix.identifier().getText() ).orElse( null );
 		List<BoxExpression>	expressions	= Optional.ofNullable( ctx.expression() ).orElse( Collections.emptyList() ).stream()
 		    .map( expression -> expression.accept( expressionVisitor ) ).toList();
@@ -376,8 +376,9 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 		var				pos			= tools.getPosition( ctx );
 		var				src			= tools.getSourceText( ctx );
 		BoxExpression	condition	= ctx.expression().accept( expressionVisitor );
-		BoxStatement	thenBody	= ( BoxStatement ) ctx.ifStmt.accept( this );
-		BoxStatement	elseBody	= Optional.ofNullable( ctx.elseStmt ).map( stmt -> ( BoxStatement ) stmt.accept( this ) ).orElse( null );
+		BoxStatement	thenBody	= tools.toStatementOrError( () -> ( BoxStatement ) ctx.ifStmt.accept( this ), ctx.ifStmt );
+		BoxStatement	elseBody	= Optional.ofNullable( ctx.elseStmt )
+		    .map( stmt -> tools.toStatementOrError( () -> ( BoxStatement ) stmt.accept( this ), stmt ) ).orElse( null );
 		return new BoxIfElse( condition, thenBody, elseBody, pos, src );
 	}
 
@@ -403,7 +404,8 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 		// Produce body from iterating ctx.statement() and calling accept(this) on each one,
 		// or assign null to body if there are no ctx.statement()
 		List<BoxStatement>	body		= Optional.ofNullable( ctx.statementOrBlock() )
-		    .map( statements -> statements.stream().map( statement -> ( BoxStatement ) statement.accept( this ) ).collect( Collectors.toList() ) )
+		    .map( statements -> statements.stream().map( statement -> tools.toStatementOrError( () -> ( BoxStatement ) statement.accept( this ), statement ) )
+		        .collect( Collectors.toList() ) )
 		    .orElse( List.of() );
 
 		return new BoxSwitchCase( condition, null, body, pos, src );
@@ -440,7 +442,7 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 		var				src			= tools.getSourceText( ctx );
 
 		BoxExpression	condition	= ctx.expression().accept( expressionVisitor );
-		BoxStatement	body		= ( BoxStatement ) ctx.statementOrBlock().accept( this );
+		BoxStatement	body		= tools.toStatementOrError( () -> ( BoxStatement ) ctx.statementOrBlock().accept( this ), ctx.statementOrBlock() );
 		String			label		= Optional.ofNullable( ctx.preFix() ).map( preFix -> preFix.identifier().getText() ).orElse( null );
 		return new BoxWhile( label, condition, body, pos, src );
 	}
@@ -994,13 +996,13 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 
 	private List<BoxStatement> buildClassBody( ClassBodyContext ctx ) {
 		List<BoxStatement> body = new ArrayList<>();
-		processIfNotNull( ctx.classBodyStatement(), stmt -> body.add( ( BoxStatement ) stmt.accept( this ) ) );
+		processIfNotNull( ctx.classBodyStatement(), stmt -> body.add( tools.toStatementOrError( () -> ( BoxStatement ) stmt.accept( this ), stmt ) ) );
 		return body;
 	}
 
 	private List<BoxStatement> buildStaticBody( NormalStatementBlockContext ctx ) {
 		List<BoxStatement> body = new ArrayList<>();
-		processIfNotNull( ctx.statement(), stmt -> body.add( ( BoxStatement ) stmt.accept( this ) ) );
+		processIfNotNull( ctx.statement(), stmt -> body.add( tools.toStatementOrError( () -> ( BoxStatement ) stmt.accept( this ), stmt ) ) );
 		return body;
 	}
 
@@ -1109,13 +1111,17 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 
 	private List<BoxStatement> buildStatementBlock( StatementBlockContext statementBlock ) {
 		return Optional.ofNullable( statementBlock ).map( StatementBlockContext::statement ).orElse( Collections.emptyList() ).stream()
-		    .map( statement -> statement.accept( this ) ).filter( boxNode -> ! ( boxNode instanceof BoxNull ) ).map( boxNode -> ( BoxStatement ) boxNode )
+		    .map( statement -> tools.toStatementOrError( () -> ( BoxStatement ) statement.accept( this ), statement ) )
+		    // How would a BoxNull ever be at the top level of a statement block?
+		    // .filter( boxNode -> ! ( boxNode instanceof BoxNull ) ).map( boxNode -> ( BoxStatement ) boxNode )
 		    .collect( Collectors.toList() );
 	}
 
 	private List<BoxStatement> buildStatementBlock( NormalStatementBlockContext statementBlock ) {
 		return Optional.ofNullable( statementBlock ).map( NormalStatementBlockContext::statement ).orElse( Collections.emptyList() ).stream()
-		    .map( statement -> statement.accept( this ) ).filter( boxNode -> ! ( boxNode instanceof BoxNull ) ).map( boxNode -> ( BoxStatement ) boxNode )
+		    .map( statement -> tools.toStatementOrError( () -> ( BoxStatement ) statement.accept( this ), statement ) )
+		    // How would a BoxNull ever be at the top level of a statement block?
+		    // .filter( boxNode -> ! ( boxNode instanceof BoxNull ) ).map( boxNode -> ( BoxStatement ) boxNode )
 		    .collect( Collectors.toList() );
 	}
 

@@ -5443,13 +5443,27 @@ public class CoreLangTest {
 	}
 
 	@Test
-	public void testClearsdfANTLRCache() {
+	public void testElvisInLambda() {
 		instance.executeSource(
 		    """
 		    	myVar = "Brad";
 		    ( (a)->println( myVar ?: a ) )( "Luis" )
 		    		  """,
 		    context, BoxSourceType.BOXSCRIPT );
+	}
+
+	@Test
+	public void testErrorNodes() throws Exception {
+		var result = new Parser().parse( """
+		                                 <bx:script>
+		                                 person="Bob"
+		                                 </bx:script>
+
+		                                 <bx:if
+		                                 	  """, BoxSourceType.BOXTEMPLATE );
+
+		assertThat( result.getIssues().size() ).isGreaterThan( 0 );
+		assertThat( result.getRoot() ).isNotNull();
 	}
 
 }
