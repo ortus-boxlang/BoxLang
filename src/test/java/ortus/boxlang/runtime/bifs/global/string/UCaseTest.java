@@ -61,10 +61,12 @@ public class UCaseTest {
 	public void testItUppercasesBIF() {
 		instance.executeSource(
 		    """
-		    result = ucase( 'brad' );
-		    """,
+		       result = ucase( 'brad' );
+		    result2 = ucase( null );
+		       """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "BRAD" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "" );
 	}
 
 	@DisplayName( "It uppercases as BIF and casting" )

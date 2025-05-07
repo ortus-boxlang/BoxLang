@@ -50,8 +50,13 @@ public class Right extends BIF {
 	 * @argument.count The number of characters to retrieve.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String	input	= arguments.getAsString( Key.string );
-		int		count	= arguments.getAsInteger( Key.count );
+		String input = arguments.getAsString( Key.string );
+
+		if ( input == null ) {
+			return "";
+		}
+
+		int count = arguments.getAsInteger( Key.count );
 
 		// Check if count is zero
 		if ( count == 0 ) {

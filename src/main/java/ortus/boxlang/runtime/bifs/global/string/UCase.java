@@ -48,7 +48,13 @@ public class UCase extends BIF {
 	 * 
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		return arguments.getAsString( Key.string ).toUpperCase();
+		String input = arguments.getAsString( Key.string );
+
+		if ( input == null ) {
+			return "";
+		}
+
+		return input.toUpperCase();
 	}
 
 }

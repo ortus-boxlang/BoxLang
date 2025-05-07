@@ -57,10 +57,12 @@ public class MidTest {
 	public void testItExtractsSubstring() {
 		instance.executeSource(
 		    """
-		    result = mid("abcdef", 2, 3);
-		    """,
+		       result = mid("abcdef", 2, 3);
+		    result2 = mid(null, 2, 3);
+		       """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "bcd" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "" );
 	}
 
 	@DisplayName( "It extracts a substring as member" )

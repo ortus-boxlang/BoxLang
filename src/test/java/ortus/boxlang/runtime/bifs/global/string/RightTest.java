@@ -59,10 +59,12 @@ public class RightTest {
 	public void testItExtractsRightmostCharacters() {
 		instance.executeSource(
 		    """
-		    result = right("abcdef", 3);
-		    """,
+		       result = right("abcdef", 3);
+		    result2 = right(null, 1)
+		       """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "def" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "" );
 	}
 
 	@DisplayName( "It extracts rightmost characters as member" )

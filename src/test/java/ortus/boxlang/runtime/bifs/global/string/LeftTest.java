@@ -59,10 +59,12 @@ public class LeftTest {
 	public void testItExtractsLeftmostCharacters() {
 		instance.executeSource(
 		    """
-		    result = left("abcdef", 3);
-		    """,
+		       result = left("abcdef", 3);
+		    result2 = left(null, 2);
+		       """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "abc" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "" );
 	}
 
 	@DisplayName( "It extracts leftmost characters as member" )

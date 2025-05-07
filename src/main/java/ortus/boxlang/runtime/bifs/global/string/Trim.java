@@ -47,6 +47,11 @@ public class Trim extends BIF {
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String input = arguments.getAsString( Key.string );
+
+		if ( input == null ) {
+			return "";
+		}
+
 		return input.trim();
 	}
 }
