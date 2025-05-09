@@ -202,4 +202,17 @@ public class ReReplaceTest {
 		assertThat( variables.get( result ) ).isEqualTo( "" );
 	}
 
+	@DisplayName( "handles optional capture group" )
+	@Test
+	public void testOptionalCaptureGroup() {
+		instance.executeSource(
+		    """
+		    localeRegex = "(_[a-z]{2})(_[A-Z]{2})?$"
+		    bundlename = "page-types.accessDenied_de"
+		    result = ReReplace( bundleName, ("^.*?" & localeRegex ), "\\1\\2" )
+		       """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "_de" );
+	}
+
 }

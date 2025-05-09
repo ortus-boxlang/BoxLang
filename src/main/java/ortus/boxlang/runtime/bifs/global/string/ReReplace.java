@@ -146,7 +146,14 @@ public class ReReplace extends BIF {
 							}
 						}
 
-						replacement.replace( i, i + 2, group );
+						if ( group != null ) {
+							replacement.replace( i, i + 2, group );
+							i += group.length() - 2;
+						} else {
+							// Skip replacement if group is null
+							replacement.delete( i, i + 2 );
+							i -= 2;
+						}
 						i += ( group != null ? group.length() : 0 ) - 2;
 					}
 				}
