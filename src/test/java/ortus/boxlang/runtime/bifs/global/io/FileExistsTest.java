@@ -133,4 +133,18 @@ public class FileExistsTest {
 		assertThat( variables.get( Key.of( "result" ) ) ).isEqualTo( false );
 	}
 
+	@DisplayName( "It detects relative paths" )
+	@Test
+	public void testdetectsRelativePaths() throws IOException {
+		instance.executeSource(
+		    """
+		    bx:application mappings={
+		    	"/" : expandPath( "/src/test/java/ortus/boxlang/runtime/bifs/" )
+		     };
+		       result = fileExists( "global/io/FileExistsTest.java" )
+		       """,
+		    context );
+		assertThat( variables.get( Key.of( "result" ) ) ).isEqualTo( true );
+	}
+
 }

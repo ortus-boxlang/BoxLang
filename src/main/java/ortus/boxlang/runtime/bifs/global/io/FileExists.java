@@ -56,15 +56,18 @@ public class FileExists extends BIF {
 		String	filePath		= arguments.getAsString( Key.source );
 		Boolean	allowRealPath	= arguments.getAsBoolean( Key.allowRealPath );
 		try {
+			Path finalPath;
 			if ( !allowRealPath && Path.of( filePath ).isAbsolute() ) {
 				throw new BoxRuntimeException(
 				    "The file or path argument [" + filePath + "] is an absolute path. This is disallowed when the allowRealPath argument is set to false."
 				);
 			} else if ( !FileSystemUtil.exists( filePath ) ) {
-				filePath = FileSystemUtil.expandPath( context, filePath ).toString();
+				finalPath = FileSystemUtil.expandPath( context, filePath ).absolutePath();
+			} else {
+				finalPath = Path.of( filePath );
 			}
 
-			return ( Boolean ) FileSystemUtil.exists( filePath ) && !Files.isDirectory( Path.of( filePath ) );
+			return ( Boolean ) finalPath.toFile().exists() && !Files.isDirectory( finalPath );
 		} catch ( java.nio.file.InvalidPathException e ) {
 			// We ignore invalid paths
 			return false;
