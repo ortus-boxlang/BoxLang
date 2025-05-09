@@ -154,7 +154,6 @@ public class ReReplace extends BIF {
 							replacement.delete( i, i + 2 );
 							i -= 2;
 						}
-						i += ( group != null ? group.length() : 0 ) - 2;
 					}
 				}
 			}
