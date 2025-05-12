@@ -26,6 +26,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -585,7 +586,20 @@ public class XML implements Serializable, IStruct {
 		String		ourName		= node.getNodeName();
 		Array		siblings	= new Array();
 		// Get sibling nodes (including ourself)
-		NodeList	children	= node.getParentNode().getChildNodes();
+		NodeList	children	= Optional.ofNullable( node.getParentNode() )
+		    .map( p -> p.getChildNodes() )
+		    .orElseGet( () -> new NodeList() {
+
+									    @Override
+									    public Node item( int index ) {
+										    return null;
+									    }
+
+									    @Override
+									    public int getLength() {
+										    return 0;
+									    }
+								    } );
 		for ( int i = 0; i < children.getLength(); i++ ) {
 			Node child = children.item( i );
 			if ( child.getNodeType() == Node.ELEMENT_NODE && child.getNodeName().equalsIgnoreCase( ourName ) ) {
