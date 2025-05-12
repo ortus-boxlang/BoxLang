@@ -573,7 +573,26 @@ public class XML implements Serializable, IStruct {
 			}
 		}
 		throw new KeyNotFoundException(
-		    "Index [" + index + "] out of bounds for child [" + ourName + "] XML nodes.  There were only " + currMatch + " children." );
+		    "Index [" + ( index + 1 ) + "] out of bounds for child [" + ourName + "] XML nodes.  There were only " + ( currMatch + 1 ) + " children." );
+	}
+
+	/**
+	 * Get the sibling of this XML node having the same name
+	 *
+	 * @return The siblings of this XML node having the same name
+	 */
+	public Array getSiblingsOfSameName() {
+		String		ourName		= node.getNodeName();
+		Array		siblings	= new Array();
+		// Get sibling nodes (including ourself)
+		NodeList	children	= node.getParentNode().getChildNodes();
+		for ( int i = 0; i < children.getLength(); i++ ) {
+			Node child = children.item( i );
+			if ( child.getNodeType() == Node.ELEMENT_NODE && child.getNodeName().equalsIgnoreCase( ourName ) ) {
+				siblings.add( new XML( child ) );
+			}
+		}
+		return siblings;
 	}
 
 	@Override

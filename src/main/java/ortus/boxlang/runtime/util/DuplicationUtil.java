@@ -154,9 +154,7 @@ public class DuplicationUtil {
 				            return deep && val instanceof IStruct ? duplicateStruct( StructCaster.cast( val ), deep )
 				                : val instanceof Array ? duplicateArray( ArrayCaster.cast( val ), deep ) : val;
 			            },
-			            ( v1, v2 ) -> {
-				            throw new BoxRuntimeException( "An exception occurred while duplicating the linked HashMap" );
-			            },
+			            ( existingValue, newValue ) -> existingValue, // Keep the existing value in case of a conflict,
 			            LinkedHashMap<Key, Object>::new
 			        )
 			    )
@@ -171,9 +169,7 @@ public class DuplicationUtil {
 				            Object val = entry.getValue();
 				            return processStructAssignment( val, deep );
 			            },
-			            ( v1, v2 ) -> {
-				            throw new BoxRuntimeException( "An exception occurred while duplicating the linked HashMap" );
-			            },
+			            ( existingValue, newValue ) -> existingValue, // Keep the existing value in case of a conflict,
 			            ConcurrentSkipListMap<Key, Object>::new
 			        )
 			    )
@@ -184,9 +180,8 @@ public class DuplicationUtil {
 			    entries.collect(
 			        Collectors.toConcurrentMap(
 			            Entry::getKey,
-			            entry -> {
-				            return processStructAssignment( entry.getValue(), deep );
-			            }
+			            entry -> processStructAssignment( entry.getValue(), deep ),
+			            ( existingValue, newValue ) -> existingValue // Keep the existing value in case of a conflict
 			        )
 			    )
 			);
