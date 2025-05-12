@@ -195,6 +195,7 @@ public class SecurityConfig implements IConfigSegment {
 		PropertyHelper.processListToSet( config, Key.disallowedComponents, this.disallowedComponents );
 		PropertyHelper.processStringOrArrayToList( config, Key.allowedFileOperationExtensions, this.allowedFileOperationExtensions );
 		PropertyHelper.processStringOrArrayToList( config, Key.disallowedFileOperationExtensions, this.disallowedFileOperationExtensions );
+		this.populateServerSystemScope = PropertyHelper.processBoolean( config, Key.populateServerSystemScope, this.populateServerSystemScope );
 		return this;
 	}
 
