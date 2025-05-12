@@ -410,6 +410,9 @@
 		// A list of Component names that will be disallowed from execution
 		// Ex: "disallowedComponents": [ "execute", "http" ]
 		"disallowedComponents": [],
+		// This is a boolean flag that determines if the server.system scope will be populated with the
+		// Java system properties and environment variables. By default this is set to true.
+		"populateServerSystemScope": true,
 		// An explicit whitelist of file extensions that are allowed to be uploaded - overrides any values in the disallowedWriteExtensions
 		"allowedFileOperationExtensions": [],
 		// The list of file extensions that are not allowed to be uploaded. Also enforced by file relocation operations ( e.g. copy/move )

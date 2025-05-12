@@ -456,7 +456,7 @@ public class BoxRunner {
 			// Mutually exclusive with template
 			if ( currentArgument.equalsIgnoreCase( "--bx-code" ) ) {
 				if ( argsList.isEmpty() ) {
-					throw new BoxRuntimeException( "Missing inline code to execute with -c flag." );
+					throw new BoxRuntimeException( "Missing inline code to execute with --bx-code flag." );
 				}
 				code = argsList.remove( 0 );
 				break;

@@ -26,6 +26,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -573,7 +574,39 @@ public class XML implements Serializable, IStruct {
 			}
 		}
 		throw new KeyNotFoundException(
-		    "Index [" + index + "] out of bounds for child [" + ourName + "] XML nodes.  There were only " + currMatch + " children." );
+		    "Index [" + ( index + 1 ) + "] out of bounds for child [" + ourName + "] XML nodes.  There were only " + ( currMatch + 1 ) + " children." );
+	}
+
+	/**
+	 * Get the sibling of this XML node having the same name
+	 *
+	 * @return The siblings of this XML node having the same name
+	 */
+	public Array getSiblingsOfSameName() {
+		String		ourName		= node.getNodeName();
+		Array		siblings	= new Array();
+		// Get sibling nodes (including ourself)
+		NodeList	children	= Optional.ofNullable( node.getParentNode() )
+		    .map( p -> p.getChildNodes() )
+		    .orElseGet( () -> new NodeList() {
+
+									    @Override
+									    public Node item( int index ) {
+										    return null;
+									    }
+
+									    @Override
+									    public int getLength() {
+										    return 0;
+									    }
+								    } );
+		for ( int i = 0; i < children.getLength(); i++ ) {
+			Node child = children.item( i );
+			if ( child.getNodeType() == Node.ELEMENT_NODE && child.getNodeName().equalsIgnoreCase( ourName ) ) {
+				siblings.add( new XML( child ) );
+			}
+		}
+		return siblings;
 	}
 
 	@Override

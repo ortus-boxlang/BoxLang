@@ -1,0 +1,6 @@
+class {
+	this.foo = "bar";
+
+	function baz() {
+	}
+}

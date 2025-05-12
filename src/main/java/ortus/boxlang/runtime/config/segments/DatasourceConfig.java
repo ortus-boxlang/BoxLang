@@ -619,6 +619,9 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 		if ( properties.containsKey( Key.leakDetectionThreshold ) ) {
 			result.setLeakDetectionThreshold( LongCaster.cast( properties.get( Key.leakDetectionThreshold ), false ) * 1000 );
 		}
+		if ( properties.containsKey( Key.initializationFailTimeout ) ) {
+			result.setInitializationFailTimeout( LongCaster.cast( properties.getOrDefault( Key.initializationFailTimeout, 1 ) ) );
+		}
 
 		// ADD NON-RESERVED PROPERTIES
 		// as Hikari properties

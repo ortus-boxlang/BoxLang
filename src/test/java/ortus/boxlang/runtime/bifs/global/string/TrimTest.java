@@ -58,10 +58,12 @@ public class TrimTest {
 	public void testItTrimsWhitespace() {
 		instance.executeSource(
 		    """
-		    result = trim('  Grant  ');
-		    """,
+		       result = trim('  Grant  ');
+		    result2 = trim(null);
+		       """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "Grant" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "" );
 	}
 
 	@DisplayName( "It trims whitespace from the beginning and end of a string as member" )

@@ -17,12 +17,11 @@
  */
 package ortus.boxlang.runtime.events;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
-import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
@@ -37,14 +36,14 @@ import ortus.boxlang.runtime.types.IStruct;
 public class InterceptorState {
 
 	/**
-	 * The state name (e.g. "preProcess", "postProcess", "onRuntimeStartup" etc.)
+	 * The interception state we represent (e.g. "preProcess", "postProcess", "onRuntimeStartup" etc.)
 	 */
-	private Key					name;
+	private Key								name;
 
 	/**
 	 * The observers for this state
 	 */
-	private List<DynamicObject>	observers	= new ArrayList<>();
+	private final List<InterceptorEntry>	observers	= new CopyOnWriteArrayList<>();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -88,12 +87,34 @@ public class InterceptorState {
 	/**
 	 * Register an observer for this state
 	 *
-	 * @param observer The observer
+	 * @param observer The observer to register
 	 *
 	 * @return The same state
 	 */
 	public InterceptorState register( DynamicObject observer ) {
-		this.observers.add( observer );
+		InterceptorInvoker	invoker;
+		Object				interceptor	= observer.unWrap();
+
+		// This is a BoxLang class
+		if ( interceptor instanceof IReferenceable ) {
+			invoker = ( data, context, target ) -> ( ( IReferenceable ) target.unWrap() ).dereferenceAndInvoke(
+			    context,
+			    getName(),
+			    new Object[] { data, context },
+			    false
+			);
+		}
+		// Java Interceptor Lambdas
+		else if ( interceptor instanceof IInterceptorLambda ) {
+			invoker = ( data, context, target ) -> ( ( IInterceptorLambda ) target.unWrap() ).intercept( data );
+		}
+		// Anything else is a Java class
+		else {
+			invoker = ( data, context, target ) -> target.invoke( context, getName().getName(), new Object[] { data } );
+		}
+
+		// Register the interceptor entry set
+		this.observers.add( new InterceptorEntry( observer, invoker ) );
 		return this;
 	}
 
@@ -105,7 +126,13 @@ public class InterceptorState {
 	 * @return The same state
 	 */
 	public InterceptorState unregister( DynamicObject observer ) {
-		this.observers.remove( observer );
+		// Iterate and remove the interceptor if found, by calling the equals method
+		for ( InterceptorEntry entry : this.observers ) {
+			if ( entry.equals( observer ) ) {
+				this.observers.remove( entry );
+				break;
+			}
+		}
 		return this;
 	}
 
@@ -117,7 +144,13 @@ public class InterceptorState {
 	 * @return True if the observer is registered, false otherwise
 	 */
 	public Boolean exists( DynamicObject observer ) {
-		return this.observers.contains( observer );
+		// Iterate and check if the interceptor is registered
+		for ( InterceptorEntry entry : this.observers ) {
+			if ( entry.equals( observer ) ) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**
@@ -143,31 +176,11 @@ public class InterceptorState {
 		}
 
 		// Process the state
-		Object[] args = new Object[] { data };
-		for ( DynamicObject observer : this.observers ) {
-			Object	stopChain;
-			// Get the actual instance from the dynamic object
-			Object	unwrappedObject	= observer.unWrap();
-
-			// Do we have a BoxLang class or Java Class
-			if ( unwrappedObject instanceof IReferenceable castedObserver ) {
-				// Dereference and Invoke the BoxLang class
-				stopChain = castedObserver.dereferenceAndInvoke(
-				    context,
-				    getName(),
-				    args,
-				    false
-				);
-			} else if ( unwrappedObject instanceof IInterceptorLambda castedLambda ) {
-				// Invoke the Java lambda
-				stopChain = castedLambda.intercept( data );
-			} else {
-				// Announce to the Java observer via Indy
-				stopChain = observer.invoke( context, getName().getName(), args );
-			}
-
+		for ( InterceptorEntry entry : this.observers ) {
+			// Run baby run!
+			Object stopChain = entry.invoker.invoke( data, context, entry.interceptor );
 			// If the observer returns true, we short circuit the rest of the observers
-			if ( stopChain != null && BooleanCaster.cast( stopChain ) ) {
+			if ( Boolean.TRUE.equals( stopChain ) ) {
 				break;
 			}
 		}

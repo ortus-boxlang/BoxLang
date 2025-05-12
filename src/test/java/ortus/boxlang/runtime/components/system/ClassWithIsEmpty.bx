@@ -1,0 +1,5 @@
+class {
+	public function isEmpty() {
+		return 'UDF Empty Data';
+	}
+}

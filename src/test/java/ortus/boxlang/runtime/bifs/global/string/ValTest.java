@@ -57,16 +57,17 @@ public class ValTest {
 	public void testItExtractsNumber() {
 		instance.executeSource(
 		    """
-		    result = val("abcdef");
-		    result2 = val("abcdef");
-		    result3 = val("abc123");
-		    result4 = val("123abcdef");
-		    result5 = val("123");
-		    result6 = val(".123");
-		    result7 = val("123.456");
-		    result8 = val(".");
-		    result9 = val(".sdf");
-		      """,
+		       result = val("abcdef");
+		       result2 = val("abcdef");
+		       result3 = val("abc123");
+		       result4 = val("123abcdef");
+		       result5 = val("123");
+		       result6 = val(".123");
+		       result7 = val("123.456");
+		       result8 = val(".");
+		       result9 = val(".sdf");
+		    result10 = val(null);
+		         """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( 0 );
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( 0 );
@@ -77,6 +78,7 @@ public class ValTest {
 		assertThat( variables.get( Key.of( "result7" ) ) ).isEqualTo( 123.456 );
 		assertThat( variables.get( Key.of( "result8" ) ) ).isEqualTo( 0 );
 		assertThat( variables.get( Key.of( "result9" ) ) ).isEqualTo( 0 );
+		assertThat( variables.get( Key.of( "result10" ) ) ).isEqualTo( 0 );
 	}
 
 	@DisplayName( "It extracts number from string Member" )

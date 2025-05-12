@@ -38,6 +38,11 @@ import ortus.boxlang.runtime.types.Struct;
 public class SecurityConfig implements IConfigSegment {
 
 	/**
+	 * A flag indicating whether the server system scope should be populated.
+	 */
+	public boolean				populateServerSystemScope			= true;
+
+	/**
 	 * A list of disallowed imports for the runtime
 	 * These are a list of regular expressions that are used to match against the import statements in the code
 	 * Ex: "disallowedImports": ["java\\.lang\\.(ProcessBuilder|Reflect", "java\\.io\\.(File|FileWriter)"]
@@ -151,9 +156,9 @@ public class SecurityConfig implements IConfigSegment {
 
 	/**
 	 * Determines whether a file operation is allowed or not based on the file extension.
-	 * 
+	 *
 	 * @param file
-	 * 
+	 *
 	 * @return
 	 */
 	public boolean isFileOperationAllowed( String file ) {
@@ -163,9 +168,9 @@ public class SecurityConfig implements IConfigSegment {
 
 	/**
 	 * Determines whether a file extension is allowed or not.
-	 * 
+	 *
 	 * @param extension
-	 * 
+	 *
 	 * @return
 	 */
 	public boolean isExtensionAllowed( String extension ) {
@@ -203,7 +208,8 @@ public class SecurityConfig implements IConfigSegment {
 		    Key.disallowedImports, this.disallowedImports,
 		    Key.disallowedBIFs, this.disallowedBIFs,
 		    Key.disallowedComponents, this.disallowedComponents,
-		    Key.disallowedFileOperationExtensions, Array.fromList( this.disallowedFileOperationExtensions )
+		    Key.disallowedFileOperationExtensions, Array.fromList( this.disallowedFileOperationExtensions ),
+		    Key.populateServerSystemScope, this.populateServerSystemScope
 		);
 	}
 

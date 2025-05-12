@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -41,8 +42,10 @@ import org.slf4j.Logger;
 import ortus.boxlang.compiler.ClassInfo;
 import ortus.boxlang.compiler.IBoxpiler;
 import ortus.boxlang.compiler.asmboxpiler.ASMBoxpiler;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.javaboxpiler.JavaBoxpiler;
 import ortus.boxlang.compiler.parser.BoxSourceType;
+import ortus.boxlang.compiler.parser.Parser;
 import ortus.boxlang.compiler.parser.ParsingResult;
 import ortus.boxlang.runtime.application.BaseApplicationListener;
 import ortus.boxlang.runtime.config.CLIOptions;
@@ -1669,6 +1672,59 @@ public class BoxRuntime implements java.io.Closeable {
 	public void printSourceAST( String source ) {
 		ParsingResult result = this.boxpiler.parseOrFail( source, BoxSourceType.BOXSCRIPT, false );
 		System.out.println( result.getRoot().toJSON() );
+	}
+
+	/**
+	 * Parse a script file
+	 * This is a passthrough to the Boxpiler parse method
+	 *
+	 * @param file source file to parse
+	 *
+	 * @return a ParsingResult containing the AST with a BoxScript as root and the list of errors (if any)
+	 *
+	 * @throws IOException
+	 *
+	 * @see BoxScript
+	 * @see ParsingResult
+	 */
+	public ParsingResult parse( File file ) {
+		return new Parser().parse( file );
+	}
+
+	/**
+	 * Parse a script string
+	 * This is a passthrough to the Boxpiler parse method
+	 *
+	 * @param code       source of the expression to parse
+	 * @param sourceType the type of source to parse. Available options are: BOXSCRIPT, BOXTEMPLATE, CFSCRIPT, CFTEMPLATE
+	 *
+	 * @return a ParsingResult containing the AST with a BoxExpr as root and the list of errors (if any)
+	 *
+	 * @throws IOException
+	 *
+	 * @see ParsingResult
+	 * @see BoxExpression
+	 */
+	public ParsingResult parse( String code, BoxSourceType sourceType ) throws IOException {
+		return new Parser().parse( code, sourceType );
+	}
+
+	/**
+	 * Parse a script string expression
+	 * This is a passthrough to the Boxpiler parse method
+	 * Defaults to BoxScript source type. If you want to parse another type, use the other method
+	 *
+	 * @param code source of the expression to parse
+	 *
+	 * @return a ParsingResult containing the AST with a BoxExpr as root and the list of errors (if any)
+	 *
+	 * @throws IOException
+	 *
+	 * @see ParsingResult
+	 * @see BoxExpression
+	 */
+	public ParsingResult parse( String code ) throws IOException {
+		return new Parser().parse( code, BoxSourceType.BOXSCRIPT );
 	}
 
 	/**

@@ -22,7 +22,7 @@ public class BoxStatementError extends BoxStatement {
 	 */
 	@Override
 	public void accept( VoidBoxVisitor v ) {
-
+		v.visit( this );
 	}
 
 	/**
@@ -35,6 +35,6 @@ public class BoxStatementError extends BoxStatement {
 	 */
 	@Override
 	public BoxNode accept( ReplacingBoxVisitor v ) {
-		return null;
+		return v.visit( this );
 	}
 }

@@ -283,8 +283,8 @@ public enum QueryColumnType {
 			case QueryColumnType.BINARY -> value; // @TODO: Will this work?
 			case QueryColumnType.BIT -> BooleanCaster.cast( value );
 			case QueryColumnType.BOOLEAN -> BooleanCaster.cast( value );
-			case QueryColumnType.TIME -> DateTimeCaster.cast( value, context );
-			case QueryColumnType.DATE -> DateTimeCaster.cast( value, context );
+			case QueryColumnType.TIME -> DateTimeCaster.cast( value, context ).toDate();
+			case QueryColumnType.DATE -> DateTimeCaster.cast( value, context ).toDate();
 			case QueryColumnType.TIMESTAMP -> new java.sql.Timestamp( DateTimeCaster.cast( value, context ).toEpochMillis() );
 			case QueryColumnType.OBJECT -> value;
 			case QueryColumnType.OTHER -> value;

@@ -582,6 +582,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		posInCode							= Key.of( "posInCode" );
 	public static final Key		position							= Key.of( "position" );
 	public static final Key		position1							= Key.of( "position1" );
+	public static final Key		populateServerSystemScope			= Key.of( "populateServerSystemScope" );
 	public static final Key		position2							= Key.of( "position2" );
 	public static final Key		positionals							= Key.of( "positionals" );
 	public static final Key		precise								= Key.of( "precise" );
@@ -902,6 +903,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		metricRegistry						= Key.of( "metricRegistry" );
 	public static final Key		minimumIdle							= Key.of( "minimumIdle" );
 	public static final Key		poolName							= Key.of( "poolName" );
+	public static final Key		initializationFailTimeout			= Key.of( "initializationFailTimeout" );
 
 	// Transaction events
 	public static final Key		onTransactionBegin					= Key.of( "onTransactionBegin" );

@@ -1486,6 +1486,17 @@ public class ClassTest {
 	}
 
 	@Test
+	public void testRelativeSelfInstantiationx() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		        include template="src/test/java/TestCases/phase3/scriptIncludeASMIssue.cfm";
+				                                      
+		    """, context );
+		// @formatter:on
+	}
+
+	@Test
 	public void testAbstractClass() {
 		Throwable t = assertThrows( AbstractClassException.class, () -> instance.executeSource(
 		    """

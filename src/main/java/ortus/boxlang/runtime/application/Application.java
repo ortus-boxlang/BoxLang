@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.application;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.net.URL;
 import java.time.Duration;
 import java.time.Instant;
@@ -35,6 +36,7 @@ import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
+import ortus.boxlang.runtime.dynamic.casters.BigDecimalCaster;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.LongCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
@@ -487,20 +489,34 @@ public class Application {
 		Object		sessionTimeout	= context.getConfigItems( Key.applicationSettings, Key.sessionTimeout );
 		String		cacheKey		= Session.buildCacheKey( ID, this.name );
 
-		// Duration is the default, but if not, we will use the number as seconds
+		// Duration is the default, but if not, we will use the number as fractional days
 		// Which is what the cache providers expect
 		if ( sessionTimeout instanceof Duration castedTimeout ) {
 			timeoutDuration = castedTimeout;
 		} else {
-			timeoutDuration = Duration.ofSeconds( LongCaster.cast( sessionTimeout ) );
+			if ( sessionTimeout instanceof BigDecimal castDecimal ) {
+				BigDecimal timeoutMinutes = castDecimal.multiply( BigDecimalCaster.cast( 1440 ) );
+				timeoutDuration = Duration.ofMinutes( timeoutMinutes.longValue() );
+			} else if ( sessionTimeout instanceof String && StringCaster.cast( sessionTimeout ).contains( "." ) ) {
+				BigDecimal	castDecimal		= BigDecimalCaster.cast( sessionTimeout );
+				BigDecimal	timeoutMinutes	= castDecimal.multiply( BigDecimalCaster.cast( 1440 ) );
+				timeoutDuration = Duration.ofMinutes( timeoutMinutes.longValue() );
+			} else {
+				timeoutDuration = Duration.ofDays( LongCaster.cast( sessionTimeout ) );
+			}
 		}
 		// Dumb Java! It needs a final variable to use in the lambda
-		final Duration	finalTimeoutDuration	= timeoutDuration;
+		final Duration finalTimeoutDuration = timeoutDuration;
+		// Make sure our created duration is represented in the application metadata
+		context.getParentOfType( RequestBoxContext.class )
+		    .getApplicationListener()
+		    .getSettings()
+		    .put( Key.sessionTimeout, finalTimeoutDuration );
 
 		// logger.debug( "**** getOrCreateSession {} Timeout {} ", ID, timeoutDuration );
 
 		// Get or create the session
-		Session			targetSession			= ( Session ) this.sessionsCache.getOrSet(
+		Session targetSession = ( Session ) this.sessionsCache.getOrSet(
 		    cacheKey,
 		    () -> new Session( ID, this, finalTimeoutDuration ),
 		    timeoutDuration,
@@ -571,12 +587,21 @@ public class Application {
 	public boolean isExpired() {
 		Object		appTimeout	= this.startingListener.getSettings().get( Key.applicationTimeout );
 		Duration	appDuration	= null;
-		// Duration is the default, but if not, we will use the number as seconds
+		// Duration is the default, but if not, we will use the number as minutes
 		// Which is what the cache providers expect
 		if ( appTimeout instanceof Duration castedTimeout ) {
 			appDuration = castedTimeout;
 		} else {
-			appDuration = Duration.ofMinutes( LongCaster.cast( appTimeout ) );
+			if ( appTimeout instanceof BigDecimal castDecimal ) {
+				BigDecimal timeoutSeconds = castDecimal.multiply( BigDecimalCaster.cast( 60 ) );
+				appDuration = Duration.ofSeconds( timeoutSeconds.longValue() );
+			} else if ( appTimeout instanceof String && StringCaster.cast( appTimeout ).contains( "." ) ) {
+				BigDecimal	castDecimal		= BigDecimalCaster.cast( appTimeout );
+				BigDecimal	timeoutSeconds	= castDecimal.multiply( BigDecimalCaster.cast( 60 ) );
+				appDuration = Duration.ofSeconds( timeoutSeconds.longValue() );
+			} else {
+				appDuration = Duration.ofMinutes( LongCaster.cast( appTimeout ) );
+			}
 		}
 
 		// If the duration is zero, then it never expires

@@ -203,6 +203,9 @@ public class GenericCaster implements IBoxCaster {
 			    || type.equals( "modifiablestruct" ) ) {
 				// Any Box Class is also considered of type "component" or "class" or "struct" or "structloose" or "modifiablestruct"
 				return object;
+			} else if ( type.equals( "collection" ) ) {
+				// Need a special case for collections, since we'll never hit the generic check below
+				return CollectionCaster.cast( object, fail );
 			} else if ( fail ) {
 				throw new BoxCastException( String.format( "Could not cast object [%s] to type [%s]", object.getClass().getSimpleName(), type ) );
 			} else {

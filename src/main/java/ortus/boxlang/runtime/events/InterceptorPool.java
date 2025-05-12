@@ -52,6 +52,13 @@ public class InterceptorPool {
 
 	/**
 	 * --------------------------------------------------------------------------
+	 * Constants
+	 * --------------------------------------------------------------------------
+	 */
+	private static final IStruct				EMPTY_STRUCT		= new Struct();
+
+	/**
+	 * --------------------------------------------------------------------------
 	 * Private Properties
 	 * --------------------------------------------------------------------------
 	 */
@@ -365,7 +372,7 @@ public class InterceptorPool {
 	 */
 	public InterceptorPool register( IInterceptor interceptor ) {
 		// No properties
-		return register( interceptor, new Struct() );
+		return register( interceptor, EMPTY_STRUCT );
 	}
 
 	/**
@@ -549,7 +556,7 @@ public class InterceptorPool {
 	 * @param state The state key to announce
 	 */
 	public void announce( Key state ) {
-		announce( state, new Struct() );
+		announce( state, EMPTY_STRUCT );
 	}
 
 	/**
@@ -558,7 +565,7 @@ public class InterceptorPool {
 	 * @param state The state key to announce
 	 */
 	public void announce( BoxEvent state ) {
-		announce( state.key(), new Struct() );
+		announce( state.key(), EMPTY_STRUCT );
 	}
 
 	/**
@@ -627,7 +634,7 @@ public class InterceptorPool {
 	 * @return A CompletableFuture of the data or null if the state does not exist
 	 */
 	public CompletableFuture<IStruct> announceAsync( Key state ) {
-		return announceAsync( state, new Struct() );
+		return announceAsync( state, EMPTY_STRUCT );
 	}
 
 	/**
@@ -638,7 +645,7 @@ public class InterceptorPool {
 	 * @return A CompletableFuture of the data or null if the state does not exist
 	 */
 	public CompletableFuture<IStruct> announceAsync( BoxEvent state ) {
-		return announceAsync( state.key(), new Struct() );
+		return announceAsync( state.key(), EMPTY_STRUCT );
 	}
 
 	/**

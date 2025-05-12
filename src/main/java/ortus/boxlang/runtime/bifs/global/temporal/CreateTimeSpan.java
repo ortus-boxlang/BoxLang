@@ -17,12 +17,15 @@
  */
 package ortus.boxlang.runtime.bifs.global.temporal;
 
+import java.math.BigDecimal;
 import java.time.Duration;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
+import ortus.boxlang.runtime.dynamic.casters.BigDecimalCaster;
+import ortus.boxlang.runtime.dynamic.casters.LongCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 
@@ -36,11 +39,11 @@ public class CreateTimeSpan extends BIF {
 	public CreateTimeSpan() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "long", Key.days ),
-		    new Argument( true, "long", Key.hours ),
-		    new Argument( true, "long", Key.minutes ),
-		    new Argument( true, "long", Key.seconds ),
-		    new Argument( false, "long", Key.milliseconds, 0l )
+		    new Argument( true, "numeric", Key.days ),
+		    new Argument( true, "numeric", Key.hours ),
+		    new Argument( true, "numeric", Key.minutes ),
+		    new Argument( true, "numeric", Key.seconds ),
+		    new Argument( false, "numeric", Key.milliseconds, 0l )
 		};
 	}
 
@@ -61,11 +64,34 @@ public class CreateTimeSpan extends BIF {
 	 * @argument.milliseconds The number of milliseconds in the timespan
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		return Duration.ofDays( arguments.getAsLong( Key.days ) )
-		    .plusHours( arguments.getAsLong( Key.hours ) )
-		    .plusMinutes( arguments.getAsLong( Key.minutes ) )
-		    .plusSeconds( arguments.getAsLong( Key.seconds ) )
-		    .plusMillis( arguments.getAsLong( Key.milliseconds ) );
+		// Check to see if any of the inbound arguments are decimals. If so, demote them
+		// for assignment
+		if ( arguments.get( Key.days ) instanceof BigDecimal castDecimal ) {
+			BigDecimal timeoutMinutes = castDecimal.multiply( BigDecimalCaster.cast( 1440 ) );
+			arguments.put( Key.days, 0l );
+			arguments.put( Key.minutes, timeoutMinutes.longValue() );
+		}
+		if ( arguments.get( Key.hours ) instanceof BigDecimal castDecimal ) {
+			BigDecimal timeoutMinutes = castDecimal.multiply( BigDecimalCaster.cast( 60 ) );
+			arguments.put( Key.hours, 0l );
+			arguments.put( Key.minutes, timeoutMinutes.longValue() );
+		}
+		if ( arguments.get( Key.minutes ) instanceof BigDecimal castDecimal ) {
+			BigDecimal timeoutSeconds = castDecimal.multiply( BigDecimalCaster.cast( 60 ) );
+			arguments.put( Key.minutes, 0l );
+			arguments.put( Key.seconds, timeoutSeconds.longValue() );
+		}
+		if ( arguments.get( Key.seconds ) instanceof BigDecimal castDecimal ) {
+			BigDecimal timeoutMilliseconds = castDecimal.multiply( BigDecimalCaster.cast( 1000 ) );
+			arguments.put( Key.seconds, 0l );
+			arguments.put( Key.milliseconds, timeoutMilliseconds.longValue() );
+		}
+
+		return Duration.ofDays( LongCaster.cast( arguments.get( Key.days ) ) )
+		    .plusHours( LongCaster.cast( arguments.get( Key.hours ) ) )
+		    .plusMinutes( LongCaster.cast( arguments.get( Key.minutes ) ) )
+		    .plusSeconds( LongCaster.cast( arguments.get( Key.seconds ) ) )
+		    .plusMillis( LongCaster.cast( arguments.get( Key.milliseconds ) ) );
 	}
 
 }

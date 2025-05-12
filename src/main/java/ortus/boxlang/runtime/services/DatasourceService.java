@@ -345,7 +345,7 @@ public class DatasourceService extends BaseService {
 	}
 
 	/**
-	 * Get an array of all registered datasources names
+	 * Get an array of all registered datasource names
 	 */
 	public String[] getNames() {
 		return this.datasources.keySet()

@@ -48,7 +48,13 @@ public class LCase extends BIF {
 	 * 
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		return arguments.getAsString( Key.string ).toLowerCase();
+		String input = arguments.getAsString( Key.string );
+
+		if ( input == null ) {
+			return "";
+		}
+
+		return input.toLowerCase();
 	}
 
 }

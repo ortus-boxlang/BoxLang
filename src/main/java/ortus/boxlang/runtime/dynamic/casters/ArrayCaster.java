@@ -23,6 +23,7 @@ import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.QueryColumn;
+import ortus.boxlang.runtime.types.XML;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 
 /**
@@ -102,6 +103,9 @@ public class ArrayCaster implements IBoxCaster {
 			}
 			case QueryColumn col -> {
 				return col.getColumnDataAsArray();
+			}
+			case XML xml -> {
+				return xml.getSiblingsOfSameName();
 			}
 			default -> {
 			}

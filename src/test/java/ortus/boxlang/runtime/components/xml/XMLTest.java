@@ -150,4 +150,35 @@ public class XMLTest {
 		assertThat( xml.toString() ).contains( "</root>" );
 	}
 
+	@DisplayName( "array len on node" )
+	@Test
+	public void testArrayLenOnNode() {
+		instance.executeSource(
+		    """
+		       ```
+		       	<bx:xml variable="testxml">
+		       	<root>
+		    <element>brad</element>
+		    <element>luis</element>
+		    <element>jon</element>
+		       	</root>
+		       	</bx:xml>
+
+		       	```
+		       	tabs = XmlSearch( testxml, "/root" );
+		       	result = arraylen(tabs[1].element);
+		     result2 = "";
+		     try {
+		     	tabs[1].element[4]
+		     } catch (e) {
+		     	result2 = e.message;
+		     }
+		         		""",
+		    context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( 3 );
+		assertThat( variables.getAsString( Key.of( "result2" ) ) ).contains( "Index [4] out of bounds" );
+		assertThat( variables.getAsString( Key.of( "result2" ) ) ).contains( "There were only 3 children" );
+
+	}
+
 }

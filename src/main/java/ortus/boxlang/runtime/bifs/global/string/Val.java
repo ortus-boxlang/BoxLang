@@ -47,7 +47,12 @@ public class Val extends BIF {
 	 * @argument.string The string to parse
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		var		input		= arguments.getAsString( Key.string );
+		var input = arguments.getAsString( Key.string );
+
+		if ( input == null ) {
+			return 0;
+		}
+
 		var		result		= new StringBuilder();
 		boolean	foundDot	= false;
 		// Loop over each character in the string

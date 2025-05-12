@@ -187,8 +187,22 @@ public class DumpTest {
 				<cfdump var="#myXML#" format="html">
 		    """,
 		    context, BoxSourceType.CFTEMPLATE );
-		// @formatter:on
+		// @formatter:onp
 		assertThat( baos.toString() ).contains( "xml" );
+	}
+
+	@DisplayName( "It can dump an isEmpty method " )
+	@Test
+	public void testCanDumpisEmptyMethod() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				cfc = new src.test.java.ortus.boxlang.runtime.components.system.ClassWithIsEmpty();
+				dump( var = cfc, format = "html" );
+		    """,
+		    context );
+ 		assertThat( baos.toString() ).contains( "<strong>isEmpty</strong>" );
+		// @formatter:on
 	}
 
 }

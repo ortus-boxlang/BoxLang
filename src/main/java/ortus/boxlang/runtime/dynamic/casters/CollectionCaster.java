@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.XML;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
@@ -100,6 +101,14 @@ public class CollectionCaster implements IBoxCaster {
 		if ( object.getClass().isArray() ) {
 			Object[] array = ( Object[] ) object;
 			return Arrays.asList( array );
+		}
+
+		// A class just uses the public this scope as the collection
+		if ( object instanceof IClassRunnable icr ) {
+			return icr.getThisScope().keySet()
+			    .stream()
+			    .map( k -> k.getName() )
+			    .collect( Collectors.toList() );
 		}
 
 		CastAttempt<String> stringAttempt = StringCaster.attempt( object );
