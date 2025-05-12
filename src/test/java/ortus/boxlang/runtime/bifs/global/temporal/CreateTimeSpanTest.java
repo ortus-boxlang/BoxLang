@@ -115,4 +115,37 @@ public class CreateTimeSpanTest {
 		);
 	}
 
+	@DisplayName( "It tests the BIF CreateTimeSpan with fractional values" )
+	@Test
+	public void testCreateTimeSpanDecimals() {
+		instance.executeSource(
+		    """
+		    result = createTimespan( .5, 0, 0, 0 );
+		    """,
+		    context );
+
+		assertEquals( Duration.ofMinutes( 720l ), variables.get( Key.of( "result" ) ) );
+		instance.executeSource(
+		    """
+		    result = createTimespan( 0, .5, 0, 0 );
+		    """,
+		    context );
+
+		assertEquals( Duration.ofMinutes( 30l ), variables.get( Key.of( "result" ) ) );
+		instance.executeSource(
+		    """
+		    result = createTimespan( 0, 0, .5, 0 );
+		    """,
+		    context );
+
+		assertEquals( Duration.ofSeconds( 30l ), variables.get( Key.of( "result" ) ) );
+		instance.executeSource(
+		    """
+		    result = createTimespan( 0, 0, 0, .5 );
+		    """,
+		    context );
+
+		assertEquals( Duration.ofMillis( 500l ), variables.get( Key.of( "result" ) ) );
+	}
+
 }

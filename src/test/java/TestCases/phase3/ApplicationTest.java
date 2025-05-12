@@ -20,6 +20,7 @@ package TestCases.phase3;
 import static com.google.common.truth.Truth.assertThat;
 
 import java.nio.file.Path;
+import java.time.Duration;
 import java.time.ZoneId;
 
 import org.junit.jupiter.api.BeforeAll;
@@ -424,6 +425,27 @@ public class ApplicationTest {
 		assertThat( schedulers ).hasSize( 1 );
 		assertThat( ( IScheduler ) variables.get( Key.of( "scheduler" ) ) ).isNotNull();
 		assertThat( variables.getAsBoolean( Key.of( "started" ) ) ).isTrue();
+	}
+
+
+
+	@DisplayName( "Use a decimal value as fractional days for session timeout" )
+	@Test
+	public void testFractionalSessionTimeout() {
+
+		// @formatter:off
+		instance.executeSource(
+		    
+		    """
+		        bx:application name="myAppsdfsdf21" sessionmanagement="true" sessionTimeout=".5";
+				result = GetApplicationMetadata();
+			""", context );
+		// @formatter:on
+
+		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
+		assertThat( variables.getAsStruct( result ).get( "name" ) ).isEqualTo( "myAppsdfsdf21" );
+		assertThat( variables.getAsStruct( result ).get( "sessionmanagement" ).toString() ).isEqualTo( "true" );
+		assertThat( variables.getAsStruct( result ).get( "sessiontimeout" ) ).isEqualTo( Duration.ofMinutes( 720l ) );
 	}
 
 }
