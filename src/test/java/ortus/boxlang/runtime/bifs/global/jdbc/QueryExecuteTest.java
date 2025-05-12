@@ -445,6 +445,31 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		assertEquals( "Developer", michael.get( "role" ) );
 	}
 
+	// See: https://github.com/brettwooldridge/HikariCP/issues/1197
+	// See: https://ortussolutions.atlassian.net/browse/BL-1376
+	@Disabled( "Not currently supported, leaving test for further development." )
+	@DisplayName( "It can provide username/password at query time" )
+	@Test
+	public void testDatasourceUsernamePasswordAtQueryTime() {
+		instance.executeSource(
+		    """
+		    ds = {
+		        "host":"127.0.0.1",
+		        "port":"3309",
+		        "driver":"mysql",
+		        "database":"myDB",
+		        "custom":"allowMultiQueries=true",
+		        "initializationFailTimeout": 0,
+		        "minimumIdle" : 0
+		    };
+		    queryExecute( "SELECT 1", [], { "datasource": ds, "username": "root", "password": "123456Password", } );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
+		Query query = variables.getAsQuery( result );
+		assertEquals( 1, query.size() );
+	}
+
 	@DisplayName( "It throws an exception if the specified datasource is not registered" )
 	@Test
 	public void testMissingNamedDataSource() {
