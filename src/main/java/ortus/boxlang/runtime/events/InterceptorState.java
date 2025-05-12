@@ -110,7 +110,7 @@ public class InterceptorState {
 		}
 		// Anything else is a Java class
 		else {
-			invoker = ( data, context, target ) -> target.invoke( context, getName().getName(), new Object[] { data, context } );
+			invoker = ( data, context, target ) -> target.invoke( context, getName().getName(), new Object[] { data } );
 		}
 
 		// Register the interceptor entry set
