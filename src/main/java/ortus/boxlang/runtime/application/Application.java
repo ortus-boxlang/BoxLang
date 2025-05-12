@@ -498,25 +498,25 @@ public class Application {
 				BigDecimal timeoutMinutes = castDecimal.multiply( BigDecimalCaster.cast( 1440 ) );
 				timeoutDuration = Duration.ofMinutes( timeoutMinutes.longValue() );
 			} else if ( sessionTimeout instanceof String && StringCaster.cast( sessionTimeout ).contains( "." ) ) {
-				BigDecimal castDecimal = BigDecimalCaster.cast( sessionTimeout );
-				BigDecimal timeoutMinutes = castDecimal.multiply( BigDecimalCaster.cast( 1440 ) );
+				BigDecimal	castDecimal		= BigDecimalCaster.cast( sessionTimeout );
+				BigDecimal	timeoutMinutes	= castDecimal.multiply( BigDecimalCaster.cast( 1440 ) );
 				timeoutDuration = Duration.ofMinutes( timeoutMinutes.longValue() );
 			} else {
 				timeoutDuration = Duration.ofDays( LongCaster.cast( sessionTimeout ) );
 			}
 		}
 		// Dumb Java! It needs a final variable to use in the lambda
-		final Duration	finalTimeoutDuration	= timeoutDuration;
+		final Duration finalTimeoutDuration = timeoutDuration;
 		// Make sure our created duration is represented in the application metadata
 		context.getParentOfType( RequestBoxContext.class )
 		    .getApplicationListener()
-			.getSettings()
+		    .getSettings()
 		    .put( Key.sessionTimeout, finalTimeoutDuration );
 
 		// logger.debug( "**** getOrCreateSession {} Timeout {} ", ID, timeoutDuration );
 
 		// Get or create the session
-		Session			targetSession			= ( Session ) this.sessionsCache.getOrSet(
+		Session targetSession = ( Session ) this.sessionsCache.getOrSet(
 		    cacheKey,
 		    () -> new Session( ID, this, finalTimeoutDuration ),
 		    timeoutDuration,

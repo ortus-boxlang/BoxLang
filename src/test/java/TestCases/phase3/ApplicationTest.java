@@ -427,8 +427,6 @@ public class ApplicationTest {
 		assertThat( variables.getAsBoolean( Key.of( "started" ) ) ).isTrue();
 	}
 
-
-
 	@DisplayName( "Use a decimal value as fractional days for session timeout" )
 	@Test
 	public void testFractionalSessionTimeout() {
