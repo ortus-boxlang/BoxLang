@@ -167,9 +167,9 @@ project.ext.bumpVersion = {
 	if( patch ){
 		newVersion = "${versionParts[ 0 ]}.${versionParts[ 1 ]}.${newPathVersion}"
 	} else if( minor ){
-		newVersion = "${versionParts[ 0 ]}.${newPathVersion}.${versionParts[ 2 ]}"
+		newVersion = "${versionParts[ 0 ]}.${newPathVersion}.0"
 	} else if( major ){
-		newVersion = "${newPathVersion}.${versionParts[ 1 ]}.${versionParts[ 2 ]}"
+		newVersion = "${newPathVersion}.0.0"
 	} else if( beta ){
 		// Get's the -betaX version.
 		def betaString = currentVersion.split( '-' )[ 1 ]
