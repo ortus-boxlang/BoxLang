@@ -569,4 +569,18 @@ public class LoopTest {
 		assertThat( variables.getAsBoolean( Key.of( "XMLAttributesExists" ) ) ).isTrue();
 	}
 
+	@Test
+	public void testLoopOverClass() {
+		instance.executeSource(
+		    """
+		    o = new src.test.java.ortus.boxlang.runtime.components.system.LoopMeAsCollection();
+		    result = [];
+		    bx:loop collection="#o#" item="key" {
+		    	result.append( key );
+		    }
+		         """,
+		    context );
+		assertThat( variables.getAsArray( Key.of( "result" ) ) ).contains( "foo" );
+		assertThat( variables.getAsArray( Key.of( "result" ) ) ).contains( "baz" );
+	}
 }
