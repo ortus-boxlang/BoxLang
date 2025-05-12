@@ -191,10 +191,18 @@ public class ServerScope extends BaseScope {
 		/**
 		 * JAVA SYSTEM PROPERTIES AND ENVIRONMENT
 		 */
-		put( Key.system, UnmodifiableStruct.of(
-		    "environment", Struct.fromMap( System.getenv() ),
-		    "properties", Struct.fromMap( System.getProperties() )
-		) );
+		if ( runtime.getConfiguration().security.populateServerSystemScope ) {
+			// Add the security config to the server scope
+			put( Key.system, UnmodifiableStruct.of(
+			    "environment", Struct.fromMap( System.getenv() ),
+			    "properties", Struct.fromMap( System.getProperties() )
+			) );
+		} else {
+			put( Key.system, UnmodifiableStruct.of(
+			    "environment", Struct.EMPTY,
+			    "properties", Struct.EMPTY
+			) );
+		}
 
 	}
 
