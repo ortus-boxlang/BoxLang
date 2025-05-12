@@ -438,6 +438,7 @@ public class ApplicationTest {
 		        bx:application name="myAppsdfsdf21" sessionmanagement="true" sessionTimeout=".5";
 				result = GetApplicationMetadata();
 			""", context );
+			
 		// @formatter:on
 
 		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
