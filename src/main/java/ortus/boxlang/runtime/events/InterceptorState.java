@@ -97,7 +97,7 @@ public class InterceptorState {
 
 		// This is a BoxLang class
 		if ( interceptor instanceof IReferenceable ) {
-			invoker = ( data, context, target ) -> ( ( IReferenceable ) target ).dereferenceAndInvoke(
+			invoker = ( data, context, target ) -> ( ( IReferenceable ) target.unWrap() ).dereferenceAndInvoke(
 			    context,
 			    getName(),
 			    new Object[] { data, context },
@@ -106,11 +106,11 @@ public class InterceptorState {
 		}
 		// Java Interceptor Lambdas
 		else if ( interceptor instanceof IInterceptorLambda ) {
-			invoker = ( data, context, target ) -> ( ( IInterceptorLambda ) target ).intercept( data );
+			invoker = ( data, context, target ) -> ( ( IInterceptorLambda ) target.unWrap() ).intercept( data );
 		}
 		// Anything else is a Java class
 		else {
-			invoker = ( data, context, target ) -> ( ( DynamicObject ) target ).invoke( context, getName().getName(), new Object[] { data } );
+			invoker = ( data, context, target ) -> target.invoke( context, getName().getName(), new Object[] { data, context } );
 		}
 
 		// Register the interceptor entry set
@@ -178,7 +178,7 @@ public class InterceptorState {
 		// Process the state
 		for ( InterceptorEntry entry : this.observers ) {
 			// Run baby run!
-			Object stopChain = entry.invoker.invoke( data, context, entry.interceptor.unWrap() );
+			Object stopChain = entry.invoker.invoke( data, context, entry.interceptor );
 			// If the observer returns true, we short circuit the rest of the observers
 			if ( Boolean.TRUE.equals( stopChain ) ) {
 				break;

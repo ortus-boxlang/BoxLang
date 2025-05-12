@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.events;
 
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.types.IStruct;
 
 @FunctionalInterface
@@ -33,5 +34,5 @@ interface InterceptorInvoker {
 	 *
 	 * @return The result of the interceptor invocation, which can be null or boolean
 	 */
-	Object invoke( IStruct data, IBoxContext context, Object observer );
+	Object invoke( IStruct data, IBoxContext context, DynamicObject observer );
 }
