@@ -188,17 +188,12 @@ public class ServerScope extends BaseScope {
 		    "version", System.getProperty( "java.version", "" )
 		) );
 
-		IStruct	env		= UnmodifiableStruct.fromMap( System.getenv() );
-		IStruct	props	= UnmodifiableStruct.fromMap( System.getProperties() );
-
 		/**
 		 * JAVA SYSTEM PROPERTIES AND ENVIRONMENT
 		 */
 		put( Key.system, UnmodifiableStruct.of(
-		    // TODO: create wrapper struct that gives live view of env vars, not just a copy
-		    "environment", env,
-		    // TODO: create wrapper struct that gives live view of system properties, not just a copy
-		    "properties", props
+		    "environment", Struct.fromMap( System.getenv() ),
+		    "properties", Struct.fromMap( System.getProperties() )
 		) );
 
 	}
