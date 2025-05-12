@@ -587,12 +587,21 @@ public class Application {
 	public boolean isExpired() {
 		Object		appTimeout	= this.startingListener.getSettings().get( Key.applicationTimeout );
 		Duration	appDuration	= null;
-		// Duration is the default, but if not, we will use the number as seconds
+		// Duration is the default, but if not, we will use the number as minutes
 		// Which is what the cache providers expect
 		if ( appTimeout instanceof Duration castedTimeout ) {
 			appDuration = castedTimeout;
 		} else {
-			appDuration = Duration.ofMinutes( LongCaster.cast( appTimeout ) );
+			if ( appTimeout instanceof BigDecimal castDecimal ) {
+				BigDecimal timeoutSeconds = castDecimal.multiply( BigDecimalCaster.cast( 60 ) );
+				appDuration = Duration.ofSeconds( timeoutSeconds.longValue() );
+			} else if ( appTimeout instanceof String && StringCaster.cast( appTimeout ).contains( "." ) ) {
+				BigDecimal	castDecimal		= BigDecimalCaster.cast( appTimeout );
+				BigDecimal	timeoutSeconds	= castDecimal.multiply( BigDecimalCaster.cast( 60 ) );
+				appDuration = Duration.ofSeconds( timeoutSeconds.longValue() );
+			} else {
+				appDuration = Duration.ofMinutes( LongCaster.cast( appTimeout ) );
+			}
 		}
 
 		// If the duration is zero, then it never expires
