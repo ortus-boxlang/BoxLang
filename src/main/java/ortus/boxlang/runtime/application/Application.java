@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.application;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.net.URL;
 import java.time.Duration;
 import java.time.Instant;
@@ -35,6 +36,7 @@ import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
+import ortus.boxlang.runtime.dynamic.casters.BigDecimalCaster;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.LongCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
@@ -487,12 +489,17 @@ public class Application {
 		Object		sessionTimeout	= context.getConfigItems( Key.applicationSettings, Key.sessionTimeout );
 		String		cacheKey		= Session.buildCacheKey( ID, this.name );
 
-		// Duration is the default, but if not, we will use the number as seconds
+		// Duration is the default, but if not, we will use the number as fractional days
 		// Which is what the cache providers expect
 		if ( sessionTimeout instanceof Duration castedTimeout ) {
 			timeoutDuration = castedTimeout;
 		} else {
-			timeoutDuration = Duration.ofSeconds( LongCaster.cast( sessionTimeout ) );
+			if ( sessionTimeout instanceof BigDecimal castDecimal ) {
+				BigDecimal timeoutMinutes = castDecimal.multiply( BigDecimalCaster.cast( 1440 ) );
+				timeoutDuration = Duration.ofMinutes( timeoutMinutes.longValue() );
+			} else {
+				timeoutDuration = Duration.ofDays( LongCaster.cast( sessionTimeout ) );
+			}
 		}
 		// Dumb Java! It needs a final variable to use in the lambda
 		final Duration	finalTimeoutDuration	= timeoutDuration;
