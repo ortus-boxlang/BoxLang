@@ -19,6 +19,7 @@ import java.util.Arrays;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
 import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
@@ -132,7 +133,7 @@ public class IsValid extends BIF {
 			 */
 			case ANY -> GenericCaster.attempt( context, arguments.get( Key.value ), "any" ).wasSuccessful();
 			case ARRAY -> GenericCaster.attempt( context, arguments.get( Key.value ), "array" ).wasSuccessful();
-			case BOOLEAN -> GenericCaster.attempt( context, arguments.get( Key.value ), "boolean" ).wasSuccessful();
+			case BOOLEAN -> BooleanCaster.attempt( arguments.get( Key.value ), false ).wasSuccessful();
 			case DATE -> GenericCaster.attempt( context, arguments.get( Key.value ), "datetime" ).wasSuccessful();
 			case FLOAT -> ValidationUtil.isFloat( arguments.get( Key.value ) );
 			case QUERY -> GenericCaster.attempt( context, arguments.get( Key.value ), "query" ).wasSuccessful();

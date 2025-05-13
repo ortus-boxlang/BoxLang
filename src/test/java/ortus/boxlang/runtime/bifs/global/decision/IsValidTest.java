@@ -87,14 +87,18 @@ public class IsValidTest {
 	public void testBoolean() {
 		instance.executeSource(
 		    """
-		    aTrue = isValid( 'boolean', true );
-		    aYes = isValid( 'boolean', "yes" );
-		    aStringFalse = isValid( 'boolean', "false" );
-		    """,
+		       aTrue = isValid( 'boolean', true );
+		       aYes = isValid( 'boolean', "yes" );
+		       aStringFalse = isValid( 'boolean', "false" );
+		    anArray = isValid( 'boolean', {} );
+		    aStruct = isValid( 'boolean', [] );
+		       """,
 		    context );
 		assertThat( ( Boolean ) variables.get( Key.of( "aTrue" ) ) ).isTrue();
 		assertThat( ( Boolean ) variables.get( Key.of( "aYes" ) ) ).isTrue();
 		assertThat( ( Boolean ) variables.get( Key.of( "aStringFalse" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "anArray" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "aStruct" ) ) ).isFalse();
 	}
 
 	@DisplayName( "It works on creditcards" )
