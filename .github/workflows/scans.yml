@@ -62,7 +62,7 @@ jobs:
           fail-build: true
 
       - name: Upload Anchore Report
-        uses: github/codeql-action/upload-sarif@v4
+        uses: github/codeql-action/upload-sarif@v2
         with:
           sarif_file: ${{ steps.securityscan.outputs.sarif }}
           category: "BoxLang-Runtime-${{ github.env.BRANCH }}"
