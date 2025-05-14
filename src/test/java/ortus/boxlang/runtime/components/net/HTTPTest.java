@@ -89,20 +89,31 @@ public class HTTPTest {
 	@DisplayName( "It can make HTTP call script" )
 	@Test
 	public void testCanMakeHTTPCallScript( WireMockRuntimeInfo wmRuntimeInfo ) {
-		stubFor( get( "/posts/1" ).willReturn( aResponse().withBody( "Done" ).withStatus( 200 ) ) );
+		stubFor( get( "/posts/1" )
+		    .willReturn(
+		        aResponse()
+		            .withBody( "Done" )
+		            .withStatus( 200 ) )
+		);
 
 		String baseURL = wmRuntimeInfo.getHttpBaseUrl();
 
-		instance.executeSource( String.format( """
-		                                        bx:http url="%s" {
-		                                            bx:httpparam type="header" name="User-Agent" value="Mozilla";
-		                                       }
-		                                       result = bxhttp;
-		                                        """, baseURL + "/posts/1" ),
-		    context );
+		// @formatter:off
+		instance.executeSource(
+		    String.format( """
+					bx:http url="%s" {
+						bx:httpparam type="header" name="User-Agent" value="Mozilla";
+					}
+					result = bxhttp
+					println( result )
+				""",
+		        baseURL + "/posts/1"
+		    ),
+		    context
+		);
+		// @formatter:on
 
 		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
-
 		IStruct bxhttp = variables.getAsStruct( result );
 		assertThat( bxhttp.get( Key.statusCode ) ).isEqualTo( 200 );
 		assertThat( bxhttp.get( Key.statusText ) ).isEqualTo( "OK" );
@@ -260,14 +271,14 @@ public class HTTPTest {
 		                .withBody( ( byte[] ) FileSystemUtil.read( "src/test/resources/chuck_norris.jpg" ) ) ) );
 
 		// @formatter:off
-		instance.executeSource( String.format( 
+		instance.executeSource( String.format(
 			"""
 			bx:http method="GET" getAsBinary=true url="%s" {
 				bx:httpparam type="header" name="Host" value="boxlang.io";
 			}
-			""", 
-			wmRuntimeInfo.getHttpBaseUrl() + "/image" ), 
-			context 
+			""",
+			wmRuntimeInfo.getHttpBaseUrl() + "/image" ),
+			context
 		);
 		// @formatter:on
 
@@ -290,12 +301,12 @@ public class HTTPTest {
 		                .withBody( "Hello world!" ) ) );
 
 		// @formatter:off
-		instance.executeSource( String.format( 
+		instance.executeSource( String.format(
 			"""
 			bx:http method="GET" url="%s" {}
-			""", 
-			wmRuntimeInfo.getHttpBaseUrl() + "/blah" ), 
-			context 
+			""",
+			wmRuntimeInfo.getHttpBaseUrl() + "/blah" ),
+			context
 		);
 		// @formatter:on
 
@@ -320,12 +331,12 @@ public class HTTPTest {
 		                .withBody( ( byte[] ) FileSystemUtil.read( "src/test/resources/chuck_norris.jpg" ) ) ) );
 
 		// @formatter:off
-		instance.executeSource( String.format( 
+		instance.executeSource( String.format(
 			"""
 			bx:http method="GET" getAsBinary=true url="%s" path="src/test/resources/tmp/http_tests" {}
-			""", 
-			wmRuntimeInfo.getHttpBaseUrl() + "/image" ), 
-			context 
+			""",
+			wmRuntimeInfo.getHttpBaseUrl() + "/image" ),
+			context
 		);
 		// @formatter:on
 
@@ -344,12 +355,12 @@ public class HTTPTest {
 		                .withBody( ( byte[] ) FileSystemUtil.read( "src/test/resources/chuck_norris.jpg" ) ) ) );
 
 		// @formatter:off
-		instance.executeSource( String.format( 
+		instance.executeSource( String.format(
 			"""
 			bx:http method="GET" getAsBinary=true url="%s" path="src/test/resources/tmp/http_tests" file="chuck.jpg" {}
-			""", 
-			wmRuntimeInfo.getHttpBaseUrl() + "/image" ), 
-			context 
+			""",
+			wmRuntimeInfo.getHttpBaseUrl() + "/image" ),
+			context
 		);
 		// @formatter:on
 
@@ -369,14 +380,14 @@ public class HTTPTest {
 
 		// @formatter:off
 		variables.put(  Key.of( "fileContent" ), FileSystemUtil.read( "src/test/resources/chuck_norris.jpg" ) );
-		instance.executeSource( String.format( 
+		instance.executeSource( String.format(
 			"""
 			bx:http method="POST" url="%s" {
 				bx:httpparam type="body" value="#fileContent#";
 			}
-			""", 
-			wmRuntimeInfo.getHttpBaseUrl() + "/image" ), 
-			context 
+			""",
+			wmRuntimeInfo.getHttpBaseUrl() + "/image" ),
+			context
 		);
 		// @formatter:on
 
@@ -397,12 +408,12 @@ public class HTTPTest {
 		                .withBody( ( byte[] ) FileSystemUtil.read( "src/test/resources/chuck_norris.jpg" ) ) ) );
 
 		// @formatter:off
-		assertThrows( BoxRuntimeException.class, () -> instance.executeSource( String.format( 
+		assertThrows( BoxRuntimeException.class, () -> instance.executeSource( String.format(
 			"""
 			bx:http method="GET" getAsBinary="never" url="%s" {}
-			""", 
-			wmRuntimeInfo.getHttpBaseUrl() + "/image" ), 
-			context 
+			""",
+			wmRuntimeInfo.getHttpBaseUrl() + "/image" ),
+			context
 		) );
 		// @formatter:on
 	}
