@@ -80,7 +80,6 @@ public class CreateTimeTest {
 		assertThat( IntegerCaster.cast( result.format( "s" ) ) ).isEqualTo( 30 );
 		assertThat( IntegerCaster.cast( result.format( "n" ) ) ).isEqualTo( 0 );
 
-
 		instance.executeSource(
 		    """
 		    result = createtime( 0, 0, 0 );
