@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.bifs.global.conversion;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.Set;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
@@ -36,6 +37,7 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.JSONUtil;
 import ortus.boxlang.runtime.types.util.ListUtil;
+import ortus.boxlang.runtime.validation.Validator;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.CUSTOM, customType = java.lang.Boolean.class, name = "toJSON" )
@@ -56,7 +58,10 @@ public class JSONSerialize extends BIF {
 		declaredArguments = new Argument[] {
 		    new Argument( true, "any", Key.data ),
 		    // NOT A BOOLEAN! Can be true, false, row, column, or struct
-		    new Argument( false, "string", Key.queryFormat, "row" ),
+		    new Argument( false, "string", Key.queryFormat, "row", Set.of(
+		        Validator.REQUIRED,
+		        Validator.valueOneOf( "true", "false", "row", "column", "struct" )
+		    ) ),
 		    // Don't set this to a boolean, Lucee accepts a charset here which ColdBox passes
 		    new Argument( false, "string", Key.useSecureJSONPrefix, false ),
 		    new Argument( false, "boolean", Key.useCustomSerializer )

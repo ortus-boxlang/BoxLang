@@ -61,12 +61,11 @@ public class ParseNumber extends BIF {
 	 */
 	public Number _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String number = arguments.getAsString( Key.number );
-		if ( RADIX_VALUES.contains( arguments.getAsString( Key.locale ).toLowerCase() ) ) {
+		if ( arguments.getAsString( Key.locale ) != null && RADIX_VALUES.contains( arguments.getAsString( Key.locale ).toLowerCase() ) ) {
 			arguments.put( Key.radix, arguments.getAsString( Key.locale ) );
 			arguments.remove( Key.locale );
 		}
 		if ( arguments.getAsString( Key.radix ) != null ) {
-			// String radix = arguments.getAsString( Key.radix ).toLowerCase();
 			return switch ( arguments.getAsString( Key.radix ).toLowerCase() ) {
 				case "bin" -> Integer.parseInt( number, 2 );
 				case "oct" -> Integer.parseInt( number, 8 );

@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import ortus.boxlang.runtime.bifs.BIF;
@@ -35,6 +36,7 @@ import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.util.FileSystemUtil;
+import ortus.boxlang.runtime.validation.Validator;
 
 @BoxBIF
 public class DirectoryList extends BIF {
@@ -48,7 +50,7 @@ public class DirectoryList extends BIF {
 		declaredArguments = new Argument[] {
 		    new Argument( true, "string", Key.path ),
 		    new Argument( true, "boolean", Key.recurse, false ),
-		    new Argument( false, "string", Key.listInfo, "path" ),
+		    new Argument( false, "string", Key.listInfo, "path", Set.of( Validator.REQUIRED ) ),
 		    new Argument( false, "any", Key.filter ),
 		    new Argument( false, "string", Key.sort, "name" ),
 		    new Argument( false, "string", Key.type, "all" )
@@ -170,7 +172,7 @@ public class DirectoryList extends BIF {
 		if ( sort != null ) {
 			String[]	sortDirectives	= sort.split( " " );
 			String		column			= sortDirectives[ 0 ];
-			String		direction		= sortDirectives.length > 1 ? sortDirectives[ 1 ].toLowerCase() : "asc";
+			String		direction		= sortDirectives.length > 1 ? ( sortDirectives[ 1 ] != null ? sortDirectives[ 1 ].toLowerCase() : "asc" ) : "asc";
 			int			columnIndex		= listingQuery.getColumnIndex( Key.of( column ) );
 			if ( columnIndex > -1 ) {
 				listingQuery.sortData( ( rowA, rowB ) -> {
