@@ -19,6 +19,7 @@
 
 package ortus.boxlang.runtime.bifs.global.list;
 
+import java.util.Set;
 import java.util.function.Predicate;
 
 import ortus.boxlang.runtime.bifs.BIF;
@@ -31,6 +32,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.ListUtil;
+import ortus.boxlang.runtime.validation.Validator;
 
 @BoxBIF
 @BoxBIF( alias = "ListValueCountNoCase" )
@@ -48,7 +50,7 @@ public class ListValueCount extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "string", Key.list ),
-		    new Argument( true, "string", Key.value ),
+		    new Argument( true, "string", Key.value, Set.of( Validator.REQUIRED ) ),
 		    new Argument( false, "string", Key.delimiter, ListUtil.DEFAULT_DELIMITER ),
 		    new Argument( false, "boolean", Key.includeEmptyFields, false )
 		};

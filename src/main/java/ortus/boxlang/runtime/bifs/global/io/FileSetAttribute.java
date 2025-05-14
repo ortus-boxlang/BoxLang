@@ -20,6 +20,7 @@ import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermissions;
+import java.util.Set;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
@@ -33,6 +34,7 @@ import ortus.boxlang.runtime.types.File;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.FileSystemUtil;
+import ortus.boxlang.runtime.validation.Validator;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.FILE )
@@ -45,8 +47,8 @@ public class FileSetAttribute extends BIF {
 	public FileSetAttribute() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "any", Key.file ),
-		    new Argument( true, "string", Key.attribute )
+		    new Argument( true, "any", Key.file, Set.of( Validator.REQUIRED ) ),
+		    new Argument( true, "string", Key.attribute, Set.of( Validator.REQUIRED ) )
 		};
 	}
 

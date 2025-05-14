@@ -14,6 +14,8 @@
  */
 package ortus.boxlang.runtime.bifs.global.string;
 
+import java.util.Set;
+
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
@@ -26,6 +28,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.validation.Validator;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "ReplaceNoCase" )
@@ -37,10 +40,13 @@ public class ReplaceNoCase extends BIF {
 	public ReplaceNoCase() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "string", Key.string ),
-		    new Argument( true, "string", Key.substring1 ),
+		    new Argument( true, "string", Key.string, "", Set.of(
+		        Validator.REQUIRED,
+		        Validator.DEFAULT_VALUE
+		    ) ),
+		    new Argument( true, "string", Key.substring1, Set.of( Validator.REQUIRED ) ),
 		    new Argument( true, "any", Key.obj ),
-		    new Argument( true, "string", Key.scope, "one" ),
+		    new Argument( true, "string", Key.scope, "one", Set.of( Validator.valueOneOf( "one", "all" ) ) ),
 		    new Argument( false, "string", Key.start, "1" )
 		};
 	}

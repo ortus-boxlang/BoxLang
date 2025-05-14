@@ -127,4 +127,14 @@ public class ReplaceNoCaseTest {
 		assertThat( variables.get( result ) ).isEqualTo( "RED1greenblueRED13" );
 	}
 
+	@Test
+	public void testHandlesNullValuesAsEmptyStrings() {
+		instance.executeSource(
+		    """
+		    result = ReplaceNoCase( null, "RED", 'brad' );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "" );
+	}
+
 }
