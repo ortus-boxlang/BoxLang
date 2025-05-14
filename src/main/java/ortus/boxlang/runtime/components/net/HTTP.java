@@ -40,6 +40,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
@@ -78,6 +79,11 @@ import ortus.boxlang.runtime.validation.Validator;
 @BoxComponent( allowsBody = true )
 public class HTTP extends Component {
 
+	/**
+	 * --------------------------------------------------------------------------
+	 * Constants
+	 * --------------------------------------------------------------------------
+	 */
 	private final static String		BASIC_AUTH_DELIMITER	= ":";
 	private static final String		AUTHMODE_BASIC			= "BASIC";
 	private static final String		AUTHMODE_NTLM			= "NTLM";
@@ -181,7 +187,7 @@ public class HTTP extends Component {
 	}
 
 	/**
-	 * I make an HTTP call
+	 * I make an HTTP call using tons of attributes to control the request.
 	 *
 	 * @param context        The context in which the Component is being invoked
 	 * @param attributes     The attributes to the Component
@@ -190,7 +196,8 @@ public class HTTP extends Component {
 	 *
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
-		// Allow for restricted headers to be set
+		// Allow for restricted headers to be set so we can send the Host header and Content-Length
+		// Java’s HttpClient (introduced in Java 11) blocks setting certain sensitive headers for security reasons
 		if ( System.getProperty( "jdk.httpclient.allowRestrictedHeaders" ) == null ) {
 			System.setProperty( "jdk.httpclient.allowRestrictedHeaders", "host,content-length" );
 		}
@@ -198,14 +205,8 @@ public class HTTP extends Component {
 		// Keeps track of the HTTPParams
 		executionState.put( Key.HTTPParams, new Array() );
 
-		Key			binaryOperator		= Key.of( attributes.getAsString( Key.getAsBinary ) );
-		Boolean		isBinaryRequested	= BINARY_REQUEST_VALUES
-		    .stream()
-		    .anyMatch( value -> value.equals( binaryOperator ) );
-		Boolean		isBinaryNever		= binaryOperator.equals( BINARY_NEVER );
-
 		// Process the component for HTTPParams
-		BodyResult	bodyResult			= processBody( context, body );
+		BodyResult bodyResult = processBody( context, body );
 
 		// IF there was a return statement inside our body, we early exit now
 		if ( bodyResult.isEarlyExit() ) {
@@ -213,14 +214,22 @@ public class HTTP extends Component {
 		}
 
 		// Prepare invocation of the HTTP request
-		String	variableName	= attributes.getAsString( Key.result );
-		String	theURL			= attributes.getAsString( Key.URL );
-		String	method			= attributes.getAsString( Key.method ).toUpperCase();
-		Array	params			= executionState.getAsArray( Key.HTTPParams );
-		Struct	HTTPResult		= new Struct();
-		URI		targetURI		= null;
-		String	authMode		= attributes.getAsString( Key.authType ).toUpperCase();
-		String	outputDirectory	= attributes.getAsString( Key.path );
+		Key		binaryOperator		= Key.of( attributes.getAsString( Key.getAsBinary ) );
+		Boolean	isBinaryRequested	= BINARY_REQUEST_VALUES
+		    .stream()
+		    .anyMatch( value -> value.equals( binaryOperator ) );
+		Boolean	isBinaryNever		= binaryOperator.equals( BINARY_NEVER );
+		String	variableName		= attributes.getAsString( Key.result );
+		String	theURL				= attributes.getAsString( Key.URL );
+		String	method				= attributes.getAsString( Key.method ).toUpperCase();
+		Array	params				= executionState.getAsArray( Key.HTTPParams );
+		Struct	HTTPResult			= new Struct();
+		URI		targetURI			= null;
+		String	authMode			= attributes.getAsString( Key.authType ).toUpperCase();
+		String	outputDirectory		= attributes.getAsString( Key.path );
+		String	requestID			= UUID.randomUUID().toString();
+
+		// Prepare the output directory if it is set
 		if ( outputDirectory != null ) {
 			ResolvedFilePath outputPath = FileSystemUtil.expandPath( context, outputDirectory );
 			if ( outputPath != null ) {
@@ -242,9 +251,15 @@ public class HTTP extends Component {
 			List<IStruct>				formFields		= new ArrayList<>();
 			List<IStruct>				files			= new ArrayList<>();
 
-			builder.version( httpVersion );
+			// Basic metadata for the request and results
+			builder
+			    .version( httpVersion )
+			    .header( "User-Agent", attributes.getAsString( Key.userAgent ) )
+			    .header( "x-request-id", requestID );
+			HTTPResult.put( Key.requestID, requestID );
+			HTTPResult.put( Key.userAgent, attributes.getAsString( Key.userAgent ) );
 
-			builder.header( "User-Agent", "BoxLang" );
+			// Set username/password if they are set
 			if ( attributes.get( Key.username ) != null && attributes.get( Key.password ) != null ) {
 				if ( authMode.equals( AUTHMODE_BASIC ) ) {
 					String	auth		= ( attributes.get( Key.username ) != null ? StringCaster.cast( attributes.get( Key.username ) ) : null )
@@ -258,6 +273,7 @@ public class HTTP extends Component {
 				}
 			}
 
+			// Process the HTTPParams
 			for ( Object p : params ) {
 				IStruct	param	= StructCaster.cast( p );
 				String	type	= StringCaster.cast( param.get( Key.type ) );
@@ -303,6 +319,7 @@ public class HTTP extends Component {
 				}
 			}
 
+			// Process Files
 			if ( !files.isEmpty() ) {
 				if ( bodyPublisher != null ) {
 					throw new BoxRuntimeException( "Cannot use a multipart body with an existing http body: " + bodyPublisher.toString() );
@@ -322,7 +339,9 @@ public class HTTP extends Component {
 				HttpRequestMultipartBody multipartBody = multipartBodyBuilder.build();
 				builder.header( "Content-Type", multipartBody.getContentType() );
 				bodyPublisher = HttpRequest.BodyPublishers.ofByteArray( multipartBody.getBody() );
-			} else if ( !formFields.isEmpty() ) {
+			}
+			// Process Form Fields
+			else if ( !formFields.isEmpty() ) {
 				if ( bodyPublisher != null ) {
 					throw new BoxRuntimeException( "Cannot use a formfield httpparam with an existing http body: " + bodyPublisher.toString() );
 				}
@@ -353,17 +372,30 @@ public class HTTP extends Component {
 			}
 
 			HttpRequest	targetHTTPRequest	= builder.build();
+			// Create a default HTTP Client or a Proxy based Client
 			HttpClient	client				= attributes.containsKey( Key.proxyServer ) || !attributes.getAsBoolean( Key.redirect )
 			    ? HttpManager.getCustomClient( attributes )
 			    : HttpManager.getClient();
 
 			// Announce the HTTP request
 			interceptorService.announce( BoxEvent.ON_HTTP_REQUEST, Struct.of(
+			    "requestID", requestID,
 			    "httpClient", client,
 			    "httpRequest", targetHTTPRequest,
 			    "targetURI", targetURI,
 			    "attributes", attributes
 			) );
+
+			// Adding the request
+			HTTPResult.put(
+			    Key.request,
+			    Struct.of(
+			        "url", targetURI,
+			        "method", method,
+			        "timeout", targetHTTPRequest.timeout(),
+			        "multipart", attributes.getAsBoolean( Key.multipart ),
+			        "headers", Struct.fromMap( targetHTTPRequest.headers().map() )
+			    ) );
 
 			// TODO : should we move the catch block below and add an `exceptionally` handler for the future?
 			CompletableFuture<HttpResponse<byte[]>>	future		= client.sendAsync( targetHTTPRequest, HttpResponse.BodyHandlers.ofByteArray() );
@@ -374,7 +406,12 @@ public class HTTP extends Component {
 			// Announce the HTTP RAW response
 			// Useful for debugging and pre-processing and timing, since the other events are after the response is processed
 			interceptorService.announce( BoxEvent.ON_HTTP_RAW_RESPONSE, Struct.of(
-			    "response", response
+			    "requestID", requestID,
+			    "response", response,
+			    "httpClient", client,
+			    "httpRequest", targetHTTPRequest,
+			    "targetURI", targetURI,
+			    "attributes", attributes
 			) );
 
 			// Start Processing Results
@@ -431,6 +468,7 @@ public class HTTP extends Component {
 				}
 			}
 
+			// Prepare all the result variables now that we have the response
 			String	httpVersionString	= response.version() == HttpClient.Version.HTTP_1_1 ? "HTTP/1.1" : "HTTP/2";
 			String	statusCodeString	= String.valueOf( response.statusCode() );
 			String	statusText			= HTTPStatusReasons.getReasonForStatus( response.statusCode() );
@@ -465,6 +503,8 @@ public class HTTP extends Component {
 
 			// Announce the HTTP response
 			interceptorService.announce( BoxEvent.ON_HTTP_RESPONSE, Struct.of(
+			    "requestID", requestID,
+			    "response", response,
 			    "result", HTTPResult
 			) );
 
@@ -512,6 +552,19 @@ public class HTTP extends Component {
 		}
 	}
 
+	/**
+	 * --------------------------------------------------------------------------
+	 * Private Methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Generate a Query of cookies from the headers
+	 *
+	 * @param headers The headers to parse
+	 *
+	 * @return A Query of cookies
+	 */
 	private Query generateCookiesQuery( IStruct headers ) {
 		Query cookies = new Query();
 		cookies.addColumn( Key._NAME, QueryColumnType.VARCHAR );
@@ -537,6 +590,12 @@ public class HTTP extends Component {
 		return cookies;
 	}
 
+	/**
+	 * Parse a cookie string into a Query
+	 *
+	 * @param cookieString The cookie string to parse
+	 * @param cookies      The Query to add the cookies to
+	 */
 	private void parseCookieStringIntoQuery( String cookieString, Query cookies ) {
 		IStruct		cookieStruct;
 		String[]	parts	= cookieString.split( ";" );
@@ -578,10 +637,27 @@ public class HTTP extends Component {
 		cookies.add( cookieStruct );
 	}
 
+	/**
+	 * Generate a status line from the HTTP version, status code, and status text
+	 *
+	 * @param httpVersionString The HTTP version string
+	 * @param statusCodeString  The status code string
+	 * @param statusText        The status text
+	 *
+	 * @return The generated status line
+	 */
 	private String generateStatusLine( String httpVersionString, String statusCodeString, String statusText ) {
 		return httpVersionString + " " + statusCodeString + " " + statusText;
 	}
 
+	/**
+	 * Generate a header string from the status line and headers
+	 *
+	 * @param statusLine The status line
+	 * @param headers    The headers to include in the string
+	 *
+	 * @return The generated header string
+	 */
 	private String generateHeaderString( String statusLine, IStruct headers ) {
 		return statusLine + " " + headers.entrySet()
 		    .stream()
@@ -604,6 +680,13 @@ public class HTTP extends Component {
 		    } ).collect( Collectors.joining( " " ) );
 	}
 
+	/**
+	 * Transform the headers map into a response header struct
+	 *
+	 * @param headersMap The headers map to transform
+	 *
+	 * @return The transformed response header struct
+	 */
 	private IStruct transformToResponseHeaderStruct( Map<String, List<String>> headersMap ) {
 		IStruct responseHeaders = new Struct();
 
@@ -635,6 +718,13 @@ public class HTTP extends Component {
 		return responseHeaders;
 	}
 
+	/**
+	 * Extract the charset from the content type string
+	 *
+	 * @param contentType The content type string to extract the charset from
+	 *
+	 * @return The extracted charset, or null if not found
+	 */
 	private static String extractCharset( String contentType ) {
 		if ( contentType == null || contentType.isEmpty() ) {
 			return null;
