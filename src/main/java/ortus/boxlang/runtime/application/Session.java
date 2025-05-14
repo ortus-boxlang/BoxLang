@@ -108,9 +108,13 @@ public class Session implements Serializable {
 		// Announce it's creation
 		BoxRuntime.getInstance()
 		    .getInterceptorService()
-		    .announce( BoxEvent.ON_SESSION_CREATED, Struct.of(
-		        Key.session, this
-		    ) );
+		    .announce(
+		        BoxEvent.ON_SESSION_CREATED,
+		        Struct.of(
+		            Key.session, this,
+		            Key.application, application
+		        )
+		    );
 	}
 
 	/**
@@ -243,7 +247,8 @@ public class Session implements Serializable {
 			        BoxEvent.ON_SESSION_DESTROYED,
 			        Struct.of(
 			            Key.session, this,
-			            Key.application, targetAppScope
+			            Key.application, targetAppScope,
+			            Key.listener, listener
 			        )
 			    );
 
