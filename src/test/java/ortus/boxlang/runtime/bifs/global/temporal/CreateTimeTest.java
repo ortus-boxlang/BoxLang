@@ -80,6 +80,23 @@ public class CreateTimeTest {
 		assertThat( IntegerCaster.cast( result.format( "s" ) ) ).isEqualTo( 30 );
 		assertThat( IntegerCaster.cast( result.format( "n" ) ) ).isEqualTo( 0 );
 
+
+		instance.executeSource(
+		    """
+		    result = createtime( 0, 0, 0 );
+		    """,
+		    context );
+		result = ( DateTime ) variables.get( Key.of( "result" ) );
+		assertThat( result ).isInstanceOf( DateTime.class );
+		assertThat( result.toString() ).isInstanceOf( String.class );
+		assertThat( IntegerCaster.cast( result.format( "yyyy" ) ) ).isEqualTo( 1970 );
+		assertThat( IntegerCaster.cast( result.format( "M" ) ) ).isEqualTo( 1 );
+		assertThat( IntegerCaster.cast( result.format( "d" ) ) ).isEqualTo( 1 );
+		assertThat( IntegerCaster.cast( result.format( "H" ) ) ).isEqualTo( 0 );
+		assertThat( IntegerCaster.cast( result.format( "m" ) ) ).isEqualTo( 0 );
+		assertThat( IntegerCaster.cast( result.format( "s" ) ) ).isEqualTo( 0 );
+		assertThat( IntegerCaster.cast( result.format( "n" ) ) ).isEqualTo( 0 );
+
 	}
 
 }
