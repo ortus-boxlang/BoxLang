@@ -880,7 +880,7 @@ public final class FileSystemUtil {
 	 */
 	public static Boolean exists( String path ) {
 		try {
-			return Files.exists( Paths.get( path ) );
+			return Files.exists( Paths.get( path ).toAbsolutePath() );
 		} catch ( java.nio.file.InvalidPathException e ) {
 			return false;
 		}

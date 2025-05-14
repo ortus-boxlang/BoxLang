@@ -19,6 +19,7 @@
 
 package ortus.boxlang.runtime.bifs.global.io;
 
+import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -31,7 +32,6 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -49,10 +49,11 @@ public class FileMoveTest {
 	static BoxRuntime	instance;
 	IBoxContext			context;
 	IScope				variables;
-	static Key			result			= new Key( "result" );
-	static String		source			= "src/test/resources/tmp/fileMoveTest/start.txt";
-	static String		destination		= "src/test/resources/tmp/fileMoveTest/end.txt";
-	static String		tmpDirectory	= "src/test/resources/tmp/fileMoveTest";
+	static Key			result				= new Key( "result" );
+	static String		source				= "src/test/resources/tmp/fileMoveTest/start.txt";
+	static String		destination			= "src/test/resources/tmp/fileMoveTest/end.txt";
+	static String		tmpDirectory		= "src/test/resources/tmp/fileMoveTest";
+	static String		javaTempDirectory	= System.getProperty( "java.io.tmpdir" );
 
 	@BeforeAll
 	public static void setUp() {
@@ -102,17 +103,22 @@ public class FileMoveTest {
 
 	@DisplayName( "It tests the BIF FileMove security" )
 	@Test
-	@Disabled
 	public void testBifSecurity() {
 		variables.put( Key.of( "targetFile" ), Path.of( source ).toAbsolutePath().toString() );
-		assertThrows(
-		    BoxRuntimeException.class,
-		    () -> instance.executeSource(
-		        """
-		        fileMove( targetFile, "blah.exe" );
-		        """,
-		        context )
-		);
+		instance.getConfiguration().security.disallowedFileOperationExtensions.add( "exe" );
+
+		try {
+			assertThrows(
+			    BoxRuntimeException.class,
+			    () -> instance.executeSource(
+			        """
+			        fileMove( targetFile, "blah.exe" );
+			             """,
+			        context )
+			);
+		} finally {
+			instance.getConfiguration().security.disallowedFileOperationExtensions.remove( "exe" );
+		}
 	}
 
 	@DisplayName( "It tests the BIF FileMove default overwrite argument will throw an error if the file exists" )
@@ -132,6 +138,23 @@ public class FileMoveTest {
 		             """,
 		        context )
 		);
+	}
+
+	@DisplayName( "It can move a file to a destionation if it's a directory" )
+	@Test
+	public void testMoveToDirectory() throws IOException {
+		variables.put( Key.of( "source" ), Path.of( source ).toAbsolutePath().toString() );
+		variables.put( Key.of( "destination" ), Path.of( javaTempDirectory ).toAbsolutePath().toString() );
+		assertThat( FileSystemUtil.exists( source ) ).isTrue();
+
+		instance.executeSource(
+		    """
+		    fileMove( source, destination );
+		      """,
+		    context );
+
+		assertThat( FileSystemUtil.exists( javaTempDirectory ) ).isTrue();
+		assertThat( FileSystemUtil.exists( javaTempDirectory + "/start.txt" ) ).isTrue();
 	}
 
 }

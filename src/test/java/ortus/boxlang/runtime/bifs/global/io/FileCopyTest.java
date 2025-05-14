@@ -19,6 +19,7 @@
 
 package ortus.boxlang.runtime.bifs.global.io;
 
+import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -31,7 +32,6 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -143,17 +143,39 @@ public class FileCopyTest {
 
 	@DisplayName( "It tests the BIF FileCopy security" )
 	@Test
-	@Disabled
 	public void testBifSecurity() {
 		variables.put( Key.of( "source" ), Path.of( sourceFile ).toAbsolutePath().toString() );
-		assertThrows(
-		    BoxRuntimeException.class,
-		    () -> instance.executeSource(
-		        """
-		        fileCopy( source, "blah.exe" );
-		        """,
-		        context )
-		);
+
+		instance.getConfiguration().security.disallowedFileOperationExtensions.add( "exe" );
+		try {
+			assertThrows(
+			    BoxRuntimeException.class,
+			    () -> instance.executeSource(
+			        """
+			        fileCopy( source, "blah.exe" );
+			        """,
+			        context )
+			);
+		} finally {
+			instance.getConfiguration().security.disallowedFileOperationExtensions.remove( "exe" );
+		}
+	}
+
+	@DisplayName( "It can copy a file to a destionation if it's a directory" )
+	@Test
+	public void testCopyToDirectory() throws IOException {
+		variables.put( Key.of( "source" ), Path.of( sourceFile ).toAbsolutePath().toString() );
+		variables.put( Key.of( "destination" ), Path.of( tmpDirectory ).toAbsolutePath().toString() );
+		assertThat( FileSystemUtil.exists( sourceFile ) ).isTrue();
+
+		instance.executeSource(
+		    """
+		    fileCopy( source, destination );
+		    """,
+		    context );
+
+		assertThat( FileSystemUtil.exists( tmpDirectory ) ).isTrue();
+		assertThat( FileSystemUtil.exists( tmpDirectory + "/source.txt" ) ).isTrue();
 	}
 
 }
