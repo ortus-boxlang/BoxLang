@@ -301,7 +301,8 @@ public class ApplicationService extends BaseService {
 		    Struct.of(
 		        "listener", listener,
 		        "context", context,
-		        "template", template )
+		        "template", template
+		    )
 		);
 
 		// Now that the settings are in place, actually define the app (and possibly
@@ -313,7 +314,8 @@ public class ApplicationService extends BaseService {
 		    Struct.of(
 		        "listener", listener,
 		        "context", context,
-		        "template", template )
+		        "template", template
+		    )
 		);
 
 		return listener;

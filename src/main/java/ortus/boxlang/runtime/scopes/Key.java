@@ -627,6 +627,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		remote_user							= Key.of( "remote_user" );
 	public static final Key		rename								= Key.of( "rename" );
 	public static final Key		replacements						= Key.of( "replacements" );
+	public static final Key		requestID							= Key.of( "requestID" );
 	public static final Key		request_method						= Key.of( "request_method" );
 	public static final Key		request_url							= Key.of( "request_url" );
 	public static final Key		requestTimeout						= Key.of( "requestTimeout" );
