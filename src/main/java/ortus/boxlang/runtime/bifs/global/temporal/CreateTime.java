@@ -64,9 +64,6 @@ public class CreateTime extends BIF {
 		if ( arguments.isEmpty() ) {
 			return new DateTime( timezone );
 		} else {
-			if ( arguments.getAsInteger( Key.hour ).equals( 0 ) ) {
-				throw new BoxRuntimeException( "The hour argument must be passed to the createTime method" );
-			}
 			// Note: ACF uses the legacy Microsoft epoch for its createTime method. We use the unix epoch.
 			return new DateTime(
 			    1970,
