@@ -15,7 +15,8 @@
 
 package ortus.boxlang.runtime.bifs.global.io;
 
-import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
@@ -44,25 +45,39 @@ public class FileMove extends BIF {
 	}
 
 	/**
-	 * Moves file from source to destination
+	 * Moves file from source to destination. The destination can be a file or a directory. If the destination is a directory, the
+	 * file will be moved to that directory with the same name as the source file.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.source The source file path.
 	 *
-	 * @argument.destination The destination file path.
-	 * 
+	 * @argument.destination The destination file path or directory path.
+	 *
 	 * @argument.overwrite Whether to overwrite the destination file if it exists. Defaults to false.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String	sourcePath		= FileSystemUtil.expandPath( context, arguments.getAsString( Key.source ) ).absolutePath().toString();
-		String	destinationPath	= FileSystemUtil.expandPath( context, arguments.getAsString( Key.destination ) ).absolutePath().toString();
+		String	sourceString		= FileSystemUtil.expandPath( context, arguments.getAsString( Key.source ) ).absolutePath().toString();
+		String	destinationString	= FileSystemUtil.expandPath( context, arguments.getAsString( Key.destination ) ).absolutePath().toString();
+		Path	sourcePath			= Path.of( sourceString );
+		Path	destinationPath		= Path.of( destinationString );
+
+		// Verify if the destination path is a directory, and if it is, append the file name
+		// A convenience method to copy a file to a directory easily
+		if ( Files.isDirectory( destinationPath ) ) {
+			String fileName = sourcePath.getFileName().toString();
+			destinationPath		= destinationPath.resolve( fileName );
+			destinationString	= destinationPath.toString();
+		}
+
 		// Make sure there is no attempt to move a file in to disallowed ( e.g. executable ) type
-		if ( !runtime.getConfiguration().security.isFileOperationAllowed( destinationPath ) ) {
+		if ( !runtime.getConfiguration().security.isFileOperationAllowed( destinationString ) ) {
 			throw new BoxRuntimeException( "The destination path contains an extension disallowed by the runtime security settings." );
 		}
-		FileSystemUtil.move( sourcePath, destinationPath, true, BooleanCaster.cast( arguments.get( Key.overwrite ) ) );
+
+		// Move it
+		FileSystemUtil.move( sourceString, destinationString, true, arguments.getAsBoolean( Key.overwrite ) );
 		return null;
 	}
 
