@@ -289,9 +289,12 @@ public abstract class BaseApplicationListener {
 			context.removeParentContext( SessionBoxContext.class );
 		}
 
-		BoxRuntime.getInstance().getInterceptorService().announce( BoxEvent.ON_APPLICATION_DEFINED, Struct.of(
-		    "listener", this
-		) );
+		BoxRuntime.getInstance().getInterceptorService().announce(
+		    BoxEvent.ON_APPLICATION_DEFINED,
+		    Struct.of(
+		        "listener", this,
+		        "context", this.context
+		    ) );
 	}
 
 	/**

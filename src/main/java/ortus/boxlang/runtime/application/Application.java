@@ -629,9 +629,13 @@ public class Application {
 	 */
 	public synchronized void restart( IBoxContext context ) {
 		// Announce it
-		BoxRuntime.getInstance().getInterceptorService().announce( Key.onApplicationRestart, Struct.of(
-		    "application", this
-		) );
+		BoxRuntime.getInstance().getInterceptorService().announce(
+		    Key.onApplicationRestart,
+		    Struct.of(
+		        "application", this,
+		        "context", context
+		    )
+		);
 		shutdown( true );
 		// call the constructor
 		prepApplication();
