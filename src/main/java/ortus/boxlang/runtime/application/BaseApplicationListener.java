@@ -1026,14 +1026,14 @@ public abstract class BaseApplicationListener {
 
 		// Announce locally
 		this.interceptorPool.announce(
-		    Key.missingTemplate,
+		    Key.onMissingTemplate,
 		    eventArgs,
 		    context
 		);
 
 		// Announce globally
 		interceptorService.announce(
-		    Key.missingTemplate,
+		    Key.onMissingTemplate,
 		    eventArgs,
 		    context
 		);
