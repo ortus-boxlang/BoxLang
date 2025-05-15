@@ -600,6 +600,38 @@ public class QoQParseTest {
 	}
 
 	@Test
+	public void testParameterized() {
+		instance.executeSource(
+		    """
+		        q = QueryExecute("
+		        				select ? as name
+		       ",
+		    ['brad'],
+		    { dbType : "query" } );
+
+		    result = q.name
+		                      			                          """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "brad" );
+	}
+
+	@Test
+	public void testParameterizedWithScale() {
+		instance.executeSource(
+		    """
+		        q = QueryExecute("
+		        				select ? as name
+		       ",
+		    [{value:'brad',maxlength:10}],
+		    { dbType : "query" } );
+
+		    result = q.name
+		                      			                          """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "brad" );
+	}
+
+	@Test
 	@Disabled
 	public void testsdf() {
 		instance.executeSource(
