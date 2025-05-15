@@ -45,6 +45,7 @@ import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.AbstractMap;
+import java.util.List;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Map;
@@ -60,14 +61,17 @@ import org.apache.commons.lang3.SystemUtils;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.InterceptorService;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.Function;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
@@ -1396,6 +1400,54 @@ public final class FileSystemUtil {
 	 */
 	public static java.util.function.Predicate<Path> createPathFilterPredicate( IBoxContext context, Function closure ) {
 		return path -> BooleanCaster.cast( context.invokeFunction( closure, new Object[] { path.toString() } ) );
+	}
+
+	/**
+	 * File Security methods
+	 */
+
+	/**
+	 * Determines whether a file operation is allowed or not based on the file extension.
+	 *
+	 * @param file
+	 *
+	 * @return
+	 */
+	public static boolean isFileOperationAllowed( IBoxContext context, String file ) {
+		String fileExtension = com.google.common.io.Files.getFileExtension( file );
+		return isExtensionAllowed( context, fileExtension );
+	}
+
+	/**
+	 * Determines whether a file extension is allowed or not.
+	 *
+	 * @param extension
+	 *
+	 * @return
+	 */
+	public static boolean isExtensionAllowed( IBoxContext context, String extension ) {
+
+		Object	allowed	= context.getConfigItem( Key.allowedFileOperationExtensions, new Array() );
+		Array	allowedExtensions;
+		if ( allowed instanceof Array || allowed instanceof List ) {
+			allowedExtensions = ArrayCaster.cast( allowed );
+		} else {
+			allowedExtensions = ListUtil.asList( StringCaster.cast( allowed ), "" );
+		}
+
+		Object	disallowed	= context.getConfigItem( Key.disallowedFileOperationExtensions, new Array() );
+		Array	disallowedExtensions;
+		if ( disallowed instanceof Array || disallowed instanceof List ) {
+			disallowedExtensions = ArrayCaster.cast( disallowed );
+		} else {
+			disallowedExtensions = ListUtil.asList( StringCaster.cast( disallowed ), ListUtil.DEFAULT_DELIMITER );
+		}
+
+		if ( allowedExtensions.contains( "*" ) || allowedExtensions.stream().anyMatch( ext -> Key.of( extension ).equals( Key.of( ext ) ) ) ) {
+			return true;
+		} else {
+			return !disallowedExtensions.stream().anyMatch( ext -> Key.of( extension ).equals( Key.of( ext ) ) );
+		}
 	}
 
 }

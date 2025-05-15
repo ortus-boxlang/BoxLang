@@ -155,39 +155,6 @@ public class SecurityConfig implements IConfigSegment {
 	}
 
 	/**
-	 * Determines whether a file operation is allowed or not based on the file extension.
-	 *
-	 * @param file
-	 *
-	 * @deprecated Use the method in the ApplicationListener to ensure correct app-level settings
-	 *             Leaving in until after the usage in any old versions of web support are phased out
-	 * 
-	 * @return
-	 */
-	public boolean isFileOperationAllowed( String file ) {
-		String fileExtension = Files.getFileExtension( file );
-		return this.isExtensionAllowed( fileExtension );
-	}
-
-	/**
-	 * Determines whether a file extension is allowed or not.
-	 *
-	 * @param extension
-	 *
-	 * @deprecated Use the method in the ApplicationListener to ensure correct app-level settings
-	 *             Leaving in until after the usage in any old versions of web support are phased out
-	 * 
-	 * @return
-	 */
-	public boolean isExtensionAllowed( String extension ) {
-		if ( this.allowedFileOperationExtensions.contains( extension ) ) {
-			return true;
-		} else {
-			return !this.disallowedFileOperationExtensions.contains( extension );
-		}
-	}
-
-	/**
 	 * Processes the configuration struct. Each segment is processed individually from the initial configuration struct.
 	 *
 	 * @param config the configuration struct
