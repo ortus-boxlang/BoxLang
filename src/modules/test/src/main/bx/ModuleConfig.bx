@@ -122,6 +122,12 @@ class{
 			{ class : "#moduleRecord.invocationPath#.interceptors.Listener", properties : {
 				createdOn : now(),
 				by : "Luis Majano"
+			} },
+			{
+				class : "interceptors.Listener",
+				properties : {
+				createdOn : now(),
+				by : "Luis Majano"
 			} }
 		];
 

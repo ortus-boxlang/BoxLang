@@ -639,8 +639,8 @@ public class ModuleRecord {
 				if ( !interceptorRecord.containsKey( Key._CLASS ) ) {
 					throw new BoxRuntimeException( "Interceptor record is missing the [class] key which is mandatory" );
 				}
-				// Quick Ref
-				String interceptorClass = interceptorRecord.getAsString( Key._CLASS );
+
+				String interceptorClass = ensureModuleInvocationAsset( interceptorRecord.getAsString( Key._CLASS ) );
 				// Default Properties struct
 				interceptorRecord.computeIfAbsent( Key.properties, k -> new Struct() );
 				// The default name is the class name + @ + the module name
@@ -678,6 +678,22 @@ public class ModuleRecord {
 		this.activatedOn	= Instant.now();
 
 		return this;
+	}
+
+	/**
+	 * This verifies if the class is absolute and returns it as is. Else,
+	 * it prepend the module invocation path to it.
+	 *
+	 * @param targetClass The class to verify
+	 *
+	 * @return The class name to use, either absolute or with the module invocation path
+	 */
+	private String ensureModuleInvocationAsset( String targetClass ) {
+		if ( targetClass.startsWith( this.invocationPath ) ) {
+			return targetClass;
+		}
+
+		return this.invocationPath + "." + targetClass;
 	}
 
 	/**
