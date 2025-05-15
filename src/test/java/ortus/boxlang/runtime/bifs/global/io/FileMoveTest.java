@@ -35,12 +35,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
@@ -105,7 +108,7 @@ public class FileMoveTest {
 	@Test
 	public void testBifSecurity() {
 		variables.put( Key.of( "targetFile" ), Path.of( source ).toAbsolutePath().toString() );
-		instance.getConfiguration().security.disallowedFileOperationExtensions.add( "exe" );
+		context.getParentOfType( RequestBoxContext.class ).getApplicationListener().updateSettings( Struct.of( "disallowedFileOperationExtensions", "exe" ) );
 
 		try {
 			assertThrows(
@@ -117,7 +120,8 @@ public class FileMoveTest {
 			        context )
 			);
 		} finally {
-			instance.getConfiguration().security.disallowedFileOperationExtensions.remove( "exe" );
+			context.getParentOfType( RequestBoxContext.class ).getApplicationListener()
+			    .updateSettings( Struct.of( "disallowedFileOperationExtensions", new Array() ) );
 		}
 	}
 

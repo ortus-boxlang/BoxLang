@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -87,7 +88,7 @@ public class FileCopy extends BIF {
 		}
 
 		// Make sure there is no attempt to move a file in to disallowed ( e.g. executable ) type
-		if ( !runtime.getConfiguration().security.isFileOperationAllowed( destinationString ) ) {
+		if ( !context.getParentOfType( RequestBoxContext.class ).getApplicationListener().isFileOperationAllowed( destinationString ) ) {
 			throw new BoxRuntimeException( "The destination path contains an extension disallowed by the runtime security settings." );
 		}
 

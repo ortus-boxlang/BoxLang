@@ -81,12 +81,4 @@ public class SecurityConfigTest {
 		assertThrows( SecurityException.class, () -> securityConfig.isClassAllowed( "java.lang.String" ) );
 	}
 
-	@DisplayName( "Check if an exe extension is disallowed" )
-	@Test
-	public void testIsExeDisalloweed() {
-		String fileName = "test.exe";
-		securityConfig.disallowedFileOperationExtensions.add( "exe" );
-		assertFalse( securityConfig.isFileOperationAllowed( fileName ) );
-	}
-
 }

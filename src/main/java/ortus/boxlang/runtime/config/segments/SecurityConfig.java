@@ -159,6 +159,9 @@ public class SecurityConfig implements IConfigSegment {
 	 *
 	 * @param file
 	 *
+	 * @deprecated Use the method in the ApplicationListener to ensure correct app-level settings
+	 *             Leaving in until after the usage in any old versions of web support are phased out
+	 * 
 	 * @return
 	 */
 	public boolean isFileOperationAllowed( String file ) {
@@ -171,6 +174,9 @@ public class SecurityConfig implements IConfigSegment {
 	 *
 	 * @param extension
 	 *
+	 * @deprecated Use the method in the ApplicationListener to ensure correct app-level settings
+	 *             Leaving in until after the usage in any old versions of web support are phased out
+	 * 
 	 * @return
 	 */
 	public boolean isExtensionAllowed( String extension ) {
