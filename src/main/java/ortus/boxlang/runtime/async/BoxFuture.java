@@ -62,7 +62,7 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 	 */
 	public BoxFuture() {
 		super();
-		this.logger = BoxRuntime.getInstance().getLoggingService().getLogger( "async" );
+		setupLogger();
 	}
 
 	/**
@@ -72,8 +72,8 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 	 */
 	private BoxFuture( T value ) {
 		super();
+		setupLogger();
 		super.complete( value );
-		this.logger = BoxRuntime.getInstance().getLoggingService().getLogger( "async" );
 	}
 
 	/**
@@ -83,7 +83,7 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 	 */
 	private BoxFuture( CompletableFuture<T> future ) {
 		super();
-		this.logger = BoxRuntime.getInstance().getLoggingService().getLogger( "async" );
+		setupLogger();
 		future.whenComplete( ( result, error ) -> {
 			if ( error != null ) {
 				this.completeExceptionally( error );
@@ -91,6 +91,13 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 				this.complete( result );
 			}
 		} );
+	}
+
+	/**
+	 * Setup the logger for this class
+	 */
+	private void setupLogger() {
+		this.logger = BoxRuntime.getInstance().getLoggingService().getLogger( "async" );
 	}
 
 	/**
