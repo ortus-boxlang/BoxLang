@@ -407,7 +407,8 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 
 		// See if it's a comma-delimted list
 		StringCaster.attempt( appSettings.get( Key.customTagPaths ) )
-		    .ifPresent( customTagPaths -> config.getAsArray( Key.customTagsDirectory ).addAll( ListUtil.asList( customTagPaths, ListUtil.DEFAULT_DELIMITER ) ) );
+		    .ifPresent(
+		        customTagPaths -> config.getAsArray( Key.customTagsDirectory ).addAll( ListUtil.asList( customTagPaths, ListUtil.DEFAULT_DELIMITER ) ) );
 
 		// Add in classPaths and componentPaths (for CF compat) to the classPaths array
 		ArrayCaster.attempt( appSettings.get( Key.classPaths ) )
@@ -428,7 +429,8 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 
 		// See if it's a comma-delimted list
 		StringCaster.attempt( appSettings.get( Key.disallowedFileOperationExtensions ) )
-		    .ifPresent( disallowedFileOperationExtensions -> config.put( Key.disallowedFileOperationExtensions, ListUtil.asList( disallowedFileOperationExtensions, ListUtil.DEFAULT_DELIMITER ) ) );
+		    .ifPresent( disallowedFileOperationExtensions -> config.put( Key.disallowedFileOperationExtensions,
+		        ListUtil.asList( disallowedFileOperationExtensions, ListUtil.DEFAULT_DELIMITER ) ) );
 
 		// OTHER OVERRIDES go here
 
