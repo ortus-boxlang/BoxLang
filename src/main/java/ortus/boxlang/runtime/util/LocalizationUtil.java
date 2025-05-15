@@ -455,16 +455,27 @@ public final class LocalizationUtil {
 	 * @return The parsed number or null if the value could not be parsed
 	 */
 	public static Number parseLocalizedNumber( Object value, Locale locale ) {
+		return parseLocalizedNumber( StringCaster.cast( value ), locale );
+	}
+
+	/**
+	 * Parses a localized number string
+	 *
+	 * @param value  The value to be parsed
+	 * @param locale The locale object to apply to the parse operation
+	 *
+	 * @return The parsed number or null if the value could not be parsed
+	 */
+	public static Number parseLocalizedNumber( String value, Locale locale ) {
 		DecimalFormat	parser			= ( DecimalFormat ) DecimalFormat.getInstance( locale );
 		String			parseable		= StringCaster.cast( value );
 		ParsePosition	parsePosition	= new ParsePosition( 0 );
 		if ( parseable.length() >= 20 || parseable.contains( "E" ) || parseable.contains( "e" ) || parseable.contains( "." ) ) {
 			parser.setParseBigDecimal( true );
 		}
-		parser.setParseBigDecimal( true );
-		Number parseResult = parser.parse( StringCaster.cast( value ), parsePosition );
+		// parser.setParseBigDecimal( true );
+		Number parseResult = parser.parse( parseable, parsePosition );
 		return parsePosition.getIndex() == parseable.length() && parseResult != null ? parseResult : null;
-
 	}
 
 	/**
