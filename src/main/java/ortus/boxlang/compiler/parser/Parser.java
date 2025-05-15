@@ -207,6 +207,20 @@ public class Parser {
 	 * @see BoxSourceType
 	 */
 	public static BoxSourceType detectFile( File file ) {
+		return detectFile( file, false );
+	}
+
+	/**
+	 * Attempt to detect the type of source code based on the contents
+	 *
+	 * @param file File to check
+	 * @param fast If true, will skip touching disk and return null instead meaning unknown
+	 *
+	 * @return a BoxFileType or null if it could not be determined
+	 *
+	 * @see BoxSourceType
+	 */
+	public static BoxSourceType detectFile( File file, boolean fast ) {
 		Optional<String> ext = getFileExtension( file.getAbsolutePath() );
 		if ( !ext.isPresent() ) {
 			throw new RuntimeException( "No file extension found for path : " + file.getAbsolutePath() );
@@ -223,6 +237,9 @@ public class Parser {
 				return BoxSourceType.CFTEMPLATE;
 			}
 			case "cfc" -> {
+				if ( fast ) {
+					return null;
+				}
 				if ( new DiskClassUtil( null ).isJavaBytecode( file ) ) {
 					return BoxSourceType.CFSCRIPT;
 				}

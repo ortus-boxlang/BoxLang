@@ -277,7 +277,7 @@ public abstract class Boxpiler implements IBoxpiler {
 	 */
 	@Override
 	public Class<IBoxRunnable> compileTemplate( ResolvedFilePath resolvedFilePath ) {
-		ClassInfo	classInfo	= ClassInfo.forTemplate( resolvedFilePath, Parser.detectFile( resolvedFilePath.absolutePath().toFile() ), this );
+		ClassInfo	classInfo	= ClassInfo.forTemplate( resolvedFilePath, Parser.detectFile( resolvedFilePath.absolutePath().toFile(), true ), this );
 		var			classPool	= getClassPool( classInfo.classPoolName() );
 		classPool.putIfAbsent( classInfo.fqn().toString(), classInfo );
 		// If the new class is newer than the one on disk, recompile it
@@ -326,7 +326,7 @@ public abstract class Boxpiler implements IBoxpiler {
 	 */
 	@Override
 	public Class<IBoxRunnable> compileClass( ResolvedFilePath resolvedFilePath ) {
-		ClassInfo	classInfo	= ClassInfo.forClass( resolvedFilePath, Parser.detectFile( resolvedFilePath.absolutePath().toFile() ), this );
+		ClassInfo	classInfo	= ClassInfo.forClass( resolvedFilePath, Parser.detectFile( resolvedFilePath.absolutePath().toFile(), true ), this );
 		var			classPool	= getClassPool( classInfo.classPoolName() );
 		classPool.putIfAbsent( classInfo.fqn().toString(), classInfo );
 		// If the new class is newer than the one on disk, recompile it
