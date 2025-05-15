@@ -19,6 +19,7 @@ import java.util.Locale;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
@@ -56,16 +57,26 @@ public class IsNumeric extends BIF {
 		if ( value == null ) {
 			return false;
 		}
-		Locale locale = LocalizationUtil.parseLocaleFromContext( context, arguments );
 		// We can't use the number caster on booleans when the booleansAreNumbers setting is set to true
 		if ( value instanceof Boolean ) {
 			return false;
 		}
-		return GenericCaster.attempt( context, value, "numeric" ).wasSuccessful()
-		    ? true
-		    : StringCaster.attempt( value ).wasSuccessful()
-		        ? LocalizationUtil.parseLocalizedNumber( StringCaster.cast( value ), locale ) != null
-		        : false;
+		if ( GenericCaster.attempt( context, value, "numeric" ).wasSuccessful() ) {
+			return true;
+		} else {
+			CastAttempt<String> stringAttempt = StringCaster.attempt( value );
+			if ( stringAttempt.wasSuccessful() ) {
+				Locale locale;
+				if ( arguments.containsKey( Key.locale ) ) {
+					locale = LocalizationUtil.getParsedLocale( arguments.getAsString( Key.locale ) );
+				} else {
+					locale = LocalizationUtil.parseLocaleFromContext( context, arguments );
+				}
+				return LocalizationUtil.parseLocalizedNumber( stringAttempt.get(), locale ) != null;
+			} else {
+				return false;
+			}
+		}
 
 	}
 
