@@ -1088,7 +1088,7 @@ public abstract class BaseApplicationListener {
 			disallowedExtensions = ListUtil.asList( StringCaster.cast( disallowed ), ListUtil.DEFAULT_DELIMITER );
 		}
 
-		if ( allowedExtensions.stream().anyMatch( ext -> Key.of( extension ).equals( Key.of( ext ) ) ) ) {
+		if ( allowedExtensions.contains( "*" ) || allowedExtensions.stream().anyMatch( ext -> Key.of( extension ).equals( Key.of( ext ) ) ) ) {
 			return true;
 		} else {
 			return !disallowedExtensions.stream().anyMatch( ext -> Key.of( extension ).equals( Key.of( ext ) ) );
