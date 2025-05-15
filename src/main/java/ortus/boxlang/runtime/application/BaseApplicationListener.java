@@ -22,8 +22,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-import com.google.common.io.Files;
-
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.Configuration;
 import ortus.boxlang.runtime.context.ApplicationBoxContext;
@@ -50,10 +48,8 @@ import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
-import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.BLCollector;
-import ortus.boxlang.runtime.types.util.ListUtil;
 import ortus.boxlang.runtime.util.EncryptionUtil;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
@@ -260,6 +256,7 @@ public abstract class BaseApplicationListener {
 		this.settings.addAll( settings );
 		// If the settings have changed, see if the app and session contexts need updated or initialized as well
 		defineApplication();
+		context.clearConfigCache();
 	}
 
 	/**

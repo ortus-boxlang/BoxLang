@@ -124,6 +124,12 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	private PrintStream												out						= System.out;
 
 	/**
+	 * Since getting config for the request happens a lot and rarley changes, cache it to improve performance
+	 * If config is changed at any context "above" us in the chain, we'll need to clear the cache via clearConfigCache()
+	 */
+	private IStruct													configCache				= null;
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Constructor(s)
 	 * --------------------------------------------------------------------------
@@ -277,6 +283,7 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	 */
 	public RequestBoxContext setApplicationListener( BaseApplicationListener applicationListener ) {
 		this.applicationListener = applicationListener;
+		clearConfigCache();
 		return this;
 	}
 
@@ -296,6 +303,7 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	 */
 	public RequestBoxContext setLocale( Locale locale ) {
 		this.locale = locale;
+		clearConfigCache();
 		return this;
 	}
 
@@ -317,6 +325,7 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	 */
 	public RequestBoxContext setTimezone( ZoneId timezone ) {
 		this.timezone = timezone;
+		clearConfigCache();
 		return this;
 	}
 
@@ -333,6 +342,10 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	 */
 	@Override
 	public IStruct getConfig() {
+		if ( configCache != null ) {
+			return configCache;
+		}
+
 		IStruct config = super.getConfig();
 
 		// Apply request-specific overrides, this happens after some BIF calls override the following in the context:
@@ -445,7 +458,17 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 		        )
 		    );
 
+		configCache = config;
 		return config;
+	}
+
+	/**
+	 * Contexts can optionallky cache their config. If so, they must override this method
+	 * to clear the cache when requested, and propagate the request to their parent context
+	 */
+	public void clearConfigCache() {
+		configCache = null;
+		super.clearConfigCache();
 	}
 
 	/**
@@ -477,6 +500,7 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	 */
 	public RequestBoxContext setEnforceExplicitOutput( boolean enforceExplicitOutput ) {
 		this.enforceExplicitOutput = enforceExplicitOutput;
+		clearConfigCache();
 		return this;
 	}
 
@@ -498,6 +522,7 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	 */
 	public RequestBoxContext setRequestTimeout( Long requestTimeout ) {
 		this.requestTimeout = requestTimeout;
+		clearConfigCache();
 		return this;
 	}
 
@@ -550,6 +575,7 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	 */
 	public RequestBoxContext setShowDebugOutput( boolean showDebugOutput ) {
 		this.showDebugOutput = showDebugOutput;
+		clearConfigCache();
 		return this;
 	}
 

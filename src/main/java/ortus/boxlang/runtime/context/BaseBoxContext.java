@@ -1166,6 +1166,16 @@ public class BaseBoxContext implements IBoxContext {
 	}
 
 	/**
+	 * Contexts can optionallky cache their config. If so, they must override this method
+	 * to clear the cache when requested, and propagate the request to their parent context
+	 */
+	public void clearConfigCache() {
+		if ( hasParent() ) {
+			getParent().clearConfigCache();
+		}
+	}
+
+	/**
 	 * Convenience method to retrieve a single config item
 	 *
 	 * @param itemKey the object key to retrieve
