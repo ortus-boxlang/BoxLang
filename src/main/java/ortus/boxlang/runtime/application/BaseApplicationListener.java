@@ -1051,47 +1051,4 @@ public abstract class BaseApplicationListener {
 	public ResolvedFilePath getBaseTemplatePath() {
 		return this.baseTemplatePath;
 	}
-
-	/**
-	 * Determines whether a file operation is allowed or not based on the file extension.
-	 *
-	 * @param file
-	 *
-	 * @return
-	 */
-	public boolean isFileOperationAllowed( String file ) {
-		String fileExtension = Files.getFileExtension( file );
-		return this.isExtensionAllowed( fileExtension );
-	}
-
-	/**
-	 * Determines whether a file extension is allowed or not.
-	 *
-	 * @param extension
-	 *
-	 * @return
-	 */
-	public boolean isExtensionAllowed( String extension ) {
-		Object	allowed	= this.settings.get( Key.allowedFileOperationExtensions );
-		Array	allowedExtensions;
-		if ( allowed instanceof Array || allowed instanceof List ) {
-			allowedExtensions = ArrayCaster.cast( allowed );
-		} else {
-			allowedExtensions = ListUtil.asList( StringCaster.cast( allowed ), "" );
-		}
-
-		Object	disallowed	= this.settings.get( Key.disallowedFileOperationExtensions );
-		Array	disallowedExtensions;
-		if ( disallowed instanceof Array || disallowed instanceof List ) {
-			disallowedExtensions = ArrayCaster.cast( disallowed );
-		} else {
-			disallowedExtensions = ListUtil.asList( StringCaster.cast( disallowed ), ListUtil.DEFAULT_DELIMITER );
-		}
-
-		if ( allowedExtensions.contains( "*" ) || allowedExtensions.stream().anyMatch( ext -> Key.of( extension ).equals( Key.of( ext ) ) ) ) {
-			return true;
-		} else {
-			return !disallowedExtensions.stream().anyMatch( ext -> Key.of( extension ).equals( Key.of( ext ) ) );
-		}
-	}
 }

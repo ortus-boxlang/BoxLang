@@ -73,7 +73,7 @@ public class FileMove extends BIF {
 		}
 
 		// Make sure there is no attempt to move a file in to disallowed ( e.g. executable ) type
-		if ( !context.getParentOfType( RequestBoxContext.class ).getApplicationListener().isFileOperationAllowed( destinationString ) ) {
+		if ( !FileSystemUtil.isFileOperationAllowed( context, destinationString ) ) {
 			throw new BoxRuntimeException( "The destination path contains an extension disallowed by the runtime security settings." );
 		}
 
