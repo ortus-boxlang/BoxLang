@@ -73,6 +73,7 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 	private BoxFuture( T value ) {
 		super();
 		super.complete( value );
+		this.logger = BoxRuntime.getInstance().getLoggingService().getLogger( "async" );
 	}
 
 	/**
@@ -82,6 +83,7 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 	 */
 	private BoxFuture( CompletableFuture<T> future ) {
 		super();
+		this.logger = BoxRuntime.getInstance().getLoggingService().getLogger( "async" );
 		future.whenComplete( ( result, error ) -> {
 			if ( error != null ) {
 				this.completeExceptionally( error );
