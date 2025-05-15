@@ -259,4 +259,15 @@ public class FutureNewTest {
 		assertThat( future.isCompletedExceptionally() ).isFalse();
 	}
 
+	@DisplayName( "Future get as an attempt" )
+	@Test
+	public void testGetAsAttempt() {
+		// @formatter:off
+		instance.executeSource("""
+			result = FutureNew( ()->'done 3' ).getAsAttempt()
+			println( result.get() )
+		""", context);
+		// @formatter:on
+	}
+
 }
