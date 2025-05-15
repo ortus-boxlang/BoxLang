@@ -539,8 +539,7 @@ public class DateTimeHelper {
 		if ( unit instanceof TimeUnit castedUnit ) {
 			return castedUnit;
 		} else if ( unit instanceof String castedUnit ) {
-			return TimeUnit.valueOf( castedUnit.substring( castedUnit.length() - 1 ).toUpperCase().equals( "S" ) ? castedUnit.toUpperCase()
-			    : StringUtil.pluralize( castedUnit ).toUpperCase() );
+			return TimeUnit.valueOf( StringUtil.pluralize( castedUnit ).toUpperCase() );
 		} else {
 			throw new IllegalArgumentException( "Unsupported time unit: " + unit );
 		}
