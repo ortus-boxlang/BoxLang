@@ -41,7 +41,7 @@ public class BaseScope extends Struct implements IScope {
 	/**
 	 * The unique lock name for this scope instance
 	 */
-	private final String	lockName;
+	private String			lockName	= null;
 
 	/**
 	 * Set of final keys which cannot be reassigned
@@ -77,8 +77,7 @@ public class BaseScope extends Struct implements IScope {
 	public BaseScope( Key scopeName, Struct.TYPES type ) {
 		// setup props
 		super( type );
-		this.scopeName	= scopeName;
-		this.lockName	= scopeName.getName() + new Object().hashCode();
+		this.scopeName = scopeName;
 	}
 
 	/**
@@ -133,6 +132,15 @@ public class BaseScope extends Struct implements IScope {
 	 * @return The unique lock name for the scope
 	 */
 	public String getLockName() {
+		// This is only used for scopes that cflock can tie to, so only generate the lock name on demand
+		if ( lockName == null ) {
+			synchronized ( this ) {
+				if ( lockName == null ) {
+					// Generate a unique lock name for this scope instance
+					lockName = scopeName.getName() + new Object().hashCode();
+				}
+			}
+		}
 		return lockName;
 	}
 
