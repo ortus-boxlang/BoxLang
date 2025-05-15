@@ -196,7 +196,11 @@ public class InstanceOf implements IOperator {
 	 * @return true if the class names match
 	 */
 	private static boolean looseClassCheck( String actual, String expected ) {
-		return actual.equalsIgnoreCase( expected ) || actual.toLowerCase().endsWith( "." + expected.toLowerCase() );
+		// Perform case insensitive check first since it's faster
+		return actual.equals( expected )
+		    || actual.equalsIgnoreCase( expected )
+		    || actual.endsWith( "." + expected )
+		    || actual.toLowerCase().endsWith( "." + expected.toLowerCase() );
 	}
 
 }
