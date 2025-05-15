@@ -615,24 +615,8 @@ public class Struct implements IStruct, IListenable<IStruct>, Serializable {
 	 */
 	@Override
 	public void putAll( Map<? extends Key, ? extends Object> map ) {
-		Stream<Map.Entry<? extends Key, ?>> entryStream;
-		// Parallel streams are actually slower for small data sets!
-		// 1000 may even be to small. Some resoruces say to not bnother unless you have over 10,000 items! Need to test more.
-		if ( map.size() > 1000 ) {
-			entryStream = map.entrySet().parallelStream().map( entry -> entry );
-		} else {
-			entryStream = map.entrySet().stream().map( entry -> entry );
-		}
-		// With a linked hashmap we need to maintain order - which is a tiny bit slower
-		if ( type.equals( TYPES.LINKED ) ) {
-			entryStream.forEachOrdered( entry -> {
-				putInternal( entry.getKey(), entry.getValue() );
-			} );
-		} else {
-			entryStream.forEach( entry -> {
-				// wrapped.put( entry.getKey(), ( entry.getValue() == null ) ? new NullValue() : entry.getValue() );
-				putInternal( entry.getKey(), entry.getValue() );
-			} );
+		for ( Map.Entry<? extends Key, ? extends Object> entry : map.entrySet() ) {
+			putInternal( entry.getKey(), entry.getValue() );
 		}
 	}
 
