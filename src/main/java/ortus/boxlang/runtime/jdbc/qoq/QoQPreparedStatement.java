@@ -347,8 +347,7 @@ public class QoQPreparedStatement extends QoQStatement implements java.sql.Prepa
 
 	@Override
 	public void setObject( int parameterIndex, Object x, int targetSqlType, int scaleOrLength ) throws SQLException {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException( "Unimplemented method 'setObject'" );
+		setObject( parameterIndex, x, targetSqlType );
 	}
 
 	@Override
