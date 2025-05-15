@@ -17,7 +17,9 @@
  */
 package ortus.boxlang.runtime.scopes;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.events.BoxEvent;
@@ -177,12 +179,19 @@ public class ServerScope extends BaseScope {
 		/**
 		 * JAVA INFO
 		 */
+		Locale.getAvailableLocales();
 		Runtime javaRuntime = Runtime.getRuntime();
 		put( Key.java, UnmodifiableStruct.of(
 		    "archModel", System.getProperty( "os.arch", "" ),
 		    "executionPath", System.getProperty( "user.dir", "" ),
 		    "freeMemory", javaRuntime.freeMemory(),
 		    "maxMemory", javaRuntime.maxMemory(),
+		    "defaultLocale", Locale.getDefault().getDisplayName(),
+		    "availableLocales", Arrays.stream( Locale.getAvailableLocales() )
+		        .filter( locale -> !locale.equals( Locale.ROOT ) )
+		        .map( Locale::getDisplayName )
+		        .sorted()
+		        .toList(),
 		    "totalMemory", javaRuntime.totalMemory(),
 		    "vendor", System.getProperty( "java.vendor", "" ),
 		    "version", System.getProperty( "java.version", "" )

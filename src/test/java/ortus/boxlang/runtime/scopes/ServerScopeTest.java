@@ -76,6 +76,8 @@ public class ServerScopeTest {
 		context	= new ScriptingRequestBoxContext();
 		IScope scope = new ServerScope().initialize();
 
+		System.out.println( scope.get( "java" ) );
+
 		System.out.println( scope.get( "cli" ) );
 
 		assertThat( scope.size() ).isGreaterThan( 0 );
