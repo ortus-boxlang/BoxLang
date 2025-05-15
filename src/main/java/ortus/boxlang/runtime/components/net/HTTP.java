@@ -417,14 +417,12 @@ public class HTTP extends Component {
 			) );
 
 			// Start Processing Results
-			HttpHeaders	httpHeaders		= Optional
-			    .ofNullable( response.headers() )
+			HttpHeaders	httpHeaders		= Optional.ofNullable( response.headers() )
 			    .orElse( HttpHeaders.of( Map.of(), ( a, b ) -> true ) );
-			IStruct		headers			= transformToResponseHeaderStruct(
-			    httpHeaders.map()
-			);
-
+			IStruct		headers			= transformToResponseHeaderStruct( httpHeaders.map() );
 			Object		responseBody	= null;
+
+			// Process body if not null
 			if ( response.body() != null ) {
 				String	contentType			= headers.getAsString( Key.of( "content-type" ) );
 				Boolean	isBinaryContentType	= FileSystemUtil.isBinaryMimeType( contentType );
@@ -501,7 +499,7 @@ public class HTTP extends Component {
 			HTTPResult.put( Key.cookies, generateCookiesQuery( headers ) );
 			HTTPResult.put( Key.executionTime, Duration.between( startTime, Instant.now() ).toMillis() );
 
-			// Set the result back into the page using the variable name
+			// Set the result back into the caller using the variable name
 			ExpressionInterpreter.setVariable( context, variableName, HTTPResult );
 
 			// Announce the HTTP response
