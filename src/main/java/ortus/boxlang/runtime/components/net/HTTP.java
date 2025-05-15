@@ -33,6 +33,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -228,6 +229,7 @@ public class HTTP extends Component {
 		String	authMode			= attributes.getAsString( Key.authType ).toUpperCase();
 		String	outputDirectory		= attributes.getAsString( Key.path );
 		String	requestID			= UUID.randomUUID().toString();
+		Instant	startTime			= Instant.now();
 
 		// Prepare the output directory if it is set
 		if ( outputDirectory != null ) {
@@ -497,6 +499,7 @@ public class HTTP extends Component {
 				}
 			} );
 			HTTPResult.put( Key.cookies, generateCookiesQuery( headers ) );
+			HTTPResult.put( Key.executionTime, Duration.between( startTime, Instant.now() ).toMillis() );
 
 			// Set the result back into the page using the variable name
 			ExpressionInterpreter.setVariable( context, variableName, HTTPResult );
