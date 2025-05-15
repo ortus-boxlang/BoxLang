@@ -447,7 +447,7 @@ public class ModuleService extends BaseService {
 		this.registry
 		    .keySet()
 		    .stream()
-		    .forEach( this::unload );
+		    .forEach( thisKey -> unload( thisKey, true ) );
 	}
 
 	/**
@@ -455,7 +455,7 @@ public class ModuleService extends BaseService {
 	 *
 	 * @param name The name of the module to unload
 	 */
-	public void unload( Key name ) {
+	public void unload( Key name, Boolean removeFromRegistry ) {
 		// Check if the module is in the registry or it's already deactivated
 		if ( !this.registry.containsKey( name ) || !this.registry.get( name ).isActivated() ) {
 			return;
@@ -498,7 +498,9 @@ public class ModuleService extends BaseService {
 		);
 
 		// Remove it
-		this.registry.remove( name );
+		if ( removeFromRegistry ) {
+			this.registry.remove( name );
+		}
 	}
 
 	/**
@@ -506,6 +508,44 @@ public class ModuleService extends BaseService {
 	 * Helpers
 	 * --------------------------------------------------------------------------
 	 */
+
+	/**
+	 * Reload all modules
+	 */
+	public void reloadAll() {
+		this.registry
+		    .keySet()
+		    .stream()
+		    .forEach( thisKey -> reload( thisKey ) );
+		this.logger.debug( "+ Module Service: Reloaded all modules" );
+	}
+
+	/**
+	 * Helper to reload a module
+	 *
+	 * @param name The name of the module to reload
+	 */
+	public synchronized void reload( Key name ) {
+		// Check if the module is in the registry
+		if ( !this.registry.containsKey( name ) ) {
+			var errorMessage = String.format(
+			    "Cannot reload the module [%s] as it is not in the module registry. Valid modules are: %s",
+			    name,
+			    this.registry.keySet().toString()
+			);
+			this.logger.warn( errorMessage );
+			throw new BoxRuntimeException( errorMessage );
+		}
+
+		// Unload the module but don't remove it from the registry
+		// This is important as we need to keep the module in the registry
+		// to be able to reload it
+		unload( name, false );
+		register( name );
+		activate( name );
+
+		this.logger.debug( "+ Module Service: Reloaded module [{}]", name.getName() );
+	}
 
 	/**
 	 * Get the module registry
