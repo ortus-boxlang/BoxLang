@@ -4,6 +4,7 @@ import java.net.URL;
 import java.nio.file.Paths;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
+import ortus.boxlang.compiler.parser.Parser;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.dynamic.javaproxy.InterfaceProxyDefinition;
 import ortus.boxlang.runtime.loader.DiskClassLoader;
@@ -149,8 +150,8 @@ public record ClassInfo(
 	public String toString() {
 		if ( resolvedFilePath != null )
 			return "Class Info-- sourcePath: [" + resolvedFilePath.absolutePath().toString() + "], fqn: [" + fqn().toString() + "]";
-		else if ( sourceType != null )
-			return "Class Info-- type: [" + sourceType + "], fqn: [" + fqn().toString() + "]";
+		else if ( sourceType() != null )
+			return "Class Info-- type: [" + sourceType() + "], fqn: [" + fqn().toString() + "]";
 		else if ( interfaceProxyDefinition != null )
 			return "Class Info-- interface proxy: [" + interfaceProxyDefinition.interfaces().toString() + "],  fqn: [" + fqn().toString()
 			    + "]";
@@ -231,5 +232,13 @@ public record ClassInfo(
 
 	public static boolean isTrustedCache() {
 		return BoxRuntime.getInstance().getConfiguration().trustedCache;
+	}
+
+	public BoxSourceType sourceType() {
+		if ( sourceType != null ) {
+			return sourceType;
+		}
+		// This is loaded on demand for classes which require inspection on disk to decide the type (.cfc)
+		return Parser.detectFile( resolvedFilePath.absolutePath().toFile() );
 	}
 }
