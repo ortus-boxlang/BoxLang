@@ -1443,6 +1443,7 @@ public final class FileSystemUtil {
 			disallowedExtensions = ListUtil.asList( StringCaster.cast( disallowed ), ListUtil.DEFAULT_DELIMITER );
 		}
 
+		// Allowed always supercedes disallowed
 		if ( allowedExtensions.contains( "*" ) || allowedExtensions.stream().anyMatch( ext -> Key.of( extension ).equals( Key.of( ext ) ) ) ) {
 			return true;
 		} else {
