@@ -22,6 +22,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
+import com.google.common.io.Files;
+
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.Configuration;
 import ortus.boxlang.runtime.context.ApplicationBoxContext;
@@ -48,8 +50,10 @@ import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.BLCollector;
+import ortus.boxlang.runtime.types.util.ListUtil;
 import ortus.boxlang.runtime.util.EncryptionUtil;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
@@ -1046,5 +1050,48 @@ public abstract class BaseApplicationListener {
 
 	public ResolvedFilePath getBaseTemplatePath() {
 		return this.baseTemplatePath;
+	}
+
+	/**
+	 * Determines whether a file operation is allowed or not based on the file extension.
+	 *
+	 * @param file
+	 *
+	 * @return
+	 */
+	public boolean isFileOperationAllowed( String file ) {
+		String fileExtension = Files.getFileExtension( file );
+		return this.isExtensionAllowed( fileExtension );
+	}
+
+	/**
+	 * Determines whether a file extension is allowed or not.
+	 *
+	 * @param extension
+	 *
+	 * @return
+	 */
+	public boolean isExtensionAllowed( String extension ) {
+		Object	allowed	= this.settings.get( Key.allowedFileOperationExtensions );
+		Array	allowedExtensions;
+		if ( allowed instanceof Array || allowed instanceof List ) {
+			allowedExtensions = ArrayCaster.cast( allowed );
+		} else {
+			allowedExtensions = ListUtil.asList( StringCaster.cast( allowed ), "" );
+		}
+
+		Object	disallowed	= this.settings.get( Key.disallowedFileOperationExtensions );
+		Array	disallowedExtensions;
+		if ( disallowed instanceof Array || disallowed instanceof List ) {
+			disallowedExtensions = ArrayCaster.cast( disallowed );
+		} else {
+			disallowedExtensions = ListUtil.asList( StringCaster.cast( disallowed ), ListUtil.DEFAULT_DELIMITER );
+		}
+
+		if ( allowedExtensions.stream().anyMatch( ext -> Key.of( extension ).equals( Key.of( ext ) ) ) ) {
+			return true;
+		} else {
+			return !disallowedExtensions.stream().anyMatch( ext -> Key.of( extension ).equals( Key.of( ext ) ) );
+		}
 	}
 }

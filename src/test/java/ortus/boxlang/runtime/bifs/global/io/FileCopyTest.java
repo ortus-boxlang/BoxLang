@@ -35,11 +35,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.FileSystemUtil;
@@ -146,7 +149,7 @@ public class FileCopyTest {
 	public void testBifSecurity() {
 		variables.put( Key.of( "source" ), Path.of( sourceFile ).toAbsolutePath().toString() );
 
-		instance.getConfiguration().security.disallowedFileOperationExtensions.add( "exe" );
+		context.getParentOfType( RequestBoxContext.class ).getApplicationListener().updateSettings( Struct.of( "disallowedFileOperationExtensions", "exe" ) );
 		try {
 			assertThrows(
 			    BoxRuntimeException.class,
@@ -157,7 +160,8 @@ public class FileCopyTest {
 			        context )
 			);
 		} finally {
-			instance.getConfiguration().security.disallowedFileOperationExtensions.remove( "exe" );
+			context.getParentOfType( RequestBoxContext.class ).getApplicationListener()
+			    .updateSettings( Struct.of( "disallowedFileOperationExtensions", new Array() ) );
 		}
 	}
 
@@ -176,6 +180,23 @@ public class FileCopyTest {
 
 		assertThat( FileSystemUtil.exists( tmpDirectory ) ).isTrue();
 		assertThat( FileSystemUtil.exists( tmpDirectory + "/source.txt" ) ).isTrue();
+	}
+
+	@DisplayName( "It tests can override disallowed and allowed extensions in application" )
+	@Test
+	public void testSecurityAppOverrides() {
+		variables.put( Key.of( "source" ), Path.of( sourceFile ).toAbsolutePath().toString() );
+		variables.put( Key.of( "badFile" ), Path.of( tmpDirectory, "blah.torrent" ).toAbsolutePath().toString() );
+
+		assertThrows(
+		    BoxRuntimeException.class,
+		    () -> instance.executeSource(
+		        """
+		        bx:application name="fileSecurityTest" disallowedFileOperationExtensions="torrent";
+		        fileCopy( source, badfile );
+		        """,
+		        context )
+		);
 	}
 
 }
