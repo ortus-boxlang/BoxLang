@@ -407,7 +407,7 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 
 		// See if it's a comma-delimted list
 		StringCaster.attempt( appSettings.get( Key.customTagPaths ) )
-		    .ifPresent( customTagPaths -> config.getAsArray( Key.customTagsDirectory ).addAll( ListUtil.asList( customTagPaths, "," ) ) );
+		    .ifPresent( customTagPaths -> config.getAsArray( Key.customTagsDirectory ).addAll( ListUtil.asList( customTagPaths, ListUtil.DEFAULT_DELIMITER ) ) );
 
 		// Add in classPaths and componentPaths (for CF compat) to the classPaths array
 		ArrayCaster.attempt( appSettings.get( Key.classPaths ) )
@@ -419,7 +419,16 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 
 		// See if it's a comma-delimted list
 		StringCaster.attempt( appSettings.get( Key.componentPaths ) )
-		    .ifPresent( componentPaths -> config.getAsArray( Key.classPaths ).addAll( ListUtil.asList( componentPaths, "," ) ) );
+		    .ifPresent( componentPaths -> config.getAsArray( Key.classPaths ).addAll( ListUtil.asList( componentPaths, ListUtil.DEFAULT_DELIMITER ) ) );
+
+		// Promotion of extension security settings
+		// Array handling
+		ArrayCaster.attempt( appSettings.get( Key.allowedFileOperationExtensions ) )
+		    .ifPresent( allowedFileOperationExtensions -> config.put( Key.allowedFileOperationExtensions, allowedFileOperationExtensions ) );
+
+		// See if it's a comma-delimted list
+		StringCaster.attempt( appSettings.get( Key.disallowedFileOperationExtensions ) )
+		    .ifPresent( disallowedFileOperationExtensions -> config.put( Key.disallowedFileOperationExtensions, ListUtil.asList( disallowedFileOperationExtensions, ListUtil.DEFAULT_DELIMITER ) ) );
 
 		// OTHER OVERRIDES go here
 
