@@ -19,7 +19,6 @@ package ortus.boxlang.runtime.operators;
 
 import java.text.Collator;
 import java.util.Locale;
-import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -97,8 +96,19 @@ public class StringCompare implements IOperator {
 	 */
 	public static Integer attempt( String left, String right, Boolean caseSensitive, boolean fail, Locale locale ) {
 
-		Boolean containsUnicode = Stream.of( left.toString(), right.toString() )
-		    .anyMatch( s -> s.codePoints().anyMatch( c -> c > 127 ) );
+		boolean containsUnicode = false;
+		for ( String s : new String[] { left.toString(), right.toString() } ) {
+			int length = s.length();
+			for ( int i = 0; i < length; i++ ) {
+				if ( s.charAt( i ) > 127 ) {
+					containsUnicode = true;
+					break;
+				}
+			}
+			if ( containsUnicode ) {
+				break;
+			}
+		}
 
 		// if our locale is different than an EN locale use the Collator
 		if ( containsUnicode || ( !locale.equals( LocalizationUtil.COMMON_LOCALES.get( Key.US ) ) && !locale.equals( Locale.ENGLISH ) ) ) {
