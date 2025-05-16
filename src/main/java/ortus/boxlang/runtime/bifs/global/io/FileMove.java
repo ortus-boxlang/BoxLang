@@ -41,7 +41,7 @@ public class FileMove extends BIF {
 		declaredArguments = new Argument[] {
 		    new Argument( true, Argument.STRING, Key.source ),
 		    new Argument( true, Argument.STRING, Key.destination ),
-		    new Argument( true, Argument.BOOLEAN, Key.overwrite, false )
+		    new Argument( true, Argument.BOOLEAN, Key.overwrite, true )
 		};
 	}
 
@@ -56,7 +56,7 @@ public class FileMove extends BIF {
 	 *
 	 * @argument.destination The destination file path or directory path.
 	 *
-	 * @argument.overwrite Whether to overwrite the destination file if it exists. Defaults to false.
+	 * @argument.overwrite Whether to overwrite the destination file if it exists. Defaults to true.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	sourceString		= FileSystemUtil.expandPath( context, arguments.getAsString( Key.source ) ).absolutePath().toString();

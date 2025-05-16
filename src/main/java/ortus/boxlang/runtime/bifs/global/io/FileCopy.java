@@ -42,7 +42,8 @@ public class FileCopy extends BIF {
 		declaredArguments = new Argument[] {
 		    new Argument( true, Argument.STRING, Key.source ),
 		    new Argument( true, Argument.STRING, Key.destination ),
-		    new Argument( false, Argument.BOOLEAN, Key.createPath, true )
+		    new Argument( false, Argument.BOOLEAN, Key.createPath, true ),
+		    new Argument( false, Argument.BOOLEAN, Key.overwrite, true )
 		};
 	}
 
@@ -85,6 +86,11 @@ public class FileCopy extends BIF {
 			} catch ( IOException e ) {
 				throw new BoxIOException( e );
 			}
+		}
+
+		if ( Files.exists( destinationPath ) && !arguments.getAsBoolean( Key.overwrite ) ) {
+			throw new BoxRuntimeException(
+			    "The target path of [" + destinationPath.toString() + "] already exists and the overwrite argument is set to false" );
 		}
 
 		// Make sure there is no attempt to move a file in to disallowed ( e.g. executable ) type
