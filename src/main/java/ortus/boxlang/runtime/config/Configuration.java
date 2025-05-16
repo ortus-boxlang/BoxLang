@@ -867,30 +867,6 @@ public class Configuration implements IConfigSegment {
 	}
 
 	/**
-	 * Helper method to validate datasource drivers configured in the runtime
-	 * configuration
-	 * This makes sure all declared drivers are registered with the datasource
-	 * service
-	 *
-	 * @throws BoxRuntimeException If a datasource driver is not registered with the
-	 *                             datasource service
-	 */
-	public void validateDatsourceDrivers() {
-		// iterate over all datasources and validate the drivers exists in the
-		// datasource service, else throw an exception
-		this.datasources.entrySet().forEach( entry -> {
-			DatasourceConfig datasource = ( DatasourceConfig ) entry.getValue();
-			if ( !BoxRuntime.getInstance().getDataSourceService().hasDriver( datasource.getDriver() ) ) {
-				throw new BoxRuntimeException(
-				    String.format(
-				        "The datasource [%s] has a driver [%s] that is not registered with the datasource service.",
-				        datasource.name,
-				        datasource.getDriver() ) );
-			}
-		} );
-	}
-
-	/**
 	 * Navigate the configuration with our cool DataNavigator!
 	 *
 	 * For example, if you want to navigate the original config:
