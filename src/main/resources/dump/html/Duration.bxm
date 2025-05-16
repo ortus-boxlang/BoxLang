@@ -1,0 +1,16 @@
+<bx:output>
+<div class="bx-dump" title="#encodeForHTML( posInCode )#">
+	<span class="bx-dwSv">
+		<span class="bx-dhSv">
+			<bx:if label.len() >
+				#encodeForHTML( label )#
+			<bx:else>
+				Timespan:
+			</bx:if>
+		</span>
+		<span>
+			#( [ var.toDaysPart(), var.toHoursPart(), var.toMinutesPart(), var.toSecondsPart() ].toList( ", " ) )#
+		</span>
+	</span>
+</div>
+</bx:output>

@@ -431,10 +431,9 @@ public class DumpUtil {
 		    target instanceof java.sql.Date || target instanceof java.sql.Timestamp || target instanceof java.util.Date ) {
 			target = DateTimeCaster.cast( target, context );
 			return "DateTime.bxm";
-		}
-		// These classes will just dump the class name and the `toString()` equivalent
-		// For easier debugging
-		else if ( target instanceof Duration || target instanceof ZoneId ) {
+		} else if ( target instanceof Duration ) {
+			return "Duration.bxm";
+		} else if ( target instanceof ZoneId ) {
 			return "ToString.bxm";
 		} else if ( target instanceof Instant ) {
 			return "Instant.bxm";
