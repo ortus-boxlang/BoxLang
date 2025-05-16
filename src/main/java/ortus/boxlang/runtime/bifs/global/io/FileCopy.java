@@ -59,6 +59,8 @@ public class FileCopy extends BIF {
 	 * @argument.destination A destionation file or directory, if it's a directory, the suorce file name will be appended
 	 *
 	 * @argument.createPath [ true ] whether to create any nested paths required to the new file
+	 *
+	 * @argument.overwrite Whether to overwrite the destination file if it exists. Defaults to true.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		// Set and expand
