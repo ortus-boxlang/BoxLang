@@ -226,7 +226,7 @@ public class RegexBuilder {
 			}
 
 			// Lookup or compile the pattern into the regex cache
-			String	cacheKey	= EncryptionUtil.hash( pattern + noCase );
+			String	cacheKey	= String.valueOf( ( pattern + noCase ).hashCode() );
 			int		theFlags	= ( noCase ? Pattern.CASE_INSENSITIVE : 0 ) | flags;
 
 			this.pattern = ( Pattern ) BoxRuntime.getInstance()
