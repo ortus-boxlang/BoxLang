@@ -86,7 +86,7 @@ public class FileMoveTest {
 		if ( FileSystemUtil.exists( tmpDirectory ) ) {
 			FileSystemUtil.deleteDirectory( tmpDirectory, true );
 		}
-		if( FileSystemUtil.exists( Path.of( javaTempDirectory, "start.txt" ).toAbsolutePath().toString() ) ){
+		if ( FileSystemUtil.exists( Path.of( javaTempDirectory, "start.txt" ).toAbsolutePath().toString() ) ) {
 			FileSystemUtil.deleteFile( Path.of( javaTempDirectory, "start.txt" ).toAbsolutePath().toString() );
 		}
 	}
