@@ -1,6 +1,8 @@
 <bx:script>
 	md = var.$bx.meta
 	hint = md.documentation.hint ?: md.annotations.hint ?: var.getClass().getSimpleName()
+	
+	expandRoot = expand ?: true;
 </bx:script>
 <bx:output>
 	<div class="bx-dump">
@@ -8,7 +10,7 @@
 			<caption
 				role="button"
 				tabindex="0"
-				<bx:if expand>open aria-expanded="true"<bx:else>aria-expanded="false"</bx:if>
+				<bx:if expandRoot>open aria-expanded="true"<bx:else>aria-expanded="false"</bx:if>
 				data-bx-toggle="siblings"
 				title="#encodeForHTML( var.getClass().getName() )#"
 			>
@@ -21,7 +23,7 @@
 				</strong>
 			</caption>
 			<tbody
-				<bx:if !expand>class="d-none"</bx:if>
+				<bx:if !expandRoot>class="d-none"</bx:if>
 			>
 				<!--- Modifiers --->
 				<tr>
