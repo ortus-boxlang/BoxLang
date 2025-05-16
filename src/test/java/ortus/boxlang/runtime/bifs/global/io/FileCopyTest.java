@@ -197,6 +197,13 @@ public class FileCopyTest {
 		        """,
 		        context )
 		);
+		// Test our ability to override through the accept argument
+		instance.executeSource(
+		    """
+		    bx:application name="fileSecurityTest" disallowedFileOperationExtensions="torrent";
+		    fileCopy( source, badFile, true, true, "torrent" );
+		    """,
+		    context );
 	}
 
 }

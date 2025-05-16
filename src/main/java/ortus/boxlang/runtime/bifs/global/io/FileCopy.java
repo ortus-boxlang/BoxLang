@@ -43,7 +43,8 @@ public class FileCopy extends BIF {
 		    new Argument( true, Argument.STRING, Key.source ),
 		    new Argument( true, Argument.STRING, Key.destination ),
 		    new Argument( false, Argument.BOOLEAN, Key.createPath, true ),
-		    new Argument( false, Argument.BOOLEAN, Key.overwrite, true )
+		    new Argument( false, Argument.BOOLEAN, Key.overwrite, true ),
+		    new Argument( false, Argument.STRING, Key.accept )
 		};
 	}
 
@@ -61,6 +62,9 @@ public class FileCopy extends BIF {
 	 * @argument.createPath [ true ] whether to create any nested paths required to the new file
 	 *
 	 * @argument.overwrite Whether to overwrite the destination file if it exists. Defaults to true.
+	 * 
+	 * @argument.accept A comma separated list of file extensions to accept - which will override runtime security settings
+	 * 
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		// Set and expand
@@ -96,7 +100,7 @@ public class FileCopy extends BIF {
 		}
 
 		// Make sure there is no attempt to move a file in to disallowed ( e.g. executable ) type
-		if ( !FileSystemUtil.isFileOperationAllowed( context, destinationString ) ) {
+		if ( !FileSystemUtil.isFileOperationAllowed( context, destinationString, arguments.getAsString( Key.accept ) ) ) {
 			throw new BoxRuntimeException( "The destination path contains an extension disallowed by the runtime security settings." );
 		}
 
