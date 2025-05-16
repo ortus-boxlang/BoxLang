@@ -205,4 +205,19 @@ public class DumpTest {
 		// @formatter:on
 	}
 
+	@DisplayName( "It can dump a Duration" )
+	@Test
+	public void testCanDumpDuration() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				timespan = createTimeSpan( 0, 1, 0, 0 );
+				dump( var = timespan, format = "html" );
+		    """,
+		    context );
+ 		assertThat( baos.toString() ).contains( "Timespan:" );
+ 		assertThat( baos.toString() ).contains( "0, 1, 0, 0" );
+		// @formatter:on
+	}
+
 }
