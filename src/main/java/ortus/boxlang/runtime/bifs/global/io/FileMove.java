@@ -41,7 +41,8 @@ public class FileMove extends BIF {
 		declaredArguments = new Argument[] {
 		    new Argument( true, Argument.STRING, Key.source ),
 		    new Argument( true, Argument.STRING, Key.destination ),
-		    new Argument( true, Argument.BOOLEAN, Key.overwrite, true )
+		    new Argument( true, Argument.BOOLEAN, Key.overwrite, true ),
+		    new Argument( false, Argument.STRING, Key.accept )
 		};
 	}
 
@@ -55,8 +56,11 @@ public class FileMove extends BIF {
 	 * @argument.source The source file path.
 	 *
 	 * @argument.destination The destination file path or directory path.
-	 *
+	 * 
 	 * @argument.overwrite Whether to overwrite the destination file if it exists. Defaults to true.
+	 * 
+	 * @argument.accept A comma separated list of file extensions to accept - which will override runtime security settings
+	 * 
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	sourceString		= FileSystemUtil.expandPath( context, arguments.getAsString( Key.source ) ).absolutePath().toString();
@@ -73,7 +77,7 @@ public class FileMove extends BIF {
 		}
 
 		// Make sure there is no attempt to move a file in to disallowed ( e.g. executable ) type
-		if ( !FileSystemUtil.isFileOperationAllowed( context, destinationString ) ) {
+		if ( !FileSystemUtil.isFileOperationAllowed( context, destinationString, arguments.getAsString( Key.accept ) ) ) {
 			throw new BoxRuntimeException( "The destination path contains an extension disallowed by the runtime security settings." );
 		}
 

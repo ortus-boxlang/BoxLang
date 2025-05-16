@@ -111,6 +111,7 @@ public class FileMoveTest {
 	@Test
 	public void testBifSecurity() {
 		variables.put( Key.of( "targetFile" ), Path.of( source ).toAbsolutePath().toString() );
+		variables.put( Key.of( "badFile" ), Path.of( tmpDirectory, "blah.exe" ).toAbsolutePath().toString() );
 		context.getParentOfType( RequestBoxContext.class ).getApplicationListener().updateSettings( Struct.of( "disallowedFileOperationExtensions", "exe" ) );
 
 		try {
@@ -118,10 +119,17 @@ public class FileMoveTest {
 			    BoxRuntimeException.class,
 			    () -> instance.executeSource(
 			        """
-			        fileMove( targetFile, "blah.exe" );
+			        fileMove( targetFile, badFile );
 			             """,
 			        context )
 			);
+
+			// Test our ability to override through the accept argument
+			instance.executeSource(
+			    """
+			    fileMove( targetFile, badFile, true, "exe" );
+			    """,
+			    context );
 		} finally {
 			context.getParentOfType( RequestBoxContext.class ).getApplicationListener()
 			    .updateSettings( Struct.of( "disallowedFileOperationExtensions", new Array() ) );

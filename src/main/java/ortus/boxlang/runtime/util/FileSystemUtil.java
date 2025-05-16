@@ -1409,6 +1409,7 @@ public final class FileSystemUtil {
 	/**
 	 * Determines whether a file operation is allowed or not based on the file extension.
 	 *
+	 * @param context
 	 * @param file
 	 *
 	 * @return
@@ -1419,13 +1420,47 @@ public final class FileSystemUtil {
 	}
 
 	/**
+	 * Determines whether a file operation is allowed or not based on the file extension.
+	 *
+	 * @param context
+	 * @param file
+	 * @param overrides A string of extensions which override the default disallow list
+	 *
+	 * @return
+	 */
+	public static boolean isFileOperationAllowed( IBoxContext context, String file, String overrides ) {
+		String fileExtension = com.google.common.io.Files.getFileExtension( file );
+		return isExtensionAllowed( context, fileExtension, overrides );
+	}
+
+	/**
 	 * Determines whether a file extension is allowed or not.
 	 *
+	 * @param context
 	 * @param extension
 	 *
 	 * @return
 	 */
 	public static boolean isExtensionAllowed( IBoxContext context, String extension ) {
+		return isExtensionAllowed( context, extension, null );
+	}
+
+	/**
+	 * Determines whether a file extension is allowed or not.
+	 *
+	 * @param context
+	 * @param extension
+	 * @param overrides A string of extensions which override the default disallow list
+	 *
+	 * @return
+	 */
+	public static boolean isExtensionAllowed( IBoxContext context, String extension, String overrides ) {
+
+		if ( overrides != null
+		    &&
+		    ListUtil.asList( overrides, ListUtil.DEFAULT_DELIMITER ).stream().map( Key::of ).anyMatch( ext -> Key.of( extension ).equals( ext ) ) ) {
+			return true;
+		}
 
 		Object	allowed	= context.getConfigItem( Key.allowedFileOperationExtensions, new Array() );
 		Array	allowedExtensions;
@@ -1444,10 +1479,10 @@ public final class FileSystemUtil {
 		}
 
 		// Allowed always supercedes disallowed
-		if ( allowedExtensions.contains( "*" ) || allowedExtensions.stream().anyMatch( ext -> Key.of( extension ).equals( Key.of( ext ) ) ) ) {
+		if ( allowedExtensions.contains( "*" ) || allowedExtensions.stream().map( Key::of ).anyMatch( ext -> Key.of( extension ).equals( ext ) ) ) {
 			return true;
 		} else {
-			return !disallowedExtensions.stream().anyMatch( ext -> Key.of( extension ).equals( Key.of( ext ) ) );
+			return !disallowedExtensions.stream().map( Key::of ).anyMatch( ext -> Key.of( extension ).equals( ext ) );
 		}
 	}
 
