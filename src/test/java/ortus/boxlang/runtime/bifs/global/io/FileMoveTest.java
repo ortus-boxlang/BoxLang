@@ -86,6 +86,9 @@ public class FileMoveTest {
 		if ( FileSystemUtil.exists( tmpDirectory ) ) {
 			FileSystemUtil.deleteDirectory( tmpDirectory, true );
 		}
+		if( FileSystemUtil.exists( Path.of( javaTempDirectory, "start.txt" ).toAbsolutePath().toString() ) ){
+			FileSystemUtil.deleteFile( Path.of( javaTempDirectory, "start.txt" ).toAbsolutePath().toString() );
+		}
 	}
 
 	@DisplayName( "It tests the BIF FileMove" )
@@ -153,7 +156,7 @@ public class FileMoveTest {
 
 		instance.executeSource(
 		    """
-		    fileMove( source, destination );
+		    fileMove( source, destination, true );
 		      """,
 		    context );
 
