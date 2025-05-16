@@ -156,7 +156,7 @@ public class FileMoveTest {
 
 		instance.executeSource(
 		    """
-		    fileMove( source, destination, true );
+		    fileMove( source, destination );
 		      """,
 		    context );
 
