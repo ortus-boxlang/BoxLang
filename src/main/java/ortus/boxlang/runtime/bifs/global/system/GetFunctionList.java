@@ -24,11 +24,17 @@ import ortus.boxlang.runtime.bifs.BIFDescriptor;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 
 @BoxBIF
 public class GetFunctionList extends BIF {
+
+	/**
+	 * Cache this data because it is expensive to get
+	 */
+	IStruct cachedFunctionList = null;
 
 	/**
 	 * Constructor
@@ -44,26 +50,35 @@ public class GetFunctionList extends BIF {
 	 * @param arguments Argument scope for the BIF.
 	 */
 	public IStruct _invoke( IBoxContext context, ArgumentsScope arguments ) {
+		return getFunctionList( context );
+	}
 
-		IStruct functions = new Struct( Struct.TYPES.LINKED );
+	private IStruct getFunctionList( IBoxContext context ) {
+		if ( cachedFunctionList == null ) {
+			synchronized ( this ) {
+				if ( cachedFunctionList == null ) {
+					IStruct functions = new Struct( Struct.TYPES.LINKED );
 
-		// Build a struct of the global functions
-		Arrays.stream( functionService.getGlobalFunctionNames() )
-		    .forEach( functionName -> {
-			    BIFDescriptor bif = functionService.getGlobalFunction( functionName );
-			    functions.put(
-			        functionName,
-			        Struct.of(
-			            "module", bif.hasModule() ? bif.module : "---",
-			            "namespace", bif.hasNamespace() ? bif.namespace : "---",
-			            "isGlobal", bif.isGlobal,
-			            "className", bif.BIFClass.getCanonicalName(),
-			            "arguments", bif.getArguments()
-			        )
-			    );
-		    } );
-
-		return functions;
+					// Build a struct of the global functions
+					Arrays.stream( functionService.getGlobalFunctionKeys() )
+					    .forEach( functionName -> {
+						    BIFDescriptor bif = functionService.getGlobalFunction( functionName );
+						    functions.put(
+						        functionName,
+						        Struct.of(
+						            Key.module, bif.hasModule() ? bif.module : "---",
+						            Key.namespace, bif.hasNamespace() ? bif.namespace : "---",
+						            Key.isGlobal, bif.isGlobal,
+						            Key.className, bif.BIFClass.getCanonicalName(),
+						            Key.arguments, bif.getArguments()
+						        )
+						    );
+					    } );
+					cachedFunctionList = functions;
+				}
+			}
+		}
+		return cachedFunctionList;
 	}
 
 }

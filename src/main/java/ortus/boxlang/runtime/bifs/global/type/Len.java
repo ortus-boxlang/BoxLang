@@ -71,25 +71,25 @@ public class Len extends BIF {
 		Object	object	= arguments.get( Key.value );
 
 		// Check if there is an argument called "struct", if so, use that
-		Object	struct	= arguments.get( "struct" );
+		Object	struct	= arguments.get( Key.struct );
 		if ( struct != null ) {
 			object = struct;
 		}
 
 		// Check if there is an argument called "query", if so, use that
-		Object query = arguments.get( "query" );
+		Object query = arguments.get( Key.query );
 		if ( query != null ) {
 			object = query;
 		}
 
 		// Check if there is an argument called "array", if so, use that
-		Object array = arguments.get( "array" );
+		Object array = arguments.get( Key.array );
 		if ( array != null ) {
 			object = array;
 		}
 
 		// Check if there is an argument called "string", if so, use that
-		Object string = arguments.get( "string" );
+		Object string = arguments.get( Key.string );
 		if ( string != null ) {
 			object = string;
 		}

@@ -170,6 +170,18 @@ public class FunctionService extends BaseService {
 	}
 
 	/**
+	 * Returns the names of the global functions registered with the service as keys
+	 *
+	 * @return A set of global function names as keys
+	 */
+	public Key[] getGlobalFunctionKeys() {
+		return this.globalFunctions.keySet()
+		    .stream()
+		    .sorted()
+		    .toArray( Key[]::new );
+	}
+
+	/**
 	 * Returns whether or not the service has a global function with the given name
 	 *
 	 * @param name The name of the global function

@@ -410,6 +410,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		interrupted							= Key.of( "interrupted" );
 	public static final Key		interval							= Key.of( "interval" );
 	public static final Key		isNew								= Key.of( "isNew" );
+	public static final Key		isGlobal							= Key.of( "isGlobal" );
 	public static final Key		invoke								= Key.of( "invoke" );
 	public static final Key		invokeArgs							= Key.of( "invokeArgs" );
 	public static final Key		isShutdown							= Key.of( "isShutdown" );
@@ -576,6 +577,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		path_translated						= Key.of( "path_translated" );
 	public static final Key		prompt								= Key.of( "prompt" );
 	public static final Key		pattern								= Key.of( "pattern" );
+	public static final Key		persisent							= Key.of( "persisent" );
 	public static final Key		pid									= Key.of( "pid" );
 	public static final Key		placeholders						= Key.of( "placeholders" );
 	public static final Key		pos									= Key.of( "pos" );
