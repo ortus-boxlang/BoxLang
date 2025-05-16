@@ -73,6 +73,23 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 		public boolean isEffectivePublic() {
 			return this == PUBLIC || this == REMOTE || this == PACKAGE;
 		}
+
+		public String getLowerName() {
+			switch ( this ) {
+				case PRIVATE :
+					return "private";
+				case PUBLIC :
+					return "public";
+				case PROTECTED :
+					return "protected";
+				case REMOTE :
+					return "remote";
+				case PACKAGE :
+					return "package";
+				default :
+					throw new IllegalArgumentException( "Unknown access: " + this );
+			}
+		}
 	}
 
 	/**
@@ -367,7 +384,7 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 		meta.putIfAbsent( Key.hint, "" );
 		// Passing null to canOutput will skip the class check
 		meta.putIfAbsent( Key.output, canOutput( null ) );
-		meta.put( Key.access, getAccess().toString().toLowerCase() );
+		meta.put( Key.access, getAccess().getLowerName() );
 		Array params = new Array();
 		for ( Argument argument : getArguments() ) {
 			IStruct arg = new Struct( IStruct.TYPES.LINKED );
@@ -497,7 +514,7 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 
 	public String signatureAsString() {
 		StringBuilder sb = new StringBuilder();
-		sb.append( getAccess().toString().toLowerCase() );
+		sb.append( getAccess().getLowerName() );
 		sb.append( " " );
 		sb.append( getReturnType() );
 		sb.append( " function " );

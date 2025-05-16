@@ -124,12 +124,12 @@ public class BIFDescriptor {
 			    argumentsStruct.put(
 			        argument.name(),
 			        Struct.of(
-			            "type", argument.type(),
-			            "required", argument.required(),
-			            "defaultValue", argument.defaultValue(),
-			            "validators", argument.validators(),
-			            "annotations", argument.annotations(),
-			            "documentation", argument.documentation()
+			            Key.type, argument.type(),
+			            Key.required, argument.required(),
+			            Key.defaultValue, argument.defaultValue(),
+			            Key.validators, argument.validators(),
+			            Key.annotations, argument.annotations(),
+			            Key.documentation, argument.documentation()
 			        )
 			    );
 		    } );

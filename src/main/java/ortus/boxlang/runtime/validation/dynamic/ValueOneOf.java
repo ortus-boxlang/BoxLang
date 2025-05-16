@@ -40,10 +40,7 @@ public class ValueOneOf implements Validator {
 	public void validate( IBoxContext context, Key caller, Validatable record, IStruct records ) {
 		if ( records.containsKey( record.name() ) ) {
 			String value = records.getAsString( record.name() );
-			if ( value != null ) {
-				value = value.toLowerCase();
-			}
-			if ( value != null && !validValues.stream().map( String::toLowerCase ).anyMatch( value::equals ) ) {
+			if ( value != null && !validValues.stream().anyMatch( value::equalsIgnoreCase ) ) {
 				throw new BoxValidationException( caller, record, "must be one of the following values: " + String.join( ", ", validValues ) );
 			}
 		}

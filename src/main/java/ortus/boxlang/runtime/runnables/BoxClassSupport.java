@@ -508,9 +508,9 @@ public class BoxClassSupport {
 				functions.add( fun.getMetaData() );
 			}
 		}
-		meta.put( "name", thisClass.bxGetName().getName() );
-		meta.put( "accessors", hasAccessors( thisClass ) );
-		meta.put( "functions", Array.fromList( functions ) );
+		meta.put( Key._NAME, thisClass.bxGetName().getName() );
+		meta.put( Key.accessors, hasAccessors( thisClass ) );
+		meta.put( Key.functions, Array.fromList( functions ) );
 
 		// meta.put( "hashCode", hashCode() );
 		var properties = new Array();
@@ -522,10 +522,10 @@ public class BoxClassSupport {
 				continue;
 			}
 			var propertyStruct = new Struct( IStruct.TYPES.LINKED );
-			propertyStruct.put( "name", property.name().getName() );
-			propertyStruct.put( "type", property.type() );
+			propertyStruct.put( Key._NAME, property.name().getName() );
+			propertyStruct.put( Key.type, property.type() );
 			if ( property.hasDefaultValue() ) {
-				propertyStruct.put( "default", property.getDefaultValueForMeta() );
+				propertyStruct.put( Key._DEFAULT, property.getDefaultValueForMeta() );
 			}
 			if ( property.documentation() != null ) {
 				propertyStruct.putAll( property.documentation() );
@@ -541,12 +541,12 @@ public class BoxClassSupport {
 			}
 			properties.add( propertyStruct );
 		}
-		meta.put( "properties", properties );
-		meta.put( "type", "Component" );
-		meta.put( "name", thisClass.bxGetName().getName() );
-		meta.put( "fullname", thisClass.bxGetName().getName() );
-		meta.put( "path", thisClass.getRunnablePath().absolutePath().toString() );
-		meta.put( "persisent", false );
+		meta.put( Key.properties, properties );
+		meta.put( Key.type, "Component" );
+		meta.put( Key._NAME, thisClass.bxGetName().getName() );
+		meta.put( Key.fullname, thisClass.bxGetName().getName() );
+		meta.put( Key.path, thisClass.getRunnablePath().absolutePath().toString() );
+		meta.put( Key.persisent, false );
 
 		if ( thisClass.getDocumentation() != null ) {
 			meta.putAll( thisClass.getDocumentation() );
@@ -555,7 +555,7 @@ public class BoxClassSupport {
 			meta.putAll( thisClass.getAnnotations() );
 		}
 		if ( thisClass.getSuper() != null ) {
-			meta.put( "extends", thisClass.getSuper().getMetaData() );
+			meta.put( Key._EXTENDS, thisClass.getSuper().getMetaData() );
 		}
 		return meta;
 	}
