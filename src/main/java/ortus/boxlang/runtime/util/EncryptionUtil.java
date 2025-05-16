@@ -39,7 +39,6 @@ import java.util.HashMap;
 import java.util.HexFormat;
 import java.util.Random;
 import java.util.regex.Pattern;
-import java.util.stream.IntStream;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -233,10 +232,14 @@ public final class EncryptionUtil {
 	 * @return the strigified result
 	 */
 	public static String digestToString( byte[] digest ) {
-		StringBuilder result = new StringBuilder();
-		IntStream
-		    .range( 0, digest.length )
-		    .forEach( idx -> result.append( String.format( "%02x", digest[ idx ] ) ) );
+		StringBuilder result = new StringBuilder( digest.length * 2 );
+		for ( byte b : digest ) {
+			int v = b & 0xFF;
+			if ( v < 16 ) {
+				result.append( '0' );
+			}
+			result.append( Integer.toHexString( v ) );
+		}
 		return result.toString();
 	}
 
