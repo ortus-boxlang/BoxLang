@@ -54,6 +54,8 @@ import ortus.boxlang.runtime.util.RegexBuilder;
  */
 public class ExceptionUtil {
 
+	private static BoxRuntime runtime = BoxRuntime.getInstance();
+
 	/**
 	 * Checks if an exception is of a given type
 	 *
@@ -289,6 +291,11 @@ public class ExceptionUtil {
 	 * @return The surrounding lines of code
 	 */
 	private static String getSurroudingLinesOfCode( String fileName, int lineNo, boolean html ) {
+		// Only return source lines when in debug mode
+		if ( !runtime.inDebugMode() ) {
+			return "";
+		}
+
 		// read file, if exists, and return the surrounding lines of code, 2 before and 2 after
 		File srcFile = new File( fileName );
 		if ( srcFile.exists() ) {
