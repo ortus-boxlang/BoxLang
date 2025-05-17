@@ -42,7 +42,7 @@ public class Transaction extends Component {
 	/**
 	 * Logger
 	 */
-	private static final BoxLangLogger logger = BoxRuntime.getInstance().getLoggingService().getLogger( "datasource" );
+	private static final BoxLangLogger logger = BoxRuntime.getInstance().getLoggingService().DATASOURCE_LOGGER;
 
 	/**
 	 * Constructor
@@ -81,15 +81,15 @@ public class Transaction extends Component {
 	 * @param attributes     The attributes to the Component
 	 * @param body           The body of the Component
 	 * @param executionState The execution state of the Component
-	 * 
+	 *
 	 * @attribute.action When used inside a transaction block, perform some action upon an existing transaction. One of: `begin`, `commit`, `rollback`, or `setsavepoint`.
-	 * 
+	 *
 	 * @attribute.isolation The isolation level to use for the transaction. Can only be set upon transaction begin. One of: `read_uncommitted`, `read_committed`, `repeatable_read`, or `serializable`.
-	 * 
+	 *
 	 * @attribute.savepoint The name of the savepoint to set or rollback to. Used with `savepoint` or `rollback` actions.
-	 * 
+	 *
 	 * @attribute.nested Whether or not this transaction is nested within another transaction. Default is `false`.
-	 * 
+	 *
 	 * @attribute.datasource The name of the datasource to use for the transaction. If not provided, the first query execution inside the transaction will set the datasource.
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {

@@ -136,7 +136,7 @@ public class AsyncService extends BaseService {
 	 */
 	@Override
 	public void onConfigurationLoad() {
-		this.logger = runtime.getLoggingService().getLogger( "async" );
+		this.logger = runtime.getLoggingService().ASYNC_LOGGER;
 	}
 
 	/**

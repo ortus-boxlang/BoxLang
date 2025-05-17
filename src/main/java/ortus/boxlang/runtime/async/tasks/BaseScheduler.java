@@ -158,7 +158,7 @@ public class BaseScheduler implements IScheduler {
 		this.name			= name;
 		this.timezone		= timezone;
 		this.asyncService	= BoxRuntime.getInstance().getAsyncService();
-		this.logger			= BoxRuntime.getInstance().getLoggingService().getLogger( "scheduler" );
+		this.logger			= BoxRuntime.getInstance().getLoggingService().SCHEDULER_LOGGER;
 		this.context		= context;
 
 		// Log it

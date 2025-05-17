@@ -26,7 +26,7 @@ public class ChildTransaction implements ITransaction {
 	/**
 	 * Logger
 	 */
-	private static final BoxLangLogger	logger	= BoxRuntime.getInstance().getLoggingService().getLogger( "datasource" );
+	private static final BoxLangLogger	logger	= BoxRuntime.getInstance().getLoggingService().DATASOURCE_LOGGER;
 	/**
 	 * The parent transaction.
 	 */

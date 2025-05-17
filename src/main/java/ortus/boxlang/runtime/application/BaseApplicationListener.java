@@ -191,7 +191,7 @@ public abstract class BaseApplicationListener {
 	 * @param context The request context
 	 */
 	protected BaseApplicationListener( RequestBoxContext context, ResolvedFilePath baseTemplatePath ) {
-		this.logger				= runtime.getLoggingService().getLogger( "application" );
+		this.logger				= runtime.getLoggingService().APPLICATION_LOGGER;
 		this.context			= context;
 		this.baseTemplatePath	= baseTemplatePath;
 		context.setApplicationListener( this );

@@ -298,7 +298,7 @@ public class ScheduledTask implements Runnable {
 		this.group		= group;
 		this.executor	= executor;
 		this.scheduler	= scheduler;
-		this.logger		= BoxRuntime.getInstance().getLoggingService().getLogger( "scheduler" );
+		this.logger		= BoxRuntime.getInstance().getLoggingService().SCHEDULER_LOGGER;
 
 		// Determine the context to use for this task
 		// - If we have a scheduler, use the scheduler context

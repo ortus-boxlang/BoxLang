@@ -71,7 +71,7 @@ public class DatasourceService extends BaseService {
 	 */
 	@Override
 	public void onConfigurationLoad() {
-		this.logger = runtime.getLoggingService().getLogger( "datasource" );
+		this.logger = runtime.getLoggingService().DATASOURCE_LOGGER;
 	}
 
 	/**
