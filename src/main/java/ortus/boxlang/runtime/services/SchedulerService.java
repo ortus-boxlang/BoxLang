@@ -99,7 +99,7 @@ public class SchedulerService extends BaseService {
 	 */
 	@Override
 	public void onConfigurationLoad() {
-		this.logger = runtime.getLoggingService().getLogger( "scheduler" );
+		this.logger = runtime.getLoggingService().SCHEDULER_LOGGER;
 	}
 
 	/**

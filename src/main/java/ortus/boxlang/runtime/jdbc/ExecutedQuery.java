@@ -46,7 +46,7 @@ import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 public final class ExecutedQuery {
 
 	private static final InterceptorService	interceptorService	= BoxRuntime.getInstance().getInterceptorService();
-	private static final BoxLangLogger		logger				= BoxRuntime.getInstance().getLoggingService().getLogger( "datasource" );
+	private static final BoxLangLogger		logger				= BoxRuntime.getInstance().getLoggingService().DATASOURCE_LOGGER;
 
 	/**
 	 * A Query object holding the results of the query.

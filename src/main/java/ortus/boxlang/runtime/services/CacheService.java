@@ -137,7 +137,7 @@ public class CacheService extends BaseService {
 	 */
 	@Override
 	public void onConfigurationLoad() {
-		this.logger = runtime.getLoggingService().getLogger( "cache" );
+		this.logger = runtime.getLoggingService().CACHE_LOGGER;
 	}
 
 	/**

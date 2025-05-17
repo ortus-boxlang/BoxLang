@@ -39,7 +39,7 @@ public class Transaction implements ITransaction {
 	/**
 	 * Logger
 	 */
-	private static final BoxLangLogger	logger					= BoxRuntime.getInstance().getLoggingService().getLogger( "datasource" );
+	private static final BoxLangLogger	logger					= BoxRuntime.getInstance().getLoggingService().DATASOURCE_LOGGER;
 
 	/**
 	 * The context associated with this transaction.

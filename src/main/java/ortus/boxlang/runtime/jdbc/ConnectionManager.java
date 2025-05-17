@@ -51,7 +51,7 @@ public class ConnectionManager {
 	/**
 	 * Logger
 	 */
-	private static final BoxLangLogger	logger							= BoxRuntime.getInstance().getLoggingService().getLogger( "datasource" );
+	private static final BoxLangLogger	logger							= BoxRuntime.getInstance().getLoggingService().DATASOURCE_LOGGER;
 
 	/**
 	 * The active transaction (if any) for this request/thread/BoxLang context.

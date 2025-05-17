@@ -97,7 +97,7 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 	 * Setup the logger for this class
 	 */
 	private void setupLogger() {
-		this.logger = BoxRuntime.getInstance().getLoggingService().getLogger( "async" );
+		this.logger = BoxRuntime.getInstance().getLoggingService().ASYNC_LOGGER;
 	}
 
 	/**
@@ -427,7 +427,7 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 	 */
 	public static BoxFuture<Array> all( IBoxContext context, Object... futures ) {
 		BoxFuture<?>[]		aFutures	= futuresWrap( context, futures );
-		final BoxLangLogger	allLogger	= BoxRuntime.getInstance().getLoggingService().getLogger( "async" );
+		final BoxLangLogger	allLogger	= BoxRuntime.getInstance().getLoggingService().ASYNC_LOGGER;
 
 		// Send to allOf() for execution
 		return ( BoxFuture<Array> ) allOf( aFutures )
@@ -628,7 +628,7 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 	    Executor executor ) {
 		// Timeunit conversion
 		TimeUnit			timeUnit	= DateTimeHelper.toTimeUnit( unit );
-		final BoxLangLogger	allLogger	= BoxRuntime.getInstance().getLoggingService().getLogger( "async" );
+		final BoxLangLogger	allLogger	= BoxRuntime.getInstance().getLoggingService().ASYNC_LOGGER;
 
 		// Array Mapping
 		if ( items instanceof Array castedArray ) {

@@ -132,7 +132,7 @@ public class ModuleService extends BaseService {
 	 */
 	@Override
 	public void onConfigurationLoad() {
-		this.logger = runtime.getLoggingService().getLogger( "modules" );
+		this.logger = runtime.getLoggingService().MODULES_LOGGER;
 	}
 
 	/**

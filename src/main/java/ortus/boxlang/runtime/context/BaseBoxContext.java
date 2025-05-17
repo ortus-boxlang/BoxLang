@@ -135,11 +135,6 @@ public class BaseBoxContext implements IBoxContext {
 	private final IBoxAttachable				attachable			= new Attachable();
 
 	/**
-	 * Context Logger
-	 */
-	private final BoxLangLogger					logger;
-
-	/**
 	 * --------------------------------------------------------------------------
 	 * Constructors
 	 * --------------------------------------------------------------------------
@@ -152,7 +147,6 @@ public class BaseBoxContext implements IBoxContext {
 	 * @param parent The parent context
 	 */
 	public BaseBoxContext( IBoxContext parent ) {
-		this.logger				= BoxRuntime.getInstance().getLoggingService().getRuntimeLogger();
 		this.parent				= parent;
 		this.functionService	= BoxRuntime.getInstance().getFunctionService();
 		this.componentService	= BoxRuntime.getInstance().getComponentService();
@@ -176,7 +170,7 @@ public class BaseBoxContext implements IBoxContext {
 	 * Get the context logger
 	 */
 	public BoxLangLogger getLogger() {
-		return this.logger;
+		return BoxRuntime.getInstance().getLoggingService().RUNTIME_LOGGER;
 	}
 
 	/**

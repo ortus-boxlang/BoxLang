@@ -67,7 +67,7 @@ public class PendingQuery {
 	 * --------------------------------------------------------------------------
 	 */
 
-	private static final BoxLangLogger			logger				= BoxRuntime.getInstance().getLoggingService().getLogger( "datasource" );
+	private static final BoxLangLogger			logger				= BoxRuntime.getInstance().getLoggingService().DATASOURCE_LOGGER;
 
 	/**
 	 * The InterceptorService instance to use for announcing events.

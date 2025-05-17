@@ -121,7 +121,7 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 	@Override
 	public synchronized ICacheProvider configure( CacheService cacheService, CacheConfig config ) {
 		// Prep the logger
-		this.logger = BoxRuntime.getInstance().getLoggingService().getLogger( "cache" );
+		this.logger = BoxRuntime.getInstance().getLoggingService().CACHE_LOGGER;
 
 		// Super size me!
 		super.configure( cacheService, config );

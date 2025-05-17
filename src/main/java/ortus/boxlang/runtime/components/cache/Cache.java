@@ -94,7 +94,7 @@ public class Cache extends Component {
 	 * ----------------------------------------
 	 */
 
-	private final BoxLangLogger		logger			= runtime.getLoggingService().getLogger( "cache" );
+	private final BoxLangLogger		logger			= runtime.getLoggingService().CACHE_LOGGER;
 
 	protected final CacheService	cacheService	= BoxRuntime.getInstance().getCacheService();
 

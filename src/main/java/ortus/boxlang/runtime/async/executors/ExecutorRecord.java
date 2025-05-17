@@ -59,7 +59,7 @@ public record ExecutorRecord( ExecutorService executor, String name, ExecutorTyp
 	 * Get the executor logger
 	 */
 	public BoxLangLogger getLogger() {
-		return BoxRuntime.getInstance().getLoggingService().getLogger( "async" );
+		return BoxRuntime.getInstance().getLoggingService().ASYNC_LOGGER;
 	}
 
 	/**

@@ -152,7 +152,7 @@ public class Application {
 	 * @param name The name of the application
 	 */
 	public Application( Key name ) {
-		this.logger	= BoxRuntime.getInstance().getLoggingService().getLogger( "application" );
+		this.logger	= BoxRuntime.getInstance().getLoggingService().APPLICATION_LOGGER;
 		this.name	= name;
 		prepApplication();
 	}

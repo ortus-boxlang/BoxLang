@@ -185,7 +185,7 @@ public class ApplicationService extends BaseService {
 	 */
 	@Override
 	public void onConfigurationLoad() {
-		this.logger = runtime.getLoggingService().getLogger( "application" );
+		this.logger = runtime.getLoggingService().APPLICATION_LOGGER;
 	}
 
 	/**

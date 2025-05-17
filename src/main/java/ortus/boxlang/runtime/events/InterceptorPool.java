@@ -716,7 +716,7 @@ public class InterceptorPool {
 		if ( this.logger == null ) {
 			synchronized ( this ) {
 				if ( this.logger == null ) {
-					this.logger = this.runtime.getLoggingService().getLogger( "runtime" );
+					this.logger = this.runtime.getLoggingService().getRuntimeLogger();
 				}
 			}
 		}

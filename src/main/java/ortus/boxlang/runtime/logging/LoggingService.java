@@ -94,6 +94,22 @@ public class LoggingService {
 	public static String							DEFAULT_LOG_LEVEL	= LEVEL_INFO;
 
 	/**
+	 * --------------------------------------------------------------------------
+	 * Public Common Loggers
+	 * --------------------------------------------------------------------------
+	 * These are the common loggers that are used in the runtime, loaded by default
+	 * so they are fast to use.
+	 */
+	public BoxLangLogger							APPLICATION_LOGGER	= null;
+	public BoxLangLogger							ASYNC_LOGGER		= null;
+	public BoxLangLogger							CACHE_LOGGER		= null;
+	public BoxLangLogger							EXCEPTION_LOGGER	= null;
+	public BoxLangLogger							DATASOURCE_LOGGER	= null;
+	public BoxLangLogger							MODULES_LOGGER		= null;
+	public BoxLangLogger							RUNTIME_LOGGER		= null;
+	public BoxLangLogger							SCHEDULER_LOGGER	= null;
+
+	/**
 	 * The log format for the BoxLang runtime
 	 *
 	 * @see https://logback.qos.ch/manual/layouts.html#conversionWord
@@ -344,6 +360,16 @@ public class LoggingService {
 			new StatusPrinter2().print( this.loggerContext );
 		}
 
+		// Store The Common Loggers
+		this.APPLICATION_LOGGER	= getLogger( "application" );
+		this.ASYNC_LOGGER		= getLogger( "async" );
+		this.CACHE_LOGGER		= getLogger( "cache" );
+		this.EXCEPTION_LOGGER	= getLogger( "exception" );
+		this.DATASOURCE_LOGGER	= getLogger( "datasource" );
+		this.MODULES_LOGGER		= getLogger( "modules" );
+		this.RUNTIME_LOGGER		= getLogger( "runtime" );
+		this.SCHEDULER_LOGGER	= getLogger( "scheduler" );
+
 		return instance;
 	}
 
@@ -451,14 +477,14 @@ public class LoggingService {
 	 * @return The runtime logger
 	 */
 	public BoxLangLogger getRuntimeLogger() {
-		return getLogger( DEFAULT_LOG_FILE );
+		return this.RUNTIME_LOGGER;
 	}
 
 	/**
 	 * Alias to get the exception logger
 	 */
 	public BoxLangLogger getExceptionLogger() {
-		return getLogger( "exception" );
+		return this.EXCEPTION_LOGGER;
 	}
 
 	/**
@@ -685,7 +711,7 @@ public class LoggingService {
 		// Check if we have the logger configuration or else build a vanilla one
 		LoggerConfig	loggerConfig	= ( LoggerConfig ) this.runtime
 		    .getConfiguration().logging.loggers
-		    .computeIfAbsent( loggerKey, key -> new LoggerConfig( key.getName().toUpperCase(), this.runtime.getConfiguration().logging ) );
+		        .computeIfAbsent( loggerKey, key -> new LoggerConfig( key.getName().toUpperCase(), this.runtime.getConfiguration().logging ) );
 		Level			configLevel		= Level.toLevel( LogLevel.valueOf( loggerConfig.level.getName(), false ).getName() );
 
 		// Seed the properties

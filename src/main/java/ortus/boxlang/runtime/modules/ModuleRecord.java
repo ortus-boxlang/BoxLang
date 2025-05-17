@@ -264,7 +264,7 @@ public class ModuleRecord {
 	 */
 	public ModuleRecord( String physicalPath ) {
 		this.runtime	= BoxRuntime.getInstance();
-		this.logger		= this.runtime.getLoggingService().getLogger( "modules" );
+		this.logger		= this.runtime.getLoggingService().MODULES_LOGGER;
 
 		Path	directoryPath	= Path.of( physicalPath );
 		Path	boxjsonPath		= directoryPath.resolve( MODULE_CONFIG_FILE );

@@ -79,7 +79,7 @@ public class ComponentService extends BaseService {
 	 */
 	@Override
 	public void onConfigurationLoad() {
-		this.logger = runtime.getLoggingService().getLogger( "runtime" );
+		this.logger = runtime.getLoggingService().getRuntimeLogger();
 	}
 
 	/**
