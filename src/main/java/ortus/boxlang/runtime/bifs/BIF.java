@@ -109,14 +109,44 @@ public abstract class BIF {
 	 * @return The result of the invocation
 	 */
 	public Object invoke( IBoxContext context, ArgumentsScope arguments ) {
-		interceptorService.announce(
-		    BoxEvent.ON_BIF_INVOCATION,
-		    Struct.of(
-		        Key.context, context,
-		        Key.arguments, arguments
-		    )
-		);
-		return _invoke( context, arguments );
+		// We do this, since it's hot code
+		boolean	doEvents	= this.interceptorService.hasState( BoxEvent.ON_BIF_INVOCATION.key() ) ||
+		    this.interceptorService.hasState( BoxEvent.POST_BIF_INVOCATION.key() );
+
+		IStruct	data		= null;
+		if ( doEvents ) {
+			data = Struct.of(
+			    Key.context, context,
+			    Key.arguments, arguments,
+			    Key.bif, this
+			);
+			interceptorService.announce(
+			    BoxEvent.ON_BIF_INVOCATION,
+			    data
+			);
+		}
+
+		// Invoke the BIF
+		Object result = _invoke( context, arguments );
+
+		if ( doEvents ) {
+
+			if ( result != null ) {
+				data.put( Key.result, result );
+			}
+
+			interceptorService.announce(
+			    BoxEvent.ON_BIF_INVOCATION,
+			    data
+			);
+
+			// If we have it, then override it
+			if ( data.containsKey( Key.result ) ) {
+				result = data.get( Key.result );
+			}
+		}
+
+		return result;
 	}
 
 	/**

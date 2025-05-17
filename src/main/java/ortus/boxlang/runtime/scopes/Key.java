@@ -125,6 +125,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		baseTag								= Key.of( "baseTag" );
 	public static final Key		binary								= Key.of( "binary" );
 	public static final Key		body								= Key.of( "body" );
+	public static final Key		bif									= Key.of( "bif" );
 	public static final Key		boxBif								= Key.of( "BoxBif" );
 	public static final Key		boxCacheProvider					= Key.of( "BoxCacheProvider" );
 	public static final Key		boxComponent						= Key.of( "BoxComponent" );
@@ -642,6 +643,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		response							= Key.of( "response" );
 	public static final Key		responseHeader						= Key.of( "responseHeader" );
 	public static final Key		result								= Key.of( "result" );
+	public static final Key		results								= Key.of( "results" );
 	public static final Key		retainKeys							= Key.of( "retainKeys" );
 	public static final Key		returnFormat						= Key.of( "returnFormat" );
 	public static final Key		returnSubExpressions				= Key.of( "returnSubExpressions" );
