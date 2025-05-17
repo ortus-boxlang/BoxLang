@@ -333,6 +333,7 @@ public class BoxRuntime implements java.io.Closeable {
 		// 1. Load Core Configuration file : resources/config/boxlang.json
 		this.configuration = loader.loadCore();
 
+		// Announce so any runtime additions can incorporate settings or override them.
 		this.interceptorService.announce(
 		    BoxEvent.ON_CONFIGURATION_LOAD,
 		    Struct.of( "config", this.configuration ) );

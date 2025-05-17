@@ -716,7 +716,16 @@ public class InterceptorPool {
 		if ( this.logger == null ) {
 			synchronized ( this ) {
 				if ( this.logger == null ) {
-					this.logger = this.runtime.getLoggingService().getRuntimeLogger();
+					// Verify if the runtime is null, if it is, then we are in loading mode
+					// Delegate to the root logger and don't store
+					// Wait for the runtime to be initialized
+					if ( this.runtime.getLoggingService().getRuntimeLogger() == null ) {
+						return this.runtime.getLoggingService().getRootLogger();
+					} else {
+						// Get the logger for the interceptor pool
+						this.logger = this.runtime.getLoggingService().getRuntimeLogger();
+					}
+
 				}
 			}
 		}

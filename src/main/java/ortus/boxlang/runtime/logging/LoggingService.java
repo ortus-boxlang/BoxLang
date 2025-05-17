@@ -135,7 +135,7 @@ public class LoggingService {
 	/**
 	 * The root logger for the runtime
 	 */
-	private Logger									rootLogger;
+	private BoxLangLogger							rootLogger;
 
 	/**
 	 * The logger context for the runtime
@@ -214,7 +214,7 @@ public class LoggingService {
 	 *
 	 * @return The root logger
 	 */
-	public Logger getRootLogger() {
+	public BoxLangLogger getRootLogger() {
 		return this.rootLogger;
 	}
 
@@ -232,7 +232,7 @@ public class LoggingService {
 	 *
 	 * @return The logging service
 	 */
-	public LoggingService setRootLogger( Logger logger ) {
+	public LoggingService setRootLogger( BoxLangLogger logger ) {
 		this.rootLogger = logger;
 		return instance;
 	}
@@ -332,7 +332,7 @@ public class LoggingService {
 		appender.start();
 
 		// Configure the Root Logger
-		this.rootLogger = loggerContext.getLogger( Logger.ROOT_LOGGER_NAME );
+		this.rootLogger = new BoxLangLogger( loggerContext.getLogger( Logger.ROOT_LOGGER_NAME ) );
 		this.rootLogger.setLevel( Boolean.TRUE.equals( debugMode ) ? Level.DEBUG : Level.WARN );
 		this.rootLogger.addAppender( appender );
 
