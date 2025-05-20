@@ -37,6 +37,7 @@ import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
+import ortus.boxlang.runtime.jdbc.qoq.QoQConnection;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.CacheService;
@@ -634,10 +635,12 @@ public class PendingQuery {
 	 */
 	private ExecutedQuery executeStatement( Connection connection, IBoxContext context ) {
 		try {
-			int					GENERATED_KEYS_SETTING	= Statement.RETURN_GENERATED_KEYS;
-			DatabaseMetaData	metaData				= connection.getMetaData();
-			if ( !metaData.supportsGetGeneratedKeys() ) {
-				GENERATED_KEYS_SETTING = Statement.NO_GENERATED_KEYS;
+			int GENERATED_KEYS_SETTING = Statement.RETURN_GENERATED_KEYS;
+			if ( ! ( connection instanceof QoQConnection ) ) {
+				DatabaseMetaData metaData = connection.getMetaData();
+				if ( !metaData.supportsGetGeneratedKeys() ) {
+					GENERATED_KEYS_SETTING = Statement.NO_GENERATED_KEYS;
+				}
 			}
 
 			String sqlStatement = this.sql;
