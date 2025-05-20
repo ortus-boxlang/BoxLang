@@ -15,6 +15,7 @@
 package ortus.boxlang.runtime.jdbc;
 
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -633,12 +634,17 @@ public class PendingQuery {
 	 */
 	private ExecutedQuery executeStatement( Connection connection, IBoxContext context ) {
 		try {
+			int					GENERATED_KEYS_SETTING	= Statement.RETURN_GENERATED_KEYS;
+			DatabaseMetaData	metaData				= connection.getMetaData();
+			if ( !metaData.supportsGetGeneratedKeys() ) {
+				GENERATED_KEYS_SETTING = Statement.NO_GENERATED_KEYS;
+			}
 
 			String sqlStatement = this.sql;
 			try (
 			    Statement statement = this.parameters.isEmpty()
 			        ? connection.createStatement()
-			        : connection.prepareStatement( sqlStatement, Statement.RETURN_GENERATED_KEYS ); ) {
+			        : connection.prepareStatement( sqlStatement, GENERATED_KEYS_SETTING ); ) {
 
 				applyParameters( statement, context );
 				applyStatementOptions( statement );
@@ -653,7 +659,7 @@ public class PendingQuery {
 				long	startTick	= System.currentTimeMillis();
 				boolean	hasResults	= statement instanceof PreparedStatement preparedStatement
 				    ? preparedStatement.execute()
-				    : statement.execute( sqlStatement, Statement.RETURN_GENERATED_KEYS );
+				    : statement.execute( sqlStatement, GENERATED_KEYS_SETTING );
 				long	endTick		= System.currentTimeMillis();
 
 				return ExecutedQuery.fromPendingQuery(
