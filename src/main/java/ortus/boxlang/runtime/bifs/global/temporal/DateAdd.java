@@ -18,6 +18,11 @@ package ortus.boxlang.runtime.bifs.global.temporal;
 import java.math.RoundingMode;
 import java.time.ZoneId;
 
+import java.math.BigDecimal;
+import java.time.Instant;
+import ortus.boxlang.runtime.types.util.DateTimeHelper;
+import java.time.LocalDateTime;
+
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
@@ -61,7 +66,16 @@ public class DateAdd extends BIF {
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		ZoneId		timezone	= LocalizationUtil.parseZoneId( null, context );
-		DateTime	ref			= DateTimeCaster.cast( arguments.get( Key.date ), true, timezone, true, context );
+		DateTime	ref;
+		if ( arguments.get( Key.date ) instanceof BigDecimal fractionalDays ) {
+			// If we have a big decimal we treat it as fractional days
+			long	epochMillis	= DateTimeHelper.fractionalDaysToEpochMillis( fractionalDays );
+			// Epoch millis is in UTC, so we always need to apply that timezone
+			ZoneId	UTCZone		= ZoneId.of( "UTC" );
+			ref = new DateTime( LocalDateTime.ofInstant( Instant.ofEpochMilli( epochMillis ), UTCZone ), UTCZone );
+		} else {
+			ref = DateTimeCaster.cast( arguments.get( Key.date ), true, timezone, true, context );
+		}
 		return ref.clone().modify(
 		    arguments.getAsString( Key.datepart ),
 		    BigDecimalCaster.cast( arguments.get( Key.number ) ).setScale( 0, RoundingMode.HALF_UP ).longValue()
