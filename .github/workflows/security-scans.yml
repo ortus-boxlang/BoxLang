@@ -10,6 +10,7 @@ permissions: write-all
 
 env:
   JDK: 21
+  GRADLE_VERSION: 8.7
 
 jobs:
   scan:
@@ -30,7 +31,7 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: "8.7"
+          gradle-version: ${{ env.GRADLE_VERSION }}
 
       - name: Setup Environment Variables For Build Process
         id: current_version
@@ -62,7 +63,7 @@ jobs:
           fail-build: true
 
       - name: Upload Anchore Report
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: ${{ steps.securityscan.outputs.sarif }}
           category: "BoxLang-Runtime-${{ github.env.BRANCH }}"
