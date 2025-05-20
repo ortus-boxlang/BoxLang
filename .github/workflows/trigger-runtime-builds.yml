@@ -1,5 +1,5 @@
 # If BoxLang Core builds then this workflow will kick off the runtime builds
-# for: web-support, aws-lambda, and docker
+# for: web-support
 name: Trigger Runtime Builds
 
 on:
@@ -19,8 +19,6 @@ jobs:
       matrix:
         repo:
           - "ortus-boxlang/boxlang-web-support"
-          - "ortus-boxlang/boxlang-aws-lambda"
-          - "ortus-boxlang/boxlang-docker"
 
     steps:
       - name: Trigger Build Workflow for ${{ matrix.repo }}
