@@ -178,6 +178,16 @@ public class ModuleTest {
 	}
 
 	@Test
+	public void testCanRunBXMCustomTagUnderscoreRelative() {
+		instance.executeSource(
+		    """
+		    <cfinclude template="src/test/java/ortus/boxlang/runtime/components/system/relativeTest/relativeTest.cfm">
+		    		  """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.getAsBoolean( Key.of( "relativeTestFound" ) ) ).isTrue();
+	}
+
+	@Test
 	public void testCanRunCustomTagUnderscoreBL() {
 		instance.executeSource(
 		    """

@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.components.system;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.components.Attribute;
@@ -198,6 +199,20 @@ public class Component extends ortus.boxlang.runtime.components.Component {
 		// Convert dots to file separator in name
 		String					fullName		= name.replace( '.', File.separatorChar );
 		List<ResolvedFilePath>	pathToSearch	= new ArrayList<>();
+
+		// Add in directoruy of current template
+		Optional.ofNullable( context.findClosestTemplate() )
+		    .filter( template -> template.absolutePath() != null && !template.absolutePath().toString().equals( "unknown" )
+		        && template.absolutePath().getParent() != null )
+		    .ifPresent( template -> pathToSearch.add(
+		        ResolvedFilePath.of(
+		            template.mappingName(),
+		            template.mappingPath(),
+		            template.relativePath(),
+		            template.absolutePath().getParent()
+		        ) )
+		    );
+
 		pathToSearch.addAll(
 		    context.getConfig()
 		        .getAsArray( Key.customTagsDirectory )
