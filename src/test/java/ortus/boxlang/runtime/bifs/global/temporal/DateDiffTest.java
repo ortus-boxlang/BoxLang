@@ -374,4 +374,21 @@ public class DateDiffTest {
 
 	}
 
+	@DisplayName( "It tests the BIF DateDiff will compare numeric fractional days" )
+	@Test
+	public void testDateDiffFractionalDays() {
+		variables.put( "date1", new DateTime( "2024-01-20T00:00:00.000Z" ) );
+		variables.put( "date2", new DateTime( "2024-01-21T00:00:00.000Z" ) );
+		instance.executeSource(
+		    """
+		       // Epoch millis: 1735689600000
+		       fractionalDays = date2.toEpochMillis() * 1.1574074074074e-8;
+		    result = dateDiff( "d", date1, fractionalDays );
+		    """,
+		    context
+		);
+		Long result = variables.getAsLong( Key.of( "result" ) );
+		assertEquals( 1, result );
+	}
+
 }

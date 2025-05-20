@@ -34,6 +34,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.LocalizationUtil;
+import ortus.boxlang.runtime.types.util.DateTimeHelper;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.DATETIME, name = "diff", objectArgument = "date1" )
@@ -83,8 +84,9 @@ public class DateDiff extends BIF {
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Key			datePart	= Key.of( arguments.getAsString( Key.datepart ) );
 		ZoneId		timezone	= LocalizationUtil.parseZoneId( null, context );
-		DateTime	date1		= DateTimeCaster.cast( arguments.get( Key.date1 ), true, timezone, context );
-		DateTime	date2		= DateTimeCaster.cast( arguments.get( Key.date2 ), true, timezone, context );
+
+		DateTime	date1		= DateTimeHelper.castIncludeFractionalDays( arguments.get( Key.date1 ), timezone, context );
+		DateTime	date2		= DateTimeHelper.castIncludeFractionalDays( arguments.get( Key.date2 ), timezone, context );
 
 		long		result		= IMPROBABLE_RESULT;
 		// @formatter:off
