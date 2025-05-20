@@ -88,7 +88,6 @@ public class DumpTest {
 		// @formatter:on
 		assertThat( baos.toString() ).contains( "root" );
 		assertThat( baos.toString() ).contains( "item" );
-		System.out.println( baos.toString() );
 	}
 
 	@DisplayName( "It can dump tag struct" )
@@ -101,8 +100,33 @@ public class DumpTest {
 		    """,
 		    context, BoxSourceType.CFTEMPLATE );
 		// @formatter:on
-		System.out.println( baos.toString() );
 		assertThat( baos.toString() ).contains( "bar" );
+	}
+
+	@DisplayName( "It can dump tag struct with sorted keys" )
+	@Test
+	public void testCanDumpTagStructSorted() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		       	<cfdump var="#{ 'z_key' : 'z', 'p_key' : 'p', 'a_key' : 'a', 'b_key' : 'b' }#" format="html">
+		    """,
+		    context, BoxSourceType.CFTEMPLATE );
+		// @formatter:on
+		assertThat( baos.toString() ).matches( "(?s).*a_key.*b_key.*p_key.*z_key.*" );
+	}
+
+	@DisplayName( "It can dump tag sorted struct with sorted keys" )
+	@Test
+	public void testCanDumpTagSortedStructSorted() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		       	<cfdump var="#[ 'z_key' : 'z', 'p_key' : 'p', 'a_key' : 'a', 'b_key' : 'b' ]#" format="html">
+		    """,
+		    context, BoxSourceType.CFTEMPLATE );
+		// @formatter:on
+		assertThat( baos.toString() ).matches( "(?s).*z_key.*p_key.*a_key.*b_key.*" );
 	}
 
 	@DisplayName( "It can dump BL tag" )

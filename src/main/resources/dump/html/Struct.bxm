@@ -39,7 +39,12 @@
 				<bx:if !expandRoot>class="d-none"</bx:if>
 			>
 					<bx:set index = 1>
-					<bx:loop collection="#var#" item="key">
+					<bx:set keys = structKeyArray( var )>
+					<!--- If this isn't some sort of sorted or linked struct, then sort the keys for dumping --->
+					<bx:if !('LINKED_CASE_SENSITIVE,LINKED,SORTED'.listFindNoCase(var.getType().toString()))>
+					  <bx:set keys = keys.sort("textnocase")>
+					</bx:if>
+					<bx:loop array="#keys#" item="key">
 						<bx:if  !isNull( top ) and index++ GT top >
 							<bx:break>
 						</bx:if>
