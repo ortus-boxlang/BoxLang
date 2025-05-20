@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.sql.Connection;
 import java.sql.SQLException;
 
@@ -288,24 +288,33 @@ public class DataSourceTest {
 		assert ( firstRow.getAsString( Key.of( "name" ) ).equals( "Luis Majano" ) );
 	}
 
+	@EnabledIf( "tools.JDBCTestUtils#hasMySQLModule" )
 	@DisplayName( "It can retrieve the generated keys from an insert query" )
 	@Test
 	void testGeneratedKeysOnInsert() {
-		try ( Connection conn = datasource.getConnection() ) {
+		DataSource myDataSource = DataSource.fromStruct(
+		    Key.of( "mysql" ),
+		    Struct.of(
+		        "username", "root",
+		        "password", "123456Password",
+		        "connectionString", "jdbc:mysql://localhost:3309/myDB"
+		    ) );
+		try ( Connection conn = myDataSource.getConnection() ) {
 			assertDoesNotThrow( () -> {
-				datasource.execute(
-				    "CREATE TABLE developers2 (id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY(START WITH 1, INCREMENT BY 1), name VARCHAR(155) NOT NULL)",
+				myDataSource.execute(
+				    "CREATE TABLE developers2 (id INTEGER AUTO_INCREMENT PRIMARY KEY, name VARCHAR(155) NOT NULL)",
 				    context );
-				ExecutedQuery executedQuery = datasource.execute( "INSERT INTO developers2 (name) VALUES ('Eric Peterson')", conn, context );
+				ExecutedQuery executedQuery = myDataSource.execute( "INSERT INTO developers2 (name) VALUES ('Eric Peterson')", conn,
+				    context );
 				assertEquals( 0, executedQuery.getRecordCount() );
-				BigDecimal generatedKey = ( BigDecimal ) executedQuery.getGeneratedKey();
+				BigInteger generatedKey = ( BigInteger ) executedQuery.getGeneratedKey();
 				assert generatedKey != null;
 				assertEquals( 1, generatedKey.intValue() );
 			} );
 		} catch ( SQLException e ) {
 			throw new RuntimeException( e );
 		} finally {
-			datasource.execute( "DROP TABLE developers2", context );
+			myDataSource.execute( "DROP TABLE IF EXISTS developers2", context );
 		}
 	}
 
