@@ -83,9 +83,9 @@ public class BaseJDBCTest {
 			    "username", "root",
 			    "password", "123456Password",
 			    "host", "localhost",
-			    "port", "3306",
+			    "port", "3309",
 			    "driver", "mysql",
-			    "database", "mysqlDB",
+			    "database", "myDB",
 			    "custom", "allowMultiQueries=true"
 			) );
 			instance.getConfiguration().datasources.put(
@@ -136,6 +136,14 @@ public class BaseJDBCTest {
 
 	public static DataSource getDatasource() {
 		return datasource;
+	}
+
+	public static DataSource getMysqlDatasource() {
+		return mysqlDatasource;
+	}
+
+	public static DataSource getMssqlDatasource() {
+		return mssqlDatasource;
 	}
 
 	public static DatasourceService getDatasourceService() {
