@@ -34,8 +34,11 @@ import java.util.concurrent.TimeUnit;
 import javax.management.InvalidAttributeValueException;
 
 import ortus.boxlang.runtime.dynamic.casters.BigDecimalCaster;
+import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.dynamic.casters.LongCaster;
 import ortus.boxlang.runtime.util.RegexBuilder;
+import ortus.boxlang.runtime.types.DateTime;
+import ortus.boxlang.runtime.context.IBoxContext;
 
 /**
  * We represent a static date/time helper class that assists with time units on date/time conversions
@@ -548,6 +551,25 @@ public class DateTimeHelper {
 			return TimeUnit.valueOf( castedUnit.toUpperCase() );
 		} else {
 			throw new IllegalArgumentException( "Unsupported time unit: " + unit );
+		}
+	}
+
+	/**
+	 * This will cast a date object and detect fractional days
+	 * 
+	 * @param dateRef  The date reference to cast
+	 * @param timezone The timezone to use
+	 * @param context  The context to use
+	 */
+	public static DateTime castIncludeFractionalDays( Object dateRef, ZoneId timezone, IBoxContext context ) {
+		if ( dateRef instanceof BigDecimal fractionalDays ) {
+			// If we have a big decimal we treat it as fractional days
+			long	epochMillis	= DateTimeHelper.fractionalDaysToEpochMillis( fractionalDays );
+			// Epoch millis is in UTC, so we always need to apply that timezone
+			ZoneId	UTCZone		= ZoneId.of( "UTC" );
+			return new DateTime( LocalDateTime.ofInstant( Instant.ofEpochMilli( epochMillis ), UTCZone ), UTCZone );
+		} else {
+			return DateTimeCaster.cast( dateRef, true, timezone, context );
 		}
 	}
 

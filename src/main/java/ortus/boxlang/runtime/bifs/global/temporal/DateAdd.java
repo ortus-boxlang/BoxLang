@@ -66,16 +66,7 @@ public class DateAdd extends BIF {
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		ZoneId		timezone	= LocalizationUtil.parseZoneId( null, context );
-		DateTime	ref;
-		if ( arguments.get( Key.date ) instanceof BigDecimal fractionalDays ) {
-			// If we have a big decimal we treat it as fractional days
-			long	epochMillis	= DateTimeHelper.fractionalDaysToEpochMillis( fractionalDays );
-			// Epoch millis is in UTC, so we always need to apply that timezone
-			ZoneId	UTCZone		= ZoneId.of( "UTC" );
-			ref = new DateTime( LocalDateTime.ofInstant( Instant.ofEpochMilli( epochMillis ), UTCZone ), UTCZone );
-		} else {
-			ref = DateTimeCaster.cast( arguments.get( Key.date ), true, timezone, true, context );
-		}
+		DateTime	ref			= DateTimeHelper.castIncludeFractionalDays( arguments.get( Key.date ), timezone, context );
 		return ref.clone().modify(
 		    arguments.getAsString( Key.datepart ),
 		    BigDecimalCaster.cast( arguments.get( Key.number ) ).setScale( 0, RoundingMode.HALF_UP ).longValue()
