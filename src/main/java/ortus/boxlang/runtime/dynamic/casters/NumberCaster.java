@@ -19,11 +19,13 @@ package ortus.boxlang.runtime.dynamic.casters;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.time.Duration;
 
 import org.apache.commons.lang3.math.NumberUtils;
 
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.types.DateTime;
+import ortus.boxlang.runtime.types.util.DateTimeHelper;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 import ortus.boxlang.runtime.types.util.MathUtil;
 
@@ -149,7 +151,9 @@ public class NumberCaster implements IBoxCaster {
 
 		if ( castDates && DateTimeCaster.isKnownDateClass( object ) ) {
 			DateTime dObject = DateTimeCaster.cast( object );
-			return dObject.toEpochMillis();
+			return DateTimeHelper.toFractionalDays( dObject.toEpochMillis() );
+		} else if ( castDates && object instanceof Duration dObject ) {
+			return DateTimeHelper.toFractionalDays( dObject.toMillis() );
 		}
 
 		// Try to parse the string as a Number

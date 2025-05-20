@@ -1018,11 +1018,12 @@ public class OperatorsTest {
 	@Test
 	public void testAddNumberToDate() {
 		instance.executeSource( """
-		                        	thisNow = now();
-		                        	thisNowMillis = thisNow.getTime();
-		                        	result = thisNow + 0;
-		                        """, context );
-		assertThat( variables.get( resultKey ) ).isEqualTo( variables.get( Key.of( "thisNowMillis" ) ) );
+		                        import java:ortus.boxlang.runtime.types.util.DateTimeHelper;
+		                                         	thisNow = now();
+		                        thisNowFractionalDays = DateTimeHelper.toFractionalDays( thisNow.getTime() );
+		                                         	result = thisNow + 0;
+		                                         """, context );
+		assertThat( variables.get( resultKey ) ).isEqualTo( variables.get( Key.of( "thisNowFractionalDays" ) ) );
 
 	}
 

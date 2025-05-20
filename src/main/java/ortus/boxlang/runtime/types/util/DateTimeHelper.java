@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.types.util;
 
+import java.math.BigDecimal;
 import java.time.DateTimeException;
 import java.time.DayOfWeek;
 import java.time.Duration;
@@ -32,6 +33,8 @@ import java.util.concurrent.TimeUnit;
 
 import javax.management.InvalidAttributeValueException;
 
+import ortus.boxlang.runtime.dynamic.casters.BigDecimalCaster;
+import ortus.boxlang.runtime.dynamic.casters.LongCaster;
 import ortus.boxlang.runtime.util.RegexBuilder;
 
 /**
@@ -47,8 +50,11 @@ import ortus.boxlang.runtime.util.RegexBuilder;
  */
 public class DateTimeHelper {
 
-	public static final DateTimeFormatter	ISO_DATE_FORMATTER	= DateTimeFormatter.ISO_LOCAL_DATE_TIME;
-	public static final DateTimeFormatter	ISO_DATE_ONLY		= DateTimeFormatter.ofPattern( "yyyy-MM-dd" );
+	public static final DateTimeFormatter	ISO_DATE_FORMATTER			= DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+	public static final DateTimeFormatter	ISO_DATE_ONLY				= DateTimeFormatter.ofPattern( "yyyy-MM-dd" );
+
+	public static final double				MILLIS_TO_DAYS_MULTIPLIER	= 1.1574074074074e-8;
+	public static final double				DAYS_TO_MILLIS_MULTIPLIER	= 8.64e+7;
 
 	/**
 	 * Get the current date/time as a Java LocalDateTime object in the system timezone
@@ -543,6 +549,27 @@ public class DateTimeHelper {
 		} else {
 			throw new IllegalArgumentException( "Unsupported time unit: " + unit );
 		}
+	}
+
+	/**
+	 * Take a number in milliseonds and convert it to a fractional day representation
+	 * 
+	 * @param millis The number of milliseconds to convert
+	 */
+	public static BigDecimal toFractionalDays( long millis ) {
+		final BigDecimal	dayMultiplier	= BigDecimalCaster.cast( MILLIS_TO_DAYS_MULTIPLIER );
+		BigDecimal			millisConverted	= BigDecimalCaster.cast( millis );
+		return dayMultiplier.multiply( millisConverted, MathUtil.getMathContext() );
+	}
+
+	/**
+	 * Takes a big decimal number of days and converts it to milliseconds
+	 * 
+	 * @param days The number of fractional days to convert
+	 */
+	public static long fractionalDaysToEpochMillis( BigDecimal days ) {
+		// We need to make sure our conversion is rounded or we may lose a millisecond or two of precision from the original in some cases
+		return Math.round( days.multiply( BigDecimalCaster.cast( LongCaster.cast( DAYS_TO_MILLIS_MULTIPLIER ) ), MathUtil.getMathContext() ).doubleValue() );
 	}
 
 }
