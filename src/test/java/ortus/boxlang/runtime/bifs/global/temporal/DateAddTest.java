@@ -150,4 +150,22 @@ public class DateAddTest {
 		assertThat( result ).isEqualTo( "1970-01-01T00:00:01.000Z" );
 	}
 
+	@DisplayName( "It tests the BIF DateAdd with fractional days as the date argument" )
+	@Test
+	public void testBifWithFractionalDays() {
+		instance.executeSource(
+		    """
+		    dateVal = parseDateTime( "2025-01-01T00:00:00Z" );
+		    // Epoch millis: 1735689600000
+		    fractionalDays = dateVal.toEpochMillis() * 1.1574074074074e-8;
+		       updatedDate = dateAdd( "d", 1, fractionalDays );
+		       result = dateTimeFormat( updatedDate, "yyyy-MM-dd'T'HH:mm:ss.SSSX", "UTC" );
+		          """,
+		    context );
+		// 1970-01-01T00:01:00.000Z
+		Object result = variables.get( Key.of( "result" ) );
+		assertThat( result ).isInstanceOf( String.class );
+		assertThat( result ).isEqualTo( "2025-01-02T00:00:00.000Z" );
+	}
+
 }

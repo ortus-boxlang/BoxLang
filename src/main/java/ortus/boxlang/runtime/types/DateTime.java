@@ -675,7 +675,7 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	 */
 	@BoxMemberExpose
 	public Long toEpochMillis() {
-		return this.wrapped.toInstant().toEpochMilli();
+		return this.toInstant().toEpochMilli();
 	}
 
 	/**
