@@ -468,6 +468,14 @@ public class BoxRunner {
 				continue;
 			}
 
+			// Is this an action command?
+			if ( ACTION_COMMANDS.contains( currentArgument.toLowerCase() ) ) {
+				actionCommand = currentArgument;
+				// Add the remaining arguments into the cliArgs and break off
+				cliArgs.addAll( argsList );
+				break;
+			}
+
 			// Template to execute?
 			String targetPath = getExecutableTemplate( currentArgument );
 			if ( actionCommand == null && targetPath != null ) {
@@ -479,14 +487,6 @@ public class BoxRunner {
 			if ( currentArgument.startsWith( "module:" ) ) {
 				// Remove the prefix
 				targetModule = currentArgument.substring( 7 );
-				continue;
-			}
-
-			// Is this an action command?
-			if ( ACTION_COMMANDS.contains( currentArgument.toLowerCase() ) ) {
-				actionCommand = currentArgument;
-				// Add the remaining arguments into the cliArgs and break off
-				cliArgs.addAll( argsList );
 				continue;
 			}
 
