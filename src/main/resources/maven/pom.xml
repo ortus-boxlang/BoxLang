@@ -1,0 +1,49 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>io.boxlang</groupId>
+	<artifactId>runtime-library</artifactId>
+	<version>@build.version@</version>
+
+	<dependencies>
+		<!--
+			Add all the Java dependencies you need here.
+			You can search for more here: https://central.sonatype.com/
+			All Dependencies for the BoxLang application will be stored under the lib/java folder
+			Just Run: mvn install to install all dependencies
+		-->
+
+		<!-- Here is an example
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-text</artifactId>
+			<version>1.12.0</version>
+		</dependency>
+		-->
+	</dependencies>
+
+	<build>
+		<directory>${project.basedir}/.tmp</directory>
+		<plugins>
+			<!-- This puts the dependencies in your project's lib folder -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<version>3.1.2</version>
+				<executions>
+					<execution>
+						<id>copy-dependencies</id>
+						<phase>package</phase>
+						<goals>
+							<goal>copy-dependencies</goal>
+						</goals>
+						<configuration>
+							<outputDirectory>${project.basedir}/lib</outputDirectory>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+</project>

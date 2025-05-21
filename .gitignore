@@ -1,12 +1,13 @@
-# Ignore Gradle project-specific cache directory
+# Ignore project-specific cache directory
 .gradle
 
-# Ignore Gradle build output directory
+# Ignore build output directory
 build/
 bin/
 runtime/build/
 runtime/bin/
 modules/test/
+src/main/resources/maven/effective-pom.xml
 
 # Dynamically Generated docs
 docs/
@@ -37,10 +38,10 @@ src/main/java/ortus/boxlang/web/www/testbox/
 # JDBC artifacts
 derby.log
 
-
 # ANTLR Plugin artifacts
 **/gen
 
+# Test Resources
 src/test/java/ortus/boxlang/compiler/Precompiled.bx
 src/test/java/ortus/boxlang/compiler/Precompiled.bxs
 /src/test/resources/testbox
