@@ -25,8 +25,8 @@ import org.apache.commons.lang3.math.NumberUtils;
 
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.types.DateTime;
-import ortus.boxlang.runtime.types.util.DateTimeHelper;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
+import ortus.boxlang.runtime.types.util.DateTimeHelper;
 import ortus.boxlang.runtime.types.util.MathUtil;
 
 /**
@@ -139,11 +139,9 @@ public class NumberCaster implements IBoxCaster {
 			}
 
 			if ( object instanceof String str ) {
-				// String true and yes are truthy
-				if ( str.equalsIgnoreCase( "true" ) || str.equalsIgnoreCase( "yes" ) ) {
+				if ( isTrueString( str ) ) {
 					return 1;
-					// String false and no are truthy
-				} else if ( str.equalsIgnoreCase( "false" ) || str.equalsIgnoreCase( "no" ) ) {
+				} else if ( isFalseString( str ) ) {
 					return 0;
 				}
 			}
@@ -216,6 +214,20 @@ public class NumberCaster implements IBoxCaster {
 		}
 
 		return null;
+	}
+
+	private static boolean isTrueString( String str ) {
+		// "true" and "yes" are both 4 or 3 chars
+		int len = str.length();
+		return ( len == 4 && str.equalsIgnoreCase( "true" ) ) ||
+		    ( len == 3 && str.equalsIgnoreCase( "yes" ) );
+	}
+
+	private static boolean isFalseString( String str ) {
+		// "false" and "no" are both 5 or 2 chars
+		int len = str.length();
+		return ( len == 5 && str.equalsIgnoreCase( "false" ) ) ||
+		    ( len == 2 && str.equalsIgnoreCase( "no" ) );
 	}
 
 }
