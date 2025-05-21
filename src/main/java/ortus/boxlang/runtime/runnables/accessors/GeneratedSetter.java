@@ -38,11 +38,12 @@ import ortus.boxlang.runtime.util.ResolvedFilePath;
  */
 public class GeneratedSetter extends UDF {
 
-	private static final IStruct	documentation	= Struct.of( "hint", "I am a generated setter method." );
+	private static final IStruct			documentation	= Struct.of( "hint", "I am a generated setter method." );
+	private static final ResolvedFilePath	runnablePath	= ResolvedFilePath.of( Path.of( "unknown" ) );
 
-	private final Key				name;
-	private final Argument[]		arguments;
-	private final Key				variable;
+	private final Key						name;
+	private final Argument[]				arguments;
+	private final Key						variable;
 
 	/**
 	 * Constructor
@@ -151,7 +152,7 @@ public class GeneratedSetter extends UDF {
 
 	@Override
 	public ResolvedFilePath getRunnablePath() {
-		return ResolvedFilePath.of( Path.of( "unknown" ) );
+		return runnablePath;
 	}
 
 	@Override
