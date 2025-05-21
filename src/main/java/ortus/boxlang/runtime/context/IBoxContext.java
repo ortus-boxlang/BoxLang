@@ -367,6 +367,13 @@ public interface IBoxContext extends IBoxAttachable, Serializable {
 	public IStruct findClosestComponent( Key name, Predicate<IStruct> predicate );
 
 	/**
+	 * Is there at least one output component on the stack
+	 * 
+	 * @return True if there is at least one output component, else false
+	 */
+	public boolean isInOutputComponent();
+
+	/**
 	 * Has the execution context been bound to a template?
 	 *
 	 * @return True if bound, else false
