@@ -185,12 +185,23 @@ public class FQN {
 	 *         Test$ext
 	 */
 	protected String[] parseParts( String fqn, boolean allPackage ) {
-		fqn	= normalizeDots( fqn );
+		fqn = normalizeDots( fqn );
 
 		// Remove any non alpha-numeric chars.
-		fqn	= RegexBuilder
-		    .of( fqn, RegexBuilder.PACKAGE_NAMES )
-		    .replaceAllAndGet( "__" );
+		// Replace any character not a-z, A-Z, 0-9, $, or . with "__"
+		StringBuilder sb = new StringBuilder();
+		for ( int i = 0; i < fqn.length(); i++ ) {
+			char c = fqn.charAt( i );
+			if ( ( c >= 'a' && c <= 'z' ) ||
+			    ( c >= 'A' && c <= 'Z' ) ||
+			    ( c >= '0' && c <= '9' ) ||
+			    c == '$' || c == '.' ) {
+				sb.append( c );
+			} else {
+				sb.append( "__" );
+			}
+		}
+		fqn = sb.toString();
 
 		// Short circuit if empty
 		if ( fqn.isEmpty() ) {
@@ -217,16 +228,20 @@ public class FQN {
 		}
 
 		// parse fqn into array, loop over array and clean/normalize parts
-		return Arrays.stream( fqn.split( "\\." ) )
-		    // if starts with number, prefix with _
-		    .map( s -> RegexBuilder.of( s, RegexBuilder.STARTS_WITH_DIGIT ).matches() ? "_" + s : s )
-		    .map( s -> {
-			    if ( RESERVED_WORDS.contains( s ) ) {
-				    return "_" + s;
-			    }
-			    return s;
-		    } )
-		    .toArray( String[]::new );
+		String[]	splitParts	= fqn.split( "\\." );
+		String[]	result		= new String[ splitParts.length ];
+		for ( int i = 0; i < splitParts.length; i++ ) {
+			String s = splitParts[ i ];
+			// if starts with number, prefix with _
+			if ( !s.isEmpty() && Character.isDigit( s.charAt( 0 ) ) ) {
+				s = "_" + s;
+			}
+			if ( RESERVED_WORDS.contains( s ) ) {
+				s = "_" + s;
+			}
+			result[ i ] = s;
+		}
+		return result;
 	}
 
 	/**
@@ -241,7 +256,9 @@ public class FQN {
 	 */
 	protected String normalizeDots( String fqn ) {
 		// Replace .. with .
-		fqn = RegexBuilder.of( fqn, RegexBuilder.TWO_DOTS ).replaceAllAndGet( "." );
+		while ( fqn.contains( ".." ) ) {
+			fqn = fqn.replace( "..", "." );
+		}
 
 		// trim trailing period
 		if ( fqn.endsWith( "." ) ) {
