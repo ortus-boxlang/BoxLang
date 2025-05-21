@@ -20,7 +20,6 @@ package ortus.boxlang.runtime.util.conversion.serializers;
 import java.io.IOException;
 import java.util.IdentityHashMap;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.jr.ob.api.ValueWriter;
@@ -55,11 +54,11 @@ public class BoxStructSerializer implements ValueWriter {
 			g.writeStartObject();
 
 			// iterate over the entry set
-			for ( Entry<?, ?> entry : bxStruct.entrySet() ) {
+			for ( Object key : bxStruct.keySet() ) {
 				// Write the property name
-				g.writeFieldName( entry.getKey().toString() );
+				g.writeFieldName( key.toString() );
 				// Write the property value
-				context.writeValue( entry.getValue() );
+				context.writeValue( bxStruct.get( key ) );
 			}
 
 			g.writeEndObject();
