@@ -24,6 +24,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 
 import ortus.boxlang.runtime.BoxRuntime;
@@ -70,12 +71,12 @@ public class BaseBoxContext implements IBoxContext {
 	/**
 	 * TODO: This can be removed later, it was put here to catch some endless recursion bugs
 	 */
-	private static final ThreadLocal<Integer>	flushBufferDepth	= ThreadLocal.withInitial( () -> 0 );
+	private static final ThreadLocal<Integer>	flushBufferDepth		= ThreadLocal.withInitial( () -> 0 );
 
 	/**
 	 * A flag to control whether null is considered undefined or not. Used by the compat module
 	 */
-	public static boolean						nullIsUndefined		= false;
+	public static boolean						nullIsUndefined			= false;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -95,29 +96,34 @@ public class BaseBoxContext implements IBoxContext {
 	 * memory since all
 	 * we really need is static data from them
 	 */
-	protected ArrayDeque<ResolvedFilePath>		templates			= new ArrayDeque<>();
+	protected ArrayDeque<ResolvedFilePath>		templates				= new ArrayDeque<>();
 
 	/**
 	 * A way to discover the imports tied to the original source of the current
 	 * template.
 	 * This should always match the top current template stack
 	 */
-	protected List<ImportDefinition>			currentImports		= null;
+	protected List<ImportDefinition>			currentImports			= null;
 
 	/**
 	 * A way to discover the current executing componenet
 	 */
-	protected ArrayDeque<IStruct>				components			= new ArrayDeque<>();
+	protected ArrayDeque<IStruct>				components				= new ArrayDeque<>();
+
+	/**
+	 * This is a denormalized cache of how many "output" components are on the component stack. We use this information very often when flushing output
+	 */
+	private final AtomicInteger					outputComponentCount	= new AtomicInteger( 0 );
 
 	/**
 	 * A way to track query loops
 	 */
-	protected LinkedHashMap<Query, Integer>		queryLoops			= new LinkedHashMap<>();
+	protected LinkedHashMap<Query, Integer>		queryLoops				= new LinkedHashMap<>();
 
 	/**
 	 * A buffer to write output to
 	 */
-	protected ArrayDeque<StringBuffer>			buffers				= new ArrayDeque<>();
+	protected ArrayDeque<StringBuffer>			buffers					= new ArrayDeque<>();
 
 	/**
 	 * The function service we can use to retrieve BIFS and member methods
@@ -132,7 +138,7 @@ public class BaseBoxContext implements IBoxContext {
 	/**
 	 * Attachable delegate
 	 */
-	private final IBoxAttachable				attachable			= new Attachable();
+	private final IBoxAttachable				attachable				= new Attachable();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -225,6 +231,10 @@ public class BaseBoxContext implements IBoxContext {
 	 */
 	public IBoxContext pushComponent( IStruct executionState ) {
 		this.components.push( executionState );
+		if ( executionState.getAsKey( Key._NAME ).equals( Key.output ) ) {
+			// If this is a component, we need to increment the output component count
+			outputComponentCount.incrementAndGet();
+		}
 		return this;
 	}
 
@@ -234,8 +244,21 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return This context
 	 */
 	public IBoxContext popComponent() {
-		this.components.pop();
+		// decrement the output component count if the component being popped is an output component
+		IStruct popped = this.components.pop();
+		if ( popped.getAsKey( Key._NAME ).equals( Key.output ) ) {
+			outputComponentCount.decrementAndGet();
+		}
 		return this;
+	}
+
+	/**
+	 * Is there at least one output component on the stack
+	 * 
+	 * @return True if there is at least one output component, else false
+	 */
+	public boolean isInOutputComponent() {
+		return outputComponentCount.get() > 0;
 	}
 
 	/**
@@ -995,29 +1018,30 @@ public class BaseBoxContext implements IBoxContext {
 		if ( o == null ) {
 			return this;
 		}
-		IStruct outputState = null;
+		// IStruct outputState = null;
 		if ( !force ) {
 			Boolean explicitOutput = ( Boolean ) getConfigItem( Key.enforceExplicitOutput, false );
-			if ( explicitOutput ) {
+			if ( explicitOutput && !isInOutputComponent() ) {
+				return this;
 				// If we are requiring to be in an output component, let's look fo r it
-				outputState = findClosestComponent( Key.output );
-				if ( outputState == null ) {
-					return this;
-				}
+				// outputState = findClosestComponent( Key.output );
+				// if ( outputState == null ) {
+				// return this;
+				// }
 			}
 		}
 
 		String content = StringCaster.cast( o );
 		// If the closest output didn't have an encode for, let's look a little harder
 		// to see if we can find one.
-		if ( outputState == null || outputState.getAsString( Key.encodefor ) == null ) {
-			outputState = findClosestComponent( Key.output, state -> state.get( Key.encodefor ) != null );
-		}
-		if ( outputState != null ) {
-			String encodeFor = outputState.getAsString( Key.encodefor );
-			// TODO: encode the content
-			// Waiting on ESAPI implementation
-		}
+		// if ( outputState == null || outputState.getAsString( Key.encodefor ) == null ) {
+		// outputState = findClosestComponent( Key.output, state -> state.get( Key.encodefor ) != null );
+		// }
+		// if ( outputState != null ) {
+		// String encodeFor = outputState.getAsString( Key.encodefor );
+		// TODO: encode the content
+		// Waiting on ESAPI implementation
+		// }
 
 		getBuffer().append( content );
 		return this;
