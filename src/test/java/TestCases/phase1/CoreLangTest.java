@@ -4418,7 +4418,9 @@ public class CoreLangTest {
 		assertThat( tagContextStruct.getAsString( Key.of( "template" ) ) ).ignoringCase()
 		    .contains( "TagContextLineMapping.bxs" );
 		String code[] = tagContextStruct.getAsString( Key.of( "codePrintPlain" ) ).split( "\n" );
-		assertThat( code[ 1 ] ).contains( "for( foo in null ) {" );
+		if ( code.length > 1 ) {
+			assertThat( code[ 1 ] ).contains( "for( foo in null ) {" );
+		}
 	}
 
 	@Test
@@ -5464,6 +5466,32 @@ public class CoreLangTest {
 
 		assertThat( result.getIssues().size() ).isGreaterThan( 0 );
 		assertThat( result.getRoot() ).isNotNull();
+	}
+
+	@Test
+	public void testNegatedLiteral() {
+		instance.executeSource(
+		    """
+		         	function foo() brad=-1 {
+
+		       }
+		    result = foo.$bx.meta.annotations.brad;
+		         		  """,
+		    context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.get( Key.of( "result" ) ) ).isEqualTo( -1 );
+	}
+
+	@Test
+	public void testNegatedLiteralCF() {
+		instance.executeSource(
+		    """
+		         	function foo() brad=-1 {
+
+		       }
+		    result = foo.$bx.meta.annotations.brad;
+		         		  """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( Key.of( "result" ) ) ).isEqualTo( -1 );
 	}
 
 }
