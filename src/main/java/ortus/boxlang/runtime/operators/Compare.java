@@ -20,8 +20,6 @@ package ortus.boxlang.runtime.operators;
 import java.math.BigDecimal;
 import java.util.Locale;
 
-import org.apache.commons.lang3.StringUtils;
-
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.dynamic.casters.BigDecimalCaster;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
@@ -178,10 +176,12 @@ public class Compare implements IOperator {
 
 		// String comparison
 		if ( left instanceof String || right instanceof String ) {
-			if ( !caseSensitive ) {
-				left	= StringUtils.lowerCase( left.toString(), locale );
-				right	= StringUtils.lowerCase( right.toString(), locale );
-			}
+			/*
+			 * if ( !caseSensitive ) {
+			 * left = StringUtils.lowerCase( left.toString(), locale );
+			 * right = StringUtils.lowerCase( right.toString(), locale );
+			 * }
+			 */
 
 			return StringCompare.invoke( StringCaster.cast( left ), StringCaster.cast( right ), caseSensitive );
 
