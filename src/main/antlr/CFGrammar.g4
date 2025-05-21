@@ -477,7 +477,7 @@ el2
 expressionList: expression (COMMA expression)* COMMA?
     ;
 
-atoms: a = (NULL | TRUE | FALSE | INTEGER_LITERAL | FLOAT_LITERAL | DOT_FLOAT_LITERAL)
+atoms: MINUS? a = (NULL | TRUE | FALSE | INTEGER_LITERAL | FLOAT_LITERAL | DOT_FLOAT_LITERAL)
     ;
 
 // All literal expressions

@@ -1008,9 +1008,15 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 
 	@Override
 	public BoxExpression visitAtoms( AtomsContext ctx ) {
-		var	pos	= tools.getPosition( ctx.a );
-		var	src	= tools.getSourceText( ctx );
-		return switch ( ctx.a.getType() ) {
+		var	pos		= tools.getPosition( ctx.a );
+		var	src		= tools.getSourceText( ctx );
+		int	type	= ctx.a.getType();
+		if ( ctx.MINUS() != null ) {
+			if ( type == NULL || type == TRUE || type == FALSE ) {
+				tools.reportError( "Minus sign invalid before a " + ctx.a.getText() + " literal", pos );
+			}
+		}
+		return switch ( type ) {
 			case NULL -> new BoxNull( pos, src );
 			case TRUE -> new BoxBooleanLiteral( true, pos, src );
 			case FALSE -> new BoxBooleanLiteral( false, pos, src );
