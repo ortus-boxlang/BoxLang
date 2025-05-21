@@ -1818,10 +1818,12 @@ public class DynamicInteropService {
 	 * @return The array of classes
 	 */
 	public static Class<?>[] argumentsToClasses( Object... args ) {
-		// Convert the arguments to an array of classes
-		return Arrays.stream( args )
-		    .map( DynamicObject::argumentToClass )
-		    .toArray( Class<?>[]::new );
+		// Convert the arguments to an array of classes without using streams
+		Class<?>[] classes = new Class<?>[ args.length ];
+		for ( int i = 0; i < args.length; i++ ) {
+			classes[ i ] = argumentToClass( args[ i ] );
+		}
+		return classes;
 	}
 
 	/**
