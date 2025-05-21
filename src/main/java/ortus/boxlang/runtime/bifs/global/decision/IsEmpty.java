@@ -14,6 +14,9 @@
  */
 package ortus.boxlang.runtime.bifs.global.decision;
 
+import java.util.List;
+import java.util.Map;
+
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
@@ -66,6 +69,14 @@ public class IsEmpty extends BIF {
 		if ( object == null ) {
 			return true;
 		}
+		// Skip the overhead of casting by doing a couple quick exact checks
+		if ( object instanceof List list ) {
+			return list.isEmpty();
+		}
+		if ( object instanceof Map map ) {
+			return map.isEmpty();
+		}
+
 		CastAttempt<Array> arrayAttempt = ArrayCaster.attempt( object );
 		if ( arrayAttempt.wasSuccessful() ) {
 			return arrayAttempt.get().isEmpty();
