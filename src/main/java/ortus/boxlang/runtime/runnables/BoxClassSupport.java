@@ -833,7 +833,7 @@ public class BoxClassSupport {
 		}
 
 		// Where was this function origionally defined
-		Class<?> enclosingClass = udf.getClass().getEnclosingClass();
+		Class<?> enclosingClass = udf.getEnclosingClass();
 
 		// Start at the bottom class
 		thisClass = thisClass.getBottomClass();

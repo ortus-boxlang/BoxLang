@@ -95,27 +95,29 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	/**
 	 * Metadata object
 	 */
-	public transient BoxMeta	$bx;
+	public transient BoxMeta<Function>	$bx;
 
 	/**
 	 * The argument collection key which defaults to : {@code argumentCollection}
 	 */
-	public static final Key		ARGUMENT_COLLECTION	= Key.argumentCollection;
+	public static final Key				ARGUMENT_COLLECTION	= Key.argumentCollection;
+
+	private Class<?>					enclosingClass		= null;
 
 	/**
 	 * Cached lookup of the output annotation
 	 */
-	private Boolean				canOutput			= null;
+	private Boolean						canOutput			= null;
 
 	/**
 	 * Default can output
 	 */
-	private boolean				defaultOutput		= true;
+	private boolean						defaultOutput		= true;
 
 	/**
 	 * Serialization version
 	 */
-	private static final long	serialVersionUID	= 1L;
+	private static final long			serialVersionUID	= 1L;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -547,6 +549,17 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	 */
 	protected boolean getDefaultOutput() {
 		return defaultOutput;
+	}
+
+	public Class<?> getEnclosingClass() {
+		if ( enclosingClass == null ) {
+			synchronized ( this.getClass() ) {
+				if ( enclosingClass == null ) {
+					enclosingClass = this.getClass().getEnclosingClass();
+				}
+			}
+		}
+		return enclosingClass;
 	}
 
 }
