@@ -67,6 +67,8 @@ sourceSets {
 		}
         resources {
             srcDirs = [ 'src/main/resources' ]
+			include '**/*.md'
+			include '**/*.xml'
             include '**/*.properties'
 			include '**/*.class'
 			include '**/*.jar'

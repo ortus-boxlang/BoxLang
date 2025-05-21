@@ -31,6 +31,7 @@ import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -375,33 +376,17 @@ public class BoxRuntime implements java.io.Closeable {
 	 * Ensure the BoxLang Home is created and ready for use
 	 */
 	private void ensureHomeAssets() {
-		// Ensure the runtime home directory exists, if not create it
-		if ( !Files.exists( this.runtimeHome ) ) {
-			try {
-				Files.createDirectories( this.runtimeHome );
-			} catch ( IOException e ) {
-				throw new BoxRuntimeException( "Could not create runtime home directory at [" + this.runtimeHome + "]",
-				    e );
-			}
-		}
+		// Ensure the runtime home directory exists
+		FileSystemUtil.createDirectoryIfMissing( this.runtimeHome );
 
-		// Add the following directories: classes, logs, lib, modules
-		Arrays.asList( "classes", "config", "logs", "lib", "modules", "global", "global/bx", "global/tags" )
-		    .forEach( dir -> {
-			    Path dirPath = Paths.get( this.runtimeHome.toString(), dir );
-			    if ( !Files.exists( dirPath ) ) {
-				    try {
-					    Files.createDirectories( dirPath );
-				    } catch ( IOException e ) {
-					    throw new BoxRuntimeException(
-					        "Could not create runtime home directory at [" + dirPath + "]", e );
-				    }
-			    }
-		    } );
+		// Add the following directories to the runtime home if they don't exist
+		// Common directories to ensure
+		List<String> directories = Arrays.asList( "classes", "config", "logs", "lib", "modules" );
+		directories.forEach( dir -> FileSystemUtil.createDirectoryIfMissing( this.runtimeHome.resolve( dir ) ) );
 
-		// Generate our seed into the config/.seed file
-		Path seedPath = Paths.get( this.runtimeHome.toString(), "config", ".seed" );
-		if ( !Files.exists( seedPath ) ) {
+		// Generate a seed file if missing
+		Path seedPath = this.runtimeHome.resolve( "config" ).resolve( ".seed" );
+		if ( Files.notExists( seedPath ) ) {
 			try {
 				Files.write( seedPath, EncryptionUtil.generateKeyAsString().getBytes() );
 			} catch ( IOException e ) {
@@ -409,28 +394,29 @@ public class BoxRuntime implements java.io.Closeable {
 			}
 		}
 
-		// If we don't have the config/boxlang.json file in the runtime home, copy it
-		// from the resources
-		Path runtimeHomeConfigPath = Paths.get( this.runtimeHome.toString(), "config", "boxlang.json" );
-		if ( !Files.exists( runtimeHomeConfigPath ) ) {
-			try ( InputStream inputStream = BoxRuntime.class.getResourceAsStream( "/config/boxlang.json" ) ) {
-				Files.copy( inputStream, runtimeHomeConfigPath );
-			} catch ( IOException e ) {
-				throw new BoxRuntimeException(
-				    "Could not copy runtime home configuration file to [" + runtimeHomeConfigPath + "]", e );
-			}
-		}
-
-		// Copy the META-INF/boxlang/version.properties to the runtime home always, and
-		// overwrite if it exists
-		Path runtimeHomeVersionPath = Paths.get( this.runtimeHome.toString(), "version.properties" );
-		try ( InputStream inputStream = BoxRuntime.class.getResourceAsStream( "/META-INF/boxlang/version.properties" ) ) {
-			Files.copy( inputStream, runtimeHomeVersionPath, java.nio.file.StandardCopyOption.REPLACE_EXISTING );
-		} catch ( IOException e ) {
-			throw new BoxRuntimeException(
-			    "Could not copy runtime home version file to [" + runtimeHomeVersionPath + "]", e );
-		}
-
+		// Copy config/boxlang.json if missing
+		FileSystemUtil.copyResourceToPath(
+		    "/config/boxlang.json",
+		    this.runtimeHome.resolve( "config" ).resolve( "boxlang.json" ),
+		    false
+		);
+		// Always copy version.properties from META-INF
+		FileSystemUtil.copyResourceToPath(
+		    "/META-INF/boxlang/version.properties",
+		    this.runtimeHome.resolve( "version.properties" ),
+		    true
+		);
+		// Copy Maven-related files
+		FileSystemUtil.copyResourceToPath(
+		    "/maven/maven.md",
+		    this.runtimeHome.resolve( "maven.md" ),
+		    true
+		);
+		FileSystemUtil.copyResourceToPath(
+		    "/maven/pom.xml",
+		    this.runtimeHome.resolve( "pom.xml" ),
+		    false
+		);
 	}
 
 	/**

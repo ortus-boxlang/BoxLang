@@ -32,6 +32,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.CopyOption;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystems;
@@ -41,13 +42,14 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.AbstractMap;
-import java.util.List;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -71,7 +73,6 @@ import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.Function;
-import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
@@ -575,6 +576,15 @@ public final class FileSystemUtil {
 		}
 	}
 
+	/**
+	 * Copies a file or directory from source to destination
+	 *
+	 * @param source      the source file path
+	 * @param destination the destination file path
+	 * @param recurse     whether to recurse into subdirectories
+	 * @param filter      a glob filter or a closure to filter the results as a Predicate
+	 * @param createPaths whether to create the parent directory if it does not exist
+	 */
 	public static void copyDirectory(
 	    String source,
 	    String destination,
@@ -1483,6 +1493,46 @@ public final class FileSystemUtil {
 			return true;
 		} else {
 			return !disallowedExtensions.stream().map( Key::of ).anyMatch( ext -> Key.of( extension ).equals( ext ) );
+		}
+	}
+
+	/**
+	 * Create a directory if it doesn't exist
+	 *
+	 * @param path The path to the directory to create
+	 */
+	public static void createDirectoryIfMissing( Path path ) {
+		if ( Files.notExists( path ) ) {
+			try {
+				Files.createDirectories( path );
+			} catch ( IOException e ) {
+				throw new BoxRuntimeException( "Could not create directory at [" + path + "]", e );
+			}
+		}
+	}
+
+	/**
+	 * Copy a resource to a path
+	 *
+	 * @param resourcePath The path to the resource to copy
+	 * @param targetPath   The path to copy the resource to
+	 * @param overwrite    True if the file should be overwritten if it exists
+	 */
+	public static void copyResourceToPath( String resourcePath, Path targetPath, boolean overwrite ) {
+		try ( InputStream inputStream = BoxRuntime.class.getResourceAsStream( resourcePath ) ) {
+			if ( inputStream == null ) {
+				throw new BoxRuntimeException( "Resource not found: " + resourcePath );
+			}
+			CopyOption[] options = overwrite
+			    ? new CopyOption[] { StandardCopyOption.REPLACE_EXISTING }
+			    : new CopyOption[ 0 ];
+			Files.copy(
+			    inputStream,
+			    targetPath,
+			    options
+			);
+		} catch ( IOException e ) {
+			throw new BoxRuntimeException( "Could not copy resource [" + resourcePath + "] to [" + targetPath + "]", e );
 		}
 	}
 
