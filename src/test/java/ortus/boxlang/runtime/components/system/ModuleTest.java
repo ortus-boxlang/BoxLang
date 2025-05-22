@@ -198,6 +198,16 @@ public class ModuleTest {
 	}
 
 	@Test
+	public void testCanRunCustomTagUnderscoreBLCaseInsensitive() {
+		instance.executeSource(
+		    """
+		    <bx:_BRAD foo="bar">
+		    		  """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		assertThat( buffer.toString().trim() ).isEqualTo( "This is the Brad tag bar" );
+	}
+
+	@Test
 	public void testCanRunCustomTagName() {
 		instance.executeSource(
 		    """
