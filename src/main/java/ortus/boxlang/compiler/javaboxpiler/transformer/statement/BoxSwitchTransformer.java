@@ -113,9 +113,11 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 					throw new ExpressionException( "Multiple default cases not supported", c.getPosition(), c.getSourceText() );
 				}
 				hasDefault = true;
-				c.getBody().forEach( stmt -> {
-					body.addStatement( ( Statement ) transpiler.transform( stmt ) );
-				} );
+				if ( c.getBody() != null ) {
+					c.getBody().forEach( stmt -> {
+						body.addStatement( ( Statement ) transpiler.transform( stmt ) );
+					} );
+				}
 			}
 		}
 		javaSwitch.setBody( body );

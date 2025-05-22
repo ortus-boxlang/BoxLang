@@ -150,8 +150,10 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 				// nodes.add( new InsnNode( Opcodes.POP ) );
 				// pop the condition off the stack
 				// nodes.add( new InsnNode( Opcodes.POP ) );
-
-				c.getBody().forEach( stmt -> nodes.addAll( transpiler.transform( stmt, TransformerContext.NONE, ReturnValueContext.EMPTY_UNLESS_JUMPING ) ) );
+				if ( c.getBody() != null ) {
+					c.getBody()
+					    .forEach( stmt -> nodes.addAll( transpiler.transform( stmt, TransformerContext.NONE, ReturnValueContext.EMPTY_UNLESS_JUMPING ) ) );
+				}
 
 				AsmHelper.addDebugLabel( nodes, "BoxSwitch - goto Endlabel" );
 				nodes.add( new JumpInsnNode( Opcodes.GOTO, endLabel ) );

@@ -995,13 +995,16 @@ public class CFParser extends AbstractParser {
 			delimiter	= findExprInAnnotations( annotations, "delimiter", false, new BoxStringLiteral( ",", null, null ), "case", getPosition( node ) );
 		}
 
-		List<BoxStatement> statements = new ArrayList<>();
+		List<BoxStatement> statements = null;
 		if ( node.template_statements() != null ) {
+			statements = new ArrayList<>();
 			statements.addAll( toAst( file, node.template_statements() ) );
 		}
 
-		// In component mode, the break is implied
-		statements.add( new BoxBreak( null, null ) );
+		if ( statements != null ) {
+			// In component mode, the break is implied
+			statements.add( new BoxBreak( null, null ) );
+		}
 
 		return new BoxSwitchCase( value, delimiter, statements, getPosition( node ), getSourceText( node ) );
 	}

@@ -679,7 +679,20 @@ public class CFTemplateTest {
 		    	<cfdefaultcase>Fruit, what fruit?</cfdefaultcase>
 		    </cfswitch>
 		                                                   """, context, BoxSourceType.CFTEMPLATE );
+	}
 
+	@Test
+	public void testSwitchEmptyDefaultCase() {
+
+		instance.executeSource(
+		    """
+		    <cfset fruit = "">
+		    <cfswitch expression="#fruit#">
+		    	<cfcase value="Apple">I like apples!</cfcase>
+		    	<cfcase value="Orange,Citrus">I like oranges!</cfcase>
+		    	<cfdefaultcase />
+		    </cfswitch>
+		    """, context, BoxSourceType.CFTEMPLATE );
 	}
 
 	@Test

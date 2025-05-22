@@ -644,6 +644,20 @@ public class BoxTemplateTest {
 	}
 
 	@Test
+	public void testSwitchEmptyDefaultCase() {
+
+		instance.executeSource(
+		    """
+		    <bx:set fruit = "">
+		    <bx:switch expression="#fruit#">
+		    	<bx:case value="Apple">I like apples!</bx:case>
+		    	<bx:case value="Orange,Citrus">I like oranges!</bx:case>
+		    	<bx:defaultcase />
+		    </bx:switch>
+		    """, context, BoxSourceType.BOXTEMPLATE );
+	}
+
+	@Test
 	public void testSwitchMultipleDefault() {
 
 		Throwable e = assertThrows( ParseException.class, () -> instance.executeSource(
