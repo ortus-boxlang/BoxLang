@@ -73,6 +73,21 @@ public class BoxLexerCustom extends BoxLexer {
 	Token										lastToken				= null;
 
 	/**
+	 * Does the parser expect a class or interface in this code?
+	 */
+	boolean										classIsExpected			= false;
+
+	/**
+	 * Have we reached the class token yet?
+	 */
+	boolean										classTokenReached		= false;
+
+	/**
+	 * Have we started the class body yet?
+	 */
+	boolean										classBodyStarted		= false;
+
+	/**
 	 * Tokens that end an operator. Instead of having "less than" or "less than or equal to" as a single token sequence,
 	 * we'll just check for the ending token ("than", or "to")
 	 */
@@ -502,6 +517,16 @@ public class BoxLexerCustom extends BoxLexer {
 						if ( debug )
 							System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because it is a variable being returned" );
 						isIdentifier = true;
+					} else if ( nextTokenType == ABSTRACT ) {
+						if ( !classIsExpected ) {
+							if ( debug )
+								System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because the file is not a class" );
+							isIdentifier = true;
+						} else if ( classTokenReached && !classBodyStarted ) {
+							if ( debug )
+								System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because we are in the class annotations" );
+							isIdentifier = true;
+						}
 					}
 
 					if ( isIdentifier ) {
@@ -521,6 +546,12 @@ public class BoxLexerCustom extends BoxLexer {
 	private Token setLastToken( Token token ) {
 		if ( token.getChannel() != HIDDEN ) {
 			lastToken = token;
+		}
+		if ( token.getType() == CLASS ) {
+			classTokenReached = true;
+		}
+		if ( classTokenReached && token.getType() == LBRACE ) {
+			classBodyStarted = true;
 		}
 		if ( token.getType() == SWITCH ) {
 			inSwitchBody = true;
@@ -768,6 +799,18 @@ public class BoxLexerCustom extends BoxLexer {
 			nextChar = getInputStream().LA( ++pos );
 		}
 		return pos;
+	}
+
+	/**
+	 * Set the classIsExpected flag
+	 * 
+	 * @param classIsExpected true if a class is expected
+	 * 
+	 * @return this
+	 */
+	public BoxLexerCustom setClassIsExpected( boolean classIsExpected ) {
+		this.classIsExpected = classIsExpected;
+		return this;
 	}
 
 }

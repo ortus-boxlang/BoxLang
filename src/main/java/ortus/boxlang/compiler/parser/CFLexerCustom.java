@@ -86,6 +86,21 @@ public class CFLexerCustom extends CFLexer {
 	Token										lastToken				= null;
 
 	/**
+	 * Does the parser expect a class or interface in this code?
+	 */
+	boolean										classIsExpected			= false;
+
+	/**
+	 * Have we reached the class token yet?
+	 */
+	boolean										classTokenReached		= false;
+
+	/**
+	 * Have we started the class body yet?
+	 */
+	boolean										classBodyStarted		= false;
+
+	/**
 	 * Tokens that end an operator. Instead of having "less than" or "less than or equal to" as a single token sequence,
 	 * we'll just check for the ending token ("than", or "to")
 	 */
@@ -525,6 +540,16 @@ public class CFLexerCustom extends CFLexer {
 						if ( debug )
 							System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because it is not a CF component call" );
 						isIdentifier = true;
+					} else if ( nextTokenType == ABSTRACT ) {
+						if ( !classIsExpected ) {
+							if ( debug )
+								System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because the file is not a class" );
+							isIdentifier = true;
+						} else if ( classTokenReached && !classBodyStarted ) {
+							if ( debug )
+								System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because we are in the class annotations" );
+							isIdentifier = true;
+						}
 					}
 
 					if ( isIdentifier ) {
@@ -543,6 +568,12 @@ public class CFLexerCustom extends CFLexer {
 	private Token setLastToken( Token token ) {
 		if ( token.getChannel() != HIDDEN ) {
 			lastToken = token;
+		}
+		if ( token.getType() == COMPONENT ) {
+			classTokenReached = true;
+		}
+		if ( classTokenReached && token.getType() == LBRACE ) {
+			classBodyStarted = true;
 		}
 		if ( token.getType() == SWITCH ) {
 			inSwitchBody = true;
@@ -601,6 +632,18 @@ public class CFLexerCustom extends CFLexer {
 	public void reset() {
 		super.reset();
 		pushMode( defaultMode );
+
+		inElseIf				= false;
+		inComponentCloseEqual	= false;
+		lastComponentCloseEqual	= null;
+		inSwitchBody			= false;
+		switchCurlyCount		= 0;
+		inForParen				= false;
+		forParenCount			= 0;
+		lastElseIf				= null;
+		lastToken				= null;
+		classBodyStarted		= false;
+		classTokenReached		= false;
 	}
 
 	/**
@@ -836,4 +879,17 @@ public class CFLexerCustom extends CFLexer {
 	private boolean isComponent( String text ) {
 		return componentService.hasComponent( text ) || text.equalsIgnoreCase( "module" );
 	}
+
+	/**
+	 * Set the classIsExpected flag
+	 * 
+	 * @param classIsExpected true if a class is expected
+	 * 
+	 * @return this
+	 */
+	public CFLexerCustom setClassIsExpected( boolean classIsExpected ) {
+		this.classIsExpected = classIsExpected;
+		return this;
+	}
+
 }
