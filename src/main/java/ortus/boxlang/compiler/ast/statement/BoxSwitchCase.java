@@ -81,7 +81,9 @@ public class BoxSwitchCase extends BoxStatement {
 	public void setBody( List<BoxStatement> body ) {
 		replaceChildren( this.body, body );
 		this.body = body;
-		this.body.forEach( arg -> arg.setParent( this ) );
+		if ( body != null ) {
+			this.body.forEach( arg -> arg.setParent( this ) );
+		}
 	}
 
 	@Override
@@ -98,7 +100,11 @@ public class BoxSwitchCase extends BoxStatement {
 		} else {
 			map.put( "delimiter", null );
 		}
-		map.put( "body", body.stream().map( BoxStatement::toMap ).collect( Collectors.toList() ) );
+		if ( body == null ) {
+			map.put( "body", null );
+		} else {
+			map.put( "body", body.stream().map( BoxStatement::toMap ).collect( Collectors.toList() ) );
+		}
 		return map;
 	}
 

@@ -858,4 +858,8 @@ template_case
         // </cfdefaultcase >
         COMPONENT_OPEN SLASH_PREFIX TEMPLATE_DEFAULTCASE COMPONENT_CLOSE
     )
+    | (
+        // <cfdefaultcase/>
+        COMPONENT_OPEN PREFIX TEMPLATE_DEFAULTCASE template_whitespace? COMPONENT_SLASH_CLOSE
+    )
     ;

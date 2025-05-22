@@ -1444,12 +1444,13 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			print( "<bx:switch expression=\"" );
 			doQuotedExpression( node.getCondition() );
 			print( "\">" );
-			increaseIndent();
 			for ( var caseNode : node.getCases() ) {
-				caseNode.accept( this );
+				increaseIndent();
 				newLine();
+				caseNode.accept( this );
+				decreaseIndent();
 			}
-			decreaseIndent();
+			newLine();
 			print( "</bx:switch>" );
 		} else {
 			print( "switch ( " );
@@ -1472,18 +1473,19 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 				print( "<bx:case value=\"" );
 				doQuotedExpression( node.getCondition() );
 				print( "\">" );
-			} else {
+			} else if ( node.getBody() != null ) {
 				print( "<bx:defaultcase>" );
+			} else {
+				print( "<bx:defaultcase/>" );
 			}
-			increaseIndent();
-			for ( var statement : node.getBody() ) {
-				statement.accept( this );
+			if ( node.getBody() != null ) {
+				for ( var statement : node.getBody() ) {
+					statement.accept( this );
+				}
 			}
-			decreaseIndent();
-			newLine();
 			if ( node.getCondition() != null ) {
 				print( "</bx:case>" );
-			} else {
+			} else if ( node.getBody() != null ) {
 				print( "</bx:defaultcase>" );
 			}
 		} else {
