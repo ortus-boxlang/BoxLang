@@ -1517,8 +1517,21 @@ public final class FileSystemUtil {
 	 * @param resourcePath The path to the resource to copy
 	 * @param targetPath   The path to copy the resource to
 	 * @param overwrite    True if the file should be overwritten if it exists
+	 *
+	 * @throws BoxRuntimeException if the resource cannot be found or copied
 	 */
 	public static void copyResourceToPath( String resourcePath, Path targetPath, boolean overwrite ) {
+		// Check if the file exists, and if overwrite is true, then skip
+		if ( Files.exists( targetPath ) && !overwrite ) {
+			return;
+		}
+
+		// Check if the resource path is valid
+		if ( resourcePath == null || resourcePath.isEmpty() ) {
+			throw new BoxRuntimeException( "Resource path cannot be null or empty." );
+		}
+
+		// Open the resource as an InputStream
 		try ( InputStream inputStream = BoxRuntime.class.getResourceAsStream( resourcePath ) ) {
 			if ( inputStream == null ) {
 				throw new BoxRuntimeException( "Resource not found: " + resourcePath );
