@@ -252,7 +252,7 @@ public class Component extends ortus.boxlang.runtime.components.Component {
 			    }
 			    return files.stream();
 		    } )
-		    .filter( possibleMatch -> possibleMatch.absolutePath().toFile().exists() )
+		    .filter( possibleMatch -> FileSystemUtil.pathExistsCaseInsensitive( possibleMatch.absolutePath() ) != null )
 		    .findFirst()
 		    .orElseThrow( () -> new BoxRuntimeException( "Could not find custom tag [" + name + "]. Paths searched: ["
 		        + pathToSearch.stream().map( p -> p.absolutePath().toString() ).collect( java.util.stream.Collectors.joining( ", " ) ) + "]" ) );
