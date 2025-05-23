@@ -56,6 +56,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.io.ByteOrderMark;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BOMInputStream;
 import org.apache.commons.lang3.StringUtils;
@@ -1425,7 +1426,7 @@ public final class FileSystemUtil {
 	 * @return
 	 */
 	public static boolean isFileOperationAllowed( IBoxContext context, String file ) {
-		String fileExtension = com.google.common.io.Files.getFileExtension( file );
+		String fileExtension = FilenameUtils.getExtension( file );
 		return isExtensionAllowed( context, fileExtension );
 	}
 
@@ -1439,7 +1440,7 @@ public final class FileSystemUtil {
 	 * @return
 	 */
 	public static boolean isFileOperationAllowed( IBoxContext context, String file, String overrides ) {
-		String fileExtension = com.google.common.io.Files.getFileExtension( file );
+		String fileExtension = FilenameUtils.getExtension( file );
 		return isExtensionAllowed( context, fileExtension, overrides );
 	}
 
