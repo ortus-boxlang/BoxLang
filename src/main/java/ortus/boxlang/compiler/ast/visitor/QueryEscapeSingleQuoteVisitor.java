@@ -140,7 +140,8 @@ public class QueryEscapeSingleQuoteVisitor extends VoidBoxVisitor {
 		    List.of(
 		        new BoxArgument( e, null, null ),
 		        new BoxArgument( new BoxStringLiteral( "'", null, null ), null, null ),
-		        new BoxArgument( new BoxStringLiteral( "''", null, null ), null, null )
+		        new BoxArgument( new BoxStringLiteral( "''", null, null ), null, null ),
+		        new BoxArgument( new BoxStringLiteral( "all", null, null ), null, null )
 		    ),
 		    e.getPosition(),
 		    e.getSourceText() );
