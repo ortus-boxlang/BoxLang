@@ -63,6 +63,24 @@ public class PreserveSingleQuotesTest extends BaseJDBCTest {
 	}
 
 	@Test
+	public void testNameSQLInterpolatedTagsTwoQuotes() {
+		instance.executeSource(
+		    """
+		    <bx:output>
+		    	<bx:set name = "Billy 'The Fish' Bob">
+		    	<bx:query name="result">
+		    		SELECT '#name#' as name
+		    		FROM developers
+		    		WHERE name = 'Bob O''Reily'
+		    	</bx:query>
+		    </bx:output>
+		    		  """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.getAsQuery( result ).size() ).isEqualTo( 1 );
+		assertThat( variables.getAsQuery( result ).getRowAsStruct( 0 ).get( "name" ) ).isEqualTo( "Billy 'The Fish' Bob" );
+	}
+
+	@Test
 	public void testNormalScript() {
 		instance.executeSource(
 		    """
