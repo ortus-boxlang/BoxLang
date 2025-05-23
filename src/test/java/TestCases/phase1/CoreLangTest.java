@@ -2331,6 +2331,28 @@ public class CoreLangTest {
 	}
 
 	@Test
+	public void testClassWithAbstractAnnotation() {
+		// @formatter:off
+		instance.executeSource(
+				"""
+					new src.test.java.TestCases.phase1.ClassWithAbstractAnnotationParent();
+				""",
+				context, BoxSourceType.CFSCRIPT );
+		// @formatter:on
+	}
+
+	@Test
+	public void testClassWithAbstractAnnotationCF() {
+		// @formatter:off
+		instance.executeSource(
+				"""
+					new src.test.java.TestCases.phase1.ClassWithAbstractAnnotationParentCF();
+				""",
+				context, BoxSourceType.CFSCRIPT );
+		// @formatter:on
+	}
+
+	@Test
 	public void testKeywords() {
 
 		instance.executeSource(
