@@ -462,32 +462,34 @@ public class BoxRunner {
 				break;
 			}
 
-			// Is it a shebang script to execute
-			if ( actionCommand == null && isShebangScript( currentArgument ) ) {
-				file = getSheBangScript( currentArgument );
-				continue;
-			}
-
 			// Is this an action command?
 			if ( ACTION_COMMANDS.contains( currentArgument.toLowerCase() ) ) {
 				actionCommand = currentArgument;
-				// Add the remaining arguments into the cliArgs and break off
+				cliArgs.addAll( argsList );
+				break;
+			}
+
+			// Is it a shebang script to execute
+			if ( isShebangScript( currentArgument ) ) {
+				file = getSheBangScript( currentArgument );
 				cliArgs.addAll( argsList );
 				break;
 			}
 
 			// Template to execute?
 			String targetPath = getExecutableTemplate( currentArgument );
-			if ( actionCommand == null && targetPath != null ) {
+			if ( targetPath != null ) {
 				file = targetPath;
-				continue;
+				cliArgs.addAll( argsList );
+				break;
 			}
 
 			// Is this a module execution
 			if ( currentArgument.startsWith( "module:" ) ) {
 				// Remove the prefix
 				targetModule = currentArgument.substring( 7 );
-				continue;
+				cliArgs.addAll( argsList );
+				break;
 			}
 
 			// add it to the list of arguments
