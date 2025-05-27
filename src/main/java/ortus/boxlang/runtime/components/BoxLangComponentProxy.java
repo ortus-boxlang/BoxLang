@@ -26,7 +26,6 @@ import ortus.boxlang.runtime.types.IStruct;
 /**
  * This is a Component that is used to proxy from a BoxLang Class to a Java method
  */
-@BoxComponent
 public class BoxLangComponentProxy extends Component {
 
 	/**
