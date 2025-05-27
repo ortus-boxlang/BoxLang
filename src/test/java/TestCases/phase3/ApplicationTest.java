@@ -447,4 +447,35 @@ public class ApplicationTest {
 		assertThat( variables.getAsStruct( result ).get( "sessiontimeout" ) ).isEqualTo( Duration.ofMinutes( 720l ) );
 	}
 
+	@DisplayName( "Use a cache other than the default for sessions" )
+	@Test
+	public void testAltSessionStorageCache() {
+
+		// @formatter:off
+		instance.executeSource(
+		    
+		    """
+		        bx:application 
+					name="myAppWithAltCache" 
+					sessionmanagement="true"
+					caches = {
+						sessionCache = {
+							provider : "BoxCacheProvider",
+							properties : {
+								maxObjects : 1000
+							}
+						}
+					}
+				sessionStorage="sessionCache";
+				result = GetApplicationMetadata();
+			""", context );
+			
+		// @formatter:on
+
+		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
+		assertThat( variables.getAsStruct( result ).get( "name" ) ).isEqualTo( "myAppWithAltCache" );
+		assertThat( variables.getAsStruct( result ).get( "sessionmanagement" ).toString() ).isEqualTo( "true" );
+		assertThat( variables.getAsStruct( result ).get( "sessionStorage" ).toString() ).isEqualTo( "sessionCache" );
+	}
+
 }
