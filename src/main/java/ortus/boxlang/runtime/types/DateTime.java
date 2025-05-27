@@ -925,7 +925,7 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 
 	@Override
 	public void writeValue( JSONWriter context, JsonGenerator g, Object value ) throws IOException {
-		DateTime dateTime = ( DateTime ) value;
+		DateTime dateTime = DateTimeCaster.cast( value );
 		g.writeString( dateTime.toISOString() );
 	}
 
@@ -1028,7 +1028,7 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 
 	/**
 	 * Get a java.util.Date instance from this DateTime
-	 * 
+	 *
 	 * @return The java.util.Date instance
 	 */
 	public Date toDate() {
