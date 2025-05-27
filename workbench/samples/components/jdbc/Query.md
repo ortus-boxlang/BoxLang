@@ -91,3 +91,69 @@ Then reference the cache name in the query `cacheProvider` attribute:
     SELECT * FROM users
 </bx:query>
 ```
+### Empty query
+
+Create an empty query object
+
+
+```java
+<bx:script>
+	myQuery = query();
+</bx:script>
+
+```
+
+Result: 
+
+### Query with some data
+
+Create query object with some initial data
+
+
+```java
+<bx:script>
+	myQuery = query( foo=[
+		1,
+		2,
+		3
+	], bar=[
+		"a",
+		"b",
+		"c"
+	] );
+</bx:script>
+
+```
+
+Result: 
+
+### Additional Examples
+
+
+```java
+myquery = query( columnName1=[ 
+	1,
+	2,
+	3
+], columnName2=[
+	4,
+	5,
+	6
+] );
+dump( myquery );
+column = "size";
+values = [
+	"small",
+	"medium",
+	"large"
+];
+myquery = query( "#column#"=values, column=values );
+dump( myquery );
+myquery = query( columnName=[] );
+dump( var=myquery, label="empty query" );
+myquery = query();
+dump( var=myquery, label="no-argument query" );
+
+```
+
+

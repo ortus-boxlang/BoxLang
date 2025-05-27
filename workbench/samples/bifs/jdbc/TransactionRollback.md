@@ -29,3 +29,24 @@ transaction {
 ```
 
 Multiple savepoints can be set or referenced.
+
+### Script Syntax
+
+In this code, any error triggered will cause transactionRollback() to run and roll back the pending transaction
+
+<a href="https://try.boxlang.io/?code=eJxLqrAqKUrMK05MLsnMz1Oo5uIsKaoEUZz6%2BgrJ%2BSmpCiX5CkWleUABJHXO%2Bbm5mSUamtZcnLUKyYklyRkKGol5lQqpmmCtSCqD8nNykhKTsyFquWq5AC39I%2Bw%3D" target="_blank">Run Example</a>
+
+```java
+bx:transaction {
+	try {
+		// code to run
+		transactionCommit();
+	} catch (any e) {
+		transactionRollback();
+	}
+}
+
+```
+
+Result: 
+
