@@ -37,7 +37,6 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.classic.util.LogbackMDCAdapterSimple;
 import ch.qos.logback.core.Appender;
 import ch.qos.logback.core.ConsoleAppender;
-import ch.qos.logback.core.FileAppender;
 import ch.qos.logback.core.encoder.EncoderBase;
 import ch.qos.logback.core.rolling.RollingFileAppender;
 import ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy;
@@ -147,6 +146,16 @@ public class LoggingService {
 	private EncoderBase<ILoggingEvent>				defaultEncoder;
 
 	/**
+	 * A JSON encoder for the runtime
+	 */
+	private EncoderBase<ILoggingEvent>				jsonEncoder;
+
+	/**
+	 * A Text encoder for the runtime
+	 */
+	private EncoderBase<ILoggingEvent>				textEncoder;
+
+	/**
 	 * A map of registered appenders
 	 * We lazy-load all appenders and cache them here
 	 */
@@ -246,6 +255,22 @@ public class LoggingService {
 	}
 
 	/**
+	 * This method receives a logger config and returns the encoder to use
+	 *
+	 * @param loggerConfig The logger configuration to use
+	 *
+	 * @return The encoder to use for the logger configuration
+	 */
+	public EncoderBase<ILoggingEvent> getEncoderForLoggerConfig( LoggerConfig loggerConfig ) {
+		// If the logger config is JSON, then return the JSON encoder
+		if ( Key.json.equals( loggerConfig.encoder ) ) {
+			return this.jsonEncoder;
+		}
+		// Otherwise, return the text encoder
+		return this.textEncoder;
+	}
+
+	/**
 	 * Store the BoxLang pattern encoder
 	 *
 	 * @param encoder The encoder to store
@@ -316,12 +341,22 @@ public class LoggingService {
 		// Name it
 		this.loggerContext.setName( CONTEXT_NAME );
 
-		// Setup the runtime encoder with the BoxLang format
+		// Create the default Text encoder with our defaults
 		PatternLayoutEncoder oEncoder = new PatternLayoutEncoder();
 		oEncoder.setContext( loggerContext );
 		oEncoder.setPattern( LOG_FORMAT );
 		oEncoder.start();
 		setDefaultEncoder( oEncoder );
+		this.textEncoder = oEncoder;
+
+		// Create a default JSON encoder with our defaults
+		JsonEncoder jsonTargetEncoder = new JsonEncoder();
+		jsonTargetEncoder.setContext( this.loggerContext );
+		jsonTargetEncoder.setWithFormattedMessage( true );
+		jsonTargetEncoder.setWithMessage( false );
+		jsonTargetEncoder.setWithArguments( false );
+		jsonTargetEncoder.start();
+		this.jsonEncoder = jsonTargetEncoder;
 
 		// Configure a basic Console Appender
 		// See: https://logback.qos.ch/manual/appenders.html
@@ -351,7 +386,7 @@ public class LoggingService {
 
 		// Change encoder or not to JSON, default is text
 		if ( this.runtime.getConfiguration().logging.defaultEncoder.equals( Key.json ) ) {
-			setDefaultEncoder( buildJsonEncoder() );
+			setDefaultEncoder( this.jsonEncoder );
 		}
 
 		// Debugging
@@ -585,51 +620,78 @@ public class LoggingService {
 	 * @param logContext   The logger context requested for the appender
 	 * @param loggerConfig The logger configuration
 	 *
-	 * @return The file appender, computed or from cache
+	 * @return The appender for the requested logger configuration
 	 */
-	public FileAppender<ILoggingEvent> getOrBuildAppender( String filePath, LoggerContext logContext, LoggerConfig loggerConfig ) {
-		return ( FileAppender<ILoggingEvent> ) this.appendersMap.computeIfAbsent( filePath.toLowerCase(), key -> {
-			var		appender		= new RollingFileAppender<ILoggingEvent>();
-			String	fileName		= FilenameUtils.getBaseName( filePath );
-			String	enclosingFolder	= FilenameUtils.getFullPathNoEndSeparator( filePath );
+	public Appender<ILoggingEvent> getOrBuildAppender( String filePath, LoggerContext logContext, LoggerConfig loggerConfig ) {
+		Appender<ILoggingEvent> createdAppender;
 
-			// Set basics of appender
-			appender.setName( fileName );
-			appender.setFile( filePath );
-			appender.setContext( logContext );
-			appender.setEncoder( getDefaultEncoder() );
-			appender.setAppend( true );
-			appender.setImmediateFlush( true );
-			// This is commented as rolling with compression does not allow prudent handling
-			// appender.setPrudent( true );
+		// Build out the appenders based on our supported types
+		switch ( loggerConfig.appender.getNameNoCase() ) {
+			case "console" : {
+				createdAppender = this.appendersMap.computeIfAbsent( filePath.toLowerCase(), key -> {
+					var		appender	= new ConsoleAppender<ILoggingEvent>();
+					String	fileName	= FilenameUtils.getBaseName( filePath );
 
-			// Time-based rolling policy with file size constraint
-			SizeAndTimeBasedRollingPolicy<ILoggingEvent> policy = new SizeAndTimeBasedRollingPolicy<>();
-			policy.setContext( logContext );
-			policy.setParent( appender );
-			policy.setFileNamePattern( enclosingFolder + "/archives/" + fileName + ".%d{yyyy-MM-dd}.%i.log.zip" );
-			policy.setMaxHistory(
-			    this.runtime.getConfiguration().logging.maxLogDays
-			);
-			policy.setMaxFileSize( FileSize.valueOf(
-			    this.runtime.getConfiguration().logging.maxFileSize
-			) ); // Maximum file size for each log
-			policy.setTotalSizeCap( FileSize.valueOf(
-			    this.runtime.getConfiguration().logging.totalCapSize
-			) ); // Max total cap size
-			policy.start();
+					// Set basics of appender
+					appender.setName( fileName );
+					appender.setContext( logContext );
+					appender.setEncoder( getEncoderForLoggerConfig( loggerConfig ) );
+					appender.setImmediateFlush( true );
+					appender.start();
 
-			// Configure it
-			appender.setRollingPolicy( policy );
-			appender.start();
-
-			// Uncomment to verify issues
-			if ( this.runtime.getConfiguration().logging.statusPrinterOnLoad ) {
-				new StatusPrinter2().print( logContext );
+					return appender;
+				} );
+				break;
 			}
+			case "file" :
+			default : {
+				createdAppender = this.appendersMap.computeIfAbsent( filePath.toLowerCase(), key -> {
+					var		appender		= new RollingFileAppender<ILoggingEvent>();
+					String	fileName		= FilenameUtils.getBaseName( filePath );
+					String	enclosingFolder	= FilenameUtils.getFullPathNoEndSeparator( filePath );
 
-			return appender;
-		} );
+					// Set basics of appender
+					appender.setName( fileName );
+					appender.setFile( filePath );
+					appender.setContext( logContext );
+					appender.setEncoder( getEncoderForLoggerConfig( loggerConfig ) );
+					appender.setAppend( true );
+					appender.setImmediateFlush( true );
+					// This is commented as rolling with compression does not allow prudent handling
+					// appender.setPrudent( true );
+
+					// Time-based rolling policy with file size constraint
+					SizeAndTimeBasedRollingPolicy<ILoggingEvent> policy = new SizeAndTimeBasedRollingPolicy<>();
+					policy.setContext( logContext );
+					policy.setParent( appender );
+					policy.setFileNamePattern( enclosingFolder + "/archives/" + fileName + ".%d{yyyy-MM-dd}.%i.log.zip" );
+					policy.setMaxHistory(
+					    this.runtime.getConfiguration().logging.maxLogDays
+					);
+					policy.setMaxFileSize( FileSize.valueOf(
+					    this.runtime.getConfiguration().logging.maxFileSize
+					) ); // Maximum file size for each log
+					policy.setTotalSizeCap( FileSize.valueOf(
+					    this.runtime.getConfiguration().logging.totalCapSize
+					) ); // Max total cap size
+					policy.start();
+
+					// Configure it
+					appender.setRollingPolicy( policy );
+					appender.start();
+
+					return appender;
+				} );
+				break;
+			}
+		} // end switch
+
+		// Uncomment to verify issues
+		if ( this.runtime.getConfiguration().logging.statusPrinterOnLoad ) {
+			new StatusPrinter2().print( logContext );
+		}
+
+		return createdAppender;
 	}
 
 	/**
@@ -686,13 +748,6 @@ public class LoggingService {
 	 * Private Methods
 	 * --------------------------------------------------------------------------
 	 */
-
-	private JsonEncoder buildJsonEncoder() {
-		JsonEncoder targetEncoder = new JsonEncoder();
-		targetEncoder.setContext( this.loggerContext );
-		targetEncoder.start();
-		return targetEncoder;
-	}
 
 	/**
 	 * Build a logger with the specified name and file path.
