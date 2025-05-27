@@ -20,7 +20,9 @@ package ortus.boxlang.compiler.asmboxpiler.transformer.statement;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.AbstractInsnNode;
+import org.objectweb.asm.tree.InsnNode;
 
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
@@ -41,6 +43,11 @@ public class BoxScriptIslandTransformer extends AbstractTransformer {
 		BoxScriptIsland			scriptIsland	= ( BoxScriptIsland ) node;
 
 		List<AbstractInsnNode>	nodes			= new ArrayList<>();
+
+		if ( scriptIsland.getStatements().isEmpty() && ReturnValueContext.VALUE_OR_NULL == returnContext ) {
+			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+			return AsmHelper.addLineNumberLabels( nodes, node );
+		}
 
 		nodes.addAll( AsmHelper.transformBodyExpressions( transpiler, scriptIsland.getStatements(), context, returnContext ) );
 

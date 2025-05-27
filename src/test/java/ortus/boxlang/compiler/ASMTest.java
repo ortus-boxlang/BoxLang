@@ -89,4 +89,20 @@ public class ASMTest {
 		// @formatter:on
 	}
 
+	@Test
+	public void testTryCatchAndFunction() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		    	try{
+
+				}
+				catch( any e ){
+				}
+				function doTest(){
+				}
+		    """, context );
+		// @formatter:on
+	}
+
 }
