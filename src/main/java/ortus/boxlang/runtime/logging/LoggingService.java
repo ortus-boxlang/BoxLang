@@ -42,7 +42,6 @@ import ch.qos.logback.core.encoder.EncoderBase;
 import ch.qos.logback.core.rolling.RollingFileAppender;
 import ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy;
 import ch.qos.logback.core.util.FileSize;
-import ch.qos.logback.core.util.StatusPrinter;
 import ch.qos.logback.core.util.StatusPrinter2;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.segments.LoggerConfig;
@@ -626,7 +625,7 @@ public class LoggingService {
 
 			// Uncomment to verify issues
 			if ( this.runtime.getConfiguration().logging.statusPrinterOnLoad ) {
-				StatusPrinter.print( logContext );
+				new StatusPrinter2().print( logContext );
 			}
 
 			return appender;
@@ -711,7 +710,7 @@ public class LoggingService {
 		// Check if we have the logger configuration or else build a vanilla one
 		LoggerConfig	loggerConfig	= ( LoggerConfig ) this.runtime
 		    .getConfiguration().logging.loggers
-		    .computeIfAbsent( loggerKey, key -> new LoggerConfig( key.getName().toUpperCase(), this.runtime.getConfiguration().logging ) );
+		        .computeIfAbsent( loggerKey, key -> new LoggerConfig( key.getName().toUpperCase(), this.runtime.getConfiguration().logging ) );
 		Level			configLevel		= Level.toLevel( LogLevel.valueOf( loggerConfig.level.getName(), false ).getName() );
 
 		// Seed the properties
