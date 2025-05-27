@@ -70,10 +70,20 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 		REMOTE,
 		PACKAGE;
 
+		/**
+		 * Check if the access is effective public, meaning it can be accessed from outside the class
+		 *
+		 * @return true if the access is effective public
+		 */
 		public boolean isEffectivePublic() {
 			return this == PUBLIC || this == REMOTE || this == PACKAGE;
 		}
 
+		/**
+		 * Get the lower case name of the access level
+		 *
+		 * @return The lower case name of the access level
+		 */
 		public String getLowerName() {
 			switch ( this ) {
 				case PRIVATE :
@@ -102,6 +112,9 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	 */
 	public static final Key				ARGUMENT_COLLECTION	= Key.argumentCollection;
 
+	/**
+	 * The enclosing class of the function, if any
+	 */
 	private Class<?>					enclosingClass		= null;
 
 	/**
@@ -115,9 +128,20 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	private boolean						defaultOutput		= true;
 
 	/**
+	 * --------------------------------------------------------------------------
+	 * Constants
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
 	 * Serialization version
 	 */
 	private static final long			serialVersionUID	= 1L;
+
+	/**
+	 * The interceptor service helper
+	 */
+	protected InterceptorService		interceptorService	= BoxRuntime.getInstance().getInterceptorService();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -133,8 +157,8 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 
 	/**
 	 * Constructor that can set the output default
-	 * 
-	 * @param defaultOutput
+	 *
+	 * @param defaultOutput Whether the function should output by default
 	 */
 	protected Function( boolean defaultOutput ) {
 		this.defaultOutput = defaultOutput;
@@ -147,7 +171,12 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 		return toString();
 	}
 
-	public BoxMeta getBoxMeta() {
+	/**
+	 * Get the source type of the function
+	 *
+	 * @return The source type of the function
+	 */
+	public BoxMeta<Function> getBoxMeta() {
 		if ( this.$bx == null ) {
 			this.$bx = new FunctionMeta( this );
 		}
@@ -199,28 +228,47 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	 * @return The result of the function, which may be null
 	 */
 	public Object invoke( FunctionBoxContext context ) {
-		InterceptorService	interceptorService	= BoxRuntime.getInstance().getInterceptorService();
+
+		// We do this, since it's hot code
+		boolean	doEvents	= this.interceptorService.hasState( BoxEvent.PRE_FUNCTION_INVOKE.key() ) ||
+		    this.interceptorService.hasState( BoxEvent.POST_FUNCTION_INVOKE.key() ) ||
+		    this.interceptorService.hasState( BoxEvent.ON_FUNCTION_EXCEPTION.key() );
 
 		// Announcements
-		IStruct				data				= Struct.of(
-		    Key.context, context,
-		    Key.function, this
-		);
-		interceptorService.announce(
-		    BoxEvent.PRE_FUNCTION_INVOKE,
-		    data
-		);
+		IStruct	data		= null;
+		if ( doEvents ) {
+			data = Struct.of(
+			    Key.context, context,
+			    Key.arguments, context.getArgumentsScope(),
+			    Key.function, this
+			);
+			interceptorService.announce(
+			    BoxEvent.PRE_FUNCTION_INVOKE,
+			    data
+			);
+		}
 
 		Object result = null;
 		context.pushTemplate( this );
 		try {
 			result = ensureReturnType( context, _invoke( context ) );
-			data.put( Key.result, result );
 
-			interceptorService.announce(
-			    BoxEvent.POST_FUNCTION_INVOKE,
-			    data
-			);
+			if ( doEvents ) {
+
+				if ( result != null ) {
+					data.put( Key.result, result );
+				}
+
+				interceptorService.announce(
+				    BoxEvent.POST_FUNCTION_INVOKE,
+				    data
+				);
+
+				// If we have it, then override it
+				if ( data.containsKey( Key.result ) ) {
+					result = data.get( Key.result );
+				}
+			}
 
 			// For remote methods, save their return format to use later
 			if ( getAccess().equals( Access.REMOTE ) && getAnnotations().containsKey( Key.returnFormat ) ) {
@@ -237,6 +285,15 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 			}
 			throw e;
 		} catch ( Throwable e ) {
+			if ( doEvents ) {
+				// If we have an exception, we need to announce it
+				data.put( Key.exception, e );
+				interceptorService.announce(
+				    BoxEvent.ON_FUNCTION_EXCEPTION,
+				    data
+				);
+			}
+
 			throw e;
 		} finally {
 			context.popTemplate();
@@ -249,9 +306,10 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	/**
 	 * Ensure the return value of the function is the correct type
 	 *
-	 * @param value
+	 * @param context the context to ensure the return type in
+	 * @param value   the value to ensure the type of
 	 *
-	 * @return
+	 * @return the value, cast to the correct type if necessary
 	 */
 	protected Object ensureReturnType( IBoxContext context, Object value ) {
 		if ( value == null ) {
@@ -320,27 +378,6 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	public abstract Access getAccess();
 
 	/**
-	 * Get modifier of the function
-	 *
-	 * @return function modifiers
-	 */
-	public List<BoxMethodDeclarationModifier> getModifiers() {
-		return List.of();
-
-	}
-
-	/**
-	 * Check if a specific modifier is present
-	 *
-	 * @param modifier The modifier to check for
-	 *
-	 * @return true if the modifier is present
-	 */
-	public boolean hasModifier( BoxMethodDeclarationModifier modifier ) {
-		return getModifiers().contains( modifier );
-	}
-
-	/**
 	 * Implement this method to invoke the actual function logic
 	 *
 	 * @param context
@@ -365,6 +402,33 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	 * The AST (abstract syntax tree) of the runnable
 	 */
 	public abstract Object getRunnableAST();
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * More Helpers
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Get modifier of the function
+	 *
+	 * @return function modifiers
+	 */
+	public List<BoxMethodDeclarationModifier> getModifiers() {
+		return List.of();
+
+	}
+
+	/**
+	 * Check if a specific modifier is present
+	 *
+	 * @param modifier The modifier to check for
+	 *
+	 * @return true if the modifier is present
+	 */
+	public boolean hasModifier( BoxMethodDeclarationModifier modifier ) {
+		return getModifiers().contains( modifier );
+	}
 
 	/**
 	 * Get the combined metadata for this function and all it's parameters
@@ -498,6 +562,13 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 		return this.canOutput;
 	}
 
+	/**
+	 * Does this function implement the signature of another function?
+	 *
+	 * @param func The function to check against
+	 *
+	 * @return The source type of the function
+	 */
 	public Boolean implementsSignature( Function func ) {
 		if ( getArguments().length != func.getArguments().length ) {
 			return false;
@@ -514,6 +585,13 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 		return true;
 	}
 
+	/**
+	 * Get the signature of the function as a string.
+	 *
+	 * This is useful for debugging and logging purposes.
+	 *
+	 * @return The signature of the function as a string
+	 */
 	public String signatureAsString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append( getAccess().getLowerName() );
@@ -544,13 +622,17 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 
 	/**
 	 * If there is no explicit output annotation on this function, what should the default be?
-	 * 
+	 *
 	 * @return true if the function should output by default
 	 */
 	protected boolean getDefaultOutput() {
 		return defaultOutput;
 	}
 
+	/**
+	 * Get the enclosing class of the function, if any.
+	 * Lazy loads it
+	 */
 	public Class<?> getEnclosingClass() {
 		if ( enclosingClass == null ) {
 			synchronized ( this.getClass() ) {
