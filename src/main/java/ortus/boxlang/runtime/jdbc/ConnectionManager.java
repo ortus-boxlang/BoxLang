@@ -396,20 +396,22 @@ public class ConnectionManager {
 	 * @return The default datasource object, if found, or null if not found.
 	 */
 	public DataSource getDefaultDatasource() {
-
-		// short circuit if we have a default datasource
 		if ( this.defaultDatasource != null ) {
 			return this.defaultDatasource;
 		}
 
 		// Discover the datasource name from the settings
-		String	defaultDSN			= ( String ) this.context.getConfigItems( Key.defaultDatasource );
+		String defaultDSN = ( String ) this.context.getConfigItems( Key.defaultDatasource );
+
+		if ( defaultDSN.isEmpty() ) {
+			return null;
+		}
 		Key		defaultDSNKey		= Key.of( defaultDSN );
 		IStruct	configDatasources	= ( IStruct ) this.context.getConfigItems( Key.datasources );
-
-		// If the default name is empty or if the name doesn't exist in the datasources map, we return null
-		if ( defaultDSN.isEmpty() || !configDatasources.containsKey( defaultDSNKey ) ) {
-			return null;
+		if ( !configDatasources.containsKey( defaultDSNKey ) ) {
+			throw new DatabaseException(
+			    "Default datasource [" + defaultDSNKey.getName() + "] not found in the application or globally"
+			);
 		}
 
 		// Get the datasource config and incorporate the application name
