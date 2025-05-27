@@ -1097,4 +1097,15 @@ public class DynamicInteropServiceTest {
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "Non-varargs method" );
 	}
 
+	@Test
+	void testEmptyJavaNamedArgs() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				result = invoke( createObject( "java", "java.util.HashMap" ), "size" );				
+			""", context);
+		// @formatter:on
+		assertThat( variables.get( Key.result ) ).isEqualTo( 0 );
+	}
+
 }
