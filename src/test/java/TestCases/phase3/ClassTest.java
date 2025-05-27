@@ -1990,4 +1990,29 @@ public class ClassTest {
 		    context );
 	}
 
+	@Test
+	public void testUDFVariableVisibility() {
+		instance.executeSource(
+		    """
+		    clazz = new src.test.java.TestCases.phase3.UDFVariableVisibility();
+
+		    result1 = clazz.test();
+		    result2 = clazz.test2();
+		    result3 = clazz.test3();
+		    result4 = clazz.test4();
+		    result6 = clazz.test6();
+
+		    bx:savecontent variable="result5" {
+		    	result5 = clazz.outer();
+		    }
+		         """,
+		    context );
+		assertThat( variables.get( "result1" ) ).isEqualTo( "class brad" );
+		assertThat( variables.get( "result2" ) ).isEqualTo( "class brad" );
+		assertThat( variables.get( "result3" ) ).isEqualTo( "function brad" );
+		assertThat( variables.get( "result4" ) ).isEqualTo( "class brad" );
+		assertThat( variables.get( "result6" ) ).isEqualTo( "N/A" );
+		assertThat( variables.get( "result5" ) ).isEqualTo( "Outer function startInner functionOuter function end" );
+	}
+
 }

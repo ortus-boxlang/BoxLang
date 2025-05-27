@@ -332,7 +332,9 @@ public class FunctionBoxContext extends BaseBoxContext {
 			}
 
 			// A component cannot see nearby scopes above it
-			return parent.scopeFind( key, defaultScope, forAssign );
+			// "skip over" other parent function calls which are all part of this class. We've already looked in the scopes like variables, this, and static here, so
+			// there are no other visible scopes in this class. At this point, it would need to be a scope like request, or application.
+			return getParentContextNotInSameClass().scopeFind( key, defaultScope, forAssign );
 		} else {
 
 			if ( shallow ) {
@@ -487,9 +489,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 */
 	@Override
 	public IBoxContext getFunctionParentContext() {
-		// If a function is executed inside another function, it uses the parent since
-		// there is nothing a function can "see" from inside it's calling function
-		return getParent();
+		return this;
 	}
 
 	/**
@@ -796,6 +796,19 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 */
 	public ArgumentsScope getArgumentsScope() {
 		return argumentsScope;
+	}
+
+	/**
+	 * Climb the parents until we reach one that is not a function call in the same class.
+	 * 
+	 * @return The parent context
+	 */
+	private IBoxContext getParentContextNotInSameClass() {
+		IBoxContext parent = getParent();
+		while ( parent instanceof FunctionBoxContext fbc && fbc.isInClass() && fbc.getThisClass().equals( getThisClass() ) ) {
+			parent = parent.getParent();
+		}
+		return parent;
 	}
 
 }
