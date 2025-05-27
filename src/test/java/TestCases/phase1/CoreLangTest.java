@@ -5518,7 +5518,7 @@ public class CoreLangTest {
 	}
 
 	@Test
-	public void testNsdegatedLiteralCF() {
+	public void testFunctionParentLookups() {
 		instance.executeSource(
 		    """
 		    <bx:function name="runQuery2">
