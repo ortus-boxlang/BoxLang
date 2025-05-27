@@ -445,6 +445,43 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		assertEquals( "Developer", michael.get( "role" ) );
 	}
 
+	@DisplayName( "It can insert an SQL Null from a null value param" )
+	@Test
+	public void testNullParam() {
+		var dbName = Key.of( "derby" );
+		// Register the named datasource
+		instance.getConfiguration().datasources.put(
+		    Key.of( dbName ),
+		    JDBCTestUtils.buildDatasourceConfig( dbName.getName() )
+		);
+
+		// @formatter:off
+		instance.executeSource(
+		    """
+		    queryExecute( "CREATE TABLE developers_new ( id INTEGER, name VARCHAR(155), role VARCHAR(155) )", [], { "datasource": "derby" } );
+		    queryExecute( 
+				"INSERT INTO developers_new ( id, name, role ) VALUES ( :id, :name, :role )"
+				, {
+					"id": 77
+					, "name": "Michael Born"
+					, "role": nullValue()
+				}
+				, { "datasource": "derby" } 
+			);
+		        result = queryExecute( "SELECT * FROM developers_new WHERE id = 77", [], { "datasource": "derby" } );
+		    """,
+		    context );
+		// @formatter:off
+		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
+		Query query = variables.getAsQuery( result );
+		assertEquals( 1, query.size() );
+
+		IStruct michael = query.getRowAsStruct( 0 );
+		assertEquals( 77, michael.get( "id" ) );
+		assertEquals( "Michael Born", michael.get( "name" ) );
+		assertEquals( null, michael.get( "role" ) );
+	}
+
 	// See: https://github.com/brettwooldridge/HikariCP/issues/1197
 	// See: https://ortussolutions.atlassian.net/browse/BL-1376
 	@Disabled( "Not currently supported, leaving test for further development." )
