@@ -1,0 +1,53 @@
+class {
+	variables.brad ="class brad"
+
+	// control
+	function test() {
+		return brad;
+	}
+
+	// another control
+	function test2() {
+		return variables.brad;
+	}
+
+	// local variable precedence
+	function test3() {
+		var brad = "function brad";
+		return brad;
+	}
+
+	// set up the distraction
+	function test4() {
+		var brad = "function brad";
+		return test5();
+	}
+
+	// This should look all the way to the class, even though the parent context is test4()
+	function test5() {
+		return brad;
+	}
+
+	// set up another distraction
+	function test6() {
+		var luis = "function luis";
+		return test7();
+	}
+
+	// This should not be found
+	function test7() {
+		return luis ?: 'N/A';
+	}
+
+	@output( true )
+	function outer() {
+		echo( "Outer function start" );
+		inner();
+		echo( "Outer function end" );
+	}
+
+	@output( true )
+	function inner() {
+		echo( "Inner function" );
+	}
+}

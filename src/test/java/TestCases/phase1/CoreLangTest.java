@@ -54,6 +54,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Function.Access;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.SampleUDF;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -5514,6 +5515,48 @@ public class CoreLangTest {
 		         		  """,
 		    context, BoxSourceType.CFSCRIPT );
 		assertThat( variables.get( Key.of( "result" ) ) ).isEqualTo( -1 );
+	}
+
+	@Test
+	public void testNsdegatedLiteralCF() {
+		instance.executeSource(
+		    """
+		    <bx:function name="runQuery2">
+
+		    	<!--- Implementation of child-specific method --->
+
+		    	<bx:set news = queryNew( "id,title", "integer,varchar" ) >
+		    	<bx:set queryAddRow( news ) >
+		    	<bx:set querySetCell( news, "id", "1" ) >
+		    	<bx:set querySetCell( news, "title", "About defeats Truman" ) >
+		    	<bx:set queryAddRow( news ) >
+		    	<bx:set querySetCell( news, "id", "2" ) >
+		    	<bx:set querySetCell( news, "title", "Men walk on Moon" ) >
+
+		    	<!--- run QofQ (query of query) --->
+		    	<bx:query name="queryResult" dbtype="query">
+		    		SELECT id, title
+		    		FROM news
+		    		WHERE #filterAbout()#
+		    		ORDER BY title DESC
+		    	</bx:query>
+
+		    	<bx:return queryResult>
+		    </bx:function>
+
+
+		    <bx:function name="filterAbout" output="true">
+
+		    	<bx:output>
+		    		title LIKE <bx:queryparam sqltype="cf_sql_varchar" value="%About%"/>
+		    	</bx:output>
+		    </bx:function>
+		    <bx:set result = runQuery2()>
+		       """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		Query query = variables.getAsQuery( result );
+		assertThat( query ).hasSize( 1 );
+		assertThat( query.getCell( Key.of( "title" ), 0 ) ).isEqualTo( "About defeats Truman" );
 	}
 
 }

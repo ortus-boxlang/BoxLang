@@ -15,6 +15,7 @@
 package ortus.boxlang.compiler;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -645,6 +646,52 @@ public class QoQParseTest {
 		        			println(q)
 		                      			                          """,
 		    context, BoxSourceType.CFSCRIPT );
+	}
+
+	@Test
+	public void testQueryParamInFunction() {
+		instance.executeSource(
+		    """
+		    <cfquery name="result" dbtype="query">
+		    	SELECT #generateParam()# as name
+		    </cfquery>
+
+		    <cffunction name="generateParam">
+		    	<cfqueryparam value="Brad" />
+		    </cffunction>
+		        """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.get( result ) ).isInstanceOf( ortus.boxlang.runtime.types.Query.class );
+		ortus.boxlang.runtime.types.Query query = variables.getAsQuery( result );
+		assertEquals( 1, query.size() );
+		System.out.println( query );
+		IStruct data = query.getRowAsStruct( 0 );
+		assertThat( data ).containsKey( Key.of( "name" ) );
+		assertThat( data.get( Key.of( "name" ) ) ).isEqualTo( "Brad" );
+	}
+
+	@Test
+	public void testSQLOutputFromFunction() {
+		instance.executeSource(
+		    """
+		    <cfquery name="result" dbtype="query">
+		    	<cfset generateSQL()>
+		    </cfquery>
+
+		    <cffunction name="generateSQL" output="true">
+		    	<cfoutput>
+		    		SELECT 'Brad' as name
+		    	</cfoutput>
+		    </cffunction>
+		        """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.get( result ) ).isInstanceOf( ortus.boxlang.runtime.types.Query.class );
+		ortus.boxlang.runtime.types.Query query = variables.getAsQuery( result );
+		assertEquals( 1, query.size() );
+		System.out.println( query );
+		IStruct data = query.getRowAsStruct( 0 );
+		assertThat( data ).containsKey( Key.of( "name" ) );
+		assertThat( data.get( Key.of( "name" ) ) ).isEqualTo( "Brad" );
 	}
 
 }
