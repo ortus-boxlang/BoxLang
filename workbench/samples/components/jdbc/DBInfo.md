@@ -59,3 +59,18 @@ The `admins` table column information is now populated into the `result` variabl
 * IS_FOREIGNKEY
 * REFERENCED_PRIMARYKEY
 * REFERENCED_PRIMARYKEY_TABLE
+### Output Column Names
+
+Along with the data type and size
+
+
+```java
+<bx:dbinfo type="columns" name="cols" table="tester">
+<bx:output query="cols">
+        #cols.COLUMN_NAME# #cols.TYPE_NAME#(#cols.COLUMN_SIZE#)<br>
+</bx:output>
+
+```
+
+Result: 
+
