@@ -16,6 +16,7 @@ package ortus.boxlang.runtime.jdbc;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -410,7 +411,8 @@ public class ConnectionManager {
 		IStruct	configDatasources	= ( IStruct ) this.context.getConfigItems( Key.datasources );
 		if ( !configDatasources.containsKey( defaultDSNKey ) ) {
 			throw new DatabaseException(
-			    "Default datasource [" + defaultDSNKey.getName() + "] not found in the application or globally"
+			    String.format( "Default datasource [%s] not found in the application or globally. Registered datasources are: %s", defaultDSNKey.getName(),
+			        Arrays.toString( getAppDatasourceNames() ) )
 			);
 		}
 
@@ -434,7 +436,10 @@ public class ConnectionManager {
 	public DataSource getDefaultDatasourceOrThrow() {
 		DataSource datasource = getDefaultDatasource();
 		if ( datasource == null ) {
-			throw new DatabaseException( "No default datasource defined in the application or globally or in the query options" );
+			throw new DatabaseException(
+			    String.format( "No default datasource defined in the application or globally or in the query options. Registered datasources are: %s",
+			        Arrays.toString( getAppDatasourceNames() ) )
+			);
 		}
 		return datasource;
 	}
@@ -502,7 +507,11 @@ public class ConnectionManager {
 		DataSource datasource = getDatasource( datasourceName );
 		if ( datasource == null ) {
 			throw new DatabaseException(
-			    "Datasource with name [" + datasourceName.getName() + "] not found in the application or globally"
+			    String.format(
+			        "Datasource with name [%s] not found in the application or globally. Registered datasources are: %s",
+			        datasourceName.getName(),
+			        Arrays.toString( getAppDatasourceNames() )
+			    )
 			);
 		}
 		return datasource;
@@ -567,11 +576,27 @@ public class ConnectionManager {
 	}
 
 	/**
-	 * Get an array of all cached datasources names
+	 * Get an array of all cached datasources names.
+	 * 
+	 * These are datasources which have been accessed during the current request/thread/BoxLang context, and pulled from the application config.
 	 */
 	public String[] getCachedDatasourcesNames() {
 		return this.datasources.keySet()
 		    .stream()
+		    .map( Key::getName )
+		    .sorted()
+		    .toArray( String[]::new );
+	}
+
+	/**
+	 * Get an array of all application datasource names.
+	 * 
+	 * These are datasources which are defined in the application config, regardless of whether they've bene accessed or validated yet.
+	 *
+	 */
+	public String[] getAppDatasourceNames() {
+		IStruct configDatasources = ( IStruct ) this.context.getConfigItems( Key.datasources );
+		return configDatasources.getKeys().stream()
 		    .map( Key::getName )
 		    .sorted()
 		    .toArray( String[]::new );
