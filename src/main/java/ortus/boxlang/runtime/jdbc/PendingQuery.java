@@ -586,9 +586,7 @@ public class PendingQuery {
 		try {
 			return execute( connection, context );
 		} finally {
-			if ( connection != null ) {
-				connectionManager.releaseConnection( connection );
-			}
+			connectionManager.releaseConnection( connection );
 		}
 	}
 

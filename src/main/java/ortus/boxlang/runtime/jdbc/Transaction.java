@@ -121,6 +121,9 @@ public class Transaction implements ITransaction {
 	 */
 	public Connection getConnection() {
 		if ( this.connection == null ) {
+			if ( this.datasource == null ) {
+				throw new BoxRuntimeException( "Transaction does not have a set datasource; cannot acquire connection." );
+			}
 			this.connection = this.datasource.getConnection();
 			if ( this.connection == null ) {
 				throw new BoxRuntimeException( "Failed to acquire connection from datasource" );

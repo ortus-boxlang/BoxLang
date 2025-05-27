@@ -256,7 +256,9 @@ public class ConnectionManager {
 			DataSource transactionalDatasource = getTransaction().getDataSource();
 			if ( transactionalDatasource == null ) {
 				logger.debug( "Transaction datasource is null; setting it to the provided datasource" );
-				return getTransaction().setDataSource( datasource ).getDataSource().getConnection();
+				return getTransaction()
+				    .setDataSource( datasource )
+				    .getConnection();
 			}
 			boolean isSameDatasource = transactionalDatasource.equals( datasource );
 			if ( isSameDatasource
@@ -278,7 +280,7 @@ public class ConnectionManager {
 	/**
 	 * Release a JDBC Connection back to the pool. Will not release transactional connections.
 	 *
-	 * @param connection The JDBC connection to release, acquired from ${@link #getConnection(DataSource)}
+	 * @param connection The JDBC connection to release, acquired from ${@link #getConnection(DataSource)}. Can be null or already closed, in which case this method will do nothing.
 	 *
 	 * @return True if the connection was successfully released, otherwise false.
 	 */
@@ -322,7 +324,9 @@ public class ConnectionManager {
 			DataSource transactionalDatasource = getTransaction().getDataSource();
 			if ( transactionalDatasource == null ) {
 				logger.debug( "Transaction datasource is null; setting it to the provided datasource" );
-				return getTransaction().setDataSource( datasource ).getDataSource().getConnection();
+				return getTransaction()
+				    .setDataSource( datasource )
+				    .getConnection();
 			}
 			boolean isSameDatasource = transactionalDatasource.equals( datasource );
 			if ( isSameDatasource ) {

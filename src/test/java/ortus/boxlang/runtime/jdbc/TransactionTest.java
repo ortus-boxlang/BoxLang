@@ -468,8 +468,8 @@ public class TransactionTest extends BaseJDBCTest {
 		    """,
 		    getContext() );
 
-		// the insert should NOT be rolled back, since it's on a separate datasource
-		assertNotNull(
+		// the insert should be rolled back
+		assertNull(
 		    getVariables().getAsQuery( result )
 		        .stream()
 		        .filter( row -> row.getAsInteger( Key.id ) == 444 )
@@ -494,20 +494,21 @@ public class TransactionTest extends BaseJDBCTest {
 		        queryExecute( "INSERT INTO developers (id,name) VALUES (8, 'Esme Acevedo' )", {}, { datasource : "fooey" } );
 		        transactionSetSavepoint( "insert" );
 
-		        queryExecute( "UPDATE developers SET name = 'Esme Acevedo' WHERE id=8", {}, { datasource : "fooey" } );
+		        queryExecute( "UPDATE developers SET name = 'Not Esme' WHERE id=8", {}, { datasource : "fooey" } );
 		        transactionRollback( "insert" );
 		    }
 		    variables.result = queryExecute( "SELECT * FROM developers", {}, { datasource : "fooey" } );
 		    """,
 		    getContext() );
 
-		// the insert should NOT be rolled back, since it's on a separate datasource
 		IStruct esme = getVariables().getAsQuery( result )
 		    .stream()
 		    .filter( row -> row.getAsInteger( Key.id ) == 8 )
 		    .findFirst()
 		    .orElse( null );
+		// the insert should NOT be rolled back
 		assertNotNull( esme );
+		// The update should have been rolled back
 		assertEquals( "Esme Acevedo", esme.getAsString( Key._NAME ) );
 	}
 
