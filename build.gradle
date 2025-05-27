@@ -243,11 +243,11 @@ shadowJar {
 	exclude 'ortus/boxlang/tools/**'
 	exclude 'ortus/boxlang/runtime/testing/**'
 	// Java Parser: Remove when we are reading to remove it.
-	exclude 'ortus/boxlang/compiler/javaboxpiler/**'
-	exclude 'com/github/javaparser/**'
-	exclude 'org/javassist/**'
-	exclude 'com/google/**'
-	exclude 'org/checkerframework/**'
+	// exclude 'ortus/boxlang/compiler/javaboxpiler/**'
+	// exclude 'com/github/javaparser/**'
+	// exclude 'org/javassist/**'
+	// exclude 'com/google/**'
+	// exclude 'org/checkerframework/**'
 
 	minimize{
 		exclude( dependency( "org.slf4j:.*:.*" ) )
