@@ -452,10 +452,10 @@ public final class FileSystemUtil {
 	}
 
 	/**
-	 * Writes a file given a path and string contents using the default charset
+	 * Writes a file given a path and string contents using the default charset (UTF-8)
 	 *
-	 * @param filePath
-	 * @param contents
+	 * @param filePath The absolute path to write the file to
+	 * @param contents The contents of the file as a string
 	 *
 	 * @throws IOException
 	 */
@@ -466,9 +466,9 @@ public final class FileSystemUtil {
 	/**
 	 * Writes a file given a string and specified charset
 	 *
-	 * @param filePath
-	 * @param contents
-	 * @param charset
+	 * @param filePath The absolute path to write the file to
+	 * @param contents The contents of the file as a string
+	 * @param charset  The charset to use for the file encoding
 	 *
 	 * @throws IOException
 	 */
@@ -479,10 +479,10 @@ public final class FileSystemUtil {
 	/**
 	 * Writes a file given a string and specified charset with ensured directory
 	 *
-	 * @param filePath
-	 * @param contents
-	 * @param charset
-	 * @param ensureDirectory boolean
+	 * @param filePath        The absolute path to write the file to
+	 * @param contents        The contents of the file as a string
+	 * @param charset         The charset to use for the file encoding
+	 * @param ensureDirectory Ensure the directory exists before writing the file if true
 	 *
 	 * @throws IOException
 	 */
@@ -494,14 +494,13 @@ public final class FileSystemUtil {
 	 * Writes a file given a path, byte array, and a boolean as to whether the
 	 * directory should be assured before the write
 	 *
-	 * @param filePath
-	 * @param contents
-	 * @param ensureDirectory
+	 * @param filePath        The absolute path to write the file to
+	 * @param contents        The contents of the file as a charset encoded byte array
+	 * @param ensureDirectory Ensure the directory exists before writing the file if true
 	 *
 	 * @throws IOException
 	 */
 	public static void write( String filePath, byte[] contents, Boolean ensureDirectory ) {
-
 		Path fileTarget = Path.of( filePath );
 
 		try {
@@ -510,7 +509,14 @@ public final class FileSystemUtil {
 				Files.createDirectories( fileTarget.getParent() );
 			}
 
-			Files.write( fileTarget, contents, StandardOpenOption.CREATE );
+			// Single write operation that creates OR truncates existing file
+			Files.write(
+			    fileTarget,
+			    contents,
+			    StandardOpenOption.CREATE,
+			    StandardOpenOption.WRITE,
+			    StandardOpenOption.TRUNCATE_EXISTING
+			);
 
 		} catch ( NoSuchFileException e ) {
 			throw new BoxRuntimeException(
@@ -519,7 +525,6 @@ public final class FileSystemUtil {
 		} catch ( IOException e ) {
 			throw new BoxIOException( e );
 		}
-
 	}
 
 	/**

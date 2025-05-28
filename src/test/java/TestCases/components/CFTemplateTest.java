@@ -1625,7 +1625,6 @@ public class CFTemplateTest {
 	}
 
 	@Test
-	@Disabled( "BL-1338" )
 	public void testEmptyScriptBlock() {
 		instance.executeSource(
 		    """

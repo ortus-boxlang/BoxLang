@@ -93,6 +93,7 @@ public enum BoxEvent {
 	 */
 	PRE_FUNCTION_INVOKE( "preFunctionInvoke" ),
 	POST_FUNCTION_INVOKE( "postFunctionInvoke" ),
+	ON_FUNCTION_EXCEPTION( "onFunctionException" ),
 
 	/**
 	 * Query Invocations

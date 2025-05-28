@@ -78,6 +78,30 @@ public class FileWriteTest {
 		}
 	}
 
+	@DisplayName( "It can overwrite a file with token replacements without adding extra content" )
+	@Test
+	public void testFileWriteOverwrite() throws IOException {
+		String testFile = Path.of( "src/test/resources/filewrite-test-box.json" ).toAbsolutePath().toString();
+		variables.put( Key.of( "testFile" ), testFile );
+
+		// @formatter:off
+		instance.executeSource(
+		    """
+				originalContent = fileRead( testFile )
+				fileWrite( testFile, originalContent.replaceNoCase( "@MODULE_NAME@", "bx-test", "all" ) )
+
+				try{
+					result = isJSON( fileRead( testFile ) )
+				} finally{
+					fileWrite( testFile, originalContent )
+				}
+		    """,
+		    context );
+		// @formatter:on
+
+		assertThat( variables.get( result ) ).isEqualTo( true );
+	}
+
 	@DisplayName( "It tests the ability to write a text file with the default charset and ensure options" )
 	@Test
 	public void testTextFileWrite() throws IOException {

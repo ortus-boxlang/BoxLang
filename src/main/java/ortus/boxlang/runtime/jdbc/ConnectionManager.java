@@ -16,6 +16,7 @@ package ortus.boxlang.runtime.jdbc;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -256,7 +257,9 @@ public class ConnectionManager {
 			DataSource transactionalDatasource = getTransaction().getDataSource();
 			if ( transactionalDatasource == null ) {
 				logger.debug( "Transaction datasource is null; setting it to the provided datasource" );
-				return getTransaction().setDataSource( datasource ).getDataSource().getConnection();
+				return getTransaction()
+				    .setDataSource( datasource )
+				    .getConnection();
 			}
 			boolean isSameDatasource = transactionalDatasource.equals( datasource );
 			if ( isSameDatasource
@@ -278,7 +281,7 @@ public class ConnectionManager {
 	/**
 	 * Release a JDBC Connection back to the pool. Will not release transactional connections.
 	 *
-	 * @param connection The JDBC connection to release, acquired from ${@link #getConnection(DataSource)}
+	 * @param connection The JDBC connection to release, acquired from ${@link #getConnection(DataSource)}. Can be null or already closed, in which case this method will do nothing.
 	 *
 	 * @return True if the connection was successfully released, otherwise false.
 	 */
@@ -322,7 +325,9 @@ public class ConnectionManager {
 			DataSource transactionalDatasource = getTransaction().getDataSource();
 			if ( transactionalDatasource == null ) {
 				logger.debug( "Transaction datasource is null; setting it to the provided datasource" );
-				return getTransaction().setDataSource( datasource ).getDataSource().getConnection();
+				return getTransaction()
+				    .setDataSource( datasource )
+				    .getConnection();
 			}
 			boolean isSameDatasource = transactionalDatasource.equals( datasource );
 			if ( isSameDatasource ) {
@@ -392,20 +397,23 @@ public class ConnectionManager {
 	 * @return The default datasource object, if found, or null if not found.
 	 */
 	public DataSource getDefaultDatasource() {
-
-		// short circuit if we have a default datasource
 		if ( this.defaultDatasource != null ) {
 			return this.defaultDatasource;
 		}
 
 		// Discover the datasource name from the settings
-		String	defaultDSN			= ( String ) this.context.getConfigItems( Key.defaultDatasource );
+		String defaultDSN = ( String ) this.context.getConfigItems( Key.defaultDatasource );
+
+		if ( defaultDSN.isEmpty() ) {
+			return null;
+		}
 		Key		defaultDSNKey		= Key.of( defaultDSN );
 		IStruct	configDatasources	= ( IStruct ) this.context.getConfigItems( Key.datasources );
-
-		// If the default name is empty or if the name doesn't exist in the datasources map, we return null
-		if ( defaultDSN.isEmpty() || !configDatasources.containsKey( defaultDSNKey ) ) {
-			return null;
+		if ( !configDatasources.containsKey( defaultDSNKey ) ) {
+			throw new DatabaseException(
+			    String.format( "Default datasource [%s] not found in the application or globally. Registered datasources are: %s", defaultDSNKey.getName(),
+			        Arrays.toString( getAppDatasourceNames() ) )
+			);
 		}
 
 		// Get the datasource config and incorporate the application name
@@ -428,7 +436,10 @@ public class ConnectionManager {
 	public DataSource getDefaultDatasourceOrThrow() {
 		DataSource datasource = getDefaultDatasource();
 		if ( datasource == null ) {
-			throw new DatabaseException( "No default datasource defined in the application or globally or in the query options" );
+			throw new DatabaseException(
+			    String.format( "No default datasource defined in the application or globally or in the query options. Registered datasources are: %s",
+			        Arrays.toString( getAppDatasourceNames() ) )
+			);
 		}
 		return datasource;
 	}
@@ -496,7 +507,11 @@ public class ConnectionManager {
 		DataSource datasource = getDatasource( datasourceName );
 		if ( datasource == null ) {
 			throw new DatabaseException(
-			    "Datasource with name [" + datasourceName.getName() + "] not found in the application or globally"
+			    String.format(
+			        "Datasource with name [%s] not found in the application or globally. Registered datasources are: %s",
+			        datasourceName.getName(),
+			        Arrays.toString( getAppDatasourceNames() )
+			    )
 			);
 		}
 		return datasource;
@@ -561,11 +576,27 @@ public class ConnectionManager {
 	}
 
 	/**
-	 * Get an array of all cached datasources names
+	 * Get an array of all cached datasources names.
+	 * 
+	 * These are datasources which have been accessed during the current request/thread/BoxLang context, and pulled from the application config.
 	 */
 	public String[] getCachedDatasourcesNames() {
 		return this.datasources.keySet()
 		    .stream()
+		    .map( Key::getName )
+		    .sorted()
+		    .toArray( String[]::new );
+	}
+
+	/**
+	 * Get an array of all application datasource names.
+	 * 
+	 * These are datasources which are defined in the application config, regardless of whether they've bene accessed or validated yet.
+	 *
+	 */
+	public String[] getAppDatasourceNames() {
+		IStruct configDatasources = ( IStruct ) this.context.getConfigItems( Key.datasources );
+		return configDatasources.getKeys().stream()
 		    .map( Key::getName )
 		    .sorted()
 		    .toArray( String[]::new );

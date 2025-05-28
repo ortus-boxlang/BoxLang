@@ -116,6 +116,26 @@ public class JSONSerializeTest {
 		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "\"2024-01-01T00:00:00Z\"" );
 	}
 
+	@DisplayName( "It can serialize using the BoxLang DateTime methods" )
+	@Test
+	public void testCanSerializeDateTimeUsingMethods() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				import java.time.LocalDate;
+				import java.sql.Date;
+
+		       	result = jsonSerialize( {
+					localDate: LocalDate.now(),
+					sqlDate: Date.valueOf( "2024-01-01" )
+				} )
+				println( result )
+		    """,
+		    context );
+		// @formatter:on
+
+	}
+
 	@DisplayName( "It can serialize a struct" )
 	@Test
 	public void testCanSerializeStruct() {

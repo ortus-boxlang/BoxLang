@@ -2246,6 +2246,9 @@ public class DynamicInteropService {
 			if ( argumentCollection instanceof Array castedArray ) {
 				return dereferenceAndInvoke( dynamicObject, targetClass, targetInstance, context, name, castedArray.toArray(), safe );
 			}
+		} else if ( namedArguments.isEmpty() ) {
+			// If the namedArguments is empty, we can just call the method with no arguments
+			return dereferenceAndInvoke( dynamicObject, targetClass, targetInstance, context, name, new Object[ 0 ], safe );
 		}
 
 		throw new BoxRuntimeException( "Methods on Java objects cannot be called with named arguments" );

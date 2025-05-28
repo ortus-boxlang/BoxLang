@@ -125,6 +125,7 @@ public class PropertyHelper {
 	 *
 	 * @param config        The configuration object
 	 * @param key           The target key to look and process
+	 * @param defaultValue  The default value to return if the key is not found
 	 * @param allowedValues The set of allowed values. If not allowed, throw an exception
 	 *
 	 * @throws BoxValidationException

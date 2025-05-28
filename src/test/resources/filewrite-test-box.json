@@ -1,0 +1,51 @@
+{
+	"name": "@MODULE_NAME@",
+	"version": "1.0.0",
+	"location": "@MODULE_STORAGE@",
+	"author": "Ortus Solutions",
+	"homepage": "https://github.com/ortus-boxlang/@MODULE_SLUG@",
+	"documentation": "https://github.com/ortus-boxlang/@MODULE_SLUG@",
+	"repository": {
+		"type": "git",
+		"URL": "https://github.com/ortus-boxlang/@MODULE_SLUG@"
+	},
+	"bugs": "https://ortussolutions.atlassian.net/browse/BLMODULES",
+	"slug": "@MODULE_SLUG@",
+	"shortDescription": "@MODULE_DESCRIPTION@",
+	"type": "boxlang-modules",
+	"keywords": [
+		"boxlang"
+	],
+	"boxlang": {
+		"minimumVersion": "1.0.0",
+		"moduleName": "@MODULE_REGISTERED_NAME@"
+	},
+	"private": false,
+	"license": [
+		{
+			"type": "Apache-2.0",
+			"URL": "https://www.apache.org/licenses/LICENSE-2.0"
+		}
+	],
+	"devDependencies": {
+		"commandbox-boxlang": "*",
+		"commandbox-cfformat": "*",
+		"commandbox-docbox": "*",
+		"testbox": "*"
+	},
+	"ignore": [
+		"**/.*",
+		"settings.gradle",
+		"gradlew.bat",
+		"gradlew",
+		"build.gradle",
+		"/src/**",
+		"gradle/**"
+	],
+	"scripts": {
+		"setupTemplate": "task run taskFile=src/build/SetupTemplate.cfc"
+	},
+	"installPaths": {
+		"testbox": "testbox/"
+	}
+}

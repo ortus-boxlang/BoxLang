@@ -444,6 +444,11 @@ public class Application {
 			);
 		}
 
+		// If we have an application defined cache with the same name, that will be used.
+		if ( cacheService.hasCache( buildAppCacheKey( sessionCacheName ) ) ) {
+			sessionCacheName = buildAppCacheKey( sessionCacheName );
+		}
+
 		// If the cache doesn't exist by now, then throw an exception
 		if ( !cacheService.hasCache( sessionCacheName ) ) {
 			throw new BoxRuntimeException(
