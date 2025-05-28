@@ -332,7 +332,7 @@ public class BoxParser extends AbstractParser {
 		this.classOrInterface = classOrInterface;
 		BoxLexerCustom	lexer	= new BoxLexerCustom( CharStreams.fromStream( stream, StandardCharsets.UTF_8 ),
 		    isScript ? BoxLexerCustom.DEFAULT_SCRIPT_MODE : BoxLexerCustom.DEFAULT_TEMPLATE_MODE, errorListener, this )
-		    .setClassIsExpected( classOrInterface );
+		        .setClassIsExpected( classOrInterface );
 		BoxGrammar		parser	= new BoxGrammar( new CommonTokenStream( lexer ) );
 
 		// DEBUG: Will print a trace of all parser rules visited:
@@ -346,14 +346,31 @@ public class BoxParser extends AbstractParser {
 		// activating profiling
 		// parser.setProfile( true );
 
-		if ( classOrInterface ) {
-			parseTree = parser.classOrInterface();
-		} else {
-			if ( isScript ) {
-				parseTree = parser.script();
+		// The parsing itself can sometimes throw errors, such as empty stack exceptions from the lexer
+		// We want to capture these properly as issues so we don't blow up here
+		try {
+			if ( classOrInterface ) {
+				parseTree = parser.classOrInterface();
 			} else {
-				parseTree = parser.template();
+				if ( isScript ) {
+					parseTree = parser.script();
+				} else {
+					parseTree = parser.template();
+				}
 			}
+		} catch ( Exception e ) {
+			Position position = null;
+			// Set the position to the last token we were parsing.
+			if ( lexer._token != null ) {
+				position = createOffsetPosition( lexer._token.getLine(),
+				    lexer._token.getCharPositionInLine() + lexer._token.getText().length() - 1, lexer._token.getLine(),
+				    lexer._token.getCharPositionInLine() + lexer._token.getText().length() - 1 );
+			} else {
+				// If there is no token, we can't get a position, so use a default one
+				position = createOffsetPosition( 1, 0, 1, 0 );
+			}
+			errorListener.semanticError( e.getClass().getName() + " " + e.getMessage(), position );
+			return null;
 		}
 
 		// This must run FIRST before resetting the lexer
