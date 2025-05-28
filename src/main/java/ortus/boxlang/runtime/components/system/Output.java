@@ -70,9 +70,37 @@ public class Output extends Component {
 		}
 		executionState.put( Key.encodefor, encodeFor );
 
-		Object queryOrName = attributes.get( Key.query );
+		Object	queryOrName			= attributes.get( Key.query );
+		String	group				= attributes.getAsString( Key.group );
+		Boolean	groupCaseSensitive	= attributes.getAsBoolean( Key.groupCaseSensitive );
+
 		// Short circuit if there's no query
 		if ( queryOrName == null ) {
+
+			// Check and see if we are a nested loop inside a group loop, ignoring ourselves, of course
+			IStruct parentComponent = context.findClosestComponent( Key.output, 1 );
+			if ( parentComponent != null ) {
+				IStruct parentAttributes = parentComponent.getAsStruct( Key.attributes );
+				if ( parentAttributes.get( Key.group ) != null ) {
+					LoopUtil.GroupData groupData = ( LoopUtil.GroupData ) parentComponent.get( Key.groupData );
+					return LoopUtil.processQueryLoopGrouped(
+					    this,
+					    context,
+					    body,
+					    executionState,
+					    groupData.getQuery(),
+					    group,
+					    groupCaseSensitive,
+					    groupData.getCurrentRow() + 1,
+					    // Inherit the same end row as our parent loop
+					    parentComponent.getAsInteger( Key.endRow ),
+					    null,
+					    null,
+					    parentComponent
+					);
+				}
+			}
+
 			BodyResult bodyResult = processBody( context, body );
 			// IF there was a return statement inside our body, we early exit now
 			if ( bodyResult.isEarlyExit() ) {
@@ -81,12 +109,15 @@ public class Output extends Component {
 			return DEFAULT_RETURN;
 		}
 
-		String	group				= attributes.getAsString( Key.group );
-		// TODO: Use this
-		Boolean	groupCaseSensitive	= attributes.getAsBoolean( Key.groupCaseSensitive );
-		Integer	startRow			= attributes.getAsInteger( Key.startRow );
-		Integer	maxRows				= attributes.getAsInteger( Key.maxRows );
-		return LoopUtil.processQueryLoop( this, context, body, executionState, queryOrName, group, groupCaseSensitive, startRow, null, maxRows, null );
+		Integer	startRow	= attributes.getAsInteger( Key.startRow );
+		Integer	maxRows		= attributes.getAsInteger( Key.maxRows );
+		if ( group == null ) {
+			return LoopUtil.processQueryLoop( this, context, body, executionState, queryOrName, startRow, null, maxRows, null );
+		} else {
+			return LoopUtil.processQueryLoopGrouped( this, context, body, executionState, queryOrName, group, groupCaseSensitive, startRow, null, maxRows,
+			    null, executionState );
+		}
+
 	}
 
 }

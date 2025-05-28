@@ -219,7 +219,7 @@ public class GenericCaster implements IBoxCaster {
 			// If it was a class, we will have caught it above. Nothing to do now but fail.
 
 			if ( fail ) {
-				throw new BoxCastException( String.format( "Cannot cast %s, to a %s.", object.getClass().getName(), type ) );
+				throwCastException( type, object );
 			} else {
 				return null;
 			}
@@ -339,7 +339,7 @@ public class GenericCaster implements IBoxCaster {
 				return object;
 			}
 			if ( fail ) {
-				throw new BoxCastException( String.format( "Cannot cast %s, to a Query.", object.getClass().getName() ) );
+				throwCastException( type, object );
 			} else {
 				return null;
 			}
@@ -361,7 +361,7 @@ public class GenericCaster implements IBoxCaster {
 			}
 
 			if ( fail ) {
-				throw new BoxCastException( String.format( "Cannot cast %s, to a Stream.", object.getClass().getName() ) );
+				throwCastException( type, object );
 			} else {
 				return null;
 			}
@@ -377,6 +377,14 @@ public class GenericCaster implements IBoxCaster {
 			return null;
 		}
 
+	}
+
+	private static void throwCastException( String type, Object object ) {
+		String objectName = "null";
+		if ( object != null ) {
+			objectName = object.getClass().getName();
+		}
+		throw new BoxCastException( String.format( "Cannot cast %s, to a %s.", objectName, type ) );
 	}
 
 	/**

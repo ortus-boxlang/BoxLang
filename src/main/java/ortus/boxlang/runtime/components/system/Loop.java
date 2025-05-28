@@ -136,7 +136,36 @@ public class Loop extends Component {
 			return _invokeCondition( context, condition, body, executionState, label );
 		}
 		if ( queryOrName != null ) {
-			return LoopUtil.processQueryLoop( this, context, body, executionState, queryOrName, group, groupCaseSensitive, startRow, endRow, null, label );
+			if ( group == null ) {
+				return LoopUtil.processQueryLoop( this, context, body, executionState, queryOrName, startRow, endRow, null, label );
+			} else {
+				return LoopUtil.processQueryLoopGrouped( this, context, body, executionState, queryOrName, group, groupCaseSensitive, startRow, endRow, null,
+				    label, executionState );
+			}
+		}
+
+		// Check and see if we are a nested loop inside a group loop, ignoring ourselves, of course
+		IStruct parentComponent = context.findClosestComponent( Key.loop, 1 );
+		if ( parentComponent != null ) {
+			IStruct parentAttributes = parentComponent.getAsStruct( Key.attributes );
+			if ( parentAttributes.get( Key.group ) != null ) {
+				LoopUtil.GroupData groupData = ( LoopUtil.GroupData ) parentComponent.get( Key.groupData );
+				return LoopUtil.processQueryLoopGrouped(
+				    this,
+				    context,
+				    body,
+				    executionState,
+				    groupData.getQuery(),
+				    group,
+				    groupCaseSensitive,
+				    groupData.getCurrentRow() + 1,
+				    // Inherit the same end row as our parent loop
+				    parentComponent.getAsInteger( Key.endRow ),
+				    null,
+				    label,
+				    parentComponent
+				);
+			}
 		}
 
 		throw new BoxRuntimeException( "CFLoop attributes not implemented yet! " + attributes.asString() );
