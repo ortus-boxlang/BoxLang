@@ -1,0 +1,5 @@
+class {
+	public function init() {
+		return 'UDF Dump Class';
+	}
+}
