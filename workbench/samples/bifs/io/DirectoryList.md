@@ -38,7 +38,7 @@ arrayOfTempFiles = directoryList( "./", true );
 
 Pass a closure instead of a string as `filter` param
 
-<a href="https://try.boxlang.io/?code=eJwljU0KwjAQhdf2FENXFUIuIBWK2pU%2F4A3GZEojbVJmxmIR726Km%2Fd48D4%2BZMbl1rVhUGLyuUmgBh%2BYnCZezkG0gtKWBjochAyUEUfKs4ImLjCh9rCFeg%2BfYsOkL46wMm2I%2FpoOKJTpZpqG4FBDitZ1znB6JBWrbzVCPBPbp6RoOpyDy5ccxvaKzpGIuZ%2Ba4%2BVkR5%2Bdf9uu%2BK7xA0D6Pj4%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJwljUsKg0AQRNfxFI0rA8NcIBiQRFf5QG7Qji1O0Bnp7gQl5O4ZyaaKgno8ZMb13jd%2BVGLqUpNACZ1nchp5vXjRAnKbG%2BhxFDKQB5wozQKqsMKMOsAeyiN8sh2TvjjAxjQ%2BdLd4QqFEV%2FM8eofqY7DtYji2UcXqokaI38T2KTGYHt%2FepUcKYwdF50jEPOrqfK3t1CXlX3bIvlv8AAO8Pew%3D" target="_blank">Run Example</a>
 
 ```java
 arrayOfFilteredFiles = directoryList( ".", false, "name", ( Any path ) => {
