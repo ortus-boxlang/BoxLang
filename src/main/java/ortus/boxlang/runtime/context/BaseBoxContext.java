@@ -266,8 +266,35 @@ public class BaseBoxContext implements IBoxContext {
 	 *
 	 * @return The execution state for the closest component, null if none was found
 	 */
+	public IStruct findClosestComponent( Key name, int offset ) {
+		return findClosestComponent( name, offset, null );
+	}
+
+	/**
+	 * Gets the execution state for the closest component.
+	 *
+	 * @return The execution state for the closest component, null if none was found
+	 */
 	public IStruct findClosestComponent( Key name ) {
-		return findClosestComponent( name, null );
+		return findClosestComponent( name, 0, null );
+	}
+
+	/**
+	 * Gets the execution state for the closest component with a predicate to
+	 * filter.
+	 *
+	 * @return The execution state for the closest component, null if none was found
+	 */
+	public IStruct findClosestComponent( Key name, int offset, Predicate<IStruct> predicate ) {
+		IStruct[] componentArray = getComponents();
+		for ( int i = offset; i < componentArray.length; i++ ) {
+			IStruct component = componentArray[ i ];
+
+			if ( component.get( Key._NAME ).equals( name ) && ( predicate == null || predicate.test( component ) ) ) {
+				return component;
+			}
+		}
+		return null;
 	}
 
 	/**
@@ -277,15 +304,7 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return The execution state for the closest component, null if none was found
 	 */
 	public IStruct findClosestComponent( Key name, Predicate<IStruct> predicate ) {
-		IStruct[] componentArray = getComponents();
-		for ( int i = 0; i < componentArray.length; i++ ) {
-			IStruct component = componentArray[ i ];
-
-			if ( component.get( Key._NAME ).equals( name ) && ( predicate == null || predicate.test( component ) ) ) {
-				return component;
-			}
-		}
-		return null;
+		return findClosestComponent( name, 0, predicate );
 	}
 
 	/**

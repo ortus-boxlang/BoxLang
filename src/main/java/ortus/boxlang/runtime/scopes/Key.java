@@ -364,6 +364,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		getName								= Key.of( "getName" );
 	public static final Key		global								= Key.of( "global" );
 	public static final Key		group								= Key.of( "group" );
+	public static final Key		groupData							= Key.of( "groupData" );
 	public static final Key		groupCaseSensitive					= Key.of( "groupCaseSensitive" );
 	public static final Key		hasEndTag							= Key.of( "hasEndTag" );
 	public static final Key		hash40								= Key.of( "hash40" );
@@ -471,6 +472,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		logging								= Key.of( "logging" );
 	public static final Key		loggingService						= Key.of( "loggingService" );
 	public static final Key		logsDirectory						= Key.of( "logsDirectory" );
+	public static final Key		loop								= Key.of( "loop" );
 	public static final Key		lucee								= Key.of( "lucee" );
 	public static final Key		main								= Key.of( "main" );
 	public static final Key		mapping								= Key.of( "mapping" );

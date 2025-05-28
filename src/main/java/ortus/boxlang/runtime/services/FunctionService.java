@@ -252,7 +252,7 @@ public class FunctionService extends BaseService {
 	 *
 	 * @return The member method with the given name and type or null if none exists
 	 */
-	public MemberDescriptor getMemberMethod( IBoxContext context, Key name, ObjectRef object ) {
+	public MemberDescriptor getMemberMethod( IBoxContext context, Key name, ObjectRef<Object> object ) {
 		// For obj.method() we first look for a registered member method of this name
 		Map<BoxLangType, MemberDescriptor> targetMethodMap = this.memberMethods.get( name );
 		if ( targetMethodMap != null ) {

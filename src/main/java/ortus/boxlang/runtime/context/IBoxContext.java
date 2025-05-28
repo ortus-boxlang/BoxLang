@@ -359,12 +359,27 @@ public interface IBoxContext extends IBoxAttachable, Serializable {
 	public IStruct findClosestComponent( Key name );
 
 	/**
+	 * Gets the execution state for the closest component at an offset.
+	 *
+	 * @return The execution state for the closest component, null if none was found
+	 */
+	public IStruct findClosestComponent( Key name, int offset );
+
+	/**
 	 * Gets the execution state for the closest component with a predicate to
 	 * filter.
 	 *
 	 * @return The execution state for the closest component, null if none was found
 	 */
 	public IStruct findClosestComponent( Key name, Predicate<IStruct> predicate );
+
+	/**
+	 * Gets the execution state for the closest component with a predicate to
+	 * filter at an offset.
+	 *
+	 * @return The execution state for the closest component, null if none was found
+	 */
+	public IStruct findClosestComponent( Key name, int offset, Predicate<IStruct> predicate );
 
 	/**
 	 * Is there at least one output component on the stack

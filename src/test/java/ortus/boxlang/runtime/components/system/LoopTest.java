@@ -76,7 +76,6 @@ public class LoopTest {
 		    context, BoxSourceType.CFTEMPLATE );
 
 		assertThat( variables.getAsString( result ).trim() ).isEqualTo( "* foo : 42 : 1* bar : 100 : 2* baz : 500 : 3* bum : 9001 : 4* qux : 12345 : 5" );
-
 	}
 
 	@Test
@@ -231,7 +230,401 @@ public class LoopTest {
 		assertThat( variables.getAsString( result ).trim() )
 		    .isEqualTo(
 		        "* foo : 42 : 1* bar : 500 : 3* baz : 12345 : 5" );
+	}
 
+	@Test
+	public void testcfloopQueryGroupedScript() {
+		instance.executeSource(
+		    """
+		          myQry=queryNew("col1,col2","string,integer",[
+		       	{col1: "foo", col2: 42 },
+		       	{col1: "foo", col2: 100 },
+		       	{col1: "bar", col2: 500 },
+		       	{col1: "bar", col2: 9001 },
+		       	{col1: "baz", col2: 12345 },
+		       	{col1: "baz", col2: 67890 }
+		       ]);
+		       cfloop( query="myQry", group="col1" ) {
+		    	echo( "* #col1# : #col2# : #currentRow#" )
+		    }
+		    result = getBoxContext().getBuffer().toString();
+		          """,
+		    context, BoxSourceType.CFSCRIPT );
+
+		assertThat( variables.getAsString( result ).trim() )
+		    .isEqualTo(
+		        "* foo : 42 : 1* bar : 500 : 3* baz : 12345 : 5" );
+	}
+
+	@Test
+	public void testcfloopQueryGroupNested() {
+		instance.executeSource(
+		    """
+		       <cfset myQry=queryNew("col1,col2","string,integer",[
+		    	{col1: "foo", col2: 42 },
+		    	{col1: "foo", col2: 100 },
+		    	{col1: "bar", col2: 500 },
+		    	{col1: "bar", col2: 9001 },
+		    	{col1: "baz", col2: 12345 },
+		    	{col1: "baz", col2: 67890 }
+		    ])>
+		    <cfoutput><cfloop query="myQry" group="col1">[#col1# : <cfloop>(#col2# : #currentRow#)</cfloop>]</cfloop></cfoutput><cfset result = getBoxContext().getBuffer().toString()>
+		       """,
+		    context, BoxSourceType.CFTEMPLATE );
+
+		assertThat( variables.getAsString( result ).trim() )
+		    .isEqualTo(
+		        "[foo : (42 : 1)(100 : 2)][bar : (500 : 3)(9001 : 4)][baz : (12345 : 5)(67890 : 6)]" );
+	}
+
+	@Test
+	public void testcfloopQueryGroupNestedList() {
+		instance.executeSource(
+		    """
+		       <cfset myQry=queryNew("col0,col1,col2","string,string,integer",[
+		    	{ col0: "fizz", col1: "foo", col2: 42 },
+		    	{ col0: "fizz", col1: "foo", col2: 100 },
+		    	{ col0: "fizz", col1: "bar", col2: 500 },
+		    	{ col0: "buzz", col1: "bar", col2: 9001 },
+		    	{ col0: "buzz", col1: "baz", col2: 12345 },
+		    	{ col0: "buzz", col1: "baz", col2: 67890 }
+		    ])>
+		    <cfoutput><cfloop query="myQry" group="col0,col1">[#col0#,#col1# : <cfloop>(#col2# : #currentRow#)</cfloop>]</cfloop></cfoutput><cfset result = getBoxContext().getBuffer().toString()>
+		       """,
+		    context, BoxSourceType.CFTEMPLATE );
+
+		assertThat( variables.getAsString( result ).trim() )
+		    .isEqualTo(
+		        "[fizz,foo : (42 : 1)(100 : 2)][fizz,bar : (500 : 3)][buzz,bar : (9001 : 4)][buzz,baz : (12345 : 5)(67890 : 6)]" );
+	}
+
+	@Test
+	public void testcfloopQueryGroupDoubleNested() {
+		instance.executeSource(
+		    """
+		       <cfset myQry=queryNew("department,jobTitle,name","string,string,string",[
+		    	{department: "IT", jobTitle: "Developer", name: "Alice"},
+		    	{department: "IT", jobTitle: "Developer", name: "Bob"},
+		    	{department: "IT", jobTitle: "Manager", name: "Carol"},
+		    	{department: "HR", jobTitle: "Recruiter", name: "Dave"},
+		    	{department: "HR", jobTitle: "Recruiter", name: "Eve"},
+		    	{department: "HR", jobTitle: "Manager", name: "Frank"}
+		    ])>
+		    <cfoutput>
+		    	<cfloop query="myQry" group="department">
+		    		[#department# :
+		    			<cfloop group="jobTitle">
+		    				(#jobTitle# :
+		    					<cfloop>
+		    						#name#
+		    					</cfloop>
+		    				)
+		    			</cfloop>
+		    		]
+		    	</cfloop>
+		    </cfoutput>
+		    <cfset result = getBoxContext().getBuffer().toString()>
+		       """,
+		    context, BoxSourceType.CFTEMPLATE );
+
+		assertThat( variables.getAsString( result ).replaceAll( "\\s+", "" ) )
+		    .isEqualTo(
+		        "[IT:(Developer:AliceBob)(Manager:Carol)][HR:(Recruiter:DaveEve)(Manager:Frank)]"
+		    );
+	}
+
+	@Test
+	public void testcfloopQueryGroupDoubleNestedOutOfOrderData() {
+		instance.executeSource(
+		    """
+		       <cfset myQry=queryNew("department,jobTitle,name","string,string,string",[
+		    	{department: "IT", jobTitle: "Developer", name: "Alice"},
+		    	{department: "IT", jobTitle: "Developer", name: "Bob"},
+		    	{department: "HR", jobTitle: "Manager", name: "Frank"},
+		    	{department: "IT", jobTitle: "Manager", name: "Carol"},
+		    	{department: "HR", jobTitle: "Recruiter", name: "Dave"},
+		    	{department: "HR", jobTitle: "Recruiter", name: "Eve"}
+		    ])>
+		    <cfoutput>
+		    	<cfloop query="myQry" group="department">
+		    		[#department# :
+		    			<cfloop group="jobTitle">
+		    				(#jobTitle# :
+		    					<cfloop>
+		    						#name#
+		    					</cfloop>
+		    				)
+		    			</cfloop>
+		    		]
+		    	</cfloop>
+		    </cfoutput>
+		    <cfset result = getBoxContext().getBuffer().toString()>
+		       """,
+		    context, BoxSourceType.CFTEMPLATE );
+
+		assertThat( variables.getAsString( result ).replaceAll( "\\s+", "" ) )
+		    .isEqualTo(
+		        "[IT:(Developer:AliceBob)][HR:(Manager:Frank)][IT:(Manager:Carol)][HR:(Recruiter:DaveEve)]"
+		    );
+	}
+
+	@Test
+	public void testcfloopQueryGroupDoubleNestedOutOfOrderDataWithContinue() {
+		instance.executeSource(
+		    """
+		           <cfset myQry=queryNew("department,jobTitle,name","string,string,string",[
+		      	{department: "IT", jobTitle: "Developer", name: "Alice"},
+		      	{department: "IT", jobTitle: "Developer", name: "Bob"},
+		      	{department: "IT", jobTitle: "Manager", name: "Carol"},
+		      	{department: "HR", jobTitle: "Recruiter", name: "Dave"},
+		      	{department: "HR", jobTitle: "Recruiter", name: "Eve"},
+		      	{department: "HR", jobTitle: "Manager", name: "Frank"}
+		      ])>
+		        <cfoutput>
+		    <cfloop query="myQry" group="department">
+		    	[#department# :
+		    		<cfloop group="jobTitle">
+		    			(#jobTitle# :
+		    				<cfloop>
+		    					#name#
+		    					<cfcontinue>
+		    					!
+		    				</cfloop>
+		    			<cfcontinue>
+		    			)
+		    		</cfloop>
+		    	<cfcontinue>
+		    	]
+		    </cfloop>
+		        </cfoutput>
+		        <cfset result = getBoxContext().getBuffer().toString()>
+		           """,
+		    context, BoxSourceType.CFTEMPLATE );
+
+		assertThat( variables.getAsString( result ).replaceAll( "\\s+", "" ) )
+		    .isEqualTo(
+		        "[IT:(Developer:AliceBob(Manager:Carol[HR:(Recruiter:DaveEve(Manager:Frank"
+		    );
+	}
+
+	@Test
+	public void testcfloopQueryGroupDoubleNestedOutOfOrderDataWithInnerBreak() {
+		instance.executeSource(
+		    """
+		           <cfset myQry=queryNew("department,jobTitle,name","string,string,string",[
+		      	{department: "IT", jobTitle: "Developer", name: "Alice"},
+		      	{department: "IT", jobTitle: "Developer", name: "Bob"},
+		      	{department: "IT", jobTitle: "Manager", name: "Carol"},
+		      	{department: "HR", jobTitle: "Recruiter", name: "Dave"},
+		      	{department: "HR", jobTitle: "Recruiter", name: "Eve"},
+		      	{department: "HR", jobTitle: "Manager", name: "Frank"}
+		      ])>
+		        <cfoutput>
+		    <cfloop query="myQry" group="department">
+		    	[#department# :
+		    		<cfloop group="jobTitle">
+		    			(#jobTitle# :
+		    				<cfloop>
+		    					#name#
+		    					<cfbreak>
+		    					!
+		    				</cfloop>
+		    			)
+		    		</cfloop>
+		    	]
+		    </cfloop>
+		        </cfoutput>
+		        <cfset result = getBoxContext().getBuffer().toString()>
+		           """,
+		    context, BoxSourceType.CFTEMPLATE );
+
+		assertThat( variables.getAsString( result ).replaceAll( "\\s+", "" ) )
+		    .isEqualTo(
+		        "[IT:(Developer:Alice)(Manager:Carol)][HR:(Recruiter:Dave)(Manager:Frank)]"
+		    );
+	}
+
+	@Test
+	public void testcfloopQueryGroupDoubleNestedOutOfOrderDataWithMiddleBreak() {
+		instance.executeSource(
+		    """
+		           <cfset myQry=queryNew("department,jobTitle,name","string,string,string",[
+		      	{department: "IT", jobTitle: "Developer", name: "Alice"},
+		      	{department: "IT", jobTitle: "Developer", name: "Bob"},
+		      	{department: "IT", jobTitle: "Manager", name: "Carol"},
+		      	{department: "HR", jobTitle: "Recruiter", name: "Dave"},
+		      	{department: "HR", jobTitle: "Recruiter", name: "Eve"},
+		      	{department: "HR", jobTitle: "Manager", name: "Frank"}
+		      ])>
+		        <cfoutput>
+		    <cfloop query="myQry" group="department">
+		    	[#department# :
+		    		<cfloop group="jobTitle">
+		    			(#jobTitle# :
+		    				<cfloop>
+		    					#name#!
+		    				</cfloop>
+		    			)
+		    			<cfbreak>
+		    		</cfloop>
+		    	]
+		    </cfloop>
+		        </cfoutput>
+		        <cfset result = getBoxContext().getBuffer().toString()>
+		           """,
+		    context, BoxSourceType.CFTEMPLATE );
+
+		assertThat( variables.getAsString( result ).replaceAll( "\\s+", "" ) )
+		    .isEqualTo(
+		        "[IT:(Developer:Alice!Bob!)][HR:(Recruiter:Dave!Eve!)]"
+		    );
+	}
+
+	@Test
+	public void testcfloopQueryGroupDoubleNestedOutOfOrderDataWithOuterBreak() {
+		instance.executeSource(
+		    """
+		           <cfset myQry=queryNew("department,jobTitle,name","string,string,string",[
+		      	{department: "IT", jobTitle: "Developer", name: "Alice"},
+		      	{department: "IT", jobTitle: "Developer", name: "Bob"},
+		      	{department: "IT", jobTitle: "Manager", name: "Carol"},
+		      	{department: "HR", jobTitle: "Recruiter", name: "Dave"},
+		      	{department: "HR", jobTitle: "Recruiter", name: "Eve"},
+		      	{department: "HR", jobTitle: "Manager", name: "Frank"}
+		      ])>
+		        <cfoutput>
+		    <cfloop query="myQry" group="department">
+		    	[#department# :
+		    		<cfloop group="jobTitle">
+		    			(#jobTitle# :
+		    				<cfloop>
+		    					#name#!
+		    				</cfloop>
+		    			)
+		    		</cfloop>
+		    	]
+		    	<cfbreak>
+		    </cfloop>
+		        </cfoutput>
+		        <cfset result = getBoxContext().getBuffer().toString()>
+		           """,
+		    context, BoxSourceType.CFTEMPLATE );
+
+		assertThat( variables.getAsString( result ).replaceAll( "\\s+", "" ) )
+		    .isEqualTo(
+		        "[IT:(Developer:Alice!Bob!)(Manager:Carol!)]"
+		    );
+	}
+
+	@Test
+	public void testcfloopQueryGroupDoubleNestedOutOfOrderDataWithInnerReturn() {
+		instance.executeSource(
+		    """
+		    	<cfset myQry=queryNew("department,jobTitle,name","string,string,string",[
+		    		{department: "IT", jobTitle: "Developer", name: "Alice"},
+		    		{department: "IT", jobTitle: "Developer", name: "Bob"},
+		    		{department: "IT", jobTitle: "Manager", name: "Carol"},
+		    		{department: "HR", jobTitle: "Recruiter", name: "Dave"},
+		    		{department: "HR", jobTitle: "Recruiter", name: "Eve"},
+		    		{department: "HR", jobTitle: "Manager", name: "Frank"}
+		    	])>
+		    	<cfoutput>
+		    		<cfloop query="myQry" group="department">
+		    			[#department# :
+		    				<cfloop group="jobTitle">
+		    					(#jobTitle# :
+		    						<cfloop>
+		    							#name#
+		    							<cfset result = getBoxContext().getBuffer().toString()  >
+		    							<cfreturn>
+		    							!
+		    						</cfloop>
+		    					)
+		    				</cfloop>
+		    			]
+		    		</cfloop>
+		    	</cfoutput>
+		    """,
+		    context, BoxSourceType.CFTEMPLATE );
+
+		assertThat( variables.getAsString( result ).replaceAll( "\\s+", "" ) )
+		    .isEqualTo(
+		        "[IT:(Developer:Alice"
+		    );
+	}
+
+	@Test
+	public void testcfloopQueryGroupDoubleNestedOutOfOrderDataWithMiddleReturn() {
+		instance.executeSource(
+		    """
+		    	<cfset myQry=queryNew("department,jobTitle,name","string,string,string",[
+		    		{department: "IT", jobTitle: "Developer", name: "Alice"},
+		    		{department: "IT", jobTitle: "Developer", name: "Bob"},
+		    		{department: "IT", jobTitle: "Manager", name: "Carol"},
+		    		{department: "HR", jobTitle: "Recruiter", name: "Dave"},
+		    		{department: "HR", jobTitle: "Recruiter", name: "Eve"},
+		    		{department: "HR", jobTitle: "Manager", name: "Frank"}
+		    	])>
+		    	<cfoutput>
+		    		<cfloop query="myQry" group="department">
+		    			[#department# :
+		    				<cfloop group="jobTitle">
+		    					(#jobTitle# :
+		    						<cfloop>
+		    							#name#
+		    							!
+		    						</cfloop>
+		    					)
+		    		<cfset result = getBoxContext().getBuffer().toString()  >
+		    		<cfreturn>
+		    				</cfloop>
+		    			]
+		    		</cfloop>
+		    	</cfoutput>
+		    """,
+		    context, BoxSourceType.CFTEMPLATE );
+
+		assertThat( variables.getAsString( result ).replaceAll( "\\s+", "" ) )
+		    .isEqualTo(
+		        "[IT:(Developer:Alice!Bob!)"
+		    );
+	}
+
+	@Test
+	public void testcfloopQueryGroupDoubleNestedOutOfOrderDataWithOuterReturn() {
+		instance.executeSource(
+		    """
+		    	<cfset myQry=queryNew("department,jobTitle,name","string,string,string",[
+		    		{department: "IT", jobTitle: "Developer", name: "Alice"},
+		    		{department: "IT", jobTitle: "Developer", name: "Bob"},
+		    		{department: "IT", jobTitle: "Manager", name: "Carol"},
+		    		{department: "HR", jobTitle: "Recruiter", name: "Dave"},
+		    		{department: "HR", jobTitle: "Recruiter", name: "Eve"},
+		    		{department: "HR", jobTitle: "Manager", name: "Frank"}
+		    	])>
+		    	<cfoutput>
+		    		<cfloop query="myQry" group="department">
+		    			[#department# :
+		    				<cfloop group="jobTitle">
+		    					(#jobTitle# :
+		    						<cfloop>
+		    							#name#
+		    							!
+		    						</cfloop>
+		    					)
+		    				</cfloop>
+		    			]
+		    		<cfset result = getBoxContext().getBuffer().toString()  >
+		    		<cfreturn>
+		    		</cfloop>
+		    	</cfoutput>
+		    """,
+		    context, BoxSourceType.CFTEMPLATE );
+
+		assertThat( variables.getAsString( result ).replaceAll( "\\s+", "" ) )
+		    .isEqualTo(
+		        "[IT:(Developer:Alice!Bob!)(Manager:Carol!)]"
+		    );
 	}
 
 	@Test
