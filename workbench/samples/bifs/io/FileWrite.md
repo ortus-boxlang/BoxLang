@@ -9,7 +9,6 @@ fileWrite( getTempFile( getTempDirectory(), "tempFile" ), "My Data" );
 
 ```
 
-Result: 
 
 ### Additional Examples
 

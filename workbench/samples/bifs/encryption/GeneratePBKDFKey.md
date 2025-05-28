@@ -39,7 +39,6 @@ writeOutput( "<br /><b>Data After Decryption</b>: " & decryptedData );
 
 ```
 
-Result: 
 
 ### Additional Examples
 

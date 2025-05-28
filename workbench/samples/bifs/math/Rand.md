@@ -12,11 +12,11 @@ writeOutput( rand() );
 
 ### simple example Using rand() with algorithm
 
-To generate a random number between 0 to 1 by using CFMX_COMPAT algorithm
+To generate a random number between 0 to 1 by using bxmX_COMPAT algorithm
 
 
 ```java
-writeOutput( rand( "CFMX_COMPAT" ) );
+writeOutput( rand( "bxmX_COMPAT" ) );
 
 ```
 

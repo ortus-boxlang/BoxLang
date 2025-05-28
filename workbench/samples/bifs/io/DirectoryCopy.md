@@ -8,7 +8,6 @@ directoryCopy( expandPath( "./mySourceDirectory" ), expandPath( "../MyDestinatio
 
 ```
 
-Result: 
 
 ### Additional Examples
 

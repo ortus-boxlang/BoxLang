@@ -1,6 +1,5 @@
 ### simple isArray example
 
-For CF9+ CF10+
 
 <a href="https://try.boxlang.io/?code=eJxLzs%2FJL3IsKkqsVLBViFbg4lSqTM3JyS9X0gEy04tSU%2FPArKLUFCWuWGuu8qLMklT%2F0pKC0hINhcxisEYNhWSEIZoKmtZcAGG2GiQ%3D" target="_blank">Run Example</a>
 
@@ -18,7 +17,6 @@ Result: yes
 
 ### simple isArray example
 
-For Lucee4.5+
 
 <a href="https://try.boxlang.io/?code=eJxLzs%2FJL3IsKkqsVLBViFbg4lSqTM3JyS9X0gEy04tSU%2FPArKLUFCWuWGuu8qLMklT%2F0pKC0hINhcxisEYNhWSEIZoKmtZcAGG2GiQ%3D" target="_blank">Run Example</a>
 
@@ -36,7 +34,6 @@ Result: true
 
 ### isArray example with number
 
-For CF9+ CF10+
 
 <a href="https://try.boxlang.io/?code=eJzLK81NSi1yLCpKrFSwVYhW4OI01OHiNAJiY65Ya67yosySVP%2FSkoLSEg2FzGKwOg2FPIQmHQVDBU0FTWsuABqtFVc%3D" target="_blank">Run Example</a>
 
@@ -54,7 +51,6 @@ Result: yes
 
 ### isArray example with number
 
-For Lucee4.5+
 
 <a href="https://try.boxlang.io/?code=eJzLK81NSi1yLCpKrFSwVYhW4OI01OHiNAJiY65Ya67yosySVP%2FSkoLSEg2FzGKwOg2FPIQmHQVDBU0FTWsuABqtFVc%3D" target="_blank">Run Example</a>
 

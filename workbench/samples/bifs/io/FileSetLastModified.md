@@ -11,7 +11,6 @@
   
 ```
 
-Result: 
 
 ### Additional Examples
 

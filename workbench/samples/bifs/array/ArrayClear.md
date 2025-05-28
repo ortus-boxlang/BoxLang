@@ -24,8 +24,7 @@ writeOutput(
 Result: Yes
 
 ### Clear the value of an array
-
-Lucee4.5+ To clear the value of an array
+To clear the value of an array
 
 <a href="https://try.boxlang.io/?code=eJw9js0KgkAUhdfepzi4GiGQ1mKQQdGqiKBFtBjwVoM2I9cZRKJ3Tw1bnY%2FzA6d1L16L6B45rqAoPnEZLwa9PI3niXbCbCcq6vCzjsZWMd0y6mRoHYJvgleUpjiLtm1jahZ0TiotLtgSdyco9lsI%2ByAWvm%2BYlIKWxxIJ8hXeFOnxxKZmLXOQUTQPJHBGn0Sh%2Fd9NxsIXzbM43A%3D%3D" target="_blank">Run Example</a>
 
@@ -50,7 +49,7 @@ Result: true
 
 ### Clear value of an array using member function
 
-CF11+ Uses the member function is the same as running arrayClear.
+Uses the member function is the same as running arrayClear.
 
 <a href="https://try.boxlang.io/?code=eJzLK81NSi1yLCpKrFSwVYhW4OI01OHiNAJiY65Ya67yosySVP%2FSkoLSEg2FPIRaPeec1MQiDU0FTWsuAJ1WE9Q%3D" target="_blank">Run Example</a>
 

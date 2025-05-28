@@ -24,7 +24,6 @@ A string identifying the XML node type.
 </bx:output>
 ```
 
-Result: 
 
 ### Additional Examples
 

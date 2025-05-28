@@ -1,6 +1,6 @@
-### Use of createTimespan in a cfquery
+### Use of createTimespan in a bx:query
 
-The createTimespan function is useful in the cachedwithin attribute of cfquery.
+The createTimespan function is useful in the cachedwithin attribute of bx:query.
 
 
 ```java
@@ -11,7 +11,6 @@ The createTimespan function is useful in the cachedwithin attribute of cfquery.
  </bx:query>
 ```
 
-Result: 
 
 ### The createTimespan function returns a numeric value
 

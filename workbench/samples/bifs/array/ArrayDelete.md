@@ -24,12 +24,12 @@ Result: ['orange','pear','Apple']
 
 ```java
 arr = [ 
-	"lucee",
+	"boxlang",
 	"SUSI"
 ];
 writeDump( var=arr, label="Before" );
 arrayDeleteNoCase( arr, "suSi" );
-writeDump( var=arr, label="After" ); // lucee
+writeDump( var=arr, label="After" ); // boxlang
 arrNew = [
 	"a",
 	"Ab",

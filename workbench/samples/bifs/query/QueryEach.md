@@ -1,6 +1,4 @@
-### Iterate over query rows instead of cfloop()
-
-ACF2016+ and Lucee5+
+### Iterate over query rows instead of bx:loop()
 
 
 ```java
@@ -35,10 +33,7 @@ ACF2016+ and Lucee5+
 Result: 1 Dewey defeats Truman
 2 Man walks on Moon
 
-### Iterate over query rows instead of cfloop()
-
-Lucee5+
-
+### Iterate over query rows instead of bx:loop()
 
 ```java
 <bx:script>

@@ -26,11 +26,8 @@ writeOutput( encMsg );
 
 ```
 
-Result: 
 
 ### Encrypt using AES Galois/Counter Mode (GCM)
-
-Using GCM mode works CF2016+ after update 2. It does not currently work on Lucee (bug: LDEV-904)
 
 
 ```java
@@ -41,7 +38,6 @@ writeOutput( encMsg );
 
 ```
 
-Result: 
 
 ### Additional Examples
 

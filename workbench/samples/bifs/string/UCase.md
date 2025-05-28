@@ -1,15 +1,15 @@
-### uppercase CFDocs Rock
+### uppercase BLDocs Rock
 
 
 
 <a href="https://try.boxlang.io/?code=eJwrdU4sTtVQUHJ2c8lPLlYIyk%2FOVlLQtOYCAFxoBs0%3D" target="_blank">Run Example</a>
 
 ```java
-uCase( "CFDocs Rock" );
+uCase( "BLDocs Rock" );
 
 ```
 
-Result: CFDOCS ROCK
+Result: BLDOCS ROCK
 
 ### Additional Examples
 

@@ -34,7 +34,7 @@ Result: 87
 
 ### Get largest numeric value of an array using member function
 
-CF11+ Lucee4.5+
+
 
 <a href="https://try.boxlang.io/?code=eJwrzs9NdSwqSqxUsFWIVuDiNDLW4eI0MQUSBkBsCOJwxVpzlRdllqT6l5YUlJZoKBTD9OjlJlZoaCpoWnMBAIh4EtQ%3D" target="_blank">Run Example</a>
 

@@ -16,7 +16,6 @@ writeOutput( formattedRoundedUp & "<br>" );
 
 ```
 
-Result: 
 
 ### Additional Examples
 

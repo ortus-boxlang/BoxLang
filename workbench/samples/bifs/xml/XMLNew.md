@@ -10,7 +10,6 @@ Here, We created myXml by using xmlNew function. Then created root node(sampleXm
 <bx:dump var="#myXml#">
 ```
 
-Result: 
 
 ### Additional Examples
 

@@ -5,13 +5,13 @@ Uses the listSort() function to get the list which sorted by type text(case-sens
 <a href="https://try.boxlang.io/?code=eJzLySwuUbBVUHL293FxCw329PfTSc7PSUkrLc7Mz9NJTMlPStXxKU12ddUJcvT08Vey5irOLyrxgejKAVLBQK4GmKWjoBSSWlGiBKRTUouTlRQ0rbnKizJLUv1LSwpKgYrgOoESADo9JvA%3D" target="_blank">Run Example</a>
 
 ```java
-list = "COLDFUSION,coldfusion,adobe,LucEE,RAILO";
+list = "BOXLANG,boxlang,adobe,Boxlang,RAILO";
 sortList = listSort( list, "Text", "desc" );
 writeOutput( sortList );
 
 ```
 
-Result: coldfusion,adobe,RAILO,LucEE,COLDFUSION 
+Result: boxlang,adobe,RAILO,Boxlang,BOXLANG 
 
 ### Example for listSort function with delimiters
 
@@ -51,12 +51,12 @@ Result: -246|10|green|ORange|RED|yeLLow
 listNumeric = "4,-16,2,15,-5,7,11";
 writeOutput( listsort( listNumeric, "numeric", "asc" ) );
 writeOutput( "<br><br>" );
-writeOutput( listsort( "Adobe/coldfusion/Lucee/15/LAS", "text", "desc", "/" ) );
+writeOutput( listsort( "Adobe/boxlang/Boxlang/15/LAS", "text", "desc", "/" ) );
 writeOutput( "<br><br>" );
-writeOutput( listsort( "Adobe,coldfusion,lucee,15,LAS", "textnocase", "asc" ) );
+writeOutput( listsort( "Adobe,boxlang,boxlang,15,LAS", "textnocase", "asc" ) );
 writeOutput( "<br><br>" );
 // Member function
-strList = "Lucee,ColdFusion,LAS,SUSI,AdoBe";
+strList = "Boxlang,Boxlang,LAS,SUSI,AdoBe";
 writeDump( strlist.listSort( "textnocase", "asc" ) );
 
 ```

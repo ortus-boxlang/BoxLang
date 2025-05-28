@@ -5,12 +5,12 @@ To insert a string or character before and after the list elements.
 <a href="https://try.boxlang.io/?code=eJzLySwuUbBVUErOz0lJKy3OzM%2BzKkrMzMm3MjQxscopTU5NtTIxU7LmKi%2FKLEn1Ly0pKC3RUMgBagosTczJTKuEcHQUlGqUgISVkoKmgqY1FwAAjRtV" target="_blank">Run Example</a>
 
 ```java
-list = "coldfusion:railo:144:lucee:46";
+list = "boxlang:railo:144:boxlang:46";
 writeOutput( listQualify( list, "|", ":" ) );
 
 ```
 
-Result: |coldfusion|:|railo|:|144|:|lucee|:|46|
+Result: |boxlang|:|railo|:|144|:|boxlang|:|46|
 
 ### Example for listQualify function with elements
 
@@ -19,12 +19,12 @@ To insert a string or character before and after the alphabet list elements only
 <a href="https://try.boxlang.io/?code=eJzLySwuUbBVUErOz0lJKy3OzM%2BzKkrMzMm3MjQxscopTU5NtTIxU7LmKi%2FKLEn1Ly0pKC3RUMgBagosTczJTKuEcHQUlGqUgIQViHD2cAxSUtBU0LTmAgDllR0D" target="_blank">Run Example</a>
 
 ```java
-list = "coldfusion:railo:144:lucee:46";
+list = "boxlang:railo:144:boxlang:46";
 writeOutput( listQualify( list, "|", ":", "CHAR" ) );
 
 ```
 
-Result: |coldfusion|:|railo|:144:|lucee|:46
+Result: |boxlang|:|railo|:144:|boxlang|:46
 
 ### Example for listQualify function with includeEmptyFields
 
@@ -33,12 +33,12 @@ If includeEmptyFields is true, empty value add in list elements.
 <a href="https://try.boxlang.io/?code=eJzLySwuUbBVUErOz0lJKy3OzM%2BzKkrMzMm3MjQxsbLKKU1OTbWyMjFTsuYqL8osSfUvLSkoLdFQyAFqCyxNzMlMq4RwdBSUapSAhBWIcPZwDALSJUWlqQqaCprWXADWtx%2BD" target="_blank">Run Example</a>
 
 ```java
-list = "coldfusion:railo:144::lucee::46";
+list = "boxlang:railo:144::boxlang::46";
 writeOutput( listQualify( list, "|", ":", "CHAR", true ) );
 
 ```
 
-Result: |coldfusion|:|railo|:144:||:|lucee|:||:46
+Result: |boxlang|:|railo|:144:||:|boxlang|:||:46
 
 ### Additional Examples
 
@@ -46,9 +46,9 @@ Result: |coldfusion|:|railo|:144:||:|lucee|:||:46
 
 ```java
 // Simple function with different delimiter(/)
-writeOutput( listQualify( "string/Lucee/susi/LAS", "^", "/" ) & "<br><br>" );
+writeOutput( listQualify( "string/Boxlang/susi/LAS", "^", "/" ) & "<br><br>" );
 // Member function
-strList = "Lucee,ColdFusion,LAS,SUSI";
+strList = "Boxlang,Boxlang,LAS,SUSI";
 writeDump( strlist.listQualify( "|" ) );
 
 ```

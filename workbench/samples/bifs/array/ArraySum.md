@@ -33,7 +33,7 @@ Result: 0
 
 ### Sum of values in an array
 
-CF11+ Lucee4.5+ Uses the sum member function is the same as running arraySum.
+ Uses the sum member function is the same as running arraySum.
 
 <a href="https://try.boxlang.io/?code=eJzLK81NSi1yLCpKrFSwVYhW4OI0NNDh4rS0BBJG5kDC3Igr1pqrvCizJNW%2FtKSgtERDIQ%2BhR6%2B4NFdDU0HTmgsA42QUkA%3D%3D" target="_blank">Run Example</a>
 

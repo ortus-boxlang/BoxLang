@@ -28,7 +28,7 @@ arr = [
 	"g"
 ];
 dump( arrayToStruct( arr ) );
-if( listFirst( server.LUCEE.VERSION, "." ) >= 6 ) dump( arrayToStruct( arr, true ) );
+if( listFirst( server.BOXLANG.VERSION, "." ) >= 6 ) dump( arrayToStruct( arr, true ) );
 // member function
 dump( arr.toStruct() );
 

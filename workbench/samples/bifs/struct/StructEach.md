@@ -48,7 +48,7 @@ structEach( favs, ( Any key, Any value ) => {
 
 ### Using the member function
 
-CF11+ Lucee4.5+
+
 
 <a href="https://try.boxlang.io/?code=eJxFjcEKgkAQhs%2FuUwzuRUHKylOmYO4KErlkeharhaKocHcLEd%2B9dS9dhvm%2F%2BYZfyFYqkb4uXEAEAyCL7WANS9%2F3kJWWNKkoMXmhc8GqZs9InuUGrvxAw21CmpIeanqsNAvM4yRmrC6IIQEaQyT%2BRTPenq8OOJA8e7jz3jPLp30oDi5EMQzI%2BnY3yZmSbyUdsLG28HTBxsKbUwfz2AY3ROM0fh9xNO4%3D" target="_blank">Run Example</a>
 
@@ -73,8 +73,6 @@ OK => 200
 NOT_MODIFIED => 304
 
 ### Accessing a reference to the looping struct in the callback
-
-Lucee4.5+
 
 <a href="https://try.boxlang.io/?code=eJwrLkksKS12zk9JLVawVahW4OL091awUjAyMNDh4nQOcnUMcXUB8w2BfD%2F%2FkHhffxdPN0%2BwoLGBCVDQydElPsg1MNQ1OAQoZgLWCFLo5h%2Fq5wIWMeGqteYqRlikl5qYnKGhoKHgmFepkJ1aqQNmlCXmlKZCmMUlRaXJJQqaCrZ2CtVcnOVFmSWpLqW5BRpwGWuuWhABAJnsNEM%3D" target="_blank">Run Example</a>
 

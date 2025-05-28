@@ -7,7 +7,6 @@ Checking for the existence of a `form` variable.
 <bx:if isDefined( "form.submit" ) >...</bx:if>
 ```
 
-Result: 
 
 ### Scope Evaluation Order and Unscoped Variables
 

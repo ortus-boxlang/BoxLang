@@ -31,7 +31,6 @@ writeDump( myResult );
 
 ```
 
-Result: 
 
 ### Retrieves query metadata using getResult member function
 
@@ -66,5 +65,4 @@ writeDump( myResult );
 
 ```
 
-Result: 
 

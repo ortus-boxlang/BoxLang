@@ -14,7 +14,6 @@ writeDump( news );
 
 ```
 
-Result: 
 
 ### Builds a simple query using queryNew and queryAddRow member syntax
 
@@ -32,7 +31,6 @@ writeDump( news );
 
 ```
 
-Result: 
 
 ### Builds a simple query using queryNew queryAddRow and querySetCell
 
@@ -52,7 +50,6 @@ writeDump( news );
 
 ```
 
-Result: 
 
 ### Builds a simple query using queryNew queryAddRow and querySetCell with rows number
 
@@ -71,7 +68,6 @@ writeDump( news );
 
 ```
 
-Result: 
 
 ### Builds a simple query using queryNew queryAddRow with multiple rows as an array
 
@@ -95,7 +91,6 @@ writeDump( news );
 
 ```
 
-Result: 
 
 ### Additional Examples
 

@@ -11,7 +11,6 @@ bx:savecontent variable="myContent" {
 
 ```
 
-Result: 
 
 ### Tag Syntax
 
@@ -24,5 +23,4 @@ Result:
 </bx:savecontent>
 ```
 
-Result: 
 

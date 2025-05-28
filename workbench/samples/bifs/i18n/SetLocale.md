@@ -20,7 +20,6 @@ Outputs the current locale, Sets the locale to French (Belgian) and outputs it, 
 
 ```
 
-Result: 
 
 ### Additional Examples
 
@@ -29,7 +28,7 @@ Result:
 dump( getLocale() );
 setLocale( "english (australian)" );
 dump( getLocale() );
-dump( Server.COLDFUSION.SUPPORTEDLOCALES.listToArray().sort( "text" ) );
+dump( Server.BOXLANG.SUPPORTEDLOCALES.listToArray().sort( "text" ) );
 
 ```
 

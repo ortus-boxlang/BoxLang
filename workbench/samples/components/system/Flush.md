@@ -12,7 +12,6 @@ writeOutput( "<div>bar</div>" );
 
 ```
 
-Result: 
 
 ### Simple Tag Example
 
@@ -25,5 +24,4 @@ Outputs 'foo' to the browser approximately 1 second before 'bar'
  <div>bar</div>
 ```
 
-Result: 
 

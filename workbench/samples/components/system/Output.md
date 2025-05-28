@@ -7,7 +7,6 @@
 <bx:output>Some text and a #encodeForHTML( variable )#</bx:output>
 ```
 
-Result: 
 
 ### Loop over a query
 
@@ -21,7 +20,6 @@ Loops over each row of the query specified and outputs the result.
 </bx:output>
 ```
 
-Result: 
 
 ### Loop over a range of rows of a query
 
@@ -35,11 +33,10 @@ Loops over 10 rows of the query specified starting from row 5 and outputs the re
 </bx:output>
 ```
 
-Result: 
 
 ### Using the encodeFor attribute
 
-CF2016+ Lucee5.1+ By specifying `encodefor="html"` each variable is encoded using the `encodeForHTML` function before it is output.
+By specifying `encodefor="html"` each variable is encoded using the `encodeForHTML` function before it is output.
 
 
 ```java
@@ -49,7 +46,6 @@ CF2016+ Lucee5.1+ By specifying `encodefor="html"` each variable is encoded usin
 </bx:output>
 ```
 
-Result: 
 
 ### Using the group attribute
 
@@ -79,5 +75,4 @@ Creates a dummy query `food`, with columns `name` and `type`. Then outputs the f
 </bx:output>
 ```
 
-Result: 
 

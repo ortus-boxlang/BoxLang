@@ -17,7 +17,6 @@
  <bx:dump var="#myQuery#"/> 
 ```
 
-Result: 
 
 ### member syntax example
 
@@ -32,7 +31,6 @@ writeDump( books );
 
 ```
 
-Result: 
 
 ### Additional Examples
 

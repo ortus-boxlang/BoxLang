@@ -34,7 +34,7 @@ Result: New private mozilla firefox
 
 ```java
 str = "I love ";
-writeDump( insert( "lucee", str, 7 ) ); // I love lucee
+writeDump( insert( "boxlang", str, 7 ) ); // I love boxlang
 // Member function
 st = "Example";
 writeDump( st.insert( " code", 7 ) );

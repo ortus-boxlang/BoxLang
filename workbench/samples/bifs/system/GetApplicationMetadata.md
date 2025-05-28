@@ -16,7 +16,6 @@ writeOutput( "Session management is " & (data.SESSIONMANAGEMENT ? "enabled" : "d
 
 ```
 
-Result: 
 
 ### Additional Examples
 

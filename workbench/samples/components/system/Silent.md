@@ -1,16 +1,16 @@
-### Example for cfsilent tag
+### Example for bx:silent tag
 
-Content within cfsilent tag will not be displayed
+Content within bx:silent tag will not be displayed
 
 
 ```java
  <bx:set a = 10 > 
  <bx:set b = 5 > 
  <bx:silent> 
-    <bx:output> This is from inside cfsilent #a + b# </bx:output> 
+    <bx:output> This is from inside bx:silent #a + b# </bx:output> 
  </bx:silent> 
- <bx:output>This is from outside cfsilent #a - b#</bx:output> 
+ <bx:output>This is from outside bx:silent #a - b#</bx:output> 
 ```
 
-Result: This is from outside cfsilent 5
+Result: This is from outside bx:silent 5
 

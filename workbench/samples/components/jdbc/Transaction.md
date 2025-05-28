@@ -63,7 +63,6 @@ bx:transaction {
 
 ```
 
-Result: 
 
 ### Tag Syntax
 
@@ -82,5 +81,4 @@ Result:
  </bx:transaction>
 ```
 
-Result: 
 

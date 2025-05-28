@@ -18,7 +18,7 @@ Result: 2
 
 ### Average value of an array using the Array member function
 
-CF11+ Lucee4.5+ Uses the avg member function is the same as running arrayAvg.
+Uses the avg member function is the same as running arrayAvg.
 
 <a href="https://try.boxlang.io/?code=eJzLK81NSi1yLCpKrFSwVYhW4OI01OHiNAJiY65Ya67yosySVP%2FSkoLSEg2FPIRavcSydA1NBU1rLgB0WBMr" target="_blank">Run Example</a>
 

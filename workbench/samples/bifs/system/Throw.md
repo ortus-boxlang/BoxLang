@@ -10,7 +10,6 @@ Use the throw function to throw a custom application exception.
 
 ```
 
-Result: 
 
 ### Throw a custom http response exception
 
@@ -24,7 +23,6 @@ if( !isJSON( httpResponse.FILECONTENT ) ) {
 
 ```
 
-Result: 
 
 ### Additional Examples
 
@@ -36,10 +34,7 @@ try {
 } catch ( e) {
 	dump( var=bxcatch, label="single argument keyword" );
 }
-/* this won't work as expected, because thrown expects only a single
- * argument function in cfscript, only message will be populated
- * see https://luceeserver.atlassian.net/browse/LDEV-2832
- */
+
 try {
 	throw message = "thrown";
 	detail = "deets";

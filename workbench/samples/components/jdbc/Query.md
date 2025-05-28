@@ -103,7 +103,6 @@ Create an empty query object
 
 ```
 
-Result: 
 
 ### Query with some data
 
@@ -125,7 +124,6 @@ Create query object with some initial data
 
 ```
 
-Result: 
 
 ### Additional Examples
 

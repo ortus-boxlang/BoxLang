@@ -19,7 +19,7 @@ Result: [4,3,2,1]
 
 ### Prepend a value to an array using the Array member function
 
-CF11+ Lucee4.5+ Invoking the prepend function on an array is the same as running arrayPrepend.
+ Invoking the prepend function on an array is the same as running arrayPrepend.
 
 <a href="https://try.boxlang.io/?code=eJxLyU8uyS9yLCpKrFSwVYhW4OJUck1OzkktLsnPU9IB8kJS8%2FIS80rA7ODczJIMMMs5sSAxJyVTiSvWmisFYYReQVFqQWpeioaCkkdpUYmSgqY1V3lRZkmqS2lugYYCkkqQDABQTSa%2B" target="_blank">Run Example</a>
 

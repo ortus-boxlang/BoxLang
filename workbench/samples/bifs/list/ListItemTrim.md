@@ -47,9 +47,9 @@ Result: hello,world,this,is a,,,example
 
 ```java
 // Simple Example
-writeoutput( listItemTrim( "Susi , LAS  ,,lucee,,,test,," ) );
+writeoutput( listItemTrim( "Susi , LAS  ,,boxlang,,,test,," ) );
 // Member Function
-strList = ",I,      , love,lucee  ,,";
+strList = ",I,      , love,boxlang  ,,";
 writeDump( strList.listItemTrim() );
 
 ```

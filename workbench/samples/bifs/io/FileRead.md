@@ -8,7 +8,6 @@ binaryContent = fileReadBinary( expandPath( "./file.pdf" ) );
 
 ```
 
-Result: 
 
 ### Additional Examples
 

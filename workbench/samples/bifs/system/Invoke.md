@@ -12,7 +12,7 @@ Result: 0
 
 ### Invoke a method on a component
 
-Invokes the method named 'test' on the component Test.cfc with one parameter
+Invokes the method named 'test' on the component Test.bx with one parameter
 
 
 ```java
@@ -23,30 +23,28 @@ invoke( obj, "test", {
 
 ```
 
-Result: 
 
 ### Invoke a method on a webservice with one argument
 
-Invokes the method named 'test' on the webservice Test.cfc with one argument
+Invokes the method named 'test' on the webservice Test.bx with one argument
 
 
 ```java
-obj = createObject( "webservice", "https://example.com/test.cfc?wsdl" );
+obj = createObject( "webservice", "https://example.com/test.bx?wsdl" );
 invoke( obj, "test", {
 	ARGUMENT1 : "Test Data"
 } );
 
 ```
 
-Result: 
 
 ### Invoke a method on a webservice with multiple arguments
 
-Invokes the method named 'test' on the webservice Test.cfc with multiple arguments
+Invokes the method named 'test' on the webservice Test.bx with multiple arguments
 
 
 ```java
-obj = createObject( "webservice", "https://example.com/test.cfc?wsdl" );
+obj = createObject( "webservice", "https://example.com/test.bx?wsdl" );
 invoke( obj, "test", {
 	ARGUMENT1 : "Test Data",
 	ARGUMENT2 : "More Data",
@@ -55,7 +53,6 @@ invoke( obj, "test", {
 
 ```
 
-Result: 
 
 ### Additional Examples
 

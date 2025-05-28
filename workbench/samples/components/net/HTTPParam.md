@@ -1,4 +1,4 @@
-### Script Syntax (CF11+)
+### Script Syntax
 
 
 
@@ -6,40 +6,23 @@
 
 ```java
 bx:http method="POST" charset="utf-8" url="https://www.google.com/" result="result" {
-	bx:httpparam name="q" type="formfield" value="cfml";
+	bx:httpparam name="q" type="formfield" value="bx";
 }
 writeDump( result );
 
 ```
 
-Result: 
 
-### Alternate Script Syntax (CF9+). Removed in ColdFusion 2025.
-
-
-
-
-```java
-httpService = new http( method="POST", charset="utf-8", url="https://www.google.com/" );
-httpService.addParam( name="q", type="formfield", value="cfml" );
-result = httpService.send().getPrefix();
-writeDump( result );
-
-```
-
-Result: 
-
-### CFHTTP Tag Syntax
+### BX:HTTP Tag Syntax
 
 
 
 
 ```java
 <bx:http result="result" method="POST" charset="utf-8" url="https://www.google.com/">
-    <bx:httpparam name="q" type="formfield" value="cfml">
+    <bx:httpparam name="q" type="formfield" value="bx">
 </bx:http>
 <bx:dump var="#result#">
 ```
 
-Result: 
 

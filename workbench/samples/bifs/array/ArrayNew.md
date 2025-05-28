@@ -39,7 +39,7 @@ Result: [["First value", "First value"],["Second value", "Second value"]]
 
 ### Create unsynchronized array
 
-CF2016+ Uses the arrayNew function to create the new unsynchronized array
+Uses the arrayNew function to create the new unsynchronized array
 
 <a href="https://try.boxlang.io/?code=eJzLSy13LCpKrFSwVUgE0X6p5RoKhjoKaYk5xakKmtZceVAFeokFBal5KRoKSvl5qUogmfKizJJU%2F9KSgtISDQWvYH%2B%2F4NSizMSczKpUDQWYLgVNkEoAs4AhBw%3D%3D" target="_blank">Run Example</a>
 
@@ -54,7 +54,7 @@ Result: ["one"]
 
 ### Create an array using implicit notation
 
-CF8+ Instead of using arrayNew you can also create an array using square brackets.
+Instead of using arrayNew you can also create an array using square brackets.
 
 <a href="https://try.boxlang.io/?code=eJzLSy13LCpKrFSwVYhW4OJUys9LVdIB0iXl%2BUpcsdZc5UWZJan%2BpSUFpSUaCl7B%2Fn7BqUWZiTmZVakaCnkwvZoKmtZcAEruFrI%3D" target="_blank">Run Example</a>
 
@@ -70,8 +70,7 @@ writeOutput( JSONSerialize( newArray ) );
 Result: ["one", "two"]
 
 ### Create an array with data type
-
-CF2018+ When using data types on array creation, items are converted if possible, otherwise an error is thrown.
+When using data types on array creation, items are converted if possible, otherwise an error is thrown.
 
 
 ```java

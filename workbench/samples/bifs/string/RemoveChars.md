@@ -5,7 +5,7 @@
 <a href="https://try.boxlang.io/?code=eJwrSs3NL0t1zkgsKtZQUPJIzcnJV3B28%2FVRCM8vyklR0lEw01EwVdC05gIAIHwL%2Bw%3D%3D" target="_blank">Run Example</a>
 
 ```java
-removeChars( "Hello CFML World", 6, 5 );
+removeChars( "Hello BL World", 6, 5 );
 
 ```
 
@@ -18,9 +18,9 @@ Result: Hello World
 ```java
 writeDump( removeChars( "Hi buddy!, Have a nice day.", 10, 18 ) ); // Expected output: Hi buddy!
 // Member function
-str = "I love Lucee";
+str = "I love Boxlang";
 writeDump( str.removeChars( 1, 7 ) );
- // Expected output: Lucee
+ // Expected output: Boxlang
 
 ```
 

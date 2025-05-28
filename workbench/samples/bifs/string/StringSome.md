@@ -36,7 +36,7 @@ Result: YES
 <a href="https://try.boxlang.io/?code=eJzLrQwuKcrMS1ewVVDKKU1OTVWy5kpOzMlJSkzOBoppKDjmVSpUKGgq2NoBKTugqkQla2uu8qLMklSX0twCDQWI%2FuD83FQNhVyoaToKcDM0FTQRJsYbYjeziiQzgaaATQUAZwM52Q%3D%3D" target="_blank">Run Example</a>
 
 ```java
-myString = "lucee";
+myString = "boxlang";
 callback = ( Any x ) => x >= "a";;
 writeDump( StringSome( myString, callback ) );
 callback_1 = ( Any x ) => x >= "z";;

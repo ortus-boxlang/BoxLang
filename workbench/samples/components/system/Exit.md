@@ -1,4 +1,4 @@
-### Simple cfexit example
+### Simple bx:exit example
 
 Here the loop over the 5 number. When it's meet the condition as true then the block of code get exit.
 

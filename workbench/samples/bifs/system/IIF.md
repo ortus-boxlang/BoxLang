@@ -6,14 +6,13 @@
 
 ```java
 iIf( server.OS.NAME == "Bacon", de( "Running Bacon OS" ), de( "Not Running Bacon OS" ) );
-
 ```
 
 Result: Not Running Bacon OS
 
 ### Simple Example using Ternary Operator Instead
 
-Instead of using iif, you should use the ternary operator CF9+
+Instead of using iif, you should use the ternary operator
 
 <a href="https://try.boxlang.io/?code=eJzT0ChOLSpLLdLzD9bzc%2FR1VbC1VVBySkzOz1PSVLBXUAoqzcvLzEtXAAsp%2BAcrKVgpKPnllyhgSGhacwEAduEWnQ%3D%3D" target="_blank">Run Example</a>
 

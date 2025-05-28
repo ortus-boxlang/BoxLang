@@ -1,6 +1,6 @@
 ### Script Syntax
 
-Enable cfoutput only
+Enable bx:output only
 
 <a href="https://try.boxlang.io/?code=eJxLqrAqTi0pycxLV0jNS0zKSc0vLSkoLcnPy6m0LSkqTbXmAgDtxg1P" target="_blank">Run Example</a>
 
@@ -9,7 +9,6 @@ bx:setting enableoutputonly=true;
 
 ```
 
-Result: 
 
 ### Script Syntax
 
@@ -22,7 +21,6 @@ bx:setting showdebugoutput=false;
 
 ```
 
-Result: 
 
 ### Script Syntax
 
@@ -35,11 +33,10 @@ bx:setting requesttimeout=30;
 
 ```
 
-Result: 
 
 ### Tag Syntax
 
-Enable cfoutput only
+Enable bx:output only
 
 
 ```java
@@ -58,7 +55,6 @@ Disables debug output
 <bx:setting showdebugoutput="false">
 ```
 
-Result: 
 
 ### Tag Syntax
 
@@ -69,5 +65,4 @@ Set the request timeout to 30 seconds
 <bx:setting requesttimeout="30">
 ```
 
-Result: 
 

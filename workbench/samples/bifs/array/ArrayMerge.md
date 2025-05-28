@@ -1,6 +1,6 @@
 ### Standard function syntax
 
-Lucee4.5+ Merge two arrays resulting in a single re-indexed array. All elements of both arrays are preserved.
+ Merge two arrays resulting in a single re-indexed array. All elements of both arrays are preserved.
 
 <a href="https://try.boxlang.io/?code=eJxVjjEOwjAMRWdyiihTK%2FUGFSsTiIUNdTDgppFKbTkOqLcnSWFAXp7l52%2BPkoLavb1as3PAPKPrMt1gyVWRBBaPzgy9eaH3AWPR80DpCUrVuYMI6YYkSwVGiF9gRok1YUKYdVoPRI8Sk9dgPaF4bOxYPuns70bbm7cExXNSTtps6oWOIebmL6Yt7gf8AT2c" target="_blank">Run Example</a>
 
@@ -26,7 +26,7 @@ Result: apple,banana,orange,tomato,carrot,corn,peas,peppers
 
 ### Member function syntax
 
-Lucee4.5+ Merge two arrays resulting in a single re-indexed array. All elements of both arrays are preserved.
+Merge two arrays resulting in a single re-indexed array. All elements of both arrays are preserved.
 
 <a href="https://try.boxlang.io/?code=eJxVjbEKAjEMQGf7FaXTHYg%2FcLg6CS5u4hA11yvcNSFNlft726qDZHkhj5dRclC7txdrNg6YZ3TbQjeIZRqSQPTozHUwT%2FQ%2BYKp6OSgtoNScO4iQfpAkNmCE9AVmlNQKE8Ks03ogetTMWL%2FvFhSPnf3V%2B8G8JCiesnLWzpY2rGc6hlSWv0Bf3TeMSzt%2F" target="_blank">Run Example</a>
 
@@ -52,7 +52,7 @@ Result: apple,banana,orange,tomato,carrot,corn,peas,peppers
 
 ### Example where leaveIndex parameter is true
 
-Lucee4.5+ Merge two arrays resulting in a single re-indexed array. Where the both arrays have elements in the same position, only values from the first array are included in the result. Valid using standard or member function syntax.
+Merge two arrays resulting in a single re-indexed array. Where the both arrays have elements in the same position, only values from the first array are included in the result. Valid using standard or member function syntax.
 
 Note how the first three elements of the veggies array are not merged because the fruit array already has values for elements 1-3.
 

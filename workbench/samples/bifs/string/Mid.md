@@ -16,7 +16,7 @@ Result: 11
 <a href="https://try.boxlang.io/?code=eJw9zMEKgkAQBuD7PsWfJ4UlLwWBdOtgYPoMuTvBHFZldsbw7QOjvgf4sgquKO7o5pXQWSBCJllJisa9hZUG08W0ROJYIqt4XDzOqFA1rq7xoDSS4GVTUJ4nl79hyxgtxs2j50CIz%2B3wC2%2BWln067uXpv30AG6wqdQ%3D%3D" target="_blank">Run Example</a>
 
 ```java
-str = "I Love Lucee server";
+str = "I Love Boxlang server";
 writeOutput( mid( str, 8, 5 ) );
 // Member function
 str = "Hi buddy, Nice day!";

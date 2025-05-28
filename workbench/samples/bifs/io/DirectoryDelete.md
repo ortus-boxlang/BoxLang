@@ -9,7 +9,6 @@
 <bx:set directoryDelete( delDirectory, recurse ) >
 ```
 
-Result: 
 
 ### Additional Examples
 

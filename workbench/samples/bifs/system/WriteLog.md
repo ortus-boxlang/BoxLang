@@ -1,6 +1,6 @@
 ### Simple writeLog Code Example
 
-Logs an order processed successfully message to `orders.log` which will be located in the CF logs directory, eg: `{cf.root}/cfusion/logs/`
+Logs an order processed successfully message to `orders.log` which will be located in the BX logs directory, eg: `{bx.root}/logs/`
 
 
 ```java

@@ -8,7 +8,6 @@ Read XML from a file and use the xmlParse method to parse it into an XML data st
 <bx:set myXML = xmlParse( xmlString ) >
 ```
 
-Result: 
 
 ### Additional Examples
 

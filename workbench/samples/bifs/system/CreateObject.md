@@ -1,17 +1,16 @@
-### Create a CFC / Component Instance
+### Create a BX / Component Instance
 
 createObject Component
 
 
 ```java
 <bx:script>
-	tellTimeCFC = createObject( "component", "appResources.components.tellTime" );
-	tellTimeCFC.getLocalTime();
+	tellTimeClass = createObject( "component", "appResources.components.tellTime" );
+	tellTimeClass.getLocalTime();
 </bx:script>
 
 ```
 
-Result: 
 
 ### Create a SOAP WebService Instance
 
@@ -27,7 +26,6 @@ createObject WebService
       
 ```
 
-Result: 
 
 ### Create a java class with specified bundle and version
 
@@ -39,7 +37,6 @@ POIFSFileSystem = createObject( "java", "org.apache.poi.poifs.filesystem.POIFSFi
 
 ```
 
-Result: 
 
 ### Additional Examples
 
@@ -52,16 +49,15 @@ dump( label="CreateObject with init()", var=createObject( "java", "java.lang.Str
 ```
 
 
-
 ```java
-dump( var=createObject( "component", "org.lucee.cfml.http" ), expand=false );
-// but even "component" is optional for cfcs
-dump( var=createObject( "org.lucee.cfml.http" ), expand=false );
+dump( var=createObject( "class", "com.my.bx.class" ), expand=false );
+// but even "class" is optional for bx
+dump( var=createObject( "com.my.bx.class" ), expand=false );
 // the modern new Object() syntax is also dynamic
-dump( var=new "org.lucee.cfml.http"(), expand=false );
-dump( var=new org.lucee.cfml.http(), expand=false );
-cfc = "org.lucee.cfml.http";
-dump( var=new "#cfc#"(), expand=false );
+dump( var=new "com.my.bx.class"(), expand=false );
+dump( var=new com.my.bx.class(), expand=false );
+myClass = "com.my.bx.class";
+dump( var=new "#myClass#"(), expand=false );
 
 ```
 

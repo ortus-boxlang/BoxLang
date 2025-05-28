@@ -23,7 +23,6 @@ try {
 
 ```
 
-Result: 
 
 ### Additional Examples
 

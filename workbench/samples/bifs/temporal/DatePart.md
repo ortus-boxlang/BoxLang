@@ -23,7 +23,6 @@ This example shows information available from datePart
 </bx:output>
 ```
 
-Result: 
 
 ### Additional Examples
 

@@ -12,5 +12,4 @@ writeoutput( "<br>Unicode value: #x#" );
 
 ```
 
-Result: 
 

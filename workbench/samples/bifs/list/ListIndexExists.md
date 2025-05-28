@@ -19,9 +19,9 @@ Result: Apple,Goa,Banana,Graphs
 
 ```java
 // Simple Example
-writeoutput( listIndexExists( "Susi,LAS,,lucee,,,test", 3 ) );
+writeoutput( listIndexExists( "Susi,LAS,,boxlang,,,test", 3 ) );
 // Member Function
-strList = ",I,,love,lucee,,";
+strList = ",I,,love,boxlang,,";
 writeDump( strList.listIndexExists( 6 ) );
  // Not exists, returns false
 

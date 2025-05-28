@@ -1,6 +1,6 @@
 ### Multiple to Script Examples
 
-Converts coldfusion objects to JavaScript syntax for use
+Converts boxlang objects to JavaScript syntax for use
 
 
 ```java
@@ -9,7 +9,7 @@ Converts coldfusion objects to JavaScript syntax for use
 <h3>Converting a string variable</h3>
 <bx:set thisString = "This is a string" >
 <bx:output>
-<b>The thisString variable in ColdFusion</b><br>
+<b>The thisString variable in Boxlang</b><br>
 #thisString#<br>
 <br>
 <strong>The output of ToScript(thisString, "jsVar")</strong><br>
@@ -31,8 +31,8 @@ document.write("jsVar in JavaScript is: " + jsVar);
 </bx:loop>
 
 <bx:output>
-<b>The ColdFusion myArray Array</b><br>
-<!--- Write the contents of the myArray variable in ColdFusion --->
+<b>The Boxlang myArray Array</b><br>
+<!--- Write the contents of the myArray variable in Boxlang --->
 <bx:loop index="i" from="1" to="#arrayLen( myArray )#">
 myArry[#i#]: #myArray[ i ]#<br>
 </bx:loop>
@@ -69,7 +69,7 @@ and ActionScript type JavaScript objects.<br>
     ORDER BY title DESC
 </bx:query>
 <br>
-The Query in ColdFusion
+The Query in Boxlang
 <bx:table query="sortedNews" headerlines="1" colheaders="">
 <bx:col align="left" width="9" header="<b>ID</b>" text="#id#">
 <bx:col align="left" width="9" header="<b>title</b>" text="#title#">
@@ -91,7 +91,6 @@ False):</strong><br>
 </bx:output>
 ```
 
-Result: 
 
 ### Additional Examples
 
@@ -100,13 +99,13 @@ Result:
 ```java
 // Struct
 Struct = {};
-Struct[ 1 ] = "lucee";
+Struct[ 1 ] = "boxlang";
 jsVar = JSONSerialize( Struct );
 resStruct = ToScript( struct, "jsVar" );
 writeDump( resStruct );
 // Array
 Array = [];
-Array[ 1 ] = "lucee";
+Array[ 1 ] = "boxlang";
 jsVar = JSONSerialize( Array );
 resArr = ToScript( Array, "jsVar" );
 writeDump( resArr );

@@ -9,7 +9,6 @@
  </bx:output>  
 ```
 
-Result: 
 
 ### Additional Examples
 

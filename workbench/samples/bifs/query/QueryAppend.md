@@ -22,7 +22,6 @@ writeDump( names );
 
 ```
 
-Result: 
 
 ### Additional Examples
 

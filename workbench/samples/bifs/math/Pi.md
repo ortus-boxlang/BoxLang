@@ -24,7 +24,7 @@ numberFormat( pi(), "0.000000000000000" );
 
 Result: 3.141592653589793
 
-### ColdFusion only shows up to 15 digits of pi
+### Boxlang only shows up to 15 digits of pi
 
 After 15th digit CF outputs 0's
 

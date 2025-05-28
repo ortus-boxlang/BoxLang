@@ -22,7 +22,7 @@ writeOutput( ui );
 
 ### Using Member Function
 
-CF11+ Lucee4.5+ 
+ 
 
 <a href="https://try.boxlang.io/?code=eJxVjsEKwjAQRM%2FmK5YUpELRu60BQfDgQfCgeIxm0dCalDWxlOK%2Fm6R68Db7mJkdktpcbAcrGIBN%2BAEVhyXw0x3J8iKQPUlzwwR3kmQtEz1j09hupLa7S53olhDN11pL0rXm7F0yr0M9jY%2FmhMpfMYcc1qaHlvClrX8eZeOxSKjGfhSvyGAGKwEDmxA6T%2BY%2FAFPglXIiC5msWgRVKSWyFIy3Erxk7yKaGsFDVfQvoi5ZR9rhxj%2Fa%2FDcNZl%2B69671LoewO6AP1rdXdA%3D%3D" target="_blank">Run Example</a>
 

@@ -8,7 +8,6 @@
  <bx:dump var="#yourTime#"/>   
 ```
 
-Result: 
 
 ### Additional Examples
 

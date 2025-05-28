@@ -8,7 +8,6 @@
 1234 ('__.00') -> #numberFormat( 1234, "__.00" )#<br/> </bx:output>
 ```
 
-Result: 
 
 ### 0 and 9 mask 
 
@@ -23,7 +22,6 @@ Result:
 </bx:output>
 ```
 
-Result: 
 
 ### _ mask
 
@@ -38,7 +36,6 @@ Result:
 </bx:output>
 ```
 
-Result: 
 
 ###    + & - mask 
 
@@ -52,7 +49,6 @@ Result:
 </bx:output>
 ```
 
-Result: 
 
 ### , comma
 
@@ -66,7 +62,6 @@ Result:
 </bx:output>
 ```
 
-Result: 
 
 ### L,C mask
 
@@ -80,7 +75,6 @@ Result:
 </bx:output>
 ```
 
-Result: 
 
 ### Two decimal places, decimal input
 

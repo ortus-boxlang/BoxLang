@@ -8,7 +8,6 @@ writeDump( getMetadata( new Query() ) );
 
 ```
 
-Result: 
 
 ### Additional Examples
 

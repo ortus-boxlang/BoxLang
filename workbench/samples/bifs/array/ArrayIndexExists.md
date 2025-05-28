@@ -1,6 +1,6 @@
 ### Simple example
 
-CF8+ To check an array element is define or not
+To check an array element is define or not
 
 <a href="https://try.boxlang.io/?code=eJwrzs9NdSwqSqxUsFWIVuDiNNTh4jQCYmMgNgFiU65Ya67yosySVP%2FSkoLSEg2FRJBqz2KX1LTMvNQUDYVimAk6CsYKmgqa1lwAtkgXRQ%3D%3D" target="_blank">Run Example</a>
 
@@ -20,7 +20,7 @@ Result: Yes
 
 ### Simple example
 
-Lucee4.5+ To check an array element is define or not
+To check an array element is define or not
 
 <a href="https://try.boxlang.io/?code=eJwrzs9NdSwqSqxUsFWIVuDiNNTh4jQCYmMgNgFiU65Ya67yosySVP%2FSkoLSEg2FRJBqz2KX1LTMvNQUDYVimAk6CmYKmgqa1lwAtl0XSA%3D%3D" target="_blank">Run Example</a>
 
@@ -40,7 +40,7 @@ Result: false
 
 ### Simple example with two dimensional array
 
-CF8+ To check an array element is define or not
+To check an array element is define or not
 
 <a href="https://try.boxlang.io/?code=eJxzyywqLnEsKkqsVLBViFbg4jTU4eI0AmJjrlhrruLU5Py8FLg0UBYkbQiSNwQrSM7PTcrMS4WpSATRfqnlGgpGCprWXGCuY0FBal6KhgKyUh2FNIS9%2BBUiOwGosrwosyTVv7SkoLREA2KdZ7FLahpQPYZOYwVNkA4AntpGyg%3D%3D" target="_blank">Run Example</a>
 
@@ -66,7 +66,7 @@ Result: No
 
 ### Simple example with two dimensional array
 
-Lucee4.5+ To check an array element is define or not
+To check an array element is define or not
 
 <a href="https://try.boxlang.io/?code=eJxzyywqLnEsKkqsVLBViFbg4jTU4eI0AmJjrlhrruLU5Py8FLg0UBYkbQiSNwQrSM7PTcrMS4WpSATRfqnlGgpGCprWXGCuY0FBal6KhgKyUh2FNIS9%2BBUiOwGosrwosyTVv7SkoLREA2KdZ7FLahpQPYZOoBNAOgCe00bJ" target="_blank">Run Example</a>
 

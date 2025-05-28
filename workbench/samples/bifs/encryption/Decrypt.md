@@ -14,7 +14,6 @@ writeDump( ex );
 
 ```
 
-Result: 
 
 ### Additional Examples
 

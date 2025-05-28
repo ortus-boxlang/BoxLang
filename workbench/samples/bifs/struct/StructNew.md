@@ -14,7 +14,6 @@ writeDump( unordered );
 
 ```
 
-Result: 
 
 ### New struct using function
 
@@ -31,7 +30,6 @@ writeDump( unordered );
 
 ```
 
-Result: 
 
 ### New ordered struct using literal notation
 
@@ -49,11 +47,10 @@ writeDump( ordered );
 
 ```
 
-Result: 
 
 ### New ordered struct using function
 
-CF2016+ Lucee4.5+ Creates an ordered struct.
+Creates an ordered struct.
 
 <a href="https://try.boxlang.io/?code=eJzLL0pJLUpNUbBVKC4pKk0u8Ust11BQyoeIKiloWnNB2XqOQDWGCK4TkGuE4DoDucbWXOVFmSWpLqW5BRoKUBmQEQB8Th%2BI" target="_blank">Run Example</a>
 
@@ -66,11 +63,10 @@ writeDump( ordered );
 
 ```
 
-Result: 
 
 ### New ordered struct using literal notation
 
-CF2016+ Lucee5+ Creates an ordered struct.
+Creates an ordered struct.
 
 
 ```java
@@ -82,7 +78,6 @@ writeDump( ordered );
 
 ```
 
-Result: 
 
 ### New case-sensitive struct using function
 
@@ -99,7 +94,6 @@ writeDump( casesensitive );
 
 ```
 
-Result: 
 
 ### New case-sensitive struct using literal notation
 
@@ -117,7 +111,6 @@ writeDump( casesensitive );
 
 ```
 
-Result: 
 
 ### New ordered and case-sensitive struct using function
 
@@ -134,7 +127,6 @@ writeDump( someStruct );
 
 ```
 
-Result: 
 
 ### New ordered and case-sensitive struct using literal notation
 
@@ -152,7 +144,6 @@ writeDump( someStruct );
 
 ```
 
-Result: 
 
 ### Additional Examples
 

@@ -54,11 +54,10 @@ writedump( subUsers );
 
 ```
 
-Result: 
 
-### Return Query as an Array of Structs - Lucee5+
+### Return Query as an Array of Structs - Boxlang5+
 
-Lucee5+ Return a query object converted into an array of structs.
+Return a query object converted into an array of structs.
 
 <a href="https://try.boxlang.io/?code=eJxNjUELgkAQhc87v2KYk4W%2FoOgSCZ0kRA8RHTYbSXCtZnczEf97a1B4GHi89%2BZ73rJY3ODTs%2FQpdxFSVYt1rTZMMdJLS3nTEuQJQQ2g1CzHFdJetwRqhDMu1mD9pZgDkzeX3nGAWm64dLjESu4G%2FVQKzGEMB2q3zY%2BHZKJ9vygGlSV5kaU%2FW4vonmCcNjqpHV%2B9eUT4nwv2B3mGPVI%3D" target="_blank">Run Example</a>
 
@@ -78,9 +77,9 @@ writedump( subUsers );
 
 Result: [ { firstname: "Han" } ]
 
-### Return Query as an Array of Structs - Lucee 4.5
+### Return Query as an Array of Structs - Boxlang 4.5
 
-Lucee4.5+ Return a query object converted into an array of structs.
+Return a query object converted into an array of structs.
 
 
 ```java
@@ -101,7 +100,7 @@ Result: [ { firstname: "Han" } ]
 
 ### Return Query as a Struct of Structs
 
-Lucee5+ Return a query object converted into a struct of structs. (Struct key is based on the "columnkey" parameter)
+Return a query object converted into a struct of structs. (Struct key is based on the "columnkey" parameter)
 
 <a href="https://try.boxlang.io/?code=eJxNjk0LgkAQhs%2B7v2LYk4WXrkWXSggqC9FDRAfTsYS0mt3NQvzvzQZ9HAaGh%2FfLaiQNY7hZpGeIjQeqzH0oStKmTitUPoPa4BHJh3tK2SklZjuQopVCsFjBEAa%2B%2B38mRmqe1kqKTu6hN5LaHpL%2FpuCBmTXIbRrPmBnoQ0GXCqwTcX7b8Ukxm8TbTeDS3i7FNVEQJ1H4wdqQzYzj0%2FUyWYWLYOswr5Kd622oNJjb6urBdwLjF4O4SLA%3D" target="_blank">Run Example</a>
 
@@ -157,7 +156,7 @@ dump( queryResult );
 ```java
 queryExecute( sql="insert into user (name) values (:name)", params={ 
 	NAME : {
-		VALUE : "lucee",
+		VALUE : "boxlang",
 		TYPE : "varchar"
 	}
 }, options={

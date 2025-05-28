@@ -48,5 +48,4 @@ bx:transaction {
 
 ```
 
-Result: 
 

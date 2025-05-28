@@ -72,5 +72,4 @@ Along with the data type and size
 
 ```
 
-Result: 
 

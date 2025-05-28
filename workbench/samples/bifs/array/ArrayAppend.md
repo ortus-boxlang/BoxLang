@@ -19,7 +19,7 @@ Result: [1,2,3,4]
 
 ### Append a value to an array using the Array member function
 
-CF11+ Lucee4.5+ Invoking the append function on an array is the same as running arrayAppend.
+Invoking the append function on an array is the same as running arrayAppend.
 
 <a href="https://try.boxlang.io/?code=eJwrzs9NdSwqSqxUsFWIVuDiNNTh4jQCYmOuWGuuYpikXmJBQWpeioaCiYKmNVd5UWZJqn9pSUFpiYaCV7C%2FX3BqUWZiTmZVqoYCXIuCJkgpACxLHJo%3D" target="_blank">Run Example</a>
 
@@ -38,7 +38,7 @@ Result: [1,2,3,4]
 
 ### Append more than one item
 
-CF10+ You can merge two arrays when third parameter is set to true.
+You can merge two arrays when third parameter is set to true.
 
 <a href="https://try.boxlang.io/?code=eJwrzs9NdSwqSqxUsFWIVuDiNNTh4jQCYmOuWGsusIRjQUFqXoqGQjFMpY5CNBenCVCNKRCbccXqKJQUlaYqaFpzlRdllqS6lOYWaCh4Bfv7BacWZSbmZFalImlW0AQpBACAdyFm" target="_blank">Run Example</a>
 

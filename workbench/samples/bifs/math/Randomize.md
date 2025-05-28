@@ -10,7 +10,6 @@ The following example calls the Randomize function to seed the random number gen
  </bx:loop> 
 ```
 
-Result: 
 
 ### Additional Examples
 

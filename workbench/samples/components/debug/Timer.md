@@ -11,7 +11,7 @@ done.
 </bx:timer>
 ```
 
-Result: The time elapsed while executing the code inside the <cftimer> block should be displayed inline.
+Result: The time elapsed while executing the code inside the <bx:timer> block should be displayed inline.
 
 ### Script version
 
@@ -28,5 +28,5 @@ bx:timer label="Nap time" type="outline" {
 
 ```
 
-Result: The time elapsed while executing the code inside the cftimer block should be displayed in the output with an outline around any output generated within the cftimer call..
+Result: The time elapsed while executing the code inside the bx:timer block should be displayed in the output with an outline around any output generated within the bx:timer call..
 

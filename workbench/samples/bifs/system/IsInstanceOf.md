@@ -1,6 +1,6 @@
 ### Check if Date is instance of java.util.Date
 
-Dates in CFML are instances of the java class: `java.util.Date`
+Dates in BL are instances of the java class: `java.util.Date`
 
 <a href="https://try.boxlang.io/?code=eJzLLPbMKy5JzEtO9U%2FTUMjLL9fQ1FFQykosS9QrLcnM0XNJLElVUtC05gIAKTkNDA%3D%3D" target="_blank">Run Example</a>
 
@@ -17,8 +17,8 @@ Result: false
 
 ```java
 writeDump( isInstanceOf( {}, "java.util.Map" ) ); // true
-writeDump( isInstanceOf( "Lucee", "java.util.Map" ) ); // false
-writeDump( isInstanceOf( "Lucee", "java.lang.String" ) );
+writeDump( isInstanceOf( "Boxlang", "java.util.Map" ) ); // false
+writeDump( isInstanceOf( "Boxlang", "java.lang.String" ) );
  // true
 
 ```

@@ -8,7 +8,6 @@ fileObj = fileOpen(expandPath('./file.txt');
 isEndOfFile = fileIsEOF(fileObj);
 ```
 
-Result: 
 
 ### Using fileIsEOF to loop over all lines of a text file
 
@@ -31,7 +30,6 @@ fileClose( fileObj );
 
 ```
 
-Result: 
 
 ### Additional Examples
 

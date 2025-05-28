@@ -13,7 +13,6 @@ The following example calls the Randomize function to seed the random number gen
  </bx:output></b></p>  
 ```
 
-Result: 
 
 ### Script Example
 
@@ -33,13 +32,12 @@ Result:
  <bx:dump var="#bytes#"/>  
 ```
 
-Result: 
 
 ### Additional Examples
 
 
 ```java
-writeDump( randRange( 25, 125, "CFMX_COMPAT" ) );
+writeDump( randRange( 25, 125, "bxmX_COMPAT" ) );
 writeDump( randRange( 100, 500, "SHA1PRNG" ) );
 
 ```

@@ -19,7 +19,6 @@ dump( queryColumnArray( news ) );
 
 ```
 
-Result: 
 
 ### Additional Examples
 

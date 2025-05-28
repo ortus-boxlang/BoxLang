@@ -31,7 +31,7 @@ Result: false
 
 ### Using Member Function
 
-CF11+ Lucee4.5+
+
 
 <a href="https://try.boxlang.io/?code=eJzLrQwuKSpNLlGwVaiuteYqL8osSfUvLSkoLdFQyIXK6XkWu%2BYWlFRqaCpoWnMBANb3EW0%3D" target="_blank">Run Example</a>
 

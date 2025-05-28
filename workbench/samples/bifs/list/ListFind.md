@@ -43,9 +43,9 @@ Result: 2
 <a href="https://try.boxlang.io/?code=eJxtjsEKgkAYhO%2F7FMOeFJY81E2CBVMIrE49gOkPLayurP9qj99q3eo6M8z3Ld4w3QKPgRNYM3Flhu7qimaiBPKsrJtJ2dASKaa1tSQVZH0vylIiRZojy1C%2BRmqZOrjtCXsRwwv1D%2FKowtCycQMWw09odGRNH6FeTOzrSMQxgnTT6w2jO5plLpbV6xT6McF3tvuxO8VldNEfD%2FFP5CDeDk9JFA%3D%3D" target="_blank">Run Example</a>
 
 ```java
-writeOutput( listFindNoCase( "I,love,lucee,testFile", "LUCEE" ) ); // Expected output 3
+writeOutput( listFindNoCase( "I,love,boxlang,testFile", "BOXLANG" ) ); // Expected output 3
 // Member Function with @ delimiter
-strList = "I@am@lucee@dev";
+strList = "I@am@boxlang@dev";
 writeDump( strList.listFindNoCase( "Dev", "@" ) );
  // Expected output 4
 

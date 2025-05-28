@@ -18,7 +18,7 @@ Result: Struct with one key-value pair: B 2
 
 ### Remove a key from a struct using the member function
 
-CF11+ Lucee4.5+ Invoking the delete function on a struct is the same as running structDelete.
+ Invoking the delete function on a struct is the same as running structDelete.
 
 <a href="https://try.boxlang.io/?code=eJwrzs9NDS4pKk0uUbBVqFbg4nRUsFIw1OHidALSRly11lzFcBV6Kak5qSWpGgpKiUoKmtZc5UWZJakupbkFGgoIRSAJACeFGW8%3D" target="_blank">Run Example</a>
 

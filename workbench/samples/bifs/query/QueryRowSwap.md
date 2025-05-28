@@ -28,7 +28,6 @@ writeDump( swap1 );
 
 ```
 
-Result: 
 
 ### Member function version.
 
@@ -60,7 +59,6 @@ writeDump( swap2 );
 
 ```
 
-Result: 
 
 ### Additional Examples
 

@@ -13,7 +13,7 @@ for( i = 1; i <= 10; i++ ) {
 
 Result: 12345678910
 
-### For Loop using CFLoop Tag
+### For Loop using Bx:loop Tag
 
 General Purpose Loop
 
@@ -38,24 +38,23 @@ myArray = [
 	"b",
 	"c"
 ];
-// For Loop By index for CF9.0.0 and lower
+// For Loop By index
 for( i = 1; i <= arrayLen( myArray ); i++ ) {
 	writeOutput( myArray[ i ] );
 }
-// By For In CF9.0.1+
+// By For
 for( currentIndex in myArray ) {
 	writeOutput( currentIndex );
 }
-// By arrayEach() member function CF11+
+// By arrayEach()
 myArray.each( ( Any element, Any index ) => {
 	writeOutput( element & " : " & index );
 } );
 
 ```
 
-Result: 
 
-### CFLoop over an Array
+### Bx:loop over an Array
 
 Array Loop
 
@@ -78,7 +77,6 @@ Array Loop
  </bx:loop>
 ```
 
-Result: 
 
 ### Loop over a Struct (Script Syntax)
 
@@ -102,11 +100,10 @@ myStruct.each( ( Any key, Any value ) => {
 
 ```
 
-Result: 
 
-### CFLoop over a Struct
+### Bx:loop over a Struct
 
-Loop over a Struct using the collection and item arguments of cfloop.
+Loop over a Struct using the collection and item arguments of bx:loop.
 
 
 ```java
@@ -121,11 +118,10 @@ Loop over a Struct using the collection and item arguments of cfloop.
  </bx:loop>
 ```
 
-Result: 
 
-### CFLoop over a Struct
+### Bx:loop over a Struct
 
-Lucee4.5+ Loop over a Struct using the collection, index and item arguments of cfloop.
+Loop over a Struct using the collection, index and item arguments of bx:loop.
 
 
 ```java
@@ -136,11 +132,11 @@ Lucee4.5+ Loop over a Struct using the collection, index and item arguments of c
 	} >
 <!--- By struct --->
 <bx:loop item="currentItem" collection="#myStruct#" index="currentKey">
-<bx:output><li>#currentKey# : #currentItem#</li></bx:output>
+
+<bx:output><li>#currentKey# : #currentItem#</li></bx:output>
 </bx:loop>
 ```
 
-Result: 
 
 ### Loop over a List (Script Syntax)
 
@@ -161,9 +157,8 @@ myList.each( ( Any element, Any index ) => {
 
 ```
 
-Result: 
 
-### CFLoop over a List
+### Bx:loop over a List
 
 List Loop
 
@@ -181,7 +176,6 @@ List Loop
  </bx:loop>
 ```
 
-Result: 
 
 ### Loop over a Query with Grouping (Script Syntax)
 
@@ -231,9 +225,8 @@ bx:loop query=q group="fk" {
 
 ```
 
-Result: 
 
-### CFLoop over a Query
+### Bx:loop over a Query
 
 Query Loop
 
@@ -243,10 +236,10 @@ Query Loop
  <bx:set platform = [
 	"Adobe ColdFusion",
 	"Railo",
-	"Lucee"
+	"Boxlang"
 	] > 
  <bx:set myQuery = queryNew( " " ) > 
- <bx:set queryAddColumn( myQuery, "platform", "CF_SQL_VARCHAR", platform ) > 
+ <bx:set queryAddColumn( myQuery, "platform", "VARCHAR", platform ) > 
  <!--- By row index ---> 
  <bx:loop index="i" from="1" to="#myQuery.RECORDCOUNT#"> 
  <bx:output><li>#myQuery[ "platform" ][ i ]#</li></bx:output> 
@@ -257,7 +250,6 @@ Query Loop
  </bx:loop>
 ```
 
-Result: 
 
 ### While Loop (Script Syntax)
 
@@ -272,7 +264,6 @@ while (condition) {
 
 ```
 
-Result: 
 
 ### Do While Loop (Script Syntax)
 
@@ -288,5 +279,4 @@ do {
 
 ```
 
-Result: 
 

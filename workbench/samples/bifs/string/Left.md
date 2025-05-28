@@ -13,7 +13,7 @@ Result: The quick brown fox
 
 ### Using left() with a negative count on a string
 
-CF2018+ In this example we'll use a negative count to return part of a string. CF2018+
+In this example we'll use a negative count to return part of a string.
 
 <a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQyElNA5JKIRmpCoWlmcnZCklF%2BeV5Cmn5FQpZpbkFqSkK%2BWWpRQolQPmcxKpKhZT8dCUdBV0jUwVNBU1rLgAbLBki" target="_blank">Run Example</a>
 
@@ -38,7 +38,6 @@ public string function capitalize( required string text ) {
 
 ```
 
-Result: 
 
 ### Using left() to test values
 
@@ -52,11 +51,10 @@ if( listFindNoCase( "super,great,coder,rulez", left( rc.ANSWER, 5 ) ) ) {
 
 ```
 
-Result: 
 
 ### Using left() as a member function
 
-CF11+ Lucee4.5+ In this example we'll use left() as a member function inside a function to help us to capitalize the first letter in a string.
+ In this example we'll use left() as a member function inside a function to help us to capitalize the first letter in a string.
 
 <a href="https://try.boxlang.io/?code=eJxlyzEOwjAMBdCZnOJPKBmIxMzMDTqwhuAGS8EU15YQiLtTBhbY3wuTHztXzKYsDaNLNb4KapnYSucHRSjdnJVOX2R0NyQ8w0rJXAVFm19IbM7D%2FjDkTqNFbJGy1zJTTFj%2FEuV2XsxflAVvPnUXXuENAPc0eg%3D%3D" target="_blank">Run Example</a>
 
@@ -68,7 +66,6 @@ public string function capitalize( required string text ) {
 
 ```
 
-Result: 
 
 ### Additional Examples
 

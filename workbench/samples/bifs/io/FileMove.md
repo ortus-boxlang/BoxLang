@@ -8,7 +8,6 @@ fileMove( sourcefile, destinationfile );
 
 ```
 
-Result: 
 
 ### Additional Examples
 

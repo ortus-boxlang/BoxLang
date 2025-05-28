@@ -5,12 +5,12 @@
 
 ```java
 <bx:xml variable="example">
-	<coldfusionengines>
+	<boxlangengines>
 		<engine>
 			<name>Adobe ColdFusion</name>
 		</engine>
 		<engine>
-			<name>Lucee</name>
+			<name>Boxlang</name>
 		</engine>
 		<engine>
 			<name>Railo</name>
@@ -18,10 +18,10 @@
 		<engine>
 			<name>Open BlueDragon</name>
 		</engine>
-	</coldfusionengines>
+	</boxlangengines>
 </bx:xml>
 <bx:script>
-	writeOutput( isXMLNode( example.COLDFUSIONENGINES ) );
+	writeOutput( isXMLNode( example.BOXLANGENGINES ) );
 </bx:script>
 
 ```
@@ -35,7 +35,7 @@ Result: YES
 <bx:xml variable="xmlobject">
 	<office>
 		<employee>
-			<emp_name>lucee_dev</emp_name>
+			<emp_name>boxlang_dev</emp_name>
 			<emp_no>121</emp_no>
 		</employee>
 	</office>
