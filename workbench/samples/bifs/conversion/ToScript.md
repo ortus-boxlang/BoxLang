@@ -94,7 +94,7 @@ False):</strong><br>
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJyNkcFKAzEQhs%2FNUww5rbCwrUcXDwuKILhSIl5KDzEMNdJd6ySx1NJ3d5KsloVFvMxk%2Fsx8%2BZlUFShPwXiRE1zD8VQPxQoWsGZFboNBlLV4c8%2BaWLhXj61Csnprv7AYCHBRC0L3y3l6V4bszhfgklSCTPMyNu7JerwJ3a6A8wzrVQUNkT6IFJmyWtf5%2FF8zeTB74fPISLr7w0fszyaWAekgUmTCR8wt7guQve6w1BuUjPnUZF41lX3o%2BH3D0lHM2ubhFq5AquCsLMWsuYvl5VycBlPLhDybSo8wLeUJU7E%2Fm%2BI12X4TPyfuwaPz8mflIyLXzOM4veqB1obuBUn0KfH8Yp5gLI9g%2BZ55%2BTCBjBMsfgPgpLdD" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io/?code=eJyNkcFqwzAMhs%2F1UwifMgik3XFhh8BGYbCM4rFL6cENJnNp3E6213Wl7z7ZzlYCoewiWb%2Blzz9yUYBw6BvHUoJ7OJ3LvljCDFak8PXuaytNy0u2sW8SSXoSL7VQqOVWf6usZ8BNyVDZP9LrTjSo9y4DG6UceJznofGA2qkH3%2B0zuMyQXhRQIcoji5Eoy1WZzv%2B3k0aTGzoPrMS7K05Cf7Kx8AqPLEYifIRcq0MG3MhO5bJVnDCfEpt3ibnxHb3fkHRik7p6foQ74MJbzXM2qeahvJ2yc29qEZEXU%2FERosU8Yir0J1O0KG3a8EFhE05Zx3%2BXPiBSTTyK48vuabXv1gqZiYnmZ9MII3kAS%2FfES4cRZJgg8QenU7j9" target="_blank">Run Example</a>
 
 ```java
 // Struct
@@ -126,5 +126,3 @@ resNum = ToScript( number, "number" );
 writeDump( resNum );
 
 ```
-
-
