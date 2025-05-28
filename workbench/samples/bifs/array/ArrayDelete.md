@@ -20,7 +20,7 @@ Result: ['orange','pear','Apple']
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJyNjr8KwkAMxmfvKcJNFQp9gHJDtYtLl8NJHNKSQiFSSe8svr13EcSl4vLlD1%2B%2B%2FFAEHFzA7CzHgciWqfNnf7LmWptVpkBtvN0LeKA4FCmBsSd29kDjLGRhX5u0xmdLTIG6%2BYgLFaBOu0Q%2FqeNHTjMGkmyCqgJFyHkdrRkrsaASNb2W4T2o4gZhOv0fUs35RxLmDdbvxA%2BueQEcpF1f" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io?code=eJyNjr8KwjAQxmfzFEemCoU%2BQMlQ7eLSJTiJw0WuUoi2XFOrb29yirhUXL77w3ff%2FZAZDBxArbTr7x6vZ53H3u7tTqtjqWbuAtXTZcjghmyQOQePjrzRG2p7Jg3rUsU1PmryFKjptzhSBuLU42Q7cfzIqdpAnExQFPCGSIkNzQkt0qAwVU7K6TWI4gJjPP0fU8zpRxTvF2i%2FEz%2FAT7cRXw8%3D" target="_blank">Run Example</a>
 
 ```java
 arr = [ 

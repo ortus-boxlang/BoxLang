@@ -27,7 +27,7 @@ Result: 73
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJyVjr0KwkAQhOvsUwxX5AcPkqhdiJBXsBWL4C1EOKOsOeEQ393jYpFCC1kGZpni%2B4SNO7FBi06k9%2Fv45jiAklpTsg7ZhGzpqJGjGz1OvYjXsT566xgF2h2elAhPTsZ5x2oeG3ppVCgaMu5yyyEfXNGgLOHPbM0ddUXyQ4MSNbC1VxUc1DSwcGw2rKz%2BdUqhwqULM6W%2BqdHCLYt4RDQiNqM3DUJZHA%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io?code=eJyVjs0KglAQhdfOUxzuwh8S1GonBr5C22hx0yGDm8akkUTv3uXqwkUtYjhwhrP4PuF6qLhGgVJEj3v3hjiAvCwmb22zsdnSMUaIsh1RaZExdvWhzcCIUOzwIk%2B4H6SddqymMad3jBRRTvVwvYWQGRflSBKMFzb1HVlK8kODPNWwMZ2yDqpvWNi1U%2Fc0uj2rf618KHv%2Bwk2pb3K0sAucABwcMzigD5k6WtY%3D" target="_blank">Run Example</a>
 
 ```java
 reduced = ArrayReduce( [ 

@@ -33,7 +33,7 @@ Result: YES
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJzLrQwuKcrMS1ewVVDKKU1OTVWy5kpOzMlJSkzOBoppKDjmVSpUKGgq2NoBKTugqkQla2uu8qLMklSX0twCDQWI%2FuD83FQNhVyoaToKcDM0FTQRJsYbYjeziiQzgaaATQUAZwM52Q%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io?code=eJzLrQwuKcrMS1ewVVBKyq%2FIScxLV7LmSk7MyUlKTM4GimooOOZVKlQoaCrY2gEpO6C6RCVra67yosySVJfS3AINBYgJwfm5qRoKuVDzdBTgZmgqaCJMjDfEbmYVSWYCTQGZCgDNVDqs" target="_blank">Run Example</a>
 
 ```java
 myString = "boxlang";
@@ -43,5 +43,4 @@ callback_1 = ( Any x ) => x >= "z";;
 writeDump( StringSome( myString, callback_1 ) );
 
 ```
-
 

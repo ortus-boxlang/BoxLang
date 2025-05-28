@@ -13,7 +13,7 @@ Result: false
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJwrL8osSXUpzS3QUMgs9swrLknMS071T9NQqK7VUVDKSixL1CstyczR800sUFLQVNC0VtDXVygpKk3lKselU8mnNDk1VQm39rTEnGLi9eck5qXrBZcUZealQ4zggjsBAAItPBE%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io?code=eJwrL8osSXUpzS3QUMgs9swrLknMS071T9NQqK7VUVDKSixL1CstyczR800sUFLQVNC0VtDXVygpKk3lKselU8kpvyInMS9dCbcBaYk5xaSYAOLoBZcUZQLFwIZwwZ0BABvAPcs%3D" target="_blank">Run Example</a>
 
 ```java
 writeDump( isInstanceOf( {}, "java.util.Map" ) ); // true

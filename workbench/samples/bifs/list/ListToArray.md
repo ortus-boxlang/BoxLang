@@ -18,7 +18,7 @@ Result: ["red", "green", "orange"]
 
 Uses the listToArray() function with a semicolon delimiter to retrieve a list as an array
 
-<a href="https://try.boxlang.io/?code=eJzLySwuUbBVUErOz0lJKy3OzM%2BzLsgosM5KLEu0Li7MUbLmSk8tcSwqSqwEqsoBKg7JB%2FM0wBwdBSVrJQVNa67i%2FNxUr2B%2FP6AiEBWcWpSZmJNZlaqhANcOVFVelFmS6l9aUlBaoqEA1wKUAAD5Lyxd" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io?code=eJzLySwuUbBVUErKr8hJzEu3LsgosM5KLEu0Li7MUbLmSk8tcSwqSqwEKskBqgzJB%2FM0wBwdBSVrJQVNa67i%2FNxUr2B%2FP6AiEBWcWpSZmJNZlaqhANcOVFVelFmS6l9aUlBaoqEA16JpDQAl4isI" target="_blank">Run Example</a>
 
 ```java
 list = "boxlang;php;java;sql";
@@ -34,7 +34,7 @@ Result: ["boxlang", "php", "java", "sql"]
 
 If includeEmptyFields is true, empty value add in array elements
 
-<a href="https://try.boxlang.io/?code=eJw9jDEOwjAMRfeewsoUpN7AYmBloEO5QFRcMDIkOA4ITl%2FTodPX03%2F%2FC1eDPYQpy2VulfMTy60g3tM7YX1JwO5KdlBNX9fE7XNeKa7QQ8DQg2kj2GFX84OO43By9R8jKSfhH0XYTtz6KBsNzUqzCNvEiwU1ni6k" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io?code=eJzLySwuUbBVUErKr8hJzEu3LsgosLbOSixLtC4uzFGy5kpPLXEsKkqsBKrJASoNyQfzNMAcHQUlayUdhZKi0lQFTWuu4vzcVK9gfz%2BgUhAVnFqUmZiTWZWqoQA3BKiqvCizJNW%2FtKSgtERDAa4FKAEAhEctWQ%3D%3D" target="_blank">Run Example</a>
 
 ```java
 list = "boxlang;php;;java;sql";

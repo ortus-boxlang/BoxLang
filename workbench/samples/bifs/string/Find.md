@@ -13,7 +13,7 @@ Result: 13
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJxNjTEOwjAMRfec4itTK1UUNqSKiQF1oAxwgdK6IlJIkOs018ctC4ulb%2Fu%2Fl9kJ3ZJ8khSYXBi7eO5nKmAfTGQr2AvHDHkRRBcV7v1CW8yR%2FWhRomxQ1zjsjc4rvZ%2FEmFIYxMVgZmGcYFv4qDWfBmU2Jv9L9WW3ilX5u29IszKP5gsX8TFE" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io?code=eJxNjbEKwkAQRPv7imGrBILRTghWFmKhFvoDF7PRg%2BRWLnuen%2B8lINgMzDAzLwWnfIn6ilqgd747y95OXIBugZkq0CFIgj4ZmoMKV%2FvmxSYJQ0coUTaoa2zWJuuJx5YD%2Bujv6sSbSQN2oCMGybNWPoP1D2pM%2Bsfm0mpGZ%2Bivsdya%2BXdrvvX3Mv4%3D" target="_blank">Run Example</a>
 
 ```java
 writeOutput( findNoCase( "Tree", "Grow the tree, Save the world" ) ); // 10
@@ -23,5 +23,3 @@ writeOutput( str.find( "boxlang" ) );
  // 8
 
 ```
-
-
