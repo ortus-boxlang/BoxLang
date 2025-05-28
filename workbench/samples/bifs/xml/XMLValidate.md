@@ -1,6 +1,6 @@
 ### Validate against an XML Schema
 
-Validates that note.xml is valid according to the schema note.xsd. Not currently working on Lucee, see: LDEV-2909
+Validates that note.xml is valid according to the schema note.xsd. 
 
 <a href="https://try.boxlang.io/?code=eJyryM0JS8zJTEksSdVQUMooKSkottLXLy8v1ys3Lk7OyM%2FPKdZLzs%2FVr8jN0c%2FLL0nVAzKUdIhTWZyipKCpFxziGBIabM0FAPhjJN4%3D" target="_blank">Run Example</a>
 

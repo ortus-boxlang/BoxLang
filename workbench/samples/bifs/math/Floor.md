@@ -1,6 +1,6 @@
 ### Floor Value of 4.0
 
-Requires CF2016+
+
 
 <a href="https://try.boxlang.io/?code=eJxLy8nPL9JQMNEzUNC05gIAIN4Diw%3D%3D" target="_blank">Run Example</a>
 
@@ -13,7 +13,7 @@ Result: 4
 
 ### Floor Value of 4.3
 
-Requires CF2016+
+
 
 <a href="https://try.boxlang.io/?code=eJxLy8nPL9JQMNEzVtC05gIAIO0Djg%3D%3D" target="_blank">Run Example</a>
 
@@ -26,7 +26,7 @@ Result: 4
 
 ### Floor Value of 4.7
 
-Requires CF2016+
+
 
 <a href="https://try.boxlang.io/?code=eJxLy8nPL9JQMNEzV9C05gIAIQEDkg%3D%3D" target="_blank">Run Example</a>
 
@@ -39,7 +39,7 @@ Result: 4
 
 ### Floor Value of -4.3
 
-Requires CF2016+
+
 
 <a href="https://try.boxlang.io/?code=eJxLy8nPL9JQ0DXRM1bQtOYCACTAA7s%3D" target="_blank">Run Example</a>
 

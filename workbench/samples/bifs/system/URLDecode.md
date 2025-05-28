@@ -23,7 +23,6 @@ if( len( rc.MSG ) ) {
 
 ```
 
-Result: 
 
 ### urlDecode() in obfuscation
 
@@ -57,16 +56,14 @@ if( len( rc.MSG ) ) {
 
 ```
 
-Result: 
 
 ### Additional Examples
 
 <a href="https://try.boxlang.io/?code=eJxLzUvOT0lNiS8uKcrMS1ewVVDKKCkpKFY1dlQ1cgOilNQyVSPXnNLk1FQgnV%2BUDhQrAeLy1Jzk%2FFygmEtJPpCAKnABK3czMjAzUbLmSinNLdBQCA3ycUkFWaKhkIpqmaaCpjWXgr6%2BAthKK319oG49sEl6QIv0S%2FShluiW5OuChXWBCvRBhnMBACK4OpY%3D" target="_blank">Run Example</a>
 
 ```java
-encoded_string = "https%3A%2F%2Fdev%2Elucee%2Eorg%2Ft%2Fwelcome%2Dto%2Dlucee%2Ddev%2F2064";
+encoded_string = "https%3A%2F%2Fdev%2Eboxlang%2Eorg%2Ft%2Fwelcome%2Dto%2Dboxlang%2Ddev%2F2064";
 dump( URLDecode( encoded_string ) );
- // https://dev.lucee.org/t/welcome-to-lucee-dev/2064
 
 ```
 

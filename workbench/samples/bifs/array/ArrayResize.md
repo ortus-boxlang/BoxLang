@@ -10,7 +10,6 @@
   <bx:dump var="#MyArray#"/>  
 ```
 
-Result: 
 
 ### Additional Examples
 

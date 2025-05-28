@@ -27,7 +27,6 @@ writeoutput( age );
 
 ### dateDiff member function
 
-Note the different behavior between ColdFusion and Lucee.
 
 <a href="https://try.boxlang.io/?code=eJw9jEsKg0AQRPeeonA1wiTiOrgICa6EnEHSLQ6EnjDTjdf3g7oqePWqlLO%2BB2W0kDi76lFQGMeD0BpPIoeSSo%2FGQ0979eYUlD%2Bmf1N3FfdtffjXUbXpqGvoFDISqyXJaBAFvX2ZPQYh3Hbwij%2FqLIcoxQLZ7DCY" target="_blank">Run Example</a>
 
@@ -35,8 +34,6 @@ Note the different behavior between ColdFusion and Lucee.
 testDate = now();
 diffDate = dateAdd( "d", 1, testDate );
 writeOutput( testDate.diff( "d", diffDate ) );
- // this returns 1 on Lucee, and -1 on ColdFusion
-
 ```
 
 

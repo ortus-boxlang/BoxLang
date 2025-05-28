@@ -13,8 +13,6 @@ Result: 6
 
 ### Decrement 7.5
 
-There is a difference between CFML engines.  ACF will return the integer decremented removing the decimal part, returns 6.  Lucee will decrement the integer part but return both, returns 6.5.
-
 <a href="https://try.boxlang.io/?code=eJxLSU0uSs1NzSsJS8wpTdVQMNczVdC05gIAZX0HJQ%3D%3D" target="_blank">Run Example</a>
 
 ```java

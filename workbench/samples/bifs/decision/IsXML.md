@@ -5,12 +5,12 @@ Returns true if the string is well-formed XML.
 <a href="https://try.boxlang.io/?code=eJxLrUjMLchJVbBVULJJzs9JSSstzszPS81Lz8xLLbbjUrCBMIEsBZu8xNxUO8eU%2FKRUBWegUjewUht9sDBQpT5cKYYmn9Lk1FSiVAYlZubkE6XSvyA1T8EppzTVpSgxHas7bPQxfaRkzVVelFmS6l9aUlBaoqGQWRyRm6OhkAoNBk0FTWsuAPAfWi0%3D" target="_blank">Run Example</a>
 
 ```java
-example = "<coldfusionengines>
+example = "<boxlangengines>
  <engine>
   <name>Adobe ColdFusion</name>
  </engine>
  <engine>
-  <name>Lucee</name>
+  <name>Boxlang</name>
  </engine>
  <engine>
   <name>Railo</name>
@@ -18,7 +18,7 @@ example = "<coldfusionengines>
  <engine>
   <name>Open BlueDragon</name>
  </engine>
-</coldfusionengines>";
+</boxlangengines>";
 writeOutput( isXml( example ) );
 
 ```
@@ -32,12 +32,12 @@ Returns false if the string is not well-formed XML.
 <a href="https://try.boxlang.io/?code=eJxLrUjMLchJNVSwVVCySc7PSUkrLc7Mz0vNS8%2FMSy2241KwgTCBLAWbvMTcVDvHlPykVAVnoFI3sFIbfbAwUKU%2BXCmGJp%2FS5NRUqEola67yosySVP%2FSkoLSEg2FzOKI3BwNhVSYSzQVNK25ADTpMcQ%3D" target="_blank">Run Example</a>
 
 ```java
-example1 = "<coldfusionengines>
+example1 = "<boxlangengines>
  <engine>
   <name>Adobe ColdFusion</name>
  </engine>
  <engine>
-  <name>Lucee</name>";
+  <name>Boxlang</name>";
 writeOutput( isXml( example1 ) );
 
 ```

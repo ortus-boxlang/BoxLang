@@ -38,7 +38,7 @@ Result: YES
 <a href="https://try.boxlang.io/?code=eJyNjsEKwjAQRM%2FmK4acWvDSc4ggWMHPqGGR4JqW7aZSxH83xXrRi9fHzJthUiUZ4WFP4H4icA5E1pnQMZ%2B7cD3mFDT2qUQq7NOMmIasqOF3eJiNkGZJK%2FRFs3SfzgiNmQvBqBLTpZ1I5gr8ntvix147c5eodMi3ocLarj%2Be5ltk23LyT02z0BdpcE29" target="_blank">Run Example</a>
 
 ```java
-letters = "I love lucee";
+letters = "I love boxlang";
 callbackFunction = ( Any input ) => {
 	return input == "e";
 };

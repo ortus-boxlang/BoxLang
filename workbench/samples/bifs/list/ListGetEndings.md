@@ -30,9 +30,9 @@ Result: four
 
 ```java
 // Simple Example
-writeoutput( listLast( "Susi ,LAS,,lucee,,,test" ) );
+writeoutput( listLast( "Susi ,LAS,,boxlang,,,test" ) );
 // Member Function
-strList = ",I,,love,lucee,,";
+strList = ",I,,love,boxlang,,";
 writeDump( strList.listLast() );
 
 ```

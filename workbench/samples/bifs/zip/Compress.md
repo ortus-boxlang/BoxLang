@@ -8,7 +8,6 @@ compress( "zip", "example.txt", "output.zip" );
 
 ```
 
-Result: 
 
 ### Compress a directory
 
@@ -20,7 +19,6 @@ compress( "zip", "example-directory", "output.zip" );
 
 ```
 
-Result: 
 
 ### Additional Examples
 

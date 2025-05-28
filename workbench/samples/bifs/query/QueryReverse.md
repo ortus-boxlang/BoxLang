@@ -30,7 +30,6 @@ writeDump( heroes.reverse() );
 
 ```
 
-Result: 
 
 ### Additional Examples
 

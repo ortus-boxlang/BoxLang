@@ -1,6 +1,6 @@
 ### isStruct Example
 
-Returns true if variable is a ColdFusion structure or is a Java object that implements the java.lang.Map interface. 
+Returns true if variable is a Boxlang structure or is a Java object that implements the java.lang.Map interface. 
 
 <a href="https://try.boxlang.io/?code=eJzLLA4uKSpNLtFQKAbTfqnlGpoKmtZcAHq5CFg%3D" target="_blank">Run Example</a>
 

@@ -10,7 +10,6 @@ bx:lock timeout="60" scope="session" type="exclusive" {
 
 ```
 
-Result: 
 
 ### Tag Syntax
 
@@ -23,5 +22,4 @@ Result:
  </bx:lock>
 ```
 
-Result: 
 

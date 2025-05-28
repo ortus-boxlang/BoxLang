@@ -10,7 +10,6 @@
    
 ```
 
-Result: 
 
 ### Additional Examples
 

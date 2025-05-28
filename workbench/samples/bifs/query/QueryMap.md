@@ -26,7 +26,6 @@ writeDump( newQuery );
 
 ```
 
-Result: 
 
 ### Additional Examples
 

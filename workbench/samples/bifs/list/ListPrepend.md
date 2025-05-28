@@ -1,6 +1,6 @@
 ### Prepend to a List using the List member function
 
-CF11+ Lucee4.5+
+
 
 <a href="https://try.boxlang.io/?code=eJwrTs3MS0vNSfHJLC5RsFVQcs7JL05VCEnMyU4t0gnOLy1Q8EusylSy5ipGVYjM1csBEgFFqQWpeSkaCkoBpWlplQrBGZlFJUoKmtZc5UWZJan%2BpSUFpSUaKPpAkgBktCyy" target="_blank">Run Example</a>
 
@@ -64,9 +64,9 @@ Result: "Jan,Feb,Mar,Apr"
 
 ```java
 // Simple Example
-writeoutput( listPrepend( "Susi,LAS,,lucee,,,test", "Inserted" ) );
+writeoutput( listPrepend( "Susi,LAS,,boxlang,,,test", "Inserted" ) );
 // Member Function
-strList = ",I,,love,lucee,,";
+strList = ",I,,love,boxlang,,";
 writeDump( strList.listPrepend( "First" ) );
 
 ```

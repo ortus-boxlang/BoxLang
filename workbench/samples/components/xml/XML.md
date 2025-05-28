@@ -1,6 +1,6 @@
 ### Script Syntax
 
-Creates a new CFML XML document object.
+Creates a new BL XML document object.
 
 <a href="https://try.boxlang.io/?code=eJw1jk0LgkAYhM%2F5K17ek0FkXWtbCQJvBUFQx9UWeWk%2FZD9Mif57anUaeGaYmbLbdFpBKxyJUskd6v6qFcIrmT0dBXmKoYkhBWT5lJPOkzU7xPVyhZhzVokglK0589bUQPfRQuRMuEA%2B8L0PSvYLOFP1YNkPskAD5Uc51EFhjRFQUCvhZiNcGpZ9bZaNlYP8JxDm2%2BSdTL8OUTcpTGdH%2BgEinUIs" target="_blank">Run Example</a>
 
@@ -12,5 +12,4 @@ writeDump( myXml );
 
 ```
 
-Result: 
 

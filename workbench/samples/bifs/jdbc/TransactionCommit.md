@@ -32,5 +32,4 @@ bx:transaction {
 
 ```
 
-Result: 
 

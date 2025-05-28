@@ -11,7 +11,6 @@ if( fileExists( expandPath( myFile ) ) ) {
 
 ```
 
-Result: 
 
 ### Additional Examples
 

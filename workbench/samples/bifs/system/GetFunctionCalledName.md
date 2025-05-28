@@ -17,7 +17,6 @@ referenceToFunction();
 
 ```
 
-Result: 
 
 ### Getters and Setters Example
 
@@ -25,7 +24,7 @@ Example of using getFunctionCalledName to create dynamic getters and setters
 
 
 ```java
-//callednamedemo.cfc
+//callednamedemo.bx
 component
 {
     variables.x1 = 1;
@@ -51,7 +50,7 @@ component
     this.setY1 = set;
 }
 
-<!--- calledname.cfm --->
+<!--- calledname.bxm --->
 
 <bx:script>
 
@@ -72,7 +71,6 @@ component
  <!--- 20 --->
 ```
 
-Result: 
 
 ### Additional Examples
 

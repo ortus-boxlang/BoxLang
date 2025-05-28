@@ -5,11 +5,11 @@
 <a href="https://try.boxlang.io/?code=eJxTslNSUFPICSnKzNVQUFIAAmc3l%2FzkYhBLSUETKKdko2TNBQCs%2FwgD" target="_blank">Run Example</a>
 
 ```java
-">" & lTrim( "    CFDocs    " ) & "<";
+">" & lTrim( "    BLDocs    " ) & "<";
 
 ```
 
-Result: >CFDocs    <
+Result: >BLDocs    <
 
 ### Additional Examples
 

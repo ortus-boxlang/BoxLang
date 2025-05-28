@@ -37,7 +37,7 @@ Result: [3,2,1]
 
 ### Reverse an Array using array slice syntax
 
-Reverse an Array using array slice syntax adding in ColdFusion 2018
+Reverse an Array using array slice syntax adding in Boxlang 2018
 
 
 ```java

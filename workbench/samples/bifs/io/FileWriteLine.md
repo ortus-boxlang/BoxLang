@@ -10,7 +10,6 @@ fileClose( myfile );
 
 ```
 
-Result: 
 
 ### Additional Examples
 

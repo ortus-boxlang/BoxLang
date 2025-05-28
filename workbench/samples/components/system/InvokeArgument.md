@@ -1,6 +1,6 @@
-### Invoke a SOAP webservice and passing arguments using cfinvokeargument
+### Invoke a SOAP webservice and passing arguments using bx:invokeargument
 
-Calls a remote web service to perform an addition, uses cfinvokeargument to pass the arguments to the method.
+Calls a remote web service to perform an addition, uses bx:invokeargument to pass the arguments to the method.
 
 
 ```java

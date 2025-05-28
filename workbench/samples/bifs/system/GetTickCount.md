@@ -9,7 +9,6 @@ writeOutput( getTickCount() );
 
 ```
 
-Result: 
 
 ### A simple timer
 

@@ -10,7 +10,6 @@ getToken(mystring, 3) is : #getToken( mystring, 3 )#
 </bx:output>
 ```
 
-Result: 
 
 ### Additional Examples
 

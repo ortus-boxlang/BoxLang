@@ -16,11 +16,10 @@ writeDump( news );
 
 ```
 
-Result: 
 
 ### Builds a simple query using queryNew
 
-Using CFML Tags with the queryAddRow querySetCell functions to populate the query.
+Using BL Tags with the queryAddRow querySetCell functions to populate the query.
 
 
 ```java
@@ -34,7 +33,6 @@ Using CFML Tags with the queryAddRow querySetCell functions to populate the quer
 <bx:set writeDump( news ) >
 ```
 
-Result: 
 
 ### Creating and Populating a query using an array rowData in queryNew
 
@@ -57,7 +55,6 @@ writeDump( news );
 
 ```
 
-Result: 
 
 ### Creating and Populating a single row query using rowData in queryNew
 
@@ -74,7 +71,6 @@ writeDump( news );
 
 ```
 
-Result: 
 
 ### Creating and populating a query with an array of structs
 
@@ -97,7 +93,6 @@ writeDump( news );
 
 ```
 
-Result: 
 
 ### Additional Examples
 

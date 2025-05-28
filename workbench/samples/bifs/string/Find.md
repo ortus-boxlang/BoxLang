@@ -2,14 +2,14 @@
 
 
 
-<a href="https://try.boxlang.io/?code=eJxLy8xL8ct3TixO1VBQKlbSUVBKTkvJTy7Wyy9KB%2FIMFDStuQDUCgpc" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io?code=eJxLy8xL8ct3TixO1VBQKlbSUVBKyq%2FIScxL18svKiktTsrPzy7WS87PBcoYKGhaAwB9TA9L" target="_blank">Run Example</a>
 
 ```java
-findNoCase( "s", "cfdocs.org", 0 );
+findNoCase( "s", "boxlang.ortusbooks.com", 0 );
 
 ```
 
-Result: 6
+Result: 13
 
 ### Additional Examples
 
@@ -18,8 +18,8 @@ Result: 6
 ```java
 writeOutput( findNoCase( "Tree", "Grow the tree, Save the world" ) ); // 10
 // Member function
-str = "I love lucee";
-writeOutput( str.find( "lucee" ) );
+str = "I love boxlang";
+writeOutput( str.find( "boxlang" ) );
  // 8
 
 ```

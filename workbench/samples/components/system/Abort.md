@@ -21,9 +21,9 @@ try {
 
 Result: Error page: Variable USERSERVICE is undefined.
 
-### Example of using <cfabort> to stop processing after an error occurs
+### Example of using <bx:abort> to stop processing after an error occurs
 
-In this example we demonstrate using the <cfabort> tag to stop any further processing after we deliberately call a non-existent function.
+In this example we demonstrate using the <bx:abort> tag to stop any further processing after we deliberately call a non-existent function.
 
 
 ```java

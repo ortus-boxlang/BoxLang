@@ -20,8 +20,6 @@ Result: ['Doctor Octopus', 'Green Goblin', 'Spider-Man', 'Venom']
 
 ### Swap the position of two values in an array using the member function
 
-CF11+ or Lucee4.5+
-
 <a href="https://try.boxlang.io/?code=eJwrLi1ILcrML3IsKkqsVLBViFbg4lQKLshMSS3S9U3MU9IBct2LUlPzFNzzk3IyIQIu%2Bckl%2BUUK%2FkCyoLQYLBSWmpefq8QVa81VjGyiXnF5YoGGgqGOgrGCpjVXeVFmSapLaS5QCEUZSA4Av3srjA%3D%3D" target="_blank">Run Example</a>
 
 ```java

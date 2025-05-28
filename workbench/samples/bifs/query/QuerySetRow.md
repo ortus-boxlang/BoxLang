@@ -31,7 +31,6 @@ writeDump( news );
 
 ```
 
-Result: 
 
 ### Builds a simple query using queryNew and someQuery.setRow member syntax
 
@@ -66,7 +65,6 @@ writeDump( news );
 
 ```
 
-Result: 
 
 ### Additional Examples
 

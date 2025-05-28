@@ -44,7 +44,7 @@ Result: synchronized
 
 ### Dump Metadata of Typed Array (Member syntax)
 
-CF2018+ Return struct has a new key called `dimensions` and can also have a defined datatype. Supported datatypes are String, Numeric, Boolean, Date, Array, Struct, Query, Component, [Component name], Binary, and Function.
+Return struct has a new key called `dimensions` and can also have a defined datatype. Supported datatypes are String, Numeric, Boolean, Date, Array, Struct, Query, Component, [Component name], Binary, and Function.
 
 
 ```java

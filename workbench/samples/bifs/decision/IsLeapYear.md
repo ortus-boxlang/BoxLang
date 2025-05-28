@@ -11,7 +11,6 @@ writeOutput( isLeapYear );
 
 ```
 
-Result: 
 
 ### Additional Examples
 

@@ -42,7 +42,7 @@ Result: three
 <a href="https://try.boxlang.io/?code=eJwrL8osSfUvLSkoLdFQyMksLglKLQaylIpLijLz0nV8SpNTU3WKS4szdXwcg5UUNBXUFJRskorsQBjItebS11fwTc1NSi1SSCvNSy7JzM%2FjAur1AZqkYKugZKBjqGOkY6xjomTNVQ6yyqU0t0BDAagCZJce3EJNkFEAlXUsRQ%3D%3D" target="_blank">Run Example</a>
 
 ```java
-writeOutput( listRest( "string,Lucee,susi,LAS" ) & "<br><br>" );
+writeOutput( listRest( "string,Boxlang,susi,LAS" ) & "<br><br>" );
 // Member function
 strList = "0,1,2,3,4";
 writeDump( strlist.listRest() );

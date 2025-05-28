@@ -34,7 +34,7 @@ Result: 1
 
 ### Member Functions: Find an "Apple" in an array of fruit
 
-Calls the findNoCase member function of the array object. Requires CF11+ or Lucee4.5+
+Calls the findNoCase member function of the array object.
 
 <a href="https://try.boxlang.io/?code=eJxLKyrNLFGwVYhW4OJUyi9KzEtPVdIBMgsy81ITCwpyIDwIiyvWmqu8KLMk1b%2B0pKC0REMhDaRZLy0zL8Uv3zmxOFVDQckRrFJBU0HTmgsAGFQcAw%3D%3D" target="_blank">Run Example</a>
 

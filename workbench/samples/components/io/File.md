@@ -9,7 +9,6 @@ fileWrite( expandPath( "./myFile.txt" ), "Here's some content for my file." );
 
 ```
 
-Result: 
 
 ### Script Syntax - Append
 
@@ -24,7 +23,6 @@ fileClose( myFile );
 
 ```
 
-Result: 
 
 ### Script Syntax - Read
 
@@ -50,7 +48,6 @@ myImageBinary = fileReadBinary( expandPath( "./myImage.jpg" ) );
 
 ```
 
-Result: 
 
 ### Script Syntax - Rename
 
@@ -62,7 +59,6 @@ fileMove( expandPath( "./myFile.txt" ), expandPath( "./myNewFileName.txt" ) );
 
 ```
 
-Result: 
 
 ### Script Syntax - Copy
 
@@ -74,7 +70,6 @@ fileCopy( expandPath( "./myFile.txt" ), expandPath( "./some/other/path" ) );
 
 ```
 
-Result: 
 
 ### Script Syntax - Move
 
@@ -86,7 +81,6 @@ fileMove( expandPath( "./myFile.txt" ), expandPath( "./some/other/path" ) );
 
 ```
 
-Result: 
 
 ### Script Syntax - Delete
 
@@ -99,7 +93,6 @@ fileDelete( expandPath( "./myFile.txt" ) );
 
 ```
 
-Result: 
 
 ### Tag Syntax (action=write)
 
@@ -110,7 +103,6 @@ Write the contents of a variable to a file.
 <bx:file action="write" file="#expandPath( "./myFile.txt" )#" output="Here's some content for my file.">
 ```
 
-Result: 
 
 ### Tag Syntax (action=append)
 
@@ -121,7 +113,6 @@ Append content to the end of a file.
 <bx:file action="append" file="#expandPath( "./myFile.txt" )#" attributes="normal" output="Here's some new content.">
 ```
 
-Result: 
 
 ### Tag Syntax (action=read)
 
@@ -132,7 +123,6 @@ Read a file into a variable
 <bx:file action="read" file="#expandPath( "./myFile.txt" )#" variable="myFile">
 ```
 
-Result: 
 
 ### Tag Syntax (action=readBinary)
 
@@ -143,7 +133,6 @@ File Read Binary
 <bx:file action="readBinary" file="#expandPath( "./myImage.jpg" )#" variable="myImageBinary">
 ```
 
-Result: 
 
 ### Tag Syntax (action=rename)
 
@@ -154,7 +143,6 @@ Rename a file
 <bx:file action="rename" source="#expandPath( "./myFile.txt" )#" destination="#expandPath( "./myNewFileName.txt" )#" attributes="normal">
 ```
 
-Result: 
 
 ### Tag Syntax (action=copy)
 
@@ -165,7 +153,6 @@ Copy a file
 <bx:file action="copy" source="#expandPath( "./myFile.txt" )#" destination="#expandPath( "./some/other/path" )#">
 ```
 
-Result: 
 
 ### Tag Syntax (action=move)
 
@@ -176,7 +163,6 @@ Move a file
 <bx:file action="move" source="#expandPath( "./myFile.txt" )#" destination="#expandPath( "./some/other/path" )#">
 ```
 
-Result: 
 
 ### Tag Syntax (action=delete)
 
@@ -187,7 +173,6 @@ Delete a file
 <bx:file action="delete" file="#expandPath( "./myFile.txt" )#">
 ```
 
-Result: 
 
 ### Tag Syntax (action=upload)
 
@@ -198,7 +183,6 @@ Upload the file contained in the myFile field. Always upload to a directory outs
 <bx:file action="upload" destination="#getTempDirectory()#" filefield="form.myFile" nameconflict="makeunique">
 ```
 
-Result: 
 
 ### Tag Syntax (action=upload) with accept
 
@@ -209,7 +193,6 @@ CF10+ Checks file extensions against a whitelist of allowed file extensions. You
 <bx:file action="upload" accept=".png,.jpg" strict="false" destination="#getTempDirectory()#" filefield="form.myFile" nameconflict="makeunique">
 ```
 
-Result: 
 
 ### Tag Syntax (action=uploadall)
 
@@ -220,5 +203,4 @@ Upload all files in the form scope.
 <bx:file action="uploadall" destination="#getTempDirectory()#" nameconflict="makeunique">
 ```
 
-Result: 
 

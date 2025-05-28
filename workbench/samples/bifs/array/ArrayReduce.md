@@ -42,12 +42,12 @@ dump( reduced ); // yields 10
 reduced = ArrayReduce( [
 	"hello",
 	"there",
-	"lucee"
+	"boxlang"
 ], ( Any carry, Any value ) => {
 	return carry & " " & value;
 }, "" );
 dump( reduced );
- // yields 'hello there lucee'
+ // yields 'hello there boxlang'
 
 ```
 

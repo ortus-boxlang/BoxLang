@@ -29,7 +29,7 @@ Result: foo,bar|me|something
 <a href="https://try.boxlang.io/?code=eJxtjsEKgkAQhu%2F7FIMnhSEPdZMOgQlC0aUXqO0PF1Zd3Nns8VutICGYyzD%2FfP83DkZwCuKCpGSNlxIWgl3ckppt%2FwDboAEWeKmMRcK0oYyygvKc9k8HLbhRPxPo90PF%2BxHtFQNVodNi%2Bk55GQ6xg7aUnBvjOc6FpXnT%2BT7hCzVOSmVoXUqf%2FGoptp771T%2BBL3XBVC%2FKX00I" target="_blank">Run Example</a>
 
 ```java
-writeOutput( listDeleteAt( "I,love,lucee,testFile", 4 ) ); // Expected output I,love,lucee
+writeOutput( listDeleteAt( "I,love,boxlang,testFile", 4 ) ); // Expected output I,love,boxlang
 // Member Function
 strList = "This,is,a,the,test,file";
 writeDump( strList.listDeleteAt( 3 ) );

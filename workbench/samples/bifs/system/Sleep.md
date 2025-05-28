@@ -13,7 +13,6 @@ Outputs the current date/time, sleeps for 5 seconds, then outputs the current da
 
 ```
 
-Result: 
 
 ### Additional Examples
 

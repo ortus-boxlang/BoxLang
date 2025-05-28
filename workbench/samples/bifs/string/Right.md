@@ -38,7 +38,6 @@ public string function capitalizeLast( required string text ) {
 
 ```
 
-Result: 
 
 ### Using right() to test values
 
@@ -52,11 +51,10 @@ if( listFindNoCase( "super,great,coder,rulez", right( rc.ANSWER, 5 ) ) ) {
 
 ```
 
-Result: 
 
 ### Using right() as a member function
 
-CF11+ Lucee4.5+ In this example we'll use right() as a member function inside a function to help us to capitalize the last letter in a string.
+ In this example we'll use right() as a member function inside a function to help us to capitalize the last letter in a string.
 
 <a href="https://try.boxlang.io/?code=eJxly6EOQjEMhWHNnqKKbIIlaDQOeQW2jN7RZJRL1yYEwrszgwF7%2FvOFxU%2BNC3RTlgqzSzG%2BCRRc2LDxkw7YLYLS3Vnp%2FD0aPQwSvMJKyVwFUKtfSaznaX%2BccqN5qL9RYoINbIdc%2F0blehlktOwFO8W0C%2B%2FwAf%2FtNg4%3D" target="_blank">Run Example</a>
 
@@ -68,7 +66,6 @@ public string function capitalizeLast( required string text ) {
 
 ```
 
-Result: 
 
 ### Additional Examples
 
@@ -76,7 +73,7 @@ Result:
 
 ```java
 // simple Function
-writeDump( right( "I love lucee", 5 ) ); // lucee
+writeDump( right( "I love boxlang", 5 ) ); // boxlang
 // Member function
 str = "Save trees, save life on the earth.";
 writeDump( str.right( 23 ) );

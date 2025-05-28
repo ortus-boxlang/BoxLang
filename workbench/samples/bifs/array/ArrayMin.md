@@ -34,7 +34,7 @@ Result: 2
 
 ### Get smallest numeric value of an array using member function
 
-CF11+ Lucee4.5+
+
 
 <a href="https://try.boxlang.io/?code=eJwrzs9NdSwqSqxUsFWIVuDiNDLW4eI0MQUSlpZAwhDE44q15iovyixJ9S8tKSgt0VAohmnS883M09BU0LTmAgCZMBL0" target="_blank">Run Example</a>
 

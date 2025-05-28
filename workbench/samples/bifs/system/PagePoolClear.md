@@ -1,6 +1,6 @@
 ### pagePoolClear Example
 
-Clear out all the CFML code (cfm, cfcs) in the cache of compiled code. It is supported in Lucee.
+Clear out all the BL code (bxm, bx) in the cache of compiled code. 
 
 <a href="https://try.boxlang.io/?code=eJwrL8osSXUpzS3QUChITE8NyM%2FPcc5JTSzS0FTQtOYCAK2FCgc%3D" target="_blank">Run Example</a>
 

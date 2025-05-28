@@ -9,7 +9,6 @@ systemCacheClear();
 
 ```
 
-Result: 
 
 ### Clear the template cache
 
@@ -22,7 +21,6 @@ systemCacheClear( "template" );
 
 ```
 
-Result: 
 
 ### Additional Examples
 

@@ -4,8 +4,7 @@
 
 
 ```java
-<bx:include template="mypage.cfm">
+<bx:include template="mypage.bxm">
 ```
 
-Result: 
 

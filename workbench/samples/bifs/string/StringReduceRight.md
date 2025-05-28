@@ -15,9 +15,9 @@ writedump( newString );
 
 Result: d4c3b2a1
 
-### How Do You Do This In Lucee?
+### How Do You Do This In Boxlang?
 
-This function will be added to Lucee in Version 6. But if you need to reverse a string now, use the `reverse()` function.
+This function will be added to Boxlang in Version 6. But if you need to reverse a string now, use the `reverse()` function.
 
 <a href="https://try.boxlang.io/?code=eJzLrQwuKcrMS1ewVVBKTEpOUbLmyksth4vlQqX1ilLLUouKUzU0rbnKizJLUlNKcws0FBBKgeIA3H4ZwQ%3D%3D" target="_blank">Run Example</a>
 

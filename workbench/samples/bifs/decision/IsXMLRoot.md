@@ -1,16 +1,16 @@
-### "coldfusionengines" is root element
+### "boxlangengines" is root element
 
 
 
 
 ```java
 <bx:xml variable="example">
-	<coldfusionengines>
+	<boxlangengines>
 		<engine>
 			<name>Adobe ColdFusion</name>
 		</engine>
 		<engine>
-			<name>Lucee</name>
+			<name>Boxlang</name>
 		</engine>
 		<engine>
 			<name>Railo</name>
@@ -18,29 +18,29 @@
 		<engine>
 			<name>Open BlueDragon</name>
 		</engine>
-	</coldfusionengines>
+	</boxlangengines>
 </bx:xml>
 <bx:script>
-	writeOutput( isXMLRoot( example.COLDFUSIONENGINES ) );
+	writeOutput( isXMLRoot( example.BOXLANGENGINES ) );
 </bx:script>
 
 ```
 
 Result: YES
 
-### "engine" is child of "coldfusionengines"
+### "engine" is child of "boxlangengines"
 
 
 
 
 ```java
 <bx:xml variable="example">
-	<coldfusionengines>
+	<boxlangengines>
 		<engine>
 			<name>Adobe ColdFusion</name>
 		</engine>
 		<engine>
-			<name>Lucee</name>
+			<name>Boxlang</name>
 		</engine>
 		<engine>
 			<name>Railo</name>
@@ -48,10 +48,10 @@ Result: YES
 		<engine>
 			<name>Open BlueDragon</name>
 		</engine>
-	</coldfusionengines>
+	</boxlangengines>
 </bx:xml>
 <bx:script>
-	writeOutput( isXMLRoot( example.COLDFUSIONENGINES.ENGINE ) );
+	writeOutput( isXMLRoot( example.BOXLANGENGINES.ENGINE ) );
 </bx:script>
 
 ```
@@ -65,7 +65,7 @@ Result: NO
 <bx:xml variable="xmlobject">
 	<office>
 		<employee>
-			<emp_name>lucee_dev</emp_name>
+			<emp_name>boxlang_dev</emp_name>
 			<emp_no>121</emp_no>
 		</employee>
 	</office>

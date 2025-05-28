@@ -19,7 +19,6 @@ Here we've a example to get the particular row value from myquery.
 <bx:dump var="#queryrowdata( myQuery, 2 )#"/>
 ```
 
-Result: 
 
 ### The simple getRow example
 
@@ -50,7 +49,6 @@ We've example to get the particular row value from myquery using script syntax.
 
 ```
 
-Result: 
 
 ### Additional Examples
 

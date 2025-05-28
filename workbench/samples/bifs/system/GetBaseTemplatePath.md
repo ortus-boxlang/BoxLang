@@ -9,7 +9,6 @@ getBaseTemplatePath();
 
 ```
 
-Result: 
 
 ### Additional Examples
 

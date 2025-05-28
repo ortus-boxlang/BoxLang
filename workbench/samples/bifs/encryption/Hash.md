@@ -46,13 +46,13 @@ input = "Hello World";
 dump( hash( input ) ); // B10A8DB164E0754105B7A99BE72E3FE5
 dump( hash( input, "QUICK" ) ); // 6b736ba1c9a95606
 dump( hash( input, "MD5" ) ); // B10A8DB164E0754105B7A99BE72E3FE5
-dump( hash( input, "CFMX_COMPAT" ) ); // B10A8DB164E0754105B7A99BE72E3FE5
+dump( hash( input, "bxmX_COMPAT" ) ); // B10A8DB164E0754105B7A99BE72E3FE5
 dump( hash( input, "SHA" ) ); // 0A4D55A8D778E5022FAB701977C5D840BBC486D0
 dump( hash( input, "SHA-256" ) ); // A591A6D40BF420404A011733CFB7B190D62C65BF0BCDA32B57B277D9AD9F146E
 dump( hash( input, "SHA-384" ) ); // 99514329186B2F6AE4A1329E7EE6C610A729636335174AC6B740F9028396FCC803D0E93863A7C3D90F86BEEE782F4F3F
 dump( hash( input, "SHA-512" ) ); // 2C74FD17EDAFD80E8447B0D46741EE243B7EB74DD2149A0AB1B9246FB30382F27E853D8585719E0E67CBDA0DAA8F51671064615D645AE27ACB15BFB1447F459B
-// The default, MD5 and CFMX_COMPAT algorithms are all MD5.
-dump( hash( input ) == hash( input, "MD5" ) && hash( input, "MD5" ) == hash( input, "CFMX_COMPAT" ) );
+// The default, MD5 and bxmX_COMPAT algorithms are all MD5.
+dump( hash( input ) == hash( input, "MD5" ) && hash( input, "MD5" ) == hash( input, "bxmX_COMPAT" ) );
  // true
 
 ```

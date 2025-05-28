@@ -13,7 +13,7 @@ Result: 8
 
 ### Increment 7.5
 
-There is a difference between CFML engines. ACF will return the integer incremented removing the decimal part. Lucee will increment the integer part but return both.
+There is a difference between BL engines. ACF will return the integer incremented removing the decimal part. Boxlang will increment the integer part but return both.
 
 <a href="https://try.boxlang.io/?code=eJzLzEsuSs1NzSsJS8wpTdVQMNczVdC05gIAZrYHMw%3D%3D" target="_blank">Run Example</a>
 

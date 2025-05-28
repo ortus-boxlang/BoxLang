@@ -37,7 +37,6 @@ writeDump( exampleQuery );
 
 ```
 
-Result: 
 
 ### Sort a query using a sort member function on a column with date values in descending order
 
@@ -78,7 +77,6 @@ writeDump( exampleQuery );
 
 ```
 
-Result: 
 
 ### Sort a query using a sort member function on a column with string values in ascending order
 
@@ -119,7 +117,6 @@ writeDump( exampleQuery );
 
 ```
 
-Result: 
 
 ### Sort a query using the querySort function on a column with string values in descending order
 
@@ -160,7 +157,6 @@ writeDump( exampleQuery );
 
 ```
 
-Result: 
 
 ### Sort a query using the querySort function on a column with numeric values in ascending order
 
@@ -201,7 +197,6 @@ writeDump( exampleQuery );
 
 ```
 
-Result: 
 
 ### Additional Examples
 

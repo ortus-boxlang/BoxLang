@@ -4,9 +4,9 @@ This example the factorial of a number is computed.
 
 
 ```java
-<!--- callfact.cfm --->
+<!--- callfact.bxm --->
 <bx:try>
-    <bx:include template="fact.cfm">
+    <bx:include template="fact.bxm">
 
 <bx:catch type="any">
     <bx:output>
@@ -16,7 +16,6 @@ This example the factorial of a number is computed.
 </bx:catch></bx:try>
 ```
 
-Result: 
 
 ### Script Syntax
 
@@ -24,7 +23,7 @@ This example the factorial of a number is computed.
 
 
 ```java
-<!--- fact.cfm --->
+<!--- fact.bxm --->
 <bx:script>
 
 	numeric function factorial( Any n ) {
@@ -44,7 +43,6 @@ This example the factorial of a number is computed.
 
 ```
 
-Result: 
 
 ### Additional Examples
 

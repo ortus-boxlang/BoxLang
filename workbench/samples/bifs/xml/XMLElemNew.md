@@ -14,7 +14,6 @@ Here, we've created myXml with root and child nodes using xmlelemnew().
 <bx:dump var="#myXml#">
 ```
 
-Result: 
 
 ### Additional Examples
 

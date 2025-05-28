@@ -1,17 +1,16 @@
-### cfparam in CFML
+### bx:param in BL
 
-A very basic CFML cfparam example
+A very basic BL bx:param example
 
 
 ```java
 <bx:param name="userID" default="0"/>
 ```
 
-Result: 
 
-### cfparam in cfscript
+### bx:param in script
 
-A very basic cfscript cfparam example
+A very basic script bx:param example
 
 <a href="https://try.boxlang.io/?code=eJxLqrAqSCxKzFXIS8xNtVUqLU4t8nRRUkhJTUsszSmxNbDmSiKoAgArtxbV" target="_blank">Run Example</a>
 
@@ -21,7 +20,6 @@ bx:param name="userID" default=0;
 
 ```
 
-Result: 
 
 ### Tag syntax using a regex
 
@@ -32,5 +30,4 @@ Throws an error if the value is not one of a list of possible values
 <bx:param name="sortdir" default="ASC" type="regex" pattern="ASC|DESC"/>
 ```
 
-Result: 
 

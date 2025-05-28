@@ -33,8 +33,6 @@ Result: {a={1},b={2}}
 
 ### Member syntax
 
-CF number toString as a method
-CAUTION: While CF returns an integer (42), Lucee returns a double (42.0), that's because while CF stores the value as `java.lang.Integer` (CF2018+) resp. `java.lang.String` (CF2016+), Lucee calls this method on `java.lang.Double`.
 
 <a href="https://try.boxlang.io/?code=eJzLK81VsFUwMbLmKi%2FKLEn1Ly0pKC3RUMgrzdUryQ8uKcrMS9fQVNC05gIAHVcNNA%3D%3D" target="_blank">Run Example</a>
 

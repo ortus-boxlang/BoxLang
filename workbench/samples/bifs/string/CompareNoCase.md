@@ -4,7 +4,7 @@
 
 
 ```java
-<bx:set comparison = compareNoCase( "ColdFusion", "coldfusion" ) >
+<bx:set comparison = compareNoCase( "Boxlang", "boxlang" ) >
 <bx:dump var="#comparison#"/>
 ```
 

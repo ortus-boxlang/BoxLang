@@ -11,7 +11,6 @@ fileAppend( "/path/to/file.log", logEntry );
 
 ```
 
-Result: 
 
 ### Additional Examples
 

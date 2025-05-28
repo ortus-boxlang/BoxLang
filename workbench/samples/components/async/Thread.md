@@ -10,7 +10,6 @@ bx:thread action="join" name="myThread,myOtherThread";
 
 ```
 
-Result: 
 
 ### Tag Syntax
 
@@ -24,5 +23,4 @@ Result:
  <bx:thread action="join" name="myThread,myOtherThread"/>
 ```
 
-Result: 
 

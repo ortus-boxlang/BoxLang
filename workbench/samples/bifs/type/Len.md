@@ -19,7 +19,7 @@ Result: 4
 
 ### Using structCount as a Member Function
 
-CF11+ Lucee4.5+ Having a reference of a structure as a variable, use the dot notation to get a key count on it using a member function.
+ Having a reference of a structure as a variable, use the dot notation to get a key count on it using a member function.
 
 <a href="https://try.boxlang.io/?code=eJwrLU4tUrBVqFbg4vR0UbBSMNTh4nTzDAoO8XP0dQXylTwS85SAYj6OCKHg%2FJx8kJivf5gnRKAksUghPLGoWImr1pqrvCizJNWlNLdAQ6EUaLpecn5pXomGpoKmNRcA%2FjQdbQ%3D%3D" target="_blank">Run Example</a>
 

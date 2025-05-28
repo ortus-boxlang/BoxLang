@@ -33,7 +33,6 @@ writeDump( x );
 
 ```
 
-Result: 
 
 ### Accidentally Overwriting a variable using structGet
 
@@ -56,7 +55,6 @@ writeDump( x );
 
 ```
 
-Result: 
 
 ### Additional Examples
 

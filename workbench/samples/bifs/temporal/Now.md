@@ -11,9 +11,9 @@ writeOutput( "The current date and time is: " & now() );
 
 Result: The current date and time is: {ts '2014-03-19 15:27:42'}
 
-### Using now() in Tagged CFML
+### Using now() in Tagged BL
 
-Let's display the current server datetime using tagged CFML.
+Let's display the current server datetime using tagged BL.
 
 
 ```java

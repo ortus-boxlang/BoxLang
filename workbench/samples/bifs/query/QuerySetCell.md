@@ -13,7 +13,6 @@
 <bx:set Temp = querySetCell( GetCourses, "Number", 100 * CountVar ) > 
 ```
 
-Result: 
 
 ### Script member function example
 
@@ -31,7 +30,6 @@ Result:
 
 ```
 
-Result: 
 
 ### Additional Examples
 

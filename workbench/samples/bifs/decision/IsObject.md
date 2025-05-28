@@ -1,6 +1,6 @@
 ### isObject Example
 
-Returns true if the parameter is a CFML object. The CFML object here is a Java object.
+Returns true if the parameter is a BL object. The BL object here is a Java object.
 
 <a href="https://try.boxlang.io/?code=eJwrSsxLyc9VsFVILkpNLEn1T8pKTS7RUFDKSixLVNKB0HrFqcmlRZkllXrBIEZqEFiPkoKmXnpqiWdecUliXnIqUE%2Bwh6NhQJCfO1DGmqscqCHVv7SkoBRoXGYxzOAiiH2aICUASxQo5w%3D%3D" target="_blank">Run Example</a>
 
@@ -14,7 +14,7 @@ Result: true
 
 ### isObject Example for Other Data Types
 
-Returns false if the parameter is any data type other than a CFML object
+Returns false if the parameter is any data type other than a BL object
 
 <a href="https://try.boxlang.io/?code=eJxLrUjMLchJVbBVqFbg4lTKS8xNVVKwUlDyVEjMVUhUKC4pKk0uUeKqteYqL8osSfUvLSkoLdFQyCz2T8pKTQayUqEGaCpoWnMBALczGEY%3D" target="_blank">Run Example</a>
 

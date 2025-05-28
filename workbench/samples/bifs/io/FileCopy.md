@@ -8,7 +8,6 @@ fileCopy( sourceFile, destinationFile );
 
 ```
 
-Result: 
 
 ### Additional Examples
 

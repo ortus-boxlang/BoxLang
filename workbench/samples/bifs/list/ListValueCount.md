@@ -29,11 +29,11 @@ Result: 3
 <a href="https://try.boxlang.io/?code=eJyNjzELwjAQhff%2BikcXWwgUshYhUiMUOqq41nJDoEZpLurP9zTaTeh03w3v3X2dC4w18jEORGrT7NSH7JMTKJBgd2istad9XmePyTFt4%2BVWoJPssR8jNdfoucAou%2FpW5ShR1qgqtIyJOE5%2BFaCXxuX%2BnwacaehjIDjG0MtsfSAfHLs7Ze9KPesY0TG%2FugRGbMxyGz3rCJj0UfYCcgZjbA%3D%3D" target="_blank">Run Example</a>
 
 ```java
-List = "lucee,ACF,luceeExt,lucee, ext,LUCEEEXT";
-writeDump( ListValueCount( list, "lucee" ) ); // It return's 2
-writeDump( ListValueCount( list, "luceeExt" ) ); // It return's 2 because it case Insensitive
-List2 = "lucee@ACF@luceeExt@lucee@ext@LUCEEEXT";
-writeDump( ListValueCount( list2, "lucee", "@" ) );
+List = "boxlang,ACF,boxlangExt,boxlang, ext,BOXLANGEXT";
+writeDump( ListValueCount( list, "boxlang" ) ); // It return's 2
+writeDump( ListValueCount( list, "boxlangExt" ) ); // It return's 2 because it case Insensitive
+List2 = "boxlang@ACF@boxlangExt@boxlang@ext@BOXLANGEXT";
+writeDump( ListValueCount( list2, "boxlang", "@" ) );
 
 ```
 

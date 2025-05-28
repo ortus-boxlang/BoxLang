@@ -1,6 +1,6 @@
-### The simple cfobject example
+### The simple bx:object example
 
-Calling the above multiply function by using cfobject tag based code.
+Calling the above multiply function by using bx:object tag based code.
 
 
 ```java
@@ -12,9 +12,9 @@ Calling the above multiply function by using cfobject tag based code.
 
 Result: 2
 
-### The simple (cfobject) example
+### The simple (bx:object) example
 
-Calling the above multiply function by using cfobject script based code.
+Calling the above multiply function by using bx:object script based code.
 
 
 ```java

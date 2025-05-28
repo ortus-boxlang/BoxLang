@@ -16,7 +16,7 @@ writeOutput( JSStringFormat( string ) );
 <a href="https://try.boxlang.io/?code=eJwrLilSsFVQcspPUi9WSM7PzU3NK1EoTyxWUFJydvP1USjKT84uVlRSUrLmKi%2FKLEn1Ly0pKC3RUCgG6lNTULJJKrJTUtBEk%2FQKDi4pysxLd8svyk2EKtYEqQIAhTEilA%3D%3D" target="_blank">Run Example</a>
 
 ```java
-str = "Bob's comment was ""CFML rocks!""";
+str = "Bob's comment was ""BL rocks!""";
 writeOutput( str & "<br>" );
 writeOutput( JSStringFormat( str ) );
 

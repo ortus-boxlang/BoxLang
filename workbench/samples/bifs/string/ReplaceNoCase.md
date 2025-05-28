@@ -5,7 +5,7 @@
 <a href="https://try.boxlang.io/?code=eJxLTy0JS8xRsFUoSi3ISUxO9ct3TixO1VBQcs7PSXELLc7Mz1PSUVAqBRGJSgqa1lzlRZklqS6luQUaCukQzUBBADcDFdY%3D" target="_blank">Run Example</a>
 
 ```java
-getVal = replaceNoCase( "ColdFUsion", "u", "a" );
+getVal = replaceNoCase( "Boxlang", "u", "a" );
 writeDump( getVal );
 
 ```
@@ -18,7 +18,7 @@ Result: Expected Result: ColdFasion
 
 
 ```java
-<bx:set getVal = replaceNoCase( "ColdFusiOn", "O", "a", "ALL" ) >
+<bx:set getVal = replaceNoCase( "Boxlang", "O", "a", "ALL" ) >
 <bx:dump var="#getVal#">
 ```
 

@@ -21,7 +21,7 @@ Result: ["Red", "White", "Blue", "Pink"]
 
 ### Simple example with member function
 
-CF11+ Lucee4.5+ Uses the member function is the same as running arrayDeleteAt.
+Uses the member function is the same as running arrayDeleteAt.
 
 <a href="https://try.boxlang.io/?code=eJwrzs9NdSwqSqxUsFWIVuDiVApKTVHSAdLhGZklqWCWe1Fqah6Y5ZRTChEKyMzLVuKKteYqhmnXc0nNSS1JdSzRUDBS0LTmKi8CavcvLSkoBYp4Bfv7BacWZSbmZFalaijANSlogpQCAIUrJos%3D" target="_blank">Run Example</a>
 

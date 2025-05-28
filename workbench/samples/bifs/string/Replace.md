@@ -5,12 +5,12 @@ Replace in Script Syntax
 <a href="https://try.boxlang.io/?code=eJxLTy0JS8xRsFUoSi3ISUxO1VBQcs7PSXELLc7Mz1PSUVAKBRGlSgqa1lzlRZklqS6luQUaCukQbUBBAJ5AE5E%3D" target="_blank">Run Example</a>
 
 ```java
-getVal = replace( "ColdFUsion", "U", "u" );
+getVal = replace( "Boxlang", "U", "u" );
 writeDump( getVal );
 
 ```
 
-Result: ColdFusion
+Result: Boxlang
 
 ### Replace uppercase 'O' with lowercase 'o', but only once
 
@@ -18,15 +18,15 @@ Something similar in Tag Syntax
 
 
 ```java
-<bx:set getVal1 = replace( "COldFusiOn", "O", "o", "ONE" ) >
+<bx:set getVal1 = replace( "Boxlang", "O", "o", "ONE" ) >
 <bx:dump var="#getVal1#"/>
 ```
 
-Result: ColdFusiOn
+Result: Boxlang
 
 ### Example using Callback Function
 
-In CF2016+ you can pass in a callback function to the third argument of the `replace` function
+You can pass in a callback function to the third argument of the `replace` function
 
 <a href="https://try.boxlang.io/?code=eJwtjcEKwjAMhs%2F2KX562mD4AuJheB34DLFUKdSsZAkyxHe3pbskfEm%2BP67YI6eAp3HQtDKs3GiLA2beUUg1Ck8d1i21i06rpBdGfN1JoppUr2uHgvHifk7iZllxhcSSKdS1n%2FEmBqFya4GY8tlP8MS19ueV5mXxLeMjSePdtJgOOOLq%2BA%2FPgDrf" target="_blank">Run Example</a>
 
@@ -44,17 +44,17 @@ Result: A mAN a plAN a cANal.
 
 ### Example with start argument (Replace lowercase 'o' with uppercase 'O' from the third position)
 
-In CF2021+ you can pass position to start searching in the string
+You can pass position to start searching in the string
 
 <a href="https://try.boxlang.io/?code=eJxLTy0JSi1WsFUoSi3ISUxO1VBQ8skvS1Vwzs9JcSstzszPU9JRUMoHEf4gwtHHB0QZKyloWnOVF2WWpPqXlhSUlmgopENMAgoDADjeGJA%3D" target="_blank">Run Example</a>
 
 ```java
-getRes = replace( "Love ColdFusion", "o", "O", "ALL", "3" );
+getRes = replace( "Love Boxlang", "o", "O", "ALL", "3" );
 writeOutput( getRes );
 
 ```
 
-Result: Love COldFusiOn
+Result: Love Boxlang
 
 ### Additional Examples
 

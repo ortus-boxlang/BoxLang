@@ -13,12 +13,11 @@ Result: <div id="some-id">Hello World!</div>
 
 ### Flushing a page from the cache
 
-Flushes the 'hello-world.cfm' page from the cache.
+Flushes the 'hello-world.bxm' page from the cache.
 
 
 ```java
-<bx:cache action="flush" directory="/path/to/directory" expireURL="/hello-world.cfm"/>
+<bx:cache action="flush" directory="/path/to/directory" expireURL="/hello-world.bxm"/>
 ```
 
-Result: 
 

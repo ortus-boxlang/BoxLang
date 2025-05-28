@@ -16,11 +16,10 @@ The local date and time are #now()#.
 </bx:output>
 ```
 
-Result: 
 
 ### Get Hawaii timezone information in German
 
-Shows the use of getTimeZoneInfo for a known / specific timezone with German locale. This syntax is only supported in Lucee.
+Shows the use of getTimeZoneInfo for a known / specific timezone with German locale. 
 
 
 ```java
@@ -30,7 +29,6 @@ Shows the use of getTimeZoneInfo for a known / specific timezone with German loc
 
 ```
 
-Result: 
 
 ### Additional Examples
 

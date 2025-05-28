@@ -1,6 +1,6 @@
 ### Simple structEvery example
 
-Here we have simple example about structevery function. It is supported only in Lucee.
+Here we have simple example about structevery function. 
 
 
 ```java
@@ -20,7 +20,7 @@ Result: Country:US Name:Dhar Age:20
 
 ### Simple structEvery member function example
 
-Here we have simple example about structevery member function. It is supported only in Lucee.
+Here we have simple example about structevery member function. 
 
 
 ```java

@@ -13,7 +13,6 @@ BODY
 </bx:if>
 ```
 
-Result: 
 
 ### Retrieve parent tag attributes
 
@@ -25,5 +24,4 @@ variables.PARENTATTRIBUTES = getBaseTagData( "cf_iframe" ).ATTRIBUTES;
 
 ```
 
-Result: 
 

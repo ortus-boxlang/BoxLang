@@ -31,7 +31,7 @@ Result: [{"len":[1],"pos":[2],"match":["e"]}]
 ```java
 writeDump( REFindNoCase( "a+c+", "abcaaCCdd" ) );
 writeDump( REFindNoCase( "a+c*", "AbcaAcCdd" ) );
-writeDump( REFindNoCase( "[\?&]rep = ", "report.cfm?rep = 1234&u = 5" ) );
+writeDump( REFindNoCase( "[\?&]rep = ", "report.bxm?rep = 1234&u = 5" ) );
 writeDump( REFindNoCase( "a+", "baaaA" ) );
 writeDump( REFindNoCase( ".*", "" ) );
 teststring1 = "The cat in the hat hat came back!";

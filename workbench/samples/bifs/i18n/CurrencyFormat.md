@@ -5,7 +5,7 @@ lsCurrencyFormat returns a currency value using the locale convention. Default v
 
 ```java
 <!--- loop through list of locales; show currency values for 100,000 units --->
-<bx:loop LIST="#Server.COLDFUSION.SUPPORTEDLOCALES#" index="locale" delimiters=",">
+<bx:loop LIST="#Server.BOXLANG.SUPPORTEDLOCALES#" index="locale" delimiters=",">
 <bx:set oldlocale = setLocale( locale ) >
 <bx:output><p><b><I>#locale#</I></b>
 Local: #lsCurrencyFormat( 100000, "local" )#
@@ -16,7 +16,6 @@ None: #lsCurrencyFormat( 100000, "none" )#
 </bx:loop>
 ```
 
-Result: 
 
 ### Script Example using specific locale
 
@@ -29,7 +28,6 @@ writeDump( lsCurrencyFormat( 5, "local", "en_US" ) );
 
 ```
 
-Result: 
 
 ### Additional Examples
 

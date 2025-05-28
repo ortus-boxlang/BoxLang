@@ -29,7 +29,7 @@ Result: [
   directory : "/Users/scottsteinbeck/Downloads/BL-1468"
 },
   {
-  name : "Application.cfc",
+  name : "Application.bx",
   size : 42,
   type : "File",
   dateLastModified : {ts '2025-05-24 04:42:10'},
@@ -83,7 +83,7 @@ Result: [
   directory : "/Users/scottsteinbeck/Downloads/BL-1468"
 },
   {
-  name : "example.cfm",
+  name : "example.bxm",
   size : 876,
   type : "File",
   dateLastModified : {ts '2025-05-26 11:01:38'},
@@ -110,7 +110,7 @@ Result: [
   directory : "/Users/scottsteinbeck/Downloads/BL-1468"
 },
   {
-  name : "index.cfm",
+  name : "index.bxm",
   size : 10048,
   type : "File",
   dateLastModified : {ts '2025-05-26 22:11:54'},
@@ -155,7 +155,7 @@ Result: [
   directory : "/Users/scottsteinbeck/Downloads/BL-1468"
 },
   {
-  name : "Page.cfc",
+  name : "Page.bx",
   size : 1253,
   type : "File",
   dateLastModified : {ts '2025-05-24 11:23:02'},
@@ -220,7 +220,6 @@ directoryCreate( expandPath( "./new_directory" ) );
 
 ```
 
-Result: 
 
 ### Delete a Directory (Script Syntax)
 
@@ -232,7 +231,6 @@ directoryDelete( expandPath( "./my_directory" ) );
 
 ```
 
-Result: 
 
 ### Rename a Directory (Script Syntax)
 
@@ -244,7 +242,6 @@ directoryRename( expandPath( "./my_directory" ), expandPath( "./new_directory" )
 
 ```
 
-Result: 
 
 ### List File in Directory (Tag Syntax)
 
@@ -255,7 +252,6 @@ Directory List
 <bx:directory action="list" directory="#expandPath( "./" )#" recurse="false" name="myList">
 ```
 
-Result: 
 
 ### Create a Directory (Tag Syntax)
 
@@ -266,7 +262,6 @@ Result:
 <bx:directory action="create" directory="#expandPath( "./new_directory" )#">
 ```
 
-Result: 
 
 ### Delete a Directory (Tag Syntax)
 
@@ -277,7 +272,6 @@ Result:
 <bx:directory action="delete" directory="#expandPath( "./my_directory" )#">
 ```
 
-Result: 
 
 ### Rename a Directory (Tag Syntax)
 
@@ -288,5 +282,4 @@ Result:
 <bx:directory action="rename" directory="#expandPath( "./my_directory" )#" newdirectory="#expandPath( "./new_directory" )#">
 ```
 
-Result: 
 

@@ -78,11 +78,10 @@ writeOutput( JSONSerialize( rc ) );
 
 ```
 
-Result: 
 
 ### Polyfill for earlier versions
 
-In older ColdFusion version where this function is not supported yet, you can fall back to a native java method to achieve the same behavior except that it does not have the `overwriteFlag`.
+In older Boxlang version where this function is not supported yet, you can fall back to a native java method to achieve the same behavior except that it does not have the `overwriteFlag`.
 
 <a href="https://try.boxlang.io/?code=eJxLzs9Ly0xXsFWoVuDidFSwUjDQ4eJ0AtFctdZc%2BQUlmfl5xSBpiKghUNYZRINkk8F69QpKSxxzcjQUYIo1rbnKizJLUv1LS4BSGgpewf5%2BwalFmYk5mVWpGgoQXQqaIHUAUXgj9A%3D%3D" target="_blank">Run Example</a>
 

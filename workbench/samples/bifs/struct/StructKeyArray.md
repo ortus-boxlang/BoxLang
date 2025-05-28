@@ -20,7 +20,7 @@ Result: [NOT_FOUND, BAD_REQUEST, CREATED, OK, NOT_MODIFIED]
 
 ### Using Member Function
 
-CF11+ Lucee4.5+ Retrieve a comma separated list of keys using the member function
+ Retrieve a comma separated list of keys using the member function
 
 <a href="https://try.boxlang.io/?code=eJwrLkksKS12zk9JLVawVahW4OL091awUjAyMNDh4nQOcnUMcXUB8w2BfD%2F%2FkHhffxdPN0%2BwoLGBCVDQydElPsg1MNQ1OAQoZgLWCFLo5h%2Fq5wIWMeGqteYqL8osSXUpzS3QUChG2KmXnVrpWFSUWKmhqaBpzQUAJU0l%2Fg%3D%3D" target="_blank">Run Example</a>
 

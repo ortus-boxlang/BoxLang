@@ -34,7 +34,6 @@ WriteDump( qry );
 
 ```
 
-Result: 
 
 ### Member function version.
 
@@ -72,7 +71,6 @@ WriteDump( qry );
 
 ```
 
-Result: 
 
 ### Additional Examples
 

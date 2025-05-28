@@ -8,7 +8,6 @@ extract( "zip", "test.zip", "output-directory" );
 
 ```
 
-Result: 
 
 ### Extract a multiple zip-files via a directory
 
@@ -20,7 +19,6 @@ extract( "zip", "multiple-directory", "output-directory" );
 
 ```
 
-Result: 
 
 ### Additional Examples
 

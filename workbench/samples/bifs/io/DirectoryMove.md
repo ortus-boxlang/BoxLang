@@ -9,7 +9,6 @@
 <bx:set directoryRename( renameDirectory, newName ) >
 ```
 
-Result: 
 
 ### Additional Examples
 
