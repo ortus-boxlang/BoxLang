@@ -5559,4 +5559,27 @@ public class CoreLangTest {
 		assertThat( query.getCell( Key.of( "title" ), 0 ) ).isEqualTo( "About defeats Truman" );
 	}
 
+	@Test
+	@Disabled( "BL-1487" )
+	public void testFinallyBlockNotRun() {
+		instance.executeSource(
+		    """
+		      variables.result = false;
+
+		      function func() {
+		    try {
+		    	bx:loop times=5 {
+		    		return;
+		    	}
+		    } finally {
+		    	variables.result = true;
+		    }
+		      }
+
+		      func()
+		              		  """,
+		    context );
+		assertThat( variables.get( Key.of( "result" ) ) ).isEqualTo( true );
+	}
+
 }
