@@ -2,6 +2,7 @@
 
 
 
+<a href="https://try.boxlang.io?code=eJxLSEjgskmqsCpOLVFIzs8tSCzKLM7PU7CFclL98p0Ti1M1FJSc8ityEvPSlXQUlJKgTAVNBTuw5pTS3AKFssQiWyVlhBnKSvp2XAkJCQBnLyBK" target="_blank">Run Example</a>
 
 ```java
 <bx:set comparison = compareNoCase( "Boxlang", "boxlang" ) >

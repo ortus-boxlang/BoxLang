@@ -35,7 +35,7 @@ Result: YES
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJyNjsEKwjAQRM%2FmK4acWvDSc4ggWMHPqGGR4JqW7aZSxH83xXrRi9fHzJthUiUZ4WFP4H4icA5E1pnQMZ%2B7cD3mFDT2qUQq7NOMmIasqOF3eJiNkGZJK%2FRFs3SfzgiNmQvBqBLTpZ1I5gr8ntvix147c5eodMi3ocLarj%2Be5ltk23LyT02z0BdpcE29" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io?code=eJyNzcEKgkAQxvFz%2BxQfe1Lo4lkMggx8DJVBlqZRxllLondvIbvUpeuf%2BX7DZEY6o4JvwONC6MY7tzL40vUtc9f2l3OU3sIo6SjDUVYEmaIhR3XAw%2B2ULKpssUoQpe2zdEpz5FQwmwYZ6oV0zcDvh3v86HnpbhqMTvE6ZdjW%2BccpviFfE%2Fk%2FmSLVF%2BFSTpA%3D" target="_blank">Run Example</a>
 
 ```java
 letters = "I love boxlang";
@@ -48,5 +48,4 @@ result1 = stringEvery( "Eee", callbackFunction );
 writeDump( result1 );
 
 ```
-
 

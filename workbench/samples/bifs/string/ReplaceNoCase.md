@@ -10,11 +10,11 @@ writeDump( getVal );
 
 ```
 
-Result: Expected Result: ColdFasion
+Result: Expected Result: Boxlang
 
 ### Tag Syntax
 
-
+<a href="https://try.boxlang.io?code=eJxLSEiwSaqwKk4tUUhPLQlLzFGwVShKLchJTE71y3dOLE7VUFByyq%2FIScxLV9JRUPIHEYkgwtHHR0lBU8GOC6Q9pTS3QKEsschWSRliirKSHVdCQgIAdZUcFA%3D%3D" target="_blank">Run Example</a>
 
 
 ```java
@@ -22,7 +22,7 @@ Result: Expected Result: ColdFasion
 <bx:dump var="#getVal#">
 ```
 
-Result: Expected Result: CaldFusian
+Result: Expected Result: Boxlang
 
 ### Additional Examples
 

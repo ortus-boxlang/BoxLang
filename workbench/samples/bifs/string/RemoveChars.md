@@ -13,7 +13,7 @@ Result: Hello World
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJxtjr0KwjAcxPc8xZmphdDaSbE4qVBBHyJN%2FmKgaUqatPbtDR0UweGm%2B%2Fjd7E2gc7RDBk%2FWTXR6Sj9m4I1BG7VeNgKNnAgSvVEELZeCC1TbpD1y5DXKEpfXQCqQhothiOGAT5sl9062JY9H7FUwrmdj8DiCX9ElHm5REfGazd8nKVD8vKkEdiuM%2FaWtE%2BwNiL0%2FwA%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io?code=eJxtjskKwjAYhO95ijGnFkprT4rFiwvUgw%2BRNr8aaJKSJl3e3iCiCB7mNMs3k1OeTkH3CRxpO9LxIdyQgNcKTZByWWWoxUgQMKolSLHkPEO5jtoiRVqhKHCee2o9Sdjg%2B%2BB3%2BLRZdK%2BkG3K4BdN6ZQ0bvMMe%2FIIu8nCwcyfMnVds%2Bn6JkfznT5lh88Kxv7z3CHsCnS9Beg%3D%3D" target="_blank">Run Example</a>
 
 ```java
 writeDump( removeChars( "Hi buddy!, Have a nice day.", 10, 18 ) ); // Expected output: Hi buddy!

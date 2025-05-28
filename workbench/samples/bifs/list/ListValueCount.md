@@ -26,7 +26,7 @@ Result: 3
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJyNjzELwjAQhff%2BikcXWwgUshYhUiMUOqq41nJDoEZpLurP9zTaTeh03w3v3X2dC4w18jEORGrT7NSH7JMTKJBgd2istad9XmePyTFt4%2BVWoJPssR8jNdfoucAou%2FpW5ShR1qgqtIyJOE5%2BFaCXxuX%2BnwacaehjIDjG0MtsfSAfHLs7Ze9KPesY0TG%2FugRGbMxyGz3rCJj0UfYCcgZjbA%3D%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io?code=eJyVj0ELgkAQRu%2F%2BisFLCguCVwnWzEKQukR4XWWIBVtjd7b8%2BU2U5SWo07y5PL5Xa0ewhLAdxl6Zk8iLjXhxOdKEApCf1b6p8922bA5hFtysJlz78yWCmh1H1XssBm8ogp5%2F8VaGEEOcQZJARWCRvDULB%2BnvAt7xxQEtdso7BE3QKb6VcWicJn3F4CFNZ2mS0%2BRHOaHkMvlPWTpLY5TPbXc%2BE2xh" target="_blank">Run Example</a>
 
 ```java
 List = "boxlang,ACF,boxlangExt,boxlang, ext,BOXLANGEXT";

@@ -30,7 +30,7 @@ Result: New private mozilla firefox
 
 ### Additional Examples
 
-<a href="https://try.boxlang.io/?code=eJxVzLsKwkAQheF%2BnuKwVQLBlBbBTgsLH0LXERb2EmZmo4%2BvG4Ngefg5n5rgAHdGLAvDTfSUYHysae4QsrJYBxerZ3YD1GTAHj36CeOI7bRW%2BuwLpxsLHjV7CyWTWqNPr2uaI%2F%2FTarufDl%2FuTf%2FC1OTtsxZ6A%2F6BMWM%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io?code=eJxVjbsOgkAQRfv5iputICFSWhA7LSz8CMDRbLIPMjMonw%2BY1cT2npxz1QQnuCtCfjFcR2%2Fxxuc5ThV8Uhar4Ia8hD49XQM1aXBEjbpD26JohdO23DgOLHjMaTSfE6nt%2BcvSxynwf17t8HvAmO%2Fsvmna28X5EFoBANkzHQ%3D%3D" target="_blank">Run Example</a>
 
 ```java
 str = "I love ";
@@ -41,5 +41,3 @@ writeDump( st.insert( " code", 7 ) );
  // Example code
 
 ```
-
-

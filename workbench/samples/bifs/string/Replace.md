@@ -2,7 +2,7 @@
 
 Replace in Script Syntax
 
-<a href="https://try.boxlang.io/?code=eJxLTy0JS8xRsFUoSi3ISUxO1VBQcs7PSXELLc7Mz1PSUVAKBRGlSgqa1lzlRZklqS6luQUaCukQbUBBAJ5AE5E%3D" target="_blank">Run Example</a>
+<a href="https://try.boxlang.io?code=eJxLTy0JS8xRsFUoSi3ISUxO1VBQcsqvyEnMS1fSUVAKBRGlSgqa1lzlRZklqS6luQUaCukQPZrWAEpOEnw%3D" target="_blank">Run Example</a>
 
 ```java
 getVal = replace( "Boxlang", "U", "u" );
@@ -16,6 +16,7 @@ Result: Boxlang
 
 Something similar in Tag Syntax
 
+<a href="https://try.boxlang.io?code=eJxLSEiwSaqwKk4tUUhPLQlLzDFUsFUoSi3ISUxO1VBQcsqvyEnMS1fSUVDyBxH5YJafq5KCpoIdF0hnSmlugUJZYpGtkjLUAGUlfbuEhAQA3xIaeQ%3D%3D" target="_blank">Run Example</a>
 
 ```java
 <bx:set getVal1 = replace( "Boxlang", "O", "o", "ONE" ) >
