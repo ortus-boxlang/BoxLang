@@ -36,7 +36,7 @@ public class FileWrite extends BIF {
 		declaredArguments = new Argument[] {
 		    new Argument( true, "string", Key.file ),
 		    new Argument( true, "any", Key.data ),
-		    new Argument( false, "string", Key.charset, "utf-8" ),
+		    new Argument( false, "string", Key.charset, FileSystemUtil.DEFAULT_CHARSET.name() ),
 		    new Argument( false, "boolean", Key.createPath, false )
 		};
 	}
