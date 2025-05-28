@@ -31,7 +31,6 @@ env:
   MODULE_ID: ${{ github.event.repository.name }}
   SNAPSHOT: ${{ inputs.snapshot || false }}
   JDK: 21
-  GRADLE: 8.7
   BUILD_ID: ${{ github.run_number }}
   LTS: ${{ inputs.lts || false }}
 
@@ -55,11 +54,6 @@ jobs:
         with:
           distribution: "temurin"
           java-version: ${{ env.JDK }}
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: ${{ env.GRADLE }}
 
       - name: Setup Environment Variables For Build Process
         id: current_version
@@ -92,7 +86,7 @@ jobs:
         run: |
           npm install -g markdownlint-cli
           markdownlint changelog.md --fix
-          gradle build -x test --stacktrace --console=plain
+          ./gradlew build -x test --stacktrace --console=plain
 
       - name: Commit Changelog [unreleased] with latest version
         uses: EndBug/add-and-commit@v9.1.4
@@ -157,7 +151,7 @@ jobs:
       - name: Publish to Github Packages
         if: env.SNAPSHOT == 'false'
         run: |
-          gradle publish --no-daemon --no-parallel
+          ./gradlew publish --no-daemon --no-parallel
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GPG_KEY: ${{ secrets.GPG_KEY }}
@@ -167,7 +161,7 @@ jobs:
       - name: Publish to Maven Central
         if: env.SNAPSHOT == 'false'
         run: |
-          gradle publishAllPublicationsToCentralPortal --stacktrace --info
+          ./gradlew publishAllPublicationsToCentralPortal --stacktrace --info
         env:
           GPG_KEY: ${{ secrets.GPG_KEY }}
           GPG_PASSWORD: ${{ secrets.GPG_PASSWORD }}
@@ -225,11 +219,6 @@ jobs:
           name: boxlang-build
           path: .tmp
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: ${{ env.GRADLE }}
-
       - name: Copy Changelog
         run: |
           cp .tmp/changelog.md changelog.md
@@ -238,9 +227,9 @@ jobs:
         run: |
           if [ $LTS == 'true' ]
           then
-            gradle bumpPatchVersion --stacktrace --console=plain
+            ./gradlew bumpPatchVersion --stacktrace --console=plain
           else
-            gradle bumpMinorVersion --stacktrace --console=plain
+            ./gradlew bumpMinorVersion --stacktrace --console=plain
           fi
           git pull
 
