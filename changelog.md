@@ -9,34 +9,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2025-05-29
+
 ### New Features
 
 - [BL-1453](https://ortussolutions.atlassian.net/browse/BL-1453) Maven pom.xml for the BoxLang Home so you can integrate with any Java library
 - [BL-1464](https://ortussolutions.atlassian.net/browse/BL-1464) implement nested grouped output/looping
 - [BL-1474](https://ortussolutions.atlassian.net/browse/BL-1474) Logger appenders in the boxlang.json can now chose their own encoder: text or json
 - [BL-1476](https://ortussolutions.atlassian.net/browse/BL-1476) Added ability for loggers to chose between file and console appenders
-- [BL-1482](https://ortussolutions.atlassian.net/browse/BL-1482) new event ON\_FUNCTION\_EXCEPTION
+- [BL-1482](https://ortussolutions.atlassian.net/browse/BL-1482) new event ON_FUNCTION_EXCEPTION
 - [BL-1485](https://ortussolutions.atlassian.net/browse/BL-1485) Update the error template to include a section where the user can contact us if the error is not good enough or we can improve it.
 
 ### Improvements
 
 - [BL-1393](https://ortussolutions.atlassian.net/browse/BL-1393) Add executionTime to result object of bx:http
-- [BL-1397](https://ortussolutions.atlassian.net/browse/BL-1397) FileCopy\( source, targetDirectory \) when using a target directory doesn't work on BoxLang but works on Lucee
+- [BL-1397](https://ortussolutions.atlassian.net/browse/BL-1397) FileCopy( source, targetDirectory ) when using a target directory doesn't work on BoxLang but works on Lucee
 - [BL-1400](https://ortussolutions.atlassian.net/browse/BL-1400) File bifs have too many casts, do one cast for performance
 - [BL-1404](https://ortussolutions.atlassian.net/browse/BL-1404) Add a unique request id metadata header when making requests in http so it can track easily
 - [BL-1405](https://ortussolutions.atlassian.net/browse/BL-1405) Add missing contexts to data interceptors
 - [BL-1406](https://ortussolutions.atlassian.net/browse/BL-1406) Add a \`request\` struct to the bxhttp result object
 - [BL-1417](https://ortussolutions.atlassian.net/browse/BL-1417) Add Allow Arguments to FileCopy and FileMove for granular extension security overrides
 - [BL-1419](https://ortussolutions.atlassian.net/browse/BL-1419) server.java.defaultLocale, server.java.availableLocales
-- [BL-1420](https://ortussolutions.atlassian.net/browse/BL-1420) New bif: BoxModuleReload\( \[name\] \) to easily reload modules for testing purposes
+- [BL-1420](https://ortussolutions.atlassian.net/browse/BL-1420) New bif: BoxModuleReload( \[name] ) to easily reload modules for testing purposes
 - [BL-1421](https://ortussolutions.atlassian.net/browse/BL-1421) optimize when LocalizationUtil string casts
-- [BL-1422](https://ortussolutions.atlassian.net/browse/BL-1422) optimize Struct.putAll\(\)
+- [BL-1422](https://ortussolutions.atlassian.net/browse/BL-1422) optimize Struct.putAll()
 - [BL-1423](https://ortussolutions.atlassian.net/browse/BL-1423) optimize when basescope creates lockname to on demand
 - [BL-1424](https://ortussolutions.atlassian.net/browse/BL-1424) optimize string compare check for unicode
 - [BL-1425](https://ortussolutions.atlassian.net/browse/BL-1425) optimize case insensitive instanceof check
 - [BL-1426](https://ortussolutions.atlassian.net/browse/BL-1426) optimize isNumeric locale parsing and casting
 - [BL-1427](https://ortussolutions.atlassian.net/browse/BL-1427) optimize file detection/reading from disk unless needed
-- [BL-1428](https://ortussolutions.atlassian.net/browse/BL-1428) optimize getConfig\(\) by caching at request context
+- [BL-1428](https://ortussolutions.atlassian.net/browse/BL-1428) optimize getConfig() by caching at request context
 - [BL-1429](https://ortussolutions.atlassian.net/browse/BL-1429) Improve performance of string lowercasing and key creation
 - [BL-1433](https://ortussolutions.atlassian.net/browse/BL-1433) Only include source lines in exceptions when in debug mode
 - [BL-1434](https://ortussolutions.atlassian.net/browse/BL-1434) Optimize hash base 64 encoding
@@ -56,7 +58,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [BL-1458](https://ortussolutions.atlassian.net/browse/BL-1458) optimize isEmpty code paths
 - [BL-1459](https://ortussolutions.atlassian.net/browse/BL-1459) optimize getting function enclosing class by caching
 - [BL-1460](https://ortussolutions.atlassian.net/browse/BL-1460) optimize number caster true/false string checks
-- [BL-1461](https://ortussolutions.atlassian.net/browse/BL-1461) optimize BoxStructSerializer class by avoiding struct.entrySet\(\)
+- [BL-1461](https://ortussolutions.atlassian.net/browse/BL-1461) optimize BoxStructSerializer class by avoiding struct.entrySet()
 - [BL-1462](https://ortussolutions.atlassian.net/browse/BL-1462) optimize string compare by removing unnecessary string to lower case
 - [BL-1473](https://ortussolutions.atlassian.net/browse/BL-1473) Update to use StatusPrinter2 from deprecated StatusPrinter using LogBack
 - [BL-1481](https://ortussolutions.atlassian.net/browse/BL-1481) Speed improvements for function invocation on hot code
@@ -70,7 +72,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [BL-1356](https://ortussolutions.atlassian.net/browse/BL-1356) postBIFInvocation event
 - [BL-1357](https://ortussolutions.atlassian.net/browse/BL-1357) Simple preFunctionInvoke interceptor throws errors due to recursing into itself
 - [BL-1385](https://ortussolutions.atlassian.net/browse/BL-1385) Module that defines an interceptor has to specify "too much" for the class path
-- [BL-1386](https://ortussolutions.atlassian.net/browse/BL-1386) ModuleService reload and reloadAll\(\) methods to provide ability for module reloading on development
+- [BL-1386](https://ortussolutions.atlassian.net/browse/BL-1386) ModuleService reload and reloadAll() methods to provide ability for module reloading on development
 - [BL-1394](https://ortussolutions.atlassian.net/browse/BL-1394) forgot to populate the \`populateServerSystemScope\` from the override boxlang.json
 - [BL-1396](https://ortussolutions.atlassian.net/browse/BL-1396) isValid Boolean Returning Incorrect Result on Struct
 - [BL-1398](https://ortussolutions.atlassian.net/browse/BL-1398) Move default disallowed file extensions to web support and keep CLI open
@@ -80,16 +82,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [BL-1403](https://ortussolutions.atlassian.net/browse/BL-1403) http not using the user agent if passed by the user
 - [BL-1409](https://ortussolutions.atlassian.net/browse/BL-1409) Compat: add \`server.coldfusion.supportedLocales\`
 - [BL-1412](https://ortussolutions.atlassian.net/browse/BL-1412) Add Application.bx/cfc support for overriding allowed and disallowed extensions
-- [BL-1414](https://ortussolutions.atlassian.net/browse/BL-1414) this.logger is null in when getting an attempt\(\) from a box future
+- [BL-1414](https://ortussolutions.atlassian.net/browse/BL-1414) this.logger is null in when getting an attempt() from a box future
 - [BL-1416](https://ortussolutions.atlassian.net/browse/BL-1416) Compat:  Support ACF/Lucee \`blockedExtForFileUpload\` Application Setting
 - [BL-1418](https://ortussolutions.atlassian.net/browse/BL-1418) parameterized QoQ with maxLength errors
 - [BL-1431](https://ortussolutions.atlassian.net/browse/BL-1431) function dump template doesn't work in compat
 - [BL-1432](https://ortussolutions.atlassian.net/browse/BL-1432) CF transpiler not turning off accessors for child classes
-- [BL-1441](https://ortussolutions.atlassian.net/browse/BL-1441) getPageContext\(\).getRequest\(\) has no getScheme\(\)
+- [BL-1441](https://ortussolutions.atlassian.net/browse/BL-1441) getPageContext().getRequest() has no getScheme()
 - [BL-1442](https://ortussolutions.atlassian.net/browse/BL-1442) empty file fields in forms throw error on submit
 - [BL-1444](https://ortussolutions.atlassian.net/browse/BL-1444) Boxlang does not pickup custom tags that are in the same folder as the file that calls them
 - [BL-1447](https://ortussolutions.atlassian.net/browse/BL-1447) Compat: DateDiff should support fractional days as date argument
-- [BL-1449](https://ortussolutions.atlassian.net/browse/BL-1449) when doing a boxlang \{action\} command it should break and execute
+- [BL-1449](https://ortussolutions.atlassian.net/browse/BL-1449) when doing a boxlang {action} command it should break and execute
 - [BL-1451](https://ortussolutions.atlassian.net/browse/BL-1451) Custom tag search is case-sensitive
 - [BL-1452](https://ortussolutions.atlassian.net/browse/BL-1452) inline annotation errors when literal value is a negative number
 - [BL-1463](https://ortussolutions.atlassian.net/browse/BL-1463) parser errors on class annotation called abstract
@@ -101,7 +103,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [BL-1475](https://ortussolutions.atlassian.net/browse/BL-1475) \`this.sessionStorage\` assignment with Application-defined cache throws error.
 - [BL-1477](https://ortussolutions.atlassian.net/browse/BL-1477) Errors within application startup leave app in unusable state
 - [BL-1479](https://ortussolutions.atlassian.net/browse/BL-1479) Compat:  Error thrown in QueryCompat interception when null param is encountered
-- [BL-1483](https://ortussolutions.atlassian.net/browse/BL-1483) calling java method with invoke\(\) and no args fails
+- [BL-1483](https://ortussolutions.atlassian.net/browse/BL-1483) calling java method with invoke() and no args fails
 - [BL-1484](https://ortussolutions.atlassian.net/browse/BL-1484) filewrite operations on existing files were not truncating it and leaving content behind.
 - [BL-1488](https://ortussolutions.atlassian.net/browse/BL-1488) isSimpleValue doesn't work with Keys
 
@@ -145,7 +147,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.0] - 2025-04-30
 
-[Unreleased]: https://github.com/ortus-boxlang/BoxLang/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/ortus-boxlang/BoxLang/compare/v1.2.0...HEAD
+
+[1.2.0]: https://github.com/ortus-boxlang/BoxLang/compare/v1.1.0...v1.2.0
 
 [1.1.0]: https://github.com/ortus-boxlang/BoxLang/compare/v1.0.1...v1.1.0
 
