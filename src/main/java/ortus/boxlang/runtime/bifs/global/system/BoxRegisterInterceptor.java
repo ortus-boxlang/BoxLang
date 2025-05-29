@@ -62,32 +62,40 @@ public class BoxRegisterInterceptor extends BIF {
 		Object	interceptor	= arguments.get( Key.interceptor );
 		Key[]	states		= InterceptorPool.inflateStates( arguments.get( Key.states ) );
 
-		// Register a boxClass
-		if ( interceptor instanceof IClassRunnable boxClass ) {
-			this.interceptorTarget
-			    .registerInterceptionPoint( states )
-			    .register( boxClass );
-		}
-
-		// Register a Dynamic Object
-		if ( interceptor instanceof DynamicObject boxObject ) {
-			this.interceptorTarget
-			    .register( boxObject, states );
-		}
-
-		// Is it a Closure/Lambda
-		if ( interceptor instanceof Function castedFunction ) {
-
-			// If the states are empty, throw an exception, closures need at least one state to listen to
-			if ( states.length == 0 ) {
-				throw new BoxRuntimeException( "Closures/Lambdas need at least one state to listen to" );
+		switch ( interceptor ) {
+			// BoxLang Classes
+			case IClassRunnable boxClass -> {
+				this.interceptorTarget
+				    .registerInterceptionPoint( states )
+				    .register( boxClass );
 			}
 
-			this.interceptorTarget
-			    .register(
-			        new ortus.boxlang.runtime.interop.proxies.IInterceptorLambda( castedFunction, context, null ),
-			        states
-			    );
+			// Any Java Class
+			case DynamicObject boxObject -> {
+				this.interceptorTarget
+				    .register( boxObject, states );
+			}
+
+			// Any BoxLang Closure/UDF/Lambda
+			case Function castedFunction -> {
+				// If the states are empty, throw an exception, closures need at least one state to listen to
+				if ( states.length == 0 ) {
+					throw new BoxRuntimeException( "Closures/Lambdas need at least one state to listen to" );
+				}
+
+				this.interceptorTarget
+				    .register(
+				        new ortus.boxlang.runtime.interop.proxies.IInterceptorLambda( castedFunction, context, null ),
+				        states
+				    );
+			}
+
+			default -> {
+				throw new BoxRuntimeException(
+				    "Invalid interceptor type. Expected a class, dynamic object, or closure/lambda, but got: "
+				        + interceptor.getClass().getName()
+				);
+			}
 		}
 
 		return true;
