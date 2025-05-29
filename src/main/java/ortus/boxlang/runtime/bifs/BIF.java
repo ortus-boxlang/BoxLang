@@ -118,7 +118,8 @@ public abstract class BIF {
 			data = Struct.of(
 			    Key.context, context,
 			    Key.arguments, arguments,
-			    Key.bif, this
+			    Key.bif, this,
+			    Key._name, arguments.getAsKey( __functionName )
 			);
 			interceptorService.announce(
 			    BoxEvent.ON_BIF_INVOCATION,

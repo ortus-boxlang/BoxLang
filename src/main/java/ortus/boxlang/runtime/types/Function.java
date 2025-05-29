@@ -240,7 +240,8 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 			data = Struct.of(
 			    Key.context, context,
 			    Key.arguments, context.getArgumentsScope(),
-			    Key.function, this
+			    Key.function, this,
+			    Key._name, getName().getName()
 			);
 			interceptorService.announce(
 			    BoxEvent.PRE_FUNCTION_INVOKE,
