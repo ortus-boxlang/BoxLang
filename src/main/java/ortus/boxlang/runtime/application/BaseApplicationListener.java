@@ -273,29 +273,41 @@ public abstract class BaseApplicationListener {
 	public void defineApplication() {
 		String appNameString = StringCaster.cast( this.settings.get( Key._NAME ) );
 
-		// Only create it if we have a name, else there is no application
-		if ( appNameString != null && !appNameString.isEmpty() ) {
-			// Setup the app name for the listener
-			this.appName = Key.of( appNameString );
-			// Startup app and services
-			createOrUpdateApplication();
-			createOrUpdateClassLoaderPaths();
-			createOrUpdateCaches();
-			createOrUpdateSchedulers();
-			createOrUpdateSessionManagement();
-		}
-		// Cleanups
-		else {
+		try {
+			// Only create it if we have a name, else there is no application
+			if ( appNameString != null && !appNameString.isEmpty() ) {
+				// Setup the app name for the listener
+				this.appName = Key.of( appNameString );
+				// Startup app and services
+				createOrUpdateApplication();
+				createOrUpdateClassLoaderPaths();
+				createOrUpdateCaches();
+				createOrUpdateSchedulers();
+				createOrUpdateSessionManagement();
+			}
+			// Cleanups
+			else {
+				context.removeParentContext( ApplicationBoxContext.class );
+				context.removeParentContext( SessionBoxContext.class );
+			}
+
+			// Announce application defined
+			BoxRuntime.getInstance().getInterceptorService().announce(
+			    BoxEvent.ON_APPLICATION_DEFINED,
+			    Struct.of(
+			        "listener", this,
+			        "context", this.context
+			    ) );
+		} catch ( Throwable e ) {
+			// Log the error
+			logger.error( "Error defining application [{}] => {}", this.appName, e.getMessage(), e );
+			this.application = null;
+			// If there was an error, we need to remove the application context
 			context.removeParentContext( ApplicationBoxContext.class );
 			context.removeParentContext( SessionBoxContext.class );
+			throw e;
 		}
 
-		BoxRuntime.getInstance().getInterceptorService().announce(
-		    BoxEvent.ON_APPLICATION_DEFINED,
-		    Struct.of(
-		        "listener", this,
-		        "context", this.context
-		    ) );
 	}
 
 	/**
