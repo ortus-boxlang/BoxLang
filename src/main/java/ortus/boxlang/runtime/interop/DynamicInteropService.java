@@ -532,13 +532,13 @@ public class DynamicInteropService {
 			    arguments
 			);
 			// May have been populated by getMethodHandle
-			targetInstance	= dynamicObject == null ? targetInstance : dynamicObject.getTargetInstance();
+			targetInstance	= ( dynamicObject == null ? targetInstance : dynamicObject.getTargetInstance() );
 		} catch ( RuntimeException e ) {
 			if ( safe ) {
 				return null;
 			} else {
 				e.printStackTrace();
-				throw new BoxRuntimeException( "Error getting method " + methodName + " for class " + targetClass.getName(), e );
+				throw new BoxRuntimeException( "Error getting method [" + methodName + "] for class [" + targetClass.getName() + "]", e );
 			}
 		}
 
@@ -563,12 +563,54 @@ public class DynamicInteropService {
 			// "] with arguments: " + Arrays.toString( arguments )
 			// );
 
-			// Execute
-			return methodRecord.isStatic()
-			    ? methodRecord.methodHandle()
-			        .invokeWithArguments( expandVarargs( castedArgumentValues, methodRecord.method().isVarArgs(), false, methodRecord.method() ) )
-			    : methodRecord.methodHandle().bindTo( targetInstance )
-			        .invokeWithArguments( expandVarargs( castedArgumentValues, methodRecord.method().isVarArgs(), true, methodRecord.method() ) );
+			// Execute Static
+			if ( methodRecord.isStatic() ) {
+				return methodRecord
+				    .methodHandle()
+				    .invokeWithArguments(
+				        expandVarargs( castedArgumentValues, methodRecord.method().isVarArgs(), false, methodRecord.method() )
+				    );
+			}
+
+			// Use a spread strategy to avoid binding if possible due to performance considerations
+			Object[] finalArgs = expandVarargs( castedArgumentValues, methodRecord.method().isVarArgs(), true, methodRecord.method() );
+			switch ( finalArgs.length ) {
+				case 0 -> {
+					return methodRecord.methodHandle().invoke( targetInstance );
+				}
+				case 1 -> {
+					return methodRecord.methodHandle().invoke( targetInstance, finalArgs[ 0 ] );
+				}
+				case 2 -> {
+					return methodRecord.methodHandle().invoke( targetInstance, finalArgs[ 0 ], finalArgs[ 1 ] );
+				}
+				case 3 -> {
+					return methodRecord.methodHandle().invoke( targetInstance, finalArgs[ 0 ], finalArgs[ 1 ], finalArgs[ 2 ] );
+				}
+				case 4 -> {
+					return methodRecord.methodHandle().invoke( targetInstance, finalArgs[ 0 ], finalArgs[ 1 ], finalArgs[ 2 ], finalArgs[ 3 ] );
+				}
+				case 5 -> {
+					return methodRecord.methodHandle().invoke( targetInstance, finalArgs[ 0 ], finalArgs[ 1 ], finalArgs[ 2 ], finalArgs[ 3 ], finalArgs[ 4 ] );
+				}
+				case 6 -> {
+					return methodRecord.methodHandle().invoke( targetInstance, finalArgs[ 0 ], finalArgs[ 1 ], finalArgs[ 2 ], finalArgs[ 3 ], finalArgs[ 4 ],
+					    finalArgs[ 5 ] );
+				}
+				case 7 -> {
+					return methodRecord.methodHandle().invoke( targetInstance, finalArgs[ 0 ], finalArgs[ 1 ], finalArgs[ 2 ], finalArgs[ 3 ], finalArgs[ 4 ],
+					    finalArgs[ 5 ], finalArgs[ 6 ] );
+				}
+				default -> {
+					return methodRecord
+					    .methodHandle()
+					    .bindTo( targetInstance )
+					    .invokeWithArguments(
+					        expandVarargs( castedArgumentValues, methodRecord.method().isVarArgs(), true, methodRecord.method() )
+					    );
+				}
+			}
+
 		} catch ( RuntimeException e ) {
 			throw e;
 		} catch ( Throwable e ) {
@@ -583,10 +625,10 @@ public class DynamicInteropService {
 
 	/**
 	 * Take an array of arguments, and if the method is using varargs, expand the array at the end
-	 * 
+	 *
 	 * @param arguments The arguments to expand
 	 * @param isVarargs Whether the method is varargs
-	 * 
+	 *
 	 * @return The expanded arguments
 	 */
 	public static Object[] expandVarargs( Object[] arguments, boolean isVarargs, boolean isInstance, Executable executable ) {
@@ -2432,7 +2474,7 @@ public class DynamicInteropService {
 
 	/**
 	 * Turn int into Integer, boolean into Boolean, etc
-	 * 
+	 *
 	 * @param types The types to unbox, modified by reference
 	 */
 	public static Class<?>[] unBoxTypes( Class<?>[] types ) {
@@ -2670,9 +2712,9 @@ public class DynamicInteropService {
 
 	/**
 	 * Small util for creating human readable name for type. Specifically will take a native array and give you String[] or int[][] etc
-	 * 
+	 *
 	 * @param clazz The class to get the readable type for
-	 * 
+	 *
 	 * @return The readable type
 	 */
 	private static String getReadableType( Class<?> clazz ) {
