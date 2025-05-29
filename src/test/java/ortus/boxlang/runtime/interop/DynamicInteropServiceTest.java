@@ -881,9 +881,9 @@ public class DynamicInteropServiceTest {
 		instance.executeSource(
 			"""
 				import java.util.Locale
-	
+
 				formatter = new java.util.Formatter()
-				result = formatter.format("Hello %s, you are %d years old!", ["John", 30]).toString()
+				result = formatter.format( "Hello %s, you are %d years old!",  [ "John",  30 ] ).toString()
 			""", context);
 		// @formatter:on
 
@@ -900,7 +900,7 @@ public class DynamicInteropServiceTest {
 		instance.executeSource(
 			"""
 				import ortus.boxlang.runtime.interop.VarArgsExample
-	
+
 				result = new VarArgsExample( [] )
 				result.setValues( ["one", "two", "three"] );
 			""", context);
@@ -920,7 +920,7 @@ public class DynamicInteropServiceTest {
 		instance.executeSource(
 			"""
 				import ortus.boxlang.runtime.interop.VarArgsExample
-	
+
 				result = new VarArgsExample( [ "one", "two", "three" ] )
 			""", context);
 		// @formatter:on
@@ -939,7 +939,7 @@ public class DynamicInteropServiceTest {
 		instance.executeSource(
 			"""
 				import ortus.boxlang.runtime.interop.VarArgsExample
-	
+
 				result = new VarArgsExample( {}, [ "one", "two", "three" ] )
 			""", context);
 		// @formatter:on
@@ -1038,9 +1038,9 @@ public class DynamicInteropServiceTest {
 				types = [];
 				[ "foo", "bar" ].each( ( key ) => arrayAppend( types, new TestTypedArraySubtype( Key.of( key ) ) ) );
 				myTypedArray.test( "foo",["blah"], types );
-				
+
 			""", context);
-		// @formatter:on		
+		// @formatter:on
 	}
 
 	@Test
@@ -1090,7 +1090,7 @@ public class DynamicInteropServiceTest {
 				import ortus.boxlang.runtime.interop.TestAmbiguousVarargs;
 				result = TestAmbiguousVarargs.foo( 5, "brad", [] );
 				result2 = TestAmbiguousVarargs.foo( 5, "brad" );
-				
+
 			""", context);
 		// @formatter:on
 		assertThat( variables.get( Key.result ) ).isEqualTo( "Varargs method" );
@@ -1102,7 +1102,7 @@ public class DynamicInteropServiceTest {
 		// @formatter:off
 		instance.executeSource(
 			"""
-				result = invoke( createObject( "java", "java.util.HashMap" ), "size" );				
+				result = invoke( createObject( "java", "java.util.HashMap" ), "size" );
 			""", context);
 		// @formatter:on
 		assertThat( variables.get( Key.result ) ).isEqualTo( 0 );

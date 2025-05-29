@@ -574,6 +574,18 @@ public class DynamicInteropService {
 
 			// Use a spread strategy to avoid binding if possible due to performance considerations
 			Object[] finalArgs = expandVarargs( castedArgumentValues, methodRecord.method().isVarArgs(), true, methodRecord.method() );
+
+			// Varargs are a pain, do separately, until I can figure out how to address it property
+			if ( methodRecord.method().isVarArgs() && finalArgs.length > 0 ) {
+				return methodRecord
+				    .methodHandle()
+				    .bindTo( targetInstance )
+				    .invokeWithArguments(
+				        expandVarargs( castedArgumentValues, methodRecord.method().isVarArgs(), true, methodRecord.method() )
+				    );
+			}
+
+			// Accelerated invoke for up to 7 arguments
 			switch ( finalArgs.length ) {
 				case 0 -> {
 					return methodRecord.methodHandle().invoke( targetInstance );
