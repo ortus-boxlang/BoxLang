@@ -95,14 +95,14 @@ import ortus.boxlang.runtime.types.util.ObjectRef;
  * This class is not in charge of casting the results. That is up to the caller to determine.
  * We basically just invoke and return the results!
  *
- * To create a new class invoker you can use the following:
+ * To create a new dynamic object, you can use the following:
  *
  * <pre>{@code
  *
- * ClassInvoker target = new ClassInvoker( String.class );
- * ClassInvoker target = ClassInvoker.of( String.class );
- * ClassInvoker target = new ClassInvoker( new String() );
- * ClassInvoker target = ClassInvoker.of( new String() );
+ * DynamicObject target = new DynamicObject( String.class );
+ * DynamicObject target = DynamicObject.of( String.class );
+ * DynamicObject target = new DynamicObject( new String() );
+ * DynamicObject target = DynamicObject.of( new String() );
  * }
  * </pre>
  *
@@ -299,7 +299,7 @@ public class DynamicInteropService {
 			args = EMPTY_ARGS;
 		}
 
-		// Unwrap any ClassInvoker instances
+		// Unwrap any DynamicObject instances
 		unWrapArguments( args );
 
 		// Discover the constructor method handle using the target class and the argument type matching
@@ -511,7 +511,7 @@ public class DynamicInteropService {
 			throw new BoxRuntimeException( "Method name cannot be null or empty." );
 		}
 
-		// Unwrap any ClassInvoker instances
+		// Unwrap any DynamicObject instances
 		unWrapArguments( arguments );
 
 		// Get the invoke dynamic method handle from our cache and discovery techniques
@@ -645,7 +645,7 @@ public class DynamicInteropService {
 			throw new BoxRuntimeException( "Method name cannot be null or empty." );
 		}
 
-		// Unwrap any ClassInvoker instances
+		// Unwrap any DynamicObject instances
 		unWrapArguments( arguments );
 		Object[]		castedArgumentValues	= new Object[ arguments.length ];
 		Class<?>[]		argumentClasses			= argumentsToClasses( arguments );
@@ -1827,7 +1827,7 @@ public class DynamicInteropService {
 	}
 
 	/**
-	 * Unwrap an object if it's inside a ClassInvoker instance
+	 * Unwrap an object if it's inside a DynamicObject instance
 	 *
 	 * @param param The object to unwrap
 	 *
@@ -1846,7 +1846,7 @@ public class DynamicInteropService {
 	}
 
 	/**
-	 * Unwrap any ClassInvoker instances in the arguments
+	 * Unwrap any DynamicObject instances in the arguments
 	 *
 	 * @param arguments The arguments to unwrap
 	 *
