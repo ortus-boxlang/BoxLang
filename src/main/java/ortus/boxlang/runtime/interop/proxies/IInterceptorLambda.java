@@ -59,7 +59,7 @@ public class IInterceptorLambda extends BaseProxy implements ortus.boxlang.runti
 			// If so, then if the incoming function is the same as the target, then just return true
 			// If not, we will do recursive invocation
 			if ( data.get( Key.function ) == getAsFunction() ) {
-				return true;
+				return false;
 			}
 		}
 
