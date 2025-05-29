@@ -19,6 +19,7 @@ import java.util.Date;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -61,6 +62,8 @@ public class IsSimpleValue extends BIF {
 	 * @return True if the value is a simple value, false otherwise.
 	 */
 	public static boolean isSimpleValue( Object value ) {
+		value = DynamicObject.unWrap( value );
+
 		if ( value == null ) {
 			return false;
 		}
@@ -72,6 +75,11 @@ public class IsSimpleValue extends BIF {
 
 		// Check for "simple" types
 		if ( value instanceof String || value instanceof Boolean || value instanceof Number || value instanceof Character ) {
+			return true;
+		}
+
+		if ( value instanceof Key ) {
+			// Keys are considered simple values
 			return true;
 		}
 

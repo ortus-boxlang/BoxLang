@@ -58,22 +58,26 @@ public class IsSimpleValueTest {
 	@DisplayName( "It detects simple values" )
 	@Test
 	public void testTrueConditions() {
+		// @formatter:off
 		instance.executeSource(
 		    """
-		    aBool   = isSimpleValue( true );
-		    aString = isSimpleValue( "Michael" );
-		    anInt   = isSimpleValue( 12345 );
-		    aFloat  = isSimpleValue( 3.45 );
-		    aDate   = isSimpleValue( value = now() );
-		    aUUID   = isSimpleValue( value = createUUID() );
+		       aBool   = isSimpleValue( true );
+		       aString = isSimpleValue( "Michael" );
+		       anInt   = isSimpleValue( 12345 );
+		       aFloat  = isSimpleValue( 3.45 );
+		       aDate   = isSimpleValue( value = now() );
+		       aUUID   = isSimpleValue( value = createUUID() );
+		       aKey    = isSimpleValue( value = new ortus.boxlang.runtime.scopes.Key( "foo" ) );
 		    """,
-		    context );
+		context );
+		// @formatter:on
 		assertThat( ( Boolean ) variables.get( Key.of( "aBool" ) ) ).isTrue();
 		assertThat( ( Boolean ) variables.get( Key.of( "aString" ) ) ).isTrue();
 		assertThat( ( Boolean ) variables.get( Key.of( "anInt" ) ) ).isTrue();
 		assertThat( ( Boolean ) variables.get( Key.of( "aFloat" ) ) ).isTrue();
 		assertThat( ( Boolean ) variables.get( Key.of( "aDate" ) ) ).isTrue();
 		assertThat( ( Boolean ) variables.get( Key.of( "aUUID" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "aKey" ) ) ).isTrue();
 	}
 
 	@DisplayName( "It returns false for non-simple values" )
