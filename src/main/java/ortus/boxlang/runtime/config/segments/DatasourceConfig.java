@@ -446,9 +446,6 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 			}
 		}
 
-		// Warn if driver is not found in the datasource service
-		validateDriver();
-
 		return this;
 	}
 
@@ -723,19 +720,6 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	 */
 	public String addCustomParams( String target ) {
 		return addCustomParams( target, "?", "&" );
-	}
-
-	/**
-	 * Log a warning if the driver is not registered with the datasource service.
-	 * 
-	 * We purposely avoid throwing an exception here, as the generic driver may be sufficient.
-	 */
-	public void validateDriver() {
-		if ( !BoxRuntime.getInstance().getDataSourceService().hasDriver( getDriver() ) ) {
-			logger.warn( "The datasource [{}] has a driver [{}] that is not registered with the datasource service. Do you need to install a driver module?",
-			    getOriginalName(),
-			    getDriver() );
-		}
 	}
 
 	/**
