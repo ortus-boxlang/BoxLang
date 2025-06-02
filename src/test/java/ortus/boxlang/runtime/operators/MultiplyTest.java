@@ -27,6 +27,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.DateTime;
 
 public class MultiplyTest {
 
@@ -53,6 +54,13 @@ public class MultiplyTest {
 		scope.put( Key.of( "i" ), 4 );
 		assertThat( Multiply.invoke( context, scope, Key.of( "i" ), 4 ).doubleValue() ).isEqualTo( 16 );
 		assertThat( scope.getAsNumber( Key.of( "i" ) ).doubleValue() ).isEqualTo( 16 );
+	}
+
+	@DisplayName( "It can multiply a number by a date" )
+	@Test
+	void testItCanMultiplyNumberToDate() {
+		DateTime refDate = new DateTime( "2025-01-01T00:00:00Z" );
+		assertThat( Multiply.invoke( refDate, 2 ) ).isNotNull();
 	}
 
 }

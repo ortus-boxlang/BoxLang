@@ -40,8 +40,8 @@ public class Multiply implements IOperator {
 	 */
 	public static Number invoke( Object left, Object right ) {
 		// First turn the operands into numbers
-		Number	nLeft		= NumberCaster.cast( left );
-		Number	nRight		= NumberCaster.cast( right );
+		Number	nLeft		= NumberCaster.cast( true, left );
+		Number	nRight		= NumberCaster.cast( true, right );
 
 		// Track if either operand is a BigDecimal so we don't have to cast them again
 		boolean	leftIsBD	= false;

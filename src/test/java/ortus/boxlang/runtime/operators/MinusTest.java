@@ -27,6 +27,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.DateTime;
 
 public class MinusTest {
 
@@ -53,6 +54,13 @@ public class MinusTest {
 		scope.put( Key.of( "i" ), 4 );
 		assertThat( Minus.invoke( context, scope, Key.of( "i" ), 2 ) ).isEqualTo( 2 );
 		assertThat( scope.getAsNumber( Key.of( "i" ) ).doubleValue() ).isEqualTo( 2 );
+	}
+
+	@DisplayName( "It can subtract a number from a date" )
+	@Test
+	void testItCanSubtractNumberFromDate() {
+		DateTime refDate = new DateTime( "2025-01-01T00:00:00Z" );
+		assertThat( Minus.invoke( refDate, 1 ) ).isNotNull();
 	}
 
 }
