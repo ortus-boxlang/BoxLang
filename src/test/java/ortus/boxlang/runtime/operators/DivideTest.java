@@ -29,6 +29,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.exceptions.BoxLangException;
+import ortus.boxlang.runtime.types.DateTime;
 
 public class DivideTest {
 
@@ -62,6 +63,13 @@ public class DivideTest {
 		scope.put( Key.of( "i" ), 4 );
 		assertThat( Divide.invoke( context, scope, Key.of( "i" ), 2 ).doubleValue() ).isEqualTo( 2 );
 		assertThat( scope.getAsNumber( Key.of( "i" ) ).doubleValue() ).isEqualTo( 2 );
+	}
+
+	@DisplayName( "It can divde a number by a date" )
+	@Test
+	void testItCanDivideNumberToDate() {
+		DateTime refDate = new DateTime( "2025-01-01T00:00:00Z" );
+		assertThat( Divide.invoke( refDate, 2 ) ).isNotNull();
 	}
 
 }
