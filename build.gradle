@@ -15,7 +15,7 @@ plugins {
 	// For source code formatting
 	id "com.diffplug.spotless" version "7.0.3"
 	// Shadow
-	id "com.gradleup.shadow" version "9.0.0-beta12"
+	id "com.gradleup.shadow" version "9.0.0-beta15"
 	// For dependency updates
 	id 'com.github.ben-manes.versions' version '0.52.0'
 	// For building service loader files
