@@ -43,8 +43,8 @@ public class Minus implements IOperator {
 	 * @return The result
 	 */
 	public static Number invoke( Object left, Object right ) {
-		Number	nLeft	= NumberCaster.cast( left );
-		Number	nRight	= NumberCaster.cast( right );
+		Number	nLeft	= NumberCaster.cast( true, left );
+		Number	nRight	= NumberCaster.cast( true, right );
 		// A couple shortcuts-- if both operands are integers or longs within a certain range, we can just subtract them safely
 		if ( nLeft instanceof Integer li ) {
 			if ( nRight instanceof Integer ri ) {
