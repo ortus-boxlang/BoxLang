@@ -50,202 +50,202 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 	private Map<String, AggregateFeatureUsed>	aggregateFeaturesUsed	= new HashMap<>();
 
 	static {
-		BIFMap.put( "abs", "" );
-		BIFMap.put( "acos", "" );
+		BIFMap.put( "abs", "core" );
+		BIFMap.put( "acos", "core" );
 		BIFMap.put( "addsoaprequestheader", "" );
 		BIFMap.put( "addsoapresponseheader", "" );
 		BIFMap.put( "ajaxlink", "" );
 		BIFMap.put( "ajaxonload", "" );
-		BIFMap.put( "applicationstarttime", "" );
-		BIFMap.put( "applicationstop", "" );
-		BIFMap.put( "argon2checkhash", "" );
+		BIFMap.put( "applicationstarttime", "core" );
+		BIFMap.put( "applicationstop", "core" );
+		BIFMap.put( "argon2checkhash", "bx-argon" );
 		BIFMap.put( "array", "" );
-		BIFMap.put( "arrayappend", "" );
-		BIFMap.put( "arrayavg", "" );
+		BIFMap.put( "arrayappend", "core" );
+		BIFMap.put( "arrayavg", "core" );
 		BIFMap.put( "arraychunk", "" );
-		BIFMap.put( "arrayclear", "" );
-		BIFMap.put( "arraycontains", "" );
-		BIFMap.put( "arraycontainsnocase", "" );
-		BIFMap.put( "arraydelete", "" );
-		BIFMap.put( "arraydeleteat", "" );
-		BIFMap.put( "arraydeletenocase", "" );
-		BIFMap.put( "arrayeach", "" );
-		BIFMap.put( "arrayevery", "" );
-		BIFMap.put( "arrayfilter", "" );
-		BIFMap.put( "arrayfind", "" );
-		BIFMap.put( "arrayfindall", "" );
-		BIFMap.put( "arrayfindallnocase", "" );
-		BIFMap.put( "arrayfindnocase", "" );
-		BIFMap.put( "arrayfirst", "" );
+		BIFMap.put( "arrayclear", "core" );
+		BIFMap.put( "arraycontains", "core" );
+		BIFMap.put( "arraycontainsnocase", "core" );
+		BIFMap.put( "arraydelete", "core" );
+		BIFMap.put( "arraydeleteat", "core" );
+		BIFMap.put( "arraydeletenocase", "core" );
+		BIFMap.put( "arrayeach", "core" );
+		BIFMap.put( "arrayevery", "core" );
+		BIFMap.put( "arrayfilter", "core" );
+		BIFMap.put( "arrayfind", "core" );
+		BIFMap.put( "arrayfindall", "core" );
+		BIFMap.put( "arrayfindallnocase", "core" );
+		BIFMap.put( "arrayfindnocase", "core" );
+		BIFMap.put( "arrayfirst", "core" );
 		BIFMap.put( "arrayflatten", "" );
 		BIFMap.put( "arrayflatmap", "" );
-		BIFMap.put( "arraygetmetadata", "" );
+		BIFMap.put( "arraygetmetadata", "core" );
 		BIFMap.put( "arraygroupby", "" );
-		BIFMap.put( "arrayindexexists", "" );
-		BIFMap.put( "arrayinsertat", "" );
-		BIFMap.put( "arrayisdefined", "" );
-		BIFMap.put( "arrayisempty", "" );
-		BIFMap.put( "arraylast", "" );
-		BIFMap.put( "arraylen", "" );
-		BIFMap.put( "arraymap", "" );
-		BIFMap.put( "arraymax", "" );
-		BIFMap.put( "arraymedian", "" );
-		BIFMap.put( "arraymerge", "" );
-		BIFMap.put( "arraymid", "" );
-		BIFMap.put( "arraymin", "" );
-		BIFMap.put( "arraynew", "" );
-		BIFMap.put( "arraypop", "" );
-		BIFMap.put( "arrayprepend", "" );
-		BIFMap.put( "arraypush", "" );
+		BIFMap.put( "arrayindexexists", "core" );
+		BIFMap.put( "arrayinsertat", "core" );
+		BIFMap.put( "arrayisdefined", "core" );
+		BIFMap.put( "arrayisempty", "core" );
+		BIFMap.put( "arraylast", "core" );
+		BIFMap.put( "arraylen", "core" );
+		BIFMap.put( "arraymap", "core" );
+		BIFMap.put( "arraymax", "core" );
+		BIFMap.put( "arraymedian", "core" );
+		BIFMap.put( "arraymerge", "core" );
+		BIFMap.put( "arraymid", "core" );
+		BIFMap.put( "arraymin", "core" );
+		BIFMap.put( "arraynew", "core" );
+		BIFMap.put( "arraypop", "core" );
+		BIFMap.put( "arrayprepend", "core" );
+		BIFMap.put( "arraypush", "core" );
 		BIFMap.put( "arrayrange", "" );
-		BIFMap.put( "arrayreduce", "" );
-		BIFMap.put( "arrayreduceright", "" );
-		BIFMap.put( "arrayresize", "" );
-		BIFMap.put( "arrayreverse", "" );
-		BIFMap.put( "arrayset", "" );
+		BIFMap.put( "arrayreduce", "core" );
+		BIFMap.put( "arrayreduceright", "core" );
+		BIFMap.put( "arrayresize", "core" );
+		BIFMap.put( "arrayreverse", "core" );
+		BIFMap.put( "arrayset", "core" );
 		BIFMap.put( "arraysetmetadata", "" );
-		BIFMap.put( "arrayshift", "" );
-		BIFMap.put( "arrayslice", "" );
-		BIFMap.put( "arraysome", "" );
-		BIFMap.put( "arraysort", "" );
-		BIFMap.put( "arraysplice", "" );
-		BIFMap.put( "arraysum", "" );
-		BIFMap.put( "arrayswap", "" );
-		BIFMap.put( "arraytolist", "" );
-		BIFMap.put( "arraytostruct", "" );
+		BIFMap.put( "arrayshift", "core" );
+		BIFMap.put( "arrayslice", "core" );
+		BIFMap.put( "arraysome", "core" );
+		BIFMap.put( "arraysort", "core" );
+		BIFMap.put( "arraysplice", "core" );
+		BIFMap.put( "arraysum", "core" );
+		BIFMap.put( "arrayswap", "core" );
+		BIFMap.put( "arraytolist", "core" );
+		BIFMap.put( "arraytostruct", "core" );
 		BIFMap.put( "arrayunique", "" );
-		BIFMap.put( "arrayunshift", "" );
+		BIFMap.put( "arrayunshift", "core" );
 		BIFMap.put( "arrayzip", "" );
-		BIFMap.put( "asc | ascii", "" );
-		BIFMap.put( "asin", "" );
-		BIFMap.put( "atn", "" );
+		BIFMap.put( "asc | ascii", "core" );
+		BIFMap.put( "asin", "core" );
+		BIFMap.put( "atn", "core" );
 		BIFMap.put( "beat", "" );
-		BIFMap.put( "binarydecode", "" );
-		BIFMap.put( "binaryencode", "" );
-		BIFMap.put( "bitand", "" );
-		BIFMap.put( "bitmaskclear", "" );
-		BIFMap.put( "bitmaskread", "" );
-		BIFMap.put( "bitmaskset", "" );
-		BIFMap.put( "bitnot", "" );
-		BIFMap.put( "bitor", "" );
-		BIFMap.put( "bitshln", "" );
-		BIFMap.put( "bitshrn", "" );
-		BIFMap.put( "bitxor", "" );
-		BIFMap.put( "booleanformat", "" );
+		BIFMap.put( "binarydecode", "core" );
+		BIFMap.put( "binaryencode", "core" );
+		BIFMap.put( "bitand", "core" );
+		BIFMap.put( "bitmaskclear", "core" );
+		BIFMap.put( "bitmaskread", "core" );
+		BIFMap.put( "bitmaskset", "core" );
+		BIFMap.put( "bitnot", "core" );
+		BIFMap.put( "bitor", "core" );
+		BIFMap.put( "bitshln", "core" );
+		BIFMap.put( "bitshrn", "core" );
+		BIFMap.put( "bitxor", "core" );
+		BIFMap.put( "booleanformat", "core" );
 		BIFMap.put( "bundleinfo", "" );
-		BIFMap.put( "cacheclear", "" );
-		BIFMap.put( "cachecount", "" );
-		BIFMap.put( "cachedelete", "" );
-		BIFMap.put( "cacheget", "" );
-		BIFMap.put( "cachegetall", "" );
-		BIFMap.put( "cachegetallids", "" );
-		BIFMap.put( "cachegetdefaultcachename", "" );
-		BIFMap.put( "cachegetengineproperties", "" );
-		BIFMap.put( "cachegetmetadata", "" );
-		BIFMap.put( "cachegetproperties", "" );
-		BIFMap.put( "cachegetsession", "" );
-		BIFMap.put( "cacheidexists", "" );
-		BIFMap.put( "cachekeyexists", "" );
-		BIFMap.put( "cacheput", "" );
-		BIFMap.put( "cacheregionexists", "" );
-		BIFMap.put( "cacheregionnew", "" );
-		BIFMap.put( "cacheregionremove", "" );
-		BIFMap.put( "cacheremove", "" );
-		BIFMap.put( "cacheremoveall", "" );
-		BIFMap.put( "cachesetproperties", "" );
+		BIFMap.put( "cacheclear", "bx-compat" );
+		BIFMap.put( "cachecount", "bx-compat" );
+		BIFMap.put( "cachedelete", "bx-compat" );
+		BIFMap.put( "cacheget", "bx-compat" );
+		BIFMap.put( "cachegetall", "bx-compat" );
+		BIFMap.put( "cachegetallids", "bx-compat" );
+		BIFMap.put( "cachegetdefaultcachename", "bx-compat" );
+		BIFMap.put( "cachegetengineproperties", "bx-compat" );
+		BIFMap.put( "cachegetmetadata", "bx-compat" );
+		BIFMap.put( "cachegetproperties", "bx-compat" );
+		BIFMap.put( "cachegetsession", "bx-compat" );
+		BIFMap.put( "cacheidexists", "bx-compat" );
+		BIFMap.put( "cachekeyexists", "bx-compat" );
+		BIFMap.put( "cacheput", "bx-compat" );
+		BIFMap.put( "cacheregionexists", "bx-compat" );
+		BIFMap.put( "cacheregionnew", "bx-compat" );
+		BIFMap.put( "cacheregionremove", "bx-compat" );
+		BIFMap.put( "cacheremove", "bx-compat" );
+		BIFMap.put( "cacheremoveall", "bx-compat" );
+		BIFMap.put( "cachesetproperties", "bx-compat" );
 		BIFMap.put( "callstackdump", "" );
-		BIFMap.put( "callstackget", "" );
-		BIFMap.put( "canonicalize", "" );
-		BIFMap.put( "ceiling", "" );
+		BIFMap.put( "callstackget", "core" );
+		BIFMap.put( "canonicalize", "bx-esapi" );
+		BIFMap.put( "ceiling", "core" );
 		BIFMap.put( "usion_decrypt", "" );
 		BIFMap.put( "usion_encrypt", "" );
-		BIFMap.put( "charsetdecode", "" );
-		BIFMap.put( "charsetencode", "" );
-		BIFMap.put( "chr | char", "" );
-		BIFMap.put( "cjustify", "" );
-		BIFMap.put( "cleartimezone", "" );
+		BIFMap.put( "charsetdecode", "core" );
+		BIFMap.put( "charsetencode", "core" );
+		BIFMap.put( "chr | char", "core" );
+		BIFMap.put( "cjustify", "core" );
+		BIFMap.put( "cleartimezone", "core" );
 		BIFMap.put( "collectioneach", "" );
 		BIFMap.put( "collectionevery", "" );
 		BIFMap.put( "collectionfilter", "" );
 		BIFMap.put( "collectionmap", "" );
 		BIFMap.put( "collectionreduce", "" );
 		BIFMap.put( "collectionsome", "" );
-		BIFMap.put( "compare", "" );
-		BIFMap.put( "comparenocase", "" );
+		BIFMap.put( "compare", "core" );
+		BIFMap.put( "comparenocase", "core" );
 		BIFMap.put( "componentcacheclear", "" );
 		BIFMap.put( "componentcachelist", "" );
 		BIFMap.put( "componentinfo", "" );
-		BIFMap.put( "compress", "" );
-		BIFMap.put( "contractpath", "" );
-		BIFMap.put( "cos", "" );
-		BIFMap.put( "createdate", "" );
-		BIFMap.put( "createdatetime", "" );
-		BIFMap.put( "createdynamicproxy", "" );
-		BIFMap.put( "createguid", "" );
-		BIFMap.put( "createobject", "" );
-		BIFMap.put( "createodbcdate", "" );
-		BIFMap.put( "createodbcdatetime", "" );
-		BIFMap.put( "createodbctime", "" );
-		BIFMap.put( "createtime", "" );
-		BIFMap.put( "createtimespan", "" );
+		BIFMap.put( "compress", "core" );
+		BIFMap.put( "contractpath", "core" );
+		BIFMap.put( "cos", "core" );
+		BIFMap.put( "createdate", "core" );
+		BIFMap.put( "createdatetime", "core" );
+		BIFMap.put( "createdynamicproxy", "core" );
+		BIFMap.put( "createguid", "core" );
+		BIFMap.put( "createobject", "core" );
+		BIFMap.put( "createodbcdate", "core" );
+		BIFMap.put( "createodbcdatetime", "core" );
+		BIFMap.put( "createodbctime", "core" );
+		BIFMap.put( "createtime", "core" );
+		BIFMap.put( "createtimespan", "core" );
 		BIFMap.put( "createuniqueid", "" );
-		BIFMap.put( "createuuid", "" );
+		BIFMap.put( "createuuid", "core" );
 		BIFMap.put( "csrfgeneratetoken", "" );
 		BIFMap.put( "csrfverifytoken", "" );
 		BIFMap.put( "ctcacheclear", "" );
 		BIFMap.put( "ctcachelist", "" );
 		BIFMap.put( "datasourceflushmetacache", "" );
-		BIFMap.put( "dateadd", "" );
-		BIFMap.put( "datecompare", "" );
-		BIFMap.put( "dateconvert", "" );
-		BIFMap.put( "datediff", "" );
-		BIFMap.put( "dateformat", "" );
-		BIFMap.put( "datepart", "" );
-		BIFMap.put( "datetimeformat", "" );
-		BIFMap.put( "day", "" );
-		BIFMap.put( "dayofweek", "" );
-		BIFMap.put( "dayofweekasstring", "" );
-		BIFMap.put( "dayofweekshortasstring", "" );
-		BIFMap.put( "dayofyear", "" );
-		BIFMap.put( "daysinmonth", "" );
-		BIFMap.put( "daysinyear", "" );
-		BIFMap.put( "de", "" );
-		BIFMap.put( "decimalformat", "" );
-		BIFMap.put( "decodeforhtml", "" );
-		BIFMap.put( "decodefromurl", "" );
+		BIFMap.put( "dateadd", "core" );
+		BIFMap.put( "datecompare", "core" );
+		BIFMap.put( "dateconvert", "core" );
+		BIFMap.put( "datediff", "core" );
+		BIFMap.put( "dateformat", "core" );
+		BIFMap.put( "datepart", "core" );
+		BIFMap.put( "datetimeformat", "core" );
+		BIFMap.put( "day", "core" );
+		BIFMap.put( "dayofweek", "core" );
+		BIFMap.put( "dayofweekasstring", "core" );
+		BIFMap.put( "dayofweekshortasstring", "core" );
+		BIFMap.put( "dayofyear", "core" );
+		BIFMap.put( "daysinmonth", "core" );
+		BIFMap.put( "daysinyear", "core" );
+		BIFMap.put( "de", "core" );
+		BIFMap.put( "decimalformat", "core" );
+		BIFMap.put( "decodeforhtml", "bx-esapi" );
+		BIFMap.put( "decodefromurl", "bx-esapi" );
 		BIFMap.put( "decrementvalue", "" );
-		BIFMap.put( "decrypt", "" );
-		BIFMap.put( "decryptbinary", "" );
-		BIFMap.put( "deleteclientvariable", "" );
-		BIFMap.put( "deserialize", "" );
-		BIFMap.put( "deserializejson", "" );
-		BIFMap.put( "deserializexml", "" );
-		BIFMap.put( "directorycopy", "" );
-		BIFMap.put( "directorycreate", "" );
-		BIFMap.put( "directorydelete", "" );
-		BIFMap.put( "directoryexists", "" );
-		BIFMap.put( "directorylist", "" );
-		BIFMap.put( "directoryrename", "" );
-		BIFMap.put( "dollarformat", "" );
+		BIFMap.put( "decrypt", "core" );
+		BIFMap.put( "decryptbinary", "core" );
+		BIFMap.put( "deleteclientvariable", "bx-compat" );
+		BIFMap.put( "deserialize", "bx-compat" );
+		BIFMap.put( "deserializejson", "core" );
+		BIFMap.put( "deserializexml", "bx-compat" );
+		BIFMap.put( "directorycopy", "core" );
+		BIFMap.put( "directorycreate", "core" );
+		BIFMap.put( "directorydelete", "core" );
+		BIFMap.put( "directoryexists", "core" );
+		BIFMap.put( "directorylist", "core" );
+		BIFMap.put( "directoryrename", "core" );
+		BIFMap.put( "dollarformat", "bx-compat" );
 		BIFMap.put( "dotnettocftype", "" );
-		BIFMap.put( "duplicate", "" );
+		BIFMap.put( "duplicate", "core" );
 		BIFMap.put( "each", "" );
-		BIFMap.put( "echo", "" );
+		BIFMap.put( "echo", "core" );
 		BIFMap.put( "empty", "" );
-		BIFMap.put( "encodefor", "" );
-		BIFMap.put( "encodeforcss", "" );
-		BIFMap.put( "encodefordn", "" );
-		BIFMap.put( "encodeforhtml", "" );
-		BIFMap.put( "encodeforhtmlattribute", "" );
-		BIFMap.put( "encodeforjavascript", "" );
-		BIFMap.put( "encodeforldap", "" );
-		BIFMap.put( "encodeforsql", "" );
-		BIFMap.put( "encodeforurl", "" );
-		BIFMap.put( "encodeforxml", "" );
-		BIFMap.put( "encodeforxmlattribute", "" );
-		BIFMap.put( "encodeforxpath", "" );
-		BIFMap.put( "encrypt", "" );
-		BIFMap.put( "encryptbinary", "" );
+		BIFMap.put( "encodefor", "bx-esapi" );
+		BIFMap.put( "encodeforcss", "bx-esapi" );
+		BIFMap.put( "encodefordn", "bx-esapi" );
+		BIFMap.put( "encodeforhtml", "bx-esapi" );
+		BIFMap.put( "encodeforhtmlattribute", "bx-esapi" );
+		BIFMap.put( "encodeforjavascript", "bx-esapi" );
+		BIFMap.put( "encodeforldap", "bx-esapi" );
+		BIFMap.put( "encodeforsql", "bx-esapi" );
+		BIFMap.put( "encodeforurl", "bx-esapi" );
+		BIFMap.put( "encodeforxml", "bx-esapi" );
+		BIFMap.put( "encodeforxmlattribute", "bx-esapi" );
+		BIFMap.put( "encodeforxpath", "bx-esapi" );
+		BIFMap.put( "encrypt", "core" );
+		BIFMap.put( "encryptbinary", "core" );
 		BIFMap.put( "entitydelete", "" );
 		BIFMap.put( "entityload", "" );
 		BIFMap.put( "entityloadbyexample", "" );
@@ -257,73 +257,73 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		BIFMap.put( "entityreload", "" );
 		BIFMap.put( "entitysave", "" );
 		BIFMap.put( "entitytoquery", "" );
-		BIFMap.put( "esapidecode", "" );
-		BIFMap.put( "esapiencode", "" );
-		BIFMap.put( "evaluate", "" );
-		BIFMap.put( "exp", "" );
-		BIFMap.put( "expandpath", "" );
+		BIFMap.put( "esapidecode", "bx-esapi" );
+		BIFMap.put( "esapiencode", "bx-esapi" );
+		BIFMap.put( "evaluate", "bx-unsafe-evaulate" );
+		BIFMap.put( "exp", "core" );
+		BIFMap.put( "expandpath", "core" );
 		BIFMap.put( "extensionexists", "" );
 		BIFMap.put( "extensionlist", "" );
-		BIFMap.put( "extract", "" );
-		BIFMap.put( "fileappend", "" );
-		BIFMap.put( "fileclose", "" );
-		BIFMap.put( "filecopy", "" );
-		BIFMap.put( "filedelete", "" );
-		BIFMap.put( "fileexists", "" );
-		BIFMap.put( "filegetmimetype", "" );
-		BIFMap.put( "fileinfo", "" );
-		BIFMap.put( "fileiseof", "" );
-		BIFMap.put( "filemove", "" );
-		BIFMap.put( "fileopen", "" );
-		BIFMap.put( "fileread", "" );
-		BIFMap.put( "filereadbinary", "" );
-		BIFMap.put( "filereadline", "" );
-		BIFMap.put( "fileseek", "" );
-		BIFMap.put( "filesetaccessmode", "" );
-		BIFMap.put( "filesetattribute", "" );
-		BIFMap.put( "filesetlastmodified", "" );
-		BIFMap.put( "fileskipbytes", "" );
-		BIFMap.put( "fileupload", "" );
-		BIFMap.put( "fileuploadall", "" );
-		BIFMap.put( "filewrite", "" );
-		BIFMap.put( "filewriteline", "" );
-		BIFMap.put( "find", "" );
-		BIFMap.put( "findnocase", "" );
-		BIFMap.put( "findoneof", "" );
-		BIFMap.put( "firstdayofmonth", "" );
-		BIFMap.put( "fix", "" );
-		BIFMap.put( "floor", "" );
-		BIFMap.put( "formatbasen", "" );
-		BIFMap.put( "generateargon2hash", "" );
-		BIFMap.put( "generatebcrypthash", "" );
+		BIFMap.put( "extract", "core" );
+		BIFMap.put( "fileappend", "core" );
+		BIFMap.put( "fileclose", "core" );
+		BIFMap.put( "filecopy", "core" );
+		BIFMap.put( "filedelete", "core" );
+		BIFMap.put( "fileexists", "core" );
+		BIFMap.put( "filegetmimetype", "core" );
+		BIFMap.put( "fileinfo", "core" );
+		BIFMap.put( "fileiseof", "core" );
+		BIFMap.put( "filemove", "core" );
+		BIFMap.put( "fileopen", "core" );
+		BIFMap.put( "fileread", "core" );
+		BIFMap.put( "filereadbinary", "core" );
+		BIFMap.put( "filereadline", "core" );
+		BIFMap.put( "fileseek", "core" );
+		BIFMap.put( "filesetaccessmode", "core" );
+		BIFMap.put( "filesetattribute", "core" );
+		BIFMap.put( "filesetlastmodified", "core" );
+		BIFMap.put( "fileskipbytes", "core" );
+		BIFMap.put( "fileupload", "bx-web-support" );
+		BIFMap.put( "fileuploadall", "bx-web-support" );
+		BIFMap.put( "filewrite", "core" );
+		BIFMap.put( "filewriteline", "core" );
+		BIFMap.put( "find", "core" );
+		BIFMap.put( "findnocase", "core" );
+		BIFMap.put( "findoneof", "core" );
+		BIFMap.put( "firstdayofmonth", "core" );
+		BIFMap.put( "fix", "core" );
+		BIFMap.put( "floor", "core" );
+		BIFMap.put( "formatbasen", "core" );
+		BIFMap.put( "generateargon2hash", "bx-argon" );
+		BIFMap.put( "generatebcrypthash", "bx-bcrypt" );
 		BIFMap.put( "generatepbkdfkey", "" );
-		BIFMap.put( "generatescrypthash", "" );
-		BIFMap.put( "generatesecretkey", "" );
-		BIFMap.put( "getapplicationmetadata", "" );
+		BIFMap.put( "generatescrypthash", "bx-scrypt" );
+		BIFMap.put( "generatesecretkey", "core" );
+		BIFMap.put( "getapplicationmetadata", "core" );
 		BIFMap.put( "getapplicationsettings", "" );
 		BIFMap.put( "getauthuser", "" );
-		BIFMap.put( "getbasetagdata", "" );
-		BIFMap.put( "getbasetaglist", "" );
-		BIFMap.put( "getbasetemplatepath", "" );
+		BIFMap.put( "getbasetagdata", "core" );
+		BIFMap.put( "getbasetaglist", "core" );
+		BIFMap.put( "getbasetemplatepath", "core" );
 		BIFMap.put( "getbuiltinfunction", "" );
-		BIFMap.put( "getcanonicalpath", "" );
+		BIFMap.put( "getcanonicalpath", "core" );
 		BIFMap.put( "getclasspath", "" );
-		BIFMap.put( "getclientvariableslist", "" );
-		BIFMap.put( "getcomponentmetadata", "" );
+		BIFMap.put( "getclientvariableslist", "bx-compat" );
+		BIFMap.put( "getcomponentmetadata", "core" );
 		BIFMap.put( "getcontextroot", "" );
-		BIFMap.put( "getcpuusage", "" );
+		BIFMap.put( "getcpuusage", "core" );
 		BIFMap.put( "getcurrentcontext", "" );
-		BIFMap.put( "getcurrenttemplatepath", "" );
-		BIFMap.put( "getdirectoryfrompath", "" );
+		BIFMap.put( "getcurrenttemplatepath", "core" );
+		BIFMap.put( "getdirectoryfrompath", "core" );
 		BIFMap.put( "getencoding", "" );
 		BIFMap.put( "getexception", "" );
-		BIFMap.put( "getfilefrompath", "" );
-		BIFMap.put( "getfileinfo", "" );
-		BIFMap.put( "getfreespace", "" );
-		BIFMap.put( "getfunctioncalledname", "" );
+		BIFMap.put( "getfilefrompath", "core" );
+		BIFMap.put( "getfileinfo", "core" );
+		BIFMap.put( "getfreespace", "core" );
+		BIFMap.put( "getfunctioncalledname", "core" );
 		BIFMap.put( "getfunctiondata", "" );
 		BIFMap.put( "getfunctionkeywords", "" );
-		BIFMap.put( "getfunctionlist", "" );
+		BIFMap.put( "getfunctionlist", "core" );
 		BIFMap.put( "getgatewayhelper", "" );
 		BIFMap.put( "gethttprequestdata", "" );
 		BIFMap.put( "gethttptimestring", "" );
@@ -833,8 +833,10 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		BIFMap.put( "year", "" );
 		BIFMap.put( "yesnoformat", "" );
 
-		// Commented components have custom transformers and parser rules and don't use the generic component Box AST node.
-		// They are also all implemented. We can add custom checks in the vistor for their specific BoxNode AST nodes if we want to report on them as being
+		// Commented components have custom transformers and parser rules and don't use
+		// the generic component Box AST node.
+		// They are also all implemented. We can add custom checks in the vistor for
+		// their specific BoxNode AST nodes if we want to report on them as being
 		// used.
 		componentMap.put( "_socialplugin", "" );
 		componentMap.put( "abort", "" );
@@ -1022,13 +1024,13 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 				missing	= false;
 			}
 			featuresUsed.add(
-			    new FeatureUsed( name, FeatureType.BIF, module, missing, node.getPosition() )
-			);
+			    new FeatureUsed( name, FeatureType.BIF, module, missing, node.getPosition() ) );
 			String aggregateKey = name + FeatureType.BIF;
 			if ( aggregateFeaturesUsed.containsKey( aggregateKey ) ) {
 				aggregateFeaturesUsed.put( aggregateKey, aggregateFeaturesUsed.get( aggregateKey ).increment() );
 			} else {
-				aggregateFeaturesUsed.put( aggregateKey, new AggregateFeatureUsed( name, FeatureType.BIF, module, missing, 1 ) );
+				aggregateFeaturesUsed.put( aggregateKey,
+				    new AggregateFeatureUsed( name, FeatureType.BIF, module, missing, 1 ) );
 			}
 		}
 		super.visit( node );
@@ -1040,7 +1042,8 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 			String	module	= componentMap.get( name );
 			boolean	missing	= !componentService.hasComponent( name );
 			if ( !missing ) {
-				// If the component service has the component, but it's the dummy component, then it's actually missing.
+				// If the component service has the component, but it's the dummy component,
+				// then it's actually missing.
 				if ( componentService.getComponent( name ).componentClass.equals( DummyComponent.class ) ) {
 					missing = true;
 				}
@@ -1051,13 +1054,13 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 				missing	= false;
 			}
 			featuresUsed.add(
-			    new FeatureUsed( name, FeatureType.COMPONENT, module, missing, node.getPosition() )
-			);
+			    new FeatureUsed( name, FeatureType.COMPONENT, module, missing, node.getPosition() ) );
 			String aggregateKey = name + FeatureType.COMPONENT;
 			if ( aggregateFeaturesUsed.containsKey( aggregateKey ) ) {
 				aggregateFeaturesUsed.put( aggregateKey, aggregateFeaturesUsed.get( aggregateKey ).increment() );
 			} else {
-				aggregateFeaturesUsed.put( aggregateKey, new AggregateFeatureUsed( name, FeatureType.COMPONENT, module, missing, 1 ) );
+				aggregateFeaturesUsed.put( aggregateKey,
+				    new AggregateFeatureUsed( name, FeatureType.COMPONENT, module, missing, 1 ) );
 			}
 		}
 		super.visit( node );
@@ -1065,26 +1068,27 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 
 	/**
 	 * If a cfquery component has a dbType="query" attribute, it's a QoQ.
-	 * 
+	 *
 	 * @param node The BoxComponent node to check
-	 * 
+	 *
 	 * @return true if the component is a QoQ, false otherwise
 	 */
 	private boolean isQoQ( BoxComponent node ) {
 		if ( node.getName().equalsIgnoreCase( "query" ) ) {
 			return node.getAttributes().stream().filter(
-			    ( anno ) -> anno.getKey().getValue().equalsIgnoreCase( "dbtype" ) && anno.getValue() instanceof BoxStringLiteral str
-			        && str.getValue().equalsIgnoreCase( "query" )
-			).toList().size() > 0;
+			    ( anno ) -> anno.getKey().getValue().equalsIgnoreCase( "dbtype" )
+			        && anno.getValue() instanceof BoxStringLiteral str
+			        && str.getValue().equalsIgnoreCase( "query" ) )
+			    .toList().size() > 0;
 		}
 		return false;
 	}
 
 	/**
 	 * If a BoxFunctionInvocation call has a dbType="query" attribute, it's a QoQ.
-	 * 
+	 *
 	 * @param node The BoxFunctionInvocation node to check
-	 * 
+	 *
 	 * @return true if the BIF is a QoQ, false otherwise
 	 */
 	private boolean isQoQ( BoxFunctionInvocation node ) {
@@ -1109,13 +1113,15 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 			}
 			// We found options, so let's look at them
 			if ( options != null ) {
-				// loop through values, if we find an ODD NUMBERED value that is "dbtype", then see if there is a next value and if that next value is "query"
+				// loop through values, if we find an ODD NUMBERED value that is "dbtype", then
+				// see if there is a next value and if that next value is "query"
 				for ( int i = 0; i < options.getValues().size(); i += 2 ) {
 					var key = options.getValues().get( i );
 					if ( ( key instanceof BoxStringLiteral str && str.getValue().equalsIgnoreCase( "dbtype" ) )
 					    || ( key instanceof BoxIdentifier id && id.getName().equalsIgnoreCase( "dbtype" ) ) ) {
 						if ( i + 1 < options.getValues().size() ) {
-							if ( options.getValues().get( i + 1 ) instanceof BoxStringLiteral value && value.getValue().equalsIgnoreCase( "query" ) ) {
+							if ( options.getValues().get( i + 1 ) instanceof BoxStringLiteral value
+							    && value.getValue().equalsIgnoreCase( "query" ) ) {
 								return true;
 							}
 						}
@@ -1136,7 +1142,8 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		var	runtime				= BoxRuntime.getInstance();
 		var	componentService	= runtime.getComponentService();
 
-		// The script parser won't parse components it doesn't know about, so we need to seed dummies or the parsing will fail.
+		// The script parser won't parse components it doesn't know about, so we need to
+		// seed dummies or the parsing will fail.
 		componentMap.forEach( ( name, module ) -> {
 			if ( !componentService.hasComponent( name ) ) {
 				Key nameKey = Key.of( name );
@@ -1148,8 +1155,7 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 				        "",
 				        null,
 				        true,
-				        false
-				    ),
+				        false ),
 				    nameKey,
 				    true );
 			}
@@ -1176,7 +1182,8 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 	public record FeatureUsed( String name, FeatureType type, String module, boolean missing, Position position ) {
 
 		public String toString() {
-			return String.format( "%s%s (%s) - %s Source line: %s", ( missing ? "[MISSING] " : "" ), name, type, module, getLine() );
+			return String.format( "%s%s (%s) - %s Source line: %s", ( missing ? "[MISSING] " : "" ), name, type, module,
+			    getLine() );
 		}
 
 		public static String csvHeader() {
@@ -1203,7 +1210,8 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 	    implements Comparable<AggregateFeatureUsed> {
 
 		public String toString() {
-			return String.format( "%s%s (%s) - %s Count Used: %s", ( missing ? "[MISSING] " : "" ), name, type, module, count );
+			return String.format( "%s%s (%s) - %s Count Used: %s", ( missing ? "[MISSING] " : "" ), name, type, module,
+			    count );
 		}
 
 		// increment the count
@@ -1231,8 +1239,9 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 	}
 
 	/**
-	 * See constructor. This is used to stub out missing components so the parser doesn't fail.
-	 * 
+	 * See constructor. This is used to stub out missing components so the parser
+	 * doesn't fail.
+	 *
 	 */
 	private class DummyComponent extends Component {
 
