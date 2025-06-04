@@ -46,11 +46,11 @@ public class ExecutorNew extends BIF {
 	 * Available types are:
 	 * - "cached" - Creates a cached thread pool executor.
 	 * - "fixed" - Creates a fixed thread pool executor.
-	 * - "fork_join" - Creates a fork-join pool executor.
+	 * - "fork_join" - Creates a fork join pool executor.
 	 * - "scheduled" - Creates a scheduled thread pool executor.
 	 * - "single" - Creates a single thread executor.
 	 * - "virtual" - Creates a virtual thread executor.
-	 * - "work_stealing" - Creates a work-stealing thread pool executor.
+	 * - "work_stealing" - Creates a work stealing thread pool executor.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.

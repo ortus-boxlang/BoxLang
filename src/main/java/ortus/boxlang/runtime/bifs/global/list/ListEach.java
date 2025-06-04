@@ -38,19 +38,25 @@ public class ListEach extends ArrayEach {
 	public ListEach() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "string", Key.list ),
+		    new Argument( true, Argument.STRING, Key.list ),
 		    new Argument( true, "function:Consumer", Key.callback ),
-		    new Argument( false, "string", Key.delimiter, ListUtil.DEFAULT_DELIMITER ),
-		    new Argument( false, "boolean", Key.includeEmptyFields, false ),
-		    new Argument( false, "boolean", Key.multiCharacterDelimiter, true ),
-		    new Argument( false, "boolean", Key.parallel, false ),
-		    new Argument( false, "integer", Key.maxThreads ),
-		    new Argument( false, "boolean", Key.ordered, false )
+		    new Argument( false, Argument.STRING, Key.delimiter, ListUtil.DEFAULT_DELIMITER ),
+		    new Argument( false, Argument.BOOLEAN, Key.includeEmptyFields, false ),
+		    new Argument( false, Argument.BOOLEAN, Key.multiCharacterDelimiter, true ),
+		    new Argument( false, Argument.BOOLEAN, Key.parallel, false ),
+		    new Argument( false, Argument.INTEGER, Key.maxThreads ),
+		    new Argument( false, Argument.BOOLEAN, Key.ordered, false )
 		};
 	}
 
 	/**
 	 * Used to iterate over a delimited list and run the function closure for each item in the list.
+	 * This BIF is similar to the ArrayEach BIF, but operates on a delimited list instead of an array.
+	 * <p>
+	 * <h2>Parallel Execution</h2>
+	 * If the <code>parallel</code> argument is set to true, and no <code>max_threads</code> are sent, the filter will be executed in parallel using a ForkJoinPool with parallel streams.
+	 * If <code>max_threads</code> is specified, it will create a new ForkJoinPool with the specified number of threads to run the filter in parallel, and destroy it after the operation is complete.
+	 * Please note that this may not be the most efficient way to iterate, as it will create a new ForkJoinPool for each invocation of the BIF. You may want to consider using a shared ForkJoinPool for better performance.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
@@ -65,10 +71,10 @@ public class ListEach extends ArrayEach {
 	 *
 	 * @argument.multiCharacterDelimiter boolean whether the delimiter is multi-character
 	 *
+	 * @argument.parallel Whether to run the filter in parallel. Defaults to false. If true, the filter will be run in parallel using a ForkJoinPool.
 	 *
-	 * @argument.parallel Specifies whether the items can be executed in parallel
-	 *
-	 * @argument.maxThreads The maximum number of threads to use when parallel = true
+	 * @argument.maxThreads The maximum number of threads to use when running the filter in parallel. If not passed it will use the default number of threads for the ForkJoinPool.
+	 *                      If parallel is false, this argument is ignored.
 	 *
 	 * @argument.ordered (BoxLang only) whether parallel operations should execute and maintain order
 	 */

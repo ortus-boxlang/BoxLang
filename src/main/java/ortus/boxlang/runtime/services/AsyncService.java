@@ -184,7 +184,7 @@ public class AsyncService extends BaseService {
 	 * @return The executor record
 	 */
 	public ExecutorRecord newExecutor( String name, ExecutorType type ) {
-		return newExecutor( name, type, DEFAULT_MAX_THREADS, 0 );
+		return newExecutor( name, type, DEFAULT_MAX_THREADS );
 	}
 
 	/**
@@ -197,21 +197,7 @@ public class AsyncService extends BaseService {
 	 * @return The executor record
 	 */
 	public ExecutorRecord newExecutor( String name, ExecutorType type, int maxThreads ) {
-		return newExecutor( name, type, maxThreads, 0 );
-	}
-
-	/**
-	 * Create a new executor if it does not exist.
-	 *
-	 * @param name        The name of the executor
-	 * @param type        The executor type
-	 * @param maxThreads  The max threads, if applicable
-	 * @param parallelism The parallelism, if applicable
-	 *
-	 * @return The executor record
-	 */
-	public ExecutorRecord newExecutor( String name, ExecutorType type, int maxThreads, int parallelism ) {
-		this.executors.computeIfAbsent( name, key -> buildExecutor( name, type, maxThreads, parallelism ) );
+		this.executors.computeIfAbsent( name, key -> buildExecutor( name, type, maxThreads ) );
 		return this.executors.get( name );
 	}
 
@@ -479,18 +465,14 @@ public class AsyncService extends BaseService {
 	/**
 	 * Build an executor without registering it using BoxLang specs
 	 *
-	 * @param name        The name of the executor
-	 * @param type        The executor type: CACHED, FIXED, SINGLE, SCHEDULED, WORK_STEALING, VIRTUAL
-	 * @param maxThreads  The max threads, if applicable
-	 * @param parallelism The parallelism level, if applicable (for Work Stealing and Fork Join), send null for default or 0
+	 * @param name       The name of the executor
+	 * @param type       The executor type: CACHED, FIXED, SINGLE, SCHEDULED, WORK_STEALING, VIRTUAL
+	 * @param maxThreads The max threads, if applicable
 	 *
 	 * @return The executor
 	 */
-	public static ExecutorRecord buildExecutor( String name, ExecutorType type, Integer maxThreads, Integer parallelism ) {
+	public static ExecutorRecord buildExecutor( String name, ExecutorType type, Integer maxThreads ) {
 		ExecutorService executor = null;
-		if ( parallelism == null ) {
-			parallelism = 0; // Default to 0 if null
-		}
 		switch ( type ) {
 			case CACHED :
 				executor = Executors.newCachedThreadPool();
@@ -507,16 +489,16 @@ public class AsyncService extends BaseService {
 			case WORK_STEALING :
 				// Work Stealing Pool is available in Java 8 and later
 				// If parallelism is null or 0, then don't pass it, otherwise use it
-				if ( parallelism > 0 ) {
-					executor = Executors.newWorkStealingPool( parallelism );
+				if ( maxThreads > 0 ) {
+					executor = Executors.newWorkStealingPool( maxThreads );
 				} else {
 					executor = Executors.newWorkStealingPool();
 				}
 				break;
 			case FORK_JOIN :
 				// If parallelism is null or 0, then don't pass it, otherwise use it
-				if ( parallelism > 0 ) {
-					executor = new ForkJoinPool( parallelism );
+				if ( maxThreads > 0 ) {
+					executor = new ForkJoinPool( maxThreads );
 				} else {
 					executor = ForkJoinPool.commonPool();
 				}
@@ -527,7 +509,7 @@ public class AsyncService extends BaseService {
 			default :
 				executor = null;
 		}
-		return new ExecutorRecord( executor, name, type, maxThreads, parallelism );
+		return new ExecutorRecord( executor, name, type, maxThreads );
 	}
 
 }

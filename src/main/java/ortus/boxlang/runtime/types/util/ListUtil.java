@@ -510,31 +510,51 @@ public class ListUtil {
 	    Integer maxThreads,
 	    Boolean ordered ) {
 
-		IntConsumer exec;
+		IntConsumer consumer;
 		if ( callback.requiresStrictArguments() ) {
-			exec = idx -> callbackContext.invokeFunction( callback,
+			consumer = idx -> callbackContext.invokeFunction( callback,
 			    new Object[] { array.size() > idx ? array.get( idx ) : null } );
 		} else {
-			exec = idx -> callbackContext.invokeFunction( callback,
+			consumer = idx -> callbackContext.invokeFunction( callback,
 			    new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } );
 		}
 		IntStream intStream = array.intStream();
+
+		// Synchronous execution
 		if ( !parallel ) {
-			intStream.forEach( exec );
-		} else if ( ordered ) {
-			AsyncService.buildExecutor(
-			    "ArrayEach_" + UUID.randomUUID().toString(),
-			    AsyncService.ExecutorType.FORK_JOIN,
-			    maxThreads
-			).submitAndGet( () -> array.intStream().parallel().forEachOrdered( exec ) );
-		} else {
-			AsyncService.buildExecutor(
-			    "ArrayEach_" + UUID.randomUUID().toString(),
-			    AsyncService.ExecutorType.FORK_JOIN,
-			    maxThreads
-			).submitAndGet( () -> array.intStream().parallel().forEach( exec ) );
+			intStream.forEach( consumer );
+			return;
 		}
 
+		/**
+		 * ---- Parallel execution ----
+		 */
+
+		// If no maxThreads, then we just run in the fork-join pool with the number of available processors
+		if ( maxThreads == null || maxThreads < 1 ) {
+			IntStream target = array.intStream().parallel();
+			if ( ordered ) {
+				target.forEachOrdered( consumer );
+			} else {
+				target.forEach( consumer );
+			}
+			return;
+		}
+
+		// Else we create a new fork-join pool with the specified number of threads
+		// and run the stream in parallel
+		AsyncService.buildExecutor(
+		    "ArrayEach_" + UUID.randomUUID().toString(),
+		    AsyncService.ExecutorType.FORK_JOIN,
+		    maxThreads
+		).submitAndGet( () -> {
+			IntStream target = array.intStream().parallel();
+			if ( ordered ) {
+				target.forEachOrdered( consumer );
+			} else {
+				target.forEach( consumer );
+			}
+		} );
 	}
 
 	/**
