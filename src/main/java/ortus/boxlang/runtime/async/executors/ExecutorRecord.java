@@ -39,12 +39,18 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 /**
  * A record for an executor
  *
- * @param executor   The executor service
- * @param name       The name of the executor
- * @param type       The executor type
- * @param maxThreads The max threads, if applicable
+ * @param executor    The executor service
+ * @param name        The name of the executor
+ * @param type        The executor type
+ * @param maxThreads  The max threads, if applicable
+ * @param parallelism The parallelism, if applicable
  */
-public record ExecutorRecord( ExecutorService executor, String name, ExecutorType type, Integer maxThreads ) {
+public record ExecutorRecord(
+    ExecutorService executor,
+    String name,
+    ExecutorType type,
+    Integer maxThreads,
+    Integer parallelism ) {
 
 	/**
 	 * Get the executor service casted as a {@link BoxScheduledExecutor}
