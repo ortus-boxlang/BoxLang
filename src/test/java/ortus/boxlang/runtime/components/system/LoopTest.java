@@ -23,6 +23,7 @@ import static com.google.common.truth.Truth.assertThat;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
@@ -625,6 +626,39 @@ public class LoopTest {
 		    .isEqualTo(
 		        "[IT:(Developer:Alice!Bob!)(Manager:Carol!)]"
 		    );
+	}
+
+	@Test
+	@DisplayName( "It can handle multiple levels of grouping" )
+	public void testCfLoopMultipleGroupings() {
+		instance.executeSource(
+		    """
+		    <cfset myQry = queryNew("group1,group2,value", "string,string,integer", [
+		      {group1:"A", group2:"X", value: 10},
+		      {group1:"A", group2:"X", value: 20},
+		      {group1:"A", group2:"Y", value: 30},
+		      {group1:"B", group2:"Z", value: 40},
+		      {group1:"B", group2:"Z", value: 50}
+		    ])>
+		    <cfoutput>
+		      <cfloop query="myQry" group="group1">
+		         [#group1#:
+		            <cfloop group="group2">
+		               (#group2# : #value#)
+		            </cfloop>
+		         ]
+		      </cfloop>
+		    </cfoutput>
+		    <cfset result = getBoxContext().getBuffer().toString()>
+		    """,
+		    context, BoxSourceType.CFTEMPLATE
+		);
+
+		// The inner cfloop returns only the first row of each grouped subset.
+		// For group A, group "X" returns the first value 10 and group "Y" returns 30.
+		// For group B, group "Z" returns 40.
+		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) )
+		    .isEqualTo( "[A:(X:10)(Y:30)][B:(Z:40)]" );
 	}
 
 	@Test
