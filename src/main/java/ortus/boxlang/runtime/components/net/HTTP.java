@@ -76,6 +76,7 @@ import ortus.boxlang.runtime.util.EncryptionUtil;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 import ortus.boxlang.runtime.validation.Validator;
+import ortus.boxlang.runtime.util.ZipUtil;
 
 @BoxComponent( allowsBody = true )
 public class HTTP extends Component {
@@ -257,7 +258,8 @@ public class HTTP extends Component {
 			builder
 			    .version( httpVersion )
 			    .header( "User-Agent", attributes.getAsString( Key.userAgent ) )
-			    .header( "Accept", "*/*" );
+			    .header( "Accept", "*/*" )
+			    .header( "Accept-Encoding", "gzip, deflate" );
 			HTTPResult.put( Key.requestID, requestID );
 			HTTPResult.put( Key.userAgent, attributes.getAsString( Key.userAgent ) );
 
@@ -421,22 +423,38 @@ public class HTTP extends Component {
 			HttpHeaders	httpHeaders		= Optional.ofNullable( response.headers() )
 			    .orElse( HttpHeaders.of( Map.of(), ( a, b ) -> true ) );
 			IStruct		headers			= transformToResponseHeaderStruct( httpHeaders.map() );
+			byte[]		responseBytes	= response.body();
 			Object		responseBody	= null;
 
 			// Process body if not null
-			if ( response.body() != null ) {
-				String	contentType			= headers.getAsString( Key.of( "content-type" ) );
+			if ( responseBytes != null ) {
+				String	contentType		= headers.getAsString( Key.of( "content-type" ) );
+				String	contentEncoding	= headers.getAsString( Key.of( "content-encoding" ) );
+
+				if (contentEncoding != null) {
+					// Split the Content-Encoding header into individual encodings
+					String[] encodings = contentEncoding.split(",");
+					for (String encoding : encodings) {
+						encoding = encoding.trim().toLowerCase();
+						if (encoding.equals("gzip")) {
+							responseBytes = ZipUtil.extractGZipContent(responseBytes);
+						} else if (encoding.equals("deflate")) {
+							responseBytes = ZipUtil.inflateDeflatedContent(responseBytes);
+						}
+					}
+				}
+
 				Boolean	isBinaryContentType	= FileSystemUtil.isBinaryMimeType( contentType );
 				String	charset				= null;
 				if ( ( isBinaryRequested || isBinaryContentType ) && !isBinaryNever ) {
-					responseBody = response.body();
+					responseBody = responseBytes;
 				} else if ( isBinaryNever && isBinaryContentType ) {
 					throw new BoxRuntimeException( "The response is a binary type, but the getAsBinary attribute was set to 'never'" );
 				} else {
 					charset			= contentType != null && contentType.contains( "charset=" )
 					    ? extractCharset( contentType )
 					    : "UTF-8";
-					responseBody	= new String( response.body(), Charset.forName( charset ) );
+					responseBody	= new String( responseBytes, Charset.forName( charset ) );
 				}
 				if ( outputDirectory != null ) {
 					String fileName = attributes.getAsString( Key.file );
@@ -461,8 +479,8 @@ public class HTTP extends Component {
 
 					if ( responseBody instanceof String responseString ) {
 						FileSystemUtil.write( destinationPath, responseString, charset, true );
-					} else if ( responseBody instanceof byte[] responseBytes ) {
-						FileSystemUtil.write( destinationPath, responseBytes, true );
+					} else if ( responseBody instanceof byte[] bodyBytes ) {
+						FileSystemUtil.write( destinationPath, bodyBytes, true );
 					}
 					return DEFAULT_RETURN;
 

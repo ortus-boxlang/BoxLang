@@ -18,6 +18,9 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ByteArrayInputStream;
+import java.util.zip.InflaterInputStream;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -532,6 +535,52 @@ public class ZipUtil {
 			}
 		} catch ( IOException e ) {
 			throw new BoxRuntimeException( "Error extracting GZIP file: [" + source + "] to destination: [" + destination + "]", e );
+		}
+	}
+
+	/**
+	 * Extracts the content of a GZIP compressed byte array and returns the decompressed byte array.
+	 *
+	 * @param content The GZIP compressed byte array
+	 * 
+	 * @return The decompressed byte array
+	 * 
+	 * @throws BoxRuntimeException If an error occurs during decompression
+	 */
+	public static byte[] extractGZipContent( byte[] content ) {
+		try ( GZIPInputStream gzipInputStream = new GZIPInputStream( new ByteArrayInputStream( content ) );
+		    ByteArrayOutputStream outputStream = new ByteArrayOutputStream() ) {
+			byte[]	buffer	= new byte[ 1024 ];
+			int		len;
+			while ( ( len = gzipInputStream.read( buffer ) ) > 0 ) {
+				outputStream.write( buffer, 0, len );
+			}
+			return outputStream.toByteArray();
+		} catch ( IOException e ) {
+			throw new BoxRuntimeException( "Error extracting GZIP content", e );
+		}
+	}
+
+	/**
+	 * Extracts the content of a Deflated compressed byte array and returns the decompressed byte array.
+	 *
+	 * @param content The Deflated compressed byte array
+	 * 
+	 * @return The decompressed byte array
+	 * 
+	 * @throws BoxRuntimeException If an error occurs during decompression
+	 */
+	public static byte[] inflateDeflatedContent( byte[] content ) {
+		try ( InflaterInputStream inflaterInputStream = new InflaterInputStream( new ByteArrayInputStream( content ) );
+		    ByteArrayOutputStream outputStream = new ByteArrayOutputStream() ) {
+			byte[]	buffer	= new byte[ 1024 ];
+			int		len;
+			while ( ( len = inflaterInputStream.read( buffer ) ) > 0 ) {
+				outputStream.write( buffer, 0, len );
+			}
+			return outputStream.toByteArray();
+		} catch ( IOException e ) {
+			throw new BoxRuntimeException( "Error extracting deflated content", e );
 		}
 	}
 
