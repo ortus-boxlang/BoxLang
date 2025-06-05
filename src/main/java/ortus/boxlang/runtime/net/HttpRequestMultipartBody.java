@@ -21,12 +21,14 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
-import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
+
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 
 public class HttpRequestMultipartBody {
 
@@ -57,7 +59,9 @@ public class HttpRequestMultipartBody {
 
 	public static class Builder {
 
-		private final String DEFAULT_MIMETYPE = "text/plain";
+		private final String	DEFAULT_MIMETYPE	= "text/plain";
+		private final String	CRLF				= "\r\n";
+		private final String	BOUNDARY_PREFIX		= "--";
 
 		public static class MultiPartRecord {
 
@@ -134,39 +138,55 @@ public class HttpRequestMultipartBody {
 		}
 
 		public HttpRequestMultipartBody build() throws IOException {
-			String					boundary	= new BigInteger( 256, new SecureRandom() ).toString();
+			String					boundary	= generateBoundary();
 			ByteArrayOutputStream	out			= new ByteArrayOutputStream();
+			PrintWriter				writer		= new PrintWriter( new OutputStreamWriter( out, StandardCharsets.UTF_8 ), true );
 			for ( MultiPartRecord record : parts ) {
-				StringBuilder stringBuilder = new StringBuilder();
-				stringBuilder.append( "--" + boundary + "\r\n" + "Content-Disposition: form-data; name=\"" + record.getFieldName() );
+				writer.append( BOUNDARY_PREFIX + boundary ).append( CRLF );
+
+				writer.append( "Content-Disposition: form-data; name=\"" + record.getFieldName() );
 				if ( record.getFilename() != null ) {
-					stringBuilder.append( "\"; filename=\"" + record.getFilename() );
+					writer.append( "\"; filename=\"" + record.getFilename() );
 				}
-				out.write( stringBuilder.toString().getBytes( StandardCharsets.UTF_8 ) );
-				out.write( ( "\"\r\n" ).getBytes( StandardCharsets.UTF_8 ) );
+				writer.append( "\"" ).append( CRLF ).flush();
+
 				Object content = record.getContent();
-				if ( content instanceof String ) {
-					out.write( ( "\r\n" ).getBytes( StandardCharsets.UTF_8 ) );
-					out.write( ( ( String ) content ).getBytes( StandardCharsets.UTF_8 ) );
-				} else if ( content instanceof byte[] ) {
-					out.write( ( "Content-Type: " + record.getContentType() + "\r\n\r\n" ).getBytes( StandardCharsets.UTF_8 ) );
-					out.write( ( byte[] ) content );
-				} else if ( content instanceof File ) {
-					out.write( ( "Content-Type: " + record.getContentType() + "\r\n\r\n" ).getBytes( StandardCharsets.UTF_8 ) );
-					Files.copy( ( ( File ) content ).toPath(), out );
+				if ( content instanceof String castString ) {
+					writer.append( "Content-Type: text/plain; charset=" + StandardCharsets.UTF_8 ).append( CRLF );
+					writer.append( CRLF ).append( castString ).append( CRLF ).flush();
+				} else if ( content instanceof byte[] castBytes ) {
+					writer.append( "Content-Type: " + record.getContentType() ).append( CRLF );
+					writer.append( "Content-Transfer-Encoding: binary" ).append( CRLF );
+					writer.append( CRLF ).flush();
+					out.write( castBytes );
+				} else if ( content instanceof File castFile ) {
+					writer.append( "Content-Type: " + record.getContentType() ).append( CRLF );
+					writer.append( "Content-Transfer-Encoding: binary" ).append( CRLF );
+					writer.append( CRLF ).flush();
+					Files.copy( castFile.toPath(), out );
 				} else {
-					out.write( ( "Content-Type: " + record.getContentType() + "\r\n\r\n" ).getBytes( StandardCharsets.UTF_8 ) );
+					writer.append( "Content-Type: " + record.getContentType() ).append( CRLF );
+					writer.append( "Content-Transfer-Encoding: binary" ).append( CRLF );
+					writer.append( CRLF ).flush();
 					ObjectOutputStream objectOutputStream = new ObjectOutputStream( out );
 					objectOutputStream.writeObject( content );
 					objectOutputStream.flush();
 				}
-				out.write( "\r\n".getBytes( StandardCharsets.UTF_8 ) );
+				out.flush(); // Important before continuing with writer!
+				writer.append( CRLF ).flush(); // CRLF is important! It indicates end of boundary.
 			}
-			out.write( ( "--" + boundary + "--\r\n" ).getBytes( StandardCharsets.UTF_8 ) );
+			// End of multipart/form-data.
+			writer.append( BOUNDARY_PREFIX + boundary + BOUNDARY_PREFIX ).append( CRLF ).flush();
 
 			HttpRequestMultipartBody httpRequestMultipartBody = new HttpRequestMultipartBody( out.toByteArray(), boundary );
 			return httpRequestMultipartBody;
 		}
 
+		private String generateBoundary() {
+			String uuid = UUID.randomUUID().toString();
+			return uuid.replaceAll( "-", "" ).toLowerCase();
+		}
+
 	}
+
 }
