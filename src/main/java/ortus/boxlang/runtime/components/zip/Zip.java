@@ -95,14 +95,16 @@ public class Zip extends Component {
 		    new Attribute( Key.source, "string", Set.of( Validator.NON_EMPTY ) ),
 		    // Variable: The name of the variable to store the read content in
 		    // Actions that require this attribute: read, readBinary
-		    new Attribute( Key.variable, "string", Set.of( Validator.NON_EMPTY ) )
+		    new Attribute( Key.variable, "string", Set.of( Validator.NON_EMPTY ) ),
+		    // Compression Level: The compression level to use for the compression.
+		    new Attribute( Key.compressionLevel, "integer", ZipUtil.DEFAULT_COMPRESSION_LEVEL, Set.of( Validator.min( 0 ), Validator.max( 9 ) ) )
 		};
 	}
 
 	/**
 	 * The BoxLang Zip component is a powerful component that allows you to interact with zip/gzip files.
 	 * You can compress/uncompress files, list the contents of a zip file, read the contents of a file inside a zip file (text or binary),
-	 * and delete files from a zip file.
+	 * and delete files from a zip file. The default compression format is zip, but you can also use gzip.
 	 * <p>
 	 * <h2>Actions</h2>
 	 * The Zip component has the following actions:
@@ -157,6 +159,8 @@ public class Zip extends Component {
 	 * <li><strong>flatList</strong>: If false, the {@code list} action will return an array of structs with all kinds of information about the entries. If true, it will return a flat list of strings with the path of the entries. Default is false.
 	 * Actions: {@code list}</li>
 	 * <li><strong>source</strong>: The absolute path to the source directory to be zipped. Actions: {@code zip}</li>
+	 * <li><strong>compressionLevel</strong>: The compression level to use for the compression. Default is 6, which is a good balance between speed and compression ratio. Valid range is from 0 (no compression) to 9 (maximum compression). Actions:
+	 * {@code zip}</li>
 	 * </ul>
 	 *
 	 * <h2>Delete Action</h2>
@@ -575,10 +579,11 @@ public class Zip extends Component {
 		}
 
 		// Optional attributes: filter, overwrite, prefix, recurse
-		Object	filter		= attributes.get( Key.filter );
-		boolean	overwrite	= Boolean.TRUE.equals( attributes.get( Key.overwrite ) );
-		boolean	recurse		= Boolean.TRUE.equals( attributes.get( Key.recurse ) );
-		Object	prefix		= attributes.get( Key.prefix );
+		Object	filter				= attributes.get( Key.filter );
+		boolean	overwrite			= Boolean.TRUE.equals( attributes.get( Key.overwrite ) );
+		boolean	recurse				= Boolean.TRUE.equals( attributes.get( Key.recurse ) );
+		Object	prefix				= attributes.get( Key.prefix );
+		Integer	compressionLevel	= attributes.getAsInteger( Key.compressionLevel );
 
 		// Kawabunga!
 		ZipUtil.compressZip(
@@ -589,6 +594,7 @@ public class Zip extends Component {
 		    prefix != null ? StringCaster.cast( prefix ) : null,
 		    filter,
 		    recurse,
+		    compressionLevel,
 		    context
 		);
 	}

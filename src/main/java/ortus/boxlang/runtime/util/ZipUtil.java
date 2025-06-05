@@ -18,18 +18,14 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.file.FileSystems;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.ArrayList;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
+import java.util.zip.Deflater;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 import java.util.zip.ZipEntry;
@@ -49,7 +45,6 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.BLCollector;
-import ortus.boxlang.runtime.types.util.ListUtil;
 
 /**
  * This class provides zip utilities for the BoxLang runtime
@@ -63,9 +58,14 @@ public class ZipUtil {
 	}
 
 	/**
-	 * Logger
+	 * Runtime Logger
 	 */
-	private static final BoxLangLogger logger = BoxRuntime.getInstance().getLoggingService().getRuntimeLogger();
+	private static final BoxLangLogger	logger						= BoxRuntime.getInstance().getLoggingService().getRuntimeLogger();
+
+	/**
+	 * Default compression level
+	 */
+	public static final int				DEFAULT_COMPRESSION_LEVEL	= Deflater.BEST_COMPRESSION;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -83,7 +83,11 @@ public class ZipUtil {
 	 * @param overwrite         Whether to overwrite the destination file if it already exists, default is false
 	 * @param prefix            String added as a prefix to the final archive. The string is the name of a subdirectory in which the entries are added to exclusively. Only works for zip archiving.
 	 * @param filter            A regex or BoxLang function or Java Predicate to apply as a filter to the extraction
+	 * @param recurse           Whether to recurse into subdirectories, default is true
+	 * @param compressionLevel  The compression level to use for the compression. Default is 6, which is a good balance between speed and compression ratio.
 	 * @param context           The BoxLang context
+	 *
+	 * @throws BoxRuntimeException If the compression level is invalid or if the destination file already exists and overwrite is false.
 	 */
 	public static String compress(
 	    COMPRESSION_FORMAT format,
@@ -94,12 +98,23 @@ public class ZipUtil {
 	    String prefix,
 	    Object filter,
 	    Boolean recurse,
+	    Integer compressionLevel,
 	    IBoxContext context ) {
+
+		// Set default compression level if not provided
+		int zipCompressionLevel = ( compressionLevel != null ) ? compressionLevel : DEFAULT_COMPRESSION_LEVEL;
+
+		// Validate compression level range
+		if ( zipCompressionLevel < Deflater.NO_COMPRESSION || zipCompressionLevel > Deflater.BEST_COMPRESSION ) {
+			throw new BoxRuntimeException( "Invalid compression level: [" + zipCompressionLevel + "]. Must be between " +
+			    Deflater.NO_COMPRESSION + " (no compression) and " + Deflater.BEST_COMPRESSION + " (maximum compression)" );
+		}
+
 		switch ( format ) {
 			case ZIP :
-				return compressZip( source, destination, includeBaseFolder, overwrite, prefix, filter, recurse, context );
+				return compressZip( source, destination, includeBaseFolder, overwrite, prefix, filter, recurse, zipCompressionLevel, context );
 			case GZIP :
-				return compressGzip( source, destination, includeBaseFolder, overwrite );
+				return compressGzip( source, destination, includeBaseFolder, overwrite, zipCompressionLevel );
 			default :
 				throw new BoxRuntimeException( "Unsupported compression format: [" + format + "]" );
 		}
@@ -115,7 +130,10 @@ public class ZipUtil {
 	 * @param prefix            String added as a prefix to the final archive. The string is the name of a subdirectory in which the entries are added to exclusively. Only works for zip archiving.
 	 * @param filter            A regex or BoxLang function or Java Predicate to apply as a filter to the extraction
 	 * @param recurse           Whether to recurse into subdirectories, default is true
+	 * @param compressionLevel  The compression level to use for the compression. Default is 6, which is a good balance between speed and compression ratio.
 	 * @param context           The BoxLang context
+	 *
+	 * @throws BoxRuntimeException If the compression level is invalid or if the destination file already exists and overwrite is false.
 	 *
 	 * @return The absolute path of the compressed file
 	 */
@@ -127,6 +145,7 @@ public class ZipUtil {
 	    String prefix,
 	    Object filter,
 	    Boolean recurse,
+	    Integer compressionLevel,  // New parameter
 	    IBoxContext context ) {
 
 		// Prepare the source and destination paths
@@ -140,6 +159,10 @@ public class ZipUtil {
 
 		// Compress the source to the destination
 		try ( java.util.zip.ZipOutputStream zipOutputStream = new java.util.zip.ZipOutputStream( new java.io.FileOutputStream( destinationFile.toFile() ) ) ) {
+
+			// Set the compression level on the ZipOutputStream
+			zipOutputStream.setLevel( compressionLevel );
+
 			// Calculate the path prefix
 			String pathPrefix = prefix != null && !prefix.isEmpty() ? prefix + "/" : "";
 
@@ -229,10 +252,11 @@ public class ZipUtil {
 	 * @param destination       The absolute destination of the compressed file, we will add the extension based on the format
 	 * @param includeBaseFolder Whether to include the base folder in the compressed file
 	 * @param overwrite         Whether to overwrite the destination file if it already exists, default is false
+	 * @param compressionLevel  The compression level to use for the compression. Default is 6, which is a good balance between speed and compression ratio.
 	 *
 	 * @return The absolute path of the compressed file
 	 */
-	public static String compressGzip( String source, String destination, Boolean includeBaseFolder, Boolean overwrite ) {
+	public static String compressGzip( String source, String destination, Boolean includeBaseFolder, Boolean overwrite, Integer compressionLevel ) {
 		final Path	sourceFile		= ensurePath( source ).normalize();
 		final Path	destinationFile	= toPathWithExtension( destination, ".gz" );
 
@@ -242,10 +266,14 @@ public class ZipUtil {
 		}
 
 		// Compress the source to the destination
-		try ( GZIPOutputStream gzipOutputStream = new GZIPOutputStream( Files.newOutputStream( destinationFile ) ) ) {
+		try ( GZIPOutputStream gzipOutputStream = new GZIPOutputStream( Files.newOutputStream( destinationFile ) ) {
+
+			{
+				def.setLevel( compressionLevel );
+			}
+		} ) {
 			// Is the source a directory?
 			if ( Files.isDirectory( sourceFile ) ) {
-				Path basePath = ( includeBaseFolder ? sourceFile.getParent() : sourceFile ).normalize();
 				Files.walkFileTree( sourceFile, new SimpleFileVisitor<>() {
 
 					@Override
