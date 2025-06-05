@@ -65,11 +65,11 @@ public class ZipUtil {
 	/**
 	 * Default compression level
 	 */
-	public static final int				DEFAULT_COMPRESSION_LEVEL	= Deflater.BEST_COMPRESSION;
+	public static final int				DEFAULT_COMPRESSION_LEVEL	= 6;
 
 	/**
 	 * --------------------------------------------------------------------------
-	 * Comrpession Methods
+	 * Compression Methods
 	 * --------------------------------------------------------------------------
 	 */
 
