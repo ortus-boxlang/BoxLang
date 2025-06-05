@@ -157,8 +157,8 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		BIFMap.put( "callstackget", "core" );
 		BIFMap.put( "canonicalize", "bx-esapi" );
 		BIFMap.put( "ceiling", "core" );
-		BIFMap.put( "usion_decrypt", "" );
-		BIFMap.put( "usion_encrypt", "" );
+		BIFMap.put( "cfusion_decrypt", "" );
+		BIFMap.put( "cfusion_encrypt", "" );
 		BIFMap.put( "charsetdecode", "core" );
 		BIFMap.put( "charsetencode", "core" );
 		BIFMap.put( "chr | char", "core" );
@@ -296,7 +296,7 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		BIFMap.put( "formatbasen", "core" );
 		BIFMap.put( "generateargon2hash", "bx-argon" );
 		BIFMap.put( "generatebcrypthash", "bx-bcrypt" );
-		BIFMap.put( "generatepbkdfkey", "" );
+		BIFMap.put( "generatepbkdfkey", "core" );
 		BIFMap.put( "generatescrypthash", "bx-scrypt" );
 		BIFMap.put( "generatesecretkey", "core" );
 		BIFMap.put( "getapplicationmetadata", "core" );
@@ -310,7 +310,7 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		BIFMap.put( "getclasspath", "" );
 		BIFMap.put( "getclientvariableslist", "bx-compat" );
 		BIFMap.put( "getcomponentmetadata", "core" );
-		BIFMap.put( "getcontextroot", "" );
+		BIFMap.put( "getcontextroot", "core" );
 		BIFMap.put( "getcpuusage", "core" );
 		BIFMap.put( "getcurrentcontext", "" );
 		BIFMap.put( "getcurrenttemplatepath", "core" );
@@ -496,9 +496,9 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		BIFMap.put( "isxmlelem", "core" );
 		BIFMap.put( "isxmlnode", "core" );
 		BIFMap.put( "isxmlroot", "core" );
-		BIFMap.put( "iszipfile", "" );
+		BIFMap.put( "iszipfile", "core" );
 		BIFMap.put( "javacast", "core" );
-		BIFMap.put( "jsstringformat", "" );
+		BIFMap.put( "jsstringformat", "core" );
 		BIFMap.put( "lcase", "core" );
 		BIFMap.put( "left", "core" );
 		BIFMap.put( "len", "core" );
@@ -885,7 +885,7 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		componentMap.put( "file", "core" );
 		componentMap.put( "fileupload", "" );
 		// componentMap.put( "finally", "core" );
-		componentMap.put( "flush", "" );
+		componentMap.put( "flush", "core" );
 		componentMap.put( "form", "" );
 		componentMap.put( "formgroup", "" );
 		componentMap.put( "formitem", "" );
@@ -911,7 +911,7 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		componentMap.put( "include", "core" );
 		componentMap.put( "index", "" );
 		componentMap.put( "input", "" );
-		componentMap.put( "insert", "" );
+		componentMap.put( "insert", "core" );
 		// componentMap.put( "interface", "core" );
 		componentMap.put( "invoke", "core" );
 		componentMap.put( "invokeargument", "core" );
@@ -952,7 +952,7 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		componentMap.put( "presentation", "" );
 		componentMap.put( "presentationslide", "" );
 		componentMap.put( "presenter", "" );
-		componentMap.put( "print", "" );
+		componentMap.put( "print", "core" );
 		componentMap.put( "processingdirective", "core" );
 		componentMap.put( "procparam", "core" );
 		componentMap.put( "procresult", "core" );
@@ -997,7 +997,7 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		componentMap.put( "treeitem", "" );
 		// componentMap.put( "try", "core" );
 		componentMap.put( "update", "" );
-		componentMap.put( "wddx", "core" );
+		componentMap.put( "wddx", "bx-wddx" );
 		componentMap.put( "websocket", "" );
 		// componentMap.put( "while", "core");
 		componentMap.put( "window", "" );
