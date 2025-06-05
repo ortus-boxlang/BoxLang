@@ -580,7 +580,7 @@ public class ZipUtil {
 			}
 			return outputStream.toByteArray();
 		} catch ( IOException e ) {
-			throw new BoxRuntimeException( "Error extracting GZIP content", e );
+			throw new BoxRuntimeException( "Error extracting deflated content", e );
 		}
 	}
 
