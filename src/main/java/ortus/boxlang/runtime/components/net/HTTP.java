@@ -431,10 +431,17 @@ public class HTTP extends Component {
 				String	contentType		= headers.getAsString( Key.of( "content-type" ) );
 				String	contentEncoding	= headers.getAsString( Key.of( "content-encoding" ) );
 
-				if ( contentEncoding != null && contentEncoding.equalsIgnoreCase( "gzip" ) ) {
-					responseBytes = ZipUtil.extractGZipContent( responseBytes );
-				} else if ( contentEncoding != null && contentEncoding.equalsIgnoreCase( "deflate" ) ) {
-					responseBytes = ZipUtil.inflateDeflatedContent( responseBytes );
+				if (contentEncoding != null) {
+					// Split the Content-Encoding header into individual encodings
+					String[] encodings = contentEncoding.split(",");
+					for (String encoding : encodings) {
+						encoding = encoding.trim().toLowerCase();
+						if (encoding.equals("gzip")) {
+							responseBytes = ZipUtil.extractGZipContent(responseBytes);
+						} else if (encoding.equals("deflate")) {
+							responseBytes = ZipUtil.inflateDeflatedContent(responseBytes);
+						}
+					}
 				}
 
 				Boolean	isBinaryContentType	= FileSystemUtil.isBinaryMimeType( contentType );
