@@ -304,18 +304,6 @@ task libsToDistro( type: Copy ) {
 	destinationDir = file( "build/distributions" )
 
 	doLast {
-		file( "build/evergreen" ).mkdirs()
-
-		if( branch == 'development' ){
-			Files.copy( file( "build/distributions/boxlang-${version}.zip" ).toPath(), file( "build/evergreen/boxlang-snapshot.zip" ).toPath(), StandardCopyOption.REPLACE_EXISTING )
-			Files.copy( file( "build/distributions/boxlang-${version}.jar" ).toPath(), file( "build/evergreen/boxlang-snapshot.jar" ).toPath(), StandardCopyOption.REPLACE_EXISTING )
-			Files.copy( file( "build/resources/main/META-INF/boxlang/version.properties" ).toPath(), file( "build/evergreen/version-snapshot.properties" ).toPath(), StandardCopyOption.REPLACE_EXISTING )
-	   } else {
-			Files.copy( file( "build/distributions/boxlang-${version}.zip" ).toPath(), file( "build/evergreen/boxlang-latest.zip" ).toPath(), StandardCopyOption.REPLACE_EXISTING )
-			Files.copy( file( "build/distributions/boxlang-${version}.jar" ).toPath(), file( "build/evergreen/boxlang-latest.jar" ).toPath(), StandardCopyOption.REPLACE_EXISTING )
-			Files.copy( file( "build/resources/main/META-INF/boxlang/version.properties" ).toPath(), file( "build/evergreen/version-latest.properties" ).toPath(), StandardCopyOption.REPLACE_EXISTING )
-	   }
-
 		// Generate checksums for all zip and jar files in distributions folder
 		file( "build/distributions" ).listFiles().each { file ->
 			if ( file.name.endsWith( '.zip' ) || file.name.endsWith( '.jar' ) ) {
@@ -323,6 +311,29 @@ task libsToDistro( type: Copy ) {
 				generateChecksum( file, 'MD5' )
 			}
 		}
+
+		// Move the distribution files to the evergreen folder
+		file( "build/evergreen" ).mkdirs()
+
+		if( branch == 'development' ){
+			Files.copy( file( "build/distributions/boxlang-${version}.zip" ).toPath(), file( "build/evergreen/boxlang-snapshot.zip" ).toPath(), StandardCopyOption.REPLACE_EXISTING )
+			Files.copy( file( "build/distributions/boxlang-${version}.jar" ).toPath(), file( "build/evergreen/boxlang-snapshot.jar" ).toPath(), StandardCopyOption.REPLACE_EXISTING )
+			Files.copy( file( "build/resources/main/META-INF/boxlang/version.properties" ).toPath(), file( "build/evergreen/version-snapshot.properties" ).toPath(), StandardCopyOption.REPLACE_EXISTING )
+			// Copy checksums
+			Files.copy( file( "build/distributions/boxlang-${version}.zip.sha-256" ).toPath(), file( "build/evergreen/boxlang-snapshot.zip.sha-256" ).toPath(), StandardCopyOption.REPLACE_EXISTING )
+			Files.copy( file( "build/distributions/boxlang-${version}.zip.md5" ).toPath(), file( "build/evergreen/boxlang-snapshot.zip.md5" ).toPath(), StandardCopyOption.REPLACE_EXISTING )
+			Files.copy( file( "build/distributions/boxlang-${version}.jar.sha-256" ).toPath(), file( "build/evergreen/boxlang-snapshot.jar.sha-256" ).toPath(), StandardCopyOption.REPLACE_EXISTING )
+			Files.copy( file( "build/distributions/boxlang-${version}.jar.md5" ).toPath(), file( "build/evergreen/boxlang-snapshot.jar.md5" ).toPath(), StandardCopyOption.REPLACE_EXISTING )
+	   } else {
+			Files.copy( file( "build/distributions/boxlang-${version}.zip" ).toPath(), file( "build/evergreen/boxlang-latest.zip" ).toPath(), StandardCopyOption.REPLACE_EXISTING )
+			Files.copy( file( "build/distributions/boxlang-${version}.jar" ).toPath(), file( "build/evergreen/boxlang-latest.jar" ).toPath(), StandardCopyOption.REPLACE_EXISTING )
+			Files.copy( file( "build/resources/main/META-INF/boxlang/version.properties" ).toPath(), file( "build/evergreen/version-latest.properties" ).toPath(), StandardCopyOption.REPLACE_EXISTING )
+			// Copy checksums
+			Files.copy( file( "build/distributions/boxlang-${version}.zip.sha-256" ).toPath(), file( "build/evergreen/boxlang-latest.zip.sha-256" ).toPath(), StandardCopyOption.REPLACE_EXISTING )
+			Files.copy( file( "build/distributions/boxlang-${version}.zip.md5" ).toPath(), file( "build/evergreen/boxlang-latest.zip.md5" ).toPath(), StandardCopyOption.REPLACE_EXISTING )
+			Files.copy( file( "build/distributions/boxlang-${version}.jar.sha-256" ).toPath(), file( "build/evergreen/boxlang-latest.jar.sha-256" ).toPath(), StandardCopyOption.REPLACE_EXISTING )
+			Files.copy( file( "build/distributions/boxlang-${version}.jar.md5" ).toPath(), file( "build/evergreen/boxlang-latest.jar.md5" ).toPath(), StandardCopyOption.REPLACE_EXISTING )
+	   }
 
 		println "+ Libs have been moved to the distribution and evergreen folders"
 		println "+ Checksums generated for all zip and jar files"
