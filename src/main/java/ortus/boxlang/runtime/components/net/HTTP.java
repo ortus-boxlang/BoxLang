@@ -257,8 +257,7 @@ public class HTTP extends Component {
 			builder
 			    .version( httpVersion )
 			    .header( "User-Agent", attributes.getAsString( Key.userAgent ) )
-			    .header( "Accept", "*/*" )
-			    .header( "Accept-Encoding", "gzip, deflate, br" );
+			    .header( "Accept", "*/*" );
 			HTTPResult.put( Key.requestID, requestID );
 			HTTPResult.put( Key.userAgent, attributes.getAsString( Key.userAgent ) );
 
