@@ -97,7 +97,7 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		BIFMap.put( "arraypop", "core" );
 		BIFMap.put( "arrayprepend", "core" );
 		BIFMap.put( "arraypush", "core" );
-		BIFMap.put( "arrayrange", "" );
+		BIFMap.put( "arrayrange", "core" );
 		BIFMap.put( "arrayreduce", "core" );
 		BIFMap.put( "arrayreduceright", "core" );
 		BIFMap.put( "arrayresize", "core" );
@@ -213,7 +213,7 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		BIFMap.put( "decimalformat", "core" );
 		BIFMap.put( "decodeforhtml", "bx-esapi" );
 		BIFMap.put( "decodefromurl", "bx-esapi" );
-		BIFMap.put( "decrementvalue", "" );
+		BIFMap.put( "decrementvalue", "core" );
 		BIFMap.put( "decrypt", "core" );
 		BIFMap.put( "decryptbinary", "core" );
 		BIFMap.put( "deleteclientvariable", "bx-compat" );
@@ -374,7 +374,7 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		BIFMap.put( "htmlcodeformat", "" );
 		BIFMap.put( "htmleditformat", "bx-compat" );
 		BIFMap.put( "htmlparse", "" );
-		BIFMap.put( "iif", "" );
+		BIFMap.put( "iif", "core" );
 		BIFMap.put( "imageaddborder", "" );
 		BIFMap.put( "imageblur", "" );
 		BIFMap.put( "imagecaptcha", "" );
@@ -459,7 +459,7 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		BIFMap.put( "isfileobject", "core" );
 		BIFMap.put( "isimage", "bx-image" );
 		BIFMap.put( "isimagefile", "bx-image" );
-		BIFMap.put( "isinstanceof", "" );
+		BIFMap.put( "isinstanceof", "core" );
 		BIFMap.put( "isipinrange", "" );
 		BIFMap.put( "isipv6", "core" );
 		BIFMap.put( "isjson", "core" );
@@ -569,7 +569,7 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		BIFMap.put( "newline", "" );
 		BIFMap.put( "now", "core" );
 		BIFMap.put( "nowserver", "" );
-		BIFMap.put( "nullvalue", "" );
+		BIFMap.put( "nullvalue", "core" );
 		BIFMap.put( "numberformat", "core" );
 		BIFMap.put( "objectequals", "" );
 		BIFMap.put( "objectload", "" );
@@ -590,17 +590,17 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		BIFMap.put( "ormreload", "" );
 		BIFMap.put( "ormsearch", "" );
 		BIFMap.put( "ormsearchoffline", "" );
-		BIFMap.put( "pagepoolclear", "" );
+		BIFMap.put( "pagepoolclear", "core" );
 		BIFMap.put( "pagepoollist", "" );
 		BIFMap.put( "paragraphformat", "core" );
 		BIFMap.put( "parameterexists", "" );
 		BIFMap.put( "parsedatetime", "core" );
 		BIFMap.put( "parsenumber", "core" );
 		BIFMap.put( "pi", "core" );
-		BIFMap.put( "precisionevaluate", "" );
-		BIFMap.put( "preservesinglequotes", "" );
+		BIFMap.put( "precisionevaluate", "core" );
+		BIFMap.put( "preservesinglequotes", "core" );
 		BIFMap.put( "quarter", "core" );
-		BIFMap.put( "query", "" );
+		BIFMap.put( "query", "core" );
 		BIFMap.put( "queryaddcolumn", "core" );
 		BIFMap.put( "queryaddrow", "core" );
 		BIFMap.put( "queryappend", "core" );
@@ -609,7 +609,7 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		BIFMap.put( "querycolumncount", "core" );
 		BIFMap.put( "querycolumndata", "core" );
 		BIFMap.put( "querycolumnexists", "core" );
-		BIFMap.put( "querycolumnlist", "" );
+		BIFMap.put( "querycolumnlist", "core" );
 		BIFMap.put( "queryconvertforgrid", "" );
 		BIFMap.put( "querycurrentrow", "core" );
 		BIFMap.put( "querydeletecolumn", "core" );
@@ -778,7 +778,7 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		BIFMap.put( "structtosorted", "core" );
 		BIFMap.put( "structupdate", "core" );
 		BIFMap.put( "structvaluearray", "core" );
-		BIFMap.put( "systemcacheclear", "" );
+		BIFMap.put( "systemcacheclear", "core" );
 		BIFMap.put( "systemoutput", "bx-compat" );
 		BIFMap.put( "tan", "core" );
 		BIFMap.put( "threadjoin", "core" );
@@ -790,7 +790,7 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		BIFMap.put( "tonumeric", "core" );
 		BIFMap.put( "toscript", "core" );
 		BIFMap.put( "tostring", "core" );
-		BIFMap.put( "trace", "" );
+		BIFMap.put( "trace", "core" );
 		BIFMap.put( "transactioncommit", "core" );
 		BIFMap.put( "transactionrollback", "core" );
 		BIFMap.put( "transactionsetsavepoint", "core" );
@@ -1003,7 +1003,7 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		componentMap.put( "window", "" );
 		componentMap.put( "xml", "core" );
 		componentMap.put( "zip", "core" );
-		componentMap.put( "zipparam", "core" );
+		componentMap.put( "zipparam", "" );
 	}
 
 	public FeatureAuditVisitor() {
