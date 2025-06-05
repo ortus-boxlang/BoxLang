@@ -283,8 +283,8 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		BIFMap.put( "filesetattribute", "core" );
 		BIFMap.put( "filesetlastmodified", "core" );
 		BIFMap.put( "fileskipbytes", "core" );
-		BIFMap.put( "fileupload", "bx-web-support" );
-		BIFMap.put( "fileuploadall", "bx-web-support" );
+		BIFMap.put( "fileupload", "" );
+		BIFMap.put( "fileuploadall", "" );
 		BIFMap.put( "filewrite", "core" );
 		BIFMap.put( "filewriteline", "core" );
 		BIFMap.put( "find", "core" );
@@ -325,7 +325,7 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		BIFMap.put( "getfunctionkeywords", "" );
 		BIFMap.put( "getfunctionlist", "core" );
 		BIFMap.put( "getgatewayhelper", "" );
-		BIFMap.put( "gethttprequestdata", "bx-web-support" );
+		BIFMap.put( "gethttprequestdata", "" );
 		BIFMap.put( "gethttptimestring", "" );
 		BIFMap.put( "getk2serverdoccount", "" );
 		BIFMap.put( "getk2serverdoccountlimit", "" );
@@ -340,7 +340,7 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		BIFMap.put( "getmetadata", "core" );
 		BIFMap.put( "getmetricdata", "" );
 		BIFMap.put( "getnumericdate", "core" );
-		BIFMap.put( "getpagecontext", "bx-web-support" );
+		BIFMap.put( "getpagecontext", "" );
 		BIFMap.put( "getprinterinfo", "" );
 		BIFMap.put( "getprinterlist", "" );
 		BIFMap.put( "getprofilesections", "" );
@@ -537,7 +537,7 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		BIFMap.put( "listvaluecount", "core" );
 		BIFMap.put( "listvaluecountnocase", "core" );
 		BIFMap.put( "ljustify", "core" );
-		BIFMap.put( "location", "bx-web-support" );
+		BIFMap.put( "location", "" );
 		BIFMap.put( "log", "core" );
 		BIFMap.put( "log10", "core" );
 		BIFMap.put( "lscurrencyformat", "core" );
