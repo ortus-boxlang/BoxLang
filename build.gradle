@@ -316,10 +316,36 @@ task libsToDistro( type: Copy ) {
 			Files.copy( file( "build/resources/main/META-INF/boxlang/version.properties" ).toPath(), file( "build/evergreen/version-latest.properties" ).toPath(), StandardCopyOption.REPLACE_EXISTING )
 	   }
 
+		// Generate checksums for all zip and jar files in distributions folder
+		file( "build/distributions" ).listFiles().each { file ->
+			if ( file.name.endsWith( '.zip' ) || file.name.endsWith( '.jar' ) ) {
+				generateChecksum( file, 'SHA-256' )
+				generateChecksum( file, 'MD5' )
+			}
+		}
+
 		println "+ Libs have been moved to the distribution and evergreen folders"
+		println "+ Checksums generated for all zip and jar files"
 	}
 }
 build.finalizedBy( libsToDistro )
+
+/**
+ * Generate checksums for the given file using the specified algorithm
+
+ * @param file The file to generate the checksum for
+ * @param algorithm The algorithm to use (e.g., "SHA-256", "MD5")
+ */
+def generateChecksum( File file, String algorithm ) {
+	def digest = java.security.MessageDigest.getInstance( algorithm )
+	file.eachByte( 4096 ) { bytes, size ->
+		digest.update( bytes, 0, size )
+	}
+	def checksum = digest.digest().collect { String.format( '%02x', it ) }.join()
+
+	def checksumFile = new File( file.parent, "${file.name}.${algorithm.toLowerCase()}" )
+	checksumFile.text = "${checksum}  ${file.name}\n"
+}
 
 /**
  * Publish the artifacts to the local maven repository
