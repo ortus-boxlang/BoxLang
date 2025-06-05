@@ -196,6 +196,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		componentPaths						= Key.of( "componentPaths" );
 	public static final Key		componentService					= Key.of( "componentService" );
 	public static final Key		compression							= Key.of( "compression" );
+	public static final Key		compressionLevel					= Key.of( "compressionLevel" );
 	public static final Key		condition							= Key.of( "condition" );
 	public static final Key		configure							= Key.of( "configure" );
 	public static final Key		connectionLimit						= Key.of( "connectionLimit" );
