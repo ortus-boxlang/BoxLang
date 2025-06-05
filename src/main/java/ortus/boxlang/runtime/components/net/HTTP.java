@@ -257,7 +257,8 @@ public class HTTP extends Component {
 			builder
 			    .version( httpVersion )
 			    .header( "User-Agent", attributes.getAsString( Key.userAgent ) )
-			    .header( "x-request-id", requestID );
+			    .header( "Accept", "*/*" )
+			    .header( "Accept-Encoding", "gzip, deflate, br" );
 			HTTPResult.put( Key.requestID, requestID );
 			HTTPResult.put( Key.userAgent, attributes.getAsString( Key.userAgent ) );
 
@@ -280,7 +281,8 @@ public class HTTP extends Component {
 				IStruct	param	= StructCaster.cast( p );
 				String	type	= StringCaster.cast( param.get( Key.type ) );
 				switch ( type.toLowerCase() ) {
-					case "header" -> builder.header( StringCaster.cast( param.get( Key._NAME ) ), StringCaster.cast( param.get( Key.value ) ) );
+					// We need to use `setHeader` to overwrite any previously set headers
+					case "header" -> builder.setHeader( StringCaster.cast( param.get( Key._NAME ) ), StringCaster.cast( param.get( Key.value ) ) );
 					case "body" -> {
 						if ( bodyPublisher != null ) {
 							throw new BoxRuntimeException( "Cannot use a body httpparam with an existing http body: " + bodyPublisher.toString() );
