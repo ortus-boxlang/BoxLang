@@ -463,6 +463,16 @@ public class AsyncService extends BaseService {
 	}
 
 	/**
+	 * Get the common ForkJoinPool, this is a special executor that is used by the
+	 * Java ForkJoin framework for parallel streams and other parallel operations.
+	 *
+	 * @return The common ForkJoinPool executor record
+	 */
+	public ExecutorRecord getCommonForkJoinPool() {
+		return new ExecutorRecord( ForkJoinPool.commonPool(), "common-fork-join-pool", ExecutorType.FORK_JOIN, 0 );
+	}
+
+	/**
 	 * Build an executor without registering it using BoxLang specs
 	 *
 	 * @param name       The name of the executor
