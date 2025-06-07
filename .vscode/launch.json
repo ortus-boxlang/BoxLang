@@ -13,6 +13,16 @@
 		},
 		{
 			"type": "java",
+			"name": "FeatureAudit Help",
+			"request": "launch",
+			"mainClass": "ortus.boxlang.compiler.FeatureAudit",
+			"projectName": "boxlang",
+			"args": [
+				"--help"
+			]
+		},
+		{
+			"type": "java",
 			"name": "BXCompiler",
 			"request": "launch",
 			"mainClass": "ortus.boxlang.compiler.BXCompiler",

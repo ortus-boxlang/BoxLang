@@ -215,9 +215,27 @@ public class FeatureAudit {
 		}
 	}
 
-	private static void scanFile( Path sourcePath, Map<String, List<FeatureAuditVisitor.FeatureUsed>> results,
-	    Map<String, List<FeatureAuditVisitor.AggregateFeatureUsed>> aggregateResults, Boolean missing, Boolean aggregate, boolean doReport,
-	    StringBuffer reportText, boolean quiet ) {
+	/**
+	 * Scans a file for features used and aggregates the results.
+	 *
+	 * @param sourcePath       The path to the source file to scan.
+	 * @param results          A map to store the features used in each file.
+	 * @param aggregateResults A map to store the aggregate features used in each file.
+	 * @param missing          If true, only include missing features.
+	 * @param aggregate        If true, aggregate the results.
+	 * @param doReport         If true, write the results to a report.
+	 * @param reportText       The StringBuffer to append report text to.
+	 * @param quiet            If true, suppress console output.
+	 */
+	private static void scanFile(
+	    Path sourcePath,
+	    Map<String, List<FeatureAuditVisitor.FeatureUsed>> results,
+	    Map<String, List<FeatureAuditVisitor.AggregateFeatureUsed>> aggregateResults,
+	    Boolean missing,
+	    Boolean aggregate,
+	    boolean doReport,
+	    StringBuffer reportText,
+	    boolean quiet ) {
 		System.out.println( "Processing: " + sourcePath.toString() );
 		ParsingResult result;
 		try {
@@ -262,6 +280,14 @@ public class FeatureAudit {
 		}
 	}
 
+	/**
+	 * Determines if the extension is one we care about for auditing.
+	 *
+	 * @param extension      The file extension to check.
+	 * @param filesProcessed A map to keep track of how many files of each type have been processed.
+	 *
+	 * @return true if the extension is one we care about, false otherwise.
+	 */
 	private static boolean extensionWeCareAbout( String extension, Map<String, Integer> filesProcessed ) {
 		extension = extension.toLowerCase();
 		if ( extension.equals( "cfm" ) || extension.equals( "cfc" ) || extension.equals( "cfs" ) || extension.equals( "cfml" ) || extension.equals( "bxs" )
