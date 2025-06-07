@@ -30,6 +30,16 @@
 		},
 		{
 			"type": "java",
+			"name": "BXCompiler Help",
+			"request": "launch",
+			"mainClass": "ortus.boxlang.compiler.BXCompiler",
+			"projectName": "boxlang",
+			"args": [
+				"--help"
+			]
+		},
+		{
+			"type": "java",
 			"name": "CFTranspiler",
 			"request": "launch",
 			"mainClass": "ortus.boxlang.compiler.CFTranspiler",
@@ -37,10 +47,30 @@
 		},
 		{
 			"type": "java",
+			"name": "CFTranspiler Help",
+			"request": "launch",
+			"mainClass": "ortus.boxlang.compiler.CFTranspiler",
+			"projectName": "boxlang",
+			"args": [
+				"--help"
+			]
+		},
+		{
+			"type": "java",
 			"name": "BoxLang Debugger",
 			"request": "launch",
 			"mainClass": "ortus.boxlang.debugger.DebugMain",
 			"projectName": "boxlang"
+		},
+		{
+			"type": "java",
+			"name": "BoxRunner Help",
+			"request": "launch",
+			"mainClass": "ortus.boxlang.runtime.BoxRunner",
+			"projectName": "boxlang",
+			"args": [
+				"--help"
+			]
 		},
 		{
 			"type": "java",
@@ -74,6 +104,17 @@
 			"args": [
 				"schedule",
 				"src/test/bx/Scheduler.bx"
+			]
+		},
+		{
+			"type": "java",
+			"name": "BoxLang Schedule Help",
+			"request": "launch",
+			"mainClass": "ortus.boxlang.runtime.BoxRunner",
+			"projectName": "boxlang",
+			"args": [
+				"schedule",
+				"--help"
 			]
 		},
 		{
