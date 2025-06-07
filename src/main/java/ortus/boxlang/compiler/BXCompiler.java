@@ -38,7 +38,77 @@ public class BXCompiler {
 
 	private static final BoxLangLogger logger = BoxRuntime.getInstance().getLoggingService().getLogger( BXCompiler.class.getSimpleName() );
 
+	/**
+	 * Prints the help message for the BXCompiler tool.
+	 */
+	private static void printHelp() {
+		System.out.println( "⚡ BoxLang Compiler - A CLI tool for pre-compiling BoxLang code to class files" );
+		System.out.println();
+		System.out.println( "📋 USAGE:" );
+		System.out.println( "  boxlang compile [OPTIONS]  # 🔧 Using OS binary" );
+		System.out.println( "  java -jar boxlang.jar ortus.boxlang.compiler.BXCompiler [OPTIONS] # 🐍 Using Java JAR" );
+		System.out.println();
+		System.out.println( "⚙️  OPTIONS:" );
+		System.out.println( "  -h, --help                  ❓ Show this help message and exit" );
+		System.out.println( "      --basePath <PATH>       📁 Base path for resolving relative paths (default: current directory)" );
+		System.out.println( "      --source <PATH>         📂 Path to source directory or file to compile (default: current directory)" );
+		System.out.println( "      --target <PATH>         🎯 Path to target directory or file (required)" );
+		System.out.println( "      --mapping <NAME>        🗺️  Mapping name for the compiled file (e.g., modules.myModule)" );
+		System.out.println( "      --stopOnError [BOOL]    🛑 Stop processing on first error (default: false)" );
+		System.out.println();
+		System.out.println( "📦 COMPILATION PROCESS:" );
+		System.out.println( "  • Compiles BoxLang/ColdFusion source files to Java bytecode class files" );
+		System.out.println( "  • Creates pre-compiled templates for faster runtime execution" );
+		System.out.println( "  • Preserves directory structure in target location" );
+		System.out.println( "  • Validates source path is within or equal to base path" );
+		System.out.println();
+		System.out.println( "🔧 SUPPORTED SOURCE FILES:" );
+		System.out.println( "  .cfm  - ColdFusion markup pages" );
+		System.out.println( "  .cfc  - ColdFusion components" );
+		System.out.println( "  .cfs  - ColdFusion script files" );
+		System.out.println();
+		System.out.println( "💡 EXAMPLES:" );
+		System.out.println( "  # ⚡ Compile current directory to target" );
+		System.out.println( "  boxlang compile --target ./compiled" );
+		System.out.println();
+		System.out.println( "  # 📂 Compile specific source directory with mapping" );
+		System.out.println( "  boxlang compile --source ./src --target ./build --mapping myapp" );
+		System.out.println();
+		System.out.println( "  # 📄 Compile single file with custom base path" );
+		System.out.println( "  boxlang compile --basePath /app --source /app/modules/user.cfm --target ./compiled" );
+		System.out.println();
+		System.out.println( "  # 🛑 Stop on first compilation error" );
+		System.out.println( "  boxlang compile --source ./src --target ./build --stopOnError" );
+		System.out.println();
+		System.out.println( "  # 🗺️  Compile with nested module mapping" );
+		System.out.println( "  boxlang compile --source ./modules/auth --target ./compiled --mapping modules.auth" );
+		System.out.println();
+		System.out.println( "📂 PATH REQUIREMENTS:" );
+		System.out.println( "  • Source path must be equal to or a subdirectory of the base path" );
+		System.out.println( "  • Target directories are created automatically if they don't exist" );
+		System.out.println( "  • Relative paths are resolved against the current working directory" );
+		System.out.println();
+		System.out.println( "🔄 OUTPUT FORMAT:" );
+		System.out.println( "  • Compiled files maintain original directory structure" );
+		System.out.println( "  • Binary format with CAFEBABE header for BoxLang runtime" );
+		System.out.println( "  • Multiple class files concatenated with length prefixes" );
+		System.out.println();
+		System.out.println( "📖 More Information:" );
+		System.out.println( "  📖 Documentation: https://boxlang.ortusbooks.com/" );
+		System.out.println( "  💬 Community: https://community.ortussolutions.com/c/boxlang/42" );
+		System.out.println( "  💾 GitHub: https://github.com/ortus-boxlang" );
+		System.out.println();
+	}
+
 	public static void main( String[] args ) {
+		// Check for help first before initializing BoxRuntime
+		for ( int i = 0; i < args.length; i++ ) {
+			if ( args[ i ].equalsIgnoreCase( "--help" ) || args[ i ].equalsIgnoreCase( "-h" ) ) {
+				printHelp();
+				System.exit( 0 );
+			}
+		}
+
 		BoxRuntime runtime = BoxRuntime.getInstance();
 		try {
 			String	base		= ".";
@@ -46,7 +116,6 @@ public class BXCompiler {
 			String	target		= null;
 			String	mapping		= "";
 			Boolean	stopOnError	= false;
-
 			for ( int i = 0; i < args.length; i++ ) {
 				if ( args[ i ].equalsIgnoreCase( "--mapping" ) ) {
 					if ( i + 1 >= args.length ) {
@@ -167,6 +236,16 @@ public class BXCompiler {
 		}
 	}
 
+	/**
+	 * Compiles a single file to the target path.
+	 *
+	 * @param sourcePath  The path to the source file to compile.
+	 * @param targetPath  The path where the compiled file should be written.
+	 * @param stopOnError If true, throws an exception on compilation errors; otherwise logs the error and continues.
+	 * @param runtime     The BoxRuntime instance used for compilation.
+	 * @param basePath    The base path used for resolving relative paths.
+	 * @param mapping     The mapping name for the compiled file.
+	 */
 	public static void compileFile( Path sourcePath, Path targetPath, Boolean stopOnError, BoxRuntime runtime, Path basePath, String mapping ) {
 		try {
 			Path directoryPath = targetPath.getParent();
