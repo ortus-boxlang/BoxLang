@@ -55,8 +55,11 @@ public class FeatureAudit {
 			Boolean	summary		= false;
 			String	reportFile	= null;
 			Boolean	quiet		= false;
-
 			for ( int i = 0; i < args.length; i++ ) {
+				if ( args[ i ].equalsIgnoreCase( "--help" ) || args[ i ].equalsIgnoreCase( "-h" ) ) {
+					printHelp();
+					System.exit( 0 );
+				}
 				if ( args[ i ].equalsIgnoreCase( "--source" ) ) {
 					if ( i + 1 >= args.length || args[ i + 1 ].startsWith( "--" ) ) {
 						throw new BoxRuntimeException( "--source requires a path" );
@@ -300,6 +303,54 @@ public class FeatureAudit {
 			return true;
 		}
 		return false;
+	}
+
+	/**
+	 * Prints the help message for the FeatureAudit tool.
+	 */
+	private static void printHelp() {
+		System.out.println( "🔍 BoxLang FeatureAudit - A CLI tool for auditing code to determine BIFs and tags in use" );
+		System.out.println();
+		System.out.println( "📋 USAGE:" );
+		System.out.println( "  boxlang featureaudit [OPTIONS]  # 🔧 Using OS binary" );
+		System.out.println( "  java -jar boxlang.jar ortus.boxlang.compiler.FeatureAudit [OPTIONS] # 🐍 Using Java JAR" );
+		System.out.println();
+		System.out.println( "⚙️  OPTIONS:" );
+		System.out.println( "  -h, --help                  ❓ Show this help message and exit" );
+		System.out.println( "      --source <PATH>         📁 Path to source directory or file to audit (default: current directory)" );
+		System.out.println( "      --missing               🚫 Only show features that are missing/not implemented in BoxLang" );
+		System.out.println( "      --aggregate [summary]   📊 Aggregate results by feature (optional: add 'summary' for summary view)" );
+		System.out.println( "      --reportFile <PATH>     📄 Output results to a CSV file (auto-adds .csv extension)" );
+		System.out.println( "      --quiet                 🔇 Suppress console output (useful with --reportFile)" );
+		System.out.println();
+		System.out.println( "💡 EXAMPLES:" );
+		System.out.println( "  # 🔍 Audit current directory for all features" );
+		System.out.println( "  boxlang featureaudit" );
+		System.out.println();
+		System.out.println( "  # 🚫 Show only missing/unimplemented features" );
+		System.out.println( "  boxlang featureaudit --missing" );
+		System.out.println();
+		System.out.println( "  # 📊 Generate aggregated summary report" );
+		System.out.println( "  boxlang featureaudit --aggregate summary" );
+		System.out.println();
+		System.out.println( "  # 📄 Audit specific directory and save to CSV" );
+		System.out.println( "  boxlang featureaudit --source /path/to/code --reportFile audit-report" );
+		System.out.println();
+		System.out.println( "  # 🔇 Generate quiet report of missing features only" );
+		System.out.println( "  boxlang featureaudit --missing --quiet --reportFile missing-features" );
+		System.out.println();
+		System.out.println( "  # 🎯 Audit single file" );
+		System.out.println( "  boxlang featureaudit --source /path/to/file.cfm" );
+		System.out.println();
+		System.out.println( "📊 OUTPUT FORMATS:" );
+		System.out.println( "  Console: Human-readable feature usage information" );
+		System.out.println( "  CSV:     Structured data suitable for analysis (File,Name,Type,Module,Missing,Line,Column)" );
+		System.out.println();
+		System.out.println( "📖 More Information:" );
+		System.out.println( "  📖 Documentation: https://boxlang.ortusbooks.com/" );
+		System.out.println( "  💬 Community: https://community.ortussolutions.com/c/boxlang/42" );
+		System.out.println( "  💾 GitHub: https://github.com/ortus-boxlang" );
+		System.out.println();
 	}
 
 }
