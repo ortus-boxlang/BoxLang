@@ -38,10 +38,10 @@ public class QueryEach extends BIF {
 	public QueryEach() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "query", Key.query ),
+		    new Argument( true, Argument.QUERY, Key.query ),
 		    new Argument( true, "function:Consumer", Key.callback ),
-		    new Argument( false, "boolean", Key.parallel, false ),
-		    new Argument( false, "integer", Key.maxThreads )
+		    new Argument( false, Argument.BOOLEAN, Key.parallel, false ),
+		    new Argument( false, Argument.INTEGER, Key.maxThreads )
 		};
 	}
 
@@ -73,8 +73,7 @@ public class QueryEach extends BIF {
 		    arguments.getAsFunction( Key.callback ),
 		    context,
 		    arguments.getAsBoolean( Key.parallel ),
-		    // we can't use the integer caster here because we need a cast null for the filter method signature
-		    ( Integer ) arguments.get( "maxThreads" ),
+		    arguments.getAsInteger( Key.maxThreads ),
 		    true
 		);
 

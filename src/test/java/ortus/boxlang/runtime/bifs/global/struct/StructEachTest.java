@@ -119,7 +119,105 @@ public class StructEachTest {
 		assertThat( values.get( 1 ) ).isEqualTo( 1 );
 		assertThat( values.get( 2 ) ).isEqualTo( "blerg" );
 		assertTrue( values.get( 3 ) instanceof IStruct );
-
 	}
 
+	@DisplayName( "Tests using in parallel with no max threads and no ordering" )
+	@Test
+	public void testBifWithParallel() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		    	values = [];
+		    	ref = [
+						"foo" : "bar",
+						"bar" : 1,
+						"blah" : "blerg",
+						"complex" : {
+							"foo" : "bar"
+						}
+		       ];
+
+				function eachFn( key, value, struct ){
+					values.append( value );
+				};
+
+		    	StructEach( ref, eachFn, true );
+		       """,
+		    context );
+		// @formatter:on
+
+		// Note: order is not guaranteed with parallel execution
+		Array values = ( Array ) variables.get( Key.of( "values" ) );
+		assertThat( values.size() ).isEqualTo( 4 );
+		// Note: order is not guaranteed with parallel execution
+		assertThat( values.contains( "bar" ) ).isTrue();
+		assertThat( values.contains( 1 ) ).isTrue();
+		assertThat( values.contains( "blerg" ) ).isTrue();
+	}
+
+	@DisplayName( "Tests using in parallel with no max threads with ordering" )
+	@Test
+	public void testBifWithParallelWithOrdering() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		    	values = [];
+		    	ref = [
+						"foo" : "bar",
+						"bar" : 1,
+						"blah" : "blerg",
+						"complex" : {
+							"foo" : "bar"
+						}
+		       ];
+
+				function eachFn( key, value, struct ){
+					values.append( value );
+				};
+
+		    	StructEach( ref, eachFn, true, 0, true );
+		       """,
+		    context );
+		// @formatter:on
+
+		Array values = ( Array ) variables.get( Key.of( "values" ) );
+		assertThat( values.size() ).isEqualTo( 4 );
+		assertThat( values.get( 0 ) ).isEqualTo( "bar" );
+		assertThat( values.get( 1 ) ).isEqualTo( 1 );
+		assertThat( values.get( 2 ) ).isEqualTo( "blerg" );
+		assertTrue( values.get( 3 ) instanceof IStruct );
+	}
+
+	@DisplayName( "Tests using in parallel with max threads" )
+	@Test
+	public void testBifWithParallelWithMaxThreads() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		    	values = [];
+		    	ref = [
+						"foo" : "bar",
+						"bar" : 1,
+						"blah" : "blerg",
+						"complex" : {
+							"foo" : "bar"
+						}
+		       ];
+
+				function eachFn( key, value, struct ){
+					values.append( value );
+				};
+
+		    	StructEach( ref, eachFn, true, 2 );
+		       """,
+		    context );
+		// @formatter:on
+
+		Array values = ( Array ) variables.get( Key.of( "values" ) );
+		assertThat( values.size() ).isEqualTo( 4 );
+		// Note: order is not guaranteed with parallel execution
+		assertThat( values.contains( "bar" ) ).isTrue();
+		assertThat( values.contains( 1 ) ).isTrue();
+		assertThat( values.contains( "blerg" ) ).isTrue();
+	}
 }

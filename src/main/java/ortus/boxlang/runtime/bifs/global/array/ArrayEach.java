@@ -18,8 +18,6 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
-import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -70,12 +68,11 @@ public class ArrayEach extends BIF {
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		ListUtil.each(
-		    ArrayCaster.cast( arguments.get( Key.array ) ),
+		    arguments.getAsArray( Key.array ),
 		    arguments.getAsFunction( Key.callback ),
 		    context,
-		    BooleanCaster.cast( arguments.getOrDefault( "parallel", false ) ),
-		    // we can't use the integer caster here because we need a cast null for the filter method signature
-		    ( Integer ) arguments.get( Key.maxThreads ),
+		    arguments.getAsBoolean( Key.parallel ),
+		    arguments.getAsInteger( Key.maxThreads ),
 		    arguments.getAsBoolean( Key.ordered )
 		);
 		return null;

@@ -25,7 +25,6 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
-import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.util.StructUtil;
 
 @BoxBIF
@@ -39,11 +38,11 @@ public class StructEach extends BIF {
 	public StructEach() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "structloose", Key.struct ),
+		    new Argument( true, Argument.STRUCT_LOOSE, Key.struct ),
 		    new Argument( true, "function:BiConsumer", Key.callback ),
-		    new Argument( false, "boolean", Key.parallel, false ),
-		    new Argument( false, "integer", Key.maxThreads ),
-		    new Argument( false, "boolean", Key.ordered, false )
+		    new Argument( false, Argument.BOOLEAN, Key.parallel, false ),
+		    new Argument( false, Argument.INTEGER, Key.maxThreads ),
+		    new Argument( false, Argument.BOOLEAN, Key.ordered, false )
 		};
 	}
 
@@ -77,17 +76,14 @@ public class StructEach extends BIF {
 	 * @argument.ordered (BoxLang only) whether parallel operations should execute and maintain order
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		IStruct target = arguments.getAsStruct( Key.struct );
-
 		StructUtil.each(
-		    target,
+		    arguments.getAsStruct( Key.struct ),
 		    arguments.getAsFunction( Key.callback ),
 		    context,
 		    arguments.getAsBoolean( Key.parallel ),
 		    arguments.getAsInteger( Key.maxThreads ),
 		    arguments.getAsBoolean( Key.ordered )
 		);
-
 		return null;
 	}
 

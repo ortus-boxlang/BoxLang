@@ -512,6 +512,14 @@ public class ListUtil {
 	    Integer maxThreads,
 	    Boolean ordered ) {
 
+		// Parameter validation
+		Objects.requireNonNull( array, "Array cannot be null" );
+		Objects.requireNonNull( callback, "Callback cannot be null" );
+		Objects.requireNonNull( callbackContext, "Callback context cannot be null" );
+		if ( maxThreads == null ) {
+			maxThreads = 0; // Default to 0 if not provided
+		}
+
 		IntConsumer consumer;
 		if ( callback.requiresStrictArguments() ) {
 			consumer = idx -> callbackContext.invokeFunction( callback,
@@ -520,43 +528,50 @@ public class ListUtil {
 			consumer = idx -> callbackContext.invokeFunction( callback,
 			    new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } );
 		}
-		IntStream intStream = array.intStream();
 
-		// Synchronous execution
-		if ( !parallel ) {
-			intStream.forEach( consumer );
+		// Create a stream of what we want, usage is determined internally by the terminators
+		IntStream arrayStream = array.intStream();
+		if ( parallel ) {
+			// If maxThreads is null or 0, then use just the ForkJoinPool default parallelism level
+			if ( maxThreads <= 0 ) {
+				if ( ordered ) {
+					arrayStream
+					    .parallel()
+					    .forEachOrdered( consumer );
+				} else {
+					arrayStream
+					    .parallel()
+					    .forEach( consumer );
+				}
+				return;
+			}
+			// Otherwise, create a new ForkJoinPool with the specified number of threads
+			AsyncService.buildExecutor(
+			    "ArrayEach_" + UUID.randomUUID().toString(),
+			    AsyncService.ExecutorType.FORK_JOIN,
+			    maxThreads
+			).submitAndGet( () -> {
+				if ( ordered ) {
+					arrayStream
+					    .parallel()
+					    .forEachOrdered( consumer );
+				} else {
+					arrayStream
+					    .parallel()
+					    .forEach( consumer );
+				}
+			} );
 			return;
 		}
 
-		/**
-		 * ---- Parallel execution ----
-		 */
-
-		// If no maxThreads, then we just run in the fork-join pool with the number of available processors
-		if ( maxThreads == null || maxThreads < 1 ) {
-			IntStream target = array.intStream().parallel();
-			if ( ordered ) {
-				target.forEachOrdered( consumer );
-			} else {
-				target.forEach( consumer );
-			}
-			return;
+		// If parallel is false, just use the regular stream
+		if ( ordered ) {
+			arrayStream
+			    .forEachOrdered( consumer );
+		} else {
+			arrayStream
+			    .forEach( consumer );
 		}
-
-		// Else we create a new fork-join pool with the specified number of threads
-		// and run the stream in parallel
-		AsyncService.buildExecutor(
-		    "ArrayEach_" + UUID.randomUUID().toString(),
-		    AsyncService.ExecutorType.FORK_JOIN,
-		    maxThreads
-		).submitAndGet( () -> {
-			IntStream target = array.intStream().parallel();
-			if ( ordered ) {
-				target.forEachOrdered( consumer );
-			} else {
-				target.forEach( consumer );
-			}
-		} );
 	}
 
 	/**
