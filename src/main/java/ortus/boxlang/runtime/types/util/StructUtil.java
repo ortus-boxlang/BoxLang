@@ -51,6 +51,53 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.EncryptionUtil;
 import ortus.boxlang.runtime.util.LocalizationUtil;
 
+/**
+ * StructUtil is a comprehensive utility class providing static methods for advanced struct operations in BoxLang.
+ * This class offers functional programming capabilities, data manipulation, sorting, searching, and conversion utilities
+ * for IStruct implementations.
+ *
+ * <h2>Core Features:</h2>
+ * <ul>
+ * <li><strong>Functional Operations:</strong> each, some, every, filter, map, reduce with parallel processing support</li>
+ * <li><strong>Data Manipulation:</strong> deep merge, flatten/unflatten operations</li>
+ * <li><strong>Sorting:</strong> Multi-type sorting (text, numeric, case-insensitive) with custom callback support</li>
+ * <li><strong>Search Operations:</strong> Find keys and values with nested path support</li>
+ * <li><strong>Conversion Utilities:</strong> Query string conversion, flat map operations</li>
+ * </ul>
+ *
+ * <h2>Parallel Processing:</h2>
+ * Many methods support parallel execution with configurable thread pools for improved performance
+ * on large datasets. When parallel is enabled, operations can optionally maintain order for
+ * LinkedHashMap-based structs.
+ *
+ * <h2>Thread Safety:</h2>
+ * This utility class is stateless and thread-safe. However, the struct instances passed to methods
+ * should be properly synchronized if accessed concurrently.
+ *
+ * <h2>Usage Examples:</h2>
+ *
+ * <pre>
+ * // Functional operations
+ * StructUtil.each( myStruct, callback, context, false, 0, true );
+ * IStruct filtered = StructUtil.filter( myStruct, predicate, context, true, 4 );
+ *
+ * // Data manipulation
+ * IStruct merged = StructUtil.deepMerge( struct1, struct2, true );
+ * IStruct flattened = StructUtil.toFlatMap( nestedStruct );
+ *
+ * // Search operations
+ * Stream&lt;IStruct&gt; keyResults = StructUtil.findKey( myStruct, "targetKey" );
+ * Stream&lt;IStruct&gt; valueResults = StructUtil.findValue( myStruct, "targetValue" );
+ *
+ * // Conversion
+ * String queryString = StructUtil.toQueryString( myStruct );
+ * IStruct fromQuery = StructUtil.fromQueryString( "foo=bar&baz=qux" );
+ * </pre>
+ *
+ * @author BoxLang Development Team
+ *
+ * @since 1.3.0
+ */
 public class StructUtil {
 
 	public static final Key scopeAll = Key.of( "all" );
@@ -225,7 +272,6 @@ public class StructUtil {
 	 *
 	 * @return A filtered array
 	 */
-	@SuppressWarnings( "unchecked" )
 	public static IStruct filter(
 	    IStruct struct,
 	    Function callback,
@@ -355,6 +401,11 @@ public class StructUtil {
 	    Function callback,
 	    IBoxContext callbackContext,
 	    Object initialValue ) {
+		// Parameter validation
+		Objects.requireNonNull( struct, "Struct cannot be null" );
+		Objects.requireNonNull( callback, "Callback cannot be null" );
+		Objects.requireNonNull( callbackContext, "Callback context cannot be null" );
+
 		BiFunction<Object, Map.Entry<Key, Object>, Object> reduction;
 		if ( callback.requiresStrictArguments() ) {
 			reduction = ( acc, item ) -> callbackContext.invokeFunction( callback,
@@ -476,12 +527,12 @@ public class StructUtil {
 	}
 
 	/**
-	 * Returns an array of keys
+	 * Finds all instances of a key in a struct and returns a stream of structs
 	 *
-	 * @param struct
-	 * @param key
+	 * @param struct the struct to get the keys from
+	 * @param key    the key to search for
 	 *
-	 * @return
+	 * @return a stream of structs containing the owner, path, and value of the found key
 	 */
 	public static Stream<IStruct> findKey( IStruct struct, String key ) {
 		String[]			keyParts	= key.toLowerCase().split( "\\." );
@@ -566,6 +617,15 @@ public class StructUtil {
 
 	}
 
+	/**
+	 * Finds all instances of a value in a struct and returns a stream of structs
+	 * containing the owner struct, the path to the value, and the key of the value.
+	 *
+	 * @param struct the struct to search within
+	 * @param value  the value to search for
+	 *
+	 * @return a stream of structs containing the owner, path, and key of the found value
+	 */
 	public static Stream<IStruct> findValue( IStruct struct, Object value ) {
 		IStruct flatMap = toFlatMap( struct );
 		return flatMap.entrySet()
@@ -658,7 +718,7 @@ public class StructUtil {
 	/**
 	 * Flattens a struct in to a struct containing dot-delmited keys for nested structs
 	 *
-	 * @param struct
+	 * @param struct the struct to flatten
 	 *
 	 * @return a flattened map of the struct
 	 */
@@ -734,7 +794,6 @@ public class StructUtil {
 	 * @param retainKeys whether to retain the original flattened keys
 	 */
 	public static void unFlattenKey( int index, Key key, String keyValue, IStruct original, boolean retainKeys ) {
-
 		String	left;
 		Object	value		= original.get( key );
 		IStruct	destination	= original;
@@ -840,10 +899,25 @@ public class StructUtil {
 		return fromQueryString( target, "&" );
 	}
 
+	/**
+	 * Get a map of common comparators for sorting structs.
+	 * This map contains comparators for text, numeric, and case-insensitive text sorting.
+	 *
+	 * @return A HashMap of Key to Comparator for common sorting operations.
+	 */
 	public static HashMap<Key, Comparator<Key>> getCommonComparators() {
 		return getCommonComparators( LocalizationUtil.COMMON_LOCALES.get( Key.of( "US" ) ) );
 	}
 
+	/**
+	 * Get a map of common comparators for sorting structs with a specific locale.
+	 * This map contains comparators for text, numeric, and case-insensitive text sorting,
+	 * localized according to the provided Locale.
+	 *
+	 * @param locale The Locale to use for text comparisons.
+	 *
+	 * @return A HashMap of Key to Comparator for common sorting operations.
+	 */
 	public static HashMap<Key, Comparator<Key>> getCommonComparators( Locale locale ) {
 		return new HashMap<Key, Comparator<Key>>() {
 
