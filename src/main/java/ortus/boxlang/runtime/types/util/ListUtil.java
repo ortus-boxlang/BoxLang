@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.function.BiFunction;
 import java.util.function.IntConsumer;
@@ -28,6 +29,7 @@ import java.util.function.IntPredicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -654,6 +656,17 @@ public class ListUtil {
 	    Boolean parallel,
 	    Integer maxThreads ) {
 
+		// Parameter validation
+		Objects.requireNonNull( array, "Array cannot be null" );
+		Objects.requireNonNull( callback, "Callback cannot be null" );
+		Objects.requireNonNull( callbackContext, "Callback context cannot be null" );
+		if ( maxThreads == null ) {
+			maxThreads = 0; // Default to 0 if not provided
+		}
+
+		// Build the test predicate based on the callback
+		// If the callback requires strict arguments, we only pass the item (Usually Java Predicates)
+		// Otherwise we pass the item, the index, and the array itself
 		IntPredicate test;
 		if ( callback.requiresStrictArguments() ) {
 			test = idx -> BooleanCaster.cast( callbackContext.invokeFunction( callback,
@@ -663,21 +676,33 @@ public class ListUtil {
 			    new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } ) );
 		}
 
-		IntStream intStream = array.intStream();
-		return ArrayCaster.cast(
-		    !parallel
-		        ? intStream
-		            .filter( test )
-		            .mapToObj( ( idx ) -> array.size() > idx ? array.get( idx ) : null )
-		            .toArray()
+		// Create a stream of what we want, usage is determined internally by the terminators
+		Stream<Object> arrayStream = array
+		    .intStream()
+		    .filter( test )
+		    .mapToObj( ( idx ) -> array.size() > idx ? array.get( idx ) : null );
 
-		        : AsyncService.buildExecutor(
-		            "ArrayFilter_" + UUID.randomUUID().toString(),
-		            AsyncService.ExecutorType.FORK_JOIN,
-		            maxThreads
-		        ).submitAndGet( () -> array.intStream().parallel().filter( test ).mapToObj( array::get ).toArray() )
-		);
+		if ( parallel ) {
+			// If maxThreads is null or 0, then use just the ForkJoinPool default parallelism level
+			if ( maxThreads <= 0 ) {
+				return arrayStream
+				    .parallel()
+				    .collect( BLCollector.toArray() );
+			}
+			// Otherwise, create a new ForkJoinPool with the specified number of threads
+			return ( Array ) AsyncService.buildExecutor(
+			    "ArrayFilter_" + UUID.randomUUID().toString(),
+			    AsyncService.ExecutorType.FORK_JOIN,
+			    maxThreads
+			).submitAndGet( () -> {
+				return arrayStream
+				    .parallel()
+				    .collect( BLCollector.toArray() );
+			} );
+		}
 
+		// Non-parallel execution
+		return arrayStream.collect( BLCollector.toArray() );
 	}
 
 	/**

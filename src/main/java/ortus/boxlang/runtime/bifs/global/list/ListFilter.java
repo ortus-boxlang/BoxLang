@@ -38,18 +38,30 @@ public class ListFilter extends BIF {
 	public ListFilter() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "string", Key.list ),
+		    new Argument( true, Argument.STRING, Key.list ),
 		    new Argument( true, "function:Predicate", Key.filter ),
-		    new Argument( false, "string", Key.delimiter, ListUtil.DEFAULT_DELIMITER ),
-		    new Argument( false, "boolean", Key.includeEmptyFields, false ),
-		    new Argument( false, "boolean", Key.multiCharacterDelimiter, true ),
-		    new Argument( false, "boolean", Key.parallel, false ),
-		    new Argument( false, "integer", Key.maxThreads )
+		    new Argument( false, Argument.STRING, Key.delimiter, ListUtil.DEFAULT_DELIMITER ),
+		    new Argument( false, Argument.BOOLEAN, Key.includeEmptyFields, false ),
+		    new Argument( false, Argument.BOOLEAN, Key.multiCharacterDelimiter, true ),
+		    new Argument( false, Argument.BOOLEAN, Key.parallel, false ),
+		    new Argument( false, Argument.INTEGER, Key.maxThreads )
 		};
 	}
 
 	/**
 	 * Filters a delimted list and returns the values from the callback test
+	 * This BIF will invoke the callback function for each entry in the list, passing the entry as a string.
+	 * <ul>
+	 * <li>If the callback returns true, the entry will be included in the new list.</li>
+	 * <li>If the callback returns false, the entry will be excluded from the new list.</li>
+	 * <li>If the callback requires strict arguments, it will only receive the entry as a string.</li>
+	 * <li>If the callback does not require strict arguments, it will receive the entry as a string, the index (0-based), and the original list as a string.</li>
+	 * </ul>
+	 * <p>
+	 * <h2>Parallel Execution</h2>
+	 * If the <code>parallel</code> argument is set to true, and no <code>max_threads</code> are sent, the filter will be executed in parallel using a ForkJoinPool with parallel streams.
+	 * If <code>max_threads</code> is specified, it will create a new ForkJoinPool with the specified number of threads to run the filter in parallel, and destroy it after the operation is complete.
+	 * Please note that this may not be the most efficient way to filter, as it will create a new ForkJoinPool for each invocation of the BIF. You may want to consider using a shared ForkJoinPool for better performance.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
@@ -64,13 +76,15 @@ public class ListFilter extends BIF {
 	 *
 	 * @argument.multiCharacterDelimiter boolean whether the delimiter is multi-character
 	 *
-	 * @argument.parallel boolean whether to execute the filter in parallel
+	 * @argument.parallel Whether to run the filter in parallel. Defaults to false. If true, the filter will be run in parallel using a ForkJoinPool.
 	 *
-	 * @argument.maxThreads number the maximum number of threads to use in the parallel filter
+	 * @argument.maxThreads The maximum number of threads to use when running the filter in parallel. If not passed it will use the default number of threads for the ForkJoinPool.
+	 *                      If parallel is false, this argument is ignored.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return ListUtil.asString(
 		    ListUtil.filter(
+		        // Convert the list to an array to filter it
 		        ListUtil.asList(
 		            arguments.getAsString( Key.list ),
 		            arguments.getAsString( Key.delimiter ),
@@ -80,7 +94,7 @@ public class ListFilter extends BIF {
 		        arguments.getAsFunction( Key.filter ),
 		        context,
 		        arguments.getAsBoolean( Key.parallel ),
-		        ( Integer ) arguments.get( Key.maxThreads )
+		        arguments.getAsInteger( Key.maxThreads )
 		    ),
 		    arguments.getAsString( Key.delimiter )
 		);

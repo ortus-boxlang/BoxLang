@@ -14,22 +14,17 @@
  */
 package ortus.boxlang.runtime.bifs.global.query;
 
-import java.util.UUID;
-import java.util.function.IntPredicate;
-import java.util.stream.IntStream;
-
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.services.AsyncService;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.Query;
-import ortus.boxlang.runtime.types.util.BLCollector;
+import ortus.boxlang.runtime.types.util.ListUtil;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.QUERY )
@@ -74,50 +69,21 @@ public class QueryFilter extends BIF {
 	 *
 	 * @argument.maxThreads The maximum number of threads to use when running the filter in parallel. If not passed it will use the default number of threads for the ForkJoinPool.
 	 *                      If parallel is false, this argument is ignored.
-	 *
-	 * @argument.callback The function to invoke for each item. The function will be passed 3 arguments: the query row as a struct, the row number, the query. You can alternatively pass a Java Predicate which will only receive the 1st arg.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		var				query		= arguments.getAsQuery( Key.query );
-		var				callback	= arguments.getAsFunction( Key.callback );
-		var				parallel	= arguments.getAsBoolean( Key.parallel );
-		var				maxThreads	= arguments.getAsInteger( Key.maxThreads );
+		Query	query			= arguments.getAsQuery( Key.query );
 
-		IntPredicate	test;
-		if ( callback.requiresStrictArguments() ) {
-			test = idx -> BooleanCaster.cast(
-			    context.invokeFunction( callback, new Object[] { query.getRowAsStruct( idx ) } )
-			);
-		} else {
-			test = idx -> BooleanCaster.cast(
-			    context.invokeFunction( callback, new Object[] { query.getRowAsStruct( idx ), idx + 1, query } )
-			);
-		}
+		// NOTE: I am using this approach until we make queries thread safe.
+		Array	mappedResult	= ListUtil.filter(
+		    query.toArrayOfStructs(),
+		    arguments.getAsFunction( Key.callback ),
+		    context,
+		    arguments.getAsBoolean( Key.parallel ),
+		    arguments.getAsInteger( Key.maxThreads )
+		);
 
-		IntStream	intStream	= query.intStream();
-		Query		newQuery	= new Query();
-
-		for ( var column : query.getColumns().entrySet() ) {
-			newQuery.addColumn( column.getKey(), column.getValue().getType() );
-		}
-
-		if ( parallel ) {
-			// If maxThreads is null or 0, then use just the ForkJoinPool default parallelism level
-			if ( maxThreads == null || maxThreads <= 0 ) {
-				return query.intStream().parallel().filter( test ).mapToObj( query::getRowAsStruct ).collect( BLCollector.toQuery( newQuery ) );
-			}
-			// Otherwise, create a new ForkJoinPool with the specified number of threads
-			return AsyncService.buildExecutor(
-			    "QueryFilter_" + UUID.randomUUID().toString(),
-			    AsyncService.ExecutorType.FORK_JOIN,
-			    maxThreads
-			).submitAndGet( () -> query.intStream().parallel().filter( test ).mapToObj( query::getRowAsStruct ).collect( BLCollector.toQuery( newQuery ) ) );
-		}
-
-		// If parallel is false, just use the regular stream
-		return intStream
-		    .filter( test )
-		    .mapToObj( query::getRowAsStruct )
-		    .collect( BLCollector.toQuery( newQuery ) );
+		query.clear();
+		query.addData( mappedResult );
+		return query;
 	}
 }

@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -210,9 +211,17 @@ public class StructUtil {
 	    Boolean parallel,
 	    Integer maxThreads ) {
 
-		Stream<Map.Entry<Key, Object>>		entryStream		= struct.entrySet().stream();
-		Stream<Map.Entry<Key, Object>>		filteredStream	= null;
-		Predicate<Map.Entry<Key, Object>>	test;
+		// Parameter validation
+		Objects.requireNonNull( struct, "Struct cannot be null" );
+		Objects.requireNonNull( callback, "Callback cannot be null" );
+		Objects.requireNonNull( callbackContext, "Callback context cannot be null" );
+		if ( maxThreads == null ) {
+			maxThreads = 0; // Default to 0 if not provided
+		}
+
+		// Build the test predicate based on whether the callback requires strict arguments
+		// or not. This is Java vs BoxLang predicate compatibility.
+		Predicate<Map.Entry<Key, Object>> test;
 		if ( callback.requiresStrictArguments() ) {
 			test = item -> BooleanCaster.cast( callbackContext.invokeFunction(
 			    callback,
@@ -225,18 +234,30 @@ public class StructUtil {
 			) );
 		}
 
-		if ( !parallel ) {
-			filteredStream = entryStream.filter( test );
-		} else {
-			filteredStream = ( Stream<Map.Entry<Key, Object>> ) AsyncService.buildExecutor(
+		Stream<Map.Entry<Key, Object>> entryStream = struct
+		    .entrySet()
+		    .stream()
+		    .filter( test );
+
+		if ( parallel ) {
+			// If maxThreads is null or 0, then use just the ForkJoinPool default parallelism level
+			if ( maxThreads <= 0 ) {
+				return entryStream.parallel().collect( BLCollector.toStruct( struct.getType() ) );
+			}
+			// Otherwise, create a new ForkJoinPool with the specified number of threads
+			return ( IStruct ) AsyncService.buildExecutor(
 			    "StructFilter_" + UUID.randomUUID().toString(),
 			    AsyncService.ExecutorType.FORK_JOIN,
 			    maxThreads
-			).submitAndGet( () -> entryStream.parallel().filter( test ) );
+			).submitAndGet( () -> {
+				return entryStream
+				    .parallel()
+				    .collect( BLCollector.toStruct( struct.getType() ) );
+			} );
 		}
 
-		return filteredStream.collect( BLCollector.toStruct( struct.getType() ) );
-
+		// Non-parallel execution
+		return entryStream.collect( BLCollector.toStruct( struct.getType() ) );
 	}
 
 	/**
