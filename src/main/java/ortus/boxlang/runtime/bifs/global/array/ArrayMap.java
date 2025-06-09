@@ -34,11 +34,10 @@ public class ArrayMap extends BIF {
 	public ArrayMap() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "array", Key.array ),
+		    new Argument( true, Argument.ARRAY, Key.array ),
 		    new Argument( true, "function:Function", Key.callback ),
-		    new Argument( false, "boolean", Key.parallel, false ),
-		    new Argument( false, "integer", Key.maxThreads ),
-		    new Argument( Key.initialValue )
+		    new Argument( false, Argument.BOOLEAN, Key.parallel, false ),
+		    new Argument( false, Argument.INTEGER, Key.maxThreads )
 		};
 	}
 
@@ -59,7 +58,8 @@ public class ArrayMap extends BIF {
 		return ListUtil.map(
 		    arguments.getAsArray( Key.array ),
 		    arguments.getAsFunction( Key.callback ),
-		    context, arguments.getAsBoolean( Key.parallel ),
+		    context,
+		    arguments.getAsBoolean( Key.parallel ),
 		    arguments.getAsInteger( Key.maxThreads )
 		);
 	}

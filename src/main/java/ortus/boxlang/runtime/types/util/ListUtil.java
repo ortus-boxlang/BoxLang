@@ -34,7 +34,6 @@ import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
 
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
@@ -855,27 +854,57 @@ public class ListUtil {
 	    IBoxContext callbackContext,
 	    Boolean parallel,
 	    Integer maxThreads ) {
-		java.util.function.IntFunction<Object> mapper;
-		if ( callback.requiresStrictArguments() ) {
-			mapper = idx -> ( Object ) callbackContext.invokeFunction( callback,
-			    new Object[] { array.size() > idx ? array.get( idx ) : null } );
-		} else {
-			mapper = idx -> ( Object ) callbackContext.invokeFunction( callback,
-			    new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } );
+
+		// Parameter validation
+		Objects.requireNonNull( array, "Array cannot be null" );
+		Objects.requireNonNull( callback, "Callback cannot be null" );
+		Objects.requireNonNull( callbackContext, "Callback context cannot be null" );
+		if ( maxThreads == null ) {
+			maxThreads = 0; // Default to 0 if not provided
 		}
 
-		IntStream intStream = array.intStream();
-		if ( !parallel ) {
-			return new Array( intStream.mapToObj( mapper ).toArray() );
+		// Build the mapper based on the callback
+		// If the callback requires strict arguments, we only pass the item (Usually Java Predicates)
+		// Otherwise we pass the item, the index, and the array itself
+		java.util.function.IntFunction<Object> mapper;
+		if ( callback.requiresStrictArguments() ) {
+			mapper = idx -> callbackContext.invokeFunction(
+			    callback,
+			    new Object[] { array.size() > idx ? array.get( idx ) : null }
+			);
 		} else {
-			return ArrayCaster.cast( AsyncService.buildExecutor(
-			    "ArrayMap_" + UUID.randomUUID().toString(),
-			    AsyncService.ExecutorType.FORK_JOIN,
-			    maxThreads
-			).submitAndGet( () -> new Array( array.intStream().parallel().mapToObj( mapper ).toArray() ) )
+			mapper = idx -> callbackContext.invokeFunction(
+			    callback,
+			    new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array }
 			);
 		}
 
+		Stream<Object> arrayStream = array
+		    .intStream()
+		    .mapToObj( mapper );
+
+		if ( parallel ) {
+			// If maxThreads is null or 0, then use just the ForkJoinPool default parallelism level
+			if ( maxThreads <= 0 ) {
+				return arrayStream
+				    .parallel()
+				    .collect( BLCollector.toArray() );
+			}
+
+			// Otherwise, create a new ForkJoinPool with the specified number of threads
+			return ( Array ) AsyncService.buildExecutor(
+			    "ArrayMap_" + UUID.randomUUID().toString(),
+			    AsyncService.ExecutorType.FORK_JOIN,
+			    maxThreads
+			).submitAndGet( () -> {
+				return arrayStream
+				    .parallel()
+				    .collect( BLCollector.toArray() );
+			} );
+		}
+
+		// Non-parallel execution
+		return arrayStream.collect( BLCollector.toArray() );
 	}
 
 	/**

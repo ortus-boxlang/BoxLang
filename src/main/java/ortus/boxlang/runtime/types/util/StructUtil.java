@@ -346,12 +346,24 @@ public class StructUtil {
 	    Boolean parallel,
 	    Integer maxThreads ) {
 
-		Stream<Map.Entry<Key, Object>>		entryStream	= struct.entrySet().stream();
-		Struct								result		= new Struct( struct.getType() );
+		// Parameter validation
+		Objects.requireNonNull( struct, "Struct cannot be null" );
+		Objects.requireNonNull( callback, "Callback cannot be null" );
+		Objects.requireNonNull( callbackContext, "Callback context cannot be null" );
+		if ( maxThreads == null ) {
+			maxThreads = 0; // Default to 0 if not provided
+		}
 
-		Consumer<Map.Entry<Key, Object>>	exec;
+		// Build out the result
+		Struct								result	= new Struct( struct.getType() );
+		Boolean								ordered	= struct.getType().equals( IStruct.TYPES.LINKED )
+		    || struct.getType().equals( IStruct.TYPES.SORTED );
+
+		// Build the test predicate based on whether the callback requires strict arguments
+		// or not. This is Java vs BoxLang predicate compatibility.
+		Consumer<Map.Entry<Key, Object>>	consumer;
 		if ( callback.requiresStrictArguments() ) {
-			exec = item -> result.put(
+			consumer = item -> result.put(
 			    item.getKey(),
 			    callbackContext.invokeFunction(
 			        callback,
@@ -359,7 +371,7 @@ public class StructUtil {
 			    )
 			);
 		} else {
-			exec = item -> result.put(
+			consumer = item -> result.put(
 			    item.getKey(),
 			    callbackContext.invokeFunction(
 			        callback,
@@ -367,21 +379,39 @@ public class StructUtil {
 			    )
 			);
 		}
+
+		Stream<Map.Entry<Key, Object>> entryStream = struct
+		    .entrySet()
+		    .stream();
+
 		if ( !parallel ) {
-			entryStream.forEach( exec );
-		} else if ( struct.getType().equals( IStruct.TYPES.LINKED ) ) {
-			AsyncService.buildExecutor(
-			    "StructMap_" + UUID.randomUUID().toString(),
-			    AsyncService.ExecutorType.FORK_JOIN,
-			    maxThreads
-			).submitAndGet( () -> entryStream.parallel().forEachOrdered( exec ) );
-		} else {
-			AsyncService.buildExecutor(
-			    "StructMap_" + UUID.randomUUID().toString(),
-			    AsyncService.ExecutorType.FORK_JOIN,
-			    maxThreads
-			).submitAndGet( () -> entryStream.parallel().forEach( exec ) );
+			entryStream.forEach( consumer );
+			return result;
 		}
+
+		// If maxThreads is null or 0, then use just the ForkJoinPool default parallelism level
+		if ( maxThreads <= 0 ) {
+			if ( ordered || struct.getType().equals( IStruct.TYPES.LINKED ) ) {
+				entryStream.parallel().forEachOrdered( consumer );
+			} else {
+				entryStream.parallel().forEach( consumer );
+			}
+			return result;
+		}
+
+		// Otherwise, create a new ForkJoinPool with the specified number of threads
+		AsyncService.buildExecutor(
+		    "StructMap_" + UUID.randomUUID().toString(),
+		    AsyncService.ExecutorType.FORK_JOIN,
+		    maxThreads
+		).submitAndGet( () -> {
+			if ( ordered || struct.getType().equals( IStruct.TYPES.LINKED ) ) {
+				entryStream.parallel().forEachOrdered( consumer );
+			} else {
+				entryStream.parallel().forEach( consumer );
+			}
+		} );
+
 		return result;
 
 	}
