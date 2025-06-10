@@ -626,13 +626,21 @@ public class PendingQuery {
 	/**
 	 * Generate and execute a JDBC statement using the provided connection.
 	 * <p>
-	 * * If query parameters are present, a {@link PreparedStatement} will be
+	 * If query parameters are present, a {@link PreparedStatement} will be
 	 * utilized and populated with the paremeter bindings. Otherwise, a standard
 	 * {@link Statement} object will be used.
-	 * * Will announce a `PRE_QUERY_EXECUTE` event before executing the query.
+	 * <p>
+	 * Will announce a `PRE_QUERY_EXECUTE` event before executing the query.
+	 *
+	 * @param connection The Connection instance to use for executing the query.
+	 * @param context    The context that initiated this query, used for type casting
+	 *
+	 * @return An ExecutedQuery instance with the results of this JDBC execution, as
+	 *         well as a link to this PendingQuery instance.
 	 */
 	private ExecutedQuery executeStatement( Connection connection, IBoxContext context ) {
 		try {
+			// Determine if we can return generated keys
 			int GENERATED_KEYS_SETTING = Statement.RETURN_GENERATED_KEYS;
 			if ( ! ( connection instanceof QoQConnection ) ) {
 				DatabaseMetaData metaData = connection.getMetaData();
@@ -713,6 +721,9 @@ public class PendingQuery {
 	 * If this is a paramaterized query, apply the parameters to the provided statement.
 	 * We will also take this opportunity to finalize the list of SQL tokens with the
 	 * final param values to build the effective SQL string.
+	 *
+	 * @param statement The Statement instance to apply the parameters to.
+	 * @param context   The context that initiated this query, used for type casting
 	 *
 	 * @throws SQLException
 	 */
