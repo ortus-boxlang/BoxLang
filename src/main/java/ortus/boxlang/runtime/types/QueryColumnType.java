@@ -38,6 +38,7 @@ public enum QueryColumnType {
 	BIT( Types.BIT ),
 	CHAR( Types.CHAR ),
 	DATE( Types.DATE ),
+	// DATETIME maps to Types.TIMESTAMP because SQL DATETIME is typically treated as a timestamp with both date and time components.
 	DATETIME( Types.TIMESTAMP ),
 	DECIMAL( Types.DECIMAL ),
 	DOUBLE( Types.DOUBLE ),
