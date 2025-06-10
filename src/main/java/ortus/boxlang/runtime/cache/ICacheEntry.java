@@ -25,11 +25,21 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 
 /**
- * Every cache provider in BoxLang must adhere to this interface.
- * Every provider can have its own implementation of the cache entry or
- * use the default one provided by BoxLang.
+ * Interface that defines a cache entry contract for BoxLang cache implementations and its object storages (@see IObjectStore)
  *
- * The Cache Entry provides uniformity when storing and retrieving cache entries.
+ * This interface serves as the primary communication mechanism between BoxCaches and their
+ * underlying object pools. Each cache entry represents a cached object with associated
+ * metadata including creation time, access patterns, expiration information, and custom
+ * metadata.
+ *
+ * Cache entries maintain state information such as hit counts, timestamps, and timeout
+ * configurations to support various caching strategies including LRU, time-based expiration,
+ * and access-based eviction policies.
+ *
+ * Implementations of this interface should be thread-safe as cache entries may be accessed
+ * concurrently by multiple threads in a multi-threaded environment.
+ *
+ * @since 1.0.0
  */
 public interface ICacheEntry extends Serializable {
 
@@ -133,13 +143,17 @@ public interface ICacheEntry extends Serializable {
 	/**
 	 * Verifies if this cache entry has expired
 	 */
-	public boolean isExpired();
+	public default boolean isExpired() {
+		return false;
+	}
 
 	/**
 	 * If available, it will get the size of the cache entry in bytes.
 	 * This is not required, but if the cache provider can provide this information,
 	 * it will be used to calculate the size of the cache.
 	 */
-	public long sizeInBytes();
+	public default long sizeInBytes() {
+		return 0;
+	}
 
 }

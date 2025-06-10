@@ -30,9 +30,32 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.conversion.ObjectMarshaller;
 
 /**
- * The base implementation of a cache entry in BoxLang.
- * This entry can be stored inside the cache provider if needed.
- * You can also inherit from this class to create your own cache entry implementation.
+ * BoxCacheEntry represents a single entry in the BoxLang cache system.
+ *
+ * This class implements the ICacheEntry interface and provides a complete cache entry
+ * implementation with support for timeouts, hit counting, metadata, and expiration logic.
+ *
+ * Key features:
+ * - Thread-safe hit counting using AtomicLong
+ * - Configurable timeout and last access timeout
+ * - Metadata support for additional entry information
+ * - Automatic expiration based on creation time and last access time
+ * - Immutable entry properties (except for hits, created, and lastAccessed timestamps)
+ * - Efficient hash code calculation excluding the cached value
+ *
+ * The entry supports two types of timeouts:
+ * 1. Absolute timeout: Entry expires after a fixed time from creation
+ * 2. Idle timeout (lastAccessTimeout): Entry expires if not accessed within the specified time
+ *
+ * Setting timeout to 0 makes the entry eternal (never expires by time).
+ *
+ * Thread Safety:
+ * This class is thread-safe for concurrent access. The hits counter, creation time,
+ * and last accessed time are managed using atomic operations.
+ *
+ * @author Ortus Solutions, Corp
+ *
+ * @since 1.0.0
  */
 public class BoxCacheEntry implements ICacheEntry {
 
