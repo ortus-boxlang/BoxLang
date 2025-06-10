@@ -15,6 +15,7 @@
 package ortus.boxlang.runtime.bifs.global.jdbc;
 
 import java.sql.Connection;
+import java.util.Objects;
 import java.util.Set;
 
 import ortus.boxlang.runtime.bifs.BIF;
@@ -126,8 +127,9 @@ public class QueryExecute extends BIF {
 			executedQuery = pendingQuery.execute( connectionManager, context );
 		}
 
+		// Store the results in the context if requested
 		if ( options.wantsResultStruct() ) {
-			assert options.resultVariableName != null;
+			Objects.requireNonNull( options.resultVariableName, "Result variable name must not be null when result struct is requested" );
 			ExpressionInterpreter.setVariable( context, options.resultVariableName, executedQuery.getResults().getMetaData() );
 		}
 

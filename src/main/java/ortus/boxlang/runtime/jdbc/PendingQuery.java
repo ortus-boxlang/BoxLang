@@ -651,6 +651,7 @@ public class PendingQuery {
 
 			String sqlStatement = this.sql;
 			try (
+			    // If we have no parameters, we can use a Statement, otherwise we use a PreparedStatement
 			    Statement statement = this.parameters.isEmpty()
 			        ? connection.createStatement()
 			        : connection.prepareStatement( sqlStatement, GENERATED_KEYS_SETTING ); ) {
@@ -663,7 +664,9 @@ public class PendingQuery {
 				    Struct.of(
 				        "sql", sqlStatement,
 				        "bindings", getParameterValues(),
-				        "pendingQuery", this ) );
+				        "pendingQuery", this
+				    )
+				);
 
 				long	startTick	= System.currentTimeMillis();
 				boolean	hasResults	= statement instanceof PreparedStatement preparedStatement
@@ -675,7 +678,8 @@ public class PendingQuery {
 				    this,
 				    statement,
 				    endTick - startTick,
-				    hasResults );
+				    hasResults
+				);
 			}
 		} catch ( SQLException e ) {
 			String detail = "";
@@ -801,9 +805,14 @@ public class PendingQuery {
 	 * <p>
 	 * Any query options which pass through to the JDBC Statement interface will be
 	 * applied here. This includes `queryTimeout`, `maxRows`, and `fetchSize`.
+	 *
+	 * @param statement The Statement instance to apply the options to.
+	 *
+	 * @throws SQLException If an error occurs while applying the options.
 	 */
 	private void applyStatementOptions( Statement statement ) throws SQLException {
 		IStruct options = this.queryOptions.toStruct();
+
 		if ( options.containsKey( Key.queryTimeout ) ) {
 			Integer queryTimeout = ( Integer ) options.getOrDefault( Key.queryTimeout, 0 );
 			if ( queryTimeout > 0 ) {
@@ -817,6 +826,7 @@ public class PendingQuery {
 				statement.setLargeMaxRows( maxRows );
 			}
 		}
+
 		if ( options.containsKey( Key.fetchSize ) ) {
 			Integer fetchSize = ( Integer ) options.getOrDefault( Key.fetchSize, 0 );
 			if ( fetchSize > 0 ) {
