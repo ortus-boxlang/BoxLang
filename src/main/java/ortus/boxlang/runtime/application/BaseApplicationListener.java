@@ -775,12 +775,18 @@ public abstract class BaseApplicationListener {
 		    && ! ( classInstance.getThisScope().get( Key.of( methodName ) ) instanceof Function func && func.getAccess().equals( Function.Access.REMOTE ) ) ) {
 			throw new BoxRuntimeException( "[" + methodName + "] is not marked as remote method on the class." );
 		}
-
-		// Direct invocation of a remote method will use named args, but invocation of the listener's onClassRequest method will use positional args
-		if ( namedParams != null ) {
-			result = classInstance.dereferenceAndInvoke( context, Key.of( methodName ), namedParams, false );
-		} else {
-			result = classInstance.dereferenceAndInvoke( context, Key.of( methodName ), positionalParams, false );
+		// The method itself will push the template, but for expandPath to work correctly, we need the BASE template to be the CFC we're executing,
+		// which may be different than the class the method is in, if it's in the super class
+		context.pushTemplate( classInstance );
+		try {
+			// Direct invocation of a remote method will use named args, but invocation of the listener's onClassRequest method will use positional args
+			if ( namedParams != null ) {
+				result = classInstance.dereferenceAndInvoke( context, Key.of( methodName ), namedParams, false );
+			} else {
+				result = classInstance.dereferenceAndInvoke( context, Key.of( methodName ), positionalParams, false );
+			}
+		} finally {
+			context.popTemplate();
 		}
 
 		String				returnFormat	= null;
