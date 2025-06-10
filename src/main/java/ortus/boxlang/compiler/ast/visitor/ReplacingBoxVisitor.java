@@ -890,12 +890,14 @@ public abstract class ReplacingBoxVisitor {
 	}
 
 	public BoxNode visit( BoxFunctionalMemberAccess node ) {
-		for ( int i = 0; i < node.getArguments().size(); i++ ) {
-			BoxArgument	argument	= node.getArguments().get( i );
-			BoxNode		newArgument	= argument.accept( this );
-			if ( newArgument != argument ) {
-				node.replaceChildren( argument, newArgument );
-				node.getArguments().set( i, ( BoxArgument ) newArgument );
+		if ( node.getArguments() != null ) {
+			for ( int i = 0; i < node.getArguments().size(); i++ ) {
+				BoxArgument	argument	= node.getArguments().get( i );
+				BoxNode		newArgument	= argument.accept( this );
+				if ( newArgument != argument ) {
+					node.replaceChildren( argument, newArgument );
+					node.getArguments().set( i, ( BoxArgument ) newArgument );
+				}
 			}
 		}
 		return node;
