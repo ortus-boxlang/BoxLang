@@ -20,6 +20,20 @@ package ortus.boxlang.runtime.cache.providers;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
+/**
+ * Enumeration representing the core cache provider types available in BoxLang runtime.
+ *
+ * This enum defines the built-in cache providers that are available by default in the BoxLang
+ * runtime system. Each provider type is associated with a unique key and can be used to
+ * instantiate the corresponding cache provider implementation.
+ *
+ * Currently supported core providers:
+ * - BOXCACHE: The default BoxLang cache provider
+ *
+ * @author Ortus Solutions, Corp
+ * 
+ * @since 1.0.0
+ */
 public enum CoreProviderType {
 
 	BOXCACHE( Key.boxCacheProvider );

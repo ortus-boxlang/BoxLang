@@ -24,8 +24,17 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * This is an annotation that can be added to cache providers to provide class
- * metadata for registration purposes
+ * Annotation used to mark and configure cache provider implementations in BoxLang.
+ *
+ * This annotation provides metadata about cache providers, including their capabilities,
+ * identification, and grouping information. It should be applied to classes that implement
+ * cache functionality within the BoxLang runtime.
+ *
+ * @author Ortus Solutions, Corp
+ *
+ * @since 1.0.0
+ *
+ * @see ortus.boxlang.runtime.cache
  */
 @Documented
 @Retention( RetentionPolicy.RUNTIME )

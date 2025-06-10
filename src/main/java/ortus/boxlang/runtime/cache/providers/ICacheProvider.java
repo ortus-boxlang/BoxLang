@@ -320,6 +320,8 @@ public interface ICacheProvider {
 
 	/**
 	 * Sets an object in the storage with no stats updated or listeners
+	 * This is considered a passthrough method to the underlying storage.
+	 * <strong>Note:</strong> This mostly makes sense for the BoxCacheProvider.
 	 *
 	 * @param key   The key to store
 	 * @param value The value to store
