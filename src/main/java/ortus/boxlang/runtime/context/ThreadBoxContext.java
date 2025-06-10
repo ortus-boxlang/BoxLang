@@ -175,30 +175,32 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 			return new ScopeSearchResult( attributesScope, attributesScope, key, true );
 		}
 
-		Object result = localScope.getRaw( key );
-		if ( isDefined( result, forAssign ) ) {
-			// Unwrap the value now in case it was really actually null for real
-			return new ScopeSearchResult( localScope, Struct.unWrapNull( result ), key );
-		}
+		if ( !isKeyVisibleScope( key ) ) {
+			Object result = localScope.getRaw( key );
+			if ( isDefined( result, forAssign ) ) {
+				// Unwrap the value now in case it was really actually null for real
+				return new ScopeSearchResult( localScope, Struct.unWrapNull( result ), key );
+			}
 
-		// attributesScope
-		result = attributesScope.getRaw( key );
-		if ( isDefined( result, forAssign ) ) {
-			return new ScopeSearchResult( attributesScope, Struct.unWrapNull( result ), key );
-		}
+			// attributesScope
+			result = attributesScope.getRaw( key );
+			if ( isDefined( result, forAssign ) ) {
+				return new ScopeSearchResult( attributesScope, Struct.unWrapNull( result ), key );
+			}
 
-		result = variablesScope.getRaw( key );
-		// Null means not found
-		if ( isDefined( result, forAssign ) ) {
-			// A thread has special permission to "see" the variables scope from its parent,
-			// even though it's not "nearby" to any other scopes
-			return new ScopeSearchResult( variablesScope, Struct.unWrapNull( result ), key );
-		}
+			result = variablesScope.getRaw( key );
+			// Null means not found
+			if ( isDefined( result, forAssign ) ) {
+				// A thread has special permission to "see" the variables scope from its parent,
+				// even though it's not "nearby" to any other scopes
+				return new ScopeSearchResult( variablesScope, Struct.unWrapNull( result ), key );
+			}
 
-		// In query loop?
-		var querySearch = queryFindNearby( key );
-		if ( querySearch != null ) {
-			return querySearch;
+			// In query loop?
+			var querySearch = queryFindNearby( key );
+			if ( querySearch != null ) {
+				return querySearch;
+			}
 		}
 
 		if ( shallow ) {
@@ -255,11 +257,12 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 				return parentSearchResult;
 			}
 		}
-
-		Object result = threadMeta.getRaw( key );
-		// Null means not found
-		if ( isDefined( result, forAssign ) ) {
-			return new ScopeSearchResult( threadMeta, Struct.unWrapNull( result ), key );
+		if ( !isKeyVisibleScope( key ) ) {
+			Object result = threadMeta.getRaw( key );
+			// Null means not found
+			if ( isDefined( result, forAssign ) ) {
+				return new ScopeSearchResult( threadMeta, Struct.unWrapNull( result ), key );
+			}
 		}
 
 		return parent.scopeFind( key, defaultScope, forAssign );

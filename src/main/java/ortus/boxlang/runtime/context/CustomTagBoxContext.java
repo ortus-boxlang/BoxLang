@@ -95,17 +95,20 @@ public class CustomTagBoxContext extends BaseBoxContext {
 	 */
 	@Override
 	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow, boolean forAssign ) {
-		Object result = variablesScope.getRaw( key );
-		// Null means not found
-		if ( isDefined( result, forAssign ) ) {
-			// Unwrap the value now in case it was really actually null for real
-			return new ScopeSearchResult( variablesScope, Struct.unWrapNull( result ), key );
-		}
 
-		// In query loop?
-		var querySearch = queryFindNearby( key );
-		if ( querySearch != null ) {
-			return querySearch;
+		if ( !isKeyVisibleScope( key ) ) {
+			Object result = variablesScope.getRaw( key );
+			// Null means not found
+			if ( isDefined( result, forAssign ) ) {
+				// Unwrap the value now in case it was really actually null for real
+				return new ScopeSearchResult( variablesScope, Struct.unWrapNull( result ), key );
+			}
+
+			// In query loop?
+			var querySearch = queryFindNearby( key );
+			if ( querySearch != null ) {
+				return querySearch;
+			}
 		}
 
 		if ( shallow ) {

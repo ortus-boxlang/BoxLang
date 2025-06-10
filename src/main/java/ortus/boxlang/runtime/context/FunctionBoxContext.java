@@ -221,7 +221,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 
 	public IStruct getVisibleScopes( IStruct scopes, boolean nearby, boolean shallow ) {
 		if ( hasParent() ) {
-			getParent().getVisibleScopes( scopes, true, shallow );
+			getParent().getVisibleScopes( scopes, true && nearby, shallow );
 		}
 		if ( nearby ) {
 			scopes.getAsStruct( Key.contextual ).put( ArgumentsScope.name, argumentsScope );
@@ -297,34 +297,40 @@ public class FunctionBoxContext extends BaseBoxContext {
 			return new ScopeSearchResult( staticScope, staticScope, key, true );
 		}
 
-		Object result = localScope.getRaw( key );
-		// Null means not found
-		if ( isDefined( result, forAssign ) ) {
-			// Unwrap the value now in case it was really actually null for real
-			return new ScopeSearchResult( localScope, Struct.unWrapNull( result ), key );
-		}
-
-		result = argumentsScope.getRaw( key );
-		// Null means not found
-		if ( isDefined( result, forAssign ) ) {
-			// Unwrap the value now in case it was really actually null for real
-			return new ScopeSearchResult( argumentsScope, Struct.unWrapNull( result ), key );
-		}
-
-		// In query loop?
-		var querySearch = queryFindNearby( key );
-		if ( querySearch != null ) {
-			return querySearch;
-		}
-
-		if ( isInClass() ) {
-			// A function executing in a class can see the class variables
-			IScope classVariablesScope = getThisClass().getBottomClass().getVariablesScope();
-			result = classVariablesScope.getRaw( key );
+		Object	result;
+		boolean	isKeyVisibleScope	= isKeyVisibleScope( key );
+		if ( !isKeyVisibleScope ) {
+			result = localScope.getRaw( key );
 			// Null means not found
 			if ( isDefined( result, forAssign ) ) {
 				// Unwrap the value now in case it was really actually null for real
-				return new ScopeSearchResult( classVariablesScope, Struct.unWrapNull( result ), key );
+				return new ScopeSearchResult( localScope, Struct.unWrapNull( result ), key );
+			}
+
+			result = argumentsScope.getRaw( key );
+			// Null means not found
+			if ( isDefined( result, forAssign ) ) {
+				// Unwrap the value now in case it was really actually null for real
+				return new ScopeSearchResult( argumentsScope, Struct.unWrapNull( result ), key );
+			}
+
+			// In query loop?
+			var querySearch = queryFindNearby( key );
+			if ( querySearch != null ) {
+				return querySearch;
+			}
+		}
+
+		if ( isInClass() ) {
+			if ( !isKeyVisibleScope ) {
+				// A function executing in a class can see the class variables
+				IScope classVariablesScope = getThisClass().getBottomClass().getVariablesScope();
+				result = classVariablesScope.getRaw( key );
+				// Null means not found
+				if ( isDefined( result, forAssign ) ) {
+					// Unwrap the value now in case it was really actually null for real
+					return new ScopeSearchResult( classVariablesScope, Struct.unWrapNull( result ), key );
+				}
 			}
 
 			if ( shallow ) {

@@ -82,17 +82,20 @@ public class InterfaceBoxContext extends BaseBoxContext {
 			return new ScopeSearchResult( staticScope, staticScope, key, true );
 		}
 
-		// In query loop?
-		var querySearch = queryFindNearby( key );
-		if ( querySearch != null ) {
-			return querySearch;
-		}
+		if ( !isKeyVisibleScope( key ) ) {
 
-		Object result = staticScope.getRaw( key );
-		// Null means not found
-		if ( isDefined( result, forAssign ) ) {
-			// Unwrap the value now in case it was really actually null for real
-			return new ScopeSearchResult( staticScope, Struct.unWrapNull( result ), key );
+			// In query loop?
+			var querySearch = queryFindNearby( key );
+			if ( querySearch != null ) {
+				return querySearch;
+			}
+
+			Object result = staticScope.getRaw( key );
+			// Null means not found
+			if ( isDefined( result, forAssign ) ) {
+				// Unwrap the value now in case it was really actually null for real
+				return new ScopeSearchResult( staticScope, Struct.unWrapNull( result ), key );
+			}
 		}
 
 		if ( shallow ) {

@@ -138,17 +138,19 @@ public class ClassBoxContext extends BaseBoxContext {
 			return new ScopeSearchResult( getThisClass(), getThisClass().getBottomClass().getBoxMeta(), BoxMeta.key, false );
 		}
 
-		// In query loop?
-		var querySearch = queryFindNearby( key );
-		if ( querySearch != null ) {
-			return querySearch;
-		}
+		if ( !isKeyVisibleScope( key ) ) {
+			// In query loop?
+			var querySearch = queryFindNearby( key );
+			if ( querySearch != null ) {
+				return querySearch;
+			}
 
-		Object result = variablesScope.getRaw( key );
-		// Null means not found
-		if ( isDefined( result, forAssign ) ) {
-			// Unwrap the value now in case it was really actually null for real
-			return new ScopeSearchResult( variablesScope, Struct.unWrapNull( result ), key );
+			Object result = variablesScope.getRaw( key );
+			// Null means not found
+			if ( isDefined( result, forAssign ) ) {
+				// Unwrap the value now in case it was really actually null for real
+				return new ScopeSearchResult( variablesScope, Struct.unWrapNull( result ), key );
+			}
 		}
 
 		if ( shallow ) {

@@ -149,24 +149,26 @@ public class ClosureBoxContext extends FunctionBoxContext {
 			return new ScopeSearchResult( argumentsScope, argumentsScope, key, true );
 		}
 
-		Object result = localScope.getRaw( key );
-		// Null means not found
-		if ( isDefined( result, forAssign ) ) {
-			// Unwrap the value now in case it was really actually null for real
-			return new ScopeSearchResult( localScope, Struct.unWrapNull( result ), key );
-		}
+		if ( !isKeyVisibleScope( key ) ) {
+			Object result = localScope.getRaw( key );
+			// Null means not found
+			if ( isDefined( result, forAssign ) ) {
+				// Unwrap the value now in case it was really actually null for real
+				return new ScopeSearchResult( localScope, Struct.unWrapNull( result ), key );
+			}
 
-		result = argumentsScope.getRaw( key );
-		// Null means not found
-		if ( isDefined( result, forAssign ) ) {
-			// Unwrap the value now in case it was really actually null for real
-			return new ScopeSearchResult( argumentsScope, Struct.unWrapNull( result ), key );
-		}
+			result = argumentsScope.getRaw( key );
+			// Null means not found
+			if ( isDefined( result, forAssign ) ) {
+				// Unwrap the value now in case it was really actually null for real
+				return new ScopeSearchResult( argumentsScope, Struct.unWrapNull( result ), key );
+			}
 
-		// In query loop?
-		var querySearch = queryFindNearby( key );
-		if ( querySearch != null ) {
-			return querySearch;
+			// In query loop?
+			var querySearch = queryFindNearby( key );
+			if ( querySearch != null ) {
+				return querySearch;
+			}
 		}
 
 		// After a closure has checked local and arguments, it stops to do a shallow lookup in the declaring scope. If the declaring scope

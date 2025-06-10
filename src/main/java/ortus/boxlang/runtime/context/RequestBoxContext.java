@@ -180,9 +180,11 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 		if ( this.threadManager != null && this.threadManager.hasThreads() ) {
 			scopes.getAsStruct( Key.contextual ).put( ThreadScope.name, this.threadManager.getThreadScope() );
 			// loop over threads and add them to the contextual scope
-			for ( Key threadName : this.threadManager.getThreadNames() ) {
-				scopes.getAsStruct( Key.contextual ).put( threadName, this.threadManager.getThreadMeta( threadName ) );
-			}
+			/*
+			 * for ( Key threadName : this.threadManager.getThreadNames() ) {
+			 * scopes.getAsStruct( Key.contextual ).put( threadName, this.threadManager.getThreadMeta( threadName ) );
+			 * }
+			 */
 		}
 		return super.getVisibleScopes( scopes, nearby, shallow );
 	}
@@ -198,10 +200,12 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 			if ( key.equals( ThreadScope.name ) ) {
 				return new ScopeSearchResult( this.threadManager.getThreadScope(), this.threadManager.getThreadScope(), key, true );
 			}
-			// Global access to threadName "scope"
-			IStruct threadMeta = this.threadManager.getThreadMeta( key );
-			if ( threadMeta != null ) {
-				return new ScopeSearchResult( threadMeta, threadMeta, key, true );
+			if ( !isKeyVisibleScope( key ) ) {
+				// Global access to threadName "scope"
+				IStruct threadMeta = this.threadManager.getThreadMeta( key );
+				if ( threadMeta != null ) {
+					return new ScopeSearchResult( threadMeta, threadMeta, key, true );
+				}
 			}
 		}
 

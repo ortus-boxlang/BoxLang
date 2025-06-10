@@ -734,6 +734,38 @@ public class BaseBoxContext implements IBoxContext {
 	}
 
 	/**
+	 * Check if a key is visible in the current context as a scope name.
+	 * This allows us to "reserve" known scope names to ensure arguments.foo
+	 * will always look in the proper arguments scope and never in
+	 * local.arguments.foo for example
+	 * 
+	 * TODO: If this method has uneccessary overhead, consider replacing getVisibleScopes() with a
+	 * more targeted method that does less work and early-exits
+	 * 
+	 * @param key The key to check for visibility
+	 * 
+	 * @return True if the key is visible in the current context, else false
+	 */
+	public boolean isKeyVisibleScope( Key key ) {
+		IStruct scopes = getVisibleScopes();
+		if ( scopes.getAsStruct( Key.contextual ).containsKey( key ) ||
+		    scopes.getAsStruct( Key.lexical ).containsKey( key ) ) {
+			if ( key.equals( Key.data ) ) {
+				System.out.println( "isKeyVisibleScope: " + true + " for key: " + key );
+				System.out.println( "contextual: " + scopes.getAsStruct( Key.contextual ).containsKey( key ) );
+				System.out.println( "lexical: " + scopes.getAsStruct( Key.lexical ).containsKey( key ) );
+				System.out.println( "lexical keys: " + scopes.getAsStruct( Key.lexical ).keySet() );
+				System.out.println( "lexical data key: " + scopes.getAsStruct( Key.lexical ).get( key ).getClass().getName() );
+			}
+			return true;
+		}
+		if ( key.equals( Key.data ) ) {
+			System.out.println( "isKeyVisibleScope: " + false + " for key: " + key );
+		}
+		return false;
+	}
+
+	/**
 	 * Get a scope from the context. If not found, the parent context is asked.
 	 * Don't search for scopes which are nearby to an execution context
 	 *

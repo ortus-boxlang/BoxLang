@@ -97,10 +97,12 @@ public class StaticClassBoxContext extends BaseBoxContext {
 			throw new BoxRuntimeException( "Cannot access super scope in a static context" );
 		}
 
-		// In query loop?
-		var querySearch = queryFindNearby( key );
-		if ( querySearch != null ) {
-			return querySearch;
+		if ( !isKeyVisibleScope( key ) ) {
+			// In query loop?
+			var querySearch = queryFindNearby( key );
+			if ( querySearch != null ) {
+				return querySearch;
+			}
 		}
 
 		if ( shallow ) {
