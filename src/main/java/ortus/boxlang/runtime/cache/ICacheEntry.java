@@ -23,7 +23,6 @@ import java.time.Instant;
 import ortus.boxlang.runtime.dynamic.Attempt;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
-import ortus.boxlang.runtime.types.Struct;
 
 /**
  * Every cache provider in BoxLang must adhere to this interface.
@@ -49,7 +48,7 @@ public interface ICacheEntry extends Serializable {
 	public long hits();
 
 	/**
-	 * The timeout of this cache entry in seconds
+	 * The timeout of this cache entry in seconds since creation.
 	 *
 	 * @return The timeout in seconds
 	 */
@@ -112,18 +111,6 @@ public interface ICacheEntry extends Serializable {
 	public IStruct metadata();
 
 	/**
-	 * Set the value of the cache entry
-	 */
-	public ICacheEntry setValue( Object value );
-
-	/**
-	 * Set the metadata of the cache entry
-	 *
-	 * @param metadata The metadata
-	 */
-	public ICacheEntry setMetadata( Struct metadata );
-
-	/**
 	 * Resets the last accessed date
 	 */
 	public ICacheEntry touchLastAccessed();
@@ -142,5 +129,17 @@ public interface ICacheEntry extends Serializable {
 	 * Get the state of the entry as a struct
 	 */
 	public IStruct toStruct();
+
+	/**
+	 * Verifies if this cache entry has expired
+	 */
+	public boolean isExpired();
+
+	/**
+	 * If available, it will get the size of the cache entry in bytes.
+	 * This is not required, but if the cache provider can provide this information,
+	 * it will be used to calculate the size of the cache.
+	 */
+	public long sizeInBytes();
 
 }

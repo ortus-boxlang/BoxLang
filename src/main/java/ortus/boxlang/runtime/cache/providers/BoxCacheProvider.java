@@ -215,8 +215,7 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 		this.objectStore.getKeysStream()
 		    .limit( limit )
 		    .forEach( key -> {
-			    var results = this.objectStore.getQuiet( key );
-			    report.put( key, results != null ? results.toStruct() : new Struct() );
+			    report.put( key, getCachedObjectMetadata( key.getName() ) );
 		    } );
 		return report;
 	}
@@ -256,7 +255,20 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 	 */
 	public IStruct getCachedObjectMetadata( String key ) {
 		var results = this.objectStore.get( Key.of( key ) );
-		return results != null ? results.toStruct() : new Struct();
+
+		if ( results == null ) {
+			// If not found, return empty
+			return new Struct();
+		}
+
+		// If expired, clear it with announcements, because it has expired
+		if ( results.isExpired() ) {
+			clear( key );
+			return new Struct();
+		}
+
+		// Return the metadata structure
+		return results.toStruct();
 	}
 
 	/**
@@ -459,7 +471,8 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 	 * @return True if the object is in the store, false otherwise
 	 */
 	public boolean lookupQuiet( String key ) {
-		return this.objectStore.lookup( Key.of( key ) );
+		ICacheEntry target = this.objectStore.getQuiet( Key.of( key ) );
+		return target != null && !target.isExpired();
 	}
 
 	/**
@@ -521,8 +534,20 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 	 * @return The cache entry retrieved or null
 	 */
 	public Attempt<Object> getQuiet( String key ) {
-		var results = this.objectStore.get( Key.of( key ) );
-		return results != null ? results.value() : Attempt.empty();
+		ICacheEntry results = this.objectStore.getQuiet( Key.of( key ) );
+
+		if ( results == null ) {
+			// If not found, return empty
+			return Attempt.empty();
+		}
+
+		// If expired, clear it with announcements, because it has expired
+		if ( results.isExpired() ) {
+			clear( key );
+			return Attempt.empty();
+		}
+
+		return results.value();
 	}
 
 	/**

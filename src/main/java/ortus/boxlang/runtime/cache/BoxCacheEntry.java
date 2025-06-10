@@ -18,12 +18,16 @@
 package ortus.boxlang.runtime.cache;
 
 import java.time.Instant;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 import ortus.boxlang.runtime.dynamic.Attempt;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.conversion.ObjectMarshaller;
 
 /**
  * The base implementation of a cache entry in BoxLang.
@@ -35,7 +39,7 @@ public class BoxCacheEntry implements ICacheEntry {
 	/**
 	 * Empty Cache Entry
 	 */
-	public static final ICacheEntry	EMPTY				= new BoxCacheEntry(
+	public static final ICacheEntry		EMPTY				= new BoxCacheEntry(
 	    Key._EMPTY,
 	    0,
 	    0,
@@ -50,19 +54,67 @@ public class BoxCacheEntry implements ICacheEntry {
 	 * --------------------------------------------------------------------------
 	 */
 
-	// Add a serialVersionUID to avoid warning
-	private static final long		serialVersionUID	= 1L;
-	private Key						cacheName;
-	private AtomicLong				hits				= new AtomicLong( 0 );
-	private long					timeout;
-	private long					lastAccessTimeout;
-	private Instant					created				= Instant.now();
-	private Instant					lastAccessed		= Instant.now();
-	private Key						key;
-	private Object					value;
-	private IStruct					metadata			= new Struct();
-	// Calculated hashcode
-	private int						hashCode;
+	/**
+	 * Serial Version UID for serialization
+	 */
+	private static final long			serialVersionUID	= 1L;
+
+	/**
+	 * The name of the cache this entry belongs to
+	 */
+	private final Key					cacheName;
+
+	/**
+	 * The number of hits this entry has received
+	 */
+	private final AtomicLong			hits				= new AtomicLong( 0 );
+
+	/**
+	 * The timeout in seconds for this entry
+	 * If 0, it is eternal and never expires
+	 */
+	private final long					timeout;
+
+	/**
+	 * The last access timeout in seconds for this entry
+	 * If 0, then it's not checked for last access timeout
+	 */
+	private final long					lastAccessTimeout;
+
+	/**
+	 * The time this entry was created
+	 */
+	private AtomicReference<Instant>	created				= new AtomicReference<>( Instant.now() );
+
+	/**
+	 * The last time this entry was accessed
+	 * This is used to determine if the entry is expired based on the last access timeout
+	 */
+	private AtomicReference<Instant>	lastAccessed		= new AtomicReference<>( Instant.now() );
+
+	/**
+	 * The key of the entry
+	 */
+	private final Key					key;
+
+	/**
+	 * The value of the entry
+	 * This can be any object, but it is not serialized in the hash code
+	 */
+	private final Object				value;
+
+	/**
+	 * The metadata associated with this entry
+	 * This is a struct that can hold additional information about the entry
+	 */
+	private final IStruct				metadata;
+
+	/**
+	 * The hash code for this entry
+	 * This is built based on the key, timeout, lastAccessTimeout, and cacheName
+	 * It does not include the value since it's a cache entry
+	 */
+	private final int					hashCode;
 
 	/**
 	 * Constructor with metadata
@@ -82,20 +134,29 @@ public class BoxCacheEntry implements ICacheEntry {
 	    Object value,
 	    IStruct metadata ) {
 		// Prep the entry
-		this.cacheName			= cacheName;
+		this.cacheName			= Objects.requireNonNull( cacheName, "Cache name cannot be null" );
+		this.key				= Objects.requireNonNull( key, "Key cannot be null" );
 		this.timeout			= timeout;
 		this.lastAccessTimeout	= lastAccessTimeout;
-		this.key				= key;
 		this.value				= value;
-		this.metadata			= metadata;
+		this.metadata			= metadata == null ? new Struct() : metadata;
+
+		// Check that timeouts cannot be negative
+		if ( timeout < 0 ) {
+			throw new BoxRuntimeException( "Timeout cannot be negative" );
+		}
+		if ( lastAccessTimeout < 0 ) {
+			throw new BoxRuntimeException( "Last access timeout cannot be negative" );
+		}
 
 		// Build out the hash code which doesn't use the object value since it's a cache entry
-		final int prime = 31;
-		this.hashCode	= 1;
-		this.hashCode	= prime * this.hashCode + key.hashCode();
-		this.hashCode	= prime * this.hashCode + cacheName.hashCode();
-		this.hashCode	= prime * this.hashCode + Long.hashCode( timeout );
-		this.hashCode	= prime * this.hashCode + Long.hashCode( lastAccessTimeout );
+		final int	prime				= 31;
+		int			calculatedHashCode	= 1;
+		calculatedHashCode	= prime * calculatedHashCode + key.hashCode();
+		calculatedHashCode	= prime * calculatedHashCode + cacheName.hashCode();
+		calculatedHashCode	= prime * calculatedHashCode + Long.hashCode( timeout );
+		calculatedHashCode	= prime * calculatedHashCode + Long.hashCode( lastAccessTimeout );
+		this.hashCode		= calculatedHashCode;
 	}
 
 	/**
@@ -119,40 +180,23 @@ public class BoxCacheEntry implements ICacheEntry {
 	 */
 	@Override
 	public boolean equals( Object obj ) {
-		if ( obj == null ) {
-			return false;
-		}
-		if ( this == obj ) {
+		if ( this == obj )
 			return true;
-		}
-		if ( getClass() != obj.getClass() ) {
+		if ( obj == null || getClass() != obj.getClass() )
 			return false;
-		}
+
 		BoxCacheEntry other = ( BoxCacheEntry ) obj;
-		return other.hashCode() == this.hashCode();
-	}
-
-	/**
-	 * Set the value of the cache entry
-	 */
-	public ICacheEntry setValue( Object value ) {
-		this.value = value;
-		return this;
-	}
-
-	/**
-	 * Set the metadata of the cache entry
-	 */
-	public ICacheEntry setMetadata( Struct metadata ) {
-		this.metadata = metadata;
-		return this;
+		return this.key.equals( other.key )
+		    && this.cacheName.equals( other.cacheName )
+		    && this.timeout == other.timeout
+		    && this.lastAccessTimeout == other.lastAccessTimeout;
 	}
 
 	/**
 	 * Reset the last accessed date
 	 */
 	public ICacheEntry touchLastAccessed() {
-		this.lastAccessed = Instant.now();
+		this.lastAccessed.set( Instant.now() );
 		return this;
 	}
 
@@ -160,7 +204,8 @@ public class BoxCacheEntry implements ICacheEntry {
 	 * Reset the created date
 	 */
 	public ICacheEntry resetCreated() {
-		this.created = Instant.now();
+		this.created.set( Instant.now() );
+		this.lastAccessed.set( Instant.now() );
 		return this;
 	}
 
@@ -209,12 +254,12 @@ public class BoxCacheEntry implements ICacheEntry {
 
 	@Override
 	public Instant created() {
-		return this.created;
+		return this.created.get();
 	}
 
 	@Override
 	public Instant lastAccessed() {
-		return this.lastAccessed;
+		return this.lastAccessed.get();
 	}
 
 	@Override
@@ -249,8 +294,8 @@ public class BoxCacheEntry implements ICacheEntry {
 		    "hits", this.hits.get(),
 		    "timeout", this.timeout,
 		    "lastAccessTimeout", this.lastAccessTimeout,
-		    "created", this.created,
-		    "lastAccessed", this.lastAccessed,
+		    "created", this.created.get(),
+		    "lastAccessed", this.lastAccessed.get(),
 		    "key", this.key,
 		    "metadata", this.metadata,
 		    "isEternal", this.isEternal()
@@ -266,6 +311,40 @@ public class BoxCacheEntry implements ICacheEntry {
 		var results = toStruct();
 		results.put( "value", value );
 		return results;
+	}
+
+	/**
+	 * Verifies if the cache entry is expired.
+	 * The rules are as follows:
+	 * - If the timeout is 0, it is eternal and never expires.
+	 * - If the last access timeout is set and the last accessed time plus that timeout is before now, it is expired.
+	 * - If the created time plus the timeout is before now, it is expired.
+	 */
+	public boolean isExpired() {
+
+		// If the timeout is 0, it's eternal
+		if ( this.isEternal() ) {
+			return false;
+		}
+
+		var now = Instant.now();
+
+		// Verify first if the last access timeout is expired
+		if ( this.lastAccessTimeout > 0 && lastAccessed().plusSeconds( this.lastAccessTimeout ).isBefore( now ) ) {
+			return true;
+		}
+
+		// Verify if the timeout is expired
+		return created().plusSeconds( this.timeout ).isBefore( now );
+	}
+
+	/**
+	 * Get the size in bytes of this cache entry.
+	 *
+	 * @return The size in bytes
+	 */
+	public long sizeInBytes() {
+		return ObjectMarshaller.estimateSerializedSize( this.getMemento() );
 	}
 
 }

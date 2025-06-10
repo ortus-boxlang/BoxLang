@@ -22,6 +22,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.nio.charset.StandardCharsets;
 
 import ortus.boxlang.compiler.javaboxpiler.transformer.BoxClassTransformer;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -154,6 +155,33 @@ public class ObjectMarshaller {
 	public static Object serializeClass( IClassRunnable target ) {
 		// Create the state of the class
 		return new BoxClassState( target );
+	}
+
+	/**
+	 * Estimate the serialized size of an object.
+	 * This method attempts to serialize the object and returns the size of the serialized data.
+	 * If the object is not serializable, it falls back to estimating the size based on its string representation.
+	 * <strong>Note:</strong> This is an estimation and may not be accurate for all objects.
+	 * <strong>Use with caution</strong> as it can take significant time for large objects or complex structures.
+	 *
+	 * @param target The object to estimate the serialized size for
+	 *
+	 * @return The estimated size in bytes
+	 */
+	public static long estimateSerializedSize( Object target ) {
+		if ( target == null ) {
+			return 0; // Null objects have no size
+		}
+
+		try (
+		    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		    ObjectOutputStream oos = new ObjectOutputStream( baos ) ) {
+			oos.writeObject( target );
+			return baos.size();
+		} catch ( Exception e ) {
+			// Fallback for non-serializable objects
+			return target.toString().getBytes( StandardCharsets.UTF_8 ).length;
+		}
 	}
 
 }
