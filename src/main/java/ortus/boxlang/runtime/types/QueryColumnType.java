@@ -38,6 +38,8 @@ public enum QueryColumnType {
 	BIT( Types.BIT ),
 	CHAR( Types.CHAR ),
 	DATE( Types.DATE ),
+    // DATETIME maps to Types.TIMESTAMP because SQL DATETIME is typically treated as a timestamp with both date and time components.
+	DATETIME( Types.TIMESTAMP ),
 	DECIMAL( Types.DECIMAL ),
 	DOUBLE( Types.DOUBLE ),
 	INTEGER( Types.INTEGER ),
@@ -48,8 +50,16 @@ public enum QueryColumnType {
 	TIMESTAMP( Types.TIMESTAMP ),
 	VARCHAR( Types.VARCHAR );
 
+	/**
+	 * The SQL type associated with this QueryColumnType.
+	 */
 	public final int sqlType;
 
+	/**
+	 * Create a new QueryColumnType from a SQL type.
+	 *
+	 * @param sqlType The SQL type to use for this QueryColumnType.
+	 */
 	QueryColumnType( int sqlType ) {
 		this.sqlType = sqlType;
 	}
@@ -153,6 +163,8 @@ public enum QueryColumnType {
 				return "time";
 			case DATE :
 				return "date";
+			case DATETIME :
+				return "datetime";
 			case TIMESTAMP :
 				return "timestamp";
 			case OBJECT :
@@ -286,6 +298,7 @@ public enum QueryColumnType {
 			case QueryColumnType.TIME -> DateTimeCaster.cast( value, context ).toDate();
 			case QueryColumnType.DATE -> DateTimeCaster.cast( value, context ).toDate();
 			case QueryColumnType.TIMESTAMP -> new java.sql.Timestamp( DateTimeCaster.cast( value, context ).toEpochMillis() );
+			case QueryColumnType.DATETIME -> new java.sql.Timestamp( DateTimeCaster.cast( value, context ).toEpochMillis() );
 			case QueryColumnType.OBJECT -> value;
 			case QueryColumnType.OTHER -> value;
 			case QueryColumnType.NULL -> null;
