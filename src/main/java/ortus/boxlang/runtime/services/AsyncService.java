@@ -499,7 +499,7 @@ public class AsyncService extends BaseService {
 			case WORK_STEALING :
 				// Work Stealing Pool is available in Java 8 and later
 				// If parallelism is null or 0, then don't pass it, otherwise use it
-				if ( maxThreads > 0 ) {
+				if ( maxThreads != null && maxThreads > 0 ) {
 					executor = Executors.newWorkStealingPool( maxThreads );
 				} else {
 					executor = Executors.newWorkStealingPool();
@@ -507,7 +507,7 @@ public class AsyncService extends BaseService {
 				break;
 			case FORK_JOIN :
 				// If parallelism is null or 0, then don't pass it, otherwise use it
-				if ( maxThreads > 0 ) {
+				if ( maxThreads != null && maxThreads > 0 ) {
 					executor = new ForkJoinPool( maxThreads );
 				} else {
 					executor = ForkJoinPool.commonPool();
