@@ -219,6 +219,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 		}
 	}
 
+	@Override
 	public IStruct getVisibleScopes( IStruct scopes, boolean nearby, boolean shallow ) {
 		if ( hasParent() ) {
 			getParent().getVisibleScopes( scopes, true && nearby, shallow );
@@ -234,6 +235,29 @@ public class FunctionBoxContext extends BaseBoxContext {
 			scopes.getAsStruct( Key.contextual ).put( StaticScope.name, getThisClass().getStaticScope() );
 		}
 		return scopes;
+	}
+
+	/**
+	 * Check if a key is visible in the current context as a scope name.
+	 * This allows us to "reserve" known scope names to ensure arguments.foo
+	 * will always look in the proper arguments scope and never in
+	 * local.arguments.foo for example
+	 * 
+	 * @param key     The key to check for visibility
+	 * @param nearby  true, check only scopes that are nearby to the current execution context
+	 * @param shallow true, do not delegate to parent or default scope if not found
+	 * 
+	 * @return True if the key is visible in the current context, else false
+	 */
+	@Override
+	public boolean isKeyVisibleScope( Key key, boolean nearby, boolean shallow ) {
+		if ( nearby && ( key.equals( ArgumentsScope.name ) || key.equals( LocalScope.name ) ) ) {
+			return true;
+		}
+		if ( isInClass() && ( key.equals( VariablesScope.name ) || key.equals( StaticScope.name ) ) ) {
+			return true;
+		}
+		return super.isKeyVisibleScope( key, true && nearby, shallow );
 	}
 
 	/**

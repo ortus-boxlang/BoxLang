@@ -174,7 +174,30 @@ public class ScriptingRequestBoxContext extends RequestBoxContext {
 		if ( nearby ) {
 			scopes.getAsStruct( Key.contextual ).put( VariablesScope.name, variablesScope );
 		}
-		return super.getVisibleScopes( scopes, nearby, shallow );
+		return scopes;
+	}
+
+	/**
+	 * Check if a key is visible in the current context as a scope name.
+	 * This allows us to "reserve" known scope names to ensure arguments.foo
+	 * will always look in the proper arguments scope and never in
+	 * local.arguments.foo for example
+	 * 
+	 * @param key     The key to check for visibility
+	 * @param nearby  true, check only scopes that are nearby to the current execution context
+	 * @param shallow true, do not delegate to parent or default scope if not found
+	 * 
+	 * @return True if the key is visible in the current context, else false
+	 */
+	@Override
+	public boolean isKeyVisibleScope( Key key, boolean nearby, boolean shallow ) {
+		if ( !shallow && key.equals( requestScope.getName() ) ) {
+			return true;
+		}
+		if ( nearby && key.equals( VariablesScope.name ) ) {
+			return true;
+		}
+		return super.isKeyVisibleScope( key, false, false );
 	}
 
 	/**

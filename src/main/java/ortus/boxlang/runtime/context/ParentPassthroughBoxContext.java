@@ -48,9 +48,14 @@ public abstract class ParentPassthroughBoxContext extends BaseBoxContext {
 	/**
 	 * All these methods just delegate to the parent context so the config override context is mostly invisible.
 	 */
-
+	@Override
 	public IStruct getVisibleScopes( IStruct scopes, boolean nearby, boolean shallow ) {
 		return getParent().getVisibleScopes( scopes, nearby, shallow );
+	}
+
+	@Override
+	public boolean isKeyVisibleScope( Key key, boolean nearby, boolean shallow ) {
+		return getParent().isKeyVisibleScope( key, nearby, shallow );
 	}
 
 	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow, boolean forAssign ) {

@@ -179,14 +179,28 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	public IStruct getVisibleScopes( IStruct scopes, boolean nearby, boolean shallow ) {
 		if ( this.threadManager != null && this.threadManager.hasThreads() ) {
 			scopes.getAsStruct( Key.contextual ).put( ThreadScope.name, this.threadManager.getThreadScope() );
-			// loop over threads and add them to the contextual scope
-			/*
-			 * for ( Key threadName : this.threadManager.getThreadNames() ) {
-			 * scopes.getAsStruct( Key.contextual ).put( threadName, this.threadManager.getThreadMeta( threadName ) );
-			 * }
-			 */
 		}
 		return super.getVisibleScopes( scopes, nearby, shallow );
+	}
+
+	/**
+	 * Check if a key is visible in the current context as a scope name.
+	 * This allows us to "reserve" known scope names to ensure arguments.foo
+	 * will always look in the proper arguments scope and never in
+	 * local.arguments.foo for example
+	 * 
+	 * @param key     The key to check for visibility
+	 * @param nearby  true, check only scopes that are nearby to the current execution context
+	 * @param shallow true, do not delegate to parent or default scope if not found
+	 * 
+	 * @return True if the key is visible in the current context, else false
+	 */
+	@Override
+	public boolean isKeyVisibleScope( Key key, boolean nearby, boolean shallow ) {
+		if ( this.threadManager != null && this.threadManager.hasThreads() && key.equals( ThreadScope.name ) ) {
+			return true;
+		}
+		return super.isKeyVisibleScope( key, nearby, shallow );
 	}
 
 	/**
