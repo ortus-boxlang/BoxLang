@@ -133,4 +133,71 @@ public class StructSomeTest {
 		assertFalse( variables.getAsBoolean( result ) );
 	}
 
+	@DisplayName( "It can run in parallel" )
+	@Test
+	public void testParallelExecution() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		    ref = {
+		    	"foo" : "bar",
+		    	"bar" : 1,
+		    	"blah" : "blerg"
+		    };
+
+		       function eachFn( key, value, struct ){
+		    		return value == "blerg";
+		       };
+
+		       result = StructSome( ref, eachFn, true );
+		              """,
+		    context );
+		// @formatter:on
+		assertTrue( variables.getAsBoolean( result ) );
+	}
+
+	@DisplayName( "It can run in parallel with max threads" )
+	@Test
+	public void testParallelExecutionWithMaxThreads() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		    ref = {
+		    	"foo" : "bar",
+		    	"bar" : 1,
+		    	"blah" : "blerg"
+		    };
+
+		       function eachFn( key, value, struct ){
+		    		return value == "blerg";
+		       };
+
+		       result = StructSome( ref, eachFn, true, 2 );
+		    """,
+		    context );
+		// @formatter:on
+		assertTrue( variables.getAsBoolean( result ) );
+	}
+
+	@DisplayName( "It can run with no matches" )
+	@Test
+	public void testNoMatches() {
+		instance.executeSource(
+		    """
+		    ref = {
+		    	"foo" : "bar",
+		    	"bar" : 1,
+		    	"blah" : "blerg"
+		    };
+
+		       function eachFn( key, value, struct ){
+		    		return value == "no match";
+		       };
+
+		       result = StructSome( ref, eachFn );
+		    """,
+		    context );
+		assertFalse( variables.getAsBoolean( result ) );
+	}
+
 }

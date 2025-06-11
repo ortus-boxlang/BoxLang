@@ -631,12 +631,20 @@ public class ListUtil {
 	 *
 	 * @return The boolean value as to whether the test is met
 	 */
-	public static Boolean some(
+	public static boolean some(
 	    Array array,
 	    Function callback,
 	    IBoxContext callbackContext,
 	    Boolean parallel,
 	    Integer maxThreads ) {
+
+		// Parameter validation
+		Objects.requireNonNull( array, "Array cannot be null" );
+		Objects.requireNonNull( callback, "Callback cannot be null" );
+		Objects.requireNonNull( callbackContext, "Callback context cannot be null" );
+		if ( maxThreads == null ) {
+			maxThreads = 0; // Default to 0 if not provided
+		}
 
 		IntPredicate test;
 		if ( callback.requiresStrictArguments() ) {
@@ -647,16 +655,31 @@ public class ListUtil {
 			    new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } ) );
 		}
 
-		IntStream intStream = array.intStream();
+		// Create a stream of what we want, usage is determined internally by the terminators
+		IntStream arrayStream = array.intStream();
 
-		return !parallel
-		    ? ( Boolean ) intStream.anyMatch( test )
-		    : ( Boolean ) AsyncService.buildExecutor(
-		        "ArraySome_" + UUID.randomUUID().toString(),
-		        AsyncService.ExecutorType.FORK_JOIN,
-		        maxThreads
-		    ).submitAndGet( () -> array.intStream().parallel().anyMatch( test ) );
+		if ( parallel ) {
+			// If maxThreads is null or 0, then use just the ForkJoinPool default parallelism level
+			if ( maxThreads <= 0 ) {
+				return arrayStream
+				    .parallel()
+				    .anyMatch( test );
+			}
+			// Otherwise, create a new ForkJoinPool with the specified number of threads
+			return ( Boolean ) AsyncService.buildExecutor(
+			    "ArraySome_" + UUID.randomUUID().toString(),
+			    AsyncService.ExecutorType.FORK_JOIN,
+			    maxThreads
+			).submitAndGet( () -> {
+				return arrayStream
+				    .parallel()
+				    .anyMatch( test );
+			} );
+		}
 
+		// Non-parallel execution
+		return arrayStream
+		    .anyMatch( test );
 	}
 
 	/**
