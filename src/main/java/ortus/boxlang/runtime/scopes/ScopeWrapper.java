@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.scopes;
 import java.util.List;
 import java.util.Map;
 
+import ortus.boxlang.runtime.dynamic.casters.KeyCaster;
 import ortus.boxlang.runtime.types.Struct;
 
 /**
@@ -75,14 +76,14 @@ public class ScopeWrapper extends BaseScope {
 	}
 
 	@Override
-	public boolean containsKey( Object name ) throws NullPointerException {
+	public boolean containsKey( Object name ) {
 		if ( super.containsKey( name ) ) {
 			return true;
 		}
 		return wrappedScope.containsKey( name );
 	}
 
-	public boolean containsKey( Key name ) throws NullPointerException {
+	public boolean containsKey( Key name ) {
 		if ( super.containsKey( name ) ) {
 			return true;
 		}
@@ -126,6 +127,20 @@ public class ScopeWrapper extends BaseScope {
 		List<Key> result = keySet().stream().collect( java.util.stream.Collectors.toList() );
 		result.addAll( wrappedScope.keySet().stream().collect( java.util.stream.Collectors.toList() ) );
 		return result;
+	}
+
+	/**
+	 * Add an override to the scope wrapper.
+	 * TODO: This should prolly live in a specific $bx meta object for the scope wrapper class
+	 * 
+	 * @param key   The key to override
+	 * @param value The value to override with
+	 * 
+	 * @return The scope wrapper itself for chaining
+	 */
+	public ScopeWrapper addOverride( Object key, Object value ) {
+		super.put( KeyCaster.cast( key ), value );
+		return this;
 	}
 
 }
