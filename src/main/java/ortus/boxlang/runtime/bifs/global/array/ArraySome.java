@@ -42,7 +42,7 @@ public class ArraySome extends BIF {
 	}
 
 	/**
-	 * Used to iterate over an array and test whether any items meet the test callback.
+	 * Used to iterate over an array and test whether <strong>ANY</strong> items meet the test callback.
 	 * The function will be passed 3 arguments: the value, the index, and the array.
 	 * You can alternatively pass a Java Predicate which will only receive the 1st arg.
 	 * The function should return true if the item meets the test, and false otherwise.

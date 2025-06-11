@@ -29,7 +29,6 @@ import ortus.boxlang.runtime.types.util.ListUtil;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "listSome" )
-
 public class ListSome extends ArraySome {
 
 	/**
@@ -49,7 +48,7 @@ public class ListSome extends ArraySome {
 	}
 
 	/**
-	 * Used to iterate over a delimited list and test whether any items meet the test callback.
+	 * Used to iterate over a delimited list and test whether <strong>ANY</strong> items meet the test callback.
 	 * The function will be passed 3 arguments: the value, the index, and the list.
 	 * You can alternatively pass a Java Predicate which will only receive the 1st arg.
 	 * The function should return true if the item meets the test, and false otherwise.

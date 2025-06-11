@@ -258,8 +258,15 @@ public class StructUtil {
 	    Boolean parallel,
 	    Integer maxThreads ) {
 
-		Stream<Map.Entry<Key, Object>>		entryStream	= struct.entrySet().stream();
-		Predicate<Map.Entry<Key, Object>>	test;
+		// Parameter validation
+		Objects.requireNonNull( struct, "Struct cannot be null" );
+		Objects.requireNonNull( callback, "Callback cannot be null" );
+		Objects.requireNonNull( callbackContext, "Callback context cannot be null" );
+		if ( maxThreads == null ) {
+			maxThreads = 0; // Default to 0 if not provided
+		}
+
+		Predicate<Map.Entry<Key, Object>> test;
 		if ( callback.requiresStrictArguments() ) {
 			test = item -> BooleanCaster.cast( callbackContext.invokeFunction(
 			    callback,
@@ -272,16 +279,29 @@ public class StructUtil {
 			) );
 		}
 
-		return !parallel
-		    ? entryStream.dropWhile( test ).toArray().length == 0
-		    : BooleanCaster.cast(
-		        AsyncService.buildExecutor(
-		            "ArrayEvery_" + UUID.randomUUID().toString(),
-		            AsyncService.ExecutorType.FORK_JOIN,
-		            maxThreads
-		        ).submitAndGet( () -> entryStream.parallel().dropWhile( test ).toArray().length == 0 )
-		    );
+		// Create a stream of what we want, usage is determined internally by the terminators
+		Stream<Map.Entry<Key, Object>> entryStream = struct.entrySet().stream();
+		if ( parallel ) {
+			// If maxThreads is null or 0, then use just the ForkJoinPool default parallelism level
+			if ( maxThreads <= 0 ) {
+				return entryStream
+				    .parallel()
+				    .allMatch( test );
+			}
+			// Otherwise, create a new ForkJoinPool with the specified number of threads
+			return ( Boolean ) AsyncService.buildExecutor(
+			    "StructEvery_" + UUID.randomUUID().toString(),
+			    AsyncService.ExecutorType.FORK_JOIN,
+			    maxThreads
+			).submitAndGet( () -> {
+				return entryStream
+				    .parallel()
+				    .allMatch( test );
+			} );
+		}
 
+		// Non-parallel execution
+		return entryStream.allMatch( test );
 	}
 
 	/**

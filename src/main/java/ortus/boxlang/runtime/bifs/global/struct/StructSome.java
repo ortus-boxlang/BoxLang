@@ -45,7 +45,7 @@ public class StructSome extends BIF {
 	}
 
 	/**
-	 * Used to iterate over a struct and test whether any items meet the test callback.
+	 * Used to iterate over a struct and test whether <strong>ANY</strong> items meet the test callback.
 	 * The function will be passed 3 arguments: the key, the value, and the struct.
 	 * You can alternatively pass a Java BiPredicate which will only receive the first 2 args.
 	 * The function should return true if the item meets the test, and false otherwise.

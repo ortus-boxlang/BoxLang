@@ -699,6 +699,15 @@ public class ListUtil {
 	    IBoxContext callbackContext,
 	    Boolean parallel,
 	    Integer maxThreads ) {
+
+		// Parameter validation
+		Objects.requireNonNull( array, "Array cannot be null" );
+		Objects.requireNonNull( callback, "Callback cannot be null" );
+		Objects.requireNonNull( callbackContext, "Callback context cannot be null" );
+		if ( maxThreads == null ) {
+			maxThreads = 0; // Default to 0 if not provided
+		}
+
 		IntPredicate test;
 		if ( callback.requiresStrictArguments() ) {
 			test = idx -> BooleanCaster.cast( callbackContext.invokeFunction( callback,
@@ -708,18 +717,31 @@ public class ListUtil {
 			    new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } ) );
 		}
 
-		IntStream intStream = array.intStream();
+		// Create a stream of what we want, usage is determined internally by the terminators
+		IntStream arrayStream = array.intStream();
 
-		return !parallel
-		    ? intStream.dropWhile( test ).toArray().length == 0
-		    : BooleanCaster.cast(
-		        AsyncService.buildExecutor(
-		            "ArrayEvery_" + UUID.randomUUID().toString(),
-		            AsyncService.ExecutorType.FORK_JOIN,
-		            maxThreads
-		        ).submitAndGet( () -> array.intStream().parallel().dropWhile( test ).toArray().length == 0 )
-		    );
+		if ( parallel ) {
+			// If maxThreads is null or 0, then use just the ForkJoinPool default parallelism level
+			if ( maxThreads <= 0 ) {
+				return arrayStream
+				    .parallel()
+				    .allMatch( test );
+			}
+			// Otherwise, create a new ForkJoinPool with the specified number of threads
+			return ( Boolean ) AsyncService.buildExecutor(
+			    "ArrayEvery_" + UUID.randomUUID().toString(),
+			    AsyncService.ExecutorType.FORK_JOIN,
+			    maxThreads
+			).submitAndGet( () -> {
+				return arrayStream
+				    .parallel()
+				    .allMatch( test );
+			} );
+		}
 
+		// Non-parallel execution
+		return arrayStream
+		    .allMatch( test );
 	}
 
 	/**
@@ -1006,9 +1028,9 @@ public class ListUtil {
 	/**
 	 * Utility method to escape special regex characters
 	 *
-	 * @param str
+	 * @param str The string to escape
 	 *
-	 * @return
+	 * @return The escaped string
 	 */
 	private static String escapeRegexSpecials( String str ) {
 		return SPECIAL_REGEX_CHARS.matcher( str ).replaceAll( "\\\\$0" );

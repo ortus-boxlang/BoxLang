@@ -42,7 +42,7 @@ public class QuerySome extends BIF {
 	}
 
 	/**
-	 * Used to iterate over a query and test whether any items meet the test callback.
+	 * Used to iterate over a query and test whether <strong>ANY</strong> items meet the test callback.
 	 * The function will be passed 3 arguments: the row, the currentRow, and the query.
 	 * You can alternatively pass a Java Predicate which will only receive the 1st arg.
 	 * The function should return true if the item meets the test, and false otherwise.
