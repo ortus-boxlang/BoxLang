@@ -72,7 +72,7 @@ public record ExecutorRecord(
 	public void shutdownQuiet() {
 		if ( executor == null )
 			return;
-		getLogger().debug( "Executor ({}) shuttingdown quiet", this.name );
+		getLogger().debug( "Executor ({}) shutting down quiet", this.name );
 		this.executor.shutdown();
 	}
 
