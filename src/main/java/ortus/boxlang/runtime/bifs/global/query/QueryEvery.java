@@ -52,7 +52,7 @@ public class QueryEvery extends BIF {
 	 * <h2>Parallel Execution</h2>
 	 * If the <code>parallel</code> argument is set to true, and no <code>max_threads</code> are sent, the filter will be executed in parallel using a ForkJoinPool with parallel streams.
 	 * If <code>max_threads</code> is specified, it will create a new ForkJoinPool with the specified number of threads to run the filter in parallel, and destroy it after the operation is complete.
-	 * This allows for efficient processing of large Querys, especially when the test function is computationally expensive or the Query is large.
+	 * This allows for efficient processing of large Queries, especially when the test function is computationally expensive or the Query is large.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
