@@ -487,7 +487,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 */
 	public Object[] getRow( int index ) {
 		validateRow( index );
-		return data.get( index );
+		return this.data.get( index );
 	}
 
 	/**
@@ -517,8 +517,8 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 				interceptorService.announce(
 				    BoxEvent.QUERY_ADD_ROW,
 				    Struct.of(
-				        "query", this,
-				        "row", target.getRow( i )
+				        Key.query, this,
+				        Key.row, target.getRow( i )
 				    )
 				);
 				data.add( position + i, target.getRow( i ) );
@@ -537,28 +537,35 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 * @return this query
 	 */
 	public int addRow( Object[] row ) {
-		interceptorService.announce(
-		    BoxEvent.QUERY_ADD_ROW,
-		    Struct.of(
-		        "query", this,
-		        "row", row
-		    )
-		);
-		// TODO: validate types
-		int newRow = size.incrementAndGet();
-		if ( actualSize.get() < newRow + 50 ) {
-			synchronized ( data ) {
-				if ( actualSize.get() < newRow + 50 ) {
-					// Add 200 more rows with nulls
-					for ( int i = 0; i < 200; i++ ) {
-						data.add( null );
-					}
-					actualSize.addAndGet( 200 );
-				}
-			}
+		// We do this, since it's hot code
+		boolean doEvents = interceptorService.hasState( BoxEvent.QUERY_ADD_ROW.key() );
+
+		if ( doEvents ) {
+			// Notify listeners before any mutation
+			interceptorService.announce(
+			    BoxEvent.QUERY_ADD_ROW,
+			    Struct.of(
+			        Key.query, this,
+			        Key.row, row
+			    )
+			);
 		}
-		data.set( newRow - 1, row );
-		return newRow;
+
+		synchronized ( this.data ) {
+			// Get new index
+			int newRow = size.incrementAndGet();
+			// Ensure Capacity
+			if ( this.actualSize.get() < newRow + 50 ) {
+				// Add 200 more slots
+				for ( int i = 0; i < 200; i++ ) {
+					this.data.add( null );
+				}
+				this.actualSize.addAndGet( 200 );
+			}
+			// Now we can safely add the row
+			this.data.set( newRow - 1, row );
+			return newRow;
+		}
 	}
 
 	/**
@@ -627,10 +634,10 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 * @return this query
 	 */
 	public int addRow( IStruct row ) {
-		Object[]	rowData	= new Object[ columns.size() ];
+		Object[]	rowData	= new Object[ this.columns.size() ];
 		// TODO: validate types
 		int			i		= 0;
-		for ( QueryColumn column : columns.values() ) {
+		for ( QueryColumn column : this.columns.values() ) {
 			// Missing keys in the struct go in the query as an empty string (CF compat)
 			rowData[ i ] = row.containsKey( column.getName() ) ? row.get( column.getName() ) : "";
 			i++;

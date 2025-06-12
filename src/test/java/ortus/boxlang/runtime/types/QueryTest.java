@@ -197,4 +197,20 @@ public class QueryTest {
 		assertThat( qry.getColumnDataAsArray( Key.of( "age" ) ).get( 1 ) ).isEqualTo( 25 );
 	}
 
+	@DisplayName( "Add 100 rows to a query synchronously " )
+	@Test
+	void testAdd100Rows() {
+		// Create an Array with 100 rows, each with a Struct of data
+		Query qry = new Query();
+		qry.addColumn( Key.of( "id" ), QueryColumnType.INTEGER );
+		qry.addColumn( Key.of( "name" ), QueryColumnType.VARCHAR );
+
+		for ( int i = 1; i <= 100; i++ ) {
+			qry.addRow( Struct.of( Key.of( "id" ), i, Key.of( "name" ), "Name " + i ) );
+		}
+
+		assertThat( qry.size() ).isEqualTo( 100 );
+		assertThat( qry.getColumnList() ).isEqualTo( "id,name" );
+	}
+
 }

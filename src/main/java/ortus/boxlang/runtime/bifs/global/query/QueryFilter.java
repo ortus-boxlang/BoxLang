@@ -21,10 +21,9 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
-import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.Query;
-import ortus.boxlang.runtime.types.util.ListUtil;
+import ortus.boxlang.runtime.types.util.QueryUtil;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.QUERY )
@@ -71,19 +70,28 @@ public class QueryFilter extends BIF {
 	 *                      If parallel is false, this argument is ignored.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Query	query			= arguments.getAsQuery( Key.query );
+		Query query = arguments.getAsQuery( Key.query );
 
 		// NOTE: I am using this approach until we make queries thread safe.
-		Array	mappedResult	= ListUtil.filter(
-		    query.toArrayOfStructs(),
+		// Array mappedResult = ListUtil.filter(
+		// query.toArrayOfStructs(),
+		// arguments.getAsFunction( Key.callback ),
+		// context,
+		// arguments.getAsBoolean( Key.parallel ),
+		// arguments.getAsInteger( Key.maxThreads )
+		// );
+
+		// query.clear();
+		// query.addData( mappedResult );
+
+		QueryUtil.filter(
+		    query,
 		    arguments.getAsFunction( Key.callback ),
 		    context,
 		    arguments.getAsBoolean( Key.parallel ),
 		    arguments.getAsInteger( Key.maxThreads )
 		);
 
-		query.clear();
-		query.addData( mappedResult );
 		return query;
 	}
 }
