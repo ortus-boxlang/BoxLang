@@ -49,6 +49,7 @@ import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.LocalScope;
+import ortus.boxlang.runtime.scopes.RequestScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
@@ -2704,7 +2705,7 @@ public class CoreLangTest {
 		           query();
 		           remote();
 		           required();
-		           request();
+		           //request();
 		          // return();
 		           rethrow();
 		           savecontent();
@@ -3163,7 +3164,7 @@ public class CoreLangTest {
 		      query();
 		      remote();
 		      required();
-		      request();
+		      //request();
 		     // return();
 		      rethrow();
 		      savecontent();
@@ -5603,6 +5604,22 @@ public class CoreLangTest {
 		              		  """,
 		    context );
 		assertThat( variables.get( Key.of( "result" ) ) ).isEqualTo( true );
+	}
+
+	@Test
+	public void testCannotOverrideScopes() {
+		instance.executeSource(
+		    """
+		       variables.request = "test";
+		    result = request;
+		    variables.server = { foo : "bar" }
+		    result2 = server.foo ?: 'default value';
+
+		                 		  """,
+		    context );
+		assertThat( variables.get( Key.of( "result" ) ) ).isInstanceOf( RequestScope.class );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "default value" );
+
 	}
 
 }
