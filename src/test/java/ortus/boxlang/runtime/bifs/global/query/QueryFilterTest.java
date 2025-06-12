@@ -148,8 +148,10 @@ public class QueryFilterTest {
 		    	type: "film",
 		    	title: "Star Wars"
 		    }]);
-		    result = queryFilter( news, (_news) => {
-		    		return _news.type is 'book';
+
+
+		    result = queryFilter( news, ( row ) => {
+		    		return row.type == 'book';
 		    	}, true );
 		    	   """,
 		    context );

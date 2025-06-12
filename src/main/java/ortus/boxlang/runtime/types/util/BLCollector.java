@@ -103,14 +103,21 @@ public class BLCollector {
 	 */
 	public static Collector<IStruct, Query, Query> toQuery( Query newQuery ) {
 		return Collector.of(
-		    () -> newQuery, // supplier
-		    Query::add, // accumulator
+		    () -> {
+			    Query q = new Query();
+			    for ( var column : newQuery.getColumns().entrySet() ) {
+				    q.addColumn( column.getKey(), column.getValue().getType() );
+			    }
+			    return q;
+		    },
+		    // supplier
+		    ( query, row ) -> query.addRow( row ),
+		    // accumulator
 		    ( left, right ) -> {
 			    left.addAll( right );
 			    return left;
 		    }, // combiner
-		    Collector.Characteristics.IDENTITY_FINISH,
-		    Collector.Characteristics.CONCURRENT
+		    Collector.Characteristics.IDENTITY_FINISH
 		);
 	}
 

@@ -66,12 +66,6 @@ public class QueryUtil {
 			);
 		}
 
-		// Prepare the new query structure
-		Query newQuery = new Query();
-		for ( var column : query.getColumns().entrySet() ) {
-			newQuery.addColumn( column.getKey(), column.getValue().getType() );
-		}
-
 		// Create a stream of what we want, usage is determined internally by the terminators
 		Stream<IStruct> queryStream = query
 		    .intStream()
@@ -82,18 +76,18 @@ public class QueryUtil {
 		if ( parallel ) {
 			// If maxThreads is null or 0, then use just the ForkJoinPool default parallelism level
 			if ( maxThreads <= 0 ) {
-				return queryStream.parallel().collect( BLCollector.toQuery( newQuery ) );
+				return queryStream.parallel().collect( BLCollector.toQuery( query ) );
 			}
 			// Otherwise, create a new ForkJoinPool with the specified number of threads
 			return ( Query ) AsyncService.buildExecutor(
 			    "QueryFilter_" + UUID.randomUUID().toString(),
 			    AsyncService.ExecutorType.FORK_JOIN,
 			    maxThreads
-			).submitAndGet( () -> queryStream.parallel().collect( BLCollector.toQuery( newQuery ) ) );
+			).submitAndGet( () -> queryStream.parallel().collect( BLCollector.toQuery( query ) ) );
 		}
 
 		// If parallel is false, just use the regular stream
-		return queryStream.collect( BLCollector.toQuery( newQuery ) );
+		return queryStream.collect( BLCollector.toQuery( query ) );
 	}
 
 }
