@@ -58,22 +58,88 @@ import ortus.boxlang.runtime.types.util.BLCollector;
 import ortus.boxlang.runtime.util.DuplicationUtil;
 
 /**
- * This type represents a representation of a database query result set.
- * It provides language specific methods to access columnar data, both as value lists and within iterative loops
+ * Represents a database query result set with rows and columns of data.
+ * This class implements a mutable query structure that can be populated from JDBC ResultSets,
+ * arrays, or manually constructed. It provides comprehensive functionality for manipulating
+ * query data including adding/removing rows and columns, sorting, and data access.
+ *
+ * <p>
+ * The Query class implements Collection&lt;IStruct&gt; to allow iteration over rows as structs,
+ * and IReferenceable for dynamic property access. Each row can be accessed as either an array
+ * of objects or as a struct with column names as keys.
+ * </p>
+ *
+ * <p>
+ * Key features:
+ * </p>
+ * <ul>
+ * <li>Thread-safe operations for concurrent access</li>
+ * <li>Lazy initialization with pre-allocated capacity for performance</li>
+ * <li>Support for various data types through QueryColumnType</li>
+ * <li>Integration with BoxLang runtime events and interceptors</li>
+ * <li>Conversion to/from different data formats (arrays, structs, ResultSets)</li>
+ * </ul>
+ *
+ * <p>
+ * Usage examples:
+ * </p>
+ *
+ * <pre>
+ * // Create empty query
+ * Query q = new Query();
+ * q.addColumn( Key.of( "id" ), QueryColumnType.INTEGER );
+ * q.addColumn( Key.of( "name" ), QueryColumnType.VARCHAR );
+ *
+ * // Add data
+ * q.addRow( new Object[] { 1, "John" } );
+ * q.addRow( Struct.of( "id", 2, "name", "Jane" ) );
+ *
+ * // Access data
+ * String name = ( String ) q.getCell( Key.of( "name" ), 0 );
+ * IStruct row = q.getRowAsStruct( 1 );
+ * </pre>
+ *
+ * @author Ortus Solutions
+ *
+ * @since 1.0.0
+ *
+ * @see QueryColumn
+ * @see QueryColumnType
+ * @see UnmodifiableQuery
  */
 public class Query implements IType, IReferenceable, Collection<IStruct>, Serializable {
 
+	/**
+	 * Interceptor service for announcing query events
+	 */
 	private static final InterceptorService	interceptorService	= BoxRuntime.getInstance().getInterceptorService();
 
 	/**
-	 * Query data as List of arrays
+	 * Serialization version
 	 */
-	// private List<Object[]> data = Collections.synchronizedList( new ArrayList<Object[]>() );
-	private List<Object[]>					data;
+	private static final long				serialVersionUID	= 1L;
 
+	/**
+	 * Function service used for member invocations and dynamic function calls
+	 */
+	private transient FunctionService		functionService;
+
+	/**
+	 * Query data as List of arrays
+	 * We are not using a synchronized list in order to have speed when doing operations.
+	 * Synchronizations will be done on a needed basis.
+	 */
+	private volatile List<Object[]>			data;
+
+	/**
+	 * Size of the query, used for fast access
+	 */
 	protected AtomicInteger					size				= new AtomicInteger( 0 );
 
-	private int								actualSize			= 0;
+	/**
+	 * The actual size of the data list, used to pre-allocate space
+	 */
+	private AtomicInteger					actualSize			= new AtomicInteger( 0 );
 
 	/**
 	 * Map of column definitions
@@ -81,19 +147,9 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	private Map<Key, QueryColumn>			columns				= Collections.synchronizedMap( new LinkedHashMap<Key, QueryColumn>() );
 
 	/**
-	 * Metadata object
+	 * Metadata object for the query
 	 */
-	public transient BoxMeta				$bx;
-
-	/**
-	 * Function service
-	 */
-	private transient FunctionService		functionService;
-
-	/**
-	 * Serialization version
-	 */
-	private static final long				serialVersionUID	= 1L;
+	public transient BoxMeta<Query>			$bx;
 
 	/**
 	 * Metadata for the query, used to populate QueryMeta
@@ -109,9 +165,9 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		this.functionService	= BoxRuntime.getInstance().getFunctionService();
 		this.metadata			= meta == null ? new Struct( IStruct.TYPES.SORTED ) : meta;
 		if ( initialSize > 0 ) {
-			this.data	= new ArrayList<Object[]>( initialSize );
+			this.data = new ArrayList<Object[]>( initialSize );
 			// add nulls and increment for each row
-			actualSize	= initialSize;
+			actualSize.set( initialSize );
 			for ( int i = 0; i < initialSize; i++ ) {
 				data.add( null );
 			}
@@ -264,7 +320,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	public void setData( List<Object[]> data ) {
 		this.data = data;
 		size.set( data.size() );
-		actualSize = data.size();
+		actualSize.set( data.size() );
 	}
 
 	/**
@@ -490,14 +546,14 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		);
 		// TODO: validate types
 		int newRow = size.incrementAndGet();
-		if ( actualSize < newRow + 50 ) {
+		if ( actualSize.get() < newRow + 50 ) {
 			synchronized ( data ) {
-				if ( actualSize < newRow + 50 ) {
+				if ( actualSize.get() < newRow + 50 ) {
 					// Add 200 more rows with nulls
 					for ( int i = 0; i < 200; i++ ) {
 						data.add( null );
 					}
-					actualSize = actualSize + 200;
+					actualSize.addAndGet( 200 );
 				}
 			}
 		}
@@ -628,7 +684,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		validateRow( index );
 		size.decrementAndGet();
 		data.remove( index );
-		actualSize = data.size();
+		actualSize.set( data.size() );
 		return this;
 	}
 
@@ -814,7 +870,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 			// loop and remove all rows over the count
 			while ( size.get() > rows ) {
 				data.remove( size.decrementAndGet() );
-				actualSize--;
+				actualSize.decrementAndGet();
 			}
 			return this;
 		}
@@ -825,7 +881,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		while ( data.size() > size.get() ) {
 			data.remove( data.size() - 1 );
 		}
-		actualSize = data.size();
+		actualSize.set( data.size() );
 	}
 
 	/***************************
@@ -904,7 +960,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		synchronized ( data ) {
 			size.decrementAndGet();
 			var result = data.remove( o );
-			actualSize = data.size();
+			actualSize.set( data.size() );
 			return result;
 		}
 	}
@@ -928,7 +984,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 			truncateInternal();
 			boolean result = data.removeAll( c );
 			size.set( data.size() );
-			actualSize = data.size();
+			actualSize.set( data.size() );
 			return result;
 		}
 	}
@@ -939,7 +995,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 			truncateInternal();
 			boolean result = data.retainAll( c );
 			size.set( data.size() );
-			actualSize = data.size();
+			actualSize.set( data.size() );
 			return result;
 		}
 	}
@@ -948,7 +1004,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	public void clear() {
 		synchronized ( data ) {
 			size.set( 0 );
-			actualSize = 0;
+			actualSize.set( 0 );
 			data.clear();
 		}
 	}
@@ -983,7 +1039,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 
 	@Override
 	public Object dereferenceAndInvoke( IBoxContext context, Key name, Object[] positionalArguments, Boolean safe ) {
-		MemberDescriptor memberDescriptor = functionService.getMemberMethod( name, BoxLangType.QUERY );
+		MemberDescriptor memberDescriptor = this.functionService.getMemberMethod( name, BoxLangType.QUERY );
 		if ( memberDescriptor != null ) {
 			return memberDescriptor.invoke( context, this, positionalArguments );
 		}
@@ -993,7 +1049,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 
 	@Override
 	public Object dereferenceAndInvoke( IBoxContext context, Key name, Map<Key, Object> namedArguments, Boolean safe ) {
-		MemberDescriptor memberDescriptor = functionService.getMemberMethod( name, BoxLangType.QUERY );
+		MemberDescriptor memberDescriptor = this.functionService.getMemberMethod( name, BoxLangType.QUERY );
 		if ( memberDescriptor != null ) {
 			return memberDescriptor.invoke( context, this, namedArguments );
 		}
@@ -1027,7 +1083,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	}
 
 	@Override
-	public BoxMeta getBoxMeta() {
+	public BoxMeta<Query> getBoxMeta() {
 		if ( this.$bx == null ) {
 			this.$bx = new QueryMeta( this );
 		}
