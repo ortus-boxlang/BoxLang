@@ -32,6 +32,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.Array;
 
 public class QueryEachTest {
 
@@ -102,5 +103,63 @@ public class QueryEachTest {
 		    context );
 
 		assertThat( variables.get( result ) ).isEqualTo( 3 );
+	}
+
+	@DisplayName( "It should iterate over each row in the query in parallel" )
+	@Test
+	public void testIteratesOverEachRowInParallel() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				query = QueryNew( "id,name", "integer,varchar" );
+				QueryAddRow( query, { id = 1, name = "John" } );
+				QueryAddRow( query, { id = 2, name = "Jane" } );
+				QueryAddRow( query, { id = 3, name = "Jim" } );
+				QueryAddRow( query, { id = 4, name = "Jill" } );
+				QueryAddRow( query, { id = 5, name = "Jack" } );
+
+				ids = []
+
+				queryEach( query, function( row, currentRow, query ){
+				ids.append( row.id );
+				}, true );
+
+				println( ids )
+
+				result = ids;
+			""",
+		    context );
+			// @formatter:on
+		Array result = variables.getAsArray( Key.result );
+		assertThat( result.size() ).isEqualTo( 5 );
+	}
+
+	@DisplayName( "It should iterate over each row in the query in parallel with max threads" )
+	@Test
+	public void testIteratesOverEachRowInParallelWithMaxThreads() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				query = QueryNew( "id,name", "integer,varchar" );
+				QueryAddRow( query, { id = 1, name = "John" } );
+				QueryAddRow( query, { id = 2, name = "Jane" } );
+				QueryAddRow( query, { id = 3, name = "Jim" } );
+				QueryAddRow( query, { id = 4, name = "Jill" } );
+				QueryAddRow( query, { id = 5, name = "Jack" } );
+
+				ids = []
+
+				queryEach( query, function( row, currentRow, query ){
+				ids.append( row.id );
+				}, true, 2 );
+
+				println( ids )
+
+				result = ids;
+			""",
+		    context );
+			// @formatter:on
+		Array result = variables.getAsArray( Key.result );
+		assertThat( result.size() ).isEqualTo( 5 );
 	}
 }

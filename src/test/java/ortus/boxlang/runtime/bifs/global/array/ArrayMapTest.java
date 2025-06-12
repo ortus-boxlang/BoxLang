@@ -132,4 +132,46 @@ public class ArrayMapTest {
 		assertThat( res.get( 2 ) ).isEqualTo( 3 );
 	}
 
+	@DisplayName( "It can map an array in parallel" )
+	@Test
+	public void testParallelMapping() {
+		instance.executeSource(
+		    """
+		              nums = [ "red", "blue", "green" ];
+
+		              result = ArrayMap( nums, function( item, i ){
+		                return i;
+		              }, true );
+		    """,
+		    context );
+
+		Array res = ( Array ) variables.get( result );
+		assertThat( res.size() ).isEqualTo( 3 );
+		assertThat( res.get( 0 ) ).isEqualTo( 1 );
+		assertThat( res.get( 1 ) ).isEqualTo( 2 );
+		assertThat( res.get( 2 ) ).isEqualTo( 3 );
+	}
+
+	@DisplayName( "It can map an array in parallel with max threads" )
+	@Test
+	public void testParallelMappingWithMaxThreads() {
+		instance.executeSource(
+		    """
+		              nums = [ "red", "blue", "green", "yellow", "purple" ];
+
+		              result = ArrayMap( nums, function( item, i ){
+		                return i;
+		              }, true, 2 );
+		    """,
+		    context );
+
+		Array res = ( Array ) variables.get( result );
+		assertThat( res.size() ).isEqualTo( 5 );
+		assertThat( res.get( 0 ) ).isEqualTo( 1 );
+		assertThat( res.get( 1 ) ).isEqualTo( 2 );
+		assertThat( res.get( 2 ) ).isEqualTo( 3 );
+		assertThat( res.get( 3 ) ).isEqualTo( 4 );
+		assertThat( res.get( 4 ) ).isEqualTo( 5 );
+	}
+
 }

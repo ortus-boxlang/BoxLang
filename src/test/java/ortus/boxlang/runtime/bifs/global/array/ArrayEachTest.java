@@ -82,6 +82,57 @@ public class ArrayEachTest {
 		assertThat( indexes.get( 4 ) ).isEqualTo( 5 );
 	}
 
+	@DisplayName( "Iterate in parallel with no max threads but ordered" )
+	@Test
+	public void testBIFWithParallel() {
+		instance.executeSource(
+		    """
+		    a = ["hello","from","boxlang"];
+		    indexes = [];
+		    a.each( (element,index,array) => {
+		    	indexes[index] = element;
+		    }, true, 0, true );
+		    """,
+		    context );
+		Array indexes = ( Array ) variables.get( Key.of( "indexes" ) );
+		assertThat( indexes.size() ).isEqualTo( 3 );
+		assertThat( indexes.get( 0 ) ).isEqualTo( "hello" );
+		assertThat( indexes.get( 1 ) ).isEqualTo( "from" );
+		assertThat( indexes.get( 2 ) ).isEqualTo( "boxlang" );
+	}
+
+	@DisplayName( "Iterate in parallel with no max threads but NOT ordered" )
+	@Test
+	public void testBIFWithParallelNotOrdered() {
+		instance.executeSource(
+		    """
+		    a = ["hello","from","boxlang"];
+		    indexes = [];
+		    a.each( (element,index,array) => {
+		    	indexes[index] = element;
+		    }, true );
+		    """,
+		    context );
+		Array indexes = ( Array ) variables.get( Key.of( "indexes" ) );
+		assertThat( indexes.size() ).isEqualTo( 3 );
+	}
+
+	@DisplayName( "Iterate in parallel with 2 threads" )
+	@Test
+	public void testBIFWithParallelAndMaxThreads() {
+		instance.executeSource(
+		    """
+		    a = ["hello","from","boxlang"];
+		    indexes = [];
+		    a.each( (element,index,array) => {
+		    	indexes[index] = element;
+		    }, true, 2 );
+		    """,
+		    context );
+		Array indexes = ( Array ) variables.get( Key.of( "indexes" ) );
+		assertThat( indexes.size() ).isEqualTo( 3 );
+	}
+
 	@DisplayName( "It tests defensive coding when the original array is modified" )
 	@Test
 	public void testBIFWithMutation() {

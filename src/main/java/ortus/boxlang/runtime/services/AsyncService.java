@@ -364,6 +364,10 @@ public class AsyncService extends BaseService {
 	 * --------------------------------------------------------------------------
 	 * Builder Aliases
 	 * --------------------------------------------------------------------------
+	 * These are useful aliases to build executors without having to use the
+	 * {@link #newExecutor(String, ExecutorType, int, int)} method directly.
+	 * They are used to create executors with the most common types and configurations.
+	 * --------------------------------------------------------------------------
 	 */
 
 	/**
@@ -426,13 +430,25 @@ public class AsyncService extends BaseService {
 	/**
 	 * Build a work stealing executor
 	 *
-	 * @param name       The name of the executor
-	 * @param maxThreads The max threads, if null it will use the default
+	 * @param name        The name of the executor
+	 * @param parallelism The parallelism level, if null it will use the default
 	 *
 	 * @return The executor record
 	 */
-	public ExecutorRecord newWorkStealingExecutor( String name, Integer maxThreads ) {
-		return newExecutor( name, ExecutorType.WORK_STEALING, ( maxThreads == null ? DEFAULT_MAX_THREADS : maxThreads ) );
+	public ExecutorRecord newWorkStealingExecutor( String name, Integer parallelism ) {
+		return newExecutor( name, ExecutorType.WORK_STEALING, ( parallelism == null ? 0 : parallelism ) );
+	}
+
+	/**
+	 * New Fork Join executor
+	 *
+	 * @param name        The name of the executor
+	 * @param parallelism The parallelism level, if null it will use the default
+	 *
+	 * @return The executor record
+	 */
+	public ExecutorRecord newForkJoinExecutor( String name, Integer parallelism ) {
+		return newExecutor( name, ExecutorType.FORK_JOIN, ( parallelism == null ? 0 : parallelism ) );
 	}
 
 	/**
@@ -444,6 +460,16 @@ public class AsyncService extends BaseService {
 	 */
 	public ExecutorRecord newVirtualExecutor( String name ) {
 		return newExecutor( name, ExecutorType.VIRTUAL );
+	}
+
+	/**
+	 * Get the common ForkJoinPool, this is a special executor that is used by the
+	 * Java ForkJoin framework for parallel streams and other parallel operations.
+	 *
+	 * @return The common ForkJoinPool executor record
+	 */
+	public ExecutorRecord getCommonForkJoinPool() {
+		return new ExecutorRecord( ForkJoinPool.commonPool(), "common-fork-join-pool", ExecutorType.FORK_JOIN, 0 );
 	}
 
 	/**
@@ -471,10 +497,21 @@ public class AsyncService extends BaseService {
 				executor = Executors.newSingleThreadExecutor();
 				break;
 			case WORK_STEALING :
-				executor = Executors.newWorkStealingPool( maxThreads );
+				// Work Stealing Pool is available in Java 8 and later
+				// If parallelism is null or 0, then don't pass it, otherwise use it
+				if ( maxThreads != null && maxThreads > 0 ) {
+					executor = Executors.newWorkStealingPool( maxThreads );
+				} else {
+					executor = Executors.newWorkStealingPool();
+				}
 				break;
 			case FORK_JOIN :
-				executor = maxThreads != null ? new ForkJoinPool( maxThreads ) : ForkJoinPool.commonPool();
+				// If parallelism is null or 0, then don't pass it, otherwise use it
+				if ( maxThreads != null && maxThreads > 0 ) {
+					executor = new ForkJoinPool( maxThreads );
+				} else {
+					executor = ForkJoinPool.commonPool();
+				}
 				break;
 			case VIRTUAL :
 				executor = Executors.newVirtualThreadPerTaskExecutor();

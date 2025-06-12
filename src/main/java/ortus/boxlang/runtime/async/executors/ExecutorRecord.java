@@ -44,7 +44,11 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  * @param type       The executor type
  * @param maxThreads The max threads, if applicable
  */
-public record ExecutorRecord( ExecutorService executor, String name, ExecutorType type, Integer maxThreads ) {
+public record ExecutorRecord(
+    ExecutorService executor,
+    String name,
+    ExecutorType type,
+    Integer maxThreads ) {
 
 	/**
 	 * Get the executor service casted as a {@link BoxScheduledExecutor}
@@ -68,7 +72,7 @@ public record ExecutorRecord( ExecutorService executor, String name, ExecutorTyp
 	public void shutdownQuiet() {
 		if ( executor == null )
 			return;
-		getLogger().info( "Executor ({}) shuttingdown quiet", this.name );
+		getLogger().debug( "Executor ({}) shutting down quiet", this.name );
 		this.executor.shutdown();
 	}
 
@@ -88,23 +92,23 @@ public record ExecutorRecord( ExecutorService executor, String name, ExecutorTyp
 		// Disable new tasks from being submitted
 		this.executor.shutdown();
 		try {
-			getLogger().info( "Executor ({}) shutdown executed, waiting for tasks to finalize...", this.name );
+			getLogger().debug( "Executor ({}) shutdown executed, waiting for tasks to finalize...", this.name );
 
 			// Wait for tasks to terminate
 			if ( !this.executor.awaitTermination( timeout, unit ) ) {
-				getLogger().info( "Executor tasks did not shutdown, forcibly shutting down executor ({})...", this.name );
+				getLogger().warn( "Executor tasks did not shutdown, forcibly shutting down executor ({})...", this.name );
 
 				// Cancel all tasks forcibly
 				List<Runnable> taskList = this.executor.shutdownNow();
 
-				getLogger().info( "Tasks waiting execution on executor ({}) -> tasks({})", this.name, taskList.size() );
+				getLogger().debug( "Tasks waiting execution on executor ({}) -> tasks({})", this.name, taskList.size() );
 
 				// Wait again now forcibly
 				if ( !this.executor.awaitTermination( timeout, unit ) ) {
 					getLogger().error( "Executor ({}) did not terminate even gracefully :(", this.name );
 				}
 			} else {
-				getLogger().info( "Executor ({}) shutdown complete", this.name );
+				getLogger().debug( "Executor ({}) shutdown complete", this.name );
 			}
 		}
 		// Catch if exceptions or interrupted
@@ -257,7 +261,6 @@ public record ExecutorRecord( ExecutorService executor, String name, ExecutorTyp
 			throw new BoxRuntimeException(
 			    "An interruption occurred while attempting to process the requested method in parallel", e
 			);
-
 		} catch ( ExecutionException e ) {
 			throw new BoxRuntimeException(
 			    "An execution error occurred while attempting to process the requested method in  in parallel", e
@@ -306,7 +309,6 @@ public record ExecutorRecord( ExecutorService executor, String name, ExecutorTyp
 			throw new BoxRuntimeException(
 			    "An interruption occurred while attempting to process the requested method in parallel", e
 			);
-
 		} catch ( ExecutionException e ) {
 			throw new BoxRuntimeException(
 			    "An execution error occurred while attempting to process the requested method in  in parallel", e

@@ -58,42 +58,76 @@ import ortus.boxlang.runtime.types.util.BLCollector;
 import ortus.boxlang.runtime.util.DuplicationUtil;
 
 /**
- * This type represents a representation of a database query result set.
- * It provides language specific methods to access columnar data, both as value lists and within iterative loops
+ * Represents a BoxLang Query object that stores tabular data.
+ *
+ * This class implements multiple interfaces:
+ * - IType: for BoxLang type system integration
+ * - IReferenceable: for dynamic property/method access
+ * - Collection<IStruct>: for Java collection operations
+ * - Serializable: for persistence support
+ *
+ * The Query object stores data as a list of row arrays, with column metadata maintained
+ * separately. It provides thread-safe operations for manipulating the data and
+ * supports JDBC ResultSet integration.
+ *
+ * Key features:
+ * - Dynamic column addition/removal
+ * - Row manipulation (add, delete, swap)
+ * - Conversion to/from other data structures
+ * - Query metadata support
+ * - Collection interface implementation
+ * - Optimized data storage with lazy initialization
+ *
+ * @since 1.0.0
  */
 public class Query implements IType, IReferenceable, Collection<IStruct>, Serializable {
 
+	/**
+	 * -----------------------------------------------------------
+	 * Static Constants
+	 * -----------------------------------------------------------
+	 */
+
 	private static final InterceptorService	interceptorService	= BoxRuntime.getInstance().getInterceptorService();
+
+	private static final FunctionService	functionService		= BoxRuntime.getInstance().getFunctionService();
+
+	private static final long				serialVersionUID	= 1L;
+
+	/**
+	 * -----------------------------------------------------------
+	 * Properties
+	 * -----------------------------------------------------------
+	 */
 
 	/**
 	 * Query data as List of arrays
 	 */
-	// private List<Object[]> data = Collections.synchronizedList( new ArrayList<Object[]>() );
-	private List<Object[]>					data;
+	private volatile List<Object[]>			data;
 
+	/**
+	 * Size of the query, used for collection methods
+	 * This is an AtomicInteger so that it can be modified from multiple threads
+	 * safely.
+	 */
 	protected AtomicInteger					size				= new AtomicInteger( 0 );
 
-	private int								actualSize			= 0;
+	/**
+	 * Actual size of the data list, used to track how many rows have been added
+	 * This is volatile so that it can be updated from multiple threads
+	 * safely.
+	 */
+	private volatile int					actualSize			= 0;
 
 	/**
 	 * Map of column definitions
 	 */
-	private Map<Key, QueryColumn>			columns				= Collections.synchronizedMap( new LinkedHashMap<Key, QueryColumn>() );
+	private volatile Map<Key, QueryColumn>	columns				= Collections.synchronizedMap( new LinkedHashMap<Key, QueryColumn>() );
 
 	/**
 	 * Metadata object
 	 */
-	public transient BoxMeta				$bx;
-
-	/**
-	 * Function service
-	 */
-	private transient FunctionService		functionService;
-
-	/**
-	 * Serialization version
-	 */
-	private static final long				serialVersionUID	= 1L;
+	public transient BoxMeta<Query>			$bx;
 
 	/**
 	 * Metadata for the query, used to populate QueryMeta
@@ -106,8 +140,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 * @param meta Struct of metadata, most likely JDBC metadata such as sql, cache parameters, etc.
 	 */
 	public Query( IStruct meta, int initialSize ) {
-		this.functionService	= BoxRuntime.getInstance().getFunctionService();
-		this.metadata			= meta == null ? new Struct( IStruct.TYPES.SORTED ) : meta;
+		this.metadata = meta == null ? new Struct( IStruct.TYPES.SORTED ) : meta;
 		if ( initialSize > 0 ) {
 			this.data	= new ArrayList<Object[]>( initialSize );
 			// add nulls and increment for each row
@@ -232,6 +265,19 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	}
 
 	/**
+	 * Set the columns for this query
+	 */
+	public Query setColumns( Map<Key, QueryColumn> columns ) {
+		this.columns = columns;
+		// Re-index the columns
+		int index = 0;
+		for ( QueryColumn column : columns.values() ) {
+			column.setIndex( index++ );
+		}
+		return this;
+	}
+
+	/**
 	 * Does this query have columns?
 	 *
 	 * @return true if query has columns
@@ -261,6 +307,11 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		return data;
 	}
 
+	/**
+	 * Set the data for this query
+	 *
+	 * @param data List of arrays representing the row data
+	 */
 	public void setData( List<Object[]> data ) {
 		this.data = data;
 		size.set( data.size() );
@@ -284,8 +335,9 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 * shorter than the current number of rows, the remaining rows will be
 	 * populated with nulls.
 	 *
-	 * @param name column name
-	 * @param type column type
+	 * @param name       column name
+	 * @param type       column type
+	 * @param columnData array of data to populate the column with, can be null
 	 *
 	 * @return this query
 	 */
@@ -478,7 +530,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 *
 	 * @param row row data as array of objects
 	 *
-	 * @return this query
+	 * @return the row number that was added (1-based)
 	 */
 	public int addRow( Object[] row ) {
 		interceptorService.announce(
@@ -510,7 +562,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 *
 	 * @param row row data as array of objects
 	 *
-	 * @return this query
+	 * @return the row number that was added (1-based)
 	 */
 	public int addRowDefaultMissing( Object[] row ) {
 		if ( row.length < columns.size() ) {
@@ -529,7 +581,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 *
 	 * @param row row data as a BoxLang array
 	 *
-	 * @return this query
+	 * @return the row number that was added (1-based)
 	 */
 	public int addRow( Array row ) {
 		return addRowDefaultMissing( row.toArray() );
@@ -557,7 +609,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	/**
 	 * Add an empty row to the query
 	 *
-	 * @return this query
+	 * @return the row number that was added (1-based)
 	 */
 	public int addEmptyRow() {
 		return addRow( columns.keySet().stream().map( key -> null ).toArray() );
@@ -568,7 +620,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 *
 	 * @param row row data as Struct
 	 *
-	 * @return this query
+	 * @return the row number that was added (1-based)
 	 */
 	public int addRow( IStruct row ) {
 		Object[]	rowData	= new Object[ columns.size() ];
@@ -625,11 +677,13 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 * @return this query
 	 */
 	public Query deleteRow( int index ) {
-		validateRow( index );
-		size.decrementAndGet();
-		data.remove( index );
-		actualSize = data.size();
-		return this;
+		synchronized ( data ) {
+			validateRow( index );
+			size.decrementAndGet();
+			data.remove( index );
+			actualSize = data.size();
+			return this;
+		}
 	}
 
 	/**
@@ -723,6 +777,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 *
 	 * @param columnName column name
 	 * @param rowIndex   row index, starting at 0
+	 * @param value      the value to set in the cell
 	 *
 	 * @return this query
 	 */
@@ -730,7 +785,9 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		validateRow( rowIndex );
 		int columnIndex = getColumn( columnName ).getIndex();
 		// TODO: validate column type
-		data.get( rowIndex )[ columnIndex ] = value;
+		synchronized ( data ) {
+			data.get( rowIndex )[ columnIndex ] = value;
+		}
 		return this;
 	}
 
@@ -792,6 +849,11 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		    .collect( Collectors.toList() );
 	}
 
+	/**
+	 * Sort the query data directly using a comparator
+	 *
+	 * @param comparator The comparator to use for sorting the row arrays
+	 */
 	public void sortData( Comparator<? super Object[]> comparator ) {
 		Stream<Object[]> stream;
 		truncateInternal();
@@ -805,7 +867,11 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 
 	/**
 	 * Truncate the query to a specific number of rows
-	 * This method does not lock the query and would allow other modifications or access while trimming the rows, whcih is not an atomic operation.
+	 * This method does not lock the query and would allow other modifications or access while trimming the rows, which is not an atomic operation.
+	 *
+	 * @param rows The maximum number of rows to keep in the query
+	 *
+	 * @return this query
 	 */
 	public Query truncate( long rows ) {
 		synchronized ( data ) {
@@ -841,6 +907,13 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		return size.get() == 0;
 	}
 
+	/**
+	 * Check if the query contains a specific row data object
+	 *
+	 * @param o The object to check for
+	 *
+	 * @return true if the object is found, false otherwise
+	 */
 	@Override
 	public boolean contains( Object o ) {
 		return data.contains( o );
@@ -873,6 +946,14 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		return data.subList( 0, size.get() ).toArray();
 	}
 
+	/**
+	 * Convert the query to an array with the specified array type
+	 *
+	 * @param <T> The type of the array elements
+	 * @param a   The array to fill, or a new array if this one is too small
+	 *
+	 * @return An array containing all query rows as structs
+	 */
 	@Override
 	public <T> T[] toArray( T[] a ) {
 		// same as toArray
@@ -893,12 +974,26 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		return arr;
 	}
 
+	/**
+	 * Add a row to the query as part of the Collection interface
+	 *
+	 * @param row The struct representing the row data to add
+	 *
+	 * @return Always returns true (as specified by Collection.add)
+	 */
 	@Override
 	public boolean add( IStruct row ) {
 		addRow( row );
 		return true;
 	}
 
+	/**
+	 * Remove a specific row data object from the query
+	 *
+	 * @param o The object to remove
+	 *
+	 * @return true if the object was removed, false otherwise
+	 */
 	@Override
 	public boolean remove( Object o ) {
 		synchronized ( data ) {
@@ -909,11 +1004,25 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		}
 	}
 
+	/**
+	 * Check if the query contains all elements in the specified collection
+	 *
+	 * @param c The collection of elements to check for
+	 *
+	 * @return true if all elements are contained in the query, false otherwise
+	 */
 	@Override
 	public boolean containsAll( Collection<?> c ) {
 		return data.containsAll( c );
 	}
 
+	/**
+	 * Add all rows from a collection to the query
+	 *
+	 * @param rows The collection of struct rows to add
+	 *
+	 * @return Always returns true (as specified by Collection.addAll)
+	 */
 	@Override
 	public boolean addAll( Collection<? extends IStruct> rows ) {
 		for ( IStruct row : rows ) {
@@ -922,6 +1031,13 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		return true;
 	}
 
+	/**
+	 * Remove all elements contained in the specified collection from the query
+	 *
+	 * @param c The collection of elements to remove
+	 *
+	 * @return true if the query was modified, false otherwise
+	 */
 	@Override
 	public boolean removeAll( Collection<?> c ) {
 		synchronized ( data ) {
@@ -933,6 +1049,13 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		}
 	}
 
+	/**
+	 * Retain only the elements contained in the specified collection
+	 *
+	 * @param c The collection of elements to retain
+	 *
+	 * @return true if the query was modified, false otherwise
+	 */
 	@Override
 	public boolean retainAll( Collection<?> c ) {
 		synchronized ( data ) {
@@ -1035,7 +1158,9 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	}
 
 	/**
-	 * Returns a IntStream of the indexes
+	 * Returns an IntStream of the row indexes
+	 *
+	 * @return IntStream containing indexes from 0 to size-1
 	 */
 	public IntStream intStream() {
 		return IntStream.range( 0, size.get() );
@@ -1067,6 +1192,10 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 
 	/**
 	 * Override Query metadata - used for setting custom query meta on cached queries.
+	 *
+	 * @param meta The metadata struct to set
+	 *
+	 * @return this query
 	 */
 	public Query setMetadata( IStruct meta ) {
 		this.metadata	= meta;
@@ -1144,7 +1273,9 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	}
 
 	/**
-	 * Convert to a String representation
+	 * Convert the query to a string representation
+	 *
+	 * @return String representation of the query
 	 */
 	@Override
 	public String toString() {
@@ -1153,6 +1284,8 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 
 	/**
 	 * Get the column names as an array
+	 *
+	 * @return Array containing all column names
 	 */
 	public Array getColumnNames() {
 		return getColumnArray();

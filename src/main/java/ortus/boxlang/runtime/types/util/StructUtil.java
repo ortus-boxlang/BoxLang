@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -50,6 +51,53 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.EncryptionUtil;
 import ortus.boxlang.runtime.util.LocalizationUtil;
 
+/**
+ * StructUtil is a comprehensive utility class providing static methods for advanced struct operations in BoxLang.
+ * This class offers functional programming capabilities, data manipulation, sorting, searching, and conversion utilities
+ * for IStruct implementations.
+ *
+ * <h2>Core Features:</h2>
+ * <ul>
+ * <li><strong>Functional Operations:</strong> each, some, every, filter, map, reduce with parallel processing support</li>
+ * <li><strong>Data Manipulation:</strong> deep merge, flatten/unflatten operations</li>
+ * <li><strong>Sorting:</strong> Multi-type sorting (text, numeric, case-insensitive) with custom callback support</li>
+ * <li><strong>Search Operations:</strong> Find keys and values with nested path support</li>
+ * <li><strong>Conversion Utilities:</strong> Query string conversion, flat map operations</li>
+ * </ul>
+ *
+ * <h2>Parallel Processing:</h2>
+ * Many methods support parallel execution with configurable thread pools for improved performance
+ * on large datasets. When parallel is enabled, operations can optionally maintain order for
+ * LinkedHashMap-based structs.
+ *
+ * <h2>Thread Safety:</h2>
+ * This utility class is stateless and thread-safe. However, the struct instances passed to methods
+ * should be properly synchronized if accessed concurrently.
+ *
+ * <h2>Usage Examples:</h2>
+ *
+ * <pre>
+ * // Functional operations
+ * StructUtil.each( myStruct, callback, context, false, 0, true );
+ * IStruct filtered = StructUtil.filter( myStruct, predicate, context, true, 4 );
+ *
+ * // Data manipulation
+ * IStruct merged = StructUtil.deepMerge( struct1, struct2, true );
+ * IStruct flattened = StructUtil.toFlatMap( nestedStruct );
+ *
+ * // Search operations
+ * Stream&lt;IStruct&gt; keyResults = StructUtil.findKey( myStruct, "targetKey" );
+ * Stream&lt;IStruct&gt; valueResults = StructUtil.findValue( myStruct, "targetValue" );
+ *
+ * // Conversion
+ * String queryString = StructUtil.toQueryString( myStruct );
+ * IStruct fromQuery = StructUtil.fromQueryString( "foo=bar&baz=qux" );
+ * </pre>
+ *
+ * @author BoxLang Development Team
+ *
+ * @since 1.3.0
+ */
 public class StructUtil {
 
 	public static final Key scopeAll = Key.of( "all" );
@@ -72,37 +120,59 @@ public class StructUtil {
 	    Integer maxThreads,
 	    Boolean ordered ) {
 
-		Stream<Map.Entry<Key, Object>>		entryStream	= struct.entrySet().stream();
+		// Parameter validation
+		Objects.requireNonNull( struct, "Struct cannot be null" );
+		Objects.requireNonNull( callback, "Callback cannot be null" );
+		Objects.requireNonNull( callbackContext, "Callback context cannot be null" );
+		if ( maxThreads == null ) {
+			maxThreads = 0; // Default to 0 if not provided
+		}
 
-		Consumer<Map.Entry<Key, Object>>	exec;
+		// Build the consumer based on whether the callback requires strict arguments
+		// or not. This is Java vs BoxLang predicate compatibility.
+		Consumer<Map.Entry<Key, Object>> consumer;
 		if ( callback.requiresStrictArguments() ) {
-			exec = item -> callbackContext.invokeFunction(
+			consumer = item -> callbackContext.invokeFunction(
 			    callback,
 			    new Object[] { item.getKey().getName(), item.getValue() }
 			);
 		} else {
-			exec = item -> callbackContext.invokeFunction(
+			consumer = item -> callbackContext.invokeFunction(
 			    callback,
 			    new Object[] { item.getKey().getName(), item.getValue(), struct }
 			);
 		}
 
+		Stream<Map.Entry<Key, Object>> entryStream = struct
+		    .entrySet()
+		    .stream();
 		if ( !parallel ) {
-			entryStream.forEach( exec );
-		} else if ( ordered ) {
-			AsyncService.buildExecutor(
-			    "StructEach_" + UUID.randomUUID().toString(),
-			    AsyncService.ExecutorType.FORK_JOIN,
-			    maxThreads
-			).submitAndGet( () -> entryStream.parallel().forEachOrdered( exec ) );
-		} else {
-			AsyncService.buildExecutor(
-			    "StructEach_" + UUID.randomUUID().toString(),
-			    AsyncService.ExecutorType.FORK_JOIN,
-			    maxThreads
-			).submitAndGet( () -> entryStream.parallel().forEach( exec ) );
+			entryStream.forEach( consumer );
+			return;
 		}
 
+		// If maxThreads is null or 0, then use just the ForkJoinPool default parallelism level
+		if ( maxThreads <= 0 ) {
+			if ( ordered || struct.getType().equals( IStruct.TYPES.LINKED ) ) {
+				entryStream.parallel().forEachOrdered( consumer );
+			} else {
+				entryStream.parallel().forEach( consumer );
+			}
+			return;
+		}
+
+		// Otherwise, create a new ForkJoinPool with the specified number of threads
+		AsyncService.buildExecutor(
+		    "StructEach_" + UUID.randomUUID().toString(),
+		    AsyncService.ExecutorType.FORK_JOIN,
+		    maxThreads
+		).submitAndGet( () -> {
+			if ( ordered || struct.getType().equals( IStruct.TYPES.LINKED ) ) {
+				entryStream.parallel().forEachOrdered( consumer );
+			} else {
+				entryStream.parallel().forEach( consumer );
+			}
+		} );
 	}
 
 	/**
@@ -123,8 +193,15 @@ public class StructUtil {
 	    Boolean parallel,
 	    Integer maxThreads ) {
 
-		Stream<Map.Entry<Key, Object>>		entryStream	= struct.entrySet().stream();
-		Predicate<Map.Entry<Key, Object>>	test;
+		// Parameter validation
+		Objects.requireNonNull( struct, "Struct cannot be null" );
+		Objects.requireNonNull( callback, "Callback cannot be null" );
+		Objects.requireNonNull( callbackContext, "Callback context cannot be null" );
+		if ( maxThreads == null ) {
+			maxThreads = 0; // Default to 0 if not provided
+		}
+
+		Predicate<Map.Entry<Key, Object>> test;
 		if ( callback.requiresStrictArguments() ) {
 			test = item -> BooleanCaster.cast( callbackContext.invokeFunction(
 			    callback,
@@ -137,14 +214,30 @@ public class StructUtil {
 			) );
 		}
 
-		return !parallel
-		    ? ( Boolean ) entryStream.anyMatch( test )
-		    : ( Boolean ) AsyncService.buildExecutor(
-		        "structSome_" + UUID.randomUUID().toString(),
-		        AsyncService.ExecutorType.FORK_JOIN,
-		        maxThreads
-		    ).submitAndGet( () -> entryStream.parallel().anyMatch( test ) );
+		// Create a stream of what we want, usage is determined internally by the terminators
+		Stream<Map.Entry<Key, Object>> entryStream = struct.entrySet().stream();
 
+		if ( parallel ) {
+			// If maxThreads is null or 0, then use just the ForkJoinPool default parallelism level
+			if ( maxThreads <= 0 ) {
+				return entryStream
+				    .parallel()
+				    .anyMatch( test );
+			}
+			// Otherwise, create a new ForkJoinPool with the specified number of threads
+			return ( Boolean ) AsyncService.buildExecutor(
+			    "StructSome_" + UUID.randomUUID().toString(),
+			    AsyncService.ExecutorType.FORK_JOIN,
+			    maxThreads
+			).submitAndGet( () -> {
+				return entryStream
+				    .parallel()
+				    .anyMatch( test );
+			} );
+		}
+
+		// Non-parallel execution
+		return entryStream.anyMatch( test );
 	}
 
 	/**
@@ -165,8 +258,15 @@ public class StructUtil {
 	    Boolean parallel,
 	    Integer maxThreads ) {
 
-		Stream<Map.Entry<Key, Object>>		entryStream	= struct.entrySet().stream();
-		Predicate<Map.Entry<Key, Object>>	test;
+		// Parameter validation
+		Objects.requireNonNull( struct, "Struct cannot be null" );
+		Objects.requireNonNull( callback, "Callback cannot be null" );
+		Objects.requireNonNull( callbackContext, "Callback context cannot be null" );
+		if ( maxThreads == null ) {
+			maxThreads = 0; // Default to 0 if not provided
+		}
+
+		Predicate<Map.Entry<Key, Object>> test;
 		if ( callback.requiresStrictArguments() ) {
 			test = item -> BooleanCaster.cast( callbackContext.invokeFunction(
 			    callback,
@@ -179,16 +279,29 @@ public class StructUtil {
 			) );
 		}
 
-		return !parallel
-		    ? entryStream.dropWhile( test ).toArray().length == 0
-		    : BooleanCaster.cast(
-		        AsyncService.buildExecutor(
-		            "ArrayEvery_" + UUID.randomUUID().toString(),
-		            AsyncService.ExecutorType.FORK_JOIN,
-		            maxThreads
-		        ).submitAndGet( () -> entryStream.parallel().dropWhile( test ).toArray().length == 0 )
-		    );
+		// Create a stream of what we want, usage is determined internally by the terminators
+		Stream<Map.Entry<Key, Object>> entryStream = struct.entrySet().stream();
+		if ( parallel ) {
+			// If maxThreads is null or 0, then use just the ForkJoinPool default parallelism level
+			if ( maxThreads <= 0 ) {
+				return entryStream
+				    .parallel()
+				    .allMatch( test );
+			}
+			// Otherwise, create a new ForkJoinPool with the specified number of threads
+			return ( Boolean ) AsyncService.buildExecutor(
+			    "StructEvery_" + UUID.randomUUID().toString(),
+			    AsyncService.ExecutorType.FORK_JOIN,
+			    maxThreads
+			).submitAndGet( () -> {
+				return entryStream
+				    .parallel()
+				    .allMatch( test );
+			} );
+		}
 
+		// Non-parallel execution
+		return entryStream.allMatch( test );
 	}
 
 	/**
@@ -202,7 +315,6 @@ public class StructUtil {
 	 *
 	 * @return A filtered array
 	 */
-	@SuppressWarnings( "unchecked" )
 	public static IStruct filter(
 	    IStruct struct,
 	    Function callback,
@@ -210,9 +322,17 @@ public class StructUtil {
 	    Boolean parallel,
 	    Integer maxThreads ) {
 
-		Stream<Map.Entry<Key, Object>>		entryStream		= struct.entrySet().stream();
-		Stream<Map.Entry<Key, Object>>		filteredStream	= null;
-		Predicate<Map.Entry<Key, Object>>	test;
+		// Parameter validation
+		Objects.requireNonNull( struct, "Struct cannot be null" );
+		Objects.requireNonNull( callback, "Callback cannot be null" );
+		Objects.requireNonNull( callbackContext, "Callback context cannot be null" );
+		if ( maxThreads == null ) {
+			maxThreads = 0; // Default to 0 if not provided
+		}
+
+		// Build the test predicate based on whether the callback requires strict arguments
+		// or not. This is Java vs BoxLang predicate compatibility.
+		Predicate<Map.Entry<Key, Object>> test;
 		if ( callback.requiresStrictArguments() ) {
 			test = item -> BooleanCaster.cast( callbackContext.invokeFunction(
 			    callback,
@@ -225,18 +345,30 @@ public class StructUtil {
 			) );
 		}
 
-		if ( !parallel ) {
-			filteredStream = entryStream.filter( test );
-		} else {
-			filteredStream = ( Stream<Map.Entry<Key, Object>> ) AsyncService.buildExecutor(
+		Stream<Map.Entry<Key, Object>> entryStream = struct
+		    .entrySet()
+		    .stream()
+		    .filter( test );
+
+		if ( parallel ) {
+			// If maxThreads is null or 0, then use just the ForkJoinPool default parallelism level
+			if ( maxThreads <= 0 ) {
+				return entryStream.parallel().collect( BLCollector.toStruct( struct.getType() ) );
+			}
+			// Otherwise, create a new ForkJoinPool with the specified number of threads
+			return ( IStruct ) AsyncService.buildExecutor(
 			    "StructFilter_" + UUID.randomUUID().toString(),
 			    AsyncService.ExecutorType.FORK_JOIN,
 			    maxThreads
-			).submitAndGet( () -> entryStream.parallel().filter( test ) );
+			).submitAndGet( () -> {
+				return entryStream
+				    .parallel()
+				    .collect( BLCollector.toStruct( struct.getType() ) );
+			} );
 		}
 
-		return filteredStream.collect( BLCollector.toStruct( struct.getType() ) );
-
+		// Non-parallel execution
+		return entryStream.collect( BLCollector.toStruct( struct.getType() ) );
 	}
 
 	/**
@@ -257,12 +389,24 @@ public class StructUtil {
 	    Boolean parallel,
 	    Integer maxThreads ) {
 
-		Stream<Map.Entry<Key, Object>>		entryStream	= struct.entrySet().stream();
-		Struct								result		= new Struct( struct.getType() );
+		// Parameter validation
+		Objects.requireNonNull( struct, "Struct cannot be null" );
+		Objects.requireNonNull( callback, "Callback cannot be null" );
+		Objects.requireNonNull( callbackContext, "Callback context cannot be null" );
+		if ( maxThreads == null ) {
+			maxThreads = 0; // Default to 0 if not provided
+		}
 
-		Consumer<Map.Entry<Key, Object>>	exec;
+		// Build out the result
+		Struct								result	= new Struct( struct.getType() );
+		Boolean								ordered	= struct.getType().equals( IStruct.TYPES.LINKED )
+		    || struct.getType().equals( IStruct.TYPES.SORTED );
+
+		// Build the test predicate based on whether the callback requires strict arguments
+		// or not. This is Java vs BoxLang predicate compatibility.
+		Consumer<Map.Entry<Key, Object>>	consumer;
 		if ( callback.requiresStrictArguments() ) {
-			exec = item -> result.put(
+			consumer = item -> result.put(
 			    item.getKey(),
 			    callbackContext.invokeFunction(
 			        callback,
@@ -270,7 +414,7 @@ public class StructUtil {
 			    )
 			);
 		} else {
-			exec = item -> result.put(
+			consumer = item -> result.put(
 			    item.getKey(),
 			    callbackContext.invokeFunction(
 			        callback,
@@ -278,21 +422,39 @@ public class StructUtil {
 			    )
 			);
 		}
+
+		Stream<Map.Entry<Key, Object>> entryStream = struct
+		    .entrySet()
+		    .stream();
+
 		if ( !parallel ) {
-			entryStream.forEach( exec );
-		} else if ( struct.getType().equals( IStruct.TYPES.LINKED ) ) {
-			AsyncService.buildExecutor(
-			    "StructMap_" + UUID.randomUUID().toString(),
-			    AsyncService.ExecutorType.FORK_JOIN,
-			    maxThreads
-			).submitAndGet( () -> entryStream.parallel().forEachOrdered( exec ) );
-		} else {
-			AsyncService.buildExecutor(
-			    "StructMap_" + UUID.randomUUID().toString(),
-			    AsyncService.ExecutorType.FORK_JOIN,
-			    maxThreads
-			).submitAndGet( () -> entryStream.parallel().forEach( exec ) );
+			entryStream.forEach( consumer );
+			return result;
 		}
+
+		// If maxThreads is null or 0, then use just the ForkJoinPool default parallelism level
+		if ( maxThreads <= 0 ) {
+			if ( ordered || struct.getType().equals( IStruct.TYPES.LINKED ) ) {
+				entryStream.parallel().forEachOrdered( consumer );
+			} else {
+				entryStream.parallel().forEach( consumer );
+			}
+			return result;
+		}
+
+		// Otherwise, create a new ForkJoinPool with the specified number of threads
+		AsyncService.buildExecutor(
+		    "StructMap_" + UUID.randomUUID().toString(),
+		    AsyncService.ExecutorType.FORK_JOIN,
+		    maxThreads
+		).submitAndGet( () -> {
+			if ( ordered || struct.getType().equals( IStruct.TYPES.LINKED ) ) {
+				entryStream.parallel().forEachOrdered( consumer );
+			} else {
+				entryStream.parallel().forEach( consumer );
+			}
+		} );
+
 		return result;
 
 	}
@@ -312,6 +474,11 @@ public class StructUtil {
 	    Function callback,
 	    IBoxContext callbackContext,
 	    Object initialValue ) {
+		// Parameter validation
+		Objects.requireNonNull( struct, "Struct cannot be null" );
+		Objects.requireNonNull( callback, "Callback cannot be null" );
+		Objects.requireNonNull( callbackContext, "Callback context cannot be null" );
+
 		BiFunction<Object, Map.Entry<Key, Object>, Object> reduction;
 		if ( callback.requiresStrictArguments() ) {
 			reduction = ( acc, item ) -> callbackContext.invokeFunction( callback,
@@ -433,12 +600,12 @@ public class StructUtil {
 	}
 
 	/**
-	 * Returns an array of keys
+	 * Finds all instances of a key in a struct and returns a stream of structs
 	 *
-	 * @param struct
-	 * @param key
+	 * @param struct the struct to get the keys from
+	 * @param key    the key to search for
 	 *
-	 * @return
+	 * @return a stream of structs containing the owner, path, and value of the found key
 	 */
 	public static Stream<IStruct> findKey( IStruct struct, String key ) {
 		String[]			keyParts	= key.toLowerCase().split( "\\." );
@@ -523,6 +690,15 @@ public class StructUtil {
 
 	}
 
+	/**
+	 * Finds all instances of a value in a struct and returns a stream of structs
+	 * containing the owner struct, the path to the value, and the key of the value.
+	 *
+	 * @param struct the struct to search within
+	 * @param value  the value to search for
+	 *
+	 * @return a stream of structs containing the owner, path, and key of the found value
+	 */
 	public static Stream<IStruct> findValue( IStruct struct, Object value ) {
 		IStruct flatMap = toFlatMap( struct );
 		return flatMap.entrySet()
@@ -615,7 +791,7 @@ public class StructUtil {
 	/**
 	 * Flattens a struct in to a struct containing dot-delmited keys for nested structs
 	 *
-	 * @param struct
+	 * @param struct the struct to flatten
 	 *
 	 * @return a flattened map of the struct
 	 */
@@ -691,7 +867,6 @@ public class StructUtil {
 	 * @param retainKeys whether to retain the original flattened keys
 	 */
 	public static void unFlattenKey( int index, Key key, String keyValue, IStruct original, boolean retainKeys ) {
-
 		String	left;
 		Object	value		= original.get( key );
 		IStruct	destination	= original;
@@ -797,10 +972,25 @@ public class StructUtil {
 		return fromQueryString( target, "&" );
 	}
 
+	/**
+	 * Get a map of common comparators for sorting structs.
+	 * This map contains comparators for text, numeric, and case-insensitive text sorting.
+	 *
+	 * @return A HashMap of Key to Comparator for common sorting operations.
+	 */
 	public static HashMap<Key, Comparator<Key>> getCommonComparators() {
 		return getCommonComparators( LocalizationUtil.COMMON_LOCALES.get( Key.of( "US" ) ) );
 	}
 
+	/**
+	 * Get a map of common comparators for sorting structs with a specific locale.
+	 * This map contains comparators for text, numeric, and case-insensitive text sorting,
+	 * localized according to the provided Locale.
+	 *
+	 * @param locale The Locale to use for text comparisons.
+	 *
+	 * @return A HashMap of Key to Comparator for common sorting operations.
+	 */
 	public static HashMap<Key, Comparator<Key>> getCommonComparators( Locale locale ) {
 		return new HashMap<Key, Comparator<Key>>() {
 

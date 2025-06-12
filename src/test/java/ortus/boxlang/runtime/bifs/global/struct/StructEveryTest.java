@@ -109,4 +109,54 @@ public class StructEveryTest {
 		assertTrue( variables.getAsBoolean( result ) );
 	}
 
+	@DisplayName( "It can run in parallel" )
+	@Test
+	public void testRunInParallel() {
+		instance.executeSource(
+		    """
+		       values = [];
+		       ref = {
+		       	"foo" : "bar",
+		       	"bar" : 1,
+		       	"blah" : "blerg"
+		       };
+
+		       function eachFn( key, value, struct ){
+		       		 values.append( value );
+		       		return true;
+		       };
+
+		    result = StructEvery( ref, eachFn, true );
+		    """,
+		    context );
+		Array values = ( Array ) variables.get( Key.of( "values" ) );
+		assertThat( values.size() ).isEqualTo( 3 );
+		assertTrue( variables.getAsBoolean( result ) );
+	}
+
+	@DisplayName( "It can run in parallel with max threads" )
+	@Test
+	public void testRunInParallelWithMaxThreads() {
+		instance.executeSource(
+		    """
+		       values = [];
+		       ref = {
+		       	"foo" : "bar",
+		       	"bar" : 1,
+		       	"blah" : "blerg"
+		       };
+
+		       function eachFn( key, value, struct ){
+		       		 values.append( value );
+		       		return true;
+		       };
+
+		    result = StructEvery( ref, eachFn, true, 2 );
+		    """,
+		    context );
+		Array values = ( Array ) variables.get( Key.of( "values" ) );
+		assertThat( values.size() ).isEqualTo( 3 );
+		assertTrue( variables.getAsBoolean( result ) );
+	}
+
 }

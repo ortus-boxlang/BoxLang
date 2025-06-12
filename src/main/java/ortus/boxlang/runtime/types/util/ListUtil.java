@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.function.BiFunction;
 import java.util.function.IntConsumer;
@@ -28,11 +29,11 @@ import java.util.function.IntPredicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
 
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
@@ -46,27 +47,63 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
- * I handle basic list operations. I assume 1-based indexes. All casting to strings must be done prior to calling these methods.
+ * Utility class providing comprehensive list manipulation operations for BoxLang.
+ *
+ * This class handles conversion between string-based delimited lists and BoxLang Arrays,
+ * providing functionality for searching, modifying, and processing list data. It supports
+ * various delimiter configurations including single character, multi-character, and
+ * whole delimiter matching.
+ *
+ * Key features:
+ * - List to Array conversion with flexible delimiter handling
+ * - Search operations (indexOf, contains) with case-sensitive and case-insensitive variants
+ * - List modification (append, prepend, insert, delete, set)
+ * - Functional programming operations (each, filter, map, reduce, some, every)
+ * - Sorting with custom comparators and predefined sort directives
+ * - Parallel processing support for performance-critical operations
+ * - Deduplication and trimming utilities
+ *
+ * The class uses a default comma delimiter but supports any custom delimiter configuration.
+ * All list operations maintain 1-based indexing to match BoxLang conventions.
+ *
+ * Thread Safety: This utility class is stateless and thread-safe for concurrent use.
+ *
+ * @since 1.2.0
  */
 public class ListUtil {
 
+	/**
+	 * Default delimiter used for list operations.
+	 * This is a comma (",") by default, but can be overridden in methods that accept a custom delimiter.
+	 */
 	public static final String	DEFAULT_DELIMITER	= ",";
 
+	/**
+	 * Regular expression pattern to escape special characters in a delimiter for regex operations.
+	 * This is used to ensure that delimiters containing regex special characters are treated literally.
+	 */
 	public static final Pattern	SPECIAL_REGEX_CHARS	= Pattern.compile( "[{}()\\[\\].+*?^$\\\\|]" );
 
-	public static final Struct	sortDirectives		= new Struct(
-	    new HashMap<Key, Comparator<Object>>() {
+	/**
+	 * Sort directives for sorting lists.
+	 */
+	public static final Struct	sortDirectives;
 
-		    {
-			    put( Key.of( "numericAsc" ), ( a, b ) -> Compare.invoke( a, b, false ) );
-			    put( Key.of( "numericDesc" ), ( b, a ) -> Compare.invoke( a, b, true ) );
-			    put( Key.of( "textAsc" ), ( a, b ) -> StringCompare.invoke( StringCaster.cast( a ), StringCaster.cast( b ), true ) );
-			    put( Key.of( "textDesc" ), ( b, a ) -> StringCompare.invoke( StringCaster.cast( a ), StringCaster.cast( b ), true ) );
-			    put( Key.of( "textNoCaseAsc" ), ( a, b ) -> StringCompare.invoke( StringCaster.cast( a ), StringCaster.cast( b ), false ) );
-			    put( Key.of( "textNoCaseDesc" ), ( b, a ) -> StringCompare.invoke( StringCaster.cast( a ), StringCaster.cast( b ), false ) );
+	static {
+		sortDirectives = new Struct(
+		    new HashMap<Key, Comparator<Object>>() {
+
+			    {
+				    put( Key.of( "numericAsc" ), ( a, b ) -> Compare.invoke( a, b, false ) );
+				    put( Key.of( "numericDesc" ), ( b, a ) -> Compare.invoke( a, b, true ) );
+				    put( Key.of( "textAsc" ), ( a, b ) -> StringCompare.invoke( StringCaster.cast( a ), StringCaster.cast( b ), true ) );
+				    put( Key.of( "textDesc" ), ( b, a ) -> StringCompare.invoke( StringCaster.cast( a ), StringCaster.cast( b ), true ) );
+				    put( Key.of( "textNoCaseAsc" ), ( a, b ) -> StringCompare.invoke( StringCaster.cast( a ), StringCaster.cast( b ), false ) );
+				    put( Key.of( "textNoCaseDesc" ), ( b, a ) -> StringCompare.invoke( StringCaster.cast( a ), StringCaster.cast( b ), false ) );
+			    }
 		    }
-	    }
-	);
+		);
+	}
 
 	/**
 	 * Turns a list into a string
@@ -97,6 +134,17 @@ public class ListUtil {
 		return asList( list, delimiter, false, false );
 	}
 
+	/**
+	 * Creates an array from a delimited list. All items are trimmed.
+	 *
+	 * @param list           The string lists
+	 * @param delimiter      The delimiter(s) of the list
+	 * @param includeEmpty   Whether to include empty items in the result array
+	 * @param wholeDelimiter Whether the delimiter contains multiple characters which should be matched. Otherwise all characters in the delimiter are
+	 *                       treated as separate delimiters
+	 *
+	 * @return A BoxLang array.
+	 */
 	public static Array asList(
 	    String list,
 	    String delimiter,
@@ -510,31 +558,66 @@ public class ListUtil {
 	    Integer maxThreads,
 	    Boolean ordered ) {
 
-		IntConsumer exec;
-		if ( callback.requiresStrictArguments() ) {
-			exec = idx -> callbackContext.invokeFunction( callback,
-			    new Object[] { array.size() > idx ? array.get( idx ) : null } );
-		} else {
-			exec = idx -> callbackContext.invokeFunction( callback,
-			    new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } );
-		}
-		IntStream intStream = array.intStream();
-		if ( !parallel ) {
-			intStream.forEach( exec );
-		} else if ( ordered ) {
-			AsyncService.buildExecutor(
-			    "ArrayEach_" + UUID.randomUUID().toString(),
-			    AsyncService.ExecutorType.FORK_JOIN,
-			    maxThreads
-			).submitAndGet( () -> array.intStream().parallel().forEachOrdered( exec ) );
-		} else {
-			AsyncService.buildExecutor(
-			    "ArrayEach_" + UUID.randomUUID().toString(),
-			    AsyncService.ExecutorType.FORK_JOIN,
-			    maxThreads
-			).submitAndGet( () -> array.intStream().parallel().forEach( exec ) );
+		// Parameter validation
+		Objects.requireNonNull( array, "Array cannot be null" );
+		Objects.requireNonNull( callback, "Callback cannot be null" );
+		Objects.requireNonNull( callbackContext, "Callback context cannot be null" );
+		if ( maxThreads == null ) {
+			maxThreads = 0; // Default to 0 if not provided
 		}
 
+		IntConsumer consumer;
+		if ( callback.requiresStrictArguments() ) {
+			consumer = idx -> callbackContext.invokeFunction( callback,
+			    new Object[] { array.size() > idx ? array.get( idx ) : null } );
+		} else {
+			consumer = idx -> callbackContext.invokeFunction( callback,
+			    new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } );
+		}
+
+		// Create a stream of what we want, usage is determined internally by the terminators
+		IntStream arrayStream = array.intStream();
+		if ( parallel ) {
+			// If maxThreads is null or 0, then use just the ForkJoinPool default parallelism level
+			if ( maxThreads <= 0 ) {
+				if ( ordered ) {
+					arrayStream
+					    .parallel()
+					    .forEachOrdered( consumer );
+				} else {
+					arrayStream
+					    .parallel()
+					    .forEach( consumer );
+				}
+				return;
+			}
+			// Otherwise, create a new ForkJoinPool with the specified number of threads
+			AsyncService.buildExecutor(
+			    "ArrayEach_" + UUID.randomUUID().toString(),
+			    AsyncService.ExecutorType.FORK_JOIN,
+			    maxThreads
+			).submitAndGet( () -> {
+				if ( ordered ) {
+					arrayStream
+					    .parallel()
+					    .forEachOrdered( consumer );
+				} else {
+					arrayStream
+					    .parallel()
+					    .forEach( consumer );
+				}
+			} );
+			return;
+		}
+
+		// If parallel is false, just use the regular stream
+		if ( ordered ) {
+			arrayStream
+			    .forEachOrdered( consumer );
+		} else {
+			arrayStream
+			    .forEach( consumer );
+		}
 	}
 
 	/**
@@ -548,12 +631,20 @@ public class ListUtil {
 	 *
 	 * @return The boolean value as to whether the test is met
 	 */
-	public static Boolean some(
+	public static boolean some(
 	    Array array,
 	    Function callback,
 	    IBoxContext callbackContext,
 	    Boolean parallel,
 	    Integer maxThreads ) {
+
+		// Parameter validation
+		Objects.requireNonNull( array, "Array cannot be null" );
+		Objects.requireNonNull( callback, "Callback cannot be null" );
+		Objects.requireNonNull( callbackContext, "Callback context cannot be null" );
+		if ( maxThreads == null ) {
+			maxThreads = 0; // Default to 0 if not provided
+		}
 
 		IntPredicate test;
 		if ( callback.requiresStrictArguments() ) {
@@ -564,16 +655,31 @@ public class ListUtil {
 			    new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } ) );
 		}
 
-		IntStream intStream = array.intStream();
+		// Create a stream of what we want, usage is determined internally by the terminators
+		IntStream arrayStream = array.intStream();
 
-		return !parallel
-		    ? ( Boolean ) intStream.anyMatch( test )
-		    : ( Boolean ) AsyncService.buildExecutor(
-		        "ArraySome_" + UUID.randomUUID().toString(),
-		        AsyncService.ExecutorType.FORK_JOIN,
-		        maxThreads
-		    ).submitAndGet( () -> array.intStream().parallel().anyMatch( test ) );
+		if ( parallel ) {
+			// If maxThreads is null or 0, then use just the ForkJoinPool default parallelism level
+			if ( maxThreads <= 0 ) {
+				return arrayStream
+				    .parallel()
+				    .anyMatch( test );
+			}
+			// Otherwise, create a new ForkJoinPool with the specified number of threads
+			return ( Boolean ) AsyncService.buildExecutor(
+			    "ArraySome_" + UUID.randomUUID().toString(),
+			    AsyncService.ExecutorType.FORK_JOIN,
+			    maxThreads
+			).submitAndGet( () -> {
+				return arrayStream
+				    .parallel()
+				    .anyMatch( test );
+			} );
+		}
 
+		// Non-parallel execution
+		return arrayStream
+		    .anyMatch( test );
 	}
 
 	/**
@@ -593,6 +699,15 @@ public class ListUtil {
 	    IBoxContext callbackContext,
 	    Boolean parallel,
 	    Integer maxThreads ) {
+
+		// Parameter validation
+		Objects.requireNonNull( array, "Array cannot be null" );
+		Objects.requireNonNull( callback, "Callback cannot be null" );
+		Objects.requireNonNull( callbackContext, "Callback context cannot be null" );
+		if ( maxThreads == null ) {
+			maxThreads = 0; // Default to 0 if not provided
+		}
+
 		IntPredicate test;
 		if ( callback.requiresStrictArguments() ) {
 			test = idx -> BooleanCaster.cast( callbackContext.invokeFunction( callback,
@@ -602,18 +717,31 @@ public class ListUtil {
 			    new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } ) );
 		}
 
-		IntStream intStream = array.intStream();
+		// Create a stream of what we want, usage is determined internally by the terminators
+		IntStream arrayStream = array.intStream();
 
-		return !parallel
-		    ? intStream.dropWhile( test ).toArray().length == 0
-		    : BooleanCaster.cast(
-		        AsyncService.buildExecutor(
-		            "ArrayEvery_" + UUID.randomUUID().toString(),
-		            AsyncService.ExecutorType.FORK_JOIN,
-		            maxThreads
-		        ).submitAndGet( () -> array.intStream().parallel().dropWhile( test ).toArray().length == 0 )
-		    );
+		if ( parallel ) {
+			// If maxThreads is null or 0, then use just the ForkJoinPool default parallelism level
+			if ( maxThreads <= 0 ) {
+				return arrayStream
+				    .parallel()
+				    .allMatch( test );
+			}
+			// Otherwise, create a new ForkJoinPool with the specified number of threads
+			return ( Boolean ) AsyncService.buildExecutor(
+			    "ArrayEvery_" + UUID.randomUUID().toString(),
+			    AsyncService.ExecutorType.FORK_JOIN,
+			    maxThreads
+			).submitAndGet( () -> {
+				return arrayStream
+				    .parallel()
+				    .allMatch( test );
+			} );
+		}
 
+		// Non-parallel execution
+		return arrayStream
+		    .allMatch( test );
 	}
 
 	/**
@@ -634,6 +762,17 @@ public class ListUtil {
 	    Boolean parallel,
 	    Integer maxThreads ) {
 
+		// Parameter validation
+		Objects.requireNonNull( array, "Array cannot be null" );
+		Objects.requireNonNull( callback, "Callback cannot be null" );
+		Objects.requireNonNull( callbackContext, "Callback context cannot be null" );
+		if ( maxThreads == null ) {
+			maxThreads = 0; // Default to 0 if not provided
+		}
+
+		// Build the test predicate based on the callback
+		// If the callback requires strict arguments, we only pass the item (Usually Java Predicates)
+		// Otherwise we pass the item, the index, and the array itself
 		IntPredicate test;
 		if ( callback.requiresStrictArguments() ) {
 			test = idx -> BooleanCaster.cast( callbackContext.invokeFunction( callback,
@@ -643,21 +782,33 @@ public class ListUtil {
 			    new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } ) );
 		}
 
-		IntStream intStream = array.intStream();
-		return ArrayCaster.cast(
-		    !parallel
-		        ? intStream
-		            .filter( test )
-		            .mapToObj( ( idx ) -> array.size() > idx ? array.get( idx ) : null )
-		            .toArray()
+		// Create a stream of what we want, usage is determined internally by the terminators
+		Stream<Object> arrayStream = array
+		    .intStream()
+		    .filter( test )
+		    .mapToObj( ( idx ) -> array.size() > idx ? array.get( idx ) : null );
 
-		        : AsyncService.buildExecutor(
-		            "ArrayFilter_" + UUID.randomUUID().toString(),
-		            AsyncService.ExecutorType.FORK_JOIN,
-		            maxThreads
-		        ).submitAndGet( () -> array.intStream().parallel().filter( test ).mapToObj( array::get ).toArray() )
-		);
+		if ( parallel ) {
+			// If maxThreads is null or 0, then use just the ForkJoinPool default parallelism level
+			if ( maxThreads <= 0 ) {
+				return arrayStream
+				    .parallel()
+				    .collect( BLCollector.toArray() );
+			}
+			// Otherwise, create a new ForkJoinPool with the specified number of threads
+			return ( Array ) AsyncService.buildExecutor(
+			    "ArrayFilter_" + UUID.randomUUID().toString(),
+			    AsyncService.ExecutorType.FORK_JOIN,
+			    maxThreads
+			).submitAndGet( () -> {
+				return arrayStream
+				    .parallel()
+				    .collect( BLCollector.toArray() );
+			} );
+		}
 
+		// Non-parallel execution
+		return arrayStream.collect( BLCollector.toArray() );
 	}
 
 	/**
@@ -748,27 +899,57 @@ public class ListUtil {
 	    IBoxContext callbackContext,
 	    Boolean parallel,
 	    Integer maxThreads ) {
-		java.util.function.IntFunction<Object> mapper;
-		if ( callback.requiresStrictArguments() ) {
-			mapper = idx -> ( Object ) callbackContext.invokeFunction( callback,
-			    new Object[] { array.size() > idx ? array.get( idx ) : null } );
-		} else {
-			mapper = idx -> ( Object ) callbackContext.invokeFunction( callback,
-			    new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } );
+
+		// Parameter validation
+		Objects.requireNonNull( array, "Array cannot be null" );
+		Objects.requireNonNull( callback, "Callback cannot be null" );
+		Objects.requireNonNull( callbackContext, "Callback context cannot be null" );
+		if ( maxThreads == null ) {
+			maxThreads = 0; // Default to 0 if not provided
 		}
 
-		IntStream intStream = array.intStream();
-		if ( !parallel ) {
-			return new Array( intStream.mapToObj( mapper ).toArray() );
+		// Build the mapper based on the callback
+		// If the callback requires strict arguments, we only pass the item (Usually Java Predicates)
+		// Otherwise we pass the item, the index, and the array itself
+		java.util.function.IntFunction<Object> mapper;
+		if ( callback.requiresStrictArguments() ) {
+			mapper = idx -> callbackContext.invokeFunction(
+			    callback,
+			    new Object[] { array.size() > idx ? array.get( idx ) : null }
+			);
 		} else {
-			return ArrayCaster.cast( AsyncService.buildExecutor(
-			    "ArrayMap_" + UUID.randomUUID().toString(),
-			    AsyncService.ExecutorType.FORK_JOIN,
-			    maxThreads
-			).submitAndGet( () -> new Array( array.intStream().parallel().mapToObj( mapper ).toArray() ) )
+			mapper = idx -> callbackContext.invokeFunction(
+			    callback,
+			    new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array }
 			);
 		}
 
+		Stream<Object> arrayStream = array
+		    .intStream()
+		    .mapToObj( mapper );
+
+		if ( parallel ) {
+			// If maxThreads is null or 0, then use just the ForkJoinPool default parallelism level
+			if ( maxThreads <= 0 ) {
+				return arrayStream
+				    .parallel()
+				    .collect( BLCollector.toArray() );
+			}
+
+			// Otherwise, create a new ForkJoinPool with the specified number of threads
+			return ( Array ) AsyncService.buildExecutor(
+			    "ArrayMap_" + UUID.randomUUID().toString(),
+			    AsyncService.ExecutorType.FORK_JOIN,
+			    maxThreads
+			).submitAndGet( () -> {
+				return arrayStream
+				    .parallel()
+				    .collect( BLCollector.toArray() );
+			} );
+		}
+
+		// Non-parallel execution
+		return arrayStream.collect( BLCollector.toArray() );
 	}
 
 	/**
@@ -847,9 +1028,9 @@ public class ListUtil {
 	/**
 	 * Utility method to escape special regex characters
 	 *
-	 * @param str
+	 * @param str The string to escape
 	 *
-	 * @return
+	 * @return The escaped string
 	 */
 	private static String escapeRegexSpecials( String str ) {
 		return SPECIAL_REGEX_CHARS.matcher( str ).replaceAll( "\\\\$0" );

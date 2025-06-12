@@ -158,4 +158,44 @@ public class ArrayEveryTest {
 		assertThat( indexes.get( 3 ) ).isEqualTo( 4 );
 		assertThat( indexes.get( 4 ) ).isEqualTo( 5 );
 	}
+
+	@DisplayName( "It can run in parallel" )
+	@Test
+	public void testRunInParallel() {
+		instance.executeSource(
+		    """
+		        indexes = [];
+		        nums = [ 1, 2, 3, 4, 5 ];
+
+		        function eachFn( value, i ){
+		            indexes[ i ] = value;
+		            return true;
+		        };
+
+		        result = ArrayEvery( nums, eachFn, true );
+		    """,
+		    context );
+
+		assertThat( variables.get( result ) ).isEqualTo( true );
+	}
+
+	@DisplayName( "It can run in parallel with max threads" )
+	@Test
+	public void testRunInParallelWithMaxThreads() {
+		instance.executeSource(
+		    """
+		        indexes = [];
+		        nums = [ 1, 2, 3, 4, 5 ];
+
+		        function eachFn( value, i ){
+		            indexes[ i ] = value;
+		            return true;
+		        };
+
+		        result = ArrayEvery( nums, eachFn, true, 2 );
+		    """,
+		    context );
+
+		assertThat( variables.get( result ) ).isEqualTo( true );
+	}
 }

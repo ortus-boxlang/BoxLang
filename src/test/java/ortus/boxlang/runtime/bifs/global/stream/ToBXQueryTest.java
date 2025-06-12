@@ -63,15 +63,14 @@ public class ToBXQueryTest {
 	public void testCanCollect() {
 		instance.executeSource(
 		    """
-		    qry = queryNew( "name,title", "varchar,varchar" );
-		    [
-		    	{ name: "Brad", title: "Developer" },
-		    	{ name: "Luis", title: "CEO" },
-		    	{ name: "Jorge", title: "PM" }
-		    ].stream().toBXQuery( qry );
-
-		    result = qry;
-		                 """,
+		       qry = queryNew( "name,title", "varchar,varchar" );
+		       [
+		       	{ name: "Brad", title: "Developer" },
+		       	{ name: "Luis", title: "CEO" },
+		       	{ name: "Jorge", title: "PM" }
+		       ].stream().toBXQuery( qry );
+		       result = qry;
+		    """,
 		    context );
 		assertTrue( variables.get( result ) instanceof Query );
 		assertThat( ( variables.getAsQuery( result ) ).size() ).isEqualTo( 3 );

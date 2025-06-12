@@ -14,6 +14,7 @@
  */
 package ortus.boxlang.runtime.bifs.global.stream;
 
+import java.util.Objects;
 import java.util.stream.Stream;
 
 import ortus.boxlang.runtime.bifs.BIF;
@@ -43,20 +44,22 @@ public class ToBXQuery extends BIF {
 
 	/**
 	 * Collect a Java stream into a BoxLang Query. Provde an empty query to populate.
-	 * 
+	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 * 
+	 *
 	 * @argument.stream The stream to collect.
-	 * 
+	 *
 	 * @argument.query The query to populate.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		@SuppressWarnings( "unchecked" )
 		// If this is not a stream of IStruct, then the cast will fail
-		Stream<IStruct>	stream	= ( Stream<IStruct> ) arguments.getAsStream( Key.stream );
-		Query			query	= arguments.getAsQuery( Key.query );
-		return stream.collect( BLCollector.toQuery( query ) );
+		Stream<IStruct> stream = ( Stream<IStruct> ) arguments.getAsStream( Key.stream );
+		Objects.requireNonNull( stream, "Stream cannot be null" );
+		Query query = arguments.getAsQuery( Key.query );
+		query = stream.collect( BLCollector.toQuery( query ) );
+		return query;
 	}
 
 }

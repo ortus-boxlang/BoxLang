@@ -33,6 +33,57 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.GenericMeta;
 
+/**
+ * Represents a column within a BoxLang Query object.
+ *
+ * A QueryColumn provides access to column metadata and data manipulation methods.
+ * It implements IReferenceable to support dynamic property access and method invocation
+ * on column values within the current query context.
+ *
+ * <p>
+ * Key features:
+ * </p>
+ * <ul>
+ * <li>Column metadata access (name, type, index)</li>
+ * <li>Cell-level data manipulation (get/set individual cells)</li>
+ * <li>Bulk column data retrieval</li>
+ * <li>Dynamic property dereferencing with context-aware row resolution</li>
+ * <li>Method invocation on cell values</li>
+ * </ul>
+ *
+ * <p>
+ * Usage examples:
+ * </p>
+ *
+ * <pre>
+ * // Access cell by row index (1-based)
+ * Object value = queryColumn.getCell( 0 );
+ *
+ * // Set cell value with type casting
+ * queryColumn.setCell( 0, "new value" );
+ *
+ * // Get all column data as array
+ * Object[] columnData = queryColumn.getColumnData();
+ *
+ * // Dynamic access via dereferencing
+ * // qry.col[1] - gets value from row 1
+ * // qry.col.property - gets property from current row's cell value
+ * </pre>
+ *
+ * <p>
+ * The column maintains a reference to its parent Query and tracks its position
+ * within the query structure. All data access operations respect the query's
+ * current row context when applicable.
+ * </p>
+ *
+ * @see Query
+ * @see QueryColumnType
+ * @see IReferenceable
+ *
+ * @author Ortus Solutions, Corp
+ *
+ * @since 1.0.0
+ */
 public class QueryColumn implements IReferenceable, Serializable {
 
 	/**
@@ -99,23 +150,53 @@ public class QueryColumn implements IReferenceable, Serializable {
 		return this.$bx;
 	}
 
+	/**
+	 * Get the name of this column
+	 *
+	 * @return The name of the column
+	 */
 	public Key getName() {
 		return name;
 	}
 
+	/**
+	 * Get the type of this column
+	 *
+	 * @return The type of the column
+	 */
 	public QueryColumnType getType() {
 		return type;
 	}
 
+	/**
+	 * Get the query this column belongs to
+	 *
+	 * @return The parent query of this column
+	 */
 	public Query getQuery() {
 		return query;
 	}
 
+	/**
+	 * Get the index of this column in the query
+	 *
+	 * @return The index of this column, 0-based
+	 */
 	public int getIndex() {
 		return index;
 	}
 
-	// Convenience methods
+	/**
+	 * Set the index of this column in the query
+	 *
+	 * @param index The new index of this column, 0-based
+	 */
+	public void setIndex( int index ) {
+		if ( index < 0 ) {
+			throw new BoxRuntimeException( "Query column index cannot be negative" );
+		}
+		this.index = index;
+	}
 
 	/**
 	 * Set the value of a cell in this column
@@ -148,7 +229,7 @@ public class QueryColumn implements IReferenceable, Serializable {
 
 	/**
 	 * Get the value of a cell in this column
-	 * 
+	 *
 	 * This method for CF/Lucee compat
 	 *
 	 * @param row The row to get, 0-based index
@@ -181,6 +262,14 @@ public class QueryColumn implements IReferenceable, Serializable {
 		return query.getColumnDataAsArray( name );
 	}
 
+	/**
+	 * Get the index of this column in the query
+	 *
+	 * @param key  The key to get the index from
+	 * @param safe If true, will return -1 if the key is not a valid index, otherwise will throw an exception
+	 *
+	 * @return The index of this column
+	 */
 	public static int getIntFromKey( Key key, boolean safe ) {
 		Integer index;
 

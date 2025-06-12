@@ -101,4 +101,107 @@ public class QueryMapTest {
 
 		assertThat( variables.getAsQuery( result ).getRow( 0 )[ 1 ] ).isEqualTo( "Boxlang" );
 	}
+
+	@DisplayName( "It should map the query to a new query in parallel" )
+	@Test
+	public void testMapQueryInParallel() {
+		instance.executeSource(
+		    """
+		    query = QueryNew( "id,name", "integer,varchar" );
+		    QueryAddRow( query, { id = 1, name = "John" } );
+		    QueryAddRow( query, { id = 2, name = "Jane" } );
+		    QueryAddRow( query, { id = 3, name = "Jim" } );
+		    QueryAddRow( query, { id = 4, name = "Jill" } );
+		    QueryAddRow( query, { id = 5, name = "Jack" } );
+
+		    function mapFn( row, currentIndex, query ){
+		    	return { id = row.id, name = "Boxlang" };
+		    };
+
+		    result = QueryMap( query, mapFn, true );
+		    """,
+		    context );
+
+		// Verify Same size
+		assertThat( variables.getAsQuery( result ).size() ).isEqualTo( 5 );
+	}
+
+	@DisplayName( "It should map the query to a new query in parallel with max threads" )
+	@Test
+	public void testMapQueryInParallelWithmaxThreads() {
+		instance.executeSource(
+		    """
+		    query = QueryNew( "id,name", "integer,varchar" );
+		    QueryAddRow( query, { id = 1, name = "John" } );
+		    QueryAddRow( query, { id = 2, name = "Jane" } );
+		    QueryAddRow( query, { id = 3, name = "Jim" } );
+		    QueryAddRow( query, { id = 4, name = "Jill" } );
+		    QueryAddRow( query, { id = 5, name = "Jack" } );
+
+		    function mapFn( row, currentIndex, query ){
+		    	return { id = row.id, name = "Boxlang" };
+		    };
+
+		    result = QueryMap( query, mapFn, true, 2 );
+		    """,
+		    context );
+
+		// Verify Same size
+		assertThat( variables.getAsQuery( result ).size() ).isEqualTo( 5 );
+	}
+
+	@DisplayName( "It should map in parallel " )
+	@Test
+	public void testMapQueryInParallelWithMemberFunction() {
+		//@formatter:off
+		instance.executeSource(
+			"""
+				query = QueryNew( "id,name", "integer,varchar" )
+				QueryAddRow( query, { id = 1, name = "John" } )
+				QueryAddRow( query, { id = 2, name = "Jane" } )
+				QueryAddRow( query, { id = 3, name = "Jim" } )
+				QueryAddRow( query, { id = 4, name = "Jill" } )
+				QueryAddRow( query, { id = 5, name = "Jack" } )
+
+				function mapFn( row, currentIndex, query ){
+					return { id = row.id, name = "Boxlang" }
+				};
+
+				result = query.map( mapFn, true )
+				println( result )
+			""",
+		    context );
+		//@formatter:on
+
+		// Verify Same size
+		assertThat( variables.getAsQuery( result ).size() ).isEqualTo( 5 );
+	}
+
+	@DisplayName( "It should map in parallel with max threads" )
+	@Test
+	public void testMapQueryInParallelWithMemberFunctionAndMaxThreads() {
+		//@formatter:off
+		instance.executeSource(
+			"""
+				query = QueryNew( "id,name", "integer,varchar" )
+				QueryAddRow( query, { id = 1, name = "John" } )
+				QueryAddRow( query, { id = 2, name = "Jane" } )
+				QueryAddRow( query, { id = 3, name = "Jim" } )
+				QueryAddRow( query, { id = 4, name = "Jill" } )
+				QueryAddRow( query, { id = 5, name = "Jack" } )
+
+				function mapFn( row, currentIndex, query ){
+					return { id = row.id, name = "Boxlang" }
+				};
+
+				result = query.map( mapFn, true, 2 )
+				println( result )
+			""",
+		    context );
+		//@formatter:on
+
+		// Verify Same size
+		assertThat( variables.getAsQuery( result ).size() ).isEqualTo( 5 );
+	}
+
 }

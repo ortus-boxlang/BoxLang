@@ -105,4 +105,50 @@ public class ListMapTest {
 		assertThat( result.get( 4 ) ).isEqualTo( "10" );
 	}
 
+	@DisplayName( "It can map in parallel" )
+	@Test
+	public void testMapInParallel() {
+		instance.executeSource(
+		    """
+		        nums = "1,2,3,4,5";
+
+		        function mapFn( value, i, list ){
+		            return value * 2;
+		        };
+
+		        result = listMap( nums, mapFn, ",", false, true );
+		    """,
+		    context );
+		Array result = ListUtil.asList( variables.getAsString( Key.of( "result" ) ), "," );
+		assertThat( result.size() ).isEqualTo( 5 );
+		assertThat( result.get( 0 ) ).isEqualTo( "2" );
+		assertThat( result.get( 1 ) ).isEqualTo( "4" );
+		assertThat( result.get( 2 ) ).isEqualTo( "6" );
+		assertThat( result.get( 3 ) ).isEqualTo( "8" );
+		assertThat( result.get( 4 ) ).isEqualTo( "10" );
+	}
+
+	@DisplayName( "It can map in parallel with max threads" )
+	@Test
+	public void testMapInParallelWithMaxThreads() {
+		instance.executeSource(
+		    """
+		        nums = "1,2,3,4,5";
+
+		        function mapFn( value, i, list ){
+		            return value * 2;
+		        };
+
+		        result = listMap( nums, mapFn, ",", false, true, 4 );
+		    """,
+		    context );
+		Array result = ListUtil.asList( variables.getAsString( Key.of( "result" ) ), "," );
+		assertThat( result.size() ).isEqualTo( 5 );
+		assertThat( result.get( 0 ) ).isEqualTo( "2" );
+		assertThat( result.get( 1 ) ).isEqualTo( "4" );
+		assertThat( result.get( 2 ) ).isEqualTo( "6" );
+		assertThat( result.get( 3 ) ).isEqualTo( "8" );
+		assertThat( result.get( 4 ) ).isEqualTo( "10" );
+	}
+
 }
