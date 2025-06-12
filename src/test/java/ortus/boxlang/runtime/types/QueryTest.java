@@ -213,4 +213,56 @@ public class QueryTest {
 		assertThat( qry.getColumnList() ).isEqualTo( "id,name" );
 	}
 
+	@DisplayName( "Add 100 rows to a query in parallel" )
+	@Test
+	void testAdd100RowsInParallel() {
+		// Create an Array with 100 rows, each with a Struct of data
+		Query qry = new Query();
+		qry.addColumn( Key.of( "id" ), QueryColumnType.INTEGER );
+		qry.addColumn( Key.of( "name" ), QueryColumnType.VARCHAR );
+
+		// Create an array of 100 rows
+		Array rows = Array.of();
+		for ( int i = 1; i <= 100; i++ ) {
+			rows.add( Struct.of( Key.of( "id" ), i, Key.of( "name" ), "Name " + i ) );
+		}
+		// Add rows to the query in parallel
+		rows.parallelStream().forEach( row -> qry.addRow( ( IStruct ) row ) );
+
+		assertThat( qry.size() ).isEqualTo( 100 );
+		assertThat( qry.getColumnList() ).isEqualTo( "id,name" );
+	}
+
+	@DisplayName( "Test concurrency modifications with a dataset of 1000 rows" )
+	@Test
+	void testConcurrentModifications() {
+		// Create a query with 1000 rows
+		Query qry = new Query();
+		qry.addColumn( Key.of( "id" ), QueryColumnType.INTEGER );
+		qry.addColumn( Key.of( "name" ), QueryColumnType.VARCHAR );
+
+		// Create an array of 1000 rows
+		Array rows = Array.of();
+		for ( int i = 1; i <= 1000; i++ ) {
+			rows.add( Struct.of( Key.of( "id" ), i, Key.of( "name" ), "Name " + i ) );
+		}
+
+		// Now do concurrent modifications, add rows, update rows, and remove rows
+		rows.parallelStream().forEach( row -> {
+			qry.addRow( ( IStruct ) row );
+			synchronized ( qry ) {
+				if ( qry.size() % 100 == 0 ) {
+					qry.setCell( Key.of( "name" ), qry.size() - 1, "Updated Name " + qry.size() );
+				}
+				if ( qry.size() % 50 == 0 && qry.size() > 0 ) {
+					// Delete the last row (size - 1 for 0-based index)
+					qry.deleteRow( qry.size() - 1 );
+				}
+			}
+		} );
+		assertThat( qry.size() ).isLessThan( 1000 );
+		assertThat( qry.getColumnList() ).isEqualTo( "id,name" );
+
+	}
+
 }
