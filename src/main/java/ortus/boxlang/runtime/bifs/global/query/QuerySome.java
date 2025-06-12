@@ -22,7 +22,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
-import ortus.boxlang.runtime.types.util.ListUtil;
+import ortus.boxlang.runtime.types.util.QueryUtil;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.QUERY )
@@ -68,8 +68,8 @@ public class QuerySome extends BIF {
 	 *                      If parallel is false, this argument is ignored.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		return ListUtil.some(
-		    arguments.getAsQuery( Key.query ).toArrayOfStructs(),
+		return QueryUtil.some(
+		    arguments.getAsQuery( Key.query ),
 		    arguments.getAsFunction( Key.callback ),
 		    context,
 		    arguments.getAsBoolean( Key.parallel ),
