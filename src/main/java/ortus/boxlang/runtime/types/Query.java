@@ -58,8 +58,27 @@ import ortus.boxlang.runtime.types.util.BLCollector;
 import ortus.boxlang.runtime.util.DuplicationUtil;
 
 /**
- * This type represents a representation of a database query result set.
- * It provides language specific methods to access columnar data, both as value lists and within iterative loops
+ * Represents a BoxLang Query object that stores tabular data.
+ *
+ * This class implements multiple interfaces:
+ * - IType: for BoxLang type system integration
+ * - IReferenceable: for dynamic property/method access
+ * - Collection<IStruct>: for Java collection operations
+ * - Serializable: for persistence support
+ *
+ * The Query object stores data as a list of row arrays, with column metadata maintained
+ * separately. It provides thread-safe operations for manipulating the data and
+ * supports JDBC ResultSet integration.
+ *
+ * Key features:
+ * - Dynamic column addition/removal
+ * - Row manipulation (add, delete, swap)
+ * - Conversion to/from other data structures
+ * - Query metadata support
+ * - Collection interface implementation
+ * - Optimized data storage with lazy initialization
+ *
+ * @since 1.0.0
  */
 public class Query implements IType, IReferenceable, Collection<IStruct>, Serializable {
 
@@ -753,7 +772,9 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		validateRow( rowIndex );
 		int columnIndex = getColumn( columnName ).getIndex();
 		// TODO: validate column type
-		data.get( rowIndex )[ columnIndex ] = value;
+		synchronized ( data ) {
+			data.get( rowIndex )[ columnIndex ] = value;
+		}
 		return this;
 	}
 
