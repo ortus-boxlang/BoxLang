@@ -103,16 +103,13 @@ public class BLCollector {
 	 */
 	public static Collector<IStruct, Query, Query> toQuery( Query newQuery ) {
 		return Collector.of(
-		    () -> {
-			    Query q = new Query();
-			    for ( var column : newQuery.getColumns().entrySet() ) {
-				    q.addColumn( column.getKey(), column.getValue().getType() );
-			    }
-			    return q;
-		    },
 		    // supplier
-		    ( query, row ) -> query.addRow( row ),
+		    () -> {
+			    return new Query().setColumns( newQuery.getColumns() );
+		    },
 		    // accumulator
+		    ( query, row ) -> query.addRow( row ),
+		    // combiner
 		    ( left, right ) -> {
 			    left.addAll( right );
 			    return left;

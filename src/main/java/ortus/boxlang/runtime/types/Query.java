@@ -265,6 +265,19 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	}
 
 	/**
+	 * Set the columns for this query
+	 */
+	public Query setColumns( Map<Key, QueryColumn> columns ) {
+		this.columns = columns;
+		// Re-index the columns
+		int index = 0;
+		for ( QueryColumn column : columns.values() ) {
+			column.setIndex( index++ );
+		}
+		return this;
+	}
+
+	/**
 	 * Does this query have columns?
 	 *
 	 * @return true if query has columns
