@@ -262,7 +262,6 @@ public class QueryTest {
 		} );
 		assertThat( qry.size() ).isLessThan( 1000 );
 		assertThat( qry.getColumnList() ).isEqualTo( "id,name" );
-
 	}
 
 }

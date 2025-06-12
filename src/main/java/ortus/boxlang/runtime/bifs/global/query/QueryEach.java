@@ -22,7 +22,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
-import ortus.boxlang.runtime.types.util.ListUtil;
+import ortus.boxlang.runtime.types.util.QueryUtil;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.QUERY )
@@ -41,7 +41,8 @@ public class QueryEach extends BIF {
 		    new Argument( true, Argument.QUERY, Key.query ),
 		    new Argument( true, "function:Consumer", Key.callback ),
 		    new Argument( false, Argument.BOOLEAN, Key.parallel, false ),
-		    new Argument( false, Argument.INTEGER, Key.maxThreads )
+		    new Argument( false, Argument.INTEGER, Key.maxThreads ),
+		    new Argument( false, Argument.BOOLEAN, Key.ordered, false )
 		};
 	}
 
@@ -68,8 +69,8 @@ public class QueryEach extends BIF {
 	 *                      If parallel is false, this argument is ignored.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		ListUtil.each(
-		    arguments.getAsQuery( Key.query ).toArrayOfStructs(),
+		QueryUtil.each(
+		    arguments.getAsQuery( Key.query ),
 		    arguments.getAsFunction( Key.callback ),
 		    context,
 		    arguments.getAsBoolean( Key.parallel ),

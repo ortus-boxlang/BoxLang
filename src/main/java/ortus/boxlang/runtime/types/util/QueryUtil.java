@@ -1,8 +1,27 @@
+/**
+ * [BoxLang]
+ *
+ * Copyright [2023] [Ortus Solutions, Corp]
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package ortus.boxlang.runtime.types.util;
 
 import java.util.Objects;
 import java.util.UUID;
+import java.util.function.IntConsumer;
 import java.util.function.IntPredicate;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -13,6 +32,13 @@ import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 
+/**
+ * Utility class for Query operations.
+ *
+ * This class provides various helper methods for working with Query objects in BoxLang,
+ * including column existence checking and query filtering with callback functions.
+ * It supports both sequential and parallel processing for filter operations.
+ */
 public class QueryUtil {
 
 	/**
@@ -88,6 +114,86 @@ public class QueryUtil {
 
 		// If parallel is false, just use the regular stream
 		return queryStream.collect( BLCollector.toQuery( query ) );
+	}
+
+	/**
+	 * Method to invoke a function for every iteration of the query
+	 *
+	 * @param query           The query object to filter
+	 * @param callback        The callback Function object
+	 * @param callbackContext The context in which to execute the callback
+	 * @param parallel        Whether to process the filter in parallel
+	 * @param maxThreads      Optional max threads for parallel execution
+	 * @param ordered         Boolean as to whether to maintain order in parallel execution
+	 */
+	public static void each(
+	    Query query,
+	    Function callback,
+	    IBoxContext callbackContext,
+	    Boolean parallel,
+	    Integer maxThreads,
+	    Boolean ordered ) {
+
+		// Parameter validation
+		Objects.requireNonNull( query, "Query cannot be null" );
+		Objects.requireNonNull( callback, "Callback cannot be null" );
+		Objects.requireNonNull( callbackContext, "Callback context cannot be null" );
+		if ( maxThreads == null ) {
+			maxThreads = 0; // Default to 0 if not provided
+		}
+
+		IntConsumer consumer;
+		if ( callback.requiresStrictArguments() ) {
+			consumer = idx -> callbackContext.invokeFunction( callback,
+			    new Object[] { query.size() > idx ? query.getRowAsStruct( idx ) : null } );
+		} else {
+			consumer = idx -> callbackContext.invokeFunction( callback,
+			    new Object[] { query.size() > idx ? query.getRowAsStruct( idx ) : null, idx + 1, query } );
+		}
+
+		// Create a stream of what we want, usage is determined internally by the terminators
+		IntStream queryStream = query.intStream();
+		if ( parallel ) {
+			// If maxThreads is null or 0, then use just the ForkJoinPool default parallelism level
+			if ( maxThreads <= 0 ) {
+				if ( ordered ) {
+					queryStream
+					    .parallel()
+					    .forEachOrdered( consumer );
+				} else {
+					queryStream
+					    .parallel()
+					    .forEach( consumer );
+				}
+				return;
+			}
+			// Otherwise, create a new ForkJoinPool with the specified number of threads
+			AsyncService.buildExecutor(
+			    "QueryEach_" + UUID.randomUUID().toString(),
+			    AsyncService.ExecutorType.FORK_JOIN,
+			    maxThreads
+			).submitAndGet( () -> {
+				if ( ordered ) {
+					queryStream
+					    .parallel()
+					    .forEachOrdered( consumer );
+				} else {
+					queryStream
+					    .parallel()
+					    .forEach( consumer );
+				}
+			} );
+			return;
+		}
+
+		// If parallel is false, just use the regular stream
+		if ( ordered ) {
+			queryStream
+			    .forEachOrdered( consumer );
+		} else {
+			queryStream
+			    .forEach( consumer );
+		}
 	}
 
 }
