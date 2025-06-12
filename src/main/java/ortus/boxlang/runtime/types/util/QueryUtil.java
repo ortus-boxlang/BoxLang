@@ -224,7 +224,7 @@ public class QueryUtil {
 
 		// Build the mapper based on the callback
 		// If the callback requires strict arguments, we only pass the item (Usually Java Predicates)
-		// Otherwise we pass the item, the index, and the array itself
+		// Otherwise we pass the item, the index, and the query itself
 		java.util.function.IntFunction<Object> mapper;
 		if ( callback.requiresStrictArguments() ) {
 			mapper = idx -> callbackContext.invokeFunction(
@@ -313,7 +313,7 @@ public class QueryUtil {
 			}
 			// Otherwise, create a new ForkJoinPool with the specified number of threads
 			return ( Boolean ) AsyncService.buildExecutor(
-			    "ArrayEvery_" + UUID.randomUUID().toString(),
+			    "QueryEvery_" + UUID.randomUUID().toString(),
 			    AsyncService.ExecutorType.FORK_JOIN,
 			    maxThreads
 			).submitAndGet( () -> {
@@ -326,6 +326,68 @@ public class QueryUtil {
 		// Non-parallel execution
 		return queryStream
 		    .allMatch( test );
+	}
+
+	/**
+	 * Method to test if any item in the query meets the criteria in the callback
+	 *
+	 * @param query           The query object to filter
+	 * @param callback        The callback Function object
+	 * @param callbackContext The context in which to execute the callback
+	 * @param parallel        Whether to process the filter in parallel
+	 * @param maxThreads      Optional max threads for parallel execution
+	 *
+	 * @return The boolean value as to whether the test is met
+	 */
+	public static boolean some(
+	    Query query,
+	    Function callback,
+	    IBoxContext callbackContext,
+	    Boolean parallel,
+	    Integer maxThreads ) {
+
+		// Parameter validation
+		Objects.requireNonNull( query, "Query cannot be null" );
+		Objects.requireNonNull( callback, "Callback cannot be null" );
+		Objects.requireNonNull( callbackContext, "Callback context cannot be null" );
+		if ( maxThreads == null ) {
+			maxThreads = 0; // Default to 0 if not provided
+		}
+
+		IntPredicate test;
+		if ( callback.requiresStrictArguments() ) {
+			test = idx -> BooleanCaster.cast( callbackContext.invokeFunction( callback,
+			    new Object[] { query.size() > idx ? query.getRowAsStruct( idx ) : null } ) );
+		} else {
+			test = idx -> BooleanCaster.cast( callbackContext.invokeFunction( callback,
+			    new Object[] { query.size() > idx ? query.getRowAsStruct( idx ) : null, idx + 1, query } ) );
+		}
+
+		// Create a stream of what we want, usage is determined internally by the terminators
+		IntStream queryStream = query.intStream();
+
+		if ( parallel ) {
+			// If maxThreads is null or 0, then use just the ForkJoinPool default parallelism level
+			if ( maxThreads <= 0 ) {
+				return queryStream
+				    .parallel()
+				    .anyMatch( test );
+			}
+			// Otherwise, create a new ForkJoinPool with the specified number of threads
+			return ( Boolean ) AsyncService.buildExecutor(
+			    "QuerySome_" + UUID.randomUUID().toString(),
+			    AsyncService.ExecutorType.FORK_JOIN,
+			    maxThreads
+			).submitAndGet( () -> {
+				return queryStream
+				    .parallel()
+				    .anyMatch( test );
+			} );
+		}
+
+		// Non-parallel execution
+		return queryStream
+		    .anyMatch( test );
 	}
 
 }
