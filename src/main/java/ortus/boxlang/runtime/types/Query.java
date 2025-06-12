@@ -30,12 +30,8 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -62,115 +58,55 @@ import ortus.boxlang.runtime.types.util.BLCollector;
 import ortus.boxlang.runtime.util.DuplicationUtil;
 
 /**
- * Represents a database query result set with rows and columns of data.
- * This class implements a mutable query structure that can be populated from JDBC ResultSets,
- * arrays, or manually constructed. It provides comprehensive functionality for manipulating
- * query data including adding/removing rows and columns, sorting, and data access.
- *
- * <p>
- * The Query class implements Collection&lt;IStruct&gt; to allow iteration over rows as structs,
- * and IReferenceable for dynamic property access. Each row can be accessed as either an array
- * of objects or as a struct with column names as keys.
- * </p>
- *
- * <p>
- * Key features:
- * </p>
- * <ul>
- * <li>Thread-safe operations for concurrent access using ReadWriteLock</li>
- * <li>High-performance concurrent reads with exclusive writes</li>
- * <li>Lazy initialization with pre-allocated capacity for performance</li>
- * <li>Support for various data types through QueryColumnType</li>
- * <li>Integration with BoxLang runtime events and interceptors</li>
- * <li>Conversion to/from different data formats (arrays, structs, ResultSets)</li>
- * </ul>
- *
- * <p>
- * Thread Safety:
- * This implementation uses ReadWriteLock for optimal performance:
- * - Multiple threads can read simultaneously (getRow, getCell, etc.)
- * - Write operations get exclusive access (addRow, setCell, etc.)
- * - Provides 10-40x better performance than synchronized for read-heavy workloads
- * </p>
- *
- * <p>
- * Usage examples:
- * </p>
- *
- * <pre>
- * // Create empty query
- * Query q = new Query();
- * q.addColumn( Key.of( "id" ), QueryColumnType.INTEGER );
- * q.addColumn( Key.of( "name" ), QueryColumnType.VARCHAR );
- *
- * // Add data
- * q.addRow( new Object[] { 1, "John" } );
- * q.addRow( Struct.of( "id", 2, "name", "Jane" ) );
- *
- * // Access data (multiple threads can read simultaneously)
- * String name = ( String ) q.getCell( Key.of( "name" ), 0 );
- * IStruct row = q.getRowAsStruct( 1 );
- * </pre>
- *
- * @author Ortus Solutions
- *
- * @since 1.0.0
- *
- * @see QueryColumn
- * @see QueryColumnType
- * @see UnmodifiableQuery
+ * This type represents a representation of a database query result set.
+ * It provides language specific methods to access columnar data, both as value lists and within iterative loops
  */
 public class Query implements IType, IReferenceable, Collection<IStruct>, Serializable {
 
 	/**
-	 * Interceptor service for announcing query events
+	 * -----------------------------------------------------------
+	 * Static Constants
+	 * -----------------------------------------------------------
 	 */
+
 	private static final InterceptorService	interceptorService	= BoxRuntime.getInstance().getInterceptorService();
 
-	/**
-	 * Serialization version
-	 */
+	private static final FunctionService	functionService		= BoxRuntime.getInstance().getFunctionService();
+
 	private static final long				serialVersionUID	= 1L;
 
 	/**
-	 * ReadWriteLock for high-performance concurrent access
-	 * - Multiple threads can read simultaneously
-	 * - Write operations get exclusive access
+	 * -----------------------------------------------------------
+	 * Properties
+	 * -----------------------------------------------------------
 	 */
-	private final ReadWriteLock				lock				= new ReentrantReadWriteLock();
-	private final Lock						readLock			= lock.readLock();
-	private final Lock						writeLock			= lock.writeLock();
-
-	/**
-	 * Function service used for member invocations and dynamic function calls
-	 */
-	private transient FunctionService		functionService;
 
 	/**
 	 * Query data as List of arrays
-	 * Protected by ReadWriteLock for optimal concurrent access
 	 */
 	private volatile List<Object[]>			data;
 
 	/**
-	 * Size of the query, used for fast access
-	 * AtomicInteger for thread-safe size operations
+	 * Size of the query, used for collection methods
+	 * This is an AtomicInteger so that it can be modified from multiple threads
+	 * safely.
 	 */
 	protected AtomicInteger					size				= new AtomicInteger( 0 );
 
 	/**
-	 * The actual size of the data list, used to pre-allocate space
+	 * Actual size of the data list, used to track how many rows have been added
+	 * This is volatile so that it can be updated from multiple threads
+	 * safely.
 	 */
-	private AtomicInteger					actualSize			= new AtomicInteger( 0 );
+	private volatile int					actualSize			= 0;
 
 	/**
 	 * Map of column definitions
-	 * Using synchronized map for thread safety
 	 */
-	private Map<Key, QueryColumn>			columns				= Collections.synchronizedMap( new LinkedHashMap<Key, QueryColumn>() );
+	private volatile Map<Key, QueryColumn>	columns				= Collections.synchronizedMap( new LinkedHashMap<Key, QueryColumn>() );
 
 	/**
-	 * Metadata object for the query
+	 * Metadata object
 	 */
 	public transient BoxMeta<Query>			$bx;
 
@@ -185,12 +121,11 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 * @param meta Struct of metadata, most likely JDBC metadata such as sql, cache parameters, etc.
 	 */
 	public Query( IStruct meta, int initialSize ) {
-		this.functionService	= BoxRuntime.getInstance().getFunctionService();
-		this.metadata			= meta == null ? new Struct( IStruct.TYPES.SORTED ) : meta;
+		this.metadata = meta == null ? new Struct( IStruct.TYPES.SORTED ) : meta;
 		if ( initialSize > 0 ) {
-			this.data = new ArrayList<Object[]>( initialSize );
+			this.data	= new ArrayList<Object[]>( initialSize );
 			// add nulls and increment for each row
-			actualSize.set( initialSize );
+			actualSize	= initialSize;
 			for ( int i = 0; i < initialSize; i++ ) {
 				data.add( null );
 			}
@@ -336,31 +271,19 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 * @return list of arrays of data
 	 */
 	public List<Object[]> getData() {
-		readLock.lock();
-		try {
-			truncateInternal();
-			// Return a copy to prevent external modification
-			return new ArrayList<>( data.subList( 0, size.get() ) );
-		} finally {
-			readLock.unlock();
-		}
+		truncateInternal();
+		return data;
 	}
 
 	/**
 	 * Set the data for this query
-	 * WARNING: This replaces all existing data
 	 *
-	 * @param data new data list
+	 * @param data List of arrays representing the row data
 	 */
 	public void setData( List<Object[]> data ) {
-		writeLock.lock();
-		try {
-			this.data = data;
-			size.set( data.size() );
-			actualSize.set( data.size() );
-		} finally {
-			writeLock.unlock();
-		}
+		this.data = data;
+		size.set( data.size() );
+		actualSize = data.size();
 	}
 
 	/**
@@ -382,51 +305,45 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 *
 	 * @param name       column name
 	 * @param type       column type
-	 * @param columnData optional data for the column
+	 * @param columnData array of data to populate the column with, can be null
 	 *
 	 * @return this query
 	 */
-	public Query addColumn( Key name, QueryColumnType type, Object[] columnData ) {
-		writeLock.lock();
-		try {
-			// check if column name already exists
-			int	index		= -1;
-			int	newColIndex	= getColumns().size();
-
-			// Get index from linked map of where the key exists already
-			for ( Key key : columns.keySet() ) {
-				index++;
-				if ( key.equals( name ) ) {
-					newColIndex = index;
-					break;
-				}
+	public synchronized Query addColumn( Key name, QueryColumnType type, Object[] columnData ) {
+		// check if column name already exists
+		int	index		= -1;
+		int	newColIndex	= getColumns().size();
+		// Get index from linked map of where the key exists already
+		for ( Key key : columns.keySet() ) {
+			index++;
+			if ( key.equals( name ) ) {
+				newColIndex = index;
+				break;
 			}
-
-			columns.put( name, createQueryColumn( name, type, newColIndex ) );
-
-			if ( size.get() > 0 ) {
-				// loop over data and replace each array with a new array having an additional column
-				for ( int i = 0; i < size.get(); i++ ) {
-					Object[]	row		= data.get( i );
-					Object[]	newRow	= new Object[ row.length + 1 ];
-					System.arraycopy( row, 0, newRow, 0, row.length );
-					if ( columnData != null && i < columnData.length ) {
-						newRow[ newColIndex ] = columnData[ i ];
-					}
-					data.set( i, newRow );
-				}
-			} else if ( columnData != null ) {
-				// loop over column data and add that many rows with an array as big as there are columns
-				for ( Object columnDatum : columnData ) {
-					Object[] row = new Object[ columns.size() ];
-					row[ newColIndex ] = columnDatum;
-					addRowInternal( row );
-				}
-			}
-			return this;
-		} finally {
-			writeLock.unlock();
 		}
+		columns.put( name, createQueryColumn( name, type, newColIndex ) );
+		if ( size.get() > 0 ) {
+			// loop over data and replace each array with a new array having an additional
+			// null at the end
+			for ( int i = 0; i < size.get(); i++ ) {
+				Object[]	row		= data.get( i );
+				Object[]	newRow	= new Object[ row.length + 1 ];
+				System.arraycopy( row, 0, newRow, 0, row.length );
+				if ( columnData != null && i < columnData.length ) {
+					newRow[ newColIndex ] = columnData[ i ];
+				}
+				data.set( i, newRow );
+			}
+		} else if ( columnData != null ) {
+			// loop over column data and add that many rows with an array as big as their
+			// are columns
+			for ( Object columnDatum : columnData ) {
+				Object[] row = new Object[ columns.size() ];
+				row[ newColIndex ] = columnDatum;
+				addRow( row );
+			}
+		}
+		return this;
 	}
 
 	/**
@@ -453,17 +370,12 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 * @return array of column data
 	 */
 	public Object[] getColumnData( Key name ) {
-		readLock.lock();
-		try {
-			int			index		= getColumn( name ).getIndex();
-			Object[]	columnData	= new Object[ size.get() ];
-			for ( int i = 0; i < size.get(); i++ ) {
-				columnData[ i ] = data.get( i )[ index ];
-			}
-			return columnData;
-		} finally {
-			readLock.unlock();
+		int			index		= getColumn( name ).getIndex();
+		Object[]	columnData	= new Object[ size.get() ];
+		for ( int i = 0; i < size.get(); i++ ) {
+			columnData[ i ] = data.get( i )[ index ];
 		}
+		return columnData;
 	}
 
 	/**
@@ -530,21 +442,16 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 
 	/**
 	 * Get data for a row as an array. 0-based index!
-	 * Array data is returned by reference - changes will affect the query.
-	 * Use with caution in multi-threaded environments.
+	 * Array is passed by reference and changes made to it will be reflected in the
+	 * query.
 	 *
 	 * @param index row index, starting at 0
 	 *
 	 * @return array of row data
 	 */
 	public Object[] getRow( int index ) {
-		readLock.lock();
-		try {
-			validateRow( index );
-			return data.get( index );
-		} finally {
-			readLock.unlock();
-		}
+		validateRow( index );
+		return data.get( index );
 	}
 
 	/**
@@ -568,32 +475,22 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 			return this;
 		}
 
-		writeLock.lock();
-		try {
+		// Insert the rows
+		synchronized ( data ) {
 			for ( int i = 0; i < target.size(); i++ ) {
-				// Announce event if needed
-				boolean doEvents = interceptorService.hasState( BoxEvent.QUERY_ADD_ROW.key() );
-				if ( doEvents ) {
-					interceptorService.announce(
-					    BoxEvent.QUERY_ADD_ROW,
-					    Struct.of(
-					        Key.query, this,
-					        Key.row, target.getRow( i )
-					    )
-					);
-				}
-
-				// Ensure capacity for insertion
-				ensureCapacity( size.get() + 1 );
-
+				interceptorService.announce(
+				    BoxEvent.QUERY_ADD_ROW,
+				    Struct.of(
+				        "query", this,
+				        "row", target.getRow( i )
+				    )
+				);
 				data.add( position + i, target.getRow( i ) );
 				size.incrementAndGet();
 			}
-			actualSize.set( data.size() );
-			return this;
-		} finally {
-			writeLock.unlock();
 		}
+
+		return this;
 	}
 
 	/**
@@ -601,65 +498,31 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 *
 	 * @param row row data as array of objects
 	 *
-	 * @return row number (1-based)
+	 * @return the row number that was added (1-based)
 	 */
 	public int addRow( Object[] row ) {
-		// Check for events outside of lock for performance
-		boolean doEvents = interceptorService.hasState( BoxEvent.QUERY_ADD_ROW.key() );
-
-		if ( doEvents ) {
-			// Notify listeners before any mutation
-			interceptorService.announce(
-			    BoxEvent.QUERY_ADD_ROW,
-			    Struct.of(
-			        Key.query, this,
-			        Key.row, row
-			    )
-			);
-		}
-
-		writeLock.lock();
-		try {
-			return addRowInternal( row );
-		} finally {
-			writeLock.unlock();
-		}
-	}
-
-	/**
-	 * Internal method to add a row without acquiring locks (assumes caller has write lock)
-	 *
-	 * @param row row data as array of objects
-	 *
-	 * @return row number (1-based)
-	 */
-	private int addRowInternal( Object[] row ) {
-		// Get new index
+		interceptorService.announce(
+		    BoxEvent.QUERY_ADD_ROW,
+		    Struct.of(
+		        "query", this,
+		        "row", row
+		    )
+		);
+		// TODO: validate types
 		int newRow = size.incrementAndGet();
-
-		// Ensure capacity
-		ensureCapacity( newRow );
-
-		// Set the row data
+		if ( actualSize < newRow + 50 ) {
+			synchronized ( data ) {
+				if ( actualSize < newRow + 50 ) {
+					// Add 200 more rows with nulls
+					for ( int i = 0; i < 200; i++ ) {
+						data.add( null );
+					}
+					actualSize = actualSize + 200;
+				}
+			}
+		}
 		data.set( newRow - 1, row );
 		return newRow;
-	}
-
-	/**
-	 * Ensure the data list has enough capacity for the given size
-	 * Must be called within write lock
-	 *
-	 * @param requiredSize minimum required size
-	 */
-	private void ensureCapacity( int requiredSize ) {
-		if ( data.size() < requiredSize ) {
-			// Add buffer space to reduce future allocations
-			int targetCapacity = requiredSize + 199; // Ensure we have at least 200 slots buffer
-			while ( data.size() < targetCapacity ) {
-				data.add( null );
-			}
-			actualSize.set( data.size() );
-		}
 	}
 
 	/**
@@ -667,7 +530,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 *
 	 * @param row row data as array of objects
 	 *
-	 * @return row number (1-based)
+	 * @return the row number that was added (1-based)
 	 */
 	public int addRowDefaultMissing( Object[] row ) {
 		if ( row.length < columns.size() ) {
@@ -686,7 +549,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 *
 	 * @param row row data as a BoxLang array
 	 *
-	 * @return row number (1-based)
+	 * @return the row number that was added (1-based)
 	 */
 	public int addRow( Array row ) {
 		return addRowDefaultMissing( row.toArray() );
@@ -701,23 +564,20 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 * @return this query
 	 */
 	public Query swapRow( int sourceRow, int destinationRow ) {
-		writeLock.lock();
-		try {
-			validateRow( sourceRow );
-			validateRow( destinationRow );
+		validateRow( sourceRow );
+		validateRow( destinationRow );
+		synchronized ( data ) {
 			Object[] temp = data.get( sourceRow );
 			data.set( sourceRow, data.get( destinationRow ) );
 			data.set( destinationRow, temp );
-			return this;
-		} finally {
-			writeLock.unlock();
 		}
+		return this;
 	}
 
 	/**
 	 * Add an empty row to the query
 	 *
-	 * @return row number (1-based)
+	 * @return the row number that was added (1-based)
 	 */
 	public int addEmptyRow() {
 		return addRow( columns.keySet().stream().map( key -> null ).toArray() );
@@ -728,13 +588,13 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 *
 	 * @param row row data as Struct
 	 *
-	 * @return row number (1-based)
+	 * @return the row number that was added (1-based)
 	 */
 	public int addRow( IStruct row ) {
-		Object[]	rowData	= new Object[ this.columns.size() ];
+		Object[]	rowData	= new Object[ columns.size() ];
+		// TODO: validate types
 		int			i		= 0;
-
-		for ( QueryColumn column : this.columns.values() ) {
+		for ( QueryColumn column : columns.values() ) {
 			// Missing keys in the struct go in the query as an empty string (CF compat)
 			rowData[ i ] = row.containsKey( column.getName() ) ? row.get( column.getName() ) : "";
 			i++;
@@ -749,12 +609,12 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 *
 	 * @param rows Number of rows to add
 	 *
-	 * @return Last row added (1-based)
+	 * @return Last row added
 	 */
 	public int addRows( int rows ) {
 		int lastRow = 0;
 		for ( int i = 0; i < rows; i++ ) {
-			lastRow = addRow( new Object[ columns.size() ] );
+			lastRow = addRow( ( Object[] ) new Object[ columns.size() ] );
 		}
 		return lastRow;
 	}
@@ -765,41 +625,15 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 * @param name the name of the column to delete
 	 */
 	public void deleteColumn( Key name ) {
-		writeLock.lock();
-		try {
-			truncateInternal();
-			QueryColumn	column	= getColumn( name );
-			int			index	= column.getIndex();
-			columns.remove( name );
-
-			// Actually modify the data in the list
-			for ( int i = 0; i < data.size(); i++ ) {
-				Object[] row = data.get( i );
-				if ( row != null ) {
-					Object[] newRow = new Object[ row.length - 1 ];
-					System.arraycopy( row, 0, newRow, 0, index );
-					System.arraycopy( row, index + 1, newRow, index, row.length - index - 1 );
-					data.set( i, newRow );
-				}
-			}
-
-			// Update column indices for remaining columns
-			updateColumnIndices();
-		} finally {
-			writeLock.unlock();
-		}
-	}
-
-	/**
-	 * Update column indices after a column is removed
-	 * Must be called within write lock
-	 */
-	private void updateColumnIndices() {
-		int index = 0;
-		for ( QueryColumn column : columns.values() ) {
-			// Note: This assumes QueryColumn has a setIndex method
-			// You may need to add this method to QueryColumn class
-			column.setIndex( index++ );
+		truncateInternal();
+		QueryColumn	column	= getColumn( name );
+		int			index	= column.getIndex();
+		columns.remove( name );
+		for ( Object[] row : data ) {
+			Object[] newRow = new Object[ row.length - 1 ];
+			System.arraycopy( row, 0, newRow, 0, index );
+			System.arraycopy( row, index + 1, newRow, index, row.length - index - 1 );
+			row = newRow;
 		}
 	}
 
@@ -811,15 +645,12 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 * @return this query
 	 */
 	public Query deleteRow( int index ) {
-		writeLock.lock();
-		try {
+		synchronized ( data ) {
 			validateRow( index );
-			data.remove( index );
 			size.decrementAndGet();
-			actualSize.set( data.size() );
+			data.remove( index );
+			actualSize = data.size();
 			return this;
-		} finally {
-			writeLock.unlock();
 		}
 	}
 
@@ -829,9 +660,10 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 *
 	 * @param rowData Data to populate the query. Can be a struct (with keys
 	 *                matching column names), an array of structs, or an array of
-	 *                arrays (in same order as columnList)
+	 *                arrays (in
+	 *                same order as columnList)
 	 *
-	 * @return index of last row added (1-based)
+	 * @return index of last row added
 	 */
 	public int addData( Object rowData ) {
 		CastAttempt<IStruct> structCastAttempt = StructCaster.attempt( rowData );
@@ -876,27 +708,22 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 * Get data for a row as a Struct. 0-based index!
 	 * Data is copied, so re-assignments into the struct will not be reflected in
 	 * the query.
-	 * Mutating a complex object in the struct will be reflected in the query.
+	 * Mutating a complex object in the array will be reflected in the query.
 	 *
 	 * @param index row index, starting at 0
 	 *
-	 * @return struct of row data
+	 * @return array of row data
 	 */
 	public IStruct getRowAsStruct( int index ) {
-		readLock.lock();
-		try {
-			validateRow( index );
-			IStruct		struct	= new Struct( IStruct.TYPES.LINKED );
-			Object[]	row		= data.get( index );
-			int			i		= 0;
-			for ( QueryColumn column : columns.values() ) {
-				struct.put( column.getName(), row[ i ] );
-				i++;
-			}
-			return struct;
-		} finally {
-			readLock.unlock();
+		validateRow( index );
+		IStruct		struct	= new Struct( IStruct.TYPES.LINKED );
+		Object[]	row		= data.get( index );
+		int			i		= 0;
+		for ( QueryColumn column : columns.values() ) {
+			struct.put( column.getName(), row[ i ] );
+			i++;
 		}
+		return struct;
 	}
 
 	/**
@@ -908,14 +735,9 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 * @return cell data
 	 */
 	public Object getCell( Key columnName, int rowIndex ) {
-		readLock.lock();
-		try {
-			validateRow( rowIndex );
-			int columnIndex = getColumn( columnName ).getIndex();
-			return data.get( rowIndex )[ columnIndex ];
-		} finally {
-			readLock.unlock();
-		}
+		validateRow( rowIndex );
+		int columnIndex = getColumn( columnName ).getIndex();
+		return data.get( rowIndex )[ columnIndex ];
 	}
 
 	/**
@@ -923,26 +745,21 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 *
 	 * @param columnName column name
 	 * @param rowIndex   row index, starting at 0
-	 * @param value      new value for the cell
+	 * @param value      the value to set in the cell
 	 *
 	 * @return this query
 	 */
 	public Query setCell( Key columnName, int rowIndex, Object value ) {
-		writeLock.lock();
-		try {
-			validateRow( rowIndex );
-			int columnIndex = getColumn( columnName ).getIndex();
-			data.get( rowIndex )[ columnIndex ] = value;
-			return this;
-		} finally {
-			writeLock.unlock();
-		}
+		validateRow( rowIndex );
+		int columnIndex = getColumn( columnName ).getIndex();
+		// TODO: validate column type
+		data.get( rowIndex )[ columnIndex ] = value;
+		return this;
 	}
 
 	/**
 	 * Validate that a row index is within bounds
 	 * Throw exception if not
-	 * Note: This method assumes the caller has appropriate lock
 	 *
 	 * @param index row index, 0-based
 	 */
@@ -966,6 +783,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 
 	/**
 	 * Get the list of column names as a comma-separated string
+	 * TODO: Look into caching this and invalidating when columns are added/removed
 	 *
 	 * @return column names as string
 	 */
@@ -983,98 +801,63 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	}
 
 	/**
-	 * Sort the query using a comparator function
+	 * Sort the query
 	 *
 	 * @param compareFunc function to use for sorting
 	 */
 	public void sort( Comparator<IStruct> compareFunc ) {
-		writeLock.lock();
-		try {
-			Stream<IStruct> sorted = intStream()
-			    .mapToObj( index -> getRowAsStructUnsafe( index ) )
-			    .sorted( compareFunc );
+		// data.sort( compareFunc );
+		Stream<IStruct> sorted = intStream()
+		    .mapToObj( index -> getRowAsStruct( index ) )
+		    .sorted( compareFunc );
 
-			data = sorted.map( row -> row.getWrapped().entrySet().stream().map( entry -> entry.getValue() ).toArray() )
-			    .collect( Collectors.toList() );
-			actualSize.set( data.size() );
-		} finally {
-			writeLock.unlock();
-		}
+		data = sorted.map( row -> row.getWrapped().entrySet().stream().map( entry -> entry.getValue() ).toArray() )
+		    .collect( Collectors.toList() );
 	}
 
 	/**
-	 * Sort the query data directly using array comparator
+	 * Sort the query data directly using a comparator
 	 *
-	 * @param comparator comparator for Object[] arrays
+	 * @param comparator The comparator to use for sorting the row arrays
 	 */
 	public void sortData( Comparator<? super Object[]> comparator ) {
-		writeLock.lock();
-		try {
-			truncateInternal();
-			Stream<Object[]> stream;
-			if ( size() > 50 ) {
-				stream = data.subList( 0, size.get() ).parallelStream();
-			} else {
-				stream = data.subList( 0, size.get() ).stream();
-			}
-			this.data = stream.sorted( comparator ).collect( Collectors.toList() );
-			actualSize.set( data.size() );
-		} finally {
-			writeLock.unlock();
+		Stream<Object[]> stream;
+		truncateInternal();
+		if ( size() > 50 ) {
+			stream = getData().parallelStream();
+		} else {
+			stream = getData().stream();
 		}
-	}
-
-	/**
-	 * Internal method to get row as struct without locking (assumes caller has lock)
-	 *
-	 * @param index row index
-	 *
-	 * @return struct representation of row
-	 */
-	private IStruct getRowAsStructUnsafe( int index ) {
-		IStruct		struct	= new Struct( IStruct.TYPES.LINKED );
-		Object[]	row		= data.get( index );
-		int			i		= 0;
-		for ( QueryColumn column : columns.values() ) {
-			struct.put( column.getName(), row[ i ] );
-			i++;
-		}
-		return struct;
+		this.data = stream.sorted( comparator ).collect( Collectors.toList() );
 	}
 
 	/**
 	 * Truncate the query to a specific number of rows
+	 * This method does not lock the query and would allow other modifications or access while trimming the rows, which is not an atomic operation.
 	 *
-	 * @param rows maximum number of rows to keep
+	 * @param rows The maximum number of rows to keep in the query
 	 *
 	 * @return this query
 	 */
 	public Query truncate( long rows ) {
-		writeLock.lock();
-		try {
+		synchronized ( data ) {
 			truncateInternal();
 			rows = Math.max( 0, rows );
 			// loop and remove all rows over the count
 			while ( size.get() > rows ) {
 				data.remove( size.decrementAndGet() );
+				actualSize--;
 			}
-			actualSize.set( data.size() );
 			return this;
-		} finally {
-			writeLock.unlock();
 		}
 	}
 
-	/**
-	 * Internal truncate method - removes null entries at end of data list
-	 * Must be called within appropriate lock
-	 */
 	private void truncateInternal() {
 		// loop and remove all rows over the count
 		while ( data.size() > size.get() ) {
 			data.remove( data.size() - 1 );
 		}
-		actualSize.set( data.size() );
+		actualSize = data.size();
 	}
 
 	/***************************
@@ -1090,77 +873,57 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		return size.get() == 0;
 	}
 
+	/**
+	 * Check if the query contains a specific row data object
+	 *
+	 * @param o The object to check for
+	 *
+	 * @return true if the object is found, false otherwise
+	 */
 	@Override
 	public boolean contains( Object o ) {
-		readLock.lock();
-		try {
-			return data.subList( 0, size.get() ).contains( o );
-		} finally {
-			readLock.unlock();
-		}
+		return data.contains( o );
 	}
 
 	@Override
 	public Iterator<IStruct> iterator() {
-		readLock.lock();
-		try {
-			// Create a snapshot to avoid ConcurrentModificationException
-			final int					snapshotSize	= size.get();
-			final List<Object[]>		snapshot		= new ArrayList<>( data.subList( 0, snapshotSize ) );
-			final Map<Key, QueryColumn>	columnSnapshot	= new LinkedHashMap<>( columns );
+		// TODO: Thread safe?
+		return new Iterator<IStruct>() {
 
-			return new Iterator<IStruct>() {
+			private int index = 0;
 
-				private int index = 0;
+			@Override
+			public boolean hasNext() {
+				return index < size.get();
+			}
 
-				@Override
-				public boolean hasNext() {
-					return index < snapshotSize;
-				}
-
-				@Override
-				public IStruct next() {
-					if ( index >= snapshotSize ) {
-						throw new NoSuchElementException();
-					}
-
-					IStruct		struct	= new Struct( IStruct.TYPES.LINKED );
-					Object[]	row		= snapshot.get( index );
-					int			i		= 0;
-
-					for ( QueryColumn column : columnSnapshot.values() ) {
-						if ( i < row.length ) {
-							struct.put( column.getName(), row[ i ] );
-						}
-						i++;
-					}
-					index++;
-					return struct;
-				}
-			};
-		} finally {
-			readLock.unlock();
-		}
+			@Override
+			public IStruct next() {
+				IStruct rowData = getRowAsStruct( index );
+				index++;
+				return rowData;
+			}
+		};
 	}
 
 	@Override
 	public Object[] toArray() {
-		readLock.lock();
-		try {
-			return data.subList( 0, size.get() ).toArray();
-		} finally {
-			readLock.unlock();
-		}
+		// return data as an array, but limit this to size.get
+		return data.subList( 0, size.get() ).toArray();
 	}
 
+	/**
+	 * Convert the query to an array with the specified array type
+	 *
+	 * @param <T> The type of the array elements
+	 * @param a   The array to fill, or a new array if this one is too small
+	 *
+	 * @return An array containing all query rows as structs
+	 */
 	@Override
 	public <T> T[] toArray( T[] a ) {
-		readLock.lock();
-		try {
-			return data.subList( 0, size.get() ).toArray( a );
-		} finally {
-			readLock.unlock();
-		}
+		// same as toArray
+		return data.subList( 0, size.get() ).toArray( a );
 	}
 
 	/**
@@ -1170,49 +933,62 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 */
 	@BoxMemberExpose
 	public Array toArrayOfStructs() {
-		readLock.lock();
-		try {
-			Array arr = new Array();
-			for ( int i = 0; i < size.get(); i++ ) {
-				arr.add( getRowAsStructUnsafe( i ) );
-			}
-			return arr;
-		} finally {
-			readLock.unlock();
+		Array arr = new Array();
+		for ( int i = 0; i < size.get(); i++ ) {
+			arr.add( getRowAsStruct( i ) );
 		}
+		return arr;
 	}
 
+	/**
+	 * Add a row to the query as part of the Collection interface
+	 *
+	 * @param row The struct representing the row data to add
+	 *
+	 * @return Always returns true (as specified by Collection.add)
+	 */
 	@Override
 	public boolean add( IStruct row ) {
 		addRow( row );
 		return true;
 	}
 
+	/**
+	 * Remove a specific row data object from the query
+	 *
+	 * @param o The object to remove
+	 *
+	 * @return true if the object was removed, false otherwise
+	 */
 	@Override
 	public boolean remove( Object o ) {
-		writeLock.lock();
-		try {
-			boolean result = data.remove( o );
-			if ( result ) {
-				size.decrementAndGet();
-				actualSize.set( data.size() );
-			}
+		synchronized ( data ) {
+			size.decrementAndGet();
+			var result = data.remove( o );
+			actualSize = data.size();
 			return result;
-		} finally {
-			writeLock.unlock();
 		}
 	}
 
+	/**
+	 * Check if the query contains all elements in the specified collection
+	 *
+	 * @param c The collection of elements to check for
+	 *
+	 * @return true if all elements are contained in the query, false otherwise
+	 */
 	@Override
 	public boolean containsAll( Collection<?> c ) {
-		readLock.lock();
-		try {
-			return data.subList( 0, size.get() ).containsAll( c );
-		} finally {
-			readLock.unlock();
-		}
+		return data.containsAll( c );
 	}
 
+	/**
+	 * Add all rows from a collection to the query
+	 *
+	 * @param rows The collection of struct rows to add
+	 *
+	 * @return Always returns true (as specified by Collection.addAll)
+	 */
 	@Override
 	public boolean addAll( Collection<? extends IStruct> rows ) {
 		for ( IStruct row : rows ) {
@@ -1221,43 +997,48 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		return true;
 	}
 
+	/**
+	 * Remove all elements contained in the specified collection from the query
+	 *
+	 * @param c The collection of elements to remove
+	 *
+	 * @return true if the query was modified, false otherwise
+	 */
 	@Override
 	public boolean removeAll( Collection<?> c ) {
-		writeLock.lock();
-		try {
+		synchronized ( data ) {
 			truncateInternal();
 			boolean result = data.removeAll( c );
 			size.set( data.size() );
-			actualSize.set( data.size() );
+			actualSize = data.size();
 			return result;
-		} finally {
-			writeLock.unlock();
 		}
 	}
 
+	/**
+	 * Retain only the elements contained in the specified collection
+	 *
+	 * @param c The collection of elements to retain
+	 *
+	 * @return true if the query was modified, false otherwise
+	 */
 	@Override
 	public boolean retainAll( Collection<?> c ) {
-		writeLock.lock();
-		try {
+		synchronized ( data ) {
 			truncateInternal();
 			boolean result = data.retainAll( c );
 			size.set( data.size() );
-			actualSize.set( data.size() );
+			actualSize = data.size();
 			return result;
-		} finally {
-			writeLock.unlock();
 		}
 	}
 
 	@Override
 	public void clear() {
-		writeLock.lock();
-		try {
+		synchronized ( data ) {
 			size.set( 0 );
-			actualSize.set( 0 );
+			actualSize = 0;
 			data.clear();
-		} finally {
-			writeLock.unlock();
 		}
 	}
 
@@ -1267,6 +1048,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 
 	@Override
 	public Object dereference( IBoxContext context, Key name, Boolean safe ) {
+
 		// Special check for $bx
 		if ( name.equals( BoxMeta.key ) ) {
 			return getBoxMeta();
@@ -1290,7 +1072,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 
 	@Override
 	public Object dereferenceAndInvoke( IBoxContext context, Key name, Object[] positionalArguments, Boolean safe ) {
-		MemberDescriptor memberDescriptor = this.functionService.getMemberMethod( name, BoxLangType.QUERY );
+		MemberDescriptor memberDescriptor = functionService.getMemberMethod( name, BoxLangType.QUERY );
 		if ( memberDescriptor != null ) {
 			return memberDescriptor.invoke( context, this, positionalArguments );
 		}
@@ -1300,7 +1082,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 
 	@Override
 	public Object dereferenceAndInvoke( IBoxContext context, Key name, Map<Key, Object> namedArguments, Boolean safe ) {
-		MemberDescriptor memberDescriptor = this.functionService.getMemberMethod( name, BoxLangType.QUERY );
+		MemberDescriptor memberDescriptor = functionService.getMemberMethod( name, BoxLangType.QUERY );
 		if ( memberDescriptor != null ) {
 			return memberDescriptor.invoke( context, this, namedArguments );
 		}
@@ -1320,26 +1102,21 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 
 	@Override
 	public String asString() {
-		readLock.lock();
-		try {
-			StringBuilder sb = new StringBuilder();
-			sb.append( "[\n" );
-			for ( int i = 0; i < size.get(); i++ ) {
-				if ( i > 0 ) {
-					sb.append( ",\n" );
-				}
-				sb.append( "  " );
-				sb.append( getRowAsStructUnsafe( i ).asString() );
+		StringBuilder sb = new StringBuilder();
+		sb.append( "[\n" );
+		for ( int i = 0; i < size.get(); i++ ) {
+			if ( i > 0 ) {
+				sb.append( ",\n" );
 			}
-			sb.append( "\n]" );
-			return sb.toString();
-		} finally {
-			readLock.unlock();
+			sb.append( "  " );
+			sb.append( getRowAsStruct( i ).asString() );
 		}
+		sb.append( "\n]" );
+		return sb.toString();
 	}
 
 	@Override
-	public BoxMeta<Query> getBoxMeta() {
+	public BoxMeta getBoxMeta() {
 		if ( this.$bx == null ) {
 			this.$bx = new QueryMeta( this );
 		}
@@ -1347,7 +1124,9 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	}
 
 	/**
-	 * Returns a IntStream of the indexes
+	 * Returns an IntStream of the row indexes
+	 *
+	 * @return IntStream containing indexes from 0 to size-1
 	 */
 	public IntStream intStream() {
 		return IntStream.range( 0, size.get() );
@@ -1379,6 +1158,10 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 
 	/**
 	 * Override Query metadata - used for setting custom query meta on cached queries.
+	 *
+	 * @param meta The metadata struct to set
+	 *
+	 * @return this query
 	 */
 	public Query setMetadata( IStruct meta ) {
 		this.metadata	= meta;
@@ -1403,31 +1186,24 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 * @return A copy of the current query.
 	 */
 	public Query duplicate( boolean deep ) {
-		readLock.lock();
-		try {
-			Query q = new Query();
+		Query q = new Query();
 
-			// Copy columns
-			this.getColumns().entrySet().forEach( entry -> {
-				q.addColumn( entry.getKey(), entry.getValue().getType() );
-			} );
+		this.getColumns().entrySet().stream().forEach( entry -> {
+			q.addColumn( entry.getKey(), entry.getValue().getType() );
+		} );
 
-			// Copy data
-			List<Object[]> currentData = new ArrayList<>( data.subList( 0, size.get() ) );
-			if ( deep ) {
-				q.addData( DuplicationUtil.duplicate( currentData, deep ) );
-			} else {
-				q.addData( currentData );
-			}
-			return q;
-		} finally {
-			readLock.unlock();
+		if ( deep ) {
+			q.addData( DuplicationUtil.duplicate( this.getData(), deep ) );
+		} else {
+			q.addData( this.getData() );
 		}
+		return q;
 	}
 
 	@Override
 	public int hashCode() {
 		return super.hashCode();
+		// return computeHashCode( IType.createIdentitySetForType() );
 	}
 
 	@Override
@@ -1436,26 +1212,20 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 			return 0;
 		}
 		visited.add( this );
-
-		readLock.lock();
-		try {
-			int	result	= 1;
-			int	row		= 1;
-			for ( Object value : data.toArray() ) {
-				if ( row > size.get() ) {
-					break;
-				}
-				if ( value instanceof IType ) {
-					result = 31 * result + ( ( IType ) value ).computeHashCode( visited );
-				} else {
-					result = 31 * result + ( value == null ? 0 : value.hashCode() );
-				}
-				row++;
+		int	result	= 1;
+		int	row		= 1;
+		for ( Object value : data.toArray() ) {
+			if ( row > size.get() ) {
+				break;
 			}
-			return result;
-		} finally {
-			readLock.unlock();
+			if ( value instanceof IType ) {
+				result = 31 * result + ( ( IType ) value ).computeHashCode( visited );
+			} else {
+				result = 31 * result + ( value == null ? 0 : value.hashCode() );
+			}
+			row++;
 		}
+		return result;
 	}
 
 	/**
@@ -1469,7 +1239,9 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	}
 
 	/**
-	 * Convert to a String representation
+	 * Convert the query to a string representation
+	 *
+	 * @return String representation of the query
 	 */
 	@Override
 	public String toString() {
@@ -1478,8 +1250,11 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 
 	/**
 	 * Get the column names as an array
+	 *
+	 * @return Array containing all column names
 	 */
 	public Array getColumnNames() {
 		return getColumnArray();
 	}
+
 }
