@@ -113,8 +113,7 @@ public class QueryUtil {
 		}
 
 		// If parallel is false, just use the regular stream
-		Query newQuery = new Query().setColumns( query.getColumns() );
-		return queryStream.collect( BLCollector.toQuery( newQuery ) );
+		return queryStream.collect( BLCollector.toQuery( query ) );
 	}
 
 	/**
