@@ -196,4 +196,74 @@ public class QueryUtil {
 		}
 	}
 
+	/**
+	 * Maps an existing query to a new query
+	 *
+	 * @param query           The query object to map
+	 * @param callback        The callback Function object
+	 * @param callbackContext The context in which to execute the callback
+	 * @param parallel        Whether to process the map in parallel
+	 * @param maxThreads      Optional max threads for parallel execution
+	 *
+	 * @return The boolean value as to whether the test is met
+	 */
+	public static Query map(
+	    Query query,
+	    Function callback,
+	    IBoxContext callbackContext,
+	    Boolean parallel,
+	    Integer maxThreads ) {
+
+		// Parameter validation
+		Objects.requireNonNull( query, "Query cannot be null" );
+		Objects.requireNonNull( callback, "Callback cannot be null" );
+		Objects.requireNonNull( callbackContext, "Callback context cannot be null" );
+		if ( maxThreads == null ) {
+			maxThreads = 0; // Default to 0 if not provided
+		}
+
+		// Build the mapper based on the callback
+		// If the callback requires strict arguments, we only pass the item (Usually Java Predicates)
+		// Otherwise we pass the item, the index, and the array itself
+		java.util.function.IntFunction<Object> mapper;
+		if ( callback.requiresStrictArguments() ) {
+			mapper = idx -> callbackContext.invokeFunction(
+			    callback,
+			    new Object[] { query.size() > idx ? query.getRowAsStruct( idx ) : null }
+			);
+		} else {
+			mapper = idx -> callbackContext.invokeFunction(
+			    callback,
+			    new Object[] { query.size() > idx ? query.getRowAsStruct( idx ) : null, idx + 1, query }
+			);
+		}
+
+		Stream<IStruct> queryStream = query
+		    .intStream()
+		    .mapToObj( idx -> ( IStruct ) mapper.apply( idx ) );
+
+		if ( parallel ) {
+			// If maxThreads is null or 0, then use just the ForkJoinPool default parallelism level
+			if ( maxThreads <= 0 ) {
+				return queryStream
+				    .parallel()
+				    .collect( BLCollector.toQuery( query ) );
+			}
+
+			// Otherwise, create a new ForkJoinPool with the specified number of threads
+			return ( Query ) AsyncService.buildExecutor(
+			    "QueryMap_" + UUID.randomUUID().toString(),
+			    AsyncService.ExecutorType.FORK_JOIN,
+			    maxThreads
+			).submitAndGet( () -> {
+				return queryStream
+				    .parallel()
+				    .collect( BLCollector.toQuery( query ) );
+			} );
+		}
+
+		// Non-parallel execution
+		return queryStream.collect( BLCollector.toQuery( query ) );
+	}
+
 }
