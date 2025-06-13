@@ -64,7 +64,7 @@ public class ToBXQueryTest {
 		instance.executeSource(
 		    """
 		       qry = queryNew( "name,title", "varchar,varchar" );
-		       [
+		       qry = [
 		       	{ name: "Brad", title: "Developer" },
 		       	{ name: "Luis", title: "CEO" },
 		       	{ name: "Jorge", title: "PM" }

@@ -114,7 +114,8 @@ public class BLCollector {
 			    left.addAll( right );
 			    return left;
 		    }, // combiner
-		    Collector.Characteristics.IDENTITY_FINISH
+		    Collector.Characteristics.IDENTITY_FINISH,
+		    Collector.Characteristics.CONCURRENT
 		);
 	}
 
