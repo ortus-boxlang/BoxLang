@@ -24,7 +24,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.ARRAY )
-public class ArrayNone extends ArrayEvery {
+public class ArrayNone extends ArraySome {
 
 	/**
 	 * Constructor
@@ -41,7 +41,7 @@ public class ArrayNone extends ArrayEvery {
 
 	/**
 	 * Used to iterate over an array and test whether <strong>NONE</strong> item meets the test callback.
-	 * This is the opposite of {@link ArrayEvery}.
+	 * This is the opposite of {@link ArraySome}.
 	 * <p>
 	 * The function will be passed 3 arguments: the value, the index, and the array.
 	 * You can alternatively pass a Java Predicate which will only receive the 1st arg.

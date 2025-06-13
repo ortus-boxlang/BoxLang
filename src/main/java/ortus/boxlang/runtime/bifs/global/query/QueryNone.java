@@ -24,7 +24,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.QUERY )
-public class QueryNone extends QueryEvery {
+public class QueryNone extends QuerySome {
 
 	/**
 	 * Constructor
@@ -33,7 +33,7 @@ public class QueryNone extends QueryEvery {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, Argument.QUERY, Key.query ),
-		    new Argument( true, "function:Predicate", Key.closure ),
+		    new Argument( true, "function:Predicate", Key.callback ),
 		    new Argument( false, Argument.BOOLEAN, Key.parallel, false ),
 		    new Argument( false, Argument.INTEGER, Key.maxThreads )
 		};
@@ -41,7 +41,7 @@ public class QueryNone extends QueryEvery {
 
 	/**
 	 * Used to iterate over a Query and test whether <strong>NONE</strong> item meets the test callback.
-	 * This is the opposite of {@link QueryEvery}.
+	 * This is the opposite of {@link QuerySome}.
 	 * <p>
 	 * The function will be passed 3 arguments: the value, the index, and the Query.
 	 * You can alternatively pass a Java Predicate which will only receive the 1st arg.

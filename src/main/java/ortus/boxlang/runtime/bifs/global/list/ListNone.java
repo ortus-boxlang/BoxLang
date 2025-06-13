@@ -27,8 +27,8 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
 @BoxBIF
-@BoxMember( type = BoxLangType.STRING_STRICT, name = "listEvery" )
-public class ListNone extends ListEvery {
+@BoxMember( type = BoxLangType.STRING_STRICT, name = "listNone" )
+public class ListNone extends ListSome {
 
 	/**
 	 * Constructor
@@ -48,7 +48,7 @@ public class ListNone extends ListEvery {
 
 	/**
 	 * Used to iterate over a delimited list and test whether <strong>NONE</strong> item meets the test callback.
-	 * This is the opposite of {@link ListEvery}.
+	 * This is the opposite of {@link ListSome}.
 	 * <p>
 	 * The function will be passed 3 arguments: the value, the index, and the list.
 	 * You can alternatively pass a Java Predicate which will only receive the 1st arg.

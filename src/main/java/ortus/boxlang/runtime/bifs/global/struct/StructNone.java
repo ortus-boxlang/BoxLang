@@ -28,7 +28,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 @BoxBIF
 @BoxMember( type = BoxLangType.STRUCT )
 
-public class StructNone extends StructEvery {
+public class StructNone extends StructSome {
 
 	/**
 	 * Constructor
@@ -45,7 +45,7 @@ public class StructNone extends StructEvery {
 
 	/**
 	 * Used to iterate over a struct and test whether <strong>NONE</strong> item meets the test callback.
-	 * This is the opposite of {@link StructEvery}.
+	 * This is the opposite of {@link StructSome}.
 	 * <p>
 	 * The function will be passed 3 arguments: the value, the index, and the struct.
 	 * You can alternatively pass a Java Predicate which will only receive the 1st arg.
