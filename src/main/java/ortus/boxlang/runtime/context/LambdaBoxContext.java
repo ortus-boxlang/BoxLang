@@ -132,7 +132,10 @@ public class LambdaBoxContext extends FunctionBoxContext {
 		if ( nearby && ( key.equals( LocalScope.name ) || key.equals( ArgumentsScope.name ) ) ) {
 			return true;
 		}
-		return super.isKeyVisibleScope( key, false, false );
+		if ( !nearby ) {
+			return super.isKeyVisibleScope( key, false, false );
+		}
+		return false;
 	}
 
 	/**

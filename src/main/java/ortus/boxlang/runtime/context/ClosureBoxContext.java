@@ -112,21 +112,21 @@ public class ClosureBoxContext extends FunctionBoxContext {
 		if ( nearby ) {
 			scopes.getAsStruct( Key.contextual ).put( ArgumentsScope.name, argumentsScope );
 			scopes.getAsStruct( Key.contextual ).put( LocalScope.name, localScope );
+			IStruct lexicalScopes = getFunction().getDeclaringContext().getVisibleScopes(
+			    Struct.linkedOf(
+			        Key.contextual,
+			        Struct.linkedOf(),
+			        Key.lexical,
+			        Struct.linkedOf()
+			    ),
+			    true,
+			    true
+			);
+			// If we're in more than one closure call with the same name, this will overwrite. We can do something to force it dynamic like adding a counter to
+			// the name
+			scopes.getAsStruct( Key.lexical ).putAll( lexicalScopes.getAsStruct( Key.lexical ) );
+			scopes.getAsStruct( Key.lexical ).put( findClosestFunctionName(), lexicalScopes.getAsStruct( Key.contextual ) );
 		}
-		IStruct lexicalScopes = getFunction().getDeclaringContext().getVisibleScopes(
-		    Struct.linkedOf(
-		        Key.contextual,
-		        Struct.linkedOf(),
-		        Key.lexical,
-		        Struct.linkedOf()
-		    ),
-		    true,
-		    true
-		);
-		// If we're in more than one closure call with the same name, this will overwrite. We can do something to force it dynamic like adding a counter to
-		// the name
-		scopes.getAsStruct( Key.lexical ).putAll( lexicalScopes.getAsStruct( Key.lexical ) );
-		scopes.getAsStruct( Key.lexical ).put( findClosestFunctionName(), lexicalScopes.getAsStruct( Key.contextual ) );
 		return scopes;
 	}
 
@@ -144,12 +144,14 @@ public class ClosureBoxContext extends FunctionBoxContext {
 	 */
 	@Override
 	public boolean isKeyVisibleScope( Key key, boolean nearby, boolean shallow ) {
-		if ( nearby && ( key.equals( LocalScope.name ) || key.equals( ArgumentsScope.name ) ) ) {
-			return true;
-		}
-		boolean result = getFunction().getDeclaringContext().isKeyVisibleScope( key, true, true );
-		if ( result ) {
-			return true;
+		if ( nearby ) {
+			if ( key.equals( LocalScope.name ) || key.equals( ArgumentsScope.name ) ) {
+				return true;
+			}
+			boolean result = getFunction().getDeclaringContext().isKeyVisibleScope( key, true, true );
+			if ( result ) {
+				return true;
+			}
 		}
 		return super.isKeyVisibleScope( key, false, false );
 	}
@@ -198,7 +200,7 @@ public class ClosureBoxContext extends FunctionBoxContext {
 
 		// After a closure has checked local and arguments, it stops to do a shallow lookup in the declaring scope. If the declaring scope
 		// is also a CLosureBoxContext, it will do the same thing, and so on until it finds a non-ClosureBoxContext.
-		ScopeSearchResult declaringContextResult = getFunction().getDeclaringContext().scopeFindNearby( key, defaultScope, true );
+		ScopeSearchResult declaringContextResult = getFunction().getDeclaringContext().scopeFindNearby( key, defaultScope, true, forAssign );
 		if ( declaringContextResult != null ) {
 			return declaringContextResult;
 		}

@@ -177,7 +177,7 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 			if ( getParent() instanceof FunctionBoxContext fbc && fbc.isInClass() && key.equals( ThisScope.name ) ) {
 				return true;
 			}
-			if ( getParent() instanceof ClassBoxContext cbc && key.equals( ThisScope.name ) ) {
+			if ( getParent() instanceof ClassBoxContext && key.equals( ThisScope.name ) ) {
 				return true;
 			}
 			if ( getParent() instanceof FunctionBoxContext fbc && fbc.isInClass() && fbc.getThisClass().getSuper() != null && key.equals( Key._super ) ) {
