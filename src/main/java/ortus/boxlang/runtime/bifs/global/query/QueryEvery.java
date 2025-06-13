@@ -57,7 +57,7 @@ public class QueryEvery extends BIF {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.query The query to iterate over
+	 * @argument.query The query to test against the callback.
 	 *
 	 * @argument.closure The function to invoke for each item. The function will be passed 3 arguments: the row, the currentRow, the query. You can alternatively pass a Java Predicate which will only receive the 1st arg.
 	 *

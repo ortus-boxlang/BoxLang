@@ -63,7 +63,7 @@ public class ListEvery extends ArrayEvery {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.list string list to filter entries from
+	 * @argument.list string list to test against the callback.
 	 *
 	 * @argument.closure function closure test to execute. You can alternatively pass a Java Predicate which will only receive the 1st arg.
 	 *

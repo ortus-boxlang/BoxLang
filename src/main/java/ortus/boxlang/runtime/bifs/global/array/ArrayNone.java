@@ -14,7 +14,6 @@
  */
 package ortus.boxlang.runtime.bifs.global.array;
 
-import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -22,16 +21,15 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
-import ortus.boxlang.runtime.types.util.ListUtil;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.ARRAY )
-public class ArrayEvery extends BIF {
+public class ArrayNone extends ArraySome {
 
 	/**
 	 * Constructor
 	 */
-	public ArrayEvery() {
+	public ArrayNone() {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, Argument.ARRAY, Key.array ),
@@ -42,12 +40,14 @@ public class ArrayEvery extends BIF {
 	}
 
 	/**
-	 * Used to iterate over an array and test whether <strong>every</strong> item meets the test callback.
+	 * Used to iterate over an array and test whether <strong>NONE</strong> item meets the test callback.
+	 * This is the opposite of {@link ArraySome}.
+	 * <p>
 	 * The function will be passed 3 arguments: the value, the index, and the array.
 	 * You can alternatively pass a Java Predicate which will only receive the 1st arg.
 	 * The function should return true if the item meets the test, and false otherwise.
 	 * <p>
-	 * <strong>Note:</strong> This operation is a short-circuit operation, meaning it will stop iterating as soon as it finds the first item that does not meet the test condition.
+	 * <strong>Note:</strong> This operation is a short-circuit operation, meaning it will stop iterating as soon as it finds the first item that does meet the test condition.
 	 * <p>
 	 * <h2>Parallel Execution</h2>
 	 * If the <code>parallel</code> argument is set to true, and no <code>max_threads</code> are sent, the filter will be executed in parallel using a ForkJoinPool with parallel streams.
@@ -67,13 +67,6 @@ public class ArrayEvery extends BIF {
 	 *                      If parallel is false, this argument is ignored.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		return ListUtil.every(
-		    arguments.getAsArray( Key.array ),
-		    arguments.getAsFunction( Key.callback ),
-		    context,
-		    arguments.getAsBoolean( Key.parallel ),
-		    arguments.getAsInteger( Key.maxThreads )
-		);
-
+		return !( Boolean ) super._invoke( context, arguments );
 	}
 }
