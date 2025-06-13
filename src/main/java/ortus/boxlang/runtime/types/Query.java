@@ -177,6 +177,23 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	}
 
 	/**
+	 * Create a new query with a pre-defined map of columns
+	 * This will not add any data to the query, just the columns.
+	 * The columns are cloned and indexed based on the order in the map.
+	 *
+	 * @param columns Map of column names to QueryColumn objects
+	 */
+	public Query( Map<Key, QueryColumn> columns ) {
+		this();
+		this.columns = Collections.synchronizedMap( new LinkedHashMap<>( columns ) );
+		// Re-index the columns
+		int index = 0;
+		for ( QueryColumn column : columns.values() ) {
+			column.setIndex( index++ );
+		}
+	}
+
+	/**
 	 * Create a new query and populate it from the given JDBC ResultSet.
 	 *
 	 * @param resultSet JDBC result set.
@@ -261,7 +278,20 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 * @return map of columns
 	 */
 	public Map<Key, QueryColumn> getColumns() {
-		return columns;
+		return this.columns;
+	}
+
+	/**
+	 * Clone the columns of this query and return a new QueryColumn map.
+	 */
+	public Map<Key, QueryColumn> cloneColumns() {
+		var	newColumns	= Collections.synchronizedMap( new LinkedHashMap<>( this.columns ) );
+		// Re-index the columns
+		int	index		= 0;
+		for ( QueryColumn column : newColumns.values() ) {
+			column.setIndex( index++ );
+		}
+		return newColumns;
 	}
 
 	/**
