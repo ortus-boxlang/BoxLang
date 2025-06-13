@@ -129,7 +129,7 @@ public class HTTPTest {
 		String baseURL = wmRuntimeInfo.getHttpBaseUrl();
 
 		instance.executeSource( String.format( """
-		                                        bx:http url="%s" port="8080" {
+		                                        bx:http url="%s" port="12345" {
 		                                            bx:httpparam type="header" name="User-Agent" value="Mozilla";
 		                                       }
 		                                       result = bxhttp;
