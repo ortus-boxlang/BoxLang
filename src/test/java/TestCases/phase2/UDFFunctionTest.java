@@ -1064,4 +1064,69 @@ public class UDFFunctionTest {
 		assertThat( paramMeta.getAsStruct( Key.of( "annotations" ) ).get( Key.of( "luis" ) ).toString() ).isEqualTo( "majano" );
 	}
 
+	@DisplayName( "UDF metadata annotations" )
+	@Test
+	public void testUDFMetadataHyphenAnnotations() {
+
+		instance.executeSource(
+		    """
+		    /**
+		    * @hint Get host competition list of clients
+		    * @param-competitionUID { "schema": { "type": "guid" }, "description": "Competition GUID" }
+		    * @responses ~client/getHostCompetitionClients.response.yml
+		    */
+		    function foo() x-secured="DD" {}
+
+		    result = foo.$bx.meta;
+		       """,
+		    context );
+
+		IStruct	meta		= variables.getAsStruct( result );
+
+		IStruct	annotations	= meta.getAsStruct( Key.of( "annotations" ) );
+		assertThat( annotations ).containsKey( Key.of( "x-secured" ) );
+		assertThat( annotations.getAsString( Key.of( "x-secured" ) ) ).isEqualTo( "DD" );
+
+		IStruct documentation = meta.getAsStruct( Key.of( "documentation" ) );
+		assertThat( documentation ).containsKey( Key.of( "hint" ) );
+		assertThat( documentation.getAsString( Key.of( "hint" ) ) ).isEqualTo( "Get host competition list of clients" );
+		assertThat( documentation ).containsKey( Key.of( "param-competitionUID" ) );
+		assertThat( documentation.getAsString( Key.of( "param-competitionUID" ) ) )
+		    .isEqualTo( "{ \"schema\": { \"type\": \"guid\" }, \"description\": \"Competition GUID\" }" );
+		assertThat( documentation ).containsKey( Key.of( "responses" ) );
+		assertThat( documentation.getAsString( Key.of( "responses" ) ) ).isEqualTo( "~client/getHostCompetitionClients.response.yml" );
+	}
+
+	@DisplayName( "UDF metadata annotations CF" )
+	@Test
+	public void testUDFMetadataHyphenAnnotationsCF() {
+
+		instance.executeSource(
+		    """
+		    /**
+		    * @hint Get host competition list of clients
+		    * @param-competitionUID { "schema": { "type": "guid" }, "description": "Competition GUID" }
+		    * @responses ~client/getHostCompetitionClients.response.yml
+		    */
+		    function foo() x-secured="DD" {}
+
+		    result = foo.$bx.meta;
+		       """,
+		    context, BoxSourceType.CFSCRIPT );
+
+		IStruct	meta		= variables.getAsStruct( result );
+
+		IStruct	annotations	= meta.getAsStruct( Key.of( "annotations" ) );
+		assertThat( annotations ).containsKey( Key.of( "x-secured" ) );
+		assertThat( annotations.getAsString( Key.of( "x-secured" ) ) ).isEqualTo( "DD" );
+
+		IStruct documentation = meta.getAsStruct( Key.of( "documentation" ) );
+		assertThat( documentation ).containsKey( Key.of( "hint" ) );
+		assertThat( documentation.getAsString( Key.of( "hint" ) ) ).isEqualTo( "Get host competition list of clients" );
+		assertThat( documentation ).containsKey( Key.of( "param-competitionUID" ) );
+		assertThat( documentation.getAsString( Key.of( "param-competitionUID" ) ) )
+		    .isEqualTo( "{ \"schema\": { \"type\": \"guid\" }, \"description\": \"Competition GUID\" }" );
+		assertThat( documentation ).containsKey( Key.of( "responses" ) );
+		assertThat( documentation.getAsString( Key.of( "responses" ) ) ).isEqualTo( "~client/getHostCompetitionClients.response.yml" );
+	}
 }

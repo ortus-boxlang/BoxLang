@@ -120,7 +120,12 @@ arrayLiteral: LBRACKET expressionList? RBRACKET
     ;
 
 // foo=bar baz="bum"
-postAnnotation: identifier ((EQUALSIGN | COLON) attributeSimple)?
+postAnnotation: postAnnotationName ((EQUALSIGN | COLON) attributeSimple)?
+    ;
+
+// foo
+// foo-bar
+postAnnotationName: identifier (MINUS identifier)*
     ;
 
 // This allows [1, 2, 3], "foo", or foo 
