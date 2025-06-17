@@ -141,6 +141,10 @@ dependencies {
 	// https://mvnrepository.com/artifact/org.semver4j/semver4j
 	implementation 'org.semver4j:semver4j:5.7.1'
 
+	// Compile Only Dependencies
+	// Java Annotations Checks, this are for compile documentation only. It's not included in the final build
+	compileOnly 'org.checkerframework:checker-qual:3.49.4'
+
 }
 
 /**

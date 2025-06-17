@@ -24,7 +24,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 

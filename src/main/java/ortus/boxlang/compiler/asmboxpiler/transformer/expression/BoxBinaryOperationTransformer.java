@@ -18,8 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
-import javax.annotation.Nonnull;
-
+import org.checkerframework.checker.nullness.qual.NonNull;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
@@ -248,7 +247,7 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 		return AsmHelper.addLineNumberLabels( nodes, node );
 	}
 
-	@Nonnull
+	@NonNull
 	private static List<AbstractInsnNode> generateBinaryMethodCallNodes( Class<?> dispatcher, Class<?> returned, List<AbstractInsnNode> left,
 	    List<AbstractInsnNode> right ) {
 		List<AbstractInsnNode> nodes = new ArrayList<>();
@@ -262,7 +261,7 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 		return nodes;
 	}
 
-	@Nonnull
+	@NonNull
 	private static List<AbstractInsnNode> generateBinaryMethodCallNodesWithContext( Transpiler transpiler, Class<?> dispatcher, Class<?> returned,
 	    List<AbstractInsnNode> left,
 	    List<AbstractInsnNode> right ) {

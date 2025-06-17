@@ -17,7 +17,7 @@ package ortus.boxlang.runtime.jdbc;
 import java.sql.Statement;
 import java.time.Duration;
 
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;

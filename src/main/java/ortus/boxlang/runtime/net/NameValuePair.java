@@ -18,7 +18,8 @@
 package ortus.boxlang.runtime.net;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 public class NameValuePair {
 
