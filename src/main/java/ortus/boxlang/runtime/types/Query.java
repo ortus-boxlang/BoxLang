@@ -815,9 +815,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		validateRow( rowIndex );
 		int columnIndex = getColumn( columnName ).getIndex();
 		// TODO: validate column type
-		synchronized ( data ) {
-			data.get( rowIndex )[ columnIndex ] = value;
-		}
+		data.get( rowIndex )[ columnIndex ] = value;
 		return this;
 	}
 
