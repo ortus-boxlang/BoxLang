@@ -13,7 +13,7 @@ import org.antlr.v4.runtime.Parser;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.misc.IntervalSet;
 
-import ortus.boxlang.parser.antlr.BoxScriptGrammar;
+import ortus.boxlang.parser.antlr.BoxGrammar;
 
 public class BoxParserErrorStrategy extends ParserErrorStrategy {
 
@@ -25,139 +25,129 @@ public class BoxParserErrorStrategy extends ParserErrorStrategy {
 	private static final Map<Integer, String>	tokenTranslation	= new HashMap<>() {
 
 																		{
-																			put( BoxScriptGrammar.AMPAMP, "Operator" );
-																			put( BoxScriptGrammar.AMPERSAND, "Operator" );
-																			put( BoxScriptGrammar.AND, "Operator" );
-																			put( BoxScriptGrammar.ARROW, "->" );
-																			put( BoxScriptGrammar.ARROW_RIGHT, "=>" );
-																			put( BoxScriptGrammar.AT, "Annotation" );
-																			put( BoxScriptGrammar.BACKSLASH, "Operator" );
-																			put( BoxScriptGrammar.BANG, "Operator" );
-																			put( BoxScriptGrammar.BANGEQUAL, "Operator" );
-																			put( BoxScriptGrammar.BITWISE_AND, "Operator" );
-																			put( BoxScriptGrammar.BITWISE_COMPLEMENT, "Operator" );
-																			put( BoxScriptGrammar.BITWISE_OR, "Operator" );
-																			put( BoxScriptGrammar.BITWISE_SIGNED_LEFT_SHIFT, "Operator" );
-																			put( BoxScriptGrammar.BITWISE_SIGNED_RIGHT_SHIFT, "Operator" );
-																			put( BoxScriptGrammar.BITWISE_UNSIGNED_RIGHT_SHIFT, "Operator" );
-																			put( BoxScriptGrammar.BITWISE_XOR, "Operator" );
-																			put( BoxScriptGrammar.CASE, "Case clause" );
-																			put( BoxScriptGrammar.CASTAS, "Expression" );
-																			put( BoxScriptGrammar.CATCH, "Catch clause" );
-																			put( BoxScriptGrammar.CLASS, "Class definition" );
-																			put( BoxScriptGrammar.CLOSE_QUOTE, "String literal close" );
-																			put( BoxScriptGrammar.CLOSE_SQUOTE, "String literal close" );
-																			put( BoxScriptGrammar.COLON, "Operator" );
-																			put( BoxScriptGrammar.COLONCOLON, "Static accessor" );
-																			put( BoxScriptGrammar.COMMA, "','" );
-																			put( BoxScriptGrammar.COMPONENT_ISLAND_END, "Component island close" );
-																			put( BoxScriptGrammar.COMPONENT_ISLAND_START, "Component island" );
-																			put( BoxScriptGrammar.CONCATEQUAL, "Operator" );
-																			put( BoxScriptGrammar.CONTAIN, "Operator" );
-																			put( BoxScriptGrammar.CONTAINS, "Operator" );
-																			put( BoxScriptGrammar.CONTINUE, "Statement" );
-																			put( BoxScriptGrammar.DEFAULT, "Expression" );
-																			put( BoxScriptGrammar.DO, "Statement" );
-																			put( BoxScriptGrammar.DOES, "Statement" );
-																			put( BoxScriptGrammar.DOT, "'.' accessor" );
-																			put( BoxScriptGrammar.DOT_FLOAT_LITERAL, "Number" );
-																			put( BoxScriptGrammar.ELSE, "Else clause" );
-																			put( BoxScriptGrammar.ELVIS, "Operator" );
-																			put( BoxScriptGrammar.EQ, "Operator" );
-																			put( BoxScriptGrammar.EQEQ, "Operator" );
-																			put( BoxScriptGrammar.EQUAL, "Operator" );
-																			put( BoxScriptGrammar.EQUALSIGN, "=" );
-																			put( BoxScriptGrammar.EQV, "Operator" );
-																			put( BoxScriptGrammar.FALSE, "Expression" );
-																			put( BoxScriptGrammar.FINAL, "Access modifier" );
-																			put( BoxScriptGrammar.FINALLY, "Finally clause" );
-																			put( BoxScriptGrammar.FLOAT_LITERAL, "Number" );
-																			put( BoxScriptGrammar.FOR, "Statement" );
-																			put( BoxScriptGrammar.FUNCTION, "Function declaration" );
-																			put( BoxScriptGrammar.GE, "Operator" );
-																			put( BoxScriptGrammar.GREATER, "Operator" );
-																			put( BoxScriptGrammar.GT, "Operator" );
-																			put( BoxScriptGrammar.GTE, "Operator" );
-																			put( BoxScriptGrammar.GTESIGN, "Operator" );
-																			put( BoxScriptGrammar.GTSIGN, "Operator" );
-																			put( BoxScriptGrammar.HASHHASH, "## expression" );
-																			put( BoxScriptGrammar.ICHAR, "# expression" );
-																			put( BoxScriptGrammar.IDENTIFIER, "Identifier" );
-																			put( BoxScriptGrammar.IF, "Statement" );
-																			put( BoxScriptGrammar.IMP, "Operator" );
-																			put( BoxScriptGrammar.IMPORT, "Statement" );
-																			put( BoxScriptGrammar.IN, "in" );
-																			put( BoxScriptGrammar.INCLUDE, "Statement" );
-																			put( BoxScriptGrammar.INSTANCEOF, "Expression" );
-																			put( BoxScriptGrammar.INTEGER_LITERAL, "Number" );
-																			put( BoxScriptGrammar.INTERFACE, "Interface declaration" );
-																			put( BoxScriptGrammar.IS, "Operator" );
-																			put( BoxScriptGrammar.JAVA, "Statement" );
-																			put( BoxScriptGrammar.LBRACE, "'}'" );
-																			put( BoxScriptGrammar.LBRACKET, "'['" );
-																			put( BoxScriptGrammar.LE, "Operator" );
-																			put( BoxScriptGrammar.LESS, "Expression" );
-																			put( BoxScriptGrammar.LESSTHANGREATERTHAN, "Operator" );
-																			put( BoxScriptGrammar.LPAREN, "'('" );
-																			put( BoxScriptGrammar.LT, "Operator" );
-																			put( BoxScriptGrammar.LTE, "Operator" );
-																			put( BoxScriptGrammar.LTESIGN, "Operator" );
-																			put( BoxScriptGrammar.LTSIGN, "Operator" );
-																			put( BoxScriptGrammar.MESSAGE, "Statement" );
-																			put( BoxScriptGrammar.MINUS, "Operator" );
-																			put( BoxScriptGrammar.MINUSEQUAL, "Operator" );
-																			put( BoxScriptGrammar.MINUSMINUS, "Operator" );
-																			put( BoxScriptGrammar.MOD, "Operator" );
-																			put( BoxScriptGrammar.MODEQUAL, "Operator" );
-																			put( BoxScriptGrammar.NEQ, "Operator" );
-																			put( BoxScriptGrammar.NEW, "Statement" );
-																			put( BoxScriptGrammar.NUMERIC, "Type specifier" );
-																			put( BoxScriptGrammar.OPEN_QUOTE, "String literal" );
-																			put( BoxScriptGrammar.OR, "Operator" );
-																			put( BoxScriptGrammar.PACKAGE, "Statement" );
-																			put( BoxScriptGrammar.PARAM, "Component declaration" );
-																			put( BoxScriptGrammar.PERCENT, "Operator" );
-																			put( BoxScriptGrammar.PIPE, "Operator" );
-																			put( BoxScriptGrammar.PIPEPIPE, "Operator" );
-																			put( BoxScriptGrammar.PLUS, "Operator" );
-																			put( BoxScriptGrammar.PLUSEQUAL, "Operator" );
-																			put( BoxScriptGrammar.PLUSPLUS, "Operator" );
-																			put( BoxScriptGrammar.POWER, "Operator" );
-																			put( BoxScriptGrammar.PRIVATE, "Access modifier" );
-																			put( BoxScriptGrammar.PROPERTY, "Property declaration" );
-																			put( BoxScriptGrammar.PUBLIC, "Access modifier" );
-																			put( BoxScriptGrammar.QM, "Operator" );
-																			put( BoxScriptGrammar.QUERY, "Statement" );
-																			put( BoxScriptGrammar.RBRACE, "'}'" );
-																			put( BoxScriptGrammar.RBRACKET, "']'" );
-																			put( BoxScriptGrammar.REMOTE, "Statement" );
-																			put( BoxScriptGrammar.REQUEST, "Statement" );
-																			put( BoxScriptGrammar.RETHROW, "Statement" );
-																			put( BoxScriptGrammar.RETURN, "Statement" );
-																			put( BoxScriptGrammar.RPAREN, "')'" );
-																			put( BoxScriptGrammar.SEMICOLON, "Operator" );
-																			put( BoxScriptGrammar.SERVER, "Statement" );
-																			put( BoxScriptGrammar.SETTING, "Statement" );
-																			put( BoxScriptGrammar.SHASHHASH, "## expression" );
-																			put( BoxScriptGrammar.SLASH, "Operator" );
-																			put( BoxScriptGrammar.SLASHEQUAL, "Operator" );
-																			put( BoxScriptGrammar.STAR, "Operator" );
-																			put( BoxScriptGrammar.STAREQUAL, "Operator" );
-																			put( BoxScriptGrammar.STATIC, "Access modifier" );
-																			put( BoxScriptGrammar.STRING, "Type specifier" );
-																			put( BoxScriptGrammar.STRING_LITERAL, "String literal" );
-																			put( BoxScriptGrammar.STRUCT, "Struct declaration" );
-																			put( BoxScriptGrammar.SWITCH, "Statement" );
-																			put( BoxScriptGrammar.TEQ, "Operator" );
-																			put( BoxScriptGrammar.THAN, "Expression" );
-																			put( BoxScriptGrammar.THROW, "Statement" );
-																			put( BoxScriptGrammar.TRY, "Statement" );
-																			put( BoxScriptGrammar.TYPE, "Statement" );
-																			put( BoxScriptGrammar.VAR, "Statement" );
-																			put( BoxScriptGrammar.VARIABLES, "Expression" );
-																			put( BoxScriptGrammar.WHEN, "Statement" );
-																			put( BoxScriptGrammar.WHILE, "Statement" );
-																			put( BoxScriptGrammar.XOR, "Expression" );
+																			put( BoxGrammar.AMPAMP, "Operator" );
+																			put( BoxGrammar.AMPERSAND, "Operator" );
+																			put( BoxGrammar.AND, "Operator" );
+																			put( BoxGrammar.ARROW, "->" );
+																			put( BoxGrammar.ARROW_RIGHT, "=>" );
+																			put( BoxGrammar.AT, "Annotation" );
+																			put( BoxGrammar.BACKSLASH, "Operator" );
+																			put( BoxGrammar.BANG, "Operator" );
+																			put( BoxGrammar.BANGEQUAL, "Operator" );
+																			put( BoxGrammar.BITWISE_AND, "Operator" );
+																			put( BoxGrammar.BITWISE_COMPLEMENT, "Operator" );
+																			put( BoxGrammar.BITWISE_OR, "Operator" );
+																			put( BoxGrammar.BITWISE_SIGNED_LEFT_SHIFT, "Operator" );
+																			put( BoxGrammar.BITWISE_SIGNED_RIGHT_SHIFT, "Operator" );
+																			put( BoxGrammar.BITWISE_UNSIGNED_RIGHT_SHIFT, "Operator" );
+																			put( BoxGrammar.BITWISE_XOR, "Operator" );
+																			put( BoxGrammar.CASE, "Case clause" );
+																			put( BoxGrammar.CASTAS, "Expression" );
+																			put( BoxGrammar.CATCH, "Catch clause" );
+																			put( BoxGrammar.CLASS, "Class definition" );
+																			put( BoxGrammar.CLOSE_QUOTE, "String literal close" );
+																			put( BoxGrammar.CLOSE_SQUOTE, "String literal close" );
+																			put( BoxGrammar.COLON, "Operator" );
+																			put( BoxGrammar.COLONCOLON, "Static accessor" );
+																			put( BoxGrammar.COMMA, "','" );
+																			put( BoxGrammar.COMPONENT_ISLAND_END, "Component island close" );
+																			put( BoxGrammar.COMPONENT_ISLAND_START, "Component island" );
+																			put( BoxGrammar.CONCATEQUAL, "Operator" );
+																			put( BoxGrammar.CONTAIN, "Operator" );
+																			put( BoxGrammar.CONTAINS, "Operator" );
+																			put( BoxGrammar.CONTINUE, "Statement" );
+																			put( BoxGrammar.DEFAULT, "Expression" );
+																			put( BoxGrammar.DO, "Statement" );
+																			put( BoxGrammar.DOES, "Statement" );
+																			put( BoxGrammar.DOT, "'.' accessor" );
+																			put( BoxGrammar.DOT_FLOAT_LITERAL, "Number" );
+																			put( BoxGrammar.ELSE, "Else clause" );
+																			put( BoxGrammar.ELVIS, "Operator" );
+																			put( BoxGrammar.EQ, "Operator" );
+																			put( BoxGrammar.EQEQ, "Operator" );
+																			put( BoxGrammar.EQUAL, "Operator" );
+																			put( BoxGrammar.EQUALSIGN, "=" );
+																			put( BoxGrammar.EQV, "Operator" );
+																			put( BoxGrammar.FALSE, "Expression" );
+																			put( BoxGrammar.FINAL, "Access modifier" );
+																			put( BoxGrammar.FINALLY, "Finally clause" );
+																			put( BoxGrammar.FLOAT_LITERAL, "Number" );
+																			put( BoxGrammar.FOR, "Statement" );
+																			put( BoxGrammar.FUNCTION, "Function declaration" );
+																			put( BoxGrammar.GE, "Operator" );
+																			put( BoxGrammar.GREATER, "Operator" );
+																			put( BoxGrammar.GT, "Operator" );
+																			put( BoxGrammar.GTE, "Operator" );
+																			put( BoxGrammar.GTESIGN, "Operator" );
+																			put( BoxGrammar.GTSIGN, "Operator" );
+																			put( BoxGrammar.HASHHASH, "## expression" );
+																			put( BoxGrammar.ICHAR, "# expression" );
+																			put( BoxGrammar.IDENTIFIER, "Identifier" );
+																			put( BoxGrammar.IF, "Statement" );
+																			put( BoxGrammar.IMP, "Operator" );
+																			put( BoxGrammar.IMPORT, "Statement" );
+																			put( BoxGrammar.IN, "in" );
+																			put( BoxGrammar.INCLUDE, "Statement" );
+																			put( BoxGrammar.INSTANCEOF, "Expression" );
+																			put( BoxGrammar.INTEGER_LITERAL, "Number" );
+																			put( BoxGrammar.INTERFACE, "Interface declaration" );
+																			put( BoxGrammar.IS, "Operator" );
+																			put( BoxGrammar.JAVA, "Statement" );
+																			put( BoxGrammar.LBRACE, "'}'" );
+																			put( BoxGrammar.LBRACKET, "'['" );
+																			put( BoxGrammar.LE, "Operator" );
+																			put( BoxGrammar.LESS, "Expression" );
+																			put( BoxGrammar.LESSTHANGREATERTHAN, "Operator" );
+																			put( BoxGrammar.LPAREN, "'('" );
+																			put( BoxGrammar.LT, "Operator" );
+																			put( BoxGrammar.LTE, "Operator" );
+																			put( BoxGrammar.LTESIGN, "Operator" );
+																			put( BoxGrammar.LTSIGN, "Operator" );
+																			put( BoxGrammar.MINUS, "Operator" );
+																			put( BoxGrammar.MINUSEQUAL, "Operator" );
+																			put( BoxGrammar.MINUSMINUS, "Operator" );
+																			put( BoxGrammar.MOD, "Operator" );
+																			put( BoxGrammar.MODEQUAL, "Operator" );
+																			put( BoxGrammar.NEQ, "Operator" );
+																			put( BoxGrammar.NEW, "Statement" );
+																			put( BoxGrammar.OPEN_QUOTE, "String literal" );
+																			put( BoxGrammar.OR, "Operator" );
+																			put( BoxGrammar.PACKAGE, "Statement" );
+																			put( BoxGrammar.PARAM, "Component declaration" );
+																			put( BoxGrammar.PERCENT, "Operator" );
+																			put( BoxGrammar.PIPE, "Operator" );
+																			put( BoxGrammar.PIPEPIPE, "Operator" );
+																			put( BoxGrammar.PLUS, "Operator" );
+																			put( BoxGrammar.PLUSEQUAL, "Operator" );
+																			put( BoxGrammar.PLUSPLUS, "Operator" );
+																			put( BoxGrammar.POWER, "Operator" );
+																			put( BoxGrammar.PRIVATE, "Access modifier" );
+																			put( BoxGrammar.PROPERTY, "Property declaration" );
+																			put( BoxGrammar.PUBLIC, "Access modifier" );
+																			put( BoxGrammar.QM, "Operator" );
+																			put( BoxGrammar.RBRACE, "'}'" );
+																			put( BoxGrammar.RBRACKET, "']'" );
+																			put( BoxGrammar.REMOTE, "Statement" );
+																			put( BoxGrammar.RETHROW, "Statement" );
+																			put( BoxGrammar.RETURN, "Statement" );
+																			put( BoxGrammar.RPAREN, "')'" );
+																			put( BoxGrammar.SEMICOLON, "Operator" );
+																			put( BoxGrammar.SHASHHASH, "## expression" );
+																			put( BoxGrammar.SLASH, "Operator" );
+																			put( BoxGrammar.SLASHEQUAL, "Operator" );
+																			put( BoxGrammar.STAR, "Operator" );
+																			put( BoxGrammar.STAREQUAL, "Operator" );
+																			put( BoxGrammar.STATIC, "Access modifier" );
+																			put( BoxGrammar.STRING_LITERAL, "String literal" );
+																			put( BoxGrammar.SWITCH, "Statement" );
+																			put( BoxGrammar.TEQ, "Operator" );
+																			put( BoxGrammar.THAN, "Expression" );
+																			put( BoxGrammar.THROW, "Statement" );
+																			put( BoxGrammar.TRY, "Statement" );
+																			put( BoxGrammar.VAR, "Statement" );
+																			put( BoxGrammar.WHEN, "Statement" );
+																			put( BoxGrammar.WHILE, "Statement" );
+																			put( BoxGrammar.XOR, "Expression" );
 																		}
 																	};
 
@@ -219,20 +209,20 @@ public class BoxParserErrorStrategy extends ParserErrorStrategy {
 	 * Keywords that are also identifiers and can be excluded from the expected set when IDENTIFIER is expected
 	 * as otherwise it just clutters the error message with all the keywords that can also be identifiers.
 	 */
-	private static final IntervalSet			keywordIDENTIFIERS	= new IntervalSet( BoxScriptGrammar.ABSTRACT, BoxScriptGrammar.AND, BoxScriptGrammar.ANY,
-	    BoxScriptGrammar.ARRAY, BoxScriptGrammar.AS, BoxScriptGrammar.ASSERT, BoxScriptGrammar.BOOLEAN, BoxScriptGrammar.BREAK, BoxScriptGrammar.CASE,
-	    BoxScriptGrammar.CASTAS, BoxScriptGrammar.CATCH, BoxScriptGrammar.CLASS, BoxScriptGrammar.CONTAIN, BoxScriptGrammar.CONTAINS, BoxScriptGrammar.CONTINUE,
-	    BoxScriptGrammar.DEFAULT, BoxScriptGrammar.DO, BoxScriptGrammar.DOES, BoxScriptGrammar.ELSE, BoxScriptGrammar.EQ,
-	    BoxScriptGrammar.EQUAL, BoxScriptGrammar.EQV, BoxScriptGrammar.FALSE, BoxScriptGrammar.FINAL, BoxScriptGrammar.FINALLY, BoxScriptGrammar.FOR,
-	    BoxScriptGrammar.FUNCTION, BoxScriptGrammar.GE, BoxScriptGrammar.GREATER, BoxScriptGrammar.GT, BoxScriptGrammar.GTE, BoxScriptGrammar.IF,
-	    BoxScriptGrammar.IMP, BoxScriptGrammar.IMPORT, BoxScriptGrammar.IN, BoxScriptGrammar.INCLUDE, BoxScriptGrammar.INSTANCEOF, BoxScriptGrammar.INTERFACE,
-	    BoxScriptGrammar.IS, BoxScriptGrammar.JAVA, BoxScriptGrammar.LE, BoxScriptGrammar.LESS, BoxScriptGrammar.LT, BoxScriptGrammar.LTE,
-	    BoxScriptGrammar.MESSAGE, BoxScriptGrammar.MOD, BoxScriptGrammar.NEQ, BoxScriptGrammar.NEW, BoxScriptGrammar.NOT, BoxScriptGrammar.NULL,
-	    BoxScriptGrammar.NUMERIC, BoxScriptGrammar.OR, BoxScriptGrammar.PACKAGE, BoxScriptGrammar.PARAM, BoxScriptGrammar.PRIVATE, BoxScriptGrammar.PROPERTY,
-	    BoxScriptGrammar.PUBLIC, BoxScriptGrammar.QUERY, BoxScriptGrammar.REMOTE, BoxScriptGrammar.REQUEST, BoxScriptGrammar.REQUIRED, BoxScriptGrammar.RETHROW,
-	    BoxScriptGrammar.RETURN, BoxScriptGrammar.SERVER, BoxScriptGrammar.SETTING, BoxScriptGrammar.STATIC, BoxScriptGrammar.STRING, BoxScriptGrammar.STRUCT,
-	    BoxScriptGrammar.THAN, BoxScriptGrammar.THROW, BoxScriptGrammar.TO, BoxScriptGrammar.TRUE, BoxScriptGrammar.TRY, BoxScriptGrammar.TYPE,
-	    BoxScriptGrammar.VAR, BoxScriptGrammar.VARIABLES, BoxScriptGrammar.WHEN, BoxScriptGrammar.WHILE, BoxScriptGrammar.XOR );
+	private static final IntervalSet			keywordIDENTIFIERS	= new IntervalSet( BoxGrammar.ABSTRACT, BoxGrammar.AND,
+	    BoxGrammar.AS, BoxGrammar.ASSERT, BoxGrammar.BREAK, BoxGrammar.CASE,
+	    BoxGrammar.CASTAS, BoxGrammar.CATCH, BoxGrammar.CLASS, BoxGrammar.CONTAIN, BoxGrammar.CONTAINS, BoxGrammar.CONTINUE,
+	    BoxGrammar.DEFAULT, BoxGrammar.DO, BoxGrammar.DOES, BoxGrammar.ELSE, BoxGrammar.EQ,
+	    BoxGrammar.EQUAL, BoxGrammar.EQV, BoxGrammar.FALSE, BoxGrammar.FINAL, BoxGrammar.FINALLY, BoxGrammar.FOR,
+	    BoxGrammar.FUNCTION, BoxGrammar.GE, BoxGrammar.GREATER, BoxGrammar.GT, BoxGrammar.GTE, BoxGrammar.IF,
+	    BoxGrammar.IMP, BoxGrammar.IMPORT, BoxGrammar.IN, BoxGrammar.INCLUDE, BoxGrammar.INSTANCEOF, BoxGrammar.INTERFACE,
+	    BoxGrammar.IS, BoxGrammar.JAVA, BoxGrammar.LE, BoxGrammar.LESS, BoxGrammar.LT, BoxGrammar.LTE,
+	    BoxGrammar.MOD, BoxGrammar.NEQ, BoxGrammar.NEW, BoxGrammar.NOT, BoxGrammar.NULL,
+	    BoxGrammar.OR, BoxGrammar.PACKAGE, BoxGrammar.PARAM, BoxGrammar.PRIVATE, BoxGrammar.PROPERTY,
+	    BoxGrammar.PUBLIC, BoxGrammar.REMOTE, BoxGrammar.REQUIRED, BoxGrammar.RETHROW,
+	    BoxGrammar.RETURN, BoxGrammar.STATIC,
+	    BoxGrammar.THAN, BoxGrammar.THROW, BoxGrammar.TO, BoxGrammar.TRUE, BoxGrammar.TRY,
+	    BoxGrammar.VAR, BoxGrammar.WHEN, BoxGrammar.WHILE, BoxGrammar.XOR );
 
 	/**
 	 * Generates an explanatory message concerning where we were in the parse when the error occurred. It will
@@ -293,7 +283,7 @@ public class BoxParserErrorStrategy extends ParserErrorStrategy {
 	 */
 	@Override
 	protected String buildExpectedMessage( Parser recognizer, IntervalSet expected ) {
-		IntervalSet	expect					= expected.contains( BoxScriptGrammar.IDENTIFIER ) ? removeIdKeywords( expected ) : expected;
+		IntervalSet	expect					= expected.contains( BoxGrammar.IDENTIFIER ) ? removeIdKeywords( expected ) : expected;
 
 		Set<String>	uniqueExpectedTokens	= expect.toList().stream()
 		    .map( tokenId -> tokenTranslation.getOrDefault( tokenId, recognizer.getVocabulary().getDisplayName( tokenId ).toLowerCase() ) )

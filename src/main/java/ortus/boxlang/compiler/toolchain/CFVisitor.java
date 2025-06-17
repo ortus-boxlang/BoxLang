@@ -803,7 +803,10 @@ public class CFVisitor extends CFGrammarBaseVisitor<BoxNode> {
 		var				pos		= tools.getPosition( ctx );
 		var				src		= tools.getSourceText( ctx );
 
-		BoxFQN			name	= new BoxFQN( ctx.identifier().getText(), tools.getPosition( ctx.identifier() ), tools.getSourceText( ctx.identifier() ) );
+		// TODO: annotation names can actually have - chars which makes then not a valid FQN. Consider refactoring a dedicated BoxAnnotationName
+		// node class since they don't fit as an identifier either, but I don't want them to just be a string literal either.
+		BoxFQN			name	= new BoxFQN( ctx.postAnnotationName().getText(), tools.getPosition( ctx.postAnnotationName() ),
+		    tools.getSourceText( ctx.postAnnotationName() ) );
 		BoxExpression	value	= Optional.ofNullable( ctx.attributeSimple() ).map( attr -> attr.accept( expressionVisitor ) ).orElse( null );
 
 		return new BoxAnnotation( name, value, pos, src );
