@@ -15,7 +15,7 @@ plugins {
 	// For source code formatting
 	id "com.diffplug.spotless" version "7.0.4"
 	// Shadow
-	id "com.gradleup.shadow" version "9.0.0-beta15"
+	id "com.gradleup.shadow" version "9.0.0-beta16"
 	// For dependency updates
 	id 'com.github.ben-manes.versions' version '0.52.0'
 	// For building service loader files
@@ -99,7 +99,7 @@ dependencies {
 	testImplementation "org.mockito:mockito-core:5.+"
 	testImplementation "com.google.truth:truth:1.+"
 	testImplementation "commons-cli:commons-cli:1.9.0"
-	testImplementation "org.wiremock:wiremock:3.13.0"
+	testImplementation "org.wiremock:wiremock:3.13.1"
 	testImplementation 'org.apache.derby:derby:10.17.1.0'
 	testImplementation 'io.undertow:undertow-core:2.3.18.Final'
 	// Explicitly declare the JUnit platform launcher (to avoid deprecation)
