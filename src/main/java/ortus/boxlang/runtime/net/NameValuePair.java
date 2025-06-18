@@ -17,16 +17,15 @@
  */
 package ortus.boxlang.runtime.net;
 
-import javax.annotation.Nonnull;
-
+import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 public class NameValuePair {
 
-	private final @Nonnull String	name;
+	private final @NonNull String	name;
 	private final @Nullable String	value;
 
-	public NameValuePair( @Nonnull String name, @Nullable String value ) {
+	public NameValuePair( @NonNull String name, @Nullable String value ) {
 		this.name	= name;
 		this.value	= value;
 	}
@@ -38,7 +37,7 @@ public class NameValuePair {
 		return new NameValuePair( nameAndValue[ 0 ], null );
 	}
 
-	@Nonnull
+	@NonNull
 	public String getName() {
 		return name;
 	}

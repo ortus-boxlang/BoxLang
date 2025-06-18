@@ -24,8 +24,7 @@ import java.sql.Statement;
 import java.util.List;
 import java.util.Map;
 
-import javax.annotation.Nonnull;
-
+import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 import ortus.boxlang.runtime.BoxRuntime;
@@ -55,7 +54,7 @@ public final class ExecutedQuery {
 	 *
 	 * @see Query
 	 */
-	private @Nonnull final Query			results;
+	private @NonNull final Query			results;
 
 	/**
 	 * The generated key of the request, if any.
@@ -73,7 +72,7 @@ public final class ExecutedQuery {
 	 * @param results      The results of the query, i.e. the actual Query object.
 	 * @param generatedKey The generated key of the query, if any.
 	 */
-	public ExecutedQuery( @Nonnull Query results, @Nullable Object generatedKey ) {
+	public ExecutedQuery( @NonNull Query results, @Nullable Object generatedKey ) {
 		this.results		= results;
 		this.generatedKey	= generatedKey;
 		this.queryMeta		= results.getMetaData();
@@ -87,7 +86,7 @@ public final class ExecutedQuery {
 	 * @param executionTime The execution time the query took.
 	 * @param hasResults    Boolean flag from {@link PreparedStatement#execute()} designating if the execution returned any results.
 	 */
-	public static ExecutedQuery fromPendingQuery( @Nonnull PendingQuery pendingQuery, @Nonnull Statement statement, long executionTime, boolean hasResults ) {
+	public static ExecutedQuery fromPendingQuery( @NonNull PendingQuery pendingQuery, @NonNull Statement statement, long executionTime, boolean hasResults ) {
 		Object	generatedKey	= null;
 		Query	results			= null;
 		int		recordCount		= 0;
@@ -203,7 +202,7 @@ public final class ExecutedQuery {
 	 *
 	 * @return A Query object of results.
 	 */
-	public @Nonnull Query getResults() {
+	public @NonNull Query getResults() {
 		return this.results;
 	}
 
@@ -212,7 +211,7 @@ public final class ExecutedQuery {
 	 *
 	 * @return An Array of Structs representing the Query
 	 */
-	public @Nonnull Array getResultsAsArray() {
+	public @NonNull Array getResultsAsArray() {
 		return this.results.toArrayOfStructs();
 	}
 
@@ -223,7 +222,7 @@ public final class ExecutedQuery {
 	 *
 	 * @return A struct of String to Struct instances representing the Query results.
 	 */
-	public @Nonnull IStruct getResultsAsStruct( @Nonnull String key ) {
+	public @NonNull IStruct getResultsAsStruct( @NonNull String key ) {
 		// @TODO get brad to make this better
 		Map<Object, List<IStruct>>	groupedResults	= this.results.stream().collect( groupingBy( r -> r.get( key ) ) );
 		Map<Object, Object>			groupedArray	= groupedResults.entrySet().stream().collect( toMap( Map.Entry::getKey, e -> new Array( e.getValue() ) ) );
@@ -261,7 +260,7 @@ public final class ExecutedQuery {
 	 *
 	 * @return A struct of query metadata, like original SQL, parameters, size, and cache info.
 	 */
-	public @Nonnull IStruct getQueryMeta() {
+	public @NonNull IStruct getQueryMeta() {
 		return this.queryMeta;
 	}
 
