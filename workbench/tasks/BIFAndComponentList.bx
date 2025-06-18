@@ -1,0 +1,15 @@
+class{
+
+	function main(){
+		var bifs = GetFunctionList()
+		var components = GetComponentList()
+
+		FileWrite( "BoxLang.Bifs.json", jsonSerialize( data: bifs, pretty : true ) )
+		FileWrite( "BoxLang.Components.json", jsonSerialize( data: components, pretty : true ) )
+
+		fileWrite( "BoxLang.Bifs.txt", bifs.keyList( char( 10  ) ) )
+		fileWrite( "BoxLang.Components.txt", components.keyList( char( 10  ) ) )
+
+		println( "BoxLang.Bifs.json and BoxLang.Components.json files have been created." )
+	}
+}
