@@ -37,7 +37,6 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.dynamic.casters.LongCaster;
-import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
@@ -632,6 +631,40 @@ public class DateTimeFormatTest {
 		DateTimeFormatter	formatter	= ( DateTimeFormatter ) DateTime.COMMON_FORMATTERS.get( "longTime" );
 		System.out.println( result );
 		assertEquals( result, timeRef.format( formatter.withLocale( LocalizationUtil.parseLocale( "zh-CN" ) ) ) );
+	}
+
+	@DisplayName( "I can use m on dateFormat and it will mean months" )
+	@Test
+	public void testDateFormatWithm() {
+		String result = null;
+		// @formatter:off
+		instance.executeSource(
+		    """
+				setTimezone( "UTC" );
+				ref = createDateTime( 2023, 12, 31, 12, 30, 30, 0 );
+				result = dateFormat( ref, "mm/dd/yyyy" );
+		    """,
+		    context );
+		// @formatter:on
+		result = ( String ) variables.get( Key.of( "result" ) );
+		assertThat( result ).isEqualTo( "12/31/2023" );
+	}
+
+	@DisplayName( "I can use M on timeFormat and it will mean minutes" )
+	@Test
+	public void testTimeFormatWithM() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				setTimezone( "UTC" );
+				ref = createDateTime( 2023, 12, 31, 12, 30, 30, 0 );
+				result = timeFormat( ref, "HH:Mm:ss" );
+				println( result )
+		    """,
+		    context );
+		// @formatter:on
+		var result = ( String ) variables.get( Key.of( "result" ) );
+		assertThat( result ).isEqualTo( "12:30:30" );
 	}
 
 }

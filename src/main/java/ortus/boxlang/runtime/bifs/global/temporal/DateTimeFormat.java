@@ -52,10 +52,10 @@ public class DateTimeFormat extends BIF {
 	public DateTimeFormat() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "any", Key.date ),
-		    new Argument( false, "string", Key.mask ),
-		    new Argument( false, "string", Key.timezone ),
-		    new Argument( false, "string", Key.locale )
+		    new Argument( true, Argument.ANY, Key.date ),
+		    new Argument( false, Argument.STRING, Key.mask ),
+		    new Argument( false, Argument.STRING, Key.timezone ),
+		    new Argument( false, Argument.STRING, Key.locale )
 		};
 	}
 
@@ -91,6 +91,16 @@ public class DateTimeFormat extends BIF {
 		// Alternate named argument - ACFvsLucee
 		if ( format == null ) {
 			format = arguments.getAsString( Key.format );
+		}
+
+		// CONVENIENCE: If DateFormat and we have lower-case 'm' convert it to uppercase
+		if ( bifMethodKey.equals( Key.dateFormat ) && format != null && format.contains( "m" ) ) {
+			format = format.replace( "m", "M" );
+		}
+
+		// CONVENIENCE: If TimeFormat and we have Uppercase 'M' convert it to lowercase
+		if ( bifMethodKey.equals( Key.timeFormat ) && format != null && format.contains( "M" ) ) {
+			format = format.replace( "M", "m" );
 		}
 
 		// LS Subclass locales
