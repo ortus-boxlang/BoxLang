@@ -537,6 +537,38 @@ public class JSONSerializeTest {
 		// @formatter:on
 
 		var json = variables.getAsString( result );
+		assertThat( json ).isNotEmpty();
+		assertThat( json ).contains( "recursive" );
+	}
+
+	@DisplayName( "It can pretty print" )
+	@Test
+	public void testCanPrettyPrint() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		    	result = jsonSerialize( data: {
+					"one" : "wood",
+					"two" : null,
+					"three" : 42,
+					"four" : [1,2,3],
+					"five" : {},
+					"six" : true
+				}, pretty=true )
+
+				println( result )
+			""",
+		    context );
+		// @formatter:on
+
+		var json = variables.getAsString( result );
+		assertThat( json ).isNotEmpty();
+		assertThat( json ).contains( "wood" );
+		assertThat( json ).contains( "null" );
+		assertThat( json ).contains( "42" );
+		assertThat( json ).contains( "[ 1, 2, 3 ]" );
+		assertThat( json ).contains( "{ }" );
+		assertThat( json ).contains( "true" );
 	}
 
 }

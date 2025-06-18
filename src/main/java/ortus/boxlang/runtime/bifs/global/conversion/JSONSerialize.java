@@ -56,31 +56,58 @@ public class JSONSerialize extends BIF {
 	public JSONSerialize() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "any", Key.data ),
+		    new Argument( true, Argument.ANY, Key.data ),
 		    // NOT A BOOLEAN! Can be true, false, row, column, or struct
-		    new Argument( false, "string", Key.queryFormat, "row", Set.of(
+		    new Argument( false, Argument.STRING, Key.queryFormat, "row", Set.of(
 		        Validator.REQUIRED,
 		        Validator.valueOneOf( "true", "false", "row", "column", "struct" )
 		    ) ),
 		    // Don't set this to a boolean, Lucee accepts a charset here which ColdBox passes
-		    new Argument( false, "string", Key.useSecureJSONPrefix, false ),
-		    new Argument( false, "boolean", Key.useCustomSerializer )
+		    new Argument( false, Argument.STRING, Key.useSecureJSONPrefix, false ),
+		    new Argument( false, Argument.BOOLEAN, Key.useCustomSerializer ),
+		    new Argument( false, Argument.BOOLEAN, Key.pretty, false )
 		};
 	}
 
 	/**
-	 * Converts a BoxLang variable into a JSON (JavaScript Object Notation) string.
+	 * Converts a BoxLang variable into a JSON (JavaScript Object Notation) string according to the specified options.
+	 *
+	 * <h2>Query Format Options</h2>
+	 * The <code>queryFormat</code> argument determines how queries are serialized:
+	 * <ul>
+	 * <li><code>row</code> or <code>false</code>: Serializes the query as a top-level struct with two keys:
+	 * <code>columns</code> (an array of column names) and <code>data</code> (an array of arrays representing
+	 * each row's data).</li>
+	 * <li><code>column</code> or <code>true</code>: Serializes the query as a top-level struct with three keys:
+	 * <code>rowCount</code> (the number of rows), <code>columns</code> (an array of column names), and
+	 * <code>data</code> (a struct where each key is a column name and the value is an array of values for that column).</li>
+	 * <li><code>struct</code>: Serializes the query as an array of structs, where each struct represents a row of data.</li>
+	 * </ul>
+	 *
+	 * <h2>Usage</h2>
+	 * 
+	 * <pre>
+	 * // Convert a query to JSON
+	 * myQuery = ...;
+	 * json = jsonSerialize( myQuery, queryFormat="row" );
+	 * // Convert a list to JSON
+	 * myList = "foo,bar,baz";
+	 * jsonList = jsonSerialize( myList );
+	 * </pre>
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.data The variable to convert to a JSON string.
 	 *
-	 * @argument.queryFormat If the variable is a query, specifies whether to serialize the query by rows or by columns.
+	 * @argument.queryFormat If the variable is a query, specifies whether to serialize the query by rows or by columns. Valid values are:
+	 *                       <code>row</code> same as <code>false</code>, <code>column</code> same as <code>true</code>, or <code>struct</code>. Defaults to <code>row</code>.
 	 *
-	 * @argument.useSecureJSONPrefix If true, the JSON string is prefixed with a secure JSON prefix.
+	 * @argument.useSecureJSONPrefix If true, the JSON string is prefixed with a secure JSON prefix. (Not implemented yet)
 	 *
-	 * @argument.useCustomSerializer If true, the JSON string is serialized using a custom serializer. (Not used)
+	 * @argument.useCustomSerializer If true, the JSON string is serialized using a custom serializer. (Not implemented yet)
+	 *
+	 * @argument.pretty If true, the JSON string is formatted with indentation and line breaks for readability. Defaults to false.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		// TODO useSecureJSONPrefix - Don't assume this is a boolean, Lucee accepts a charset here which ColdBox passes
@@ -132,7 +159,7 @@ public class JSONSerialize extends BIF {
 
 		// Serialize the object to JSON
 		try {
-			return JSONUtil.getJSONBuilder( false ).asString( obj );
+			return JSONUtil.getJSONBuilder( arguments.getAsBoolean( Key.pretty ) ).asString( obj );
 		} catch ( IOException e ) {
 			throw new BoxRuntimeException( "Error serializing to JSON", e );
 		}
