@@ -93,16 +93,6 @@ public class DateTimeFormat extends BIF {
 			format = arguments.getAsString( Key.format );
 		}
 
-		// CONVENIENCE: If DateFormat and we have lower-case 'm' convert it to uppercase
-		if ( bifMethodKey.equals( Key.dateFormat ) && format != null && format.contains( "m" ) ) {
-			format = format.replace( "m", "M" );
-		}
-
-		// CONVENIENCE: If TimeFormat and we have Uppercase 'M' convert it to lowercase
-		if ( bifMethodKey.equals( Key.timeFormat ) && format != null && format.contains( "M" ) ) {
-			format = format.replace( "M", "m" );
-		}
-
 		// LS Subclass locales
 		Locale locale = LocalizationUtil.parseLocaleFromContext( context, arguments );
 		// Apply our runtime timezone to our initial reference
