@@ -79,6 +79,10 @@ public class BoxArgument extends BoxExpression {
 		return value;
 	}
 
+	public boolean isNamed() {
+		return name != null;
+	}
+
 	@Override
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = super.toMap();

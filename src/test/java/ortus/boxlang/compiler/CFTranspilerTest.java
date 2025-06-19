@@ -23,6 +23,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
+import ortus.boxlang.compiler.parser.ParsingResult;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -402,6 +403,51 @@ public class CFTranspilerTest {
 		    result = local.cfhttp;
 		      	""",
 		    context, BoxSourceType.CFSCRIPT );
+	}
+
+	@Test
+	public void testCFSQLType() {
+		ParsingResult result = instance.parse( """
+		                                       <cfquery name="news">
+		                                       	SELECT id,title,story
+		                                       	FROM news
+		                                       	WHERE id = <cfqueryparam value="#url.id#" cfsqltype="cf_sql_integer">
+		                                       </cfquery>
+		                                       <cfscript>
+		                                       	result = queryExecute( "SELECT * FROM exampleData WHERE id = :id AND title = :title", 	{
+		                                       		title={
+		                                       				value="Man walks on Moon",
+		                                       				cfsqltype="cf_sql_varchar"
+		                                       			},
+		                                       		id={
+		                                       				value=2,
+		                                       				'cfsqltype'="cf_sql_integer"
+		                                       			}
+		                                       		},	{
+		                                       			dbtype="query"
+		                                       	} 	);
+
+		                                       	result1 = queryExecute(	"SELECT * FROM exampleData WHERE id = ? AND title = ?", [
+		                                       			{
+		                                       				value="Man walks on Moon",
+		                                       				cfsqltype="cf_sql_varchar"
+		                                       			},
+		                                       			{
+		                                       				value=2,
+		                                       				'cfsqltype'="cf_sql_integer"
+		                                       			}
+		                                       		],	{
+		                                       			dbtype="query"
+		                                       		} );
+		                                       </cfscript>
+		                                       """, BoxSourceType.CFTEMPLATE );
+		assertThat( result.isCorrect() ).isTrue();
+		String trasnpiledSource = result.getRoot().toString();
+		assertThat( trasnpiledSource ).contains( "sqltype" );
+		assertThat( trasnpiledSource ).contains( "varchar" );
+		assertThat( trasnpiledSource ).contains( "integer" );
+		assertThat( trasnpiledSource ).doesNotContain( "cfsqltype" );
+		assertThat( trasnpiledSource ).doesNotContain( "cf_sql_" );
 	}
 
 }

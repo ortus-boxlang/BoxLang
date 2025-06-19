@@ -14,6 +14,19 @@
  */
 package ortus.boxlang.compiler.ast;
 
+import java.util.Iterator;
+
+import ortus.boxlang.compiler.ast.expression.BoxArrayLiteral;
+import ortus.boxlang.compiler.ast.expression.BoxFQN;
+import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
+import ortus.boxlang.compiler.ast.expression.BoxStructLiteral;
+import ortus.boxlang.compiler.ast.expression.IBoxSimpleLiteral;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.ExpressionException;
+
 /**
  * Abstract class representing Expressions
  */
@@ -37,4 +50,79 @@ public abstract class BoxExpression extends BoxNode {
 	protected BoxExpression( Position position, String sourceText ) {
 		super( position, sourceText );
 	}
+
+	// Utility methods for working with expressions in AST
+
+	/**
+	 * Get the value of this BoxExpression as a simple value
+	 *
+	 * @return The value
+	 */
+	public Object getAsSimpleValue() {
+		return getAsSimpleValue( null, false );
+	}
+
+	/**
+	 * Get the value of this BoxExpression as a simple value
+	 *
+	 * @param defaultValue     The default value to return if the expression is null
+	 * @param identifierAsText Whether to return identifier as text
+	 * 
+	 * @return The value
+	 */
+	public Object getAsSimpleValue( Object defaultValue, boolean identifierAsText ) {
+		if ( this instanceof IBoxSimpleLiteral lit ) {
+			return lit.getValue();
+		}
+		if ( this instanceof BoxFQN fqn ) {
+			return fqn.getValue();
+		}
+		if ( identifierAsText && this instanceof BoxIdentifier id ) {
+			return id.getName();
+		}
+		if ( defaultValue != null ) {
+			return defaultValue;
+		} else {
+			throw new ExpressionException( "Unsupported BoxExpr type: " + this.getClass().getSimpleName(), this );
+		}
+	}
+
+	/**
+	 * Get the value of this BoxExpression as a literal value
+	 *
+	 * @return The value
+	 */
+	public Object getAsLiteralValue() {
+		if ( this instanceof IBoxSimpleLiteral lit ) {
+			return lit.getValue();
+		}
+		if ( this instanceof BoxFQN fqn ) {
+			return fqn.getValue();
+		}
+		if ( this instanceof BoxArrayLiteral arr ) {
+			Array array = Array.of();
+			arr.getValues().forEach( value -> {
+				array.add( value.getAsLiteralValue() );
+			} );
+			return array;
+		}
+		if ( this instanceof BoxStructLiteral str ) {
+			IStruct					struct		= Struct.of();
+			Iterator<BoxExpression>	iterator	= str.getValues().iterator();
+			while ( iterator.hasNext() ) {
+				BoxExpression key = iterator.next();
+				if ( iterator.hasNext() ) {
+					BoxExpression value = iterator.next();
+					struct.put( Key.of( key.getAsSimpleValue( null, true ) ), value.getAsLiteralValue() );
+				} else {
+					// Handle odd number of values
+					throw new IllegalArgumentException( "Invalid number of values in BoxStructLiteral" );
+				}
+			}
+			return struct;
+		}
+		// return "[Runtime Expression]";
+		throw new ExpressionException( "Non-literal value in BoxExpr type: " + this.getClass().getSimpleName(), this );
+	}
+
 }

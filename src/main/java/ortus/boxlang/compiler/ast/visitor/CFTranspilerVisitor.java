@@ -36,6 +36,7 @@ import ortus.boxlang.compiler.ast.comment.BoxSingleLineComment;
 import ortus.boxlang.compiler.ast.expression.BoxAccess;
 import ortus.boxlang.compiler.ast.expression.BoxArgument;
 import ortus.boxlang.compiler.ast.expression.BoxArrayAccess;
+import ortus.boxlang.compiler.ast.expression.BoxArrayLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxAssignment;
 import ortus.boxlang.compiler.ast.expression.BoxAssignmentOperator;
 import ortus.boxlang.compiler.ast.expression.BoxBinaryOperation;
@@ -373,7 +374,45 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		if ( BIFMap.containsKey( name ) ) {
 			node.setName( BIFMap.get( name ) );
 		}
+		// look for "params" named arg, or 2nd positional arg, and if it's a struct literal, any of the values which are also a struct literal,
+		// rename any keys from cfsqltype to sqltype and remove "cf_sql_" from the values of any sqltype
+		if ( name.equals( "queryexecute" ) && node.getArguments().size() >= 2 ) {
+			BoxExpression params = null;
+			// Check for positional args
+			if ( !node.isNamedArgs() ) {
+				params = node.getArguments().get( 1 ).getValue();
+			} else {
+				params = node.getArguments().stream()
+				    .filter( a -> ( a.getName().getAsSimpleValue().toString().equalsIgnoreCase( "params" ) ) )
+				    .findFirst()
+				    .map( a -> a.getValue() )
+				    .orElse( null );
+			}
+			// If we found named or positional struct params
+			if ( params != null ) {
+				// Named params could just be { myParam : "myValue" }
+				// But we only care if it's using a nested struct for the value as in: { myParam : { value : "myValue" } }
+				if ( params instanceof BoxStructLiteral structParamsValues ) {
+					// Rename cfsqltype to sqltype
+					List<BoxExpression> paramsValues = structParamsValues.getValues();
+					// For each even index, which is a value
+					for ( int k = 1; k < paramsValues.size(); k += 2 ) {
+						BoxExpression paramData = paramsValues.get( k );
+						// If the value is a struct literal, we can rename the keys
+						if ( paramData instanceof BoxStructLiteral paramDataStruct ) {
+							modifySQLParamStruct( paramDataStruct );
+						}
+					}
+				} else if ( params instanceof BoxArrayLiteral arrayParamsValues ) {
+					// now do the same thing but for a BoxArrayLiteral of params, where each item in the array is potentially a struct
+					arrayParamsValues.getValues().stream()
+					    .filter( v -> v instanceof BoxStructLiteral )
+					    .map( v -> ( BoxStructLiteral ) v )
+					    .forEach( this::modifySQLParamStruct );
+				}
+			}
 
+		}
 		// This is now done with runtime checks in the actual structKeyExist() BIF triggered by the compat module
 		/*
 		 * if ( name.equalsIgnoreCase( "structKeyExists" ) && node.getArguments().size() == 2 ) {
@@ -394,6 +433,35 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 			return transpileBIFReturnType( node, name );
 		}
 		return super.visit( node );
+	}
+
+	/**
+	 * Takes a struct representation of a query param and modifies any keys
+	 * from cfsqltype to sqltype and removes the "cf_sql_" prefix from the values
+	 *
+	 * @param paramDataStruct The struct literal representing the query param data
+	 */
+	private void modifySQLParamStruct( BoxStructLiteral paramDataStruct ) {
+		List<BoxExpression> paramDataValues = paramDataStruct.getValues();
+		// For each odd index, which is the name of the key
+		for ( int i = 0; i < paramDataValues.size(); i += 2 ) {
+			BoxExpression	key		= paramDataValues.get( i );
+			boolean			isType	= false;
+			if ( key instanceof BoxIdentifier id && id.getName().equalsIgnoreCase( "cfsqltype" ) ) {
+				id.setName( "sqltype" );
+				isType = true;
+			} else if ( key instanceof BoxStringLiteral str && str.getValue().equalsIgnoreCase( "cfsqltype" ) ) {
+				str.setValue( "sqltype" );
+				isType = true;
+			}
+			if ( isType && i + 1 < paramDataValues.size() ) {
+				// Now look for the value, which is the next item in the list
+				BoxExpression value = paramDataValues.get( i + 1 );
+				if ( value instanceof BoxStringLiteral valStr ) {
+					valStr.setValue( valStr.getValue().replace( "cf_sql_", "" ) );
+				}
+			}
+		}
 	}
 
 	private BoxNode transpileBIFReturnType( BoxFunctionInvocation node, String name ) {
@@ -880,6 +948,16 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 					);
 				}
 			} );
+		}
+		// fix SQL types to remove cf_sql_ from values (we transpile the attribute names generically above)
+		if ( componentName.equals( "queryparam" ) || componentName.equals( "procparam" ) ) {
+			node.getAttributes().stream()
+			    .filter( a -> a.getKey().getValue().equalsIgnoreCase( "sqltype" ) && a.getValue() instanceof BoxStringLiteral )
+			    .forEach( a -> {
+				    BoxStringLiteral bsl		= ( BoxStringLiteral ) a.getValue();
+				    String			newValue	= bsl.getValue().replace( "cf_sql_", "" );
+				    bsl.setValue( newValue );
+			    } );
 		}
 		return super.visit( node );
 	}

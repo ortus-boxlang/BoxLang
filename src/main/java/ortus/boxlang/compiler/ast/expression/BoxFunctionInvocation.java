@@ -14,15 +14,15 @@
  */
 package ortus.boxlang.compiler.ast.expression;
 
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
-
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * AST Node representing a fully qualified name
@@ -62,6 +62,17 @@ public class BoxFunctionInvocation extends BoxExpression {
 
 	public void setName( String name ) {
 		this.name = name;
+	}
+
+	/**
+	 * Checks if the function invocation is using named arguments.
+	 * If there are no args defined, we return false. In that case, it doesn't neccessarily mean
+	 * the args are positional, but they certainly aren't named either, so it's not wrong.
+	 * 
+	 * @return true if the function invocation is using named arguments, false otherwise
+	 */
+	public boolean isNamedArgs() {
+		return arguments.size() > 0 && arguments.get( 0 ).isNamed();
 	}
 
 	@Override
