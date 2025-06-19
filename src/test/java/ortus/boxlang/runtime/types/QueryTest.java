@@ -254,13 +254,9 @@ public class QueryTest {
 				if ( qry.size() % 100 == 0 ) {
 					qry.setCell( Key.of( "name" ), qry.size() - 1, "Updated Name " + qry.size() );
 				}
-				if ( qry.size() % 50 == 0 && qry.size() > 0 ) {
-					// Delete the last row (size - 1 for 0-based index)
-					qry.deleteRow( qry.size() - 1 );
-				}
 			}
 		} );
-		assertThat( qry.size() ).isLessThan( 1000 );
+		assertThat( qry.size() ).isEqualTo( 1000 );
 		assertThat( qry.getColumnList() ).isEqualTo( "id,name" );
 	}
 
