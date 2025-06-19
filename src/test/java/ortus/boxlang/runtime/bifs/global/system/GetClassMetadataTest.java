@@ -69,7 +69,7 @@ public class GetClassMetadataTest {
 		assertThat( metadata.containsKey( "name" ) ).isTrue();
 		assertThat( metadata.containsKey( "type" ) ).isTrue();
 		assertThat( metadata.getAsString( Key._name ) ).isEqualTo( "src.test.bx.Person" );
-		assertThat( metadata.getAsString( Key.type ) ).isEqualTo( "Component" );
+		assertThat( metadata.getAsString( Key.type ) ).isEqualTo( "Class" );
 	}
 
 	@DisplayName( "It can get the metadata for a bx interface" )
