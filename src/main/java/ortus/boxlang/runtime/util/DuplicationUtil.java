@@ -131,7 +131,7 @@ public class DuplicationUtil {
 		return newClass;
 	}
 
-	public static XML duplicateXML( XML target ) {
+	private static XML duplicateXML( XML target ) {
 		return target.clone();
 	}
 
