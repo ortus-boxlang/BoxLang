@@ -579,7 +579,7 @@ public class ClassTest {
 		var	cfc		= variables.getAsClassRunnable( Key.of( "cfc" ) );
 		var	boxMeta	= ( ClassMeta ) cfc.getBoxMeta();
 		var	meta	= boxMeta.meta;
-		assertThat( meta.get( Key.of( "type" ) ) ).isEqualTo( "Component" );
+		assertThat( meta.get( Key.of( "type" ) ) ).isEqualTo( "Class" );
 		assertThat( meta.get( Key.of( "fullname" ) ) ).isEqualTo( "src.test.java.TestCases.phase3.MyClass" );
 		assertThat( meta.getAsString( Key.of( "path" ) ).contains( "MyClass.bx" ) ).isTrue();
 		assertThat( meta.get( Key.of( "hashcode" ) ) ).isEqualTo( cfc.hashCode() );
