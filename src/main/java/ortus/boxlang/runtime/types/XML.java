@@ -55,6 +55,7 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.bifs.BoxMemberExpose;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
@@ -713,6 +714,16 @@ public class XML implements Serializable, IStruct {
 			}
 		}
 		return index;
+	}
+
+	/**
+	 * Clone this XML object
+	 *
+	 * @return a new XML object with the same data
+	 */
+	@BoxMemberExpose
+	public XML clone() {
+		return new XML( this.asString() );
 	}
 
 	// Implement IStruct methods

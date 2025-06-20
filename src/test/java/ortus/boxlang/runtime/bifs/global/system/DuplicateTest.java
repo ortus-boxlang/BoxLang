@@ -52,6 +52,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.QueryColumn;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.XML;
 import ortus.boxlang.runtime.types.exceptions.ParseException;
 
 public class DuplicateTest {
@@ -446,6 +447,23 @@ public class DuplicateTest {
 		    """,
 		    context );
 		assertEquals( variables.get( refKey ), variables.get( resultKey ) );
+	}
+
+	@DisplayName( "It can duplicate XMLObjects" )
+	@Test
+	public void testDuplicateXML() {
+		instance.executeSource(
+		    """
+		    module = '<mura name="filebrowser" contenttypes="" iconclass="mi-commenting"></mura>';
+		    xml = xmlParse( module );
+		    xml2 = duplicate(xml);
+
+		      """,
+		    context );
+		assertTrue( variables.get( Key.of( "xml" ) ) instanceof XML );
+		assertTrue( variables.get( Key.of( "xml2" ) ) instanceof XML );
+		assertEquals( variables.getAsXML( Key.of( "xml" ) ).toString(), variables.getAsXML( Key.of( "xml2" ) ).toString() );
+
 	}
 
 	@DisplayName( "It can duplicate null" )
