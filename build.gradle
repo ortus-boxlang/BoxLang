@@ -139,7 +139,7 @@ dependencies {
 	// https://mvnrepository.com/artifact/org.ow2.asm/asm-util
 	implementation 'org.ow2.asm:asm-util:9.8'
 	// https://mvnrepository.com/artifact/org.semver4j/semver4j
-	implementation 'org.semver4j:semver4j:5.7.1'
+	implementation 'org.semver4j:semver4j:5.8.0'
 
 	// Compile Only Dependencies
 	// Java Annotations Checks, this are for compile documentation only. It's not included in the final build
