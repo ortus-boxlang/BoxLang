@@ -75,8 +75,8 @@ import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 import ortus.boxlang.runtime.util.EncryptionUtil;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
-import ortus.boxlang.runtime.validation.Validator;
 import ortus.boxlang.runtime.util.ZipUtil;
+import ortus.boxlang.runtime.validation.Validator;
 
 @BoxComponent( allowsBody = true )
 public class HTTP extends Component {
@@ -259,7 +259,10 @@ public class HTTP extends Component {
 			    .version( httpVersion )
 			    .header( "User-Agent", attributes.getAsString( Key.userAgent ) )
 			    .header( "Accept", "*/*" )
-			    .header( "Accept-Encoding", "gzip, deflate" );
+			    .header( "Accept-Encoding", "gzip, deflate" )
+			    .header( "x-request-id", requestID );
+
+			// Set the values into the HTTPResult Struct
 			HTTPResult.put( Key.requestID, requestID );
 			HTTPResult.put( Key.userAgent, attributes.getAsString( Key.userAgent ) );
 
