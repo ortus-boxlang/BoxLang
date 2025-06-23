@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.cache;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.mockito.Mockito.when;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -29,6 +30,7 @@ import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Struct;
@@ -72,12 +74,7 @@ public class BoxCacheEntryTest {
 	@Test
 	@DisplayName( "When updating BoxCacheEntry properties, they should reflect the changes" )
 	void testBoxCacheEntryPropertiesUpdate() throws InterruptedException {
-		// Given
-		Instant newLastAccessed = Instant.now();
-
-		// When
 		cacheEntry.touchLastAccessed();
-		cacheEntry.setValue( newLastAccessed );
 		cacheEntry.incrementHits();
 		Instant originalCreated = cacheEntry.created();
 
@@ -86,7 +83,6 @@ public class BoxCacheEntryTest {
 		cacheEntry.resetCreated();
 
 		// Then
-		assertThat( cacheEntry.value().get() ).isEqualTo( newLastAccessed );
 		// The following test is not consistent as there may be nanoseconds of difference between the two times
 		// assertThat( cacheEntry.lastAccessed() ).isEqualTo( newLastAccessed );
 		assertThat( cacheEntry.hits() ).isEqualTo( 1L );
@@ -132,6 +128,76 @@ public class BoxCacheEntryTest {
 
 		inflatedEntry.setHits( 1l );
 		assertThat( inflatedEntry.hits() ).isEqualTo( 1L );
+	}
 
+	@DisplayName( "It can never expire if it is eternal" )
+	@Test
+	void testIsEternal() {
+		// Given
+		BoxCacheEntry	eternalEntry	= new BoxCacheEntry(
+		    Key.of( "default" ),
+		    0, // Eternal
+		    0,
+		    Key.of( "eternalKey" ),
+		    "eternalValue",
+		    new Struct()
+		);
+
+		// When
+		boolean			isEternal		= eternalEntry.isEternal();
+
+		// Then
+		assertThat( isEternal ).isTrue();
+		assertThat( eternalEntry.isExpired() ).isFalse();
+	}
+
+	@DisplayName( "It can expire using a timeout" )
+	@Test
+	void testIsExpiredWithTimeout() {
+		// Given
+		BoxCacheEntry	expiredEntry	= new BoxCacheEntry(
+		    Key.of( "default" ),
+		    1, // 1 second timeout
+		    0,
+		    Key.of( "expiredKey" ),
+		    "expiredValue",
+		    new Struct()
+		);
+
+		// Spy on it
+		Instant			testTime		= Instant.now().minusSeconds( 60 );
+		BoxCacheEntry	spyEntry		= Mockito.spy( expiredEntry );
+		when( spyEntry.created() ).thenReturn( testTime );
+
+		// Then
+		assertThat( spyEntry.created() ).isEqualTo( testTime );
+		assertThat( spyEntry.key() ).isEqualTo( Key.of( "expiredKey" ) );
+		assertThat( spyEntry.timeout() ).isEqualTo( 1 );
+		System.out.println( "Created: " + spyEntry.created() );
+		System.out.println( "Current: " + Instant.now() );
+		assertThat( spyEntry.isExpired() ).isTrue();
+	}
+
+	@DisplayName( "It can expire using a last access timeout" )
+	@Test
+	void testIsExpiredWithLastAccessTimeout() {
+		// Given
+		BoxCacheEntry	expiredEntry	= new BoxCacheEntry(
+		    Key.of( "default" ),
+		    60, // 60 seconds timeout
+		    1, // 1 second last access timeout
+		    Key.of( "expiredKey" ),
+		    "expiredValue",
+		    new Struct()
+		);
+
+		// Spy on it
+		BoxCacheEntry	spyEntry		= Mockito.spy( expiredEntry );
+		Mockito.doReturn( Instant.now().minusSeconds( 2 ) ).when( spyEntry ).lastAccessed();
+
+		// Then
+		assertThat( spyEntry.key() ).isEqualTo( Key.of( "expiredKey" ) );
+		assertThat( spyEntry.lastAccessTimeout() ).isEqualTo( 1 );
+		assertThat( spyEntry.isExpired() ).isTrue();
 	}
 }

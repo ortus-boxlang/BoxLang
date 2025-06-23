@@ -25,12 +25,10 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
-import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.util.StructUtil;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.STRUCT )
-
 public class StructFilter extends BIF {
 
 	/**
@@ -39,15 +37,27 @@ public class StructFilter extends BIF {
 	public StructFilter() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "structloose", Key.struct ),
+		    new Argument( true, Argument.STRUCT_LOOSE, Key.struct ),
 		    new Argument( true, "function:BiPredicate", Key.callback ),
-		    new Argument( false, "boolean", Key.parallel, false ),
-		    new Argument( false, "integer", Key.maxThreads )
+		    new Argument( false, Argument.BOOLEAN, Key.parallel, false ),
+		    new Argument( false, Argument.INTEGER, Key.maxThreads )
 		};
 	}
 
 	/**
-	 * Used to filter a struct and return a new struct containing the result
+	 * Filters a struct and returns a new struct with the values that pass the filter criteria.
+	 * This BIF will invoke the callback function for each entry in the struct, passing the key, value, and the struct itself.
+	 * <ul>
+	 * <li>If the callback returns true, the entry will be included in the new struct.</li>
+	 * <li>If the callback returns false, the entry will be excluded from the new struct.</li>
+	 * <li>If the callback requires strict arguments, it will only receive the key and value.</li>
+	 * <li>If the callback does not require strict arguments, it will receive the key, value, and the original struct.</li>
+	 * </ul>
+	 * <p>
+	 * <h2>Parallel Execution</h2>
+	 * If the <code>parallel</code> argument is set to true, and no <code>max_threads</code> are sent, the filter will be executed in parallel using a ForkJoinPool with parallel streams.
+	 * If <code>max_threads</code> is specified, it will create a new ForkJoinPool with the specified number of threads to run the filter in parallel, and destroy it after the operation is complete.
+	 * Please note that this may not be the most efficient way to filter, as it will create a new ForkJoinPool for each invocation of the BIF. You may want to consider using a shared ForkJoinPool for better performance.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
@@ -56,20 +66,19 @@ public class StructFilter extends BIF {
 	 *
 	 * @argument.callback The function used to filter. The function will be passed 3 arguments: the key, the value, the struct. You can alternatively pass a Java BiPredicate which will only receive the first 2 args.
 	 *
-	 * @argument.parallel Specifies whether the items can be executed in parallel
+	 * @argument.parallel Whether to run the filter in parallel. Defaults to false. If true, the filter will be run in parallel using a ForkJoinPool.
 	 *
-	 * @argument.maxThreads The maximum number of threads to use when parallel = true
+	 * @argument.maxThreads The maximum number of threads to use when running the filter in parallel. If not passed it will use the default number of threads for the ForkJoinPool.
+	 *                      If parallel is false, this argument is ignored.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		IStruct target = arguments.getAsStruct( Key.struct );
 		return StructUtil.filter(
-		    target,
+		    arguments.getAsStruct( Key.struct ),
 		    arguments.getAsFunction( Key.callback ),
 		    context,
 		    arguments.getAsBoolean( Key.parallel ),
 		    arguments.getAsInteger( Key.maxThreads )
 		);
-		// java.util.stream.Collectors
 	}
 
 }

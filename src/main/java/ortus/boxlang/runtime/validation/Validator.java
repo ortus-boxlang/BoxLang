@@ -150,6 +150,13 @@ public interface Validator {
 		return new ValueOneOf( Set.of( validValues ) );
 	}
 
+	/**
+	 * Builder method to create a TypeOneOf validator
+	 *
+	 * @param validTypes The valid types
+	 *
+	 * @return The TypeOneOf validator
+	 */
 	public static Validator typeOneOf( String... validTypes ) {
 		return new TypeOneOf( Set.of( validTypes ) );
 	}

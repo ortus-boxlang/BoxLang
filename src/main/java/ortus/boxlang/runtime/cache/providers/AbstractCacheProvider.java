@@ -41,8 +41,48 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
- * Abstract Cache Provider for BoxLang
- * This is an optional base class for all cache providers.
+ * AbstractCacheProvider serves as the base implementation for all cache providers in the BoxLang runtime.
+ * This abstract class provides common functionality and structure for cache providers including:
+ *
+ * <ul>
+ * <li>Configuration management and initialization</li>
+ * <li>Statistics tracking and reporting</li>
+ * <li>Event announcement and interception capabilities</li>
+ * <li>Object store creation and management</li>
+ * <li>Asynchronous cache operations</li>
+ * <li>Memory threshold monitoring</li>
+ * <li>Timeout and duration handling utilities</li>
+ * </ul>
+ *
+ * <p>
+ * Cache providers extending this class must implement the specific cache operations
+ * defined in the ICacheProvider interface while leveraging the common infrastructure
+ * provided by this abstract implementation.
+ * </p>
+ *
+ * <p>
+ * The provider maintains an enabled state, configuration settings, statistics,
+ * and an interceptor pool for handling cache-related events. It integrates with
+ * the CacheService to provide a complete caching solution.
+ * </p>
+ *
+ * <h3>Key Features:</h3>
+ * <ul>
+ * <li><strong>Thread-safe operations:</strong> Uses AtomicBoolean for state management</li>
+ * <li><strong>Event-driven architecture:</strong> Supports cache event interception</li>
+ * <li><strong>Flexible object stores:</strong> Supports both core and custom object store implementations</li>
+ * <li><strong>Memory monitoring:</strong> Built-in JVM memory threshold checking</li>
+ * <li><strong>Async support:</strong> CompletableFuture-based asynchronous operations</li>
+ * </ul>
+ *
+ * @see ICacheProvider
+ * @see CacheService
+ * @see IObjectStore
+ * @see ICacheStats
+ *
+ * @author Ortus Solutions, Corp
+ * 
+ * @since 1.0.0
  */
 public abstract class AbstractCacheProvider implements ICacheProvider {
 

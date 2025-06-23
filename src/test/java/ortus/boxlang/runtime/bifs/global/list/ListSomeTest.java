@@ -192,4 +192,59 @@ public class ListSomeTest {
 		assertThat( indexes.get( 5 ) ).isEqualTo( "5" );
 	}
 
+	@DisplayName( "Tests with running in parallel" )
+	@Test
+	public void testParallelExecution() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		        indexes = [];
+		        nums = "1,2,3,4,5";
+
+		        function eachFn( value, i ){
+		            indexes[ i ] = value;
+		            return value == 3;
+		        };
+
+		        result = nums.listSome(
+					eachFn, // closure
+					",",  // delimiter
+					false, // include empty fields
+					true, // multi-character delimiter
+					true // parallel
+					);
+		    """,
+		    context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( true );
+	}
+
+	@DisplayName( "Tests with running in parallel with max threads" )
+	@Test
+	public void testParallelExecutionWithMaxThreads() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		        indexes = [];
+		        nums = "1,2,3,4,5,6,7,8,9,10";
+
+		        function eachFn( value, i ){
+		            indexes[ i ] = value;
+		            return value == 3;
+		        };
+
+		        result = nums.listSome(
+					eachFn, // closure
+					",",  // delimiter
+					false, // include empty fields
+					true, // multi-character delimiter
+					true, // parallel
+					2 // max threads
+					);
+		    """,
+		    context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( true );
+	}
+
 }

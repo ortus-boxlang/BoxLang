@@ -43,7 +43,8 @@ public class Compress extends BIF {
 		    new Argument( false, Argument.BOOLEAN, Key.overwrite, false ),
 		    new Argument( false, Argument.STRING, Key.prefix, Set.of( Validator.NON_EMPTY ) ),
 		    new Argument( false, Argument.ANY, Key.filter ),
-		    new Argument( false, Argument.BOOLEAN, Key.recurse, true )
+		    new Argument( false, Argument.BOOLEAN, Key.recurse, true ),
+		    new Argument( false, Argument.INTEGER, Key.compressionLevel, Set.of( Validator.min( 0 ), Validator.max( 9 ), ZipUtil.DEFAULT_COMPRESSION_LEVEL ) )
 		};
 	}
 
@@ -59,6 +60,11 @@ public class Compress extends BIF {
 	 * <p>
 	 * The {@code overwrite} argument is used to overwrite the destination
 	 * file if it already exists, else it will throw an exception. The default is {@code false}.
+	 * <p>
+	 * <h2>Compression Levels</h2>
+	 * The {@code compressionLevel} argument is used to specify the compression level to use for the compression.
+	 * The default is {@code 6}, which is a good balance between speed and compression ratio.
+	 * The valid range is from {@code 0} (no compression) to {@code 9} (maximum compression).
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
@@ -79,6 +85,8 @@ public class Compress extends BIF {
 	 *
 	 * @argument.recurse Whether to compress the files recursively. Default is true.
 	 *
+	 * @argument.compressionLevel The compression level to use for the compression. Default is 6, which is a good balance between speed and compression ratio.
+	 *
 	 * @return The absolute path to the compressed file.
 	 */
 	public String _invoke( IBoxContext context, ArgumentsScope arguments ) {
@@ -89,6 +97,7 @@ public class Compress extends BIF {
 		boolean	overwrite			= BooleanCaster.cast( arguments.get( Key.overwrite ) );
 		Object	prefix				= arguments.get( Key.prefix );
 		Object	filter				= arguments.get( Key.filter );
+		Integer	compressionLevel	= arguments.getAsInteger( Key.compressionLevel );
 
 		return ZipUtil.compress(
 		    ZipUtil.COMPRESSION_FORMAT.valueOf( format.toUpperCase() ),
@@ -99,6 +108,7 @@ public class Compress extends BIF {
 		    prefix == null ? "" : StringCaster.cast( prefix ),
 		    filter,
 		    BooleanCaster.cast( arguments.get( Key.recurse ) ),
+		    compressionLevel,
 		    context
 		);
 	}

@@ -47,6 +47,11 @@ public class ExecutorConfig {
 	public int		maxThreads	= AsyncService.DEFAULT_MAX_THREADS;
 
 	/**
+	 * Description of the executor configuration segment.
+	 */
+	public String	description	= "";
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Methods
 	 * --------------------------------------------------------------------------
@@ -96,6 +101,10 @@ public class ExecutorConfig {
 
 		if ( config.containsKey( "maxThreads" ) ) {
 			this.maxThreads = IntegerCaster.cast( PlaceholderHelper.resolve( config.get( "maxThreads" ) ) );
+		}
+
+		if ( config.containsKey( "description" ) ) {
+			this.description = PlaceholderHelper.resolve( config.get( "description" ) );
 		}
 
 		return this;

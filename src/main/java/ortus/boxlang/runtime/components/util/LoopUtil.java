@@ -132,11 +132,8 @@ public class LoopUtil {
 				// Run the code inside of the output loop
 				Component.BodyResult bodyResult = component.processBody( context, body );
 
-				if ( groupData.hasChildGroup() ) {
-					/*
-					 * System.out.println(
-					 * "taking child currenrt row of " + groupData.getCurrentRow() + " and overwriting my row of " + i + " for group [" + group + "]" );
-					 */
+				if ( groupData.hasChildGroup() && i != groupData.getCurrentRow() ) {
+					// System.out.println( "taking child current row of " + groupData.getCurrentRow() + " and overwriting my row of " + i + " for group [" + group + "]" );
 					i = groupData.getCurrentRow();
 				}
 
@@ -154,10 +151,7 @@ public class LoopUtil {
 						groupData.setCurrentRow( i + 1 ).calcGroupValuesForRow();
 						// If some group data has changed, we need to exit this inner loop
 						if ( !groupData.isSameGroupAggregate() && groupData.hasParentGroup() ) {
-							/*
-							 * System.out
-							 * .println( "one of our groups has changed, exiting this inner loop [" + group + "]" );
-							 */
+							// System.out.println( "one of our groups has changed, exiting this inner loop [" + group + "]" );
 							groupData.setCurrentRow( i );
 							break;
 						}
@@ -174,7 +168,15 @@ public class LoopUtil {
 						i--;
 						if ( groupData.hasParentGroup() ) {
 							groupData.setCurrentRow( i );
-							break;
+							// If the parent hasn't changed and we didn't break in this loop, then just continue to the next row
+							if ( groupData.getParentGroup().isSameGroupAggregate() && !bodyResult.isBreak( label ) ) {
+								// System.out.println( "parent group is same, so continuing to next row [" + i + "] of group [" + group + "]" );
+								continue;
+							} else {
+								// Otherwise, we need to break out of this loop and return to our parent group
+								// System.out.println( "done running off rows, breaking to parent -- group [" + group + "]" );
+								break;
+							}
 						}
 					}
 

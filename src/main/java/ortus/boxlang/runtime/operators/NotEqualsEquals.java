@@ -30,7 +30,7 @@ public class NotEqualsEquals implements IOperator {
 	 * @return True if operands are the not equal
 	 */
 	public static Boolean invoke( Object left, Object right ) {
-		Integer comparison = Compare.attempt( left, right, false, false );
+		Integer comparison = Compare.attempt( left, right, false );
 
 		if ( comparison == null ) {
 			return !left.equals( right );
@@ -51,7 +51,7 @@ public class NotEqualsEquals implements IOperator {
 	 * @return True if operands are not equal
 	 */
 	public static Boolean invoke( Object left, Object right, boolean caseSensitive ) {
-		Integer comparison = Compare.attempt( left, right, caseSensitive, false );
+		Integer comparison = Compare.attempt( left, right, caseSensitive );
 
 		if ( comparison == null ) {
 			return !left.equals( right );

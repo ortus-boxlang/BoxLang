@@ -45,14 +45,63 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.util.BLCollector;
 
 /**
- * The BoxCacheProvider class is a cache provider for BoxLang that
- * can use a variety of object stores to store cache data:
+ * BoxLang's native cache provider implementation that uses an object store for caching operations.
+ * This cache provider supports automatic expiration, reaping, eviction policies, and provides
+ * comprehensive caching functionality with performance monitoring and event announcements.
  *
- * - ConcurrentHashMap
- * - ConcurrentSoftReference
- * - Disk
- * - Custom
+ * <p>
+ * Key Features:
+ * </p>
+ * <ul>
+ * <li>Object store-based caching with configurable timeout and last access timeout</li>
+ * <li>Automatic reaping of expired entries via scheduled tasks</li>
+ * <li>Memory threshold and max objects eviction policies</li>
+ * <li>Performance statistics tracking (hits, misses, etc.)</li>
+ * <li>Event-driven architecture with cache lifecycle announcements</li>
+ * <li>Thread-safe operations with proper synchronization</li>
+ * <li>Flexible key filtering and batch operations</li>
+ * <li>Metadata reporting for cache monitoring and debugging</li>
+ * </ul>
  *
+ * <p>
+ * Configuration Properties:
+ * </p>
+ * <ul>
+ * <li><code>maxObjects</code> - Maximum number of objects allowed in cache</li>
+ * <li><code>defaultTimeout</code> - Default expiration timeout in seconds</li>
+ * <li><code>defaultLastAccessTimeout</code> - Default last access timeout in seconds</li>
+ * <li><code>reapFrequency</code> - Frequency of reaping operations in seconds</li>
+ * <li><code>useLastAccessTimeouts</code> - Whether to use last access timeouts for eviction</li>
+ * </ul>
+ *
+ * <p>
+ * Thread Safety:
+ * </p>
+ * This implementation is thread-safe and uses synchronization where necessary, particularly
+ * in the configure(), reap(), and getOrSet() methods to ensure data consistency.
+ *
+ * <p>
+ * Usage Example:
+ * </p>
+ * 
+ * <pre>
+ * // Basic operations
+ * cache.set( "key", "value", 3600 ); // Store with 1 hour timeout
+ * Optional&lt;Object&gt; value = cache.get( "key" );
+ * boolean exists = cache.lookup( "key" );
+ * cache.clear( "key" );
+ *
+ * // Batch operations
+ * cache.set( Struct.of( "key1", "value1", "key2", "value2" ) );
+ * IStruct results = cache.get( "key1", "key2", "key3" );
+ *
+ * // Get-or-set pattern (thread-safe)
+ * Object value = cache.getOrSet( "expensiveKey", () -> computeExpensiveValue() );
+ * </pre>
+ *
+ * @author BoxLang Team
+ * 
+ * @since 1.0.0
  */
 @BoxCache( alias = "BoxLang", distributed = false, description = "BoxLang's native cache provider using an object store." )
 public class BoxCacheProvider extends AbstractCacheProvider {
@@ -215,8 +264,7 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 		this.objectStore.getKeysStream()
 		    .limit( limit )
 		    .forEach( key -> {
-			    var results = this.objectStore.getQuiet( key );
-			    report.put( key, results != null ? results.toStruct() : new Struct() );
+			    report.put( key, getCachedObjectMetadata( key.getName() ) );
 		    } );
 		return report;
 	}
@@ -256,7 +304,20 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 	 */
 	public IStruct getCachedObjectMetadata( String key ) {
 		var results = this.objectStore.get( Key.of( key ) );
-		return results != null ? results.toStruct() : new Struct();
+
+		if ( results == null ) {
+			// If not found, return empty
+			return new Struct();
+		}
+
+		// If expired, clear it with announcements, because it has expired
+		if ( results.isExpired() ) {
+			clear( key );
+			return new Struct();
+		}
+
+		// Return the metadata structure
+		return results.toStruct();
 	}
 
 	/**
@@ -459,7 +520,8 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 	 * @return True if the object is in the store, false otherwise
 	 */
 	public boolean lookupQuiet( String key ) {
-		return this.objectStore.lookup( Key.of( key ) );
+		ICacheEntry target = this.objectStore.getQuiet( Key.of( key ) );
+		return target != null && !target.isExpired();
 	}
 
 	/**
@@ -521,8 +583,20 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 	 * @return The cache entry retrieved or null
 	 */
 	public Attempt<Object> getQuiet( String key ) {
-		var results = this.objectStore.get( Key.of( key ) );
-		return results != null ? results.value() : Attempt.empty();
+		ICacheEntry results = this.objectStore.getQuiet( Key.of( key ) );
+
+		if ( results == null ) {
+			// If not found, return empty
+			return Attempt.empty();
+		}
+
+		// If expired, clear it with announcements, because it has expired
+		if ( results.isExpired() ) {
+			clear( key );
+			return Attempt.empty();
+		}
+
+		return results.value();
 	}
 
 	/**

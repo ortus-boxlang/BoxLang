@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.annotation.Nonnull;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.cache.providers.ICacheProvider;
@@ -83,7 +83,7 @@ public class PendingQuery {
 	 * marks (`?`)
 	 * or as named bindings, prefixed with a colon (`:`)
 	 */
-	private @Nonnull String						sql;
+	private @NonNull String						sql;
 
 	/**
 	 * A list of SQL tokens, which are the segments of the SQL string broken up by
@@ -96,7 +96,7 @@ public class PendingQuery {
 	/**
 	 * SQL string broken up into segments so we can build a fully
 	 */
-	private @Nonnull String						SQLWithParamValues;
+	private @NonNull String						SQLWithParamValues;
 
 	/**
 	 * The original SQL provided to the constructor. When constructing a
@@ -108,7 +108,7 @@ public class PendingQuery {
 	 * is set as `sql` and the original SQL provided with named parameters is set as
 	 * `originalSql`.
 	 */
-	private @Nonnull final String				originalSql;
+	private @NonNull final String				originalSql;
 
 	/**
 	 * A List of QueryParameter instances. The store the value and SQL type of the
@@ -116,7 +116,7 @@ public class PendingQuery {
 	 *
 	 * @see QueryParameter
 	 */
-	private @Nonnull final List<QueryParameter>	parameters;
+	private @NonNull final List<QueryParameter>	parameters;
 
 	/**
 	 * Query options from the original BoxLang code.
@@ -155,7 +155,7 @@ public class PendingQuery {
 	 *                     bindings.
 	 * @param queryOptions QueryOptions object denoting the options for this query.
 	 */
-	public PendingQuery( IBoxContext context, @Nonnull String sql, Object bindings, QueryOptions queryOptions ) {
+	public PendingQuery( IBoxContext context, @NonNull String sql, Object bindings, QueryOptions queryOptions ) {
 
 		if ( logger.isDebugEnabled() ) {
 			logger.debug( "Creating new PendingQuery from SQL: [{}] and options: [{}]", sql, queryOptions.toStruct() );
@@ -220,7 +220,7 @@ public class PendingQuery {
 	 * @param sql        The SQL string to execute
 	 * @param parameters A list of {@link QueryParameter} to use as bindings.
 	 */
-	public PendingQuery( IBoxContext context, @Nonnull String sql, @Nonnull List<QueryParameter> parameters ) {
+	public PendingQuery( IBoxContext context, @NonNull String sql, @NonNull List<QueryParameter> parameters ) {
 		this( context, sql, parameters, new QueryOptions( new Struct() ) );
 	}
 
@@ -517,7 +517,7 @@ public class PendingQuery {
 	 *
 	 * @return The original sql string
 	 */
-	public @Nonnull String getOriginalSql() {
+	public @NonNull String getOriginalSql() {
 		return this.originalSql;
 	}
 
@@ -526,7 +526,7 @@ public class PendingQuery {
 	 *
 	 * @return
 	 */
-	public @Nonnull String getSQLWithParamValues() {
+	public @NonNull String getSQLWithParamValues() {
 		return this.SQLWithParamValues;
 	}
 
@@ -536,7 +536,7 @@ public class PendingQuery {
 	 *
 	 * @return A list of parameter values as `Object`s.
 	 */
-	public @Nonnull List<Object> getParameterValues() {
+	public @NonNull List<Object> getParameterValues() {
 		List<Object> values = new ArrayList<>();
 		for ( QueryParameter param : this.parameters ) {
 			if ( param.isListParam() ) {
@@ -563,7 +563,7 @@ public class PendingQuery {
 	 *
 	 * @see ExecutedQuery
 	 */
-	public @Nonnull ExecutedQuery execute( ConnectionManager connectionManager, IBoxContext context ) {
+	public @NonNull ExecutedQuery execute( ConnectionManager connectionManager, IBoxContext context ) {
 		// We do an early cache check here to avoid the overhead of creating a
 		// connection if we already have a matching cached query.
 		if ( isCacheable() ) {
@@ -606,7 +606,7 @@ public class PendingQuery {
 	 *
 	 * @see ExecutedQuery
 	 */
-	public @Nonnull ExecutedQuery execute( Connection connection, IBoxContext context ) {
+	public @NonNull ExecutedQuery execute( Connection connection, IBoxContext context ) {
 		if ( isCacheable() ) {
 			// we use separate get() and set() calls over a .getOrSet() so we can run
 			// `.setIsCached()` on discovered/cached results.
@@ -626,13 +626,21 @@ public class PendingQuery {
 	/**
 	 * Generate and execute a JDBC statement using the provided connection.
 	 * <p>
-	 * * If query parameters are present, a {@link PreparedStatement} will be
+	 * If query parameters are present, a {@link PreparedStatement} will be
 	 * utilized and populated with the paremeter bindings. Otherwise, a standard
 	 * {@link Statement} object will be used.
-	 * * Will announce a `PRE_QUERY_EXECUTE` event before executing the query.
+	 * <p>
+	 * Will announce a `PRE_QUERY_EXECUTE` event before executing the query.
+	 *
+	 * @param connection The Connection instance to use for executing the query.
+	 * @param context    The context that initiated this query, used for type casting
+	 *
+	 * @return An ExecutedQuery instance with the results of this JDBC execution, as
+	 *         well as a link to this PendingQuery instance.
 	 */
 	private ExecutedQuery executeStatement( Connection connection, IBoxContext context ) {
 		try {
+			// Determine if we can return generated keys
 			int GENERATED_KEYS_SETTING = Statement.RETURN_GENERATED_KEYS;
 			if ( ! ( connection instanceof QoQConnection ) ) {
 				DatabaseMetaData metaData = connection.getMetaData();
@@ -643,6 +651,7 @@ public class PendingQuery {
 
 			String sqlStatement = this.sql;
 			try (
+			    // If we have no parameters, we can use a Statement, otherwise we use a PreparedStatement
 			    Statement statement = this.parameters.isEmpty()
 			        ? connection.createStatement()
 			        : connection.prepareStatement( sqlStatement, GENERATED_KEYS_SETTING ); ) {
@@ -655,7 +664,9 @@ public class PendingQuery {
 				    Struct.of(
 				        "sql", sqlStatement,
 				        "bindings", getParameterValues(),
-				        "pendingQuery", this ) );
+				        "pendingQuery", this
+				    )
+				);
 
 				long	startTick	= System.currentTimeMillis();
 				boolean	hasResults	= statement instanceof PreparedStatement preparedStatement
@@ -667,7 +678,8 @@ public class PendingQuery {
 				    this,
 				    statement,
 				    endTick - startTick,
-				    hasResults );
+				    hasResults
+				);
 			}
 		} catch ( SQLException e ) {
 			String detail = "";
@@ -713,6 +725,9 @@ public class PendingQuery {
 	 * If this is a paramaterized query, apply the parameters to the provided statement.
 	 * We will also take this opportunity to finalize the list of SQL tokens with the
 	 * final param values to build the effective SQL string.
+	 *
+	 * @param statement The Statement instance to apply the parameters to.
+	 * @param context   The context that initiated this query, used for type casting
 	 *
 	 * @throws SQLException
 	 */
@@ -790,9 +805,14 @@ public class PendingQuery {
 	 * <p>
 	 * Any query options which pass through to the JDBC Statement interface will be
 	 * applied here. This includes `queryTimeout`, `maxRows`, and `fetchSize`.
+	 *
+	 * @param statement The Statement instance to apply the options to.
+	 *
+	 * @throws SQLException If an error occurs while applying the options.
 	 */
 	private void applyStatementOptions( Statement statement ) throws SQLException {
 		IStruct options = this.queryOptions.toStruct();
+
 		if ( options.containsKey( Key.queryTimeout ) ) {
 			Integer queryTimeout = ( Integer ) options.getOrDefault( Key.queryTimeout, 0 );
 			if ( queryTimeout > 0 ) {
@@ -806,6 +826,7 @@ public class PendingQuery {
 				statement.setLargeMaxRows( maxRows );
 			}
 		}
+
 		if ( options.containsKey( Key.fetchSize ) ) {
 			Integer fetchSize = ( Integer ) options.getOrDefault( Key.fetchSize, 0 );
 			if ( fetchSize > 0 ) {

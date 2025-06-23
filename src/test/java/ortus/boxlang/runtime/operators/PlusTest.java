@@ -73,4 +73,11 @@ public class PlusTest {
 		// assertThat( Plus.invoke( refDate, Duration.ofDays( 1 ) ) ).isEqualTo( BigDecimal.valueOf( 20089.87142399999864417203809807688 ).round( MathUtil.getMathContext() ) );
 	}
 
+	@DisplayName( "It can add a number to a date" )
+	@Test
+	void testItCanAddNumberToDate() {
+		DateTime refDate = new DateTime( "2025-01-01T00:00:00Z" );
+		assertThat( Plus.invoke( refDate, 1 ) ).isNotNull();
+	}
+
 }

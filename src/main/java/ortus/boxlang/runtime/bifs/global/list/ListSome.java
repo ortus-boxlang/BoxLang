@@ -29,7 +29,6 @@ import ortus.boxlang.runtime.types.util.ListUtil;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "listSome" )
-
 public class ListSome extends ArraySome {
 
 	/**
@@ -38,18 +37,28 @@ public class ListSome extends ArraySome {
 	public ListSome() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "string", Key.list ),
+		    new Argument( true, Argument.STRING, Key.list ),
 		    new Argument( true, "function:Predicate", Key.callback ),
-		    new Argument( false, "string", Key.delimiter, ListUtil.DEFAULT_DELIMITER ),
-		    new Argument( false, "boolean", Key.includeEmptyFields, false ),
-		    new Argument( false, "boolean", Key.multiCharacterDelimiter, true ),
-		    new Argument( false, "boolean", Key.parallel, false ),
-		    new Argument( false, "integer", Key.maxThreads )
+		    new Argument( false, Argument.STRING, Key.delimiter, ListUtil.DEFAULT_DELIMITER ),
+		    new Argument( false, Argument.BOOLEAN, Key.includeEmptyFields, false ),
+		    new Argument( false, Argument.BOOLEAN, Key.multiCharacterDelimiter, true ),
+		    new Argument( false, Argument.BOOLEAN, Key.parallel, false ),
+		    new Argument( false, Argument.INTEGER, Key.maxThreads )
 		};
 	}
 
 	/**
-	 * Tests whether any item in a list meets the specified callback
+	 * Used to iterate over a delimited list and test whether <strong>ANY</strong> items meet the test callback.
+	 * The function will be passed 3 arguments: the value, the index, and the list.
+	 * You can alternatively pass a Java Predicate which will only receive the 1st arg.
+	 * The function should return true if the item meets the test, and false otherwise.
+	 * <p>
+	 * <strong>Note:</strong> This operation is a short-circuit operation, meaning it will stop iterating as soon as it finds the first item that meets the test condition.
+	 * <p>
+	 * <h2>Parallel Execution</h2>
+	 * If the <code>parallel</code> argument is set to true, and no <code>max_threads</code> are sent, the filter will be executed in parallel using a ForkJoinPool with parallel streams.
+	 * If <code>max_threads</code> is specified, it will create a new ForkJoinPool with the specified number of threads to run the filter in parallel, and destroy it after the operation is complete.
+	 * Please note that this may not be the most efficient way to iterate, as it will create a new ForkJoinPool for each invocation of the BIF. You may want to consider using a shared ForkJoinPool for better performance.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
@@ -64,9 +73,10 @@ public class ListSome extends ArraySome {
 	 *
 	 * @argument.multiCharacterDelimiter boolean whether the delimiter is multi-character
 	 *
-	 * @argument.parallel boolean whether to execute the filter in parallel
+	 * @argument.parallel Whether to run the filter in parallel. Defaults to false. If true, the filter will be run in parallel using a ForkJoinPool.
 	 *
-	 * @argument.maxThreads number the maximum number of threads to use in the parallel filter
+	 * @argument.maxThreads The maximum number of threads to use when running the filter in parallel. If not passed it will use the default number of threads for the ForkJoinPool.
+	 *                      If parallel is false, this argument is ignored.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		arguments.put(

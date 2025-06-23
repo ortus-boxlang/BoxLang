@@ -31,11 +31,65 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
  * I am a CLI tool for transpiling ColdFusion code to BoxLang
- * TODO: Not sure where this class should eventually live.
  */
 public class CFTranspiler {
 
 	private static final BoxLangLogger logger = BoxRuntime.getInstance().getLoggingService().getLogger( CFTranspiler.class.getSimpleName() );
+
+	/**
+	 * Prints the help message for the CFTranspiler tool.
+	 */
+	private static void printHelp() {
+		System.out.println( "🔄 BoxLang CFTranspiler - A CLI tool for transpiling ColdFusion code to BoxLang" );
+		System.out.println();
+		System.out.println( "📋 USAGE:" );
+		System.out.println( "  boxlang cftranspile [OPTIONS]  # 🔧 Using OS binary" );
+		System.out.println( "  java -jar boxlang.jar ortus.boxlang.compiler.CFTranspiler [OPTIONS] # 🐍 Using Java JAR" );
+		System.out.println();
+		System.out.println( "⚙️  OPTIONS:" );
+		System.out.println( "  -h, --help                  ❓ Show this help message and exit" );
+		System.out.println( "      --source <PATH>         📁 Path to source directory or file to transpile (default: current directory)" );
+		System.out.println( "      --target <PATH>         🎯 Path to target directory or file (required)" );
+		System.out.println( "      --stopOnError [BOOL]    🛑 Stop processing on first error (default: false)" );
+		System.out.println();
+		System.out.println( "🔄 FILE EXTENSION MAPPING:" );
+		System.out.println( "  .cfm  →  .bxm  (ColdFusion markup to BoxLang markup)" );
+		System.out.println( "  .cfc  →  .bx   (ColdFusion component to BoxLang class)" );
+		System.out.println( "  .cfs  →  .bxs  (ColdFusion script to BoxLang script)" );
+		System.out.println();
+		System.out.println( "💡 EXAMPLES:" );
+		System.out.println( "  # 🔄 Transpile current directory to target directory" );
+		System.out.println( "  boxlang cftranspile --target ./boxlang-output" );
+		System.out.println();
+		System.out.println( "  # 📁 Transpile specific source directory" );
+		System.out.println( "  boxlang cftranspile --source ./coldfusion-code --target ./boxlang-code" );
+		System.out.println();
+		System.out.println( "  # 📄 Transpile single file" );
+		System.out.println( "  boxlang cftranspile --source app.cfm --target app.bxm" );
+		System.out.println();
+		System.out.println( "  # 🛑 Stop on first error" );
+		System.out.println( "  boxlang cftranspile --source ./cf-app --target ./bx-app --stopOnError" );
+		System.out.println();
+		System.out.println( "  # 📂 Transpile with directory structure preservation" );
+		System.out.println( "  boxlang cftranspile --source /path/to/cf/project --target /path/to/bx/project" );
+		System.out.println();
+		System.out.println( "📂 BEHAVIOR:" );
+		System.out.println( "  • Directory transpilation preserves folder structure" );
+		System.out.println( "  • Single file transpilation allows custom target naming" );
+		System.out.println( "  • Missing target directories are created automatically" );
+		System.out.println( "  • Parsing errors are logged, processing continues unless --stopOnError is used" );
+		System.out.println();
+		System.out.println( "🔧 SUPPORTED SOURCE FILES:" );
+		System.out.println( "  .cfm  - ColdFusion markup pages" );
+		System.out.println( "  .cfc  - ColdFusion components" );
+		System.out.println( "  .cfs  - ColdFusion script files" );
+		System.out.println();
+		System.out.println( "📖 More Information:" );
+		System.out.println( "  📖 Documentation: https://boxlang.ortusbooks.com/" );
+		System.out.println( "  💬 Community: https://community.ortussolutions.com/c/boxlang/42" );
+		System.out.println( "  💾 GitHub: https://github.com/ortus-boxlang" );
+		System.out.println();
+	}
 
 	public static void main( String[] args ) {
 		BoxRuntime runtime = BoxRuntime.getInstance();
@@ -43,8 +97,11 @@ public class CFTranspiler {
 			String	source		= ".";
 			String	target		= null;
 			Boolean	stopOnError	= false;
-
 			for ( int i = 0; i < args.length; i++ ) {
+				if ( args[ i ].equalsIgnoreCase( "--help" ) || args[ i ].equalsIgnoreCase( "-h" ) ) {
+					printHelp();
+					System.exit( 0 );
+				}
 				if ( args[ i ].equalsIgnoreCase( "--source" ) ) {
 					if ( i + 1 >= args.length ) {
 						throw new BoxRuntimeException( "--source requires a path" );
@@ -129,6 +186,15 @@ public class CFTranspiler {
 		}
 	}
 
+	/**
+	 * Transpiles a single ColdFusion file to BoxLang and writes the result to the target path.
+	 *
+	 * @param sourcePath  The path to the source ColdFusion file.
+	 * @param targetPath  The path where the transpiled BoxLang file should be written.
+	 * @param stopOnError If true, the program will exit with an error code if parsing fails.
+	 *
+	 * @throws BoxRuntimeException If there is an error writing the transpiled file or if parsing fails and stopOnError is true.
+	 */
 	private static void transpileFile( Path sourcePath, Path targetPath, Boolean stopOnError ) {
 		try {
 			Path directoryPath = targetPath.getParent();
@@ -157,6 +223,15 @@ public class CFTranspiler {
 		}
 	}
 
+	/**
+	 * Maps ColdFusion file extensions to BoxLang file extensions.
+	 *
+	 * @param extension The ColdFusion file extension (e.g., "cfm", "cfc", "cfs").
+	 *
+	 * @return The corresponding BoxLang file extension (e.g., "bxm", "bx", "bxs").
+	 *
+	 * @throws BoxRuntimeException If the provided extension is not supported.
+	 */
 	private static String mapExtension( String extension ) {
 		switch ( extension ) {
 			case "cfm" :
@@ -169,4 +244,5 @@ public class CFTranspiler {
 				throw new BoxRuntimeException( "Unsupported extension: " + extension );
 		}
 	}
+
 }

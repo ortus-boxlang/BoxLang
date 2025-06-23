@@ -140,4 +140,43 @@ public class ListEveryTest {
 		assertThat( indexes.get( 4 ) ).isEqualTo( "5" );
 	}
 
+	@DisplayName( "It can run in parallel" )
+	@Test
+	public void testParallelExecution() {
+		instance.executeSource(
+		    """
+		        indexes = [];
+		        nums = "1,2,3,4,5";
+
+		        function eachFn( value, i ){
+		            indexes[ i ] = value;
+		            return true;
+		        };
+
+		        result = ListEvery( nums, eachFn, true );
+		    """,
+		    context );
+
+		assertThat( variables.get( result ) ).isEqualTo( true );
+	}
+
+	@DisplayName( "It can run in parallel with max threads" )
+	@Test
+	public void testParallelExecutionWithMaxThreads() {
+		instance.executeSource(
+		    """
+		        indexes = [];
+		        nums = "1,2,3,4,5";
+
+		        function eachFn( value, i ){
+		            indexes[ i ] = value;
+		            return true;
+		        };
+
+		        result = ListEvery( nums, eachFn, true, 2 );
+		    """,
+		    context );
+
+		assertThat( variables.get( result ) ).isEqualTo( true );
+	}
 }

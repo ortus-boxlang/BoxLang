@@ -80,7 +80,7 @@ public class ClassMeta extends BoxMeta<IClassRunnable> {
 		            Key.annotations, new Struct( entry.getValue().annotations() ),
 		            Key.documentation, new Struct( entry.getValue().documentation() )
 		        ) ).toArray() ),
-		    Key.type, "Component",
+		    Key.type, "Class",
 		    Key.fullname, target.bxGetName().getName(),
 		    Key.path, target.getRunnablePath().absolutePath().toString()
 		);

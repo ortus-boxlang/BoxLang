@@ -103,6 +103,7 @@ public class LambdaBoxContext extends FunctionBoxContext {
 		}
 	}
 
+	@Override
 	public IStruct getVisibleScopes( IStruct scopes, boolean nearby, boolean shallow ) {
 		if ( !nearby ) {
 			getParent().getVisibleScopes( scopes, false, false );
@@ -112,6 +113,29 @@ public class LambdaBoxContext extends FunctionBoxContext {
 			scopes.getAsStruct( Key.contextual ).put( LocalScope.name, localScope );
 		}
 		return scopes;
+	}
+
+	/**
+	 * Check if a key is visible in the current context as a scope name.
+	 * This allows us to "reserve" known scope names to ensure arguments.foo
+	 * will always look in the proper arguments scope and never in
+	 * local.arguments.foo for example
+	 * 
+	 * @param key     The key to check for visibility
+	 * @param nearby  true, check only scopes that are nearby to the current execution context
+	 * @param shallow true, do not delegate to parent or default scope if not found
+	 * 
+	 * @return True if the key is visible in the current context, else false
+	 */
+	@Override
+	public boolean isKeyVisibleScope( Key key, boolean nearby, boolean shallow ) {
+		if ( nearby && ( key.equals( LocalScope.name ) || key.equals( ArgumentsScope.name ) ) ) {
+			return true;
+		}
+		if ( !nearby ) {
+			return super.isKeyVisibleScope( key, false, false );
+		}
+		return false;
 	}
 
 	/**
@@ -127,24 +151,26 @@ public class LambdaBoxContext extends FunctionBoxContext {
 			return new ScopeSearchResult( argumentsScope, argumentsScope, key, true );
 		}
 
-		Object result = localScope.getRaw( key );
-		// Null means not found
-		if ( isDefined( result, forAssign ) ) {
-			// Unwrap the value now in case it was really actually null for real
-			return new ScopeSearchResult( localScope, Struct.unWrapNull( result ), key );
-		}
+		if ( !isKeyVisibleScope( key ) ) {
+			Object result = localScope.getRaw( key );
+			// Null means not found
+			if ( isDefined( result, forAssign ) ) {
+				// Unwrap the value now in case it was really actually null for real
+				return new ScopeSearchResult( localScope, Struct.unWrapNull( result ), key );
+			}
 
-		result = argumentsScope.getRaw( key );
-		// Null means not found
-		if ( isDefined( result, forAssign ) ) {
-			// Unwrap the value now in case it was really actually null for real
-			return new ScopeSearchResult( argumentsScope, Struct.unWrapNull( result ), key );
-		}
+			result = argumentsScope.getRaw( key );
+			// Null means not found
+			if ( isDefined( result, forAssign ) ) {
+				// Unwrap the value now in case it was really actually null for real
+				return new ScopeSearchResult( argumentsScope, Struct.unWrapNull( result ), key );
+			}
 
-		// In query loop?
-		var querySearch = queryFindNearby( key );
-		if ( querySearch != null ) {
-			return querySearch;
+			// In query loop?
+			var querySearch = queryFindNearby( key );
+			if ( querySearch != null ) {
+				return querySearch;
+			}
 		}
 
 		if ( shallow ) {

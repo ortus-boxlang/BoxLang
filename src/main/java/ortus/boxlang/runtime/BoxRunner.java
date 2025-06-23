@@ -69,7 +69,8 @@ import ortus.boxlang.runtime.util.Timer;
  *
  * <ul>
  * <li><code>--debug</code> - Enables debug mode</li>
- * <li><code>-c</code> - Executes the code passed as the next argument. Mutually exclusive with a template execution.</li>
+ * <li><code>-c</code> - Executes the code passed as the next argument. Mutually
+ * exclusive with a template execution.</li>
  * <li><code>-config</code> - Path to the config file to use for overrides.</li>
  * </ul>
  *
@@ -100,8 +101,7 @@ public class BoxRunner {
 	    "compile",
 	    "cftranspile",
 	    "featureaudit",
-	    "schedule"
-	);
+	    "schedule" );
 
 	/**
 	 * The allowed template extensions that can be executed by the BoxRunner
@@ -198,6 +198,49 @@ public class BoxRunner {
 	}
 
 	/**
+	 * Prints the help message for the schedule command.
+	 */
+	private static void printScheduleHelp() {
+		System.out.println( "⏰ BoxLang Scheduler - Run and manage BoxLang scheduler files" );
+		System.out.println();
+		System.out.println( "📋 USAGE:" );
+		System.out.println( "  boxlang schedule <SCHEDULER_FILE>             # 🔧 Using OS binary" );
+		System.out.println( "  java -jar boxlang.jar schedule <SCHEDULER_FILE> # 🐍 Using Java JAR" );
+		System.out.println();
+		System.out.println( "⚙️  OPTIONS:" );
+		System.out.println( "  -h, --help                      ❓ Show this help message and exit" );
+		System.out.println();
+		System.out.println( "📂 SCHEDULER FILE REQUIREMENTS:" );
+		System.out.println( "  • Must be a .bx (BoxLang) file" );
+		System.out.println( "  • File should contain a BoxLang component with scheduler definitions" );
+		System.out.println( "  • Scheduler will run continuously until Ctrl+C is pressed" );
+		System.out.println( "  • File path can be absolute or relative to current directory" );
+		System.out.println();
+		System.out.println( "🔄 SCHEDULER LIFECYCLE:" );
+		System.out.println( "  1. File is compiled and validated" );
+		System.out.println( "  2. Scheduler component is instantiated" );
+		System.out.println( "  3. Scheduler is registered with BoxLang runtime" );
+		System.out.println( "  4. Scheduler tasks begin execution" );
+		System.out.println( "  5. Press Ctrl+C to gracefully shutdown" );
+		System.out.println();
+		System.out.println( "💡 EXAMPLES:" );
+		System.out.println( "  # ⏰ Run a basic scheduler" );
+		System.out.println( "  boxlang schedule ./schedulers/MainScheduler.bx" );
+		System.out.println();
+		System.out.println( "  # 📁 Run scheduler with absolute path" );
+		System.out.println( "  boxlang schedule /opt/myapp/schedulers/TaskRunner.bx" );
+		System.out.println();
+		System.out.println( "  # 🔧 Run scheduler in project directory" );
+		System.out.println( "  cd /my/project && boxlang schedule schedulers/CronJobs.bx" );
+		System.out.println();
+		System.out.println( "📖 More Information:" );
+		System.out.println( "  📖 Documentation: https://boxlang.ortusbooks.com/" );
+		System.out.println( "  💬 Community: https://community.ortussolutions.com/c/boxlang/42" );
+		System.out.println( "  💾 GitHub: https://github.com/ortus-boxlang" );
+		System.out.println();
+	}
+
+	/**
 	 * Run an action command based on the options passed.
 	 *
 	 * @param options The CLIOptions object with the parsed options
@@ -215,7 +258,19 @@ public class BoxRunner {
 				FeatureAudit.main( options.cliArgs().toArray( new String[ 0 ] ) );
 				break;
 			case "schedule" :
+				// Check for help first
+				if ( !options.cliArgs().isEmpty() &&
+				    ( options.cliArgs().getFirst().equalsIgnoreCase( "--help" ) ||
+				        options.cliArgs().getFirst().equalsIgnoreCase( "-h" ) ) ) {
+					printScheduleHelp();
+					System.exit( 0 );
+				}
+				if ( options.cliArgs().isEmpty() ) {
+					throw new BoxRuntimeException(
+					    "schedule command requires a scheduler file path. Use: boxlang schedule --help" );
+				}
 				runScheduler( options.cliArgs().getFirst(), runtime );
+				break;
 			default :
 				throw new BoxRuntimeException( "Unknown action command: " + options.actionCommand() );
 		}
@@ -251,8 +306,7 @@ public class BoxRunner {
 			Class<IBoxRunnable>	targetSchedulerClass	= RunnableLoader.getInstance()
 			    .loadClass(
 			        ResolvedFilePath.of( targetSchedulerPath ),
-			        scriptingContext
-			    );
+			        scriptingContext );
 			// Construct the scheduler
 			IClassRunnable		targetScheduler			= ( IClassRunnable ) DynamicObject.of( targetSchedulerClass )
 			    .invokeConstructor( scriptingContext )
@@ -339,7 +393,8 @@ public class BoxRunner {
 	 *
 	 * @param options The CLIOptions object with the parsed options
 	 *
-	 * @return A new CLIOptions object with the parsed options + environment overrides
+	 * @return A new CLIOptions object with the parsed options + environment
+	 *         overrides
 	 */
 	private static CLIOptions parseEnvironmentVariables( CLIOptions options ) {
 		Map<String, String>	envVars		= System.getenv();
@@ -362,7 +417,8 @@ public class BoxRunner {
 			printAST = Boolean.parseBoolean( envVars.get( "BOXLANG_PRINTAST" ) );
 		}
 		// Custom Config File
-		String	configFile	= envVars.containsKey( "BOXLANG_CONFIG" ) ? envVars.get( "BOXLANG_CONFIG" ) : options.configFile();
+		String	configFile	= envVars.containsKey( "BOXLANG_CONFIG" ) ? envVars.get( "BOXLANG_CONFIG" )
+		    : options.configFile();
 
 		// Runtime Home
 		String	runtimeHome	= envVars.containsKey( "BOXLANG_HOME" ) ? envVars.get( "BOXLANG_HOME" ) : options.runtimeHome();
@@ -379,8 +435,7 @@ public class BoxRunner {
 		    options.cliArgs(),
 		    options.cliArgsRaw(),
 		    options.targetModule(),
-		    options.actionCommand()
-		);
+		    options.actionCommand() );
 	}
 
 	/**
@@ -410,6 +465,12 @@ public class BoxRunner {
 		while ( !argsList.isEmpty() ) {
 			currentArgument = argsList.remove( 0 );
 
+			// Help Flag, we find and break off
+			if ( currentArgument.equalsIgnoreCase( "--help" ) || currentArgument.equalsIgnoreCase( "-h" ) ) {
+				printHelp();
+				System.exit( 0 );
+			}
+
 			// ShowVersion mode Flag, we find and break off
 			if ( currentArgument.equalsIgnoreCase( "--version" ) ) {
 				showVersion = true;
@@ -437,7 +498,8 @@ public class BoxRunner {
 			// Config File Flag, we find and continue to the next argument for the path
 			if ( currentArgument.equalsIgnoreCase( "--bx-config" ) ) {
 				if ( argsList.isEmpty() ) {
-					throw new BoxRuntimeException( "Missing config file path with --config flag, it must be the next argument. [--config /path/boxlang.json]" );
+					throw new BoxRuntimeException(
+					    "Missing config file path with --config flag, it must be the next argument. [--config /path/boxlang.json]" );
 				}
 				configFile = argsList.remove( 0 );
 				continue;
@@ -446,7 +508,8 @@ public class BoxRunner {
 			// Runtime Home Flag, we find and continue to the next argument for the path
 			if ( currentArgument.equalsIgnoreCase( "--bx-home" ) ) {
 				if ( argsList.isEmpty() ) {
-					throw new BoxRuntimeException( "Missing runtime home path with --home flag, it must be the next argument. [--home /path/to/boxlang-home]" );
+					throw new BoxRuntimeException(
+					    "Missing runtime home path with --home flag, it must be the next argument. [--home /path/to/boxlang-home]" );
 				}
 				runtimeHome = argsList.remove( 0 );
 				continue;
@@ -508,8 +571,7 @@ public class BoxRunner {
 		    cliArgs,
 		    args,
 		    targetModule,
-		    actionCommand
-		);
+		    actionCommand );
 	}
 
 	/**
@@ -557,17 +619,21 @@ public class BoxRunner {
 	}
 
 	/**
-	 * Convert a template path to an absolute path from the currently executing directory.
-	 * If the passed string is not a valid path, the original string is returned unchanged.
+	 * Convert a template path to an absolute path from the currently executing
+	 * directory.
+	 * If the passed string is not a valid path, the original string is returned
+	 * unchanged.
 	 *
 	 * @param path The path to the template
 	 *
-	 * @return The absolute path to the template, or the original path if it was already absolute
+	 * @return The absolute path to the template, or the original path if it was
+	 *         already absolute
 	 */
 	private static String templateToAbsolute( String path ) {
 		try {
 			Path templatePath = Path.of( path );
-			// If path is not already absolute, make it absolute relative to the working directory of our process
+			// If path is not already absolute, make it absolute relative to the working
+			// directory of our process
 			if ( ! ( templatePath.toFile().isAbsolute() ) ) {
 				templatePath = Path.of( System.getProperty( "user.dir" ), templatePath.toString() );
 			}
@@ -618,12 +684,116 @@ public class BoxRunner {
 			Path temp = Files.createTempFile( "blscript", ".bxs" );
 			Files.write(
 			    temp,
-			    lines.skip( 1 ).collect( Collectors.joining( System.lineSeparator() ) ).getBytes()
-			);
+			    lines.skip( 1 ).collect( Collectors.joining( System.lineSeparator() ) ).getBytes() );
 			return temp.toString();
 		} catch ( IOException e ) {
 			throw new BoxIOException( e );
 		}
+	}
+
+	/**
+	 * Prints the help message for the BoxRunner CLI tool.
+	 */
+	private static void printHelp() {
+		System.out.println( "⚡ BoxLang Runtime - Execute templates, components, and manage your BoxLang projects" );
+		System.out.println();
+		System.out.println( "📋 USAGE:" );
+		System.out.println( "  boxlang [OPTIONS] [COMMAND] [ARGS...]         # 🔧 Using OS binary" );
+		System.out.println( "  java -jar boxlang.jar [OPTIONS] [FILE]        # 🐍 Using Java JAR" );
+		System.out.println();
+		System.out.println( "🔧 GLOBAL OPTIONS:" );
+		System.out.println( "  -h, --help                      ❓ Show this help message and exit" );
+		System.out.println( "      --version                   📋 Show version information and exit" );
+		System.out.println( "      --bx-debug                  🐛 Enable debug mode with timing information" );
+		System.out.println( "      --bx-config <PATH>          ⚙️  Use custom configuration file" );
+		System.out.println( "      --bx-home <PATH>           🏠 Set BoxLang runtime home directory" );
+		System.out.println( "      --bx-code <CODE>           💻 Execute inline BoxLang code" );
+		System.out.println( "      --bx-printAST              🌳 Print Abstract Syntax Tree for code" );
+		System.out.println( "      --bx-transpile             🔄 Transpile BoxLang code to Java" );
+		System.out.println();
+		System.out.println( "🚀 ACTION COMMANDS:" );
+		System.out.println( "  compile                         📦 Pre-compile BoxLang templates to class files" );
+		System.out.println( "                                     Use: boxlang compile --help" );
+		System.out.println( "  cftranspile                     🔄 Transpile ColdFusion code to BoxLang" );
+		System.out.println( "                                     Use: boxlang cftranspile --help" );
+		System.out.println( "  featureaudit                    🔍 Audit code for BoxLang feature compatibility" );
+		System.out.println( "                                     Use: boxlang featureaudit --help" );
+		System.out.println( "  schedule <SCHEDULER_FILE>       ⏰ Run a BoxLang scheduler from file" );
+		System.out.println( "                                     Use: boxlang schedule --help" );
+		System.out.println();
+		System.out.println( "📂 FILE EXECUTION:" );
+		System.out.println( "  • Execute BoxLang templates directly by providing a file path" );
+		System.out.println( "  • Supported extensions: .cfm, .cfs, .bxm, .bx, .bxs" );
+		System.out.println( "  • Shebang scripts are automatically detected and executed" );
+		System.out.println( "  • Components with main() methods can be executed as entry points" );
+		System.out.println();
+		System.out.println( "🧩 MODULE EXECUTION:" );
+		System.out.println( "  • Execute BoxLang modules using the module: prefix" );
+		System.out.println( "  • Example: boxlang module:myModule arg1 arg2" );
+		System.out.println();
+		System.out.println( "💡 EXAMPLES:" );
+		System.out.println( "  # ⚡ Execute a BoxLang template" );
+		System.out.println( "  boxlang myapp.bx" );
+		System.out.println();
+		System.out.println( "  # 💻 Execute inline code" );
+		System.out.println( "  boxlang --bx-code \"println('Hello BoxLang!')\"" );
+		System.out.println();
+		System.out.println( "  # 🐛 Execute with debug mode and custom config" );
+		System.out.println( "  boxlang --bx-debug --bx-config ./custom.json myapp.bx" );
+		System.out.println();
+		System.out.println( "  # 📦 Pre-compile templates" );
+		System.out.println( "  boxlang compile --source ./src --target ./compiled" );
+		System.out.println();
+		System.out.println( "  # 🔄 Transpile ColdFusion to BoxLang" );
+		System.out.println( "  boxlang cftranspile --source ./legacy --target ./modern" );
+		System.out.println();
+		System.out.println( "  # 🔍 Audit code features" );
+		System.out.println( "  boxlang featureaudit --source ./myapp --output report.json" );
+		System.out.println();
+		System.out.println( "  # ⏰ Run a scheduler" );
+		System.out.println( "  boxlang schedule ./schedulers/MyScheduler.bx" );
+		System.out.println();
+		System.out.println( "  # 🧩 Execute a module" );
+		System.out.println( "  boxlang module:myModule arg1 arg2" );
+		System.out.println();
+		System.out.println( "  # 🌳 Print AST for code analysis" );
+		System.out.println( "  boxlang --bx-printAST --bx-code \"x = 1 + 2\"" );
+		System.out.println();
+		System.out.println( "🔄 REPL MODE:" );
+		System.out.println( "  • When no arguments are provided, BoxLang starts in REPL mode" );
+		System.out.println( "  • Interactive environment for testing and development" );
+		System.out.println( "  • Type expressions and see results immediately" );
+		System.out.println( "  • Press Ctrl+C to exit REPL mode" );
+		System.out.println();
+		System.out.println( "🌍 ENVIRONMENT VARIABLES:" );
+		System.out.println( "  BOXLANG_DEBUG=true              🐛 Enable debug mode" );
+		System.out.println( "  BOXLANG_CONFIG=/path/config.json ⚙️  Override configuration file" );
+		System.out.println( "  BOXLANG_HOME=/path/to/home      🏠 Set runtime home directory" );
+		System.out.println( "  BOXLANG_TRANSPILE=true          🔄 Enable transpile mode" );
+		System.out.println( "  BOXLANG_PRINTAST=true           🌳 Enable AST printing" );
+		System.out.println();
+		System.out.println( "📖 More Information:" );
+		System.out.println( "  📖 Documentation: https://boxlang.ortusbooks.com/" );
+		System.out.println( "  💬 Community: https://community.ortussolutions.com/c/boxlang/42" );
+		System.out.println( "  💾 GitHub: https://github.com/ortus-boxlang" );
+		System.out.println( "  🌐 Website: https://boxlang.io" );
+		System.out.println();
+	}
+
+	/**
+	 * An exit code indicator for the BoxRunner
+	 */
+	public static int getExitCode() {
+		return exitCode;
+	}
+
+	/**
+	 * Sets the exit code for the BoxRunner
+	 *
+	 * @param exitCode The exit code to set
+	 */
+	public static void setExitCode( int exitCode ) {
+		BoxRunner.exitCode = exitCode;
 	}
 
 }

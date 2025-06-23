@@ -219,9 +219,10 @@ public class FunctionBoxContext extends BaseBoxContext {
 		}
 	}
 
+	@Override
 	public IStruct getVisibleScopes( IStruct scopes, boolean nearby, boolean shallow ) {
 		if ( hasParent() ) {
-			getParent().getVisibleScopes( scopes, true, shallow );
+			getParent().getVisibleScopes( scopes, true && nearby, shallow );
 		}
 		if ( nearby ) {
 			scopes.getAsStruct( Key.contextual ).put( ArgumentsScope.name, argumentsScope );
@@ -234,6 +235,29 @@ public class FunctionBoxContext extends BaseBoxContext {
 			scopes.getAsStruct( Key.contextual ).put( StaticScope.name, getThisClass().getStaticScope() );
 		}
 		return scopes;
+	}
+
+	/**
+	 * Check if a key is visible in the current context as a scope name.
+	 * This allows us to "reserve" known scope names to ensure arguments.foo
+	 * will always look in the proper arguments scope and never in
+	 * local.arguments.foo for example
+	 * 
+	 * @param key     The key to check for visibility
+	 * @param nearby  true, check only scopes that are nearby to the current execution context
+	 * @param shallow true, do not delegate to parent or default scope if not found
+	 * 
+	 * @return True if the key is visible in the current context, else false
+	 */
+	@Override
+	public boolean isKeyVisibleScope( Key key, boolean nearby, boolean shallow ) {
+		if ( nearby && ( key.equals( ArgumentsScope.name ) || key.equals( LocalScope.name ) ) ) {
+			return true;
+		}
+		if ( isInClass() && ( key.equals( VariablesScope.name ) || key.equals( StaticScope.name ) ) ) {
+			return true;
+		}
+		return super.isKeyVisibleScope( key, true && nearby, shallow );
 	}
 
 	/**
@@ -297,34 +321,40 @@ public class FunctionBoxContext extends BaseBoxContext {
 			return new ScopeSearchResult( staticScope, staticScope, key, true );
 		}
 
-		Object result = localScope.getRaw( key );
-		// Null means not found
-		if ( isDefined( result, forAssign ) ) {
-			// Unwrap the value now in case it was really actually null for real
-			return new ScopeSearchResult( localScope, Struct.unWrapNull( result ), key );
-		}
-
-		result = argumentsScope.getRaw( key );
-		// Null means not found
-		if ( isDefined( result, forAssign ) ) {
-			// Unwrap the value now in case it was really actually null for real
-			return new ScopeSearchResult( argumentsScope, Struct.unWrapNull( result ), key );
-		}
-
-		// In query loop?
-		var querySearch = queryFindNearby( key );
-		if ( querySearch != null ) {
-			return querySearch;
-		}
-
-		if ( isInClass() ) {
-			// A function executing in a class can see the class variables
-			IScope classVariablesScope = getThisClass().getBottomClass().getVariablesScope();
-			result = classVariablesScope.getRaw( key );
+		Object	result;
+		boolean	isKeyVisibleScope	= isKeyVisibleScope( key );
+		if ( !isKeyVisibleScope ) {
+			result = localScope.getRaw( key );
 			// Null means not found
 			if ( isDefined( result, forAssign ) ) {
 				// Unwrap the value now in case it was really actually null for real
-				return new ScopeSearchResult( classVariablesScope, Struct.unWrapNull( result ), key );
+				return new ScopeSearchResult( localScope, Struct.unWrapNull( result ), key );
+			}
+
+			result = argumentsScope.getRaw( key );
+			// Null means not found
+			if ( isDefined( result, forAssign ) ) {
+				// Unwrap the value now in case it was really actually null for real
+				return new ScopeSearchResult( argumentsScope, Struct.unWrapNull( result ), key );
+			}
+
+			// In query loop?
+			var querySearch = queryFindNearby( key );
+			if ( querySearch != null ) {
+				return querySearch;
+			}
+		}
+
+		if ( isInClass() ) {
+			if ( !isKeyVisibleScope ) {
+				// A function executing in a class can see the class variables
+				IScope classVariablesScope = getThisClass().getBottomClass().getVariablesScope();
+				result = classVariablesScope.getRaw( key );
+				// Null means not found
+				if ( isDefined( result, forAssign ) ) {
+					// Unwrap the value now in case it was really actually null for real
+					return new ScopeSearchResult( classVariablesScope, Struct.unWrapNull( result ), key );
+				}
 			}
 
 			if ( shallow ) {

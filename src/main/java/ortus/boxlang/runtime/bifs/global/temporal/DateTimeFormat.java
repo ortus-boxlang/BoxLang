@@ -52,10 +52,10 @@ public class DateTimeFormat extends BIF {
 	public DateTimeFormat() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "any", Key.date ),
-		    new Argument( false, "string", Key.mask ),
-		    new Argument( false, "string", Key.timezone ),
-		    new Argument( false, "string", Key.locale )
+		    new Argument( true, Argument.ANY, Key.date ),
+		    new Argument( false, Argument.STRING, Key.mask ),
+		    new Argument( false, Argument.STRING, Key.timezone ),
+		    new Argument( false, Argument.STRING, Key.locale )
 		};
 	}
 

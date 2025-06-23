@@ -196,4 +196,17 @@ public class ArrayFindTest {
 		// @formatter:on
 		assertThat( variables.get( result ) ).isEqualTo( 0 );
 	}
+
+	@Test
+	public void testMismatchedTypes() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		        result = [{},{}].findNoCase( "test" );
+		    """,
+		    context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( 0 );
+	}
+
 }

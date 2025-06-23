@@ -17,7 +17,7 @@ package ortus.boxlang.runtime.jdbc;
 import java.sql.Statement;
 import java.time.Duration;
 
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
@@ -181,8 +181,8 @@ public class QueryOptions {
 		// Caching options
 		this.cache					= BooleanCaster.attempt( options.get( Key.cache ) ).getOrDefault( false );
 		this.cacheKey				= options.getAsString( Key.cacheKey );
-		this.cacheTimeout			= ( Duration ) options.getOrDefault( Key.cacheTimeout, Duration.ZERO );
-		this.cacheLastAccessTimeout	= ( Duration ) options.getOrDefault( Key.cacheLastAccessTimeout, Duration.ZERO );
+		this.cacheTimeout			= ( Duration ) options.getOrDefault( Key.cacheTimeout, null );
+		this.cacheLastAccessTimeout	= ( Duration ) options.getOrDefault( Key.cacheLastAccessTimeout, null );
 		this.cacheProvider			= ( String ) options.getOrDefault( Key.cacheProvider, cacheService.getDefaultCache().getName().toString() );
 
 		Integer intMaxRows = options.getAsInteger( Key.maxRows );

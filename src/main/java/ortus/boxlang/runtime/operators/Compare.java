@@ -56,7 +56,7 @@ public class Compare implements IOperator {
 	 * @return 1 if greater than, -1 if less than, = if equal
 	 */
 	public static int invoke( Object left, Object right ) {
-		return invoke( left, right, false );
+		return invoke( left, right, false, true, Locale.US );
 	}
 
 	/**
@@ -66,10 +66,10 @@ public class Compare implements IOperator {
 	 * @param right         The right operand
 	 * @param caseSensitive Whether to compare strings case sensitive
 	 *
-	 * @return 1 if greater than, -1 if less than, 0 if equal
+	 * @return 1 if greater than, -1 if less than, = if equal
 	 */
-	public static int invoke( Object left, Object right, Boolean caseSensitive ) {
-		return attempt( left, right, caseSensitive, true );
+	public static int invoke( Object left, Object right, boolean caseSensitive ) {
+		return invoke( left, right, caseSensitive, true, Locale.US );
 	}
 
 	/**
@@ -82,8 +82,8 @@ public class Compare implements IOperator {
 	 *
 	 * @return 1 if greater than, -1 if less than, 0 if equal
 	 */
-	public static Integer attempt( Object left, Object right, Boolean caseSensitive, boolean fail ) {
-		return attempt( left, right, caseSensitive, fail, Locale.US );
+	public static Integer attempt( Object left, Object right, boolean caseSensitive ) {
+		return attempt( left, right, caseSensitive, Locale.US );
 	}
 
 	/**
@@ -92,13 +92,27 @@ public class Compare implements IOperator {
 	 * @param left          The left operand
 	 * @param right         The right operand
 	 * @param caseSensitive Whether to compare strings case sensitive
-	 * @param fail          True to throw an exception if the left and right arguments cannot be compared
 	 * @param locale        The locale to use for comparison
 	 *
 	 * @return 1 if greater than, -1 if less than, 0 if equal
 	 */
+	public static Integer attempt( Object left, Object right, boolean caseSensitive, Locale locale ) {
+		return invoke( left, right, caseSensitive, false, locale );
+	}
+
+	/**
+	 * Invokes the comparison
+	 *
+	 * @param left          The left operand
+	 * @param right         The right operand
+	 * @param caseSensitive Whether to compare strings case sensitive *
+	 * @param fail          True to throw an exception if the left and right arguments cannot be compared
+	 * @param locale        The locale to use for comparison
+	 *
+	 * @return 1 if greater than, -1 if less than, 0 if equal. Null if fail=false and the left and right arguments cannot be compared
+	 */
 	@SuppressWarnings( "unchecked" )
-	public static Integer attempt( Object left, Object right, Boolean caseSensitive, boolean fail, Locale locale ) {
+	public static Integer invoke( Object left, Object right, boolean caseSensitive, boolean fail, Locale locale ) {
 		// Two nulls are equal
 		if ( left == null && right == null ) {
 			return 0;
@@ -175,8 +189,17 @@ public class Compare implements IOperator {
 		}
 
 		// String comparison
+		// This only works if at least one operand is already a java.lang.String
+		// What if both are a Character or CharSequence?
+		// TODO: we may want to try the string casters every time regardless of the type
 		if ( left instanceof String || right instanceof String ) {
-			return StringCompare.invoke( StringCaster.cast( left ), StringCaster.cast( right ), caseSensitive );
+			CastAttempt<String>	leftStringAttempt	= StringCaster.attempt( left );
+			CastAttempt<String>	rightStringAttempt	= StringCaster.attempt( right );
+
+			if ( leftStringAttempt.wasSuccessful() && rightStringAttempt.wasSuccessful() ) {
+				return StringCompare.invoke( leftStringAttempt.get(), rightStringAttempt.get(), caseSensitive );
+			}
+			// If both sides weren't castable to a string, then just ignore this check.
 
 		}
 

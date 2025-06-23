@@ -39,6 +39,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.NullValue;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.XML;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
@@ -66,6 +67,8 @@ public class DuplicationUtil {
 			return target;
 		} else if ( target instanceof IClassRunnable icr ) {
 			return duplicateClass( icr, deep );
+		} else if ( target instanceof XML xml ) {
+			return duplicateXML( xml );
 		} else if ( target instanceof IStruct str ) {
 			return duplicateStruct( str, deep );
 		} else if ( target instanceof Array arr ) {
@@ -126,6 +129,10 @@ public class DuplicationUtil {
 		newClass.getInterfaces().addAll( originalClass.getInterfaces() );
 
 		return newClass;
+	}
+
+	private static XML duplicateXML( XML target ) {
+		return target.clone();
 	}
 
 	/**

@@ -22,22 +22,40 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 import java.util.Iterator;
 
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.VariablesScope;
 
 public class QueryTest {
 
-	private IBoxContext context = new ScriptingRequestBoxContext();
+	static BoxRuntime	instance;
+	IBoxContext			context;
+	IScope				variables;
+	static Key			result	= new Key( "result" );
 
-	@DisplayName( "Test Constructor" )
+	@BeforeAll
+	public static void setUp() {
+		instance = BoxRuntime.getInstance( true );
+	}
+
+	@BeforeEach
+	public void setupEach() {
+		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		variables	= context.getScopeNearby( VariablesScope.name );
+	}
+
+	@DisplayName( "Test Methods" )
 	@Test
-	void testConstructors() {
-		IBoxContext	ctx	= new ScriptingRequestBoxContext();
-		Query		qry	= new Query();
+	void testMethods() {
+		Query qry = new Query();
 		assertThat( qry.size() ).isEqualTo( 0 );
 		assertThat( qry.hasColumns() ).isEqualTo( false );
 
@@ -86,16 +104,15 @@ public class QueryTest {
 		assertThat( qry.dereference( context, Key.currentRow, false ) ).isEqualTo( 1 );
 
 		assertThat( qry.dereference( context, Key.of( "foo" ), false ) ).isInstanceOf( QueryColumn.class );
-		assertThat( ctx.unwrapQueryColumn( qry.dereference( context, Key.of( "foo" ), false ) ) ).isEqualTo( "bar" );
+		assertThat( context.unwrapQueryColumn( qry.dereference( context, Key.of( "foo" ), false ) ) ).isEqualTo( "bar" );
 		assertThat( qry.assign( context, Key.of( "foo" ), "gavin" ) ).isEqualTo( "gavin" );
-		assertThat( ctx.unwrapQueryColumn( qry.dereference( context, Key.of( "foo" ), false ) ) ).isEqualTo( "gavin" );
+		assertThat( context.unwrapQueryColumn( qry.dereference( context, Key.of( "foo" ), false ) ) ).isEqualTo( "gavin" );
 	}
 
 	@DisplayName( "Test Query Iterator" )
 	@Test
 	void testQueryIterator() {
-		IBoxContext	ctx	= new ScriptingRequestBoxContext();
-		Query		qry	= new Query();
+		Query qry = new Query();
 		assertThat( qry.size() ).isEqualTo( 0 );
 		assertThat( qry.hasColumns() ).isEqualTo( false );
 		assertThat( qry.iterator().hasNext() ).isEqualTo( false );
@@ -116,6 +133,131 @@ public class QueryTest {
 		Array stArray = qry.toArrayOfStructs();
 		assertInstanceOf( Array.class, stArray );
 		assertThat( stArray.size() ).isEqualTo( 2 );
+	}
+
+	@DisplayName( "Test get metadata" )
+	@Test
+	void testGetMetadata() {
+		// Build a query with metadata
+		Query qry = new Query();
+		qry.addColumn( Key.of( "name" ), QueryColumnType.VARCHAR );
+		qry.addColumn( Key.of( "age" ), QueryColumnType.INTEGER );
+		qry.addRow( Struct.of( Key.of( "name" ), "sana", Key.of( "age" ), 30 ) );
+		qry.addRow( Struct.of( Key.of( "name" ), "harris", Key.of( "age" ), 25 ) );
+		assertThat( qry.size() ).isEqualTo( 2 );
+		IStruct metadata = qry.getMetaData();
+		assertThat( metadata ).isNotNull();
+		assertThat( metadata.get( Key.executionTime ) ).isEqualTo( 0 );
+		assertThat( metadata.get( Key.cached ) ).isEqualTo( false );
+		assertThat( metadata.get( Key.cacheKey ) ).isNull();
+		assertThat( metadata.get( Key.cacheProvider ) ).isNull();
+		assertThat( metadata.get( Key.cacheTimeout ) ).isEqualTo( java.time.Duration.ZERO );
+		assertThat( metadata.get( Key.cacheLastAccessTimeout ) ).isEqualTo( java.time.Duration.ZERO );
+		assertThat( metadata.get( Key.recordCount ) ).isEqualTo( 2 );
+		assertThat( metadata.get( Key.columns ) ).isEqualTo( qry.getColumns() );
+		assertThat( metadata.get( Key.columnList ) ).isEqualTo( qry.getColumnList() );
+		assertThat( metadata.get( Key._HASHCODE ) ).isEqualTo( qry.hashCode() );
+	}
+
+	@DisplayName( "Can create fromArray method" )
+	@Test
+	void testFromArray() {
+		Array	columnNames	= Array.of( "name", "age" );
+		Array	columnTypes	= Array.of( "varchar", "integer" );
+		Array	rowData		= Array.of(
+		    Array.of( "sana", 30 ),
+		    Array.of( "harris", 25 )
+		);
+		Query	qry			= Query.fromArray( columnNames, columnTypes, rowData );
+		assertThat( qry.size() ).isEqualTo( 2 );
+		assertThat( qry.getColumnList() ).isEqualTo( "name,age" );
+		assertThat( qry.getRowAsStruct( 0 ).getAsString( Key.of( "name" ) ) ).isEqualTo( "sana" );
+		assertThat( qry.getRowAsStruct( 1 ).getAsString( Key.of( "name" ) ) ).isEqualTo( "harris" );
+
+		// Assert using the getColumns()
+		assertThat( qry.getColumns().get( Key.of( "name" ) ).getType() ).isEqualTo( QueryColumnType.VARCHAR );
+		assertThat( qry.getColumns().get( Key.of( "age" ) ).getType() ).isEqualTo( QueryColumnType.INTEGER );
+		// hasColumn()
+		assertThat( qry.hasColumn( Key.of( "name" ) ) ).isTrue();
+		assertThat( qry.hasColumn( Key.of( "age" ) ) ).isTrue();
+		assertThat( qry.hasColumn( Key.of( "nonexistent" ) ) ).isFalse();
+		// getColumnData()
+		assertThat( qry.getColumnData( Key.of( "name" ) ).length ).isEqualTo( 2 );
+		assertThat( qry.getColumnData( Key.of( "name" ) )[ 0 ] ).isEqualTo( "sana" );
+		assertThat( qry.getColumnData( Key.of( "name" ) )[ 1 ] ).isEqualTo( "harris" );
+		assertThat( qry.getColumnData( Key.of( "age" ) ).length ).isEqualTo( 2 );
+		assertThat( qry.getColumnData( Key.of( "age" ) )[ 0 ] ).isEqualTo( 30 );
+		assertThat( qry.getColumnData( Key.of( "age" ) )[ 1 ] ).isEqualTo( 25 );
+		// getColumnDataAsArray()
+		assertThat( qry.getColumnDataAsArray( Key.of( "name" ) ).size() ).isEqualTo( 2 );
+		assertThat( qry.getColumnDataAsArray( Key.of( "name" ) ).get( 0 ) ).isEqualTo( "sana" );
+		assertThat( qry.getColumnDataAsArray( Key.of( "name" ) ).get( 1 ) ).isEqualTo( "harris" );
+		assertThat( qry.getColumnDataAsArray( Key.of( "age" ) ).size() ).isEqualTo( 2 );
+		assertThat( qry.getColumnDataAsArray( Key.of( "age" ) ).get( 0 ) ).isEqualTo( 30 );
+		assertThat( qry.getColumnDataAsArray( Key.of( "age" ) ).get( 1 ) ).isEqualTo( 25 );
+	}
+
+	@DisplayName( "Add 100 rows to a query synchronously " )
+	@Test
+	void testAdd100Rows() {
+		// Create an Array with 100 rows, each with a Struct of data
+		Query qry = new Query();
+		qry.addColumn( Key.of( "id" ), QueryColumnType.INTEGER );
+		qry.addColumn( Key.of( "name" ), QueryColumnType.VARCHAR );
+
+		for ( int i = 1; i <= 100; i++ ) {
+			qry.addRow( Struct.of( Key.of( "id" ), i, Key.of( "name" ), "Name " + i ) );
+		}
+
+		assertThat( qry.size() ).isEqualTo( 100 );
+		assertThat( qry.getColumnList() ).isEqualTo( "id,name" );
+	}
+
+	@DisplayName( "Add 100 rows to a query in parallel" )
+	@Test
+	void testAdd100RowsInParallel() {
+		// Create an Array with 100 rows, each with a Struct of data
+		Query qry = new Query();
+		qry.addColumn( Key.of( "id" ), QueryColumnType.INTEGER );
+		qry.addColumn( Key.of( "name" ), QueryColumnType.VARCHAR );
+
+		// Create an array of 100 rows
+		Array rows = Array.of();
+		for ( int i = 1; i <= 100; i++ ) {
+			rows.add( Struct.of( Key.of( "id" ), i, Key.of( "name" ), "Name " + i ) );
+		}
+		// Add rows to the query in parallel
+		rows.parallelStream().forEach( row -> qry.addRow( ( IStruct ) row ) );
+
+		assertThat( qry.size() ).isEqualTo( 100 );
+		assertThat( qry.getColumnList() ).isEqualTo( "id,name" );
+	}
+
+	@DisplayName( "Test concurrency modifications with a dataset of 1000 rows" )
+	@Test
+	void testConcurrentModifications() {
+		// Create a query with 1000 rows
+		Query qry = new Query();
+		qry.addColumn( Key.of( "id" ), QueryColumnType.INTEGER );
+		qry.addColumn( Key.of( "name" ), QueryColumnType.VARCHAR );
+
+		// Create an array of 1000 rows
+		Array rows = Array.of();
+		for ( int i = 1; i <= 1000; i++ ) {
+			rows.add( Struct.of( Key.of( "id" ), i, Key.of( "name" ), "Name " + i ) );
+		}
+
+		// Now do concurrent modifications, add rows, update rows, and remove rows
+		rows.parallelStream().forEach( row -> {
+			qry.addRow( ( IStruct ) row );
+			synchronized ( qry ) {
+				if ( qry.size() % 100 == 0 ) {
+					qry.setCell( Key.of( "name" ), qry.size() - 1, "Updated Name " + qry.size() );
+				}
+			}
+		} );
+		assertThat( qry.size() ).isEqualTo( 1000 );
+		assertThat( qry.getColumnList() ).isEqualTo( "id,name" );
 	}
 
 }

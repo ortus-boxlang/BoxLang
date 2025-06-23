@@ -18,8 +18,6 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
-import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -36,17 +34,23 @@ public class ArrayEach extends BIF {
 	public ArrayEach() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "array", Key.array ),
+		    new Argument( true, Argument.ARRAY, Key.array ),
 		    new Argument( true, "function:Consumer", Key.callback ),
-		    new Argument( false, "boolean", Key.parallel, false ),
-		    new Argument( false, "integer", Key.maxThreads ),
-		    new Argument( false, "boolean", Key.ordered, false ),
-		    new Argument( Key.initialValue )
+		    new Argument( false, Argument.BOOLEAN, Key.parallel, false ),
+		    new Argument( false, Argument.INTEGER, Key.maxThreads ),
+		    new Argument( false, Argument.BOOLEAN, Key.ordered, false )
 		};
 	}
 
 	/**
 	 * Used to iterate over an array and run the function closure for each item in the array.
+	 * This BIF is used to perform an operation on each item in the array, similar to Java's forEach method.
+	 * It can also be used to perform operations in parallel if the `parallel` argument is set to true.
+	 *
+	 * <h2>Parallel Execution</h2>
+	 * If the <code>parallel</code> argument is set to true, and no <code>max_threads</code> are sent, the iterator will be executed in parallel using a ForkJoinPool with parallel streams.
+	 * If <code>max_threads</code> is specified, it will create a new ForkJoinPool with the specified number of threads to run the iterator in parallel, and destroy it after the operation is complete.
+	 * Please note that this may not be the most efficient way to iterate, as it will create a new ForkJoinPool for each invocation of the BIF. You may want to consider using a shared ForkJoinPool for better performance.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
@@ -55,20 +59,20 @@ public class ArrayEach extends BIF {
 	 *
 	 * @argument.callback The function to invoke for each item. The function will be passed 3 arguments: the value, the index, the array. You can alternatively pass a Java Comparator which will only receive the 1st arg.
 	 *
-	 * @argument.parallel Specifies whether the items can be executed in parallel
+	 * @argument.parallel Whether to run the filter in parallel. Defaults to false. If true, the filter will be run in parallel using a ForkJoinPool.
 	 *
-	 * @argument.maxThreads The maximum number of threads to use when parallel = true
+	 * @argument.maxThreads The maximum number of threads to use when running the filter in parallel. If not passed it will use the default number of threads for the ForkJoinPool.
+	 *                      If parallel is false, this argument is ignored.
 	 *
 	 * @argument.ordered (BoxLang only) whether parallel operations should execute and maintain order
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		ListUtil.each(
-		    ArrayCaster.cast( arguments.get( Key.array ) ),
+		    arguments.getAsArray( Key.array ),
 		    arguments.getAsFunction( Key.callback ),
 		    context,
-		    BooleanCaster.cast( arguments.getOrDefault( "parallel", false ) ),
-		    // we can't use the integer caster here because we need a cast null for the filter method signature
-		    ( Integer ) arguments.get( Key.maxThreads ),
+		    arguments.getAsBoolean( Key.parallel ),
+		    arguments.getAsInteger( Key.maxThreads ),
 		    arguments.getAsBoolean( Key.ordered )
 		);
 		return null;

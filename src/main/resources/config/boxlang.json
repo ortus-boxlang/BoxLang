@@ -243,20 +243,22 @@
 	// Some executors do not take in a `threads` property
 	"executors": {
 		// Use this for IO bound tasks, does not support scheduling
-		// This is also the default executor for parallel operations
 		// This is also the default when requestion an executor service via executorGet()
 		"io-tasks": {
-			"type": "virtual"
+			"type": "virtual",
+			"description": "Unlimited IO bound tasks using Java Virtual Threads"
 		},
 		// Use this for CPU bound tasks, supports scheduling
 		"cpu-tasks": {
 			"type": "scheduled",
-			"threads": 10
+			"threads": 20,
+			"description": "CPU bound tasks using a fixed thread pool with scheduling capabilities"
 		},
 		// Used for all scheduled tasks in the runtime
 		"scheduled-tasks": {
 			"type": "scheduled",
-			"threads": 10
+			"threads": 20,
+			"description": "Scheduled tasks using a fixed thread pool with scheduling capabilities"
 		}
 	},
 	// BoxLang Scheduler

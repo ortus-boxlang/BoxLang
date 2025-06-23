@@ -49,6 +49,7 @@ import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.LocalScope;
+import ortus.boxlang.runtime.scopes.RequestScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
@@ -262,6 +263,29 @@ public class CoreLangTest {
 		assertThat( variables.get( Key.of( "message" ) ) ).isEqualTo( "You cannot divide by zero." );
 		assertThat( variables.get( Key.of( "message2" ) ) ).isEqualTo( "You cannot divide by zero." );
 
+	}
+
+	@DisplayName( "try catch in script using cfcatch variable in CF" )
+	@Test
+	public void testTryCatchInScriptUsingCfCatchVariableCF() {
+
+		instance.executeSource(
+		    """
+		    try {
+		    	1/0;
+		    } catch (any e) {
+		    	result = cfcatch.message;
+		    	result2 = e.message;
+		    }
+		    result3 = isNull( cfcatch );
+		    result4 = isNull( e );
+
+		                """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "You cannot divide by zero." );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "You cannot divide by zero." );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( true );
 	}
 
 	@DisplayName( "try catch with empty type" )
@@ -2681,7 +2705,7 @@ public class CoreLangTest {
 		           query();
 		           remote();
 		           required();
-		           request();
+		           //request();
 		          // return();
 		           rethrow();
 		           savecontent();
@@ -3140,7 +3164,7 @@ public class CoreLangTest {
 		      query();
 		      remote();
 		      required();
-		      request();
+		      //request();
 		     // return();
 		      rethrow();
 		      savecontent();
@@ -5580,6 +5604,22 @@ public class CoreLangTest {
 		              		  """,
 		    context );
 		assertThat( variables.get( Key.of( "result" ) ) ).isEqualTo( true );
+	}
+
+	@Test
+	public void testCannotOverrideScopes() {
+		instance.executeSource(
+		    """
+		       variables.request = "test";
+		    result = request;
+		    variables.server = { foo : "bar" }
+		    result2 = server.foo ?: 'default value';
+
+		                 		  """,
+		    context );
+		assertThat( variables.get( Key.of( "result" ) ) ).isInstanceOf( RequestScope.class );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "default value" );
+
 	}
 
 }

@@ -274,6 +274,17 @@ public class BoxCacheProviderTest {
 	}
 
 	@Test
+	@DisplayName( "It can do getOrSet() operations with a timeout" )
+	void testGetOrSetWithTimeout() throws InterruptedException {
+		// Clear just in case
+		boxCache.clear( "testKey" );
+		assertThat( boxCache.getOrSet( "testKey", () -> "test", 1 ) ).isEqualTo( "test" );
+		Thread.sleep( 3000 );
+		System.out.println( boxCache.lookup( "testKey" ) );
+		System.out.println( boxCache.get( "testKey" ) );
+	}
+
+	@Test
 	@DisplayName( "It can set with timeout and lastaccesstimeouts as empty strings and ues the defaults" )
 	void testSetWithTimeouts() {
 		boxCache.set( "testKey", "test", "", "" );

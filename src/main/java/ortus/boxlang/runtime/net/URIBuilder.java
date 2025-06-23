@@ -23,21 +23,21 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class URIBuilder {
 
 	private @Nullable String				basePath;
-	private @Nonnull List<NameValuePair>	queryParams;
+	private @NonNull List<NameValuePair>	queryParams;
 
 	public URIBuilder() throws URISyntaxException {
 		this( "" );
 	}
 
-	public URIBuilder( @Nonnull String string ) throws URISyntaxException {
+	public URIBuilder( @NonNull String string ) throws URISyntaxException {
 		String[] pathParts = string.split( "\\?" );
 		this.basePath		= string = pathParts[ 0 ];
 		this.queryParams	= pathParts.length > 1
@@ -45,11 +45,11 @@ public class URIBuilder {
 		    : new ArrayList<NameValuePair>();
 	}
 
-	public URIBuilder( @Nonnull URI uri ) throws URISyntaxException {
+	public URIBuilder( @NonNull URI uri ) throws URISyntaxException {
 		this( uri.toString() );
 	}
 
-	public void addParameter( @Nonnull String name, @Nullable String value ) {
+	public void addParameter( @NonNull String name, @Nullable String value ) {
 		this.queryParams.add( new NameValuePair( name, value ) );
 	}
 

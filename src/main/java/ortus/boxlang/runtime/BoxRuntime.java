@@ -1692,8 +1692,12 @@ public class BoxRuntime implements java.io.Closeable {
 	 * @see ParsingResult
 	 * @see BoxExpression
 	 */
-	public ParsingResult parse( String code, BoxSourceType sourceType ) throws IOException {
-		return new Parser().parse( code, sourceType );
+	public ParsingResult parse( String code, BoxSourceType sourceType ) {
+		try {
+			return new Parser().parse( code, sourceType );
+		} catch ( IOException e ) {
+			throw new BoxRuntimeException( "Error parsing code", e );
+		}
 	}
 
 	/**
@@ -1710,8 +1714,8 @@ public class BoxRuntime implements java.io.Closeable {
 	 * @see ParsingResult
 	 * @see BoxExpression
 	 */
-	public ParsingResult parse( String code ) throws IOException {
-		return new Parser().parse( code, BoxSourceType.BOXSCRIPT );
+	public ParsingResult parse( String code ) {
+		return parse( code, BoxSourceType.BOXSCRIPT );
 	}
 
 	/**

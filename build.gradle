@@ -13,9 +13,9 @@ plugins {
 	id "application"
 	id 'antlr'
 	// For source code formatting
-	id "com.diffplug.spotless" version "7.0.3"
+	id "com.diffplug.spotless" version "7.0.4"
 	// Shadow
-	id "com.gradleup.shadow" version "9.0.0-beta12"
+	id "com.gradleup.shadow" version "9.0.0-beta16"
 	// For dependency updates
 	id 'com.github.ben-manes.versions' version '0.52.0'
 	// For building service loader files
@@ -95,11 +95,11 @@ repositories {
  */
 dependencies {
     // Testing Dependencies
-    testImplementation "org.junit.jupiter:junit-jupiter:5.12.2"
+    testImplementation "org.junit.jupiter:junit-jupiter:5.13.1"
 	testImplementation "org.mockito:mockito-core:5.+"
 	testImplementation "com.google.truth:truth:1.+"
 	testImplementation "commons-cli:commons-cli:1.9.0"
-	testImplementation "org.wiremock:wiremock:3.13.0"
+	testImplementation "org.wiremock:wiremock:3.13.1"
 	testImplementation 'org.apache.derby:derby:10.17.1.0'
 	testImplementation 'io.undertow:undertow-core:2.3.18.Final'
 	// Explicitly declare the JUnit platform launcher (to avoid deprecation)
@@ -112,7 +112,7 @@ dependencies {
 	// https://mvnrepository.com/artifact/commons-io/commons-io
 	implementation "commons-io:commons-io:2.19.0"
 	// https://mvnrepository.com/artifact/com.github.javaparser/javaparser-symbol-solver-core
-	implementation 'com.github.javaparser:javaparser-symbol-solver-core:3.26.4'
+	implementation 'com.github.javaparser:javaparser-symbol-solver-core:3.27.0'
 	// https://mvnrepository.com/artifact/org.apache.commons/commons-lang3
 	implementation 'org.apache.commons:commons-lang3:3.17.0'
 	// https://mvnrepository.com/artifact/org.apache.commons/commons-text
@@ -121,13 +121,13 @@ dependencies {
 	// https://mvnrepository.com/artifact/org.apache.commons/commons-cli
 	implementation "commons-cli:commons-cli:1.9.0"
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-objects
-	implementation 'com.fasterxml.jackson.jr:jackson-jr-objects:2.19.0'
+	implementation 'com.fasterxml.jackson.jr:jackson-jr-objects:2.19.1'
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-extension-javatime
-	implementation 'com.fasterxml.jackson.jr:jackson-jr-extension-javatime:2.19.0'
+	implementation 'com.fasterxml.jackson.jr:jackson-jr-extension-javatime:2.19.1'
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-stree
-	implementation 'com.fasterxml.jackson.jr:jackson-jr-stree:2.19.0'
+	implementation 'com.fasterxml.jackson.jr:jackson-jr-stree:2.19.1'
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-annotation-support
-	implementation 'com.fasterxml.jackson.jr:jackson-jr-annotation-support:2.19.0'
+	implementation 'com.fasterxml.jackson.jr:jackson-jr-annotation-support:2.19.1'
 	// https://mvnrepository.com/artifact/org.slf4j/slf4j-api
 	implementation 'org.slf4j:slf4j-api:2.0.17'
 	// https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
@@ -139,7 +139,11 @@ dependencies {
 	// https://mvnrepository.com/artifact/org.ow2.asm/asm-util
 	implementation 'org.ow2.asm:asm-util:9.8'
 	// https://mvnrepository.com/artifact/org.semver4j/semver4j
-	implementation 'org.semver4j:semver4j:5.7.0'
+	implementation 'org.semver4j:semver4j:5.7.1'
+
+	// Compile Only Dependencies
+	// Java Annotations Checks, this are for compile documentation only. It's not included in the final build
+	compileOnly 'org.checkerframework:checker-qual:3.49.4'
 
 }
 
@@ -304,22 +308,59 @@ task libsToDistro( type: Copy ) {
 	destinationDir = file( "build/distributions" )
 
 	doLast {
+		// Generate checksums for all zip and jar files in distributions folder
+		file( "build/distributions" ).listFiles().each { file ->
+			if ( file.name.endsWith( '.zip' ) || file.name.endsWith( '.jar' ) ) {
+				generateChecksum( file, 'SHA-256' )
+				generateChecksum( file, 'MD5' )
+			}
+		}
+
+		// Move the distribution files to the evergreen folder
 		file( "build/evergreen" ).mkdirs()
 
 		if( branch == 'development' ){
 			Files.copy( file( "build/distributions/boxlang-${version}.zip" ).toPath(), file( "build/evergreen/boxlang-snapshot.zip" ).toPath(), StandardCopyOption.REPLACE_EXISTING )
 			Files.copy( file( "build/distributions/boxlang-${version}.jar" ).toPath(), file( "build/evergreen/boxlang-snapshot.jar" ).toPath(), StandardCopyOption.REPLACE_EXISTING )
 			Files.copy( file( "build/resources/main/META-INF/boxlang/version.properties" ).toPath(), file( "build/evergreen/version-snapshot.properties" ).toPath(), StandardCopyOption.REPLACE_EXISTING )
+			// Copy checksums
+			Files.copy( file( "build/distributions/boxlang-${version}.zip.sha-256" ).toPath(), file( "build/evergreen/boxlang-snapshot.zip.sha-256" ).toPath(), StandardCopyOption.REPLACE_EXISTING )
+			Files.copy( file( "build/distributions/boxlang-${version}.zip.md5" ).toPath(), file( "build/evergreen/boxlang-snapshot.zip.md5" ).toPath(), StandardCopyOption.REPLACE_EXISTING )
+			Files.copy( file( "build/distributions/boxlang-${version}.jar.sha-256" ).toPath(), file( "build/evergreen/boxlang-snapshot.jar.sha-256" ).toPath(), StandardCopyOption.REPLACE_EXISTING )
+			Files.copy( file( "build/distributions/boxlang-${version}.jar.md5" ).toPath(), file( "build/evergreen/boxlang-snapshot.jar.md5" ).toPath(), StandardCopyOption.REPLACE_EXISTING )
 	   } else {
 			Files.copy( file( "build/distributions/boxlang-${version}.zip" ).toPath(), file( "build/evergreen/boxlang-latest.zip" ).toPath(), StandardCopyOption.REPLACE_EXISTING )
 			Files.copy( file( "build/distributions/boxlang-${version}.jar" ).toPath(), file( "build/evergreen/boxlang-latest.jar" ).toPath(), StandardCopyOption.REPLACE_EXISTING )
 			Files.copy( file( "build/resources/main/META-INF/boxlang/version.properties" ).toPath(), file( "build/evergreen/version-latest.properties" ).toPath(), StandardCopyOption.REPLACE_EXISTING )
+			// Copy checksums
+			Files.copy( file( "build/distributions/boxlang-${version}.zip.sha-256" ).toPath(), file( "build/evergreen/boxlang-latest.zip.sha-256" ).toPath(), StandardCopyOption.REPLACE_EXISTING )
+			Files.copy( file( "build/distributions/boxlang-${version}.zip.md5" ).toPath(), file( "build/evergreen/boxlang-latest.zip.md5" ).toPath(), StandardCopyOption.REPLACE_EXISTING )
+			Files.copy( file( "build/distributions/boxlang-${version}.jar.sha-256" ).toPath(), file( "build/evergreen/boxlang-latest.jar.sha-256" ).toPath(), StandardCopyOption.REPLACE_EXISTING )
+			Files.copy( file( "build/distributions/boxlang-${version}.jar.md5" ).toPath(), file( "build/evergreen/boxlang-latest.jar.md5" ).toPath(), StandardCopyOption.REPLACE_EXISTING )
 	   }
 
 		println "+ Libs have been moved to the distribution and evergreen folders"
+		println "+ Checksums generated for all zip and jar files"
 	}
 }
 build.finalizedBy( libsToDistro )
+
+/**
+ * Generate checksums for the given file using the specified algorithm
+
+ * @param file The file to generate the checksum for
+ * @param algorithm The algorithm to use (e.g., "SHA-256", "MD5")
+ */
+def generateChecksum( File file, String algorithm ) {
+	def digest = java.security.MessageDigest.getInstance( algorithm )
+	file.eachByte( 4096 ) { bytes, size ->
+		digest.update( bytes, 0, size )
+	}
+	def checksum = digest.digest().collect { String.format( '%02x', it ) }.join()
+
+	def checksumFile = new File( file.parent, "${file.name}.${algorithm.toLowerCase()}" )
+	checksumFile.text = "${checksum}  ${file.name}\n"
+}
 
 /**
  * Publish the artifacts to the local maven repository

@@ -18,18 +18,20 @@
 package ortus.boxlang.runtime.util;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import ortus.boxlang.runtime.context.RequestBoxContext;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.types.Array;
-import java.io.IOException;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class ZipUtilTest {
 
@@ -50,6 +52,7 @@ public class ZipUtilTest {
 	@DisplayName( "Compress without base folder" )
 	@Test
 	public void testCompressUsingDefaults() throws IOException {
+		destination = "build/test" + java.util.UUID.randomUUID().toString() + ".zip";
 		ZipUtil.compress(
 		    ZipUtil.COMPRESSION_FORMAT.ZIP,
 		    sourceFolder,
@@ -59,6 +62,7 @@ public class ZipUtilTest {
 		    null,
 		    null,
 		    false,
+		    ZipUtil.DEFAULT_COMPRESSION_LEVEL,
 		    null
 		);
 		Array list = ZipUtil.listEntriesFlat( destination, "", false, null );
@@ -97,6 +101,7 @@ public class ZipUtilTest {
 		    null,
 		    null,
 		    false,
+		    ZipUtil.DEFAULT_COMPRESSION_LEVEL,
 		    null
 		);
 		Array list = ZipUtil.listEntriesFlat( destination, "", false, null );
@@ -108,11 +113,103 @@ public class ZipUtilTest {
 	@DisplayName( "Can delete entries" )
 	@Test
 	public void testDeleteEntries() {
-		ZipUtil.compress( ZipUtil.COMPRESSION_FORMAT.ZIP, sourceFolder, destination, false, true, null, null, false, null );
+		ZipUtil.compress(
+		    ZipUtil.COMPRESSION_FORMAT.ZIP,
+		    sourceFolder,
+		    destination,
+		    false,
+		    true,
+		    null,
+		    null,
+		    false,
+		    ZipUtil.DEFAULT_COMPRESSION_LEVEL,
+		    null
+		);
 		ZipUtil.deleteEntries( destination, "libs/*.*", new Array(), null );
 		Array list = ZipUtil.listEntriesFlat( destination, "", true, null );
 		// System.out.println( list );
 		assertThat( list.toList() ).doesNotContain( "libs/" );
+	}
+
+	@DisplayName( "Compress using gzip and max compression level" )
+	@Test
+	public void testCompressUsingGzipWithMaxCompression() {
+		String gzipDestination = "build/test" + java.util.UUID.randomUUID().toString() + ".gz";
+		ZipUtil.compress(
+		    ZipUtil.COMPRESSION_FORMAT.GZIP,
+		    sourceFolder,
+		    gzipDestination,
+		    false,
+		    true,
+		    null,
+		    null,
+		    false,
+		    9, // Maximum compression level
+		    null
+		);
+		// Assert that the gzip file was created
+		File gzipFile = new File( gzipDestination );
+		assertThat( gzipFile.exists() ).isTrue();
+		assertThat( gzipFile.length() ).isGreaterThan( 0 );
+	}
+
+	@DisplayName( "Compress with maximum compression level" )
+	@Test
+	public void testCompressWithMaxCompression() {
+		ZipUtil.compress(
+		    ZipUtil.COMPRESSION_FORMAT.ZIP,
+		    sourceFolder,
+		    destination,
+		    false,
+		    true,
+		    null,
+		    null,
+		    false,
+		    9, // Maximum compression level
+		    null
+		);
+		Array list = ZipUtil.listEntriesFlat( destination, "", false, null );
+		assertThat( list.size() ).isAtLeast( 3 );
+		assertThat( list.toList() ).doesNotContain( "resources" );
+	}
+
+	@DisplayName( "Compress with min compression level" )
+	@Test
+	public void testCompressWithMinCompression() {
+		ZipUtil.compress(
+		    ZipUtil.COMPRESSION_FORMAT.ZIP,
+		    sourceFolder,
+		    destination,
+		    false,
+		    true,
+		    null,
+		    null,
+		    false,
+		    0, // Minimum compression level
+		    null
+		);
+		Array list = ZipUtil.listEntriesFlat( destination, "", false, null );
+		assertThat( list.size() ).isAtLeast( 3 );
+		assertThat( list.toList() ).doesNotContain( "resources" );
+	}
+
+	@DisplayName( "Throw an exception if an invalid compression level is used" )
+	@Test
+	public void testInvalidCompressionLevel() {
+		assertThrows( BoxRuntimeException.class, () -> {
+			ZipUtil.compress(
+			    ZipUtil.COMPRESSION_FORMAT.ZIP,
+			    sourceFolder,
+			    destination,
+			    false,
+			    true,
+			    null,
+			    null,
+			    false,
+			    -1, // Invalid compression level
+			    null
+			);
+		} );
 	}
 
 }

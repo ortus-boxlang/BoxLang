@@ -88,43 +88,42 @@ public class Query extends Component {
 	 * @param attributes     The attributes to the Component
 	 * @param body           The body of the Component
 	 * @param executionState The execution state of the Component
-	 * 
+	 *
 	 * @attribute.name The name of the variable to store the query results in.
-	 * 
+	 *
 	 * @attribute.datasource The datasource to execute the query against.
-	 * 
+	 *
 	 * @attribute.returnType The type of the result to return. One of: `query`, `struct`, `array`.
-	 * 
+	 *
 	 * @attribute.columnKey The key to use for the column names in the result struct.
-	 * 
+	 *
 	 * @attribute.dbtype The type of query to execute. One of: `query`, `hql`.
-	 * 
+	 *
 	 * @attribute.maxRows The maximum number of rows to return. -1 for no limit.
-	 * 
+	 *
 	 * @attribute.blockfactor Maximum rows per block to fetch from the server. Ranges from 1-100.
-	 * 
+	 *
 	 * @attribute.fetchSize The number of rows to fetch at a time. Ranges from 1-100.
-	 * 
+	 *
 	 * @attribute.timeout The timeout for the query in seconds.
-	 * 
+	 *
 	 * @attribute.cache Whether or not to cache the results of the query.
-	 * 
+	 *
 	 * @attribute.cacheTimeout The timeout for the cached query, using a duration object like `createTimespan( 0, 1, 0, 0 )`.
-	 * 
+	 *
 	 * @attribute.cacheLastAccessTimeout The timeout for the cached query, using a duration object like `createTimespan( 0, 1, 0, 0 )`.
-	 * 
+	 *
 	 * @attribute.cacheKey The key to use for the cached query.
-	 * 
+	 *
 	 * @attribute.cacheProvider String name of the cache provider to use. Defaults to the default cache provider.
-	 * 
+	 *
 	 * @attribute.result The name of the variable to store the query result in.
 	 */
 	@Override
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
+		// Prepare the attributes
 		QueryOptions options = new QueryOptions( attributes );
-
 		executionState.put( Key.queryParams, new Array() );
-
 		StringBuffer buffer = new StringBuffer();
 
 		// Spoof being in the output component in case the app has enableoutputonly=true
@@ -135,14 +134,16 @@ public class Query extends Component {
 		        Key.attributes, Struct.EMPTY
 		    )
 		);
+		// Process the body of the query
 		BodyResult bodyResult = processBody( context, body, buffer );
 		context.popComponent();
 
-		// IF there was a return statement inside our body, we early exit now
+		// If there was a return statement inside our body, we early exit now
 		if ( bodyResult.isEarlyExit() ) {
 			return bodyResult;
 		}
 
+		// If the body did not return anything, we assume it was a query
 		String	sql			= buffer.toString();
 		Object	bindings	= executionState.getAsArray( Key.queryParams );
 		if ( attributes.containsKey( Key.params ) && attributes.get( Key.params ) != null ) {

@@ -367,7 +367,7 @@ public class Struct implements IStruct, IListenable<IStruct>, Serializable {
 	 */
 	public boolean containsKey( Key key ) {
 		return isCaseSensitive()
-		    ? ( boolean ) keySet().stream().anyMatch( match -> match.equalsWithCase( key ) )
+		    ? keySet().stream().anyMatch( match -> match.equalsWithCase( key ) )
 		    : wrapped.containsKey( key );
 
 	}

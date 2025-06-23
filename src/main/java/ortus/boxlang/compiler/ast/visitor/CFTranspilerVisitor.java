@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -27,12 +28,15 @@ import java.util.stream.Stream;
 import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
+import ortus.boxlang.compiler.ast.BoxScript;
 import ortus.boxlang.compiler.ast.BoxStatement;
+import ortus.boxlang.compiler.ast.BoxTemplate;
 import ortus.boxlang.compiler.ast.SourceFile;
 import ortus.boxlang.compiler.ast.comment.BoxSingleLineComment;
 import ortus.boxlang.compiler.ast.expression.BoxAccess;
 import ortus.boxlang.compiler.ast.expression.BoxArgument;
 import ortus.boxlang.compiler.ast.expression.BoxArrayAccess;
+import ortus.boxlang.compiler.ast.expression.BoxArrayLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxAssignment;
 import ortus.boxlang.compiler.ast.expression.BoxAssignmentOperator;
 import ortus.boxlang.compiler.ast.expression.BoxBinaryOperation;
@@ -68,8 +72,10 @@ import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxIfElse;
 import ortus.boxlang.compiler.ast.statement.BoxProperty;
 import ortus.boxlang.compiler.ast.statement.BoxReturn;
+import ortus.boxlang.compiler.ast.statement.BoxScriptIsland;
 import ortus.boxlang.compiler.ast.statement.BoxStatementBlock;
 import ortus.boxlang.compiler.ast.statement.BoxSwitch;
+import ortus.boxlang.compiler.ast.statement.BoxTryCatch;
 import ortus.boxlang.compiler.ast.statement.BoxWhile;
 import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
 import ortus.boxlang.compiler.ast.statement.component.BoxTemplateIsland;
@@ -95,6 +101,7 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	private static Key								upperCaseKeysKey			= Key.of( "upperCaseKeys" );
 	private static Key								forceOutputTrueKey			= Key.of( "forceOutputTrue" );
 	private static Key								mergeDocsIntoAnnotationsKey	= Key.of( "mergeDocsIntoAnnotations" );
+	private static Key								isLuceeKey					= Key.of( "isLucee" );
 	private static Key								compatKey					= Key.of( "compat-cfml" );
 	private static BoxRuntime						runtime						= BoxRuntime.getInstance();
 	private static ModuleService					moduleService				= runtime.getModuleService();
@@ -103,6 +110,9 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	private boolean									upperCaseKeys				= true;
 	private boolean									forceOutputTrue				= true;
 	private boolean									mergeDocsIntoAnnotations	= true;
+	// If compat module is not installed, we assume this is a Lucee compat visitor
+	// Users can toggle this by installing compat and setting the engine to "adobe"
+	private boolean									isLuceeCompat				= true;
 
 	private Set<BoxBinaryOperator>					binaryOpsHigherThanNot		= Set.of(
 	    BoxBinaryOperator.Power,
@@ -206,6 +216,9 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 			}
 			if ( settings.containsKey( mergeDocsIntoAnnotationsKey ) ) {
 				mergeDocsIntoAnnotations = BooleanCaster.cast( settings.get( mergeDocsIntoAnnotationsKey ) );
+			}
+			if ( settings.containsKey( isLuceeKey ) ) {
+				isLuceeCompat = BooleanCaster.cast( settings.get( isLuceeKey ) );
 			}
 		}
 	}
@@ -361,7 +374,45 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		if ( BIFMap.containsKey( name ) ) {
 			node.setName( BIFMap.get( name ) );
 		}
+		// look for "params" named arg, or 2nd positional arg, and if it's a struct literal, any of the values which are also a struct literal,
+		// rename any keys from cfsqltype to sqltype and remove "cf_sql_" from the values of any sqltype
+		if ( name.equals( "queryexecute" ) && node.getArguments().size() >= 2 ) {
+			BoxExpression params = null;
+			// Check for positional args
+			if ( !node.isNamedArgs() ) {
+				params = node.getArguments().get( 1 ).getValue();
+			} else {
+				params = node.getArguments().stream()
+				    .filter( a -> ( a.getName().getAsSimpleValue().toString().equalsIgnoreCase( "params" ) ) )
+				    .findFirst()
+				    .map( a -> a.getValue() )
+				    .orElse( null );
+			}
+			// If we found named or positional struct params
+			if ( params != null ) {
+				// Named params could just be { myParam : "myValue" }
+				// But we only care if it's using a nested struct for the value as in: { myParam : { value : "myValue" } }
+				if ( params instanceof BoxStructLiteral structParamsValues ) {
+					// Rename cfsqltype to sqltype
+					List<BoxExpression> paramsValues = structParamsValues.getValues();
+					// For each even index, which is a value
+					for ( int k = 1; k < paramsValues.size(); k += 2 ) {
+						BoxExpression paramData = paramsValues.get( k );
+						// If the value is a struct literal, we can rename the keys
+						if ( paramData instanceof BoxStructLiteral paramDataStruct ) {
+							modifySQLParamStruct( paramDataStruct );
+						}
+					}
+				} else if ( params instanceof BoxArrayLiteral arrayParamsValues ) {
+					// now do the same thing but for a BoxArrayLiteral of params, where each item in the array is potentially a struct
+					arrayParamsValues.getValues().stream()
+					    .filter( v -> v instanceof BoxStructLiteral )
+					    .map( v -> ( BoxStructLiteral ) v )
+					    .forEach( this::modifySQLParamStruct );
+				}
+			}
 
+		}
 		// This is now done with runtime checks in the actual structKeyExist() BIF triggered by the compat module
 		/*
 		 * if ( name.equalsIgnoreCase( "structKeyExists" ) && node.getArguments().size() == 2 ) {
@@ -382,6 +433,35 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 			return transpileBIFReturnType( node, name );
 		}
 		return super.visit( node );
+	}
+
+	/**
+	 * Takes a struct representation of a query param and modifies any keys
+	 * from cfsqltype to sqltype and removes the "cf_sql_" prefix from the values
+	 *
+	 * @param paramDataStruct The struct literal representing the query param data
+	 */
+	private void modifySQLParamStruct( BoxStructLiteral paramDataStruct ) {
+		List<BoxExpression> paramDataValues = paramDataStruct.getValues();
+		// For each odd index, which is the name of the key
+		for ( int i = 0; i < paramDataValues.size(); i += 2 ) {
+			BoxExpression	key		= paramDataValues.get( i );
+			boolean			isType	= false;
+			if ( key instanceof BoxIdentifier id && id.getName().equalsIgnoreCase( "cfsqltype" ) ) {
+				id.setName( "sqltype" );
+				isType = true;
+			} else if ( key instanceof BoxStringLiteral str && str.getValue().equalsIgnoreCase( "cfsqltype" ) ) {
+				str.setValue( "sqltype" );
+				isType = true;
+			}
+			if ( isType && i + 1 < paramDataValues.size() ) {
+				// Now look for the value, which is the next item in the list
+				BoxExpression value = paramDataValues.get( i + 1 );
+				if ( value instanceof BoxStringLiteral valStr ) {
+					valStr.setValue( valStr.getValue().replace( "cf_sql_", "" ) );
+				}
+			}
+		}
 	}
 
 	private BoxNode transpileBIFReturnType( BoxFunctionInvocation node, String name ) {
@@ -869,6 +949,16 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 				}
 			} );
 		}
+		// fix SQL types to remove cf_sql_ from values (we transpile the attribute names generically above)
+		if ( componentName.equals( "queryparam" ) || componentName.equals( "procparam" ) ) {
+			node.getAttributes().stream()
+			    .filter( a -> a.getKey().getValue().equalsIgnoreCase( "sqltype" ) && a.getValue() instanceof BoxStringLiteral )
+			    .forEach( a -> {
+				    BoxStringLiteral bsl		= ( BoxStringLiteral ) a.getValue();
+				    String			newValue	= bsl.getValue().replace( "cf_sql_", "" );
+				    bsl.setValue( newValue );
+			    } );
+		}
 		return super.visit( node );
 	}
 
@@ -1028,6 +1118,57 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	}
 
 	/**
+	 * Add the statement
+	 * variables.addOverride( 'bxcatch', e )
+	 * to the top of the try catch block
+	 * This is to ensure that the catch variable is always available in the variables scope
+	 */
+	@Override
+	public BoxNode visit( BoxTryCatch node ) {
+		// Tag catch blocks don't allow you to set the variable anyway
+		// Also, only do this if we're in Lucee compat.
+		if ( !isLuceeCompat || !isInScript( node ) ) {
+			return super.visit( node );
+		}
+
+		if ( node.getCatchBody() != null && node.getException() != null ) {
+			var body = node.getCatchBody();
+			body.addFirst(
+			    ( BoxStatement ) new BoxExpressionStatement(
+			        new BoxMethodInvocation(
+			            new BoxIdentifier( "addOverride", null, null ),
+			            new BoxScope( "variables", null, null ),
+			            List.of(
+			                new BoxArgument(
+			                    new BoxStringLiteral( "bxcatch", null, null ),
+			                    null,
+			                    null
+			                ),
+			                new BoxArgument(
+			                    new BoxIdentifier( node.getException().getName(), null, null ),
+			                    null,
+			                    null
+			                )
+			            ),
+			            null,
+			            null
+			        ),
+			        null,
+			        null
+			    ).addComment(
+			        new BoxSingleLineComment(
+			            "Ensure the catch variable is available in the variables scope as 'bxcatch' (Lucee compat)",
+			            null,
+			            null
+			        )
+			    )
+			);
+			node.setCatchBody( body );
+		}
+		return super.visit( node );
+	}
+
+	/**
 	 * Add output annotation and set to true if it doesn't exist
 	 *
 	 * @param annotations The annotations for the node
@@ -1071,4 +1212,18 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		) != null;
 	}
 
+	/**
+	 * Determine if a node is inside a script or template
+	 * TODO: Does this deserve to exist on BoxNode?
+	 * 
+	 * @param node The node to check
+	 * 
+	 * @return true if the node is inside a script or template, false otherwise
+	 */
+	@SuppressWarnings( "unchecked" )
+	private boolean isInScript( BoxNode node ) {
+		return Optional.ofNullable( node.getFirstNodeOfTypes( BoxScript.class, BoxTemplate.class, BoxTemplateIsland.class, BoxScriptIsland.class ) )
+		    .map( n -> n instanceof BoxScript || n instanceof BoxScriptIsland )
+		    .orElse( false );
+	}
 }

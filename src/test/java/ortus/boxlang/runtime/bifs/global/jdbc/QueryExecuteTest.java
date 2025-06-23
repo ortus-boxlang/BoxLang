@@ -878,10 +878,10 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		assertThat( result ).containsKey( Key.cacheLastAccessTimeout );
 
 		assertThat( result.getAsBoolean( Key.cached ) ).isEqualTo( true );
-		assertEquals( "default", result.getAsString( Key.cacheProvider ) );
-		assertEquals( "adminDevs", result.getAsString( Key.cacheKey ) );
-		assertEquals( Duration.ofHours( 1 ), result.get( Key.cacheTimeout ) );
-		assertEquals( Duration.ofMinutes( 30 ), result.get( Key.cacheLastAccessTimeout ) );
+		assertThat( result.getAsString( Key.cacheProvider ) ).isEqualTo( "default" );
+		assertThat( result.getAsString( Key.cacheKey ) ).isEqualTo( "adminDevs" );
+		assertThat( result.get( Key.cacheTimeout ) ).isEqualTo( Duration.ofHours( 1 ) );
+		assertThat( result.get( Key.cacheLastAccessTimeout ) ).isEqualTo( Duration.ofMinutes( 30 ) );
 	}
 
 	@DisplayName( "It can properly handle duplicate column names in the result set" )

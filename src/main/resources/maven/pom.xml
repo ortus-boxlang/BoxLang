@@ -34,12 +34,21 @@
 				<executions>
 					<execution>
 						<id>copy-dependencies</id>
-						<phase>package</phase>
+						<phase>install</phase>
 						<goals>
 							<goal>copy-dependencies</goal>
 						</goals>
 						<configuration>
 							<outputDirectory>${project.basedir}/lib</outputDirectory>
+							<!-- Only include runtime and compile scope dependencies -->
+							<includeScope>runtime</includeScope>
+							<!-- Exclude test dependencies -->
+							<excludeScope>test</excludeScope>
+							<!-- Don't include provided dependencies -->
+							<excludeScope>provided</excludeScope>
+							<!-- Clean the directory first -->
+							<overWriteReleases>true</overWriteReleases>
+							<overWriteSnapshots>true</overWriteSnapshots>
 						</configuration>
 					</execution>
 				</executions>

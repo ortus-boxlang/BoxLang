@@ -97,14 +97,19 @@ public class BLCollector {
 	/**
 	 * Returns a Collector that collects the input elements into a Query
 	 *
-	 * @param newQuery The query to populate with data
+	 * @param template The template Query to use for the new Query
 	 *
-	 * @return the populated query
+	 * @return The collector that collects into a Query
 	 */
-	public static Collector<IStruct, Query, Query> toQuery( Query newQuery ) {
+	public static Collector<IStruct, Query, Query> toQuery( Query template ) {
 		return Collector.of(
-		    () -> newQuery, // supplier
-		    Query::add, // accumulator
+		    // supplier
+		    () -> {
+			    return new Query( template.getColumns() );
+		    },
+		    // accumulator
+		    ( query, row ) -> query.addRow( row ),
+		    // combiner
 		    ( left, right ) -> {
 			    left.addAll( right );
 			    return left;

@@ -14,7 +14,7 @@
  */
 package ortus.boxlang.compiler.javaboxpiler.transformer.expression;
 
-import javax.annotation.Nonnull;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.NodeList;
@@ -194,7 +194,7 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 		return javaExpr;
 	}
 
-	@Nonnull
+	@NonNull
 	private static MethodCallExpr generateBinaryMethodCallExpr( String methodName, Object... args ) {
 		NameExpr		nameExpr		= new NameExpr( methodName );
 		MethodCallExpr	methodCallExpr	= new MethodCallExpr( nameExpr, "invoke" );
