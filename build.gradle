@@ -23,7 +23,7 @@ plugins {
 	// Maven Publisher
 	id 'maven-publish'
 	id 'signing'
-	id 'com.gradleup.nmcp' version "0.0.9"
+	id 'com.gradleup.nmcp' version "0.2.1"
     // Download task
     id "de.undercouch.download" version "5.6.0"
 }
