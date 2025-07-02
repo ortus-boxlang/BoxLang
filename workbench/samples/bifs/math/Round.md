@@ -41,13 +41,10 @@ Result: -1
 
 
 ```java
-var pi = 3.1415926535;
-var pi_rounded = Round( pi, 2 );
-echo( pi ); // 3.1415926535
-echo( "<br>" );
-echo( pi_rounded );
- // 3.14
-
+pi = 3.1415926535;
+pi_rounded = Round( pi );
+println( pi ); // 3.1415926535
+println( pi_rounded ); //3
 ```
 
 
