@@ -111,4 +111,39 @@ public class RoundTest {
 		    context );
 		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( 2 );
 	}
+
+	@DisplayName( "It rounds a number to the closest integer with precision" )
+	@Test
+	public void testItRoundsToClosestIntegerWithPrecision() {
+		instance.executeSource(
+		    """
+		    result = round(0.37, 1);
+		    """,
+		    context );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( 0.4 );
+
+		instance.executeSource(
+		    """
+		    result = round(1.72, 1);
+		    """,
+		    context );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( 1.7 );
+
+		instance.executeSource(
+		    """
+		    result = round(1.123456789, 4);
+		    """,
+		    context );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( 1.1235 );
+
+		instance.executeSource(
+		    """
+		    pi = 3.1415926535;
+		    pi_rounded = round(pi, 2);
+		    result = pi_rounded;
+		    """,
+		    context );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( 3.14 );
+	}
+
 }

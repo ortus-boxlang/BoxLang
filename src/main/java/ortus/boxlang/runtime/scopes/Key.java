@@ -592,6 +592,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		position2							= Key.of( "position2" );
 	public static final Key		positionals							= Key.of( "positionals" );
 	public static final Key		precise								= Key.of( "precise" );
+	public static final Key		precision							= Key.of( "precision" );
 	public static final Key		prefix								= Key.of( "prefix" );
 	public static final Key		pretty								= Key.of( "pretty" );
 	public static final Key		print								= Key.of( "print" );

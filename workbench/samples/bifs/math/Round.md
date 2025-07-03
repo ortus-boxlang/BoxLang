@@ -42,9 +42,10 @@ Result: -1
 
 ```java
 pi = 3.1415926535;
-pi_rounded = Round( pi );
+pi_rounded = Round( pi, 2 );
 println( pi ); // 3.1415926535
-println( pi_rounded ); //3
+println( pi_rounded );
+ // 3.14
 ```
 
 
