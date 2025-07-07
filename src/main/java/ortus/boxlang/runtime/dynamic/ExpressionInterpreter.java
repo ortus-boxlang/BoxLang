@@ -24,7 +24,6 @@ import java.util.Set;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext.ScopeSearchResult;
 import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
-import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.RequestScope;
 import ortus.boxlang.runtime.scopes.ServerScope;
@@ -80,7 +79,7 @@ public class ExpressionInterpreter {
 			return false;
 		}
 
-		String[]	parts	= splitParts( context, expression, safe );
+		Object[]	parts	= splitParts( context, expression, safe );
 		Object		ref		= null;
 		Key			refName	= Key.of( parts[ 0 ] );
 
@@ -128,7 +127,7 @@ public class ExpressionInterpreter {
 	 * @return The expression found
 	 */
 	public static Object setVariable( IBoxContext context, String expression, Object value ) {
-		String[]	parts	= splitParts( context, expression, false );
+		Object[]	parts	= splitParts( context, expression, false );
 		Object		ref		= null;
 		Key			refName	= Key.of( parts[ 0 ] );
 		Key[]		keys;
@@ -179,7 +178,7 @@ public class ExpressionInterpreter {
 	 *
 	 * @return
 	 */
-	private static String[] splitParts( IBoxContext context, String expression, boolean safe ) {
+	private static Object[] splitParts( IBoxContext context, String expression, boolean safe ) {
 		if ( expression.isEmpty() || expression.startsWith( "." ) || expression.endsWith( "." ) || expression.startsWith( "[" ) ) {
 			throw new ExpressionException( "Invalid expression", null, expression );
 		}
@@ -188,7 +187,7 @@ public class ExpressionInterpreter {
 		boolean			quote		= false;
 		char			quoteChar	= 0;
 		boolean			bracket		= false;
-		List<String>	parts		= new ArrayList<>();
+		List<Object>	parts		= new ArrayList<>();
 		StringBuilder	part		= new StringBuilder();
 
 		for ( int i = 0; i < expression.length(); i++ ) {
@@ -265,14 +264,18 @@ public class ExpressionInterpreter {
 					if ( end == -1 ) {
 						throw new ExpressionException( "Invalid expression, unclosed bracket", null, expression );
 					}
-					// TODO: Assumes keys are strings. Safe unless the code is dealing with a Java Map with a non-string key
-					parts.add( StringCaster.cast( getVariable( context, expression.substring( i, end ), safe ) ) );
+					parts.add( getVariable( context, expression.substring( i, end ), safe ) );
 					i = end - 1;
 					continue;
 				}
 				part.append( expression.charAt( i ) );
 				continue;
 			}
+			if ( expression.charAt( i ) == '(' && part.length() > 0 ) {
+				throw new ExpressionException( "Function calls not allowed in expression interpreter", null, expression );
+			}
+
+			throw new ExpressionException( "Invalid character in expression: " + expression.charAt( i ) + " at position " + ( i + 1 ), null, expression );
 		}
 		if ( quote ) {
 			throw new ExpressionException( "Invalid expression, unclosed quote", null, expression );
@@ -284,6 +287,6 @@ public class ExpressionInterpreter {
 		if ( part.length() > 0 ) {
 			parts.add( part.toString() );
 		}
-		return parts.toArray( new String[ 0 ] );
+		return parts.toArray( new Object[ 0 ] );
 	}
 }
