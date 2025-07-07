@@ -74,9 +74,7 @@ public class LoadPrecompiledTemplateTest {
 		    target,
 		    target,
 		    true,
-		    instance,
-		    Path.of( "" ),
-		    "/"
+		    instance
 		);
 		instance.executeSource(
 		    """
@@ -105,9 +103,7 @@ public class LoadPrecompiledTemplateTest {
 		    target,
 		    target,
 		    true,
-		    instance,
-		    Path.of( "" ),
-		    "/"
+		    instance
 		);
 		instance.executeSource(
 		    """
