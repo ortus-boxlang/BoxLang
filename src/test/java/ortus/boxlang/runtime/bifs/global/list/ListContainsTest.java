@@ -21,6 +21,7 @@ package ortus.boxlang.runtime.bifs.global.list;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertEquals;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -154,7 +155,7 @@ public class ListContainsTest {
 		    	result = listContains("sheep,goat,foo,bar,goo", "oo");
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 3 );
+		assertEquals( variables.get( result ), 3 );
 	}
 
 	@DisplayName( "Test listContainsNoCase substring match" )
@@ -165,7 +166,7 @@ public class ListContainsTest {
 		    	result = listContainsNoCase("sheep,goat,foo,bar,goo", "oO");
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 3 );
+		assertEquals( variables.get( result ), 3 );
 	}
 
 }
