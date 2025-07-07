@@ -24,11 +24,20 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.commons.ClassRemapper;
+import org.objectweb.asm.commons.Remapper;
+import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.FieldInsnNode;
+import org.objectweb.asm.tree.InsnList;
+import org.objectweb.asm.tree.LdcInsnNode;
+import org.objectweb.asm.tree.MethodInsnNode;
+import org.objectweb.asm.tree.MethodNode;
 
 import ortus.boxlang.compiler.ClassInfo;
 import ortus.boxlang.compiler.IBoxpiler;
-import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.util.RegexBuilder;
 
 /**
@@ -118,7 +127,7 @@ public class DiskClassLoader extends URLClassLoader {
 	 * @param diskPath  the path to the class file on disk, may not exist
 	 * @param name      the fully qualified class name
 	 * @param baseName  the base name of the class
-	 *
+	 * 
 	 * @return true if the class needs to be compiled
 	 */
 	private boolean needsCompile( ClassInfo classInfo, Path diskPath, String name, String baseName ) {
@@ -207,14 +216,21 @@ public class DiskClassLoader extends URLClassLoader {
 		addURL( Paths.get( jarfile ).toRealPath().toUri().toURL() );
 	}
 
-	public void defineClasses( String fqn, File sourceFile ) {
+	public void defineClasses( String fqn, File sourceFile, ClassInfo classInfo ) {
 		try {
 			byte[]		fileBytes	= Files.readAllBytes( sourceFile.toPath() );
 			ByteBuffer	buffer		= ByteBuffer.wrap( fileBytes );
 			// remove initial magic number
 			buffer.getInt();
+			// Read the original class name from the file
+			int		classNameLength	= buffer.getInt();
+			byte[]	classNameBytes	= new byte[ classNameLength ];
+			buffer.get( classNameBytes );
+			String	originalClassName	= new String( classNameBytes );
 
-			boolean first = true;
+			String	newInternalName		= fqn.replace( '.', '/' );
+			String	oldInternalName		= originalClassName.replace( '.', '/' );
+			boolean	first				= true;
 
 			while ( buffer.hasRemaining() ) {
 				// Read the length of the class file
@@ -224,24 +240,119 @@ public class DiskClassLoader extends URLClassLoader {
 				byte[]	classBytes	= new byte[ length ];
 				buffer.get( classBytes );
 
-				if ( first ) {
-					first = false;
-					String classNameInFile = new String( classBytes );
-					if ( !fqn.equals( classNameInFile ) ) {
-						throw new RuntimeException( "The source file " + sourceFile.toPath().toString()
-						    + " is pre-compiled bytecode, but its original class name [" + classNameInFile + "] does not match what we expected [" + fqn
-						    + "].  Pre-compiled source code must have the same path and name as the original file." );
-					}
-				} else {
-					// String className = getClassName( classBytes );
-					// Define the class
-					defineClass( null, classBytes, 0, classBytes.length );
-				}
+				// Use ASM to rewrite the class name and references
+				byte[] newClassBytes = renameClassAndReferences( classBytes, oldInternalName, newInternalName, classInfo, first );
+
+				defineClass( null, newClassBytes, 0, newClassBytes.length );
+				first = false;
 			}
 
 		} catch ( IOException e ) {
 			throw new RuntimeException( "Failed to read file", e );
 		}
+	}
+
+	/**
+	 * Rename a class and all its references in the bytecode
+	 * Also updates the box class FQN and path to reflect the current disk path and mapping
+	 * 
+	 * @param classBytes      the bytecode of the class
+	 * @param oldInternalName the old internal name of the class (e.g., "com/example/MyClass")
+	 * @param newInternalName the new internal name of the class (e.g., "com/example/NewClass")
+	 * @param classInfo       the ClassInfo object containing metadata about the class
+	 * @param outerClass      true if this is the outer class, false if it is an inner class
+	 * 
+	 * @return the modified bytecode with the class name and references updated
+	 */
+	private byte[] renameClassAndReferences( byte[] classBytes, String oldInternalName, String newInternalName, ClassInfo classInfo, boolean outerClass ) {
+		String		boxFQN			= classInfo.boxFqn().toString();
+		String		mappingName		= classInfo.resolvedFilePath().mappingName();
+		String		mappingPath		= classInfo.resolvedFilePath().mappingPath();
+		String		relativePath	= classInfo.resolvedFilePath().relativePath();
+		String		absolutePath	= classInfo.resolvedFilePath().absolutePath().toString();
+
+		ClassReader	cr				= new ClassReader( classBytes );
+		ClassNode	sourceNode		= new ClassNode();
+		cr.accept( sourceNode, 0 );
+
+		// Remap class names into a new ClassNode
+		ClassNode	remappedNode	= new ClassNode();
+		Remapper	remapper		= new Remapper() {
+
+										@Override
+										public String map( String internalName ) {
+											if ( internalName.equals( oldInternalName ) || internalName.startsWith( oldInternalName + "$" ) ) {
+												return internalName.replace( oldInternalName, newInternalName );
+											}
+											return internalName;
+										}
+									};
+		// Remap from sourceNode to remappedNode
+		sourceNode.accept( new ClassRemapper( remappedNode, remapper ) );
+
+		// Only patch the static initializer for the name and path fields if this is the outer class
+		if ( outerClass ) {
+			for ( MethodNode mn : remappedNode.methods ) {
+				if ( "<clinit>".equals( mn.name ) ) {
+					InsnList insns = mn.instructions;
+					for ( AbstractInsnNode insn = insns.getFirst(); insn != null; insn = insn.getNext() ) {
+						// Patch Key name assignment
+						if ( insn.getOpcode() == Opcodes.LDC
+						    && insn.getNext() != null
+						    && insn.getNext().getOpcode() == Opcodes.INVOKESTATIC
+						    && insn.getNext().getNext() != null
+						    && insn.getNext().getNext().getOpcode() == Opcodes.PUTSTATIC ) {
+
+							LdcInsnNode		ldc			= ( LdcInsnNode ) insn;
+							MethodInsnNode	keyOf		= ( MethodInsnNode ) insn.getNext();
+							FieldInsnNode	putstatic	= ( FieldInsnNode ) insn.getNext().getNext();
+
+							if ( keyOf.owner.equals( "ortus/boxlang/runtime/scopes/Key" )
+							    && keyOf.name.equals( "of" )
+							    && keyOf.desc.equals( "(Ljava/lang/String;)Lortus/boxlang/runtime/scopes/Key;" )
+							    && putstatic.name.equals( "name" )
+							    && putstatic.desc.equals( "Lortus/boxlang/runtime/scopes/Key;" ) ) {
+								ldc.cst = boxFQN;
+							}
+						}
+
+						// Patch ResolvedFilePath path assignment (util package version)
+						if ( insn.getOpcode() == Opcodes.LDC
+						    && insn.getNext() != null && insn.getNext().getOpcode() == Opcodes.LDC
+						    && insn.getNext().getNext() != null && insn.getNext().getNext().getOpcode() == Opcodes.LDC
+						    && insn.getNext().getNext().getNext() != null && insn.getNext().getNext().getNext().getOpcode() == Opcodes.LDC
+						    && insn.getNext().getNext().getNext().getNext() != null
+						    && insn.getNext().getNext().getNext().getNext().getOpcode() == Opcodes.INVOKESTATIC
+						    && insn.getNext().getNext().getNext().getNext().getNext() != null
+						    && insn.getNext().getNext().getNext().getNext().getNext().getOpcode() == Opcodes.PUTSTATIC ) {
+
+							LdcInsnNode		ldc1		= ( LdcInsnNode ) insn;
+							LdcInsnNode		ldc2		= ( LdcInsnNode ) insn.getNext();
+							LdcInsnNode		ldc3		= ( LdcInsnNode ) insn.getNext().getNext();
+							LdcInsnNode		ldc4		= ( LdcInsnNode ) insn.getNext().getNext().getNext();
+							MethodInsnNode	ofCall		= ( MethodInsnNode ) insn.getNext().getNext().getNext().getNext();
+							FieldInsnNode	putstatic	= ( FieldInsnNode ) insn.getNext().getNext().getNext().getNext().getNext();
+
+							if ( ofCall.owner.equals( "ortus/boxlang/runtime/util/ResolvedFilePath" )
+							    && ofCall.name.equals( "of" )
+							    && ofCall.desc.equals(
+							        "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lortus/boxlang/runtime/util/ResolvedFilePath;" )
+							    && putstatic.name.equals( "path" )
+							    && putstatic.desc.equals( "Lortus/boxlang/runtime/util/ResolvedFilePath;" ) ) {
+								ldc1.cst	= mappingName;
+								ldc2.cst	= mappingPath;
+								ldc3.cst	= relativePath;
+								ldc4.cst	= absolutePath;
+							}
+						}
+					}
+				}
+			}
+		}
+
+		ClassWriter cw = new ClassWriter( 0 );
+		remappedNode.accept( cw );
+		return cw.toByteArray();
 	}
 
 	public static String getClassName( byte[] classBytes ) {

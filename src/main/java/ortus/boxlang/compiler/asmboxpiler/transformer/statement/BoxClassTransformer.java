@@ -225,10 +225,6 @@ public class BoxClassTransformer {
 			methodVisitor.visitFieldInsn( Opcodes.PUTFIELD, type.getInternalName(), "thisScope", Type.getDescriptor( ThisScope.class ) );
 
 			methodVisitor.visitVarInsn( Opcodes.ALOAD, 0 );
-			transpiler.createKey( boxClassName ).forEach( abstractInsnNode -> abstractInsnNode.accept( methodVisitor ) );
-			methodVisitor.visitFieldInsn( Opcodes.PUTFIELD, type.getInternalName(), "name", Type.getDescriptor( Key.class ) );
-
-			methodVisitor.visitVarInsn( Opcodes.ALOAD, 0 );
 			methodVisitor.visitTypeInsn( Opcodes.NEW, Type.getInternalName( ArrayList.class ) );
 			methodVisitor.visitInsn( Opcodes.DUP );
 			methodVisitor.visitMethodInsn( Opcodes.INVOKESPECIAL, Type.getInternalName( ArrayList.class ), "<init>", Type.getMethodDescriptor( Type.VOID_TYPE ),
@@ -243,6 +239,12 @@ public class BoxClassTransformer {
 		classNode.visitField( Opcodes.ACC_PRIVATE | Opcodes.ACC_FINAL | Opcodes.ACC_STATIC, "serialVersionUID", Type.getDescriptor( long.class ), null, 1L )
 		    .visitEnd();
 
+		AsmHelper.addStaticFieldGetter( classNode,
+		    type,
+		    "name",
+		    "bxGetName",
+		    Type.getType( Key.class ),
+		    null );
 		AsmHelper.addStaticFieldGetter( classNode,
 		    type,
 		    "imports",
@@ -384,12 +386,6 @@ public class BoxClassTransformer {
 		    "thisScope",
 		    "getThisScope",
 		    Type.getType( ThisScope.class ),
-		    null );
-		AsmHelper.addPrivateFieldGetter( classNode,
-		    type,
-		    "name",
-		    "bxGetName",
-		    Type.getType( Key.class ),
 		    null );
 		AsmHelper.addPrivateFieldGetter( classNode,
 		    type,
@@ -544,6 +540,13 @@ public class BoxClassTransformer {
 			    type.getInternalName(),
 			    "sourceType",
 			    Type.getDescriptor( BoxSourceType.class ) );
+
+			transpiler.createKeyAdHoc( boxClassName ).forEach( abstractInsnNode -> abstractInsnNode.accept( methodVisitor ) );
+			;
+			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
+			    type.getInternalName(),
+			    "name",
+			    Type.getDescriptor( Key.class ) );
 
 			List<AbstractInsnNode>			annotations		= transpiler.transformAnnotations( boxClass.getAnnotations() );
 			List<AbstractInsnNode>			documenation	= transpiler.transformDocumentation( boxClass.getDocumentation() );

@@ -23,10 +23,11 @@ import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
+import java.util.Set;
 
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ParseException;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
@@ -36,7 +37,7 @@ import ortus.boxlang.runtime.util.ResolvedFilePath;
  */
 public class BXCompiler {
 
-	private static final BoxLangLogger logger = BoxRuntime.getInstance().getLoggingService().getLogger( BXCompiler.class.getSimpleName() );
+	private static final Set<String> SUPPORTED_EXTENSIONS = Set.of( "cfm", "cfc", "cfs", "bx", "bxs", "bxm" );
 
 	/**
 	 * Prints the help message for the BXCompiler tool.
@@ -50,41 +51,32 @@ public class BXCompiler {
 		System.out.println();
 		System.out.println( "⚙️  OPTIONS:" );
 		System.out.println( "  -h, --help                  ❓ Show this help message and exit" );
-		System.out.println( "      --basePath <PATH>       📁 Base path for resolving relative paths (default: current directory)" );
 		System.out.println( "      --source <PATH>         📂 Path to source directory or file to compile (default: current directory)" );
 		System.out.println( "      --target <PATH>         🎯 Path to target directory or file (required)" );
-		System.out.println( "      --mapping <NAME>        🗺️  Mapping name for the compiled file (e.g., modules.myModule)" );
+		System.out.println( "      --includeStatic         🔍 Include static files in compilation (default: false)" );
 		System.out.println( "      --stopOnError [BOOL]    🛑 Stop processing on first error (default: false)" );
 		System.out.println();
 		System.out.println( "📦 COMPILATION PROCESS:" );
 		System.out.println( "  • Compiles BoxLang/ColdFusion source files to Java bytecode class files" );
 		System.out.println( "  • Creates pre-compiled templates for faster runtime execution" );
 		System.out.println( "  • Preserves directory structure in target location" );
-		System.out.println( "  • Validates source path is within or equal to base path" );
 		System.out.println();
 		System.out.println( "🔧 SUPPORTED SOURCE FILES:" );
 		System.out.println( "  .cfm  - ColdFusion markup pages" );
 		System.out.println( "  .cfc  - ColdFusion components" );
 		System.out.println( "  .cfs  - ColdFusion script files" );
+		System.out.println( "  .bx   - BoxLang class files" );
+		System.out.println( "  .bxs  - BoxLang script files" );
+		System.out.println( "  .bxm  - BoxLang module files" );
 		System.out.println();
 		System.out.println( "💡 EXAMPLES:" );
 		System.out.println( "  # ⚡ Compile current directory to target" );
 		System.out.println( "  boxlang compile --target ./compiled" );
 		System.out.println();
-		System.out.println( "  # 📂 Compile specific source directory with mapping" );
-		System.out.println( "  boxlang compile --source ./src --target ./build --mapping myapp" );
-		System.out.println();
-		System.out.println( "  # 📄 Compile single file with custom base path" );
-		System.out.println( "  boxlang compile --basePath /app --source /app/modules/user.cfm --target ./compiled" );
-		System.out.println();
 		System.out.println( "  # 🛑 Stop on first compilation error" );
 		System.out.println( "  boxlang compile --source ./src --target ./build --stopOnError" );
 		System.out.println();
-		System.out.println( "  # 🗺️  Compile with nested module mapping" );
-		System.out.println( "  boxlang compile --source ./modules/auth --target ./compiled --mapping modules.auth" );
-		System.out.println();
 		System.out.println( "📂 PATH REQUIREMENTS:" );
-		System.out.println( "  • Source path must be equal to or a subdirectory of the base path" );
 		System.out.println( "  • Target directories are created automatically if they don't exist" );
 		System.out.println( "  • Relative paths are resolved against the current working directory" );
 		System.out.println();
@@ -111,23 +103,13 @@ public class BXCompiler {
 
 		BoxRuntime runtime = BoxRuntime.getInstance();
 		try {
-			String	base		= ".";
-			String	source		= ".";
-			String	target		= null;
-			String	mapping		= "";
-			Boolean	stopOnError	= false;
+			String	source			= ".";
+			String	target			= null;
+			Boolean	stopOnError		= false;
+			Boolean	includeStatic	= false;
 			for ( int i = 0; i < args.length; i++ ) {
-				if ( args[ i ].equalsIgnoreCase( "--mapping" ) ) {
-					if ( i + 1 >= args.length ) {
-						throw new BoxRuntimeException( "--mapping requires a name like [modules.myModule]" );
-					}
-					mapping = args[ i + 1 ];
-				}
-				if ( args[ i ].equalsIgnoreCase( "--basePath" ) ) {
-					if ( i + 1 >= args.length ) {
-						throw new BoxRuntimeException( "--basePath requires a path" );
-					}
-					base = args[ i + 1 ];
+				if ( args[ i ].equalsIgnoreCase( "--includeStatic" ) ) {
+					includeStatic = true;
 				}
 				if ( args[ i ].equalsIgnoreCase( "--source" ) ) {
 					if ( i + 1 >= args.length ) {
@@ -150,36 +132,15 @@ public class BXCompiler {
 
 				}
 			}
-			mapping = mapping.replace( "/", "." ).replace( "\\", "." );
-			// trim double ..
-			while ( mapping.contains( ".." ) ) {
-				mapping = mapping.replace( "..", "." );
-			}
-			// trim leading or trailing .
-			if ( mapping.startsWith( "." ) ) {
-				mapping = mapping.substring( 1 );
-			}
-			if ( mapping.endsWith( "." ) ) {
-				mapping = mapping.substring( 0, mapping.length() - 1 );
-			}
-			final String	finalMapping	= mapping;
-			Path			basePath		= Paths.get( base ).normalize();
-			if ( !basePath.isAbsolute() ) {
-				basePath = Paths.get( "" ).resolve( basePath ).normalize().toAbsolutePath().normalize();
-			}
-			final Path	finalBasePath	= basePath;
-			Path		sourcePath		= Paths.get( source ).normalize();
+			final Boolean	finalIncludeStatic	= includeStatic;
+			Path			sourcePath			= Paths.get( source ).normalize();
 			if ( !sourcePath.isAbsolute() ) {
 				sourcePath = Paths.get( "" ).resolve( sourcePath ).normalize().toAbsolutePath().normalize();
 			}
 
 			if ( !sourcePath.toFile().exists() ) {
-				logger.warn( "Source Path does not exist: " + sourcePath.toString() );
+				System.out.println( "Source Path does not exist: " + sourcePath.toString() );
 				System.exit( 1 );
-			}
-			// source path must be equal to or a subdirectory of the base path
-			if ( !sourcePath.startsWith( basePath ) ) {
-				throw new BoxRuntimeException( "Source path must be equal to or a subdirectory of the base path" );
 			}
 
 			if ( target == null ) {
@@ -191,7 +152,7 @@ public class BXCompiler {
 			}
 
 			if ( sourcePath.toFile().isDirectory() ) {
-				logger.debug( "Transpiling all .cfm files in " + sourcePath.toString() + " to " + targetPath.toString() );
+				System.out.println( "Compiling all source files in " + sourcePath.toString() + " to " + targetPath.toString() );
 				// compile all .cfm, .cfs, and .cfc files in sourcePath to targetPath
 				final Path finalTargetPath = targetPath;
 				try {
@@ -201,33 +162,42 @@ public class BXCompiler {
 					    .parallel()
 					    .filter( Files::isRegularFile )
 					    .forEach( path -> {
-						    String sourceExtension = path.getFileName().toString().substring( path.getFileName().toString().lastIndexOf( "." ) + 1 );
-						    if ( sourceExtension.equals( "cfm" ) || sourceExtension.equals( "cfc" ) || sourceExtension.equals( "cfs" ) ) {
-							    String targetExtension	= sourceExtension;
-							    Path resolvedTargetPath	= finalTargetPath
-							        .resolve(
-							            finalSourcePath.relativize( path ).toString().substring( 0, finalSourcePath.relativize( path ).toString().length() - 3 )
-							                + targetExtension );
-							    compileFile( path, resolvedTargetPath, finalStopOnError, runtime, finalBasePath, finalMapping );
+						    String sourceExtension	= path.getFileName().toString().substring( path.getFileName().toString().lastIndexOf( "." ) + 1 )
+						        .toLowerCase();
+						    Path resolvedTargetPath	= finalTargetPath.resolve( finalSourcePath.relativize( path ).toString() );
+
+						    if ( SUPPORTED_EXTENSIONS.contains( sourceExtension ) ) {
+							    compileFile( path, resolvedTargetPath, finalStopOnError, runtime );
+						    } else if ( finalIncludeStatic && !Files.exists( resolvedTargetPath ) ) {
+							    // If the file is not a supported source file, but we are including static files,
+							    // we will copy it to the target directory
+							    try {
+								    ensureParentDirectoriesExist( resolvedTargetPath );
+								    System.out.println( "Writing " + path.toString() + " to " + resolvedTargetPath.toString() );
+								    Files.copy( path, resolvedTargetPath, StandardCopyOption.REPLACE_EXISTING );
+							    } catch ( IOException e ) {
+								    if ( finalStopOnError ) {
+									    throw new BoxRuntimeException( "Error copying static file: " + path.toString(), e );
+								    } else {
+									    System.out.println( "Error copying static file: " + path.toString() + ": " + e.getMessage() );
+								    }
+							    }
 						    }
 					    } );
 				} catch ( IOException e ) {
 					throw new BoxRuntimeException( "Error walking source path", e );
 				}
 			} else {
-				String	sourceExtension	= sourcePath.getFileName().toString().substring( sourcePath.getFileName().toString().lastIndexOf( "." ) + 1 );
-				String	targetExtension	= sourceExtension;
-				String	trgName			= targetPath.getFileName().toString();
-				if ( targetPath.toFile().isDirectory() && !trgName.endsWith( ".bx" )
-				    && !trgName.endsWith( ".bxs" ) && !trgName.endsWith( ".bxm" ) ) {
-					targetPath = targetPath.resolve( sourcePath.getFileName().toString().replace( sourceExtension, targetExtension ) );
-				} else {
-					if ( !trgName.endsWith( targetExtension ) ) {
-						// append correct extension
-						targetPath = targetPath.resolveSibling( trgName + "." + targetExtension );
-					}
+				String sourceFileName = sourcePath.getFileName().toString();
+				if ( !SUPPORTED_EXTENSIONS.contains( sourceFileName.substring( sourceFileName.lastIndexOf( "." ) + 1 ).toLowerCase() ) ) {
+					System.out.println( "Unsupported source file extension: " + sourcePath.getFileName().toString() );
+					System.exit( 1 );
 				}
-				compileFile( sourcePath, targetPath, stopOnError, runtime, finalBasePath, finalMapping );
+				if ( targetPath.toFile().isDirectory() ) {
+					// if target is a directory, use the source file name as the target file name
+					targetPath = targetPath.resolve( sourceFileName );
+				}
+				compileFile( sourcePath, targetPath, stopOnError, runtime );
 			}
 
 			System.exit( 0 );
@@ -243,31 +213,19 @@ public class BXCompiler {
 	 * @param targetPath  The path where the compiled file should be written.
 	 * @param stopOnError If true, throws an exception on compilation errors; otherwise logs the error and continues.
 	 * @param runtime     The BoxRuntime instance used for compilation.
-	 * @param basePath    The base path used for resolving relative paths.
-	 * @param mapping     The mapping name for the compiled file.
 	 */
-	public static void compileFile( Path sourcePath, Path targetPath, Boolean stopOnError, BoxRuntime runtime, Path basePath, String mapping ) {
-		try {
-			Path directoryPath = targetPath.getParent();
-			if ( directoryPath != null && !Files.exists( directoryPath ) ) {
-				Files.createDirectories( directoryPath );
-			}
-		} catch ( IOException e ) {
-			// folder already exists
-		}
-		logger.debug( "Writing " + targetPath.toString() );
+	public static void compileFile( Path sourcePath, Path targetPath, Boolean stopOnError, BoxRuntime runtime ) {
+		ensureParentDirectoriesExist( targetPath );
+		System.out.println( "Writing " + targetPath.toString() );
 		List<byte[]> bytesList = null;
 		try {
-			// calculate relative path by replacing the base path with an empty string
-			Path relativePath = basePath.relativize( sourcePath );
-			// remove file name
 			bytesList = runtime.getCompiler()
-			    .compileTemplateBytes( ResolvedFilePath.of( mapping, basePath.toString(), relativePath.toString(), sourcePath ) );
+			    .compileTemplateBytes( ResolvedFilePath.of( "", "", sourcePath.toString(), sourcePath ) );
 		} catch ( ParseException e ) {
 			if ( stopOnError ) {
 				throw e;
 			} else {
-				logger.error( "Error compiling " + sourcePath.toString() + ": " + e.getMessage() );
+				System.out.println( "Error compiling " + sourcePath.toString() + ": " + e.getMessage() );
 				return;
 			}
 		}
@@ -287,6 +245,22 @@ public class BXCompiler {
 			Files.write( targetPath, baos.toByteArray() );
 		} catch ( IOException e ) {
 			throw new RuntimeException( "Unable to write to target file", e );
+		}
+	}
+
+	/**
+	 * Ensures that the parent directories of the target path exist, creating them if necessary.
+	 *
+	 * @param targetPath The path for which to ensure parent directories exist.
+	 */
+	private static void ensureParentDirectoriesExist( Path targetPath ) {
+		try {
+			Path directoryPath = targetPath.getParent();
+			if ( directoryPath != null && !Files.exists( directoryPath ) ) {
+				Files.createDirectories( directoryPath );
+			}
+		} catch ( IOException e ) {
+			// folder already exists
 		}
 	}
 

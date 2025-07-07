@@ -155,11 +155,11 @@ public class BoxClassTransformer extends AbstractTransformer {
 			private static StaticScope staticScope = new StaticScope();
 			// This is public so the ClassLocator can check it easily
 			public static boolean staticInitialized = false;
+			public static final Key name = ${boxFQN};
 
 			// Private instance fields
 			private VariablesScope variablesScope = new ClassVariablesScope(this);
 			private ThisScope thisScope = new ThisScope();
-			private Key name = ${boxFQN};
 			private IClassRunnable _super = null;
 			private IClassRunnable child = null;
 			private Boolean canOutput = null;
@@ -274,7 +274,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 			}
 
 			public Key bxGetName() {
-				return this.name;
+				return ${className}.name;
 			}
 
 			public Map<Key,Property> getProperties() {
@@ -537,7 +537,8 @@ public class BoxClassTransformer extends AbstractTransformer {
 		    Map.entry( "resolvedFilePath", transpiler.getResolvedFilePath( mappingName, mappingPath, relativePath, filePath ) ),
 		    Map.entry( "compiledOnTimestamp", transpiler.getDateTime( LocalDateTime.now() ) ),
 		    Map.entry( "compileVersion", "1L" ),
-		    Map.entry( "boxFQN", createKey( boxFQN ).toString() ),
+		    // Don't use the transpiler helper method for this so it's always a Key.of() call. When re-defining a class, we want this to be a Key.of() call.
+		    Map.entry( "boxFQN", "Key.of( \"" + boxFQN + "\" )" ),
 		    Map.entry( "compileTimeMethodNames", generateCompileTimeMethodNames( boxClass ) )
 		);
 		String							code		= PlaceholderHelper.resolve( CLASS_TEMPLATE, values );
