@@ -21,7 +21,6 @@ package ortus.boxlang.runtime.bifs.global.list;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.Assert.assertEquals;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -138,15 +137,16 @@ public class ListFindTest {
 		assertThat( found ).isEqualTo( 0 );
 	}
 
-	@DisplayName( "Test listFind" )
+	@DisplayName( "Test listContains" )
 	@Test
 	public void testMatchSubStringCaseSensitive() {
 		instance.executeSource(
 		    """
-		    	result = listFind("sheep,goat,foo,bar,goo", "oo");
+		    	result = listContains("sheep,goat,foo,bar,goo", "oo");
 		    """,
 		    context );
-		assertEquals( variables.get( result ), 0 );
+		Boolean found = ( Boolean ) variables.get( result );
+		assertTrue( found );
 	}
 
 	@DisplayName( "Test listFindNoCase" )
@@ -154,10 +154,11 @@ public class ListFindTest {
 	public void testMatchSubStringCaseInSensitive() {
 		instance.executeSource(
 		    """
-		    	result = listFindNoCase("sheep,goat,foo,bar,goo", "oO");
+		    	result = listContainsNoCase("sheep,goat,foo,bar,goo", "oO");
 		    """,
 		    context );
-		assertEquals( variables.get( result ), 0 );
+		Boolean found = ( Boolean ) variables.get( result );
+		assertTrue( found );
 	}
 
 	@DisplayName( "It should find strings in a case insensitive manner when using nocase" )

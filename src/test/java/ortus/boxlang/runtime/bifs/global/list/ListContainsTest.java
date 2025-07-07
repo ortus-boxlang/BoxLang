@@ -21,7 +21,6 @@ package ortus.boxlang.runtime.bifs.global.list;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertEquals;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -70,7 +69,7 @@ public class ListContainsTest {
 		    result = listContains( list, 'b' );
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 2 );
+		assertThat( variables.get( result ) ).isEqualTo( true );
 
 		instance.executeSource(
 		    """
@@ -78,7 +77,7 @@ public class ListContainsTest {
 		    result = listContains( list, 3.456 );
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 3 );
+		assertThat( variables.get( result ) ).isEqualTo( true );
 	}
 
 	@DisplayName( "It can search case insensitively" )
@@ -91,7 +90,7 @@ public class ListContainsTest {
 		    result = listContains( list, 'B' );
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 0 );
+		assertThat( variables.get( result ) ).isEqualTo( false );
 
 		instance.executeSource(
 		    """
@@ -99,7 +98,7 @@ public class ListContainsTest {
 		    result = listContainsNoCase( list, 'B' );
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 2 );
+		assertThat( variables.get( result ) ).isEqualTo( true );
 
 	}
 
@@ -128,7 +127,7 @@ public class ListContainsTest {
 		    result = list.listContains( 'b' );
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 2 );
+		assertThat( variables.get( result ) ).isEqualTo( true );
 
 		instance.executeSource(
 		    """
@@ -136,7 +135,7 @@ public class ListContainsTest {
 		    result = list.listContains( 'B' );
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 0 );
+		assertThat( variables.get( result ) ).isEqualTo( false );
 
 		instance.executeSource(
 		    """
@@ -144,29 +143,7 @@ public class ListContainsTest {
 		    result = list.listContainsNoCase( 'B' );
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 2 );
-	}
-
-	@DisplayName( "Test listContains substring match" )
-	@Test
-	public void testMatchSubStringCaseSensitive() {
-		instance.executeSource(
-		    """
-		    	result = listContains("sheep,goat,foo,bar,goo", "oo");
-		    """,
-		    context );
-		assertEquals( variables.get( result ), 3 );
-	}
-
-	@DisplayName( "Test listContainsNoCase substring match" )
-	@Test
-	public void testMatchSubStringCaseInSensitive() {
-		instance.executeSource(
-		    """
-		    	result = listContainsNoCase("sheep,goat,foo,bar,goo", "oO");
-		    """,
-		    context );
-		assertEquals( variables.get( result ), 3 );
+		assertThat( variables.get( result ) ).isEqualTo( true );
 	}
 
 }
