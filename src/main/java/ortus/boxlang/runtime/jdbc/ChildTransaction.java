@@ -98,15 +98,12 @@ public class ChildTransaction implements ITransaction {
 	}
 
 	/**
-	 * No-op for setting the datasource on a nested transaction.
+	 * Set the datasource on the parent transaction.
 	 * <p>
-	 * The datasource is set on the parent transaction, and all child transactions inherit the datasource from their parent.
-	 * <p>
-	 * Will log a warning if called; otherwise no action taken.
+	 * Calls the same method on the parent transaction, allowing the child transaction to inherit the datasource. The parent transaction will ignore the datasource if it has already been set.
 	 */
 	public ChildTransaction setDataSource( DataSource datasource ) {
-		logger.warn(
-		    "Cannot set datasource on a nested transaction. No action required; this nested transaction will use the datasource defined by the parent" );
+		this.parent.setDataSource( datasource );
 		return this;
 	}
 
