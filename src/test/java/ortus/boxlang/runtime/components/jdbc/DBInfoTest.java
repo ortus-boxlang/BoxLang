@@ -138,13 +138,13 @@ public class DBInfoTest extends BaseJDBCTest {
 		assertEquals( 2, dbNamesQuery.getColumns().size() );
 
 		IStruct ourDBRow = dbNamesQuery.stream()
-		    .filter( row -> row.getAsString( Key.of( "DBNAME" ) ).equals( "mysqlDB" ) )
+		    .filter( row -> row.getAsString( Key.of( "DBNAME" ) ).equals( "myDB" ) )
 		    .findFirst()
 		    .orElse( null );
 
 		assertNotNull( ourDBRow );
 		assertEquals( "CATALOG", ourDBRow.getAsString( Key.type ) );
-		assertEquals( "mysqlDB", ourDBRow.getAsString( Key.of( "DBNAME" ) ) );
+		assertEquals( "myDB", ourDBRow.getAsString( Key.of( "DBNAME" ) ) );
 	}
 
 	@DisplayName( "Can get table column data" )
