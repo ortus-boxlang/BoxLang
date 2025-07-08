@@ -100,9 +100,12 @@ public class ChildTransaction implements ITransaction {
 	/**
 	 * Set the datasource on the parent transaction.
 	 * <p>
-	 * Calls the same method on the parent transaction, allowing the child transaction to inherit the datasource. The parent transaction will ignore the datasource if it has already been set.
+	 * Calls the same method on the parent transaction, allowing the child transaction to inherit the datasource. Will no-op if the parent transaction already has a datasource set.
 	 */
 	public ChildTransaction setDataSource( DataSource datasource ) {
+		if ( this.parent.getDataSource() != null ) {
+			return this;
+		}
 		this.parent.setDataSource( datasource );
 		return this;
 	}
