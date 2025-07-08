@@ -657,4 +657,29 @@ public class TransactionTest extends BaseJDBCTest {
 		        .orElse( null )
 		);
 	}
+
+	@DisplayName( "Nested transactions: Can set transaction datasource / execute query from child transaction" )
+	@Test
+	public void testNestedTransactionDatasource() {
+		getInstance().executeSource(
+		    """
+		        transaction{
+		            transaction{
+		                queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 22, 'Brad Wood', 'Developer' )", {} );
+		            }
+		        }
+		        variables.result = queryExecute( "SELECT * FROM developers", {} );
+		    """,
+		    getContext() );
+		Query theResult = getVariables().getAsQuery( result );
+
+		// This row from the inner transaction should exist
+		assertNotNull(
+		    theResult
+		        .stream()
+		        .filter( row -> row.getAsString( Key._NAME ).equals( "Brad Wood" ) )
+		        .findFirst()
+		        .orElse( null )
+		);
+	}
 }
