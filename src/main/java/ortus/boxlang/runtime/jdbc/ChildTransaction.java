@@ -141,7 +141,7 @@ public class ChildTransaction implements ITransaction {
 	 * The transaction will be rolled back to the last committed point, and will ignore any set savepoints.
 	 */
 	public ChildTransaction rollback() {
-		return rollback( Key.nulls );
+		return rollback( ChildTransaction.BEGIN );
 	}
 
 	/**
@@ -150,11 +150,9 @@ public class ChildTransaction implements ITransaction {
 	 * @param savepoint The name of the savepoint to rollback to or NULL for no savepoint.
 	 */
 	public ChildTransaction rollback( Key savepoint ) {
-		if ( savepoint == Key.nulls ) {
-			savepoint = ChildTransaction.BEGIN;
-		}
-		logger.debug( "Rolling back child transaction to savepoint {}", this.savepointPrefix + savepoint );
-		this.parent.rollback( Key.of( this.savepointPrefix + savepoint.getNameNoCase() ) );
+		Key savepointKey = savepoint.getNameNoCase().startsWith( "child_" ) ? savepoint : Key.of( this.savepointPrefix + savepoint.getNameNoCase() );
+		logger.debug( "Rolling back child transaction to savepoint {}", savepointKey );
+		this.parent.rollback( savepointKey );
 		return this;
 	}
 
@@ -164,7 +162,8 @@ public class ChildTransaction implements ITransaction {
 	 * @param savepoint The name of the savepoint
 	 */
 	public ChildTransaction setSavepoint( Key savepoint ) {
-		this.parent.setSavepoint( Key.of( this.savepointPrefix + savepoint.getNameNoCase() ) );
+		Key savepointKey = savepoint.getNameNoCase().startsWith( "child_" ) ? savepoint : Key.of( this.savepointPrefix + savepoint.getNameNoCase() );
+		this.parent.setSavepoint( savepointKey );
 		return this;
 	}
 
