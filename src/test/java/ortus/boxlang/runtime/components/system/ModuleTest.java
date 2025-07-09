@@ -236,4 +236,14 @@ public class ModuleTest {
 		    context, BoxSourceType.BOXTEMPLATE );
 	}
 
+	@Test
+	public void testCanAccessThisScopeFromFunction() {
+		instance.executeSource(
+		    """
+		    result = new src.test.java.ortus.boxlang.runtime.components.system.AccessThisScopeFromFunction().run();
+		    		  """,
+		    context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "brad" );
+	}
+
 }

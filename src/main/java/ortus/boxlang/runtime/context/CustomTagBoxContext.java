@@ -121,6 +121,14 @@ public class CustomTagBoxContext extends BaseBoxContext {
 	@Override
 	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow, boolean forAssign ) {
 
+		if ( thisScope != null && key.equals( ThisScope.name ) ) {
+			return new ScopeSearchResult( thisScope, thisScope, key, true );
+		}
+
+		if ( key.equals( VariablesScope.name ) ) {
+			return new ScopeSearchResult( variablesScope, variablesScope, key, true );
+		}
+
 		if ( !isKeyVisibleScope( key ) ) {
 			Object result = variablesScope.getRaw( key );
 			// Null means not found
@@ -154,9 +162,6 @@ public class CustomTagBoxContext extends BaseBoxContext {
 	 */
 	@Override
 	public ScopeSearchResult scopeFind( Key key, IScope defaultScope, boolean forAssign ) {
-		if ( thisScope != null && key.equals( ThisScope.name ) ) {
-			return new ScopeSearchResult( thisScope, thisScope, key, true );
-		}
 		// The custom tag has no "global" scopes, so just defer to parent
 		return parent.scopeFind( key, defaultScope, forAssign );
 	}

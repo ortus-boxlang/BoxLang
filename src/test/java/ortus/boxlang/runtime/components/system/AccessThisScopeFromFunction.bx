@@ -1,0 +1,9 @@
+class {
+	this.data = "brad";
+
+	function run() {
+		var bus = {};
+		bx:component name="AccessThisScopeFromFunction" bus=bus;
+		return bus.data;
+	}
+}
