@@ -408,7 +408,7 @@ public class ParseDateTimeTest {
 
 	@DisplayName( "It tests the BIF ParseDateTime with a slash date time and lower case PM marker" )
 	@Test
-	public void testWithLowerCaseAMAndSlashDate() {
+	public void testWithLowerCasePMAndSlashDate() {
 		instance.executeSource(
 		    """
 		    result = ParseDateTime( "7/20/2025 1:00 pm" );
