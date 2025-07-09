@@ -185,7 +185,7 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	    "yyyy-MM-dd'T'HH:mm:ss",         // Date-time
 
 	    // ODBC formats
-	    "yyyyMMddHHmmss",                // OBCDateTime - Potential ODBC format
+	    "yyyyMMddHHmmss",                // ODBCDateTime - Potential ODBC format
 
 	    // US Localized Date formats - Month First
 	    "MMM dd yyyy",                   // Long Date (e.g., Apr 02 2024)
@@ -205,7 +205,6 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	    "dd-MMM-yyyy",                   // Medium Date (e.g., 02-Apr-2024) - Might need adjustment based on locale
 	    "dd/MMM/yyyy",                   // Medium Date (e.g., 02-Apr-2024) - Might need adjustment based on locale
 	    "dd.MMM.yyyy",                   // Medium Date (e.g., 02.Apr.2024) - Might need adjustment based on locale
-	    "MMM dd yyyy",                   // Med Date (e.g., Apr 02 2024) - Might need adjustment based on locale
 	    "MMM dd, yyyy",                  // Med Date (e.g., Apr 02, 2024) - Might need adjustment based on locale
 	    "MMMM dd yyyy",                  // Long month Date (e.g., April 02 2024) - Might need adjustment based on locale
 	    "MMMM dd, yyyy",                 // Long month Date (e.g., April 02, 2024) - Might need adjustment based on locale
