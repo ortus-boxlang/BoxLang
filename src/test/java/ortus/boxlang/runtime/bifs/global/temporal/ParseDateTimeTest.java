@@ -406,4 +406,24 @@ public class ParseDateTimeTest {
 
 	}
 
+	@DisplayName( "It tests the BIF ParseDateTime with a slash date time and lower case PM marker" )
+	@Test
+	public void testWithLowerCaseAMAndSlashDate() {
+		instance.executeSource(
+		    """
+		    result = ParseDateTime( "7/20/2025 1:00 pm" );
+		    """,
+		    context );
+		DateTime result = ( DateTime ) variables.get( Key.of( "result" ) );
+		assertThat( result ).isInstanceOf( DateTime.class );
+		assertThat( result.toString() ).isInstanceOf( String.class );
+		assertThat( IntegerCaster.cast( result.format( "yyyy" ) ) ).isEqualTo( 2025 );
+		assertThat( IntegerCaster.cast( result.format( "M" ) ) ).isEqualTo( 7 );
+		assertThat( IntegerCaster.cast( result.format( "d" ) ) ).isEqualTo( 20 );
+		assertThat( IntegerCaster.cast( result.format( "H" ) ) ).isEqualTo( 13 );
+		assertThat( IntegerCaster.cast( result.format( "m" ) ) ).isEqualTo( 0 );
+		assertThat( IntegerCaster.cast( result.format( "s" ) ) ).isEqualTo( 0 );
+
+	}
+
 }
