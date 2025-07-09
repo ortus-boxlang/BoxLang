@@ -25,6 +25,7 @@ import java.time.format.DateTimeFormatter;
 import org.apache.commons.lang3.time.DateUtils;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
@@ -37,77 +38,6 @@ import ortus.boxlang.runtime.util.RegexBuilder;
  * I cast to DateTime objects
  */
 public class DateTimeCaster implements IBoxCaster {
-
-	private static final String[] COMMON_PATTERNS = {
-
-	    // Localized Date/Time formats
-	    "EEE, dd MMM yyyy HH:mm:ss zzz", // Full DateTime (e.g., Tue, 02 Apr 2024 21:01:00 CEST) - Similar to FULL_FULL
-	    "dd MMM yyyy HH:mm:ss",         // Long DateTime (e.g., 02 Apr 2024 21:01:00) - Similar to LONG_LONG
-	    "dd-MMM-yyyy HH:mm:ss",         // Medium DateTime (e.g., 02-Apr-2024 21:01:00) - Might need adjustment based on locale
-	    "MM/dd/yyyy HH:mm:ss",         // Short DateTime (e.g., 02/04/2024 21:01:00) - Might need adjustment based on locale
-	    "MM/dd/yyyy hh:mm:ss a",         // Short DateTime (e.g., 02/04/2024 04:01:00 PM) - Might need adjustment based on locale
-	    "MM/dd/yyyy hh:mm a",         // Short DateTime (e.g., 02/04/2024 04:01:00 PM) - Might need adjustment based on locale
-	    "dd.MM.yyyy HH:mm:ss",         // Short DateTime (e.g., 02.04.2024 21:01:00) - Might need adjustment based on locale
-	    "LLLL dd yyyy HH:mm:ss", 	  // Long month DateTime (e.g., April 02 2024 21:01:00) - Might need adjustment based on locale
-	    "LLLL dd',' yyyy HH:mm:ss", 	  // Long month DateTime (e.g., April 02, 2024 21:01:00) - Might need adjustment based on locale
-	    "LLLL dd yyyy hh:mm a", 	  // Long month DateTime with AM/PM (e.g., April 02 2024 05:01 AM) - Might need adjustment based on locale
-	    "LLLL dd',' yyyy hh:mm a", 	  // Long month DateTime with AM/PM (e.g., April 02, 2024 05:01 AM) - Might need adjustment based on locale
-	    "MMM dd yyyy HH:mm:ss", 	  // Med DateTime (e.g., Apr 02 2024 21:01:00) - Might need adjustment based on locale
-	    "MMM dd',' yyyy HH:mm:ss", 	  // Med DateTime (e.g., Apr 02, 2024 21:01:00) - Might need adjustment based on locale
-	    "MMM dd yyyy hh:mm a", 	       // Med DateTime No Seconds and AM/PM (e.g., Apr 02 2024 10:01 AM) - Might need adjustment based on locale
-	    "MMM dd',' yyyy hh:mm a", 	    // Med DateTime No Seconds and AM/PM (e.g., Apr 02, 2024 10:01 AM) - Might need adjustment based on locale
-	    "MMM dd yyyy HH:mm", 	       // Med DateTime No Seconds (e.g., Apr 02 2024 21:01) - Might need adjustment based on locale
-	    "MMM dd',' yyyy HH:mm", 	       // Med DateTime No Seconds (e.g., Apr 02 2024 21:01) - Might need adjustment based on locale
-
-	    // java.util.Date toString default format
-	    "EEE MMM dd HH:mm:ss zzz yyyy", // Default DateTime (e.g., Tue Apr 02 21:01:00 CET 2024) - Similar to DEFAULT
-
-	    // ISO formats
-	    "yyyy-MM-dd'T'HH:mm:ss.SSSXXX",  // Date-time with milliseconds and offset
-	    "yyyy-MM-dd'T'HH:mm:ss.SSS",     // Date-time with milliseconds
-	    "yyyy-MM-dd'T'HH:mm:ssZ",        // Date-time with offset (Z)
-	    "yyyy-MM-dd'T'HH:mm:ssX",        // Date-time with offset (X)
-	    "yyyy-MM-dd'T'HH:mm:ss",         // Date-time
-
-	    // ODBC formats
-	    "yyyyMMddHHmmss",                // OBCDateTime - Potential ODBC format
-
-	    // Localized Date formats
-	    "EEE, dd MMM yyyy",            // Full Date (e.g., Tue, 02 Apr 2024) - Similar to FULL
-	    "dd MMM yyyy",                   // Long Date (e.g., 02 Apr 2024) - Similar to LONG
-	    "dd-MMM-yyyy",                   // Medium Date (e.g., 02-Apr-2024) - Might need adjustment based on locale
-	    "dd/MMM/yyyy",                   // Medium Date (e.g., 02-Apr-2024) - Might need adjustment based on locale
-	    "dd.MMM.yyyy",                   // Medium Date (e.g., 02.Apr.2024) - Might need adjustment based on locale
-	    "MMM dd yyyy",                   // Med Date (e.g., Apr 02 2024) - Might need adjustment based on locale
-	    "MMM dd, yyyy",                  // Med Date (e.g., Apr 02, 2024) - Might need adjustment based on locale
-	    "MMMM dd yyyy",                  // Long month Date (e.g., April 02 2024) - Might need adjustment based on locale
-	    "MMMM dd, yyyy",                 // Long month Date (e.g., April 02, 2024) - Might need adjustment based on locale
-
-	    "dd MM yyyy",                   // Short Date (e.g., 02.04.2024) - Might need adjustment based on locale
-	    "dd-MM-yyyy",                   // Short Date (e.g., 02-04-2024) - Might need adjustment based on locale
-	    "dd/MM/yyyy",                   // Short Date (e.g., 02/04/2024) - Might need adjustment based on locale
-	    "dd.MM.yyyy",                   // Short Date (e.g., 02.04.2024) - Might need adjustment based on locale
-
-	    // Localized Date formats - Month First
-	    "MMM dd yyyy",                   // Long Date (e.g., Apr 02 2024)
-	    "MMM-dd-yyyy",                   // Medium Date (e.g., Apr-02-2024) - Might need adjustment based on locale
-	    "MMM/dd/yyyy",                   // Medium Date (e.g., Apr/02/2024) - Might need adjustment based on locale
-	    "MMM.dd.yyyy",                   // Medium Date (e.g., Apr.02.2024) - Might need adjustment based on locale
-
-	    // Localized Date formats - Month First (Short)
-	    "MM dd yyyy",                   // Short Date (e.g., 04 02 2024) - Might need adjustment based on locale
-	    "MM-dd-yyyy",                   // Short Date (e.g., 04-02-2024) - Might need adjustment based on locale
-	    "MM/dd/yyyy",                   // Short Date (e.g., 04/02/2024) - Might need adjustment based on locale
-	    "MM.dd.yyyy",                   // Short Date (e.g., 04.02.2024) - Might need adjustment based on locale
-
-	    // ISO format
-	    "yyyy-MM-dd",                   // ISODate (e.g., 2024-04-02)
-	    "yyyy/MM/dd",                   // ISODate (e.g., 2024/04/02)
-	    "yyyy.MM.dd",                   // ISODate (e.g., 2024.04.02)
-
-	    // ODBC format
-	    "yyyyMMdd"                     // ODBCDate - Potential ODBC format
-	};
 
 	/**
 	 * Tests to see if the value can be cast.
@@ -300,9 +230,12 @@ public class DateTimeCaster implements IBoxCaster {
 		}
 
 		// Now let's go to Apache commons lang for its date parsing
-		// TODO: Refactor to handle the remaining parsing in the constructor for the DateTime class. We shouldn't mantain handling of patterns in two places
 		try {
-			return new DateTime( DateUtils.parseDateStrictly( targetString, COMMON_PATTERNS ), timezone );
+			return new DateTime(
+			    DateUtils.parseDateStrictly( targetString, LocalizationUtil.parseLocaleFromContext( context, new ArgumentsScope() ),
+			        DateTime.COMMON_DATETIME_PATTERNS ),
+			    timezone
+			);
 		} catch ( java.text.ParseException e ) {
 			try {
 				return new DateTime( targetString, timezone );
