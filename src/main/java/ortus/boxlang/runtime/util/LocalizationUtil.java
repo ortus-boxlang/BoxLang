@@ -343,7 +343,7 @@ public final class LocalizationUtil {
 		RequestBoxContext requestContext = context.getParentOfType( RequestBoxContext.class );
 		return parseLocaleOrDefault(
 		    arguments.getAsString( Key.locale ),
-		    requestContext.getLocale() != null ? requestContext.getLocale() : ( Locale ) context.getConfig().get( Key.locale )
+		    requestContext != null && requestContext.getLocale() != null ? requestContext.getLocale() : ( Locale ) context.getConfig().get( Key.locale )
 		);
 	}
 
