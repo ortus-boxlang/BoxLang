@@ -57,16 +57,34 @@ public class Parser {
 	 */
 
 	public ParsingResult parse( File file ) {
+		return parse( file, true );
+	}
+
+	/**
+	 * Parse a script file
+	 *
+	 * @param file source file to parse
+	 * @param transpileCFML whether to transpile CFML to BoxLang
+	 *
+	 * @return a ParsingResult containing the AST with a BoxScript as root and the list of errors (if any)
+	 *
+	 * @throws IOException
+	 *
+	 * @see BoxScript
+	 * @see ParsingResult
+	 */
+
+	public ParsingResult parse( File file, boolean transpileCFML ) {
 		BoxSourceType	fileType	= detectFile( file );
 		AbstractParser	parser;
 		boolean			isScript	= true;
 		switch ( fileType ) {
 			case CFSCRIPT -> {
-				parser		= new CFParser();
+				parser		= new CFParser().withTranspilation( transpileCFML );
 				isScript	= true;
 			}
 			case CFTEMPLATE -> {
-				parser		= new CFParser();
+				parser		= new CFParser().withTranspilation( transpileCFML );
 				isScript	= false;
 			}
 			case BOXSCRIPT -> {
@@ -87,6 +105,8 @@ public class Parser {
 		} catch ( IOException e ) {
 			throw new BoxIOException( e );
 		}
+
+		result.setBoxSourceType( fileType );
 
 		IStruct data = Struct.of(
 		    "file", file,
@@ -126,15 +146,31 @@ public class Parser {
 	 * @see BoxExpression
 	 */
 	public ParsingResult parse( String code, BoxSourceType sourceType, Boolean classOrInterface ) throws IOException {
+		return parse( code, sourceType, false, true );
+	}
+
+	/**
+	 * Parse a script string expression
+	 *
+	 * @param code source of the expression to parse
+	 *
+	 * @return a ParsingResult containing the AST with a BoxExpr as root and the list of errors (if any)
+	 *
+	 * @throws IOException
+	 *
+	 * @see ParsingResult
+	 * @see BoxExpression
+	 */
+	public ParsingResult parse( String code, BoxSourceType sourceType, Boolean classOrInterface, Boolean transpileCFML ) throws IOException {
 		AbstractParser	parser;
 		boolean			isScript	= true;
 		switch ( sourceType ) {
 			case CFSCRIPT -> {
-				parser		= new CFParser();
+				parser		= new CFParser().withTranspilation( transpileCFML );
 				isScript	= true;
 			}
 			case CFTEMPLATE -> {
-				parser		= new CFParser();
+				parser		= new CFParser().withTranspilation( transpileCFML );
 				isScript	= false;
 			}
 			case BOXSCRIPT -> {
@@ -149,9 +185,10 @@ public class Parser {
 				throw new RuntimeException( "Unsupported language" );
 			}
 		}
-		ParsingResult	result	= parser.parse( code, classOrInterface, isScript );
+		ParsingResult result = parser.parse( code, classOrInterface, isScript );
+		result.setBoxSourceType( sourceType );
 
-		IStruct			data	= Struct.of(
+		IStruct data = Struct.of(
 		    "code", code,
 		    "result", result
 		);
