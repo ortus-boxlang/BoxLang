@@ -381,8 +381,12 @@ public class BoxRuntime implements java.io.Closeable {
 
 		// Add the following directories to the runtime home if they don't exist
 		// Common directories to ensure
-		List<String> directories = Arrays.asList( "classes", "config", "logs", "lib", "modules" );
+		List<String> directories = Arrays.asList( "classes", "config", "global", "logs", "lib", "modules" );
 		directories.forEach( dir -> FileSystemUtil.createDirectoryIfMissing( this.runtimeHome.resolve( dir ) ) );
+
+		// Global Directories to ensure
+		List<String> globalDirectories = Arrays.asList( "classes", "components", "schedulers" );
+		globalDirectories.forEach( dir -> FileSystemUtil.createDirectoryIfMissing( this.runtimeHome.resolve( "global" ).resolve( dir ) ) );
 
 		// Generate a seed file if missing
 		Path seedPath = this.runtimeHome.resolve( "config" ).resolve( ".seed" );

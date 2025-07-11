@@ -215,7 +215,7 @@ public class Component extends ortus.boxlang.runtime.components.Component {
 
 		pathToSearch.addAll(
 		    context.getConfig()
-		        .getAsArray( Key.customTagsDirectory )
+		        .getAsArray( Key.customComponentsDirectory )
 		        .stream()
 		        .map( entry -> ResolvedFilePath.of( "", entry.toString(), entry.toString(),
 		            FileSystemUtil.expandPath( context, entry.toString() ).absolutePath() ) )

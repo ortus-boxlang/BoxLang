@@ -226,7 +226,7 @@ public class Configuration implements IConfigSegment {
 	 * An array of directories where custom tags are located and loaded from.
 	 * {@code [ /{boxlang-home}/customTags ]}
 	 */
-	public List<String>								customTagsDirectory				= new ArrayList<>(
+	public List<String>								customComponentsDirectory		= new ArrayList<>(
 	    Arrays.asList( BoxRuntime.getInstance().getRuntimeHome().toString() + "/customTags" ) );
 
 	/**
@@ -467,7 +467,7 @@ public class Configuration implements IConfigSegment {
 				    entry.getKey(),
 				    PlaceholderHelper.resolve( entry.getValue() ) ) );
 			} else {
-				logger.warn( "The [runtime.mappings] configuration is not a JSON Object, ignoring it." );
+				logger.warn( "The [mappings] configuration is not a JSON Object, ignoring it." );
 			}
 		}
 
@@ -482,22 +482,22 @@ public class Configuration implements IConfigSegment {
 					}
 				} );
 			} else {
-				logger.warn( "The [runtime.modulesDirectory] configuration is not a JSON Array, ignoring it." );
+				logger.warn( "The [modulesDirectory] configuration is not a JSON Array, ignoring it." );
 			}
 		}
 
-		// Process customTags directories
-		if ( config.containsKey( Key.customTagsDirectory ) ) {
-			if ( config.get( Key.customTagsDirectory ) instanceof List<?> castedList ) {
+		// Process customComponent directories
+		if ( config.containsKey( Key.customComponentsDirectory ) ) {
+			if ( config.get( Key.customComponentsDirectory ) instanceof List<?> castedList ) {
 				// iterate and add to the original list if it doesn't exist
 				castedList.forEach( item -> {
 					var resolvedItem = PlaceholderHelper.resolve( item );
-					if ( !this.customTagsDirectory.contains( resolvedItem ) ) {
-						this.customTagsDirectory.add( resolvedItem );
+					if ( !this.customComponentsDirectory.contains( resolvedItem ) ) {
+						this.customComponentsDirectory.add( resolvedItem );
 					}
 				} );
 			} else {
-				logger.warn( "The [runtime.customTagsDirectory] configuration is not a JSON Array, ignoring it." );
+				logger.warn( "The [customComponentsDirectory] configuration is not a JSON Array, ignoring it." );
 			}
 		}
 
@@ -620,7 +620,7 @@ public class Configuration implements IConfigSegment {
 			if ( config.get( Key.experimental ) instanceof IStruct castedStruct ) {
 				castedStruct.entrySet().forEach( entry -> this.experimental.put( entry.getKey(), PlaceholderHelper.resolve( entry.getValue() ) ) );
 			} else {
-				logger.warn( "The [runtime.experimental] configuration is not a JSON Object, ignoring it." );
+				logger.warn( "The [experimental] configuration is not a JSON Object, ignoring it." );
 			}
 		}
 
@@ -642,12 +642,12 @@ public class Configuration implements IConfigSegment {
 						    this.datasources.put( datasourceConfig.name, datasourceConfig );
 					    } else {
 						    logger.warn(
-						        "The [runtime.datasources.{}] configuration is not a JSON Object, ignoring it.",
+						        "The [datasources.{}] configuration is not a JSON Object, ignoring it.",
 						        entry.getKey() );
 					    }
 				    } );
 			} else {
-				logger.warn( "The [runtime.datasources] configuration is not a JSON Object, ignoring it." );
+				logger.warn( "The [datasources] configuration is not a JSON Object, ignoring it." );
 			}
 		}
 
@@ -663,13 +663,13 @@ public class Configuration implements IConfigSegment {
 						        .process( castedMap );
 						    this.modules.put( moduleConfig.name, moduleConfig );
 					    } else {
-						    logger.warn( "The [runtime.modules.{}] configuration is not a JSON Object, ignoring it.",
+						    logger.warn( "The [modules.{}] configuration is not a JSON Object, ignoring it.",
 						        entry.getKey() );
 					    }
 				    } );
 
 			} else {
-				logger.warn( "The [runtime.modules] configuration is not a JSON Object, ignoring it." );
+				logger.warn( "The [modules] configuration is not a JSON Object, ignoring it." );
 			}
 		}
 
@@ -968,7 +968,7 @@ public class Configuration implements IConfigSegment {
 		    Key.caches, cachesCopy,
 		    Key.classGenerationDirectory, this.classGenerationDirectory,
 		    Key.clearClassFilesOnStartup, this.clearClassFilesOnStartup,
-		    Key.customTagsDirectory, Array.copyFromList( this.customTagsDirectory ),
+		    Key.customComponentsDirectory, Array.copyFromList( this.customComponentsDirectory ),
 		    Key.classPaths, Array.copyFromList( this.classPaths ),
 		    Key.datasources, datsourcesCopy,
 		    Key.debugMode, this.debugMode,

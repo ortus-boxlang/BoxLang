@@ -22,8 +22,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -438,7 +440,7 @@ public class BoxResolver extends BaseResolver {
 	}
 
 	/**
-	 * Find a class in lookup directories. This includes custom tag paths and component/class paths
+	 * Find a class in lookup directories. This includes custom component paths and class paths
 	 *
 	 * @param context   The current context of execution
 	 * @param slashName The name of the class to find using slahes instead of dots
@@ -455,35 +457,29 @@ public class BoxResolver extends BaseResolver {
 	    List<ImportDefinition> imports,
 	    boolean loadClass ) {
 
-		List<Path> lookupPaths = new ArrayList<Path>();
-		lookupPaths
-		    .addAll( context.getConfig().getAsArray( Key.customTagsDirectory ).stream().map( String::valueOf ).map( Path::of ).toList() );
-		lookupPaths.addAll( context.getConfig().getAsArray( Key.classPaths ).stream().map( String::valueOf ).map( Path::of ).toList() );
-
-		Optional<Path> result = lookupPaths
-		    .stream()
+		return Stream.concat(
+		    context.getConfig().getAsArray( Key.customComponentsDirectory ).stream(),
+		    context.getConfig().getAsArray( Key.classPaths ).stream()
+		).map( String::valueOf )
+		    .map( Path::of )
 		    .map( cp -> findExistingPathWithValidExtension( cp, slashName ) )
-		    .filter( path -> path != null )
-		    .findFirst();
-
-		if ( !result.isPresent() ) {
-			return Optional.empty();
-		}
-		Path				foundPath			= result.get();
-
-		ResolvedFilePath	newResolvedFilePath	= ResolvedFilePath.of( "", "", slashName, foundPath );
-		return Optional.of( new ClassLocation(
-		    newResolvedFilePath.getBoxFQN().getClassName(),
-		    foundPath.toAbsolutePath().toString(),
-		    newResolvedFilePath.getBoxFQN().getPackageString(),
-		    ClassLocator.TYPE_BX,
-		    null,
-		    "",
-		    true,
-		    context.getApplicationName(),
-		    newResolvedFilePath
-		) );
-
+		    .filter( Objects::nonNull )
+		    // Short circuit to the first found path
+		    .findFirst()
+		    .map( foundPath -> {
+			    ResolvedFilePath resolved = ResolvedFilePath.of( "", "", slashName, foundPath );
+			    return new ClassLocation(
+			        resolved.getBoxFQN().getClassName(),
+			        foundPath.toAbsolutePath().toString(),
+			        resolved.getBoxFQN().getPackageString(),
+			        ClassLocator.TYPE_BX,
+			        null,
+			        "",
+			        true,
+			        context.getApplicationName(),
+			        resolved
+			    );
+		    } );
 	}
 
 	/**
@@ -495,9 +491,11 @@ public class BoxResolver extends BaseResolver {
 	 * @return The path if found, null otherwise
 	 */
 	private Path findExistingPathWithValidExtension( Path parentPath, String slashName ) {
-		for ( String extension : getValidExtensions() ) {
-			Path	targetPath	= parentPath.resolve( slashName.substring( 1 ) + "." + extension ).normalize();
+		String		baseName	= slashName.substring( 1 );
+		Set<String>	extensions	= getValidExtensions(); // avoid calling repeatedly
 
+		for ( String extension : extensions ) {
+			Path	targetPath	= parentPath.resolve( baseName + "." + extension ).normalize();
 			Path	result		= FileSystemUtil.pathExistsCaseInsensitive( targetPath );
 			if ( result != null ) {
 				return result;

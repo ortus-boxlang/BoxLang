@@ -188,11 +188,11 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	 * This allows us to "reserve" known scope names to ensure arguments.foo
 	 * will always look in the proper arguments scope and never in
 	 * local.arguments.foo for example
-	 * 
+	 *
 	 * @param key     The key to check for visibility
 	 * @param nearby  true, check only scopes that are nearby to the current execution context
 	 * @param shallow true, do not delegate to parent or default scope if not found
-	 * 
+	 *
 	 * @return True if the key is visible in the current context, else false
 	 */
 	@Override
@@ -432,14 +432,22 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 		StructCaster.attempt( appSettings.get( Key.mappings ) )
 		    .ifPresent( mappings -> config.getAsStruct( Key.mappings ).putAll( mappings ) );
 
-		// Add in custom tag paths. We called them customTagsDirectory, but CF calls them customTagPaths. Maybe support both?
-		ArrayCaster.attempt( appSettings.get( Key.customTagPaths ) )
-		    .ifPresent( customTagPaths -> config.getAsArray( Key.customTagsDirectory ).addAll( customTagPaths ) );
-
-		// See if it's a comma-delimted list
-		StringCaster.attempt( appSettings.get( Key.customTagPaths ) )
+		// If we have a customTagPaths, then transpile it to customComponentPaths
+		// This is a legacy setting that was used in older versions of BoxLang + CFML
+		if ( appSettings.containsKey( Key.customTagPaths ) ) {
+			appSettings.put( Key.customComponentPaths, appSettings.get( Key.customTagPaths ) );
+		}
+		// Check if appSettings.customComponentPaths is a String ,if so, convert it to an array
+		StringCaster.attempt( appSettings.get( Key.customComponentPaths ) )
 		    .ifPresent(
-		        customTagPaths -> config.getAsArray( Key.customTagsDirectory ).addAll( ListUtil.asList( customTagPaths, ListUtil.DEFAULT_DELIMITER ) ) );
+		        castedPaths -> appSettings.put(
+		            Key.customComponentPaths,
+		            ListUtil.asList( castedPaths, ListUtil.DEFAULT_DELIMITER )
+		        )
+		    );
+		// Custom Component Paths, aliased as customTagPaths as well.
+		ArrayCaster.attempt( appSettings.get( Key.customComponentPaths ) )
+		    .ifPresent( customComponentPaths -> config.getAsArray( Key.customComponentsDirectory ).addAll( customComponentPaths ) );
 
 		// Add in classPaths and componentPaths (for CF compat) to the classPaths array
 		ArrayCaster.attempt( appSettings.get( Key.classPaths ) )
