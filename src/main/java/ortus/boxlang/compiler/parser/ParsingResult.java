@@ -32,6 +32,7 @@ public class ParsingResult {
 	private BoxNode					root;
 	private final List<Issue>		issues;
 	private final List<BoxComment>	comments;
+	private BoxSourceType			sourceType;
 
 	/**
 	 * General constructor.
@@ -47,6 +48,14 @@ public class ParsingResult {
 		this.root		= root;
 		this.issues		= issues;
 		this.comments	= comments;
+	}
+
+	public void setBoxSourceType( BoxSourceType sourceType ) {
+		this.sourceType = sourceType;
+	}
+
+	public BoxSourceType getBoxSourceType() {
+		return sourceType;
 	}
 
 	public BoxNode getRoot() {

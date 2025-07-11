@@ -147,6 +147,7 @@ public class CFParser extends AbstractParser {
 	public ComponentService		componentService	= BoxRuntime.getInstance().getComponentService();
 	private CFExpressionVisitor	expressionVisitor	= new CFExpressionVisitor( this, new CFVisitor( this ) );
 	private boolean				classOrInterface	= false;
+	private boolean				transpile			= true;
 
 	/**
 	 * Constructor
@@ -170,6 +171,11 @@ public class CFParser extends AbstractParser {
 
 	public void setInOutputBlock( boolean inOutputBlock ) {
 		this.inOutputBlock = inOutputBlock;
+	}
+
+	public CFParser withTranspilation( boolean transpile ) {
+		this.transpile = transpile;
+		return this;
 	}
 
 	/**
@@ -428,8 +434,12 @@ public class CFParser extends AbstractParser {
 		// associate all comments in the source with the appropriate AST nodes
 		rootNode.associateComments( this.comments );
 
-		// Transpile CF to BoxLang
-		return rootNode.accept( new CFTranspilerVisitor() );
+		if ( this.transpile ) {
+			// Transpile CF to BoxLang
+			return rootNode.accept( new CFTranspilerVisitor() );
+		} else {
+			return rootNode;
+		}
 	}
 
 	private void validateParse( CFLexerCustom lexer ) {
