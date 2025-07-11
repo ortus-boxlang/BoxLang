@@ -63,7 +63,7 @@ public class Parser {
 	/**
 	 * Parse a script file
 	 *
-	 * @param file source file to parse
+	 * @param file          source file to parse
 	 * @param transpileCFML whether to transpile CFML to BoxLang
 	 *
 	 * @return a ParsingResult containing the AST with a BoxScript as root and the list of errors (if any)
