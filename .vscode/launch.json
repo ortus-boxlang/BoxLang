@@ -161,6 +161,14 @@
 			"args": [
 				"module:test"
 			]
+		},
+		{
+			"type": "java",
+			"name": "PrettyPrint",
+			"request": "launch",
+			"mainClass": "ortus.boxlang.compiler.PrettyPrint",
+			"projectName": "BoxLang",
+			"args": "${input:prettyPrintFile}"
 		}
 	],
 	"inputs": [
@@ -178,6 +186,12 @@
 			"id": "arg1",
 			"description": "Enter the action command arg1",
 			"type": "promptString"
+		},
+		{
+			"id": "prettyPrintFile",
+			"description": "Enter the file path to pretty print",
+			"type": "promptString",
+			"default": "~/Projects/ast-viewer/public/test.bx"
 		}
 	]
 }
