@@ -100,9 +100,12 @@ public class ChildTransaction implements ITransaction {
 	/**
 	 * Set the datasource on the parent transaction.
 	 * <p>
-	 * Calls the same method on the parent transaction, allowing the child transaction to inherit the datasource. The parent transaction will ignore the datasource if it has already been set.
+	 * Calls the same method on the parent transaction, allowing the child transaction to inherit the datasource. Will no-op if the parent transaction already has a datasource set.
 	 */
 	public ChildTransaction setDataSource( DataSource datasource ) {
+		if ( this.parent.getDataSource() != null ) {
+			return this;
+		}
 		this.parent.setDataSource( datasource );
 		return this;
 	}
@@ -138,7 +141,7 @@ public class ChildTransaction implements ITransaction {
 	 * The transaction will be rolled back to the last committed point, and will ignore any set savepoints.
 	 */
 	public ChildTransaction rollback() {
-		return rollback( Key.nulls );
+		return rollback( ChildTransaction.BEGIN );
 	}
 
 	/**
@@ -147,11 +150,9 @@ public class ChildTransaction implements ITransaction {
 	 * @param savepoint The name of the savepoint to rollback to or NULL for no savepoint.
 	 */
 	public ChildTransaction rollback( Key savepoint ) {
-		if ( savepoint == Key.nulls ) {
-			savepoint = ChildTransaction.BEGIN;
-		}
-		logger.debug( "Rolling back child transaction to savepoint {}", this.savepointPrefix + savepoint );
-		this.parent.rollback( Key.of( this.savepointPrefix + savepoint.getNameNoCase() ) );
+		Key savepointKey = savepoint.getNameNoCase().startsWith( "child_" ) ? savepoint : Key.of( this.savepointPrefix + savepoint.getNameNoCase() );
+		logger.debug( "Rolling back child transaction to savepoint {}", savepointKey );
+		this.parent.rollback( savepointKey );
 		return this;
 	}
 
@@ -161,7 +162,8 @@ public class ChildTransaction implements ITransaction {
 	 * @param savepoint The name of the savepoint
 	 */
 	public ChildTransaction setSavepoint( Key savepoint ) {
-		this.parent.setSavepoint( Key.of( this.savepointPrefix + savepoint.getNameNoCase() ) );
+		Key savepointKey = savepoint.getNameNoCase().startsWith( "child_" ) ? savepoint : Key.of( this.savepointPrefix + savepoint.getNameNoCase() );
+		this.parent.setSavepoint( savepointKey );
 		return this;
 	}
 

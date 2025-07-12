@@ -217,7 +217,7 @@ public class Transaction implements ITransaction {
 	 * The transaction will be rolled back to the last committed point, and will ignore any set savepoints.
 	 */
 	public Transaction rollback() {
-		return rollback( Key.nulls );
+		return rollback( null );
 	}
 
 	/**
