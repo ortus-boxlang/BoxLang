@@ -71,7 +71,7 @@ public class GetSemverTest {
 	public void testBuildSemver() {
 		instance.executeSource(
 		    """
-		    result = getSemver().withMajor( 1 ).withMinor( 2 ).withPatch( 3 ).toSemver();
+		    result = getSemver().withMajor( 1 ).withMinor( 2 ).withPatch( 3 ).build();
 		    """,
 		    context );
 
@@ -79,6 +79,25 @@ public class GetSemverTest {
 		assertThat( semver.getMajor() ).isEqualTo( 1 );
 		assertThat( semver.getMinor() ).isEqualTo( 2 );
 		assertThat( semver.getPatch() ).isEqualTo( 3 );
+	}
+
+	@DisplayName( "it Can create an empty semver object" )
+	@Test
+	public void testEmptySemver() {
+		instance.executeSource(
+		    """
+		      result = GetSemver()
+		    .withMajor( 1 )
+		    .withMinor( 2 )
+		    .withPatch( 3 )
+		    .withPreRelease( "alpha" )
+		    .build()
+
+		    println( result )
+		      """,
+		    context
+		);
+
 	}
 
 }

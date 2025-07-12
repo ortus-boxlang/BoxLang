@@ -90,8 +90,8 @@ public class GetSemver extends BIF {
 	 *
 	 * <pre>
 	 *
-	 * var version = GetSemver().withMajor( 1 ).withMinor( 2 ).withPatch( 3 ).withPreRelease( "alpha" ).toSemver();
-	 * var versionString = GetSemver().withMajor( 1 ).withMinor( 2 ).withPatch( 3 ).withPreRelease( "alpha" ).toString();
+	 * var version = GetSemver().withMajor( 1 ).withMinor( 2 ).withPatch( 3 ).withPreRelease( "alpha" ).build();
+	 * var versionString = GetSemver().withMajor( 1 ).withMinor( 2 ).withPatch( 3 ).withPreRelease( "alpha" ).build();
 	 * </pre>
 	 *
 	 * @param context   The context in which the BIF is being invoked.
@@ -103,6 +103,6 @@ public class GetSemver extends BIF {
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String version = arguments.getAsString( Key.version );
-		return ( version.isEmpty() ) ? Semver.of() : new Semver( version );
+		return ( version.isEmpty() ) ? Semver.builder() : new Semver( version );
 	}
 }
