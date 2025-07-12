@@ -224,10 +224,10 @@ public class Configuration implements IConfigSegment {
 
 	/**
 	 * An array of directories where custom tags are located and loaded from.
-	 * {@code [ /{boxlang-home}/customTags ]}
+	 * {@code [ /{boxlang-home}/global/components ]}
 	 */
 	public List<String>								customComponentsDirectory		= new ArrayList<>(
-	    Arrays.asList( BoxRuntime.getInstance().getRuntimeHome().toString() + "/customTags" ) );
+	    Arrays.asList( BoxRuntime.getInstance().getRuntimeHome().toString() + "/global/components" ) );
 
 	/**
 	 * An array of directories where box classes are located and loaded from.

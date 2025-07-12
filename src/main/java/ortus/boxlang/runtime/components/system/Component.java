@@ -186,9 +186,8 @@ public class Component extends ortus.boxlang.runtime.components.Component {
 	 * Lookup a custom tag by name based on our lookup rules.
 	 * An error is thrown is the name could not be found.
 	 *
-	 * - Directories specified in the this.customTagPaths page variable, if it exists.
-	 * - Directories specified in the engine config Custom Tag Paths
-	 * - The /boxlang/CustomTags directory, and its subdirectories.
+	 * - Directories specified in the this.customComponentPaths page variable, if it exists.
+	 * - Directories specified in the engine config boxlang.json file, under the customComponentsDirectory key.
 	 * - Directories specified in the mappings in the engine config
 	 *
 	 * @param name The name of the custom tag in the format "foo.bar.baz". If the tag was called in the format <cf_brad>, then the name would be "brad"
@@ -200,7 +199,9 @@ public class Component extends ortus.boxlang.runtime.components.Component {
 		String					fullName		= name.replace( '.', File.separatorChar );
 		List<ResolvedFilePath>	pathToSearch	= new ArrayList<>();
 
-		// Add in directoruy of current template
+		// Add in the current template path, if it exists
+		// This is the path of the template that is invoking this component
+		// This is useful for relative paths in the custom component
 		Optional.ofNullable( context.findClosestTemplate() )
 		    .filter( template -> template.absolutePath() != null && !template.absolutePath().toString().equals( "unknown" )
 		        && template.absolutePath().getParent() != null )
@@ -213,22 +214,32 @@ public class Component extends ortus.boxlang.runtime.components.Component {
 		        ) )
 		    );
 
+		// Add in the custom components directories specified in the config
 		pathToSearch.addAll(
 		    context.getConfig()
 		        .getAsArray( Key.customComponentsDirectory )
 		        .stream()
-		        .map( entry -> ResolvedFilePath.of( "", entry.toString(), entry.toString(),
-		            FileSystemUtil.expandPath( context, entry.toString() ).absolutePath() ) )
+		        .map( entry -> ResolvedFilePath.of(
+		            "",
+		            entry.toString(),
+		            entry.toString(),
+		            FileSystemUtil.expandPath( context, entry.toString() ).absolutePath() )
+		        )
 		        .toList()
 		);
+
 		// Add in mappings to search
 		pathToSearch.addAll(
 		    context.getConfig()
 		        .getAsStruct( Key.mappings )
 		        .entrySet()
 		        .stream()
-		        .map( entry -> ResolvedFilePath.of( entry.getKey().getName(), entry.getValue().toString(), entry.getValue().toString(),
-		            entry.getValue().toString() ) )
+		        .map( entry -> ResolvedFilePath.of(
+		            entry.getKey().getName(),
+		            entry.getValue().toString(),
+		            entry.getValue().toString(),
+		            entry.getValue().toString() )
+		        )
 		        .toList()
 		);
 
