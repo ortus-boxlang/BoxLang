@@ -80,7 +80,7 @@ public class BoxTemplateTest {
 
 	@Test
 	public void testSetComponentUnquotedExpression() {
-		instance.getConfiguration().customTagsDirectory.add( "src/test/java/TestCases/components" );
+		instance.getConfiguration().customComponentsDirectory.add( "src/test/java/TestCases/components" );
 		instance.executeSource(
 		    """
 		       <bx:set foo = "bar">

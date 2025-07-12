@@ -45,7 +45,7 @@ public class ModuleTest {
 	@BeforeAll
 	public static void setUp() {
 		instance = BoxRuntime.getInstance( true );
-		instance.getConfiguration().customTagsDirectory.add( "src/test/java/ortus/boxlang/runtime/components/system" );
+		instance.getConfiguration().customComponentsDirectory.add( "src/test/java/ortus/boxlang/runtime/components/system" );
 	}
 
 	@AfterAll

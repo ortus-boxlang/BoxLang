@@ -57,7 +57,7 @@ public class GetBaseTagDataTest {
 	@DisplayName( "It gets tag data" )
 	@Test
 	public void testGetTagData() {
-		instance.getConfiguration().customTagsDirectory.add( "src/test/java/ortus/boxlang/runtime/bifs/global/system" );
+		instance.getConfiguration().customComponentsDirectory.add( "src/test/java/ortus/boxlang/runtime/bifs/global/system" );
 		instance.executeSource(
 		    """
 		    <bx:set thisIsCaller = true>

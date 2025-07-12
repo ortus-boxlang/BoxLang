@@ -56,7 +56,7 @@ public class GetBaseTagListTest {
 	@DisplayName( "It lists the tags" )
 	@Test
 	public void testListsTags() {
-		instance.getConfiguration().customTagsDirectory.add( "src/test/java/ortus/boxlang/runtime/bifs/global/system" );
+		instance.getConfiguration().customComponentsDirectory.add( "src/test/java/ortus/boxlang/runtime/bifs/global/system" );
 		instance.executeSource(
 		    """
 		    <!--- Adobe calls this "cf_TestCustomTag", but Lucee calls it "cfmodule".  We're copying Adobe. --->

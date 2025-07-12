@@ -218,9 +218,13 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		currentRow							= Key.of( "currentRow" );
 	public static final Key		customInterceptionPoints			= Key.of( "customInterceptionPoints" );
 	public static final Key		customTagName						= Key.of( "customTagName" );
+	public static final Key		customComponentName					= Key.of( "customComponentName" );
 	public static final Key		customTagPath						= Key.of( "customTagPath" );
+	public static final Key		customComponentPath					= Key.of( "customComponentPath" );
 	public static final Key		customTagPaths						= Key.of( "customTagPaths" );
+	public static final Key		customComponentPaths				= Key.of( "customComponentPaths" );
 	public static final Key		customTagsDirectory					= Key.of( "customTagsDirectory" );
+	public static final Key		customComponentsDirectory			= Key.of( "customComponentsDirectory" );
 	public static final Key		daemon								= Key.of( "daemon" );
 	public static final Key		data								= Key.of( "data" );
 	public static final Key		dataCollection						= Key.of( "dataCollection" );

@@ -139,28 +139,42 @@ public abstract class BaseApplicationListener {
 	 * You can find the majority of defaults in the {@link Configuration} class.
 	 */
 	protected IStruct						settings					= Struct.of(
+	    // Security settings
 	    "allowedFileOperationExtensions", runtime.getConfiguration().security.allowedFileOperationExtensions,
+	    // Application settings
 	    "applicationTimeout", runtime.getConfiguration().applicationTimeout,
+	    // Cache Definitions
 	    "caches", new Struct(),
+	    // Class Paths, using both for compat
 	    "classPaths", new Array(),
 	    "componentPaths", new Array(),
-	    "customTagPaths", new Array(),
+	    // Component Paths
+	    "customComponentPaths", new Array(),
+	    // Datasource settings
 	    "datasource", runtime.getConfiguration().defaultDatasource,
 	    "defaultDatasource", runtime.getConfiguration().defaultDatasource,
 	    "datasources", new Struct(),
+	    // Security settings
 	    "disallowedFileOperationExtensions", runtime.getConfiguration().security.disallowedFileOperationExtensions,
+	    // Invocation settings
 	    "invokeImplicitAccessor", runtime.getConfiguration().invokeImplicitAccessor,
+	    // Java Settings
 	    "javaSettings", Struct.of(
 	        "loadPaths", new Array(),
 	        "loadSystemClassPath", false,
 	        "reloadOnChange", false
 	    ),
+	    // Locale for the application
 	    "locale", runtime.getConfiguration().locale.toString(),
+	    // Mappings
 	    "mappings", Struct.of(),
+	    // Dynamic Schedulers
 	    "schedulers", new Array(),
+	    // Default Session Management settings
 	    "sessionManagement", runtime.getConfiguration().sessionManagement,
 	    "sessionStorage", runtime.getConfiguration().sessionStorage,
 	    "sessionTimeout", runtime.getConfiguration().sessionTimeout,
+	    // Cookie Management
 	    "setClientCookies", runtime.getConfiguration().setClientCookies,
 	    "setDomainCookies", runtime.getConfiguration().setDomainCookies,
 	    // These are auto-calculated at runtime
