@@ -258,7 +258,7 @@ public class Transaction implements ITransaction {
 	 *
 	 * @param savepoint The name of the savepoint
 	 */
-	public Transaction setSavepoint( Key savepoint ) {
+	public Savepoint setSavepoint( Key savepoint ) {
 		if ( savepoint == null ) {
 			throw new DatabaseException( "Savepoint name cannot be null" );
 		}
@@ -270,6 +270,10 @@ public class Transaction implements ITransaction {
 		);
 		announce( BoxEvent.ON_TRANSACTION_SET_SAVEPOINT, eventData );
 
+		if ( this.savepoints.containsKey( savepoint ) ) {
+			throw new DatabaseException( "Savepoint {} already exists, not creating again", savepoint.getNameNoCase() );
+		}
+
 		if ( this.connection != null ) {
 			try {
 				logger.debug( "Setting transaction savepoint: {}", savepoint.getNameNoCase() );
@@ -278,7 +282,7 @@ public class Transaction implements ITransaction {
 				throw new DatabaseException( "Failed to set savepoint: " + e.getMessage(), e );
 			}
 		}
-		return this;
+		return savepoints.get( savepoint );
 	}
 
 	/**
@@ -324,6 +328,20 @@ public class Transaction implements ITransaction {
 			}
 		}
 		return this;
+	}
+
+	/**
+	 * Get the savepoints used in this transaction.
+	 * <p>
+	 * This method returns a map of savepoint names to their associated savepoint objects, allowing you to manage and rollback to specific points in the transaction.
+	 * 
+	 * @see #setSavepoint(Key)
+	 * @see #rollback(Key)
+	 * 
+	 * @return A map of savepoint Keys to JDBC savepoint objects.
+	 */
+	public Map<Key, Savepoint> getSavepoints() {
+		return this.savepoints;
 	}
 
 	/**
