@@ -202,6 +202,7 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	    // Localized Date formats
 	    "EEE, dd MMM yyyy",            // Full Date (e.g., Tue, 02 Apr 2024) - Similar to FULL
 	    "dd MMM yyyy",                   // Long Date (e.g., 02 Apr 2024) - Similar to LONG
+	    "dd-MMM-yy",                     // Medium Date with a two-digit year (e.g., 02-Apr-24) - Might need adjustment based on locale
 	    "dd-MMM-yyyy",                   // Medium Date (e.g., 02-Apr-2024) - Might need adjustment based on locale
 	    "dd/MMM/yyyy",                   // Medium Date (e.g., 02-Apr-2024) - Might need adjustment based on locale
 	    "dd.MMM.yyyy",                   // Medium Date (e.g., 02.Apr.2024) - Might need adjustment based on locale
