@@ -467,7 +467,7 @@ public class Application {
 			    String		key			= ( String ) data.get( "key" );
 
 			    targetCache
-			        .get( key )
+			        .getQuiet( key )
 			        .ifPresent( maybeSession -> {
 				        if ( maybeSession instanceof Session castedSession ) {
 					        logger.debug( "Session storage cache [{}] shutdown session [{}]", targetCache.getName(), key );
