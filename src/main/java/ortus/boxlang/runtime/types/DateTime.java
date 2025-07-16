@@ -926,7 +926,14 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 		if ( DynamicInteropService.hasMethodNoCase( this.getClass(), name.getName() ) ) {
 			return DynamicInteropService.invoke( context, this, name.getName(), safe, positionalArguments );
 		} else if ( DynamicInteropService.hasMethodNoCase( this.wrapped.getClass(), name.getName() ) ) {
-			return DynamicInteropService.invoke( context, this.wrapped, name.getName(), safe, positionalArguments );
+			Object interopResult = DynamicInteropService.invoke( context, this.wrapped, name.getName(), safe, positionalArguments );
+			if( interopResult instanceof ZonedDateTime castZonedDateTime ) {
+				// If the result is a ZonedDateTime, we need to wrap it in a DateTime object
+				return new DateTime( castZonedDateTime );
+			} else {
+				// Otherwise, we return the result as is
+				return interopResult;
+			}
 		} else if ( DynamicInteropService.hasMethodNoCase( this.getClass(), "get" + name.getName() ) ) {
 			return DynamicInteropService.invoke( context, this.wrapped, "get" + name.getName(), safe, positionalArguments );
 		} else {
