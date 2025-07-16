@@ -473,6 +473,9 @@ public class BoxClassTransformer {
 			    List<AbstractInsnNode> psuedoBody = new ArrayList<>();
 			    List<AbstractInsnNode> body		= boxClass.getBody()
 			        .stream()
+			        // skip static methods declarations
+			        .filter( statement -> ! ( statement instanceof BoxFunctionDeclaration func
+			            && func.getModifiers().contains( BoxMethodDeclarationModifier.STATIC ) ) )
 			        .flatMap( statement -> transpiler.transform( statement, TransformerContext.NONE, ReturnValueContext.EMPTY ).stream() )
 			        .collect( Collectors.toList() );
 			    psuedoBody.addAll( transpiler.getUDFRegistrations() );
@@ -497,7 +500,16 @@ public class BoxClassTransformer {
 
 		AsmHelper.methodWithContextAndClassLocator( classNode, "staticInitializer", Type.getType( IBoxContext.class ), Type.VOID_TYPE, true, transpiler, false,
 		    () -> {
-			    List<AbstractInsnNode> staticNodes = ( List<AbstractInsnNode> ) transpiler.getBoxStaticInitializers()
+			    List<AbstractInsnNode> staticNodes = new ArrayList<>();
+			    boxClass.getDescendantsOfType( BoxFunctionDeclaration.class, ( expr ) -> {
+				    BoxFunctionDeclaration func = ( BoxFunctionDeclaration ) expr;
+
+				    return func.getModifiers().contains( BoxMethodDeclarationModifier.STATIC );
+			    } ).forEach( func -> {
+				    staticNodes.addAll( transpiler.transform( func, TransformerContext.NONE ) );
+			    } );
+
+			    staticNodes.addAll( ( List<AbstractInsnNode> ) transpiler.getBoxStaticInitializers()
 			        .stream()
 			        .map( ( staticInitializer ) -> {
 				        if ( staticInitializer == null || staticInitializer.getBody().size() == 0 ) {
@@ -511,15 +523,7 @@ public class BoxClassTransformer {
 				            .collect( Collectors.toList() );
 			        } )
 			        .flatMap( s -> s.stream() )
-			        .collect( Collectors.toList() );
-
-			    boxClass.getDescendantsOfType( BoxFunctionDeclaration.class, ( expr ) -> {
-				    BoxFunctionDeclaration func = ( BoxFunctionDeclaration ) expr;
-
-				    return func.getModifiers().contains( BoxMethodDeclarationModifier.STATIC );
-			    } ).forEach( func -> {
-				    staticNodes.addAll( transpiler.transform( func, TransformerContext.NONE ) );
-			    } );
+			        .collect( Collectors.toList() ) );
 
 			    return staticNodes;
 		    }
