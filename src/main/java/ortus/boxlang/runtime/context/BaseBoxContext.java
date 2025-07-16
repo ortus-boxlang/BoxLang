@@ -1021,12 +1021,23 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return The current row
 	 */
 	public int getQueryRow( Query query ) {
+		return getQueryRow( query, 0 );
+	}
+
+	/**
+	 * Get the current query row, providing a default value if the query is not registered
+	 *
+	 * @param query      The query to get the row from
+	 * @param defaultRow The default value to return if the query is not registered
+	 *
+	 * @return The current row
+	 */
+	public int getQueryRow( Query query, int defaultRow ) {
 		// If we're not looping over this query, then we're on the first row
 		if ( !queryLoops.containsKey( query ) ) {
-			return 0;
+			return defaultRow;
 		}
 		return queryLoops.get( query );
-
 	}
 
 	/**

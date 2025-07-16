@@ -44,9 +44,11 @@ public class LoopUtil {
 	    Integer maxRows,
 	    String label ) {
 
-		Query	theQuery	= getQuery( context, queryOrName );
-		int		iStartRow	= calculateStartRow( startRow );
-		int		iEndRow		= calculateEndRow( startRow, endRow, maxRows, theQuery.size() );
+		Query	theQuery			= getQuery( context, queryOrName );
+		int		iStartRow			= calculateStartRow( startRow );
+		int		iEndRow				= calculateEndRow( startRow, endRow, maxRows, theQuery.size() );
+		// -1 means the query wasn't originally registered
+		int		originalQueryLoop	= context.getQueryRow( theQuery, -1 );
 
 		// If there's nothing to loop over, exit stage left
 		if ( iEndRow < iStartRow ) {
@@ -76,7 +78,13 @@ public class LoopUtil {
 			}
 		} finally {
 			// This query is DONE!
-			context.unregisterQueryLoop( theQuery );
+			if ( originalQueryLoop > -1 ) {
+				// If we were originally registered, then unregister us
+				context.registerQueryLoop( theQuery, originalQueryLoop );
+			} else {
+				// Otherwise, we were never registered, so just unregister us
+				context.unregisterQueryLoop( theQuery );
+			}
 		}
 		return Component.DEFAULT_RETURN;
 	}
@@ -115,6 +123,8 @@ public class LoopUtil {
 		    parentExecutionState == null ? null : ( GroupData ) parentExecutionState.get( Key.groupData ) );
 
 		executionState.put( Key.groupData, groupData );
+		// -1 means the query wasn't originally registered
+		int originalQueryLoop = context.getQueryRow( theQuery, -1 );
 
 		try {
 			for ( int i = iStartRow; i <= iEndRow; i++ ) {
@@ -208,7 +218,13 @@ public class LoopUtil {
 
 			}
 		} finally {
-			context.unregisterQueryLoop( theQuery );
+			if ( originalQueryLoop > -1 ) {
+				// If we were originally registered, then unregister us
+				context.registerQueryLoop( theQuery, originalQueryLoop );
+			} else {
+				// Otherwise, we were never registered, so just unregister us
+				context.unregisterQueryLoop( theQuery );
+			}
 		}
 		return Component.DEFAULT_RETURN;
 	}

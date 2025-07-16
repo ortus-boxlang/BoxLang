@@ -1010,4 +1010,55 @@ public class LoopTest {
 		assertThat( variables.getAsArray( Key.of( "result" ) ) ).contains( "foo" );
 		assertThat( variables.getAsArray( Key.of( "result" ) ) ).contains( "baz" );
 	}
+
+	@Test
+	public void testUnscopeOutputAfterGroup() {
+		instance.executeSource(
+		    """
+		        	myQry = queryNew("group1,group2,value", "string,string,integer", [
+		        		{group1:"A", group2:"X", value: 10},
+		        		{group1:"A", group2:"X", value: 20},
+		        		{group1:"A", group2:"Y", value: 30},
+		        		{group1:"B", group2:"Z", value: 40},
+		        		{group1:"B", group2:"Z", value: 50}
+		        	])
+		        	savecontent variable="result" {
+		    	cfloop(query=myQry, group="group1") {
+		    		writeOutput("group1: #group1#");
+		    		cfloop(group="group2") {
+		    			writeOutput("group2: #group2#");
+		    		}
+		    		writeOutput("group1 (again): #group1#"); // fails
+		    		writeOutput("group1 (again): #myQry.group1#"); // works
+		    	}
+		    }
+		        """,
+		    context, BoxSourceType.CFSCRIPT );
+		String resultText = variables.getAsString( result ).replaceAll( "\\s+", "" );
+		assertThat( resultText ).isEqualTo( "group1:Agroup2:Xgroup2:Ygroup1(again):Agroup1(again):Agroup1:Bgroup2:Zgroup1(again):Bgroup1(again):B" );
+	}
+
+	@Test
+	public void testUnscopeOutputAfterLoop() {
+		instance.executeSource(
+		    """
+		    myQry = queryNew("value", "integer", [
+		    	{value: 10},
+		    	{value: 20}
+		    ])
+		    savecontent variable="result" {
+		    	cfloop(query=myQry) {
+		    		writeOutput("-outer-#value#");
+		    		cfloop(query=myQry) {
+		    			writeOutput("-inner-#value#");
+		    		}
+		    		writeOutput("-outer-again-#value#");
+		    	}
+		    }
+		           """,
+		    context, BoxSourceType.CFSCRIPT );
+		String resultText = variables.getAsString( result ).replaceAll( "\\s+", "" );
+		assertThat( resultText ).isEqualTo( "-outer-10-inner-10-inner-20-outer-again-10-outer-20-inner-10-inner-20-outer-again-20" );
+	}
+
 }

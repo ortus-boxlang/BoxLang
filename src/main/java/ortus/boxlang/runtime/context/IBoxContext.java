@@ -532,6 +532,16 @@ public interface IBoxContext extends IBoxAttachable, Serializable {
 	public Object unwrapQueryColumn( Object value );
 
 	/**
+	 * Get the current query row, providing a default value if the query is not registered
+	 *
+	 * @param query      The query to get the row from
+	 * @param defaultRow The default value to return if the query is not registered
+	 *
+	 * @return The current row
+	 */
+	public int getQueryRow( Query query, int defaultRow );
+
+	/**
 	 * Get the current query row
 	 *
 	 * @param query The query to get the row from
