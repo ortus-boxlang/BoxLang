@@ -2020,8 +2020,7 @@ public class ClassTest {
 		instance.executeSource(
 		    """
 		    result = new src.test.java.TestCases.phase3.StaticInitCallStaticMethod().someStruct.foo;
-
-		         """,
+		    """,
 		    context );
 		assertThat( variables.get( "result" ) ).isEqualTo( "bar" );
 	}
