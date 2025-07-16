@@ -21,7 +21,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
-public class RunAsyncTest {
+public class AsyncRunTest {
 
 	static BoxRuntime	instance;
 	IBoxContext			context;
