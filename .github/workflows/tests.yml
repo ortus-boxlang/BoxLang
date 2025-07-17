@@ -48,9 +48,11 @@ jobs:
         run: box install testbox@be src/test/resources --verbose --noSave
 
       - name: Test Module
+        env:
+          BOXLANG_EXPERIMENTAL_COMPILER: ${{ matrix.compiler }}
         run: |
-          ./gradlew :src:modules:test:build "-Dboxlang.experimental.compiler=${{ matrix.compiler }}" --stacktrace --console=plain
-          ./gradlew test "-Dboxlang.experimental.compiler=${{ matrix.compiler }}" --stacktrace --console=plain
+          ./gradlew :src:modules:test:build --stacktrace --console=plain
+          ./gradlew test --stacktrace --console=plain
 
       - name: Upload Test Results
         if: always()
