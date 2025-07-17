@@ -81,7 +81,8 @@ public class ArrayCaster implements IBoxCaster {
 		if ( object.getClass().isArray() ) {
 			// Arrays of Object are easier to cast
 			if ( object instanceof Object[] array ) {
-				return Array.of( array );
+				// This will wrap the native array and not copy it.
+				return Array.fromArray( array );
 			}
 
 			// for primitive arrays, we must copy like so

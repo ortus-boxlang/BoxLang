@@ -133,6 +133,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 
 	/**
 	 * Constructor to create an Array from a Java array
+	 * This will COPY the original array and not wrap it
 	 *
 	 * @param arr The array to create the Array from
 	 */
@@ -216,11 +217,12 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 
 	/**
 	 * Create an Array from a Java array of boxed objects
+	 * This will wrap the original array and not copy it.
 	 *
 	 * @param arr The array to create the Array from
 	 */
 	public static Array fromArray( Object[] arr ) {
-		return new Array( arr );
+		return new Array( Arrays.asList( arr ) );
 	}
 
 	/**
@@ -231,7 +233,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 	 * @return The Array
 	 */
 	public static Array of( Object... values ) {
-		return fromArray( values );
+		return new Array( values );
 	}
 
 	/**

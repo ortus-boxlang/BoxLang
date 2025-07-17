@@ -41,7 +41,7 @@ public class ArraySort extends BIF {
 	public ArraySort() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "modifiablearray", Key.array ),
+		    new Argument( true, "assignablearray", Key.array ),
 		    new Argument( false, "any", Key.sortType, "textnocase" ),
 		    new Argument( false, "string", Key.sortOrder, "asc" ),
 		    new Argument( false, "boolean", Key.localeSensitive ),

@@ -113,6 +113,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		arrayFindAll						= Key.of( "arrayFindAll" );
 	public static final Key		asOptional							= Key.of( "asOptional" );
 	public static final Key		assocAttribs						= Key.of( "assocAttribs" );
+	public static final Key		assignableArray						= Key.of( "assignableArray" );
 	public static final Key		asyncService						= Key.of( "asyncService" );
 	public static final Key		attribute							= Key.of( "attribute" );
 	public static final Key		attributeCollection					= Key.of( "attributeCollection" );

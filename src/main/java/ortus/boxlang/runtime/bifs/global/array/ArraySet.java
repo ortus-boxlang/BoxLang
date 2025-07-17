@@ -38,7 +38,7 @@ public class ArraySet extends BIF {
 	public ArraySet() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "modifiablearray", Key.array ),
+		    new Argument( true, "assignablearray", Key.array ),
 		    new Argument( true, "any", Key.start ),
 		    new Argument( true, "any", Key.end ),
 		    new Argument( true, "any", Key.value )
