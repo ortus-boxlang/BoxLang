@@ -29,6 +29,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.async.executors.ExecutorRecord;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.Attempt;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
@@ -404,7 +405,7 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 	 */
 
 	/**
-	 * This method accepts an infinite amount of future objects, closures or an array of future objects/closures
+	 * This method accepts an array of future objects, closures or an array of future objects/closures
 	 * in order to execute them in parallel. It will return back to you a future that will return back an array
 	 * of results from every future that was executed. This way you can further attach processing and pipelining
 	 * on the constructed array of values.
@@ -414,35 +415,62 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 	 * until you call get() on the future.
 	 * <p>
 	 * Each future can be a BoxFuture or a CompletableFuture or a BoxLang Function that will be treated as a future.
-	 *
-	 * <pre>
-	 * results = all( f1, f2, f3 ).get()
-	 * all( f1, f2, f3 ).then( (values) => logResults( values ) );
-	 * </pre>
+	 * <p>
+	 * This uses the default executor (ForkJoinPool.commonPool()).
 	 *
 	 * @param context The context of the current execution
-	 * @param futures The futures to execute. This can be one or more futures or an array of futures
+	 * @param futures The array of futures to execute
 	 *
-	 * @result A future that will return the results in an array
+	 * @return A future that will return the results in an array
 	 */
-	public static BoxFuture<Array> all( IBoxContext context, Object... futures ) {
-		BoxFuture<?>[]		aFutures	= futuresWrap( context, futures );
-		final BoxLangLogger	allLogger	= BoxRuntime.getInstance().getLoggingService().ASYNC_LOGGER;
+	public static BoxFuture<Array> all( IBoxContext context, Array futures ) {
+		return all( context, futures, BoxRuntime.getInstance().getAsyncService().getCommonForkJoinPool() );
+	}
+
+	/**
+	 * This method accepts an array of future objects, closures or an array of future objects/closures
+	 * in order to execute them in parallel. It will return back to you a future that will return back an array
+	 * of results from every future that was executed. This way you can further attach processing and pipelining
+	 * on the constructed array of values.
+	 * <p>
+	 * This means that the futures will be executed in parallel and the results will be returned in the order
+	 * that they were passed in. This also means that this operation is non-blocking and will return immediately
+	 * until you call get() on the future.
+	 * <p>
+	 * Each future can be a BoxFuture or a CompletableFuture or a BoxLang Function that will be treated as a future.
+	 * <p>
+	 * You can also pass a custom ExecutorRecord to use for the execution of the futures if and ONLY if
+	 * the incoming array of futures is an array of closures/lambdas or functions.
+	 *
+	 * <pre>
+	 * results = all( [f1, f2, f3] ).get()
+	 * all( [f1, f2, f3] ).then( (values) => logResults( values ) );
+	 * </pre>
+	 *
+	 * @param context        The context of the current execution
+	 * @param futures        The array of futures to execute
+	 * @param executorRecord The executor to use
+	 *
+	 * @return A future that will return the results in an array
+	 */
+	public static BoxFuture<Array> all( IBoxContext context, Array futures, ExecutorRecord executorRecord ) {
+		// If futures is null or empty, return an empty array future
+		if ( futures == null || futures.isEmpty() ) {
+			return BoxFuture.completedFuture( new Array() );
+		}
+
+		// Process the incoming array to make sure it complies to our expectations
+		BoxFuture<?>[] aFutures = futuresWrap( context, futures, executorRecord );
 
 		// Send to allOf() for execution
-		return ( BoxFuture<Array> ) allOf( aFutures )
+		return new BoxFuture<>( allOf( aFutures )
 		    .thenApplyAsync( v -> {
-			    return Arrays.stream( aFutures )
-			        .map( future -> {
-				        try {
-					        return future.get();
-				        } catch ( InterruptedException | ExecutionException e ) {
-					        allLogger.error( "Error executing get() on a future", e );
-					        throw new CompletionException( e );
-				        }
-			        } )
+			    // All futures are now complete, so join() won't block or throw checked exceptions
+			    return Arrays
+			        .stream( aFutures )
+			        .map( BoxFuture::join )
 			        .collect( BLCollector.toArray() );
-		    } );
+		    } ) );
 	}
 
 	/**
@@ -695,40 +723,61 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 	}
 
 	/**
-	 * This method accepts an infinite amount of future objects, closures or an array of future objects/closures
+	 * This method accepts an array of future objects, closures or an array of future objects/closures
 	 *
-	 * @param context The context of the current execution
-	 * @param futures The futures to execute. This can be one or more futures or an array of futures
+	 * @param context        The context of the current execution
+	 * @param futures        The futures to execute. This can be one or more futures or an array of futures
+	 * @param executorRecord The executor to use for running the futures
 	 *
-	 * @return A future that will return the results in an array
+	 * @return An array of BoxFuture objects
 	 */
-	public static BoxFuture<?>[] futuresWrap( IBoxContext context, Object... futures ) {
-		var target = futures;
-
-		// If we only have one future and it is an array, then we will use that array
-		if ( futures.length == 1 && futures[ 0 ] instanceof Object[] ) {
-			target = ( Object[] ) futures[ 0 ];
-		}
-
+	public static BoxFuture<?>[] futuresWrap( IBoxContext context, Array futures, ExecutorRecord executorRecord ) {
 		// Wrap all the futures in a BoxFuture
-		return Arrays.stream( target )
+		return futures
+		    .stream()
 		    .map( future -> {
+
+			    if ( future == null ) {
+				    throw new BoxRuntimeException( "Null future found in futures array" );
+			    }
+
+			    BoxFuture<?> targetFuture = null;
+
 			    // Already a BoxFuture
 			    if ( future instanceof BoxFuture ) {
-				    return ( BoxFuture<?> ) future;
+				    targetFuture = ( BoxFuture<?> ) future;
 			    }
-
 			    // Convert CompletableFuture to BoxFuture
-			    if ( future instanceof CompletableFuture ) {
-				    return ( BoxFuture<?> ) future;
+			    else if ( future instanceof CompletableFuture ) {
+				    targetFuture = BoxFuture.ofCompletableFuture( ( CompletableFuture<?> ) future );
+			    }
+			    // If it's a function, then wrap it in a BoxFuture
+			    else if ( future instanceof ortus.boxlang.runtime.types.Function castedFunction ) {
+				    targetFuture = run( new ortus.boxlang.runtime.interop.proxies.Supplier<>( castedFunction, context, null ), executorRecord.executor() );
+			    } else {
+				    throw new BoxRuntimeException(
+				        "Invalid future type: " + future.getClass().getSimpleName() +
+				            ". Expected BoxFuture, CompletableFuture, or Function"
+				    );
 			    }
 
-			    // Build one from a closure
-			    if ( future instanceof ortus.boxlang.runtime.types.Function castedFunction ) {
-				    return ( BoxFuture<?> ) run( new ortus.boxlang.runtime.interop.proxies.Supplier<>( castedFunction, context, null ) );
-			    }
-
-			    throw new IllegalArgumentException( "Invalid future type" );
+			    // Create a new BoxFuture to handle both success and error cases
+			    BoxFuture<Object> resultFuture = new BoxFuture<>();
+			    targetFuture.whenComplete( ( result, throwable ) -> {
+				    if ( throwable != null ) {
+					    // Log the error
+					    BoxRuntime.getInstance().getLoggingService().ASYNC_LOGGER.error( "Error executing future", throwable );
+					    // Complete with error struct
+					    resultFuture.complete( Struct.of(
+					        "error", true,
+					        "message", throwable.getMessage() != null ? throwable.getMessage() : throwable.getClass().getSimpleName(),
+					        "stackTrace", Arrays.toString( throwable.getStackTrace() )
+					    ) );
+				    } else {
+					    resultFuture.complete( result );
+				    }
+			    } );
+			    return resultFuture;
 		    } )
 		    .toArray( BoxFuture[]::new );
 	}

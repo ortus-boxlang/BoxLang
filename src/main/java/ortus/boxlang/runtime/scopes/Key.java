@@ -356,6 +356,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		from								= Key.of( "from" );
 	public static final Key		fromKey								= Key.of( "fromKey" );
 	public static final Key		fullname							= Key.of( "fullname" );
+	public static final Key		future								= Key.of( "future" );
+	public static final Key		futures								= Key.of( "futures" );
 	public static final Key		function							= Key.of( "function" );
 	public static final Key		functions							= Key.of( "functions" );
 	public static final Key		functionService						= Key.of( "functionService" );
