@@ -36,7 +36,7 @@ public class ArrayResize extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "modifiablearray", Key.array ),
-		    new Argument( true, "any", Key.size )
+		    new Argument( true, "integer", Key.size )
 		};
 	}
 
