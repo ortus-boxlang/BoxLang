@@ -2015,4 +2015,14 @@ public class ClassTest {
 		assertThat( variables.get( "result5" ) ).isEqualTo( "Outer function startInner functionOuter function end" );
 	}
 
+	@Test
+	public void testStaticInitCallStaticMethod() {
+		instance.executeSource(
+		    """
+		    result = new src.test.java.TestCases.phase3.StaticInitCallStaticMethod().someStruct.foo;
+		    """,
+		    context );
+		assertThat( variables.get( "result" ) ).isEqualTo( "bar" );
+	}
+
 }

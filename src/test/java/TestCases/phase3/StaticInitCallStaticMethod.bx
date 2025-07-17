@@ -1,0 +1,12 @@
+class {
+	static {
+		someStruct = { 
+				foo : someStaticFunction( 'bar' )
+		}
+	}
+
+	private static string function someStaticFunction( required string baz ) {
+		return arguments.baz;
+	}
+
+}
