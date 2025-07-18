@@ -1042,6 +1042,7 @@ public class StructUtil {
 	 * Get a map of common comparators for sorting structs with a specific locale.
 	 * This map contains comparators for text, numeric, and case-insensitive text sorting,
 	 * localized according to the provided Locale.
+	 * This method sorts on a struct's entries, which are Map.Entry<Key, Object> pairs.
 	 *
 	 * @param locale The Locale to use for text comparisons.
 	 *
