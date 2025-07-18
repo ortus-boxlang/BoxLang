@@ -27,6 +27,7 @@ import java.time.Year;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.time.OffsetDateTime;
 import java.time.chrono.ChronoLocalDateTime;
 import java.time.chrono.ChronoZonedDateTime;
 import java.time.chrono.Chronology;
@@ -151,81 +152,6 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	);
 
 	/**
-	 * A primitive array of common US-prioritized DateTime format patterns, which is used for fast casting by commons lang DateUtils
-	 */
-	public static final String[]			COMMON_DATETIME_PATTERNS					= {
-
-	    // Localized Date/Time formats
-	    "EEE, dd MMM yyyy HH:mm:ss zzz", // Full DateTime (e.g., Tue, 02 Apr 2024 21:01:00 CEST) - Similar to FULL_FULL
-	    "dd MMM yyyy HH:mm:ss",         // Long DateTime (e.g., 02 Apr 2024 21:01:00) - Similar to LONG_LONG
-	    "dd-MMM-yyyy HH:mm:ss",         // Medium DateTime (e.g., 02-Apr-2024 21:01:00) - Might need adjustment based on locale
-	    "MM/dd/yyyy HH:mm:ss",         // Short DateTime (e.g., 02/04/2024 21:01:00) - Might need adjustment based on locale
-	    "MM/dd/yyyy hh:mm:ss a",         // Short DateTime (e.g., 02/04/2024 04:01:00 PM) - Might need adjustment based on locale
-	    "MM/dd/yyyy hh:mm a",         // Short DateTime (e.g., 02/04/2024 04:01:00 PM) - Might need adjustment based on locale
-	    "dd.MM.yyyy HH:mm:ss",         // Short DateTime (e.g., 02.04.2024 21:01:00) - Might need adjustment based on locale
-	    "LLLL dd yyyy HH:mm:ss", 	  // Long month DateTime (e.g., April 02 2024 21:01:00) - Might need adjustment based on locale
-	    "LLLL dd',' yyyy HH:mm:ss", 	  // Long month DateTime (e.g., April 02, 2024 21:01:00) - Might need adjustment based on locale
-	    "LLLL dd yyyy hh:mm a", 	  // Long month DateTime with AM/PM (e.g., April 02 2024 05:01 AM) - Might need adjustment based on locale
-	    "LLLL dd',' yyyy hh:mm a", 	  // Long month DateTime with AM/PM (e.g., April 02, 2024 05:01 AM) - Might need adjustment based on locale
-	    "MMM dd yyyy HH:mm:ss", 	  // Med DateTime (e.g., Apr 02 2024 21:01:00) - Might need adjustment based on locale
-	    "MMM dd',' yyyy HH:mm:ss", 	  // Med DateTime (e.g., Apr 02, 2024 21:01:00) - Might need adjustment based on locale
-	    "MMM dd yyyy hh:mm a", 	       // Med DateTime No Seconds and AM/PM (e.g., Apr 02 2024 10:01 AM) - Might need adjustment based on locale
-	    "MMM dd',' yyyy hh:mm a", 	    // Med DateTime No Seconds and AM/PM (e.g., Apr 02, 2024 10:01 AM) - Might need adjustment based on locale
-	    "MMM dd yyyy HH:mm", 	       // Med DateTime No Seconds (e.g., Apr 02 2024 21:01) - Might need adjustment based on locale
-	    "MMM dd',' yyyy HH:mm", 	       // Med DateTime No Seconds (e.g., Apr 02 2024 21:01) - Might need adjustment based on locale
-
-	    // java.util.Date toString default format
-	    "EEE MMM dd HH:mm:ss zzz yyyy", // Default DateTime (e.g., Tue Apr 02 21:01:00 CET 2024) - Similar to DEFAULT
-
-	    // ISO formats
-	    "yyyy-MM-dd'T'HH:mm:ss.SSSXXX",  // Date-time with milliseconds and offset
-	    "yyyy-MM-dd'T'HH:mm:ss.SSS",     // Date-time with milliseconds
-	    "yyyy-MM-dd'T'HH:mm:ssZ",        // Date-time with offset (Z)
-	    "yyyy-MM-dd'T'HH:mm:ssX",        // Date-time with offset (X)
-	    "yyyy-MM-dd'T'HH:mm:ss",         // Date-time
-
-	    // ODBC formats
-	    "yyyyMMddHHmmss",                // ODBCDateTime - Potential ODBC format
-
-	    // US Localized Date formats - Month First
-	    "MMM dd yyyy",                   // Long Date (e.g., Apr 02 2024)
-	    "MMM-dd-yyyy",                   // Medium Date (e.g., Apr-02-2024) - Might need adjustment based on locale
-	    "MMM/dd/yyyy",                   // Medium Date (e.g., Apr/02/2024) - Might need adjustment based on locale
-	    "MMM.dd.yyyy",                   // Medium Date (e.g., Apr.02.2024) - Might need adjustment based on locale
-
-	    // US Localized Date formats - Month First (Short)
-	    "MM dd yyyy",                   // Short Date (e.g., 04 02 2024) - Might need adjustment based on locale
-	    "MM-dd-yyyy",                   // Short Date (e.g., 04-02-2024) - Might need adjustment based on locale
-	    "MM/dd/yyyy",                   // Short Date (e.g., 04/02/2024) - Might need adjustment based on locale
-	    "MM.dd.yyyy",                   // Short Date (e.g., 04.02.2024) - Might need adjustment based on locale
-
-	    // Localized Date formats
-	    "EEE, dd MMM yyyy",            // Full Date (e.g., Tue, 02 Apr 2024) - Similar to FULL
-	    "dd MMM yyyy",                   // Long Date (e.g., 02 Apr 2024) - Similar to LONG
-	    "dd-MMM-yy",                     // Medium Date with a two-digit year (e.g., 02-Apr-24) - Might need adjustment based on locale
-	    "dd-MMM-yyyy",                   // Medium Date (e.g., 02-Apr-2024) - Might need adjustment based on locale
-	    "dd/MMM/yyyy",                   // Medium Date (e.g., 02-Apr-2024) - Might need adjustment based on locale
-	    "dd.MMM.yyyy",                   // Medium Date (e.g., 02.Apr.2024) - Might need adjustment based on locale
-	    "MMM dd, yyyy",                  // Med Date (e.g., Apr 02, 2024) - Might need adjustment based on locale
-	    "MMMM dd yyyy",                  // Long month Date (e.g., April 02 2024) - Might need adjustment based on locale
-	    "MMMM dd, yyyy",                 // Long month Date (e.g., April 02, 2024) - Might need adjustment based on locale
-
-	    // European Day-First Formats
-	    "dd MM yyyy",                   // Short Date (e.g., 02.04.2024) - Might need adjustment based on locale
-	    "dd-MM-yyyy",                   // Short Date (e.g., 02-04-2024) - Might need adjustment based on locale
-	    "dd/MM/yyyy",                   // Short Date (e.g., 02/04/2024) - Might need adjustment based on locale
-	    "dd.MM.yyyy",                   // Short Date (e.g., 02.04.2024) - Might need adjustment based on locale
-
-	    // ISO format
-	    "yyyy-MM-dd",                   // ISODate (e.g., 2024-04-02)
-	    "yyyy/MM/dd",                   // ISODate (e.g., 2024/04/02)
-	    "yyyy.MM.dd",                   // ISODate (e.g., 2024.04.02)
-
-	    // ODBC format
-	    "yyyyMMdd"                     // ODBCDate - Potential ODBC format
-	};
-
-	/**
 	 * The format we use to represent the date time
 	 * which defaults to the ODBC format: {ts '''yyyy-MM-dd HH:mm:ss'''}
 	 */
@@ -336,6 +262,10 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	 */
 	public DateTime( LocalDateTime dateTime ) {
 		this( dateTime, ZoneId.systemDefault() );
+	}
+
+	public DateTime( OffsetDateTime dateTime ) {
+		this( dateTime.toZonedDateTime() );
 	}
 
 	/**
@@ -729,8 +659,7 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	 */
 	@BoxMemberExpose
 	public String toISOString() {
-		this.formatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
-		return toString();
+		return this.wrapped.format( DateTimeFormatter.ISO_OFFSET_DATE_TIME );
 	}
 
 	/**

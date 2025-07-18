@@ -489,8 +489,9 @@ public class DateTimeFormatTest {
 		DateTime dateRef = DateTimeCaster.cast( "2025-01-01T12:00:00.000Z" );
 		instance.executeSource(
 		    """
-		    result = "2025-01-01T12:00:00.000Z".DateTimeFormat( format="long", locale="en-US" );
-		    """,
+		    setTimeZone( "Z" );
+		       result = "2025-01-01T12:00:00.000Z".DateTimeFormat( format="long", locale="en-US" );
+		       """,
 		    context );
 		String				result		= variables.getAsString( Key.of( "result" ) );
 		DateTimeFormatter	formatter	= ( DateTimeFormatter ) DateTime.COMMON_FORMATTERS.get( "longDateTime" );
@@ -609,8 +610,9 @@ public class DateTimeFormatTest {
 		DateTime dateRef = DateTimeCaster.cast( "2025-01-01T12:00:00.000Z" );
 		instance.executeSource(
 		    """
-		    result = "2025-01-01T12:00:00.000Z".timeFormat( format="long", locale="en-US" );
-		    """,
+		    setTimeZone( "Z" );
+		       result = "2025-01-01T12:00:00.000Z".timeFormat( format="long", locale="en-US" );
+		       """,
 		    context );
 		String				result		= variables.getAsString( Key.of( "result" ) );
 		DateTimeFormatter	formatter	= ( DateTimeFormatter ) DateTime.COMMON_FORMATTERS.get( "longTime" );

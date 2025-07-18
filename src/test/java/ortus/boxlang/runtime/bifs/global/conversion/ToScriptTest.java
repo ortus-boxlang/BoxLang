@@ -92,11 +92,12 @@ public class ToScriptTest {
 		    """
 		    setTimezone( "UTC" );
 		    myDate = parseDateTime( "2024-03-07T16:35:43.362397-06:00" );
+			println( "parsed date: " & myDate.toISOString() );
 		    result = toScript( myDate, "myVar" )
 		    """,
 		    context );
 		// @formatter:on
-		assertThat( variables.get( result ) ).isEqualTo( "myVar = new Date('2024-03-07T16:35:43.362397Z');" );
+		assertThat( variables.get( result ) ).isEqualTo( "myVar = new Date('2024-03-07T16:35:43.362397-06:00');" );
 	}
 
 	@Test
