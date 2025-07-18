@@ -667,6 +667,16 @@ public final class LocalizationUtil {
 		return symbols;
 	}
 
+	/**
+	 * Parses a date-time string using common patterns and returns a {@link DateTime} object.
+	 * The method attempts to parse the input string into various {@link TemporalAccessor} types,
+	 * such as {@link OffsetDateTime}, {@link ZonedDateTime}, {@link LocalDateTime}, {@link LocalDate},
+	 * {@link LocalTime}, or {@link Instant}. If successful, it wraps the parsed result in a {@link DateTime}.
+	 *
+	 * @param dateTime the date-time string to parse
+	 * @return a {@link DateTime} object representing the parsed date-time
+	 * @throws BoxRuntimeException if the input string cannot be parsed into a supported {@link TemporalAccessor}
+	 */
 	public static DateTime parseFromCommonPatterns( String dateTime ) {
 		TemporalAccessor date = getCommonPatternDateTimeParsers().parseBest( dateTime, OffsetDateTime::from, ZonedDateTime::from, LocalDateTime::from,
 		    LocalDate::from, LocalTime::from );
