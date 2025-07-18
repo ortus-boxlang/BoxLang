@@ -116,7 +116,8 @@ public class ModuleRecord {
 
 	/**
 	 * The BoxLang mapping of the module used to construct classes from within it.
-	 * All mappings have a prefix of {@link ModuleService#MODULE_MAPPING_INVOCATION_PREFIX}
+	 * All mappings have a prefix of
+	 * {@link ModuleService#MODULE_MAPPING_INVOCATION_PREFIX}
 	 *
 	 */
 	public String				mapping;
@@ -182,7 +183,8 @@ public class ModuleRecord {
 	public Path					physicalPath;
 
 	/**
-	 * The physical path of the module but in string format. Used by BoxLang code mostly
+	 * The physical path of the module but in string format. Used by BoxLang code
+	 * mostly
 	 * Same as the {@link ModuleRecord#physicalPath} but in string format
 	 */
 	public String				path;
@@ -276,8 +278,8 @@ public class ModuleRecord {
 			    .from( "boxlang" )
 			    .ifPresent( "moduleName", value -> this.name = Key.of( value ) )
 			    .ifPresent( "minimumVersion",
-			        value -> this.runtime.getModuleService().verifyModuleAndBoxLangVersion( ( String ) value, directoryPath )
-			    );
+			        value -> this.runtime.getModuleService().verifyModuleAndBoxLangVersion( ( String ) value,
+			            directoryPath ) );
 		}
 
 		// Default to the directory name if the box.json file does not exist
@@ -309,7 +311,8 @@ public class ModuleRecord {
 	 */
 	public ModuleRecord loadDescriptor( IBoxContext context ) {
 		Path	descriptorPath	= physicalPath.resolve( ModuleService.MODULE_DESCRIPTOR );
-		String	packageName		= MODULE_PACKAGE_NAME + this.name.getNameNoCase() + EncryptionUtil.hash( physicalPath.toString() );
+		String	packageName		= MODULE_PACKAGE_NAME + this.name.getNameNoCase()
+		    + EncryptionUtil.hash( physicalPath.toString() );
 
 		// Load the Class, Construct it and store it
 		this.moduleConfig = ( IClassRunnable ) DynamicObject.of(
@@ -317,12 +320,11 @@ public class ModuleRecord {
 		        ResolvedFilePath.of(
 		            null,
 		            null,
-		            packageName.replace( ".", Matcher.quoteReplacement( File.separator ) ) + File.separator + ModuleService.MODULE_DESCRIPTOR,
-		            descriptorPath
-		        ),
-		        context
-		    )
-		).invokeConstructor( context )
+		            packageName.replace( ".", Matcher.quoteReplacement( File.separator ) ) + File.separator
+		                + ModuleService.MODULE_DESCRIPTOR,
+		            descriptorPath ),
+		        context ) )
+		    .invokeConstructor( context )
 		    .getTargetInstance();
 
 		// Nice References
@@ -380,7 +382,8 @@ public class ModuleRecord {
 
 	/**
 	 * This method registers the module with all the runtime services.
-	 * This is called by the ModuleService if the module is allowed to be registered or not
+	 * This is called by the ModuleService if the module is allowed to be registered
+	 * or not
 	 *
 	 * @param context The current context of execution
 	 *
@@ -398,17 +401,18 @@ public class ModuleRecord {
 		// Called first in case this is used in the `configure` method
 		this.runtime.getConfiguration().registerMapping( this.mapping, this.path );
 
-		// Create the module class loader and seed it with the physical path to the module
+		// Create the module class loader and seed it with the physical path to the
+		// module
 		// This traverses the module and looks for *.class files to load (NOT JARs)
 		// Using the `modules.{module_name}` package prefix
-		// This is important for module developers to include this as their package prefix.
+		// This is important for module developers to include this as their package
+		// prefix.
 		try {
 			this.classLoader = new DynamicClassLoader(
 			    this.name,
 			    this.physicalPath.toUri().toURL(),
 			    this.runtime.getRuntimeLoader(),
-			    false
-			);
+			    false );
 		} catch ( MalformedURLException e ) {
 			this.logger.error( "Error creating module [{}] class loader.", this.name, e );
 			throw new BoxRuntimeException( "Error creating module [" + this.name + "] class loader", e );
@@ -421,8 +425,10 @@ public class ModuleRecord {
 			try {
 				this.classLoader.addURLs( DynamicClassLoader.getJarURLs( libsPath ) );
 			} catch ( IOException e ) {
-				this.logger.error( "Error while seeding the module [{}] class loader with the libs folder.", this.name, e );
-				throw new BoxRuntimeException( "Error while seeding the module [" + this.name + "] class loader with the libs folder", e );
+				this.logger.error( "Error while seeding the module [{}] class loader with the libs folder.", this.name,
+				    e );
+				throw new BoxRuntimeException(
+				    "Error while seeding the module [" + this.name + "] class loader with the libs folder", e );
 			}
 		}
 
@@ -432,8 +438,7 @@ public class ModuleRecord {
 			    context,
 			    Key.configure,
 			    DynamicObject.EMPTY_ARGS,
-			    false
-			);
+			    false );
 		}
 
 		// Register descriptor configurations into the record
@@ -452,7 +457,8 @@ public class ModuleRecord {
 
 		// Register Interception points with the InterceptorService
 		if ( !this.customInterceptionPoints.isEmpty() ) {
-			interceptorService.registerInterceptionPoint( this.customInterceptionPoints.stream().map( Key::of ).toArray( Key[]::new ) );
+			interceptorService
+			    .registerInterceptionPoint( this.customInterceptionPoints.stream().map( Key::of ).toArray( Key[]::new ) );
 		}
 
 		// Register BoxLang Bifs if they exist
@@ -514,18 +520,21 @@ public class ModuleRecord {
 		ServiceLoader.load( IScheduler.class, this.classLoader )
 		    .stream()
 		    .map( ServiceLoader.Provider::get )
-		    .forEach( scheduler -> this.runtime.getSchedulerService().loadScheduler( Key.of( scheduler.getSchedulerName() + "@" + this.name ), scheduler ) );
+		    .forEach( scheduler -> this.runtime.getSchedulerService()
+		        .loadScheduler( Key.of( scheduler.getSchedulerName() + "@" + this.name ), scheduler ) );
 
 		// Do we have any Java ICacheProviders to register in the CacheService
 		ServiceLoader.load( ICacheProvider.class, this.classLoader )
 		    .stream()
 		    .map( ServiceLoader.Provider::type )
-		    .forEach( provider -> this.runtime.getCacheService().registerProvider( Key.of( provider.getSimpleName() ), provider ) );
+		    .forEach( provider -> this.runtime.getCacheService().registerProvider( Key.of( provider.getSimpleName() ),
+		        provider ) );
 
 		// Do we have any Java IInterceptor to register in the InterceptorService
 		ServiceLoader.load( IInterceptor.class, this.classLoader )
 		    .stream()
-		    // Only load interceptors that are set to auto-load by default or by configuration
+		    // Only load interceptors that are set to auto-load by default or by
+		    // configuration
 		    .filter( provider -> interceptorService.canLoadInterceptor( provider.type() ) )
 		    // Register the interceptor with the module settings
 		    .map( ServiceLoader.Provider::get )
@@ -556,8 +565,7 @@ public class ModuleRecord {
 				    context,
 				    Key.onUnload,
 				    DynamicObject.EMPTY_ARGS,
-				    false
-				);
+				    false );
 			} catch ( Exception e ) {
 				this.logger.error( "Error while unloading module [{}]", this.name, e );
 			}
@@ -601,7 +609,7 @@ public class ModuleRecord {
 	 * @throws ClassNotFoundException If the class is not found
 	 */
 	public Class<?> findModuleClass( String className, Boolean safe, IBoxContext context ) throws ClassNotFoundException {
-		return this.classLoader.findClass( className, safe );
+		return this.classLoader.findClass( className, safe, false );
 	}
 
 	/**
@@ -610,8 +618,10 @@ public class ModuleRecord {
 	 *
 	 * @param context The current context of execution
 	 *
-	 * @throws BoxRuntimeException If an interceptor record is missing the [class] which is mandatory
-	 * @throws BoxRuntimeException If an interceptor class is not found locally or with any mappings
+	 * @throws BoxRuntimeException If an interceptor record is missing the [class]
+	 *                             which is mandatory
+	 * @throws BoxRuntimeException If an interceptor class is not found locally or
+	 *                             with any mappings
 	 *
 	 * @return The ModuleRecord
 	 */
@@ -652,9 +662,7 @@ public class ModuleRecord {
 				        interceptorClass,
 				        interceptorRecord.getAsStruct( Key.properties ),
 				        interceptorRecord.getAsString( Key._NAME ),
-				        this
-				    )
-				);
+				        this ) );
 			}
 		}
 
@@ -669,8 +677,7 @@ public class ModuleRecord {
 			    context,
 			    Key.onLoad,
 			    DynamicObject.EMPTY_ARGS,
-			    false
-			);
+			    false );
 		}
 
 		// Finalize
@@ -686,7 +693,8 @@ public class ModuleRecord {
 	 *
 	 * @param targetClass The class to verify
 	 *
-	 * @return The class name to use, either absolute or with the module invocation path
+	 * @return The class name to use, either absolute or with the module invocation
+	 *         path
 	 */
 	private String ensureModuleInvocationAsset( String targetClass ) {
 		if ( targetClass.startsWith( this.invocationPath ) ) {
@@ -702,7 +710,8 @@ public class ModuleRecord {
 	 * @param context The current context of execution
 	 * @param args    The arguments to pass to the module
 	 *
-	 * @throws BoxRuntimeException If the module is not executable, meaning it doesn't have a main method
+	 * @throws BoxRuntimeException If the module is not executable, meaning it
+	 *                             doesn't have a main method
 	 */
 	public void execute( IBoxContext context, String[] args ) {
 		ThisScope thisScope = this.moduleConfig.getThisScope();
@@ -716,8 +725,7 @@ public class ModuleRecord {
 			    context,
 			    Key.main,
 			    new Object[] { Array.fromArray( args ) },
-			    false
-			);
+			    false );
 		} catch ( Exception e ) {
 			runtime.getLoggingService().getExceptionLogger().error( e.getMessage(), e );
 			throw new BoxRuntimeException( e.getMessage(), e );
@@ -734,7 +742,8 @@ public class ModuleRecord {
 	/**
 	 * If the module is enabled for activation
 	 *
-	 * @return {@code true} if the module is enabled for activation, {@code false} otherwise
+	 * @return {@code true} if the module is enabled for activation, {@code false}
+	 *         otherwise
 	 */
 	public boolean isEnabled() {
 		return enabled;
@@ -780,8 +789,7 @@ public class ModuleRecord {
 		    "registrationTime", registrationTime,
 		    "settings", settings,
 		    "version", version,
-		    "webURL", webURL
-		);
+		    "webURL", webURL );
 	}
 
 	/**
@@ -793,13 +801,15 @@ public class ModuleRecord {
 	/**
 	 * Register a BoxLang based Component with the runtime
 	 *
-	 * @param targetFile The target file to register that represents the Component on disk
+	 * @param targetFile The target file to register that represents the Component
+	 *                   on disk
 	 * @param context    The current context of execution
 	 *
 	 * @return The ModuleRecord
 	 */
 	private ModuleRecord registerComponent( File targetFile, IBoxContext context ) {
-		// System.out.println( "Processing component: " + targetFile.getAbsolutePath() );
+		// System.out.println( "Processing component: " + targetFile.getAbsolutePath()
+		// );
 
 		// Skip directories and non CFC/BX files
 		// We are not doing recursive registration for the moment.
@@ -818,12 +828,10 @@ public class ModuleRecord {
 		// Inject some helpers
 		oComponent.getVariablesScope().put( Key.newBuffer, new DynamicFunction(
 		    Key.newBuffer,
-		    ( context1, fnc ) -> new StringBuffer()
-		) );
+		    ( context1, fnc ) -> new StringBuffer() ) );
 		oComponent.getVariablesScope().put( Key.newBuilder, new DynamicFunction(
 		    Key.newBuilder,
-		    ( context1, fnc ) -> new StringBuilder()
-		) );
+		    ( context1, fnc ) -> new StringBuilder() ) );
 
 		// ProcessBody Delegate
 		oComponent.getVariablesScope().put( Key.processBody, new DynamicFunction(
@@ -836,20 +844,17 @@ public class ModuleRecord {
 			    return oComponentProxy.processBody(
 			        ( IBoxContext ) args.get( Key.context ),
 			        ( ComponentBody ) args.get( Key.body ),
-			        buffer instanceof StringBuffer ? ( StringBuffer ) buffer : context.getBuffer()
-			    );
+			        buffer instanceof StringBuffer ? ( StringBuffer ) buffer : context.getBuffer() );
 		    },
 		    new Argument[] {
 		        new Argument( true, "any", Key.context ),
 		        new Argument( true, "any", Key.body ),
 		        new Argument( true, "any", Key.buffer )
-		    }
-		) );
+		    } ) );
 		// Get Name Delegate
 		oComponent.getVariablesScope().put( Key.getName, new DynamicFunction(
 		    Key.getName,
-		    ( context1, fnc ) -> oComponent.bxGetName()
-		) );
+		    ( context1, fnc ) -> oComponent.bxGetName() ) );
 
 		/**
 		 * --------------------------------------------------------------------------
@@ -865,8 +870,7 @@ public class ModuleRecord {
 		    null,
 		    oComponentProxy,
 		    BooleanCaster.cast( annotations.getOrDefault( "AllowsBody", false ) ),
-		    BooleanCaster.cast( annotations.getOrDefault( "RequiresBody", false ) )
-		);
+		    BooleanCaster.cast( annotations.getOrDefault( "RequiresBody", false ) ) );
 		Key[]				componentAliases	= buildAnnotationAliases( oComponent, className, Key.boxComponent );
 
 		// Register all components with their aliases
@@ -876,8 +880,7 @@ public class ModuleRecord {
 			    "> Registered Module [{}] Component [{}] with alias [{}]",
 			    this.name.getName(),
 			    className.getName(),
-			    thisAlias.getName()
-			);
+			    thisAlias.getName() );
 			this.components.push( thisAlias );
 		}
 
@@ -918,22 +921,19 @@ public class ModuleRecord {
 		    this.name.getName(),
 		    null,
 		    true,
-		    new BoxLangBIFProxy( oBIF )
-		);
+		    new BoxLangBIFProxy( oBIF ) );
 		Key[]			bifAliases		= buildAnnotationAliases( oBIF, className, Key.boxBif );
 		for ( Key bifAlias : bifAliases ) {
 			// Register the mapping in the runtime
 			functionService.registerGlobalFunction(
 			    bifDescriptor,
 			    bifAlias,
-			    true
-			);
+			    true );
 			this.logger.info(
 			    "> Registered Module [{}] BIF [{}] with alias [{}]",
 			    this.name.getName(),
 			    className.getName(),
-			    bifAlias.getName()
-			);
+			    bifAlias.getName() );
 			this.bifs.push( bifAlias );
 		}
 
@@ -957,14 +957,11 @@ public class ModuleRecord {
 			        java.lang.Object.class,
 			        // Pass null if objectArgument is empty
 			        objectArgument.isEmpty() ? null : Key.of( objectArgument ),
-			        bifDescriptor
-			    )
-			);
+			        bifDescriptor ) );
 			this.logger.info(
 			    "> Registered Module [{}] MemberMethod [{}]",
 			    this.name.getName(),
-			    memberMethod
-			);
+			    memberMethod );
 			this.memberMethods.push( memberMethod );
 		}
 
@@ -972,18 +969,22 @@ public class ModuleRecord {
 	}
 
 	/**
-	 * Discover member methods by getting the {@code BoxMember} annotation on the Class.
+	 * Discover member methods by getting the {@code BoxMember} annotation on the
+	 * Class.
 	 *
 	 * @param targetBIF The target BIF to discover member methods for
 	 * @param className The class name of the BIF
 	 *
-	 * @return An array of member methods for the BIF: {@code [ { name : "", objectArgument: "", type : BoxLangType } ] }
+	 * @return An array of member methods for the BIF: {@code [ { name : "",
+	 *         objectArgument: "", type : BoxLangType } ] }
 	 */
 	private Array discoverMemberMethods( IClassRunnable targetBIF, Key className ) {
 		// Get the BoxMember annotation
-		Object boxMembers = targetBIF.getBoxMeta().getMeta().getAsStruct( Key.annotations ).getOrDefault( Key.boxMember, null );
+		Object boxMembers = targetBIF.getBoxMeta().getMeta().getAsStruct( Key.annotations ).getOrDefault( Key.boxMember,
+		    null );
 
-		// System.out.println( className.getName() + " BoxMembers Found [" + boxMembers + "]" );
+		// System.out.println( className.getName() + " BoxMembers Found [" + boxMembers
+		// + "]" );
 
 		// Case 0: If null, then we don't have any :)
 		if ( boxMembers == null ) {
@@ -993,19 +994,22 @@ public class ModuleRecord {
 		// Case 1 : This is a simple String with no value, throw an exception
 		// @BoxMember
 		if ( boxMembers instanceof String castedBoxMember && castedBoxMember.isBlank() ) {
-			throw new BoxRuntimeException( className.getName() + " BoxMember annotation is missing it's type value, which is mandatory" );
+			throw new BoxRuntimeException(
+			    className.getName() + " BoxMember annotation is missing it's type value, which is mandatory" );
 		}
 
-		// Case 2 : This is a simple String with a value which is the type. Validate it, default it's record and return it
+		// Case 2 : This is a simple String with a value which is the type. Validate it,
+		// default it's record and return it
 		// ClassName : ArrayFoo
-		// @BoxMember "array" -> { "name": "foo", "objectArgument": null, type: BoxLangType.ARRAY }
+		// @BoxMember "array" -> { "name": "foo", "objectArgument": null, type:
+		// BoxLangType.ARRAY }
 		if ( boxMembers instanceof String castedBoxMember && !castedBoxMember.isBlank() ) {
 			// Validate the type is valid else throw an exception
 			if ( !BoxLangType.isValid( castedBoxMember ) ) {
 				throw new BoxRuntimeException(
-				    className.getName() + " BoxMember annotation has an invalid type value [" + castedBoxMember + "]" +
-				        "Valid types are: " + Arrays.toString( BoxLangType.values() )
-				);
+				    className.getName() + " BoxMember annotation has an invalid type value [" + castedBoxMember
+				        + "]" +
+				        "Valid types are: " + Arrays.toString( BoxLangType.values() ) );
 			}
 			BoxLangType boxType = BoxLangType.valueOf( castedBoxMember.toUpperCase() );
 			return Array.of(
@@ -1013,9 +1017,7 @@ public class ModuleRecord {
 			        // Default member name for class ArrayFoo with BoxType of Array is just foo()
 			        Key._NAME, className.getNameNoCase().replace( boxType.getKey().getNameNoCase(), "" ),
 			        Key.objectArgument, "",
-			        Key.type, boxType
-			    )
-			);
+			        Key.type, boxType ) );
 		}
 
 		// Case 3 : We have a struct of member methods, validate them and return them
@@ -1029,24 +1031,25 @@ public class ModuleRecord {
 				Key type = entry.getKey();
 				if ( !BoxLangType.isValid( type ) ) {
 					throw new BoxRuntimeException(
-					    className.getName() + " BoxMember annotation has an invalid type value [" + type.getName() + "]" +
-					        "Valid types are: " + Arrays.toString( BoxLangType.values() )
-					);
+					    className.getName() + " BoxMember annotation has an invalid type value [" + type.getName()
+					        + "]" +
+					        "Valid types are: " + Arrays.toString( BoxLangType.values() ) );
 				}
 
-				// Now the value of this key must be a struct with the following keys: name, objectArgument
+				// Now the value of this key must be a struct with the following keys: name,
+				// objectArgument
 				// Validate the value is a struct
 				if ( ! ( entry.getValue() instanceof IStruct memberRecord ) ) {
 					throw new BoxRuntimeException(
-					    className.getName() + " BoxMember annotation value must be a struct with the following keys: [name], [objectArgument]"
-					);
+					    className.getName()
+					        + " BoxMember annotation value must be a struct with the following keys: [name], [objectArgument]" );
 				}
 
 				// Prepare the record now
 				BoxLangType boxType = BoxLangType.valueOf( type.getName().toUpperCase() );
 				memberRecord.put( Key.type, boxType );
-				memberRecord.computeIfAbsent( Key._NAME, k -> className.getNameNoCase().replace( type.getNameNoCase(), "" )
-				);
+				memberRecord.computeIfAbsent( Key._NAME,
+				    k -> className.getNameNoCase().replace( type.getNameNoCase(), "" ) );
 				memberRecord.putIfAbsent( Key.objectArgument, "" );
 				result.push( memberRecord );
 			}
@@ -1059,9 +1062,12 @@ public class ModuleRecord {
 	}
 
 	/**
-	 * Build an array of Key aliases for the BIF/Component based on the following rules:
-	 * - If the target has any `{annotation}` annoations that have a value, use those
-	 * - If the target has any `{annotation}` annoations that have no value, use the BIF name
+	 * Build an array of Key aliases for the BIF/Component based on the following
+	 * rules:
+	 * - If the target has any `{annotation}` annoations that have a value, use
+	 * those
+	 * - If the target has any `{annotation}` annoations that have no value, use the
+	 * BIF name
 	 *
 	 * @param target     The target Component/BIF to build aliases for
 	 * @param className  The class name of the target
@@ -1078,14 +1084,16 @@ public class ModuleRecord {
 			return new Key[] { className };
 		}
 
-		// Case 2 : This is a simple String with a value, return the value as the alias instead of the name of the file on disk
+		// Case 2 : This is a simple String with a value, return the value as the alias
+		// instead of the name of the file on disk
 		if ( annotations instanceof String castedAnnotationWithValue && !castedAnnotationWithValue.isBlank() ) {
 			return new Key[] {
 			    Key.of( castedAnnotationWithValue )
 			};
 		}
 
-		// Case 3 : We have an Array of aliases, and they have values, return them alongside the class name
+		// Case 3 : We have an Array of aliases, and they have values, return them
+		// alongside the class name
 		if ( annotations instanceof Array castedAliases ) {
 			// convert the values in the array to Keys
 			return castedAliases.push( className ).stream().map( Key::of ).toArray( Key[]::new );
@@ -1114,11 +1122,9 @@ public class ModuleRecord {
 		                .replace( ".", Matcher.quoteReplacement( File.separator ) )
 		                + File.separator
 		                + FilenameUtils.getBaseName( targetFile.getAbsolutePath() ),
-		            targetFile.toPath()
-		        ),
-		        context
-		    )
-		).invokeConstructor( context )
+		            targetFile.toPath() ),
+		        context ) )
+		    .invokeConstructor( context )
 		    .getTargetInstance();
 
 		/**

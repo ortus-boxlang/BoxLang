@@ -29,6 +29,7 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
@@ -37,6 +38,8 @@ import org.slf4j.Logger;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.global.type.NullValue;
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
@@ -78,6 +81,11 @@ public class DynamicClassLoader extends URLClassLoader {
 	 * Logger. Lazy init to avoid deadlocks on runtime startup
 	 */
 	private static Logger								logger			= null;
+
+	/**
+	 * The BoxLang Runtime instance
+	 */
+	private static final BoxRuntime						runtime			= BoxRuntime.getInstance();
 
 	/**
 	 * Runtime special prefixes Set that MUST come from the parent class loader
@@ -160,12 +168,21 @@ public class DynamicClassLoader extends URLClassLoader {
 	}
 
 	/**
+	 * Find a class in the class loader or delegate to the parent. If not found, then throw an exception
+	 *
+	 * @param className The name of the class to find
+	 */
+	public Class<?> findClass( String className, Boolean safe ) throws ClassNotFoundException {
+		return findClass( className, false, true );
+	}
+
+	/**
 	 * Find a class in the class loader or delegate to the parent
 	 *
 	 * @param className The name of the class to find
 	 * @param safe      Whether to throw an exception if the class is not found
 	 */
-	public Class<?> findClass( String className, Boolean safe ) throws ClassNotFoundException {
+	public Class<?> findClass( String className, Boolean safe, boolean checkParent ) throws ClassNotFoundException {
 		Logger logger = getLogger();
 		if ( closed ) {
 			throw new BoxRuntimeException(
@@ -208,21 +225,40 @@ public class DynamicClassLoader extends URLClassLoader {
 			cachedClass = super.findClass( className );
 			logger.trace( "[{}].[{}] : Class found locally from thread [{}] ", this.nameAsKey.getName(), className, Thread.currentThread().getName() );
 		} catch ( ClassNotFoundException e ) {
+			if ( checkParent ) {
+				// 4. If not found in JARs, delegate to parent class loader
+				try {
+					logger.trace( "[{}].[{}] : Class not found locally, trying the parent...", this.nameAsKey.getName(), className );
+					logger.trace( "The context class loader is [{}]", Thread.currentThread().getContextClassLoader().getName() );
+					cachedClass = getDynamicParent().loadClass( className );
+					logger.trace( "[{}].[{}] : Class found in parent on thread [{}]", this.nameAsKey.getName(), className, Thread.currentThread().getName() );
+				} catch ( ClassNotFoundException parentException ) {
 
-			// 4. If not found in JARs, delegate to parent class loader
-			try {
-				logger.trace( "[{}].[{}] : Class not found locally, trying the parent...", this.nameAsKey.getName(), className );
-				logger.trace( "The context class loader is [{}]", Thread.currentThread().getContextClassLoader().getName() );
-				cachedClass = getDynamicParent().loadClass( className );
-				logger.trace( "[{}].[{}] : Class found in parent on thread [{}]", this.nameAsKey.getName(), className, Thread.currentThread().getName() );
-			} catch ( ClassNotFoundException parentException ) {
-				logger.trace( "[{}].[{}] : Class not found in parent, adding to unfound classes", this.nameAsKey.getName(), className );
-				// Add to the unfound cache
-				this.unfoundClasses.put( className, NullValue.class );
-				// If not safe, throw the exception
-				if ( !safe ) {
-					throw new ClassNotFoundException( String.format( "Class [%s] not found in class loader [%s]", className, this.nameAsKey.getName() ) );
+					// Only do this if we've bubbled up to the runtime classloader. Otherwise, we'll get stack overflows if this is just a module classloader
+					if ( this == runtime.getRuntimeLoader() ) {
+						logger.trace( "[{}].[{}] : Class not found in parent, searching the class locator", this.nameAsKey.getName(), className );
+						IBoxContext				context	= Optional.ofNullable( ( IBoxContext ) RequestBoxContext.getCurrent() )
+						    .orElse( runtime.getRuntimeContext() );
+						Optional<ClassLocation>	result	= runtime.getClassLocator().getJavaResolver().findFromAllModules( className, null, context );
+
+						if ( result.isPresent() ) {
+							cachedClass = result.get().clazz();
+							logger.trace( "[{}].[{}] : Class found in class locator on thread [{}]", this.nameAsKey.getName(), className,
+							    Thread.currentThread().getName() );
+						}
+					}
 				}
+
+				if ( cachedClass == null ) {
+					logger.trace( "[{}].[{}] : Giving up on class, adding to unfound classes", this.nameAsKey.getName(), className );
+					// Add to the unfound cache
+					this.unfoundClasses.put( className, NullValue.class );
+					// If not safe, throw the exception
+					if ( !safe ) {
+						throw new ClassNotFoundException( String.format( "Class [%s] not found in class loader [%s]", className, this.nameAsKey.getName() ) );
+					}
+				}
+
 			}
 
 		}
@@ -462,7 +498,7 @@ public class DynamicClassLoader extends URLClassLoader {
 		    } )
 		    .flatMap( Arrays::stream )
 		    .distinct()
-		    // .peek( url -> getLogger().debug( "Inflated URL: [{}]", url ) )
+		    // .peek( url -> getLogger().trace( "Inflated URL: [{}]", url ) )
 		    .toArray( URL[]::new );
 	}
 
