@@ -64,15 +64,15 @@ public class StructSortTest {
 	public void testBif() {
 		instance.executeSource(
 		    """
-		      	myStruct = {
-		      		"foo" : "bar",
-		      		"bar" : "foo",
-		      		"zena" : "princess warrior"
-		      	};
+		    	myStruct = {
+		    		"foo" : "bar",
+		    		"bar" : "foo",
+		    		"zena" : "princess warrior"
+		    	};
 
-		      	result = structSort( myStruct );
+		    	result = structSort( myStruct );
 
-		      """,
+		    """,
 		    context );
 
 		assertTrue( variables.get( result ) instanceof Array );
