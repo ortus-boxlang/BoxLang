@@ -824,6 +824,15 @@ public final class LocalizationUtil {
 		return new DateTimeFormatterBuilder().parseLenient();
 	}
 
+	/**
+	 * Returns a DateTimeFormatter that can parse common date-time patterns.
+	 * <p>
+	 * This method constructs a lenient DateTimeFormatter that supports a predefined
+	 * set of common date-time patterns. It is useful for parsing date-time strings
+	 * that match any of these patterns.
+	 *
+	 * @return a DateTimeFormatter configured with common date-time patterns
+	 */
 	public static DateTimeFormatter getCommonPatternDateTimeParsers() {
 		DateTimeFormatterBuilder builder = newLenientDateTimeFormatterBuilder();
 		Stream.of( COMMON_DATETIME_PATTERNS )
