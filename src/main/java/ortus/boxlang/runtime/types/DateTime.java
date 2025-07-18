@@ -264,6 +264,12 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 		this( dateTime, ZoneId.systemDefault() );
 	}
 
+	/**
+	 * Constructor to create DateTime from an OffsetDateTime object
+	 * This will convert the OffsetDateTime to a ZonedDateTime
+	 *
+	 * @param dateTime An OffsetDateTime object
+	 */
 	public DateTime( OffsetDateTime dateTime ) {
 		this( dateTime.toZonedDateTime() );
 	}
