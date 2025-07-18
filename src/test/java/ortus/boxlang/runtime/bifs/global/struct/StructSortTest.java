@@ -71,7 +71,6 @@ public class StructSortTest {
 		      	};
 
 		      	result = structSort( myStruct );
-		    println( "Sorted result: " & JSONSerialize( result ) );
 
 		      """,
 		    context );
