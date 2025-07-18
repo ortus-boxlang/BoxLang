@@ -148,6 +148,7 @@ public enum BoxEvent {
 	/**
 	 * Datasource Service Events
 	 */
+	ON_DATASOURCE_CONFIG_LOAD( "onDatasourceConfigLoad" ),
 	ON_DATASOURCE_SERVCE_STARTUP( "onDatasourceServiceStartup" ),
 	ON_DATASOURCE_SERVICE_SHUTDOWN( "onDatasourceServiceShutdown" ),
 	ON_DATASOURCE_STARTUP( "onDatasourceStartup" ),

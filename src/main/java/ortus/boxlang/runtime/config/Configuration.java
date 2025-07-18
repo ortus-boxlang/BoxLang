@@ -49,6 +49,7 @@ import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.KeyCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
+import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.loader.DynamicClassLoader;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
@@ -637,8 +638,14 @@ public class Configuration implements IConfigSegment {
 				    .entrySet()
 				    .forEach( entry -> {
 					    if ( entry.getValue() instanceof IStruct castedStruct ) {
-						    DatasourceConfig datasourceConfig = new DatasourceConfig( entry.getKey() )
-						        .process( new Struct( castedStruct ) );
+						    IStruct eventData = Struct.of(
+						        Key._name, entry.getKey(),
+						        Key.datasource, new Struct( castedStruct )
+						    );
+						    BoxRuntime.getInstance().announce( BoxEvent.ON_DATASOURCE_CONFIG_LOAD, eventData );
+
+						    DatasourceConfig datasourceConfig = new DatasourceConfig( eventData.getAsKey( Key._name ) )
+						        .process( eventData.getAsStruct( Key.datasource ) );
 						    this.datasources.put( datasourceConfig.name, datasourceConfig );
 					    } else {
 						    logger.warn(
@@ -951,9 +958,9 @@ public class Configuration implements IConfigSegment {
 		this.executors.entrySet()
 		    .forEach( entry -> executorsCopy.put( entry.getKey(), ( ( ExecutorConfig ) entry.getValue() ).toStruct() ) );
 
-		IStruct datsourcesCopy = new Struct();
+		IStruct datasourcesCopy = new Struct();
 		this.datasources.entrySet()
-		    .forEach( entry -> datsourcesCopy.put( entry.getKey(), ( ( DatasourceConfig ) entry.getValue() ).asStruct() ) );
+		    .forEach( entry -> datasourcesCopy.put( entry.getKey(), ( ( DatasourceConfig ) entry.getValue() ).asStruct() ) );
 
 		IStruct modulesCopy = new Struct();
 		this.modules.entrySet()
@@ -970,7 +977,7 @@ public class Configuration implements IConfigSegment {
 		    Key.clearClassFilesOnStartup, this.clearClassFilesOnStartup,
 		    Key.customComponentsDirectory, Array.copyFromList( this.customComponentsDirectory ),
 		    Key.classPaths, Array.copyFromList( this.classPaths ),
-		    Key.datasources, datsourcesCopy,
+		    Key.datasources, datasourcesCopy,
 		    Key.debugMode, this.debugMode,
 		    Key.classResolverCache, this.classResolverCache,
 		    Key.defaultDatasource, this.defaultDatasource,
