@@ -1,6 +1,9 @@
 package ortus.boxlang.runtime.jdbc;
 
 import java.sql.Connection;
+import java.sql.Savepoint;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.commons.text.RandomStringGenerator;
 
@@ -26,11 +29,16 @@ public class ChildTransaction implements ITransaction {
 	/**
 	 * Logger
 	 */
-	private static final BoxLangLogger	logger	= BoxRuntime.getInstance().getLoggingService().DATASOURCE_LOGGER;
+	private static final BoxLangLogger	logger		= BoxRuntime.getInstance().getLoggingService().DATASOURCE_LOGGER;
 	/**
 	 * The parent transaction.
 	 */
 	private ITransaction				parent;
+
+	/**
+	 * The underlying JDBC connection.
+	 */
+	private Connection					connection;
 
 	/**
 	 * The prefix for savepoints created in this transaction.
@@ -45,9 +53,18 @@ public class ChildTransaction implements ITransaction {
 	 * Key constants used for savepoints demarcating the start and end of a child (nested) transaction.
 	 * --------------------------------------------------------------------------
 	 */
-	private static final Key			BEGIN	= Key.of( "BEGIN" );
-	private static final Key			END		= Key.of( "END" );
-	private static final Key			COMMIT	= Key.of( "COMMIT" );
+	private static final Key			BEGIN		= Key.of( "BEGIN" );
+	private static final Key			END			= Key.of( "END" );
+	private static final Key			COMMIT		= Key.of( "COMMIT" );
+
+	/**
+	 * Stores the savepoints used in this transaction, referenced from <code>transactionSetSavepoint( "mySavepoint" )</code> and
+	 * <code>transactionRollback( "mySavepoint" )</code>.
+	 *
+	 * Each savepoint name uses a Key to avoid case sensitivity issues with the lookup, and each JDBC savepoint is created with the name in UPPERCASE for
+	 * the same reason.
+	 */
+	private Map<Key, Savepoint>			savepoints	= new HashMap<>();
 
 	/**
 	 * Construct a nested transaction, attaching the given @param parent transaction.
@@ -61,7 +78,7 @@ public class ChildTransaction implements ITransaction {
 		    .filteredBy( Character::isLetterOrDigit )
 		    .build();
 
-		this.savepointPrefix = "CHILD_" + generator.generate( 12 ) + "_";
+		this.savepointPrefix = ( "CHILD_" + generator.generate( 12 ) + "_" ).toUpperCase();
 	}
 
 	/**
@@ -94,15 +111,25 @@ public class ChildTransaction implements ITransaction {
 	 * Get (creating if none found) the connection associated with the parent transaction.
 	 */
 	public Connection getConnection() {
-		return this.parent.getConnection();
+		if ( this.connection == null ) {
+			this.connection = this.parent.getConnection();
+			// now that we've obtained a connection, we can "begin" the child transaction.
+			if ( !this.savepoints.containsKey( generateSavepointKey( ChildTransaction.BEGIN ) ) ) {
+				begin();
+			}
+		}
+		return this.connection;
 	}
 
 	/**
 	 * Set the datasource on the parent transaction.
 	 * <p>
-	 * Calls the same method on the parent transaction, allowing the child transaction to inherit the datasource. The parent transaction will ignore the datasource if it has already been set.
+	 * Calls the same method on the parent transaction, allowing the child transaction to inherit the datasource. Will no-op if the parent transaction already has a datasource set.
 	 */
 	public ChildTransaction setDataSource( DataSource datasource ) {
+		if ( this.parent.getDataSource() != null ) {
+			return this;
+		}
 		this.parent.setDataSource( datasource );
 		return this;
 	}
@@ -128,7 +155,9 @@ public class ChildTransaction implements ITransaction {
 	 * Commit the transaction
 	 */
 	public ChildTransaction commit() {
-		setSavepoint( ChildTransaction.COMMIT );
+		if ( !this.savepoints.containsKey( generateSavepointKey( ChildTransaction.COMMIT ) ) ) {
+			setSavepoint( ChildTransaction.COMMIT );
+		}
 		return this;
 	}
 
@@ -138,7 +167,7 @@ public class ChildTransaction implements ITransaction {
 	 * The transaction will be rolled back to the last committed point, and will ignore any set savepoints.
 	 */
 	public ChildTransaction rollback() {
-		return rollback( Key.nulls );
+		return rollback( ChildTransaction.BEGIN );
 	}
 
 	/**
@@ -147,11 +176,9 @@ public class ChildTransaction implements ITransaction {
 	 * @param savepoint The name of the savepoint to rollback to or NULL for no savepoint.
 	 */
 	public ChildTransaction rollback( Key savepoint ) {
-		if ( savepoint == Key.nulls ) {
-			savepoint = ChildTransaction.BEGIN;
-		}
-		logger.debug( "Rolling back child transaction to savepoint {}", this.savepointPrefix + savepoint );
-		this.parent.rollback( Key.of( this.savepointPrefix + savepoint.getNameNoCase() ) );
+		Key savepointKey = generateSavepointKey( savepoint );
+		logger.debug( "Rolling back child transaction to savepoint {}", savepointKey );
+		this.parent.rollback( savepointKey );
 		return this;
 	}
 
@@ -160,9 +187,27 @@ public class ChildTransaction implements ITransaction {
 	 *
 	 * @param savepoint The name of the savepoint
 	 */
-	public ChildTransaction setSavepoint( Key savepoint ) {
-		this.parent.setSavepoint( Key.of( this.savepointPrefix + savepoint.getNameNoCase() ) );
-		return this;
+	public Savepoint setSavepoint( Key savepoint ) {
+		Key			savepointKey	= generateSavepointKey( savepoint );
+		Savepoint	jdbcSavepoint	= this.parent.setSavepoint( savepointKey );
+		if ( jdbcSavepoint != null ) {
+			this.savepoints.put( savepointKey, jdbcSavepoint );
+		}
+		return jdbcSavepoint;
+	}
+
+	/**
+	 * Get the savepoints used in this transaction.
+	 * <p>
+	 * This method returns a map of savepoint names to their associated savepoint objects, allowing you to manage and rollback to specific points in the transaction.
+	 * 
+	 * @see #setSavepoint(Key)
+	 * @see #rollback(Key)
+	 * 
+	 * @return A map of savepoint Keys to JDBC savepoint objects.
+	 */
+	public Map<Key, Savepoint> getSavepoints() {
+		return this.savepoints;
 	}
 
 	/**
@@ -181,5 +226,9 @@ public class ChildTransaction implements ITransaction {
 	 */
 	public ITransaction getParent() {
 		return this.parent;
+	}
+
+	private Key generateSavepointKey( Key savepoint ) {
+		return savepoint.getNameNoCase().startsWith( "child_" ) ? savepoint : Key.of( this.savepointPrefix + savepoint.getName().toUpperCase() );
 	}
 }
