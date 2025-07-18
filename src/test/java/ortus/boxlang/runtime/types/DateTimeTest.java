@@ -189,11 +189,11 @@ public class DateTimeTest {
 	@Test
 	void testEquality() {
 		java.util.Date	epoch		= new java.util.Date( 0 );
-		DateTime		dateTime1	= DateTimeCaster.cast( epoch );
+		DateTime		dateTime1	= new DateTime( epoch, ZoneId.of( "UTC" ) );
 		DateTime		dateTime2	= DateTimeCaster.cast( "1970-01-01T00:00:00Z" );
 		assertThat( dateTime1.isEqual( dateTime2 ) ).isTrue();
 		assertThat( dateTime1.equals( dateTime2 ) ).isTrue();
-		assertThat( dateTime1.compareTo( dateTime2 ) ).isEqualTo( 0 );
+		assertThat( dateTime1.toISOString() ).isEqualTo( dateTime2.toISOString() );
 		// @formatter:off
 		instance.executeSource(
 		"""

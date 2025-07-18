@@ -87,7 +87,7 @@ public class ParseDateTime extends BIF {
 			CastAttempt<DateTime> attempt = DateTimeCaster.attempt( StringCaster.cast( dateRef ), context );
 			if ( attempt.wasSuccessful() ) {
 				// If the dateRef can be cast to a DateTime, we can return it directly
-				return attempt.get().setTimezone( timezone );
+				return attempt.get();
 			} else {
 				return new DateTime( StringCaster.cast( dateRef ), timezone );
 			}

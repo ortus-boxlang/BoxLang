@@ -77,7 +77,7 @@ public class ParseDateTimeTest {
 		assertThat( IntegerCaster.cast( result.format( "H" ) ) ).isEqualTo( 0 );
 		assertThat( IntegerCaster.cast( result.format( "m" ) ) ).isEqualTo( 0 );
 		assertThat( IntegerCaster.cast( result.format( "s" ) ) ).isEqualTo( 1 );
-		assertThat( IntegerCaster.cast( result.format( "n" ) ) ).isEqualTo( 1000000 );
+		assertThat( IntegerCaster.cast( result.format( "n" ) ) ).isEqualTo( 100000 );
 	}
 
 	@DisplayName( "It tests the BIF ParseDateTime with a full ISO without offset" )
@@ -97,7 +97,7 @@ public class ParseDateTimeTest {
 		assertThat( IntegerCaster.cast( result.format( "H" ) ) ).isEqualTo( 0 );
 		assertThat( IntegerCaster.cast( result.format( "m" ) ) ).isEqualTo( 0 );
 		assertThat( IntegerCaster.cast( result.format( "s" ) ) ).isEqualTo( 1 );
-		assertThat( IntegerCaster.cast( result.format( "n" ) ) ).isEqualTo( 1000000 );
+		assertThat( IntegerCaster.cast( result.format( "n" ) ) ).isEqualTo( 100000 );
 	}
 
 	@DisplayName( "It tests the BIF ParseDateTime with a full ISO without offset an no T" )

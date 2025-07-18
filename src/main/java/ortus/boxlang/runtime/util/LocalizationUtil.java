@@ -26,7 +26,10 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
+import java.time.Instant;
+import java.time.temporal.TemporalAccessor;
 import java.time.ZonedDateTime;
+import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.FormatStyle;
@@ -60,12 +63,88 @@ public final class LocalizationUtil {
 	/**
 	 * The runtime logger
 	 */
-	private static final BoxLangLogger				logger			= BoxRuntime.getInstance().getLoggingService().getRuntimeLogger();
+	private static final BoxLangLogger				logger						= BoxRuntime.getInstance().getLoggingService().getRuntimeLogger();
+
+	/**
+	 * A primitive array of common US-prioritized DateTime format patterns, which is used for fast casting by commons lang DateUtils
+	 */
+	public static final String[]					COMMON_DATETIME_PATTERNS	= {
+
+	    // Localized Date/Time formats - the order in which these are presented is very specific
+	    "EEE, d MMM yyyy HH:mm:ss zzz", // Full DateTime (e.g., Tue, 02 Apr 2024 21:01:00 CEST) - Similar to FULL_FULL
+	    "dd MMM yyyy HH:mm:ss",         // Long DateTime (e.g., 02 Apr 2024 21:01:00) - Similar to LONG_LONG
+	    "dd-MMM-yyyy HH:mm:ss",         // Medium DateTime (e.g., 02-Apr-2024 21:01:00) - Might need adjustment based on locale
+	    "MM/dd/yyyy hh:mm:ss a",         // Short DateTime (e.g., 02/04/2024 04:01:00 PM) - Might need adjustment based on locale
+	    "MM/dd/yyyy HH:mm:ss",         // Short DateTime (e.g., 02/04/2024 21:01:00) - Might need adjustment based on locale
+	    "MM/dd/yyyy hh:mm a",         // Short DateTime (e.g., 02/04/2024 04:01:00 PM) - Might need adjustment based on locale
+	    "dd.MM.yyyy HH:mm:ss",         // Short DateTime (e.g., 02.04.2024 21:01:00) - Might need adjustment based on locale
+	    "LLLL dd yyyy HH:mm:ss", 	  // Long month DateTime (e.g., April 02 2024 21:01:00) - Might need adjustment based on locale
+	    "LLLL dd',' yyyy HH:mm:ss", 	  // Long month DateTime (e.g., April 02, 2024 21:01:00) - Might need adjustment based on locale
+	    "LLLL dd yyyy hh:mm a", 	  // Long month DateTime with AM/PM (e.g., April 02 2024 05:01 AM) - Might need adjustment based on locale
+	    "LLLL dd',' yyyy hh:mm a", 	  // Long month DateTime with AM/PM (e.g., April 02, 2024 05:01 AM) - Might need adjustment based on locale
+	    "MMM dd yyyy HH:mm:ss", 	  // Med DateTime (e.g., Apr 02 2024 21:01:00) - Might need adjustment based on locale
+	    "MMM dd',' yyyy HH:mm:ss", 	  // Med DateTime (e.g., Apr 02, 2024 21:01:00) - Might need adjustment based on locale
+	    "MMM dd yyyy hh:mm a", 	       // Med DateTime No Seconds and AM/PM (e.g., Apr 02 2024 10:01 AM) - Might need adjustment based on locale
+	    "MMM dd',' yyyy hh:mm a", 	    // Med DateTime No Seconds and AM/PM (e.g., Apr 02, 2024 10:01 AM) - Might need adjustment based on locale
+	    "MMM dd yyyy HH:mm", 	       // Med DateTime No Seconds (e.g., Apr 02 2024 21:01) - Might need adjustment based on locale
+	    "MMM dd',' yyyy HH:mm", 	       // Med DateTime No Seconds (e.g., Apr 02 2024 21:01) - Might need adjustment based on locale
+
+	    // java.util.Date toString default format
+	    "EEE MMM dd HH:mm:ss zzz yyyy", // Default DateTime (e.g., Tue Apr 02 21:01:00 CET 2024) - Similar to DEFAULT
+
+	    // ISO formats
+	    "yyyy-MM-dd'T'HH:mm:ss.SSSSSSXXX",  // Date-time with fractional microseconds and offset
+	    "yyyy-MM-dd'T'HH:mm:ss.SSSXXX",  // Date-time with milliseconds and offset
+	    "yyyy-MM-dd'T'HH:mm:ss.SSS",     // Date-time with milliseconds
+	    "yyyy-MM-dd'T'HH:mm:ssZ",        // Date-time with offset (Z)
+	    "yyyy-MM-dd'T'HH:mm:ssX",        // Date-time with offset (X)
+	    "yyyy-MM-dd'T'HH:mm:ss",         // Date-time
+
+	    // ODBC formats
+	    "yyyyMMddHHmmss",                // ODBCDateTime - Potential ODBC format
+
+	    // US Localized Date formats - Month First
+	    "MMM dd yyyy",                   // Long Date (e.g., Apr 02 2024)
+	    "MMM-dd-yyyy",                   // Medium Date (e.g., Apr-02-2024) - Might need adjustment based on locale
+	    "MMM/dd/yyyy",                   // Medium Date (e.g., Apr/02/2024) - Might need adjustment based on locale
+	    "MMM.dd.yyyy",                   // Medium Date (e.g., Apr.02.2024) - Might need adjustment based on locale
+
+	    // US Localized Date formats - Month First (Short)
+	    "MM dd yyyy",                   // Short Date (e.g., 04 02 2024) - Might need adjustment based on locale
+	    "MM-dd-yyyy",                   // Short Date (e.g., 04-02-2024) - Might need adjustment based on locale
+	    "MM/dd/yyyy",                   // Short Date (e.g., 04/02/2024) - Might need adjustment based on locale
+	    "MM.dd.yyyy",                   // Short Date (e.g., 04.02.2024) - Might need adjustment based on locale
+
+	    // Localized Date formats
+	    "EEE, dd MMM yyyy",            // Full Date (e.g., Tue, 02 Apr 2024) - Similar to FULL
+	    "dd MMM yyyy",                   // Long Date (e.g., 02 Apr 2024) - Similar to LONG
+	    "dd-MMM-yy",                     // Medium Date with a two-digit year (e.g., 02-Apr-24) - Might need adjustment based on locale
+	    "dd-MMM-yyyy",                   // Medium Date (e.g., 02-Apr-2024) - Might need adjustment based on locale
+	    "dd/MMM/yyyy",                   // Medium Date (e.g., 02-Apr-2024) - Might need adjustment based on locale
+	    "dd.MMM.yyyy",                   // Medium Date (e.g., 02.Apr.2024) - Might need adjustment based on locale
+	    "MMM dd, yyyy",                  // Med Date (e.g., Apr 02, 2024) - Might need adjustment based on locale
+	    "MMMM dd yyyy",                  // Long month Date (e.g., April 02 2024) - Might need adjustment based on locale
+	    "MMMM dd, yyyy",                 // Long month Date (e.g., April 02, 2024) - Might need adjustment based on locale
+
+	    // European Day-First Formats
+	    "dd MM yyyy",                   // Short Date (e.g., 02.04.2024) - Might need adjustment based on locale
+	    "dd-MM-yyyy",                   // Short Date (e.g., 02-04-2024) - Might need adjustment based on locale
+	    "dd/MM/yyyy",                   // Short Date (e.g., 02/04/2024) - Might need adjustment based on locale
+	    "dd.MM.yyyy",                   // Short Date (e.g., 02.04.2024) - Might need adjustment based on locale
+
+	    // ISO format
+	    "yyyy-MM-dd",                   // ISODate (e.g., 2024-04-02)
+	    "yyyy/MM/dd",                   // ISODate (e.g., 2024/04/02)
+	    "yyyy.MM.dd",                   // ISODate (e.g., 2024.04.02)
+
+	    // ODBC format
+	    "yyyyMMdd"                     // ODBCDate - Potential ODBC format
+	};
 
 	/**
 	 * A struct of common locale constants
 	 */
-	public static final LinkedHashMap<Key, Locale>	COMMON_LOCALES	= new LinkedHashMap<Key, Locale>();
+	public static final LinkedHashMap<Key, Locale>	COMMON_LOCALES				= new LinkedHashMap<Key, Locale>();
 	static {
 		COMMON_LOCALES.put( Key.of( "Canada" ), Locale.CANADA );
 		COMMON_LOCALES.put( Key.of( "Canadian" ), Locale.CANADA );
@@ -589,6 +668,43 @@ public final class LocalizationUtil {
 	}
 
 	/**
+	 * Parses a date-time string using common patterns and returns a {@link DateTime} object.
+	 * The method attempts to parse the input string into various {@link TemporalAccessor} types,
+	 * such as {@link OffsetDateTime}, {@link ZonedDateTime}, {@link LocalDateTime}, {@link LocalDate},
+	 * {@link LocalTime}, or {@link Instant}. If successful, it wraps the parsed result in a {@link DateTime}.
+	 *
+	 * @param dateTime the date-time string to parse
+	 * 
+	 * @return a {@link DateTime} object representing the parsed date-time
+	 * 
+	 * @throws BoxRuntimeException if the input string cannot be parsed into a supported {@link TemporalAccessor}
+	 */
+	public static DateTime parseFromCommonPatterns( String dateTime ) {
+		TemporalAccessor date = getCommonPatternDateTimeParsers().parseBest( dateTime, OffsetDateTime::from, ZonedDateTime::from, LocalDateTime::from,
+		    LocalDate::from, LocalTime::from );
+		if ( date instanceof ZonedDateTime castZonedDateTime ) {
+			return new DateTime( castZonedDateTime );
+		} else if ( date instanceof LocalDateTime castLocalDateTime ) {
+			return new DateTime( castLocalDateTime );
+		} else if ( date instanceof LocalDate castLocalDate ) {
+			return new DateTime( castLocalDate );
+		} else if ( date instanceof LocalTime castLocalTime ) {
+			return new DateTime( castLocalTime );
+		} else if ( date instanceof Instant castInstant ) {
+			return new DateTime( castInstant );
+		} else if ( date instanceof OffsetDateTime castOffsetDateTime ) {
+			return new DateTime( castOffsetDateTime );
+		} else {
+			throw new BoxRuntimeException(
+			    String.format(
+			        "The TemporalAccessor instanceof [%s] does not have a valid DateTime constructor",
+			        date.getClass().getName()
+			    )
+			);
+		}
+	}
+
+	/**
 	 * Parses a date string into a ZonedDateTime instance
 	 *
 	 * @param dateTime the date time string to parse
@@ -708,6 +824,31 @@ public final class LocalizationUtil {
 	 */
 	public static DateTimeFormatterBuilder newLenientDateTimeFormatterBuilder() {
 		return new DateTimeFormatterBuilder().parseLenient();
+	}
+
+	/**
+	 * Returns a DateTimeFormatter that can parse common date-time patterns.
+	 * <p>
+	 * This method constructs a lenient DateTimeFormatter that supports a predefined
+	 * set of common date-time patterns. It is useful for parsing date-time strings
+	 * that match any of these patterns.
+	 *
+	 * @return a DateTimeFormatter configured with common date-time patterns
+	 */
+	public static DateTimeFormatter getCommonPatternDateTimeParsers() {
+		DateTimeFormatterBuilder builder = newLenientDateTimeFormatterBuilder();
+		Stream.of( COMMON_DATETIME_PATTERNS )
+		    .forEach( pattern -> {
+			    builder.appendOptional(
+			        new DateTimeFormatterBuilder()
+			            .parseCaseInsensitive()
+			            .appendPattern( pattern )
+			            .toFormatter()
+			    );
+		    } );
+
+		return builder.toFormatter();
+
 	}
 
 	/**

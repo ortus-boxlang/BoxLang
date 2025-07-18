@@ -231,12 +231,8 @@ public class DateTimeCaster implements IBoxCaster {
 
 		// Now let's go to Apache commons lang for its date parsing
 		try {
-			return new DateTime(
-			    DateUtils.parseDateStrictly( targetString, LocalizationUtil.parseLocaleFromContext( context, new ArgumentsScope() ),
-			        DateTime.COMMON_DATETIME_PATTERNS ),
-			    timezone
-			);
-		} catch ( java.text.ParseException e ) {
+			return LocalizationUtil.parseFromCommonPatterns( targetString );
+		} catch ( java.time.format.DateTimeParseException e ) {
 			try {
 				return new DateTime( targetString, timezone );
 			} catch ( Throwable e2 ) {
