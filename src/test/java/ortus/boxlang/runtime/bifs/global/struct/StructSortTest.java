@@ -64,21 +64,21 @@ public class StructSortTest {
 	public void testBif() {
 		instance.executeSource(
 		    """
-		    	myStruct = {
-		    		"foo" : "bar",
-		    		"bar" : "foo",
-		    		"zena" : "princess warrior"
-		    	};
+		      	myStruct = {
+		      		"foo" : "bar",
+		      		"bar" : "foo",
+		      		"zena" : "princess warrior"
+		      	};
 
-		    	result = structSort( myStruct );
+		      	result = structSort( myStruct );
 
-		    """,
+		      """,
 		    context );
 
 		assertTrue( variables.get( result ) instanceof Array );
 		assertEquals( variables.getAsArray( result ).size(), 3 );
-		assertEquals( variables.getAsArray( result ).get( 0 ), "bar" );
-		assertEquals( variables.getAsArray( result ).get( 1 ), "foo" );
+		assertEquals( variables.getAsArray( result ).get( 0 ), "foo" );
+		assertEquals( variables.getAsArray( result ).get( 1 ), "bar" );
 		assertEquals( variables.getAsArray( result ).get( 2 ), "zena" );
 
 		instance.executeSource(
@@ -96,8 +96,8 @@ public class StructSortTest {
 
 		assertTrue( variables.get( result ) instanceof Array );
 		assertEquals( variables.getAsArray( result ).size(), 3 );
-		assertEquals( variables.getAsArray( result ).get( 0 ), "bar" );
-		assertEquals( variables.getAsArray( result ).get( 1 ), "foo" );
+		assertEquals( variables.getAsArray( result ).get( 0 ), "foo" );
+		assertEquals( variables.getAsArray( result ).get( 1 ), "bar" );
 		assertEquals( variables.getAsArray( result ).get( 2 ), "zena" );
 
 		instance.executeSource(
@@ -115,8 +115,8 @@ public class StructSortTest {
 
 		assertTrue( variables.get( result ) instanceof Array );
 		assertEquals( variables.getAsArray( result ).size(), 3 );
-		assertEquals( variables.getAsArray( result ).get( 2 ), "bar" );
-		assertEquals( variables.getAsArray( result ).get( 1 ), "foo" );
+		assertEquals( variables.getAsArray( result ).get( 2 ), "foo" );
+		assertEquals( variables.getAsArray( result ).get( 1 ), "bar" );
 		assertEquals( variables.getAsArray( result ).get( 0 ), "zena" );
 
 		instance.executeSource(
@@ -134,9 +134,33 @@ public class StructSortTest {
 
 		assertTrue( variables.get( result ) instanceof Array );
 		assertEquals( variables.getAsArray( result ).size(), 3 );
-		assertEquals( variables.getAsArray( result ).get( 2 ), "bar" );
-		assertEquals( variables.getAsArray( result ).get( 1 ), "foo" );
+		assertEquals( variables.getAsArray( result ).get( 2 ), "foo" );
+		assertEquals( variables.getAsArray( result ).get( 1 ), "bar" );
 		assertEquals( variables.getAsArray( result ).get( 0 ), "zena" );
+
+	}
+
+	@DisplayName( "It tests the BIF StructSort using the numeric sort directives" )
+	@Test
+	public void testBifNumericSort() {
+		instance.executeSource(
+		    """
+		    	myStruct = {
+		    		"foo" : 3,
+		    		"bar" : 1,
+		    		"zena" : 2
+		    	};
+
+		    	result = structSort( myStruct, "numeric" );
+
+		    """,
+		    context );
+
+		assertTrue( variables.get( result ) instanceof Array );
+		assertEquals( variables.getAsArray( result ).size(), 3 );
+		assertEquals( variables.getAsArray( result ).get( 0 ), "bar" );
+		assertEquals( variables.getAsArray( result ).get( 1 ), "zena" );
+		assertEquals( variables.getAsArray( result ).get( 2 ), "foo" );
 
 	}
 
@@ -259,10 +283,10 @@ public class StructSortTest {
 		instance.executeSource(
 		    """
 		       myStruct = structNew( "casesensitive" );
-		         		myStruct[ "foo" ] = "bar";
-		         		myStruct[ "fOO" ] = "bar";
-		         		myStruct[ "bar" ] = "foo";
-		         		myStruct[ "bAR" ] = "foo";
+		         		myStruct[ "foo" ] = "foo";
+		         		myStruct[ "fOO" ] = "fOO";
+		         		myStruct[ "bar" ] = "bar";
+		         		myStruct[ "bAR" ] = "bAR";
 		    count = myStruct.keyArray().len()
 
 		         	result = structSort( myStruct, "text" );
@@ -323,8 +347,8 @@ public class StructSortTest {
 
 		assertTrue( variables.get( result ) instanceof Array );
 		assertEquals( variables.getAsArray( result ).size(), 3 );
-		assertEquals( variables.getAsArray( result ).get( 0 ), "bar" );
-		assertEquals( variables.getAsArray( result ).get( 1 ), "foo" );
+		assertEquals( variables.getAsArray( result ).get( 0 ), "foo" );
+		assertEquals( variables.getAsArray( result ).get( 1 ), "bar" );
 		assertEquals( variables.getAsArray( result ).get( 2 ), "zena" );
 	}
 

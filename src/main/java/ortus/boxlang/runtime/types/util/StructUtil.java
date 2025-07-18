@@ -514,7 +514,7 @@ public class StructUtil {
 	    String path ) {
 		if ( path == null ) {
 			Key typeKey = Key.of( sortType + sortOrder );
-			if ( !getCommonComparators().containsKey( typeKey ) ) {
+			if ( !getCommonKeyComparators().containsKey( typeKey ) ) {
 				throw new BoxRuntimeException(
 				    String.format(
 				        "The sort directive [%s,%s] is not a valid struct sorting directive",
@@ -523,11 +523,12 @@ public class StructUtil {
 				    )
 				);
 			}
+
 			return new Array(
-			    struct.keySet()
+			    struct.entrySet()
 			        .stream()
-			        .sorted( getCommonComparators().get( typeKey ) )
-			        .map( k -> k.getName() )
+			        .sorted( getCommonEntryComparators( Locale.US ).get( typeKey ) )
+			        .map( k -> k.getKey().getName() )
 			        .toArray()
 			);
 		} else {
@@ -978,8 +979,8 @@ public class StructUtil {
 	 *
 	 * @return A HashMap of Key to Comparator for common sorting operations.
 	 */
-	public static HashMap<Key, Comparator<Key>> getCommonComparators() {
-		return getCommonComparators( LocalizationUtil.COMMON_LOCALES.get( Key.of( "US" ) ) );
+	public static HashMap<Key, Comparator<Key>> getCommonKeyComparators() {
+		return getCommonKeyComparators( LocalizationUtil.COMMON_LOCALES.get( Key.of( "US" ) ) );
 	}
 
 	/**
@@ -991,7 +992,7 @@ public class StructUtil {
 	 *
 	 * @return A HashMap of Key to Comparator for common sorting operations.
 	 */
-	public static HashMap<Key, Comparator<Key>> getCommonComparators( Locale locale ) {
+	public static HashMap<Key, Comparator<Key>> getCommonKeyComparators( Locale locale ) {
 		return new HashMap<Key, Comparator<Key>>() {
 
 			{
@@ -1026,6 +1027,62 @@ public class StructUtil {
 					    return aNum.wasSuccessful()
 					        // lazy cast second value if first is a number
 					        && ( bNum = NumberCaster.attempt( b.getOriginalValue() ) ).wasSuccessful()
+					            ? Compare.invoke(
+					                aNum.get(),
+					                bNum.get()
+					            )
+					            : Compare.invoke( a.toString(), b.toString(), true );
+				    }
+				);
+			}
+		};
+	}
+
+	/**
+	 * Get a map of common comparators for sorting structs with a specific locale.
+	 * This map contains comparators for text, numeric, and case-insensitive text sorting,
+	 * localized according to the provided Locale.
+	 * This method sorts on a struct's entries, which are Map.Entry<Key, Object> pairs.
+	 *
+	 * @param locale The Locale to use for text comparisons.
+	 *
+	 * @return A HashMap of Key to Comparator for common sorting operations.
+	 */
+	public static HashMap<Key, Comparator<Map.Entry<Key, Object>>> getCommonEntryComparators( Locale locale ) {
+		return new HashMap<Key, Comparator<Map.Entry<Key, Object>>>() {
+
+			{
+				put( Key.of( "textAsc" ), ( a, b ) -> StringCompare
+				    .invoke( StringCaster.cast( a.getValue() ), StringCaster.cast( b.getValue() ), true, locale ) );
+				put( Key.of( "textDesc" ), ( b, a ) -> StringCompare
+				    .invoke( StringCaster.cast( a.getValue() ), StringCaster.cast( b.getValue() ), true, locale ) );
+				put( Key.of( "textNoCaseAsc" ),
+				    ( a, b ) -> StringCompare.invoke( StringCaster.cast( a.getValue() ),
+				        StringCaster.cast( b.getValue() ), false, locale ) );
+				put( Key.of( "textNoCaseDesc" ),
+				    ( b, a ) -> StringCompare.invoke( StringCaster.cast( a.getValue() ),
+				        StringCaster.cast( b.getValue() ), false, locale ) );
+				put( Key.of( "numericAsc" ),
+				    ( a, b ) -> {
+					    CastAttempt<Number> aNum = NumberCaster.attempt( a.getValue() );
+					    CastAttempt<Number> bNum = null;
+					    return aNum.wasSuccessful()
+					        // lazy cast second value if first is a number
+					        && ( bNum = NumberCaster.attempt( b.getValue() ) ).wasSuccessful()
+					            ? Compare.invoke(
+					                aNum.get(),
+					                bNum.get()
+					            )
+					            : Compare.invoke( a.toString(), b.toString(), true );
+				    }
+				);
+				put( Key.of( "numericDesc" ),
+				    ( b, a ) -> {
+					    CastAttempt<Number> aNum = NumberCaster.attempt( a.getValue() );
+					    CastAttempt<Number> bNum = null;
+					    return aNum.wasSuccessful()
+					        // lazy cast second value if first is a number
+					        && ( bNum = NumberCaster.attempt( b.getValue() ) ).wasSuccessful()
 					            ? Compare.invoke(
 					                aNum.get(),
 					                bNum.get()
