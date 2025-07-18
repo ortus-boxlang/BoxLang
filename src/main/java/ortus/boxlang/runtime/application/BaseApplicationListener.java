@@ -482,8 +482,9 @@ public abstract class BaseApplicationListener {
 	public void rotateSession() {
 		SessionBoxContext sessionContext = context.getParentOfType( SessionBoxContext.class );
 		if ( sessionContext != null ) {
-			Session	existing		= sessionContext.getSession();
-			IStruct	existingScope	= new Struct( existing.getSessionScope() );
+			Session			existing		= sessionContext.getSession();
+			SessionScope	currentScope	= existing.getSessionScope();
+			IStruct			existingScope	= currentScope != null ? new Struct( currentScope ) : new Struct();
 
 			context.resetSession();
 
