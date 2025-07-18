@@ -674,7 +674,9 @@ public final class LocalizationUtil {
 	 * {@link LocalTime}, or {@link Instant}. If successful, it wraps the parsed result in a {@link DateTime}.
 	 *
 	 * @param dateTime the date-time string to parse
+	 * 
 	 * @return a {@link DateTime} object representing the parsed date-time
+	 * 
 	 * @throws BoxRuntimeException if the input string cannot be parsed into a supported {@link TemporalAccessor}
 	 */
 	public static DateTime parseFromCommonPatterns( String dateTime ) {
