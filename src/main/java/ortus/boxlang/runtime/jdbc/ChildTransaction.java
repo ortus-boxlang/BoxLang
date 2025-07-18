@@ -155,7 +155,9 @@ public class ChildTransaction implements ITransaction {
 	 * Commit the transaction
 	 */
 	public ChildTransaction commit() {
-		setSavepoint( ChildTransaction.COMMIT );
+		if ( !this.savepoints.containsKey( generateSavepointKey( ChildTransaction.COMMIT ) ) ) {
+			setSavepoint( ChildTransaction.COMMIT );
+		}
 		return this;
 	}
 

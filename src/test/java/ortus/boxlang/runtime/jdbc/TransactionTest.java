@@ -674,8 +674,8 @@ public class TransactionTest extends BaseJDBCTest {
 		    		}
 		    	}
 		    }
-		          variables.result = queryExecute( "SELECT * FROM developers", {} );
-		      """,
+		    variables.result = queryExecute( "SELECT * FROM developers", {} );
+		    """,
 		    getContext() );
 		Query theResult = getVariables().getAsQuery( result );
 

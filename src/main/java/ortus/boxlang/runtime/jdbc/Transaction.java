@@ -277,7 +277,7 @@ public class Transaction implements ITransaction {
 		if ( this.connection != null ) {
 			try {
 				logger.debug( "Setting transaction savepoint: {}", savepoint.getNameNoCase() );
-				savepoints.put( savepoint, this.connection.setSavepoint( savepoint.getNameNoCase() ) );
+				this.savepoints.put( savepoint, this.connection.setSavepoint( savepoint.getNameNoCase() ) );
 			} catch ( SQLException e ) {
 				throw new DatabaseException( "Failed to set savepoint: " + e.getMessage(), e );
 			}
