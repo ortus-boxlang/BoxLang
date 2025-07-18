@@ -23,7 +23,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.MalformedURLException;
@@ -79,6 +78,7 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.ListUtil;
+import ortus.boxlang.runtime.util.conversion.RuntimeObjectInputStream;
 
 public final class FileSystemUtil {
 
@@ -1274,7 +1274,7 @@ public final class FileSystemUtil {
 	 */
 	public static Object deserializeFromFile( Path filePath ) {
 		try ( InputStream fileStream = Files.newInputStream( filePath ) ) {
-			try ( ObjectInputStream objStream = new ObjectInputStream( fileStream ) ) {
+			try ( RuntimeObjectInputStream objStream = new RuntimeObjectInputStream( fileStream ) ) {
 				return objStream.readObject();
 			} catch ( ClassNotFoundException e ) {
 				throw new BoxRuntimeException(
