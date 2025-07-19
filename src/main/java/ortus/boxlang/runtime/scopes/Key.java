@@ -313,6 +313,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		equals								= Key.of( "equals" );
 	public static final Key		errNumber							= Key.of( "errNumber" );
 	public static final Key		error								= Key.of( "error" );
+	public static final Key		errorHandler						= Key.of( "errorHandler" );
 	public static final Key		errorcode							= Key.of( "errorcode" );
 	public static final Key		errorDetail							= Key.of( "errorDetail" );
 	public static final Key		errors								= Key.of( "errors" );
@@ -359,6 +360,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		from								= Key.of( "from" );
 	public static final Key		fromKey								= Key.of( "fromKey" );
 	public static final Key		fullname							= Key.of( "fullname" );
+	public static final Key		future								= Key.of( "future" );
+	public static final Key		futures								= Key.of( "futures" );
 	public static final Key		function							= Key.of( "function" );
 	public static final Key		functions							= Key.of( "functions" );
 	public static final Key		functionService						= Key.of( "functionService" );
@@ -432,6 +435,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		isShutdown							= Key.of( "isShutdown" );
 	public static final Key		isValid								= Key.of( "isValid" );
 	public static final Key		item								= Key.of( "item" );
+	public static final Key		items								= Key.of( "items" );
 	public static final Key		iterations							= Key.of( "iterations" );
 	public static final Key		IVorSalt							= Key.of( "IVorSalt" );
 	public static final Key		java								= Key.of( "java" );
@@ -484,6 +488,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		lucee								= Key.of( "lucee" );
 	public static final Key		main								= Key.of( "main" );
 	public static final Key		mapping								= Key.of( "mapping" );
+	public static final Key		mapper								= Key.of( "mapper" );
 	public static final Key		mappings							= Key.of( "mappings" );
 	public static final Key		mask								= Key.of( "mask" );
 	public static final Key		match								= Key.of( "match" );
@@ -780,6 +785,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		throwOnError						= Key.of( "throwOnError" );
 	public static final Key		throwOnTimeout						= Key.of( "throwOnTimeout" );
 	public static final Key		time								= Key.of( "time" );
+	public static final Key		timeUnit							= Key.of( "timeUnit" );
 	public static final Key		timeCreated							= Key.of( "timeCreated" );
 	public static final Key		timeFormat							= Key.of( "timeFormat" );
 	public static final Key		timeout								= Key.of( "timeout" );

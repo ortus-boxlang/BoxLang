@@ -35,6 +35,7 @@ import ortus.boxlang.runtime.config.segments.ExecutorConfig;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 
 /**
@@ -520,6 +521,30 @@ public class AsyncService extends BaseService {
 				executor = null;
 		}
 		return new ExecutorRecord( executor, name, type, maxThreads );
+	}
+
+	/**
+	 * Get an executor record from any object, this is useful for BIFs that accept an executor as an argument.
+	 * It will return the executor record if it is a string or an ExecutorRecord, otherwise it will throw an exception.
+	 *
+	 * @param executor The executor to get the record from or null if no executor is provided
+	 *
+	 * @throws BoxRuntimeException If the executor is not a string or an ExecutorRecord
+	 *
+	 * @return The executor record
+	 */
+	public ExecutorRecord getRecordOrNull( Object executor ) {
+		ExecutorRecord executorRecord = null;
+		if ( executor != null ) {
+			if ( executor instanceof String castedExecutor ) {
+				executorRecord = this.getExecutor( castedExecutor );
+			} else if ( executor instanceof ExecutorRecord castedExecutor ) {
+				executorRecord = castedExecutor;
+			} else {
+				throw new BoxRuntimeException( "Invalid executor type: " + executor.getClass().getName() );
+			}
+		}
+		return executorRecord;
 	}
 
 }
