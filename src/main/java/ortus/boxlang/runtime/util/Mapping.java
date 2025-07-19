@@ -33,7 +33,7 @@ public record Mapping( String name, String path, boolean external ) {
 	/**
 	 * Factory method to create a new Mapping instance.
 	 * Mapping names such as foo/bar will be forced to have leading and trailing slashes.
-	 * /foo/bar/
+	 * For example, foo/bar will be transformed to /foo/bar/.
 	 *
 	 * @param name     The mapping name
 	 * @param path     The mapping path
