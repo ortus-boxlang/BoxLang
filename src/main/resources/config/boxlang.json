@@ -60,7 +60,7 @@
 	"sessionStorage": "memory",
 	// A collection of BoxLang mappings, the key is the prefix and the value is the directory
 	// The key can also be a struct containing a "path" and "external" property 
-	// An non-external mapping will not be used in the web runtimes to resolve incoming file paths
+	// A non-external mapping will not be used in the web runtimes to resolve incoming file paths
 	"mappings": {
 		"/": "${user-dir}"
 	},
