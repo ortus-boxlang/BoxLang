@@ -46,7 +46,7 @@ public class ContractPathTest {
 	public static void setUp() throws IOException {
 		instance = BoxRuntime.getInstance( true );
 		// Create a mapping for the test
-		instance.getConfiguration().mappings.put( "/contract/path/test",
+		instance.getConfiguration().registerMapping( "/contract/path/test",
 		    Path.of( "src/test/java/ortus/boxlang/runtime/bifs/global/io/" ).toAbsolutePath().toString() );
 	}
 

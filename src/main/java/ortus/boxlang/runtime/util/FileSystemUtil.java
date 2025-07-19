@@ -1005,8 +1005,21 @@ public final class FileSystemUtil {
 	 * @return The expanded path represented in a ResolvedFilePath record
 	 */
 	public static ResolvedFilePath expandPath( IBoxContext context, String path ) {
+		return expandPath( context, path, false );
+	}
+
+	/**
+	 * Expands a path to an absolute path. If the path is already absolute, it is
+	 * returned as is.
+	 *
+	 * @param context The context in which the BIF is being invoked.
+	 * @param path    The path to expand
+	 *
+	 * @return The expanded path represented in a ResolvedFilePath record
+	 */
+	public static ResolvedFilePath expandPath( IBoxContext context, String path, boolean externalOnly ) {
 		ResolvedFilePath resolvedFilePath = context.findClosestTemplate();
-		return expandPath( context, path, resolvedFilePath );
+		return expandPath( context, path, resolvedFilePath, externalOnly );
 	}
 
 	/**
@@ -1020,6 +1033,20 @@ public final class FileSystemUtil {
 	 * @return The expanded path represented in a ResolvedFilePath record
 	 */
 	public static ResolvedFilePath expandPath( IBoxContext context, String path, ResolvedFilePath basePath ) {
+		return expandPath( context, path, basePath, false );
+	}
+
+	/**
+	 * Expands a path to an absolute path. If the path is already absolute, it is
+	 * returned as is.
+	 *
+	 * @param context  The context in which the BIF is being invoked.
+	 * @param path     The path to expand
+	 * @param basePath The base path to use for relative paths
+	 *
+	 * @return The expanded path represented in a ResolvedFilePath record
+	 */
+	public static ResolvedFilePath expandPath( IBoxContext context, String path, ResolvedFilePath basePath, boolean externalOnly ) {
 		// This really isn't a valid path, but ColdBox does this by carelessly appending too many slashes to view paths
 		if ( path.startsWith( "//" ) ) {
 			// strip one of them off
@@ -1053,6 +1080,9 @@ public final class FileSystemUtil {
 		    .entrySet()
 		    .stream()
 		    .filter( entry -> {
+															    if ( externalOnly && ! ( ( Mapping ) entry.getValue() ).external() ) {
+																    return false;
+															    }
 															    // Don't match the root mapping yet, we'll do that below
 															    if ( entry.getKey().getName().equals( "/" ) ) {
 																    return false;
@@ -1124,7 +1154,7 @@ public final class FileSystemUtil {
 		}
 
 		// We give up, just assume it uses the root mapping of /
-		String	rootMapping	= context.getConfig().getAsStruct( Key.mappings ).getAsString( Key.of( "/" ) );
+		String	rootMapping	= context.getConfig().getAsStruct( Key.mappings ).getAs( Mapping.class, Key.of( "/" ) ).path();
 		Path	result		= Path.of( rootMapping, path ).toAbsolutePath();
 		return ResolvedFilePath.of( "/", rootMapping, Path.of( finalPath ).normalize().toString(), result.normalize() );
 	}
@@ -1155,7 +1185,7 @@ public final class FileSystemUtil {
 		IStruct	mappings	= context.getConfig().getAsStruct( Key.mappings );
 
 		if ( preferredMapping != null && mappings.get( Key.of( preferredMapping ) ) != null ) {
-			String mappingDirectory = mappings.getAsString( Key.of( preferredMapping ) );
+			String mappingDirectory = mappings.getAs( Mapping.class, Key.of( preferredMapping ) ).path();
 			mappingDirectory = Path.of( mappingDirectory ).normalize().toString().replace( "\\", "/" );
 			if ( File.separator.equals( "/" ) ? finalPath.startsWith( mappingDirectory )
 			    : StringUtils.startsWithIgnoreCase( finalPath, mappingDirectory ) ) {

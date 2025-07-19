@@ -361,11 +361,16 @@ public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 
 	/**
 	 * Convenience method for getting cast as BoxLang Attempt
-	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
+	 * If the value is not already an attempt, it will be wrapped in an Attempt
 	 */
 	@SuppressWarnings( "unchecked" )
 	default Attempt<Object> getAsAttempt( Key key ) {
-		return ( Attempt<Object> ) DynamicObject.unWrap( get( key ) );
+		Object result = DynamicObject.unWrap( get( key ) );
+		// if it's already an Attempt, return it
+		if ( result instanceof Attempt ar ) {
+			return ar;
+		}
+		return Attempt.of( result );
 	}
 
 	/**

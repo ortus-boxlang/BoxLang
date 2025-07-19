@@ -251,7 +251,16 @@ public interface IBoxContext extends IBoxAttachable, Serializable {
 	 *
 	 * @param templatePath A relateive template path
 	 */
-	public void includeTemplate( String templatePath );
+	public default void includeTemplate( String templatePath ) {
+		includeTemplate( templatePath, false );
+	}
+
+	/**
+	 * Invoke a template in the current context
+	 *
+	 * @param templatePath A relateive template path
+	 */
+	public void includeTemplate( String templatePath, boolean externalOnly );
 
 	/**
 	 * Register a UDF with the local context.
