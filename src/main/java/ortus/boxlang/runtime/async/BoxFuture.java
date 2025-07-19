@@ -38,6 +38,7 @@ import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 import ortus.boxlang.runtime.types.util.BLCollector;
 import ortus.boxlang.runtime.types.util.DateTimeHelper;
 
@@ -474,6 +475,54 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 	}
 
 	/**
+	 * This method accepts an array of future objects, closures or an array of future objects/closures
+	 * in order to execute them in parallel. It will return back to you a future that will return back the first
+	 * result from the futures that was executed. This way you can further attach processing and pipelining
+	 * on the constructed value.
+	 * <p>
+	 * This means that the futures will be executed in parallel and the result will be returned as soon as one of
+	 * the futures completes. This also means that this operation is non-blocking and will return immediately
+	 * until you call get() on the future.
+	 *
+	 * @param context The context of the current execution
+	 * @param futures The array of futures to execute
+	 *
+	 * @return A future that will return the first result from the futures
+	 */
+	public static BoxFuture<Object> any( IBoxContext context, Array futures ) {
+		return any( context, futures, BoxRuntime.getInstance().getAsyncService().getCommonForkJoinPool() );
+	}
+
+	/**
+	 * This method accepts an array of future objects, closures or an array of future objects/closures
+	 * in order to execute them in parallel. It will return back to you a future that will return back the first
+	 * result from the futures that was executed. This way you can further attach processing and pipelining
+	 * on the constructed value.
+	 * <p>
+	 * This means that the futures will be executed in parallel and the result will be returned as soon as one of
+	 * the futures completes. This also means that this operation is non-blocking and will return immediately
+	 * until you call get() on the future.
+	 *
+	 * @param context        The context of the current execution
+	 * @param futures        The array of futures to execute
+	 * @param executorRecord The executor to use for the execution of the futures if they are functions or closures
+	 *
+	 * @return A future that will return the first result from the futures
+	 */
+	public static BoxFuture<Object> any( IBoxContext context, Array futures, ExecutorRecord executorRecord ) {
+		// If futures is null or empty, return an empty future
+		if ( futures == null || futures.isEmpty() ) {
+			return BoxFuture.completedFuture( null );
+		}
+
+		// Process the incoming array to make sure it complies to our expectations
+		BoxFuture<?>[] aFutures = futuresWrap( context, futures, executorRecord );
+
+		// Send to any() for execution
+		return new BoxFuture<>( anyOf( aFutures ) );
+	}
+
+	/**
 	 * Creates a new BoxFuture that is already completed with the given value.
 	 *
 	 * @param value The value to complete the future with
@@ -588,8 +637,8 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 	    Object items,
 	    ortus.boxlang.runtime.types.Function mapper,
 	    ortus.boxlang.runtime.types.Function errorHandler,
-	    Executor executor ) {
-		return allApply( context, items, mapper, errorHandler, 0, TimeUnit.MILLISECONDS, null );
+	    ExecutorRecord executor ) {
+		return allApply( context, items, mapper, errorHandler, 0, TimeUnit.MILLISECONDS, executor );
 	}
 
 	/**
@@ -653,12 +702,17 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 	    ortus.boxlang.runtime.types.Function errorHandler,
 	    long timeout,
 	    Object unit,
-	    Executor executor ) {
+	    ExecutorRecord executor ) {
 		// Timeunit conversion
 		TimeUnit			timeUnit	= DateTimeHelper.toTimeUnit( unit );
 		final BoxLangLogger	allLogger	= BoxRuntime.getInstance().getLoggingService().ASYNC_LOGGER;
 
-		// Array Mapping
+		// If items is null, return an empty array
+		if ( items == null ) {
+			return Array.EMPTY;
+		}
+
+		// Array Processing
 		if ( items instanceof Array castedArray ) {
 			return castedArray
 			    .stream()
@@ -671,7 +725,7 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 				    }
 				    // Using a custom executor or not
 				    if ( executor != null ) {
-					    return f.then( new ortus.boxlang.runtime.interop.proxies.Function<>( mapper, context, null ), executor );
+					    return f.then( new ortus.boxlang.runtime.interop.proxies.Function<>( mapper, context, null ), executor.executor() );
 				    } else {
 					    return f.then( new ortus.boxlang.runtime.interop.proxies.Function<>( mapper, context, null ) );
 				    }
@@ -679,14 +733,23 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 			    // Join with the timeout
 			    .map( future -> {
 				    try {
-					    return future.get( timeout, timeUnit );
+					    // If we have a timeout, we need to get the result with the timeout
+					    if ( timeout > 0 ) {
+						    return future.get( timeout, timeUnit );
+					    }
+					    // If no timeout, just get the result
+					    else {
+						    return future.get();
+					    }
 				    } catch ( InterruptedException | ExecutionException | TimeoutException e ) {
 					    allLogger.error( "Error executing get() on a future", e );
-					    throw new CompletionException( e );
+					    return ExceptionUtil.throwableToStruct( e );
 				    }
 			    } )
 			    .collect( BLCollector.toArray() );
-		} else if ( items instanceof IStruct castedStruct ) {
+		}
+		// Process a Struct
+		else if ( items instanceof IStruct castedStruct ) {
 			IStruct result = new Struct();
 			// Struct Mapping
 			castedStruct
@@ -694,14 +757,16 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 			    .stream()
 			    .map( entry -> {
 				    // Create a new BoxFuture for each item with a key and value
-				    BoxFuture<IStruct> f = ( BoxFuture<IStruct> ) ofValue( Struct.of( "key", entry.getKey(), "value", entry.getValue() ) );
+				    BoxFuture<IStruct> f = ( BoxFuture<IStruct> ) ofValue(
+				        Struct.of( Key.key, entry.getKey(), Key.value, entry.getValue() )
+				    );
 				    // Do we have an error handler
 				    if ( errorHandler != null ) {
 					    f.onError( new ortus.boxlang.runtime.interop.proxies.Function<>( errorHandler, context, null ) );
 				    }
 				    // Using a custom executor or not
 				    if ( executor != null ) {
-					    return f.then( new ortus.boxlang.runtime.interop.proxies.Function<>( mapper, context, null ), executor );
+					    return f.then( new ortus.boxlang.runtime.interop.proxies.Function<>( mapper, context, null ), executor.executor() );
 				    } else {
 					    return f.then( new ortus.boxlang.runtime.interop.proxies.Function<>( mapper, context, null ) );
 				    }
@@ -709,13 +774,23 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 			    // Join with the timeout
 			    .map( future -> {
 				    try {
-					    return ( IStruct ) future.get( timeout, timeUnit );
+					    if ( timeout > 0 ) {
+						    // If we have a timeout, we need to get the result with the timeout
+						    return ( IStruct ) future.get( timeout, timeUnit );
+					    }
+					    // If no timeout, just get the result
+					    else {
+						    return ( IStruct ) future.get();
+					    }
 				    } catch ( InterruptedException | ExecutionException | TimeoutException e ) {
 					    allLogger.error( "Error executing get() on a future", e );
 					    throw new CompletionException( e );
 				    }
 			    } )
-			    .forEach( entry -> result.put( Key.of( entry.get( "key" ) ), entry.get( "value" ) ) );
+			    .forEach( entry -> result.put(
+			        Key.of( entry.get( Key.key ) ),
+			        entry.get( Key.value ) )
+			    );
 			return result;
 		} else {
 			throw new BoxRuntimeException( "The items argument must be an array or a struct" );
@@ -768,11 +843,9 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 					    // Log the error
 					    BoxRuntime.getInstance().getLoggingService().ASYNC_LOGGER.error( "Error executing future", throwable );
 					    // Complete with error struct
-					    resultFuture.complete( Struct.of(
-					        "error", true,
-					        "message", throwable.getMessage() != null ? throwable.getMessage() : throwable.getClass().getSimpleName(),
-					        "stackTrace", Arrays.toString( throwable.getStackTrace() )
-					    ) );
+					    resultFuture.complete(
+					        ExceptionUtil.throwableToStruct( throwable )
+					    );
 				    } else {
 					    resultFuture.complete( result );
 				    }

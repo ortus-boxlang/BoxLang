@@ -40,10 +40,9 @@ public class AsyncAll extends BIF {
 	}
 
 	/**
-	 * This BIF accepts an infinite amount of future objects, closures or an array of future objects/closures
-	 * in order to execute them in parallel. It will return back to you a future that will return back an array
-	 * of results from every future that was executed. This way you can further attach processing and pipelining
-	 * on the constructed array of values.
+	 * This BIF accepts an array of futures/closures/lambdas and executes them all in parallel.
+	 * It returns a BoxFuture that will contain an array of results once all futures are completed
+	 * successfully.
 	 * <p>
 	 * This means that the futures will be executed in parallel and the results will be returned in the order
 	 * that they were passed in. This also means that this operation is non-blocking and will return immediately
@@ -73,16 +72,7 @@ public class AsyncAll extends BIF {
 		Array			futures			= arguments.getAsArray( Key.futures );
 		Object			executor		= arguments.get( Key.executor );
 
-		ExecutorRecord	executorRecord	= null;
-		if ( executor != null ) {
-			if ( executor instanceof String castedExecutor ) {
-				executorRecord = asyncService.getExecutor( castedExecutor );
-			} else if ( executor instanceof ExecutorRecord castedExecutor ) {
-				executorRecord = castedExecutor;
-			} else {
-				throw new KeyNotFoundException( "Invalid executor type: " + executor.getClass().getName() );
-			}
-		}
+		ExecutorRecord	executorRecord	= this.asyncService.getRecordOrNull( executor );
 
 		if ( executorRecord == null ) {
 			return BoxFuture.all( context, futures );

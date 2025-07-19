@@ -14,17 +14,15 @@
  */
 package ortus.boxlang.runtime.bifs.global.async;
 
-import java.util.concurrent.Executor;
-
 import ortus.boxlang.runtime.async.BoxFuture;
+import ortus.boxlang.runtime.async.executors.ExecutorRecord;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
-import ortus.boxlang.runtime.types.Function;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 
 @BoxBIF
@@ -36,22 +34,19 @@ public class AsyncAny extends BIF {
 	public AsyncAny() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, Argument.FUNCTION, Key.callback ),
+		    new Argument( true, Argument.ARRAY, Key.futures ),
 		    new Argument( false, Argument.ANY, Key.executor )
 		};
 	}
 
 	/**
-	 * Executes the given code asynchronously and returns to you a BoxFuture object which inherits from CompletableFuture.
-	 * This way you can create fluent asynchronous code that can be chained and composed.
-	 *
-	 * @see https://docs.oracle.com/en%2Fjava%2Fjavase%2F22%2Fdocs%2Fapi%2F%2F/java.base/java/util/concurrent/CompletableFuture.html
+	 * This BIF accepts an array of futures/closures/lambdas and executes them all in parallel,
+	 * returning a BoxFuture that will contain the result of the first future that completes successfully.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.callback The code to execute asynchronously, this can be a closure
-	 *                    or lambda.
+	 * @argument.futures An array of BoxFuture objects to process in parallel
 	 *
 	 * @argument.executor The executor to use for the asynchronous execution. This
 	 *                    can be an instance of an Executor class, or the name of a
@@ -63,29 +58,17 @@ public class AsyncAny extends BIF {
 	 *         asynchronously executed code.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		// Get the callback
-		Function	callback	= arguments.getAsFunction( Key.callback );
-		// Get the executor
-		Object		executor	= arguments.get( Key.executor );
+		Array			futures			= arguments.getAsArray( Key.futures );
+		Object			executor		= arguments.get( Key.executor );
 
-		// Run the code asynchronously in the fork/join pool if no executor is provided
-		if ( executor == null ) {
-			return BoxFuture.ofFunction( context, callback );
+		ExecutorRecord	executorRecord	= this.asyncService.getRecordOrNull( executor );
+
+		if ( executorRecord == null ) {
+			return BoxFuture.any( context, futures );
+		} else {
+			return BoxFuture.any( context, futures, executorRecord );
 		}
 
-		// Check if the executor is a string, if so, and then check the async service
-		// for the executor
-		// If the executor is not found, throw an exception
-		if ( executor instanceof String castedExecutor ) {
-			return BoxFuture.ofFunction( context, callback, asyncService.getExecutor( castedExecutor ).executor() );
-		}
-
-		// Check if the executor is an instance of an Executor class
-		if ( executor instanceof Executor castedExecutor ) {
-			return BoxFuture.ofFunction( context, callback, castedExecutor );
-		}
-
-		throw new BoxRuntimeException( "Invalid executor type " + executor.getClass().getName() );
 	}
 
 }
