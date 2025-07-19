@@ -426,4 +426,17 @@ public class ParseDateTimeTest {
 
 	}
 
+	@DisplayName( "It tests the BIF ParseDateTime with text/numeric formats" )
+	@Test
+	public void testVarious(){
+		instance.executeSource(
+		    """
+		    parseDateTime('July, 19 2015');
+			parseDateTime('Jul, 19 2015');
+			parseDateTime('July 19 2015');
+			parseDateTime('Jul 19 2015');
+		    """,
+		    context );
+	}
+
 }
