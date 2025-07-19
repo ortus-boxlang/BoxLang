@@ -1,6 +1,7 @@
 package ortus.boxlang.runtime.bifs.global.async;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.concurrent.ExecutionException;
 
@@ -13,11 +14,13 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.LongCaster;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class AsyncAllApplyTest {
 
@@ -63,22 +66,22 @@ public class AsyncAllApplyTest {
 	@Test
 	public void testAsyncApplyWithTimeout() throws Throwable, ExecutionException {
 		// @formatter:off
-		instance.executeSource("""
-			a = [1, 2, 3];
-			result = asyncAllApply(
-				items: a,
-				mapper: ( item ) => {
-					sleep( 1000 );
-					return item * 2;
-				},
-				timeout: 500,
-				timeUnit: "MILLISECONDS"
-			)
-			println( result )
-		""", context);
+		assertThrows( BoxRuntimeException.class, () -> {
+			instance.executeSource("""
+				a = [1, 2, 3];
+				result = asyncAllApply(
+					items: a,
+					mapper: ( item ) => {
+						sleep( 1000 );
+						return item * 2;
+					},
+					timeout: 500,
+					timeUnit: "MILLISECONDS"
+				)
+				println( result )
+			""", context);
+		} );
 		// @formatter:on
-		Array aResult = variables.getAsArray( result );
-		assertThat( aResult ).isNotNull();
 	}
 
 	@DisplayName( "Test asyncAllApply() with the basics using a struct" )
@@ -93,13 +96,13 @@ public class AsyncAllApplyTest {
 				return item
 			})
 			println( result )
-			assert result.one == 2
-			assert result.two == 4
-			assert result.three == 6
 		""", context);
 		// @formatter:on
 		IStruct aResult = variables.getAsStruct( result );
 		assertThat( aResult ).isNotNull();
+		assertThat( LongCaster.cast( aResult.get( Key.of( "one" ) ) ) ).isEqualTo( 2 );
+		assertThat( LongCaster.cast( aResult.get( Key.of( "two" ) ) ) ).isEqualTo( 4 );
+		assertThat( LongCaster.cast( aResult.get( Key.of( "three" ) ) ) ).isEqualTo( 6 );
 	}
 
 }

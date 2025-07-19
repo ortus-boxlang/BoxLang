@@ -17,16 +17,21 @@
  */
 package ortus.boxlang.runtime.async;
 
+import java.util.AbstractMap;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.async.executors.ExecutorRecord;
@@ -669,7 +674,7 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 	    ortus.boxlang.runtime.types.Function errorHandler,
 	    long timeout,
 	    Object unit ) {
-		return allApply( context, items, mapper, errorHandler, 0, TimeUnit.MILLISECONDS, null );
+		return allApply( context, items, mapper, errorHandler, timeout, unit, null );
 	}
 
 	/**
@@ -694,7 +699,6 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 	 *
 	 * @return An array or struct of the results
 	 */
-	@SuppressWarnings( "unchecked" )
 	public static Object allApply(
 	    IBoxContext context,
 	    Object items,
@@ -703,10 +707,6 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 	    long timeout,
 	    Object unit,
 	    ExecutorRecord executor ) {
-		// Timeunit conversion
-		TimeUnit			timeUnit	= DateTimeHelper.toTimeUnit( unit );
-		final BoxLangLogger	allLogger	= BoxRuntime.getInstance().getLoggingService().ASYNC_LOGGER;
-
 		// If items is null, return an empty array
 		if ( items == null ) {
 			return Array.EMPTY;
@@ -714,86 +714,204 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 
 		// Array Processing
 		if ( items instanceof Array castedArray ) {
-			return castedArray
-			    .stream()
-			    .map( item -> {
-				    // Create a new BoxFuture for each item
-				    BoxFuture<?> f = ofValue( item );
-				    // Do we have an error handler
-				    if ( errorHandler != null ) {
-					    f.onError( new ortus.boxlang.runtime.interop.proxies.Function<>( errorHandler, context, null ) );
-				    }
-				    // Using a custom executor or not
-				    if ( executor != null ) {
-					    return f.then( new ortus.boxlang.runtime.interop.proxies.Function<>( mapper, context, null ), executor.executor() );
-				    } else {
-					    return f.then( new ortus.boxlang.runtime.interop.proxies.Function<>( mapper, context, null ) );
-				    }
-			    } )
-			    // Join with the timeout
-			    .map( future -> {
-				    try {
-					    // If we have a timeout, we need to get the result with the timeout
-					    if ( timeout > 0 ) {
-						    return future.get( timeout, timeUnit );
-					    }
-					    // If no timeout, just get the result
-					    else {
-						    return future.get();
-					    }
-				    } catch ( InterruptedException | ExecutionException | TimeoutException e ) {
-					    allLogger.error( "Error executing get() on a future", e );
-					    return ExceptionUtil.throwableToStruct( e );
-				    }
-			    } )
-			    .collect( BLCollector.toArray() );
+			return allApplyArray( context, castedArray, mapper, errorHandler, timeout, unit, executor );
 		}
 		// Process a Struct
 		else if ( items instanceof IStruct castedStruct ) {
-			IStruct result = new Struct();
-			// Struct Mapping
-			castedStruct
-			    .entrySet()
-			    .stream()
-			    .map( entry -> {
-				    // Create a new BoxFuture for each item with a key and value
-				    BoxFuture<IStruct> f = ( BoxFuture<IStruct> ) ofValue(
-				        Struct.of( Key.key, entry.getKey(), Key.value, entry.getValue() )
-				    );
-				    // Do we have an error handler
-				    if ( errorHandler != null ) {
-					    f.onError( new ortus.boxlang.runtime.interop.proxies.Function<>( errorHandler, context, null ) );
-				    }
-				    // Using a custom executor or not
-				    if ( executor != null ) {
-					    return f.then( new ortus.boxlang.runtime.interop.proxies.Function<>( mapper, context, null ), executor.executor() );
-				    } else {
-					    return f.then( new ortus.boxlang.runtime.interop.proxies.Function<>( mapper, context, null ) );
-				    }
-			    } )
-			    // Join with the timeout
-			    .map( future -> {
-				    try {
-					    if ( timeout > 0 ) {
-						    // If we have a timeout, we need to get the result with the timeout
-						    return ( IStruct ) future.get( timeout, timeUnit );
-					    }
-					    // If no timeout, just get the result
-					    else {
-						    return ( IStruct ) future.get();
-					    }
-				    } catch ( InterruptedException | ExecutionException | TimeoutException e ) {
-					    allLogger.error( "Error executing get() on a future", e );
-					    throw new CompletionException( e );
-				    }
-			    } )
-			    .forEach( entry -> result.put(
-			        Key.of( entry.get( Key.key ) ),
-			        entry.get( Key.value ) )
-			    );
-			return result;
-		} else {
+			return allApplyStruct( context, castedStruct, mapper, errorHandler, timeout, unit, executor );
+		}
+		// Add other types here if needed
+		// If we get here, then the items argument is not an array or a struct
+		// This is an error, so we throw an exception
+		else {
 			throw new BoxRuntimeException( "The items argument must be an array or a struct" );
+		}
+	}
+
+	/**
+	 * Private helper method to apply a function to each item in an array in parallel
+	 *
+	 * @param context      The context of the current execution
+	 * @param array        The array to process
+	 * @param mapper       The function to apply to each item
+	 * @param errorHandler The function to handle any errors that occur, this can be null
+	 * @param timeout      The maximum time to wait
+	 * @param unit         The time unit of the timeout argument
+	 * @param executor     The executor to run the function on
+	 *
+	 * @return An array of the results
+	 */
+	private static Array allApplyArray(
+	    IBoxContext context,
+	    Array array,
+	    ortus.boxlang.runtime.types.Function mapper,
+	    ortus.boxlang.runtime.types.Function errorHandler,
+	    long timeout,
+	    Object unit,
+	    ExecutorRecord executor ) {
+		TimeUnit						timeUnit	= DateTimeHelper.toTimeUnit( unit );
+		final BoxLangLogger				allLogger	= BoxRuntime.getInstance().getLoggingService().ASYNC_LOGGER;
+
+		// Create all futures in parallel (non-blocking)
+		// @formatter:off
+		List<CompletableFuture<Object>>	futures		= array
+		    .stream()
+		    .map( item -> {
+				return CompletableFuture.supplyAsync( () -> {
+						try {
+							// Apply the mapper function directly to each item
+							return new ortus.boxlang.runtime.interop.proxies.Function<>( mapper, context, null ).apply( item );
+						} catch ( Exception e ) {
+							allLogger.error( "Error executing mapper function on item", e );
+							// Handle error with error handler if provided, otherwise return exception struct
+							if ( errorHandler != null ) {
+								try {
+									return new ortus.boxlang.runtime.interop.proxies.Function<>( errorHandler, context, null ).apply( e );
+								} catch ( Exception handlerError ) {
+									allLogger.error( "Error in error handler", handlerError );
+									return ExceptionUtil.throwableToStruct( handlerError );
+								}
+							}
+							// No handler provided, return the exception as a struct
+							else {
+								return ExceptionUtil.throwableToStruct( e );
+							}
+						}
+					},
+						// Bound the executor to the CompletableFuture
+						executor != null ? executor.executor() : ForkJoinPool.commonPool()
+					);
+			} )
+		    .collect( Collectors.toList() );
+		// @formatter:on
+
+		// Wait for all futures to complete with timeout handling
+		try {
+			CompletableFuture<Void> allFutures = CompletableFuture.allOf( futures.toArray( new CompletableFuture[ 0 ] ) );
+
+			// Apply timeout if specified and wait for completion
+			if ( timeout > 0 ) {
+				allFutures.get( timeout, timeUnit );
+			} else {
+				allFutures.get();
+			}
+
+			// All completed successfully, collect results
+			return futures
+			    .stream()
+			    .map( CompletableFuture::join )  // Won't block since all are complete
+			    .collect( BLCollector.toArray() );
+		} catch ( TimeoutException e ) {
+			allLogger.error( "Timeout waiting for all array items to complete", e );
+			// Cancel remaining futures, not guaranteed to stop them but will prevent further processing
+			futures.forEach( f -> f.cancel( true ) );
+			// It's up to the user to shut down the executor if needed
+			throw new BoxRuntimeException( "Array processing timed out after " + timeout + " " + timeUnit,
+			    "Array processing timed out after " + timeout + " " + timeUnit, // message
+			    "java.lang.TimeoutException", // type
+			    e // cause
+			);
+		} catch ( Exception e ) {
+			allLogger.error( "Error waiting for array processing", e );
+			throw new BoxRuntimeException( "Error during array parallel processing", e );
+		}
+	}
+
+	/**
+	 * Private helper method to apply a function to each item in a struct in parallel
+	 *
+	 * @param context      The context of the current execution
+	 * @param struct       The struct to process
+	 * @param mapper       The function to apply to each item
+	 * @param errorHandler The function to handle any errors that occur, this can be null
+	 * @param timeout      The maximum time to wait
+	 * @param unit         The time unit of the timeout argument
+	 * @param executor     The executor to run the function on
+	 *
+	 * @return A struct of the results
+	 */
+	private static IStruct allApplyStruct(
+	    IBoxContext context,
+	    IStruct struct,
+	    ortus.boxlang.runtime.types.Function mapper,
+	    ortus.boxlang.runtime.types.Function errorHandler,
+	    long timeout,
+	    Object unit,
+	    ExecutorRecord executor ) {
+		TimeUnit										timeUnit	= DateTimeHelper.toTimeUnit( unit );
+		final BoxLangLogger								allLogger	= BoxRuntime.getInstance().getLoggingService().ASYNC_LOGGER;
+		IStruct											result		= new Struct();
+
+		// Create all futures in parallel (non-blocking)
+		// @formatter:off
+		List<CompletableFuture<Map.Entry<Key, Object>>>	futures		= struct
+		    .entrySet()
+		    .stream()
+		    .map( entry -> {
+				CompletableFuture<Map.Entry<Key, Object>> future = CompletableFuture
+					.supplyAsync( () -> {
+							try {
+								// Create key-value struct for the mapper function
+								IStruct itemStruct = Struct.of( Key.key, entry.getKey(), Key.value, entry.getValue() );
+								// Apply the mapper function to the itemStruct
+								IStruct mappedResult = (IStruct) new ortus.boxlang.runtime.interop.proxies.Function<>( mapper, context, null ).apply( itemStruct );
+								// Return the key with the processed value
+								return new AbstractMap.SimpleEntry<>( entry.getKey(), mappedResult.get( Key.value ) );
+							} catch ( Exception e ) {
+								allLogger.error( "Error executing mapper function on struct entry", e );
+								Object errorResult;
+								// Handle error with error handler if provided
+								if ( errorHandler != null ) {
+									try {
+										errorResult = new ortus.boxlang.runtime.interop.proxies.Function<>( errorHandler, context, null ).apply( e );
+									} catch ( Exception handlerError ) {
+										allLogger.error( "Error in error handler", handlerError );
+										errorResult = ExceptionUtil.throwableToStruct( handlerError );
+									}
+								} else {
+									errorResult = ExceptionUtil.throwableToStruct( e );
+								}
+								// Return the key-error pair
+								return new AbstractMap.SimpleEntry<>( entry.getKey(), errorResult );
+							}
+						},
+					executor != null ? executor.executor() : ForkJoinPool.commonPool()
+				);
+				return future;
+			} )
+		    .collect( Collectors.toList() );
+		// @formatter:on
+
+		// Wait for all futures to complete with timeout handling
+		try {
+			CompletableFuture<Void> allFutures = CompletableFuture.allOf( futures.toArray( new CompletableFuture[ 0 ] ) );
+
+			// Apply timeout if specified, wait for completion
+			if ( timeout > 0 ) {
+				allFutures.get( timeout, timeUnit );
+			} else {
+				allFutures.get();
+			}
+
+			// All completed successfully, collect results into the struct
+			futures
+			    .stream()
+			    .map( CompletableFuture::join )  // Won't block since all are complete
+			    .forEach( entry -> result.put( entry.getKey(), entry.getValue() ) );
+			return result;
+
+		} catch ( TimeoutException e ) {
+			allLogger.error( "Timeout waiting for all struct entries to complete", e );
+			// Cancel remaining futures
+			futures.forEach( f -> f.cancel( true ) );
+			throw new BoxRuntimeException(
+			    "Struct processing timed out after " + timeout + " " + timeUnit, // message
+			    "java.lang.TimeoutException", // type
+			    e // cause
+			);
+		} catch ( Exception e ) {
+			allLogger.error( "Error waiting for struct processing", e );
+			throw new BoxRuntimeException( "Error during struct parallel processing", e );
 		}
 	}
 
