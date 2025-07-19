@@ -337,6 +337,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		expression2							= Key.of( "expression2" );
 	public static final Key		expressions							= Key.of( "expressions" );
 	public static final Key		extendedinfo						= Key.of( "extendedinfo" );
+	public static final Key		external							= Key.of( "external" );
+	public static final Key		externalOnly						= Key.of( "externalOnly" );
 	public static final Key		extrainfo							= Key.of( "extrainfo" );
 	public static final Key		fatalErrors							= Key.of( "fatalErrors" );
 	public static final Key		file								= Key.of( "file" );
@@ -803,6 +805,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		urlToken							= Key.of( "urlToken" );
 	public static final Key		US									= Key.of( "US" );
 	public static final Key		useCache							= Key.of( "useCache" );
+	public static final Key		useCaching							= Key.of( "useCaching" );
 	public static final Key		useCustomSerializer					= Key.of( "useCustomSerializer" );
 	public static final Key		useHighPrecisionMath				= Key.of( "useHighPrecisionMath" );
 	public static final Key		useLastAccessTimeouts				= Key.of( "useLastAccessTimeouts" );

@@ -18,6 +18,9 @@
 package TestCases.phase2;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.nio.file.Paths;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -32,6 +35,9 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.BoxIOException;
+import ortus.boxlang.runtime.types.exceptions.MissingIncludeException;
 
 public class IncludeTest {
 
@@ -112,6 +118,80 @@ public class IncludeTest {
 		    context );
 
 		assertThat( variables.get( result ) ).isEqualTo( "<cfoutput>This will #not# compile<cfset now()></cfoutput>" );
+	}
+
+	@DisplayName( "can include obey external mapping flag for static files" )
+	@Test
+	public void testCanIncludeObeyExternalMappingFlagForStaticFiles() {
+		String mappingPath = Paths.get( "src/test/java/TestCases/phase2/" ).toAbsolutePath().toString();
+		instance.getConfiguration().registerMapping( "/externalTest", Struct.of(
+		    Key.path, mappingPath,
+		    Key.external, true
+		) );
+		instance.getConfiguration().registerMapping( "/internalTest", Struct.of(
+		    Key.path, mappingPath,
+		    Key.external, false
+		) );
+
+		instance.executeSource(
+		    """
+		    bx:savecontent variable="result" {
+		    	bx:include template="/externalTest/NonCompilableFileExtension.txt";
+		    }
+		          """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "<cfoutput>This will #not# compile<cfset now()></cfoutput>" );
+
+		instance.executeSource(
+		    """
+		    bx:savecontent variable="result" {
+		    	bx:include template="/internalTest/NonCompilableFileExtension.txt";
+		    }
+		          """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "<cfoutput>This will #not# compile<cfset now()></cfoutput>" );
+
+		Throwable t = assertThrows( BoxIOException.class, () -> instance.executeSource(
+		    """
+		    bx:include template="/internalTest/NonCompilableFileExtension.txt" externalOnly="true";
+		         """,
+		    context ) );
+		assertThat( t.getMessage() ).contains( "could not be found" );
+	}
+
+	@DisplayName( "can include obey external mapping flag for dynamic files" )
+	@Test
+	public void testCanIncludeObeyExternalMappingFlagForDynamicFiles() {
+		String mappingPath = Paths.get( "src/test/java/TestCases/phase2/" ).toAbsolutePath().toString();
+		instance.getConfiguration().registerMapping( "/externalTest", Struct.of(
+		    Key.path, mappingPath,
+		    Key.external, true
+		) );
+		instance.getConfiguration().registerMapping( "/internalTest", Struct.of(
+		    Key.path, mappingPath,
+		    Key.external, false
+		) );
+
+		instance.executeSource(
+		    """
+		    bx:include template="/externalTest/IncludeTest.cfs";
+		         """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "found the value before wood" );
+
+		instance.executeSource(
+		    """
+		    bx:include template="/internalTest/IncludeTest.cfs";
+		         """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "found the value before wood" );
+
+		Throwable t = assertThrows( MissingIncludeException.class, () -> instance.executeSource(
+		    """
+		    bx:include template="/internalTest/IncludeTest.cfs" externalOnly="true";
+		         """,
+		    context ) );
+		assertThat( t.getMessage() ).contains( "could not be found" );
 	}
 
 	@DisplayName( "can include file again" )

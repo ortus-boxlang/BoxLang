@@ -56,7 +56,7 @@ public class ApplicationTemplateListener extends BaseApplicationListener {
 	public void onRequest( IBoxContext context, Object[] args ) {
 		super.onRequest( context, args );
 		// Then include the requested template
-		context.includeTemplate( ( String ) args[ 0 ] );
+		context.includeTemplate( ( String ) args[ 0 ], true );
 	}
 
 	@Override

@@ -19,7 +19,10 @@
 package ortus.boxlang.runtime.bifs.global.system;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.nio.file.Paths;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,6 +37,8 @@ import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.ClassNotFoundBoxLangException;
 
 public class CreateObjectTest {
 
@@ -66,6 +71,28 @@ public class CreateObjectTest {
 	void testBIFBXNoType() {
 		Object test = instance.executeStatement( "createObject( 'src.test.java.TestCases.phase3.MyClass' )" );
 		assertTrue( test instanceof IClassRunnable );
+	}
+
+	@DisplayName( "Can obey externalOnly flag" )
+	@Test
+	void testBIFBXExternalOnly() {
+
+		String mappingPath = Paths.get( "src/test/java/TestCases/" ).toAbsolutePath().toString();
+		instance.getConfiguration().registerMapping( "/bxexternalTest", Struct.of(
+		    Key.path, mappingPath,
+		    Key.external, true
+		) );
+		instance.getConfiguration().registerMapping( "/bxinternalTest", Struct.of(
+		    Key.path, mappingPath,
+		    Key.external, false
+		) );
+
+		Object test = instance.executeStatement( "createObject( 'component', 'bxexternalTest.phase3.MyClass' )" );
+		assertTrue( test instanceof IClassRunnable );
+
+		Throwable t = assertThrows( ClassNotFoundBoxLangException.class,
+		    () -> instance.executeStatement( "createObject( type='component', className='bxinternalTest.phase3.MyClass', externalOnly=true )" ) );
+		assertThat( t.getMessage() ).contains( "has not been located" );
 	}
 
 	@DisplayName( "Test BIF CreateObject Java" )

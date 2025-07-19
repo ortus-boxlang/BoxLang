@@ -36,6 +36,8 @@ import ortus.boxlang.runtime.loader.resolvers.IClassResolver;
 import ortus.boxlang.runtime.loader.resolvers.JavaResolver;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ClassNotFoundBoxLangException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
@@ -413,6 +415,34 @@ public class ClassLocator extends ClassLoader {
 	 *
 	 */
 	public DynamicObject load( IBoxContext context, String name, List<ImportDefinition> imports ) {
+		return load( context, name, imports, Struct.EMPTY );
+	}
+
+	/**
+	 * Load a class without a direct resolver or with a resovler prefix. If there is not a resolver prefix-- Ex:
+	 * java.lang.String
+	 * app.models.User
+	 *
+	 * This will require a system resolution of the class location and will cache the result for future lookups.
+	 *
+	 * The lookup order is:
+	 *
+	 * 1. Bx Resolver
+	 * 2. Java Resolver
+	 *
+	 * If there is a resolver prefix, then it will be used directly. Ex:
+	 * java:java.lang.String
+	 * bx:app.models.User
+	 *
+	 * @param context    The current context of execution
+	 * @param name       The fully qualified path/name of the class to load
+	 * @param imports    The list of imports to use when resolving the class
+	 * @param properties The properties to use when resolving the class
+	 *
+	 * @return The invokable representation of the class
+	 *
+	 */
+	public DynamicObject load( IBoxContext context, String name, List<ImportDefinition> imports, IStruct properties ) {
 		// If the imports are null, set them to an empty list
 		if ( imports == null ) {
 			imports = List.of();
@@ -421,7 +451,7 @@ public class ClassLocator extends ClassLoader {
 		int resolverDelimiterPos = name.indexOf( ":" );
 		// If not, use our system lookup order
 		if ( resolverDelimiterPos == -1 ) {
-			ClassLocation target = resolveFromSystem( context, name, true, imports, true );
+			ClassLocation target = resolveFromSystem( context, name, true, imports, properties );
 			return ( target == null ) ? null : DynamicObject.of( target.clazz( context ), context );
 		} else {
 			// If there is a resolver prefix, carve it off and use it directly/
@@ -483,7 +513,7 @@ public class ClassLocator extends ClassLoader {
 	    String resolverPrefix,
 	    Boolean throwException,
 	    List<ImportDefinition> imports ) {
-		return load( context, name, resolverPrefix, throwException, imports, true );
+		return load( context, name, resolverPrefix, throwException, imports, Struct.EMPTY );
 	}
 
 	/**
@@ -494,7 +524,7 @@ public class ClassLocator extends ClassLoader {
 	 * @param resolverPrefix The prefix of the resolver to use
 	 * @param throwException If true, it will throw an exception if the class is not found, else it will return null
 	 * @param imports        The list of imports to use when resolving the class
-	 * @param useCaching     If true, it will cache the resolved class if allowed, else just does discovery and passthrough
+	 * @param properties     The properties to use when resolving the class. Boolean useCaching, Boolean externalOnly
 	 *
 	 * @return The invokable representation of the class
 	 *
@@ -505,17 +535,19 @@ public class ClassLocator extends ClassLoader {
 	    String resolverPrefix,
 	    Boolean throwException,
 	    List<ImportDefinition> imports,
-	    Boolean useCaching ) {
+	    IStruct properties ) {
 
 		// If the imports are null, set them to an empty list
 		if ( imports == null ) {
 			imports = List.of();
 		}
 
+		boolean							useCaching	= ( Boolean ) properties.getOrDefault( Key.useCaching, true );
+
 		// Must be final for the lambda to use it
 		final List<ImportDefinition>	thisImports	= imports;
 		// Unique Cache Key
-		String							cacheKey	= new StringBuilder( resolverPrefix )
+		String							cacheKey	= useCaching ? new StringBuilder( resolverPrefix )
 		    .append( COLON )
 		    .append( context.getApplicationName() )
 		    .append( COLON )
@@ -526,7 +558,7 @@ public class ClassLocator extends ClassLoader {
 		    .append( getTemplatePathPrefix( context ) )
 		    .append( COLON )
 		    .append( name )
-		    .toString();
+		    .toString() : "";
 
 		// Are we in debug mode, if so disable caching
 		if ( !runtime.getConfiguration().classResolverCache ) {
@@ -535,9 +567,9 @@ public class ClassLocator extends ClassLoader {
 		final boolean			finalUseCaching	= useCaching;
 
 		// Try to resolve it
-		Optional<ClassLocation>	resolvedClass	= getClass( cacheKey )
+		Optional<ClassLocation>	resolvedClass	= ( useCaching ? getClass( cacheKey ) : Optional.<ClassLocation>empty() )
 		    // Resolve it
-		    .or( () -> getResolver( resolverPrefix ).resolve( context, name, thisImports ) )
+		    .or( () -> getResolver( resolverPrefix ).resolve( context, name, thisImports, properties ) )
 		    // If found, cache it
 		    .map( target -> {
 			    if ( finalUseCaching && target.cacheable() ) {
@@ -654,8 +686,23 @@ public class ClassLocator extends ClassLoader {
 	 * @return The invokable representation of the class or an empty optional if not found
 	 */
 	public Optional<DynamicObject> safeLoad( IBoxContext context, String name, List<ImportDefinition> imports ) {
+		return safeLoad( context, name, imports, Struct.EMPTY );
+	}
+
+	/**
+	 * Same as the load method, but it will not throw an exception if the class is not found,
+	 * it will return an empty optional instead.
+	 *
+	 * @param context    The current context of execution
+	 * @param name       The fully qualified path/name of the class to load
+	 * @param imports    The list of imports to use when resolving the class
+	 * @param properties The properties to use when resolving the class
+	 *
+	 * @return The invokable representation of the class or an empty optional if not found
+	 */
+	public Optional<DynamicObject> safeLoad( IBoxContext context, String name, List<ImportDefinition> imports, IStruct properties ) {
 		ClassLocation location;
-		location = resolveFromSystem( context, name, false, imports, true );
+		location = resolveFromSystem( context, name, false, imports, properties );
 		// If not found, return an empty optional
 		return ( location == null )
 		    ? Optional.empty()
@@ -713,7 +760,7 @@ public class ClassLocator extends ClassLoader {
 	 * @return The class requested to be loaded represented by the incoming name
 	 */
 	public Class<?> findClass( IBoxContext context, String name, List<ImportDefinition> imports ) {
-		ClassLocation target = resolveFromSystem( context, name, true, imports, false );
+		ClassLocation target = resolveFromSystem( context, name, true, imports, Struct.of( Key.useCaching, false ) );
 		try {
 			return ( target == null )
 			    ? super.findClass( name )
@@ -744,11 +791,13 @@ public class ClassLocator extends ClassLoader {
 	    String name,
 	    Boolean throwException,
 	    List<ImportDefinition> imports,
-	    Boolean useCaching ) {
+	    IStruct properties ) {
+
+		Boolean	useCaching	= ( Boolean ) properties.getOrDefault( Key.useCaching, true );
 
 		// This builds a unique cache key for the class requested with as much information as possible
 		// To guarantee uniqueness
-		String cacheKey = new StringBuilder( context.getApplicationName() )
+		String	cacheKey	= useCaching ? new StringBuilder( context.getApplicationName() )
 		    .append( COLON )
 		    .append( Objects.hash( imports ) )
 		    .append( COLON )
@@ -757,7 +806,7 @@ public class ClassLocator extends ClassLoader {
 		    .append( getTemplatePathPrefix( context ) )
 		    .append( COLON )
 		    .append( name )
-		    .toString();
+		    .toString() : "";
 
 		// No Setting, No Full Caching
 		if ( !runtime.getConfiguration().classResolverCache ) {
@@ -766,11 +815,11 @@ public class ClassLocator extends ClassLoader {
 		final boolean			finalUseCaching	= useCaching;
 
 		// Try to get it from cache
-		Optional<ClassLocation>	resolvedClass	= getClass( cacheKey )
+		Optional<ClassLocation>	resolvedClass	= ( useCaching ? getClass( cacheKey ) : Optional.<ClassLocation>empty() )
 		    // Is it a BoxClass?
-		    .or( () -> getResolver( BX_PREFIX ).resolve( context, name, imports ) )
+		    .or( () -> getResolver( BX_PREFIX ).resolve( context, name, imports, properties ) )
 		    // Is it a JavaClass?
-		    .or( () -> getResolver( JAVA_PREFIX ).resolve( context, name, imports ) )
+		    .or( () -> getResolver( JAVA_PREFIX ).resolve( context, name, imports, properties ) )
 		    // If found, cache it
 		    .map( target -> {
 			    if ( finalUseCaching && target.cacheable() ) {

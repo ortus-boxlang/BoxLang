@@ -1164,7 +1164,8 @@ public class BoxRuntime implements java.io.Closeable {
 			// Load the template
 			BoxTemplate targetTemplate = RunnableLoader.getInstance().loadTemplateRelative(
 			    context,
-			    templatePath );
+			    templatePath,
+			    false );
 			executeTemplate( targetTemplate, templatePath, context );
 		}
 	}

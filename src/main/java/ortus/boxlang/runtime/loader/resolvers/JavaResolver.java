@@ -35,6 +35,8 @@ import ortus.boxlang.runtime.loader.DynamicClassLoader;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.ModuleService;
+import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.RegexBuilder;
 
@@ -103,7 +105,26 @@ public class JavaResolver extends BaseResolver {
 	 */
 	@Override
 	public Optional<ClassLocation> resolve( IBoxContext context, String name ) {
-		return resolve( context, name, List.of() );
+		return resolve( context, name, List.of(), Struct.EMPTY );
+	}
+
+	/**
+	 * Each resolver has a way to resolve the class it represents.
+	 * This method will be called by the {@link ClassLocator} class
+	 * to resolve the class if the prefix matches with imports.
+	 *
+	 * @param context    The current context of execution
+	 * @param name       The fully qualified name OR imported alias of the class to resolve
+	 * @param imports    The list of imports to use
+	 * @param properties The properties to use
+	 *
+	 * @return An optional class object representing the class if found
+	 */
+	@Override
+	public Optional<ClassLocation> resolve( IBoxContext context, String name, List<ImportDefinition> imports, IStruct properties ) {
+		String fullyQualifiedName = expandFromImport( context, name, imports );
+		return findFromModules( fullyQualifiedName, imports, context )
+		    .or( () -> findFromSystem( fullyQualifiedName, imports, context ) );
 	}
 
 	/**
@@ -117,11 +138,8 @@ public class JavaResolver extends BaseResolver {
 	 *
 	 * @return An optional class object representing the class if found
 	 */
-	@Override
 	public Optional<ClassLocation> resolve( IBoxContext context, String name, List<ImportDefinition> imports ) {
-		String fullyQualifiedName = expandFromImport( context, name, imports );
-		return findFromModules( fullyQualifiedName, imports, context )
-		    .or( () -> findFromSystem( fullyQualifiedName, imports, context ) );
+		return resolve( context, name, imports, Struct.EMPTY );
 	}
 
 	/**

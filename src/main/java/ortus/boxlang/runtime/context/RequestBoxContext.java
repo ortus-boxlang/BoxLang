@@ -42,6 +42,7 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.util.ListUtil;
 import ortus.boxlang.runtime.util.LocalizationUtil;
+import ortus.boxlang.runtime.util.Mapping;
 import ortus.boxlang.runtime.util.RequestThreadManager;
 
 /**
@@ -429,8 +430,14 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 		}
 
 		// Mapping overrides
+		var configMappings = config.getAsStruct( Key.mappings );
 		StructCaster.attempt( appSettings.get( Key.mappings ) )
-		    .ifPresent( mappings -> config.getAsStruct( Key.mappings ).putAll( mappings ) );
+		    .ifPresent( mappings -> mappings.keySet().forEach( mappingKey -> {
+			    // translate from struct/string to mapping instance
+			    // Mappings declared in the Application.bx file default to external
+			    var m = Mapping.fromData( mappingKey.getName(), mappings.get( mappingKey ), true );
+			    configMappings.put( m.name(), m );
+		    } ) );
 
 		// If we have a customTagPaths, then transpile it to customComponentPaths
 		// This is a legacy setting that was used in older versions of BoxLang + CFML

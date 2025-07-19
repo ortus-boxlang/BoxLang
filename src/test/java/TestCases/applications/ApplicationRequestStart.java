@@ -32,6 +32,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.util.FileSystemUtil;
+import ortus.boxlang.runtime.util.Mapping;
 
 public class ApplicationRequestStart {
 
@@ -62,7 +63,7 @@ public class ApplicationRequestStart {
 
 	private IBoxContext getContext( String rootPath, String template ) {
 		return new ScriptingRequestBoxContext( new ConfigOverrideBoxContext( instance.getRuntimeContext(), config -> {
-			config.getAsStruct( Key.mappings ).put( "/", new java.io.File( rootPath ).getAbsolutePath() );
+			config.getAsStruct( Key.mappings ).put( "/", Mapping.ofExternal( "/", new java.io.File( rootPath ).getAbsolutePath() ) );
 			return config;
 		} ), FileSystemUtil.createFileUri( template ) );
 	}

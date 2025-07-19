@@ -181,9 +181,9 @@ public class RunnableLoader {
 	 *
 	 * @return The BoxTemplate instance
 	 */
-	public BoxTemplate loadTemplateRelative( IBoxContext context, String path ) {
+	public BoxTemplate loadTemplateRelative( IBoxContext context, String path, boolean externalOnly ) {
 		// Make absolute
-		return loadTemplateAbsolute( context, FileSystemUtil.expandPath( context, path ) );
+		return loadTemplateAbsolute( context, FileSystemUtil.expandPath( context, path, externalOnly ) );
 	}
 
 	/**

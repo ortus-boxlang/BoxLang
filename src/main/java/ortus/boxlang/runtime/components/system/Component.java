@@ -92,7 +92,7 @@ public class Component extends ortus.boxlang.runtime.components.Component {
 			String	templateName		= templateFileName.substring( 0, templateFileName.lastIndexOf( '.' ) );
 			tagName = Key.of( templateName );
 			executionState.put( Key.customTagName, tagName );
-			bTemplate = RunnableLoader.getInstance().loadTemplateRelative( context, template );
+			bTemplate = RunnableLoader.getInstance().loadTemplateRelative( context, template, false );
 		} else if ( name != null && !name.isEmpty() ) {
 			tagName = Key.of( name );
 			executionState.put( Key.customTagName, tagName );
@@ -236,6 +236,7 @@ public class Component extends ortus.boxlang.runtime.components.Component {
 		        .stream()
 		        .map( entry -> ResolvedFilePath.of(
 		            entry.getKey().getName(),
+		            // Mapping.toString() returns the path
 		            entry.getValue().toString(),
 		            entry.getValue().toString(),
 		            entry.getValue().toString() )
