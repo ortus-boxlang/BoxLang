@@ -78,11 +78,8 @@ public final class LocalizationUtil {
 	    "MM/dd/yyyy HH:mm:ss",         // Short DateTime (e.g., 02/04/2024 21:01:00) - Might need adjustment based on locale
 	    "MM/dd/yyyy hh:mm a",         // Short DateTime (e.g., 02/04/2024 04:01:00 PM) - Might need adjustment based on locale
 	    "dd.MM.yyyy HH:mm:ss",         // Short DateTime (e.g., 02.04.2024 21:01:00) - Might need adjustment based on locale
-	    "LLLL dd yyyy HH:mm:ss", 	  // Long month DateTime (e.g., April 02 2024 21:01:00) - Might need adjustment based on locale
 	    "LLLL dd[,] yyyy HH:mm:ss", 	  // Long month DateTime (e.g., April 02, 2024 21:01:00) - Might need adjustment based on locale
-	    "LLLL dd yyyy hh:mm a", 	  // Long month DateTime with AM/PM (e.g., April 02 2024 05:01 AM) - Might need adjustment based on locale
 	    "LLLL dd[,] yyyy hh:mm a", 	  // Long month DateTime with AM/PM (e.g., April 02, 2024 05:01 AM) - Might need adjustment based on locale
-	    "MMM dd yyyy HH:mm:ss", 	  // Med DateTime (e.g., Apr 02 2024 21:01:00) - Might need adjustment based on locale
 	    "MMM dd[,] yyyy HH:mm:ss", 	  // Med DateTime (e.g., Apr 02, 2024 21:01:00) - Might need adjustment based on locale
 	    "MMM dd yyyy hh:mm a", 	       // Med DateTime No Seconds and AM/PM (e.g., Apr 02 2024 10:01 AM) - Might need adjustment based on locale
 	    "MMM dd[,] yyyy hh:mm a", 	    // Med DateTime No Seconds and AM/PM (e.g., Apr 02, 2024 10:01 AM) - Might need adjustment based on locale
@@ -122,7 +119,6 @@ public final class LocalizationUtil {
 	    "dd/MMM/yyyy",                   // Medium Date (e.g., 02-Apr-2024) - Might need adjustment based on locale
 	    "dd.MMM.yyyy",                   // Medium Date (e.g., 02.Apr.2024) - Might need adjustment based on locale
 	    "MMM[,] dd[,] yyyy",                  // Med Date (e.g., Apr 02, 2024) - Might need adjustment based on locale
-	    "MMMM[,] dd[,] yyyy",                  // Long month Date (e.g., April 02 2024) - Might need adjustment based on locale
 	    "MMMM[,] dd[,] yyyy",                 // Long month Date (e.g., April 02, 2024) - Might need adjustment based on locale
 
 	    // European Day-First Formats
