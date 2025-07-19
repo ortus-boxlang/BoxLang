@@ -31,7 +31,7 @@ import ortus.boxlang.runtime.types.Struct;
 public record Mapping( String name, String path, boolean external ) {
 
 	/**
-	 * Factor method to create a new Mapping instance.
+	 * Factory method to create a new Mapping instance.
 	 * Mapping names such as foo/bar will be forced to have leading and trailing slashes.
 	 * /foo/bar/
 	 *
