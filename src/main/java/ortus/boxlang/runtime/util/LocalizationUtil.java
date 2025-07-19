@@ -71,29 +71,26 @@ public final class LocalizationUtil {
 	public static final String[]					COMMON_DATETIME_PATTERNS	= {
 
 	    // Localized Date/Time formats - the order in which these are presented is very specific
-	    "EEE[,] d MMM yyyy HH:mm:ss zzz", // Full DateTime (e.g., Tue, 02 Apr 2024 21:01:00 CEST) - Similar to FULL_FULL
-	    "dd MMM yyyy HH:mm:ss",         // Long DateTime (e.g., 02 Apr 2024 21:01:00) - Similar to LONG_LONG
-	    "dd-MMM-yyyy HH:mm:ss",         // Medium DateTime (e.g., 02-Apr-2024 21:01:00) - Might need adjustment based on locale
-	    "MM/dd/yyyy hh:mm:ss a",         // Short DateTime (e.g., 02/04/2024 04:01:00 PM) - Might need adjustment based on locale
-	    "MM/dd/yyyy HH:mm:ss",         // Short DateTime (e.g., 02/04/2024 21:01:00) - Might need adjustment based on locale
+	    "EEE[E][,] d MMM yyyy HH:mm:ss zzz", // Full DateTime (e.g., Tue, 02 Apr 2024 21:01:00 CEST) - Similar to FULL_FULL - optional full day, optional comma
+	    "dd MMM yyyy HH:mm[:ss]",         // Long DateTime (e.g., 02 Apr 2024 21:01:00) - Similar to LONG_LONG
+	    "dd-MMM-yyyy HH:mm[:ss]",         // Medium DateTime (e.g., 02-Apr-2024 21:01:00) - Might need adjustment based on locale
+	    "MM/dd/yyyy hh:mm[:ss] a",         // Short DateTime (e.g., 02/04/2024 04:01:00 PM) - Might need adjustment based on locale
+	    "MM/dd/yyyy HH:mm[:ss]",         // Short DateTime (e.g., 02/04/2024 21:01:00) - Might need adjustment based on locale
 	    "MM/dd/yyyy hh:mm a",         // Short DateTime (e.g., 02/04/2024 04:01:00 PM) - Might need adjustment based on locale
-	    "dd.MM.yyyy HH:mm:ss",         // Short DateTime (e.g., 02.04.2024 21:01:00) - Might need adjustment based on locale
+	    "dd.MM.yyyy HH:mm[:ss]",         // Short DateTime (e.g., 02.04.2024 21:01:00) - Might need adjustment based on locale
 	    "LLLL dd[,] yyyy HH:mm:ss", 	  // Long month DateTime (e.g., April 02, 2024 21:01:00) - Might need adjustment based on locale
 	    "LLLL dd[,] yyyy hh:mm a", 	  // Long month DateTime with AM/PM (e.g., April 02, 2024 05:01 AM) - Might need adjustment based on locale
-	    "MMM dd[,] yyyy HH:mm:ss", 	  // Med DateTime (e.g., Apr 02, 2024 21:01:00) - Might need adjustment based on locale
-	    "MMM dd yyyy hh:mm a", 	       // Med DateTime No Seconds and AM/PM (e.g., Apr 02 2024 10:01 AM) - Might need adjustment based on locale
-	    "MMM dd[,] yyyy hh:mm a", 	    // Med DateTime No Seconds and AM/PM (e.g., Apr 02, 2024 10:01 AM) - Might need adjustment based on locale
-	    "MMM dd[,] yyyy HH:mm", 	     // Med DateTime No Seconds (e.g. Apr 02 2024 21:01) - Might need adjustment based on locale
+	    "MMM[,] dd[,] yyyy HH:mm:ss", 	  // Med DateTime (e.g., Apr 02, 2024 21:01:00) - Might need adjustment based on locale
+	    "MMM[,] dd[,] yyyy hh:mm a", 	    // Med DateTime No Seconds and AM/PM (e.g., Apr 02, 2024 10:01 AM) - Might need adjustment based on locale
+	    "MMM[,] dd[,] yyyy HH:mm", 	     // Med DateTime No Seconds (e.g. Apr 02 2024 21:01) - Might need adjustment based on locale
 
 	    // java.util.Date toString default format
-	    "EEE MMM dd HH:mm:ss zzz yyyy", // Default DateTime (e.g., Tue Apr 02 21:01:00 CET 2024) - Similar to DEFAULT
+	    "EEE[,] MMM[,] dd[,] HH:mm:ss zzz yyyy", // Default DateTime (e.g., Tue Apr 02 21:01:00 CET 2024) - Similar to DEFAULT - optional commas
 
 	    // ISO formats
 	    "yyyy-MM-dd'T'HH:mm:ss.SSSSSSXXX",  // Date-time with fractional microseconds and offset
-	    "yyyy-MM-dd'T'HH:mm:ss.SSSXXX",  // Date-time with milliseconds and offset
-	    "yyyy-MM-dd'T'HH:mm:ss.SSS",     // Date-time with milliseconds
-	    "yyyy-MM-dd'T'HH:mm:ssZ",        // Date-time with offset (Z)
-	    "yyyy-MM-dd'T'HH:mm:ssX",        // Date-time with offset (X)
+	    "yyyy-MM-dd'T'HH:mm:ss.SSS[XXX]",  // Date-time with milliseconds and offset
+	    "yyyy-MM-dd'T'HH:mm:ss[Z][X]",        // Date-time with offset (Z)
 	    "yyyy-MM-dd'T'HH:mm:ss",         // Date-time
 
 	    // ODBC formats
@@ -112,7 +109,7 @@ public final class LocalizationUtil {
 	    "MM.dd.yyyy",                   // Short Date (e.g., 04.02.2024) - Might need adjustment based on locale
 
 	    // Localized Date formats
-	    "EEE, dd MMM yyyy",            // Full Date (e.g., Tue, 02 Apr 2024) - Similar to FULL
+	    "EEE[E][,] dd MMM yyyy",          // Full Date (e.g., Tue, 02 Apr 2024) - Similar to FULL - optional full day, optional comma
 	    "dd MMM yyyy",                   // Long Date (e.g., 02 Apr 2024) - Similar to LONG
 	    "dd-MMM-yy",                     // Medium Date with a two-digit year (e.g., 02-Apr-24) - Might need adjustment based on locale
 	    "dd-MMM-yyyy",                   // Medium Date (e.g., 02-Apr-2024) - Might need adjustment based on locale
