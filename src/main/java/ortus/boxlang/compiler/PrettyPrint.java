@@ -66,12 +66,11 @@ public class PrettyPrint {
 	private static void prettyPrintFile( Path sourcePath ) {
 		long	startTime	= System.currentTimeMillis();
 
-		Config	config		= Config.builder()
-		    .withIndentSize( 4 )
-		    .withTabIndent( true )
-		    .withMaxLineLength( 80 )
-		    .withSingleQuote( false )
-		    .build();
+		Config	config		= new Config()
+		    .setIndentSize( 4 )
+		    .setTabIndent( false )
+		    .setMaxLineLength( 100 )
+		    .setSingleQuote( true );
 		System.out.println( config.toJSON() );
 		long			configTime	= System.currentTimeMillis();
 

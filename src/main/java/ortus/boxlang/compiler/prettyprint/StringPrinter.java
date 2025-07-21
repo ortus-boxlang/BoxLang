@@ -33,7 +33,7 @@ public class StringPrinter {
 	}
 
 	public void printStringLiteral( BoxStringLiteral node ) {
-		var quote = visitor.config.isSingleQuote() ? "'" : "\"";
+		var quote = visitor.config.getSingleQuote() ? "'" : "\"";
 
 		visitor.printPreComments( node );
 		visitor.print( quote + escapeString( node.getValue(), quote ) + quote );
@@ -55,7 +55,7 @@ public class StringPrinter {
 	}
 
 	public void printStringInterpolation( BoxStringInterpolation node ) {
-		var quote = visitor.config.isSingleQuote() ? "'" : "\"";
+		var quote = visitor.config.getSingleQuote() ? "'" : "\"";
 
 		visitor.printPreComments( node );
 		visitor.print( quote );
