@@ -2691,7 +2691,7 @@ public class DynamicInteropService {
 		// EXPECTED: java.sql.Timestamp
 		// If we expect a Timestamp and we have a `DateTime` instance
 		if ( Timestamp.class.isAssignableFrom( expected ) && actualClass.equals( "datetime" ) ) {
-			// logger.debug( "Coerce attempt: Castable to Time " + actualClass );
+			// logger.debug( "Coerce attempt: Castable to Timestamp " + actualClass );
 			CastAttempt<DateTime> dateTimeAttempt = DateTimeCaster.attempt( value );
 			if ( dateTimeAttempt.wasSuccessful() ) {
 				// Casting is relatively accurate
