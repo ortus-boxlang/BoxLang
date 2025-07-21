@@ -29,6 +29,7 @@ import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
@@ -36,6 +37,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Date;
+import java.sql.Time;
+import java.sql.Timestamp;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -47,6 +51,8 @@ import java.util.stream.Stream;
 import org.apache.commons.lang3.ClassUtils;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.dynamic.casters.TimeCaster;
+import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.context.ClassBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -67,6 +73,7 @@ import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.IntKey;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.FunctionService;
+import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
@@ -2642,6 +2649,54 @@ public class DynamicInteropService {
 				// Type casting is a looser match, increment 2
 				matchScore.addAndGet( 2 );
 				return booleanAttempt.toOptional();
+			}
+		}
+
+		// EXPECTED: java.time.LocalTime
+		// If we expect a LocalTime and we have a `DateTime` instance
+		if ( LocalTime.class.isAssignableFrom( expected ) && actualClass.equals( "datetime" ) ) {
+			// logger.debug( "Coerce attempt: Castable to Date " + actualClass );
+			CastAttempt<LocalTime> localTimeAttempt = TimeCaster.attempt( value );
+			if ( localTimeAttempt.wasSuccessful() ) {
+				// Casting is relatively accurate
+				matchScore.addAndGet( 1 );
+				return localTimeAttempt.toOptional();
+			}
+		}
+
+		// EXPECTED: java.util.Date
+		// If we expect a Date and we have a `DateTime` instance
+		if ( Date.class.isAssignableFrom( expected ) && actualClass.equals( "datetime" ) ) {
+			// logger.debug( "Coerce attempt: Castable to Date " + actualClass );
+			CastAttempt<DateTime> dateTimeAttempt = DateTimeCaster.attempt( value );
+			if ( dateTimeAttempt.wasSuccessful() ) {
+				// Casting is relatively accurate
+				matchScore.addAndGet( 1 );
+				return Optional.ofNullable( dateTimeAttempt.get().toDate() );
+			}
+		}
+
+		// EXPECTED: java.sql.Time
+		// If we expect a Time and we have a `DateTime` instance
+		if ( Time.class.isAssignableFrom( expected ) && actualClass.equals( "datetime" ) ) {
+			// logger.debug( "Coerce attempt: Castable to Time " + actualClass );
+			CastAttempt<LocalTime> timeAttempt = TimeCaster.attempt( value );
+			if ( timeAttempt.wasSuccessful() ) {
+				// Casting is relatively accurate
+				matchScore.addAndGet( 1 );
+				return Optional.ofNullable( Time.valueOf( timeAttempt.get() ) );
+			}
+		}
+
+		// EXPECTED: java.sql.Timestamp
+		// If we expect a Timestamp and we have a `DateTime` instance
+		if ( Timestamp.class.isAssignableFrom( expected ) && actualClass.equals( "datetime" ) ) {
+			// logger.debug( "Coerce attempt: Castable to Time " + actualClass );
+			CastAttempt<DateTime> dateTimeAttempt = DateTimeCaster.attempt( value );
+			if ( dateTimeAttempt.wasSuccessful() ) {
+				// Casting is relatively accurate
+				matchScore.addAndGet( 1 );
+				return Optional.ofNullable( Timestamp.valueOf( dateTimeAttempt.get().getWrapped().toLocalDateTime() ) );
 			}
 		}
 
