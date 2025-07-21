@@ -847,6 +847,10 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 		List<CompletableFuture<Map.Entry<Key, Object>>>	futures		= struct
 		    .entrySet()
 		    .stream()
+			// Every item in the collection becomes a CompletableFuture
+			// that will execute the mapper function asynchronously
+			// and return a key-value pair with the processed value
+			// If an error occurs, it will return the key with an error struct
 		    .map( entry -> {
 				CompletableFuture<Map.Entry<Key, Object>> future = CompletableFuture
 					.supplyAsync( () -> {
@@ -854,9 +858,16 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 								// Create key-value struct for the mapper function
 								IStruct itemStruct = Struct.of( Key.key, entry.getKey(), Key.value, entry.getValue() );
 								// Apply the mapper function to the itemStruct
-								IStruct mappedResult = (IStruct) new ortus.boxlang.runtime.interop.proxies.Function<>( mapper, context, null ).apply( itemStruct );
+								Object mappedResult = (IStruct) new ortus.boxlang.runtime.interop.proxies.Function<>( mapper, context, null ).apply( itemStruct );
+								if( !( mappedResult instanceof IStruct ) ) {
+									allLogger.error("Mapper function did not return an instance of IStruct. Returned: " + mappedResult.getClass().getName());
+									throw new BoxRuntimeException( "Mapper function must return a struct, but it returned a: " + mappedResult.getClass().getName() );
+								}
 								// Return the key with the processed value
-								return new AbstractMap.SimpleEntry<>( entry.getKey(), mappedResult.get( Key.value ) );
+								return new AbstractMap.SimpleEntry<>(
+									entry.getKey(),
+									((IStruct) mappedResult).get( Key.value )
+								);
 							} catch ( Exception e ) {
 								allLogger.error( "Error executing mapper function on struct entry", e );
 								Object errorResult;
