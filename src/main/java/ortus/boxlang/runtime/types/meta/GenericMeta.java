@@ -17,6 +17,8 @@
  */
 package ortus.boxlang.runtime.types.meta;
 
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableStruct;
 
@@ -58,6 +60,20 @@ public class GenericMeta extends BoxMeta<Object> {
 	 */
 	public IStruct getMeta() {
 		return this.meta;
+	}
+
+	/**
+	 * Direct invoke a Java method on the target bypassing the referencable methods
+	 */
+	public Object invokeTargetMethod( IBoxContext context, String methodName, Object[] args ) {
+		return DynamicObject.of( target ).invoke( context, methodName, args );
+	}
+
+	/**
+	 * Direct invoke a static Java method on the target's class bypassing the referencable methods
+	 */
+	public Object invokeTargetMethodStatic( IBoxContext context, String methodName, Object[] args ) {
+		return DynamicObject.of( target ).invokeStatic( context, methodName, args );
 	}
 
 }

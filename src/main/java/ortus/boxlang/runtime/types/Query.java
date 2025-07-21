@@ -489,6 +489,21 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	}
 
 	/**
+	 * Get the QueryColumn meta object
+	 *
+	 * @param name column name
+	 *
+	 * @return QueryColumn meta object
+	 */
+	public BoxMeta getColumnMeta( Key name ) {
+		QueryColumn column = columns.get( name );
+		if ( column == null ) {
+			throw new BoxRuntimeException( "Column '" + name + "' does not exist in query" );
+		}
+		return column.getBoxMeta();
+	}
+
+	/**
 	 * Get the QueryColumn object for a column
 	 * Throws an exception if the column doesn't exist
 	 *
@@ -691,11 +706,19 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		QueryColumn	column	= getColumn( name );
 		int			index	= column.getIndex();
 		columns.remove( name );
-		for ( Object[] row : data ) {
-			Object[] newRow = new Object[ row.length - 1 ];
+		// Decrement index of subsequent columns
+		for ( QueryColumn qc : columns.values() ) {
+			if ( qc.getIndex() > index ) {
+				qc.setIndex( qc.getIndex() - 1 );
+			}
+		}
+		// Remove column data from each row
+		for ( int i = 0; i < data.size(); i++ ) {
+			Object[]	row		= data.get( i );
+			Object[]	newRow	= new Object[ row.length - 1 ];
 			System.arraycopy( row, 0, newRow, 0, index );
 			System.arraycopy( row, index + 1, newRow, index, row.length - index - 1 );
-			row = newRow;
+			data.set( i, newRow );
 		}
 	}
 

@@ -102,6 +102,7 @@ public class QueryColumn implements IReferenceable, Serializable {
 	private transient Query		query;
 
 	/**
+	 * 0-based index of column in the
 	 * Keep in sync if columns are added or removed
 	 */
 	private int					index;
