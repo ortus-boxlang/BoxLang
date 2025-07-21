@@ -955,7 +955,7 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 			    else if ( future instanceof CompletableFuture ) {
 				    targetFuture = BoxFuture.ofCompletableFuture( ( CompletableFuture<?> ) future );
 			    }
-			    // If it's a function, then wrap it in a BoxFuture
+			    // If it's a function, then wrap it in a Proxy Supplier
 			    else if ( future instanceof ortus.boxlang.runtime.types.Function castedFunction ) {
 				    targetFuture = run( new ortus.boxlang.runtime.interop.proxies.Supplier<>( castedFunction, context, null ), executorRecord.executor() );
 			    } else {
