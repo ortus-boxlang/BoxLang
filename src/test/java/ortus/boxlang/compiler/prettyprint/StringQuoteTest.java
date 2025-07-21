@@ -26,13 +26,12 @@ public class StringQuoteTest extends PrettyPrintTest {
 	@Test
 	public void testStringQuotes() throws IOException {
 		// test with double quotes
-		Config config = Config.builder().build();
+		Config config = new Config();
 		printTest( "stringquote", "double", config );
 
 		// test with single quotes
-		config = Config.builder()
-		    .withSingleQuote( true )
-		    .build();
+		config = new Config()
+		    .setSingleQuote( true );
 		printTest( "stringquote", "single", config );
 	}
 }

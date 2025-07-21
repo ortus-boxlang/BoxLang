@@ -26,20 +26,17 @@ public class IndentTest extends PrettyPrintTest {
 	@Test
 	public void testIndent() throws IOException {
 		// indent with tabs
-		Config config = Config.builder().build();
+		Config config = new Config();
 		printTest( "indent", "tabs", config );
 
 		// indent with spaces
-		config = Config.builder()
-		    .withTabIndent( false )
-		    .build();
+		config = new Config().setTabIndent( false );
 		printTest( "indent", "spaces", config );
 
 		// indent with 2 spaces
-		config = Config.builder()
-		    .withTabIndent( false )
-		    .withIndentSize( 2 )
-		    .build();
+		config = new Config()
+		    .setTabIndent( false )
+		    .setIndentSize( 2 );
 		printTest( "indent", "spaces_2", config );
 	}
 }

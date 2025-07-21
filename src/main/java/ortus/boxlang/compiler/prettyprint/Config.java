@@ -21,48 +21,78 @@ import java.io.File;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Objects;
 
 import com.fasterxml.jackson.jr.ob.JSON;
 import com.fasterxml.jackson.jr.ob.JSON.Feature;
-import com.fasterxml.jackson.jr.ob.JSONObjectException;
 
 import ortus.boxlang.runtime.types.util.JSONUtil;
 
 public final class Config {
 
-	private final int		indentSize;
-	private final boolean	tabIndent;
-	private final int		maxLineLength;
-	private final String	newLine;
-	private final boolean	singleQuote;
+	private int		indentSize		= 4;
+	private boolean	tabIndent		= true;
+	private int		maxLineLength	= 80;
+	private String	newLine			= "os";
+	private boolean	singleQuote		= false;
 
-	private Config( Builder builder ) {
-		this.indentSize		= builder.indentSize;
-		this.tabIndent		= builder.tabIndent;
-		this.maxLineLength	= builder.maxLineLength;
-		this.newLine		= builder.newLine;
-		this.singleQuote	= builder.singleQuote;
+	public Config() {
 	}
 
 	public int getIndentSize() {
 		return indentSize;
 	}
 
-	public boolean isTabIndent() {
+	public Config setIndentSize( int indentSize ) {
+		this.indentSize = indentSize;
+		return this;
+	}
+
+	public boolean getTabIndent() {
 		return tabIndent;
+	}
+
+	public Config setTabIndent( boolean tabIndent ) {
+		this.tabIndent = tabIndent;
+		return this;
 	}
 
 	public int getMaxLineLength() {
 		return maxLineLength;
 	}
 
+	public Config setMaxLineLength( int maxLineLength ) {
+		this.maxLineLength = maxLineLength;
+		return this;
+	}
+
 	public String getNewLine() {
 		return newLine;
 	}
 
-	public boolean isSingleQuote() {
+	public Config setNewLine( String newLine ) {
+		this.newLine = newLine;
+		return this;
+	}
+
+	public boolean getSingleQuote() {
 		return singleQuote;
+	}
+
+	public Config setSingleQuote( boolean singleQuote ) {
+		this.singleQuote = singleQuote;
+		return this;
+	}
+
+	@SuppressWarnings( "unchecked" )
+	public Config loadFromConfigFile( String filePath ) {
+		Map<String, Object> config = ( Map<String, Object> ) JSONUtil.fromJSON( new File( filePath ) );
+		applyMapConfig( config );
+		return this;
+	}
+
+	public Config loadFromConfig( Map<String, Object> config ) {
+		applyMapConfig( config );
+		return this;
 	}
 
 	public int indentColumn( int indentLevel ) {
@@ -83,7 +113,7 @@ public final class Config {
 	}
 
 	public String lineSeparator() {
-		return newLine == "os" ? System.lineSeparator() : newLine;
+		return newLine.equals( "os" ) ? System.lineSeparator() : newLine;
 	}
 
 	public Map<String, Object> toMap() {
@@ -100,88 +130,27 @@ public final class Config {
 		try {
 			return JSON.std.with( Feature.PRETTY_PRINT_OUTPUT, Feature.WRITE_NULL_PROPERTIES )
 			    .asString( toMap() );
-		} catch ( JSONObjectException e ) {
-			e.printStackTrace();
 		} catch ( IOException e ) {
 			e.printStackTrace();
+			throw new RuntimeException( "Failed to convert to JSON", e );
 		}
-		throw new RuntimeException( "Failed to convert to JSON" );
 	}
 
-	public static Builder builder() {
-		return new Builder();
-	}
-
-	public static final class Builder {
-
-		private int		indentSize		= 4;
-		private boolean	tabIndent		= true;
-		private int		maxLineLength	= 80;
-		private String	newLine			= "os";
-		private boolean	singleQuote		= false;
-
-		private Builder() {
+	private void applyMapConfig( Map<String, Object> config ) {
+		if ( config.containsKey( "indentSize" ) && config.get( "indentSize" ) instanceof Number indentSize ) {
+			this.indentSize = indentSize.intValue();
 		}
-
-		public Builder withIndentSize( int indentSize ) {
-			this.indentSize = indentSize;
-			return this;
-		}
-
-		public Builder withTabIndent( boolean tabIndent ) {
+		if ( config.containsKey( "tabIndent" ) && config.get( "tabIndent" ) instanceof Boolean tabIndent ) {
 			this.tabIndent = tabIndent;
-			return this;
 		}
-
-		public Builder withMaxLineLength( int maxLineLength ) {
-			this.maxLineLength = maxLineLength;
-			return this;
+		if ( config.containsKey( "maxLineLength" ) && config.get( "maxLineLength" ) instanceof Number maxLineLength ) {
+			this.maxLineLength = maxLineLength.intValue();
 		}
-
-		public Builder withNewLine( String newLine ) {
-			this.newLine = Objects.requireNonNull( newLine, "newLine must not be null" );
-			return this;
+		if ( config.containsKey( "newLine" ) && config.get( "newLine" ) instanceof String newLine ) {
+			this.newLine = newLine;
 		}
-
-		public Builder withSingleQuote( boolean singleQuote ) {
+		if ( config.containsKey( "singleQuote" ) && config.get( "singleQuote" ) instanceof Boolean singleQuote ) {
 			this.singleQuote = singleQuote;
-			return this;
-		}
-
-		@SuppressWarnings( "unchecked" )
-		public Builder withConfigFile( String filePath ) {
-			Objects.requireNonNull( filePath, "filePath must not be null" );
-			Map<String, Object> config = ( Map<String, Object> ) JSONUtil.fromJSON( new File( filePath ) );
-			applyMapConfig( config );
-			return this;
-		}
-
-		public Builder withConfig( Map<String, Object> config ) {
-			Objects.requireNonNull( config, "config must not be null" );
-			applyMapConfig( config );
-			return this;
-		}
-
-		public Config build() {
-			return new Config( this );
-		}
-
-		private void applyMapConfig( Map<String, Object> config ) {
-			if ( config.containsKey( "indentSize" ) && config.get( "indentSize" ) instanceof Number ) {
-				this.indentSize = ( ( Number ) config.get( "indentSize" ) ).intValue();
-			}
-			if ( config.containsKey( "tabIndent" ) && config.get( "tabIndent" ) instanceof Boolean ) {
-				this.tabIndent = ( Boolean ) config.get( "tabIndent" );
-			}
-			if ( config.containsKey( "maxLineLength" ) && config.get( "maxLineLength" ) instanceof Number ) {
-				this.maxLineLength = ( ( Number ) config.get( "maxLineLength" ) ).intValue();
-			}
-			if ( config.containsKey( "newLine" ) && config.get( "newLine" ) instanceof String ) {
-				this.newLine = ( String ) config.get( "newLine" );
-			}
-			if ( config.containsKey( "singleQuote" ) && config.get( "singleQuote" ) instanceof Boolean ) {
-				this.singleQuote = ( Boolean ) config.get( "singleQuote" );
-			}
 		}
 	}
 }
