@@ -806,8 +806,8 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 			// Cancel remaining futures, not guaranteed to stop them but will prevent further processing
 			futures.forEach( f -> f.cancel( true ) );
 			// It's up to the user to shut down the executor if needed
-			throw new BoxRuntimeException( "Array processing timed out after " + timeout + " " + timeUnit,
-			    "Array processing timed out after " + timeout + " " + timeUnit, // message
+			throw new BoxRuntimeException(
+			    "Array processing timed out after " + timeout + " " + timeUnit,
 			    "java.lang.TimeoutException", // type
 			    e // cause
 			);
