@@ -2655,7 +2655,7 @@ public class DynamicInteropService {
 		// EXPECTED: java.time.LocalTime
 		// If we expect a LocalTime and we have a `DateTime` instance
 		if ( LocalTime.class.isAssignableFrom( expected ) && actualClass.equals( "datetime" ) ) {
-			// logger.debug( "Coerce attempt: Castable to Date " + actualClass );
+			// logger.debug( "Coerce attempt: Castable to LocalTime " + actualClass );
 			CastAttempt<LocalTime> localTimeAttempt = TimeCaster.attempt( value );
 			if ( localTimeAttempt.wasSuccessful() ) {
 				// Casting is relatively accurate
