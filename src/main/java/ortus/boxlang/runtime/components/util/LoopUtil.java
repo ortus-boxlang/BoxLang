@@ -175,7 +175,7 @@ public class LoopUtil {
 	 *
 	 * <p>
 	 * Example usage for nested grouping:
-	 * 
+	 *
 	 * <pre>
 	 * // Outer loop: group by department
 	 * bx:loop query="employees" group="department"
@@ -434,80 +434,85 @@ public class LoopUtil {
 
 	/**
 	 * Data structure for managing grouped query loop state and hierarchical grouping relationships.
-	 * 
-	 * <p>This class encapsulates all the state needed to track group changes during query loop execution,
+	 *
+	 * <p>
+	 * This class encapsulates all the state needed to track group changes during query loop execution,
 	 * including support for nested grouping where multiple GroupData instances form a parent-child hierarchy.
-	 * 
-	 * <p>Key responsibilities:
+	 *
+	 * <p>
+	 * Key responsibilities:
 	 * <ul>
-	 *   <li>Track current row position across the group hierarchy</li>
-	 *   <li>Detect when group values change by comparing current vs. previous row values</li>
-	 *   <li>Manage parent-child relationships for nested grouped loops</li>
-	 *   <li>Provide aggregate group change detection across the entire hierarchy</li>
+	 * <li>Track current row position across the group hierarchy</li>
+	 * <li>Detect when group values change by comparing current vs. previous row values</li>
+	 * <li>Manage parent-child relationships for nested grouped loops</li>
+	 * <li>Provide aggregate group change detection across the entire hierarchy</li>
 	 * </ul>
-	 * 
-	 * <p>Group change detection works by:
+	 *
+	 * <p>
+	 * Group change detection works by:
 	 * <ol>
-	 *   <li>Storing the previous row's group column values</li>
-	 *   <li>Comparing current row's values against previous values</li>
-	 *   <li>Setting isSameGroup flag based on comparison results</li>
-	 *   <li>Recursively updating parent group data for hierarchy consistency</li>
+	 * <li>Storing the previous row's group column values</li>
+	 * <li>Comparing current row's values against previous values</li>
+	 * <li>Setting isSameGroup flag based on comparison results</li>
+	 * <li>Recursively updating parent group data for hierarchy consistency</li>
 	 * </ol>
+	 *
+	 * <p>
+	 * Example hierarchy for nested grouping:
 	 * 
-	 * <p>Example hierarchy for nested grouping:
 	 * <pre>
 	 * Department GroupData (parent)
 	 *   ↳ Manager GroupData (child)
 	 *       ↳ Employee loop (no GroupData, just iterates)
 	 * </pre>
-	 * 
+	 *
 	 * @see #calcGroupValuesForRow() for group change detection logic
 	 * @see #isSameGroupAggregate() for hierarchy-wide group status
 	 */
 	public static class GroupData {
 
-		/** 
-		 * Current row index (0-based). 
+		/**
+		 * Current row index (0-based).
 		 * In hierarchical grouping, only the root parent maintains the authoritative position.
 		 */
 		private int			currentRow		= 0;
-		
-		/** 
-		 * Array of column keys to group by. 
+
+		/**
+		 * Array of column keys to group by.
 		 * Null or empty array indicates no grouping at this level.
 		 */
 		private Key[]		groupKeys;
-		
-		/** 
+
+		/**
 		 * Whether group value comparisons should be case-sensitive.
 		 */
 		private boolean		groupCaseSensitive;
-		
-		/** 
+
+		/**
 		 * Values from the previous row for group change detection.
 		 * Null on first iteration, populated thereafter.
 		 */
 		private Object[]	lastGroupValues	= null;
-		
-		/** 
+
+		/**
 		 * Whether the current row belongs to the same group as the previous row.
 		 * Updated by calcGroupValuesForRow().
 		 */
 		private boolean		isSameGroup		= true;
-		
-		/** 
+
+		/**
 		 * Reference to parent GroupData in nested grouping hierarchy.
 		 * Null for top-level groups.
 		 */
 		private GroupData	parentGroup		= null;
-		
-		/** 
+
+		/**
 		 * Whether this GroupData has child grouped loops nested within it.
 		 * Used to optimize loop advancement logic.
 		 */
 		private boolean		hasChild		= false;
-		
-		/** 
+
+		/**
 		 * The query being processed.
 		 * Used for retrieving cell values during group comparison.
 		 */
@@ -515,14 +520,15 @@ public class LoopUtil {
 
 		/**
 		 * Constructs a new GroupData instance for managing grouped query loop state.
-		 * 
-		 * <p>Automatically establishes parent-child relationships when a parentGroup is provided,
+		 *
+		 * <p>
+		 * Automatically establishes parent-child relationships when a parentGroup is provided,
 		 * ensuring the hierarchy is properly maintained for nested grouped loops.
-		 * 
-		 * @param groupKeys Array of column keys to group by. Can be null for ungrouped behavior
+		 *
+		 * @param groupKeys          Array of column keys to group by. Can be null for ungrouped behavior
 		 * @param groupCaseSensitive Whether group value comparisons should be case-sensitive
-		 * @param query The query object being processed
-		 * @param parentGroup Parent GroupData for nested grouping hierarchy. Can be null for top-level groups
+		 * @param query              The query object being processed
+		 * @param parentGroup        Parent GroupData for nested grouping hierarchy. Can be null for top-level groups
 		 */
 		public GroupData( Key[] groupKeys, boolean groupCaseSensitive, Query query, GroupData parentGroup ) {
 			this.groupKeys			= groupKeys;
@@ -536,11 +542,12 @@ public class LoopUtil {
 
 		/**
 		 * Gets the current row index for the group hierarchy.
-		 * 
-		 * <p>In nested grouping scenarios, only the root parent maintains the authoritative
+		 *
+		 * <p>
+		 * In nested grouping scenarios, only the root parent maintains the authoritative
 		 * row position. Child groups delegate to their parent to ensure consistency
 		 * across the entire hierarchy.
-		 * 
+		 *
 		 * @return The current 0-based row index
 		 */
 		public int getCurrentRow() {
@@ -549,12 +556,14 @@ public class LoopUtil {
 
 		/**
 		 * Sets the current row index for the group hierarchy.
-		 * 
-		 * <p>In nested grouping scenarios, the row position is always set at the root
+		 *
+		 * <p>
+		 * In nested grouping scenarios, the row position is always set at the root
 		 * parent level to maintain consistency. Child groups delegate the operation
 		 * up the hierarchy chain.
-		 * 
+		 *
 		 * @param currentRow The new 0-based row index to set
+		 * 
 		 * @return This GroupData instance for method chaining
 		 */
 		public GroupData setCurrentRow( int currentRow ) {
@@ -568,10 +577,11 @@ public class LoopUtil {
 
 		/**
 		 * Returns whether the current row belongs to the same group as the previous row.
-		 * 
-		 * <p>This flag is updated by {@link #calcGroupValuesForRow()} and reflects
+		 *
+		 * <p>
+		 * This flag is updated by {@link #calcGroupValuesForRow()} and reflects
 		 * whether any of the group column values changed between the previous and current row.
-		 * 
+		 *
 		 * @return true if current row is in the same group as previous row, false if group changed
 		 */
 		public boolean isSameGroup() {
@@ -580,17 +590,19 @@ public class LoopUtil {
 
 		/**
 		 * Checks if this group and all parent groups in the hierarchy are unchanged.
-		 * 
-		 * <p>This method provides aggregate group status across the entire nesting hierarchy.
+		 *
+		 * <p>
+		 * This method provides aggregate group status across the entire nesting hierarchy.
 		 * It returns true only if:
 		 * <ul>
-		 *   <li>This group's values haven't changed (isSameGroup == true), AND</li>
-		 *   <li>All parent groups' values haven't changed (recursive check)</li>
+		 * <li>This group's values haven't changed (isSameGroup == true), AND</li>
+		 * <li>All parent groups' values haven't changed (recursive check)</li>
 		 * </ul>
-		 * 
-		 * <p>This is crucial for nested grouping logic where a change in any parent group
+		 *
+		 * <p>
+		 * This is crucial for nested grouping logic where a change in any parent group
 		 * should trigger group boundary processing even if the current level hasn't changed.
-		 * 
+		 *
 		 * @return true if this group and all parent groups are unchanged, false otherwise
 		 */
 		public boolean isSameGroupAggregate() {
@@ -599,11 +611,13 @@ public class LoopUtil {
 
 		/**
 		 * Sets the same group flag for this GroupData instance.
-		 * 
-		 * <p>This method is typically called by {@link #calcGroupValuesForRow()}
+		 *
+		 * <p>
+		 * This method is typically called by {@link #calcGroupValuesForRow()}
 		 * after comparing current and previous row values.
-		 * 
+		 *
 		 * @param isSameGroup true if current row is in same group as previous, false if group changed
+		 * 
 		 * @return This GroupData instance for method chaining
 		 */
 		public GroupData setSameGroup( boolean isSameGroup ) {
@@ -613,26 +627,29 @@ public class LoopUtil {
 
 		/**
 		 * Calculates and compares group values for the current row to detect group changes.
-		 * 
-		 * <p>This is the core group change detection algorithm. It:
+		 *
+		 * <p>
+		 * This is the core group change detection algorithm. It:
 		 * <ol>
-		 *   <li>Retrieves current row values for all group columns</li>
-		 *   <li>Compares them against stored previous row values</li>
-		 *   <li>Sets isSameGroup flag based on comparison results</li>
-		 *   <li>Stores current values as "previous" for next iteration</li>
-		 *   <li>Recursively updates parent group data for hierarchy consistency</li>
+		 * <li>Retrieves current row values for all group columns</li>
+		 * <li>Compares them against stored previous row values</li>
+		 * <li>Sets isSameGroup flag based on comparison results</li>
+		 * <li>Stores current values as "previous" for next iteration</li>
+		 * <li>Recursively updates parent group data for hierarchy consistency</li>
 		 * </ol>
-		 * 
-		 * <p>Group change detection rules:
+		 *
+		 * <p>
+		 * Group change detection rules:
 		 * <ul>
-		 *   <li>First row (lastGroupValues == null): Always considered same group (true)</li>
-		 *   <li>Subsequent rows: Compare each group column value using Configure.invoke()</li>
-		 *   <li>Any changed value → isSameGroup = false</li>
-		 *   <li>All values identical → isSameGroup = true</li>
+		 * <li>First row (lastGroupValues == null): Always considered same group (true)</li>
+		 * <li>Subsequent rows: Compare each group column value using Configure.invoke()</li>
+		 * <li>Any changed value → isSameGroup = false</li>
+		 * <li>All values identical → isSameGroup = true</li>
 		 * </ul>
-		 * 
-		 * <p>The comparison respects the groupCaseSensitive setting for string comparisons.
-		 * 
+		 *
+		 * <p>
+		 * The comparison respects the groupCaseSensitive setting for string comparisons.
+		 *
 		 * @return This GroupData instance for method chaining
 		 */
 		public GroupData calcGroupValuesForRow() {
@@ -669,7 +686,7 @@ public class LoopUtil {
 
 		/**
 		 * Gets the query object being processed by this group.
-		 * 
+		 *
 		 * @return The Query object
 		 */
 		public Query getQuery() {
@@ -678,7 +695,7 @@ public class LoopUtil {
 
 		/**
 		 * Checks if this GroupData has a parent in the grouping hierarchy.
-		 * 
+		 *
 		 * @return true if this group has a parent (is nested), false if this is a top-level group
 		 */
 		public boolean hasParentGroup() {
@@ -687,7 +704,7 @@ public class LoopUtil {
 
 		/**
 		 * Gets the parent GroupData in the grouping hierarchy.
-		 * 
+		 *
 		 * @return The parent GroupData, or null if this is a top-level group
 		 */
 		public GroupData getParentGroup() {
@@ -696,10 +713,11 @@ public class LoopUtil {
 
 		/**
 		 * Checks if this GroupData has child grouped loops nested within it.
-		 * 
-		 * <p>This flag is used to optimize loop advancement logic. When a group has children,
+		 *
+		 * <p>
+		 * This flag is used to optimize loop advancement logic. When a group has children,
 		 * the parent loop needs to coordinate with child loops to determine proper row advancement.
-		 * 
+		 *
 		 * @return true if child grouped loops exist within this group, false otherwise
 		 */
 		public boolean hasChildGroup() {
@@ -708,10 +726,11 @@ public class LoopUtil {
 
 		/**
 		 * Marks this GroupData as having child grouped loops.
-		 * 
-		 * <p>This method is automatically called during GroupData construction when
+		 *
+		 * <p>
+		 * This method is automatically called during GroupData construction when
 		 * a child GroupData is created with this instance as its parent.
-		 * 
+		 *
 		 * @return This GroupData instance for method chaining
 		 */
 		public GroupData setHasChildGroup() {
@@ -721,10 +740,11 @@ public class LoopUtil {
 
 		/**
 		 * Checks if this GroupData instance has active grouping configured.
-		 * 
-		 * <p>A group "has groups" if it was configured with one or more column names
+		 *
+		 * <p>
+		 * A group "has groups" if it was configured with one or more column names
 		 * to group by. Groups without grouping configuration behave like simple iteration.
-		 * 
+		 *
 		 * @return true if group keys are configured and non-empty, false otherwise
 		 */
 		public boolean hasGroups() {
