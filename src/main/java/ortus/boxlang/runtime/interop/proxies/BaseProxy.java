@@ -67,6 +67,10 @@ public abstract class BaseProxy {
 	 */
 	protected RequestThreadManager	threadManager;
 
+	/**
+	 * A set of public methods from java.lang.Object that we need to handle specially
+	 * since they are not part of the target's scope.
+	 */
 	private static final Set<Key>	javaLangObjectPublicMethods	= Set.of(
 	    Key.getClass,
 	    Key._hashCode,
