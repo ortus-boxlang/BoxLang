@@ -1769,12 +1769,12 @@ public class BoxRuntime implements java.io.Closeable {
 		// System.out.println( "Choosing Boxpiler implementation..." );
 		switch ( ( String ) this.configuration.experimental.getOrDefault( "compiler", "asm" ) ) {
 			case "java" :
-				this.loggingService.getRootLogger().warn( "+ Choosing " + JavaBoxpiler.class.getSimpleName() + " as the Boxpiler implementation" );
+				this.loggingService.getRootLogger().info( "+ Choosing " + JavaBoxpiler.class.getSimpleName() + " as the Boxpiler implementation" );
 				return useJavaBoxpiler();
 			case "asm" :
-				this.loggingService.getRootLogger().warn( "+ Choosing " + ASMBoxpiler.class.getSimpleName() + " as the Boxpiler implementation" );
+				this.loggingService.getRootLogger().info( "+ Choosing " + ASMBoxpiler.class.getSimpleName() + " as the Boxpiler implementation" );
 			default :
-				this.loggingService.getRootLogger().warn( "+ Choosing " + ASMBoxpiler.class.getSimpleName() + " as the Boxpiler implementation" );
+				this.loggingService.getRootLogger().info( "+ Choosing " + ASMBoxpiler.class.getSimpleName() + " as the Boxpiler implementation" );
 				return useASMBoxPiler();
 		}
 	}
