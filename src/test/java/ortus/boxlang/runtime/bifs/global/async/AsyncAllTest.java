@@ -118,6 +118,42 @@ public class AsyncAllTest {
 		assertThat( array.get( 1 ) ).isEqualTo( "Lambda Result 2" );
 	}
 
+	@DisplayName( "Test with some closures and some scopes" )
+	@Test
+	public void testAsyncAllWithClosuresAndScopes() throws Throwable, ExecutionException {
+		// @formatter:off
+		instance.executeSource("""
+			request.value = 2
+			application.value = 2
+
+			multiply = ( a, b ) => {
+				return a * b
+			}
+
+			// Using lambdas with scopes
+			result = asyncAll([
+				() => {
+					var test = multiply( 1, request.value )
+					sleep( 1000 )
+					return "Lambda Result #test#"
+				},
+				() => {
+					var test = multiply( 1, application.value )
+					sleep( 500 )
+					return "Lambda Result #test#"
+				}
+			]);
+
+			""", context);
+		// @formatter:on
+
+		BoxFuture<Array>	results	= ( BoxFuture<Array> ) variables.get( result );
+		Array				array	= ( Array ) results.get();
+		assertThat( array.size() ).isEqualTo( 2 );
+		assertThat( array.get( 0 ) ).isEqualTo( "Lambda Result 2" );
+		assertThat( array.get( 1 ) ).isEqualTo( "Lambda Result 2" );
+	}
+
 	@DisplayName( "Test with some lambdas and a custom executor record" )
 	@Test
 	public void testAsyncAllWithLambdasAndCustomExecutor() throws Throwable, ExecutionException {
