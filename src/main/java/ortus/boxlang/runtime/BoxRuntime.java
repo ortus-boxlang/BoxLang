@@ -1766,7 +1766,7 @@ public class BoxRuntime implements java.io.Closeable {
 	 * @return The Boxpiler implementation to use
 	 */
 	private IBoxpiler chooseBoxpiler() {
-		System.out.println( "Choosing Boxpiler implementation..." );
+		// System.out.println( "Choosing Boxpiler implementation..." );
 		switch ( ( String ) this.configuration.experimental.getOrDefault( "compiler", "asm" ) ) {
 			case "java" :
 				this.loggingService.getRootLogger().warn( "+ Choosing " + JavaBoxpiler.class.getSimpleName() + " as the Boxpiler implementation" );
