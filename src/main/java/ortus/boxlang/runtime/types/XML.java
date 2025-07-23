@@ -86,7 +86,7 @@ public class XML implements Serializable, IStruct {
 	/**
 	 * Metadata object
 	 */
-	public BoxMeta<?>				$bx;
+	public transient BoxMeta<?>		$bx;
 
 	/**
 	 * The type of struct ( private so that the interface method `getType` will be used )

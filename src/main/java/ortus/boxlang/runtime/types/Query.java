@@ -495,7 +495,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 *
 	 * @return QueryColumn meta object
 	 */
-	public BoxMeta getColumnMeta( Key name ) {
+	public BoxMeta<?> getColumnMeta( Key name ) {
 		QueryColumn column = columns.get( name );
 		if ( column == null ) {
 			throw new BoxRuntimeException( "Column '" + name + "' does not exist in query" );
@@ -1201,7 +1201,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	}
 
 	@Override
-	public BoxMeta getBoxMeta() {
+	public BoxMeta<Query> getBoxMeta() {
 		if ( this.$bx == null ) {
 			this.$bx = new QueryMeta( this );
 		}
