@@ -17,6 +17,7 @@ package ortus.boxlang.runtime.jdbc;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toMap;
 
+import java.io.Serializable;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -43,7 +44,7 @@ import ortus.boxlang.runtime.types.exceptions.DatabaseException;
  * This class represents a query that has been executed and contains the results of executing that query.
  * It contains a reference to the {@link PendingQuery} that was executed to create this.
  */
-public final class ExecutedQuery {
+public final class ExecutedQuery implements Serializable {
 
 	private static final InterceptorService	interceptorService	= BoxRuntime.getInstance().getInterceptorService();
 	private static final BoxLangLogger		logger				= BoxRuntime.getInstance().getLoggingService().DATASOURCE_LOGGER;
