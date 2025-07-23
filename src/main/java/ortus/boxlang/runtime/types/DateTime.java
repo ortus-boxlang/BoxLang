@@ -125,6 +125,11 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	public static final String				MODE_TIME									= "Time";
 	public static final String				MODE_DATETIME								= "DateTime";
 
+	/**
+	 * The format mask currently applied to this DateTime instance.
+	 * This field is used to preserve the format mask during serialization and deserialization.
+	 * By default, it is initialized to {@link #TS_FORMAT_MASK}.
+	 */
 	private String							appliedFormatMask							= TS_FORMAT_MASK;
 
 	/**
