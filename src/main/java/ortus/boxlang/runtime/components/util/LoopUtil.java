@@ -271,11 +271,11 @@ public class LoopUtil {
 				if ( i + 1 < theQuery.size() ) {
 					// If there are no children loops "inside" of us, or we have no grouping
 					// ourselves, then we are a dead end...
-					if ( !groupData.hasChildGroup() || !groupData.hasGroups() ) {
+					if ( groupData.hasParentGroup() && ( !groupData.hasChildGroup() || !groupData.hasGroups() ) ) {
 						// ... so let's calc the next row
 						groupData.setCurrentRow( i + 1 ).calcGroupValuesForRow();
 						// If some group data has changed, we need to exit this inner loop
-						if ( !groupData.isSameGroupAggregate() && groupData.hasParentGroup() ) {
+						if ( !groupData.isSameGroupAggregate() ) {
 							// System.out.println( "one of our groups has changed, exiting this inner loop [" + group + "]" );
 							groupData.setCurrentRow( i );
 							break;

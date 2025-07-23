@@ -23,7 +23,6 @@ import static com.google.common.truth.Truth.assertThat;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -663,7 +662,6 @@ public class LoopTest {
 	}
 
 	@DisplayName( "Test that loop can handle a group with one row column having one data set, but with no inner loop" )
-	@Disabled( "Brad to fix, this is not working." )
 	@Test
 	public void testCanLoopWithGroupAndNoInnerGroup() {
 		// @formatter:off
@@ -685,7 +683,7 @@ public class LoopTest {
 					bx:loop query=myQry group="mygroup"{
 						writeoutput( "myGroup: #myGroup# myValue: #myValue# " )
 					}
-					result = getBoxContext().getBuffer().toString()
+					result = getBoxContext().getBuffer().toString().trim()
 				""",
 				context );
 		// @formatter:on
