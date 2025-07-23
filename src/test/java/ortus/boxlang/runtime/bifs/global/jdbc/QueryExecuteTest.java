@@ -36,12 +36,14 @@ import org.junit.jupiter.api.condition.EnabledIf;
 
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
+import ortus.boxlang.runtime.jdbc.ExecutedQuery;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
+import ortus.boxlang.runtime.util.conversion.ObjectMarshaller;
 import tools.JDBCTestUtils;
 
 public class QueryExecuteTest extends BaseJDBCTest {
@@ -940,4 +942,10 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		assertEquals( 0, query.size() );
 	}
 
+	@DisplayName( "ExecutedQuery instances are serializable" )
+	@Test
+	public void testObjectMarshallingOfExecutedQuery() {
+		ExecutedQuery executedQuery = new ExecutedQuery( new Query(), null );
+		ObjectMarshaller.serialize( context, executedQuery );
+	}
 }
