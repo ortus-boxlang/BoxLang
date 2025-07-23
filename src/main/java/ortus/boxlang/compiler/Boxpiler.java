@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -376,4 +377,21 @@ public abstract class Boxpiler implements IBoxpiler {
 
 		return diskClassUtil.readLineNumbers( classPoolName, IBoxpiler.getBaseFQN( FQN ) );
 	}
+
+	@Override
+	public List<byte[]> compileTemplateBytes( ResolvedFilePath resolvedFilePath ) {
+		Path		path		= resolvedFilePath.absolutePath();
+		ClassInfo	classInfo	= null;
+		// file extension is .bx or .cfc
+		if ( path.toString().endsWith( ".bx" ) || path.toString().endsWith( ".cfc" ) ) {
+			classInfo = ClassInfo.forClass( resolvedFilePath, Parser.detectFile( path.toFile() ), this );
+		} else {
+			classInfo = ClassInfo.forTemplate( resolvedFilePath, Parser.detectFile( path.toFile() ), this );
+		}
+		var classPool = getClassPool( classInfo.classPoolName() );
+		classPool.putIfAbsent( classInfo.fqn().toString(), classInfo );
+		compileClassInfo( classInfo.classPoolName(), classInfo.fqn().toString() );
+		return diskClassUtil.readClassBytes( classInfo.classPoolName(), classInfo.fqn().toString() );
+	}
+
 }
