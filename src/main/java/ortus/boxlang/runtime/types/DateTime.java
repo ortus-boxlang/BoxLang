@@ -174,7 +174,7 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	/**
 	 * Metadata object
 	 */
-	public BoxMeta							$bx;
+	public transient BoxMeta<?>				$bx;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -548,7 +548,7 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	 *
 	 * @return The string representation
 	 */
-	public BoxMeta getBoxMeta() {
+	public BoxMeta<?> getBoxMeta() {
 		if ( this.$bx == null ) {
 			this.$bx = new GenericMeta( this );
 		}

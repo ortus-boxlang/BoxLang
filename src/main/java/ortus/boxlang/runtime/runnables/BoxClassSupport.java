@@ -111,7 +111,7 @@ public class BoxClassSupport {
 	 *
 	 * @return The metadata Box object
 	 */
-	public static BoxMeta getBoxMeta( IClassRunnable thisClass ) {
+	public static BoxMeta<?> getBoxMeta( IClassRunnable thisClass ) {
 		if ( thisClass._getbx() == null ) {
 			thisClass._setbx( new ClassMeta( thisClass ) );
 		}

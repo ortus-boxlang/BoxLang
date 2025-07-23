@@ -100,11 +100,11 @@ public interface IClassRunnable extends ITemplateRunnable, IStruct {
 	public IStruct getMetaData();
 
 	// Duplicate from IType
-	public BoxMeta getBoxMeta();
+	public BoxMeta<?> getBoxMeta();
 
-	public BoxMeta _getbx();
+	public BoxMeta<?> _getbx();
 
-	public void _setbx( BoxMeta bx );
+	public void _setbx( BoxMeta<?> bx );
 
 	public void registerInterface( BoxInterface _interface );
 

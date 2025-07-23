@@ -167,7 +167,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 			private List<BoxInterface> interfaces = new ArrayList<>();
 
 			// Public instance fields
-			public BoxMeta		$bx;
+			public transient BoxMeta		$bx;
 
 			public ${className}() {
 			}

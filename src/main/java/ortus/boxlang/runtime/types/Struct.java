@@ -106,7 +106,7 @@ public class Struct implements IStruct, IListenable<IStruct>, Serializable {
 	/**
 	 * Metadata object
 	 */
-	public BoxMeta									$bx;
+	public transient BoxMeta<?>						$bx;
 
 	/**
 	 * The type of struct ( private so that the interface method `getType` will be used )
@@ -799,7 +799,7 @@ public class Struct implements IStruct, IListenable<IStruct>, Serializable {
 	 *
 	 * @return The {@Link BoxMeta} object for this struct
 	 */
-	public BoxMeta getBoxMeta() {
+	public BoxMeta<?> getBoxMeta() {
 		if ( this.$bx == null ) {
 			this.$bx = new StructMeta( this );
 		}

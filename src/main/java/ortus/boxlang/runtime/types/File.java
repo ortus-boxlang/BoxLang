@@ -105,7 +105,7 @@ public class File implements IType, IReferenceable {
 	/**
 	 * Metadata object
 	 */
-	public BoxMeta							$bx;
+	public transient BoxMeta<?>				$bx;
 
 	/**
 	 * Function service
@@ -433,7 +433,7 @@ public class File implements IType, IReferenceable {
 		return this.toString();
 	}
 
-	public BoxMeta getBoxMeta() {
+	public BoxMeta<?> getBoxMeta() {
 		if ( this.$bx == null ) {
 			this.$bx = new GenericMeta( this );
 		}
