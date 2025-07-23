@@ -29,9 +29,19 @@ public class EqualsEqualsEquals implements IOperator {
 	 *
 	 * @return True if operands are the equal
 	 */
+	@SuppressWarnings( "unchecked" )
 	public static Boolean invoke( Object left, Object right ) {
 		if ( left.getClass().isAssignableFrom( right.getClass() ) || right.getClass().isAssignableFrom( left.getClass() ) ) {
-			return Compare.invoke( left, right ) == 0;
+			// We need string comparisons to still be case insensitive
+			if ( left instanceof String lefString && right instanceof String rightString ) {
+				return StringCompare.invoke( lefString, rightString ) == 0;
+			} else if ( left instanceof Comparable leftComparable && right instanceof Comparable rightComparable ) {
+				return leftComparable.compareTo( rightComparable ) == 0;
+			} else {
+				// For everything else, NO CASTING! Just check equality between the objects.
+				// note, this means an integer and a long will not be equal even if they represent the same value
+				return left.equals( right );
+			}
 		}
 		return false;
 	}
