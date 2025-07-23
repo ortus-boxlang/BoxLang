@@ -153,7 +153,7 @@ public class HttpRequestMultipartBody {
 				Object content = record.getContent();
 				if ( content instanceof String castString ) {
 					writer.append( "Content-Type: text/plain; charset=" + StandardCharsets.UTF_8 ).append( CRLF );
-					writer.append( CRLF ).append( castString ).append( CRLF ).flush();
+					writer.append( CRLF ).append( castString ).flush();
 				} else if ( content instanceof byte[] castBytes ) {
 					writer.append( "Content-Type: " + record.getContentType() ).append( CRLF );
 					writer.append( "Content-Transfer-Encoding: binary" ).append( CRLF );
