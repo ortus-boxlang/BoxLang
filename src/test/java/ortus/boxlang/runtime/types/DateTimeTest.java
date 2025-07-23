@@ -220,4 +220,23 @@ public class DateTimeTest {
 		assertThat( defaultDateTime.getTime() ).isEqualTo( defaultDateTime.getWrapped().toInstant().toEpochMilli() );
 	}
 
+	@DisplayName( "Tests DateTime serialization and deserialization" )
+	@Test
+	void testSerializationDeserialization() {
+		// Test that the original formatter value is maintained
+		// @formatter:off
+		instance.executeSource(
+		"""
+			obj = parseDateTime( "2023-12-31 00:00:00", "yyyy-MM-dd HH:mm:ss" );
+			obj.setFormat( "yyyy-MM-dd HH:mm:ss" );
+			a = objectSerialize( obj );
+			result = objectDeserialize( a );
+		""", 
+		context 
+		);
+		assertThat( variables.get( Key.of( "result" ) ) ).isInstanceOf( DateTime.class );
+		assertThat( variables.getAsDateTime( Key.of( "result" ) ).toString() ).isEqualTo( "2023-12-31 00:00:00" );
+		// @formatter:on
+	}
+
 }
