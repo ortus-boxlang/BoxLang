@@ -77,6 +77,33 @@ public class AsmHelper {
 		);
 	}
 
+	/**
+	 * Debugging helper for calling System.out.println within the ASM code.
+	 * 
+	 * @param message
+	 * 
+	 * @return
+	 */
+	public static List<AbstractInsnNode> println( String message ) {
+		List<AbstractInsnNode> nodes = new ArrayList<>();
+
+		nodes.add( new FieldInsnNode(
+		    Opcodes.GETSTATIC,
+		    "java/lang/System",
+		    "out",
+		    "Ljava/io/PrintStream;"
+		) );
+		nodes.add( new LdcInsnNode( message ) );
+		nodes.add( new MethodInsnNode( Opcodes.INVOKEVIRTUAL,
+		    Type.getInternalName( java.io.PrintStream.class ),
+		    "println",
+		    Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( String.class ) ),
+		    false
+		) );
+
+		return nodes;
+	}
+
 	public static List<AbstractInsnNode> addLineNumberLabels( List<AbstractInsnNode> nodes, BoxNode node ) {
 		LabelNode start = new LabelNode();
 

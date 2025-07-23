@@ -572,6 +572,73 @@ public class CoreLangTest {
 
 	}
 
+	@DisplayName( "for in loop query" )
+	@Test
+	public void testForInLoopQuery() {
+
+		instance.executeSource(
+		    """
+		       result=""
+		       q = QueryNew([
+		    	{"id": 10},
+		    	{"id": 20}
+		    ])
+
+		    for (row in q) {
+		    	result &= id & ":";
+		    }
+		                """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "10:20:" );
+	}
+
+	@DisplayName( "for in loop query nested" )
+	@Test
+	public void testForInLoopQueryNested() {
+
+		instance.executeSource(
+		    """
+		          result=""
+		          q = QueryNew([
+		       	{"id": 10},
+		       	{"id": 20}
+		       ])
+
+		    for (outerRow in q) {
+		    	result &= ":outer-before:" & id;
+		    	for (innerRow in q) {
+		    		result &= ":inner:" & id;
+		    	}
+		    	result &= ":outer-after:" & id;
+		    }
+		                   """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( ":outer-before:10:inner:10:inner:20:outer-after:10:outer-before:20:inner:10:inner:20:outer-after:20" );
+	}
+
+	@DisplayName( "for in loop query cleanup" )
+	@Test
+	public void testForInLoopQueryCleanup() {
+
+		instance.executeSource(
+		    """
+		             result=""
+		             q = QueryNew([
+		          	{"id": 10}
+		          ])
+
+		       try {
+		          for (row in q) {
+		          	result &= id & ":";
+		          	throw("done")
+		          }
+		    } catch( any e ) {}
+		       result = id ?: "no id";
+		                      """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "no id" );
+	}
+
 	@DisplayName( "do while loop" )
 	@Test
 	@Timeout( value = 5, unit = TimeUnit.SECONDS )

@@ -28,6 +28,7 @@ import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.IfStmt;
 import com.github.javaparser.ast.stmt.LabeledStmt;
 import com.github.javaparser.ast.stmt.Statement;
+import com.github.javaparser.ast.stmt.TryStmt;
 import com.github.javaparser.ast.stmt.WhileStmt;
 
 import ortus.boxlang.compiler.ast.BoxNode;
@@ -60,30 +61,32 @@ public class BoxForInTransformer extends AbstractTransformer {
 	 */
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-		BoxForIn					boxFor			= ( BoxForIn ) node;
-		Expression					collection		= ( Expression ) transpiler.transform( boxFor.getExpression() );
-		int							forInCount		= transpiler.incrementAndGetForInCounter();
-		String						jVarName		= "forInIterator" + forInCount;
-		String						jisQueryName	= "isQuery" + forInCount;
-		String						jisStructName	= "isStruct" + forInCount;
-		String						jCollectionName	= "collection" + forInCount;
+		BoxForIn					boxFor					= ( BoxForIn ) node;
+		Expression					collection				= ( Expression ) transpiler.transform( boxFor.getExpression() );
+		int							forInCount				= transpiler.incrementAndGetForInCounter();
+		String						jVarName				= "forInIterator" + forInCount;
+		String						jisQueryName			= "isQuery" + forInCount;
+		String						jisStructName			= "isStruct" + forInCount;
+		String						jCollectionName			= "collection" + forInCount;
+		String						originalQueryIndexName	= "originalQueryLoop" + forInCount;
 
-		BlockStmt					stmt			= new BlockStmt();
+		BlockStmt					stmt					= new BlockStmt();
 
-		Map<String, String>			values			= new HashMap<>() {
+		Map<String, String>			values					= new HashMap<>() {
 
-														{
-															put( "variable", jVarName );
-															put( "isQueryName", jisQueryName );
-															put( "isStructName", jisStructName );
-															put( "jVarName", jVarName );
-															put( "collectionName", jCollectionName );
-															// put( "collection", collection.toString() );
-															put( "contextName", transpiler.peekContextName() );
-														}
-													};
+																{
+																	put( "variable", jVarName );
+																	put( "isQueryName", jisQueryName );
+																	put( "isStructName", jisStructName );
+																	put( "jVarName", jVarName );
+																	put( "collectionName", jCollectionName );
+																	put( "originalQueryIndexName", originalQueryIndexName );
+																	// put( "collection", collection.toString() );
+																	put( "contextName", transpiler.peekContextName() );
+																}
+															};
 
-		List<BoxAssignmentModifier>	modifiers		= new ArrayList<BoxAssignmentModifier>();
+		List<BoxAssignmentModifier>	modifiers				= new ArrayList<BoxAssignmentModifier>();
 		if ( boxFor.getHasVar() ) {
 			modifiers.add( BoxAssignmentModifier.VAR );
 		}
@@ -108,8 +111,14 @@ public class BoxForInTransformer extends AbstractTransformer {
 		                                  Boolean ${isStructName} = ${collectionName} instanceof Struct;
 		                                                     """;
 
+		String		template1bb			= """
+		                                  int		${originalQueryIndexName}	= -1;
+		                                                                              """;
+
 		String		template1c			= """
 		                                  if( ${isQueryName} ) {
+		                                  	// -1 means the query wasn't originally registered
+		                                    ${originalQueryIndexName}	= context.getQueryRow( (Query) ${collectionName}, -1 );
 		                                  	${contextName}.registerQueryLoop( (Query) ${collectionName}, 0 );
 		                                  }
 		                                                     """;
@@ -130,9 +139,15 @@ public class BoxForInTransformer extends AbstractTransformer {
 		                                  """;
 		String		template3			= """
 		                                  if( ${isQueryName} ) {
-		                                  	${contextName}.unregisterQueryLoop( (Query) ${collectionName} );
+		                                  	if ( ${originalQueryIndexName} > -1 ) {
+		                                  		// If we were originally registered, then unregister us
+		                                  		${contextName}.registerQueryLoop( (Query) ${collectionName}, ${originalQueryIndexName} );
+		                                  	} else {
+		                                  		// Otherwise, we were never registered, so just unregister us
+		                                  		${contextName}.unregisterQueryLoop( (Query) ${collectionName} );
+		                                  	}
 		                                  }
-		                                                                             """;
+		                                  """;
 		WhileStmt	whileStmt			= ( WhileStmt ) parseStatement( template2a, values );
 		IfStmt		incrementQueryStmt	= ( IfStmt ) parseStatement( template2b, values );
 		Statement	tempStmt			= ( Statement ) parseStatement( template1, values );
@@ -141,8 +156,11 @@ public class BoxForInTransformer extends AbstractTransformer {
 		stmt.addStatement( tempStmt );
 		stmt.addStatement( ( Statement ) parseStatement( template1a, values ) );
 		stmt.addStatement( ( Statement ) parseStatement( template1b, values ) );
+		stmt.addStatement( ( Statement ) parseStatement( template1bb, values ) );
 		stmt.addStatement( ( Statement ) parseStatement( template1c, values ) );
-		stmt.addStatement( ( Statement ) parseStatement( template1d, values ) );
+
+		TryStmt tryStmt = new TryStmt();
+		tryStmt.getTryBlock().addStatement( ( Statement ) parseStatement( template1d, values ) );
 
 		// May be a single statement or a block statement, which is still a single statement :)
 		whileStmt.getBody().asBlockStmt().addStatement( ( Statement ) transpiler.transform( boxFor.getBody() ) );
@@ -150,11 +168,13 @@ public class BoxForInTransformer extends AbstractTransformer {
 
 		if ( boxFor.getLabel() != null ) {
 			LabeledStmt labeledWhile = new LabeledStmt( boxFor.getLabel().toLowerCase(), whileStmt );
-			stmt.addStatement( labeledWhile );
+			tryStmt.getTryBlock().addStatement( labeledWhile );
 		} else {
-			stmt.addStatement( whileStmt );
+			tryStmt.getTryBlock().addStatement( whileStmt );
 		}
-		stmt.addStatement( ( Statement ) parseStatement( template3, values ) );
+		tryStmt.setFinallyBlock( new BlockStmt().addStatement( ( Statement ) parseStatement( template3, values ) ) );
+
+		stmt.addStatement( tryStmt );
 		// logger.trace( node.getSourceText() + " -> " + stmt );
 		addIndex( stmt, node );
 		// loop over statements in stmt block statement and add index to each statement (the compiler unwraps the block statement so it gets lost)
