@@ -36,7 +36,7 @@ public class NullValue implements IType, IUnmodifiable, Serializable {
 	/**
 	 * Metadata object
 	 */
-	public BoxMeta				$bx;
+	public transient BoxMeta<?>	$bx;
 
 	/**
 	 * Constructor
@@ -59,7 +59,7 @@ public class NullValue implements IType, IUnmodifiable, Serializable {
 	 *
 	 * @return The metadata object
 	 */
-	public BoxMeta getBoxMeta() {
+	public BoxMeta<?> getBoxMeta() {
 		if ( this.$bx == null ) {
 			this.$bx = new GenericMeta( this );
 		}

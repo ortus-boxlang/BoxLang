@@ -110,7 +110,7 @@ public class QueryColumn implements IReferenceable, Serializable {
 	/**
 	 * Metadata object
 	 */
-	public BoxMeta				$bx;
+	public transient BoxMeta<?>	$bx;
 
 	/**
 	 * Serial version UID
@@ -137,7 +137,7 @@ public class QueryColumn implements IReferenceable, Serializable {
 	 *
 	 * @return metadata object
 	 */
-	public BoxMeta getBoxMeta() {
+	public BoxMeta<?> getBoxMeta() {
 		if ( this.$bx == null ) {
 			// TODO: create query column meta object.
 			// getMetaData() in CF returns struct of

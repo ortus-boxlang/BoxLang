@@ -87,7 +87,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 	/**
 	 * Metadata object
 	 */
-	public transient BoxMeta							$bx;
+	public transient BoxMeta<?>							$bx;
 
 	/**
 	 * Used to track change listeners. Intitialized on-demand
@@ -565,7 +565,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 	 *
 	 * @return The metadata object for the array
 	 */
-	public BoxMeta getBoxMeta() {
+	public BoxMeta<?> getBoxMeta() {
 		if ( this.$bx == null ) {
 			this.$bx = new GenericMeta( this );
 		}

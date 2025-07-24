@@ -36,22 +36,22 @@ public class BaseScope extends Struct implements IScope {
 	/**
 	 * Each scope can have a human friendly name
 	 */
-	private final Key		scopeName;
+	private final Key			scopeName;
 
 	/**
 	 * The unique lock name for this scope instance
 	 */
-	private String			lockName	= null;
+	private String				lockName	= null;
 
 	/**
 	 * Set of final keys which cannot be reassigned
 	 */
-	private final Set<Key>	finalKeys	= new HashSet<>();
+	private final Set<Key>		finalKeys	= new HashSet<>();
 
 	/**
 	 * Metadata object
 	 */
-	public BoxMeta			$bx;
+	public transient BoxMeta<?>	$bx;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -110,7 +110,7 @@ public class BaseScope extends Struct implements IScope {
 	 * @return The {@Link BoxMeta} object for this struct
 	 */
 	@Override
-	public BoxMeta getBoxMeta() {
+	public BoxMeta<?> getBoxMeta() {
 		if ( this.$bx == null ) {
 			this.$bx = new ScopeMeta( this, this.finalKeys );
 		}

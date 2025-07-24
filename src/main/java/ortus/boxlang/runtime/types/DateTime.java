@@ -18,6 +18,8 @@
 package ortus.boxlang.runtime.types;
 
 import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -124,6 +126,13 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	public static final String				MODE_DATETIME								= "DateTime";
 
 	/**
+	 * The format mask currently applied to this DateTime instance.
+	 * This field is used to preserve the format mask during serialization and deserialization.
+	 * By default, it is initialized to {@link #TS_FORMAT_MASK}.
+	 */
+	private String							appliedFormatMask							= TS_FORMAT_MASK;
+
+	/**
 	 * Common Formatters Map so we can easily access them by name
 	 */
 	public static final IStruct				COMMON_FORMATTERS							= Struct.of(
@@ -155,7 +164,7 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	 * The format we use to represent the date time
 	 * which defaults to the ODBC format: {ts '''yyyy-MM-dd HH:mm:ss'''}
 	 */
-	private transient DateTimeFormatter		formatter									= DateTimeFormatter.ofPattern( TS_FORMAT_MASK );
+	private transient DateTimeFormatter		formatter									= DateTimeFormatter.ofPattern( appliedFormatMask );
 
 	/**
 	 * Function service
@@ -165,7 +174,7 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	/**
 	 * Metadata object
 	 */
-	public transient BoxMeta				$bx;
+	public transient BoxMeta<?>				$bx;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -503,7 +512,8 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	 * @return
 	 */
 	public DateTime setFormat( String mask ) {
-		this.formatter = DateTimeFormatter.ofPattern( mask );
+		this.appliedFormatMask	= mask;
+		this.formatter			= DateTimeFormatter.ofPattern( mask );
 		return this;
 	}
 
@@ -515,6 +525,7 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	 * @return
 	 */
 	public DateTime setFormat( DateTimeFormatter formatter ) {
+		// we can only set the formatter as there is no way to retrieve the original mask from the object
 		this.formatter = formatter;
 		return this;
 	}
@@ -537,7 +548,7 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	 *
 	 * @return The string representation
 	 */
-	public BoxMeta getBoxMeta() {
+	public BoxMeta<?> getBoxMeta() {
 		if ( this.$bx == null ) {
 			this.$bx = new GenericMeta( this );
 		}
@@ -1105,6 +1116,32 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	@Override
 	public ZoneId getZone() {
 		return this.wrapped.getZone();
+	}
+
+	/**
+	 * Custom Serializable methods to make sure the formatter is serialized and deserialized correctly
+	 */
+
+	/**
+	 * Serializes the DateTime object, including the applied format mask
+	 */
+	private void writeObject( ObjectOutputStream out ) throws IOException {
+		out.defaultWriteObject(); // Serialize non-transient fields
+		out.writeUTF( this.appliedFormatMask ); // Manually serialize the applied format
+	}
+
+	/**
+	 * Deserializes the DateTime object, reconstructing the formatter from the applied format mask
+	 */
+	private void readObject( ObjectInputStream in ) throws IOException, ClassNotFoundException {
+		in.defaultReadObject(); // Deserialize non-transient fields
+		String pattern = in.readUTF(); // Manually deserialize the pattern string
+		if ( pattern == null || pattern.isEmpty() ) {
+			this.appliedFormatMask = TS_FORMAT_MASK;
+		} else {
+			this.appliedFormatMask = pattern;
+		}
+		this.formatter = DateTimeFormatter.ofPattern( this.appliedFormatMask ); // Reconstruct the formatter
 	}
 
 }
