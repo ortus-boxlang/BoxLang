@@ -42,9 +42,7 @@ import org.slf4j.Logger;
 
 import ortus.boxlang.compiler.ClassInfo;
 import ortus.boxlang.compiler.IBoxpiler;
-import ortus.boxlang.compiler.asmboxpiler.ASMBoxpiler;
 import ortus.boxlang.compiler.ast.BoxExpression;
-import ortus.boxlang.compiler.javaboxpiler.JavaBoxpiler;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.compiler.parser.Parser;
 import ortus.boxlang.compiler.parser.ParsingResult;
@@ -226,17 +224,6 @@ public class BoxRuntime implements java.io.Closeable {
 	 * The Module service in charge of all modules
 	 */
 	private ModuleService						moduleService;
-
-	/**
-	 * The BoxPiler implementation the runtime will use. At this time we offer two
-	 * choices:
-	 * 1. JavaBoxpiler - Generates Java source code and compiles it via the JDK
-	 * 2. ASMBoxpiler - Generates bytecode directly via ASM
-	 * However, developers can create their own Boxpiler implementations and
-	 * register them with the runtime
-	 * via configuration.
-	 */
-	private IBoxpiler							boxpiler;
 
 	/**
 	 * The Scheduler service in charge of all schedulers
@@ -488,8 +475,6 @@ public class BoxRuntime implements java.io.Closeable {
 		this.schedulerService.onConfigurationLoad();
 		this.dataSourceService.onConfigurationLoad();
 
-		// Startup the right Compiler according to settings
-		this.boxpiler = chooseBoxpiler();
 		// Seed Mathematical Precision for the runtime
 		MathUtil.setHighPrecisionMath( getConfiguration().useHighPrecisionMath );
 
@@ -665,13 +650,6 @@ public class BoxRuntime implements java.io.Closeable {
 	 */
 	public static Boolean hasInstance() {
 		return instance != null;
-	}
-
-	/**
-	 * Returns the compiler instance to use based on the configuration
-	 */
-	public IBoxpiler getCompiler() {
-		return this.boxpiler;
 	}
 
 	/**
@@ -1060,24 +1038,6 @@ public class BoxRuntime implements java.io.Closeable {
 	 * Utility Methods
 	 * --------------------------------------------------------------------------
 	 */
-
-	/**
-	 * Switch the runtime to generate java source and compile via the JDK
-	 */
-	public IBoxpiler useJavaBoxpiler() {
-		this.boxpiler = JavaBoxpiler.getInstance();
-		RunnableLoader.getInstance().selectBoxPiler( this.boxpiler );
-		return this.boxpiler;
-	}
-
-	/**
-	 * Switch the runtime to generate bytecode directly via ASM
-	 */
-	public IBoxpiler useASMBoxPiler() {
-		this.boxpiler = ASMBoxpiler.getInstance();
-		RunnableLoader.getInstance().selectBoxPiler( this.boxpiler );
-		return this.boxpiler;
-	}
 
 	/**
 	 * Get a Struct of version information from the version.properties
@@ -1646,13 +1606,14 @@ public class BoxRuntime implements java.io.Closeable {
 	 * @param filePath The path to the source file
 	 */
 	public void printTranspiledJavaCode( String filePath ) {
+		IBoxpiler		boxpiler	= RunnableLoader.getInstance().getBoxpiler();
 		ClassInfo		classInfo	= ClassInfo.forTemplate(
 		    ResolvedFilePath.of( "", "", Path.of( filePath ).getParent().toString(), filePath ),
 		    BoxSourceType.BOXSCRIPT,
-		    this.boxpiler
+		    boxpiler
 		);
-		ParsingResult	result		= this.boxpiler.parseOrFail( Path.of( filePath ).toFile() );
-		this.boxpiler.printTranspiledCode( result, classInfo, System.out );
+		ParsingResult	result		= boxpiler.parseOrFail( Path.of( filePath ).toFile() );
+		boxpiler.printTranspiledCode( result, classInfo, System.out );
 	}
 
 	/**
@@ -1662,7 +1623,7 @@ public class BoxRuntime implements java.io.Closeable {
 	 *
 	 */
 	public void printSourceAST( String source ) {
-		ParsingResult result = this.boxpiler.parseOrFail( source, BoxSourceType.BOXSCRIPT, false );
+		ParsingResult result = RunnableLoader.getInstance().getBoxpiler().parseOrFail( source, BoxSourceType.BOXSCRIPT, false );
 		System.out.println( result.getRoot().toJSON() );
 	}
 
@@ -1755,27 +1716,6 @@ public class BoxRuntime implements java.io.Closeable {
 			return new ScriptingRequestBoxContext( context, template );
 		} else {
 			return new ScriptingRequestBoxContext( context );
-		}
-	}
-
-	/**
-	 * Choose the Boxpiler implementation to use according to the configuration
-	 * We only support two direct implementations, Java and ASM
-	 * Later on we need to inspect the class path for specific files if we want this configurable.
-	 *
-	 * @return The Boxpiler implementation to use
-	 */
-	private IBoxpiler chooseBoxpiler() {
-		// System.out.println( "Choosing Boxpiler implementation..." );
-		switch ( ( String ) this.configuration.experimental.getOrDefault( "compiler", "asm" ) ) {
-			case "java" :
-				this.loggingService.getRootLogger().info( "+ Choosing " + JavaBoxpiler.class.getSimpleName() + " as the Boxpiler implementation" );
-				return useJavaBoxpiler();
-			case "asm" :
-				this.loggingService.getRootLogger().info( "+ Choosing " + ASMBoxpiler.class.getSimpleName() + " as the Boxpiler implementation" );
-			default :
-				this.loggingService.getRootLogger().info( "+ Choosing " + ASMBoxpiler.class.getSimpleName() + " as the Boxpiler implementation" );
-				return useASMBoxPiler();
 		}
 	}
 

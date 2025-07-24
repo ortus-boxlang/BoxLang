@@ -111,6 +111,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		array2								= Key.of( "array2" );
 	public static final Key		arrayFind							= Key.of( "arrayFind" );
 	public static final Key		arrayFindAll						= Key.of( "arrayFindAll" );
+	public static final Key		asm									= Key.of( "asm" );
 	public static final Key		asOptional							= Key.of( "asOptional" );
 	public static final Key		assocAttribs						= Key.of( "assocAttribs" );
 	public static final Key		assignableArray						= Key.of( "assignableArray" );
@@ -541,6 +542,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		newDelimiter						= Key.of( "newDelimiter" );
 	public static final Key		newDirectory						= Key.of( "newDirectory" );
 	public static final Key		newPath								= Key.of( "newPath" );
+	public static final Key		noOp								= Key.of( "noop" );
 	public static final Key		noInit								= Key.of( "noInit" );
 	public static final Key		notify								= Key.of( "notify" );
 	public static final Key		notifyAll							= Key.of( "notifyAll" );

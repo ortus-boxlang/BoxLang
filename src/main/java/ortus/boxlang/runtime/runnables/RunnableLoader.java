@@ -18,7 +18,10 @@
 package ortus.boxlang.runtime.runnables;
 
 import java.nio.file.Path;
+import java.util.Map;
+import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import ortus.boxlang.compiler.IBoxpiler;
 import ortus.boxlang.compiler.parser.BoxSourceType;
@@ -26,7 +29,10 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.Configuration;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.StaticClassBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 import ortus.boxlang.runtime.types.exceptions.MissingIncludeException;
 import ortus.boxlang.runtime.util.FileSystemUtil;
@@ -50,7 +56,13 @@ public class RunnableLoader {
 	private static RunnableLoader		instance;
 
 	/**
-	 * The Boxpiler to use: ASM or Java
+	 * The BoxPiler implementation the runtime will use. At this time we offer two
+	 * choices:
+	 * 1. JavaBoxpiler - Generates Java source code and compiles it via the JDK
+	 * 2. ASMBoxpiler - Generates bytecode directly via ASM
+	 * However, developers can create their own Boxpiler implementations and
+	 * register them with the runtime
+	 * via configuration.
 	 */
 	private IBoxpiler					boxpiler;
 
@@ -62,6 +74,11 @@ public class RunnableLoader {
 	private static final Set<String>	VALID_TEMPLATE_EXTENSIONS	= BoxRuntime.getInstance().getConfiguration().getValidTemplateExtensions();
 
 	/**
+	 * The registry of Boxpilers
+	 */
+	private Map<Key, IBoxpiler>			boxpilers					= new ConcurrentHashMap<Key, IBoxpiler>();
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Constructors
 	 * --------------------------------------------------------------------------
@@ -71,6 +88,7 @@ public class RunnableLoader {
 	 * Private constructor
 	 */
 	private RunnableLoader() {
+		registerBoxpilers();
 	}
 
 	/**
@@ -90,23 +108,108 @@ public class RunnableLoader {
 	 * Public Methods
 	 * --------------------------------------------------------------------------
 	 */
+	/**
+	 * Registers the Boxpilers in a specified class loader.
+	 * 
+	 * @param cl
+	 */
+	public void registerBoxpilers( ClassLoader cl ) {
+		// use service loader to find instance of myself
+		ServiceLoader<IBoxpiler> loader = ServiceLoader.load( IBoxpiler.class, cl );
+		for ( IBoxpiler boxpiler : loader ) {
+			boxpilers.put( boxpiler.getName(), boxpiler );
+		}
+		chooseBoxpiler();
+	}
+
+	/**
+	 * Register boxpilers with the default class loader.
+	 */
+	public void registerBoxpilers() {
+		registerBoxpilers( IBoxpiler.class.getClassLoader() );
+	}
+
+	/**
+	 * Get all boxpilers registered, initting in double check lock if null
+	 */
+	public Map<Key, IBoxpiler> getBoxpilers() {
+		return boxpilers;
+	}
+
+	/**
+	 * Get the Boxpiler for the given name.
+	 *
+	 * @param name the name of the Boxpiler
+	 *
+	 * @return the Boxpiler instance
+	 */
+	public IBoxpiler getBoxpiler( Key name ) {
+		IBoxpiler boxpiler = boxpilers.get( name );
+		if ( boxpiler == null ) {
+			String detail = "There are no registered Boxpilers. Please ensure you have a Boxpiler implementation on the classpath.";
+			if ( !boxpilers.isEmpty() ) {
+				detail = "Available Boxpilers are: [" + boxpilers.keySet() + "]";
+			}
+			throw new BoxRuntimeException( "No Boxpiler registered for name: " + name + ". " + detail );
+		}
+		return boxpiler;
+	}
 
 	/**
 	 * Select the Boxpiler implementation to use when generating bytecode
 	 *
 	 * @param boxpiler The Boxpiler interface to use
 	 */
-	public void selectBoxPiler( IBoxpiler boxpiler ) {
-		this.boxpiler = boxpiler;
+	public void selectBoxPiler( Key name ) {
+		this.boxpiler = getBoxpiler( name );
 	}
 
 	/**
 	 * Get the current BoxPiler
+	 * Returns null if no BoxPiler is registered.
 	 *
 	 * @return The current Boxpiler
 	 */
 	public IBoxpiler getBoxpiler() {
 		return this.boxpiler;
+	}
+
+	/**
+	 * Choose the Boxpiler implementation to use according to the configuration
+	 * We only support two direct implementations, Java and ASM
+	 * Later on we need to inspect the class path for specific files if we want this configurable.
+	 *
+	 * @return The Boxpiler implementation to use
+	 */
+	private void chooseBoxpiler() {
+		if ( boxpiler != null ) {
+			// If we already have a boxpiler, do not change it
+			return;
+		}
+
+		BoxRuntime	runtime		= BoxRuntime.getInstance();
+		String		nameToUse	= StringCaster.cast( runtime.getConfiguration().experimental.get( "compiler" ) );
+		Key			keyToUse	= null;
+		// if there is no config
+		if ( nameToUse == null ) {
+			// prefer the ASM Boxpiler if it's registered
+			if ( boxpilers.containsKey( Key.asm ) ) {
+				keyToUse = Key.asm;
+			} else if ( !boxpilers.isEmpty() ) {
+				// if there is no ASM, juse the first we find
+				keyToUse = boxpilers.keySet().iterator().next();
+			} else {
+				// If there are no boxpilers registered, use the no-op
+				// it will still load classes, but not compile them
+				keyToUse = Key.noOp;
+			}
+
+		} else {
+			keyToUse = Key.of( nameToUse );
+		}
+
+		selectBoxPiler( keyToUse );
+		runtime.getLoggingService().RUNTIME_LOGGER.info( "+ Choosing " + getBoxpiler().getClass().getSimpleName() + " as the Boxpiler implementation" );
 	}
 
 	/**
@@ -166,7 +269,7 @@ public class RunnableLoader {
 
 		// This extension check is duplicated in the BaseBoxContext.includeTemplate() right now since some code paths hit the runnableLoader directly
 		if ( ext.equals( "*" ) || VALID_TEMPLATE_EXTENSIONS.contains( ext ) ) {
-			Class<IBoxRunnable> clazz = this.boxpiler.compileTemplate( resolvedFilePath );
+			Class<IBoxRunnable> clazz = getBoxpiler().compileTemplate( resolvedFilePath );
 			return ( BoxTemplate ) DynamicObject.of( clazz ).invokeStatic( context, "getInstance" );
 		} else {
 			throw new BoxValidationException(
@@ -196,7 +299,7 @@ public class RunnableLoader {
 	 * @return The BoxScript instance
 	 */
 	public BoxScript loadSource( IBoxContext context, String source, BoxSourceType type ) {
-		Class<IBoxRunnable> clazz = this.boxpiler.compileScript( source, type );
+		Class<IBoxRunnable> clazz = getBoxpiler().compileScript( source, type );
 		if ( IClassRunnable.class.isAssignableFrom( clazz ) ) {
 			throw new RuntimeException( "Cannot define class in an ad-hoc script." );
 		}
@@ -224,7 +327,7 @@ public class RunnableLoader {
 	 * @return The BoxScript instance
 	 */
 	public BoxScript loadStatement( IBoxContext context, String source, BoxSourceType type ) {
-		Class<IBoxRunnable> clazz = this.boxpiler.compileStatement( source, type );
+		Class<IBoxRunnable> clazz = getBoxpiler().compileStatement( source, type );
 		return ( BoxScript ) DynamicObject.of( clazz ).invokeStatic( context, "getInstance" );
 	}
 
@@ -239,7 +342,7 @@ public class RunnableLoader {
 	 * @return The BoxLang class
 	 */
 	public Class<IBoxRunnable> loadClass( String source, IBoxContext context, BoxSourceType type ) {
-		Class<IBoxRunnable> clazz = this.boxpiler.compileClass( source, type );
+		Class<IBoxRunnable> clazz = getBoxpiler().compileClass( source, type );
 		runStaticInitializer( clazz, context );
 		return clazz;
 	}
@@ -254,7 +357,7 @@ public class RunnableLoader {
 	 * @return The BoxLang class
 	 */
 	public Class<IBoxRunnable> loadClass( ResolvedFilePath resolvedFilePath, IBoxContext context ) {
-		Class<IBoxRunnable> clazz = this.boxpiler.compileClass( resolvedFilePath );
+		Class<IBoxRunnable> clazz = getBoxpiler().compileClass( resolvedFilePath );
 		runStaticInitializer( clazz, context );
 		return clazz;
 	}

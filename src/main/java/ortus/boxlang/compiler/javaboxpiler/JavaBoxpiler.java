@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.net.URISyntaxException;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
@@ -58,14 +57,13 @@ import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.visitor.QueryEscapeSingleQuoteVisitor;
 import ortus.boxlang.compiler.javaboxpiler.transformer.ProxyTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.indexer.BoxNodeKey;
-import ortus.boxlang.compiler.parser.Parser;
 import ortus.boxlang.compiler.parser.ParsingResult;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 import ortus.boxlang.runtime.util.RegexBuilder;
-import ortus.boxlang.runtime.util.ResolvedFilePath;
 import ortus.boxlang.runtime.util.Timer;
 
 /**
@@ -80,14 +78,9 @@ public class JavaBoxpiler extends Boxpiler {
 	 */
 
 	/**
-	 * Singleton instance
-	 */
-	private static JavaBoxpiler	instance;
-
-	/**
 	 * The Java compiler
 	 */
-	private JavaCompiler		compiler;
+	private JavaCompiler compiler;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -98,21 +91,14 @@ public class JavaBoxpiler extends Boxpiler {
 	/**
 	 * Private constructor
 	 */
-	private JavaBoxpiler() {
+	public JavaBoxpiler() {
 		super();
 		this.compiler = ToolProvider.getSystemJavaCompiler();
 	}
 
-	/**
-	 * Get the singleton instance
-	 *
-	 * @return TemplateLoader
-	 */
-	public static synchronized JavaBoxpiler getInstance() {
-		if ( instance == null ) {
-			instance = new JavaBoxpiler();
-		}
-		return instance;
+	@Override
+	public Key getName() {
+		return Key.java;
 	}
 
 	@Override
@@ -355,58 +341,4 @@ public class JavaBoxpiler extends Boxpiler {
 		return ProxyTransformer.transform( classInfo );
 	}
 
-	/**
-	 * Compile a template, returning a list of byte arrays representing the compiled class and its inner classes
-	 */
-	@Override
-	public List<byte[]> compileTemplateBytes( ResolvedFilePath resolvedFilePath ) {
-		Path		path		= resolvedFilePath.absolutePath();
-		ClassInfo	classInfo	= null;
-		// file extension is .bx or .cfc
-		if ( path.toString().endsWith( ".bx" ) || path.toString().endsWith( ".cfc" ) ) {
-			classInfo = ClassInfo.forClass( resolvedFilePath, Parser.detectFile( path.toFile() ), this );
-		} else {
-			classInfo = ClassInfo.forTemplate( resolvedFilePath, Parser.detectFile( path.toFile() ), this );
-		}
-		var classPool = getClassPool( classInfo.classPoolName() );
-		classPool.putIfAbsent( classInfo.fqn().toString(), classInfo );
-		compileClassInfo( classInfo.classPoolName(), classInfo.fqn().toString() );
-		return diskClassUtil.readClassBytes( classInfo.classPoolName(), classInfo.fqn().toString() );
-	}
-
-	/*
-	 * private static class CustomOutputStream extends OutputStream {
-	 * 
-	 * private final OutputStream delegate;
-	 * private final Path path;
-	 * private final Instant customModifiedDate;
-	 * 
-	 * public CustomOutputStream( OutputStream delegate, Path path, Instant customModifiedDate ) {
-	 * this.delegate = delegate;
-	 * this.path = path;
-	 * this.customModifiedDate = customModifiedDate;
-	 * }
-	 * 
-	 * @Override
-	 * public void write( int b ) throws IOException {
-	 * delegate.write( b );
-	 * }
-	 * 
-	 * @Override
-	 * public void write( byte[] b ) throws IOException {
-	 * delegate.write( b );
-	 * }
-	 * 
-	 * @Override
-	 * public void write( byte[] b, int off, int len ) throws IOException {
-	 * delegate.write( b, off, len );
-	 * }
-	 * 
-	 * @Override
-	 * public void close() throws IOException {
-	 * delegate.close();
-	 * Files.setLastModifiedTime( path, FileTime.from( customModifiedDate ) );
-	 * }
-	 * }
-	 */
 }

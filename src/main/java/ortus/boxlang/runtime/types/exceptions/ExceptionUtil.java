@@ -43,6 +43,7 @@ import ortus.boxlang.runtime.dynamic.casters.StructCasterLoose;
 import ortus.boxlang.runtime.dynamic.casters.ThrowableCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.operators.InstanceOf;
+import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
@@ -201,7 +202,7 @@ public class ExceptionUtil {
 						BLFileName = element.getFileName();
 					}
 
-					IBoxpiler	boxpiler	= BoxRuntime.getInstance().getCompiler();
+					IBoxpiler	boxpiler	= RunnableLoader.getInstance().getBoxpiler();
 					SourceMap	sourceMap	= null;
 
 					if ( boxpiler instanceof JavaBoxpiler ) {
