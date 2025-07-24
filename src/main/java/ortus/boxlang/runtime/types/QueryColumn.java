@@ -99,7 +99,7 @@ public class QueryColumn implements IReferenceable, Serializable {
 	/**
 	 * The query this column is a part of
 	 */
-	private transient Query		query;
+	private Query				query;
 
 	/**
 	 * 0-based index of column in the
