@@ -55,10 +55,11 @@ public class Val extends BIF {
 
 		var		result		= new StringBuilder();
 		boolean	foundDot	= false;
+		boolean	foundMinus	= false;
 		// Loop over each character in the string
 		for ( var c : input.getBytes() ) {
 			// If the character is not a digit
-			if ( ( c < 48 || c > 57 ) && c != 46 ) {
+			if ( ( c < 48 || c > 57 ) && c != 46 && c != 45 ) {
 				// we're done
 				break;
 			}
@@ -69,6 +70,14 @@ public class Val extends BIF {
 					break;
 				}
 				foundDot = true;
+			}
+			// The first minus is allowed
+			if ( c == 45 ) {
+				// But subsequent minus signs are not
+				if ( foundMinus ) {
+					break;
+				}
+				foundMinus = true;
 			}
 			// Build up the result
 			result.append( ( char ) c );
