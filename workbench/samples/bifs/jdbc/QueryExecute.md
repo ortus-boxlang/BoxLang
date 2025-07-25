@@ -34,6 +34,84 @@ qryResult = queryExecute(
 );
 ```
 
+### Return Type Options
+
+By default, `queryExecute()` will return a [query object](../../types/query) with the results of the SQL statement. To return results as an array of structs, you can specify the `returnType: "array"`:
+
+```java
+queryExecute("SELECT * FROM Employees", [], { returnType: "array" });
+```
+
+```json
+[
+	{
+		"empid": 1,
+		"firstname": "John",
+		"lastname": "Doe",
+		"country": "USA"
+	},
+	{
+		"empid": 2,
+		"firstname": "Jane",
+		"lastname": "Smith",
+		"country": "Canada"
+	}
+]
+```
+
+You can also return results as a key-value struct by specifying the `returnType` and `columnKey` options:
+
+```java
+queryExecute("SELECT * FROM Employees", [], { returnType: "struct", columnKey: "empid" });
+```
+
+```json
+{
+	"1": {
+		"empid": 1,
+		"firstname": "John",
+		"lastname": "Doe",
+		"country": "USA"
+	},
+	"2": {
+		"empid": 2,
+		"firstname": "Jane",
+		"lastname": "Smith",
+		"country": "Canada"
+	}
+}
+```
+
+### Caching a query
+
+You can enable query caching by setting `cache` to `true`. By default, the cached query will never expire, but you can use `cacheTimeout` to specify a timeout duration via the [createTimespan](../temporal/CreateTimeSpan) BIF.
+
+```java
+qryResult = queryExecute(
+  "SELECT * FROM Employees", 
+  [],
+  {
+    "cache": true,
+    "cacheTimeout": createTimespan( 0, 0, 0, 2 )
+  }
+);
+```
+
+This will mark the query for cache eviction after 2 seconds. You can also use `cacheLastAccessTimeout` to specify a timeout based on the last access time of the query:
+
+```java
+qryResult = queryExecute(
+  "SELECT * FROM Employees", 
+  [],
+  {
+    "cache": true,
+    "cacheLastAccessTimeout": createTimespan( 0, 0, 0, 2 )
+  }
+);
+```
+
+See our [caching documentation](https://boxlang.ortusbooks.com/boxlang-framework/caching) for more information on caching.
+
 
 ### Query of Queries
 
