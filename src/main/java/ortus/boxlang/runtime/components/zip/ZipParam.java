@@ -42,7 +42,7 @@ public class ZipParam extends Component {
 	}
 
 	/**
-	 * Adds a param to a zip component.  This component must always be a child of a Zip component
+	 * Adds a param to a zip component. This component must always be a child of a Zip component
 	 * 
 	 * @argument.source The source of the Zip entry - either a file or a directory
 	 * 
