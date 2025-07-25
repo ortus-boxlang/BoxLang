@@ -305,6 +305,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		encodingBase64Url					= Key.of( "Base64Url" );
 	public static final Key		encodingHex							= Key.of( "Hex" );
 	public static final Key		encodingUU							= Key.of( "UU" );
+	public static final Key		encryptionAlgorithm					= Key.of( "encryptionAlgorithm" );
 	public static final Key		end									= Key.of( "end" );
 	public static final Key		endRow								= Key.of( "endRow" );
 	public static final Key		enforceExplicitOutput				= Key.of( "enforceExplicitOutput" );
@@ -349,6 +350,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		filepath							= Key.of( "filepath" );
 	public static final Key		fileread							= Key.of( "fileread" );
 	public static final Key		filter								= Key.of( "filter" );
+	public static final Key		filterDelimiters					= Key.of( "filterDelimiters" );
 	public static final Key		find								= Key.of( "find" );
 	public static final Key		findAll								= Key.of( "findAll" );
 	public static final Key		findNoCase							= Key.of( "findNoCase" );
@@ -862,6 +864,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		xpath								= Key.of( "xpath" );
 	public static final Key		XSL									= Key.of( "XSL" );
 	public static final Key		year								= Key.of( "year" );
+	public static final Key		Zip									= Key.of( "Zip" );
 	public static final Key		zipParams							= Key.of( "zipParams" );
 
 	/**
