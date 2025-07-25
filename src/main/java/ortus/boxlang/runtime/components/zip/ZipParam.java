@@ -92,7 +92,7 @@ public class ZipParam extends Component {
 		if ( parentState == null ) {
 			throw new RuntimeException( "ZipParam must be nested in the body of an Zip component" );
 		}
-		// Set our data into the HTTP component for it to use
+		// Set our data into the ZIP component for it to use
 		parentState.getAsArray( Key.zipParams ).add( attributes );
 		return DEFAULT_RETURN;
 	}
