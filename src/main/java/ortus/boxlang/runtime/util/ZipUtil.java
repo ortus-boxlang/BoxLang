@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.InputStream;
 import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.charset.Charset;
 import java.io.ByteArrayInputStream;
 import java.util.zip.InflaterInputStream;
 import java.nio.file.FileVisitResult;
@@ -39,6 +41,8 @@ import org.apache.commons.lang3.StringUtils;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
@@ -116,7 +120,7 @@ public class ZipUtil {
 
 		switch ( format ) {
 			case ZIP :
-				return compressZip( source, destination, includeBaseFolder, overwrite, prefix, filter, recurse, zipCompressionLevel, context );
+				return compressZip( Array.of( source ), destination, includeBaseFolder, overwrite, prefix, filter, recurse, zipCompressionLevel, context );
 			case GZIP :
 				return compressGzip( source, destination, includeBaseFolder, overwrite, zipCompressionLevel );
 			default :
@@ -127,7 +131,7 @@ public class ZipUtil {
 	/**
 	 * Compression method that compresses a file or folder into a zip file and returns the absolute path of the compressed file
 	 *
-	 * @param source            The absolute file or folder to compress
+	 * @param sources           An array of source sets to compress. Each source can be a file path, a directory, or a Struct with content.
 	 * @param destination       The absolute destination of the compressed file, we will add the extension based on the format
 	 * @param includeBaseFolder Whether to include the base folder in the compressed file
 	 * @param overwrite         Whether to overwrite the destination file if it already exists, default is false
@@ -142,7 +146,7 @@ public class ZipUtil {
 	 * @return The absolute path of the compressed file
 	 */
 	public static String compressZip(
-	    String source,
+	    Array sources,
 	    String destination,
 	    Boolean includeBaseFolder,
 	    Boolean overwrite,
@@ -152,9 +156,8 @@ public class ZipUtil {
 	    Integer compressionLevel,  // New parameter
 	    IBoxContext context ) {
 
-		// Prepare the source and destination paths
-		final Path	sourceFile		= ensurePath( source );
-		final Path	destinationFile	= toPathWithExtension( destination, ".zip" );
+		// Prepare destination paths
+		final Path destinationFile = toPathWithExtension( destination, ".zip" );
 
 		// Verify destination does not exist
 		if ( destinationFile.toFile().exists() && !overwrite ) {
@@ -167,81 +170,133 @@ public class ZipUtil {
 			// Set the compression level on the ZipOutputStream
 			zipOutputStream.setLevel( compressionLevel );
 
-			// Calculate the path prefix
-			String pathPrefix = prefix != null && !prefix.isEmpty() ? prefix + "/" : "";
-
-			// Is the source a directory
-			if ( Files.isDirectory( sourceFile ) ) {
-				Path basePath = ( includeBaseFolder ? sourceFile.getParent() : sourceFile ).normalize();
-				Files.walkFileTree( sourceFile, new SimpleFileVisitor<>() {
-
-					@Override
-					public FileVisitResult visitFile( Path file, BasicFileAttributes attrs ) throws IOException {
-						Path	targetFile		= basePath.relativize( file.normalize() );  // Normalize the file path
-						String	zipEntryName	= pathPrefix + targetFile.toString().replace( "\\", "/" );
-
-						// If a filter is present, apply it
-						if ( filter != null ) {
-							// String regex filter: If there is a match, we add the entry to the zip file, else we skip it
-							if ( filter instanceof String castedFilter && castedFilter.length() > 1 ) {
-								if ( !FileSystemUtil.fileMatchesPattern( castedFilter, Path.of( zipEntryName ) ) ) {
-									return FileVisitResult.CONTINUE;
-								}
-							}
-
-							// BoxLang function filters
-							if ( filter instanceof Function filterFunction ) {
-								if ( !BooleanCaster.cast( context.invokeFunction( filterFunction, new Object[] { zipEntryName } ) ) ) {
-									return FileVisitResult.CONTINUE;
-								}
-							}
-
-							// Java Predicate filters
-							if ( filter instanceof java.util.function.Predicate<?> ) {
-								@SuppressWarnings( "unchecked" )
-								java.util.function.Predicate<String> predicate = ( java.util.function.Predicate<String> ) filter;
-								if ( !predicate.test( zipEntryName ) ) {
-									return FileVisitResult.CONTINUE;
-								}
-							}
+			sources.stream().forEach( ( source ) -> {
+				Object	itemFilter				= null;
+				Path	sourceFile				= null;
+				byte[]	sourceBytes				= null;
+				String	destinationEntryPath	= null;
+				// Calculate the path prefix
+				String	pathPrefix				= prefix != null && !prefix.isEmpty() ? prefix + "/" : "";
+				if ( source instanceof String stringSource ) {
+					sourceFile	= ensurePath( stringSource );
+					itemFilter	= filter;
+				} else if ( source instanceof IStruct attributes ) {
+					String declaredSource = attributes.getAsString( Key.source );
+					if ( declaredSource != null && !declaredSource.isEmpty() ) {
+						sourceFile	= ensurePath( declaredSource );
+						itemFilter	= attributes.get( Key.filter );
+					} else if ( attributes.get( Key.entryPath ) != null && !attributes.getAsString( Key.entryPath ).isEmpty() ) {
+						// create a temp file with the content
+						destinationEntryPath = attributes.getAsString( Key.entryPath );
+						if ( attributes.get( Key.prefix ) != null ) {
+							pathPrefix = attributes.getAsString( Key.prefix ) + "/";
 						}
-
-						// Add the entry to the zip file
-						zipOutputStream.putNextEntry( new ZipEntry( zipEntryName ) );
-						Files.copy( file, zipOutputStream );
-						zipOutputStream.closeEntry();
-						return FileVisitResult.CONTINUE;
+						Object sourceContent = attributes.get( Key.content );
+						if ( sourceContent instanceof byte[] castSourceBytes ) {
+							sourceBytes = castSourceBytes;
+						} else {
+							String charset = StringCaster.cast( attributes.getOrDefault( Key.charset, StandardCharsets.UTF_8.name() ) );
+							sourceBytes = StringCaster.cast( sourceContent ).getBytes( Charset.forName( charset ) );
+						}
+					} else {
+						return; // Skip this source if no valid source or content is provided
 					}
 
-					@Override
-					public FileVisitResult preVisitDirectory( Path dir, BasicFileAttributes attrs ) throws IOException {
-						// If the directory is the source directory and we are not including the base folder, we skip it
-						if ( dir.equals( sourceFile ) && !includeBaseFolder ) {
-							return FileVisitResult.CONTINUE;
-						}
-						// If not recursing, we skip the directory
-						if ( !recurse && !dir.equals( sourceFile ) ) {
-							return FileVisitResult.SKIP_SUBTREE;
-						}
+				}
 
-						// Calculate the target directory path & Add the directory to the zip file
-						Path	targetDir		= basePath.relativize( dir.normalize() );  // Normalize the directory path
-						String	zipEntryName	= pathPrefix + targetDir.toString().replace( "\\", "/" ) + "/";
-						zipOutputStream.putNextEntry( new ZipEntry( zipEntryName ) );
-						zipOutputStream.closeEntry();
-						return FileVisitResult.CONTINUE;
+				// Finalize for visitor
+				final String	finalPathPrefix	= pathPrefix;
+				final Object	finalItemFilter	= itemFilter;
+
+				try {
+					// Is the source a directory
+					if ( sourceFile != null && Files.isDirectory( sourceFile ) ) {
+						// Finalize for visitor
+						final Path	finalSourceFile	= sourceFile;
+						Path		basePath		= ( includeBaseFolder ? sourceFile.getParent() : sourceFile ).normalize();
+						Files.walkFileTree( sourceFile, new SimpleFileVisitor<>() {
+
+							@Override
+							public FileVisitResult visitFile( Path file, BasicFileAttributes attrs ) throws IOException {
+								Path	targetFile		= basePath.relativize( file.normalize() );  // Normalize the file path
+								String	zipEntryName	= finalPathPrefix + targetFile.toString().replace( "\\", "/" );
+
+								// If a filter is present, apply it
+								if ( finalItemFilter != null ) {
+									// String regex filter: If there is a match, we add the entry to the zip file, else we skip it
+									if ( finalItemFilter instanceof String castedFilter && castedFilter.length() > 1 ) {
+										if ( !FileSystemUtil.fileMatchesPattern( castedFilter, Path.of( zipEntryName ) ) ) {
+											return FileVisitResult.CONTINUE;
+										}
+									}
+
+									// BoxLang function filters
+									if ( finalItemFilter instanceof Function filterFunction ) {
+										if ( !BooleanCaster.cast( context.invokeFunction( filterFunction, new Object[] { zipEntryName } ) ) ) {
+											return FileVisitResult.CONTINUE;
+										}
+									}
+
+									// Java Predicate filters
+									if ( finalItemFilter instanceof java.util.function.Predicate<?> ) {
+										@SuppressWarnings( "unchecked" )
+										java.util.function.Predicate<String> predicate = ( java.util.function.Predicate<String> ) finalItemFilter;
+										if ( !predicate.test( zipEntryName ) ) {
+											return FileVisitResult.CONTINUE;
+										}
+									}
+								}
+
+								// Add the entry to the zip file
+								zipOutputStream.putNextEntry( new ZipEntry( zipEntryName ) );
+								Files.copy( file, zipOutputStream );
+								zipOutputStream.closeEntry();
+								return FileVisitResult.CONTINUE;
+							}
+
+							@Override
+							public FileVisitResult preVisitDirectory( Path dir, BasicFileAttributes attrs ) throws IOException {
+								// If the directory is the source directory and we are not including the base folder, we skip it
+								if ( dir.equals( finalSourceFile ) && !includeBaseFolder ) {
+									return FileVisitResult.CONTINUE;
+								}
+								// If not recursing, we skip the directory
+								if ( !recurse && !dir.equals( finalSourceFile ) ) {
+									return FileVisitResult.SKIP_SUBTREE;
+								}
+
+								// Calculate the target directory path & Add the directory to the zip file
+								Path	targetDir		= basePath.relativize( dir.normalize() );  // Normalize the directory path
+								String	zipEntryName	= finalPathPrefix + targetDir.toString().replace( "\\", "/" ) + "/";
+								zipOutputStream.putNextEntry( new ZipEntry( zipEntryName ) );
+								zipOutputStream.closeEntry();
+								return FileVisitResult.CONTINUE;
+							}
+						} );
 					}
-				} );
-			}
-			// We have a file
-			else {
-				String zipEntryName = pathPrefix + sourceFile.getFileName().toString();
-				zipOutputStream.putNextEntry( new ZipEntry( zipEntryName ) );
-				Files.copy( sourceFile, zipOutputStream );
-				zipOutputStream.closeEntry();
-			}
+					// We have binary content
+					else if ( sourceBytes != null ) {
+						String zipEntryName = finalPathPrefix + destinationEntryPath;
+						zipOutputStream.putNextEntry( new ZipEntry( zipEntryName ) );
+						zipOutputStream.write( sourceBytes, 0, sourceBytes.length );
+						zipOutputStream.closeEntry();
+					}
+					// We have a file
+					else {
+						String zipEntryName = finalPathPrefix + sourceFile.getFileName().toString();
+						zipOutputStream.putNextEntry( new ZipEntry( zipEntryName ) );
+						Files.copy( sourceFile, zipOutputStream );
+						zipOutputStream.closeEntry();
+					}
+
+				} catch ( IOException e ) {
+					throw new BoxIOException( "Error processing zip source", e );
+				}
+
+			} );
+
 		} catch ( Exception e ) {
-			throw new BoxRuntimeException( "Error compressing file or folder: [" + source + "] to destination: [" + destination + "]", e );
+			throw new BoxRuntimeException( "Error compressing to destination: [" + destination + "]", e );
 		}
 
 		return destinationFile.toString();
@@ -260,7 +315,12 @@ public class ZipUtil {
 	 *
 	 * @return The absolute path of the compressed file
 	 */
-	public static String compressGzip( String source, String destination, Boolean includeBaseFolder, Boolean overwrite, Integer compressionLevel ) {
+	public static String compressGzip(
+	    String source,
+	    String destination,
+	    Boolean includeBaseFolder,
+	    Boolean overwrite,
+	    Integer compressionLevel ) {
 		final Path	sourceFile		= ensurePath( source ).normalize();
 		final Path	destinationFile	= toPathWithExtension( destination, ".gz" );
 
