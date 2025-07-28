@@ -316,6 +316,12 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	 */
 	@Override
 	public BoxNode visit( BoxDotAccess node ) {
+		// This renames the columnNames to columnArray
+		if ( node.getAccess() instanceof BoxIdentifier id && id.getName().equalsIgnoreCase( "columnNames" ) ) {
+			id.setName( "columnArray" );
+		}
+
+		// Make sure we upper case the dot access keys like in CFML
 		upperCaseDotAceessKeys( node );
 		return super.visit( node );
 	}
@@ -1215,9 +1221,9 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	/**
 	 * Determine if a node is inside a script or template
 	 * TODO: Does this deserve to exist on BoxNode?
-	 * 
+	 *
 	 * @param node The node to check
-	 * 
+	 *
 	 * @return true if the node is inside a script or template, false otherwise
 	 */
 	@SuppressWarnings( "unchecked" )
