@@ -39,7 +39,7 @@ public class JavaArraySerializer implements ValueWriter {
 		IdentityHashMap<Object, Boolean> visited = visitedArrays.get();
 
 		if ( visited.containsKey( value ) ) {
-			g.writeString( "recursive-array-skipping" ); 
+			g.writeString( "recursive-array-skipping" );
 		} else {
 			visited.put( value, Boolean.TRUE );
 

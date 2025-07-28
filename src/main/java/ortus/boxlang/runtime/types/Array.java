@@ -268,7 +268,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 			return new Array( new ArrayList<>( collection ) );
 		}
 		throw new BoxRuntimeException(
-		    "Cannot create Array from type: " + arr.getClass().getName() + ". Supported types: List, Array, Collection, or native arrays." ); 
+		    "Cannot create Array from type: " + arr.getClass().getName() + ". Supported types: List, Array, Collection, or native arrays." );
 	}
 
 	public Object toVarArgsArray( Class<?> varArgType ) {
