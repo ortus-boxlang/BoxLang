@@ -32,12 +32,12 @@ import com.fasterxml.jackson.jr.ob.impl.JSONWriter;
 public class JavaArraySerializer implements ValueWriter {
 
 	// ThreadLocal to keep track of seen structs in the current thread
-	private static final ThreadLocal<IdentityHashMap<List<?>, Boolean>> visitedArrays = ThreadLocal.withInitial( IdentityHashMap::new );
+	private static final ThreadLocal<IdentityHashMap<Object, Boolean>> visitedArrays = ThreadLocal.withInitial( IdentityHashMap::new );
 
 	@Override
 	public void writeValue( JSONWriter context, JsonGenerator g, Object value ) throws IOException {
 		// Get the current thread's set of seen arrays
-		IdentityHashMap<List<?>, Boolean> visited = visitedArrays.get();
+		IdentityHashMap<Object, Boolean> visited = visitedArrays.get();
 
 		if ( visited.containsKey( value ) ) {
 			g.writeString( "recursive-array-skipping" );
