@@ -255,7 +255,7 @@ public class BaseBoxContext implements IBoxContext {
 
 	/**
 	 * Is there at least one output component on the stack
-	 * 
+	 *
 	 * @return True if there is at least one output component, else false
 	 */
 	public boolean isInOutputComponent() {
@@ -741,9 +741,9 @@ public class BaseBoxContext implements IBoxContext {
 	 * This allows us to "reserve" known scope names to ensure arguments.foo
 	 * will always look in the proper arguments scope and never in
 	 * local.arguments.foo for example
-	 * 
+	 *
 	 * @param key The key to check for visibility
-	 * 
+	 *
 	 * @return True if the key is visible in the current context, else false
 	 */
 	public boolean isKeyVisibleScope( Key key ) {
@@ -755,11 +755,11 @@ public class BaseBoxContext implements IBoxContext {
 	 * This allows us to "reserve" known scope names to ensure arguments.foo
 	 * will always look in the proper arguments scope and never in
 	 * local.arguments.foo for example
-	 * 
+	 *
 	 * @param key     The key to check for visibility
 	 * @param nearby  true, check only scopes that are nearby to the current execution context
 	 * @param shallow true, do not delegate to parent or default scope if not found
-	 * 
+	 *
 	 * @return True if the key is visible in the current context, else false
 	 */
 	public boolean isKeyVisibleScope( Key key, boolean nearby, boolean shallow ) {
@@ -878,6 +878,9 @@ public class BaseBoxContext implements IBoxContext {
 				}
 				if ( key.equals( Key.columnList ) ) {
 					return new ScopeSearchResult( null, query.getColumnList(), key );
+				}
+				if ( key.equals( Key.columnArray ) ) {
+					return new ScopeSearchResult( null, query.getColumnArray(), key );
 				}
 				if ( query.hasColumn( key ) ) {
 					// TODO: create query scope wrapper for edge cases

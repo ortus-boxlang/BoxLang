@@ -1138,12 +1138,14 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		if ( name.equals( BoxMeta.key ) ) {
 			return getBoxMeta();
 		}
-
 		if ( name.equals( Key.recordCount ) ) {
 			return size();
 		}
 		if ( name.equals( Key.columnList ) ) {
 			return getColumnList();
+		}
+		if ( name.equals( Key.columnArray ) ) {
+			return getColumnArray();
 		}
 		if ( name.equals( Key.currentRow ) ) {
 			return getRowFromContext( context ) + 1;
