@@ -36,12 +36,13 @@ public class JavaArraySerializer implements ValueWriter {
 
 	@Override
 	public void writeValue( JSONWriter context, JsonGenerator g, Object value ) throws IOException {
-		// Get the current thread's set of seen structs
+		// Get the current thread's set of seen arrays
 		IdentityHashMap<List<?>, Boolean> visited = visitedArrays.get();
 
 		if ( visited.containsKey( value ) ) {
 			g.writeString( "recursive-array-skipping" );
 		} else {
+			visited.put( value, Boolean.TRUE );
 
 			g.writeStartArray();
 			int len = Array.getLength( value );
@@ -50,7 +51,7 @@ public class JavaArraySerializer implements ValueWriter {
 				context.writeValue( element );
 			}
 			g.writeEndArray();
-			// Remove the struct from the set of seen structs
+			// Remove the array from the set of seen arrays
 			visited.remove( value );
 		}
 	}
