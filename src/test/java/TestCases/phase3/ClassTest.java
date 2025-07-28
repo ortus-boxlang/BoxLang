@@ -556,6 +556,19 @@ public class ClassTest {
 		assertThat( res ).isEqualTo( "someFuncsecond" );
 	}
 
+	@DisplayName( "It should let you override java functions" )
+	@Test
+	public void testJavaOverride() {
+		instance.executeSource(
+		    """
+		          clazz = new src.test.java.TestCases.phase3.JavaOverride();
+		    result = clazz.get( 1 );
+		           """, context );
+
+		String res = variables.getAsString( result );
+		assertThat( res ).isEqualTo( "IT IS ALWAYS THE SAME" );
+	}
+
 	@DisplayName( "It should return null" )
 	@Test
 	public void testIncludeEvaluateReturnValue() {

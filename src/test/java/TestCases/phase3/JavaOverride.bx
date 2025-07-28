@@ -1,0 +1,7 @@
+class extends="java:java.util.ArrayList" {
+
+    @overrideJava
+    public java.lang.String function get( required int numeric ){
+        return "IT IS ALWAYS THE SAME";
+    }
+}
