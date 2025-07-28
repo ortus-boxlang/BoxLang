@@ -20,7 +20,6 @@ package ortus.boxlang.runtime.util.conversion.serializers;
 import java.io.IOException;
 import java.lang.reflect.Array;
 import java.util.IdentityHashMap;
-import java.util.List;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.jr.ob.api.ValueWriter;
@@ -40,7 +39,7 @@ public class JavaArraySerializer implements ValueWriter {
 		IdentityHashMap<Object, Boolean> visited = visitedArrays.get();
 
 		if ( visited.containsKey( value ) ) {
-			g.writeString( "recursive-array-skipping" );
+			g.writeString( "recursive-array-skipping" ); 
 		} else {
 			visited.put( value, Boolean.TRUE );
 
