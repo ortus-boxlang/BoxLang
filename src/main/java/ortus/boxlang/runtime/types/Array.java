@@ -237,19 +237,37 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 	}
 
 	/**
-	 * Create a new Array from a list of values.
+	 * Create a new Array from a List or array of values.
 	 *
-	 * @param arr List of values to copy into a new Array
+	 * @param arr List or array of values to copy into a new Array
 	 *
 	 * @return The Array
 	 */
-	public static Array copyOf( List<?> arr ) {
-		Array newArr = new Array();
-		// loop over list and add all elements
-		for ( Object o : arr ) {
-			newArr.add( o );
+	public static Array copyOf( Object arr ) {
+		if ( arr instanceof List<?> arrList ) {
+			Array newArr = new Array();
+			// loop over list and add all elements
+			for ( Object o : arrList ) {
+				newArr.add( o );
+			}
+			return newArr;
 		}
-		return newArr;
+		if ( arr instanceof Array arrArray ) {
+			return new Array( arrArray.toArray() );
+		}
+		if ( arr.getClass().isArray() ) {
+			// Convert any native array of any type to a List<Object>
+			int				length		= java.lang.reflect.Array.getLength( arr );
+			List<Object>	arrayList	= new ArrayList<>( length );
+			for ( int i = 0; i < length; i++ ) {
+				arrayList.add( java.lang.reflect.Array.get( arr, i ) );
+			}
+			return new Array( arrayList );
+		}
+		if ( arr instanceof Collection<?> collection ) {
+			return new Array( new ArrayList<>( collection ) );
+		}
+		throw new BoxRuntimeException( "Cannot create Array from type: " + arr.getClass().getName() );
 	}
 
 	public Object toVarArgsArray( Class<?> varArgType ) {
@@ -552,10 +570,21 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 	public String asString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append( "[\n  " );
-		sb.append( wrapped.stream()
-		    .map( value -> ( value instanceof IType t ? t.asString() : ( value == null ? "[null]" : value.toString() ) ) )
-		    .map( line -> RegexBuilder.of( line, RegexBuilder.MULTILINE_START_OF_LINE ).replaceAllAndGet( "  " ) ) // Add an indent to the start of each line
-		    .collect( java.util.stream.Collectors.joining( ",\n" ) ) );
+		sb.append(
+		    wrapped.stream()
+		        .map( value -> {
+			        if ( value == null )
+				        return "[null]";
+			        Class<?> clazz = value.getClass();
+			        if ( clazz.isArray() ) {
+				        return Array.copyOf( value );
+			        }
+			        return value;
+		        } )
+		        .map( val -> ( val instanceof IType t ? t.asString() : val.toString() ) )
+		        .map( line -> RegexBuilder.of( line, RegexBuilder.MULTILINE_START_OF_LINE ).replaceAllAndGet( "  " ) )
+		        .collect( java.util.stream.Collectors.joining( ",\n" ) )
+		);
 		sb.append( "\n]" );
 		return sb.toString();
 	}
