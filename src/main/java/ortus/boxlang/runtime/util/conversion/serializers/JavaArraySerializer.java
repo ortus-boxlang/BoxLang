@@ -58,7 +58,8 @@ public class JavaArraySerializer implements ValueWriter {
 
 	@Override
 	public Class<?> valueType() {
-		return Object[].class; // or simply Object.class if you want broader matching
+		// Return the superclass of Object[].class, which is Object.class, to match all array types
+		return Object[].class.getSuperclass();
 	}
 
 }
