@@ -60,26 +60,26 @@ public class ZipParam extends Component {
 
 	/**
 	 * Adds a param to a zip component. This component must always be a child of a Zip component
-	 * 
-	 * @argument.source The source of the Zip entry - either a file or a directory
-	 * 
-	 * @argument.recurse Whether to recurse into subdirectories when zipping
-	 * 
-	 * @argument.content The content of the Zip entry - can be binary or text content
-	 * 
-	 * @argument.filter The filter to apply to the content of the Zip entry - applies for source directories
-	 * 
-	 * @argument.prefix The prefix to use for the created zip entries
-	 * 
-	 * @argument.entryPath The path of the Zip entry - required if content is specified
-	 * 
-	 * @argument.charset The charset to use for the content of the Zip entry - used only when the content attribute is provided with text content
-	 * 
-	 * @argument.filterDelimiters The delimiters to use for the filter - not implemented in the current release
-	 * 
-	 * @argument.password The password to use for the Zip entry - not implemented in the current release
-	 * 
-	 * @argument.encryptionAlgorithm The encryption algorithm to use for the Zip entry - not implemented in the current release
+	 *
+	 * @attribute.source The source of the Zip entry - either a file or a directory
+	 *
+	 * @attribute.recurse Whether to recurse into subdirectories when zipping
+	 *
+	 * @attribute.content The content of the Zip entry - can be binary or text content
+	 *
+	 * @attribute.filter The filter to apply to the content of the Zip entry - applies for source directories
+	 *
+	 * @attribute.prefix The prefix to use for the created zip entries
+	 *
+	 * @attribute.entryPath The path of the Zip entry - required if content is specified
+	 *
+	 * @attribute.charset The charset to use for the content of the Zip entry - used only when the content attribute is provided with text content
+	 *
+	 * @attribute.filterDelimiters The delimiters to use for the filter - not implemented in the current release
+	 *
+	 * @attribute.password The password to use for the Zip entry - not implemented in the current release
+	 *
+	 * @attribute.encryptionAlgorithm The encryption algorithm to use for the Zip entry - not implemented in the current release
 	 *
 	 * @param context        The context in which the Component is being invoked
 	 * @param attributes     The attributes to the Component
