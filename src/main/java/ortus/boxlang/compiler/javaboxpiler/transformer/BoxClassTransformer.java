@@ -973,9 +973,9 @@ public class BoxClassTransformer extends AbstractTransformer {
 			}
 		}
 		sb.append( "};\n" );
-		sb.append( "    Object result = RequestBoxContext.runInContext( ctx -> this.dereferenceAndInvoke( ctx, Key.of( \"" );
+		sb.append( "    Object result = BoxClassSupport.javaMethodStub( this, Key.of( \"" );
 		sb.append( func.getName() );
-		sb.append( "\" ), ___args, false ) );\n" );
+		sb.append( "\" ), ___args );\n" );
 
 		// return only if the method is not void
 		if ( !returnValue.equals( "void" ) ) {

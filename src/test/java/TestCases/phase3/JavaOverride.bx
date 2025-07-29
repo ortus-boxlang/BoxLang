@@ -1,7 +1,7 @@
-class extends="java:java.util.ArrayList" {
+class extends="java:ortus.boxlang.runtime.bifs.global.math.Rand" {
 
     @overrideJava
-    public java.lang.String function get( required int numeric ){
-        return "IT IS ALWAYS THE SAME";
+    public java.lang.Object function _invoke( ortus.boxlang.runtime.context.IBoxContext context, ortus.boxlang.runtime.scopes.ArgumentsScope arguments ) {
+        return "From BoxLang";
     }
 }

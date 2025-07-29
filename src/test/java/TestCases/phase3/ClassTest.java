@@ -562,11 +562,11 @@ public class ClassTest {
 		instance.executeSource(
 		    """
 		          clazz = new src.test.java.TestCases.phase3.JavaOverride();
-		    result = clazz.get( 1 );
+		    result = clazz._invoke();
 		           """, context );
 
 		String res = variables.getAsString( result );
-		assertThat( res ).isEqualTo( "IT IS ALWAYS THE SAME" );
+		assertThat( res ).isEqualTo( "From BoxLang" );
 	}
 
 	@DisplayName( "It should return null" )
