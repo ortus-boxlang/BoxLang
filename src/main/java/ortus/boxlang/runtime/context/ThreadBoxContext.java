@@ -199,7 +199,7 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 
 	/**
 	 * Lazy initializer for variables scope
-	 * this.variablesSScope may be null if not used.
+	 * this.variablesScope may be null if not used.
 	 */
 	public IScope getVariablesScope() {
 		if ( this.variablesScope == null ) {
