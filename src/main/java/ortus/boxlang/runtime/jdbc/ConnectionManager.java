@@ -630,15 +630,8 @@ public class ConnectionManager {
 	 * Shutdown the ConnectionManager and release any resources.
 	 */
 	public void shutdown() {
-		this.datasources.forEach( ( key, datasource ) -> {
-			datasource.shutdown();
-		} );
 		this.datasources.clear();
-
-		if ( this.defaultDatasource != null ) {
-			this.defaultDatasource.shutdown();
-			this.defaultDatasource = null;
-		}
+		this.defaultDatasource = null;
 
 		if ( this.transaction != null ) {
 			this.transaction.end();
