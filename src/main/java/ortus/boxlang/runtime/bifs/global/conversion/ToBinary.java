@@ -67,7 +67,50 @@ public class ToBinary extends BIF {
 			string = string + "=".repeat( 4 - padding ); // Add padding
 		}
 
+		string = stripExcessBase64Padding( string );
+
 		// return java.util.Base64.getDecoder().decode( string );
 		return Base64Variants.getDefaultVariant().decode( string );
 	}
+
+	private String stripExcessBase64Padding( String base64 ) {
+		int len = base64.length();
+
+		// Fast path: length is multiple of 4 and no more than 2 trailing '='
+		if ( len % 4 == 0 ) {
+			int padCount = 0;
+			for ( int i = len - 1; i >= 0 && base64.charAt( i ) == '='; i-- ) {
+				padCount++;
+			}
+			if ( padCount <= 2 ) {
+				return base64; // Input is already valid
+			}
+		}
+
+		// Count actual trailing '='
+		int padStart = len;
+		while ( padStart > 0 && base64.charAt( padStart - 1 ) == '=' ) {
+			padStart--;
+		}
+		int		padCount	= len - padStart;
+
+		// Trim to at most 2 '='
+		int		maxPad		= Math.min( padCount, 2 );
+		String	trimmed		= base64.substring( 0, padStart + maxPad );
+
+		// Ensure length is multiple of 4 by stripping extra '=' if needed
+		int		mod			= trimmed.length() % 4;
+		if ( mod != 0 ) {
+			int	excess	= mod;
+			int	end		= trimmed.length();
+			while ( excess > 0 && trimmed.charAt( end - 1 ) == '=' ) {
+				end--;
+				excess--;
+			}
+			trimmed = trimmed.substring( 0, end );
+		}
+
+		return trimmed;
+	}
+
 }
