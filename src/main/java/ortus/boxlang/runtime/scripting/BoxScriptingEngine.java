@@ -175,7 +175,7 @@ public class BoxScriptingEngine implements ScriptEngine, Compilable, Invocable {
 	 *
 	 * @return A new Bindings object with the given map
 	 */
-	public Bindings creatBindings( Map<String, Object> m ) {
+	public Bindings createBindings( Map<String, Object> m ) {
 		return new SimpleBindings( m );
 	}
 

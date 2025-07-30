@@ -1,13 +1,7 @@
 package ortus.boxlang.runtime.scripting;
 
-import org.apache.commons.io.output.ByteArrayOutputStream;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.Array;
+import static com.google.common.truth.Truth.assertThat;
 
-import javax.script.*;
 import java.io.PrintStream;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
@@ -16,7 +10,19 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.function.Predicate;
 
-import static com.google.common.truth.Truth.assertThat;
+import javax.script.Bindings;
+import javax.script.CompiledScript;
+import javax.script.Invocable;
+import javax.script.ScriptException;
+import javax.script.SimpleBindings;
+
+import org.apache.commons.io.output.ByteArrayOutputStream;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Array;
 
 public class BoxScriptingEngineTest {
 
@@ -44,7 +50,7 @@ public class BoxScriptingEngineTest {
 	@DisplayName( "Can create bindings from a map" )
 	@Test
 	public void testBindingsFromMap() {
-		Bindings bindings = engine.creatBindings( Map.of( "name", "World" ) );
+		Bindings bindings = engine.createBindings( Map.of( "name", "World" ) );
 		assertThat( bindings ).isInstanceOf( SimpleBindings.class );
 		assertThat( bindings.size() ).isEqualTo( 1 );
 		assertThat( bindings.get( "name" ) ).isEqualTo( "World" );

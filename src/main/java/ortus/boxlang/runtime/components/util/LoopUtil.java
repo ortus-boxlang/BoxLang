@@ -57,12 +57,6 @@ import ortus.boxlang.runtime.types.util.ListUtil;
 public class LoopUtil {
 
 	/**
-	 * Safety counter to prevent infinite loops during grouped query processing.
-	 * Throws an exception if more than 1000 iterations are attempted.
-	 */
-	static int maxloop = 0;
-
-	/**
 	 * Processes a simple query loop without grouping functionality.
 	 * This method iterates through query rows sequentially, executing the provided
 	 * component body for each row within the specified range.
@@ -243,11 +237,6 @@ public class LoopUtil {
 
 		try {
 			for ( int i = iStartRow; i <= iEndRow; i++ ) {
-				maxloop++;
-				if ( maxloop > 1000 ) {
-					throw new IllegalStateException(
-					    "Looping over more than 1000 rows is not allowed, please check your query or loop logic." );
-				}
 				// This allows query references to know what row we're on and for unscoped
 				// column references to work
 				context.registerQueryLoop( theQuery, i );
