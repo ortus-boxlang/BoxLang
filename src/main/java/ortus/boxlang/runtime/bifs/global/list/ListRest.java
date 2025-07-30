@@ -41,10 +41,11 @@ public class ListRest extends BIF {
 	public ListRest() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "string", Key.list ),
-		    new Argument( false, "string", Key.delimiter, ListUtil.DEFAULT_DELIMITER ),
-		    new Argument( false, "boolean", Key.includeEmptyFields, false ),
-		    new Argument( false, "integer", Key.offset, 0 )
+				new Argument(true, "string", Key.list),
+				new Argument(false, "string", Key.delimiter, ListUtil.DEFAULT_DELIMITER),
+				new Argument(false, "boolean", Key.includeEmptyFields, false),
+				new Argument(false, "boolean", Key.multiCharacterDelimiter, false),
+				new Argument(false, "integer", Key.offset, 0)
 		};
 	}
 
@@ -58,22 +59,40 @@ public class ListRest extends BIF {
 	 *
 	 * @argument.delimiter string the list delimiter
 	 *
-	 * @argument.includeEmptyFields boolean whether to include empty fields in the returned result
+	 * @argument.includeEmptyFields boolean whether to include empty fields in the
+	 *                              returned result
 	 *
-	 * @argument.multiCharacterDelimiter boolean whether the delimiter is multi-character
+	 * @argument.multiCharacterDelimiter boolean whether the delimiter is
+	 *                                   multi-character
 	 */
-	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Integer	offset	= arguments.getAsInteger( Key.offset );
-		Array	ref		= ListUtil.asList(
-		    arguments.getAsString( Key.list ),
-		    arguments.getAsString( Key.delimiter ),
-		    arguments.getAsBoolean( Key.includeEmptyFields ),
-		    false
-		);
-		if ( ref.size() >= 1 ) {
-			ref.remove( 0 + offset );
+	public Object _invoke(IBoxContext context, ArgumentsScope arguments) {
+		String list = arguments.getAsString(Key.list);
+		String delimiter = arguments.getAsString(Key.delimiter);
+		Boolean includeEmptyFields = arguments.getAsBoolean(Key.includeEmptyFields);
+		Boolean multiCharacterDelimiter = arguments.getAsBoolean(Key.multiCharacterDelimiter);
+		Integer offset = arguments.getAsInteger(Key.offset);
+
+		Array ref = ListUtil.asList(list, delimiter, includeEmptyFields, multiCharacterDelimiter);
+		if (ref.size() >= 1) {
+			ref.remove(0 + offset);
 		}
-		return ListUtil.asString( ref, arguments.getAsString( Key.delimiter ) );
+
+		// When multiCharacterDelimiter is false and delimiter has multiple chars,
+		// we need to figure out which actual delimiter to use for reconstruction
+		String reconstructionDelimiter = delimiter;
+		if (!multiCharacterDelimiter && delimiter.length() > 1) {
+			// Find the first delimiter character that actually exists in the original
+			// string
+			for (int i = 0; i < delimiter.length(); i++) {
+				String singleDelim = String.valueOf(delimiter.charAt(i));
+				if (list.contains(singleDelim)) {
+					reconstructionDelimiter = singleDelim;
+					break;
+				}
+			}
+		}
+
+		return ListUtil.asString(ref, reconstructionDelimiter);
 	}
 
 }
