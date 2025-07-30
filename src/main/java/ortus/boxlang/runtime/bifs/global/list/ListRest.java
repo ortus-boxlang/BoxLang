@@ -31,7 +31,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
 @BoxBIF
-@BoxMember( type = BoxLangType.STRING_STRICT, name = "ListRest" )
+@BoxMember(type = BoxLangType.STRING_STRICT, name = "ListRest")
 
 public class ListRest extends BIF {
 
@@ -41,11 +41,11 @@ public class ListRest extends BIF {
 	public ListRest() {
 		super();
 		declaredArguments = new Argument[] {
-				new Argument(true, "string", Key.list),
-				new Argument(false, "string", Key.delimiter, ListUtil.DEFAULT_DELIMITER),
-				new Argument(false, "boolean", Key.includeEmptyFields, false),
-				new Argument(false, "boolean", Key.multiCharacterDelimiter, false),
-				new Argument(false, "integer", Key.offset, 0)
+		    new Argument( true, "string", Key.list ),
+		    new Argument( false, "string", Key.delimiter, ListUtil.DEFAULT_DELIMITER ),
+		    new Argument( false, "boolean", Key.includeEmptyFields, false ),
+		    new Argument( false, "boolean", Key.multiCharacterDelimiter, false ),
+		    new Argument( false, "integer", Key.offset, 0 )
 		};
 	}
 
