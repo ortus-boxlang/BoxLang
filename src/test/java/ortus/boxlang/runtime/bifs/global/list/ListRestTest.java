@@ -83,6 +83,14 @@ public class ListRestTest {
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "b|c" );
 
+		instance.executeSource(
+		    """
+		    list = "a|b|c";
+		    result = listRest( list, "?|" );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "b|c" );
+
 	}
 
 	@DisplayName( "It tests the member function for ListRest" )

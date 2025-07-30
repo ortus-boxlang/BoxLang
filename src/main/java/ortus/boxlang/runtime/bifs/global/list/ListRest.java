@@ -68,7 +68,7 @@ public class ListRest extends BIF {
 		    arguments.getAsString( Key.list ),
 		    arguments.getAsString( Key.delimiter ),
 		    arguments.getAsBoolean( Key.includeEmptyFields ),
-		    true
+		    false
 		);
 		if ( ref.size() >= 1 ) {
 			ref.remove( 0 + offset );
