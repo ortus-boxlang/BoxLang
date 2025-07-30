@@ -80,6 +80,33 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.ListUtil;
 import ortus.boxlang.runtime.util.conversion.RuntimeObjectInputStream;
 
+/**
+ * Utility class for file system operations in BoxLang.
+ * <p>
+ * Provides a comprehensive set of static methods for reading, writing, copying, moving, deleting files and directories,
+ * handling file permissions, resolving and contracting paths, working with MIME types, and performing file security checks.
+ * <p>
+ * Key features:
+ * <ul>
+ * <li>Read and write files with support for character encoding and binary/text detection.</li>
+ * <li>Create, delete, move, and copy files and directories, with options for recursion and filtering.</li>
+ * <li>Manage POSIX file permissions and convert between octal and permission sets.</li>
+ * <li>Resolve and contract file paths based on BoxLang mappings and context.</li>
+ * <li>Determine MIME types and whether files are binary or text.</li>
+ * <li>Perform case-insensitive path resolution for file systems that support it.</li>
+ * <li>Serialize and deserialize objects to and from files.</li>
+ * <li>Security checks for allowed/disallowed file extensions for operations.</li>
+ * <li>Utility methods for working with input streams, temporary directories, and resources.</li>
+ * </ul>
+ * <p>
+ * This class is designed to be final and contains only static methods.
+ * <p>
+ * Exceptions thrown by methods are wrapped in BoxLang-specific runtime or IO exceptions.
+ *
+ * @author Ortus Solutions, Corp
+ *
+ * @since 1.0.0
+ */
 public final class FileSystemUtil {
 
 	/**
@@ -96,29 +123,31 @@ public final class FileSystemUtil {
 	 * MimeType suffixes which denote files which should be treated as text - e.g.
 	 * application/json, application/xml, etc
 	 */
+	// @formatter:off
 	public static final ArrayList<String>	TEXT_MIME_SUFFIXES		= new ArrayList<String>() {
-
-																		{
-																			add( "json" );
-																			add( "xml" );
-																			add( "javascript" );
-																			add( "plain" );
-																			add( "pkcs" );
-																			add( "x-x509" );
-																			add( "x-pem" );
-																			add( "x-x509" );
-																		}
-																	};
+			{
+				add( "json" );
+				add( "xml" );
+				add( "javascript" );
+				add( "plain" );
+				add( "pkcs" );
+				add( "x-x509" );
+				add( "x-pem" );
+				add( "x-x509" );
+			}
+		};
+		// @formatter:on
 
 	/**
 	 * MimeType prefixes which denote text files - e.g. text/plain, text/x-yaml
 	 */
+	// @formatter:off
 	public static final ArrayList<String>	TEXT_MIME_PREFIXES		= new ArrayList<String>() {
-
-																		{
-																			add( "text" );
-																		}
-																	};
+		{
+			add( "text" );
+		}
+	};
+	// @formatter:on
 
 	/**
 	 * Octal representations for Posix strings to octals
@@ -150,21 +179,30 @@ public final class FileSystemUtil {
 	 */
 	public static final String				SLASH_PREFIX			= "/";
 
+	/**
+	 * The interceptor service for BoxLang
+	 */
 	private static InterceptorService		interceptorService		= BoxRuntime.getInstance().getInterceptorService();
+
+	/**
+	 * ------------------------------------------------------------------
+	 * Reading Methods
+	 * ------------------------------------------------------------------
+	 */
 
 	/**
 	 * Returns the contents of a file
 	 *
-	 * @param filePath
-	 * @param charset
-	 * @param bufferSize
-	 * @param resultsAsString
+	 * @param filePath        the path to the file. This can be root-relative or absolute.
+	 * @param charset         the charset to use for reading the file. If null, the default charset
+	 * @param bufferSize      the buffer size to use for reading the file. If null, a default buffer size is used.
+	 * @param resultsAsString whether to return the results as a string or a byte array. If true, the file is read as text.
 	 *
 	 * @return Object - Strings without a buffersize arg return the contents, with a
 	 *         buffersize arg a Buffered reader is returned, binary files return the
 	 *         byte array unless `resultsAsString` is true, in which case a string will always be returned
 	 *
-	 * @throws IOException
+	 * @throws IOException if an I/O error occurs reading from the file or a malformed URL is encountered
 	 */
 	public static Object read( String filePath, String charset, Integer bufferSize, boolean resultsAsString ) {
 		Path	path	= null;
@@ -229,15 +267,15 @@ public final class FileSystemUtil {
 	/**
 	 * Returns the contents of a file
 	 *
-	 * @param filePath
-	 * @param charset
-	 * @param bufferSize
+	 * @param filePath   the path to the file. This can be root-relative or absolute.
+	 * @param charset    the charset to use for reading the file. If null, the default charset
+	 * @param bufferSize the buffer size to use for reading the file. If null, a default buffer size is used.
 	 *
 	 * @return Object - Strings without a buffersize arg return the contents, with a
 	 *         buffersize arg a Buffered reader is returned, binary files return the
 	 *         byte array
 	 *
-	 * @throws IOException
+	 * @throws IOException if an I/O error occurs reading from the file or a malformed URL is encountered
 	 */
 	public static Object read( String filePath, String charset, Integer bufferSize ) {
 		return read( filePath, charset, bufferSize, false );
@@ -246,166 +284,26 @@ public final class FileSystemUtil {
 	/**
 	 * Returns the contents of a file with the defaults
 	 *
-	 * @param filePath
+	 * @param filePath the path to the file. This can be root-relative or absolute.
 	 */
 	public static Object read( String filePath ) {
 		return read( filePath, null, null );
 	}
 
 	/**
-	 * Creates a directory from a string path.
-	 *
-	 * @param directoryPath the path to create. This can be root-relative or
-	 *                      absolute.
-	 *
-	 * @throws IOException
+	 * ------------------------------------------------------------------
+	 * Matching Helpers
+	 * ------------------------------------------------------------------
 	 */
-	public static void createDirectory( String directoryPath ) {
-		createDirectory( directoryPath, true, null );
-	}
 
 	/**
-	 * Creates a directory from a string path.
+	 * Matches a file path against a glob pattern
 	 *
-	 * @param directoryPath the path to create. This can be root-relative or
-	 *                      absolute.
+	 * @param filter   the glob pattern to match against
+	 * @param filePath the path to match
 	 *
-	 * @throws IOException
+	 * @return true if the file path matches the pattern, false otherwise
 	 */
-	public static void createDirectory( String directoryPath, Boolean createPath, String mode ) {
-		try {
-			if ( createPath ) {
-				Files.createDirectories( Path.of( directoryPath ) );
-			} else {
-				Files.createDirectory( Path.of( directoryPath ) );
-			}
-
-			if ( mode != null ) {
-				FileSystemUtil.setPosixPermissions( directoryPath, mode );
-			}
-		} catch ( IOException e ) {
-			throw new BoxIOException( e );
-		}
-	}
-
-	/**
-	 * Deletes a file from a string path.
-	 *
-	 * @param directoryPath the path to create. This can be root-relative or
-	 *                      absolute.
-	 *
-	 * @throws IOException
-	 */
-	public static void deleteDirectory( String directoryPath, Boolean recursive ) {
-		Path targetDirectory = Path.of( directoryPath );
-
-		if ( recursive ) {
-			try ( DirectoryStream<Path> stream = Files.newDirectoryStream( targetDirectory ) ) {
-				for ( Path entry : stream ) {
-					if ( Files.isDirectory( entry ) ) {
-						deleteDirectory( entry.toString(), true );
-					} else {
-						Files.delete( entry );
-					}
-				}
-			} catch ( IOException e ) {
-				throw new BoxIOException( e );
-			}
-		}
-
-		try {
-			Files.delete( targetDirectory );
-		} catch ( DirectoryNotEmptyException e ) {
-			throw new BoxRuntimeException( "The directory " + directoryPath
-			    + " is not empty and may not be deleted without the recursive option." );
-		} catch ( IOException e ) {
-			throw new BoxIOException( e );
-		}
-	}
-
-	/**
-	 * Lists the contents of a directory
-	 *
-	 * @param path    the path to list
-	 * @param recurse whether to recurse into subdirectories
-	 * @param filter  a glob filter or a closure to filter the results as a Predicate
-	 * @param sort    a string containing the sort field and direction
-	 * @param type    the type of files to list
-	 *
-	 * @return a stream of paths
-	 */
-	@SuppressWarnings( "unchecked" )
-	public static Stream<Path> listDirectory( String path, Boolean recurse, Object filter, String sort, String type ) {
-		Path targetPath = Path.of( path );
-
-		// If path doesn't exist, return an empty stream
-		if ( !Files.exists( targetPath ) ) {
-			return Stream.empty();
-		}
-
-		// Setup variables
-		final String		theType			= type.toLowerCase();
-		String[]			sortElements	= sort.split( ( "\\s+" ) );
-		String				sortField		= sortElements[ 0 ];
-		String				sortDirection	= sortElements.length > 1 ? sortElements[ 1 ].toLowerCase() : "asc";
-		Comparator<Path>	pathSort		= null;
-		Stream<Path>		directoryStream	= null;
-
-		switch ( sortField ) {
-			case "size" :
-				pathSort = ( final Path a, final Path b ) -> {
-					try {
-						return sortDirection.equals( "desc" )
-						    ? ( int ) Long.compareUnsigned( Files.size( b ), Files.size( a ) )
-						    : ( int ) Long.compareUnsigned( Files.size( a ), Files.size( b ) );
-					} catch ( IOException e ) {
-						return Long.compareUnsigned( 0l, 0l );
-					}
-				};
-				break;
-			case "directory" :
-				pathSort = ( final Path a, final Path b ) -> sortDirection.equals( "desc" )
-				    ? b.getParent().toString().compareTo( a.getParent().toString() )
-				    : a.getParent().toString().compareTo( b.getParent().toString() );
-				break;
-			case "namenocase" :
-				pathSort = ( final Path a, final Path b ) -> sortDirection.equals( "desc" )
-				    ? b.toString().toLowerCase().compareTo( a.toString().toLowerCase() )
-				    : a.toString().toLowerCase().compareTo( b.toString().toLowerCase() );
-				break;
-			default :
-				pathSort = ( final Path a, final Path b ) -> sortDirection.equals( "desc" )
-				    ? b.toString().compareTo( a.toString() )
-				    : a.toString().compareTo( b.toString() );
-				break;
-		}
-
-		try {
-			if ( recurse ) {
-				directoryStream = Files.walk( targetPath ).parallel().filter( filterPath -> !filterPath.equals( targetPath ) );
-			} else {
-				directoryStream = Files.walk( targetPath, 1 ).parallel().filter( filterPath -> !filterPath.equals( targetPath ) );
-			}
-		} catch ( IOException e ) {
-			throw new BoxIOException( e );
-		}
-
-		// Apply the type filter
-		directoryStream = directoryStream.filter( item -> matchesType( item, theType ) );
-
-		// Is the filter a string or a closure?
-		if ( filter instanceof String castedFilter && castedFilter.length() > 1 ) {
-			directoryStream = directoryStream.filter( item -> fileMatchesPattern( castedFilter, item.getFileName() ) );
-		}
-		// Predicate filter
-		else if ( filter instanceof java.util.function.Predicate<?> ) {
-			directoryStream = directoryStream.filter( ( java.util.function.Predicate<Path> ) filter );
-		}
-
-		// Finally, sort the stream
-		return directoryStream.sorted( pathSort );
-	}
-
 	public static Boolean fileMatchesPattern( String filter, Path filePath ) {
 		ArrayList<PathMatcher> pathMatchers = ListUtil.asList( filter, "|" )
 		    .stream()
@@ -413,7 +311,6 @@ public final class FileSystemUtil {
 		    .collect( Collectors.toCollection( ArrayList::new ) );
 
 		return pathMatchers.stream().anyMatch( pathMatcher -> pathMatcher.matches( filePath ) );
-
 	}
 
 	/**
@@ -437,11 +334,17 @@ public final class FileSystemUtil {
 	}
 
 	/**
+	 * ------------------------------------------------------------------
+	 * File Operations
+	 * ------------------------------------------------------------------
+	 */
+
+	/**
 	 * Deletes a file from a string path.
 	 *
 	 * @param filePath the path to create. This can be root-relative or absolute.
 	 *
-	 * @throws IOException
+	 * @throws IOException if an I/O error occurs deleting the file or if the path is invalid
 	 */
 	public static void deleteFile( String filePath ) {
 		try {
@@ -457,7 +360,7 @@ public final class FileSystemUtil {
 	 * @param filePath The absolute path to write the file to
 	 * @param contents The contents of the file as a string
 	 *
-	 * @throws IOException
+	 * @throws IOException if an I/O error occurs writing the file
 	 */
 	public static void write( String filePath, String contents ) {
 		write( filePath, contents.getBytes( DEFAULT_CHARSET ), false );
@@ -470,7 +373,7 @@ public final class FileSystemUtil {
 	 * @param contents The contents of the file as a string
 	 * @param charset  The charset to use for the file encoding
 	 *
-	 * @throws IOException
+	 * @throws IOException if an I/O error occurs writing the file
 	 */
 	public static void write( String filePath, String contents, String charset ) {
 		write( filePath, contents.getBytes( Charset.forName( charset ) ), false );
@@ -484,9 +387,9 @@ public final class FileSystemUtil {
 	 * @param charset         The charset to use for the file encoding
 	 * @param ensureDirectory Ensure the directory exists before writing the file if true
 	 *
-	 * @throws IOException
+	 * @throws IOException if an I/O error occurs writing the file
 	 */
-	public static void write( String filePath, String contents, String charset, Boolean ensureDirectory ) {
+	public static void write( String filePath, String contents, String charset, boolean ensureDirectory ) {
 		write( filePath, contents.getBytes( Charset.forName( charset ) ), ensureDirectory );
 	}
 
@@ -498,9 +401,9 @@ public final class FileSystemUtil {
 	 * @param contents        The contents of the file as a charset encoded byte array
 	 * @param ensureDirectory Ensure the directory exists before writing the file if true
 	 *
-	 * @throws IOException
+	 * @throws IOException if an I/O error occurs writing the file
 	 */
-	public static void write( String filePath, byte[] contents, Boolean ensureDirectory ) {
+	public static void write( String filePath, byte[] contents, boolean ensureDirectory ) {
 		Path fileTarget = Path.of( filePath );
 
 		try {
@@ -583,6 +486,428 @@ public final class FileSystemUtil {
 	}
 
 	/**
+	 * Is the file path a valid file path. If the test throws an exception, it is
+	 * assumed that the file path is invalid.
+	 *
+	 * @param filePath the file path
+	 *
+	 * @return a boolean as to whether the file path is valid
+	 */
+	public static boolean isValidFilePath( Path filePath ) {
+		return Files.exists( filePath );
+	}
+
+	/**
+	 * Is the file path a valid file path
+	 *
+	 * @param filePath the file path string
+	 *
+	 * @return a boolean as to whether the file path is valid
+	 */
+	public static boolean isValidFilePath( String filePath ) {
+		try {
+			return isValidFilePath( Path.of( filePath ) );
+		} catch ( InvalidPathException e ) {
+			return false;
+		}
+	}
+
+	/**
+	 * Tests whether a file is binary
+	 *
+	 * @param filePath the file path string
+	 *
+	 * @return a boolean as to whether the file is binary
+	 *
+	 * @throws IOException
+	 */
+	public static boolean isBinaryFile( String filePath ) {
+		return isBinaryMimeType( getMimeType( filePath ) );
+	}
+
+	/**
+	 * Tests whether a given mime type is a binary mime type
+	 *
+	 * @param mimeType the mime type string to test
+	 *
+	 * @return a boolean as to whether the mime type is binary
+	 */
+	public static boolean isBinaryMimeType( String mimeType ) {
+		// if we can't determine a mimetype from a path we assume the file is text (
+		// e.g. a friendly URL )
+		if ( mimeType == null || mimeType.split( "/" ).length == 1 ) {
+			return false;
+		}
+
+		// if this is a content-type header we need to strip the charset
+		if ( mimeType.split( ";" ).length > 1 ) {
+			mimeType = mimeType.split( ";" )[ 0 ];
+		}
+
+		String[] mimeParts = mimeType.split( "/" );
+
+		return !TEXT_MIME_PREFIXES.contains( mimeParts[ 0 ] )
+		    && !TEXT_MIME_SUFFIXES.stream().anyMatch( suffix -> mimeParts[ 1 ].startsWith( StringCaster.cast( suffix ).toLowerCase() ) );
+	}
+
+	/**
+	 * Gets the MIME type for the file path/file object you have specified.
+	 *
+	 * @param filePath the file path string or File instance
+	 *
+	 * @return the MIME type string or null if not found
+	 */
+	public static String getMimeType( String filePath ) {
+		try {
+			if ( filePath.substring( 0, 4 ).equalsIgnoreCase( "http" ) ) {
+				return Files.probeContentType( Paths.get( new URI( filePath ).toURL().getFile() ).getFileName() );
+			} else {
+				return Files.probeContentType( Paths.get( filePath ).getFileName() );
+			}
+		} catch ( IOException e ) {
+			throw new BoxIOException( e );
+		} catch ( URISyntaxException e ) {
+			throw new BoxRuntimeException( "The provided URL [" + filePath + "] is not a valid. " + e.getMessage() );
+		}
+	}
+
+	/**
+	 * Tests whether a file or directory exists
+	 *
+	 * @param path Can be a relative or absolute path
+	 *
+	 * @return
+	 */
+	public static Boolean exists( String path ) {
+		try {
+			return Files.exists( Paths.get( path ).toAbsolutePath() );
+		} catch ( java.nio.file.InvalidPathException e ) {
+			return false;
+		}
+	}
+
+	/**
+	 * Returns a struct of information on a file - supports the FileInfo and
+	 * GetFileInfo BIFs
+	 *
+	 * @param filePath The filepath or File object
+	 * @param verbose  Currently returns the GetFileInfo additional information -
+	 *                 this should be either deprecated or expanded at a later date
+	 *
+	 * @return a Struct containing the info of the file or directory
+	 */
+	public static IStruct info( Object filePath, Boolean verbose ) {
+		Path path = null;
+		if ( filePath instanceof String ) {
+			path = Path.of( ( String ) filePath );
+		} else {
+			path = ( Path ) filePath;
+		}
+		IStruct infoStruct = new Struct();
+		try {
+			infoStruct.put( "name", path.getFileName().toString() );
+			infoStruct.put( "path", path.toAbsolutePath().toString() );
+			infoStruct.put( "size", Files.isDirectory( path ) ? 0l : Files.size( path ) );
+			infoStruct.put( "type", Files.isDirectory( path ) ? "dir" : "file" );
+			infoStruct.put( "lastModified",
+			    new DateTime( Files.getLastModifiedTime( path ).toInstant() ).setFormat( "MMMM, d, yyyy HH:mm:ss Z" ) );
+			if ( verbose == null || !verbose ) {
+				// fileInfo method compatibile keys
+				infoStruct.put( "attributes", "" );
+				infoStruct.put( "mode",
+				    isPosixCompliant( path ) ? StringCaster.cast( posixSetToOctal( Files.getPosixFilePermissions( path ) ) )
+				        : "" );
+				infoStruct.put( "read", Files.isReadable( path ) );
+				infoStruct.put( "write", Files.isWritable( path ) );
+				infoStruct.put( "execute", Files.isExecutable( path ) );
+				infoStruct.put( "checksum", !Files.isDirectory( path ) ? EncryptionUtil.checksum( path, "md5" ) : "" );
+			} else {
+				// getFileInfo method compatibile keys
+				infoStruct.put( "parent", path.getParent().toAbsolutePath().toString() );
+				infoStruct.put( "isHidden", Files.isHidden( path ) );
+				infoStruct.put( "canRead", Files.isReadable( path ) );
+				infoStruct.put( "canWrite", Files.isWritable( path ) );
+				infoStruct.put( "canExecute", Files.isExecutable( path ) );
+				infoStruct.put( "isArchive", IS_WINDOWS ? Files.getAttribute( path, "dos:archive" ) : false );
+				infoStruct.put( "isSystem", IS_WINDOWS ? Files.getAttribute( path, "dos:system" ) : false );
+				infoStruct.put( "isAttributesSupported", IS_WINDOWS );
+				infoStruct.put( "isModeSupported", isPosixCompliant( path ) );
+				infoStruct.put( "isCaseSensitive",
+				    !Files.exists( Path.of( path.toAbsolutePath().toString().toUpperCase() ) ) );
+			}
+			return infoStruct;
+		} catch ( IOException e ) {
+			throw new BoxIOException( e );
+		}
+	}
+
+	/**
+	 * Serializes a target Serializable object to a file destination as binary data.
+	 * If the file already exists, it will be overwritten.
+	 *
+	 * @param target   The target object to serialize
+	 * @param filePath The file path to serialize to
+	 */
+	public static void serializeToFile( Object target, Path filePath ) {
+		try ( OutputStream fileStream = Files.newOutputStream( filePath, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING ) ) {
+			try ( ObjectOutputStream objStream = new ObjectOutputStream( fileStream ) ) {
+				objStream.writeObject( target );
+			} catch ( IOException e ) {
+				throw new BoxIOException( String.format(
+				    "The target entry [%s] could not be written to the file path [%s]. The message received was: %s",
+				    target.getClass().getName(),
+				    filePath.toString(),
+				    e.getMessage()
+				),
+				    e
+				);
+			}
+		} catch ( IOException e ) {
+			throw new BoxIOException( e );
+		}
+	}
+
+	/**
+	 * Deserializes a target Serializable object from a file destination as binary data
+	 *
+	 * @param filePath The file path to deserialize from
+	 *
+	 * @return The deserialized object
+	 */
+	public static Object deserializeFromFile( Path filePath ) {
+		try ( InputStream fileStream = Files.newInputStream( filePath ) ) {
+			try ( RuntimeObjectInputStream objStream = new RuntimeObjectInputStream( fileStream ) ) {
+				return objStream.readObject();
+			} catch ( ClassNotFoundException e ) {
+				throw new BoxRuntimeException(
+				    "Cannot cast the deserialized object to a known class.",
+				    e
+				);
+			} catch ( IOException e ) {
+				throw new BoxIOException( String.format(
+				    "The file path [%s] could not be read. The message received was: %s",
+				    filePath.toString(),
+				    e.getMessage()
+				),
+				    e
+				);
+			}
+		} catch ( IOException e ) {
+			throw new BoxIOException( e );
+		}
+	}
+
+	/**
+	 * Copy a resource to a path
+	 *
+	 * @param resourcePath The path to the resource to copy
+	 * @param targetPath   The path to copy the resource to
+	 * @param overwrite    True if the file should be overwritten if it exists
+	 *
+	 * @throws BoxRuntimeException if the resource cannot be found or copied
+	 */
+	public static void copyResourceToPath( String resourcePath, Path targetPath, boolean overwrite ) {
+		// Check if the file exists, and if overwrite is true, then skip
+		if ( Files.exists( targetPath ) && !overwrite ) {
+			return;
+		}
+
+		// Check if the resource path is valid
+		if ( resourcePath == null || resourcePath.isEmpty() ) {
+			throw new BoxRuntimeException( "Resource path cannot be null or empty." );
+		}
+
+		// Open the resource as an InputStream
+		try ( InputStream inputStream = BoxRuntime.class.getResourceAsStream( resourcePath ) ) {
+			if ( inputStream == null ) {
+				throw new BoxRuntimeException( "Resource not found: " + resourcePath );
+			}
+			CopyOption[] options = overwrite
+			    ? new CopyOption[] { StandardCopyOption.REPLACE_EXISTING }
+			    : new CopyOption[ 0 ];
+			Files.copy(
+			    inputStream,
+			    targetPath,
+			    options
+			);
+		} catch ( IOException e ) {
+			throw new BoxRuntimeException( "Could not copy resource [" + resourcePath + "] to [" + targetPath + "]", e );
+		}
+	}
+
+	/**
+	 * ------------------------------------------------------------------
+	 * Directory Operations
+	 * ------------------------------------------------------------------
+	 */
+
+	/**
+	 * Creates a directory from a string path, using the default permissions and ensuring the path exists.
+	 *
+	 * @param directoryPath the path to create. This can be root-relative or absolute.
+	 *
+	 * @throws IOException if an I/O error occurs creating the directory or if the path is invalid
+	 */
+	public static void createDirectory( String directoryPath ) {
+		createDirectory( directoryPath, true, null );
+	}
+
+	/**
+	 * Creates a directory from a string path.
+	 *
+	 * @param directoryPath the path to create. This can be root-relative or absolute.
+	 * @param createPath    whether to create the full path or just the directory
+	 * @param mode          the POSIX permissions to set on the directory, or null to use default permissions
+	 *
+	 * @throws IOException if an I/O error occurs creating the directory or if the path is invalid
+	 */
+	public static void createDirectory( String directoryPath, boolean createPath, String mode ) {
+		try {
+			if ( createPath ) {
+				Files.createDirectories( Path.of( directoryPath ) );
+			} else {
+				Files.createDirectory( Path.of( directoryPath ) );
+			}
+
+			if ( mode != null ) {
+				FileSystemUtil.setPosixPermissions( directoryPath, mode );
+			}
+		} catch ( IOException e ) {
+			throw new BoxIOException( e );
+		}
+	}
+
+	/**
+	 * ------------------------------------------------------------------
+	 * Directory Deletions
+	 * ------------------------------------------------------------------
+	 */
+
+	/**
+	 * Deletes a file from a string path.
+	 *
+	 * @param directoryPath the path to create. This can be root-relative or absolute.
+	 * @param recursive     whether to delete the directory recursively, including all contents
+	 *
+	 * @throws IOException if an I/O error occurs deleting the directory or if the path is invalid
+	 */
+	public static void deleteDirectory( String directoryPath, boolean recursive ) {
+		Path targetDirectory = Path.of( directoryPath );
+
+		if ( recursive ) {
+			try ( DirectoryStream<Path> stream = Files.newDirectoryStream( targetDirectory ) ) {
+				for ( Path entry : stream ) {
+					if ( Files.isDirectory( entry ) ) {
+						deleteDirectory( entry.toString(), true );
+					} else {
+						Files.delete( entry );
+					}
+				}
+			} catch ( IOException e ) {
+				throw new BoxIOException( e );
+			}
+		}
+
+		try {
+			Files.delete( targetDirectory );
+		} catch ( DirectoryNotEmptyException e ) {
+			throw new BoxRuntimeException( "The directory " + directoryPath
+			    + " is not empty and may not be deleted without the recursive option." );
+		} catch ( IOException e ) {
+			throw new BoxIOException( e );
+		}
+	}
+
+	/**
+	 * ------------------------------------------------------------------
+	 * Directory Listing
+	 * ------------------------------------------------------------------
+	 */
+
+	/**
+	 * Lists the contents of a directory
+	 *
+	 * @param path    the path to list
+	 * @param recurse whether to recurse into subdirectories
+	 * @param filter  a glob filter or a closure to filter the results as a Predicate
+	 * @param sort    a string containing the sort field and direction
+	 * @param type    the type of files to list
+	 *
+	 * @return a stream of paths
+	 */
+	@SuppressWarnings( "unchecked" )
+	public static Stream<Path> listDirectory( String path, boolean recurse, Object filter, String sort, String type ) {
+		Path targetPath = Path.of( path );
+
+		// If path doesn't exist, return an empty stream
+		if ( !Files.exists( targetPath ) ) {
+			return Stream.empty();
+		}
+
+		// Setup variables
+		final String		theType			= type.toLowerCase();
+		String[]			sortElements	= sort.split( ( "\\s+" ) );
+		String				sortField		= sortElements[ 0 ];
+		String				sortDirection	= sortElements.length > 1 ? sortElements[ 1 ].toLowerCase() : "asc";
+		Comparator<Path>	pathSort		= null;
+		Stream<Path>		directoryStream	= null;
+
+		switch ( sortField ) {
+			case "size" :
+				pathSort = ( final Path a, final Path b ) -> {
+					try {
+						return sortDirection.equals( "desc" )
+						    ? ( int ) Long.compareUnsigned( Files.size( b ), Files.size( a ) )
+						    : ( int ) Long.compareUnsigned( Files.size( a ), Files.size( b ) );
+					} catch ( IOException e ) {
+						return Long.compareUnsigned( 0l, 0l );
+					}
+				};
+				break;
+			case "directory" :
+				pathSort = ( final Path a, final Path b ) -> sortDirection.equals( "desc" )
+				    ? b.getParent().toString().compareTo( a.getParent().toString() )
+				    : a.getParent().toString().compareTo( b.getParent().toString() );
+				break;
+			case "namenocase" :
+				pathSort = ( final Path a, final Path b ) -> sortDirection.equals( "desc" )
+				    ? b.toString().toLowerCase().compareTo( a.toString().toLowerCase() )
+				    : a.toString().toLowerCase().compareTo( b.toString().toLowerCase() );
+				break;
+			default :
+				pathSort = ( final Path a, final Path b ) -> sortDirection.equals( "desc" )
+				    ? b.toString().compareTo( a.toString() )
+				    : a.toString().compareTo( b.toString() );
+				break;
+		}
+
+		try {
+			if ( recurse ) {
+				directoryStream = Files.walk( targetPath ).parallel().filter( filterPath -> !filterPath.equals( targetPath ) );
+			} else {
+				directoryStream = Files.walk( targetPath, 1 ).parallel().filter( filterPath -> !filterPath.equals( targetPath ) );
+			}
+		} catch ( IOException e ) {
+			throw new BoxIOException( e );
+		}
+
+		// Apply the type filter
+		directoryStream = directoryStream.filter( item -> matchesType( item, theType ) );
+
+		// Is the filter a string or a closure?
+		if ( filter instanceof String castedFilter && castedFilter.length() > 1 ) {
+			directoryStream = directoryStream.filter( item -> fileMatchesPattern( castedFilter, item.getFileName() ) );
+		}
+		// Predicate filter
+		else if ( filter instanceof java.util.function.Predicate<?> ) {
+			directoryStream = directoryStream.filter( ( java.util.function.Predicate<Path> ) filter );
+		}
+
+		// Finally, sort the stream
+		return directoryStream.sorted( pathSort );
+	}
+
+	/**
 	 * Copies a file or directory from source to destination
 	 *
 	 * @param source      the source file path
@@ -594,9 +919,9 @@ public final class FileSystemUtil {
 	public static void copyDirectory(
 	    String source,
 	    String destination,
-	    Boolean recurse,
+	    boolean recurse,
 	    Object filter,
-	    Boolean createPaths ) {
+	    boolean createPaths ) {
 		Path	start	= Path.of( source );
 		Path	end		= Path.of( destination );
 		if ( createPaths && !Files.exists( end ) ) {
@@ -645,94 +970,39 @@ public final class FileSystemUtil {
 				throw new BoxIOException( e );
 			}
 		}
-
 	}
 
 	/**
-	 * Is the file path a valid file path. If the test throws an exception, it is
-	 * assumed that the file path is invalid.
+	 * Get the system temp directory
 	 *
-	 * @param filePath the file path
-	 *
-	 * @return a boolean as to whether the file path is valid
+	 * @return The system temp directory
 	 */
-	public static Boolean isValidFilePath( Path filePath ) {
-		return Files.exists( filePath );
+	public static String getTempDirectory() {
+		return System.getProperty( "java.io.tmpdir" );
 	}
 
 	/**
-	 * Is the file path a valid file path
+	 * Create a directory if it doesn't exist
 	 *
-	 * @param filePath the file path string
+	 * @param path The path(s) to the directory to create
 	 *
-	 * @return a boolean as to whether the file path is valid
+	 * @throws BoxRuntimeException if the directory cannot be created
 	 */
-	public static Boolean isValidFilePath( String filePath ) {
-		try {
-			return isValidFilePath( Path.of( filePath ) );
-		} catch ( InvalidPathException e ) {
-			return false;
-		}
-	}
-
-	/**
-	 * Tests whether a file is binary
-	 *
-	 * @param filePath the file path string
-	 *
-	 * @return a boolean as to whether the file is binary
-	 *
-	 * @throws IOException
-	 */
-	public static Boolean isBinaryFile( String filePath ) {
-		return isBinaryMimeType( getMimeType( filePath ) );
-	}
-
-	/**
-	 * Tests whether a given mime type is a binary mime type
-	 *
-	 * @param mimeType
-	 *
-	 * @return
-	 */
-	public static Boolean isBinaryMimeType( String mimeType ) {
-		// if we can't determine a mimetype from a path we assume the file is text (
-		// e.g. a friendly URL )
-		if ( mimeType == null || mimeType.split( "/" ).length == 1 ) {
-			return false;
-		}
-
-		// if this is a content-type header we need to strip the charset
-		if ( mimeType.split( ";" ).length > 1 ) {
-			mimeType = mimeType.split( ";" )[ 0 ];
-		}
-
-		String[] mimeParts = mimeType.split( "/" );
-
-		return !TEXT_MIME_PREFIXES.contains( mimeParts[ 0 ] )
-		    && !TEXT_MIME_SUFFIXES.stream().anyMatch( suffix -> mimeParts[ 1 ].startsWith( StringCaster.cast( suffix ).toLowerCase() ) );
-	}
-
-	/**
-	 * Gets the MIME type for the file path/file object you have specified.
-	 *
-	 * @param filePath
-	 *
-	 * @return
-	 */
-	public static String getMimeType( String filePath ) {
-		try {
-			if ( filePath.substring( 0, 4 ).equalsIgnoreCase( "http" ) ) {
-				return Files.probeContentType( Paths.get( new URI( filePath ).toURL().getFile() ).getFileName() );
-			} else {
-				return Files.probeContentType( Paths.get( filePath ).getFileName() );
+	public static void createDirectoryIfMissing( Path path ) {
+		if ( Files.notExists( path ) ) {
+			try {
+				Files.createDirectories( path );
+			} catch ( IOException e ) {
+				throw new BoxRuntimeException( "Could not create directory at [" + path + "]", e );
 			}
-		} catch ( IOException e ) {
-			throw new BoxIOException( e );
-		} catch ( URISyntaxException e ) {
-			throw new BoxRuntimeException( "The provided URL [" + filePath + "] is not a valid. " + e.getMessage() );
 		}
 	}
+
+	/**
+	 * ------------------------------------------------------------------
+	 * Permission Operations
+	 * ------------------------------------------------------------------
+	 */
 
 	/**
 	 * gets the posix permission of a file or directory
@@ -741,7 +1011,7 @@ public final class FileSystemUtil {
 	 *
 	 * @return the permission set
 	 *
-	 * @throws IOException
+	 * @throws IOException if an I/O error occurs getting the permissions or if the path is invalid
 	 */
 	public static Set<PosixFilePermission> getPosixPermissions( String filePath ) {
 		Path path = Path.of( filePath );
@@ -764,7 +1034,7 @@ public final class FileSystemUtil {
 	 *
 	 * @return A boolean as to whether the the file system is compliant
 	 */
-	public static Boolean isPosixCompliant( Object filePath ) {
+	public static boolean isPosixCompliant( Object filePath ) {
 		Path path = null;
 		if ( filePath instanceof String ) {
 			path = Path.of( ( String ) filePath );
@@ -811,12 +1081,11 @@ public final class FileSystemUtil {
 	/**
 	 * Utility method to parse numeric permission mode in to a usable permission set
 	 *
-	 * @param mode The numeric string representation of the mode ( e.g. 755, 644,
-	 *             etc )
+	 * @param mode The numeric string representation of the mode ( e.g. 755, 644, etc )
 	 *
 	 * @return The PosixFilePermission set
 	 */
-	private static Set<PosixFilePermission> octalToPosixPermissions( String mode ) {
+	public static Set<PosixFilePermission> octalToPosixPermissions( String mode ) {
 		final char[]	directiveSet	= mode.toCharArray();
 		final char[]	attributeSet	= { '-', '-', '-', '-', '-', '-', '-', '-', '-' };
 		for ( int i = directiveSet.length - 1; i >= 0; i-- ) {
@@ -892,74 +1161,10 @@ public final class FileSystemUtil {
 	}
 
 	/**
-	 * Tests whether a file or directory exists
-	 *
-	 * @param path Can be a relative or absolute path
-	 *
-	 * @return
+	 * ------------------------------------------------------------------
+	 * Helper Operations
+	 * ------------------------------------------------------------------
 	 */
-	public static Boolean exists( String path ) {
-		try {
-			return Files.exists( Paths.get( path ).toAbsolutePath() );
-		} catch ( java.nio.file.InvalidPathException e ) {
-			return false;
-		}
-	}
-
-	/**
-	 * Returns a struct of information on a file - supports the FileInfo and
-	 * GetFileInfo BIFs
-	 *
-	 * @param filePath The filepath or File object
-	 * @param verbose  Currently returns the GetFileInfo additional information -
-	 *                 this should be either deprecated or expanded at a later date
-	 *
-	 * @return a Struct containing the info of the file or directory
-	 */
-	public static IStruct info( Object filePath, Boolean verbose ) {
-		Path path = null;
-		if ( filePath instanceof String ) {
-			path = Path.of( ( String ) filePath );
-		} else {
-			path = ( Path ) filePath;
-		}
-		IStruct infoStruct = new Struct();
-		try {
-			infoStruct.put( "name", path.getFileName().toString() );
-			infoStruct.put( "path", path.toAbsolutePath().toString() );
-			infoStruct.put( "size", Files.isDirectory( path ) ? 0l : Files.size( path ) );
-			infoStruct.put( "type", Files.isDirectory( path ) ? "dir" : "file" );
-			infoStruct.put( "lastModified",
-			    new DateTime( Files.getLastModifiedTime( path ).toInstant() ).setFormat( "MMMM, d, yyyy HH:mm:ss Z" ) );
-			if ( verbose == null || !verbose ) {
-				// fileInfo method compatibile keys
-				infoStruct.put( "attributes", "" );
-				infoStruct.put( "mode",
-				    isPosixCompliant( path ) ? StringCaster.cast( posixSetToOctal( Files.getPosixFilePermissions( path ) ) )
-				        : "" );
-				infoStruct.put( "read", Files.isReadable( path ) );
-				infoStruct.put( "write", Files.isWritable( path ) );
-				infoStruct.put( "execute", Files.isExecutable( path ) );
-				infoStruct.put( "checksum", !Files.isDirectory( path ) ? EncryptionUtil.checksum( path, "md5" ) : "" );
-			} else {
-				// getFileInfo method compatibile keys
-				infoStruct.put( "parent", path.getParent().toAbsolutePath().toString() );
-				infoStruct.put( "isHidden", Files.isHidden( path ) );
-				infoStruct.put( "canRead", Files.isReadable( path ) );
-				infoStruct.put( "canWrite", Files.isWritable( path ) );
-				infoStruct.put( "canExecute", Files.isExecutable( path ) );
-				infoStruct.put( "isArchive", IS_WINDOWS ? Files.getAttribute( path, "dos:archive" ) : false );
-				infoStruct.put( "isSystem", IS_WINDOWS ? Files.getAttribute( path, "dos:system" ) : false );
-				infoStruct.put( "isAttributesSupported", IS_WINDOWS );
-				infoStruct.put( "isModeSupported", isPosixCompliant( path ) );
-				infoStruct.put( "isCaseSensitive",
-				    !Files.exists( Path.of( path.toAbsolutePath().toString().toUpperCase() ) ) );
-			}
-			return infoStruct;
-		} catch ( IOException e ) {
-			throw new BoxIOException( e );
-		}
-	}
 
 	/**
 	 * Take input stream, read it, and return byte array
@@ -1261,71 +1466,6 @@ public final class FileSystemUtil {
 	}
 
 	/**
-	 * Get the system temp directory
-	 *
-	 * @return The system temp directory
-	 */
-	public static String getTempDirectory() {
-		return System.getProperty( "java.io.tmpdir" );
-	}
-
-	/**
-	 * Serializes a target Serializable object to a file destination as binary data.
-	 * If the file already exists, it will be overwritten.
-	 *
-	 * @param target   The target object to serialize
-	 * @param filePath The file path to serialize to
-	 */
-	public static void serializeToFile( Object target, Path filePath ) {
-		try ( OutputStream fileStream = Files.newOutputStream( filePath, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING ) ) {
-			try ( ObjectOutputStream objStream = new ObjectOutputStream( fileStream ) ) {
-				objStream.writeObject( target );
-			} catch ( IOException e ) {
-				throw new BoxIOException( String.format(
-				    "The target entry [%s] could not be written to the file path [%s]. The message received was: %s",
-				    target.getClass().getName(),
-				    filePath.toString(),
-				    e.getMessage()
-				),
-				    e
-				);
-			}
-		} catch ( IOException e ) {
-			throw new BoxIOException( e );
-		}
-	}
-
-	/**
-	 * Deserializes a target Serializable object from a file destination as binary data
-	 *
-	 * @param filePath The file path to deserialize from
-	 *
-	 * @return The deserialized object
-	 */
-	public static Object deserializeFromFile( Path filePath ) {
-		try ( InputStream fileStream = Files.newInputStream( filePath ) ) {
-			try ( RuntimeObjectInputStream objStream = new RuntimeObjectInputStream( fileStream ) ) {
-				return objStream.readObject();
-			} catch ( ClassNotFoundException e ) {
-				throw new BoxRuntimeException(
-				    "Cannot cast the deserialized object to a known class.",
-				    e
-				);
-			} catch ( IOException e ) {
-				throw new BoxIOException( String.format(
-				    "The file path [%s] could not be read. The message received was: %s",
-				    filePath.toString(),
-				    e.getMessage()
-				),
-				    e
-				);
-			}
-		} catch ( IOException e ) {
-			throw new BoxIOException( e );
-		}
-	}
-
-	/**
 	 * Performs case insensitive path resolution. This will return the real path, which may be different in case than the incoming path.
 	 *
 	 * @param path The path to check
@@ -1385,26 +1525,6 @@ public final class FileSystemUtil {
 		return null;
 	}
 
-	private static boolean caseSensitivityCheck() {
-		try {
-			File	currentWorkingDir	= new File( System.getProperty( "user.home" ) );
-			File	case1				= new File( currentWorkingDir, "case1" );
-			File	case2				= new File( currentWorkingDir, "Case1" );
-			case1.createNewFile();
-			if ( case2.createNewFile() ) {
-				case1.delete();
-				case2.delete();
-				return true;
-			} else {
-				case1.delete();
-				return false;
-			}
-		} catch ( Throwable e ) {
-			e.printStackTrace();
-		}
-		return true;
-	}
-
 	/**
 	 * Creates a URI from a file path string
 	 *
@@ -1449,16 +1569,18 @@ public final class FileSystemUtil {
 	}
 
 	/**
-	 * File Security methods
+	 * ------------------------------------------------------------------
+	 * File Security Methods
+	 * ------------------------------------------------------------------
 	 */
 
 	/**
 	 * Determines whether a file operation is allowed or not based on the file extension.
 	 *
-	 * @param context
-	 * @param file
+	 * @param context The context in which the BIF is being invoked.
+	 * @param file    The file to check, which can be a file name or a full path.
 	 *
-	 * @return
+	 * @return true if the file operation is allowed, false otherwise.
 	 */
 	public static boolean isFileOperationAllowed( IBoxContext context, String file ) {
 		String fileExtension = FilenameUtils.getExtension( file );
@@ -1468,11 +1590,11 @@ public final class FileSystemUtil {
 	/**
 	 * Determines whether a file operation is allowed or not based on the file extension.
 	 *
-	 * @param context
-	 * @param file
+	 * @param context   The context in which the BIF is being invoked.
+	 * @param file      The file to check, which can be a file name or a full path.
 	 * @param overrides A string of extensions which override the default disallow list
 	 *
-	 * @return
+	 * @return true if the file operation is allowed, false otherwise.
 	 */
 	public static boolean isFileOperationAllowed( IBoxContext context, String file, String overrides ) {
 		String fileExtension = FilenameUtils.getExtension( file );
@@ -1482,10 +1604,10 @@ public final class FileSystemUtil {
 	/**
 	 * Determines whether a file extension is allowed or not.
 	 *
-	 * @param context
-	 * @param extension
+	 * @param context   The context in which the BIF is being invoked.
+	 * @param extension The file extension to check, which can be just the extension or a full path.
 	 *
-	 * @return
+	 * @return true if the extension is allowed, false otherwise.
 	 */
 	public static boolean isExtensionAllowed( IBoxContext context, String extension ) {
 		return isExtensionAllowed( context, extension, null );
@@ -1494,11 +1616,11 @@ public final class FileSystemUtil {
 	/**
 	 * Determines whether a file extension is allowed or not.
 	 *
-	 * @param context
-	 * @param extension
+	 * @param context   The context in which the BIF is being invoked.
+	 * @param extension The file extension to check, which can be just the extension or a full path.
 	 * @param overrides A string of extensions which override the default disallow list
 	 *
-	 * @return
+	 * @return true if the extension is allowed, false otherwise.
 	 */
 	public static boolean isExtensionAllowed( IBoxContext context, String extension, String overrides ) {
 
@@ -1533,56 +1655,34 @@ public final class FileSystemUtil {
 	}
 
 	/**
-	 * Create a directory if it doesn't exist
-	 *
-	 * @param path The path to the directory to create
+	 * ------------------------------------------------------------------
+	 * Private Helpers
+	 * ------------------------------------------------------------------
 	 */
-	public static void createDirectoryIfMissing( Path path ) {
-		if ( Files.notExists( path ) ) {
-			try {
-				Files.createDirectories( path );
-			} catch ( IOException e ) {
-				throw new BoxRuntimeException( "Could not create directory at [" + path + "]", e );
-			}
-		}
-	}
 
 	/**
-	 * Copy a resource to a path
+	 * Checks if the file system is case sensitive by creating two files with similar names and checking if they can coexist.
 	 *
-	 * @param resourcePath The path to the resource to copy
-	 * @param targetPath   The path to copy the resource to
-	 * @param overwrite    True if the file should be overwritten if it exists
-	 *
-	 * @throws BoxRuntimeException if the resource cannot be found or copied
+	 * @return true if the file system is case sensitive, false otherwise
 	 */
-	public static void copyResourceToPath( String resourcePath, Path targetPath, boolean overwrite ) {
-		// Check if the file exists, and if overwrite is true, then skip
-		if ( Files.exists( targetPath ) && !overwrite ) {
-			return;
-		}
-
-		// Check if the resource path is valid
-		if ( resourcePath == null || resourcePath.isEmpty() ) {
-			throw new BoxRuntimeException( "Resource path cannot be null or empty." );
-		}
-
-		// Open the resource as an InputStream
-		try ( InputStream inputStream = BoxRuntime.class.getResourceAsStream( resourcePath ) ) {
-			if ( inputStream == null ) {
-				throw new BoxRuntimeException( "Resource not found: " + resourcePath );
+	private static boolean caseSensitivityCheck() {
+		try {
+			File	currentWorkingDir	= new File( System.getProperty( "user.home" ) );
+			File	case1				= new File( currentWorkingDir, "case1" );
+			File	case2				= new File( currentWorkingDir, "Case1" );
+			case1.createNewFile();
+			if ( case2.createNewFile() ) {
+				case1.delete();
+				case2.delete();
+				return true;
+			} else {
+				case1.delete();
+				return false;
 			}
-			CopyOption[] options = overwrite
-			    ? new CopyOption[] { StandardCopyOption.REPLACE_EXISTING }
-			    : new CopyOption[ 0 ];
-			Files.copy(
-			    inputStream,
-			    targetPath,
-			    options
-			);
-		} catch ( IOException e ) {
-			throw new BoxRuntimeException( "Could not copy resource [" + resourcePath + "] to [" + targetPath + "]", e );
+		} catch ( Throwable e ) {
+			e.printStackTrace();
 		}
+		return true;
 	}
 
 }
