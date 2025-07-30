@@ -988,6 +988,17 @@ public final class FileSystemUtil {
 	 *
 	 * @throws BoxRuntimeException if the directory cannot be created
 	 */
+	public static void createDirectoryIfMissing( String path ) {
+		createDirectoryIfMissing( Path.of( path ) );
+	}
+
+	/**
+	 * Create a directory if it doesn't exist
+	 *
+	 * @param path The path(s) to the directory to create
+	 *
+	 * @throws BoxRuntimeException if the directory cannot be created
+	 */
 	public static void createDirectoryIfMissing( Path path ) {
 		if ( Files.notExists( path ) ) {
 			try {
