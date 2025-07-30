@@ -1,0 +1,7 @@
+class extends="java:ortus.boxlang.runtime.bifs.global.math.Rand" {
+
+    @overrideJava
+    public java.lang.Object function _invoke( ortus.boxlang.runtime.context.IBoxContext context, ortus.boxlang.runtime.scopes.ArgumentsScope arguments ) {
+        return "From BoxLang";
+    }
+}

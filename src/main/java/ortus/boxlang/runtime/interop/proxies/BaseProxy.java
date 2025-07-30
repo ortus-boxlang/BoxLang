@@ -24,6 +24,7 @@ import org.slf4j.Logger;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
@@ -182,12 +183,12 @@ public abstract class BaseProxy {
 			}
 
 		} else {
-			return target.dereferenceAndInvoke(
-			    this.context,
+			return RequestBoxContext.runInContext( this.context, ctx -> target.dereferenceAndInvoke(
+			    ctx,
 			    method,
 			    args,
 			    false
-			);
+			) );
 		}
 	}
 
@@ -202,10 +203,10 @@ public abstract class BaseProxy {
 	 */
 	protected Object invoke( Object... args ) throws InterruptedException {
 		if ( isFunctionTarget() ) {
-			return this.context.invokeFunction(
+			return RequestBoxContext.runInContext( this.context, ctx -> ctx.invokeFunction(
 			    this.target,
 			    args
-			);
+			) );
 		} else {
 			return invoke( this.defaultMethod, args );
 		}

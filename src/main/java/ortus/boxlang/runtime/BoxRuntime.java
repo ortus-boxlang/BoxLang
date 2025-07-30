@@ -1188,9 +1188,15 @@ public class BoxRuntime implements java.io.Closeable {
 		}
 		// Execute it
 		ScriptingRequestBoxContext scriptingContext = new ScriptingRequestBoxContext( getRuntimeContext() );
-		getModuleService()
-		    .getModuleRecord( moduleName )
-		    .execute( scriptingContext, args );
+		try {
+			RequestBoxContext.setCurrent( scriptingContext );
+			getModuleService()
+			    .getModuleRecord( moduleName )
+			    .execute( scriptingContext, args );
+		} finally {
+			RequestBoxContext.removeCurrent();
+			scriptingContext.shutdown();
+		}
 	}
 
 	/**
@@ -1306,6 +1312,7 @@ public class BoxRuntime implements java.io.Closeable {
 
 		IBoxContext scriptingContext;
 		scriptingContext = ensureRequestTypeContext( context, FileSystemUtil.createFileUri( templatePath ) );
+		boolean					shutdownContext	= context != scriptingContext;
 		BaseApplicationListener	listener		= scriptingContext
 		    .getParentOfType( RequestBoxContext.class )
 		    .getApplicationListener();
@@ -1374,6 +1381,9 @@ public class BoxRuntime implements java.io.Closeable {
 			scriptingContext.flushBuffer( false );
 			RequestBoxContext.removeCurrent();
 			Thread.currentThread().setContextClassLoader( oldClassLoader );
+			if ( shutdownContext ) {
+				scriptingContext.getRequestContext().shutdown();
+			}
 		}
 	}
 
@@ -1426,7 +1436,8 @@ public class BoxRuntime implements java.io.Closeable {
 	 * @return The result of the execution, if any, or null
 	 */
 	public Object executeStatement( BoxScript scriptRunnable, IBoxContext context ) {
-		IBoxContext scriptingContext = ensureRequestTypeContext( context );
+		IBoxContext	scriptingContext	= ensureRequestTypeContext( context );
+		boolean		shutdownContext		= context != scriptingContext;
 		RequestBoxContext.setCurrent( scriptingContext.getParentOfType( RequestBoxContext.class ) );
 		ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
 		try {
@@ -1443,6 +1454,9 @@ public class BoxRuntime implements java.io.Closeable {
 			scriptingContext.flushBuffer( false );
 			RequestBoxContext.removeCurrent();
 			Thread.currentThread().setContextClassLoader( oldClassLoader );
+			if ( shutdownContext ) {
+				scriptingContext.getRequestContext().shutdown();
+			}
 		}
 
 	}

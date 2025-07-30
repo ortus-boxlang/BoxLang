@@ -25,7 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.ThreadBoxContext;
+import ortus.boxlang.runtime.context.ThreadComponentBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.ThreadScope;
@@ -97,7 +97,7 @@ public class RequestThreadManager {
 	 *
 	 * @return The thread metadata
 	 */
-	public synchronized IStruct registerThread( Key name, ThreadBoxContext context ) {
+	public synchronized IStruct registerThread( Key name, ThreadComponentBoxContext context ) {
 		// reject dupe thread names for this request
 		if ( threads.containsKey( name ) ) {
 			throw new RuntimeException( "Thread name [" + name + "] already in use for this request." );
@@ -168,7 +168,7 @@ public class RequestThreadManager {
 
 		// If the thread was not complete last time we looked at it, let's update the status
 		if ( ACTION_STATES.contains( threadStatus ) ) {
-			Thread	thread		= ( ( ThreadBoxContext ) threadData.get( Key.context ) ).getThread();
+			Thread	thread		= ( ( ThreadComponentBoxContext ) threadData.get( Key.context ) ).getThread();
 			IStruct	exception	= threadMeta.getAsStruct( Key.error );
 			// Update status
 			threadStatus = switch ( thread.getState() ) {
@@ -228,7 +228,7 @@ public class RequestThreadManager {
 			return;
 		}
 		IStruct				threadMeta		= threadData.getAsStruct( Key.metadata );
-		java.lang.Thread	targetThread	= ( ( ThreadBoxContext ) threadData.get( Key.context ) ).getThread();
+		java.lang.Thread	targetThread	= ( ( ThreadComponentBoxContext ) threadData.get( Key.context ) ).getThread();
 
 		threadMeta.put( Key.interrupted, interrupted );
 		threadMeta.put( Key.error, exception );
@@ -261,9 +261,9 @@ public class RequestThreadManager {
 	 *
 	 * @return The thread context
 	 */
-	public ThreadBoxContext createThreadContext( IBoxContext context, Key name, IStruct attributes ) {
+	public ThreadComponentBoxContext createThreadContext( IBoxContext context, Key name, IStruct attributes ) {
 		// Generate a new thread context of execution
-		return new ThreadBoxContext( context, this, name, attributes );
+		return new ThreadComponentBoxContext( context, this, name, attributes );
 	}
 
 	/**
@@ -276,7 +276,7 @@ public class RequestThreadManager {
 	 *
 	 * @return The thread instance already started
 	 */
-	public Thread startThread( ThreadBoxContext context, Key name, String priority, Runnable task ) {
+	public Thread startThread( ThreadComponentBoxContext context, Key name, String priority, Runnable task ) {
 		return startThread( context, name, priority, task, false );
 	}
 
@@ -291,7 +291,7 @@ public class RequestThreadManager {
 	 *
 	 * @return The thread instance already started
 	 */
-	public Thread startThread( ThreadBoxContext context, Key name, String priority, Runnable task, boolean virtual ) {
+	public Thread startThread( ThreadComponentBoxContext context, Key name, String priority, Runnable task, boolean virtual ) {
 		// Create a new thread definition
 		java.lang.Thread thread = virtual
 		    ? Thread.ofVirtual().name( DEFAULT_THREAD_PREFIX + name.getName() ).unstarted( task )
@@ -338,8 +338,8 @@ public class RequestThreadManager {
 			throwInvalidThreadException( name );
 			return;
 		}
-		ThreadBoxContext	context			= ( ThreadBoxContext ) threadData.get( Key.context );
-		java.lang.Thread	targetThread	= context.getThread();
+		ThreadComponentBoxContext	context			= ( ThreadComponentBoxContext ) threadData.get( Key.context );
+		java.lang.Thread			targetThread	= context.getThread();
 
 		// Try to interrupt the thread first
 		targetThread.interrupt();
@@ -370,7 +370,7 @@ public class RequestThreadManager {
 	 */
 	public boolean IsThreadInterrupted( IBoxContext context ) {
 		return context
-		    .getParentOfType( ThreadBoxContext.class )
+		    .getParentOfType( ThreadComponentBoxContext.class )
 		    .getThread()
 		    .isInterrupted();
 	}
@@ -383,7 +383,7 @@ public class RequestThreadManager {
 	 * @return true if the thread is interrupted
 	 */
 	public boolean IsThreadInterrupted( Key threadName ) {
-		return ( ( ThreadBoxContext ) getThreadData( threadName ).get( Key.context ) )
+		return ( ( ThreadComponentBoxContext ) getThreadData( threadName ).get( Key.context ) )
 		    .getThread()
 		    .isInterrupted();
 	}
@@ -398,7 +398,7 @@ public class RequestThreadManager {
 	public boolean isThreadAlive( Key threadName ) {
 		IStruct threadData = this.threads.get( threadName );
 		if ( threadData != null ) {
-			return ( ( ThreadBoxContext ) threadData.get( Key.context ) )
+			return ( ( ThreadComponentBoxContext ) threadData.get( Key.context ) )
 			    .getThread()
 			    .isAlive();
 		}
@@ -458,7 +458,7 @@ public class RequestThreadManager {
 	public void joinThread( Key name, Integer timeout ) {
 		Objects.requireNonNull( name, "Thread name is required for join" );
 		try {
-			( ( ThreadBoxContext ) getThreadData( name ).get( Key.context ) )
+			( ( ThreadComponentBoxContext ) getThreadData( name ).get( Key.context ) )
 			    .getThread()
 			    .join( timeout );
 		} catch ( InterruptedException e ) {
@@ -481,9 +481,9 @@ public class RequestThreadManager {
 	 * @param name The name of the thread
 	 */
 	public void interruptThread( Key name ) {
-		IStruct				threadData		= getThreadData( name );
-		ThreadBoxContext	threadContext	= ( ThreadBoxContext ) threadData.get( Key.context );
-		IStruct				threadMetadata	= threadData.getAsStruct( Key.metadata );
+		IStruct						threadData		= getThreadData( name );
+		ThreadComponentBoxContext	threadContext	= ( ThreadComponentBoxContext ) threadData.get( Key.context );
+		IStruct						threadMetadata	= threadData.getAsStruct( Key.metadata );
 		// Interrupt the thread
 		threadContext.getThread().interrupt();
 		// Then we mark the thread as interrupted

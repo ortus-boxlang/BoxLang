@@ -902,6 +902,43 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		assertThat( firstRow.get( Key.of( "role" ) ) ).isEqualTo( "CEO" );
 	}
 
+	@DisplayName( "It uses a different connection manager for each thread" )
+	@Test
+	public void testDifferentConnectionManagerPerThread() {
+		instance.executeStatement(
+		    """
+		    bx:application
+		    	name="mysleeptest"
+		    	datasources={
+		    		"derby": {
+		    			"connectionString": "jdbc:derby:memory:testQueryExecuteAlternateUserDB;user=foo;password=bar;create=true"
+		    		}
+		    	}
+		    	datasource : "derby";
+
+		    [1,2,3,4,5].each( ()=> {
+		    	try {
+		    		queryExecute( "
+		    			CREATE FUNCTION SLEEP(MILLISECONDS INT)
+		    			RETURNS INT
+		    			PARAMETER STYLE JAVA
+		    			LANGUAGE JAVA
+		    			EXTERNAL NAME 'ortus.boxlang.runtime.bifs.global.jdbc.DerbySleep.sleep'
+		    		" );
+
+		    		transaction {
+		    			queryExecute( "VALUES SLEEP(5000)" )
+		    		}
+
+		    	} catch( e ) {
+		    		if( !(e.message contains 'already exists') ) {
+		    			rethrow;
+		    		}
+		    	}
+		    }, true );
+		    """, context );
+	}
+
 	@Disabled( "Not implemented" )
 	@DisplayName( "It only keeps the first resultSet and discards the rest like Lucee" )
 	@Test

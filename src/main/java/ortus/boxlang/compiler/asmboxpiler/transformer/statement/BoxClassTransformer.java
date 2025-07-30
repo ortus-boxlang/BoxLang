@@ -172,6 +172,9 @@ public class BoxClassTransformer {
 									    // TODO this needs to be improved substantially
 									    Type						returnType		= switch ( returnTypeString ) {
 																														    case "void" -> Type.VOID_TYPE;
+																														    case "int" -> Type.INT_TYPE;
+																														    case "float" -> Type.FLOAT_TYPE;
+																														    case "double" -> Type.DOUBLE_TYPE;
 																														    case "long" -> Type
 																														        .getType( Long.class );
 																														    default -> Type.getType( "L"
@@ -183,10 +186,10 @@ public class BoxClassTransformer {
 									    Type[]						parameterTypes	= new Type[ parameters.size() ];
 									    for ( int i = 0; i < parameters.size(); i++ ) {
 										    BoxArgumentDeclaration parameter = parameters.get( i );
-										    parameterTypes[ i ] = Type.getType( "L" + parameter.getType().replace( '.', '/' ) + ";" );
+										    parameterTypes[ i ] = findJavaType( parameter.getType() );
 
 									    }
-									    return AsmHelper.dereferenceAndInvoke( func.getName(), Type.getMethodType( returnType, parameterTypes ), type );
+									    return AsmHelper.generateJavaMethodStub( func.getName(), Type.getMethodType( returnType, parameterTypes ), type );
 								    } )
 				    .toList();
 			} else {
@@ -911,6 +914,21 @@ public class BoxClassTransformer {
 		methodVisitor.visitMaxs( 0, 0 );
 
 		methodVisitor.visitEnd();
+	}
+
+	private static Type findJavaType( String typeString ) {
+		return switch ( typeString ) {
+			case "void" -> Type.VOID_TYPE;
+			case "int" -> Type.INT_TYPE;
+			case "float" -> Type.FLOAT_TYPE;
+			case "double" -> Type.DOUBLE_TYPE;
+			case "long" -> Type
+			    .getType( Long.class );
+			default -> Type.getType( "L"
+			    + typeString.replace( '.',
+			        '/' )
+			    + ";" );
+		};
 	}
 
 }

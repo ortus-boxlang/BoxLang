@@ -26,7 +26,7 @@ import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
-import ortus.boxlang.runtime.context.ThreadBoxContext;
+import ortus.boxlang.runtime.context.ThreadComponentBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
@@ -125,9 +125,9 @@ public class Thread extends Component {
 	 * @param body       The body of the Component
 	 */
 	private void run( IBoxContext context, String name, String priority, IStruct attributes, ComponentBody body ) {
-		RequestThreadManager	threadManager	= context.getParentOfType( RequestBoxContext.class ).getThreadManager();
-		final Key				nameKey			= RequestThreadManager.ensureThreadName( name );
-		ThreadBoxContext		tContext		= threadManager.createThreadContext( context, nameKey, attributes );
+		RequestThreadManager		threadManager	= context.getParentOfType( RequestBoxContext.class ).getThreadManager();
+		final Key					nameKey			= RequestThreadManager.ensureThreadName( name );
+		ThreadComponentBoxContext	tContext		= threadManager.createThreadContext( context, nameKey, attributes );
 
 		// Startup the thread
 		threadManager.startThread(

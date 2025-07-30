@@ -44,6 +44,7 @@ import ortus.boxlang.compiler.ast.statement.BoxType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.Referencer;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator;
@@ -102,6 +103,150 @@ public class AsmHelper {
 		) );
 
 		return nodes;
+	}
+
+	/**
+	 * Generates ASM instructions to box a primitive value to its wrapper type.
+	 * If the type is already an object type, no boxing instructions are generated.
+	 * 
+	 * @param visitor       The method visitor or node to add instructions to
+	 * @param primitiveType The type to potentially box
+	 */
+	public static void boxPrimitive( MethodVisitor visitor, Type primitiveType ) {
+
+		if ( primitiveType.getSort() == Type.OBJECT
+		    || primitiveType.getSort() == Type.ARRAY ) {
+			// Already an object, no boxing needed
+			return;
+		}
+
+		String	boxedName	= null;
+		Type	boxedType	= null;
+
+		switch ( primitiveType.getSort() ) {
+			case Type.BOOLEAN :
+				boxedName = "java/lang/Boolean";
+				boxedType = Type.getType( Boolean.class );
+				break;
+			case Type.BYTE :
+				boxedName = "java/lang/Byte";
+				boxedType = Type.getType( Byte.class );
+				break;
+			case Type.CHAR :
+				boxedName = "java/lang/Character";
+				boxedType = Type.getType( Character.class );
+				break;
+			case Type.SHORT :
+				boxedName = "java/lang/Short";
+				boxedType = Type.getType( Short.class );
+				break;
+			case Type.INT :
+				boxedName = "java/lang/Integer";
+				boxedType = Type.getType( Integer.class );
+				break;
+			case Type.LONG :
+				boxedName = "java/lang/Long";
+				boxedType = Type.getType( Long.class );
+				break;
+			case Type.FLOAT :
+				boxedName = "java/lang/Float";
+				boxedType = Type.getType( Float.class );
+				break;
+			case Type.DOUBLE :
+				boxedName = "java/lang/Double";
+				boxedType = Type.getType( Double.class );
+				break;
+		}
+
+		visitor.visitMethodInsn( Opcodes.INVOKESTATIC,
+		    boxedName,
+		    "valueOf",
+		    Type.getMethodDescriptor( boxedType, primitiveType ),
+		    false );
+	}
+
+	/**
+	 * Generates ASM instructions to unbox a wrapper type to its primitive value.
+	 * 
+	 * @param visitor             The method visitor to add instructions to
+	 * @param wrapperType         The wrapper type to unbox
+	 * @param targetPrimitiveType The target primitive type
+	 */
+	public static void unboxPrimitive( MethodVisitor visitor, Type wrapperType, Type targetPrimitiveType ) {
+		if ( targetPrimitiveType.getSort() == Type.OBJECT || targetPrimitiveType.getSort() == Type.ARRAY ) {
+			// Target is already an object, just cast if needed
+			if ( !wrapperType.equals( targetPrimitiveType ) ) {
+				visitor.visitTypeInsn( Opcodes.CHECKCAST, targetPrimitiveType.getInternalName() );
+			}
+			return;
+		}
+
+		switch ( targetPrimitiveType.getSort() ) {
+			case Type.BOOLEAN :
+				visitor.visitTypeInsn( Opcodes.CHECKCAST, Type.getInternalName( Boolean.class ) );
+				visitor.visitMethodInsn( Opcodes.INVOKEVIRTUAL,
+				    Type.getInternalName( Boolean.class ),
+				    "booleanValue",
+				    Type.getMethodDescriptor( Type.BOOLEAN_TYPE ),
+				    false );
+				break;
+			case Type.BYTE :
+				visitor.visitTypeInsn( Opcodes.CHECKCAST, Type.getInternalName( Number.class ) );
+				visitor.visitMethodInsn( Opcodes.INVOKEVIRTUAL,
+				    Type.getInternalName( Number.class ),
+				    "byteValue",
+				    Type.getMethodDescriptor( Type.BYTE_TYPE ),
+				    false );
+				break;
+			case Type.CHAR :
+				visitor.visitTypeInsn( Opcodes.CHECKCAST, Type.getInternalName( Character.class ) );
+				visitor.visitMethodInsn( Opcodes.INVOKEVIRTUAL,
+				    Type.getInternalName( Character.class ),
+				    "charValue",
+				    Type.getMethodDescriptor( Type.CHAR_TYPE ),
+				    false );
+				break;
+			case Type.SHORT :
+				visitor.visitTypeInsn( Opcodes.CHECKCAST, Type.getInternalName( Number.class ) );
+				visitor.visitMethodInsn( Opcodes.INVOKEVIRTUAL,
+				    Type.getInternalName( Number.class ),
+				    "shortValue",
+				    Type.getMethodDescriptor( Type.SHORT_TYPE ),
+				    false );
+				break;
+			case Type.INT :
+				visitor.visitTypeInsn( Opcodes.CHECKCAST, Type.getInternalName( Number.class ) );
+				visitor.visitMethodInsn( Opcodes.INVOKEVIRTUAL,
+				    Type.getInternalName( Number.class ),
+				    "intValue",
+				    Type.getMethodDescriptor( Type.INT_TYPE ),
+				    false );
+				break;
+			case Type.LONG :
+				visitor.visitTypeInsn( Opcodes.CHECKCAST, Type.getInternalName( Number.class ) );
+				visitor.visitMethodInsn( Opcodes.INVOKEVIRTUAL,
+				    Type.getInternalName( Number.class ),
+				    "longValue",
+				    Type.getMethodDescriptor( Type.LONG_TYPE ),
+				    false );
+				break;
+			case Type.FLOAT :
+				visitor.visitTypeInsn( Opcodes.CHECKCAST, Type.getInternalName( Number.class ) );
+				visitor.visitMethodInsn( Opcodes.INVOKEVIRTUAL,
+				    Type.getInternalName( Number.class ),
+				    "floatValue",
+				    Type.getMethodDescriptor( Type.FLOAT_TYPE ),
+				    false );
+				break;
+			case Type.DOUBLE :
+				visitor.visitTypeInsn( Opcodes.CHECKCAST, Type.getInternalName( Number.class ) );
+				visitor.visitMethodInsn( Opcodes.INVOKEVIRTUAL,
+				    Type.getInternalName( Number.class ),
+				    "doubleValue",
+				    Type.getMethodDescriptor( Type.DOUBLE_TYPE ),
+				    false );
+				break;
+		}
 	}
 
 	public static List<AbstractInsnNode> addLineNumberLabels( List<AbstractInsnNode> nodes, BoxNode node ) {
@@ -1202,10 +1347,12 @@ public class AsmHelper {
 		for ( int index = 0, offset = 1; index < descriptor.getArgumentCount(); index++ ) {
 			node.visitInsn( Opcodes.DUP );
 			node.visitLdcInsn( index );
-			node.visitVarInsn( descriptor.getArgumentTypes()[ index ].getOpcode( Opcodes.ILOAD ), offset );
-			// TODO: boxing of primitives
+			Type argumentType = descriptor.getArgumentTypes()[ index ];
+			node.visitVarInsn( argumentType.getOpcode( Opcodes.ILOAD ), offset );
+			// Box primitives to their wrapper types
+			boxPrimitive( node, argumentType );
 			node.visitInsn( Opcodes.AASTORE );
-			offset += descriptor.getArgumentTypes()[ index ].getSize();
+			offset += argumentType.getSize();
 		}
 
 		node.visitFieldInsn( Opcodes.GETSTATIC, Type.getInternalName( Boolean.class ), "FALSE", Type.getDescriptor( Boolean.class ) );
@@ -1219,8 +1366,70 @@ public class AsmHelper {
 		if ( descriptor.getReturnType().getSort() == Type.VOID ) {
 			node.visitInsn( Opcodes.POP );
 		} else {
-			// TODO: unboxing of primitives
-			node.visitTypeInsn( Opcodes.CHECKCAST, descriptor.getReturnType().getInternalName() );
+			// Unbox primitives from their wrapper types
+			unboxPrimitive( node, Type.getType( Object.class ), descriptor.getReturnType() );
+		}
+		node.visitInsn( descriptor.getReturnType().getOpcode( Opcodes.IRETURN ) );
+
+		node.visitMaxs( 0, 0 );
+		node.visitEnd();
+
+		return node;
+	}
+
+	public static MethodNode generateJavaMethodStub( String name, Type descriptor, Type type ) {
+		MethodNode node = new MethodNode(
+		    Opcodes.ACC_PUBLIC,
+		    name,
+		    descriptor.getDescriptor(),
+		    null,
+		    null );
+
+		node.visitCode();
+
+		// push this onto the stack
+		node.visitVarInsn( Opcodes.ALOAD, 0 );
+
+		// create key and leave it on the stack
+		node.visitLdcInsn( name );
+		node.visitMethodInsn( Opcodes.INVOKESTATIC,
+		    Type.getInternalName( Key.class ),
+		    "of",
+		    Type.getMethodDescriptor( Type.getType( Key.class ), Type.getType( String.class ) ),
+		    false );
+
+		// make an array of the arguments
+		node.visitLdcInsn( descriptor.getArgumentCount() );
+		node.visitTypeInsn( Opcodes.ANEWARRAY, Type.getInternalName( Object.class ) );
+
+		for ( int index = 0, offset = 1; index < descriptor.getArgumentCount(); index++ ) {
+			node.visitInsn( Opcodes.DUP );
+			node.visitLdcInsn( index );
+			Type argumentType = descriptor.getArgumentTypes()[ index ];
+			node.visitVarInsn( argumentType.getOpcode( Opcodes.ILOAD ), offset );
+			// Box primitives to their wrapper types
+			boxPrimitive( node, argumentType );
+			node.visitInsn( Opcodes.AASTORE );
+			offset += argumentType.getSize();
+		}
+
+		// BoxClassSupport.javaMethodStub( this, functionNameKey, args )
+		node.visitMethodInsn( Opcodes.INVOKESTATIC,
+		    Type.getInternalName( BoxClassSupport.class ),
+		    "javaMethodStub",
+		    Type.getMethodDescriptor(
+		        Type.getType( Object.class ),
+		        Type.getType( IReferenceable.class ),
+		        Type.getType( Key.class ),
+		        Type.getType( Object[].class )
+		    ),
+		    false );
+
+		if ( descriptor.getReturnType().getSort() == Type.VOID ) {
+			node.visitInsn( Opcodes.POP );
+		} else {
+			// Unbox primitives from their wrapper types
+			unboxPrimitive( node, Type.getType( Object.class ), descriptor.getReturnType() );
 		}
 		node.visitInsn( descriptor.getReturnType().getOpcode( Opcodes.IRETURN ) );
 

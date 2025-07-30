@@ -25,6 +25,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.ThreadBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.AsyncService;
@@ -84,11 +85,12 @@ public class QueryUtil {
 		IntPredicate test;
 		if ( callback.requiresStrictArguments() ) {
 			test = idx -> BooleanCaster.cast(
-			    callbackContext.invokeFunction( callback, new Object[] { query.getRowAsStruct( idx ) } )
+			    ThreadBoxContext.runInContext( callbackContext, parallel, ctx -> ctx.invokeFunction( callback, new Object[] { query.getRowAsStruct( idx ) } ) )
 			);
 		} else {
 			test = idx -> BooleanCaster.cast(
-			    callbackContext.invokeFunction( callback, new Object[] { query.getRowAsStruct( idx ), idx + 1, query } )
+			    ThreadBoxContext.runInContext( callbackContext, parallel, ctx -> ctx.invokeFunction( callback,
+			        new Object[] { query.getRowAsStruct( idx ), idx + 1, query } ) )
 			);
 		}
 
@@ -144,11 +146,11 @@ public class QueryUtil {
 
 		IntConsumer consumer;
 		if ( callback.requiresStrictArguments() ) {
-			consumer = idx -> callbackContext.invokeFunction( callback,
-			    new Object[] { query.size() > idx ? query.getRowAsStruct( idx ) : null } );
+			consumer = idx -> ThreadBoxContext.runInContext( callbackContext, parallel, ctx -> ctx.invokeFunction( callback,
+			    new Object[] { query.size() > idx ? query.getRowAsStruct( idx ) : null } ) );
 		} else {
-			consumer = idx -> callbackContext.invokeFunction( callback,
-			    new Object[] { query.size() > idx ? query.getRowAsStruct( idx ) : null, idx + 1, query } );
+			consumer = idx -> ThreadBoxContext.runInContext( callbackContext, parallel, ctx -> ctx.invokeFunction( callback,
+			    new Object[] { query.size() > idx ? query.getRowAsStruct( idx ) : null, idx + 1, query } ) );
 		}
 
 		// Create a stream of what we want, usage is determined internally by the terminators
@@ -227,15 +229,15 @@ public class QueryUtil {
 		// Otherwise we pass the item, the index, and the query itself
 		java.util.function.IntFunction<Object> mapper;
 		if ( callback.requiresStrictArguments() ) {
-			mapper = idx -> callbackContext.invokeFunction(
+			mapper = idx -> ThreadBoxContext.runInContext( callbackContext, parallel, ctx -> ctx.invokeFunction(
 			    callback,
 			    new Object[] { query.size() > idx ? query.getRowAsStruct( idx ) : null }
-			);
+			) );
 		} else {
-			mapper = idx -> callbackContext.invokeFunction(
+			mapper = idx -> ThreadBoxContext.runInContext( callbackContext, parallel, ctx -> ctx.invokeFunction(
 			    callback,
 			    new Object[] { query.size() > idx ? query.getRowAsStruct( idx ) : null, idx + 1, query }
-			);
+			) );
 		}
 
 		Stream<IStruct> queryStream = query
@@ -294,11 +296,11 @@ public class QueryUtil {
 
 		IntPredicate test;
 		if ( callback.requiresStrictArguments() ) {
-			test = idx -> BooleanCaster.cast( callbackContext.invokeFunction( callback,
-			    new Object[] { query.size() > idx ? query.getRowAsStruct( idx ) : null } ) );
+			test = idx -> BooleanCaster.cast( ThreadBoxContext.runInContext( callbackContext, parallel, ctx -> ctx.invokeFunction( callback,
+			    new Object[] { query.size() > idx ? query.getRowAsStruct( idx ) : null } ) ) );
 		} else {
-			test = idx -> BooleanCaster.cast( callbackContext.invokeFunction( callback,
-			    new Object[] { query.size() > idx ? query.getRowAsStruct( idx ) : null, idx + 1, query } ) );
+			test = idx -> BooleanCaster.cast( ThreadBoxContext.runInContext( callbackContext, parallel, ctx -> ctx.invokeFunction( callback,
+			    new Object[] { query.size() > idx ? query.getRowAsStruct( idx ) : null, idx + 1, query } ) ) );
 		}
 
 		// Create a stream of what we want, usage is determined internally by the terminators
@@ -356,11 +358,11 @@ public class QueryUtil {
 
 		IntPredicate test;
 		if ( callback.requiresStrictArguments() ) {
-			test = idx -> BooleanCaster.cast( callbackContext.invokeFunction( callback,
-			    new Object[] { query.size() > idx ? query.getRowAsStruct( idx ) : null } ) );
+			test = idx -> BooleanCaster.cast( ThreadBoxContext.runInContext( callbackContext, parallel, ctx -> ctx.invokeFunction( callback,
+			    new Object[] { query.size() > idx ? query.getRowAsStruct( idx ) : null } ) ) );
 		} else {
-			test = idx -> BooleanCaster.cast( callbackContext.invokeFunction( callback,
-			    new Object[] { query.size() > idx ? query.getRowAsStruct( idx ) : null, idx + 1, query } ) );
+			test = idx -> BooleanCaster.cast( ThreadBoxContext.runInContext( callbackContext, parallel, ctx -> ctx.invokeFunction( callback,
+			    new Object[] { query.size() > idx ? query.getRowAsStruct( idx ) : null, idx + 1, query } ) ) );
 		}
 
 		// Create a stream of what we want, usage is determined internally by the terminators

@@ -22,7 +22,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.net.URISyntaxException;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
@@ -254,11 +253,10 @@ public class JavaBoxpiler extends Boxpiler {
 																}
 															};
 
-			String							javaRT			= System.getProperty( "java.class.path" );
-			String							jarPath			= Paths.get( getClass().getProtectionDomain().getCodeSource().getLocation().toURI() ).toString();
+			String							javaCP			= System.getProperty( "java.class.path" );
 
 			List<JavaFileObject>			sourceFiles		= Collections.singletonList( new JavaSourceString( fqn, javaSource ) );
-			List<String>					options			= List.of( "-g", "-cp", jarPath, "-source", "21", "-target", "21" );
+			List<String>					options			= List.of( "-g", "-cp", javaCP, "-source", "21", "-target", "21" );
 			JavaCompiler.CompilationTask	task			= compiler.getTask( null, fileManager, diagnostics, options, null, sourceFiles );
 			boolean							compilerResult	= task.call();
 
@@ -268,7 +266,7 @@ public class JavaBoxpiler extends Boxpiler {
 				    .collect( Collectors.joining( "\n" ) );
 				throw new BoxRuntimeException( errors + "\n" + javaSource );
 			}
-		} catch ( IOException | URISyntaxException e ) {
+		} catch ( IOException e ) {
 			throw new BoxRuntimeException( "Error compiling source " + fqn, e );
 		} finally {
 			frTransService.endTransaction( trans );

@@ -33,6 +33,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.ThreadBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
@@ -132,15 +133,15 @@ public class StructUtil {
 		// or not. This is Java vs BoxLang predicate compatibility.
 		Consumer<Map.Entry<Key, Object>> consumer;
 		if ( callback.requiresStrictArguments() ) {
-			consumer = item -> callbackContext.invokeFunction(
+			consumer = item -> ThreadBoxContext.runInContext( callbackContext, parallel, ctx -> ctx.invokeFunction(
 			    callback,
 			    new Object[] { item.getKey().getName(), item.getValue() }
-			);
+			) );
 		} else {
-			consumer = item -> callbackContext.invokeFunction(
+			consumer = item -> ThreadBoxContext.runInContext( callbackContext, parallel, ctx -> ctx.invokeFunction(
 			    callback,
 			    new Object[] { item.getKey().getName(), item.getValue(), struct }
-			);
+			) );
 		}
 
 		Stream<Map.Entry<Key, Object>> entryStream = struct
@@ -203,15 +204,15 @@ public class StructUtil {
 
 		Predicate<Map.Entry<Key, Object>> test;
 		if ( callback.requiresStrictArguments() ) {
-			test = item -> BooleanCaster.cast( callbackContext.invokeFunction(
+			test = item -> BooleanCaster.cast( ThreadBoxContext.runInContext( callbackContext, parallel, ctx -> ctx.invokeFunction(
 			    callback,
 			    new Object[] { item.getKey().getName(), item.getValue() }
-			) );
+			) ) );
 		} else {
-			test = item -> BooleanCaster.cast( callbackContext.invokeFunction(
+			test = item -> BooleanCaster.cast( ThreadBoxContext.runInContext( callbackContext, parallel, ctx -> ctx.invokeFunction(
 			    callback,
 			    new Object[] { item.getKey().getName(), item.getValue(), struct }
-			) );
+			) ) );
 		}
 
 		// Create a stream of what we want, usage is determined internally by the terminators
@@ -268,15 +269,15 @@ public class StructUtil {
 
 		Predicate<Map.Entry<Key, Object>> test;
 		if ( callback.requiresStrictArguments() ) {
-			test = item -> BooleanCaster.cast( callbackContext.invokeFunction(
+			test = item -> BooleanCaster.cast( ThreadBoxContext.runInContext( callbackContext, parallel, ctx -> ctx.invokeFunction(
 			    callback,
 			    new Object[] { item.getKey().getName(), item.getValue() }
-			) );
+			) ) );
 		} else {
-			test = item -> BooleanCaster.cast( callbackContext.invokeFunction(
+			test = item -> BooleanCaster.cast( ThreadBoxContext.runInContext( callbackContext, parallel, ctx -> ctx.invokeFunction(
 			    callback,
 			    new Object[] { item.getKey().getName(), item.getValue(), struct }
-			) );
+			) ) );
 		}
 
 		// Create a stream of what we want, usage is determined internally by the terminators
@@ -334,15 +335,15 @@ public class StructUtil {
 		// or not. This is Java vs BoxLang predicate compatibility.
 		Predicate<Map.Entry<Key, Object>> test;
 		if ( callback.requiresStrictArguments() ) {
-			test = item -> BooleanCaster.cast( callbackContext.invokeFunction(
+			test = item -> BooleanCaster.cast( ThreadBoxContext.runInContext( callbackContext, parallel, ctx -> ctx.invokeFunction(
 			    callback,
 			    new Object[] { item.getKey().getName(), item.getValue() }
-			) );
+			) ) );
 		} else {
-			test = item -> BooleanCaster.cast( callbackContext.invokeFunction(
+			test = item -> BooleanCaster.cast( ThreadBoxContext.runInContext( callbackContext, parallel, ctx -> ctx.invokeFunction(
 			    callback,
 			    new Object[] { item.getKey().getName(), item.getValue(), struct }
-			) );
+			) ) );
 		}
 
 		Stream<Map.Entry<Key, Object>> entryStream = struct
@@ -408,18 +409,18 @@ public class StructUtil {
 		if ( callback.requiresStrictArguments() ) {
 			consumer = item -> result.put(
 			    item.getKey(),
-			    callbackContext.invokeFunction(
+			    ThreadBoxContext.runInContext( callbackContext, parallel, ctx -> ctx.invokeFunction(
 			        callback,
 			        new Object[] { item.getKey().getName(), item.getValue() }
-			    )
+			    ) )
 			);
 		} else {
 			consumer = item -> result.put(
 			    item.getKey(),
-			    callbackContext.invokeFunction(
+			    ThreadBoxContext.runInContext( callbackContext, parallel, ctx -> ctx.invokeFunction(
 			        callback,
 			        new Object[] { item.getKey().getName(), item.getValue(), struct }
-			    )
+			    ) )
 			);
 		}
 
