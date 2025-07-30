@@ -83,6 +83,16 @@ public class MinTest {
 		    """,
 		    context );
 		assertThat( variables.getAsNumber( result ).toString() ).isEqualTo( "123123123123123123123123" );
+
+		instance.executeSource(
+		    """
+		       a = 1
+		    b = 2
+		    c = 3
+		    result = a.min( b ).min( c )
+		       """,
+		    context );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( 1 );
 	}
 
 }
