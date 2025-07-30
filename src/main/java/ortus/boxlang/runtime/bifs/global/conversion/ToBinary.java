@@ -73,6 +73,13 @@ public class ToBinary extends BIF {
 		return Base64Variants.getDefaultVariant().decode( string );
 	}
 
+	/**
+	 * Strips excess padding from a Base64 string.
+	 * 
+	 * @param base64 The Base64 string to process.
+	 * 
+	 * @return The processed Base64 string without excess padding.
+	 */
 	private String stripExcessBase64Padding( String base64 ) {
 		int len = base64.length();
 
