@@ -169,7 +169,7 @@ public class PropertyFile {
 			continuedLine.append( trimmedContent );
 
 			// Check for line continuation - but only on non-empty trimmed lines
-			if ( !trimmedContent.isEmpty() && trimmedContent.endsWith( "\\" ) ) {
+			if ( !trimmedContent.isEmpty() && isLineContinuation( trimmedContent ) ) {
 				// Remove continuation character and continue to next line
 				continuedLine.setLength( continuedLine.length() - 1 );
 				originalLine.append( "\n" );
@@ -696,6 +696,52 @@ public class PropertyFile {
 		}
 
 		return result.toString();
+	}
+
+	/**
+	 * Determines if a line represents a continuation (ends with unescaped backslash)
+	 *
+	 * @param line The trimmed line content to check
+	 *
+	 * @return true if this line continues to the next line, false otherwise
+	 */
+	private boolean isLineContinuation( String line ) {
+		if ( !line.endsWith( "\\" ) ) {
+			return false;
+		}
+
+		// Count consecutive backslashes at the end
+		int backslashCount = 0;
+		for ( int i = line.length() - 1; i >= 0 && line.charAt( i ) == '\\'; i-- ) {
+			backslashCount++;
+		}
+
+		// If we have an even number of backslashes, they're all escaped pairs (no continuation)
+		if ( backslashCount % 2 == 0 ) {
+			return false;
+		}
+
+		// For odd number of backslashes, we need to be more careful
+		// Check if this line looks like "key=\" (property with single backslash value)
+
+		// Find the last delimiter in the line
+		Matcher	matcher				= DELIMITER_PATTERN.matcher( line );
+		int		lastDelimiterIndex	= -1;
+		while ( matcher.find() ) {
+			lastDelimiterIndex = matcher.start();
+		}
+
+		if ( lastDelimiterIndex >= 0 ) {
+			// Extract the value part after the last delimiter
+			String afterDelimiter = line.substring( lastDelimiterIndex + 1 );
+
+			// If the part after delimiter is just whitespace + single backslash, it's a value, not continuation
+			if ( afterDelimiter.trim().equals( "\\" ) ) {
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	/**
