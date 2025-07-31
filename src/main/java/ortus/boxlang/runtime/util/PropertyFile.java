@@ -105,39 +105,39 @@ public class PropertyFile {
 		}
 		this.path = path;
 
-		// Load it
-		String			fileContents	= ( ( String ) FileSystemUtil.read( this.path ) )
-		    // Normalize line endings to use the system line separator
+		// Load and normalize file contents
+		String		fileContents	= ( ( String ) FileSystemUtil.read( this.path ) )
 		    .replace( "\r\n", "\n" )
 		    .replace( "\r", "\n" );
-		String[]		fileLines		= fileContents.split( "\n", -1 );
-		int				lineNo			= 0;
-		StringBuilder	nextLine		= new StringBuilder();
-		StringBuilder	originalLine	= new StringBuilder();
+
+		String[]	fileLines		= fileContents.split( "\n", -1 );
+		int			lineNo			= 0;
+		var			continuedLine	= new StringBuilder();
+		var			originalLine	= new StringBuilder();
 
 		for ( String line : fileLines ) {
 			lineNo++;
 			originalLine.append( line );
-			nextLine.append( LTrim.apply( line ) );
+			continuedLine.append( LTrim.apply( line ) );
 
-			// Check for line continuation. Ex: foo=bar \
-			if ( nextLine.toString().endsWith( "\\" ) ) {
-				// Line continuation
-				nextLine.setLength( nextLine.length() - 1 );
+			// Check for line continuation
+			if ( continuedLine.toString().endsWith( "\\" ) ) {
+				// Remove continuation character and continue to next line
+				continuedLine.setLength( continuedLine.length() - 1 );
 				originalLine.append( "\n" );
 				continue;
 			}
 
-			// If we reach here, it means we have a complete line
-			if ( nextLine.length() > 0 ) {
-				addLine(
-				    nextLine.toString(),
-				    lineNo,
-				    originalLine.toString().replace( "\n", LINE_SEPARATOR )
-				);
-				originalLine.setLength( 0 );
-				nextLine.setLength( 0 );
-			}
+			// Process the complete line (including empty lines)
+			addLine(
+			    continuedLine.toString(),
+			    lineNo,
+			    originalLine.toString().replace( "\n", LINE_SEPARATOR )
+			);
+
+			// Reset for next line
+			originalLine.setLength( 0 );
+			continuedLine.setLength( 0 );
 		}
 
 		return this;
