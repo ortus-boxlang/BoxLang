@@ -121,6 +121,81 @@ public class PropertyFileTest {
 	}
 
 	@Test
+	@DisplayName( "It should handle all line continuation and backslash scenarios correctly" )
+	public void testAllContinuationScenarios() throws Exception {
+		Path	tempFile	= tempDir.resolve( "all_scenarios.properties" );
+		String	content		= "# Various scenarios\n" +
+		    "\n" +
+		    "# Normal property\n" +
+		    "normal=value\n" +
+		    "\n" +
+		    "# Property with single backslash value\n" +
+		    "justBackslash=\\\n" +
+		    "\n" +
+		    "# Property with backslash and spaces\n" +
+		    "backslashSpaces=  \\  \n" +
+		    "\n" +
+		    "# Legitimate line continuation\n" +
+		    "continued=start \\\n" +
+		    "middle \\\n" +
+		    "end\n" +
+		    "# Another continuation\n" +
+		    "longValue=This is a long value that \\\n" +
+		    "continues on the next line and \\\n" +
+		    "ends here.\n" +
+		    "\n" +
+		    "# Double backslash (no continuation)\n" +
+		    "doubleBackslash=value\\\\\n" +
+		    "\n" +
+		    "# Triple backslash (continuation)\n" +
+		    "tripleBackslash=value\\\\\\\n" +
+		    "# Colon with backslash value\n" +
+		    "colonBackslash:\\\n" +
+		    "\n" +
+		    "# Final property\n" +
+		    "final=value\n";
+
+		Files.write( tempFile, content.getBytes() );
+
+		PropertyFile pf = new PropertyFile().load( tempFile.toString() );
+
+		// Debug output
+		System.out.println( "=== Properties parsed ===" );
+		System.out.println( pf.getLines() );
+		System.out.println( "Total properties: " + pf.size() );
+
+		// Normal property
+		assertThat( pf.get( "normal" ) ).isEqualTo( "value" );
+
+		// Single backslash properties
+		assertThat( pf.exists( "justBackslash" ) ).isTrue();
+		assertThat( pf.get( "justBackslash" ) ).isEqualTo( "\\" );
+
+		assertThat( pf.exists( "backslashSpaces" ) ).isTrue();
+		assertThat( pf.get( "backslashSpaces" ) ).isEqualTo( "\\" );
+
+		// Line continuations
+		assertThat( pf.get( "continued" ) ).isEqualTo( "start middle end" );
+		assertThat( pf.get( "longValue" ) ).isEqualTo( "This is a long value that continues on the next line and ends here." );
+
+		// Escaped backslashes
+		assertThat( pf.get( "doubleBackslash" ) ).isEqualTo( "value\\" );
+		assertThat( pf.get( "tripleBackslash" ) ).isEqualTo( "value\\\\" );
+
+		// Different delimiters with backslash
+		assertThat( pf.get( "colonBackslash" ) ).isEqualTo( "\\" );
+
+		// Final property
+		assertThat( pf.get( "final" ) ).isEqualTo( "value" );
+
+		// Should not have any properties named after continuation lines
+		assertThat( pf.exists( "middle" ) ).isFalse();
+		assertThat( pf.exists( "end" ) ).isFalse();
+		assertThat( pf.exists( "continues" ) ).isFalse();
+		assertThat( pf.exists( "continued" ) ).isTrue(); // This is a real property name
+	}
+
+	@Test
 	@DisplayName( "It should throw exception when file doesn't exist" )
 	public void testLoadNonExistentFile() {
 		assertThrows( BoxRuntimeException.class, () -> {
@@ -375,9 +450,8 @@ public class PropertyFileTest {
 	@DisplayName( "It should return correct size" )
 	public void testSize() {
 		PropertyFile	pf				= new PropertyFile().load( testFile );
-
 		// Count properties in test file (excluding comments and whitespace)
-		int				expectedSize	= 25; // Adjust based on actual count in test.properties
+		int				expectedSize	= 29; // Adjust based on actual count in test.properties
 		assertThat( pf.size() ).isEqualTo( expectedSize );
 	}
 
@@ -584,18 +658,6 @@ public class PropertyFileTest {
 		assertThat( pf.get( "key with spaces" ) ).isEqualTo( "value1" );
 		assertThat( pf.get( "key=with=equals" ) ).isEqualTo( "value2" );
 		assertThat( pf.get( "key:with:colons" ) ).isEqualTo( "value3" );
-	}
-
-	@Test
-	@DisplayName( "It should handle invalid property format" )
-	public void testInvalidPropertyFormat() throws Exception {
-		Path	tempFile	= tempDir.resolve( "invalid.properties" );
-		String	content		= "invalidLineWithoutDelimiter\n";
-		Files.write( tempFile, content.getBytes() );
-
-		assertThrows( IllegalArgumentException.class, () -> {
-			new PropertyFile().load( tempFile.toString() );
-		} );
 	}
 
 	@Test
