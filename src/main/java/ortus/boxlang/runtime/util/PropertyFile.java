@@ -555,14 +555,19 @@ public class PropertyFile {
 				int		delimIndex	= matcher.start();
 				char	delimiter	= contents.charAt( delimIndex );
 
-				line.put( Key._name, unEscapeToken( contents.substring( 0, delimIndex ).trim() ) );
+				String	keyPart		= contents.substring( 0, delimIndex ).trim();
+				String	valuePart	= contents.substring( delimIndex + 1 );
+
+				// Handle comments at end of value - find first unescaped # or !
+				String	actualValue	= extractValueBeforeComment( valuePart );
+
+				line.put( Key._name, unEscapeToken( keyPart ) );
 				line.put( Key.delimiter, String.valueOf( delimiter ) );
-				line.put( Key.value, unEscapeToken( contents.substring( delimIndex + 1 ).trim() ) );
+				line.put( Key.value, unEscapeToken( actualValue.trim() ) );
 				line.put( Key.type, "property" );
 			}
 			// If no delimiter is found, treat the whole line as a key with empty value
 			else if ( !contents.isEmpty() ) {
-				// No delimiter, treat as key with empty value
 				line.put( Key._name, unEscapeToken( contents.trim() ) );
 				line.put( Key.delimiter, "=" );
 				line.put( Key.value, "" );
@@ -570,9 +575,39 @@ public class PropertyFile {
 			} else {
 				throw new IllegalArgumentException( "Invalid property file format, line " + lineNo );
 			}
-
 		}
 		lines.add( line );
+	}
+
+	/**
+	 * Extracts the value part of a property line before any comment marker (# or !)
+	 *
+	 * @param valuePart The value part of the property line
+	 *
+	 * @return The extracted value before any comment marker
+	 */
+	private String extractValueBeforeComment( String valuePart ) {
+		StringBuilder	result	= new StringBuilder();
+		boolean			escaped	= false;
+
+		for ( int i = 0; i < valuePart.length(); i++ ) {
+			char ch = valuePart.charAt( i );
+
+			if ( escaped ) {
+				result.append( ch );
+				escaped = false;
+			} else if ( ch == '\\' ) {
+				result.append( ch );
+				escaped = true;
+			} else if ( ch == '#' || ch == '!' ) {
+				// Found unescaped comment marker - stop processing
+				break;
+			} else {
+				result.append( ch );
+			}
+		}
+
+		return result.toString();
 	}
 
 	/**
