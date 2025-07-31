@@ -1144,7 +1144,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		if ( name.equals( Key.columnList ) ) {
 			return getColumnList();
 		}
-		if ( name.equals( Key.columnArray ) ) {
+		if ( name.equals( Key.columnArray ) || name.equals( Key.columnNames ) ) {
 			return getColumnArray();
 		}
 		if ( name.equals( Key.currentRow ) ) {

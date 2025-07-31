@@ -316,11 +316,6 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	 */
 	@Override
 	public BoxNode visit( BoxDotAccess node ) {
-		// This renames the columnNames to columnArray
-		if ( node.getAccess() instanceof BoxIdentifier id && id.getName().equalsIgnoreCase( "columnNames" ) ) {
-			id.setName( "columnArray" );
-		}
-
 		// Make sure we upper case the dot access keys like in CFML
 		upperCaseDotAceessKeys( node );
 		return super.visit( node );

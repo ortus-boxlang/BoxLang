@@ -879,7 +879,7 @@ public class BaseBoxContext implements IBoxContext {
 				if ( key.equals( Key.columnList ) ) {
 					return new ScopeSearchResult( null, query.getColumnList(), key );
 				}
-				if ( key.equals( Key.columnArray ) ) {
+				if ( key.equals( Key.columnArray ) || key.equals( Key.columnNames ) ) {
 					return new ScopeSearchResult( null, query.getColumnArray(), key );
 				}
 				if ( query.hasColumn( key ) ) {

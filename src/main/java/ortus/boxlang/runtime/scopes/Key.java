@@ -191,6 +191,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		columnList							= Key.of( "columnList" );
 	public static final Key		columnArray							= Key.of( "columnArray" );
 	public static final Key		columnName							= Key.of( "columnName" );
+	public static final Key		columnNames							= Key.of( "columnNames" );
 	public static final Key		columns								= Key.of( "columns" );
 	public static final Key		columnType							= Key.of( "columnType" );
 	public static final Key		columnTypeList						= Key.of( "columnTypeList" );
