@@ -163,10 +163,13 @@ public class PropertyFile {
 		for ( String line : fileLines ) {
 			lineNo++;
 			originalLine.append( line );
-			continuedLine.append( LTrim.apply( line ) );
 
-			// Check for line continuation
-			if ( continuedLine.toString().endsWith( "\\" ) ) {
+			// Apply LTrim to get the logical content
+			String trimmedContent = LTrim.apply( line );
+			continuedLine.append( trimmedContent );
+
+			// Check for line continuation - but only on non-empty trimmed lines
+			if ( !trimmedContent.isEmpty() && trimmedContent.endsWith( "\\" ) ) {
 				// Remove continuation character and continue to next line
 				continuedLine.setLength( continuedLine.length() - 1 );
 				originalLine.append( "\n" );
