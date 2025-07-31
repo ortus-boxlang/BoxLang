@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.util;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -32,6 +33,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.BLCollector;
+import ortus.boxlang.runtime.types.util.JSONUtil;
 
 /**
  * A fluent API for managing property files in BoxLang.
@@ -213,8 +215,7 @@ public class PropertyFile {
 			path = this.path;
 		}
 
-		FileSystemUtil.createDirectoryIfMissing( path );
-		FileSystemUtil.write( path, getLinesAsText() );
+		FileSystemUtil.write( path, getLinesAsText(), FileSystemUtil.DEFAULT_CHARSET.toString(), true );
 
 		return this;
 	}
@@ -518,7 +519,29 @@ public class PropertyFile {
 		    .collect( BLCollector.toArray() );
 	}
 
-	// Private helper methods
+	/**
+	 * To String representation of the property file as a struct
+	 */
+	public String toString() {
+		return getAsStruct().toString();
+	}
+
+	/**
+	 * JSON representation of the property file
+	 */
+	public String toJSON() {
+		try {
+			return JSONUtil.getJSONBuilder().asString( getAsStruct() );
+		} catch ( IOException e ) {
+			throw new BoxRuntimeException( "Failed to convert PropertyFile to JSON", e );
+		}
+	}
+
+	/**
+	 * ----------------------------------------------------------
+	 * Private helper methods
+	 * ----------------------------------------------------------
+	 */
 
 	/**
 	 * Adds a line from the source file to the internal structure
