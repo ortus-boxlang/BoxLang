@@ -585,6 +585,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		options								= Key.of( "options" );
 	public static final Key		ordered								= Key.of( "ordered" );
 	public static final Key		originalConfig						= Key.of( "originalConfig" );
+	public static final Key		originalLine						= Key.of( "originalLine" );
 	public static final Key		os									= Key.of( "os" );
 	public static final Key		output								= Key.of( "output" );
 	public static final Key		overwrite							= Key.of( "overwrite" );
