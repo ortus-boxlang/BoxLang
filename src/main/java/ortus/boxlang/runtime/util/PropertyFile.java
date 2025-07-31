@@ -652,11 +652,21 @@ public class PropertyFile {
 					case '\'' :
 						result.append( '\'' );
 						break;
+					case '=' :
+						result.append( '=' );
+						break;
+					case ':' :
+						result.append( ':' );
+						break;
+					case ' ' :
+						result.append( ' ' );
+						break;
 					case 'u' :
 						unicode = true;
 						break;
 					default :
-						result.append( ch );
+						// For any other escaped character, include both the backslash and the character
+						result.append( '\\' ).append( ch );
 						break;
 				}
 				escaped = false;
@@ -678,6 +688,11 @@ public class PropertyFile {
 
 		if ( unicode ) {
 			throw new IllegalArgumentException( "Incomplete unicode escape at the end of token [" + token + "]" );
+		}
+
+		if ( escaped ) {
+			// If we end with an escape character, include it literally
+			result.append( '\\' );
 		}
 
 		return result.toString();
