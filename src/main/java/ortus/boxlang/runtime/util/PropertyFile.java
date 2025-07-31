@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -41,7 +42,13 @@ public class PropertyFile {
 	 * The line separator used for this property file.
 	 * Defaults to the system line separator.
 	 */
-	private static final String	LINE_SEPARATOR	= System.lineSeparator();
+	private static final String		LINE_SEPARATOR		= System.lineSeparator();
+
+	/**
+	 * A regex pattern to match property delimiters.
+	 * Matches =, :, or whitespace followed by a non-delimiter character.
+	 */
+	private static final Pattern	DELIMITER_PATTERN	= Pattern.compile( "(?<!\\\\)(=|:|\\s(?=[^=:]))" );
 
 	/**
 	 * ------------------------------------------------------------------------
@@ -52,21 +59,27 @@ public class PropertyFile {
 	/**
 	 * The path to the property file.
 	 */
-	private String				path;
+	private String					path;
 
 	/**
 	 * The list of lines in the property file.
 	 * This includes comments, whitespace, and property lines.
 	 * Each line is represented by a PropertyLine object.
 	 */
-	private List<IStruct>		lines;
+	private List<IStruct>			lines;
 
 	/**
 	 * The maximum line width for formatting long property values.
 	 * If a property value exceeds this width, it will be broken into multiple lines.
 	 * Default is set to 150 characters.
 	 */
-	private int					maxLineWidth	= 150;
+	private int						maxLineWidth		= 150;
+
+	/**
+	 * Cache for the IStruct representation of the property file.
+	 */
+	private volatile IStruct		cachedStruct		= null;
+	private volatile boolean		structCacheDirty	= true;
 
 	/**
 	 * ------------------------------------------------------------------------
@@ -85,6 +98,34 @@ public class PropertyFile {
 
 	/**
 	 * ------------------------------------------------------------------------
+	 * Static Constructors
+	 * ------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Creates a new PropertyFile from a Map
+	 *
+	 * @param properties The properties as a Map
+	 *
+	 * @return A new PropertyFile instance
+	 */
+	public static PropertyFile fromMap( Map<String, String> properties ) {
+		return new PropertyFile().setMulti( properties );
+	}
+
+	/**
+	 * Creates a new PropertyFile from an IStruct
+	 *
+	 * @param properties The properties as an IStruct
+	 *
+	 * @return A new PropertyFile instance
+	 */
+	public static PropertyFile fromIStruct( IStruct properties ) {
+		return new PropertyFile().setMulti( properties );
+	}
+
+	/**
+	 * ------------------------------------------------------------------------
 	 * Fluent Methods
 	 * ------------------------------------------------------------------------
 	 */
@@ -99,7 +140,11 @@ public class PropertyFile {
 	 * @return This PropertyFile instance for method chaining
 	 */
 	public PropertyFile load( String path ) {
-		// Set and validate the path
+		// Path Guards
+		Objects.requireNonNull( path, "Path cannot be null" );
+		if ( path.isBlank() ) {
+			throw new BoxRuntimeException( "Path cannot be empty" );
+		}
 		if ( !FileSystemUtil.exists( path ) ) {
 			throw new BoxRuntimeException( "Property file does not exist at path: " + path );
 		}
@@ -151,7 +196,7 @@ public class PropertyFile {
 	 * @return This PropertyFile instance for method chaining
 	 */
 	public PropertyFile store( String path ) {
-		if ( path == null ) {
+		if ( path == null || path.isBlank() ) {
 			path = this.path;
 		}
 
@@ -205,6 +250,38 @@ public class PropertyFile {
 	}
 
 	/**
+	 * Adds a comment line to the property file
+	 *
+	 * @param comment The comment text (without # prefix)
+	 *
+	 * @return This PropertyFile instance for method chaining
+	 */
+	public PropertyFile addComment( String comment ) {
+		IStruct commentLine = Struct.of(
+		    Key.type, "comment",
+		    Key.value, "# " + comment,
+		    Key.lineNumber, lines.size() + 1
+		);
+		lines.add( commentLine );
+		return this;
+	}
+
+	/**
+	 * Adds a blank line to the property file
+	 *
+	 * @return This PropertyFile instance for method chaining
+	 */
+	public PropertyFile addBlankLine() {
+		IStruct blankLine = Struct.of(
+		    Key.type, "whitespace",
+		    Key.value, "",
+		    Key.lineNumber, lines.size() + 1
+		);
+		lines.add( blankLine );
+		return this;
+	}
+
+	/**
 	 * Sets a property value
 	 *
 	 * @param name  The property name
@@ -233,7 +310,7 @@ public class PropertyFile {
 			);
 			lines.add( newLine );
 		}
-
+		this.structCacheDirty = true;
 		return this;
 	}
 
@@ -244,7 +321,7 @@ public class PropertyFile {
 	 *
 	 * @return This PropertyFile instance for method chaining
 	 */
-	public PropertyFile setAll( IStruct properties ) {
+	public PropertyFile setMulti( IStruct properties ) {
 		properties.entrySet().forEach( entry -> {
 			set( entry.getKey().getName(), entry.getValue().toString() );
 		} );
@@ -258,7 +335,7 @@ public class PropertyFile {
 	 *
 	 * @return This PropertyFile instance for method chaining
 	 */
-	public PropertyFile setAll( Map<String, String> properties ) {
+	public PropertyFile setMulti( Map<String, String> properties ) {
 		properties.entrySet().forEach( entry -> {
 			set( entry.getKey(), entry.getValue() );
 		} );
@@ -277,6 +354,7 @@ public class PropertyFile {
 
 		if ( lineIndex >= 0 ) {
 			lines.remove( lineIndex );
+			this.structCacheDirty = true;
 		}
 
 		return this;
@@ -289,8 +367,9 @@ public class PropertyFile {
 	 *
 	 * @return This PropertyFile instance for method chaining
 	 */
-	public PropertyFile removeAll( Array names ) {
+	public PropertyFile removeMulti( Array names ) {
 		names.forEach( name -> remove( name.toString() ) );
+		this.structCacheDirty = true;
 		return this;
 	}
 
@@ -330,6 +409,7 @@ public class PropertyFile {
 	 */
 	public PropertyFile clearProperties() {
 		this.lines.removeIf( line -> "property".equals( line.get( Key.type ) ) );
+		this.structCacheDirty = true;
 		return this;
 	}
 
@@ -340,6 +420,8 @@ public class PropertyFile {
 	 */
 	public PropertyFile clear() {
 		this.lines.clear();
+		this.cachedStruct		= null;
+		this.structCacheDirty	= true;
 		return this;
 	}
 
@@ -350,15 +432,18 @@ public class PropertyFile {
 	 * @return An IStruct containing all properties with insertion order preserved
 	 */
 	public IStruct getAsStruct() {
-		IStruct result = new Struct( IStruct.TYPES.LINKED );
-
-		for ( IStruct line : lines ) {
-			if ( "property".equals( line.get( Key.type ) ) ) {
-				result.put( Key.of( line.get( Key._name ) ), line.get( Key.value ) );
+		if ( this.cachedStruct == null || this.structCacheDirty ) {
+			synchronized ( this ) {
+				this.cachedStruct = new Struct( IStruct.TYPES.LINKED );
+				for ( IStruct line : lines ) {
+					if ( "property".equals( line.get( Key.type ) ) ) {
+						this.cachedStruct.put( Key.of( line.get( Key._name ) ), line.get( Key.value ) );
+					}
+				}
+				this.structCacheDirty = false;
 			}
 		}
-
-		return result;
+		return this.cachedStruct;
 	}
 
 	/**
@@ -462,9 +547,7 @@ public class PropertyFile {
 			// foo = bar
 			// foo : bar
 			// foo \bar=baz -> kay name is "foo bar"
-			Pattern	delimPattern	= Pattern.compile( "(?<!\\\\)(=|:|\\s(?=[^=:]))" );
-			Matcher	matcher			= delimPattern.matcher( contents );
-
+			Matcher matcher = DELIMITER_PATTERN.matcher( contents );
 			if ( matcher.find() ) {
 				int		delimIndex	= matcher.start();
 				char	delimiter	= contents.charAt( delimIndex );
@@ -472,6 +555,14 @@ public class PropertyFile {
 				line.put( Key._name, unEscapeToken( contents.substring( 0, delimIndex ).trim() ) );
 				line.put( Key.delimiter, String.valueOf( delimiter ) );
 				line.put( Key.value, unEscapeToken( contents.substring( delimIndex + 1 ).trim() ) );
+				line.put( Key.type, "property" );
+			}
+			// If no delimiter is found, treat the whole line as a key with empty value
+			else if ( !contents.isEmpty() ) {
+				// No delimiter, treat as key with empty value
+				line.put( Key._name, unEscapeToken( contents.trim() ) );
+				line.put( Key.delimiter, "=" );
+				line.put( Key.value, "" );
 				line.put( Key.type, "property" );
 			} else {
 				throw new IllegalArgumentException( "Invalid property file format, line " + lineNo );
@@ -706,6 +797,7 @@ public class PropertyFile {
 	 * @return The zero-based index of the property line, or -1 if not found
 	 */
 	private int findLineIndex( String name ) {
+		// Linear search and update cache
 		for ( int i = 0; i < lines.size(); i++ ) {
 			IStruct line = lines.get( i );
 			if ( "property".equals( line.get( Key.type ) ) && name.equals( line.get( Key._name ) ) ) {
