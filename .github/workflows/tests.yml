@@ -28,7 +28,7 @@ jobs:
         compiler: [ "java", "asm" ]
         exclude:
           - os: windows-latest
-          compiler: java
+            compiler: java
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
