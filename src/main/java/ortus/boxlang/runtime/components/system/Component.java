@@ -101,19 +101,28 @@ public class Component extends ortus.boxlang.runtime.components.Component {
 			throw new CustomException( "Either the template or name attribute must be specified." );
 		}
 
+		// Register the custom tag in the execution state
 		executionState.put( Key.customTagPath, bTemplate.getRunnablePath().absolutePath().toString() );
+
+		// Prepare the variables
 		VariablesScope		caller		= ( VariablesScope ) context.getScopeNearby( VariablesScope.name );
 		CustomTagBoxContext	ctContext	= new CustomTagBoxContext( context, tagName );
 		VariablesScope		variables	= ( VariablesScope ) ctContext.getScopeNearby( VariablesScope.name );
+
 		variables.put( Key.attributes, actualAttributes );
 		variables.put( Key.caller, caller );
-		IStruct thisTag = new Struct();
-		thisTag.put( Key.executionMode, "start" );
-		thisTag.put( Key.hasEndTag, body != null );
-		thisTag.put( Key.generatedContent, "" );
-		variables.put( Key.thisTag, thisTag );
+
+		// Prepare the thisComponent SCOPE
+		IStruct thisComponent = Struct.of(
+		    Key.executionMode, "start",
+		    Key.hasEndTag, body != null,
+		    Key.generatedContent, ""
+		);
+		variables.put( Key.thisComponent, thisComponent );
+
+		// Place it in the execution state
 		executionState.put( Key.caller, caller );
-		executionState.put( Key.thisTag, thisTag );
+		executionState.put( Key.thisComponent, thisComponent );
 
 		try {
 			try {
@@ -135,7 +144,7 @@ public class Component extends ortus.boxlang.runtime.components.Component {
 
 			if ( body != null ) {
 
-				thisTag.put( Key.executionMode, "inactive" );
+				thisComponent.put( Key.executionMode, "inactive" );
 
 				boolean keepLooping = true;
 				while ( keepLooping ) {
@@ -150,10 +159,10 @@ public class Component extends ortus.boxlang.runtime.components.Component {
 						context.writeToBuffer( buffer.toString() );
 						return bodyResult;
 					}
-					thisTag.put( Key.generatedContent, buffer.toString() );
+					thisComponent.put( Key.generatedContent, buffer.toString() );
 					// This will contain data added via the associate component
-					thisTag.putAll( executionState.getAsStruct( Key.dataCollection ) );
-					thisTag.put( Key.executionMode, "end" );
+					thisComponent.putAll( executionState.getAsStruct( Key.dataCollection ) );
+					thisComponent.put( Key.executionMode, "end" );
 
 					try {
 						bTemplate.invoke( ctContext );
@@ -170,7 +179,7 @@ public class Component extends ortus.boxlang.runtime.components.Component {
 							throw e;
 						}
 					} finally {
-						context.writeToBuffer( thisTag.getAsString( Key.generatedContent ) );
+						context.writeToBuffer( thisComponent.getAsString( Key.generatedContent ) );
 					}
 				}
 

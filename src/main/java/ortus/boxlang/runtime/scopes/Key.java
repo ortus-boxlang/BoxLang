@@ -786,6 +786,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		text								= Key.of( "text" );
 	public static final Key		textQualifier						= Key.of( "textQualifier" );
 	public static final Key		thisTag								= Key.of( "thisTag" );
+	public static final Key		thisComponent						= Key.of( "thisComponent" );
 	public static final Key		thread								= Key.of( "thread" );
 	public static final Key		threadGroup							= Key.of( "threadGroup" );
 	public static final Key		threadName							= Key.of( "threadName" );

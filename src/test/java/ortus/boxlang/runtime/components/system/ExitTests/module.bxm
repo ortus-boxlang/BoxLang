@@ -1,4 +1,4 @@
-<bx:if thisTag.executionMode == "start">
+<bx:if thisComponent.executionMode == "start">
 	<bx:if request.exitWhen == "start" >
 		<bx:set caller.result &= "beforestart">
 		<bx:exit method="#request.exitMethod#">
@@ -6,7 +6,7 @@
 	<bx:else>
 		<bx:set caller.result &= "start">
 	</bx:if>
-<bx:elseif thisTag.executionMode == "end">
+<bx:elseif thisComponent.executionMode == "end">
 	<bx:if request.exitWhen == "end" && request.loopCount++ LT 1 >
 		<bx:set caller.result &= "beforeend">
 		<bx:exit method="#request.exitMethod#">
