@@ -683,7 +683,8 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	public static Object runInContext( IBoxContext parent, java.util.function.Function<IBoxContext, Object> runnable ) {
 		IBoxContext currentContext = RequestBoxContext.getCurrent();
 		if ( currentContext == null ) {
-			RequestBoxContext context = null;
+			RequestBoxContext	context			= null;
+			boolean				shutdownContext	= false;
 			// If the parent is or has a grandparent of a RequestBoxContext, we can use that
 			// (We don't want to create a request context which is a parent of another request context.)
 			if ( parent != null ) {
@@ -692,7 +693,8 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 
 			// If we don't have a request context, then create one
 			if ( context == null ) {
-				context = new ScriptingRequestBoxContext( parent != null ? parent : BoxRuntime.getInstance().getRuntimeContext() );
+				context			= new ScriptingRequestBoxContext( parent != null ? parent : BoxRuntime.getInstance().getRuntimeContext() );
+				shutdownContext	= true;
 			}
 
 			try {
@@ -700,7 +702,9 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 				return runnable.apply( context );
 			} finally {
 				RequestBoxContext.removeCurrent();
-				context.shutdown();
+				if ( shutdownContext ) {
+					context.shutdown();
+				}
 			}
 		} else {
 			return runnable.apply( currentContext );
