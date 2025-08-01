@@ -156,7 +156,11 @@ public class BoxScriptingEngine implements ScriptEngine, Compilable, Invocable {
 	 * @return The buffer from the BoxContext
 	 */
 	public Object eval( String script ) throws ScriptException {
-		return boxRuntime.executeStatement( script, this.boxContext );
+		try {
+			return boxRuntime.executeStatement( script, this.boxContext );
+		} finally {
+			boxContext.shutdownConnections();
+		}
 	}
 
 	/**
@@ -323,6 +327,7 @@ public class BoxScriptingEngine implements ScriptEngine, Compilable, Invocable {
 		} finally {
 			RequestBoxContext.removeCurrent();
 			Thread.currentThread().setContextClassLoader( oldClassLoader );
+			boxContext.shutdownConnections();
 		}
 	}
 
@@ -346,6 +351,7 @@ public class BoxScriptingEngine implements ScriptEngine, Compilable, Invocable {
 		} finally {
 			RequestBoxContext.removeCurrent();
 			Thread.currentThread().setContextClassLoader( oldClassLoader );
+			boxContext.shutdownConnections();
 		}
 	}
 
