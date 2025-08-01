@@ -20,52 +20,50 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.util.FileSystemUtil;
 
 @BoxBIF
-public class GetDirectoryFromPath extends BIF {
+public class PropertyFile extends BIF {
 
 	/**
 	 * Constructor
 	 */
-	public GetDirectoryFromPath() {
+	public PropertyFile() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "string", Key.path ),
+		    new Argument( false, Argument.STRING, Key.path )
 		};
 	}
 
 	/**
-	 * Retrieves the directory parent of a path
+	 * Get a fluent PropertyFile object that can be used to read or write properties to a loaded property file or a new one.
+	 * If the path is not specified, it will return a blank property file object you can use to write properties to a new file.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.path The path to extract the parent directory from
+	 * @argument.path The path to the property file to load or the path where the property file will be stored at
+	 *
+	 * @return A fluent PropertyFile object that can be used to read or write properties.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		// Note: I can't trust the Path object as it won't treat a drive root as a folder, and returns
 		// null for some parents that are valid. So we're just doing string parsing for now.
-		String path = arguments.getAsString( Key.path );
+		String									path			= arguments.getAsString( Key.path );
+		ortus.boxlang.runtime.util.PropertyFile	propertyFile	= new ortus.boxlang.runtime.util.PropertyFile();
 
-		if ( path == null ) {
-			return "/";
-		}
-
-		if ( path.endsWith( "/" ) || path.endsWith( "\\" ) ) {
-			return path;
+		// If the path is null or empty, we return a blank PropertyFile object
+		if ( path == null || path.isEmpty() ) {
+			return propertyFile;
 		}
 
-		int lastSeparator = path.lastIndexOf( "/" );
-		// find last index of
-		if ( lastSeparator == -1 ) {
-			lastSeparator = path.lastIndexOf( "\\" );
+		// Let's see if we have a valid path or a potentially valid path
+		path = FileSystemUtil.expandPath( context, path ).absolutePath().toString();
+		// If valid, we load the property file, otherwise we set the path
+		if ( FileSystemUtil.isValidFilePath( path ) ) {
+			return propertyFile.load( path );
 		}
-		// if path doesn't contain \ or /, return /
-		if ( lastSeparator == -1 ) {
-			return "/";
-		}
-		// strip last segment after last \ or / and append a final File.separator
-		return path.substring( 0, lastSeparator + 1 );
+		return propertyFile.setPath( path );
 	}
 
 }

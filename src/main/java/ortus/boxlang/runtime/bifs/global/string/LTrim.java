@@ -33,7 +33,7 @@ public class LTrim extends BIF {
 	public LTrim() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "string", Key.string ),
+		    new Argument( true, Argument.STRING, Key.string ),
 		};
 	}
 
@@ -46,8 +46,24 @@ public class LTrim extends BIF {
 	 * @argument.string The string to trim
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String	input		= arguments.getAsString( Key.string );
-		int		startIndex	= 0;
+		String input = arguments.getAsString( Key.string );
+		return apply( input );
+	}
+
+	/**
+	 * Trims leading whitespace from the input string.
+	 *
+	 * @param input The string to trim.
+	 *
+	 * @return The trimmed string.
+	 */
+	public static String apply( String input ) {
+		// If the input is null or empty, return it as is
+		if ( input == null || input.isEmpty() ) {
+			return input;
+		}
+
+		int startIndex = 0;
 
 		// Find the index of the first non-whitespace character
 		while ( startIndex < input.length() && Character.isWhitespace( input.charAt( startIndex ) ) ) {
