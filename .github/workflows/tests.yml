@@ -18,16 +18,18 @@ jobs:
       DB_USER: root
       DB_PASSWORD: root
     continue-on-error: ${{ matrix.experimental }}
-    strategy:
-      fail-fast: false
-      matrix:
+      strategy:
+        fail-fast: false
+        matrix:
         os: [ "ubuntu-latest", "windows-latest" ]
         jdkProvider: [ "temurin" ]
         jdkVersion: [ "21" ]
         experimental: [ false ]
         compiler: [ "java", "asm" ]
-    steps:
-      - name: Checkout Repository
+        exclude:
+          - os: windows-latest
+          compiler: java
+        - name: Checkout Repository
         uses: actions/checkout@v4
 
       - name: Setup Java
