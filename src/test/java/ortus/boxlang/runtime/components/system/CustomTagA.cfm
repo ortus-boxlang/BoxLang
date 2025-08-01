@@ -1,3 +1,3 @@
-<cfif thisTag.executionMode == "start">
+<cfif thisComponent.executionMode == "start">
 	CustomTagA
 </cfif>

@@ -73,7 +73,8 @@ public class GetBaseTagData extends BIF {
 		IStruct component = components.get( ancestorLevels - 1 );
 		return Struct.of(
 		    Key.caller, component.get( Key.caller ),
-		    Key.thisTag, component.get( Key.thisTag ),
+		    Key.thisTag, component.get( Key.thisComponent ),
+		    Key.thisComponent, component.get( Key.thisComponent ),
 		    Key.attributes, component.getAsStruct( Key.attributes ).get( Key.attributes )
 		);
 	}
