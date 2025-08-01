@@ -41,6 +41,7 @@ public class ListIndexExists extends BIF {
 		    new Argument( true, "integer", Key.index ),
 		    new Argument( false, "string", Key.delimiter, ListUtil.DEFAULT_DELIMITER ),
 		    new Argument( false, "boolean", Key.includeEmptyFields, false ),
+		    new Argument( false, "boolean", Key.multiCharacterDelimiter, false )
 		};
 	}
 
@@ -64,7 +65,7 @@ public class ListIndexExists extends BIF {
 		    arguments.getAsString( Key.list ),
 		    arguments.getAsString( Key.delimiter ),
 		    arguments.getAsBoolean( Key.includeEmptyFields ),
-		    false
+		    arguments.getAsBoolean( Key.multiCharacterDelimiter )
 		).size() >= index;
 	}
 }

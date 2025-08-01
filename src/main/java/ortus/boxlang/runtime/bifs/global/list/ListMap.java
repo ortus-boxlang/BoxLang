@@ -42,6 +42,7 @@ public class ListMap extends ArrayMap {
 		    new Argument( true, "function:Function", Key.callback ),
 		    new Argument( false, Argument.STRING, Key.delimiter, ListUtil.DEFAULT_DELIMITER ),
 		    new Argument( false, Argument.BOOLEAN, Key.includeEmptyFields, false ),
+		    new Argument( false, "boolean", Key.multiCharacterDelimiter, false ),
 		    new Argument( false, Argument.BOOLEAN, Key.parallel, false ),
 		    new Argument( false, Argument.INTEGER, Key.maxThreads )
 		};
@@ -83,7 +84,7 @@ public class ListMap extends ArrayMap {
 		        arguments.getAsString( Key.list ),
 		        arguments.getAsString( Key.delimiter ),
 		        arguments.getAsBoolean( Key.includeEmptyFields ),
-		        false
+		        arguments.getAsBoolean( Key.multiCharacterDelimiter )
 		    )
 		);
 		return ListUtil.asString(

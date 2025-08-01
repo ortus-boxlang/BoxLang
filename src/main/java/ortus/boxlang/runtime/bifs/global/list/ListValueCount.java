@@ -52,7 +52,8 @@ public class ListValueCount extends BIF {
 		    new Argument( true, "string", Key.list ),
 		    new Argument( true, "string", Key.value, Set.of( Validator.REQUIRED ) ),
 		    new Argument( false, "string", Key.delimiter, ListUtil.DEFAULT_DELIMITER ),
-		    new Argument( false, "boolean", Key.includeEmptyFields, false )
+		    new Argument( false, "boolean", Key.includeEmptyFields, false ),
+		    new Argument( false, "boolean", Key.multiCharacterDelimiter, false )
 		};
 	}
 
@@ -84,7 +85,7 @@ public class ListValueCount extends BIF {
 		    arguments.getAsString( Key.list ),
 		    arguments.getAsString( Key.delimiter ),
 		    arguments.getAsBoolean( Key.includeEmptyFields ),
-		    true
+		    arguments.getAsBoolean( Key.multiCharacterDelimiter )
 		).stream().filter( test ).count();
 	}
 

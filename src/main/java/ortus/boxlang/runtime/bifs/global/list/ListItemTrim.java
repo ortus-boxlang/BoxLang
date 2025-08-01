@@ -46,6 +46,7 @@ public class ListItemTrim extends BIF {
 		        ListUtil.DEFAULT_DELIMITER
 		    ),
 		    new Argument( false, "boolean", Key.includeEmptyFields, false ),
+		    new Argument( false, "boolean", Key.multiCharacterDelimiter, false )
 		};
 	}
 
@@ -71,7 +72,7 @@ public class ListItemTrim extends BIF {
 		                arguments.getAsString( Key.list ),
 		                delimiter,
 		                arguments.getAsBoolean( Key.includeEmptyFields ),
-		                false
+		                arguments.getAsBoolean( Key.multiCharacterDelimiter )
 		            )
 		            .stream()
 		            .map( s -> ( ( String ) s ).trim() )

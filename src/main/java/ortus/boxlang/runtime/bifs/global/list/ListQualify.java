@@ -47,7 +47,8 @@ public class ListQualify extends BIF {
 		    new Argument( true, "string", Key.qualifier ),
 		    new Argument( false, "string", Key.delimiter, ListUtil.DEFAULT_DELIMITER ),
 		    new Argument( false, "string", Key.elements, "all" ),
-		    new Argument( false, "boolean", Key.includeEmptyFields, false )
+		    new Argument( false, "boolean", Key.includeEmptyFields, false ),
+		    new Argument( false, "boolean", Key.multiCharacterDelimiter, false )
 		};
 	}
 
@@ -77,7 +78,7 @@ public class ListQualify extends BIF {
 		            arguments.getAsString( Key.list ),
 		            arguments.getAsString( Key.delimiter ),
 		            arguments.getAsBoolean( Key.includeEmptyFields ),
-		            true
+		            arguments.getAsBoolean( Key.multiCharacterDelimiter )
 		        ).stream().map( item -> {
 
 			        if ( elements.equals( ELEMENTS_CHAR ) ? RegexBuilder.of( StringCaster.cast( item ), RegexBuilder.ALPHA ).matches() : true ) {

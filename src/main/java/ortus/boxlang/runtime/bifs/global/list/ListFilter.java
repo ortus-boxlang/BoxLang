@@ -42,7 +42,7 @@ public class ListFilter extends BIF {
 		    new Argument( true, "function:Predicate", Key.filter ),
 		    new Argument( false, Argument.STRING, Key.delimiter, ListUtil.DEFAULT_DELIMITER ),
 		    new Argument( false, Argument.BOOLEAN, Key.includeEmptyFields, false ),
-		    new Argument( false, Argument.BOOLEAN, Key.multiCharacterDelimiter, true ),
+		    new Argument( false, Argument.BOOLEAN, Key.multiCharacterDelimiter, false ),
 		    new Argument( false, Argument.BOOLEAN, Key.parallel, false ),
 		    new Argument( false, Argument.INTEGER, Key.maxThreads )
 		};
