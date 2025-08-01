@@ -207,7 +207,7 @@ public class ConnectionManager {
 	 * In case of nested transactions, will close the inner transaction and update the reference to the parent transaction. Otherwise will close the outer (only) transaction and nullify the reference.
 	 */
 	public ConnectionManager endTransaction() {
-		if( this.transaction == null ) {
+		if ( this.transaction == null ) {
 			return this;
 		}
 		try {
