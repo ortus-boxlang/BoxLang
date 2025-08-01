@@ -5689,4 +5689,72 @@ public class CoreLangTest {
 
 	}
 
+	@Test
+	public void testUnclosedBracesCF() {
+		Throwable t = assertThrows( ParseException.class, () -> instance.executeSource(
+		    """
+		    	foo = function(required boolean b) {
+		    		return test
+
+		    """,
+		    context, BoxSourceType.CFSCRIPT ) );
+		assertThat( t.getMessage() ).contains( "Unclosed curly brace" );
+	}
+
+	@Test
+	public void testUnclosedParensCF() {
+		Throwable t = assertThrows( ParseException.class, () -> instance.executeSource(
+		    """
+		    	foo = ( 42
+
+		    """,
+		    context, BoxSourceType.CFSCRIPT ) );
+		assertThat( t.getMessage() ).contains( "Unclosed parenthesis" );
+	}
+
+	@Test
+	public void testUnclosedBracketsCF() {
+		Throwable t = assertThrows( ParseException.class, () -> instance.executeSource(
+		    """
+		    	foo = [ 1, 2, 3
+
+		    """,
+		    context, BoxSourceType.CFSCRIPT ) );
+		assertThat( t.getMessage() ).contains( "Unclosed bracket" );
+	}
+
+	@Test
+	public void testUnclosedBraces() {
+		Throwable t = assertThrows( ParseException.class, () -> instance.executeSource(
+		    """
+		    	foo = function(required boolean b) {
+		    		return test
+
+		    """,
+		    context ) );
+		assertThat( t.getMessage() ).contains( "Unclosed curly brace" );
+	}
+
+	@Test
+	public void testUnclosedParens() {
+		Throwable t = assertThrows( ParseException.class, () -> instance.executeSource(
+		    """
+		    	foo = ( 42
+
+		    """,
+		    context ) );
+		assertThat( t.getMessage() ).contains( "Unclosed parenthesis" );
+	}
+
+	@Test
+	public void testUnclosedBrackets() {
+		Throwable t = assertThrows( ParseException.class, () -> instance.executeSource(
+		    """
+		    	foo = [ 1, 2, 3
+
+		    """,
+		    context ) );
+		assertThat( t.getMessage() ).contains( "Unclosed bracket" );
+	}
+
 }

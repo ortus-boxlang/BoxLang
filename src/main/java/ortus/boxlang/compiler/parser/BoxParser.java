@@ -332,7 +332,7 @@ public class BoxParser extends AbstractParser {
 		this.classOrInterface = classOrInterface;
 		BoxLexerCustom	lexer	= new BoxLexerCustom( CharStreams.fromStream( stream, StandardCharsets.UTF_8 ),
 		    isScript ? BoxLexerCustom.DEFAULT_SCRIPT_MODE : BoxLexerCustom.DEFAULT_TEMPLATE_MODE, errorListener, this )
-		    .setClassIsExpected( classOrInterface );
+		        .setClassIsExpected( classOrInterface );
 		BoxGrammar		parser	= new BoxGrammar( new CommonTokenStream( lexer ) );
 
 		// DEBUG: Will print a trace of all parser rules visited:
@@ -488,7 +488,8 @@ public class BoxParser extends AbstractParser {
 				// add logic like the above to handle it. Eventually, this catch-all should never be used.
 				position = new Position( new Point( 0, 0 ), new Point( 0, 0 ), sourceToParse );
 				errorListener.semanticError(
-				    "Internal error(42): Un-popped Lexer modes. [" + String.join( ", ", modes ) + "] Please report this to the developers.", position );
+				    "Internal error(42): Un-popped Lexer modes. [" + String.join( ", ", modes.reversed() ) + "] Please report this to the developers.",
+				    position );
 
 			}
 			// I'm only returning here because we have to reset the lexer above to get the position of the unmatched token, so we no longer have
@@ -516,7 +517,7 @@ public class BoxParser extends AbstractParser {
 		}
 
 		// If there is already a parsing issue, try to get a more specific error
-		if ( issues.isEmpty() ) {
+		if ( !issues.isEmpty() ) {
 
 			Token unclosedBrace = lexer.findUnclosedToken( BoxLexer.LBRACE, BoxLexer.RBRACE );
 			if ( unclosedBrace != null ) {
@@ -532,6 +533,15 @@ public class BoxParser extends AbstractParser {
 				errorListener.reset();
 				errorListener.semanticError( "Unclosed parenthesis [(] on line " + ( unclosedParen.getLine() + this.startLine ), createOffsetPosition(
 				    unclosedParen.getLine(), unclosedParen.getCharPositionInLine(), unclosedParen.getLine(), unclosedParen.getCharPositionInLine() + 1 ) );
+			}
+
+			Token unclosedBracket = lexer.findUnclosedToken( BoxLexer.LBRACKET, BoxLexer.RBRACKET );
+			if ( unclosedBracket != null ) {
+				issues.clear();
+				errorListener.reset();
+				errorListener.semanticError( "Unclosed bracket [ on line " + ( unclosedBracket.getLine() + this.startLine ), createOffsetPosition(
+				    unclosedBracket.getLine(), unclosedBracket.getCharPositionInLine(), unclosedBracket.getLine(),
+				    unclosedBracket.getCharPositionInLine() + 1 ) );
 			}
 		}
 	}
