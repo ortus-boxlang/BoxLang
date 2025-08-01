@@ -594,4 +594,25 @@ public class JSONSerializeTest {
 		assertThat( json ).isEqualTo( "{\"test\":[[0.0,0.30420544445599146]]}" );
 	}
 
+	@DisplayName( "It can serialize exception" )
+	@Test
+	public void testCanSerializeException() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				try {
+					1/0;
+				} catch (e) {
+					result = jsonSerialize( data: e )
+				}
+
+				println( result )
+			""",
+		    context );
+		// @formatter:on
+
+		var json = variables.getAsString( result );
+		assertThat( json ).isNotEmpty();
+	}
+
 }
