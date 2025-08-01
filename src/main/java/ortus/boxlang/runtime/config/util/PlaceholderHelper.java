@@ -83,7 +83,7 @@ public class PlaceholderHelper {
 		return matcher.replaceAll( matchResult -> {
 			String	placeholder		= matchResult.group( 1 );
 			String	defaultValue	= matchResult.group( 2 );
-			String	replacement		= ( String ) map.getOrDefault( placeholder, defaultValue != null ? defaultValue : matchResult.group() );
+			String	replacement		= StringCaster.cast( map.getOrDefault( placeholder, defaultValue != null ? defaultValue : matchResult.group() ) );
 
 			if ( replacement == null ) {
 				throw new BoxRuntimeException(
