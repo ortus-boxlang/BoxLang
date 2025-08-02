@@ -45,6 +45,7 @@ public enum BoxLangType {
 	LIST( Key._LIST ),
 	LONG( Key._LONG ),
 	MODIFIABLE_ARRAY( Key.modifiableArray ),
+	ASSIGNABLE_ARRAY( Key.assignableArray ),
 	MODIFIABLE_STRUCT( Key.modifiableStruct ),
 	MODIFIABLE_QUERY( Key.modifiableQuery ),
 	NUMERIC( Key._NUMERIC ),

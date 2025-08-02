@@ -830,4 +830,17 @@ public class TimeUnitsTest {
 		assertEquals( result, refWeekOfYear );
 
 	}
+
+	@DisplayName( "It tests the BIF Month on a date that could be interpreted with a different mask" )
+	@Test
+	public void testBifMonthWithAltMaskPossible() {
+		instance.executeSource(
+		    """
+		    setLocale( "en_US" );
+		       result = month( '7/4/2021' );
+		       """,
+		    context );
+		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
+		assertEquals( 7, result );
+	}
 }

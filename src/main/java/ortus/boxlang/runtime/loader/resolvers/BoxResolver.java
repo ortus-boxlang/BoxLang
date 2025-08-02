@@ -22,8 +22,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -36,8 +38,10 @@ import ortus.boxlang.runtime.modules.ModuleRecord;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.ModuleService;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.FileSystemUtil;
+import ortus.boxlang.runtime.util.Mapping;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 /**
@@ -104,7 +108,7 @@ public class BoxResolver extends BaseResolver {
 	 * @return An optional class object representing the class if found
 	 */
 	public Optional<ClassLocation> resolve( IBoxContext context, String name, boolean loadClass ) {
-		return resolve( context, name, EMPTY_IMPORTS, loadClass );
+		return resolve( context, name, EMPTY_IMPORTS, loadClass, Struct.EMPTY );
 	}
 
 	/**
@@ -119,7 +123,24 @@ public class BoxResolver extends BaseResolver {
 	 */
 	@Override
 	public Optional<ClassLocation> resolve( IBoxContext context, String name ) {
-		return resolve( context, name, EMPTY_IMPORTS, true );
+		return resolve( context, name, EMPTY_IMPORTS, true, Struct.EMPTY );
+	}
+
+	/**
+	 * Each resolver has a way to resolve the class it represents.
+	 * This method will be called by the {@link ClassLocator} class
+	 * to resolve the class if the prefix matches with imports.
+	 *
+	 * @param context    The current context of execution
+	 * @param name       The name of the class to resolve
+	 * @param imports    The list of imports to use
+	 * @param properties The properties to use
+	 *
+	 * @return An optional class object representing the class if found
+	 */
+	@Override
+	public Optional<ClassLocation> resolve( IBoxContext context, String name, List<ImportDefinition> imports, IStruct properties ) {
+		return resolve( context, name, imports, true, properties );
 	}
 
 	/**
@@ -133,9 +154,8 @@ public class BoxResolver extends BaseResolver {
 	 *
 	 * @return An optional class object representing the class if found
 	 */
-	@Override
 	public Optional<ClassLocation> resolve( IBoxContext context, String name, List<ImportDefinition> imports ) {
-		return resolve( context, name, imports, true );
+		return resolve( context, name, imports, true, Struct.EMPTY );
 	}
 
 	/**
@@ -150,7 +170,7 @@ public class BoxResolver extends BaseResolver {
 	 *
 	 * @return An optional class object representing the class if found
 	 */
-	public Optional<ClassLocation> resolve( IBoxContext context, String name, List<ImportDefinition> imports, boolean loadClass ) {
+	public Optional<ClassLocation> resolve( IBoxContext context, String name, List<ImportDefinition> imports, boolean loadClass, IStruct properties ) {
 		// turn / into .
 		name	= name.replace( "../", "DOT_DOT_SLASH" )
 		    .replace( "/", "." )
@@ -164,7 +184,7 @@ public class BoxResolver extends BaseResolver {
 		// System.out.println( "--=--------> fullyQualifiedName: " + fullyQualifiedName );
 
 		return findFromModules( context, fullyQualifiedName, imports, loadClass )
-		    .or( () -> findFromLocal( context, fullyQualifiedName, imports, loadClass ) );
+		    .or( () -> findFromLocal( context, fullyQualifiedName, imports, loadClass, properties ) );
 	}
 
 	/**
@@ -263,7 +283,7 @@ public class BoxResolver extends BaseResolver {
 	 * @return The loaded class or null if not found
 	 */
 	public Optional<ClassLocation> findFromLocal( IBoxContext context, String fullyQualifiedName, List<ImportDefinition> imports ) {
-		return findFromLocal( context, fullyQualifiedName, imports, true );
+		return findFromLocal( context, fullyQualifiedName, imports, true, Struct.EMPTY );
 	}
 
 	/**
@@ -276,7 +296,8 @@ public class BoxResolver extends BaseResolver {
 	 *
 	 * @return The loaded class or null if not found
 	 */
-	public Optional<ClassLocation> findFromLocal( IBoxContext context, String fullyQualifiedName, List<ImportDefinition> imports, boolean loadClass ) {
+	public Optional<ClassLocation> findFromLocal( IBoxContext context, String fullyQualifiedName, List<ImportDefinition> imports, boolean loadClass,
+	    IStruct properties ) {
 		final String finalSlashName = getFullyQualifiedSlashName( fullyQualifiedName );
 		// Try to find the class using:
 		// 1. Relative to the current template
@@ -285,18 +306,19 @@ public class BoxResolver extends BaseResolver {
 		return findByRelativeLocation( context, finalSlashName, name, imports, loadClass )
 		    // TODO: both of these method call context.getConfig(), but ideally we just call it once
 		    // For classes found in a lookup directory, it will result in getConfig() being called twice.
-		    .or( () -> findByMapping( context, finalSlashName, name, imports, loadClass ) )
+		    .or( () -> findByMapping( context, finalSlashName, name, imports, loadClass, properties ) )
 		    .or( () -> findByLookupDirectory( context, finalSlashName, name, imports, loadClass ) );
 	}
 
 	/**
 	 * Find a class by mapping resolution
 	 *
-	 * @param context   The current context of execution
-	 * @param slashName The name of the class to find using slahes instead of dots
-	 * @param name      The original dot notation name of the class to find
-	 * @param imports   The list of imports to use
-	 * @param loadClass When false, the class location is returned with informatino about where the class was found, but the class is not loaded and will be null.
+	 * @param context    The current context of execution
+	 * @param slashName  The name of the class to find using slahes instead of dots
+	 * @param name       The original dot notation name of the class to find
+	 * @param imports    The list of imports to use
+	 * @param loadClass  When false, the class location is returned with informatino about where the class was found, but the class is not loaded and will be null.
+	 * @param properties The properties to use
 	 *
 	 * @return An Optional of {@link ClassLocation} if found, {@link Optional#empty()} otherwise
 	 */
@@ -305,10 +327,13 @@ public class BoxResolver extends BaseResolver {
 	    String slashName,
 	    String name,
 	    List<ImportDefinition> imports,
-	    boolean loadClass ) {
+	    boolean loadClass,
+	    IStruct properties ) {
+
+		boolean	externalOnly	= ( Boolean ) properties.getOrDefault( Key.externalOnly, false );
 
 		// Look for a mapping that matches the start of the path
-		IStruct mappings = context.getConfig().getAsStruct( Key.mappings );
+		IStruct	mappings		= context.getConfig().getAsStruct( Key.mappings );
 
 		// System.out.println( "mappings: " + mappings );
 		// System.out.println( "slashName: " + slashName );
@@ -320,7 +345,9 @@ public class BoxResolver extends BaseResolver {
 		    .entrySet()
 		    .stream()
 		    // Filter out mappings that don't match the start of the mapping path
-		    .filter( entry -> StringUtils.startsWithIgnoreCase( slashName, entry.getKey().getName() ) )
+		    // Also, filter out external mappings if externalOnly is true
+		    .filter( entry -> ( !externalOnly || ( ( Mapping ) entry.getValue() ).external() )
+		        && StringUtils.startsWithIgnoreCase( slashName, entry.getKey().getName() ) )
 		    // Map it to a Stream<Path> object representing the paths to the classes
 		    .flatMap( entry -> {
 			    // Generate multiple paths here
@@ -438,7 +465,7 @@ public class BoxResolver extends BaseResolver {
 	}
 
 	/**
-	 * Find a class in lookup directories. This includes custom tag paths and component/class paths
+	 * Find a class in lookup directories. This includes custom component paths and class paths
 	 *
 	 * @param context   The current context of execution
 	 * @param slashName The name of the class to find using slahes instead of dots
@@ -455,35 +482,29 @@ public class BoxResolver extends BaseResolver {
 	    List<ImportDefinition> imports,
 	    boolean loadClass ) {
 
-		List<Path> lookupPaths = new ArrayList<Path>();
-		lookupPaths
-		    .addAll( context.getConfig().getAsArray( Key.customTagsDirectory ).stream().map( String::valueOf ).map( Path::of ).toList() );
-		lookupPaths.addAll( context.getConfig().getAsArray( Key.classPaths ).stream().map( String::valueOf ).map( Path::of ).toList() );
-
-		Optional<Path> result = lookupPaths
-		    .stream()
+		return Stream.concat(
+		    context.getConfig().getAsArray( Key.customComponentsDirectory ).stream(),
+		    context.getConfig().getAsArray( Key.classPaths ).stream()
+		).map( String::valueOf )
+		    .map( Path::of )
 		    .map( cp -> findExistingPathWithValidExtension( cp, slashName ) )
-		    .filter( path -> path != null )
-		    .findFirst();
-
-		if ( !result.isPresent() ) {
-			return Optional.empty();
-		}
-		Path				foundPath			= result.get();
-
-		ResolvedFilePath	newResolvedFilePath	= ResolvedFilePath.of( "", "", slashName, foundPath );
-		return Optional.of( new ClassLocation(
-		    newResolvedFilePath.getBoxFQN().getClassName(),
-		    foundPath.toAbsolutePath().toString(),
-		    newResolvedFilePath.getBoxFQN().getPackageString(),
-		    ClassLocator.TYPE_BX,
-		    null,
-		    "",
-		    true,
-		    context.getApplicationName(),
-		    newResolvedFilePath
-		) );
-
+		    .filter( Objects::nonNull )
+		    // Short circuit to the first found path
+		    .findFirst()
+		    .map( foundPath -> {
+			    ResolvedFilePath resolved = ResolvedFilePath.of( "", "", slashName, foundPath );
+			    return new ClassLocation(
+			        resolved.getBoxFQN().getClassName(),
+			        foundPath.toAbsolutePath().toString(),
+			        resolved.getBoxFQN().getPackageString(),
+			        ClassLocator.TYPE_BX,
+			        null,
+			        "",
+			        true,
+			        context.getApplicationName(),
+			        resolved
+			    );
+		    } );
 	}
 
 	/**
@@ -495,9 +516,11 @@ public class BoxResolver extends BaseResolver {
 	 * @return The path if found, null otherwise
 	 */
 	private Path findExistingPathWithValidExtension( Path parentPath, String slashName ) {
-		for ( String extension : getValidExtensions() ) {
-			Path	targetPath	= parentPath.resolve( slashName.substring( 1 ) + "." + extension ).normalize();
+		String		baseName	= slashName.substring( 1 );
+		Set<String>	extensions	= getValidExtensions(); // avoid calling repeatedly
 
+		for ( String extension : extensions ) {
+			Path	targetPath	= parentPath.resolve( baseName + "." + extension ).normalize();
 			Path	result		= FileSystemUtil.pathExistsCaseInsensitive( targetPath );
 			if ( result != null ) {
 				return result;

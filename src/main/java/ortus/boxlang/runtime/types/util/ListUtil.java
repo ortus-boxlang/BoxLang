@@ -34,6 +34,7 @@ import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
 
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.ThreadBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
@@ -568,11 +569,11 @@ public class ListUtil {
 
 		IntConsumer consumer;
 		if ( callback.requiresStrictArguments() ) {
-			consumer = idx -> callbackContext.invokeFunction( callback,
-			    new Object[] { array.size() > idx ? array.get( idx ) : null } );
+			consumer = idx -> ThreadBoxContext.runInContext( callbackContext, parallel, ctx -> ctx.invokeFunction( callback,
+			    new Object[] { array.size() > idx ? array.get( idx ) : null } ) );
 		} else {
-			consumer = idx -> callbackContext.invokeFunction( callback,
-			    new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } );
+			consumer = idx -> ThreadBoxContext.runInContext( callbackContext, parallel, ctx -> ctx.invokeFunction( callback,
+			    new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } ) );
 		}
 
 		// Create a stream of what we want, usage is determined internally by the terminators
@@ -648,11 +649,11 @@ public class ListUtil {
 
 		IntPredicate test;
 		if ( callback.requiresStrictArguments() ) {
-			test = idx -> BooleanCaster.cast( callbackContext.invokeFunction( callback,
-			    new Object[] { array.size() > idx ? array.get( idx ) : null } ) );
+			test = idx -> BooleanCaster.cast( ThreadBoxContext.runInContext( callbackContext, parallel, ctx -> ctx.invokeFunction( callback,
+			    new Object[] { array.size() > idx ? array.get( idx ) : null } ) ) );
 		} else {
-			test = idx -> BooleanCaster.cast( callbackContext.invokeFunction( callback,
-			    new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } ) );
+			test = idx -> BooleanCaster.cast( ThreadBoxContext.runInContext( callbackContext, parallel, ctx -> ctx.invokeFunction( callback,
+			    new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } ) ) );
 		}
 
 		// Create a stream of what we want, usage is determined internally by the terminators
@@ -710,11 +711,11 @@ public class ListUtil {
 
 		IntPredicate test;
 		if ( callback.requiresStrictArguments() ) {
-			test = idx -> BooleanCaster.cast( callbackContext.invokeFunction( callback,
-			    new Object[] { array.size() > idx ? array.get( idx ) : null } ) );
+			test = idx -> BooleanCaster.cast( ThreadBoxContext.runInContext( callbackContext, parallel, ctx -> ctx.invokeFunction( callback,
+			    new Object[] { array.size() > idx ? array.get( idx ) : null } ) ) );
 		} else {
-			test = idx -> BooleanCaster.cast( callbackContext.invokeFunction( callback,
-			    new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } ) );
+			test = idx -> BooleanCaster.cast( ThreadBoxContext.runInContext( callbackContext, parallel, ctx -> ctx.invokeFunction( callback,
+			    new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } ) ) );
 		}
 
 		// Create a stream of what we want, usage is determined internally by the terminators
@@ -775,11 +776,11 @@ public class ListUtil {
 		// Otherwise we pass the item, the index, and the array itself
 		IntPredicate test;
 		if ( callback.requiresStrictArguments() ) {
-			test = idx -> BooleanCaster.cast( callbackContext.invokeFunction( callback,
-			    new Object[] { array.size() > idx ? array.get( idx ) : null } ) );
+			test = idx -> BooleanCaster.cast( ThreadBoxContext.runInContext( callbackContext, parallel, ctx -> ctx.invokeFunction( callback,
+			    new Object[] { array.size() > idx ? array.get( idx ) : null } ) ) );
 		} else {
-			test = idx -> BooleanCaster.cast( callbackContext.invokeFunction( callback,
-			    new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } ) );
+			test = idx -> BooleanCaster.cast( ThreadBoxContext.runInContext( callbackContext, parallel, ctx -> ctx.invokeFunction( callback,
+			    new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } ) ) );
 		}
 
 		// Create a stream of what we want, usage is determined internally by the terminators
@@ -913,15 +914,15 @@ public class ListUtil {
 		// Otherwise we pass the item, the index, and the array itself
 		java.util.function.IntFunction<Object> mapper;
 		if ( callback.requiresStrictArguments() ) {
-			mapper = idx -> callbackContext.invokeFunction(
+			mapper = idx -> ThreadBoxContext.runInContext( callbackContext, parallel, ctx -> ctx.invokeFunction(
 			    callback,
 			    new Object[] { array.size() > idx ? array.get( idx ) : null }
-			);
+			) );
 		} else {
-			mapper = idx -> callbackContext.invokeFunction(
+			mapper = idx -> ThreadBoxContext.runInContext( callbackContext, parallel, ctx -> ctx.invokeFunction(
 			    callback,
 			    new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array }
-			);
+			) );
 		}
 
 		Stream<Object> arrayStream = array

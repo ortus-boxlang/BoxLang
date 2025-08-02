@@ -250,7 +250,7 @@ public class DumpTest {
 		// @formatter:off
 		instance.executeSource(
 		    """
-				val = [1,2,3,4,5];
+				val = [1,2,3,null,5];
 				dump( var = val, format = "html" );
 		    """,
 		    context );

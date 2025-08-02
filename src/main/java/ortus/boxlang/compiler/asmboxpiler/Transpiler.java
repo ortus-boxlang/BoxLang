@@ -220,6 +220,26 @@ public abstract class Transpiler implements ITranspiler {
 		return ++lambdaCounter;
 	}
 
+	public abstract List<List<AbstractInsnNode>> transformProperties( Type declaringType, List<BoxProperty> properties, String sourceType );
+
+	/**
+	 * Create a key and register it in the list compiled array of pre-calculated keys.
+	 * 
+	 * @param expr the string name of the key
+	 * 
+	 * @return a list of instructions that will create the key
+	 */
+	public List<AbstractInsnNode> createKey( String expr ) {
+		return createKey( new BoxStringLiteral( expr, null, expr ) );
+	}
+
+	/**
+	 * Create a key and register it in the list compiled array of pre-calculated keys.
+	 * 
+	 * @param expr the Box expression name of the key
+	 * 
+	 * @return a list of instructions that will create the key
+	 */
 	public List<AbstractInsnNode> createKey( BoxExpression expr ) {
 		// If this key is a literal, we can optimize it
 		if ( expr instanceof BoxStringLiteral || expr instanceof BoxIntegerLiteral ) {
@@ -246,10 +266,37 @@ public abstract class Transpiler implements ITranspiler {
 		}
 	}
 
-	public abstract List<List<AbstractInsnNode>> transformProperties( Type declaringType, List<BoxProperty> properties, String sourceType );
+	/**
+	 * Create a key ad-hoc, without registering it in the list of pre-calculated keys.
+	 * 
+	 * @param name the name of the key
+	 * 
+	 * @return a list of instructions that will create the key
+	 */
+	public List<AbstractInsnNode> createKeyAdHoc( String name ) {
+		return createKeyAdHoc( new BoxStringLiteral( name, null, name ) );
+	}
 
-	public List<AbstractInsnNode> createKey( String expr ) {
-		return createKey( new BoxStringLiteral( expr, null, expr ) );
+	/**
+	 * Create a key ad-hoc, without registering it in the list of pre-calculated keys.
+	 * 
+	 * @param expr the Box expression name of the key
+	 * 
+	 * @return a list of instructions that will create the key
+	 */
+	public List<AbstractInsnNode> createKeyAdHoc( BoxExpression expr ) {
+		List<AbstractInsnNode> nodes = new ArrayList<>();
+		nodes.addAll( transform(
+		    expr,
+		    TransformerContext.NONE,
+		    ReturnValueContext.VALUE
+		) );
+		nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+		    Type.getInternalName( Key.class ),
+		    "of",
+		    Type.getMethodDescriptor( Type.getType( Key.class ), Type.getType( Object.class ) ),
+		    false ) );
+		return nodes;
 	}
 
 	public List<AbstractInsnNode> transformDocumentation( List<BoxDocumentationAnnotation> documentation ) {

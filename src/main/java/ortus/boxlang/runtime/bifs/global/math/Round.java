@@ -39,7 +39,8 @@ public class Round extends BIF {
 	public Round() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "numeric", Key.number )
+		    new Argument( true, "numeric", Key.number ),
+		    new Argument( false, "integer", Key.precision, 0 )
 		};
 	}
 
@@ -50,12 +51,17 @@ public class Round extends BIF {
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.number The number to be rounded.
+	 * 
+	 * @argument.precision The number of decimal places to round to (default is 0).
 	 */
 	public Number _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Number value = arguments.getAsNumber( Key.number );
+		Number	value		= arguments.getAsNumber( Key.number );
+		int		precision	= arguments.getAsInteger( Key.precision );
+
 		if ( value instanceof BigDecimal bd ) {
-			return bd.setScale( 0, RoundingMode.HALF_UP );
+			return bd.setScale( precision, RoundingMode.HALF_UP );
 		}
-		return StrictMath.round( value.doubleValue() );
+		double scale = Math.pow( 10, precision );
+		return Math.round( value.doubleValue() * scale ) / scale;
 	}
 }

@@ -1,4 +1,3 @@
-
 /**
  * [BoxLang]
  *
@@ -65,6 +64,7 @@ public class ParseDateTimeTest {
 	public void testParseDateTimeFullISO() {
 		instance.executeSource(
 		    """
+		    setTimezone( "UTC" );
 		    result = parseDateTime( "2024-01-14T00:00:01.0001Z" );
 		    """,
 		    context );
@@ -404,6 +404,46 @@ public class ParseDateTimeTest {
 		assertThat( IntegerCaster.cast( result.format( "m" ) ) ).isEqualTo( 0 );
 		assertThat( IntegerCaster.cast( result.format( "s" ) ) ).isEqualTo( 0 );
 
+	}
+
+	@DisplayName( "It tests the BIF ParseDateTime with a slash date time and lower case PM marker" )
+	@Test
+	public void testWithLowerCasePMAndSlashDate() {
+		instance.executeSource(
+		    """
+		    result = ParseDateTime( "7/20/2025 1:00 pm" );
+		    """,
+		    context );
+		DateTime result = ( DateTime ) variables.get( Key.of( "result" ) );
+		assertThat( result ).isInstanceOf( DateTime.class );
+		assertThat( result.toString() ).isInstanceOf( String.class );
+		assertThat( IntegerCaster.cast( result.format( "yyyy" ) ) ).isEqualTo( 2025 );
+		assertThat( IntegerCaster.cast( result.format( "M" ) ) ).isEqualTo( 7 );
+		assertThat( IntegerCaster.cast( result.format( "d" ) ) ).isEqualTo( 20 );
+		assertThat( IntegerCaster.cast( result.format( "H" ) ) ).isEqualTo( 13 );
+		assertThat( IntegerCaster.cast( result.format( "m" ) ) ).isEqualTo( 0 );
+		assertThat( IntegerCaster.cast( result.format( "s" ) ) ).isEqualTo( 0 );
+
+	}
+
+	@DisplayName( "It tests the BIF ParseDateTime with text/numeric formats" )
+	@Test
+	public void testVarious() {
+		instance.executeSource(
+		    """
+		          parseDateTime('July, 19 2015');
+		       parseDateTime('Jul, 19 2015');
+		       parseDateTime('July 19 2015');
+		       parseDateTime('Jul 19 2015');
+		    parseDateTime( 'Tue Apr 02 21:01:00 CET 2024' );
+		    parseDateTime( 'Tue, Apr 02, 21:01:00 CET 2024' );
+		    parseDateTime( '02 Apr 2024 21:01:00' );
+		    parseDateTime( '02 Apr 2024 21:01' );
+		    parseDateTime( 'Tue, 02 Apr 2024 21:01:00 CEST' );
+		    parseDateTime( 'Tue 02 Apr 2024 21:01:00 CEST' );
+		    parseDateTime( 'Tuesday 02 Apr 2024 21:01:00 CEST' );
+		          """,
+		    context );
 	}
 
 }

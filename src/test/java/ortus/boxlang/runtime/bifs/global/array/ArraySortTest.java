@@ -302,4 +302,28 @@ public class ArraySortTest {
 		assertThat( res.get( 2 ) ).isEqualTo( 3 );
 		assertThat( ( ( Number ) res.get( 3 ) ).doubleValue() ).isEqualTo( 4.3 );
 	}
+
+	@DisplayName( "It should work on native arrays" )
+	@Test
+	public void testNativeArray() {
+		instance.executeSource(
+		    """
+		         threadList = createObject("java", "java.lang.Thread")
+		         	.getAllStackTraces().keySet().toArray();
+
+		    result = threadList.map( .getName() ).toList();
+
+		         // Sort the list
+		         arraySort( threadList, (a, b)  => {
+		         	return a.getName().compareTo(b.getName());
+		         });
+
+		      result2 = threadList.map( .getName() ).toList();
+
+		      """,
+		    context );
+		assertThat( variables.getAsString( result ) ).isNotEqualTo( variables.getAsString( Key.of( "result2" ) ) );
+
+	}
+
 }

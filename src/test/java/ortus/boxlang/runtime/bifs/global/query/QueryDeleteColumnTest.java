@@ -71,17 +71,28 @@ public class QueryDeleteColumnTest {
 		    query.addRow({name: "John", age: 30});
 		    query.addRow({name: "Jane", age: 25});
 
+		    ageInitialIndex = query.getColumnMeta( "age" ).invokeTargetMethod( getBoxContext(), "getIndex", [] );
+
 		    query.deleteColumn("name");
 		    columnList = query.columnList;
 		    age1 = query.age[1];
 		    age2 = query.age[2];
-		    """,
+
+		    row1DataLength = query.getData()[1].len();
+		    row2DataLength = query.getData()[2].len();
+
+		    ageIndex = query.getColumnMeta( "age" ).invokeTargetMethod( getBoxContext(), "getIndex", [] );
+		         """,
 		    context
 		);
 
 		assertThat( variables.get( Key.of( "columnList" ) ) ).isEqualTo( "age" );
 		assertThat( variables.get( Key.of( "age1" ) ) ).isEqualTo( 30 );
 		assertThat( variables.get( Key.of( "age2" ) ) ).isEqualTo( 25 );
+		assertThat( variables.get( Key.of( "row1DataLength" ) ) ).isEqualTo( 1 );
+		assertThat( variables.get( Key.of( "row2DataLength" ) ) ).isEqualTo( 1 );
+		assertThat( variables.get( Key.of( "ageInitialIndex" ) ) ).isEqualTo( 1 );
+		assertThat( variables.get( Key.of( "ageIndex" ) ) ).isEqualTo( 0 );
 	}
 
 	@DisplayName( "It should throw an error when trying to delete a column that does not exist" )

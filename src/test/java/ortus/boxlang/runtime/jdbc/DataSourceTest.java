@@ -104,7 +104,7 @@ public class DataSourceTest {
 		    Struct.of(
 		        "username", "root",
 		        "password", "123456Password",
-		        "connectionString", "jdbc:mysql://localhost:3306"
+		        "connectionString", "jdbc:mysql://localhost:3309"
 		    ) );
 		try ( Connection conn = myDataSource.getConnection() ) {
 			assertThat( conn ).isInstanceOf( Connection.class );

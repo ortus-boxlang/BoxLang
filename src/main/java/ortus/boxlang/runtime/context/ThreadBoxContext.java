@@ -18,23 +18,18 @@
 package ortus.boxlang.runtime.context;
 
 import ortus.boxlang.runtime.jdbc.ConnectionManager;
-import ortus.boxlang.runtime.scopes.AttributesScope;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.scopes.LocalScope;
-import ortus.boxlang.runtime.scopes.ThisScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
-import ortus.boxlang.runtime.util.RequestThreadManager;
 
 /**
- * This context represents the context of any function execution in BoxLang
- * It encapsulates the arguments scope and local scope and has a reference to
- * the function being invoked.
- * This context is extended for use with both UDFs and Closures as well
+ * This context represents any code running inside of a thread. It can still have a grandparent
+ * of a given request context, but it provides encapsulation for things like JDBC connections, which
+ * cannot be shared with the parent thread.
  */
 public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableContext {
 
@@ -45,41 +40,15 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 	 */
 
 	/**
-	 * The thread local scope
-	 */
-	protected IScope				localScope;
-
-	/**
-	 * The thread attributes scope
-	 */
-	protected IScope				attributesScope;
-
-	/**
 	 * The parent's variables scope
 	 */
-	protected IScope				variablesScope;
-
-	/**
-	 * The Thread
-	 */
-	protected Thread				thread;
-
-	/**
-	 * The BoxLang name of the thread as registered in the thread manager.
-	 */
-	protected Key					threadName;
-
-	/**
-	 * A shortcut to the request thread manager stored in one of our ancestor
-	 * contexts
-	 */
-	private RequestThreadManager	threadManager;
+	protected IScope			variablesScope		= null;
 
 	/**
 	 * The JDBC connection manager, which tracks transaction state/context and
 	 * allows a thread or request to retrieve connections.
 	 */
-	private ConnectionManager		connectionManager;
+	private ConnectionManager	connectionManager	= null;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -95,15 +64,47 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 	 * @param threadManager The thread manager
 	 * @param threadName    The name of the thread
 	 */
-	public ThreadBoxContext( IBoxContext parent, RequestThreadManager threadManager, Key threadName, IStruct attributes ) {
+	public ThreadBoxContext( IBoxContext parent ) {
 		super( parent );
-		this.threadManager		= threadManager;
-		this.threadName			= threadName;
-		this.connectionManager	= new ConnectionManager( this );
-		this.localScope			= new LocalScope();
-		this.attributesScope	= new AttributesScope( attributes );
+		// variables scope and connection manager are lazy initialized
+	}
 
-		this.variablesScope		= parent.getScopeNearby( VariablesScope.name );
+	/**
+	 * Run a consumer with a given context. If we're running in parallel, we will create a new ThreadBoxContext
+	 * and set it as the current context, cleaning up any JDBC connections when done.
+	 * If this is not in parallel, then we just run the consumer in the current context.
+	 * The parallel flag is for convenience since many BIFs allow for parallel execution to be toggled
+	 * on and off, this will make for simpler code paths. When parallel is false, this method
+	 * is basically a no-op.
+	 * 
+	 * @param parent   The parent context to use for the ThreadBoxContext
+	 * @param runnable The runnable to execute
+	 * @param parallel If true, run in a new ThreadBoxContext, otherwise run in the current context
+	 */
+	public static Object runInContext( IBoxContext parent, boolean parallel, java.util.function.Function<IBoxContext, Object> runnable ) {
+		if ( parallel ) {
+			ThreadBoxContext context = new ThreadBoxContext( parent );
+			try {
+				RequestBoxContext.setCurrent( context );
+				return runnable.apply( context );
+			} finally {
+				RequestBoxContext.removeCurrent();
+				context.shutdown();
+			}
+		} else {
+			return runnable.apply( parent );
+		}
+	}
+
+	/**
+	 * Run a consumer with a given context. We will create a new ThreadBoxContext
+	 * and set it as the current context, cleaning up any JDBC connections when done.
+	 * 
+	 * @param parent   The parent context to use for the ThreadBoxContext
+	 * @param runnable The runnable to execute
+	 */
+	public static Object runInContext( IBoxContext parent, java.util.function.Function<IBoxContext, Object> runnable ) {
+		return runInContext( parent, true, runnable );
 	}
 
 	/**
@@ -112,125 +113,39 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 	 * --------------------------------------------------------------------------
 	 */
 
-	/**
-	 * Set the thread
-	 *
-	 * @return THis context
-	 */
-	public ThreadBoxContext setThread( Thread thread ) {
-		this.thread = thread;
-		return this;
-	}
-
 	@Override
 	public IStruct getVisibleScopes( IStruct scopes, boolean nearby, boolean shallow ) {
 		if ( hasParent() && !shallow ) {
 			getParent().getVisibleScopes( scopes, false, false );
 		}
 		if ( nearby ) {
-			scopes.getAsStruct( Key.contextual ).put( LocalScope.name, localScope );
-			scopes.getAsStruct( Key.contextual ).put( Key.thread, threadManager.getThreadMeta( threadName ) );
-			scopes.getAsStruct( Key.contextual ).put( Key.attributes, attributesScope );
-
-			// A thread has special permission to "see" the variables and this scope from its parent,
-			// even though it's not "nearby" to any other scopes
-			scopes.getAsStruct( Key.contextual ).put( VariablesScope.name, variablesScope );
-
-			if ( getParent() instanceof FunctionBoxContext fbc && fbc.isInClass() ) {
-				scopes.getAsStruct( Key.contextual ).put( ThisScope.name, fbc.getThisClass().getBottomClass().getThisScope() );
-			}
-			if ( getParent() instanceof ClassBoxContext cbc ) {
-				scopes.getAsStruct( Key.contextual ).put( ThisScope.name, cbc.getThisScope() );
-			}
-			if ( getParent() instanceof FunctionBoxContext fbc && fbc.isInClass() && fbc.getThisClass().getSuper() != null ) {
-				scopes.getAsStruct( Key.contextual ).put( Key._super, fbc.getThisClass().getSuper().getVariablesScope() );
-			}
-			if ( getParent() instanceof ClassBoxContext cbc && cbc.getThisClass().getSuper() != null ) {
-				scopes.getAsStruct( Key.contextual ).put( Key._super, cbc.getThisClass().getSuper().getVariablesScope() );
-			}
-
+			scopes.getAsStruct( Key.contextual ).put( VariablesScope.name, getVariablesScope() );
 		}
-
 		return scopes;
 	}
 
-	/**
-	 * Check if a key is visible in the current context as a scope name.
-	 * This allows us to "reserve" known scope names to ensure arguments.foo
-	 * will always look in the proper arguments scope and never in
-	 * local.arguments.foo for example
-	 * 
-	 * @param key     The key to check for visibility
-	 * @param nearby  true, check only scopes that are nearby to the current execution context
-	 * @param shallow true, do not delegate to parent or default scope if not found
-	 * 
-	 * @return True if the key is visible in the current context, else false
-	 */
 	@Override
 	public boolean isKeyVisibleScope( Key key, boolean nearby, boolean shallow ) {
-
-		if ( nearby ) {
-			if ( key.equals( LocalScope.name ) || key.equals( Key.thread ) || key.equals( Key.attributes ) || key.equals( VariablesScope.name ) ) {
-				return true;
-			}
-
-			if ( getParent() instanceof FunctionBoxContext fbc && fbc.isInClass() && key.equals( ThisScope.name ) ) {
-				return true;
-			}
-			if ( getParent() instanceof ClassBoxContext && key.equals( ThisScope.name ) ) {
-				return true;
-			}
-			if ( getParent() instanceof FunctionBoxContext fbc && fbc.isInClass() && fbc.getThisClass().getSuper() != null && key.equals( Key._super ) ) {
-				return true;
-			}
-			if ( getParent() instanceof ClassBoxContext cbc && cbc.getThisClass().getSuper() != null && key.equals( Key._super ) ) {
-				return true;
-			}
-
+		if ( nearby && key.equals( VariablesScope.name ) ) {
+			return true;
 		}
 		return super.isKeyVisibleScope( key, false, false );
 	}
 
-	/**
-	 * Search for a variable in "nearby" scopes
-	 *
-	 * @param key          The key to search for
-	 * @param defaultScope The default scope to use if the key is not found
-	 * @param shallow      Whether to search only the "nearby" scopes or all scopes
-	 *
-	 * @return The search result
-	 */
 	@Override
 	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow, boolean forAssign ) {
 
-		// Look in the local scope first
-		if ( key.equals( localScope.getName() ) ) {
-			return new ScopeSearchResult( localScope, localScope, key, true );
-		}
-
-		if ( key.equals( AttributesScope.name ) ) {
-			return new ScopeSearchResult( attributesScope, attributesScope, key, true );
+		if ( key.equals( VariablesScope.name ) ) {
+			return new ScopeSearchResult( getVariablesScope(), getVariablesScope(), key, true );
 		}
 
 		if ( !isKeyVisibleScope( key ) ) {
-			Object result = localScope.getRaw( key );
-			if ( isDefined( result, forAssign ) ) {
-				// Unwrap the value now in case it was really actually null for real
-				return new ScopeSearchResult( localScope, Struct.unWrapNull( result ), key );
-			}
-
-			// attributesScope
-			result = attributesScope.getRaw( key );
-			if ( isDefined( result, forAssign ) ) {
-				return new ScopeSearchResult( attributesScope, Struct.unWrapNull( result ), key );
-			}
-
-			result = variablesScope.getRaw( key );
+			Object result = getVariablesScope().getRaw( key );
 			// Null means not found
 			if ( isDefined( result, forAssign ) ) {
 				// A thread has special permission to "see" the variables scope from its parent,
 				// even though it's not "nearby" to any other scopes
-				return new ScopeSearchResult( variablesScope, Struct.unWrapNull( result ), key );
+				return new ScopeSearchResult( getVariablesScope(), Struct.unWrapNull( result ), key );
 			}
 
 			// In query loop?
@@ -243,128 +158,28 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 		if ( shallow ) {
 			return null;
 		}
-
 		return scopeFind( key, defaultScope, forAssign );
 
 	}
 
-	/**
-	 * Search for a variable in scopes
-	 *
-	 * @param key          The key to search for
-	 * @param defaultScope The default scope to use if the key is not found
-	 *
-	 * @return The search result
-	 */
 	@Override
 	public ScopeSearchResult scopeFind( Key key, IScope defaultScope, boolean forAssign ) {
-		IStruct				threadMeta	= threadManager.getThreadMeta( threadName );
-		ScopeSearchResult	parentSearchResult;
-
-		// access thread.foo inside a thread
-		if ( key.equals( Key.thread ) ) {
-			return new ScopeSearchResult( threadMeta, threadMeta, key, true );
-		}
-
-		// access threadName.foo inside a thread
-		if ( key.equals( threadName ) ) {
-			return new ScopeSearchResult( threadMeta, threadMeta, key, true );
-		}
-
-		// If we're inside a function, we can see the function's this and super scopes
-		if ( getParent() instanceof FunctionBoxContext fbc ) {
-			parentSearchResult = fbc.scopeFindThis( key );
-			if ( parentSearchResult != null ) {
-				return parentSearchResult;
-			}
-			parentSearchResult = fbc.scopeFindSuper( key );
-			if ( parentSearchResult != null ) {
-				return parentSearchResult;
-			}
-		}
-
-		// If we're inside a class (pseudoconstructor), we can see the class's this and super scopes
-		if ( getParent() instanceof ClassBoxContext cbc ) {
-			parentSearchResult = cbc.scopeFindThis( key );
-			if ( parentSearchResult != null ) {
-				return parentSearchResult;
-			}
-			parentSearchResult = cbc.scopeFindSuper( key );
-			if ( parentSearchResult != null ) {
-				return parentSearchResult;
-			}
-		}
-		if ( !isKeyVisibleScope( key ) ) {
-			Object result = threadMeta.getRaw( key );
-			// Null means not found
-			if ( isDefined( result, forAssign ) ) {
-				return new ScopeSearchResult( threadMeta, Struct.unWrapNull( result ), key );
-			}
-		}
-
 		return parent.scopeFind( key, defaultScope, forAssign );
 	}
 
-	/**
-	 * Look for a scope by name
-	 *
-	 * @param name The name of the scope to look for
-	 *
-	 * @return The scope reference to use
-	 */
 	@Override
 	public IScope getScope( Key name ) throws ScopeNotFoundException {
 		return this.parent.getScope( name );
 	}
 
-	/**
-	 * Look for a "nearby" scope by name
-	 *
-	 * @param name The name of the scope to look for
-	 *
-	 * @return The scope reference to use
-	 */
 	@Override
 	public IScope getScopeNearby( Key name, boolean shallow ) throws ScopeNotFoundException {
-		// Check the scopes I know about
-		if ( name.equals( localScope.getName() ) ) {
-			return this.localScope;
-		}
-
-		if ( name.equals( AttributesScope.name ) ) {
-			return this.attributesScope;
-		}
 
 		if ( name.equals( VariablesScope.name ) ) {
-			// A thread has special permission to "see" the variables scope from its parent,
-			// even though it's not "nearby" to any other scopes
-			return this.variablesScope;
+			return getVariablesScope();
 		}
 
-		if ( name.equals( ThisScope.name ) ) {
-			if ( getParent() instanceof FunctionBoxContext fbc && fbc.isInClass() ) {
-				return fbc.getThisClass().getBottomClass().getThisScope();
-			}
-			if ( getParent() instanceof ClassBoxContext cbc ) {
-				return cbc.getThisScope();
-			}
-		}
-
-		if ( name.equals( Key._super ) ) {
-			if ( getParent() instanceof FunctionBoxContext fbc && fbc.isInClass() && fbc.getThisClass().getSuper() != null ) {
-				return fbc.getThisClass().getSuper().getVariablesScope();
-			}
-			if ( getParent() instanceof ClassBoxContext cbc && cbc.getThisClass().getSuper() != null ) {
-				return cbc.getThisClass().getSuper().getVariablesScope();
-			}
-		}
-
-		if ( shallow ) {
-			return null;
-		}
-
-		// A custom tag cannot see nearby scopes above it
-		return this.parent.getScope( name );
+		return getScope( name );
 	}
 
 	/**
@@ -374,21 +189,27 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 	 */
 	@Override
 	public IScope getDefaultAssignmentScope() {
-		return this.localScope;
+		return getVariablesScope();
 	}
 
 	@Override
 	public void registerUDF( UDF udf, boolean override ) {
-		registerUDF( this.variablesScope, udf, override );
+		registerUDF( getVariablesScope(), udf, override );
 	}
 
 	/**
-	 * Get the thread
-	 *
-	 * @return The thread
+	 * Lazy initializer for variables scope
+	 * this.variablesScope may be null if not used.
 	 */
-	public Thread getThread() {
-		return this.thread;
+	public IScope getVariablesScope() {
+		if ( this.variablesScope == null ) {
+			synchronized ( this ) {
+				if ( this.variablesScope == null ) {
+					this.variablesScope = parent.getScopeNearby( VariablesScope.name, false );
+				}
+			}
+		}
+		return this.variablesScope;
 	}
 
 	/**
@@ -396,6 +217,13 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 	 * connections and transactions.
 	 */
 	public ConnectionManager getConnectionManager() {
+		if ( this.connectionManager == null ) {
+			synchronized ( this ) {
+				if ( this.connectionManager == null ) {
+					this.connectionManager = new ConnectionManager( this );
+				}
+			}
+		}
 		return this.connectionManager;
 	}
 
@@ -403,6 +231,15 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 	 * Shutdown the ConnectionManager and release any resources.
 	 */
 	public void shutdownConnections() {
-		this.connectionManager.shutdown();
+		if ( this.connectionManager != null ) {
+			this.connectionManager.shutdown();
+			this.connectionManager = null;
+		}
 	}
+
+	@Override
+	public void shutdown() {
+		shutdownConnections();
+	}
+
 }

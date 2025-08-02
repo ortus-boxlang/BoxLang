@@ -20,7 +20,6 @@ package ortus.boxlang.runtime.util.conversion;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.nio.charset.StandardCharsets;
 
@@ -106,7 +105,7 @@ public class ObjectMarshaller {
 		    .announce( BoxEvent.BEFORE_OBJECT_MARSHALL_DESERIALIZE, Struct.of( "binary", data ) );
 
 		try ( ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream( data );
-		    ObjectInputStream objectInputStream = new ObjectInputStream( byteArrayInputStream ) ) {
+		    RuntimeObjectInputStream objectInputStream = new RuntimeObjectInputStream( byteArrayInputStream ) ) {
 
 			// Deserialize the object
 			Object result = objectInputStream.readObject();

@@ -17,7 +17,9 @@ package ortus.boxlang.runtime.bifs.global.system;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.context.ThreadBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -53,7 +55,7 @@ public class RunThreadInContext extends BIF {
 	 *
 	 * @argument.sessionId The sessionID to use to run the code in (requires application name).
 	 *
-	 * @argument.context The context to use to run the code in. Mututally exclusive with applicationName and sessionId.
+	 * @argument.context The context to use to run the code in. Mutually exclusive with applicationName and sessionId.
 	 *
 	 * @argument.callback The function to run in the new context.
 	 *
@@ -66,7 +68,7 @@ public class RunThreadInContext extends BIF {
 		IBoxContext	newContext		= null;
 		if ( objContext != null ) {
 			if ( objContext instanceof IBoxContext ctx ) {
-				newContext = ctx;
+				newContext = new ThreadBoxContext( ctx );
 			} else {
 				throw new BoxValidationException( "Context must be instance of IBoxContext." );
 			}
@@ -90,6 +92,12 @@ public class RunThreadInContext extends BIF {
 			throw new BoxValidationException( "Context or applicationName is required." );
 		}
 
-		return newContext.invokeFunction( callback );
+		RequestBoxContext.setCurrent( newContext );
+		try {
+			return newContext.invokeFunction( callback );
+		} finally {
+			RequestBoxContext.removeCurrent();
+			newContext.shutdown();
+		}
 	}
 }

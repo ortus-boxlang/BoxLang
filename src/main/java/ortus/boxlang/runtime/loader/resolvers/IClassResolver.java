@@ -24,6 +24,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.loader.ClassLocation;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.loader.ImportDefinition;
+import ortus.boxlang.runtime.types.IStruct;
 
 /**
  * This interface is to implement ways to resolve classes in BoxLang.
@@ -72,6 +73,6 @@ public interface IClassResolver {
 	 *
 	 * @return An optional class object representing the class if found
 	 */
-	public Optional<ClassLocation> resolve( IBoxContext context, String name, List<ImportDefinition> imports );
+	public Optional<ClassLocation> resolve( IBoxContext context, String name, List<ImportDefinition> imports, IStruct properties );
 
 }

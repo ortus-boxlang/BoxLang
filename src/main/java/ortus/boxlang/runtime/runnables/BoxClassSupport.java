@@ -25,7 +25,9 @@ import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.context.BaseBoxContext;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
+import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ImportDefinition;
@@ -111,7 +113,7 @@ public class BoxClassSupport {
 	 *
 	 * @return The metadata Box object
 	 */
-	public static BoxMeta getBoxMeta( IClassRunnable thisClass ) {
+	public static BoxMeta<?> getBoxMeta( IClassRunnable thisClass ) {
 		if ( thisClass._getbx() == null ) {
 			thisClass._setbx( new ClassMeta( thisClass ) );
 		}
@@ -127,6 +129,10 @@ public class BoxClassSupport {
 	 */
 	public static String asString( IClassRunnable thisClass ) {
 		return "Class: " + thisClass.bxGetName().getName();
+	}
+
+	public static Object javaMethodStub( IReferenceable obj, Key functionName, Object[] args ) {
+		return RequestBoxContext.runInContext( ctx -> obj.dereferenceAndInvoke( ctx, functionName, args, false ) );
 	}
 
 	/**

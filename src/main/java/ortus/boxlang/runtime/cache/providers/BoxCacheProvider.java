@@ -83,7 +83,7 @@ import ortus.boxlang.runtime.types.util.BLCollector;
  * <p>
  * Usage Example:
  * </p>
- * 
+ *
  * <pre>
  * // Basic operations
  * cache.set( "key", "value", 3600 ); // Store with 1 hour timeout
@@ -100,7 +100,7 @@ import ortus.boxlang.runtime.types.util.BLCollector;
  * </pre>
  *
  * @author BoxLang Team
- * 
+ *
  * @since 1.0.0
  */
 @BoxCache( alias = "BoxLang", distributed = false, description = "BoxLang's native cache provider using an object store." )
@@ -520,7 +520,7 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 	 * @return True if the object is in the store, false otherwise
 	 */
 	public boolean lookupQuiet( String key ) {
-		ICacheEntry target = this.objectStore.getQuiet( Key.of( key ) );
+		ICacheEntry target = getCacheEntry( key );
 		return target != null && !target.isExpired();
 	}
 
@@ -583,16 +583,10 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 	 * @return The cache entry retrieved or null
 	 */
 	public Attempt<Object> getQuiet( String key ) {
-		ICacheEntry results = this.objectStore.getQuiet( Key.of( key ) );
+		ICacheEntry results = getCacheEntry( key );
 
+		// If not found, return empty
 		if ( results == null ) {
-			// If not found, return empty
-			return Attempt.empty();
-		}
-
-		// If expired, clear it with announcements, because it has expired
-		if ( results.isExpired() ) {
-			clear( key );
 			return Attempt.empty();
 		}
 
@@ -607,20 +601,28 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 	 * @return The value retrieved or null
 	 */
 	public Attempt<Object> get( String key ) {
-		// Get it like a ninja
-		var results = getQuiet( key );
-
-		// Record the hit or miss
-		if ( results.isPresent() ) {
-			this.stats.recordHit();
-		} else {
-			this.stats.recordMiss();
-		}
-
 		// Run eviction checks async using a CompletableFuture
 		getTaskScheduler().submit( this::evictChecks );
+		// Get it like a ninja
+		ICacheEntry cacheEntry = getCacheEntry( key );
 
-		return results;
+		// If not found, return empty attempt
+		if ( cacheEntry == null ) {
+			this.stats.recordMiss();
+			return Attempt.empty();
+		}
+
+		// If expired, clear it with announcements, because it has expired
+		if ( cacheEntry.isExpired() ) {
+			clear( key );
+			this.stats.recordMiss();
+			return Attempt.empty();
+		}
+
+		// Record the hit
+		this.stats.recordHit();
+
+		return cacheEntry.value();
 	}
 
 	/**
@@ -903,6 +905,28 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 	 */
 	public ScheduledFuture<?> getReapingFuture() {
 		return this.reapingFuture;
+	}
+
+	/**
+	 * Get a raw ICacheEntry from the cache's object store
+	 *
+	 * @param key The key to retrieve
+	 *
+	 * @return The ICacheEntry from the object store or null if not found
+	 */
+	public ICacheEntry getCacheEntry( String key ) {
+		return getCacheEntry( Key.of( key ) );
+	}
+
+	/**
+	 * Get a raw ICacheEntry from the cache's object store
+	 *
+	 * @param key The key to retrieve
+	 *
+	 * @return The ICacheEntry from the object store or null if not found
+	 */
+	public ICacheEntry getCacheEntry( Key key ) {
+		return this.objectStore.getQuiet( Key.of( key ) );
 	}
 
 	/**

@@ -60,6 +60,7 @@ import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 import ortus.boxlang.runtime.util.Attachable;
 import ortus.boxlang.runtime.util.DataNavigator;
 import ortus.boxlang.runtime.util.DataNavigator.Navigator;
+import ortus.boxlang.runtime.util.FileSystemUtil;
 import ortus.boxlang.runtime.util.IBoxAttachable;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
@@ -254,7 +255,7 @@ public class BaseBoxContext implements IBoxContext {
 
 	/**
 	 * Is there at least one output component on the stack
-	 * 
+	 *
 	 * @return True if there is at least one output component, else false
 	 */
 	public boolean isInOutputComponent() {
@@ -672,7 +673,8 @@ public class BaseBoxContext implements IBoxContext {
 	 *
 	 * @param templatePath A relateive template path
 	 */
-	public void includeTemplate( String templatePath ) {
+	@Override
+	public void includeTemplate( String templatePath, boolean externalOnly ) {
 		Set<String>	VALID_TEMPLATE_EXTENSIONS	= BoxRuntime.getInstance().getConfiguration().getValidTemplateExtensions();
 
 		String		ext							= "";
@@ -694,12 +696,13 @@ public class BaseBoxContext implements IBoxContext {
 		// This extension check is duplicated in the runnableLoader right now since some code paths hit the runnableLoader directly
 		if ( ext.equals( "*" ) || VALID_TEMPLATE_EXTENSIONS.contains( ext ) ) {
 			// Load template class, compiling if neccessary
-			BoxTemplate template = RunnableLoader.getInstance().loadTemplateRelative( this, templatePath );
+			BoxTemplate template = RunnableLoader.getInstance().loadTemplateRelative( this, templatePath, externalOnly );
 
 			template.invoke( this );
 		} else {
 			// If this extension is not one we compile, then just read the contents and flush it to the buffer
-			writeToBuffer( invokeFunction( Key.fileread, new Object[] { templatePath } ) );
+			writeToBuffer(
+			    invokeFunction( Key.fileread, new Object[] { FileSystemUtil.expandPath( this, templatePath, externalOnly ).absolutePath().toString() } ) );
 		}
 	}
 
@@ -738,9 +741,9 @@ public class BaseBoxContext implements IBoxContext {
 	 * This allows us to "reserve" known scope names to ensure arguments.foo
 	 * will always look in the proper arguments scope and never in
 	 * local.arguments.foo for example
-	 * 
+	 *
 	 * @param key The key to check for visibility
-	 * 
+	 *
 	 * @return True if the key is visible in the current context, else false
 	 */
 	public boolean isKeyVisibleScope( Key key ) {
@@ -752,11 +755,11 @@ public class BaseBoxContext implements IBoxContext {
 	 * This allows us to "reserve" known scope names to ensure arguments.foo
 	 * will always look in the proper arguments scope and never in
 	 * local.arguments.foo for example
-	 * 
+	 *
 	 * @param key     The key to check for visibility
 	 * @param nearby  true, check only scopes that are nearby to the current execution context
 	 * @param shallow true, do not delegate to parent or default scope if not found
-	 * 
+	 *
 	 * @return True if the key is visible in the current context, else false
 	 */
 	public boolean isKeyVisibleScope( Key key, boolean nearby, boolean shallow ) {
@@ -875,6 +878,9 @@ public class BaseBoxContext implements IBoxContext {
 				}
 				if ( key.equals( Key.columnList ) ) {
 					return new ScopeSearchResult( null, query.getColumnList(), key );
+				}
+				if ( key.equals( Key.columnArray ) || key.equals( Key.columnNames ) ) {
+					return new ScopeSearchResult( null, query.getColumnArray(), key );
 				}
 				if ( query.hasColumn( key ) ) {
 					// TODO: create query scope wrapper for edge cases
@@ -1021,12 +1027,23 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return The current row
 	 */
 	public int getQueryRow( Query query ) {
+		return getQueryRow( query, 0 );
+	}
+
+	/**
+	 * Get the current query row, providing a default value if the query is not registered
+	 *
+	 * @param query      The query to get the row from
+	 * @param defaultRow The default value to return if the query is not registered
+	 *
+	 * @return The current row
+	 */
+	public int getQueryRow( Query query, int defaultRow ) {
 		// If we're not looping over this query, then we're on the first row
 		if ( !queryLoops.containsKey( query ) ) {
-			return 0;
+			return defaultRow;
 		}
 		return queryLoops.get( query );
-
 	}
 
 	/**

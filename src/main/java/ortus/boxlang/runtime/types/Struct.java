@@ -106,7 +106,7 @@ public class Struct implements IStruct, IListenable<IStruct>, Serializable {
 	/**
 	 * Metadata object
 	 */
-	public BoxMeta									$bx;
+	public transient BoxMeta<?>						$bx;
 
 	/**
 	 * The type of struct ( private so that the interface method `getType` will be used )
@@ -771,22 +771,32 @@ public class Struct implements IStruct, IListenable<IStruct>, Serializable {
 		try {
 			StringBuilder sb = new StringBuilder();
 			sb.append( size() > 0 ? "{\n" : "{" );
-			sb.append( wrapped.entrySet().stream()
-			    .map( entry -> {
-				    String line = entry.getKey().getName() + " : ";
-				    if ( entry.getValue() instanceof IType t ) {
-					    line += t.asString();
-				    } else {
-					    if ( entry.getValue() instanceof String s ) {
-						    line += "\"" + s.replace( "\"", "\\\"" ) + "\"";
-					    } else {
-						    line += entry.getValue().toString();
-					    }
-				    }
-				    return line;
-			    } )
-			    .map( line -> RegexBuilder.of( line, RegexBuilder.MULTILINE_START_OF_LINE ).replaceAllAndGet( "  " ) ) // Add an indent to the start of each line
-			    .collect( java.util.stream.Collectors.joining( ",\n" ) ) );
+			sb.append(
+			    wrapped.entrySet().stream()
+			        .map( entry -> {
+				        String line = entry.getKey().getName() + " : ";
+				        Object value = entry.getValue();
+				        if ( value == null ) {
+					        line += "[null]";
+				        } else {
+					        Class<?> clazz = value.getClass();
+					        if ( clazz.isArray() ) {
+						        value = Array.copyOf( value );
+					        }
+
+					        if ( value instanceof IType t ) {
+						        line += t.asString();
+					        } else if ( value instanceof String s ) {
+						        line += "\"" + s.replace( "\"", "\\\"" ) + "\"";
+					        } else {
+						        line += value.toString();
+					        }
+				        }
+				        return line;
+			        } )
+			        .map( line -> RegexBuilder.of( line, RegexBuilder.MULTILINE_START_OF_LINE ).replaceAllAndGet( "  " ) ) // Add an indent to the start of each line
+			        .collect( java.util.stream.Collectors.joining( ",\n" ) )
+			);
 			sb.append( size() > 0 ? "\n}" : "}" );
 			return sb.toString();
 		} finally {
@@ -799,7 +809,7 @@ public class Struct implements IStruct, IListenable<IStruct>, Serializable {
 	 *
 	 * @return The {@Link BoxMeta} object for this struct
 	 */
-	public BoxMeta getBoxMeta() {
+	public BoxMeta<?> getBoxMeta() {
 		if ( this.$bx == null ) {
 			this.$bx = new StructMeta( this );
 		}

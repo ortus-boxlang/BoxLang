@@ -171,4 +171,19 @@ public class LenTest {
 		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( 3 );
 	}
 
+	@DisplayName( "It returns the length of a query" )
+	@Test
+	public void testItReturnsQueryLength() {
+		instance.executeSource(
+		    """
+		    myQuery = queryNew( "id,name", "integer,varchar", [
+		    	[1, "Ortus Solutions"],
+		    	[2, "BoxLang"],
+		    	[3, "ColdBox"]
+		    ] );
+		    result = myQuery.len()
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 3 );
+	}
 }

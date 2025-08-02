@@ -19,6 +19,7 @@
 package ortus.boxlang.runtime.bifs.global.decision;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -32,6 +33,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class IsDefinedTest {
 
@@ -72,12 +74,12 @@ public class IsDefinedTest {
 		    structReference   = isDefined( "brad.age" );
 		    """,
 		    context );
-		assertThat( ( Boolean ) variables.get( Key.of( "stringVarName" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "variableReference" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "stringVarName" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "variableReference" ) ) ).isTrue();
 		// @TODO: Discuss var keyword and the `local` scope with brad
-		// assertThat( ( Boolean ) variables.get( Key.of( "localReference" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "variableScope" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "structReference" ) ) ).isTrue();
+		// assertThat( variables.getAsBoolean( Key.of( "localReference" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "variableScope" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "structReference" ) ) ).isTrue();
 	}
 
 	@DisplayName( "It returns false for non-existing variables" )
@@ -93,10 +95,87 @@ public class IsDefinedTest {
 		    structReference   = isDefined( "brad.oldAge" );
 		    """,
 		    context );
-		assertThat( ( Boolean ) variables.get( Key.of( "stringVarName" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "localReference" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "variableScope" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "structReference" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "stringVarName" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "localReference" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "variableScope" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "structReference" ) ) ).isFalse();
+	}
+
+	@DisplayName( "It returns true for function name" )
+	@Test
+	public void testFalseFunction() {
+		instance.executeSource(
+		    """
+		    function foo() {}
+
+		    result     = isDefined( "foo" );
+		    """,
+		    context );
+		assertThat( variables.getAsBoolean( Key.of( "result" ) ) ).isTrue();
+	}
+
+	@DisplayName( "It errors when calling function" )
+	@Test
+	public void testErrorCallingFunction() {
+		Throwable t = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		    """
+		    function foo() {}
+
+		    isDefined( "foo()" );
+		    """,
+		    context ) );
+		assertThat( t.getMessage() ).contains( "Function " );
+
+		t = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		    """
+		    function foo() {}
+
+		    isDefined( "x[ foo() ]" );
+		    """,
+		    context ) );
+		assertThat( t.getMessage() ).contains( "Function " );
+	}
+
+	@DisplayName( "It errors on invalid chars" )
+	@Test
+	public void testErrorInvalidChars() {
+		Throwable t = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		    """
+		    isDefined( "^" );
+		    """,
+		    context ) );
+		assertThat( t.getMessage() ).contains( "Invalid character " );
+	}
+
+	@DisplayName( "It works with non-string keys" )
+	@Test
+	public void testNonStringKeys() {
+		instance.executeSource(
+		    """
+		       function foo() {}
+		       str = {};
+		       result = isDefined( "str[ foo ]" );
+
+		    str[ foo ] = "bar";
+		    result2 = isDefined( "str[ foo ]" );
+
+
+		             """,
+		    context );
+		assertThat( variables.getAsBoolean( Key.of( "result" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "result2" ) ) ).isTrue();
+	}
+
+	@DisplayName( "It won't run assignment expression" )
+	@Test
+	public void testNonStringKeysAssignment() {
+		Throwable t = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		    """
+		    isDefined("test[ isAdmin = true ]")
+		    """,
+		    context ) );
+		assertThat( t.getMessage() ).contains( "Invalid character " );
+
 	}
 
 }

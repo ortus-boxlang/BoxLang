@@ -23,6 +23,7 @@ import java.util.Map;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.StreamWriteConstraints;
 import com.fasterxml.jackson.jr.annotationsupport.JacksonAnnotationExtension;
 import com.fasterxml.jackson.jr.extension.javatime.JacksonJrJavaTimeExtension;
 import com.fasterxml.jackson.jr.ob.JSON;
@@ -52,6 +53,11 @@ public class JSONUtil {
 	private static final JSON	PRETTY_JSON_BUILDER	= JSON.builder(
 	    // Use a custom factory with enabled parsing features
 	    new JsonFactory()
+	        .setStreamWriteConstraints(
+	            StreamWriteConstraints.builder()
+	                .maxNestingDepth( Integer.MAX_VALUE )
+	                .build()
+	        )
 	        .enable( JsonParser.Feature.ALLOW_COMMENTS )
 	        .enable( JsonParser.Feature.ALLOW_YAML_COMMENTS )
 	        // TODO: This whole block needs to be converted over to use the JsonFactory.builder() as the following feature is deprecated
@@ -84,6 +90,11 @@ public class JSONUtil {
 	private static final JSON	JSON_BUILDER		= JSON.builder(
 	    // Use a custom factory with enabled parsing features
 	    new JsonFactory()
+	        .setStreamWriteConstraints(
+	            StreamWriteConstraints.builder()
+	                .maxNestingDepth( Integer.MAX_VALUE )
+	                .build()
+	        )
 	        .enable( JsonParser.Feature.ALLOW_COMMENTS )
 	        .enable( JsonParser.Feature.ALLOW_YAML_COMMENTS )
 	        // TODO: This whole block needs to be converted over to use the JsonFactory.builder() as the following feature is deprecated

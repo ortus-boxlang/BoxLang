@@ -21,8 +21,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.NodeList;
+import com.github.javaparser.ast.expr.ArrayCreationExpr;
+import com.github.javaparser.ast.expr.ArrayInitializerExpr;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.MethodCallExpr;
+import com.github.javaparser.ast.type.ArrayType;
+import com.github.javaparser.ast.type.ClassOrInterfaceType;
 
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
@@ -80,11 +85,29 @@ public class BoxArrayLiteralTransformer extends AbstractTransformer {
 			addIndex( javaExpr, node );
 			return javaExpr;
 		}
-		MethodCallExpr javaExpr = ( MethodCallExpr ) parseExpression( "Array.of()", values );
+		// Create an Object[] array literal with the values as Expressions
+		Expression[]	exprArray	= new Expression[ arrayLiteral.getValues().size() ];
+		int				i			= 0;
 		for ( BoxExpression expr : arrayLiteral.getValues() ) {
-			Expression value = ( Expression ) transpiler.transform( expr, context );
-			javaExpr.getArguments().add( value );
+			exprArray[ i++ ] = ( Expression ) transpiler.transform( expr, context );
 		}
+		// Create the array initializer expression
+		ArrayInitializerExpr	arrayInitExpr	= new ArrayInitializerExpr(
+		    NodeList.nodeList( exprArray )
+		);
+		ArrayCreationExpr		arrayExpr		= new ArrayCreationExpr(
+		    new ArrayType(
+		        new ClassOrInterfaceType( null, "Object" )
+		    ),
+		    NodeList.nodeList(),
+		    arrayInitExpr
+		);
+
+		MethodCallExpr			javaExpr		= new MethodCallExpr(
+		    null,
+		    "Array.of",
+		    NodeList.nodeList( arrayExpr )
+		);
 		// logger.trace( "{} -> {}", node.getSourceText(), javaExpr );
 		addIndex( javaExpr, node );
 		return javaExpr;

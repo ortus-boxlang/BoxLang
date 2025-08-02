@@ -34,6 +34,7 @@ import ortus.boxlang.runtime.loader.DynamicClassLoader;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.loader.util.ClassDiscovery;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
@@ -193,7 +194,7 @@ public class BaseResolver implements IClassResolver {
 	 * @return An optional class object representing the class if found
 	 */
 	@Override
-	public Optional<ClassLocation> resolve( IBoxContext context, String name, List<ImportDefinition> imports ) {
+	public Optional<ClassLocation> resolve( IBoxContext context, String name, List<ImportDefinition> imports, IStruct properties ) {
 		throw new BoxRuntimeException( "Implement the [resolve] method in your own resolver" );
 	}
 

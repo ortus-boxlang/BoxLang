@@ -22,10 +22,10 @@ import java.util.Set;
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
-import ortus.boxlang.runtime.validation.Validator;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.validation.Validator;
 
 @BoxComponent
 public class Include extends Component {
@@ -39,7 +39,8 @@ public class Include extends Component {
 	public Include() {
 		super();
 		declaredAttributes = new Attribute[] {
-		    new Attribute( Key.template, "string", Set.of( Validator.REQUIRED, Validator.NON_EMPTY ) )
+		    new Attribute( Key.template, "string", Set.of( Validator.REQUIRED, Validator.NON_EMPTY ) ),
+		    new Attribute( Key.externalOnly, "boolean", false )
 		};
 	}
 
@@ -53,7 +54,7 @@ public class Include extends Component {
 	 *
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
-		context.includeTemplate( attributes.getAsString( Key.template ) );
+		context.includeTemplate( attributes.getAsString( Key.template ), attributes.getAsBoolean( Key.externalOnly ) );
 		return DEFAULT_RETURN;
 	}
 }

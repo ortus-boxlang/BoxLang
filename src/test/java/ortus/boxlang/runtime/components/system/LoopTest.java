@@ -628,6 +628,70 @@ public class LoopTest {
 		    );
 	}
 
+	@DisplayName( "Test that loop can handle a group with one row column having one data set" )
+	@Test
+	public void testCfLoopSingleGrouping() {
+		// @formatter:off
+		instance.executeSource( """
+					myQry = queryNew(
+						"mygroup,myvalue",
+						"string,integer", [
+							{ mygroup:"A", myvalue: 10 },
+							{ mygroup:"B", myvalue: 20 },
+							{ mygroup:"B", myvalue: 30 },
+							{ mygroup:"B", myvalue: 40 },
+							{ mygroup:"B", myvalue: 50 },
+							{ mygroup:"C", myvalue: 60 },
+							{ mygroup:"D", myvalue: 70 },
+							{ mygroup:"D", myvalue: 80 },
+						]
+					)
+					bx:loop query=myQry group="mygroup"{
+						writeoutput( " myGroup: #myGroup#" )
+							bx:loop{
+								writeoutput( " myValue: #myvalue#" )
+							}
+					}
+					result = getBoxContext().getBuffer().toString()
+				""",
+				context );
+		// @formatter:on
+		assertThat( variables.getAsString( Key.of( "result" ) ) )
+		    .isEqualTo(
+		        " myGroup: A myValue: 10 myGroup: B myValue: 20 myValue: 30 myValue: 40 myValue: 50 myGroup: C myValue: 60 myGroup: D myValue: 70 myValue: 80" );
+	}
+
+	@DisplayName( "Test that loop can handle a group with one row column having one data set, but with no inner loop" )
+	@Test
+	public void testCanLoopWithGroupAndNoInnerGroup() {
+		// @formatter:off
+		instance.executeSource( """
+					myQry = queryNew(
+						"mygroup,myvalue",
+						"string,integer", [
+							{ mygroup:"A", myvalue: 10 },
+							{ mygroup:"B", myvalue: 20 },
+							{ mygroup:"B", myvalue: 30 },
+							{ mygroup:"B", myvalue: 40 },
+							{ mygroup:"B", myvalue: 50 },
+							{ mygroup:"C", myvalue: 60 },
+							{ mygroup:"D", myvalue: 70 },
+							{ mygroup:"D", myvalue: 80 },
+						]
+					)
+					// This should output only the group name with the first record of each group
+					bx:loop query=myQry group="mygroup"{
+						writeoutput( "myGroup: #myGroup# myValue: #myValue# " )
+					}
+					result = getBoxContext().getBuffer().toString().trim()
+				""",
+				context );
+		// @formatter:on
+		assertThat( variables.getAsString( Key.of( "result" ) ) )
+		    .isEqualTo(
+		        "myGroup: A myValue: 10 myGroup: B myValue: 20 myGroup: C myValue: 60 myGroup: D myValue: 70" );
+	}
+
 	@Test
 	@DisplayName( "It can handle multiple levels of grouping" )
 	public void testCfLoopMultipleGroupings() {
@@ -1010,4 +1074,55 @@ public class LoopTest {
 		assertThat( variables.getAsArray( Key.of( "result" ) ) ).contains( "foo" );
 		assertThat( variables.getAsArray( Key.of( "result" ) ) ).contains( "baz" );
 	}
+
+	@Test
+	public void testUnscopeOutputAfterGroup() {
+		instance.executeSource(
+		    """
+		        	myQry = queryNew("group1,group2,value", "string,string,integer", [
+		        		{group1:"A", group2:"X", value: 10},
+		        		{group1:"A", group2:"X", value: 20},
+		        		{group1:"A", group2:"Y", value: 30},
+		        		{group1:"B", group2:"Z", value: 40},
+		        		{group1:"B", group2:"Z", value: 50}
+		        	])
+		        	savecontent variable="result" {
+		    	cfloop(query=myQry, group="group1") {
+		    		writeOutput("group1: #group1#");
+		    		cfloop(group="group2") {
+		    			writeOutput("group2: #group2#");
+		    		}
+		    		writeOutput("group1 (again): #group1#"); // fails
+		    		writeOutput("group1 (again): #myQry.group1#"); // works
+		    	}
+		    }
+		        """,
+		    context, BoxSourceType.CFSCRIPT );
+		String resultText = variables.getAsString( result ).replaceAll( "\\s+", "" );
+		assertThat( resultText ).isEqualTo( "group1:Agroup2:Xgroup2:Ygroup1(again):Agroup1(again):Agroup1:Bgroup2:Zgroup1(again):Bgroup1(again):B" );
+	}
+
+	@Test
+	public void testUnscopeOutputAfterLoop() {
+		instance.executeSource(
+		    """
+		    myQry = queryNew("value", "integer", [
+		    	{value: 10},
+		    	{value: 20}
+		    ])
+		    savecontent variable="result" {
+		    	cfloop(query=myQry) {
+		    		writeOutput("-outer-#value#");
+		    		cfloop(query=myQry) {
+		    			writeOutput("-inner-#value#");
+		    		}
+		    		writeOutput("-outer-again-#value#");
+		    	}
+		    }
+		           """,
+		    context, BoxSourceType.CFSCRIPT );
+		String resultText = variables.getAsString( result ).replaceAll( "\\s+", "" );
+		assertThat( resultText ).isEqualTo( "-outer-10-inner-10-inner-20-outer-again-10-outer-20-inner-10-inner-20-outer-again-20" );
+	}
+
 }

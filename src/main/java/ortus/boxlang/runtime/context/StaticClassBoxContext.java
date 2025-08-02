@@ -25,6 +25,7 @@ import ortus.boxlang.runtime.scopes.StaticScope;
 import ortus.boxlang.runtime.scopes.ThisScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
@@ -115,6 +116,13 @@ public class StaticClassBoxContext extends BaseBoxContext {
 
 		if ( key.equals( Key._super ) ) {
 			throw new BoxRuntimeException( "Cannot access super scope in a static context" );
+		}
+
+		Object result = staticScope.getRaw( key );
+		// Null means not found
+		if ( isDefined( result, forAssign ) ) {
+			// Unwrap the value now in case it was really actually null for real
+			return new ScopeSearchResult( staticScope, Struct.unWrapNull( result ), key );
 		}
 
 		if ( !isKeyVisibleScope( key ) ) {

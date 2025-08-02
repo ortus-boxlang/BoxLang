@@ -86,16 +86,18 @@ public class ValTest {
 	public void testItExtractsNumberMember() {
 		instance.executeSource(
 		    """
-		    result = "abcdef".val();
-		    result2 = "abcdef".val();
-		    result3 = "abc123".val();
-		    result4 = "123abcdef".val();
-		    result5 = "123".val();
-		    result6 = ".123".val();
-		    result7 = "123.456".val();
-		    result8 = ".".val();
-		    result9 = ".sdf".val();
-		      """,
+		       result = "abcdef".val();
+		       result2 = "abcdef".val();
+		       result3 = "abc123".val();
+		       result4 = "123abcdef".val();
+		       result5 = "123".val();
+		       result6 = ".123".val();
+		       result7 = "123.456".val();
+		       result8 = ".".val();
+		       result9 = ".sdf".val();
+		    result10 = "-50".val();
+		    result11 = "-45-60".val();
+		         """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( 0 );
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( 0 );
@@ -106,6 +108,9 @@ public class ValTest {
 		assertThat( variables.get( Key.of( "result7" ) ) ).isEqualTo( 123.456 );
 		assertThat( variables.get( Key.of( "result8" ) ) ).isEqualTo( 0 );
 		assertThat( variables.get( Key.of( "result9" ) ) ).isEqualTo( 0 );
+		assertThat( variables.get( Key.of( "result10" ) ) ).isEqualTo( -50 );
+		assertThat( variables.get( Key.of( "result11" ) ) ).isEqualTo( -45 );
+
 	}
 
 }

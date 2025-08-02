@@ -556,6 +556,19 @@ public class ClassTest {
 		assertThat( res ).isEqualTo( "someFuncsecond" );
 	}
 
+	@DisplayName( "It should let you override java functions" )
+	@Test
+	public void testJavaOverride() {
+		instance.executeSource(
+		    """
+		          clazz = new src.test.java.TestCases.phase3.JavaOverride();
+		    result = clazz._invoke();
+		           """, context );
+
+		String res = variables.getAsString( result );
+		assertThat( res ).isEqualTo( "From BoxLang" );
+	}
+
 	@DisplayName( "It should return null" )
 	@Test
 	public void testIncludeEvaluateReturnValue() {
@@ -2013,6 +2026,16 @@ public class ClassTest {
 		assertThat( variables.get( "result4" ) ).isEqualTo( "class brad" );
 		assertThat( variables.get( "result6" ) ).isEqualTo( "N/A" );
 		assertThat( variables.get( "result5" ) ).isEqualTo( "Outer function startInner functionOuter function end" );
+	}
+
+	@Test
+	public void testStaticInitCallStaticMethod() {
+		instance.executeSource(
+		    """
+		    result = new src.test.java.TestCases.phase3.StaticInitCallStaticMethod().someStruct.foo;
+		    """,
+		    context );
+		assertThat( variables.get( "result" ) ).isEqualTo( "bar" );
 	}
 
 }

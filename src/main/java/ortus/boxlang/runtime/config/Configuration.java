@@ -61,6 +61,7 @@ import ortus.boxlang.runtime.types.util.DateTimeHelper;
 import ortus.boxlang.runtime.util.DataNavigator;
 import ortus.boxlang.runtime.util.DataNavigator.Navigator;
 import ortus.boxlang.runtime.util.LocalizationUtil;
+import ortus.boxlang.runtime.util.Mapping;
 
 /**
  * The BoxLang configuration object representing the core configuration.
@@ -224,10 +225,10 @@ public class Configuration implements IConfigSegment {
 
 	/**
 	 * An array of directories where custom tags are located and loaded from.
-	 * {@code [ /{boxlang-home}/customTags ]}
+	 * {@code [ /{boxlang-home}/global/components ]}
 	 */
-	public List<String>								customTagsDirectory				= new ArrayList<>(
-	    Arrays.asList( BoxRuntime.getInstance().getRuntimeHome().toString() + "/customTags" ) );
+	public List<String>								customComponentsDirectory		= new ArrayList<>(
+	    Arrays.asList( BoxRuntime.getInstance().getRuntimeHome().toString() + "/global/components" ) );
 
 	/**
 	 * An array of directories where box classes are located and loaded from.
@@ -463,11 +464,16 @@ public class Configuration implements IConfigSegment {
 		// Process mappings
 		if ( config.containsKey( Key.mappings ) ) {
 			if ( config.get( Key.mappings ) instanceof IStruct castedMap ) {
-				castedMap.entrySet().forEach( entry -> this.mappings.put(
-				    entry.getKey(),
-				    PlaceholderHelper.resolve( entry.getValue() ) ) );
+				castedMap.entrySet().forEach( entry -> {
+					// Server-level mappings default to being external
+					registerMapping(
+					    entry.getKey(),
+					    PlaceholderHelper.resolveAll( entry.getValue() ),
+					    true
+					);
+				} );
 			} else {
-				logger.warn( "The [runtime.mappings] configuration is not a JSON Object, ignoring it." );
+				logger.warn( "The [mappings] configuration is not a JSON Object, ignoring it." );
 			}
 		}
 
@@ -482,22 +488,22 @@ public class Configuration implements IConfigSegment {
 					}
 				} );
 			} else {
-				logger.warn( "The [runtime.modulesDirectory] configuration is not a JSON Array, ignoring it." );
+				logger.warn( "The [modulesDirectory] configuration is not a JSON Array, ignoring it." );
 			}
 		}
 
-		// Process customTags directories
-		if ( config.containsKey( Key.customTagsDirectory ) ) {
-			if ( config.get( Key.customTagsDirectory ) instanceof List<?> castedList ) {
+		// Process customComponent directories
+		if ( config.containsKey( Key.customComponentsDirectory ) ) {
+			if ( config.get( Key.customComponentsDirectory ) instanceof List<?> castedList ) {
 				// iterate and add to the original list if it doesn't exist
 				castedList.forEach( item -> {
 					var resolvedItem = PlaceholderHelper.resolve( item );
-					if ( !this.customTagsDirectory.contains( resolvedItem ) ) {
-						this.customTagsDirectory.add( resolvedItem );
+					if ( !this.customComponentsDirectory.contains( resolvedItem ) ) {
+						this.customComponentsDirectory.add( resolvedItem );
 					}
 				} );
 			} else {
-				logger.warn( "The [runtime.customTagsDirectory] configuration is not a JSON Array, ignoring it." );
+				logger.warn( "The [customComponentsDirectory] configuration is not a JSON Array, ignoring it." );
 			}
 		}
 
@@ -620,7 +626,7 @@ public class Configuration implements IConfigSegment {
 			if ( config.get( Key.experimental ) instanceof IStruct castedStruct ) {
 				castedStruct.entrySet().forEach( entry -> this.experimental.put( entry.getKey(), PlaceholderHelper.resolve( entry.getValue() ) ) );
 			} else {
-				logger.warn( "The [runtime.experimental] configuration is not a JSON Object, ignoring it." );
+				logger.warn( "The [experimental] configuration is not a JSON Object, ignoring it." );
 			}
 		}
 
@@ -642,12 +648,12 @@ public class Configuration implements IConfigSegment {
 						    this.datasources.put( datasourceConfig.name, datasourceConfig );
 					    } else {
 						    logger.warn(
-						        "The [runtime.datasources.{}] configuration is not a JSON Object, ignoring it.",
+						        "The [datasources.{}] configuration is not a JSON Object, ignoring it.",
 						        entry.getKey() );
 					    }
 				    } );
 			} else {
-				logger.warn( "The [runtime.datasources] configuration is not a JSON Object, ignoring it." );
+				logger.warn( "The [datasources] configuration is not a JSON Object, ignoring it." );
 			}
 		}
 
@@ -663,13 +669,13 @@ public class Configuration implements IConfigSegment {
 						        .process( castedMap );
 						    this.modules.put( moduleConfig.name, moduleConfig );
 					    } else {
-						    logger.warn( "The [runtime.modules.{}] configuration is not a JSON Object, ignoring it.",
+						    logger.warn( "The [modules.{}] configuration is not a JSON Object, ignoring it.",
 						        entry.getKey() );
 					    }
 				    } );
 
 			} else {
-				logger.warn( "The [runtime.modules] configuration is not a JSON Object, ignoring it." );
+				logger.warn( "The [modules] configuration is not a JSON Object, ignoring it." );
 			}
 		}
 
@@ -747,83 +753,93 @@ public class Configuration implements IConfigSegment {
 	}
 
 	/**
-	 * Register a mapping in the runtime configuration
+	 * Register a mapping in the runtime configuration.
+	 * The mapping will default to not being external
 	 *
-	 * @param mapping The mapping to register: {@code /myMapping}, please note the
-	 *                leading slash
-	 * @param path    The absolute path to the directory to map to the mapping
+	 * @param name            The mapping to register: {@code /myMapping}, please note the
+	 *                        leading slash
+	 * @param data            The absolute path to the directory to map to the mapping
+	 * @param defaultExternal If this mapping defaults to being external
 	 *
 	 * @throws BoxRuntimeException If the path does not exist
 	 *
 	 * @return The runtime configuration
 	 */
-	public Configuration registerMapping( String mapping, String path ) {
-		return this.registerMapping( Key.of( mapping ), path );
+	public Configuration registerMapping( String name, Object data, boolean defaultExternal ) {
+		return this.registerMapping( Key.of( name ), data, defaultExternal );
 	}
 
 	/**
 	 * Register a mapping in the runtime configuration
 	 *
-	 * @param mapping The mapping to register: {@code /myMapping}, please note the
-	 *                leading slash
-	 * @param path    The absolute path to the directory to map to the mapping
+	 * @param name The mapping to register: {@code /myMapping}, please note the
+	 *             leading slash
+	 * @param data The absolute path to the directory to map to the mapping
 	 *
 	 * @throws BoxRuntimeException If the path does not exist
 	 *
 	 * @return The runtime configuration
 	 */
-	public Configuration registerMapping( Key mapping, String path ) {
-		// Check if mapping has a leading slash else add it
-		if ( !mapping.getName().startsWith( "/" ) ) {
-			mapping = Key.of( "/" + mapping.getName() );
-		}
+	public Configuration registerMapping( String name, Object data ) {
+		return this.registerMapping( Key.of( name ), data );
+	}
 
-		// Convert the path to a Java Path
-		Path pathObj = Path.of( path ).toAbsolutePath();
+	/**
+	 * Register a mapping in the runtime configuration
+	 * The mapping will default to not being external
+	 *
+	 * @param name The mapping to register: {@code /myMapping}, please note the
+	 *             leading slash
+	 * @param data The absolute path to the directory to map to the mapping
+	 *
+	 * @throws BoxRuntimeException If the path does not exist
+	 *
+	 * @return The runtime configuration
+	 */
+	public Configuration registerMapping( Key name, Object data ) {
+		return registerMapping( name, data, false );
+	}
 
-		// Verify it exists else throw an exception
-		if ( !pathObj.toFile().exists() ) {
-			throw new BoxRuntimeException(
-			    String.format( "The path [%s] does not exist.", pathObj ) );
-		}
-
-		// Now we can add it
-		this.mappings.put( mapping, pathObj.toString() );
-
+	/**
+	 * Register a mapping in the runtime configuration
+	 *
+	 * @param name            The mapping to register: {@code /myMapping}, please note the
+	 *                        leading slash
+	 * @param data            The absolute path to the directory to map to the mapping
+	 * @param defaultExternal If this mapping defaults to being external
+	 *
+	 * @throws BoxRuntimeException If the path does not exist
+	 *
+	 * @return The runtime configuration
+	 */
+	public Configuration registerMapping( Key name, Object data, boolean defaultExternal ) {
+		var m = Mapping.fromData( name.getName(), data, defaultExternal );
+		this.mappings.put( m.name(), m );
 		return this;
 	}
 
 	/**
 	 * Unregister a mapping in the runtime configuration
 	 *
-	 * @param mapping The String mapping to unregister: {@code /myMapping}, please
-	 *                note the leading slash
+	 * @param name The String mapping to unregister: {@code /myMapping}, please
+	 *             note the leading slash
 	 *
 	 * @return True if the mapping was removed, false otherwise
 	 */
-	public boolean unregisterMapping( String mapping ) {
-		return this.unregisterMapping( Key.of( mapping ) );
+	public boolean unregisterMapping( String name ) {
+		return this.mappings.remove( Key.of( Mapping.cleanName( name ) ) ) != null;
 	}
 
 	/**
 	 * Unregister a mapping in the runtime configuration using a {@link Key}
 	 *
-	 * @param mapping The Key mapping to unregister: {@code /myMapping}, please note
-	 *                the leading slash
+	 * @param name The Key mapping to unregister: {@code /myMapping}, please note
+	 *             the leading slash
 	 *
 	 * @return True if the mapping was removed, false otherwise
 	 */
-	public boolean unregisterMapping( Key mapping ) {
-		// Check if mapping has a leading slash else add it
-		if ( !mapping.getName().startsWith( "/" ) ) {
-			mapping = Key.of( "/" + mapping.getName() );
-		}
-		// Add traiing slash
-		if ( !mapping.getName().endsWith( "/" ) ) {
-			mapping = Key.of( mapping.getName() + "/" );
-		}
-
-		return this.mappings.remove( mapping ) != null;
+	public boolean unregisterMapping( Key name ) {
+		return unregisterMapping( name.getName() );
 	}
 
 	/**
@@ -968,7 +984,7 @@ public class Configuration implements IConfigSegment {
 		    Key.caches, cachesCopy,
 		    Key.classGenerationDirectory, this.classGenerationDirectory,
 		    Key.clearClassFilesOnStartup, this.clearClassFilesOnStartup,
-		    Key.customTagsDirectory, Array.copyFromList( this.customTagsDirectory ),
+		    Key.customComponentsDirectory, Array.copyFromList( this.customComponentsDirectory ),
 		    Key.classPaths, Array.copyFromList( this.classPaths ),
 		    Key.datasources, datsourcesCopy,
 		    Key.debugMode, this.debugMode,

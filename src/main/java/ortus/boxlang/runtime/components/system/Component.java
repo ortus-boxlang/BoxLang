@@ -92,7 +92,7 @@ public class Component extends ortus.boxlang.runtime.components.Component {
 			String	templateName		= templateFileName.substring( 0, templateFileName.lastIndexOf( '.' ) );
 			tagName = Key.of( templateName );
 			executionState.put( Key.customTagName, tagName );
-			bTemplate = RunnableLoader.getInstance().loadTemplateRelative( context, template );
+			bTemplate = RunnableLoader.getInstance().loadTemplateRelative( context, template, false );
 		} else if ( name != null && !name.isEmpty() ) {
 			tagName = Key.of( name );
 			executionState.put( Key.customTagName, tagName );
@@ -101,19 +101,28 @@ public class Component extends ortus.boxlang.runtime.components.Component {
 			throw new CustomException( "Either the template or name attribute must be specified." );
 		}
 
+		// Register the custom tag in the execution state
 		executionState.put( Key.customTagPath, bTemplate.getRunnablePath().absolutePath().toString() );
+
+		// Prepare the variables
 		VariablesScope		caller		= ( VariablesScope ) context.getScopeNearby( VariablesScope.name );
 		CustomTagBoxContext	ctContext	= new CustomTagBoxContext( context, tagName );
 		VariablesScope		variables	= ( VariablesScope ) ctContext.getScopeNearby( VariablesScope.name );
+
 		variables.put( Key.attributes, actualAttributes );
 		variables.put( Key.caller, caller );
-		IStruct thisTag = new Struct();
-		thisTag.put( Key.executionMode, "start" );
-		thisTag.put( Key.hasEndTag, body != null );
-		thisTag.put( Key.generatedContent, "" );
-		variables.put( Key.thisTag, thisTag );
+
+		// Prepare the thisComponent SCOPE
+		IStruct thisComponent = Struct.of(
+		    Key.executionMode, "start",
+		    Key.hasEndTag, body != null,
+		    Key.generatedContent, ""
+		);
+		variables.put( Key.thisComponent, thisComponent );
+
+		// Place it in the execution state
 		executionState.put( Key.caller, caller );
-		executionState.put( Key.thisTag, thisTag );
+		executionState.put( Key.thisComponent, thisComponent );
 
 		try {
 			try {
@@ -135,7 +144,7 @@ public class Component extends ortus.boxlang.runtime.components.Component {
 
 			if ( body != null ) {
 
-				thisTag.put( Key.executionMode, "inactive" );
+				thisComponent.put( Key.executionMode, "inactive" );
 
 				boolean keepLooping = true;
 				while ( keepLooping ) {
@@ -150,10 +159,10 @@ public class Component extends ortus.boxlang.runtime.components.Component {
 						context.writeToBuffer( buffer.toString() );
 						return bodyResult;
 					}
-					thisTag.put( Key.generatedContent, buffer.toString() );
+					thisComponent.put( Key.generatedContent, buffer.toString() );
 					// This will contain data added via the associate component
-					thisTag.putAll( executionState.getAsStruct( Key.dataCollection ) );
-					thisTag.put( Key.executionMode, "end" );
+					thisComponent.putAll( executionState.getAsStruct( Key.dataCollection ) );
+					thisComponent.put( Key.executionMode, "end" );
 
 					try {
 						bTemplate.invoke( ctContext );
@@ -170,7 +179,7 @@ public class Component extends ortus.boxlang.runtime.components.Component {
 							throw e;
 						}
 					} finally {
-						context.writeToBuffer( thisTag.getAsString( Key.generatedContent ) );
+						context.writeToBuffer( thisComponent.getAsString( Key.generatedContent ) );
 					}
 				}
 
@@ -186,9 +195,8 @@ public class Component extends ortus.boxlang.runtime.components.Component {
 	 * Lookup a custom tag by name based on our lookup rules.
 	 * An error is thrown is the name could not be found.
 	 *
-	 * - Directories specified in the this.customTagPaths page variable, if it exists.
-	 * - Directories specified in the engine config Custom Tag Paths
-	 * - The /boxlang/CustomTags directory, and its subdirectories.
+	 * - Directories specified in the this.customComponentPaths page variable, if it exists.
+	 * - Directories specified in the engine config boxlang.json file, under the customComponentsDirectory key.
 	 * - Directories specified in the mappings in the engine config
 	 *
 	 * @param name The name of the custom tag in the format "foo.bar.baz". If the tag was called in the format <cf_brad>, then the name would be "brad"
@@ -200,7 +208,9 @@ public class Component extends ortus.boxlang.runtime.components.Component {
 		String					fullName		= name.replace( '.', File.separatorChar );
 		List<ResolvedFilePath>	pathToSearch	= new ArrayList<>();
 
-		// Add in directoruy of current template
+		// Add in the current template path, if it exists
+		// This is the path of the template that is invoking this component
+		// This is useful for relative paths in the custom component
 		Optional.ofNullable( context.findClosestTemplate() )
 		    .filter( template -> template.absolutePath() != null && !template.absolutePath().toString().equals( "unknown" )
 		        && template.absolutePath().getParent() != null )
@@ -213,22 +223,33 @@ public class Component extends ortus.boxlang.runtime.components.Component {
 		        ) )
 		    );
 
+		// Add in the custom components directories specified in the config
 		pathToSearch.addAll(
 		    context.getConfig()
-		        .getAsArray( Key.customTagsDirectory )
+		        .getAsArray( Key.customComponentsDirectory )
 		        .stream()
-		        .map( entry -> ResolvedFilePath.of( "", entry.toString(), entry.toString(),
-		            FileSystemUtil.expandPath( context, entry.toString() ).absolutePath() ) )
+		        .map( entry -> ResolvedFilePath.of(
+		            "",
+		            entry.toString(),
+		            entry.toString(),
+		            FileSystemUtil.expandPath( context, entry.toString() ).absolutePath() )
+		        )
 		        .toList()
 		);
+
 		// Add in mappings to search
 		pathToSearch.addAll(
 		    context.getConfig()
 		        .getAsStruct( Key.mappings )
 		        .entrySet()
 		        .stream()
-		        .map( entry -> ResolvedFilePath.of( entry.getKey().getName(), entry.getValue().toString(), entry.getValue().toString(),
-		            entry.getValue().toString() ) )
+		        .map( entry -> ResolvedFilePath.of(
+		            entry.getKey().getName(),
+		            // Mapping.toString() returns the path
+		            entry.getValue().toString(),
+		            entry.getValue().toString(),
+		            entry.getValue().toString() )
+		        )
 		        .toList()
 		);
 

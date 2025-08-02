@@ -42,6 +42,7 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.util.ListUtil;
 import ortus.boxlang.runtime.util.LocalizationUtil;
+import ortus.boxlang.runtime.util.Mapping;
 import ortus.boxlang.runtime.util.RequestThreadManager;
 
 /**
@@ -58,76 +59,76 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	/**
 	 * Track the current request box context for the thread. Allow more than one as a stack.
 	 */
-	private static final ThreadLocal<ArrayDeque<RequestBoxContext>>	current					= new ThreadLocal<>();
+	private static final ThreadLocal<ArrayDeque<IBoxContext>>	current					= new ThreadLocal<>();
 
 	/**
 	 * The locale for this request
 	 */
-	private Locale													locale					= null;
+	private Locale												locale					= null;
 
 	/**
 	 * The timezone for this request
 	 */
-	private ZoneId													timezone				= null;
+	private ZoneId												timezone				= null;
 
 	/**
 	 * The thread manager for this request
 	 */
-	private RequestThreadManager									threadManager			= null;
+	private RequestThreadManager								threadManager			= null;
 
 	/**
 	 * The request class loader
 	 */
-	private DynamicClassLoader										requestClassLoader		= null;
+	private DynamicClassLoader									requestClassLoader		= null;
 
 	/**
 	 * Flag to enforce explicit output
 	 */
-	private boolean													enforceExplicitOutput	= false;
+	private boolean												enforceExplicitOutput	= false;
 
 	/**
 	 * Flag to enable/disabled debug output for a request regardless of runtime
 	 * Each runtime can provide its own implementation of this setting
 	 * It defaults to the runtime's debug mode
 	 */
-	private boolean													showDebugOutput			= getRuntime().inDebugMode();
+	private boolean												showDebugOutput			= getRuntime().inDebugMode();
 
 	/**
 	 * The request timeout in milliseconds
 	 */
-	private Long													requestTimeout			= null;
+	private Long												requestTimeout			= null;
 
 	/**
 	 * The time in milliseconds when the request started
 	 */
-	private DateTime												requestStart			= new DateTime();
+	private DateTime											requestStart			= new DateTime();
 
 	/**
 	 * The JDBC connection manager, which tracks transaction state/context and allows a thread or request to retrieve connections.
 	 */
-	private ConnectionManager										connectionManager;
+	private ConnectionManager									connectionManager;
 
 	/**
 	 * Application.bx listener for this request
 	 * null if there is none
 	 */
-	private BaseApplicationListener									applicationListener;
+	private BaseApplicationListener								applicationListener;
 
 	/**
 	 * The application service
 	 */
-	private ApplicationService										applicationService		= getRuntime().getApplicationService();
+	private ApplicationService									applicationService		= getRuntime().getApplicationService();
 
 	/**
 	 * The output buffer for the script
 	 */
-	private PrintStream												out						= System.out;
+	private PrintStream											out						= System.out;
 
 	/**
 	 * Since getting config for the request happens a lot and rarley changes, cache it to improve performance
 	 * If config is changed at any context "above" us in the chain, we'll need to clear the cache via clearConfigCache()
 	 */
-	private IStruct													configCache				= null;
+	private IStruct												configCache				= null;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -188,11 +189,11 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	 * This allows us to "reserve" known scope names to ensure arguments.foo
 	 * will always look in the proper arguments scope and never in
 	 * local.arguments.foo for example
-	 * 
+	 *
 	 * @param key     The key to check for visibility
 	 * @param nearby  true, check only scopes that are nearby to the current execution context
 	 * @param shallow true, do not delegate to parent or default scope if not found
-	 * 
+	 *
 	 * @return True if the key is visible in the current context, else false
 	 */
 	@Override
@@ -429,17 +430,31 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 		}
 
 		// Mapping overrides
+		var configMappings = config.getAsStruct( Key.mappings );
 		StructCaster.attempt( appSettings.get( Key.mappings ) )
-		    .ifPresent( mappings -> config.getAsStruct( Key.mappings ).putAll( mappings ) );
+		    .ifPresent( mappings -> mappings.keySet().forEach( mappingKey -> {
+			    // translate from struct/string to mapping instance
+			    // Mappings declared in the Application.bx file default to external
+			    var m = Mapping.fromData( mappingKey.getName(), mappings.get( mappingKey ), true );
+			    configMappings.put( m.name(), m );
+		    } ) );
 
-		// Add in custom tag paths. We called them customTagsDirectory, but CF calls them customTagPaths. Maybe support both?
-		ArrayCaster.attempt( appSettings.get( Key.customTagPaths ) )
-		    .ifPresent( customTagPaths -> config.getAsArray( Key.customTagsDirectory ).addAll( customTagPaths ) );
-
-		// See if it's a comma-delimted list
-		StringCaster.attempt( appSettings.get( Key.customTagPaths ) )
+		// If we have a customTagPaths, then transpile it to customComponentPaths
+		// This is a legacy setting that was used in older versions of BoxLang + CFML
+		if ( appSettings.containsKey( Key.customTagPaths ) ) {
+			appSettings.put( Key.customComponentPaths, appSettings.get( Key.customTagPaths ) );
+		}
+		// Check if appSettings.customComponentPaths is a String ,if so, convert it to an array
+		StringCaster.attempt( appSettings.get( Key.customComponentPaths ) )
 		    .ifPresent(
-		        customTagPaths -> config.getAsArray( Key.customTagsDirectory ).addAll( ListUtil.asList( customTagPaths, ListUtil.DEFAULT_DELIMITER ) ) );
+		        castedPaths -> appSettings.put(
+		            Key.customComponentPaths,
+		            ListUtil.asList( castedPaths, ListUtil.DEFAULT_DELIMITER )
+		        )
+		    );
+		// Custom Component Paths, aliased as customTagPaths as well.
+		ArrayCaster.attempt( appSettings.get( Key.customComponentPaths ) )
+		    .ifPresent( customComponentPaths -> config.getAsArray( Key.customComponentsDirectory ).addAll( customComponentPaths ) );
 
 		// Add in classPaths and componentPaths (for CF compat) to the classPaths array
 		ArrayCaster.attempt( appSettings.get( Key.classPaths ) )
@@ -584,6 +599,11 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 		this.connectionManager.shutdown();
 	}
 
+	@Override
+	public void shutdown() {
+		shutdownConnections();
+	}
+
 	/**
 	 * Set the debug output flag for this request
 	 * This is a request-specific setting that can be used to enable or disable debug output for a request
@@ -614,8 +634,8 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	 *
 	 * @return The current request context or null
 	 */
-	public static RequestBoxContext getCurrent() {
-		ArrayDeque<RequestBoxContext> stack = current.get();
+	public static IBoxContext getCurrent() {
+		ArrayDeque<IBoxContext> stack = current.get();
 		if ( stack == null || stack.isEmpty() ) {
 			return null;
 		}
@@ -627,8 +647,8 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	 *
 	 * @param context The request context
 	 */
-	public static void setCurrent( RequestBoxContext context ) {
-		ArrayDeque<RequestBoxContext> stack = current.get();
+	public static void setCurrent( IBoxContext context ) {
+		ArrayDeque<IBoxContext> stack = current.get();
 		// No synchronization is needed here since only one thread can access a threadlocal var at a time.
 		if ( stack == null ) {
 			stack = new ArrayDeque<>();
@@ -642,13 +662,65 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	 * This cleanup is done by the runtime once a thread is done processing a request
 	 */
 	public static void removeCurrent() {
-		ArrayDeque<RequestBoxContext> stack = current.get();
+		ArrayDeque<IBoxContext> stack = current.get();
 		if ( stack != null ) {
 			stack.pop();
 			if ( stack.isEmpty() ) {
 				current.remove();
 			}
 		}
+	}
+
+	/**
+	 * Run a consumer with the thread's current context. If there is no current thread context, then
+	 * we'll create one and manage its lifecycle.
+	 * 
+	 * @param parent   Optional parent context to use if creating one
+	 * @param runnable The runnable to execute in the context
+	 * 
+	 * @return The result of the runnable
+	 */
+	public static Object runInContext( IBoxContext parent, java.util.function.Function<IBoxContext, Object> runnable ) {
+		IBoxContext currentContext = RequestBoxContext.getCurrent();
+		if ( currentContext == null ) {
+			RequestBoxContext	context			= null;
+			boolean				shutdownContext	= false;
+			// If the parent is or has a grandparent of a RequestBoxContext, we can use that
+			// (We don't want to create a request context which is a parent of another request context.)
+			if ( parent != null ) {
+				context = parent.getRequestContext();
+			}
+
+			// If we don't have a request context, then create one
+			if ( context == null ) {
+				context			= new ScriptingRequestBoxContext( parent != null ? parent : BoxRuntime.getInstance().getRuntimeContext() );
+				shutdownContext	= true;
+			}
+
+			try {
+				RequestBoxContext.setCurrent( context );
+				return runnable.apply( context );
+			} finally {
+				RequestBoxContext.removeCurrent();
+				if ( shutdownContext ) {
+					context.shutdown();
+				}
+			}
+		} else {
+			return runnable.apply( currentContext );
+		}
+	}
+
+	/**
+	 * Run a consumer with the thread's current context. If there is no current thread context, then
+	 * we'll create one and manage its lifecycle.
+	 * 
+	 * @param runnable The runnable to execute in the context
+	 * 
+	 * @return The result of the runnable
+	 */
+	public static Object runInContext( java.util.function.Function<IBoxContext, Object> runnable ) {
+		return runInContext( null, runnable );
 	}
 
 }

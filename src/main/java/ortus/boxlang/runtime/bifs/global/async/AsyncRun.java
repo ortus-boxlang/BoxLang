@@ -28,12 +28,13 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 
 @BoxBIF
-public class RunAsync extends BIF {
+@BoxBIF( alias = "RunAsync" )
+public class AsyncRun extends BIF {
 
 	/**
 	 * Constructor
 	 */
-	public RunAsync() {
+	public AsyncRun() {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, Argument.FUNCTION, Key.callback ),
@@ -42,21 +43,25 @@ public class RunAsync extends BIF {
 	}
 
 	/**
-	 * Executes the given code asynchronously and returns to you a BoxFuture object that you can use to interact with the
-	 * asynchronously executed code. A BoxFuture is a subclass of CompletableFuture.
+	 * Executes the given code asynchronously and returns to you a BoxFuture object which inherits from CompletableFuture.
+	 * This way you can create fluent asynchronous code that can be chained and composed.
 	 *
 	 * @see https://docs.oracle.com/en%2Fjava%2Fjavase%2F22%2Fdocs%2Fapi%2F%2F/java.base/java/util/concurrent/CompletableFuture.html
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.callback The code to execute asynchronously, this can be a closure or lambda.
+	 * @argument.callback The code to execute asynchronously, this can be a closure
+	 *                    or lambda.
 	 *
-	 * @argument.executor The executor to use for the asynchronous execution. This can be an instance of an Executor class, or the name of a registered executor in the AsyncService.
+	 * @argument.executor The executor to use for the asynchronous execution. This
+	 *                    can be an instance of an Executor class, or the name of a
+	 *                    registered executor in the AsyncService.
 	 *
 	 * @throws KeyNotFoundException If the executor name passed is not valid.
 	 *
-	 * @return A BoxFuture object that you can use to interact with the asynchronously executed code.
+	 * @return A BoxFuture object that you can use to interact with the
+	 *         asynchronously executed code.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		// Get the callback
@@ -69,7 +74,8 @@ public class RunAsync extends BIF {
 			return BoxFuture.ofFunction( context, callback );
 		}
 
-		// Check if the executor is a string, if so, and then check the async service for the executor
+		// Check if the executor is a string, if so, and then check the async service
+		// for the executor
 		// If the executor is not found, throw an exception
 		if ( executor instanceof String castedExecutor ) {
 			return BoxFuture.ofFunction( context, callback, asyncService.getExecutor( castedExecutor ).executor() );

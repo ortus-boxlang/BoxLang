@@ -15,6 +15,8 @@
 package ortus.boxlang.runtime.jdbc;
 
 import java.sql.Connection;
+import java.sql.Savepoint;
+import java.util.Map;
 
 import ortus.boxlang.runtime.scopes.Key;
 
@@ -96,9 +98,21 @@ public interface ITransaction {
 	 *
 	 * @param savepoint The name of the savepoint
 	 * 
-	 * @return The transaction object for chainability.
+	 * @return The created JDBC savepoint object or NULL if the savepoint could not be created.
 	 */
-	public ITransaction setSavepoint( Key savepoint );
+	public Savepoint setSavepoint( Key savepoint );
+
+	/**
+	 * Get the savepoints used in this transaction.
+	 * <p>
+	 * This method returns a map of savepoint names to their associated savepoint objects, allowing you to manage and rollback to specific points in the transaction.
+	 * 
+	 * @see #setSavepoint(Key)
+	 * @see #rollback(Key)
+	 * 
+	 * @return A map of savepoint Keys to JDBC savepoint objects.
+	 */
+	public Map<Key, Savepoint> getSavepoints();
 
 	/**
 	 * Shutdown the transaction by re-enabling auto commit mode and closing the connection to the database (i.e. releasing it back to the connection pool

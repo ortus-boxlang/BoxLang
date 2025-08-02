@@ -59,6 +59,8 @@
 	// This will apply to ALL applications unless overridden in the Application.cfc
 	"sessionStorage": "memory",
 	// A collection of BoxLang mappings, the key is the prefix and the value is the directory
+	// The key can also be a struct containing a "path" and "external" property 
+	// A non-external mapping will not be used in the web runtimes to resolve incoming file paths
 	"mappings": {
 		"/": "${user-dir}"
 	},
@@ -67,12 +69,14 @@
 		"${user-dir}/boxlang_modules",
 		"${boxlang-home}/modules"
 	],
-	// A collection of BoxLang custom tag directories, they must be absolute paths
-	"customTagsDirectory": [
-		"${boxlang-home}/customTags"
+	// A collection of BoxLang custom component directories, they must be absolute paths
+	"customComponentsDirectory": [
+		"${boxlang-home}/global/components"
 	],
 	// A collection of directories to lookup box classes in (.bx files), they must be absolute paths
-	"classPaths": [],
+	"classPaths": [
+		"${boxlang-home}/global/classes"
+	],
 	// A collection of directories we will class load all Java *.jar files from
 	"javaLibraryPaths": [
 		"${boxlang-home}/lib"

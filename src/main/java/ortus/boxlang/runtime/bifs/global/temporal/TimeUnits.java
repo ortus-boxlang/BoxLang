@@ -83,7 +83,6 @@ import ortus.boxlang.runtime.util.LocalizationUtil;
 @BoxMember( type = BoxLangType.DATETIME, name = "offset" )
 @BoxMember( type = BoxLangType.DATETIME, name = "timezone" )
 @BoxMember( type = BoxLangType.DATETIME, name = "getnumericdate" )
-@BoxMember( type = BoxLangType.DATETIME, name = "getTime" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "year" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "quarter" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "month" )
@@ -106,7 +105,6 @@ import ortus.boxlang.runtime.util.LocalizationUtil;
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "offset" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "timezone" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "getnumericdate" )
-@BoxMember( type = BoxLangType.STRING_STRICT, name = "getTime" )
 
 public class TimeUnits extends BIF {
 

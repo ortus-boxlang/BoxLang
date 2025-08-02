@@ -189,11 +189,11 @@ public class DateTimeTest {
 	@Test
 	void testEquality() {
 		java.util.Date	epoch		= new java.util.Date( 0 );
-		DateTime		dateTime1	= DateTimeCaster.cast( epoch );
+		DateTime		dateTime1	= new DateTime( epoch, ZoneId.of( "UTC" ) );
 		DateTime		dateTime2	= DateTimeCaster.cast( "1970-01-01T00:00:00Z" );
 		assertThat( dateTime1.isEqual( dateTime2 ) ).isTrue();
 		assertThat( dateTime1.equals( dateTime2 ) ).isTrue();
-		assertThat( dateTime1.compareTo( dateTime2 ) ).isEqualTo( 0 );
+		assertThat( dateTime1.toISOString() ).isEqualTo( dateTime2.toISOString() );
 		// @formatter:off
 		instance.executeSource(
 		"""
@@ -218,6 +218,25 @@ public class DateTimeTest {
 	void testGetTime() {
 		DateTime defaultDateTime = new DateTime( "2023-12-31 00:00:00", "yyyy-MM-dd HH:mm:ss" );
 		assertThat( defaultDateTime.getTime() ).isEqualTo( defaultDateTime.getWrapped().toInstant().toEpochMilli() );
+	}
+
+	@DisplayName( "Tests DateTime serialization and deserialization" )
+	@Test
+	void testSerializationDeserialization() {
+		// Test that the original formatter value is maintained
+		// @formatter:off
+		instance.executeSource(
+		"""
+			obj = parseDateTime( "2023-12-31 00:00:00", "yyyy-MM-dd HH:mm:ss" );
+			obj.setFormat( "yyyy-MM-dd HH:mm:ss" );
+			a = objectSerialize( obj );
+			result = objectDeserialize( a );
+		""", 
+		context 
+		);
+		assertThat( variables.get( Key.of( "result" ) ) ).isInstanceOf( DateTime.class );
+		assertThat( variables.getAsDateTime( Key.of( "result" ) ).toString() ).isEqualTo( "2023-12-31 00:00:00" );
+		// @formatter:on
 	}
 
 }

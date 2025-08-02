@@ -35,6 +35,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.RequestScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.util.FileSystemUtil;
+import ortus.boxlang.runtime.util.Mapping;
 
 public class GetBaseTemplatePathTest {
 
@@ -77,7 +78,7 @@ public class GetBaseTemplatePathTest {
 
 	@Test
 	public void testAppClassInMappingSub() {
-		instance.getConfiguration().mappings.put( "/secret", new java.io.File( "src/test/java/TestCases/applications/external" ).getAbsolutePath() );
+		instance.getConfiguration().registerMapping( "/secret", new java.io.File( "src/test/java/TestCases/applications/external" ).getAbsolutePath() );
 		context = getContext( "src/test/java/TestCases/applications/appClass/", "secret/sub1/index.bxm" );
 		instance.executeTemplate(
 		    "secret/sub1/index.bxm",
@@ -91,7 +92,7 @@ public class GetBaseTemplatePathTest {
 
 	private IBoxContext getContext( String rootPath, String template ) {
 		return new ScriptingRequestBoxContext( new ConfigOverrideBoxContext( instance.getRuntimeContext(), config -> {
-			config.getAsStruct( Key.mappings ).put( "/", new java.io.File( rootPath ).getAbsolutePath() );
+			config.getAsStruct( Key.mappings ).put( "/", Mapping.ofExternal( "/", new java.io.File( rootPath ).getAbsolutePath() ) );
 			return config;
 		} ), FileSystemUtil.createFileUri( template ) );
 	}

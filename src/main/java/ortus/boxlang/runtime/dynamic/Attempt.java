@@ -28,8 +28,8 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Struct;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.CustomException;
+import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 import ortus.boxlang.runtime.types.exceptions.NoElementException;
 import ortus.boxlang.runtime.util.ValidationUtil;
 
@@ -673,11 +673,7 @@ public class Attempt<T> {
 	 */
 	public T orThrow( Exception throwable ) {
 		if ( isEmpty() ) {
-			try {
-				throw throwable;
-			} catch ( Exception e ) {
-				throw new BoxRuntimeException( "Can't throw exception", e );
-			}
+			ExceptionUtil.throwException( throwable );
 		}
 		return this.value;
 	}

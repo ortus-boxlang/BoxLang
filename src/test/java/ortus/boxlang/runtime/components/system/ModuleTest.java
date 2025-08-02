@@ -45,7 +45,7 @@ public class ModuleTest {
 	@BeforeAll
 	public static void setUp() {
 		instance = BoxRuntime.getInstance( true );
-		instance.getConfiguration().customTagsDirectory.add( "src/test/java/ortus/boxlang/runtime/components/system" );
+		instance.getConfiguration().customComponentsDirectory.add( "src/test/java/ortus/boxlang/runtime/components/system" );
 	}
 
 	@AfterAll
@@ -158,6 +158,17 @@ public class ModuleTest {
 	}
 
 	@Test
+	public void testCanRunCustomTagCustomAttributesSelfClose() {
+
+		instance.executeSource(
+		    """
+		    <cfmodule template="src/test/java/ortus/boxlang/runtime/components/system/MyTag3.cfm" attributeCollection="#{ template : "something" }#" />
+		            """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( buffer.toString().trim() ).isEqualTo( "Template: somethingTemplate: something" );
+	}
+
+	@Test
 	public void testCanRunCustomTagUnderscore() {
 		instance.executeSource(
 		    """
@@ -168,6 +179,16 @@ public class ModuleTest {
 	}
 
 	@Test
+	public void testCanRunCustomTagUnderscoreSelfClose() {
+		instance.executeSource(
+		    """
+		    <cf_brad foo="bar" />
+		    """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( buffer.toString().trim() ).isEqualTo( "This is the Brad tag barThis is the Brad tag bar" );
+	}
+
+	@Test
 	public void testCanRunBXMCustomTagUnderscore() {
 		instance.executeSource(
 		    """
@@ -175,6 +196,16 @@ public class ModuleTest {
 		    		  """,
 		    context, BoxSourceType.CFTEMPLATE );
 		assertThat( buffer.toString().trim() ).isEqualTo( "This is the Brad tag bar" );
+	}
+
+	@Test
+	public void testCanRunBXMCustomTagUnderscoreSelfClose() {
+		instance.executeSource(
+		    """
+		    <cf_bradBL foo="bar" />
+		    """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( buffer.toString().trim() ).isEqualTo( "This is the Brad tag barThis is the Brad tag bar" );
 	}
 
 	@Test
@@ -194,6 +225,46 @@ public class ModuleTest {
 		    <bx:_brad foo="bar">
 		    		  """,
 		    context, BoxSourceType.BOXTEMPLATE );
+		assertThat( buffer.toString().trim() ).isEqualTo( "This is the Brad tag bar" );
+	}
+
+	@Test
+	public void testCanRunCustomTagUnderscoreBLSelfClose() {
+		instance.executeSource(
+		    """
+		    <bx:_brad foo="bar" />
+		    """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		assertThat( buffer.toString().trim() ).isEqualTo( "This is the Brad tag barThis is the Brad tag bar" );
+	}
+
+	@Test
+	public void testCanRunBXMCustomTagUnderscorefromBL() {
+		instance.executeSource(
+		    """
+		    <bx:_bradBL foo="bar">
+		    		  """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		assertThat( buffer.toString().trim() ).isEqualTo( "This is the Brad tag bar" );
+	}
+
+	@Test
+	public void testCanRunBXMCustomTagUnderscorefromBLSelfClose() {
+		instance.executeSource(
+		    """
+		    <bx:_bradBL foo="bar" />
+		    """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		assertThat( buffer.toString().trim() ).isEqualTo( "This is the Brad tag barThis is the Brad tag bar" );
+	}
+
+	@Test
+	public void testCanRunCustomTagUnderscoreBLScript() {
+		instance.executeSource(
+		    """
+		    bx:_brad foo="bar";
+		    		  """,
+		    context, BoxSourceType.BOXSCRIPT );
 		assertThat( buffer.toString().trim() ).isEqualTo( "This is the Brad tag bar" );
 	}
 
@@ -234,6 +305,16 @@ public class ModuleTest {
 		    <bx:component name="AccessVariablesScopeFromFunction">
 		    		  """,
 		    context, BoxSourceType.BOXTEMPLATE );
+	}
+
+	@Test
+	public void testCanAccessThisScopeFromFunction() {
+		instance.executeSource(
+		    """
+		    result = new src.test.java.ortus.boxlang.runtime.components.system.AccessThisScopeFromFunction().run();
+		    		  """,
+		    context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "brad" );
 	}
 
 }

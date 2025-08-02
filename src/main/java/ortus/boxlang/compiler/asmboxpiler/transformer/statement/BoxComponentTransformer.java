@@ -161,7 +161,7 @@ public class BoxComponentTransformer extends AbstractTransformer {
 
 	private List<AbstractInsnNode> generateBodyNodes( List<BoxStatement> body ) {
 
-		if ( body == null || body.size() == 0 ) {
+		if ( body == null ) {
 			return List.of( new InsnNode( Opcodes.ACONST_NULL ) );
 		}
 

@@ -75,8 +75,18 @@ public class ApplicationClassListener extends BaseApplicationListener {
 		if ( this.settings.containsKey( Key.mappings ) ) {
 			IStruct mappings = this.settings.getAsStruct( Key.mappings );
 			for ( Key key : mappings.keySet() ) {
-				String value = String.valueOf( mappings.get( key ) );
-				mappings.put( key, FileSystemUtil.expandPath( context, value, listener.getRunnablePath() ).absolutePath().toString() );
+				// This could be a struct or a string, so we need to handle both cases
+				Object value = mappings.get( key );
+				// If it's a string, expand it directly and place it back in
+				if ( value instanceof String stringMapping ) {
+					mappings.put( key, FileSystemUtil.expandPath( context, stringMapping, listener.getRunnablePath() ).absolutePath().toString() );
+				} else if ( value instanceof IStruct structMapping ) {
+					// If it's a struct, look for a path key (string) to expand
+					if ( structMapping.containsKey( Key.path ) ) {
+						String path = StringCaster.cast( structMapping.get( Key.path ) );
+						structMapping.put( Key.path, FileSystemUtil.expandPath( context, path, listener.getRunnablePath() ).absolutePath().toString() );
+					}
+				}
 			}
 		}
 
@@ -115,7 +125,7 @@ public class ApplicationClassListener extends BaseApplicationListener {
 			try {
 				// Ensure our implicit onRequest() always outputs, even if the class has output=false
 				cbc.setOutputOverride( true );
-				cbc.includeTemplate( ( String ) args[ 0 ] );
+				cbc.includeTemplate( ( String ) args[ 0 ], true );
 				cbc.flushBuffer( false );
 			} catch ( AbortException e ) {
 				cbc.flushBuffer( false );

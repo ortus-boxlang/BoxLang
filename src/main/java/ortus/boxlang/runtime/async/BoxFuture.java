@@ -17,18 +17,24 @@
  */
 package ortus.boxlang.runtime.async;
 
+import java.util.AbstractMap;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.async.executors.ExecutorRecord;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.Attempt;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
@@ -37,6 +43,7 @@ import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 import ortus.boxlang.runtime.types.util.BLCollector;
 import ortus.boxlang.runtime.types.util.DateTimeHelper;
 
@@ -404,7 +411,7 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 	 */
 
 	/**
-	 * This method accepts an infinite amount of future objects, closures or an array of future objects/closures
+	 * This method accepts an array of future objects, closures or an array of future objects/closures
 	 * in order to execute them in parallel. It will return back to you a future that will return back an array
 	 * of results from every future that was executed. This way you can further attach processing and pipelining
 	 * on the constructed array of values.
@@ -414,35 +421,110 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 	 * until you call get() on the future.
 	 * <p>
 	 * Each future can be a BoxFuture or a CompletableFuture or a BoxLang Function that will be treated as a future.
-	 *
-	 * <pre>
-	 * results = all( f1, f2, f3 ).get()
-	 * all( f1, f2, f3 ).then( (values) => logResults( values ) );
-	 * </pre>
+	 * <p>
+	 * This uses the default executor (ForkJoinPool.commonPool()).
 	 *
 	 * @param context The context of the current execution
-	 * @param futures The futures to execute. This can be one or more futures or an array of futures
+	 * @param futures The array of futures to execute
 	 *
-	 * @result A future that will return the results in an array
+	 * @return A future that will return the results in an array
 	 */
-	public static BoxFuture<Array> all( IBoxContext context, Object... futures ) {
-		BoxFuture<?>[]		aFutures	= futuresWrap( context, futures );
-		final BoxLangLogger	allLogger	= BoxRuntime.getInstance().getLoggingService().ASYNC_LOGGER;
+	public static BoxFuture<Array> all( IBoxContext context, Array futures ) {
+		return all( context, futures, BoxRuntime.getInstance().getAsyncService().getCommonForkJoinPool() );
+	}
+
+	/**
+	 * This method accepts an array of future objects, closures or an array of future objects/closures
+	 * in order to execute them in parallel. It will return back to you a future that will return back an array
+	 * of results from every future that was executed. This way you can further attach processing and pipelining
+	 * on the constructed array of values.
+	 * <p>
+	 * This means that the futures will be executed in parallel and the results will be returned in the order
+	 * that they were passed in. This also means that this operation is non-blocking and will return immediately
+	 * until you call get() on the future.
+	 * <p>
+	 * Each future can be a BoxFuture or a CompletableFuture or a BoxLang Function that will be treated as a future.
+	 * <p>
+	 * You can also pass a custom ExecutorRecord to use for the execution of the futures if and ONLY if
+	 * the incoming array of futures is an array of closures/lambdas or functions.
+	 *
+	 * <pre>
+	 * results = all( [f1, f2, f3] ).get()
+	 * all( [f1, f2, f3] ).then( (values) => logResults( values ) );
+	 * </pre>
+	 *
+	 * @param context        The context of the current execution
+	 * @param futures        The array of futures to execute
+	 * @param executorRecord The executor to use
+	 *
+	 * @return A future that will return the results in an array
+	 */
+	public static BoxFuture<Array> all( IBoxContext context, Array futures, ExecutorRecord executorRecord ) {
+		// If futures is null or empty, return an empty array future
+		if ( futures == null || futures.isEmpty() ) {
+			return BoxFuture.completedFuture( new Array() );
+		}
+
+		// Process the incoming array to make sure it complies to our expectations
+		BoxFuture<?>[] aFutures = futuresWrap( context, futures, executorRecord );
 
 		// Send to allOf() for execution
-		return ( BoxFuture<Array> ) allOf( aFutures )
+		return new BoxFuture<>( allOf( aFutures )
 		    .thenApplyAsync( v -> {
-			    return Arrays.stream( aFutures )
-			        .map( future -> {
-				        try {
-					        return future.get();
-				        } catch ( InterruptedException | ExecutionException e ) {
-					        allLogger.error( "Error executing get() on a future", e );
-					        throw new CompletionException( e );
-				        }
-			        } )
+			    // All futures are now complete, so join() won't block or throw checked exceptions
+			    return Arrays
+			        .stream( aFutures )
+			        .map( BoxFuture::join )
 			        .collect( BLCollector.toArray() );
-		    } );
+		    } ) );
+	}
+
+	/**
+	 * This method accepts an array of future objects, closures or an array of future objects/closures
+	 * in order to execute them in parallel. It will return back to you a future that will return back the first
+	 * result from the futures that was executed. This way you can further attach processing and pipelining
+	 * on the constructed value.
+	 * <p>
+	 * This means that the futures will be executed in parallel and the result will be returned as soon as one of
+	 * the futures completes. This also means that this operation is non-blocking and will return immediately
+	 * until you call get() on the future.
+	 *
+	 * @param context The context of the current execution
+	 * @param futures The array of futures to execute
+	 *
+	 * @return A future that will return the first result from the futures
+	 */
+	public static BoxFuture<Object> any( IBoxContext context, Array futures ) {
+		return any( context, futures, BoxRuntime.getInstance().getAsyncService().getCommonForkJoinPool() );
+	}
+
+	/**
+	 * This method accepts an array of future objects, closures or an array of future objects/closures
+	 * in order to execute them in parallel. It will return back to you a future that will return back the first
+	 * result from the futures that was executed. This way you can further attach processing and pipelining
+	 * on the constructed value.
+	 * <p>
+	 * This means that the futures will be executed in parallel and the result will be returned as soon as one of
+	 * the futures completes. This also means that this operation is non-blocking and will return immediately
+	 * until you call get() on the future.
+	 *
+	 * @param context        The context of the current execution
+	 * @param futures        The array of futures to execute
+	 * @param executorRecord The executor to use for the execution of the futures if they are functions or closures
+	 *
+	 * @return A future that will return the first result from the futures
+	 */
+	public static BoxFuture<Object> any( IBoxContext context, Array futures, ExecutorRecord executorRecord ) {
+		// If futures is null or empty, return an empty future
+		if ( futures == null || futures.isEmpty() ) {
+			return BoxFuture.completedFuture( null );
+		}
+
+		// Process the incoming array to make sure it complies to our expectations
+		BoxFuture<?>[] aFutures = futuresWrap( context, futures, executorRecord );
+
+		// Send to any() for execution
+		return new BoxFuture<>( anyOf( aFutures ) );
 	}
 
 	/**
@@ -560,8 +642,8 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 	    Object items,
 	    ortus.boxlang.runtime.types.Function mapper,
 	    ortus.boxlang.runtime.types.Function errorHandler,
-	    Executor executor ) {
-		return allApply( context, items, mapper, errorHandler, 0, TimeUnit.MILLISECONDS, null );
+	    ExecutorRecord executor ) {
+		return allApply( context, items, mapper, errorHandler, 0, TimeUnit.MILLISECONDS, executor );
 	}
 
 	/**
@@ -592,7 +674,7 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 	    ortus.boxlang.runtime.types.Function errorHandler,
 	    long timeout,
 	    Object unit ) {
-		return allApply( context, items, mapper, errorHandler, 0, TimeUnit.MILLISECONDS, null );
+		return allApply( context, items, mapper, errorHandler, timeout, unit, null );
 	}
 
 	/**
@@ -617,7 +699,6 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 	 *
 	 * @return An array or struct of the results
 	 */
-	@SuppressWarnings( "unchecked" )
 	public static Object allApply(
 	    IBoxContext context,
 	    Object items,
@@ -625,110 +706,280 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 	    ortus.boxlang.runtime.types.Function errorHandler,
 	    long timeout,
 	    Object unit,
-	    Executor executor ) {
-		// Timeunit conversion
-		TimeUnit			timeUnit	= DateTimeHelper.toTimeUnit( unit );
-		final BoxLangLogger	allLogger	= BoxRuntime.getInstance().getLoggingService().ASYNC_LOGGER;
+	    ExecutorRecord executor ) {
+		// If items is null, return an empty array
+		if ( items == null ) {
+			return Array.EMPTY;
+		}
 
-		// Array Mapping
+		// Array Processing
 		if ( items instanceof Array castedArray ) {
-			return castedArray
-			    .stream()
-			    .map( item -> {
-				    // Create a new BoxFuture for each item
-				    BoxFuture<?> f = ofValue( item );
-				    // Do we have an error handler
-				    if ( errorHandler != null ) {
-					    f.onError( new ortus.boxlang.runtime.interop.proxies.Function<>( errorHandler, context, null ) );
-				    }
-				    // Using a custom executor or not
-				    if ( executor != null ) {
-					    return f.then( new ortus.boxlang.runtime.interop.proxies.Function<>( mapper, context, null ), executor );
-				    } else {
-					    return f.then( new ortus.boxlang.runtime.interop.proxies.Function<>( mapper, context, null ) );
-				    }
-			    } )
-			    // Join with the timeout
-			    .map( future -> {
-				    try {
-					    return future.get( timeout, timeUnit );
-				    } catch ( InterruptedException | ExecutionException | TimeoutException e ) {
-					    allLogger.error( "Error executing get() on a future", e );
-					    throw new CompletionException( e );
-				    }
-			    } )
-			    .collect( BLCollector.toArray() );
-		} else if ( items instanceof IStruct castedStruct ) {
-			IStruct result = new Struct();
-			// Struct Mapping
-			castedStruct
-			    .entrySet()
-			    .stream()
-			    .map( entry -> {
-				    // Create a new BoxFuture for each item with a key and value
-				    BoxFuture<IStruct> f = ( BoxFuture<IStruct> ) ofValue( Struct.of( "key", entry.getKey(), "value", entry.getValue() ) );
-				    // Do we have an error handler
-				    if ( errorHandler != null ) {
-					    f.onError( new ortus.boxlang.runtime.interop.proxies.Function<>( errorHandler, context, null ) );
-				    }
-				    // Using a custom executor or not
-				    if ( executor != null ) {
-					    return f.then( new ortus.boxlang.runtime.interop.proxies.Function<>( mapper, context, null ), executor );
-				    } else {
-					    return f.then( new ortus.boxlang.runtime.interop.proxies.Function<>( mapper, context, null ) );
-				    }
-			    } )
-			    // Join with the timeout
-			    .map( future -> {
-				    try {
-					    return ( IStruct ) future.get( timeout, timeUnit );
-				    } catch ( InterruptedException | ExecutionException | TimeoutException e ) {
-					    allLogger.error( "Error executing get() on a future", e );
-					    throw new CompletionException( e );
-				    }
-			    } )
-			    .forEach( entry -> result.put( Key.of( entry.get( "key" ) ), entry.get( "value" ) ) );
-			return result;
-		} else {
+			return allApplyArray( context, castedArray, mapper, errorHandler, timeout, unit, executor );
+		}
+		// Process a Struct
+		else if ( items instanceof IStruct castedStruct ) {
+			return allApplyStruct( context, castedStruct, mapper, errorHandler, timeout, unit, executor );
+		}
+		// Add other types here if needed
+		// If we get here, then the items argument is not an array or a struct
+		// This is an error, so we throw an exception
+		else {
 			throw new BoxRuntimeException( "The items argument must be an array or a struct" );
 		}
 	}
 
 	/**
-	 * This method accepts an infinite amount of future objects, closures or an array of future objects/closures
+	 * Private helper method to apply a function to each item in an array in parallel
 	 *
-	 * @param context The context of the current execution
-	 * @param futures The futures to execute. This can be one or more futures or an array of futures
+	 * @param context      The context of the current execution
+	 * @param array        The array to process
+	 * @param mapper       The function to apply to each item
+	 * @param errorHandler The function to handle any errors that occur, this can be null
+	 * @param timeout      The maximum time to wait
+	 * @param unit         The time unit of the timeout argument
+	 * @param executor     The executor to run the function on
 	 *
-	 * @return A future that will return the results in an array
+	 * @return An array of the results
 	 */
-	public static BoxFuture<?>[] futuresWrap( IBoxContext context, Object... futures ) {
-		var target = futures;
+	private static Array allApplyArray(
+	    IBoxContext context,
+	    Array array,
+	    ortus.boxlang.runtime.types.Function mapper,
+	    ortus.boxlang.runtime.types.Function errorHandler,
+	    long timeout,
+	    Object unit,
+	    ExecutorRecord executor ) {
+		TimeUnit						timeUnit	= DateTimeHelper.toTimeUnit( unit );
+		final BoxLangLogger				allLogger	= BoxRuntime.getInstance().getLoggingService().ASYNC_LOGGER;
 
-		// If we only have one future and it is an array, then we will use that array
-		if ( futures.length == 1 && futures[ 0 ] instanceof Object[] ) {
-			target = ( Object[] ) futures[ 0 ];
+		// Create all futures in parallel (non-blocking)
+		// @formatter:off
+		List<CompletableFuture<Object>>	futures		= array
+		    .stream()
+		    .map( item -> {
+				return CompletableFuture.supplyAsync( () -> {
+						try {
+							// Apply the mapper function directly to each item
+							return new ortus.boxlang.runtime.interop.proxies.Function<>( mapper, context, null ).apply( item );
+						} catch ( Exception e ) {
+							allLogger.error( "Error executing mapper function on item", e );
+							// Handle error with error handler if provided, otherwise return exception struct
+							if ( errorHandler != null ) {
+								try {
+									return new ortus.boxlang.runtime.interop.proxies.Function<>( errorHandler, context, null ).apply( e );
+								} catch ( Exception handlerError ) {
+									allLogger.error( "Error in error handler", handlerError );
+									return ExceptionUtil.throwableToStruct( handlerError );
+								}
+							}
+							// No handler provided, return the exception as a struct
+							else {
+								return ExceptionUtil.throwableToStruct( e );
+							}
+						}
+					},
+						// Bound the executor to the CompletableFuture
+						executor != null ? executor.executor() : ForkJoinPool.commonPool()
+					);
+			} )
+		    .collect( Collectors.toList() );
+		// @formatter:on
+
+		// Wait for all futures to complete with timeout handling
+		try {
+			CompletableFuture<Void> allFutures = CompletableFuture.allOf( futures.toArray( new CompletableFuture[ 0 ] ) );
+
+			// Apply timeout if specified and wait for completion
+			if ( timeout > 0 ) {
+				allFutures.get( timeout, timeUnit );
+			} else {
+				allFutures.get();
+			}
+
+			// All completed successfully, collect results
+			return futures
+			    .stream()
+			    .map( CompletableFuture::join )  // Won't block since all are complete
+			    .collect( BLCollector.toArray() );
+		} catch ( TimeoutException e ) {
+			allLogger.error( "Timeout waiting for all array items to complete", e );
+			// Cancel remaining futures, not guaranteed to stop them but will prevent further processing
+			futures.forEach( f -> f.cancel( true ) );
+			// It's up to the user to shut down the executor if needed
+			throw new BoxRuntimeException(
+			    "Array processing timed out after " + timeout + " " + timeUnit,
+			    "java.lang.TimeoutException", // type
+			    e // cause
+			);
+		} catch ( Exception e ) {
+			allLogger.error( "Error waiting for array processing", e );
+			throw new BoxRuntimeException( "Error during array parallel processing", e );
 		}
+	}
 
+	/**
+	 * Private helper method to apply a function to each item in a struct in parallel
+	 *
+	 * @param context      The context of the current execution
+	 * @param struct       The struct to process
+	 * @param mapper       The function to apply to each item
+	 * @param errorHandler The function to handle any errors that occur, this can be null
+	 * @param timeout      The maximum time to wait
+	 * @param unit         The time unit of the timeout argument
+	 * @param executor     The executor to run the function on
+	 *
+	 * @return A struct of the results
+	 */
+	private static IStruct allApplyStruct(
+	    IBoxContext context,
+	    IStruct struct,
+	    ortus.boxlang.runtime.types.Function mapper,
+	    ortus.boxlang.runtime.types.Function errorHandler,
+	    long timeout,
+	    Object unit,
+	    ExecutorRecord executor ) {
+		TimeUnit										timeUnit	= DateTimeHelper.toTimeUnit( unit );
+		final BoxLangLogger								allLogger	= BoxRuntime.getInstance().getLoggingService().ASYNC_LOGGER;
+		IStruct											result		= new Struct();
+
+		// Create all futures in parallel (non-blocking)
+		// @formatter:off
+		List<CompletableFuture<Map.Entry<Key, Object>>>	futures		= struct
+		    .entrySet()
+		    .stream()
+			// Every item in the collection becomes a CompletableFuture
+			// that will execute the mapper function asynchronously
+			// and return a key-value pair with the processed value
+			// If an error occurs, it will return the key with an error struct
+		    .map( entry -> {
+				CompletableFuture<Map.Entry<Key, Object>> future = CompletableFuture
+					.supplyAsync( () -> {
+							try {
+								// Create key-value struct for the mapper function
+								IStruct itemStruct = Struct.of( Key.key, entry.getKey(), Key.value, entry.getValue() );
+								// Apply the mapper function to the itemStruct
+								Object mappedResult = (IStruct) new ortus.boxlang.runtime.interop.proxies.Function<>( mapper, context, null ).apply( itemStruct );
+								if( !( mappedResult instanceof IStruct ) ) {
+									allLogger.error("Mapper function did not return an instance of IStruct. Returned: " + mappedResult.getClass().getName());
+									throw new BoxRuntimeException( "Mapper function must return a struct, but it returned a: " + mappedResult.getClass().getName() );
+								}
+								// Return the key with the processed value
+								return new AbstractMap.SimpleEntry<>(
+									entry.getKey(),
+									((IStruct) mappedResult).get( Key.value )
+								);
+							} catch ( Exception e ) {
+								allLogger.error( "Error executing mapper function on struct entry", e );
+								Object errorResult;
+								// Handle error with error handler if provided
+								if ( errorHandler != null ) {
+									try {
+										errorResult = new ortus.boxlang.runtime.interop.proxies.Function<>( errorHandler, context, null ).apply( e );
+									} catch ( Exception handlerError ) {
+										allLogger.error( "Error in error handler", handlerError );
+										errorResult = ExceptionUtil.throwableToStruct( handlerError );
+									}
+								} else {
+									errorResult = ExceptionUtil.throwableToStruct( e );
+								}
+								// Return the key-error pair
+								return new AbstractMap.SimpleEntry<>( entry.getKey(), errorResult );
+							}
+						},
+					executor != null ? executor.executor() : ForkJoinPool.commonPool()
+				);
+				return future;
+			} )
+		    .collect( Collectors.toList() );
+		// @formatter:on
+
+		// Wait for all futures to complete with timeout handling
+		try {
+			CompletableFuture<Void> allFutures = CompletableFuture.allOf( futures.toArray( new CompletableFuture[ 0 ] ) );
+
+			// Apply timeout if specified, wait for completion
+			if ( timeout > 0 ) {
+				allFutures.get( timeout, timeUnit );
+			} else {
+				allFutures.get();
+			}
+
+			// All completed successfully, collect results into the struct
+			futures
+			    .stream()
+			    .map( CompletableFuture::join )  // Won't block since all are complete
+			    .forEach( entry -> result.put( entry.getKey(), entry.getValue() ) );
+			return result;
+
+		} catch ( TimeoutException e ) {
+			allLogger.error( "Timeout waiting for all struct entries to complete", e );
+			// Cancel remaining futures
+			futures.forEach( f -> f.cancel( true ) );
+			throw new BoxRuntimeException(
+			    "Struct processing timed out after " + timeout + " " + timeUnit, // message
+			    "java.lang.TimeoutException", // type
+			    e // cause
+			);
+		} catch ( Exception e ) {
+			allLogger.error( "Error waiting for struct processing", e );
+			throw new BoxRuntimeException( "Error during struct parallel processing", e );
+		}
+	}
+
+	/**
+	 * This method accepts an array of future objects, closures or an array of future objects/closures
+	 *
+	 * @param context        The context of the current execution
+	 * @param futures        The futures to execute. This can be one or more futures or an array of futures
+	 * @param executorRecord The executor to use for running the futures
+	 *
+	 * @return An array of BoxFuture objects
+	 */
+	public static BoxFuture<?>[] futuresWrap( IBoxContext context, Array futures, ExecutorRecord executorRecord ) {
 		// Wrap all the futures in a BoxFuture
-		return Arrays.stream( target )
+		return futures
+		    .stream()
 		    .map( future -> {
+
+			    if ( future == null ) {
+				    throw new BoxRuntimeException( "Null future found in futures array" );
+			    }
+
+			    BoxFuture<?> targetFuture = null;
+
 			    // Already a BoxFuture
 			    if ( future instanceof BoxFuture ) {
-				    return ( BoxFuture<?> ) future;
+				    targetFuture = ( BoxFuture<?> ) future;
 			    }
-
 			    // Convert CompletableFuture to BoxFuture
-			    if ( future instanceof CompletableFuture ) {
-				    return ( BoxFuture<?> ) future;
+			    else if ( future instanceof CompletableFuture ) {
+				    targetFuture = BoxFuture.ofCompletableFuture( ( CompletableFuture<?> ) future );
+			    }
+			    // If it's a function, then wrap it in a Proxy Supplier
+			    else if ( future instanceof ortus.boxlang.runtime.types.Function castedFunction ) {
+				    targetFuture = run( new ortus.boxlang.runtime.interop.proxies.Supplier<>( castedFunction, context, null ), executorRecord.executor() );
+			    } else {
+				    throw new BoxRuntimeException(
+				        "Invalid future type: " + future.getClass().getSimpleName() +
+				            ". Expected BoxFuture, CompletableFuture, or Function"
+				    );
 			    }
 
-			    // Build one from a closure
-			    if ( future instanceof ortus.boxlang.runtime.types.Function castedFunction ) {
-				    return ( BoxFuture<?> ) run( new ortus.boxlang.runtime.interop.proxies.Supplier<>( castedFunction, context, null ) );
-			    }
-
-			    throw new IllegalArgumentException( "Invalid future type" );
+			    // Create a new BoxFuture to handle both success and error cases
+			    BoxFuture<Object> resultFuture = new BoxFuture<>();
+			    targetFuture.whenComplete( ( result, throwable ) -> {
+				    if ( throwable != null ) {
+					    // Log the error
+					    BoxRuntime.getInstance().getLoggingService().ASYNC_LOGGER.error( "Error executing future", throwable );
+					    // Complete with error struct
+					    resultFuture.complete(
+					        ExceptionUtil.throwableToStruct( throwable )
+					    );
+				    } else {
+					    resultFuture.complete( result );
+				    }
+			    } );
+			    return resultFuture;
 		    } )
 		    .toArray( BoxFuture[]::new );
 	}

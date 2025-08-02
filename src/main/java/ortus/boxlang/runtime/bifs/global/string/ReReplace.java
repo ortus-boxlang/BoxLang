@@ -90,19 +90,30 @@ public class ReReplace extends BIF {
 		// Ignore non-quantifier curly braces like PERL
 		regex	= RegexUtil.replaceNonQuantiferCurlyBraces( regex );
 
-		StringBuffer	result		= new StringBuffer();
-		Matcher			matcher		= RegexBuilder.of( string, regex, noCase, Pattern.DOTALL ).matcher();
-		boolean			upperCase	= false;
-		boolean			lowerCase	= false;
+		StringBuffer	result					= new StringBuffer();
+		Matcher			matcher					= RegexBuilder.of( string, regex, noCase, Pattern.DOTALL ).matcher();
+		boolean			upperCase				= false;
+		boolean			lowerCase				= false;
+		boolean			upperCaseOne			= false;
+		boolean			lowerCaseOne			= false;
+		boolean			lastBackslashWasEscaped	= false;
 
 		while ( matcher.find() ) {
 			StringBuffer replacement = new StringBuffer( substring );
 			for ( int i = 0; i < replacement.length() - 1; i++ ) {
-				if ( replacement.charAt( i ) == '\\' ) {
-					// If the character before the \ is also a \, skip this iteration
-					if ( i > 0 && replacement.charAt( i - 1 ) == '\\' ) {
+				char currentChar = replacement.charAt( i );
+				if ( currentChar == '\\' ) {
+					// collapse double \\ IF they are before a special sequence
+					if ( i > 0
+					    && replacement.charAt( i - 1 ) == '\\'
+					    && !lastBackslashWasEscaped
+					    && nextCharsAreSpecial( replacement, i ) ) {
+						lastBackslashWasEscaped = true;
+						replacement.delete( i, i + 1 );
+						i--;
 						continue;
 					}
+					lastBackslashWasEscaped = false;
 
 					if ( replacement.charAt( i + 1 ) == 'U' ) {
 						upperCase	= true;
@@ -122,38 +133,54 @@ public class ReReplace extends BIF {
 						replacement.delete( i, i + 2 );
 						i--;
 						continue;
+					} else if ( replacement.charAt( i + 1 ) == 'u' ) {
+						upperCaseOne	= true;
+						lowerCaseOne	= false;
+						replacement.delete( i, i + 2 );
+						i--;
+						continue;
+					} else if ( replacement.charAt( i + 1 ) == 'l' ) {
+						lowerCaseOne	= true;
+						upperCaseOne	= false;
+						replacement.delete( i, i + 2 );
+						i--;
+						continue;
 					} else if ( Character.isDigit( replacement.charAt( i + 1 ) ) ) {
-						int		groupIndex	= Character.getNumericValue( replacement.charAt( i + 1 ) );
-						String	group		= matcher.group( groupIndex );
-
-						if ( upperCase && group != null ) {
-							group = group.toUpperCase();
-						} else if ( lowerCase && group != null ) {
-							group = group.toLowerCase();
-						}
-						// Check if the previous two characters were \\u or \\l
-						if ( i >= 2 && replacement.charAt( i - 2 ) == '\\' && group != null ) {
-							if ( replacement.charAt( i - 1 ) == 'u' ) {
-								// Uppercase the first character of the group
-								group = Character.toUpperCase( group.charAt( 0 ) ) + group.substring( 1 );
-								replacement.delete( i - 2, i );
-								i -= 2;
-							} else if ( replacement.charAt( i - 1 ) == 'l' ) {
-								// Lowercase the first character of the group
-								group = Character.toLowerCase( group.charAt( 0 ) ) + group.substring( 1 );
-								replacement.delete( i - 2, i );
-								i -= 2;
-							}
-						}
+						int		groupIndexLength	= findGroupIndexLength( replacement, i + 1 );
+						int		groupIndex			= Integer.parseInt( replacement.substring( i + 1, i + groupIndexLength ) );
+						String	group				= matcher.group( groupIndex );
 
 						if ( group != null ) {
-							replacement.replace( i, i + 2, group );
-							i += group.length() - 2;
+							if ( upperCase ) {
+								group = group.toUpperCase();
+							} else if ( lowerCase ) {
+								group = group.toLowerCase();
+							} else if ( upperCaseOne ) {
+								group			= Character.toUpperCase( group.charAt( 0 ) ) + group.substring( 1 );
+								upperCaseOne	= false;
+							} else if ( lowerCaseOne ) {
+								group			= Character.toLowerCase( group.charAt( 0 ) ) + group.substring( 1 );
+								lowerCaseOne	= false;
+							}
+							replacement.replace( i, i + groupIndexLength, group );
+							i += group.length() - groupIndexLength;
 						} else {
 							// Skip replacement if group is null
 							replacement.delete( i, i + 2 );
 							i -= 2;
 						}
+						continue;
+					}
+				}
+				if ( upperCase || upperCaseOne ) {
+					replacement.replace( i, i + 1, String.valueOf( currentChar ).toUpperCase() );
+					if ( upperCaseOne ) {
+						upperCaseOne = false; // Reset after one use
+					}
+				} else if ( lowerCase || lowerCaseOne ) {
+					replacement.replace( i, i + 1, String.valueOf( currentChar ).toLowerCase() );
+					if ( lowerCaseOne ) {
+						lowerCaseOne = false; // Reset after one use
 					}
 				}
 			}
@@ -167,6 +194,36 @@ public class ReReplace extends BIF {
 
 		matcher.appendTail( result );
 		return result.toString();
+	}
+
+	/**
+	 * Returns true if the next char is a special char that can follow \
+	 * or if the next two chars are a valid \X escape sequence.
+	 * Returns false if the index is out of bounds.
+	 */
+	private boolean nextCharsAreSpecial( StringBuffer str, int i ) {
+		// Skip ahead all \ chars
+		while ( i < str.length() && str.charAt( i ) == '\\' ) {
+			i++;
+		}
+
+		// And see if the next non-\ char is a special one
+		char c = str.charAt( i );
+		return c == 'l' || c == 'L' || c == 'u' || c == 'U' || c == 'E' || Character.isDigit( c );
+
+	}
+
+	/**
+	 * Keep searching so long as we keep finding digits
+	 */
+	private int findGroupIndexLength( StringBuffer replacement, int startIndex ) {
+		// Start with the second digit since we already know the first one is a digit or we wouldn't be here
+		int length = 1;
+		while ( startIndex + length < replacement.length()
+		    && Character.isDigit( replacement.charAt( startIndex + length ) ) ) {
+			length++;
+		}
+		return length + 1; // +1 for the backslash
 	}
 
 }

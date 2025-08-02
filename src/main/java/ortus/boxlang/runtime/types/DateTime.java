@@ -18,6 +18,8 @@
 package ortus.boxlang.runtime.types;
 
 import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -27,6 +29,7 @@ import java.time.Year;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.time.OffsetDateTime;
 import java.time.chrono.ChronoLocalDateTime;
 import java.time.chrono.ChronoZonedDateTime;
 import java.time.chrono.Chronology;
@@ -123,6 +126,13 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	public static final String				MODE_DATETIME								= "DateTime";
 
 	/**
+	 * The format mask currently applied to this DateTime instance.
+	 * This field is used to preserve the format mask during serialization and deserialization.
+	 * By default, it is initialized to {@link #TS_FORMAT_MASK}.
+	 */
+	private String							appliedFormatMask							= TS_FORMAT_MASK;
+
+	/**
 	 * Common Formatters Map so we can easily access them by name
 	 */
 	public static final IStruct				COMMON_FORMATTERS							= Struct.of(
@@ -154,7 +164,7 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	 * The format we use to represent the date time
 	 * which defaults to the ODBC format: {ts '''yyyy-MM-dd HH:mm:ss'''}
 	 */
-	private transient DateTimeFormatter		formatter									= DateTimeFormatter.ofPattern( TS_FORMAT_MASK );
+	private transient DateTimeFormatter		formatter									= DateTimeFormatter.ofPattern( appliedFormatMask );
 
 	/**
 	 * Function service
@@ -164,7 +174,7 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	/**
 	 * Metadata object
 	 */
-	public transient BoxMeta				$bx;
+	public transient BoxMeta<?>				$bx;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -261,6 +271,16 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	 */
 	public DateTime( LocalDateTime dateTime ) {
 		this( dateTime, ZoneId.systemDefault() );
+	}
+
+	/**
+	 * Constructor to create DateTime from an OffsetDateTime object
+	 * This will convert the OffsetDateTime to a ZonedDateTime
+	 *
+	 * @param dateTime An OffsetDateTime object
+	 */
+	public DateTime( OffsetDateTime dateTime ) {
+		this( dateTime.toZonedDateTime() );
 	}
 
 	/**
@@ -492,7 +512,8 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	 * @return
 	 */
 	public DateTime setFormat( String mask ) {
-		this.formatter = DateTimeFormatter.ofPattern( mask );
+		this.appliedFormatMask	= mask;
+		this.formatter			= DateTimeFormatter.ofPattern( mask );
 		return this;
 	}
 
@@ -504,6 +525,7 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	 * @return
 	 */
 	public DateTime setFormat( DateTimeFormatter formatter ) {
+		// we can only set the formatter as there is no way to retrieve the original mask from the object
 		this.formatter = formatter;
 		return this;
 	}
@@ -526,7 +548,7 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	 *
 	 * @return The string representation
 	 */
-	public BoxMeta getBoxMeta() {
+	public BoxMeta<?> getBoxMeta() {
 		if ( this.$bx == null ) {
 			this.$bx = new GenericMeta( this );
 		}
@@ -654,8 +676,7 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	 */
 	@BoxMemberExpose
 	public String toISOString() {
-		this.formatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
-		return toString();
+		return this.wrapped.format( DateTimeFormatter.ISO_OFFSET_DATE_TIME );
 	}
 
 	/**
@@ -851,7 +872,14 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 		if ( DynamicInteropService.hasMethodNoCase( this.getClass(), name.getName() ) ) {
 			return DynamicInteropService.invoke( context, this, name.getName(), safe, positionalArguments );
 		} else if ( DynamicInteropService.hasMethodNoCase( this.wrapped.getClass(), name.getName() ) ) {
-			return DynamicInteropService.invoke( context, this.wrapped, name.getName(), safe, positionalArguments );
+			Object interopResult = DynamicInteropService.invoke( context, this.wrapped, name.getName(), safe, positionalArguments );
+			if ( interopResult instanceof ZonedDateTime castZonedDateTime ) {
+				// If the result is a ZonedDateTime, we need to wrap it in a DateTime object
+				return new DateTime( castZonedDateTime );
+			} else {
+				// Otherwise, we return the result as is
+				return interopResult;
+			}
 		} else if ( DynamicInteropService.hasMethodNoCase( this.getClass(), "get" + name.getName() ) ) {
 			return DynamicInteropService.invoke( context, this.wrapped, "get" + name.getName(), safe, positionalArguments );
 		} else {
@@ -1088,6 +1116,32 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	@Override
 	public ZoneId getZone() {
 		return this.wrapped.getZone();
+	}
+
+	/**
+	 * Custom Serializable methods to make sure the formatter is serialized and deserialized correctly
+	 */
+
+	/**
+	 * Serializes the DateTime object, including the applied format mask
+	 */
+	private void writeObject( ObjectOutputStream out ) throws IOException {
+		out.defaultWriteObject(); // Serialize non-transient fields
+		out.writeUTF( this.appliedFormatMask ); // Manually serialize the applied format
+	}
+
+	/**
+	 * Deserializes the DateTime object, reconstructing the formatter from the applied format mask
+	 */
+	private void readObject( ObjectInputStream in ) throws IOException, ClassNotFoundException {
+		in.defaultReadObject(); // Deserialize non-transient fields
+		String pattern = in.readUTF(); // Manually deserialize the pattern string
+		if ( pattern == null || pattern.isEmpty() ) {
+			this.appliedFormatMask = TS_FORMAT_MASK;
+		} else {
+			this.appliedFormatMask = pattern;
+		}
+		this.formatter = DateTimeFormatter.ofPattern( this.appliedFormatMask ); // Reconstruct the formatter
 	}
 
 }

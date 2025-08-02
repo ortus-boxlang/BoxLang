@@ -280,6 +280,9 @@ public class GenericCaster implements IBoxCaster {
 		if ( type.equals( "modifiablearray" ) ) {
 			return ModifiableArrayCaster.cast( object, fail );
 		}
+		if ( type.equals( "assignablearray" ) ) {
+			return AssignableArrayCaster.cast( object, fail );
+		}
 		if ( type.equals( "struct" ) ) {
 			return StructCaster.cast( object, fail );
 		}

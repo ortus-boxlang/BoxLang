@@ -87,7 +87,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 	/**
 	 * Metadata object
 	 */
-	public transient BoxMeta							$bx;
+	public transient BoxMeta<?>							$bx;
 
 	/**
 	 * Used to track change listeners. Intitialized on-demand
@@ -133,6 +133,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 
 	/**
 	 * Constructor to create an Array from a Java array
+	 * This will COPY the original array and not wrap it
 	 *
 	 * @param arr The array to create the Array from
 	 */
@@ -216,11 +217,12 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 
 	/**
 	 * Create an Array from a Java array of boxed objects
+	 * This will wrap the original array and not copy it.
 	 *
 	 * @param arr The array to create the Array from
 	 */
 	public static Array fromArray( Object[] arr ) {
-		return new Array( arr );
+		return new Array( Arrays.asList( arr ) );
 	}
 
 	/**
@@ -231,23 +233,42 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 	 * @return The Array
 	 */
 	public static Array of( Object... values ) {
-		return fromArray( values );
+		return new Array( values );
 	}
 
 	/**
-	 * Create a new Array from a list of values.
+	 * Create a new Array from a List or array of values.
 	 *
-	 * @param arr List of values to copy into a new Array
+	 * @param arr List or array of values to copy into a new Array
 	 *
 	 * @return The Array
 	 */
-	public static Array copyOf( List<?> arr ) {
-		Array newArr = new Array();
-		// loop over list and add all elements
-		for ( Object o : arr ) {
-			newArr.add( o );
+	public static Array copyOf( Object arr ) {
+		if ( arr instanceof List<?> arrList ) {
+			Array newArr = new Array();
+			// loop over list and add all elements
+			for ( Object o : arrList ) {
+				newArr.add( o );
+			}
+			return newArr;
 		}
-		return newArr;
+		if ( arr instanceof Array arrArray ) {
+			return new Array( arrArray.toArray() );
+		}
+		if ( arr.getClass().isArray() ) {
+			// Convert any native array of any type to a List<Object>
+			int				length		= java.lang.reflect.Array.getLength( arr );
+			List<Object>	arrayList	= new ArrayList<>( length );
+			for ( int i = 0; i < length; i++ ) {
+				arrayList.add( java.lang.reflect.Array.get( arr, i ) );
+			}
+			return new Array( arrayList );
+		}
+		if ( arr instanceof Collection<?> collection ) {
+			return new Array( new ArrayList<>( collection ) );
+		}
+		throw new BoxRuntimeException(
+		    "Cannot create Array from type: " + arr.getClass().getName() + ". Supported types: List, Array, Collection, or native arrays." );
 	}
 
 	public Object toVarArgsArray( Class<?> varArgType ) {
@@ -550,10 +571,21 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 	public String asString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append( "[\n  " );
-		sb.append( wrapped.stream()
-		    .map( value -> ( value instanceof IType t ? t.asString() : ( value == null ? "[null]" : value.toString() ) ) )
-		    .map( line -> RegexBuilder.of( line, RegexBuilder.MULTILINE_START_OF_LINE ).replaceAllAndGet( "  " ) ) // Add an indent to the start of each line
-		    .collect( java.util.stream.Collectors.joining( ",\n" ) ) );
+		sb.append(
+		    wrapped.stream()
+		        .map( value -> {
+			        if ( value == null )
+				        return "[null]";
+			        Class<?> clazz = value.getClass();
+			        if ( clazz.isArray() ) {
+				        return Array.copyOf( value );
+			        }
+			        return value;
+		        } )
+		        .map( val -> ( val instanceof IType t ? t.asString() : val.toString() ) )
+		        .map( line -> RegexBuilder.of( line, RegexBuilder.MULTILINE_START_OF_LINE ).replaceAllAndGet( "  " ) )
+		        .collect( java.util.stream.Collectors.joining( ",\n" ) )
+		);
 		sb.append( "\n]" );
 		return sb.toString();
 	}
@@ -563,7 +595,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 	 *
 	 * @return The metadata object for the array
 	 */
-	public BoxMeta getBoxMeta() {
+	public BoxMeta<?> getBoxMeta() {
 		if ( this.$bx == null ) {
 			this.$bx = new GenericMeta( this );
 		}

@@ -25,10 +25,10 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import ortus.boxlang.compiler.javaboxpiler.JavaBoxpiler;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
@@ -59,7 +59,7 @@ public class SourceMapTest {
 
 	@Test
 	public void testVariableLineNumber() {
-		if ( instance.getCompiler() instanceof JavaBoxpiler ) {
+		if ( RunnableLoader.getInstance().getBoxpiler().getName().equals( Key.java ) ) {
 			return;
 		}
 		Exception		e		= assertThrows( KeyNotFoundException.class, () -> {
@@ -79,7 +79,7 @@ public class SourceMapTest {
 
 	@Test
 	public void testTemmplateMissingVariable() {
-		if ( instance.getCompiler() instanceof JavaBoxpiler ) {
+		if ( RunnableLoader.getInstance().getBoxpiler().getName().equals( Key.java ) ) {
 			return;
 		}
 
@@ -100,7 +100,7 @@ public class SourceMapTest {
 
 	@Test
 	public void testTemmplateMissingVariableInComponent() {
-		if ( instance.getCompiler() instanceof JavaBoxpiler ) {
+		if ( RunnableLoader.getInstance().getBoxpiler().getName().equals( Key.java ) ) {
 			return;
 		}
 		Exception		e		= assertThrows( KeyNotFoundException.class, () -> {

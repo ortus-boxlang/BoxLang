@@ -4,8 +4,6 @@ import java.io.File;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.nio.file.Path;
-import java.util.List;
 import java.util.function.BiConsumer;
 
 import org.objectweb.asm.ClassWriter;
@@ -20,27 +18,21 @@ import ortus.boxlang.compiler.ast.BoxInterface;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
 import ortus.boxlang.compiler.ast.visitor.QueryEscapeSingleQuoteVisitor;
-import ortus.boxlang.compiler.parser.Parser;
 import ortus.boxlang.compiler.parser.ParsingResult;
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
-import ortus.boxlang.runtime.util.ResolvedFilePath;
 import ortus.boxlang.runtime.util.Timer;
 
 public class ASMBoxpiler extends Boxpiler {
 
-	public static final boolean	DEBUG	= Boolean.getBoolean( "asmboxpiler.debug" );
+	public static final boolean DEBUG = Boolean.getBoolean( "asmboxpiler.debug" );
 
 	/**
 	 * --------------------------------------------------------------------------
 	 * Private Properties
 	 * --------------------------------------------------------------------------
 	 */
-
-	/**
-	 * Singleton instance
-	 */
-	private static ASMBoxpiler	instance;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -51,20 +43,13 @@ public class ASMBoxpiler extends Boxpiler {
 	/**
 	 * Private constructor
 	 */
-	private ASMBoxpiler() {
+	public ASMBoxpiler() {
 		super();
 	}
 
-	/**
-	 * Get the singleton instance
-	 *
-	 * @return TemplateLoader
-	 */
-	public static synchronized ASMBoxpiler getInstance() {
-		if ( instance == null ) {
-			instance = new ASMBoxpiler();
-		}
-		return instance;
+	@Override
+	public Key getName() {
+		return Key.asm;
 	}
 
 	@Override
@@ -92,7 +77,7 @@ public class ASMBoxpiler extends Boxpiler {
 			File sourceFile = classInfo.resolvedFilePath().absolutePath().toFile();
 			// Check if the source file contains Java bytecode by reading the first few bytes
 			if ( diskClassUtil.isJavaBytecode( sourceFile ) ) {
-				classInfo.getClassLoader().defineClasses( FQN, sourceFile );
+				classInfo.getClassLoader().defineClasses( FQN, sourceFile, classInfo );
 				return;
 			}
 			ParsingResult result = parseOrFail( sourceFile );
@@ -180,19 +165,4 @@ public class ASMBoxpiler extends Boxpiler {
 		return null;
 	}
 
-	@Override
-	public List<byte[]> compileTemplateBytes( ResolvedFilePath resolvedFilePath ) {
-		Path		path		= resolvedFilePath.absolutePath();
-		ClassInfo	classInfo	= null;
-		// file extension is .bx or .cfc
-		if ( path.toString().endsWith( ".bx" ) || path.toString().endsWith( ".cfc" ) ) {
-			classInfo = ClassInfo.forClass( resolvedFilePath, Parser.detectFile( path.toFile() ), this );
-		} else {
-			classInfo = ClassInfo.forTemplate( resolvedFilePath, Parser.detectFile( path.toFile() ), this );
-		}
-		var classPool = getClassPool( classInfo.classPoolName() );
-		classPool.putIfAbsent( classInfo.fqn().toString(), classInfo );
-		compileClassInfo( classInfo.classPoolName(), classInfo.fqn().toString() );
-		return diskClassUtil.readClassBytes( classInfo.classPoolName(), classInfo.fqn().toString() );
-	}
 }

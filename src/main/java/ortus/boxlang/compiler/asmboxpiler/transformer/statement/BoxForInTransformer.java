@@ -28,6 +28,7 @@ import org.objectweb.asm.tree.JumpInsnNode;
 import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
+import org.objectweb.asm.tree.TryCatchBlockNode;
 import org.objectweb.asm.tree.TypeInsnNode;
 import org.objectweb.asm.tree.VarInsnNode;
 
@@ -67,12 +68,16 @@ public class BoxForInTransformer extends AbstractTransformer {
 			throw new IllegalStateException();
 		}
 
-		MethodContextTracker	tracker			= trackerOption.get();
+		MethodContextTracker	tracker				= trackerOption.get();
 
-		LabelNode				loopStart		= new LabelNode();
-		LabelNode				loopEnd			= new LabelNode();
-		LabelNode				breakTarget		= new LabelNode();
-		LabelNode				continueTarget	= new LabelNode();
+		LabelNode				loopStart			= new LabelNode();
+		LabelNode				loopEnd				= new LabelNode();
+		LabelNode				breakTarget			= new LabelNode();
+		LabelNode				continueTarget		= new LabelNode();
+		LabelNode				tryStartLabel		= new LabelNode();
+		LabelNode				tryEndLabel			= new LabelNode();
+		LabelNode				finallyStartLabel	= new LabelNode();
+		LabelNode				finallyEndLabel		= new LabelNode();
 
 		tracker.setContinue( forIn, continueTarget );
 		tracker.setBreak( forIn, breakTarget );
@@ -108,6 +113,10 @@ public class BoxForInTransformer extends AbstractTransformer {
 		VarStore isQueryVar = tracker.storeNewVariable( Opcodes.ISTORE );
 		nodes.addAll( isQueryVar.nodes() );
 
+		nodes.add( new LdcInsnNode( -1 ) );
+		VarStore originalQueryIndexVar = tracker.storeNewVariable( Opcodes.ISTORE );
+		nodes.addAll( originalQueryIndexVar.nodes() );
+
 		// determine if it is a struct
 		nodes.add( new VarInsnNode( Opcodes.ALOAD, collectionVar.index() ) );
 		nodes.add( new TypeInsnNode( Opcodes.INSTANCEOF, Type.getType( Struct.class ).getInternalName() ) );
@@ -115,11 +124,31 @@ public class BoxForInTransformer extends AbstractTransformer {
 		VarStore isStructVar = tracker.storeNewVariable( Opcodes.ISTORE );
 		nodes.addAll( isStructVar.nodes() );
 
+		nodes.add( tryStartLabel );
+
 		// need to register query loop
 		// ${contextName}.registerQueryLoop( (Query) ${collectionName}, 0 );
 		nodes.add( new VarInsnNode( Opcodes.ILOAD, isQueryVar.index() ) );
 		LabelNode endQueryLabel = new LabelNode();
 		nodes.add( new JumpInsnNode( Opcodes.IFEQ, endQueryLabel ) );
+
+		// track if query was registered in context
+		nodes.addAll( tracker.loadCurrentContext() );
+		nodes.add( new VarInsnNode( Opcodes.ALOAD, collectionVar.index() ) );
+		nodes.add( new TypeInsnNode( Opcodes.CHECKCAST, Type.getInternalName( Query.class ) ) );
+		nodes.add( new LdcInsnNode( -1 ) );
+		nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
+		    Type.getInternalName( IBoxContext.class ),
+		    "getQueryRow",
+		    Type.getMethodDescriptor(
+		        Type.INT_TYPE,
+		        Type.getType( Query.class ),
+		        Type.INT_TYPE
+		    ),
+		    true
+		) );
+		nodes.addAll( originalQueryIndexVar.nodes() );
+
 		// push context
 		nodes.addAll( tracker.loadCurrentContext() );
 		// push collection
@@ -223,9 +252,72 @@ public class BoxForInTransformer extends AbstractTransformer {
 		nodes.add( loopEnd );
 
 		// unregister query loop
+		nodes.addAll( getUnregisterQueryNodes( collectionVar, isQueryVar, originalQueryIndexVar ) );
+
+		nodes.add( new VarInsnNode( Opcodes.ALOAD, varStore.index() ) );
+
+		if ( returnValueContext.empty ) {
+			nodes.add( new InsnNode( Opcodes.POP ) );
+		}
+
+		nodes.add( new JumpInsnNode( Opcodes.GOTO, finallyEndLabel ) );
+
+		nodes.add( tryEndLabel );
+		nodes.add( finallyStartLabel );
+
+		AsmHelper.addDebugLabel( nodes, "BoxForIn - finally start" );
+
+		nodes.addAll( getUnregisterQueryNodes( collectionVar, isQueryVar, originalQueryIndexVar ) );
+
+		nodes.add( new InsnNode( Opcodes.ATHROW ) );
+
+		nodes.add( finallyEndLabel );
+
+		AsmHelper.addDebugLabel( nodes, "BoxForIn - end" );
+
+		tracker.addTryCatchBlock( new TryCatchBlockNode( tryStartLabel, tryEndLabel, finallyStartLabel, null ) );
+
+		return AsmHelper.addLineNumberLabels( nodes, node );
+	}
+
+	private List<AbstractInsnNode> getUnregisterQueryNodes( VarStore collectionVar, VarStore isQueryVar, VarStore originalQueryIndexVar ) {
+		List<AbstractInsnNode>	nodes		= new ArrayList<>();
+		MethodContextTracker	tracker		= transpiler.getCurrentMethodContextTracker()
+		    .orElseThrow( () -> new IllegalStateException( "No current method context tracker found." ) );
+		LabelNode				ifLabel		= new LabelNode();
+		LabelNode				elseLabel	= new LabelNode();
+
+		// if (isQuery) {
 		nodes.add( new VarInsnNode( Opcodes.ILOAD, isQueryVar.index() ) );
-		LabelNode unRegisterQueryLabel = new LabelNode();
-		nodes.add( new JumpInsnNode( Opcodes.IFEQ, unRegisterQueryLabel ) );
+		nodes.add( new JumpInsnNode( Opcodes.IFEQ, ifLabel ) );
+
+		// if( originalQueryIndexVar > -1 ) {
+		nodes.add( new VarInsnNode( Opcodes.ILOAD, originalQueryIndexVar.index() ) );
+		nodes.add( new JumpInsnNode( Opcodes.IFLT, elseLabel ) );
+
+		// ${contextName}.registerQueryLoop( (Query) ${collectionName}, ${originalQueryIndexName} );
+		nodes.addAll( tracker.loadCurrentContext() );
+		// push collection
+		nodes.add( new VarInsnNode( Opcodes.ALOAD, collectionVar.index() ) );
+		nodes.add( new TypeInsnNode( Opcodes.CHECKCAST, Type.getInternalName( Query.class ) ) );
+
+		nodes.add( new VarInsnNode( Opcodes.ILOAD, originalQueryIndexVar.index() ) );
+
+		// invoke regiserQueryLoop
+		nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
+		    Type.getInternalName( IBoxContext.class ),
+		    "registerQueryLoop",
+		    Type.getMethodDescriptor(
+		        Type.VOID_TYPE,
+		        Type.getType( Query.class ),
+		        Type.INT_TYPE
+		    ),
+		    true
+		) );
+
+		nodes.add( new JumpInsnNode( Opcodes.GOTO, ifLabel ) );
+
+		nodes.add( elseLabel );
 		// push context
 		nodes.addAll( tracker.loadCurrentContext() );
 		// push collection
@@ -241,17 +333,10 @@ public class BoxForInTransformer extends AbstractTransformer {
 		    ),
 		    true
 		) );
-		nodes.add( unRegisterQueryLabel );
 
-		nodes.add( new VarInsnNode( Opcodes.ALOAD, varStore.index() ) );
+		nodes.add( ifLabel );
 
-		if ( returnValueContext.empty ) {
-			nodes.add( new InsnNode( Opcodes.POP ) );
-		}
-
-		AsmHelper.addDebugLabel( nodes, "BoxForIn - end" );
-
-		return AsmHelper.addLineNumberLabels( nodes, node );
+		return nodes;
 	}
 
 	private List<AbstractInsnNode> assignVar( BoxForIn forIn, int iteratorIndex, TransformerContext context ) {

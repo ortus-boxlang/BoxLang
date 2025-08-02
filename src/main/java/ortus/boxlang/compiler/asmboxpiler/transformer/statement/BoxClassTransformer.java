@@ -172,6 +172,9 @@ public class BoxClassTransformer {
 									    // TODO this needs to be improved substantially
 									    Type						returnType		= switch ( returnTypeString ) {
 																														    case "void" -> Type.VOID_TYPE;
+																														    case "int" -> Type.INT_TYPE;
+																														    case "float" -> Type.FLOAT_TYPE;
+																														    case "double" -> Type.DOUBLE_TYPE;
 																														    case "long" -> Type
 																														        .getType( Long.class );
 																														    default -> Type.getType( "L"
@@ -183,10 +186,10 @@ public class BoxClassTransformer {
 									    Type[]						parameterTypes	= new Type[ parameters.size() ];
 									    for ( int i = 0; i < parameters.size(); i++ ) {
 										    BoxArgumentDeclaration parameter = parameters.get( i );
-										    parameterTypes[ i ] = Type.getType( "L" + parameter.getType().replace( '.', '/' ) + ";" );
+										    parameterTypes[ i ] = findJavaType( parameter.getType() );
 
 									    }
-									    return AsmHelper.dereferenceAndInvoke( func.getName(), Type.getMethodType( returnType, parameterTypes ), type );
+									    return AsmHelper.generateJavaMethodStub( func.getName(), Type.getMethodType( returnType, parameterTypes ), type );
 								    } )
 				    .toList();
 			} else {
@@ -225,10 +228,6 @@ public class BoxClassTransformer {
 			methodVisitor.visitFieldInsn( Opcodes.PUTFIELD, type.getInternalName(), "thisScope", Type.getDescriptor( ThisScope.class ) );
 
 			methodVisitor.visitVarInsn( Opcodes.ALOAD, 0 );
-			transpiler.createKey( boxClassName ).forEach( abstractInsnNode -> abstractInsnNode.accept( methodVisitor ) );
-			methodVisitor.visitFieldInsn( Opcodes.PUTFIELD, type.getInternalName(), "name", Type.getDescriptor( Key.class ) );
-
-			methodVisitor.visitVarInsn( Opcodes.ALOAD, 0 );
 			methodVisitor.visitTypeInsn( Opcodes.NEW, Type.getInternalName( ArrayList.class ) );
 			methodVisitor.visitInsn( Opcodes.DUP );
 			methodVisitor.visitMethodInsn( Opcodes.INVOKESPECIAL, Type.getInternalName( ArrayList.class ), "<init>", Type.getMethodDescriptor( Type.VOID_TYPE ),
@@ -243,6 +242,12 @@ public class BoxClassTransformer {
 		classNode.visitField( Opcodes.ACC_PRIVATE | Opcodes.ACC_FINAL | Opcodes.ACC_STATIC, "serialVersionUID", Type.getDescriptor( long.class ), null, 1L )
 		    .visitEnd();
 
+		AsmHelper.addStaticFieldGetter( classNode,
+		    type,
+		    "name",
+		    "bxGetName",
+		    Type.getType( Key.class ),
+		    null );
 		AsmHelper.addStaticFieldGetter( classNode,
 		    type,
 		    "imports",
@@ -387,12 +392,6 @@ public class BoxClassTransformer {
 		    null );
 		AsmHelper.addPrivateFieldGetter( classNode,
 		    type,
-		    "name",
-		    "bxGetName",
-		    Type.getType( Key.class ),
-		    null );
-		AsmHelper.addPrivateFieldGetter( classNode,
-		    type,
 		    "interfaces",
 		    "getInterfaces",
 		    Type.getType( List.class ),
@@ -477,6 +476,9 @@ public class BoxClassTransformer {
 			    List<AbstractInsnNode> psuedoBody = new ArrayList<>();
 			    List<AbstractInsnNode> body		= boxClass.getBody()
 			        .stream()
+			        // skip static methods declarations
+			        .filter( statement -> ! ( statement instanceof BoxFunctionDeclaration func
+			            && func.getModifiers().contains( BoxMethodDeclarationModifier.STATIC ) ) )
 			        .flatMap( statement -> transpiler.transform( statement, TransformerContext.NONE, ReturnValueContext.EMPTY ).stream() )
 			        .collect( Collectors.toList() );
 			    psuedoBody.addAll( transpiler.getUDFRegistrations() );
@@ -501,7 +503,16 @@ public class BoxClassTransformer {
 
 		AsmHelper.methodWithContextAndClassLocator( classNode, "staticInitializer", Type.getType( IBoxContext.class ), Type.VOID_TYPE, true, transpiler, false,
 		    () -> {
-			    List<AbstractInsnNode> staticNodes = ( List<AbstractInsnNode> ) transpiler.getBoxStaticInitializers()
+			    List<AbstractInsnNode> staticNodes = new ArrayList<>();
+			    boxClass.getDescendantsOfType( BoxFunctionDeclaration.class, ( expr ) -> {
+				    BoxFunctionDeclaration func = ( BoxFunctionDeclaration ) expr;
+
+				    return func.getModifiers().contains( BoxMethodDeclarationModifier.STATIC );
+			    } ).forEach( func -> {
+				    staticNodes.addAll( transpiler.transform( func, TransformerContext.NONE ) );
+			    } );
+
+			    staticNodes.addAll( ( List<AbstractInsnNode> ) transpiler.getBoxStaticInitializers()
 			        .stream()
 			        .map( ( staticInitializer ) -> {
 				        if ( staticInitializer == null || staticInitializer.getBody().size() == 0 ) {
@@ -515,15 +526,7 @@ public class BoxClassTransformer {
 				            .collect( Collectors.toList() );
 			        } )
 			        .flatMap( s -> s.stream() )
-			        .collect( Collectors.toList() );
-
-			    boxClass.getDescendantsOfType( BoxFunctionDeclaration.class, ( expr ) -> {
-				    BoxFunctionDeclaration func = ( BoxFunctionDeclaration ) expr;
-
-				    return func.getModifiers().contains( BoxMethodDeclarationModifier.STATIC );
-			    } ).forEach( func -> {
-				    staticNodes.addAll( transpiler.transform( func, TransformerContext.NONE ) );
-			    } );
+			        .collect( Collectors.toList() ) );
 
 			    return staticNodes;
 		    }
@@ -544,6 +547,13 @@ public class BoxClassTransformer {
 			    type.getInternalName(),
 			    "sourceType",
 			    Type.getDescriptor( BoxSourceType.class ) );
+
+			transpiler.createKeyAdHoc( boxClassName ).forEach( abstractInsnNode -> abstractInsnNode.accept( methodVisitor ) );
+			;
+			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
+			    type.getInternalName(),
+			    "name",
+			    Type.getDescriptor( Key.class ) );
 
 			List<AbstractInsnNode>			annotations		= transpiler.transformAnnotations( boxClass.getAnnotations() );
 			List<AbstractInsnNode>			documenation	= transpiler.transformDocumentation( boxClass.getDocumentation() );
@@ -904,6 +914,21 @@ public class BoxClassTransformer {
 		methodVisitor.visitMaxs( 0, 0 );
 
 		methodVisitor.visitEnd();
+	}
+
+	private static Type findJavaType( String typeString ) {
+		return switch ( typeString ) {
+			case "void" -> Type.VOID_TYPE;
+			case "int" -> Type.INT_TYPE;
+			case "float" -> Type.FLOAT_TYPE;
+			case "double" -> Type.DOUBLE_TYPE;
+			case "long" -> Type
+			    .getType( Long.class );
+			default -> Type.getType( "L"
+			    + typeString.replace( '.',
+			        '/' )
+			    + ";" );
+		};
 	}
 
 }

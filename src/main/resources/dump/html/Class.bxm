@@ -102,7 +102,12 @@
 												<td>
 													<!--- check if this is static or we have an instance --->
 													<bx:if Modifier.isStatic(variables.field.getModifiers() ) or !isNull( instance ) >
-														<bx:set value = variables.field.get( instance )>
+														<bx:if isNull( instance )> 
+															<!--- Static field, so we can get the value without an instance --->
+															<bx:set value = variables.field.get(null)>
+														<bx:else>
+															<bx:set value = variables.field.get( instance )>
+														</bx:if>
 														<bx:if isNull( value ) >
 															[Null]
 														<bx:else>

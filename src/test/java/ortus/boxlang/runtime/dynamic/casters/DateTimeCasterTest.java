@@ -278,4 +278,13 @@ public class DateTimeCasterTest {
 		assertThat( result.setFormat( "yyyy-MM-dd" ).toString() ).isEqualTo( "2024-05-21" );
 		assertThat( result.setFormat( "HH:mm:ss" ).toString() ).isEqualTo( "15:02:16" );
 	}
+
+	@DisplayName( "Test two-year date" )
+	@Test
+	public void testTwoYearDate() {
+		String		dateString	= "14-Sep-20";
+		DateTime	result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.setFormat( "yyyy-MM-dd" ).toString() ).isEqualTo( "2020-09-14" );
+	}
 }

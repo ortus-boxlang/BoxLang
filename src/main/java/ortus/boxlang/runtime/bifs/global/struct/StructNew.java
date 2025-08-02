@@ -91,8 +91,8 @@ public class StructNew extends BIF {
 		String							sort				= arguments.getAsString( Key.sortType );
 
 		HashMap<Key, Comparator<Key>>	commonComparators	= arguments.getAsBoolean( Key.localeSensitive )
-		    ? StructUtil.getCommonComparators( LocalizationUtil.parseLocaleFromContext( context, arguments ) )
-		    : StructUtil.getCommonComparators();
+		    ? StructUtil.getCommonKeyComparators( LocalizationUtil.parseLocaleFromContext( context, arguments ) )
+		    : StructUtil.getCommonKeyComparators();
 
 		// With Sorting
 		if ( sort != null ) {

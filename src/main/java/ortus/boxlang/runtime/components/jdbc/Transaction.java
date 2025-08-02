@@ -33,7 +33,7 @@ import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
-import ortus.boxlang.runtime.types.exceptions.DatabaseException;
+import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 import ortus.boxlang.runtime.validation.Validator;
 
 @BoxComponent( allowsBody = true )
@@ -93,7 +93,7 @@ public class Transaction extends Component {
 	 * @attribute.datasource The name of the datasource to use for the transaction. If not provided, the first query execution inside the transaction will set the datasource.
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
-		boolean				isTransactionBeginning	= attributes.getAsString( Key.action ).equals( "begin" ) || body != null;
+		boolean				isTransactionBeginning	= attributes.getAsString( Key.action ).equalsIgnoreCase( "begin" ) || body != null;
 		IJDBCCapableContext	jdbcContext				= context.getParentOfType( IJDBCCapableContext.class );
 		ConnectionManager	connectionManager		= jdbcContext.getConnectionManager();
 		ITransaction		transaction;
@@ -148,19 +148,10 @@ public class Transaction extends Component {
 			try {
 				bodyResult = processBody( context, body );
 				transaction.commit();
-			} catch ( BoxRuntimeException e ) {
-				logger.error( "Encountered runtime exception while processing transaction; rolling back", e );
-				transaction.rollback();
-				// if it is already a runtime exception throw it as-is
-				throw e;
-			} catch ( DatabaseException e ) {
-				logger.error( "Encountered generic exception while processing transaction; rolling back", e );
-				transaction.rollback();
-				throw new DatabaseException( e.getMessage(), e );
 			} catch ( Throwable e ) {
 				logger.error( "Encountered database exception while processing transaction; rolling back", e );
 				transaction.rollback();
-				throw new BoxRuntimeException( e.getMessage(), e );
+				ExceptionUtil.throwException( e );
 			} finally {
 				// notify the connection manager that we're no longer in a transaction.
 				connectionManager.endTransaction();
