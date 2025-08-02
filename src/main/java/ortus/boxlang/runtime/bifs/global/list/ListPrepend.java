@@ -42,7 +42,7 @@ public class ListPrepend extends BIF {
 		    new Argument( true, "string", Key.value ),
 		    new Argument( false, "string", Key.delimiter, ListUtil.DEFAULT_DELIMITER ),
 		    new Argument( false, "boolean", Key.includeEmptyFields, false ),
-		    new Argument( false, "boolean", Key.multiCharacterDelimiter, true )
+		    new Argument( false, "boolean", Key.multiCharacterDelimiter, false )
 		};
 	}
 

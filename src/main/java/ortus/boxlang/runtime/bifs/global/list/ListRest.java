@@ -44,6 +44,7 @@ public class ListRest extends BIF {
 		    new Argument( true, "string", Key.list ),
 		    new Argument( false, "string", Key.delimiter, ListUtil.DEFAULT_DELIMITER ),
 		    new Argument( false, "boolean", Key.includeEmptyFields, false ),
+		    new Argument( false, "boolean", Key.multiCharacterDelimiter, false ),
 		    new Argument( false, "integer", Key.offset, 0 )
 		};
 	}
@@ -68,7 +69,7 @@ public class ListRest extends BIF {
 		    arguments.getAsString( Key.list ),
 		    arguments.getAsString( Key.delimiter ),
 		    arguments.getAsBoolean( Key.includeEmptyFields ),
-		    true
+		    arguments.getAsBoolean( Key.multiCharacterDelimiter )
 		);
 		if ( ref.size() >= 1 ) {
 			ref.remove( 0 + offset );
