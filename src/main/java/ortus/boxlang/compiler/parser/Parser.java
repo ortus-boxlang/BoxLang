@@ -106,8 +106,6 @@ public class Parser {
 			throw new BoxIOException( e );
 		}
 
-		result.setBoxSourceType( fileType );
-
 		IStruct data = Struct.of(
 		    "file", file,
 		    "result", result
@@ -185,10 +183,9 @@ public class Parser {
 				throw new RuntimeException( "Unsupported language" );
 			}
 		}
-		ParsingResult result = parser.parse( code, classOrInterface, isScript );
-		result.setBoxSourceType( sourceType );
+		ParsingResult	result	= parser.parse( code, classOrInterface, isScript );
 
-		IStruct data = Struct.of(
+		IStruct			data	= Struct.of(
 		    "code", code,
 		    "result", result
 		);

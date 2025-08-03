@@ -20,13 +20,15 @@ import java.util.stream.Collectors;
 
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
+import ortus.boxlang.compiler.parser.BoxSourceType;
 
 /**
  * Root node for a script (program) cfs/bxs
  */
 public class BoxScript extends BoxNode {
 
-	private List<BoxStatement> statements;
+	private List<BoxStatement>	statements;
+	private BoxSourceType		boxSourceType;
 
 	/**
 	 * Creates an AST for a program which is represented by a list of statements
@@ -38,13 +40,18 @@ public class BoxScript extends BoxNode {
 	 * @see Position
 	 * @see BoxStatement
 	 */
-	public BoxScript( List<BoxStatement> statements, Position position, String sourceText ) {
+	public BoxScript( List<BoxStatement> statements, Position position, String sourceText, BoxSourceType boxSourceType ) {
 		super( position, sourceText );
 		setStatements( statements );
+		this.boxSourceType = boxSourceType;
 	}
 
 	public List<BoxStatement> getStatements() {
 		return statements;
+	}
+
+	public BoxSourceType getBoxSourceType() {
+		return boxSourceType;
 	}
 
 	public void setStatements( List<BoxStatement> statements ) {
