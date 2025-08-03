@@ -164,9 +164,9 @@
 		},
 		{
 			"type": "java",
-			"name": "PrettyPrint",
+			"name": "PrettyPrinter",
 			"request": "launch",
-			"mainClass": "ortus.boxlang.compiler.PrettyPrint",
+			"mainClass": "ortus.boxlang.compiler.PrettyPrinter",
 			"projectName": "BoxLang",
 			"args": "${input:prettyPrintFile}"
 		}

@@ -23,18 +23,18 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.parser.Parser;
 import ortus.boxlang.compiler.parser.ParsingResult;
 import ortus.boxlang.compiler.prettyprint.Config;
-import ortus.boxlang.compiler.prettyprint.Printer;
-import ortus.boxlang.compiler.prettyprint.Visitor;
+import ortus.boxlang.compiler.prettyprint.PrettyPrint;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
-public class PrettyPrint {
+public class PrettyPrinter {
 
-	private static final BoxLangLogger logger = BoxRuntime.getInstance().getLoggingService().getLogger( PrettyPrint.class.getSimpleName() );
+	private static final BoxLangLogger logger = BoxRuntime.getInstance().getLoggingService().getLogger( PrettyPrinter.class.getSimpleName() );
 
 	public static void main( String[] args ) {
 		BoxRuntime runtime = BoxRuntime.getInstance();
@@ -82,16 +82,13 @@ public class PrettyPrint {
 			result.getIssues().forEach( issue -> logger.error( issue.toString() ) );
 			return;
 		}
-		Visitor visitor = new Visitor( result.getBoxSourceType(), config );
-		result.getRoot().accept( visitor );
-		var doc = visitor.getRoot();
-		doc.condense();
-		doc.propagateWillBreak();
-		long	docTime	= System.currentTimeMillis();
 
-		var		printer	= new Printer( config );
-		var		printed	= printer.print( doc );
-		long	endTime	= System.currentTimeMillis();
+		BoxNode	rootNode	= result.getRoot();
+		var		doc			= PrettyPrint.generateDoc( rootNode, config );
+		long	docTime		= System.currentTimeMillis();
+
+		var		printed		= PrettyPrint.printDoc( doc, config );
+		long	endTime		= System.currentTimeMillis();
 
 		System.out.println( "---------------" );
 		System.out.println( printed );
