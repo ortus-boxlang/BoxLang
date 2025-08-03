@@ -38,6 +38,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.util.ListUtil;
 
 /**
  * An InterceptorPool is a pool of interceptors that can be used to intercept events
@@ -742,7 +743,7 @@ public class InterceptorPool {
 	public static Key[] inflateStates( Object states ) {
 		// If it's a string, make it into an array
 		if ( states instanceof String castedString ) {
-			states = Array.fromString( castedString );
+			states = ListUtil.asList( castedString, ListUtil.DEFAULT_DELIMITER );
 		}
 
 		// If already an array, make sure they are keys

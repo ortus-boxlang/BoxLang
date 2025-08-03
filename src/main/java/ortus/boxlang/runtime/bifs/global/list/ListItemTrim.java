@@ -17,15 +17,18 @@
  */
 package ortus.boxlang.runtime.bifs.global.list;
 
+import java.util.Arrays;
+
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
+import ortus.boxlang.runtime.types.DelimitedArray;
+import ortus.boxlang.runtime.types.util.BLCollector;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
 @BoxBIF
@@ -65,20 +68,17 @@ public class ListItemTrim extends BIF {
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String delimiter = arguments.getAsString( Key.delimiter );
 
-		return ListUtil.asString(
-		    ArrayCaster.cast(
-		        ListUtil
-		            .asList(
-		                arguments.getAsString( Key.list ),
-		                delimiter,
-		                arguments.getAsBoolean( Key.includeEmptyFields ),
-		                arguments.getAsBoolean( Key.multiCharacterDelimiter )
-		            )
-		            .stream()
-		            .map( s -> ( ( String ) s ).trim() )
-		            .toArray()
-		    ),
-		    delimiter
-		);
+		return Arrays.stream(
+		    ListUtil
+		        .asDelimitedList(
+		            arguments.getAsString( Key.list ),
+		            delimiter,
+		            arguments.getAsBoolean( Key.includeEmptyFields ),
+		            arguments.getAsBoolean( Key.multiCharacterDelimiter )
+		        )
+		        .toElementDelimiterPairs() )
+		    .map( pair -> new DelimitedArray.ElementDelimiterPair( ( ( String ) pair.element() ).trim(), pair.delimiter() ) )
+		    .collect( BLCollector.toArray( DelimitedArray.class ) )
+		    .asString();
 	}
 }

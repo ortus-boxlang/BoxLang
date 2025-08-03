@@ -80,7 +80,7 @@ public class ListMap extends ArrayMap {
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		arguments.put(
 		    Key.array,
-		    ListUtil.asList(
+		    ListUtil.asDelimitedList(
 		        arguments.getAsString( Key.list ),
 		        arguments.getAsString( Key.delimiter ),
 		        arguments.getAsBoolean( Key.includeEmptyFields ),

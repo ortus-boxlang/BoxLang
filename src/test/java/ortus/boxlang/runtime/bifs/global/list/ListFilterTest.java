@@ -115,6 +115,44 @@ public class ListFilterTest {
 		assertThat( indexes.get( 4 ) ).isEqualTo( 5 );
 	}
 
+	@DisplayName( "It can filter using a multi delimiter argument" )
+	@Test
+	public void testMultiDelimiter() {
+		instance.executeSource(
+		    """
+		        indexes = [];
+		        nums = "1,2|3:4-5";
+
+		        function filterFn( value, i ){
+		            indexes[ i ] = javacast( "integer", value );
+		            return i != "3" && i != "5";
+		        };
+
+		        result = ListFilter( nums, filterFn, ",|:-" );
+		    """,
+		    context );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "1,2:4" );
+	}
+
+	@DisplayName( "It can filter using a multi delimiter argument whole" )
+	@Test
+	public void testMultiDelimiterWhole() {
+		instance.executeSource(
+		    """
+		        indexes = [];
+		        nums = "1-and-2-and-3-and-4-and-5";
+
+		        function filterFn( value, i ){
+		            indexes[ i ] = javacast( "integer", value );
+		            return i != "3" && i != "5";
+		        };
+
+		        result = ListFilter( nums, filterFn, "-and-", true, true );
+		    """,
+		    context );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "1-and-2-and-4" );
+	}
+
 	@DisplayName( "It should remove values that the UDF returns false for" )
 	@Test
 	public void testRemovesFalseValues() {

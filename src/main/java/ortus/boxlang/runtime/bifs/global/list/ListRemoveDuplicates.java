@@ -40,7 +40,9 @@ public class ListRemoveDuplicates extends BIF {
 		declaredArguments = new Argument[] {
 		    new Argument( true, "string", Key.list ),
 		    new Argument( false, "string", Key.delimiter, ListUtil.DEFAULT_DELIMITER ),
-		    new Argument( false, "boolean", Key.ignoreCase, false )
+		    new Argument( false, "boolean", Key.ignoreCase, false ),
+		    new Argument( false, "boolean", Key.includeEmptyFields, false ),
+		    new Argument( false, "boolean", Key.multiCharacterDelimiter, false )
 		};
 	}
 
@@ -57,11 +59,14 @@ public class ListRemoveDuplicates extends BIF {
 	 * @argument.ignoreCase Whether case should be ignored or not during deduplication - defaults to false
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		return ListUtil.removeDuplicates(
+		return ListUtil.asDelimitedList(
 		    arguments.getAsString( Key.list ),
 		    arguments.getAsString( Key.delimiter ),
-		    !arguments.getAsBoolean( Key.ignoreCase )
-		);
+		    arguments.getAsBoolean( Key.includeEmptyFields ),
+		    arguments.getAsBoolean( Key.multiCharacterDelimiter )
+		)
+		    .removeDuplicates( !arguments.getAsBoolean( Key.ignoreCase ) )
+		    .asString();
 	}
 
 }

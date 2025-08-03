@@ -125,4 +125,26 @@ public class ListAppendTest {
 		assertEquals( updated.getAt( 7 ), "6" );
 	}
 
+	@Test
+	public void testPreserveDelimiter() {
+		instance.executeSource(
+		    """
+		    path = "1-2,3:4_5";
+		    result = listAppend( path, 6, "-,:_" );
+		      """,
+		    context );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "1-2,3:4_5-6" );
+	}
+
+	@Test
+	public void testPreserveDelimiterWhole() {
+		instance.executeSource(
+		    """
+		    path = "1-and-2-and-3-and-4-and-5";
+		    result = listAppend( path, 6, "-and-", true, true );
+		      """,
+		    context );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "1-and-2-and-3-and-4-and-5-and-6" );
+	}
+
 }

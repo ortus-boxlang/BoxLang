@@ -109,4 +109,29 @@ public class ListRestTest {
 		assertThat( variables.get( result ) ).isEqualTo( "q=test" );
 	}
 
+	@Test
+	public void testPreserveDelim() {
+		instance.executeSource(
+		    """
+		    result = listRest( "1a2b3c4", "abc" )
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "2b3c4" );
+
+		instance.executeSource(
+		    """
+		    result = listRest( "1abc2bca3cba4", "abc" )
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "2b3c4" );
+
+		instance.executeSource(
+		    """
+		    result = listRest( "1-and-2-and-3-and-4", "-and-", true, true )
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "2-and-3-and-4" );
+
+	}
+
 }
