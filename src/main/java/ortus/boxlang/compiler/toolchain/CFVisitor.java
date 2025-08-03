@@ -59,6 +59,7 @@ import ortus.boxlang.compiler.ast.statement.BoxType;
 import ortus.boxlang.compiler.ast.statement.BoxWhile;
 import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
 import ortus.boxlang.compiler.ast.statement.component.BoxTemplateIsland;
+import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.compiler.parser.CFParser;
 import ortus.boxlang.parser.antlr.CFGrammar.AtomsContext;
 import ortus.boxlang.parser.antlr.CFGrammar.BoxClassContext;
@@ -189,7 +190,7 @@ public class CFVisitor extends CFGrammarBaseVisitor<BoxNode> {
 		List<BoxStatement>	statements	= ctx.functionOrStatement().stream()
 		    .map( stmt -> tools.toStatementOrError( () -> ( BoxStatement ) stmt.accept( this ), stmt ) )
 		    .collect( Collectors.toList() );
-		return new BoxScript( statements, pos, src );
+		return new BoxScript( statements, pos, src, BoxSourceType.CFSCRIPT );
 	}
 
 	@Override
@@ -252,7 +253,7 @@ public class CFVisitor extends CFGrammarBaseVisitor<BoxNode> {
 			    tools.getPosition( ctx.FINAL() ), ctx.FINAL().getText() ) );
 		}
 
-		return new BoxClass( imports, body, annotations, documentation, property, pos, src );
+		return new BoxClass( imports, body, annotations, documentation, property, pos, src, BoxSourceType.CFSCRIPT );
 	}
 
 	@Override
@@ -296,7 +297,8 @@ public class CFVisitor extends CFGrammarBaseVisitor<BoxNode> {
 		processIfNotNull( ctx.postAnnotation(), annotation -> postAnnotations.add( ( BoxAnnotation ) annotation.accept( this ) ) );
 		processIfNotNull( ctx.function(), stmt -> body.add( tools.toStatementOrError( () -> ( BoxStatement ) stmt.accept( this ), stmt ) ) );
 
-		return new BoxInterface( imports, body, preAnnotations, postAnnotations, documentation, tools.getPosition( ctx ), tools.getSourceText( ctx ) );
+		return new BoxInterface( imports, body, preAnnotations, postAnnotations, documentation, tools.getPosition( ctx ), tools.getSourceText( ctx ),
+		    BoxSourceType.CFSCRIPT );
 	}
 
 	@Override

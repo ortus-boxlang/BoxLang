@@ -693,7 +693,8 @@ public class CFParser extends AbstractParser {
 			body.add( funDec );
 		} );
 
-		return new BoxInterface( imports, body, annotations, postAnnotations, documentation, getPosition( interface_ ), getSourceText( interface_ ) );
+		return new BoxInterface( imports, body, annotations, postAnnotations, documentation, getPosition( interface_ ), getSourceText( interface_ ),
+		    BoxSourceType.CFTEMPLATE );
 	}
 
 	private BoxTemplate toAst( File file, TemplateContext rule ) throws IOException {
@@ -701,7 +702,7 @@ public class CFParser extends AbstractParser {
 		if ( rule.template_statements() != null ) {
 			statements = toAst( file, rule.template_statements() );
 		}
-		return new BoxTemplate( statements, getPosition( rule ), getSourceText( rule ) );
+		return new BoxTemplate( statements, getPosition( rule ), getSourceText( rule ), BoxSourceType.CFTEMPLATE );
 	}
 
 	private BoxNode toAst( File file, Template_componentContext node ) {
@@ -734,7 +735,7 @@ public class CFParser extends AbstractParser {
 			properties.add( toAst( file, annotation ) );
 		}
 
-		return new BoxClass( imports, body, annotations, documentation, properties, getPosition( node ), getSourceText( node ) );
+		return new BoxClass( imports, body, annotations, documentation, properties, getPosition( node ), getSourceText( node ), BoxSourceType.CFTEMPLATE );
 	}
 
 	private BoxProperty toAst( File file, Template_propertyContext node ) {

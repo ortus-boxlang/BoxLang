@@ -608,7 +608,7 @@ public class BoxParser extends AbstractParser {
 		if ( rule.template_statements() != null ) {
 			statements = toAst( file, rule.template_statements() );
 		}
-		return new BoxTemplate( statements, getPosition( rule ), getSourceText( rule ) );
+		return new BoxTemplate( statements, getPosition( rule ), getSourceText( rule ), BoxSourceType.BOXTEMPLATE );
 	}
 
 	private BoxImport toAst( File file, Template_boxImportContext node ) {
