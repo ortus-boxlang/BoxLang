@@ -51,22 +51,11 @@ public abstract class PrettyPrintTest extends TestBase {
 			File inputFile = new File( TEST_RESOURCES_PATH + resourceFolder + "/input." + ext );
 			if ( inputFile.exists() ) {
 				ParsingResult	result			= parser.parse( inputFile, false );
+				String			actualOutput	= PrettyPrint.prettyPrint( result.getRoot(), config );
 				String			expectedOutput	= readFile( TEST_RESOURCES_PATH + resourceFolder + "/output_" + outputExt + "." + ext );
-				String			actualOutput	= print( result, config );
 				assertEquals( expectedOutput, actualOutput );
 			}
 		}
-	}
-
-	protected String print( ParsingResult result, Config config ) {
-		Visitor visitor = new Visitor( result.getBoxSourceType(), config );
-		result.getRoot().accept( visitor );
-		var doc = visitor.getRoot();
-		doc.condense();
-		doc.propagateWillBreak();
-
-		var printer = new Printer( config );
-		return printer.print( doc );
 	}
 
 	protected String readFile( String filePath ) throws IOException {
