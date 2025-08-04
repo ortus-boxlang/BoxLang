@@ -38,7 +38,27 @@ public class BaseJDBCTest {
 		datasourceService = instance.getDataSourceService();
 		String uniqueName = UUID.randomUUID().toString();
 		datasource = JDBCTestUtils.constructTestDataSource( uniqueName, setUpContext );
-		datasourceService.register( Key.of( uniqueName ), datasource );
+		Key datasourceKey = Key.of( uniqueName );
+		datasourceService.register( datasourceKey, datasource );
+		instance.getConfiguration().datasources.put(
+		    datasourceKey,
+		    datasource.getConfiguration()
+		);
+		try {
+			datasource.execute( "DROP TABLE generatedKeyTest", setUpContext );
+		} catch ( DatabaseException ignored ) {
+		}
+		try {
+			// @formatter:off
+			datasource.execute( """
+				CREATE TABLE generatedKeyTest(
+					id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1),
+					name VARCHAR(155)
+				)
+			""", setUpContext );
+			// @formatter:on
+		} catch ( DatabaseException ignored ) {
+		}
 
 		if ( JDBCTestUtils.hasMSSQLModule() ) {
 			// Register a MSSQL datasource for later use

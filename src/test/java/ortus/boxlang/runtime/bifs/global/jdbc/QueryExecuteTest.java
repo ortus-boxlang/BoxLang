@@ -34,7 +34,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
 
-import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.jdbc.ExecutedQuery;
 import ortus.boxlang.runtime.scopes.Key;
@@ -758,24 +757,6 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		assertEquals( "Luis", query.getRowAsStruct( 0 ).get( Key._NAME ) );
 		assertEquals( "Brad", query.getRowAsStruct( 1 ).get( Key._NAME ) );
 		assertEquals( "Jon", query.getRowAsStruct( 2 ).get( Key._NAME ) );
-	}
-
-	@EnabledIf( "tools.JDBCTestUtils#hasMSSQLModule" )
-	@DisplayName( "It sets generatedKey in query meta" )
-	@Test
-	public void testGeneratedKey() {
-		instance.executeStatement(
-		    """
-		        queryExecute(
-		        	"INSERT INTO generatedKeyTest (name) VALUES ( 'Michael' )",
-		        	{},
-		        	{ "result": "variables.result", "datasource" : "MSSQLdatasource" }
-		        );
-		    """,
-		    context );
-		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
-		IStruct meta = variables.getAsStruct( result );
-		assertThat( DoubleCaster.cast( meta.get( Key.generatedKey ), false ) ).isEqualTo( 1.0d );
 	}
 
 	@DisplayName( "It can return cached query results within the cache timeout" )
