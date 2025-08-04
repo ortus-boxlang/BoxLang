@@ -23,13 +23,13 @@ import tools.JDBCTestUtils;
 
 public class BaseJDBCTest {
 
-	static BoxRuntime						instance;
-	protected ScriptingRequestBoxContext	context;
-	IScope									variables;
-	static DataSource						datasource;
-	static DataSource						mssqlDatasource;
-	static DataSource						mysqlDatasource;
-	static DatasourceService				datasourceService;
+	public static BoxRuntime			instance;
+	public ScriptingRequestBoxContext	context;
+	public IScope						variables;
+	public static DataSource			datasource;
+	public static DataSource			mssqlDatasource;
+	public static DataSource			mysqlDatasource;
+	public static DatasourceService		datasourceService;
 
 	@BeforeAll
 	public static void setUp() {
@@ -94,6 +94,14 @@ public class BaseJDBCTest {
 			);
 			datasourceService.register( mysqlName, mysqlDatasource );
 			JDBCTestUtils.ensureTestTableExists( mysqlDatasource, setUpContext );
+			try {
+				mysqlDatasource.execute( "DROP TABLE generatedKeyTest", setUpContext );
+			} catch ( DatabaseException ignored ) {
+			}
+			try {
+				mysqlDatasource.execute( "CREATE TABLE generatedKeyTest( id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(155))", setUpContext );
+			} catch ( DatabaseException ignored ) {
+			}
 		}
 	}
 
