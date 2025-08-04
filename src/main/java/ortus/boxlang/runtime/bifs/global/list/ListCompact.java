@@ -66,7 +66,7 @@ public class ListCompact extends BIF {
 	 * @argument.multiCharacterDelimiter boolean whether the delimiter is multi-character
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Array ref = ListUtil.asList(
+		Array ref = ListUtil.asDelimitedList(
 		    arguments.getAsString( Key.list ),
 		    arguments.getAsString( Key.delimiter ),
 		    true,
@@ -74,7 +74,7 @@ public class ListCompact extends BIF {
 		);
 		trimLeadingEmpties( ref );
 		trimLeadingEmpties( ref.reverse() );
-		return ListUtil.asString( ref.reverse(), arguments.getAsString( Key.delimiter ) );
+		return ref.reverse().asString();
 	}
 
 	/**

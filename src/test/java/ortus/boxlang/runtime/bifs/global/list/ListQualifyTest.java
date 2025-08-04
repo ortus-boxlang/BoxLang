@@ -93,6 +93,24 @@ public class ListQualifyTest {
 		    context );
 
 		assertEquals( "@a@|@b@|@c@|@d@|2|@e@", variables.getAsString( result ) );
+
+		instance.executeSource(
+		    """
+		    myList="a,b|c:d-2_e";
+		    result = ListQualify( myList, "@", ",|:-_", "char" );
+		    """,
+		    context );
+
+		assertEquals( "@a@,@b@|@c@:@d@-2_@e@", variables.getAsString( result ) );
+
+		instance.executeSource(
+		    """
+		    myList="a-and-b-and-c-and-d-and-2-and-e";
+		    result = ListQualify( myList, "@", "-and-", "char", true, true );
+		    """,
+		    context );
+
+		assertEquals( "@a@-and-@b@-and-@c@-and-@d@-and-2-and-@e@", variables.getAsString( result ) );
 	}
 
 	@DisplayName( "It tests the BIF ListQualify with empty values retained" )

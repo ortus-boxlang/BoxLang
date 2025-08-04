@@ -85,6 +85,32 @@ public class ListCompactTest {
 
 	}
 
+	@DisplayName( "It tests the BIF ListCompact with delimiters" )
+	@Test
+	public void testWihDelims() {
+
+		instance.executeSource(
+		    """
+		    list=",|a:b-c,d|:";
+		    result = ListCompact( list, ",|:-" );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "a:b-c,d" );
+	}
+
+	@DisplayName( "It tests the BIF ListCompact with delimiters whole" )
+	@Test
+	public void testWihDelimsWhole() {
+
+		instance.executeSource(
+		    """
+		    list="-and--and-a-and-b-and-c-and-d-and--and-";
+		    result = ListCompact( list, "-and-", true, true );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "a-and-b-and-c-and-d" );
+	}
+
 	@DisplayName( "It tests the member function for String.ListCompact" )
 	@Test
 	public void testMemberFunction() {
