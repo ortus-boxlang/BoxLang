@@ -7,9 +7,8 @@ public class MySQLDriverTest extends AbstractDriverTest {
 
 	/**
 	 * Override to provide driver-specific datasource name
-	 * 
-	 * @Override
 	 */
+	@Override
 	String getDatasourceName() {
 		return "MySQLdatasource";
 	}

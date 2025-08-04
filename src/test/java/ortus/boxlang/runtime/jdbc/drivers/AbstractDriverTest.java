@@ -32,9 +32,6 @@ public abstract class AbstractDriverTest extends BaseJDBCTest {
 	static Key result = new Key( "result" );
 
 	/**
-	 * Override to provide driver-specific datasource name
-	 */
-	/**
 	 * Subclasses must implement to provide driver-specific datasource name
 	 */
 	abstract String getDatasourceName();

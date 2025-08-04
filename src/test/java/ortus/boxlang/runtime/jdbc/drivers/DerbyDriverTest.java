@@ -7,7 +7,6 @@ public class DerbyDriverTest extends AbstractDriverTest {
 
 	/**
 	 * Override to provide driver-specific datasource name
-	 * 
 	 */
 	@Override
 	String getDatasourceName() {
