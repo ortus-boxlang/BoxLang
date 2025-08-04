@@ -34,9 +34,10 @@ public abstract class AbstractDriverTest extends BaseJDBCTest {
 	/**
 	 * Override to provide driver-specific datasource name
 	 */
-	String getDatasourceName() {
-		return datasource.getOriginalName();
-	}
+	/**
+	 * Subclasses must implement to provide driver-specific datasource name
+	 */
+	abstract String getDatasourceName();
 
 	@DisplayName( "It sets generatedKey in query meta" )
 	@Test
