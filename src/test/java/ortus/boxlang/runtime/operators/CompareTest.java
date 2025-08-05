@@ -106,7 +106,7 @@ public class CompareTest {
 
 	}
 
-	@DisplayName( "It can compare durations to number" )
+	@DisplayName( "It can compare durations to numbers" )
 	@Test
 	void testItCanCompareDurations() {
 		assertThat( Compare.invoke( Duration.ofDays( 1 ), 1 ) ).isEqualTo( 0 );
