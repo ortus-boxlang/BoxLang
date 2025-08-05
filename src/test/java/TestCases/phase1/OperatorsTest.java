@@ -870,6 +870,9 @@ public class OperatorsTest {
 
 		result = instance.executeStatement( "'B' greater than 'A'", context );
 		assertThat( result ).isEqualTo( true );
+
+		result = instance.executeStatement( "createTimespan( 1, 0, 0, 0 ) > 0", context );
+		assertThat( result ).isEqualTo( true );
 	}
 
 	@DisplayName( "comparison greater than equal" )
