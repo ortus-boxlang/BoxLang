@@ -151,6 +151,7 @@ public class NumberCaster implements IBoxCaster {
 			DateTime dObject = DateTimeCaster.cast( object );
 			return DateTimeHelper.toFractionalDays( dObject.toEpochMillis() );
 		} else if ( castDates && object instanceof Duration dObject ) {
+			System.out.println( "Duration object: " + DateTimeHelper.toFractionalDays( dObject.toMillis() ) );
 			return DateTimeHelper.toFractionalDays( dObject.toMillis() );
 		}
 

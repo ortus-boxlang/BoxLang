@@ -160,9 +160,9 @@ public class Compare implements IOperator {
 		}
 
 		// Numeric comparison
-		CastAttempt<Number> leftAttempt = NumberCaster.attempt( left );
+		CastAttempt<Number> leftAttempt = NumberCaster.attempt( left, true );
 		if ( leftAttempt.wasSuccessful() ) {
-			CastAttempt<Number> rightAttempt = NumberCaster.attempt( right );
+			CastAttempt<Number> rightAttempt = NumberCaster.attempt( right, true );
 
 			if ( rightAttempt.wasSuccessful() ) {
 				boolean	isLeft	= leftAttempt.get() instanceof BigDecimal;

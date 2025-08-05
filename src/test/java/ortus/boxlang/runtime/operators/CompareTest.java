@@ -21,6 +21,8 @@ import static com.google.common.truth.Truth.assertThat;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import java.time.Duration;
+import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 
 import ortus.boxlang.runtime.types.DateTime;
 
@@ -104,6 +106,12 @@ public class CompareTest {
 		assertThat( Compare.invoke( new DateTime( "1/1/2024" ), new DateTime( "02/1/2024" ) ) ).isEqualTo( -1 );
 		assertThat( Compare.invoke( new DateTime( "1/1/2024" ), new DateTime( "02/1/2024" ) ) ).isEqualTo( -1 );
 
+	}
+
+	@DisplayName( "It can compare durations to number" )
+	@Test
+	void testItCanCompareDurations() {
+		assertThat( Compare.invoke( Duration.ofDays( 1 ), 1 ) ).isEqualTo( 0 );
 	}
 
 }

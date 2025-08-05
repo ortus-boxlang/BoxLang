@@ -31,6 +31,8 @@ import java.time.temporal.TemporalAdjusters;
 import java.time.zone.ZoneRulesException;
 import java.util.concurrent.TimeUnit;
 
+import java.math.MathContext;
+
 import javax.management.InvalidAttributeValueException;
 
 import ortus.boxlang.runtime.dynamic.casters.BigDecimalCaster;
@@ -581,7 +583,8 @@ public class DateTimeHelper {
 	public static BigDecimal toFractionalDays( long millis ) {
 		final BigDecimal	dayMultiplier	= BigDecimalCaster.cast( MILLIS_TO_DAYS_MULTIPLIER );
 		BigDecimal			millisConverted	= BigDecimalCaster.cast( millis );
-		return dayMultiplier.multiply( millisConverted, MathUtil.getMathContext() );
+		// We only need DECIMAL32 precision here or else equality with Durations of milliseconds can fail
+		return dayMultiplier.multiply( millisConverted, MathContext.DECIMAL32 );
 	}
 
 	/**
