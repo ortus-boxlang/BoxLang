@@ -22,8 +22,6 @@ import static com.google.common.truth.Truth.assertThat;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import java.time.Duration;
-import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
-
 import ortus.boxlang.runtime.types.DateTime;
 
 public class CompareTest {
