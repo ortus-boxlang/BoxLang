@@ -609,6 +609,9 @@ public class ModuleRecord {
 	 * @throws ClassNotFoundException If the class is not found
 	 */
 	public Class<?> findModuleClass( String className, Boolean safe, IBoxContext context ) throws ClassNotFoundException {
+		if ( this.classLoader == null ) {
+			return null;
+		}
 		return this.classLoader.findClass( className, safe, false );
 	}
 
