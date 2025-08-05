@@ -1156,4 +1156,18 @@ public class DynamicInteropServiceTest {
 		assertThat( variables.get( Key.result ) ).isEqualTo( true );
 	}
 
+	@Test
+	void testParseFormatCoercion() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				formatter = createObject( "java", "java.text.SimpleDateFormat" ).init(
+					"yyyy-MM-dd'T'HH:mm:ssXXX"
+				);
+				result = formatter.format( parseDateTime( "2025-07-01T00:00:00-06:00" ) );
+				println( result )
+			""", context);
+		// @formatter:on
+	}
+
 }
