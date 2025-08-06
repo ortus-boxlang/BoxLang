@@ -2038,4 +2038,14 @@ public class ClassTest {
 		assertThat( variables.get( "result" ) ).isEqualTo( "bar" );
 	}
 
+	@Test
+	public void testSuperMixinBug() {
+		instance.executeSource(
+		    """
+		    child = new src.test.java.TestCases.phase3.superMixinBug.Child();
+		    child.doSomething();
+		       """,
+		    context );
+	}
+
 }

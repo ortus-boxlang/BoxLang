@@ -1,0 +1,5 @@
+class name="Grandparent" {
+	function doSomething() {
+		println( "from grandparent" );
+	}
+}
