@@ -159,7 +159,11 @@ public class StringCaster implements IBoxCaster {
 				}
 
 			} catch ( Exception e ) {
-				throw new BoxCastException( "Failed to read input stream as a string.", e );
+				if ( fail ) {
+					throw new BoxCastException( "Could not cast InputStream to a string.", e );
+				} else {
+					return null;
+				}
 			}
 		}
 		if ( object instanceof Path path ) {
