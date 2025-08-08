@@ -2048,4 +2048,15 @@ public class ClassTest {
 		    context );
 	}
 
+	@Test
+	public void testGeneratedSetterReturnCorrectThis() {
+		instance.executeSource(
+		    """
+		    child = new src.test.java.TestCases.phase3.GeneratedSetterReturnCorrectThis().setName( "brad" );
+		    result = child.baseClassMethod();
+		       """,
+		    context );
+		assertThat( variables.get( "result" ) ).isEqualTo( "This is the base class method." );
+	}
+
 }
