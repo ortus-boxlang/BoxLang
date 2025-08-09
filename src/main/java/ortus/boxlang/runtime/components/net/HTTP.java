@@ -286,7 +286,16 @@ public class HTTP extends Component {
 				String	type	= StringCaster.cast( param.get( Key.type ) );
 				switch ( type.toLowerCase() ) {
 					// We need to use `setHeader` to overwrite any previously set headers
-					case "header" -> builder.setHeader( StringCaster.cast( param.get( Key._NAME ) ), StringCaster.cast( param.get( Key.value ) ) );
+					case "header" -> {
+						String headerName = StringCaster.cast( param.get( Key._NAME ) );
+						// We need to downgrade our HTTP version if a TE header is present and is not `trailers`
+						// because HTTP/2 does not support the TE header with any other values
+						if ( headerName.equalsIgnoreCase( "TE" ) && !StringCaster.cast( param.get( Key.value ) ).equalsIgnoreCase( "trailers" ) ) {
+							httpVersion = HttpClient.Version.HTTP_1_1;
+							builder.version( httpVersion );
+						}
+						builder.setHeader( headerName, StringCaster.cast( param.get( Key.value ) ) );
+					}
 					case "body" -> {
 						if ( bodyPublisher != null ) {
 							throw new BoxRuntimeException( "Cannot use a body httpparam with an existing http body: " + bodyPublisher.toString() );

@@ -573,6 +573,50 @@ public class HTTPTest {
 
 	}
 
+	@DisplayName( "It can make HTTP call with custom transfer encoding" )
+	@Test
+	public void testCanMakeHTTPCallTransferEncoding( WireMockRuntimeInfo wmRuntimeInfo ) {
+		stubFor(
+		    get( "/posts/3" )
+		        .withHeader( "Accept-Encoding", equalTo( "deflate;q=0" ) )
+		        .willReturn( ok().withHeader( "Content-Type", "application/json; charset=utf-8" ).withBody(
+		            """
+		            {
+		              "userId": 3,
+		              "id": 3,
+		              "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
+		              "body": "quia et suscipit\\nsuscipit recusandae consequuntur expedita et cum\\nreprehenderit molestiae ut ut quas totam\\nnostrum rerum est autem sunt rem eveniet architecto"
+		            }
+		            """ ) ) );
+
+		instance.executeSource(
+		    String.format( """
+		                                   <cfhttp url="%s">
+		                                   	<cfhttpparam type="Header" name="Accept-Encoding" value="deflate;q=0">
+		                   <cfhttpparam type="Header" name="TE" value="deflate;q=0">
+		                                   </cfhttp>
+		                                   <cfset result = cfhttp>
+		                                     """, wmRuntimeInfo.getHttpBaseUrl() + "/posts/3" ),
+		    context, BoxSourceType.CFTEMPLATE );
+
+		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
+
+		IStruct bxhttp = variables.getAsStruct( result );
+		assertThat( bxhttp.get( Key.statusCode ) ).isEqualTo( 200 );
+		assertThat( bxhttp.get( Key.statusText ) ).isEqualTo( "OK" );
+		assertThat( bxhttp.getAsString( Key.fileContent ).replaceAll( "\\s+", "" ) ).isEqualTo(
+		    """
+		    {
+		      "userId": 3,
+		      "id": 3,
+		      "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
+		      "body": "quia et suscipit\\nsuscipit recusandae consequuntur expedita et cum\\nreprehenderit molestiae ut ut quas totam\\nnostrum rerum est autem sunt rem eveniet architecto"
+		    }
+		    """.replaceAll(
+		        "\\s+", "" ) );
+
+	}
+
 	@DisplayName( "It can make a GET request with URL params" )
 	@Test
 	public void testGetWithParams( WireMockRuntimeInfo wmRuntimeInfo ) {
