@@ -646,12 +646,12 @@ public class Configuration implements IConfigSegment {
 					    if ( entry.getValue() instanceof IStruct castedStruct ) {
 						    IStruct eventData = Struct.of(
 						        Key._name, entry.getKey(),
-						        Key.datasource, new Struct( castedStruct )
+						        Key.properties, new Struct( castedStruct )
 						    );
 						    BoxRuntime.getInstance().announce( BoxEvent.ON_DATASOURCE_CONFIG_LOAD, eventData );
 
 						    DatasourceConfig datasourceConfig = new DatasourceConfig( eventData.getAsKey( Key._name ) )
-						        .process( eventData.getAsStruct( Key.datasource ) );
+						        .process( eventData.getAsStruct( Key.properties ) );
 						    this.datasources.put( datasourceConfig.name, datasourceConfig );
 					    } else {
 						    logger.warn(
