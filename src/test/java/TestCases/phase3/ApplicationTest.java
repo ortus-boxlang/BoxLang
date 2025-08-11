@@ -334,7 +334,8 @@ public class ApplicationTest {
 		assertThat( result.get( Key._NAME ) ).isEqualTo( "testUpdateApplicationWithoutName" );
 		assertThat( result.get( Key.mappings ) ).isNotNull();
 		assertThat( result.get( Key.mappings ) ).isInstanceOf( IStruct.class );
-		assertThat( result.getAsStruct( Key.mappings ).get( "/UpdateApplicationWithoutName" ) ).isEqualTo( "/src/test/resources/libs/" );
+		assertThat( result.getAsStruct( Key.mappings ).getAsString( Key.of( "/UpdateApplicationWithoutName" ) ) )
+		    .isEqualTo( "/src/test/resources/libs/" );
 		assertThat( variables.get( Key.of( "firstSessionID" ) ) ).isEqualTo( variables.get( Key.of( "secondSessionID" ) ) );
 	}
 

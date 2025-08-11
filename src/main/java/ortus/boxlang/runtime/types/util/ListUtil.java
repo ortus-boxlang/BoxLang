@@ -17,7 +17,6 @@
  */
 package ortus.boxlang.runtime.types.util;
 
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Locale;
@@ -34,6 +33,7 @@ import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
 
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.ThreadBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
@@ -42,6 +42,7 @@ import ortus.boxlang.runtime.operators.StringCompare;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.AsyncService;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.DelimitedArray;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -82,7 +83,7 @@ public class ListUtil {
 	 * Regular expression pattern to escape special characters in a delimiter for regex operations.
 	 * This is used to ensure that delimiters containing regex special characters are treated literally.
 	 */
-	public static final Pattern	SPECIAL_REGEX_CHARS	= Pattern.compile( "[{}()\\[\\].+*?^$\\\\|]" );
+	public static final Pattern	SPECIAL_REGEX_CHARS	= Pattern.compile( "[{}()\\[\\].+*?^$\\\\|\\-\\&]" );
 
 	/**
 	 * Sort directives for sorting lists.
@@ -114,12 +115,16 @@ public class ListUtil {
 	 * @return The string representation
 	 */
 	public static String asString( Array list, String delimiter ) {
+		if ( list instanceof DelimitedArray delimitedArray ) {
+			// A delimited array already has its own delimiters
+			return delimitedArray.asString();
+		}
 		return list.stream()
 		    // map nulls to empty string since the string caster won't do this
 		    .map( s -> s == null ? "" : s )
 		    .map( v -> v instanceof Array arrayValue ? "'" + arrayValue.toString() + "'" : v )
 		    .map( StringCaster::cast )
-		    .collect( Collectors.joining( list.containsDelimiters ? "" : delimiter ) );
+		    .collect( Collectors.joining( delimiter ) );
 	}
 
 	/**
@@ -150,7 +155,28 @@ public class ListUtil {
 	    String delimiter,
 	    Boolean includeEmpty,
 	    Boolean wholeDelimiter ) {
-		return asList( list, delimiter, includeEmpty, wholeDelimiter, false );
+
+		if ( list == null || list.isEmpty() ) {
+			return new Array();
+		}
+
+		if ( delimiter.length() == 0 ) {
+			return Array.of( list.split( "" ) );
+		}
+		if ( wholeDelimiter ) {
+			if ( includeEmpty ) {
+				return Array.of( StringUtils.splitByWholeSeparatorPreserveAllTokens( list, delimiter ) );
+			} else {
+				return Array.of( StringUtils.splitByWholeSeparator( list, delimiter ) );
+			}
+		} else {
+			if ( includeEmpty ) {
+				return Array.of( StringUtils.splitPreserveAllTokens( list, delimiter ) );
+			} else {
+				return Array.of( StringUtils.split( list, delimiter ) );
+			}
+		}
+
 	}
 
 	/**
@@ -164,38 +190,42 @@ public class ListUtil {
 	 *
 	 * @return A BoxLang array.
 	 */
-	public static Array asList(
+	public static DelimitedArray asDelimitedList(
 	    String list,
 	    String delimiter,
 	    Boolean includeEmpty,
-	    Boolean wholeDelimiter,
-	    Boolean preserveDelimiters ) {
+	    Boolean wholeDelimiter ) {
 
 		if ( list == null || list.isEmpty() ) {
-			return new Array();
+			return new DelimitedArray();
 		}
 
-		String[] result = null;
 		if ( delimiter.length() == 0 ) {
-			result = list.split( "" );
-		} else if ( wholeDelimiter ) {
-			if ( includeEmpty ) {
-				result = StringUtils.splitByWholeSeparatorPreserveAllTokens( list, delimiter );
-			} else {
-				result = StringUtils.splitByWholeSeparator( list, delimiter );
+			var	tokens	= list.split( "" );
+			var	result	= new DelimitedArray().withDelimiter( "" );
+			for ( String token : tokens ) {
+				result.add( token );
 			}
-		} else if ( delimiter.length() > 1 && !wholeDelimiter && preserveDelimiters ) {
-			return new Array( list.splitWithDelimiters( "[" + escapeRegexSpecials( delimiter ) + "]", 0 ) ).withDelimiters();
-		} else {
-			if ( includeEmpty ) {
-				result = StringUtils.splitPreserveAllTokens( list, delimiter );
-			} else {
-				result = StringUtils.split( list, delimiter );
-			}
+			return result;
 		}
 
-		return Arrays.stream( result )
-		    .collect( BLCollector.toArray() );
+		DelimitedArray delimitedArray;
+		if ( wholeDelimiter ) {
+			delimitedArray = DelimitedArray.of( list.splitWithDelimiters( escapeRegexSpecials( delimiter ), -1 ) );
+		} else {
+
+			delimitedArray = DelimitedArray.of( list.splitWithDelimiters( "[" + escapeRegexSpecials( delimiter ) + "]", -1 ) );
+		}
+		if ( !includeEmpty ) {
+			// loop backwards, removing empty items
+			for ( int i = delimitedArray.size() - 1; i >= 0; i-- ) {
+				if ( ( ( String ) delimitedArray.get( i ) ).isEmpty() ) {
+					delimitedArray.remove( i );
+				}
+			}
+		}
+		return delimitedArray;
+
 	}
 
 	/**
@@ -390,7 +420,10 @@ public class ListUtil {
 	 * @return The new list
 	 */
 	public static String setAt( String list, int index, String value, String delimiter, Boolean includeEmpty, Boolean wholeDelimiter ) {
-		return asString( asList( list, delimiter, includeEmpty, wholeDelimiter ).setAt( index, value ), delimiter );
+		return asDelimitedList( list, delimiter, includeEmpty, wholeDelimiter )
+		    .withDelimiter( delimiter, wholeDelimiter )
+		    .setAt( index, value )
+		    .asString();
 	}
 
 	/**
@@ -483,13 +516,13 @@ public class ListUtil {
 	 * @return The new list
 	 */
 	public static String insertAt( String list, int index, String value, String delimiter, Boolean includeEmpty, Boolean wholeDelimiter ) {
-		Array jList = asList( list, delimiter, includeEmpty, wholeDelimiter );
+		Array jList = asDelimitedList( list, delimiter, includeEmpty, wholeDelimiter ).withDelimiter( delimiter, wholeDelimiter );
 		// Throw if index is out of bounds
 		if ( index < 1 || index > jList.size() + 1 ) {
 			throw new BoxRuntimeException( "Index out of bounds for list with " + jList.size() + " elements." );
 		}
 		jList.add( index - 1, value );
-		return asString( jList, delimiter );
+		return jList.asString();
 	}
 
 	/**
@@ -519,23 +552,7 @@ public class ListUtil {
 	 */
 	public static String deleteAt( String list, int index, String delimiter, Boolean includeEmpty, Boolean wholeDelimiter ) {
 		return asString(
-		    asList( list, delimiter, includeEmpty, wholeDelimiter, true ).deleteAt( index ),
-		    delimiter
-		);
-	}
-
-	/**
-	 * De-duplicates a list
-	 *
-	 * @param list          The list to remove from
-	 * @param delimiter     The delimiter to use
-	 * @param caseSensitive Whether the perform the deduplication case-insenstively
-	 *
-	 * @return The new list
-	 */
-	public static String removeDuplicates( String list, String delimiter, Boolean caseSensitive ) {
-		return asString(
-		    asList( list, delimiter ).removeDuplicates( caseSensitive ),
+		    asDelimitedList( list, delimiter, includeEmpty, wholeDelimiter ).deleteAt( index ),
 		    delimiter
 		);
 	}
@@ -568,11 +585,11 @@ public class ListUtil {
 
 		IntConsumer consumer;
 		if ( callback.requiresStrictArguments() ) {
-			consumer = idx -> callbackContext.invokeFunction( callback,
-			    new Object[] { array.size() > idx ? array.get( idx ) : null } );
+			consumer = idx -> ThreadBoxContext.runInContext( callbackContext, parallel, ctx -> ctx.invokeFunction( callback,
+			    new Object[] { array.size() > idx ? array.get( idx ) : null } ) );
 		} else {
-			consumer = idx -> callbackContext.invokeFunction( callback,
-			    new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } );
+			consumer = idx -> ThreadBoxContext.runInContext( callbackContext, parallel, ctx -> ctx.invokeFunction( callback,
+			    new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } ) );
 		}
 
 		// Create a stream of what we want, usage is determined internally by the terminators
@@ -648,11 +665,11 @@ public class ListUtil {
 
 		IntPredicate test;
 		if ( callback.requiresStrictArguments() ) {
-			test = idx -> BooleanCaster.cast( callbackContext.invokeFunction( callback,
-			    new Object[] { array.size() > idx ? array.get( idx ) : null } ) );
+			test = idx -> BooleanCaster.cast( ThreadBoxContext.runInContext( callbackContext, parallel, ctx -> ctx.invokeFunction( callback,
+			    new Object[] { array.size() > idx ? array.get( idx ) : null } ) ) );
 		} else {
-			test = idx -> BooleanCaster.cast( callbackContext.invokeFunction( callback,
-			    new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } ) );
+			test = idx -> BooleanCaster.cast( ThreadBoxContext.runInContext( callbackContext, parallel, ctx -> ctx.invokeFunction( callback,
+			    new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } ) ) );
 		}
 
 		// Create a stream of what we want, usage is determined internally by the terminators
@@ -710,11 +727,11 @@ public class ListUtil {
 
 		IntPredicate test;
 		if ( callback.requiresStrictArguments() ) {
-			test = idx -> BooleanCaster.cast( callbackContext.invokeFunction( callback,
-			    new Object[] { array.size() > idx ? array.get( idx ) : null } ) );
+			test = idx -> BooleanCaster.cast( ThreadBoxContext.runInContext( callbackContext, parallel, ctx -> ctx.invokeFunction( callback,
+			    new Object[] { array.size() > idx ? array.get( idx ) : null } ) ) );
 		} else {
-			test = idx -> BooleanCaster.cast( callbackContext.invokeFunction( callback,
-			    new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } ) );
+			test = idx -> BooleanCaster.cast( ThreadBoxContext.runInContext( callbackContext, parallel, ctx -> ctx.invokeFunction( callback,
+			    new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } ) ) );
 		}
 
 		// Create a stream of what we want, usage is determined internally by the terminators
@@ -775,25 +792,25 @@ public class ListUtil {
 		// Otherwise we pass the item, the index, and the array itself
 		IntPredicate test;
 		if ( callback.requiresStrictArguments() ) {
-			test = idx -> BooleanCaster.cast( callbackContext.invokeFunction( callback,
-			    new Object[] { array.size() > idx ? array.get( idx ) : null } ) );
+			test = idx -> BooleanCaster.cast( ThreadBoxContext.runInContext( callbackContext, parallel, ctx -> ctx.invokeFunction( callback,
+			    new Object[] { array.size() > idx ? array.get( idx ) : null } ) ) );
 		} else {
-			test = idx -> BooleanCaster.cast( callbackContext.invokeFunction( callback,
-			    new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } ) );
+			test = idx -> BooleanCaster.cast( ThreadBoxContext.runInContext( callbackContext, parallel, ctx -> ctx.invokeFunction( callback,
+			    new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } ) ) );
 		}
 
 		// Create a stream of what we want, usage is determined internally by the terminators
 		Stream<Object> arrayStream = array
 		    .intStream()
 		    .filter( test )
-		    .mapToObj( ( idx ) -> array.size() > idx ? array.get( idx ) : null );
+		    .mapToObj( ( idx ) -> array.size() > idx ? array.getData( idx ) : null );
 
 		if ( parallel ) {
 			// If maxThreads is null or 0, then use just the ForkJoinPool default parallelism level
 			if ( maxThreads <= 0 ) {
 				return arrayStream
 				    .parallel()
-				    .collect( BLCollector.toArray() );
+				    .collect( BLCollector.toArray( array.getClass() ) );
 			}
 			// Otherwise, create a new ForkJoinPool with the specified number of threads
 			return ( Array ) AsyncService.buildExecutor(
@@ -803,12 +820,12 @@ public class ListUtil {
 			).submitAndGet( () -> {
 				return arrayStream
 				    .parallel()
-				    .collect( BLCollector.toArray() );
+				    .collect( BLCollector.toArray( array.getClass() ) );
 			} );
 		}
 
 		// Non-parallel execution
-		return arrayStream.collect( BLCollector.toArray() );
+		return arrayStream.collect( BLCollector.toArray( array.getClass() ) );
 	}
 
 	/**
@@ -913,15 +930,15 @@ public class ListUtil {
 		// Otherwise we pass the item, the index, and the array itself
 		java.util.function.IntFunction<Object> mapper;
 		if ( callback.requiresStrictArguments() ) {
-			mapper = idx -> callbackContext.invokeFunction(
+			mapper = idx -> ThreadBoxContext.runInContext( callbackContext, parallel, ctx -> array.copyData( idx, ctx.invokeFunction(
 			    callback,
 			    new Object[] { array.size() > idx ? array.get( idx ) : null }
-			);
+			) ) );
 		} else {
-			mapper = idx -> callbackContext.invokeFunction(
+			mapper = idx -> ThreadBoxContext.runInContext( callbackContext, parallel, ctx -> array.copyData( idx, ctx.invokeFunction(
 			    callback,
 			    new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array }
-			);
+			) ) );
 		}
 
 		Stream<Object> arrayStream = array
@@ -933,7 +950,7 @@ public class ListUtil {
 			if ( maxThreads <= 0 ) {
 				return arrayStream
 				    .parallel()
-				    .collect( BLCollector.toArray() );
+				    .collect( BLCollector.toArray( array.getClass() ) );
 			}
 
 			// Otherwise, create a new ForkJoinPool with the specified number of threads
@@ -944,12 +961,12 @@ public class ListUtil {
 			).submitAndGet( () -> {
 				return arrayStream
 				    .parallel()
-				    .collect( BLCollector.toArray() );
+				    .collect( BLCollector.toArray( array.getClass() ) );
 			} );
 		}
 
 		// Non-parallel execution
-		return arrayStream.collect( BLCollector.toArray() );
+		return arrayStream.collect( BLCollector.toArray( array.getClass() ) );
 	}
 
 	/**

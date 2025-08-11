@@ -32,6 +32,8 @@ public class EqualsEqualsEqualsTest {
 		assertThat( EqualsEqualsEquals.invoke( true, true ) ).isTrue();
 		assertThat( EqualsEqualsEquals.invoke( 1, "1" ) ).isFalse();
 		assertThat( EqualsEqualsEquals.invoke( 1, 1 ) ).isTrue();
+		assertThat( EqualsEqualsEquals.invoke( "1", "true" ) ).isFalse();
+		assertThat( EqualsEqualsEquals.invoke( Integer.valueOf( 5 ), Long.valueOf( 5 ) ) ).isFalse();
 	}
 
 	@DisplayName( "It can obey inheritance" )

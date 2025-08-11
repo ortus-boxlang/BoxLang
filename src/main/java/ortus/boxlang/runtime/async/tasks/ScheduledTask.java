@@ -39,7 +39,10 @@ import org.slf4j.Logger;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.async.executors.ExecutorRecord;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.IJDBCCapableContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
+import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.context.ThreadBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.interop.DynamicObject;
@@ -305,11 +308,11 @@ public class ScheduledTask implements Runnable {
 		// - If we have a request context on the ThreadLocal use that
 		// - Else use the default runtime context
 		if ( this.scheduler != null ) {
-			this.taskContext = this.scheduler.getContext();
+			this.taskContext = new ThreadBoxContext( this.scheduler.getContext() );
 		} else if ( RequestBoxContext.getCurrent() != null ) {
-			this.taskContext = RequestBoxContext.getCurrent();
+			this.taskContext = new ThreadBoxContext( RequestBoxContext.getCurrent() );
 		} else {
-			this.taskContext = BoxRuntime.getInstance().getRuntimeContext();
+			this.taskContext = new ScriptingRequestBoxContext( BoxRuntime.getInstance().getRuntimeContext() );
 		}
 
 		// Init the stats
@@ -429,11 +432,6 @@ public class ScheduledTask implements Runnable {
 	 */
 	public void run( Boolean force ) {
 
-		// If we have a request box context, use it for the thread.
-		if ( this.taskContext instanceof RequestBoxContext castedContext ) {
-			RequestBoxContext.setCurrent( castedContext );
-		}
-
 		debugLog( String.format( "run( force: %b )", force ) );
 		String timerLabel = "task-" + System.currentTimeMillis();
 		timer.start( timerLabel );
@@ -453,6 +451,8 @@ public class ScheduledTask implements Runnable {
 		// Mark the task as it will run now for the first time
 		this.stats.put( "neverRun", false );
 		try {
+			RequestBoxContext.setCurrent( this.taskContext );
+
 			// Before Interceptors : From global to local
 			this.interceptorService.announce(
 			    BoxEvent.SCHEDULER_BEFORE_ANY_TASK,
@@ -572,6 +572,13 @@ public class ScheduledTask implements Runnable {
 			cleanupTaskRun();
 			// set next run time based on timeUnit and period
 			setNextRunTime();
+
+			RequestBoxContext.removeCurrent();
+
+			// Clean up an open connections from this run
+			if ( this.taskContext instanceof IJDBCCapableContext jdbcContext ) {
+				jdbcContext.shutdownConnections();
+			}
 		}
 	}
 

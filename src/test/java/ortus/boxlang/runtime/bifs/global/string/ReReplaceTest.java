@@ -131,6 +131,13 @@ public class ReReplaceTest {
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "FIRST@second@THIRD" );
+
+		instance.executeSource(
+		    """
+		    result = "zachary".reReplace("ary", "\\Utest\\Eer");
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "zachTESTer" );
 	}
 
 	@Test
@@ -155,6 +162,13 @@ public class ReReplaceTest {
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "ZACHARY" );
+
+		instance.executeSource(
+		    """
+		    result = "zachary".reReplace("ary", "\\utest");
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "zachTest" );
 
 	}
 
@@ -213,6 +227,133 @@ public class ReReplaceTest {
 		       """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "_de" );
+	}
+
+	@DisplayName( "ignore trailing backslash" )
+	@Test
+	public void testIgnoreTrailingBackslash() {
+		instance.executeSource(
+		    """
+		    str = "brad wood";
+		    result = reReplaceNoCase( str, "rad", "ard\\", "all" )
+		         """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "bard\\ wood" );
+	}
+
+	@DisplayName( "ignore double backslash not preceding special char" )
+	@Test
+	public void testIgnoreDoubleBackslashNotPrecedingSpecialChar() {
+		instance.executeSource(
+		    """
+		    str = "brad wood";
+		    result = reReplaceNoCase( str, "rad", "\\\\ard", "all" )
+		         """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "b\\\\ard wood" );
+	}
+
+	@DisplayName( "escape double backslash preceeding special char" )
+	@Test
+	public void testEscapeDoubleBackslashPreceedingSpecialChar() {
+		instance.executeSource(
+		    """
+		    str = "brad wood";
+		    result = reReplaceNoCase( str, "rad", "\\\\U\\\\u\\\\L\\\\l\\\\E", "all" )
+		         """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "b\\U\\u\\L\\l\\E wood" );
+
+		// This gets ignored since there is no special char after the double backslash
+		instance.executeSource(
+		    """
+		    str = "brad wood";
+		    result = reReplaceNoCase( str, "rad", "\\\\ard", "all" )
+		         """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "b\\\\ard wood" );
+	}
+
+	@DisplayName( "escape double backslash preceeding two char escape sequence" )
+	@Test
+	public void testEscapeDoubleBackslashPreceedingTwoCharEscapeSequence() {
+		instance.executeSource(
+		    """
+		    str = "9+9";
+		    result = reReplaceNoCase( str, "([+])", "\\\\\\1", "all" )
+		         """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "9\\+9" );
+
+		// This gets ignored since there is no special char after the double backslash
+		instance.executeSource(
+		    """
+		    str = "brad wood";
+		    result = reReplaceNoCase( str, "rad", "\\ard", "all" )
+		    result2 = reReplaceNoCase( str, "rad", "\\\\ard", "all" )
+		    result3 = reReplaceNoCase( str, "rad", "\\\\\\ard", "all" )
+		    result4 = reReplaceNoCase( str, "rad", "\\\\\\\\ard", "all" )
+		    result5 = reReplaceNoCase( str, "rad", "\\\\\\\\\\ard", "all" )
+		         """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "b\\ard wood" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "b\\\\ard wood" );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( "b\\\\\\ard wood" );
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "b\\\\\\\\ard wood" );
+		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( "b\\\\\\\\\\ard wood" );
+
+		instance.executeSource(
+		    """
+		    str = "brad wood";
+		    result = reReplaceNoCase( str, "rad", "\\uard", "all" )
+		    result2 = reReplaceNoCase( str, "rad", "\\\\uard", "all" )
+		    result3 = reReplaceNoCase( str, "rad", "\\\\\\uard", "all" )
+		    result4 = reReplaceNoCase( str, "rad", "\\\\\\\\uard", "all" )
+		    result5 = reReplaceNoCase( str, "rad", "\\\\\\\\\\uard", "all" )
+		    result6 = reReplaceNoCase( str, "rad", "\\\\\\\\\\\\uard", "all" )
+		    result7 = reReplaceNoCase( str, "rad", "\\\\\\\\\\\\\\uard", "all" )
+		               """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "bArd wood" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "b\\uard wood" );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( "b\\Ard wood" );
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "b\\\\uard wood" );
+		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( "b\\\\Ard wood" );
+		assertThat( variables.get( Key.of( "result6" ) ) ).isEqualTo( "b\\\\\\uard wood" );
+		assertThat( variables.get( Key.of( "result7" ) ) ).isEqualTo( "b\\\\\\Ard wood" );
+
+		instance.executeSource(
+		    """
+		    str = "brad wood";
+		    result = reReplaceNoCase( str, "(rad)", "\\1", "all" )
+		    result2 = reReplaceNoCase( str, "(rad)", "\\\\1", "all" )
+		    result3 = reReplaceNoCase( str, "(rad)", "\\\\\\1", "all" )
+		    result4 = reReplaceNoCase( str, "(rad)", "\\\\\\\\1", "all" )
+		    result5 = reReplaceNoCase( str, "(rad)", "\\\\\\\\\\1", "all" )
+		    result6 = reReplaceNoCase( str, "(rad)", "\\\\\\\\\\\\1", "all" )
+		    result7 = reReplaceNoCase( str, "(rad)", "\\\\\\\\\\\\\\1", "all" )
+		               """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "brad wood" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "b\\1 wood" );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( "b\\rad wood" );
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "b\\\\1 wood" );
+		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( "b\\\\rad wood" );
+		assertThat( variables.get( Key.of( "result6" ) ) ).isEqualTo( "b\\\\\\1 wood" );
+		assertThat( variables.get( Key.of( "result7" ) ) ).isEqualTo( "b\\\\\\rad wood" );
+	}
+
+	@DisplayName( "backreference over 9000" )
+	@Test
+	public void testBackreferenceOver9000() {
+		instance.executeSource(
+		    """
+		    str = "abcdefghijklmnopqrstuvwxyz";
+		    result = reReplaceNoCase( str, "(a)(b)(c)(d)(e)(f)(g)(h)(i)(j)(k)(l)(m)(n)(o)(p)(q)(r)(s)(t)(u)(v)(w)(x)(y)(z)", "\\1\\2\\3\\4\\5\\6\\7\\8\\9\\10\\11\\12\\13\\14\\15\\16\\17\\18\\19\\20\\21\\22\\23\\24\\25\\26", "all" )
+		         """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "abcdefghijklmnopqrstuvwxyz" );
+
 	}
 
 }

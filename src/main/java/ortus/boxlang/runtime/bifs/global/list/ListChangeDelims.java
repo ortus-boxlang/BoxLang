@@ -46,6 +46,7 @@ public class ListChangeDelims extends BIF {
 		        ListUtil.DEFAULT_DELIMITER
 		    ),
 		    new Argument( false, "boolean", Key.includeEmptyFields, false ),
+		    new Argument( false, "boolean", Key.multiCharacterDelimiter, false )
 		};
 	}
 
@@ -69,7 +70,7 @@ public class ListChangeDelims extends BIF {
 		        arguments.getAsString( Key.list ),
 		        arguments.getAsString( Key.delimiter ),
 		        arguments.getAsBoolean( Key.includeEmptyFields ),
-		        false
+		        arguments.getAsBoolean( Key.multiCharacterDelimiter )
 		    ),
 		    arguments.getAsString( Key.newDelimiter )
 		);

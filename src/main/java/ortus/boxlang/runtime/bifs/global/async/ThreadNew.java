@@ -22,7 +22,7 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
-import ortus.boxlang.runtime.context.ThreadBoxContext;
+import ortus.boxlang.runtime.context.ThreadComponentBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -71,13 +71,13 @@ public class ThreadNew extends BIF {
 	 */
 	@Override
 	public Thread _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Function				task			= arguments.getAsFunction( Key.runnable );
-		String					name			= arguments.getAsString( Key._NAME );
-		String					priority		= arguments.getAsString( Key.priority );
-		IStruct					attributes		= arguments.getAsStruct( Key.attributes );
-		RequestThreadManager	threadManager	= context.getParentOfType( RequestBoxContext.class ).getThreadManager();
-		final Key				nameKey			= RequestThreadManager.ensureThreadName( name );
-		ThreadBoxContext		tContext		= threadManager.createThreadContext( context, nameKey, attributes );
+		Function					task			= arguments.getAsFunction( Key.runnable );
+		String						name			= arguments.getAsString( Key._NAME );
+		String						priority		= arguments.getAsString( Key.priority );
+		IStruct						attributes		= arguments.getAsStruct( Key.attributes );
+		RequestThreadManager		threadManager	= context.getParentOfType( RequestBoxContext.class ).getThreadManager();
+		final Key					nameKey			= RequestThreadManager.ensureThreadName( name );
+		ThreadComponentBoxContext	tContext		= threadManager.createThreadContext( context, nameKey, attributes );
 
 		// Startup the thread
 		return threadManager.startThread(

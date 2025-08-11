@@ -572,6 +572,73 @@ public class CoreLangTest {
 
 	}
 
+	@DisplayName( "for in loop query" )
+	@Test
+	public void testForInLoopQuery() {
+
+		instance.executeSource(
+		    """
+		       result=""
+		       q = QueryNew([
+		    	{"id": 10},
+		    	{"id": 20}
+		    ])
+
+		    for (row in q) {
+		    	result &= id & ":";
+		    }
+		                """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "10:20:" );
+	}
+
+	@DisplayName( "for in loop query nested" )
+	@Test
+	public void testForInLoopQueryNested() {
+
+		instance.executeSource(
+		    """
+		          result=""
+		          q = QueryNew([
+		       	{"id": 10},
+		       	{"id": 20}
+		       ])
+
+		    for (outerRow in q) {
+		    	result &= ":outer-before:" & id;
+		    	for (innerRow in q) {
+		    		result &= ":inner:" & id;
+		    	}
+		    	result &= ":outer-after:" & id;
+		    }
+		                   """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( ":outer-before:10:inner:10:inner:20:outer-after:10:outer-before:20:inner:10:inner:20:outer-after:20" );
+	}
+
+	@DisplayName( "for in loop query cleanup" )
+	@Test
+	public void testForInLoopQueryCleanup() {
+
+		instance.executeSource(
+		    """
+		             result=""
+		             q = QueryNew([
+		          	{"id": 10}
+		          ])
+
+		       try {
+		          for (row in q) {
+		          	result &= id & ":";
+		          	throw("done")
+		          }
+		    } catch( any e ) {}
+		       result = id ?: "no id";
+		                      """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "no id" );
+	}
+
 	@DisplayName( "do while loop" )
 	@Test
 	@Timeout( value = 5, unit = TimeUnit.SECONDS )
@@ -5620,6 +5687,74 @@ public class CoreLangTest {
 		assertThat( variables.get( Key.of( "result" ) ) ).isInstanceOf( RequestScope.class );
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "default value" );
 
+	}
+
+	@Test
+	public void testUnclosedBracesCF() {
+		Throwable t = assertThrows( ParseException.class, () -> instance.executeSource(
+		    """
+		    	foo = function(required boolean b) {
+		    		return test
+
+		    """,
+		    context, BoxSourceType.CFSCRIPT ) );
+		assertThat( t.getMessage() ).contains( "Unclosed curly brace" );
+	}
+
+	@Test
+	public void testUnclosedParensCF() {
+		Throwable t = assertThrows( ParseException.class, () -> instance.executeSource(
+		    """
+		    	foo = ( 42
+
+		    """,
+		    context, BoxSourceType.CFSCRIPT ) );
+		assertThat( t.getMessage() ).contains( "Unclosed parenthesis" );
+	}
+
+	@Test
+	public void testUnclosedBracketsCF() {
+		Throwable t = assertThrows( ParseException.class, () -> instance.executeSource(
+		    """
+		    	foo = [ 1, 2, 3
+
+		    """,
+		    context, BoxSourceType.CFSCRIPT ) );
+		assertThat( t.getMessage() ).contains( "Unclosed bracket" );
+	}
+
+	@Test
+	public void testUnclosedBraces() {
+		Throwable t = assertThrows( ParseException.class, () -> instance.executeSource(
+		    """
+		    	foo = function(required boolean b) {
+		    		return test
+
+		    """,
+		    context ) );
+		assertThat( t.getMessage() ).contains( "Unclosed curly brace" );
+	}
+
+	@Test
+	public void testUnclosedParens() {
+		Throwable t = assertThrows( ParseException.class, () -> instance.executeSource(
+		    """
+		    	foo = ( 42
+
+		    """,
+		    context ) );
+		assertThat( t.getMessage() ).contains( "Unclosed parenthesis" );
+	}
+
+	@Test
+	public void testUnclosedBrackets() {
+		Throwable t = assertThrows( ParseException.class, () -> instance.executeSource(
+		    """
+		    	foo = [ 1, 2, 3
+
+		    """,
+		    context ) );
+		assertThat( t.getMessage() ).contains( "Unclosed bracket" );
 	}
 
 }

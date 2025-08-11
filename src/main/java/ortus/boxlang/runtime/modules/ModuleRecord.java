@@ -399,7 +399,7 @@ public class ModuleRecord {
 
 		// Register the module mapping in the this.runtime
 		// Called first in case this is used in the `configure` method
-		this.runtime.getConfiguration().registerMapping( this.mapping, this.path );
+		this.runtime.getConfiguration().registerMapping( this.mapping, this.path, false );
 
 		// Create the module class loader and seed it with the physical path to the
 		// module
@@ -609,6 +609,9 @@ public class ModuleRecord {
 	 * @throws ClassNotFoundException If the class is not found
 	 */
 	public Class<?> findModuleClass( String className, Boolean safe, IBoxContext context ) throws ClassNotFoundException {
+		if ( this.classLoader == null ) {
+			return null;
+		}
 		return this.classLoader.findClass( className, safe, false );
 	}
 

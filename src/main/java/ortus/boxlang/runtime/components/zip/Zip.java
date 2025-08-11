@@ -569,13 +569,21 @@ public class Zip extends Component {
 	private void zip( IBoxContext context, IStruct attributes, IStruct executionState ) {
 		// Required attributes: file, source
 		String	destinationFile	= StringCaster.cast( attributes.get( Key.file ) );
-		String	source			= StringCaster.cast( attributes.get( Key.source ) );
+		// This may be null if the source items are supplied by Zip params
+		String	source			= attributes.getAsString( Key.source );
+
+		// Files may be provided by our Zip params
+		Array	sources			= executionState.getAsArray( Key.zipParams );
 
 		if ( destinationFile == null || destinationFile.isEmpty() ) {
 			throw new BoxRuntimeException( "The file attribute is required for the zip action" );
 		}
-		if ( source == null || source.isEmpty() ) {
-			throw new BoxRuntimeException( "The source attribute is required for the zip action" );
+		if ( sources.size() == 0 && ( source == null || source.isEmpty() ) ) {
+			throw new BoxRuntimeException( "The source attribute is required for the zip action if source objects are not provided by params" );
+		}
+
+		if ( source != null && !source.isEmpty() ) {
+			sources.add( source );
 		}
 
 		// Optional attributes: filter, overwrite, prefix, recurse
@@ -587,9 +595,9 @@ public class Zip extends Component {
 
 		// Kawabunga!
 		ZipUtil.compressZip(
-		    source,
+		    sources,
 		    destinationFile,
-		    true,
+		    false, // do not include the source directory
 		    overwrite,
 		    prefix != null ? StringCaster.cast( prefix ) : null,
 		    filter,

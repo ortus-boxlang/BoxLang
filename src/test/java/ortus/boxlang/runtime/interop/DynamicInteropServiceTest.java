@@ -1108,4 +1108,66 @@ public class DynamicInteropServiceTest {
 		assertThat( variables.get( Key.result ) ).isEqualTo( 0 );
 	}
 
+	@DisplayName( "It can correctly coerce a DateTime object to java.util.Date" )
+	@Test
+	void testDateTimeCoercionToDate() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+			UtilTimeZone = createObject("java", "java.util.TimeZone")
+			// sun.util.calendar.ZoneInfo
+			TimeZone = UtilTimeZone.getTimeZone( "America/Los_Angeles" );
+			summerDate = parseDateTime( "2025-07-01T00:00:00-06:00" )
+			inDayLightTime = TimeZone.inDaylightTime( summerDate );
+			result = inDayLightTime;
+			""", context);
+		// @formatter:on
+		assertThat( variables.get( Key.result ) ).isEqualTo( true );
+	}
+
+	@DisplayName( "It can correctly coerce a DateTime object to java.sql.Timestamp" )
+	@Test
+	void testDateTimeCoercionToTimestamp() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+			pastDate = parseDateTime( "2025-07-01T00:00:00-06:00" );
+			timestamp = createObject("java", "java.sql.Timestamp");
+			pastTimestamp = timestamp.valueOf( pastDate.getWrapped().toLocalDateTime() );
+			result = pastTimestamp.before( now() );
+			""", context);
+		// @formatter:on
+		assertThat( variables.get( Key.result ) ).isEqualTo( true );
+	}
+
+	@DisplayName( "It can correctly coerce a DateTime object to java.sql.Time and java.time.LocalTime" )
+	@Test
+	void testDateTimeCoercionToTime() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+			import java.sql.Time;
+			dateOne = parseDateTime( "1970-01-01T12:00:00Z" );
+			dateTwo = parseDateTime( "1970-01-01T23:00:00Z" );
+			timeValue = Time.valueOf( dateOne );
+			result = timeValue.before( dateTwo );
+			""", context);
+		// @formatter:on
+		assertThat( variables.get( Key.result ) ).isEqualTo( true );
+	}
+
+	@Test
+	void testParseFormatCoercion() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				formatter = createObject( "java", "java.text.SimpleDateFormat" ).init(
+					"yyyy-MM-dd'T'HH:mm:ssXXX"
+				);
+				result = formatter.format( parseDateTime( "2025-07-01T00:00:00-06:00" ) );
+				println( result )
+			""", context);
+		// @formatter:on
+	}
+
 }

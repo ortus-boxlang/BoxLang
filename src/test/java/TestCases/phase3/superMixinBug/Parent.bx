@@ -1,0 +1,3 @@
+class name="Parent" extends="Grandparent" {
+	include "mixin.bxs";
+}

@@ -17,6 +17,8 @@
  */
 package ortus.boxlang.runtime.operators;
 
+import java.time.Duration;
+
 import static com.google.common.truth.Truth.assertThat;
 
 import org.junit.jupiter.api.DisplayName;
@@ -52,6 +54,12 @@ public class EqualsEqualsTest {
 		assertThat( EqualsEquals.invoke( null, null ) ).isTrue();
 		assertThat( EqualsEquals.invoke( "brad", null ) ).isFalse();
 		assertThat( EqualsEquals.invoke( null, "brad" ) ).isFalse();
+	}
+
+	@DisplayName( "It can compare durations to numbers" )
+	@Test
+	void testItCanCompareTimespans() {
+		assertThat( EqualsEquals.invoke( Duration.ofDays( 1 ), 1 ) ).isTrue();
 	}
 
 }

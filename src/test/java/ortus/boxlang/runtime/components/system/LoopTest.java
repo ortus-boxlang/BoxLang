@@ -628,6 +628,70 @@ public class LoopTest {
 		    );
 	}
 
+	@DisplayName( "Test that loop can handle a group with one row column having one data set" )
+	@Test
+	public void testCfLoopSingleGrouping() {
+		// @formatter:off
+		instance.executeSource( """
+					myQry = queryNew(
+						"mygroup,myvalue",
+						"string,integer", [
+							{ mygroup:"A", myvalue: 10 },
+							{ mygroup:"B", myvalue: 20 },
+							{ mygroup:"B", myvalue: 30 },
+							{ mygroup:"B", myvalue: 40 },
+							{ mygroup:"B", myvalue: 50 },
+							{ mygroup:"C", myvalue: 60 },
+							{ mygroup:"D", myvalue: 70 },
+							{ mygroup:"D", myvalue: 80 },
+						]
+					)
+					bx:loop query=myQry group="mygroup"{
+						writeoutput( " myGroup: #myGroup#" )
+							bx:loop{
+								writeoutput( " myValue: #myvalue#" )
+							}
+					}
+					result = getBoxContext().getBuffer().toString()
+				""",
+				context );
+		// @formatter:on
+		assertThat( variables.getAsString( Key.of( "result" ) ) )
+		    .isEqualTo(
+		        " myGroup: A myValue: 10 myGroup: B myValue: 20 myValue: 30 myValue: 40 myValue: 50 myGroup: C myValue: 60 myGroup: D myValue: 70 myValue: 80" );
+	}
+
+	@DisplayName( "Test that loop can handle a group with one row column having one data set, but with no inner loop" )
+	@Test
+	public void testCanLoopWithGroupAndNoInnerGroup() {
+		// @formatter:off
+		instance.executeSource( """
+					myQry = queryNew(
+						"mygroup,myvalue",
+						"string,integer", [
+							{ mygroup:"A", myvalue: 10 },
+							{ mygroup:"B", myvalue: 20 },
+							{ mygroup:"B", myvalue: 30 },
+							{ mygroup:"B", myvalue: 40 },
+							{ mygroup:"B", myvalue: 50 },
+							{ mygroup:"C", myvalue: 60 },
+							{ mygroup:"D", myvalue: 70 },
+							{ mygroup:"D", myvalue: 80 },
+						]
+					)
+					// This should output only the group name with the first record of each group
+					bx:loop query=myQry group="mygroup"{
+						writeoutput( "myGroup: #myGroup# myValue: #myValue# " )
+					}
+					result = getBoxContext().getBuffer().toString().trim()
+				""",
+				context );
+		// @formatter:on
+		assertThat( variables.getAsString( Key.of( "result" ) ) )
+		    .isEqualTo(
+		        "myGroup: A myValue: 10 myGroup: B myValue: 20 myGroup: C myValue: 60 myGroup: D myValue: 70" );
+	}
+
 	@Test
 	@DisplayName( "It can handle multiple levels of grouping" )
 	public void testCfLoopMultipleGroupings() {

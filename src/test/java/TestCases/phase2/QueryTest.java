@@ -61,6 +61,47 @@ public class QueryTest {
 		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
+	@DisplayName( "Test query.columnArray" )
+	@Test
+	public void testColumnArray() {
+		// Test implementation goes here
+		// @formatter:off
+		instance.executeSource( """
+					qry = queryNew( "col1,col2", "string,integer", [ "foo", 42 ] );
+					result = qry.columnArray;
+					println( result )
+			"""
+			, context );
+		// @formatter:on
+		assertThat( variables.getAsArray( result ) ).isInstanceOf( Array.class );
+		assertThat( variables.getAsArray( result ).size() ).isEqualTo( 2 );
+		assertThat( variables.getAsArray( result ).get( 0 ) ).isEqualTo( "col1" );
+		assertThat( variables.getAsArray( result ).get( 1 ) ).isEqualTo( "col2" );
+	}
+
+	@DisplayName( "Test query.columnArray in a loop" )
+	@Test
+	public void testColumnArrayInLoop() {
+		// Test implementation goes here
+		// @formatter:off
+		instance.executeSource( """
+					qry = queryNew( "col1,col2", "string,integer", [
+						[ "foo", 42 ],
+						[ "bar", 100 ]
+					] );
+					bx:loop query=#qry#{
+						println( col1 )
+						result = columnArray
+					}
+			"""
+			, context );
+		// @formatter:on
+		assertThat( variables.getAsArray( result ) ).isInstanceOf( Array.class );
+		assertThat( variables.getAsArray( result ).size() ).isEqualTo( 2 );
+		assertThat( variables.getAsArray( result ).get( 0 ) ).isEqualTo( "col1" );
+		assertThat( variables.getAsArray( result ).get( 1 ) ).isEqualTo( "col2" );
+	}
+
 	@DisplayName( "Query" )
 	@Disabled( "Issue with member function vs java method" )
 	@Test

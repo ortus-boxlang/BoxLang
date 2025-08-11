@@ -411,7 +411,6 @@ public class CFParser extends AbstractParser {
 				}
 			}
 		} catch ( Exception e ) {
-			// e.printStackTrace();
 			// Ignore issues creating AST if the parsing already had failures
 			if ( issues.isEmpty() ) {
 				throw e;
@@ -507,7 +506,8 @@ public class CFParser extends AbstractParser {
 				// add logic like the above to handle it. Eventually, this catch-all should never be used.
 				position = new Position( new Point( 0, 0 ), new Point( 0, 0 ), sourceToParse );
 				errorListener.semanticError(
-				    "Internal error(42): Un-popped Lexer modes. [" + String.join( ", ", modes ) + "] Please report this to the developers.", position );
+				    "Internal error(42): Un-popped Lexer modes. [" + String.join( ", ", modes.reversed() ) + "] Please report this to the developers.",
+				    position );
 
 			}
 			// I'm only returning here because we have to reset the lexer above to get the position of the unmatched token, so we no longer have
@@ -535,7 +535,7 @@ public class CFParser extends AbstractParser {
 		}
 
 		// If there is already a parsing issue, try to get a more specific error
-		if ( issues.isEmpty() ) {
+		if ( !issues.isEmpty() ) {
 
 			Token unclosedBrace = lexer.findUnclosedToken( CFLexer.LBRACE, CFLexer.RBRACE );
 			if ( unclosedBrace != null ) {
@@ -551,6 +551,15 @@ public class CFParser extends AbstractParser {
 				errorListener.reset();
 				errorListener.semanticError( "Unclosed parenthesis [(] on line " + ( unclosedParen.getLine() + this.startLine ), createOffsetPosition(
 				    unclosedParen.getLine(), unclosedParen.getCharPositionInLine(), unclosedParen.getLine(), unclosedParen.getCharPositionInLine() + 1 ) );
+			}
+
+			Token unclosedBracket = lexer.findUnclosedToken( CFLexer.LBRACKET, CFLexer.RBRACKET );
+			if ( unclosedBracket != null ) {
+				issues.clear();
+				errorListener.reset();
+				errorListener.semanticError( "Unclosed bracket [ on line " + ( unclosedBracket.getLine() + this.startLine ), createOffsetPosition(
+				    unclosedBracket.getLine(), unclosedBracket.getCharPositionInLine(), unclosedBracket.getLine(),
+				    unclosedBracket.getCharPositionInLine() + 1 ) );
 			}
 		}
 	}

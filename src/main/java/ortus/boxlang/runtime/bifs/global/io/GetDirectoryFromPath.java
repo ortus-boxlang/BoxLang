@@ -12,7 +12,6 @@
  * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-
 package ortus.boxlang.runtime.bifs.global.io;
 
 import ortus.boxlang.runtime.bifs.BIF;
@@ -23,7 +22,6 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 
 @BoxBIF
-
 public class GetDirectoryFromPath extends BIF {
 
 	/**

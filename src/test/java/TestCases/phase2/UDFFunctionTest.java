@@ -30,7 +30,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import ortus.boxlang.compiler.javaboxpiler.JavaBoxpiler;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
@@ -38,6 +37,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.Referencer;
 import ortus.boxlang.runtime.loader.ImportDefinition;
+import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -172,7 +172,7 @@ public class UDFFunctionTest {
 	@DisplayName( "It should not allow you to declare multiple functions with the same name" )
 	@Test
 	public void testMultipleFunctionDeclarationsSameName() {
-		if ( instance.getCompiler() instanceof JavaBoxpiler ) {
+		if ( RunnableLoader.getInstance().getBoxpiler().getName().equals( Key.java ) ) {
 			return;
 		}
 

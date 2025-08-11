@@ -42,7 +42,7 @@ public class ListAppend extends BIF {
 		    new Argument( true, "string", Key.value ),
 		    new Argument( false, "string", Key.delimiter, ListUtil.DEFAULT_DELIMITER ),
 		    new Argument( false, "boolean", Key.includeEmptyFields, false ),
-		    new Argument( false, "boolean", Key.multiCharacterDelimiter, true )
+		    new Argument( false, "boolean", Key.multiCharacterDelimiter, false )
 		};
 	}
 
@@ -70,13 +70,13 @@ public class ListAppend extends BIF {
 		Boolean	isMultiChar	= arguments.getAsBoolean( Key.multiCharacterDelimiter );
 		String	delimiter	= arguments.getAsString( Key.delimiter );
 		return ListUtil.asString(
-		    ListUtil.asList(
+		    ListUtil.asDelimitedList(
 		        arguments.getAsString( Key.list ),
 		        arguments.getAsString( Key.delimiter ),
 		        arguments.getAsBoolean( Key.includeEmptyFields ),
 		        isMultiChar
-		    ).push( arguments.getAsString( Key.value ) ),
-		    isMultiChar ? delimiter : delimiter.substring( 0, 1 )
+		    ).withDelimiter( delimiter, isMultiChar ).push( arguments.getAsString( Key.value ) ),
+		    delimiter
 		);
 	}
 

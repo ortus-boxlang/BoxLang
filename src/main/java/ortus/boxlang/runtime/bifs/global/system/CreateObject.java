@@ -51,7 +51,8 @@ public class CreateObject extends BIF {
 		declaredArguments = new Argument[] {
 		    new Argument( false, Argument.STRING, Key.type, CLASS_TYPE ),
 		    new Argument( false, Argument.STRING, Key.className ),
-		    new Argument( false, Argument.ANY, Key.properties )
+		    new Argument( false, Argument.ANY, Key.properties ),
+		    new Argument( false, Argument.BOOLEAN, Key.externalOnly )
 		};
 	}
 
@@ -94,11 +95,12 @@ public class CreateObject extends BIF {
 	 * @return The created object.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String	type		= arguments.getAsString( Key.type );
-		String	className	= arguments.getAsString( Key.className );
-		Object	properties	= arguments.get( Key.properties );
+		String	type			= arguments.getAsString( Key.type );
+		String	className		= arguments.getAsString( Key.className );
+		Object	properties		= arguments.get( Key.properties );
+		Boolean	externalOnly	= arguments.getAsBoolean( Key.externalOnly );
 
-		return createObject( context, type, className, properties, arguments );
+		return createObject( context, type, className, properties, arguments, externalOnly );
 	}
 
 	/**
@@ -125,7 +127,8 @@ public class CreateObject extends BIF {
 	    String type,
 	    String className,
 	    Object properties,
-	    ArgumentsScope arguments ) {
+	    ArgumentsScope arguments,
+	    Boolean externalOnly ) {
 		// If no type is provided, default to class
 		if ( className == null ) {
 			className	= type;
@@ -140,7 +143,7 @@ public class CreateObject extends BIF {
 		// Class and Component left for backward compatibility
 		if ( type.equalsIgnoreCase( COMPONENT_TYPE ) ||
 		    type.equalsIgnoreCase( CLASS_TYPE ) ) {
-			return createBoxClass( context, className );
+			return createBoxClass( context, className, externalOnly );
 		}
 
 		// Uknown, let's see if we can intercept it
@@ -216,14 +219,19 @@ public class CreateObject extends BIF {
 	 *
 	 * @return The created object.
 	 */
-	private static Object createBoxClass( IBoxContext context, String className ) {
+	private static Object createBoxClass( IBoxContext context, String className, Boolean externalOnly ) {
+		IStruct props = Struct.EMPTY;
+		if ( externalOnly != null ) {
+			props = Struct.of( Key.externalOnly, externalOnly );
+		}
 		// Load up the class
 		DynamicObject result = CLASS_LOCATOR.load(
 		    context,
 		    className,
 		    ClassLocator.BX_PREFIX,
 		    true,
-		    context.getCurrentImports()
+		    context.getCurrentImports(),
+		    props
 		);
 
 		// If it's a class, bootstrap the constructor

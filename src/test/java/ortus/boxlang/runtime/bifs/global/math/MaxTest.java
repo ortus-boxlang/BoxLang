@@ -89,6 +89,16 @@ public class MaxTest {
 		    """,
 		    context );
 		assertThat( variables.getAsNumber( result ).toString() ).isEqualTo( "46456456456456456456465456" );
+
+		instance.executeSource(
+		    """
+		       a = 1
+		    b = 2
+		    c = 3
+		    result = a.max( b ).max( c )
+		       """,
+		    context );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( 3 );
 	}
 
 }

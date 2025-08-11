@@ -556,6 +556,19 @@ public class ClassTest {
 		assertThat( res ).isEqualTo( "someFuncsecond" );
 	}
 
+	@DisplayName( "It should let you override java functions" )
+	@Test
+	public void testJavaOverride() {
+		instance.executeSource(
+		    """
+		          clazz = new src.test.java.TestCases.phase3.JavaOverride();
+		    result = clazz._invoke();
+		           """, context );
+
+		String res = variables.getAsString( result );
+		assertThat( res ).isEqualTo( "From BoxLang" );
+	}
+
 	@DisplayName( "It should return null" )
 	@Test
 	public void testIncludeEvaluateReturnValue() {
@@ -2023,6 +2036,27 @@ public class ClassTest {
 		    """,
 		    context );
 		assertThat( variables.get( "result" ) ).isEqualTo( "bar" );
+	}
+
+	@Test
+	public void testSuperMixinBug() {
+		instance.executeSource(
+		    """
+		    child = new src.test.java.TestCases.phase3.superMixinBug.Child();
+		    child.doSomething();
+		       """,
+		    context );
+	}
+
+	@Test
+	public void testGeneratedSetterReturnCorrectThis() {
+		instance.executeSource(
+		    """
+		    child = new src.test.java.TestCases.phase3.GeneratedSetterReturnCorrectThis().setName( "brad" );
+		    result = child.baseClassMethod();
+		       """,
+		    context );
+		assertThat( variables.get( "result" ) ).isEqualTo( "This is the base class method." );
 	}
 
 }

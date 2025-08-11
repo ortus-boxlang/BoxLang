@@ -88,6 +88,13 @@ public class GetBaseTagDataTest {
 		assertThat( resultStruct.containsKey( Key.caller ) ).isTrue();
 		assertThat( resultStruct.getAsStruct( Key.caller ).containsKey( Key.of( "thisIsCaller" ) ) ).isTrue();
 
+		// New Form
+		assertThat( resultStruct.containsKey( Key.thisComponent ) ).isTrue();
+		assertThat( resultStruct.getAsStruct( Key.thisComponent ).containsKey( Key.generatedContent ) ).isTrue();
+		assertThat( resultStruct.getAsStruct( Key.thisComponent ).containsKey( Key.hasEndTag ) ).isTrue();
+		assertThat( resultStruct.getAsStruct( Key.thisComponent ).containsKey( Key.executionMode ) ).isTrue();
+		assertThat( resultStruct.getAsStruct( Key.thisComponent ).get( Key.executionMode ) ).isEqualTo( "inactive" );
+		// Old Form
 		assertThat( resultStruct.containsKey( Key.thisTag ) ).isTrue();
 		assertThat( resultStruct.getAsStruct( Key.thisTag ).containsKey( Key.generatedContent ) ).isTrue();
 		assertThat( resultStruct.getAsStruct( Key.thisTag ).containsKey( Key.hasEndTag ) ).isTrue();

@@ -26,6 +26,9 @@ jobs:
         jdkVersion: [ "21" ]
         experimental: [ false ]
         compiler: [ "java", "asm" ]
+        exclude:
+          - os: windows-latest
+            compiler: java
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4

@@ -44,7 +44,8 @@ public class ListRest extends BIF {
 		    new Argument( true, "string", Key.list ),
 		    new Argument( false, "string", Key.delimiter, ListUtil.DEFAULT_DELIMITER ),
 		    new Argument( false, "boolean", Key.includeEmptyFields, false ),
-		    new Argument( false, "integer", Key.offset, 0 )
+		    new Argument( false, "boolean", Key.multiCharacterDelimiter, false ),
+		    new Argument( false, "integer", Key.offset, 1 )
 		};
 	}
 
@@ -64,14 +65,14 @@ public class ListRest extends BIF {
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Integer	offset	= arguments.getAsInteger( Key.offset );
-		Array	ref		= ListUtil.asList(
+		Array	ref		= ListUtil.asDelimitedList(
 		    arguments.getAsString( Key.list ),
 		    arguments.getAsString( Key.delimiter ),
 		    arguments.getAsBoolean( Key.includeEmptyFields ),
-		    true
+		    arguments.getAsBoolean( Key.multiCharacterDelimiter )
 		);
-		if ( ref.size() >= 1 ) {
-			ref.remove( 0 + offset );
+		for ( int i = 0; i < offset && ref.size() > 0; i++ ) {
+			ref.remove( 0 );
 		}
 		return ListUtil.asString( ref, arguments.getAsString( Key.delimiter ) );
 	}

@@ -97,6 +97,7 @@ public class ObjectMarshallerTest {
 			queryAddRow( a, { "directory": "/tmp", "name": "test.txt", "type": "file" } );
 			serialized = objectSerialize( a );
 			result = objectDeserialize( serialized );
+			assert result[ "directory" ] == "/tmp"; 
 		    """,
 		context );
 		// @formatter:on

@@ -426,4 +426,24 @@ public class ParseDateTimeTest {
 
 	}
 
+	@DisplayName( "It tests the BIF ParseDateTime with text/numeric formats" )
+	@Test
+	public void testVarious() {
+		instance.executeSource(
+		    """
+		          parseDateTime('July, 19 2015');
+		       parseDateTime('Jul, 19 2015');
+		       parseDateTime('July 19 2015');
+		       parseDateTime('Jul 19 2015');
+		    parseDateTime( 'Tue Apr 02 21:01:00 CET 2024' );
+		    parseDateTime( 'Tue, Apr 02, 21:01:00 CET 2024' );
+		    parseDateTime( '02 Apr 2024 21:01:00' );
+		    parseDateTime( '02 Apr 2024 21:01' );
+		    parseDateTime( 'Tue, 02 Apr 2024 21:01:00 CEST' );
+		    parseDateTime( 'Tue 02 Apr 2024 21:01:00 CEST' );
+		    parseDateTime( 'Tuesday 02 Apr 2024 21:01:00 CEST' );
+		          """,
+		    context );
+	}
+
 }

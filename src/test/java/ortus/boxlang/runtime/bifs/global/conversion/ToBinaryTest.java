@@ -87,4 +87,14 @@ public class ToBinaryTest {
 		// @formatter:on
 	}
 
+	@Test
+	public void testTooMuchPadding() {
+		instance.executeSource(
+		    """
+		    result = toBinary("YXNkZg=========")
+		    """,
+		    context );
+		assertThat( new String( ( byte[] ) variables.get( result ) ) ).isEqualTo( "asdf" );
+	}
+
 }

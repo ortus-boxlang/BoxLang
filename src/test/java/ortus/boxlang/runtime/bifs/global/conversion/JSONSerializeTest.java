@@ -571,4 +571,48 @@ public class JSONSerializeTest {
 		assertThat( json ).contains( "true" );
 	}
 
+	@DisplayName( "It can serialize java arrays" )
+	@Test
+	public void testCanSerializeJavaArrays() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				array1 = [javacast("double",0.0) ,javacast("double",0.30420544445599146)];
+
+				matrix = {   "test": 
+					[javacast("double[]", array1)]
+				}
+		    	result = jsonSerialize( data: matrix )
+
+				println( result )
+			""",
+		    context );
+		// @formatter:on
+
+		var json = variables.getAsString( result );
+		assertThat( json ).isNotEmpty();
+		assertThat( json ).isEqualTo( "{\"test\":[[0.0,0.30420544445599146]]}" );
+	}
+
+	@DisplayName( "It can serialize exception" )
+	@Test
+	public void testCanSerializeException() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				try {
+					1/0;
+				} catch (e) {
+					result = jsonSerialize( data: e )
+				}
+
+				println( result )
+			""",
+		    context );
+		// @formatter:on
+
+		var json = variables.getAsString( result );
+		assertThat( json ).isNotEmpty();
+	}
+
 }

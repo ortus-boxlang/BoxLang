@@ -36,12 +36,14 @@ import org.junit.jupiter.api.condition.EnabledIf;
 
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
+import ortus.boxlang.runtime.jdbc.ExecutedQuery;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
+import ortus.boxlang.runtime.util.conversion.ObjectMarshaller;
 import tools.JDBCTestUtils;
 
 public class QueryExecuteTest extends BaseJDBCTest {
@@ -900,6 +902,43 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		assertThat( firstRow.get( Key.of( "role" ) ) ).isEqualTo( "CEO" );
 	}
 
+	@DisplayName( "It uses a different connection manager for each thread" )
+	@Test
+	public void testDifferentConnectionManagerPerThread() {
+		instance.executeStatement(
+		    """
+		    bx:application
+		    	name="mysleeptest"
+		    	datasources={
+		    		"derby": {
+		    			"connectionString": "jdbc:derby:memory:testQueryExecuteAlternateUserDB;user=foo;password=bar;create=true"
+		    		}
+		    	}
+		    	datasource : "derby";
+
+		    [1,2,3,4,5].each( ()=> {
+		    	try {
+		    		queryExecute( "
+		    			CREATE FUNCTION SLEEP(MILLISECONDS INT)
+		    			RETURNS INT
+		    			PARAMETER STYLE JAVA
+		    			LANGUAGE JAVA
+		    			EXTERNAL NAME 'ortus.boxlang.runtime.bifs.global.jdbc.DerbySleep.sleep'
+		    		" );
+
+		    		transaction {
+		    			queryExecute( "VALUES SLEEP(5000)" )
+		    		}
+
+		    	} catch( e ) {
+		    		if( !(e.message contains 'already exists') ) {
+		    			rethrow;
+		    		}
+		    	}
+		    }, true );
+		    """, context );
+	}
+
 	@Disabled( "Not implemented" )
 	@DisplayName( "It only keeps the first resultSet and discards the rest like Lucee" )
 	@Test
@@ -940,4 +979,10 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		assertEquals( 0, query.size() );
 	}
 
+	@DisplayName( "ExecutedQuery instances are serializable" )
+	@Test
+	public void testObjectMarshallingOfExecutedQuery() {
+		ExecutedQuery executedQuery = new ExecutedQuery( new Query(), null );
+		ObjectMarshaller.serialize( context, executedQuery );
+	}
 }

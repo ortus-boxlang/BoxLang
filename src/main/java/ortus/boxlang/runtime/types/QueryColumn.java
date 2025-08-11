@@ -99,9 +99,10 @@ public class QueryColumn implements IReferenceable, Serializable {
 	/**
 	 * The query this column is a part of
 	 */
-	private transient Query		query;
+	private Query				query;
 
 	/**
+	 * 0-based index of column in the
 	 * Keep in sync if columns are added or removed
 	 */
 	private int					index;
@@ -109,7 +110,7 @@ public class QueryColumn implements IReferenceable, Serializable {
 	/**
 	 * Metadata object
 	 */
-	public transient BoxMeta	$bx;
+	public transient BoxMeta<?>	$bx;
 
 	/**
 	 * Serial version UID
@@ -136,7 +137,7 @@ public class QueryColumn implements IReferenceable, Serializable {
 	 *
 	 * @return metadata object
 	 */
-	public BoxMeta getBoxMeta() {
+	public BoxMeta<?> getBoxMeta() {
 		if ( this.$bx == null ) {
 			// TODO: create query column meta object.
 			// getMetaData() in CF returns struct of

@@ -56,5 +56,5 @@ public interface IType {
 		return this.hashCode();
 	}
 
-	public BoxMeta getBoxMeta();
+	public BoxMeta<?> getBoxMeta();
 }

@@ -47,12 +47,12 @@ public abstract class BoxInterface implements ITemplateRunnable, IReferenceable,
 	/**
 	 * Metadata object
 	 */
-	public BoxMeta	$bx;
+	public transient BoxMeta<?>	$bx;
 
 	/**
 	 * Cached lookup of the output annotation
 	 */
-	private Boolean	canOutput	= null;
+	private Boolean				canOutput	= null;
 
 	protected void resolveSupers( IBoxContext context ) {
 		// First, we load an super interface
@@ -163,7 +163,7 @@ public abstract class BoxInterface implements ITemplateRunnable, IReferenceable,
 	 *
 	 * @return The metadata object
 	 */
-	public BoxMeta getBoxMeta() {
+	public BoxMeta<?> getBoxMeta() {
 		if ( this.$bx == null ) {
 			this.$bx = new InterfaceMeta( this );
 		}

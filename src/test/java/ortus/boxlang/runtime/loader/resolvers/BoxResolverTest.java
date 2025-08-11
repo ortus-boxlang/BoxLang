@@ -40,6 +40,7 @@ import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.DateTime;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 public class BoxResolverTest extends AbstractResolverTest {
@@ -52,10 +53,15 @@ public class BoxResolverTest extends AbstractResolverTest {
 		// Create a mapping to the `resources` directory as `/tests`
 		Path resourcesDirectory = Paths.get( "src/test/resources" ).toAbsolutePath();
 		runtime.getConfiguration().registerMapping( "/tests", resourcesDirectory.toString() );
+		// An internal mapping to the same place
+		runtime.getConfiguration().registerMapping( "/testsSecret", Struct.of(
+		    Key.path, resourcesDirectory.toString(),
+		    Key.external, false
+		) );
 		// System.out.println( "mappings: " + Arrays.toString( runtime.getConfiguration().getRegisteredMappings() ) );
 	}
 
-	@DisplayName( "It can be created correctly with the rigth prefix" )
+	@DisplayName( "It can be created correctly with the right prefix" )
 	@Test
 	void testItCanBeCreated() {
 		assertThat( boxResolver.getName() ).isEqualTo( "BoxResolver" );
@@ -79,6 +85,17 @@ public class BoxResolverTest extends AbstractResolverTest {
 		assertThat( targetClass ).isNotNull();
 		assertThat( targetClass.getThisScope().getAsString( Key.of( "name" ) ) ).isEqualTo( "test" );
 		assertThat( targetClass.getThisScope().get( Key.of( "created" ) ) ).isInstanceOf( DateTime.class );
+	}
+
+	@DisplayName( "It cannot find classes from internal mapping" )
+	@Test
+	void testFindFromInternal() {
+		// You can find this in src/test/resources/tests/components/User.cfc
+		String					testComponent	= "testsSecret.components.User";
+		Optional<ClassLocation>	classLocation	= boxResolver.findFromLocal( context, testComponent, new ArrayList<>(), true,
+		    Struct.of( Key.externalOnly, true ) );
+
+		assertThat( classLocation.isPresent() ).isFalse();
 	}
 
 	@DisplayName( "It can resolve classes using direct class names" )

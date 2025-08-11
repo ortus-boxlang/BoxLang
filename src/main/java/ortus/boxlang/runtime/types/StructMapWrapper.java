@@ -72,7 +72,7 @@ public class StructMapWrapper implements IStruct, IListenable<IStruct>, Serializ
 	/**
 	 * Metadata object
 	 */
-	public BoxMeta									$bx;
+	public transient BoxMeta<?>						$bx;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -626,7 +626,7 @@ public class StructMapWrapper implements IStruct, IListenable<IStruct>, Serializ
 	 *
 	 * @return The {@Link BoxMeta} object for this struct
 	 */
-	public BoxMeta getBoxMeta() {
+	public BoxMeta<?> getBoxMeta() {
 		if ( this.$bx == null ) {
 			this.$bx = new StructMeta( this );
 		}

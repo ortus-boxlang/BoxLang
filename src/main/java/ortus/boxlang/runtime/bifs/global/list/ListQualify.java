@@ -17,16 +17,19 @@
  */
 package ortus.boxlang.runtime.bifs.global.list;
 
+import java.util.Arrays;
+
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
+import ortus.boxlang.runtime.types.DelimitedArray;
+import ortus.boxlang.runtime.types.util.BLCollector;
 import ortus.boxlang.runtime.types.util.ListUtil;
 import ortus.boxlang.runtime.util.RegexBuilder;
 
@@ -47,7 +50,8 @@ public class ListQualify extends BIF {
 		    new Argument( true, "string", Key.qualifier ),
 		    new Argument( false, "string", Key.delimiter, ListUtil.DEFAULT_DELIMITER ),
 		    new Argument( false, "string", Key.elements, "all" ),
-		    new Argument( false, "boolean", Key.includeEmptyFields, false )
+		    new Argument( false, "boolean", Key.includeEmptyFields, false ),
+		    new Argument( false, "boolean", Key.multiCharacterDelimiter, false )
 		};
 	}
 
@@ -71,24 +75,24 @@ public class ListQualify extends BIF {
 		String	elements	= arguments.getAsString( Key.elements );
 		String	qualifier	= arguments.getAsString( Key.qualifier );
 
-		return ListUtil.asString(
-		    ArrayCaster.cast(
-		        ListUtil.asList(
-		            arguments.getAsString( Key.list ),
-		            arguments.getAsString( Key.delimiter ),
-		            arguments.getAsBoolean( Key.includeEmptyFields ),
-		            true
-		        ).stream().map( item -> {
-
-			        if ( elements.equals( ELEMENTS_CHAR ) ? RegexBuilder.of( StringCaster.cast( item ), RegexBuilder.ALPHA ).matches() : true ) {
-				        return new StringBuilder( qualifier ).append( item ).append( qualifier ).toString();
-			        } else {
-				        return item;
-			        }
-		        } ).toArray()
-		    ),
-		    arguments.getAsString( Key.delimiter )
-		);
+		return Arrays.stream( ListUtil.asDelimitedList(
+		    arguments.getAsString( Key.list ),
+		    arguments.getAsString( Key.delimiter ),
+		    arguments.getAsBoolean( Key.includeEmptyFields ),
+		    arguments.getAsBoolean( Key.multiCharacterDelimiter )
+		).toElementDelimiterPairs() )
+		    .map( item -> {
+			    Object oldValue	= item.element();
+			    Object newValue;
+			    if ( elements.equals( ELEMENTS_CHAR ) ? RegexBuilder.of( StringCaster.cast( oldValue ), RegexBuilder.ALPHA ).matches() : true ) {
+				    newValue = new StringBuilder( qualifier ).append( oldValue ).append( qualifier ).toString();
+			    } else {
+				    newValue = oldValue;
+			    }
+			    return new DelimitedArray.ElementDelimiterPair( newValue, item.delimiter() );
+		    } )
+		    .collect( BLCollector.toArray( DelimitedArray.class ) )
+		    .asString();
 	}
 
 }

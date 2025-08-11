@@ -42,6 +42,8 @@ import ortus.boxlang.runtime.util.conversion.serializers.BoxClassSerializer;
 import ortus.boxlang.runtime.util.conversion.serializers.BoxFunctionSerializer;
 import ortus.boxlang.runtime.util.conversion.serializers.BoxStructSerializer;
 import ortus.boxlang.runtime.util.conversion.serializers.DynamicObjectSerializer;
+import ortus.boxlang.runtime.util.conversion.serializers.ExceptionSerializer;
+import ortus.boxlang.runtime.util.conversion.serializers.JavaArraySerializer;
 
 /**
  * This class provides a JSON provider for BoxLang using our lib: Jackson JR
@@ -76,6 +78,14 @@ public class BoxJsonProvider extends ReaderWriterProvider {
 
 		if ( type == DynamicObject.class ) {
 			return new DynamicObjectSerializer();
+		}
+
+		if ( Throwable.class.isAssignableFrom( type ) ) {
+			return new ExceptionSerializer();
+		}
+
+		if ( type.isArray() ) {
+			return new JavaArraySerializer();
 		}
 
 		return null;

@@ -42,7 +42,7 @@ public class ListFilter extends BIF {
 		    new Argument( true, "function:Predicate", Key.filter ),
 		    new Argument( false, Argument.STRING, Key.delimiter, ListUtil.DEFAULT_DELIMITER ),
 		    new Argument( false, Argument.BOOLEAN, Key.includeEmptyFields, false ),
-		    new Argument( false, Argument.BOOLEAN, Key.multiCharacterDelimiter, true ),
+		    new Argument( false, Argument.BOOLEAN, Key.multiCharacterDelimiter, false ),
 		    new Argument( false, Argument.BOOLEAN, Key.parallel, false ),
 		    new Argument( false, Argument.INTEGER, Key.maxThreads )
 		};
@@ -82,22 +82,19 @@ public class ListFilter extends BIF {
 	 *                      If parallel is false, this argument is ignored.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		return ListUtil.asString(
-		    ListUtil.filter(
-		        // Convert the list to an array to filter it
-		        ListUtil.asList(
-		            arguments.getAsString( Key.list ),
-		            arguments.getAsString( Key.delimiter ),
-		            arguments.getAsBoolean( Key.includeEmptyFields ),
-		            arguments.getAsBoolean( Key.multiCharacterDelimiter )
-		        ),
-		        arguments.getAsFunction( Key.filter ),
-		        context,
-		        arguments.getAsBoolean( Key.parallel ),
-		        arguments.getAsInteger( Key.maxThreads )
-		    ),
-		    arguments.getAsString( Key.delimiter )
-		);
+		return ListUtil.filter(
+		    // Convert the list to an array to filter it
+		    ListUtil.asDelimitedList(
+		        arguments.getAsString( Key.list ),
+		        arguments.getAsString( Key.delimiter ),
+		        arguments.getAsBoolean( Key.includeEmptyFields ),
+		        arguments.getAsBoolean( Key.multiCharacterDelimiter )
+		    ).withDelimiter( arguments.getAsString( Key.delimiter ), arguments.getAsBoolean( Key.multiCharacterDelimiter ) ),
+		    arguments.getAsFunction( Key.filter ),
+		    context,
+		    arguments.getAsBoolean( Key.parallel ),
+		    arguments.getAsInteger( Key.maxThreads )
+		).asString();
 	}
 
 }

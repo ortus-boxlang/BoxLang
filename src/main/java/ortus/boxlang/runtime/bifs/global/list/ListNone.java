@@ -40,7 +40,7 @@ public class ListNone extends ListSome {
 		    new Argument( true, "function:Predicate", Key.callback ),
 		    new Argument( false, Argument.STRING, Key.delimiter, ListUtil.DEFAULT_DELIMITER ),
 		    new Argument( false, Argument.BOOLEAN, Key.includeEmptyFields, false ),
-		    new Argument( false, Argument.BOOLEAN, Key.multiCharacterDelimiter, true ),
+		    new Argument( false, Argument.BOOLEAN, Key.multiCharacterDelimiter, false ),
 		    new Argument( false, Argument.BOOLEAN, Key.parallel, false ),
 		    new Argument( false, Argument.INTEGER, Key.maxThreads )
 		};

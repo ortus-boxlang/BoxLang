@@ -25,7 +25,9 @@ import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.context.BaseBoxContext;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
+import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ImportDefinition;
@@ -111,7 +113,7 @@ public class BoxClassSupport {
 	 *
 	 * @return The metadata Box object
 	 */
-	public static BoxMeta getBoxMeta( IClassRunnable thisClass ) {
+	public static BoxMeta<?> getBoxMeta( IClassRunnable thisClass ) {
 		if ( thisClass._getbx() == null ) {
 			thisClass._setbx( new ClassMeta( thisClass ) );
 		}
@@ -127,6 +129,10 @@ public class BoxClassSupport {
 	 */
 	public static String asString( IClassRunnable thisClass ) {
 		return "Class: " + thisClass.bxGetName().getName();
+	}
+
+	public static Object javaMethodStub( IReferenceable obj, Key functionName, Object[] args ) {
+		return RequestBoxContext.runInContext( ctx -> obj.dereferenceAndInvoke( ctx, functionName, args, false ) );
 	}
 
 	/**
@@ -843,16 +849,23 @@ public class BoxClassSupport {
 			return thisClass;
 		}
 
+		// This is a hack still and not a full solution. It will work for a mixin on a parent class, ignoring it on the lower classes it was copied to,
+		// but will NOT work for a mixin which was mixed explicitly into both the child and the parent class.
+		// As it currently stands. there is no way to tell if a mixin in a child class was simply coied down from the parent class, or if it was explicitly mixed in there.
+		// The full fix for this will require some additional tracking.
+		IClassRunnable	highestClassWithUDFInstance	= thisClass.getVariablesScope().containsValue( udf ) ? thisClass : null;
+
 		// Otherwise, let's climb the supers (if they even exist) and see if one of them declared it
-		IClassRunnable thisSuper = thisClass.getSuper();
+		IClassRunnable	thisSuper					= thisClass.getSuper();
 		while ( thisSuper != null ) {
 			if ( enclosingClass == thisSuper.getClass() ) {
 				return thisSuper;
 			}
-			thisSuper = thisSuper.getSuper();
+			highestClassWithUDFInstance	= thisSuper.getVariablesScope().containsValue( udf ) ? thisSuper : highestClassWithUDFInstance;
+			thisSuper					= thisSuper.getSuper();
 		}
 		// If the original class and no supers were the enclosing class, then this is prolly a mixin. Just return the original value.
-		return thisClass;
+		return highestClassWithUDFInstance != null ? highestClassWithUDFInstance : thisClass;
 	}
 
 }

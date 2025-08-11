@@ -79,6 +79,10 @@ public class DataSource implements Comparable<DataSource> {
 		);
 		// Retrieve and store the potentially modified configuration from the event.
 		this.configuration = eventParams.getAs( DatasourceConfig.class, Key.of( "config" ) );
+
+		// Warn if driver is not found in the datasource service
+		this.configuration.validateDriver();
+
 		HikariConfig hikariConfig = null;
 		try {
 			hikariConfig			= this.configuration.toHikariConfig();

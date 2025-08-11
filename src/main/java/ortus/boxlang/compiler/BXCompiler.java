@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Set;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ParseException;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
@@ -219,7 +220,7 @@ public class BXCompiler {
 		System.out.println( "Writing " + targetPath.toString() );
 		List<byte[]> bytesList = null;
 		try {
-			bytesList = runtime.getCompiler()
+			bytesList = RunnableLoader.getInstance().getBoxpiler()
 			    .compileTemplateBytes( ResolvedFilePath.of( "", "", sourcePath.toString(), sourcePath ) );
 		} catch ( ParseException e ) {
 			if ( stopOnError ) {
