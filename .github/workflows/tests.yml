@@ -47,8 +47,10 @@ jobs:
         if: ${{ matrix.os == 'windows-latest' }}
         run: choco install commandbox
 
-      - name: Install TestBox
-        run: box install testbox@be src/test/resources --verbose --noSave
+      - name: Install test dependencies
+        run: |
+          box install testbox@be src/test/resources --verbose --noSave
+          box install id=bx-mssql,bx-mysql directory=~/.boxlang/modules --verbose --nosave
 
       - name: Test Module
         env:
@@ -78,6 +80,23 @@ jobs:
           SLACK_USERNAME: CI
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
           MSG_MINIMAL: true
+
+    services:
+      mysql:
+        image: mysql:5.7
+        env:
+          MYSQL_DATABASE: myDB
+          MYSQL_ROOT_PASSWORD: 123456Password
+        ports:
+          - 3309:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+      mssql:
+        image: mcr.microsoft.com/mssql/server:2019-latest
+        env:
+          SA_PASSWORD: 123456Password
+          ACCEPT_EULA: "Y"
+        ports:
+          - 1433:1433
 
   publish-test-results:
     name: Publish Test Results
