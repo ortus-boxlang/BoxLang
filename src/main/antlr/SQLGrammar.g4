@@ -51,6 +51,7 @@ predicate:
     | expr IS_ NOT_? expr
     | expr NOT_? BETWEEN_ expr AND_ expr
     | expr NOT_? IN_ (OPEN_PAR (expr ( COMMA expr)*)? CLOSE_PAR | subquery_no_alias)
+    | OPEN_PAR predicate CLOSE_PAR
 ;
 
 expr:
