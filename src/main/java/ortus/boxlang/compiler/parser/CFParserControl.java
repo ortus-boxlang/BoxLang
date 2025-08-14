@@ -123,6 +123,12 @@ public abstract class CFParserControl extends Parser {
 		// If it starts with cf, the name follows
 		if ( nextToken.getType() == PREFIXEDIDENTIFIER ) {
 			tokText = tokText.substring( 2 );
+			// If the code is cf_something( then it's a CF-style script custom tag/component
+			// It's worth noting, you can't have a function called cf_myFunc() in CF because it will be
+			// taken as a script custom tag every time, even if it doesn't exist. Typical ambiguous CFML :/
+			if ( tokText.startsWith( "_" ) && input.LT( 2 ).getType() == LPAREN ) {
+				return true;
+			}
 		} else if ( identifiers.contains( nextToken.getType() ) ) {
 			// Since we know it's not the ACF syntax, we can throw out function calls
 			if ( input.LT( 2 ).getType() == LPAREN )
