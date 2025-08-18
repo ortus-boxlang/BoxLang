@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
@@ -58,6 +59,27 @@ import ortus.boxlang.runtime.util.BoxFQN;
  * delegate to these methods.
  */
 public class BoxClassSupport {
+
+	/**
+	 * In legacy class meta structs, don't allow ad-hoc annotations or doc comments to override these top level keys
+	 */
+	public static final Set<Key>	legacyMetaClassReservedAnnotations		= Set.of(
+	    Key._NAME,
+	    Key.fullname,
+	    Key.functions,
+	    Key.properties,
+	    Key.type,
+	    Key.path
+	);
+
+	/**
+	 * In legacy property meta structs, don't allow ad-hoc annotations or doc comments to override these top level keys
+	 */
+	public static final Set<Key>	legacyMetaPropertyReservedAnnotations	= Set.of(
+	    Key._NAME,
+	    Key.type,
+	    Key._DEFAULT
+	);
 
 	/**
 	 * Call the pseudo constructor
@@ -534,14 +556,16 @@ public class BoxClassSupport {
 				propertyStruct.put( Key._DEFAULT, property.getDefaultValueForMeta() );
 			}
 			if ( property.documentation() != null ) {
-				propertyStruct.putAll( property.documentation() );
+				for ( var doc : property.documentation().entrySet() ) {
+					if ( !legacyMetaPropertyReservedAnnotations.contains( doc.getKey() ) ) {
+						propertyStruct.put( doc.getKey(), doc.getValue() );
+					}
+				}
 			}
 			if ( property.annotations() != null ) {
-				if ( property.annotations() != null ) {
-					for ( var annotation : property.annotations().entrySet() ) {
-						if ( !annotation.getKey().equals( Key._DEFAULT ) ) {
-							propertyStruct.put( annotation.getKey(), annotation.getValue() );
-						}
+				for ( var annotation : property.annotations().entrySet() ) {
+					if ( !legacyMetaPropertyReservedAnnotations.contains( annotation.getKey() ) ) {
+						propertyStruct.put( annotation.getKey(), annotation.getValue() );
 					}
 				}
 			}
@@ -555,10 +579,18 @@ public class BoxClassSupport {
 		meta.put( Key.persisent, false );
 
 		if ( thisClass.getDocumentation() != null ) {
-			meta.putAll( thisClass.getDocumentation() );
+			for ( Map.Entry<Key, Object> entry : thisClass.getDocumentation().entrySet() ) {
+				if ( !legacyMetaClassReservedAnnotations.contains( entry.getKey() ) ) {
+					meta.put( entry.getKey(), entry.getValue() );
+				}
+			}
 		}
 		if ( thisClass.getAnnotations() != null ) {
-			meta.putAll( thisClass.getAnnotations() );
+			for ( Map.Entry<Key, Object> entry : thisClass.getAnnotations().entrySet() ) {
+				if ( !legacyMetaClassReservedAnnotations.contains( entry.getKey() ) ) {
+					meta.put( entry.getKey(), entry.getValue() );
+				}
+			}
 		}
 		if ( thisClass.getSuper() != null ) {
 			meta.put( Key._EXTENDS, thisClass.getSuper().getMetaData() );

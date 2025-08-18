@@ -36,6 +36,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.runnables.BoxClassSupport;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.IScope;
@@ -2057,6 +2058,25 @@ public class ClassTest {
 		       """,
 		    context );
 		assertThat( variables.get( "result" ) ).isEqualTo( "This is the base class method." );
+	}
+
+	@Test
+	public void testLegacyReservedAnnotations() {
+		// This tests the legacy meta behavior. If we ever move that to compat, this test will need to go with it.
+		instance.executeSource(
+		    """
+		    result = new src.test.java.TestCases.phase3.ReservedAnnotations();
+		       """,
+		    context );
+		// Get the legeacy metadata
+		IStruct meta = BoxClassSupport.getMetaData( variables.getAsClassRunnable( result ) );
+		// Ensure the annotations and doc comments didn't affect the reserved ones
+		assertThat( meta.getAsString( Key._NAME ) ).isEqualTo( "src.test.java.TestCases.phase3.ReservedAnnotations" );
+		assertThat( meta.getAsString( Key.fullname ) ).isEqualTo( "src.test.java.TestCases.phase3.ReservedAnnotations" );
+		assertThat( meta.get( Key.functions ) ).isInstanceOf( Array.class );
+		assertThat( meta.get( Key.properties ) ).isInstanceOf( Array.class );
+		assertThat( meta.getAsString( Key.type ) ).isEqualTo( "Component" );
+		assertThat( meta.getAsString( Key.path ) ).contains( "ReservedAnnotations.cfc" );
 	}
 
 }
