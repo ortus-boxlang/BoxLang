@@ -60,11 +60,11 @@ public class SQLPrettifyTest {
 		    result = sqlPrettify("SELECT * FROM users WHERE id = 1");
 		    """, context );
 
-		assertThat( variables.getAsString( result ).trim() ).isEqualTo( "SELECT\r\n" + //
-		    "   * \r\n" + //
-		    "FROM\r\n" + //
-		    "  USERS\r\n" + //
-		    "WHERE\r\n" + //
+		assertThat( variables.getAsString( result ).trim().replace( System.lineSeparator(), "\n" ) ).isEqualTo( "SELECT\n" + //
+		    "   * \n" + //
+		    "FROM\n" + //
+		    "  USERS\n" + //
+		    "WHERE\n" + //
 		    "  ID  =  1" );
 	}
 
