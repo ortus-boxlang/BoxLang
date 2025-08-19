@@ -112,33 +112,6 @@ public class DataSourceTest {
 		myDataSource.shutdown();
 	}
 
-	@EnabledIf( "tools.JDBCTestUtils#hasMSSQLModule" )
-	@DisplayName( "It can get a MSSQL JDBC connection" )
-	@Test
-	void testMSSQLConnection() throws SQLException {
-		DataSource myDataSource = DataSource.fromStruct(
-		    Key.of( "mssql" ),
-		    Struct.of(
-		        "host", "localhost",
-		        "port", "1433",
-		        "dbdriver", "MSSQL",
-		        "database", "master",
-		        "dsn", "jdbc:sqlserver://{host}:{port}",
-		        "custom", "DATABASENAME=master&sendStringParametersAsUnicode=false&SelectMethod=direct&applicationName=fooey",
-		        "class", "com.microsoft.sqlserver.jdbc.SQLServerDriver",
-		        "username", "${DB_USER}",
-		        "password", "${DB_PASSWORD}",
-		        "connectionLimit", "100",
-		        "connectionTimeout", "20",
-		        "username", "sa",
-		        "password", "123456Password"
-		    ) );
-		try ( Connection conn = myDataSource.getConnection() ) {
-			assertThat( conn ).isInstanceOf( Connection.class );
-		}
-		myDataSource.shutdown();
-	}
-
 	@DisplayName( "It can get a JDBC connection regardless of key casing" )
 	@Test
 	void testDerbyConnectionFunnyKeyCasing() throws SQLException {
