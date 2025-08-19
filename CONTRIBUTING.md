@@ -55,7 +55,17 @@ If you discover a security vulnerability, please send an email to the developmen
 
 ## Development Setup
 
-We have added all the necessary information for you to develop on BoxLang in our [readme collaboration area](../readme.md#collaboration).
+To develop on BoxLang, you will need the following installed:
+
+- [Java JDK 21+](https://docs.oracle.com/en/java/javase/21/install/)
+- [VS Code](https://code.visualstudio.com/) - or IDE of your choice
+
+Here's a list of shell commands that will set you up:
+
+1. Clone the repository - `git clone git@github.com:ortus-boxlang/BoxLang.git`
+2. Change into the directory - `cd BoxLang`
+3. Build the project, without running tests - `./gradlew build -x test`
+4. Run the tests - `./gradlew test`
 
 ## Language Compatiblity
 
