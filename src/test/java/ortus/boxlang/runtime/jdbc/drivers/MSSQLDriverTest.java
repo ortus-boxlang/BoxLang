@@ -2,6 +2,7 @@ package ortus.boxlang.runtime.jdbc.drivers;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
@@ -17,10 +18,20 @@ public class MSSQLDriverTest extends AbstractDriverTest {
 		return "MSSQLdatasource";
 	}
 
-	@DisplayName( "It sets generatedKey in query meta" )
+	@DisplayName( "It can return a rowcount in the second SQL statement" )
+	@Disabled( "Disabled until BL-1186 is resolved" )
 	@Test
-	public void testGeneratedKey() {
-		// test that the mssql test is actually running
-		assertThat( 1 ).isEqualTo( 0 );
+	public void testRowCount() {
+		// @formatter:off
+		instance.executeStatement(
+		    String.format( """
+				result = queryExecute( "
+					update developers set name = 'Michael Borne' where name = 'Michael Born';
+					select @@rowcount c;
+				", {}, { "datasource" : "%s"} );
+			""", getDatasourceName() ),
+		    context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( 1 );
 	}
 }
