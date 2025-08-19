@@ -598,6 +598,7 @@ public class ClassTest {
 		assertThat( meta.getAsString( Key.of( "path" ) ).contains( "MyClass.bx" ) ).isTrue();
 		assertThat( meta.get( Key.of( "hashcode" ) ) ).isEqualTo( cfc.hashCode() );
 		assertThat( meta.get( Key.of( "properties" ) ) instanceof Array ).isTrue();
+		assertThat( meta.getAsBoolean( Key.of( "output" ) ) ).isFalse();
 		Array properties = meta.getAsArray( Key.of( "properties" ) );
 		assertThat( properties.size() ).isEqualTo( 1 );
 		assertThat( properties.get( 0 ) instanceof IStruct ).isTrue();
