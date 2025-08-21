@@ -289,7 +289,7 @@ public class RequestThreadManager {
 	protected void flushCompletedThread() {
 		// This is to prevent a memory leak if you have a long-running daemon which fires many uniquely-named threads over a period of time.
 		// We don't want to just keep filling up memory, so clear our old completed threads.
-		// It seems unlikely that a request would legitimatley have 1000+ threads that it wants to reference back in the thread scope later
+		// It seems unlikely that a request would legitimately have 1000+ threads that it wants to reference back in the thread scope later
 		while ( completedThreads.size() > MAX_TRACKED_COMPLETED_THREADS ) {
 			// Use poll just in the crazy chance the queue is empty now
 			Key oldestThread = completedThreads.poll();
