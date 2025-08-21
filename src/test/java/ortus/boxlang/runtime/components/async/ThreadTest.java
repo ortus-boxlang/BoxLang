@@ -396,7 +396,7 @@ public class ThreadTest {
 
 
 
-	@DisplayName( "It avoid memory leak with lots of threads" )
+	@DisplayName( "It avoids memory leak with lots of threads" )
 	@Test
 	public void testAvoidMemoryLeakWithLotsOfThreads() {
 		RequestThreadManager.MAX_TRACKED_COMPLETED_THREADS = 5;
