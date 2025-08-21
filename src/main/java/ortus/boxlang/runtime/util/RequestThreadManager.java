@@ -181,7 +181,7 @@ public class RequestThreadManager {
 	 * @return The thread meta data or null if not found
 	 */
 	public IStruct getThreadMeta( Key name ) {
-		IStruct threadData = getThreadData( name );
+		IStruct threadData = getThreadDataSafe( name );
 		if ( threadData == null ) {
 			return null;
 		}
@@ -241,6 +241,17 @@ public class RequestThreadManager {
 			}
 		}
 		return threadData;
+	}
+
+	/**
+	 * Gets the thread data for a thread. Returns null if not found.
+	 *
+	 * @param name The name of the thread
+	 *
+	 * @return The thread data
+	 */
+	public IStruct getThreadDataSafe( Key name ) {
+		return this.threads.get( name );
 	}
 
 	/**
