@@ -17,7 +17,9 @@
  */
 package ortus.boxlang.runtime.util;
 
+import java.util.ArrayDeque;
 import java.util.Arrays;
+import java.util.Deque;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -48,14 +50,20 @@ public class RequestThreadManager {
 	 */
 
 	/**
+	 * The maximum number of completed threads to track for a single request. Old threads will be flushed out to prevent memory from filling.
+	 * We can make this into a setting, but for now someone can also just manually update this static property if they need to work around this.
+	 */
+	public static int					MAX_TRACKED_COMPLETED_THREADS	= 1000;
+
+	/**
 	 * The prefix for thread names
 	 */
-	public static final String			DEFAULT_THREAD_PREFIX		= "BL-Thread-";
+	public static final String			DEFAULT_THREAD_PREFIX			= "BL-Thread-";
 
 	/**
 	 * The default time to wait for a thread to stop when terminating
 	 */
-	public static final long			DEFAULT_THREAD_WAIT_TIME	= 3000;
+	public static final long			DEFAULT_THREAD_WAIT_TIME		= 3000;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -71,23 +79,28 @@ public class RequestThreadManager {
 	 * - name : The thread name
 	 * - metadata : A struct of metadata about the thread
 	 */
-	protected Map<Key, IStruct>			threads						= new ConcurrentHashMap<>();
+	protected Map<Key, IStruct>			threads							= new ConcurrentHashMap<>();
 
 	/**
 	 * The thread scope for the request
 	 */
-	protected IScope					threadScope					= new ThreadScope();
+	protected IScope					threadScope						= new ThreadScope();
+
+	/**
+	 * A list of completed threads in the order they completed. This is used for fast lookups to unregister completed threads if we get too many.
+	 */
+	protected Deque<Key>				completedThreads				= new ArrayDeque<>();
 
 	/**
 	 * The thread group for the threads created by this manager
 	 * TODO: Move to SingleThreadExecutors for better control
 	 */
-	private static final ThreadGroup	THREAD_GROUP				= new ThreadGroup( "BL-Threads" );
+	private static final ThreadGroup	THREAD_GROUP					= new ThreadGroup( "BL-Threads" );
 
 	/**
 	 * The states that a thread can be in where we update valid statuses
 	 */
-	private static final Set<String>	ACTION_STATES				= Set.of( "NOT_STARTED", "RUNNNG", "WAITING" );
+	private static final Set<String>	ACTION_STATES					= Set.of( "NOT_STARTED", "RUNNNG", "WAITING" );
 
 	/**
 	 * Registers a thread with the manager
@@ -149,6 +162,17 @@ public class RequestThreadManager {
 	}
 
 	/**
+	 * Unregister a thread from the manager
+	 * 
+	 * @param name The name of the thread
+	 */
+	public void unregisterThread( Key name ) {
+		this.threads.remove( name );
+		this.threadScope.remove( name );
+		this.completedThreads.remove( name );
+	}
+
+	/**
 	 * Gets just the thread meta data for a thread. This is a subset of the metadata.
 	 * Returns null if not found.
 	 *
@@ -157,9 +181,9 @@ public class RequestThreadManager {
 	 * @return The thread meta data or null if not found
 	 */
 	public IStruct getThreadMeta( Key name ) {
-		IStruct threadData = this.threads.get( name );
+		IStruct threadData = getThreadData( name );
 		if ( threadData == null ) {
-			return threadData;
+			return null;
 		}
 
 		// Only valid threads here
@@ -200,7 +224,8 @@ public class RequestThreadManager {
 	}
 
 	/**
-	 * Gets the thread data for a thread. Throws exception if not found.
+	 * Gets the thread data for a thread. Throws exception if not found, unless we've
+	 * reached out max completed threads, in which case it returns null.
 	 *
 	 * @param name The name of the thread
 	 *
@@ -209,7 +234,11 @@ public class RequestThreadManager {
 	public IStruct getThreadData( Key name ) {
 		IStruct threadData = this.threads.get( name );
 		if ( threadData == null ) {
-			throwInvalidThreadException( name );
+			if ( this.completedThreads.size() >= ( MAX_TRACKED_COMPLETED_THREADS - 5 ) ) {
+				return null;
+			} else {
+				throwInvalidThreadException( name );
+			}
 		}
 		return threadData;
 	}
@@ -223,7 +252,7 @@ public class RequestThreadManager {
 	 * @param interrupted Whether the thread was interrupted
 	 */
 	public void completeThread( Key name, String output, Throwable exception, Boolean interrupted ) {
-		IStruct threadData = this.threads.get( name );
+		IStruct threadData = getThreadData( name );
 		if ( threadData == null ) {
 			return;
 		}
@@ -236,6 +265,27 @@ public class RequestThreadManager {
 		threadMeta.put( Key.status, ( exception == null ? "COMPLETED" : "TERMINATED" ) );
 		threadMeta.put( Key.elapsedTime, System.currentTimeMillis() - threadData.getAsLong( Key.startTicks ) );
 		threadMeta.put( Key.stackTrace, targetThread.getStackTrace() );
+
+		// Track this completed thread
+		completedThreads.add( name );
+
+		flushCompletedThread();
+	}
+
+	/**
+	 * Flushes completed threads from the manager.
+	 */
+	protected void flushCompletedThread() {
+		// This is to prevent a memory leak if you have a long-running daemon which fires many uniquely-named threads over a period of time.
+		// We don't want to just keep filling up memory, so clear our old completed threads.
+		// It seems unlikely that a request would legitimatley have 1000+ threads that it wants to reference back in the thread scope later
+		while ( completedThreads.size() > MAX_TRACKED_COMPLETED_THREADS ) {
+			// Use poll just in the crazy chance the queue is empty now
+			Key oldestThread = completedThreads.poll();
+			if ( oldestThread != null ) {
+				unregisterThread( oldestThread );
+			}
+		}
 	}
 
 	/**
@@ -333,9 +383,8 @@ public class RequestThreadManager {
 	 */
 	@SuppressWarnings( "removal" )
 	public void terminateThread( Key name ) {
-		IStruct threadData = this.threads.get( name );
+		IStruct threadData = getThreadData( name );
 		if ( threadData == null ) {
-			throwInvalidThreadException( name );
 			return;
 		}
 		ThreadComponentBoxContext	context			= ( ThreadComponentBoxContext ) threadData.get( Key.context );
@@ -383,7 +432,11 @@ public class RequestThreadManager {
 	 * @return true if the thread is interrupted
 	 */
 	public boolean IsThreadInterrupted( Key threadName ) {
-		return ( ( ThreadComponentBoxContext ) getThreadData( threadName ).get( Key.context ) )
+		IStruct threadData = getThreadData( threadName );
+		if ( threadData == null ) {
+			return false;
+		}
+		return ( ( ThreadComponentBoxContext ) threadData.get( Key.context ) )
 		    .getThread()
 		    .isInterrupted();
 	}
@@ -396,7 +449,7 @@ public class RequestThreadManager {
 	 * @return true if the thread is alive
 	 */
 	public boolean isThreadAlive( Key threadName ) {
-		IStruct threadData = this.threads.get( threadName );
+		IStruct threadData = getThreadData( threadName );
 		if ( threadData != null ) {
 			return ( ( ThreadComponentBoxContext ) threadData.get( Key.context ) )
 			    .getThread()
@@ -458,7 +511,11 @@ public class RequestThreadManager {
 	public void joinThread( Key name, Integer timeout ) {
 		Objects.requireNonNull( name, "Thread name is required for join" );
 		try {
-			( ( ThreadComponentBoxContext ) getThreadData( name ).get( Key.context ) )
+			IStruct threadData = getThreadData( name );
+			if ( threadData == null ) {
+				return;
+			}
+			( ( ThreadComponentBoxContext ) threadData.get( Key.context ) )
 			    .getThread()
 			    .join( timeout );
 		} catch ( InterruptedException e ) {
@@ -481,7 +538,10 @@ public class RequestThreadManager {
 	 * @param name The name of the thread
 	 */
 	public void interruptThread( Key name ) {
-		IStruct						threadData		= getThreadData( name );
+		IStruct threadData = getThreadData( name );
+		if ( threadData == null ) {
+			return;
+		}
 		ThreadComponentBoxContext	threadContext	= ( ThreadComponentBoxContext ) threadData.get( Key.context );
 		IStruct						threadMetadata	= threadData.getAsStruct( Key.metadata );
 		// Interrupt the thread

@@ -35,6 +35,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.util.RequestThreadManager;
 
 public class ThreadTest {
 
@@ -391,6 +392,41 @@ public class ThreadTest {
 			""",
 			context, BoxSourceType.CFSCRIPT );
 			assertThat( variables.get( result ) ).isEqualTo(variables.get( Key.of( "actualThreadId" ) ));
+	}
+
+
+
+	@DisplayName( "It avoid memory leak with lots of threads" )
+	@Test
+	public void testAvoidMemoryLeakWithLotsOfThreads() {
+		RequestThreadManager.MAX_TRACKED_COMPLETED_THREADS = 5;
+		// @formatter:off
+		instance.executeSource(
+			"""			
+				bx:thread name="my-thread-1" {}
+				bx:thread name="my-thread-2" {}
+				bx:thread name="my-thread-3" {}
+				bx:thread name="my-thread-4" {}
+				bx:thread name="my-thread-5" {}
+				bx:thread name="my-thread-6" {}
+				
+				bx:thread action="join" name="my-thread-1,my-thread-2,my-thread-3,my-thread-4,my-thread-5,my-thread-6" {}
+				
+				result1 = bxthread.keyExists( 'my-thread-1' )
+				result2 = bxthread.keyExists( 'my-thread-2' )
+				result3 = bxthread.keyExists( 'my-thread-3' )
+				result4 = bxthread.keyExists( 'my-thread-4' )
+				result5 = bxthread.keyExists( 'my-thread-5' )
+				result6 = bxthread.keyExists( 'my-thread-6' )
+			}
+			""",
+			context, BoxSourceType.BOXSCRIPT );
+			assertThat( variables.getAsBoolean( Key.of( "result1" ) ) ).isFalse();
+			assertThat( variables.getAsBoolean( Key.of( "result2" ) ) ).isTrue();
+			assertThat( variables.getAsBoolean( Key.of( "result3" ) ) ).isTrue();
+			assertThat( variables.getAsBoolean( Key.of( "result4" ) ) ).isTrue();
+			assertThat( variables.getAsBoolean( Key.of( "result5" ) ) ).isTrue();
+			assertThat( variables.getAsBoolean( Key.of( "result6" ) ) ).isTrue();
 	}
 
 
