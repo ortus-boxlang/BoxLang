@@ -237,4 +237,54 @@ public class ArrayNoneTest {
 
 		assertThat( variables.get( result ) ).isEqualTo( true );
 	}
+
+	@DisplayName( "It can run in parallel with virtual threads" )
+	@Test
+	public void testRunInParallelWithVirtualThreads() {
+		instance.executeSource(
+		    """
+		          indexes = [];
+		          nums = [ 1, 2, 3, 4, 5 ];
+
+		          function eachFn( value, i ){
+		              indexes[ i ] = value;
+		              return true;
+		          };
+
+		          result = arrayNone(
+		    	array = nums,
+		    	callback = eachFn,
+		    	parallel = true,
+		    	virtual = true
+		    );
+		      """,
+		    context );
+
+		assertThat( variables.get( result ) ).isEqualTo( false );
+	}
+
+	@DisplayName( "It can run in parallel with virtual threads using the alt positonal max" )
+	@Test
+	public void testRunInParallelWithVirtualThreadsAndAltMax() {
+		instance.executeSource(
+		    """
+		          indexes = [];
+		          nums = [ 1, 2, 3, 4, 5 ];
+
+		          function eachFn( value, i ){
+		              indexes[ i ] = value;
+		              return true;
+		          };
+
+		          result = arrayNone(
+		    	nums,
+		    	eachFn,
+		    	true,
+		    	true
+		    );
+		      """,
+		    context );
+
+		assertThat( variables.get( result ) ).isEqualTo( false );
+	}
 }
