@@ -87,7 +87,7 @@ public class ArrayEvery extends BIF {
 		    arguments.getAsFunction( Key.callback ),
 		    context,
 		    arguments.getAsBoolean( Key.parallel ),
-		    maxThreadsAttempt.wasSuccessful() ? maxThreadsAttempt.get() : null,
+		    maxThreadsAttempt.orElse( null ),
 		    arguments.getAsBoolean( Key.virtual )
 		);
 
