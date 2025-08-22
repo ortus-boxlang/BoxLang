@@ -35,7 +35,7 @@ public class ArrayNone extends ArraySome {
 		    new Argument( true, Argument.ARRAY, Key.array ),
 		    new Argument( true, "function:Predicate", Key.callback ),
 		    new Argument( false, Argument.BOOLEAN, Key.parallel, false ),
-		    new Argument( false, Argument.INTEGER, Key.maxThreads ),
+		    new Argument( false, Argument.ANY, Key.maxThreads ),
 		    new Argument( false, Argument.BOOLEAN, Key.virtual, false )
 		};
 	}
