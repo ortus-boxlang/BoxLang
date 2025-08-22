@@ -88,6 +88,30 @@ public class ListInsertAtTest {
 		assertEquals( updated.getAt( 2 ), "6" );
 	}
 
+	@DisplayName( "It can Insert a string value custom delims" )
+	@Test
+	public void testInsertStringCustomDelims() {
+		instance.executeSource(
+		    """
+		        nums = "1,2|3:4-5";
+		        result = listInsertAt( nums, 2, "6", ",|:-" );
+		    """,
+		    context );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "1,6,2|3:4-5" );
+	}
+
+	@DisplayName( "It can Insert a string value custom delims whole" )
+	@Test
+	public void testInsertStringCustomDelimsWhole() {
+		instance.executeSource(
+		    """
+		        nums = "1-and-2-and-3-and-4-and-5";
+		        result = listInsertAt( nums, 2, "6", "-and-", true, true );
+		    """,
+		    context );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "1-and-6-and-2-and-3-and-4-and-5" );
+	}
+
 	@DisplayName( "Can Insert using the member function" )
 	@Test
 	public void testInsertMember() {

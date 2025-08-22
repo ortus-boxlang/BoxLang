@@ -52,7 +52,6 @@ public class ThreadTerminateTest {
 				threadTerminate( "myThread" )
 				thread name="myThread" action="join" timeout=1000;
 		    	result = myThread;
-				println( result )
 		    	totalTime = getTickCount() - start
 		    """,
 		    context, BoxSourceType.CFSCRIPT );

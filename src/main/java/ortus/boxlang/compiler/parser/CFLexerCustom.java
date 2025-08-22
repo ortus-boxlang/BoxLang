@@ -471,11 +471,12 @@ public class CFLexerCustom extends CFLexer {
 						isIdentifier = true;
 					} else if ( nextNonWhiteSpaceCharIs( '(' )
 					    && ( ( !keywordsThatComeBeforeLParen.contains( nextTokenType ) || ( nextTokenType == CATCH && !lastTokenWas( RBRACE ) ) ) )
-					    && ! ( nextTokenType == PREFIXEDIDENTIFIER && isComponent( nextToken.getText().substring( 2 ) ) ) ) {
+					    && ! ( nextTokenType == PREFIXEDIDENTIFIER
+					        && ( nextToken.getText().toLowerCase().startsWith( "cf_" ) || isComponent( nextToken.getText().substring( 2 ) ) ) ) ) {
 						// next char is a (
 						// but some tokens like function() or if() are exceptions
 						// catch() is allowed only if the previous token wasn't } which implies it's not actually part of a try/catch block
-						// ignore cfhttp() and other component calls
+						// ignore cfhttp() and other component calls, as well as cf_customTag() calls
 						if ( debug )
 							System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because next char is a left parenthesis" );
 						isIdentifier = true;
@@ -534,9 +535,11 @@ public class CFLexerCustom extends CFLexer {
 							System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because it is a variable being returned" );
 						isIdentifier = true;
 					} else if ( nextTokenType == PREFIXEDIDENTIFIER
-					    && ( !nextNonWhiteSpaceCharIs( '(' ) || !isComponent( nextToken.getText().substring( 2 ) ) ) ) {
+					    && ( !nextNonWhiteSpaceCharIs( '(' )
+					        || ! ( nextToken.getText().toLowerCase().startsWith( "cf_" ) || isComponent( nextToken.getText().substring( 2 ) ) ) ) ) {
 						// The token is not an a CF component call
 						// cfsomething function() {}
+						// real compenent calls are cfhttp() or cf_custom()
 						if ( debug )
 							System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because it is not a CF component call" );
 						isIdentifier = true;

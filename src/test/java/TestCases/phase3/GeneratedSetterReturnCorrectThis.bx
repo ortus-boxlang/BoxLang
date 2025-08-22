@@ -1,0 +1,7 @@
+class extends="GeneratedSetterReturnCorrectThisParent" {
+
+	function baseClassMethod() {
+		return "This is the base class method.";
+	}
+	
+}

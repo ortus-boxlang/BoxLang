@@ -158,6 +158,7 @@ public class Thread extends Component {
 				        exception,
 				        java.lang.Thread.interrupted()
 				    );
+				    tContext.shutdown();
 			    }
 		    },
 		    BooleanCaster.cast( attributes.get( Key.virtual ) )

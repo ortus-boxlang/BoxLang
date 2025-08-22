@@ -29,17 +29,17 @@ import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.sql.Time;
+import java.sql.Timestamp;
 import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Date;
-import java.sql.Time;
-import java.sql.Timestamp;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -51,8 +51,6 @@ import java.util.stream.Stream;
 import org.apache.commons.lang3.ClassUtils;
 
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.dynamic.casters.TimeCaster;
-import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.context.ClassBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -60,10 +58,12 @@ import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
+import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
 import ortus.boxlang.runtime.dynamic.casters.KeyCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCasterLoose;
+import ortus.boxlang.runtime.dynamic.casters.TimeCaster;
 import ortus.boxlang.runtime.dynamic.javaproxy.InterfaceProxyService;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.loader.ClassLocator;
@@ -73,8 +73,8 @@ import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.IntKey;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.FunctionService;
-import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.IType;
@@ -2459,14 +2459,24 @@ public class DynamicInteropService {
 				if ( method.getParameterCount() != argumentsAsClasses.length ) {
 					matchScore.addAndGet( 10 );
 				}
+
+				// If we cannot assign the arguments to the method parameters, return false
 				if ( !ClassUtils.isAssignable( argumentsAsClasses, methodParams ) ) {
 					return false;
 				}
-				// Add 1 to our match score for each argument that is not an exact match
+
+				// Iterate over the method parameters and arguments to see if they match
+				// If they do not match, we will penalize the match score
 				for ( int i = 0; i < methodParams.length; i++ ) {
+					// Add 1 to our match score for each argument that is not an exact match
 					if ( !methodParams[ i ].equals( argumentsAsClasses[ i ] ) ) {
 						matchScore.addAndGet( 1 );
 					}
+					// If any of the methodParams is `Object` then just exit out, it's too broad, we will try dynamic coercion
+					if ( methodParams[ i ] == Object.class ) {
+						return false;
+					}
+
 				}
 				// copy arguments into castedArgumentValues
 				System.arraycopy( arguments, 0, castedArgumentValues, 0, arguments.length );
@@ -2544,8 +2554,16 @@ public class DynamicInteropService {
 				coerced						= true;
 				castedArgumentValues[ i ]	= arguments[ i ];
 
+				// Penalize `Object` matches since they are too broad
+				if ( methodParams[ i ] == Object.class ) {
+					// If the method parameter is Object, we will not coerce it, but we
+					// will penalize the match score since it's too broad
+					// This gives the actual type a chance to be matched
+					// with a more specific method later on
+					matchScore.addAndGet( 2 );
+				}
 				// Penalize classes that aren't an exact match
-				if ( !methodParams[ i ].equals( arguments[ i ].getClass() ) ) {
+				else if ( !methodParams[ i ].equals( arguments[ i ].getClass() ) ) {
 					matchScore.addAndGet( 1 );
 				}
 

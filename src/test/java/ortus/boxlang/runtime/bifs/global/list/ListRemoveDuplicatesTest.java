@@ -85,6 +85,22 @@ public class ListRemoveDuplicatesTest {
 		    context );
 		Array list = ListUtil.asList( StringCaster.cast( variables.get( result ) ), "|" );
 		assertThat( list.size() ).isEqualTo( 3 );
+
+		instance.executeSource(
+		    """
+		        nums = "1,2|2:4-4";
+		        result = listRemoveDuplicates( nums, ",|:-" );
+		    """,
+		    context );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "1,2:4" );
+
+		instance.executeSource(
+		    """
+		        nums = "1-and-2-and-2-and-4-and-4";
+		        result = listRemoveDuplicates( nums, "-and-", true, true, true );
+		    """,
+		    context );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "1-and-2-and-4" );
 	}
 
 	@DisplayName( "Can deduplicate case sensitively" )

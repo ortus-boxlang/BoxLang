@@ -88,6 +88,7 @@ public class ListItemTrimTest {
 		    context
 		);
 		assertThat( variables.get( result ) ).isEqualTo( "a:b:c" );
+
 		instance.executeSource(
 		    """
 		    list = "a, b : c ";
@@ -96,6 +97,24 @@ public class ListItemTrimTest {
 		    context
 		);
 		assertThat( variables.get( result ) ).isEqualTo( "a, b:c" );
+
+		instance.executeSource(
+		    """
+		    list = " a , b : c - d ";
+		    result = listItemTrim( list, ",:-" );
+		    """,
+		    context
+		);
+		assertThat( variables.get( result ) ).isEqualTo( "a,b:c-d" );
+
+		instance.executeSource(
+		    """
+		    list = " a -and- b -and- c -and- d ";
+		    result = listItemTrim( list, "-and-", true, true );
+		    """,
+		    context
+		);
+		assertThat( variables.get( result ) ).isEqualTo( "a-and-b-and-c-and-d" );
 	}
 
 	@DisplayName( "It can include empty fields when trimming items" )

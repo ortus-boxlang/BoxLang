@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.checkerframework.checker.nullness.qual.NonNull;
@@ -346,53 +347,52 @@ public class PendingQuery {
 			return params;
 		}
 
-		boolean			isPositional		= positionalParameters != null;
-		String			SQL					= this.sql;
+		boolean					isPositional				= positionalParameters != null;
+		String					SQL							= this.sql;
 		// This is the SQL string with the named parameters replaced with positional placeholders
-		StringBuilder	newSQL				= new StringBuilder();
+		StringBuilder			newSQL						= new StringBuilder();
 		// This is the name of the current named parameter being processed
-		StringBuilder	paramName			= new StringBuilder();
+		StringBuilder			paramName					= new StringBuilder();
 		// This is the current SQL token being processed. We'll save these for later when we apply the parameters.
 		// We could techincally finalize this string now, but we'd end up casting all the values twice which seems inefficient.
-		StringBuilder	SQLWithParamToken	= new StringBuilder();
+		StringBuilder			SQLWithParamToken			= new StringBuilder();
 		// Track the named params we encounter for validation below
-		Set<Key>		foundNamedParams	= new HashSet<>();
+		Set<Key>				foundNamedParams			= new HashSet<>();
 
 		// 0 = Default state, processing SQL
 		// 1 = Inside a string literal
 		// 2 = Inside a single line comment
 		// 3 = Inside a multi-line comment
 		// 4 = Inside a named parameter
-		int				state				= 0;
+		int						state						= 0;
 
 		// This should always match params.size(), but is a little easier to use
-		int				paramsEncountered	= 0;
+		int						paramsEncountered			= 0;
+		// Check if a character is a valid identifier start character for named parameters
+		Predicate<Character>	isValidIdentiferStartChar	= c -> Character.isLetter( c ) || c == '_';
 		// Pop this into a lambda so we can re-use it for the last named parameter
-		Runnable		processNamed		= () -> {
-												SQLWithParamTokens.add( SQLWithParamToken.toString() );
-												SQLWithParamToken.setLength( 0 );
-												Key finalParamName = Key.of( paramName.toString() );
-												if ( isPositional ) {
-													throw new DatabaseException(
-													    "Named parameter [:" + finalParamName.getName() + "] found in query with positional parameters." );
-												} else {
-													if ( namedParameters.containsKey( finalParamName ) ) {
-														QueryParameter newParam = QueryParameter.fromAny( namedParameters.get( finalParamName ) );
-														foundNamedParams.add( finalParamName );
-														params.add( newParam );
-														// List params add ?, ?, ? etc. to the SQL string
-														if ( newParam.isListParam() ) {
-															List<Object> values = ( List<Object> ) newParam.getValue();
-															newSQL.append( values.stream().map( v -> "?" ).collect( Collectors.joining( ", " ) ) );
-														} else {
-															newSQL.append( "?" );
-														}
-													} else {
-														throw new DatabaseException(
-														    "Named parameter [:" + finalParamName.getName() + "] not provided to query." );
-													}
-												}
-											};
+		Runnable				processNamed				= () -> {
+																SQLWithParamTokens.add( SQLWithParamToken.toString() );
+																SQLWithParamToken.setLength( 0 );
+																Key finalParamName = Key.of( paramName.toString() );
+																if ( namedParameters.containsKey( finalParamName ) ) {
+																	QueryParameter newParam = QueryParameter
+																	    .fromAny( namedParameters.get( finalParamName ) );
+																	foundNamedParams.add( finalParamName );
+																	params.add( newParam );
+																	// List params add ?, ?, ? etc. to the SQL string
+																	if ( newParam.isListParam() ) {
+																		List<Object> values = ( List<Object> ) newParam.getValue();
+																		newSQL.append(
+																		    values.stream().map( v -> "?" ).collect( Collectors.joining( ", " ) ) );
+																	} else {
+																		newSQL.append( "?" );
+																	}
+																} else {
+																	throw new DatabaseException(
+																	    "Named parameter [:" + finalParamName.getName() + "] not provided to query." );
+																}
+															};
 
 		for ( int i = 0; i < SQL.length(); i++ ) {
 			char c = SQL.charAt( i );
@@ -409,31 +409,28 @@ public class PendingQuery {
 					} else if ( c == '/' && i < SQL.length() - 1 && SQL.charAt( i + 1 ) == '*' ) {
 						// If we've reached a /* then we're inside a multi-line comment
 						state = 3;
-					} else if ( c == '?' ) {
+					} else if ( c == '?' && isPositional ) {
 						// We've encountered a positional parameter
 						paramsEncountered++;
-						if ( isPositional ) {
-							if ( paramsEncountered > positionalParameters.size() ) {
-								throw new DatabaseException( "Too few positional parameters [" + positionalParameters.size()
-								    + "] provided for query having at least [" + paramsEncountered + "] '?' char(s)." );
-							}
-
-							SQLWithParamTokens.add( SQLWithParamToken.toString() );
-							SQLWithParamToken.setLength( 0 );
-							var				newParam	= QueryParameter.fromAny( positionalParameters.get( paramsEncountered - 1 ) );
-							List<Object>	values;
-							// List params add ?, ?, ? etc. to the SQL string
-							if ( newParam.isListParam() && ( values = ( List<Object> ) newParam.getValue() ).size() > 1 ) {
-								newSQL.append( "?, ".repeat( values.size() - 1 ) );
-							}
-							params.add( newParam );
-							// append here and break so the ? doesn't go into the SQLWithParamToken
-							newSQL.append( c );
-							break;
-						} else {
-							throw new DatabaseException( "Positional parameter [?] found in query with named parameters." );
+						if ( paramsEncountered > positionalParameters.size() ) {
+							throw new DatabaseException( "Too few positional parameters [" + positionalParameters.size()
+							    + "] provided for query having at least [" + paramsEncountered + "] '?' char(s)." );
 						}
-					} else if ( c == ':' ) {
+
+						SQLWithParamTokens.add( SQLWithParamToken.toString() );
+						SQLWithParamToken.setLength( 0 );
+						var				newParam	= QueryParameter.fromAny( positionalParameters.get( paramsEncountered - 1 ) );
+						List<Object>	values;
+						// List params add ?, ?, ? etc. to the SQL string
+						if ( newParam.isListParam() && ( values = ( List<Object> ) newParam.getValue() ).size() > 1 ) {
+							newSQL.append( "?, ".repeat( values.size() - 1 ) );
+						}
+						params.add( newParam );
+						// append here and break so the ? doesn't go into the SQLWithParamToken
+						newSQL.append( c );
+						break;
+					} else if ( c == ':' && !isPositional && i < SQL.length() - 1
+					    && isValidIdentiferStartChar.test( SQL.charAt( i + 1 ) ) ) {
 						// We've encountered a named parameter
 						state = 4;
 						// Do not append anything

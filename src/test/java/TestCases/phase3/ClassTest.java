@@ -36,6 +36,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.runnables.BoxClassSupport;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.IScope;
@@ -597,6 +598,7 @@ public class ClassTest {
 		assertThat( meta.getAsString( Key.of( "path" ) ).contains( "MyClass.bx" ) ).isTrue();
 		assertThat( meta.get( Key.of( "hashcode" ) ) ).isEqualTo( cfc.hashCode() );
 		assertThat( meta.get( Key.of( "properties" ) ) instanceof Array ).isTrue();
+		assertThat( meta.getAsBoolean( Key.of( "output" ) ) ).isFalse();
 		Array properties = meta.getAsArray( Key.of( "properties" ) );
 		assertThat( properties.size() ).isEqualTo( 1 );
 		assertThat( properties.get( 0 ) instanceof IStruct ).isTrue();
@@ -2036,6 +2038,46 @@ public class ClassTest {
 		    """,
 		    context );
 		assertThat( variables.get( "result" ) ).isEqualTo( "bar" );
+	}
+
+	@Test
+	public void testSuperMixinBug() {
+		instance.executeSource(
+		    """
+		    child = new src.test.java.TestCases.phase3.superMixinBug.Child();
+		    child.doSomething();
+		       """,
+		    context );
+	}
+
+	@Test
+	public void testGeneratedSetterReturnCorrectThis() {
+		instance.executeSource(
+		    """
+		    child = new src.test.java.TestCases.phase3.GeneratedSetterReturnCorrectThis().setName( "brad" );
+		    result = child.baseClassMethod();
+		       """,
+		    context );
+		assertThat( variables.get( "result" ) ).isEqualTo( "This is the base class method." );
+	}
+
+	@Test
+	public void testLegacyReservedAnnotations() {
+		// This tests the legacy meta behavior. If we ever move that to compat, this test will need to go with it.
+		instance.executeSource(
+		    """
+		    result = new src.test.java.TestCases.phase3.ReservedAnnotations();
+		       """,
+		    context );
+		// Get the legeacy metadata
+		IStruct meta = BoxClassSupport.getMetaData( variables.getAsClassRunnable( result ) );
+		// Ensure the annotations and doc comments didn't affect the reserved ones
+		assertThat( meta.getAsString( Key._NAME ) ).isEqualTo( "src.test.java.TestCases.phase3.ReservedAnnotations" );
+		assertThat( meta.getAsString( Key.fullname ) ).isEqualTo( "src.test.java.TestCases.phase3.ReservedAnnotations" );
+		assertThat( meta.get( Key.functions ) ).isInstanceOf( Array.class );
+		assertThat( meta.get( Key.properties ) ).isInstanceOf( Array.class );
+		assertThat( meta.getAsString( Key.type ) ).isEqualTo( "Component" );
+		assertThat( meta.getAsString( Key.path ) ).contains( "ReservedAnnotations.cfc" );
 	}
 
 }

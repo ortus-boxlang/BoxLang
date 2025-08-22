@@ -4,7 +4,7 @@ Logs an order processed successfully message to `orders.log` which will be locat
 
 
 ```java
-writeLog( text="Order #order.getOrderID()# Processed Successfully", type="information", file="orders" );
+writeLog( text="Order #order.getOrderID()# Processed Successfully", type="information", log="orders" );
 
 ```
 

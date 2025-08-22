@@ -46,9 +46,11 @@ import ortus.boxlang.runtime.config.segments.SchedulerConfig;
 import ortus.boxlang.runtime.config.segments.SecurityConfig;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.KeyCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
+import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.loader.DynamicClassLoader;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
@@ -162,6 +164,14 @@ public class Configuration implements IConfigSegment {
 	 * {@code true} by default
 	 */
 	public Boolean									useHighPrecisionMath			= true;
+
+	/**
+	 * The maximum number of completed threads to track for a single request. Old threads will be flushed out to prevent memory from filling.
+	 * This only applies to the "thread" component bx:thread name="mythread" {} which tracks execution status and scopes for the remainder of the request that fired it.
+	 * ONLY threads which have been completed will be eligible to be flushed.
+	 * Note: when the limit is reached, the thread component and related BIFs will no longer throw exceptions on invalid thread names, they will silently ignore attempts to interrupt or join those threads
+	 */
+	public Integer									maxTrackedCompletedThreads		= 1000;
 
 	/**
 	 * The application timeout
@@ -419,6 +429,12 @@ public class Configuration implements IConfigSegment {
 			    .ifSuccessful( value -> this.useHighPrecisionMath = value );
 		}
 
+		// maxTrackedCompletedThreads
+		if ( config.containsKey( Key.maxTrackedCompletedThreads ) ) {
+			IntegerCaster.attempt( PlaceholderHelper.resolve( config.get( Key.maxTrackedCompletedThreads ) ) )
+			    .ifSuccessful( value -> this.maxTrackedCompletedThreads = value );
+		}
+
 		// Application Timeout
 		if ( config.containsKey( Key.applicationTimeout )
 		    && StringCaster.cast( config.get( "applicationTimeout" ) ).length() > 0 ) {
@@ -643,8 +659,14 @@ public class Configuration implements IConfigSegment {
 				    .entrySet()
 				    .forEach( entry -> {
 					    if ( entry.getValue() instanceof IStruct castedStruct ) {
-						    DatasourceConfig datasourceConfig = new DatasourceConfig( entry.getKey() )
-						        .process( new Struct( castedStruct ) );
+						    IStruct eventData = Struct.of(
+						        Key._name, entry.getKey(),
+						        Key.properties, new Struct( castedStruct )
+						    );
+						    BoxRuntime.getInstance().announce( BoxEvent.ON_DATASOURCE_CONFIG_LOAD, eventData );
+
+						    DatasourceConfig datasourceConfig = new DatasourceConfig( eventData.getAsKey( Key._name ) )
+						        .process( eventData.getAsStruct( Key.properties ) );
 						    this.datasources.put( datasourceConfig.name, datasourceConfig );
 					    } else {
 						    logger.warn(
@@ -967,9 +989,9 @@ public class Configuration implements IConfigSegment {
 		this.executors.entrySet()
 		    .forEach( entry -> executorsCopy.put( entry.getKey(), ( ( ExecutorConfig ) entry.getValue() ).toStruct() ) );
 
-		IStruct datsourcesCopy = new Struct();
+		IStruct datasourcesCopy = new Struct();
 		this.datasources.entrySet()
-		    .forEach( entry -> datsourcesCopy.put( entry.getKey(), ( ( DatasourceConfig ) entry.getValue() ).asStruct() ) );
+		    .forEach( entry -> datasourcesCopy.put( entry.getKey(), ( ( DatasourceConfig ) entry.getValue() ).asStruct() ) );
 
 		IStruct modulesCopy = new Struct();
 		this.modules.entrySet()
@@ -986,7 +1008,7 @@ public class Configuration implements IConfigSegment {
 		    Key.clearClassFilesOnStartup, this.clearClassFilesOnStartup,
 		    Key.customComponentsDirectory, Array.copyFromList( this.customComponentsDirectory ),
 		    Key.classPaths, Array.copyFromList( this.classPaths ),
-		    Key.datasources, datsourcesCopy,
+		    Key.datasources, datasourcesCopy,
 		    Key.debugMode, this.debugMode,
 		    Key.classResolverCache, this.classResolverCache,
 		    Key.defaultDatasource, this.defaultDatasource,
@@ -1014,6 +1036,7 @@ public class Configuration implements IConfigSegment {
 		    Key.timezone, this.timezone,
 		    Key.trustedCache, this.trustedCache,
 		    Key.useHighPrecisionMath, this.useHighPrecisionMath,
+		    Key.maxTrackedCompletedThreads, this.maxTrackedCompletedThreads,
 		    Key.validExtensions, Array.fromSet( getValidExtensions() ),
 		    Key.validClassExtensions, Array.fromSet( this.validClassExtensions ),
 		    Key.validTemplateExtensions, Array.fromSet( getValidTemplateExtensions() ),

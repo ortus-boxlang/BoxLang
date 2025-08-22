@@ -44,7 +44,7 @@ public class WriteLog extends BIF {
 	}
 
 	/**
-	 * Writes a log message out
+	 * Writes a message out to a log file
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.

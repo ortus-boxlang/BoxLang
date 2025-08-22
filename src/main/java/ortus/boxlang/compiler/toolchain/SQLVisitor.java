@@ -613,7 +613,7 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 			return binarySimple( ctx.expr( 0 ), ctx.expr( 1 ), SQLBinaryOperator.NOTEQUAL, pos, src, table, joins );
 		} else if ( ctx.OPEN_PAR() != null ) {
 			// Needs to run AFTER function and IN checks
-			return new SQLParenthesis( visitExpr( ctx.expr( 0 ), table, joins ), pos, src );
+			return new SQLParenthesis( visitPredicate( ctx.predicate( 0 ), table, joins ), pos, src );
 		} else {
 			throw new UnsupportedOperationException( "Unimplemented expression: " + src );
 		}

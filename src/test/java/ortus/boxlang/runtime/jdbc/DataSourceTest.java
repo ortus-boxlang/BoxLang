@@ -24,7 +24,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.math.BigInteger;
 import java.sql.Connection;
 import java.sql.SQLException;
 
@@ -34,7 +33,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIf;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -93,50 +91,6 @@ public class DataSourceTest {
 			assertThat( conn ).isInstanceOf( Connection.class );
 		}
 		derbyDB.shutdown();
-	}
-
-	@EnabledIf( "tools.JDBCTestUtils#hasMySQLModule" )
-	@DisplayName( "It can get a MySQL JDBC connection" )
-	@Test
-	void testMySQLConnection() throws SQLException {
-		DataSource myDataSource = DataSource.fromStruct(
-		    Key.of( "mysql" ),
-		    Struct.of(
-		        "username", "root",
-		        "password", "123456Password",
-		        "connectionString", "jdbc:mysql://localhost:3309"
-		    ) );
-		try ( Connection conn = myDataSource.getConnection() ) {
-			assertThat( conn ).isInstanceOf( Connection.class );
-		}
-		myDataSource.shutdown();
-	}
-
-	@EnabledIf( "tools.JDBCTestUtils#hasMSSQLModule" )
-	@DisplayName( "It can get a MSSQL JDBC connection" )
-	@Test
-	void testMSSQLConnection() throws SQLException {
-		DataSource myDataSource = DataSource.fromStruct(
-		    Key.of( "mssql" ),
-		    Struct.of(
-		        "host", "localhost",
-		        "port", "1433",
-		        "dbdriver", "MSSQL",
-		        "database", "master",
-		        "dsn", "jdbc:sqlserver://{host}:{port}",
-		        "custom", "DATABASENAME=master&sendStringParametersAsUnicode=false&SelectMethod=direct&applicationName=fooey",
-		        "class", "com.microsoft.sqlserver.jdbc.SQLServerDriver",
-		        "username", "${DB_USER}",
-		        "password", "${DB_PASSWORD}",
-		        "connectionLimit", "100",
-		        "connectionTimeout", "20",
-		        "username", "sa",
-		        "password", "123456Password"
-		    ) );
-		try ( Connection conn = myDataSource.getConnection() ) {
-			assertThat( conn ).isInstanceOf( Connection.class );
-		}
-		myDataSource.shutdown();
 	}
 
 	@DisplayName( "It can get a JDBC connection regardless of key casing" )
@@ -286,36 +240,6 @@ public class DataSourceTest {
 
 		assert ( firstRow.getAsInteger( Key.of( "id" ) ) == 1 );
 		assert ( firstRow.getAsString( Key.of( "name" ) ).equals( "Luis Majano" ) );
-	}
-
-	@EnabledIf( "tools.JDBCTestUtils#hasMySQLModule" )
-	@DisplayName( "It can retrieve the generated keys from an insert query" )
-	@Test
-	void testGeneratedKeysOnInsert() {
-		DataSource myDataSource = DataSource.fromStruct(
-		    Key.of( "mysql" ),
-		    Struct.of(
-		        "username", "root",
-		        "password", "123456Password",
-		        "connectionString", "jdbc:mysql://localhost:3309/myDB"
-		    ) );
-		try ( Connection conn = myDataSource.getConnection() ) {
-			assertDoesNotThrow( () -> {
-				myDataSource.execute(
-				    "CREATE TABLE developers2 (id INTEGER AUTO_INCREMENT PRIMARY KEY, name VARCHAR(155) NOT NULL)",
-				    context );
-				ExecutedQuery executedQuery = myDataSource.execute( "INSERT INTO developers2 (name) VALUES ('Eric Peterson')", conn,
-				    context );
-				assertEquals( 0, executedQuery.getRecordCount() );
-				BigInteger generatedKey = ( BigInteger ) executedQuery.getGeneratedKey();
-				assert generatedKey != null;
-				assertEquals( 1, generatedKey.intValue() );
-			} );
-		} catch ( SQLException e ) {
-			throw new RuntimeException( e );
-		} finally {
-			myDataSource.execute( "DROP TABLE IF EXISTS developers2", context );
-		}
 	}
 
 	@DisplayName( "It can compare datasources" )

@@ -174,4 +174,60 @@ public class ArrayMapTest {
 		assertThat( res.get( 4 ) ).isEqualTo( 5 );
 	}
 
+	@DisplayName( "It can map an array in parallel with virtual threads" )
+	@Test
+	public void testParallelMappingWithVirtualThreads() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+			nums = [ "red", "blue", "green", "yellow", "purple" ];
+
+			result = ArrayMap( 
+				array=nums, 
+				callback=function( item, i ){
+					return i;
+				}, 
+				parallel=true,  
+				virtual=true
+			);
+		    """,
+		    context );
+		// @formatter:on
+		Array res = ( Array ) variables.get( result );
+		assertThat( res.size() ).isEqualTo( 5 );
+		assertThat( res.get( 0 ) ).isEqualTo( 1 );
+		assertThat( res.get( 1 ) ).isEqualTo( 2 );
+		assertThat( res.get( 2 ) ).isEqualTo( 3 );
+		assertThat( res.get( 3 ) ).isEqualTo( 4 );
+		assertThat( res.get( 4 ) ).isEqualTo( 5 );
+	}
+
+	@DisplayName( "It can map an array in parallel with virtual threads using it as the 4th arg" )
+	@Test
+	public void testParallelMappingWithVirtualAltPosition() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+			nums = [ "red", "blue", "green", "yellow", "purple" ];
+
+			result = ArrayMap( 
+				nums, 
+				function( item, i ){
+					return i;
+				}, 
+				true,  
+				true
+			);
+		    """,
+		    context );
+		// @formatter:on
+		Array res = ( Array ) variables.get( result );
+		assertThat( res.size() ).isEqualTo( 5 );
+		assertThat( res.get( 0 ) ).isEqualTo( 1 );
+		assertThat( res.get( 1 ) ).isEqualTo( 2 );
+		assertThat( res.get( 2 ) ).isEqualTo( 3 );
+		assertThat( res.get( 3 ) ).isEqualTo( 4 );
+		assertThat( res.get( 4 ) ).isEqualTo( 5 );
+	}
+
 }

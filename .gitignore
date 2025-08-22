@@ -46,3 +46,6 @@ src/test/java/ortus/boxlang/compiler/Precompiled.bx
 src/test/java/ortus/boxlang/compiler/Precompiled.bxs
 /src/test/resources/testbox
 test.txt
+
+# Secrets
+.env

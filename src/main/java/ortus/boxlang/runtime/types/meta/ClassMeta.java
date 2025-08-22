@@ -63,6 +63,7 @@ public class ClassMeta extends BoxMeta<IClassRunnable> {
 		this.meta = Struct.of(
 		    Key._NAME, target.bxGetName().getName(),
 		    Key.nameAsKey, target.bxGetName(),
+		    Key.output, target.canOutput(),
 		    Key.documentation, new Struct( target.getDocumentation() ),
 		    Key.annotations, new Struct( target.getAnnotations() ),
 		    Key._EXTENDS, target.getSuper() != null ? target.getSuper().getBoxMeta().getMeta() : Struct.EMPTY,

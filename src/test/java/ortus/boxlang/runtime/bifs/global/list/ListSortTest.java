@@ -59,7 +59,7 @@ public class ListSortTest {
 		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
-	@DisplayName( "It should run the UDF over the array until one returns true" )
+	@DisplayName( "It should sort the array" )
 	@Test
 	public void testSort() {
 		instance.executeSource(
@@ -75,6 +75,34 @@ public class ListSortTest {
 		assertThat( res.get( 1 ) ).isEqualTo( "b" );
 		assertThat( res.get( 2 ) ).isEqualTo( "c" );
 		assertThat( res.get( 3 ) ).isEqualTo( "d" );
+	}
+
+	@DisplayName( "It should sort the array with delims" )
+	@Test
+	public void testSortWithDelims() {
+		instance.executeSource(
+		    """
+		        list = "b,d|c:a";
+
+		        result = ListSort( list, "text", "asc", ",|:" );
+		    """,
+		    context );
+
+		assertThat( variables.getAsString( result ) ).isEqualTo( "a:b|c,d" );
+	}
+
+	@DisplayName( "It should sort the array with delims whole" )
+	@Test
+	public void testSortWithDelimsWhole() {
+		instance.executeSource(
+		    """
+		        list = "b-and-d-and-c-and-a";
+
+		        result = ListSort( list, "text", "asc", "-and-", true, true );
+		    """,
+		    context );
+
+		assertThat( variables.getAsString( result ) ).isEqualTo( "a-and-b-and-c-and-d" );
 	}
 
 	@DisplayName( "It should sort text ascending" )

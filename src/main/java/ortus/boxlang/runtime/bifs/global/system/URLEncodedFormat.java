@@ -43,13 +43,13 @@ public class URLEncodedFormat extends BIF {
 	}
 
 	/**
-	 * Generates a URL-encoded string. For example, it replaces spaces with %20, and non-alphanumeric characters with equivalent hexadecimal escape
-	 * sequences. Passes arbitrary strings within a URL. *
+	 * Generates a URL-encoded string. For example, it replaces spaces with `%20`, and non-alphanumeric characters with equivalent hexadecimal escape
+	 * sequences. Passes arbitrary strings within a URL.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.String
+	 * @argument.String String to encode for usage within a URL.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String str = StringCaster.cast( arguments.get( Key.string ) );

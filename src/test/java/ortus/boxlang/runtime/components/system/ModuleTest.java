@@ -259,6 +259,27 @@ public class ModuleTest {
 	}
 
 	@Test
+	public void testCanRunCustomTagUnderscoreCFScript() {
+		instance.executeSource(
+		    """
+		    cf_brad( foo="bar" );
+		    		  """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( buffer.toString().trim() ).isEqualTo( "This is the Brad tag bar" );
+	}
+
+	@Test
+	public void testCanRunCustomTagUnderscoreCFScriptBody() {
+		instance.executeSource(
+		    """
+		    // Runs tag twice since there is a body
+		       cf_brad( foo="bar" ){}
+		       		  """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( buffer.toString().trim() ).isEqualTo( "This is the Brad tag barThis is the Brad tag bar" );
+	}
+
+	@Test
 	public void testCanRunCustomTagUnderscoreBLScript() {
 		instance.executeSource(
 		    """

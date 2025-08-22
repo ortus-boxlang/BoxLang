@@ -446,9 +446,6 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 			}
 		}
 
-		// Warn if driver is not found in the datasource service
-		validateDriver();
-
 		return this;
 	}
 
@@ -463,7 +460,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 
 	/**
 	 * Retrieve the configuration properties.
-	 * 
+	 *
 	 * @return Struct representation of all datasource configuration properties.
 	 */
 	public IStruct getProperties() {
@@ -727,7 +724,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 
 	/**
 	 * Log a warning if the driver is not registered with the datasource service.
-	 * 
+	 *
 	 * We purposely avoid throwing an exception here, as the generic driver may be sufficient.
 	 */
 	public void validateDriver() {

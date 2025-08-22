@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
@@ -58,6 +59,27 @@ import ortus.boxlang.runtime.util.BoxFQN;
  * delegate to these methods.
  */
 public class BoxClassSupport {
+
+	/**
+	 * In legacy class meta structs, don't allow ad-hoc annotations or doc comments to override these top level keys
+	 */
+	public static final Set<Key>	legacyMetaClassReservedAnnotations		= Set.of(
+	    Key._NAME,
+	    Key.fullname,
+	    Key.functions,
+	    Key.properties,
+	    Key.type,
+	    Key.path
+	);
+
+	/**
+	 * In legacy property meta structs, don't allow ad-hoc annotations or doc comments to override these top level keys
+	 */
+	public static final Set<Key>	legacyMetaPropertyReservedAnnotations	= Set.of(
+	    Key._NAME,
+	    Key.type,
+	    Key._DEFAULT
+	);
 
 	/**
 	 * Call the pseudo constructor
@@ -534,14 +556,16 @@ public class BoxClassSupport {
 				propertyStruct.put( Key._DEFAULT, property.getDefaultValueForMeta() );
 			}
 			if ( property.documentation() != null ) {
-				propertyStruct.putAll( property.documentation() );
+				for ( var doc : property.documentation().entrySet() ) {
+					if ( !legacyMetaPropertyReservedAnnotations.contains( doc.getKey() ) ) {
+						propertyStruct.put( doc.getKey(), doc.getValue() );
+					}
+				}
 			}
 			if ( property.annotations() != null ) {
-				if ( property.annotations() != null ) {
-					for ( var annotation : property.annotations().entrySet() ) {
-						if ( !annotation.getKey().equals( Key._DEFAULT ) ) {
-							propertyStruct.put( annotation.getKey(), annotation.getValue() );
-						}
+				for ( var annotation : property.annotations().entrySet() ) {
+					if ( !legacyMetaPropertyReservedAnnotations.contains( annotation.getKey() ) ) {
+						propertyStruct.put( annotation.getKey(), annotation.getValue() );
 					}
 				}
 			}
@@ -555,10 +579,18 @@ public class BoxClassSupport {
 		meta.put( Key.persisent, false );
 
 		if ( thisClass.getDocumentation() != null ) {
-			meta.putAll( thisClass.getDocumentation() );
+			for ( Map.Entry<Key, Object> entry : thisClass.getDocumentation().entrySet() ) {
+				if ( !legacyMetaClassReservedAnnotations.contains( entry.getKey() ) ) {
+					meta.put( entry.getKey(), entry.getValue() );
+				}
+			}
 		}
 		if ( thisClass.getAnnotations() != null ) {
-			meta.putAll( thisClass.getAnnotations() );
+			for ( Map.Entry<Key, Object> entry : thisClass.getAnnotations().entrySet() ) {
+				if ( !legacyMetaClassReservedAnnotations.contains( entry.getKey() ) ) {
+					meta.put( entry.getKey(), entry.getValue() );
+				}
+			}
 		}
 		if ( thisClass.getSuper() != null ) {
 			meta.put( Key._EXTENDS, thisClass.getSuper().getMetaData() );
@@ -849,16 +881,23 @@ public class BoxClassSupport {
 			return thisClass;
 		}
 
+		// This is a hack still and not a full solution. It will work for a mixin on a parent class, ignoring it on the lower classes it was copied to,
+		// but will NOT work for a mixin which was mixed explicitly into both the child and the parent class.
+		// As it currently stands. there is no way to tell if a mixin in a child class was simply coied down from the parent class, or if it was explicitly mixed in there.
+		// The full fix for this will require some additional tracking.
+		IClassRunnable	highestClassWithUDFInstance	= thisClass.getVariablesScope().containsValue( udf ) ? thisClass : null;
+
 		// Otherwise, let's climb the supers (if they even exist) and see if one of them declared it
-		IClassRunnable thisSuper = thisClass.getSuper();
+		IClassRunnable	thisSuper					= thisClass.getSuper();
 		while ( thisSuper != null ) {
 			if ( enclosingClass == thisSuper.getClass() ) {
 				return thisSuper;
 			}
-			thisSuper = thisSuper.getSuper();
+			highestClassWithUDFInstance	= thisSuper.getVariablesScope().containsValue( udf ) ? thisSuper : highestClassWithUDFInstance;
+			thisSuper					= thisSuper.getSuper();
 		}
 		// If the original class and no supers were the enclosing class, then this is prolly a mixin. Just return the original value.
-		return thisClass;
+		return highestClassWithUDFInstance != null ? highestClassWithUDFInstance : thisClass;
 	}
 
 }

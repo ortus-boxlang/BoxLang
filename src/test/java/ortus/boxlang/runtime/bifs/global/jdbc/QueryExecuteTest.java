@@ -19,7 +19,6 @@
 package ortus.boxlang.runtime.bifs.global.jdbc;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -32,9 +31,7 @@ import java.util.List;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIf;
 
-import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.jdbc.ExecutedQuery;
 import ortus.boxlang.runtime.scopes.Key;
@@ -49,139 +46,6 @@ import tools.JDBCTestUtils;
 public class QueryExecuteTest extends BaseJDBCTest {
 
 	static Key result = new Key( "result" );
-
-	@Disabled( "Couldn't get a working datetime column in the CREATE TABLE statement in JDBCTestUtils." )
-	@EnabledIf( "tools.JDBCTestUtils#hasMSSQLModule" )
-	@DisplayName( "It can pass date object params without specifying a sql type" )
-	@Test
-	public void testDateParamNoSqlType() {
-		instance.executeSource(
-		    """
-		    result = queryExecute(
-		    	"SELECT id from developers WHERE myDate <= :created",
-		    	{ "created" : now() },
-		    	{ "datasource" : "MSSQLdatasource" }
-		    );
-		    """,
-		    context );
-		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
-		Query query = variables.getAsQuery( result );
-		assertThat( query.size() ).isGreaterThan( 0 );
-	}
-
-	@Disabled( "To fix. For some reason the @@rowcount is not returning a result set." )
-	@EnabledIf( "tools.JDBCTestUtils#hasMSSQLModule" )
-	@DisplayName( "It can retrieve a resultSet after an update statement - BL-1186. (multiple statements)" )
-	@Test
-	public void testSelectAfterUpdate() {
-		// asking for a result set from a statement that doesn't return one should return an empty query
-		instance.executeSource(
-		    """
-		       result = queryExecute( "
-		             update developers
-		             set id = '99'
-		             where id = '77';
-
-		             select @@rowcount;
-		    ", {}, { "datasource" : "MSSQLdatasource" } );
-		       """,
-		    context );
-		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
-		Query query = variables.getAsQuery( result );
-		assertEquals( 1, query.size() );
-		IStruct row = query.getRowAsStruct( 0 );
-		assertEquals( 99, row.get( "id" ) );
-	}
-
-	@EnabledIf( "tools.JDBCTestUtils#hasMSSQLModule" )
-	@DisplayName( "It won't throw on DROP statements like MSSQL does" )
-	@Test
-	public void testTableDrop() {
-		// asking for a result set from a statement that doesn't return one should return an empty query
-		instance.executeSource(
-		    """
-		    result = queryExecute( "DROP TABLE IF EXISTS foo", {}, { "datasource" : "MSSQLdatasource" } );
-		    """,
-		    context );
-		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
-		Query query = variables.getAsQuery( result );
-		assertEquals( 0, query.size() );
-	}
-
-	@EnabledIf( "tools.JDBCTestUtils#hasMySQLModule" )
-	@DisplayName( "It supports timestamp param types" )
-	@Test
-	public void testTimestampDateParam() {
-		instance.executeSource(
-		    """
-		       queryExecute(
-		    	"
-		    	INSERT INTO developers ( id, name, role, createdAt )
-		    	VALUES ( 100, 'Tony Skipponi', 'Engineer', :timestamp )",
-		    	{
-		    		timestamp : { sqltype : "cf_sql_timestamp", value : now() }
-		    	},
-		    	{ "datasource" : "mysqldatasource" }
-		    );
-		    result = queryExecute( "SELECT * FROM developers WHERE id = 100", [], { "datasource" : "mysqldatasource" } );
-		       """,
-		    context );
-		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
-		Query query = variables.getAsQuery( result );
-		assertEquals( 1, query.size() );
-	}
-
-	@EnabledIf( "tools.JDBCTestUtils#hasMySQLModule" )
-	@DisplayName( "It can use string values as timestamp params." )
-	@Test
-	public void testTimestampParamCompare() {
-		instance.executeSource(
-		    """
-		      queryExecute( "INSERT INTO developers ( id, name, role, createdAt )
-		      	VALUES ( 101, 'Tony Skipponi', 'Engineer', NOW() )", {}, { "datasource" : "mysqldatasource" } );
-		      result = queryExecute(
-		      	"
-		      	SELECT * FROM developers
-		    WHERE createdAt IS NOT NULL AND createdAt < :timestamp",
-		      	{
-		      		timestamp : { sqltype : "cf_sql_timestamp", value : "09/24/2099" }
-		      	},
-		      	{ "datasource" : "mysqldatasource" }
-		      );
-		      """,
-		    context );
-		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
-		Query query = variables.getAsQuery( result );
-		assertEquals( 1, query.size() );
-	}
-
-	@EnabledIf( "tools.JDBCTestUtils#hasMySQLModule" )
-	@DisplayName( "It can execute multiple statements in a single queryExecute() call" )
-	@Test
-	public void testMultipleStatements() {
-		assertDoesNotThrow( () -> instance.executeStatement(
-		    """
-		           result = queryExecute( '
-		     	   TRUNCATE TABLE developers;
-		               INSERT INTO developers (id) VALUES (111);
-		               INSERT INTO developers (id) VALUES (222);
-		               SELECT * FROM developers;
-		               INSERT INTO developers (id) VALUES (333);
-		               INSERT INTO developers (id) VALUES (444);
-		               ',
-		      [],
-		      { "datasource" : "mysqldatasource" }
-		           );
-		    """, context )
-		);
-		Object multiStatementQueryReturn = variables.get( Key.of( "result" ) );
-		assertThat( multiStatementQueryReturn ).isInstanceOf( Query.class );
-		assertEquals( 2, ( ( Query ) multiStatementQueryReturn ).size(), "For compatibility, the last result should be returned" );
-
-		Query newTableRows = ( Query ) instance
-		    .executeStatement( "queryExecute( 'SELECT * FROM developers WHERE id IN (111,222)', [],{ 'datasource' : 'mysqldatasource' } );", context );
-		assertEquals( 2, newTableRows.size() );
-	}
 
 	@DisplayName( "It can execute a query with no bindings on the default datasource" )
 	@Test
@@ -739,43 +603,6 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		    """,
 		    context );
 		assertThat( variables.getAsBoolean( Key.of( "isDate" ) ) ).isEqualTo( false );
-	}
-
-	@EnabledIf( "tools.JDBCTestUtils#hasMSSQLModule" )
-	@DisplayName( "It can return inserted values" )
-	@Test
-	public void testSQLOutput() {
-		instance.executeStatement(
-		    """
-		        result = queryExecute( "
-		            insert into developers (id, name) OUTPUT INSERTED.*
-		            VALUES (1, 'Luis'), (2, 'Brad'), (3, 'Jon')
-		        ", {}, { "datasource" : "MSSQLdatasource" } );
-		    """, context );
-		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
-		Query query = variables.getAsQuery( result );
-		assertEquals( 3, query.size() );
-		assertEquals( "Luis", query.getRowAsStruct( 0 ).get( Key._NAME ) );
-		assertEquals( "Brad", query.getRowAsStruct( 1 ).get( Key._NAME ) );
-		assertEquals( "Jon", query.getRowAsStruct( 2 ).get( Key._NAME ) );
-	}
-
-	@EnabledIf( "tools.JDBCTestUtils#hasMSSQLModule" )
-	@DisplayName( "It sets generatedKey in query meta" )
-	@Test
-	public void testGeneratedKey() {
-		instance.executeStatement(
-		    """
-		        queryExecute(
-		        	"INSERT INTO generatedKeyTest (name) VALUES ( 'Michael' )",
-		        	{},
-		        	{ "result": "variables.result", "datasource" : "MSSQLdatasource" }
-		        );
-		    """,
-		    context );
-		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
-		IStruct meta = variables.getAsStruct( result );
-		assertThat( DoubleCaster.cast( meta.get( Key.generatedKey ), false ) ).isEqualTo( 1.0d );
 	}
 
 	@DisplayName( "It can return cached query results within the cache timeout" )

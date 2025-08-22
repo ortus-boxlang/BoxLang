@@ -505,6 +505,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		maxObjects							= Key.of( "maxObjects" );
 	public static final Key		maxRows								= Key.of( "maxRows" );
 	public static final Key		maxThreads							= Key.of( "maxThreads" );
+	public static final Key		maxTrackedCompletedThreads			= Key.of( "maxTrackedCompletedThreads" );
 	public static final Key		merge								= Key.of( "merge" );
 	public static final Key		message								= Key.of( "message" );
 	public static final Key		metadata							= Key.of( "metadata" );

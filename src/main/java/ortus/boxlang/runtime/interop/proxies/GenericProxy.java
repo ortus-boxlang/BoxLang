@@ -24,7 +24,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicInteropService;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 import ortus.boxlang.runtime.types.util.BooleanRef;
 
 /**
@@ -61,7 +63,8 @@ public class GenericProxy extends BaseProxy implements InvocationHandler {
 			}
 		} catch ( Exception e ) {
 			getLogger().error( "Error invoking GenericProxy", e );
-			throw new BoxRuntimeException( "Error invoking GenericProxy", e );
+			ExceptionUtil.throwException( e );
+			return null; // Unreachable code, but required for compilation
 		}
 	}
 
@@ -75,9 +78,26 @@ public class GenericProxy extends BaseProxy implements InvocationHandler {
 	 * @return The coerced return value
 	 */
 	private Object coerceReturnValue( Object returnValue, Class<?> returnType, String methodName ) {
+
+		// If our proxy returned a value, but we needed void, then just skip the casting check and return null.
+		if ( Void.class.equals( returnType ) || void.class.equals( returnType ) ) {
+			return null;
+		}
+
+		// If there is nothing to cast, just return it....
 		if ( returnValue == null ) {
+			// ... UNLESS we required a primitive type, which cannot be null!
+			if ( returnType.isPrimitive() ) {
+				throw new BoxCastException(
+				    "Proxied method [" + methodName + "()] returned null, but the interface method signature requires a primitive type ["
+				        + returnType.getName() + "] which cannot be null." );
+			}
 			return returnValue;
 		}
+
+		// Delegate the coercion to the DynamicInteropService to cast the return value to what the proxy expects.
+		// This is required when we pass things like UDFs into a Java methods expecting a functional interface.
+		// We need to ensure whatever we return adheres to the type expected.
 		Object[]	args	= new Object[] { returnValue };
 		boolean		success	= DynamicInteropService.coerceArguments(
 		    context,

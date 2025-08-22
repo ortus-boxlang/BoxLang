@@ -47,8 +47,28 @@ jobs:
         if: ${{ matrix.os == 'windows-latest' }}
         run: choco install commandbox
 
-      - name: Install TestBox
+      - name: Install Testbox
         run: box install testbox@be src/test/resources --verbose --noSave
+
+      - name: Install JDBC modules
+        if: ${{ matrix.os != 'windows-latest' }}
+        run: box install id=bx-mssql,bx-mysql directory=~/.boxlang/modules --verbose --nosave
+
+      - name: Setup MySQL Service
+        if: ${{ matrix.os != 'windows-latest' }}
+        uses: samin/mysql-action@v1
+        with:
+          host port: 3309
+          mysql database: "myDB"
+          mysql root password: "123456Password"
+
+      - name: Setup MSSQL
+        if: ${{ matrix.os != 'windows-latest' }}
+        uses: rails-sqlserver/setup-mssql@v1
+        with:
+          components: sqlengine
+          sa-password: "123456Password"
+          version: 2022
 
       - name: Test Module
         env:

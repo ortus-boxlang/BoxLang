@@ -21,12 +21,12 @@ import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.bifs.global.array.ArraySort;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
+import ortus.boxlang.runtime.types.DelimitedArray;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
 @BoxBIF
@@ -74,19 +74,16 @@ public class ListSort extends ArraySort {
 	 * @argument.callback Optional function to use for sorting - if the sort type is a closure, it will be recognized as a callback
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Array listArray = ListUtil.asList(
+		Array listArray = ListUtil.asDelimitedList(
 		    arguments.getAsString( Key.list ),
 		    arguments.getAsString( Key.delimiter ),
 		    arguments.getAsBoolean( Key.includeEmptyFields ),
 		    arguments.getAsBoolean( Key.multiCharacterDelimiter )
 		);
+
 		arguments.put( Key.array, listArray );
-		return ListUtil.asString(
-		    ArrayCaster.cast( super._invoke( context, arguments ) ),
-		    arguments.getAsString( Key.delimiter )
 
-		);
-
+		return ( ( DelimitedArray ) super._invoke( context, arguments ) ).asString();
 	}
 
 }

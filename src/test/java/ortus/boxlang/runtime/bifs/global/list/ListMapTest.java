@@ -82,6 +82,40 @@ public class ListMapTest {
 		assertThat( result.get( 4 ) ).isEqualTo( "10" );
 	}
 
+	@Test
+	public void testDelims() {
+		instance.executeSource(
+		    """
+		        nums = "1,2|3:4-5";
+
+		        function mapFn( value, i ){
+		            return value * 2;
+		        };
+
+		        result = ListMap( nums, mapFn, ",|:-" );
+		    """,
+		    context );
+
+		assertThat( variables.getAsString( result ) ).isEqualTo( "2,4|6:8-10" );
+	}
+
+	@Test
+	public void testDelimsWhole() {
+		instance.executeSource(
+		    """
+		        nums = "1-and-2-and-3-and-4-and-5";
+
+		        function mapFn( value, i ){
+		            return value * 2;
+		        };
+
+		        result = ListMap( nums, mapFn, "-and-", true, true );
+		    """,
+		    context );
+
+		assertThat( variables.getAsString( result ) ).isEqualTo( "2-and-4-and-6-and-8-and-10" );
+	}
+
 	@DisplayName( "It should allow you to call it as a member function" )
 	@Test
 	public void testUseProvidedUDFCallMember() {
