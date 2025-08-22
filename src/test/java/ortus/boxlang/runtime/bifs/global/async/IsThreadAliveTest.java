@@ -42,6 +42,10 @@ public class IsThreadAliveTest {
 		// @formatter:off
 		instance.executeSource(
 		    """
+				thread name="testThread"{
+					sleep( 1000 );
+				};
+				thread name="testThread" action="join";
 				result = isThreadAlive( "testThread" );
 		    """,
 		    context );

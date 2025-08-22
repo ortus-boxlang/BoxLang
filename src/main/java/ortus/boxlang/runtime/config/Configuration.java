@@ -46,6 +46,7 @@ import ortus.boxlang.runtime.config.segments.SchedulerConfig;
 import ortus.boxlang.runtime.config.segments.SecurityConfig;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.KeyCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
@@ -163,6 +164,14 @@ public class Configuration implements IConfigSegment {
 	 * {@code true} by default
 	 */
 	public Boolean									useHighPrecisionMath			= true;
+
+	/**
+	 * The maximum number of completed threads to track for a single request. Old threads will be flushed out to prevent memory from filling.
+	 * This only applies to the "thread" component bx:thread name="mythread" {} which tracks execution status and scopes for the remainder of the request that fired it.
+	 * ONLY threads which have been completed will be eligible to be flushed.
+	 * Note: when the limit is reached, the thread component and related BIFs will no longer throw exceptions on invalid thread names, they will silently ignore attempts to interrupt or join those threads
+	 */
+	public Integer									maxTrackedCompletedThreads		= 1000;
 
 	/**
 	 * The application timeout
@@ -418,6 +427,12 @@ public class Configuration implements IConfigSegment {
 		if ( config.containsKey( Key.useHighPrecisionMath ) ) {
 			BooleanCaster.attempt( PlaceholderHelper.resolve( config.get( Key.useHighPrecisionMath ) ) )
 			    .ifSuccessful( value -> this.useHighPrecisionMath = value );
+		}
+
+		// maxTrackedCompletedThreads
+		if ( config.containsKey( Key.maxTrackedCompletedThreads ) ) {
+			IntegerCaster.attempt( PlaceholderHelper.resolve( config.get( Key.maxTrackedCompletedThreads ) ) )
+			    .ifSuccessful( value -> this.maxTrackedCompletedThreads = value );
 		}
 
 		// Application Timeout
@@ -1021,6 +1036,7 @@ public class Configuration implements IConfigSegment {
 		    Key.timezone, this.timezone,
 		    Key.trustedCache, this.trustedCache,
 		    Key.useHighPrecisionMath, this.useHighPrecisionMath,
+		    Key.maxTrackedCompletedThreads, this.maxTrackedCompletedThreads,
 		    Key.validExtensions, Array.fromSet( getValidExtensions() ),
 		    Key.validClassExtensions, Array.fromSet( this.validClassExtensions ),
 		    Key.validTemplateExtensions, Array.fromSet( getValidTemplateExtensions() ),
