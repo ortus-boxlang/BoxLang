@@ -626,7 +626,7 @@ public class ListUtil {
 	 * @param ordered         Boolean as to whether to maintain order in parallel
 	 *                        execution
 	 * 
-	 * @deprecated Use
+	 * @deprecated Since 1.5.0 Use
 	 *             {@link #each(Array, Function, IBoxContext, Boolean, Integer, Boolean)}
 	 *             instead.
 	 */
@@ -744,7 +744,7 @@ public class ListUtil {
 	 *
 	 * @return The boolean value as to whether the test is met
 	 * 
-	 * @deprecated Use
+	 * @deprecated Since 1.5.0 Use
 	 *             {@link #some(Array, Function, IBoxContext, Boolean, Integer, Boolean)}
 	 *             instead.
 	 */
@@ -1076,7 +1076,7 @@ public class ListUtil {
 	 *
 	 * @return The boolean value as to whether the test is met
 	 * 
-	 * @deprecated Use
+	 * @deprecated Since 1.5.0 Use
 	 *             {@link #map(Array, Function, IBoxContext, Boolean, Integer, Boolean)}
 	 *             instead.
 	 */
