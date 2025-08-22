@@ -263,7 +263,7 @@ public class ArrayNoneTest {
 		assertThat( variables.get( result ) ).isEqualTo( false );
 	}
 
-	@DisplayName( "It can run in parallel with virtual threads using the alt positonal max" )
+	@DisplayName( "It can run in parallel with virtual threads using the alt positional max" )
 	@Test
 	public void testRunInParallelWithVirtualThreadsAndAltMax() {
 		instance.executeSource(
