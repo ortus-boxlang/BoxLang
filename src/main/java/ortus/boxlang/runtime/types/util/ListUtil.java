@@ -32,6 +32,8 @@ import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
 
+import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.async.executors.ExecutorRecord;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ThreadBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
@@ -48,26 +50,33 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
- * Utility class providing comprehensive list manipulation operations for BoxLang.
+ * Utility class providing comprehensive list manipulation operations for
+ * BoxLang.
  *
- * This class handles conversion between string-based delimited lists and BoxLang Arrays,
- * providing functionality for searching, modifying, and processing list data. It supports
- * various delimiter configurations including single character, multi-character, and
+ * This class handles conversion between string-based delimited lists and
+ * BoxLang Arrays,
+ * providing functionality for searching, modifying, and processing list data.
+ * It supports
+ * various delimiter configurations including single character, multi-character,
+ * and
  * whole delimiter matching.
  *
  * Key features:
  * - List to Array conversion with flexible delimiter handling
- * - Search operations (indexOf, contains) with case-sensitive and case-insensitive variants
+ * - Search operations (indexOf, contains) with case-sensitive and
+ * case-insensitive variants
  * - List modification (append, prepend, insert, delete, set)
  * - Functional programming operations (each, filter, map, reduce, some, every)
  * - Sorting with custom comparators and predefined sort directives
  * - Parallel processing support for performance-critical operations
  * - Deduplication and trimming utilities
  *
- * The class uses a default comma delimiter but supports any custom delimiter configuration.
+ * The class uses a default comma delimiter but supports any custom delimiter
+ * configuration.
  * All list operations maintain 1-based indexing to match BoxLang conventions.
  *
- * Thread Safety: This utility class is stateless and thread-safe for concurrent use.
+ * Thread Safety: This utility class is stateless and thread-safe for concurrent
+ * use.
  *
  * @since 1.2.0
  */
@@ -75,13 +84,16 @@ public class ListUtil {
 
 	/**
 	 * Default delimiter used for list operations.
-	 * This is a comma (",") by default, but can be overridden in methods that accept a custom delimiter.
+	 * This is a comma (",") by default, but can be overridden in methods that
+	 * accept a custom delimiter.
 	 */
 	public static final String	DEFAULT_DELIMITER	= ",";
 
 	/**
-	 * Regular expression pattern to escape special characters in a delimiter for regex operations.
-	 * This is used to ensure that delimiters containing regex special characters are treated literally.
+	 * Regular expression pattern to escape special characters in a delimiter for
+	 * regex operations.
+	 * This is used to ensure that delimiters containing regex special characters
+	 * are treated literally.
 	 */
 	public static final Pattern	SPECIAL_REGEX_CHARS	= Pattern.compile( "[{}()\\[\\].+*?^$\\\\|\\-\\&]" );
 
@@ -90,6 +102,11 @@ public class ListUtil {
 	 */
 	public static final Struct	sortDirectives;
 
+	/**
+	 * The async service used for parallel processing of list operations.
+	 */
+	private static AsyncService	asyncService		= BoxRuntime.getInstance().getAsyncService();
+
 	static {
 		sortDirectives = new Struct(
 		    new HashMap<Key, Comparator<Object>>() {
@@ -97,13 +114,16 @@ public class ListUtil {
 			    {
 				    put( Key.of( "numericAsc" ), ( a, b ) -> Compare.invoke( a, b, false ) );
 				    put( Key.of( "numericDesc" ), ( b, a ) -> Compare.invoke( a, b, true ) );
-				    put( Key.of( "textAsc" ), ( a, b ) -> StringCompare.invoke( StringCaster.cast( a ), StringCaster.cast( b ), true ) );
-				    put( Key.of( "textDesc" ), ( b, a ) -> StringCompare.invoke( StringCaster.cast( a ), StringCaster.cast( b ), true ) );
-				    put( Key.of( "textNoCaseAsc" ), ( a, b ) -> StringCompare.invoke( StringCaster.cast( a ), StringCaster.cast( b ), false ) );
-				    put( Key.of( "textNoCaseDesc" ), ( b, a ) -> StringCompare.invoke( StringCaster.cast( a ), StringCaster.cast( b ), false ) );
+				    put( Key.of( "textAsc" ),
+				        ( a, b ) -> StringCompare.invoke( StringCaster.cast( a ), StringCaster.cast( b ), true ) );
+				    put( Key.of( "textDesc" ),
+				        ( b, a ) -> StringCompare.invoke( StringCaster.cast( a ), StringCaster.cast( b ), true ) );
+				    put( Key.of( "textNoCaseAsc" ),
+				        ( a, b ) -> StringCompare.invoke( StringCaster.cast( a ), StringCaster.cast( b ), false ) );
+				    put( Key.of( "textNoCaseDesc" ),
+				        ( b, a ) -> StringCompare.invoke( StringCaster.cast( a ), StringCaster.cast( b ), false ) );
 			    }
-		    }
-		);
+		    } );
 	}
 
 	/**
@@ -145,7 +165,9 @@ public class ListUtil {
 	 * @param list           The string lists
 	 * @param delimiter      The delimiter(s) of the list
 	 * @param includeEmpty   Whether to include empty items in the result array
-	 * @param wholeDelimiter Whether the delimiter contains multiple characters which should be matched. Otherwise all characters in the delimiter are
+	 * @param wholeDelimiter Whether the delimiter contains multiple characters
+	 *                       which should be matched. Otherwise all characters in
+	 *                       the delimiter are
 	 *                       treated as separate delimiters
 	 *
 	 * @return A BoxLang array.
@@ -185,7 +207,9 @@ public class ListUtil {
 	 * @param list           The string lists
 	 * @param delimiter      The delimiter(s) of the list
 	 * @param includeEmpty   Whether to include empty items in the result array
-	 * @param wholeDelimiter Whether the delimiter contains multiple characters which should be matched. Otherwise all characters in the delimiter are
+	 * @param wholeDelimiter Whether the delimiter contains multiple characters
+	 *                       which should be matched. Otherwise all characters in
+	 *                       the delimiter are
 	 *                       treated as separate delimiters
 	 *
 	 * @return A BoxLang array.
@@ -214,7 +238,8 @@ public class ListUtil {
 			delimitedArray = DelimitedArray.of( list.splitWithDelimiters( escapeRegexSpecials( delimiter ), -1 ) );
 		} else {
 
-			delimitedArray = DelimitedArray.of( list.splitWithDelimiters( "[" + escapeRegexSpecials( delimiter ) + "]", -1 ) );
+			delimitedArray = DelimitedArray
+			    .of( list.splitWithDelimiters( "[" + escapeRegexSpecials( delimiter ) + "]", -1 ) );
 		}
 		if ( !includeEmpty ) {
 			// loop backwards, removing empty items
@@ -248,12 +273,15 @@ public class ListUtil {
 	 * @param value          The value to search for
 	 * @param delimiter      The delimiter to use
 	 * @param includeEmpty   Whether to include empty items in the result array
-	 * @param wholeDelimiter Whether the delimiter contains multiple characters which should be matched. Otherwise all characters in the delimiter are
+	 * @param wholeDelimiter Whether the delimiter contains multiple characters
+	 *                       which should be matched. Otherwise all characters in
+	 *                       the delimiter are
 	 *                       treated as separate delimiters
 	 *
 	 * @return The (1-based) index of the value or 0 if not found
 	 */
-	public static int indexOf( String list, String value, String delimiter, Boolean includeEmpty, Boolean wholeDelimiter ) {
+	public static int indexOf( String list, String value, String delimiter, Boolean includeEmpty,
+	    Boolean wholeDelimiter ) {
 		return asList( list, delimiter, includeEmpty, wholeDelimiter ).findIndex( value, true );
 	}
 
@@ -277,12 +305,15 @@ public class ListUtil {
 	 * @param value          The value to search for
 	 * @param delimiter      The delimiter to use
 	 * @param includeEmpty   Whether to include empty items in the result array
-	 * @param wholeDelimiter Whether the delimiter contains multiple characters which should be matched. Otherwise all characters in the delimiter are
+	 * @param wholeDelimiter Whether the delimiter contains multiple characters
+	 *                       which should be matched. Otherwise all characters in
+	 *                       the delimiter are
 	 *                       treated as separate delimiters
 	 *
 	 * @return The (1-based) index of the value or 0 if not found
 	 */
-	public static int indexOfNoCase( String list, String value, String delimiter, Boolean includeEmpty, Boolean wholeDelimiter ) {
+	public static int indexOfNoCase( String list, String value, String delimiter, Boolean includeEmpty,
+	    Boolean wholeDelimiter ) {
 		return asList( list, delimiter, includeEmpty, wholeDelimiter ).findIndex( value, false );
 	}
 
@@ -306,12 +337,15 @@ public class ListUtil {
 	 * @param value          The value to search for
 	 * @param delimiter      The delimiter to use
 	 * @param includeEmpty   Whether to include empty items in the result array
-	 * @param wholeDelimiter Whether the delimiter contains multiple characters which should be matched. Otherwise all characters in the delimiter are
+	 * @param wholeDelimiter Whether the delimiter contains multiple characters
+	 *                       which should be matched. Otherwise all characters in
+	 *                       the delimiter are
 	 *                       treated as separate delimiters
 	 *
 	 * @return True if the value is in the list
 	 */
-	public static Boolean contains( String list, String value, String delimiter, Boolean includeEmpty, Boolean wholeDelimiter ) {
+	public static Boolean contains( String list, String value, String delimiter, Boolean includeEmpty,
+	    Boolean wholeDelimiter ) {
 		return indexOf( list, value, delimiter, includeEmpty, wholeDelimiter ) > 0;
 	}
 
@@ -335,12 +369,15 @@ public class ListUtil {
 	 * @param value          The value to search for
 	 * @param delimiter      The delimiter to use
 	 * @param includeEmpty   Whether to include empty items in the result array
-	 * @param wholeDelimiter Whether the delimiter contains multiple characters which should be matched. Otherwise all characters in the delimiter are
+	 * @param wholeDelimiter Whether the delimiter contains multiple characters
+	 *                       which should be matched. Otherwise all characters in
+	 *                       the delimiter are
 	 *                       treated as separate delimiters
 	 *
 	 * @return True if the value is in the list
 	 */
-	public static Boolean containsNoCase( String list, String value, String delimiter, Boolean includeEmpty, Boolean wholeDelimiter ) {
+	public static Boolean containsNoCase( String list, String value, String delimiter, Boolean includeEmpty,
+	    Boolean wholeDelimiter ) {
 		return asList( list, delimiter, includeEmpty, wholeDelimiter ).findIndex( value, false ) > 0;
 	}
 
@@ -364,7 +401,9 @@ public class ListUtil {
 	 * @param index          The index to get
 	 * @param delimiter      The delimiter to use
 	 * @param includeEmpty   Whether to include empty items in the result array
-	 * @param wholeDelimiter Whether the delimiter contains multiple characters which should be matched. Otherwise all characters in the delimiter are
+	 * @param wholeDelimiter Whether the delimiter contains multiple characters
+	 *                       which should be matched. Otherwise all characters in
+	 *                       the delimiter are
 	 *                       treated as separate delimiters
 	 *
 	 * @return The value at the index if found
@@ -374,19 +413,23 @@ public class ListUtil {
 	}
 
 	/**
-	 * Get an item at a specific (1-based) index, returning a default value if not found
+	 * Get an item at a specific (1-based) index, returning a default value if not
+	 * found
 	 *
 	 * @param list           The list to search
 	 * @param index          The index to get
 	 * @param delimiter      The delimiter to use
 	 * @param includeEmpty   Whether to include empty items in the result array
-	 * @param wholeDelimiter Whether the delimiter contains multiple characters which should be matched. Otherwise all characters in the delimiter are
+	 * @param wholeDelimiter Whether the delimiter contains multiple characters
+	 *                       which should be matched. Otherwise all characters in
+	 *                       the delimiter are
 	 *                       treated as separate delimiters
 	 * @param defaultValue   The value to return if the index is not found
 	 *
 	 * @return The value at the index if found
 	 */
-	public static String getAt( String list, int index, String delimiter, Boolean includeEmpty, Boolean wholeDelimiter, String defaultValue ) {
+	public static String getAt( String list, int index, String delimiter, Boolean includeEmpty, Boolean wholeDelimiter,
+	    String defaultValue ) {
 		Array array = asList( list, delimiter, includeEmpty, wholeDelimiter );
 		if ( index < 0 || array.size() < index ) {
 			return defaultValue;
@@ -414,12 +457,15 @@ public class ListUtil {
 	 * @param index          The index to set
 	 * @param delimiter      The delimiter to use
 	 * @param includeEmpty   Whether to include empty items in the result array
-	 * @param wholeDelimiter Whether the delimiter contains multiple characters which should be matched. Otherwise all characters in the delimiter are
+	 * @param wholeDelimiter Whether the delimiter contains multiple characters
+	 *                       which should be matched. Otherwise all characters in
+	 *                       the delimiter are
 	 *                       treated as separate delimiters
 	 *
 	 * @return The new list
 	 */
-	public static String setAt( String list, int index, String value, String delimiter, Boolean includeEmpty, Boolean wholeDelimiter ) {
+	public static String setAt( String list, int index, String value, String delimiter, Boolean includeEmpty,
+	    Boolean wholeDelimiter ) {
 		return asDelimitedList( list, delimiter, includeEmpty, wholeDelimiter )
 		    .withDelimiter( delimiter, wholeDelimiter )
 		    .setAt( index, value )
@@ -446,12 +492,15 @@ public class ListUtil {
 	 * @param value          The value to append
 	 * @param delimiter      The delimiter to use
 	 * @param includeEmpty   Whether to include empty items in the result array
-	 * @param wholeDelimiter Whether the delimiter contains multiple characters which should be matched. Otherwise all characters in the delimiter are
+	 * @param wholeDelimiter Whether the delimiter contains multiple characters
+	 *                       which should be matched. Otherwise all characters in
+	 *                       the delimiter are
 	 *                       treated as separate delimiters
 	 *
 	 * @return The new list
 	 */
-	public static String append( String list, String value, String delimiter, Boolean includeEmpty, Boolean wholeDelimiter ) {
+	public static String append( String list, String value, String delimiter, Boolean includeEmpty,
+	    Boolean wholeDelimiter ) {
 		Array jList = asList( list, delimiter, includeEmpty, wholeDelimiter );
 		jList.add( value );
 		return asString( jList, delimiter );
@@ -477,12 +526,15 @@ public class ListUtil {
 	 * @param value          The value to prepend
 	 * @param delimiter      The delimiter to use
 	 * @param includeEmpty   Whether to include empty items in the result array
-	 * @param wholeDelimiter Whether the delimiter contains multiple characters which should be matched. Otherwise all characters in the delimiter are
+	 * @param wholeDelimiter Whether the delimiter contains multiple characters
+	 *                       which should be matched. Otherwise all characters in
+	 *                       the delimiter are
 	 *                       treated as separate delimiters
 	 *
 	 * @return The new list
 	 */
-	public static String prepend( String list, String value, String delimiter, Boolean includeEmpty, Boolean wholeDelimiter ) {
+	public static String prepend( String list, String value, String delimiter, Boolean includeEmpty,
+	    Boolean wholeDelimiter ) {
 		Array jList = asList( list, delimiter, includeEmpty, wholeDelimiter );
 		jList.add( 0, value );
 		return asString( jList, delimiter );
@@ -510,13 +562,17 @@ public class ListUtil {
 	 * @param value          The value to insert
 	 * @param delimiter      The delimiter to use
 	 * @param includeEmpty   Whether to include empty items in the result array
-	 * @param wholeDelimiter Whether the delimiter contains multiple characters which should be matched. Otherwise all characters in the delimiter are
+	 * @param wholeDelimiter Whether the delimiter contains multiple characters
+	 *                       which should be matched. Otherwise all characters in
+	 *                       the delimiter are
 	 *                       treated as separate delimiters
 	 *
 	 * @return The new list
 	 */
-	public static String insertAt( String list, int index, String value, String delimiter, Boolean includeEmpty, Boolean wholeDelimiter ) {
-		Array jList = asDelimitedList( list, delimiter, includeEmpty, wholeDelimiter ).withDelimiter( delimiter, wholeDelimiter );
+	public static String insertAt( String list, int index, String value, String delimiter, Boolean includeEmpty,
+	    Boolean wholeDelimiter ) {
+		Array jList = asDelimitedList( list, delimiter, includeEmpty, wholeDelimiter ).withDelimiter( delimiter,
+		    wholeDelimiter );
 		// Throw if index is out of bounds
 		if ( index < 1 || index > jList.size() + 1 ) {
 			throw new BoxRuntimeException( "Index out of bounds for list with " + jList.size() + " elements." );
@@ -545,15 +601,50 @@ public class ListUtil {
 	 * @param index          The index to remove
 	 * @param delimiter      The delimiter to use
 	 * @param includeEmpty   Whether to include empty items in the result array
-	 * @param wholeDelimiter Whether the delimiter contains multiple characters which should be matched. Otherwise all characters in the delimiter are
+	 * @param wholeDelimiter Whether the delimiter contains multiple characters
+	 *                       which should be matched. Otherwise all characters in
+	 *                       the delimiter are
 	 *                       treated as separate delimiters
 	 *
 	 * @return The new list
 	 */
-	public static String deleteAt( String list, int index, String delimiter, Boolean includeEmpty, Boolean wholeDelimiter ) {
+	public static String deleteAt( String list, int index, String delimiter, Boolean includeEmpty,
+	    Boolean wholeDelimiter ) {
 		return asString(
 		    asDelimitedList( list, delimiter, includeEmpty, wholeDelimiter ).deleteAt( index ),
-		    delimiter
+		    delimiter );
+	}
+
+	/**
+	 * Method to invoke a function for every iteration of the array
+	 *
+	 * @param array           The array object to filter
+	 * @param callback        The callback Function object
+	 * @param callbackContext The context in which to execute the callback
+	 * @param parallel        Whether to process the filter in parallel
+	 * @param maxThreads      Optional max threads for parallel execution
+	 * @param ordered         Boolean as to whether to maintain order in parallel
+	 *                        execution
+	 * 
+	 * @deprecated Since 1.5.0 Use
+	 *             {@link #each(Array, Function, IBoxContext, Boolean, Integer, Boolean)}
+	 *             instead.
+	 */
+	public static void each(
+	    Array array,
+	    Function callback,
+	    IBoxContext callbackContext,
+	    Boolean parallel,
+	    Integer maxThreads,
+	    Boolean ordered ) {
+		each(
+		    array,
+		    callback,
+		    callbackContext,
+		    parallel,
+		    maxThreads,
+		    ordered,
+		    false // Default to not using virtual threads
 		);
 	}
 
@@ -565,7 +656,9 @@ public class ListUtil {
 	 * @param callbackContext The context in which to execute the callback
 	 * @param parallel        Whether to process the filter in parallel
 	 * @param maxThreads      Optional max threads for parallel execution
-	 * @param ordered         Boolean as to whether to maintain order in parallel execution
+	 * @param ordered         Boolean as to whether to maintain order in parallel
+	 *                        execution
+	 * @param virtual         Whether to use virtual threads for parallel execution
 	 */
 	public static void each(
 	    Array array,
@@ -573,7 +666,8 @@ public class ListUtil {
 	    IBoxContext callbackContext,
 	    Boolean parallel,
 	    Integer maxThreads,
-	    Boolean ordered ) {
+	    Boolean ordered,
+	    Boolean virtual ) {
 
 		// Parameter validation
 		Objects.requireNonNull( array, "Array cannot be null" );
@@ -585,18 +679,22 @@ public class ListUtil {
 
 		IntConsumer consumer;
 		if ( callback.requiresStrictArguments() ) {
-			consumer = idx -> ThreadBoxContext.runInContext( callbackContext, parallel, ctx -> ctx.invokeFunction( callback,
-			    new Object[] { array.size() > idx ? array.get( idx ) : null } ) );
+			consumer = idx -> ThreadBoxContext.runInContext( callbackContext, parallel,
+			    ctx -> ctx.invokeFunction( callback,
+			        new Object[] { array.size() > idx ? array.get( idx ) : null } ) );
 		} else {
-			consumer = idx -> ThreadBoxContext.runInContext( callbackContext, parallel, ctx -> ctx.invokeFunction( callback,
-			    new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } ) );
+			consumer = idx -> ThreadBoxContext.runInContext( callbackContext, parallel,
+			    ctx -> ctx.invokeFunction( callback,
+			        new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } ) );
 		}
 
-		// Create a stream of what we want, usage is determined internally by the terminators
+		// Create a stream of what we want, usage is determined internally by the
+		// terminators
 		IntStream arrayStream = array.intStream();
 		if ( parallel ) {
-			// If maxThreads is null or 0, then use just the ForkJoinPool default parallelism level
-			if ( maxThreads <= 0 ) {
+			// If maxThreads is null or 0, then use just the ForkJoinPool default
+			// parallelism level
+			if ( !virtual && maxThreads <= 0 ) {
 				if ( ordered ) {
 					arrayStream
 					    .parallel()
@@ -608,12 +706,10 @@ public class ListUtil {
 				}
 				return;
 			}
-			// Otherwise, create a new ForkJoinPool with the specified number of threads
-			AsyncService.buildExecutor(
-			    "ArrayEach_" + UUID.randomUUID().toString(),
-			    AsyncService.ExecutorType.FORK_JOIN,
-			    maxThreads
-			).submitAndGet( () -> {
+
+			ExecutorRecord executor = chooseExecutor( "ArrayEach_", maxThreads, virtual );
+
+			executor.submitAndGet( () -> {
 				if ( ordered ) {
 					arrayStream
 					    .parallel()
@@ -647,6 +743,10 @@ public class ListUtil {
 	 * @param maxThreads      Optional max threads for parallel execution
 	 *
 	 * @return The boolean value as to whether the test is met
+	 * 
+	 * @deprecated Since 1.5.0 Use
+	 *             {@link #some(Array, Function, IBoxContext, Boolean, Integer, Boolean)}
+	 *             instead.
 	 */
 	public static boolean some(
 	    Array array,
@@ -654,6 +754,36 @@ public class ListUtil {
 	    IBoxContext callbackContext,
 	    Boolean parallel,
 	    Integer maxThreads ) {
+
+		return some(
+		    array,
+		    callback,
+		    callbackContext,
+		    parallel,
+		    maxThreads,
+		    false // Default to not using virtual threads
+		);
+	}
+
+	/**
+	 * Method to test if any item in the array meets the criteria in the callback
+	 *
+	 * @param array           The array object to filter
+	 * @param callback        The callback Function object
+	 * @param callbackContext The context in which to execute the callback
+	 * @param parallel        Whether to process the filter in parallel
+	 * @param maxThreads      Optional max threads for parallel execution
+	 * @param virtual         Whether to use virtual threads for parallel execution
+	 *
+	 * @return The boolean value as to whether the test is met
+	 */
+	public static boolean some(
+	    Array array,
+	    Function callback,
+	    IBoxContext callbackContext,
+	    Boolean parallel,
+	    Integer maxThreads,
+	    Boolean virtual ) {
 
 		// Parameter validation
 		Objects.requireNonNull( array, "Array cannot be null" );
@@ -665,29 +795,31 @@ public class ListUtil {
 
 		IntPredicate test;
 		if ( callback.requiresStrictArguments() ) {
-			test = idx -> BooleanCaster.cast( ThreadBoxContext.runInContext( callbackContext, parallel, ctx -> ctx.invokeFunction( callback,
-			    new Object[] { array.size() > idx ? array.get( idx ) : null } ) ) );
+			test = idx -> BooleanCaster
+			    .cast( ThreadBoxContext.runInContext( callbackContext, parallel, ctx -> ctx.invokeFunction( callback,
+			        new Object[] { array.size() > idx ? array.get( idx ) : null } ) ) );
 		} else {
-			test = idx -> BooleanCaster.cast( ThreadBoxContext.runInContext( callbackContext, parallel, ctx -> ctx.invokeFunction( callback,
-			    new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } ) ) );
+			test = idx -> BooleanCaster
+			    .cast( ThreadBoxContext.runInContext( callbackContext, parallel, ctx -> ctx.invokeFunction( callback,
+			        new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } ) ) );
 		}
 
-		// Create a stream of what we want, usage is determined internally by the terminators
+		// Create a stream of what we want, usage is determined internally by the
+		// terminators
 		IntStream arrayStream = array.intStream();
 
 		if ( parallel ) {
-			// If maxThreads is null or 0, then use just the ForkJoinPool default parallelism level
-			if ( maxThreads <= 0 ) {
+			// If maxThreads is null or 0, then use just the ForkJoinPool default
+			// parallelism level
+			if ( !virtual && maxThreads <= 0 ) {
 				return arrayStream
 				    .parallel()
 				    .anyMatch( test );
 			}
-			// Otherwise, create a new ForkJoinPool with the specified number of threads
-			return ( Boolean ) AsyncService.buildExecutor(
-			    "ArraySome_" + UUID.randomUUID().toString(),
-			    AsyncService.ExecutorType.FORK_JOIN,
-			    maxThreads
-			).submitAndGet( () -> {
+
+			ExecutorRecord executor = chooseExecutor( "ArraySome_", maxThreads, virtual );
+
+			return ( Boolean ) executor.submitAndGet( () -> {
 				return arrayStream
 				    .parallel()
 				    .anyMatch( test );
@@ -716,6 +848,34 @@ public class ListUtil {
 	    IBoxContext callbackContext,
 	    Boolean parallel,
 	    Integer maxThreads ) {
+		return every(
+		    array,
+		    callback,
+		    callbackContext,
+		    parallel,
+		    maxThreads,
+		    false // Default to not using virtual threads
+		);
+	}
+
+	/**
+	 * Method to test if any item in the array meets the criteria in the callback
+	 *
+	 * @param array           The array object to filter
+	 * @param callback        The callback Function object
+	 * @param callbackContext The context in which to execute the callback
+	 * @param parallel        Whether to process the filter in parallel
+	 * @param maxThreads      Optional max threads for parallel execution
+	 *
+	 * @return The boolean value as to whether the test is met
+	 */
+	public static Boolean every(
+	    Array array,
+	    Function callback,
+	    IBoxContext callbackContext,
+	    Boolean parallel,
+	    Integer maxThreads,
+	    Boolean virtual ) {
 
 		// Parameter validation
 		Objects.requireNonNull( array, "Array cannot be null" );
@@ -727,29 +887,31 @@ public class ListUtil {
 
 		IntPredicate test;
 		if ( callback.requiresStrictArguments() ) {
-			test = idx -> BooleanCaster.cast( ThreadBoxContext.runInContext( callbackContext, parallel, ctx -> ctx.invokeFunction( callback,
-			    new Object[] { array.size() > idx ? array.get( idx ) : null } ) ) );
+			test = idx -> BooleanCaster
+			    .cast( ThreadBoxContext.runInContext( callbackContext, parallel, ctx -> ctx.invokeFunction( callback,
+			        new Object[] { array.size() > idx ? array.get( idx ) : null } ) ) );
 		} else {
-			test = idx -> BooleanCaster.cast( ThreadBoxContext.runInContext( callbackContext, parallel, ctx -> ctx.invokeFunction( callback,
-			    new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } ) ) );
+			test = idx -> BooleanCaster
+			    .cast( ThreadBoxContext.runInContext( callbackContext, parallel, ctx -> ctx.invokeFunction( callback,
+			        new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } ) ) );
 		}
 
-		// Create a stream of what we want, usage is determined internally by the terminators
+		// Create a stream of what we want, usage is determined internally by the
+		// terminators
 		IntStream arrayStream = array.intStream();
 
 		if ( parallel ) {
-			// If maxThreads is null or 0, then use just the ForkJoinPool default parallelism level
-			if ( maxThreads <= 0 ) {
+			// If maxThreads is null or 0, then use just the ForkJoinPool default
+			// parallelism level
+			if ( !virtual && maxThreads <= 0 ) {
 				return arrayStream
 				    .parallel()
 				    .allMatch( test );
 			}
-			// Otherwise, create a new ForkJoinPool with the specified number of threads
-			return ( Boolean ) AsyncService.buildExecutor(
-			    "ArrayEvery_" + UUID.randomUUID().toString(),
-			    AsyncService.ExecutorType.FORK_JOIN,
-			    maxThreads
-			).submitAndGet( () -> {
+
+			ExecutorRecord executor = chooseExecutor( "ArrayEvery_", maxThreads, virtual );
+
+			return ( Boolean ) executor.submitAndGet( () -> {
 				return arrayStream
 				    .parallel()
 				    .allMatch( test );
@@ -788,40 +950,43 @@ public class ListUtil {
 		}
 
 		// Build the test predicate based on the callback
-		// If the callback requires strict arguments, we only pass the item (Usually Java Predicates)
+		// If the callback requires strict arguments, we only pass the item (Usually
+		// Java Predicates)
 		// Otherwise we pass the item, the index, and the array itself
 		IntPredicate test;
 		if ( callback.requiresStrictArguments() ) {
-			test = idx -> BooleanCaster.cast( ThreadBoxContext.runInContext( callbackContext, parallel, ctx -> ctx.invokeFunction( callback,
-			    new Object[] { array.size() > idx ? array.get( idx ) : null } ) ) );
+			test = idx -> BooleanCaster
+			    .cast( ThreadBoxContext.runInContext( callbackContext, parallel, ctx -> ctx.invokeFunction( callback,
+			        new Object[] { array.size() > idx ? array.get( idx ) : null } ) ) );
 		} else {
-			test = idx -> BooleanCaster.cast( ThreadBoxContext.runInContext( callbackContext, parallel, ctx -> ctx.invokeFunction( callback,
-			    new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } ) ) );
+			test = idx -> BooleanCaster
+			    .cast( ThreadBoxContext.runInContext( callbackContext, parallel, ctx -> ctx.invokeFunction( callback,
+			        new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } ) ) );
 		}
 
-		// Create a stream of what we want, usage is determined internally by the terminators
+		// Create a stream of what we want, usage is determined internally by the
+		// terminators
 		Stream<Object> arrayStream = array
 		    .intStream()
 		    .filter( test )
 		    .mapToObj( ( idx ) -> array.size() > idx ? array.getData( idx ) : null );
 
 		if ( parallel ) {
-			// If maxThreads is null or 0, then use just the ForkJoinPool default parallelism level
+			// If maxThreads is null or 0, then use just the ForkJoinPool default
+			// parallelism level
 			if ( maxThreads <= 0 ) {
 				return arrayStream
 				    .parallel()
 				    .collect( BLCollector.toArray( array.getClass() ) );
 			}
-			// Otherwise, create a new ForkJoinPool with the specified number of threads
 			return ( Array ) AsyncService.buildExecutor(
 			    "ArrayFilter_" + UUID.randomUUID().toString(),
 			    AsyncService.ExecutorType.FORK_JOIN,
-			    maxThreads
-			).submitAndGet( () -> {
-				return arrayStream
-				    .parallel()
-				    .collect( BLCollector.toArray( array.getClass() ) );
-			} );
+			    maxThreads ).submitAndGet( () -> {
+				    return arrayStream
+				        .parallel()
+				        .collect( BLCollector.toArray( array.getClass() ) );
+			    } );
 		}
 
 		// Non-parallel execution
@@ -831,7 +996,8 @@ public class ListUtil {
 	/**
 	 * Method to filter an list with a function callback and context
 	 *
-	 * If parallel we create a fork join pool. If no max threads is specified it uses the {@link java.util.concurrent.ForkJoinPool#commonPool}
+	 * If parallel we create a fork join pool. If no max threads is specified it
+	 * uses the {@link java.util.concurrent.ForkJoinPool#commonPool}
 	 *
 	 * @param array           The array object to filter
 	 * @param callback        The callback Function object
@@ -845,15 +1011,15 @@ public class ListUtil {
 	    IBoxContext callbackContext ) {
 
 		array.sort(
-		    ( a, b ) -> IntegerCaster.cast( callbackContext.invokeFunction( callback, new Object[] { a, b } ) )
-		);
+		    ( a, b ) -> IntegerCaster.cast( callbackContext.invokeFunction( callback, new Object[] { a, b } ) ) );
 		return array;
 	}
 
 	/**
 	 * Method to filter an list with a function callback and context
 	 *
-	 * If parallel we create a fork join pool. If no max threads is specified it uses the {@link java.util.concurrent.ForkJoinPool#commonPool}
+	 * If parallel we create a fork join pool. If no max threads is specified it
+	 * uses the {@link java.util.concurrent.ForkJoinPool#commonPool}
 	 *
 	 * @param array     The array object to filter
 	 * @param sortType  The textual sort directive
@@ -909,6 +1075,10 @@ public class ListUtil {
 	 * @param maxThreads      Optional max threads for parallel execution
 	 *
 	 * @return The boolean value as to whether the test is met
+	 * 
+	 * @deprecated Since 1.5.0 Use
+	 *             {@link #map(Array, Function, IBoxContext, Boolean, Integer, Boolean)}
+	 *             instead.
 	 */
 	public static Array map(
 	    Array array,
@@ -916,6 +1086,27 @@ public class ListUtil {
 	    IBoxContext callbackContext,
 	    Boolean parallel,
 	    Integer maxThreads ) {
+		return map( array, callback, callbackContext, parallel, maxThreads, false );
+	}
+
+	/**
+	 * Maps an existing array to a new array
+	 *
+	 * @param array           The array object to map
+	 * @param callback        The callback Function object
+	 * @param callbackContext The context in which to execute the callback
+	 * @param parallel        Whether to process the map in parallel
+	 * @param maxThreads      Optional max threads for parallel execution
+	 *
+	 * @return The boolean value as to whether the test is met
+	 */
+	public static Array map(
+	    Array array,
+	    Function callback,
+	    IBoxContext callbackContext,
+	    Boolean parallel,
+	    Integer maxThreads,
+	    Boolean virtual ) {
 
 		// Parameter validation
 		Objects.requireNonNull( array, "Array cannot be null" );
@@ -926,19 +1117,20 @@ public class ListUtil {
 		}
 
 		// Build the mapper based on the callback
-		// If the callback requires strict arguments, we only pass the item (Usually Java Predicates)
+		// If the callback requires strict arguments, we only pass the item (Usually
+		// Java Predicates)
 		// Otherwise we pass the item, the index, and the array itself
 		java.util.function.IntFunction<Object> mapper;
 		if ( callback.requiresStrictArguments() ) {
-			mapper = idx -> ThreadBoxContext.runInContext( callbackContext, parallel, ctx -> array.copyData( idx, ctx.invokeFunction(
-			    callback,
-			    new Object[] { array.size() > idx ? array.get( idx ) : null }
-			) ) );
+			mapper = idx -> ThreadBoxContext.runInContext( callbackContext, parallel,
+			    ctx -> array.copyData( idx, ctx.invokeFunction(
+			        callback,
+			        new Object[] { array.size() > idx ? array.get( idx ) : null } ) ) );
 		} else {
-			mapper = idx -> ThreadBoxContext.runInContext( callbackContext, parallel, ctx -> array.copyData( idx, ctx.invokeFunction(
-			    callback,
-			    new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array }
-			) ) );
+			mapper = idx -> ThreadBoxContext.runInContext( callbackContext, parallel,
+			    ctx -> array.copyData( idx, ctx.invokeFunction(
+			        callback,
+			        new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } ) ) );
 		}
 
 		Stream<Object> arrayStream = array
@@ -946,19 +1138,17 @@ public class ListUtil {
 		    .mapToObj( mapper );
 
 		if ( parallel ) {
-			// If maxThreads is null or 0, then use just the ForkJoinPool default parallelism level
-			if ( maxThreads <= 0 ) {
+			// If maxThreads is null or 0, then use just the ForkJoinPool default
+			// parallelism level
+			if ( !virtual && maxThreads <= 0 ) {
 				return arrayStream
 				    .parallel()
 				    .collect( BLCollector.toArray( array.getClass() ) );
 			}
 
-			// Otherwise, create a new ForkJoinPool with the specified number of threads
-			return ( Array ) AsyncService.buildExecutor(
-			    "ArrayMap_" + UUID.randomUUID().toString(),
-			    AsyncService.ExecutorType.FORK_JOIN,
-			    maxThreads
-			).submitAndGet( () -> {
+			ExecutorRecord executor = chooseExecutor( "ArrayMap_", maxThreads, virtual );
+
+			return ( Array ) executor.submitAndGet( () -> {
 				return arrayStream
 				    .parallel()
 				    .collect( BLCollector.toArray( array.getClass() ) );
@@ -998,8 +1188,7 @@ public class ListUtil {
 		    .reduce(
 		        initialValue,
 		        reduction,
-		        ( acc, intermediate ) -> acc
-		    );
+		        ( acc, intermediate ) -> acc );
 
 	}
 
@@ -1037,9 +1226,26 @@ public class ListUtil {
 		    .reduce(
 		        initialValue,
 		        reduction,
-		        ( acc, intermediate ) -> acc
-		    );
+		        ( acc, intermediate ) -> acc );
 
+	}
+
+	/**
+	 * Utility method to choose an executor for parallel processing
+	 * 
+	 * @param maxThreads The maximum number of threads to use ignored if virtual is
+	 *                   requested
+	 * @param virtual    Whether to use virtual threads
+	 */
+	private static ExecutorRecord chooseExecutor( String prefix, int maxThreads, boolean virtual ) {
+		if ( virtual ) {
+			return asyncService.newVirtualExecutor( prefix + UUID.randomUUID().toString() );
+		} else {
+			return AsyncService.buildExecutor(
+			    prefix + UUID.randomUUID().toString(),
+			    AsyncService.ExecutorType.FORK_JOIN,
+			    maxThreads );
+		}
 	}
 
 	/**

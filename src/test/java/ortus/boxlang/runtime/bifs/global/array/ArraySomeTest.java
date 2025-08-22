@@ -179,4 +179,56 @@ public class ArraySomeTest {
 		// @formatter:on
 		assertThat( variables.get( result ) ).isEqualTo( true );
 	}
+
+	@DisplayName( "Test with running in parallel and virtual threads" )
+	@Test
+	public void testParallelExecutionWithVirtualThreads() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		        indexes = [];
+		        nums = [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ];
+
+		        function eachFn( value, i ){
+		            indexes[ i ] = value;
+		            return value == 3;
+		        };
+
+		        result = ArraySome( 
+					array = nums, 
+					callback = eachFn, 
+					parallel = true,
+					virtual = true
+				);
+		    """,
+		    context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( true );
+	}
+
+	@DisplayName( "Test with running in parallel and virtual threads using the optional boolean for max" )
+	@Test
+	public void testParallelExecutionWithVirtualThreadsOptPosition() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		        indexes = [];
+		        nums = [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ];
+
+		        function eachFn( value, i ){
+		            indexes[ i ] = value;
+		            return value == 3;
+		        };
+
+		        result = ArraySome( 
+					nums, 
+					eachFn, 
+					true,
+					true
+				);
+		    """,
+		    context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( true );
+	}
 }
