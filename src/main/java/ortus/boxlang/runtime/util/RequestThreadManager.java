@@ -27,6 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.context.ThreadComponentBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -50,20 +51,14 @@ public class RequestThreadManager {
 	 */
 
 	/**
-	 * The maximum number of completed threads to track for a single request. Old threads will be flushed out to prevent memory from filling.
-	 * We can make this into a setting, but for now someone can also just manually update this static property if they need to work around this.
-	 */
-	public static int					MAX_TRACKED_COMPLETED_THREADS	= 1000;
-
-	/**
 	 * The prefix for thread names
 	 */
-	public static final String			DEFAULT_THREAD_PREFIX			= "BL-Thread-";
+	public static final String			DEFAULT_THREAD_PREFIX		= "BL-Thread-";
 
 	/**
 	 * The default time to wait for a thread to stop when terminating
 	 */
-	public static final long			DEFAULT_THREAD_WAIT_TIME		= 3000;
+	public static final long			DEFAULT_THREAD_WAIT_TIME	= 3000;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -79,28 +74,45 @@ public class RequestThreadManager {
 	 * - name : The thread name
 	 * - metadata : A struct of metadata about the thread
 	 */
-	protected Map<Key, IStruct>			threads							= new ConcurrentHashMap<>();
+	protected Map<Key, IStruct>			threads						= new ConcurrentHashMap<>();
 
 	/**
 	 * The thread scope for the request
 	 */
-	protected IScope					threadScope						= new ThreadScope();
+	protected IScope					threadScope					= new ThreadScope();
 
 	/**
 	 * A list of completed threads in the order they completed. This is used for fast lookups to unregister completed threads if we get too many.
 	 */
-	protected Deque<Key>				completedThreads				= new ArrayDeque<>();
+	protected Deque<Key>				completedThreads			= new ArrayDeque<>();
+
+	/**
+	 * The associated context
+	 */
+	protected RequestBoxContext			context;
 
 	/**
 	 * The thread group for the threads created by this manager
 	 * TODO: Move to SingleThreadExecutors for better control
 	 */
-	private static final ThreadGroup	THREAD_GROUP					= new ThreadGroup( "BL-Threads" );
+	private static final ThreadGroup	THREAD_GROUP				= new ThreadGroup( "BL-Threads" );
 
 	/**
 	 * The states that a thread can be in where we update valid statuses
 	 */
-	private static final Set<String>	ACTION_STATES					= Set.of( "NOT_STARTED", "RUNNNG", "WAITING" );
+	private static final Set<String>	ACTION_STATES				= Set.of( "NOT_STARTED", "RUNNNG", "WAITING" );
+
+	/**
+	 * Constructor
+	 * 
+	 * @param name
+	 * @param context
+	 * 
+	 * @return
+	 */
+	public RequestThreadManager( RequestBoxContext context ) {
+		this.context = context;
+	}
 
 	/**
 	 * Registers a thread with the manager
@@ -234,13 +246,22 @@ public class RequestThreadManager {
 	public IStruct getThreadData( Key name ) {
 		IStruct threadData = this.threads.get( name );
 		if ( threadData == null ) {
-			if ( this.completedThreads.size() >= ( MAX_TRACKED_COMPLETED_THREADS - 5 ) ) {
+			if ( this.completedThreads.size() >= ( getMaxTrackedCompletedThreads() ) ) {
 				return null;
 			} else {
 				throwInvalidThreadException( name );
 			}
 		}
 		return threadData;
+	}
+
+	/**
+	 * Convenience method to get the current maximum tracked completed threads settings from the config
+	 *
+	 * @return The maximum tracked completed threads
+	 */
+	public int getMaxTrackedCompletedThreads() {
+		return this.context.getConfig().getAsInteger( Key.maxTrackedCompletedThreads );
 	}
 
 	/**
@@ -290,7 +311,7 @@ public class RequestThreadManager {
 		// This is to prevent a memory leak if you have a long-running daemon which fires many uniquely-named threads over a period of time.
 		// We don't want to just keep filling up memory, so clear our old completed threads.
 		// It seems unlikely that a request would legitimately have 1000+ threads that it wants to reference back in the thread scope later
-		while ( completedThreads.size() > MAX_TRACKED_COMPLETED_THREADS ) {
+		while ( completedThreads.size() > getMaxTrackedCompletedThreads() ) {
 			// Use poll just in the crazy chance the queue is empty now
 			Key oldestThread = completedThreads.poll();
 			if ( oldestThread != null ) {

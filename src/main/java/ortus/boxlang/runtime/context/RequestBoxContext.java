@@ -518,7 +518,7 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 			if ( this.threadManager != null ) {
 				return this.threadManager;
 			}
-			this.threadManager = new RequestThreadManager();
+			this.threadManager = new RequestThreadManager( this );
 		}
 		return this.threadManager;
 	}

@@ -35,7 +35,6 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.IStruct;
-import ortus.boxlang.runtime.util.RequestThreadManager;
 
 public class ThreadTest {
 
@@ -399,7 +398,10 @@ public class ThreadTest {
 	@DisplayName( "It avoids memory leak with lots of threads" )
 	@Test
 	public void testAvoidMemoryLeakWithLotsOfThreads() {
-		RequestThreadManager.MAX_TRACKED_COMPLETED_THREADS = 5;
+		
+		instance.getConfiguration().maxTrackedCompletedThreads=5;
+		context.clearConfigCache();
+
 		// @formatter:off
 		instance.executeSource(
 			"""			
