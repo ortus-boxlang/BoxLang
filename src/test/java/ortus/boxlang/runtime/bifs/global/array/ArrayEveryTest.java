@@ -224,7 +224,7 @@ public class ArrayEveryTest {
 		assertThat( variables.get( result ) ).isEqualTo( true );
 	}
 
-	@DisplayName( "It can run in parallel with virtual threads using the alt positonal max" )
+	@DisplayName( "It can run in parallel with virtual threads using the alt positional max" )
 	@Test
 	public void testRunInParallelWithVirtualThreadsAndAltMax() {
 		instance.executeSource(
