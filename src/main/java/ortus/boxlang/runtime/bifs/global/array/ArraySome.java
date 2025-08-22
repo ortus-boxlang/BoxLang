@@ -88,7 +88,7 @@ public class ArraySome extends BIF {
 		    arguments.getAsFunction( Key.callback ),
 		    context,
 		    arguments.getAsBoolean( Key.parallel ),
-		    maxThreadsAttempt.orElse( null ),
+		    maxThreadsAttempt.getOrDefault( null ),
 		    arguments.getAsBoolean( Key.virtual )
 		);
 	}

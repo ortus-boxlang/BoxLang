@@ -86,7 +86,7 @@ public class ArrayEach extends BIF {
 		    arguments.getAsFunction( Key.callback ),
 		    context,
 		    arguments.getAsBoolean( Key.parallel ),
-		    maxThreadsAttempt.orElse( null ),
+		    maxThreadsAttempt.getOrDefault( null ),
 		    arguments.getAsBoolean( Key.ordered ),
 		    arguments.getAsBoolean( Key.virtual )
 		);
