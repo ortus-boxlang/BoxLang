@@ -89,7 +89,7 @@ public class ArrayEvery extends BIF {
 		    context,
 		    arguments.getAsBoolean( Key.parallel ),
 		    maxThreadsAttempt.getOrDefault( null ),
-		    BooleanCaster.cast( arguments.getOrDefault( Key.virtual, true ) )
+		    BooleanCaster.cast( arguments.getOrDefault( Key.virtual, false ) )
 		);
 
 	}
