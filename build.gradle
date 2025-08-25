@@ -103,7 +103,7 @@ dependencies {
 	testImplementation 'org.apache.derby:derby:10.17.1.0'
 	testImplementation 'io.undertow:undertow-core:2.3.18.Final'
 	// Explicitly declare the JUnit platform launcher (to avoid deprecation)
-    testRuntimeOnly "org.junit.platform:junit-platform-launcher"
+    // testRuntimeOnly "org.junit.platform:junit-platform-launcher"
 
 	// Antlr
 	antlr "org.antlr:antlr4:$antlrVersion"
@@ -676,10 +676,7 @@ test {
 	// IMPORTANT: Do not leave this uncommented and commit or all tests locally will run on the specified compiler
 	// systemProperty 'boxlang.experimental.compiler', System.getProperty('boxlang.experimental.compiler', "java")
 	useJUnitPlatform()
-	    
-    // Enable JUnit discovery debugging
-    systemProperty 'junit.platform.launcher.debug', 'true'
-	
+
 	testLogging {
 		showStandardStreams = true
 		events "FAILED", "STANDARD_ERROR"
