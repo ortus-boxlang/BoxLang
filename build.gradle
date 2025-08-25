@@ -675,21 +675,30 @@ task createHeapDump {
 test {
 	// IMPORTANT: Do not leave this uncommented and commit or all tests locally will run on the specified compiler
 	// systemProperty 'boxlang.experimental.compiler', System.getProperty('boxlang.experimental.compiler', "java")
-
-	useJUnitPlatform {
-        // Explicitly enable scanning of all test classes (default behavior, but reinforced)
-        includePackages '**'  // Matches all packages and subpackages
+	useJUnitPlatform()
+// Ensure all test classes are included
+    filter {
+        includeTestsMatching '*'  // Matches all test classes in any package
     }
 
-	testLogging {
-		showStandardStreams = true
-		events "FAILED", "STANDARD_ERROR"
-	}
-	dependsOn compileJava, compileTestJava
-	//exclude '**/resources/**'
+    testLogging {
+        showStandardStreams = true
+        events "PASSED", "SKIPPED", "FAILED", "STANDARD_OUT", "STANDARD_ERROR"
+        exceptionFormat "full"
+    }
+    dependsOn compileJava, compileTestJava
 
-	// Uncomment to take a heap dump after the conclusion of tests
-	// finalizedBy( createHeapDump )
+    // Enable JUnit Platform debug logging
+    systemProperty 'junit.platform.logging.level', 'DEBUG'
+
+    // Explicitly set test source directory
+    sourceSets {
+        test {
+            java {
+                srcDirs = ['src/test/java']
+            }
+        }
+    }
 }
 
 /**
