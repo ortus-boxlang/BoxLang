@@ -59,6 +59,7 @@ public class JDBCTestUtils {
 	 * @return
 	 */
 	public static boolean hasMySQLModule() {
+		System.out.println( "hasMySQLModule(), loaded module names: " + BoxRuntime.getInstance().getModuleService().getModuleNames() );
 		return BoxRuntime.getInstance().getModuleService().hasModule( Key.of( "mysql" ) );
 	}
 
@@ -74,6 +75,7 @@ public class JDBCTestUtils {
 	 * @return
 	 */
 	public static boolean hasMSSQLModule() {
+		System.out.println( "hasMSSQLModule(), loaded module names: " + BoxRuntime.getInstance().getModuleService().getModuleNames() );
 		return BoxRuntime.getInstance().getModuleService().hasModule( Key.of( "mssql" ) );
 	}
 

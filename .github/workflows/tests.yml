@@ -70,9 +70,10 @@ jobs:
           sa-password: "123456Password"
           version: 2022
 
-      - name: Test Module
+      - name: Test BoxLang
         env:
           BOXLANG_EXPERIMENTAL_COMPILER: ${{ matrix.compiler }}
+          BOXLANG_DEBUG: true
         run: |
           ./gradlew :src:modules:test:build --stacktrace --console=plain
           ./gradlew test --stacktrace --console=plain
