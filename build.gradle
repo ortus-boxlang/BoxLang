@@ -676,28 +676,56 @@ test {
 	// IMPORTANT: Do not leave this uncommented and commit or all tests locally will run on the specified compiler
 	// systemProperty 'boxlang.experimental.compiler', System.getProperty('boxlang.experimental.compiler', "java")
 	useJUnitPlatform()
-// Ensure all test classes are included
+	
+	// Maximize test inclusion
     filter {
-        includeTestsMatching '*'  // Matches all test classes in any package
+        includeTestsMatching '*'  // Match all test classes
     }
 
+    // Verbose logging for debugging
     testLogging {
         showStandardStreams = true
         events "PASSED", "SKIPPED", "FAILED", "STANDARD_OUT", "STANDARD_ERROR"
         exceptionFormat "full"
+        showCauses true
+        showExceptions true
+        showStackTraces true
     }
-    dependsOn compileJava, compileTestJava
 
-    // Enable JUnit Platform debug logging
-    systemProperty 'junit.platform.logging.level', 'DEBUG'
+    // JUnit Platform debug logging
+    systemProperties = [
+        'junit.platform.logging.level': 'DEBUG',
+        'org.junit.platform.launcher.LauncherDiscoveryListener': 'org.junit.platform.launcher.listeners.LoggingListener'
+    ]
 
-    // Explicitly set test source directory
+    // Explicit test source set
     sourceSets {
         test {
             java {
                 srcDirs = ['src/test/java']
             }
         }
+    }
+
+    dependsOn compileJava, compileTestJava
+
+    // Debug test discovery (keep Claude’s suggestion)
+    doFirst {
+        println "=== TEST DISCOVERY DEBUG ==="
+        testClassesDirs.each { dir ->
+            if (dir.exists()) {
+                println "Scanning compiled test classes in: $dir"
+                dir.eachFileRecurse { file ->
+                    if (file.name.endsWith('Test.class')) {
+                        def relativePath = dir.toPath().relativize(file.toPath()).toString()
+                        def className = relativePath.replace('/', '.').replace('.class', '')
+                        println "  Found compiled test: $className"
+                    }
+                }
+            }
+        }
+        println "Test classpath: ${sourceSets.test.runtimeClasspath.asPath}"
+        println "=== END DEBUG ==="
     }
 }
 
