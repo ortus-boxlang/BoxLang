@@ -76,7 +76,7 @@ jobs:
           BOXLANG_DEBUG: true
         run: |
           ./gradlew :src:modules:test:build --stacktrace --console=plain
-          ./gradlew test --stacktrace --console=plain
+          ./gradlew test --stacktrace --console=plain --info -Dtest.junit.platform.listeners.discovery=true
 
       - name: Upload Test Results
         if: always()
