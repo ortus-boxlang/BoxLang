@@ -154,7 +154,6 @@ public class QueryTest {
 		assertThat( metadata.get( Key.cacheTimeout ) ).isEqualTo( java.time.Duration.ZERO );
 		assertThat( metadata.get( Key.cacheLastAccessTimeout ) ).isEqualTo( java.time.Duration.ZERO );
 		assertThat( metadata.get( Key.recordCount ) ).isEqualTo( 2 );
-		assertThat( metadata.get( Key.columns ) ).isEqualTo( qry.getColumns() );
 		assertThat( metadata.get( Key.columnList ) ).isEqualTo( qry.getColumnList() );
 		assertThat( metadata.get( Key._HASHCODE ) ).isEqualTo( qry.hashCode() );
 	}

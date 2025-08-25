@@ -2,17 +2,21 @@ package ortus.boxlang.runtime.jdbc.drivers;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
 
+import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
+import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.jdbc.DataSource;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.Struct;
 
@@ -25,6 +29,41 @@ public class MSSQLDriverTest extends AbstractDriverTest {
 	@Override
 	String getDatasourceName() {
 		return "MSSQLdatasource";
+	}
+
+	@DisplayName( "It sets generatedKey in query meta" )
+	@Test
+	public void testGeneratedKey() {
+		instance.executeStatement(
+		    String.format( """
+		                                          queryExecute( "
+		                                          	INSERT INTO generatedKeyTest (name) VALUES ( 'Michael' ), ( 'Michael2');
+		                                          	INSERT INTO generatedKeyTest (name) VALUES ( 'Brad' ), ( 'Brad2' );
+		                                          	INSERT INTO generatedKeyTest (name) VALUES ( 'Luis' );
+		                                          	INSERT INTO generatedKeyTest (name) VALUES ( 'Jon' ), ( 'Jon2' ), ( 'Jon3' );
+		                   ",
+		                                          	{},
+		                                          	{ "result": "variables.result", "datasource" : "%s" }
+		                                          );
+		                                                         """, getDatasourceName() ),
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
+		IStruct meta = variables.getAsStruct( result );
+
+		// MSSQL JDBC driver only hands back the last generated key
+		assertThat( DoubleCaster.cast( meta.get( Key.generatedKey ), false ) ).isEqualTo( 8 );
+
+		Array generatedKeys = meta.getAsArray( Key.generatedKeys );
+
+		assertThat( generatedKeys ).hasSize( 1 );
+
+		// MSSQL JDBC driver only hands back the last generated key
+		Integer[] firstKeys = ( ( Array ) generatedKeys.get( 0 ) ).stream().map( IntegerCaster::cast ).toArray( Integer[]::new );
+		assertThat( firstKeys ).isEqualTo( new Integer[] { 8 } );
+
+		assertThat( meta.get( "updateCount" ) ).isEqualTo( 8 );
+		Array updateCounts = meta.getAsArray( Key.of( "updateCounts" ) );
+		assertThat( updateCounts.toArray() ).isEqualTo( new Integer[] { 2, 2, 1, 3 } );
 	}
 
 	@DisplayName( "It can get a MSSQL JDBC connection" )
@@ -54,34 +93,33 @@ public class MSSQLDriverTest extends AbstractDriverTest {
 	}
 
 	@DisplayName( "It can return a rowcount in the second SQL statement" )
-	@Disabled( "Disabled until BL-1186 is resolved" )
 	@Test
 	public void testRowCount() {
 		// @formatter:off
 		instance.executeStatement(
 		    String.format( """
 				result = queryExecute( "
-					update developers set name = 'Michael Borne' where name = 'Michael Born';
+					update developers set name = 'Michael Borne'  where name = 'Michael Born';
 					select @@rowcount c;
-				", {}, { "datasource" : "%s"} );
-			""", getDatasourceName() ),
+				", {}, { "datasource" : "%s"} ).c;
+			""", getDatasourceName(), getDatasourceName() ),
 		    context );
 		// @formatter:on
 		assertThat( variables.get( result ) ).isEqualTo( 1 );
 	}
 
-	@Disabled( "Couldn't get a working datetime column in the CREATE TABLE statement in JDBCTestUtils." )
 	@DisplayName( "It can pass date object params without specifying a sql type" )
 	@Test
 	public void testDateParamNoSqlType() {
 		instance.executeSource(
 		    """
-		    result = queryExecute(
-		    	"SELECT id from developers WHERE myDate <= :created",
-		    	{ "created" : now() },
-		    	{ "datasource" : "MSSQLdatasource" }
-		    );
-		    """,
+		         result = queryExecute(
+		         	"SELECT id from developers WHERE createdAt <= :created",
+		    // Database is in UTC and this fails locally unless I artifically push this to tomorrow
+		         	{ "created" : dateAdd( 'd', 1, now() ) },
+		         	{ "datasource" : "MSSQLdatasource" }
+		         );
+		         """,
 		    context );
 		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
 		Query query = variables.getAsQuery( result );
@@ -119,4 +157,61 @@ public class MSSQLDriverTest extends AbstractDriverTest {
 		assertEquals( "Brad", query.getRowAsStruct( 1 ).get( Key._NAME ) );
 		assertEquals( "Jon", query.getRowAsStruct( 2 ).get( Key._NAME ) );
 	}
+
+	@DisplayName( "It can raise SQL error" )
+	@Test
+	public void testSQLError() {
+		Throwable t = assertThrows( Throwable.class, () -> instance.executeStatement(
+		    """
+		        queryExecute( "
+		        	RAISERROR('Boom!',11,1);
+		        ", {}, { "datasource" : "MSSQLdatasource" } );
+		    """, context ) );
+		assertThat( t.getMessage() ).contains( "Boom!" );
+		assertThat( t.getCause() ).isNotNull();
+		assertThat( t.getCause().getMessage() ).contains( "Boom!" );
+	}
+
+	@DisplayName( "It can raise multiple SQL errors" )
+	@Test
+	public void testSQLErrors() {
+		Throwable t = assertThrows( Throwable.class, () -> instance.executeStatement(
+		    """
+		        result = queryExecute( "
+		        	RAISERROR('Boom 1!',11,1);
+		        	RAISERROR('Boom 2!',11,1);
+		        	RAISERROR('Boom 3!',11,1);
+		        ", {}, { "datasource" : "MSSQLdatasource" } );
+		    """, context ) );
+		assertThat( t.getMessage() ).contains( "Boom 3!" );
+		assertThat( t.getCause() ).isNotNull();
+		assertThat( t.getCause().getMessage() ).contains( "Boom 3!" );
+		assertThat( t.getCause().getCause() ).isNotNull();
+		assertThat( t.getCause().getCause().getMessage() ).contains( "Boom 2!" );
+		assertThat( t.getCause().getCause().getCause() ).isNotNull();
+		assertThat( t.getCause().getCause().getCause().getMessage() ).contains( "Boom 1!" );
+
+	}
+
+	@DisplayName( "It can raise multiple SQL errors" )
+	@Test
+	public void testSQLErrorsAfterSuccess() {
+		Throwable t = assertThrows( Throwable.class, () -> instance.executeStatement(
+		    """
+		        result = queryExecute( "
+		    	SELECT 'brad' as dev;
+		        	RAISERROR('Boom 1!',11,1);
+		        	RAISERROR('Boom 2!',11,1);
+		        	RAISERROR('Boom 3!',11,1);
+		        ", {}, { "datasource" : "MSSQLdatasource" } );
+		    """, context ) );
+		assertThat( t.getMessage() ).contains( "Boom 3!" );
+		assertThat( t.getCause() ).isNotNull();
+		assertThat( t.getCause().getMessage() ).contains( "Boom 3!" );
+		assertThat( t.getCause().getCause() ).isNotNull();
+		assertThat( t.getCause().getCause().getMessage() ).contains( "Boom 2!" );
+		assertThat( t.getCause().getCause().getCause() ).isNotNull();
+		assertThat( t.getCause().getCause().getCause().getMessage() ).contains( "Boom 1!" );
+	}
+
 }

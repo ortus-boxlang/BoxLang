@@ -118,7 +118,7 @@ public class StoredProc extends Component {
 			putResultSetsInContext( context, procedure, procResults );
 
 		} catch ( SQLException e ) {
-			throw new DatabaseException( e.getMessage(), e );
+			throw new DatabaseException( e );
 		}
 
 		return DEFAULT_RETURN;

@@ -1,5 +1,7 @@
 package tools;
 
+import java.sql.SQLException;
+
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.segments.DatasourceConfig;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -57,6 +59,7 @@ public class JDBCTestUtils {
 	 * @return
 	 */
 	public static boolean hasMySQLModule() {
+		System.out.println( "hasMySQLModule(), loaded module names: " + BoxRuntime.getInstance().getModuleService().getModuleNames() );
 		return BoxRuntime.getInstance().getModuleService().hasModule( Key.of( "mysql" ) );
 	}
 
@@ -72,6 +75,7 @@ public class JDBCTestUtils {
 	 * @return
 	 */
 	public static boolean hasMSSQLModule() {
+		System.out.println( "hasMSSQLModule(), loaded module names: " + BoxRuntime.getInstance().getModuleService().getModuleNames() );
 		return BoxRuntime.getInstance().getModuleService().hasModule( Key.of( "mssql" ) );
 	}
 
@@ -180,8 +184,13 @@ public class JDBCTestUtils {
 	 */
 	public static void ensureTestTableExists( DataSource datasource, IBoxContext context ) {
 		try {
-			datasource.execute( "CREATE TABLE developers ( id INTEGER, name VARCHAR(155), role VARCHAR(155), createdAt TIMESTAMP )", context );
-		} catch ( DatabaseException e ) {
+			if ( datasource.getConnection().getMetaData().getDriverName().toLowerCase().contains( "microsoft" ) ) {
+				datasource.execute( "CREATE TABLE developers ( id INTEGER, name VARCHAR(155), role VARCHAR(155), createdAt DATETIME )", context );
+			} else {
+				datasource.execute( "CREATE TABLE developers ( id INTEGER, name VARCHAR(155), role VARCHAR(155), createdAt TIMESTAMP )", context );
+			}
+		} catch ( DatabaseException | SQLException e ) {
+			e.printStackTrace();
 			// Ignore the exception if the table already exists
 		}
 	}
@@ -192,10 +201,31 @@ public class JDBCTestUtils {
 	 * @param datasource
 	 */
 	public static void resetDevelopersTable( DataSource datasource, IBoxContext context ) {
+		String currentDate = getCurrentDate( datasource );
 		datasource.execute( "TRUNCATE TABLE developers", context );
-		datasource.execute( "INSERT INTO developers ( id, name, role ) VALUES ( 77, 'Michael Born', 'Developer' )", context );
-		datasource.execute( "INSERT INTO developers ( id, name, role ) VALUES ( 1, 'Luis Majano', 'CEO' )", context );
-		datasource.execute( "INSERT INTO developers ( id, name, role ) VALUES ( 42, 'Eric Peterson', 'Developer' )", context );
-		datasource.execute( "INSERT INTO developers ( id, name, role ) VALUES ( 9001, 'Bob O''Reily', 'QA' )", context );
+		datasource.execute( "INSERT INTO developers ( id, name, role, createdAt ) VALUES ( 77, 'Michael Born', 'Developer', " + currentDate + " )", context );
+		datasource.execute( "INSERT INTO developers ( id, name, role, createdAt ) VALUES ( 1, 'Luis Majano', 'CEO', " + currentDate + " )", context );
+		datasource.execute( "INSERT INTO developers ( id, name, role, createdAt ) VALUES ( 42, 'Eric Peterson', 'Developer', " + currentDate + " )", context );
+		datasource.execute( "INSERT INTO developers ( id, name, role, createdAt ) VALUES ( 9001, 'Bob O''Reily', 'QA', " + currentDate + " )", context );
 	}
+
+	private static String getCurrentDate( DataSource datasource ) {
+		String driverName;
+		try {
+			driverName = datasource.getConnection().getMetaData().getDriverName().toLowerCase();
+		} catch ( SQLException e ) {
+			throw new DatabaseException( "Failed to get current date", e );
+		}
+		if ( driverName.contains( "microsoft" ) ) {
+			return "GETDATE()";
+		} else if ( driverName.contains( "oracle" ) ) {
+			return "SYSDATE";
+		} else if ( driverName.contains( "mysql" ) ) {
+			return "NOW()";
+		} else {
+			// Derby, PostgreSQL, most others
+			return "CURRENT_TIMESTAMP";
+		}
+	}
+
 }

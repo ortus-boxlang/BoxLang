@@ -209,8 +209,7 @@ public class DataSource implements Comparable<DataSource> {
 		try {
 			return this.hikariDataSource.getConnection();
 		} catch ( SQLException e ) {
-			// @TODO: Recast as BoxSQLException?
-			throw new BoxRuntimeException( "Unable to open connection:", e );
+			throw new DatabaseException( "Unable to open connection:", e );
 		}
 	}
 
@@ -218,7 +217,7 @@ public class DataSource implements Comparable<DataSource> {
 		try {
 			return DriverManager.getConnection( this.hikariDataSource.getJdbcUrl(), this.hikariDataSource.getUsername(), this.hikariDataSource.getPassword() );
 		} catch ( SQLException e ) {
-			throw new BoxRuntimeException( "Unable to open connection:", e );
+			throw new DatabaseException( "Unable to open connection:", e );
 		}
 	}
 
@@ -234,7 +233,7 @@ public class DataSource implements Comparable<DataSource> {
 			return this.hikariDataSource.getConnection( username, password );
 		} catch ( SQLException e ) {
 			// @TODO: Recast as BoxSQLException?
-			throw new BoxRuntimeException( "Unable to open connection:", e );
+			throw new DatabaseException( "Unable to open connection:", e );
 		}
 	}
 
@@ -266,7 +265,7 @@ public class DataSource implements Comparable<DataSource> {
 		try ( Connection conn = getConnection() ) {
 			return execute( query, conn, null );
 		} catch ( SQLException e ) {
-			throw new DatabaseException( e.getMessage(), e );
+			throw new DatabaseException( e );
 		}
 	}
 
@@ -280,7 +279,7 @@ public class DataSource implements Comparable<DataSource> {
 		try ( Connection conn = getConnection() ) {
 			return execute( query, conn, context );
 		} catch ( SQLException e ) {
-			throw new DatabaseException( e.getMessage(), e );
+			throw new DatabaseException( e );
 		}
 	}
 
@@ -317,7 +316,7 @@ public class DataSource implements Comparable<DataSource> {
 		try ( Connection conn = getConnection() ) {
 			return execute( query, parameters, conn, context );
 		} catch ( SQLException e ) {
-			throw new DatabaseException( e.getMessage(), e );
+			throw new DatabaseException( e );
 		}
 	}
 
@@ -336,7 +335,7 @@ public class DataSource implements Comparable<DataSource> {
 		try ( Connection conn = getConnection() ) {
 			return execute( query, parameters, conn, context );
 		} catch ( SQLException e ) {
-			throw new DatabaseException( e.getMessage(), e );
+			throw new DatabaseException( e );
 		}
 	}
 
@@ -355,7 +354,7 @@ public class DataSource implements Comparable<DataSource> {
 		try ( Connection conn = getConnection() ) {
 			return execute( query, parameters, conn, context );
 		} catch ( SQLException e ) {
-			throw new DatabaseException( e.getMessage(), e );
+			throw new DatabaseException( e );
 		}
 	}
 
