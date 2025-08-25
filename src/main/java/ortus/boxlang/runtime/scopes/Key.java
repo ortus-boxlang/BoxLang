@@ -129,6 +129,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		beforeAnyTask						= Key.of( "beforeAnyTask" );
 	public static final Key		bif									= Key.of( "bif" );
 	public static final Key		binary								= Key.of( "binary" );
+	public static final Key		bindings							= Key.of( "bindings" );
 	public static final Key		body								= Key.of( "body" );
 	public static final Key		boxBif								= Key.of( "BoxBif" );
 	public static final Key		boxCacheProvider					= Key.of( "BoxCacheProvider" );
@@ -331,6 +332,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		executionTime						= Key.of( "executionTime" );
 	public static final Key		executor							= Key.of( "executor" );
 	public static final Key		executors							= Key.of( "executors" );
+	public static final Key		executedQuery						= Key.of( "executedQuery" );
 	public static final Key		exitCode							= Key.of( "exitCode" );
 	public static final Key		expand								= Key.of( "expand" );
 	public static final Key		experimental						= Key.of( "experimental" );
@@ -602,6 +604,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		path_translated						= Key.of( "path_translated" );
 	public static final Key		pattern								= Key.of( "pattern" );
 	public static final Key		persisent							= Key.of( "persisent" );
+	public static final Key		pendingQuery						= Key.of( "pendingQuery" );
 	public static final Key		pid									= Key.of( "pid" );
 	public static final Key		placeholders						= Key.of( "placeholders" );
 	public static final Key		poolname							= Key.of( "poolname" );

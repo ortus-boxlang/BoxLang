@@ -90,25 +90,25 @@ public final class ExecutedQuery implements Serializable {
 	 */
 	public static void dumpResultSet( ResultSet rs ) throws SQLException {
 		if ( rs == null ) {
-			// System.out.println( "ResultSet is null." );
+			System.out.println( "ResultSet is null." );
 			return;
 		}
 
 		try {
 			ResultSetMetaData	meta		= rs.getMetaData();
 			int					columnCount	= meta.getColumnCount();
-			// System.out.println( "ResultSet:" );
+			System.out.println( "ResultSet:" );
 
 			while ( rs.next() ) {
 				for ( int i = 1; i <= columnCount; i++ ) {
 					String	name	= meta.getColumnLabel( i );
 					Object	value	= rs.getObject( i );
-					// System.out.print( name + "=" + value + "\t" );
+					System.out.print( name + "=" + value + "\t" );
 				}
-				// System.out.println();
+				System.out.println();
 			}
 		} catch ( NullPointerException e ) {
-			// System.out.println( "ResultSet is null 2." );
+			System.out.println( "ResultSet is null 2." );
 			return;
 		}
 	}
@@ -153,22 +153,6 @@ public final class ExecutedQuery implements Serializable {
 		int			affectedCount					= -1;
 		Array		allGeneratedKeys				= new Array();
 		// System.out.println( "****************************** process query result. hasResults: " + hasResults );
-
-		/*
-		 * try {
-		 * 
-		 * System.out.println( "statement.getUpdateCount(): " + statement.getUpdateCount() );
-		 * System.out.println( "statement.getResultSet(): " );
-		 * dumpResultSet( statement.getResultSet() );
-		 * System.out.println( "statement.getGeneratedKeys(): " );
-		 * dumpResultSet( statement.getGeneratedKeys() );
-		 * System.out.println( "statement.getMoreResults(): " + statement.getMoreResults() );
-		 * 
-		 * } catch ( SQLException e ) {
-		 * // TODO Auto-generated catch block
-		 * e.printStackTrace();
-		 * }
-		 */
 
 		if ( statement instanceof QoQStatement qs ) {
 			results = qs.getQueryResult();
@@ -307,11 +291,30 @@ public final class ExecutedQuery implements Serializable {
 		ExecutedQuery executedQuery = new ExecutedQuery( results, generatedKey );
 
 		interceptorService.announce( BoxEvent.POST_QUERY_EXECUTE,
-		    Struct.of( "sql", queryMeta.getAsString( Key.sql ), "bindings", pendingQuery.getParameterValues(), "executionTime", executionTime, "data", results,
-		        "result", queryMeta, "pendingQuery", pendingQuery, "executedQuery", executedQuery ) );
+		    Struct.of(
+		        Key.sql, queryMeta.getAsString( Key.sql ),
+		        Key.bindings, pendingQuery.getParameterValues(),
+		        Key.executionTime, executionTime,
+		        Key.data, results,
+		        Key.result, queryMeta,
+		        Key.pendingQuery, pendingQuery,
+		        Key.executedQuery, executedQuery
+		    )
+		);
 		return executedQuery;
 	}
 
+	/**
+	 * Processes the generated keys from the result set.
+	 *
+	 * @param rs               The result set containing the generated keys.
+	 * @param allGeneratedKeys An array to store all generated keys.
+	 * @param generatedKey     The generated key for the current insert/update operation.
+	 * 
+	 * @return The processed generated key.
+	 * 
+	 * @throws SQLException If an SQL error occurs.
+	 */
 	private static Object processGeneratedKeys( ResultSet rs, Array allGeneratedKeys, Object generatedKey ) throws SQLException {
 		// System.out.println( "retrieving generated keys posing as a result set" );
 		Array theseKeys = new Array();
