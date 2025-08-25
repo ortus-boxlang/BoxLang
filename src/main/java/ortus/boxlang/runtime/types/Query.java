@@ -243,7 +243,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 				query.addRow( row );
 			}
 		} catch ( SQLException e ) {
-			throw new DatabaseException( e.getMessage(), e );
+			throw new DatabaseException( e );
 		}
 
 		return query;
@@ -1237,7 +1237,6 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		this.metadata.computeIfAbsent( Key.cacheTimeout, key -> Duration.ZERO );
 		this.metadata.computeIfAbsent( Key.cacheLastAccessTimeout, key -> Duration.ZERO );
 		this.metadata.computeIfAbsent( Key.recordCount, key -> size.get() );
-		this.metadata.computeIfAbsent( Key.columns, key -> this.getColumns() );
 		this.metadata.computeIfAbsent( Key.columnList, key -> this.getColumnList() );
 		this.metadata.computeIfAbsent( Key._HASHCODE, key -> this.hashCode() );
 		return this.metadata;

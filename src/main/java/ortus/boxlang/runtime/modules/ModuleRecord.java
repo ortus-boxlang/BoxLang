@@ -73,6 +73,7 @@ import ortus.boxlang.runtime.types.DynamicFunction;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 import ortus.boxlang.runtime.types.util.StructUtil;
 import ortus.boxlang.runtime.util.DataNavigator;
 import ortus.boxlang.runtime.util.EncryptionUtil;
@@ -494,7 +495,7 @@ public class ModuleRecord {
 			    try {
 				    DriverManager.registerDriver( new DriverShim( driver ) );
 			    } catch ( SQLException e ) {
-				    throw new BoxRuntimeException( e.getMessage() );
+				    throw new DatabaseException( e );
 			    }
 		    } );
 

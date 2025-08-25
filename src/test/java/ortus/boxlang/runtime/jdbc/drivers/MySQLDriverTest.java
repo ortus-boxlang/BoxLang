@@ -4,6 +4,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -73,22 +74,23 @@ public class MySQLDriverTest extends AbstractDriverTest {
 	public void testTimestampParamCompare() {
 		instance.executeSource(
 		    """
-		      queryExecute( "INSERT INTO developers ( id, name, role, createdAt )
-		      	VALUES ( 101, 'Tony Skipponi', 'Engineer', NOW() )", {}, { "datasource" : "mysqldatasource" } );
-		      result = queryExecute(
-		      	"
-		      	SELECT * FROM developers
-		    WHERE createdAt IS NOT NULL AND createdAt < :timestamp",
-		      	{
-		      		timestamp : { sqltype : "cf_sql_timestamp", value : "09/24/2099" }
-		      	},
-		      	{ "datasource" : "mysqldatasource" }
-		      );
-		      """,
+		       queryExecute( "INSERT INTO developers ( id, name, role, createdAt )
+		       	VALUES ( 101, 'Tony Skipponi', 'Engineer', NOW() )", {}, { "datasource" : "mysqldatasource" } );
+		       result = queryExecute(
+		       	"
+		       	SELECT * FROM developers
+		     WHERE createdAt IS NOT NULL AND createdAt < :timestamp",
+		       	{
+		       		timestamp : { sqltype : "cf_sql_timestamp", value : "09/24/2099" }
+		       	},
+		       	{ "datasource" : "mysqldatasource" }
+		       );
+		    println( result )
+		       """,
 		    context );
 		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
 		Query query = variables.getAsQuery( result );
-		assertEquals( 1, query.size() );
+		assertEquals( 5, query.size() );
 	}
 
 	@DisplayName( "It can execute multiple statements in a single queryExecute() call" )
@@ -116,6 +118,7 @@ public class MySQLDriverTest extends AbstractDriverTest {
 		Query newTableRows = ( Query ) instance
 		    .executeStatement( "queryExecute( 'SELECT * FROM developers WHERE id IN (111,222)', [],{ 'datasource' : 'mysqldatasource' } );", context );
 		assertEquals( 2, newTableRows.size() );
+
 	}
 
 	@DisplayName( "Gets empty tables query when unmatched database name is provided" )
@@ -154,4 +157,34 @@ public class MySQLDriverTest extends AbstractDriverTest {
 		assertEquals( "CATALOG", ourDBRow.getAsString( Key.type ) );
 		assertEquals( "myDB", ourDBRow.getAsString( Key.of( "DBNAME" ) ) );
 	}
+
+	@DisplayName( "It can raise SQL error" )
+	@Test
+	public void testSQLError() {
+		Throwable t = assertThrows( Throwable.class, () -> instance.executeStatement(
+		    """
+		        queryExecute( "
+		    		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Boom!';
+		        ", {}, { "datasource" : "MySQLdatasource" } );
+		    """, context ) );
+		assertThat( t.getMessage() ).contains( "Boom!" );
+		assertThat( t.getCause() ).isNotNull();
+		assertThat( t.getCause().getMessage() ).contains( "Boom!" );
+	}
+
+	@DisplayName( "It can raise SQL error after success" )
+	@Test
+	public void testSQLErrorAfterSuccess() {
+		Throwable t = assertThrows( Throwable.class, () -> instance.executeStatement(
+		    """
+		          queryExecute( "
+		    SELECT 'brad' as dev;
+		      		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Boom!';
+		          ", {}, { "datasource" : "MySQLdatasource" } );
+		      """, context ) );
+		assertThat( t.getMessage() ).contains( "Boom!" );
+		assertThat( t.getCause() ).isNotNull();
+		assertThat( t.getCause().getMessage() ).contains( "Boom!" );
+	}
+
 }

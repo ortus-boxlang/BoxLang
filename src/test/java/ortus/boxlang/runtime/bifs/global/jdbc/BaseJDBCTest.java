@@ -77,6 +77,7 @@ public class BaseJDBCTest {
 			);
 			datasourceService.register( mssqlName, mssqlDatasource );
 			JDBCTestUtils.ensureTestTableExists( mssqlDatasource, setUpContext );
+			JDBCTestUtils.resetDevelopersTable( mssqlDatasource, setUpContext );
 
 			try {
 				mssqlDatasource.execute( "DROP TABLE generatedKeyTest", setUpContext );
@@ -114,6 +115,7 @@ public class BaseJDBCTest {
 			);
 			datasourceService.register( mysqlName, mysqlDatasource );
 			JDBCTestUtils.ensureTestTableExists( mysqlDatasource, setUpContext );
+			JDBCTestUtils.resetDevelopersTable( mysqlDatasource, setUpContext );
 			try {
 				mysqlDatasource.execute( "DROP TABLE generatedKeyTest", setUpContext );
 			} catch ( DatabaseException ignored ) {

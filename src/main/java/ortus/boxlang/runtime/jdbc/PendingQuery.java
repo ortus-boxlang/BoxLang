@@ -665,17 +665,27 @@ public class PendingQuery {
 				    )
 				);
 
-				long	startTick	= System.currentTimeMillis();
-				boolean	hasResults	= statement instanceof PreparedStatement preparedStatement
-				    ? preparedStatement.execute()
-				    : statement.execute( sqlStatement, GENERATED_KEYS_SETTING );
-				long	endTick		= System.currentTimeMillis();
+				long			startTick			= System.currentTimeMillis();
+				boolean			hasResults			= true;
+				SQLException	initialSqlException	= null;
+				// We can't throw here yet. If MSSQL has raised multiple errors, they need to be discovered as we iterate over the
+				// result set down in the fromPendingQuery() call.
+				try {
+					hasResults = statement instanceof PreparedStatement preparedStatement
+					    ? preparedStatement.execute()
+					    : statement.execute( sqlStatement, GENERATED_KEYS_SETTING );
+				} catch ( SQLException e ) {
+					// Pass this along.
+					initialSqlException = e;
+				}
+				long endTick = System.currentTimeMillis();
 
 				return ExecutedQuery.fromPendingQuery(
 				    this,
 				    statement,
 				    endTick - startTick,
-				    hasResults
+				    hasResults,
+				    initialSqlException
 				);
 			}
 		} catch ( SQLException e ) {

@@ -373,6 +373,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		gateway_interface					= Key.of( "gateway_interface" );
 	public static final Key		generatedContent					= Key.of( "generatedContent" );
 	public static final Key		generatedKey						= Key.of( "generatedKey" );
+	public static final Key		generatedKeys						= Key.of( "generatedKeys" );
 	public static final Key		generic								= Key.of( "generic" );
 	public static final Key		getAsBinary							= Key.of( "getAsBinary" );
 	public static final Key		getClass							= Key.of( "getClass" );
@@ -814,6 +815,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		type								= Key.of( "type" );
 	public static final Key		typename							= Key.of( "typename" );
 	public static final Key		unit								= Key.of( "unit" );
+	public static final Key		updateCounts						= Key.of( "updateCounts" );
+	public static final Key		updateCount							= Key.of( "updateCount" );
 	public static final Key		upload								= Key.of( "upload" );
 	public static final Key		uploadAll							= Key.of( "uploadAll" );
 	public static final Key		URL									= Key.of( "URL" );

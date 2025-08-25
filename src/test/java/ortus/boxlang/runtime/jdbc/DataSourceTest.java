@@ -136,7 +136,7 @@ public class DataSourceTest {
 				assertEquals( 4, executedQuery.getRecordCount() );
 			} );
 		} catch ( SQLException e ) {
-			throw new RuntimeException( e );
+			throw new DatabaseException( e );
 		}
 	}
 
@@ -159,7 +159,7 @@ public class DataSourceTest {
 				assertEquals( "Michael Born", developer.get( "name" ) );
 			} );
 		} catch ( SQLException e ) {
-			throw new RuntimeException( e );
+			throw new DatabaseException( e );
 		}
 	}
 
@@ -182,7 +182,7 @@ public class DataSourceTest {
 				assertEquals( "Michael Born", developer.get( "name" ) );
 			} );
 		} catch ( SQLException e ) {
-			throw new RuntimeException( e );
+			throw new DatabaseException( e );
 		}
 	}
 
@@ -200,7 +200,7 @@ public class DataSourceTest {
 			} );
 			assertEquals( "Named parameter [:name] not provided to query.", exception.getMessage() );
 		} catch ( SQLException e ) {
-			throw new RuntimeException( e );
+			throw new DatabaseException( e );
 		}
 	}
 

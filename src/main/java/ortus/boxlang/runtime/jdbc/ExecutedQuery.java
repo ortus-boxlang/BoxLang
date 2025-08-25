@@ -20,6 +20,7 @@ import static java.util.stream.Collectors.toMap;
 import java.io.Serializable;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
@@ -87,91 +88,213 @@ public final class ExecutedQuery implements Serializable {
 	 * @param executionTime The execution time the query took.
 	 * @param hasResults    Boolean flag from {@link PreparedStatement#execute()} designating if the execution returned any results.
 	 */
-	public static ExecutedQuery fromPendingQuery( @NonNull PendingQuery pendingQuery, @NonNull Statement statement, long executionTime, boolean hasResults ) {
-		Object	generatedKey	= null;
-		Query	results			= null;
-		int		recordCount		= 0;
-		int		affectedCount	= -1;
+	public static void dumpResultSet( ResultSet rs ) throws SQLException {
+		if ( rs == null ) {
+			// System.out.println( "ResultSet is null." );
+			return;
+		}
+
+		try {
+			ResultSetMetaData	meta		= rs.getMetaData();
+			int					columnCount	= meta.getColumnCount();
+			// System.out.println( "ResultSet:" );
+
+			while ( rs.next() ) {
+				for ( int i = 1; i <= columnCount; i++ ) {
+					String	name	= meta.getColumnLabel( i );
+					Object	value	= rs.getObject( i );
+					// System.out.print( name + "=" + value + "\t" );
+				}
+				// System.out.println();
+			}
+		} catch ( NullPointerException e ) {
+			// System.out.println( "ResultSet is null 2." );
+			return;
+		}
+	}
+
+	/**
+	 * Detect if a result set is generated keys. This is needed because some JDBC drivers will INCORRECTLY return a
+	 * "normal" result set as the generated keys after an update. (Looking at you MSSQL :/ )
+	 *
+	 * @param rs The ResultSet to check.
+	 * 
+	 * @return True if the ResultSet is for generated keys, false otherwise.
+	 */
+	private static boolean isResultSetGeneratedKeys( ResultSet rs ) {
+		if ( rs == null ) {
+			return false;
+		}
+		try {
+			ResultSetMetaData	meta		= rs.getMetaData();
+			int					columnCount	= meta.getColumnCount();
+			if ( columnCount != 1 ) {
+				return false;
+			}
+			// This can be tricked, but it's the best we can do
+			String columnName = meta.getColumnLabel( 1 );
+			// System.out.println( "Checking if result set is generated keys: " + columnName );
+			// Possible others, not sure. IDENTITYCOL, GENERATEDKEYS
+			return columnName.equalsIgnoreCase( "GENERATED_KEYS" ) || columnName.equalsIgnoreCase( "GENERATED_KEY" );
+		} catch ( SQLException | NullPointerException e ) {
+			return false;
+		}
+	}
+
+	public static ExecutedQuery fromPendingQuery( @NonNull PendingQuery pendingQuery, @NonNull Statement statement, long executionTime, boolean hasResults,
+	    SQLException initialSqlException ) {
+		boolean		generatedKeysComeAsResultSet	= false;
+		Object		generatedKey					= null;
+		Throwable	raisedError						= initialSqlException;
+		Query		results							= null;
+		int			recordCount						= 0;
+		int			totalUpdateCount				= 0;
+		Array		updateCounts					= new Array();
+		int			affectedCount					= -1;
+		Array		allGeneratedKeys				= new Array();
+		// System.out.println( "****************************** process query result. hasResults: " + hasResults );
+
+		/*
+		 * try {
+		 * 
+		 * System.out.println( "statement.getUpdateCount(): " + statement.getUpdateCount() );
+		 * System.out.println( "statement.getResultSet(): " );
+		 * dumpResultSet( statement.getResultSet() );
+		 * System.out.println( "statement.getGeneratedKeys(): " );
+		 * dumpResultSet( statement.getGeneratedKeys() );
+		 * System.out.println( "statement.getMoreResults(): " + statement.getMoreResults() );
+		 * 
+		 * } catch ( SQLException e ) {
+		 * // TODO Auto-generated catch block
+		 * e.printStackTrace();
+		 * }
+		 */
 
 		if ( statement instanceof QoQStatement qs ) {
 			results = qs.getQueryResult();
 		} else {
+			try {
+				// TODO: Move this into a generic flag that we set on the MSSQL driver.
+				generatedKeysComeAsResultSet = statement.getConnection().getMetaData().getDriverName().toLowerCase().contains( "microsoft" );
+			} catch ( SQLException e ) {
+				logger.error( "Error getting JDBC driver name", e );
+			}
+
 			// Loop over results until we find a result set, or run out of results
 			while ( true ) {
 				if ( hasResults ) {
 					try ( ResultSet rs = statement.getResultSet() ) {
-						results		= Query.fromResultSet( rs );
-						recordCount	= results.size();
-						break;
+						// Surprise, MSSQL sometimes returns generated keys as a result set. Because it hates us.
+						if ( generatedKeysComeAsResultSet && isResultSetGeneratedKeys( rs ) ) {
+							generatedKey = processGeneratedKeys( rs, allGeneratedKeys, generatedKey );
+						} else {
+							// Only take first result set. We don't break here though because we need to keep looping in case a later result raised an exception
+							if ( results == null ) {
+								results		= Query.fromResultSet( rs );
+								recordCount	= results.size();
+								// System.out.println( "acquired query result. recordCount: " + recordCount );
+							}
+						}
 					} catch ( SQLException e ) {
-						throw new DatabaseException( e.getMessage(), e );
+						// e.printStackTrace();
+						throw new DatabaseException( e );
 					}
 				} else {
 
 					// Capture generated keys, if any.
 					try {
-						try {
-							affectedCount = statement.getUpdateCount();
-							if ( affectedCount > -1 ) {
-								recordCount = affectedCount;
-								try ( ResultSet keys = statement.getGeneratedKeys() ) {
-									if ( keys != null && keys.next() ) {
-										generatedKey = keys.getObject( 1 );
-									}
-								} catch ( SQLException e ) {
-									// @TODO: drop the message check, since it doesn't support alternate languages.
-									if ( e.getMessage().contains( "The statement must be executed before any results can be obtained." ) ) {
-										logger.info(
-										    "SQL Server threw an error when attempting to retrieve generated keys. Am ignoring the error - no action is required. Error : [{}]",
-										    e.getMessage() );
-									} else {
-										logger.warn( "Error getting generated keys", e );
-									}
+						affectedCount = statement.getUpdateCount();
+						// System.out.println( "affectedCount: " + affectedCount );
+						if ( affectedCount > -1 ) {
+							updateCounts.add( affectedCount );
+							totalUpdateCount += affectedCount;
+
+							if ( !generatedKeysComeAsResultSet ) {
+								ResultSet keys = statement.getGeneratedKeys();
+								// System.out.println( "retrieving generated keys" );
+								if ( keys != null ) {
+									generatedKey = processGeneratedKeys( keys, allGeneratedKeys, generatedKey );
 								}
+								keys.close();
 							}
-						} catch ( SQLException t ) {
-							logger.error( "Error getting update count", t );
 						}
-					} catch ( NullPointerException e ) {
-						// This is likely due to Hikari wrapping a null ResultSet.
-						// There should not be a null ResultSet returned from getGeneratedKeys
-						// (https://docs.oracle.com/javase/8/docs/api/java/sql/Statement.html#getGeneratedKeys--)
-						// but some JDBC drivers do anyway.
-						// Since Hikari wraps the null value, we can't get access to it,
-						// so instead we have to catch it here and ignore it.
-						// We do check the message to try to be very particular about what NullPointerExceptions we are catching
-						String message = e.getMessage();
-						if ( message == null || !message.equals( "Cannot invoke \"java.sql.ResultSet.next()\" because \"this.delegate\" is null" ) ) {
-							throw e;
-						}
+					} catch ( SQLException | NullPointerException t ) {
+						// throw new DatabaseException( "Error getting update count", t );
+						// t.printStackTrace();
+						// System.out.println( "Error getting generatedKeys: " + t.getMessage() );
+						logger.error( "Error getting update count", t );
 					}
 				}
 				// If we have no results and no affected count, we're done.
 				if ( !hasResults && affectedCount == -1 ) {
+					// System.out.println( "no results or affected count, breaking" );
 					break;
 				}
 
 				// Otherwise, look for another result set or update count.
 				try {
+					// System.out.println( "checking for more results" );
 					hasResults = statement.getMoreResults();
+					// System.out.println( "hasResults: " + hasResults );
 				} catch ( SQLException e ) {
-					break;
+					// e.printStackTrace();
+					// Keep nesting our raised errors. We'll throw them all at the end.
+					if ( raisedError == null || !raisedError.equals( e ) ) {
+						if ( raisedError == null || e.getCause() != null ) {
+							raisedError = e;
+						} else {
+							raisedError = e.initCause( raisedError );
+						}
+					}
+					try {
+						// It's possible that the SQLException was that the statement was closed
+						// If so, break to avoid endless looping.
+						// Otherwise, we want to continue as MSSQL can thrown many exceptions and we gotta' catch them all!
+						if ( statement.isClosed() ) {
+							break;
+						}
+					} catch ( SQLException e1 ) {
+						// stupid isCClosed() can throw SQLException
+						break;
+					}
 				}
 
 			} // /while
+
+			// If there are one or more errors raised, we throw them now.
+			if ( raisedError != null ) {
+				throw new DatabaseException( raisedError.getMessage(), raisedError );
+			}
+
+		}
+
+		// I'm not sure what the precedent is here, but if there were multiple updates or inserts and no selects,
+		// then make our record count the total number of updated rows.
+		if ( results == null ) {
+			recordCount = totalUpdateCount;
 		}
 
 		IStruct queryMeta = Struct.of(
-		    "cached", false,
-		    "cacheKey", pendingQuery.getCacheKey(),
-		    "sql", pendingQuery.getSQLWithParamValues(),
-		    "sqlParameters", Array.fromList( pendingQuery.getParameterValues() ),
-		    "executionTime", executionTime,
-		    "recordCount", recordCount
+		    Key.cached, false,
+		    Key.cacheKey, pendingQuery.getCacheKey(),
+		    Key.sql, pendingQuery.getSQLWithParamValues(),
+		    Key.sqlParameters, Array.fromList( pendingQuery.getParameterValues() ),
+		    Key.executionTime, executionTime,
+		    Key.recordCount, recordCount
 		);
 
 		if ( generatedKey != null ) {
-			queryMeta.put( "generatedKey", generatedKey );
+			// The first/last generated key (depends on driver)
+			queryMeta.put( Key.generatedKey, generatedKey );
+			// array of arrays of generated keys (depends on driver)
+			queryMeta.put( Key.generatedKeys, allGeneratedKeys );
+		}
+
+		if ( !updateCounts.isEmpty() ) {
+			// The total number of updated rows across all statements
+			queryMeta.put( Key.updateCount, totalUpdateCount );
+			// Array of update counts for each statement
+			queryMeta.put( Key.updateCounts, updateCounts );
 		}
 
 		// If we only had an update or insert, we need an empty query object to return
@@ -183,19 +306,24 @@ public final class ExecutedQuery implements Serializable {
 		results.setMetadata( queryMeta );
 		ExecutedQuery executedQuery = new ExecutedQuery( results, generatedKey );
 
-		interceptorService.announce(
-		    BoxEvent.POST_QUERY_EXECUTE,
-		    Struct.of(
-		        "sql", queryMeta.getAsString( Key.sql ),
-		        "bindings", pendingQuery.getParameterValues(),
-		        "executionTime", executionTime,
-		        "data", results,
-		        "result", queryMeta,
-		        "pendingQuery", pendingQuery,
-		        "executedQuery", executedQuery
-		    )
-		);
+		interceptorService.announce( BoxEvent.POST_QUERY_EXECUTE,
+		    Struct.of( "sql", queryMeta.getAsString( Key.sql ), "bindings", pendingQuery.getParameterValues(), "executionTime", executionTime, "data", results,
+		        "result", queryMeta, "pendingQuery", pendingQuery, "executedQuery", executedQuery ) );
 		return executedQuery;
+	}
+
+	private static Object processGeneratedKeys( ResultSet rs, Array allGeneratedKeys, Object generatedKey ) throws SQLException {
+		// System.out.println( "retrieving generated keys posing as a result set" );
+		Array theseKeys = new Array();
+		while ( rs.next() ) {
+			theseKeys.add( rs.getObject( 1 ) );
+		}
+		allGeneratedKeys.add( theseKeys );
+		if ( generatedKey == null && !theseKeys.isEmpty() ) {
+			generatedKey = theseKeys.get( 0 );
+			// System.out.println( "acquired generated key: " + generatedKey );
+		}
+		return generatedKey;
 	}
 
 	/**

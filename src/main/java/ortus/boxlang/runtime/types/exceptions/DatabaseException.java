@@ -17,6 +17,8 @@
  */
 package ortus.boxlang.runtime.types.exceptions;
 
+import java.sql.SQLException;
+
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 
@@ -60,6 +62,25 @@ public class DatabaseException extends BoxLangException {
 	/**
 	 * Constructor
 	 *
+	 * @param cause The cause
+	 */
+	public DatabaseException( Throwable cause ) {
+		this( cause.getMessage(), cause );
+	}
+
+	/**
+	 * Constructor
+	 *
+	 * @param message The message
+	 * @param cause   The cause
+	 */
+	public DatabaseException( String message, SQLException cause ) {
+		this( message, cause.getSQLState(), String.valueOf( cause.getErrorCode() ), cause.getMessage(), null, null, null, cause );
+	}
+
+	/**
+	 * Constructor
+	 *
 	 * @param message The message
 	 * @param cause   The cause
 	 */
@@ -91,7 +112,7 @@ public class DatabaseException extends BoxLangException {
 	 */
 	public DatabaseException( String message, String detail, String nativeErrorCode, String SQLState, String SQL, String queryError, String where,
 	    Throwable cause ) {
-		super( message, "database", cause );
+		super( message, "database", nestSQLExceptions( cause ) );
 		this.detail				= detail;
 		this.nativeErrorCode	= nativeErrorCode;
 		this.SQLState			= SQLState;
@@ -100,6 +121,19 @@ public class DatabaseException extends BoxLangException {
 		this.where				= where;
 	}
 
+	static private Throwable nestSQLExceptions( Throwable cause ) {
+		if ( cause == null ) {
+			return null;
+		}
+		if ( cause instanceof SQLException se ) {
+			while ( se.getNextException() != null ) {
+				se = ( SQLException ) se.getNextException().initCause( se );
+			}
+			return se;
+		}
+
+		return cause;
+	}
 	// getters
 
 	/**
