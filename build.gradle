@@ -682,6 +682,23 @@ test {
 	}
 	dependsOn compileJava, compileTestJava
 	//exclude '**/resources/**'
+	
+    doFirst {
+        println "=== TEST DISCOVERY DEBUG ==="
+        testClassesDirs.each { dir ->
+            if (dir.exists()) {
+                println "Scanning compiled test classes in: $dir"
+                dir.eachFileRecurse { file ->
+                    if (file.name.endsWith('Test.class')) {
+                        def relativePath = dir.toPath().relativize(file.toPath()).toString()
+                        def className = relativePath.replace('/', '.').replace('.class', '')
+                        println "  Found compiled test: $className"
+                    }
+                }
+            }
+        }
+        println "=== END DEBUG ==="
+    }
 
 	// Uncomment to take a heap dump after the conclusion of tests
 	// finalizedBy( createHeapDump )
