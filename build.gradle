@@ -675,7 +675,11 @@ task createHeapDump {
 test {
 	// IMPORTANT: Do not leave this uncommented and commit or all tests locally will run on the specified compiler
 	// systemProperty 'boxlang.experimental.compiler', System.getProperty('boxlang.experimental.compiler', "java")
-	useJUnitPlatform()
+
+	useJUnitPlatform {
+        // Explicitly enable scanning of all test classes (default behavior, but reinforced)
+        includePackages '**'  // Matches all packages and subpackages
+    }
 
 	testLogging {
 		showStandardStreams = true
