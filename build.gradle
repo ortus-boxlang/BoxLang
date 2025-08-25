@@ -676,29 +676,16 @@ test {
 	// IMPORTANT: Do not leave this uncommented and commit or all tests locally will run on the specified compiler
 	// systemProperty 'boxlang.experimental.compiler', System.getProperty('boxlang.experimental.compiler', "java")
 	useJUnitPlatform()
+	    
+    // Enable JUnit discovery debugging
+    systemProperty 'junit.platform.launcher.debug', 'true'
+	
 	testLogging {
 		showStandardStreams = true
 		events "FAILED", "STANDARD_ERROR"
 	}
 	dependsOn compileJava, compileTestJava
 	//exclude '**/resources/**'
-	
-    doFirst {
-        println "=== TEST DISCOVERY DEBUG ==="
-        testClassesDirs.each { dir ->
-            if (dir.exists()) {
-                println "Scanning compiled test classes in: $dir"
-                dir.eachFileRecurse { file ->
-                    if (file.name.endsWith('Test.class')) {
-                        def relativePath = dir.toPath().relativize(file.toPath()).toString()
-                        def className = relativePath.replace('/', '.').replace('.class', '')
-                        println "  Found compiled test: $className"
-                    }
-                }
-            }
-        }
-        println "=== END DEBUG ==="
-    }
 
 	// Uncomment to take a heap dump after the conclusion of tests
 	// finalizedBy( createHeapDump )
