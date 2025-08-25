@@ -56,7 +56,7 @@ jobs:
 
       - name: Setup MySQL Service
         if: ${{ matrix.os != 'windows-latest' }}
-        uses: samin/mysql-action@v1
+        uses: samin/mysql-action@v1.3
         with:
           host port: 3309
           mysql database: "myDB"
