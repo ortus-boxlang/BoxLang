@@ -103,7 +103,7 @@ dependencies {
 	testImplementation 'org.apache.derby:derby:10.17.1.0'
 	testImplementation 'io.undertow:undertow-core:2.3.18.Final'
 	// Explicitly declare the JUnit platform launcher (to avoid deprecation)
-    testRuntimeOnly "org.junit.platform:junit-platform-launcher:1.11.4"
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher:1.13.4"
 
 	// Antlr
 	antlr "org.antlr:antlr4:$antlrVersion"
