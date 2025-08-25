@@ -18,6 +18,7 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
@@ -79,7 +80,7 @@ public class ArrayMap extends BIF {
 		    context,
 		    arguments.getAsBoolean( Key.parallel ),
 		    maxThreadsAttempt.getOrDefault( null ),
-		    arguments.getAsBoolean( Key.virtual )
+		    BooleanCaster.cast( arguments.getOrDefault( Key.virtual, false ) )
 		);
 	}
 }
