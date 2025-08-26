@@ -80,6 +80,11 @@ sourceSets {
             include '**/META-INF/services/*'
         }
     }
+    test {
+        java {
+            srcDirs = [ 'src/test/java' ]
+        }
+    }
 }
 
 /**
@@ -676,11 +681,20 @@ test {
 	// IMPORTANT: Do not leave this uncommented and commit or all tests locally will run on the specified compiler
 	// systemProperty 'boxlang.experimental.compiler', System.getProperty('boxlang.experimental.compiler', "java")
 	useJUnitPlatform()
-	
+
+	// Detailed  logging
 	testLogging {
 		showStandardStreams = true
-		events "FAILED", "STANDARD_ERROR"
+		events "PASSED", "FAILED", "SKIPPED", "STANDARD_ERROR"
+        displayGranularity = 1
 	}
+
+	// Set system properties for consistent behavior across OS
+	systemProperty 'junit.jupiter.testclass.order.default', 'org.junit.jupiter.api.ClassOrderer$ClassName'
+    systemProperty 'file.encoding', 'UTF-8'
+    systemProperty 'user.timezone', 'UTC'
+
+	// Dependencies
 	dependsOn compileJava, compileTestJava
 	//exclude '**/resources/**'
 
