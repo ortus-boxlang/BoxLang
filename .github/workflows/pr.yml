@@ -29,6 +29,8 @@ jobs:
   format_check:
     name: Checks Source Code Formatting
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
