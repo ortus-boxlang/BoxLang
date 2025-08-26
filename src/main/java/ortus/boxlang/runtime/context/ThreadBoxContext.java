@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.context;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.jdbc.ConnectionManager;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -82,6 +83,15 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 	 * @param parallel If true, run in a new ThreadBoxContext, otherwise run in the current context
 	 */
 	public static Object runInContext( IBoxContext parent, boolean parallel, java.util.function.Function<IBoxContext, Object> runnable ) {
+
+		ClassLoader			oldClassLoader	= Thread.currentThread().getContextClassLoader();
+		RequestBoxContext	requestContext	= parent.getRequestContext();
+		if ( requestContext != null ) {
+			Thread.currentThread().setContextClassLoader( requestContext.getRequestClassLoader() );
+		} else {
+			Thread.currentThread().setContextClassLoader( BoxRuntime.getInstance().getRuntimeLoader() );
+		}
+
 		if ( parallel ) {
 			ThreadBoxContext context = new ThreadBoxContext( parent );
 			try {
@@ -90,9 +100,14 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 			} finally {
 				RequestBoxContext.removeCurrent();
 				context.shutdown();
+				Thread.currentThread().setContextClassLoader( oldClassLoader );
 			}
 		} else {
-			return runnable.apply( parent );
+			try {
+				return runnable.apply( parent );
+			} finally {
+				Thread.currentThread().setContextClassLoader( oldClassLoader );
+			}
 		}
 	}
 
