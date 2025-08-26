@@ -256,6 +256,11 @@ public class ModuleRecord {
 	 */
 	private BoxRuntime				runtime;
 
+	/**
+	 * Tracks JDBC drivers registered by this module for proper cleanup (deregistration)
+	 * during module unload. This ensures that drivers do not leak and are removed
+	 * from the DriverManager when the module is unloaded.
+	 */
 	private Map<Key, DriverShim>	jdbcDrivers					= new HashMap<>();
 
 	/**
@@ -591,6 +596,16 @@ public class ModuleRecord {
 		return this;
 	}
 
+	/**
+	 * Unregisters the module from the runtime, removing global services, JDBC drivers,
+	 * and other resources associated with this module.
+	 *
+	 * @param context The current context of execution
+	 * 
+	 * @return The ModuleRecord instance
+	 * 
+	 * @throws ortus.boxlang.runtime.types.exceptions.DatabaseException if a SQL error occurs while deregistering JDBC drivers
+	 */
 	public ModuleRecord unregister( IBoxContext context ) {
 		InterceptorService interceptorService = this.runtime.getInterceptorService();
 
@@ -646,7 +661,7 @@ public class ModuleRecord {
 		    .filter( provider -> interceptorService.canLoadInterceptor( provider.type() ) )
 		    // Register the interceptor with the module settings
 		    .map( ServiceLoader.Provider::get )
-		    .forEach( targetInterceptor -> interceptorService.register( targetInterceptor, this.settings ) );
+		    .forEach( targetInterceptor -> interceptorService.unregister( targetInterceptor ) );
 
 		// unregister the module mapping from the runtime
 		this.runtime.getConfiguration().unregisterMapping( this.mapping );
