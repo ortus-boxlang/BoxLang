@@ -18,6 +18,8 @@
 package ortus.boxlang.runtime.bifs.global.format;
 
 import java.util.Locale;
+import java.util.Map;
+import java.util.LinkedHashMap;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
@@ -55,7 +57,7 @@ public class NumberFormat extends BIF {
 	 *
 	 * @argument.number The number to be formatted
 	 *
-	 * @argument.mask The formatting mask to apply
+	 * @argument.mask The formatting mask to apply using the {@link java.text.DecimalFormat} patterns.
 	 *
 	 * @argument.locale An optional locale string to apply to the format
 	 *
@@ -69,6 +71,14 @@ public class NumberFormat extends BIF {
 		    locale,
 		    LocalizationUtil.NUMBER_FORMAT_PATTERNS.get( LocalizationUtil.DEFAULT_NUMBER_FORMAT_KEY )
 		);
+		final LinkedHashMap<String, String> formatReplacements = new LinkedHashMap<>(){
+			{
+				put( "9", "0" );
+				put( "_", "#" );
+				put( "#,.", "#,##0." );
+				put( "#$,0", "$#,##0" );
+			}
+		};
 
 		// Currency-specific arguments
 		String					type		= arguments.getAsString( Key.type );
@@ -87,8 +97,11 @@ public class NumberFormat extends BIF {
 			} else if ( format.equals( "ls$" ) ) {
 				formatter = LocalizationUtil.localizedCurrencyFormatter( locale );
 			} else {
-				format = format.replace( "9", "0" )
-				    .replace( "_", "#" );
+				
+				for( Map.Entry<String, String> entry : formatReplacements.entrySet() ) {
+					format = format.replace( entry.getKey(), entry.getValue() );
+				}
+				
 				if ( format.substring( 0, 1 ).equals( "L" ) ) {
 					format = format.substring( 1, format.length() );
 				} else if ( format.substring( 0, 1 ).equals( "C" ) ) {
