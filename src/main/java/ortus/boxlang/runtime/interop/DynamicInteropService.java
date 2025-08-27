@@ -365,8 +365,12 @@ public class DynamicInteropService {
 
 			return thisInstance;
 		} catch ( RuntimeException e ) {
+			System.out.println( "RuntimeException invoking constructor for class " + targetClass.getName() + " with arguments " + Arrays.toString( args )
+			    + " using method handle " + constructorHandle.toString() );
 			throw e;
 		} catch ( Throwable e ) {
+			System.out.println( "Throwable invoking constructor for class " + targetClass.getName() + " with arguments " + Arrays.toString( args )
+			    + " using method handle " + constructorHandle.toString() );
 			throw new BoxRuntimeException( "Error invoking constructor for class " + targetClass.getName(), e );
 		}
 	}
