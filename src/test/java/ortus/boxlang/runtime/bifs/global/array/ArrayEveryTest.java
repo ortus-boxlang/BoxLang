@@ -227,17 +227,18 @@ public class ArrayEveryTest {
 	@DisplayName( "It can run in parallel with virtual threads using the alt positional max" )
 	@Test
 	public void testRunInParallelWithVirtualThreadsAndAltMax() {
+		//@formatter:off
 		instance.executeSource(
 		    """
-		          indexes = [];
-		          nums = [ 1, 2, 3, 4, 5 ];
+			indexes = [];
+			nums = [ 1, 2, 3, 4, 5 ];
 
-		          function eachFn( value, i ){
-		              indexes[ i ] = value;
-		              return true;
-		          };
+			function eachFn( value, i ){
+				indexes[ i ] = value;
+				return true;
+			};
 
-		          result = ArrayEvery(
+			result = ArrayEvery(
 		    	nums,
 		    	eachFn,
 		    	true,
@@ -245,7 +246,7 @@ public class ArrayEveryTest {
 		    );
 		      """,
 		    context );
-
+		//@formatter:on
 		assertThat( variables.get( result ) ).isEqualTo( true );
 	}
 }
