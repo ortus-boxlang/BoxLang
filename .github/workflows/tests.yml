@@ -85,6 +85,8 @@ jobs:
           path: '**/build/test-results/**/*.xml'
           reporter: 'java-junit'
           fail-on-error: true
+          list-suites: 'all'
+          list-tests: 'failed'
 
       - name: Upload Test Results
         if: always()
