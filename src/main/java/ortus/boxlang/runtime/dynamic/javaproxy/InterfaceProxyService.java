@@ -25,8 +25,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.apache.commons.lang3.ClassUtils;
-
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
@@ -271,13 +269,7 @@ public class InterfaceProxyService {
 		if ( isFunctionalInterface( clazz ) ) {
 			return clazz;
 		}
-
-		// Default, check all implemented interfaces for a functional interface
-		return ClassUtils.getAllInterfaces( clazz )
-		    .stream()
-		    .filter( InterfaceProxyService::isFunctionalInterface )
-		    .findFirst()
-		    .orElse( null );
+		return null;
 	}
 
 	/**
