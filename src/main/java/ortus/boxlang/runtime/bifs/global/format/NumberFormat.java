@@ -64,24 +64,25 @@ public class NumberFormat extends BIF {
 	 * @function.currencyFormat Formats a number as a currency value
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Number					value		= arguments.getAsNumber( Key.number );
-		String					format		= arguments.getAsString( Key.mask );
-		Locale					locale		= LocalizationUtil.parseLocaleFromContext( context, arguments );
-		java.text.NumberFormat	formatter	= LocalizationUtil.localizedDecimalFormatter(
+		Number								value				= arguments.getAsNumber( Key.number );
+		String								format				= arguments.getAsString( Key.mask );
+		Locale								locale				= LocalizationUtil.parseLocaleFromContext( context, arguments );
+		java.text.NumberFormat				formatter			= LocalizationUtil.localizedDecimalFormatter(
 		    locale,
 		    LocalizationUtil.NUMBER_FORMAT_PATTERNS.get( LocalizationUtil.DEFAULT_NUMBER_FORMAT_KEY )
 		);
-		final LinkedHashMap<String, String> formatReplacements = new LinkedHashMap<>(){
-			{
-				put( "9", "0" );
-				put( "_", "#" );
-				put( "#,.", "#,##0." );
-				put( "#$,0", "$#,##0" );
-			}
-		};
+		final LinkedHashMap<String, String>	formatReplacements	= new LinkedHashMap<>() {
+
+																	{
+																		put( "9", "0" );
+																		put( "_", "#" );
+																		put( "#,.", "#,##0." );
+																		put( "#$,0", "$#,##0" );
+																	}
+																};
 
 		// Currency-specific arguments
-		String					type		= arguments.getAsString( Key.type );
+		String								type				= arguments.getAsString( Key.type );
 		if ( type != null ) {
 			formatter = ( java.text.NumberFormat ) LocalizationUtil.localizedCurrencyFormatter( locale, type );
 			// Format parsing
@@ -97,11 +98,11 @@ public class NumberFormat extends BIF {
 			} else if ( format.equals( "ls$" ) ) {
 				formatter = LocalizationUtil.localizedCurrencyFormatter( locale );
 			} else {
-				
-				for( Map.Entry<String, String> entry : formatReplacements.entrySet() ) {
+
+				for ( Map.Entry<String, String> entry : formatReplacements.entrySet() ) {
 					format = format.replace( entry.getKey(), entry.getValue() );
 				}
-				
+
 				if ( format.substring( 0, 1 ).equals( "L" ) ) {
 					format = format.substring( 1, format.length() );
 				} else if ( format.substring( 0, 1 ).equals( "C" ) ) {
