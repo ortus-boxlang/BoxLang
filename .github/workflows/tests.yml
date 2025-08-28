@@ -77,16 +77,18 @@ jobs:
           ./gradlew :src:modules:test:build --stacktrace --console=plain
           ./gradlew test --stacktrace --console=plain
 
-      - name: Publish Test Report
-        uses: dorny/test-reporter@v2.1.1
-        if: success() || failure()
+      - name: Publish Test Reports
+        uses: mikepenz/action-junit-report@v5.6.2
         with:
-          name: 'Test Results (${{ matrix.os }}-${{ matrix.compiler }})'
-          path: '**/build/test-results/**/*.xml'
-          reporter: 'java-junit'
-          fail-on-error: true
-          list-suites: 'failed'
-          list-tests: 'failed'
+          report_paths: |
+            **/build/test-results/test/*.xml
+            **/surefire-reports/*.xml
+            **/failsafe-reports/*.xml
+          check_name: "JUnit Report ${{ matrix.os }}-${{ matrix.jdkProvider }}-${{ matrix.jdkVersion }}-${{ matrix.compiler }}"
+          include_passed: false
+          fail_on_failure: true
+          summary: "Test Results for ${{ matrix.os }} with ${{ matrix.compiler }} compiler on JDK ${{ matrix.jdkVersion }}"
+          detailed_summary: true
 
       - name: Upload Test Results
         if: always()
