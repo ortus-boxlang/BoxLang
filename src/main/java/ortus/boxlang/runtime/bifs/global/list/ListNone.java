@@ -25,6 +25,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.ListUtil;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "listNone" )
@@ -42,7 +43,8 @@ public class ListNone extends ListSome {
 		    new Argument( false, Argument.BOOLEAN, Key.includeEmptyFields, false ),
 		    new Argument( false, Argument.BOOLEAN, Key.multiCharacterDelimiter, false ),
 		    new Argument( false, Argument.BOOLEAN, Key.parallel, false ),
-		    new Argument( false, Argument.INTEGER, Key.maxThreads )
+		    new Argument( false, Argument.ANY, Key.maxThreads ),
+		    new Argument( false, Argument.BOOLEAN, Key.virtual, false )
 		};
 	}
 
@@ -77,10 +79,12 @@ public class ListNone extends ListSome {
 	 * @argument.parallel Whether to run the filter in parallel. Defaults to false. If true, the filter will be run in parallel using a ForkJoinPool.
 	 *
 	 * @argument.maxThreads The maximum number of threads to use when running the filter in parallel. If not passed it will use the default number of threads for the ForkJoinPool.
-	 *                      If parallel is false, this argument is ignored.
+	 *                      If parallel is false, this argument is ignored. If a boolean is provided it will be assigned to the virtual argument instead.
+	 * 
+	 * @argument.virtual ( BoxLang only) If true, the function will be invoked using virtual threads. Defaults to false. Ignored if parallel is false.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		return !( Boolean ) super._invoke( context, arguments );
+		return !BooleanCaster.cast( super._invoke( context, arguments ) );
 	}
 
 }
