@@ -72,7 +72,7 @@ public class StructNone extends StructSome {
 	 * @argument.maxThreads The maximum number of threads to use when running the filter in parallel. If not passed it will use the default number of threads for the ForkJoinPool.
 	 *                      If parallel is false, this argument is ignored. If parallel is true and maxThreads is not passed, it will use the common ForkJoinPool.
 	 * 
-	 * @argument.virtual Whether to use a virtual thread for each task when running in parallel. Defaults to false. Ignored if parrallel is false.
+	 * @argument.virtual Whether to use a virtual thread for each task when running in parallel. Defaults to false. Ignored if parallel is false.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return !BooleanCaster.cast( super._invoke( context, arguments ) );
