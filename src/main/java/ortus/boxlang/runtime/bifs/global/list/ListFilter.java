@@ -109,7 +109,7 @@ public class ListFilter extends BIF {
 		    arguments.getAsFunction( Key.filter ),
 		    context,
 		    arguments.getAsBoolean( Key.parallel ),
-		    maxThreadsAttempt.getOrDefault( null ),
+		    maxThreadsAttempt.getOrDefault( 0 ),
 		    arguments.getAsBoolean( Key.virtual )
 		).asString();
 	}

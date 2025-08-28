@@ -90,7 +90,7 @@ public class StructSome extends BIF {
 		    arguments.getAsFunction( Key.callback ),
 		    context,
 		    arguments.getAsBoolean( Key.parallel ),
-		    maxThreadsAttempt.getOrDefault( null ),
+		    maxThreadsAttempt.getOrDefault( 0 ),
 		    arguments.getAsBoolean( Key.virtual )
 		);
 	}

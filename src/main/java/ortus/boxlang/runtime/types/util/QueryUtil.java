@@ -182,7 +182,7 @@ public class QueryUtil {
 	    Boolean parallel,
 	    Integer maxThreads,
 	    Boolean ordered,
-	    Boolean virtual ) {
+	    boolean virtual ) {
 
 		// Parameter validation
 		Objects.requireNonNull( query, "Query cannot be null" );
@@ -283,7 +283,7 @@ public class QueryUtil {
 	    IBoxContext callbackContext,
 	    Boolean parallel,
 	    Integer maxThreads,
-	    Boolean virtual ) {
+	    boolean virtual ) {
 
 		// Parameter validation
 		Objects.requireNonNull( query, "Query cannot be null" );
@@ -374,7 +374,7 @@ public class QueryUtil {
 	    IBoxContext callbackContext,
 	    Boolean parallel,
 	    Integer maxThreads,
-	    Boolean virtual ) {
+	    boolean virtual ) {
 
 		// Parameter validation
 		Objects.requireNonNull( query, "Query cannot be null" );
@@ -456,7 +456,7 @@ public class QueryUtil {
 	    IBoxContext callbackContext,
 	    Boolean parallel,
 	    Integer maxThreads,
-	    Boolean virtual ) {
+	    boolean virtual ) {
 
 		// Parameter validation
 		Objects.requireNonNull( query, "Query cannot be null" );

@@ -152,7 +152,7 @@ public class StructUtil {
 	    Boolean parallel,
 	    Integer maxThreads,
 	    Boolean ordered,
-	    Boolean virtual ) {
+	    boolean virtual ) {
 
 		// Parameter validation
 		Objects.requireNonNull( struct, "Struct cannot be null" );
@@ -248,7 +248,7 @@ public class StructUtil {
 	    IBoxContext callbackContext,
 	    Boolean parallel,
 	    Integer maxThreads,
-	    Boolean virtual ) {
+	    boolean virtual ) {
 
 		// Parameter validation
 		Objects.requireNonNull( struct, "Struct cannot be null" );
@@ -335,7 +335,7 @@ public class StructUtil {
 	    IBoxContext callbackContext,
 	    Boolean parallel,
 	    Integer maxThreads,
-	    Boolean virtual ) {
+	    boolean virtual ) {
 
 		// Parameter validation
 		Objects.requireNonNull( struct, "Struct cannot be null" );
@@ -420,7 +420,7 @@ public class StructUtil {
 	    IBoxContext callbackContext,
 	    Boolean parallel,
 	    Integer maxThreads,
-	    Boolean virtual ) {
+	    boolean virtual ) {
 
 		// Parameter validation
 		Objects.requireNonNull( struct, "Struct cannot be null" );
@@ -511,7 +511,7 @@ public class StructUtil {
 	    IBoxContext callbackContext,
 	    Boolean parallel,
 	    Integer maxThreads,
-	    Boolean virtual ) {
+	    boolean virtual ) {
 
 		// Parameter validation
 		Objects.requireNonNull( struct, "Struct cannot be null" );

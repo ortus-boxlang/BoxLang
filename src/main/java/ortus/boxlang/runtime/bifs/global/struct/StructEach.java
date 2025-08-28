@@ -95,7 +95,7 @@ public class StructEach extends BIF {
 		    arguments.getAsFunction( Key.callback ),
 		    context,
 		    arguments.getAsBoolean( Key.parallel ),
-		    maxThreadsAttempt.getOrDefault( null ),
+		    maxThreadsAttempt.getOrDefault( 0 ),
 		    arguments.getAsBoolean( Key.ordered ),
 		    arguments.getAsBoolean( Key.virtual )
 		);

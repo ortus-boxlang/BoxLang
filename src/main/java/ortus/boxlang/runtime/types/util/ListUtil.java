@@ -662,7 +662,7 @@ public class ListUtil {
 	    Boolean parallel,
 	    Integer maxThreads,
 	    Boolean ordered,
-	    Boolean virtual ) {
+	    boolean virtual ) {
 
 		// Parameter validation
 		Objects.requireNonNull( array, "Array cannot be null" );
@@ -777,7 +777,7 @@ public class ListUtil {
 	    IBoxContext callbackContext,
 	    Boolean parallel,
 	    Integer maxThreads,
-	    Boolean virtual ) {
+	    boolean virtual ) {
 
 		// Parameter validation
 		Objects.requireNonNull( array, "Array cannot be null" );
@@ -868,7 +868,7 @@ public class ListUtil {
 	    IBoxContext callbackContext,
 	    Boolean parallel,
 	    Integer maxThreads,
-	    Boolean virtual ) {
+	    boolean virtual ) {
 
 		// Parameter validation
 		Objects.requireNonNull( array, "Array cannot be null" );
@@ -963,7 +963,7 @@ public class ListUtil {
 	    IBoxContext callbackContext,
 	    Boolean parallel,
 	    Integer maxThreads,
-	    Boolean virtual ) {
+	    boolean virtual ) {
 
 		// Parameter validation
 		Objects.requireNonNull( array, "Array cannot be null" );
@@ -1129,7 +1129,7 @@ public class ListUtil {
 	    IBoxContext callbackContext,
 	    Boolean parallel,
 	    Integer maxThreads,
-	    Boolean virtual ) {
+	    boolean virtual ) {
 
 		// Parameter validation
 		Objects.requireNonNull( array, "Array cannot be null" );
