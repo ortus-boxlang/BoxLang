@@ -21,6 +21,8 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
+import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -40,7 +42,8 @@ public class StructFilter extends BIF {
 		    new Argument( true, Argument.STRUCT_LOOSE, Key.struct ),
 		    new Argument( true, "function:BiPredicate", Key.callback ),
 		    new Argument( false, Argument.BOOLEAN, Key.parallel, false ),
-		    new Argument( false, Argument.INTEGER, Key.maxThreads )
+		    new Argument( false, Argument.ANY, Key.maxThreads ),
+		    new Argument( false, Argument.BOOLEAN, Key.virtual, false )
 		};
 	}
 
@@ -72,12 +75,22 @@ public class StructFilter extends BIF {
 	 *                      If parallel is false, this argument is ignored.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
+		Object maxThreads = arguments.get( Key.maxThreads );
+		if ( maxThreads instanceof Boolean castBoolean ) {
+			// If maxThreads is a boolean, we assign it to virtual
+			arguments.put( Key.virtual, castBoolean );
+			maxThreads = null;
+		}
+
+		CastAttempt<Integer> maxThreadsAttempt = IntegerCaster.attempt( maxThreads );
+
 		return StructUtil.filter(
 		    arguments.getAsStruct( Key.struct ),
 		    arguments.getAsFunction( Key.callback ),
 		    context,
 		    arguments.getAsBoolean( Key.parallel ),
-		    arguments.getAsInteger( Key.maxThreads )
+		    maxThreadsAttempt.getOrDefault( null ),
+		    arguments.getAsBoolean( Key.virtual )
 		);
 	}
 
