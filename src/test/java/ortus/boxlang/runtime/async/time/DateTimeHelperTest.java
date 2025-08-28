@@ -3,6 +3,7 @@ package ortus.boxlang.runtime.async.time;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.sql.Time;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.concurrent.TimeUnit;
@@ -32,7 +33,7 @@ class DateTimeHelperTest {
 
 		LocalDateTime		result				= DateTimeHelper.dateTimeAdd( LocalDateTime.now(), 1, TimeUnit.HOURS );
 		String				formattedDateTime2	= result.format( formatter );
-		assertThat( result ).isInstanceOf( LocalDateTime.class );
+		assertThat( result ).isInstanceOf( Time.class );
 
 		assertEquals( formattedDateTime1, formattedDateTime2 );
 	}
