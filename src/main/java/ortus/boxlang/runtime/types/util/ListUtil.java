@@ -102,11 +102,6 @@ public class ListUtil {
 	 */
 	public static final Struct	sortDirectives;
 
-	/**
-	 * The async service used for parallel processing of list operations.
-	 */
-	private static AsyncService	asyncService		= BoxRuntime.getInstance().getAsyncService();
-
 	static {
 		sortDirectives = new Struct(
 		    new HashMap<Key, Comparator<Object>>() {
@@ -707,7 +702,7 @@ public class ListUtil {
 				return;
 			}
 
-			ExecutorRecord executor = chooseExecutor( "ArrayEach_", maxThreads, virtual );
+			ExecutorRecord executor = AsyncService.chooseParallelExecutor( "ArrayEach_", maxThreads, virtual );
 			executor.submitAndGet( () -> {
 				if ( ordered ) {
 					arrayStream
@@ -816,7 +811,7 @@ public class ListUtil {
 				    .anyMatch( test );
 			}
 
-			ExecutorRecord executor = chooseExecutor( "ArraySome_", maxThreads, virtual );
+			ExecutorRecord executor = AsyncService.chooseParallelExecutor( "ArraySome_", maxThreads, virtual );
 			return ( Boolean ) executor.submitAndGet( () -> {
 				return arrayStream
 				    .parallel()
@@ -907,7 +902,7 @@ public class ListUtil {
 				    .allMatch( test );
 			}
 
-			ExecutorRecord executor = chooseExecutor( "ArrayEvery_", maxThreads, virtual );
+			ExecutorRecord executor = AsyncService.chooseParallelExecutor( "ArrayEvery_", maxThreads, virtual );
 
 			return ( Boolean ) executor.submitAndGet( () -> {
 				return arrayStream
@@ -1008,7 +1003,7 @@ public class ListUtil {
 				    .collect( BLCollector.toArray( array.getClass() ) );
 			}
 
-			ExecutorRecord executor = chooseExecutor( "ArrayFilter_", maxThreads, virtual );
+			ExecutorRecord executor = AsyncService.chooseParallelExecutor( "ArrayFilter_", maxThreads, virtual );
 
 			return ( Array ) executor.submitAndGet( () -> {
 				return arrayStream
@@ -1174,7 +1169,7 @@ public class ListUtil {
 				    .collect( BLCollector.toArray( array.getClass() ) );
 			}
 
-			ExecutorRecord executor = chooseExecutor( "ArrayMap_", maxThreads, virtual );
+			ExecutorRecord executor = AsyncService.chooseParallelExecutor( "ArrayMap_", maxThreads, virtual );
 
 			return ( Array ) executor.submitAndGet( () -> {
 				return arrayStream
@@ -1256,24 +1251,6 @@ public class ListUtil {
 		        reduction,
 		        ( acc, intermediate ) -> acc );
 
-	}
-
-	/**
-	 * Utility method to choose an executor for parallel processing
-	 * 
-	 * @param maxThreads The maximum number of threads to use ignored if virtual is
-	 *                   requested
-	 * @param virtual    Whether to use virtual threads
-	 */
-	private static ExecutorRecord chooseExecutor( String prefix, int maxThreads, boolean virtual ) {
-		if ( virtual ) {
-			return AsyncService.buildExecutor( prefix + UUID.randomUUID().toString(), AsyncService.ExecutorType.VIRTUAL, 0 );
-		} else {
-			return AsyncService.buildExecutor(
-			    prefix + UUID.randomUUID().toString(),
-			    AsyncService.ExecutorType.FORK_JOIN,
-			    maxThreads );
-		}
 	}
 
 	/**
