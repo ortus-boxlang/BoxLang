@@ -59,7 +59,12 @@ public class ParametersPrinter {
 					contentsDoc.append( " = " );
 					node.getValue().accept( visitor );
 				}
+
+				visitor.helperPrinter.printKeyValueAnnotations( node.getAnnotations(), false );
+
+				visitor.printInsideComments( node, false );
 				visitor.printPostComments( node );
+
 				if ( i < size - 1 ) {
 					contentsDoc.append( "," ).append( Line.LINE );
 				}

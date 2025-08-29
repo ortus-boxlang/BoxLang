@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.compiler.prettyprint;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import ortus.boxlang.compiler.ast.BoxClass;
@@ -60,10 +61,22 @@ public class ClassPrinter {
 		printImports( classNode.getImports() );
 		visitor.printPreComments( classNode );
 
-		// TODO: need to separate pre and inline annotations in AST
-		printBoxAnnotations( classNode.getAnnotations() );
+		// split annotations into pre and post based on whether the source of the annotation starts with `@`
+		var	preAnnotations	= new ArrayList<BoxAnnotation>();
+		var	postAnnotations	= new ArrayList<BoxAnnotation>();
+		for ( var anno : classNode.getAnnotations() ) {
+			if ( anno.getSourceText().startsWith( "@" ) ) {
+				preAnnotations.add( anno );
+			} else {
+				postAnnotations.add( anno );
+			}
+		}
 
-		currentDoc.append( "class {" );
+		printBoxAnnotations( preAnnotations );
+
+		currentDoc.append( "class" );
+		visitor.helperPrinter.printKeyValueAnnotations( postAnnotations, false );
+		currentDoc.append( " {" );
 
 		visitor.pushDoc( DocType.INDENT ).append( Line.HARD );
 		printProperties( classNode.getProperties() );
