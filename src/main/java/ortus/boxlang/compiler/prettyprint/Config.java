@@ -34,6 +34,7 @@ public final class Config {
 	private int		maxLineLength	= 80;
 	private String	newLine			= "os";
 	private boolean	singleQuote		= false;
+	private boolean	bracketPadding	= false;
 
 	public Config() {
 	}
@@ -83,6 +84,15 @@ public final class Config {
 		return this;
 	}
 
+	public boolean getBracketPadding() {
+		return bracketPadding;
+	}
+
+	public Config setBracketPadding( boolean bracketPadding ) {
+		this.bracketPadding = bracketPadding;
+		return this;
+	}
+
 	@SuppressWarnings( "unchecked" )
 	public Config loadFromConfigFile( String filePath ) {
 		Map<String, Object> config = ( Map<String, Object> ) JSONUtil.fromJSON( new File( filePath ) );
@@ -123,6 +133,7 @@ public final class Config {
 		map.put( "maxLineLength", maxLineLength );
 		map.put( "newLine", newLine );
 		map.put( "singleQuote", singleQuote );
+		map.put( "bracketPadding", bracketPadding );
 		return map;
 	}
 
@@ -151,6 +162,9 @@ public final class Config {
 		}
 		if ( config.containsKey( "singleQuote" ) && config.get( "singleQuote" ) instanceof Boolean singleQuote ) {
 			this.singleQuote = singleQuote;
+		}
+		if ( config.containsKey( "bracketPadding" ) && config.get( "bracketPadding" ) instanceof Boolean bracketPadding ) {
+			this.bracketPadding = bracketPadding;
 		}
 	}
 }
