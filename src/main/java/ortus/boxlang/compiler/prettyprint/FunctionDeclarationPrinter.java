@@ -53,7 +53,8 @@ public class FunctionDeclarationPrinter {
 		var	preAnnotations			= new ArrayList<BoxAnnotation>();
 		var	postAnnotations			= new ArrayList<BoxAnnotation>();
 		for ( var anno : node.getAnnotations() ) {
-			if ( anno.getSourceText().startsWith( "@" ) ) {
+			// .getSourceText() _could_ be null, assume pre in that case
+			if ( anno.getSourceText() == null || anno.getSourceText().startsWith( "@" ) ) {
 				preAnnotations.add( anno );
 			} else {
 				postAnnotations.add( anno );
