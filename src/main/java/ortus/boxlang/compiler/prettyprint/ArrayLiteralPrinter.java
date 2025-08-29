@@ -51,12 +51,12 @@ public class ArrayLiteralPrinter {
 				}
 			}
 
-			visitor.printInsideComments( arrayNode, true );
+			visitor.printInsideComments( arrayNode, false );
 
 			arrayDoc.append( visitor.popDoc() );
 			arrayDoc.append( Line.SOFT );
 		} else {
-			visitor.printInsideComments( arrayNode, true );
+			visitor.printInsideComments( arrayNode, false );
 			arrayDoc.append( Line.SOFT );
 		}
 

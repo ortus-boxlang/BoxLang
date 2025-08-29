@@ -59,7 +59,7 @@ public class StructLiteralPrinter {
 					contentsDoc.append( "," ).append( Line.LINE );
 				}
 			}
-			visitor.printInsideComments( structNode, true );
+			visitor.printInsideComments( structNode, false );
 
 			structDoc.append( visitor.popDoc() ).append( Line.SOFT );
 		} else {
@@ -67,7 +67,7 @@ public class StructLiteralPrinter {
 				structDoc.append( ":" );
 
 			}
-			visitor.printInsideComments( structNode, true );
+			visitor.printInsideComments( structNode, false );
 			structDoc.append( Line.SOFT );
 		}
 
