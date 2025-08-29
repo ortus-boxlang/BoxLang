@@ -71,7 +71,8 @@ public class PrettyPrinter {
 		    .setTabIndent( false )
 		    .setMaxLineLength( 100 )
 		    .setSingleQuote( true )
-		    .setBracketPadding( true );
+		    .setBracketPadding( true )
+		    .setParensPadding( true );
 		System.out.println( config.toJSON() );
 		long			configTime	= System.currentTimeMillis();
 

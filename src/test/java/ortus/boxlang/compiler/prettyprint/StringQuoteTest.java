@@ -18,20 +18,24 @@
 package ortus.boxlang.compiler.prettyprint;
 
 import java.io.IOException;
+import java.util.stream.Stream;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class StringQuoteTest extends PrettyPrintTest {
 
-	@Test
-	public void testStringQuotes() throws IOException {
-		// test with double quotes
-		Config config = new Config();
-		printTest( "stringquote", "double", config );
+	@ParameterizedTest( name = "String Quotes: {0}" )
+	@MethodSource( "stringQuoteConfigs" )
+	public void testStringQuotes( String testName, Config config, String expectedSuffix ) throws IOException {
+		printTest( "stringquote", expectedSuffix, config );
+	}
 
-		// test with single quotes
-		config = new Config()
-		    .setSingleQuote( true );
-		printTest( "stringquote", "single", config );
+	static Stream<Arguments> stringQuoteConfigs() {
+		return Stream.of(
+		    Arguments.of( "double quotes", new Config(), "double" ),
+		    Arguments.of( "single quotes", new Config().setSingleQuote( true ), "single" )
+		);
 	}
 }
