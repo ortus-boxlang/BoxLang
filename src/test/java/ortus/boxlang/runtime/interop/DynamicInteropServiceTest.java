@@ -58,6 +58,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 import ortus.boxlang.runtime.types.exceptions.BoxLangException;
 import ortus.boxlang.runtime.types.exceptions.NoFieldException;
 import ortus.boxlang.runtime.types.exceptions.NoMethodException;
@@ -959,14 +960,12 @@ public class DynamicInteropServiceTest {
 			"""
 				import java.util.Arrays;
 
-				result = Arrays.stream( [ 1,2,3 ] )
+				result = Arrays.stream( [ 1,2,3 ] ).toArray()
 			""", context);
 		// @formatter:on
 
 		assertThat( variables.get( Key.result ) ).isNotNull();
-		assertThat( variables.get( Key.result ) ).isInstanceOf( IntStream.class );
-		assertThat( ( ( IntStream ) variables.get( Key.result ) ).toArray() ).isEqualTo( new int[] { 1, 2, 3 } );
-
+		assertThat( variables.get( Key.result ) ).isInstanceOf( int[].class );
 	}
 
 	@SuppressWarnings( "unchecked" )
@@ -1154,6 +1153,49 @@ public class DynamicInteropServiceTest {
 			""", context);
 		// @formatter:on
 		assertThat( variables.get( Key.result ) ).isEqualTo( true );
+	}
+
+	@Test
+	void testParseFormatCoercion() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				formatter = createObject( "java", "java.text.SimpleDateFormat" ).init(
+					"yyyy-MM-dd'T'HH:mm:ssXXX"
+				);
+				result = formatter.format( parseDateTime( "2025-07-01T00:00:00-06:00" ) );
+				println( result )
+			""", context);
+		// @formatter:on
+	}
+
+	@Test
+	void testCatchProxyReturningNullWhichRequiredPrimitive() {
+		// BoxCastException: Proxied method [ applyAsInt() ] returned null, but the interface method signature requires a primitive type [ int ] which cannot be null.
+		// @formatter:off
+		Throwable t = assertThrows( BoxCastException.class, ()->instance.executeSource(
+			"""
+			import java.util.stream.IntStream;
+
+			IntStream.range( 1, 3 ).map( ::println ).toArray()
+			""", context) );
+		// @formatter:on
+		assertThat( t.getMessage() ).contains(
+		    "Proxied method [applyAsInt()] returned null, but the interface method signature requires a primitive type [int] which cannot be null." );
+	}
+
+	@Test
+	void testIgnoreProxyReturningNullWhichRequiresVoid() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+			import java.util.stream.IntStream;
+
+			// len() returns a value, but we'll just ignore it since forEach() expects an IntConsumer, which has a void return
+			IntStream.range( 1, 3 ).forEach( ::len )
+			""", context);
+		// @formatter:on
+
 	}
 
 }

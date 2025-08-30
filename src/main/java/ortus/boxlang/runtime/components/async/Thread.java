@@ -21,6 +21,7 @@ import java.util.Set;
 
 import org.slf4j.Logger;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
@@ -142,6 +143,16 @@ public class Thread extends Component {
 			    StringBuffer buffer		= new StringBuffer();
 			    Throwable	exception	= null;
 			    Logger		logger		= runtime.getLoggingService().ASYNC_LOGGER;
+
+			    RequestBoxContext.setCurrent( tContext );
+			    ClassLoader		oldClassLoader	= java.lang.Thread.currentThread().getContextClassLoader();
+			    RequestBoxContext requestContext = tContext.getRequestContext();
+			    if ( requestContext != null ) {
+				    java.lang.Thread.currentThread().setContextClassLoader( requestContext.getRequestClassLoader() );
+			    } else {
+				    java.lang.Thread.currentThread().setContextClassLoader( BoxRuntime.getInstance().getRuntimeLoader() );
+			    }
+
 			    try {
 				    processBody( tContext, body, buffer );
 			    } catch ( AbortException e ) {
@@ -158,6 +169,9 @@ public class Thread extends Component {
 				        exception,
 				        java.lang.Thread.interrupted()
 				    );
+				    tContext.shutdown();
+				    RequestBoxContext.removeCurrent();
+				    java.lang.Thread.currentThread().setContextClassLoader( oldClassLoader );
 			    }
 		    },
 		    BooleanCaster.cast( attributes.get( Key.virtual ) )

@@ -56,7 +56,6 @@ import ortus.boxlang.runtime.types.meta.GenericMeta;
 import ortus.boxlang.runtime.types.meta.IChangeListener;
 import ortus.boxlang.runtime.types.meta.IListenable;
 import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableArray;
-import ortus.boxlang.runtime.types.util.ListUtil;
 import ortus.boxlang.runtime.util.RegexBuilder;
 
 /**
@@ -103,11 +102,6 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 	 * Serialization ID
 	 */
 	private static final long							serialVersionUID	= 1L;
-
-	/**
-	 * Public property to determine if the parse array contains delimiters
-	 */
-	public boolean										containsDelimiters	= false;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -157,34 +151,6 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 	 * --------------------------------------------------------------------------
 	 * These are mostly builders from other types
 	 */
-
-	/**
-	 * Convert a list to an array, using , as the delimiter, making sure each element is trimmed
-	 *
-	 * @param list The list to convert
-	 *
-	 * @return The array
-	 */
-	public static Array fromString( String list ) {
-		return fromString( list, "," );
-	}
-
-	/**
-	 * Convert a list to an array, making sure each element is trimmed
-	 *
-	 * @param list      The list to convert
-	 * @param delimiter The delimiter to use, comma by default
-	 *
-	 * @return The array
-	 */
-	public static Array fromString( String list, String delimiter ) {
-		if ( delimiter == null ) {
-			delimiter = ",";
-		}
-
-		// Split the string by comma and trim the values
-		return ListUtil.asList( list, delimiter );
-	}
 
 	/**
 	 * Create an Array from a List
@@ -283,26 +249,32 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 	 * --------------------------------------------------------------------------
 	 */
 
+	@Override
 	public int size() {
 		return wrapped.size();
 	}
 
+	@Override
 	public boolean isEmpty() {
 		return wrapped.isEmpty();
 	}
 
+	@Override
 	public boolean contains( Object o ) {
 		return wrapped.contains( o );
 	}
 
+	@Override
 	public Iterator<Object> iterator() {
 		return wrapped.iterator();
 	}
 
+	@Override
 	public Object[] toArray() {
 		return wrapped.toArray();
 	}
 
+	@Override
 	public <T> T[] toArray( T[] a ) {
 		return wrapped.toArray( a );
 	}
@@ -320,18 +292,21 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 		return wrapped;
 	}
 
+	@Override
 	public boolean add( Object e ) {
 		synchronized ( wrapped ) {
 			return wrapped.add( notifyListeners( wrapped.size(), e ) );
 		}
 	}
 
+	@Override
 	public void add( int index, Object element ) {
 		synchronized ( wrapped ) {
 			wrapped.add( index, notifyListeners( index, element ) );
 		}
 	}
 
+	@Override
 	public boolean remove( Object o ) {
 		synchronized ( wrapped ) {
 			ListIterator<Object> iterator = wrapped.listIterator();
@@ -346,10 +321,12 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 		}
 	}
 
+	@Override
 	public boolean containsAll( Collection<?> c ) {
 		return wrapped.containsAll( c );
 	}
 
+	@Override
 	public boolean addAll( Collection<? extends Object> c ) {
 
 		synchronized ( wrapped ) {
@@ -358,6 +335,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 		}
 	}
 
+	@Override
 	public boolean addAll( int index, Collection<? extends Object> c ) {
 		synchronized ( wrapped ) {
 			// TODO: deal with listeners
@@ -365,6 +343,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 		}
 	}
 
+	@Override
 	public boolean removeAll( Collection<?> c ) {
 		// TODO: deal with listeners
 		synchronized ( wrapped ) {
@@ -372,6 +351,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 		}
 	}
 
+	@Override
 	public boolean retainAll( Collection<?> c ) {
 		// TODO: deal with listeners
 		synchronized ( wrapped ) {
@@ -382,6 +362,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 	/**
 	 * Clears the contents contents of the array
 	 */
+	@Override
 	public void clear() {
 		// TODO: deal with listeners
 		synchronized ( wrapped ) {
@@ -392,13 +373,41 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 	/*
 	 * Get the element at the specified index
 	 */
+	@Override
 	public Object get( int index ) {
 		return wrapped.get( index );
+	}
+
+	/*
+	 * Get the element at the specified index wrapped as some sort of data which
+	 * the add() methods can use when re-adding. This allows subclasses of the Array
+	 * such as the DelimitedArray to wrap the data in a delimiter
+	 * 
+	 * @param index The index to get the data from
+	 * 
+	 * @return The data at the specified index
+	 */
+	public Object getData( int index ) {
+		return wrapped.get( index );
+	}
+
+	/**
+	 * Given a new value, copy any additional data from the old value at that index
+	 * This is used by the DelimitedArray to copy the delimiter from the old value
+	 * 
+	 * @param index    The index to copy the data from
+	 * @param newValue The new value to set at the index
+	 * 
+	 * @return The new value to set at the index, possibly modified with additional data
+	 */
+	public Object copyData( int index, Object newValue ) {
+		return newValue;
 	}
 
 	/**
 	 * Set the element at the specified index
 	 */
+	@Override
 	public Object set( int index, Object element ) {
 		return wrapped.set(
 		    index,
@@ -409,6 +418,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 	/**
 	 * Remove an element at a specified index
 	 */
+	@Override
 	public Object remove( int index ) {
 		synchronized ( wrapped ) {
 			ListIterator<Object>	iterator	= wrapped.listIterator();
@@ -429,22 +439,27 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 		return remove( index.intValue() );
 	}
 
+	@Override
 	public int indexOf( Object o ) {
 		return wrapped.indexOf( o );
 	}
 
+	@Override
 	public int lastIndexOf( Object o ) {
 		return wrapped.lastIndexOf( o );
 	}
 
+	@Override
 	public ListIterator<Object> listIterator() {
 		return wrapped.listIterator();
 	}
 
+	@Override
 	public ListIterator<Object> listIterator( int index ) {
 		return wrapped.listIterator( index );
 	}
 
+	@Override
 	public List<Object> subList( int fromIndex, int toIndex ) {
 		return wrapped.subList( fromIndex, toIndex );
 	}
@@ -678,16 +693,8 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 		if ( index < 1 || index > wrapped.size() ) {
 			throw new BoxRuntimeException( "Index [" + index + "] out of bounds for list with " + wrapped.size() + " elements." );
 		}
-
-		if ( containsDelimiters ) {
-			index = index * 2;
-		}
-
 		synchronized ( wrapped ) {
 			remove( index - 1 );
-			if ( containsDelimiters && size() >= index - 1 ) {
-				remove( index - 1 );
-			}
 			notifyListeners( index - 1, null );
 		}
 		return this;
@@ -793,17 +800,6 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 		// Our collector HashMap didn't maintain order so we need to restore it
 		distinct.sort( ( a, b ) -> Compare.invoke( ref.findIndex( a ), ref.findIndex( b ) ) );
 		return distinct;
-	}
-
-	/**
-	 * Flags the array as containing delimiters - which may be used for list re-assembly
-	 *
-	 * @return
-	 */
-	public Array withDelimiters() {
-		containsDelimiters = true;
-		return this;
-
 	}
 
 	/**

@@ -133,6 +133,50 @@ public class ArrayEachTest {
 		assertThat( indexes.size() ).isEqualTo( 3 );
 	}
 
+	@DisplayName( "Iterate in parallel with Virtual threads" )
+	@Test
+	public void testBIFWithParallelAndVirtualThreads() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		    a = ["hello","from","boxlang"];
+		    indexes = [];
+		    a.each( 
+				callback= (element,index,array) => {
+					indexes[index] = element;
+				}, 
+				parallel=true, 
+				virtual=true
+			);
+		    """,
+		    context );
+		// @formatter:on
+		Array indexes = ( Array ) variables.get( Key.of( "indexes" ) );
+		assertThat( indexes.size() ).isEqualTo( 3 );
+	}
+
+	@DisplayName( "Iterate in parallel with Virtual threads using optional boolean as the max threads arg" )
+	@Test
+	public void testBIFWithParallelAndVirtualPositionalMax() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		    a = ["hello","from","boxlang"];
+		    indexes = [];
+		    a.each( 
+				(element,index,array) => {
+					indexes[index] = element;
+				}, 
+				true, 
+				true
+			);
+		    """,
+		    context );
+		// @formatter:on
+		Array indexes = ( Array ) variables.get( Key.of( "indexes" ) );
+		assertThat( indexes.size() ).isEqualTo( 3 );
+	}
+
 	@DisplayName( "It tests defensive coding when the original array is modified" )
 	@Test
 	public void testBIFWithMutation() {

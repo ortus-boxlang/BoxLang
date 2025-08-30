@@ -226,4 +226,64 @@ public class ArrayFilterTest {
 		assertThat( indexes.get( 3 ) ).isEqualTo( 4 );
 		assertThat( indexes.get( 4 ) ).isEqualTo( 5 );
 	}
+
+	@DisplayName( "It should execute the filter in parallel using virtual threads" )
+	@Test
+	public void testParallelVirtualMemberFunction() {
+		instance.executeSource(
+		    """
+		        indexes = [];
+		        nums = [ 1, 2, 3, 4, 5 ];
+
+		        function filterFn( value, i ){
+		            indexes[ i ] = value;
+		            return i != 3 && i != 5;
+		        };
+
+		        result = nums.filter( callback=filterFn, parallel=true, virtual=true );
+		    """,
+		    context );
+		Array resultArray = ( Array ) variables.get( result );
+		assertThat( resultArray.size() ).isEqualTo( 3 );
+		assertThat( resultArray.get( 0 ) ).isEqualTo( 1 );
+		assertThat( resultArray.get( 1 ) ).isEqualTo( 2 );
+		assertThat( resultArray.get( 2 ) ).isEqualTo( 4 );
+		Array indexes = ( Array ) variables.get( Key.of( "indexes" ) );
+		assertThat( indexes.size() ).isEqualTo( 5 );
+		assertThat( indexes.get( 0 ) ).isEqualTo( 1 );
+		assertThat( indexes.get( 1 ) ).isEqualTo( 2 );
+		assertThat( indexes.get( 2 ) ).isEqualTo( 3 );
+		assertThat( indexes.get( 3 ) ).isEqualTo( 4 );
+		assertThat( indexes.get( 4 ) ).isEqualTo( 5 );
+	}
+
+	@DisplayName( "It should execute the filter in parallel using virtual threads and the optional positional virtual arg" )
+	@Test
+	public void testParallelAltVirtualMemberFunction() {
+		instance.executeSource(
+		    """
+		        indexes = [];
+		        nums = [ 1, 2, 3, 4, 5 ];
+
+		        function filterFn( value, i ){
+		            indexes[ i ] = value;
+		            return i != 3 && i != 5;
+		        };
+
+		        result = nums.filter( filterFn, true, true );
+		    """,
+		    context );
+		Array resultArray = ( Array ) variables.get( result );
+		assertThat( resultArray.size() ).isEqualTo( 3 );
+		assertThat( resultArray.get( 0 ) ).isEqualTo( 1 );
+		assertThat( resultArray.get( 1 ) ).isEqualTo( 2 );
+		assertThat( resultArray.get( 2 ) ).isEqualTo( 4 );
+		Array indexes = ( Array ) variables.get( Key.of( "indexes" ) );
+		assertThat( indexes.size() ).isEqualTo( 5 );
+		assertThat( indexes.get( 0 ) ).isEqualTo( 1 );
+		assertThat( indexes.get( 1 ) ).isEqualTo( 2 );
+		assertThat( indexes.get( 2 ) ).isEqualTo( 3 );
+		assertThat( indexes.get( 3 ) ).isEqualTo( 4 );
+		assertThat( indexes.get( 4 ) ).isEqualTo( 5 );
+	}
 }

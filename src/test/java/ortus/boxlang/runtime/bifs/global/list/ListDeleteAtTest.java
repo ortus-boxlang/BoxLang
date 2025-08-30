@@ -94,13 +94,28 @@ public class ListDeleteAtTest {
 		instance.executeSource(
 		    """
 		    path = "/home/user/dir/subdir";
-		    position = listLen( path, "\\/" );
-		    result = listDeleteAt( path, position, "\\/" );
+		    position = listLen( path, "\\/", true );
+		    result = listDeleteAt( path, position, "\\/", true );
 		      """,
 		    context );
-		assertEquals( 4, variables.getAsInteger( Key.position ) );
+		assertEquals( 5, variables.getAsInteger( Key.position ) );
 		assertEquals( "/home/user/dir", variables.getAsString( result ) );
 
+		instance.executeSource(
+		    """
+		    path = "1-2,3:4_5";
+		    result = listDeleteAt( path, 2, "-,:_" );
+		      """,
+		    context );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "1-3:4_5" );
+
+		instance.executeSource(
+		    """
+		    path = "1-and-2-and-3-and-4-and-5";
+		    result = listDeleteAt( path, 2, "-and-", true, true );
+		      """,
+		    context );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "1-and-3-and-4-and-5" );
 	}
 
 	@DisplayName( "It can handle regex characters like periods in delimiter with multi-char on" )

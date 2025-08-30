@@ -55,7 +55,26 @@ If you discover a security vulnerability, please send an email to the developmen
 
 ## Development Setup
 
-We have added all the necessary information for you to develop on BoxLang in our [readme collaboration area](../readme.md#collaboration).
+To develop on BoxLang, you will need the following installed:
+
+- [Java JDK 21+](https://docs.oracle.com/en/java/javase/21/install/)
+- [VS Code](https://code.visualstudio.com/) - or IDE of your choice
+
+Here's a list of shell commands that will set you up:
+
+1. Clone the repository - `git clone git@github.com:ortus-boxlang/BoxLang.git`
+2. Change into the directory - `cd BoxLang`
+3. Build the project, without running tests - `./gradlew build -x test`
+4. Run the tests - `./gradlew test`
+
+To run JDBC tests against real databases, you'll need to set up the dockerized databases via the following:
+
+1. Set up the database secrets - `cp .env.example .env`
+2. Start your database of choice - `docker compose up -d mssql mysql`
+3. Install the boxlang JDBC driver for testing:
+   1. `mkdir -p ~/.boxlang/modules`
+   2. `curl https://s3.amazonaws.com/downloads.ortussolutions.com/ortussolutions/boxlang-modules/bx-mssql/1.4.0/bx-mssql-1.4.0.zip --output ~/.boxlang/modules/bx-mssql.zip`
+   3. `unzip -o ~/.boxlang/modules/bx-mssql.zip -d ~/.boxlang/modules/bx-mssql`
 
 ## Language Compatiblity
 

@@ -119,7 +119,7 @@ public class GeneratedSetter extends UDF {
 	 */
 	public Object _invoke( FunctionBoxContext context ) {
 		context.getScopeNearby( VariablesScope.name ).assign( context, variable, context.getArgumentsScope().get( Key._1 ) );
-		return context.getThisClass();
+		return context.getThisClass().getBottomClass();
 	}
 
 	// ITemplateRunnable implementation methods

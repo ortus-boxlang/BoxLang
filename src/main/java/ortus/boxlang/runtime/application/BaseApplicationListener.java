@@ -358,14 +358,17 @@ public abstract class BaseApplicationListener {
 	 * @return The expanded load paths as URLs
 	 */
 	public URL[] getJavaSettingsLoadPaths( RequestBoxContext requestContext ) {
+		// Get the Application.cfc settings for the current request
+		IStruct				thisSettings			= requestContext.getApplicationListener().getSettings();
+
 		// Get the source location to resolve pathing
-		String				source					= StringCaster.cast( this.settings.get( Key.source ) );
+		String				source					= StringCaster.cast( thisSettings.get( Key.source ) );
 		ResolvedFilePath	listenerResolvedPath	= ResolvedFilePath.of( source );
 
 		// logger.debug( "Listener resolved path: {}", listenerResolvedPath );
 
 		// Get the defined paths, and expand them using BL rules.
-		IStruct				javaSettings			= this.settings.getAsStruct( Key.javaSettings );
+		IStruct				javaSettings			= thisSettings.getAsStruct( Key.javaSettings );
 		Array				loadPaths				= ArrayCaster.cast( javaSettings.getOrDefault( Key.loadPaths, new Array() ) )
 		    .stream()
 		    .map( item -> FileSystemUtil.expandPath( requestContext, ( String ) item, listenerResolvedPath ).absolutePath().toString() )

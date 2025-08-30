@@ -25,6 +25,7 @@ import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class BLCollector {
 
@@ -37,9 +38,26 @@ public class BLCollector {
 	 * @return the populated array
 	 */
 	public static Collector<Object, ?, Array> toArray() {
+		return toArray( Array.class );
+	}
+
+	/**
+	 * Returns a Collector that collects the input elements into an Array of the specified type
+	 * This allows for streams to be collected into a DelimitedArray.
+	 *
+	 * @return the populated array
+	 */
+	public static Collector<Object, ?, Array> toArray( Class<? extends Array> type ) {
 		return Collector.of(
-		    Array::new, // supplier
-		    Array::add, // accumulator
+		    () -> {
+			    try {
+				    // This should never error, but we are forced to catch a host of checked exceptions here
+				    return type.getDeclaredConstructor().newInstance();
+			    } catch ( Exception e ) {
+				    throw new BoxRuntimeException( "Unable to instantiate Array of type: " + type.getName(), e );
+			    }
+		    }, // supplier
+		    ( arr, element ) -> arr.add( element ), // accumulator
 		    ( left, right ) -> {
 			    left.addAll( right );
 			    return left;

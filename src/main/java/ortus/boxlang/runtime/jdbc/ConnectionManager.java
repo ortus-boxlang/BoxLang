@@ -301,7 +301,7 @@ public class ConnectionManager {
 			logger.debug( "Releasing connection {}", connection );
 			connection.close();
 		} catch ( SQLException e ) {
-			throw new BoxRuntimeException( "Error releasing connection: " + e.getMessage(), e );
+			throw new DatabaseException( "Error releasing connection: " + e.getMessage(), e );
 		}
 		return true;
 	}

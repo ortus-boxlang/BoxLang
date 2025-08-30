@@ -22,6 +22,11 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ortus.boxlang.runtime.config.util.PlaceholderHelper;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
+import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
+import ortus.boxlang.runtime.dynamic.casters.LongCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -152,7 +157,9 @@ public class CacheConfig {
 	 */
 
 	/**
-	 * Processes the configuration struct. Each segment is processed individually from the initial configuration struct.
+	 * Processes the configuration struct.
+	 * Each segment is processed individually from the initial configuration struct.
+	 * We cannot do individual casting for each segment, since it can be for ANY cache.
 	 *
 	 * @param config the configuration struct
 	 *
@@ -160,18 +167,18 @@ public class CacheConfig {
 	 */
 	public CacheConfig process( IStruct config ) {
 		// Name
-		if ( config.containsKey( "name" ) ) {
-			this.name = Key.of( ( String ) config.get( "name" ) );
+		if ( config.containsKey( Key._name ) ) {
+			this.name = Key.of( config.getAsString( Key._name ) );
 		}
 
 		// Provider
-		if ( config.containsKey( "provider" ) ) {
-			this.provider = Key.of( ( String ) config.get( "provider" ) );
+		if ( config.containsKey( Key.provider ) ) {
+			this.provider = Key.of( config.getAsString( Key.provider ) );
 		}
 
 		// Properties
-		if ( config.containsKey( "properties" ) ) {
-			if ( config.get( "properties" ) instanceof Map<?, ?> castedProps ) {
+		if ( config.containsKey( Key.properties ) ) {
+			if ( config.get( Key.properties ) instanceof Map<?, ?> castedProps ) {
 				processProperties( new Struct( castedProps ) );
 			} else {
 				logger.warn( "The [runtime.caches.{}.properties] configuration is not a JSON Object, ignoring it.", this.name );
@@ -189,8 +196,44 @@ public class CacheConfig {
 	 * @return the configuration
 	 */
 	public CacheConfig processProperties( IStruct properties ) {
-		// Store
-		this.properties = properties;
+		// Create a new struct to hold the processed properties
+		IStruct resolvedProperties = new Struct();
+
+		// Iterate over the keys in the incoming properties
+		for ( Map.Entry<Key, Object> entry : properties.entrySet() ) {
+			Key		key					= entry.getKey();
+			Object	incomingValue		= entry.getValue();
+
+			// Resolve placeholders for the incoming value.
+			String	resolvedStringValue	= PlaceholderHelper.resolve( incomingValue.toString() );
+
+			// Get the default value for this key to determine the expected type
+			Object	defaultValue		= DEFAULTS.get( key );
+			if ( defaultValue != null ) {
+				// Get the class of the default value
+				Class<?>	defaultType	= defaultValue.getClass();
+
+				// Dynamically cast the resolved value to the correct type
+				Object		finalValue	= resolvedStringValue;
+				if ( defaultType.equals( Integer.class ) ) {
+					finalValue = IntegerCaster.cast( resolvedStringValue );
+				} else if ( defaultType.equals( Boolean.class ) ) {
+					finalValue = BooleanCaster.cast( resolvedStringValue );
+				} else if ( defaultType.equals( Long.class ) ) {
+					finalValue = LongCaster.cast( resolvedStringValue );
+				} else if ( defaultType.equals( Double.class ) ) {
+					finalValue = DoubleCaster.cast( resolvedStringValue );
+				}
+
+				// Put the final, casted value into the new struct
+				resolvedProperties.put( key, finalValue );
+			} else {
+				// If the key is not in DEFAULTS, store the resolved string value
+				resolvedProperties.put( key, resolvedStringValue );
+			}
+		}
+
+		this.properties = resolvedProperties;
 
 		// Merge defaults if it's a BoxLang cache
 		if ( this.provider.equals( Key.boxCacheProvider ) ) {
@@ -205,7 +248,7 @@ public class CacheConfig {
 
 	/**
 	 * Returns the configuration as a struct
-	 * * Remember that this is what the context's use to build runtime/request configs, so don't use any references
+	 * Remember that this is what the context's use to build runtime/request configs, so don't use any references
 	 */
 	public IStruct toStruct() {
 		return Struct.of(

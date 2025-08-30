@@ -17,14 +17,15 @@
  */
 package ortus.boxlang.runtime.services;
 
-import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.UUID;
 
 import org.slf4j.Logger;
 
@@ -545,6 +546,24 @@ public class AsyncService extends BaseService {
 			}
 		}
 		return executorRecord;
+	}
+
+	/**
+	 * Utility method to choose an executor for parallel processing
+	 * 
+	 * @param maxThreads The maximum number of threads to use ignored if virtual is
+	 *                   requested
+	 * @param virtual    Whether to use virtual threads
+	 */
+	public static ExecutorRecord chooseParallelExecutor( String prefix, int maxThreads, boolean virtual ) {
+		if ( virtual ) {
+			return AsyncService.buildExecutor( prefix + UUID.randomUUID().toString(), AsyncService.ExecutorType.VIRTUAL, 0 );
+		} else {
+			return AsyncService.buildExecutor(
+			    prefix + UUID.randomUUID().toString(),
+			    AsyncService.ExecutorType.FORK_JOIN,
+			    maxThreads );
+		}
 	}
 
 }

@@ -694,4 +694,35 @@ public class QoQParseTest {
 		assertThat( data.get( Key.of( "name" ) ) ).isEqualTo( "Brad" );
 	}
 
+	@Test
+	public void testSQLParenthenticalPredicate() {
+		instance.executeSource(
+		    """
+		    qryEmployees = queryNew(
+		    	"name,age,dept,supervisor",
+		    	"varchar,integer,varchar,varchar",
+		    	[
+		    		["luis",43,"Exec","luis"],
+		    		["brad",44,"IT","luis"],
+		    		["jacob",35,"IT","luis"],
+		    		["Jon",45,"HR","luis"]
+		    	]
+		    )
+
+		    result = queryExecute( "
+		    		select *
+		    		from qryEmployees
+		    		where ( age > 40 )
+		    	",
+		    	[],
+		    	{ dbType : "query" }
+		    	);
+		    println( result )
+		           """,
+		    context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.get( result ) ).isInstanceOf( ortus.boxlang.runtime.types.Query.class );
+		ortus.boxlang.runtime.types.Query query = variables.getAsQuery( result );
+		assertEquals( 3, query.size() );
+	}
+
 }

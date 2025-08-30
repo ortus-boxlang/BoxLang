@@ -61,6 +61,27 @@ public class RunThreadInContextTest {
 	}
 
 	@Test
+	public void testCanRunCodeInContextWithContextClassloader() {
+		instance.executeSource(
+		    """
+		    	import java.lang.Thread;
+
+		    	rcl = getBoxContext().getRequestContext().getRequestClassLoader();
+		    	t = new Thread( ()=> {
+		    		runThreadInContext( context=getBoxContext(), callback=()=>{
+		    			println( "running in context")
+		    			variables.threadCL = Thread.currentThread().getContextClassLoader();
+		    		})
+		    	});
+		    	t.start()
+		    	t.join();
+		    	result = rcl.equals( variables.threadCL );
+		    """,
+		    context );
+		assert ( variables.get( result ).equals( true ) );
+	}
+
+	@Test
 	public void testCanRunCodeInContextReturnResult() {
 		instance.executeSource(
 		    """

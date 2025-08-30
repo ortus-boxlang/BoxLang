@@ -140,7 +140,7 @@ public class CreateDynamicProxyTest {
 		        context ) );
 		// @formatter:on
 
-		assertThat( e.getCause().getMessage() ).contains( "could not be coerced" );
+		assertThat( e.getMessage() ).contains( "could not be coerced" );
 	}
 
 }

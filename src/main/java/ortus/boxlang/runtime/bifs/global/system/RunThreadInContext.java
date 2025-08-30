@@ -14,6 +14,7 @@
  */
 package ortus.boxlang.runtime.bifs.global.system;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -93,11 +94,20 @@ public class RunThreadInContext extends BIF {
 		}
 
 		RequestBoxContext.setCurrent( newContext );
+		ClassLoader			oldClassLoader	= Thread.currentThread().getContextClassLoader();
+		RequestBoxContext	requestContext	= newContext.getRequestContext();
+		if ( requestContext != null ) {
+			Thread.currentThread().setContextClassLoader( requestContext.getRequestClassLoader() );
+		} else {
+			Thread.currentThread().setContextClassLoader( BoxRuntime.getInstance().getRuntimeLoader() );
+		}
+
 		try {
 			return newContext.invokeFunction( callback );
 		} finally {
 			RequestBoxContext.removeCurrent();
 			newContext.shutdown();
+			Thread.currentThread().setContextClassLoader( oldClassLoader );
 		}
 	}
 }

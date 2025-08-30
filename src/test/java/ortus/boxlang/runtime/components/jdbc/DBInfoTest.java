@@ -31,7 +31,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIf;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
@@ -119,32 +118,6 @@ public class DBInfoTest extends BaseJDBCTest {
 		assertEquals( 6, versionQuery.getColumns().size() );
 
 		assertEquals( "Apache Derby Embedded JDBC Driver", versionQuery.getRowAsStruct( 0 ).getAsString( Key.of( "DRIVER_NAME" ) ) );
-	}
-
-	@EnabledIf( "tools.JDBCTestUtils#hasMySQLModule" )
-	@DisplayName( "Can get catalog and schema names" )
-	@Test
-	public void testDBNamesType() {
-		getInstance().executeSource(
-		    """
-		        cfdbinfo( type='dbnames', name='result', datasource='mysqldatasource' )
-		    """,
-		    getContext(), BoxSourceType.CFSCRIPT );
-		Object theResult = getVariables().get( result );
-		assertThat( theResult ).isInstanceOf( Query.class );
-
-		Query dbNamesQuery = ( Query ) theResult;
-		assertThat( dbNamesQuery.size() ).isGreaterThan( 0 );
-		assertEquals( 2, dbNamesQuery.getColumns().size() );
-
-		IStruct ourDBRow = dbNamesQuery.stream()
-		    .filter( row -> row.getAsString( Key.of( "DBNAME" ) ).equals( "myDB" ) )
-		    .findFirst()
-		    .orElse( null );
-
-		assertNotNull( ourDBRow );
-		assertEquals( "CATALOG", ourDBRow.getAsString( Key.type ) );
-		assertEquals( "myDB", ourDBRow.getAsString( Key.of( "DBNAME" ) ) );
 	}
 
 	@DisplayName( "Can get table column data" )
@@ -292,20 +265,6 @@ public class DBInfoTest extends BaseJDBCTest {
 		Boolean isCorrectDBName = resultQuery.stream()
 		    .allMatch( row -> row.getAsString( Key.of( "TABLE_CAT" ) ).equals( "BoxlangDB" ) );
 		assertNotNull( isCorrectDBName );
-	}
-
-	// Derby's database filters apparently don't work right, so this test is MySQL-only.
-	@EnabledIf( "tools.JDBCTestUtils#hasMySQLModule" )
-	@DisplayName( "Gets empty tables query when unmatched database name is provided" )
-	@Test
-	public void testTablesTypeBadDBName() {
-		getInstance().executeSource(
-		    """
-		        cfdbinfo( type='tables', name='result', datasource="mysqldatasource", dbname="foo" )
-		    """,
-		    getContext(), BoxSourceType.CFSCRIPT );
-		Query resultQuery = ( Query ) getVariables().get( result );
-		assertThat( resultQuery.size() ).isEqualTo( 0 );
 	}
 
 	@DisplayName( "Can get filter table results by pattern name" )

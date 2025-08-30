@@ -518,7 +518,7 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 			if ( this.threadManager != null ) {
 				return this.threadManager;
 			}
-			this.threadManager = new RequestThreadManager();
+			this.threadManager = new RequestThreadManager( this );
 		}
 		return this.threadManager;
 	}
@@ -681,7 +681,8 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	 * @return The result of the runnable
 	 */
 	public static Object runInContext( IBoxContext parent, java.util.function.Function<IBoxContext, Object> runnable ) {
-		IBoxContext currentContext = RequestBoxContext.getCurrent();
+		IBoxContext	currentContext	= RequestBoxContext.getCurrent();
+		ClassLoader	oldClassLoader	= Thread.currentThread().getContextClassLoader();
 		if ( currentContext == null ) {
 			RequestBoxContext	context			= null;
 			boolean				shutdownContext	= false;
@@ -698,6 +699,7 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 			}
 
 			try {
+				Thread.currentThread().setContextClassLoader( context.getRequestClassLoader() );
 				RequestBoxContext.setCurrent( context );
 				return runnable.apply( context );
 			} finally {
@@ -705,9 +707,20 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 				if ( shutdownContext ) {
 					context.shutdown();
 				}
+				Thread.currentThread().setContextClassLoader( oldClassLoader );
 			}
 		} else {
-			return runnable.apply( currentContext );
+			RequestBoxContext requestContext = currentContext.getRequestContext();
+			if ( requestContext != null ) {
+				Thread.currentThread().setContextClassLoader( requestContext.getRequestClassLoader() );
+			} else {
+				Thread.currentThread().setContextClassLoader( BoxRuntime.getInstance().getRuntimeLoader() );
+			}
+			try {
+				return runnable.apply( currentContext );
+			} finally {
+				Thread.currentThread().setContextClassLoader( oldClassLoader );
+			}
 		}
 	}
 

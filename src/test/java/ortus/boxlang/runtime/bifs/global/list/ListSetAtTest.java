@@ -118,6 +118,7 @@ public class ListSetAtTest {
 		assertThat( updated.size() ).isEqualTo( 5 );
 		assertEquals( updated.getAt( 2 ), "6" );
 		assertEquals( updated.getAt( 3 ), "3" );
+
 		instance.executeSource(
 		    """
 		        nums = "1|2||3|4|5";
@@ -127,6 +128,22 @@ public class ListSetAtTest {
 		updated = ListUtil.asList( variables.getAsString( result ), "|", true, true );
 		assertThat( updated.size() ).isEqualTo( 6 );
 		assertEquals( updated.getAt( 2 ), "6" );
+
+		instance.executeSource(
+		    """
+		        nums = "1,2|3:4-5";
+		        result = nums.listSetAt( 2, 6, ",|:-" );
+		    """,
+		    context );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "1,6|3:4-5" );
+
+		instance.executeSource(
+		    """
+		        nums = "1-and-2-and-3-and-4-and-5";
+		        result = nums.listSetAt( 2, 6, "-and-", true, true );
+		    """,
+		    context );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "1-and-6-and-3-and-4-and-5" );
 	}
 
 }

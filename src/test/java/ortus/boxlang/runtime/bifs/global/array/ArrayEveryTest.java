@@ -198,4 +198,55 @@ public class ArrayEveryTest {
 
 		assertThat( variables.get( result ) ).isEqualTo( true );
 	}
+
+	@DisplayName( "It can run in parallel with virtual threads" )
+	@Test
+	public void testRunInParallelWithVirtualThreads() {
+		instance.executeSource(
+		    """
+		          indexes = [];
+		          nums = [ 1, 2, 3, 4, 5 ];
+
+		          function eachFn( value, i ){
+		              indexes[ i ] = value;
+		              return true;
+		          };
+
+		          result = ArrayEvery(
+		    	array = nums,
+		    	callback = eachFn,
+		    	parallel = true,
+		    	virtual = true
+		    );
+		      """,
+		    context );
+
+		assertThat( variables.get( result ) ).isEqualTo( true );
+	}
+
+	@DisplayName( "It can run in parallel with virtual threads using the alt positional max" )
+	@Test
+	public void testRunInParallelWithVirtualThreadsAndAltMax() {
+		//@formatter:off
+		instance.executeSource(
+		    """
+			indexes = [];
+			nums = [ 1, 2, 3, 4, 5 ];
+
+			function eachFn( value, i ){
+				indexes[ i ] = value;
+				return true;
+			};
+
+			result = ArrayEvery(
+		    	nums,
+		    	eachFn,
+		    	true,
+		    	true
+		    );
+		      """,
+		    context );
+		//@formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( true );
+	}
 }

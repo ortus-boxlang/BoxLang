@@ -1,0 +1,5 @@
+
+	function doSomething() {
+		super.doSomething();
+		println( "from child" );
+	}

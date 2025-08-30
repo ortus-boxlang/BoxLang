@@ -21,6 +21,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
 import ortus.boxlang.compiler.parser.BoxSourceType;
@@ -58,6 +59,29 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	 * Properties
 	 * --------------------------------------------------------------------------
 	 */
+
+	/**
+	 * In legacy function meta structs, don't allow ad-hoc annotations or doc comments to override these top level keys
+	 */
+	public static final Set<Key>	legacyMetaFunctionReservedAnnotations	= Set.of(
+	    Key.returnType,
+	    Key.access,
+	    Key.parameters,
+	    Key.closure,
+	    Key.ANONYMOUSCLOSURE,
+	    Key.lambda,
+	    Key.ANONYMOUSLAMBDA
+	);
+
+	/**
+	 * In legacy argument meta structs, don't allow ad-hoc annotations or doc comments to override these top level keys
+	 */
+	public static final Set<Key>	legacyMetaArgumentReservedAnnotations	= Set.of(
+	    Key._NAME,
+	    Key.required,
+	    Key.type,
+	    Key.defaultValue
+	);
 
 	/**
 	 * The supported access levels of the function
@@ -441,10 +465,18 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	public IStruct getMetaData() {
 		IStruct meta = new Struct( IStruct.TYPES.LINKED );
 		if ( getDocumentation() != null ) {
-			meta.putAll( getDocumentation() );
+			getDocumentation().forEach( ( k, v ) -> {
+				if ( !legacyMetaFunctionReservedAnnotations.contains( k ) ) {
+					meta.put( k, v );
+				}
+			} );
 		}
 		if ( getAnnotations() != null ) {
-			meta.putAll( getAnnotations() );
+			getAnnotations().forEach( ( k, v ) -> {
+				if ( !legacyMetaFunctionReservedAnnotations.contains( k ) ) {
+					meta.put( k, v );
+				}
+			} );
 		}
 		meta.put( Key._NAME, getName().getName() );
 		meta.put( Key.returnType, getReturnType() );
@@ -460,10 +492,18 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 			arg.put( Key.type, argument.type() );
 			arg.put( Key._DEFAULT, argument.defaultValue() );
 			if ( argument.documentation() != null ) {
-				arg.putAll( argument.documentation() );
+				argument.documentation().forEach( ( k, v ) -> {
+					if ( !legacyMetaArgumentReservedAnnotations.contains( k ) ) {
+						arg.put( k, v );
+					}
+				} );
 			}
 			if ( argument.annotations() != null ) {
-				arg.putAll( argument.annotations() );
+				argument.annotations().forEach( ( k, v ) -> {
+					if ( !legacyMetaArgumentReservedAnnotations.contains( k ) ) {
+						arg.put( k, v );
+					}
+				} );
 			}
 			// Always have this key present?
 			arg.putIfAbsent( Key.hint, "" );

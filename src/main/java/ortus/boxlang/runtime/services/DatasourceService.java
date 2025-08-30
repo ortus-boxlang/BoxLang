@@ -102,7 +102,7 @@ public class DatasourceService extends BaseService {
 
 		// Announce it
 		announce(
-		    BoxEvent.ON_DATASOURCE_SERVCE_STARTUP,
+		    BoxEvent.ON_DATASOURCE_SERVICE_STARTUP,
 		    Struct.of( "DatasourceService", this )
 		);
 

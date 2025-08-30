@@ -30,7 +30,6 @@ import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
-import ortus.boxlang.runtime.util.RequestThreadManager;
 
 /**
  * This is a BoxLang proxy class for functional interfaces so we can use them in BoxLang
@@ -62,11 +61,6 @@ public abstract class BaseProxy {
 	 * The logger for this proxy.
 	 */
 	protected BoxLangLogger			logger;
-
-	/**
-	 * The thread manager for this proxy.
-	 */
-	protected RequestThreadManager	threadManager;
 
 	/**
 	 * A set of public methods from java.lang.Object that we need to handle specially
@@ -118,10 +112,9 @@ public abstract class BaseProxy {
 			this.defaultMethod = Key.run;
 		}
 
-		this.context		= context;
-		this.appContext		= context.getParentOfType( ApplicationBoxContext.class );
-		this.threadManager	= new RequestThreadManager();
-		this.logger			= BoxRuntime.getInstance().getLoggingService().getRuntimeLogger();
+		this.context	= context;
+		this.appContext	= context.getParentOfType( ApplicationBoxContext.class );
+		this.logger		= BoxRuntime.getInstance().getLoggingService().getRuntimeLogger();
 	}
 
 	/**
@@ -283,19 +276,4 @@ public abstract class BaseProxy {
 		return getCurrentThread().getName().startsWith( "ForkJoinPool" );
 	}
 
-	/**
-	 * Get the thread manager for the proxy
-	 *
-	 * @return The thread manager
-	 */
-	protected RequestThreadManager getThreadManager() {
-		return this.threadManager;
-	}
-
-	/**
-	 * Are we in a thread
-	 */
-	protected boolean isInThread() {
-		return this.threadManager.isInThread();
-	}
 }

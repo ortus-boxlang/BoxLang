@@ -70,13 +70,13 @@ public class ListAppend extends BIF {
 		Boolean	isMultiChar	= arguments.getAsBoolean( Key.multiCharacterDelimiter );
 		String	delimiter	= arguments.getAsString( Key.delimiter );
 		return ListUtil.asString(
-		    ListUtil.asList(
+		    ListUtil.asDelimitedList(
 		        arguments.getAsString( Key.list ),
 		        arguments.getAsString( Key.delimiter ),
 		        arguments.getAsBoolean( Key.includeEmptyFields ),
 		        isMultiChar
-		    ).push( arguments.getAsString( Key.value ) ),
-		    isMultiChar ? delimiter : delimiter.substring( 0, 1 )
+		    ).withDelimiter( delimiter, isMultiChar ).push( arguments.getAsString( Key.value ) ),
+		    delimiter
 		);
 	}
 

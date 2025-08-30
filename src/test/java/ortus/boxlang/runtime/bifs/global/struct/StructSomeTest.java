@@ -179,6 +179,29 @@ public class StructSomeTest {
 		assertTrue( variables.getAsBoolean( result ) );
 	}
 
+	@DisplayName( "It can run in parallel with virtual threads" )
+	@Test
+	public void testParallelExecutionWithVirtualThreads() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		    ref = {
+		    	"foo" : "bar",
+		    	"bar" : 1,
+		    	"blah" : "blerg"
+		    };
+
+		       function eachFn( key, value, struct ){
+		    		return value == "blerg";
+		       };
+
+		       result = StructSome( ref, eachFn, true, true );
+		    """,
+		    context );
+		// @formatter:on
+		assertTrue( variables.getAsBoolean( result ) );
+	}
+
 	@DisplayName( "It can run with no matches" )
 	@Test
 	public void testNoMatches() {

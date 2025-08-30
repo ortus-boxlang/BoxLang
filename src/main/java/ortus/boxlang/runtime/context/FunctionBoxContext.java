@@ -254,9 +254,15 @@ public class FunctionBoxContext extends BaseBoxContext {
 		if ( nearby && ( key.equals( ArgumentsScope.name ) || key.equals( LocalScope.name ) ) ) {
 			return true;
 		}
-		if ( isInClass() && ( key.equals( VariablesScope.name ) || key.equals( StaticScope.name ) ) ) {
-			return true;
+		if ( isInClass() ) {
+			if ( key.equals( VariablesScope.name ) || key.equals( StaticScope.name ) || key.equals( ThisScope.name ) ) {
+				return true;
+			}
+			if ( key.equals( Key._super ) && ( getThisClass().getSuper() != null || getThisClass().isJavaExtends() ) ) {
+				return true;
+			}
 		}
+
 		return super.isKeyVisibleScope( key, true && nearby, shallow );
 	}
 
@@ -402,7 +408,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 */
 	protected ScopeSearchResult scopeFindSuper( Key key ) {
 		// Look in the "super" scope next
-		if ( key.equals( Key._super ) && getThisClass() != null ) {
+		if ( key.equals( Key._super ) && isInClass() ) {
 			if ( getThisClass().getSuper() != null ) {
 				return new ScopeSearchResult( getThisClass().getSuper(), getThisClass().getSuper(), key, true );
 			} else if ( getThisClass().isJavaExtends() ) {

@@ -72,7 +72,7 @@ public record ExecutorRecord(
 	public void shutdownQuiet() {
 		if ( executor == null )
 			return;
-		getLogger().debug( "Executor ({}) shutting down quiet", this.name );
+		getLogger().trace( "Executor ({}) shutting down quiet", this.name );
 		this.executor.shutdown();
 	}
 
@@ -92,7 +92,7 @@ public record ExecutorRecord(
 		// Disable new tasks from being submitted
 		this.executor.shutdown();
 		try {
-			getLogger().debug( "Executor ({}) shutdown executed, waiting for tasks to finalize...", this.name );
+			getLogger().trace( "Executor ({}) shutdown executed, waiting for tasks to finalize...", this.name );
 
 			// Wait for tasks to terminate
 			if ( !this.executor.awaitTermination( timeout, unit ) ) {
@@ -101,14 +101,14 @@ public record ExecutorRecord(
 				// Cancel all tasks forcibly
 				List<Runnable> taskList = this.executor.shutdownNow();
 
-				getLogger().debug( "Tasks waiting execution on executor ({}) -> tasks({})", this.name, taskList.size() );
+				getLogger().trace( "Tasks waiting execution on executor ({}) -> tasks({})", this.name, taskList.size() );
 
 				// Wait again now forcibly
 				if ( !this.executor.awaitTermination( timeout, unit ) ) {
 					getLogger().error( "Executor ({}) did not terminate even gracefully :(", this.name );
 				}
 			} else {
-				getLogger().debug( "Executor ({}) shutdown complete", this.name );
+				getLogger().trace( "Executor ({}) shutdown complete", this.name );
 			}
 		}
 		// Catch if exceptions or interrupted

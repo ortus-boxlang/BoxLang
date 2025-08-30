@@ -23,13 +23,13 @@ import tools.JDBCTestUtils;
 
 public class BaseJDBCTest {
 
-	static BoxRuntime						instance;
-	protected ScriptingRequestBoxContext	context;
-	IScope									variables;
-	static DataSource						datasource;
-	static DataSource						mssqlDatasource;
-	static DataSource						mysqlDatasource;
-	static DatasourceService				datasourceService;
+	public static BoxRuntime			instance;
+	public ScriptingRequestBoxContext	context;
+	public IScope						variables;
+	public static DataSource			datasource;
+	public static DataSource			mssqlDatasource;
+	public static DataSource			mysqlDatasource;
+	public static DatasourceService		datasourceService;
 
 	@BeforeAll
 	public static void setUp() {
@@ -38,7 +38,27 @@ public class BaseJDBCTest {
 		datasourceService = instance.getDataSourceService();
 		String uniqueName = UUID.randomUUID().toString();
 		datasource = JDBCTestUtils.constructTestDataSource( uniqueName, setUpContext );
-		datasourceService.register( Key.of( uniqueName ), datasource );
+		Key datasourceKey = Key.of( uniqueName );
+		datasourceService.register( datasourceKey, datasource );
+		instance.getConfiguration().datasources.put(
+		    datasourceKey,
+		    datasource.getConfiguration()
+		);
+		try {
+			datasource.execute( "DROP TABLE generatedKeyTest", setUpContext );
+		} catch ( DatabaseException ignored ) {
+		}
+		try {
+			// @formatter:off
+			datasource.execute( """
+				CREATE TABLE generatedKeyTest(
+					id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1),
+					name VARCHAR(155)
+				)
+			""", setUpContext );
+			// @formatter:on
+		} catch ( DatabaseException ignored ) {
+		}
 
 		if ( JDBCTestUtils.hasMSSQLModule() ) {
 			// Register a MSSQL datasource for later use
@@ -57,6 +77,7 @@ public class BaseJDBCTest {
 			);
 			datasourceService.register( mssqlName, mssqlDatasource );
 			JDBCTestUtils.ensureTestTableExists( mssqlDatasource, setUpContext );
+			JDBCTestUtils.resetDevelopersTable( mssqlDatasource, setUpContext );
 
 			try {
 				mssqlDatasource.execute( "DROP TABLE generatedKeyTest", setUpContext );
@@ -94,6 +115,15 @@ public class BaseJDBCTest {
 			);
 			datasourceService.register( mysqlName, mysqlDatasource );
 			JDBCTestUtils.ensureTestTableExists( mysqlDatasource, setUpContext );
+			JDBCTestUtils.resetDevelopersTable( mysqlDatasource, setUpContext );
+			try {
+				mysqlDatasource.execute( "DROP TABLE generatedKeyTest", setUpContext );
+			} catch ( DatabaseException ignored ) {
+			}
+			try {
+				mysqlDatasource.execute( "CREATE TABLE generatedKeyTest( id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(155))", setUpContext );
+			} catch ( DatabaseException ignored ) {
+			}
 		}
 	}
 

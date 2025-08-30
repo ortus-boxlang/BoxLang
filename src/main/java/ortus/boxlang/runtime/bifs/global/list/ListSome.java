@@ -43,7 +43,8 @@ public class ListSome extends ArraySome {
 		    new Argument( false, Argument.BOOLEAN, Key.includeEmptyFields, false ),
 		    new Argument( false, Argument.BOOLEAN, Key.multiCharacterDelimiter, false ),
 		    new Argument( false, Argument.BOOLEAN, Key.parallel, false ),
-		    new Argument( false, Argument.INTEGER, Key.maxThreads )
+		    new Argument( false, Argument.INTEGER, Key.maxThreads ),
+		    new Argument( false, Argument.BOOLEAN, Key.virtual, false )
 		};
 	}
 
@@ -76,7 +77,9 @@ public class ListSome extends ArraySome {
 	 * @argument.parallel Whether to run the filter in parallel. Defaults to false. If true, the filter will be run in parallel using a ForkJoinPool.
 	 *
 	 * @argument.maxThreads The maximum number of threads to use when running the filter in parallel. If not passed it will use the default number of threads for the ForkJoinPool.
-	 *                      If parallel is false, this argument is ignored.
+	 *                      If parallel is false, this argument is ignored. If a boolean is provided it will be assigned to the virtual argument instead.
+	 * 
+	 * @argument.virtual ( BoxLang only) If true, the function will be invoked using virtual threads. Defaults to false. Ignored if parallel is false.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		arguments.put(

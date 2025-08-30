@@ -137,7 +137,7 @@ public class ApplicationTest {
 		    """
 				import java.lang.Thread;
 
-		        bx:application name="myJavaApp" javaSettings={
+		        bx:application name="myJavaApp1" javaSettings={
 					loadPaths = [ "/src/test/resources/libs" ],
 					reloadOnChange = true
 				 };
@@ -159,7 +159,7 @@ public class ApplicationTest {
 
 		// ClassLoader newClassLoader = ( ClassLoader ) variables.get( result );
 		// assertThat( newClassLoader ).isNotEqualTo( currentClassLoader );
-		// assertThat( newClassLoader.getName() ).isEqualTo( "myJavaApp" );
+		// assertThat( newClassLoader.getName() ).isEqualTo( "myJavaApp1" );
 	}
 
 	@DisplayName( "Ad-hoc config override" )
@@ -184,7 +184,7 @@ public class ApplicationTest {
 		// @formatter:off
 		instance.executeSource(
 		    """
-		        bx:application name="myJavaApp" javaSettings={
+		        bx:application name="myJavaApp2" javaSettings={
 					loadPaths = [ "/src/test/resources/libs/helloworld.jar" ],
 					reloadOnChange = true
 				 };
@@ -202,7 +202,7 @@ public class ApplicationTest {
 		// @formatter:off
 		instance.executeSource(
 		    """
-		        bx:application name="myJavaApp" javaSettings={
+		        bx:application name="myJavaApp3" javaSettings={
 					loadPaths = [ "\\src\\test\\resources\\libs\\helloworld.jar" ],
 					reloadOnChange = true
 				 };
@@ -229,7 +229,7 @@ public class ApplicationTest {
 		// @formatter:off
 		instance.executeSource(
 		    """
-		        bx:application name="myJavaApp" javaSettings={
+		        bx:application name="myJavaApp4" javaSettings={
 					loadPaths = [ "libs/helloworld.jar" ],
 					reloadOnChange = true
 				 };

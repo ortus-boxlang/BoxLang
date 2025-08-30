@@ -145,6 +145,9 @@ public class StringUtil {
 	 * @return The prettified sql
 	 */
 	public static String prettySql( String target ) {
+		if ( target == null || target.isBlank() ) {
+			return "";
+		}
 		return target.lines()
 		    // trim it
 		    .map( String::trim )

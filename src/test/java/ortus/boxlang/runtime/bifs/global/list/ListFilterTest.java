@@ -115,6 +115,44 @@ public class ListFilterTest {
 		assertThat( indexes.get( 4 ) ).isEqualTo( 5 );
 	}
 
+	@DisplayName( "It can filter using a multi delimiter argument" )
+	@Test
+	public void testMultiDelimiter() {
+		instance.executeSource(
+		    """
+		        indexes = [];
+		        nums = "1,2|3:4-5";
+
+		        function filterFn( value, i ){
+		            indexes[ i ] = javacast( "integer", value );
+		            return i != "3" && i != "5";
+		        };
+
+		        result = ListFilter( nums, filterFn, ",|:-" );
+		    """,
+		    context );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "1,2:4" );
+	}
+
+	@DisplayName( "It can filter using a multi delimiter argument whole" )
+	@Test
+	public void testMultiDelimiterWhole() {
+		instance.executeSource(
+		    """
+		        indexes = [];
+		        nums = "1-and-2-and-3-and-4-and-5";
+
+		        function filterFn( value, i ){
+		            indexes[ i ] = javacast( "integer", value );
+		            return i != "3" && i != "5";
+		        };
+
+		        result = ListFilter( nums, filterFn, "-and-", true, true );
+		    """,
+		    context );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "1-and-2-and-4" );
+	}
+
 	@DisplayName( "It should remove values that the UDF returns false for" )
 	@Test
 	public void testRemovesFalseValues() {
@@ -220,6 +258,67 @@ public class ListFilterTest {
 
 		        result = nums.listFilter( filter=filterFn, parallel=true, maxThreads=5 );
 		    """,
+		    context );
+		Array resultArray = ListUtil.asList( variables.getAsString( result ), ",", false, false );
+		assertThat( resultArray.size() ).isEqualTo( 3 );
+		assertThat( resultArray.get( 0 ) ).isEqualTo( "1" );
+		assertThat( resultArray.get( 1 ) ).isEqualTo( "2" );
+		assertThat( resultArray.get( 2 ) ).isEqualTo( "4" );
+		Array indexes = ( Array ) variables.get( Key.of( "indexes" ) );
+		assertThat( indexes.size() ).isEqualTo( 5 );
+		assertThat( indexes.get( 0 ) ).isEqualTo( 1 );
+		assertThat( indexes.get( 1 ) ).isEqualTo( 2 );
+		assertThat( indexes.get( 2 ) ).isEqualTo( 3 );
+		assertThat( indexes.get( 3 ) ).isEqualTo( 4 );
+		assertThat( indexes.get( 4 ) ).isEqualTo( 5 );
+	}
+
+	@DisplayName( "It should execute the filter in parallel with threads" )
+	@Test
+	public void testParallelVirtualThreadMemberFunction() {
+		instance.executeSource(
+		    """
+		        indexes = [];
+		        nums = "1,2,3,4,5";
+
+		        function filterFn( value, i ){
+		            indexes[ i ] = javacast( "integer", value );
+		            return i != "3" && i != "5";
+		        };
+
+		        result = nums.listFilter( filter=filterFn, parallel=true, virtual=true );
+		    """,
+		    context );
+		Array resultArray = ListUtil.asList( variables.getAsString( result ), ",", false, false );
+		assertThat( resultArray.size() ).isEqualTo( 3 );
+		assertThat( resultArray.get( 0 ) ).isEqualTo( "1" );
+		assertThat( resultArray.get( 1 ) ).isEqualTo( "2" );
+		assertThat( resultArray.get( 2 ) ).isEqualTo( "4" );
+		Array indexes = ( Array ) variables.get( Key.of( "indexes" ) );
+		assertThat( indexes.size() ).isEqualTo( 5 );
+		assertThat( indexes.get( 0 ) ).isEqualTo( 1 );
+		assertThat( indexes.get( 1 ) ).isEqualTo( 2 );
+		assertThat( indexes.get( 2 ) ).isEqualTo( 3 );
+		assertThat( indexes.get( 3 ) ).isEqualTo( 4 );
+		assertThat( indexes.get( 4 ) ).isEqualTo( 5 );
+	}
+
+	@DisplayName( "It should execute the filter in parallel with virtual threads using the alt maxThreads boolean argument" )
+	@Test
+	public void testParallelVirtualAltThreadMemberFunction() {
+		instance.executeSource(
+		    """
+		          indexes = [];
+		          nums = "1,2,3,4,5";
+
+		          function filterFn( value, i ){
+		              indexes[ i ] = javacast( "integer", value );
+		              return i != "3" && i != "5";
+		          };
+
+		    // We do this with named args because of all of the additional args within the listFilter function
+		          result = nums.listFilter( filter=filterFn, parallel=true, maxThreads=true );
+		      """,
 		    context );
 		Array resultArray = ListUtil.asList( variables.getAsString( result ), ",", false, false );
 		assertThat( resultArray.size() ).isEqualTo( 3 );

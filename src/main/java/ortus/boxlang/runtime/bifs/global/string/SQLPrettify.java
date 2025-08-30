@@ -50,7 +50,6 @@ public class SQLPrettify extends BIF {
 	 * @argument.sql The string to prettify
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String input = arguments.getAsString( Key.string );
-		return StringUtil.prettySql( input );
+		return StringUtil.prettySql( arguments.getAsString( Key.sql ) );
 	}
 }

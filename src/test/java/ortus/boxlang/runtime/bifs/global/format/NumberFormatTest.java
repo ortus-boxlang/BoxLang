@@ -96,6 +96,18 @@ public class NumberFormatTest {
 		    """,
 		    context );
 		assertEquals( variables.getAsString( result ), "12345.000" );
+		instance.executeSource(
+		    """
+		    result = numberFormat( round( 110.647747663711, 1 ), "_,.0");
+		    """,
+		    context );
+		assertEquals( "110.6", variables.getAsString( result ) );
+		instance.executeSource(
+		    """
+		    result = numberFormat( 123456789,'_$,9.99' );
+		    """,
+		    context );
+		assertEquals( "$123,456,789.00", variables.getAsString( result ) );
 	}
 
 	@DisplayName( "It tests the BIF NumberFormat with common format masks" )

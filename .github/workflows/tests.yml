@@ -47,15 +47,49 @@ jobs:
         if: ${{ matrix.os == 'windows-latest' }}
         run: choco install commandbox
 
-      - name: Install TestBox
+      - name: Install Testbox
         run: box install testbox@be src/test/resources --verbose --noSave
 
-      - name: Test Module
+      - name: Install JDBC modules
+        if: ${{ matrix.os != 'windows-latest' }}
+        run: box install id=bx-mssql,bx-mysql directory=~/.boxlang/modules --verbose --nosave
+
+      - name: Setup MySQL Service
+        if: ${{ matrix.os != 'windows-latest' }}
+        uses: samin/mysql-action@v1.3
+        with:
+          host port: 3309
+          mysql database: "myDB"
+          mysql root password: "123456Password"
+
+      - name: Setup MSSQL
+        if: ${{ matrix.os != 'windows-latest' }}
+        uses: rails-sqlserver/setup-mssql@v1
+        with:
+          components: sqlengine
+          sa-password: "123456Password"
+          version: 2022
+
+      - name: Test BoxLang
         env:
           BOXLANG_EXPERIMENTAL_COMPILER: ${{ matrix.compiler }}
         run: |
           ./gradlew :src:modules:test:build --stacktrace --console=plain
           ./gradlew test --stacktrace --console=plain
+
+      - name: Publish Test Reports
+        uses: mikepenz/action-junit-report@v5.6.2
+        if: always()
+        with:
+          report_paths: |
+            **/build/test-results/test/*.xml
+            **/surefire-reports/*.xml
+            **/failsafe-reports/*.xml
+          check_name: "JUnit Report ${{ matrix.os }}-${{ matrix.jdkProvider }}-${{ matrix.jdkVersion }}-${{ matrix.compiler }}"
+          include_passed: false
+          fail_on_failure: true
+          summary: "Test Results for ${{ matrix.os }} with ${{ matrix.compiler }} compiler on JDK ${{ matrix.jdkVersion }}"
+          detailed_summary: true
 
       - name: Upload Test Results
         if: always()
@@ -78,25 +112,3 @@ jobs:
           SLACK_USERNAME: CI
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
           MSG_MINIMAL: true
-
-  publish-test-results:
-    name: Publish Test Results
-    runs-on: ubuntu-latest
-    needs: tests
-    if: always()
-    permissions:
-      checks: write
-      pull-requests: write
-      contents: read
-      issues: read
-    steps:
-      - name: Download Artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts
-
-      - name: Publish Test Results
-        uses: EnricoMi/publish-unit-test-result-action@v2
-        with:
-          files: |
-            artifacts/**/*.xml

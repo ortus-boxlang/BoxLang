@@ -43,7 +43,6 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.Struct;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 import ortus.boxlang.runtime.validation.Validator;
@@ -611,7 +610,7 @@ public class DBInfo extends Component {
 			}
 		} catch ( SQLException e ) {
 			logger.error( "Unable to read foreign key info for table [{}], schema [{}], and catalog [{}]", table, schema, catalog, e );
-			throw new BoxRuntimeException( "Unable to read foreign key info", e );
+			throw new DatabaseException( "Unable to read foreign key info", e );
 		}
 		return temp;
 	}
@@ -635,7 +634,7 @@ public class DBInfo extends Component {
 			}
 		} catch ( SQLException e ) {
 			logger.error( "Unable to read foreign key info for table [{}], schema [{}], and catalog [{}]", table, schema, catalog, e );
-			throw new BoxRuntimeException( "Unable to read foreign key info", e );
+			throw new DatabaseException( "Unable to read foreign key info", e );
 		}
 		return temp;
 	}
