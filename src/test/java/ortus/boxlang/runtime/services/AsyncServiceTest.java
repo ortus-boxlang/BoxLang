@@ -31,7 +31,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Spy;
 
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.async.executors.ExecutorRecord;
+import ortus.boxlang.runtime.async.executors.BoxExecutor;
 
 class AsyncServiceTest {
 
@@ -81,7 +81,7 @@ class AsyncServiceTest {
 		assertThat( asyncService.getExecutorNames() ).contains( name );
 		assertThat( asyncService.hasExecutor( name ) ).isTrue();
 
-		ExecutorRecord record = asyncService.getExecutor( name );
+		BoxExecutor record = asyncService.getExecutor( name );
 		assertThat( record.type() ).isEqualTo( executorType );
 		assertThat( record.getStats().toString() ).contains( "pool" );
 

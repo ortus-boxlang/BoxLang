@@ -32,7 +32,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import ortus.boxlang.runtime.async.executors.ExecutorRecord;
+import ortus.boxlang.runtime.async.executors.BoxExecutor;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ThreadBoxContext;
@@ -195,7 +195,7 @@ public class StructUtil {
 			return;
 		}
 
-		ExecutorRecord executor = AsyncService.chooseParallelExecutor( "StructEach_", maxThreads, virtual );
+		BoxExecutor executor = AsyncService.chooseParallelExecutor( "StructEach_", maxThreads, virtual );
 
 		// Otherwise, create a new ForkJoinPool with the specified number of threads
 		executor.submitAndGet( () -> {
@@ -282,7 +282,7 @@ public class StructUtil {
 				    .anyMatch( test );
 			}
 
-			ExecutorRecord executor = AsyncService.chooseParallelExecutor( "StructSome_", maxThreads, virtual );
+			BoxExecutor executor = AsyncService.chooseParallelExecutor( "StructSome_", maxThreads, virtual );
 
 			return BooleanCaster.cast( executor.submitAndGet( () -> {
 				return entryStream
@@ -368,7 +368,7 @@ public class StructUtil {
 				    .allMatch( test );
 			}
 			// Otherwise, create a new ForkJoinPool with the specified number of threads
-			ExecutorRecord executor = AsyncService.chooseParallelExecutor( "StructEvery_", maxThreads, virtual );
+			BoxExecutor executor = AsyncService.chooseParallelExecutor( "StructEvery_", maxThreads, virtual );
 			return BooleanCaster.cast( executor.submitAndGet( () -> {
 				return entryStream
 				    .parallel()
@@ -456,7 +456,7 @@ public class StructUtil {
 				return entryStream.parallel().collect( BLCollector.toStruct( struct.getType() ) );
 			}
 
-			ExecutorRecord executor = AsyncService.chooseParallelExecutor( "StructFilter_", maxThreads, virtual );
+			BoxExecutor executor = AsyncService.chooseParallelExecutor( "StructFilter_", maxThreads, virtual );
 
 			// Otherwise, create a new ForkJoinPool with the specified number of threads
 			return StructCaster.cast( executor.submitAndGet( () -> {
@@ -566,7 +566,7 @@ public class StructUtil {
 			return result;
 		}
 
-		ExecutorRecord executor = AsyncService.chooseParallelExecutor( "StructMap_", maxThreads, virtual );
+		BoxExecutor executor = AsyncService.chooseParallelExecutor( "StructMap_", maxThreads, virtual );
 
 		// Otherwise, create a new ForkJoinPool with the specified number of threads
 		executor.submitAndGet( () -> {
