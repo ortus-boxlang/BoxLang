@@ -17,7 +17,7 @@ jobs:
     # Checkout the main/release branch
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: main
 
