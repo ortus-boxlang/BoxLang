@@ -27,8 +27,10 @@ import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.UUID;
@@ -90,32 +92,32 @@ public class ModuleRecord {
 	/**
 	 * Unique internal ID for the module
 	 */
-	public final String				id							= UUID.randomUUID().toString();
+	public final String								id							= UUID.randomUUID().toString();
 
 	/**
 	 * The name of the module, defaults to the folder name on disk
 	 */
-	public Key						name;
+	public Key										name;
 
 	/**
 	 * The version of the module, defaults to 1.0.0
 	 */
-	public String					version						= "1.0.0";
+	public String									version						= "1.0.0";
 
 	/**
 	 * The author of the module or empty if not set
 	 */
-	public String					author						= "";
+	public String									author						= "";
 
 	/**
 	 * The description of the module or empty if not set
 	 */
-	public String					description					= "";
+	public String									description					= "";
 
 	/**
 	 * The web URL of the module or empty if not set
 	 */
-	public String					webURL						= "";
+	public String									webURL						= "";
 
 	/**
 	 * The BoxLang mapping of the module used to construct classes from within it.
@@ -123,74 +125,74 @@ public class ModuleRecord {
 	 * {@link ModuleService#MODULE_MAPPING_INVOCATION_PREFIX}
 	 *
 	 */
-	public String					mapping;
+	public String									mapping;
 
 	/**
 	 * If the module is enabled for activation, defaults to false
 	 */
-	public boolean					enabled						= true;
+	public boolean									enabled						= true;
 
 	/**
 	 * Flag to indicate if the module has been activated or not yet
 	 */
-	public boolean					activated					= false;
+	public boolean									activated					= false;
 
 	/**
 	 * The settings of the module
 	 */
-	public Struct					settings					= new Struct();
+	public Struct									settings					= new Struct();
 
 	/**
 	 * The object mappings of the module
 	 */
-	public Struct					objectMappings				= new Struct();
+	public Struct									objectMappings				= new Struct();
 
 	/**
 	 * The datasources to register by the module
 	 */
-	public Struct					datasources					= new Struct( Struct.TYPES.LINKED );
+	public Struct									datasources					= new Struct( Struct.TYPES.LINKED );
 
 	/**
 	 * Any module activation dependencies
 	 */
-	public Array					dependencies				= new Array();
+	public Array									dependencies				= new Array();
 
 	/**
 	 * The interceptors of the module
 	 */
-	public Array					interceptors				= new Array();
+	public Array									interceptors				= new Array();
 
 	/**
 	 * The BIFS collaborated by the module
 	 */
-	public Array					bifs						= new Array();
+	public Array									bifs						= new Array();
 
 	/**
 	 * The Components collaborated by the module
 	 */
-	public Array					components					= new Array();
+	public Array									components					= new Array();
 
 	/**
 	 * The member Methods collaborated by the module
 	 */
-	public Array					memberMethods				= new Array();
+	public Array									memberMethods				= new Array();
 
 	/**
 	 * The custom interception points of the module
 	 */
-	public Array					customInterceptionPoints	= new Array();
+	public Array									customInterceptionPoints	= new Array();
 
 	/**
 	 * The physical path of the module on disk as a Java {@link Path}
 	 */
-	public Path						physicalPath;
+	public Path										physicalPath;
 
 	/**
 	 * The physical path of the module but in string format. Used by BoxLang code
 	 * mostly
 	 * Same as the {@link ModuleRecord#physicalPath} but in string format
 	 */
-	public String					path;
+	public String									path;
 
 	/**
 	 * The invocation path of the module which is a composition of the
@@ -198,37 +200,37 @@ public class ModuleRecord {
 	 * Example: {@code /bxModules/MyModule} is the mapping for the module
 	 * the invocation path would be {@code bxModules.MyModule}
 	 */
-	public String					invocationPath;
+	public String									invocationPath;
 
 	/**
 	 * The timestamp when the module was registered
 	 */
-	public Instant					registeredOn;
+	public Instant									registeredOn;
 
 	/**
 	 * The time it took in ms to register the module
 	 */
-	public long						registrationTime			= 0;
+	public long										registrationTime			= 0;
 
 	/**
 	 * The timestamp when the module was activated
 	 */
-	public Instant					activatedOn;
+	public Instant									activatedOn;
 
 	/**
 	 * The time it took in ms to activate the module
 	 */
-	public long						activationTime				= 0;
+	public long										activationTime				= 0;
 
 	/**
 	 * The Dynamic class loader for the module
 	 */
-	public DynamicClassLoader		classLoader					= null;
+	public DynamicClassLoader						classLoader					= null;
 
 	/**
 	 * The descriptor for the module
 	 */
-	public IClassRunnable			moduleConfig;
+	public IClassRunnable							moduleConfig;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -239,29 +241,53 @@ public class ModuleRecord {
 	/**
 	 * This prefix is used a virtual package name for the module
 	 */
-	private static final String		MODULE_PACKAGE_NAME			= "ortus.boxlang.runtime.modules.";
+	private static final String						MODULE_PACKAGE_NAME			= "ortus.boxlang.runtime.modules.";
 
 	/**
 	 * The name of the descriptor file for the module based on CommandBox
 	 */
-	private static final String		MODULE_CONFIG_FILE			= "box.json";
+	private static final String						MODULE_CONFIG_FILE			= "box.json";
 
 	/**
 	 * Logger
 	 */
-	private BoxLangLogger			logger;
+	private BoxLangLogger							logger;
 
 	/**
 	 * Runtime
 	 */
-	private BoxRuntime				runtime;
+	private BoxRuntime								runtime;
+
+	/**
+	 * The global services provided by the module. (Any {@link IService} implementation)
+	 */
+	private List<IService>							globalServices				= new ArrayList<>();
 
 	/**
 	 * Tracks JDBC drivers registered by this module for proper cleanup (deregistration)
 	 * during module unload. This ensures that drivers do not leak and are removed
 	 * from the DriverManager when the module is unloaded.
 	 */
-	private Map<Key, DriverShim>	jdbcDrivers					= new HashMap<>();
+	private Map<Key, DriverShim>					JDBCDriverShims				= new HashMap<>();
+
+	/**
+	 * The JDBC drivers registered by this module. (Any {@link IJDBCDriver} implementation)
+	 */
+	private List<IJDBCDriver>						JDBCDrivers					= new ArrayList<>();
+
+	/**
+	 * The schedulers provided by the module. (Any {@link IScheduler} implementation)
+	 */
+	private List<IScheduler>						schedulers					= new ArrayList<>();
+
+	/**
+	 * The cache providers registered by this module. (Any {@link ICacheProvider} implementation)
+	 */
+	private List<Class<? extends ICacheProvider>>	cacheProviders				= new ArrayList<>();
+	/**
+	 * The Java interceptors provided by the module. (Any {@link IInterceptor} implementation)
+	 */
+	private List<IInterceptor>						javaInterceptors			= new ArrayList<>();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -494,7 +520,10 @@ public class ModuleRecord {
 		ServiceLoader.load( IService.class, this.classLoader )
 		    .stream()
 		    .map( ServiceLoader.Provider::get )
-		    .forEach( service -> this.runtime.putGlobalService( service.getName(), service ) );
+		    .forEach( service -> {
+			    this.globalServices.add( service );
+			    this.runtime.putGlobalService( service.getName(), service );
+		    } );
 
 		// Load any JDBC drivers into the JVM
 		ServiceLoader.load( Driver.class, this.classLoader )
@@ -502,7 +531,7 @@ public class ModuleRecord {
 		    .map( ServiceLoader.Provider::get )
 		    .forEach( driver -> {
 			    DriverShim driverShim = new DriverShim( driver );
-			    this.jdbcDrivers.put( Key.of( driver.getClass().getName() ), driverShim );
+			    this.JDBCDriverShims.put( Key.of( driver.getClass().getName() ), driverShim );
 			    try {
 				    DriverManager.registerDriver( driverShim );
 			    } catch ( SQLException e ) {
@@ -514,7 +543,10 @@ public class ModuleRecord {
 		ServiceLoader.load( IJDBCDriver.class, this.classLoader )
 		    .stream()
 		    .map( ServiceLoader.Provider::get )
-		    .forEach( driver -> this.runtime.getDataSourceService().registerDriver( driver ) );
+		    .forEach( driver -> {
+			    this.JDBCDrivers.add( driver );
+			    this.runtime.getDataSourceService().registerDriver( driver );
+		    } );
 
 		// Do we have any Java BIFs to load?
 		ServiceLoader.load( BIF.class, this.classLoader )
@@ -532,15 +564,21 @@ public class ModuleRecord {
 		ServiceLoader.load( IScheduler.class, this.classLoader )
 		    .stream()
 		    .map( ServiceLoader.Provider::get )
-		    .forEach( scheduler -> this.runtime.getSchedulerService()
-		        .loadScheduler( Key.of( scheduler.getSchedulerName() + "@" + this.name ), scheduler ) );
+		    .forEach( scheduler -> {
+			    this.schedulers.add( scheduler );
+			    this.runtime.getSchedulerService()
+			        .loadScheduler( Key.of( scheduler.getSchedulerName() + "@" + this.name ), scheduler );
+		    } );
 
 		// Do we have any Java ICacheProviders to register in the CacheService
 		ServiceLoader.load( ICacheProvider.class, this.classLoader )
 		    .stream()
 		    .map( ServiceLoader.Provider::type )
-		    .forEach( provider -> this.runtime.getCacheService().registerProvider( Key.of( provider.getSimpleName() ),
-		        provider ) );
+		    .forEach( provider -> {
+			    this.cacheProviders.add( provider );
+			    this.runtime.getCacheService().registerProvider( Key.of( provider.getSimpleName() ),
+			        provider );
+		    } );
 
 		// Do we have any Java IInterceptor to register in the InterceptorService
 		ServiceLoader.load( IInterceptor.class, this.classLoader )
@@ -550,7 +588,10 @@ public class ModuleRecord {
 		    .filter( provider -> interceptorService.canLoadInterceptor( provider.type() ) )
 		    // Register the interceptor with the module settings
 		    .map( ServiceLoader.Provider::get )
-		    .forEach( targetInterceptor -> interceptorService.register( targetInterceptor, this.settings ) );
+		    .forEach( targetInterceptor -> {
+			    this.javaInterceptors.add( targetInterceptor );
+			    interceptorService.register( targetInterceptor, this.settings );
+		    } );
 
 		// Finalize Registration
 		this.registeredOn = Instant.now();
@@ -610,30 +651,24 @@ public class ModuleRecord {
 		InterceptorService interceptorService = this.runtime.getInterceptorService();
 
 		// Unregister any global services
-		ServiceLoader.load( IService.class, this.classLoader )
-		    .stream()
-		    .map( ServiceLoader.Provider::get )
+		this.globalServices.stream()
 		    .forEach( service -> this.runtime.removeGlobalService( service.getName() ) );
+		this.globalServices.clear();
 
 		// Unload JDBC drivers from the JVM
-		ServiceLoader.load( Driver.class, this.classLoader )
-		    .stream()
-		    .map( ServiceLoader.Provider::get )
-		    .forEach( driver -> {
-			    Key driverKey = Key.of( driver.getClass().getName() );
-			    try {
-				    DriverManager.deregisterDriver( this.jdbcDrivers.get( driverKey ) );
-			    } catch ( SQLException e ) {
-				    throw new DatabaseException( e );
-			    }
-			    this.jdbcDrivers.remove( driverKey );
-		    } );
+		this.JDBCDriverShims.forEach( ( key, driver ) -> {
+			try {
+				DriverManager.deregisterDriver( driver );
+			} catch ( SQLException e ) {
+				throw new DatabaseException( e );
+			}
+		} );
+		this.JDBCDriverShims.clear();
 
 		// Unregister JDBC drivers from the datasource service
-		ServiceLoader.load( IJDBCDriver.class, this.classLoader )
-		    .stream()
-		    .map( ServiceLoader.Provider::get )
+		this.JDBCDrivers.stream()
 		    .forEach( driver -> this.runtime.getDataSourceService().removeDriver( driver.getName() ) );
+		this.JDBCDrivers.clear();
 
 		// @TODO: Unregister BIFs; we're lacking an unregister method in the FunctionService
 		// as a counterpart to `functionService.processBIFRegistration`.
@@ -641,27 +676,20 @@ public class ModuleRecord {
 		// @TODO: Unregister components; we're lacking an unregisterComponent method in the ComponentService
 
 		// unregister schedulers
-		ServiceLoader.load( IScheduler.class, this.classLoader )
-		    .stream()
-		    .map( ServiceLoader.Provider::get )
-		    .forEach( scheduler -> this.runtime.getSchedulerService()
-		        .removeScheduler( Key.of( scheduler.getSchedulerName() + "@" + this.name ), true, 500 ) );
+		this.schedulers.forEach( scheduler -> {
+			this.runtime.getSchedulerService()
+			    .removeScheduler( Key.of( scheduler.getSchedulerName() + "@" + this.name ), true, 500 );
+		} );
+		this.schedulers.clear();
 
 		// Unregister cache providers
-		ServiceLoader.load( ICacheProvider.class, this.classLoader )
-		    .stream()
-		    .map( ServiceLoader.Provider::type )
+		this.cacheProviders
 		    .forEach( provider -> this.runtime.getCacheService().removeProvider( Key.of( provider.getSimpleName() ) ) );
+		this.cacheProviders.clear();
 
 		// Unregister java interceptors
-		ServiceLoader.load( IInterceptor.class, this.classLoader )
-		    .stream()
-		    // Only load interceptors that are set to auto-load by default or by
-		    // configuration
-		    .filter( provider -> interceptorService.canLoadInterceptor( provider.type() ) )
-		    // Register the interceptor with the module settings
-		    .map( ServiceLoader.Provider::get )
-		    .forEach( targetInterceptor -> interceptorService.unregister( targetInterceptor ) );
+		this.javaInterceptors.forEach( interceptor -> interceptorService.unregister( interceptor ) );
+		this.javaInterceptors.clear();
 
 		// unregister the module mapping from the runtime
 		this.runtime.getConfiguration().unregisterMapping( this.mapping );
