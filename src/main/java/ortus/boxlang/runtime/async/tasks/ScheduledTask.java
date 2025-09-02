@@ -87,7 +87,7 @@ public class ScheduledTask implements Runnable {
 	/**
 	 * The executor to use for this task
 	 */
-	private BoxExecutor							executor			= null;
+	private BoxExecutor								executor			= null;
 
 	/**
 	 * The task as a {@link DynamicObject} or a

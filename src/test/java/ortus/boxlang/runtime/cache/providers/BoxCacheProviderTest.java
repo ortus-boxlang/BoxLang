@@ -42,7 +42,7 @@ public class BoxCacheProviderTest {
 	static BoxCacheProvider	boxCache;
 	static CacheConfig		config			= new CacheConfig();
 	static CacheService		cacheService	= Mockito.mock( CacheService.class );
-	static BoxExecutor	boxExecutor	= AsyncService.buildExecutor( "tests", ExecutorType.SCHEDULED, 20 );
+	static BoxExecutor		boxExecutor		= AsyncService.buildExecutor( "tests", ExecutorType.SCHEDULED, 20 );
 
 	@BeforeAll
 	static void setup() {

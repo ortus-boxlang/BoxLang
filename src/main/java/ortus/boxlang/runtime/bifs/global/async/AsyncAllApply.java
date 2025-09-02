@@ -91,7 +91,7 @@ public class AsyncAllApply extends BIF {
 	 * @return An array or struct of the results
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Object			executor		= arguments.get( Key.executor );
+		Object		executor		= arguments.get( Key.executor );
 		BoxExecutor	executorRecord	= this.asyncService.getRecordOrNull( executor );
 
 		return BoxFuture.allApply(

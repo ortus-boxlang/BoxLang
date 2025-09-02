@@ -45,21 +45,21 @@ public class BoxExecutorTest {
 	@BeforeEach
 	void setUp() {
 		// Create different types of executors for testing
-		fixedExecutor = new BoxExecutor(
+		fixedExecutor	= new BoxExecutor(
 		    Executors.newFixedThreadPool( 4 ),
 		    "test-fixed",
 		    ExecutorType.FIXED,
 		    4
 		);
 
-		singleExecutor = new BoxExecutor(
+		singleExecutor	= new BoxExecutor(
 		    Executors.newSingleThreadExecutor(),
 		    "test-single",
 		    ExecutorType.SINGLE,
 		    1
 		);
 
-		cachedExecutor = new BoxExecutor(
+		cachedExecutor	= new BoxExecutor(
 		    Executors.newCachedThreadPool(),
 		    "test-cached",
 		    ExecutorType.CACHED,
@@ -191,8 +191,8 @@ public class BoxExecutorTest {
 	@Test
 	@DisplayName( "Test health status calculation" )
 	void testHealthStatus() {
-		IStruct stats = fixedExecutor.getStats();
-		String healthStatus = ( String ) stats.get( "healthStatus" );
+		IStruct	stats			= fixedExecutor.getStats();
+		String	healthStatus	= ( String ) stats.get( "healthStatus" );
 
 		// Should be healthy initially
 		assertThat( healthStatus ).isEqualTo( "healthy" );
@@ -200,8 +200,8 @@ public class BoxExecutorTest {
 
 		// After shutdown should change status
 		fixedExecutor.shutdown();
-		stats = fixedExecutor.getStats();
-		healthStatus = ( String ) stats.get( "healthStatus" );
+		stats			= fixedExecutor.getStats();
+		healthStatus	= ( String ) stats.get( "healthStatus" );
 		// The status can vary depending on timing, but should not be healthy
 		assertThat( healthStatus ).isNotEqualTo( "healthy" );
 		assertFalse( fixedExecutor.isHealthy() );
@@ -210,8 +210,8 @@ public class BoxExecutorTest {
 	@Test
 	@DisplayName( "Test health report structure" )
 	void testHealthReport() {
-		IStruct stats = fixedExecutor.getStats();
-		IStruct healthReport = ( IStruct ) stats.get( "healthReport" );
+		IStruct	stats			= fixedExecutor.getStats();
+		IStruct	healthReport	= ( IStruct ) stats.get( "healthReport" );
 
 		assertNotNull( healthReport );
 		assertThat( healthReport.get( "status" ) ).isNotNull();
@@ -336,14 +336,14 @@ public class BoxExecutorTest {
 			assertThat( result ).isEqualTo( "test result" );
 
 			// Test with Runnable (creates a new executor each time)
-			BoxExecutor testExecutor2 = new BoxExecutor(
+			BoxExecutor	testExecutor2	= new BoxExecutor(
 			    Executors.newSingleThreadExecutor(),
 			    "test-submitAndGet-2",
 			    ExecutorType.SINGLE,
 			    1
 			);
 
-			Object runnableResult = testExecutor2.submitAndGet( () -> System.out.println( "test" ) );
+			Object		runnableResult	= testExecutor2.submitAndGet( () -> System.out.println( "test" ) );
 			// Runnable submit typically returns null
 		} finally {
 			// Note: submitAndGet calls shutdownQuiet() internally, so no manual cleanup needed
@@ -379,8 +379,8 @@ public class BoxExecutorTest {
 	@Test
 	@DisplayName( "Test features map" )
 	void testFeatures() {
-		IStruct stats = fixedExecutor.getStats();
-		Object features = stats.get( "features" );
+		IStruct	stats		= fixedExecutor.getStats();
+		Object	features	= stats.get( "features" );
 		assertNotNull( features );
 
 		// Should contain feature information for ThreadPoolExecutor
@@ -394,8 +394,8 @@ public class BoxExecutorTest {
 	@Test
 	@DisplayName( "Test thresholds in stats" )
 	void testThresholds() {
-		IStruct stats = fixedExecutor.getStats();
-		Object thresholds = stats.get( "thresholds" );
+		IStruct	stats		= fixedExecutor.getStats();
+		Object	thresholds	= stats.get( "thresholds" );
 		assertNotNull( thresholds );
 
 		// Should contain health monitoring thresholds

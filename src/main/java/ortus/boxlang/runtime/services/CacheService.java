@@ -77,7 +77,7 @@ public class CacheService extends BaseService {
 	/**
 	 * The scheduled executor service record
 	 */
-	private final BoxExecutor							executor;
+	private final BoxExecutor								executor;
 
 	/**
 	 * The caches registry

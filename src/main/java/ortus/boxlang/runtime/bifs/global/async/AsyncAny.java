@@ -58,8 +58,8 @@ public class AsyncAny extends BIF {
 	 *         asynchronously executed code.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Array			futures			= arguments.getAsArray( Key.futures );
-		Object			executor		= arguments.get( Key.executor );
+		Array		futures			= arguments.getAsArray( Key.futures );
+		Object		executor		= arguments.get( Key.executor );
 
 		BoxExecutor	executorRecord	= this.asyncService.getRecordOrNull( executor );
 
