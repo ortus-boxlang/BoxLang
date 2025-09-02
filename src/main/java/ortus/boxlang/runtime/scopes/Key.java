@@ -203,6 +203,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		compression							= Key.of( "compression" );
 	public static final Key		compressionLevel					= Key.of( "compressionLevel" );
 	public static final Key		condition							= Key.of( "condition" );
+	public static final Key		config								= Key.of( "config" );
 	public static final Key		configure							= Key.of( "configure" );
 	public static final Key		connectionLimit						= Key.of( "connectionLimit" );
 	public static final Key		content								= Key.of( "content" );
