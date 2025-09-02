@@ -14,7 +14,7 @@
  */
 package ortus.boxlang.runtime.bifs.global.async;
 
-import ortus.boxlang.runtime.async.executors.ExecutorRecord;
+import ortus.boxlang.runtime.async.executors.BoxExecutor;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -41,7 +41,7 @@ public class ExecutorNew extends BIF {
 
 	/**
 	 * Creates and registers a new executor by name and type.
-	 * The return value is an ExecutorRecord object that can be used to interact with the executor.
+	 * The return value is an BoxExecutor object that can be used to interact with the executor.
 	 *
 	 * Available types are:
 	 * - "cached" - Creates a cached thread pool executor.
@@ -60,7 +60,7 @@ public class ExecutorNew extends BIF {
 	 * @argument.type The type of executor to create
 	 */
 	@Override
-	public ExecutorRecord _invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public BoxExecutor _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	name		= arguments.getAsString( Key._NAME );
 		String	type		= arguments.getAsString( Key.type ).toUpperCase();
 		Integer	maxThreads	= IntegerCaster.cast( arguments.get( Key.maxThreads ) );

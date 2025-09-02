@@ -40,7 +40,7 @@ import org.mockito.Mockito;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.async.executors.BoxScheduledExecutor;
-import ortus.boxlang.runtime.async.executors.ExecutorRecord;
+import ortus.boxlang.runtime.async.executors.BoxExecutor;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
@@ -67,7 +67,7 @@ class ScheduledTaskTest {
 	@BeforeEach
 	public void setupBeforeEach() {
 
-		ExecutorRecord executor = new ExecutorRecord(
+		BoxExecutor executor = new BoxExecutor(
 		    new BoxScheduledExecutor( 20 ),
 		    "test",
 		    AsyncService.ExecutorType.SCHEDULED,

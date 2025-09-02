@@ -15,7 +15,7 @@
 package ortus.boxlang.runtime.bifs.global.async;
 
 import ortus.boxlang.runtime.async.BoxFuture;
-import ortus.boxlang.runtime.async.executors.ExecutorRecord;
+import ortus.boxlang.runtime.async.executors.BoxExecutor;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -58,10 +58,10 @@ public class AsyncAny extends BIF {
 	 *         asynchronously executed code.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Array			futures			= arguments.getAsArray( Key.futures );
-		Object			executor		= arguments.get( Key.executor );
+		Array		futures			= arguments.getAsArray( Key.futures );
+		Object		executor		= arguments.get( Key.executor );
 
-		ExecutorRecord	executorRecord	= this.asyncService.getRecordOrNull( executor );
+		BoxExecutor	executorRecord	= this.asyncService.getRecordOrNull( executor );
 
 		if ( executorRecord == null ) {
 			return BoxFuture.any( context, futures );

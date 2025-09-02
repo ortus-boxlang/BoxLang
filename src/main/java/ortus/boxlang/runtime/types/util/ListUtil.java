@@ -33,7 +33,7 @@ import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
 
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.async.executors.ExecutorRecord;
+import ortus.boxlang.runtime.async.executors.BoxExecutor;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ThreadBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
@@ -702,7 +702,7 @@ public class ListUtil {
 				return;
 			}
 
-			ExecutorRecord executor = AsyncService.chooseParallelExecutor( "ArrayEach_", maxThreads, virtual );
+			BoxExecutor executor = AsyncService.chooseParallelExecutor( "ArrayEach_", maxThreads, virtual );
 			executor.submitAndGet( () -> {
 				if ( ordered ) {
 					arrayStream
@@ -811,7 +811,7 @@ public class ListUtil {
 				    .anyMatch( test );
 			}
 
-			ExecutorRecord executor = AsyncService.chooseParallelExecutor( "ArraySome_", maxThreads, virtual );
+			BoxExecutor executor = AsyncService.chooseParallelExecutor( "ArraySome_", maxThreads, virtual );
 			return ( Boolean ) executor.submitAndGet( () -> {
 				return arrayStream
 				    .parallel()
@@ -902,7 +902,7 @@ public class ListUtil {
 				    .allMatch( test );
 			}
 
-			ExecutorRecord executor = AsyncService.chooseParallelExecutor( "ArrayEvery_", maxThreads, virtual );
+			BoxExecutor executor = AsyncService.chooseParallelExecutor( "ArrayEvery_", maxThreads, virtual );
 
 			return ( Boolean ) executor.submitAndGet( () -> {
 				return arrayStream
@@ -1003,7 +1003,7 @@ public class ListUtil {
 				    .collect( BLCollector.toArray( array.getClass() ) );
 			}
 
-			ExecutorRecord executor = AsyncService.chooseParallelExecutor( "ArrayFilter_", maxThreads, virtual );
+			BoxExecutor executor = AsyncService.chooseParallelExecutor( "ArrayFilter_", maxThreads, virtual );
 
 			return ( Array ) executor.submitAndGet( () -> {
 				return arrayStream
@@ -1169,7 +1169,7 @@ public class ListUtil {
 				    .collect( BLCollector.toArray( array.getClass() ) );
 			}
 
-			ExecutorRecord executor = AsyncService.chooseParallelExecutor( "ArrayMap_", maxThreads, virtual );
+			BoxExecutor executor = AsyncService.chooseParallelExecutor( "ArrayMap_", maxThreads, virtual );
 
 			return ( Array ) executor.submitAndGet( () -> {
 				return arrayStream
