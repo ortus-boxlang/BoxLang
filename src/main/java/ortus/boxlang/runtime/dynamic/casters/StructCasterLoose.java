@@ -21,7 +21,9 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.bifs.global.decision.IsArray;
 import ortus.boxlang.runtime.bifs.global.decision.IsObject;
+import ortus.boxlang.runtime.bifs.global.decision.IsSimpleValue;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
@@ -33,6 +35,12 @@ import ortus.boxlang.runtime.types.exceptions.BoxCastException;
  * fields as the keys and the values as the values.
  */
 public class StructCasterLoose implements IBoxCaster {
+
+	/**
+	 * If true, use even looser casting to a struct
+	 * This is here for compat to toggle
+	 */
+	public static boolean extraLooseStructCasting = false;
 
 	/**
 	 * Tests to see if the value can be cast to a Struct.
@@ -90,7 +98,7 @@ public class StructCasterLoose implements IBoxCaster {
 		}
 
 		// If it's a random Java class, then turn it into a struct!!
-		if ( IsObject.isObject( object ) ) {
+		if ( canWeTurnThisClassIntoAGenericStruct( object ) ) {
 			IStruct			thisResult	= new Struct();
 			DynamicObject	dynObject;
 
@@ -99,14 +107,19 @@ public class StructCasterLoose implements IBoxCaster {
 			dynObject.getFieldsAsStream()
 			    .filter( field -> Modifier.isPublic( field.getModifiers() ) )
 			    .forEach( field -> {
-				    thisResult.put( field.getName(), dynObject.getField( field.getName() ).get() );
+				    thisResult.put( field.getName(), dynObject.getField( field.getName() ).orElse( null ) );
 			    } );
 			// also add fields for all public methods starting with "get" that take no arguments
+
 			dynObject.getMethodNames( true ).forEach( methodName -> {
 				Method m;
 				if ( methodName.startsWith( "get" ) && Modifier.isPublic( ( m = dynObject.getMethod( methodName, true ) ).getModifiers() )
 				    && m.getParameterCount() == 0 && !methodName.equals( "getClass" ) ) {
-					thisResult.put( methodName.substring( 3 ), dynObject.invoke( BoxRuntime.getInstance().getRuntimeContext(), methodName ) );
+					try {
+						thisResult.put( methodName.substring( 3 ), dynObject.invoke( BoxRuntime.getInstance().getRuntimeContext(), methodName ) );
+					} catch ( Exception e ) {
+						// We're gonna ignore any invalid methods that error out.
+					}
 				}
 			} );
 
@@ -118,7 +131,7 @@ public class StructCasterLoose implements IBoxCaster {
 				    // get public, static fields
 				    .filter( field -> Modifier.isPublic( field.getModifiers() ) && Modifier.isStatic( field.getModifiers() ) )
 				    .forEach( field -> {
-					    thisResult.put( field.getName(), dynObject2.getField( field.getName() ).get() );
+					    thisResult.put( field.getName(), dynObject2.getField( field.getName() ).orElse( null ) );
 				    } );
 				// also add fields for all public methods starting with "get" that take no arguments
 				dynObject2.getMethodNames( true ).forEach( methodName -> {
@@ -126,7 +139,12 @@ public class StructCasterLoose implements IBoxCaster {
 						Method	m			= dynObject2.getMethod( methodName, true );
 						int		modifiers	= m.getModifiers();
 						if ( Modifier.isPublic( modifiers ) && Modifier.isStatic( modifiers ) && m.getParameterCount() == 0 ) {
-							thisResult.put( methodName.substring( 3 ), dynObject2.invokeStatic( BoxRuntime.getInstance().getRuntimeContext(), methodName ) );
+							try {
+								thisResult.put( methodName.substring( 3 ),
+								    dynObject2.invokeStatic( BoxRuntime.getInstance().getRuntimeContext(), methodName ) );
+							} catch ( Exception e ) {
+								// We're gonna ignore any invalid methods that error out.
+							}
 						}
 					}
 				} );
@@ -141,6 +159,22 @@ public class StructCasterLoose implements IBoxCaster {
 			);
 		} else {
 			return null;
+		}
+	}
+
+	/**
+	 * Support two different levels of loose struct casting. CF will turn literallyk ANYTHING but an array or simple value into a generic struct
+	 * That feels a little too far, so BoxLang's default behavior is to only allow "objects" to be turned into structs, which exempts additional internal types such as UDFs or closures.
+	 * 
+	 * @param object The object to test
+	 * 
+	 * @return true if the object can be turned into a generic struct, false otherwise
+	 */
+	private static boolean canWeTurnThisClassIntoAGenericStruct( Object object ) {
+		if ( extraLooseStructCasting ) {
+			return ! ( IsArray.isNativeArrayOrList( object ) || IsSimpleValue.isSimpleValue( object ) );
+		} else {
+			return IsObject.isObject( object );
 		}
 	}
 

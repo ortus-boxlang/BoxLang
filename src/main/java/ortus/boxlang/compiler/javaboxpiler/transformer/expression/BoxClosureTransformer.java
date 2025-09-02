@@ -76,7 +76,6 @@ public class BoxClosureTransformer extends AbstractTransformer {
 		import java.nio.file.*;
 
   		public class ${classname} extends Closure {
-			private static ${classname}				instance;
 			private final static Key				name		= Closure.defaultName;
 			private final static Argument[]			arguments	= new Argument[] {};
 			private final static String				returnType	= "any";
