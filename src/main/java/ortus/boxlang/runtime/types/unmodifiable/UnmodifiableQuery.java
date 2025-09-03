@@ -23,6 +23,7 @@ import java.util.Comparator;
 import java.util.Map;
 
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
@@ -310,8 +311,21 @@ public class UnmodifiableQuery extends Query implements IUnmodifiable {
 	 * @return A copy of the current query.
 	 */
 	@Override
+	@Deprecated
 	public UnmodifiableQuery duplicate() {
-		return super.duplicate( false ).toUnmodifiable();
+		return duplicate( RequestBoxContext.getCurrent() );
+	}
+
+	/**
+	 * Duplicate the current query.
+	 * 
+	 * @param deep If true, nested objects will be duplicated as well.
+	 *
+	 * @return A copy of the current query.
+	 */
+	@Override
+	public UnmodifiableQuery duplicate( IBoxContext context ) {
+		return super.duplicate( false, context ).toUnmodifiable();
 	}
 
 	/***************************
