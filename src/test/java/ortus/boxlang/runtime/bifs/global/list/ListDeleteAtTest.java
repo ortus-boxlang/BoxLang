@@ -133,4 +133,19 @@ public class ListDeleteAtTest {
 		assertEquals( "coldbox.system", variables.getAsString( result ) );
 
 	}
+
+	@DisplayName( "It does not lose preceding slashes when dealing with paths" )
+	@Test
+	public void itDoesNotLosePrecedingSlashes() {
+		instance.executeSource(
+		    """
+		    path = "/Users/elpete/Developer/github/coldbox-modules/quick/";
+		    position = listLen( path, "\\/" );
+			result = listDeleteAt( path, position, "\\/" );
+		    """,
+		    context );
+		assertEquals( 6, variables.getAsInteger( Key.position ) );
+		assertEquals( "/Users/elpete/Developer/github/coldbox-modules", variables.getAsString( result ) );
+
+	}
 }
