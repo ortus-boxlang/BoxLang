@@ -89,12 +89,8 @@ public class ArraySort extends BIF {
 			    context
 			);
 		} else {
-			Object	argLocale		= arguments.get( Key.locale );
 			Locale	requestedLocale	= null;
-
-			if ( arguments.getAsBoolean( Key.localeSensitive ) && argLocale instanceof Locale castLocale ) {
-				requestedLocale = castLocale;
-			} else if ( arguments.getAsBoolean( Key.localeSensitive ) ) {
+			if ( arguments.getAsBoolean( Key.localeSensitive ) ) {
 				requestedLocale = LocalizationUtil.parseLocaleFromContext( context, arguments );
 			}
 
