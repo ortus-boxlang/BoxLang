@@ -28,7 +28,7 @@ import ortus.boxlang.runtime.util.LocalizationUtil;
 /**
  * Operator to compare two strings and bypass any additional cast attempts
  */
-public class StringCompare implements IOperator {
+public class CollatorStringCompare implements IOperator {
 
 	/**
 	 * Invokes the comparison
@@ -95,10 +95,33 @@ public class StringCompare implements IOperator {
 	 * @return 1 if greater than, -1 if less than, = if equal
 	 */
 	public static Integer attempt( String left, String right, Boolean caseSensitive, boolean fail, Locale locale ) {
-		return caseSensitive
-		    ? StringUtils.compare( left, right )
-		    : StringUtils.compareIgnoreCase( left, right );
 
+		boolean containsUnicode = false;
+		for ( String s : new String[] { left.toString(), right.toString() } ) {
+			int length = s.length();
+			for ( int i = 0; i < length; i++ ) {
+				if ( s.charAt( i ) > 127 ) {
+					containsUnicode = true;
+					break;
+				}
+			}
+			if ( containsUnicode ) {
+				break;
+			}
+		}
+
+		// if our locale is different than an EN locale use the Collator
+		if ( containsUnicode || ( !locale.equals( LocalizationUtil.COMMON_LOCALES.get( Key.US ) ) && !locale.equals( Locale.ENGLISH ) ) ) {
+			// Use Collator for proper locale-based comparison
+			Collator collator = Collator.getInstance( locale );
+			collator.setStrength( caseSensitive ? Collator.IDENTICAL : Collator.TERTIARY );
+			collator.setDecomposition( Collator.CANONICAL_DECOMPOSITION );
+			return collator.getCollationKey( left.toString() )
+			    .compareTo( collator.getCollationKey( right.toString() ) );
+		} else {
+			// if no locale comparison is needed use the faster comparison
+			return StringCompare.attempt( left, right, caseSensitive, fail, locale );
+		}
 	}
 
 }
