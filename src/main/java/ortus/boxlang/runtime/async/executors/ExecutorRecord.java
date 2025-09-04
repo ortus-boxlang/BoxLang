@@ -21,6 +21,9 @@ import java.util.concurrent.ExecutorService;
 
 import ortus.boxlang.runtime.services.AsyncService.ExecutorType;
 
+/**
+ * @deprecated use {@link BoxExecutor} instead since version 1.6.0
+ */
 public class ExecutorRecord extends BoxExecutor {
 
 	public ExecutorRecord( ExecutorService executor, String name, ExecutorType type, Integer maxThreads ) {
