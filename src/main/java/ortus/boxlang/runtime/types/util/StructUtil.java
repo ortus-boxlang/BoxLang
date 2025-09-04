@@ -1172,6 +1172,7 @@ public class StructUtil {
 	 */
 	public static HashMap<Key, Comparator<Map.Entry<Key, Object>>> getCommonEntryComparators( Locale locale ) {
 		return new HashMap<Key, Comparator<Map.Entry<Key, Object>>>() {
+
 			{
 				put( Key.of( "textAsc" ), ( a, b ) -> StringCompare
 				    .invoke( StringCaster.cast( a.getValue() ), StringCaster.cast( b.getValue() ), true, locale ) );
