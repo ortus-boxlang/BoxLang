@@ -19,6 +19,7 @@
 package ortus.boxlang.compiler.prettyprint;
 
 import ortus.boxlang.compiler.ast.BoxNode;
+import ortus.boxlang.compiler.ast.comment.BoxComment;
 import ortus.boxlang.compiler.ast.comment.BoxDocComment;
 import ortus.boxlang.compiler.ast.comment.BoxMultiLineComment;
 import ortus.boxlang.compiler.ast.comment.BoxSingleLineComment;
@@ -42,7 +43,7 @@ public class CommentsPrinter {
 		for ( var comment : node.getComments() ) {
 			if ( comment.isBefore( node ) ) {
 				if ( lastNodeToPrint != null ) {
-					printPreCommentSpacing( lastNodeToPrint, comment );
+					printCommentSpacing( lastNodeToPrint, comment );
 				}
 
 				comment.accept( visitor );
@@ -51,30 +52,10 @@ public class CommentsPrinter {
 		}
 
 		if ( lastNodeToPrint != null ) {
-			printPreCommentSpacing( lastNodeToPrint, node );
+			printCommentSpacing( lastNodeToPrint, node );
 		}
 
 		return lastNodeToPrint != null;
-	}
-
-	/**
-	 * print comment line spacing
-	 */
-	void printPreCommentSpacing( BoxNode lastNodeToPrint, BoxNode node ) {
-		var currentDoc = visitor.getCurrentDoc();
-		// If we have printed a comment, and this one starts on the same line, we need to append a space
-		if ( node.startsOnEndLineOf( lastNodeToPrint ) ) {
-			currentDoc.append( " " );
-		} else {
-			// this node starts on a new line
-			currentDoc.append( Line.HARD );
-
-			// check to see if there is a gap of multiple lines in the source
-			if ( node.hasLinesBetween( lastNodeToPrint ) ) {
-				// if so, print an extra new line (eliminating line gaps greater than 1)
-				currentDoc.append( Line.HARD );
-			}
-		}
 	}
 
 	boolean printPostComments( BoxNode node ) {
@@ -108,17 +89,23 @@ public class CommentsPrinter {
 	}
 
 	boolean printInsideComments( BoxNode node, boolean indent ) {
-		var	currentDoc	= visitor.getCurrentDoc();
-		Doc	commentsDoc	= null;
+		var		currentDoc		= visitor.getCurrentDoc();
+
+		Doc		commentsDoc		= null;
+		BoxNode	lastNodeToPrint	= null;
 
 		for ( var comment : node.getComments() ) {
 			if ( comment.isInside( node ) ) {
 				if ( commentsDoc == null ) {
-					commentsDoc = visitor.pushDoc( DocType.ARRAY );
-				} else {
-					commentsDoc.append( Line.HARD );
+					lastNodeToPrint	= findPreviousNode( node, comment );
+					commentsDoc		= visitor.pushDoc( DocType.ARRAY );
 				}
+				if ( lastNodeToPrint != null ) {
+					printCommentSpacing( lastNodeToPrint, comment );
+				}
+
 				comment.accept( visitor );
+				lastNodeToPrint = comment;
 			}
 		}
 
@@ -135,6 +122,26 @@ public class CommentsPrinter {
 		}
 
 		return commentsDoc != null;
+	}
+
+	/**
+	 * print comment line spacing
+	 */
+	void printCommentSpacing( BoxNode lastNodeToPrint, BoxNode node ) {
+		var currentDoc = visitor.getCurrentDoc();
+		// If we have printed a comment, and this one starts on the same line, we need to append a space
+		if ( node.startsOnEndLineOf( lastNodeToPrint ) ) {
+			currentDoc.append( " " );
+		} else {
+			// this node starts on a new line
+			currentDoc.append( Line.HARD );
+
+			// check to see if there is a gap of multiple lines in the source
+			if ( node.hasLinesBetween( lastNodeToPrint ) ) {
+				// if so, print an extra new line (eliminating line gaps greater than 1)
+				currentDoc.append( Line.HARD );
+			}
+		}
 	}
 
 	/**
@@ -209,6 +216,22 @@ public class CommentsPrinter {
 			}
 			currentDoc.append( "*/" );
 		}
+	}
+
+	private BoxNode findPreviousNode( BoxNode parentNode, BoxComment comment ) {
+		BoxNode previousNode = null;
+		// Note, children are in order, so we can just iterate until we find the comment
+		// TODO: check if there are circumstances where this is not true
+		for ( var node : parentNode.getChildren() ) {
+			if ( node == comment ) {
+				break;
+			} else if ( node instanceof BoxComment ) {
+				// skip comments
+				continue;
+			}
+			previousNode = node;
+		}
+		return previousNode;
 	}
 
 }

@@ -47,7 +47,7 @@ public class StructLiteralPrinter {
 
 		if ( size > 0 ) {
 			var contentsDoc = visitor.pushDoc( DocType.INDENT );
-			contentsDoc.append( Line.SOFT );
+			contentsDoc.append( visitor.config.getBracketPadding() ? Line.LINE : Line.SOFT );
 
 			for ( int i = 0; i < size; i += 2 ) {
 				values.get( i ).accept( visitor );
@@ -59,15 +59,15 @@ public class StructLiteralPrinter {
 					contentsDoc.append( "," ).append( Line.LINE );
 				}
 			}
-			visitor.printInsideComments( structNode, true );
+			visitor.printInsideComments( structNode, false );
 
-			structDoc.append( visitor.popDoc() ).append( Line.SOFT );
+			structDoc.append( visitor.popDoc() ).append( visitor.config.getBracketPadding() ? Line.LINE : Line.SOFT );
 		} else {
 			if ( isOrdered ) {
-				structDoc.append( ":" );
+				structDoc.append( visitor.config.getBracketPadding() ? " : " : ":" );
 
 			}
-			visitor.printInsideComments( structNode, true );
+			visitor.printInsideComments( structNode, false );
 			structDoc.append( Line.SOFT );
 		}
 

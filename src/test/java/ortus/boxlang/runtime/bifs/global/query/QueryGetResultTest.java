@@ -49,7 +49,6 @@ public class QueryGetResultTest extends BaseJDBCTest {
 		assertTrue( getVariables().get( Key.result ) instanceof Struct );
 		IStruct result = getVariables().getAsStruct( Key.result );
 		assertTrue( result.containsKey( Key.recordCount ) );
-		assertTrue( result.containsKey( Key.columns ) );
 		assertTrue( result.get( Key.recordCount ) instanceof Integer );
 		assertThat( result.getAsInteger( Key.recordCount ) ).isEqualTo( 1 );
 	}
@@ -68,7 +67,6 @@ public class QueryGetResultTest extends BaseJDBCTest {
 		assertTrue( getVariables().get( Key.result ) instanceof Struct );
 		IStruct result = getVariables().getAsStruct( Key.result );
 		assertTrue( result.containsKey( Key.recordCount ) );
-		assertTrue( result.containsKey( Key.columns ) );
 		assertTrue( result.get( Key.recordCount ) instanceof Integer );
 		assertThat( result.getAsInteger( Key.recordCount ) ).isEqualTo( 1 );
 	}

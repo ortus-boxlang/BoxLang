@@ -319,7 +319,7 @@ public class BoxScriptingEngine implements ScriptEngine, Compilable, Invocable {
 			throw new ScriptException( "Cannot invoke method on null object" );
 		}
 
-		RequestBoxContext.setCurrent( getBoxContext().getParentOfType( RequestBoxContext.class ) );
+		RequestBoxContext.setCurrent( getBoxContext() );
 		ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
 		try {
 			// This will handle any sort of referencable object, including member methods on data types
@@ -344,7 +344,7 @@ public class BoxScriptingEngine implements ScriptEngine, Compilable, Invocable {
 	 */
 	@Override
 	public Object invokeFunction( String name, Object... args ) throws ScriptException, NoSuchMethodException {
-		RequestBoxContext.setCurrent( boxContext.getParentOfType( RequestBoxContext.class ) );
+		RequestBoxContext.setCurrent( boxContext );
 		ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
 		try {
 			return boxContext.invokeFunction( Key.of( name ), args );

@@ -26,6 +26,8 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.StructUtil;
+import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
+import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.STRUCT )
@@ -41,8 +43,9 @@ public class StructEach extends BIF {
 		    new Argument( true, Argument.STRUCT_LOOSE, Key.struct ),
 		    new Argument( true, "function:BiConsumer", Key.callback ),
 		    new Argument( false, Argument.BOOLEAN, Key.parallel, false ),
-		    new Argument( false, Argument.INTEGER, Key.maxThreads ),
-		    new Argument( false, Argument.BOOLEAN, Key.ordered, false )
+		    new Argument( false, Argument.ANY, Key.maxThreads ),
+		    new Argument( false, Argument.BOOLEAN, Key.ordered, false ),
+		    new Argument( false, Argument.BOOLEAN, Key.virtual, false )
 		};
 	}
 
@@ -70,19 +73,31 @@ public class StructEach extends BIF {
 	 *
 	 * @argument.parallel Whether to run the filter in parallel. Defaults to false. If true, the filter will be run in parallel using a ForkJoinPool.
 	 *
-	 * @argument.maxThreads The maximum number of threads to use when running the filter in parallel. If not passed it will use the default number of threads for the ForkJoinPool.
-	 *                      If parallel is false, this argument is ignored.
+	 * @argument.maxThreads The maximum number of threads to use when running in parallel. If not passed it will use the default number of threads for the ForkJoinPool.
+	 *                      If parallel is false, this argument is ignored. If a boolean is provided it will be assigned to the virtual argument instead.
 	 *
 	 * @argument.ordered (BoxLang only) whether parallel operations should execute and maintain order
+	 * 
+	 * @argument.virtual ( BoxLang only) If true, the function will be invoked using virtual threads. Defaults to false. Ignored if parallel is false.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
+		Object maxThreads = arguments.get( Key.maxThreads );
+		if ( maxThreads instanceof Boolean castBoolean ) {
+			// If maxThreads is a boolean, we assign it to virtual
+			arguments.put( Key.virtual, castBoolean );
+			maxThreads = null;
+		}
+
+		CastAttempt<Integer> maxThreadsAttempt = IntegerCaster.attempt( maxThreads );
+
 		StructUtil.each(
 		    arguments.getAsStruct( Key.struct ),
 		    arguments.getAsFunction( Key.callback ),
 		    context,
 		    arguments.getAsBoolean( Key.parallel ),
-		    arguments.getAsInteger( Key.maxThreads ),
-		    arguments.getAsBoolean( Key.ordered )
+		    maxThreadsAttempt.getOrDefault( 0 ),
+		    arguments.getAsBoolean( Key.ordered ),
+		    arguments.getAsBoolean( Key.virtual )
 		);
 		return null;
 	}

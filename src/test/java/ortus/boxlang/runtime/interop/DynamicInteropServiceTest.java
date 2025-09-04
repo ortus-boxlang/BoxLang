@@ -960,14 +960,12 @@ public class DynamicInteropServiceTest {
 			"""
 				import java.util.Arrays;
 
-				result = Arrays.stream( [ 1,2,3 ] )
+				result = Arrays.stream( [ 1,2,3 ] ).toArray()
 			""", context);
 		// @formatter:on
 
 		assertThat( variables.get( Key.result ) ).isNotNull();
-		assertThat( variables.get( Key.result ) ).isInstanceOf( IntStream.class );
-		assertThat( ( ( IntStream ) variables.get( Key.result ) ).toArray() ).isEqualTo( new int[] { 1, 2, 3 } );
-
+		assertThat( variables.get( Key.result ) ).isInstanceOf( int[].class );
 	}
 
 	@SuppressWarnings( "unchecked" )

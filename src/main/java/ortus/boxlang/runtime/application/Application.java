@@ -237,6 +237,7 @@ public class Application {
 		// Make sure our thread is using the right class loader
 		logger.trace( "===> Setting the context classLoader to the [javasettings] loader during startupClassLoaderPaths via [{}]",
 		    Thread.currentThread().getName() );
+
 		Thread.currentThread().setContextClassLoader( this.classLoaders.get( loaderCacheKey ) );
 	}
 

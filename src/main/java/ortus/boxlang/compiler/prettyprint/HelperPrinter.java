@@ -100,11 +100,11 @@ public class HelperPrinter {
 	public void printParensExpression( BoxExpression node ) {
 		var	currentDoc	= visitor.getCurrentDoc();
 		var	parensDoc	= visitor.pushDoc( DocType.GROUP ).append( "(" );
-		visitor.pushDoc( DocType.INDENT ).append( Line.SOFT );
+		visitor.pushDoc( DocType.INDENT ).append( visitor.config.getParensPadding() ? Line.LINE : Line.SOFT );
 		node.accept( visitor );
 		parensDoc
 		    .append( visitor.popDoc() )
-		    .append( Line.SOFT )
+		    .append( visitor.config.getParensPadding() ? Line.LINE : Line.SOFT )
 		    .append( ")" );
 
 		currentDoc.append( visitor.popDoc() );

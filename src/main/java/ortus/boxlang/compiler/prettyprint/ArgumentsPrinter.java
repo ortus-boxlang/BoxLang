@@ -42,7 +42,7 @@ public class ArgumentsPrinter {
 
 		if ( size > 0 ) {
 			var contentsDoc = visitor.pushDoc( DocType.INDENT );
-			contentsDoc.append( Line.SOFT );
+			contentsDoc.append( visitor.config.getParensPadding() ? Line.LINE : Line.SOFT );
 
 			// Note: handling BoxArgument here, so that eventually we can
 			// align named arguments if they print on multiple lines.
@@ -71,7 +71,7 @@ public class ArgumentsPrinter {
 			visitor.printInsideComments( parentNode, false );
 
 			argumentsDoc.append( visitor.popDoc() );
-			argumentsDoc.append( Line.SOFT );
+			argumentsDoc.append( visitor.config.getParensPadding() ? Line.LINE : Line.SOFT );
 		} else {
 			visitor.printInsideComments( parentNode, false );
 			// argumentsDoc.append( Line.SOFT );

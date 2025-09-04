@@ -15,7 +15,7 @@ plugins {
 	// For source code formatting
 	id "com.diffplug.spotless" version "7.2.0"
 	// Shadow
-	id "com.gradleup.shadow" version "9.0.0-rc1"
+	id "com.gradleup.shadow" version "9.0.2"
 	// For dependency updates
 	id 'com.github.ben-manes.versions' version '0.52.0'
 	// For building service loader files
@@ -23,7 +23,7 @@ plugins {
 	// Maven Publisher
 	id 'maven-publish'
 	id 'signing'
-	id 'com.gradleup.nmcp' version "0.0.9"
+	id 'com.gradleup.nmcp.aggregation' version "1.1.0"
     // Download task
     id "de.undercouch.download" version "5.6.0"
 }
@@ -78,6 +78,11 @@ sourceSets {
 			include '**/*.js'
 			include '**/*.cf*'
             include '**/META-INF/services/*'
+        }
+    }
+    test {
+        java {
+            srcDirs = [ 'src/test/java' ]
         }
     }
 }
@@ -476,24 +481,38 @@ publishing {
     }
 }
 
-nmcp {
-  publishAllProjectsProbablyBreakingProjectIsolation {
-    username = System.getenv( "MAVEN_USERNAME" ) ?: project.findProperty( "maven_username" )
-    password = System.getenv( "MAVEN_PASSWORD" ) ?: project.findProperty( "maven_password" )
-    // publish manually from the portal
-    //publicationType = "USER_MANAGED"
-    // or if you want to publish automatically
-    publicationType = "AUTOMATIC"
-  }
+/**
+ * Maven Central Publishing
+ * Plugin Information here: https://github.com/gradleup/nmcp
+ */
+nmcpAggregation {
+	centralPortal {
+		username = System.getenv( "MAVEN_USERNAME" ) ?: findProperty( "maven_username" )
+		password = System.getenv( "MAVEN_PASSWORD" ) ?: findProperty( "maven_password" )
+		// Manual release from the Portal UI:
+		// publishingType = "USER_MANAGED"
+		// Or auto-release:
+		publishingType = "AUTOMATIC"
+	}
+
+	// Publishes all subprojects that apply 'maven-publish'
+  	publishAllProjectsProbablyBreakingProjectIsolation()
 }
 
 /**
  * Digital Signing of assets using the ortus GPG Key
  */
 signing {
-	def signingKey = System.getenv("GPG_KEY") ?: project.findProperty("signing.keyId")
-	def signingPassword = System.getenv("GPG_PASSWORD") ?: project.findProperty("signing.password")
-    useInMemoryPgpKeys(signingKey, signingPassword)
+	// Check if we have environment variables for in-memory PGP keys (CI/CD)
+	def gpgKey = System.getenv( "GPG_KEY" )
+	def gpgPassword = System.getenv( "GPG_PASSWORD" )
+
+	if ( gpgKey && gpgPassword ) {
+		// Use in-memory PGP keys for CI/CD
+		useInMemoryPgpKeys( gpgKey, gpgPassword )
+	}
+	// Otherwise use traditional gradle.properties approach for local development
+
     sign publishing.publications.shadow
 }
 
@@ -676,10 +695,20 @@ test {
 	// IMPORTANT: Do not leave this uncommented and commit or all tests locally will run on the specified compiler
 	// systemProperty 'boxlang.experimental.compiler', System.getProperty('boxlang.experimental.compiler', "java")
 	useJUnitPlatform()
+
+	// Detailed  logging
 	testLogging {
 		showStandardStreams = true
-		events "FAILED", "STANDARD_ERROR"
+		events "PASSED", "FAILED", "SKIPPED", "STANDARD_ERROR"
+        displayGranularity = 1
 	}
+
+	// Set system properties for consistent behavior across OS
+	systemProperty 'junit.jupiter.testclass.order.default', 'org.junit.jupiter.api.ClassOrderer$ClassName'
+    systemProperty 'file.encoding', 'UTF-8'
+    systemProperty 'user.timezone', 'UTC'
+
+	// Dependencies
 	dependsOn compileJava, compileTestJava
 	//exclude '**/resources/**'
 

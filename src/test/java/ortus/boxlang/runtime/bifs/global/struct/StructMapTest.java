@@ -190,4 +190,27 @@ public class StructMapTest {
 		assertTrue( BooleanCaster.cast( variables.getAsStruct( result ).get( "blah" ) ) );
 	}
 
+	@DisplayName( "It should execute in parallel with a virtual threads arg" )
+	@Test
+	public void testParallelVirtualThreads() {
+		instance.executeSource(
+		    """
+		    ref = {
+		    	"foo" : "bar",
+		    	"bar" : 1,
+		    	"blah" : "blerg"
+		    };
+
+		       function mapFn( key, value, struct ){
+		    		return value == "blerg";
+		       };
+
+		       result = ref.map( mapFn, true, true );
+		              """,
+		    context );
+		assertTrue( variables.get( result ) instanceof Struct );
+		assertEquals( variables.getAsStruct( result ).size(), 3 );
+		assertTrue( BooleanCaster.cast( variables.getAsStruct( result ).get( "blah" ) ) );
+	}
+
 }

@@ -39,7 +39,7 @@ public class ParametersPrinter {
 
 		if ( size > 0 ) {
 			var contentsDoc = visitor.pushDoc( DocType.INDENT );
-			contentsDoc.append( Line.SOFT );
+			contentsDoc.append( visitor.config.getParensPadding() ? Line.LINE : Line.SOFT );
 
 			for ( int i = 0; i < size; i++ ) {
 				var node = params.get( i );
@@ -59,7 +59,12 @@ public class ParametersPrinter {
 					contentsDoc.append( " = " );
 					node.getValue().accept( visitor );
 				}
+
+				visitor.helperPrinter.printKeyValueAnnotations( node.getAnnotations(), false );
+
+				visitor.printInsideComments( node, false );
 				visitor.printPostComments( node );
+
 				if ( i < size - 1 ) {
 					contentsDoc.append( "," ).append( Line.LINE );
 				}
@@ -67,7 +72,7 @@ public class ParametersPrinter {
 
 			// visitor.printDanglingComments( arrayNode, true );
 
-			paramsDoc.append( visitor.popDoc() ).append( Line.SOFT );
+			paramsDoc.append( visitor.popDoc() ).append( visitor.config.getParensPadding() ? Line.LINE : Line.SOFT );
 		} else {
 			// visitor.printDanglingComments( arrayNode, true );
 			paramsDoc.append( Line.SOFT );

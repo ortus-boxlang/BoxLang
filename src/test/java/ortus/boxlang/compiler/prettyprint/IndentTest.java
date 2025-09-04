@@ -18,25 +18,25 @@
 package ortus.boxlang.compiler.prettyprint;
 
 import java.io.IOException;
+import java.util.stream.Stream;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class IndentTest extends PrettyPrintTest {
 
-	@Test
-	public void testIndent() throws IOException {
-		// indent with tabs
-		Config config = new Config();
-		printTest( "indent", "tabs", config );
+	@ParameterizedTest( name = "Indentation: {0}" )
+	@MethodSource( "indentConfigs" )
+	public void testIndent( String testName, Config config, String expectedSuffix ) throws IOException {
+		printTest( "indent", expectedSuffix, config );
+	}
 
-		// indent with spaces
-		config = new Config().setTabIndent( false );
-		printTest( "indent", "spaces", config );
-
-		// indent with 2 spaces
-		config = new Config()
-		    .setTabIndent( false )
-		    .setIndentSize( 2 );
-		printTest( "indent", "spaces_2", config );
+	static Stream<Arguments> indentConfigs() {
+		return Stream.of(
+		    Arguments.of( "tabs", new Config(), "tabs" ),
+		    Arguments.of( "spaces", new Config().setTabIndent( false ), "spaces" ),
+		    Arguments.of( "2 spaces", new Config().setTabIndent( false ).setIndentSize( 2 ), "spaces_2" )
+		);
 	}
 }

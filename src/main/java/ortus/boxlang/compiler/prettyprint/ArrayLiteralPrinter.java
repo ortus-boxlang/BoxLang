@@ -40,7 +40,7 @@ public class ArrayLiteralPrinter {
 
 		if ( size > 0 ) {
 			var contentsDoc = visitor.pushDoc( DocType.INDENT );
-			contentsDoc.append( Line.SOFT );
+			contentsDoc.append( visitor.config.getBracketPadding() ? Line.LINE : Line.SOFT );
 
 			for ( int i = 0; i < size; i++ ) {
 				values.get( i ).accept( visitor );
@@ -51,12 +51,12 @@ public class ArrayLiteralPrinter {
 				}
 			}
 
-			visitor.printInsideComments( arrayNode, true );
+			visitor.printInsideComments( arrayNode, false );
 
 			arrayDoc.append( visitor.popDoc() );
-			arrayDoc.append( Line.SOFT );
+			arrayDoc.append( visitor.config.getBracketPadding() ? Line.LINE : Line.SOFT );
 		} else {
-			visitor.printInsideComments( arrayNode, true );
+			visitor.printInsideComments( arrayNode, false );
 			arrayDoc.append( Line.SOFT );
 		}
 

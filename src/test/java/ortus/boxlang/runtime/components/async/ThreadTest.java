@@ -431,5 +431,23 @@ public class ThreadTest {
 			assertThat( variables.getAsBoolean( Key.of( "result6" ) ) ).isTrue();
 	}
 
+	@Test
+	public void testThreadUsesSameContextClassloader() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+			import java.lang.Thread;
+			rcl = getBoxContext().getRequestContext().getRequestClassLoader();
+			thread name="myThread" {
+				variables.threadCL = Thread.currentThread().getContextClassLoader();
+			}
+			thread name="myThread" action="join";
+			println( myThread )
+			result = rcl.equals( variables.threadCL );
+					""",
+			context, BoxSourceType.BOXSCRIPT );
+		// @formatter:on
+		assert ( variables.get( result ).equals( true ) );
+	}
 
 }

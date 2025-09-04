@@ -221,18 +221,29 @@ public class RequestThreadManager {
 			// Grab stack trace, only if thread is running OR waiting OR blocked
 			switch ( threadStatus ) {
 				case "RUNNNG", "WAITING", "BLOCKED" -> {
-					StringBuilder		stackTraceBuilder	= new StringBuilder();
-					StackTraceElement[]	stackTrace			= thread.getStackTrace();
-					for ( StackTraceElement element : stackTrace ) {
-						stackTraceBuilder.append( element.toString() ).append( "\n" );
-					}
-					threadMeta.put( Key.stackTrace, stackTraceBuilder.toString() );
+					threadMeta.put( Key.stackTrace, getStackTraceAsString( thread ) );
 				}
 				default -> threadMeta.put( Key.stackTrace, "" );
 			}
 		}
 
 		return threadMeta;
+	}
+
+	/**
+	 * Gets the stack trace for a thread as a string.
+	 * 
+	 * @param thread The thread to get the stack trace for
+	 * 
+	 * @return The stack trace as a string
+	 */
+	private String getStackTraceAsString( Thread thread ) {
+		StringBuilder		stackTraceBuilder	= new StringBuilder();
+		StackTraceElement[]	stackTrace			= thread.getStackTrace();
+		for ( StackTraceElement element : stackTrace ) {
+			stackTraceBuilder.append( element.toString() ).append( "\n" );
+		}
+		return stackTraceBuilder.toString();
 	}
 
 	/**
@@ -296,7 +307,11 @@ public class RequestThreadManager {
 		threadMeta.put( Key.output, output );
 		threadMeta.put( Key.status, ( exception == null ? "COMPLETED" : "TERMINATED" ) );
 		threadMeta.put( Key.elapsedTime, System.currentTimeMillis() - threadData.getAsLong( Key.startTicks ) );
-		threadMeta.put( Key.stackTrace, targetThread.getStackTrace() );
+		if ( interrupted && targetThread.isAlive() ) {
+			threadMeta.put( Key.stackTrace, getStackTraceAsString( targetThread ) );
+		} else {
+			threadMeta.put( Key.stackTrace, "" );
+		}
 
 		// Track this completed thread
 		completedThreads.add( name );

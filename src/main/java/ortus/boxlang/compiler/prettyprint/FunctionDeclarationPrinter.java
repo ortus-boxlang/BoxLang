@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.compiler.prettyprint;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import ortus.boxlang.compiler.ast.BoxInterface;
@@ -48,7 +49,19 @@ public class FunctionDeclarationPrinter {
 
 		var	defaultInterfaceMethod	= node.getFirstNodeOfType( BoxInterface.class ) != null;
 
-		printBoxAnnotations( node.getAnnotations() );
+		// split annotations into pre and post based on whether the source of the annotation starts with `@`
+		var	preAnnotations			= new ArrayList<BoxAnnotation>();
+		var	postAnnotations			= new ArrayList<BoxAnnotation>();
+		for ( var anno : node.getAnnotations() ) {
+			// .getSourceText() _could_ be null, assume pre in that case
+			if ( anno.getSourceText() == null || anno.getSourceText().startsWith( "@" ) ) {
+				preAnnotations.add( anno );
+			} else {
+				postAnnotations.add( anno );
+			}
+		}
+
+		printBoxAnnotations( preAnnotations );
 
 		if ( defaultInterfaceMethod ) {
 			currentDoc.append( "default " );
@@ -70,6 +83,8 @@ public class FunctionDeclarationPrinter {
 		    .append( node.getName() );
 
 		visitor.parametersPrinter.print( node.getArgs() );
+
+		visitor.helperPrinter.printKeyValueAnnotations( postAnnotations, false );
 
 		if ( node.getBody() != null ) {
 			currentDoc.append( " " );
@@ -108,6 +123,8 @@ public class FunctionDeclarationPrinter {
 		    .append( node.getName() );
 
 		visitor.parametersPrinter.print( node.getArgs() );
+
+		visitor.helperPrinter.printKeyValueAnnotations( node.getAnnotations(), false );
 
 		if ( node.getBody() != null ) {
 			currentDoc.append( " " );
