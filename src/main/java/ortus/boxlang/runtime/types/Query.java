@@ -40,6 +40,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.BoxMemberExpose;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
@@ -1260,8 +1261,20 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 *
 	 * @return A copy of the current query.
 	 */
+	@Deprecated
 	public Query duplicate() {
-		return duplicate( false );
+		return duplicate( RequestBoxContext.getCurrent() );
+	}
+
+	/**
+	 * Duplicate the current query.
+	 * 
+	 * @param context The context to use for duplication of nested objects
+	 *
+	 * @return A copy of the current query.
+	 */
+	public Query duplicate( IBoxContext context ) {
+		return duplicate( false, context );
 	}
 
 	/**
@@ -1271,7 +1284,20 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 *
 	 * @return A copy of the current query.
 	 */
+	@Deprecated
 	public Query duplicate( boolean deep ) {
+		return duplicate( deep, RequestBoxContext.getCurrent() );
+	}
+
+	/**
+	 * Duplicate the current query.
+	 *
+	 * @param deep    If true, nested objects will be duplicated as well.
+	 * @param context The context to use for duplication of nested objects
+	 *
+	 * @return A copy of the current query.
+	 */
+	public Query duplicate( boolean deep, IBoxContext context ) {
 		Query q = new Query();
 
 		this.getColumns().entrySet().stream().forEach( entry -> {
@@ -1279,7 +1305,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		} );
 
 		if ( deep ) {
-			q.addData( DuplicationUtil.duplicate( this.getData(), deep ) );
+			q.addData( DuplicationUtil.duplicate( this.getData(), deep, context ) );
 		} else {
 			q.addData( this.getData() );
 		}

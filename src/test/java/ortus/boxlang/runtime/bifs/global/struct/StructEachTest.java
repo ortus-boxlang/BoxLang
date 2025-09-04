@@ -220,4 +220,70 @@ public class StructEachTest {
 		assertThat( values.contains( 1 ) ).isTrue();
 		assertThat( values.contains( "blerg" ) ).isTrue();
 	}
+
+	@DisplayName( "Tests using in parallel with virtual threads" )
+	@Test
+	public void testBifWithParallelWithVirtualThreads() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		    	values = [];
+		    	ref = [
+						"foo" : "bar",
+						"bar" : 1,
+						"blah" : "blerg",
+						"complex" : {
+							"foo" : "bar"
+						}
+		       ];
+
+				function eachFn( key, value, struct ){
+					values.append( value );
+				};
+
+		    	StructEach( struct=ref, callback=eachFn, parallel=true, virtual=true );
+		       """,
+		    context );
+		// @formatter:on
+
+		Array values = ( Array ) variables.get( Key.of( "values" ) );
+		assertThat( values.size() ).isEqualTo( 4 );
+		// Note: order is not guaranteed with parallel execution
+		assertThat( values.contains( "bar" ) ).isTrue();
+		assertThat( values.contains( 1 ) ).isTrue();
+		assertThat( values.contains( "blerg" ) ).isTrue();
+	}
+
+	@DisplayName( "Tests using in parallel with virtual threads using the alt positional arg" )
+	@Test
+	public void testBifWithParallelAltWithVirtualThreads() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		    	values = [];
+		    	ref = [
+						"foo" : "bar",
+						"bar" : 1,
+						"blah" : "blerg",
+						"complex" : {
+							"foo" : "bar"
+						}
+		       ];
+
+				function eachFn( key, value, struct ){
+					values.append( value );
+				};
+
+		    	StructEach( ref, eachFn, true, true );
+		       """,
+		    context );
+		// @formatter:on
+
+		Array values = ( Array ) variables.get( Key.of( "values" ) );
+		assertThat( values.size() ).isEqualTo( 4 );
+		// Note: order is not guaranteed with parallel execution
+		assertThat( values.contains( "bar" ) ).isTrue();
+		assertThat( values.contains( 1 ) ).isTrue();
+		assertThat( values.contains( "blerg" ) ).isTrue();
+	}
 }

@@ -50,7 +50,7 @@ public class QueryReverse extends BIF {
 	 * @argument.query The query to reverse
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Query query = ( Query ) DuplicationUtil.duplicate( arguments.get( Key.query ), false );
+		Query query = ( Query ) DuplicationUtil.duplicate( arguments.get( Key.query ), false, context );
 
 		Collections.reverse( query.getData() );
 

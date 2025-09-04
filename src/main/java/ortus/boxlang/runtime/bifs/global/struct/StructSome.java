@@ -26,6 +26,8 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.StructUtil;
+import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
+import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 
 @BoxBIF
 @BoxMember( type = BoxLangType.STRUCT )
@@ -37,10 +39,11 @@ public class StructSome extends BIF {
 	public StructSome() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "structloose", Key.struct ),
+		    new Argument( true, Argument.STRUCT_LOOSE, Key.struct ),
 		    new Argument( true, "function:BiPredicate", Key.callback ),
-		    new Argument( false, "boolean", Key.parallel, false ),
-		    new Argument( false, "integer", Key.maxThreads )
+		    new Argument( false, Argument.BOOLEAN, Key.parallel, false ),
+		    new Argument( false, Argument.ANY, Key.maxThreads ),
+		    new Argument( false, Argument.BOOLEAN, Key.virtual, false )
 		};
 	}
 
@@ -68,15 +71,27 @@ public class StructSome extends BIF {
 	 * @argument.parallel Whether to run the filter in parallel. Defaults to false. If true, the filter will be run in parallel using a ForkJoinPool.
 	 *
 	 * @argument.maxThreads The maximum number of threads to use when running the filter in parallel. If not passed it will use the default number of threads for the ForkJoinPool.
-	 *                      If parallel is false, this argument is ignored.
+	 *                      If parallel is false, this argument is ignored. If parallel is true and maxThreads is not passed, it will use the common ForkJoinPool.
+	 * 
+	 * @argument.virtual Whether to use a virtual thread for each task when running in parallel. Defaults to false. Ignored if parallel is false.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
+		Object maxThreads = arguments.get( Key.maxThreads );
+		if ( maxThreads instanceof Boolean castBoolean ) {
+			// If maxThreads is a boolean, we assign it to virtual
+			arguments.put( Key.virtual, castBoolean );
+			maxThreads = null;
+		}
+
+		CastAttempt<Integer> maxThreadsAttempt = IntegerCaster.attempt( maxThreads );
+
 		return StructUtil.some(
 		    arguments.getAsStruct( Key.struct ),
 		    arguments.getAsFunction( Key.callback ),
 		    context,
 		    arguments.getAsBoolean( Key.parallel ),
-		    arguments.getAsInteger( Key.maxThreads )
+		    maxThreadsAttempt.getOrDefault( 0 ),
+		    arguments.getAsBoolean( Key.virtual )
 		);
 	}
 

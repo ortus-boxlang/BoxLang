@@ -164,4 +164,25 @@ public class QueryEveryTest {
 
 		assertThat( variables.get( result ) ).isEqualTo( true );
 	}
+
+	@DisplayName( "It can run in parallel with Virtual threads" )
+	@Test
+	public void testQueryEveryParallelWithVirtualThreads() {
+		instance.executeSource(
+		    """
+		    query = QueryNew( "id,name", "integer,varchar" );
+		    QueryAddRow( query, { id = 1, name = "John" } );
+		    QueryAddRow( query, { id = 2, name = "Jane" } );
+		    QueryAddRow( query, { id = 3, name = "Jim" } );
+		    QueryAddRow( query, { id = 4, name = "Jill" } );
+		    QueryAddRow( query, { id = 5, name = "Jack" } );
+
+		    result = QueryEvery( query, function( row, i, query ){
+		    	return row.id > 0;
+		    }, true, true );
+		    """,
+		    context );
+
+		assertThat( variables.get( result ) ).isEqualTo( true );
+	}
 }

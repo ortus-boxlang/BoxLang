@@ -197,4 +197,41 @@ public class QueryFilterTest {
 		assertThat( qry.size() ).isEqualTo( 3 );
 	}
 
+	@DisplayName( "It should filter a query with parallel execution and virtual threads" )
+	@Test
+	public void testFilterParallelWithVirtualThreads() {
+		instance.executeSource(
+		    """
+		    news = queryNew("id,type,title", "integer,varchar,varchar");
+		    queryAddRow(news,[{
+		    	id: 1,
+		    	type: "book",
+		    	title: "Cloud Atlas"
+		    },{
+		    	id: 2,
+		    	type: "book",
+		    	title: "Lord of The Rings"
+		    },{
+		    	id: 3,
+		    	type: "film",
+		    	title: "Men in Black"
+		    },{
+		    	id: 4,
+		    	type: "book",
+		    	title: "The Hobbit"
+		    },{
+		    	id: 5,
+		    	type: "film",
+		    	title: "Star Wars"
+		    }]);
+		    result = queryFilter( news, (_news) => {
+		    		return _news.type is 'book';
+		    	}, true, true );
+		    	   """,
+		    context );
+
+		Query qry = variables.getAsQuery( result );
+		assertThat( qry.size() ).isEqualTo( 3 );
+	}
+
 }

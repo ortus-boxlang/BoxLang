@@ -32,7 +32,8 @@ import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
 
-import ortus.boxlang.runtime.async.executors.ExecutorRecord;
+import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.async.executors.BoxExecutor;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ThreadBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
@@ -102,11 +103,6 @@ public class ListUtil {
 	 * Sort directives for sorting lists.
 	 */
 	public static final Struct	sortDirectives;
-
-	/**
-	 * The async service used for parallel processing of list operations.
-	 */
-	private static AsyncService	asyncService		= BoxRuntime.getInstance().getAsyncService();
 
 	static {
 		sortDirectives = new Struct(
@@ -670,7 +666,7 @@ public class ListUtil {
 	    Boolean parallel,
 	    Integer maxThreads,
 	    Boolean ordered,
-	    Boolean virtual ) {
+	    boolean virtual ) {
 
 		// Parameter validation
 		Objects.requireNonNull( array, "Array cannot be null" );
@@ -710,8 +706,7 @@ public class ListUtil {
 				return;
 			}
 
-			ExecutorRecord executor = chooseExecutor( "ArrayEach_", maxThreads, virtual );
-
+			BoxExecutor executor = AsyncService.chooseParallelExecutor( "ArrayEach_", maxThreads, virtual );
 			executor.submitAndGet( () -> {
 				if ( ordered ) {
 					arrayStream
@@ -786,7 +781,7 @@ public class ListUtil {
 	    IBoxContext callbackContext,
 	    Boolean parallel,
 	    Integer maxThreads,
-	    Boolean virtual ) {
+	    boolean virtual ) {
 
 		// Parameter validation
 		Objects.requireNonNull( array, "Array cannot be null" );
@@ -820,8 +815,7 @@ public class ListUtil {
 				    .anyMatch( test );
 			}
 
-			ExecutorRecord executor = chooseExecutor( "ArraySome_", maxThreads, virtual );
-
+			BoxExecutor executor = AsyncService.chooseParallelExecutor( "ArraySome_", maxThreads, virtual );
 			return ( Boolean ) executor.submitAndGet( () -> {
 				return arrayStream
 				    .parallel()
@@ -878,7 +872,7 @@ public class ListUtil {
 	    IBoxContext callbackContext,
 	    Boolean parallel,
 	    Integer maxThreads,
-	    Boolean virtual ) {
+	    boolean virtual ) {
 
 		// Parameter validation
 		Objects.requireNonNull( array, "Array cannot be null" );
@@ -912,7 +906,7 @@ public class ListUtil {
 				    .allMatch( test );
 			}
 
-			ExecutorRecord executor = chooseExecutor( "ArrayEvery_", maxThreads, virtual );
+			BoxExecutor executor = AsyncService.chooseParallelExecutor( "ArrayEvery_", maxThreads, virtual );
 
 			return ( Boolean ) executor.submitAndGet( () -> {
 				return arrayStream
@@ -934,6 +928,8 @@ public class ListUtil {
 	 * @param callbackContext The context in which to execute the callback
 	 * @param parallel        Whether to process the filter in parallel
 	 * @param maxThreads      Optional max threads for parallel execution
+	 * 
+	 * @deprecated Since 1.5.0 Use {@link #filter(Array, Function, IBoxContext, Boolean, Integer, Boolean)} instead.
 	 *
 	 * @return A filtered array
 	 */
@@ -943,6 +939,35 @@ public class ListUtil {
 	    IBoxContext callbackContext,
 	    Boolean parallel,
 	    Integer maxThreads ) {
+		return filter(
+		    array,
+		    callback,
+		    callbackContext,
+		    parallel,
+		    maxThreads,
+		    false // Default to not using virtual threads
+		);
+	}
+
+	/**
+	 * Method to filter an list with a function callback and context
+	 *
+	 * @param array           The array object to filter
+	 * @param callback        The callback Function object
+	 * @param callbackContext The context in which to execute the callback
+	 * @param parallel        Whether to process the filter in parallel
+	 * @param maxThreads      Optional max threads for parallel execution
+	 * @param virtual         Whether to use virtual threads for parallel execution
+	 *
+	 * @return A filtered array
+	 */
+	public static Array filter(
+	    Array array,
+	    Function callback,
+	    IBoxContext callbackContext,
+	    Boolean parallel,
+	    Integer maxThreads,
+	    boolean virtual ) {
 
 		// Parameter validation
 		Objects.requireNonNull( array, "Array cannot be null" );
@@ -968,28 +993,27 @@ public class ListUtil {
 		}
 
 		// Create a stream of what we want, usage is determined internally by the
-		// terminators
+		// terminators. These methods are lazily executed by the terminal `collect` operation
 		Stream<Object> arrayStream = array
 		    .intStream()
 		    .filter( test )
 		    .mapToObj( ( idx ) -> array.size() > idx ? array.getData( idx ) : null );
 
 		if ( parallel ) {
-			// If maxThreads is null or 0, then use just the ForkJoinPool default
 			// parallelism level
-			if ( maxThreads <= 0 ) {
+			if ( !virtual && maxThreads <= 0 ) {
 				return arrayStream
 				    .parallel()
 				    .collect( BLCollector.toArray( array.getClass() ) );
 			}
-			return ( Array ) AsyncService.buildExecutor(
-			    "ArrayFilter_" + UUID.randomUUID().toString(),
-			    AsyncService.ExecutorType.FORK_JOIN,
-			    maxThreads ).submitAndGet( () -> {
-				    return arrayStream
-				        .parallel()
-				        .collect( BLCollector.toArray( array.getClass() ) );
-			    } );
+
+			BoxExecutor executor = AsyncService.chooseParallelExecutor( "ArrayFilter_", maxThreads, virtual );
+
+			return ( Array ) executor.submitAndGet( () -> {
+				return arrayStream
+				    .parallel()
+				    .collect( BLCollector.toArray( array.getClass() ) );
+			} );
 		}
 
 		// Non-parallel execution
@@ -1111,7 +1135,7 @@ public class ListUtil {
 	    IBoxContext callbackContext,
 	    Boolean parallel,
 	    Integer maxThreads,
-	    Boolean virtual ) {
+	    boolean virtual ) {
 
 		// Parameter validation
 		Objects.requireNonNull( array, "Array cannot be null" );
@@ -1151,7 +1175,7 @@ public class ListUtil {
 				    .collect( BLCollector.toArray( array.getClass() ) );
 			}
 
-			ExecutorRecord executor = chooseExecutor( "ArrayMap_", maxThreads, virtual );
+			BoxExecutor executor = AsyncService.chooseParallelExecutor( "ArrayMap_", maxThreads, virtual );
 
 			return ( Array ) executor.submitAndGet( () -> {
 				return arrayStream
@@ -1233,24 +1257,6 @@ public class ListUtil {
 		        reduction,
 		        ( acc, intermediate ) -> acc );
 
-	}
-
-	/**
-	 * Utility method to choose an executor for parallel processing
-	 * 
-	 * @param maxThreads The maximum number of threads to use ignored if virtual is
-	 *                   requested
-	 * @param virtual    Whether to use virtual threads
-	 */
-	private static ExecutorRecord chooseExecutor( String prefix, int maxThreads, boolean virtual ) {
-		if ( virtual ) {
-			return asyncService.newVirtualExecutor( prefix + UUID.randomUUID().toString() );
-		} else {
-			return AsyncService.buildExecutor(
-			    prefix + UUID.randomUUID().toString(),
-			    AsyncService.ExecutorType.FORK_JOIN,
-			    maxThreads );
-		}
 	}
 
 	/**

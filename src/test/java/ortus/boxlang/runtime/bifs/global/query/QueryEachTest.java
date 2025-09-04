@@ -162,4 +162,33 @@ public class QueryEachTest {
 		Array result = variables.getAsArray( Key.result );
 		assertThat( result.size() ).isEqualTo( 5 );
 	}
+
+	@DisplayName( "It should iterate over each row in the query in parallel with virtual threads" )
+	@Test
+	public void testIteratesOverEachRowInParallelWithVirtualThreads() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				query = QueryNew( "id,name", "integer,varchar" );
+				QueryAddRow( query, { id = 1, name = "John" } );
+				QueryAddRow( query, { id = 2, name = "Jane" } );
+				QueryAddRow( query, { id = 3, name = "Jim" } );
+				QueryAddRow( query, { id = 4, name = "Jill" } );
+				QueryAddRow( query, { id = 5, name = "Jack" } );
+
+				ids = []
+
+				queryEach( query, function( row, currentRow, query ){
+				ids.append( row.id );
+				}, true, true );
+
+				println( ids )
+
+				result = ids;
+			""",
+		    context );
+			// @formatter:on
+		Array result = variables.getAsArray( Key.result );
+		assertThat( result.size() ).isEqualTo( 5 );
+	}
 }

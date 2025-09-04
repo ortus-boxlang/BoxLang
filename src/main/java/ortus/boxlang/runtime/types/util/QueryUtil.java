@@ -27,11 +27,13 @@ import java.util.stream.Stream;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ThreadBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import ortus.boxlang.runtime.dynamic.casters.QueryCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.AsyncService;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
+import ortus.boxlang.runtime.async.executors.BoxExecutor;
 
 /**
  * Utility class for Query operations.
@@ -62,6 +64,8 @@ public class QueryUtil {
 	 * @param callbackContext The context in which to execute the callback
 	 * @param parallel        Whether to process the filter in parallel
 	 * @param maxThreads      Optional max threads for parallel execution
+	 * 
+	 * @deprecated since v1.5.0, use {@link #filter(Query, Function, IBoxContext, boolean, Integer, boolean)} instead
 	 *
 	 * @return A filtered query
 	 */
@@ -71,6 +75,28 @@ public class QueryUtil {
 	    IBoxContext callbackContext,
 	    boolean parallel,
 	    Integer maxThreads ) {
+		return filter( query, callback, callbackContext, parallel, maxThreads, false );
+	}
+
+	/**
+	 * Method to filter a query with a function callback and context
+	 *
+	 * @param query           The query object to filter
+	 * @param callback        The callback Function object
+	 * @param callbackContext The context in which to execute the callback
+	 * @param parallel        Whether to process the filter in parallel
+	 * @param maxThreads      Optional max threads for parallel execution
+	 * @param virtual         Whether to use virtual threads for parallel execution
+	 *
+	 * @return A filtered query
+	 */
+	public static Query filter(
+	    Query query,
+	    Function callback,
+	    IBoxContext callbackContext,
+	    boolean parallel,
+	    Integer maxThreads,
+	    boolean virtual ) {
 
 		// Parameter validation
 		Objects.requireNonNull( query, "Query cannot be null" );
@@ -103,15 +129,13 @@ public class QueryUtil {
 		// Let's do it!
 		if ( parallel ) {
 			// If maxThreads is null or 0, then use just the ForkJoinPool default parallelism level
-			if ( maxThreads <= 0 ) {
+			if ( !virtual && maxThreads <= 0 ) {
 				return queryStream.parallel().collect( BLCollector.toQuery( query ) );
 			}
-			// Otherwise, create a new ForkJoinPool with the specified number of threads
-			return ( Query ) AsyncService.buildExecutor(
-			    "QueryFilter_" + UUID.randomUUID().toString(),
-			    AsyncService.ExecutorType.FORK_JOIN,
-			    maxThreads
-			).submitAndGet( () -> queryStream.parallel().collect( BLCollector.toQuery( query ) ) );
+
+			BoxExecutor executor = AsyncService.chooseParallelExecutor( "QueryFilter_", maxThreads, virtual );
+
+			return QueryCaster.cast( executor.submitAndGet( () -> queryStream.parallel().collect( BLCollector.toQuery( query ) ) ) );
 		}
 
 		// If parallel is false, just use the regular stream
@@ -127,6 +151,8 @@ public class QueryUtil {
 	 * @param parallel        Whether to process the filter in parallel
 	 * @param maxThreads      Optional max threads for parallel execution
 	 * @param ordered         Boolean as to whether to maintain order in parallel execution
+	 * 
+	 * @deprecated since v1.5.0, use {@link #each(Query, Function, IBoxContext, boolean, Integer, boolean, boolean)} instead
 	 */
 	public static void each(
 	    Query query,
@@ -135,6 +161,28 @@ public class QueryUtil {
 	    Boolean parallel,
 	    Integer maxThreads,
 	    Boolean ordered ) {
+		each( query, callback, callbackContext, parallel, maxThreads, ordered, false );
+	}
+
+	/**
+	 * Method to invoke a function for every iteration of the query
+	 *
+	 * @param query           The query object to filter
+	 * @param callback        The callback Function object
+	 * @param callbackContext The context in which to execute the callback
+	 * @param parallel        Whether to process the filter in parallel
+	 * @param maxThreads      Optional max threads for parallel execution
+	 * @param ordered         Boolean as to whether to maintain order in parallel execution
+	 * @param virtual         Whether to use virtual threads for parallel execution
+	 */
+	public static void each(
+	    Query query,
+	    Function callback,
+	    IBoxContext callbackContext,
+	    Boolean parallel,
+	    Integer maxThreads,
+	    Boolean ordered,
+	    boolean virtual ) {
 
 		// Parameter validation
 		Objects.requireNonNull( query, "Query cannot be null" );
@@ -157,7 +205,7 @@ public class QueryUtil {
 		IntStream queryStream = query.intStream();
 		if ( parallel ) {
 			// If maxThreads is null or 0, then use just the ForkJoinPool default parallelism level
-			if ( maxThreads <= 0 ) {
+			if ( !virtual && maxThreads <= 0 ) {
 				if ( ordered ) {
 					queryStream
 					    .parallel()
@@ -169,12 +217,9 @@ public class QueryUtil {
 				}
 				return;
 			}
-			// Otherwise, create a new ForkJoinPool with the specified number of threads
-			AsyncService.buildExecutor(
-			    "QueryEach_" + UUID.randomUUID().toString(),
-			    AsyncService.ExecutorType.FORK_JOIN,
-			    maxThreads
-			).submitAndGet( () -> {
+
+			BoxExecutor executor = AsyncService.chooseParallelExecutor( "QueryEach_", maxThreads, virtual );
+			executor.submitAndGet( () -> {
 				if ( ordered ) {
 					queryStream
 					    .parallel()
@@ -206,6 +251,8 @@ public class QueryUtil {
 	 * @param callbackContext The context in which to execute the callback
 	 * @param parallel        Whether to process the map in parallel
 	 * @param maxThreads      Optional max threads for parallel execution
+	 * 
+	 * @deprecated since v1.5.0, use {@link #map(Query, Function, IBoxContext, boolean, Integer, boolean)} instead
 	 *
 	 * @return The boolean value as to whether the test is met
 	 */
@@ -215,6 +262,28 @@ public class QueryUtil {
 	    IBoxContext callbackContext,
 	    Boolean parallel,
 	    Integer maxThreads ) {
+		return map( query, callback, callbackContext, parallel, maxThreads, false );
+	}
+
+	/**
+	 * Maps an existing query to a new query
+	 *
+	 * @param query           The query object to map
+	 * @param callback        The callback Function object
+	 * @param callbackContext The context in which to execute the callback
+	 * @param parallel        Whether to process the map in parallel
+	 * @param maxThreads      Optional max threads for parallel execution
+	 * @param virtual         Whether to use virtual threads for parallel execution
+	 *
+	 * @return The boolean value as to whether the test is met
+	 */
+	public static Query map(
+	    Query query,
+	    Function callback,
+	    IBoxContext callbackContext,
+	    Boolean parallel,
+	    Integer maxThreads,
+	    boolean virtual ) {
 
 		// Parameter validation
 		Objects.requireNonNull( query, "Query cannot be null" );
@@ -246,26 +315,46 @@ public class QueryUtil {
 
 		if ( parallel ) {
 			// If maxThreads is null or 0, then use just the ForkJoinPool default parallelism level
-			if ( maxThreads <= 0 ) {
+			if ( !virtual && maxThreads <= 0 ) {
 				return queryStream
 				    .parallel()
 				    .collect( BLCollector.toQuery( query ) );
 			}
 
+			BoxExecutor executor = AsyncService.chooseParallelExecutor( "QueryMap_", maxThreads, virtual );
+
 			// Otherwise, create a new ForkJoinPool with the specified number of threads
-			return ( Query ) AsyncService.buildExecutor(
-			    "QueryMap_" + UUID.randomUUID().toString(),
-			    AsyncService.ExecutorType.FORK_JOIN,
-			    maxThreads
-			).submitAndGet( () -> {
+			return QueryCaster.cast( executor.submitAndGet( () -> {
 				return queryStream
 				    .parallel()
 				    .collect( BLCollector.toQuery( query ) );
-			} );
+			} ) );
 		}
 
 		// Non-parallel execution
 		return queryStream.collect( BLCollector.toQuery( query ) );
+	}
+
+	/**
+	 * Method to test if any item in the query meets the criteria in the callback
+	 *
+	 * @param query           The query object to filter
+	 * @param callback        The callback Function object
+	 * @param callbackContext The context in which to execute the callback
+	 * @param parallel        Whether to process the filter in parallel
+	 * @param maxThreads      Optional max threads for parallel execution
+	 * 
+	 * @deprecated since v1.5.0, use {@link #every(Query, Function, IBoxContext, boolean, Integer, boolean)} instead
+	 *
+	 * @return The boolean value as to whether the test is met
+	 */
+	public static Boolean every(
+	    Query query,
+	    Function callback,
+	    IBoxContext callbackContext,
+	    Boolean parallel,
+	    Integer maxThreads ) {
+		return every( query, callback, callbackContext, parallel, maxThreads, false );
 	}
 
 	/**
@@ -284,7 +373,8 @@ public class QueryUtil {
 	    Function callback,
 	    IBoxContext callbackContext,
 	    Boolean parallel,
-	    Integer maxThreads ) {
+	    Integer maxThreads,
+	    boolean virtual ) {
 
 		// Parameter validation
 		Objects.requireNonNull( query, "Query cannot be null" );
@@ -308,26 +398,45 @@ public class QueryUtil {
 
 		if ( parallel ) {
 			// If maxThreads is null or 0, then use just the ForkJoinPool default parallelism level
-			if ( maxThreads <= 0 ) {
+			if ( !virtual && maxThreads <= 0 ) {
 				return queryStream
 				    .parallel()
 				    .allMatch( test );
 			}
-			// Otherwise, create a new ForkJoinPool with the specified number of threads
-			return ( Boolean ) AsyncService.buildExecutor(
-			    "QueryEvery_" + UUID.randomUUID().toString(),
-			    AsyncService.ExecutorType.FORK_JOIN,
-			    maxThreads
-			).submitAndGet( () -> {
+
+			BoxExecutor executor = AsyncService.chooseParallelExecutor( "QueryEvery_", maxThreads, virtual );
+			return BooleanCaster.cast( executor.submitAndGet( () -> {
 				return queryStream
 				    .parallel()
 				    .allMatch( test );
-			} );
+			} ) );
 		}
 
 		// Non-parallel execution
 		return queryStream
 		    .allMatch( test );
+	}
+
+	/**
+	 * Method to test if any item in the query meets the criteria in the callback
+	 *
+	 * @param query           The query object to filter
+	 * @param callback        The callback Function object
+	 * @param callbackContext The context in which to execute the callback
+	 * @param parallel        Whether to process the filter in parallel
+	 * @param maxThreads      Optional max threads for parallel execution
+	 * 
+	 * @deprecated since v1.5.0, use {@link #some(Query, Function, IBoxContext, boolean, Integer, boolean)} instead
+	 *
+	 * @return The boolean value as to whether the test is met
+	 */
+	public static boolean some(
+	    Query query,
+	    Function callback,
+	    IBoxContext callbackContext,
+	    Boolean parallel,
+	    Integer maxThreads ) {
+		return some( query, callback, callbackContext, parallel, maxThreads, false );
 	}
 
 	/**
@@ -346,7 +455,8 @@ public class QueryUtil {
 	    Function callback,
 	    IBoxContext callbackContext,
 	    Boolean parallel,
-	    Integer maxThreads ) {
+	    Integer maxThreads,
+	    boolean virtual ) {
 
 		// Parameter validation
 		Objects.requireNonNull( query, "Query cannot be null" );
@@ -370,21 +480,18 @@ public class QueryUtil {
 
 		if ( parallel ) {
 			// If maxThreads is null or 0, then use just the ForkJoinPool default parallelism level
-			if ( maxThreads <= 0 ) {
+			if ( !virtual && maxThreads <= 0 ) {
 				return queryStream
 				    .parallel()
 				    .anyMatch( test );
 			}
-			// Otherwise, create a new ForkJoinPool with the specified number of threads
-			return ( Boolean ) AsyncService.buildExecutor(
-			    "QuerySome_" + UUID.randomUUID().toString(),
-			    AsyncService.ExecutorType.FORK_JOIN,
-			    maxThreads
-			).submitAndGet( () -> {
+
+			BoxExecutor executor = AsyncService.chooseParallelExecutor( "QuerySome_", maxThreads, virtual );
+			return BooleanCaster.cast( executor.submitAndGet( () -> {
 				return queryStream
 				    .parallel()
 				    .anyMatch( test );
-			} );
+			} ) );
 		}
 
 		// Non-parallel execution

@@ -32,6 +32,8 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import ortus.boxlang.runtime.async.executors.BoxExecutor;
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ThreadBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
@@ -45,10 +47,10 @@ import ortus.boxlang.runtime.operators.StringCompare;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.AsyncService;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.EncryptionUtil;
 import ortus.boxlang.runtime.util.LocalizationUtil;
 
@@ -112,6 +114,8 @@ public class StructUtil {
 	 * @param parallel        Whether to process the filter in parallel
 	 * @param maxThreads      Optional max threads for parallel execution
 	 * @param ordered         Boolean as to whether to maintain order in parallel execution
+	 * 
+	 * @deprecated since 1.5.0, use {@link #each(IStruct, Function, IBoxContext, Boolean, Integer, Boolean, Boolean)} instead
 	 */
 	public static void each(
 	    IStruct struct,
@@ -120,6 +124,35 @@ public class StructUtil {
 	    Boolean parallel,
 	    Integer maxThreads,
 	    Boolean ordered ) {
+		each(
+		    struct,
+		    callback,
+		    callbackContext,
+		    parallel,
+		    maxThreads,
+		    ordered,
+		    false
+		);
+	}
+
+	/**
+	 * Method to invoke a function for every item in a struct
+	 *
+	 * @param struct          The struct to iterate
+	 * @param callback        The callback Function object
+	 * @param callbackContext The context in which to execute the callback
+	 * @param parallel        Whether to process the filter in parallel
+	 * @param maxThreads      Optional max threads for parallel execution
+	 * @param ordered         Boolean as to whether to maintain order in parallel execution
+	 */
+	public static void each(
+	    IStruct struct,
+	    Function callback,
+	    IBoxContext callbackContext,
+	    Boolean parallel,
+	    Integer maxThreads,
+	    Boolean ordered,
+	    boolean virtual ) {
 
 		// Parameter validation
 		Objects.requireNonNull( struct, "Struct cannot be null" );
@@ -153,7 +186,7 @@ public class StructUtil {
 		}
 
 		// If maxThreads is null or 0, then use just the ForkJoinPool default parallelism level
-		if ( maxThreads <= 0 ) {
+		if ( !virtual && maxThreads <= 0 ) {
 			if ( ordered || struct.getType().equals( IStruct.TYPES.LINKED ) ) {
 				entryStream.parallel().forEachOrdered( consumer );
 			} else {
@@ -162,12 +195,10 @@ public class StructUtil {
 			return;
 		}
 
+		BoxExecutor executor = AsyncService.chooseParallelExecutor( "StructEach_", maxThreads, virtual );
+
 		// Otherwise, create a new ForkJoinPool with the specified number of threads
-		AsyncService.buildExecutor(
-		    "StructEach_" + UUID.randomUUID().toString(),
-		    AsyncService.ExecutorType.FORK_JOIN,
-		    maxThreads
-		).submitAndGet( () -> {
+		executor.submitAndGet( () -> {
 			if ( ordered || struct.getType().equals( IStruct.TYPES.LINKED ) ) {
 				entryStream.parallel().forEachOrdered( consumer );
 			} else {
@@ -184,6 +215,8 @@ public class StructUtil {
 	 * @param callbackContext The context in which to execute the callback
 	 * @param parallel        Whether to process the filter in parallel
 	 * @param maxThreads      Optional max threads for parallel execution
+	 * 
+	 * @deprecated since 1.5.0, use {@link #some(IStruct, Function, IBoxContext, Boolean, Integer, Boolean)} instead
 	 *
 	 * @return The boolean value as to whether the test is met
 	 */
@@ -193,6 +226,29 @@ public class StructUtil {
 	    IBoxContext callbackContext,
 	    Boolean parallel,
 	    Integer maxThreads ) {
+
+		return some( struct, callback, callbackContext, parallel, maxThreads, false );
+	}
+
+	/**
+	 * Method to test if any item in the struct meets the criteria in the callback
+	 *
+	 * @param struct          The struct to test
+	 * @param callback        The callback test to apply
+	 * @param callbackContext The context in which to execute the callback
+	 * @param parallel        Whether to process the filter in parallel
+	 * @param maxThreads      Optional max threads for parallel execution
+	 * @param virtual         Whether to use virtual threads for parallel execution
+	 *
+	 * @return The boolean value as to whether the test is met
+	 */
+	public static Boolean some(
+	    IStruct struct,
+	    Function callback,
+	    IBoxContext callbackContext,
+	    Boolean parallel,
+	    Integer maxThreads,
+	    boolean virtual ) {
 
 		// Parameter validation
 		Objects.requireNonNull( struct, "Struct cannot be null" );
@@ -220,21 +276,19 @@ public class StructUtil {
 
 		if ( parallel ) {
 			// If maxThreads is null or 0, then use just the ForkJoinPool default parallelism level
-			if ( maxThreads <= 0 ) {
+			if ( !virtual && maxThreads <= 0 ) {
 				return entryStream
 				    .parallel()
 				    .anyMatch( test );
 			}
-			// Otherwise, create a new ForkJoinPool with the specified number of threads
-			return ( Boolean ) AsyncService.buildExecutor(
-			    "StructSome_" + UUID.randomUUID().toString(),
-			    AsyncService.ExecutorType.FORK_JOIN,
-			    maxThreads
-			).submitAndGet( () -> {
+
+			BoxExecutor executor = AsyncService.chooseParallelExecutor( "StructSome_", maxThreads, virtual );
+
+			return BooleanCaster.cast( executor.submitAndGet( () -> {
 				return entryStream
 				    .parallel()
 				    .anyMatch( test );
-			} );
+			} ) );
 		}
 
 		// Non-parallel execution
@@ -249,6 +303,8 @@ public class StructUtil {
 	 * @param callbackContext The context in which to execute the callback
 	 * @param parallel        Whether to process the filter in parallel
 	 * @param maxThreads      Optional max threads for parallel execution
+	 * 
+	 * @deprecated since 1.5.0, use {@link #every(IStruct, Function, IBoxContext, Boolean, Integer, Boolean)} instead
 	 *
 	 * @return The boolean value as to whether the test is met
 	 */
@@ -258,6 +314,28 @@ public class StructUtil {
 	    IBoxContext callbackContext,
 	    Boolean parallel,
 	    Integer maxThreads ) {
+		return every( struct, callback, callbackContext, parallel, maxThreads, false );
+	}
+
+	/**
+	 * Method to test if any item in the struct meets the criteria in the callback
+	 *
+	 * @param struct          The struct object to filter
+	 * @param callback        The callback Function object
+	 * @param callbackContext The context in which to execute the callback
+	 * @param parallel        Whether to process the filter in parallel
+	 * @param maxThreads      Optional max threads for parallel execution
+	 * @param virtual         Whether to use virtual threads for parallel execution
+	 *
+	 * @return The boolean value as to whether the test is met
+	 */
+	public static Boolean every(
+	    IStruct struct,
+	    Function callback,
+	    IBoxContext callbackContext,
+	    Boolean parallel,
+	    Integer maxThreads,
+	    boolean virtual ) {
 
 		// Parameter validation
 		Objects.requireNonNull( struct, "Struct cannot be null" );
@@ -284,21 +362,18 @@ public class StructUtil {
 		Stream<Map.Entry<Key, Object>> entryStream = struct.entrySet().stream();
 		if ( parallel ) {
 			// If maxThreads is null or 0, then use just the ForkJoinPool default parallelism level
-			if ( maxThreads <= 0 ) {
+			if ( !virtual && maxThreads <= 0 ) {
 				return entryStream
 				    .parallel()
 				    .allMatch( test );
 			}
 			// Otherwise, create a new ForkJoinPool with the specified number of threads
-			return ( Boolean ) AsyncService.buildExecutor(
-			    "StructEvery_" + UUID.randomUUID().toString(),
-			    AsyncService.ExecutorType.FORK_JOIN,
-			    maxThreads
-			).submitAndGet( () -> {
+			BoxExecutor executor = AsyncService.chooseParallelExecutor( "StructEvery_", maxThreads, virtual );
+			return BooleanCaster.cast( executor.submitAndGet( () -> {
 				return entryStream
 				    .parallel()
 				    .allMatch( test );
-			} );
+			} ) );
 		}
 
 		// Non-parallel execution
@@ -313,6 +388,8 @@ public class StructUtil {
 	 * @param callbackContext The context in which to execute the callback
 	 * @param parallel        Whether to process the filter in parallel
 	 * @param maxThreads      Optional max threads for parallel execution
+	 * 
+	 * @deprecated since 1.5.0, use {@link #filter(IStruct, Function, IBoxContext, Boolean, Integer, Boolean)} instead
 	 *
 	 * @return A filtered array
 	 */
@@ -322,6 +399,28 @@ public class StructUtil {
 	    IBoxContext callbackContext,
 	    Boolean parallel,
 	    Integer maxThreads ) {
+		return filter( struct, callback, callbackContext, parallel, maxThreads, false );
+	}
+
+	/**
+	 * Method to filter a struct with a function callback and context
+	 *
+	 * @param struct          The struct object to filter
+	 * @param callback        The callback Function object
+	 * @param callbackContext The context in which to execute the callback
+	 * @param parallel        Whether to process the filter in parallel
+	 * @param maxThreads      Optional max threads for parallel execution
+	 * @param virtual         Whether to use virtual threads for parallel execution
+	 *
+	 * @return A filtered array
+	 */
+	public static IStruct filter(
+	    IStruct struct,
+	    Function callback,
+	    IBoxContext callbackContext,
+	    Boolean parallel,
+	    Integer maxThreads,
+	    boolean virtual ) {
 
 		// Parameter validation
 		Objects.requireNonNull( struct, "Struct cannot be null" );
@@ -353,19 +452,18 @@ public class StructUtil {
 
 		if ( parallel ) {
 			// If maxThreads is null or 0, then use just the ForkJoinPool default parallelism level
-			if ( maxThreads <= 0 ) {
+			if ( !virtual && maxThreads <= 0 ) {
 				return entryStream.parallel().collect( BLCollector.toStruct( struct.getType() ) );
 			}
+
+			BoxExecutor executor = AsyncService.chooseParallelExecutor( "StructFilter_", maxThreads, virtual );
+
 			// Otherwise, create a new ForkJoinPool with the specified number of threads
-			return ( IStruct ) AsyncService.buildExecutor(
-			    "StructFilter_" + UUID.randomUUID().toString(),
-			    AsyncService.ExecutorType.FORK_JOIN,
-			    maxThreads
-			).submitAndGet( () -> {
+			return StructCaster.cast( executor.submitAndGet( () -> {
 				return entryStream
 				    .parallel()
 				    .collect( BLCollector.toStruct( struct.getType() ) );
-			} );
+			} ) );
 		}
 
 		// Non-parallel execution
@@ -380,6 +478,8 @@ public class StructUtil {
 	 * @param callbackContext The context in which to execute the callback
 	 * @param parallel        Whether to process the filter in parallel
 	 * @param maxThreads      Optional max threads for parallel execution
+	 * 
+	 * @deprecated since 1.5.0, use {@link #map(IStruct, Function, IBoxContext, Boolean, Integer, Boolean)} instead
 	 *
 	 * @return A filtered array
 	 */
@@ -389,6 +489,29 @@ public class StructUtil {
 	    IBoxContext callbackContext,
 	    Boolean parallel,
 	    Integer maxThreads ) {
+
+		return map( struct, callback, callbackContext, parallel, maxThreads, false );
+	}
+
+	/**
+	 * Method to map a struct to a new struct
+	 *
+	 * @param struct          The struct object to filter
+	 * @param callback        The callback Function object
+	 * @param callbackContext The context in which to execute the callback
+	 * @param parallel        Whether to process the filter in parallel
+	 * @param maxThreads      Optional max threads for parallel execution
+	 * @param virtual         Whether to use virtual threads for parallel execution
+	 *
+	 * @return A filtered array
+	 */
+	public static Struct map(
+	    IStruct struct,
+	    Function callback,
+	    IBoxContext callbackContext,
+	    Boolean parallel,
+	    Integer maxThreads,
+	    boolean virtual ) {
 
 		// Parameter validation
 		Objects.requireNonNull( struct, "Struct cannot be null" );
@@ -434,7 +557,7 @@ public class StructUtil {
 		}
 
 		// If maxThreads is null or 0, then use just the ForkJoinPool default parallelism level
-		if ( maxThreads <= 0 ) {
+		if ( !virtual && maxThreads <= 0 ) {
 			if ( ordered || struct.getType().equals( IStruct.TYPES.LINKED ) ) {
 				entryStream.parallel().forEachOrdered( consumer );
 			} else {
@@ -443,12 +566,10 @@ public class StructUtil {
 			return result;
 		}
 
+		BoxExecutor executor = AsyncService.chooseParallelExecutor( "StructMap_", maxThreads, virtual );
+
 		// Otherwise, create a new ForkJoinPool with the specified number of threads
-		AsyncService.buildExecutor(
-		    "StructMap_" + UUID.randomUUID().toString(),
-		    AsyncService.ExecutorType.FORK_JOIN,
-		    maxThreads
-		).submitAndGet( () -> {
+		executor.submitAndGet( () -> {
 			if ( ordered || struct.getType().equals( IStruct.TYPES.LINKED ) ) {
 				entryStream.parallel().forEachOrdered( consumer );
 			} else {

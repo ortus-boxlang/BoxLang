@@ -167,4 +167,26 @@ public class StructNoneTest {
 		assertThat( variables.get( result ) ).isEqualTo( true );
 	}
 
+	@DisplayName( "It can run in parallel with virtual threads" )
+	@Test
+	public void testRunInParallelWithVirtualThreads() {
+		instance.executeSource(
+		    """
+		       values = [];
+		       ref = {
+		       	"foo" : "bar",
+		       	"bar" : 1,
+		       	"blah" : "blerg"
+		       };
+
+		       function targetFn( key, value, struct ){
+		       		return value == "bleeeerg";
+		       };
+
+		    result = StructNone( ref, targetFn, true, true );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( true );
+	}
+
 }
