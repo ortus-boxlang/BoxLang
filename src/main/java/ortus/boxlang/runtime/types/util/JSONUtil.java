@@ -310,21 +310,21 @@ public class JSONUtil {
 	 * Creates a new JSON builder instance with specified pretty print option.
 	 * 
 	 * @param pretty If true, enables pretty print output.
+	 * 
 	 * @return a configured {@link JSON} instance
 	 */
 	public static JSON newJSONBuilder( boolean pretty ) {
 
 		// TODO: This whole block needs to be converted over to use the JsonFactory.builder() as the a number of features are deprecated
-		JsonFactory factory =  // Use a custom factory with enabled parsing features
-		    new JsonFactory()
-		        .setStreamWriteConstraints(
-		            StreamWriteConstraints.builder()
-		                .maxNestingDepth( Integer.MAX_VALUE )
-		                .build()
-		        )
-		        .enable( JsonParser.Feature.ALLOW_COMMENTS )
-		        .enable( JsonParser.Feature.ALLOW_YAML_COMMENTS )
-		        .enable( JsonParser.Feature.ALLOW_BACKSLASH_ESCAPING_ANY_CHARACTER );
+		JsonFactory factory = new JsonFactory()
+		    .setStreamWriteConstraints(
+		        StreamWriteConstraints.builder()
+		            .maxNestingDepth( Integer.MAX_VALUE )
+		            .build()
+		    )
+		    .enable( JsonParser.Feature.ALLOW_COMMENTS )
+		    .enable( JsonParser.Feature.ALLOW_YAML_COMMENTS )
+		    .enable( JsonParser.Feature.ALLOW_BACKSLASH_ESCAPING_ANY_CHARACTER );
 
 		// If lenient parsing is enabled, allow some common non-standard JSON features
 		if ( useLenientParsing ) {
@@ -336,8 +336,6 @@ public class JSONUtil {
 		}
 
 		JSON.Builder builder = JSON.builder( factory )
-		    // Enable JSON features
-		    // https://fasterxml.github.io/jackson-jr/javadoc/jr-objects/2.8/com/fasterxml/jackson/jr/ob/JSON.Feature.html
 		    .enable(
 		        JSON.Feature.USE_BIG_DECIMAL_FOR_FLOATS,
 		        JSON.Feature.USE_FIELDS,
