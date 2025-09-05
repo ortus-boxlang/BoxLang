@@ -99,8 +99,8 @@ public class CollatorStringCompare implements IOperator {
 		Collator collator = Collator.getInstance( locale );
 		collator.setStrength( caseSensitive ? Collator.IDENTICAL : Collator.TERTIARY );
 		collator.setDecomposition( Collator.CANONICAL_DECOMPOSITION );
-		return collator.getCollationKey( left.toString() )
-		    .compareTo( collator.getCollationKey( right.toString() ) );
+		return collator.getCollationKey( left )
+		    .compareTo( collator.getCollationKey( right ) );
 	}
 
 }
