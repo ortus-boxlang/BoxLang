@@ -21,6 +21,7 @@ package ortus.boxlang.runtime.bifs.global.string;
 
 import java.util.function.BiFunction;
 
+import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.StringUtils;
 
 import ortus.boxlang.runtime.bifs.BIF;
@@ -100,9 +101,9 @@ public class ReplaceList extends BIF {
 		BiFunction<Object, Integer, Object>	reduction		= ( acc, idx ) -> {
 																if ( list2.size() >= idx + 1 ) {
 																	return !bifMethodKey.equals( noCaseKey )
-																	    ? StringUtils.replace( StringCaster.cast( acc ), StringCaster.cast( list1.get( idx ) ),
+																	    ? Strings.CS.replace( StringCaster.cast( acc ), StringCaster.cast( list1.get( idx ) ),
 																	        StringCaster.cast( list2.get( idx ) ) )
-																	    : StringUtils.replaceIgnoreCase( StringCaster.cast( acc ),
+																	    : Strings.CI.replace( StringCaster.cast( acc ),
 																	        StringCaster.cast( list1.get( idx ) ),
 																	        StringCaster.cast( list2.get( idx ) ) );
 																} else if ( list2.size() > 0 ) {
@@ -110,7 +111,7 @@ public class ReplaceList extends BIF {
 																		// we need to normalize the casing in order for our replaceChars invokation to work
 																		acc = list1.stream().reduce(
 																		    acc,
-																		    ( result, c ) -> StringUtils.replaceIgnoreCase( StringCaster.cast( result ),
+																		    ( result, c ) -> Strings.CI.replace( StringCaster.cast( result ),
 																		        StringCaster.cast( c ), StringCaster.cast( c ) ),
 																		    ( result, intermediate ) -> result
 																		);

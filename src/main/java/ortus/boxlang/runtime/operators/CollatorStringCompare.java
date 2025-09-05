@@ -20,11 +20,6 @@ package ortus.boxlang.runtime.operators;
 import java.text.Collator;
 import java.util.Locale;
 
-import org.apache.commons.lang3.StringUtils;
-
-import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.util.LocalizationUtil;
-
 /**
  * Operator to compare two strings and bypass any additional cast attempts
  */

@@ -55,6 +55,7 @@ import javax.crypto.spec.PBEParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.apache.commons.lang3.SerializationUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.StringUtils;
 
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
@@ -865,27 +866,6 @@ public final class EncryptionUtil {
 	}
 
 	/**
-	 * Returns the algorithm parameters for the specified algorithm
-	 *
-	 * @param algorithm        The string representation of the algorithm ( e.g. AES, DES, etc. )
-	 * @param initVectorOrSalt The initialization vector or salt
-	 * @param iterations       The number of iterations to use for the algorithm
-	 *
-	 * @return The algorithm parameters
-	 */
-	private static AlgorithmParameterSpec getAlgorithmParams( String algorithm, byte[] initVectorOrSalt, Integer iterations ) {
-		if ( isPBEAlgorithm( algorithm ) ) {
-			return new PBEParameterSpec( initVectorOrSalt, iterations != null ? iterations : DEFAULT_ENCRYPTION_ITERATIONS );
-		} else if ( isFBMAlgorithm( algorithm ) && initVectorOrSalt != null ) {
-			return new IvParameterSpec( initVectorOrSalt );
-		} else if ( isCBCMode( algorithm ) ) {
-			return new IvParameterSpec( new byte[ 16 ] );
-		} else {
-			return null;
-		}
-	}
-
-	/**
 	 * Returns true if the algorithm is a Password Based Encryption algorithm
 	 *
 	 * @param algorithm The string representation of the algorithm
@@ -893,7 +873,7 @@ public final class EncryptionUtil {
 	 * @return
 	 */
 	public static boolean isPBEAlgorithm( String algorithm ) {
-		return StringUtils.startsWithIgnoreCase( algorithm, "PBE" );
+		return Strings.CI.startsWith( algorithm, "PBE" );
 	}
 
 	/**
@@ -905,7 +885,7 @@ public final class EncryptionUtil {
 	 */
 	public static boolean isFBMAlgorithm( String algorithm ) {
 		String[] algorithmParts = StringUtils.split( algorithm, "/" );
-		return algorithm.indexOf( "/" ) > -1 && !StringUtils.startsWithIgnoreCase( algorithmParts[ 1 ], "ECB" );
+		return algorithm.indexOf( "/" ) > -1 && !Strings.CI.startsWith( algorithmParts[ 1 ], "ECB" );
 	}
 
 	/**
@@ -917,7 +897,7 @@ public final class EncryptionUtil {
 	 */
 	private static boolean isCBCMode( String algorithm ) {
 		String[] algorithmParts = StringUtils.split( algorithm, "/" );
-		return algorithmParts.length > 1 && StringUtils.startsWithIgnoreCase( algorithmParts[ 1 ], "CBC" );
+		return algorithmParts.length > 1 && Strings.CI.startsWith( algorithmParts[ 1 ], "CBC" );
 	}
 
 	/**

@@ -17,13 +17,9 @@
  */
 package ortus.boxlang.runtime.operators;
 
-import java.text.Collator;
 import java.util.Locale;
 
-import org.apache.commons.lang3.StringUtils;
-
-import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.util.LocalizationUtil;
+import org.apache.commons.lang3.Strings;
 
 /**
  * Operator to compare two strings and bypass any additional cast attempts
@@ -96,9 +92,8 @@ public class StringCompare implements IOperator {
 	 */
 	public static Integer attempt( String left, String right, Boolean caseSensitive, boolean fail, Locale locale ) {
 		return caseSensitive
-		    ? StringUtils.compare( left, right )
-		    : StringUtils.compareIgnoreCase( left, right );
-
+		    ? Strings.CS.compare( left, right )
+		    : Strings.CI.compare( left, right );
 	}
 
 }

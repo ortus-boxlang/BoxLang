@@ -37,7 +37,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.slf4j.Logger;
 
 import ortus.boxlang.compiler.ClassInfo;
@@ -1114,7 +1114,7 @@ public class BoxRuntime implements java.io.Closeable {
 	public void executeTemplate( String templatePath, IBoxContext context, String[] args ) {
 		// If the templatePath is a .cfs, .cfm then use the loadTemplateAbsolute, if
 		// it's a .cfc, .bx then use the loadClass
-		if ( StringUtils.endsWithAny( templatePath, ".cfc", ".bx" ) ) {
+		if ( Strings.CI.endsWithAny( templatePath, ".cfc", ".bx" ) ) {
 			// Load the class
 			Class<IBoxRunnable> targetClass = RunnableLoader.getInstance().loadClass(
 			    ResolvedFilePath.of( Paths.get( templatePath ) ),
