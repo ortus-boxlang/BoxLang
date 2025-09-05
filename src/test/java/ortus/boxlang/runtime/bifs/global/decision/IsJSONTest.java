@@ -138,7 +138,7 @@ public class IsJSONTest {
 	void testIsJSONTrailingCommas() {
 		instance.executeSource(
 		    """
-		    result = isJSON( { "foo" : "bar", } );
+		    result = isJSON( '{ "foo" : "bar", }' );
 		    """,
 		    context );
 		assertThat( variables.getAsBoolean( Key.result ) ).isFalse();
@@ -149,7 +149,7 @@ public class IsJSONTest {
 	void testIsJSONLeadingZero() {
 		instance.executeSource(
 		    """
-		    result = isJSON( { "foo" : 01 } );
+		    result = isJSON( '{ "foo" : 01 }' );
 		    """,
 		    context );
 		assertThat( variables.getAsBoolean( Key.result ) ).isFalse();
