@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.slf4j.Logger;
 
 import ortus.boxlang.runtime.BoxRuntime;
@@ -429,7 +429,7 @@ public class FunctionService extends BaseService {
 			if ( member.name().equals( "" ) ) {
 				// Default member name for class ArrayFoo with BoxType of Array is just foo()
 				memberKey = Key.of(
-				    StringUtils.replace( className.toLowerCase(), member.type().name().toLowerCase(), "" )
+				    Strings.CS.replace( className.toLowerCase(), member.type().name().toLowerCase(), "" )
 				);
 			} else {
 				memberKey = Key.of( member.name() );

@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.BoxMemberExpose;
@@ -713,7 +713,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 		    .filter(
 		        i -> ( ( !caseSensitive
 		            &&
-		            StringUtils.containsAnyIgnoreCase( get( i ).toString(), value.toString() ) )
+		            Strings.CI.containsAny( get( i ).toString(), value.toString() ) )
 		            ||
 		            ( caseSensitive
 		                &&

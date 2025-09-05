@@ -27,7 +27,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -347,14 +347,14 @@ public class BoxResolver extends BaseResolver {
 		    // Filter out mappings that don't match the start of the mapping path
 		    // Also, filter out external mappings if externalOnly is true
 		    .filter( entry -> ( !externalOnly || ( ( Mapping ) entry.getValue() ).external() )
-		        && StringUtils.startsWithIgnoreCase( slashName, entry.getKey().getName() ) )
+		        && Strings.CI.startsWith( slashName, entry.getKey().getName() ) )
 		    // Map it to a Stream<Path> object representing the paths to the classes
 		    .flatMap( entry -> {
 			    // Generate multiple paths here
 			    List<ResolvedFilePath> paths = new ArrayList<>();
 			    for ( String extension : getValidExtensions() ) {
 				    Path absolutePath = Path
-				        .of( StringUtils.replaceOnceIgnoreCase( slashName, entry.getKey().getName(), entry.getValue() + "/" ) + "." + extension )
+				        .of( Strings.CI.replaceOnce( slashName, entry.getKey().getName(), entry.getValue() + "/" ) + "." + extension )
 				        .normalize();
 
 				    // Verify that the file exists

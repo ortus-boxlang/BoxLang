@@ -14,7 +14,7 @@
  */
 package ortus.boxlang.runtime.bifs.global.array;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
@@ -88,7 +88,7 @@ public class ArrayDelete extends BIF {
 	 */
 	private boolean isCaseSensitive( Key functionName ) {
 		// Check if the functionName ends with "noCase" with no case sensitivity
-		return StringUtils.endsWithIgnoreCase( functionName.getName(), "NoCase" ) ? false : true;
+		return Strings.CI.endsWith( functionName.getName(), "NoCase" ) ? false : true;
 	}
 
 }

@@ -23,9 +23,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.PrintStream;
 import java.nio.file.Paths;
+import java.nio.charset.StandardCharsets;
 
 import org.apache.commons.io.output.ByteArrayOutputStream;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -88,7 +89,7 @@ public class LogTest {
 		    bx:log text="Hello Logger!" file="bxlog";
 		    """,
 		    context, BoxSourceType.BOXSCRIPT );
-		assertTrue( StringUtils.contains( outContent.toString(), "Hello Logger!" ) );
+		assertTrue( Strings.CS.contains( outContent.toString( StandardCharsets.UTF_8 ), "Hello Logger!" ) );
 	}
 
 	@DisplayName( "It tests the BIF Log with CFML parsing" )
@@ -99,7 +100,7 @@ public class LogTest {
 		    <cflog text="Hello Logger!" file="bxlog.log" />
 		    """,
 		    context, BoxSourceType.CFTEMPLATE );
-		assertTrue( StringUtils.contains( outContent.toString(), "Hello Logger!" ) );
+		assertTrue( Strings.CS.contains( outContent.toString( StandardCharsets.UTF_8 ), "Hello Logger!" ) );
 	}
 
 	@DisplayName( "It tests the BIF Log with BoxLang parsing" )
@@ -110,7 +111,7 @@ public class LogTest {
 		    <bx:log text="Hello Logger!" file="bxlog.log" />
 		    """,
 		    context, BoxSourceType.BOXTEMPLATE );
-		assertTrue( StringUtils.contains( outContent.toString(), "Hello Logger!" ) );
+		assertTrue( Strings.CS.contains( outContent.toString( StandardCharsets.UTF_8 ), "Hello Logger!" ) );
 	}
 
 }

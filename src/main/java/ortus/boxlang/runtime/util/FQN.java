@@ -22,7 +22,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 
 /**
  * This class represents a java fully qualified name (FQN) for a class or package.
@@ -301,12 +301,12 @@ public class FQN {
 		}
 
 		// Replace all periods with an emtpy string in fqn
-		fqn	= StringUtils.remove( fqn, "." );
+		fqn	= Strings.CS.remove( fqn, "." );
 		// Take out slashes to . and backslashes to .
-		fqn	= StringUtils.replace( fqn, "/", "." );
-		fqn	= StringUtils.replace( fqn, "\\", "." );
+		fqn	= Strings.CS.replace( fqn, "/", "." );
+		fqn	= Strings.CS.replace( fqn, "\\", "." );
 		// Take out colons to _
-		fqn	= StringUtils.replace( fqn, ":", "_" );
+		fqn	= Strings.CS.replace( fqn, ":", "_" );
 		return fqn;
 	}
 

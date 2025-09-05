@@ -32,7 +32,7 @@ import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
@@ -93,7 +93,7 @@ public class XMLValidate extends BIF {
 		XMLValidationHandler	errorHandler	= new XMLValidationHandler( response );
 		if ( xmlObject instanceof XML ) {
 			xmlString = xmlObject.toString();
-		} else if ( StringUtils.equals( StringCaster.cast( xmlObject ).substring( 0, 3 ), "http" ) ) {
+		} else if ( Strings.CS.equals( StringCaster.cast( xmlObject ).substring( 0, 3 ), "http" ) ) {
 			xmlString = StringCaster.cast( FileSystemUtil.read( StringCaster.cast( xmlObject ) ) );
 		} else {
 			xmlString = StringCaster.cast( xmlObject );
@@ -109,7 +109,7 @@ public class XMLValidate extends BIF {
 				schema = factory.newSchema();
 			} else {
 				SchemaFactory factory = SchemaFactory.newInstance( XMLConstants.W3C_XML_SCHEMA_NS_URI );
-				if ( StringUtils.equals( validator.substring( 0, 3 ), "http" ) ) {
+				if ( Strings.CS.equals( validator.substring( 0, 3 ), "http" ) ) {
 					try {
 						schema = factory.newSchema( new URI( validator ).toURL() );
 					} catch ( URISyntaxException u ) {
