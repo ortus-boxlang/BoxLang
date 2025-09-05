@@ -111,6 +111,28 @@ public class IsJSONTest {
 		    context );
 	}
 
+	@DisplayName( "Tests with no quoted keys and lenient parsing disabled" )
+	@Test
+	void testIsJSONNoQuoteKeys() {
+		instance.executeSource(
+		    """
+		    result = isJSON( "{ a : 1, b : 2, c : 3 }" );
+		    """,
+		    context );
+		assertThat( variables.getAsBoolean( Key.result ) ).isFalse();
+	}
+
+	@DisplayName( "Tests with single quoted keys and lenient parsing disabled" )
+	@Test
+	void testIsJSONSingleQuoteKeys() {
+		instance.executeSource(
+		    """
+		    result = isJSON( "{ 'a' : 1, 'b' : 2, 'c' : 3 }" );
+		    """,
+		    context );
+		assertThat( variables.getAsBoolean( Key.result ) ).isFalse();
+	}
+
 	// For future reference when building deserializeJSON():
 	// // both engines succeed
 	// writeDump( deserializeJSON( '{}' ) );
