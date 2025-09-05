@@ -21,7 +21,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Objects;
-import java.util.UUID;
 import java.util.function.BiFunction;
 import java.util.function.IntConsumer;
 import java.util.function.IntPredicate;
@@ -32,22 +31,22 @@ import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
 
-import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.async.executors.BoxExecutor;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ThreadBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.operators.CollatorStringCompare;
 import ortus.boxlang.runtime.operators.Compare;
 import ortus.boxlang.runtime.operators.StringCompare;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.AsyncService;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.DelimitedArray;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.Struct;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
  * Utility class providing comprehensive list manipulation operations for
@@ -98,6 +97,7 @@ public class ListUtil {
 	public static final Pattern	SPECIAL_REGEX_CHARS	= Pattern.compile( "[{}()\\[\\].+*?^$\\\\|\\-\\&]" );
 
 	/**
+	 * <<<<<<< Updated upstream
 	 * Sort directives for sorting lists.
 	 */
 	public static final Struct	sortDirectives;
@@ -122,6 +122,8 @@ public class ListUtil {
 	}
 
 	/**
+	 * =======
+	 * >>>>>>> Stashed changes
 	 * Turns a list into a string
 	 *
 	 * @param list      The list to turn into a string
@@ -1058,13 +1060,15 @@ public class ListUtil {
 	    String sortOrder,
 	    Locale locale ) {
 
-		Key sortKey = Key.of( sortType + sortOrder );
+		Key		sortKey	= Key.of( sortType + sortOrder );
 
-		if ( !sortDirectives.containsKey( sortKey ) ) {
+		Struct	sorts	= newSortDirectives( locale );
+
+		if ( !sorts.containsKey( sortKey ) ) {
 			throw new BoxRuntimeException( "You must supply either a sortOrder or callback" );
 		}
 
-		array.sort( ( Comparator<Object> ) sortDirectives.get( sortKey ) );
+		array.sort( ( Comparator<Object> ) sorts.get( sortKey ) );
 
 		return array;
 
@@ -1262,5 +1266,48 @@ public class ListUtil {
 	 */
 	private static String escapeRegexSpecials( String str ) {
 		return SPECIAL_REGEX_CHARS.matcher( str ).replaceAll( "\\\\$0" );
+	}
+
+	/**
+	 * Returns a struct of sort directives
+	 */
+	private static final Struct newSortDirectives( Locale locale ) {
+		if ( locale == null ) {
+			return new Struct(
+			    new HashMap<Key, Comparator<Object>>() {
+
+				    {
+					    put( Key.numericAsc, ( a, b ) -> Compare.invoke( a, b, false ) );
+					    put( Key.numericDesc, ( b, a ) -> Compare.invoke( a, b, true ) );
+					    put( Key.textAsc,
+					        ( a, b ) -> StringCompare.invoke( StringCaster.cast( a ), StringCaster.cast( b ), true ) );
+					    put( Key.textDesc,
+					        ( b, a ) -> StringCompare.invoke( StringCaster.cast( a ), StringCaster.cast( b ), true ) );
+					    put( Key.textNoCaseAsc,
+					        ( a, b ) -> StringCompare.invoke( StringCaster.cast( a ), StringCaster.cast( b ), false ) );
+					    put( Key.textNoCaseDesc,
+					        ( b, a ) -> StringCompare.invoke( StringCaster.cast( a ), StringCaster.cast( b ), false ) );
+				    }
+			    }
+			);
+		} else {
+			return new Struct(
+			    new HashMap<Key, Comparator<Object>>() {
+
+				    {
+					    put( Key.numericAsc, ( a, b ) -> Compare.invoke( a, b, false ) );
+					    put( Key.numericDesc, ( b, a ) -> Compare.invoke( a, b, true ) );
+					    put( Key.textAsc,
+					        ( a, b ) -> CollatorStringCompare.invoke( StringCaster.cast( a ), StringCaster.cast( b ), true, locale ) );
+					    put( Key.textDesc,
+					        ( b, a ) -> CollatorStringCompare.invoke( StringCaster.cast( a ), StringCaster.cast( b ), true, locale ) );
+					    put( Key.textNoCaseAsc,
+					        ( a, b ) -> CollatorStringCompare.invoke( StringCaster.cast( a ), StringCaster.cast( b ), false, locale ) );
+					    put( Key.textNoCaseDesc,
+					        ( b, a ) -> CollatorStringCompare.invoke( StringCaster.cast( a ), StringCaster.cast( b ), false, locale ) );
+				    }
+			    }
+			);
+		}
 	}
 }

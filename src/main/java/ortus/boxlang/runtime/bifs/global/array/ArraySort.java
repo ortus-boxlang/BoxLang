@@ -15,6 +15,8 @@
 
 package ortus.boxlang.runtime.bifs.global.array;
 
+import java.util.Locale;
+
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
@@ -44,7 +46,7 @@ public class ArraySort extends BIF {
 		    new Argument( true, "assignablearray", Key.array ),
 		    new Argument( false, "any", Key.sortType, "textnocase" ),
 		    new Argument( false, "string", Key.sortOrder, "asc" ),
-		    new Argument( false, "boolean", Key.localeSensitive ),
+		    new Argument( false, "boolean", Key.localeSensitive, false ),
 		    new Argument( false, "function:Comparator", Key.callback )
 		};
 	}
@@ -87,11 +89,16 @@ public class ArraySort extends BIF {
 			    context
 			);
 		} else {
+			Locale requestedLocale = null;
+			if ( arguments.getAsBoolean( Key.localeSensitive ) ) {
+				requestedLocale = LocalizationUtil.parseLocaleFromContext( context, arguments );
+			}
+
 			result = ListUtil.sort(
 			    array,
 			    StringCaster.cast( sortType ),
 			    sortOrder,
-			    LocalizationUtil.parseLocaleFromContext( context, arguments )
+			    requestedLocale
 			);
 		}
 
