@@ -310,6 +310,7 @@ public class JSONUtil {
 	 * Creates a new JSON builder instance with specified pretty print option.
 	 * 
 	 * @param pretty If true, enables pretty print output.
+	 * @return a configured {@link JSON} instance
 	 */
 	public static JSON newJSONBuilder( boolean pretty ) {
 
