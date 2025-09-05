@@ -364,4 +364,14 @@ public class JSONUtil {
 
 	}
 
+	/**
+	 * Resets the JSON builders, forcing them to be recreated on next use.
+	 */
+	public static void resetBuilders() {
+		synchronized ( JSONUtil.class ) {
+			PRETTY_JSON_BUILDER	= null;
+			JSON_BUILDER		= null;
+		}
+	}
+
 }
