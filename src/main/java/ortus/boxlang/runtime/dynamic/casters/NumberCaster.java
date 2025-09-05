@@ -183,8 +183,10 @@ public class NumberCaster implements IBoxCaster {
 	 *         null, floats, alpha characters, etc.
 	 */
 	private static Number parseNumber( String value ) {
-		if ( value == null )
+		if ( value == null ) {
 			return null;
+		}
+		value = value.trim();
 		// strip trailing period
 		if ( value.endsWith( "." ) ) {
 			value = value.substring( 0, value.length() - 1 );
