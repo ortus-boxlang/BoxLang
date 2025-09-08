@@ -468,6 +468,48 @@ public class HTTP extends Component {
 					    : "UTF-8";
 					responseBody	= new String( responseBytes, Charset.forName( charset ) );
 				}
+
+				// Prepare all the result variables now that we have the response
+				String	httpVersionString	= response.version() == HttpClient.Version.HTTP_1_1 ? "HTTP/1.1" : "HTTP/2";
+				String	statusCodeString	= String.valueOf( response.statusCode() );
+				String	statusText			= HTTPStatusReasons.getReasonForStatus( response.statusCode() );
+
+				headers.put( Key.HTTP_Version, httpVersionString );
+				headers.put( Key.status_code, statusCodeString );
+				headers.put( Key.explanation, statusText );
+
+				HTTPResult.put( Key.responseHeader, headers );
+				HTTPResult.put( Key.header, generateHeaderString( generateStatusLine( httpVersionString, statusCodeString, statusText ), headers ) );
+				HTTPResult.put( Key.HTTP_Version, httpVersionString );
+				HTTPResult.put( Key.statusCode, response.statusCode() );
+				HTTPResult.put( Key.status_code, response.statusCode() );
+				HTTPResult.put( Key.statusText, statusText );
+				HTTPResult.put( Key.status_text, statusText );
+				HTTPResult.put( Key.fileContent, response.statusCode() == 408 ? "Request Timeout" : responseBody );
+				HTTPResult.put( Key.errorDetail, response.statusCode() == 408 ? response.body() : "" );
+				Optional<String> contentTypeHeader = httpHeaders.firstValue( "Content-Type" );
+				contentTypeHeader.ifPresent( ( headerContentType ) -> {
+					String[] contentTypeParts = headerContentType.split( ";\s*" );
+					if ( contentTypeParts.length > 0 ) {
+						HTTPResult.put( Key.mimetype, contentTypeParts[ 0 ] );
+					}
+					if ( contentTypeParts.length > 1 ) {
+						HTTPResult.put( Key.charset, extractCharset( headerContentType ) );
+					}
+				} );
+				HTTPResult.put( Key.cookies, generateCookiesQuery( headers ) );
+				HTTPResult.put( Key.executionTime, Duration.between( startTime, Instant.now() ).toMillis() );
+
+				// Set the result back into the caller using the variable name
+				ExpressionInterpreter.setVariable( context, variableName, HTTPResult );
+
+				// Announce the HTTP response
+				interceptorService.announce( BoxEvent.ON_HTTP_RESPONSE, Struct.of(
+				    "requestID", requestID,
+				    "response", response,
+				    "result", HTTPResult
+				) );
+
 				if ( outputDirectory != null ) {
 					String fileName = attributes.getAsString( Key.file );
 					if ( fileName == null || fileName.trim().isEmpty() ) {
@@ -494,51 +536,8 @@ public class HTTP extends Component {
 					} else if ( responseBody instanceof byte[] bodyBytes ) {
 						FileSystemUtil.write( destinationPath, bodyBytes, true );
 					}
-					return DEFAULT_RETURN;
-
 				}
 			}
-
-			// Prepare all the result variables now that we have the response
-			String	httpVersionString	= response.version() == HttpClient.Version.HTTP_1_1 ? "HTTP/1.1" : "HTTP/2";
-			String	statusCodeString	= String.valueOf( response.statusCode() );
-			String	statusText			= HTTPStatusReasons.getReasonForStatus( response.statusCode() );
-
-			headers.put( Key.HTTP_Version, httpVersionString );
-			headers.put( Key.status_code, statusCodeString );
-			headers.put( Key.explanation, statusText );
-
-			HTTPResult.put( Key.responseHeader, headers );
-			HTTPResult.put( Key.header, generateHeaderString( generateStatusLine( httpVersionString, statusCodeString, statusText ), headers ) );
-			HTTPResult.put( Key.HTTP_Version, httpVersionString );
-			HTTPResult.put( Key.statusCode, response.statusCode() );
-			HTTPResult.put( Key.status_code, response.statusCode() );
-			HTTPResult.put( Key.statusText, statusText );
-			HTTPResult.put( Key.status_text, statusText );
-			HTTPResult.put( Key.fileContent, response.statusCode() == 408 ? "Request Timeout" : responseBody );
-			HTTPResult.put( Key.errorDetail, response.statusCode() == 408 ? response.body() : "" );
-			Optional<String> contentTypeHeader = httpHeaders.firstValue( "Content-Type" );
-			contentTypeHeader.ifPresent( ( contentType ) -> {
-				String[] contentTypeParts = contentType.split( ";\s*" );
-				if ( contentTypeParts.length > 0 ) {
-					HTTPResult.put( Key.mimetype, contentTypeParts[ 0 ] );
-				}
-				if ( contentTypeParts.length > 1 ) {
-					HTTPResult.put( Key.charset, extractCharset( contentType ) );
-				}
-			} );
-			HTTPResult.put( Key.cookies, generateCookiesQuery( headers ) );
-			HTTPResult.put( Key.executionTime, Duration.between( startTime, Instant.now() ).toMillis() );
-
-			// Set the result back into the caller using the variable name
-			ExpressionInterpreter.setVariable( context, variableName, HTTPResult );
-
-			// Announce the HTTP response
-			interceptorService.announce( BoxEvent.ON_HTTP_RESPONSE, Struct.of(
-			    "requestID", requestID,
-			    "response", response,
-			    "result", HTTPResult
-			) );
 
 			return DEFAULT_RETURN;
 		} catch ( ExecutionException e ) {
