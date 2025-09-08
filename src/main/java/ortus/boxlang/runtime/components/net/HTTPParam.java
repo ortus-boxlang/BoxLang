@@ -102,8 +102,7 @@ public class HTTPParam extends Component {
 	 * 
 	 * @attribute.encoded Whether the value is URL encoded (default: false)
 	 * 
-	 * @attribute.mimetype The MIME type of the file (only used for file type, default: application/octet-stream)git
-	 *
+	 * @attribute.mimetype The MIME type of the file (only used for file type, default: application/octet-stream)
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
 		IStruct parentState = context.findClosestComponent( Key.HTTP );
