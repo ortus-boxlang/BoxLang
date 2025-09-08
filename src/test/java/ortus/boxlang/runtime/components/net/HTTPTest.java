@@ -388,6 +388,28 @@ public class HTTPTest {
 		assertThat( FileSystemUtil.exists( "src/test/resources/tmp/http_tests/chuck.jpg" ) ).isTrue();
 	}
 
+	@DisplayName( "It can write out a binary file using the file attribute as the full path" )
+	@Test
+	public void testBinaryFileWriteFileOnly( WireMockRuntimeInfo wmRuntimeInfo ) {
+		stubFor(
+		    get( "/image" )
+		        .willReturn(
+		            ok().withHeader( "Content-Type", "image/jpeg; charset=utf-8" )
+		                .withHeader( "Content-Disposition", "attachment; filename=\"chuck_norris_dl.jpg\"" )
+		                .withBody( ( byte[] ) FileSystemUtil.read( "src/test/resources/chuck_norris.jpg" ) ) ) );
+
+		// @formatter:off
+		instance.executeSource( String.format(
+			"""
+			bx:http method="GET" getAsBinary=true url="%s" file="src/test/resources/tmp/http_tests/chucky.jpg" {}
+			""",
+			wmRuntimeInfo.getHttpBaseUrl() + "/image" ),
+			context
+		);
+		// @formatter:on
+		assertThat( FileSystemUtil.exists( "src/test/resources/tmp/http_tests/chucky.jpg" ) ).isTrue();
+	}
+
 	@DisplayName( "It can send binary content" )
 	@Test
 	public void testBinarySend( WireMockRuntimeInfo wmRuntimeInfo ) {

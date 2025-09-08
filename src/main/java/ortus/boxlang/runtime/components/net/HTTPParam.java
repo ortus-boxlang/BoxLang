@@ -91,6 +91,18 @@ public class HTTPParam extends Component {
 	 * @param attributes     The attributes to the Component
 	 * @param body           The body of the Component
 	 * @param executionState The execution state of the Component
+	 * 
+	 * @attribute.type The type of parameter: header, body, xml, cgi, file, url, formfield, cookie
+	 * 
+	 * @attribute.name The name of the parameter (not required for body, xml, or file types)
+	 * 
+	 * @attribute.value The value of the parameter (not required for file type)
+	 * 
+	 * @attribute.file The path to the file (required for file type)
+	 * 
+	 * @attribute.encoded Whether the value is URL encoded (default: false)
+	 * 
+	 * @attribute.mimetype The MIME type of the file (only used for file type, default: application/octet-stream)
 	 *
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {

@@ -144,19 +144,7 @@ public class HTTP extends Component {
 		        Validator.REQUIRED,
 		        Validator.NON_EMPTY
 		    ) ),
-		    new Attribute( Key.file, "string", Set.of(
-		        Validator.requires( Key.path ),
-		        ( cxt, comp, attr, attrs ) -> {
-			        if ( !attrs.containsKey( Key.path ) ) {
-				        return;
-			        }
-			        String attrValue	= attrs.getAsString( attr.name() );
-			        Boolean isGetRequest = attrs.getAsString( Key.method ).toUpperCase().equals( "GET" );
-			        if ( !isGetRequest && ( attrValue == null || attrValue.trim().isEmpty() ) ) {
-				        throw new BoxValidationException( comp, attr, "is required with a path is specified and the method is not GET" );
-			        }
-		        }
-		    ) ),
+		    new Attribute( Key.file, "string" ),
 		    new Attribute( Key.multipart, "boolean", false, Set.of( Validator.TYPE ) ),
 		    new Attribute( Key.multipartType, "string", "form-data",
 		        Set.of( Validator.REQUIRED, Validator.NON_EMPTY, Validator.valueOneOf( "form-data", "related" ) ) ),
@@ -195,6 +183,61 @@ public class HTTP extends Component {
 	 * @param attributes     The attributes to the Component
 	 * @param body           The body of the Component
 	 * @param executionState The execution state of the Component
+	 * 
+	 * @attribute.URL The URL to which to make the HTTP request. Must start with http:// or https://
+	 * 
+	 * @attribute.port The port to which to make the HTTP request. Defaults to the standard port for the protocol (80 for http, 443 for https)
+	 * 
+	 * @attribute.method The HTTP method to use. One of GET, POST, PUT, DELETE, HEAD, TRACE, OPTIONS, PATCH. Default is GET.
+	 * 
+	 * @attribute.username The username to use for authentication, if any.
+	 * 
+	 * @attribute.password The password to use for authentication, if any.
+	 * 
+	 * @attribute.userAgent The User-Agent string to send with the request. Default is "BoxLang".
+	 * 
+	 * @attribute.charset The character set to use for the request. Default is UTF-8.
+	 * 
+	 * @attribute.resolveUrl Whether to resolve the URL before making the request. Default is false.
+	 * 
+	 * @attribute.throwOnError Whether to throw an error if the HTTP response status code is 400 or greater. Default is true.
+	 * 
+	 * @attribute.redirect Whether to follow redirects. Default is true.
+	 * 
+	 * @attribute.timeout The timeout for the request, in seconds. Default is no timeout.
+	 * 
+	 * @attribute.getAsBinary Whether to return the response body as binary. One of true, false, auto, yes, no, never. Default is auto.
+	 * 
+	 * @attribute.result The name of the variable in which to store the result Struct. Default is "bxhttp".
+	 * 
+	 * @attribute.file The name of the file in which to store the response body. If not set, the response body is stored in the result Struct. If not provided with a `path`, the file attribute can be a full path to the file to write.
+	 * 
+	 * @attribute.multipart Whether the request is a multipart request. Default is false.
+	 * 
+	 * @attribute.multipartType The type of multipart request. One of form-data, related. Default is form-data.
+	 * 
+	 * @attribute.clientCertPassword The password for the client certificate, if any.
+	 * 
+	 * @attribute.path The directory in which to store the response file, if any. If a file attribute is not provided, the file name will be extracted from the Content-Disposition header if present. If no disposition header is present with the file name,
+	 *                 an error will be thrown
+	 * 
+	 * @attribute.clientCert The path to the client certificate, if any.
+	 * 
+	 * @attribute.compression The compression type to use for the request, if any.
+	 * 
+	 * @attribute.authType The authentication type to use. One of BASIC, NTLM. Default is BASIC.
+	 * 
+	 * @attribute.cachedWithin If set, and a cached response is available within the specified duration (e.g. 10m for 10 minutes, 1h for 1 hour), the cached response will be returned instead of making a new request.
+	 * 
+	 * @attribute.encodeUrl Whether to encode the URL. Default is true.
+	 * 
+	 * @attribute.proxyServer The proxy server to use, if any.
+	 * 
+	 * @attribute.proxyPort The proxy server port to use, if any.
+	 * 
+	 * @attribute.proxyUser The proxy server username to use, if any.
+	 * 
+	 * @attribute.proxyPassword The proxy server password to use, if any.
 	 *
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
@@ -231,6 +274,13 @@ public class HTTP extends Component {
 		String	outputDirectory		= attributes.getAsString( Key.path );
 		String	requestID			= UUID.randomUUID().toString();
 		Instant	startTime			= Instant.now();
+
+		// We allow the `file` attribute to become the full file path if the `path` attribute is empty
+		if ( outputDirectory == null && attributes.getAsString( Key.file ) != null ) {
+			Path filePath = FileSystemUtil.expandPath( context, attributes.getAsString( Key.file ) ).absolutePath();
+			outputDirectory = filePath.getParent().toString();
+			attributes.put( Key.file, filePath.getFileName().toString() );
+		}
 
 		// Prepare the output directory if it is set
 		if ( outputDirectory != null ) {
