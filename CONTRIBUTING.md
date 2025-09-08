@@ -80,7 +80,7 @@ Please make sure you use JDK21+.
 
 ## Coding Styles & Formatting
 
-We are big on coding styles and have included a Java code formatter that you can use to format your code.  Our Java style guide is located in [Java](workbench/ortus-java-style.xml).
+We are big on coding styles and have included a Java code formatter that you can use to format your code.  Our Java style guide is located in [workbench/ortus-java-style.xml](workbench/ortus-java-style.xml).
 
 For formatting Java source code, you can use these commands:
 
