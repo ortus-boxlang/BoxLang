@@ -374,9 +374,7 @@ public class HTTP extends Component {
 					case "file" -> files.add( param );
 					case "url" -> uriBuilder.addParameter(
 					    StringCaster.cast( param.get( Key._NAME ) ),
-					    BooleanCaster.cast( param.getOrDefault( Key.encoded, false ) )
-					        ? EncryptionUtil.urlEncode( StringCaster.cast( param.get( Key.value ) ), StandardCharsets.UTF_8 )
-					        : StringCaster.cast( param.get( Key.value ) )
+					    EncryptionUtil.urlEncode( StringCaster.cast( param.get( Key.value ) ), StandardCharsets.UTF_8 )
 					);
 					case "formfield" -> formFields.add( param );
 					case "cookie" -> builder.header( "Cookie",
