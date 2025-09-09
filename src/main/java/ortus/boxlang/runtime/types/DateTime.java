@@ -392,7 +392,7 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	 * @param timezone The timezone to assign to the string, if an offset or zone is not provided in the value
 	 */
 	public DateTime( String dateTime, Locale locale, ZoneId timezone ) {
-		this.wrapped	= LocalizationUtil.parseFromString( dateTime, locale, timezone );
+		this.wrapped = LocalizationUtil.parseFromString( dateTime, locale, timezone );
 	}
 
 	/**
