@@ -13,9 +13,9 @@ plugins {
 	id "application"
 	id 'antlr'
 	// For source code formatting
-	id "com.diffplug.spotless" version "7.2.0"
+	id "com.diffplug.spotless" version "7.2.1"
 	// Shadow
-	id "com.gradleup.shadow" version "9.0.2"
+	id "com.gradleup.shadow" version "9.1.0"
 	// For dependency updates
 	id 'com.github.ben-manes.versions' version '0.52.0'
 	// For building service loader files
@@ -150,7 +150,7 @@ dependencies {
 
 	// Compile Only Dependencies
 	// Java Annotations Checks, this are for compile documentation only. It's not included in the final build
-	compileOnly 'org.checkerframework:checker-qual:3.49.5'
+	compileOnly 'org.checkerframework:checker-qual:3.50.0'
 
 }
 

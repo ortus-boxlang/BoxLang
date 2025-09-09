@@ -22,7 +22,7 @@ package ortus.boxlang.runtime.bifs.global.xml;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -64,7 +64,7 @@ public class XMLNewTest {
 	@Test
 	public void testBif() {
 		XML xmlObject = XMLCaster.cast( instance.executeStatement( "XMLNew()" ) );
-		assertTrue( StringUtils.contains( xmlObject.toString(), "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" ) );
+		assertTrue( Strings.CS.contains( xmlObject.toString(), "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" ) );
 		assertEquals( xmlObject.size(), 0 );
 	}
 

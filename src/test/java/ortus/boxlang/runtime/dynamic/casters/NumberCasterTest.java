@@ -155,4 +155,10 @@ public class NumberCasterTest {
 		assertThat( ( end - start ) / 1000000l ).isLessThan( 20l );
 	}
 
+	@Test
+	void canTrimSpaces() {
+		Number result = NumberCaster.cast( "  2  " );
+		assertThat( result.doubleValue() ).isEqualTo( 2.0 );
+	}
+
 }

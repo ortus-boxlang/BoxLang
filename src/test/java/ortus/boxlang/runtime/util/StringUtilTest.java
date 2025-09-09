@@ -26,8 +26,6 @@ import ortus.boxlang.runtime.types.util.StringUtil;
 
 public class StringUtilTest {
 
-	private StringUtil stringUtil;
-
 	@DisplayName( "Test create slug" )
 	@Test
 	void testSlug() {

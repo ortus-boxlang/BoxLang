@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.RandomStringUtils;
 
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.async.executors.ExecutorRecord;
+import ortus.boxlang.runtime.async.executors.BoxExecutor;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.scopes.Key;
@@ -66,7 +66,7 @@ public class BaseScheduler implements IScheduler {
 	/**
 	 * The Scheduled Executor we are bound to
 	 */
-	protected ExecutorRecord					executor;
+	protected BoxExecutor						executor;
 
 	/**
 	 * The timezone for the scheduler and the tasks it creates and manages
@@ -737,7 +737,7 @@ public class BaseScheduler implements IScheduler {
 	 *
 	 * @return the scheduler object
 	 */
-	public BaseScheduler setExecutor( ExecutorRecord executor ) {
+	public BaseScheduler setExecutor( BoxExecutor executor ) {
 		this.executor = executor;
 		return this;
 	}
@@ -747,7 +747,7 @@ public class BaseScheduler implements IScheduler {
 	 *
 	 * @return the executor record
 	 */
-	public ExecutorRecord getExecutor() {
+	public BoxExecutor getExecutor() {
 		return this.executor;
 	}
 

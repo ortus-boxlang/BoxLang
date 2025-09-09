@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.StringUtils;
 
 import com.fasterxml.jackson.jr.ob.JSON;
@@ -106,7 +107,7 @@ public class StringUtil {
 
 		// Strip accents
 		slug	= StringUtils.stripAccents( slug );
-		slug	= StringUtils.replace( slug, "ß", "ss" );
+		slug	= Strings.CS.replace( slug, "ß", "ss" );
 
 		// More cleanup
 		slug	= RegexBuilder.of( slug, "[^a-z0-9" + allow + "]" ).replaceAllAndGet( "-" );

@@ -33,7 +33,7 @@ import ortus.boxlang.runtime.services.AsyncService;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
-import ortus.boxlang.runtime.async.executors.ExecutorRecord;
+import ortus.boxlang.runtime.async.executors.BoxExecutor;
 
 /**
  * Utility class for Query operations.
@@ -133,7 +133,7 @@ public class QueryUtil {
 				return queryStream.parallel().collect( BLCollector.toQuery( query ) );
 			}
 
-			ExecutorRecord executor = AsyncService.chooseParallelExecutor( "QueryFilter_", maxThreads, virtual );
+			BoxExecutor executor = AsyncService.chooseParallelExecutor( "QueryFilter_", maxThreads, virtual );
 
 			return QueryCaster.cast( executor.submitAndGet( () -> queryStream.parallel().collect( BLCollector.toQuery( query ) ) ) );
 		}
@@ -218,7 +218,7 @@ public class QueryUtil {
 				return;
 			}
 
-			ExecutorRecord executor = AsyncService.chooseParallelExecutor( "QueryEach_", maxThreads, virtual );
+			BoxExecutor executor = AsyncService.chooseParallelExecutor( "QueryEach_", maxThreads, virtual );
 			executor.submitAndGet( () -> {
 				if ( ordered ) {
 					queryStream
@@ -321,7 +321,7 @@ public class QueryUtil {
 				    .collect( BLCollector.toQuery( query ) );
 			}
 
-			ExecutorRecord executor = AsyncService.chooseParallelExecutor( "QueryMap_", maxThreads, virtual );
+			BoxExecutor executor = AsyncService.chooseParallelExecutor( "QueryMap_", maxThreads, virtual );
 
 			// Otherwise, create a new ForkJoinPool with the specified number of threads
 			return QueryCaster.cast( executor.submitAndGet( () -> {
@@ -404,7 +404,7 @@ public class QueryUtil {
 				    .allMatch( test );
 			}
 
-			ExecutorRecord executor = AsyncService.chooseParallelExecutor( "QueryEvery_", maxThreads, virtual );
+			BoxExecutor executor = AsyncService.chooseParallelExecutor( "QueryEvery_", maxThreads, virtual );
 			return BooleanCaster.cast( executor.submitAndGet( () -> {
 				return queryStream
 				    .parallel()
@@ -486,7 +486,7 @@ public class QueryUtil {
 				    .anyMatch( test );
 			}
 
-			ExecutorRecord executor = AsyncService.chooseParallelExecutor( "QuerySome_", maxThreads, virtual );
+			BoxExecutor executor = AsyncService.chooseParallelExecutor( "QuerySome_", maxThreads, virtual );
 			return BooleanCaster.cast( executor.submitAndGet( () -> {
 				return queryStream
 				    .parallel()

@@ -58,7 +58,7 @@ import org.apache.commons.io.ByteOrderMark;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BOMInputStream;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.SystemUtils;
 
 import ortus.boxlang.runtime.BoxRuntime;
@@ -1305,7 +1305,7 @@ public final class FileSystemUtil {
 															    }
 															    // Standard startswith check
 															    // /foo/bar/baz starts with /foo/bar
-															    if ( StringUtils.startsWithIgnoreCase( finalPath, entry.getKey().getName() ) ) {
+															    if ( Strings.CI.startsWith( finalPath, entry.getKey().getName() ) ) {
 																    return true;
 															    }
 															    // Edge case where mapping is defined with trailing slash, but expand path was called without a trailing slash
@@ -1404,7 +1404,7 @@ public final class FileSystemUtil {
 			String mappingDirectory = mappings.getAs( Mapping.class, Key.of( preferredMapping ) ).path();
 			mappingDirectory = Path.of( mappingDirectory ).normalize().toString().replace( "\\", "/" );
 			if ( File.separator.equals( "/" ) ? finalPath.startsWith( mappingDirectory )
-			    : StringUtils.startsWithIgnoreCase( finalPath, mappingDirectory ) ) {
+			    : Strings.CI.startsWith( finalPath, mappingDirectory ) ) {
 
 				// strip the dir from the path
 				String contractedPath = finalPath.substring( mappingDirectory.length() );
@@ -1441,7 +1441,7 @@ public final class FileSystemUtil {
 		        Path.of( entry.getValue().toString() ).normalize().toString().replace( "\\", "/" ) ) )
 		    .filter( entry -> {
 			    return File.separator.equals( "/" ) ? finalPath.startsWith( entry.getValue() )
-			        : StringUtils.startsWithIgnoreCase( finalPath, entry.getValue() );
+			        : Strings.CI.startsWith( finalPath, entry.getValue() );
 		    } )
 		    .findFirst()
 		    .orElse( null );

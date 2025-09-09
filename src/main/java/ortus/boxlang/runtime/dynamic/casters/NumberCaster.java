@@ -35,6 +35,10 @@ import ortus.boxlang.runtime.types.util.MathUtil;
  */
 public class NumberCaster implements IBoxCaster {
 
+	/**
+	 * If true, booleans will be treated as numbers, with true=1 and false=0
+	 * This is here for compat to toggle
+	 */
 	public static boolean booleansAreNumbers = false;
 
 	/**
@@ -179,8 +183,10 @@ public class NumberCaster implements IBoxCaster {
 	 *         null, floats, alpha characters, etc.
 	 */
 	private static Number parseNumber( String value ) {
-		if ( value == null )
+		if ( value == null ) {
 			return null;
+		}
+		value = value.trim();
 		// strip trailing period
 		if ( value.endsWith( "." ) ) {
 			value = value.substring( 0, value.length() - 1 );

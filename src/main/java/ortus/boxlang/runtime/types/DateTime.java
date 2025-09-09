@@ -72,6 +72,7 @@ import ortus.boxlang.runtime.util.LocalizationUtil;
  * The primary DateTime class that represents a date and time object in BoxLang
  *
  * All temporal methods in BoxLang operate on this class and all castable date/time representations are cast to this class
+ * 
  */
 public class DateTime implements IType, IReferenceable, Serializable, ValueWriter, ChronoZonedDateTime<LocalDate> {
 
@@ -117,6 +118,8 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	public static final String				JS_COMMON_TO_STRING_MASK					= "EEE MMM dd yyyy HH:mm:ss 'GMT'Z (zzzz)";
 	// The format used by most browsers when calling toString on a Javascript date object - note that this is implementation dependent and may not be reliable
 	public static final String				JS_COMMON_ALT_STRING_MASK					= "EEE MMM dd yyyy HH:mm:ss 'GMT'Z (zzz)";
+	// The format output by ZonedDateTime toString method - optional offest, optional millis
+	public static final String				ZONED_DATE_TIME_TO_STRING_MASK				= "yyyy-MM-dd'T'HH:mm:ss[.SSS][XXX]'['VV']'";
 
 	/**
 	 * Common Modes
@@ -390,8 +393,7 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	 * @param timezone The timezone to assign to the string, if an offset or zone is not provided in the value
 	 */
 	public DateTime( String dateTime, Locale locale, ZoneId timezone ) {
-		this.formatter	= DateTimeFormatter.ISO_ZONED_DATE_TIME.withLocale( locale );
-		this.wrapped	= LocalizationUtil.parseFromString( dateTime, locale, timezone );
+		this.wrapped = LocalizationUtil.parseFromString( dateTime, locale, timezone );
 	}
 
 	/**

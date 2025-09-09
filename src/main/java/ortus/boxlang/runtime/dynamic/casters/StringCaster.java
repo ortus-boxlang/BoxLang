@@ -216,6 +216,7 @@ public class StringCaster implements IBoxCaster {
 			BigDecimal	minutes		= BigDecimal.valueOf( targetDuration.toMinutesPart() );
 			BigDecimal	seconds		= BigDecimal.valueOf( targetDuration.toSecondsPart() );
 			BigDecimal	nanos		= BigDecimal.valueOf( targetDuration.toNanosPart(), 9 );
+			// @TODO - this needs to be refactored due to deprecation, however using RoundingMode.HALF_UP does not produce the correct result
 			BigDecimal	totalDays	= days.add( hours.divide( BigDecimal.valueOf( 24 ), 15, BigDecimal.ROUND_HALF_UP ) )
 			    .add( minutes.divide( BigDecimal.valueOf( 1440 ), 15, BigDecimal.ROUND_HALF_UP ) )
 			    .add( seconds.divide( BigDecimal.valueOf( 86400 ), 15, BigDecimal.ROUND_HALF_UP ) )

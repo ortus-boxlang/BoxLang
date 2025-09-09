@@ -37,7 +37,7 @@ import javax.management.InvalidAttributeValueException;
 import org.slf4j.Logger;
 
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.async.executors.ExecutorRecord;
+import ortus.boxlang.runtime.async.executors.BoxExecutor;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.IJDBCCapableContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
@@ -87,7 +87,7 @@ public class ScheduledTask implements Runnable {
 	/**
 	 * The executor to use for this task
 	 */
-	private ExecutorRecord							executor			= null;
+	private BoxExecutor								executor			= null;
 
 	/**
 	 * The task as a {@link DynamicObject} or a
@@ -295,7 +295,7 @@ public class ScheduledTask implements Runnable {
 	 * @param executor  The executor we are bound to (Optional) can be null
 	 * @param scheduler The scheduler we are bound to (Optional) can be null
 	 */
-	public ScheduledTask( String name, String group, ExecutorRecord executor, BaseScheduler scheduler ) {
+	public ScheduledTask( String name, String group, BoxExecutor executor, BaseScheduler scheduler ) {
 		// Seed it
 		this.name		= name;
 		this.group		= group;
@@ -374,7 +374,7 @@ public class ScheduledTask implements Runnable {
 	 * @param name     The name of the task
 	 * @param executor The executor we are bound to
 	 */
-	public ScheduledTask( String name, ExecutorRecord executor ) {
+	public ScheduledTask( String name, BoxExecutor executor ) {
 		this( name, "", executor, null );
 	}
 
@@ -2716,7 +2716,7 @@ public class ScheduledTask implements Runnable {
 	 *
 	 * @return The executor
 	 */
-	private ExecutorRecord getExecutor() {
+	private BoxExecutor getExecutor() {
 		if ( this.executor == null ) {
 			this.executor = this.scheduler.getExecutor();
 		}

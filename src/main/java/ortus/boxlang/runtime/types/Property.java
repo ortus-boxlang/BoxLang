@@ -67,7 +67,7 @@ public record Property( Key name, String type, Object defaultValue, DefaultExpre
 		if ( defaultExpression != null ) {
 			return defaultExpression.evaluate( context );
 		}
-		return DuplicationUtil.duplicate( defaultValue, false );
+		return DuplicationUtil.duplicate( defaultValue, false, context );
 	}
 
 	public Object getDefaultValueForMeta() {

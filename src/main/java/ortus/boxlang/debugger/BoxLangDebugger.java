@@ -35,7 +35,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 
 import com.sun.jdi.AbsentInformationException;
 import com.sun.jdi.ClassNotLoadedException;
@@ -629,7 +629,7 @@ public class BoxLangDebugger {
 	}
 
 	private boolean isBoxlangThread( ThreadReference threadRef ) {
-		return StringUtils.containsIgnoreCase( threadRef.name(), "BL-Thread" );
+		return Strings.CI.contains( threadRef.name(), "BL-Thread" );
 	}
 
 	private void handleExceptionEvent( EventSet eventSet, ExceptionEvent exceptionEvent ) {

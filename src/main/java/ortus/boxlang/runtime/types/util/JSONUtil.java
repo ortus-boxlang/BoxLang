@@ -47,81 +47,20 @@ import ortus.boxlang.runtime.util.conversion.BoxJsonProvider;
 public class JSONUtil {
 
 	/**
-	 * The JSON builder library we use
+	 * If true, the JSON parser will use lenient parsing to allow some common non-standard JSON features.
+	 * This is disabled by default for strict compliance with the JSON specification. It can be toggled on by the compat module
 	 */
-	@SuppressWarnings( "deprecation" )
-	private static final JSON	PRETTY_JSON_BUILDER	= JSON.builder(
-	    // Use a custom factory with enabled parsing features
-	    new JsonFactory()
-	        .setStreamWriteConstraints(
-	            StreamWriteConstraints.builder()
-	                .maxNestingDepth( Integer.MAX_VALUE )
-	                .build()
-	        )
-	        .enable( JsonParser.Feature.ALLOW_COMMENTS )
-	        .enable( JsonParser.Feature.ALLOW_YAML_COMMENTS )
-	        // TODO: This whole block needs to be converted over to use the JsonFactory.builder() as the following feature is deprecated
-	        .enable( JsonParser.Feature.ALLOW_BACKSLASH_ESCAPING_ANY_CHARACTER )
-	)
-	    // Enable JSON features
-	    // https://fasterxml.github.io/jackson-jr/javadoc/jr-objects/2.8/com/fasterxml/jackson/jr/ob/JSON.Feature.html
-	    .enable(
-	        JSON.Feature.PRETTY_PRINT_OUTPUT,
-	        JSON.Feature.USE_BIG_DECIMAL_FOR_FLOATS,
-	        JSON.Feature.USE_FIELDS,
-	        JSON.Feature.WRITE_NULL_PROPERTIES
-	    )
-	    // Add Jackson annotation support
-	    .register( JacksonAnnotationExtension.std )
-	    // Add JavaTime Extension
-	    .register( new JacksonJrJavaTimeExtension() )
-	    // Add Custom Serializers/ Deserializers
-	    .register( new JacksonJrExtension() {
+	public static boolean	useLenientParsing	= false;
 
-		    @Override
-		    protected void register( ExtensionContext extensionContext ) {
-			    extensionContext.insertProvider( new BoxJsonProvider() );
-		    }
+	/**
+	 * The JSON builder with pretty print enabled - lazy loaded
+	 */
+	private static JSON		PRETTY_JSON_BUILDER	= null;
 
-	    } )
-	    // Yeaaaahaaa!
-	    .build();
-
-	private static final JSON	JSON_BUILDER		= JSON.builder(
-	    // Use a custom factory with enabled parsing features
-	    new JsonFactory()
-	        .setStreamWriteConstraints(
-	            StreamWriteConstraints.builder()
-	                .maxNestingDepth( Integer.MAX_VALUE )
-	                .build()
-	        )
-	        .enable( JsonParser.Feature.ALLOW_COMMENTS )
-	        .enable( JsonParser.Feature.ALLOW_YAML_COMMENTS )
-	        // TODO: This whole block needs to be converted over to use the JsonFactory.builder() as the following feature is deprecated
-	        .enable( JsonParser.Feature.ALLOW_BACKSLASH_ESCAPING_ANY_CHARACTER )
-	)
-	    // Enable JSON features
-	    // https://fasterxml.github.io/jackson-jr/javadoc/jr-objects/2.8/com/fasterxml/jackson/jr/ob/JSON.Feature.html
-	    .enable(
-	        JSON.Feature.USE_BIG_DECIMAL_FOR_FLOATS,
-	        JSON.Feature.USE_FIELDS,
-	        JSON.Feature.WRITE_NULL_PROPERTIES
-	    )
-	    // Add Jackson annotation support
-	    .register( JacksonAnnotationExtension.std )
-	    // Add JavaTime Extension
-	    .register( new JacksonJrJavaTimeExtension() )
-	    // Add Custom Serializers/ Deserializers
-	    .register( new JacksonJrExtension() {
-
-		    @Override
-		    protected void register( ExtensionContext extensionContext ) {
-			    extensionContext.insertProvider( new BoxJsonProvider() );
-		    }
-
-	    } )
-	    // Yeaaaahaaa!
-	    .build();
+	/**
+	 * The JSON builder without pretty print - lazy loaded
+	 */
+	private static JSON		JSON_BUILDER		= null;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -141,7 +80,20 @@ public class JSONUtil {
 	 * @return The JSON builder
 	 */
 	public static JSON getJSONBuilder( Boolean pretty ) {
-		return pretty ? PRETTY_JSON_BUILDER : JSON_BUILDER;
+		JSON assignedBuilder = pretty ? PRETTY_JSON_BUILDER : JSON_BUILDER;
+
+		if ( assignedBuilder == null ) {
+			synchronized ( JSONUtil.class ) {
+				assignedBuilder = newJSONBuilder( pretty );
+				if ( pretty ) {
+					PRETTY_JSON_BUILDER = assignedBuilder;
+				} else {
+					JSON_BUILDER = assignedBuilder;
+				}
+			}
+		}
+
+		return assignedBuilder;
 	}
 
 	/**
@@ -170,7 +122,7 @@ public class JSONUtil {
 	 */
 	public static Object fromJSON( Object json, boolean toBLTypes ) {
 		try {
-			Object parsed = JSON_BUILDER.anyFrom( json );
+			Object parsed = getJSONBuilder( false ).anyFrom( json );
 			// Now parse the JSON
 			return toBLTypes ? mapToBLTypes( parsed, true ) : parsed;
 		} catch ( Exception e ) {
@@ -232,7 +184,7 @@ public class JSONUtil {
 	 */
 	public static <T> T fromJSON( Class<T> clazz, Object json ) {
 		try {
-			return JSON_BUILDER.beanFrom( clazz, json );
+			return getJSONBuilder( false ).beanFrom( clazz, json );
 		} catch ( Exception e ) {
 			throw new BoxRuntimeException( "Failed to parse JSON into " + clazz.getSimpleName(), e );
 		}
@@ -352,6 +304,74 @@ public class JSONUtil {
 		}
 
 		return result;
+	}
+
+	/**
+	 * Creates a new JSON builder instance with specified pretty print option.
+	 * 
+	 * @param pretty If true, enables pretty print output.
+	 * 
+	 * @return a configured {@link JSON} instance
+	 */
+	public static JSON newJSONBuilder( boolean pretty ) {
+
+		// TODO: This whole block needs to be converted over to use the JsonFactory.builder() as the a number of features are deprecated
+		JsonFactory factory = new JsonFactory()
+		    .setStreamWriteConstraints(
+		        StreamWriteConstraints.builder()
+		            .maxNestingDepth( Integer.MAX_VALUE )
+		            .build()
+		    )
+		    .enable( JsonParser.Feature.ALLOW_COMMENTS )
+		    .enable( JsonParser.Feature.ALLOW_YAML_COMMENTS )
+		    .enable( JsonParser.Feature.ALLOW_BACKSLASH_ESCAPING_ANY_CHARACTER );
+
+		// If lenient parsing is enabled, allow some common non-standard JSON features
+		if ( useLenientParsing ) {
+			factory
+			    .enable( JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES )
+			    .enable( JsonParser.Feature.ALLOW_SINGLE_QUOTES )
+			    .enable( JsonParser.Feature.ALLOW_NUMERIC_LEADING_ZEROS )
+			    .enable( JsonParser.Feature.ALLOW_TRAILING_COMMA );
+		}
+
+		JSON.Builder builder = JSON.builder( factory )
+		    .enable(
+		        JSON.Feature.USE_BIG_DECIMAL_FOR_FLOATS,
+		        JSON.Feature.USE_FIELDS,
+		        JSON.Feature.WRITE_NULL_PROPERTIES
+		    )
+		    // Add Jackson annotation support
+		    .register( JacksonAnnotationExtension.std )
+		    // Add JavaTime Extension
+		    .register( new JacksonJrJavaTimeExtension() )
+		    // Add Custom Serializers/ Deserializers
+		    .register( new JacksonJrExtension() {
+
+			    @Override
+			    protected void register( ExtensionContext extensionContext ) {
+				    extensionContext.insertProvider( new BoxJsonProvider() );
+			    }
+
+		    } );
+
+		if ( pretty ) {
+			builder.set( JSON.Feature.PRETTY_PRINT_OUTPUT, true );
+		}
+
+		// Yeaaaahaaa!
+		return builder.build();
+
+	}
+
+	/**
+	 * Resets the JSON builders, forcing them to be recreated on next use.
+	 */
+	public static void resetBuilders() {
+		synchronized ( JSONUtil.class ) {
+			PRETTY_JSON_BUILDER	= null;
+			JSON_BUILDER		= null;
+		}
 	}
 
 }

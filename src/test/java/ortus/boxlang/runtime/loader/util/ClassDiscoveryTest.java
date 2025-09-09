@@ -22,6 +22,7 @@ import static com.google.common.truth.Truth.assertThat;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.net.URI;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -81,7 +82,7 @@ class ClassDiscoveryTest {
 		// jar:file:/Users/lmajano/Sites/projects/boxlang/build/libs/boxlang-1.0.0.jar!/modules
 		String			jar		= "build/libs/boxlang-1.0.0.jar";
 		Path			jarPath	= Paths.get( jar ).toAbsolutePath();
-		URL				jarURL	= new URL( "jar:file:" + jarPath.toString() + "!/" );
+		URL				jarURL	= URI.create( "jar:file:" + jarPath.toString() + "!/" ).toURL();
 
 		@SuppressWarnings( "unchecked" )
 		List<Class<?>>	classes	= ClassDiscovery.findClassesInJar(

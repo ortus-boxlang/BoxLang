@@ -21,6 +21,7 @@ package ortus.boxlang.runtime.bifs.global.struct;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.AfterAll;
@@ -35,6 +36,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class StructKeyExistsTest {
 
@@ -141,6 +143,29 @@ public class StructKeyExistsTest {
 		    	result = structKeyExists(stEnvVars, "FOOBAR");
 		    """,
 		    context );
+	}
+
+	@Test
+	public void testStructKeyExistsClosure() {
+
+		Throwable t = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		    """
+		    x = () => 2
+		    result = structKeyExists( x, "test" );
+		       """,
+		    context ) );
+		assertThat( t.getMessage() ).contains( "does not match the declared type" );
+
+		instance.executeSource(
+		    """
+		    import ortus.boxlang.runtime.dynamic.casters.StructCasterLoose;
+		    StructCasterLoose.extraLooseStructCasting = true;
+		       x = () => 2
+		       result = structKeyExists( x, "test" );
+		    StructCasterLoose.extraLooseStructCasting = false;
+		          """,
+		    context );
+		assertThat( variables.getAsBoolean( result ) ).isFalse();
 	}
 
 }

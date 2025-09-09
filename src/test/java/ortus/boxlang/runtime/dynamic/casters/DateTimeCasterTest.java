@@ -287,4 +287,13 @@ public class DateTimeCasterTest {
 		assertThat( result ).isNotNull();
 		assertThat( result.setFormat( "yyyy-MM-dd" ).toString() ).isEqualTo( "2020-09-14" );
 	}
+
+	@DisplayName( "Test timestamp without millis and timezone in brackets" )
+	@Test
+	public void testTimeStampNoMillis() {
+		String		dateString	= "2025-09-08T00:00:00Z[Etc/UTC]";
+		DateTime	result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.setFormat( "yyyy-MM-dd" ).toString() ).isEqualTo( "2025-09-08" );
+	}
 }

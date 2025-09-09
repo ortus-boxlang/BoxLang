@@ -17,7 +17,7 @@ package ortus.boxlang.runtime.bifs.global.async;
 import java.util.concurrent.TimeUnit;
 
 import ortus.boxlang.runtime.async.BoxFuture;
-import ortus.boxlang.runtime.async.executors.ExecutorRecord;
+import ortus.boxlang.runtime.async.executors.BoxExecutor;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -91,8 +91,8 @@ public class AsyncAllApply extends BIF {
 	 * @return An array or struct of the results
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Object			executor		= arguments.get( Key.executor );
-		ExecutorRecord	executorRecord	= this.asyncService.getRecordOrNull( executor );
+		Object		executor		= arguments.get( Key.executor );
+		BoxExecutor	executorRecord	= this.asyncService.getRecordOrNull( executor );
 
 		return BoxFuture.allApply(
 		    context,

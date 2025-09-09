@@ -135,9 +135,47 @@ install-bx-module bx-compat-cfml@1.11.0
 install-bx-module bx-compat-cfml bx-esapi bx-pdf
 ```
 
+## Quick Start
+
+Once BoxLang is installed, you can quickly get started with a simple "Hello World":
+
+```javascript
+// hello.bxs
+println( "Hello, BoxLang World!" )
+
+// Variables and functions
+name = "Developer"
+function greet( name ) {
+    return "Welcome to BoxLang, " & name & "!"
+}
+
+println( greet( name ) )
+```
+
+Run it:
+
+```bash
+boxlang hello.bxs
+```
+
+For more examples and tutorials, visit our [Getting Started Guide](https://boxlang.ortusbooks.com/getting-started).
+
+## Language Features
+
+BoxLang combines the best of many programming languages with modern JVM capabilities:
+
+- **Dynamic Typing with Optional Type Safety**: Write code quickly with dynamic types or add type hints for better tooling
+- **Closures & Lambda Functions**: First-class function support with modern syntax
+- **Java Interoperability**: Direct access to Java classes, methods, and libraries
+- **Modular Architecture**: Built-in module system for extensible applications  
+- **Multiple Paradigms**: Object-oriented, functional, and procedural programming styles
+- **Built-in Web Framework**: Full-featured web development capabilities out of the box
+- **Query of Queries**: Powerful in-memory query capabilities
+- **Async/Threading**: Built-in concurrency and async programming support
+
 ## BoxLang IDE
 
-<img src="https://boxlang.ortusbooks.com/~gitbook/image?url=https%3A%2F%2F1598982152-files.gitbook.io%2F%7E%2Ffiles%2Fv0%2Fb%2Fgitbook-x-prod.appspot.com%2Fo%2Fspaces%252F4ENvvb4b3Cmrr1qKj7y4%252Fuploads%252FNv4M8hpT2ZF15vNlU9kf%252Fimage.png%3Falt%3Dmedia%26token%3D9ad1083f-ba07-4522-a435-e508cab125d9&width=768&dpr=1&quality=100&sign=cd734817&sv=2">
+<img src="https://boxlang.ortusbooks.com/~gitbook/image?url=https%3A%2F%2F1598982152-files.gitbook.io%2F%7E%2Ffiles%2Fv0%2Fb%2Fgitbook-x-prod.appspot.com%2Fo%2Fspaces%252F4ENvvb4b3Cmrr1qKj7y4%252Fuploads%252FNv4M8hpT2ZF15vNlU9kf%252Fimage.png%3Falt%3Dmedia%26token%3D9ad1083f-ba07-4522-a435-e508cab125d9&width=768&dpr=1&quality=100&sign=cd734817&sv=2" alt="BoxLang IDE Screenshot">
 
 <p>&nbsp;</p>
 
@@ -160,6 +198,34 @@ BoxLang has its own IDE based on VSCode that you can use to write, test, and deb
 
 Learn more about the BoxLang IDE here: https://boxlang.ortusbooks.com/getting-started/ide-tooling
 
+## Contributing
+
+We welcome contributions to BoxLang! Whether you're:
+
+- 🐛 Reporting bugs
+- 💡 Suggesting new features
+- 📝 Improving documentation
+- 🛠️ Submitting code changes
+
+Please check our [Contributing Guidelines](CONTRIBUTING.md) and feel free to submit issues and pull requests.
+
+### Development Requirements
+
+- **JDK 21** (for building BoxLang)
+- **Gradle** (included via wrapper)
+
+### Building from Source
+
+```bash
+git clone https://github.com/ortus-boxlang/boxlang.git
+cd boxlang
+./gradlew build
+```
+
+### Security
+
+If you discover a security vulnerability within BoxLang, please send an email to [security@ortussolutions.com](mailto:security@ortussolutions.com). All security vulnerabilities will be promptly addressed.
+
 ## Resources
 
 - 🌐 [Website](https://boxlang.io)
@@ -170,7 +236,7 @@ Learn more about the BoxLang IDE here: https://boxlang.ortusbooks.com/getting-st
 - 📰 [Latest News](https://www.ortussolutions.com/blog)
 - 🕸️ [Modules](https://forgebox.io/)
 
-Suport this project by becoming a sponsor or buying a [BoxLang +/++ Subscription](https://boxlang.io/plans). Your logo will show up here with a link to your website. [Become a sponsor](https://www.patreon.com/ortussolutions)
+Support this project by becoming a sponsor or buying a [BoxLang +/++ Subscription](https://boxlang.io/plans). Your logo will show up here with a link to your website. [Become a sponsor](https://www.patreon.com/ortussolutions)
 
 🐞 **Reporting a Bug**
 

@@ -40,6 +40,7 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
+import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.StringUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.DocumentType;
@@ -542,7 +543,7 @@ public class XML implements Serializable, IStruct {
 			        (
 						child.getPrefix() != null
 			            &&
-			        	StringUtils.replace( child.getNodeName(), child.getPrefix() + xmlnsSeparator, StringUtils.EMPTY ).equalsIgnoreCase( childName )
+			        	Strings.CS.replace( child.getNodeName(), child.getPrefix() + xmlnsSeparator, StringUtils.EMPTY ).equalsIgnoreCase( childName )
 					)
 				)
 			) {

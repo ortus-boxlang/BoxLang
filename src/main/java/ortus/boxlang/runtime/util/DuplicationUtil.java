@@ -25,8 +25,9 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.ClassUtils;
-import org.apache.commons.lang3.SerializationUtils;
 
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
@@ -41,6 +42,7 @@ import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.XML;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.conversion.ObjectMarshaller;
 
 /**
  * This class is responsible for duplicating objects in the BoxLang runtime
@@ -55,7 +57,21 @@ public class DuplicationUtil {
 	 *
 	 * @return A new object copy
 	 */
+	@Deprecated
 	public static Object duplicate( Object target, Boolean deep ) {
+		return duplicate( target, deep, RequestBoxContext.getCurrent() );
+	}
+
+	/**
+	 * Duplicate an object according to type and deep flag
+	 *
+	 * @param target  The object to duplicate
+	 * @param deep    Flag to do a deep copy on all nested objects, if true
+	 * @param context The context in which the duplication is being performed
+	 *
+	 * @return A new object copy
+	 */
+	public static Object duplicate( Object target, Boolean deep, IBoxContext context ) {
 		target = DynamicObject.unWrap( target );
 		if ( target == null ) {
 			return null;
@@ -66,15 +82,15 @@ public class DuplicationUtil {
 		} else if ( target instanceof Enum<?> || target instanceof Class<?> ) {
 			return target;
 		} else if ( target instanceof IClassRunnable icr ) {
-			return duplicateClass( icr, deep );
+			return duplicateClass( icr, deep, context );
 		} else if ( target instanceof XML xml ) {
 			return duplicateXML( xml );
 		} else if ( target instanceof IStruct str ) {
-			return duplicateStruct( str, deep );
+			return duplicateStruct( str, deep, context );
 		} else if ( target instanceof Array arr ) {
-			return duplicateArray( arr, deep );
+			return duplicateArray( arr, deep, context );
 		} else if ( target instanceof Query arr ) {
-			return duplicateQuery( arr, deep );
+			return duplicateQuery( arr, deep, context );
 		} else if ( target instanceof DateTime dateTimeInstance ) {
 			return dateTimeInstance.clone();
 		} else if ( target instanceof Function ) {
@@ -83,7 +99,9 @@ public class DuplicationUtil {
 		} else if ( target instanceof Serializable ) {
 			// Once we get here duplication is deep but very slow, but many java classes like ArrayList and all HashMaps implement this class
 			// If a new type is created, add a custom routine above for duplication
-			return SerializationUtils.clone( ( Serializable ) target );
+			// Use this instead of generic serializers as this uses our BL class loader aware object input stream
+			// TODO: I'm not sure that we want the interceptions to be announced from here.
+			return ObjectMarshaller.deserialize( context, ObjectMarshaller.serialize( context, target ) );
 		} else {
 			throw new BoxRuntimeException(
 			    String.format(
@@ -94,7 +112,7 @@ public class DuplicationUtil {
 		}
 	}
 
-	private static IClassRunnable duplicateClass( IClassRunnable originalClass, Boolean deep ) {
+	private static IClassRunnable duplicateClass( IClassRunnable originalClass, Boolean deep, IBoxContext context ) {
 		IClassRunnable newClass;
 		try {
 			newClass = originalClass.getClass().getConstructor().newInstance();
@@ -105,21 +123,21 @@ public class DuplicationUtil {
 
 		// variables scope
 		if ( deep ) {
-			newClass.getVariablesScope().putAll( duplicateStruct( originalClass.getVariablesScope(), deep ) );
+			newClass.getVariablesScope().putAll( duplicateStruct( originalClass.getVariablesScope(), deep, context ) );
 		} else {
 			newClass.getVariablesScope().putAll( originalClass.getVariablesScope() );
 		}
 
 		// this scope
 		if ( deep ) {
-			newClass.getThisScope().putAll( duplicateStruct( originalClass.getThisScope(), deep ) );
+			newClass.getThisScope().putAll( duplicateStruct( originalClass.getThisScope(), deep, context ) );
 		} else {
 			newClass.getThisScope().putAll( originalClass.getThisScope() );
 		}
 
 		// super scope
 		if ( originalClass.getSuper() != null ) {
-			IClassRunnable newSuper = duplicateClass( originalClass.getSuper(), deep );
+			IClassRunnable newSuper = duplicateClass( originalClass.getSuper(), deep, context );
 			newSuper.setChild( newClass );
 			newClass._setSuper( newSuper );
 
@@ -143,7 +161,20 @@ public class DuplicationUtil {
 	 *
 	 * @return A new Struct copy
 	 */
+	@Deprecated
 	public static IStruct duplicateStruct( IStruct target, Boolean deep ) {
+		return duplicateStruct( target, deep, RequestBoxContext.getCurrent() );
+	}
+
+	/**
+	 * Duplicate a Struct object
+	 *
+	 * @param target The Struct object to duplicate
+	 * @param deep   Flag to do a deep copy on all nested objects, if true
+	 *
+	 * @return A new Struct copy
+	 */
+	public static IStruct duplicateStruct( IStruct target, Boolean deep, IBoxContext context ) {
 		var entries = target.entrySet().stream();
 
 		if ( target.getType().equals( Struct.TYPES.LINKED ) ) {
@@ -158,8 +189,8 @@ public class DuplicationUtil {
 				            if ( val == null ) {
 					            val = new NullValue();
 				            }
-				            return deep && val instanceof IStruct ? duplicateStruct( StructCaster.cast( val ), deep )
-				                : val instanceof Array ? duplicateArray( ArrayCaster.cast( val ), deep ) : val;
+				            return deep && val instanceof IStruct ? duplicateStruct( StructCaster.cast( val ), deep, context )
+				                : val instanceof Array ? duplicateArray( ArrayCaster.cast( val ), deep, context ) : val;
 			            },
 			            ( existingValue, newValue ) -> existingValue, // Keep the existing value in case of a conflict,
 			            LinkedHashMap<Key, Object>::new
@@ -174,7 +205,7 @@ public class DuplicationUtil {
 			            Entry::getKey,
 			            entry -> {
 				            Object val = entry.getValue();
-				            return processStructAssignment( val, deep );
+				            return processStructAssignment( val, deep, context );
 			            },
 			            ( existingValue, newValue ) -> existingValue, // Keep the existing value in case of a conflict,
 			            ConcurrentSkipListMap<Key, Object>::new
@@ -187,7 +218,7 @@ public class DuplicationUtil {
 			    entries.collect(
 			        Collectors.toConcurrentMap(
 			            Entry::getKey,
-			            entry -> processStructAssignment( entry.getValue(), deep ),
+			            entry -> processStructAssignment( entry.getValue(), deep, context ),
 			            ( existingValue, newValue ) -> existingValue // Keep the existing value in case of a conflict
 			        )
 			    )
@@ -203,7 +234,7 @@ public class DuplicationUtil {
 	 *
 	 * @return The duplicated value
 	 */
-	public static Object processStructAssignment( Object val, Boolean deep ) {
+	private static Object processStructAssignment( Object val, Boolean deep, IBoxContext context ) {
 		// If it's a null value, we need to wrap it, concurrent maps don't accept nulls.
 		if ( val == null ) {
 			return new NullValue();
@@ -222,10 +253,24 @@ public class DuplicationUtil {
 	 *
 	 * @return A new Array copy
 	 */
+	@Deprecated
 	public static Array duplicateArray( Array target, Boolean deep ) {
+		return duplicateArray( target, deep, RequestBoxContext.getCurrent() );
+	}
+
+	/**
+	 * Duplicate an Array object
+	 *
+	 * @param target  The Array object to duplicate
+	 * @param deep    Flag to do a deep copy on all nested objects, if true
+	 * @param context The context in which the duplication is being performed
+	 *
+	 * @return A new Array copy
+	 */
+	public static Array duplicateArray( Array target, Boolean deep, IBoxContext context ) {
 		return new Array(
 		    target.intStream()
-		        .mapToObj( idx -> deep ? ( Object ) duplicate( target.get( idx ), deep ) : ( Object ) target.get( idx ) )
+		        .mapToObj( idx -> deep ? ( Object ) duplicate( target.get( idx ), deep, context ) : ( Object ) target.get( idx ) )
 		        .toArray()
 		);
 	}
@@ -238,8 +283,8 @@ public class DuplicationUtil {
 	 *
 	 * @return A new Query copy
 	 */
-	private static Object duplicateQuery( Query target, Boolean deep ) {
-		return target.duplicate( deep );
+	private static Object duplicateQuery( Query target, Boolean deep, IBoxContext context ) {
+		return target.duplicate( deep, context );
 	}
 
 }

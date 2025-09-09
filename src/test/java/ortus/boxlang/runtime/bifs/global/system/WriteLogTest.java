@@ -23,9 +23,10 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.PrintStream;
 import java.nio.file.Paths;
+import java.nio.charset.StandardCharsets;
 
 import org.apache.commons.io.output.ByteArrayOutputStream;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -115,7 +116,7 @@ public class WriteLogTest {
 		    """,
 		    context );
 		// Assert we got here
-		assertThat( StringUtils.contains( outContent.toString(), "Hola Logger!" ) ).isTrue();
+		assertThat( Strings.CS.contains( outContent.toString( StandardCharsets.UTF_8 ), "Hola Logger!" ) ).isTrue();
 	}
 
 	@DisplayName( "It can write a default with a custom log file" )
@@ -128,7 +129,7 @@ public class WriteLogTest {
 		    context );
 		assertTrue( FileSystemUtil.exists( logFilePath ) );
 		String fileContent = StringCaster.cast( FileSystemUtil.read( logFilePath ) );
-		assertTrue( StringUtils.contains( fileContent, "Custom Logger!" ) );
+		assertTrue( Strings.CS.contains( fileContent, "Custom Logger!" ) );
 	}
 
 	@DisplayName( "It can write a default with a custom log file and type" )

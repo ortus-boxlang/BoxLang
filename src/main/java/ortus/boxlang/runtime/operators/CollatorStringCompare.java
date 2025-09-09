@@ -17,14 +17,13 @@
  */
 package ortus.boxlang.runtime.operators;
 
+import java.text.Collator;
 import java.util.Locale;
-
-import org.apache.commons.lang3.Strings;
 
 /**
  * Operator to compare two strings and bypass any additional cast attempts
  */
-public class StringCompare implements IOperator {
+public class CollatorStringCompare implements IOperator {
 
 	/**
 	 * Invokes the comparison
@@ -91,9 +90,12 @@ public class StringCompare implements IOperator {
 	 * @return 1 if greater than, -1 if less than, = if equal
 	 */
 	public static Integer attempt( String left, String right, Boolean caseSensitive, boolean fail, Locale locale ) {
-		return caseSensitive
-		    ? Strings.CS.compare( left, right )
-		    : Strings.CI.compare( left, right );
+		// Use Collator for proper locale-based comparison
+		Collator collator = Collator.getInstance( locale );
+		collator.setStrength( caseSensitive ? Collator.IDENTICAL : Collator.TERTIARY );
+		collator.setDecomposition( Collator.CANONICAL_DECOMPOSITION );
+		return collator.getCollationKey( left )
+		    .compareTo( collator.getCollationKey( right ) );
 	}
 
 }

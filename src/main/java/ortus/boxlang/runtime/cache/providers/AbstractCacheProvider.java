@@ -22,7 +22,7 @@ import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import ortus.boxlang.runtime.async.executors.ExecutorRecord;
+import ortus.boxlang.runtime.async.executors.BoxExecutor;
 import ortus.boxlang.runtime.cache.store.IObjectStore;
 import ortus.boxlang.runtime.cache.store.ObjectStoreType;
 import ortus.boxlang.runtime.cache.util.BoxCacheStats;
@@ -288,7 +288,7 @@ public abstract class AbstractCacheProvider implements ICacheProvider {
 	 *
 	 * @return The task scheduler
 	 */
-	protected ExecutorRecord getTaskScheduler() {
+	protected BoxExecutor getTaskScheduler() {
 		return this.cacheService.getTaskScheduler();
 	}
 
