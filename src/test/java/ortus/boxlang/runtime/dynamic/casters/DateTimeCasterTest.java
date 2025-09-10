@@ -296,4 +296,22 @@ public class DateTimeCasterTest {
 		assertThat( result ).isNotNull();
 		assertThat( result.setFormat( "yyyy-MM-dd" ).toString() ).isEqualTo( "2025-09-08" );
 	}
+
+	@DisplayName( "Test African date pattern" )
+	@Test
+	public void testAfricanMask() {
+		String		dateString	= "2018/9/6";
+		DateTime	result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.setFormat( "yyyy-MM-dd" ).toString() ).isEqualTo( "2018-09-06" );
+	}
+
+	@DisplayName( "Test short year pattern" )
+	@Test
+	public void testShortYearPattern() {
+		String		dateString	= "9-6-18";
+		DateTime	result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.setFormat( "yyyy-MM-dd" ).toString() ).isEqualTo( "2018-09-06" );
+	}
 }

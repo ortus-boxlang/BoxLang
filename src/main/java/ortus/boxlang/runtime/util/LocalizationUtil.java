@@ -96,6 +96,10 @@ public final class LocalizationUtil {
 	    // ODBC formats
 	    "yyyyMMddHHmmss",                // ODBCDateTime - Potential ODBC format
 
+	    // Alt patterns encountered with dates from other countries - anything out of English locale norms needs to come first
+	    "yyyy/MM/dd", // Common to Africa and Taiwan
+	    "M-d-yy", // Short Form two-digit year
+
 	    // US Localized Date formats - Month First
 	    "MMM dd yyyy",                   // Long Date (e.g., Apr 02 2024)
 	    "MMM-dd-yyyy",                   // Medium Date (e.g., Apr-02-2024) - Might need adjustment based on locale
@@ -737,7 +741,7 @@ public final class LocalizationUtil {
 					} catch ( java.time.format.DateTimeParseException x ) {
 						throw new BoxRuntimeException(
 						    String.format(
-						        "The date time value of [%s] could not be parsed as a valid date or datetime locale of [%s]",
+						        "The date time value of [%s] could not be parsed as a valid date or datetime using the locale of [%s]",
 						        dateTime,
 						        locale.getDisplayName()
 						    ), x );
@@ -745,7 +749,7 @@ public final class LocalizationUtil {
 				}
 				throw new BoxRuntimeException(
 				    String.format(
-				        "The date time value of [%s] could not be parsed as a valid date or datetime locale of [%s]",
+				        "The date time value of [%s] could not be parsed as a valid date or datetime using the locale of [%s]",
 				        dateTime,
 				        locale.getDisplayName()
 				    ), e );
@@ -792,7 +796,7 @@ public final class LocalizationUtil {
 			} catch ( Exception x ) {
 				throw new BoxRuntimeException(
 				    String.format(
-				        "The date time value of [%s] could not be parsed as a valid date or datetime locale of [%s]",
+				        "The date time value of [%s] could not be parsed as a valid date or datetime using the locale of [%s]",
 				        dateTime,
 				        locale.getDisplayName()
 				    ), x );

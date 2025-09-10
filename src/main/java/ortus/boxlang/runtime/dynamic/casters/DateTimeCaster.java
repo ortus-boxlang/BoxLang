@@ -22,10 +22,7 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
-import org.apache.commons.lang3.time.DateUtils;
-
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
@@ -38,6 +35,8 @@ import ortus.boxlang.runtime.util.RegexBuilder;
  * I cast to DateTime objects
  */
 public class DateTimeCaster implements IBoxCaster {
+
+	public static boolean convertParsedDatesToLocalZone = false;
 
 	/**
 	 * Tests to see if the value can be cast.
