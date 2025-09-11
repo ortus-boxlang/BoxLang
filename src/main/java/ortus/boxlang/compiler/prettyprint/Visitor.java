@@ -907,10 +907,10 @@ public class Visitor extends VoidBoxVisitor {
 			// TODO: Handle these accounting for shorcut syntax
 			// also need to seperate pre and inline annotations
 			var	size			= node.getPostAnnotations().size();
-			var	multiline		= size > config.getProperty().getMultiline().getElement_count();
+			var	multiline		= size > config.getProperty().getMultiline().getElementCount();
 			var	keyValuePadding	= config.getProperty().getKeyValue().getPadding();
 			if ( node.getSourceText() == null
-			    || ( node.getSourceText().length() > config.getProperty().getMultiline().getMin_length() ) ) {
+			    || ( node.getSourceText().length() > config.getProperty().getMultiline().getMinLength() ) ) {
 				multiline = true;
 			}
 
