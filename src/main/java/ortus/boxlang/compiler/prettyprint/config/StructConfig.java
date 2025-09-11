@@ -5,6 +5,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.jr.ob.JSON;
 import com.fasterxml.jackson.jr.ob.JSON.Feature;
 
@@ -18,12 +19,96 @@ public class StructConfig {
 	private Separator		separator		= Separator.COLON_SPACE;
 	private MultilineConfig	multiline		= new MultilineConfig();
 
+	public static class LeadingComma {
+
+		private boolean	enabled	= false;
+		private boolean	padding	= true;
+
+		public LeadingComma() {
+		}
+
+		public LeadingComma( boolean enabled ) {
+			this.enabled = enabled;
+		}
+
+		public static LeadingComma fromMap( Map<String, Object> map ) {
+			LeadingComma lc = new LeadingComma();
+			if ( map.containsKey( "enabled" ) && map.get( "enabled" ) instanceof Boolean b ) {
+				lc.setEnabled( b );
+			}
+			if ( map.containsKey( "padding" ) && map.get( "padding" ) instanceof Boolean b ) {
+				lc.setPadding( b );
+			}
+			return lc;
+		}
+
+		public boolean getEnabled() {
+			return enabled;
+		}
+
+		public LeadingComma setEnabled( boolean enabled ) {
+			this.enabled = enabled;
+			return this;
+		}
+
+		public boolean getPadding() {
+			return padding;
+		}
+
+		public LeadingComma setPadding( boolean padding ) {
+			this.padding = padding;
+			return this;
+		}
+	}
+
 	public static class MultilineConfig {
 
 		@JsonProperty( "element_count" )
-		private int elementCount = 4;
+		private int				elementCount	= 4;
+
+		@JsonProperty( "comma_dangle" )
+		private boolean			commaDangle		= false;
+
+		@JsonProperty( "leading_comma" )
+		private LeadingComma	leadingComma	= new LeadingComma();
+
+		@JsonProperty( "min_length" )
+		private int				minLength		= 40;
 
 		public MultilineConfig() {
+		}
+
+		public LeadingComma getLeadingComma() {
+			return leadingComma;
+		}
+
+		@JsonSetter( "leading_comma" )
+		public MultilineConfig setLeadingComma( Object leadingComma ) {
+			if ( leadingComma instanceof Boolean b ) {
+				this.leadingComma = new LeadingComma( b );
+			} else if ( leadingComma instanceof Map lcMap ) {
+				this.leadingComma = LeadingComma.fromMap( lcMap );
+			}
+
+			return this;
+		}
+
+		public int getMinLength() {
+			return minLength;
+		}
+
+		public MultilineConfig setMinLength( int minLength ) {
+			this.minLength = minLength;
+			return this;
+		}
+
+		public boolean getCommaDangle() {
+			return commaDangle;
+		}
+
+		public MultilineConfig setCommaDangle( boolean commaDangle ) {
+			this.commaDangle = commaDangle;
+			return this;
 		}
 
 		public int getElementCount() {

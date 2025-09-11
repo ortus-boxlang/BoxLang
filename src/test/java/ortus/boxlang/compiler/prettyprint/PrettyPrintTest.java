@@ -64,12 +64,19 @@ public abstract class PrettyPrintTest extends TestBase {
 	}
 
 	protected void printTestWithConfigFile( String resourceFolder, String name ) throws IOException {
+		_printTestWithDefaultConfig( resourceFolder, name, Config.loadConfig( TEST_RESOURCES_PATH + resourceFolder + "/" + name + ".json" ) );
+	}
+
+	protected void printTestWithDefaultConfig( String resourceFolder, String name ) throws IOException {
+		_printTestWithDefaultConfig( resourceFolder, name, new Config() );
+	}
+
+	protected void _printTestWithDefaultConfig( String resourceFolder, String name, Config config ) throws IOException {
 		for ( String ext : fileExts ) {
 			File inputFile = new File( TEST_RESOURCES_PATH + resourceFolder + "/" + name + "_input." + ext );
 			if ( inputFile.exists() ) {
 				ParsingResult	result			= parser.parse( inputFile, false );
-				String			actualOutput	= PrettyPrint.prettyPrint( result.getRoot(),
-				    Config.loadConfig( TEST_RESOURCES_PATH + resourceFolder + "/" + name + ".json" ) );
+				String			actualOutput	= PrettyPrint.prettyPrint( result.getRoot(), config );
 				String			expectedOutput	= readFile( TEST_RESOURCES_PATH + resourceFolder + "/" + name + "_output." + ext );
 				assertEquals( expectedOutput, actualOutput );
 			}

@@ -45,4 +45,29 @@ public class StructTest extends PrettyPrintTest {
     public void testStructMultilineDefault() throws IOException {
         printTestWithConfigFile( "struct", "multiline_3_default" );
     }
+
+    @Test
+    public void testStructCommaDangleTrue() throws IOException {
+        printTestWithConfigFile( "struct", "comma_dangle_true" );
+    }
+
+    @Test
+    public void testStructCommaDangleDefault() throws IOException {
+        printTestWithDefaultConfig( "struct", "comma_dangle_default" );
+    }
+
+    @Test
+    public void testStructLeadingComma() throws IOException {
+        printTestWithConfigFile( "struct", "leading_comma_true" );
+    }
+
+    @Test
+    public void testStructLeadingCommaNoPadding() throws IOException {
+        printTestWithConfigFile( "struct", "leading_comma_true_no_padding" );
+    }
+
+    @Test
+    public void testStructMinLineLength() throws IOException {
+        printTestWithConfigFile( "struct", "min_length_10" );
+    }
 }
