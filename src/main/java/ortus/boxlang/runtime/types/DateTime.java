@@ -53,6 +53,8 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.jr.ob.api.ValueWriter;
 import com.fasterxml.jackson.jr.ob.impl.JSONWriter;
 
+import org.apache.commons.lang3.StringUtils;
+
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.BoxMemberExpose;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
@@ -85,7 +87,7 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	/**
 	 * Serial version UID
 	 */
-	private static final long				serialVersionUID							= 1L;
+	private static final long				serialVersionUID						= 1L;
 
 	/**
 	 * Represents the wrapped ZonedDateTime object we enhance
@@ -102,82 +104,87 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	 * Formatters
 	 */
 	// This mask matches the Lucee default - @TODO ISO would be a better default - can we change this
-	public static final String				TS_FORMAT_MASK								= "'{ts '''yyyy-MM-dd HH:mm:ss'''}'";
-	public static final String				DEFAULT_DATE_FORMAT_MASK					= "dd-MMM-yy";
-	public static final String				DEFAULT_TIME_FORMAT_MASK					= "hh:mm a";
-	public static final String				DEFAULT_DATETIME_FORMAT_MASK				= "dd-MMM-yyyy HH:mm:ss";
-	public static final String				ISO_DATE_TIME_VARIATION_FORMAT_MASK			= "yyyy-MM-dd HH:mm:ss";
-	public static final String				ISO_DATE_TIME_MILIS_FORMAT_MASK				= "yyyy-MM-dd'T'HH:mm:ss.SSS";
-	public static final String				ISO_OFFSET_DATE_TIME_NOMILLIS_FORMAT_MASK	= "yyyy-MM-dd'T'HH:mm:ssXXX";
-	public static final String				ISO_DATE_TIME_MILIS_NO_T_FORMAT_MASK		= "yyyy-MM-dd HH:mm:ss.SSS";
+	public static final DateTimeFormatter	TS_FORMATTER							= DateTimeFormatter.ofPattern( "'{ts '''yyyy-MM-dd HH:mm:ss'''}'" );
+	public static final DateTimeFormatter	DEFAULT_DATE_FORMATTER					= DateTimeFormatter.ofPattern( "dd-MMM-yy" );
+	public static final DateTimeFormatter	DEFAULT_TIME_FORMATTER					= DateTimeFormatter.ofPattern( "hh:mm a" );
+	public static final DateTimeFormatter	DEFAULT_DATETIME_FORMATTER				= DateTimeFormatter.ofPattern( "dd-MMM-yyyy HH:mm:ss" );
+	public static final DateTimeFormatter	ISO_DATE_TIME_VARIATION_FORMATTER		= DateTimeFormatter.ofPattern( "yyyy-MM-dd HH:mm:ss" );
+	public static final DateTimeFormatter	ISO_DATE_TIME_MILIS_FORMATTER			= DateTimeFormatter.ofPattern( "yyyy-MM-dd'T'HH:mm:ss.SSS" );
+	public static final DateTimeFormatter	ISO_OFFSET_DATE_TIME_NOMILLIS_FORMATTER	= DateTimeFormatter.ofPattern( "yyyy-MM-dd'T'HH:mm:ssXXX" );
+	public static final DateTimeFormatter	ISO_DATE_TIME_MILIS_NO_T_FORMATTER		= DateTimeFormatter.ofPattern( "yyyy-MM-dd HH:mm:ss.SSS" );
 	// <a href="https://learn.microsoft.com/en-us/sql/odbc/reference/develop-app/date-time-and-timestamp-literals">The ODBC default format masks</a>
-	public static final String				ODBC_DATE_TIME_FORMAT_MASK					= TS_FORMAT_MASK;
-	public static final String				ODBC_DATE_FORMAT_MASK						= "'{d '''yyyy-MM-dd'''}'";
-	public static final String				ODBC_TIME_FORMAT_MASK						= "'{t '''HH:mm:ss'''}'";
+	public static final DateTimeFormatter	ODBC_DATE_TIME_FORMATTER				= TS_FORMATTER;
+	public static final DateTimeFormatter	ODBC_DATE_FORMATTER						= DateTimeFormatter.ofPattern( "'{d '''yyyy-MM-dd'''}'" );
+	public static final DateTimeFormatter	ODBC_TIME_FORMATTER						= DateTimeFormatter.ofPattern( "'{t '''HH:mm:ss'''}'" );
 	// The format used by most browsers when calling toString on a Javascript date object - note that this is implementation dependent and may not be reliable
-	public static final String				JS_COMMON_TO_STRING_MASK					= "EEE MMM dd yyyy HH:mm:ss 'GMT'Z (zzzz)";
+	public static final DateTimeFormatter	JS_COMMON_TO_STRING_FORMATTER			= DateTimeFormatter
+	    .ofPattern( "EEE MMM dd yyyy HH:mm:ss 'GMT'Z (zzzz)" );
 	// The format used by most browsers when calling toString on a Javascript date object - note that this is implementation dependent and may not be reliable
-	public static final String				JS_COMMON_ALT_STRING_MASK					= "EEE MMM dd yyyy HH:mm:ss 'GMT'Z (zzz)";
+	public static final DateTimeFormatter	JS_COMMON_ALT_STRING_FORMATTER			= DateTimeFormatter
+	    .ofPattern( "EEE MMM dd yyyy HH:mm:ss 'GMT'Z (zzz)" );
 	// The format output by ZonedDateTime toString method - optional offest, optional millis
-	public static final String				ZONED_DATE_TIME_TO_STRING_MASK				= "yyyy-MM-dd'T'HH:mm:ss[.SSS][XXX]'['VV']'";
+	public static final DateTimeFormatter	ZONED_DATE_TIME_TO_STRING_FORMATTER		= DateTimeFormatter
+	    .ofPattern( "yyyy-MM-dd'T'HH:mm:ss[.SSS][XXX]'['VV']'" );
 
 	/**
 	 * Common Modes
 	 */
-	public static final String				MODE_DATE									= "Date";
-	public static final String				MODE_TIME									= "Time";
-	public static final String				MODE_DATETIME								= "DateTime";
+	public static final String				MODE_DATE								= "Date";
+	public static final String				MODE_TIME								= "Time";
+	public static final String				MODE_DATETIME							= "DateTime";
 
 	/**
 	 * The format mask currently applied to this DateTime instance.
 	 * This field is used to preserve the format mask during serialization and deserialization.
 	 * By default, it is initialized to {@link #TS_FORMAT_MASK}.
 	 */
-	private String							appliedFormatMask							= TS_FORMAT_MASK;
+	private String							appliedFormatMask						= null;
 
 	/**
 	 * If the value of this is true, the timezone is fixed in all formatting and output operations
 	 */
-	public boolean							fixedTimezone								= false;
+	public boolean							fixedTimezone							= false;
 
 	/**
 	 * Common Formatters Map so we can easily access them by name
 	 */
-	public static final IStruct				COMMON_FORMATTERS							= Struct.of(
+	public static final IStruct				COMMON_FORMATTERS						= Struct.of(
 	    "fullDateTime", DateTimeFormatter.ofLocalizedDateTime( FormatStyle.FULL, FormatStyle.FULL ),
 	    "longDateTime", DateTimeFormatter.ofLocalizedDateTime( FormatStyle.LONG, FormatStyle.LONG ),
 	    "mediumDateTime", DateTimeFormatter.ofLocalizedDateTime( FormatStyle.MEDIUM, FormatStyle.MEDIUM ),
 	    "shortDateTime", DateTimeFormatter.ofLocalizedDateTime( FormatStyle.SHORT, FormatStyle.SHORT ),
-	    "ISODateTime", DateTimeFormatter.ofPattern( ISO_OFFSET_DATE_TIME_NOMILLIS_FORMAT_MASK ),
+	    "ISODateTime", ISO_OFFSET_DATE_TIME_NOMILLIS_FORMATTER,
 	    "ISO8601DateTime", DateTimeFormatter.ISO_OFFSET_DATE_TIME,
-	    "ODBCDateTime", DateTimeFormatter.ofPattern( ODBC_DATE_TIME_FORMAT_MASK ),
-	    "javascriptDateTime", DateTimeFormatter.ofPattern( JS_COMMON_TO_STRING_MASK ),
+	    "ODBCDateTime", ODBC_DATE_TIME_FORMATTER,
+	    "javascriptDateTime", JS_COMMON_TO_STRING_FORMATTER,
 	    "fullDate", DateTimeFormatter.ofLocalizedDate( FormatStyle.FULL ),
 	    "longDate", DateTimeFormatter.ofLocalizedDate( FormatStyle.LONG ),
 	    "mediumDate", DateTimeFormatter.ofLocalizedDate( FormatStyle.MEDIUM ),
 	    "shortDate", DateTimeFormatter.ofLocalizedDate( FormatStyle.SHORT ),
 	    "ISODate", DateTimeFormatter.ISO_DATE,
 	    "ISO8601Date", DateTimeFormatter.ISO_DATE,
-	    "ODBCDate", DateTimeFormatter.ofPattern( ODBC_DATE_FORMAT_MASK ),
+	    "ODBCDate", ODBC_DATE_FORMATTER,
 	    "fullTime", DateTimeFormatter.ofLocalizedTime( FormatStyle.FULL ),
 	    "longTime", DateTimeFormatter.ofLocalizedTime( FormatStyle.LONG ),
 	    "mediumTime", DateTimeFormatter.ofLocalizedTime( FormatStyle.MEDIUM ),
 	    "shortTime", DateTimeFormatter.ofLocalizedTime( FormatStyle.SHORT ),
 	    "ISOTime", DateTimeFormatter.ISO_TIME,
 	    "ISO8601Time", DateTimeFormatter.ISO_TIME,
-	    "ODBCTime", DateTimeFormatter.ofPattern( ODBC_TIME_FORMAT_MASK )
+	    "ODBCTime", ODBC_TIME_FORMATTER
 	);
+
+	private static final DateTimeFormatter	defaultFormatter						= TS_FORMATTER;
 
 	/**
 	 * The format we use to represent the date time
 	 * which defaults to the ODBC format: {ts '''yyyy-MM-dd HH:mm:ss'''}
 	 */
-	private transient DateTimeFormatter		formatter									= DateTimeFormatter.ofPattern( appliedFormatMask );
+	private transient DateTimeFormatter		formatter								= defaultFormatter;
 
 	/**
 	 * Function service
 	 */
-	private static final FunctionService	functionService								= BoxRuntime.getInstance().getFunctionService();
+	private static final FunctionService	functionService							= BoxRuntime.getInstance().getFunctionService();
 
 	/**
 	 * Metadata object
@@ -677,6 +684,18 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	}
 
 	/**
+	 * Returns the date time representation as a string in the specified locale
+	 *
+	 * @param locale    the locale to use
+	 * @param formatter The DateTimeFormatter instance
+	 *
+	 * @return the date time representation as a string in the specified format mask
+	 */
+	public String format( Locale locale, DateTimeFormatter formatter ) {
+		return this.wrapped.format( formatter.withLocale( locale ) );
+	}
+
+	/**
 	 * Returns the date time representation as a string in the specified format mask
 	 *
 	 * @return
@@ -1159,7 +1178,13 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	 */
 	private void writeObject( ObjectOutputStream out ) throws IOException {
 		out.defaultWriteObject(); // Serialize non-transient fields
-		out.writeUTF( this.appliedFormatMask ); // Manually serialize the applied format
+
+		if ( this.appliedFormatMask != null ) {
+			out.writeUTF( this.appliedFormatMask ); // Manually serialize the applied format
+		} else {
+			// We have to write out an empty string or the attempt to read will throw an EOF exception
+			out.writeUTF( StringUtils.EMPTY );
+		}
 	}
 
 	/**
@@ -1169,11 +1194,12 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 		in.defaultReadObject(); // Deserialize non-transient fields
 		String pattern = in.readUTF(); // Manually deserialize the pattern string
 		if ( pattern == null || pattern.isEmpty() ) {
-			this.appliedFormatMask = TS_FORMAT_MASK;
+			this.formatter = defaultFormatter;
 		} else {
-			this.appliedFormatMask = pattern;
+			this.appliedFormatMask	= pattern;
+			this.formatter			= DateTimeFormatter.ofPattern( this.appliedFormatMask );
 		}
-		this.formatter = DateTimeFormatter.ofPattern( this.appliedFormatMask ); // Reconstruct the formatter
+		// Reconstruct the formatter
 	}
 
 }

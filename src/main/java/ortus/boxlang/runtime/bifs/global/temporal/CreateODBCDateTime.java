@@ -17,6 +17,9 @@
  */
 package ortus.boxlang.runtime.bifs.global.temporal;
 
+import java.util.HashMap;
+import java.time.format.DateTimeFormatter;
+
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
@@ -27,8 +30,6 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.DateTime;
-import ortus.boxlang.runtime.types.IStruct;
-import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.util.LocalizationUtil;
 
 @BoxBIF
@@ -39,14 +40,17 @@ import ortus.boxlang.runtime.util.LocalizationUtil;
 @BoxMember( type = BoxLangType.DATETIME, name = "toODBCTime" )
 public class CreateODBCDateTime extends BIF {
 
-	private static final IStruct formatters = Struct.of(
-	    "CreateODBCDateTime", DateTime.ODBC_DATE_TIME_FORMAT_MASK,
-	    "CreateODBCDate", DateTime.ODBC_DATE_FORMAT_MASK,
-	    "CreateODBCTime", DateTime.ODBC_TIME_FORMAT_MASK,
-	    "toODBCDateTime", DateTime.ODBC_DATE_TIME_FORMAT_MASK,
-	    "toODBCDate", DateTime.ODBC_DATE_FORMAT_MASK,
-	    "toODBCTime", DateTime.ODBC_TIME_FORMAT_MASK
-	);
+	private static final HashMap<Key, DateTimeFormatter> formatters = new HashMap<Key, DateTimeFormatter>() {
+
+		{
+			put( Key.of( "CreateODBCDateTime" ), DateTime.ODBC_DATE_TIME_FORMATTER );
+			put( Key.of( "CreateODBCDate" ), DateTime.ODBC_DATE_FORMATTER );
+			put( Key.of( "CreateODBCTime" ), DateTime.ODBC_TIME_FORMATTER );
+			put( Key.of( "toODBCDateTime" ), DateTime.ODBC_DATE_TIME_FORMATTER );
+			put( Key.of( "toODBCDate" ), DateTime.ODBC_DATE_FORMATTER );
+			put( Key.of( "toODBCTime" ), DateTime.ODBC_TIME_FORMATTER );
+		}
+	};
 
 	/**
 	 * Constructor
@@ -75,7 +79,7 @@ public class CreateODBCDateTime extends BIF {
 		    LocalizationUtil.parseZoneId( arguments.getAsString( Key.timezone ), context ),
 		    context
 		);
-		return new DateTime( dateRef.getWrapped() ).setFormat( formatters.getAsString( arguments.getAsKey( BIF.__functionName ) ) );
+		return new DateTime( dateRef.getWrapped() ).setFormat( formatters.get( arguments.getAsKey( BIF.__functionName ) ) );
 	}
 
 }

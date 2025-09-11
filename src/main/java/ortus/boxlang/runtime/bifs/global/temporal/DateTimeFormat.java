@@ -101,11 +101,11 @@ public class DateTimeFormat extends BIF {
 		}
 
 		if ( format == null && bifMethodKey.equals( Key.dateFormat ) ) {
-			return locale == null ? ref.format( DateTime.DEFAULT_DATE_FORMAT_MASK ) : ref.format( locale, DateTime.DEFAULT_DATE_FORMAT_MASK );
+			return locale == null ? ref.format( DateTime.DEFAULT_DATE_FORMATTER ) : ref.format( locale, DateTime.DEFAULT_DATE_FORMATTER );
 		} else if ( format == null && bifMethodKey.equals( Key.timeFormat ) ) {
-			return locale == null ? ref.format( DateTime.DEFAULT_TIME_FORMAT_MASK ) : ref.format( locale, DateTime.DEFAULT_TIME_FORMAT_MASK );
+			return locale == null ? ref.format( DateTime.DEFAULT_TIME_FORMATTER ) : ref.format( locale, DateTime.DEFAULT_TIME_FORMATTER );
 		} else if ( format == null ) {
-			return locale == null ? ref.format( DateTime.DEFAULT_DATETIME_FORMAT_MASK ) : ref.format( locale, DateTime.DEFAULT_DATETIME_FORMAT_MASK );
+			return locale == null ? ref.format( DateTime.DEFAULT_DATETIME_FORMATTER ) : ref.format( locale, DateTime.DEFAULT_DATETIME_FORMATTER );
 		} else {
 			Key		formatKey		= Key.of( format );
 			String	mode			= bifMethodKey.equals( Key.dateFormat )

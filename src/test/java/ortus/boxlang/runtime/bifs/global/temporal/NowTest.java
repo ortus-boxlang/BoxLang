@@ -75,7 +75,7 @@ public class NowTest {
 		var result = variables.get( Key.of( "result" ) );
 		assertThat( result ).isInstanceOf( DateTime.class );
 		ZonedDateTime		referenceNow		= ZonedDateTime.of( LocalDateTime.now(), LocalizationUtil.parseZoneId( null, context ) );
-		DateTimeFormatter	referenceFormatter	= DateTimeFormatter.ofPattern( DateTime.TS_FORMAT_MASK );
+		DateTimeFormatter	referenceFormatter	= DateTime.TS_FORMATTER;
 		assertThat( result.toString() ).isInstanceOf( String.class );
 		assertThat( result.toString() ).isEqualTo( referenceFormatter.format( referenceNow ) );
 	}
@@ -91,7 +91,7 @@ public class NowTest {
 		var result = variables.get( Key.of( "result" ) );
 		assertThat( result ).isInstanceOf( DateTime.class );
 		ZonedDateTime		referenceNow		= ZonedDateTime.now( ZoneId.of( "UTC" ) );
-		DateTimeFormatter	referenceFormatter	= DateTimeFormatter.ofPattern( DateTime.TS_FORMAT_MASK );
+		DateTimeFormatter	referenceFormatter	= DateTime.TS_FORMATTER;
 		assertThat( result.toString() ).isInstanceOf( String.class );
 		assertThat( result.toString() ).isEqualTo( referenceFormatter.format( referenceNow ) );
 		assertThat( DateTimeCaster.cast( result ).getWrapped().getZone() ).isEqualTo( referenceNow.getZone() );
@@ -109,7 +109,7 @@ public class NowTest {
 		var result = variables.get( Key.of( "result" ) );
 		assertThat( result ).isInstanceOf( DateTime.class );
 		ZonedDateTime		referenceNow		= ZonedDateTime.now( ZoneId.of( "America/Los_Angeles" ) );
-		DateTimeFormatter	referenceFormatter	= DateTimeFormatter.ofPattern( DateTime.TS_FORMAT_MASK );
+		DateTimeFormatter	referenceFormatter	= DateTime.TS_FORMATTER;
 		assertThat( result.toString() ).isInstanceOf( String.class );
 		assertThat( result.toString() ).isEqualTo( referenceFormatter.format( referenceNow ) );
 		assertThat( DateTimeCaster.cast( result ).getWrapped().getZone() ).isEqualTo( referenceNow.getZone() );
