@@ -776,11 +776,21 @@ public class Visitor extends VoidBoxVisitor {
 		if ( node.getInitializer() != null ) {
 			node.getInitializer().accept( this );
 		}
-		print( "; " );
+
+		print( ";" );
+		if ( config.getForLoopSemicolons().getPadding() ) {
+			print( " " );
+		}
+
 		if ( node.getCondition() != null ) {
 			node.getCondition().accept( this );
 		}
-		print( "; " );
+
+		print( ";" );
+		if ( config.getForLoopSemicolons().getPadding() ) {
+			print( " " );
+		}
+
 		if ( node.getStep() != null ) {
 			node.getStep().accept( this );
 		}

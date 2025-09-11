@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.jr.ob.JSON;
 import com.fasterxml.jackson.jr.ob.JSON.Feature;
 import com.fasterxml.jackson.jr.ob.JSONObjectException;
@@ -30,15 +31,18 @@ import ortus.boxlang.runtime.types.util.JSONUtil;
 
 public final class Config {
 
-	private int				indentSize				= 4;
-	private boolean			tabIndent				= true;
-	private int				maxLineLength			= 80;
-	private String			newLine					= "os";
-	private boolean			singleQuote				= false;
-	private boolean			bracketPadding			= false;
-	private boolean			parensPadding			= false;
-	private boolean			binaryOperatorsPadding	= true;
-	private StructConfig	struct					= new StructConfig();
+	private int					indentSize				= 4;
+	private boolean				tabIndent				= true;
+	private int					maxLineLength			= 80;
+	private String				newLine					= "os";
+	private boolean				singleQuote				= false;
+	private boolean				bracketPadding			= false;
+	private boolean				parensPadding			= false;
+	private boolean				binaryOperatorsPadding	= true;
+	private StructConfig		struct					= new StructConfig();
+
+	@JsonProperty( "for_loop_semicolons" )
+	private ForLoopSemicolons	forLoopSemicolons		= new ForLoopSemicolons();
 
 	public Config() {
 	}
@@ -121,6 +125,15 @@ public final class Config {
 
 	public Config setParensPadding( boolean parensPadding ) {
 		this.parensPadding = parensPadding;
+		return this;
+	}
+
+	public ForLoopSemicolons getForLoopSemicolons() {
+		return forLoopSemicolons;
+	}
+
+	public Config setForLoopSemicolons( ForLoopSemicolons forLoopSemicolons ) {
+		this.forLoopSemicolons = forLoopSemicolons;
 		return this;
 	}
 
