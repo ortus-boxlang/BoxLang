@@ -17,7 +17,7 @@
  */
 package ortus.boxlang.runtime.bifs.global.temporal;
 
-import java.util.HashMap;
+import java.util.Map;
 import java.time.format.DateTimeFormatter;
 
 import ortus.boxlang.runtime.bifs.BIF;
@@ -40,17 +40,14 @@ import ortus.boxlang.runtime.util.LocalizationUtil;
 @BoxMember( type = BoxLangType.DATETIME, name = "toODBCTime" )
 public class CreateODBCDateTime extends BIF {
 
-	private static final HashMap<Key, DateTimeFormatter> formatters = new HashMap<Key, DateTimeFormatter>() {
-
-		{
-			put( Key.of( "CreateODBCDateTime" ), DateTime.ODBC_DATE_TIME_FORMATTER );
-			put( Key.of( "CreateODBCDate" ), DateTime.ODBC_DATE_FORMATTER );
-			put( Key.of( "CreateODBCTime" ), DateTime.ODBC_TIME_FORMATTER );
-			put( Key.of( "toODBCDateTime" ), DateTime.ODBC_DATE_TIME_FORMATTER );
-			put( Key.of( "toODBCDate" ), DateTime.ODBC_DATE_FORMATTER );
-			put( Key.of( "toODBCTime" ), DateTime.ODBC_TIME_FORMATTER );
-		}
-	};
+	private static final Map<Key, DateTimeFormatter> formatters = Map.of(
+	    Key.of( "CreateODBCDateTime" ), DateTime.ODBC_DATE_TIME_FORMATTER,
+	    Key.of( "CreateODBCDate" ), DateTime.ODBC_DATE_FORMATTER,
+	    Key.of( "CreateODBCTime" ), DateTime.ODBC_TIME_FORMATTER,
+	    Key.of( "toODBCDateTime" ), DateTime.ODBC_DATE_TIME_FORMATTER,
+	    Key.of( "toODBCDate" ), DateTime.ODBC_DATE_FORMATTER,
+	    Key.of( "toODBCTime" ), DateTime.ODBC_TIME_FORMATTER
+	);
 
 	/**
 	 * Constructor
