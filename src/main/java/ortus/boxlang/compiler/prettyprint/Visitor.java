@@ -140,7 +140,6 @@ public class Visitor extends VoidBoxVisitor {
 	FunctionDeclarationPrinter		functionDeclaration;
 	StructLiteralPrinter			structLiteralPrinter;
 	ArrayLiteralPrinter				arrayLiteralPrinter;
-	BinaryOperatorPrinter			binaryOperatorPrinter;
 
 	/**
 	 * Constructor
@@ -168,7 +167,6 @@ public class Visitor extends VoidBoxVisitor {
 		this.functionDeclaration	= new FunctionDeclarationPrinter( this );
 		this.parametersPrinter		= new ParametersPrinter( this );
 		this.argumentsPrinter		= new ArgumentsPrinter( this );
-		this.binaryOperatorPrinter	= new BinaryOperatorPrinter( this );
 	}
 
 	public Doc getRoot() {
