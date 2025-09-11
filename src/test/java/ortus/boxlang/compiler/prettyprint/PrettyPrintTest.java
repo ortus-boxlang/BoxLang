@@ -46,6 +46,35 @@ public abstract class PrettyPrintTest extends TestBase {
 		instance = BoxRuntime.getInstance( true );
 	}
 
+	protected void singlePrintTest( String inputFilePath, String expectedFilePath, Config config ) throws IOException {
+		File			inputFile		= new File( TEST_RESOURCES_PATH + inputFilePath );
+		ParsingResult	result			= parser.parse( inputFile, false );
+		String			actualOutput	= PrettyPrint.prettyPrint( result.getRoot(), config );
+		String			expectedOutput	= readFile( TEST_RESOURCES_PATH + expectedFilePath );
+		assertEquals( expectedOutput, actualOutput );
+	}
+
+	protected void singlePrintTest( String inputFilePath, String expectedFilePath, String configFilePath ) throws IOException {
+		File			inputFile		= new File( TEST_RESOURCES_PATH + inputFilePath );
+		ParsingResult	result			= parser.parse( inputFile, false );
+		String			actualOutput	= PrettyPrint.prettyPrint( result.getRoot(), new Config().loadFromConfigFile( TEST_RESOURCES_PATH + configFilePath ) );
+		String			expectedOutput	= readFile( TEST_RESOURCES_PATH + expectedFilePath );
+		assertEquals( expectedOutput, actualOutput );
+	}
+
+	protected void printTestWithConfigFile( String resourceFolder, String name ) throws IOException {
+		for ( String ext : fileExts ) {
+			File inputFile = new File( TEST_RESOURCES_PATH + resourceFolder + "/" + name + "_input." + ext );
+			if ( inputFile.exists() ) {
+				ParsingResult	result			= parser.parse( inputFile, false );
+				String			actualOutput	= PrettyPrint.prettyPrint( result.getRoot(),
+				    Config.loadConfig( TEST_RESOURCES_PATH + resourceFolder + "/" + name + ".json" ) );
+				String			expectedOutput	= readFile( TEST_RESOURCES_PATH + resourceFolder + "/" + name + "_output." + ext );
+				assertEquals( expectedOutput, actualOutput );
+			}
+		}
+	}
+
 	protected void printTest( String resourceFolder, String outputExt, Config config ) throws IOException {
 		for ( String ext : fileExts ) {
 			File inputFile = new File( TEST_RESOURCES_PATH + resourceFolder + "/input." + ext );

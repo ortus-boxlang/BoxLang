@@ -144,7 +144,7 @@ public class Parser {
 	 * @see BoxExpression
 	 */
 	public ParsingResult parse( String code, BoxSourceType sourceType, Boolean classOrInterface ) throws IOException {
-		return parse( code, sourceType, false, true );
+		return parse( code, sourceType, classOrInterface, true );
 	}
 
 	/**

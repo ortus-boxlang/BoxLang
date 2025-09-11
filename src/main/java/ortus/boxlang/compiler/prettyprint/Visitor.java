@@ -140,6 +140,7 @@ public class Visitor extends VoidBoxVisitor {
 	FunctionDeclarationPrinter		functionDeclaration;
 	StructLiteralPrinter			structLiteralPrinter;
 	ArrayLiteralPrinter				arrayLiteralPrinter;
+	BinaryOperatorPrinter			binaryOperatorPrinter;
 
 	/**
 	 * Constructor
@@ -167,6 +168,7 @@ public class Visitor extends VoidBoxVisitor {
 		this.functionDeclaration	= new FunctionDeclarationPrinter( this );
 		this.parametersPrinter		= new ParametersPrinter( this );
 		this.argumentsPrinter		= new ArgumentsPrinter( this );
+		this.binaryOperatorPrinter	= new BinaryOperatorPrinter( this );
 	}
 
 	public Doc getRoot() {
@@ -350,19 +352,20 @@ public class Visitor extends VoidBoxVisitor {
 	}
 
 	public void visit( BoxBinaryOperation node ) {
-		var	currentDoc	= getCurrentDoc();
+		var	currentDoc		= getCurrentDoc();
 
-		var	inGroup		= ( node.getParent() instanceof BoxBinaryOperation ||
+		var	inGroup			= ( node.getParent() instanceof BoxBinaryOperation ||
 		    node.getParent() instanceof BoxParenthesis || node.getParent() instanceof BoxIfElse );
+		var	needsPadding	= config.getBinaryOperatorsPadding();
 
 		if ( !inGroup ) {
 			var	binaryDoc	= pushDoc( DocType.GROUP );
 			var	indentDoc	= pushDoc( DocType.INDENT );
 			node.getLeft().accept( this );
 			indentDoc
-			    .append( " " )
+			    .append( needsPadding ? Line.LINE : Line.SOFT )
 			    .append( node.getOperator().getSymbol() )
-			    .append( Line.LINE );
+			    .append( needsPadding ? Line.LINE : Line.SOFT );
 			node.getRight().accept( this );
 			binaryDoc.append( popDoc() );
 
@@ -370,9 +373,9 @@ public class Visitor extends VoidBoxVisitor {
 		} else {
 			node.getLeft().accept( this );
 			currentDoc
-			    .append( " " )
+			    .append( needsPadding ? Line.LINE : Line.SOFT )
 			    .append( node.getOperator().getSymbol() )
-			    .append( Line.LINE );
+			    .append( needsPadding ? Line.LINE : Line.SOFT );
 			node.getRight().accept( this );
 		}
 	}

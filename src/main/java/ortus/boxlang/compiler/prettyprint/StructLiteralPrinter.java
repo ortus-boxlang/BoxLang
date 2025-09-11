@@ -38,7 +38,7 @@ public class StructLiteralPrinter {
 		var	isOrdered	= structNode.getType().equals( BoxStructType.Ordered );
 		var	openBrace	= isOrdered ? "[" : "{";
 		var	closeBrace	= isOrdered ? "]" : "}";
-		var	colon		= ": "; // TODO: make configurable
+		var	separator	= visitor.config.getStruct().getSeparator().getSymbol();
 
 		var	values		= structNode.getValues();
 		var	size		= values.size();
@@ -47,11 +47,17 @@ public class StructLiteralPrinter {
 
 		if ( size > 0 ) {
 			var contentsDoc = visitor.pushDoc( DocType.INDENT );
-			contentsDoc.append( visitor.config.getBracketPadding() ? Line.LINE : Line.SOFT );
+			contentsDoc.append( visitor.config.getStruct().getPadding() ? Line.LINE : Line.SOFT );
 
 			for ( int i = 0; i < size; i += 2 ) {
+				if ( visitor.config.getStruct().getQuoteKeys() ) {
+					contentsDoc.append( visitor.config.getSingleQuote() ? "'" : "\"" );
+				}
 				values.get( i ).accept( visitor );
-				contentsDoc.append( colon );
+				if ( visitor.config.getStruct().getQuoteKeys() ) {
+					contentsDoc.append( visitor.config.getSingleQuote() ? "'" : "\"" );
+				}
+				contentsDoc.append( separator );
 
 				values.get( i + 1 ).accept( visitor );
 
@@ -61,14 +67,14 @@ public class StructLiteralPrinter {
 			}
 			visitor.printInsideComments( structNode, false );
 
-			structDoc.append( visitor.popDoc() ).append( visitor.config.getBracketPadding() ? Line.LINE : Line.SOFT );
+			structDoc.append( visitor.popDoc() ).append( visitor.config.getStruct().getPadding() ? Line.LINE : Line.SOFT );
 		} else {
 			if ( isOrdered ) {
-				structDoc.append( visitor.config.getBracketPadding() ? " : " : ":" );
+				structDoc.append( visitor.config.getStruct().getEmptyPadding() ? " : " : ":" );
 
 			}
 			visitor.printInsideComments( structNode, false );
-			structDoc.append( Line.SOFT );
+			structDoc.append( visitor.config.getStruct().getEmptyPadding() ? Line.LINE : Line.SOFT );
 		}
 
 		structDoc.append( closeBrace );

@@ -22,22 +22,137 @@ import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonValue;
 import com.fasterxml.jackson.jr.ob.JSON;
 import com.fasterxml.jackson.jr.ob.JSON.Feature;
+import com.fasterxml.jackson.jr.ob.JSONObjectException;
 
 import ortus.boxlang.runtime.types.util.JSONUtil;
 
 public final class Config {
 
-	private int		indentSize		= 4;
-	private boolean	tabIndent		= true;
-	private int		maxLineLength	= 80;
-	private String	newLine			= "os";
-	private boolean	singleQuote		= false;
-	private boolean	bracketPadding	= false;
-	private boolean	parensPadding	= false;
+	private int				indentSize				= 4;
+	private boolean			tabIndent				= true;
+	private int				maxLineLength			= 80;
+	private String			newLine					= "os";
+	private boolean			singleQuote				= false;
+	private boolean			bracketPadding			= false;
+	private boolean			parensPadding			= false;
+	private boolean			binaryOperatorsPadding	= true;
+	private StructConfig	struct					= new StructConfig();
+
+	public static enum Separator {
+
+		@JsonProperty( ":" )
+		COLON(":" ),
+
+		@JsonProperty( "=" )
+		EQUALS("=" ),
+
+		@JsonProperty( ": " )
+		COLON_SPACE(": " ),
+
+		@JsonProperty( "= " )
+		EQUALS_SPACE("= " );
+
+		private final String symbol;
+
+		Separator( String symbol ) {
+			this.symbol = symbol;
+		}
+
+		@JsonValue
+		public String getSymbol() {
+			return symbol;
+		}
+	}
+
+	public static class StructConfig {
+
+		private boolean		padding			= false;
+		@JsonProperty( "empty_padding" )
+		private boolean		emptyPadding	= false;
+		@JsonProperty( "quote_keys" )
+		private boolean		quoteKeys		= false;
+		private Separator	separator		= Separator.COLON_SPACE;
+
+		public StructConfig() {
+		}
+
+		public Separator getSeparator() {
+			return separator;
+		}
+
+		public StructConfig setSeparator( Separator separator ) {
+			this.separator = separator;
+			return this;
+		}
+
+		public boolean getQuoteKeys() {
+			return quoteKeys;
+		}
+
+		public StructConfig setQuoteKeys( boolean quoteKeys ) {
+			this.quoteKeys = quoteKeys;
+			return this;
+		}
+
+		public boolean getPadding() {
+			return padding;
+		}
+
+		public StructConfig setPadding( boolean padding ) {
+			this.padding = padding;
+			return this;
+		}
+
+		public boolean getEmptyPadding() {
+			return emptyPadding;
+		}
+
+		public StructConfig setEmptyPadding( boolean emptyPadding ) {
+			this.emptyPadding = emptyPadding;
+			return this;
+		}
+
+		public Map<String, Object> toMap() {
+			Map<String, Object> map = new LinkedHashMap<>();
+			map.put( "padding", padding );
+			map.put( "empty_padding", emptyPadding );
+			return map;
+		}
+
+		public String toJSON() {
+			try {
+				return JSON.std.with( Feature.PRETTY_PRINT_OUTPUT, Feature.WRITE_NULL_PROPERTIES )
+				    .asString( toMap() );
+			} catch ( IOException e ) {
+				e.printStackTrace();
+				throw new RuntimeException( "Failed to convert to JSON", e );
+			}
+		}
+	}
 
 	public Config() {
+	}
+
+	public StructConfig getStruct() {
+		return struct;
+	}
+
+	public Config setStruct( StructConfig struct ) {
+		this.struct = struct;
+		return this;
+	}
+
+	public Config setBinaryOperatorsPadding( boolean value ) {
+		this.binaryOperatorsPadding = value;
+		return this;
+	}
+
+	public boolean getBinaryOperatorsPadding() {
+		return this.binaryOperatorsPadding;
 	}
 
 	public int getIndentSize() {
@@ -101,6 +216,10 @@ public final class Config {
 	public Config setParensPadding( boolean parensPadding ) {
 		this.parensPadding = parensPadding;
 		return this;
+	}
+
+	public static Config loadConfig( String filePath ) throws JSONObjectException, IOException {
+		return JSONUtil.getJSONBuilder().beanFrom( Config.class, new File( filePath ) );
 	}
 
 	@SuppressWarnings( "unchecked" )
