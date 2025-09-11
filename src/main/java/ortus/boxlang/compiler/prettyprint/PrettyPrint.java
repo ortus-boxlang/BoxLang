@@ -6,6 +6,7 @@ import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
 import ortus.boxlang.compiler.ast.BoxTemplate;
 import ortus.boxlang.compiler.parser.BoxSourceType;
+import ortus.boxlang.compiler.prettyprint.config.Config;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public final class PrettyPrint {

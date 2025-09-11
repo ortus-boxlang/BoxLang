@@ -42,6 +42,8 @@ public class StructLiteralPrinter {
 
 		var	values		= structNode.getValues();
 		var	size		= values.size();
+		var	isMultiline	= visitor.config.getStruct().getMultiline().getElementCount() > 0
+		    && size / 2 >= visitor.config.getStruct().getMultiline().getElementCount();
 
 		structDoc.append( openBrace );
 
@@ -62,7 +64,7 @@ public class StructLiteralPrinter {
 				values.get( i + 1 ).accept( visitor );
 
 				if ( i < size - 2 ) {
-					contentsDoc.append( "," ).append( Line.LINE );
+					contentsDoc.append( "," ).append( isMultiline ? Line.HARD : Line.LINE );
 				}
 			}
 			visitor.printInsideComments( structNode, false );

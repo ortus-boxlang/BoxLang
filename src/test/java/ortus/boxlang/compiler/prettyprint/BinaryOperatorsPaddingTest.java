@@ -25,6 +25,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import ortus.boxlang.compiler.prettyprint.config.Config;
+
 public class BinaryOperatorsPaddingTest extends PrettyPrintTest {
 
 	@ParameterizedTest( name = "Binary Operators Padding: {0}" )

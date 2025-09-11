@@ -30,6 +30,7 @@ import org.junit.jupiter.api.BeforeAll;
 import ortus.boxlang.compiler.TestBase;
 import ortus.boxlang.compiler.parser.Parser;
 import ortus.boxlang.compiler.parser.ParsingResult;
+import ortus.boxlang.compiler.prettyprint.config.Config;
 import ortus.boxlang.runtime.BoxRuntime;
 
 public abstract class PrettyPrintTest extends TestBase {

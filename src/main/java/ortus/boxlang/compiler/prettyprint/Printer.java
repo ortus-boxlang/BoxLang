@@ -25,6 +25,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
 
+import ortus.boxlang.compiler.prettyprint.config.Config;
+
 public class Printer {
 
 	private final Config config;
