@@ -40,6 +40,7 @@ public final class Config {
 	private boolean				parensPadding			= false;
 	private boolean				binaryOperatorsPadding	= true;
 	private StructConfig		struct					= new StructConfig();
+	private PropertyConfig		property				= new PropertyConfig();
 
 	@JsonProperty( "for_loop_semicolons" )
 	private ForLoopSemicolons	forLoopSemicolons		= new ForLoopSemicolons();
@@ -134,6 +135,15 @@ public final class Config {
 
 	public Config setForLoopSemicolons( ForLoopSemicolons forLoopSemicolons ) {
 		this.forLoopSemicolons = forLoopSemicolons;
+		return this;
+	}
+
+	public PropertyConfig getProperty() {
+		return property;
+	}
+
+	public Config setProperty( PropertyConfig property ) {
+		this.property = property;
 		return this;
 	}
 

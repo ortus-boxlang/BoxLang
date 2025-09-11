@@ -906,15 +906,44 @@ public class Visitor extends VoidBoxVisitor {
 			print( "property" );
 			// TODO: Handle these accounting for shorcut syntax
 			// also need to seperate pre and inline annotations
-			for ( var anno : node.getPostAnnotations() ) {
-				print( " " );
+			var	size			= node.getPostAnnotations().size();
+			var	multiline		= size > config.getProperty().getMultiline().getElement_count();
+			var	keyValuePadding	= config.getProperty().getKeyValue().getPadding();
+			if ( node.getSourceText() == null
+			    || ( node.getSourceText().length() > config.getProperty().getMultiline().getMin_length() ) ) {
+				multiline = true;
+			}
+
+			Doc	currentDoc	= getCurrentDoc();
+			Doc	propDoc		= currentDoc;
+
+			if ( multiline ) {
+				propDoc = pushDoc( DocType.INDENT );
+			}
+
+			for ( int i = 0; i < size; i++ ) {
+				var anno = node.getPostAnnotations().get( i );
+
+				if ( i < size ) {
+					if ( multiline ) {
+						propDoc.append( Line.HARD );
+					} else {
+						propDoc.append( " " );
+					}
+				}
+
 				anno.getKey().accept( this );
 				if ( anno.getValue() != null ) {
-					print( "=" );
+					propDoc.append( keyValuePadding ? " = " : "=" );
 					anno.getValue().accept( this );
 				}
 			}
-			print( ";" );
+			propDoc.append( ";" );
+
+			if ( multiline ) {
+				popDoc();
+				currentDoc.append( propDoc );
+			}
 		}
 		printPostComments( node );
 	}
