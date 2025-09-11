@@ -136,6 +136,11 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	private String							appliedFormatMask							= TS_FORMAT_MASK;
 
 	/**
+	 * If the value of this is true, the timezone is fixed in all formatting and output operations
+	 */
+	public boolean							fixedTimezone								= false;
+
+	/**
 	 * Common Formatters Map so we can easily access them by name
 	 */
 	public static final IStruct				COMMON_FORMATTERS							= Struct.of(
@@ -772,7 +777,23 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	 * @return a new converted DateTime instance
 	 */
 	public DateTime convertToZone( ZoneId timezone ) {
-		return new DateTime( getWrapped().withZoneSameInstant( timezone ) );
+		return convertToZone( timezone, false );
+	}
+
+	/**
+	 * Converts this date to a specified timezone - this may result in a change to the date and time
+	 *
+	 * @param timezone the ZoneId of the timezone to convert to
+	 * @param fixed    if true, the timezone is fixed for output operations on the new object
+	 *
+	 * @return a new converted DateTime instance
+	 */
+	public DateTime convertToZone( ZoneId timezone, boolean fixed ) {
+		DateTime newRef = new DateTime( getWrapped().withZoneSameInstant( timezone ) );
+		if ( fixed ) {
+			newRef.fixTimezone();
+		}
+		return newRef;
 	}
 
 	/**
@@ -805,6 +826,15 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	 */
 	public ZonedDateTime getWrapped() {
 		return this.wrapped;
+	}
+
+	/**
+	 * Fixes the timezone on this object for output operations
+	 * This means that any formatting or output operations will use the timezone of this object
+	 */
+	public DateTime fixTimezone() {
+		this.fixedTimezone = true;
+		return this;
 	}
 
 	/**

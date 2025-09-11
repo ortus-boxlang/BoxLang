@@ -95,8 +95,10 @@ public class DateTimeFormat extends BIF {
 
 		// LS Subclass locales
 		Locale locale = LocalizationUtil.parseLocaleFromContext( context, arguments );
-		// Apply our runtime timezone to our initial reference
-		ref = new DateTime( ref.getWrapped().withZoneSameInstant( timezone ) );
+		// Update to use a copy with the current zone only if a timezone was passed in, or if the ref has not been manually fixed to a timezone
+		if ( arguments.getAsString( Key.timezone ) != null || !ref.fixedTimezone ) {
+			ref = new DateTime( ref.getWrapped().withZoneSameInstant( timezone ) );
+		}
 
 		if ( format == null && bifMethodKey.equals( Key.dateFormat ) ) {
 			return locale == null ? ref.format( DateTime.DEFAULT_DATE_FORMAT_MASK ) : ref.format( locale, DateTime.DEFAULT_DATE_FORMAT_MASK );
