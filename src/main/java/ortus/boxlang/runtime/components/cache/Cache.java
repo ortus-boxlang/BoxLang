@@ -258,7 +258,7 @@ public class Cache extends Component {
 			    Key.executionState, executionState,
 			    Key.result, null
 			);
-			interceptorService.announce( BoxEvent.ON_CREATEOBJECT_REQUEST, interceptorArgs );
+			interceptorService.announce( BoxEvent.ON_CACHE_COMPONENT_ACTION, interceptorArgs );
 			if ( interceptorArgs.get( Key.result ) == null ) {
 				throw new BoxRuntimeException(
 				    String.format( "The specified cache action [%s] is is not valid in the current runtime", cacheAction.toString().toLowerCase() )
