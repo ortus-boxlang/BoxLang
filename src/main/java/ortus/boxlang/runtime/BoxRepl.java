@@ -118,6 +118,7 @@ public class BoxRepl {
 			while ( ( source = reader.readLine() ) != null ) {
 				// Check for exit commands
 				if ( isExitCommand( source ) ) {
+					System.out.println( "👋 Thanks for using BoxLang REPL! Happy coding! 🎉" );
 					break;
 				}
 
@@ -136,16 +137,17 @@ public class BoxRepl {
 	 * Display the BoxLang REPL banner and instructions.
 	 */
 	private void showBanner() {
-		System.out.println( "██████   ██████  ██   ██ ██       █████  ███    ██  ██████ " );
-		System.out.println( "██   ██ ██    ██  ██ ██  ██      ██   ██ ████   ██ ██      " );
-		System.out.println( "██████  ██    ██   ███   ██      ███████ ██ ██  ██ ██   ███" );
-		System.out.println( "██   ██ ██    ██  ██ ██  ██      ██   ██ ██  ██ ██ ██    ██" );
-		System.out.println( "██████   ██████  ██   ██ ███████ ██   ██ ██   ████  ██████ " );
+		System.out.println( "🚀 ██████   ██████  ██   ██ ██       █████  ███    ██  ██████ " );
+		System.out.println( "   ██   ██ ██    ██  ██ ██  ██      ██   ██ ████   ██ ██      " );
+		System.out.println( "   ██████  ██    ██   ███   ██      ███████ ██ ██  ██ ██   ███" );
+		System.out.println( "   ██   ██ ██    ██  ██ ██  ██      ██   ██ ██  ██ ██ ██    ██" );
+		System.out.println( "   ██████   ██████  ██   ██ ███████ ██   ██ ██   ████  ██████  🎯" );
 		System.out.println( "" );
-		System.out.println( "Enter an expression, then hit enter" );
-		System.out.println( "Press Ctrl-C to exit" );
+		System.out.println( "✨ Welcome to the BoxLang Interactive REPL!" );
+		System.out.println( "💡 Enter an expression, then hit enter" );
+		System.out.println( "🚪 Type 'exit' or 'quit' to leave, or press Ctrl-C" );
 		System.out.println( "" );
-		System.out.print( "BoxLang> " );
+		System.out.print( "📦 BoxLang> " );
 	}
 
 	/**
@@ -192,15 +194,16 @@ public class BoxRepl {
 			// Handle abort exceptions (like <cfabort>)
 			scriptingContext.flushBuffer( true );
 			if ( e.getCause() != null ) {
-				System.out.println( "Abort: " + e.getCause().getMessage() );
+				System.out.println( "⏹️  Abort: " + e.getCause().getMessage() );
 			}
 		} catch ( Exception e ) {
 			// Handle any other exceptions
-			e.printStackTrace();
+			System.out.println( "❌ Error: " + e.getMessage() );
+			// e.printStackTrace(); // Uncomment for detailed stack traces during development
 		}
 
 		// Show prompt for next input
-		System.out.print( "BoxLang> " );
+		System.out.print( "📦 BoxLang> " );
 	}
 
 	/**
@@ -212,14 +215,14 @@ public class BoxRepl {
 		// Try to convert to string first
 		CastAttempt<String> stringAttempt = StringCaster.attempt( result );
 		if ( stringAttempt.wasSuccessful() ) {
-			System.out.println( stringAttempt.get() );
+			System.out.println( "➡️  " + stringAttempt.get() );
 		} else {
 			// Handle Java arrays by converting to BoxLang Array
 			if ( result.getClass().isArray() ) {
 				result = Array.fromArray( ( Object[] ) result );
 			}
 			// Display the object's toString representation
-			System.out.println( result );
+			System.out.println( "➡️  " + result );
 		}
 	}
 
