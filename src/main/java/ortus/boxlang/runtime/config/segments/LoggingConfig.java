@@ -134,11 +134,11 @@ public class LoggingConfig implements IConfigSegment {
 	 */
 	@Override
 	public IStruct asStruct() {
-		IStruct loggersCopy = new Struct();
+		IStruct loggersCopy = Struct.ofNonConcurrent();
 		this.loggers.entrySet()
 		    .forEach( entry -> loggersCopy.put( entry.getKey(), ( ( LoggerConfig ) entry.getValue() ).asStruct() ) );
 
-		return Struct.of(
+		return Struct.ofNonConcurrent(
 		    Key.defaultEncoder, this.defaultEncoder.getName(),
 		    Key.logsDirectory, this.logsDirectory,
 		    Key.loggers, loggersCopy,

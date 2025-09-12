@@ -18,7 +18,6 @@
 package ortus.boxlang.runtime.services;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.ServiceLoader;
@@ -351,12 +350,23 @@ public class FunctionService extends BaseService {
 
 		// Make sure the container for the member key exists
 		// Ex: memberMethods[ "foo" ] = { BoxLangType.ARRAY : MemberDescriptor, BoxLangType.STRING : MemberDescriptor }
-		synchronized ( this.memberMethods ) {
-			this.memberMethods.putIfAbsent( memberKey, Collections.synchronizedMap( new LinkedHashMap<>() ) );
+		var memberMap = this.memberMethods.get( memberKey );
+		if ( memberMap == null ) {
+			synchronized ( this.memberMethods ) {
+				// Double check
+				memberMap = this.memberMethods.get( memberKey );
+				if ( memberMap == null ) {
+					memberMap = new LinkedHashMap<>();
+					this.memberMethods.put( memberKey, memberMap );
+				}
+			}
 		}
 
-		// Now add them up
-		this.memberMethods.get( memberKey ).put( descriptor.type, descriptor );
+		// No checks here, since this always overwrites. Lock just to avoid corruption if two threads are putting
+		synchronized ( memberMap ) {
+			// Now add them up
+			memberMap.put( descriptor.type, descriptor );
+		}
 	}
 
 	/**

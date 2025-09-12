@@ -659,9 +659,9 @@ public class Configuration implements IConfigSegment {
 				    .entrySet()
 				    .forEach( entry -> {
 					    if ( entry.getValue() instanceof IStruct castedStruct ) {
-						    IStruct eventData = Struct.of(
+						    IStruct eventData = Struct.ofNonConcurrent(
 						        Key._name, entry.getKey(),
-						        Key.properties, new Struct( castedStruct )
+						        Key.properties, castedStruct
 						    );
 						    BoxRuntime.getInstance().announce( BoxEvent.ON_DATASOURCE_CONFIG_LOAD, eventData );
 
@@ -981,27 +981,27 @@ public class Configuration implements IConfigSegment {
 		IStruct mappingsCopy = new Struct( Struct.KEY_LENGTH_LONGEST_FIRST_COMPARATOR ).registerChangeListener( forceMappingTrailingSlash );
 		mappingsCopy.putAll( this.mappings );
 
-		IStruct cachesCopy = new Struct();
-		this.caches.entrySet()
-		    .forEach( entry -> cachesCopy.put( entry.getKey(), ( ( CacheConfig ) entry.getValue() ).toStruct() ) );
+		IStruct cachesCopy = new Struct( false );
+		this.caches.keySet()
+		    .forEach( key -> cachesCopy.put( key, ( ( CacheConfig ) this.caches.get( key ) ).toStruct() ) );
 
-		IStruct executorsCopy = new Struct();
-		this.executors.entrySet()
-		    .forEach( entry -> executorsCopy.put( entry.getKey(), ( ( ExecutorConfig ) entry.getValue() ).toStruct() ) );
+		IStruct executorsCopy = new Struct( false );
+		this.executors.keySet()
+		    .forEach( key -> executorsCopy.put( key, ( ( ExecutorConfig ) this.executors.get( key ) ).toStruct() ) );
 
-		IStruct datasourcesCopy = new Struct();
-		this.datasources.entrySet()
-		    .forEach( entry -> datasourcesCopy.put( entry.getKey(), ( ( DatasourceConfig ) entry.getValue() ).asStruct() ) );
+		IStruct datasourcesCopy = new Struct( false );
+		this.datasources.keySet()
+		    .forEach( key -> datasourcesCopy.put( key, ( ( DatasourceConfig ) this.datasources.get( key ) ).asStruct() ) );
 
-		IStruct modulesCopy = new Struct();
-		this.modules.entrySet()
-		    .forEach( entry -> modulesCopy.put( entry.getKey(), ( ( ModuleConfig ) entry.getValue() ).asStruct() ) );
+		IStruct modulesCopy = new Struct( false );
+		this.modules.keySet()
+		    .forEach( key -> modulesCopy.put( key, ( ( ModuleConfig ) this.modules.get( key ) ).asStruct() ) );
 
-		IStruct runtimesCopy = new Struct();
-		this.runtimes.entrySet()
-		    .forEach( entry -> runtimesCopy.put( entry.getKey(), entry.getValue() ) );
+		IStruct runtimesCopy = new Struct( false );
+		this.runtimes.keySet()
+		    .forEach( key -> runtimesCopy.put( key, this.runtimes.get( key ) ) );
 
-		return Struct.of(
+		return Struct.ofNonConcurrent(
 		    Key.applicationTimeout, this.applicationTimeout,
 		    Key.caches, cachesCopy,
 		    Key.classGenerationDirectory, this.classGenerationDirectory,
@@ -1019,7 +1019,7 @@ public class Configuration implements IConfigSegment {
 		    Key.whitespaceCompressionEnabled, this.whitespaceCompressionEnabled,
 		    Key.javaLibraryPaths, Array.copyFromList( this.javaLibraryPaths ),
 		    Key.locale, this.locale,
-		    Key.logging, this.logging.asStruct(),
+		    // Key.logging, this.logging.asStruct(),
 		    Key.mappings, mappingsCopy,
 		    Key.modules, modulesCopy,
 		    Key.modulesDirectory, Array.copyFromList( this.modulesDirectory ),
