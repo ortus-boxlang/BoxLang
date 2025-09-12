@@ -32,8 +32,7 @@ plugins {
  * Project Properties
  */
 group = 'ortus.boxlang'
-sourceCompatibility = jdkVersion
-targetCompatibility = jdkVersion
+
 ext {
 	buildID = System.getenv( 'BUILD_ID' ) ?: '0'
 	branch = System.getenv( 'BRANCH' ) ?: 'development'
@@ -55,6 +54,8 @@ def antlrGeneratedParserPackageDir = antlrGeneratedParserPackage.replaceAll("\\.
 def antlrGrammarDir = "src/main/antlr"
 
 java {
+	sourceCompatibility = JavaVersion.toVersion(jdkVersion)
+	targetCompatibility = JavaVersion.toVersion(jdkVersion)
 	withJavadocJar()
 	withSourcesJar()
 }
