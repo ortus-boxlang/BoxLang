@@ -148,7 +148,7 @@ public class ClassLocator extends ClassLoader {
 	 *
 	 * @return ClassLocator
 	 */
-	public static synchronized ClassLocator getInstance() {
+	public static ClassLocator getInstance() {
 		if ( instance == null ) {
 			throw new BoxRuntimeException( "The ClassLocator instance has not been initialized." );
 		}
@@ -162,15 +162,22 @@ public class ClassLocator extends ClassLoader {
 	 *
 	 * @return ClassLocator
 	 */
-	public static synchronized ClassLocator getInstance( BoxRuntime runtime ) {
+	public static ClassLocator getInstance( BoxRuntime runtime ) {
 		if ( instance == null ) {
-			instance			= new ClassLocator();
-			instance.runtime	= runtime;
-			// Register core box and java resolvers
-			instance.registerResolver( new BoxResolver( instance ) );
-			instance.registerResolver( new JavaResolver( instance ) );
+			synchronized ( ClassLocator.class ) {
+				if ( instance == null ) {
+					var tmpInstance = new ClassLocator();
+					tmpInstance.runtime = runtime;
+					// Register core box and java resolvers
+					tmpInstance.registerResolver( new BoxResolver( tmpInstance ) );
+					tmpInstance.registerResolver( new JavaResolver( tmpInstance ) );
+					// wait to set until the end to avoid race conditions
+					instance = tmpInstance;
+				}
+			}
 		}
 		return instance;
+
 	}
 
 	/**

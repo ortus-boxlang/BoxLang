@@ -109,9 +109,13 @@ public class BoxScriptTransformer extends AbstractTransformer {
 			public ${className}() {
 			}
 
-			public static synchronized ${className} getInstance() {
+			public static ${className} getInstance() {
 				if ( instance == null ) {
-					instance = new ${className}();
+					synchronized ( ${className}.class ) {
+						if ( instance == null ) {
+							instance = new ${className}();
+						}
+					}
 				}
 				return instance;
 			}
