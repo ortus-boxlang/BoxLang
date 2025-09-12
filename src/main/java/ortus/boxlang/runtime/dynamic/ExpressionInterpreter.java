@@ -32,7 +32,6 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
-import ortus.boxlang.runtime.util.RegexBuilder;
 
 /**
  * I handle interpreting expressions
@@ -68,7 +67,7 @@ public class ExpressionInterpreter {
 			return expression.substring( 1, expression.length() - 1 ).replace( "''", "'" );
 		}
 		// If expression is a number, return it directly
-		if ( RegexBuilder.of( expression, RegexBuilder.NUMBERS ).matches() ) {
+		if ( isNumberSmokeTest( expression ) ) {
 			return NumberCaster.cast( expression );
 		}
 		// Check for true/false
@@ -288,5 +287,42 @@ public class ExpressionInterpreter {
 			parts.add( part.toString() );
 		}
 		return parts.toArray( new Object[ 0 ] );
+	}
+
+	/**
+	 * Simple, quick test string contains ONLY digits, no more than one - at the start, and no more than one .
+	 * 
+	 * @param str The string to test
+	 * 
+	 * @return True if it looks like a number, false otherwise
+	 */
+	/**
+	 * Efficiently checks if a string is a valid number: only one '-' at the start, only one '.', and all other chars are digits.
+	 * 
+	 * @param str The string to test
+	 * 
+	 * @return True if it looks like a number, false otherwise
+	 */
+	private static boolean isNumberSmokeTest( String str ) {
+		if ( str == null || str.isEmpty() )
+			return false;
+		boolean	seenDecimal	= false;
+		boolean	seenDigit	= false;
+		for ( int i = 0; i < str.length(); i++ ) {
+			char c = str.charAt( i );
+			if ( Character.isDigit( c ) ) {
+				seenDigit = true;
+			} else if ( c == '-' ) {
+				if ( i != 0 )
+					return false;
+			} else if ( c == '.' ) {
+				if ( seenDecimal )
+					return false;
+				seenDecimal = true;
+			} else {
+				return false;
+			}
+		}
+		return seenDigit;
 	}
 }

@@ -1,7 +1,7 @@
 class extends="java:ortus.boxlang.runtime.context.BaseBoxContext" {
 
 	function getTemplatesYo() {
-		return super.templates;
+		return super.currentImports;
 	}
 
 }

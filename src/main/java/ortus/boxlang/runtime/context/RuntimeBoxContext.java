@@ -251,4 +251,33 @@ public class RuntimeBoxContext extends BaseBoxContext {
 		return this.runtimeConfig.asStruct();
 	}
 
+	/**
+	 * Clear the buffer
+	 *
+	 * @return This context
+	 */
+	public IBoxContext clearBuffer() {
+		return this;
+	}
+
+	/**
+	 * Can the current context output to the response stream?
+	 * Contexts tied to a specific object like a function or class may override this
+	 * to return false based on their own logic.
+	 */
+	public Boolean canOutput() {
+		return false;
+	}
+
+	/**
+	 * Write output to this buffer. Any input object will be converted to a string
+	 *
+	 * @param o The object to write
+	 *
+	 * @return This context
+	 */
+	public IBoxContext writeToBuffer( Object o ) {
+		return this;
+	}
+
 }

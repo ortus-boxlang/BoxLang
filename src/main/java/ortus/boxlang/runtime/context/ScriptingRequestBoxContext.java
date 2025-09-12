@@ -319,10 +319,13 @@ public class ScriptingRequestBoxContext extends RequestBoxContext {
 	 */
 	@Override
 	public IBoxContext flushBuffer( boolean force ) {
+		var buffers = super._getBuffers();
+
 		if ( !canOutput() && !force ) {
 			return this;
 		}
-		String output;
+		String	output;
+		boolean	hasState	= runtime.getInterceptorService().hasState( BoxEvent.ON_REQUEST_FLUSH_BUFFER );
 		// If there are extra buffers registered, we ignore flush requests since someone
 		// out there is wanting to capture our buffer instead.
 		if ( hasParent() && buffers.size() == 1 ) {
@@ -332,16 +335,18 @@ public class ScriptingRequestBoxContext extends RequestBoxContext {
 				clearBuffer();
 			}
 
-			// Announce it
-			IStruct eventData = Struct.of(
-			    Key.context, this,
-			    Key.output, output
-			);
-			BoxRuntime.getInstance().getInterceptorService()
-			    .announce( BoxEvent.ON_REQUEST_FLUSH_BUFFER, eventData );
+			if ( hasState ) {
+				// Announce it
+				IStruct eventData = Struct.ofNonConcurrent(
+				    Key.context, this,
+				    Key.output, output
+				);
+				runtime.getInterceptorService().announce( BoxEvent.ON_REQUEST_FLUSH_BUFFER, eventData );
+				output = eventData.getAsString( Key.output );
+			}
 
 			// If a scripting context is our top-level context, we flush to the console.
-			getOut().print( eventData.getAsString( Key.output ) );
+			getOut().print( output );
 		} else if ( force ) {
 			for ( StringBuffer buf : buffers ) {
 				synchronized ( buf ) {
@@ -349,15 +354,17 @@ public class ScriptingRequestBoxContext extends RequestBoxContext {
 					buf.setLength( 0 );
 				}
 
-				// Announce it
-				IStruct eventData = Struct.of(
-				    Key.context, this,
-				    Key.output, output
-				);
-				BoxRuntime.getInstance().getInterceptorService()
-				    .announce( BoxEvent.ON_REQUEST_FLUSH_BUFFER, eventData );
+				if ( hasState ) {
+					// Announce it
+					IStruct eventData = Struct.of(
+					    Key.context, this,
+					    Key.output, output
+					);
+					runtime.getInterceptorService().announce( BoxEvent.ON_REQUEST_FLUSH_BUFFER, eventData );
+					output = eventData.getAsString( Key.output );
+				}
 
-				getOut().print( eventData.getAsString( Key.output ) );
+				getOut().print( output );
 			}
 		}
 		return this;
