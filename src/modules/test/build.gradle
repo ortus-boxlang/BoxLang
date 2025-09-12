@@ -8,9 +8,6 @@ plugins {
 }
 
 version = '1.0.0'
-sourceCompatibility = jdkVersion
-targetCompatibility = jdkVersion
-
 repositories {
     mavenCentral()
 }
@@ -30,11 +27,16 @@ dependencies {
     testRuntimeOnly "org.junit.platform:junit-platform-launcher"
 }
 
+java {
+	sourceCompatibility = JavaVersion.toVersion( jdkVersion )
+	targetCompatibility = JavaVersion.toVersion( jdkVersion )
+}
+
 compileJava {
 	// Compiler Options
 	options.incremental = true
 	options.encoding = 'UTF-8'
-	options.debug()
+	options.debug = true
 }
 
 compileTestJava{
