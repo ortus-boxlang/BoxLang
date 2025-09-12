@@ -261,7 +261,7 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 		// Announcements
 		IStruct	data		= null;
 		if ( doEvents ) {
-			data = Struct.of(
+			data = Struct.ofNonConcurrent(
 			    Key.context, context,
 			    Key.arguments, context.getArgumentsScope(),
 			    Key.function, this,

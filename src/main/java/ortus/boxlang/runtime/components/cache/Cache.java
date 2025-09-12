@@ -250,7 +250,7 @@ public class Cache extends Component {
 
 		// Evalutions on cache directive
 		if ( !namedCacheOps.contains( cacheAction ) ) {
-			IStruct interceptorArgs = Struct.of(
+			IStruct interceptorArgs = Struct.ofNonConcurrent(
 			    Key.component, this,
 			    Key.context, context,
 			    Key.attributes, attributes,

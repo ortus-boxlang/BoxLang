@@ -441,25 +441,25 @@ public class HTTP extends Component {
 			HttpClient	client				= attributes.containsKey( Key.proxyServer ) || !attributes.getAsBoolean( Key.redirect )
 			    ? HttpManager.getCustomClient( attributes )
 			    : HttpManager.getClient();
-
 			// Announce the HTTP request
-			interceptorService.announce( BoxEvent.ON_HTTP_REQUEST, Struct.of(
-			    "requestID", requestID,
-			    "httpClient", client,
-			    "httpRequest", targetHTTPRequest,
-			    "targetURI", targetURI,
-			    "attributes", attributes
+			final var	finalTargetURI		= targetURI;
+			interceptorService.announce( BoxEvent.ON_HTTP_REQUEST, () -> Struct.ofNonConcurrent(
+			    Key.requestID, requestID,
+			    Key.httpClient, client,
+			    Key.httpRequest, targetHTTPRequest,
+			    Key.targetURI, finalTargetURI,
+			    Key.attributes, attributes
 			) );
 
 			// Adding the request
 			HTTPResult.put(
 			    Key.request,
 			    Struct.of(
-			        "url", targetURI,
-			        "method", method,
-			        "timeout", targetHTTPRequest.timeout(),
-			        "multipart", attributes.getAsBoolean( Key.multipart ),
-			        "headers", Struct.fromMap( targetHTTPRequest.headers().map() )
+			        Key.URL, targetURI,
+			        Key.method, method,
+			        Key.timeout, targetHTTPRequest.timeout(),
+			        Key.multipart, attributes.getAsBoolean( Key.multipart ),
+			        Key.headers, Struct.fromMap( targetHTTPRequest.headers().map() )
 			    ) );
 
 			// TODO : should we move the catch block below and add an `exceptionally` handler for the future?
@@ -470,13 +470,13 @@ public class HTTP extends Component {
 
 			// Announce the HTTP RAW response
 			// Useful for debugging and pre-processing and timing, since the other events are after the response is processed
-			interceptorService.announce( BoxEvent.ON_HTTP_RAW_RESPONSE, Struct.of(
-			    "requestID", requestID,
-			    "response", response,
-			    "httpClient", client,
-			    "httpRequest", targetHTTPRequest,
-			    "targetURI", targetURI,
-			    "attributes", attributes
+			interceptorService.announce( BoxEvent.ON_HTTP_RAW_RESPONSE, () -> Struct.ofNonConcurrent(
+			    Key.requestID, requestID,
+			    Key.response, response,
+			    Key.httpClient, client,
+			    Key.httpRequest, targetHTTPRequest,
+			    Key.targetURI, finalTargetURI,
+			    Key.attributes, attributes
 			) );
 
 			// Start Processing Results
@@ -552,10 +552,10 @@ public class HTTP extends Component {
 				ExpressionInterpreter.setVariable( context, variableName, HTTPResult );
 
 				// Announce the HTTP response
-				interceptorService.announce( BoxEvent.ON_HTTP_RESPONSE, Struct.of(
-				    "requestID", requestID,
-				    "response", response,
-				    "result", HTTPResult
+				interceptorService.announce( BoxEvent.ON_HTTP_RESPONSE, () -> Struct.ofNonConcurrent(
+				    Key.requestID, requestID,
+				    Key.response, response,
+				    Key.result, HTTPResult
 				) );
 
 				if ( outputDirectory != null ) {

@@ -125,7 +125,7 @@ public class Tracer {
 		    .getInterceptorService()
 		    .announce(
 		        BoxEvent.LOG_MESSAGE,
-		        Struct.of(
+		        () -> Struct.ofNonConcurrent(
 		            // Log Message as text
 		            Key.text, traceMessage,
 		            // Log file

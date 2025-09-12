@@ -36,6 +36,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 
 import org.apache.commons.lang3.Strings;
 import org.slf4j.Logger;
@@ -891,6 +892,28 @@ public class BoxRuntime implements java.io.Closeable {
 	 */
 	public void announce( BoxEvent state, IStruct data ) {
 		getInterceptorService().announce( state, data );
+	}
+
+	/**
+	 * Announce an event with the provided {@link IStruct} supplier of data short-hand for
+	 * {@link #getInterceptorService()}.announce()
+	 *
+	 * @param state        The Key state to announce
+	 * @param dataProvider A Supplier that provides the data to announce
+	 */
+	public void announce( BoxEvent state, Supplier<IStruct> dataProvider ) {
+		getInterceptorService().announce( state, dataProvider );
+	}
+
+	/**
+	 * Announce an event with the provided {@link IStruct} supplier of data short-hand for
+	 * {@link #getInterceptorService()}.announce()
+	 *
+	 * @param state        The Key state to announce
+	 * @param dataProvider A Supplier that provides the data to announce
+	 */
+	public void announce( Key state, Supplier<IStruct> dataProvider ) {
+		getInterceptorService().announce( state, dataProvider );
 	}
 
 	/**

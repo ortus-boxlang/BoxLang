@@ -68,10 +68,10 @@ public class DataSource implements Comparable<DataSource> {
 	 *               defined, and potentially `username` and `password` as well.
 	 */
 	public DataSource( DatasourceConfig config ) {
-		IStruct eventParams = Struct.of(
-		    "name", config.getUniqueName(),
-		    "properties", config.properties,
-		    "config", config
+		IStruct eventParams = Struct.ofNonConcurrent(
+		    Key._NAME, config.getUniqueName(),
+		    Key.properties, config.properties,
+		    Key.config, config
 		);
 		BoxRuntime.getInstance().getInterceptorService().announce(
 		    BoxEvent.ON_DATASOURCE_STARTUP,

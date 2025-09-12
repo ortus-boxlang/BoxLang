@@ -115,7 +115,7 @@ public abstract class BIF {
 
 		IStruct	data		= null;
 		if ( doEvents ) {
-			data = Struct.of(
+			data = Struct.ofNonConcurrent(
 			    Key.context, context,
 			    Key.arguments, arguments,
 			    Key.bif, this,

@@ -227,7 +227,7 @@ public abstract class AbstractTransformer implements Transformer {
 		if ( members.isEmpty() ) {
 			return ( Expression ) parseExpression( "Struct.EMPTY", new HashMap<>() );
 		} else {
-			MethodCallExpr documentationStruct = ( MethodCallExpr ) parseExpression( "Struct.linkedOf()", new HashMap<>() );
+			MethodCallExpr documentationStruct = ( MethodCallExpr ) parseExpression( "Struct.linkedOfNonConcurrent()", new HashMap<>() );
 			documentationStruct.getArguments().addAll( members );
 			return documentationStruct;
 		}
@@ -271,7 +271,7 @@ public abstract class AbstractTransformer implements Transformer {
 		if ( annotations.isEmpty() ) {
 			return parseExpression( "new Struct()", new HashMap<>() );
 		} else {
-			MethodCallExpr annotationStruct = ( MethodCallExpr ) parseExpression( "Struct.linkedOf()", new HashMap<>() );
+			MethodCallExpr annotationStruct = ( MethodCallExpr ) parseExpression( "Struct.linkedOfNonConcurrent()", new HashMap<>() );
 			annotationStruct.getArguments().addAll( members );
 			return annotationStruct;
 		}

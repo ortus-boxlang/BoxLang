@@ -20,7 +20,6 @@ package ortus.boxlang.runtime.components;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.components.Component.BodyResult;
@@ -132,21 +131,21 @@ public class ComponentDescriptor {
 			synchronized ( this ) {
 				// Double check inside lock
 				if ( this.componentInstance == null ) {
+
 					this.componentInstance = ( ( Component ) DynamicObject.of( this.componentClass )
 					    .invokeConstructor( ( IBoxContext ) null, new Object[] {} )
 					    .getTargetInstance() )
-					    .setName( name );
+					        .setName( name );
+
 					interceptorService.announce(
 					    BoxEvent.ON_COMPONENT_INSTANCE,
-					    new Struct(
-					        Map.of(
-					            Key.instance,
-					            this.componentInstance,
-					            Key._NAME,
-					            this.name,
-					            Key.descriptor,
-					            this
-					        )
+					    () -> Struct.ofNonConcurrent(
+					        Key.instance,
+					        this.componentInstance,
+					        Key._NAME,
+					        this.name,
+					        Key.descriptor,
+					        this
 					    )
 					);
 				}

@@ -91,10 +91,10 @@ public class RuntimeBoxContext extends BaseBoxContext {
 		// Announce we are done
 		BoxRuntime.getInstance().announce(
 		    BoxEvent.ON_RUNTIME_BOX_CONTEXT_STARTUP,
-		    Struct.of(
-		        "context", this,
-		        "configuration", this.runtimeConfig,
-		        "serverScope", this.serverScope
+		    () -> Struct.ofNonConcurrent(
+		        Key.context, this,
+		        Key.configuration, this.runtimeConfig,
+		        Key.serverScope, this.serverScope
 		    )
 		);
 	}
