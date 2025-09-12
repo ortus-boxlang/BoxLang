@@ -17,11 +17,9 @@
  */
 package ortus.boxlang.runtime;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -54,8 +52,6 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.context.RuntimeBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
-import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator;
@@ -1485,17 +1481,6 @@ public class BoxRuntime implements java.io.Closeable {
 	}
 
 	/**
-	 * Execute a source strings from an input stream
-	 *
-	 * @param sourceStream An input stream to read
-	 *
-	 * @return The result of the execution
-	 */
-	public Object executeSource( InputStream sourceStream ) {
-		return executeSource( sourceStream, this.runtimeContext );
-	}
-
-	/**
 	 * Execute a source string
 	 *
 	 * @param source  A string of source to execute
@@ -1529,87 +1514,6 @@ public class BoxRuntime implements java.io.Closeable {
 		}
 
 		return results;
-	}
-
-	/**
-	 * This is our REPL (Read-Eval-Print-Loop) method that allows for interactive
-	 * BoxLang execution
-	 *
-	 * @param sourceStream An input stream to read
-	 * @param context      The context to execute the source in
-	 */
-	public Object executeSource( InputStream sourceStream, IBoxContext context ) {
-		IBoxContext		scriptingContext	= ensureRequestTypeContext( context );
-		BufferedReader	reader				= new BufferedReader( new InputStreamReader( sourceStream ) );
-		String			source;
-		RequestBoxContext.setCurrent( scriptingContext.getParentOfType( RequestBoxContext.class ) );
-		ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
-
-		try {
-			Boolean quiet = reader.ready();
-			if ( !quiet ) {
-				System.out.println( "██████   ██████  ██   ██ ██       █████  ███    ██  ██████ " );
-				System.out.println( "██   ██ ██    ██  ██ ██  ██      ██   ██ ████   ██ ██      " );
-				System.out.println( "██████  ██    ██   ███   ██      ███████ ██ ██  ██ ██   ███" );
-				System.out.println( "██   ██ ██    ██  ██ ██  ██      ██   ██ ██  ██ ██ ██    ██" );
-				System.out.println( "██████   ██████  ██   ██ ███████ ██   ██ ██   ████  ██████ " );
-				System.out.println( "" );
-				System.out.println( "Enter an expression, then hit enter" );
-				System.out.println( "Press Ctrl-C to exit" );
-				System.out.println( "" );
-				System.out.print( "BoxLang> " );
-			}
-			while ( ( source = reader.readLine() ) != null ) {
-
-				if ( source.toLowerCase().equals( "exit" ) || source.toLowerCase().equals( "quit" ) ) {
-					break;
-				}
-
-				try {
-
-					BoxScript	scriptRunnable		= RunnableLoader.getInstance().loadStatement( context, source,
-					    BoxSourceType.BOXSCRIPT );
-
-					// Fire!!!
-					Object		result				= scriptRunnable.invoke( scriptingContext );
-					boolean		hadBufferContent	= scriptingContext.getBuffer().length() > 0;
-					scriptingContext.flushBuffer( false );
-					if ( !hadBufferContent && result != null ) {
-						CastAttempt<String> stringAttempt = StringCaster.attempt( result );
-						if ( stringAttempt.wasSuccessful() ) {
-							System.out.println( stringAttempt.get() );
-						} else {
-							// check if it's a java array
-							if ( result.getClass().isArray() ) {
-								result = Array.fromArray( ( Object[] ) result );
-							}
-
-							System.out.println( result );
-						}
-					} else {
-						System.out.println();
-					}
-				} catch ( AbortException e ) {
-					scriptingContext.flushBuffer( true );
-					if ( e.getCause() != null ) {
-						System.out.println( "Abort: " + e.getCause().getMessage() );
-					}
-				} catch ( Exception e ) {
-					e.printStackTrace();
-				}
-
-				if ( !quiet ) {
-					System.out.print( "BoxLang> " );
-				}
-			}
-		} catch ( IOException e ) {
-			throw new BoxRuntimeException( "Error reading source stream", e );
-		} finally {
-			RequestBoxContext.removeCurrent();
-			Thread.currentThread().setContextClassLoader( oldClassLoader );
-		}
-
-		return null;
 	}
 
 	/**
