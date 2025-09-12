@@ -21,6 +21,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -68,7 +70,27 @@ public class BoxRepl {
 	/**
 	 * The BoxLang runtime instance
 	 */
-	private final BoxRuntime runtime;
+	private final BoxRuntime	runtime;
+
+	/**
+	 * Command history storage
+	 */
+	private final List<String>	commandHistory		= new ArrayList<>();
+
+	/**
+	 * Current position in command history (-1 means not navigating history)
+	 */
+	private int					historyIndex		= -1;
+
+	/**
+	 * Maximum number of commands to keep in history
+	 */
+	private static final int	MAX_HISTORY_SIZE	= 100;
+
+	/**
+	 * ANSI escape sequences for terminal control
+	 */
+	private static final String	ANSI_CLEAR_LINE		= "\r\033[2K";
 
 	/**
 	 * Constructor
@@ -104,9 +126,8 @@ public class BoxRepl {
 	 */
 	public void start( InputStream sourceStream, IBoxContext context ) {
 		// Create a scripting context for REPL execution
-		IBoxContext		scriptingContext	= new ScriptingRequestBoxContext( context );
-		BufferedReader	reader				= new BufferedReader( new InputStreamReader( sourceStream ) );
-		String			source;
+		IBoxContext	scriptingContext	= new ScriptingRequestBoxContext( context );
+		String		source;
 		RequestBoxContext.setCurrent( scriptingContext.getParentOfType( RequestBoxContext.class ) );
 		ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
 
@@ -114,16 +135,32 @@ public class BoxRepl {
 			// Show the interactive banner
 			showBanner();
 
-			// Main REPL loop
-			while ( ( source = reader.readLine() ) != null ) {
-				// Check for exit commands
-				if ( isExitCommand( source ) ) {
-					System.out.println( "👋 Thanks for using BoxLang REPL! Happy coding! 🎉" );
-					break;
-				}
+			// For non-System.in streams, fall back to simple line reading
+			if ( sourceStream != System.in ) {
+				BufferedReader reader = new BufferedReader( new InputStreamReader( sourceStream ) );
+				// Traditional REPL loop for non-interactive input
+				while ( ( source = reader.readLine() ) != null ) {
+					// Check for exit commands
+					if ( isExitCommand( source ) ) {
+						System.out.println( "👋 Thanks for using BoxLang REPL! Happy coding! 🎉" );
+						break;
+					}
 
-				// Execute the source code
-				executeReplLine( source, scriptingContext );
+					// Execute the source code
+					executeReplLine( source, scriptingContext );
+				}
+			} else {
+				// Interactive REPL loop with history support
+				while ( ( source = readLineWithHistory() ) != null ) {
+					// Check for exit commands
+					if ( isExitCommand( source ) ) {
+						System.out.println( "👋 Thanks for using BoxLang REPL! Happy coding! 🎉" );
+						break;
+					}
+
+					// Execute the source code
+					executeReplLine( source, scriptingContext );
+				}
 			}
 		} catch ( IOException e ) {
 			throw new BoxRuntimeException( "Error reading source stream", e );
@@ -145,7 +182,8 @@ public class BoxRepl {
 		System.out.println( "" );
 		System.out.println( "✨ Welcome to the BoxLang Interactive REPL!" );
 		System.out.println( "💡 Enter an expression, then hit enter" );
-		System.out.println( "🚪 Type 'exit' or 'quit' to leave, or press Ctrl-C" );
+		System.out.println( "� Use UP/DOWN arrow keys to navigate command history" );
+		System.out.println( "�🚪 Type 'exit' or 'quit' to leave, or press Ctrl-C" );
 		System.out.println( "" );
 		System.out.print( "📦 BoxLang> " );
 	}
@@ -233,5 +271,177 @@ public class BoxRepl {
 	 */
 	public BoxRuntime getRuntime() {
 		return runtime;
+	}
+
+	/**
+	 * Add a command to the history.
+	 *
+	 * @param command The command to add to history
+	 */
+	private void addToHistory( String command ) {
+		if ( command == null || command.trim().isEmpty() ) {
+			return;
+		}
+
+		// Don't add duplicate consecutive commands
+		if ( !commandHistory.isEmpty() && commandHistory.get( commandHistory.size() - 1 ).equals( command ) ) {
+			return;
+		}
+
+		commandHistory.add( command );
+
+		// Maintain maximum history size
+		if ( commandHistory.size() > MAX_HISTORY_SIZE ) {
+			commandHistory.remove( 0 );
+		}
+
+		// Reset history navigation
+		historyIndex = -1;
+	}
+
+	/**
+	 * Clear the current line and move cursor to beginning.
+	 */
+	private void clearLine() {
+		System.out.print( ANSI_CLEAR_LINE );
+	}
+
+	/**
+	 * Redraw the prompt and current line content.
+	 *
+	 * @param lineContent The current line content to display
+	 */
+	private void redrawLine( String lineContent ) {
+		clearLine();
+		System.out.print( "📦 BoxLang> " + lineContent );
+	}
+
+	/**
+	 * Read a line with history support and arrow key navigation.
+	 * This method handles raw terminal input to support arrow keys for history navigation.
+	 *
+	 * @return The input line, or null if EOF is reached
+	 * 
+	 * @throws IOException If an I/O error occurs
+	 */
+	private String readLineWithHistory() throws IOException {
+		StringBuilder	lineBuffer	= new StringBuilder();
+		int				ch;
+
+		while ( ( ch = System.in.read() ) != -1 ) {
+			switch ( ch ) {
+				case '\n' :
+				case '\r' :
+					// Enter pressed - return the current line
+					System.out.println(); // Move to next line
+					String result = lineBuffer.toString();
+					if ( !result.trim().isEmpty() ) {
+						addToHistory( result );
+					}
+					return result;
+
+				case 127 : // Backspace (DEL)
+				case 8 :   // Backspace (BS)
+					if ( lineBuffer.length() > 0 ) {
+						lineBuffer.deleteCharAt( lineBuffer.length() - 1 );
+						redrawLine( lineBuffer.toString() );
+					}
+					break;
+
+				case 27 : // ESC - potential arrow key sequence
+					// Check for arrow key sequences
+					int next1 = System.in.read();
+					if ( next1 == '[' ) {
+						int next2 = System.in.read();
+						switch ( next2 ) {
+							case 'A' : // Up arrow
+								String prevCommand = getPreviousHistoryCommand();
+								if ( prevCommand != null ) {
+									lineBuffer.setLength( 0 );
+									lineBuffer.append( prevCommand );
+									redrawLine( lineBuffer.toString() );
+								}
+								break;
+
+							case 'B' : // Down arrow
+								String nextCommand = getNextHistoryCommand();
+								if ( nextCommand != null ) {
+									lineBuffer.setLength( 0 );
+									lineBuffer.append( nextCommand );
+									redrawLine( lineBuffer.toString() );
+								}
+								break;
+
+							case 'C' : // Right arrow
+							case 'D' : // Left arrow
+								// Ignore for now - could implement cursor movement later
+								break;
+						}
+					}
+					break;
+
+				case 3 : // Ctrl+C
+					System.out.println();
+					System.out.println( "👋 Thanks for using BoxLang REPL! Happy coding! 🎉" );
+					return null;
+
+				case 4 : // Ctrl+D (EOF)
+					if ( lineBuffer.length() == 0 ) {
+						return null; // EOF on empty line
+					}
+					break;
+
+				default :
+					// Regular character - add to buffer
+					if ( ch >= 32 && ch <= 126 ) { // Printable ASCII
+						lineBuffer.append( ( char ) ch );
+						redrawLine( lineBuffer.toString() );
+					}
+					break;
+			}
+		}
+
+		return null; // EOF reached
+	}
+
+	/**
+	 * Get the previous command in history.
+	 *
+	 * @return The previous command, or null if at the beginning
+	 */
+	private String getPreviousHistoryCommand() {
+		if ( commandHistory.isEmpty() ) {
+			return null;
+		}
+
+		if ( historyIndex == -1 ) {
+			historyIndex = commandHistory.size() - 1;
+		} else if ( historyIndex > 0 ) {
+			historyIndex--;
+		}
+
+		return historyIndex >= 0 && historyIndex < commandHistory.size()
+		    ? commandHistory.get( historyIndex )
+		    : null;
+	}
+
+	/**
+	 * Get the next command in history.
+	 *
+	 * @return The next command, or null if at the end
+	 */
+	private String getNextHistoryCommand() {
+		if ( commandHistory.isEmpty() || historyIndex == -1 ) {
+			return null;
+		}
+
+		if ( historyIndex < commandHistory.size() - 1 ) {
+			historyIndex++;
+			return commandHistory.get( historyIndex );
+		} else {
+			// At the end of history, return to current (empty) line
+			historyIndex = -1;
+			return "";
+		}
 	}
 }
