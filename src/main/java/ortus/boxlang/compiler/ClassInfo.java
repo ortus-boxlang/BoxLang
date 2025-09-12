@@ -29,13 +29,14 @@ public record ClassInfo(
     DiskClassLoader[] diskClassLoader,
     InterfaceProxyDefinition interfaceProxyDefinition,
     IBoxpiler boxpiler,
-    ResolvedFilePath resolvedFilePath ) {
+    ResolvedFilePath resolvedFilePath,
+    int _hashCode ) {
 
 	/**
 	 * Hash Code
 	 */
 	public int hashCode() {
-		return fqn().toString().hashCode();
+		return _hashCode;
 	}
 
 	/**
@@ -52,8 +53,9 @@ public record ClassInfo(
 	}
 
 	public static ClassInfo forScript( String source, BoxSourceType sourceType, IBoxpiler boxpiler ) {
+		FQN fqn = FQN.of( "boxgenerated.scripts", "Script_" + IBoxpiler.MD5( sourceType.toString() + source ) );
 		return new ClassInfo(
-		    FQN.of( "boxgenerated.scripts", "Script_" + IBoxpiler.MD5( sourceType.toString() + source ) ),
+		    fqn,
 		    BoxFQN.of( "" ),
 		    "BoxScript",
 		    "Object",
@@ -63,13 +65,15 @@ public record ClassInfo(
 		    new DiskClassLoader[ 1 ],
 		    null,
 		    boxpiler,
-		    null
+		    null,
+		    fqn.toString().hashCode()
 		);
 	}
 
 	public static ClassInfo forStatement( String source, BoxSourceType sourceType, IBoxpiler boxpiler ) {
+		FQN fqn = FQN.of( "boxgenerated.scripts", "Statement_" + IBoxpiler.MD5( sourceType.toString() + source ) );
 		return new ClassInfo(
-		    FQN.of( "boxgenerated.scripts", "Statement_" + IBoxpiler.MD5( sourceType.toString() + source ) ),
+		    fqn,
 		    BoxFQN.of( "" ),
 		    "BoxScript",
 		    "Object",
@@ -79,13 +83,15 @@ public record ClassInfo(
 		    new DiskClassLoader[ 1 ],
 		    null,
 		    boxpiler,
-		    null
+		    null,
+		    fqn.toString().hashCode()
 		);
 	}
 
 	public static ClassInfo forTemplate( ResolvedFilePath resolvedFilePath, BoxSourceType sourceType, IBoxpiler boxpiler ) {
+		FQN fqn = resolvedFilePath.getFQN( "boxgenerated.templates" );
 		return new ClassInfo(
-		    resolvedFilePath.getFQN( "boxgenerated.templates" ),
+		    fqn,
 		    resolvedFilePath.getBoxFQN( "boxgenerated.templates" ),
 		    "BoxTemplate",
 		    "void",
@@ -95,13 +101,15 @@ public record ClassInfo(
 		    new DiskClassLoader[ 1 ],
 		    null,
 		    boxpiler,
-		    resolvedFilePath
+		    resolvedFilePath,
+		    fqn.toString().hashCode()
 		);
 	}
 
 	public static ClassInfo forClass( ResolvedFilePath resolvedFilePath, BoxSourceType sourceType, IBoxpiler boxpiler ) {
+		FQN fqn = resolvedFilePath.getFQN( "boxgenerated.boxclass" );
 		return new ClassInfo(
-		    resolvedFilePath.getFQN( "boxgenerated.boxclass" ),
+		    fqn,
 		    resolvedFilePath.getBoxFQN(),
 		    null,
 		    null,
@@ -111,13 +119,15 @@ public record ClassInfo(
 		    new DiskClassLoader[ 1 ],
 		    null,
 		    boxpiler,
-		    resolvedFilePath
+		    resolvedFilePath,
+		    fqn.toString().hashCode()
 		);
 	}
 
 	public static ClassInfo forClass( String source, BoxSourceType sourceType, IBoxpiler boxpiler ) {
+		FQN fqn = FQN.of( "boxgenerated.boxclass", "Class_" + IBoxpiler.MD5( source ) );
 		return new ClassInfo(
-		    FQN.of( "boxgenerated.boxclass", "Class_" + IBoxpiler.MD5( source ) ),
+		    fqn,
 		    BoxFQN.of( "" ),
 		    null,
 		    null,
@@ -127,13 +137,15 @@ public record ClassInfo(
 		    new DiskClassLoader[ 1 ],
 		    null,
 		    boxpiler,
-		    null
+		    null,
+		    fqn.toString().hashCode()
 		);
 	}
 
 	public static ClassInfo forInterfaceProxy( String name, InterfaceProxyDefinition interfaceProxyDefinition, IBoxpiler boxpiler ) {
+		FQN fqn = FQN.of( "boxgenerated.dynamicProxy", "InterfaceProxy_" + name );
 		return new ClassInfo(
-		    FQN.of( "boxgenerated.dynamicProxy", "InterfaceProxy_" + name ),
+		    fqn,
 		    BoxFQN.of( "" ),
 		    null,
 		    null,
@@ -143,7 +155,8 @@ public record ClassInfo(
 		    new DiskClassLoader[ 1 ],
 		    interfaceProxyDefinition,
 		    boxpiler,
-		    null
+		    null,
+		    fqn.toString().hashCode()
 		);
 	}
 
