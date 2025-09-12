@@ -115,10 +115,10 @@ public class ExecutorConfig {
 	 * Remember that this is what the context's use to build runtime/request configs, so don't use any references
 	 */
 	public IStruct toStruct() {
-		return Struct.of(
-		    "name", this.name,
-		    "type", this.type,
-		    "maxThreads", this.maxThreads
+		return Struct.ofNonConcurrent(
+		    Key._NAME, this.name,
+		    Key.type, this.type,
+		    Key.maxThreads, this.maxThreads
 		);
 	}
 
