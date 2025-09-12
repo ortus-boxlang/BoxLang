@@ -174,11 +174,11 @@ public class PendingQuery {
 		 * - options : The QueryOptions class populated with query options from
 		 * `queryExecute()` or `<bx:query>`
 		 */
-		IStruct eventArgs = Struct.of(
-		    "sql", sql.trim(),
-		    "bindings", bindings,
-		    "pendingQuery", this,
-		    "options", queryOptions
+		IStruct eventArgs = Struct.ofNonConcurrent(
+		    Key.sql, sql.trim(),
+		    Key.bindings, bindings,
+		    Key.pendingQuery, this,
+		    Key.options, queryOptions
 		);
 
 		interceptorService.announce( BoxEvent.ON_QUERY_BUILD, eventArgs );
@@ -658,10 +658,10 @@ public class PendingQuery {
 
 				interceptorService.announce(
 				    BoxEvent.PRE_QUERY_EXECUTE,
-				    Struct.of(
-				        "sql", sqlStatement,
-				        "bindings", getParameterValues(),
-				        "pendingQuery", this
+				    () -> Struct.ofNonConcurrent(
+				        Key.sql, sqlStatement,
+				        Key.bindings, getParameterValues(),
+				        Key.pendingQuery, this
 				    )
 				);
 

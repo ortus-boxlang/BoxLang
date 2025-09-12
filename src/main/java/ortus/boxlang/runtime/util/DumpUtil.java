@@ -148,19 +148,23 @@ public class DumpUtil {
 		}
 
 		// Announce it
+		final var	outputFinal	= output;
+		final var	formatFinal	= format;
 		context
 		    .getRuntime()
-		    .announce( BoxEvent.ON_BXDUMP, Struct.of(
-		        Key.context, context,
-		        Key.target, target,
-		        Key.label, label,
-		        Key.top, top,
-		        Key.expand, expand,
-		        Key.abort, abort,
-		        Key.output, output,
-		        Key.format, format,
-		        Key.showUDFs, showUDFs
-		    ) );
+		    .announce(
+		        BoxEvent.ON_BXDUMP,
+		        () -> Struct.ofNonConcurrent(
+		            Key.context, context,
+		            Key.target, target,
+		            Key.label, label,
+		            Key.top, top,
+		            Key.expand, expand,
+		            Key.abort, abort,
+		            Key.output, outputFinal,
+		            Key.format, formatFinal,
+		            Key.showUDFs, showUDFs
+		        ) );
 
 		// Dump the object based on the output location
 		switch ( output ) {
@@ -195,15 +199,15 @@ public class DumpUtil {
 				    .getInterceptorService()
 				    .announce(
 				        BoxEvent.ON_MISSING_DUMP_OUTPUT,
-				        Struct.of(
+				        () -> Struct.ofNonConcurrent(
 				            Key.context, context,
 				            Key.target, target,
 				            Key.label, label,
 				            Key.top, top,
 				            Key.expand, expand,
 				            Key.abort, abort,
-				            Key.output, output,
-				            Key.format, format,
+				            Key.output, outputFinal,
+				            Key.format, formatFinal,
 				            Key.showUDFs, showUDFs
 				        )
 				    );

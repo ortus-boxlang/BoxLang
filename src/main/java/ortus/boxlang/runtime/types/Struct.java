@@ -23,17 +23,18 @@ import java.util.AbstractMap.SimpleEntry;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
@@ -155,16 +156,39 @@ public class Struct implements IStruct, IListenable<IStruct>, Serializable {
 	 * @throws BoxRuntimeException If an invalid type is specified: DEFAULT, CASE_SENSITIVE, LINKED, LINKED_CASE_SENSITIVE, SORTED, WEAK, SOFT
 	 */
 	public Struct( TYPES type ) {
+		this( type, true );
+	}
+
+	/**
+	 * Constructor
+	 *
+	 * @param type       The type of struct to create: DEFAULT, CASE_SENSITIVE, LINKED, LINKED_CASE_SENSITIVE, SORTED, WEAK, SOFT
+	 * @param concurrent Whether to use a concurrent map implementation
+	 *
+	 * @throws BoxRuntimeException If an invalid type is specified: DEFAULT, CASE_SENSITIVE, LINKED, LINKED_CASE_SENSITIVE, SORTED, WEAK, SOFT
+	 */
+	public Struct( TYPES type, boolean concurrent ) {
 		this.type		= type;
 
 		// Initialize the wrapped map
 		this.wrapped	= switch ( type ) {
-							case DEFAULT, CASE_SENSITIVE, SOFT -> new ConcurrentHashMap<>( INITIAL_CAPACITY );
-							case LINKED, LINKED_CASE_SENSITIVE -> Collections.synchronizedMap( LinkedHashMap.newLinkedHashMap( INITIAL_CAPACITY ) );
-							case SORTED -> new ConcurrentSkipListMap<>();
-							case WEAK -> WeakHashMap.newWeakHashMap( INITIAL_CAPACITY );
+							case DEFAULT, CASE_SENSITIVE, SOFT -> concurrent ? new ConcurrentHashMap<>( INITIAL_CAPACITY ) : new HashMap<>( INITIAL_CAPACITY );
+							case LINKED, LINKED_CASE_SENSITIVE -> concurrent ? Collections.synchronizedMap( LinkedHashMap.newLinkedHashMap( INITIAL_CAPACITY ) )
+							    : LinkedHashMap.newLinkedHashMap( INITIAL_CAPACITY );
+							case SORTED -> concurrent ? new ConcurrentSkipListMap<>() : new TreeMap<>();
+							case WEAK -> concurrent ? Collections.synchronizedMap( WeakHashMap.newWeakHashMap( INITIAL_CAPACITY ) )
+							    : WeakHashMap.newWeakHashMap( INITIAL_CAPACITY );
 							default -> throw new BoxRuntimeException( "Invalid struct type [" + type.name() + "]" );
 						};
+	}
+
+	/**
+	 * Create a default struct
+	 * 
+	 * @param concurrent Whether to use a concurrent map implementation
+	 */
+	public Struct( boolean concurrent ) {
+		this( TYPES.DEFAULT, concurrent );
 	}
 
 	/**
@@ -176,6 +200,7 @@ public class Struct implements IStruct, IListenable<IStruct>, Serializable {
 
 	/**
 	 * Create a sorted struct with the passed {@Link Comparator} object
+	 * This always creates a concurrent map.
 	 *
 	 * @param comparator The comparator to use
 	 */
@@ -210,12 +235,23 @@ public class Struct implements IStruct, IListenable<IStruct>, Serializable {
 	/**
 	 * Construct a struct of a specific type from an existing map
 	 *
+	 * @param type       The type of struct to create: DEFAULT, LINKED, SORTED
+	 * @param map        The map to create the struct from
+	 * @param concurrent Whether to use a concurrent map implementation
+	 */
+	public Struct( TYPES type, Map<? extends Object, ? extends Object> map, boolean concurrent ) {
+		this( type, concurrent );
+		addAll( map );
+	}
+
+	/**
+	 * Construct a struct of a specific type from an existing map
+	 *
 	 * @param type The type of struct to create: DEFAULT, LINKED, SORTED
 	 * @param map  The map to create the struct from
 	 */
 	public Struct( TYPES type, Map<? extends Object, ? extends Object> map ) {
-		this( type );
-		addAll( map );
+		this( type, map, true );
 	}
 
 	/**
@@ -274,6 +310,24 @@ public class Struct implements IStruct, IListenable<IStruct>, Serializable {
 	}
 
 	/**
+	 * Create a struct from a list of values. The values must be in pairs, key, value, key, value, etc.
+	 *
+	 * @param values The values to create the struct from
+	 *
+	 * @return The struct
+	 */
+	public static IStruct ofNonConcurrent( Object... values ) {
+		if ( values.length % 2 != 0 ) {
+			throw new BoxRuntimeException( "Invalid number of arguments.  Must be an even number." );
+		}
+		IStruct struct = new Struct( TYPES.DEFAULT, false );
+		for ( int i = 0; i < values.length; i += 2 ) {
+			struct.put( KeyCaster.cast( values[ i ] ), values[ i + 1 ] );
+		}
+		return struct;
+	}
+
+	/**
 	 * Create a linked struct from a list of values. The values must be in pairs, key, value, key, value, etc.
 	 *
 	 * @param values The values to create the struct from
@@ -285,6 +339,24 @@ public class Struct implements IStruct, IListenable<IStruct>, Serializable {
 			throw new BoxRuntimeException( "Invalid number of arguments.  Must be an even number." );
 		}
 		IStruct struct = new Struct( TYPES.LINKED );
+		for ( int i = 0; i < values.length; i += 2 ) {
+			struct.put( KeyCaster.cast( values[ i ] ), values[ i + 1 ] );
+		}
+		return struct;
+	}
+
+	/**
+	 * Create a linked struct from a list of values. The values must be in pairs, key, value, key, value, etc.
+	 *
+	 * @param values The values to create the struct from
+	 *
+	 * @return The linked struct
+	 */
+	public static IStruct linkedOfNonConcurrent( Object... values ) {
+		if ( values.length % 2 != 0 ) {
+			throw new BoxRuntimeException( "Invalid number of arguments.  Must be an even number." );
+		}
+		IStruct struct = new Struct( TYPES.LINKED, false );
 		for ( int i = 0; i < values.length; i += 2 ) {
 			struct.put( KeyCaster.cast( values[ i ] ), values[ i + 1 ] );
 		}
@@ -627,36 +699,17 @@ public class Struct implements IStruct, IListenable<IStruct>, Serializable {
 	 * @param map
 	 */
 	public void addAll( Map<? extends Object, ? extends Object> map ) {
-		Stream<Map.Entry<?, ?>> entryStream;
-		// Parallel streams are actually slower for small data sets!
-		// 1000 may even be to small. Some resoruces say to not bnother unless you have over 10,000 items! Need to test more.
-		if ( map.size() > 1000 ) {
-			entryStream = map.entrySet().parallelStream().map( entry -> entry );
-		} else {
-			entryStream = map.entrySet().stream().map( entry -> entry );
-		}
-		// With a linked hashmap we need to maintain order - which is a tiny bit slower
-		if ( type.equals( TYPES.LINKED ) ) {
-			entryStream.forEachOrdered( entry -> {
-				Key key;
-				if ( entry.getKey() instanceof Key entryKey ) {
-					key = entryKey;
-				} else {
-					key = Key.of( entry.getKey().toString() );
-				}
-				putInternal( key, entry.getValue() );
-			} );
-		} else {
-			entryStream.forEach( entry -> {
-				Key key;
-				if ( entry.getKey() instanceof Key entryKey ) {
-					key = entryKey;
-				} else {
-					key = Key.of( entry.getKey().toString() );
-				}
-				putInternal( key, entry.getValue() );
-			} );
-		}
+		map
+		    .keySet()
+		    .forEach( keyObj -> {
+			    Key key;
+			    if ( keyObj instanceof Key entryKey ) {
+				    key = entryKey;
+			    } else {
+				    key = Key.of( keyObj.toString() );
+			    }
+			    putInternal( key, map.get( keyObj ) );
+		    } );
 	}
 
 	/**

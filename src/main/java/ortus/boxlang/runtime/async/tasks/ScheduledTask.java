@@ -456,7 +456,8 @@ public class ScheduledTask implements Runnable {
 			// Before Interceptors : From global to local
 			this.interceptorService.announce(
 			    BoxEvent.SCHEDULER_BEFORE_ANY_TASK,
-			    Struct.of( "task", this ) );
+			    () -> Struct.ofNonConcurrent( Key.task, this )
+			);
 			if ( hasScheduler() ) {
 				getScheduler().beforeAnyTask( this );
 			}
@@ -507,7 +508,8 @@ public class ScheduledTask implements Runnable {
 			}
 			this.interceptorService.announce(
 			    BoxEvent.SCHEDULER_AFTER_ANY_TASK,
-			    Struct.of( "task", this, "result", result ) );
+			    () -> Struct.ofNonConcurrent( Key.task, this, Key.result, result )
+			);
 
 			// Store successes and call success interceptor : From global to local
 			( ( AtomicInteger ) this.stats.get( "totalSuccess" ) ).incrementAndGet();
@@ -519,7 +521,8 @@ public class ScheduledTask implements Runnable {
 			}
 			this.interceptorService.announce(
 			    BoxEvent.SCHEDULER_ON_ANY_TASK_SUCCESS,
-			    Struct.of( "task", this, "result", result ) );
+			    () -> Struct.ofNonConcurrent( Key.task, this, Key.result, result )
+			);
 
 		} catch ( Exception e ) {
 			// store failures
@@ -539,7 +542,7 @@ public class ScheduledTask implements Runnable {
 				}
 				this.interceptorService.announce(
 				    BoxEvent.SCHEDULER_ON_ANY_TASK_ERROR,
-				    Struct.of( "task", this, "exception", e ) );
+				    () -> Struct.ofNonConcurrent( Key.task, this, Key.exception, e ) );
 
 				// After Tasks Interceptor with the exception as the last result : From global
 				// to local
@@ -551,7 +554,8 @@ public class ScheduledTask implements Runnable {
 				}
 				this.interceptorService.announce(
 				    BoxEvent.SCHEDULER_AFTER_ANY_TASK,
-				    Struct.of( "task", this, "result", Optional.of( e ) ) );
+				    () -> Struct.ofNonConcurrent( Key.task, this, Key.result, Optional.of( e ) )
+				);
 			} catch ( Exception afterException ) {
 				// Log it, so it doesn't go to ether and executor doesn't die.
 				logger.error(

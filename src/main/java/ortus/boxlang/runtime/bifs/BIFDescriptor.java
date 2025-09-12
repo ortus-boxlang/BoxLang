@@ -150,7 +150,7 @@ public class BIFDescriptor {
 					this.BIFInstance = ( BIF ) DynamicObject.of( this.BIFClass ).invokeConstructor( ( IBoxContext ) null ).getTargetInstance();
 					interceptorService.announce(
 					    BoxEvent.ON_BIF_INSTANCE,
-					    Struct.of(
+					    () -> Struct.ofNonConcurrent(
 					        Key.instance, this.BIFInstance,
 					        Key._NAME, this.name,
 					        Key.descriptor, this

@@ -556,11 +556,12 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		// Insert the rows
 		synchronized ( data ) {
 			for ( int i = 0; i < target.size(); i++ ) {
+				final int finalI = i;
 				interceptorService.announce(
 				    BoxEvent.QUERY_ADD_ROW,
-				    Struct.of(
-				        "query", this,
-				        "row", target.getRow( i )
+				    () -> Struct.ofNonConcurrent(
+				        Key.query, this,
+				        Key.row, target.getRow( finalI )
 				    )
 				);
 				data.add( position + i, target.getRow( i ) );
@@ -581,9 +582,9 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	public int addRow( Object[] row ) {
 		interceptorService.announce(
 		    BoxEvent.QUERY_ADD_ROW,
-		    Struct.of(
-		        "query", this,
-		        "row", row
+		    () -> Struct.ofNonConcurrent(
+		        Key.query, this,
+		        Key.row, row
 		    )
 		);
 		// TODO: validate types

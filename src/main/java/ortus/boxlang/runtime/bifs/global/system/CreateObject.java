@@ -149,18 +149,20 @@ public class CreateObject extends BIF {
 		// Uknown, let's see if we can intercept it
 		// Announce an interception so that modules can contribute to object creation requests
 		// If the response is set, we'll use that as the object to return
-		IStruct interceptorArgs = Struct.of(
-		    Key.response, null,
-		    Key.context, context,
-		    Key.arguments, arguments
-		);
-		BoxRuntime.getInstance()
-		    .getInterceptorService()
-		    .announce( BoxEvent.ON_CREATEOBJECT_REQUEST, interceptorArgs );
+		var interceptorService = BoxRuntime.getInstance().getInterceptorService();
+		if ( interceptorService.hasState( BoxEvent.ON_CREATEOBJECT_REQUEST ) ) {
+			IStruct interceptorArgs = Struct.ofNonConcurrent(
+			    Key.response, null,
+			    Key.context, context,
+			    Key.arguments, arguments
+			);
+			interceptorService
+			    .announce( BoxEvent.ON_CREATEOBJECT_REQUEST, interceptorArgs );
 
-		// If the response is set, we'll use that as the object to return
-		if ( interceptorArgs.get( Key.response ) != null ) {
-			return interceptorArgs.get( Key.response );
+			// If the response is set, we'll use that as the object to return
+			if ( interceptorArgs.get( Key.response ) != null ) {
+				return interceptorArgs.get( Key.response );
+			}
 		}
 
 		throw new BoxRuntimeException( "Unsupported type: " + arguments.getAsString( Key.type ) );

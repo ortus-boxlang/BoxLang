@@ -21,7 +21,8 @@ import java.time.LocalDateTime;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.events.BoxEvent;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Struct;
 
 public abstract class BoxScript implements IScriptRunnable {
@@ -65,18 +66,26 @@ public abstract class BoxScript implements IScriptRunnable {
 	 *
 	 */
 	public Object invoke( IBoxContext context ) {
-		BoxRuntime	runtime	= BoxRuntime.getInstance();
+		BoxRuntime runtime = BoxRuntime.getInstance();
 
 		// Announcements
-		IStruct		data	= Struct.of(
-		    "context", context,
-		    "source", this
+		runtime.announce(
+		    BoxEvent.ON_PRE_SOURCE_INVOKE,
+		    () -> Struct.ofNonConcurrent(
+		        Key.context, context,
+		        Key.source, this
+		    )
 		);
-		runtime.announce( "preSourceInvoke", data );
 		try {
 			return _invoke( context );
 		} finally {
-			runtime.announce( "postSourceInvoke", data );
+			runtime.announce(
+			    BoxEvent.ON_POST_SOURCE_INVOKE,
+			    () -> Struct.ofNonConcurrent(
+			        Key.context, context,
+			        Key.source, this
+			    )
+			);
 		}
 
 	}

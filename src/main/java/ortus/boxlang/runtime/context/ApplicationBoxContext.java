@@ -103,12 +103,8 @@ public class ApplicationBoxContext extends BaseBoxContext {
 	public void updateApplication( Application application ) {
 		this.application		= application;
 		this.applicationScope	= application.getApplicationScope();
-		try {
+		if ( !this.applicationScope.containsKey( Key.applicationName ) ) {
 			this.applicationScope.put( Key.applicationName, application.getName().getName() );
-		} catch ( Throwable e ) {
-			System.err.println( "error application scope null, app name is: " + application.getName() );
-			// This should never happen, adding debugging for now.
-			e.printStackTrace();
 		}
 	}
 
