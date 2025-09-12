@@ -48,22 +48,31 @@ public class DiskClassLoader extends URLClassLoader {
 	/**
 	 * The location of the disk store
 	 */
-	private Path	diskStore;
+	private Path																diskStore;
 
 	/**
 	 * The boxpiler
 	 */
-	IBoxpiler		boxPiler;
+	IBoxpiler																	boxPiler;
 
 	/**
 	 * The class pool name
 	 */
-	String			classPoolName;
+	String																		classPoolName;
 
 	/**
 	 * The class pool name but with all special characters replaced so it can be used as a valid folder name
 	 */
-	String			classPoolDiskPrefix;
+	String																		classPoolDiskPrefix;
+
+	/**
+	 * Memory-safe cache for loaded classes
+	 * Trying to avoid calling super.loadClass() here as the JDK ClassLoader.loadClass() method has a mandatory synchronized block which single threads access to loading a class, even if it's
+	 * already compiled and already been loaded before. That is dumb, so we'll keep our own cache here once we've loaded it.
+	 * I'm not using a conncurrent Map because I want to have NO LOCKING ON READS. I'm supplying my own concurrency below any time this map is modified.
+	 * This means a read may happen while the map is having a put() operation performed. I THINK this is ok. If we see errors, then switch to a concurrent class.
+	 */
+	private final java.util.Map<String, java.lang.ref.WeakReference<Class<?>>>	loadedClasses	= new java.util.HashMap<>();
 
 	/**
 	 * Constructor
@@ -82,6 +91,40 @@ public class DiskClassLoader extends URLClassLoader {
 
 		// Init disk store
 		diskStore.toFile().mkdirs();
+	}
+
+	/**
+	 * Load a class by name. The logic for this is all in the super class, but we're overriding the method
+	 * so we can provide a layer of caching to avoid the heavy-handed locking in the ClassLoader.loadClass() method.
+	 * Our version will require ZERO locking once the class has been loaded once.
+	 */
+	@Override
+	public Class<?> loadClass( String name ) throws ClassNotFoundException {
+		// check local cache
+		java.lang.ref.WeakReference<Class<?>> ref = loadedClasses.get( name );
+		if ( ref != null ) {
+			Class<?> clazz = ref.get();
+			if ( clazz != null ) {
+				return clazz;
+			}
+		}
+
+		// If not found, delegate to parent
+		// This will only get hit the first time through, or if GC reaps the class
+		synchronized ( loadedClasses ) {
+			// Another thread may have created it. Perform double-check.
+			ref = loadedClasses.get( name );
+			if ( ref != null ) {
+				Class<?> clazz = ref.get();
+				if ( clazz != null ) {
+					return clazz;
+				}
+			}
+			// Ok, we give up. Load it up.
+			var clazz = super.loadClass( name );
+			loadedClasses.put( name, new java.lang.ref.WeakReference<>( clazz ) );
+			return clazz;
+		}
 	}
 
 	/**
