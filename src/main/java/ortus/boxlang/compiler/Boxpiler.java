@@ -22,9 +22,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
@@ -73,7 +73,7 @@ public abstract class Boxpiler implements IBoxpiler {
 	/**
 	 * Keeps track of the classes we've compiled
 	 */
-	protected Map<String, Map<String, ClassInfo>>	classPools		= new ConcurrentHashMap<>();
+	protected Map<String, Map<String, ClassInfo>>	classPools		= new HashMap<>();
 
 	/**
 	 * The transaction service used to track subtransactions
@@ -132,7 +132,38 @@ public abstract class Boxpiler implements IBoxpiler {
 	 * @return The class pool
 	 */
 	public Map<String, ClassInfo> getClassPool( String classPoolName ) {
-		return classPools.computeIfAbsent( classPoolName, k -> new ConcurrentHashMap<String, ClassInfo>() );
+		var result = classPools.get( classPoolName );
+		if ( result != null ) {
+			return result;
+		}
+		synchronized ( classPools ) {
+			result = classPools.get( classPoolName );
+			if ( result != null ) {
+				return result;
+			}
+			var newOne = new HashMap<String, ClassInfo>();
+			classPools.put( classPoolName, newOne );
+			return newOne;
+		}
+	}
+
+	/**
+	 * Ensure the class info exists in the pool without locking
+	 *
+	 * @param classPool The class pool to check
+	 * @param classInfo The class info to ensure
+	 */
+	protected void ensureClassInfo( Map<String, ClassInfo> classPool, ClassInfo classInfo ) {
+		String name = classInfo.fqn().toString();
+		if ( classPool.get( name ) != null ) {
+			return;
+		}
+		synchronized ( classPool ) {
+			if ( classPool.get( name ) != null ) {
+				return;
+			}
+			classPool.put( name, classInfo );
+		}
 	}
 
 	/**
@@ -148,10 +179,14 @@ public abstract class Boxpiler implements IBoxpiler {
 	 * Clear page pools
 	 */
 	public void clearPagePool() {
-		// TODO: Not threadsafe if another thread is in the middle of loading a class.
-		// I really don't like locking these for concurrency, but we'd nee to have a least a read lock to make this thread safe
-		// Or we'd need a retry strategy if the page pool gets wiped in the middle of a compilation.
-		getClassPools().forEach( ( k, v ) -> v.clear() );
+		var pools = getClassPools();
+		synchronized ( pools ) {
+			pools.forEach( ( k, v ) -> {
+				synchronized ( v ) {
+					v.clear();
+				}
+			} );
+		}
 	}
 
 	/**
@@ -245,7 +280,7 @@ public abstract class Boxpiler implements IBoxpiler {
 	public Class<IBoxRunnable> compileStatement( String source, BoxSourceType type ) {
 		ClassInfo	classInfo	= ClassInfo.forStatement( source, type, this );
 		var			classPool	= getClassPool( classInfo.classPoolName() );
-		classPool.putIfAbsent( classInfo.fqn().toString(), classInfo );
+		ensureClassInfo( classPool, classInfo );
 		classInfo = classPool.get( classInfo.fqn().toString() );
 
 		return classInfo.getDiskClass();
@@ -264,7 +299,7 @@ public abstract class Boxpiler implements IBoxpiler {
 	public Class<IBoxRunnable> compileScript( String source, BoxSourceType type ) {
 		ClassInfo	classInfo	= ClassInfo.forScript( source, type, this );
 		var			classPool	= getClassPool( classInfo.classPoolName() );
-		classPool.putIfAbsent( classInfo.fqn().toString(), classInfo );
+		ensureClassInfo( classPool, classInfo );
 		classInfo = classPool.get( classInfo.fqn().toString() );
 		return classInfo.getDiskClass();
 	}
@@ -280,7 +315,7 @@ public abstract class Boxpiler implements IBoxpiler {
 	public Class<IBoxRunnable> compileTemplate( ResolvedFilePath resolvedFilePath ) {
 		ClassInfo	classInfo	= ClassInfo.forTemplate( resolvedFilePath, Parser.detectFile( resolvedFilePath.absolutePath().toFile(), true ), this );
 		var			classPool	= getClassPool( classInfo.classPoolName() );
-		classPool.putIfAbsent( classInfo.fqn().toString(), classInfo );
+		ensureClassInfo( classPool, classInfo );
 		// If the new class is newer than the one on disk, recompile it
 		long	lastModified	= classPool.get( classInfo.fqn().toString() ).lastModified();
 		long	lastModified2	= classInfo.lastModified();
@@ -312,7 +347,7 @@ public abstract class Boxpiler implements IBoxpiler {
 	public Class<IBoxRunnable> compileClass( String source, BoxSourceType type ) {
 		ClassInfo	classInfo	= ClassInfo.forClass( source, type, this );
 		var			classPool	= getClassPool( classInfo.classPoolName() );
-		classPool.putIfAbsent( classInfo.fqn().toString(), classInfo );
+		ensureClassInfo( classPool, classInfo );
 		classInfo = classPool.get( classInfo.fqn().toString() );
 
 		return classInfo.getDiskClass();
@@ -329,7 +364,7 @@ public abstract class Boxpiler implements IBoxpiler {
 	public Class<IBoxRunnable> compileClass( ResolvedFilePath resolvedFilePath ) {
 		ClassInfo	classInfo	= ClassInfo.forClass( resolvedFilePath, Parser.detectFile( resolvedFilePath.absolutePath().toFile(), true ), this );
 		var			classPool	= getClassPool( classInfo.classPoolName() );
-		classPool.putIfAbsent( classInfo.fqn().toString(), classInfo );
+		ensureClassInfo( classPool, classInfo );
 		// If the new class is newer than the one on disk, recompile it
 		long	lastModified	= classPool.get( classInfo.fqn().toString() ).lastModified();
 		long	lastModified2	= classInfo.lastModified();
@@ -354,7 +389,7 @@ public abstract class Boxpiler implements IBoxpiler {
 	public Class<IProxyRunnable> compileInterfaceProxy( IBoxContext context, InterfaceProxyDefinition definition ) {
 		ClassInfo	classInfo	= ClassInfo.forInterfaceProxy( definition.name(), definition, this );
 		var			classPool	= getClassPool( classInfo.classPoolName() );
-		classPool.putIfAbsent( classInfo.fqn().toString(), classInfo );
+		ensureClassInfo( classPool, classInfo );
 		classInfo = classPool.get( classInfo.fqn().toString() );
 
 		return classInfo.getDiskClassProxy();
@@ -389,7 +424,7 @@ public abstract class Boxpiler implements IBoxpiler {
 			classInfo = ClassInfo.forTemplate( resolvedFilePath, Parser.detectFile( path.toFile() ), this );
 		}
 		var classPool = getClassPool( classInfo.classPoolName() );
-		classPool.putIfAbsent( classInfo.fqn().toString(), classInfo );
+		ensureClassInfo( classPool, classInfo );
 		compileClassInfo( classInfo.classPoolName(), classInfo.fqn().toString() );
 		return diskClassUtil.readClassBytes( classInfo.classPoolName(), classInfo.fqn().toString() );
 	}
