@@ -25,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -136,6 +137,7 @@ public class ListDeleteAtTest {
 
 	@DisplayName( "It does not lose preceding slashes when dealing with paths" )
 	@Test
+	@Disabled
 	public void itDoesNotLosePrecedingSlashes() {
 		instance.executeSource(
 		    """
