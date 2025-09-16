@@ -73,9 +73,31 @@ jobs:
       - name: Build it!
         run: ./gradlew clean jar
 
-      - name: Scan generated packages
+      - name: Scan generated packages (Table Output)
         uses: anchore/scan-action@v6
-        id: securityscan
+        id: securityscan-table
+        continue-on-error: true
+        with:
+          path: "./build/libs"
+          output-format: table
+          severity-cutoff: ${{ github.event.inputs.severity-cutoff || 'high' }}
+          by-cve: "true"
+          fail-build: false
+
+      - name: Scan generated packages (JSON Output for Processing)
+        uses: anchore/scan-action@v6
+        id: securityscan-json
+        continue-on-error: true
+        with:
+          path: "./build/libs"
+          output-format: json
+          severity-cutoff: ${{ github.event.inputs.severity-cutoff || 'high' }}
+          by-cve: "true"
+          fail-build: false
+
+      - name: Scan generated packages (SARIF Output)
+        uses: anchore/scan-action@v6
+        id: securityscan-sarif
         with:
           path: "./build/libs"
           output-format: sarif
@@ -83,9 +105,55 @@ jobs:
           by-cve: "true"
           fail-build: ${{ github.event.inputs.fail-build != 'false' }}
 
+      - name: Display Security Scan Results
+        if: always()
+        run: |
+          echo "## 🔍 Security Scan Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Scan Target:** \`./build/libs\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Severity Cutoff:** \`${{ github.event.inputs.severity-cutoff || 'high' }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** \`${{ env.BRANCH }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Scan Status:** " >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Check scan exit codes and display results
+          if [ "${{ steps.securityscan-table.outcome }}" = "success" ]; then
+            echo "### ✅ No Vulnerabilities Found" >> $GITHUB_STEP_SUMMARY
+            echo "No security vulnerabilities detected at the \`${{ github.event.inputs.severity-cutoff || 'high' }}\` severity level or above." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### ⚠️ Vulnerabilities Detected" >> $GITHUB_STEP_SUMMARY
+            echo "Security vulnerabilities were found. Check the detailed logs above and artifacts below." >> $GITHUB_STEP_SUMMARY
+
+            # Try to show some vulnerability info if JSON output exists
+            if [ -f "results.json" ]; then
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "**Quick Summary:**" >> $GITHUB_STEP_SUMMARY
+              # Count vulnerabilities by severity
+              echo "- Critical: \`$(jq '[.matches[]? | select(.vulnerability.severity=="Critical")] | length' results.json 2>/dev/null || echo "0")\`" >> $GITHUB_STEP_SUMMARY
+              echo "- High: \`$(jq '[.matches[]? | select(.vulnerability.severity=="High")] | length' results.json 2>/dev/null || echo "0")\`" >> $GITHUB_STEP_SUMMARY
+              echo "- Medium: \`$(jq '[.matches[]? | select(.vulnerability.severity=="Medium")] | length' results.json 2>/dev/null || echo "0")\`" >> $GITHUB_STEP_SUMMARY
+              echo "- Low: \`$(jq '[.matches[]? | select(.vulnerability.severity=="Low")] | length' results.json 2>/dev/null || echo "0")\`" >> $GITHUB_STEP_SUMMARY
+            fi
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "📋 **Download detailed reports from the artifacts section below**" >> $GITHUB_STEP_SUMMARY
+          echo "🔐 **View results in the [Security tab](../../security/code-scanning)**" >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload Security Reports as Artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-scan-reports-${{ env.BRANCH }}-${{ github.run_number }}
+          path: |
+            results.json
+            results.sarif
+          retention-days: 30
+
       - name: Upload Anchore Report
         uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
-          sarif_file: ${{ steps.securityscan.outputs.sarif }}
+          sarif_file: ${{ steps.securityscan-sarif.outputs.sarif }}
           category: "BoxLang-Runtime-${{ env.BRANCH }}"
