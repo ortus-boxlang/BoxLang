@@ -366,13 +366,23 @@ public class BoxRepl {
 			private final String orig;
 
 			PosixRaw() {
-				this.orig = execRead( "stty -g" );
-				exec( "stty -icanon -echo min 1 time 0" ); // raw-ish
+				try {
+					this.orig = execRead( "stty -g" );
+					// Enable raw mode: no canonical input, no echo, immediate character availability
+					exec( "stty -icanon -echo -isig min 1 time 0" );
+				} catch ( Exception e ) {
+					throw new RuntimeException( "Failed to enable raw terminal mode. Ensure 'stty' is available.", e );
+				}
 			}
 
 			@Override
 			public void close() {
-				exec( "stty " + orig );
+				try {
+					exec( "stty " + orig );
+				} catch ( Exception e ) {
+					// Best effort to restore - don't throw in close()
+					System.err.println( "Warning: Failed to restore terminal settings: " + e.getMessage() );
+				}
 			}
 
 			private static String execRead( String cmd ) {
@@ -455,143 +465,172 @@ public class BoxRepl {
 		 */
 		String readLine( String prompt ) {
 			if ( WINDOWS ) {
-				try ( WinKeys keys = new WinKeys() ) {
-					System.out.print( prompt );
-					StringBuilder buf = new StringBuilder();
-					for ( ;; ) {
-						String t = keys.nextToken();
-						if ( t == null )
-							return null;
-						switch ( t ) {
-							case "ENTER" -> {
-								System.out.print( "\r\n" );
-								hIdx = -1;
-								return buf.toString();
-							}
-							case "BACKSPACE" -> {
-								if ( buf.length() > 0 ) {
-									buf.deleteCharAt( buf.length() - 1 );
-									redraw( prompt, buf );
-								}
-							}
-							case "UP" -> {
-								String prev = prevHist();
-								if ( prev != null ) {
-									buf.setLength( 0 );
-									buf.append( prev );
-									redraw( prompt, buf );
-								}
-							}
-							case "DOWN" -> {
-								String next = nextHist();
-								if ( next != null ) {
-									buf.setLength( 0 );
-									buf.append( next );
-									redraw( prompt, buf );
-								}
-							}
-							case "CTRL_C" -> {
-								System.out.println();
-								return null;
-							}
-							case "CTRL_D" -> {
-								if ( buf.length() == 0 ) {
-									System.out.println();
-									return null;
-								}
-								buf.setLength( 0 );
-								redraw( prompt, buf ); // clear buffer
-							}
-							default -> {
-								if ( t.startsWith( "CHAR:" ) ) {
-									int code = Integer.parseInt( t.substring( 5 ) );
-									if ( code >= 32 && code < 127 ) {
-										buf.append( ( char ) code );
-										redraw( prompt, buf );
-									}
-								}
-							}
-						}
-					}
-				} catch ( IOException e ) {
-					throw new RuntimeException( e );
-				}
+				return readLineWindows( prompt );
 			} else {
-				try ( PosixRaw raw = new PosixRaw() ) {
-					System.out.print( prompt );
-					System.out.flush();
-					StringBuilder buf = new StringBuilder();
-					for ( ;; ) {
-						int b = System.in.read();
-						if ( b == -1 )
-							return null;
+				return readLinePosix( prompt );
+			}
+		}
 
-						// ENTER
-						if ( b == '\r' || b == '\n' ) {
+		private String readLineWindows( String prompt ) {
+			try ( WinKeys keys = new WinKeys() ) {
+				System.out.print( prompt );
+				System.out.flush();
+				StringBuilder buf = new StringBuilder();
+				for ( ;; ) {
+					String t = keys.nextToken();
+					if ( t == null )
+						return null;
+					switch ( t ) {
+						case "ENTER" -> {
 							System.out.print( "\r\n" );
 							hIdx = -1;
 							return buf.toString();
 						}
-
-						// Ctrl+C
-						if ( b == 3 ) {
+						case "BACKSPACE" -> {
+							if ( buf.length() > 0 ) {
+								buf.deleteCharAt( buf.length() - 1 );
+								redraw( prompt, buf );
+							}
+						}
+						case "UP" -> {
+							String prev = prevHist();
+							if ( prev != null ) {
+								buf.setLength( 0 );
+								buf.append( prev );
+								redraw( prompt, buf );
+							}
+						}
+						case "DOWN" -> {
+							String next = nextHist();
+							if ( next != null ) {
+								buf.setLength( 0 );
+								buf.append( next );
+								redraw( prompt, buf );
+							}
+						}
+						case "CTRL_C" -> {
 							System.out.println();
 							return null;
 						}
-
-						// Ctrl+D
-						if ( b == 4 ) {
+						case "CTRL_D" -> {
 							if ( buf.length() == 0 ) {
 								System.out.println();
 								return null;
 							}
 							buf.setLength( 0 );
-							redraw( prompt, buf );
-							continue;
+							redraw( prompt, buf ); // clear buffer
 						}
-
-						// Backspace (DEL or BS)
-						if ( b == 127 || b == 8 ) {
-							if ( buf.length() > 0 ) {
-								buf.deleteCharAt( buf.length() - 1 );
-								redraw( prompt, buf );
+						default -> {
+							if ( t.startsWith( "CHAR:" ) ) {
+								int code = Integer.parseInt( t.substring( 5 ) );
+								if ( code >= 32 && code < 127 ) {
+									buf.append( ( char ) code );
+									redraw( prompt, buf );
+								}
 							}
-							continue;
 						}
+					}
+				}
+			} catch ( IOException e ) {
+				throw new RuntimeException( "Windows key input failed", e );
+			}
+		}
 
-						// Escape sequences (arrows)
-						if ( b == 27 ) { // ESC
-							System.in.read(); // '[' or other
-							int c = System.in.read();
-							if ( c == 'A' ) { // Up
+		private String readLinePosix( String prompt ) {
+			// Try raw mode first, fall back to line mode if stty fails
+			try ( PosixRaw raw = new PosixRaw() ) {
+				return readRawPosix( prompt );
+			} catch ( Exception e ) {
+				System.err.println( "Warning: Raw terminal mode failed, falling back to line mode. " + e.getMessage() );
+				return readLinePosixFallback( prompt );
+			}
+		}
+
+		private String readRawPosix( String prompt ) throws IOException {
+			System.out.print( prompt );
+			System.out.flush();
+			StringBuilder buf = new StringBuilder();
+
+			for ( ;; ) {
+				int b = System.in.read();
+				if ( b == -1 ) {
+					return null; // EOF
+				}
+
+				// ENTER (CR or LF)
+				if ( b == '\r' || b == '\n' ) {
+					System.out.print( "\r\n" );
+					System.out.flush();
+					hIdx = -1;
+					return buf.toString();
+				}
+
+				// Backspace (DEL or BS)
+				if ( b == 127 || b == 8 ) {
+					if ( buf.length() > 0 ) {
+						buf.deleteCharAt( buf.length() - 1 );
+						redraw( prompt, buf );
+					}
+					continue;
+				}
+
+				// Escape sequences (arrows, etc.)
+				if ( b == 27 ) { // ESC
+					// Read the next character to see if it's a CSI sequence
+					int next = System.in.read();
+					if ( next == '[' ) {
+						// This is a CSI sequence, read the final character
+						int c = System.in.read();
+						switch ( c ) {
+							case 'A' -> { // Up arrow
 								String prev = prevHist();
 								if ( prev != null ) {
 									buf.setLength( 0 );
 									buf.append( prev );
 									redraw( prompt, buf );
 								}
-							} else if ( c == 'B' ) { // Down
-								String next = nextHist();
-								if ( next != null ) {
+							}
+							case 'B' -> { // Down arrow
+								String next_hist = nextHist();
+								if ( next_hist != null ) {
 									buf.setLength( 0 );
-									buf.append( next );
+									buf.append( next_hist );
 									redraw( prompt, buf );
 								}
-							} else {
-								// ignore others
 							}
-							continue;
+							case 'C' -> {
+								// Right arrow - could implement cursor movement
+							}
+							case 'D' -> {
+								// Left arrow - could implement cursor movement
+							}
+							default -> {
+								// Ignore other CSI sequences
+							}
 						}
-
-						// Printable ASCII
-						if ( b >= 32 && b < 127 ) {
-							buf.append( ( char ) b );
-							redraw( prompt, buf );
-						}
+					} else {
+						// Not a CSI sequence, ignore
 					}
-				} catch ( IOException e ) {
-					throw new RuntimeException( e );
+					continue;
 				}
+
+				// Printable ASCII characters
+				if ( b >= 32 && b < 127 ) {
+					buf.append( ( char ) b );
+					redraw( prompt, buf );
+				}
+				// Ignore other control characters
+			}
+		}
+
+		private String readLinePosixFallback( String prompt ) {
+			// Fallback to BufferedReader for systems where stty doesn't work
+			try ( BufferedReader reader = new BufferedReader( new InputStreamReader( System.in ) ) ) {
+				System.out.print( prompt );
+				System.out.flush();
+				return reader.readLine();
+			} catch ( IOException e ) {
+				throw new RuntimeException( "Failed to read input", e );
 			}
 		}
 
