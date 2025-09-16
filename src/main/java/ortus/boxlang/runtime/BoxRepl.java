@@ -82,11 +82,6 @@ public class BoxRepl {
 	private int					historyIndex	= -1;
 
 	/**
-	 * ANSI escape sequences for terminal control
-	 */
-	private static final String	ANSI_CLEAR_LINE	= "\r\033[2K";
-
-	/**
 	 * Constructor
 	 *
 	 * @param runtime The BoxLang runtime instance to use for code execution
@@ -339,7 +334,7 @@ public class BoxRepl {
 		commandHistory.add( command );
 
 		// Reset history navigation
-		historyIndex = -1;
+		this.historyIndex = -1;
 	}
 
 	/**
