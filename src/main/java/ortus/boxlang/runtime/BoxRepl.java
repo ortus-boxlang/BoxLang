@@ -74,22 +74,17 @@ public class BoxRepl {
 	/**
 	 * Command history storage
 	 */
-	private final List<String>	commandHistory		= new ArrayList<>();
-
-	/**
-	 * Maximum number of commands to keep in history
-	 */
-	private static final int	MAX_HISTORY_SIZE	= 100;
+	private final List<String>	commandHistory	= new ArrayList<>();
 
 	/**
 	 * Current position in command history (-1 means not navigating history)
 	 */
-	private int					historyIndex		= -1;
+	private int					historyIndex	= -1;
 
 	/**
 	 * ANSI escape sequences for terminal control
 	 */
-	private static final String	ANSI_CLEAR_LINE		= "\r\033[2K";
+	private static final String	ANSI_CLEAR_LINE	= "\r\033[2K";
 
 	/**
 	 * Constructor
@@ -197,11 +192,11 @@ public class BoxRepl {
 	 * Display the BoxLang REPL banner and instructions.
 	 */
 	private void showBanner() {
-		System.out.println( "🚀 ██████   ██████  ██   ██ ██       █████  ███    ██  ██████ " );
+		System.out.println( "  ██████   ██████  ██   ██ ██       █████  ███    ██  ██████ " );
 		System.out.println( "   ██   ██ ██    ██  ██ ██  ██      ██   ██ ████   ██ ██      " );
 		System.out.println( "   ██████  ██    ██   ███   ██      ███████ ██ ██  ██ ██   ███" );
 		System.out.println( "   ██   ██ ██    ██  ██ ██  ██      ██   ██ ██  ██ ██ ██    ██" );
-		System.out.println( "   ██████   ██████  ██   ██ ███████ ██   ██ ██   ████  ██████  🎯" );
+		System.out.println( "   ██████   ██████  ██   ██ ███████ ██   ██ ██   ████  ██████ " );
 		System.out.println( "" );
 		System.out.println( "✨ Welcome to the BoxLang Interactive REPL!" );
 		System.out.println( "💡 Enter an expression, then hit enter" );
@@ -211,7 +206,6 @@ public class BoxRepl {
 		System.out.println( " 🧹 Press Ctrl+D to clear current line, or on empty line to exit" );
 		System.out.println( "🚪 Type 'exit' or 'quit' to leave, or press Ctrl-C" );
 		System.out.println( "" );
-		System.out.print( "📦 BoxLang> " );
 	}
 
 	/**
@@ -265,9 +259,6 @@ public class BoxRepl {
 			System.out.println( "❌ Error: " + e.getMessage() );
 			// e.printStackTrace(); // Uncomment for detailed stack traces during development
 		}
-
-		// Show prompt for next input
-		System.out.print( "📦 BoxLang> " );
 	}
 
 	/**
@@ -276,27 +267,17 @@ public class BoxRepl {
 	 * @param result The result object to display
 	 */
 	private void displayResult( Object result ) {
-		// Try to convert to string first
 		CastAttempt<String> stringAttempt = StringCaster.attempt( result );
 		if ( stringAttempt.wasSuccessful() ) {
-			System.out.println( "  ➡️  " + stringAttempt.get() );
+			System.out.println( stringAttempt.get() );
 		} else {
 			// Handle Java arrays by converting to BoxLang Array
 			if ( result.getClass().isArray() ) {
 				result = Array.fromArray( ( Object[] ) result );
 			}
 			// Display the object's toString representation
-			System.out.println( "  ➡️  " + result );
+			System.out.println( result );
 		}
-	}
-
-	/**
-	 * Get the runtime instance used by this REPL.
-	 *
-	 * @return The BoxRuntime instance
-	 */
-	public BoxRuntime getRuntime() {
-		return runtime;
 	}
 
 	/**
@@ -330,7 +311,7 @@ public class BoxRepl {
 	 */
 	private void showHistory() {
 		if ( commandHistory.isEmpty() ) {
-			System.out.println( "No command history available." );
+			System.out.println( "∅ No command history available." );
 			return;
 		}
 
@@ -357,174 +338,13 @@ public class BoxRepl {
 
 		commandHistory.add( command );
 
-		// Maintain maximum history size
-		if ( commandHistory.size() > MAX_HISTORY_SIZE ) {
-			commandHistory.remove( 0 );
-		}
-
 		// Reset history navigation
 		historyIndex = -1;
 	}
 
 	/**
-	 * Read a line with arrow key support using character-by-character reading.
-	 * Note: Arrow key detection may not work in all terminal environments due to
-	 * Java's buffered input limitations. For full arrow key support, a native
-	 * terminal library like JLine would be needed.
-	 *
-	 * @param reader The BufferedReader to read from
-	 *
-	 * @return The input line, or null if EOF is reached
-	 *
-	 * @throws IOException If an I/O error occurs
+	 * Tiny, zero-dep cross-platform raw editor
 	 */
-	private String readInputLine( BufferedReader reader ) throws IOException {
-		StringBuilder	lineBuffer	= new StringBuilder();
-		int				ch;
-
-		while ( ( ch = reader.read() ) != -1 ) {
-			switch ( ch ) {
-				case '\n' :
-				case '\r' :
-					// Enter pressed - return the current line
-					System.out.println(); // Move to next line
-					String result = lineBuffer.toString();
-					historyIndex = -1; // Reset history navigation
-					return result;
-
-				case 127 : // Backspace (DEL)
-				case 8 :   // Backspace (BS)
-					if ( lineBuffer.length() > 0 ) {
-						lineBuffer.deleteCharAt( lineBuffer.length() - 1 );
-						redrawLine( lineBuffer.toString() );
-					}
-					break;
-
-				case 27 : // ESC - potential arrow key sequence
-					// Try to read arrow key sequences, but this may not work reliably
-					// in all terminal environments due to Java's input buffering
-					if ( reader.ready() ) {
-						int next1 = reader.read();
-						if ( next1 == '[' && reader.ready() ) {
-							int next2 = reader.read();
-							switch ( next2 ) {
-								case 'A' : // Up arrow
-									String prevCommand = getPreviousHistoryCommand();
-									if ( prevCommand != null ) {
-										lineBuffer.setLength( 0 );
-										lineBuffer.append( prevCommand );
-										redrawLine( lineBuffer.toString() );
-									}
-									break;
-
-								case 'B' : // Down arrow
-									String nextCommand = getNextHistoryCommand();
-									if ( nextCommand != null ) {
-										lineBuffer.setLength( 0 );
-										lineBuffer.append( nextCommand );
-										redrawLine( lineBuffer.toString() );
-									}
-									break;
-
-								case 'C' : // Right arrow
-								case 'D' : // Left arrow
-									// Ignore for now - could implement cursor movement later
-									break;
-							}
-						}
-					}
-					break;
-
-				case 3 : // Ctrl+C
-					System.out.println();
-					System.out.println( "👋 Thanks for using BoxLang REPL! Happy coding! 🎉" );
-					return null;
-
-				case 4 : // Ctrl+D (EOF)
-					if ( lineBuffer.length() == 0 ) {
-						// Ctrl+D on empty line - exit REPL
-						System.out.println();
-						System.out.println( "👋 Thanks for using BoxLang REPL! Happy coding! 🎉" );
-						return null;
-					} else {
-						// Ctrl+D with content - clear the current line
-						lineBuffer.setLength( 0 );
-						redrawLine( "" );
-					}
-					break;
-
-				default :
-					// Regular character - add to buffer
-					if ( ch >= 32 && ch <= 126 ) { // Printable ASCII
-						lineBuffer.append( ( char ) ch );
-						redrawLine( lineBuffer.toString() );
-					}
-					break;
-			}
-		}
-
-		return null; // EOF reached
-	}
-
-	/**
-	 * Clear the current line and move cursor to beginning.
-	 */
-	private void clearLine() {
-		System.out.print( ANSI_CLEAR_LINE );
-	}
-
-	/**
-	 * Redraw the prompt and current line content.
-	 *
-	 * @param lineContent The current line content to display
-	 */
-	private void redrawLine( String lineContent ) {
-		clearLine();
-		System.out.print( "📦 BoxLang> " + lineContent );
-	}
-
-	/**
-	 * Get the previous command in history.
-	 *
-	 * @return The previous command, or null if at the beginning
-	 */
-	private String getPreviousHistoryCommand() {
-		if ( commandHistory.isEmpty() ) {
-			return null;
-		}
-
-		if ( historyIndex == -1 ) {
-			historyIndex = commandHistory.size() - 1;
-		} else if ( historyIndex > 0 ) {
-			historyIndex--;
-		}
-
-		return historyIndex >= 0 && historyIndex < commandHistory.size()
-		    ? commandHistory.get( historyIndex )
-		    : null;
-	}
-
-	/**
-	 * Get the next command in history.
-	 *
-	 * @return The next command, or null if at the end
-	 */
-	private String getNextHistoryCommand() {
-		if ( commandHistory.isEmpty() || historyIndex == -1 ) {
-			return null;
-		}
-
-		if ( historyIndex < commandHistory.size() - 1 ) {
-			historyIndex++;
-			return commandHistory.get( historyIndex );
-		} else {
-			// At the end of history, return to current (empty) line
-			historyIndex = -1;
-			return "";
-		}
-	}
-
-	// --- Tiny, zero-dep cross-platform raw editor ------------------------------
 	private static final class TinyLineEditor implements AutoCloseable {
 
 		// 256-color helpers
