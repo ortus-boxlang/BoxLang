@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime;
 
 import java.io.BufferedReader;
+import java.io.Console;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -340,7 +341,7 @@ public class BoxRepl {
 	/**
 	 * Tiny, zero-dep cross-platform raw editor
 	 */
-	private static final class TinyLineEditor implements AutoCloseable {
+	private final class TinyLineEditor implements AutoCloseable {
 
 		// 256-color helpers
 		static String fg256( int idx ) {
@@ -363,22 +364,77 @@ public class BoxRepl {
 		// POSIX raw mode support (macOS/Linux). Uses `stty`, no libs.
 		private static final class PosixRaw implements AutoCloseable {
 
-			private final String orig;
+			private final String	orig;
+			private final Console	console;
+			private final boolean	usingConsole;
+			private Process			ddProcess;
+			private InputStream		rawInput;
 
 			PosixRaw() {
 				try {
-					this.orig = execRead( "stty -g" );
-					// Enable raw mode: no canonical input, no echo, immediate character availability
-					exec( "stty -icanon -echo -isig min 1 time 0" );
+					// Save original terminal settings
+					this.orig			= execRead( "stty -g < /dev/tty" );
+
+					// Try to use Console for better terminal access
+					this.console		= System.console();
+					this.usingConsole	= ( console != null );
+
+					if ( !usingConsole ) {
+						// Enable raw mode: no canonical input, no echo, immediate character availability
+						exec( "stty -icanon -echo -isig min 1 time 0 < /dev/tty" );
+
+						// Start dd process to read from /dev/tty in raw mode
+						// This bypasses Java's System.in buffering
+						this.ddProcess	= new ProcessBuilder( "dd", "if=/dev/tty", "bs=1", "count=1" )
+						    .redirectError( ProcessBuilder.Redirect.DISCARD )
+						    .start();
+						this.rawInput	= ddProcess.getInputStream();
+					} else {
+						// Still set terminal to raw mode even when using Console
+						exec( "stty -icanon -echo -isig min 1 time 0 < /dev/tty" );
+					}
+
 				} catch ( Exception e ) {
-					throw new RuntimeException( "Failed to enable raw terminal mode. Ensure 'stty' is available.", e );
+					throw new RuntimeException( "Failed to enable raw terminal mode. Ensure 'stty' and 'dd' are available.", e );
+				}
+			}
+
+			/**
+			 * Read a single byte from the terminal in raw mode
+			 */
+			int readByte() throws IOException {
+				if ( usingConsole ) {
+					// Try using Console.readPassword() with empty prompt for single character
+					char[] chars = console.readPassword( "" );
+					if ( chars != null && chars.length > 0 ) {
+						return chars[ 0 ];
+					}
+					return -1;
+				} else {
+					// Start a new dd process for each byte read
+					// This is necessary because dd exits after reading count=1
+					try {
+						Process	p	= new ProcessBuilder( "dd", "if=/dev/tty", "bs=1", "count=1" )
+						    .redirectError( ProcessBuilder.Redirect.DISCARD )
+						    .start();
+
+						int		b	= p.getInputStream().read();
+						p.waitFor();
+						return b;
+					} catch ( InterruptedException e ) {
+						Thread.currentThread().interrupt();
+						throw new IOException( "Interrupted while reading", e );
+					}
 				}
 			}
 
 			@Override
 			public void close() {
 				try {
-					exec( "stty " + orig );
+					if ( ddProcess != null && ddProcess.isAlive() ) {
+						ddProcess.destroyForcibly();
+					}
+					exec( "stty " + orig + " < /dev/tty" );
 				} catch ( Exception e ) {
 					// Best effort to restore - don't throw in close()
 					System.err.println( "Warning: Failed to restore terminal settings: " + e.getMessage() );
@@ -537,7 +593,17 @@ public class BoxRepl {
 		}
 
 		private String readLinePosix( String prompt ) {
-			// Try raw mode first, fall back to line mode if stty fails
+			// Try using Java Console first if available
+			Console console = System.console();
+			if ( console != null ) {
+				try {
+					return readConsoleRaw( prompt, console );
+				} catch ( Exception e ) {
+					System.err.println( "Console raw mode failed: " + e.getMessage() );
+				}
+			}
+
+			// Fall back to stty approach
 			try ( PosixRaw raw = new PosixRaw() ) {
 				return readRawPosix( prompt );
 			} catch ( Exception e ) {
@@ -546,80 +612,120 @@ public class BoxRepl {
 			}
 		}
 
+		private String readConsoleRaw( String prompt, Console console ) throws IOException {
+			System.out.print( prompt );
+			System.out.flush();
+			StringBuilder buf = new StringBuilder();
+
+			// Try to use console for better terminal integration
+			for ( ;; ) {
+				// Unfortunately, Java Console doesn't provide character-by-character input either
+				// We need to fall back to our stty approach
+				String line = console.readLine();
+				if ( line == null ) {
+					return null;
+				}
+				return line;
+			}
+		}
+
 		private String readRawPosix( String prompt ) throws IOException {
 			System.out.print( prompt );
 			System.out.flush();
 			StringBuilder buf = new StringBuilder();
 
-			for ( ;; ) {
-				int b = System.in.read();
-				if ( b == -1 ) {
-					return null; // EOF
-				}
+			// We need to access the PosixRaw instance to use its readByte method
+			// Create a new instance since we're inside the try-with-resources
+			try ( PosixRaw raw = new PosixRaw() ) {
+				for ( ;; ) {
+					int b = raw.readByte();
+					if ( b == -1 ) {
+						return null; // EOF
+					}
 
-				// ENTER (CR or LF)
-				if ( b == '\r' || b == '\n' ) {
-					System.out.print( "\r\n" );
-					System.out.flush();
-					hIdx = -1;
-					return buf.toString();
-				}
+					// ENTER (CR or LF)
+					if ( b == '\r' || b == '\n' ) {
+						System.out.print( "\r\n" );
+						System.out.flush();
+						hIdx = -1;
+						return buf.toString();
+					}
 
-				// Backspace (DEL or BS)
-				if ( b == 127 || b == 8 ) {
-					if ( buf.length() > 0 ) {
-						buf.deleteCharAt( buf.length() - 1 );
+					// Backspace (DEL or BS)
+					if ( b == 127 || b == 8 ) {
+						if ( buf.length() > 0 ) {
+							buf.deleteCharAt( buf.length() - 1 );
+							redraw( prompt, buf );
+						}
+						continue;
+					}
+
+					// Escape sequences (arrows, etc.)
+					if ( b == 27 ) { // ESC
+						// Read the next character to see if it's a CSI sequence
+						int next = raw.readByte();
+						if ( next == '[' ) {
+							// This is a CSI sequence, read the final character
+							int c = raw.readByte();
+							switch ( c ) {
+								case 'A' -> { // Up arrow
+									String prev = prevHist();
+									if ( prev != null ) {
+										buf.setLength( 0 );
+										buf.append( prev );
+										redraw( prompt, buf );
+									}
+								}
+								case 'B' -> { // Down arrow
+									String next_hist = nextHist();
+									if ( next_hist != null ) {
+										buf.setLength( 0 );
+										buf.append( next_hist );
+										redraw( prompt, buf );
+									}
+								}
+								case 'C' -> { // Right arrow - ignore for now
+								}
+								case 'D' -> { // Left arrow - ignore for now
+								}
+							}
+						} else {
+							// Not a CSI sequence, treat as regular character
+							buf.append( ( char ) b );
+							if ( next != -1 ) {
+								buf.append( ( char ) next );
+							}
+							redraw( prompt, buf );
+						}
+						continue;
+					}
+
+					// Control+D (EOF on empty line = exit)
+					if ( b == 4 && buf.length() == 0 ) {
+						return null;
+					}
+
+					// Control+D (clear line if not empty)
+					if ( b == 4 && buf.length() > 0 ) {
+						buf.setLength( 0 );
+						redraw( prompt, buf );
+						continue;
+					}
+
+					// Control+C
+					if ( b == 3 ) {
+						System.out.print( "^C\r\n" );
+						System.out.flush();
+						hIdx = -1;
+						return ""; // Empty line
+					}
+
+					// Regular printable character
+					if ( b >= 32 && b < 127 ) {
+						buf.append( ( char ) b );
 						redraw( prompt, buf );
 					}
-					continue;
 				}
-
-				// Escape sequences (arrows, etc.)
-				if ( b == 27 ) { // ESC
-					// Read the next character to see if it's a CSI sequence
-					int next = System.in.read();
-					if ( next == '[' ) {
-						// This is a CSI sequence, read the final character
-						int c = System.in.read();
-						switch ( c ) {
-							case 'A' -> { // Up arrow
-								String prev = prevHist();
-								if ( prev != null ) {
-									buf.setLength( 0 );
-									buf.append( prev );
-									redraw( prompt, buf );
-								}
-							}
-							case 'B' -> { // Down arrow
-								String next_hist = nextHist();
-								if ( next_hist != null ) {
-									buf.setLength( 0 );
-									buf.append( next_hist );
-									redraw( prompt, buf );
-								}
-							}
-							case 'C' -> {
-								// Right arrow - could implement cursor movement
-							}
-							case 'D' -> {
-								// Left arrow - could implement cursor movement
-							}
-							default -> {
-								// Ignore other CSI sequences
-							}
-						}
-					} else {
-						// Not a CSI sequence, ignore
-					}
-					continue;
-				}
-
-				// Printable ASCII characters
-				if ( b >= 32 && b < 127 ) {
-					buf.append( ( char ) b );
-					redraw( prompt, buf );
-				}
-				// Ignore other control characters
 			}
 		}
 
