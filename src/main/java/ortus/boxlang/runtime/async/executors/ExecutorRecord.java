@@ -22,7 +22,7 @@ import java.util.concurrent.ExecutorService;
 import ortus.boxlang.runtime.services.AsyncService.ExecutorType;
 
 /**
- * @deprecated use {@link BoxExecutor} instead since version 1.6.0
+ * @Deprecated use {@link BoxExecutor} instead since version 1.6.0
  */
 public class ExecutorRecord extends BoxExecutor {
 

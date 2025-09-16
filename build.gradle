@@ -541,7 +541,7 @@ javadoc {
 }
 
 task zipJavadocs( type: Zip ) {
-	group "documentation"
+	group = "documentation"
 	from javadoc.destinationDir
 	archiveFileName = "boxlang-javadocs-${version}.zip"
 	destinationDirectory = file( "$buildDir/distributions" )

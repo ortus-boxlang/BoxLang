@@ -18,12 +18,12 @@
 package ortus.boxlang.runtime.types.util;
 
 import java.util.Objects;
-import java.util.UUID;
 import java.util.function.IntConsumer;
 import java.util.function.IntPredicate;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import ortus.boxlang.runtime.async.executors.BoxExecutor;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ThreadBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
@@ -33,7 +33,6 @@ import ortus.boxlang.runtime.services.AsyncService;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
-import ortus.boxlang.runtime.async.executors.BoxExecutor;
 
 /**
  * Utility class for Query operations.
@@ -64,8 +63,8 @@ public class QueryUtil {
 	 * @param callbackContext The context in which to execute the callback
 	 * @param parallel        Whether to process the filter in parallel
 	 * @param maxThreads      Optional max threads for parallel execution
-	 * 
-	 * @deprecated since v1.5.0, use {@link #filter(Query, Function, IBoxContext, boolean, Integer, boolean)} instead
+	 *
+	 * @Deprecated since v1.5.0, use {@link #filter(Query, Function, IBoxContext, boolean, Integer, boolean)} instead
 	 *
 	 * @return A filtered query
 	 */
@@ -151,8 +150,8 @@ public class QueryUtil {
 	 * @param parallel        Whether to process the filter in parallel
 	 * @param maxThreads      Optional max threads for parallel execution
 	 * @param ordered         Boolean as to whether to maintain order in parallel execution
-	 * 
-	 * @deprecated since v1.5.0, use {@link #each(Query, Function, IBoxContext, boolean, Integer, boolean, boolean)} instead
+	 *
+	 * @Deprecated since v1.5.0, use {@link #each(Query, Function, IBoxContext, boolean, Integer, boolean, boolean)} instead
 	 */
 	public static void each(
 	    Query query,
@@ -251,8 +250,8 @@ public class QueryUtil {
 	 * @param callbackContext The context in which to execute the callback
 	 * @param parallel        Whether to process the map in parallel
 	 * @param maxThreads      Optional max threads for parallel execution
-	 * 
-	 * @deprecated since v1.5.0, use {@link #map(Query, Function, IBoxContext, boolean, Integer, boolean)} instead
+	 *
+	 * @Deprecated since v1.5.0, use {@link #map(Query, Function, IBoxContext, boolean, Integer, boolean)} instead
 	 *
 	 * @return The boolean value as to whether the test is met
 	 */
@@ -343,8 +342,8 @@ public class QueryUtil {
 	 * @param callbackContext The context in which to execute the callback
 	 * @param parallel        Whether to process the filter in parallel
 	 * @param maxThreads      Optional max threads for parallel execution
-	 * 
-	 * @deprecated since v1.5.0, use {@link #every(Query, Function, IBoxContext, boolean, Integer, boolean)} instead
+	 *
+	 * @Deprecated since v1.5.0, use {@link #every(Query, Function, IBoxContext, boolean, Integer, boolean)} instead
 	 *
 	 * @return The boolean value as to whether the test is met
 	 */
@@ -425,8 +424,8 @@ public class QueryUtil {
 	 * @param callbackContext The context in which to execute the callback
 	 * @param parallel        Whether to process the filter in parallel
 	 * @param maxThreads      Optional max threads for parallel execution
-	 * 
-	 * @deprecated since v1.5.0, use {@link #some(Query, Function, IBoxContext, boolean, Integer, boolean)} instead
+	 *
+	 * @Deprecated since v1.5.0, use {@link #some(Query, Function, IBoxContext, boolean, Integer, boolean)} instead
 	 *
 	 * @return The boolean value as to whether the test is met
 	 */
