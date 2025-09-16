@@ -51,13 +51,14 @@ jobs:
         id: securityscan
         with:
           path: "./build/libs"
-          output-format: table
+          output-format: sarif
           severity-cutoff: "high"
           by-cve: "true"
           fail-build: true
 
       - name: Upload Anchore Report
         uses: github/codeql-action/upload-sarif@v3
+        if: always()
         with:
           sarif_file: ${{ steps.securityscan.outputs.sarif }}
-          category: "BoxLang-Runtime-${{ github.env.BRANCH }}"
+          category: "BoxLang-Runtime-${{ env.BRANCH }}"
