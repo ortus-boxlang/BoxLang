@@ -2,6 +2,31 @@ name: Anchore-Grype Security Scans
 
 on:
   workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to scan'
+        required: false
+        default: 'main'
+        type: choice
+        options:
+          - main
+          - development
+      severity-cutoff:
+        description: 'Minimum severity level to report'
+        required: false
+        default: 'high'
+        type: choice
+        options:
+          - negligible
+          - low
+          - medium
+          - high
+          - critical
+      fail-build:
+        description: 'Fail build on vulnerabilities'
+        required: false
+        default: true
+        type: boolean
   schedule:
     # Run this against the main branch every Monday at 5:30 AM
     - cron: "30 5 * * 2"
@@ -19,7 +44,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v5
         with:
-          ref: main
+          ref: ${{ github.event.inputs.branch || 'main' }}
 
       - name: Setup Java
         uses: actions/setup-java@v5
@@ -33,15 +58,17 @@ jobs:
           # Read Version from gradle.properties
           echo "VERSION=`grep '^version=' gradle.properties | cut -d'=' -f2`" >> $GITHUB_ENV
 
-          # Stable
-          echo "Github Ref is $GITHUB_REF"
-          echo "BRANCH=main" >> $GITHUB_ENV
-
-          # Snapshot
-          if [ $GITHUB_REF == 'refs/heads/development' ]
-          then
-            echo "BRANCH=development" >> $GITHUB_ENV
+          # Set branch from input or detect from ref
+          BRANCH="${{ github.event.inputs.branch }}"
+          if [ -z "$BRANCH" ]; then
+            if [ "$GITHUB_REF" == "refs/heads/development" ]; then
+              BRANCH="development"
+            else
+              BRANCH="main"
+            fi
           fi
+          echo "BRANCH=$BRANCH" >> $GITHUB_ENV
+          echo "Using branch: $BRANCH"
 
       - name: Build it!
         run: ./gradlew clean jar
@@ -52,9 +79,9 @@ jobs:
         with:
           path: "./build/libs"
           output-format: sarif
-          severity-cutoff: "high"
+          severity-cutoff: ${{ github.event.inputs.severity-cutoff || 'high' }}
           by-cve: "true"
-          fail-build: true
+          fail-build: ${{ github.event.inputs.fail-build != 'false' }}
 
       - name: Upload Anchore Report
         uses: github/codeql-action/upload-sarif@v3
