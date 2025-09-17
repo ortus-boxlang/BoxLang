@@ -15,9 +15,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.runtime.cli;
+package ortus.boxlang.runtime.cli.providers;
 
 import java.util.List;
+
+import ortus.boxlang.runtime.cli.TabCompletion;
 
 /**
  * Interface for providing tab completion suggestions.
@@ -33,7 +35,7 @@ import java.util.List;
  * console.registerTabProvider( componentProvider );
  * </pre>
  */
-public interface TabProvider {
+public interface ITabProvider {
 
 	/**
 	 * Determines if this provider should handle tab completion for the given input context.

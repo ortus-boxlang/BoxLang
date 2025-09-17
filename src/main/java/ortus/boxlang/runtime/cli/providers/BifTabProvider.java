@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Set;
 
 import ortus.boxlang.runtime.cli.TabCompletion;
-import ortus.boxlang.runtime.cli.TabProvider;
 
 /**
  * Tab completion provider for BoxLang Built-in Functions (BIFs).
@@ -38,7 +37,7 @@ import ortus.boxlang.runtime.cli.TabProvider;
  * <li>"structK" + TAB → completes to "structKeyExists("</li>
  * </ul>
  */
-public class BifTabProvider implements TabProvider {
+public class BifTabProvider implements ITabProvider {
 
 	private final Set<String>	bifNames;
 	private final boolean		includeParentheses;

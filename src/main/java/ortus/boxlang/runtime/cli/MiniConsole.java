@@ -23,6 +23,8 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
+import ortus.boxlang.runtime.cli.providers.ITabProvider;
+
 /**
  * MiniConsole - A lightweight, cross-platform command-line input handler with history support.
  *
@@ -74,57 +76,57 @@ public class MiniConsole implements AutoCloseable {
 	/**
 	 * Default prompt text
 	 */
-	private static final String		DEFAULT_PROMPT		= "> ";
+	private static final String			DEFAULT_PROMPT		= "> ";
 
 	/**
 	 * ANSI sequence to clear current line
 	 */
-	private static final String		CLR_LINE			= "\r\033[2K";
+	private static final String			CLR_LINE			= "\r\033[2K";
 
 	/**
 	 * Operating system detection
 	 */
-	private static final boolean	WINDOWS				= System.getProperty( "os.name" ).toLowerCase().contains( "win" );
+	private static final boolean		WINDOWS				= System.getProperty( "os.name" ).toLowerCase().contains( "win" );
 
 	/**
 	 * Current prompt string
 	 */
-	private String					prompt				= DEFAULT_PROMPT;
+	private String						prompt				= DEFAULT_PROMPT;
 
 	/**
 	 * Command history storage (using ArrayList for performance)
 	 */
-	private final List<String>		history				= new ArrayList<>();
+	private final List<String>			history				= new ArrayList<>();
 
 	/**
 	 * Current position in command history (-1 means not navigating history)
 	 */
-	private int						historyIndex		= -1;
+	private int							historyIndex		= -1;
 
 	/**
 	 * Maximum number of history entries to retain
 	 */
-	private int						maxHistorySize		= 1000;
+	private int							maxHistorySize		= 1000;
 
 	/**
 	 * Reusable StringBuilder for input buffering (performance optimization)
 	 */
-	private final StringBuilder		inputBuffer			= new StringBuilder( 256 );
+	private final StringBuilder			inputBuffer			= new StringBuilder( 256 );
 
 	/**
 	 * Optional syntax highlighter for real-time input coloring
 	 */
-	private ISyntaxHighlighter		syntaxHighlighter	= null;
+	private ISyntaxHighlighter			syntaxHighlighter	= null;
 
 	/**
 	 * List of registered tab completion providers
 	 */
-	private final List<TabProvider>	tabProviders		= new ArrayList<>();
+	private final List<ITabProvider>	tabProviders		= new ArrayList<>();
 
 	/**
 	 * Current completion state for cycling through suggestions
 	 */
-	private CompletionState			completionState		= null;
+	private CompletionState				completionState		= null;
 
 	/**
 	 * Constructor with default settings
@@ -142,30 +144,69 @@ public class MiniConsole implements AutoCloseable {
 		private final List<TabCompletion>	completions;
 		private final int					cursorPosition;
 		private int							currentIndex;
+		private final int					replaceStart;
+		private final int					replaceEnd;
 
-		CompletionState( String originalInput, List<TabCompletion> completions, int cursorPosition ) {
+		CompletionState( String originalInput, List<TabCompletion> completions, int cursorPosition, int replaceStart, int replaceEnd ) {
 			this.originalInput	= originalInput;
 			this.completions	= new ArrayList<>( completions );
 			this.cursorPosition	= cursorPosition;
 			this.currentIndex	= 0;
+			this.replaceStart	= replaceStart;
+			this.replaceEnd		= replaceEnd;
 		}
 
 		TabCompletion getCurrentCompletion() {
-			return completions.isEmpty() ? null : completions.get( currentIndex );
+			return this.completions.isEmpty() ? null : this.completions.get( currentIndex );
 		}
 
 		void nextCompletion() {
-			if ( !completions.isEmpty() ) {
-				currentIndex = ( currentIndex + 1 ) % completions.size();
+			if ( !this.completions.isEmpty() ) {
+				currentIndex = ( currentIndex + 1 ) % this.completions.size();
 			}
 		}
 
 		boolean hasCompletions() {
-			return !completions.isEmpty();
+			return !this.completions.isEmpty();
 		}
 
 		int getCompletionCount() {
-			return completions.size();
+			return this.completions.size();
+		}
+
+		/**
+		 * Get all completions in this state
+		 */
+		List<TabCompletion> getAllCompletions() {
+			return this.completions;
+		}
+
+		/**
+		 * Get the current completion index
+		 */
+		int getCurrentIndex() {
+			return this.currentIndex;
+		}
+
+		/**
+		 * Get the original input before any completions
+		 */
+		String getOriginalInput() {
+			return this.originalInput;
+		}
+
+		/**
+		 * Get the replace start position
+		 */
+		int getReplaceStart() {
+			return this.replaceStart;
+		}
+
+		/**
+		 * Get the replace end position
+		 */
+		int getReplaceEnd() {
+			return this.replaceEnd;
 		}
 	}
 
@@ -225,7 +266,7 @@ public class MiniConsole implements AutoCloseable {
 	 *
 	 * @return This MiniConsole instance for method chaining
 	 */
-	public MiniConsole registerTabProvider( TabProvider provider ) {
+	public MiniConsole registerTabProvider( ITabProvider provider ) {
 		tabProviders.add( provider );
 		// Sort by priority (higher priority first)
 		tabProviders.sort( ( a, b ) -> Integer.compare( b.getPriority(), a.getPriority() ) );
@@ -467,6 +508,18 @@ public class MiniConsole implements AutoCloseable {
 				switch ( token ) {
 					// ENTER
 					case "ENTER" -> {
+						// If we're in completion mode, accept the selected completion
+						if ( completionState != null ) {
+							TabCompletion selected = completionState.getCurrentCompletion();
+							if ( selected != null ) {
+								// Restore original input first
+								inputBuffer.setLength( 0 );
+								inputBuffer.append( completionState.getOriginalInput() );
+								// Apply the completion
+								applyCompletion( prompt, inputBuffer, selected );
+							}
+							completionState = null;
+						}
 						System.out.print( "\r\n" );
 						historyIndex = -1;
 						String result = inputBuffer.toString();
@@ -475,6 +528,7 @@ public class MiniConsole implements AutoCloseable {
 					}
 					// Backspace
 					case "BACKSPACE" -> {
+						completionState = null; // Clear completion state
 						if ( inputBuffer.length() > 0 ) {
 							inputBuffer.deleteCharAt( inputBuffer.length() - 1 );
 							redraw( prompt, inputBuffer );
@@ -482,6 +536,7 @@ public class MiniConsole implements AutoCloseable {
 					}
 					// Up arrow = History navigation
 					case "UP" -> {
+						completionState = null; // Clear completion state
 						String prev = navigateHistoryPrevious();
 						if ( prev != null ) {
 							inputBuffer.setLength( 0 );
@@ -491,6 +546,7 @@ public class MiniConsole implements AutoCloseable {
 					}
 					// Down arrow = History navigation
 					case "DOWN" -> {
+						completionState = null; // Clear completion state
 						String next = navigateHistoryNext();
 						if ( next != null ) {
 							inputBuffer.setLength( 0 );
@@ -517,10 +573,15 @@ public class MiniConsole implements AutoCloseable {
 						clear();
 						redraw( prompt, inputBuffer );
 					}
+					// Tab completion
+					case "TAB" -> {
+						handleTabCompletion( prompt, inputBuffer );
+					}
 					default -> {
 						if ( token.startsWith( "CHAR:" ) ) {
 							int code = Integer.parseInt( token.substring( 5 ) );
 							if ( code >= 32 && code < 127 ) {
+								completionState = null; // Clear completion state
 								inputBuffer.append( ( char ) code );
 								redraw( prompt, inputBuffer );
 							}
@@ -561,6 +622,18 @@ public class MiniConsole implements AutoCloseable {
 
 			// ENTER (CR or LF)
 			if ( b == '\r' || b == '\n' ) {
+				// If we're in completion mode, accept the selected completion
+				if ( completionState != null ) {
+					TabCompletion selected = completionState.getCurrentCompletion();
+					if ( selected != null ) {
+						// Restore original input first
+						inputBuffer.setLength( 0 );
+						inputBuffer.append( completionState.getOriginalInput() );
+						// Apply the completion
+						applyCompletion( prompt, inputBuffer, selected );
+					}
+					completionState = null;
+				}
 				System.out.print( "\r\n" );
 				System.out.flush();
 				historyIndex = -1;
@@ -727,17 +800,17 @@ public class MiniConsole implements AutoCloseable {
 		String	currentInput	= buffer.toString();
 		int		cursorPosition	= buffer.length(); // Cursor is always at end in our simple implementation
 
-		// If we're already in a completion state and the input hasn't changed, cycle to next completion
-		if ( completionState != null && currentInput.equals( completionState.originalInput ) ) {
+		// If we're already showing completions and user presses tab again, cycle through them
+		if ( completionState != null ) {
 			completionState.nextCompletion();
-			applyCompletion( prompt, buffer, completionState.getCurrentCompletion() );
+			showCompletionList( prompt, buffer, completionState );
 			return;
 		}
 
 		// Find completions from registered providers
 		List<TabCompletion> allCompletions = new ArrayList<>();
 
-		for ( TabProvider provider : tabProviders ) {
+		for ( ITabProvider provider : tabProviders ) {
 			try {
 				if ( provider.canProvideCompletions( currentInput, cursorPosition ) ) {
 					List<TabCompletion> providerCompletions = provider.getCompletions( currentInput, cursorPosition );
@@ -755,7 +828,7 @@ public class MiniConsole implements AutoCloseable {
 
 		// Handle completions
 		if ( allCompletions.isEmpty() ) {
-			// No completions found - maybe show a message or do nothing
+			// No completions found - clear any existing completion state
 			completionState = null;
 			return;
 		}
@@ -765,13 +838,13 @@ public class MiniConsole implements AutoCloseable {
 			applyCompletion( prompt, buffer, allCompletions.get( 0 ) );
 			completionState = null;
 		} else {
-			// Multiple completions - start cycling state
-			completionState = new CompletionState( currentInput, allCompletions, cursorPosition );
-			applyCompletion( prompt, buffer, completionState.getCurrentCompletion() );
+			// Multiple completions - determine replace bounds and start cycling state
+			TabCompletion	firstCompletion	= allCompletions.get( 0 );
+			int				replaceEnd		= buffer.length();
+			int				replaceStart	= firstCompletion.hasCustomRange() ? firstCompletion.getReplaceStart() : findWordStart( currentInput, replaceEnd );
 
-			// Show completion count
-			System.out.print( "\r\n[" + allCompletions.size() + " completions]\r\n" );
-			redraw( prompt, buffer );
+			completionState = new CompletionState( currentInput, allCompletions, cursorPosition, replaceStart, replaceEnd );
+			showCompletionList( prompt, buffer, completionState );
 		}
 	}
 
@@ -801,6 +874,108 @@ public class MiniConsole implements AutoCloseable {
 		}
 
 		redraw( prompt, buffer );
+	}
+
+	/**
+	 * Displays a dropdown-style list of completions below the current cursor position.
+	 * Shows a preview of the selected completion in the input line but doesn't apply it to the buffer.
+	 *
+	 * @param prompt The current prompt
+	 * @param buffer The current input buffer
+	 * @param state  The completion state containing all completions and selection
+	 */
+	private void showCompletionList( String prompt, StringBuilder buffer, CompletionState state ) {
+		List<TabCompletion>	completions		= state.getAllCompletions();
+		int					selectedIndex	= state.getCurrentIndex();
+
+		// Show the completion list below the current line
+		System.out.print( "\r\n" );
+
+		// Display up to 10 completions to avoid overwhelming the user
+		int	maxDisplay	= Math.min( 10, completions.size() );
+		int	startIndex	= Math.max( 0, selectedIndex - 5 ); // Center around selected item
+		int	endIndex	= Math.min( completions.size(), startIndex + maxDisplay );
+
+		// Adjust start if we're near the end
+		if ( endIndex - startIndex < maxDisplay && startIndex > 0 ) {
+			startIndex = Math.max( 0, endIndex - maxDisplay );
+		}
+
+		for ( int i = startIndex; i < endIndex; i++ ) {
+			TabCompletion	completion	= completions.get( i );
+			boolean			isSelected	= ( i == selectedIndex );
+
+			// Highlight the selected item
+			if ( isSelected ) {
+				System.out.print( color( 44 ) ); // Blue background
+				System.out.print( color( 15 ) ); // White text
+				System.out.print( "► " );
+			} else {
+				System.out.print( "  " );
+			}
+
+			// Show the completion text with its original formatting
+			System.out.print( completion.getDisplayText() );
+
+			// Show description if available
+			if ( completion.getDescription() != null && !completion.getDescription().isEmpty() ) {
+				System.out.print( color( 8 ) ); // Dim color for description
+				System.out.print( " - " + completion.getDescription() );
+			}
+
+			if ( isSelected ) {
+				System.out.print( reset() );
+			}
+
+			System.out.print( "\r\n" );
+		}
+
+		// Show pagination info if there are more items
+		if ( completions.size() > maxDisplay ) {
+			System.out.print( color( 8 ) ); // Dim color
+			System.out.print( "  ... (" + ( selectedIndex + 1 ) + "/" + completions.size() + " - TAB for next, ENTER to accept)" );
+			System.out.print( reset() );
+			System.out.print( "\r\n" );
+		}
+
+		// Show preview of selected completion in the input line
+		showCompletionPreview( prompt, buffer, state );
+	}
+
+	/**
+	 * Shows a preview of the selected completion in the input line without modifying the buffer.
+	 */
+	private void showCompletionPreview( String prompt, StringBuilder buffer, CompletionState state ) {
+		TabCompletion selectedCompletion = state.getCurrentCompletion();
+		if ( selectedCompletion == null ) {
+			redraw( prompt, buffer );
+			return;
+		}
+
+		// Create a preview by building the line with the completion applied
+		String			originalInput	= state.getOriginalInput();
+		int				replaceStart	= state.getReplaceStart();
+		int				replaceEnd		= state.getReplaceEnd();
+
+		StringBuilder	preview			= new StringBuilder( originalInput );
+		if ( replaceStart >= 0 && replaceEnd >= replaceStart && replaceEnd <= preview.length() ) {
+			preview.delete( replaceStart, replaceEnd );
+			preview.insert( replaceStart, selectedCompletion.getText() );
+		}
+
+		// Show the preview
+		System.out.print( CLR_LINE );
+		System.out.print( prompt );
+
+		// Apply syntax highlighting if available
+		if ( syntaxHighlighter != null ) {
+			String highlighted = syntaxHighlighter.highlight( preview.toString() );
+			System.out.print( highlighted );
+		} else {
+			System.out.print( preview );
+		}
+
+		System.out.flush();
 	}
 
 	/**
@@ -980,6 +1155,7 @@ public class MiniConsole implements AutoCloseable {
 				    "  'Backspace' { [Console]::Out.WriteLine('BACKSPACE'); continue }",
 				    "  'UpArrow'   { [Console]::Out.WriteLine('UP'); continue }",
 				    "  'DownArrow' { [Console]::Out.WriteLine('DOWN'); continue }",
+				    "  'Tab'       { [Console]::Out.WriteLine('TAB'); continue }",
 				    "}",
 				    "if([int]$k.KeyChar -gt 0){ [Console]::Out.WriteLine('CHAR:' + ([int]$k.KeyChar)) }",
 				    "}",

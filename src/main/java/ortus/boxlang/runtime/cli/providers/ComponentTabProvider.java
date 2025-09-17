@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Set;
 
 import ortus.boxlang.runtime.cli.TabCompletion;
-import ortus.boxlang.runtime.cli.TabProvider;
 
 /**
  * Tab completion provider for BoxLang components (bx:componentName syntax).
@@ -37,7 +36,7 @@ import ortus.boxlang.runtime.cli.TabProvider;
  * <li>"bx:script" + TAB → completes to "bx:script"</li>
  * </ul>
  */
-public class ComponentTabProvider implements TabProvider {
+public class ComponentTabProvider implements ITabProvider {
 
 	private final Set<String> componentNames;
 
