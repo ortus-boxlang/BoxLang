@@ -299,7 +299,7 @@ public class MiniConsole implements AutoCloseable {
 	 *
 	 * @return ANSI escape sequence for foreground color
 	 */
-	public static String fg256( int colorIndex ) {
+	public static String color( int colorIndex ) {
 		return "\033[38;5;" + colorIndex + "m";
 	}
 
@@ -310,7 +310,7 @@ public class MiniConsole implements AutoCloseable {
 	 *
 	 * @return ANSI escape sequence for background color
 	 */
-	public static String bg256( int colorIndex ) {
+	public static String background( int colorIndex ) {
 		return "\033[48;5;" + colorIndex + "m";
 	}
 
