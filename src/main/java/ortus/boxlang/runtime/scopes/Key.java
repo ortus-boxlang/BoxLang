@@ -846,6 +846,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		useLastAccessTimeouts				= Key.of( "useLastAccessTimeouts" );
 	public static final Key		useQueryString						= Key.of( "useQueryString" );
 	public static final Key		userAgent							= Key.of( "userAgent" );
+	public static final Key		usePrefix							= Key.of( "usePrefix" );
 	public static final Key		useRegex							= Key.of( "useRegex" );
 	public static final Key		useSecureJSONPrefix					= Key.of( "useSecureJSONPrefix" );
 	public static final Key		validator							= Key.of( "validator" );

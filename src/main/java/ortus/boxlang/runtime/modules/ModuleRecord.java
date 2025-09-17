@@ -79,6 +79,7 @@ import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 import ortus.boxlang.runtime.types.util.StructUtil;
 import ortus.boxlang.runtime.util.DataNavigator;
 import ortus.boxlang.runtime.util.EncryptionUtil;
+import ortus.boxlang.runtime.util.Mapping;
 import ortus.boxlang.runtime.util.RegexBuilder;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
@@ -123,7 +124,7 @@ public class ModuleRecord {
 	 * {@link ModuleService#MODULE_MAPPING_INVOCATION_PREFIX}
 	 *
 	 */
-	public String					mapping;
+	public Mapping					mapping;
 
 	/**
 	 * If the module is enabled for activation, defaults to false
@@ -290,7 +291,12 @@ public class ModuleRecord {
 		this.path			= physicalPath;
 		this.physicalPath	= Paths.get( physicalPath );
 		// Register the automatic mapping by convention: /bxModules/{name}
-		this.mapping		= ModuleService.MODULE_MAPPING_PREFIX + name.getName();
+		// Not visible externally
+		this.mapping		= Mapping.of(
+		    ModuleService.MODULE_MAPPING_PREFIX + name.getName(),
+		    this.path,
+		    false
+		);
 		// Register the invocation path by convention: bxModules.{name}
 		this.invocationPath	= ModuleService.MODULE_MAPPING_INVOCATION_PREFIX + name.getName();
 	}
@@ -347,12 +353,35 @@ public class ModuleRecord {
 		}
 
 		// Do we have a custom mapping to override?
-		// If so, recalculate it
-		if ( thisScope.containsKey( Key.mapping ) &&
-		    thisScope.get( Key.mapping ) instanceof String castedMapping &&
-		    !castedMapping.isBlank() ) {
-			this.mapping		= ModuleService.MODULE_MAPPING_PREFIX + castedMapping;
-			this.invocationPath	= ModuleService.MODULE_MAPPING_INVOCATION_PREFIX + castedMapping;
+		if ( thisScope.containsKey( Key.mapping ) ) {
+			Object overrideMapping = thisScope.get( Key.mapping );
+			// If it's a string, then we assume it's the name and not visibly external
+			if ( overrideMapping instanceof String castedMapping && !castedMapping.isBlank() ) {
+				this.mapping		= Mapping.of(
+				    ModuleService.MODULE_MAPPING_PREFIX + castedMapping,
+				    this.path,
+				    false
+				);
+				this.invocationPath	= ModuleService.MODULE_MAPPING_INVOCATION_PREFIX + castedMapping;
+			}
+			// If it's a struct, then we assume it's a full mapping definition
+			else if ( overrideMapping instanceof IStruct structMapping
+			    && structMapping.containsKey( Key._name ) ) {
+
+				// Do we use the prefix or not
+				String mappingName = BooleanCaster.cast( structMapping.getOrDefault( Key.usePrefix, true ) )
+				    ? ModuleService.MODULE_MAPPING_PREFIX + structMapping.getAsString( Key._name )
+				    : structMapping.getAsString( Key._name );
+
+				// Now create the mapping
+				this.mapping		= Mapping.fromData(
+				    mappingName,
+				    this.path,
+				    BooleanCaster.cast( structMapping.getOrDefault( Key.external, false ) )
+				);
+
+				this.invocationPath	= ModuleService.MODULE_MAPPING_INVOCATION_PREFIX + structMapping.getAsString( Key._name );
+			}
 		}
 
 		// Verify the internal config structures exist, else default them
@@ -398,7 +427,7 @@ public class ModuleRecord {
 
 		// Register the module mapping in the this.runtime
 		// Called first in case this is used in the `configure` method
-		this.runtime.getConfiguration().registerMapping( this.mapping, this.path, false );
+		this.runtime.getConfiguration().registerMapping( this.mapping );
 
 		// Create the module class loader and seed it with the physical path to the
 		// module
@@ -859,7 +888,7 @@ public class ModuleRecord {
 		    "Id", id,
 		    "interceptors", Array.copyOf( interceptors ),
 		    "invocationPath", invocationPath,
-		    "mapping", mapping,
+		    "mapping", mapping.toStruct(),
 		    "name", name,
 		    "physicalPath", physicalPath.toString(),
 		    "registeredOn", registeredOn,

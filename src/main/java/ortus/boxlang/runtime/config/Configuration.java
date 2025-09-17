@@ -775,23 +775,6 @@ public class Configuration implements IConfigSegment {
 	}
 
 	/**
-	 * Register a mapping in the runtime configuration.
-	 * The mapping will default to not being external
-	 *
-	 * @param name            The mapping to register: {@code /myMapping}, please note the
-	 *                        leading slash
-	 * @param data            The absolute path to the directory to map to the mapping
-	 * @param defaultExternal If this mapping defaults to being external
-	 *
-	 * @throws BoxRuntimeException If the path does not exist
-	 *
-	 * @return The runtime configuration
-	 */
-	public Configuration registerMapping( String name, Object data, boolean defaultExternal ) {
-		return this.registerMapping( Key.of( name ), data, defaultExternal );
-	}
-
-	/**
 	 * Register a mapping in the runtime configuration
 	 *
 	 * @param name The mapping to register: {@code /myMapping}, please note the
@@ -823,6 +806,23 @@ public class Configuration implements IConfigSegment {
 	}
 
 	/**
+	 * Register a mapping in the runtime configuration.
+	 * The mapping will default to not being external
+	 *
+	 * @param name            The mapping to register: {@code /myMapping}, please note the
+	 *                        leading slash
+	 * @param data            The absolute path to the directory to map to the mapping
+	 * @param defaultExternal If this mapping defaults to being external
+	 *
+	 * @throws BoxRuntimeException If the path does not exist
+	 *
+	 * @return The runtime configuration
+	 */
+	public Configuration registerMapping( String name, Object data, boolean defaultExternal ) {
+		return this.registerMapping( Key.of( name ), data, defaultExternal );
+	}
+
+	/**
 	 * Register a mapping in the runtime configuration
 	 *
 	 * @param name            The mapping to register: {@code /myMapping}, please note the
@@ -841,15 +841,15 @@ public class Configuration implements IConfigSegment {
 	}
 
 	/**
-	 * Unregister a mapping in the runtime configuration
+	 * Register a mapping in the runtime configuration
 	 *
-	 * @param name The String mapping to unregister: {@code /myMapping}, please
-	 *             note the leading slash
+	 * @param mapping The mapping to register
 	 *
-	 * @return True if the mapping was removed, false otherwise
+	 * @return The runtime configuration
 	 */
-	public boolean unregisterMapping( String name ) {
-		return this.mappings.remove( Key.of( Mapping.cleanName( name ) ) ) != null;
+	public Configuration registerMapping( Mapping mapping ) {
+		this.mappings.put( mapping.name(), mapping );
+		return this;
 	}
 
 	/**
@@ -862,6 +862,29 @@ public class Configuration implements IConfigSegment {
 	 */
 	public boolean unregisterMapping( Key name ) {
 		return unregisterMapping( name.getName() );
+	}
+
+	/**
+	 * Unregister a mapping in the runtime configuration
+	 *
+	 * @param mapping The mapping to unregister
+	 *
+	 * @return True if the mapping was removed, false otherwise
+	 */
+	public boolean unregisterMapping( Mapping mapping ) {
+		return unregisterMapping( mapping.name() );
+	}
+
+	/**
+	 * Unregister a mapping in the runtime configuration
+	 *
+	 * @param name The String mapping to unregister: {@code /myMapping}, please
+	 *             note the leading slash
+	 *
+	 * @return True if the mapping was removed, false otherwise
+	 */
+	public boolean unregisterMapping( String name ) {
+		return this.mappings.remove( Key.of( Mapping.cleanName( name ) ) ) != null;
 	}
 
 	/**
