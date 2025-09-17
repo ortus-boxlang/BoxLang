@@ -380,7 +380,7 @@ public class ModuleRecord {
 				    BooleanCaster.cast( structMapping.getOrDefault( Key.external, false ) )
 				);
 
-				this.invocationPath	= ModuleService.MODULE_MAPPING_INVOCATION_PREFIX + this.mapping.name();
+				this.invocationPath	= ModuleService.MODULE_MAPPING_INVOCATION_PREFIX + structMapping.getAsString( Key._name );
 			}
 		}
 
