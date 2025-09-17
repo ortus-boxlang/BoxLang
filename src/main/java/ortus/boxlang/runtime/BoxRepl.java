@@ -152,7 +152,7 @@ public class BoxRepl {
 
 				// Handle history shorthands
 				if ( source.equals( "!!" ) ) {
-					String lastCommand = console.getLastCommand();
+					String lastCommand = console.getPreviousCommand();
 					if ( lastCommand != null ) {
 						source = lastCommand;
 						System.out.println( "Executing: " + source );

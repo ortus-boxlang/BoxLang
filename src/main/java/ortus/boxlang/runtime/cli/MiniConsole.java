@@ -233,6 +233,18 @@ public class MiniConsole implements AutoCloseable {
 	}
 
 	/**
+	 * Get the previous command (second-to-last) from history
+	 *
+	 * @return The previous command, or null if not enough history
+	 */
+	public String getPreviousCommand() {
+		if ( history.size() < 2 ) {
+			return null;
+		}
+		return history.get( history.size() - 2 );
+	}
+
+	/**
 	 * Get a specific command from history by number (1-based)
 	 *
 	 * @param historyNum The history number (1-based)
