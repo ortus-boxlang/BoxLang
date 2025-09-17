@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.runtime;
+package ortus.boxlang.runtime.cli;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,8 +27,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
-import ortus.boxlang.runtime.cli.ISyntaxHighlighter;
-import ortus.boxlang.runtime.cli.MiniConsole;
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.cli.providers.BifTabProvider;
 import ortus.boxlang.runtime.cli.providers.ComponentTabProvider;
 import ortus.boxlang.runtime.context.IBoxContext;
