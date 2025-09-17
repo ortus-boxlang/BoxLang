@@ -96,7 +96,12 @@ public class BoxRepl {
 	 */
 	public static void main( String[] args ) {
 		BoxRuntime runtime = BoxRuntime.getInstance( true );
-		new BoxRepl( runtime ).start();
+		try {
+			new BoxRepl( runtime ).start();
+		} finally {
+			runtime.shutdown();
+			System.exit( 0 );
+		}
 	}
 
 	/**
@@ -206,7 +211,7 @@ public class BoxRepl {
 		System.out.println( "" );
 		System.out.println( "✨ Welcome to the BoxLang Interactive REPL!" );
 		System.out.println( "💡 Enter an expression, then hit enter" );
-		System.out.println( "↕️ UP/DOWN arrows navigate command history" );
+		System.out.println( "↕️  UP/DOWN arrows navigate command history" );
 		System.out.println( "📚 Type 'history' to see command history" );
 		System.out.println( "🔄 Type '!!' to repeat last command, or '!n' to repeat command n" );
 		System.out.println( "🧹 Press Ctrl+D to clear current line, or on empty line to exit" );

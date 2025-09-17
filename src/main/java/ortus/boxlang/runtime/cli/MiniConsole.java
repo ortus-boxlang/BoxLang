@@ -476,7 +476,7 @@ public class MiniConsole implements AutoCloseable {
 				System.out.print( "^C\r\n" );
 				System.out.flush();
 				historyIndex = -1;
-				return ""; // Empty line
+				return null; // Exit signal
 			}
 
 			// Regular printable character
