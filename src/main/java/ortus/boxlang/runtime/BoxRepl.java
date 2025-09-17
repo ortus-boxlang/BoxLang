@@ -19,14 +19,18 @@ package ortus.boxlang.runtime;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.cli.ISyntaxHighlighter;
 import ortus.boxlang.runtime.cli.MiniConsole;
+import ortus.boxlang.runtime.cli.providers.BifTabProvider;
+import ortus.boxlang.runtime.cli.providers.ComponentTabProvider;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -101,7 +105,16 @@ public class BoxRepl {
 	 * @param runtime The BoxLang runtime instance to use for code execution
 	 */
 	public BoxRepl( BoxRuntime runtime ) {
-		this.runtime = runtime;
+		this.runtime	= runtime;
+
+		// Initialize BIFs and components for syntax highlighting and tab completion
+		this.components	= Arrays.stream( runtime.getComponentService().getComponentNames() )
+		    .map( String::toLowerCase )
+		    .collect( Collectors.toSet() );
+
+		this.bifs		= Arrays.stream( runtime.getFunctionService().getGlobalFunctionNames() )
+		    .map( String::toLowerCase )
+		    .collect( Collectors.toSet() );
 	}
 
 	/**
@@ -164,9 +177,10 @@ public class BoxRepl {
 			console = new MiniConsole( prompt );
 
 			// Set up syntax highlighting
-			console.setSyntaxHighlighter( new BoxLangSyntaxHighlighter( this.runtime ) );
+			console.setSyntaxHighlighter( new BoxLangSyntaxHighlighter() );
 
-			// Multi-line input tracking
+			// Set up tab completion providers
+			setupTabCompletion( console );			// Multi-line input tracking
 			StringBuilder	multiLineBuffer		= new StringBuilder();
 			int				braceDepth			= 0;
 			String			continuationPrompt	= MiniConsole.color( 39 ) + "        ... " + MiniConsole.reset();
@@ -441,27 +455,16 @@ public class BoxRepl {
 
 		private static final Pattern	COMPONENT_PATTERN	= Pattern.compile( "\\bbx:([a-zA-Z][a-zA-Z0-9_]*)\\b" );
 		private static final Pattern	BIF_PATTERN			= Pattern.compile( "\\b([a-zA-Z][a-zA-Z0-9_]*)\\s*\\(" );
-		private final Set<String>		bifs				= new HashSet<>();
-		private final Set<String>		components			= new HashSet<>();
+		private Set<String>				bifs				= new HashSet<>();
+		private Set<String>				components			= new HashSet<>();
 
 		/**
-		 * Constructor initializes available BIFs and components for highlighting.
-		 *
-		 * @param runtime The BoxLang runtime instance to retrieve BIFs and components from
+		 * Constructor uses the shared BIFs and components from the outer REPL class.
 		 */
-		public BoxLangSyntaxHighlighter( BoxRuntime runtime ) {
-			// Get all the BIFs and Components Loaded
-			String[]	bifsArray		= runtime.getFunctionService().getGlobalFunctionNames();
-			String[]	componentsArray	= runtime.getComponentService().getComponentNames();
-
-			// Convert to sets for O(1) lookup performance
-			for ( String bif : bifsArray ) {
-				bifs.add( bif.toLowerCase() ); // Case-insensitive
-			}
-
-			for ( String component : componentsArray ) {
-				components.add( component.toLowerCase() ); // Case-insensitive
-			}
+		public BoxLangSyntaxHighlighter() {
+			// Use the outer class's shared bifs and components sets
+			this.bifs		= BoxRepl.this.bifs;
+			this.components	= BoxRepl.this.components;
 		}
 
 		@Override
@@ -506,6 +509,19 @@ public class BoxRepl {
 
 			return tempBuffer.toString();
 		}
+	}
+
+	/**
+	 * Sets up tab completion providers for the console
+	 *
+	 * @param console The MiniConsole instance to configure
+	 */
+	private void setupTabCompletion( MiniConsole console ) {
+		// Register component tab provider for bx: completions
+		console.registerTabProvider( new ComponentTabProvider( BoxRepl.this.components ) );
+
+		// Register BIF tab provider for function completions
+		console.registerTabProvider( new BifTabProvider( BoxRepl.this.bifs ) );
 	}
 
 }

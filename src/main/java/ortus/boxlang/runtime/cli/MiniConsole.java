@@ -117,10 +117,56 @@ public class MiniConsole implements AutoCloseable {
 	private ISyntaxHighlighter		syntaxHighlighter	= null;
 
 	/**
+	 * List of registered tab completion providers
+	 */
+	private final List<TabProvider>	tabProviders		= new ArrayList<>();
+
+	/**
+	 * Current completion state for cycling through suggestions
+	 */
+	private CompletionState			completionState		= null;
+
+	/**
 	 * Constructor with default settings
 	 */
 	public MiniConsole() {
-		// Default configuration
+		// Uses default prompt
+	}
+
+	/**
+	 * Internal class to track completion state for cycling through suggestions
+	 */
+	private static class CompletionState {
+
+		private final String				originalInput;
+		private final List<TabCompletion>	completions;
+		private final int					cursorPosition;
+		private int							currentIndex;
+
+		CompletionState( String originalInput, List<TabCompletion> completions, int cursorPosition ) {
+			this.originalInput	= originalInput;
+			this.completions	= new ArrayList<>( completions );
+			this.cursorPosition	= cursorPosition;
+			this.currentIndex	= 0;
+		}
+
+		TabCompletion getCurrentCompletion() {
+			return completions.isEmpty() ? null : completions.get( currentIndex );
+		}
+
+		void nextCompletion() {
+			if ( !completions.isEmpty() ) {
+				currentIndex = ( currentIndex + 1 ) % completions.size();
+			}
+		}
+
+		boolean hasCompletions() {
+			return !completions.isEmpty();
+		}
+
+		int getCompletionCount() {
+			return completions.size();
+		}
 	}
 
 	/**
@@ -170,6 +216,20 @@ public class MiniConsole implements AutoCloseable {
 	 */
 	public String getPrompt() {
 		return prompt;
+	}
+
+	/**
+	 * Register a tab completion provider
+	 *
+	 * @param provider The tab completion provider to register
+	 *
+	 * @return This MiniConsole instance for method chaining
+	 */
+	public MiniConsole registerTabProvider( TabProvider provider ) {
+		tabProviders.add( provider );
+		// Sort by priority (higher priority first)
+		tabProviders.sort( ( a, b ) -> Integer.compare( b.getPriority(), a.getPriority() ) );
+		return this;
 	}
 
 	/**
@@ -511,6 +571,7 @@ public class MiniConsole implements AutoCloseable {
 
 			// Backspace (DEL or BS)
 			if ( b == 127 || b == 8 ) {
+				completionState = null; // Clear completion state
 				if ( inputBuffer.length() > 0 ) {
 					inputBuffer.deleteCharAt( inputBuffer.length() - 1 );
 					redraw( prompt, inputBuffer );
@@ -550,6 +611,12 @@ public class MiniConsole implements AutoCloseable {
 				continue;
 			}
 
+			// Tab completion
+			if ( b == 9 ) {
+				handleTabCompletion( prompt, inputBuffer );
+				continue;
+			}
+
 			// Control+C
 			if ( b == 3 ) {
 				System.out.print( "^C\r\n" );
@@ -567,6 +634,7 @@ public class MiniConsole implements AutoCloseable {
 
 			// Regular printable character
 			if ( b >= 32 && b < 127 ) {
+				completionState = null; // Clear completion state
 				inputBuffer.append( ( char ) b );
 				redraw( prompt, inputBuffer );
 			}
@@ -593,6 +661,7 @@ public class MiniConsole implements AutoCloseable {
 
 		// Handle arrow keys - ignore any parameters (like 1;5A for Ctrl+Up)
 		if ( seq.endsWith( "A" ) ) { // Up arrow (any variant)
+			completionState = null; // Clear completion state
 			String prev = navigateHistoryPrevious();
 			if ( prev != null ) {
 				buffer.setLength( 0 );
@@ -600,6 +669,7 @@ public class MiniConsole implements AutoCloseable {
 				redraw( prompt, buffer );
 			}
 		} else if ( seq.endsWith( "B" ) ) { // Down arrow (any variant)
+			completionState = null; // Clear completion state
 			String next = navigateHistoryNext();
 			if ( next != null ) {
 				buffer.setLength( 0 );
@@ -648,6 +718,119 @@ public class MiniConsole implements AutoCloseable {
 			addToHistory( result );
 			return result;
 		}
+	}
+
+	/**
+	 * Handles tab completion by finding matching providers and cycling through suggestions.
+	 */
+	private void handleTabCompletion( String prompt, StringBuilder buffer ) {
+		String	currentInput	= buffer.toString();
+		int		cursorPosition	= buffer.length(); // Cursor is always at end in our simple implementation
+
+		// If we're already in a completion state and the input hasn't changed, cycle to next completion
+		if ( completionState != null && currentInput.equals( completionState.originalInput ) ) {
+			completionState.nextCompletion();
+			applyCompletion( prompt, buffer, completionState.getCurrentCompletion() );
+			return;
+		}
+
+		// Find completions from registered providers
+		List<TabCompletion> allCompletions = new ArrayList<>();
+
+		for ( TabProvider provider : tabProviders ) {
+			try {
+				if ( provider.canProvideCompletions( currentInput, cursorPosition ) ) {
+					List<TabCompletion> providerCompletions = provider.getCompletions( currentInput, cursorPosition );
+					if ( providerCompletions != null ) {
+						allCompletions.addAll( providerCompletions );
+					}
+					// Use first provider that can handle this input (highest priority)
+					break;
+				}
+			} catch ( Exception e ) {
+				// Continue to next provider if this one fails
+				System.err.println( "Tab completion error in " + provider.getProviderName() + ": " + e.getMessage() );
+			}
+		}
+
+		// Handle completions
+		if ( allCompletions.isEmpty() ) {
+			// No completions found - maybe show a message or do nothing
+			completionState = null;
+			return;
+		}
+
+		if ( allCompletions.size() == 1 ) {
+			// Single completion - apply it directly
+			applyCompletion( prompt, buffer, allCompletions.get( 0 ) );
+			completionState = null;
+		} else {
+			// Multiple completions - start cycling state
+			completionState = new CompletionState( currentInput, allCompletions, cursorPosition );
+			applyCompletion( prompt, buffer, completionState.getCurrentCompletion() );
+
+			// Show completion count
+			System.out.print( "\r\n[" + allCompletions.size() + " completions]\r\n" );
+			redraw( prompt, buffer );
+		}
+	}
+
+	/**
+	 * Applies a completion to the current input buffer.
+	 */
+	private void applyCompletion( String prompt, StringBuilder buffer, TabCompletion completion ) {
+		if ( completion == null ) {
+			return;
+		}
+
+		// For now, simple implementation: replace from start of current word to end
+		String	currentInput	= buffer.toString();
+		int		replaceStart	= completion.getReplaceStart();
+		int		replaceEnd		= completion.getReplaceEnd();
+
+		if ( !completion.hasCustomRange() ) {
+			// Auto-detect word boundaries
+			replaceEnd		= buffer.length();
+			replaceStart	= findWordStart( currentInput, replaceEnd );
+		}
+
+		// Replace the text
+		if ( replaceStart >= 0 && replaceEnd >= replaceStart && replaceEnd <= buffer.length() ) {
+			buffer.delete( replaceStart, replaceEnd );
+			buffer.insert( replaceStart, completion.getText() );
+		}
+
+		redraw( prompt, buffer );
+	}
+
+	/**
+	 * Finds the start of the current word for tab completion.
+	 */
+	private int findWordStart( String input, int fromPosition ) {
+		if ( input.isEmpty() || fromPosition <= 0 ) {
+			return 0;
+		}
+
+		int pos = Math.min( fromPosition - 1, input.length() - 1 );
+
+		// Move backwards while we see word characters
+		while ( pos > 0 && isWordCharacter( input.charAt( pos ) ) ) {
+			pos--;
+		}
+
+		// If we stopped on a non-word character, move forward one
+		if ( pos > 0 && !isWordCharacter( input.charAt( pos ) ) ) {
+			pos++;
+		}
+
+		return pos;
+	}
+
+	/**
+	 * Checks if a character is part of a word for completion purposes.
+	 */
+	private boolean isWordCharacter( char c ) {
+		return Character.isLetterOrDigit( c ) || c == '_' || c == ':' || c == '.';
 	}
 
 	/**
