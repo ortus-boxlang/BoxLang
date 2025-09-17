@@ -405,6 +405,7 @@ public class MiniConsole implements AutoCloseable {
 					return null;
 
 				switch ( token ) {
+					// ENTER
 					case "ENTER" -> {
 						System.out.print( "\r\n" );
 						historyIndex = -1;
@@ -412,12 +413,14 @@ public class MiniConsole implements AutoCloseable {
 						addToHistory( result );
 						return result;
 					}
+					// Backspace
 					case "BACKSPACE" -> {
 						if ( inputBuffer.length() > 0 ) {
 							inputBuffer.deleteCharAt( inputBuffer.length() - 1 );
 							redraw( prompt, inputBuffer );
 						}
 					}
+					// Up arrow = History navigation
 					case "UP" -> {
 						String prev = navigateHistoryPrevious();
 						if ( prev != null ) {
@@ -426,6 +429,7 @@ public class MiniConsole implements AutoCloseable {
 							redraw( prompt, inputBuffer );
 						}
 					}
+					// Down arrow = History navigation
 					case "DOWN" -> {
 						String next = navigateHistoryNext();
 						if ( next != null ) {
@@ -434,16 +438,23 @@ public class MiniConsole implements AutoCloseable {
 							redraw( prompt, inputBuffer );
 						}
 					}
+					// Control+C (exit)
 					case "CTRL_C" -> {
 						System.out.println();
 						return null;
 					}
+					// Control+D (EOF on empty line = exit)
 					case "CTRL_D" -> {
 						if ( inputBuffer.length() == 0 ) {
 							System.out.println();
 							return null;
 						}
 						inputBuffer.setLength( 0 );
+						redraw( prompt, inputBuffer );
+					}
+					// Control + L (clear screen)
+					case "CTRL_L" -> {
+						clear();
 						redraw( prompt, inputBuffer );
 					}
 					default -> {
@@ -545,6 +556,13 @@ public class MiniConsole implements AutoCloseable {
 				System.out.flush();
 				historyIndex = -1;
 				return null; // Exit signal
+			}
+
+			// Control + L (clear screen)
+			if ( b == 12 ) {
+				clear();
+				redraw( prompt, inputBuffer );
+				continue;
 			}
 
 			// Regular printable character
