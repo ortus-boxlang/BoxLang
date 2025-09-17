@@ -138,7 +138,11 @@ public class BoxRepl {
 		// Create a scripting context for REPL execution
 		IBoxContext scriptingContext = new ScriptingRequestBoxContext( context );
 		RequestBoxContext.setCurrent( scriptingContext.getParentOfType( RequestBoxContext.class ) );
-		ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
+		ClassLoader	oldClassLoader	= Thread.currentThread().getContextClassLoader();
+
+		// Get all the BIFs and Components Loaded
+		String[]	bifs			= this.runtime.getFunctionService().getGlobalFunctionNames();
+		String[]	components		= this.runtime.getComponentService().getComponentNames();
 
 		try {
 			// Show the interactive banner
