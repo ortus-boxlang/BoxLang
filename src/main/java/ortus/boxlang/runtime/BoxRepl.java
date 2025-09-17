@@ -178,9 +178,13 @@ public class BoxRepl {
 
 			// Set up syntax highlighting
 			console.setSyntaxHighlighter( new BoxLangSyntaxHighlighter() );
-
 			// Set up tab completion providers
-			setupTabCompletion( console );			// Multi-line input tracking
+			// Register component tab provider for bx: completions
+			console.registerTabProvider( new ComponentTabProvider( BoxRepl.this.components ) );
+			// Register BIF tab provider for function completions
+			console.registerTabProvider( new BifTabProvider( BoxRepl.this.bifs ) );
+
+			// Multi-line input tracking
 			StringBuilder	multiLineBuffer		= new StringBuilder();
 			int				braceDepth			= 0;
 			String			continuationPrompt	= MiniConsole.color( 39 ) + "        ... " + MiniConsole.reset();
@@ -509,19 +513,6 @@ public class BoxRepl {
 
 			return tempBuffer.toString();
 		}
-	}
-
-	/**
-	 * Sets up tab completion providers for the console
-	 *
-	 * @param console The MiniConsole instance to configure
-	 */
-	private void setupTabCompletion( MiniConsole console ) {
-		// Register component tab provider for bx: completions
-		console.registerTabProvider( new ComponentTabProvider( BoxRepl.this.components ) );
-
-		// Register BIF tab provider for function completions
-		console.registerTabProvider( new BifTabProvider( BoxRepl.this.bifs ) );
 	}
 
 }
