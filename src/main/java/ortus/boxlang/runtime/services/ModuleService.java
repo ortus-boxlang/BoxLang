@@ -167,7 +167,7 @@ public class ModuleService extends BaseService {
 			        "description", entrySet.getValue().description,
 			        "enabled", entrySet.getValue().isEnabled(),
 			        "invocationPath", entrySet.getValue().invocationPath,
-			        "mapping", entrySet.getValue().mapping,
+			        "mapping", entrySet.getValue().mapping.toStruct(),
 			        "physicalPath", entrySet.getValue().physicalPath.toString(),
 			        "registeredOn", entrySet.getValue().registeredOn,
 			        "registrationTime", entrySet.getValue().registrationTime,

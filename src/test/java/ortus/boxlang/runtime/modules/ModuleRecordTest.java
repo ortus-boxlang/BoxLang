@@ -72,7 +72,7 @@ class ModuleRecordTest {
 
 		// Then
 		assertThat( moduleRecord.name ).isEqualTo( moduleName );
-		assertThat( moduleRecord.mapping ).isEqualTo( "/bxModules/TestModule" );
+		assertThat( moduleRecord.mapping.name() ).isEqualTo( "/bxModules/TestModule/" );
 		Path modulePath = moduleRecord.physicalPath;
 		assertThat( modulePath.getFileName().toString() ).isEqualTo( "TestModule" );
 		assertThat( moduleRecord.invocationPath ).isEqualTo( "bxModules.TestModule" );
@@ -116,7 +116,11 @@ class ModuleRecordTest {
 		assertThat( structRepresentation.get( "id" ) ).isNotNull();
 		assertThat( structRepresentation.getAsArray( Key.of( "interceptors" ) ).size() ).isEqualTo( 0 );
 		assertThat( structRepresentation.get( "invocationPath" ) ).isEqualTo( "bxModules.TestModule" );
-		assertThat( structRepresentation.get( "mapping" ) ).isEqualTo( "/bxModules/TestModule" );
+		assertThat( structRepresentation.get( "mapping" ) ).isInstanceOf( IStruct.class );
+		Struct mappingStruct = ( Struct ) structRepresentation.get( "mapping" );
+		assertThat( mappingStruct.getAsString( Key.of( "name" ) ) ).isEqualTo( "/bxModules/TestModule/" );
+		assertThat( mappingStruct.getAsString( Key.of( "path" ) ) ).isEqualTo( physicalPath );
+		assertThat( mappingStruct.getAsBoolean( Key.of( "external" ) ) ).isFalse();
 		assertThat( structRepresentation.get( "name" ) ).isEqualTo( moduleName );
 	}
 
@@ -138,7 +142,7 @@ class ModuleRecordTest {
 		assertThat( moduleRecord.description ).isEqualTo( "This module does amazing things" );
 		assertThat( moduleRecord.webURL ).isEqualTo( "https://www.ortussolutions.com" );
 		assertThat( moduleRecord.enabled ).isEqualTo( true );
-		assertThat( moduleRecord.mapping ).isEqualTo( ModuleService.MODULE_MAPPING_PREFIX + "test" );
+		assertThat( moduleRecord.mapping.name() ).isEqualTo( ModuleService.MODULE_MAPPING_PREFIX + "test/" );
 		assertThat( moduleRecord.invocationPath ).isEqualTo( ModuleService.MODULE_MAPPING_INVOCATION_PREFIX + moduleRecord.name.getName() );
 	}
 
@@ -179,7 +183,7 @@ class ModuleRecordTest {
 		assertThat( moduleRecord.description ).isEqualTo( "This module does amazing things" );
 		assertThat( moduleRecord.webURL ).isEqualTo( "https://www.ortussolutions.com" );
 		assertThat( moduleRecord.enabled ).isEqualTo( true );
-		assertThat( moduleRecord.mapping ).isEqualTo( ModuleService.MODULE_MAPPING_PREFIX + "test" );
+		assertThat( moduleRecord.mapping.name() ).isEqualTo( ModuleService.MODULE_MAPPING_PREFIX + "test/" );
 		assertThat( moduleRecord.invocationPath ).isEqualTo( ModuleService.MODULE_MAPPING_INVOCATION_PREFIX + moduleRecord.name.getName() );
 		assertThat( moduleRecord.settings.getAsStruct( Key.of( "nested" ) ).get( Key.of( "SLA" ) ) ).isEqualTo( "24 hours" );
 		assertThat( moduleRecord.settings.getAsStruct( Key.of( "nested" ) ).get( Key.of( "supportedBy" ) ) ).isEqualTo( "Jon" );
