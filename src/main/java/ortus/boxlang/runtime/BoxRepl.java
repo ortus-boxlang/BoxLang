@@ -95,14 +95,8 @@ public class BoxRepl {
 	 * @param args Command line arguments (currently unused)
 	 */
 	public static void main( String[] args ) {
-		try {
-			BoxRuntime	runtime	= BoxRuntime.getInstance( true );
-			BoxRepl		repl	= new BoxRepl( runtime );
-			repl.start();
-		} catch ( IOException e ) {
-			System.err.println( "REPL Error: " + e.getMessage() );
-			System.exit( 1 );
-		}
+		BoxRuntime runtime = BoxRuntime.getInstance( true );
+		new BoxRepl( runtime ).start();
 	}
 
 	/**
@@ -189,8 +183,9 @@ public class BoxRepl {
 				executeReplLine( source, scriptingContext );
 			}
 
+		} catch ( IOException e ) {
+			System.err.println( "REPL I/O Error: " + e.getMessage() );
 		} finally {
-			// Clean up resources
 			if ( console != null ) {
 				console.close();
 			}
@@ -203,7 +198,7 @@ public class BoxRepl {
 	 * Display the BoxLang REPL banner and instructions.
 	 */
 	private void showBanner() {
-		System.out.println( "  ██████   ██████  ██   ██ ██       █████  ███    ██  ██████ " );
+		System.out.println( "   ██████   ██████  ██   ██ ██       █████  ███    ██  ██████ " );
 		System.out.println( "   ██   ██ ██    ██  ██ ██  ██      ██   ██ ████   ██ ██      " );
 		System.out.println( "   ██████  ██    ██   ███   ██      ███████ ██ ██  ██ ██   ███" );
 		System.out.println( "   ██   ██ ██    ██  ██ ██  ██      ██   ██ ██  ██ ██ ██    ██" );
@@ -211,10 +206,10 @@ public class BoxRepl {
 		System.out.println( "" );
 		System.out.println( "✨ Welcome to the BoxLang Interactive REPL!" );
 		System.out.println( "💡 Enter an expression, then hit enter" );
-		System.out.println( " ↕️ UP/DOWN arrows navigate command history" );
-		System.out.println( " 📚 Type 'history' to see command history" );
-		System.out.println( " 🔄 Type '!!' to repeat last command, or '!n' to repeat command n" );
-		System.out.println( " 🧹 Press Ctrl+D to clear current line, or on empty line to exit" );
+		System.out.println( "↕️ UP/DOWN arrows navigate command history" );
+		System.out.println( "📚 Type 'history' to see command history" );
+		System.out.println( "🔄 Type '!!' to repeat last command, or '!n' to repeat command n" );
+		System.out.println( "🧹 Press Ctrl+D to clear current line, or on empty line to exit" );
 		System.out.println( "🚪 Type 'exit' or 'quit' to leave, or press Ctrl-C" );
 		System.out.println( "" );
 	}
