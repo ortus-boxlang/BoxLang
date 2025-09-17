@@ -48,6 +48,11 @@ public class Compare implements IOperator {
 	public static boolean		lenientDateComparison	= false;
 
 	/**
+	 * null is equal to empty string
+	 */
+	public static boolean		nullEqualsEmptyString	= false;
+
+	/**
 	 * Invokes the comparison
 	 *
 	 * @param left  The left operand
@@ -117,6 +122,17 @@ public class Compare implements IOperator {
 		if ( left == null && right == null ) {
 			return 0;
 		}
+
+		// This is here for CF compat, off unless toggled by compat module
+		if ( nullEqualsEmptyString ) {
+			if ( left == null && "".equals( right ) ) {
+				return 0;
+			}
+			if ( right == null && "".equals( left ) ) {
+				return 0;
+			}
+		}
+
 		// null is less than than non null
 		if ( left == null && right != null ) {
 			return -1;
