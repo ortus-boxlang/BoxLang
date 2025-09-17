@@ -86,7 +86,7 @@ public class Attempt<T> {
 	 */
 	protected Attempt( T value ) {
 		this.value				= value;
-		this.validationRecord	= new ValidationRecord();
+		this.validationRecord	= null;
 	}
 
 	/**
@@ -286,6 +286,11 @@ public class Attempt<T> {
 		// Verify if present first
 		if ( isEmpty() ) {
 			return false;
+		}
+
+		if ( this.validationRecord == null ) {
+			// No validation rules, so if present, it's valid
+			return true;
 		}
 
 		// Do we have a validation function?

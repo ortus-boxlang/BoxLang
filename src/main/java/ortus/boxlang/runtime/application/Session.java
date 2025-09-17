@@ -110,7 +110,7 @@ public class Session implements Serializable {
 		    .getInterceptorService()
 		    .announce(
 		        BoxEvent.ON_SESSION_CREATED,
-		        Struct.of(
+		        () -> Struct.ofNonConcurrent(
 		            Key.session, this,
 		            Key.application, application
 		        )
@@ -245,7 +245,7 @@ public class Session implements Serializable {
 			    .getInterceptorService()
 			    .announce(
 			        BoxEvent.ON_SESSION_DESTROYED,
-			        Struct.of(
+			        () -> Struct.ofNonConcurrent(
 			            Key.session, this,
 			            Key.application, targetAppScope,
 			            Key.listener, listener

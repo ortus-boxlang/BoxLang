@@ -44,9 +44,9 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.AsyncService;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.DelimitedArray;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
  * Utility class providing comprehensive list manipulation operations for
@@ -180,19 +180,19 @@ public class ListUtil {
 		}
 
 		if ( delimiter.length() == 0 ) {
-			return Array.of( list.split( "" ) );
+			return Array.of( ( Object[] ) list.split( "" ) );
 		}
 		if ( wholeDelimiter ) {
 			if ( includeEmpty ) {
-				return Array.of( StringUtils.splitByWholeSeparatorPreserveAllTokens( list, delimiter ) );
+				return Array.of( ( Object[] ) StringUtils.splitByWholeSeparatorPreserveAllTokens( list, delimiter ) );
 			} else {
-				return Array.of( StringUtils.splitByWholeSeparator( list, delimiter ) );
+				return Array.of( ( Object[] ) StringUtils.splitByWholeSeparator( list, delimiter ) );
 			}
 		} else {
 			if ( includeEmpty ) {
-				return Array.of( StringUtils.splitPreserveAllTokens( list, delimiter ) );
+				return Array.of( ( Object[] ) StringUtils.splitPreserveAllTokens( list, delimiter ) );
 			} else {
-				return Array.of( StringUtils.split( list, delimiter ) );
+				return Array.of( ( Object[] ) StringUtils.split( list, delimiter ) );
 			}
 		}
 
@@ -622,8 +622,8 @@ public class ListUtil {
 	 * @param maxThreads      Optional max threads for parallel execution
 	 * @param ordered         Boolean as to whether to maintain order in parallel
 	 *                        execution
-	 * 
-	 * @deprecated Since 1.5.0 Use
+	 *
+	 * @Deprecated Since 1.5.0 Use
 	 *             {@link #each(Array, Function, IBoxContext, Boolean, Integer, Boolean)}
 	 *             instead.
 	 */
@@ -739,8 +739,8 @@ public class ListUtil {
 	 * @param maxThreads      Optional max threads for parallel execution
 	 *
 	 * @return The boolean value as to whether the test is met
-	 * 
-	 * @deprecated Since 1.5.0 Use
+	 *
+	 * @Deprecated Since 1.5.0 Use
 	 *             {@link #some(Array, Function, IBoxContext, Boolean, Integer, Boolean)}
 	 *             instead.
 	 */
@@ -926,8 +926,8 @@ public class ListUtil {
 	 * @param callbackContext The context in which to execute the callback
 	 * @param parallel        Whether to process the filter in parallel
 	 * @param maxThreads      Optional max threads for parallel execution
-	 * 
-	 * @deprecated Since 1.5.0 Use {@link #filter(Array, Function, IBoxContext, Boolean, Integer, Boolean)} instead.
+	 *
+	 * @Deprecated Since 1.5.0 Use {@link #filter(Array, Function, IBoxContext, Boolean, Integer, Boolean)} instead.
 	 *
 	 * @return A filtered array
 	 */
@@ -1102,8 +1102,8 @@ public class ListUtil {
 	 * @param maxThreads      Optional max threads for parallel execution
 	 *
 	 * @return The boolean value as to whether the test is met
-	 * 
-	 * @deprecated Since 1.5.0 Use
+	 *
+	 * @Deprecated Since 1.5.0 Use
 	 *             {@link #map(Array, Function, IBoxContext, Boolean, Integer, Boolean)}
 	 *             instead.
 	 */

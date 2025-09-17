@@ -1314,7 +1314,7 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	 *      Examples:
 	 *      - @param name "User name" becomes a formal annotation
 	 *      - @return "Generated user ID" becomes a return annotation
-	 *      - @deprecated "Use newMethod instead" becomes a deprecated annotation
+	 *      - @Deprecated "Use newMethod instead" becomes a deprecated annotation
 	 *
 	 * @param annotations   The existing formal annotations list to merge into
 	 * @param documentation The documentation annotations to merge from

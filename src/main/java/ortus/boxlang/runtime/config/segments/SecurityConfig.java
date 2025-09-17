@@ -175,7 +175,7 @@ public class SecurityConfig implements IConfigSegment {
 	 */
 	@Override
 	public IStruct asStruct() {
-		return Struct.of(
+		return Struct.ofNonConcurrent(
 		    Key.allowedFileOperationExtensions, Array.fromList( this.allowedFileOperationExtensions ),
 		    Key.disallowedImports, this.disallowedImports,
 		    Key.disallowedBIFs, this.disallowedBIFs,

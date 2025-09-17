@@ -55,7 +55,6 @@ import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.QueryMeta;
 import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableQuery;
-import ortus.boxlang.runtime.types.util.BLCollector;
 import ortus.boxlang.runtime.util.DuplicationUtil;
 
 /**
@@ -134,6 +133,16 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 * Metadata for the query, used to populate QueryMeta
 	 */
 	private IStruct							metadata;
+
+	/**
+	 * Denormalized list of column names for fast access. Initialized on first use.
+	 */
+	private transient String				columnNameList		= null;
+
+	/**
+	 * Denormalized array of column names for fast access. Initialized on first use.
+	 */
+	private transient Array					columnNameArray		= null;
 
 	/**
 	 * Create a new query with additional metadata
@@ -406,6 +415,8 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 				addRow( row );
 			}
 		}
+		columnNameList	= null;
+		columnNameArray	= null;
 		return this;
 	}
 
@@ -556,11 +567,12 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		// Insert the rows
 		synchronized ( data ) {
 			for ( int i = 0; i < target.size(); i++ ) {
+				final int finalI = i;
 				interceptorService.announce(
 				    BoxEvent.QUERY_ADD_ROW,
-				    Struct.of(
-				        "query", this,
-				        "row", target.getRow( i )
+				    () -> Struct.ofNonConcurrent(
+				        Key.query, this,
+				        Key.row, target.getRow( finalI )
 				    )
 				);
 				data.add( position + i, target.getRow( i ) );
@@ -581,9 +593,9 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	public int addRow( Object[] row ) {
 		interceptorService.announce(
 		    BoxEvent.QUERY_ADD_ROW,
-		    Struct.of(
-		        "query", this,
-		        "row", row
+		    () -> Struct.ofNonConcurrent(
+		        Key.query, this,
+		        Key.row, row
 		    )
 		);
 		// TODO: validate types
@@ -721,6 +733,8 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 			System.arraycopy( row, index + 1, newRow, index, row.length - index - 1 );
 			data.set( i, newRow );
 		}
+		columnNameList	= null;
+		columnNameArray	= null;
 	}
 
 	/**
@@ -874,7 +888,15 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 * @return column names as string
 	 */
 	public String getColumnList() {
-		return getColumns().keySet().stream().map( Key::getName ).collect( Collectors.joining( "," ) );
+		if ( columnNameList == null ) {
+			synchronized ( this ) {
+				if ( columnNameList == null ) {
+					columnNameList = getColumns().keySet().stream().map( Key::getName ).collect( Collectors.joining( "," ) );
+				}
+			}
+		}
+
+		return columnNameList;
 	}
 
 	/**
@@ -883,7 +905,14 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 * @return column names as array
 	 */
 	public Array getColumnArray() {
-		return getColumns().keySet().stream().map( Key::getName ).collect( BLCollector.toArray() );
+		if ( columnNameArray == null ) {
+			synchronized ( this ) {
+				if ( columnNameArray == null ) {
+					columnNameArray = Array.fromArray( getColumns().keySet().stream().map( Key::getName ).toArray( String[]::new ) );
+				}
+			}
+		}
+		return columnNameArray;
 	}
 
 	/**

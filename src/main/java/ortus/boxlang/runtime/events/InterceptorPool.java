@@ -18,11 +18,13 @@
 package ortus.boxlang.runtime.events;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import ortus.boxlang.runtime.BoxRuntime;
@@ -56,7 +58,7 @@ public class InterceptorPool {
 	 * Constants
 	 * --------------------------------------------------------------------------
 	 */
-	private static final IStruct				EMPTY_STRUCT		= new Struct();
+	private static final IStruct			EMPTY_STRUCT		= new Struct().toUnmodifiable();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -67,32 +69,32 @@ public class InterceptorPool {
 	/**
 	 * Logger
 	 */
-	private BoxLangLogger						logger;
+	private BoxLangLogger					logger;
 
 	/**
 	 * The list of interception points we can listen for
 	 */
-	protected Set<Key>							interceptionPoints	= ConcurrentHashMap.newKeySet( 32 );
+	protected Set<Key>						interceptionPoints	= ConcurrentHashMap.newKeySet( 32 );
 
 	/**
 	 * The collection of interception states registered with the service
 	 */
-	protected Map<Key, InterceptorState>		interceptionStates	= new ConcurrentHashMap<>();
+	protected Map<Key, InterceptorState>	interceptionStates	= new HashMap<>();
 
 	/**
 	 * Key registry of announced states, to avoid key creation
 	 */
-	protected ConcurrentHashMap<String, Key>	keyRegistry			= new ConcurrentHashMap<>();
+	protected Map<String, Key>				keyRegistry			= new HashMap<>();
 
 	/**
 	 * The name of the pool
 	 */
-	protected Key								name;
+	protected Key							name;
 
 	/**
 	 * The runtime singleton
 	 */
-	protected BoxRuntime						runtime;
+	protected BoxRuntime					runtime;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -170,7 +172,9 @@ public class InterceptorPool {
 	 * Use with caution. Mostly left for testing purposes
 	 */
 	public void clearInterceptionStates() {
-		this.interceptionStates.clear();
+		synchronized ( this.interceptionStates ) {
+			this.interceptionStates.clear();
+		}
 	}
 
 	/**
@@ -215,7 +219,9 @@ public class InterceptorPool {
 	 */
 	public synchronized InterceptorPool removeInterceptionPoint( Key... points ) {
 		this.interceptionPoints.removeAll( Arrays.asList( points ) );
-		this.interceptionStates.keySet().removeAll( Arrays.asList( points ) );
+		synchronized ( this.interceptionStates ) {
+			this.interceptionStates.keySet().removeAll( Arrays.asList( points ) );
+		}
 		return this;
 	}
 
@@ -254,6 +260,17 @@ public class InterceptorPool {
 	}
 
 	/**
+	 * Check if the service has the {@link InterceptorState}
+	 *
+	 * @param name The name of the state
+	 *
+	 * @return True if the service has the state, false otherwise
+	 */
+	public Boolean hasState( BoxEvent name ) {
+		return this.interceptionStates.containsKey( name.key() );
+	}
+
+	/**
 	 * Register a new {@link InterceptorState} with the pool and returns it.
 	 * This verifies if there is already an interception point by that name.
 	 * If there is not, it will add it.
@@ -269,10 +286,17 @@ public class InterceptorPool {
 		// Register it or return it
 
 		// Comput if absent
-		return interceptionStates.computeIfAbsent(
-		    name,
-		    InterceptorState::new
-		);
+		InterceptorState state = interceptionStates.get( name );
+		if ( state == null ) {
+			synchronized ( interceptionStates ) {
+				state = interceptionStates.get( name );
+				if ( state == null ) {
+					state = new InterceptorState( name );
+					interceptionStates.put( name, state );
+				}
+			}
+		}
+		return state;
 	}
 
 	/**
@@ -283,8 +307,10 @@ public class InterceptorPool {
 	 *
 	 * @return The same pool
 	 */
-	public synchronized InterceptorPool removeState( Key name ) {
-		this.interceptionStates.remove( name );
+	public InterceptorPool removeState( Key name ) {
+		synchronized ( this.interceptionStates ) {
+			this.interceptionStates.remove( name );
+		}
 		return this;
 	}
 
@@ -539,9 +565,11 @@ public class InterceptorPool {
 	 * @return The same pool
 	 */
 	public InterceptorPool unregister( DynamicObject interceptor ) {
-		interceptionStates.values()
-		    .stream()
-		    .forEach( state -> state.unregister( interceptor ) );
+		synchronized ( this.interceptionStates ) {
+			interceptionStates.values()
+			    .stream()
+			    .forEach( state -> state.unregister( interceptor ) );
+		}
 		return this;
 	}
 
@@ -582,11 +610,42 @@ public class InterceptorPool {
 	/**
 	 * Announce an event with the provided {@link IStruct} of data.
 	 *
+	 * @param state        The state to announce
+	 * @param dataProducer A supplier that produces the data to announce
+	 */
+	public void announce( BoxEvent state, Supplier<IStruct> dataProducer ) {
+		announce( state.key(), dataProducer );
+	}
+
+	/**
+	 * Announce an event with the provided {@link IStruct} of data.
+	 *
 	 * @param state The state to announce
 	 * @param data  The data to announce
 	 */
 	public void announce( String state, IStruct data ) {
-		announce( this.keyRegistry.computeIfAbsent( state, Key::of ), data );
+		announce( getKeyFromRegistry( state ), data );
+	}
+
+	/**
+	 * Get or create a Key from the registry
+	 * 
+	 * @param state The state name
+	 * 
+	 * @return The Key object
+	 */
+	private Key getKeyFromRegistry( String state ) {
+		Key key = this.keyRegistry.get( state );
+		if ( key == null ) {
+			synchronized ( this.keyRegistry ) {
+				key = this.keyRegistry.get( state );
+				if ( key == null ) {
+					key = Key.of( state );
+					this.keyRegistry.put( state, key );
+				}
+			}
+		}
+		return key;
 	}
 
 	/**
@@ -596,19 +655,41 @@ public class InterceptorPool {
 	 * @param data  The data to announce
 	 */
 	public void announce( Key state, IStruct data ) {
-		announce( state, data, this.runtime.getRuntimeContext() );
+		announce( state, () -> data, this.runtime.getRuntimeContext() );
+	}
+
+	/**
+	 * Announce an event with the provided {@link IStruct} of data.
+	 *
+	 * @param state        The state key to announce
+	 * @param dataProducer A supplier that produces the data to announce
+	 */
+	public void announce( Key state, Supplier<IStruct> dataProducer ) {
+		announce( state, dataProducer, this.runtime.getRuntimeContext() );
 	}
 
 	/**
 	 * Announce an event with the provided {@link IStruct} of data and context
 	 *
-	 * @param state The state key to announce
-	 * @param data  The data to announce
+	 * @param state        The state key to announce
+	 * @param dataProducer A supplier that produces the data to announce
+	 * @param context      The context to pass to the interceptors
 	 */
 	public void announce( Key state, IStruct data, IBoxContext context ) {
+		announce( state, () -> data, context );
+	}
+
+	/**
+	 * Announce an event with the provided {@link IStruct} of data and context
+	 *
+	 * @param state   The state key to announce
+	 * @param data    The data to announce
+	 * @param context The context to pass to the interceptors
+	 */
+	public void announce( Key state, Supplier<IStruct> dataProducer, IBoxContext context ) {
 		if ( hasState( state ) ) {
 			try {
-				getState( state ).announce( data, context );
+				getState( state ).announce( dataProducer.get(), context );
 			} catch ( AbortException e ) {
 				throw e;
 			} catch ( Exception e ) {
@@ -670,7 +751,7 @@ public class InterceptorPool {
 	 * @return A CompletableFuture of the data or null if the state does not exist
 	 */
 	public CompletableFuture<IStruct> announceAsync( String state, IStruct data ) {
-		return announceAsync( this.keyRegistry.computeIfAbsent( state, Key::of ), data );
+		return announceAsync( getKeyFromRegistry( state ), data );
 	}
 
 	/**

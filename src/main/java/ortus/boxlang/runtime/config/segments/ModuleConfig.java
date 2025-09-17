@@ -87,7 +87,7 @@ public class ModuleConfig implements IConfigSegment {
 	 * @return A struct representation of the configuration segment
 	 */
 	public IStruct asStruct() {
-		return Struct.of(
+		return Struct.ofNonConcurrent(
 		    Key._NAME, this.name,
 		    Key.enabled, this.enabled,
 		    Key.settings, new Struct( this.settings )

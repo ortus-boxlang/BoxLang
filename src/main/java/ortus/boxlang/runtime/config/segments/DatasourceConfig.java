@@ -159,7 +159,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	    // additional monitoring information
 	    "registerMbeans", true,
 	    // Leak detection threshold in seconds
-	    "leakDetectionThreshold", 30 );
+	    "leakDetectionThreshold", 0 );
 
 	// List of keys to NOT set dynamically. All keys not in this list will use
 	// `addDataSourceProperty` to set the property and pass it to the JDBC driver.

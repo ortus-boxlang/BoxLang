@@ -114,7 +114,7 @@ public class LoggerConfig implements IConfigSegment {
 		IStruct argsCopy = new Struct( Struct.KEY_LENGTH_LONGEST_FIRST_COMPARATOR );
 		argsCopy.putAll( this.appenderArguments );
 
-		return Struct.of(
+		return Struct.ofNonConcurrent(
 		    Key._NAME, this.name.getName(),
 		    Key.level, this.level.getName(),
 		    Key.additive, this.additive,

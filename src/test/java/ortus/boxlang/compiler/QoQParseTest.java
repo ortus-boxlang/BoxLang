@@ -74,7 +74,7 @@ public class QoQParseTest {
 		IStruct			data	= Struct.of(
 		    "file", null,
 		    "result", result );
-		BoxRuntime.getInstance().announce( "onParse", data );
+		BoxRuntime.getInstance().announce( Key.onParse, data );
 
 		assertThat( result ).isNotNull();
 		System.out.println( result.getIssues() );

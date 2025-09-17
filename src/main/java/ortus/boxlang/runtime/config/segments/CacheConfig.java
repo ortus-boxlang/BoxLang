@@ -251,10 +251,10 @@ public class CacheConfig {
 	 * Remember that this is what the context's use to build runtime/request configs, so don't use any references
 	 */
 	public IStruct toStruct() {
-		return Struct.of(
-		    "name", this.name.getName(),
-		    "provider", this.provider.getName(),
-		    "properties", new Struct( this.properties )
+		return Struct.ofNonConcurrent(
+		    Key._NAME, this.name.getName(),
+		    Key.provider, this.provider.getName(),
+		    Key.properties, new Struct( IStruct.TYPES.DEFAULT, this.properties, false )
 		);
 	}
 

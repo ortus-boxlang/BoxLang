@@ -21,6 +21,7 @@ import java.net.URL;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.Configuration;
@@ -138,54 +139,54 @@ public abstract class BaseApplicationListener {
 	 * <p>
 	 * You can find the majority of defaults in the {@link Configuration} class.
 	 */
-	protected IStruct						settings					= Struct.of(
+	protected IStruct						settings					= Struct.ofNonConcurrent(
 	    // Security settings
-	    "allowedFileOperationExtensions", runtime.getConfiguration().security.allowedFileOperationExtensions,
+	    Key.allowedFileOperationExtensions, runtime.getConfiguration().security.allowedFileOperationExtensions,
 	    // Application settings
-	    "applicationTimeout", runtime.getConfiguration().applicationTimeout,
+	    Key.applicationTimeout, runtime.getConfiguration().applicationTimeout,
 	    // Cache Definitions
-	    "caches", new Struct(),
+	    Key.caches, new Struct(),
 	    // Class Paths, using both for compat
-	    "classPaths", new Array(),
-	    "componentPaths", new Array(),
+	    Key.classPaths, new Array(),
+	    Key.componentPaths, new Array(),
 	    // Component Paths
-	    "customComponentPaths", new Array(),
+	    Key.customComponentPaths, new Array(),
 	    // Datasource settings
-	    "datasource", runtime.getConfiguration().defaultDatasource,
-	    "defaultDatasource", runtime.getConfiguration().defaultDatasource,
-	    "datasources", new Struct(),
+	    Key.datasource, runtime.getConfiguration().defaultDatasource,
+	    Key.defaultDatasource, runtime.getConfiguration().defaultDatasource,
+	    Key.datasources, new Struct(),
 	    // Security settings
-	    "disallowedFileOperationExtensions", runtime.getConfiguration().security.disallowedFileOperationExtensions,
+	    Key.disallowedFileOperationExtensions, runtime.getConfiguration().security.disallowedFileOperationExtensions,
 	    // Invocation settings
-	    "invokeImplicitAccessor", runtime.getConfiguration().invokeImplicitAccessor,
+	    Key.invokeImplicitAccessor, runtime.getConfiguration().invokeImplicitAccessor,
 	    // Java Settings
-	    "javaSettings", Struct.of(
-	        "loadPaths", new Array(),
-	        "loadSystemClassPath", false,
-	        "reloadOnChange", false
+	    Key.javaSettings, Struct.ofNonConcurrent(
+	        Key.loadPaths, new Array(),
+	        Key.loadSystemClassPath, false,
+	        Key.reloadOnChange, false
 	    ),
 	    // Locale for the application
-	    "locale", runtime.getConfiguration().locale.toString(),
+	    Key.locale, runtime.getConfiguration().locale.toString(),
 	    // Mappings
-	    "mappings", Struct.of(),
+	    Key.mappings, Struct.ofNonConcurrent(),
 	    // Dynamic Schedulers
-	    "schedulers", new Array(),
+	    Key.schedulers, new Array(),
 	    // Default Session Management settings
-	    "sessionManagement", runtime.getConfiguration().sessionManagement,
-	    "sessionStorage", runtime.getConfiguration().sessionStorage,
-	    "sessionTimeout", runtime.getConfiguration().sessionTimeout,
+	    Key.sessionManagement, runtime.getConfiguration().sessionManagement,
+	    Key.sessionStorage, runtime.getConfiguration().sessionStorage,
+	    Key.sessionTimeout, runtime.getConfiguration().sessionTimeout,
 	    // Cookie Management
-	    "setClientCookies", runtime.getConfiguration().setClientCookies,
-	    "setDomainCookies", runtime.getConfiguration().setDomainCookies,
+	    Key.setClientCookies, runtime.getConfiguration().setClientCookies,
+	    Key.setDomainCookies, runtime.getConfiguration().setDomainCookies,
 	    // These are auto-calculated at runtime
-	    "class", "",
-	    "name", "",
-	    "source", "",
+	    Key._CLASS, "",
+	    Key._NAME, "",
+	    Key.source, "",
 	    // end auto-calculated
-	    "timezone", runtime.getConfiguration().timezone.getId(),
+	    Key.timezone, runtime.getConfiguration().timezone.getId(),
 	    // Stil Considering if they will be core or a module
-	    "secureJson", false,
-	    "secureJsonPrefix", ""
+	    Key.secureJson, false,
+	    Key.secureJsonPrefix, ""
 	);
 
 	/**
@@ -308,9 +309,9 @@ public abstract class BaseApplicationListener {
 			// Announce application defined
 			BoxRuntime.getInstance().getInterceptorService().announce(
 			    BoxEvent.ON_APPLICATION_DEFINED,
-			    Struct.of(
-			        "listener", this,
-			        "context", this.context
+			    () -> Struct.ofNonConcurrent(
+			        Key.listener, this,
+			        Key.context, this.context
 			    ) );
 		} catch ( Throwable e ) {
 			// Log the error
@@ -573,24 +574,25 @@ public abstract class BaseApplicationListener {
 	 */
 	public void onRequest( IBoxContext context, Object[] args ) {
 		logger.trace( "Fired onRequest ...................." );
-		IStruct eventArgs = Struct.of(
-		    "context", context,
-		    "args", args,
-		    "application", this.application,
-		    "listener", this
+
+		Supplier<IStruct> dataProducer = () -> Struct.ofNonConcurrent(
+		    Key.context, context,
+		    Key.args, args,
+		    Key.application, this.application,
+		    Key.listener, this
 		);
 
 		// Announce locally
 		this.interceptorPool.announce(
 		    Key.onRequest,
-		    eventArgs,
+		    dataProducer,
 		    context
 		);
 
 		// Announce globally
 		interceptorService.announce(
 		    Key.onRequest,
-		    eventArgs,
+		    dataProducer,
 		    context
 		);
 	}
@@ -605,24 +607,25 @@ public abstract class BaseApplicationListener {
 	 */
 	public boolean onRequestStart( IBoxContext context, Object[] args ) {
 		logger.trace( "Fired onRequestStart ...................." );
-		IStruct eventArgs = Struct.of(
-		    "context", context,
-		    "args", args,
-		    "application", this.application,
-		    "listener", this
+
+		Supplier<IStruct> dataProducer = () -> Struct.ofNonConcurrent(
+		    Key.context, context,
+		    Key.args, args,
+		    Key.application, this.application,
+		    Key.listener, this
 		);
 
 		// Announce locally
 		this.interceptorPool.announce(
 		    Key.onRequestStart,
-		    eventArgs,
+		    dataProducer,
 		    context
 		);
 
 		// Announce globally
 		interceptorService.announce(
 		    Key.onRequestStart,
-		    eventArgs,
+		    dataProducer,
 		    context
 		);
 
@@ -637,24 +640,24 @@ public abstract class BaseApplicationListener {
 	 */
 	public void onRequestEnd( IBoxContext context, Object[] args ) {
 		logger.trace( "Fired onRequestEnd ...................." );
-		IStruct eventArgs = Struct.of(
-		    "context", context,
-		    "args", args,
-		    "application", this.application,
-		    "listener", this
+		Supplier<IStruct> dataProducer = () -> Struct.ofNonConcurrent(
+		    Key.context, context,
+		    Key.args, args,
+		    Key.application, this.application,
+		    Key.listener, this
 		);
 
 		// Announce locally
 		this.interceptorPool.announce(
 		    Key.onRequestEnd,
-		    eventArgs,
+		    dataProducer,
 		    context
 		);
 
 		// Announce globally
 		interceptorService.announce(
 		    Key.onRequestEnd,
-		    eventArgs,
+		    dataProducer,
 		    context
 		);
 	}
@@ -668,24 +671,24 @@ public abstract class BaseApplicationListener {
 	public void onAbort( IBoxContext context, Object[] args ) {
 		logger.trace( "Fired onAbort ...................." );
 
-		IStruct eventArgs = Struct.of(
-		    "context", context,
-		    "args", args,
-		    "application", this.application,
-		    "listener", this
+		Supplier<IStruct> dataProducer = () -> Struct.ofNonConcurrent(
+		    Key.context, context,
+		    Key.args, args,
+		    Key.application, this.application,
+		    Key.listener, this
 		);
 
 		// Announce locally
 		this.interceptorPool.announce(
 		    Key.onAbort,
-		    eventArgs,
+		    dataProducer,
 		    context
 		);
 
 		// Announce globally
 		interceptorService.announce(
 		    Key.onAbort,
-		    eventArgs,
+		    dataProducer,
 		    context
 		);
 	}
@@ -709,29 +712,24 @@ public abstract class BaseApplicationListener {
 	private void _onClassRequest( IBoxContext context, Object[] args ) {
 		logger.trace( "Fired onClassRequest ...................." );
 
-		IStruct eventArgs = Struct.of(
-		    "context", context,
-		    "args", args,
-		    "application", this.application,
-		    "listener", this
+		Supplier<IStruct> dataProducer = () -> Struct.ofNonConcurrent(
+		    Key.context, context,
+		    Key.args, args,
+		    Key.application, this.application,
+		    Key.listener, this
 		);
 
 		// Announce locally
 		this.interceptorPool.announce(
 		    Key.onClassRequest,
-		    Struct.of(
-		        "context", context,
-		        "args", args,
-		        "application", this.application,
-		        "listener", this
-		    ),
+		    dataProducer,
 		    context
 		);
 
 		// Announce globally
 		interceptorService.announce(
 		    Key.onClassRequest,
-		    eventArgs,
+		    dataProducer,
 		    context
 		);
 	}
@@ -916,24 +914,24 @@ public abstract class BaseApplicationListener {
 	public void onSessionStart( IBoxContext context, Object[] args ) {
 		logger.trace( "Fired onSessionStart ...................." );
 
-		IStruct eventArgs = Struct.of(
-		    "context", context,
-		    "args", args,
-		    "application", this.application,
-		    "listener", this
+		Supplier<IStruct> dataProducer = () -> Struct.ofNonConcurrent(
+		    Key.context, context,
+		    Key.args, args,
+		    Key.application, this.application,
+		    Key.listener, this
 		);
 
 		// Announce locally
 		this.interceptorPool.announce(
 		    Key.onSessionStart,
-		    eventArgs,
+		    dataProducer,
 		    context
 		);
 
 		// Announce globally
 		interceptorService.announce(
 		    Key.onSessionStart,
-		    eventArgs,
+		    dataProducer,
 		    context
 		);
 	}
@@ -947,24 +945,24 @@ public abstract class BaseApplicationListener {
 	public void onSessionEnd( IBoxContext context, Object[] args ) {
 		logger.trace( "Fired onSessionEnd ...................." );
 
-		IStruct eventArgs = Struct.of(
-		    "context", context,
-		    "args", args,
-		    "application", this.application,
-		    "listener", this
+		Supplier<IStruct> dataProducer = () -> Struct.ofNonConcurrent(
+		    Key.context, context,
+		    Key.args, args,
+		    Key.application, this.application,
+		    Key.listener, this
 		);
 
 		// Announce locally
 		this.interceptorPool.announce(
 		    Key.onSessionEnd,
-		    eventArgs,
+		    dataProducer,
 		    context
 		);
 
 		// Announce globally
 		interceptorService.announce(
 		    Key.onSessionEnd,
-		    eventArgs,
+		    dataProducer,
 		    context
 		);
 	}
@@ -980,11 +978,11 @@ public abstract class BaseApplicationListener {
 
 		this.interceptorPool.announce(
 		    Key.onApplicationStart,
-		    Struct.of(
-		        "context", context,
-		        "args", args,
-		        "application", this.application,
-		        "listener", this
+		    () -> Struct.ofNonConcurrent(
+		        Key.context, context,
+		        Key.args, args,
+		        Key.application, this.application,
+		        Key.listener, this
 		    ),
 		    context
 		);
@@ -1001,11 +999,11 @@ public abstract class BaseApplicationListener {
 
 		this.interceptorPool.announce(
 		    Key.onApplicationEnd,
-		    Struct.of(
-		        "context", context,
-		        "args", args,
-		        "application", this.application,
-		        "listener", this
+		    Struct.ofNonConcurrent(
+		        Key.context, context,
+		        Key.args, args,
+		        Key.application, this.application,
+		        Key.listener, this
 		    ),
 		    context
 		);
@@ -1022,24 +1020,24 @@ public abstract class BaseApplicationListener {
 	public boolean onError( IBoxContext context, Object[] args ) {
 		logger.trace( "Fired onError ...................." );
 
-		IStruct eventArgs = Struct.of(
-		    "context", context,
-		    "args", args,
-		    "application", this.application,
-		    "listener", this
+		Supplier<IStruct> dataProducer = () -> Struct.ofNonConcurrent(
+		    Key.context, context,
+		    Key.args, args,
+		    Key.application, this.application,
+		    Key.listener, this
 		);
 
 		// Announce locally
 		this.interceptorPool.announce(
 		    Key.onError,
-		    eventArgs,
+		    dataProducer,
 		    context
 		);
 
 		// Announce globally
 		interceptorService.announce(
 		    Key.onError,
-		    eventArgs,
+		    dataProducer,
 		    context
 		);
 
@@ -1057,24 +1055,24 @@ public abstract class BaseApplicationListener {
 	public boolean onMissingTemplate( IBoxContext context, Object[] args ) {
 		logger.trace( "Fired onMissingTemplate ...................." );
 
-		IStruct eventArgs = Struct.of(
-		    "context", context,
-		    "args", args,
-		    "application", this.application,
-		    "listener", this
+		Supplier<IStruct> dataProducer = () -> Struct.ofNonConcurrent(
+		    Key.context, context,
+		    Key.args, args,
+		    Key.application, this.application,
+		    Key.listener, this
 		);
 
 		// Announce locally
 		this.interceptorPool.announce(
 		    Key.onMissingTemplate,
-		    eventArgs,
+		    dataProducer,
 		    context
 		);
 
 		// Announce globally
 		interceptorService.announce(
 		    Key.onMissingTemplate,
-		    eventArgs,
+		    dataProducer,
 		    context
 		);
 

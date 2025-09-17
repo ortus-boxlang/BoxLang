@@ -87,7 +87,7 @@ public class SchedulerConfig implements IConfigSegment {
 	 */
 	@Override
 	public IStruct asStruct() {
-		return Struct.of(
+		return Struct.ofNonConcurrent(
 		    Key.executor, this.executor,
 		    Key.cacheName, this.cacheName,
 		    Key.schedulers, Array.fromList( this.schedulers ),

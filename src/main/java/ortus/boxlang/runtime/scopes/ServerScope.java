@@ -84,9 +84,9 @@ public class ServerScope extends BaseScope {
 		// announce the scope creation
 		BoxRuntime.getInstance().announce(
 		    BoxEvent.ON_SERVER_SCOPE_CREATION,
-		    Struct.of(
-		        "scope", this,
-		        "name", ServerScope.name
+		    () -> Struct.of(
+		        Key.scope, this,
+		        Key._NAME, ServerScope.name
 		    )
 		);
 		this.initialized = true;

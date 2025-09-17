@@ -120,8 +120,7 @@ public class BoxFQN extends FQN {
 		}
 
 		// parse fqn into array of parts
-		return Arrays.stream( fqn.split( "\\." ) )
-		    .toArray( String[]::new );
+		return fqn.split( "\\." );
 	}
 
 	/**

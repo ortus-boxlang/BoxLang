@@ -485,9 +485,9 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 		    .getInterceptorService()
 		    .announce(
 		        BoxEvent.ON_REQUEST_CONTEXT_CONFIG,
-		        Struct.of(
-		            "context", this,
-		            "config", config
+		        () -> Struct.ofNonConcurrent(
+		            Key.context, this,
+		            Key.config, config
 		        )
 		    );
 

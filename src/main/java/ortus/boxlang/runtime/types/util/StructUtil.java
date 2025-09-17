@@ -45,10 +45,10 @@ import ortus.boxlang.runtime.operators.StringCompare;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.AsyncService;
 import ortus.boxlang.runtime.types.Array;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.EncryptionUtil;
 import ortus.boxlang.runtime.util.LocalizationUtil;
 
@@ -112,8 +112,8 @@ public class StructUtil {
 	 * @param parallel        Whether to process the filter in parallel
 	 * @param maxThreads      Optional max threads for parallel execution
 	 * @param ordered         Boolean as to whether to maintain order in parallel execution
-	 * 
-	 * @deprecated since 1.5.0, use {@link #each(IStruct, Function, IBoxContext, Boolean, Integer, Boolean, Boolean)} instead
+	 *
+	 * @Deprecated since 1.5.0, use {@link #each(IStruct, Function, IBoxContext, Boolean, Integer, Boolean, Boolean)} instead
 	 */
 	public static void each(
 	    IStruct struct,
@@ -213,8 +213,8 @@ public class StructUtil {
 	 * @param callbackContext The context in which to execute the callback
 	 * @param parallel        Whether to process the filter in parallel
 	 * @param maxThreads      Optional max threads for parallel execution
-	 * 
-	 * @deprecated since 1.5.0, use {@link #some(IStruct, Function, IBoxContext, Boolean, Integer, Boolean)} instead
+	 *
+	 * @Deprecated since 1.5.0, use {@link #some(IStruct, Function, IBoxContext, Boolean, Integer, Boolean)} instead
 	 *
 	 * @return The boolean value as to whether the test is met
 	 */
@@ -301,8 +301,8 @@ public class StructUtil {
 	 * @param callbackContext The context in which to execute the callback
 	 * @param parallel        Whether to process the filter in parallel
 	 * @param maxThreads      Optional max threads for parallel execution
-	 * 
-	 * @deprecated since 1.5.0, use {@link #every(IStruct, Function, IBoxContext, Boolean, Integer, Boolean)} instead
+	 *
+	 * @Deprecated since 1.5.0, use {@link #every(IStruct, Function, IBoxContext, Boolean, Integer, Boolean)} instead
 	 *
 	 * @return The boolean value as to whether the test is met
 	 */
@@ -386,8 +386,8 @@ public class StructUtil {
 	 * @param callbackContext The context in which to execute the callback
 	 * @param parallel        Whether to process the filter in parallel
 	 * @param maxThreads      Optional max threads for parallel execution
-	 * 
-	 * @deprecated since 1.5.0, use {@link #filter(IStruct, Function, IBoxContext, Boolean, Integer, Boolean)} instead
+	 *
+	 * @Deprecated since 1.5.0, use {@link #filter(IStruct, Function, IBoxContext, Boolean, Integer, Boolean)} instead
 	 *
 	 * @return A filtered array
 	 */
@@ -476,8 +476,8 @@ public class StructUtil {
 	 * @param callbackContext The context in which to execute the callback
 	 * @param parallel        Whether to process the filter in parallel
 	 * @param maxThreads      Optional max threads for parallel execution
-	 * 
-	 * @deprecated since 1.5.0, use {@link #map(IStruct, Function, IBoxContext, Boolean, Integer, Boolean)} instead
+	 *
+	 * @Deprecated since 1.5.0, use {@link #map(IStruct, Function, IBoxContext, Boolean, Integer, Boolean)} instead
 	 *
 	 * @return A filtered array
 	 */
