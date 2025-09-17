@@ -198,12 +198,14 @@ public class BoxRepl {
 					} catch ( NumberFormatException ignore ) {
 						// Invalid history number, treat as regular command
 					}
-				} else if ( braceDepth == 0 && source.equals( "history" ) ) {
+				}
+				// Magic Command: If the user typed ":history", then show command history
+				else if ( braceDepth == 0 && source.equals( ":history" ) ) {
 					console.showHistory();
 					continue;
 				}
-				// If the user typed "clear", then clear the console
-				else if ( braceDepth == 0 && source.equals( "clear" ) ) {
+				// Magic Command: If the user typed ":clear", then clear the console
+				else if ( braceDepth == 0 && source.equals( ":clear" ) ) {
 					console.clear();
 					showBanner();
 					continue;
