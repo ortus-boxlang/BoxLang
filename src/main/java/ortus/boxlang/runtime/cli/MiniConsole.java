@@ -74,42 +74,47 @@ public class MiniConsole implements AutoCloseable {
 	/**
 	 * Default prompt text
 	 */
-	private static final String		DEFAULT_PROMPT	= "> ";
+	private static final String		DEFAULT_PROMPT		= "> ";
 
 	/**
 	 * ANSI sequence to clear current line
 	 */
-	private static final String		CLR_LINE		= "\r\033[2K";
+	private static final String		CLR_LINE			= "\r\033[2K";
 
 	/**
 	 * Operating system detection
 	 */
-	private static final boolean	WINDOWS			= System.getProperty( "os.name" ).toLowerCase().contains( "win" );
+	private static final boolean	WINDOWS				= System.getProperty( "os.name" ).toLowerCase().contains( "win" );
 
 	/**
 	 * Current prompt string
 	 */
-	private String					prompt			= DEFAULT_PROMPT;
+	private String					prompt				= DEFAULT_PROMPT;
 
 	/**
 	 * Command history storage (using ArrayList for performance)
 	 */
-	private final List<String>		history			= new ArrayList<>();
+	private final List<String>		history				= new ArrayList<>();
 
 	/**
 	 * Current position in command history (-1 means not navigating history)
 	 */
-	private int						historyIndex	= -1;
+	private int						historyIndex		= -1;
 
 	/**
 	 * Maximum number of history entries to retain
 	 */
-	private int						maxHistorySize	= 1000;
+	private int						maxHistorySize		= 1000;
 
 	/**
 	 * Reusable StringBuilder for input buffering (performance optimization)
 	 */
-	private final StringBuilder		inputBuffer		= new StringBuilder( 256 );
+	private final StringBuilder		inputBuffer			= new StringBuilder( 256 );
+
+	/**
+	 * Optional syntax highlighter for real-time input coloring
+	 */
+	private ISyntaxHighlighter		syntaxHighlighter	= null;
 
 	/**
 	 * Constructor with default settings
@@ -135,6 +140,27 @@ public class MiniConsole implements AutoCloseable {
 	public MiniConsole setPrompt( String prompt ) {
 		this.prompt = prompt != null ? prompt : DEFAULT_PROMPT;
 		return this;
+	}
+
+	/**
+	 * Set a syntax highlighter for real-time input coloring
+	 *
+	 * @param highlighter The syntax highlighter to use, or null to disable
+	 *
+	 * @return this console instance for method chaining
+	 */
+	public MiniConsole setSyntaxHighlighter( ISyntaxHighlighter highlighter ) {
+		this.syntaxHighlighter = highlighter;
+		return this;
+	}
+
+	/**
+	 * Get the current syntax highlighter
+	 *
+	 * @return The current syntax highlighter, or null if none set
+	 */
+	public ISyntaxHighlighter getSyntaxHighlighter() {
+		return syntaxHighlighter;
 	}
 
 	/**
@@ -321,6 +347,27 @@ public class MiniConsole implements AutoCloseable {
 	 */
 	public static String reset() {
 		return "\033[0m";
+	}
+
+	// Convenient static aliases for common color printing
+	public static void printError( String text ) {
+		ColorPrint.redText().bold().println( text );
+	}
+
+	public static void printSuccess( String text ) {
+		ColorPrint.greenText().bold().println( text );
+	}
+
+	public static void printWarning( String text ) {
+		ColorPrint.yellowText().bold().println( text );
+	}
+
+	public static void printInfo( String text ) {
+		ColorPrint.blueText().bold().println( text );
+	}
+
+	public static void printDebug( String text ) {
+		ColorPrint.magentaText().bold().println( text );
 	}
 
 	@Override
@@ -591,7 +638,15 @@ public class MiniConsole implements AutoCloseable {
 	private void redraw( String promptStr, StringBuilder buffer ) {
 		System.out.print( CLR_LINE );
 		System.out.print( promptStr );
-		System.out.print( buffer );
+
+		// Apply syntax highlighting if available
+		if ( syntaxHighlighter != null ) {
+			String highlighted = syntaxHighlighter.highlight( buffer.toString() );
+			System.out.print( highlighted );
+		} else {
+			System.out.print( buffer );
+		}
+
 		System.out.flush();
 	}
 

@@ -19,8 +19,13 @@ package ortus.boxlang.runtime;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
+import ortus.boxlang.runtime.cli.ISyntaxHighlighter;
 import ortus.boxlang.runtime.cli.MiniConsole;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
@@ -81,6 +86,16 @@ public class BoxRepl {
 	private MiniConsole			console;
 
 	/**
+	 * Available Built-in Functions for syntax highlighting
+	 */
+	private Set<String>			bifs;
+
+	/**
+	 * Available Components for syntax highlighting
+	 */
+	private Set<String>			components;
+
+	/**
 	 * Constructor
 	 *
 	 * @param runtime The BoxLang runtime instance to use for code execution
@@ -138,11 +153,7 @@ public class BoxRepl {
 		// Create a scripting context for REPL execution
 		IBoxContext scriptingContext = new ScriptingRequestBoxContext( context );
 		RequestBoxContext.setCurrent( scriptingContext.getParentOfType( RequestBoxContext.class ) );
-		ClassLoader	oldClassLoader	= Thread.currentThread().getContextClassLoader();
-
-		// Get all the BIFs and Components Loaded
-		String[]	bifs			= this.runtime.getFunctionService().getGlobalFunctionNames();
-		String[]	components		= this.runtime.getComponentService().getComponentNames();
+		ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
 
 		try {
 			// Show the interactive banner
@@ -151,6 +162,9 @@ public class BoxRepl {
 			// Create console with custom BoxLang prompt
 			String prompt = MiniConsole.color( 39 ) + "📦 BoxLang> " + MiniConsole.reset();
 			console = new MiniConsole( prompt );
+
+			// Set up syntax highlighting
+			console.setSyntaxHighlighter( new BoxLangSyntaxHighlighter( this.runtime ) );
 
 			// Multi-line input tracking
 			StringBuilder	multiLineBuffer		= new StringBuilder();
@@ -255,6 +269,7 @@ public class BoxRepl {
 		System.out.println( "✨ Welcome to the BoxLang Interactive REPL!" );
 		System.out.println( "💡 Enter an expression, then hit enter" );
 		System.out.println( "🔧 Use { } for multi-line blocks - prompt changes to '...' until balanced" );
+		System.out.println( "🎨 BIFs and components are highlighted as you type!" );
 		System.out.println( "↕️  UP/DOWN arrows navigate command history" );
 		System.out.println( "📚 Type 'history' to see command history" );
 		System.out.println( "🔄 Type '!!' to repeat last command, or '!n' to repeat command n" );
@@ -415,6 +430,80 @@ public class BoxRepl {
 		}
 
 		return depth;
+	}
+
+	/**
+	 * BoxLang-specific syntax highlighter implementation
+	 */
+	private class BoxLangSyntaxHighlighter implements ISyntaxHighlighter {
+
+		private static final Pattern	COMPONENT_PATTERN	= Pattern.compile( "\\bbx:([a-zA-Z][a-zA-Z0-9_]*)\\b" );
+		private static final Pattern	BIF_PATTERN			= Pattern.compile( "\\b([a-zA-Z][a-zA-Z0-9_]*)\\s*\\(" );
+		private final Set<String>		bifs				= new HashSet<>();
+		private final Set<String>		components			= new HashSet<>();
+
+		/**
+		 * Constructor initializes available BIFs and components for highlighting.
+		 *
+		 * @param runtime The BoxLang runtime instance to retrieve BIFs and components from
+		 */
+		public BoxLangSyntaxHighlighter( BoxRuntime runtime ) {
+			// Get all the BIFs and Components Loaded
+			String[]	bifsArray		= runtime.getFunctionService().getGlobalFunctionNames();
+			String[]	componentsArray	= runtime.getComponentService().getComponentNames();
+
+			// Convert to sets for O(1) lookup performance
+			for ( String bif : bifsArray ) {
+				bifs.add( bif.toLowerCase() ); // Case-insensitive
+			}
+
+			for ( String component : componentsArray ) {
+				components.add( component.toLowerCase() ); // Case-insensitive
+			}
+		}
+
+		@Override
+		public String highlight( String input ) {
+			if ( input == null || input.isEmpty() ) {
+				return input;
+			}
+			String			workingInput		= input;
+
+			// First, highlight component declarations (bx:componentName)
+			Matcher			componentMatcher	= COMPONENT_PATTERN.matcher( workingInput );
+			StringBuffer	tempBuffer			= new StringBuffer();
+
+			while ( componentMatcher.find() ) {
+				String componentName = componentMatcher.group( 1 ).toLowerCase();
+				if ( components.contains( componentName ) ) {
+					// Highlight the entire bx:componentName in cyan
+					String highlighted = MiniConsole.color( 51 ) + componentMatcher.group( 0 ) + MiniConsole.reset();
+					componentMatcher.appendReplacement( tempBuffer, Matcher.quoteReplacement( highlighted ) );
+				} else {
+					// Unknown component - highlight in dim red
+					String highlighted = MiniConsole.color( 196 ) + componentMatcher.group( 0 ) + MiniConsole.reset();
+					componentMatcher.appendReplacement( tempBuffer, Matcher.quoteReplacement( highlighted ) );
+				}
+			}
+			componentMatcher.appendTail( tempBuffer );
+			workingInput = tempBuffer.toString();
+
+			// Next, highlight BIF function calls
+			Matcher bifMatcher = BIF_PATTERN.matcher( workingInput );
+			tempBuffer = new StringBuffer();
+
+			while ( bifMatcher.find() ) {
+				String functionName = bifMatcher.group( 1 ).toLowerCase();
+				if ( bifs.contains( functionName ) ) {
+					// Highlight function name in bright green, keep the opening parenthesis
+					String highlighted = MiniConsole.color( 46 ) + bifMatcher.group( 1 ) + MiniConsole.reset() + "(";
+					bifMatcher.appendReplacement( tempBuffer, Matcher.quoteReplacement( highlighted ) );
+				}
+			}
+			bifMatcher.appendTail( tempBuffer );
+
+			return tempBuffer.toString();
+		}
 	}
 
 }
