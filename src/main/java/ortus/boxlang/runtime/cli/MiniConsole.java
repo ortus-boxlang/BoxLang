@@ -508,7 +508,7 @@ public class MiniConsole implements AutoCloseable {
 				switch ( token ) {
 					// ENTER
 					case "ENTER" -> {
-						// If we're in completion mode, accept the selected completion
+						// If we're in completion mode, accept the selected completion and continue editing
 						if ( completionState != null ) {
 							TabCompletion selected = completionState.getCurrentCompletion();
 							if ( selected != null ) {
@@ -519,7 +519,12 @@ public class MiniConsole implements AutoCloseable {
 								applyCompletion( prompt, inputBuffer, selected );
 							}
 							completionState = null;
+							// Clear completion list and continue editing - don't execute the line
+							clearCompletionDisplay();
+							redraw( prompt, inputBuffer );
+							continue;
 						}
+						// Normal ENTER - execute the line
 						System.out.print( "\r\n" );
 						historyIndex = -1;
 						String result = inputBuffer.toString();
@@ -528,7 +533,10 @@ public class MiniConsole implements AutoCloseable {
 					}
 					// Backspace
 					case "BACKSPACE" -> {
-						completionState = null; // Clear completion state
+						if ( completionState != null ) {
+							clearCompletionDisplay();
+							completionState = null; // Clear completion state
+						}
 						if ( inputBuffer.length() > 0 ) {
 							inputBuffer.deleteCharAt( inputBuffer.length() - 1 );
 							redraw( prompt, inputBuffer );
@@ -536,7 +544,10 @@ public class MiniConsole implements AutoCloseable {
 					}
 					// Up arrow = History navigation
 					case "UP" -> {
-						completionState = null; // Clear completion state
+						if ( completionState != null ) {
+							clearCompletionDisplay();
+							completionState = null; // Clear completion state
+						}
 						String prev = navigateHistoryPrevious();
 						if ( prev != null ) {
 							inputBuffer.setLength( 0 );
@@ -546,7 +557,10 @@ public class MiniConsole implements AutoCloseable {
 					}
 					// Down arrow = History navigation
 					case "DOWN" -> {
-						completionState = null; // Clear completion state
+						if ( completionState != null ) {
+							clearCompletionDisplay();
+							completionState = null; // Clear completion state
+						}
 						String next = navigateHistoryNext();
 						if ( next != null ) {
 							inputBuffer.setLength( 0 );
@@ -581,7 +595,10 @@ public class MiniConsole implements AutoCloseable {
 						if ( token.startsWith( "CHAR:" ) ) {
 							int code = Integer.parseInt( token.substring( 5 ) );
 							if ( code >= 32 && code < 127 ) {
-								completionState = null; // Clear completion state
+								if ( completionState != null ) {
+									clearCompletionDisplay();
+									completionState = null; // Clear completion state
+								}
 								inputBuffer.append( ( char ) code );
 								redraw( prompt, inputBuffer );
 							}
@@ -622,7 +639,7 @@ public class MiniConsole implements AutoCloseable {
 
 			// ENTER (CR or LF)
 			if ( b == '\r' || b == '\n' ) {
-				// If we're in completion mode, accept the selected completion
+				// If we're in completion mode, accept the selected completion and continue editing
 				if ( completionState != null ) {
 					TabCompletion selected = completionState.getCurrentCompletion();
 					if ( selected != null ) {
@@ -633,7 +650,12 @@ public class MiniConsole implements AutoCloseable {
 						applyCompletion( prompt, inputBuffer, selected );
 					}
 					completionState = null;
+					// Clear completion list and continue editing - don't execute the line
+					clearCompletionDisplay();
+					redraw( prompt, inputBuffer );
+					continue;
 				}
+				// Normal ENTER - execute the line
 				System.out.print( "\r\n" );
 				System.out.flush();
 				historyIndex = -1;
@@ -644,7 +666,10 @@ public class MiniConsole implements AutoCloseable {
 
 			// Backspace (DEL or BS)
 			if ( b == 127 || b == 8 ) {
-				completionState = null; // Clear completion state
+				if ( completionState != null ) {
+					clearCompletionDisplay();
+					completionState = null; // Clear completion state
+				}
 				if ( inputBuffer.length() > 0 ) {
 					inputBuffer.deleteCharAt( inputBuffer.length() - 1 );
 					redraw( prompt, inputBuffer );
@@ -707,7 +732,10 @@ public class MiniConsole implements AutoCloseable {
 
 			// Regular printable character
 			if ( b >= 32 && b < 127 ) {
-				completionState = null; // Clear completion state
+				if ( completionState != null ) {
+					clearCompletionDisplay();
+					completionState = null; // Clear completion state
+				}
 				inputBuffer.append( ( char ) b );
 				redraw( prompt, inputBuffer );
 			}
@@ -734,7 +762,10 @@ public class MiniConsole implements AutoCloseable {
 
 		// Handle arrow keys - ignore any parameters (like 1;5A for Ctrl+Up)
 		if ( seq.endsWith( "A" ) ) { // Up arrow (any variant)
-			completionState = null; // Clear completion state
+			if ( completionState != null ) {
+				clearCompletionDisplay();
+				completionState = null; // Clear completion state
+			}
 			String prev = navigateHistoryPrevious();
 			if ( prev != null ) {
 				buffer.setLength( 0 );
@@ -742,7 +773,10 @@ public class MiniConsole implements AutoCloseable {
 				redraw( prompt, buffer );
 			}
 		} else if ( seq.endsWith( "B" ) ) { // Down arrow (any variant)
-			completionState = null; // Clear completion state
+			if ( completionState != null ) {
+				clearCompletionDisplay();
+				completionState = null; // Clear completion state
+			}
 			String next = navigateHistoryNext();
 			if ( next != null ) {
 				buffer.setLength( 0 );
@@ -761,6 +795,10 @@ public class MiniConsole implements AutoCloseable {
 
 		switch ( c ) {
 			case 'A' -> { // Up arrow
+				if ( completionState != null ) {
+					clearCompletionDisplay();
+					completionState = null;
+				}
 				String prev = navigateHistoryPrevious();
 				if ( prev != null ) {
 					buffer.setLength( 0 );
@@ -769,6 +807,10 @@ public class MiniConsole implements AutoCloseable {
 				}
 			}
 			case 'B' -> { // Down arrow
+				if ( completionState != null ) {
+					clearCompletionDisplay();
+					completionState = null;
+				}
 				String next = navigateHistoryNext();
 				if ( next != null ) {
 					buffer.setLength( 0 );
@@ -888,6 +930,9 @@ public class MiniConsole implements AutoCloseable {
 		List<TabCompletion>	completions		= state.getAllCompletions();
 		int					selectedIndex	= state.getCurrentIndex();
 
+		// Clear any previous completion display
+		clearCompletionDisplay();
+
 		// Show the completion list below the current line
 		System.out.print( "\r\n" );
 
@@ -975,6 +1020,15 @@ public class MiniConsole implements AutoCloseable {
 			System.out.print( preview );
 		}
 
+		System.out.flush();
+	}
+
+	/**
+	 * Clears the completion display by clearing everything below the cursor.
+	 */
+	private void clearCompletionDisplay() {
+		// Clear from cursor to end of screen
+		System.out.print( "\033[0J" );
 		System.out.flush();
 	}
 
