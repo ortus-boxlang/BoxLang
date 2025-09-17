@@ -141,16 +141,6 @@ public class ModuleRecord {
 	public Struct					settings					= new Struct();
 
 	/**
-	 * The object mappings of the module
-	 */
-	public Struct					objectMappings				= new Struct();
-
-	/**
-	 * The datasources to register by the module
-	 */
-	public Struct					datasources					= new Struct( Struct.TYPES.LINKED );
-
-	/**
 	 * Any module activation dependencies
 	 */
 	public Array					dependencies				= new Array();
@@ -321,10 +311,11 @@ public class ModuleRecord {
 	 */
 	public ModuleRecord loadDescriptor( IBoxContext context ) {
 		Path	descriptorPath	= physicalPath.resolve( ModuleService.MODULE_DESCRIPTOR );
-		String	packageName		= MODULE_PACKAGE_NAME + this.name.getNameNoCase()
+		String	packageName		= MODULE_PACKAGE_NAME
+		    + this.name.getNameNoCase()
 		    + EncryptionUtil.hash( physicalPath.toString() );
 
-		// Load the Class, Construct it and store it
+		// Load the ModuleConfig.bx, Construct it and store it
 		this.moduleConfig = ( IClassRunnable ) DynamicObject.of(
 		    RunnableLoader.getInstance().loadClass(
 		        ResolvedFilePath.of(
@@ -366,8 +357,6 @@ public class ModuleRecord {
 
 		// Verify the internal config structures exist, else default them
 		variablesScope.computeIfAbsent( Key.settings, k -> new Struct() );
-		variablesScope.computeIfAbsent( Key.objectMappings, k -> new Struct() );
-		variablesScope.computeIfAbsent( Key.datasources, k -> new Struct( Struct.TYPES.LINKED ) );
 		variablesScope.computeIfAbsent( Key.interceptors, k -> Array.of() );
 		variablesScope.computeIfAbsent( Key.customInterceptionPoints, k -> Array.of() );
 
@@ -460,10 +449,9 @@ public class ModuleRecord {
 			StructUtil.deepMerge( this.settings, config.settings, true );
 		}
 
+		// Get the interceptors and custom interception points
 		this.interceptors				= variablesScope.getAsArray( Key.interceptors );
 		this.customInterceptionPoints	= variablesScope.getAsArray( Key.customInterceptionPoints );
-		this.objectMappings				= ( Struct ) variablesScope.getAsStruct( Key.objectMappings );
-		this.datasources				= ( Struct ) variablesScope.getAsStruct( Key.datasources );
 
 		// Register Interception points with the InterceptorService
 		if ( !this.customInterceptionPoints.isEmpty() ) {
@@ -601,9 +589,9 @@ public class ModuleRecord {
 	 * and other resources associated with this module.
 	 *
 	 * @param context The current context of execution
-	 * 
+	 *
 	 * @return The ModuleRecord instance
-	 * 
+	 *
 	 * @throws ortus.boxlang.runtime.types.exceptions.DatabaseException if a SQL error occurs while deregistering JDBC drivers
 	 */
 	public ModuleRecord unregister( IBoxContext context ) {
