@@ -76,57 +76,62 @@ public class MiniConsole implements AutoCloseable {
 	/**
 	 * Default prompt text
 	 */
-	private static final String			DEFAULT_PROMPT		= "> ";
+	private static final String			DEFAULT_PROMPT			= "> ";
 
 	/**
 	 * ANSI sequence to clear current line
 	 */
-	private static final String			CLR_LINE			= "\r\033[2K";
+	private static final String			CLR_LINE				= "\r\033[2K";
 
 	/**
 	 * Operating system detection
 	 */
-	private static final boolean		WINDOWS				= System.getProperty( "os.name" ).toLowerCase().contains( "win" );
+	private static final boolean		WINDOWS					= System.getProperty( "os.name" ).toLowerCase().contains( "win" );
 
 	/**
 	 * Current prompt string
 	 */
-	private String						prompt				= DEFAULT_PROMPT;
+	private String						prompt					= DEFAULT_PROMPT;
 
 	/**
 	 * Command history storage (using ArrayList for performance)
 	 */
-	private final List<String>			history				= new ArrayList<>();
+	private final List<String>			history					= new ArrayList<>();
 
 	/**
 	 * Current position in command history (-1 means not navigating history)
 	 */
-	private int							historyIndex		= -1;
+	private int							historyIndex			= -1;
 
 	/**
 	 * Maximum number of history entries to retain
 	 */
-	private int							maxHistorySize		= 1000;
+	private int							maxHistorySize			= 1000;
 
 	/**
 	 * Reusable StringBuilder for input buffering (performance optimization)
 	 */
-	private final StringBuilder			inputBuffer			= new StringBuilder( 256 );
+	private final StringBuilder			inputBuffer				= new StringBuilder( 256 );
 
 	/**
 	 * Optional syntax highlighter for real-time input coloring
 	 */
-	private ISyntaxHighlighter			syntaxHighlighter	= null;
+	private ISyntaxHighlighter			syntaxHighlighter		= null;
 
 	/**
 	 * List of registered tab completion providers
 	 */
-	private final List<ITabProvider>	tabProviders		= new ArrayList<>();
+	private final List<ITabProvider>	tabProviders			= new ArrayList<>();
 
 	/**
 	 * Current completion state for cycling through suggestions
 	 */
-	private CompletionState				completionState		= null;
+	private CompletionState				completionState			= null;
+
+	/**
+	 * Number of lines used by the current completion display
+	 */
+	private int							completionDisplayLines	= 0;
 
 	/**
 	 * Constructor with default settings
@@ -518,7 +523,8 @@ public class MiniConsole implements AutoCloseable {
 								// Apply the completion
 								applyCompletion( prompt, inputBuffer, selected );
 							}
-							completionState = null;
+							completionState			= null;
+							completionDisplayLines	= 0;
 							// Clear completion list and continue editing - don't execute the line
 							clearCompletionDisplay();
 							redraw( prompt, inputBuffer );
@@ -535,7 +541,8 @@ public class MiniConsole implements AutoCloseable {
 					case "BACKSPACE" -> {
 						if ( completionState != null ) {
 							clearCompletionDisplay();
-							completionState = null; // Clear completion state
+							completionState			= null; // Clear completion state
+							completionDisplayLines	= 0;
 						}
 						if ( inputBuffer.length() > 0 ) {
 							inputBuffer.deleteCharAt( inputBuffer.length() - 1 );
@@ -546,7 +553,8 @@ public class MiniConsole implements AutoCloseable {
 					case "UP" -> {
 						if ( completionState != null ) {
 							clearCompletionDisplay();
-							completionState = null; // Clear completion state
+							completionState			= null; // Clear completion state
+							completionDisplayLines	= 0;
 						}
 						String prev = navigateHistoryPrevious();
 						if ( prev != null ) {
@@ -559,7 +567,8 @@ public class MiniConsole implements AutoCloseable {
 					case "DOWN" -> {
 						if ( completionState != null ) {
 							clearCompletionDisplay();
-							completionState = null; // Clear completion state
+							completionState			= null; // Clear completion state
+							completionDisplayLines	= 0;
 						}
 						String next = navigateHistoryNext();
 						if ( next != null ) {
@@ -597,7 +606,8 @@ public class MiniConsole implements AutoCloseable {
 							if ( code >= 32 && code < 127 ) {
 								if ( completionState != null ) {
 									clearCompletionDisplay();
-									completionState = null; // Clear completion state
+									completionState			= null; // Clear completion state
+									completionDisplayLines	= 0;
 								}
 								inputBuffer.append( ( char ) code );
 								redraw( prompt, inputBuffer );
@@ -668,7 +678,8 @@ public class MiniConsole implements AutoCloseable {
 			if ( b == 127 || b == 8 ) {
 				if ( completionState != null ) {
 					clearCompletionDisplay();
-					completionState = null; // Clear completion state
+					completionState			= null; // Clear completion state
+					completionDisplayLines	= 0;
 				}
 				if ( inputBuffer.length() > 0 ) {
 					inputBuffer.deleteCharAt( inputBuffer.length() - 1 );
@@ -734,7 +745,8 @@ public class MiniConsole implements AutoCloseable {
 			if ( b >= 32 && b < 127 ) {
 				if ( completionState != null ) {
 					clearCompletionDisplay();
-					completionState = null; // Clear completion state
+					completionState			= null; // Clear completion state
+					completionDisplayLines	= 0;
 				}
 				inputBuffer.append( ( char ) b );
 				redraw( prompt, inputBuffer );
@@ -764,7 +776,8 @@ public class MiniConsole implements AutoCloseable {
 		if ( seq.endsWith( "A" ) ) { // Up arrow (any variant)
 			if ( completionState != null ) {
 				clearCompletionDisplay();
-				completionState = null; // Clear completion state
+				completionState			= null; // Clear completion state
+				completionDisplayLines	= 0;
 			}
 			String prev = navigateHistoryPrevious();
 			if ( prev != null ) {
@@ -775,7 +788,8 @@ public class MiniConsole implements AutoCloseable {
 		} else if ( seq.endsWith( "B" ) ) { // Down arrow (any variant)
 			if ( completionState != null ) {
 				clearCompletionDisplay();
-				completionState = null; // Clear completion state
+				completionState			= null; // Clear completion state
+				completionDisplayLines	= 0;
 			}
 			String next = navigateHistoryNext();
 			if ( next != null ) {
@@ -797,7 +811,8 @@ public class MiniConsole implements AutoCloseable {
 			case 'A' -> { // Up arrow
 				if ( completionState != null ) {
 					clearCompletionDisplay();
-					completionState = null;
+					completionState			= null;
+					completionDisplayLines	= 0;
 				}
 				String prev = navigateHistoryPrevious();
 				if ( prev != null ) {
@@ -809,7 +824,8 @@ public class MiniConsole implements AutoCloseable {
 			case 'B' -> { // Down arrow
 				if ( completionState != null ) {
 					clearCompletionDisplay();
-					completionState = null;
+					completionState			= null;
+					completionDisplayLines	= 0;
 				}
 				String next = navigateHistoryNext();
 				if ( next != null ) {
@@ -935,6 +951,7 @@ public class MiniConsole implements AutoCloseable {
 
 		// Show the completion list below the current line
 		System.out.print( "\r\n" );
+		int	linesUsed	= 1; // Count the newline we just printed
 
 		// Display up to 10 completions to avoid overwhelming the user
 		int	maxDisplay	= Math.min( 10, completions.size() );
@@ -973,6 +990,7 @@ public class MiniConsole implements AutoCloseable {
 			}
 
 			System.out.print( "\r\n" );
+			linesUsed++; // Count each completion line
 		}
 
 		// Show pagination info if there are more items
@@ -981,7 +999,11 @@ public class MiniConsole implements AutoCloseable {
 			System.out.print( "  ... (" + ( selectedIndex + 1 ) + "/" + completions.size() + " - TAB for next, ENTER to accept)" );
 			System.out.print( reset() );
 			System.out.print( "\r\n" );
+			linesUsed++; // Count pagination line
 		}
+
+		// Store the number of lines used for later clearing
+		completionDisplayLines = linesUsed;
 
 		// Show preview of selected completion in the input line
 		showCompletionPreview( prompt, buffer, state );
@@ -1024,12 +1046,17 @@ public class MiniConsole implements AutoCloseable {
 	}
 
 	/**
-	 * Clears the completion display by clearing everything below the cursor.
+	 * Clears the completion display by moving up and clearing the lines used.
 	 */
 	private void clearCompletionDisplay() {
-		// Clear from cursor to end of screen
-		System.out.print( "\033[0J" );
-		System.out.flush();
+		if ( completionDisplayLines > 0 ) {
+			// Move cursor up by the number of lines used by completion display
+			System.out.print( "\033[" + completionDisplayLines + "A" );
+			// Clear from cursor to end of screen
+			System.out.print( "\033[0J" );
+			System.out.flush();
+			completionDisplayLines = 0;
+		}
 	}
 
 	/**
