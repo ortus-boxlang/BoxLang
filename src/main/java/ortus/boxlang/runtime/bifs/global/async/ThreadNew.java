@@ -18,6 +18,7 @@ import java.util.Set;
 
 import org.slf4j.Logger;
 
+import ortus.boxlang.runtime.async.RequestThreadManager;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -31,7 +32,6 @@ import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.AbortException;
-import ortus.boxlang.runtime.util.RequestThreadManager;
 import ortus.boxlang.runtime.validation.Validator;
 
 @BoxBIF

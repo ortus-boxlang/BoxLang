@@ -19,9 +19,9 @@ package ortus.boxlang.runtime.config;
 
 import java.util.List;
 
+import ortus.boxlang.runtime.cli.CLIUtil;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableStruct;
-import ortus.boxlang.runtime.util.CLIUtil;
 
 /**
  * Command-line options for the BoxLang runtime.

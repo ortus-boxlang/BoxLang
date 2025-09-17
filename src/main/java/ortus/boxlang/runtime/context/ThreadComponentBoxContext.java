@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.context;
 
+import ortus.boxlang.runtime.async.RequestThreadManager;
 import ortus.boxlang.runtime.jdbc.ConnectionManager;
 import ortus.boxlang.runtime.scopes.AttributesScope;
 import ortus.boxlang.runtime.scopes.IScope;
@@ -28,7 +29,6 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
-import ortus.boxlang.runtime.util.RequestThreadManager;
 
 /**
  * This context represents a thread started by the bx:thread component.
@@ -156,11 +156,11 @@ public class ThreadComponentBoxContext extends BaseBoxContext implements IJDBCCa
 	 * This allows us to "reserve" known scope names to ensure arguments.foo
 	 * will always look in the proper arguments scope and never in
 	 * local.arguments.foo for example
-	 * 
+	 *
 	 * @param key     The key to check for visibility
 	 * @param nearby  true, check only scopes that are nearby to the current execution context
 	 * @param shallow true, do not delegate to parent or default scope if not found
-	 * 
+	 *
 	 * @return True if the key is visible in the current context, else false
 	 */
 	@Override
