@@ -273,7 +273,7 @@ public class BoxRepl {
 		System.out.println( "🔧 Use { } for multi-line blocks - prompt changes to '...' until balanced" );
 		System.out.println( "🎨 BIFs and components are highlighted as you type!" );
 		System.out.println( "↕️  UP/DOWN arrows navigate command history" );
-		System.out.println( "📚 Type 'history' to see command history" );
+		System.out.println( "📚 Type ':history' to see command history" );
 		System.out.println( "🔄 Type '!!' to repeat last command, or '!n' to repeat command n" );
 		System.out.println( "🧹 Press Ctrl+D to clear current line, or on empty line to exit" );
 		System.out.println( "🚪 Type 'exit' or 'quit' to leave, or press Ctrl-C" );
