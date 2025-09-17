@@ -184,6 +184,12 @@ public class BoxRepl {
 					console.showHistory();
 					continue;
 				}
+				// If the user typed "clear", then clear the console
+				else if ( braceDepth == 0 && source.equals( "clear" ) ) {
+					console.clear();
+					showBanner();
+					continue;
+				}
 
 				// Handle exit commands (only when not in multi-line mode)
 				if ( braceDepth == 0 && isExitCommand( source ) ) {

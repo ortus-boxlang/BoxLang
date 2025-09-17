@@ -328,6 +328,15 @@ public class MiniConsole implements AutoCloseable {
 		// Nothing to clean up at this level - handled by inner classes
 	}
 
+	/**
+	 * This function clears the entire console screen and resets the cursor to the top-left corner.
+	 */
+	public void clear() {
+		// ANSI escape sequence to clear the screen and move cursor to top-left
+		System.out.print( "\033[2J\033[H" );
+		System.out.flush();
+	}
+
 	// ================================================================================
 	// PRIVATE IMPLEMENTATION
 	// ================================================================================
