@@ -238,12 +238,26 @@ public class BaseBoxContext implements IBoxContext {
 		if ( this.components == null ) {
 			synchronized ( this ) {
 				if ( this.components == null ) {
-					this.components				= new ArrayDeque<>();
-					this.outputComponentCount	= new AtomicInteger( 0 );
+					this.components = new ArrayDeque<>();
+					_getOutputComponentCount();
 				}
 			}
 		}
 		return this.components;
+	}
+
+	/**
+	 * Lazy create the component output count
+	 */
+	protected AtomicInteger _getOutputComponentCount() {
+		if ( this.outputComponentCount == null ) {
+			synchronized ( this ) {
+				if ( this.outputComponentCount == null ) {
+					this.outputComponentCount = new AtomicInteger( 0 );
+				}
+			}
+		}
+		return this.outputComponentCount;
 	}
 
 	/**
@@ -257,7 +271,7 @@ public class BaseBoxContext implements IBoxContext {
 		_getComponents().push( executionState );
 		if ( executionState.getAsKey( Key._NAME ).equals( Key.output ) ) {
 			// If this is a component, we need to increment the output component count
-			outputComponentCount.incrementAndGet();
+			_getOutputComponentCount().incrementAndGet();
 		}
 		return this;
 	}
@@ -271,7 +285,7 @@ public class BaseBoxContext implements IBoxContext {
 		// decrement the output component count if the component being popped is an output component
 		IStruct popped = _getComponents().pop();
 		if ( popped.getAsKey( Key._NAME ).equals( Key.output ) ) {
-			outputComponentCount.decrementAndGet();
+			_getOutputComponentCount().decrementAndGet();
 		}
 		return this;
 	}
@@ -282,7 +296,7 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return True if there is at least one output component, else false
 	 */
 	public boolean isInOutputComponent() {
-		return outputComponentCount.get() > 0;
+		return _getOutputComponentCount().get() > 0;
 	}
 
 	/**
