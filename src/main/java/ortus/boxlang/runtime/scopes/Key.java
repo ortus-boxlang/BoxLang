@@ -638,6 +638,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		proxyPort							= Key.of( "proxyPort" );
 	public static final Key		proxyServer							= Key.of( "proxyServer" );
 	public static final Key		proxyUser							= Key.of( "proxyUser" );
+	public static final Key		publicMapping						= Key.of( "publicMapping" );
 	public static final Key		qualifier							= Key.of( "qualifier" );
 	public static final Key		quarter								= Key.of( "quarter" );
 	public static final Key		query								= Key.of( "query" );

@@ -64,6 +64,7 @@ public class ModuleService extends BaseService {
 	public static final String		MODULE_COMPONENTS					= "components";
 	public static final String		MODULE_LIBS							= "libs";
 	public static final String		MODULE_PACKAGE_PREFIX				= "modules";
+	public static final String		MODULE_PUBLIC_FOLDER				= "public";
 
 	/**
 	 * --------------------------------------------------------------------------

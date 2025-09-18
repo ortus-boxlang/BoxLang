@@ -124,7 +124,12 @@ public class ModuleRecord {
 	 * {@link ModuleService#MODULE_MAPPING_INVOCATION_PREFIX}
 	 *
 	 */
-	public Mapping					mapping;
+	public Mapping					mapping						= null;
+
+	/**
+	 * A public conventioin mapping for a /public folder inside the module
+	 */
+	public Mapping					publicMapping				= null;
 
 	/**
 	 * If the module is enabled for activation, defaults to false
@@ -287,9 +292,11 @@ public class ModuleRecord {
 		if ( this.name == null ) {
 			this.name = Key.of( directoryPath.getFileName().toString() );
 		}
+
 		// Path to the module in string and Path formats
 		this.path			= physicalPath;
 		this.physicalPath	= Paths.get( physicalPath );
+
 		// Register the automatic mapping by convention: /bxModules/{name}
 		// Not visible externally
 		this.mapping		= Mapping.of(
@@ -297,6 +304,14 @@ public class ModuleRecord {
 		    this.path,
 		    false
 		);
+
+		// Register the public mapping by convention /bxModules/{name}/public
+		this.publicMapping	= Mapping.of(
+		    ModuleService.MODULE_MAPPING_PREFIX + name.getName() + "/" + ModuleService.MODULE_PUBLIC_FOLDER,
+		    this.physicalPath.resolve( "public" ).toString(),
+		    true
+		);
+
 		// Register the invocation path by convention: bxModules.{name}
 		this.invocationPath	= ModuleService.MODULE_MAPPING_INVOCATION_PREFIX + name.getName();
 	}
@@ -309,6 +324,7 @@ public class ModuleRecord {
 
 	/**
 	 * Load the ModuleConfig.bx from disk, construct it and store it
+	 * This happens before module registration.
 	 * Then populate the module record with the information from the descriptor
 	 *
 	 * @param context The current context of execution
@@ -354,34 +370,12 @@ public class ModuleRecord {
 
 		// Do we have a custom mapping to override?
 		if ( thisScope.containsKey( Key.mapping ) ) {
-			Object overrideMapping = thisScope.get( Key.mapping );
-			// If it's a string, then we assume it's the name and not visibly external
-			if ( overrideMapping instanceof String castedMapping && !castedMapping.isBlank() ) {
-				this.mapping		= Mapping.of(
-				    ModuleService.MODULE_MAPPING_PREFIX + castedMapping,
-				    this.path,
-				    false
-				);
-				this.invocationPath	= ModuleService.MODULE_MAPPING_INVOCATION_PREFIX + castedMapping;
-			}
-			// If it's a struct, then we assume it's a full mapping definition
-			else if ( overrideMapping instanceof IStruct structMapping
-			    && structMapping.containsKey( Key._name ) ) {
+			this.mapping = resolveMapping( thisScope.get( Key.mapping ) );
+		}
 
-				// Do we use the prefix or not
-				String mappingName = BooleanCaster.cast( structMapping.getOrDefault( Key.usePrefix, true ) )
-				    ? ModuleService.MODULE_MAPPING_PREFIX + structMapping.getAsString( Key._name )
-				    : structMapping.getAsString( Key._name );
-
-				// Now create the mapping
-				this.mapping		= Mapping.fromData(
-				    mappingName,
-				    this.path,
-				    BooleanCaster.cast( structMapping.getOrDefault( Key.external, false ) )
-				);
-
-				this.invocationPath	= ModuleService.MODULE_MAPPING_INVOCATION_PREFIX + structMapping.getAsString( Key._name );
-			}
+		// Do we have a public mapping to override?
+		if ( thisScope.containsKey( Key.publicMapping ) ) {
+			this.publicMapping = resolvePublicMapping( thisScope.get( Key.publicMapping ) );
 		}
 
 		// Verify the internal config structures exist, else default them
@@ -1265,6 +1259,83 @@ public class ModuleRecord {
 		oTargetObject.getVariablesScope().put( Key.log, this.logger );
 
 		return oTargetObject;
+	}
+
+	/**
+	 * Resolve the mapping for the module based on the targetMapping object
+	 * which can be either a string or a struct.
+	 *
+	 * @param targetMapping The target mapping to resolve
+	 *
+	 * @return The resolved Mapping object
+	 */
+	private Mapping resolveMapping( Object targetMapping ) {
+		Mapping result = null;
+		// If it's a string, then we assume it's the name and not visibly external
+		if ( targetMapping instanceof String castedMapping && !castedMapping.isBlank() ) {
+			result				= Mapping.of(
+			    ModuleService.MODULE_MAPPING_PREFIX + castedMapping,
+			    this.path,
+			    false
+			);
+			this.invocationPath	= ModuleService.MODULE_MAPPING_INVOCATION_PREFIX + castedMapping;
+		}
+		// If it's a struct, then we assume it's a full mapping definition
+		else if ( targetMapping instanceof IStruct structMapping && structMapping.containsKey( Key._name ) ) {
+
+			// Do we use the prefix or not
+			String mappingName = BooleanCaster.cast( structMapping.getOrDefault( Key.usePrefix, true ) )
+			    ? ModuleService.MODULE_MAPPING_PREFIX + structMapping.getAsString( Key._name )
+			    : structMapping.getAsString( Key._name );
+
+			// Now create the mapping
+			result				= Mapping.fromData(
+			    mappingName,
+			    this.path,
+			    BooleanCaster.cast( structMapping.getOrDefault( Key.external, false ) )
+			);
+
+			this.invocationPath	= ModuleService.MODULE_MAPPING_INVOCATION_PREFIX + structMapping.getAsString( Key._name );
+		}
+
+		return result;
+	}
+
+	private Mapping resolvePublicMapping( Object targetMapping ) {
+		// If it's a string, then the mapping is /bxModules/{this.name}/<castedMapping>
+		// And the folder is the module path + "/" + <castedMapping>
+		// this.publicMapping = "public" -> /bxModules/{this.name}/public
+		// this.publicMapping = "www" -> /bxModules/{this.name}/www
+		if ( targetMapping instanceof String castedMapping && !castedMapping.isBlank() ) {
+			return Mapping.of(
+			    ModuleService.MODULE_MAPPING_PREFIX + this.name.getNameNoCase() + "/" + castedMapping,
+			    this.physicalPath.resolve( castedMapping ).toString(),
+			    true
+			);
+		}
+
+		// If it's a struct, then make sure we have the following keys:
+		// - name (mandatory), /bxModules/{this.name}/<name>, unless usePrefix is false
+		// - usePrefix (optional, default true)
+
+		if ( targetMapping instanceof IStruct structMapping && structMapping.containsKey( Key._name ) ) {
+			boolean	usePrefix	= BooleanCaster.cast( structMapping.getOrDefault( Key.usePrefix, true ) );
+			// Do we use the prefix or not
+			String	mappingName	= usePrefix
+			    ? ModuleService.MODULE_MAPPING_PREFIX +
+			        this.name.getNameNoCase() + "/" + structMapping.getAsString( Key._name )
+			    : structMapping.getAsString( Key._name );
+
+			// Now create the mapping
+			return Mapping.fromData(
+			    mappingName,
+			    this.physicalPath.resolve( structMapping.getAsString( Key._name ) ).toString(),
+			    true
+			);
+		}
+
+		// Return original mapping if we can't resolve it
+		return this.publicMapping;
 	}
 
 }
