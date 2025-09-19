@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -99,6 +100,45 @@ public class BoxRepl {
 	private Set<String>			components;
 
 	/**
+	 * Our REPL Prompt
+	 */
+	private String				prompt;
+
+	/**
+	 * Create a dark color pallete for the REPL: prompt, highlights, etc.
+	 */
+	private Map<String, String>	darkPalette		= Map.ofEntries(
+	    // Prompt Light Blue
+	    Map.entry( "prompt", MiniConsole.color( 39 ) ),
+	    // Console Continuation Prompt Blue
+	    Map.entry( "continuation", MiniConsole.color( 33 ) ),
+	    // BIFS Bright Green
+	    Map.entry( "bif", MiniConsole.color( 46 ) ),
+	    // Components Bright Purple
+	    Map.entry( "component", MiniConsole.color( 201 ) ),
+	    // Unknown component dim red
+	    Map.entry( "unknown_component", MiniConsole.color( 131 ) )
+	);
+
+	/**
+	 * Create a light color pallete for the REPL: prompt, highlights, etc.
+	 */
+	private Map<String, String>	lightPalette	= Map.ofEntries(
+	    // Prompt Dark Blue
+	    Map.entry( "prompt", MiniConsole.color( 21 ) ),
+	    // Console Continuation Prompt blue
+	    Map.entry( "continuation", MiniConsole.color( 27 ) ),
+	    // BIFS Dark Green
+	    Map.entry( "bif", MiniConsole.color( 28 ) ),
+	    // Components Dark Purple
+	    Map.entry( "component", MiniConsole.color( 129 ) ),
+	    // Unknown Component Dim Red
+	    Map.entry( "unknown_component", MiniConsole.color( 131 ) )
+	);
+
+	private Map<String, String>	currentPalette	= darkPalette;
+
+	/**
 	 * Constructor
 	 *
 	 * @param runtime The BoxLang runtime instance to use for code execution
@@ -110,15 +150,14 @@ public class BoxRepl {
 		this.components	= Arrays.stream( runtime.getComponentService().getComponentNames() )
 		    .map( String::toLowerCase )
 		    .collect( Collectors.toSet() );
-
 		this.bifs		= Arrays.stream( runtime.getFunctionService().getGlobalFunctionNames() )
 		    .map( String::toLowerCase )
 		    .collect( Collectors.toSet() );
 
 		// Create console with custom BoxLang prompt
-		String prompt = MiniConsole.color( 39 ) + "📦 BoxLang> " + MiniConsole.reset();
+		this.prompt		= this.currentPalette.get( "prompt" ) + "📦 BoxLang> " + MiniConsole.reset();
 		// Setup the MiniConsole
-		this.console = new MiniConsole( prompt, new BoxLangSyntaxHighlighter() );
+		this.console	= new MiniConsole( this.prompt, new BoxLangSyntaxHighlighter() );
 		// Set up tab completion providers
 		// Register component tab provider for bx: completions
 		this.console.registerTabProvider( new ComponentTabProvider( BoxRepl.this.components ) );
@@ -183,8 +222,7 @@ public class BoxRepl {
 			// Multi-line input tracking
 			StringBuilder	multiLineBuffer		= new StringBuilder();
 			int				braceDepth			= 0;
-			String			continuationPrompt	= MiniConsole.color( 39 ) + "        ... " + MiniConsole.reset();
-
+			String			continuationPrompt	= currentPalette.get( "continuation" ) + "        ... " + MiniConsole.reset();
 			String			source;
 			while ( ( source = console.readLine() ) != null ) {
 
@@ -482,11 +520,11 @@ public class BoxRepl {
 				String componentName = componentMatcher.group( 1 ).toLowerCase();
 				if ( components.contains( componentName ) ) {
 					// Highlight the entire bx:componentName in cyan
-					String highlighted = MiniConsole.color( 51 ) + componentMatcher.group( 0 ) + MiniConsole.reset();
+					String highlighted = currentPalette.get( "component" ) + componentMatcher.group( 0 ) + MiniConsole.reset();
 					componentMatcher.appendReplacement( tempBuffer, Matcher.quoteReplacement( highlighted ) );
 				} else {
 					// Unknown component - highlight in dim red
-					String highlighted = MiniConsole.color( 196 ) + componentMatcher.group( 0 ) + MiniConsole.reset();
+					String highlighted = currentPalette.get( "unknown_component" ) + componentMatcher.group( 0 ) + MiniConsole.reset();
 					componentMatcher.appendReplacement( tempBuffer, Matcher.quoteReplacement( highlighted ) );
 				}
 			}
@@ -501,7 +539,7 @@ public class BoxRepl {
 				String functionName = bifMatcher.group( 1 ).toLowerCase();
 				if ( bifs.contains( functionName ) ) {
 					// Highlight function name in bright green, keep the opening parenthesis
-					String highlighted = MiniConsole.color( 46 ) + bifMatcher.group( 1 ) + MiniConsole.reset() + "(";
+					String highlighted = currentPalette.get( "function" ) + bifMatcher.group( 1 ) + MiniConsole.reset() + "(";
 					bifMatcher.appendReplacement( tempBuffer, Matcher.quoteReplacement( highlighted ) );
 				}
 			}
