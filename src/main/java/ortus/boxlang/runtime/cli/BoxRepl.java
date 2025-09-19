@@ -114,6 +114,16 @@ public class BoxRepl {
 		this.bifs		= Arrays.stream( runtime.getFunctionService().getGlobalFunctionNames() )
 		    .map( String::toLowerCase )
 		    .collect( Collectors.toSet() );
+
+		// Create console with custom BoxLang prompt
+		String prompt = MiniConsole.color( 39 ) + "📦 BoxLang> " + MiniConsole.reset();
+		// Setup the MiniConsole
+		this.console = new MiniConsole( prompt, new BoxLangSyntaxHighlighter() );
+		// Set up tab completion providers
+		// Register component tab provider for bx: completions
+		this.console.registerTabProvider( new ComponentTabProvider( BoxRepl.this.components ) );
+		// Register BIF tab provider for function completions
+		this.console.registerTabProvider( new BifTabProvider( BoxRepl.this.bifs ) );
 	}
 
 	/**
@@ -170,19 +180,6 @@ public class BoxRepl {
 		try {
 			// Show the interactive banner
 			showBanner();
-
-			// Create console with custom BoxLang prompt
-			String prompt = MiniConsole.color( 39 ) + "📦 BoxLang> " + MiniConsole.reset();
-			console = new MiniConsole( prompt );
-
-			// Set up syntax highlighting
-			console.setSyntaxHighlighter( new BoxLangSyntaxHighlighter() );
-			// Set up tab completion providers
-			// Register component tab provider for bx: completions
-			console.registerTabProvider( new ComponentTabProvider( BoxRepl.this.components ) );
-			// Register BIF tab provider for function completions
-			console.registerTabProvider( new BifTabProvider( BoxRepl.this.bifs ) );
-
 			// Multi-line input tracking
 			StringBuilder	multiLineBuffer		= new StringBuilder();
 			int				braceDepth			= 0;

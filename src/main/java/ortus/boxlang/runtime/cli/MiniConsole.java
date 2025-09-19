@@ -76,64 +76,20 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 public class MiniConsole implements AutoCloseable {
 
 	/**
-	 * Default prompt text
+	 * ----------------------------------------------------------------------------
+	 * Constants
+	 * ----------------------------------------------------------------------------
 	 */
-	private static final String			DEFAULT_PROMPT			= "> ";
 
 	/**
-	 * ANSI sequence to clear current line
+	 * Default prompt
 	 */
-	private static final String			CLR_LINE				= "\r\033[2K";
+	private static final String		DEFAULT_PROMPT	= "> ";
 
 	/**
 	 * Operating system detection
 	 */
-	private static final boolean		WINDOWS					= System.getProperty( "os.name" ).toLowerCase().contains( "win" );
-
-	/**
-	 * Current prompt string
-	 */
-	private String						prompt					= DEFAULT_PROMPT;
-
-	/**
-	 * Command history storage (using ArrayList for performance)
-	 */
-	private final List<String>			history					= new ArrayList<>();
-
-	/**
-	 * Current position in command history (-1 means not navigating history)
-	 */
-	private int							historyIndex			= -1;
-
-	/**
-	 * Maximum number of history entries to retain
-	 */
-	private int							maxHistorySize			= 1000;
-
-	/**
-	 * Reusable StringBuilder for input buffering (performance optimization)
-	 */
-	private final StringBuilder			inputBuffer				= new StringBuilder( 256 );
-
-	/**
-	 * Optional syntax highlighter for real-time input coloring
-	 */
-	private ISyntaxHighlighter			syntaxHighlighter		= null;
-
-	/**
-	 * List of registered tab completion providers
-	 */
-	private final List<ITabProvider>	tabProviders			= new ArrayList<>();
-
-	/**
-	 * Current completion state for cycling through suggestions
-	 */
-	private CompletionState				completionState			= null;
-
-	/**
-	 * Number of lines used by the current completion display
-	 */
-	private int							completionDisplayLines	= 0;
+	private static final boolean	WINDOWS			= System.getProperty( "os.name" ).toLowerCase().contains( "win" );
 
 	/**
 	 * Global Ansi Codes
@@ -242,6 +198,63 @@ public class MiniConsole implements AutoCloseable {
 			return this.code;
 		}
 	}
+
+	/**
+	 * ----------------------------------------------------------------------------
+	 * Properties
+	 * ----------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Current prompt string
+	 */
+	private String						prompt					= DEFAULT_PROMPT;
+
+	/**
+	 * Command history storage (using ArrayList for performance)
+	 */
+	private final List<String>			history					= new ArrayList<>();
+
+	/**
+	 * Current position in command history (-1 means not navigating history)
+	 */
+	private int							historyIndex			= -1;
+
+	/**
+	 * Maximum number of history entries to retain
+	 */
+	private int							maxHistorySize			= 1000;
+
+	/**
+	 * Reusable StringBuilder for input buffering (performance optimization)
+	 */
+	private final StringBuilder			inputBuffer				= new StringBuilder( 256 );
+
+	/**
+	 * Optional syntax highlighter for real-time input coloring
+	 */
+	private ISyntaxHighlighter			syntaxHighlighter		= null;
+
+	/**
+	 * List of registered tab completion providers
+	 */
+	private final List<ITabProvider>	tabProviders			= new ArrayList<>();
+
+	/**
+	 * Current completion state for cycling through suggestions
+	 */
+	private CompletionState				completionState			= null;
+
+	/**
+	 * Number of lines used by the current completion display
+	 */
+	private int							completionDisplayLines	= 0;
+
+	/**
+	 * ----------------------------------------------------------------------------
+	 * Constructors
+	 * ----------------------------------------------------------------------------
+	 */
 
 	/**
 	 * Constructor with default settings
@@ -1152,7 +1165,7 @@ public class MiniConsole implements AutoCloseable {
 		}
 
 		// Show the preview
-		System.out.print( CLR_LINE );
+		System.out.print( CODES.CLEAR_LINE.code() );
 		System.out.print( prompt );
 
 		// Apply syntax highlighting if available
@@ -1220,7 +1233,7 @@ public class MiniConsole implements AutoCloseable {
 	 * Redraw the current line with prompt and buffer content
 	 */
 	private void redraw( String promptStr, StringBuilder buffer ) {
-		System.out.print( CLR_LINE );
+		System.out.print( CODES.CLEAR_LINE.code() );
 		System.out.print( promptStr );
 
 		// Apply syntax highlighting if available
