@@ -31,19 +31,19 @@ public class ColorPrintTest {
 		System.out.println( "\n=== ColorPrint Fluent API Demo ===" );
 
 		// Named colors
-		ColorPrint.style().color( "red" ).bold().println( "Bold Red Error Message" );
-		ColorPrint.style().color( "green" ).println( "Green Success Message" );
-		ColorPrint.style().color( "yellow" ).italic().println( "Yellow Italic Warning" );
-		ColorPrint.style().color( "blue" ).underline().println( "Blue Underlined Info" );
+		ColorPrint.color( "red" ).bold().println( "Bold Red Error Message" );
+		ColorPrint.color( "green" ).println( "Green Success Message" );
+		ColorPrint.color( "yellow" ).italic().println( "Yellow Italic Warning" );
+		ColorPrint.color( "blue" ).underline().println( "Blue Underlined Info" );
 
 		// ANSI color codes (0-255)
-		ColorPrint.style().color( 196 ).bold().println( "Bright Red (196) with Bold" );
-		ColorPrint.style().color( 46 ).println( "Bright Green (46)" );
-		ColorPrint.style().color( 33 ).italic().println( "Blue (33) with Italic" );
+		ColorPrint.color( 196 ).bold().println( "Bright Red (196) with Bold" );
+		ColorPrint.color( 46 ).println( "Bright Green (46)" );
+		ColorPrint.color( 33 ).italic().println( "Blue (33) with Italic" );
 
 		// Background colors
-		ColorPrint.style().color( "white" ).background( "red" ).bold().println( "White on Red Background" );
-		ColorPrint.style().color( "black" ).background( "yellow" ).println( "Black on Yellow Background" );
+		ColorPrint.color( "white" ).background( "red" ).bold().println( "White on Red Background" );
+		ColorPrint.color( "black" ).background( "yellow" ).println( "Black on Yellow Background" );
 
 		// Style factory methods
 		ColorPrint.red().bold().println( "Red Bold Text" );
@@ -51,7 +51,7 @@ public class ColorPrintTest {
 		ColorPrint.blue().underline().println( "Blue Underlined Text" );
 
 		// Chaining multiple styles
-		ColorPrint.style()
+		ColorPrint
 		    .color( "magenta" )
 		    .bold()
 		    .italic()
@@ -67,20 +67,20 @@ public class ColorPrintTest {
 		System.out.println( "\n=== Color Name Mapping Test ===" );
 
 		// Test all basic colors
-		ColorPrint.style().color( "black" ).print( "Black " );
-		ColorPrint.style().color( "red" ).print( "Red " );
-		ColorPrint.style().color( "green" ).print( "Green " );
-		ColorPrint.style().color( "yellow" ).print( "Yellow " );
-		ColorPrint.style().color( "blue" ).print( "Blue " );
-		ColorPrint.style().color( "magenta" ).print( "Magenta " );
-		ColorPrint.style().color( "cyan" ).print( "Cyan " );
-		ColorPrint.style().color( "white" ).println( "White" );
+		ColorPrint.color( "black" ).print( "Black " );
+		ColorPrint.color( "red" ).print( "Red " );
+		ColorPrint.color( "green" ).print( "Green " );
+		ColorPrint.color( "yellow" ).print( "Yellow " );
+		ColorPrint.color( "blue" ).print( "Blue " );
+		ColorPrint.color( "magenta" ).print( "Magenta " );
+		ColorPrint.color( "cyan" ).print( "Cyan " );
+		ColorPrint.color( "white" ).println( "White" );
 
 		// Test bright colors
-		ColorPrint.style().color( "brightRed" ).print( "BrightRed " );
-		ColorPrint.style().color( "brightGreen" ).print( "BrightGreen " );
-		ColorPrint.style().color( "brightBlue" ).print( "BrightBlue " );
-		ColorPrint.style().color( "brightYellow" ).println( "BrightYellow" );
+		ColorPrint.color( "brightRed" ).print( "BrightRed " );
+		ColorPrint.color( "brightGreen" ).print( "BrightGreen " );
+		ColorPrint.color( "brightBlue" ).print( "BrightBlue " );
+		ColorPrint.color( "brightYellow" ).println( "BrightYellow" );
 	}
 
 	@Test
@@ -89,15 +89,15 @@ public class ColorPrintTest {
 		System.out.println( "\n=== Style Combinations Test ===" );
 
 		// Various style combinations
-		ColorPrint.style().bold().println( "Bold only" );
-		ColorPrint.style().italic().println( "Italic only" );
-		ColorPrint.style().underline().println( "Underline only" );
-		ColorPrint.style().dim().println( "Dim only" );
-		ColorPrint.style().strikethrough().println( "Strikethrough only" );
+		ColorPrint.bold().println( "Bold only" );
+		ColorPrint.italic().println( "Italic only" );
+		ColorPrint.underline().println( "Underline only" );
+		ColorPrint.dim().println( "Dim only" );
+		ColorPrint.strikethrough().println( "Strikethrough only" );
 
 		// Combined styles
-		ColorPrint.style().bold().italic().println( "Bold + Italic" );
-		ColorPrint.style().bold().underline().println( "Bold + Underline" );
-		ColorPrint.style().italic().underline().println( "Italic + Underline" );
+		ColorPrint.bold().italic().println( "Bold + Italic" );
+		ColorPrint.bold().underline().println( "Bold + Underline" );
+		ColorPrint.italic().underline().println( "Italic + Underline" );
 	}
 }
