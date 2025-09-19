@@ -22,8 +22,10 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import ortus.boxlang.runtime.cli.providers.ITabProvider;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
  * MiniConsole - A lightweight, cross-platform command-line input handler with history support.
@@ -134,6 +136,114 @@ public class MiniConsole implements AutoCloseable {
 	private int							completionDisplayLines	= 0;
 
 	/**
+	 * Global Ansi Codes
+	 */
+	public enum CODES {
+
+		BACKGROUND( "\033[48;5;" ),
+		BLINK( "\033[5m" ),
+		BOLD( "\033[1m" ),
+		DIM( "\033[2m" ),
+		FOREGROUND( "\033[38;5;" ),
+		ITALIC( "\033[3m" ),
+		RESET( "\033[0m" ),
+		REVERSE( "\033[7m" ),
+		STRIKETHROUGH( "\033[9m" ),
+		UNDERLINE( "\033[4m" ),
+
+	    // Cursor movement
+		CURSOR_UP( "\033[A" ),
+		CURSOR_DOWN( "\033[B" ),
+		CURSOR_RIGHT( "\033[C" ),
+		CURSOR_LEFT( "\033[D" ),
+		CURSOR_HOME( "\033[H" ),
+		CURSOR_SAVE( "\033[s" ),
+		CURSOR_RESTORE( "\033[u" ),
+
+	    // Screen clearing
+		CLEAR_SCREEN( "\033[2J" ),
+		CLEAR_LINE( "\033[2K" ),
+		CLEAR_TO_END( "\033[0J" ),
+		CLEAR_TO_START( "\033[1J" ),
+
+	    // Standard colors (foreground)
+		BLACK( "\033[30m" ),
+		RED( "\033[31m" ),
+		GREEN( "\033[32m" ),
+		YELLOW( "\033[33m" ),
+		BLUE( "\033[34m" ),
+		MAGENTA( "\033[35m" ),
+		CYAN( "\033[36m" ),
+		WHITE( "\033[37m" ),
+
+	    // Bright colors (foreground)
+		BRIGHT_BLACK( "\033[90m" ),
+		BRIGHT_RED( "\033[91m" ),
+		BRIGHT_GREEN( "\033[92m" ),
+		BRIGHT_YELLOW( "\033[93m" ),
+		BRIGHT_BLUE( "\033[94m" ),
+		BRIGHT_MAGENTA( "\033[95m" ),
+		BRIGHT_CYAN( "\033[96m" ),
+		BRIGHT_WHITE( "\033[97m" ),
+
+	    // Background colors
+		BG_BLACK( "\033[40m" ),
+		BG_RED( "\033[41m" ),
+		BG_GREEN( "\033[42m" ),
+		BG_YELLOW( "\033[43m" ),
+		BG_BLUE( "\033[44m" ),
+		BG_MAGENTA( "\033[45m" ),
+		BG_CYAN( "\033[46m" ),
+		BG_WHITE( "\033[47m" ),
+
+	    // Bright background colors
+		BG_BRIGHT_BLACK( "\033[100m" ),
+		BG_BRIGHT_RED( "\033[101m" ),
+		BG_BRIGHT_GREEN( "\033[102m" ),
+		BG_BRIGHT_YELLOW( "\033[103m" ),
+		BG_BRIGHT_BLUE( "\033[104m" ),
+		BG_BRIGHT_MAGENTA( "\033[105m" ),
+		BG_BRIGHT_CYAN( "\033[106m" ),
+		BG_BRIGHT_WHITE( "\033[107m" );
+
+		private final String code;
+
+		CODES( String code ) {
+			this.code = code;
+		}
+
+		public String code() {
+			return this.code;
+		}
+
+		/**
+		 * Find a code by its name (case-insensitive)
+		 *
+		 * @param name The name of the code (e.g., "red", "bg_bright_white", "reset")
+		 *
+		 * @return The ANSI code string, or null if not found
+		 */
+		public static String get( String name ) {
+			Objects.requireNonNull( name, "Code name is required" );
+			String upperName = name.toUpperCase();
+
+			for ( CODES code : values() ) {
+				if ( code.name().equals( upperName ) ) {
+					return code.code;
+				}
+			}
+
+			// Throw a BoxRuntimeException
+			throw new BoxRuntimeException( "Invalid ANSI code name: " + name );
+		}
+
+		@Override
+		public String toString() {
+			return this.code;
+		}
+	}
+
+	/**
 	 * Constructor with default settings
 	 */
 	public MiniConsole() {
@@ -150,6 +260,23 @@ public class MiniConsole implements AutoCloseable {
 	}
 
 	/**
+	 * Constructor with custom prompt and syntax highlighter
+	 *
+	 * @param prompt      The prompt string to display
+	 * @param highlighter The syntax highlighter to use, or null to disable
+	 */
+	public MiniConsole( String prompt, ISyntaxHighlighter highlighter ) {
+		this( prompt );
+		this.syntaxHighlighter = highlighter;
+	}
+
+	/**
+	 * ----------------------------------------------------------------------------
+	 * Prompt Management
+	 * ----------------------------------------------------------------------------
+	 */
+
+	/**
 	 * Set the prompt string displayed before user input
 	 *
 	 * @param prompt The new prompt string (null defaults to "> ")
@@ -158,6 +285,21 @@ public class MiniConsole implements AutoCloseable {
 		this.prompt = prompt != null ? prompt : DEFAULT_PROMPT;
 		return this;
 	}
+
+	/**
+	 * Get the current prompt string
+	 *
+	 * @return The current prompt string
+	 */
+	public String getPrompt() {
+		return prompt;
+	}
+
+	/**
+	 * ----------------------------------------------------------------------------
+	 * Syntax Highlighting
+	 * ----------------------------------------------------------------------------
+	 */
 
 	/**
 	 * Set a syntax highlighter for real-time input coloring
@@ -181,13 +323,10 @@ public class MiniConsole implements AutoCloseable {
 	}
 
 	/**
-	 * Get the current prompt string
-	 *
-	 * @return The current prompt string
+	 * ----------------------------------------------------------------------------
+	 * Tab Completion and Management
+	 * ----------------------------------------------------------------------------
 	 */
-	public String getPrompt() {
-		return prompt;
-	}
 
 	/**
 	 * Register a tab completion provider
@@ -202,6 +341,12 @@ public class MiniConsole implements AutoCloseable {
 		tabProviders.sort( ( a, b ) -> Integer.compare( b.getPriority(), a.getPriority() ) );
 		return this;
 	}
+
+	/**
+	 * ----------------------------------------------------------------------------
+	 * History Management
+	 * ----------------------------------------------------------------------------
+	 */
 
 	/**
 	 * Set the maximum number of history entries to retain
@@ -316,6 +461,109 @@ public class MiniConsole implements AutoCloseable {
 	}
 
 	/**
+	 * ----------------------------------------------------------------------------
+	 * Utilities
+	 * ----------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Create a 256-color foreground ANSI sequence
+	 *
+	 * @param colorIndex Color index (0-255)
+	 *
+	 * @return ANSI escape sequence for foreground color
+	 */
+	public static String color( int colorIndex ) {
+		return CODES.FOREGROUND.code() + colorIndex + "m";
+	}
+
+	/**
+	 * Create a 256-color background ANSI sequence
+	 *
+	 * @param colorIndex Color index (0-255)
+	 *
+	 * @return ANSI escape sequence for background color
+	 */
+	public static String background( int colorIndex ) {
+		return CODES.BACKGROUND.code() + colorIndex + "m";
+	}
+
+	/**
+	 * ANSI reset sequence to clear all formatting
+	 *
+	 * @return ANSI reset sequence
+	 */
+	public static String reset() {
+		return CODES.RESET.code();
+	}
+
+	/**
+	 * Convenient static alias to print an error message in red bold text
+	 *
+	 * @param text The message text
+	 */
+	@SuppressWarnings( "static-access" )
+	public static void printError( String text ) {
+		ColorPrint.bold().red().println( "🔴  " + text );
+	}
+
+	/**
+	 * Convenient static alias to print a success message in green bold text
+	 *
+	 * @param text The message text
+	 */
+	@SuppressWarnings( "static-access" )
+	public static void printSuccess( String text ) {
+		ColorPrint.green().bold().println( "✅  " + text );
+	}
+
+	/**
+	 * Convenient static alias to print a warning message in yellow bold text
+	 *
+	 * @param text The message text
+	 */
+	@SuppressWarnings( "static-access" )
+	public static void printWarning( String text ) {
+		ColorPrint.yellow().bold().println( "⚠️  " + text );
+	}
+
+	/**
+	 * Convenient static alias to print an info message in blue bold text
+	 *
+	 * @param text The message text
+	 */
+	@SuppressWarnings( "static-access" )
+	public static void printInfo( String text ) {
+		ColorPrint.blue().bold().println( "ℹ️  " + text );
+	}
+
+	/**
+	 * Convenient static alias to print a debug message in magenta bold text
+	 *
+	 * @param text The message text
+	 */
+	@SuppressWarnings( "static-access" )
+	public static void printDebug( String text ) {
+		ColorPrint.magenta().bold().println( "🔍  " + text );
+	}
+
+	/**
+	 * This function clears the entire console screen and resets the cursor to the top-left corner.
+	 */
+	public void clear() {
+		// ANSI escape sequence to clear the screen and move cursor to top-left
+		// Use the CODES enum
+		System.out.print( CODES.CLEAR_SCREEN.code() + CODES.CURSOR_HOME.code() );
+		System.out.flush();
+	}
+
+	/**
+	 * ----------------------------------------------------------------------------
+	 * Input Reading and Line Editing
+	 * ----------------------------------------------------------------------------
+	 */
+
+	/**
 	 * Read a line of input with full editing capabilities
 	 *
 	 * @return The input line, or null on EOF/exit
@@ -350,69 +598,11 @@ public class MiniConsole implements AutoCloseable {
 	}
 
 	/**
-	 * Create a 256-color foreground ANSI sequence
-	 *
-	 * @param colorIndex Color index (0-255)
-	 *
-	 * @return ANSI escape sequence for foreground color
+	 * Close the console and release any resources
 	 */
-	public static String color( int colorIndex ) {
-		return "\033[38;5;" + colorIndex + "m";
-	}
-
-	/**
-	 * Create a 256-color background ANSI sequence
-	 *
-	 * @param colorIndex Color index (0-255)
-	 *
-	 * @return ANSI escape sequence for background color
-	 */
-	public static String background( int colorIndex ) {
-		return "\033[48;5;" + colorIndex + "m";
-	}
-
-	/**
-	 * ANSI reset sequence to clear all formatting
-	 *
-	 * @return ANSI reset sequence
-	 */
-	public static String reset() {
-		return "\033[0m";
-	}
-
-	// Convenient static aliases for common color printing
-	public static void printError( String text ) {
-		ColorPrint.redText().bold().println( text );
-	}
-
-	public static void printSuccess( String text ) {
-		ColorPrint.greenText().bold().println( text );
-	}
-
-	public static void printWarning( String text ) {
-		ColorPrint.yellowText().bold().println( text );
-	}
-
-	public static void printInfo( String text ) {
-		ColorPrint.blueText().bold().println( text );
-	}
-
-	public static void printDebug( String text ) {
-		ColorPrint.magentaText().bold().println( text );
-	}
-
 	@Override
 	public void close() {
 		// Nothing to clean up at this level - handled by inner classes
-	}
-
-	/**
-	 * This function clears the entire console screen and resets the cursor to the top-left corner.
-	 */
-	public void clear() {
-		// ANSI escape sequence to clear the screen and move cursor to top-left
-		System.out.print( "\033[2J\033[H" );
-		System.out.flush();
 	}
 
 	// ================================================================================
@@ -777,6 +967,12 @@ public class MiniConsole implements AutoCloseable {
 	}
 
 	/**
+	 * ----------------------------------------------------------------------------
+	 * Tab Completion Algorithm
+	 * ----------------------------------------------------------------------------
+	 */
+
+	/**
 	 * Handles tab completion by finding matching providers and cycling through suggestions.
 	 */
 	private void handleTabCompletion( String prompt, StringBuilder buffer ) {
@@ -985,6 +1181,12 @@ public class MiniConsole implements AutoCloseable {
 	}
 
 	/**
+	 * ----------------------------------------------------------------------------
+	 * Charavcter and Word Utilities
+	 * ----------------------------------------------------------------------------
+	 */
+
+	/**
 	 * Finds the start of the current word for tab completion.
 	 */
 	private int findWordStart( String input, int fromPosition ) {
@@ -1031,6 +1233,12 @@ public class MiniConsole implements AutoCloseable {
 
 		System.out.flush();
 	}
+
+	/**
+	 * ----------------------------------------------------------------------------
+	 * History Navigation
+	 * ----------------------------------------------------------------------------
+	 */
 
 	/**
 	 * Navigate to previous command in history
