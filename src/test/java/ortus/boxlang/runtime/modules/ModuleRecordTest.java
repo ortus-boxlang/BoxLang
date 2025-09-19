@@ -73,6 +73,9 @@ class ModuleRecordTest {
 		// Then
 		assertThat( moduleRecord.name ).isEqualTo( moduleName );
 		assertThat( moduleRecord.mapping.name() ).isEqualTo( "/bxModules/TestModule/" );
+		assertThat( moduleRecord.mapping.external() ).isFalse();
+		assertThat( moduleRecord.publicMapping.name() ).isEqualTo( "/bxModules/TestModule/public/" );
+		assertThat( moduleRecord.publicMapping.external() ).isTrue();
 		Path modulePath = moduleRecord.physicalPath;
 		assertThat( modulePath.getFileName().toString() ).isEqualTo( "TestModule" );
 		assertThat( moduleRecord.invocationPath ).isEqualTo( "bxModules.TestModule" );
@@ -144,6 +147,9 @@ class ModuleRecordTest {
 		assertThat( moduleRecord.enabled ).isEqualTo( true );
 		assertThat( moduleRecord.mapping.name() ).isEqualTo( ModuleService.MODULE_MAPPING_PREFIX + "test/" );
 		assertThat( moduleRecord.invocationPath ).isEqualTo( ModuleService.MODULE_MAPPING_INVOCATION_PREFIX + moduleRecord.name.getName() );
+		assertThat( moduleRecord.publicMapping.name() ).isEqualTo( "/bxModules/test/www/" );
+		assertThat( moduleRecord.publicMapping.external() ).isTrue();
+
 	}
 
 	@DisplayName( "Can configure a module descriptor" )

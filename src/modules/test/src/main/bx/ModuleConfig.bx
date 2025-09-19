@@ -39,6 +39,13 @@ class{
 	this.mapping = "test";
 
 	/**
+	 * The BoxLang invocation path for your module.  This is the path that you will use to invoke
+	 * your module from the command line or programmatically.  All BoxLang module invocation paths
+	 * are prefixed with: bxModules.{this.invocationPath}, /bxmodules/{this.invocationPath}
+	 */
+	this.publicMapping = "www";
+
+	/**
 	 * Who built the module
 	 */
 	this.author = "Luis Majano";

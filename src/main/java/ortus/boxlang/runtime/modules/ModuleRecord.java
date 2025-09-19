@@ -1271,67 +1271,92 @@ public class ModuleRecord {
 	 */
 	private Mapping resolveMapping( Object targetMapping ) {
 		Mapping result = null;
-		// If it's a string, then we assume it's the name and not visibly external
+
+		// If it's a string, then we assume it's the name and not visibly externally
 		if ( targetMapping instanceof String castedMapping && !castedMapping.isBlank() ) {
 			result				= Mapping.of(
 			    ModuleService.MODULE_MAPPING_PREFIX + castedMapping,
+			    // Always points to the module path
 			    this.path,
 			    false
 			);
 			this.invocationPath	= ModuleService.MODULE_MAPPING_INVOCATION_PREFIX + castedMapping;
 		}
 		// If it's a struct, then we assume it's a full mapping definition
-		else if ( targetMapping instanceof IStruct structMapping && structMapping.containsKey( Key._name ) ) {
-
-			// Do we use the prefix or not
-			String mappingName = BooleanCaster.cast( structMapping.getOrDefault( Key.usePrefix, true ) )
-			    ? ModuleService.MODULE_MAPPING_PREFIX + structMapping.getAsString( Key._name )
-			    : structMapping.getAsString( Key._name );
-
-			// Now create the mapping
-			result				= Mapping.fromData(
-			    mappingName,
-			    this.path,
-			    BooleanCaster.cast( structMapping.getOrDefault( Key.external, false ) )
-			);
-
+		// It must have a `name` key and optionally:
+		// - usePrefix (boolean, default true)
+		// - external (boolean, default false)
+		// - path (string, relative from the module path, default is the module path)
+		else if ( targetMapping instanceof IStruct structMapping ) {
+			result				= mappingFromStruct( structMapping, false );
 			this.invocationPath	= ModuleService.MODULE_MAPPING_INVOCATION_PREFIX + structMapping.getAsString( Key._name );
 		}
 
 		return result;
 	}
 
+	/**
+	 * Create a Mapping from a struct definition
+	 *
+	 * @param definition        The struct definition
+	 * @param isExternalDefault The default value for the external key if not
+	 *
+	 * @return The Mapping object
+	 */
+	private Mapping mappingFromStruct( IStruct definition, boolean isExternalDefault ) {
+		// Default usePrefix to true
+		boolean usePrefix = BooleanCaster.cast( definition.getOrDefault( Key.usePrefix, true ) );
+		// If the definition doesn't have a name, use the module name
+		if ( !definition.containsKey( Key._name ) || definition.getAsString( Key._name ).isBlank() ) {
+			definition.put( Key._name, this.name.getName() );
+		}
+
+		// Compose the mapping name
+		String mappingName = usePrefix
+		    ? ModuleService.MODULE_MAPPING_PREFIX + definition.getAsString( Key._name )
+		    : definition.getAsString( Key._name );
+
+		// Compose the mapping path
+		String mappingPath = this.path;
+		// The path is relative to the module path, so compose it.
+		if ( definition.containsKey( Key.path ) && !definition.getAsString( Key.path ).isBlank() ) {
+			mappingPath = this.physicalPath.resolve( definition.getAsString( Key.path ) ).toString();
+		}
+
+		// Now create the mapping
+		return Mapping.fromData(
+		    mappingName,
+		    mappingPath,
+		    BooleanCaster.cast( definition.getOrDefault( Key.external, isExternalDefault ) )
+		);
+	}
+
+	/**
+	 * Resolve the public mapping for the module based on the targetMapping object
+	 * which can be either a string or a struct.
+	 *
+	 * @param targetMapping The target mapping to resolve
+	 *
+	 * @return The resolved Mapping object
+	 */
 	private Mapping resolvePublicMapping( Object targetMapping ) {
-		// If it's a string, then the mapping is /bxModules/{this.name}/<castedMapping>
-		// And the folder is the module path + "/" + <castedMapping>
+		// If it's a string, then basically the value is the relative folder or 'path'
 		// this.publicMapping = "public" -> /bxModules/{this.name}/public
 		// this.publicMapping = "www" -> /bxModules/{this.name}/www
 		if ( targetMapping instanceof String castedMapping && !castedMapping.isBlank() ) {
 			return Mapping.of(
-			    ModuleService.MODULE_MAPPING_PREFIX + this.name.getNameNoCase() + "/" + castedMapping,
+			    this.mapping.name() + castedMapping,
 			    this.physicalPath.resolve( castedMapping ).toString(),
 			    true
 			);
 		}
 
-		// If it's a struct, then make sure we have the following keys:
-		// - name (mandatory), /bxModules/{this.name}/<name>, unless usePrefix is false
+		// If it's a struct then
+		// - name (optional) defaults to the module mapping
 		// - usePrefix (optional, default true)
-
-		if ( targetMapping instanceof IStruct structMapping && structMapping.containsKey( Key._name ) ) {
-			boolean	usePrefix	= BooleanCaster.cast( structMapping.getOrDefault( Key.usePrefix, true ) );
-			// Do we use the prefix or not
-			String	mappingName	= usePrefix
-			    ? ModuleService.MODULE_MAPPING_PREFIX +
-			        this.name.getNameNoCase() + "/" + structMapping.getAsString( Key._name )
-			    : structMapping.getAsString( Key._name );
-
-			// Now create the mapping
-			return Mapping.fromData(
-			    mappingName,
-			    this.physicalPath.resolve( structMapping.getAsString( Key._name ) ).toString(),
-			    true
-			);
+		// - path (relative from the module path)
+		if ( targetMapping instanceof IStruct structMapping ) {
+			return mappingFromStruct( structMapping, true );
 		}
 
 		// Return original mapping if we can't resolve it
