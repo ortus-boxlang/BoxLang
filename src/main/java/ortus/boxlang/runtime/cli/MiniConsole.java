@@ -1165,6 +1165,7 @@ public class MiniConsole implements AutoCloseable {
 		}
 
 		// Show the preview
+		System.out.print( "\r" );
 		System.out.print( CODES.CLEAR_LINE.code() );
 		System.out.print( prompt );
 
@@ -1233,6 +1234,7 @@ public class MiniConsole implements AutoCloseable {
 	 * Redraw the current line with prompt and buffer content
 	 */
 	private void redraw( String promptStr, StringBuilder buffer ) {
+		System.out.print( "\r" );
 		System.out.print( CODES.CLEAR_LINE.code() );
 		System.out.print( promptStr );
 
