@@ -170,6 +170,7 @@ public class ModuleService extends BaseService {
 			        "invocationPath", entrySet.getValue().invocationPath,
 			        "mapping", entrySet.getValue().mapping.toStruct(),
 			        "physicalPath", entrySet.getValue().physicalPath.toString(),
+			        "publicMapping", entrySet.getValue().publicMapping.toStruct(),
 			        "registeredOn", entrySet.getValue().registeredOn,
 			        "registrationTime", entrySet.getValue().registrationTime,
 			        "version", entrySet.getValue().version
