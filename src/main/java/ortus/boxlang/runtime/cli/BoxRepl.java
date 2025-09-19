@@ -79,6 +79,8 @@ import ortus.boxlang.runtime.types.exceptions.AbortException;
  */
 public class BoxRepl {
 
+	private static final String	DEFAULT_PROMPT	= "📦 BoxLang> ";
+
 	/**
 	 * The BoxLang runtime instance
 	 */
@@ -155,7 +157,7 @@ public class BoxRepl {
 		    .collect( Collectors.toSet() );
 
 		// Create console with custom BoxLang prompt
-		this.prompt		= this.currentPalette.get( "prompt" ) + "📦 BoxLang> " + MiniConsole.reset();
+		this.prompt		= this.currentPalette.get( "prompt" ) + DEFAULT_PROMPT + MiniConsole.reset();
 		// Setup the MiniConsole
 		this.console	= new MiniConsole( this.prompt, new BoxLangSyntaxHighlighter() );
 		// Set up tab completion providers
@@ -262,6 +264,16 @@ public class BoxRepl {
 					showBanner();
 					continue;
 				}
+				// Magic Command: If the user typed ":dark", then switch to dark color palette
+				else if ( braceDepth == 0 && source.equals( ":dark" ) ) {
+					switchToTheme( "dark" );
+					continue;
+				}
+				// Magic Command: If the user typed ":light", then switch to light color palette
+				else if ( braceDepth == 0 && source.equals( ":light" ) ) {
+					switchToTheme( "light" );
+					continue;
+				}
 
 				// Handle exit commands (only when not in multi-line mode)
 				if ( braceDepth == 0 && isExitCommand( source ) ) {
@@ -323,9 +335,8 @@ public class BoxRepl {
 		System.out.println( "✨ Welcome to the BoxLang Interactive REPL!" );
 		System.out.println( "💡 Enter an expression, then hit enter" );
 		System.out.println( "🔧 Use { } for multi-line blocks - prompt changes to '...' until balanced" );
-		System.out.println( "🎨 BIFs and components are highlighted as you type!" );
-		System.out.println( "↕️  UP/DOWN arrows navigate command history" );
 		System.out.println( "📚 Type ':history' to see command history" );
+		System.out.println( "🌙 Type ':dark' for dark theme, ':light' for light theme" );
 		System.out.println( "🔄 Type '!!' to repeat last command, or '!n' to repeat command n" );
 		System.out.println( "🧹 Press Ctrl+D to clear current line, or on empty line to exit" );
 		System.out.println( "🚪 Type 'exit' or 'quit' to leave, or press Ctrl-C" );
@@ -342,6 +353,25 @@ public class BoxRepl {
 	private boolean isExitCommand( String input ) {
 		return input != null &&
 		    ( input.toLowerCase().equals( "exit" ) || input.toLowerCase().equals( "quit" ) );
+	}
+
+	/**
+	 * Switch between light and dark color themes.
+	 *
+	 * @param theme The theme to switch to ("light" or "dark")
+	 */
+	private void switchToTheme( String theme ) {
+		if ( "light".equals( theme ) ) {
+			currentPalette = lightPalette;
+			System.out.println( "☀️ Switched to light theme" );
+		} else if ( "dark".equals( theme ) ) {
+			currentPalette = darkPalette;
+			System.out.println( "🌙 Switched to dark theme" );
+		}
+
+		// Update the prompt with the new color palette
+		this.prompt = this.currentPalette.get( "prompt" ) + DEFAULT_PROMPT + MiniConsole.reset();
+		console.setPrompt( this.prompt );
 	}
 
 	/**
@@ -539,7 +569,7 @@ public class BoxRepl {
 				String functionName = bifMatcher.group( 1 ).toLowerCase();
 				if ( bifs.contains( functionName ) ) {
 					// Highlight function name in bright green, keep the opening parenthesis
-					String highlighted = currentPalette.get( "function" ) + bifMatcher.group( 1 ) + MiniConsole.reset() + "(";
+					String highlighted = currentPalette.get( "bif" ) + bifMatcher.group( 1 ) + MiniConsole.reset() + "(";
 					bifMatcher.appendReplacement( tempBuffer, Matcher.quoteReplacement( highlighted ) );
 				}
 			}
