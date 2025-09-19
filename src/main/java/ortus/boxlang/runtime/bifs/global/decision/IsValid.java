@@ -76,6 +76,7 @@ public class IsValid extends BIF {
 	 * <li>hex</li>
 	 * <li>integer</li>
 	 * <li>numeric</li>
+	 * <li>number</li>
 	 * <li>query</li>
 	 * <li>range</li>
 	 * <li>regex</li>
@@ -156,6 +157,7 @@ public class IsValid extends BIF {
 			case INTEGER -> ValidationUtil.isValidInteger( arguments.get( Key.value ) );
 			case LAMBDA -> ValidationUtil.isLambda( arguments.get( Key.value ) );
 			case NUMERIC -> ValidationUtil.isValidNumeric( arguments.get( Key.value ) );
+			case NUMBER -> ValidationUtil.isValidNumeric( arguments.get( Key.value ) );
 			case RANGE -> ValidationUtil.isValidRange(
 			    arguments.get( Key.value ),
 			    NumberCaster.cast( arguments.get( Key.min ) ),
@@ -212,6 +214,7 @@ public class IsValid extends BIF {
 		INTEGER( "integer" ),
 		LAMBDA( "lambda" ),
 		NUMERIC( "numeric" ),
+		NUMBER( "number" ),
 		QUERY( "query" ),
 		RANGE( "range" ),
 		REGEX( "regex" ),

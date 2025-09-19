@@ -223,6 +223,30 @@ public class IsValidTest {
 		assertThat( ( Boolean ) variables.get( Key.of( "stringval" ) ) ).isFalse();
 	}
 
+	@DisplayName( "It works on Numbers" )
+	@Test
+	public void testNumber() {
+		instance.executeSource(
+		    """
+		    // trues
+		    int         = isValid( 'number', 123 );
+		    float       = isValid( 'number', 123.45 );
+		    stringInt   = isValid( 'number', "123" );
+		    stringFloat = isValid( 'number', "123.45" );
+
+		    // falsies
+		    bool      = isValid( 'number', true );
+		    stringval = isValid( 'number', '3x' );
+		    """,
+		    context );
+		assertThat( ( Boolean ) variables.get( Key.of( "int" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "float" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "stringInt" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "stringFloat" ) ) ).isTrue();
+		assertThat( ( Boolean ) variables.get( Key.of( "bool" ) ) ).isFalse();
+		assertThat( ( Boolean ) variables.get( Key.of( "stringval" ) ) ).isFalse();
+	}
+
 	@DisplayName( "It works on ssns" )
 	@Test
 	public void testSSN() {
