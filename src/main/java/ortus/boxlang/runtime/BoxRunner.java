@@ -41,6 +41,7 @@ import ortus.boxlang.compiler.FeatureAudit;
 import ortus.boxlang.runtime.application.BaseApplicationListener;
 import ortus.boxlang.runtime.async.tasks.BoxScheduler;
 import ortus.boxlang.runtime.async.tasks.IScheduler;
+import ortus.boxlang.runtime.cli.BoxRepl;
 import ortus.boxlang.runtime.config.CLIOptions;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
@@ -177,8 +178,8 @@ public class BoxRunner {
 			}
 			// REPL Mode: Execute code as read from the standard input of the process
 			else {
-				// Execute code from the standard input
-				boxRuntime.executeSource( System.in );
+				// Start the interactive REPL
+				new BoxRepl( boxRuntime ).start();
 			}
 		} catch ( BoxRuntimeException e ) {
 			ExceptionUtil.printBoxLangStackTrace( e, System.err );

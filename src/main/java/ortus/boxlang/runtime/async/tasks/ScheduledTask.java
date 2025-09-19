@@ -46,6 +46,7 @@ import ortus.boxlang.runtime.context.ThreadBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.net.NetworkUtil;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.types.Function;
@@ -53,7 +54,6 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.util.DateTimeHelper;
 import ortus.boxlang.runtime.types.util.StringUtil;
-import ortus.boxlang.runtime.util.NetworkUtil;
 import ortus.boxlang.runtime.util.Timer;
 
 /**

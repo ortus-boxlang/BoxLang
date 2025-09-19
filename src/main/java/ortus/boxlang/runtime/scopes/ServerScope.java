@@ -23,12 +23,12 @@ import java.util.Locale;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.events.BoxEvent;
+import ortus.boxlang.runtime.net.NetworkUtil;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableArray;
 import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableStruct;
-import ortus.boxlang.runtime.util.NetworkUtil;
 
 /**
  * Represents the BoxLang "server" scope container

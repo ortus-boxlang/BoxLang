@@ -1569,19 +1569,6 @@ public class BoxRuntime implements java.io.Closeable {
 		ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
 
 		try {
-			Boolean quiet = reader.ready();
-			if ( !quiet ) {
-				System.out.println( "██████   ██████  ██   ██ ██       █████  ███    ██  ██████ " );
-				System.out.println( "██   ██ ██    ██  ██ ██  ██      ██   ██ ████   ██ ██      " );
-				System.out.println( "██████  ██    ██   ███   ██      ███████ ██ ██  ██ ██   ███" );
-				System.out.println( "██   ██ ██    ██  ██ ██  ██      ██   ██ ██  ██ ██ ██    ██" );
-				System.out.println( "██████   ██████  ██   ██ ███████ ██   ██ ██   ████  ██████ " );
-				System.out.println( "" );
-				System.out.println( "Enter an expression, then hit enter" );
-				System.out.println( "Press Ctrl-C to exit" );
-				System.out.println( "" );
-				System.out.print( "BoxLang> " );
-			}
 			while ( ( source = reader.readLine() ) != null ) {
 
 				if ( source.toLowerCase().equals( "exit" ) || source.toLowerCase().equals( "quit" ) ) {
@@ -1602,11 +1589,9 @@ public class BoxRuntime implements java.io.Closeable {
 						if ( stringAttempt.wasSuccessful() ) {
 							System.out.println( stringAttempt.get() );
 						} else {
-							// check if it's a java array
 							if ( result.getClass().isArray() ) {
 								result = Array.fromArray( ( Object[] ) result );
 							}
-
 							System.out.println( result );
 						}
 					} else {
@@ -1619,10 +1604,6 @@ public class BoxRuntime implements java.io.Closeable {
 					}
 				} catch ( Exception e ) {
 					e.printStackTrace();
-				}
-
-				if ( !quiet ) {
-					System.out.print( "BoxLang> " );
 				}
 			}
 		} catch ( IOException e ) {

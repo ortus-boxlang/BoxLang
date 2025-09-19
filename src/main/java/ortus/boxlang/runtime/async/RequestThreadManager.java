@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.runtime.util;
+package ortus.boxlang.runtime.async;
 
 import java.util.ArrayDeque;
 import java.util.Arrays;
@@ -104,10 +104,10 @@ public class RequestThreadManager {
 
 	/**
 	 * Constructor
-	 * 
+	 *
 	 * @param name
 	 * @param context
-	 * 
+	 *
 	 * @return
 	 */
 	public RequestThreadManager( RequestBoxContext context ) {
@@ -175,7 +175,7 @@ public class RequestThreadManager {
 
 	/**
 	 * Unregister a thread from the manager
-	 * 
+	 *
 	 * @param name The name of the thread
 	 */
 	public void unregisterThread( Key name ) {
@@ -232,9 +232,9 @@ public class RequestThreadManager {
 
 	/**
 	 * Gets the stack trace for a thread as a string.
-	 * 
+	 *
 	 * @param thread The thread to get the stack trace for
-	 * 
+	 *
 	 * @return The stack trace as a string
 	 */
 	private String getStackTraceAsString( Thread thread ) {
