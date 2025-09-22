@@ -303,7 +303,7 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 	 * @return The metadata structure or an empty struct if the object is not found
 	 */
 	public IStruct getCachedObjectMetadata( String key ) {
-		var results = this.objectStore.get( Key.of( key ) );
+		ICacheEntry results = getCacheEntry( key );
 
 		if ( results == null ) {
 			// If not found, return empty
