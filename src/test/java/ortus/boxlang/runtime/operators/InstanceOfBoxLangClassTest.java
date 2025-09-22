@@ -53,10 +53,10 @@ public class InstanceOfBoxLangClassTest {
 		looseClassCheckMethod.setAccessible( true );
 
 		// Test case 1: boxgenerated.boxclass.coldbox.system.logging.Logevent$cfc should match coldbox.system.logging.LogEvent
-		String actualClassName = "boxgenerated.boxclass.coldbox.system.logging.Logevent$cfc";
-		String expectedClassName = "coldbox.system.logging.LogEvent";
-		
-		Boolean result = ( Boolean ) looseClassCheckMethod.invoke( null, actualClassName, expectedClassName );
+		String	actualClassName		= "boxgenerated.boxclass.coldbox.system.logging.Logevent$cfc";
+		String	expectedClassName	= "coldbox.system.logging.LogEvent";
+
+		Boolean	result				= ( Boolean ) looseClassCheckMethod.invoke( null, actualClassName, expectedClassName );
 		assertThat( result ).isTrue();
 
 		// Test case insensitive matching
@@ -75,10 +75,10 @@ public class InstanceOfBoxLangClassTest {
 		looseClassCheckMethod.setAccessible( true );
 
 		// Test case 2: boxgenerated.boxclass.coldbox.system.logging.Logevent$bx should match coldbox.system.logging.LogEvent
-		String actualClassName = "boxgenerated.boxclass.coldbox.system.logging.Logevent$bx";
-		String expectedClassName = "coldbox.system.logging.LogEvent";
-		
-		Boolean result = ( Boolean ) looseClassCheckMethod.invoke( null, actualClassName, expectedClassName );
+		String	actualClassName		= "boxgenerated.boxclass.coldbox.system.logging.Logevent$bx";
+		String	expectedClassName	= "coldbox.system.logging.LogEvent";
+
+		Boolean	result				= ( Boolean ) looseClassCheckMethod.invoke( null, actualClassName, expectedClassName );
 		assertThat( result ).isTrue();
 
 		// Test case insensitive matching
@@ -96,13 +96,13 @@ public class InstanceOfBoxLangClassTest {
 		Method looseClassCheckMethod = InstanceOf.class.getDeclaredMethod( "looseClassCheck", String.class, String.class );
 		looseClassCheckMethod.setAccessible( true );
 
-				String[] suffixes = { "$cfc", "$bx" };
-		String baseClassName = "boxgenerated.boxclass.myapp.components.MyComponent";
-		String expectedClassName = "myapp.components.MyComponent";
+		String[]	suffixes			= { "$cfc", "$bx" };
+		String		baseClassName		= "boxgenerated.boxclass.myapp.components.MyComponent";
+		String		expectedClassName	= "myapp.components.MyComponent";
 
 		for ( String suffix : suffixes ) {
-			String actualClassName = baseClassName + suffix;
-			Boolean result = ( Boolean ) looseClassCheckMethod.invoke( null, actualClassName, expectedClassName );
+			String	actualClassName	= baseClassName + suffix;
+			Boolean	result			= ( Boolean ) looseClassCheckMethod.invoke( null, actualClassName, expectedClassName );
 			assertThat( result ).isTrue(); // Should match for suffix: " + suffix
 
 			// Test case insensitive
@@ -122,10 +122,10 @@ public class InstanceOfBoxLangClassTest {
 		looseClassCheckMethod.setAccessible( true );
 
 		// Test boxgenerated.templates prefix
-		String actualClassName = "boxgenerated.templates.views.main.index$cfc";
-		String expectedClassName = "views.main.index";
-		
-		Boolean result = ( Boolean ) looseClassCheckMethod.invoke( null, actualClassName, expectedClassName );
+		String	actualClassName		= "boxgenerated.templates.views.main.index$cfc";
+		String	expectedClassName	= "views.main.index";
+
+		Boolean	result				= ( Boolean ) looseClassCheckMethod.invoke( null, actualClassName, expectedClassName );
 		assertThat( result ).isTrue();
 
 		// Test with just the filename
@@ -140,19 +140,19 @@ public class InstanceOfBoxLangClassTest {
 		Field suffixesField = InstanceOf.class.getDeclaredField( "BOXLANG_SUFFIXES" );
 		suffixesField.setAccessible( true );
 		String[] suffixes = ( String[] ) suffixesField.get( null );
-		
-				assertThat( suffixes ).asList().containsExactly( "$cfc", "$bx" );
+
+		assertThat( suffixes ).asList().containsExactly( "$cfc", "$bx" );
 
 		Field prefixField = InstanceOf.class.getDeclaredField( "BOXLANG_PREFIX" );
 		prefixField.setAccessible( true );
 		String prefix = ( String ) prefixField.get( null );
-		
+
 		assertThat( prefix ).isEqualTo( "boxgenerated." );
 
 		Field prefixLengthField = InstanceOf.class.getDeclaredField( "BOXLANG_PREFIX_LENGTH" );
 		prefixLengthField.setAccessible( true );
 		int prefixLength = ( int ) prefixLengthField.get( null );
-		
+
 		assertThat( prefixLength ).isEqualTo( "boxgenerated.".length() );
 	}
 
