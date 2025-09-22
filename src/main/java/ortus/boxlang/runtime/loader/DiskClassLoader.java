@@ -41,46 +41,95 @@ import ortus.boxlang.compiler.IBoxpiler;
 import ortus.boxlang.runtime.util.RegexBuilder;
 
 /**
- * Disk Class Loader for our Class Infos
+ * Custom ClassLoader implementation for BoxLang that provides disk-based class caching and dynamic bytecode manipulation.
+ * 
+ * <p>This ClassLoader extends URLClassLoader to provide the following key functionalities:</p>
+ * 
+ * <h3>Key Features:</h3>
+ * <ul>
+ *   <li><strong>Disk-based Caching:</strong> Compiled classes are cached to disk for faster subsequent loads</li>
+ *   <li><strong>Memory-safe Class Cache:</strong> Uses WeakReferences to avoid memory leaks while providing fast access</li>
+ *   <li><strong>Dynamic Bytecode Manipulation:</strong> Uses ASM to rename classes and update references at runtime</li>
+ *   <li><strong>Pre-compiled Class Support:</strong> Can load and patch pre-compiled BoxLang classes</li>
+ *   <li><strong>JIT Compilation Integration:</strong> Works with the BoxPiler for just-in-time compilation</li>
+ * </ul>
+ * 
+ * <h3>Architecture:</h3>
+ * <p>The class loader maintains a disk store organized by class pool name, where each pool represents
+ * a logical grouping of related classes (e.g., classes from the same source file or module).</p>
+ * 
+ * <h3>Bytecode Manipulation:</h3>
+ * <p>When loading pre-compiled classes, this loader can dynamically rename classes and update their
+ * internal references using ASM. This allows BoxLang to load the same source class multiple times
+ * with different FQNs (Fully Qualified Names) without conflicts.</p>
+ * 
+ * <h3>Thread Safety:</h3>
+ * <p>The class implements custom locking strategies to minimize contention while ensuring thread safety.
+ * Read operations on the cache are lock-free, while writes use synchronized blocks.</p>
+ * 
+ * @see ortus.boxlang.compiler.IBoxpiler
+ * @see ortus.boxlang.compiler.ClassInfo
  */
 public class DiskClassLoader extends URLClassLoader {
 
 	/**
-	 * The location of the disk store
+	 * The location of the disk store where compiled classes are cached.
+	 * This path is resolved relative to the base disk store and includes the class pool prefix.
 	 */
 	private Path																diskStore;
 
 	/**
-	 * The boxpiler
+	 * The BoxLang compiler interface used for just-in-time compilation of source files.
+	 * This is used when a class needs to be compiled from source before loading.
 	 */
 	IBoxpiler																	boxPiler;
 
 	/**
-	 * The class pool name
+	 * The logical name of the class pool this loader is responsible for.
+	 * Class pools group related classes together (e.g., all classes from the same source file).
 	 */
 	String																		classPoolName;
 
 	/**
-	 * The class pool name but with all special characters replaced so it can be used as a valid folder name
+	 * The class pool name sanitized for use as a directory name.
+	 * All special characters are replaced with underscores to ensure filesystem compatibility.
 	 */
 	String																		classPoolDiskPrefix;
 
 	/**
-	 * Memory-safe cache for loaded classes
-	 * Trying to avoid calling super.loadClass() here as the JDK ClassLoader.loadClass() method has a mandatory synchronized block which single threads access to loading a class, even if it's
-	 * already compiled and already been loaded before. That is dumb, so we'll keep our own cache here once we've loaded it.
-	 * I'm not using a conncurrent Map because I want to have NO LOCKING ON READS. I'm supplying my own concurrency below any time this map is modified.
-	 * This means a read may happen while the map is having a put() operation performed. I THINK this is ok. If we see errors, then switch to a concurrent class.
+	 * Memory-safe cache for loaded classes using WeakReferences to prevent memory leaks.
+	 * 
+	 * <p>This cache serves multiple purposes:</p>
+	 * <ul>
+	 *   <li>Avoids the synchronized block in ClassLoader.loadClass() for already-loaded classes</li>
+	 *   <li>Provides O(1) lookup time for frequently accessed classes</li>
+	 *   <li>Automatically handles memory pressure via WeakReferences</li>
+	 * </ul>
+	 * 
+	 * <p><strong>Concurrency Strategy:</strong> This map is NOT thread-safe by design to avoid
+	 * read locking. Modifications are synchronized, but reads are lock-free. This means
+	 * a read might occur during a write operation, but this is acceptable for performance.</p>
+	 * 
+	 * <p>If concurrency issues arise, consider switching to ConcurrentHashMap, but this will
+	 * introduce read locking overhead.</p>
 	 */
 	private final java.util.Map<String, java.lang.ref.WeakReference<Class<?>>>	loadedClasses	= new java.util.HashMap<>();
 
 	/**
-	 * Constructor
+	 * Constructs a new DiskClassLoader with the specified configuration.
+	 * 
+	 * <p>This constructor sets up the disk-based class loading infrastructure:</p>
+	 * <ul>
+	 *   <li>Initializes the disk store directory structure</li>
+	 *   <li>Sanitizes the class pool name for filesystem compatibility</li>
+	 *   <li>Sets up the parent delegation chain</li>
+	 * </ul>
 	 *
-	 * @param urls      classpath
-	 * @param parent    parent classloader
-	 * @param diskStore disk store location path
-	 * @param boxpiler  Boxpiler
+	 * @param urls           The URLs from which to load classes and resources (passed to URLClassLoader)
+	 * @param parent         The parent ClassLoader for delegation
+	 * @param diskStore      The base directory where compiled classes will be cached
+	 * @param boxpiler       The BoxLang compiler interface for JIT compilation
+	 * @param classPoolName  The logical name for this class pool (used for organization and caching)
 	 */
 	public DiskClassLoader( URL[] urls, ClassLoader parent, Path diskStore, IBoxpiler boxpiler, String classPoolName ) {
 		super( urls, parent );
@@ -94,9 +143,25 @@ public class DiskClassLoader extends URLClassLoader {
 	}
 
 	/**
-	 * Load a class by name. The logic for this is all in the super class, but we're overriding the method
-	 * so we can provide a layer of caching to avoid the heavy-handed locking in the ClassLoader.loadClass() method.
-	 * Our version will require ZERO locking once the class has been loaded once.
+	 * Loads a class by name with optimized caching to avoid ClassLoader synchronization overhead.
+	 * 
+	 * <p>This method implements a three-tier loading strategy:</p>
+	 * <ol>
+	 *   <li><strong>Fast Path:</strong> Check the WeakReference cache (lock-free read)</li>
+	 *   <li><strong>Double-Check:</strong> Synchronize and check cache again (handles race conditions)</li>
+	 *   <li><strong>Delegate:</strong> Fall back to parent ClassLoader.loadClass() and cache the result</li>
+	 * </ol>
+	 * 
+	 * <p><strong>Performance Note:</strong> This approach eliminates the synchronized block overhead
+	 * of the standard ClassLoader.loadClass() method for already-loaded classes, providing
+	 * near-zero overhead for cache hits.</p>
+	 * 
+	 * <p><strong>Memory Management:</strong> Uses WeakReferences so classes can be garbage collected
+	 * when no longer referenced, preventing memory leaks in long-running applications.</p>
+	 * 
+	 * @param name The fully qualified name of the class to load
+	 * @return The loaded Class object
+	 * @throws ClassNotFoundException If the class cannot be found by this loader or its parents
 	 */
 	@Override
 	public Class<?> loadClass( String name ) throws ClassNotFoundException {
@@ -128,10 +193,36 @@ public class DiskClassLoader extends URLClassLoader {
 	}
 
 	/**
-	 * Find class on disk, if not found, delegate to parent
-	 * TODO: If we move to sharing classloaders across files with trusted cache, make the locking more granular instead of synchronizing the entire method
-	 *
-	 * @param name class name
+	 * Finds and loads a class from disk, with just-in-time compilation support.
+	 * 
+	 * <p>This method implements the core class loading logic:</p>
+	 * <ol>
+	 *   <li><strong>Compilation Check:</strong> Determines if the class needs (re)compilation</li>
+	 *   <li><strong>JIT Compilation:</strong> Compiles source to bytecode if needed</li>
+	 *   <li><strong>Disk Loading:</strong> Loads compiled bytecode from disk cache</li>
+	 *   <li><strong>Pre-compiled Support:</strong> Handles classes already loaded via defineClasses()</li>
+	 * </ol>
+	 * 
+	 * <p><strong>Compilation Logic:</strong></p>
+	 * <ul>
+	 *   <li>Inner classes are never compiled directly (they're compiled with their outer class)</li>
+	 *   <li>Classes are recompiled if source is newer than cached bytecode</li>
+	 *   <li>Missing cache files trigger compilation</li>
+	 * </ul>
+	 * 
+	 * <p><strong>Pre-compiled Classes:</strong> Some classes may be loaded directly into the
+	 * ClassLoader via defineClasses() without disk caching. These are handled by delegating
+	 * back to loadClass().</p>
+	 * 
+	 * <p><strong>Thread Safety:</strong> This method is synchronized to prevent concurrent
+	 * compilation of the same class, which could lead to file system conflicts.</p>
+	 * 
+	 * @param name The fully qualified name of the class to find
+	 * @return The loaded Class object
+	 * @throws ClassNotFoundException If the class cannot be found or compiled
+	 * 
+	 * @see #needsCompile(ClassInfo, Path, String, String)
+	 * @see #defineClasses(String, File, ClassInfo)
 	 */
 	@Override
 	protected synchronized Class<?> findClass( String name ) throws ClassNotFoundException {
@@ -164,14 +255,37 @@ public class DiskClassLoader extends URLClassLoader {
 	}
 
 	/**
-	 * Abstract out the logic for determining if a class needs to be compiled
-	 *
-	 * @param classInfo the class info, may be null if there is none
-	 * @param diskPath  the path to the class file on disk, may not exist
-	 * @param name      the fully qualified class name
-	 * @param baseName  the base name of the class
+	 * Determines whether a class needs to be compiled based on various factors.
 	 * 
-	 * @return true if the class needs to be compiled
+	 * <p>This method implements intelligent compilation logic to avoid unnecessary work:</p>
+	 * 
+	 * <h4>Decision Matrix:</h4>
+	 * <table border="1">
+	 *   <tr><th>Condition</th><th>Result</th><th>Reason</th></tr>
+	 *   <tr><td>Inner class (name != baseName)</td><td>false</td><td>Compiled with outer class</td></tr>
+	 *   <tr><td>No disk cache exists</td><td>true</td><td>First-time compilation needed</td></tr>
+	 *   <tr><td>Source newer than cache</td><td>true</td><td>Recompilation needed</td></tr>
+	 *   <tr><td>Cache exists and up-to-date</td><td>false</td><td>Use cached version</td></tr>
+	 * </table>
+	 * 
+	 * <p><strong>Timestamp Comparison:</strong> Uses lastModified timestamps to detect when
+	 * source files have been updated since the last compilation. A mismatch triggers recompilation.</p>
+	 * 
+	 * <p><strong>Inner Class Optimization:</strong> Inner classes are never compiled individually
+	 * since they're always compiled together with their enclosing class.</p>
+	 * 
+	 * <p><strong>Future Enhancement:</strong> The ClassInfo object should include compilation
+	 * flags to better track compilation state and handle pre-compiled classes that were
+	 * loaded directly into memory.</p>
+	 *
+	 * @param classInfo The metadata about the class (may be null for unknown classes)
+	 * @param diskPath  The expected path to the compiled class file on disk
+	 * @param name      The fully qualified class name being requested
+	 * @param baseName  The base name without inner class suffixes
+	 * 
+	 * @return true if the class needs to be compiled, false if cached version can be used
+	 * 
+	 * @see ClassInfo#lastModified()
 	 */
 	private boolean needsCompile( ClassInfo classInfo, Path diskPath, String name, String baseName ) {
 		// TODO: need to add some Modifiable flags to the classInfo object to track if it has been compiled or not
@@ -198,23 +312,35 @@ public class DiskClassLoader extends URLClassLoader {
 	}
 
 	/**
-	 * Check if a class exists on disk
+	 * Checks if a compiled class file exists on disk for the given class name.
+	 * 
+	 * <p>This is a simple existence check that converts the class name to a file path
+	 * and verifies the file exists in the disk cache.</p>
 	 *
-	 * @param name class name
-	 *
-	 * @return true if class exists on disk
+	 * @param name The fully qualified class name to check
+	 * @return true if a compiled class file exists on disk, false otherwise
+	 * 
+	 * @see #generateDiskPath(String)
 	 */
 	public boolean hasClass( String name ) {
 		return generateDiskPath( name ).toFile().exists();
 	}
 
 	/**
-	 * Check if a class exists on disk and is up to date
+	 * Checks if a compiled class file exists on disk and is up-to-date with the source.
+	 * 
+	 * <p>This method performs both existence and freshness checks:</p>
+	 * <ol>
+	 *   <li>Verifies the compiled class file exists on disk</li>
+	 *   <li>Compares timestamps to ensure the cache is not stale</li>
+	 * </ol>
+	 * 
+	 * <p><strong>Timestamp Logic:</strong> If lastModified is greater than 0 and doesn't
+	 * match the disk file's timestamp, the cache is considered stale.</p>
 	 *
-	 * @param name         class name
-	 * @param lastModified last modified timestamp of source file
-	 *
-	 * @return true if class exists on disk and is up to date
+	 * @param name         The fully qualified class name to check
+	 * @param lastModified The timestamp of the source file (0 to skip timestamp check)
+	 * @return true if class exists on disk and is up-to-date, false otherwise
 	 */
 	public boolean hasClass( String name, long lastModified ) {
 		Path diskPath = generateDiskPath( name );
@@ -230,35 +356,98 @@ public class DiskClassLoader extends URLClassLoader {
 	}
 
 	/**
-	 * Check if a class exists on disk
+	 * Internal helper method to check if a class file exists at the given path.
+	 * 
+	 * <p>This is a simple wrapper around File.exists() used internally
+	 * by the compilation decision logic.</p>
 	 *
-	 * @param name class name
-	 *
-	 * @return true if class exists on disk
+	 * @param path The file system path to check
+	 * @return true if the file exists, false otherwise
 	 */
-	private boolean hasClass( Path name ) {
-		return name.toFile().exists();
+	private boolean hasClass( Path path ) {
+		return path.toFile().exists();
 	}
 
 	/**
-	 * Generate a disk path for a class name
+	 * Generates the file system path where a compiled class should be stored.
+	 * 
+	 * <p>This method converts a fully qualified class name into a file path
+	 * within the disk store directory:</p>
+	 * 
+	 * <p><strong>Path Construction:</strong></p>
+	 * <ul>
+	 *   <li>Base directory: diskStore (includes class pool prefix)</li>
+	 *   <li>Package structure: dots replaced with file separators</li>
+	 *   <li>File extension: .class added</li>
+	 * </ul>
+	 * 
+	 * <p><strong>Example:</strong><br>
+	 * Class: {@code com.example.MyClass}<br>
+	 * Result: {@code /path/to/diskStore/com/example/MyClass.class}</p>
 	 *
-	 * @param name class name
-	 *
-	 * @return path to class file
+	 * @param name The fully qualified class name
+	 * @return The path where the compiled class file should be stored
 	 */
 	private Path generateDiskPath( String name ) {
 		return Paths.get( diskStore.toString(), name.replace( ".", File.separator ) + ".class" );
 	}
 
-	/*
-	 * Required for Java Agents when this classloader is used as the system classloader
+	/**
+	 * Required method for Java Agent compatibility when this ClassLoader is used as the system ClassLoader.
+	 * 
+	 * <p>This method allows Java agents to dynamically add JAR files to the classpath
+	 * at runtime. It's called via reflection by the Java Agent infrastructure.</p>
+	 * 
+	 * <p><strong>Usage:</strong> Primarily used in development and testing environments
+	 * where dynamic classpath modification is needed.</p>
+	 * 
+	 * @param jarfile The path to the JAR file to add to the classpath
+	 * @throws IOException If the JAR file cannot be read or added to the classpath
 	 */
 	@SuppressWarnings( "unused" )
 	private void appendToClassPathForInstrumentation( String jarfile ) throws IOException {
 		addURL( Paths.get( jarfile ).toRealPath().toUri().toURL() );
 	}
 
+	/**
+	 * Loads and defines pre-compiled BoxLang classes from a binary file with dynamic class renaming.
+	 * 
+	 * <p>This method handles the complex process of loading pre-compiled BoxLang classes
+	 * that were compiled with a different FQN (Fully Qualified Name) than needed at runtime.
+	 * It performs the following operations:</p>
+	 * 
+	 * <h4>File Format Processing:</h4>
+	 * <ol>
+	 *   <li><strong>Magic Number:</strong> Skips the initial magic number identifier</li>
+	 *   <li><strong>Original Class Name:</strong> Reads the original FQN from the file header</li>
+	 *   <li><strong>Class Data:</strong> Processes one or more class bytecode blocks</li>
+	 * </ol>
+	 * 
+	 * <h4>Bytecode Manipulation:</h4>
+	 * <p>For each class in the file:</p>
+	 * <ul>
+	 *   <li>Dynamically renames the class from original FQN to target FQN</li>
+	 *   <li>Updates all internal references to use the new name</li>
+	 *   <li>Patches BoxLang-specific metadata (Key names, ResolvedFilePath)</li>
+	 *   <li>Loads the transformed bytecode into the ClassLoader</li>
+	 * </ul>
+	 * 
+	 * <h4>Inner Class Support:</h4>
+	 * <p>The file may contain multiple classes (outer class + inner classes).
+	 * The first class is marked as the "outer class" for special metadata patching.</p>
+	 * 
+	 * <p><strong>Use Case:</strong> This enables BoxLang to load the same source class
+	 * multiple times with different FQNs, which is essential for template includes
+	 * and dynamic class generation.</p>
+	 * 
+	 * @param fqn        The target fully qualified name for the class
+	 * @param sourceFile The binary file containing the pre-compiled class data
+	 * @param classInfo  Metadata about the class (used for patching BoxLang-specific fields)
+	 * 
+	 * @throws RuntimeException If the file cannot be read or processed
+	 * 
+	 * @see #renameClassAndReferences(byte[], String, String, ClassInfo, boolean)
+	 */
 	public void defineClasses( String fqn, File sourceFile, ClassInfo classInfo ) {
 		try {
 			byte[]		fileBytes	= Files.readAllBytes( sourceFile.toPath() );
@@ -296,16 +485,63 @@ public class DiskClassLoader extends URLClassLoader {
 	}
 
 	/**
-	 * Rename a class and all its references in the bytecode
-	 * Also updates the box class FQN and path to reflect the current disk path and mapping
+	 * Performs sophisticated bytecode manipulation to rename a class and update all its references.
 	 * 
-	 * @param classBytes      the bytecode of the class
-	 * @param oldInternalName the old internal name of the class (e.g., "com/example/MyClass")
-	 * @param newInternalName the new internal name of the class (e.g., "com/example/NewClass")
-	 * @param classInfo       the ClassInfo object containing metadata about the class
-	 * @param outerClass      true if this is the outer class, false if it is an inner class
+	 * <p>This method uses the ASM bytecode manipulation library to perform several complex operations:</p>
 	 * 
-	 * @return the modified bytecode with the class name and references updated
+	 * <h4>Primary Functions:</h4>
+	 * <ol>
+	 *   <li><strong>Class Renaming:</strong> Changes the internal class name throughout the bytecode</li>
+	 *   <li><strong>Reference Updates:</strong> Updates all references to the old class name</li>
+	 *   <li><strong>BoxLang Metadata Patching:</strong> Updates BoxLang-specific static fields</li>
+	 * </ol>
+	 * 
+	 * <h4>ASM Processing Pipeline:</h4>
+	 * <ol>
+	 *   <li><strong>Parse:</strong> Read bytecode into ClassNode tree structure</li>
+	 *   <li><strong>Remap:</strong> Use ClassRemapper to rename class and references</li>
+	 *   <li><strong>Patch:</strong> Scan static initializer for BoxLang metadata to update</li>
+	 *   <li><strong>Generate:</strong> Write modified tree back to bytecode</li>
+	 * </ol>
+	 * 
+	 * <h4>BoxLang-Specific Patching:</h4>
+	 * <p>For outer classes, this method searches the static initializer ({@code <clinit>}) method
+	 * and patches specific instruction sequences:</p>
+	 * 
+	 * <ul>
+	 *   <li><strong>Key.name Field:</strong> Updates the BoxLang Key name field with the new FQN</li>
+	 *   <li><strong>ResolvedFilePath.path Field:</strong> Updates the file path metadata with current values</li>
+	 * </ul>
+	 * 
+	 * <h4>Instruction Pattern Matching:</h4>
+	 * <p>The method uses sophisticated bytecode pattern matching to identify and patch
+	 * specific instruction sequences. It looks for:</p>
+	 * 
+	 * <ul>
+	 *   <li>LDC (Load Constant) instructions loading string literals</li>
+	 *   <li>INVOKESTATIC calls to Key.of() and ResolvedFilePath.of()</li>
+	 *   <li>PUTSTATIC instructions storing to specific fields</li>
+	 * </ul>
+	 * 
+	 * <p><strong>Null Safety:</strong> Handles null values in ResolvedFilePath by converting
+	 * them to empty strings, as ASM cannot handle null constants.</p>
+	 * 
+	 * <p><strong>Inner Class Handling:</strong> Only patches metadata for outer classes,
+	 * as inner classes inherit their metadata from the outer class.</p>
+	 * 
+	 * @param classBytes      The original bytecode of the class to transform
+	 * @param oldInternalName The original internal class name (e.g., "com/example/MyClass")
+	 * @param newInternalName The target internal class name (e.g., "com/example/NewClass")
+	 * @param classInfo       Metadata about the class containing current path and FQN information
+	 * @param outerClass      true if this is the outer class (patches metadata), false for inner classes
+	 * 
+	 * @return The modified bytecode with class name and metadata updated
+	 * 
+	 * @throws RuntimeException If bytecode manipulation fails
+	 * 
+	 * @see org.objectweb.asm.ClassReader
+	 * @see org.objectweb.asm.ClassWriter
+	 * @see org.objectweb.asm.commons.ClassRemapper
 	 */
 	private byte[] renameClassAndReferences( byte[] classBytes, String oldInternalName, String newInternalName, ClassInfo classInfo, boolean outerClass ) {
 		String		boxFQN			= classInfo.boxFqn().toString();
@@ -382,10 +618,10 @@ public class DiskClassLoader extends URLClassLoader {
 							        "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lortus/boxlang/runtime/util/ResolvedFilePath;" )
 							    && putstatic.name.equals( "path" )
 							    && putstatic.desc.equals( "Lortus/boxlang/runtime/util/ResolvedFilePath;" ) ) {
-								ldc1.cst	= mappingName;
-								ldc2.cst	= mappingPath;
-								ldc3.cst	= relativePath;
-								ldc4.cst	= absolutePath;
+								ldc1.cst	= mappingName != null ? mappingName : "";
+								ldc2.cst	= mappingPath != null ? mappingPath : "";
+								ldc3.cst	= relativePath != null ? relativePath : "";
+								ldc4.cst	= absolutePath != null ? absolutePath : "";
 							}
 						}
 					}
@@ -398,6 +634,28 @@ public class DiskClassLoader extends URLClassLoader {
 		return cw.toByteArray();
 	}
 
+	/**
+	 * Utility method to extract the fully qualified class name from raw bytecode.
+	 * 
+	 * <p>This method uses ASM to parse the bytecode and extract the internal class name,
+	 * then converts it to the standard Java FQN format by replacing forward slashes with dots.</p>
+	 * 
+	 * <p><strong>Use Cases:</strong></p>
+	 * <ul>
+	 *   <li>Debugging bytecode processing</li>
+	 *   <li>Validation during class loading</li>
+	 *   <li>Tooling that needs to inspect compiled classes</li>
+	 * </ul>
+	 * 
+	 * <p><strong>Example:</strong><br>
+	 * Bytecode internal name: {@code com/example/MyClass}<br>
+	 * Returned FQN: {@code com.example.MyClass}</p>
+	 * 
+	 * @param classBytes The bytecode of the class to inspect
+	 * @return The fully qualified class name in dot notation
+	 * 
+	 * @throws RuntimeException If the bytecode cannot be parsed
+	 */
 	public static String getClassName( byte[] classBytes ) {
 		ClassReader	classReader	= new ClassReader( classBytes );
 		ClassNode	classNode	= new ClassNode();
