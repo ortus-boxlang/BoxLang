@@ -76,12 +76,15 @@ public class XMLNewTest {
 		    """
 			rootNode = xmlNew();
 			newNode = xmlElemNew( rootNode, "foo" );
+			newNode.XmlAttributes[ "nil" ] = "true";
 			arrayAppend( rootNode.xmlChildren, newNode );
 			result = structKeyExists( rootNode, "foo" );
+			result2 = structKeyExists( rootNode.foo.XmlAttributes, "nil" ) and ( rootNode.foo.XmlAttributes.nil == "true" );
 		    """, context );
 		// @formatter:on
 
 		assertTrue( variables.getAsBoolean( result ) );
+		assertTrue( variables.getAsBoolean( Key.of( "result2" ) ) );
 
 	}
 

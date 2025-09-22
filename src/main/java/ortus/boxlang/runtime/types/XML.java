@@ -473,6 +473,8 @@ public class XML implements Serializable, IStruct {
 			node = newDocumentBuilder().newDocument();
 			if ( name.equals( Key.XMLRoot ) ) {
 				return this;
+			} else if ( name.equals( Key.XMLAttributes ) ) {
+				return getXMLAttributes();
 			} else if ( name.equals( Key.XMLComment ) ) {
 				return getNodeComments();
 			} else if ( name.equals( Key.XMLDocType ) ) {
@@ -488,6 +490,8 @@ public class XML implements Serializable, IStruct {
 		if ( node instanceof Document document ) {
 			if ( name.equals( Key.XMLRoot ) ) {
 				return new XML( document.getDocumentElement() );
+			} else if ( name.equals( Key.XMLAttributes ) ) {
+				return new XML( document.getDocumentElement() ).getXMLAttributes();
 			} else if ( name.equals( Key.XMLComment ) ) {
 				return getNodeComments();
 			} else if ( name.equals( Key.XMLDocType ) ) {
