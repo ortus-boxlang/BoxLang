@@ -156,7 +156,7 @@ public class XML implements Serializable, IStruct {
 	}
 
 	/**
-	 * Creates a new document builder for either parsing or docuemnt creation
+	 * Creates a new document builder for either parsing or document creation
 	 */
 	private static DocumentBuilder newDocumentBuilder() {
 		DocumentBuilderFactory	factory	= DocumentBuilderFactory.newNSInstance();
