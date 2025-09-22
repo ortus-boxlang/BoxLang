@@ -268,9 +268,13 @@ public class ArgumentUtil {
 		CastAttempt<Object> typeCheck = GenericCaster.attempt( context, value, type, true );
 		if ( !typeCheck.wasSuccessful() ) {
 			throw new BoxRuntimeException(
-			    String.format( "In function [%s], argument [%s] with a type of [%s] does not match the declared type of [%s]",
-			        functionName.getName(), name.getName(), DynamicObject.unWrap( value ).getClass().getName(),
-			        type )
+			    String.format(
+			        "In function [%s], argument [%s] with a type of [%s] does not match the declared type of [%s]",
+			        functionName.getName(),
+			        name.getName(),
+			        DynamicObject.unWrap( value ).getClass().getName(),
+			        type
+			    )
 			);
 		}
 		// Should we actually return the casted value??? Not CFML Compat! If so, return typeCheck.get() with check for NullValue instances.
