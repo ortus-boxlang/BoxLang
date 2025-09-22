@@ -264,8 +264,8 @@ public class StoredProcTest extends BaseJDBCTest {
 		assertEquals( initiallyActive, subsequentActive );
 	}
 
-	// Derby does a relatively poor job of implementing the stored procedure spec, so we'll only run this test if a MySQL instance is reachable.
-	@EnabledIf( "tools.JDBCTestUtils#isMySQLReachable" )
+	// Derby does a relatively poor job of implementing the stored procedure spec, so we'll only run this test if a MySQL module is present. (implies MySQL instance is present)
+	@EnabledIf( "tools.JDBCTestUtils#hasMySQLModule" )
 	@Test
 	public void testMultiResultSets() {
 		// Because we can't do an `@EnabledIf` on a `@BeforeAll` method, we have to set up the datasource here.
