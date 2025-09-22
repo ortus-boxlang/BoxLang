@@ -85,7 +85,7 @@ public class QueryExecute extends BIF {
 	 * <h2>Options</h2>
 	 * The available options for this BIF are:
 	 * <ul>
-	 * <><strong>cache:boolean</strong> - Whether to cache the query results, defaults to false</li>
+	 * <li><strong>cache:boolean</strong> - Whether to cache the query results, defaults to false</li>
 	 * <li><strong>cacheKey:string</strong> - Your own cache key, if not specified, the SQL will be used as the cache key</li>
 	 * <li><strong>cacheTimeout:timespan|seconds</strong> - The timeout for the cache, defaults to 0 (no timeout)</li>
 	 * <li><strong>cacheLastAccessTimeout:timespan|seconds</strong> - The timeout for the last access to the cache, defaults to 0 (no timeout)</li>
