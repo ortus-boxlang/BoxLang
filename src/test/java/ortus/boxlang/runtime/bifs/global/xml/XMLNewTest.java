@@ -68,4 +68,21 @@ public class XMLNewTest {
 		assertEquals( xmlObject.size(), 0 );
 	}
 
+	@DisplayName( "It tests the BIF XMLNew creates a usable element" )
+	@Test
+	public void testUsability() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+			rootNode = xmlNew();
+			newNode = xmlElemNew( rootNode, "foo" );
+			arrayAppend( rootNode.xmlChildren, newNode );
+			result = structKeyExists( rootNode, "foo" );
+		    """, context );
+		// @formatter:on
+
+		assertTrue( variables.getAsBoolean( result ) );
+
+	}
+
 }
