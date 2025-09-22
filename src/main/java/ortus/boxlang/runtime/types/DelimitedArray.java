@@ -479,9 +479,9 @@ public class DelimitedArray extends Array {
 	 */
 
 	/**
-	 * Returns a new array removing all of the duplicates - either caseSenstively or not
+	 * Returns a new array removing all of the duplicates - either caseSensitively or not
 	 *
-	 * @param caseSensitive whether to perform the deduplication caseSenstively
+	 * @param caseSensitive whether to perform the deduplication caseSensitively
 	 *
 	 * @return The new array
 	 */

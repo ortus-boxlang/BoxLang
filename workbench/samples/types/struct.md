@@ -8,7 +8,7 @@ myStruct = structNew();
 myStruct = structNew( "ordered" );
 
 // Create a case-sensitive struct which will require key access to use the exact casing
-myStruct = structNew( "casesenstive" );
+myStruct = structNew( "casesensitive" );
 myStruct[ "cat" ] = "pet";
 myStruct[ "Cat" ] = "wild";
 
