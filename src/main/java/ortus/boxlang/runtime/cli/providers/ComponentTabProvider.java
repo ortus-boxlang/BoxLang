@@ -36,9 +36,21 @@ import ortus.boxlang.runtime.cli.TabCompletion;
  * <li>"bx:script" + TAB → completes to "bx:script"</li>
  * </ul>
  */
-public class ComponentTabProvider implements ITabProvider {
+public class ComponentTabProvider extends AbstractTabProvider {
+
+	/**
+	 * ----------------------------------------------------------------------------
+	 * Properties
+	 * ----------------------------------------------------------------------------
+	 */
 
 	private final Set<String> componentNames;
+
+	/**
+	 * ----------------------------------------------------------------------------
+	 * Constructors
+	 * ----------------------------------------------------------------------------
+	 */
 
 	/**
 	 * Constructor with component names.
@@ -49,24 +61,26 @@ public class ComponentTabProvider implements ITabProvider {
 		this.componentNames = componentNames;
 	}
 
+	/**
+	 * ----------------------------------------------------------------------------
+	 * Methods
+	 * ----------------------------------------------------------------------------
+	 */
+
 	@Override
 	public boolean canProvideCompletions( String input, int cursorPosition ) {
-		if ( input == null || input.isEmpty() ) {
+		if ( !isValidInput( input, cursorPosition ) ) {
 			return false;
 		}
 
 		// Look for bx: pattern at or before cursor position
-		String	upToCursor	= input.substring( 0, Math.min( cursorPosition, input.length() ) );
-
-		// Check if we're currently typing a component declaration
-		int		bxIndex		= upToCursor.lastIndexOf( "bx:" );
+		int bxIndex = findPrefixIndex( input, cursorPosition, COMPONENT_PREFIX );
 		if ( bxIndex == -1 ) {
 			return false;
 		}
 
 		// Make sure there's no whitespace after bx: and before cursor
-		String afterBx = upToCursor.substring( bxIndex + 3 );
-		return !afterBx.contains( " " ) && !afterBx.contains( "\t" );
+		return !hasWhitespaceAfterPrefix( input, cursorPosition, COMPONENT_PREFIX );
 	}
 
 	@Override
@@ -77,31 +91,25 @@ public class ComponentTabProvider implements ITabProvider {
 			return completions;
 		}
 
-		String	upToCursor	= input.substring( 0, Math.min( cursorPosition, input.length() ) );
-		int		bxIndex		= upToCursor.lastIndexOf( "bx:" );
-
+		int bxIndex = findPrefixIndex( input, cursorPosition, COMPONENT_PREFIX );
 		if ( bxIndex == -1 ) {
 			return completions;
 		}
 
 		// Extract the partial component name after "bx:"
-		String partial = upToCursor.substring( bxIndex + 3 ).toLowerCase();
+		String partial = getTextAfterPrefix( input, cursorPosition, COMPONENT_PREFIX ).toLowerCase();
 
 		// Find matching components
 		for ( String componentName : componentNames ) {
 			String lowerComponentName = componentName.toLowerCase();
 
 			if ( lowerComponentName.startsWith( partial ) ) {
-				// Create completion that replaces from "bx:" onwards
-				String			fullCompletion	= "bx:" + componentName;
-				String			displayText		= "\033[36m" + fullCompletion + "\033[0m"; // Cyan color
-
-				TabCompletion	completion		= new TabCompletion(
-				    fullCompletion,
-				    displayText,
+				// Create component completion using base class utility
+				TabCompletion completion = createCompletion(
+				    "bx:" + componentName,
 				    "BoxLang component: " + componentName,
-				    bxIndex,  // Start replacement from "bx:"
-				    cursorPosition  // End replacement at cursor
+				    bxIndex,
+				    cursorPosition
 				);
 
 				completions.add( completion );
@@ -109,18 +117,14 @@ public class ComponentTabProvider implements ITabProvider {
 		}
 
 		// Sort completions alphabetically
-		completions.sort( ( a, b ) -> a.getText().compareToIgnoreCase( b.getText() ) );
+		sortCompletionsAlphabetically( completions );
 
 		return completions;
 	}
 
 	@Override
-	public String getProviderName() {
-		return "ComponentTabProvider";
-	}
-
-	@Override
 	public int getPriority() {
-		return 200; // Higher priority than default for component-specific completions
+		// Higher priority than default for component-specific completions
+		return 200;
 	}
 }

@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.cli.providers;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 import ortus.boxlang.runtime.cli.TabCompletion;
@@ -37,10 +38,29 @@ import ortus.boxlang.runtime.cli.TabCompletion;
  * <li>"structK" + TAB → completes to "structKeyExists("</li>
  * </ul>
  */
-public class BifTabProvider implements ITabProvider {
+public class BifTabProvider extends AbstractTabProvider {
 
+	/**
+	 * ----------------------------------------------------------------------------
+	 * Properties
+	 * ----------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Set of available BIF names (case-insensitive)
+	 */
 	private final Set<String>	bifNames;
+
+	/**
+	 * Whether to include opening parenthesis in completions.
+	 */
 	private final boolean		includeParentheses;
+
+	/**
+	 * ----------------------------------------------------------------------------
+	 * Constructors
+	 * ----------------------------------------------------------------------------
+	 */
 
 	/**
 	 * Constructor with BIF names.
@@ -58,13 +78,30 @@ public class BifTabProvider implements ITabProvider {
 	 * @param includeParentheses Whether to include opening parenthesis in completions
 	 */
 	public BifTabProvider( Set<String> bifNames, boolean includeParentheses ) {
+		Objects.requireNonNull( bifNames, "bifNames cannot be null" );
 		this.bifNames			= bifNames;
 		this.includeParentheses	= includeParentheses;
 	}
 
+	/**
+	 * ----------------------------------------------------------------------------
+	 * Methods
+	 * ----------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Can this provider handle completions for the given input?
+	 * It handles function name completions when the current word
+	 * starts with a letter and is not a component declaration (bx:).
+	 *
+	 * @param input          The input string to check.
+	 * @param cursorPosition The cursor position in the input.
+	 *
+	 * @return true if this provider can provide completions.
+	 */
 	@Override
 	public boolean canProvideCompletions( String input, int cursorPosition ) {
-		if ( input == null || input.isEmpty() ) {
+		if ( !isValidInput( input, cursorPosition ) ) {
 			return false;
 		}
 
@@ -77,17 +114,22 @@ public class BifTabProvider implements ITabProvider {
 		// 3. It's not already a component declaration (starts with bx:)
 		return currentWord.length() > 0
 		    && Character.isLetter( currentWord.charAt( 0 ) )
-		    && !currentWord.startsWith( "bx:" );
+		    && !currentWord.startsWith( COMPONENT_PREFIX );
 	}
 
+	/**
+	 * Get completions for the given input at the cursor position.
+	 */
 	@Override
 	public List<TabCompletion> getCompletions( String input, int cursorPosition ) {
 		List<TabCompletion> completions = new ArrayList<>();
 
-		if ( input == null || bifNames == null || bifNames.isEmpty() ) {
+		// Early return if input is invalid
+		if ( input == null || bifNames.isEmpty() ) {
 			return completions;
 		}
 
+		// Get the current word at cursor position
 		String currentWord = getCurrentWord( input, cursorPosition );
 		if ( currentWord.isEmpty() ) {
 			return completions;
@@ -106,18 +148,15 @@ public class BifTabProvider implements ITabProvider {
 					completionText += "(";
 				}
 
-				// Create display text with highlighting
-				String			displayText	= "\033[33m" + completionText + "\033[0m"; // Yellow color for functions
-
 				// Find word boundaries for replacement
 				int				wordStart	= findWordStart( input, cursorPosition );
 
-				TabCompletion	completion	= new TabCompletion(
+				// Create completion using base class utility
+				TabCompletion	completion	= createCompletion(
 				    completionText,
-				    displayText,
 				    "Built-in function: " + bifName,
-				    wordStart,  // Start replacement from word beginning
-				    cursorPosition  // End replacement at cursor
+				    wordStart,
+				    cursorPosition
 				);
 
 				completions.add( completion );
@@ -125,66 +164,14 @@ public class BifTabProvider implements ITabProvider {
 		}
 
 		// Sort completions alphabetically
-		completions.sort( ( a, b ) -> a.getText().compareToIgnoreCase( b.getText() ) );
+		sortCompletionsAlphabetically( completions );
 
 		return completions;
 	}
 
-	/**
-	 * Gets the current word being typed at the cursor position.
-	 */
-	private String getCurrentWord( String input, int cursorPosition ) {
-		if ( input == null || input.isEmpty() ) {
-			return "";
-		}
-
-		int	start	= findWordStart( input, cursorPosition );
-		int	end		= Math.min( cursorPosition, input.length() );
-
-		if ( start >= end ) {
-			return "";
-		}
-
-		return input.substring( start, end );
-	}
-
-	/**
-	 * Finds the start of the current word for tab completion.
-	 */
-	private int findWordStart( String input, int fromPosition ) {
-		if ( input.isEmpty() || fromPosition <= 0 ) {
-			return 0;
-		}
-
-		int pos = Math.min( fromPosition - 1, input.length() - 1 );
-
-		// Move backwards while we see word characters
-		while ( pos > 0 && isWordCharacter( input.charAt( pos ) ) ) {
-			pos--;
-		}
-
-		// If we stopped on a non-word character, move forward one
-		if ( pos > 0 && !isWordCharacter( input.charAt( pos ) ) ) {
-			pos++;
-		}
-
-		return pos;
-	}
-
-	/**
-	 * Checks if a character is part of a word for completion purposes.
-	 */
-	private boolean isWordCharacter( char c ) {
-		return Character.isLetterOrDigit( c ) || c == '_';
-	}
-
-	@Override
-	public String getProviderName() {
-		return "BifTabProvider";
-	}
-
 	@Override
 	public int getPriority() {
-		return 150; // Medium priority - lower than components but higher than generic
+		// Medium priority - lower than components but higher than generic
+		return 150;
 	}
 }
