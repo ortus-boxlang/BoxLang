@@ -41,4 +41,7 @@ public @interface BoxComponent {
 
 	// Alias for the component, the component service reads this and uses it to map the component
 	String alias() default "";
+
+	// A short description of the component for documentation purposes
+	String description() default "";
 }

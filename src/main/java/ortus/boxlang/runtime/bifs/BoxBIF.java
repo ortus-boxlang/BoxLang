@@ -30,6 +30,7 @@ import java.lang.annotation.Target;
 @Repeatable( BoxBIFs.class )
 public @interface BoxBIF {
 
+	// An alias for the BIF, if any (e.g., "arrayLen" for "arrayLength")
 	String alias() default "";
 
 	// Allows us to mark BIFs a deprecated in a future release
@@ -40,5 +41,8 @@ public @interface BoxBIF {
 
 	// Allows us to mark BIFs as excluded from docs
 	boolean documented() default true;
+
+	// A short description of the BIF for documentation purposes
+	String description() default "";
 
 }
