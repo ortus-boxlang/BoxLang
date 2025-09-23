@@ -1178,14 +1178,18 @@ public class MiniConsole implements AutoCloseable {
 
 			// Show description if available
 			if ( completion.getDescription() != null && !completion.getDescription().isEmpty() ) {
-				System.out.print( color( 8 ) ); // Dim color for description
-				System.out.print( " - " + completion.getDescription() );
+				if ( isSelected ) {
+					// Keep selected item colors for description
+					System.out.print( " - " + completion.getDescription() );
+				} else {
+					System.out.print( color( 8 ) ); // Dim color for description
+					System.out.print( " - " + completion.getDescription() );
+					System.out.print( reset() ); // Reset after description
+				}
 			}
 
-			if ( isSelected ) {
-				System.out.print( reset() );
-			}
-
+			// Always reset at the end of each line to prevent color bleeding
+			System.out.print( reset() );
 			System.out.print( "\r\n" );
 			linesUsed++; // Count each completion line
 		}
