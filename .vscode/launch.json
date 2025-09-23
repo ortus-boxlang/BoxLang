@@ -8,6 +8,13 @@
             "type": "java",
             "name": "BoxRepl",
             "request": "launch",
+            "mainClass": "ortus.boxlang.runtime.cli.BoxRepl",
+            "projectName": "boxlang"
+        },
+        {
+            "type": "java",
+            "name": "BoxRepl",
+            "request": "launch",
             "mainClass": "ortus.boxlang.runtime.BoxRepl",
             "projectName": "boxlang"
         },

@@ -49,12 +49,7 @@ public class BifTabProvider extends AbstractTabProvider {
 	/**
 	 * Set of available BIF names (case-insensitive)
 	 */
-	private final Set<String>	bifNames;
-
-	/**
-	 * Whether to include opening parenthesis in completions.
-	 */
-	private final boolean		includeParentheses;
+	private final Set<String> bifNames;
 
 	/**
 	 * ----------------------------------------------------------------------------
@@ -68,19 +63,8 @@ public class BifTabProvider extends AbstractTabProvider {
 	 * @param bifNames Set of available BIF names (case-insensitive)
 	 */
 	public BifTabProvider( Set<String> bifNames ) {
-		this( bifNames, true );
-	}
-
-	/**
-	 * Constructor with BIF names and parentheses option.
-	 *
-	 * @param bifNames           Set of available BIF names (case-insensitive)
-	 * @param includeParentheses Whether to include opening parenthesis in completions
-	 */
-	public BifTabProvider( Set<String> bifNames, boolean includeParentheses ) {
 		Objects.requireNonNull( bifNames, "bifNames cannot be null" );
-		this.bifNames			= bifNames;
-		this.includeParentheses	= includeParentheses;
+		this.bifNames = bifNames;
 	}
 
 	/**
@@ -143,16 +127,11 @@ public class BifTabProvider extends AbstractTabProvider {
 
 			if ( lowerBifName.startsWith( lowerCurrentWord ) ) {
 				// Create completion text
-				String completionText = bifName;
-				if ( includeParentheses && !input.substring( cursorPosition ).startsWith( "(" ) ) {
-					completionText += "(";
-				}
-
+				String			completionText	= bifName;
 				// Find word boundaries for replacement
-				int				wordStart	= findWordStart( input, cursorPosition );
-
+				int				wordStart		= findWordStart( input, cursorPosition );
 				// Create completion using base class utility
-				TabCompletion	completion	= createCompletion(
+				TabCompletion	completion		= createCompletion(
 				    completionText,
 				    "Built-in function: " + bifName,
 				    wordStart,
