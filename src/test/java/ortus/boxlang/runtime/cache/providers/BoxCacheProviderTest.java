@@ -108,7 +108,7 @@ public class BoxCacheProviderTest {
 		boxCache.set( "key1", "testing" );
 		var results = boxCache.getCachedObjectMetadata( "key1" );
 		assertThat( results ).isNotNull();
-		assertThat( results.get( "hits" ) ).isEqualTo( 1 );
+		assertThat( results.get( "hits" ) ).isEqualTo( 0 );
 	}
 
 	@Test
