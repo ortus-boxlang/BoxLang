@@ -32,10 +32,10 @@ public class ArrayNew extends BIF {
 
 	/**
 	 * Return new array
-	 * 
+	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 * 
+	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		// TODO: accept dimension and isSynchronized params - need to update ArrayGetMetaData

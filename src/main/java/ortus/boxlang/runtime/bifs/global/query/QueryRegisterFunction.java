@@ -51,17 +51,17 @@ public class QueryRegisterFunction extends BIF {
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.name The name of the function to register without parenthesis. You will reference it in your SQL with this name.
-	 * 
+	 *
 	 * @argument.function The function to register. This can be a closure or a function reference. For scalar functions, the function will receive a value for each incoming argument and must return a single value.
 	 *                    For aggregate functions, the function will receive a value for each incoming argument in the form of an array of values representing each row being aggregated and must return a single value.
 	 *                    Null values are not passed into aggregates. Aggregate functions should return a scalar value
 	 *                    so the size of the array won't necessarily match the number of rows in the query, and may be different across columns.
-	 * 
+	 *
 	 * @argument.type The type of function to register. This can be "scalar" or "aggregate". Default is "scalar".
-	 * 
+	 *
 	 * @argument.returnType The return type of the function as a query column type. Default is "Object". This can be any valid query column type. This can be used to enforce
 	 *                      how the return values of this function are handled. For example, customFunc() + customFunc2() will behave differently based on whether the custom functions return strings or numbers.
-	 * 
+	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Key				name		= Key.of( arguments.getAsString( Key._NAME ) );

@@ -50,7 +50,7 @@ public class ArrayResize extends BIF {
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.array The array to resize
-	 * 
+	 *
 	 * @argument.size The new minimum size of the array
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {

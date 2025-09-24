@@ -45,7 +45,7 @@ public class RTrim extends BIF {
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 * 
+	 *
 	 * @argument.string The string to trim
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {

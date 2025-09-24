@@ -46,7 +46,7 @@ public class Left extends BIF {
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.string The string to extract from
-	 * 
+	 *
 	 * @argument.count The number of characters to retrieve.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {

@@ -44,9 +44,9 @@ public class ArrayPrepend extends BIF {
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 * 
+	 *
 	 * @argument.array The array to prepend to
-	 * 
+	 *
 	 * @argument.value The value to prepend
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {

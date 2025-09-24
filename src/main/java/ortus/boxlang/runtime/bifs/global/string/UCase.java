@@ -38,14 +38,14 @@ public class UCase extends BIF {
 	}
 
 	/**
-	 * 
+	 *
 	 * Uppercase a string
-	 * 
+	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 * 
+	 *
 	 * @argument.string The string to uppercase
-	 * 
+	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String input = arguments.getAsString( Key.string );

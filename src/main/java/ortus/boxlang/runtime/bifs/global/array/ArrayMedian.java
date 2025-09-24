@@ -47,10 +47,10 @@ public class ArrayMedian extends BIF {
 
 	/**
 	 * Return the median value of an array. Will only work on arrays that contain only numeric values.
-	 * 
+	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 * 
+	 *
 	 * @argument.array The array to get median value from
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {

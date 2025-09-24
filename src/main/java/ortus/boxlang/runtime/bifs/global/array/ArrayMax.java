@@ -42,10 +42,10 @@ public class ArrayMax extends BIF {
 
 	/**
 	 * Get the max value from an array
-	 * 
+	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 * 
+	 *
 	 * @argument.array The array to get max value from
 	 */
 	public Number _invoke( IBoxContext context, ArgumentsScope arguments ) {
