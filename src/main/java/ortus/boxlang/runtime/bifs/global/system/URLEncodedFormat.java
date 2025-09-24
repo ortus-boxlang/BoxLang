@@ -28,7 +28,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.util.EncryptionUtil;
 
-@BoxBIF
+@BoxBIF( description = "Encode a string for URL use" )
 @BoxMember( type = BoxLangType.STRING_STRICT )
 public class URLEncodedFormat extends BIF {
 

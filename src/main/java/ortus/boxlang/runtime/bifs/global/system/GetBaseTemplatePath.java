@@ -24,7 +24,7 @@ import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
-@BoxBIF
+@BoxBIF( description = "Get the path of the base template" )
 public class GetBaseTemplatePath extends BIF {
 
 	/**

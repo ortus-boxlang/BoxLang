@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.validation.Validator;
 
-@BoxBIF
+@BoxBIF( description = "Register a custom function for use in Query of Queries" )
 public class QueryRegisterFunction extends BIF {
 
 	/**

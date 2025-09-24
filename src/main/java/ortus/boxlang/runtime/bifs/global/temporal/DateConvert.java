@@ -32,7 +32,7 @@ import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.util.LocalizationUtil;
 import ortus.boxlang.runtime.validation.Validator;
 
-@BoxBIF
+@BoxBIF( description = "Convert between different date/time formats" )
 public class DateConvert extends BIF {
 
 	private static final Key	utc2Local	= Key.of( "utc2Local" );

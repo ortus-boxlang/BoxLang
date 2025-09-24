@@ -23,7 +23,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 
-@BoxBIF
+@BoxBIF( description = "Convert a string to uppercase" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "UCase" )
 public class UCase extends BIF {
 

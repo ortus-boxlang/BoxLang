@@ -31,7 +31,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.util.LocalizationUtil;
 
-@BoxBIF
+@BoxBIF( description = "Format a date/time value as a string" )
 @BoxBIF( alias = "DateFormat" )
 @BoxBIF( alias = "TimeFormat" )
 @BoxMember( type = BoxLangType.DATETIME, name = "format" )

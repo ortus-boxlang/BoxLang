@@ -24,6 +24,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
+@BoxBIF( description = "Left or right justify text within a specified length" )
 @BoxBIF( alias = "LJustify" )
 @BoxBIF( alias = "RJustify" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "LJustify" )

@@ -26,7 +26,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
 
-@BoxBIF
+@BoxBIF( description = "Delete matching values from an array" )
 @BoxMember( type = BoxLangType.ARRAY )
 @BoxBIF( alias = "ArrayDeleteNoCase" )
 @BoxMember( type = BoxLangType.ARRAY, name = "deleteNoCase" )

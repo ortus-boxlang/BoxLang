@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
-@BoxBIF
+@BoxBIF( description = "Insert a value at a specific position in a list" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "listInsertAt" )
 
 public class ListInsertAt extends BIF {

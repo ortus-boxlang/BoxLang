@@ -28,7 +28,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
-@BoxBIF
+@BoxBIF( description = "Transform list items using a callback function" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "listMap" )
 public class ListMap extends ArrayMap {
 

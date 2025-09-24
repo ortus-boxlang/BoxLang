@@ -26,7 +26,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Function;
 
-@BoxBIF
+@BoxBIF( description = "Create a new future for asynchronous execution" )
 public class FutureNew extends BIF {
 
 	/**

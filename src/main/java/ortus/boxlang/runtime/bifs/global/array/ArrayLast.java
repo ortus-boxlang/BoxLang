@@ -25,7 +25,7 @@ import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
-@BoxBIF
+@BoxBIF( description = "Return last item in array" )
 @BoxMember( type = BoxLangType.ARRAY )
 public class ArrayLast extends BIF {
 

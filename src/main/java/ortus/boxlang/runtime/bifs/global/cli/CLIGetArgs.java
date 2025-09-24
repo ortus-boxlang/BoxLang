@@ -25,7 +25,7 @@ import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 
-@BoxBIF
+@BoxBIF( description = "Get command line arguments" )
 public class CLIGetArgs extends BIF {
 
 	/**

@@ -28,7 +28,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.util.ValidationUtil;
 
-@BoxBIF
+@BoxBIF( description = "Validate data against specified criteria" )
 public class IsValid extends BIF {
 
 	/**

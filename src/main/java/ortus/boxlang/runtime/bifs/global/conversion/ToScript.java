@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.DateTime;
 
-@BoxBIF
+@BoxBIF( description = "Convert data to script representation" )
 public class ToScript extends BIF {
 
 	/**

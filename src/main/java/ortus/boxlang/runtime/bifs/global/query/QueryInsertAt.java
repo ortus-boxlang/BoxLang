@@ -25,7 +25,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.Query;
 
-@BoxBIF
+@BoxBIF( description = "Insert a row at a specific position in a query" )
 @BoxMember( type = BoxLangType.QUERY )
 public class QueryInsertAt extends BIF {
 

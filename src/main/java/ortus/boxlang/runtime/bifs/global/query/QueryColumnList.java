@@ -23,7 +23,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 
-@BoxBIF
+@BoxBIF( description = "Get a list of column names in a query" )
 @BoxMember( type = BoxLangType.QUERY )
 public class QueryColumnList extends BIF {
 

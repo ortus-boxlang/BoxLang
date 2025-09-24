@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.util.ZipUtil;
 import ortus.boxlang.runtime.validation.Validator;
 
-@BoxBIF
+@BoxBIF( description = "Extract files from an archive" )
 public class Extract extends BIF {
 
 	/**

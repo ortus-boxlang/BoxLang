@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.util.BLCollector;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
-@BoxBIF
+@BoxBIF( description = "Wait for a thread to complete execution" )
 public class ThreadJoin extends BIF {
 
 	/**

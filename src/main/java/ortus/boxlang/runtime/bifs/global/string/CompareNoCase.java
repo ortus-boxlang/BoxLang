@@ -24,7 +24,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 
-@BoxBIF
+@BoxBIF( description = "Compare two strings lexicographically (case-insensitive)" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "compareNoCase" )
 public class CompareNoCase extends BIF {
 

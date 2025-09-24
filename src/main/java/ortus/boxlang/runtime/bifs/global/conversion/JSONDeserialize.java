@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.JSONUtil;
 
-@BoxBIF
+@BoxBIF( description = "Convert JSON string to BoxLang data" )
 @BoxMember( type = BoxLangType.STRING_STRICT )
 @BoxMember( type = BoxLangType.STRING )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "fromJSON" )

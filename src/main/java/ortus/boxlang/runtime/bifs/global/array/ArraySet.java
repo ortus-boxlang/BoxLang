@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
 
-@BoxBIF
+@BoxBIF( description = "Set all elements in an array to a specified value" )
 @BoxMember( type = BoxLangType.ARRAY )
 
 public class ArraySet extends BIF {

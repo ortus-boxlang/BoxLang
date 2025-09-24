@@ -33,7 +33,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.util.DumpUtil;
 import ortus.boxlang.runtime.validation.Validator;
 
-@BoxBIF
+@BoxBIF( description = "Output the contents of a variable for debugging" )
 @BoxBIF( alias = "writeDump" )
 @BoxMember( type = BoxLangType.ANY, name = "dump" )
 @BoxMember( type = BoxLangType.ARRAY, name = "dump" )

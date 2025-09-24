@@ -23,7 +23,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
-@BoxBIF
+@BoxBIF( description = "Move a directory to a new location" )
 @BoxBIF( alias = "DirectoryRename" )
 
 public class DirectoryMove extends BIF {

@@ -30,7 +30,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.IStruct;
 
-@BoxBIF
+@BoxBIF( description = "Create a sorted copy of a struct" )
 @BoxMember( type = BoxLangType.STRUCT )
 
 public class StructToSorted extends BIF {

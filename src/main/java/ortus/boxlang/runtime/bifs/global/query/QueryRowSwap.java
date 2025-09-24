@@ -25,7 +25,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.Query;
 
-@BoxBIF
+@BoxBIF( description = "Swap two rows in a query" )
 @BoxMember( type = BoxLangType.QUERY )
 public class QueryRowSwap extends BIF {
 

@@ -31,7 +31,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
 
-@BoxBIF
+@BoxBIF( description = "Calculate the median value of numeric elements in an array" )
 @BoxMember( type = BoxLangType.ARRAY )
 public class ArrayMedian extends BIF {
 

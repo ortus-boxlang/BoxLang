@@ -29,7 +29,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.util.LocalizationUtil;
 
-@BoxBIF
+@BoxBIF( description = "Check if a string represents a valid currency value" )
 @BoxBIF( alias = "LSIsCurrency" )
 
 public class IsCurrency extends BIF {

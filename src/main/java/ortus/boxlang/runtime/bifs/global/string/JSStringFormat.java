@@ -23,7 +23,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 
-@BoxBIF
+@BoxBIF( description = "Format a string for JavaScript output" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "jsFormat" )
 public class JSStringFormat extends BIF {
 

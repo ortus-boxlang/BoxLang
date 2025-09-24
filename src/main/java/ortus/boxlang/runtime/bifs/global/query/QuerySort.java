@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.Query;
 
-@BoxBIF
+@BoxBIF( description = "Sort query rows by one or more columns" )
 @BoxMember( type = BoxLangType.QUERY )
 public class QuerySort extends BIF {
 

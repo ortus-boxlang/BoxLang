@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 
-@BoxBIF
+@BoxBIF( description = "Update a struct with values from another struct" )
 @BoxMember( type = BoxLangType.STRUCT )
 
 public class StructUpdate extends StructInsert {

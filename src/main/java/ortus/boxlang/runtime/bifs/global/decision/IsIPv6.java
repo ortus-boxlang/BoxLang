@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 
-@BoxBIF
+@BoxBIF( description = "Check if string is a valid IPv6 address" )
 public class IsIPv6 extends BIF {
 
 	/**

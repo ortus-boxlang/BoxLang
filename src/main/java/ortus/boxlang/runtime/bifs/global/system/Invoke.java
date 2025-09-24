@@ -30,7 +30,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 
-@BoxBIF
+@BoxBIF( description = "Dynamically invoke a method on an object" )
 public class Invoke extends BIF {
 
 	ClassLocator classLocator = BoxRuntime.getInstance().getClassLocator();

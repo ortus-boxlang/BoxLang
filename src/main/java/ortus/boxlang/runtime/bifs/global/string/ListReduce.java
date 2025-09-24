@@ -29,7 +29,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
-@BoxBIF
+@BoxBIF( description = "Reduce list items to a single value using a callback function" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "listReduce" )
 public class ListReduce extends BIF {
 

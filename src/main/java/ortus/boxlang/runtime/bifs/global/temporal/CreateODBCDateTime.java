@@ -32,7 +32,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.util.LocalizationUtil;
 
-@BoxBIF
+@BoxBIF( description = "Create an ODBC-formatted datetime string" )
 @BoxBIF( alias = "CreateODBCDate" )
 @BoxBIF( alias = "CreateODBCTime" )
 @BoxMember( type = BoxLangType.DATETIME, name = "toODBCDateTime" )

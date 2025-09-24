@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
-@BoxBIF
+@BoxBIF( description = "Check if an index exists in a list" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "listIndexExists" )
 public class ListIndexExists extends BIF {
 

@@ -33,7 +33,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.util.LocalizationUtil;
 
-@BoxBIF
+@BoxBIF( description = "Parse a date/time string into a datetime object" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "parseDateTime" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "toDateTime" )
 public class ParseDateTime extends BIF {

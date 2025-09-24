@@ -25,7 +25,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
 
-@BoxBIF
+@BoxBIF( description = "Resize an array to a specified size" )
 @BoxMember( type = BoxLangType.ARRAY )
 public class ArrayResize extends BIF {
 

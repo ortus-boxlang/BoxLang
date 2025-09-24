@@ -26,7 +26,7 @@ import ortus.boxlang.runtime.services.SchedulerService;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.validation.Validator;
 
-@BoxBIF
+@BoxBIF( description = "Restart a scheduled task" )
 public class SchedulerRestart extends BIF {
 
 	/**

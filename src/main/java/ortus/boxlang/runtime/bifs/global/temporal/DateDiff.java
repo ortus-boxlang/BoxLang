@@ -36,7 +36,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.LocalizationUtil;
 import ortus.boxlang.runtime.types.util.DateTimeHelper;
 
-@BoxBIF
+@BoxBIF( description = "Calculate the difference between two dates" )
 @BoxMember( type = BoxLangType.DATETIME, name = "diff", objectArgument = "date1" )
 public class DateDiff extends BIF {
 

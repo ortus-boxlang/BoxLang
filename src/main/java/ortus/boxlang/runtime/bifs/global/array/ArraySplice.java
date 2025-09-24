@@ -25,7 +25,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
 
-@BoxBIF
+@BoxBIF( description = "Remove or replace elements in an array and return the removed elements" )
 @BoxMember( type = BoxLangType.ARRAY )
 public class ArraySplice extends BIF {
 

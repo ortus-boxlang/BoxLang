@@ -24,8 +24,8 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
-@BoxBIF
-@BoxMember( type = BoxLangType.STRING_STRICT, name = "Left" )
+@BoxBIF( description = "Return the leftmost characters of a string" )
+@BoxMember( type = BoxLangType.STRING_STRICT )
 public class Left extends BIF {
 
 	/**

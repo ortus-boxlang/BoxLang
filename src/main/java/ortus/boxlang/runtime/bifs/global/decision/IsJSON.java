@@ -24,7 +24,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.util.JSONUtil;
 
-@BoxBIF
+@BoxBIF( description = "Check if string is valid JSON" )
 public class IsJSON extends BIF {
 
 	/**

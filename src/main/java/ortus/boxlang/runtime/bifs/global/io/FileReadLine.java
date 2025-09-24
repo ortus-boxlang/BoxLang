@@ -26,7 +26,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.File;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
-@BoxBIF
+@BoxBIF( description = "Read a single line from a file" )
 @BoxMember( type = BoxLangType.FILE )
 
 public class FileReadLine extends BIF {

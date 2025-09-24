@@ -28,7 +28,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
-@BoxBIF
+@BoxBIF( description = "Find the position of a value in a list" )
 @BoxBIF( alias = "ListFindNoCase" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "listFind" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "listFindNoCase" )

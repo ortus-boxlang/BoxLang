@@ -22,7 +22,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.util.ZipUtil;
 
-@BoxBIF
+@BoxBIF( description = "Check if a file is a valid ZIP archive" )
 public class IsZipFile extends BIF {
 
 	/**

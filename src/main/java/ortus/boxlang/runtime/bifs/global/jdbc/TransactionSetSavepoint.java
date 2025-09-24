@@ -24,7 +24,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 
-@BoxBIF
+@BoxBIF( description = "Set a savepoint in the current transaction" )
 public class TransactionSetSavepoint extends TransactionBIF {
 
 	/**

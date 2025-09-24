@@ -31,7 +31,7 @@ import ortus.boxlang.runtime.types.DelimitedArray;
 import ortus.boxlang.runtime.types.util.BLCollector;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
-@BoxBIF
+@BoxBIF( description = "Trim whitespace from all items in a list" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "listItemTrim" )
 public class ListItemTrim extends BIF {
 

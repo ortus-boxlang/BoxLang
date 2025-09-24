@@ -33,7 +33,7 @@ import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.util.ListUtil;
 import ortus.boxlang.runtime.util.LocalizationUtil;
 
-@BoxBIF
+@BoxBIF( description = "Sort the elements of an array" )
 @BoxMember( type = BoxLangType.ARRAY )
 public class ArraySort extends BIF {
 

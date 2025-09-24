@@ -51,7 +51,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 import ortus.boxlang.runtime.util.conversion.XMLValidationHandler;
 
-@BoxBIF
+@BoxBIF( description = "Validate XML against a schema or DTD" )
 
 public class XMLValidate extends BIF {
 

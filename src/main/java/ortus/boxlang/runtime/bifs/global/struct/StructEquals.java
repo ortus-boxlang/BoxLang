@@ -28,7 +28,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 
-@BoxBIF
+@BoxBIF( description = "Compare two structs for equality" )
 @BoxMember( type = BoxLangType.STRUCT )
 
 public class StructEquals extends BIF {

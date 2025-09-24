@@ -31,7 +31,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
-@BoxBIF
+@BoxBIF( description = "Create a dynamic proxy for a Java interface" )
 public class CreateDynamicProxy extends BIF {
 
 	ClassLocator classLocator = BoxRuntime.getInstance().getClassLocator();

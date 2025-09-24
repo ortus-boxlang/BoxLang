@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.ListUtil;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 
-@BoxBIF
+@BoxBIF( description = "Test whether no items in list match the callback function" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "listNone" )
 public class ListNone extends ListSome {
 

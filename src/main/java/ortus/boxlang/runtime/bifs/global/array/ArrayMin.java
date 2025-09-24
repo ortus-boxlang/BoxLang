@@ -26,7 +26,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
 
-@BoxBIF
+@BoxBIF( description = "Find the minimum value in an array" )
 @BoxMember( type = BoxLangType.ARRAY )
 public class ArrayMin extends BIF {
 

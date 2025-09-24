@@ -36,7 +36,7 @@ import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
-@BoxBIF
+@BoxBIF( description = "Replace substrings using parallel replacement lists" )
 @BoxBIF( alias = "ReplaceListNoCase" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "ReplaceList" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "ReplaceListNoCase" )

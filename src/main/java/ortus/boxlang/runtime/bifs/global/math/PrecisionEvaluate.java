@@ -32,7 +32,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.MathUtil;
 
-@BoxBIF
+@BoxBIF( description = "Evaluate an expression with specified precision" )
 public class PrecisionEvaluate extends BIF {
 
 	/**

@@ -24,7 +24,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
 
-@BoxBIF
+@BoxBIF( description = "Prepend a value to the beginning of an array" )
 @BoxMember( type = BoxLangType.ARRAY )
 public class ArrayPrepend extends BIF {
 

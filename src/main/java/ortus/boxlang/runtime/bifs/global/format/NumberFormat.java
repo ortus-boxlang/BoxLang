@@ -31,7 +31,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.util.LocalizationUtil;
 
-@BoxBIF
+@BoxBIF( description = "Format a number using a specified mask" )
 @BoxMember( type = BoxLangType.NUMERIC )
 @BoxBIF( alias = "LSNumberFormat" )
 

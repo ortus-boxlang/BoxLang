@@ -41,7 +41,7 @@ import ortus.boxlang.runtime.types.XML;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.ValidationUtil;
 
-@BoxBIF
+@BoxBIF( description = "Create a new XML element" )
 public class XMLElemNew extends BIF {
 
 	/**

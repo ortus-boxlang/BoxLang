@@ -23,7 +23,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.conversion.ObjectMarshaller;
 
-@BoxBIF
+@BoxBIF( description = "Serialize an object to binary format" )
 public class ObjectSerialize extends BIF {
 
 	/**

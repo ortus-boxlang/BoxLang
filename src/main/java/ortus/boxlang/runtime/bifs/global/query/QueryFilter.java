@@ -26,7 +26,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.QueryUtil;
 
-@BoxBIF
+@BoxBIF( description = "Filter query rows using a callback function" )
 @BoxMember( type = BoxLangType.QUERY )
 public class QueryFilter extends BIF {
 

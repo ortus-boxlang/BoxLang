@@ -21,7 +21,7 @@ import ortus.boxlang.runtime.context.IJDBCCapableContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.types.Argument;
 
-@BoxBIF
+@BoxBIF( description = "Check if currently in a transaction" )
 @BoxBIF( alias = "IsWithinTransaction" )
 public class IsInTransaction extends BIF {
 

@@ -23,7 +23,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 
-@BoxBIF
+@BoxBIF( description = "Check if a thread has been interrupted" )
 public class IsThreadInterrupted extends BIF {
 
 	/**

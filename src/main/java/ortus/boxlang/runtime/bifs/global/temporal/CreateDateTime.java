@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.LocalizationUtil;
 
-@BoxBIF
+@BoxBIF( description = "Create a datetime object" )
 @BoxBIF( alias = "CreateDate" )
 public class CreateDateTime extends BIF {
 

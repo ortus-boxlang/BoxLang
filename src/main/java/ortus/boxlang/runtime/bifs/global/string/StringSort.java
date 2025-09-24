@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.BoxLangType;
 
-@BoxBIF
+@BoxBIF( description = "Sort the characters in a string" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "StringSort" )
 
 public class StringSort extends ListSort {

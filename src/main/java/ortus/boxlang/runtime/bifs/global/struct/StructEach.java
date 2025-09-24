@@ -29,7 +29,7 @@ import ortus.boxlang.runtime.types.util.StructUtil;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 
-@BoxBIF
+@BoxBIF( description = "Execute a callback function for each key-value pair in a struct" )
 @BoxMember( type = BoxLangType.STRUCT )
 
 public class StructEach extends BIF {

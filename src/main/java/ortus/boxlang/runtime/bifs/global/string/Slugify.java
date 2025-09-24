@@ -24,7 +24,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.StringUtil;
 
-@BoxBIF
+@BoxBIF( description = "Convert a string to a URL-friendly slug" )
 @BoxMember( type = BoxLangType.STRING_STRICT )
 public class Slugify extends BIF {
 

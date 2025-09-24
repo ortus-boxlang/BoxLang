@@ -23,7 +23,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 
-@BoxBIF
+@BoxBIF( description = "Remove carriage return characters from a string" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "StripCR" )
 public class StripCR extends BIF {
 

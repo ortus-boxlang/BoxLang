@@ -34,7 +34,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.ListUtil;
 import ortus.boxlang.runtime.validation.Validator;
 
-@BoxBIF
+@BoxBIF( description = "Count occurrences of a value in a list" )
 @BoxBIF( alias = "ListValueCountNoCase" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "ListValueCount" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "ListValueCountNoCase" )

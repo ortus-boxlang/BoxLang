@@ -24,7 +24,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.IStruct;
 
-@BoxBIF
+@BoxBIF( description = "Remove all key-value pairs from a struct" )
 @BoxMember( type = BoxLangType.STRUCT )
 public class StructClear extends BIF {
 

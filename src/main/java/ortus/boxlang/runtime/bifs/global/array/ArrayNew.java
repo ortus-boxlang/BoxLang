@@ -20,7 +20,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.types.Array;
 
-@BoxBIF
+@BoxBIF( description = "Create a new array" )
 public class ArrayNew extends BIF {
 
 	/**

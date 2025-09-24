@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
-@BoxBIF
+@BoxBIF( description = "Execute a callback function for each element in an array" )
 @BoxMember( type = BoxLangType.ARRAY )
 public class ArrayEach extends BIF {
 

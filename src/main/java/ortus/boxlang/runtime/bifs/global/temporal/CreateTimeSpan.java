@@ -29,7 +29,7 @@ import ortus.boxlang.runtime.dynamic.casters.LongCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 
-@BoxBIF
+@BoxBIF( description = "Create a timespan object" )
 
 public class CreateTimeSpan extends BIF {
 

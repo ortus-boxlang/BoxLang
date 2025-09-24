@@ -32,7 +32,7 @@ import ortus.boxlang.runtime.types.util.RegexUtil;
 import ortus.boxlang.runtime.util.RegexBuilder;
 import ortus.boxlang.runtime.validation.Validator;
 
-@BoxBIF
+@BoxBIF( description = "Find the position of a regular expression match in a string" )
 @BoxBIF( alias = "reFindNoCase" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "reFind", objectArgument = "string" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "reFindNoCase", objectArgument = "string" )

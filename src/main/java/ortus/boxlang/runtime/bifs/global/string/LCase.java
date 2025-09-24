@@ -23,7 +23,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 
-@BoxBIF
+@BoxBIF( description = "Convert a string to lowercase" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "LCase" )
 public class LCase extends BIF {
 

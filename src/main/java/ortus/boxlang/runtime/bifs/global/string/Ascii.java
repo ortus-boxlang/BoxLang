@@ -24,7 +24,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
-@BoxBIF
+@BoxBIF( description = "Return the ASCII value of the first character in a string" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "ascii" )
 public class Ascii extends BIF {
 

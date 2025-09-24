@@ -30,7 +30,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 
-@BoxBIF
+@BoxBIF( description = "Format special characters for XML output" )
 @BoxMember( type = BoxLangType.STRING_STRICT )
 
 public class XMLFormat extends BIF {

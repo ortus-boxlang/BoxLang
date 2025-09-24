@@ -23,7 +23,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Struct;
 
-@BoxBIF
+@BoxBIF( description = "Debug BoxLang contexts" )
 public class DebugBoxContexts extends BIF {
 
 	/**

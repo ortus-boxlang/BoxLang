@@ -24,7 +24,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
-@BoxBIF
+@BoxBIF( description = "Delete a column from a query" )
 @BoxMember( type = BoxLangType.QUERY )
 public class QueryDeleteColumn extends BIF {
 

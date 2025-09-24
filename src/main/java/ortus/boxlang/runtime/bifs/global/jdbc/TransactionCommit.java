@@ -23,7 +23,7 @@ import ortus.boxlang.runtime.jdbc.ITransaction;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.types.Argument;
 
-@BoxBIF
+@BoxBIF( description = "Commit the current transaction" )
 public class TransactionCommit extends TransactionBIF {
 
 	/**

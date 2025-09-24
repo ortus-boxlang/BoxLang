@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
-@BoxBIF
+@BoxBIF( description = "Test whether at least one item in list matches the callback function" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "listSome" )
 public class ListSome extends ArraySome {
 

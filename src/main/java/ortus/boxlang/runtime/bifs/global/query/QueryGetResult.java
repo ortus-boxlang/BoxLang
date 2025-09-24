@@ -24,7 +24,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.Query;
 
-@BoxBIF
+@BoxBIF( description = "Get result metadata from a query" )
 @BoxMember( type = BoxLangType.QUERY )
 public class QueryGetResult extends BIF {
 

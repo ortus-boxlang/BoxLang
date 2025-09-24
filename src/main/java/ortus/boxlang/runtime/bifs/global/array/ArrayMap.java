@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
-@BoxBIF
+@BoxBIF( description = "Create a new array by transforming each element using a callback function" )
 @BoxMember( type = BoxLangType.ARRAY )
 public class ArrayMap extends BIF {
 

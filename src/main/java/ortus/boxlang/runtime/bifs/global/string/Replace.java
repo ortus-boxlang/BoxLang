@@ -27,8 +27,8 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
-@BoxBIF
-@BoxMember( type = BoxLangType.STRING_STRICT, name = "Replace" )
+@BoxBIF( description = "Replace occurrences of a substring in a string" )
+@BoxMember( type = BoxLangType.STRING_STRICT )
 public class Replace extends BIF {
 
 	/**

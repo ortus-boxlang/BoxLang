@@ -25,7 +25,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
-@BoxBIF
+@BoxBIF( description = "Get data for a specific row in a query" )
 @BoxMember( type = BoxLangType.QUERY, name = "rowData" )
 // We are transpiling the CF BIF queryGetRow to this BIF
 @BoxMember( type = BoxLangType.QUERY, name = "getRow" )

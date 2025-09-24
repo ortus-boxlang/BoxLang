@@ -24,7 +24,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
 
-@BoxBIF
+@BoxBIF( description = "Check if an array is empty" )
 @BoxMember( type = BoxLangType.ARRAY )
 public class ArrayIsEmpty extends BIF {
 

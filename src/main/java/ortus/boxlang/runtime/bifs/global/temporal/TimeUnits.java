@@ -38,6 +38,7 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.LocalizationUtil;
 
+@BoxBIF( description = "Extract time units from date/time values" )
 @BoxBIF( alias = "Year" )
 @BoxBIF( alias = "Quarter" )
 @BoxBIF( alias = "Month" )

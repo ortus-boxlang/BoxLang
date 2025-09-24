@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.types.File;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
-@BoxBIF
+@BoxBIF( description = "Set the last modified timestamp of a file" )
 @BoxMember( type = BoxLangType.FILE )
 
 public class FileSetLastModified extends BIF {

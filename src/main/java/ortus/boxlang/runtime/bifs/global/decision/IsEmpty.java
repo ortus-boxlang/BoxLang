@@ -34,7 +34,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 
-@BoxBIF
+@BoxBIF( description = "Check if value is empty" )
 @BoxBIF( alias = "structIsEmpty" )
 @BoxBIF( alias = "arrayIsEmpty" )
 @BoxMember( type = BoxLangType.ARRAY )

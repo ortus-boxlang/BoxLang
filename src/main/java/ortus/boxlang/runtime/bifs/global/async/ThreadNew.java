@@ -34,7 +34,7 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.validation.Validator;
 
-@BoxBIF
+@BoxBIF( description = "Create a new thread for asynchronous execution" )
 public class ThreadNew extends BIF {
 
 	/**

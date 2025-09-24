@@ -24,7 +24,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
 
-@BoxBIF
+@BoxBIF( description = "Clear all items from array" )
 @BoxMember( type = BoxLangType.ARRAY )
 public class ArrayClear extends BIF {
 

@@ -25,7 +25,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 
-@BoxBIF( documented = false )
+@BoxBIF( description = "Swap collection keys during transpilation", documented = false )
 // MOVE THIS TO THE COMPAT MODULE WHEN THE TRANSPILER IS MOVED THERE
 public class TranspileCollectionKeySwap extends BIF {
 

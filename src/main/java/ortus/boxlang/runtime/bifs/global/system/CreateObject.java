@@ -33,7 +33,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
-@BoxBIF
+@BoxBIF( description = "Create an instance of a Java class or component" )
 public class CreateObject extends BIF {
 
 	/**

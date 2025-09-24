@@ -29,7 +29,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.DelimitedArray;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
-@BoxBIF
+@BoxBIF( description = "Sort the items in a list" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "listSort" )
 
 public class ListSort extends ArraySort {
