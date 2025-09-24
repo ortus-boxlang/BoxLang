@@ -107,7 +107,7 @@ public class BoxRunner {
 	/**
 	 * The allowed template extensions that can be executed by the BoxRunner
 	 */
-	private static final List<String>	ALLOWED_TEMPLATE_EXECUTIONS	= List.of( ".cfm", ".cfs", ".bxm", ".bx", ".bxs" );
+	private static final List<String>	ALLOWED_TEMPLATE_EXECUTIONS	= List.of( ".cfm", ".cfs", ".cfc", ".bxm", ".bx", ".bxs" );
 
 	/**
 	 * An exit code indicator for the BoxRunner
