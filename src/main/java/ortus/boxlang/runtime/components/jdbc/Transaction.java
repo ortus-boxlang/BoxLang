@@ -36,7 +36,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 import ortus.boxlang.runtime.validation.Validator;
 
-@BoxComponent( allowsBody = true )
+@BoxComponent( description = "Manage database transactions with commit/rollback support", allowsBody = true )
 public class Transaction extends Component {
 
 	/**

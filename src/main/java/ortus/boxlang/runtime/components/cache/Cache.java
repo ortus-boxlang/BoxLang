@@ -44,7 +44,7 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.validation.Validator;
 
-@BoxComponent( allowsBody = true )
+@BoxComponent( description = "Manage cached data with get, put, and delete operations", allowsBody = true )
 public class Cache extends Component {
 
 	/**

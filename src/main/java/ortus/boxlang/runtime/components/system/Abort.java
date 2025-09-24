@@ -26,7 +26,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.CustomException;
 
-@BoxComponent
+@BoxComponent( description = "Abort processing of the current request" )
 public class Abort extends Component {
 
 	/**

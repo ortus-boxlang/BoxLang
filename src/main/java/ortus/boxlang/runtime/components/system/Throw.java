@@ -24,7 +24,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 
-@BoxComponent
+@BoxComponent( description = "Throw custom exceptions with messages and error codes" )
 public class Throw extends Component {
 
 	/**

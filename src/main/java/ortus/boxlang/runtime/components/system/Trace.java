@@ -30,7 +30,7 @@ import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.util.Tracer;
 import ortus.boxlang.runtime.validation.Validator;
 
-@BoxComponent
+@BoxComponent( description = "Add execution and debugging information to trace output" )
 public class Trace extends Component {
 
 	/**

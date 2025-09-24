@@ -25,7 +25,7 @@ import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 
-@BoxComponent
+@BoxComponent( description = "Modify runtime settings and configuration" )
 public class Setting extends Component {
 
 	public Setting() {

@@ -51,7 +51,7 @@ import ortus.boxlang.runtime.validation.Validator;
  *
  * @see LoopUtil for the underlying loop processing logic
  */
-@BoxComponent( requiresBody = true )
+@BoxComponent( description = "Create loops for iterating over collections and ranges", requiresBody = true )
 public class Loop extends Component {
 
 	/**

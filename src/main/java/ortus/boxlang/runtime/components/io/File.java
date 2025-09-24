@@ -34,7 +34,7 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.validation.Validator;
 
-@BoxComponent
+@BoxComponent( description = "Perform file operations like read, write, copy, and delete" )
 public class File extends Component {
 
 	private static final Key							fileAppendKey		= Key.of( "fileAppend" );

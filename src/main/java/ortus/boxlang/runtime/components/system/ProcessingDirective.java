@@ -24,7 +24,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 
-@BoxComponent( allowsBody = true )
+@BoxComponent( description = "Set page-level processing instructions and directives", allowsBody = true )
 public class ProcessingDirective extends Component {
 
 	public ProcessingDirective() {

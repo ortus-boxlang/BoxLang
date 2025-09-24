@@ -38,7 +38,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.validation.Validator;
 
-@BoxComponent( requiresBody = true )
+@BoxComponent( description = "Execute SQL queries against databases", requiresBody = true )
 public class Query extends Component {
 
 	/**
