@@ -30,7 +30,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.validation.Validator;
 
-@BoxBIF
+@BoxBIF( description = "Announce an event synchronously" )
 public class BoxAnnounce extends BIF {
 
 	/**

@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
-@BoxBIF
+@BoxBIF( description = "Change the delimiters in a list" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "listChangeDelims" )
 public class ListChangeDelims extends BIF {
 

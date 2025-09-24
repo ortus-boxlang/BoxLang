@@ -29,7 +29,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.StructUtil;
 
-@BoxBIF
+@BoxBIF( description = "Test whether every item in struct matches the callback function" )
 @BoxMember( type = BoxLangType.STRUCT )
 
 public class StructEvery extends BIF {

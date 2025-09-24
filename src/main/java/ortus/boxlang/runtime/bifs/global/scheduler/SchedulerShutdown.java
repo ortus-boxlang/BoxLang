@@ -26,7 +26,7 @@ import ortus.boxlang.runtime.services.SchedulerService;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.validation.Validator;
 
-@BoxBIF
+@BoxBIF( description = "Shutdown the scheduler" )
 public class SchedulerShutdown extends BIF {
 
 	/**

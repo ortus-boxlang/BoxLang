@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.IStruct;
 
-@BoxBIF
+@BoxBIF( description = "Check if a key exists in a struct" )
 @BoxMember( type = BoxLangType.STRUCT )
 @BoxMember( type = BoxLangType.XML, name = "keyExists" )
 

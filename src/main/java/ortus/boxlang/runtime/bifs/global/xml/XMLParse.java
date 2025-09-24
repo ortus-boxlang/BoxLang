@@ -26,7 +26,7 @@ import ortus.boxlang.runtime.util.FileSystemUtil;
 
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
-@BoxBIF
+@BoxBIF( description = "Parse XML from a string" )
 public class XMLParse extends BIF {
 
 	/**

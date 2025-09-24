@@ -21,6 +21,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 
+@BoxBIF( description = "Perform bitwise shift operations (left or right)" )
 @BoxBIF( alias = "bitShln" )
 @BoxBIF( alias = "bitShrn" )
 public class BitSh extends BIF {

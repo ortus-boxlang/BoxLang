@@ -43,7 +43,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 import ortus.boxlang.runtime.validation.Validator;
 
-@BoxComponent( requiresBody = true )
+@BoxComponent( description = "Execute stored procedures with parameters and result capture", requiresBody = true )
 public class StoredProc extends Component {
 
 	/**
@@ -73,13 +73,13 @@ public class StoredProc extends Component {
 	 * @attribute.procedure The name of the procedure to execute.
 	 *
 	 * @attribute.datasource The name of the datasource where the stored procedure is registered.
-	 * 
+	 *
 	 * @attribute.blockfactor The fetch size to use for batching rows and reducing network round trips when reading results.
-	 * 
+	 *
 	 * @attribute.debug If enabled, list debugging info on each statement.
-	 * 
+	 *
 	 * @attribute.returnCode If enabled, populates `bxstoredproc.statusCode` with status code returned by stored procedure.
-	 * 
+	 *
 	 * @attribute.result The name of the variable to store the result set in.
 	 *
 	 */
@@ -126,7 +126,7 @@ public class StoredProc extends Component {
 
 	/**
 	 * Build a call string for the stored procedure, including input parameters.
-	 * 
+	 *
 	 * @param procedureName The name of the stored procedure.
 	 * @param params        The parameters to the stored procedure.
 	 */
@@ -139,7 +139,7 @@ public class StoredProc extends Component {
 
 	/**
 	 * Attach the IN and OUT parameters to the callable statement.
-	 * 
+	 *
 	 * @param procedure The callable statement.
 	 * @param params    The parameters to the stored procedure.
 	 */
@@ -158,7 +158,7 @@ public class StoredProc extends Component {
 
 	/**
 	 * Read the stored procedure ResultSet and copy them into the Boxlang script context variable scope.
-	 * 
+	 *
 	 * @param context     The Boxlang script context.
 	 * @param procedure   The callable statement.
 	 * @param procResults The stored procedure results - It's an array because there can be multiple ResultSets.
@@ -207,7 +207,7 @@ public class StoredProc extends Component {
 
 	/**
 	 * Validate that all ProcResult components have a resultSet attribute, unless there's only one.
-	 * 
+	 *
 	 * @param procResults The stored procedure results.
 	 */
 	private void validateProcResultResultSetAttribute( Array procResults ) {
@@ -226,7 +226,7 @@ public class StoredProc extends Component {
 
 	/**
 	 * Read the stored procedure OUT parameters and copy them into the Boxlang script context variable scope.
-	 * 
+	 *
 	 * @param context   The Boxlang script context.
 	 * @param procedure The executed procedure CallableStatement.
 	 * @param params    The stored procedure parameters.

@@ -22,7 +22,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 
-@BoxBIF
+@BoxBIF( description = "Unregister a request-level interceptor" )
 public class BoxUnregisterRequestInterceptor extends BoxUnregisterInterceptor {
 
 	/**

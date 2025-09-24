@@ -29,7 +29,7 @@ import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.validation.Validator;
 
-@BoxComponent
+@BoxComponent( description = "Associate data with nested components like custom tags" )
 public class Associate extends Component {
 
 	/**

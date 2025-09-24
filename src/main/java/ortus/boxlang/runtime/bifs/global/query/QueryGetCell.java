@@ -24,7 +24,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.Query;
 
-@BoxBIF
+@BoxBIF( description = "Get the value of a specific cell in a query" )
 @BoxMember( type = BoxLangType.QUERY )
 public class QueryGetCell extends BIF {
 

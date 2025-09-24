@@ -29,7 +29,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.MathUtil;
 import ortus.boxlang.runtime.validation.Validator;
 
-@BoxBIF
+@BoxBIF( description = "Convert a string number from specified base to decimal" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "InputBaseN" )
 public class InputBaseN extends BIF {
 

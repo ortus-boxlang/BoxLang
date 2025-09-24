@@ -30,7 +30,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.validation.Validator;
 
-@BoxBIF
+@BoxBIF( description = "Replace occurrences of a substring in a string (case-insensitive)" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "ReplaceNoCase" )
 public class ReplaceNoCase extends BIF {
 

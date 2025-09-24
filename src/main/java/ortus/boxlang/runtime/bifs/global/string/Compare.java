@@ -24,7 +24,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 
-@BoxBIF
+@BoxBIF( description = "Compare two strings lexicographically" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "compare" )
 public class Compare extends BIF {
 

@@ -24,7 +24,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
 
-@BoxBIF
+@BoxBIF( description = "Insert a value at a specific position in an array" )
 @BoxMember( type = BoxLangType.ARRAY )
 public class ArrayInsertAt extends BIF {
 

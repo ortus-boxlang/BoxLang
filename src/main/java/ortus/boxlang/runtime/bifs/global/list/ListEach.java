@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
-@BoxBIF
+@BoxBIF( description = "Execute a callback function for each item in a list" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "listEach" )
 
 public class ListEach extends ArrayEach {

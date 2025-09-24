@@ -26,7 +26,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.EncryptionUtil;
 
-@BoxBIF
+@BoxBIF( description = "Generate an HMAC (Hash-based Message Authentication Code)" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "Hmac" )
 
 public class Hmac extends BIF {

@@ -23,7 +23,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 
-@BoxBIF
+@BoxBIF( description = "Extract numeric value from the beginning of a string" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "Val" )
 public class Val extends BIF {
 

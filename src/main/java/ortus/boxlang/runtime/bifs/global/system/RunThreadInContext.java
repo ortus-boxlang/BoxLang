@@ -28,7 +28,7 @@ import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 
-@BoxBIF
+@BoxBIF( description = "Run code in a thread with BoxLang context" )
 public class RunThreadInContext extends BIF {
 
 	/**

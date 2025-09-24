@@ -28,7 +28,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 import ortus.boxlang.runtime.validation.Validator;
 
-@BoxComponent
+@BoxComponent( description = "Define parameters for HTTP requests" )
 public class HTTPParam extends Component {
 
 	/**

@@ -26,7 +26,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 
-@BoxBIF
+@BoxBIF( description = "Remove trailing whitespace from a string" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "RTrim" )
 public class RTrim extends BIF {
 
@@ -45,7 +45,7 @@ public class RTrim extends BIF {
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 * 
+	 *
 	 * @argument.string The string to trim
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {

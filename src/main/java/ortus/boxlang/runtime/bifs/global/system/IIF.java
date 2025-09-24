@@ -23,7 +23,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 
 // TODO: Move to compat module
-@BoxBIF
+@BoxBIF( description = "Inline conditional evaluation" )
 public class IIF extends BIF {
 
 	/**

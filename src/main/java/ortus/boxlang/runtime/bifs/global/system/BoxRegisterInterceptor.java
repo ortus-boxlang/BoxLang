@@ -30,7 +30,7 @@ import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
-@BoxBIF
+@BoxBIF( description = "Register an application-level interceptor" )
 public class BoxRegisterInterceptor extends BIF {
 
 	protected InterceptorPool interceptorTarget;

@@ -30,7 +30,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 
-@BoxBIF
+@BoxBIF( description = "Append one struct to another" )
 @BoxMember( type = BoxLangType.STRUCT )
 public class StructAppend extends BIF {
 

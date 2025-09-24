@@ -35,7 +35,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.LockException;
 import ortus.boxlang.runtime.validation.Validator;
 
-@BoxComponent( requiresBody = true )
+@BoxComponent( description = "Serialize access to sections of code with named locks", requiresBody = true )
 public class Lock extends Component {
 
 	private ConcurrentHashMap<String, WeakReference<ReentrantReadWriteLock>>	lockMap	= new ConcurrentHashMap<>();

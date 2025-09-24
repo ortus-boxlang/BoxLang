@@ -25,7 +25,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
-@BoxBIF
+@BoxBIF( description = "Get data for a specific column in a query" )
 @BoxMember( type = BoxLangType.QUERY )
 public class QueryColumnData extends BIF {
 

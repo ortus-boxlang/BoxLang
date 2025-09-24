@@ -31,7 +31,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.util.DumpUtil;
 import ortus.boxlang.runtime.validation.Validator;
 
-@BoxComponent
+@BoxComponent( description = "Display structured output of variables and expressions" )
 public class Dump extends Component {
 
 	/**

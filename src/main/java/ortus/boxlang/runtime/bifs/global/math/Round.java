@@ -29,7 +29,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 
-@BoxBIF
+@BoxBIF( description = "Round a number to the nearest integer or specified decimal places" )
 @BoxMember( type = BoxLangType.NUMERIC, name = "Round" )
 public class Round extends BIF {
 

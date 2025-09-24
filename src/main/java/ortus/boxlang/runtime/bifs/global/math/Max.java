@@ -26,7 +26,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 
-@BoxBIF
+@BoxBIF( description = "Return the maximum value from a set of numbers" )
 @BoxMember( type = BoxLangType.NUMERIC )
 public class Max extends BIF {
 

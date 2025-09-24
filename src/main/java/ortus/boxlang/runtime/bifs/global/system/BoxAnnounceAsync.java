@@ -22,7 +22,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 
-@BoxBIF
+@BoxBIF( description = "Announce an event asynchronously" )
 public class BoxAnnounceAsync extends BoxAnnounce {
 
 	/**

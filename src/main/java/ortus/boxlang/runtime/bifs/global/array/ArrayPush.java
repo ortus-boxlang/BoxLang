@@ -24,7 +24,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
 
-@BoxBIF
+@BoxBIF( description = "Add one or more elements to the end of an array" )
 @BoxMember( type = BoxLangType.ARRAY )
 public class ArrayPush extends BIF {
 

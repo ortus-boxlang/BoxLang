@@ -24,8 +24,8 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
-@BoxBIF
-@BoxMember( type = BoxLangType.STRING_STRICT, name = "Right" )
+@BoxBIF( description = "Return the rightmost characters of a string" )
+@BoxMember( type = BoxLangType.STRING_STRICT )
 public class Right extends BIF {
 
 	/**

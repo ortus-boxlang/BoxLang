@@ -35,7 +35,7 @@ import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.validation.Validator;
 
-@BoxBIF
+@BoxBIF( description = "Execute a SQL query" )
 public class QueryExecute extends BIF {
 
 	/**

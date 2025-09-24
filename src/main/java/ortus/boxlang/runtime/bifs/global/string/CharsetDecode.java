@@ -30,7 +30,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 
-@BoxBIF
+@BoxBIF( description = "Decode a string from the specified character set" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "CharsetDecode" )
 
 public class CharsetDecode extends BIF {

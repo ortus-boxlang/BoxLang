@@ -24,7 +24,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.Query;
 
-@BoxBIF
+@BoxBIF( description = "Prepend rows from one query to another" )
 @BoxMember( type = BoxLangType.QUERY )
 public class QueryPrepend extends BIF {
 

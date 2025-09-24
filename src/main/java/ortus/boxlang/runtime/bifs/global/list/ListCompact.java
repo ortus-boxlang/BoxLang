@@ -31,7 +31,7 @@ import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
-@BoxBIF
+@BoxBIF( description = "Remove empty elements from a list" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "ListCompact" )
 /**
  * @Deprecated

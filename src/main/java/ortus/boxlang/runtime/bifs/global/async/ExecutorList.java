@@ -20,7 +20,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.types.Array;
 
-@BoxBIF
+@BoxBIF( description = "Get a list of all executor services" )
 public class ExecutorList extends BIF {
 
 	/**

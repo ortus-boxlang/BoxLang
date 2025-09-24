@@ -30,7 +30,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.IType;
 
-@BoxBIF
+@BoxBIF( description = "Convert a value to a string" )
 @BoxMember( type = BoxLangType.STRING_STRICT )
 public class ToString extends BIF {
 

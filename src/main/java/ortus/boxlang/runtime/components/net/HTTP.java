@@ -78,7 +78,7 @@ import ortus.boxlang.runtime.util.ResolvedFilePath;
 import ortus.boxlang.runtime.util.ZipUtil;
 import ortus.boxlang.runtime.validation.Validator;
 
-@BoxComponent( allowsBody = true )
+@BoxComponent( description = "Make HTTP requests and handle responses", allowsBody = true )
 public class HTTP extends Component {
 
 	/**

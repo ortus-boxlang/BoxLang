@@ -26,7 +26,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.File;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
-@BoxBIF
+@BoxBIF( description = "Set access permissions for a file" )
 @BoxMember( type = BoxLangType.FILE )
 
 public class FileSetAccessMode extends BIF {

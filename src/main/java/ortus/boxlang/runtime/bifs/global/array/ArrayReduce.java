@@ -24,7 +24,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
-@BoxBIF
+@BoxBIF( description = "Reduce an array to a single value using a callback function" )
 @BoxMember( type = BoxLangType.ARRAY )
 public class ArrayReduce extends BIF {
 

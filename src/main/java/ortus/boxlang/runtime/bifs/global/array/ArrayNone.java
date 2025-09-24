@@ -22,7 +22,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 
-@BoxBIF
+@BoxBIF( description = "Test whether no items in array match the callback function" )
 @BoxMember( type = BoxLangType.ARRAY )
 public class ArrayNone extends ArraySome {
 

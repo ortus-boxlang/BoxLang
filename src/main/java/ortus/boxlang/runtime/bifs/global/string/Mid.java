@@ -23,8 +23,8 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 
-@BoxBIF
-@BoxMember( type = BoxLangType.STRING_STRICT, name = "Mid" )
+@BoxBIF( description = "Extract a substring from the middle of a string" )
+@BoxMember( type = BoxLangType.STRING_STRICT )
 public class Mid extends BIF {
 
 	/**

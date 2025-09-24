@@ -43,7 +43,7 @@ import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
-@BoxBIF
+@BoxBIF( description = "Execute a system command" )
 
 public class SystemExecute extends BIF {
 

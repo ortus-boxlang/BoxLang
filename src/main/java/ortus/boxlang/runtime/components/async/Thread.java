@@ -39,7 +39,7 @@ import ortus.boxlang.runtime.types.util.BLCollector;
 import ortus.boxlang.runtime.types.util.ListUtil;
 import ortus.boxlang.runtime.validation.Validator;
 
-@BoxComponent( allowsBody = true )
+@BoxComponent( description = "Enables multithreaded programming for asynchronous execution", allowsBody = true )
 public class Thread extends Component {
 
 	/**

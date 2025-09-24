@@ -35,7 +35,7 @@ import ortus.boxlang.runtime.validation.Validator;
 /**
  * This component allows you to compress/uncompress and manipulate zip/gzip files
  */
-@BoxComponent( allowsBody = true, alias = "gzip" )
+@BoxComponent( description = "Create, extract, and manipulate ZIP archives", allowsBody = true, alias = "gzip" )
 public class Zip extends Component {
 
 	/**

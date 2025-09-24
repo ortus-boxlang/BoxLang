@@ -24,7 +24,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
 
-@BoxBIF
+@BoxBIF( description = "Prepend a value to the beginning of an array" )
 @BoxMember( type = BoxLangType.ARRAY )
 public class ArrayPrepend extends BIF {
 
@@ -44,9 +44,9 @@ public class ArrayPrepend extends BIF {
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 * 
+	 *
 	 * @argument.array The array to prepend to
-	 * 
+	 *
 	 * @argument.value The value to prepend
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {

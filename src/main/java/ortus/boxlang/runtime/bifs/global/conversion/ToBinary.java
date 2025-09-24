@@ -29,7 +29,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 
-@BoxBIF
+@BoxBIF( description = "Convert data to binary format" )
 @BoxMember( type = BoxLangType.STRING_STRICT )
 public class ToBinary extends BIF {
 

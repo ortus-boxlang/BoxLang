@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 
-@BoxBIF
+@BoxBIF( description = "Filters an array and returns a new array containing only items that meet a test condition" )
 @BoxMember( type = BoxLangType.ARRAY )
 public class ArrayFilter extends BIF {
 

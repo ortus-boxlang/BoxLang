@@ -41,7 +41,7 @@ import ortus.boxlang.runtime.types.XML;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.XMLNamespaceResolver;
 
-@BoxBIF
+@BoxBIF( description = "Search XML using XPath expressions" )
 @BoxMember( type = BoxLangType.XML )
 public class XMLSearch extends BIF {
 

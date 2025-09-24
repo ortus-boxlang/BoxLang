@@ -28,7 +28,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.MathUtil;
 
-@BoxBIF
+@BoxBIF( description = "Calculate the base-10 logarithm of a number" )
 @BoxMember( type = BoxLangType.NUMERIC )
 public class Log10 extends BIF {
 

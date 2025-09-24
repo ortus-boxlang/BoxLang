@@ -26,7 +26,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.Query;
 
-@BoxBIF
+@BoxBIF( description = "Add a new row to a query" )
 @BoxMember( type = BoxLangType.QUERY )
 public class QueryAddRow extends BIF {
 

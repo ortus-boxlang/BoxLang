@@ -24,7 +24,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.XML;
 
-@BoxBIF
+@BoxBIF( description = "Get the type of an XML node" )
 @BoxMember( type = BoxLangType.XML )
 public class XMLGetNodeType extends BIF {
 

@@ -24,7 +24,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.Query;
 
-@BoxBIF
+@BoxBIF( description = "Append rows from one query to another" )
 @BoxMember( type = BoxLangType.QUERY )
 public class QueryAppend extends BIF {
 

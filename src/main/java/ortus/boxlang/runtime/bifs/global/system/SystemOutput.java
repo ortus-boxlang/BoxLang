@@ -29,7 +29,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.IType;
 
 // TODO: Move to compat module
-@BoxBIF
+@BoxBIF( description = "Output text to the system console" )
 public class SystemOutput extends BIF {
 
 	private static final Key	addNewLineKey		= Key.of( "addNewLine" );

@@ -36,7 +36,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 import ortus.boxlang.runtime.validation.Validator;
 
-@BoxBIF
+@BoxBIF( description = "Set attributes for a file" )
 @BoxMember( type = BoxLangType.FILE )
 
 public class FileSetAttribute extends BIF {

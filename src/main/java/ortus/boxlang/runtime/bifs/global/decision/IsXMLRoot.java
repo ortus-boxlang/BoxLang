@@ -26,7 +26,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.XML;
 
-@BoxBIF
+@BoxBIF( description = "Check if value is an XML document root" )
 public class IsXMLRoot extends BIF {
 
 	/**

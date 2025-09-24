@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
-@BoxBIF
+@BoxBIF( description = "Prepend a value to the beginning of a list" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "listPrepend" )
 
 public class ListPrepend extends BIF {

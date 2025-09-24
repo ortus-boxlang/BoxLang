@@ -42,7 +42,7 @@ import ortus.boxlang.runtime.types.XML;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
-@BoxBIF
+@BoxBIF( description = "Transform XML using XSLT" )
 @BoxMember( type = BoxLangType.XML )
 public class XMLTransform extends BIF {
 

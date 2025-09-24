@@ -24,7 +24,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 
-@BoxComponent( allowsBody = false )
+@BoxComponent( description = "Define parameters for parameterized queries", allowsBody = false )
 public class QueryParam extends Component {
 
 	/**

@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
-@BoxBIF
+@BoxBIF( description = "Test whether every item in an array meets a test condition" )
 @BoxMember( type = BoxLangType.ARRAY )
 public class ArrayEvery extends BIF {
 

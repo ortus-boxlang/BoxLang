@@ -30,7 +30,7 @@ import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.util.Tracer;
 import ortus.boxlang.runtime.validation.Validator;
 
-@BoxBIF
+@BoxBIF( description = "Add trace information for debugging" )
 public class Trace extends BIF {
 
 	/**

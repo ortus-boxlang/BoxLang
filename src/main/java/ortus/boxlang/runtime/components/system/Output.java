@@ -28,7 +28,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.validation.Validator;
 
-@BoxComponent( requiresBody = true )
+@BoxComponent( description = "Control and format output of content blocks", requiresBody = true )
 public class Output extends Component {
 
 	/**

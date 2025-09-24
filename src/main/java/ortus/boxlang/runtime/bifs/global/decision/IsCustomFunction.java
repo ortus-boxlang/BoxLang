@@ -26,7 +26,7 @@ import ortus.boxlang.runtime.types.Closure;
 import ortus.boxlang.runtime.types.Lambda;
 import ortus.boxlang.runtime.types.UDF;
 
-@BoxBIF
+@BoxBIF( description = "Check if value is a custom function" )
 public class IsCustomFunction extends BIF {
 
 	/**

@@ -30,7 +30,7 @@ import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
-@BoxBIF
+@BoxBIF( description = "Return all items in a list except the first" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "ListRest" )
 
 public class ListRest extends BIF {

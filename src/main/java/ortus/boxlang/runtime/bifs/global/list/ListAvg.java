@@ -29,7 +29,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
-@BoxBIF
+@BoxBIF( description = "Calculate the average of numeric values in a list" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "ListAvg" )
 
 public class ListAvg extends ArrayAvg {

@@ -36,7 +36,7 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 import ortus.boxlang.runtime.validation.Validator;
 
-@BoxComponent( allowsBody = true )
+@BoxComponent( description = "Invoke methods on objects dynamically", allowsBody = true )
 public class Invoke extends Component {
 
 	ClassLocator			classLocator			= BoxRuntime.getInstance().getClassLocator();

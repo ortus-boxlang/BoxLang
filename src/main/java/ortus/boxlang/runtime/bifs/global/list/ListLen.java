@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
-@BoxBIF
+@BoxBIF( description = "Get the number of items in a list" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "listLen" )
 public class ListLen extends BIF {
 
