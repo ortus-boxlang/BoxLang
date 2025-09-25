@@ -794,18 +794,36 @@ public class AsmHelper {
 		    null );
 		fieldVisitor.visitEnd();
 		MethodVisitor methodVisitor = classVisitor.visitMethod(
-		    Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNCHRONIZED | Opcodes.ACC_STATIC,
+		    Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
 		    "getInstance",
 		    Type.getMethodDescriptor( type ),
 		    null,
 		    null );
 		methodVisitor.visitCode();
-		Label after = new Label();
+		
+		// First null check (outside synchronized block)
+		Label endOfMethod = new Label();
 		methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
 		    type.getInternalName(),
 		    "instance",
 		    type.getDescriptor() );
-		methodVisitor.visitJumpInsn( Opcodes.IFNONNULL, after );
+		methodVisitor.visitJumpInsn( Opcodes.IFNONNULL, endOfMethod );
+		
+		// Synchronized block on class
+		methodVisitor.visitLdcInsn( type );
+		methodVisitor.visitInsn( Opcodes.MONITORENTER );
+		
+		// Second null check (inside synchronized block)
+		methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
+		    type.getInternalName(),
+		    "instance",
+		    type.getDescriptor() );
+		Label start = new Label(), end = new Label(), handler = new Label();
+		methodVisitor.visitTryCatchBlock( start, end, handler, null );
+		methodVisitor.visitLabel( start );
+		methodVisitor.visitJumpInsn( Opcodes.IFNONNULL, end );
+		
+		// Create new instance
 		methodVisitor.visitTypeInsn( Opcodes.NEW, type.getInternalName() );
 		methodVisitor.visitInsn( Opcodes.DUP );
 		methodVisitor.visitMethodInsn( Opcodes.INVOKESPECIAL,
@@ -817,12 +835,26 @@ public class AsmHelper {
 		    type.getInternalName(),
 		    "instance",
 		    type.getDescriptor() );
-		methodVisitor.visitLabel( after );
+		
+		// Exit synchronized block normally
+		methodVisitor.visitLabel( end );
+		methodVisitor.visitLdcInsn( type );
+		methodVisitor.visitInsn( Opcodes.MONITOREXIT );
+		
+		// Return instance
+		methodVisitor.visitLabel( endOfMethod );
 		methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
 		    type.getInternalName(),
 		    "instance",
 		    type.getDescriptor() );
 		methodVisitor.visitInsn( Opcodes.ARETURN );
+		
+		// Exception handler for synchronized block
+		methodVisitor.visitLabel( handler );
+		methodVisitor.visitLdcInsn( type );
+		methodVisitor.visitInsn( Opcodes.MONITOREXIT );
+		methodVisitor.visitInsn( Opcodes.ATHROW );
+		
 		methodVisitor.visitMaxs( 0, 0 );
 		methodVisitor.visitEnd();
 	}
