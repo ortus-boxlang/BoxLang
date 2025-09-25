@@ -37,6 +37,7 @@ import com.fasterxml.jackson.jr.ob.JSONObjectException;
 
 import ortus.boxlang.compiler.BXCompiler;
 import ortus.boxlang.compiler.CFTranspiler;
+import ortus.boxlang.compiler.DiskClassUtil;
 import ortus.boxlang.compiler.FeatureAudit;
 import ortus.boxlang.runtime.application.BaseApplicationListener;
 import ortus.boxlang.runtime.async.tasks.BoxScheduler;
@@ -660,6 +661,10 @@ public class BoxRunner {
 		}
 		// return false if the file doesn't exist
 		if ( !Files.exists( templatePath ) ) {
+			return false;
+		}
+
+		if ( DiskClassUtil.isJavaByteCode( templatePath.toFile() ) ) {
 			return false;
 		}
 

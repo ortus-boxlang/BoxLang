@@ -240,7 +240,7 @@ public class Parser {
 				if ( fast ) {
 					return null;
 				}
-				if ( new DiskClassUtil( null ).isJavaBytecode( file ) ) {
+				if ( DiskClassUtil.isJavaByteCode( file ) ) {
 					return BoxSourceType.CFSCRIPT;
 				}
 				try {
