@@ -23,6 +23,7 @@ import java.math.BigInteger;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
+import ortus.boxlang.runtime.types.util.TypeUtil;
 
 /**
  * I handle casting anything to a string
@@ -160,7 +161,7 @@ public class StringCasterStrict implements IBoxCaster {
 
 		// Do we throw?
 		if ( fail ) {
-			throw new BoxCastException( "Can't cast " + object.getClass().getName() + " to a string." );
+			throw new BoxCastException( "Can't cast " + TypeUtil.getObjectName( object ) + " to a string." );
 		}
 
 		return null;

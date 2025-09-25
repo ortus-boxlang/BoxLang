@@ -57,6 +57,7 @@ import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
+import ortus.boxlang.runtime.types.util.TypeUtil;
 import ortus.boxlang.runtime.util.Attachable;
 import ortus.boxlang.runtime.util.DataNavigator;
 import ortus.boxlang.runtime.util.DataNavigator.Navigator;
@@ -702,7 +703,7 @@ public class BaseBoxContext implements IBoxContext {
 			return funcAttempt.get();
 		} else {
 			throw new BoxRuntimeException(
-			    "Variable '" + name + "' of type  '" + result.value().getClass().getName() + "'  is not a function." );
+			    "Variable '" + name + "' of type  '" + TypeUtil.getObjectName( result.value() ) + "'  is not a function." );
 		}
 	}
 

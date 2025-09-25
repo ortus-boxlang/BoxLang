@@ -47,6 +47,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.FunctionMeta;
+import ortus.boxlang.runtime.types.util.TypeUtil;
 import ortus.boxlang.runtime.util.ArgumentUtil;
 
 /**
@@ -191,8 +192,19 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	/**
 	 * Return a string representation of the function
 	 */
+	@Override
 	public String asString() {
 		return toString();
+	}
+
+	/**
+	 * Get the BoxLang type name for this type
+	 * 
+	 * @return The BoxLang type name
+	 */
+	@Override
+	public String getBoxTypeName() {
+		return "Function";
 	}
 
 	/**
@@ -200,6 +212,7 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	 *
 	 * @return The source type of the function
 	 */
+	@Override
 	public BoxMeta<Function> getBoxMeta() {
 		if ( this.$bx == null ) {
 			this.$bx = new FunctionMeta( this );
@@ -344,7 +357,7 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 		if ( !typeCheck.wasSuccessful() ) {
 			throw new BoxRuntimeException(
 			    String.format( "The return value of the function [%s] is of type [%s] does not match the declared type of [%s]",
-			        getName().getName(), value.getClass().getName(), getReturnType() )
+			        getName().getName(), TypeUtil.getObjectName( value ), getReturnType() )
 			);
 		}
 		if ( typeCheck.get() instanceof NullValue ) {

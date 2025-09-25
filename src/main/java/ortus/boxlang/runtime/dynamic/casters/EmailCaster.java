@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.dynamic.casters;
 
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
+import ortus.boxlang.runtime.types.util.TypeUtil;
 import ortus.boxlang.runtime.util.ValidationUtil;
 
 /**
@@ -76,7 +77,7 @@ public class EmailCaster implements IBoxCaster {
 				sObject = castAttempt.get();
 			} else {
 				if ( fail ) {
-					throw new BoxCastException( "Can't cast " + object.getClass().getName() + " to a Email." );
+					throw new BoxCastException( "Can't cast " + TypeUtil.getObjectName( object ) + " to a Email." );
 				} else {
 					return null;
 				}
@@ -89,7 +90,7 @@ public class EmailCaster implements IBoxCaster {
 
 		// Do we throw?
 		if ( fail ) {
-			throw new BoxCastException( "Can't cast " + object.getClass().getName() + " to a Email." );
+			throw new BoxCastException( "Can't cast " + TypeUtil.getObjectName( object ) + " to a Email." );
 		}
 
 		return null;

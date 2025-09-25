@@ -29,6 +29,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.JavaMethod;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
+import ortus.boxlang.runtime.types.util.TypeUtil;
 
 /**
  * I handle casting anything to a Function
@@ -137,7 +138,7 @@ public class FunctionCaster implements IBoxCaster {
 		}
 		if ( fail ) {
 			throw new BoxCastException(
-			    String.format( "Value [%s] cannot be cast to a Function", object.getClass().getName() )
+			    String.format( "Value [%s] cannot be cast to a Function", TypeUtil.getObjectName( object ) )
 			);
 		} else {
 			return null;

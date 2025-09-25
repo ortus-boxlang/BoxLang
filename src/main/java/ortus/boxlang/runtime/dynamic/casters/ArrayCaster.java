@@ -25,6 +25,7 @@ import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.QueryColumn;
 import ortus.boxlang.runtime.types.XML;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
+import ortus.boxlang.runtime.types.util.TypeUtil;
 
 /**
  * I handle casting anything to a Array
@@ -114,7 +115,7 @@ public class ArrayCaster implements IBoxCaster {
 
 		if ( fail ) {
 			throw new BoxCastException(
-			    String.format( "Can't cast [%s] to a Array.", object.getClass().getName() )
+			    String.format( "Can't cast [%s] to a Array.", TypeUtil.getObjectName( object ) )
 			);
 		} else {
 			return null;

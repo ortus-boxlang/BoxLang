@@ -46,6 +46,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 import ortus.boxlang.runtime.types.util.BLCollector;
 import ortus.boxlang.runtime.types.util.DateTimeHelper;
+import ortus.boxlang.runtime.types.util.TypeUtil;
 
 /**
  * This is the BoxLang version of a CompletableFuture to allow for more
@@ -860,8 +861,8 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 								// Apply the mapper function to the itemStruct
 								Object mappedResult = (IStruct) new ortus.boxlang.runtime.interop.proxies.Function<>( mapper, context, null ).apply( itemStruct );
 								if( !( mappedResult instanceof IStruct ) ) {
-									allLogger.error("Mapper function did not return an instance of IStruct. Returned: " + mappedResult.getClass().getName());
-									throw new BoxRuntimeException( "Mapper function must return a struct, but it returned a: " + mappedResult.getClass().getName() );
+									allLogger.error("Mapper function did not return an instance of IStruct. Returned: " + TypeUtil.getObjectName( mappedResult ));
+									throw new BoxRuntimeException( "Mapper function must return a struct, but it returned a: " + TypeUtil.getObjectName( mappedResult ) );
 								}
 								// Return the key with the processed value
 								return new AbstractMap.SimpleEntry<>(

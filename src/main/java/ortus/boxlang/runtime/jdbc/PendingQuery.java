@@ -50,6 +50,7 @@ import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 import ortus.boxlang.runtime.types.util.ListUtil;
+import ortus.boxlang.runtime.types.util.TypeUtil;
 
 /**
  * This class represents a query and any parameters/bindings before being
@@ -320,8 +321,7 @@ public class PendingQuery {
 		}
 
 		// We always have bindings, since we exit early if there are none
-		String className = bindings.getClass().getName();
-		throw new DatabaseException( "Invalid type for query params. Expected array or struct. Received: " + className );
+		throw new DatabaseException( "Invalid type for query params. Expected array or struct. Received: " + TypeUtil.getObjectName( bindings ) );
 	}
 
 	/**

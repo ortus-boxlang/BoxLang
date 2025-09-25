@@ -83,6 +83,29 @@ public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 				);
 			}
 		}
+
+		public String getHumanReadableName() {
+			// return the opposite of the case statement above
+			switch ( this ) {
+				case CASE_SENSITIVE :
+					return "Case Sensitive";
+				case DEFAULT :
+					return "Default";
+				case LINKED_CASE_SENSITIVE :
+					return "Ordered Case Sensitive";
+				case LINKED :
+					return "Ordered";
+				case SOFT :
+					return "Soft";
+				case SORTED :
+					return "Sorted";
+				case WEAK :
+					return "Weak";
+				default :
+					return this.name();
+			}
+		}
+
 	}
 
 	/**

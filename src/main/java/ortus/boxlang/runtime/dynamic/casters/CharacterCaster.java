@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.dynamic.casters;
 
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
+import ortus.boxlang.runtime.types.util.TypeUtil;
 
 /**
  * I handle casting anything
@@ -91,7 +92,7 @@ public class CharacterCaster implements IBoxCaster {
 
 		if ( fail ) {
 			throw new BoxCastException(
-			    String.format( "Can't cast [%s] to a char.", object.getClass().getName() )
+			    String.format( "Can't cast [%s] to a char.", TypeUtil.getObjectName( object ) )
 			);
 		} else {
 			return null;

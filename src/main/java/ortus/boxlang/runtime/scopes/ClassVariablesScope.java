@@ -29,6 +29,7 @@ import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.util.TypeUtil;
 import ortus.boxlang.runtime.util.ArgumentUtil;
 
 /**
@@ -93,7 +94,7 @@ public class ClassVariablesScope extends VariablesScope {
 				return function.invoke( fContext );
 			} else if ( memberDescriptor == null ) {
 				throw new BoxRuntimeException(
-				    "key '" + name.getName() + "' of type  '" + value.getClass().getName() + "'  is not a function " );
+				    "key '" + name.getName() + "' of type  '" + TypeUtil.getObjectName( value ) + "'  is not a function " );
 			}
 		}
 
@@ -141,7 +142,7 @@ public class ClassVariablesScope extends VariablesScope {
 				return function.invoke( fContext );
 			} else if ( memberDescriptor == null ) {
 				throw new BoxRuntimeException(
-				    "key '" + name.getName() + "' of type  '" + value.getClass().getName() + "'  is not a function "
+				    "key '" + name.getName() + "' of type  '" + TypeUtil.getObjectName( value ) + "'  is not a function "
 				);
 			}
 		}

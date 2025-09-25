@@ -33,6 +33,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.util.TypeUtil;
 
 /**
  * Performs EQ, GT, and LT comparisons
@@ -231,7 +232,7 @@ public class Compare implements IOperator {
 
 		if ( fail ) {
 			throw new BoxRuntimeException(
-			    String.format( "Can't compare [%s] against [%s]", left.getClass().getName(), right.getClass().getName() )
+			    String.format( "Can't compare [%s] against [%s]", TypeUtil.getObjectName( left ), TypeUtil.getObjectName( right ) )
 			);
 		}
 

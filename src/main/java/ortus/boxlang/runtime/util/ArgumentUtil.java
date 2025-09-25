@@ -24,7 +24,6 @@ import java.util.Map;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
-import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.IntKey;
 import ortus.boxlang.runtime.scopes.Key;
@@ -34,6 +33,7 @@ import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.NullValue;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.util.TypeUtil;
 
 /**
  * Represents an argument to a function or BIF
@@ -272,7 +272,7 @@ public class ArgumentUtil {
 			        "In function [%s], argument [%s] with a type of [%s] does not match the declared type of [%s]",
 			        functionName.getName(),
 			        name.getName(),
-			        DynamicObject.unWrap( value ).getClass().getName(),
+			        TypeUtil.getObjectName( value ),
 			        type
 			    )
 			);

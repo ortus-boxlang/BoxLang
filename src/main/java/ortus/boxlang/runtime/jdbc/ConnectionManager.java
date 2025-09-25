@@ -34,6 +34,7 @@ import ortus.boxlang.runtime.services.DatasourceService;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
+import ortus.boxlang.runtime.types.util.TypeUtil;
 
 /**
  * Manages the active JDBC Connection for the current request/thread/BoxLang context.
@@ -379,7 +380,7 @@ public class ConnectionManager {
 				return getDatasourceOrThrow( Key.of( datasourceName ) );
 			}
 			// INVALID DATASOURCE
-			throw new BoxRuntimeException( "Invalid datasource type: " + datasourceObject.getClass().getName() );
+			throw new BoxRuntimeException( "Invalid datasource type: " + TypeUtil.getObjectName( datasourceObject ) );
 		}
 		return getDefaultDatasourceOrThrow();
 	}

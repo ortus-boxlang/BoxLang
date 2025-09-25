@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.dynamic.casters;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.types.Closure;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
+import ortus.boxlang.runtime.types.util.TypeUtil;
 
 /**
  * I handle casting anything to a Closure
@@ -74,7 +75,7 @@ public class ClosureCaster implements IBoxCaster {
 		} else {
 			if ( fail ) {
 				throw new BoxCastException(
-				    String.format( "Value [%s] cannot be cast to a Closure", object.getClass().getName() )
+				    String.format( "Value [%s] cannot be cast to a Closure", TypeUtil.getObjectName( object ) )
 				);
 			} else {
 				return null;

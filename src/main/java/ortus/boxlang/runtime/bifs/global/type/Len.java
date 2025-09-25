@@ -30,6 +30,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.util.TypeUtil;
 
 @BoxBIF( description = "Get the length of a string, array, or struct" ) // Len()
 @BoxBIF( alias = "StructCount" )
@@ -120,7 +121,7 @@ public class Len extends BIF {
 			return structAttempt.get().size();
 		}
 
-		throw new BoxRuntimeException( "Cannot determine length of object of type " + object.getClass().getName() );
+		throw new BoxRuntimeException( "Cannot determine length of object of type " + TypeUtil.getObjectName( object ) );
 	}
 
 }

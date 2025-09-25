@@ -858,10 +858,24 @@ public class Struct implements IStruct, IListenable<IStruct>, Serializable {
 	}
 
 	/**
+	 * Get the BoxLang type name for this type
+	 * 
+	 * @return The BoxLang type name
+	 */
+	@Override
+	public String getBoxTypeName() {
+		if ( getType() != TYPES.DEFAULT ) {
+			return "Struct<" + getType().getHumanReadableName() + ">";
+		}
+		return "Struct";
+	}
+
+	/**
 	 * Get the BoxMetadata object for this struct
 	 *
 	 * @return The {@Link BoxMeta} object for this struct
 	 */
+	@Override
 	public BoxMeta<?> getBoxMeta() {
 		if ( this.$bx == null ) {
 			this.$bx = new StructMeta( this );

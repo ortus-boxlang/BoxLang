@@ -29,6 +29,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
+import ortus.boxlang.runtime.types.util.TypeUtil;
 
 /**
  * I handle casting anything to a boolean
@@ -176,7 +177,7 @@ public class BooleanCaster implements IBoxCaster {
 				default -> {
 					if ( fail ) {
 						throw new BoxCastException(
-						    String.format( "Value [%s] cannot be cast to a boolean", object.getClass().getName() ) );
+						    String.format( "Value [%s] cannot be cast to a boolean", TypeUtil.getObjectName( object ) ) );
 					} else {
 						yield null;
 					}
@@ -186,7 +187,7 @@ public class BooleanCaster implements IBoxCaster {
 
 		if ( fail ) {
 			throw new BoxCastException(
-			    String.format( "Value [%s] cannot be cast to a boolean", object.getClass().getName() )
+			    String.format( "Value [%s] cannot be cast to a boolean", TypeUtil.getObjectName( object ) )
 			);
 		} else {
 			return null;

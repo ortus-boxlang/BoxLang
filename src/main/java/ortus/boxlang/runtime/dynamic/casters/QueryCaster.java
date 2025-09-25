@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.dynamic.casters;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
+import ortus.boxlang.runtime.types.util.TypeUtil;
 
 /**
  * I handle casting anything to Query
@@ -74,7 +75,7 @@ public class QueryCaster implements IBoxCaster {
 		}
 
 		if ( fail ) {
-			throw new BoxCastException( "Can't cast " + object.getClass().getName() + " to Query." );
+			throw new BoxCastException( "Can't cast " + TypeUtil.getObjectName( object ) + " to Query." );
 		} else {
 			return null;
 		}

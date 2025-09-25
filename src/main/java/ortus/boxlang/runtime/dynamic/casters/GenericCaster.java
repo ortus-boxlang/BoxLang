@@ -35,6 +35,7 @@ import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.NullValue;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
+import ortus.boxlang.runtime.types.util.TypeUtil;
 
 /**
  * I handle casting anything
@@ -66,7 +67,7 @@ public class GenericCaster implements IBoxCaster {
 		if ( type.equalsIgnoreCase( "null" ) || type.equalsIgnoreCase( "void" ) ) {
 			if ( strict && object != null ) {
 				throw new BoxCastException(
-				    String.format( "Cannot cast type [%s] to %s.", object.getClass().getName(), type )
+				    String.format( "Cannot cast type [%s] to %s.", TypeUtil.getObjectName( object ), type )
 				);
 			}
 			return CastAttempt.ofNullable( new NullValue() );
@@ -178,7 +179,7 @@ public class GenericCaster implements IBoxCaster {
 				if ( fail ) {
 					throw new BoxCastException(
 					    String.format( "You asked for type %s, but input %s cannot be cast to an array.", type,
-					        object.getClass().getName() )
+					        TypeUtil.getObjectName( object ) )
 					);
 				} else {
 					return null;
@@ -383,11 +384,7 @@ public class GenericCaster implements IBoxCaster {
 	}
 
 	private static void throwCastException( String type, Object object ) {
-		String objectName = "null";
-		if ( object != null ) {
-			objectName = object.getClass().getName();
-		}
-		throw new BoxCastException( String.format( "Cannot cast %s, to a %s.", objectName, type ) );
+		throw new BoxCastException( String.format( "Cannot cast %s, to a %s.", TypeUtil.getObjectName( object ), type ) );
 	}
 
 	/**
