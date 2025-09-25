@@ -105,4 +105,31 @@ public class ASMTest {
 		// @formatter:on
 	}
 
+	@Test
+	public void testGetInstancePattern() {
+		// Test that getInstance methods work correctly for functions and lambdas
+		instance.executeSource(
+		    """
+		    	// Test function getInstance via compilation
+		    	function testFunc() {
+		    		return "function result";
+		    	}
+		    	
+		    	// Test lambda getInstance via compilation
+		    	lambda = () => {
+		    		return "lambda result";
+		    	};
+		    	
+		    	result = testFunc();
+		    	lambdaResult = lambda();
+		    """, context );
+		
+		// Verify the functions execute correctly (indicating getInstance works)
+		var result = context.getScopeNearby( VariablesScope.name ).get( new Key( "result" ) );
+		var lambdaResult = context.getScopeNearby( VariablesScope.name ).get( new Key( "lambdaResult" ) );
+		
+		assert result.equals( "function result" );
+		assert lambdaResult.equals( "lambda result" );
+	}
+
 }
