@@ -538,7 +538,8 @@ public class BoxClassTransformer extends AbstractTransformer {
 		    Map.entry( "compiledOnTimestamp", transpiler.getDateTime( LocalDateTime.now() ) ),
 		    Map.entry( "compileVersion", "1L" ),
 		    // Don't use the transpiler helper method for this so it's always a Key.of() call. When re-defining a class, we want this to be a Key.of() call.
-		    Map.entry( "boxFQN", "Key.of( \"" + boxFQN + "\" )" ),
+		    // Casting input to Object to match the same bytecode the ASM boxpiler uses, which the DiskClassLoader ASM vistor looks for.
+		    Map.entry( "boxFQN", "Key.of( (Object)\"" + boxFQN + "\" )" ),
 		    Map.entry( "compileTimeMethodNames", generateCompileTimeMethodNames( boxClass ) )
 		);
 		String							code		= PlaceholderHelper.resolve( CLASS_TEMPLATE, values );
