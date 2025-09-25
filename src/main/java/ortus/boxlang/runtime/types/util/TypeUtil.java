@@ -43,6 +43,10 @@ public class TypeUtil {
 	 * - Java primitive wrappers (String, Integer, Boolean, etc) in the java.lang package use their simple name
 	 * - Java Number types are represented as Number<name>
 	 * - All other objects, return the Java class name
+	 * 
+	 * @param obj The object or class
+	 * 
+	 * @return The name of the object or class
 	 */
 	public static String getObjectName( Object obj ) {
 		if ( obj == null ) {
@@ -77,6 +81,13 @@ public class TypeUtil {
 		return name;
 	}
 
+	/**
+	 * Get the type name for an array class
+	 * 
+	 * @param arrayClass The array class
+	 * 
+	 * @return The type name
+	 */
 	private static String getArrayTypeName( Class<?> arrayClass ) {
 		int			dimensions		= 0;
 
@@ -91,6 +102,13 @@ public class TypeUtil {
 		return getSimplishName( componentType ) + brackets;
 	}
 
+	/**
+	 * Get a simplified name for a class. If it's in the java.lang package, return just the simple name, otherwise return the full name.
+	 * 
+	 * @param clazz The class
+	 * 
+	 * @return The simplified name
+	 */
 	private static String getSimplishName( Class<?> clazz ) {
 		if ( clazz.getPackageName().equals( "java.lang" ) ) {
 			return clazz.getSimpleName();
