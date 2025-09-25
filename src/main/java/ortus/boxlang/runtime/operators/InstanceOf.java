@@ -42,21 +42,6 @@ import ortus.boxlang.runtime.runnables.IClassRunnable;
 public class InstanceOf implements IOperator {
 
 	/**
-	 * BoxLang class suffixes that need to be stripped for type comparison
-	 */
-	private static final String[]	BOXLANG_SUFFIXES		= { "$cfc", "$bx" };
-
-	/**
-	 * BoxLang compilation prefix that needs to be stripped for type comparison
-	 */
-	private static final String		BOXLANG_PREFIX			= "boxgenerated.";
-
-	/**
-	 * BoxLang compilation prefix length for performance optimization
-	 */
-	private static final int		BOXLANG_PREFIX_LENGTH	= BOXLANG_PREFIX.length();
-
-	/**
 	 * @param left  The object to perform type check on
 	 * @param right The type to check against
 	 *
@@ -204,7 +189,6 @@ public class InstanceOf implements IOperator {
 
 	/**
 	 * Will match java.lang.String or just String, or even java.lang.string or string.
-	 * Also handles BoxLang class suffixes like $cfc, $bx, etc. and strips BoxLang compilation prefixes.
 	 *
 	 * @param actual   The actual class name
 	 * @param expected The expected class name
@@ -212,45 +196,11 @@ public class InstanceOf implements IOperator {
 	 * @return true if the class names match
 	 */
 	private static boolean looseClassCheck( String actual, String expected ) {
-		// Perform exact checks first since it's fastest, else move to more expensive checks
-		if ( actual.equals( expected ) ||
-		    actual.equalsIgnoreCase( expected ) ||
-		    actual.endsWith( "." + expected ) ||
-		    actual.toLowerCase().endsWith( "." + expected.toLowerCase() ) ) {
-			return true;
-		}
-
-		// Remove BoxLang compilation prefixes and suffixes from actual class name for comparison
-		String cleanActual = actual;
-
-		// Strip BoxLang compilation prefixes like "boxgenerated.boxclass.", "boxgenerated.templates.", etc.
-		if ( cleanActual.startsWith( BOXLANG_PREFIX ) ) {
-			int secondDotIndex = cleanActual.indexOf( '.', BOXLANG_PREFIX_LENGTH );
-			if ( secondDotIndex > 0 && secondDotIndex < cleanActual.length() - 1 ) {
-				cleanActual = cleanActual.substring( secondDotIndex + 1 );
-			}
-		}
-
-		// Remove BoxLang class suffixes like $cfc, $bx, etc.
-		for ( String suffix : BOXLANG_SUFFIXES ) {
-			if ( cleanActual.endsWith( suffix ) ) {
-				cleanActual = cleanActual.substring( 0, cleanActual.length() - suffix.length() );
-				break; // Only remove one suffix
-			}
-		}
-
-		// Check if the cleaned actual class name matches the expected
-		if ( cleanActual.equals( expected ) || cleanActual.equalsIgnoreCase( expected ) ) {
-			return true;
-		}
-
-		// Check if actual/cleaned actual ends with expected (package.ClassName pattern)
-		if ( cleanActual.endsWith( "." + expected ) ||
-		    cleanActual.toLowerCase().endsWith( "." + expected.toLowerCase() ) ) {
-			return true;
-		}
-
-		return false;
+		// Perform case insensitive check first since it's faster
+		return actual.equals( expected )
+		    || actual.equalsIgnoreCase( expected )
+		    || actual.endsWith( "." + expected )
+		    || actual.toLowerCase().endsWith( "." + expected.toLowerCase() );
 	}
 
 }

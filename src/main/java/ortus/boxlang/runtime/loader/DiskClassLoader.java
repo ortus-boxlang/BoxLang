@@ -691,7 +691,7 @@ public class DiskClassLoader extends URLClassLoader {
 
 							if ( keyOf.owner.equals( "ortus/boxlang/runtime/scopes/Key" )
 							    && keyOf.name.equals( "of" )
-							    && keyOf.desc.equals( "(Ljava/lang/String;)Lortus/boxlang/runtime/scopes/Key;" )
+							    && keyOf.desc.equals( "(Ljava/lang/Object;)Lortus/boxlang/runtime/scopes/Key;" )
 							    && putstatic.name.equals( "name" )
 							    && putstatic.desc.equals( "Lortus/boxlang/runtime/scopes/Key;" ) ) {
 								ldc.cst = boxFQN;
@@ -740,19 +740,8 @@ public class DiskClassLoader extends URLClassLoader {
 	/**
 	 * Utility method to extract the fully qualified class name from raw bytecode.
 	 *
-	 * <p>
 	 * This method uses ASM to parse the bytecode and extract the internal class name,
 	 * then converts it to the standard Java FQN format by replacing forward slashes with dots.
-	 * </p>
-	 *
-	 * <p>
-	 * <strong>Use Cases:</strong>
-	 * </p>
-	 * <ul>
-	 * <li>Debugging bytecode processing</li>
-	 * <li>Validation during class loading</li>
-	 * <li>Tooling that needs to inspect compiled classes</li>
-	 * </ul>
 	 *
 	 * <p>
 	 * <strong>Example:</strong><br>
