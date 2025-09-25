@@ -1232,6 +1232,16 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		return sb.toString();
 	}
 
+	/**
+	 * Get the BoxLang type name for this type
+	 * 
+	 * @return The BoxLang type name
+	 */
+	@Override
+	public String getBoxTypeName() {
+		return "Query";
+	}
+
 	@Override
 	public BoxMeta<Query> getBoxMeta() {
 		if ( this.$bx == null ) {

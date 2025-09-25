@@ -23,6 +23,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.CustomException;
+import ortus.boxlang.runtime.types.util.TypeUtil;
 
 /**
  * I handle casting anything to a Throwable
@@ -125,7 +126,7 @@ public class ThrowableCaster implements IBoxCaster {
 
 		// Do we throw?
 		if ( fail ) {
-			throw new BoxCastException( "Can't cast " + object.getClass().getName() + " to a Throwable." );
+			throw new BoxCastException( "Can't cast " + TypeUtil.getObjectName( object ) + " to a Throwable." );
 		}
 
 		return null;

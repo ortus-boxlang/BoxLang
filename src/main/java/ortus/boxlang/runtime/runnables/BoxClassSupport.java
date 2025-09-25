@@ -50,6 +50,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.ClassMeta;
+import ortus.boxlang.runtime.types.util.TypeUtil;
 import ortus.boxlang.runtime.util.ArgumentUtil;
 import ortus.boxlang.runtime.util.BoxFQN;
 
@@ -399,7 +400,7 @@ public class BoxClassSupport {
 		// Not a function, throw an exception
 		if ( value != null ) {
 			throw new BoxRuntimeException(
-			    "key '" + name.getName() + "' of type  '" + value.getClass().getName() + "'  is not a function " );
+			    "key '" + name.getName() + "' of type  '" + TypeUtil.getObjectName( value ) + "'  is not a function " );
 		}
 
 		// Do we have a member function for classes?
@@ -486,7 +487,7 @@ public class BoxClassSupport {
 		// Not a function, throw an exception
 		if ( value != null ) {
 			throw new BoxRuntimeException(
-			    "key '" + name.getName() + "' of type  '" + value.getClass().getName() + "'  is not a function " );
+			    "key '" + name.getName() + "' of type  '" + TypeUtil.getObjectName( value ) + "'  is not a function " );
 		}
 
 		// Do we have a member function for classes?
@@ -817,7 +818,7 @@ public class BoxClassSupport {
 			return BoxRuntime.getInstance().getClassLocator().load( context, str, imports );
 		}
 		throw new BoxRuntimeException( "Cannot load class for static access.  Did you try to statically dereference an instance on accident?  Type provided: "
-		    + obj.getClass().getName() );
+		    + TypeUtil.getObjectName( obj ) );
 
 	}
 

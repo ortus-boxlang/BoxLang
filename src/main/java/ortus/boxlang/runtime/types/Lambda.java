@@ -37,4 +37,14 @@ public abstract class Lambda extends Function {
 		super();
 	}
 
+	/**
+	 * Get the BoxLang type name for this type
+	 * 
+	 * @return The BoxLang type name
+	 */
+	@Override
+	public String getBoxTypeName() {
+		return "Lambda";
+	}
+
 }

@@ -28,6 +28,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 import ortus.boxlang.runtime.types.util.BooleanRef;
+import ortus.boxlang.runtime.types.util.TypeUtil;
 
 /**
  * A generic proxy allows you to wrap any object and call any method on it from Java/BoxLang
@@ -110,7 +111,7 @@ public class GenericProxy extends BaseProxy implements InvocationHandler {
 		    new AtomicInteger( 0 )
 		);
 		if ( !success ) {
-			throw new BoxRuntimeException( "Proxied method [ " + methodName + "() ] returned a value of type [ " + returnValue.getClass().getName()
+			throw new BoxRuntimeException( "Proxied method [ " + methodName + "() ] returned a value of type [ " + TypeUtil.getObjectName( returnValue )
 			    + " ] which could not be coerced to [ " + returnType.getName() + " ] in order to match the interface method signature." );
 		}
 		return args[ 0 ];

@@ -78,6 +78,7 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.ListUtil;
+import ortus.boxlang.runtime.types.util.TypeUtil;
 import ortus.boxlang.runtime.util.conversion.RuntimeObjectInputStream;
 
 /**
@@ -655,7 +656,7 @@ public final class FileSystemUtil {
 			} catch ( IOException e ) {
 				throw new BoxIOException( String.format(
 				    "The target entry [%s] could not be written to the file path [%s]. The message received was: %s",
-				    target.getClass().getName(),
+				    TypeUtil.getObjectName( target ),
 				    filePath.toString(),
 				    e.getMessage()
 				),

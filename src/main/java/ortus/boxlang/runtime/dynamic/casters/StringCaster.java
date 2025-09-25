@@ -39,6 +39,7 @@ import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.XML;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
+import ortus.boxlang.runtime.types.util.TypeUtil;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
 /**
@@ -266,7 +267,7 @@ public class StringCaster implements IBoxCaster {
 
 		// Do we throw?
 		if ( fail ) {
-			throw new BoxCastException( "Can't cast " + object.getClass().getName() + " to a string." );
+			throw new BoxCastException( "Can't cast " + TypeUtil.getObjectName( object ) + " to a string." );
 		}
 
 		return null;

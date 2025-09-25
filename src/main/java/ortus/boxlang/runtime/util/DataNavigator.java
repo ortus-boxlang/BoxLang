@@ -42,6 +42,7 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.JSONUtil;
+import ortus.boxlang.runtime.types.util.TypeUtil;
 
 /**
  * This utility class is a fluent class that can navigate
@@ -84,7 +85,7 @@ public class DataNavigator {
 			return new Navigator( Struct.fromMap( map ) );
 		}
 
-		throw new BoxRuntimeException( "The JSON data must be a Map and it's a [" + data.getClass().getName() + "]" );
+		throw new BoxRuntimeException( "The JSON data must be a Map and it's a [" + TypeUtil.getObjectName( data ) + "]" );
 	}
 
 	/**
@@ -288,7 +289,7 @@ public class DataNavigator {
 
 				// If it's not a map/struct then we can't navigate it, blow up
 				if ( ! ( lastResult instanceof Map<?, ?> ) ) {
-					throw new BoxRuntimeException( "The requested segment is not a Struct, but a [" + lastResult.getClass().getName() + "]" );
+					throw new BoxRuntimeException( "The requested segment is not a Struct, but a [" + TypeUtil.getObjectName( lastResult ) + "]" );
 				}
 
 				// Set the navigable segment

@@ -18,18 +18,18 @@
 package ortus.boxlang.runtime.types;
 
 import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.OffsetDateTime;
 import java.time.Year;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
-import java.time.OffsetDateTime;
 import java.time.chrono.ChronoLocalDateTime;
 import java.time.chrono.ChronoZonedDateTime;
 import java.time.chrono.Chronology;
@@ -49,11 +49,11 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.jr.ob.api.ValueWriter;
 import com.fasterxml.jackson.jr.ob.impl.JSONWriter;
-
-import org.apache.commons.lang3.StringUtils;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.BoxMemberExpose;
@@ -553,8 +553,19 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	/**
 	 * Interface method to return the string representation
 	 **/
+	@Override
 	public String asString() {
 		return toString();
+	}
+
+	/**
+	 * Get the BoxLang type name for this type
+	 * 
+	 * @return The BoxLang type name
+	 */
+	@Override
+	public String getBoxTypeName() {
+		return "DateTime";
 	}
 
 	/**
@@ -562,6 +573,7 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	 *
 	 * @return The string representation
 	 */
+	@Override
 	public BoxMeta<?> getBoxMeta() {
 		if ( this.$bx == null ) {
 			this.$bx = new GenericMeta( this );
