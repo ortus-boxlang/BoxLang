@@ -41,6 +41,49 @@ public class MySQLDriverTest extends AbstractDriverTest {
 		);
 		mysqlDatasource = AbstractDriverTest.setupTestDatasource( instance, setUpContext, datasourceName, dsConfig );
 		MySQLDriverTest.createGeneratedKeyTable( mysqlDatasource, setUpContext );
+
+		/***
+		 * Set up stored procedure and supporting table for testing. See StoredProcTest.
+		 */
+		if ( false ) {
+			mysqlDatasource.execute(
+			    """
+			    CREATE DEFINER=`root`@`%` PROCEDURE `sp_multi_result_set` (IN `companyName` VARCHAR(255))   BEGIN
+			    	SELECT *
+			    	FROM company
+			    	WHERE name <> companyName
+			    	order by name asc;
+
+			    	SELECT *
+			    	FROM company
+			    	WHERE name <> companyName
+			    	order by name desc;
+			    END$$
+			    """,
+			    setUpContext
+			);
+			mysqlDatasource.execute(
+			    """
+			    CREATE TABLE `company` (
+			    `id` int NOT NULL,
+			    `name` text NOT NULL,
+			    `active` tinyint(1) NOT NULL DEFAULT '1'
+			    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+			    	""",
+			    setUpContext
+			);
+			mysqlDatasource.execute(
+			    """
+			    INSERT INTO `company` (`id`, `name`, `active`) VALUES
+			    (1, 'Nintendo', 1),
+			    (2, 'SEGA', 0),
+			    (3, 'Sony', 1),
+			    (4, 'Microsoft', 1);
+			    	""",
+			    setUpContext
+			);
+		}
+
 		return mysqlDatasource;
 	}
 
