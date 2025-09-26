@@ -170,7 +170,7 @@ public final class ExecutedQuery implements Serializable {
 					try ( ResultSet rs = statement.getResultSet() ) {
 						// Surprise, MSSQL sometimes returns generated keys as a result set. Because it hates us.
 						if ( generatedKeysComeAsResultSet && isResultSetGeneratedKeys( rs ) ) {
-							generatedKey = processGeneratedKeys( rs, allGeneratedKeys, generatedKey );
+							generatedKey = processGeneratedKeys( rs, allGeneratedKeys, generatedKey, -1 );
 						} else {
 							// Only take first result set. We don't break here though because we need to keep looping in case a later result raised an exception
 							if ( results == null ) {
@@ -197,9 +197,9 @@ public final class ExecutedQuery implements Serializable {
 								ResultSet keys = statement.getGeneratedKeys();
 								// System.out.println( "retrieving generated keys" );
 								if ( keys != null ) {
-									generatedKey = processGeneratedKeys( keys, allGeneratedKeys, generatedKey );
+									generatedKey = processGeneratedKeys( keys, allGeneratedKeys, generatedKey, affectedCount );
+									keys.close();
 								}
-								keys.close();
 							}
 						}
 					} catch ( SQLException | NullPointerException t ) {
@@ -241,6 +241,10 @@ public final class ExecutedQuery implements Serializable {
 						// stupid isCClosed() can throw SQLException
 						break;
 					}
+				} catch ( NullPointerException e1 ) {
+					// Maria DB will throw Cannot invoke "java.util.List.size()" because "this.results" is null
+					// here if there is no result (like an update)
+					hasResults = false;
 				}
 
 			} // /while
@@ -310,21 +314,22 @@ public final class ExecutedQuery implements Serializable {
 	 * @param rs               The result set containing the generated keys.
 	 * @param allGeneratedKeys An array to store all generated keys.
 	 * @param generatedKey     The generated key for the current insert/update operation.
+	 * @param affectedCount    The number of rows affected by the operation.
 	 * 
 	 * @return The processed generated key.
 	 * 
 	 * @throws SQLException If an SQL error occurs.
 	 */
-	private static Object processGeneratedKeys( ResultSet rs, Array allGeneratedKeys, Object generatedKey ) throws SQLException {
-		// System.out.println( "retrieving generated keys posing as a result set" );
+	private static Object processGeneratedKeys( ResultSet rs, Array allGeneratedKeys, Object generatedKey, int affectedCount ) throws SQLException {
 		Array theseKeys = new Array();
-		while ( rs.next() ) {
+		// MariaDB returns ALL the generated keys at once for the current statement and future statements, so we should never take more keys than the updated count showed.
+		while ( rs.next() && ( affectedCount == -1 || affectedCount > theseKeys.size() ) ) {
+			// System.out.println( "acquired generated key: " + rs.getObject( 1 ) );
 			theseKeys.add( rs.getObject( 1 ) );
 		}
 		allGeneratedKeys.add( theseKeys );
 		if ( generatedKey == null && !theseKeys.isEmpty() ) {
 			generatedKey = theseKeys.get( 0 );
-			// System.out.println( "acquired generated key: " + generatedKey );
 		}
 		return generatedKey;
 	}

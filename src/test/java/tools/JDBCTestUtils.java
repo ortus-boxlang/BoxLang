@@ -28,8 +28,8 @@ public class JDBCTestUtils {
 	 * @return
 	 */
 	private static boolean hasModuleByName( Key moduleName ) {
-		System.out.println( String.format( "hasModuleByName(), checking for %s, loaded module names: %s", moduleName,
-		    BoxRuntime.getInstance().getModuleService().getModuleNames() ) );
+		// System.out.println( String.format( "hasModuleByName(), checking for %s, loaded module names: %s", moduleName,
+		// BoxRuntime.getInstance().getModuleService().getModuleNames() ) );
 		return BoxRuntime.getInstance().getModuleService().hasModule( moduleName );
 	}
 
