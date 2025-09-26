@@ -44,19 +44,6 @@ public class BaseJDBCTest {
 		    datasourceKey,
 		    datasource.getConfiguration()
 		);
-		JDBCTestUtils.dropTestTable( datasource, setUpContext, "generatedKeyTest", true );
-		try {
-			// @formatter:off
-			datasource.execute( """
-				CREATE TABLE generatedKeyTest(
-					id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1),
-					name VARCHAR(155)
-				)
-			""", setUpContext );
-			// @formatter:on
-		} catch ( DatabaseException ignored ) {
-		}
-
 		if ( JDBCTestUtils.hasMSSQLModule() ) {
 			// Register a MSSQL datasource for later use
 			Key mssqlName = Key.of( "MSSQLdatasource" );
