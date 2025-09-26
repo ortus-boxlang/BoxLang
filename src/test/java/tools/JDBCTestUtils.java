@@ -17,6 +17,98 @@ import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 public class JDBCTestUtils {
 
 	/**
+	 * Boolean test for the presence of the BoxLang MariaDB module.
+	 * <p>
+	 * Useful in `@EnabledIf` annotations for conditional test execution based on the loaded JDBC drivers:
+	 * <p>
+	 * <code>
+	 * &#64;EnabledIf( "tools.JDBCTestUtils#hasMariaDBModule" )
+	 * </code>
+	 *
+	 * @return
+	 */
+	private static boolean hasModuleByName( Key moduleName ) {
+		System.out.println( String.format( "hasModuleByName(), checking for %s, loaded module names: %s", moduleName,
+		    BoxRuntime.getInstance().getModuleService().getModuleNames() ) );
+		return BoxRuntime.getInstance().getModuleService().hasModule( moduleName );
+	}
+
+	/**
+	 * Boolean test for the presence of the BoxLang Postgres module.
+	 * <p>
+	 * Useful in `@EnabledIf` annotations for conditional test execution based on the loaded JDBC drivers:
+	 * <p>
+	 * <code>
+	 * &#64;EnabledIf( "tools.JDBCTestUtils#hasPostgresModule" )
+	 * </code>
+	 *
+	 * @return
+	 */
+	public static boolean hasPostgresModule() {
+		return hasModuleByName( Key.of( "postgresql" ) );
+	}
+
+	/**
+	 * Boolean test for the presence of the BoxLang Oracle module.
+	 * <p>
+	 * Useful in `@EnabledIf` annotations for conditional test execution based on the loaded JDBC drivers:
+	 * <p>
+	 * <code>
+	 * &#64;EnabledIf( "tools.JDBCTestUtils#hasOracleModule" )
+	 * </code>
+	 *
+	 * @return
+	 */
+	public static boolean hasOracleModule() {
+		return hasModuleByName( Key.of( "oracle" ) );
+	}
+
+	/**
+	 * Boolean test for the presence of the BoxLang SQLite module.
+	 * <p>
+	 * Useful in `@EnabledIf` annotations for conditional test execution based on the loaded JDBC drivers:
+	 * <p>
+	 * <code>
+	 * &#64;EnabledIf( "tools.JDBCTestUtils#hasSQLiteModule" )
+	 * </code>
+	 *
+	 * @return
+	 */
+	public static boolean hasSQLiteModule() {
+		return hasModuleByName( Key.of( "sqlite" ) );
+	}
+
+	/**
+	 * Boolean test for the presence of the BoxLang HyperSQL module.
+	 * <p>
+	 * Useful in `@EnabledIf` annotations for conditional test execution based on the loaded JDBC drivers:
+	 * <p>
+	 * <code>
+	 * &#64;EnabledIf( "tools.JDBCTestUtils#hasHyperSQLModule" )
+	 * </code>
+	 *
+	 * @return
+	 */
+	public static boolean hasHyperSQLModule() {
+		return hasModuleByName( Key.of( "hypersql" ) );
+	}
+
+	/**
+	 * Boolean test for the presence of the BoxLang MariaDB module.
+	 * <p>
+	 * Useful in `@EnabledIf` annotations for conditional test execution based on the loaded JDBC drivers:
+	 * <p>
+	 * <code>
+	 * &#64;EnabledIf( "tools.JDBCTestUtils#hasMariaDBModule" )
+	 * </code>
+	 *
+	 * @return
+	 */
+	public static boolean hasMariaDBModule() {
+		return hasModuleByName( Key.of( "mariadb" ) );
+	}
+
+	/**
 	 * Boolean test for the presence of the BoxLang MySQL module.
 	 * <p>
 	 * Useful in `@EnabledIf` annotations for conditional test execution based on the loaded JDBC drivers:
@@ -28,8 +120,7 @@ public class JDBCTestUtils {
 	 * @return
 	 */
 	public static boolean hasMySQLModule() {
-		System.out.println( "hasMySQLModule(), loaded module names: " + BoxRuntime.getInstance().getModuleService().getModuleNames() );
-		return BoxRuntime.getInstance().getModuleService().hasModule( Key.of( "mysql" ) );
+		return hasModuleByName( Key.of( "mysql" ) );
 	}
 
 	/**
@@ -44,8 +135,7 @@ public class JDBCTestUtils {
 	 * @return
 	 */
 	public static boolean hasMSSQLModule() {
-		System.out.println( "hasMSSQLModule(), loaded module names: " + BoxRuntime.getInstance().getModuleService().getModuleNames() );
-		return BoxRuntime.getInstance().getModuleService().hasModule( Key.of( "mssql" ) );
+		return hasModuleByName( Key.of( "mssql" ) );
 	}
 
 	/**
