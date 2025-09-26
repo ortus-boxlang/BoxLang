@@ -64,14 +64,14 @@ public abstract class PrettyPrintTest extends TestBase {
 	}
 
 	protected void printTestWithConfigFile( String resourceFolder, String name ) throws IOException {
-		_printTestWithDefaultConfig( resourceFolder, name, Config.loadConfig( TEST_RESOURCES_PATH + resourceFolder + "/" + name + ".json" ) );
+		_printTestWithConfig( resourceFolder, name, Config.loadConfig( TEST_RESOURCES_PATH + resourceFolder + "/" + name + ".json" ) );
 	}
 
 	protected void printTestWithDefaultConfig( String resourceFolder, String name ) throws IOException {
-		_printTestWithDefaultConfig( resourceFolder, name, new Config() );
+		_printTestWithConfig( resourceFolder, name, new Config() );
 	}
 
-	protected void _printTestWithDefaultConfig( String resourceFolder, String name, Config config ) throws IOException {
+	protected void _printTestWithConfig( String resourceFolder, String name, Config config ) throws IOException {
 		for ( String ext : fileExts ) {
 			File inputFile = new File( TEST_RESOURCES_PATH + resourceFolder + "/" + name + "_input." + ext );
 			if ( inputFile.exists() ) {

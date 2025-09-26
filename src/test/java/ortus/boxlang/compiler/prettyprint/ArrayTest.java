@@ -15,4 +15,9 @@ public class ArrayTest extends PrettyPrintTest {
 	public void testArrayEmptyPaddingDefault() throws IOException {
 		printTestWithDefaultConfig( "array", "empty_padding_default" );
 	}
+
+	@Test
+	public void testArrayMultiline() throws IOException {
+		printTestWithConfigFile( "array", "multiline_element_count" );
+	}
 }

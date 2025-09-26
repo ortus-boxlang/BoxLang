@@ -59,6 +59,7 @@ public class MultilineConfig {
 		return elementCount;
 	}
 
+	@JsonSetter( "element_count" )
 	public MultilineConfig setElementCount( int elementCount ) {
 		this.elementCount = elementCount;
 		return this;

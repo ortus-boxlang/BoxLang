@@ -35,14 +35,16 @@ public class ArrayLiteralPrinter {
 		var	arrayDoc	= visitor.pushDoc( DocType.GROUP );
 		arrayDoc.append( "[" );
 
-		var	values	= arrayNode.getValues();
-		var	size	= values.size();
+		var	values		= arrayNode.getValues();
+		var	size		= values.size();
+		var	multiline	= visitor.config.getArray().getMultiline().getElementCount() <= size;
 
 		if ( size > 0 ) {
 			var contentsDoc = visitor.pushDoc( DocType.INDENT );
-			contentsDoc.append( visitor.config.getBracketPadding() ? Line.LINE : Line.SOFT );
+			contentsDoc.append( multiline || visitor.config.getArray().getPadding() ? Line.LINE : Line.SOFT );
 
 			for ( int i = 0; i < size; i++ ) {
+
 				values.get( i ).accept( visitor );
 
 				if ( i < size - 1 ) {
@@ -53,12 +55,16 @@ public class ArrayLiteralPrinter {
 
 			visitor.printInsideComments( arrayNode, false );
 
+			if ( multiline ) {
+				contentsDoc.append( Line.BREAK_PARENT );
+			}
+
 			arrayDoc.append( visitor.popDoc() );
-			arrayDoc.append( visitor.config.getBracketPadding() ? Line.LINE : Line.SOFT );
 		} else {
 			visitor.printInsideComments( arrayNode, false );
-			arrayDoc.append( visitor.config.getArray().getEmpty_padding() ? Line.LINE : Line.SOFT );
 		}
+
+		arrayDoc.append( visitor.config.getArray().getEmpty_padding() ? Line.LINE : Line.SOFT );
 
 		arrayDoc.append( "]" );
 		currentDoc.append( visitor.popDoc() );
