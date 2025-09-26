@@ -230,12 +230,21 @@ public class JDBCTestUtils {
 	}
 
 	/**
-	 * Remove the developers table from the database.
+	 * Drop a test table from the database, optionally ignoring exceptions if it doesn't exist.
 	 *
-	 * @param datasource
+	 * @param datasource   The datasource on which this table exists
+	 * @param context      The context to use for executing the drop
+	 * @param tableName    The name of the table to drop
+	 * @param ignoreErrors if true, will ignore exceptions if the table doesn't exist
 	 */
-	public static void dropDevelopersTable( DataSource datasource, IBoxContext context ) {
-		datasource.execute( "DROP TABLE developers", context );
+	public static void dropTestTable( DataSource datasource, IBoxContext context, String tableName, boolean ignoreErrors ) {
+		try {
+			datasource.execute( "DROP TABLE " + tableName, context );
+		} catch ( DatabaseException ignored ) {
+			if ( !ignoreErrors ) {
+				throw ignored;
+			}
+		}
 	}
 
 	/**

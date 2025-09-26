@@ -44,10 +44,7 @@ public class BaseJDBCTest {
 		    datasourceKey,
 		    datasource.getConfiguration()
 		);
-		try {
-			datasource.execute( "DROP TABLE generatedKeyTest", setUpContext );
-		} catch ( DatabaseException ignored ) {
-		}
+		JDBCTestUtils.dropTestTable( datasource, setUpContext, "generatedKeyTest", true );
 		try {
 			// @formatter:off
 			datasource.execute( """
@@ -130,15 +127,19 @@ public class BaseJDBCTest {
 	@AfterAll
 	public static void teardown() throws SQLException {
 		IBoxContext tearDownContext = new ScriptingRequestBoxContext( instance.getRuntimeContext() );
-		JDBCTestUtils.dropDevelopersTable( datasource, tearDownContext );
+		JDBCTestUtils.dropTestTable( datasource, tearDownContext, "developers", true );
 		datasource.shutdown();
 		if ( mssqlDatasource != null ) {
-			JDBCTestUtils.dropDevelopersTable( mssqlDatasource, tearDownContext );
+			JDBCTestUtils.dropTestTable( mssqlDatasource, tearDownContext, "developers", true );
 			mssqlDatasource.shutdown();
 		}
 		if ( mysqlDatasource != null ) {
-			JDBCTestUtils.dropDevelopersTable( mysqlDatasource, tearDownContext );
+			JDBCTestUtils.dropTestTable( mysqlDatasource, tearDownContext, "developers", true );
 			mysqlDatasource.shutdown();
+		}
+		if ( mariaDBDatasource != null ) {
+			JDBCTestUtils.dropTestTable( mariaDBDatasource, tearDownContext, "developers", true );
+			mariaDBDatasource.shutdown();
 		}
 	}
 
@@ -166,14 +167,6 @@ public class BaseJDBCTest {
 
 	public static DataSource getDatasource() {
 		return datasource;
-	}
-
-	public static DataSource getMysqlDatasource() {
-		return mysqlDatasource;
-	}
-
-	public static DataSource getMssqlDatasource() {
-		return mssqlDatasource;
 	}
 
 	public static DatasourceService getDatasourceService() {
