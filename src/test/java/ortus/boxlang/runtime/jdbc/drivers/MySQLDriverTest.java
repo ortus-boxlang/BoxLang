@@ -44,6 +44,13 @@ public class MySQLDriverTest extends AbstractDriverTest {
 		return mysqlDatasource;
 	}
 
+	/**
+	 * Create a table that uses generated keys so we can test our generated key retrieval in BL.
+	 * Create a table that uses generated keys so we can test our generated key retrieval in BL.
+	 * 
+	 * @param ds      Datasource object
+	 * @param context Box context
+	 */
 	public static void createGeneratedKeyTable( DataSource ds, IBoxContext context ) {
 		try {
 			mysqlDatasource.execute( "CREATE TABLE generatedKeyTest( id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(155))", context );

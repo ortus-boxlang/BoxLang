@@ -17,6 +17,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 
 @EnabledIf( "tools.JDBCTestUtils#hasMariaDBModule" )
 public class MariaDBDriverTest extends AbstractDriverTest {
@@ -30,7 +31,7 @@ public class MariaDBDriverTest extends AbstractDriverTest {
 		    "connectionString", "jdbc:mariadb://localhost:3360"
 		);
 		DataSource	theDatasource	= AbstractDriverTest.setupTestDatasource( instance, setUpContext, datasourceName, dsConfig );
-		// MariaDBDriverTest.createGeneratedKeyTable( theDatasource, setUpContext );
+		MariaDBDriverTest.createGeneratedKeyTable( theDatasource, setUpContext );
 		return theDatasource;
 	}
 
@@ -40,6 +41,20 @@ public class MariaDBDriverTest extends AbstractDriverTest {
 	@Override
 	String getDatasourceName() {
 		return "MariaDBdatasource";
+	}
+
+	/**
+	 * Create a table that uses generated keys so we can test our generated key retrieval in BL.
+	 * Create a table that uses generated keys so we can test our generated key retrieval in BL.
+	 * 
+	 * @param ds      Datasource object
+	 * @param context Box context
+	 */
+	public static void createGeneratedKeyTable( DataSource ds, IBoxContext context ) {
+		try {
+			mysqlDatasource.execute( "CREATE TABLE generatedKeyTest( id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(155))", context );
+		} catch ( DatabaseException ignored ) {
+		}
 	}
 
 	@DisplayName( "It can get a MariaDB JDBC connection" )

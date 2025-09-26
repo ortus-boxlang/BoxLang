@@ -46,7 +46,6 @@ public class MSSQLDriverTest extends AbstractDriverTest {
 		try {
 			dataSource.execute( "CREATE TABLE generatedKeyTest( id INT IDENTITY(1,1) PRIMARY KEY, name VARCHAR(155))", context );
 		} catch ( DatabaseException ignored ) {
-			// foo
 		}
 	}
 
