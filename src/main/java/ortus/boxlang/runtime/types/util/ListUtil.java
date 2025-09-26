@@ -121,8 +121,6 @@ public class ListUtil {
 	}
 
 	/**
-	 * =======
-	 * >>>>>>> Stashed changes
 	 * Turns a list into a string
 	 *
 	 * @param list      The list to turn into a string
