@@ -17,34 +17,95 @@ import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 public class JDBCTestUtils {
 
 	/**
-	 * Boolean test that a MySQL database is reachable at localhost:3306.
+	 * Boolean test for the presence of the BoxLang MariaDB module.
 	 * <p>
-	 * Useful in `@EnabledIf` annotations for conditionally executing MySQL-specific tests:
+	 * Useful in `@EnabledIf` annotations for conditional test execution based on the loaded JDBC drivers:
 	 * <p>
 	 * <code>
-	 * &#64;EnabledIf( "tools.JDBCTestUtils#isMySQLReachable" )
+	 * &#64;EnabledIf( "tools.JDBCTestUtils#hasMariaDBModule" )
 	 * </code>
 	 *
 	 * @return
 	 */
-	public static boolean isMySQLReachable() {
-		try {
-			DataSource.fromStruct(
-			    "MySQLReachable",
-			    Struct.of(
-			        "database", "MySQLReachable",
-			        "driver", "mysql",
-			        "connectionString", "jdbc:mysql//localhost:3306/mysqlStoredProc",
-			        "maxConnections", 1,
-			        "minConnections", 1,
-			        "username", "root",
-			        "password", "db_pass"
-			    )
-			);
-		} catch ( Exception e ) {
-			return false;
-		}
-		return true;
+	private static boolean hasModuleByName( Key moduleName ) {
+		System.out.println( String.format( "hasModuleByName(), checking for %s, loaded module names: %s", moduleName,
+		    BoxRuntime.getInstance().getModuleService().getModuleNames() ) );
+		return BoxRuntime.getInstance().getModuleService().hasModule( moduleName );
+	}
+
+	/**
+	 * Boolean test for the presence of the BoxLang Postgres module.
+	 * <p>
+	 * Useful in `@EnabledIf` annotations for conditional test execution based on the loaded JDBC drivers:
+	 * <p>
+	 * <code>
+	 * &#64;EnabledIf( "tools.JDBCTestUtils#hasPostgresModule" )
+	 * </code>
+	 *
+	 * @return
+	 */
+	public static boolean hasPostgresModule() {
+		return hasModuleByName( Key.of( "postgresql" ) );
+	}
+
+	/**
+	 * Boolean test for the presence of the BoxLang Oracle module.
+	 * <p>
+	 * Useful in `@EnabledIf` annotations for conditional test execution based on the loaded JDBC drivers:
+	 * <p>
+	 * <code>
+	 * &#64;EnabledIf( "tools.JDBCTestUtils#hasOracleModule" )
+	 * </code>
+	 *
+	 * @return
+	 */
+	public static boolean hasOracleModule() {
+		return hasModuleByName( Key.of( "oracle" ) );
+	}
+
+	/**
+	 * Boolean test for the presence of the BoxLang SQLite module.
+	 * <p>
+	 * Useful in `@EnabledIf` annotations for conditional test execution based on the loaded JDBC drivers:
+	 * <p>
+	 * <code>
+	 * &#64;EnabledIf( "tools.JDBCTestUtils#hasSQLiteModule" )
+	 * </code>
+	 *
+	 * @return
+	 */
+	public static boolean hasSQLiteModule() {
+		return hasModuleByName( Key.of( "sqlite" ) );
+	}
+
+	/**
+	 * Boolean test for the presence of the BoxLang HyperSQL module.
+	 * <p>
+	 * Useful in `@EnabledIf` annotations for conditional test execution based on the loaded JDBC drivers:
+	 * <p>
+	 * <code>
+	 * &#64;EnabledIf( "tools.JDBCTestUtils#hasHyperSQLModule" )
+	 * </code>
+	 *
+	 * @return
+	 */
+	public static boolean hasHyperSQLModule() {
+		return hasModuleByName( Key.of( "hypersql" ) );
+	}
+
+	/**
+	 * Boolean test for the presence of the BoxLang MariaDB module.
+	 * <p>
+	 * Useful in `@EnabledIf` annotations for conditional test execution based on the loaded JDBC drivers:
+	 * <p>
+	 * <code>
+	 * &#64;EnabledIf( "tools.JDBCTestUtils#hasMariaDBModule" )
+	 * </code>
+	 *
+	 * @return
+	 */
+	public static boolean hasMariaDBModule() {
+		return hasModuleByName( Key.of( "mariadb" ) );
 	}
 
 	/**
@@ -59,8 +120,7 @@ public class JDBCTestUtils {
 	 * @return
 	 */
 	public static boolean hasMySQLModule() {
-		System.out.println( "hasMySQLModule(), loaded module names: " + BoxRuntime.getInstance().getModuleService().getModuleNames() );
-		return BoxRuntime.getInstance().getModuleService().hasModule( Key.of( "mysql" ) );
+		return hasModuleByName( Key.of( "mysql" ) );
 	}
 
 	/**
@@ -75,8 +135,7 @@ public class JDBCTestUtils {
 	 * @return
 	 */
 	public static boolean hasMSSQLModule() {
-		System.out.println( "hasMSSQLModule(), loaded module names: " + BoxRuntime.getInstance().getModuleService().getModuleNames() );
-		return BoxRuntime.getInstance().getModuleService().hasModule( Key.of( "mssql" ) );
+		return hasModuleByName( Key.of( "mssql" ) );
 	}
 
 	/**
@@ -171,12 +230,21 @@ public class JDBCTestUtils {
 	}
 
 	/**
-	 * Remove the developers table from the database.
+	 * Drop a test table from the database, optionally ignoring exceptions if it doesn't exist.
 	 *
-	 * @param datasource
+	 * @param datasource   The datasource on which this table exists
+	 * @param context      The context to use for executing the drop
+	 * @param tableName    The name of the table to drop
+	 * @param ignoreErrors if true, will ignore exceptions if the table doesn't exist
 	 */
-	public static void dropDevelopersTable( DataSource datasource, IBoxContext context ) {
-		datasource.execute( "DROP TABLE developers", context );
+	public static void dropTestTable( DataSource datasource, IBoxContext context, String tableName, boolean ignoreErrors ) {
+		try {
+			datasource.execute( "DROP TABLE " + tableName, context );
+		} catch ( DatabaseException ignored ) {
+			if ( !ignoreErrors ) {
+				throw ignored;
+			}
+		}
 	}
 
 	/**

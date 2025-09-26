@@ -97,7 +97,6 @@ public class ListUtil {
 	public static final Pattern	SPECIAL_REGEX_CHARS	= Pattern.compile( "[{}()\\[\\].+*?^$\\\\|\\-\\&]" );
 
 	/**
-	 * <<<<<<< Updated upstream
 	 * Sort directives for sorting lists.
 	 */
 	public static final Struct	sortDirectives;
@@ -122,8 +121,6 @@ public class ListUtil {
 	}
 
 	/**
-	 * =======
-	 * >>>>>>> Stashed changes
 	 * Turns a list into a string
 	 *
 	 * @param list      The list to turn into a string
