@@ -11,6 +11,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
 
+import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.jdbc.DataSource;
@@ -19,9 +21,34 @@ import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 
 @EnabledIf( "tools.JDBCTestUtils#hasMSSQLModule" )
 public class MSSQLDriverTest extends AbstractDriverTest {
+
+	protected static Key datasourceName = Key.of( "MSSQLdatasource" );
+
+	public static DataSource setupTestDatasource( BoxRuntime instance, IBoxContext setUpContext ) {
+		IStruct		dsConfig		= Struct.of(
+		    "username", "sa",
+		    "password", "123456Password",
+		    "host", "localhost",
+		    "port", "1433",
+		    "driver", "mssql",
+		    "database", "master"
+		);
+		DataSource	theDatasource	= AbstractDriverTest.setupTestDatasource( instance, setUpContext, datasourceName, dsConfig );
+		MSSQLDriverTest.createGeneratedKeyTable( theDatasource, setUpContext );
+		return theDatasource;
+	}
+
+	public static void createGeneratedKeyTable( DataSource dataSource, IBoxContext context ) {
+		try {
+			dataSource.execute( "CREATE TABLE generatedKeyTest( id INT IDENTITY(1,1) PRIMARY KEY, name VARCHAR(155))", context );
+		} catch ( DatabaseException ignored ) {
+			// foo
+		}
+	}
 
 	/**
 	 * Override to provide driver-specific datasource name

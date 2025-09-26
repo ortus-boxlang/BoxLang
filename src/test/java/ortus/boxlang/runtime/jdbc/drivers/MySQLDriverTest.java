@@ -14,14 +14,42 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
+import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.jdbc.DataSource;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 
 @EnabledIf( "tools.JDBCTestUtils#hasMySQLModule" )
 public class MySQLDriverTest extends AbstractDriverTest {
+
+	protected static Key		datasourceName	= Key.of( "MySQLdatasource" );
+	public static DataSource	mysqlDatasource;
+
+	public static DataSource setupTestDatasource( BoxRuntime instance, IBoxContext setUpContext ) {
+		IStruct dsConfig = Struct.of(
+		    "username", "root",
+		    "password", "123456Password",
+		    "host", "localhost",
+		    "port", "3309",
+		    "driver", "mysql",
+		    "database", "myDB",
+		    "custom", "allowMultiQueries=true"
+		);
+		mysqlDatasource = AbstractDriverTest.setupTestDatasource( instance, setUpContext, datasourceName, dsConfig );
+		MySQLDriverTest.createGeneratedKeyTable( mysqlDatasource, setUpContext );
+		return mysqlDatasource;
+	}
+
+	public static void createGeneratedKeyTable( DataSource ds, IBoxContext context ) {
+		try {
+			mysqlDatasource.execute( "CREATE TABLE generatedKeyTest( id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(155))", context );
+		} catch ( DatabaseException ignored ) {
+		}
+	}
 
 	/**
 	 * Override to provide driver-specific datasource name

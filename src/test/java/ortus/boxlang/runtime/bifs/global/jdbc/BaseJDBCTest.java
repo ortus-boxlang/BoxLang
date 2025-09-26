@@ -13,12 +13,13 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.jdbc.DataSource;
+import ortus.boxlang.runtime.jdbc.drivers.MSSQLDriverTest;
+import ortus.boxlang.runtime.jdbc.drivers.MariaDBDriverTest;
+import ortus.boxlang.runtime.jdbc.drivers.MySQLDriverTest;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.services.DatasourceService;
-import ortus.boxlang.runtime.types.Struct;
-import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 import tools.JDBCTestUtils;
 
 public class BaseJDBCTest {
@@ -29,6 +30,7 @@ public class BaseJDBCTest {
 	public static DataSource			datasource;
 	public static DataSource			mssqlDatasource;
 	public static DataSource			mysqlDatasource;
+	public static DataSource			mariaDBDatasource;
 	public static DatasourceService		datasourceService;
 
 	@BeforeAll
@@ -45,69 +47,15 @@ public class BaseJDBCTest {
 		    datasource.getConfiguration()
 		);
 		if ( JDBCTestUtils.hasMSSQLModule() ) {
-			// Register a MSSQL datasource for later use
-			Key mssqlName = Key.of( "MSSQLdatasource" );
-			mssqlDatasource = DataSource.fromStruct( mssqlName, Struct.of(
-			    "username", "sa",
-			    "password", "123456Password",
-			    "host", "localhost",
-			    "port", "1433",
-			    "driver", "mssql",
-			    "database", "master"
-			) );
-			instance.getConfiguration().datasources.put(
-			    mssqlName,
-			    mssqlDatasource.getConfiguration()
-			);
-			datasourceService.register( mssqlName, mssqlDatasource );
-			JDBCTestUtils.ensureTestTableExists( mssqlDatasource, setUpContext );
-			JDBCTestUtils.resetDevelopersTable( mssqlDatasource, setUpContext );
-
-			try {
-				mssqlDatasource.execute( "DROP TABLE generatedKeyTest", setUpContext );
-			} catch ( DatabaseException ignored ) {
-			}
-			try {
-				mssqlDatasource.execute( "CREATE TABLE generatedKeyTest( id INT IDENTITY(1,1) PRIMARY KEY, name VARCHAR(155))", setUpContext );
-			} catch ( DatabaseException ignored ) {
-			}
+			mssqlDatasource = MSSQLDriverTest.setupTestDatasource( instance, setUpContext );
 		}
 
 		if ( JDBCTestUtils.hasMySQLModule() ) {
-			/**
-			 * docker run -d \
-			 * --name MYSQL_boxlang \
-			 * -p 3306:3306 \
-			 * -e MYSQL_DATABASE=mysqlDB \
-			 * -e MYSQL_ROOT_PASSWORD=123456Password \
-			 * mysql:8
-			 */
-			// Register a mysql datasource for later use
-			Key mysqlName = Key.of( "MySQLdatasource" );
-			mysqlDatasource = DataSource.fromStruct( mysqlName, Struct.of(
-			    "username", "root",
-			    "password", "123456Password",
-			    "host", "localhost",
-			    "port", "3309",
-			    "driver", "mysql",
-			    "database", "myDB",
-			    "custom", "allowMultiQueries=true"
-			) );
-			instance.getConfiguration().datasources.put(
-			    mysqlName,
-			    mysqlDatasource.getConfiguration()
-			);
-			datasourceService.register( mysqlName, mysqlDatasource );
-			JDBCTestUtils.ensureTestTableExists( mysqlDatasource, setUpContext );
-			JDBCTestUtils.resetDevelopersTable( mysqlDatasource, setUpContext );
-			try {
-				mysqlDatasource.execute( "DROP TABLE generatedKeyTest", setUpContext );
-			} catch ( DatabaseException ignored ) {
-			}
-			try {
-				mysqlDatasource.execute( "CREATE TABLE generatedKeyTest( id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(155))", setUpContext );
-			} catch ( DatabaseException ignored ) {
-			}
+			mysqlDatasource = MySQLDriverTest.setupTestDatasource( instance, setUpContext );
+		}
+
+		if ( JDBCTestUtils.hasMariaDBModule() ) {
+			mariaDBDatasource = MariaDBDriverTest.setupTestDatasource( instance, setUpContext );
 		}
 	}
 
