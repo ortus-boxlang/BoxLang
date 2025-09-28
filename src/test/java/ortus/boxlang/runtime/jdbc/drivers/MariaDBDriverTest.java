@@ -53,7 +53,8 @@ public class MariaDBDriverTest extends AbstractDriverTest {
 
 	@AfterAll
 	public static void teardown() throws SQLException {
-		AbstractDriverTest.teardownTestDatasource( new ScriptingRequestBoxContext( instance.getRuntimeContext() ), mariaDBDatasource );
+		IBoxContext tearDownContext = new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		AbstractDriverTest.teardownTestDatasource( tearDownContext, mariaDBDatasource );
 	}
 
 	/**

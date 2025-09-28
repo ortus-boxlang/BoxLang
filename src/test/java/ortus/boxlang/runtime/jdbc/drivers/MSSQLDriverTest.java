@@ -25,7 +25,6 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
-import tools.JDBCTestUtils;
 
 @EnabledIf( "tools.JDBCTestUtils#hasMSSQLModule" )
 public class MSSQLDriverTest extends AbstractDriverTest {
@@ -54,9 +53,7 @@ public class MSSQLDriverTest extends AbstractDriverTest {
 	@AfterAll
 	public static void teardown() throws SQLException {
 		IBoxContext tearDownContext = new ScriptingRequestBoxContext( instance.getRuntimeContext() );
-		JDBCTestUtils.dropTestTable( mssqlDatasource, tearDownContext, "developers", true );
-		JDBCTestUtils.dropTestTable( mssqlDatasource, tearDownContext, "generatedKeyTest", true );
-		mssqlDatasource.shutdown();
+		AbstractDriverTest.teardownTestDatasource( tearDownContext, mssqlDatasource );
 	}
 
 	public static void createGeneratedKeyTable( DataSource dataSource, IBoxContext context ) {
