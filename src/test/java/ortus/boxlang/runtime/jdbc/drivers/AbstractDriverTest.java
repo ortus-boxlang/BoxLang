@@ -63,6 +63,18 @@ public abstract class AbstractDriverTest extends BaseJDBCTest {
 		return theDatasource;
 	}
 
+	/**
+	 * Tears down a specific driver type datasource after testing is complete.
+	 * 
+	 * @param tearDownContext The context to use for teardown
+	 * @param theDatasource   The datasource to teardown
+	 */
+	public static void teardownTestDatasource( IBoxContext tearDownContext, DataSource theDatasource ) {
+		JDBCTestUtils.dropTestTable( theDatasource, tearDownContext, "developers", true );
+		JDBCTestUtils.dropTestTable( theDatasource, tearDownContext, "generatedKeyTest", true );
+		theDatasource.shutdown();
+	}
+
 	@DisplayName( "It sets generatedKey in query meta" )
 	@Test
 	public void testGeneratedKey() {
