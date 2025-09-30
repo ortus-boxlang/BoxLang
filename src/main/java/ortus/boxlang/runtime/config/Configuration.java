@@ -660,18 +660,13 @@ public class Configuration implements IConfigSegment {
 				    .forEach( entry -> {
 					    if ( entry.getValue() instanceof IStruct castedStruct ) {
 						    IStruct eventData = Struct.ofNonConcurrent(
-						        Key._name, entry.getKey(),
+						        Key._name, Key.of( PlaceholderHelper.resolve( entry.getKey().getName() ) ),
 						        Key.properties, castedStruct
 						    );
 						    BoxRuntime.getInstance().announce( BoxEvent.ON_DATASOURCE_CONFIG_LOAD, eventData );
-
 						    DatasourceConfig datasourceConfig = new DatasourceConfig( eventData.getAsKey( Key._name ) )
 						        .process( eventData.getAsStruct( Key.properties ) );
 						    this.datasources.put( datasourceConfig.name, datasourceConfig );
-					    } else {
-						    logger.warn(
-						        "The [datasources.{}] configuration is not a JSON Object, ignoring it.",
-						        entry.getKey() );
 					    }
 				    } );
 			} else {
