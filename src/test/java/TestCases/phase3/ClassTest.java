@@ -2080,4 +2080,23 @@ public class ClassTest {
 		assertThat( meta.getAsString( Key.path ) ).contains( "ReservedAnnotations.cfc" );
 	}
 
+	@Test
+	public void testKeywordAsAnnotationName() {
+		instance.executeSource(
+		    """
+		    meta = new src.test.java.TestCases.phase3.KeywordAsAnnotationNameCF().$bx.meta;
+		    result = meta.annotations.component;
+		       """,
+		    context );
+		assertThat( variables.get( "result" ) ).isEqualTo( "" );
+
+		instance.executeSource(
+		    """
+		    meta = new src.test.java.TestCases.phase3.KeywordAsAnnotationName().$bx.meta;
+		    result = meta.annotations.class;
+		       """,
+		    context );
+		assertThat( variables.get( "result" ) ).isEqualTo( "" );
+	}
+
 }

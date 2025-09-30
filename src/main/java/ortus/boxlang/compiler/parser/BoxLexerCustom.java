@@ -519,7 +519,7 @@ public class BoxLexerCustom extends BoxLexer {
 						if ( debug )
 							System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because it is a variable being returned" );
 						isIdentifier = true;
-					} else if ( nextTokenType == ABSTRACT ) {
+					} else if ( nextTokenType == ABSTRACT || nextTokenType == CLASS || nextTokenType == INTERFACE ) {
 						if ( !classIsExpected ) {
 							if ( debug )
 								System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because the file is not a class" );
