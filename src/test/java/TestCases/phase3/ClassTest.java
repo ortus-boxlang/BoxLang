@@ -2130,4 +2130,14 @@ public class ClassTest {
 		assertThat( variables.get( "result" ) ).isEqualTo( "_test.MyClass" );
 	}
 
+	@Test
+	public void testTagClassWithBOM() {
+		instance.executeSource(
+		    """
+		    result = new src.test.java.TestCases.phase3.TagClassWithBOM();
+		       """,
+		    context );
+
+	}
+
 }

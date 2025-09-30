@@ -280,9 +280,13 @@ public class Parser {
 		try ( BufferedReader reader = Files.newBufferedReader( file.toPath(), charset ) ) {
 			String line;
 			while ( ( line = reader.readLine() ) != null ) {
-				// Remove any BOMs from the start of the file
-				line = line.replaceFirst( "^\uFEFF", "" ).replaceFirst( "^\uFFFE", "" ).replaceFirst( "^\u0000FEFF", "" )
-				    .replaceFirst( "^\uFFFE0000", "" ).toLowerCase().trim();
+				// Remove any BOMs from the start of the file (There can be more than one BOM in some cases)
+				line = line.replaceAll( "^\u0000\uFEFF+", "" )     // UTF-32 BE BOM (longest first)
+				    .replaceAll( "^\uFFFE\u0000+", "" )      // UTF-32 LE BOM (longest first)
+				    .replaceAll( "^\uFEFF+", "" )            // UTF-8 BOM (handle multiple)
+				    .replaceFirst( "^\uFFFE", "" )           // UTF-16 LE BOM (after UTF-32 LE)
+				    .toLowerCase().trim();
+
 				// Rudimentary attempt to skip comments
 				if ( line.startsWith( "//" ) ) {
 					continue;
