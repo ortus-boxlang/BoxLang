@@ -1396,4 +1396,31 @@ public class BoxTemplateTest {
 		    context, BoxSourceType.BOXTEMPLATE );
 	}
 
+	@Test
+	public void testReturnVariableName() {
+		instance.executeSource(
+		    """
+		    <bx:function name="test">
+		    	<bx:set variables.return = "brad" />
+		    	<bx:return #return# />
+		    </bx:function>
+		    <bx:set result = test() />
+		    """,
+		    context, BoxSourceType.BOXTEMPLATE );
+
+		assertThat( variables.get( result ) ).isEqualTo( "brad" );
+
+		instance.executeSource(
+		    """
+		    <bx:function name="test">
+		    	<bx:set variables.return = "brad" />
+		    	<bx:return return />
+		    </bx:function>
+		    <bx:set result = test() />
+		    """,
+		    context, BoxSourceType.BOXTEMPLATE );
+
+		assertThat( variables.get( result ) ).isEqualTo( "brad" );
+	}
+
 }

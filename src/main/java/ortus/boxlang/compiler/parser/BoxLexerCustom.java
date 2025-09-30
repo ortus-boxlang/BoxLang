@@ -347,7 +347,7 @@ public class BoxLexerCustom extends BoxLexer {
 					} else if ( ( nextTokenType == BREAK || nextTokenType == CASE ) && inSwitchBody ) {
 						// switch( foo ) { case 1: break; }
 						isIdentifier = false;
-					} else if ( nextTokenType == RETURN && !lastTokenWas( DOT ) &&
+					} else if ( nextTokenType == RETURN && !lastTokenWas( DOT ) && !wrappedInPounds( nextToken ) &&
 					    ( nextNonWhiteSpaceCharIsOneOf( new int[] { '(', '{', '[', ';', '}', '\'', '"', '-', '_', '$' } ) || nextNonWhiteSpaceIsAnyChar()
 					        || nextNonWhiteSpaceIsAnyDigit() ) ) {
 						// return foo;
@@ -357,6 +357,8 @@ public class BoxLexerCustom extends BoxLexer {
 						// return {}
 						// return -4
 						// { return }
+						// ignore foo.return
+						// ignore #return#
 						isIdentifier = false;
 					} else if ( nextTokenType == PARAM && ( ( lastTokenWas( DOT ) || lastTokenWas( LPAREN ) || nextNonWhiteSpaceCharIs( ')' ) )
 					    || ! ( nextNonWhiteSpaceCharIsOneOf( new int[] { '\'', '"' } ) || nextNonWhiteSpaceIsAnyChar() ) ) ) {
@@ -487,7 +489,7 @@ public class BoxLexerCustom extends BoxLexer {
 						if ( debug )
 							System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because next chars are the start of an operator" );
 						isIdentifier = true;
-					} else if ( lastTokenWas( ICHAR ) && nextNonWhiteSpaceCharIs( '#' ) && hasMode( hashMode ) ) {
+					} else if ( lastTokenWas( ICHAR ) && nextNonWhiteSpaceCharIs( '#' ) && ( hasMode( hashMode ) || lastModeWas( DEFAULT_SCRIPT_MODE ) ) ) {
 						// The token is encased in #hash# signs
 						if ( debug )
 							System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because it is encased in #hash# signs" );
@@ -811,6 +813,21 @@ public class BoxLexerCustom extends BoxLexer {
 	public BoxLexerCustom setClassIsExpected( boolean classIsExpected ) {
 		this.classIsExpected = classIsExpected;
 		return this;
+	}
+
+	/**
+	 * Decide if a token is wrapped in #pound# signs.
+	 * 
+	 * @param token the token to check
+	 * 
+	 * @return true if the token is wrapped in #pound# signs
+	 */
+	private boolean wrappedInPounds( Token token ) {
+		int length = token.getText().length();
+		if ( getInputStream().LA( -length - 1 ) == '#' && getInputStream().LA( 1 ) == '#' ) {
+			return true;
+		}
+		return false;
 	}
 
 }
