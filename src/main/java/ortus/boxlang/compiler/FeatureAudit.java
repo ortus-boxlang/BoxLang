@@ -23,9 +23,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import ortus.boxlang.compiler.ast.visitor.FeatureAuditVisitor;
 import ortus.boxlang.compiler.parser.Parser;
@@ -47,6 +50,7 @@ public class FeatureAudit {
 		Map<String, List<FeatureAuditVisitor.AggregateFeatureUsed>>	aggregateResults	= new ConcurrentHashMap<>();
 		StringBuffer												reportText			= new StringBuffer();
 		Map<String, Integer>										filesProcessed		= new ConcurrentHashMap<>();
+		Set<String>													recommendedModules	= new HashSet<>();
 
 		try {
 			String	source		= ".";
@@ -140,7 +144,7 @@ public class FeatureAudit {
 						    String sourceExtension = path.getFileName().toString().substring( path.getFileName().toString().lastIndexOf( "." ) + 1 );
 						    if ( extensionWeCareAbout( sourceExtension, filesProcessed ) ) {
 							    scanFile( path, results, aggregateResults, finalMissing, finalAggregate, finalReportPath != null, reportText,
-							        finalQuiet || finalSummary );
+							        finalQuiet || finalSummary, recommendedModules );
 						    }
 					    } );
 				} catch ( IOException e ) {
@@ -150,7 +154,7 @@ public class FeatureAudit {
 				String sourceExtension = sourcePath.getFileName().toString().substring( sourcePath.getFileName().toString().lastIndexOf( "." ) + 1 );
 				if ( extensionWeCareAbout( sourceExtension, filesProcessed ) ) {
 					scanFile( sourcePath, results, aggregateResults, finalMissing, finalAggregate, finalReportPath != null, reportText,
-					    finalQuiet || finalSummary );
+					    finalQuiet || finalSummary, recommendedModules );
 				}
 			}
 			if ( summary ) {
@@ -167,6 +171,22 @@ public class FeatureAudit {
 				filesProcessed.forEach( ( k, v ) -> System.out.println( "  * ." + k + ": " + v ) );
 				System.out.println();
 				System.out.println();
+				Set<String> rcommendedModulesWeCareAbout = recommendedModules.stream()
+				    .filter( mod -> !mod.equals( "core" ) && !mod.equals( "boxlang-web-support" ) )
+				    .collect( Collectors.toSet() );
+				if ( rcommendedModulesWeCareAbout.size() > 0 ) {
+					System.out.println( "Recommended Modules to install:" );
+					System.out.println( "box install " + rcommendedModulesWeCareAbout.stream().sorted().collect( Collectors.joining( "," ) ) );
+					System.out.println();
+					if ( recommendedModules.contains( "boxlang-web-support" ) ) {
+						System.out.println(
+						    "You have code that requires a web runtime.  You can install the [bx-web-support] into your CLI runtime to prevent those features from being marked as missing." );
+						System.out.println(
+						    "But DO NOT install bx-web-support into your actual server, as it will cause conflicts.  The web runtimes already come with everything they need." );
+						System.out.println();
+					}
+					System.out.println();
+				}
 
 				Map<String, FeatureAuditVisitor.AggregateFeatureUsed> summaryData = new HashMap<>();
 				results.forEach( ( k, v ) -> {
@@ -238,8 +258,11 @@ public class FeatureAudit {
 	    Boolean aggregate,
 	    boolean doReport,
 	    StringBuffer reportText,
-	    boolean quiet ) {
-		System.out.println( "Processing: " + sourcePath.toString() );
+	    boolean quiet,
+	    Set<String> recommendedModules ) {
+		if ( !quiet ) {
+			System.out.println( "Processing: " + sourcePath.toString() );
+		}
 		ParsingResult result;
 		try {
 			result = new Parser().parse( sourcePath.toFile() );
@@ -251,6 +274,8 @@ public class FeatureAudit {
 		if ( result.isCorrect() ) {
 			FeatureAuditVisitor visitor = new FeatureAuditVisitor();
 			result.getRoot().accept( visitor );
+			recommendedModules.addAll(
+			    visitor.getFeaturesUsed().stream().filter( f -> f.missing() && f.module() != null && !f.module().isEmpty() ).map( f -> f.module() ).toList() );
 			if ( missing ) {
 				results.put( sourcePath.toString(), visitor.getFeaturesUsed().stream().filter( f -> f.missing() ).toList() );
 				aggregateResults.put( sourcePath.toString(), visitor.getAggregateFeaturesUsed().stream().filter( f -> f.missing() ).toList() );

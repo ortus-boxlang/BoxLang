@@ -259,7 +259,7 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		BIFMap.put( "entitytoquery", "bx-orm" );
 		BIFMap.put( "esapidecode", "bx-esapi" );
 		BIFMap.put( "esapiencode", "bx-esapi" );
-		BIFMap.put( "evaluate", "bx-unsafe-evaulate" );
+		BIFMap.put( "evaluate", "bx-unsafe-evaluate" );
 		BIFMap.put( "exp", "core" );
 		BIFMap.put( "expandpath", "core" );
 		BIFMap.put( "extensionexists", "" );
@@ -890,7 +890,7 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		componentMap.put( "formgroup", "" );
 		componentMap.put( "formitem", "" );
 		componentMap.put( "forward", "" );
-		componentMap.put( "ftp", "" );
+		componentMap.put( "ftp", "bx-ftp" );
 		componentMap.put( "function", "core" );
 		componentMap.put( "grid", "" );
 		componentMap.put( "gridcolumn", "" );
