@@ -301,8 +301,9 @@ public class Application {
 			BoxRuntime.getInstance().getInterceptorService().announce(
 			    Key.onApplicationStart,
 			    Struct.of(
-			        "application", this,
-			        "listener", this.startingListener
+			        Key.application, this,
+			        Key.listener, this.startingListener,
+			        Key.context, context
 			    )
 			);
 
@@ -664,10 +665,12 @@ public class Application {
 		// Announce it globally
 		RequestBoxContext requestContext = this.getStartingListener().getRequestContext();
 		try {
-			BoxRuntime.getInstance().getInterceptorService().announce( Key.onApplicationEnd, () -> Struct.ofNonConcurrent(
-			    Key.application, this,
-			    Key.context, requestContext
-			) );
+			BoxRuntime.getInstance().getInterceptorService().announce(
+			    Key.onApplicationEnd,
+			    () -> Struct.ofNonConcurrent(
+			        Key.application, this,
+			        Key.context, requestContext
+			    ) );
 		} catch ( Exception e ) {
 			logger.error( "Error announcing onApplicationEnd", e );
 		}

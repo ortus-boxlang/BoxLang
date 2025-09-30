@@ -308,9 +308,9 @@ public class ApplicationService extends BaseService {
 		announce(
 		    BoxEvent.BEFORE_APPLICATION_LISTENER_LOAD,
 		    Struct.of(
-		        "listener", listener,
-		        "context", context,
-		        "template", template
+		        Key.listener, listener,
+		        Key.context, context,
+		        Key.template, template
 		    )
 		);
 
@@ -321,9 +321,9 @@ public class ApplicationService extends BaseService {
 		announce(
 		    BoxEvent.AFTER_APPLICATION_LISTENER_LOAD,
 		    Struct.of(
-		        "listener", listener,
-		        "context", context,
-		        "template", template
+		        Key.listener, listener,
+		        Key.context, context,
+		        Key.template, template
 		    )
 		);
 
