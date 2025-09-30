@@ -1,3 +1,3 @@
-component component interface final {
+component component interface {
 	
 }
