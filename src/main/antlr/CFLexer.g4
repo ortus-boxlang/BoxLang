@@ -188,8 +188,8 @@ ISTEMPLATE : '__template__' -> pushMode(DEFAULT_TEMPLATE_MODE), channel(HIDDEN);
 mode DEFAULT_SCRIPT_MODE;
 
 COMPONENT_SLASH_CLOSE99:
-    '/>' {isExpressionComplete() && _modeStack.contains(TEMPLATE_EXPRESSION_MODE_COMPONENT)}? -> type(COMPONENT_SLASH_CLOSE), popMode, popMode, popMode
-        , popMode, popMode
+    '/' COMPONENT_WHITESPACE_OUTPUT3* '>' {isExpressionComplete() && _modeStack.contains(TEMPLATE_EXPRESSION_MODE_COMPONENT)}? -> type(
+        COMPONENT_SLASH_CLOSE), popMode, popMode, popMode, popMode, popMode
 ;
 
 COMPONENT_CLOSE99:

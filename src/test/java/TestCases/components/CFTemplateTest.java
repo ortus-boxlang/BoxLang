@@ -1633,4 +1633,24 @@ public class CFTemplateTest {
 		    context, BoxSourceType.CFTEMPLATE );
 	}
 
+	public void testSelfClosingTagHasSpace() {
+		instance.executeSource(
+		    """
+		    <cffunction  name="test">
+		    	<cfreturn / >
+		    </cffunction>
+		    <cfset result=test()>
+		       """,
+		    context, BoxSourceType.CFTEMPLATE );
+
+		assertThat( variables.get( result ) ).isNull();
+
+		instance.executeSource(
+		    """
+		    <cfset result="brad" / >
+		       """,
+		    context, BoxSourceType.CFTEMPLATE );
+
+		assertThat( variables.get( result ) ).isEqualTo( "brad" );
+	}
 }
