@@ -1,0 +1,16 @@
+{
+  "mappings": {
+    "/simple": "${user-dir}",
+    "/complex": {
+      "path": "${user-home}",
+      "external": false
+    },
+    "/complexExternal": {
+      "path": "${java-temp}",
+      "external": true
+    },
+    "/complexNoExternal": {
+      "path": "${user-dir}"
+    }
+  }
+}

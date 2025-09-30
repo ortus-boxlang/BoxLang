@@ -259,4 +259,37 @@ class ConfigLoaderTest {
 		assertThat( config.experimental.getAsString( Key.of( "compiler" ) ) ).isEqualTo( "asm" );
 	}
 
+	@DisplayName( "It can load complex mappings with path and external properties" )
+	@Test
+	void testItCanLoadComplexMappings() {
+		Configuration config = ConfigLoader.getInstance().loadFromFile( "src/test/resources/test-complex-mappings.json" );
+
+		// Should have 4 mappings
+		assertThat( config.mappings ).hasSize( 4 );
+
+		// Simple mapping - should be external by default
+		assertThat( config.hasMapping( "/simple/" ) ).isTrue();
+		var simpleMapping = ( ortus.boxlang.runtime.util.Mapping ) config.mappings.get( "/simple/" );
+		assertThat( simpleMapping.path() ).isEqualTo( System.getProperty( "user.dir" ) );
+		assertThat( simpleMapping.external() ).isTrue(); // default is true for server-level mappings
+
+		// Complex mapping with external = false
+		assertThat( config.hasMapping( "/complex/" ) ).isTrue();
+		var complexMapping = ( ortus.boxlang.runtime.util.Mapping ) config.mappings.get( "/complex/" );
+		assertThat( complexMapping.path() ).isEqualTo( System.getProperty( "user.home" ) );
+		assertThat( complexMapping.external() ).isFalse();
+
+		// Complex mapping with external = true
+		assertThat( config.hasMapping( "/complexExternal/" ) ).isTrue();
+		var complexExternalMapping = ( ortus.boxlang.runtime.util.Mapping ) config.mappings.get( "/complexExternal/" );
+		assertThat( complexExternalMapping.path() ).isEqualTo( System.getProperty( "java.io.tmpdir" ) );
+		assertThat( complexExternalMapping.external() ).isTrue();
+
+		// Complex mapping without external property - should default to true
+		assertThat( config.hasMapping( "/complexNoExternal/" ) ).isTrue();
+		var complexNoExternalMapping = ( ortus.boxlang.runtime.util.Mapping ) config.mappings.get( "/complexNoExternal/" );
+		assertThat( complexNoExternalMapping.path() ).isEqualTo( System.getProperty( "user.dir" ) );
+		assertThat( complexNoExternalMapping.external() ).isTrue(); // defaults to true
+	}
+
 }
