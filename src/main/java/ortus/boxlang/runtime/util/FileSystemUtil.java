@@ -234,8 +234,6 @@ public final class FileSystemUtil {
 			} else {
 				if ( allowBinary && isBinaryFile( filePath ) ) {
 					return Files.readAllBytes( path );
-				} else if ( bufferSize == null ) {
-					return StringCaster.cast( Files.newInputStream( path ), charset, true );
 				} else {
 					// @formatter:off
 					try (
@@ -252,8 +250,14 @@ public final class FileSystemUtil {
 							} else {
 								inputReader = new InputStreamReader( inputStream );
 							}
-							try ( BufferedReader reader = new BufferedReader( inputReader, bufferSize ) ) {
-								return reader.lines().collect( Collectors.joining( FileSystemUtil.LINE_SEPARATOR ) );
+							if( bufferSize == null ) {
+								try ( BufferedReader reader = new BufferedReader( inputReader ) ) {
+									return reader.lines().collect( Collectors.joining( FileSystemUtil.LINE_SEPARATOR ) );
+								}
+							} else {
+								try ( BufferedReader reader = new BufferedReader( inputReader, bufferSize ) ) {
+									return reader.lines().collect( Collectors.joining( FileSystemUtil.LINE_SEPARATOR ) );
+								}
 							}
 						}
 					// @formatter:on
