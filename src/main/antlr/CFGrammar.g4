@@ -128,7 +128,9 @@ postAnnotation: postAnnotationName ((EQUALSIGN | COLON) attributeSimple)?
 
 // foo
 // foo-bar
-postAnnotationName: identifier (MINUS identifier)*
+// foo.bar
+// foo-bar.baz-bum.qux
+postAnnotationName: identifier ( (MINUS identifier) | (DOT identifier))*
     ;
 
 // This allows [1, 2, 3], "foo", or foo

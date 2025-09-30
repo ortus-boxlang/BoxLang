@@ -670,7 +670,7 @@ public class ClassTest {
 		var	boxMeta	= ( ClassMeta ) cfc.getBoxMeta();
 		var	meta	= boxMeta.meta;
 
-		assertThat( meta.getAsArray( Key.of( "properties" ) ).size() ).isEqualTo( 7 );
+		assertThat( meta.getAsArray( Key.of( "properties" ) ).size() ).isEqualTo( 8 );
 
 		var prop1 = ( IStruct ) meta.getAsArray( Key.of( "properties" ) ).get( 0 );
 		assertThat( prop1.get( "name" ) ).isEqualTo( "myProperty" );
@@ -721,6 +721,11 @@ public class ClassTest {
 		assertThat( prop2Docs.getAsString( Key.of( "brad" ) ).trim() ).isEqualTo( "wood" );
 		assertThat( prop2Docs.getAsString( Key.of( "luis" ) ).trim() ).isEqualTo( "" );
 		assertThat( prop2Docs.getAsString( Key.of( "hint" ) ).trim() ).isEqualTo( "This is my property" );
+
+		var prop8 = ( IStruct ) meta.getAsArray( Key.of( "properties" ) ).get( 7 );
+
+		assertThat( prop8.get( "name" ) ).isEqualTo( "barProp" );
+		assertThat( prop8.get( "type" ) ).isEqualTo( "foo.com.Bar" );
 	}
 
 	@DisplayName( "properties" )
@@ -750,7 +755,7 @@ public class ClassTest {
 		var	boxMeta	= ( ClassMeta ) cfc.getBoxMeta();
 		var	meta	= boxMeta.meta;
 
-		assertThat( meta.getAsArray( Key.of( "properties" ) ).size() ).isEqualTo( 5 );
+		assertThat( meta.getAsArray( Key.of( "properties" ) ).size() ).isEqualTo( 6 );
 
 		var prop1 = ( IStruct ) meta.getAsArray( Key.of( "properties" ) ).get( 0 );
 		assertThat( prop1.get( "name" ) ).isEqualTo( "myProperty" );
@@ -786,6 +791,11 @@ public class ClassTest {
 		assertThat( prop2Docs.getAsString( Key.of( "brad" ) ).trim() ).isEqualTo( "wood" );
 		assertThat( prop2Docs.getAsString( Key.of( "luis" ) ).trim() ).isEqualTo( "" );
 		assertThat( prop2Docs.getAsString( Key.of( "hint" ) ).trim() ).isEqualTo( "This is my property" );
+
+		var prop6 = ( IStruct ) meta.getAsArray( Key.of( "properties" ) ).get( 5 );
+
+		assertThat( prop6.get( "name" ) ).isEqualTo( "barProp" );
+		assertThat( prop6.get( "type" ) ).isEqualTo( "foo.com.Bar" );
 
 	}
 
