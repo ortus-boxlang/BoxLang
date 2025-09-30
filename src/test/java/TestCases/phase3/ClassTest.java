@@ -2099,4 +2099,25 @@ public class ClassTest {
 		assertThat( variables.get( "result" ) ).isEqualTo( "" );
 	}
 
+	@Test
+	public void testNewFQNStartWithUnderscore() {
+
+		instance.getConfiguration().registerMapping( "/_test", Paths.get( "src/test/java/TestCases/phase3/" ).toAbsolutePath().toString() );
+		context.clearConfigCache();
+
+		instance.executeSource(
+		    """
+		    result = new _test.MyClass().$bx.meta.name;
+		       """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( "result" ) ).isEqualTo( "_test.MyClass" );
+
+		instance.executeSource(
+		    """
+		    result = new _test.MyClass().$bx.meta.name;
+		       """,
+		    context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.get( "result" ) ).isEqualTo( "_test.MyClass" );
+	}
+
 }

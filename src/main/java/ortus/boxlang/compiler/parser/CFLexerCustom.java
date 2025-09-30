@@ -401,9 +401,13 @@ public class CFLexerCustom extends CFLexer {
 						// var foo = "bar"
 						isIdentifier = false;
 					} else if ( nextTokenType == NEW && !lastTokenWas( DOT )
-					    && ( nextNonWhiteSpaceIsAnyChar() || nextNonWhiteSpaceCharIs( '\'' ) || nextNonWhiteSpaceCharIs( '"' ) )
+					    && ( nextNonWhiteSpaceIsAnyChar() || nextNonWhiteSpaceCharIs( '\'' ) || nextNonWhiteSpaceCharIs( '"' )
+					        || nextNonWhiteSpaceCharIs( '_' ) )
 					    && !nextNonWhiteSpaceCharsAre( operatorStartingChars ) ) {
 						// foo = new Bar() is fine
+						// new "Bar"() is fine
+						// new 'Bar'() is fine
+						// new _Bar() is fine
 						// but ignore "new is 1" because there is an operator after new
 						isIdentifier = false;
 					} else if ( nextTokenType == FUNCTION && !isFunctionDeclaration( nextToken ) ) {
