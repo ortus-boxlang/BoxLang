@@ -20,7 +20,7 @@ dependencies {
 
     // Testing Dependencies
 	testImplementation project( ':' )
-    testImplementation "org.junit.jupiter:junit-jupiter:5.+"
+    testImplementation "org.junit.jupiter:junit-jupiter:6.+"
 	testImplementation "org.mockito:mockito-core:5.+"
 	testImplementation "com.google.truth:truth:1.+"
 	// Explicitly declare the JUnit platform launcher (to avoid deprecation)
