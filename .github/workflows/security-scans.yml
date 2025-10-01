@@ -74,7 +74,7 @@ jobs:
         run: ./gradlew clean jar
 
       - name: Scan generated packages (Table Output)
-        uses: anchore/scan-action@v6
+        uses: anchore/scan-action@v7
         id: securityscan-table
         continue-on-error: true
         with:
@@ -85,7 +85,7 @@ jobs:
           fail-build: false
 
       - name: Scan generated packages (JSON Output for Processing)
-        uses: anchore/scan-action@v6
+        uses: anchore/scan-action@v7
         id: securityscan-json
         continue-on-error: true
         with:
@@ -96,7 +96,7 @@ jobs:
           fail-build: false
 
       - name: Scan generated packages (SARIF Output)
-        uses: anchore/scan-action@v6
+        uses: anchore/scan-action@v7
         id: securityscan-sarif
         with:
           path: "./build/libs"
