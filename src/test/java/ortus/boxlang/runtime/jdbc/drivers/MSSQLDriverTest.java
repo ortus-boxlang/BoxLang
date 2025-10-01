@@ -7,12 +7,15 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.sql.Connection;
 import java.sql.SQLException;
 
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.jdbc.DataSource;
@@ -26,20 +29,31 @@ import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 @EnabledIf( "tools.JDBCTestUtils#hasMSSQLModule" )
 public class MSSQLDriverTest extends AbstractDriverTest {
 
-	protected static Key datasourceName = Key.of( "MSSQLdatasource" );
+	public static DataSource	mssqlDatasource;
 
-	public static DataSource setupTestDatasource( BoxRuntime instance, IBoxContext setUpContext ) {
-		IStruct		dsConfig		= Struct.of(
-		    "username", "sa",
-		    "password", "123456Password",
-		    "host", "localhost",
-		    "port", "1433",
-		    "driver", "mssql",
-		    "database", "master"
-		);
-		DataSource	theDatasource	= AbstractDriverTest.setupTestDatasource( instance, setUpContext, datasourceName, dsConfig );
-		MSSQLDriverTest.createGeneratedKeyTable( theDatasource, setUpContext );
-		return theDatasource;
+	protected static Key		datasourceName		= Key.of( "MSSQLdatasource" );
+
+	protected static IStruct	datasourceConfig	= Struct.of(
+	    "username", "sa",
+	    "password", "123456Password",
+	    "host", "localhost",
+	    "port", "1433",
+	    "driver", "mssql",
+	    "database", "master"
+	);
+
+	@BeforeAll
+	public static void setUp() {
+		instance = BoxRuntime.getInstance( true );
+		IBoxContext setUpContext = new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		mssqlDatasource = AbstractDriverTest.setupTestDatasource( instance, setUpContext, datasourceName, datasourceConfig );
+		MSSQLDriverTest.createGeneratedKeyTable( mssqlDatasource, setUpContext );
+	}
+
+	@AfterAll
+	public static void teardown() throws SQLException {
+		IBoxContext tearDownContext = new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		AbstractDriverTest.teardownTestDatasource( tearDownContext, mssqlDatasource );
 	}
 
 	public static void createGeneratedKeyTable( DataSource dataSource, IBoxContext context ) {

@@ -12,7 +12,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIf;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
@@ -210,24 +209,6 @@ public class StoredProcTest extends BaseJDBCTest {
 		    getContext(), BoxSourceType.BOXTEMPLATE );
 		Integer subsequentActive = getDatasource().getPoolStats().getAsInteger( Key.of( "ActiveConnections" ) );
 		assertEquals( initiallyActive, subsequentActive );
-	}
-
-	// Derby does a poor job of implementing the stored procedure spec, so we'll only run this test on mysql.
-	@Disabled( "TODO: Update Mysql stored procedure setup in MySQLDriverTest.java" )
-	@EnabledIf( "tools.JDBCTestUtils#hasMySQLModule" )
-	@Test
-	public void testMultiResultSets() {
-		getInstance().executeSource(
-		    """
-		        storedproc dataSource = "MysqlStoredProcTest" procedure = "sp_multi_result_set" {
-		        	procparam sqltype="varchar" value="SEGA";
-		        	procresult name="names_asc" resultSet=1 maxRows=1;
-		        	procresult name="names_desc" resultSet=2 maxRows=2;
-		        };
-		    """,
-		    getContext(), BoxSourceType.BOXTEMPLATE );
-		assertThat( getVariables().get( Key.of( "names_asc" ) ) ).isInstanceOf( Query.class );
-		assertThat( getVariables().get( Key.of( "names_desc" ) ) ).isInstanceOf( Query.class );
 	}
 
 }

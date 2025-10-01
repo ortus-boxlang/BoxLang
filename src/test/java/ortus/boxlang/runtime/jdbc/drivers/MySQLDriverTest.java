@@ -9,6 +9,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.sql.Connection;
 import java.sql.SQLException;
 
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
@@ -16,87 +19,107 @@ import org.junit.jupiter.api.condition.EnabledIf;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.jdbc.DataSource;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
+import tools.JDBCTestUtils;
 
 @EnabledIf( "tools.JDBCTestUtils#hasMySQLModule" )
 public class MySQLDriverTest extends AbstractDriverTest {
 
-	protected static Key		datasourceName	= Key.of( "MySQLdatasource" );
 	public static DataSource	mysqlDatasource;
 
-	public static DataSource setupTestDatasource( BoxRuntime instance, IBoxContext setUpContext ) {
-		IStruct dsConfig = Struct.of(
-		    "username", "root",
-		    "password", "123456Password",
-		    "host", "localhost",
-		    "port", "3309",
-		    "driver", "mysql",
-		    "database", "myDB",
-		    "custom", "allowMultiQueries=true"
-		);
-		mysqlDatasource = AbstractDriverTest.setupTestDatasource( instance, setUpContext, datasourceName, dsConfig );
+	protected static Key		datasourceName		= Key.of( "MySQLdatasource" );
+
+	protected static IStruct	datasourceConfig	= Struct.of(
+	    "username", "root",
+	    "password", "123456Password",
+	    "host", "localhost",
+	    "port", "3309",
+	    "driver", "mysql",
+	    "database", "myDB",
+	    "custom", "allowMultiQueries=true"
+	);
+
+	@BeforeAll
+	public static void setUp() {
+		instance = BoxRuntime.getInstance( true );
+		IBoxContext setUpContext = new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+
+		mysqlDatasource = AbstractDriverTest.setupTestDatasource( instance, setUpContext, datasourceName, datasourceConfig );
 		MySQLDriverTest.createGeneratedKeyTable( mysqlDatasource, setUpContext );
 
-		/***
-		 * Set up stored procedure and supporting table for testing. See StoredProcTest.
-		 */
-		if ( false ) {
-			mysqlDatasource.execute(
-			    """
-			    CREATE DEFINER=`root`@`%` PROCEDURE `sp_multi_result_set` (IN `companyName` VARCHAR(255))   BEGIN
-			    	SELECT *
-			    	FROM company
-			    	WHERE name <> companyName
-			    	order by name asc;
+		// @TODO: Move mysql-specific StoredProcTest here and uncomment this setup.
+		// setupStoredProcTests( setUpContext );
+	}
 
-			    	SELECT *
-			    	FROM company
-			    	WHERE name <> companyName
-			    	order by name desc;
-			    END$$
-			    """,
-			    setUpContext
-			);
-			mysqlDatasource.execute(
-			    """
-			    CREATE TABLE `company` (
-			    `id` int NOT NULL,
-			    `name` text NOT NULL,
-			    `active` tinyint(1) NOT NULL DEFAULT '1'
-			    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-			    	""",
-			    setUpContext
-			);
-			mysqlDatasource.execute(
-			    """
-			    INSERT INTO `company` (`id`, `name`, `active`) VALUES
-			    (1, 'Nintendo', 1),
-			    (2, 'SEGA', 0),
-			    (3, 'Sony', 1),
-			    (4, 'Microsoft', 1);
-			    	""",
-			    setUpContext
-			);
-		}
+	@AfterAll
+	public static void teardown() throws SQLException {
+		IBoxContext tearDownContext = new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		JDBCTestUtils.dropTestTable( mysqlDatasource, tearDownContext, "company", true );
+		AbstractDriverTest.teardownTestDatasource( tearDownContext, mysqlDatasource );
+	}
 
-		return mysqlDatasource;
+	/***
+	 * Set up stored procedure and supporting table for testing. See StoredProcTest.
+	 */
+	public static void setupStoredProcTests( IBoxContext context ) {
+		mysqlDatasource.execute(
+		    """
+		    CREATE TABLE `company` (
+		    `id` int NOT NULL,
+		    `name` text NOT NULL,
+		    `active` tinyint(1) NOT NULL DEFAULT '1'
+		    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+		    	""",
+		    context
+		);
+		mysqlDatasource.execute(
+		    """
+		    INSERT INTO `company` (`id`, `name`, `active`) VALUES
+		    (1, 'Nintendo', 1),
+		    (2, 'SEGA', 0),
+		    (3, 'Sony', 1),
+		    (4, 'Microsoft', 1);
+		    	""",
+		    context
+		);
+		// formatter:off
+		mysqlDatasource.execute(
+		    """
+		    DELIMITER //
+		    CREATE PROCEDURE sp_multi_result_set(IN companyName VARCHAR(255))
+		    BEGIN
+		        SELECT *
+		        FROM company
+		        WHERE name <> companyName
+		        order by name asc;
+
+		        SELECT *
+		        FROM company
+		        WHERE name <> companyName
+		        order by name desc;
+		    END //
+		    DELIMITER ;
+		    """,
+		    context
+		);
+		// @formatter:on
 	}
 
 	/**
 	 * Create a table that uses generated keys so we can test our generated key retrieval in BL.
-	 * Create a table that uses generated keys so we can test our generated key retrieval in BL.
 	 * 
-	 * @param ds      Datasource object
-	 * @param context Box context
+	 * @param dataSource Datasource object
+	 * @param context    Box context
 	 */
-	public static void createGeneratedKeyTable( DataSource ds, IBoxContext context ) {
+	public static void createGeneratedKeyTable( DataSource dataSource, IBoxContext context ) {
 		try {
-			mysqlDatasource.execute( "CREATE TABLE generatedKeyTest( id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(155))", context );
+			dataSource.execute( "CREATE TABLE generatedKeyTest( id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(155))", context );
 		} catch ( DatabaseException ignored ) {
 		}
 	}
@@ -263,6 +286,23 @@ public class MySQLDriverTest extends AbstractDriverTest {
 		assertThat( t.getMessage() ).contains( "Boom!" );
 		assertThat( t.getCause() ).isNotNull();
 		assertThat( t.getCause().getMessage() ).contains( "Boom!" );
+	}
+
+	@Disabled( "Stored procedure initialization needs work; is failing with a syntax error on the first line." )
+	@Test
+	public void testMultiResultSets() {
+		getInstance().executeSource(
+		    String.format(
+		        """
+		            storedproc dataSource = "%s" procedure = "sp_multi_result_set" {
+		            	procparam sqltype="varchar" value="SEGA";
+		            	procresult name="names_asc" resultSet=1 maxRows=1;
+		            	procresult name="names_desc" resultSet=2 maxRows=2;
+		            };
+		        """, getDatasourceName() ),
+		    getContext(), BoxSourceType.BOXTEMPLATE );
+		assertThat( getVariables().get( Key.of( "names_asc" ) ) ).isInstanceOf( Query.class );
+		assertThat( getVariables().get( Key.of( "names_desc" ) ) ).isInstanceOf( Query.class );
 	}
 
 }

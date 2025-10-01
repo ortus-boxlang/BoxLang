@@ -11,6 +11,8 @@ import java.nio.ByteOrder;
 import java.sql.Connection;
 import java.sql.SQLException;
 
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
@@ -18,6 +20,7 @@ import org.junit.jupiter.api.condition.EnabledIf;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.jdbc.DataSource;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
@@ -28,19 +31,30 @@ import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 @EnabledIf( "tools.JDBCTestUtils#hasMariaDBModule" )
 public class MariaDBDriverTest extends AbstractDriverTest {
 
-	protected static Key datasourceName = Key.of( "MariaDBdatasource" );
+	public static DataSource	mariaDBDatasource;
 
-	public static DataSource setupTestDatasource( BoxRuntime instance, IBoxContext setUpContext ) {
-		IStruct dsConfig = Struct.of(
-		    "username", "root",
-		    "password", "123456Password",
-		    "connectionString", "jdbc:mariadb://localhost:3360",
-		    "database", "myDB",
-		    "custom", "allowMultiQueries=true&returnMultiValuesGeneratedIds=true"
-		);
-		mariaDBDatasource = AbstractDriverTest.setupTestDatasource( instance, setUpContext, datasourceName, dsConfig );
+	protected static Key		datasourceName		= Key.of( "MariaDBdatasource" );
+
+	protected static IStruct	datasourceConfig	= Struct.of(
+	    "username", "root",
+	    "password", "123456Password",
+	    "connectionString", "jdbc:mariadb://localhost:3360",
+	    "database", "myDB",
+	    "custom", "allowMultiQueries=true&returnMultiValuesGeneratedIds=true"
+	);
+
+	@BeforeAll
+	public static void setUp() {
+		instance = BoxRuntime.getInstance( true );
+		IBoxContext setUpContext = new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		mariaDBDatasource = AbstractDriverTest.setupTestDatasource( instance, setUpContext, datasourceName, datasourceConfig );
 		MariaDBDriverTest.createGeneratedKeyTable( mariaDBDatasource, setUpContext );
-		return mariaDBDatasource;
+	}
+
+	@AfterAll
+	public static void teardown() throws SQLException {
+		IBoxContext tearDownContext = new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		AbstractDriverTest.teardownTestDatasource( tearDownContext, mariaDBDatasource );
 	}
 
 	/**
@@ -54,12 +68,12 @@ public class MariaDBDriverTest extends AbstractDriverTest {
 	/**
 	 * Create a table that uses generated keys so we can test our generated key retrieval in BL.
 	 * 
-	 * @param ds      Datasource object
-	 * @param context Box context
+	 * @param dataSource Datasource object
+	 * @param context    Box context
 	 */
-	public static void createGeneratedKeyTable( DataSource ds, IBoxContext context ) {
+	public static void createGeneratedKeyTable( DataSource dataSource, IBoxContext context ) {
 		try {
-			mariaDBDatasource.execute( "CREATE TABLE generatedKeyTest( id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(155))", context );
+			dataSource.execute( "CREATE TABLE generatedKeyTest( id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(155))", context );
 		} catch ( DatabaseException ignored ) {
 		}
 	}

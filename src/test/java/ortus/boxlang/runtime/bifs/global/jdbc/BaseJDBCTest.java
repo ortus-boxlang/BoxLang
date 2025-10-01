@@ -13,9 +13,6 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.jdbc.DataSource;
-import ortus.boxlang.runtime.jdbc.drivers.MSSQLDriverTest;
-import ortus.boxlang.runtime.jdbc.drivers.MariaDBDriverTest;
-import ortus.boxlang.runtime.jdbc.drivers.MySQLDriverTest;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
@@ -28,9 +25,6 @@ public class BaseJDBCTest {
 	public ScriptingRequestBoxContext	context;
 	public IScope						variables;
 	public static DataSource			datasource;
-	public static DataSource			mssqlDatasource;
-	public static DataSource			mysqlDatasource;
-	public static DataSource			mariaDBDatasource;
 	public static DatasourceService		datasourceService;
 
 	@BeforeAll
@@ -46,17 +40,6 @@ public class BaseJDBCTest {
 		    datasourceKey,
 		    datasource.getConfiguration()
 		);
-		if ( JDBCTestUtils.hasMSSQLModule() ) {
-			mssqlDatasource = MSSQLDriverTest.setupTestDatasource( instance, setUpContext );
-		}
-
-		if ( JDBCTestUtils.hasMySQLModule() ) {
-			mysqlDatasource = MySQLDriverTest.setupTestDatasource( instance, setUpContext );
-		}
-
-		if ( JDBCTestUtils.hasMariaDBModule() ) {
-			mariaDBDatasource = MariaDBDriverTest.setupTestDatasource( instance, setUpContext );
-		}
 	}
 
 	@AfterAll
@@ -64,18 +47,6 @@ public class BaseJDBCTest {
 		IBoxContext tearDownContext = new ScriptingRequestBoxContext( instance.getRuntimeContext() );
 		JDBCTestUtils.dropTestTable( datasource, tearDownContext, "developers", true );
 		datasource.shutdown();
-		if ( mssqlDatasource != null ) {
-			JDBCTestUtils.dropTestTable( mssqlDatasource, tearDownContext, "developers", true );
-			mssqlDatasource.shutdown();
-		}
-		if ( mysqlDatasource != null ) {
-			JDBCTestUtils.dropTestTable( mysqlDatasource, tearDownContext, "developers", true );
-			mysqlDatasource.shutdown();
-		}
-		if ( mariaDBDatasource != null ) {
-			JDBCTestUtils.dropTestTable( mariaDBDatasource, tearDownContext, "developers", true );
-			mariaDBDatasource.shutdown();
-		}
 	}
 
 	@BeforeEach
