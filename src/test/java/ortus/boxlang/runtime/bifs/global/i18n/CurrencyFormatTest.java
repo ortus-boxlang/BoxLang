@@ -194,4 +194,16 @@ public class CurrencyFormatTest {
 		assertEquals( variables.getAsString( result ), formatter.format( 12345D ) );
 	}
 
+	@DisplayName( "It tests the BIF LSCurrencyFormat with a numeric string" )
+	@Test
+	public void testNumberString() {
+		instance.executeSource(
+		    """
+		    myNumber = "3.00";
+		    result = lsCurrencyFormat( myNumber, "local", "en_US" );
+		       """,
+		    context );
+		assertEquals( variables.getAsString( result ), "$3.00" );
+	}
+
 }
