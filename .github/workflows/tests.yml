@@ -64,7 +64,7 @@ jobs:
 
       - name: Setup MSSQL
         if: ${{ matrix.os != 'windows-latest' }}
-        uses: rails-sqlserver/setup-mssql@v1
+        uses: rails-sqlserver/setup-mssql@v2
         with:
           components: sqlengine
           sa-password: "123456Password"
