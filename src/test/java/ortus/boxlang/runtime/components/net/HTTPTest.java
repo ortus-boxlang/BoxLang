@@ -998,7 +998,7 @@ public class HTTPTest {
 		certPath = Path.of( certPath ).toAbsolutePath().toString();
 		File certFile = new File( certPath );
 		FileUtils.touch( certFile );
-		try ( FileOutputStream fos = new FileOutputStream( Path.of( certPath ).toAbsolutePath().toString() ) ) {
+		try ( FileOutputStream fos = new FileOutputStream( certPath ) ) {
 			keyStore.store( fos, certPassword.toCharArray() );
 		}
 	}
