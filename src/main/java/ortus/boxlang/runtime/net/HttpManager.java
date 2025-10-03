@@ -137,7 +137,7 @@ public class HttpManager {
 				// Set the SSL context in the builder
 				builder.sslContext( sslContext );
 			} catch ( Exception e ) {
-				throw new RuntimeException( "Failed to configure client certificate", e );
+				throw new BoxRuntimeException( "Failed to configure client certificate", e.getClass().getSimpleName(), e );
 			}
 		}
 		return builder.build();
