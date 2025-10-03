@@ -481,12 +481,32 @@ public class Configuration implements IConfigSegment {
 		if ( config.containsKey( Key.mappings ) ) {
 			if ( config.get( Key.mappings ) instanceof IStruct castedMap ) {
 				castedMap.entrySet().forEach( entry -> {
-					// Server-level mappings default to being external
-					registerMapping(
-					    entry.getKey(),
-					    PlaceholderHelper.resolveAll( entry.getValue() ),
-					    true
-					);
+					// entry.getKey() is the mapping name (Key)
+					// Support two styles:
+					// 1) Simple: "/app": "${user-dir}" => path is the value, external = true
+					// 2) Complex: "/app": { "path": "${user-dir}", "external": true }
+					// Where "path" is mandatory and "external" is optional (defaults to true)
+					var value = entry.getValue();
+					if ( value instanceof IStruct castedMapping ) {
+						// complex mapping: path is mandatory
+						if ( !castedMapping.containsKey( Key.path ) || castedMapping.get( Key.path ) == null
+						    || StringCaster.cast( castedMapping.get( Key.path ) ).trim().length() == 0 ) {
+							logger.warn( "The [mappings.{}] configuration is missing a [path], ignoring it.", entry.getKey() );
+							return;
+						}
+						var		resolvedPath	= PlaceholderHelper.resolve( castedMapping.get( Key.path ) );
+						// external is optional and defaults to true
+						boolean	external		= true;
+						if ( castedMapping.containsKey( Key.external ) ) {
+							external = BooleanCaster.attempt( PlaceholderHelper.resolve( castedMapping.get( Key.external ) ) )
+							    .orElse( true );
+						}
+						registerMapping( entry.getKey(), resolvedPath, external );
+					}
+					// simple mapping: resolve all placeholders on the value and default external to true
+					else {
+						registerMapping( entry.getKey(), PlaceholderHelper.resolveAll( value ), true );
+					}
 				} );
 			} else {
 				logger.warn( "The [mappings] configuration is not a JSON Object, ignoring it." );
@@ -659,19 +679,14 @@ public class Configuration implements IConfigSegment {
 				    .entrySet()
 				    .forEach( entry -> {
 					    if ( entry.getValue() instanceof IStruct castedStruct ) {
-						    IStruct eventData = Struct.of(
-						        Key._name, entry.getKey(),
-						        Key.properties, new Struct( castedStruct )
+						    IStruct eventData = Struct.ofNonConcurrent(
+						        Key._name, Key.of( PlaceholderHelper.resolve( entry.getKey().getName() ) ),
+						        Key.properties, castedStruct
 						    );
 						    BoxRuntime.getInstance().announce( BoxEvent.ON_DATASOURCE_CONFIG_LOAD, eventData );
-
 						    DatasourceConfig datasourceConfig = new DatasourceConfig( eventData.getAsKey( Key._name ) )
 						        .process( eventData.getAsStruct( Key.properties ) );
 						    this.datasources.put( datasourceConfig.name, datasourceConfig );
-					    } else {
-						    logger.warn(
-						        "The [datasources.{}] configuration is not a JSON Object, ignoring it.",
-						        entry.getKey() );
 					    }
 				    } );
 			} else {
@@ -775,23 +790,6 @@ public class Configuration implements IConfigSegment {
 	}
 
 	/**
-	 * Register a mapping in the runtime configuration.
-	 * The mapping will default to not being external
-	 *
-	 * @param name            The mapping to register: {@code /myMapping}, please note the
-	 *                        leading slash
-	 * @param data            The absolute path to the directory to map to the mapping
-	 * @param defaultExternal If this mapping defaults to being external
-	 *
-	 * @throws BoxRuntimeException If the path does not exist
-	 *
-	 * @return The runtime configuration
-	 */
-	public Configuration registerMapping( String name, Object data, boolean defaultExternal ) {
-		return this.registerMapping( Key.of( name ), data, defaultExternal );
-	}
-
-	/**
 	 * Register a mapping in the runtime configuration
 	 *
 	 * @param name The mapping to register: {@code /myMapping}, please note the
@@ -823,6 +821,23 @@ public class Configuration implements IConfigSegment {
 	}
 
 	/**
+	 * Register a mapping in the runtime configuration.
+	 * The mapping will default to not being external
+	 *
+	 * @param name            The mapping to register: {@code /myMapping}, please note the
+	 *                        leading slash
+	 * @param data            The absolute path to the directory to map to the mapping
+	 * @param defaultExternal If this mapping defaults to being external
+	 *
+	 * @throws BoxRuntimeException If the path does not exist
+	 *
+	 * @return The runtime configuration
+	 */
+	public Configuration registerMapping( String name, Object data, boolean defaultExternal ) {
+		return this.registerMapping( Key.of( name ), data, defaultExternal );
+	}
+
+	/**
 	 * Register a mapping in the runtime configuration
 	 *
 	 * @param name            The mapping to register: {@code /myMapping}, please note the
@@ -841,15 +856,15 @@ public class Configuration implements IConfigSegment {
 	}
 
 	/**
-	 * Unregister a mapping in the runtime configuration
+	 * Register a mapping in the runtime configuration
 	 *
-	 * @param name The String mapping to unregister: {@code /myMapping}, please
-	 *             note the leading slash
+	 * @param mapping The mapping to register
 	 *
-	 * @return True if the mapping was removed, false otherwise
+	 * @return The runtime configuration
 	 */
-	public boolean unregisterMapping( String name ) {
-		return this.mappings.remove( Key.of( Mapping.cleanName( name ) ) ) != null;
+	public Configuration registerMapping( Mapping mapping ) {
+		this.mappings.put( mapping.name(), mapping );
+		return this;
 	}
 
 	/**
@@ -862,6 +877,29 @@ public class Configuration implements IConfigSegment {
 	 */
 	public boolean unregisterMapping( Key name ) {
 		return unregisterMapping( name.getName() );
+	}
+
+	/**
+	 * Unregister a mapping in the runtime configuration
+	 *
+	 * @param mapping The mapping to unregister
+	 *
+	 * @return True if the mapping was removed, false otherwise
+	 */
+	public boolean unregisterMapping( Mapping mapping ) {
+		return unregisterMapping( mapping.name() );
+	}
+
+	/**
+	 * Unregister a mapping in the runtime configuration
+	 *
+	 * @param name The String mapping to unregister: {@code /myMapping}, please
+	 *             note the leading slash
+	 *
+	 * @return True if the mapping was removed, false otherwise
+	 */
+	public boolean unregisterMapping( String name ) {
+		return this.mappings.remove( Key.of( Mapping.cleanName( name ) ) ) != null;
 	}
 
 	/**
@@ -981,27 +1019,27 @@ public class Configuration implements IConfigSegment {
 		IStruct mappingsCopy = new Struct( Struct.KEY_LENGTH_LONGEST_FIRST_COMPARATOR ).registerChangeListener( forceMappingTrailingSlash );
 		mappingsCopy.putAll( this.mappings );
 
-		IStruct cachesCopy = new Struct();
-		this.caches.entrySet()
-		    .forEach( entry -> cachesCopy.put( entry.getKey(), ( ( CacheConfig ) entry.getValue() ).toStruct() ) );
+		IStruct cachesCopy = new Struct( false );
+		this.caches.keySet()
+		    .forEach( key -> cachesCopy.put( key, ( ( CacheConfig ) this.caches.get( key ) ).toStruct() ) );
 
-		IStruct executorsCopy = new Struct();
-		this.executors.entrySet()
-		    .forEach( entry -> executorsCopy.put( entry.getKey(), ( ( ExecutorConfig ) entry.getValue() ).toStruct() ) );
+		IStruct executorsCopy = new Struct( false );
+		this.executors.keySet()
+		    .forEach( key -> executorsCopy.put( key, ( ( ExecutorConfig ) this.executors.get( key ) ).toStruct() ) );
 
-		IStruct datasourcesCopy = new Struct();
-		this.datasources.entrySet()
-		    .forEach( entry -> datasourcesCopy.put( entry.getKey(), ( ( DatasourceConfig ) entry.getValue() ).asStruct() ) );
+		IStruct datasourcesCopy = new Struct( false );
+		this.datasources.keySet()
+		    .forEach( key -> datasourcesCopy.put( key, ( ( DatasourceConfig ) this.datasources.get( key ) ).asStruct() ) );
 
-		IStruct modulesCopy = new Struct();
-		this.modules.entrySet()
-		    .forEach( entry -> modulesCopy.put( entry.getKey(), ( ( ModuleConfig ) entry.getValue() ).asStruct() ) );
+		IStruct modulesCopy = new Struct( false );
+		this.modules.keySet()
+		    .forEach( key -> modulesCopy.put( key, ( ( ModuleConfig ) this.modules.get( key ) ).asStruct() ) );
 
-		IStruct runtimesCopy = new Struct();
-		this.runtimes.entrySet()
-		    .forEach( entry -> runtimesCopy.put( entry.getKey(), entry.getValue() ) );
+		IStruct runtimesCopy = new Struct( false );
+		this.runtimes.keySet()
+		    .forEach( key -> runtimesCopy.put( key, this.runtimes.get( key ) ) );
 
-		return Struct.of(
+		return Struct.ofNonConcurrent(
 		    Key.applicationTimeout, this.applicationTimeout,
 		    Key.caches, cachesCopy,
 		    Key.classGenerationDirectory, this.classGenerationDirectory,
@@ -1019,7 +1057,7 @@ public class Configuration implements IConfigSegment {
 		    Key.whitespaceCompressionEnabled, this.whitespaceCompressionEnabled,
 		    Key.javaLibraryPaths, Array.copyFromList( this.javaLibraryPaths ),
 		    Key.locale, this.locale,
-		    Key.logging, this.logging.asStruct(),
+		    // Key.logging, this.logging.asStruct(),
 		    Key.mappings, mappingsCopy,
 		    Key.modules, modulesCopy,
 		    Key.modulesDirectory, Array.copyFromList( this.modulesDirectory ),

@@ -670,7 +670,7 @@ public class ClassTest {
 		var	boxMeta	= ( ClassMeta ) cfc.getBoxMeta();
 		var	meta	= boxMeta.meta;
 
-		assertThat( meta.getAsArray( Key.of( "properties" ) ).size() ).isEqualTo( 7 );
+		assertThat( meta.getAsArray( Key.of( "properties" ) ).size() ).isEqualTo( 8 );
 
 		var prop1 = ( IStruct ) meta.getAsArray( Key.of( "properties" ) ).get( 0 );
 		assertThat( prop1.get( "name" ) ).isEqualTo( "myProperty" );
@@ -721,6 +721,11 @@ public class ClassTest {
 		assertThat( prop2Docs.getAsString( Key.of( "brad" ) ).trim() ).isEqualTo( "wood" );
 		assertThat( prop2Docs.getAsString( Key.of( "luis" ) ).trim() ).isEqualTo( "" );
 		assertThat( prop2Docs.getAsString( Key.of( "hint" ) ).trim() ).isEqualTo( "This is my property" );
+
+		var prop8 = ( IStruct ) meta.getAsArray( Key.of( "properties" ) ).get( 7 );
+
+		assertThat( prop8.get( "name" ) ).isEqualTo( "barProp" );
+		assertThat( prop8.get( "type" ) ).isEqualTo( "foo.com.Bar" );
 	}
 
 	@DisplayName( "properties" )
@@ -750,7 +755,7 @@ public class ClassTest {
 		var	boxMeta	= ( ClassMeta ) cfc.getBoxMeta();
 		var	meta	= boxMeta.meta;
 
-		assertThat( meta.getAsArray( Key.of( "properties" ) ).size() ).isEqualTo( 5 );
+		assertThat( meta.getAsArray( Key.of( "properties" ) ).size() ).isEqualTo( 6 );
 
 		var prop1 = ( IStruct ) meta.getAsArray( Key.of( "properties" ) ).get( 0 );
 		assertThat( prop1.get( "name" ) ).isEqualTo( "myProperty" );
@@ -786,6 +791,11 @@ public class ClassTest {
 		assertThat( prop2Docs.getAsString( Key.of( "brad" ) ).trim() ).isEqualTo( "wood" );
 		assertThat( prop2Docs.getAsString( Key.of( "luis" ) ).trim() ).isEqualTo( "" );
 		assertThat( prop2Docs.getAsString( Key.of( "hint" ) ).trim() ).isEqualTo( "This is my property" );
+
+		var prop6 = ( IStruct ) meta.getAsArray( Key.of( "properties" ) ).get( 5 );
+
+		assertThat( prop6.get( "name" ) ).isEqualTo( "barProp" );
+		assertThat( prop6.get( "type" ) ).isEqualTo( "foo.com.Bar" );
 
 	}
 
@@ -2078,6 +2088,56 @@ public class ClassTest {
 		assertThat( meta.get( Key.properties ) ).isInstanceOf( Array.class );
 		assertThat( meta.getAsString( Key.type ) ).isEqualTo( "Component" );
 		assertThat( meta.getAsString( Key.path ) ).contains( "ReservedAnnotations.cfc" );
+	}
+
+	@Test
+	public void testKeywordAsAnnotationName() {
+		instance.executeSource(
+		    """
+		    meta = new src.test.java.TestCases.phase3.KeywordAsAnnotationNameCF().$bx.meta;
+		    result = meta.annotations.component;
+		       """,
+		    context );
+		assertThat( variables.get( "result" ) ).isEqualTo( "" );
+
+		instance.executeSource(
+		    """
+		    meta = new src.test.java.TestCases.phase3.KeywordAsAnnotationName().$bx.meta;
+		    result = meta.annotations.class;
+		       """,
+		    context );
+		assertThat( variables.get( "result" ) ).isEqualTo( "" );
+	}
+
+	@Test
+	public void testNewFQNStartWithUnderscore() {
+
+		instance.getConfiguration().registerMapping( "/_test", Paths.get( "src/test/java/TestCases/phase3/" ).toAbsolutePath().toString() );
+		context.clearConfigCache();
+
+		instance.executeSource(
+		    """
+		    result = new _test.MyClass().$bx.meta.name;
+		       """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( "result" ) ).isEqualTo( "_test.MyClass" );
+
+		instance.executeSource(
+		    """
+		    result = new _test.MyClass().$bx.meta.name;
+		       """,
+		    context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.get( "result" ) ).isEqualTo( "_test.MyClass" );
+	}
+
+	@Test
+	public void testTagClassWithBOM() {
+		instance.executeSource(
+		    """
+		    result = new src.test.java.TestCases.phase3.TagClassWithBOM();
+		       """,
+		    context );
+
 	}
 
 }

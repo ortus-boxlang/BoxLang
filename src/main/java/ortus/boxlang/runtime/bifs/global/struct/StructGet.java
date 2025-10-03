@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 
-@BoxBIF
+@BoxBIF( description = "Get a value from a struct using dot notation" )
 @BoxMember( type = BoxLangType.STRUCT, name = "getFromPath", objectArgument = "object" )
 public class StructGet extends BIF {
 

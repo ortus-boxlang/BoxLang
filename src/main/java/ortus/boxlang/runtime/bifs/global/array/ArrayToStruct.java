@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 
-@BoxBIF
+@BoxBIF( description = "Convert an array to a struct" )
 @BoxMember( type = BoxLangType.ARRAY )
 public class ArrayToStruct extends BIF {
 

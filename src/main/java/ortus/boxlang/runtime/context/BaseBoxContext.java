@@ -57,6 +57,7 @@ import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
+import ortus.boxlang.runtime.types.util.TypeUtil;
 import ortus.boxlang.runtime.util.Attachable;
 import ortus.boxlang.runtime.util.DataNavigator;
 import ortus.boxlang.runtime.util.DataNavigator.Navigator;
@@ -70,14 +71,9 @@ import ortus.boxlang.runtime.util.ResolvedFilePath;
 public class BaseBoxContext implements IBoxContext {
 
 	/**
-	 * TODO: This can be removed later, it was put here to catch some endless recursion bugs
-	 */
-	private static final ThreadLocal<Integer>	flushBufferDepth		= ThreadLocal.withInitial( () -> 0 );
-
-	/**
 	 * A flag to control whether null is considered undefined or not. Used by the compat module
 	 */
-	public static boolean						nullIsUndefined			= false;
+	public static boolean					nullIsUndefined			= false;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -88,7 +84,7 @@ public class BaseBoxContext implements IBoxContext {
 	/**
 	 * Any context can have a parent it can delegate to
 	 */
-	protected IBoxContext						parent;
+	protected IBoxContext					parent;
 
 	/**
 	 * A way to discover the current executing template. We're storing the path
@@ -97,49 +93,49 @@ public class BaseBoxContext implements IBoxContext {
 	 * memory since all
 	 * we really need is static data from them
 	 */
-	protected ArrayDeque<ResolvedFilePath>		templates				= new ArrayDeque<>();
+	private ArrayDeque<ResolvedFilePath>	templates				= null;
 
 	/**
 	 * A way to discover the imports tied to the original source of the current
 	 * template.
 	 * This should always match the top current template stack
 	 */
-	protected List<ImportDefinition>			currentImports			= null;
+	protected List<ImportDefinition>		currentImports			= null;
 
 	/**
 	 * A way to discover the current executing componenet
 	 */
-	protected ArrayDeque<IStruct>				components				= new ArrayDeque<>();
+	private ArrayDeque<IStruct>				components				= null;
 
 	/**
 	 * This is a denormalized cache of how many "output" components are on the component stack. We use this information very often when flushing output
 	 */
-	private final AtomicInteger					outputComponentCount	= new AtomicInteger( 0 );
+	private AtomicInteger					outputComponentCount	= null;
 
 	/**
 	 * A way to track query loops
 	 */
-	protected LinkedHashMap<Query, Integer>		queryLoops				= new LinkedHashMap<>();
+	private LinkedHashMap<Query, Integer>	queryLoops				= null;
 
 	/**
 	 * A buffer to write output to
 	 */
-	protected ArrayDeque<StringBuffer>			buffers					= new ArrayDeque<>();
+	private ArrayDeque<StringBuffer>		buffers					= null;
 
 	/**
 	 * The function service we can use to retrieve BIFS and member methods
 	 */
-	private final FunctionService				functionService;
+	private final FunctionService			functionService;
 
 	/**
 	 * The component service
 	 */
-	private final ComponentService				componentService;
+	private final ComponentService			componentService;
 
 	/**
 	 * Attachable delegate
 	 */
-	private final IBoxAttachable				attachable				= new Attachable();
+	private IBoxAttachable					attachable				= null;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -157,7 +153,6 @@ public class BaseBoxContext implements IBoxContext {
 		this.parent				= parent;
 		this.functionService	= BoxRuntime.getInstance().getFunctionService();
 		this.componentService	= BoxRuntime.getInstance().getComponentService();
-		buffers.push( new StringBuffer() );
 	}
 
 	/**
@@ -181,6 +176,20 @@ public class BaseBoxContext implements IBoxContext {
 	}
 
 	/**
+	 * Lazy create the templates
+	 */
+	protected ArrayDeque<ResolvedFilePath> _getTemplates() {
+		if ( this.templates == null ) {
+			synchronized ( this ) {
+				if ( this.templates == null ) {
+					this.templates = new ArrayDeque<>();
+				}
+			}
+		}
+		return this.templates;
+	}
+
+	/**
 	 * Push a template to the stack
 	 *
 	 * @param template The template that this execution context is bound to
@@ -201,7 +210,7 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return IBoxContext
 	 */
 	public IBoxContext pushTemplate( ResolvedFilePath template ) {
-		this.templates.push( template );
+		_getTemplates().push( template );
 		return this;
 	}
 
@@ -211,7 +220,7 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return The template that this execution context is bound to
 	 */
 	public ResolvedFilePath popTemplate() {
-		return this.templates.pop();
+		return _getTemplates().pop();
 	}
 
 	/**
@@ -220,7 +229,36 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return The templates
 	 */
 	public ResolvedFilePath[] getTemplates() {
-		return this.templates.toArray( new ResolvedFilePath[ 0 ] );
+		return _getTemplates().toArray( new ResolvedFilePath[ 0 ] );
+	}
+
+	/**
+	 * Lazy create the components
+	 */
+	protected ArrayDeque<IStruct> _getComponents() {
+		if ( this.components == null ) {
+			synchronized ( this ) {
+				if ( this.components == null ) {
+					this.components = new ArrayDeque<>();
+					_getOutputComponentCount();
+				}
+			}
+		}
+		return this.components;
+	}
+
+	/**
+	 * Lazy create the component output count
+	 */
+	protected AtomicInteger _getOutputComponentCount() {
+		if ( this.outputComponentCount == null ) {
+			synchronized ( this ) {
+				if ( this.outputComponentCount == null ) {
+					this.outputComponentCount = new AtomicInteger( 0 );
+				}
+			}
+		}
+		return this.outputComponentCount;
 	}
 
 	/**
@@ -231,10 +269,10 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return This context
 	 */
 	public IBoxContext pushComponent( IStruct executionState ) {
-		this.components.push( executionState );
+		_getComponents().push( executionState );
 		if ( executionState.getAsKey( Key._NAME ).equals( Key.output ) ) {
 			// If this is a component, we need to increment the output component count
-			outputComponentCount.incrementAndGet();
+			_getOutputComponentCount().incrementAndGet();
 		}
 		return this;
 	}
@@ -246,9 +284,9 @@ public class BaseBoxContext implements IBoxContext {
 	 */
 	public IBoxContext popComponent() {
 		// decrement the output component count if the component being popped is an output component
-		IStruct popped = this.components.pop();
+		IStruct popped = _getComponents().pop();
 		if ( popped.getAsKey( Key._NAME ).equals( Key.output ) ) {
-			outputComponentCount.decrementAndGet();
+			_getOutputComponentCount().decrementAndGet();
 		}
 		return this;
 	}
@@ -259,7 +297,7 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return True if there is at least one output component, else false
 	 */
 	public boolean isInOutputComponent() {
-		return outputComponentCount.get() > 0;
+		return _getOutputComponentCount().get() > 0;
 	}
 
 	/**
@@ -317,13 +355,14 @@ public class BaseBoxContext implements IBoxContext {
 		// get parent components and append our own
 		if ( hasParent() ) {
 			IStruct[]	parentComponents	= getParent().getComponents();
-			IStruct[]	myComponents		= this.components.toArray( new IStruct[ 0 ] );
+			// If we've never initialized the components array, then don't bother, just return an empty one.
+			IStruct[]	myComponents		= this.components == null ? new IStruct[ 0 ] : this.components.toArray( new IStruct[ 0 ] );
 			IStruct[]	allComponents		= new IStruct[ parentComponents.length + myComponents.length ];
 			System.arraycopy( myComponents, 0, allComponents, 0, myComponents.length );
 			System.arraycopy( parentComponents, 0, allComponents, myComponents.length, parentComponents.length );
 			return allComponents;
 		}
-		return this.components.toArray( new IStruct[ 0 ] );
+		return _getComponents().toArray( new IStruct[ 0 ] );
 	}
 
 	/**
@@ -332,7 +371,7 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return True if bound, else false
 	 */
 	public boolean hasTemplates() {
-		return !this.templates.isEmpty();
+		return this.templates != null && !this.templates.isEmpty();
 	}
 
 	/**
@@ -344,7 +383,7 @@ public class BaseBoxContext implements IBoxContext {
 	public ResolvedFilePath findClosestTemplate() {
 		// If this context has templates, grab the first
 		if ( hasTemplates() ) {
-			return this.templates.peek();
+			return _getTemplates().peek();
 		}
 
 		// Otherwise, if we have a parent, ask them
@@ -373,7 +412,7 @@ public class BaseBoxContext implements IBoxContext {
 		}
 		// Otherwise, If this context has templates, grab the last
 		if ( hasTemplates() ) {
-			return this.templates.peekLast();
+			return _getTemplates().peekLast();
 		}
 
 		// There are none to be found!
@@ -664,7 +703,7 @@ public class BaseBoxContext implements IBoxContext {
 			return funcAttempt.get();
 		} else {
 			throw new BoxRuntimeException(
-			    "Variable '" + name + "' of type  '" + result.value().getClass().getName() + "'  is not a function." );
+			    "Variable '" + name + "' of type  '" + TypeUtil.getObjectName( result.value() ) + "'  is not a function." );
 		}
 	}
 
@@ -859,6 +898,20 @@ public class BaseBoxContext implements IBoxContext {
 	}
 
 	/**
+	 * Lazy create the query loops
+	 */
+	protected LinkedHashMap<Query, Integer> _getQueryLoops() {
+		if ( this.queryLoops == null ) {
+			synchronized ( this ) {
+				if ( this.queryLoops == null ) {
+					this.queryLoops = new LinkedHashMap<>();
+				}
+			}
+		}
+		return this.queryLoops;
+	}
+
+	/**
 	 * Search any query loops for a column name matching the uncscoped variable
 	 *
 	 * @param key The key to search for
@@ -866,6 +919,7 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return A ScopeSearchResult if found, else null
 	 */
 	protected ScopeSearchResult queryFindNearby( Key key ) {
+		var queryLoops = _getQueryLoops();
 		if ( queryLoops.size() > 0 ) {
 			var queries = queryLoops.keySet().toArray( new Query[ 0 ] );
 			for ( int i = queries.length - 1; i >= 0; i-- ) {
@@ -1039,6 +1093,7 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return The current row
 	 */
 	public int getQueryRow( Query query, int defaultRow ) {
+		var queryLoops = _getQueryLoops();
 		// If we're not looping over this query, then we're on the first row
 		if ( !queryLoops.containsKey( query ) ) {
 			return defaultRow;
@@ -1052,7 +1107,7 @@ public class BaseBoxContext implements IBoxContext {
 	 * @param query The query to register
 	 */
 	public void registerQueryLoop( Query query, int row ) {
-		queryLoops.put( query, row );
+		_getQueryLoops().put( query, row );
 	}
 
 	/**
@@ -1061,7 +1116,7 @@ public class BaseBoxContext implements IBoxContext {
 	 * @param query The query to unregister
 	 */
 	public void unregisterQueryLoop( Query query ) {
-		queryLoops.remove( query );
+		_getQueryLoops().remove( query );
 	}
 
 	/**
@@ -1070,6 +1125,7 @@ public class BaseBoxContext implements IBoxContext {
 	 * @param query The query to increment
 	 */
 	public void incrementQueryLoop( Query query ) {
+		var queryLoops = _getQueryLoops();
 		queryLoops.put( query, queryLoops.get( query ) + 1 );
 	}
 
@@ -1144,42 +1200,35 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return This context
 	 */
 	public IBoxContext flushBuffer( boolean force ) {
+		if ( this.buffers == null ) {
+			return this;
+		}
+
 		if ( !canOutput() && !force ) {
 			return this;
 		}
-		flushBufferDepth.set( flushBufferDepth.get() + 1 );
 
-		// Check the depth
-		if ( flushBufferDepth.get() > 50 ) {
-			throw new RuntimeException( "Nested flushBuffer() calls exceeded 50" );
-		}
-
-		try {
-			// If there are extra buffers registered, we ignore flush requests since someone
-			// out there is wanting to capture our buffer instead.
-			if ( hasParent() && buffers.size() == 1 ) {
-				StringBuffer thisBuffer = getBuffer();
-				synchronized ( thisBuffer ) {
-					getParent().writeToBuffer( thisBuffer.toString(), true );
-					thisBuffer.setLength( 0 );
-				}
-				if ( force ) {
-					getParent().flushBuffer( true );
-				}
-			} else if ( force && hasParent() ) {
-				for ( StringBuffer buf : buffers ) {
-					synchronized ( buf ) {
-						getParent().writeToBuffer( buf.toString(), true );
-						buf.setLength( 0 );
-					}
-				}
+		// If there are extra buffers registered, we ignore flush requests since someone
+		// out there is wanting to capture our buffer instead.
+		if ( hasParent() && this.buffers.size() == 1 ) {
+			StringBuffer thisBuffer = getBuffer();
+			synchronized ( thisBuffer ) {
+				getParent().writeToBuffer( thisBuffer.toString(), true );
+				thisBuffer.setLength( 0 );
+			}
+			if ( force ) {
 				getParent().flushBuffer( true );
 			}
-			return this;
-		} finally {
-			// Decrement the depth
-			flushBufferDepth.set( flushBufferDepth.get() - 1 );
+		} else if ( force && hasParent() ) {
+			for ( StringBuffer buf : this.buffers ) {
+				synchronized ( buf ) {
+					getParent().writeToBuffer( buf.toString(), true );
+					buf.setLength( 0 );
+				}
+			}
+			getParent().flushBuffer( true );
 		}
+		return this;
 	}
 
 	/**
@@ -1196,12 +1245,27 @@ public class BaseBoxContext implements IBoxContext {
 	}
 
 	/**
+	 * Lazy create the buffers
+	 */
+	protected ArrayDeque<StringBuffer> _getBuffers() {
+		if ( this.buffers == null ) {
+			synchronized ( this ) {
+				if ( this.buffers == null ) {
+					this.buffers = new ArrayDeque<>();
+					this.buffers.push( new StringBuffer() );
+				}
+			}
+		}
+		return this.buffers;
+	}
+
+	/**
 	 * Get the buffer
 	 *
 	 * @return The buffer
 	 */
 	public StringBuffer getBuffer() {
-		return this.buffers.peek();
+		return _getBuffers().peek();
 	}
 
 	/**
@@ -1213,7 +1277,7 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return This context
 	 */
 	public IBoxContext pushBuffer( StringBuffer buffer ) {
-		this.buffers.push( buffer );
+		_getBuffers().push( buffer );
 		return this;
 	}
 
@@ -1223,7 +1287,7 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return This context
 	 */
 	public IBoxContext popBuffer() {
-		this.buffers.pop();
+		_getBuffers().pop();
 		return this;
 	}
 
@@ -1403,34 +1467,48 @@ public class BaseBoxContext implements IBoxContext {
 	 * --------------------------------------------------------------------------
 	 */
 
+	/**
+	 * Lazy create the attachable
+	 */
+	protected IBoxAttachable _getAttachable() {
+		if ( this.attachable == null ) {
+			synchronized ( this ) {
+				if ( this.attachable == null ) {
+					this.attachable = new Attachable();
+				}
+			}
+		}
+		return this.attachable;
+	}
+
 	@Override
 	public <T> T putAttachment( Key key, T value ) {
-		return this.attachable.putAttachment( key, value );
+		return _getAttachable().putAttachment( key, value );
 	}
 
 	@Override
 	public <T> T getAttachment( Key key ) {
-		return this.attachable.getAttachment( key );
+		return _getAttachable().getAttachment( key );
 	}
 
 	@Override
 	public boolean hasAttachment( Key key ) {
-		return this.attachable.hasAttachment( key );
+		return _getAttachable().hasAttachment( key );
 	}
 
 	@Override
 	public <T> T removeAttachment( Key key ) {
-		return this.attachable.removeAttachment( key );
+		return _getAttachable().removeAttachment( key );
 	}
 
 	@Override
 	public Key[] getAttachmentKeys() {
-		return this.attachable.getAttachmentKeys();
+		return _getAttachable().getAttachmentKeys();
 	}
 
 	@Override
 	public <T> T computeAttachmentIfAbsent( Key key, java.util.function.Function<? super Key, ? extends T> mappingFunction ) {
-		return this.attachable.computeAttachmentIfAbsent( key, mappingFunction );
+		return _getAttachable().computeAttachmentIfAbsent( key, mappingFunction );
 	}
 
 }

@@ -239,4 +239,26 @@ public class DateTimeTest {
 		// @formatter:on
 	}
 
+	@DisplayName( "Tests DateTime default format string results" )
+	@Test
+	void testConsistentToStringResult() {
+		// Test that the original formatter value is maintained
+		// @formatter:off
+		instance.executeSource(
+		"""
+			result = parseDateTime( "2025-09-09T13:32:30Z" );       // {ts '2025-09-09 13:32:30'}
+			result2 = parseDateTime( "2025-09-09T13:32:30-00:00" );  // 2025-09-09T13:32:30Z
+			result3 = parseDateTime( "2025-09-09T13:32:30-06:00" );  // 2025-09-09T13:32:30-06:00
+		""", 
+		context 
+		);
+		assertThat( variables.get( Key.of( "result" ) ) ).isInstanceOf( DateTime.class );
+		assertThat( variables.getAsDateTime( Key.of( "result" ) ).toString() ).isEqualTo( "{ts '2025-09-09 13:32:30'}" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isInstanceOf( DateTime.class );
+		assertThat( variables.getAsDateTime( Key.of( "result2" ) ).toString() ).isEqualTo( "{ts '2025-09-09 13:32:30'}" );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isInstanceOf( DateTime.class );
+		assertThat( variables.getAsDateTime( Key.of( "result3" ) ).toString() ).isEqualTo( "{ts '2025-09-09 13:32:30'}" );
+		// @formatter:on
+	}
+
 }

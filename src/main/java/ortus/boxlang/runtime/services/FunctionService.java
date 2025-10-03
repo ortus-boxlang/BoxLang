@@ -18,13 +18,12 @@
 package ortus.boxlang.runtime.services;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.slf4j.Logger;
 
 import ortus.boxlang.runtime.BoxRuntime;
@@ -351,12 +350,23 @@ public class FunctionService extends BaseService {
 
 		// Make sure the container for the member key exists
 		// Ex: memberMethods[ "foo" ] = { BoxLangType.ARRAY : MemberDescriptor, BoxLangType.STRING : MemberDescriptor }
-		synchronized ( this.memberMethods ) {
-			this.memberMethods.putIfAbsent( memberKey, Collections.synchronizedMap( new LinkedHashMap<>() ) );
+		var memberMap = this.memberMethods.get( memberKey );
+		if ( memberMap == null ) {
+			synchronized ( this.memberMethods ) {
+				// Double check
+				memberMap = this.memberMethods.get( memberKey );
+				if ( memberMap == null ) {
+					memberMap = new LinkedHashMap<>();
+					this.memberMethods.put( memberKey, memberMap );
+				}
+			}
 		}
 
-		// Now add them up
-		this.memberMethods.get( memberKey ).put( descriptor.type, descriptor );
+		// No checks here, since this always overwrites. Lock just to avoid corruption if two threads are putting
+		synchronized ( memberMap ) {
+			// Now add them up
+			memberMap.put( descriptor.type, descriptor );
+		}
 	}
 
 	/**
@@ -429,7 +439,7 @@ public class FunctionService extends BaseService {
 			if ( member.name().equals( "" ) ) {
 				// Default member name for class ArrayFoo with BoxType of Array is just foo()
 				memberKey = Key.of(
-				    StringUtils.replace( className.toLowerCase(), member.type().name().toLowerCase(), "" )
+				    Strings.CS.replace( className.toLowerCase(), member.type().name().toLowerCase(), "" )
 				);
 			} else {
 				memberKey = Key.of( member.name() );

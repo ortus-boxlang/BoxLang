@@ -28,7 +28,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.BLCollector;
 
-@BoxBIF
+@BoxBIF( description = "Create an array with a range of values" )
 @BoxMember( type = BoxLangType.ARRAY )
 public class ArrayRange extends BIF {
 

@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.util.DuplicationUtil;
 
-@BoxBIF
+@BoxBIF( description = "Reverse the order of rows in a query" )
 @BoxMember( type = BoxLangType.QUERY )
 public class QueryReverse extends BIF {
 
@@ -50,7 +50,7 @@ public class QueryReverse extends BIF {
 	 * @argument.query The query to reverse
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Query query = ( Query ) DuplicationUtil.duplicate( arguments.get( Key.query ), false );
+		Query query = ( Query ) DuplicationUtil.duplicate( arguments.get( Key.query ), false, context );
 
 		Collections.reverse( query.getData() );
 

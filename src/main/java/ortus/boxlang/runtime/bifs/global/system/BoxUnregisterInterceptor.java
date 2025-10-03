@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 
-@BoxBIF
+@BoxBIF( description = "Unregister an application-level interceptor" )
 public class BoxUnregisterInterceptor extends BIF {
 
 	protected InterceptorPool interceptorTarget;

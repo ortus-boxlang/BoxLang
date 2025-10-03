@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.util.DuplicationUtil;
 
-@BoxBIF
+@BoxBIF( description = "Create a copy of a struct" )
 @BoxMember( type = BoxLangType.STRUCT )
 public class StructCopy extends BIF {
 
@@ -50,7 +50,7 @@ public class StructCopy extends BIF {
 	 * @argument.struct The struct to copy
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		return DuplicationUtil.duplicateStruct( arguments.getAsStruct( Key.struct ), false );
+		return DuplicationUtil.duplicateStruct( arguments.getAsStruct( Key.struct ), false, context );
 	}
 
 }

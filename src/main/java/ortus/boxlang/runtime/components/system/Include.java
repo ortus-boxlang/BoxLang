@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.validation.Validator;
 
-@BoxComponent
+@BoxComponent( description = "Include and process another template file" )
 public class Include extends Component {
 
 	/**

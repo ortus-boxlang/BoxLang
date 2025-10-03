@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.util.EncryptionUtil;
 
-@BoxBIF
+@BoxBIF( description = "Encode binary data as a string" )
 public class BinaryEncode extends BIF {
 
 	/**

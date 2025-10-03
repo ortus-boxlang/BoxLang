@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.bifs.global.temporal;
 
 import java.time.ZoneId;
 import java.util.Locale;
+import java.util.Set;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
@@ -29,8 +30,9 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.util.LocalizationUtil;
+import ortus.boxlang.runtime.validation.Validator;
 
-@BoxBIF
+@BoxBIF( description = "Convert between different date/time formats" )
 public class DateConvert extends BIF {
 
 	private static final Key	utc2Local	= Key.of( "utc2Local" );
@@ -42,8 +44,11 @@ public class DateConvert extends BIF {
 	public DateConvert() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "string", Key.conversionType ),
-		    new Argument( true, "any", Key.date )
+		    new Argument( true, "string", Key.conversionType, Set.of(
+		        Validator.REQUIRED,
+		        Validator.valueOneOf( "utc2Local", "local2utc" )
+		    ) ),
+		    new Argument( true, "any", Key.date, Set.of( Validator.REQUIRED ) )
 		};
 	}
 
@@ -71,7 +76,7 @@ public class DateConvert extends BIF {
 			dateRef = DateTimeCaster.cast( dateObject, context );
 		}
 
-		return dateRef.convertToZone( conversion.equals( utc2Local ) ? localZone : utcZone );
+		return dateRef.convertToZone( conversion.equals( utc2Local ) ? localZone : utcZone, true );
 
 	}
 

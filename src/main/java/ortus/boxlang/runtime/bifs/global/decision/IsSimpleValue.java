@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.IType;
 
-@BoxBIF
+@BoxBIF( description = "Check if value is a simple value" )
 public class IsSimpleValue extends BIF {
 
 	/**

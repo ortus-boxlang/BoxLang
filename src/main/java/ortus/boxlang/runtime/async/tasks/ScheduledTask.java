@@ -37,7 +37,7 @@ import javax.management.InvalidAttributeValueException;
 import org.slf4j.Logger;
 
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.async.executors.ExecutorRecord;
+import ortus.boxlang.runtime.async.executors.BoxExecutor;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.IJDBCCapableContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
@@ -46,6 +46,7 @@ import ortus.boxlang.runtime.context.ThreadBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.net.NetworkUtil;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.types.Function;
@@ -53,7 +54,6 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.util.DateTimeHelper;
 import ortus.boxlang.runtime.types.util.StringUtil;
-import ortus.boxlang.runtime.util.NetworkUtil;
 import ortus.boxlang.runtime.util.Timer;
 
 /**
@@ -87,7 +87,7 @@ public class ScheduledTask implements Runnable {
 	/**
 	 * The executor to use for this task
 	 */
-	private ExecutorRecord							executor			= null;
+	private BoxExecutor								executor			= null;
 
 	/**
 	 * The task as a {@link DynamicObject} or a
@@ -295,7 +295,7 @@ public class ScheduledTask implements Runnable {
 	 * @param executor  The executor we are bound to (Optional) can be null
 	 * @param scheduler The scheduler we are bound to (Optional) can be null
 	 */
-	public ScheduledTask( String name, String group, ExecutorRecord executor, BaseScheduler scheduler ) {
+	public ScheduledTask( String name, String group, BoxExecutor executor, BaseScheduler scheduler ) {
 		// Seed it
 		this.name		= name;
 		this.group		= group;
@@ -374,7 +374,7 @@ public class ScheduledTask implements Runnable {
 	 * @param name     The name of the task
 	 * @param executor The executor we are bound to
 	 */
-	public ScheduledTask( String name, ExecutorRecord executor ) {
+	public ScheduledTask( String name, BoxExecutor executor ) {
 		this( name, "", executor, null );
 	}
 
@@ -456,7 +456,8 @@ public class ScheduledTask implements Runnable {
 			// Before Interceptors : From global to local
 			this.interceptorService.announce(
 			    BoxEvent.SCHEDULER_BEFORE_ANY_TASK,
-			    Struct.of( "task", this ) );
+			    () -> Struct.ofNonConcurrent( Key.task, this )
+			);
 			if ( hasScheduler() ) {
 				getScheduler().beforeAnyTask( this );
 			}
@@ -507,7 +508,8 @@ public class ScheduledTask implements Runnable {
 			}
 			this.interceptorService.announce(
 			    BoxEvent.SCHEDULER_AFTER_ANY_TASK,
-			    Struct.of( "task", this, "result", result ) );
+			    () -> Struct.ofNonConcurrent( Key.task, this, Key.result, result )
+			);
 
 			// Store successes and call success interceptor : From global to local
 			( ( AtomicInteger ) this.stats.get( "totalSuccess" ) ).incrementAndGet();
@@ -519,7 +521,8 @@ public class ScheduledTask implements Runnable {
 			}
 			this.interceptorService.announce(
 			    BoxEvent.SCHEDULER_ON_ANY_TASK_SUCCESS,
-			    Struct.of( "task", this, "result", result ) );
+			    () -> Struct.ofNonConcurrent( Key.task, this, Key.result, result )
+			);
 
 		} catch ( Exception e ) {
 			// store failures
@@ -539,7 +542,7 @@ public class ScheduledTask implements Runnable {
 				}
 				this.interceptorService.announce(
 				    BoxEvent.SCHEDULER_ON_ANY_TASK_ERROR,
-				    Struct.of( "task", this, "exception", e ) );
+				    () -> Struct.ofNonConcurrent( Key.task, this, Key.exception, e ) );
 
 				// After Tasks Interceptor with the exception as the last result : From global
 				// to local
@@ -551,7 +554,8 @@ public class ScheduledTask implements Runnable {
 				}
 				this.interceptorService.announce(
 				    BoxEvent.SCHEDULER_AFTER_ANY_TASK,
-				    Struct.of( "task", this, "result", Optional.of( e ) ) );
+				    () -> Struct.ofNonConcurrent( Key.task, this, Key.result, Optional.of( e ) )
+				);
 			} catch ( Exception afterException ) {
 				// Log it, so it doesn't go to ether and executor doesn't die.
 				logger.error(
@@ -2716,7 +2720,7 @@ public class ScheduledTask implements Runnable {
 	 *
 	 * @return The executor
 	 */
-	private ExecutorRecord getExecutor() {
+	private BoxExecutor getExecutor() {
 		if ( this.executor == null ) {
 			this.executor = this.scheduler.getExecutor();
 		}

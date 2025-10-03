@@ -31,16 +31,18 @@ import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 
 import com.fasterxml.jackson.jr.ob.JSONObjectException;
 
 import ortus.boxlang.compiler.BXCompiler;
 import ortus.boxlang.compiler.CFTranspiler;
+import ortus.boxlang.compiler.DiskClassUtil;
 import ortus.boxlang.compiler.FeatureAudit;
 import ortus.boxlang.runtime.application.BaseApplicationListener;
 import ortus.boxlang.runtime.async.tasks.BoxScheduler;
 import ortus.boxlang.runtime.async.tasks.IScheduler;
+import ortus.boxlang.runtime.cli.BoxRepl;
 import ortus.boxlang.runtime.config.CLIOptions;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
@@ -106,7 +108,7 @@ public class BoxRunner {
 	/**
 	 * The allowed template extensions that can be executed by the BoxRunner
 	 */
-	private static final List<String>	ALLOWED_TEMPLATE_EXECUTIONS	= List.of( ".cfm", ".cfs", ".bxm", ".bx", ".bxs" );
+	private static final List<String>	ALLOWED_TEMPLATE_EXECUTIONS	= List.of( ".cfm", ".cfs", ".cfc", ".bxm", ".bx", ".bxs" );
 
 	/**
 	 * An exit code indicator for the BoxRunner
@@ -177,8 +179,8 @@ public class BoxRunner {
 			}
 			// REPL Mode: Execute code as read from the standard input of the process
 			else {
-				// Execute code from the standard input
-				boxRuntime.executeSource( System.in );
+				// Start the interactive REPL
+				new BoxRepl( boxRuntime ).start();
 			}
 		} catch ( BoxRuntimeException e ) {
 			ExceptionUtil.printBoxLangStackTrace( e, System.err );
@@ -285,7 +287,7 @@ public class BoxRunner {
 	 */
 	private static void runScheduler( String schedulerPath, BoxRuntime runtime ) {
 		// Check if the scheduler path is valid
-		if ( !StringUtils.endsWithAny( schedulerPath, ".bx" ) ) {
+		if ( !Strings.CI.endsWithAny( schedulerPath, ".bx" ) ) {
 			throw new BoxRuntimeException( "Scheduler must be a .bx file, found: " + schedulerPath );
 		}
 
@@ -659,6 +661,10 @@ public class BoxRunner {
 		}
 		// return false if the file doesn't exist
 		if ( !Files.exists( templatePath ) ) {
+			return false;
+		}
+
+		if ( DiskClassUtil.isJavaByteCode( templatePath.toFile() ) ) {
 			return false;
 		}
 

@@ -23,7 +23,7 @@ import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.types.IStruct;
 
-@BoxComponent
+@BoxComponent( description = "Force output buffer to flush to the client" )
 public class Flush extends Component {
 
 	/**

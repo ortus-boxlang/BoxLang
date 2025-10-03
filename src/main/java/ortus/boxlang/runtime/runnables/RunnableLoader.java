@@ -96,9 +96,13 @@ public class RunnableLoader {
 	 *
 	 * @return TemplateLoader
 	 */
-	public static synchronized RunnableLoader getInstance() {
+	public static RunnableLoader getInstance() {
 		if ( instance == null ) {
-			instance = new RunnableLoader();
+			synchronized ( RunnableLoader.class ) {
+				if ( instance == null ) {
+					instance = new RunnableLoader();
+				}
+			}
 		}
 		return instance;
 	}

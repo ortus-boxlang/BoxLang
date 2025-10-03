@@ -96,6 +96,10 @@ public final class LocalizationUtil {
 	    // ODBC formats
 	    "yyyyMMddHHmmss",                // ODBCDateTime - Potential ODBC format
 
+	    // Alt patterns encountered with dates from other countries - anything out of English locale norms needs to come first
+	    "yyyy/MM/dd", // Common to Africa and Taiwan
+	    "M-d-yy", // Short Form two-digit year
+
 	    // US Localized Date formats - Month First
 	    "MMM dd yyyy",                   // Long Date (e.g., Apr 02 2024)
 	    "MMM-dd-yyyy",                   // Medium Date (e.g., Apr-02-2024) - Might need adjustment based on locale
@@ -737,7 +741,7 @@ public final class LocalizationUtil {
 					} catch ( java.time.format.DateTimeParseException x ) {
 						throw new BoxRuntimeException(
 						    String.format(
-						        "The date time value of [%s] could not be parsed as a valid date or datetime locale of [%s]",
+						        "The date time value of [%s] could not be parsed as a valid date or datetime using the locale of [%s]",
 						        dateTime,
 						        locale.getDisplayName()
 						    ), x );
@@ -745,7 +749,7 @@ public final class LocalizationUtil {
 				}
 				throw new BoxRuntimeException(
 				    String.format(
-				        "The date time value of [%s] could not be parsed as a valid date or datetime locale of [%s]",
+				        "The date time value of [%s] could not be parsed as a valid date or datetime using the locale of [%s]",
 				        dateTime,
 				        locale.getDisplayName()
 				    ), e );
@@ -792,7 +796,7 @@ public final class LocalizationUtil {
 			} catch ( Exception x ) {
 				throw new BoxRuntimeException(
 				    String.format(
-				        "The date time value of [%s] could not be parsed as a valid date or datetime locale of [%s]",
+				        "The date time value of [%s] could not be parsed as a valid date or datetime using the locale of [%s]",
 				        dateTime,
 				        locale.getDisplayName()
 				    ), x );
@@ -935,13 +939,14 @@ public final class LocalizationUtil {
 		    .appendOptional(
 		        DateTimeFormatter.ofPattern( "MMMM d yyyy HH:mm" )
 		    )
-		    .appendOptional( DateTimeFormatter.ofPattern( DateTime.ISO_DATE_TIME_MILIS_FORMAT_MASK ) )
-		    .appendOptional( DateTimeFormatter.ofPattern( DateTime.ISO_DATE_TIME_MILIS_NO_T_FORMAT_MASK ) )
-		    .appendOptional( DateTimeFormatter.ofPattern( DateTime.ISO_DATE_TIME_VARIATION_FORMAT_MASK ) )
-		    .appendOptional( DateTimeFormatter.ofPattern( DateTime.DEFAULT_DATETIME_FORMAT_MASK ) )
-		    .appendOptional( DateTimeFormatter.ofPattern( DateTime.TS_FORMAT_MASK ) )
-		    .appendOptional( DateTimeFormatter.ofPattern( DateTime.JS_COMMON_TO_STRING_MASK ) )
-		    .appendOptional( DateTimeFormatter.ofPattern( DateTime.JS_COMMON_ALT_STRING_MASK ) )
+		    .appendOptional( DateTime.ISO_DATE_TIME_MILIS_FORMATTER )
+		    .appendOptional( DateTime.ISO_DATE_TIME_MILIS_NO_T_FORMATTER )
+		    .appendOptional( DateTime.ISO_DATE_TIME_VARIATION_FORMATTER )
+		    .appendOptional( DateTime.DEFAULT_DATETIME_FORMATTER )
+		    .appendOptional( DateTime.TS_FORMATTER )
+		    .appendOptional( DateTime.JS_COMMON_TO_STRING_FORMATTER )
+		    .appendOptional( DateTime.JS_COMMON_ALT_STRING_FORMATTER )
+		    .appendOptional( DateTime.ZONED_DATE_TIME_TO_STRING_FORMATTER )
 		    .appendOptional( DateTimeFormatter.ISO_INSTANT )
 		    .appendOptional( DateTimeFormatter.ISO_DATE_TIME )
 		    .appendOptional( DateTimeFormatter.ISO_LOCAL_DATE_TIME );
@@ -976,7 +981,7 @@ public final class LocalizationUtil {
 		    .appendOptional( DateTimeFormatter.ofPattern( "yyyy-MM-dd" ) )
 		    .appendOptional( DateTimeFormatter.ofPattern( "yyyy.MM.dd" ) )
 		    .appendOptional( DateTimeFormatter.ofPattern( "MM/dd/yyyy" ) )
-		    .appendOptional( DateTimeFormatter.ofPattern( DateTime.DEFAULT_DATE_FORMAT_MASK ) )
+		    .appendOptional( DateTime.DEFAULT_DATE_FORMATTER )
 		    .appendOptional( DateTimeFormatter.ISO_DATE )
 		    .appendOptional( DateTimeFormatter.ISO_LOCAL_DATE )
 		    .appendOptional( DateTimeFormatter.BASIC_ISO_DATE );
@@ -1008,7 +1013,7 @@ public final class LocalizationUtil {
 		    .appendOptional( DateTimeFormatter.ofLocalizedTime( FormatStyle.MEDIUM ).withLocale( locale ) )
 		    .appendOptional( DateTimeFormatter.ofLocalizedTime( FormatStyle.LONG ).withLocale( locale ) )
 		    .appendOptional( DateTimeFormatter.ofLocalizedTime( FormatStyle.FULL ).withLocale( locale ) )
-		    .appendOptional( DateTimeFormatter.ofPattern( DateTime.DEFAULT_TIME_FORMAT_MASK ) )
+		    .appendOptional( DateTime.DEFAULT_TIME_FORMATTER )
 		    .appendOptional( DateTimeFormatter.ISO_TIME );
 	}
 

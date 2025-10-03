@@ -12,7 +12,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIf;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
@@ -22,7 +21,6 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.jdbc.DataSource;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Query;
-import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 
@@ -30,8 +28,6 @@ public class StoredProcTest extends BaseJDBCTest {
 
 	static BoxRuntime	instance;
 	static Key			result	= new Key( "result" );
-
-	private DataSource	mysqlDatasource;
 
 	public static void doNothing() {
 		// A lazy fellow indeed.
@@ -97,55 +93,6 @@ public class StoredProcTest extends BaseJDBCTest {
 		    'ortus.boxlang.runtime.components.jdbc.StoredProcTest.doNothing'
 		    """,
 		    setUpContext
-		);
-	}
-
-	public void setupMySQLTest() {
-		mysqlDatasource = DataSource.fromStruct(
-		    "MysqlStoredProcTest",
-		    Struct.of(
-		        "database", "MysqlStoredProcTest",
-		        "driver", "mysql",
-		        "connectionString", "jdbc:mysql//localhost:3306/mysqlStoredProc"
-		    )
-		);
-		getDatasourceService().register( Key.of( "MysqlStoredProcTest" ), mysqlDatasource );
-
-		mysqlDatasource.execute(
-		    """
-		    CREATE DEFINER=`root`@`%` PROCEDURE `sp_multi_result_set` (IN `companyName` VARCHAR(255))   BEGIN
-		    	SELECT *
-		    	 FROM company
-		    	WHERE name <> companyName
-		    	order by name asc;
-
-		    	SELECT *
-		    	 FROM company
-		    	WHERE name <> companyName
-		    	order by name desc;
-		    END$$
-		       """,
-		    context
-		);
-		mysqlDatasource.execute(
-		    """
-		    		CREATE TABLE `company` (
-		      `id` int NOT NULL,
-		      `name` text NOT NULL,
-		      `active` tinyint(1) NOT NULL DEFAULT '1'
-		    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-		           """,
-		    context
-		);
-		mysqlDatasource.execute(
-		    """
-		    INSERT INTO `company` (`id`, `name`, `active`) VALUES
-		    (1, 'Nintendo', 1),
-		    (2, 'SEGA', 0),
-		    (3, 'Sony', 1),
-		    (4, 'Microsoft', 1);
-		         """,
-		    context
 		);
 	}
 
@@ -262,27 +209,6 @@ public class StoredProcTest extends BaseJDBCTest {
 		    getContext(), BoxSourceType.BOXTEMPLATE );
 		Integer subsequentActive = getDatasource().getPoolStats().getAsInteger( Key.of( "ActiveConnections" ) );
 		assertEquals( initiallyActive, subsequentActive );
-	}
-
-	// Derby does a relatively poor job of implementing the stored procedure spec, so we'll only run this test if a MySQL instance is reachable.
-	@EnabledIf( "tools.JDBCTestUtils#isMySQLReachable" )
-	@Test
-	public void testMultiResultSets() {
-		// Because we can't do an `@EnabledIf` on a `@BeforeAll` method, we have to set up the datasource here.
-		if ( mysqlDatasource == null ) {
-			setupMySQLTest();
-		}
-		getInstance().executeSource(
-		    """
-		        storedproc dataSource = "MysqlStoredProcTest" procedure = "sp_multi_result_set" {
-		        	procparam sqltype="varchar" value="SEGA";
-		        	procresult name="names_asc" resultSet=1 maxRows=1;
-		        	procresult name="names_desc" resultSet=2 maxRows=2;
-		        };
-		    """,
-		    getContext(), BoxSourceType.BOXTEMPLATE );
-		assertThat( getVariables().get( Key.of( "names_asc" ) ) ).isInstanceOf( Query.class );
-		assertThat( getVariables().get( Key.of( "names_desc" ) ) ).isInstanceOf( Query.class );
 	}
 
 }

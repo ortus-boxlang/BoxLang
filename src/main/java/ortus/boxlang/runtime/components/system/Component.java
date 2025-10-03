@@ -40,7 +40,7 @@ import ortus.boxlang.runtime.types.exceptions.CustomException;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
-@BoxComponent( allowsBody = true )
+@BoxComponent( description = "Define component properties and functionality", allowsBody = true )
 public class Component extends ortus.boxlang.runtime.components.Component {
 
 	/**

@@ -30,7 +30,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 
-@BoxBIF
+@BoxBIF( description = "Convert a value to a number" )
 public class ToNumeric extends BIF {
 
 	/**

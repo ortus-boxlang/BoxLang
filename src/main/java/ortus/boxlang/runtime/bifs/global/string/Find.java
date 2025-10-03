@@ -23,7 +23,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 
-@BoxBIF
+@BoxBIF( description = "Find the position of a substring in a string" )
 @BoxBIF( alias = "FindNoCase" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "Find", objectArgument = "string" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "FindNoCase", objectArgument = "string" )

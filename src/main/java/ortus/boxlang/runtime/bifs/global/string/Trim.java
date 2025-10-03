@@ -23,8 +23,8 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 
-@BoxBIF
-@BoxMember( type = BoxLangType.STRING_STRICT, name = "Trim" )
+@BoxBIF( description = "Remove leading and trailing whitespace from a string" )
+@BoxMember( type = BoxLangType.STRING_STRICT )
 public class Trim extends BIF {
 
 	/**

@@ -25,7 +25,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 
-@BoxBIF
+@BoxBIF( description = "Get metadata information about an array" )
 @BoxMember( type = BoxLangType.ARRAY )
 public class ArrayGetMetadata extends BIF {
 

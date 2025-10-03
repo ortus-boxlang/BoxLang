@@ -47,7 +47,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 import ortus.boxlang.runtime.validation.Validator;
 
-@BoxComponent( allowsBody = false )
+@BoxComponent( description = "Retrieve database metadata and connection information", allowsBody = false )
 public class DBInfo extends Component {
 
 	/**

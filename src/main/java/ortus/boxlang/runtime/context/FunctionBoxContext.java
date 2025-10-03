@@ -42,6 +42,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
+import ortus.boxlang.runtime.types.util.TypeUtil;
 import ortus.boxlang.runtime.util.ArgumentUtil;
 
 /**
@@ -726,7 +727,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 				    "Variable '" + name + "' is null and cannot be used as a function." );
 			} else {
 				throw new BoxRuntimeException(
-				    "Variable '" + name + "' of type  '" + value.getClass().getName() + "'  is not a function." );
+				    "Variable '" + name + "' of type  '" + TypeUtil.getObjectName( value ) + "'  is not a function." );
 			}
 		}
 

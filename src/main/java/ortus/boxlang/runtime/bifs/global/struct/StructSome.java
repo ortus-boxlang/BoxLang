@@ -29,7 +29,7 @@ import ortus.boxlang.runtime.types.util.StructUtil;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 
-@BoxBIF
+@BoxBIF( description = "Test whether at least one item in struct matches the callback function" )
 @BoxMember( type = BoxLangType.STRUCT )
 public class StructSome extends BIF {
 

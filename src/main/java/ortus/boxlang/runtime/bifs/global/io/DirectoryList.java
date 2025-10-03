@@ -38,7 +38,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 import ortus.boxlang.runtime.validation.Validator;
 
-@BoxBIF
+@BoxBIF( description = "Get a list of files and directories" )
 public class DirectoryList extends BIF {
 
 	/**

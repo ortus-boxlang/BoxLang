@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
-@BoxBIF
+@BoxBIF( description = "Remove duplicate items from a list" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "listRemoveDuplicates" )
 
 public class ListRemoveDuplicates extends BIF {

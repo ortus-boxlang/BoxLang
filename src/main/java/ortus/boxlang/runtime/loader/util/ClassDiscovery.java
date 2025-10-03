@@ -36,7 +36,7 @@ import java.util.jar.JarFile;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -385,7 +385,7 @@ public class ClassDiscovery {
 			    // Replace the base directory path so we only work with packages and use dot notation
 			    .map( path -> directoryPath.relativize( path ).toString().replace( File.separator, "." ) )
 			    // Construct the class name from the path
-			    .map( path -> packageName + "." + StringUtils.replaceIgnoreCase( path, CLASS_FILE_EXTENSION, "" ) )
+			    .map( path -> packageName + "." + Strings.CI.replace( path, CLASS_FILE_EXTENSION, "" ) )
 			    // Load it or throw up
 			    .map( className -> {
 				    try {

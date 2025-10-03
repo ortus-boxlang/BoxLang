@@ -129,7 +129,7 @@ public record Argument(
 		if ( defaultExpression != null ) {
 			return defaultExpression.evaluate( context );
 		}
-		return DuplicationUtil.duplicate( defaultValue, false );
+		return DuplicationUtil.duplicate( defaultValue, false, context );
 	}
 
 	public boolean hasDefaultValue() {

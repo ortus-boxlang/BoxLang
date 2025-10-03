@@ -13,17 +13,17 @@ plugins {
 	id "application"
 	id 'antlr'
 	// For source code formatting
-	id "com.diffplug.spotless" version "7.2.0"
+	id "com.diffplug.spotless" version "7.2.1"
 	// Shadow
-	id "com.gradleup.shadow" version "9.0.2"
+	id "com.gradleup.shadow" version "9.1.0"
 	// For dependency updates
-	id 'com.github.ben-manes.versions' version '0.52.0'
+	id 'com.github.ben-manes.versions' version '0.53.0'
 	// For building service loader files
     id "com.github.harbby.gradle.serviceloader" version "1.1.9"
 	// Maven Publisher
 	id 'maven-publish'
 	id 'signing'
-	id 'com.gradleup.nmcp.aggregation' version "1.1.0"
+	id 'com.gradleup.nmcp.aggregation' version "1.2.0"
     // Download task
     id "de.undercouch.download" version "5.6.0"
 }
@@ -32,8 +32,7 @@ plugins {
  * Project Properties
  */
 group = 'ortus.boxlang'
-sourceCompatibility = jdkVersion
-targetCompatibility = jdkVersion
+
 ext {
 	buildID = System.getenv( 'BUILD_ID' ) ?: '0'
 	branch = System.getenv( 'BRANCH' ) ?: 'development'
@@ -55,6 +54,8 @@ def antlrGeneratedParserPackageDir = antlrGeneratedParserPackage.replaceAll("\\.
 def antlrGrammarDir = "src/main/antlr"
 
 java {
+	sourceCompatibility = JavaVersion.toVersion( jdkVersion )
+	targetCompatibility = JavaVersion.toVersion( jdkVersion )
 	withJavadocJar()
 	withSourcesJar()
 }
@@ -100,13 +101,13 @@ repositories {
  */
 dependencies {
     // Testing Dependencies
-    testImplementation "org.junit.jupiter:junit-jupiter:5.13.4"
+    testImplementation "org.junit.jupiter:junit-jupiter:6.0.0"
 	testImplementation "org.mockito:mockito-core:5.+"
 	testImplementation "com.google.truth:truth:1.+"
-	testImplementation "commons-cli:commons-cli:1.9.0"
+	testImplementation "commons-cli:commons-cli:1.10.0"
 	testImplementation "org.wiremock:wiremock:3.13.1"
 	testImplementation 'org.apache.derby:derby:10.17.1.0'
-	testImplementation 'io.undertow:undertow-core:2.3.18.Final'
+	testImplementation 'io.undertow:undertow-core:2.3.19.Final'
 	// Explicitly declare the JUnit platform launcher (to avoid deprecation)
     testRuntimeOnly "org.junit.platform:junit-platform-launcher"
 
@@ -124,15 +125,15 @@ dependencies {
 	// Many of these classes ( e.g. StringEscapeUtils ) are currently deprecated in commons-lang and others will be moved in the future
 	implementation 'org.apache.commons:commons-text:1.14.0'
 	// https://mvnrepository.com/artifact/org.apache.commons/commons-cli
-	implementation "commons-cli:commons-cli:1.9.0"
+	implementation "commons-cli:commons-cli:1.10.0"
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-objects
-	implementation 'com.fasterxml.jackson.jr:jackson-jr-objects:2.19.2'
+	implementation 'com.fasterxml.jackson.jr:jackson-jr-objects:2.20.0'
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-extension-javatime
-	implementation 'com.fasterxml.jackson.jr:jackson-jr-extension-javatime:2.19.2'
+	implementation 'com.fasterxml.jackson.jr:jackson-jr-extension-javatime:2.20.0'
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-stree
-	implementation 'com.fasterxml.jackson.jr:jackson-jr-stree:2.19.2'
+	implementation 'com.fasterxml.jackson.jr:jackson-jr-stree:2.20.0'
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-annotation-support
-	implementation 'com.fasterxml.jackson.jr:jackson-jr-annotation-support:2.19.2'
+	implementation 'com.fasterxml.jackson.jr:jackson-jr-annotation-support:2.20.0'
 	// https://mvnrepository.com/artifact/org.slf4j/slf4j-api
 	implementation 'org.slf4j:slf4j-api:2.0.17'
 	// https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
@@ -150,7 +151,7 @@ dependencies {
 
 	// Compile Only Dependencies
 	// Java Annotations Checks, this are for compile documentation only. It's not included in the final build
-	compileOnly 'org.checkerframework:checker-qual:3.49.5'
+	compileOnly 'org.checkerframework:checker-qual:3.51.0'
 
 }
 
@@ -540,7 +541,7 @@ javadoc {
 }
 
 task zipJavadocs( type: Zip ) {
-	group "documentation"
+	group = "documentation"
 	from javadoc.destinationDir
 	archiveFileName = "boxlang-javadocs-${version}.zip"
 	destinationDirectory = file( "$buildDir/distributions" )

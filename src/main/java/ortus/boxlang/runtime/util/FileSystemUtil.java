@@ -58,7 +58,7 @@ import org.apache.commons.io.ByteOrderMark;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BOMInputStream;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.SystemUtils;
 
 import ortus.boxlang.runtime.BoxRuntime;
@@ -78,6 +78,7 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.ListUtil;
+import ortus.boxlang.runtime.types.util.TypeUtil;
 import ortus.boxlang.runtime.util.conversion.RuntimeObjectInputStream;
 
 /**
@@ -233,8 +234,6 @@ public final class FileSystemUtil {
 			} else {
 				if ( allowBinary && isBinaryFile( filePath ) ) {
 					return Files.readAllBytes( path );
-				} else if ( bufferSize == null ) {
-					return StringCaster.cast( Files.newInputStream( path ), charset, true );
 				} else {
 					// @formatter:off
 					try (
@@ -251,8 +250,14 @@ public final class FileSystemUtil {
 							} else {
 								inputReader = new InputStreamReader( inputStream );
 							}
-							try ( BufferedReader reader = new BufferedReader( inputReader, bufferSize ) ) {
-								return reader.lines().collect( Collectors.joining( FileSystemUtil.LINE_SEPARATOR ) );
+							if( bufferSize == null ) {
+								try ( BufferedReader reader = new BufferedReader( inputReader ) ) {
+									return reader.lines().collect( Collectors.joining( FileSystemUtil.LINE_SEPARATOR ) );
+								}
+							} else {
+								try ( BufferedReader reader = new BufferedReader( inputReader, bufferSize ) ) {
+									return reader.lines().collect( Collectors.joining( FileSystemUtil.LINE_SEPARATOR ) );
+								}
 							}
 						}
 					// @formatter:on
@@ -655,7 +660,7 @@ public final class FileSystemUtil {
 			} catch ( IOException e ) {
 				throw new BoxIOException( String.format(
 				    "The target entry [%s] could not be written to the file path [%s]. The message received was: %s",
-				    target.getClass().getName(),
+				    TypeUtil.getObjectName( target ),
 				    filePath.toString(),
 				    e.getMessage()
 				),
@@ -1263,6 +1268,21 @@ public final class FileSystemUtil {
 	 * @return The expanded path represented in a ResolvedFilePath record
 	 */
 	public static ResolvedFilePath expandPath( IBoxContext context, String path, ResolvedFilePath basePath, boolean externalOnly ) {
+		IStruct mappings = context.getConfig().getAsStruct( Key.mappings );
+		return expandPath( mappings, path, basePath, externalOnly );
+	}
+
+	/**
+	 * Expands a path to an absolute path. If the path is already absolute, it is
+	 * returned as is.
+	 *
+	 * @param mappings The mappings to use for resolving the path.
+	 * @param path     The path to expand
+	 * @param basePath The base path to use for relative paths
+	 *
+	 * @return The expanded path represented in a ResolvedFilePath record
+	 */
+	public static ResolvedFilePath expandPath( IStruct mappings, String path, ResolvedFilePath basePath, boolean externalOnly ) {
 		// This really isn't a valid path, but ColdBox does this by carelessly appending too many slashes to view paths
 		if ( path.startsWith( "//" ) ) {
 			// strip one of them off
@@ -1281,7 +1301,7 @@ public final class FileSystemUtil {
 				// There are codepaths where ad-hoc source code has a source path of "unknown". That's not really ideal, but
 				// if we try to process this, we'll get crazy errors.
 				if ( basePath.absolutePath() != null && !basePath.absolutePath().toString().equals( "unknown" ) ) {
-					return basePath.newFromRelative( context, path );
+					return basePath.newFromRelative( mappings, path );
 				}
 			}
 			// No template, no problem. Slap a slash on, and we'll match it below
@@ -1291,8 +1311,7 @@ public final class FileSystemUtil {
 		// Let's find the longest mapping that matches the start of the path
 		// Mappings are already sorted by length, so we can just take the first one that matches
 		final String			finalPath				= path;
-		Map.Entry<Key, Object>	matchingMappingEntry	= context.getConfig()
-		    .getAsStruct( Key.mappings )
+		Map.Entry<Key, Object>	matchingMappingEntry	= mappings
 		    .entrySet()
 		    .stream()
 		    .filter( entry -> {
@@ -1305,7 +1324,7 @@ public final class FileSystemUtil {
 															    }
 															    // Standard startswith check
 															    // /foo/bar/baz starts with /foo/bar
-															    if ( StringUtils.startsWithIgnoreCase( finalPath, entry.getKey().getName() ) ) {
+															    if ( Strings.CI.startsWith( finalPath, entry.getKey().getName() ) ) {
 																    return true;
 															    }
 															    // Edge case where mapping is defined with trailing slash, but expand path was called without a trailing slash
@@ -1340,7 +1359,9 @@ public final class FileSystemUtil {
 			if ( File.separator.equals( "/" ) ) {
 				// System.out.println( "We are Unix now... " );
 				// ... if so the path needs to start with / AND the parent must exist (and the parent can't be /)
-				if ( originalPath.startsWith( "/" ) && !Files.exists( originalPathPath ) && !originalPathPath.getParent().toString().equals( "/" ) ) {
+				Boolean originalPathExists = null;
+				if ( originalPath.startsWith( "/" ) && ! ( originalPathExists = Files.exists( originalPathPath ) )
+				    && !originalPathPath.getParent().toString().equals( "/" ) ) {
 					// System.out.println( "We are in the conditional now... " );
 					String[]	pathParts	= originalPath.substring( 1, originalPath.length() - 1 ).split( "/" );
 					String		tld			= "/" + pathParts[ 0 ];
@@ -1348,7 +1369,7 @@ public final class FileSystemUtil {
 					if ( tldExists ) {
 						return ResolvedFilePath.of( originalPathPath );
 					}
-				} else if ( Files.exists( originalPathPath ) ) {
+				} else if ( originalPathExists != null ? originalPathExists : Files.exists( originalPathPath ) ) {
 					return ResolvedFilePath.of( originalPathPath );
 				}
 			} else {
@@ -1358,19 +1379,21 @@ public final class FileSystemUtil {
 			}
 		}
 
-		IStruct interceptData = Struct.of( Key.path, path, Key.resolvedFilePath, null );
-		// An interceptor can populate a ResolvedFilePath instance in the interceptData struct to supply the resolved path
-		interceptorService.announce(
-		    BoxEvent.ON_MISSING_MAPPING,
-		    interceptData
-		);
-		if ( interceptData.get( Key.resolvedFilePath ) != null ) {
-			// if an interceptor puts a bad value here, we'll get a class cast exception. We can validate it, but it should error either way.
-			return ( ResolvedFilePath ) interceptData.get( Key.resolvedFilePath );
+		if ( interceptorService.hasState( BoxEvent.ON_MISSING_MAPPING.key() ) ) {
+			IStruct interceptData = Struct.ofNonConcurrent( Key.path, path, Key.resolvedFilePath, null );
+			// An interceptor can populate a ResolvedFilePath instance in the interceptData struct to supply the resolved path
+			interceptorService.announce(
+			    BoxEvent.ON_MISSING_MAPPING,
+			    interceptData
+			);
+			if ( interceptData.get( Key.resolvedFilePath ) != null ) {
+				// if an interceptor puts a bad value here, we'll get a class cast exception. We can validate it, but it should error either way.
+				return ( ResolvedFilePath ) interceptData.get( Key.resolvedFilePath );
+			}
 		}
 
 		// We give up, just assume it uses the root mapping of /
-		String	rootMapping	= context.getConfig().getAsStruct( Key.mappings ).getAs( Mapping.class, Key.of( "/" ) ).path();
+		String	rootMapping	= mappings.getAs( Mapping.class, Key.of( "/" ) ).path();
 		Path	result		= Path.of( rootMapping, path ).toAbsolutePath();
 		return ResolvedFilePath.of( "/", rootMapping, Path.of( finalPath ).normalize().toString(), result.normalize() );
 	}
@@ -1397,14 +1420,27 @@ public final class FileSystemUtil {
 	 * @return The contracted path represented in a ResolvedFilePath record. (The contracted path will be in the relativePath property)
 	 */
 	public static ResolvedFilePath contractPath( IBoxContext context, String path, String preferredMapping ) {
-		String	finalPath	= Path.of( path ).normalize().toString().replace( "\\", "/" );
-		IStruct	mappings	= context.getConfig().getAsStruct( Key.mappings );
+		IStruct mappings = context.getConfig().getAsStruct( Key.mappings );
+		return contractPath( mappings, path, preferredMapping );
+	}
+
+	/**
+	 * Tries to match a given absolute path to mappings in the environment and will return a path that is contracted by the shortest matched mapping. If there are no matches, returns the absolute path it was given.
+	 *
+	 * @param mappings         The mappings to use for path contraction
+	 * @param path             The path to contract
+	 * @param preferredMapping A mapping to check for a match first
+	 *
+	 * @return The contracted path represented in a ResolvedFilePath record. (The contracted path will be in the relativePath property)
+	 */
+	public static ResolvedFilePath contractPath( IStruct mappings, String path, String preferredMapping ) {
+		String finalPath = Path.of( path ).normalize().toString().replace( "\\", "/" );
 
 		if ( preferredMapping != null && mappings.get( Key.of( preferredMapping ) ) != null ) {
 			String mappingDirectory = mappings.getAs( Mapping.class, Key.of( preferredMapping ) ).path();
 			mappingDirectory = Path.of( mappingDirectory ).normalize().toString().replace( "\\", "/" );
 			if ( File.separator.equals( "/" ) ? finalPath.startsWith( mappingDirectory )
-			    : StringUtils.startsWithIgnoreCase( finalPath, mappingDirectory ) ) {
+			    : Strings.CI.startsWith( finalPath, mappingDirectory ) ) {
 
 				// strip the dir from the path
 				String contractedPath = finalPath.substring( mappingDirectory.length() );
@@ -1441,7 +1477,7 @@ public final class FileSystemUtil {
 		        Path.of( entry.getValue().toString() ).normalize().toString().replace( "\\", "/" ) ) )
 		    .filter( entry -> {
 			    return File.separator.equals( "/" ) ? finalPath.startsWith( entry.getValue() )
-			        : StringUtils.startsWithIgnoreCase( finalPath, entry.getValue() );
+			        : Strings.CI.startsWith( finalPath, entry.getValue() );
 		    } )
 		    .findFirst()
 		    .orElse( null );
@@ -1678,7 +1714,7 @@ public final class FileSystemUtil {
 	 */
 	private static boolean caseSensitivityCheck() {
 		try {
-			File	currentWorkingDir	= new File( System.getProperty( "user.home" ) );
+			File	currentWorkingDir	= new File( System.getProperty( "java.io.tmpdir" ) );
 			File	case1				= new File( currentWorkingDir, "case1" );
 			File	case2				= new File( currentWorkingDir, "Case1" );
 			case1.createNewFile();

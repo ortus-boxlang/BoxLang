@@ -122,9 +122,13 @@ public class BoxLambdaTransformer extends AbstractTransformer {
 				super();
 			}
 
-			public static synchronized ${classname} getInstance() {
+			public static ${classname} getInstance() {
 				if ( instance == null ) {
-					instance = new ${classname}();
+					synchronized ( ${classname}.class ) {
+						if ( instance == null ) {
+							instance = new ${classname}();
+						}
+					}
 				}
 				return instance;
 			}

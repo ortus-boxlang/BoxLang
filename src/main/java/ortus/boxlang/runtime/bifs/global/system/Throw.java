@@ -26,7 +26,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.exceptions.CustomException;
 import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 
-@BoxBIF
+@BoxBIF( description = "Throw a custom exception" )
 public class Throw extends BIF {
 
 	/**

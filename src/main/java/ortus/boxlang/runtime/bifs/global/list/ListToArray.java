@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
-@BoxBIF
+@BoxBIF( description = "Convert a delimited list to an array" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "ListToArray" )
 public class ListToArray extends BIF {
 

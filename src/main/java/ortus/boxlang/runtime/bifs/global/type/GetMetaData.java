@@ -23,7 +23,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.IType;
 
-@BoxBIF
+@BoxBIF( description = "Get metadata about a function or component" )
 public class GetMetaData extends BIF {
 
 	/**

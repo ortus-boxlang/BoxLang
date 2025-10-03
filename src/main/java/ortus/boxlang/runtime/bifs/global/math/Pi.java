@@ -22,7 +22,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.types.util.MathUtil;
 
-@BoxBIF
+@BoxBIF( description = "Return the value of pi" )
 public class Pi extends BIF {
 
 	/**

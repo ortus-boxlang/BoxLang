@@ -357,7 +357,7 @@ public class DynamicInteropService {
 			    .getInterceptorService()
 			    .announce(
 			        BoxEvent.AFTER_DYNAMIC_OBJECT_CREATION,
-			        Struct.of(
+			        () -> Struct.ofNonConcurrent(
 			            Key.object, thisInstance,
 			            Key.clazz, targetClass
 			        )

@@ -30,7 +30,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 
-@BoxBIF
+@BoxBIF( description = "Encode a string to the specified character set" )
 
 public class CharsetEncode extends BIF {
 

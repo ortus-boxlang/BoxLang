@@ -31,7 +31,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.util.LocalizationUtil;
 
-@BoxBIF
+@BoxBIF( description = "Format a date/time value as a string" )
 @BoxBIF( alias = "DateFormat" )
 @BoxBIF( alias = "TimeFormat" )
 @BoxMember( type = BoxLangType.DATETIME, name = "format" )
@@ -95,15 +95,17 @@ public class DateTimeFormat extends BIF {
 
 		// LS Subclass locales
 		Locale locale = LocalizationUtil.parseLocaleFromContext( context, arguments );
-		// Apply our runtime timezone to our initial reference
-		ref = new DateTime( ref.getWrapped().withZoneSameInstant( timezone ) );
+		// Update to use a copy with the current zone only if a timezone was passed in, or if the ref has not been manually fixed to a timezone
+		if ( arguments.getAsString( Key.timezone ) != null || !ref.fixedTimezone ) {
+			ref = new DateTime( ref.getWrapped().withZoneSameInstant( timezone ) );
+		}
 
 		if ( format == null && bifMethodKey.equals( Key.dateFormat ) ) {
-			return locale == null ? ref.format( DateTime.DEFAULT_DATE_FORMAT_MASK ) : ref.format( locale, DateTime.DEFAULT_DATE_FORMAT_MASK );
+			return locale == null ? ref.format( DateTime.DEFAULT_DATE_FORMATTER ) : ref.format( locale, DateTime.DEFAULT_DATE_FORMATTER );
 		} else if ( format == null && bifMethodKey.equals( Key.timeFormat ) ) {
-			return locale == null ? ref.format( DateTime.DEFAULT_TIME_FORMAT_MASK ) : ref.format( locale, DateTime.DEFAULT_TIME_FORMAT_MASK );
+			return locale == null ? ref.format( DateTime.DEFAULT_TIME_FORMATTER ) : ref.format( locale, DateTime.DEFAULT_TIME_FORMATTER );
 		} else if ( format == null ) {
-			return locale == null ? ref.format( DateTime.DEFAULT_DATETIME_FORMAT_MASK ) : ref.format( locale, DateTime.DEFAULT_DATETIME_FORMAT_MASK );
+			return locale == null ? ref.format( DateTime.DEFAULT_DATETIME_FORMATTER ) : ref.format( locale, DateTime.DEFAULT_DATETIME_FORMATTER );
 		} else {
 			Key		formatKey		= Key.of( format );
 			String	mode			= bifMethodKey.equals( Key.dateFormat )

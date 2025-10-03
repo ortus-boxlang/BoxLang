@@ -32,7 +32,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
-@BoxBIF
+@BoxBIF( description = "Set values for a specific row in a query" )
 @BoxMember( type = BoxLangType.QUERY )
 public class QuerySetRow extends BIF {
 

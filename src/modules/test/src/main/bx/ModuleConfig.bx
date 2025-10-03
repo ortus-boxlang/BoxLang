@@ -39,6 +39,13 @@ class{
 	this.mapping = "test";
 
 	/**
+	 * The BoxLang invocation path for your module.  This is the path that you will use to invoke
+	 * your module from the command line or programmatically.  All BoxLang module invocation paths
+	 * are prefixed with: bxModules.{this.invocationPath}, /bxmodules/{this.invocationPath}
+	 */
+	this.publicMapping = "www";
+
+	/**
 	 * Who built the module
 	 */
 	this.author = "Luis Majano";
@@ -91,27 +98,6 @@ class{
 				supportedBy : "Brad",
 				SLA : "24 hours"
 			}
-		};
-
-		/**
-		 * Every module can have a list of object mappings
-		 * that can be created by boxLang.  This is a great way
-		 * to create objects that can be used by the module
-		 * or other modules.
-		 * The mappings will be created in the following format:
-		 * bxModules.{this.mapping}.{mappingName}
-		 * Ex: bxModules.test.MyObject => bxModules.test.models.MyObject
-		 */
-		objectMappings = {
-			// { name="MyObject", class="models.utilities.MyObject" }
-		}
-
-		/**
-		 * DataSources can be defined by a module and they will be registered
-		 * for you in the runtime
-		 */
-		datasources = {
-			// { name="MyDSN", class="coldbox.system.datasources.ColdBoxDataSource", properties={dsn="mydsn"} }
 		};
 
 		/**

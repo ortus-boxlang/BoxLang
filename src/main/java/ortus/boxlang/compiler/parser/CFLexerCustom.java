@@ -364,7 +364,7 @@ public class CFLexerCustom extends CFLexer {
 					} else if ( ( nextTokenType == BREAK || nextTokenType == CASE ) && inSwitchBody ) {
 						// switch( foo ) { case 1: break; }
 						isIdentifier = false;
-					} else if ( nextTokenType == RETURN && !lastTokenWas( DOT ) &&
+					} else if ( nextTokenType == RETURN && !lastTokenWas( DOT ) && !wrappedInPounds( nextToken ) &&
 					    ( nextNonWhiteSpaceCharIsOneOf( new int[] { '(', '{', '[', ';', '}', '\'', '"', '-', '_', '$' } ) || nextNonWhiteSpaceIsAnyChar()
 					        || nextNonWhiteSpaceIsAnyDigit() ) ) {
 						// return foo;
@@ -376,6 +376,8 @@ public class CFLexerCustom extends CFLexer {
 						// return _foo;
 						// return $foo;
 						// { return }
+						// ignore foo.return
+						// ignore #return#
 						isIdentifier = false;
 					} else if ( nextTokenType == PARAM && ( ( lastTokenWas( DOT ) || lastTokenWas( LPAREN ) || nextNonWhiteSpaceCharIs( ')' ) )
 					    || ! ( nextNonWhiteSpaceCharIsOneOf( new int[] { '\'', '"' } ) || nextNonWhiteSpaceIsAnyChar() ) ) ) {
@@ -399,9 +401,13 @@ public class CFLexerCustom extends CFLexer {
 						// var foo = "bar"
 						isIdentifier = false;
 					} else if ( nextTokenType == NEW && !lastTokenWas( DOT )
-					    && ( nextNonWhiteSpaceIsAnyChar() || nextNonWhiteSpaceCharIs( '\'' ) || nextNonWhiteSpaceCharIs( '"' ) )
+					    && ( nextNonWhiteSpaceIsAnyChar() || nextNonWhiteSpaceCharIs( '\'' ) || nextNonWhiteSpaceCharIs( '"' )
+					        || nextNonWhiteSpaceCharIs( '_' ) )
 					    && !nextNonWhiteSpaceCharsAre( operatorStartingChars ) ) {
 						// foo = new Bar() is fine
+						// new "Bar"() is fine
+						// new 'Bar'() is fine
+						// new _Bar() is fine
 						// but ignore "new is 1" because there is an operator after new
 						isIdentifier = false;
 					} else if ( nextTokenType == FUNCTION && !isFunctionDeclaration( nextToken ) ) {
@@ -510,7 +516,7 @@ public class CFLexerCustom extends CFLexer {
 						if ( debug )
 							System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because next chars are the start of an operator" );
 						isIdentifier = true;
-					} else if ( lastTokenWas( ICHAR ) && nextNonWhiteSpaceCharIs( '#' ) && hasMode( hashMode ) ) {
+					} else if ( lastTokenWas( ICHAR ) && nextNonWhiteSpaceCharIs( '#' ) && ( hasMode( hashMode ) || lastModeWas( DEFAULT_SCRIPT_MODE ) ) ) {
 						// The token is encased in #hash# signs
 						if ( debug )
 							System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because it is encased in #hash# signs" );
@@ -543,7 +549,7 @@ public class CFLexerCustom extends CFLexer {
 						if ( debug )
 							System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because it is not a CF component call" );
 						isIdentifier = true;
-					} else if ( nextTokenType == ABSTRACT ) {
+					} else if ( nextTokenType == ABSTRACT || nextTokenType == COMPONENT || nextTokenType == INTERFACE ) {
 						if ( !classIsExpected ) {
 							if ( debug )
 								System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because the file is not a class" );
@@ -893,6 +899,21 @@ public class CFLexerCustom extends CFLexer {
 	public CFLexerCustom setClassIsExpected( boolean classIsExpected ) {
 		this.classIsExpected = classIsExpected;
 		return this;
+	}
+
+	/**
+	 * Decide if a token is wrapped in #pound# signs.
+	 * 
+	 * @param token the token to check
+	 * 
+	 * @return true if the token is wrapped in #pound# signs
+	 */
+	private boolean wrappedInPounds( Token token ) {
+		int length = token.getText().length();
+		if ( getInputStream().LA( -length - 1 ) == '#' && getInputStream().LA( 1 ) == '#' ) {
+			return true;
+		}
+		return false;
 	}
 
 }

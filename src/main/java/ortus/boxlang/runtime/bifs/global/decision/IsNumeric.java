@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.util.LocalizationUtil;
 
-@BoxBIF
+@BoxBIF( description = "Check if value is numeric" )
 @BoxBIF( alias = "LSIsNumeric" )
 public class IsNumeric extends BIF {
 

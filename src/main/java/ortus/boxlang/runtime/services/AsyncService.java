@@ -31,7 +31,7 @@ import org.slf4j.Logger;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.async.executors.BoxScheduledExecutor;
-import ortus.boxlang.runtime.async.executors.ExecutorRecord;
+import ortus.boxlang.runtime.async.executors.BoxExecutor;
 import ortus.boxlang.runtime.config.segments.ExecutorConfig;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
@@ -44,7 +44,7 @@ import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
  * Every time a new executor is created it will be automatically registered with the service.
  * You can then use the service to get the executor by name and perform operations on it.
  *
- * When you get an executor by name, you will get an {@link ExecutorRecord} which contains the executor
+ * When you get an executor by name, you will get an {@link BoxExecutor} which contains the executor
  * and some metadata about it. You can also get a map of all the executors and their metadata.
  *
  * The available executor types are:
@@ -65,7 +65,7 @@ import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
  * Please note that we do not use direct forced shutdown of the executors, we use the
  * {@link ortus.boxlang.runtime.async.tasks.BaseScheduler#shutdown()}
  * and
- * {@link ExecutorRecord#shutdownAndAwaitTermination(Long, TimeUnit)}
+ * {@link BoxExecutor#shutdownAndAwaitTermination(Long, TimeUnit)}
  * methods to allow the tasks to finish gracefully. If you want to force shutdown, you can do so by passing in a {code force = true}
  */
 public class AsyncService extends BaseService {
@@ -105,7 +105,7 @@ public class AsyncService extends BaseService {
 	 * --------------------------------------------------------------------------
 	 */
 
-	private Map<String, ExecutorRecord>	executors			= new ConcurrentHashMap<>();
+	private Map<String, BoxExecutor>	executors			= new ConcurrentHashMap<>();
 
 	/**
 	 * Logger
@@ -173,7 +173,7 @@ public class AsyncService extends BaseService {
 	 *
 	 * @return The executors struct
 	 */
-	public Map<String, ExecutorRecord> getExecutors() {
+	public Map<String, BoxExecutor> getExecutors() {
 		return executors;
 	}
 
@@ -185,7 +185,7 @@ public class AsyncService extends BaseService {
 	 *
 	 * @return The executor record
 	 */
-	public ExecutorRecord newExecutor( String name, ExecutorType type ) {
+	public BoxExecutor newExecutor( String name, ExecutorType type ) {
 		return newExecutor( name, type, DEFAULT_MAX_THREADS );
 	}
 
@@ -198,7 +198,7 @@ public class AsyncService extends BaseService {
 	 *
 	 * @return The executor record
 	 */
-	public ExecutorRecord newExecutor( String name, ExecutorType type, int maxThreads ) {
+	public BoxExecutor newExecutor( String name, ExecutorType type, int maxThreads ) {
 		this.executors.computeIfAbsent( name, key -> buildExecutor( name, type, maxThreads ) );
 		return this.executors.get( name );
 	}
@@ -223,7 +223,7 @@ public class AsyncService extends BaseService {
 	 *
 	 * @return The executor
 	 */
-	public ExecutorRecord getExecutor( String name ) {
+	public BoxExecutor getExecutor( String name ) {
 		if ( !hasExecutor( name ) ) {
 			throw new KeyNotFoundException( "Executor [" + name + "] does not exist. Valid executors are " + this.executors.keySet().toString() );
 		}
@@ -238,7 +238,7 @@ public class AsyncService extends BaseService {
 	 */
 	public AsyncService deleteExecutor( String name ) {
 		if ( hasExecutor( name ) ) {
-			ExecutorRecord targetExecutor = this.executors.remove( name );
+			BoxExecutor targetExecutor = this.executors.remove( name );
 			if ( targetExecutor.executor().isShutdown() ) {
 				targetExecutor.executor().shutdownNow();
 			}
@@ -379,7 +379,7 @@ public class AsyncService extends BaseService {
 	 *
 	 * @return The executor record
 	 */
-	public ExecutorRecord newCachedExecutor( String name ) {
+	public BoxExecutor newCachedExecutor( String name ) {
 		return newExecutor( name, ExecutorType.CACHED );
 	}
 
@@ -391,7 +391,7 @@ public class AsyncService extends BaseService {
 	 *
 	 * @return The executor record
 	 */
-	public ExecutorRecord newFixedExecutor( String name, Integer maxThreads ) {
+	public BoxExecutor newFixedExecutor( String name, Integer maxThreads ) {
 		return newExecutor( name, ExecutorType.FIXED, ( maxThreads == null ? DEFAULT_MAX_THREADS : maxThreads ) );
 	}
 
@@ -402,7 +402,7 @@ public class AsyncService extends BaseService {
 	 *
 	 * @return The executor record
 	 */
-	public ExecutorRecord newSingleExecutor( String name ) {
+	public BoxExecutor newSingleExecutor( String name ) {
 		return newExecutor( name, ExecutorType.SINGLE );
 	}
 
@@ -414,7 +414,7 @@ public class AsyncService extends BaseService {
 	 *
 	 * @return The executor record
 	 */
-	public ExecutorRecord newScheduledExecutor( String name, Integer maxThreads ) {
+	public BoxExecutor newScheduledExecutor( String name, Integer maxThreads ) {
 		return newExecutor( name, ExecutorType.SCHEDULED, ( maxThreads == null ? DEFAULT_MAX_THREADS : maxThreads ) );
 	}
 
@@ -425,7 +425,7 @@ public class AsyncService extends BaseService {
 	 *
 	 * @return The executor record
 	 */
-	public ExecutorRecord newScheduledExecutor( String name ) {
+	public BoxExecutor newScheduledExecutor( String name ) {
 		return newExecutor( name, ExecutorType.SCHEDULED, DEFAULT_MAX_THREADS );
 	}
 
@@ -437,7 +437,7 @@ public class AsyncService extends BaseService {
 	 *
 	 * @return The executor record
 	 */
-	public ExecutorRecord newWorkStealingExecutor( String name, Integer parallelism ) {
+	public BoxExecutor newWorkStealingExecutor( String name, Integer parallelism ) {
 		return newExecutor( name, ExecutorType.WORK_STEALING, ( parallelism == null ? 0 : parallelism ) );
 	}
 
@@ -449,7 +449,7 @@ public class AsyncService extends BaseService {
 	 *
 	 * @return The executor record
 	 */
-	public ExecutorRecord newForkJoinExecutor( String name, Integer parallelism ) {
+	public BoxExecutor newForkJoinExecutor( String name, Integer parallelism ) {
 		return newExecutor( name, ExecutorType.FORK_JOIN, ( parallelism == null ? 0 : parallelism ) );
 	}
 
@@ -460,7 +460,7 @@ public class AsyncService extends BaseService {
 	 *
 	 * @return The executor record
 	 */
-	public ExecutorRecord newVirtualExecutor( String name ) {
+	public BoxExecutor newVirtualExecutor( String name ) {
 		return newExecutor( name, ExecutorType.VIRTUAL );
 	}
 
@@ -470,8 +470,8 @@ public class AsyncService extends BaseService {
 	 *
 	 * @return The common ForkJoinPool executor record
 	 */
-	public ExecutorRecord getCommonForkJoinPool() {
-		return new ExecutorRecord( ForkJoinPool.commonPool(), "common-fork-join-pool", ExecutorType.FORK_JOIN, 0 );
+	public BoxExecutor getCommonForkJoinPool() {
+		return new BoxExecutor( ForkJoinPool.commonPool(), "common-fork-join-pool", ExecutorType.FORK_JOIN, 0 );
 	}
 
 	/**
@@ -483,7 +483,7 @@ public class AsyncService extends BaseService {
 	 *
 	 * @return The executor
 	 */
-	public static ExecutorRecord buildExecutor( String name, ExecutorType type, Integer maxThreads ) {
+	public static BoxExecutor buildExecutor( String name, ExecutorType type, Integer maxThreads ) {
 		ExecutorService executor = null;
 		switch ( type ) {
 			case CACHED :
@@ -521,41 +521,41 @@ public class AsyncService extends BaseService {
 			default :
 				executor = null;
 		}
-		return new ExecutorRecord( executor, name, type, maxThreads );
+		return new BoxExecutor( executor, name, type, maxThreads );
 	}
 
 	/**
 	 * Get an executor record from any object, this is useful for BIFs that accept an executor as an argument.
-	 * It will return the executor record if it is a string or an ExecutorRecord, otherwise it will throw an exception.
+	 * It will return the executor record if it is a string or an BoxExecutor, otherwise it will throw an exception.
 	 *
 	 * @param executor The executor to get the record from or null if no executor is provided
 	 *
-	 * @throws BoxRuntimeException If the executor is not a string or an ExecutorRecord
+	 * @throws BoxRuntimeException If the executor is not a string or an BoxExecutor
 	 *
 	 * @return The executor record
 	 */
-	public ExecutorRecord getRecordOrNull( Object executor ) {
-		ExecutorRecord executorRecord = null;
+	public BoxExecutor getRecordOrNull( Object executor ) {
+		BoxExecutor boxExecutor = null;
 		if ( executor != null ) {
 			if ( executor instanceof String castedExecutor ) {
-				executorRecord = this.getExecutor( castedExecutor );
-			} else if ( executor instanceof ExecutorRecord castedExecutor ) {
-				executorRecord = castedExecutor;
+				boxExecutor = this.getExecutor( castedExecutor );
+			} else if ( executor instanceof BoxExecutor castedExecutor ) {
+				boxExecutor = castedExecutor;
 			} else {
 				throw new BoxRuntimeException( "Invalid executor type: " + executor.getClass().getName() );
 			}
 		}
-		return executorRecord;
+		return boxExecutor;
 	}
 
 	/**
 	 * Utility method to choose an executor for parallel processing
-	 * 
+	 *
 	 * @param maxThreads The maximum number of threads to use ignored if virtual is
 	 *                   requested
 	 * @param virtual    Whether to use virtual threads
 	 */
-	public static ExecutorRecord chooseParallelExecutor( String prefix, int maxThreads, boolean virtual ) {
+	public static BoxExecutor chooseParallelExecutor( String prefix, int maxThreads, boolean virtual ) {
 		if ( virtual ) {
 			return AsyncService.buildExecutor( prefix + UUID.randomUUID().toString(), AsyncService.ExecutorType.VIRTUAL, 0 );
 		} else {

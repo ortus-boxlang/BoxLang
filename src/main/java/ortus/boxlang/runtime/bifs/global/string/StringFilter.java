@@ -25,7 +25,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 
-@BoxBIF
+@BoxBIF( description = "Filter string characters using a callback function" )
 
 public class StringFilter extends ListFilter {
 

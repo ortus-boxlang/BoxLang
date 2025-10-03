@@ -28,7 +28,7 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 import ortus.boxlang.runtime.validation.Validator;
 
-@BoxBIF
+@BoxBIF( description = "Get data from the base tag" )
 public class GetBaseTagData extends BIF {
 
 	/**

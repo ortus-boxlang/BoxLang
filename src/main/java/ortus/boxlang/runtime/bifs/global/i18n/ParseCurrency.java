@@ -31,7 +31,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.LocalizationUtil;
 
-@BoxBIF
+@BoxBIF( description = "Parse a currency string into a numeric value" )
 @BoxBIF( alias = "LSParseCurrency" )
 
 public class ParseCurrency extends BIF {

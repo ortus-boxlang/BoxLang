@@ -34,7 +34,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.async.executors.ExecutorRecord;
+import ortus.boxlang.runtime.async.executors.BoxExecutor;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.Attempt;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
@@ -46,6 +46,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 import ortus.boxlang.runtime.types.util.BLCollector;
 import ortus.boxlang.runtime.types.util.DateTimeHelper;
+import ortus.boxlang.runtime.types.util.TypeUtil;
 
 /**
  * This is the BoxLang version of a CompletableFuture to allow for more
@@ -445,7 +446,7 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 	 * <p>
 	 * Each future can be a BoxFuture or a CompletableFuture or a BoxLang Function that will be treated as a future.
 	 * <p>
-	 * You can also pass a custom ExecutorRecord to use for the execution of the futures if and ONLY if
+	 * You can also pass a custom BoxExecutor to use for the execution of the futures if and ONLY if
 	 * the incoming array of futures is an array of closures/lambdas or functions.
 	 *
 	 * <pre>
@@ -459,7 +460,7 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 	 *
 	 * @return A future that will return the results in an array
 	 */
-	public static BoxFuture<Array> all( IBoxContext context, Array futures, ExecutorRecord executorRecord ) {
+	public static BoxFuture<Array> all( IBoxContext context, Array futures, BoxExecutor executorRecord ) {
 		// If futures is null or empty, return an empty array future
 		if ( futures == null || futures.isEmpty() ) {
 			return BoxFuture.completedFuture( new Array() );
@@ -514,7 +515,7 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 	 *
 	 * @return A future that will return the first result from the futures
 	 */
-	public static BoxFuture<Object> any( IBoxContext context, Array futures, ExecutorRecord executorRecord ) {
+	public static BoxFuture<Object> any( IBoxContext context, Array futures, BoxExecutor executorRecord ) {
 		// If futures is null or empty, return an empty future
 		if ( futures == null || futures.isEmpty() ) {
 			return BoxFuture.completedFuture( null );
@@ -642,7 +643,7 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 	    Object items,
 	    ortus.boxlang.runtime.types.Function mapper,
 	    ortus.boxlang.runtime.types.Function errorHandler,
-	    ExecutorRecord executor ) {
+	    BoxExecutor executor ) {
 		return allApply( context, items, mapper, errorHandler, 0, TimeUnit.MILLISECONDS, executor );
 	}
 
@@ -706,7 +707,7 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 	    ortus.boxlang.runtime.types.Function errorHandler,
 	    long timeout,
 	    Object unit,
-	    ExecutorRecord executor ) {
+	    BoxExecutor executor ) {
 		// If items is null, return an empty array
 		if ( items == null ) {
 			return Array.EMPTY;
@@ -748,7 +749,7 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 	    ortus.boxlang.runtime.types.Function errorHandler,
 	    long timeout,
 	    Object unit,
-	    ExecutorRecord executor ) {
+	    BoxExecutor executor ) {
 		TimeUnit						timeUnit	= DateTimeHelper.toTimeUnit( unit );
 		final BoxLangLogger				allLogger	= BoxRuntime.getInstance().getLoggingService().ASYNC_LOGGER;
 
@@ -837,7 +838,7 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 	    ortus.boxlang.runtime.types.Function errorHandler,
 	    long timeout,
 	    Object unit,
-	    ExecutorRecord executor ) {
+	    BoxExecutor executor ) {
 		TimeUnit										timeUnit	= DateTimeHelper.toTimeUnit( unit );
 		final BoxLangLogger								allLogger	= BoxRuntime.getInstance().getLoggingService().ASYNC_LOGGER;
 		IStruct											result		= new Struct();
@@ -860,8 +861,8 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 								// Apply the mapper function to the itemStruct
 								Object mappedResult = (IStruct) new ortus.boxlang.runtime.interop.proxies.Function<>( mapper, context, null ).apply( itemStruct );
 								if( !( mappedResult instanceof IStruct ) ) {
-									allLogger.error("Mapper function did not return an instance of IStruct. Returned: " + mappedResult.getClass().getName());
-									throw new BoxRuntimeException( "Mapper function must return a struct, but it returned a: " + mappedResult.getClass().getName() );
+									allLogger.error("Mapper function did not return an instance of IStruct. Returned: " + TypeUtil.getObjectName( mappedResult ));
+									throw new BoxRuntimeException( "Mapper function must return a struct, but it returned a: " + TypeUtil.getObjectName( mappedResult ) );
 								}
 								// Return the key with the processed value
 								return new AbstractMap.SimpleEntry<>(
@@ -935,7 +936,7 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 	 *
 	 * @return An array of BoxFuture objects
 	 */
-	public static BoxFuture<?>[] futuresWrap( IBoxContext context, Array futures, ExecutorRecord executorRecord ) {
+	public static BoxFuture<?>[] futuresWrap( IBoxContext context, Array futures, BoxExecutor executorRecord ) {
 		// Wrap all the futures in a BoxFuture
 		return futures
 		    .stream()

@@ -29,7 +29,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.StructUtil;
 
-@BoxBIF
+@BoxBIF( description = "Filter struct entries using a callback function" )
 @BoxMember( type = BoxLangType.STRUCT )
 public class StructFilter extends BIF {
 

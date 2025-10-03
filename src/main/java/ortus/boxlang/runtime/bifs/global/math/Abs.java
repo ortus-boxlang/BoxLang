@@ -26,7 +26,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.MathUtil;
 
-@BoxBIF
+@BoxBIF( description = "Return the absolute value of a number" )
 @BoxMember( type = BoxLangType.NUMERIC )
 public class Abs extends BIF {
 

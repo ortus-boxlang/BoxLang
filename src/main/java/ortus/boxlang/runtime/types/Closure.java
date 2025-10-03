@@ -71,4 +71,14 @@ public abstract class Closure extends Function {
 		return null;
 	}
 
+	/**
+	 * Get the BoxLang type name for this type
+	 * 
+	 * @return The BoxLang type name
+	 */
+	@Override
+	public String getBoxTypeName() {
+		return "Closure";
+	}
+
 }

@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.dynamic.casters;
 
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
+import ortus.boxlang.runtime.types.util.TypeUtil;
 
 /**
  * I handle casting anything to a VariableName
@@ -75,7 +76,7 @@ public class VariableNameCaster implements IBoxCaster {
 				sObject = castAttempt.get();
 			} else {
 				if ( fail ) {
-					throw new BoxCastException( "Can't cast " + object.getClass().getName() + " to a VariableName." );
+					throw new BoxCastException( "Can't cast " + TypeUtil.getObjectName( object ) + " to a VariableName." );
 				} else {
 					return null;
 				}
@@ -88,7 +89,7 @@ public class VariableNameCaster implements IBoxCaster {
 				if ( ! ( Character.isAlphabetic( nextChar ) || nextChar == '_' || nextChar == '$' ) ) {
 					if ( fail ) {
 						throw new BoxCastException(
-						    "Can't cast " + object.getClass().getName() + " to a VariableName.  Invalid start character for VariableName: " + nextChar );
+						    "Can't cast " + TypeUtil.getObjectName( object ) + " to a VariableName.  Invalid start character for VariableName: " + nextChar );
 					} else {
 						return null;
 					}
@@ -97,7 +98,7 @@ public class VariableNameCaster implements IBoxCaster {
 				if ( ! ( Character.isAlphabetic( nextChar ) || Character.isDigit( nextChar ) || nextChar == '_' || nextChar == '$' ) ) {
 					if ( fail ) {
 						throw new BoxCastException(
-						    "Can't cast " + object.getClass().getName() + " to a VariableName.  Invalid character in VariableName: " + nextChar );
+						    "Can't cast " + TypeUtil.getObjectName( object ) + " to a VariableName.  Invalid character in VariableName: " + nextChar );
 					} else {
 						return null;
 					}

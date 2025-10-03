@@ -22,7 +22,7 @@ import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.types.IStruct;
 
-@BoxComponent( requiresBody = true )
+@BoxComponent( description = "Suppress output from the enclosed code block", requiresBody = true )
 public class Silent extends Component {
 
 	/**

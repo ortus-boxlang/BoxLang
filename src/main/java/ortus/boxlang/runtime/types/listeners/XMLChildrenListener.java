@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.types.listeners;
 
+import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
@@ -53,10 +54,15 @@ public class XMLChildrenListener implements IChangeListener<Array> {
 		if ( oldValue == null && newValue == null ) {
 			parentNode.removeChild( childNodeList.item( index ) );
 		} else if ( newValue != null && oldValue == null ) {
+			Node importNode = newValue instanceof Node ? ( Node ) newValue : ( ( XML ) newValue ).getNode();
+			// If two documents are being merged, we need to import before appending
+			if ( parentNode instanceof Document docParent && importNode instanceof Document docImport ) {
+				importNode = docParent.importNode( docImport.getDocumentElement(), true );
+			}
 			if ( childNodeList.item( index ) == null ) {
-				parentNode.appendChild( newValue instanceof Node ? ( Node ) newValue : ( ( XML ) newValue ).getNode() );
+				parentNode.appendChild( importNode );
 			} else {
-				parentNode.insertBefore( newValue instanceof Node ? ( Node ) newValue : ( ( XML ) newValue ).getNode(), childNodeList.item( index ) );
+				parentNode.insertBefore( importNode, childNodeList.item( index ) );
 			}
 		} else if ( newValue == null && oldValue != null ) {
 			parentNode.removeChild( oldValue instanceof Node ? ( Node ) oldValue : ( ( XML ) oldValue ).getNode() );

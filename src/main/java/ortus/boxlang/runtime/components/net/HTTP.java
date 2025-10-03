@@ -78,7 +78,7 @@ import ortus.boxlang.runtime.util.ResolvedFilePath;
 import ortus.boxlang.runtime.util.ZipUtil;
 import ortus.boxlang.runtime.validation.Validator;
 
-@BoxComponent( allowsBody = true )
+@BoxComponent( description = "Make HTTP requests and handle responses", allowsBody = true )
 public class HTTP extends Component {
 
 	/**
@@ -144,19 +144,7 @@ public class HTTP extends Component {
 		        Validator.REQUIRED,
 		        Validator.NON_EMPTY
 		    ) ),
-		    new Attribute( Key.file, "string", Set.of(
-		        Validator.requires( Key.path ),
-		        ( cxt, comp, attr, attrs ) -> {
-			        if ( !attrs.containsKey( Key.path ) ) {
-				        return;
-			        }
-			        String attrValue	= attrs.getAsString( attr.name() );
-			        Boolean isGetRequest = attrs.getAsString( Key.method ).toUpperCase().equals( "GET" );
-			        if ( !isGetRequest && ( attrValue == null || attrValue.trim().isEmpty() ) ) {
-				        throw new BoxValidationException( comp, attr, "is required with a path is specified and the method is not GET" );
-			        }
-		        }
-		    ) ),
+		    new Attribute( Key.file, "string" ),
 		    new Attribute( Key.multipart, "boolean", false, Set.of( Validator.TYPE ) ),
 		    new Attribute( Key.multipartType, "string", "form-data",
 		        Set.of( Validator.REQUIRED, Validator.NON_EMPTY, Validator.valueOneOf( "form-data", "related" ) ) ),
@@ -195,6 +183,61 @@ public class HTTP extends Component {
 	 * @param attributes     The attributes to the Component
 	 * @param body           The body of the Component
 	 * @param executionState The execution state of the Component
+	 * 
+	 * @attribute.URL The URL to which to make the HTTP request. Must start with http:// or https://
+	 * 
+	 * @attribute.port The port to which to make the HTTP request. Defaults to the standard port for the protocol (80 for http, 443 for https)
+	 * 
+	 * @attribute.method The HTTP method to use. One of GET, POST, PUT, DELETE, HEAD, TRACE, OPTIONS, PATCH. Default is GET.
+	 * 
+	 * @attribute.username The username to use for authentication, if any.
+	 * 
+	 * @attribute.password The password to use for authentication, if any.
+	 * 
+	 * @attribute.userAgent The User-Agent string to send with the request. Default is "BoxLang".
+	 * 
+	 * @attribute.charset The character set to use for the request. Default is UTF-8.
+	 * 
+	 * @attribute.resolveUrl Whether to resolve the URL before making the request. Default is false.
+	 * 
+	 * @attribute.throwOnError Whether to throw an error if the HTTP response status code is 400 or greater. Default is true.
+	 * 
+	 * @attribute.redirect Whether to follow redirects. Default is true.
+	 * 
+	 * @attribute.timeout The timeout for the request, in seconds. Default is no timeout.
+	 * 
+	 * @attribute.getAsBinary Whether to return the response body as binary. One of true, false, auto, yes, no, never. Default is auto.
+	 * 
+	 * @attribute.result The name of the variable in which to store the result Struct. Default is "bxhttp".
+	 * 
+	 * @attribute.file The name of the file in which to store the response body. If not set, the response body is stored in the result Struct. If not provided with a `path`, the file attribute can be a full path to the file to write.
+	 * 
+	 * @attribute.multipart Whether the request is a multipart request. Default is false.
+	 * 
+	 * @attribute.multipartType The type of multipart request. One of form-data, related. Default is form-data.
+	 * 
+	 * @attribute.clientCertPassword The password for the client certificate, if any.
+	 * 
+	 * @attribute.path The directory in which to store the response file, if any. If a file attribute is not provided, the file name will be extracted from the Content-Disposition header if present. If no disposition header is present with the file name,
+	 *                 an error will be thrown
+	 * 
+	 * @attribute.clientCert The path to the client certificate, if any.
+	 * 
+	 * @attribute.compression The compression type to use for the request, if any.
+	 * 
+	 * @attribute.authType The authentication type to use. One of BASIC, NTLM. Default is BASIC.
+	 * 
+	 * @attribute.cachedWithin If set, and a cached response is available within the specified duration (e.g. 10m for 10 minutes, 1h for 1 hour), the cached response will be returned instead of making a new request.
+	 * 
+	 * @attribute.encodeUrl Whether to encode the URL. Default is true.
+	 * 
+	 * @attribute.proxyServer The proxy server to use, if any.
+	 * 
+	 * @attribute.proxyPort The proxy server port to use, if any.
+	 * 
+	 * @attribute.proxyUser The proxy server username to use, if any.
+	 * 
+	 * @attribute.proxyPassword The proxy server password to use, if any.
 	 *
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
@@ -231,6 +274,13 @@ public class HTTP extends Component {
 		String	outputDirectory		= attributes.getAsString( Key.path );
 		String	requestID			= UUID.randomUUID().toString();
 		Instant	startTime			= Instant.now();
+
+		// We allow the `file` attribute to become the full file path if the `path` attribute is empty
+		if ( outputDirectory == null && attributes.getAsString( Key.file ) != null ) {
+			Path filePath = FileSystemUtil.expandPath( context, attributes.getAsString( Key.file ) ).absolutePath();
+			outputDirectory = filePath.getParent().toString();
+			attributes.put( Key.file, filePath.getFileName().toString() );
+		}
 
 		// Prepare the output directory if it is set
 		if ( outputDirectory != null ) {
@@ -324,9 +374,7 @@ public class HTTP extends Component {
 					case "file" -> files.add( param );
 					case "url" -> uriBuilder.addParameter(
 					    StringCaster.cast( param.get( Key._NAME ) ),
-					    BooleanCaster.cast( param.getOrDefault( Key.encoded, false ) )
-					        ? EncryptionUtil.urlEncode( StringCaster.cast( param.get( Key.value ) ), StandardCharsets.UTF_8 )
-					        : StringCaster.cast( param.get( Key.value ) )
+					    EncryptionUtil.urlEncode( StringCaster.cast( param.get( Key.value ) ), StandardCharsets.UTF_8 )
 					);
 					case "formfield" -> formFields.add( param );
 					case "cookie" -> builder.header( "Cookie",
@@ -393,25 +441,25 @@ public class HTTP extends Component {
 			HttpClient	client				= attributes.containsKey( Key.proxyServer ) || !attributes.getAsBoolean( Key.redirect )
 			    ? HttpManager.getCustomClient( attributes )
 			    : HttpManager.getClient();
-
 			// Announce the HTTP request
-			interceptorService.announce( BoxEvent.ON_HTTP_REQUEST, Struct.of(
-			    "requestID", requestID,
-			    "httpClient", client,
-			    "httpRequest", targetHTTPRequest,
-			    "targetURI", targetURI,
-			    "attributes", attributes
+			final var	finalTargetURI		= targetURI;
+			interceptorService.announce( BoxEvent.ON_HTTP_REQUEST, () -> Struct.ofNonConcurrent(
+			    Key.requestID, requestID,
+			    Key.httpClient, client,
+			    Key.httpRequest, targetHTTPRequest,
+			    Key.targetURI, finalTargetURI,
+			    Key.attributes, attributes
 			) );
 
 			// Adding the request
 			HTTPResult.put(
 			    Key.request,
 			    Struct.of(
-			        "url", targetURI,
-			        "method", method,
-			        "timeout", targetHTTPRequest.timeout(),
-			        "multipart", attributes.getAsBoolean( Key.multipart ),
-			        "headers", Struct.fromMap( targetHTTPRequest.headers().map() )
+			        Key.URL, targetURI,
+			        Key.method, method,
+			        Key.timeout, targetHTTPRequest.timeout(),
+			        Key.multipart, attributes.getAsBoolean( Key.multipart ),
+			        Key.headers, Struct.fromMap( targetHTTPRequest.headers().map() )
 			    ) );
 
 			// TODO : should we move the catch block below and add an `exceptionally` handler for the future?
@@ -422,13 +470,13 @@ public class HTTP extends Component {
 
 			// Announce the HTTP RAW response
 			// Useful for debugging and pre-processing and timing, since the other events are after the response is processed
-			interceptorService.announce( BoxEvent.ON_HTTP_RAW_RESPONSE, Struct.of(
-			    "requestID", requestID,
-			    "response", response,
-			    "httpClient", client,
-			    "httpRequest", targetHTTPRequest,
-			    "targetURI", targetURI,
-			    "attributes", attributes
+			interceptorService.announce( BoxEvent.ON_HTTP_RAW_RESPONSE, () -> Struct.ofNonConcurrent(
+			    Key.requestID, requestID,
+			    Key.response, response,
+			    Key.httpClient, client,
+			    Key.httpRequest, targetHTTPRequest,
+			    Key.targetURI, finalTargetURI,
+			    Key.attributes, attributes
 			) );
 
 			// Start Processing Results
@@ -468,6 +516,48 @@ public class HTTP extends Component {
 					    : "UTF-8";
 					responseBody	= new String( responseBytes, Charset.forName( charset ) );
 				}
+
+				// Prepare all the result variables now that we have the response
+				String	httpVersionString	= response.version() == HttpClient.Version.HTTP_1_1 ? "HTTP/1.1" : "HTTP/2";
+				String	statusCodeString	= String.valueOf( response.statusCode() );
+				String	statusText			= HTTPStatusReasons.getReasonForStatus( response.statusCode() );
+
+				headers.put( Key.HTTP_Version, httpVersionString );
+				headers.put( Key.status_code, statusCodeString );
+				headers.put( Key.explanation, statusText );
+
+				HTTPResult.put( Key.responseHeader, headers );
+				HTTPResult.put( Key.header, generateHeaderString( generateStatusLine( httpVersionString, statusCodeString, statusText ), headers ) );
+				HTTPResult.put( Key.HTTP_Version, httpVersionString );
+				HTTPResult.put( Key.statusCode, response.statusCode() );
+				HTTPResult.put( Key.status_code, response.statusCode() );
+				HTTPResult.put( Key.statusText, statusText );
+				HTTPResult.put( Key.status_text, statusText );
+				HTTPResult.put( Key.fileContent, response.statusCode() == 408 ? "Request Timeout" : responseBody );
+				HTTPResult.put( Key.errorDetail, response.statusCode() == 408 ? response.body() : "" );
+				Optional<String> contentTypeHeader = httpHeaders.firstValue( "Content-Type" );
+				contentTypeHeader.ifPresent( ( headerContentType ) -> {
+					String[] contentTypeParts = headerContentType.split( ";\s*" );
+					if ( contentTypeParts.length > 0 ) {
+						HTTPResult.put( Key.mimetype, contentTypeParts[ 0 ] );
+					}
+					if ( contentTypeParts.length > 1 ) {
+						HTTPResult.put( Key.charset, extractCharset( headerContentType ) );
+					}
+				} );
+				HTTPResult.put( Key.cookies, generateCookiesQuery( headers ) );
+				HTTPResult.put( Key.executionTime, Duration.between( startTime, Instant.now() ).toMillis() );
+
+				// Set the result back into the caller using the variable name
+				ExpressionInterpreter.setVariable( context, variableName, HTTPResult );
+
+				// Announce the HTTP response
+				interceptorService.announce( BoxEvent.ON_HTTP_RESPONSE, () -> Struct.ofNonConcurrent(
+				    Key.requestID, requestID,
+				    Key.response, response,
+				    Key.result, HTTPResult
+				) );
+
 				if ( outputDirectory != null ) {
 					String fileName = attributes.getAsString( Key.file );
 					if ( fileName == null || fileName.trim().isEmpty() ) {
@@ -494,51 +584,8 @@ public class HTTP extends Component {
 					} else if ( responseBody instanceof byte[] bodyBytes ) {
 						FileSystemUtil.write( destinationPath, bodyBytes, true );
 					}
-					return DEFAULT_RETURN;
-
 				}
 			}
-
-			// Prepare all the result variables now that we have the response
-			String	httpVersionString	= response.version() == HttpClient.Version.HTTP_1_1 ? "HTTP/1.1" : "HTTP/2";
-			String	statusCodeString	= String.valueOf( response.statusCode() );
-			String	statusText			= HTTPStatusReasons.getReasonForStatus( response.statusCode() );
-
-			headers.put( Key.HTTP_Version, httpVersionString );
-			headers.put( Key.status_code, statusCodeString );
-			headers.put( Key.explanation, statusText );
-
-			HTTPResult.put( Key.responseHeader, headers );
-			HTTPResult.put( Key.header, generateHeaderString( generateStatusLine( httpVersionString, statusCodeString, statusText ), headers ) );
-			HTTPResult.put( Key.HTTP_Version, httpVersionString );
-			HTTPResult.put( Key.statusCode, response.statusCode() );
-			HTTPResult.put( Key.status_code, response.statusCode() );
-			HTTPResult.put( Key.statusText, statusText );
-			HTTPResult.put( Key.status_text, statusText );
-			HTTPResult.put( Key.fileContent, response.statusCode() == 408 ? "Request Timeout" : responseBody );
-			HTTPResult.put( Key.errorDetail, response.statusCode() == 408 ? response.body() : "" );
-			Optional<String> contentTypeHeader = httpHeaders.firstValue( "Content-Type" );
-			contentTypeHeader.ifPresent( ( contentType ) -> {
-				String[] contentTypeParts = contentType.split( ";\s*" );
-				if ( contentTypeParts.length > 0 ) {
-					HTTPResult.put( Key.mimetype, contentTypeParts[ 0 ] );
-				}
-				if ( contentTypeParts.length > 1 ) {
-					HTTPResult.put( Key.charset, extractCharset( contentType ) );
-				}
-			} );
-			HTTPResult.put( Key.cookies, generateCookiesQuery( headers ) );
-			HTTPResult.put( Key.executionTime, Duration.between( startTime, Instant.now() ).toMillis() );
-
-			// Set the result back into the caller using the variable name
-			ExpressionInterpreter.setVariable( context, variableName, HTTPResult );
-
-			// Announce the HTTP response
-			interceptorService.announce( BoxEvent.ON_HTTP_RESPONSE, Struct.of(
-			    "requestID", requestID,
-			    "response", response,
-			    "result", HTTPResult
-			) );
 
 			return DEFAULT_RETURN;
 		} catch ( ExecutionException e ) {

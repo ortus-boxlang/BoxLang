@@ -26,7 +26,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.QueryUtil;
 
-@BoxBIF
+@BoxBIF( description = "Execute a callback function for each row in a query" )
 @BoxMember( type = BoxLangType.QUERY )
 public class QueryEach extends BIF {
 

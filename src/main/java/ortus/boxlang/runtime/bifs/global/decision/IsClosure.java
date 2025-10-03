@@ -22,7 +22,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Closure;
 
-@BoxBIF
+@BoxBIF( description = "Check if value is a closure" )
 public class IsClosure extends BIF {
 
 	/**

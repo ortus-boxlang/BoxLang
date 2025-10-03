@@ -26,14 +26,16 @@ import org.junit.jupiter.api.Test;
 import com.zaxxer.hikari.HikariConfig;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.config.Configuration;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 
 class DatasourceConfigTest {
 
 	@BeforeAll
 	public static void setUp() {
-		BoxRuntime instance = BoxRuntime.getInstance( true );
+		BoxRuntime.getInstance( true );
 	}
 
 	@DisplayName( "It can generate hikari config" )
@@ -313,6 +315,32 @@ class DatasourceConfigTest {
 		    "jdbcURL", "jdbc:postgresql://127.0.0.1:5432/foo?"
 		) );
 		assertThat( datasource4.toHikariConfig().getJdbcUrl() ).isEqualTo( "jdbc:postgresql://127.0.0.1:5432/foo?" );
+	}
+
+	@DisplayName( "It resolves placeholders in datasource names when loading configuration" )
+	@Test
+	void testItResolvesDatasourceNamePlaceholders() {
+		// Build a config where the datasource key is a placeholder with a default value
+		IStruct			datasources	= Struct.ofNonConcurrent(
+		    Key.datasources,
+		    Struct.ofNonConcurrent(
+		        Key.of( "${env.MY_DS:MyDSDefault}" ),
+		        Struct.ofNonConcurrent(
+		            "driver", "postgresql",
+		            "host", "127.0.0.1",
+		            "port", 5432,
+		            "database", "foo"
+		        )
+		    ) );
+
+		Configuration	cfg			= new Configuration().process( datasources );
+
+		// The placeholder should resolve to the default "MyDSDefault"
+		boolean			found		= cfg.datasources.keySet()
+		    .stream()
+		    .anyMatch( k -> k.getName().equals( "MyDSDefault" ) );
+
+		assertThat( found ).isTrue();
 	}
 
 }

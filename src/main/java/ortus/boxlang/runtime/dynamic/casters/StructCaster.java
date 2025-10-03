@@ -25,6 +25,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.StructMapWrapper;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
+import ortus.boxlang.runtime.types.util.TypeUtil;
 
 /**
  * I handle casting anything to a Struct
@@ -92,7 +93,7 @@ public class StructCaster implements IBoxCaster {
 
 		if ( fail ) {
 			throw new BoxCastException(
-			    String.format( "Can't cast [%s] to a Struct.", object.getClass().getName() )
+			    String.format( "Can't cast [%s] to a Struct.", TypeUtil.getObjectName( object ) )
 			);
 		} else {
 			return null;

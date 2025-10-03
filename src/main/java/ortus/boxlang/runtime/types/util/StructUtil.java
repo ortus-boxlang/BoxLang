@@ -25,15 +25,13 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
-import java.util.UUID;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import ortus.boxlang.runtime.async.executors.ExecutorRecord;
-import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.async.executors.BoxExecutor;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ThreadBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
@@ -47,10 +45,10 @@ import ortus.boxlang.runtime.operators.StringCompare;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.AsyncService;
 import ortus.boxlang.runtime.types.Array;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.EncryptionUtil;
 import ortus.boxlang.runtime.util.LocalizationUtil;
 
@@ -114,8 +112,8 @@ public class StructUtil {
 	 * @param parallel        Whether to process the filter in parallel
 	 * @param maxThreads      Optional max threads for parallel execution
 	 * @param ordered         Boolean as to whether to maintain order in parallel execution
-	 * 
-	 * @deprecated since 1.5.0, use {@link #each(IStruct, Function, IBoxContext, Boolean, Integer, Boolean, Boolean)} instead
+	 *
+	 * @Deprecated since 1.5.0, use {@link #each(IStruct, Function, IBoxContext, Boolean, Integer, Boolean, Boolean)} instead
 	 */
 	public static void each(
 	    IStruct struct,
@@ -195,7 +193,7 @@ public class StructUtil {
 			return;
 		}
 
-		ExecutorRecord executor = AsyncService.chooseParallelExecutor( "StructEach_", maxThreads, virtual );
+		BoxExecutor executor = AsyncService.chooseParallelExecutor( "StructEach_", maxThreads, virtual );
 
 		// Otherwise, create a new ForkJoinPool with the specified number of threads
 		executor.submitAndGet( () -> {
@@ -215,8 +213,8 @@ public class StructUtil {
 	 * @param callbackContext The context in which to execute the callback
 	 * @param parallel        Whether to process the filter in parallel
 	 * @param maxThreads      Optional max threads for parallel execution
-	 * 
-	 * @deprecated since 1.5.0, use {@link #some(IStruct, Function, IBoxContext, Boolean, Integer, Boolean)} instead
+	 *
+	 * @Deprecated since 1.5.0, use {@link #some(IStruct, Function, IBoxContext, Boolean, Integer, Boolean)} instead
 	 *
 	 * @return The boolean value as to whether the test is met
 	 */
@@ -282,7 +280,7 @@ public class StructUtil {
 				    .anyMatch( test );
 			}
 
-			ExecutorRecord executor = AsyncService.chooseParallelExecutor( "StructSome_", maxThreads, virtual );
+			BoxExecutor executor = AsyncService.chooseParallelExecutor( "StructSome_", maxThreads, virtual );
 
 			return BooleanCaster.cast( executor.submitAndGet( () -> {
 				return entryStream
@@ -303,8 +301,8 @@ public class StructUtil {
 	 * @param callbackContext The context in which to execute the callback
 	 * @param parallel        Whether to process the filter in parallel
 	 * @param maxThreads      Optional max threads for parallel execution
-	 * 
-	 * @deprecated since 1.5.0, use {@link #every(IStruct, Function, IBoxContext, Boolean, Integer, Boolean)} instead
+	 *
+	 * @Deprecated since 1.5.0, use {@link #every(IStruct, Function, IBoxContext, Boolean, Integer, Boolean)} instead
 	 *
 	 * @return The boolean value as to whether the test is met
 	 */
@@ -368,7 +366,7 @@ public class StructUtil {
 				    .allMatch( test );
 			}
 			// Otherwise, create a new ForkJoinPool with the specified number of threads
-			ExecutorRecord executor = AsyncService.chooseParallelExecutor( "StructEvery_", maxThreads, virtual );
+			BoxExecutor executor = AsyncService.chooseParallelExecutor( "StructEvery_", maxThreads, virtual );
 			return BooleanCaster.cast( executor.submitAndGet( () -> {
 				return entryStream
 				    .parallel()
@@ -388,8 +386,8 @@ public class StructUtil {
 	 * @param callbackContext The context in which to execute the callback
 	 * @param parallel        Whether to process the filter in parallel
 	 * @param maxThreads      Optional max threads for parallel execution
-	 * 
-	 * @deprecated since 1.5.0, use {@link #filter(IStruct, Function, IBoxContext, Boolean, Integer, Boolean)} instead
+	 *
+	 * @Deprecated since 1.5.0, use {@link #filter(IStruct, Function, IBoxContext, Boolean, Integer, Boolean)} instead
 	 *
 	 * @return A filtered array
 	 */
@@ -456,7 +454,7 @@ public class StructUtil {
 				return entryStream.parallel().collect( BLCollector.toStruct( struct.getType() ) );
 			}
 
-			ExecutorRecord executor = AsyncService.chooseParallelExecutor( "StructFilter_", maxThreads, virtual );
+			BoxExecutor executor = AsyncService.chooseParallelExecutor( "StructFilter_", maxThreads, virtual );
 
 			// Otherwise, create a new ForkJoinPool with the specified number of threads
 			return StructCaster.cast( executor.submitAndGet( () -> {
@@ -478,8 +476,8 @@ public class StructUtil {
 	 * @param callbackContext The context in which to execute the callback
 	 * @param parallel        Whether to process the filter in parallel
 	 * @param maxThreads      Optional max threads for parallel execution
-	 * 
-	 * @deprecated since 1.5.0, use {@link #map(IStruct, Function, IBoxContext, Boolean, Integer, Boolean)} instead
+	 *
+	 * @Deprecated since 1.5.0, use {@link #map(IStruct, Function, IBoxContext, Boolean, Integer, Boolean)} instead
 	 *
 	 * @return A filtered array
 	 */
@@ -566,7 +564,7 @@ public class StructUtil {
 			return result;
 		}
 
-		ExecutorRecord executor = AsyncService.chooseParallelExecutor( "StructMap_", maxThreads, virtual );
+		BoxExecutor executor = AsyncService.chooseParallelExecutor( "StructMap_", maxThreads, virtual );
 
 		// Otherwise, create a new ForkJoinPool with the specified number of threads
 		executor.submitAndGet( () -> {

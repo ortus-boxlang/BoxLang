@@ -30,7 +30,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.util.StructUtil;
 
-@BoxBIF
+@BoxBIF( description = "Convert a struct to a query string" )
 @BoxMember( type = BoxLangType.STRUCT )
 public class StructToQueryString extends BIF {
 

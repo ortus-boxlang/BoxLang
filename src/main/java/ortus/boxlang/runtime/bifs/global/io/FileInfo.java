@@ -29,7 +29,7 @@ import ortus.boxlang.runtime.types.File;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 
-@BoxBIF
+@BoxBIF( description = "Get information about a file" )
 @BoxBIF( alias = "GetFileInfo" )
 @BoxMember( type = BoxLangType.FILE )
 

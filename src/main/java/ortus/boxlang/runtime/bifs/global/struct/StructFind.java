@@ -30,7 +30,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
-@BoxBIF
+@BoxBIF( description = "Find a value in a struct" )
 @BoxMember( type = BoxLangType.STRUCT )
 
 public class StructFind extends BIF {

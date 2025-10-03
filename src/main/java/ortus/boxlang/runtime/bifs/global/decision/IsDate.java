@@ -31,7 +31,7 @@ import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.LocalizationUtil;
 
-@BoxBIF
+@BoxBIF( description = "Check if value is a valid date" )
 @BoxBIF( alias = "IsNumericDate" )
 public class IsDate extends BIF {
 

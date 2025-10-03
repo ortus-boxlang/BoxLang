@@ -25,7 +25,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
-@BoxBIF
+@BoxBIF( description = "Convert a relative path to an absolute path" )
 public class ExpandPath extends BIF {
 
 	/**

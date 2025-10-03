@@ -44,7 +44,7 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.validation.Validator;
 
-@BoxComponent( allowsBody = true )
+@BoxComponent( description = "Manage cached data with get, put, and delete operations", allowsBody = true )
 public class Cache extends Component {
 
 	/**
@@ -250,7 +250,7 @@ public class Cache extends Component {
 
 		// Evalutions on cache directive
 		if ( !namedCacheOps.contains( cacheAction ) ) {
-			IStruct interceptorArgs = Struct.of(
+			IStruct interceptorArgs = Struct.ofNonConcurrent(
 			    Key.component, this,
 			    Key.context, context,
 			    Key.attributes, attributes,
@@ -258,7 +258,7 @@ public class Cache extends Component {
 			    Key.executionState, executionState,
 			    Key.result, null
 			);
-			interceptorService.announce( BoxEvent.ON_CREATEOBJECT_REQUEST, interceptorArgs );
+			interceptorService.announce( BoxEvent.ON_CACHE_COMPONENT_ACTION, interceptorArgs );
 			if ( interceptorArgs.get( Key.result ) == null ) {
 				throw new BoxRuntimeException(
 				    String.format( "The specified cache action [%s] is is not valid in the current runtime", cacheAction.toString().toLowerCase() )

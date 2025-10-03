@@ -33,7 +33,7 @@ import ortus.boxlang.runtime.types.util.BLCollector;
 import ortus.boxlang.runtime.types.util.ListUtil;
 import ortus.boxlang.runtime.util.RegexBuilder;
 
-@BoxBIF
+@BoxBIF( description = "Add qualifiers around each item in a list" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "ListQualify" )
 
 public class ListQualify extends BIF {

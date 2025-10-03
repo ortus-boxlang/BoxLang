@@ -24,7 +24,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
 
-@BoxBIF
+@BoxBIF( description = "Remove and return the last element from an array" )
 @BoxMember( type = BoxLangType.ARRAY )
 public class ArrayPop extends BIF {
 
@@ -41,10 +41,10 @@ public class ArrayPop extends BIF {
 
 	/**
 	 * Remove last item in array and return it
-	 * 
+	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 * 
+	 *
 	 * @argument.array The array to get the last
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {

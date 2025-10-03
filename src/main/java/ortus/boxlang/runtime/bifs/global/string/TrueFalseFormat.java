@@ -24,7 +24,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 
-@BoxBIF
+@BoxBIF( description = "Format a boolean value as True/False" )
 @BoxMember( type = BoxLangType.STRING_STRICT )
 public class TrueFalseFormat extends BIF {
 

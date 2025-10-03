@@ -7,10 +7,15 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.sql.Connection;
 import java.sql.SQLException;
 
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
 
+import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.jdbc.DataSource;
@@ -19,9 +24,44 @@ import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 
 @EnabledIf( "tools.JDBCTestUtils#hasMSSQLModule" )
 public class MSSQLDriverTest extends AbstractDriverTest {
+
+	public static DataSource	mssqlDatasource;
+
+	protected static Key		datasourceName		= Key.of( "MSSQLdatasource" );
+
+	protected static IStruct	datasourceConfig	= Struct.of(
+	    "username", "sa",
+	    "password", "123456Password",
+	    "host", "localhost",
+	    "port", "1433",
+	    "driver", "mssql",
+	    "database", "master"
+	);
+
+	@BeforeAll
+	public static void setUp() {
+		instance = BoxRuntime.getInstance( true );
+		IBoxContext setUpContext = new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		mssqlDatasource = AbstractDriverTest.setupTestDatasource( instance, setUpContext, datasourceName, datasourceConfig );
+		MSSQLDriverTest.createGeneratedKeyTable( mssqlDatasource, setUpContext );
+	}
+
+	@AfterAll
+	public static void teardown() throws SQLException {
+		IBoxContext tearDownContext = new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		AbstractDriverTest.teardownTestDatasource( tearDownContext, mssqlDatasource );
+	}
+
+	public static void createGeneratedKeyTable( DataSource dataSource, IBoxContext context ) {
+		try {
+			dataSource.execute( "CREATE TABLE generatedKeyTest( id INT IDENTITY(1,1) PRIMARY KEY, name VARCHAR(155))", context );
+		} catch ( DatabaseException ignored ) {
+		}
+	}
 
 	/**
 	 * Override to provide driver-specific datasource name

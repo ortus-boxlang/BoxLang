@@ -28,7 +28,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.util.EncryptionUtil;
 
-@BoxBIF
+@BoxBIF( description = "Generate a secret key for encryption" )
 public class GenerateSecretKey extends BIF {
 
 	/**

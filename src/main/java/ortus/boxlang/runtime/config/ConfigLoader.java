@@ -92,9 +92,13 @@ public class ConfigLoader {
 	 *
 	 * @return The ConfigLoader instance
 	 */
-	public static synchronized ConfigLoader getInstance() {
+	public static ConfigLoader getInstance() {
 		if ( instance == null ) {
-			instance = new ConfigLoader();
+			synchronized ( ConfigLoader.class ) {
+				if ( instance == null ) {
+					instance = new ConfigLoader();
+				}
+			}
 		}
 		return instance;
 	}

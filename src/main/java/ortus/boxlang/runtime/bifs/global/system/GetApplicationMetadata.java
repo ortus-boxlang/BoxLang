@@ -26,7 +26,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 
-@BoxBIF
+@BoxBIF( description = "Get metadata about the current application" )
 public class GetApplicationMetadata extends BIF {
 
 	/**

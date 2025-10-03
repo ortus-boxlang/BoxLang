@@ -1633,4 +1633,53 @@ public class CFTemplateTest {
 		    context, BoxSourceType.CFTEMPLATE );
 	}
 
+	@Test
+	public void testReturnVariableName() {
+		instance.executeSource(
+		    """
+		    <cffunction name="test">
+		    	<cfset variables.return = "brad" />
+		    	<cfreturn #return# />
+		    </cffunction>
+		    <cfset result = test() />
+		    """,
+		    context, BoxSourceType.CFTEMPLATE );
+
+		assertThat( variables.get( result ) ).isEqualTo( "brad" );
+
+		instance.executeSource(
+		    """
+		    <cffunction name="test">
+		    	<cfset variables.return = "brad" />
+		    	<cfreturn return />
+		    </cffunction>
+		    <cfset result = test() />
+		    """,
+		    context, BoxSourceType.CFTEMPLATE );
+
+		assertThat( variables.get( result ) ).isEqualTo( "brad" );
+	}
+
+	@Test
+	public void testSelfClosingTagHasSpace() {
+		instance.executeSource(
+		    """
+		    <cffunction  name="test">
+		    	<cfreturn / >
+		    </cffunction>
+		    <cfset result=test()>
+		       """,
+		    context, BoxSourceType.CFTEMPLATE );
+
+		assertThat( variables.get( result ) ).isNull();
+
+		instance.executeSource(
+		    """
+		    <cfset result="brad" / >
+		       """,
+		    context, BoxSourceType.CFTEMPLATE );
+
+		assertThat( variables.get( result ) ).isEqualTo( "brad" );
+	}
+
 }

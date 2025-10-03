@@ -29,7 +29,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.util.EncryptionUtil;
 
-@BoxBIF
+@BoxBIF( description = "Convert data to Base64 encoding" )
 @BoxMember( type = BoxLangType.STRING_STRICT )
 public class ToBase64 extends BIF {
 

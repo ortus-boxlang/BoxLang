@@ -17,13 +17,9 @@
  */
 package ortus.boxlang.runtime.operators;
 
-import java.text.Collator;
 import java.util.Locale;
 
-import org.apache.commons.lang3.StringUtils;
-
-import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.util.LocalizationUtil;
+import org.apache.commons.lang3.Strings;
 
 /**
  * Operator to compare two strings and bypass any additional cast attempts
@@ -95,31 +91,9 @@ public class StringCompare implements IOperator {
 	 * @return 1 if greater than, -1 if less than, = if equal
 	 */
 	public static Integer attempt( String left, String right, Boolean caseSensitive, boolean fail, Locale locale ) {
-
-		boolean containsUnicode = false;
-		for ( String s : new String[] { left.toString(), right.toString() } ) {
-			int length = s.length();
-			for ( int i = 0; i < length; i++ ) {
-				if ( s.charAt( i ) > 127 ) {
-					containsUnicode = true;
-					break;
-				}
-			}
-			if ( containsUnicode ) {
-				break;
-			}
-		}
-
-		// if our locale is different than an EN locale use the Collator
-		if ( containsUnicode || ( !locale.equals( LocalizationUtil.COMMON_LOCALES.get( Key.US ) ) && !locale.equals( Locale.ENGLISH ) ) ) {
-			Collator collator = Collator.getInstance( locale );
-			return collator.getCollationKey( caseSensitive ? left.toString() : left.toString().toLowerCase( locale ) )
-			    .compareTo( collator.getCollationKey( caseSensitive ? right.toString() : right.toString().toLowerCase( locale ) ) );
-		} else {
-			return caseSensitive
-			    ? StringUtils.compare( left.toString(), right.toString() )
-			    : StringUtils.compareIgnoreCase( left.toString(), right.toString() );
-		}
+		return caseSensitive
+		    ? Strings.CS.compare( left, right )
+		    : Strings.CI.compare( left, right );
 	}
 
 }

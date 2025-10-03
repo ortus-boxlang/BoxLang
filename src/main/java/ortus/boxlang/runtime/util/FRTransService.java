@@ -50,9 +50,13 @@ public class FRTransService {
 		}
 	}
 
-	public synchronized static FRTransService getInstance( Boolean enabled ) {
+	public static FRTransService getInstance( Boolean enabled ) {
 		if ( instance == null ) {
-			instance = new FRTransService( enabled );
+			synchronized ( FRTransService.class ) {
+				if ( instance == null ) {
+					instance = new FRTransService( enabled );
+				}
+			}
 		}
 		return instance;
 	}

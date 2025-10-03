@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.dynamic.casters;
 
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
+import ortus.boxlang.runtime.types.util.TypeUtil;
 
 /**
  * I handle casting anything to a Binary
@@ -71,7 +72,7 @@ public class BinaryCaster implements IBoxCaster {
 
 		// Do we throw?
 		if ( fail ) {
-			throw new BoxCastException( "Can't cast " + object.getClass().getName() + " to a Binary." );
+			throw new BoxCastException( "Can't cast " + TypeUtil.getObjectName( object ) + " to a Binary." );
 		}
 
 		return null;

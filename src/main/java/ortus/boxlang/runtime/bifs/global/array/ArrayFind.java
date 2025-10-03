@@ -16,7 +16,7 @@ package ortus.boxlang.runtime.bifs.global.array;
 
 import java.util.Set;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
@@ -30,7 +30,7 @@ import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.validation.Validator;
 
-@BoxBIF
+@BoxBIF( description = "Find the index of a value in an array" )
 @BoxBIF( alias = "ArrayFindNoCase" )
 @BoxMember( type = BoxLangType.ARRAY )
 @BoxMember( type = BoxLangType.ARRAY, name = "findNoCase" )
@@ -121,7 +121,7 @@ public class ArrayFind extends BIF {
 	 */
 	private boolean isCaseSensitive( Key functionName ) {
 		// Check if the functionName ends with "noCase" with no case sensitivity
-		return StringUtils.endsWithIgnoreCase( functionName.getName(), "NoCase" ) ? false : true;
+		return Strings.CI.endsWith( functionName.getName(), "NoCase" ) ? false : true;
 	}
 
 	/**
@@ -133,7 +133,7 @@ public class ArrayFind extends BIF {
 	 */
 	private boolean isBooleanReturn( Key functionName ) {
 		// Check if the functionName ends with "noCase" with no case sensitivity
-		return StringUtils.containsIgnoreCase( functionName.getName(), "contains" ) ? true : false;
+		return Strings.CI.contains( functionName.getName(), "contains" ) ? true : false;
 	}
 
 }

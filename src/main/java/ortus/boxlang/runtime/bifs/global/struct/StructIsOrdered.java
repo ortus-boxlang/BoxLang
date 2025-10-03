@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.IStruct;
 
-@BoxBIF
+@BoxBIF( description = "Check if a struct maintains insertion order" )
 @BoxMember( type = BoxLangType.STRUCT )
 
 public class StructIsOrdered extends BIF {

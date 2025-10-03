@@ -15,7 +15,7 @@
 package ortus.boxlang.runtime.bifs.global.async;
 
 import ortus.boxlang.runtime.async.BoxFuture;
-import ortus.boxlang.runtime.async.executors.ExecutorRecord;
+import ortus.boxlang.runtime.async.executors.BoxExecutor;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -25,7 +25,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 
-@BoxBIF
+@BoxBIF( description = "Wait for all async operations to complete" )
 public class AsyncAll extends BIF {
 
 	/**
@@ -69,10 +69,10 @@ public class AsyncAll extends BIF {
 	 * @return A future that will return the results in an array
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Array			futures			= arguments.getAsArray( Key.futures );
-		Object			executor		= arguments.get( Key.executor );
+		Array		futures			= arguments.getAsArray( Key.futures );
+		Object		executor		= arguments.get( Key.executor );
 
-		ExecutorRecord	executorRecord	= this.asyncService.getRecordOrNull( executor );
+		BoxExecutor	executorRecord	= this.asyncService.getRecordOrNull( executor );
 
 		if ( executorRecord == null ) {
 			return BoxFuture.all( context, futures );

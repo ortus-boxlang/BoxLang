@@ -29,7 +29,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
 
-@BoxBIF
+@BoxBIF( description = "Return an array of struct values" )
 @BoxMember( type = BoxLangType.STRUCT )
 
 public class StructValueArray extends BIF {

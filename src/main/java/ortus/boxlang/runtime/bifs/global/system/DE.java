@@ -22,7 +22,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 
 // TODO: Move to compat module
-@BoxBIF
+@BoxBIF( description = "Delay evaluation of an expression" )
 public class DE extends BIF {
 
 	/**

@@ -25,7 +25,7 @@ import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 
-@BoxComponent
+@BoxComponent( description = "Define application-level settings and behavior" )
 public class Application extends Component {
 
 	/**

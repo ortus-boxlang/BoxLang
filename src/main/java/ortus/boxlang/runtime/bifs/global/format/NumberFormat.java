@@ -25,13 +25,14 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.util.LocalizationUtil;
 
-@BoxBIF
+@BoxBIF( description = "Format a number using a specified mask" )
 @BoxMember( type = BoxLangType.NUMERIC )
 @BoxBIF( alias = "LSNumberFormat" )
 
@@ -64,7 +65,7 @@ public class NumberFormat extends BIF {
 	 * @function.currencyFormat Formats a number as a currency value
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Number								value				= arguments.getAsNumber( Key.number );
+		Number								value				= NumberCaster.cast( arguments.get( Key.number ) );
 		String								format				= arguments.getAsString( Key.mask );
 		Locale								locale				= LocalizationUtil.parseLocaleFromContext( context, arguments );
 		java.text.NumberFormat				formatter			= LocalizationUtil.localizedDecimalFormatter(

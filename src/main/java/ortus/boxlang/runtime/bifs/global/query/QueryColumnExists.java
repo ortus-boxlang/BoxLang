@@ -24,7 +24,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.QueryUtil;
 
-@BoxBIF
+@BoxBIF( description = "Check if a column exists in a query" )
 @BoxMember( type = BoxLangType.QUERY )
 public class QueryColumnExists extends BIF {
 

@@ -23,12 +23,12 @@ import java.util.Locale;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.events.BoxEvent;
+import ortus.boxlang.runtime.net.NetworkUtil;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableArray;
 import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableStruct;
-import ortus.boxlang.runtime.util.NetworkUtil;
 
 /**
  * Represents the BoxLang "server" scope container
@@ -84,9 +84,9 @@ public class ServerScope extends BaseScope {
 		// announce the scope creation
 		BoxRuntime.getInstance().announce(
 		    BoxEvent.ON_SERVER_SCOPE_CREATION,
-		    Struct.of(
-		        "scope", this,
-		        "name", ServerScope.name
+		    () -> Struct.of(
+		        Key.scope, this,
+		        Key._NAME, ServerScope.name
 		    )
 		);
 		this.initialized = true;

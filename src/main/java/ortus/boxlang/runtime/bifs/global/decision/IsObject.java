@@ -24,7 +24,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.IType;
 
-@BoxBIF
+@BoxBIF( description = "Check if value is an object" )
 public class IsObject extends BIF {
 
 	/**

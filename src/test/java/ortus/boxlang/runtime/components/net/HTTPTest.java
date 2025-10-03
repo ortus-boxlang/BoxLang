@@ -27,6 +27,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.havingExactly;
 import static com.github.tomakehurst.wiremock.client.WireMock.ok;
+import static com.github.tomakehurst.wiremock.client.WireMock.notFound;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.google.common.truth.Truth.assertThat;
@@ -339,9 +340,30 @@ public class HTTPTest {
 			context
 		);
 		// @formatter:on
-
-		assertThat( variables.get( bxhttp ) ).isNull();
 		assertThat( FileSystemUtil.exists( "src/test/resources/tmp/http_tests/chuck_norris_dl.jpg" ) ).isTrue();
+	}
+
+	@DisplayName( "It will always return an http result even if a file and path are specified" )
+	@Test
+	public void testResultWithPath( WireMockRuntimeInfo wmRuntimeInfo ) {
+		stubFor(
+		    get( "/bad-image.jpg" )
+		        .willReturn( notFound() )
+		);
+
+		// @formatter:off
+		instance.executeSource( String.format(
+			"""
+			bx:http method="GET" getAsBinary=true url="%s" path="src/test/resources/tmp/http_tests" file="bad-image.jpg" result="httpResult" {}
+			""",
+			wmRuntimeInfo.getHttpBaseUrl() + "/bad-image.jpg" ),
+			context
+		);
+		// @formatter:on
+		assertThat( variables.get( Key.of( "httpResult" ) ) ).isInstanceOf( IStruct.class );
+		IStruct res = variables.getAsStruct( Key.of( "httpResult" ) );
+		assertThat( res.get( Key.statusCode ) ).isEqualTo( 404 );
+		assertThat( FileSystemUtil.exists( "src/test/resources/tmp/http_tests/bad-image.jpg" ) ).isTrue();
 	}
 
 	@DisplayName( "It can write out a binary file using a specified filename" )
@@ -363,9 +385,29 @@ public class HTTPTest {
 			context
 		);
 		// @formatter:on
-
-		assertThat( variables.get( bxhttp ) ).isNull();
 		assertThat( FileSystemUtil.exists( "src/test/resources/tmp/http_tests/chuck.jpg" ) ).isTrue();
+	}
+
+	@DisplayName( "It can write out a binary file using the file attribute as the full path" )
+	@Test
+	public void testBinaryFileWriteFileOnly( WireMockRuntimeInfo wmRuntimeInfo ) {
+		stubFor(
+		    get( "/image" )
+		        .willReturn(
+		            ok().withHeader( "Content-Type", "image/jpeg; charset=utf-8" )
+		                .withHeader( "Content-Disposition", "attachment; filename=\"chuck_norris_dl.jpg\"" )
+		                .withBody( ( byte[] ) FileSystemUtil.read( "src/test/resources/chuck_norris.jpg" ) ) ) );
+
+		// @formatter:off
+		instance.executeSource( String.format(
+			"""
+			bx:http method="GET" getAsBinary=true url="%s" file="src/test/resources/tmp/http_tests/chucky.jpg" {}
+			""",
+			wmRuntimeInfo.getHttpBaseUrl() + "/image" ),
+			context
+		);
+		// @formatter:on
+		assertThat( FileSystemUtil.exists( "src/test/resources/tmp/http_tests/chucky.jpg" ) ).isTrue();
 	}
 
 	@DisplayName( "It can send binary content" )

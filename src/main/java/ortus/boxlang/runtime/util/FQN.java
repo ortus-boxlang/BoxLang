@@ -22,7 +22,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 
 /**
  * This class represents a java fully qualified name (FQN) for a class or package.
@@ -209,22 +209,22 @@ public class FQN {
 		}
 
 		if ( allPackage ) {
-			// Lowercase everything
 			fqn = fqn.toLowerCase();
 		} else {
-			// Find the last period in the string
-			int lastPeriodIndex = fqn.lastIndexOf( '.' );
-			if ( lastPeriodIndex != -1 ) {
-				// Lowercase everything up to the last period
-				String	beforeLastPeriod	= fqn.substring( 0, lastPeriodIndex ).toLowerCase();
-				String	afterLastPeriod		= fqn.substring( lastPeriodIndex + 1 ).toLowerCase();
-				// upper case first char of afterLastPeriod
-				afterLastPeriod	= afterLastPeriod.substring( 0, 1 ).toUpperCase() + afterLastPeriod.substring( 1 );
-				fqn				= beforeLastPeriod + "." + afterLastPeriod;
-			} else {
-				// There is no package, just a class, so upper case first char of fqn
-				fqn = fqn.substring( 0, 1 ).toUpperCase() + fqn.substring( 1 ).toLowerCase();
+			char[]	chars			= fqn.toCharArray();
+			int		lastPeriodIndex	= fqn.lastIndexOf( '.' );
+
+			for ( int i = 0; i < chars.length; i++ ) {
+				if ( i == lastPeriodIndex + 1 ) {
+					// First char after last period - uppercase
+					chars[ i ] = Character.toUpperCase( chars[ i ] );
+				} else {
+					// Everything else - lowercase
+					chars[ i ] = Character.toLowerCase( chars[ i ] );
+				}
 			}
+
+			fqn = new String( chars );
 		}
 
 		// parse fqn into array, loop over array and clean/normalize parts
@@ -301,12 +301,12 @@ public class FQN {
 		}
 
 		// Replace all periods with an emtpy string in fqn
-		fqn	= StringUtils.remove( fqn, "." );
+		fqn	= Strings.CS.remove( fqn, "." );
 		// Take out slashes to . and backslashes to .
-		fqn	= StringUtils.replace( fqn, "/", "." );
-		fqn	= StringUtils.replace( fqn, "\\", "." );
+		fqn	= Strings.CS.replace( fqn, "/", "." );
+		fqn	= Strings.CS.replace( fqn, "\\", "." );
 		// Take out colons to _
-		fqn	= StringUtils.replace( fqn, ":", "_" );
+		fqn	= Strings.CS.replace( fqn, ":", "_" );
 		return fqn;
 	}
 

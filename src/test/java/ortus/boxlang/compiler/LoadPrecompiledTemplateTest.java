@@ -22,15 +22,20 @@ import java.nio.file.Path;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.runnables.IClassRunnable;
+import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 public class LoadPrecompiledTemplateTest {
 
@@ -105,13 +110,54 @@ public class LoadPrecompiledTemplateTest {
 		    true,
 		    instance
 		);
+
+		// Create some alternative ways to create the same physical class on disk. These should have different names in their
+		// bytecode which represents how they were referenced when they were created.
+		instance.getConfiguration().registerMapping( "/precompiled/path/to/", source.getParent().toString() );
+		instance.getConfiguration().registerMapping( "/another/precompiled/path/whee/", source.getParent().toString() );
+
 		instance.executeSource(
 		    """
-		       foo = new src.test.java.ortus.boxlang.compiler.Precompiled();
-		    result = foo.bar()
-		          """,
+		      	foo = new src.test.java.ortus.boxlang.compiler.Precompiled();
+		      	result = foo.bar()
+		    resultName = foo.$bx.meta.name;
+		      	foo2 = new precompiled.path.to.Precompiled();
+		      	result2 = foo2.bar()
+		    resultName2 = foo2.$bx.meta.name;
+		      	foo3 = new another.precompiled.path.whee.Precompiled();
+		      	result3 = foo3.bar()
+		    resultName3 = foo3.$bx.meta.name;
+		      """,
 		    context, BoxSourceType.BOXSCRIPT );
+
 		assertThat( variables.get( result ) ).isEqualTo( "brad" );
+		assertThat( variables.get( new Key( "resultName" ) ) ).isEqualTo( "src.test.java.ortus.boxlang.compiler.Precompiled" );
+		assertThat( variables.get( new Key( "result2" ) ) ).isEqualTo( "brad" );
+		assertThat( variables.get( new Key( "resultName2" ) ) ).isEqualTo( "precompiled.path.to.Precompiled" );
+		assertThat( variables.get( new Key( "result3" ) ) ).isEqualTo( "brad" );
+		assertThat( variables.get( new Key( "resultName3" ) ) ).isEqualTo( "another.precompiled.path.whee.Precompiled" );
+
+	}
+
+	@Test
+	@DisplayName( "Load a pre-compiled class and execute" )
+	public void testPrecompiledModuleConfig() {
+		Path			target			= Path.of( "src/test/resources/compiledCode/ModuleConfig.bx" );
+
+		// Load the ModuleConfig.bx, Construct it and store it
+		IClassRunnable	moduleConfig	= ( IClassRunnable ) DynamicObject.of(
+		    RunnableLoader.getInstance().loadClass(
+		        ResolvedFilePath.of(
+		            null,
+		            null,
+		            "",
+		            target.toString()
+		        ),
+		        context
+		    )
+		)
+		    .invokeConstructor( context )
+		    .getTargetInstance();
 
 	}
 }

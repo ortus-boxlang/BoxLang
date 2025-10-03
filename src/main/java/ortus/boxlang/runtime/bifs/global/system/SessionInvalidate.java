@@ -25,7 +25,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 
-@BoxBIF
+@BoxBIF( description = "Invalidate the current session" )
 
 public class SessionInvalidate extends BIF {
 

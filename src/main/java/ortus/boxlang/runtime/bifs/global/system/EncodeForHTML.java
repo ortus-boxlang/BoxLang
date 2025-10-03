@@ -26,7 +26,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 
-@BoxBIF
+@BoxBIF( description = "Encode text for safe HTML output" )
 @BoxBIF( alias = "htmlEditFormat" )
 public class EncodeForHTML extends BIF {
 

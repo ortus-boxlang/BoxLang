@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.util.DuplicationUtil;
 
-@BoxBIF
+@BoxBIF( description = "Create a deep copy of a variable" )
 @BoxMember( type = BoxLangType.ARRAY )
 @BoxMember( type = BoxLangType.STRUCT )
 @BoxMember( type = BoxLangType.DATETIME )
@@ -56,7 +56,7 @@ public class Duplicate extends BIF {
 	 * @argument.deep Whether to deep copy the object or make a shallow copy (e.g. only the top level keys in a struct)
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		return DuplicationUtil.duplicate( arguments.get( Key.object ), arguments.getAsBoolean( Key.deep ) );
+		return DuplicationUtil.duplicate( arguments.get( Key.object ), arguments.getAsBoolean( Key.deep ), context );
 	}
 
 }

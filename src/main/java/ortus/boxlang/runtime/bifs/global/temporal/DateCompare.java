@@ -34,7 +34,7 @@ import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.LocalizationUtil;
 
-@BoxBIF
+@BoxBIF( description = "Compare two date/time values" )
 @BoxMember( type = BoxLangType.DATETIME, name = "compare" )
 @BoxMember( type = BoxLangType.DATETIME, name = "compareTo" )
 public class DateCompare extends BIF {

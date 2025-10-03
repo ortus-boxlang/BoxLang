@@ -28,7 +28,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.MathUtil;
 
-@BoxBIF
+@BoxBIF( description = "Calculate e raised to the power of a number" )
 @BoxMember( type = BoxLangType.NUMERIC )
 public class Exp extends BIF {
 

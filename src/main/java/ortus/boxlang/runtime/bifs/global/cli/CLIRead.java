@@ -25,7 +25,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
-@BoxBIF
+@BoxBIF( description = "Read input from the CLI console" )
 public class CLIRead extends BIF {
 
 	// DO NOT CLOSE THIS SCANNER!

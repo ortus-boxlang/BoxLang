@@ -23,7 +23,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 
-@BoxBIF
+@BoxBIF( description = "Test whether no items in query match the callback function" )
 @BoxMember( type = BoxLangType.QUERY )
 public class QueryNone extends QuerySome {
 

@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.dynamic.casters;
 
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
+import ortus.boxlang.runtime.types.util.TypeUtil;
 
 /**
  * I handle casting anything
@@ -79,7 +80,7 @@ public class FloatCaster implements IBoxCaster {
 		if ( number.wasSuccessful() ) {
 			return number.get().floatValue();
 		} else if ( fail ) {
-			throw new BoxCastException( "Can't cast " + object.getClass().getName() + " to a float." );
+			throw new BoxCastException( "Can't cast " + TypeUtil.getObjectName( object ) + " to a float." );
 		} else {
 			return null;
 		}

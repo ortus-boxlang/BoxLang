@@ -106,11 +106,12 @@ public class Session implements Serializable {
 		this.sessionScope.put( Key.lastVisit, timeNow );
 
 		// Announce it's creation
-		BoxRuntime.getInstance()
+		BoxRuntime
+		    .getInstance()
 		    .getInterceptorService()
 		    .announce(
 		        BoxEvent.ON_SESSION_CREATED,
-		        Struct.of(
+		        () -> Struct.ofNonConcurrent(
 		            Key.session, this,
 		            Key.application, application
 		        )
@@ -241,11 +242,12 @@ public class Session implements Serializable {
 
 		try {
 			// Announce it's destruction to the runtime first
-			BoxRuntime.getInstance()
+			BoxRuntime
+			    .getInstance()
 			    .getInterceptorService()
 			    .announce(
 			        BoxEvent.ON_SESSION_DESTROYED,
-			        Struct.of(
+			        () -> Struct.ofNonConcurrent(
 			            Key.session, this,
 			            Key.application, targetAppScope,
 			            Key.listener, listener

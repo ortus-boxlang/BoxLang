@@ -28,6 +28,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.XML;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 import ortus.boxlang.runtime.types.util.ListUtil;
+import ortus.boxlang.runtime.types.util.TypeUtil;
 
 /**
  * I handle casting anything to a collection
@@ -118,7 +119,7 @@ public class CollectionCaster implements IBoxCaster {
 
 		if ( fail ) {
 			throw new BoxCastException(
-			    String.format( "Can't cast [%s] to a Collection.", object.getClass().getName() )
+			    String.format( "Can't cast [%s] to a Collection.", TypeUtil.getObjectName( object ) )
 			);
 		} else {
 			return null;

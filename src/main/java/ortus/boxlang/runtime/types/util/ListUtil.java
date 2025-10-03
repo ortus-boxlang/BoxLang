@@ -21,7 +21,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Objects;
-import java.util.UUID;
 import java.util.function.BiFunction;
 import java.util.function.IntConsumer;
 import java.util.function.IntPredicate;
@@ -32,13 +31,13 @@ import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
 
-import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.async.executors.ExecutorRecord;
+import ortus.boxlang.runtime.async.executors.BoxExecutor;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ThreadBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.operators.CollatorStringCompare;
 import ortus.boxlang.runtime.operators.Compare;
 import ortus.boxlang.runtime.operators.StringCompare;
 import ortus.boxlang.runtime.scopes.Key;
@@ -178,19 +177,19 @@ public class ListUtil {
 		}
 
 		if ( delimiter.length() == 0 ) {
-			return Array.of( list.split( "" ) );
+			return Array.of( ( Object[] ) list.split( "" ) );
 		}
 		if ( wholeDelimiter ) {
 			if ( includeEmpty ) {
-				return Array.of( StringUtils.splitByWholeSeparatorPreserveAllTokens( list, delimiter ) );
+				return Array.of( ( Object[] ) StringUtils.splitByWholeSeparatorPreserveAllTokens( list, delimiter ) );
 			} else {
-				return Array.of( StringUtils.splitByWholeSeparator( list, delimiter ) );
+				return Array.of( ( Object[] ) StringUtils.splitByWholeSeparator( list, delimiter ) );
 			}
 		} else {
 			if ( includeEmpty ) {
-				return Array.of( StringUtils.splitPreserveAllTokens( list, delimiter ) );
+				return Array.of( ( Object[] ) StringUtils.splitPreserveAllTokens( list, delimiter ) );
 			} else {
-				return Array.of( StringUtils.split( list, delimiter ) );
+				return Array.of( ( Object[] ) StringUtils.split( list, delimiter ) );
 			}
 		}
 
@@ -620,8 +619,8 @@ public class ListUtil {
 	 * @param maxThreads      Optional max threads for parallel execution
 	 * @param ordered         Boolean as to whether to maintain order in parallel
 	 *                        execution
-	 * 
-	 * @deprecated Since 1.5.0 Use
+	 *
+	 * @Deprecated Since 1.5.0 Use
 	 *             {@link #each(Array, Function, IBoxContext, Boolean, Integer, Boolean)}
 	 *             instead.
 	 */
@@ -702,7 +701,7 @@ public class ListUtil {
 				return;
 			}
 
-			ExecutorRecord executor = AsyncService.chooseParallelExecutor( "ArrayEach_", maxThreads, virtual );
+			BoxExecutor executor = AsyncService.chooseParallelExecutor( "ArrayEach_", maxThreads, virtual );
 			executor.submitAndGet( () -> {
 				if ( ordered ) {
 					arrayStream
@@ -737,8 +736,8 @@ public class ListUtil {
 	 * @param maxThreads      Optional max threads for parallel execution
 	 *
 	 * @return The boolean value as to whether the test is met
-	 * 
-	 * @deprecated Since 1.5.0 Use
+	 *
+	 * @Deprecated Since 1.5.0 Use
 	 *             {@link #some(Array, Function, IBoxContext, Boolean, Integer, Boolean)}
 	 *             instead.
 	 */
@@ -811,7 +810,7 @@ public class ListUtil {
 				    .anyMatch( test );
 			}
 
-			ExecutorRecord executor = AsyncService.chooseParallelExecutor( "ArraySome_", maxThreads, virtual );
+			BoxExecutor executor = AsyncService.chooseParallelExecutor( "ArraySome_", maxThreads, virtual );
 			return ( Boolean ) executor.submitAndGet( () -> {
 				return arrayStream
 				    .parallel()
@@ -902,7 +901,7 @@ public class ListUtil {
 				    .allMatch( test );
 			}
 
-			ExecutorRecord executor = AsyncService.chooseParallelExecutor( "ArrayEvery_", maxThreads, virtual );
+			BoxExecutor executor = AsyncService.chooseParallelExecutor( "ArrayEvery_", maxThreads, virtual );
 
 			return ( Boolean ) executor.submitAndGet( () -> {
 				return arrayStream
@@ -924,8 +923,8 @@ public class ListUtil {
 	 * @param callbackContext The context in which to execute the callback
 	 * @param parallel        Whether to process the filter in parallel
 	 * @param maxThreads      Optional max threads for parallel execution
-	 * 
-	 * @deprecated Since 1.5.0 Use {@link #filter(Array, Function, IBoxContext, Boolean, Integer, Boolean)} instead.
+	 *
+	 * @Deprecated Since 1.5.0 Use {@link #filter(Array, Function, IBoxContext, Boolean, Integer, Boolean)} instead.
 	 *
 	 * @return A filtered array
 	 */
@@ -1003,7 +1002,7 @@ public class ListUtil {
 				    .collect( BLCollector.toArray( array.getClass() ) );
 			}
 
-			ExecutorRecord executor = AsyncService.chooseParallelExecutor( "ArrayFilter_", maxThreads, virtual );
+			BoxExecutor executor = AsyncService.chooseParallelExecutor( "ArrayFilter_", maxThreads, virtual );
 
 			return ( Array ) executor.submitAndGet( () -> {
 				return arrayStream
@@ -1058,13 +1057,15 @@ public class ListUtil {
 	    String sortOrder,
 	    Locale locale ) {
 
-		Key sortKey = Key.of( sortType + sortOrder );
+		Key		sortKey	= Key.of( sortType + sortOrder );
 
-		if ( !sortDirectives.containsKey( sortKey ) ) {
+		Struct	sorts	= newSortDirectives( locale );
+
+		if ( !sorts.containsKey( sortKey ) ) {
 			throw new BoxRuntimeException( "You must supply either a sortOrder or callback" );
 		}
 
-		array.sort( ( Comparator<Object> ) sortDirectives.get( sortKey ) );
+		array.sort( ( Comparator<Object> ) sorts.get( sortKey ) );
 
 		return array;
 
@@ -1098,8 +1099,8 @@ public class ListUtil {
 	 * @param maxThreads      Optional max threads for parallel execution
 	 *
 	 * @return The boolean value as to whether the test is met
-	 * 
-	 * @deprecated Since 1.5.0 Use
+	 *
+	 * @Deprecated Since 1.5.0 Use
 	 *             {@link #map(Array, Function, IBoxContext, Boolean, Integer, Boolean)}
 	 *             instead.
 	 */
@@ -1169,7 +1170,7 @@ public class ListUtil {
 				    .collect( BLCollector.toArray( array.getClass() ) );
 			}
 
-			ExecutorRecord executor = AsyncService.chooseParallelExecutor( "ArrayMap_", maxThreads, virtual );
+			BoxExecutor executor = AsyncService.chooseParallelExecutor( "ArrayMap_", maxThreads, virtual );
 
 			return ( Array ) executor.submitAndGet( () -> {
 				return arrayStream
@@ -1262,5 +1263,48 @@ public class ListUtil {
 	 */
 	private static String escapeRegexSpecials( String str ) {
 		return SPECIAL_REGEX_CHARS.matcher( str ).replaceAll( "\\\\$0" );
+	}
+
+	/**
+	 * Returns a struct of sort directives
+	 */
+	private static final Struct newSortDirectives( Locale locale ) {
+		if ( locale == null ) {
+			return new Struct(
+			    new HashMap<Key, Comparator<Object>>() {
+
+				    {
+					    put( Key.numericAsc, ( a, b ) -> Compare.invoke( a, b, false ) );
+					    put( Key.numericDesc, ( b, a ) -> Compare.invoke( a, b, true ) );
+					    put( Key.textAsc,
+					        ( a, b ) -> StringCompare.invoke( StringCaster.cast( a ), StringCaster.cast( b ), true ) );
+					    put( Key.textDesc,
+					        ( b, a ) -> StringCompare.invoke( StringCaster.cast( a ), StringCaster.cast( b ), true ) );
+					    put( Key.textNoCaseAsc,
+					        ( a, b ) -> StringCompare.invoke( StringCaster.cast( a ), StringCaster.cast( b ), false ) );
+					    put( Key.textNoCaseDesc,
+					        ( b, a ) -> StringCompare.invoke( StringCaster.cast( a ), StringCaster.cast( b ), false ) );
+				    }
+			    }
+			);
+		} else {
+			return new Struct(
+			    new HashMap<Key, Comparator<Object>>() {
+
+				    {
+					    put( Key.numericAsc, ( a, b ) -> Compare.invoke( a, b, false ) );
+					    put( Key.numericDesc, ( b, a ) -> Compare.invoke( a, b, true ) );
+					    put( Key.textAsc,
+					        ( a, b ) -> CollatorStringCompare.invoke( StringCaster.cast( a ), StringCaster.cast( b ), true, locale ) );
+					    put( Key.textDesc,
+					        ( b, a ) -> CollatorStringCompare.invoke( StringCaster.cast( a ), StringCaster.cast( b ), true, locale ) );
+					    put( Key.textNoCaseAsc,
+					        ( a, b ) -> CollatorStringCompare.invoke( StringCaster.cast( a ), StringCaster.cast( b ), false, locale ) );
+					    put( Key.textNoCaseDesc,
+					        ( b, a ) -> CollatorStringCompare.invoke( StringCaster.cast( a ), StringCaster.cast( b ), false, locale ) );
+				    }
+			    }
+			);
+		}
 	}
 }

@@ -34,7 +34,7 @@ import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.util.StructUtil;
 
-@BoxBIF
+@BoxBIF( description = "Sort struct keys and return as an array" )
 @BoxMember( type = BoxLangType.STRUCT )
 
 public class StructSort extends BIF {

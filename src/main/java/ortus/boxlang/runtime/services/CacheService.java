@@ -23,7 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.async.executors.ExecutorRecord;
+import ortus.boxlang.runtime.async.executors.BoxExecutor;
 import ortus.boxlang.runtime.cache.BoxCache;
 import ortus.boxlang.runtime.cache.providers.BoxCacheProvider;
 import ortus.boxlang.runtime.cache.providers.CoreProviderType;
@@ -77,7 +77,7 @@ public class CacheService extends BaseService {
 	/**
 	 * The scheduled executor service record
 	 */
-	private final ExecutorRecord							executor;
+	private final BoxExecutor								executor;
 
 	/**
 	 * The caches registry
@@ -122,7 +122,7 @@ public class CacheService extends BaseService {
 	 *
 	 * @return The scheduled executor record
 	 */
-	public ExecutorRecord getTaskScheduler() {
+	public BoxExecutor getTaskScheduler() {
 		return this.executor;
 	}
 

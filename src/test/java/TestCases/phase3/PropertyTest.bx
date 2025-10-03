@@ -21,6 +21,8 @@ class accessors=true {
 
     property name="chain"   type="array"  default="#ArrayNew(1)#";
 
+    property foo.com.Bar barProp;
+
     function init() {
         getMyProperty();
         // force this property to be uninitialized so we can test the default return of the generated getter method

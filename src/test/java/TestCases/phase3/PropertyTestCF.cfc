@@ -14,6 +14,8 @@ component accessors=true {
 
     property name="chain"   type="array"  default="#ArrayNew(1)#";
 
+    property foo.com.Bar barProp;
+
     function init() {
         getMyProperty();
     }

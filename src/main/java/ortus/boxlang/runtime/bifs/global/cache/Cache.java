@@ -26,7 +26,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.validation.Validator;
 
-@BoxBIF
+@BoxBIF( description = "Perform cache operations" )
 public class Cache extends BIF {
 
 	private static final Validator cacheExistsValidator = new CacheExistsValidator();

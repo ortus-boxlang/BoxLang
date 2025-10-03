@@ -25,7 +25,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.IType;
 
-@BoxBIF
+@BoxBIF( description = "Write output to the response stream" )
 @BoxBIF( alias = "echo" )
 public class WriteOutput extends BIF {
 

@@ -87,7 +87,8 @@ public class JSRScriptingRequestBoxContext extends ScriptingRequestBoxContext {
 		if ( !canOutput() && !force ) {
 			return this;
 		}
-		String output;
+		var		buffers	= super._getBuffers();
+		String	output;
 		for ( StringBuffer buf : buffers ) {
 			synchronized ( buf ) {
 				output = buf.toString();

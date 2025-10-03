@@ -29,7 +29,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.RegexUtil;
 import ortus.boxlang.runtime.util.RegexBuilder;
 
-@BoxBIF
+@BoxBIF( description = "Find all matches of a regular expression in a string" )
 @BoxBIF( alias = "reMatchNoCase" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "reMatch", objectArgument = "string" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "reMatchNoCase", objectArgument = "string" )

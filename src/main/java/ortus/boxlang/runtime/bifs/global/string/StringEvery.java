@@ -25,7 +25,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 
-@BoxBIF
+@BoxBIF( description = "Test whether every character in string matches the callback function" )
 
 public class StringEvery extends ListEvery {
 

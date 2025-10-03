@@ -429,10 +429,22 @@ public class File implements IType, IReferenceable {
 	 *
 	 * @return The string representation
 	 */
+	@Override
 	public String asString() {
 		return this.toString();
 	}
 
+	/**
+	 * Get the BoxLang type name for this type
+	 * 
+	 * @return The BoxLang type name
+	 */
+	@Override
+	public String getBoxTypeName() {
+		return "File";
+	}
+
+	@Override
 	public BoxMeta<?> getBoxMeta() {
 		if ( this.$bx == null ) {
 			this.$bx = new GenericMeta( this );

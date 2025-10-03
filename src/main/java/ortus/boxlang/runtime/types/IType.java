@@ -48,13 +48,40 @@ public interface IType {
 	 */
 	public String asString();
 
+	/**
+	 * Create a set that uses identity for equality
+	 * 
+	 * @return The identity set
+	 */
 	static Set<IType> createIdentitySetForType() {
 		return Collections.newSetFromMap( new IdentityHashMap<>() );
 	}
 
+	/**
+	 * Compute a hash code for this type, avoiding cycles
+	 * 
+	 * @param visited The set of visited types
+	 * 
+	 * @return The hash code
+	 */
 	default int computeHashCode( Set<IType> visited ) {
 		return this.hashCode();
 	}
 
+	/**
+	 * Get the BoxMeta for this type
+	 * 
+	 * @return The BoxMeta for this type
+	 */
 	public BoxMeta<?> getBoxMeta();
+
+	/**
+	 * Get the BoxLang type name for this type
+	 * 
+	 * @return The BoxLang type name
+	 */
+	default String getBoxTypeName() {
+		return this.getClass().getSimpleName();
+	}
+
 }

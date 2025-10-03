@@ -23,7 +23,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
-@BoxBIF
+@BoxBIF( description = "Delete a file" )
 
 public class FileDelete extends BIF {
 

@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.validation.Validator;
 
-@BoxComponent( allowsBody = false )
+@BoxComponent( description = "Define parameters for stored procedure calls", allowsBody = false )
 public class ProcParam extends Component {
 
 	/**

@@ -36,7 +36,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.util.LocalizationUtil;
 
-@BoxBIF
+@BoxBIF( description = "Add a time interval to a date/time value" )
 @BoxMember( type = BoxLangType.DATETIME, name = "add", objectArgument = "date" )
 public class DateAdd extends BIF {
 

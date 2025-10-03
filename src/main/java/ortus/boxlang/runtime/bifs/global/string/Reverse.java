@@ -23,8 +23,8 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 
-@BoxBIF
-@BoxMember( type = BoxLangType.STRING_STRICT, name = "Reverse" )
+@BoxBIF( description = "Reverse the characters in a string" )
+@BoxMember( type = BoxLangType.STRING_STRICT )
 public class Reverse extends BIF {
 
 	/**

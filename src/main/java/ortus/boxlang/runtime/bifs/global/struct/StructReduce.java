@@ -29,7 +29,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.StructUtil;
 
-@BoxBIF
+@BoxBIF( description = "Reduce struct values to a single value using a callback function" )
 @BoxMember( type = BoxLangType.STRUCT )
 public class StructReduce extends BIF {
 

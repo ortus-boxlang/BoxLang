@@ -30,7 +30,7 @@ import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 
-@BoxBIF
+@BoxBIF( description = "Filter list items using a callback function" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "listFilter" )
 
 public class ListFilter extends BIF {

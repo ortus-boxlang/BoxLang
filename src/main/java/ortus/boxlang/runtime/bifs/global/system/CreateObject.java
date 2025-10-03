@@ -32,8 +32,9 @@ import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.util.TypeUtil;
 
-@BoxBIF
+@BoxBIF( description = "Create an instance of a Java class or component" )
 public class CreateObject extends BIF {
 
 	/**
@@ -149,18 +150,20 @@ public class CreateObject extends BIF {
 		// Uknown, let's see if we can intercept it
 		// Announce an interception so that modules can contribute to object creation requests
 		// If the response is set, we'll use that as the object to return
-		IStruct interceptorArgs = Struct.of(
-		    Key.response, null,
-		    Key.context, context,
-		    Key.arguments, arguments
-		);
-		BoxRuntime.getInstance()
-		    .getInterceptorService()
-		    .announce( BoxEvent.ON_CREATEOBJECT_REQUEST, interceptorArgs );
+		var interceptorService = BoxRuntime.getInstance().getInterceptorService();
+		if ( interceptorService.hasState( BoxEvent.ON_CREATEOBJECT_REQUEST ) ) {
+			IStruct interceptorArgs = Struct.ofNonConcurrent(
+			    Key.response, null,
+			    Key.context, context,
+			    Key.arguments, arguments
+			);
+			interceptorService
+			    .announce( BoxEvent.ON_CREATEOBJECT_REQUEST, interceptorArgs );
 
-		// If the response is set, we'll use that as the object to return
-		if ( interceptorArgs.get( Key.response ) != null ) {
-			return interceptorArgs.get( Key.response );
+			// If the response is set, we'll use that as the object to return
+			if ( interceptorArgs.get( Key.response ) != null ) {
+				return interceptorArgs.get( Key.response );
+			}
 		}
 
 		throw new BoxRuntimeException( "Unsupported type: " + arguments.getAsString( Key.type ) );
@@ -189,7 +192,7 @@ public class CreateObject extends BIF {
 			} else if ( properties instanceof Array ) {
 				classPaths = ( Array ) properties;
 			} else {
-				throw new BoxRuntimeException( "Invalid properties type: " + properties.getClass().getName() );
+				throw new BoxRuntimeException( "Invalid properties type: " + TypeUtil.getObjectName( properties ) );
 			}
 
 			return CLASS_LOCATOR.loadFromClassPaths(

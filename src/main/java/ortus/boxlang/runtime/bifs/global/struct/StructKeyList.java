@@ -24,7 +24,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.IStruct;
 
-@BoxBIF
+@BoxBIF( description = "Return a list of struct keys" )
 @BoxMember( type = BoxLangType.STRUCT, name = "keyList" )
 public class StructKeyList extends BIF {
 

@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.dynamic.casters;
 
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
+import ortus.boxlang.runtime.types.util.TypeUtil;
 
 /**
  * I handle casting anything
@@ -79,7 +80,7 @@ public class ByteCaster implements IBoxCaster {
 		if ( number.wasSuccessful() ) {
 			return number.get().byteValue();
 		} else if ( fail ) {
-			throw new BoxCastException( "Can't cast " + object.getClass().getName() + " to a byte." );
+			throw new BoxCastException( "Can't cast " + TypeUtil.getObjectName( object ) + " to a byte." );
 		} else {
 			return null;
 		}

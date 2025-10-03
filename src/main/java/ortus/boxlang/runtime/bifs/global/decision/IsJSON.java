@@ -24,7 +24,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.util.JSONUtil;
 
-@BoxBIF
+@BoxBIF( description = "Check if string is valid JSON" )
 public class IsJSON extends BIF {
 
 	/**
@@ -54,7 +54,7 @@ public class IsJSON extends BIF {
 		// TODO: Make a JSON caster for this.
 		// I don't like catching the exception, but our JSON lib doesn't give us another option
 		try {
-			JSONUtil.getJSONBuilder().anyFrom( stringAttempt.get() );
+			JSONUtil.getJSONBuilder( false ).anyFrom( stringAttempt.get() );
 			return true;
 		} catch ( Exception e ) {
 			return false;

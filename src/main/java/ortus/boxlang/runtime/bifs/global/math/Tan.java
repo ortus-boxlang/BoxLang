@@ -28,7 +28,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.MathUtil;
 
-@BoxBIF
+@BoxBIF( description = "Calculate the tangent of an angle" )
 @BoxMember( type = BoxLangType.NUMERIC )
 public class Tan extends BIF {
 

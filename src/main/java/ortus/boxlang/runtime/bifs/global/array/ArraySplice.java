@@ -25,7 +25,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
 
-@BoxBIF
+@BoxBIF( description = "Remove or replace elements in an array and return the removed elements" )
 @BoxMember( type = BoxLangType.ARRAY )
 public class ArraySplice extends BIF {
 
@@ -50,11 +50,11 @@ public class ArraySplice extends BIF {
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.array The array to splice
-	 * 
+	 *
 	 * @argument.index The initial position to remove or insert from
-	 * 
+	 *
 	 * @argument.elementCountForRemoval The number of elemetns to remove
-	 * 
+	 *
 	 * @argument.replacements An array of elements to insert
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {

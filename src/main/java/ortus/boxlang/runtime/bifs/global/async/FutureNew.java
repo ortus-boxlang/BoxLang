@@ -17,7 +17,7 @@ package ortus.boxlang.runtime.bifs.global.async;
 import java.util.concurrent.CompletableFuture;
 
 import ortus.boxlang.runtime.async.BoxFuture;
-import ortus.boxlang.runtime.async.executors.ExecutorRecord;
+import ortus.boxlang.runtime.async.executors.BoxExecutor;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -26,7 +26,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Function;
 
-@BoxBIF
+@BoxBIF( description = "Create a new future for asynchronous execution" )
 public class FutureNew extends BIF {
 
 	/**
@@ -80,12 +80,12 @@ public class FutureNew extends BIF {
 		// Is the executor a string, then it is the name of a named executor.
 		if ( executor != null ) {
 			if ( executor instanceof String castedExecutor ) {
-				ExecutorRecord executorRecord = asyncService.getExecutor( castedExecutor );
+				BoxExecutor executorRecord = asyncService.getExecutor( castedExecutor );
 				return BoxFuture.ofFunction( context, supplier, executorRecord.executor() );
 			}
 
 			// If the executor is an executor object then use it.
-			if ( executor instanceof ExecutorRecord castedExecutor ) {
+			if ( executor instanceof BoxExecutor castedExecutor ) {
 				return BoxFuture.ofFunction( context, supplier, castedExecutor.executor() );
 			}
 		}

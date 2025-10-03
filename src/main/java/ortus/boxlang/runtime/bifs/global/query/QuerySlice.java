@@ -26,7 +26,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
-@BoxBIF
+@BoxBIF( description = "Extract a portion of query rows" )
 @BoxMember( type = BoxLangType.QUERY )
 public class QuerySlice extends BIF {
 

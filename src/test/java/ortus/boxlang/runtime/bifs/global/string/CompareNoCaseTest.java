@@ -32,6 +32,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.Array;
 
 public class CompareNoCaseTest {
 
@@ -87,6 +88,52 @@ public class CompareNoCaseTest {
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( -1 );
+	}
+
+	@DisplayName( "It ensures a basic lexigraphal sort with unicode" )
+	@Test
+	public void testCompareUnicode() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+			messages = [
+				"A Z —",
+				"AB"
+			]
+
+			messages.sort( (a,b)=>compareNoCase( a, b ) )
+			result1 = messages[1];
+			result2 = messages[2];
+		       """,
+		    context );
+		// @formatter:on
+		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( "A Z —" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "AB" );
+
+		// @formatter:off
+		instance.executeSource(
+		    """
+			words = [
+				"résumé",
+				"apple",
+				"banana",
+				"éclair",
+				"zebra"
+			];
+
+			words.sort( (a,b)=>compareNoCase( a, b ) );
+			//  should produce ['apple', 'banana', 'résumé', 'zebra', 'éclair']
+			result = words;
+		       """,
+		    context );
+		// @formatter:on
+		assertThat( variables.get( Key.result ) ).isInstanceOf( Array.class );
+		Array words = variables.getAsArray( Key.result );
+		assertThat( words.get( 0 ) ).isEqualTo( "apple" );
+		assertThat( words.get( 1 ) ).isEqualTo( "banana" );
+		assertThat( words.get( 2 ) ).isEqualTo( "résumé" );
+		assertThat( words.get( 3 ) ).isEqualTo( "zebra" );
+		assertThat( words.get( 4 ) ).isEqualTo( "éclair" );
 	}
 
 	@DisplayName( "It returns 1 if the second string precedes the first string lexicographically" )

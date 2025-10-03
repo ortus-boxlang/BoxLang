@@ -30,7 +30,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.validation.Validator;
 
-@BoxBIF
+@BoxBIF( description = "Register interception points" )
 public class BoxRegisterInterceptionPoints extends BIF {
 
 	/**

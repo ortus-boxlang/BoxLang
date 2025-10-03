@@ -302,7 +302,7 @@ public class ExceptionUtil {
 		if ( srcFile.exists() ) {
 
 			// If this is a pre-compiled source file, then we can't read it
-			if ( new DiskClassUtil( null ).isJavaBytecode( srcFile ) ) {
+			if ( DiskClassUtil.isJavaByteCode( srcFile ) ) {
 				return "Precompiled source not available.";
 			}
 

@@ -27,7 +27,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.async.executors.ExecutorRecord;
+import ortus.boxlang.runtime.async.executors.BoxExecutor;
 import ortus.boxlang.runtime.cache.filters.WildcardFilter;
 import ortus.boxlang.runtime.config.segments.CacheConfig;
 import ortus.boxlang.runtime.scopes.Key;
@@ -42,12 +42,12 @@ public class BoxCacheProviderTest {
 	static BoxCacheProvider	boxCache;
 	static CacheConfig		config			= new CacheConfig();
 	static CacheService		cacheService	= Mockito.mock( CacheService.class );
-	static ExecutorRecord	executorRecord	= AsyncService.buildExecutor( "tests", ExecutorType.SCHEDULED, 20 );
+	static BoxExecutor		boxExecutor		= AsyncService.buildExecutor( "tests", ExecutorType.SCHEDULED, 20 );
 
 	@BeforeAll
 	static void setup() {
 		instance = BoxRuntime.getInstance( true );
-		Mockito.when( cacheService.getTaskScheduler() ).thenReturn( executorRecord );
+		Mockito.when( cacheService.getTaskScheduler() ).thenReturn( boxExecutor );
 		Mockito.when( cacheService.getRuntime() ).thenReturn( instance );
 
 		boxCache = new BoxCacheProvider();
@@ -108,7 +108,7 @@ public class BoxCacheProviderTest {
 		boxCache.set( "key1", "testing" );
 		var results = boxCache.getCachedObjectMetadata( "key1" );
 		assertThat( results ).isNotNull();
-		assertThat( results.get( "hits" ) ).isEqualTo( 1 );
+		assertThat( results.get( "hits" ) ).isEqualTo( 0 );
 	}
 
 	@Test

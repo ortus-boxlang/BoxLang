@@ -36,8 +36,9 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.slf4j.Logger;
 
 import ortus.boxlang.compiler.ClassInfo;
@@ -894,6 +895,28 @@ public class BoxRuntime implements java.io.Closeable {
 	}
 
 	/**
+	 * Announce an event with the provided {@link IStruct} supplier of data short-hand for
+	 * {@link #getInterceptorService()}.announce()
+	 *
+	 * @param state        The Key state to announce
+	 * @param dataProvider A Supplier that provides the data to announce
+	 */
+	public void announce( BoxEvent state, Supplier<IStruct> dataProvider ) {
+		getInterceptorService().announce( state, dataProvider );
+	}
+
+	/**
+	 * Announce an event with the provided {@link IStruct} supplier of data short-hand for
+	 * {@link #getInterceptorService()}.announce()
+	 *
+	 * @param state        The Key state to announce
+	 * @param dataProvider A Supplier that provides the data to announce
+	 */
+	public void announce( Key state, Supplier<IStruct> dataProvider ) {
+		getInterceptorService().announce( state, dataProvider );
+	}
+
+	/**
 	 * Shut down the runtime gracefully
 	 */
 	public synchronized void shutdown() {
@@ -1114,7 +1137,7 @@ public class BoxRuntime implements java.io.Closeable {
 	public void executeTemplate( String templatePath, IBoxContext context, String[] args ) {
 		// If the templatePath is a .cfs, .cfm then use the loadTemplateAbsolute, if
 		// it's a .cfc, .bx then use the loadClass
-		if ( StringUtils.endsWithAny( templatePath, ".cfc", ".bx" ) ) {
+		if ( Strings.CI.endsWithAny( templatePath, ".cfc", ".bx" ) ) {
 			// Load the class
 			Class<IBoxRunnable> targetClass = RunnableLoader.getInstance().loadClass(
 			    ResolvedFilePath.of( Paths.get( templatePath ) ),
@@ -1546,19 +1569,6 @@ public class BoxRuntime implements java.io.Closeable {
 		ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
 
 		try {
-			Boolean quiet = reader.ready();
-			if ( !quiet ) {
-				System.out.println( "██████   ██████  ██   ██ ██       █████  ███    ██  ██████ " );
-				System.out.println( "██   ██ ██    ██  ██ ██  ██      ██   ██ ████   ██ ██      " );
-				System.out.println( "██████  ██    ██   ███   ██      ███████ ██ ██  ██ ██   ███" );
-				System.out.println( "██   ██ ██    ██  ██ ██  ██      ██   ██ ██  ██ ██ ██    ██" );
-				System.out.println( "██████   ██████  ██   ██ ███████ ██   ██ ██   ████  ██████ " );
-				System.out.println( "" );
-				System.out.println( "Enter an expression, then hit enter" );
-				System.out.println( "Press Ctrl-C to exit" );
-				System.out.println( "" );
-				System.out.print( "BoxLang> " );
-			}
 			while ( ( source = reader.readLine() ) != null ) {
 
 				if ( source.toLowerCase().equals( "exit" ) || source.toLowerCase().equals( "quit" ) ) {
@@ -1579,11 +1589,9 @@ public class BoxRuntime implements java.io.Closeable {
 						if ( stringAttempt.wasSuccessful() ) {
 							System.out.println( stringAttempt.get() );
 						} else {
-							// check if it's a java array
 							if ( result.getClass().isArray() ) {
 								result = Array.fromArray( ( Object[] ) result );
 							}
-
 							System.out.println( result );
 						}
 					} else {
@@ -1596,10 +1604,6 @@ public class BoxRuntime implements java.io.Closeable {
 					}
 				} catch ( Exception e ) {
 					e.printStackTrace();
-				}
-
-				if ( !quiet ) {
-					System.out.print( "BoxLang> " );
 				}
 			}
 		} catch ( IOException e ) {
