@@ -18,7 +18,36 @@
 
 package ortus.boxlang.runtime.components.net;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static com.github.tomakehurst.wiremock.client.WireMock.put;
+import static com.github.tomakehurst.wiremock.client.WireMock.delete;
+import static com.github.tomakehurst.wiremock.client.WireMock.head;
+import static com.github.tomakehurst.wiremock.client.WireMock.options;
+import static com.github.tomakehurst.wiremock.client.WireMock.patch;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.resetAllRequests;
+import static com.github.tomakehurst.wiremock.client.WireMock.resetAllScenarios;
+import static com.github.tomakehurst.wiremock.client.WireMock.resetAllMappings;
+import static com.github.tomakehurst.wiremock.client.WireMock.verify;
+import static com.github.tomakehurst.wiremock.client.WireMock.requestMadeFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.containing;
+import static com.github.tomakehurst.wiremock.client.WireMock.matching;
+import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
+import static com.github.tomakehurst.wiremock.client.WireMock.matchingXPath;
+import static com.github.tomakehurst.wiremock.client.WireMock.withHeader;
+import static com.github.tomakehurst.wiremock.client.WireMock.withRequestBody;
+import static com.github.tomakehurst.wiremock.client.WireMock.withQueryParam;
+import static com.github.tomakehurst.wiremock.client.WireMock.withCookie;
+import static com.github.tomakehurst.wiremock.client.WireMock.withBasicAuth;
+import static com.github.tomakehurst.wiremock.client.WireMock.withMultipartRequestBody;
+import static com.github.tomakehurst.wiremock.client.WireMock.withFormParameter;
+import static com.github.tomakehurst.wiremock.client.WireMock.withRequestBodyMatching;
+import static com.github.tomakehurst.wiremock.client.WireMock.withRequestBodyEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.withRequestBodyContaining;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
