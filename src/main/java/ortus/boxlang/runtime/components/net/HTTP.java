@@ -274,6 +274,9 @@ public class HTTP extends Component {
 		String	outputDirectory		= attributes.getAsString( Key.path );
 		String	requestID			= UUID.randomUUID().toString();
 		Instant	startTime			= Instant.now();
+		if ( attributes.containsKey( Key.clientCert ) ) {
+			attributes.put( Key.clientCert, FileSystemUtil.expandPath( context, attributes.getAsString( Key.clientCert ) ).absolutePath().toString() );
+		}
 
 		// We allow the `file` attribute to become the full file path if the `path` attribute is empty
 		if ( outputDirectory == null && attributes.getAsString( Key.file ) != null ) {
@@ -436,11 +439,19 @@ public class HTTP extends Component {
 				builder.timeout( Duration.ofSeconds( attributes.getAsInteger( Key.timeout ) ) );
 			}
 
-			HttpRequest	targetHTTPRequest	= builder.build();
 			// Create a default HTTP Client or a Proxy based Client
-			HttpClient	client				= attributes.containsKey( Key.proxyServer ) || !attributes.getAsBoolean( Key.redirect )
-			    ? HttpManager.getCustomClient( attributes )
-			    : HttpManager.getClient();
+			HttpClient client = attributes.containsKey( Key.clientCert ) || attributes.containsKey( Key.proxyServer )
+			    || !attributes.getAsBoolean( Key.redirect )
+			        ? HttpManager.getCustomClient( attributes )
+			        : HttpManager.getClient();
+
+			// Append our debug cert header if in debug mode and the cert has been assigned
+			if ( BooleanCaster.cast( attributes.getOrDefault( Key.debug, false ) ) && attributes.containsKey( HttpManager.encodedCertKey ) ) {
+				builder.header( "X-Client-Cert", attributes.getAsString( HttpManager.encodedCertKey ) );
+			}
+
+			HttpRequest	targetHTTPRequest	= builder.build();
+
 			// Announce the HTTP request
 			final var	finalTargetURI		= targetURI;
 			interceptorService.announce( BoxEvent.ON_HTTP_REQUEST, () -> Struct.ofNonConcurrent(
