@@ -365,6 +365,13 @@ public class BoxRunner {
 		} finally {
 			try {
 				listener.onRequestEnd( scriptingContext, new Object[] { schedulerPath } );
+			} catch ( AbortException e ) {
+				try {
+					listener.onAbort( scriptingContext, new Object[] { schedulerPath } );
+				} catch ( Throwable ae ) {
+					// Opps, an error while handling onAbort
+					errorToHandle = ae;
+				}
 			} catch ( Throwable e ) {
 				// Opps, an error while handling onRequestEnd
 				errorToHandle = e;

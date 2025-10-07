@@ -1279,6 +1279,13 @@ public class BoxRuntime implements java.io.Closeable {
 			} finally {
 				try {
 					listener.onRequestEnd( scriptingContext, new Object[] { templatePath } );
+				} catch ( AbortException e ) {
+					try {
+						listener.onAbort( scriptingContext, new Object[] { templatePath } );
+					} catch ( Throwable ae ) {
+						// Opps, an error while handling onAbort
+						errorToHandle = ae;
+					}
 				} catch ( Throwable e ) {
 					// Opps, an error while handling onRequestEnd
 					errorToHandle = e;
@@ -1381,6 +1388,13 @@ public class BoxRuntime implements java.io.Closeable {
 
 			try {
 				listener.onRequestEnd( scriptingContext, new Object[] { templatePath } );
+			} catch ( AbortException e ) {
+				try {
+					listener.onAbort( scriptingContext, new Object[] { templatePath } );
+				} catch ( Throwable ae ) {
+					// Opps, an error while handling onAbort
+					errorToHandle = ae;
+				}
 			} catch ( Throwable e ) {
 				// Opps, an error while handling onRequestEnd
 				errorToHandle = e;

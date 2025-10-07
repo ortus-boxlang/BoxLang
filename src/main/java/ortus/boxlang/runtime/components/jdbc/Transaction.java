@@ -32,6 +32,7 @@ import ortus.boxlang.runtime.jdbc.ITransaction;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 import ortus.boxlang.runtime.validation.Validator;
@@ -148,6 +149,9 @@ public class Transaction extends Component {
 			try {
 				bodyResult = processBody( context, body );
 				transaction.commit();
+			} catch ( AbortException e ) {
+				// Ignore aborts
+				throw e;
 			} catch ( Throwable e ) {
 				logger.error( "Encountered database exception while processing transaction; rolling back", e );
 				transaction.rollback();
