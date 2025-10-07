@@ -20,22 +20,25 @@ package ortus.boxlang.runtime.util;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.nio.file.CopyOption;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.DirectoryStream;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
+import java.nio.file.FileSystems;
 import java.nio.file.InvalidPathException;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
@@ -43,8 +46,6 @@ import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
-import java.nio.file.attribute.PosixFilePermission;
-import java.nio.file.attribute.PosixFilePermissions;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -565,7 +566,11 @@ public final class FileSystemUtil {
 	public static String getMimeType( String filePath ) {
 		try {
 			if ( filePath.substring( 0, 4 ).equalsIgnoreCase( "http" ) ) {
-				return Files.probeContentType( Paths.get( new URI( filePath ).toURL().getFile() ).getFileName() );
+				String contentType = Files.probeContentType( Paths.get( new URI( filePath ).toURL().getFile() ).getFileName() );
+				if ( contentType == null ) {
+					contentType = getRemoteFileContentType( filePath );
+				}
+				return contentType;
 			} else {
 				return Files.probeContentType( Paths.get( filePath ).getFileName() );
 			}
@@ -573,6 +578,30 @@ public final class FileSystemUtil {
 			throw new BoxIOException( e );
 		} catch ( URISyntaxException e ) {
 			throw new BoxRuntimeException( "The provided URL [" + filePath + "] is not a valid. " + e.getMessage() );
+		}
+	}
+
+	/**
+	 * Retrieves the content type of a remote file
+	 *
+	 * @param src
+	 *
+	 * @return
+	 * 
+	 */
+	public static String getRemoteFileContentType( String src ) {
+		try {
+			URL					url			= new URI( src ).toURL();
+			HttpURLConnection	connection	= ( HttpURLConnection ) url.openConnection();
+			// Use HEAD to avoid downloading the full content
+			connection.setRequestMethod( "HEAD" );
+			connection.connect();
+
+			return connection.getHeaderField( "Content-Type" );
+		} catch ( URISyntaxException e ) {
+			throw new RuntimeException( "Error parsing URI: " + src, e );
+		} catch ( IOException e ) {
+			throw new BoxIOException( "Error fetching content type for URL: " + src, e );
 		}
 	}
 
