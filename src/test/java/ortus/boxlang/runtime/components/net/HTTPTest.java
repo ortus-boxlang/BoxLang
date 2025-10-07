@@ -877,6 +877,34 @@ public class HTTPTest {
 		assertThat( bxhttp.get( Key.fileContent ) ).isEqualTo( "{\"success\": true }" );
 	}
 
+	@DisplayName( "Will not double encode params when encoded is set to false on a URL param" )
+	@Test
+	public void testDoubleEncoding( WireMockRuntimeInfo wmRuntimeInfo ) {
+		stubFor(
+		    post( "/test-params?myParam=This%26is%20my%2Fvery%20long%3Fquery%2Bparam" )
+		        .willReturn( ok().withBody( "{\"success\": true }" ) ) );
+
+		String baseURL = wmRuntimeInfo.getHttpBaseUrl();
+		// @formatter:off
+		instance.executeSource( String.format( """
+			bx:http method="POST" url="%s" {
+				bx:httpparam type="url" encoded="false" name="myParam" value="#urlEncodedFormat( "This&is my/very long?query+param" )#";
+			}
+			result = bxhttp;
+		""", baseURL + "/test-params" ), context );
+		// @formatter:on
+
+		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
+
+		IStruct bxhttp = variables.getAsStruct( result );
+
+		Assertions.assertTrue( bxhttp.containsKey( Key.statusCode ) );
+		assertThat( bxhttp.get( Key.statusCode ) ).isEqualTo( 200 );
+
+		Assertions.assertTrue( bxhttp.containsKey( Key.fileContent ) );
+		assertThat( bxhttp.get( Key.fileContent ) ).isEqualTo( "{\"success\": true }" );
+	}
+
 	@DisplayName( "It can process a basic authentication request" )
 	@Test
 	public void testBasicAuth( WireMockRuntimeInfo wmRuntimeInfo ) {
