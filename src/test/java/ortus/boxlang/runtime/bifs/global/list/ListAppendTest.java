@@ -147,4 +147,16 @@ public class ListAppendTest {
 		assertThat( variables.getAsString( result ) ).isEqualTo( "1-and-2-and-3-and-4-and-5-and-6" );
 	}
 
+	@Test
+	public void testAppendNull() {
+		instance.executeSource(
+		    """
+		    result = "brad,jon".listAppend( null )
+		      """,
+		    context );
+		// even with ignore empty elements defaulting to true, we still get the trailing slash because that flag is only enforced
+		// when parsing the incoming list, not when generating the final list. Not sure what is correct, but this behavior does match CFML
+		assertThat( variables.getAsString( result ) ).isEqualTo( "brad,jon," );
+	}
+
 }
