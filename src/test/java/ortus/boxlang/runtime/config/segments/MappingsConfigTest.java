@@ -6,6 +6,8 @@ package ortus.boxlang.runtime.config.segments;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.io.File;
+
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -52,7 +54,7 @@ class MappingsConfigTest {
 		Configuration	cfg			= new Configuration().process( mappings );
 		Mapping			map			= cfg.mappings.getAs( Mapping.class, Key.of( "/site/" ) );
 		assertThat( map ).isNotNull();
-		assertThat( map.path() ).isEqualTo( System.getProperty( "user.dir" ) + "/site" );
+		assertThat( map.path() ).isEqualTo( System.getProperty( "user.dir" ) + File.separator + "site" );
 		// external value should be false
 		assertThat( map.external() ).isFalse();
 	}
