@@ -17,6 +17,8 @@
  */
 package ortus.boxlang.runtime.util;
 
+import java.nio.file.Paths;
+
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
@@ -97,7 +99,9 @@ public record Mapping( String name, String path, boolean external ) {
 		// If the data is a Struct, we can extract the mapping path and external flag
 		return StructCaster.attempt( data ).map( s -> Mapping.of(
 		    name,
-		    s.getAsAttempt( Key.path ).map( StringCaster::cast ).orThrow( "Path is required for mapping" ),
+		    // incoming paths are expected to be absolute but we still need to normalize them to get rid of things like ../
+		    s.getAsAttempt( Key.path ).map( StringCaster::cast ).map( path -> Paths.get( path ).normalize().toString() )
+		        .orThrow( "Path is required for mapping" ),
 		    s.getAsAttempt( Key.external ).map( BooleanCaster::cast ).getOrDefault( defaultExternal )
 		) )
 		    // Otherwise, we assume the data is a string representing the mapping path (and default external)
