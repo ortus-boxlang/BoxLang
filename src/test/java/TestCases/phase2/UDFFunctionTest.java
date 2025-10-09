@@ -1129,4 +1129,28 @@ public class UDFFunctionTest {
 		assertThat( documentation ).containsKey( Key.of( "responses" ) );
 		assertThat( documentation.getAsString( Key.of( "responses" ) ) ).isEqualTo( "~client/getHostCompetitionClients.response.yml" );
 	}
+
+	@DisplayName( "Hyphen pre annotations" )
+	@Test
+	public void testHyphenPreAnnotations() {
+
+		instance.executeSource(
+		    """
+		    @x-secured( DD )
+		    @response-default( "value" )
+		       function foo() {}
+
+		       result = foo.$bx.meta;
+		          """,
+		    context, BoxSourceType.BOXSCRIPT );
+
+		IStruct	meta		= variables.getAsStruct( result );
+
+		IStruct	annotations	= meta.getAsStruct( Key.of( "annotations" ) );
+		assertThat( annotations ).containsKey( Key.of( "x-secured" ) );
+		assertThat( annotations.getAsString( Key.of( "x-secured" ) ) ).isEqualTo( "DD" );
+		assertThat( annotations ).containsKey( Key.of( "response-default" ) );
+		assertThat( annotations.getAsString( Key.of( "response-default" ) ) ).isEqualTo( "value" );
+	}
+
 }

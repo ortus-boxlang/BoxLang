@@ -114,9 +114,16 @@ functionParamList: functionParam (COMMA functionParam)* COMMA?
 functionParam: REQUIRED? type? identifier (EQUALSIGN expression)? postAnnotation*
     ;
 
-// @MyAnnotation "value". This is BL specific, so it's disabled in the CF grammar, but defined here
-// in the base grammar for better rule reuse.
-preAnnotation: AT fqn annotation*
+// @foo
+// @foo( bar, "brad wood" )
+preAnnotation: AT preAnnotationName ( LPAREN annotation (COMMA annotation)* RPAREN)? SEMICOLON*
+    ;
+
+// foo
+// foo-bar
+// foo.bar
+// foo-bar.baz-bum.qux
+preAnnotationName: identifier ( (MINUS identifier) | (DOT identifier))*
     ;
 
 arrayLiteral: LBRACKET expressionList? RBRACKET
