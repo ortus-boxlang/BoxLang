@@ -486,27 +486,11 @@ public class Configuration implements IConfigSegment {
 					// 1) Simple: "/app": "${user-dir}" => path is the value, external = true
 					// 2) Complex: "/app": { "path": "${user-dir}", "external": true }
 					// Where "path" is mandatory and "external" is optional (defaults to true)
-					var value = entry.getValue();
-					if ( value instanceof IStruct castedMapping ) {
-						// complex mapping: path is mandatory
-						if ( !castedMapping.containsKey( Key.path ) || castedMapping.get( Key.path ) == null
-						    || StringCaster.cast( castedMapping.get( Key.path ) ).trim().length() == 0 ) {
-							logger.warn( "The [mappings.{}] configuration is missing a [path], ignoring it.", entry.getKey() );
-							return;
-						}
-						var		resolvedPath	= PlaceholderHelper.resolve( castedMapping.get( Key.path ) );
-						// external is optional and defaults to true
-						boolean	external		= true;
-						if ( castedMapping.containsKey( Key.external ) ) {
-							external = BooleanCaster.attempt( PlaceholderHelper.resolve( castedMapping.get( Key.external ) ) )
-							    .orElse( true );
-						}
-						registerMapping( entry.getKey(), resolvedPath, external );
-					}
-					// simple mapping: resolve all placeholders on the value and default external to true
-					else {
-						registerMapping( entry.getKey(), PlaceholderHelper.resolveAll( value ), true );
-					}
+					registerMapping(
+					    entry.getKey(),
+					    PlaceholderHelper.resolveAll( entry.getValue() ),
+					    true
+					);
 				} );
 			} else {
 				logger.warn( "The [mappings] configuration is not a JSON Object, ignoring it." );

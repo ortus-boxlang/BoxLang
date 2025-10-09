@@ -4,6 +4,7 @@
 package ortus.boxlang.runtime.config.segments;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -56,16 +57,17 @@ class MappingsConfigTest {
 		assertThat( map.external() ).isFalse();
 	}
 
-	@DisplayName( "Complex mapping missing path is ignored" )
+	@DisplayName( "Complex mapping missing path is stopped" )
 	@Test
 	void testComplexMappingMissingPathIgnored() {
-		IStruct			mappings	= Struct.ofNonConcurrent( Key.mappings, Struct.ofNonConcurrent(
+		IStruct		mappings	= Struct.ofNonConcurrent( Key.mappings, Struct.ofNonConcurrent(
 		    Key.of( "/bad" ), Struct.ofNonConcurrent(
 		        Key.of( "external" ), false
 		    )
 		) );
 
-		Configuration	cfg			= new Configuration().process( mappings );
-		assertThat( cfg.mappings.containsKey( Key.of( "/bad" ) ) ).isFalse();
+		Throwable	t			= assertThrows( Throwable.class, () -> new Configuration().process( mappings ) );
+		assertThat( t.getMessage() ).contains( "Path is required" );
+
 	}
 }

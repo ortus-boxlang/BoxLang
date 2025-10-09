@@ -87,8 +87,9 @@ public record Mapping( String name, String path, boolean external ) {
 	 * If the data is a Struct, it will extract the path and external flag.
 	 * If the data is not a Struct, it will assume the data is a string representing the mapping path and default the external flag.
 	 * 
-	 * @param name The mapping name
-	 * @param data The data to extract the mapping path and external flag from.
+	 * @param name            The mapping name
+	 * @param data            The data to extract the mapping path and external flag from.
+	 * @param defaultExternal The default value for the external flag if not specified in the data.
 	 * 
 	 * @return A new Mapping instance.
 	 */
