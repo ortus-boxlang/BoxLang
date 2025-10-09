@@ -461,7 +461,24 @@ public class JSONSerializeTest {
 				bar = { foo : foo }
 				foo.bar = bar
 				result = jsonSerialize( foo )
-				println( result )
+		    """,
+		context );
+		// @formatter:on
+
+		var json = variables.getAsString( result );
+	}
+
+	@DisplayName( "It can handle recursion of classes" )
+	@Test
+	public void testCanHandleRecursionClasses() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		    	foo = new src.test.java.ortus.boxlang.runtime.bifs.global.conversion.CircularClass()
+				bar = new src.test.java.ortus.boxlang.runtime.bifs.global.conversion.CircularClass()
+				foo.setValue( bar );
+				bar.setValue( foo );
+				result = jsonSerialize( foo )
 		    """,
 		context );
 		// @formatter:on
