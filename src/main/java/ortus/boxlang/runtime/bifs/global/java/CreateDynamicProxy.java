@@ -29,7 +29,10 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.util.TypeUtil;
 
 @BoxBIF( description = "Create a dynamic proxy for a Java interface" )
 public class CreateDynamicProxy extends BIF {
@@ -43,7 +46,8 @@ public class CreateDynamicProxy extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "any", Key._CLASS ),
-		    new Argument( true, "any", Key.interfaces )
+		    new Argument( true, "any", Key.interfaces ),
+		    new Argument( false, Argument.ANY, Key.properties )
 		};
 	}
 
@@ -62,23 +66,57 @@ public class CreateDynamicProxy extends BIF {
 	 *
 	 * @argument.interfaces The interfaces that the dynamic proxy should implement.
 	 *
+	 * @argument.properties Optional class paths to load the class from. Can be a single path or an array of paths to directories containing Jars/Classes, or to specific Jars/Classes.
+	 *
 	 * @return A dynamic proxy of the Box Class.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object			oClass		= arguments.get( Key._CLASS );
 		Object			oInterfaces	= arguments.get( Key.interfaces );
-		IClassRunnable	classToProxy;
+		Object			properties	= arguments.get( Key.properties );
+		IClassRunnable	classToProxy	= null;
 		Array			interfacesToImplement;
 
 		// Class can be a string name or a Box Class instance
 		if ( oClass instanceof IClassRunnable classRunnable ) {
 			classToProxy = classRunnable;
 		} else {
-			String className = StringCaster.cast( oClass );
-			classToProxy = ( IClassRunnable ) classLocator
-			    .load( context, className, ClassLocator.BX_PREFIX, false, context.getCurrentImports() )
-			    .invokeConstructor( context )
-			    .unWrapBoxLangClass();
+			String	className	= StringCaster.cast( oClass );
+			IStruct	props		= Struct.EMPTY;
+			boolean	loaded		= false;
+
+			// If we have properties, convert them to a struct format for the ClassLocator
+			if ( properties != null ) {
+				// Check if properties is already a struct
+				if ( properties instanceof IStruct ) {
+					props = ( IStruct ) properties;
+				} else if ( properties instanceof String || properties instanceof Array ) {
+					// If properties is a string or array of class paths, use loadFromClassPaths
+					// This supports loading compiled classes from custom JAR paths
+					Array classPaths;
+					// Normalize to an array
+					if ( properties instanceof String ) {
+						classPaths = Array.of( properties );
+					} else {
+						classPaths = ( Array ) properties;
+					}
+					classToProxy = ( IClassRunnable ) classLocator
+					    .loadFromClassPaths( context, className, classPaths, true, context.getCurrentImports() )
+					    .invokeConstructor( context )
+					    .unWrapBoxLangClass();
+					loaded = true;
+				} else {
+					throw new BoxRuntimeException( "Invalid properties type: " + TypeUtil.getObjectName( properties ) );
+				}
+			}
+
+			// Load using standard BoxLang class loading if we haven't loaded it yet
+			if ( !loaded ) {
+				classToProxy = ( IClassRunnable ) classLocator
+				    .load( context, className, ClassLocator.BX_PREFIX, false, context.getCurrentImports(), props )
+				    .invokeConstructor( context )
+				    .unWrapBoxLangClass();
+			}
 		}
 
 		// Interfaces can be a string name or an array of string names
