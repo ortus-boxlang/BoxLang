@@ -37,6 +37,7 @@ import ortus.boxlang.runtime.services.DatasourceService;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.util.StructUtil;
+import ortus.boxlang.runtime.types.util.BLCollector;
 
 /**
  * A BoxLang datasource configuration.
@@ -691,6 +692,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	public String addCustomParams( String target, String URIDelimiter, String delimiter ) {
 		String	targetCustom	= "";
 		IStruct	structCustom;
+		String finalURL = target;
 
 		// Convert to struct
 		if ( this.properties.get( Key.custom ) instanceof String castedCustom ) {
@@ -700,7 +702,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 		}
 
 		// filter out any keys alraedy in the target query string
-		targetCustom	= structCustom
+		structCustom	= structCustom
 		    .entrySet()
 		    .stream()
 		    .filter( e -> !target.contains( e.getKey().getName() + "=" ) )
@@ -712,11 +714,11 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 		// Append the custom parameters
 		if ( targetCustom.length() > 0 ) {
 			// Incorporate URI Delimiter if it doesn't exist
-			if ( !target.endsWith( URIDelimiter ) ) {
-				target += URIDelimiter;
+			if ( !finalURL.endsWith( URIDelimiter ) ) {
+				finalURL += URIDelimiter;
 			}
 			// Now add the custom parameters
-			target += targetCustom;
+			finalURL += targetCustom;
 		}
 
 		return target;
