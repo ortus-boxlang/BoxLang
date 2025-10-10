@@ -690,16 +690,29 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	 */
 	public String addCustomParams( String target, String URIDelimiter, String delimiter ) {
 		String targetCustom = "";
+		IStruct structCustom;
+		
+		// Convert to struct
 		if ( this.properties.get( Key.custom ) instanceof String castedCustom ) {
-			targetCustom = castedCustom;
+			structCustom = StructUtil.fromQueryString( castedCustom, delimiter );
 		} else {
-			targetCustom = StructUtil.toQueryString( ( IStruct ) this.properties.get( Key.custom ), delimiter );
+			structCustom = this.properties.getAsStruct( Key.custom );
 		}
+		
+		// filter out any keys alraedy in the target query string
+		targetCustom = structCustom
+			.entrySet()
+			.stream()
+			.filter( e -> !target.contains( e.getKey().getName() + "=" ) )
+			.collect( BLCollector.toStruct() );
+
+		// Convert back to query string
+		targetCustom = StructUtil.toQueryString( structCustom, delimiter );
 
 		// Append the custom parameters
 		if ( targetCustom.length() > 0 ) {
 			// Incorporate URI Delimiter if it doesn't exist
-			if ( !target.contains( URIDelimiter ) ) {
+			if ( !target.endsWith( URIDelimiter ) ) {
 				target += URIDelimiter;
 			}
 			// Now add the custom parameters

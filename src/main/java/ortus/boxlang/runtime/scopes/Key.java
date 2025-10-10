@@ -902,6 +902,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		cacheProvider						= Key.of( "cacheProvider" );
 	public static final Key		cacheTimeout						= Key.of( "cacheTimeout" );
 	public static final Key		dbname								= Key.of( "dbname" );
+	public static final Key		DBVarName							= Key.of( "DBVarName" );
 	public static final Key		driver								= Key.of( "driver" );
 	public static final Key		dbdriver							= Key.of( "dbdriver" );
 	public static final Key		host								= Key.of( "host" );

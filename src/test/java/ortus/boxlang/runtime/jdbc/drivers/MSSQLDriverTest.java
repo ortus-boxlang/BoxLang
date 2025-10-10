@@ -13,6 +13,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
 
+import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -24,6 +25,7 @@ import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 
 @EnabledIf( "tools.JDBCTestUtils#hasMSSQLModule" )
@@ -48,6 +50,7 @@ public class MSSQLDriverTest extends AbstractDriverTest {
 		IBoxContext setUpContext = new ScriptingRequestBoxContext( instance.getRuntimeContext() );
 		mssqlDatasource = AbstractDriverTest.setupTestDatasource( instance, setUpContext, datasourceName, datasourceConfig );
 		MSSQLDriverTest.createGeneratedKeyTable( mssqlDatasource, setUpContext );
+		MSSQLDriverTest.createStoredProcedure( mssqlDatasource, setUpContext );
 	}
 
 	@AfterAll
@@ -61,6 +64,27 @@ public class MSSQLDriverTest extends AbstractDriverTest {
 			dataSource.execute( "CREATE TABLE generatedKeyTest( id INT IDENTITY(1,1) PRIMARY KEY, name VARCHAR(155))", context );
 		} catch ( DatabaseException ignored ) {
 		}
+	}
+
+	public static void createStoredProcedure( DataSource dataSource, IBoxContext context ) {
+		dataSource.execute(
+		    """
+		      CREATE OR ALTER PROCEDURE testProcedure
+		      	@in1 INT = 45,
+		      	@in2 NVARCHAR(50),
+		      	@inout1 INT OUTPUT,
+		      	@out1 NVARCHAR(50) OUTPUT
+		      AS
+		      BEGIN
+		      	SET @out1 = CONCAT('foo-', @in1, '-', @in2);
+		      	SET @inout1 = @in1 + 100;
+		      	SELECT 'foo' as col UNION SELECT 'bar';
+		    SELECT 'second' as myColumn;
+		      	RETURN 42;
+		      END
+		      """,
+		    context
+		);
 	}
 
 	/**
@@ -252,6 +276,419 @@ public class MSSQLDriverTest extends AbstractDriverTest {
 		assertThat( t.getCause().getCause().getMessage() ).contains( "Boom 2!" );
 		assertThat( t.getCause().getCause().getCause() ).isNotNull();
 		assertThat( t.getCause().getCause().getCause().getMessage() ).contains( "Boom 1!" );
+	}
+
+	@DisplayName( "It can call stored proc" )
+	@Test
+	public void testCallStoredProc() {
+		instance.executeSource(
+		    """
+		    <bx:storedproc procedure="testProcedure" datasource="MSSQLdatasource" result="variables.result" returncode="true">
+		        <bx:procparam name="in1" value="123" type="in" sqltype="integer" />
+		        <bx:procparam name="in2" value="hello" type="in" sqltype="nvarchar" />
+		        <bx:procparam name="inout1" value="10" type="inout" sqltype="integer" variable="inout1" />
+		        <bx:procparam name="out1" type="out" sqltype="nvarchar" variable="out1" />
+		        <bx:procresult name="resultSet1" resultSet=1 />
+		        <bx:procresult name="resultSet2" resultSet=2 />
+		    </bx:storedproc>
+		    """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.get( "inout1" ) ).isEqualTo( 223 );
+		assertThat( variables.get( "out1" ) ).isEqualTo( "foo-123-hello" );
+
+		assertThat( variables.get( "resultSet1" ) ).isInstanceOf( Query.class );
+		Query rs1 = variables.getAsQuery( Key.of( "resultSet1" ) );
+		assertThat( rs1.size() ).isEqualTo( 2 );
+		assertThat( rs1.getRowAsStruct( 0 ).getAsString( Key.of( "col" ) ) ).isEqualTo( "foo" );
+		assertThat( rs1.getRowAsStruct( 1 ).getAsString( Key.of( "col" ) ) ).isEqualTo( "bar" );
+
+		assertThat( variables.get( "resultSet2" ) ).isInstanceOf( Query.class );
+		Query rs2 = variables.getAsQuery( Key.of( "resultSet2" ) );
+		assertThat( rs2.size() ).isEqualTo( 1 );
+		assertThat( rs2.getRowAsStruct( 0 ).getAsString( Key.of( "myColumn" ) ) ).isEqualTo( "second" );
+
+		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
+		IStruct resultStruct = variables.getAsStruct( result );
+
+		assertThat( resultStruct.get( "returnCode" ) ).isEqualTo( 42 );
+		assertThat( resultStruct.getAsNumber( Key.of( "executionTime" ) ).doubleValue() ).isGreaterThan( 0.0 );
+	}
+
+	@DisplayName( "It can call stored proc with max rows" )
+	@Test
+	public void testCallStoredProcWithMaxRows() {
+		instance.executeSource(
+		    """
+		    <bx:storedproc procedure="testProcedure" datasource="MSSQLdatasource" result="variables.result" returncode="true">
+		        <bx:procparam name="in1" value="123" type="in" sqltype="integer" />
+		        <bx:procparam name="in2" value="hello" type="in" sqltype="nvarchar" />
+		        <bx:procparam name="inout1" value="10" type="inout" sqltype="integer" variable="inout1" />
+		        <bx:procparam name="out1" type="out" sqltype="nvarchar" variable="out1" />
+		        <bx:procresult name="resultSet1" resultSet=1 maxRows=1 />
+		        <bx:procresult name="resultSet2" resultSet=2 maxRows=0 />
+		    </bx:storedproc>
+		    """,
+		    context, BoxSourceType.BOXTEMPLATE );
+
+		assertThat( variables.get( "resultSet1" ) ).isInstanceOf( Query.class );
+		Query rs1 = variables.getAsQuery( Key.of( "resultSet1" ) );
+		assertThat( rs1.size() ).isEqualTo( 1 );
+		assertThat( rs1.getRowAsStruct( 0 ).getAsString( Key.of( "col" ) ) ).isEqualTo( "foo" );
+
+		assertThat( variables.get( "resultSet2" ) ).isInstanceOf( Query.class );
+		Query rs2 = variables.getAsQuery( Key.of( "resultSet2" ) );
+		assertThat( rs2.size() ).isEqualTo( 0 );
+	}
+
+	@DisplayName( "It can call stored proc with default prefix name" )
+	@Test
+	public void testCallStoredProcWithDefaultPrefix() {
+		instance.executeSource(
+		    """
+		    <bx:storedproc procedure="testProcedure" datasource="MSSQLdatasource" returncode="true">
+		        <bx:procparam name="in1" value="123" type="in" sqltype="integer" />
+		        <bx:procparam name="in2" value="hello" type="in" sqltype="nvarchar" />
+		        <bx:procparam name="inout1" value="10" type="inout" sqltype="integer" variable="inout1" />
+		        <bx:procparam name="out1" type="out" sqltype="nvarchar" variable="out1" />
+		        <bx:procresult name="resultSet1" resultSet=1 />
+		        <bx:procresult name="resultSet2" resultSet=2 />
+		    </bx:storedproc>
+		    """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.get( "inout1" ) ).isEqualTo( 223 );
+		assertThat( variables.get( "out1" ) ).isEqualTo( "foo-123-hello" );
+
+		assertThat( variables.get( "resultSet1" ) ).isInstanceOf( Query.class );
+		Query rs1 = variables.getAsQuery( Key.of( "resultSet1" ) );
+		assertThat( rs1.size() ).isEqualTo( 2 );
+		assertThat( rs1.getRowAsStruct( 0 ).getAsString( Key.of( "col" ) ) ).isEqualTo( "foo" );
+		assertThat( rs1.getRowAsStruct( 1 ).getAsString( Key.of( "col" ) ) ).isEqualTo( "bar" );
+
+		assertThat( variables.get( "resultSet2" ) ).isInstanceOf( Query.class );
+		Query rs2 = variables.getAsQuery( Key.of( "resultSet2" ) );
+		assertThat( rs2.size() ).isEqualTo( 1 );
+		assertThat( rs2.getRowAsStruct( 0 ).getAsString( Key.of( "myColumn" ) ) ).isEqualTo( "second" );
+
+		assertThat( variables.get( Key.of( "bxstoredproc" ) ) ).isInstanceOf( IStruct.class );
+		IStruct resultStruct = variables.getAsStruct( Key.of( "bxstoredproc" ) );
+
+		assertThat( resultStruct.get( "returnCode" ) ).isEqualTo( 42 );
+		assertThat( resultStruct.getAsNumber( Key.of( "executionTime" ) ).doubleValue() ).isGreaterThan( 0.0 );
+	}
+
+	@DisplayName( "It can call stored proc without types" )
+	@Test
+	public void testCallStoredProcNoTypes() {
+		instance.executeSource(
+		    """
+		    <bx:storedproc procedure="testProcedure" datasource="MSSQLdatasource" result="variables.result" returncode="true">
+		        <bx:procparam name="in1" value="123" type="in" />
+		        <bx:procparam name="in2" value="hello" type="in" />
+		        <bx:procparam name="inout1" value="10" type="inout" variable="inout1" />
+		        <bx:procparam name="out1" type="out" variable="out1" />
+		        <bx:procresult name="resultSet1" resultSet=1 />
+		        <bx:procresult name="resultSet2" resultSet=2 />
+		    </bx:storedproc>
+		    """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.get( "inout1" ) ).isEqualTo( "223" );
+		assertThat( variables.get( "out1" ) ).isEqualTo( "foo-123-hello" );
+
+		assertThat( variables.get( "resultSet1" ) ).isInstanceOf( Query.class );
+		Query rs1 = variables.getAsQuery( Key.of( "resultSet1" ) );
+		assertThat( rs1.size() ).isEqualTo( 2 );
+		assertThat( rs1.getRowAsStruct( 0 ).getAsString( Key.of( "col" ) ) ).isEqualTo( "foo" );
+		assertThat( rs1.getRowAsStruct( 1 ).getAsString( Key.of( "col" ) ) ).isEqualTo( "bar" );
+
+		assertThat( variables.get( "resultSet2" ) ).isInstanceOf( Query.class );
+		Query rs2 = variables.getAsQuery( Key.of( "resultSet2" ) );
+		assertThat( rs2.size() ).isEqualTo( 1 );
+		assertThat( rs2.getRowAsStruct( 0 ).getAsString( Key.of( "myColumn" ) ) ).isEqualTo( "second" );
+
+		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
+		IStruct resultStruct = variables.getAsStruct( result );
+
+		assertThat( resultStruct.get( "returnCode" ) ).isEqualTo( 42 );
+		assertThat( resultStruct.getAsNumber( Key.of( "executionTime" ) ).doubleValue() ).isGreaterThan( 0.0 );
+	}
+
+	@DisplayName( "It can call stored proc with dbvarname" )
+	@Test
+	public void testCallStoredProcWithDBVarName() {
+		instance.executeSource(
+		    """
+		    <bx:storedproc procedure="testProcedure" datasource="MSSQLdatasource" result="variables.result" returncode="true">
+		        <bx:procparam name="in1" value="123" type="in" sqltype="integer" dbvarname="@in1" />
+		        <bx:procparam name="in2" value="hello" type="in" sqltype="nvarchar" dbvarname="@in2" />
+		        <bx:procparam name="inout1" value="10" type="inout" sqltype="integer" variable="inout1" dbvarname="@inout1" />
+		        <bx:procparam name="out1" type="out" sqltype="nvarchar" variable="out1" dbvarname="@out1" />
+		        <bx:procresult name="resultSet1" resultSet=1 />
+		        <bx:procresult name="resultSet2" resultSet=2 />
+		    </bx:storedproc>
+		    """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.get( "inout1" ) ).isEqualTo( 223 );
+		assertThat( variables.get( "out1" ) ).isEqualTo( "foo-123-hello" );
+
+		assertThat( variables.get( "resultSet1" ) ).isInstanceOf( Query.class );
+		Query rs1 = variables.getAsQuery( Key.of( "resultSet1" ) );
+		assertThat( rs1.size() ).isEqualTo( 2 );
+		assertThat( rs1.getRowAsStruct( 0 ).getAsString( Key.of( "col" ) ) ).isEqualTo( "foo" );
+		assertThat( rs1.getRowAsStruct( 1 ).getAsString( Key.of( "col" ) ) ).isEqualTo( "bar" );
+
+		assertThat( variables.get( "resultSet2" ) ).isInstanceOf( Query.class );
+		Query rs2 = variables.getAsQuery( Key.of( "resultSet2" ) );
+		assertThat( rs2.size() ).isEqualTo( 1 );
+		assertThat( rs2.getRowAsStruct( 0 ).getAsString( Key.of( "myColumn" ) ) ).isEqualTo( "second" );
+
+		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
+		IStruct resultStruct = variables.getAsStruct( result );
+
+		assertThat( resultStruct.get( "returnCode" ) ).isEqualTo( 42 );
+		assertThat( resultStruct.getAsNumber( Key.of( "executionTime" ) ).doubleValue() ).isGreaterThan( 0.0 );
+	}
+
+	@DisplayName( "It can call stored proc with dbvarname skipping defaulted inputs" )
+	@Test
+	public void testCallStoredProcWithDBVarNameSkippingDefaults() {
+		instance.executeSource(
+		    """
+		    <bx:storedproc procedure="testProcedure" datasource="MSSQLdatasource" result="variables.result" returncode="true">
+		        <!---<bx:procparam name="in1" value="123" type="in" sqltype="integer" dbvarname="@in1" />--->
+		        <bx:procparam name="in2" value="hello" type="in" sqltype="nvarchar" dbvarname="@in2" />
+		        <bx:procparam name="inout1" value="10" type="inout" sqltype="integer" variable="inout1" dbvarname="@inout1" />
+		        <bx:procparam name="out1" type="out" sqltype="nvarchar" variable="out1" dbvarname="@out1" />
+		        <bx:procresult name="resultSet1" resultSet=1 />
+		        <bx:procresult name="resultSet2" resultSet=2 />
+		    </bx:storedproc>
+		    """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.get( "inout1" ) ).isEqualTo( 145 );
+		assertThat( variables.get( "out1" ) ).isEqualTo( "foo-45-hello" );
+
+		assertThat( variables.get( "resultSet1" ) ).isInstanceOf( Query.class );
+		Query rs1 = variables.getAsQuery( Key.of( "resultSet1" ) );
+		assertThat( rs1.size() ).isEqualTo( 2 );
+		assertThat( rs1.getRowAsStruct( 0 ).getAsString( Key.of( "col" ) ) ).isEqualTo( "foo" );
+		assertThat( rs1.getRowAsStruct( 1 ).getAsString( Key.of( "col" ) ) ).isEqualTo( "bar" );
+
+		assertThat( variables.get( "resultSet2" ) ).isInstanceOf( Query.class );
+		Query rs2 = variables.getAsQuery( Key.of( "resultSet2" ) );
+		assertThat( rs2.size() ).isEqualTo( 1 );
+		assertThat( rs2.getRowAsStruct( 0 ).getAsString( Key.of( "myColumn" ) ) ).isEqualTo( "second" );
+
+		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
+		IStruct resultStruct = variables.getAsStruct( result );
+
+		assertThat( resultStruct.get( "returnCode" ) ).isEqualTo( 42 );
+		assertThat( resultStruct.getAsNumber( Key.of( "executionTime" ) ).doubleValue() ).isGreaterThan( 0.0 );
+	}
+
+	@DisplayName( "It can call stored proc no return code" )
+	@Test
+	public void testCallStoredProcNoReturnCode() {
+		instance.executeSource(
+		    """
+		    <bx:storedproc procedure="testProcedure" datasource="MSSQLdatasource" result="variables.result" returncode="false">
+		        <bx:procparam name="in1" value="123" type="in" sqltype="integer" />
+		        <bx:procparam name="in2" value="hello" type="in" sqltype="nvarchar" />
+		        <bx:procparam name="inout1" value="10" type="inout" sqltype="integer" variable="inout1" />
+		        <bx:procparam name="out1" type="out" sqltype="nvarchar" variable="out1" />
+		        <bx:procresult name="resultSet1" resultSet=1 />
+		        <bx:procresult name="resultSet2" resultSet=2 />
+		    </bx:storedproc>
+		    """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.get( "inout1" ) ).isEqualTo( 223 );
+		assertThat( variables.get( "out1" ) ).isEqualTo( "foo-123-hello" );
+
+		assertThat( variables.get( "resultSet1" ) ).isInstanceOf( Query.class );
+		Query rs1 = variables.getAsQuery( Key.of( "resultSet1" ) );
+		assertThat( rs1.size() ).isEqualTo( 2 );
+		assertThat( rs1.getRowAsStruct( 0 ).getAsString( Key.of( "col" ) ) ).isEqualTo( "foo" );
+		assertThat( rs1.getRowAsStruct( 1 ).getAsString( Key.of( "col" ) ) ).isEqualTo( "bar" );
+
+		assertThat( variables.get( "resultSet2" ) ).isInstanceOf( Query.class );
+		Query rs2 = variables.getAsQuery( Key.of( "resultSet2" ) );
+		assertThat( rs2.size() ).isEqualTo( 1 );
+		assertThat( rs2.getRowAsStruct( 0 ).getAsString( Key.of( "myColumn" ) ) ).isEqualTo( "second" );
+
+		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
+		IStruct resultStruct = variables.getAsStruct( result );
+
+		assertThat( resultStruct.get( "returnCode" ) ).isEqualTo( 0 );
+		assertThat( resultStruct.getAsNumber( Key.of( "executionTime" ) ).doubleValue() ).isGreaterThan( 0.0 );
+	}
+
+	@DisplayName( "It can call stored proc no result sets" )
+	@Test
+	public void testCallStoredProcNoResultSets() {
+		instance.executeSource(
+		    """
+		    <bx:storedproc procedure="testProcedure" datasource="MSSQLdatasource" result="variables.result" returncode="false">
+		        <bx:procparam name="in1" value="123" type="in" sqltype="integer" />
+		        <bx:procparam name="in2" value="hello" type="in" sqltype="nvarchar" />
+		        <bx:procparam name="inout1" value="10" type="inout" sqltype="integer" variable="inout1" />
+		        <bx:procparam name="out1" type="out" sqltype="nvarchar" variable="out1" />
+		    </bx:storedproc>
+		    """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.get( "inout1" ) ).isEqualTo( 223 );
+		assertThat( variables.get( "out1" ) ).isEqualTo( "foo-123-hello" );
+
+		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
+		IStruct resultStruct = variables.getAsStruct( result );
+
+		assertThat( resultStruct.get( "returnCode" ) ).isEqualTo( 0 );
+		assertThat( resultStruct.getAsNumber( Key.of( "executionTime" ) ).doubleValue() ).isGreaterThan( 0.0 );
+	}
+
+	@DisplayName( "It can call stored proc skipping result set" )
+	@Test
+	public void testCallStoredProcSkippingResult() {
+		instance.executeSource(
+		    """
+		    <bx:storedproc procedure="testProcedure" datasource="MSSQLdatasource" result="variables.result" returncode="false">
+		        <bx:procparam name="in1" value="123" type="in" sqltype="integer" />
+		        <bx:procparam name="in2" value="hello" type="in" sqltype="nvarchar" />
+		        <bx:procparam name="inout1" value="10" type="inout" sqltype="integer" variable="inout1" />
+		        <bx:procparam name="out1" type="out" sqltype="nvarchar" variable="out1" />
+		        <bx:procresult name="resultSet2" resultSet=2 />
+		    </bx:storedproc>
+		    """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.get( "inout1" ) ).isEqualTo( 223 );
+		assertThat( variables.get( "out1" ) ).isEqualTo( "foo-123-hello" );
+
+		assertThat( variables.get( "resultSet1" ) ).isNull();
+
+		assertThat( variables.get( "resultSet2" ) ).isInstanceOf( Query.class );
+		Query rs2 = variables.getAsQuery( Key.of( "resultSet2" ) );
+		assertThat( rs2.size() ).isEqualTo( 1 );
+		assertThat( rs2.getRowAsStruct( 0 ).getAsString( Key.of( "myColumn" ) ) ).isEqualTo( "second" );
+
+		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
+		IStruct resultStruct = variables.getAsStruct( result );
+
+		assertThat( resultStruct.get( "returnCode" ) ).isEqualTo( 0 );
+		assertThat( resultStruct.getAsNumber( Key.of( "executionTime" ) ).doubleValue() ).isGreaterThan( 0.0 );
+	}
+
+	@DisplayName( "It can call stored proc with positional results" )
+	@Test
+	public void testCallStoredProcPositionalResults() {
+		instance.executeSource(
+		    """
+		    <bx:storedproc procedure="testProcedure" datasource="MSSQLdatasource" result="variables.result" returncode="true">
+		        <bx:procparam name="in1" value="123" type="in" sqltype="integer" />
+		        <bx:procparam name="in2" value="hello" type="in" sqltype="nvarchar" />
+		        <bx:procparam name="inout1" value="10" type="inout" sqltype="integer" variable="inout1" />
+		        <bx:procparam name="out1" type="out" sqltype="nvarchar" variable="out1" />
+		        <bx:procresult name="resultSet1" />
+		        <bx:procresult name="resultSet2" />
+		    </bx:storedproc>
+		    """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.get( "inout1" ) ).isEqualTo( 223 );
+		assertThat( variables.get( "out1" ) ).isEqualTo( "foo-123-hello" );
+
+		assertThat( variables.get( "resultSet1" ) ).isInstanceOf( Query.class );
+		Query rs1 = variables.getAsQuery( Key.of( "resultSet1" ) );
+		assertThat( rs1.size() ).isEqualTo( 2 );
+		assertThat( rs1.getRowAsStruct( 0 ).getAsString( Key.of( "col" ) ) ).isEqualTo( "foo" );
+		assertThat( rs1.getRowAsStruct( 1 ).getAsString( Key.of( "col" ) ) ).isEqualTo( "bar" );
+
+		assertThat( variables.get( "resultSet2" ) ).isInstanceOf( Query.class );
+		Query rs2 = variables.getAsQuery( Key.of( "resultSet2" ) );
+		assertThat( rs2.size() ).isEqualTo( 1 );
+		assertThat( rs2.getRowAsStruct( 0 ).getAsString( Key.of( "myColumn" ) ) ).isEqualTo( "second" );
+
+		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
+		IStruct resultStruct = variables.getAsStruct( result );
+
+		assertThat( resultStruct.get( "returnCode" ) ).isEqualTo( 42 );
+		assertThat( resultStruct.getAsNumber( Key.of( "executionTime" ) ).doubleValue() ).isGreaterThan( 0.0 );
+	}
+
+	@DisplayName( "It can't call stored proc mixing positional and indexed proc results" )
+	@Test
+	public void testCallStoredProcErrorOnMixedResults() {
+		Throwable t = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		    """
+		    <bx:storedproc procedure="testProcedure" datasource="MSSQLdatasource">
+		        <bx:procparam name="in1" value="123" type="in" sqltype="integer" />
+		        <bx:procparam name="in2" value="hello" type="in" sqltype="nvarchar" />
+		        <bx:procparam name="inout1" value="10" type="inout" sqltype="integer" variable="inout1" />
+		        <bx:procparam name="out1" type="out" sqltype="nvarchar" variable="out1" />
+		        <bx:procresult name="resultSet1" resultSet=1 />
+		        <bx:procresult name="resultSet2" />
+		    </bx:storedproc>
+		    """,
+		    context, BoxSourceType.BOXTEMPLATE ) );
+		assertThat( t.getMessage() ).contains( "Cannot mix" );
+	}
+
+	@DisplayName( "It can call stored proc with selects after insert" )
+	@Test
+	public void testStoredProcSelectAfterInsert() {
+		instance.executeSource(
+		    """
+		       <bx:query datasource="MSSQLdatasource">
+		    	create or alter procedure [dbo].[_testQ] as
+		    	begin
+		    		-- Statement 1 (Declare, no results)
+		    		DECLARE @TestTable TABLE (
+		    			id INT idENTITY(1,1) PRIMARY KEY,
+		    			TestName VARCHAR(100),
+		    			dateAdded DATETIME DEFAULT GETDATE()
+		    		);
+		    		-- Statement 2 (insert, no results, generatedKey when inserting into actual table and not variable)
+		    		INSERT INTO @TestTable (TestName)
+		    		VALUES
+		    			('Test ' + CAST(FORMAT(GETDATE(), 'yyyyMMddHHmmss') AS VARCHAR)),
+		    			('Test ' + CAST(FORMAT(DATEADD(SECOND, 1, GETDATE()), 'yyyyMMddHHmmss') AS VARCHAR)),
+		    			('Test ' + CAST(FORMAT(DATEADD(SECOND, 2, GETDATE()), 'yyyyMMddHHmmss') AS VARCHAR));
+		    		-- Statement 3 (select, no results)
+		    		SELECT id, TestName, dateAdded FROM @TestTable WHERE id = 0;
+		    		-- Statement 4 (select, 1 result)
+		    		SELECT id, TestName, dateAdded FROM @TestTable WHERE id = 1;
+		    		-- Statement 5 (select, all results)
+		    		SELECT id, TestName, dateAdded FROM @TestTable;
+		    	end
+		    </bx:query>
+		       """,
+		    context, BoxSourceType.BOXTEMPLATE );
+
+		instance.executeSource(
+		    """
+		    <bx:storedproc procedure="_testQ" datasource="MSSQLdatasource">
+		       	<bx:procresult name="rs1" resultset="1" />
+		       	<bx:procresult name="rs2" resultset="2" />
+		       	<bx:procresult name="rs3" resultset="3" />
+		       	<bx:procresult name="rs4" resultset="4" />
+		       	<bx:procresult name="rs5" resultset="5" />
+		    </bx:storedproc>
+		         """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.get( "rs1" ) ).isInstanceOf( Query.class );
+		Query rs1 = variables.getAsQuery( Key.of( "rs1" ) );
+		assertThat( rs1.size() ).isEqualTo( 0 );
+
+		assertThat( variables.get( "rs2" ) ).isInstanceOf( Query.class );
+		Query rs2 = variables.getAsQuery( Key.of( "rs2" ) );
+		assertThat( rs2.size() ).isEqualTo( 1 );
+		assertThat( rs2.getRowAsStruct( 0 ).getAsInteger( Key.of( "id" ) ) ).isEqualTo( 1 );
+
+		assertThat( variables.get( "rs3" ) ).isInstanceOf( Query.class );
+		Query rs3 = variables.getAsQuery( Key.of( "rs3" ) );
+		assertThat( rs3.size() ).isEqualTo( 3 );
+		assertThat( rs3.getRowAsStruct( 0 ).getAsInteger( Key.of( "id" ) ) ).isEqualTo( 1 );
+		assertThat( rs3.getRowAsStruct( 1 ).getAsInteger( Key.of( "id" ) ) ).isEqualTo( 2 );
+		assertThat( rs3.getRowAsStruct( 2 ).getAsInteger( Key.of( "id" ) ) ).isEqualTo( 3 );
+
+		assertThat( variables.get( "rs4" ) ).isNull();
+		assertThat( variables.get( "rs5" ) ).isNull();
+
 	}
 
 }
