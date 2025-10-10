@@ -304,6 +304,27 @@ public class HTTPTest {
 		assertThat( res.get( Key.statusText ) ).isEqualTo( "OK" );
 		Object body = res.get( Key.fileContent );
 		assertThat( body ).isInstanceOf( byte[].class );
+
+		// Now test with getAsBinary set to "no" which should still return binary content
+		// @formatter:off
+		instance.executeSource( String.format(
+			"""
+			bx:http method="GET" getAsBinary="no" url="%s" {
+				bx:httpparam type="header" name="Host" value="boxlang.io";
+			}
+			""",
+			wmRuntimeInfo.getHttpBaseUrl() + "/image" ),
+			context
+		);
+		// @formatter:on
+
+		assertThat( variables.get( bxhttp ) ).isInstanceOf( IStruct.class );
+
+		res = variables.getAsStruct( bxhttp );
+		assertThat( res.get( Key.statusCode ) ).isEqualTo( 200 );
+		assertThat( res.get( Key.statusText ) ).isEqualTo( "OK" );
+		body = res.get( Key.fileContent );
+		assertThat( body ).isInstanceOf( byte[].class );
 	}
 
 	@DisplayName( "Will treat random content types as string contents" )

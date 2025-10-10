@@ -147,6 +147,7 @@ public final class FileSystemUtil {
 	public static final ArrayList<String>	TEXT_MIME_PREFIXES		= new ArrayList<String>() {
 		{
 			add( "text" );
+			add( "message" );
 		}
 	};
 	// @formatter:on
@@ -552,8 +553,8 @@ public final class FileSystemUtil {
 
 		String[] mimeParts = mimeType.split( "/" );
 
-		return !TEXT_MIME_PREFIXES.contains( mimeParts[ 0 ] )
-		    && !TEXT_MIME_SUFFIXES.stream().anyMatch( suffix -> mimeParts[ 1 ].startsWith( StringCaster.cast( suffix ).toLowerCase() ) );
+		return !TEXT_MIME_PREFIXES.contains( mimeParts[ 0 ].toLowerCase() )
+		    && !TEXT_MIME_SUFFIXES.stream().anyMatch( suffix -> mimeParts[ 1 ].toLowerCase().startsWith( StringCaster.cast( suffix ).toLowerCase() ) );
 	}
 
 	/**

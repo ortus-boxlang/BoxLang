@@ -604,7 +604,7 @@ public class HTTP extends Component {
 		} catch ( ExecutionException e ) {
 			Throwable innerException = e.getCause();
 			if ( innerException instanceof SocketException ) {
-				HTTPResult.put( Key.responseHeader, Struct.EMPTY );
+				HTTPResult.put( Key.responseHeader, new Struct() );
 				HTTPResult.put( Key.header, "" );
 				HTTPResult.put( Key.statusCode, 502 );
 				HTTPResult.put( Key.status_code, 502 );
@@ -622,7 +622,7 @@ public class HTTP extends Component {
 				}
 				ExpressionInterpreter.setVariable( context, variableName, HTTPResult );
 			} else if ( innerException instanceof HttpTimeoutException ) {
-				HTTPResult.put( Key.responseHeader, Struct.EMPTY );
+				HTTPResult.put( Key.responseHeader, new Struct() );
 				HTTPResult.put( Key.header, "" );
 				HTTPResult.put( Key.statusCode, 408 );
 				HTTPResult.put( Key.status_code, 408 );
