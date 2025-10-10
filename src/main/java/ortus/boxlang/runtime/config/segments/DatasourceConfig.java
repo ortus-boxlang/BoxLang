@@ -36,8 +36,8 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.DatasourceService;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
-import ortus.boxlang.runtime.types.util.StructUtil;
 import ortus.boxlang.runtime.types.util.BLCollector;
+import ortus.boxlang.runtime.types.util.StructUtil;
 
 /**
  * A BoxLang datasource configuration.
@@ -692,7 +692,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	public String addCustomParams( String target, String URIDelimiter, String delimiter ) {
 		String	targetCustom	= "";
 		IStruct	structCustom;
-		String finalURL = target;
+		String	finalURL		= target;
 
 		// Convert to struct
 		if ( this.properties.get( Key.custom ) instanceof String castedCustom ) {
@@ -721,7 +721,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 			finalURL += targetCustom;
 		}
 
-		return target;
+		return finalURL;
 	}
 
 	/**
