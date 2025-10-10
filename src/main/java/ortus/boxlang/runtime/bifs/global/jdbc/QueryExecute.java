@@ -32,6 +32,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.validation.Validator;
 
@@ -108,11 +109,30 @@ public class QueryExecute extends BIF {
 	 * @argument.params An array of binding parameters or a struct of named binding parameters
 	 *
 	 * @argument.options A struct of query options
+	 *
+	 * @return The executed query results, based on the return type specified in the options
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String			sql				= arguments.getAsString( Key.sql );
-		Object			bindings		= arguments.get( Key.params );
-		QueryOptions	options			= new QueryOptions( arguments.getAsStruct( Key.options ) );
+		return execute(
+		    context,
+		    arguments.getAsString( Key.sql ),
+		    arguments.get( Key.params ),
+		    arguments.getAsStruct( Key.options )
+		);
+	}
+
+	/**
+	 * Static helper to execute a query outside of the BIF context
+	 *
+	 * @param context       The context in which the BIF is being invoked.
+	 * @param sql           The SQL to execute
+	 * @param bindings      An array of binding parameters or a struct of named binding parameters
+	 * @param optionsStruct A struct of query options
+	 *
+	 * @return The executed query results, based on the return type specified in the options
+	 */
+	public static Object execute( IBoxContext context, String sql, Object bindings, IStruct optionsStruct ) {
+		QueryOptions	options			= new QueryOptions( optionsStruct != null ? optionsStruct : new Struct() );
 		PendingQuery	pendingQuery	= new PendingQuery( context, sql, bindings, options );
 		ExecutedQuery	executedQuery;
 
@@ -136,5 +156,4 @@ public class QueryExecute extends BIF {
 		// Encapsulate this into the executed query
 		return options.castAsReturnType( executedQuery );
 	}
-
 }
