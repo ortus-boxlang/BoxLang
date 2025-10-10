@@ -655,4 +655,18 @@ public class DuplicateTest {
 		assertThat( ( ( Throwable ) variables.get( resultKey ) ).getMessage() ).contains( "'^' was unexpected" );
 
 	}
+
+	@Test
+	public void testDuplicateOptional() {
+		instance.executeSource(
+		    """
+		    import java:java.util.Optional;
+		    myOptional = Optional.ofNullable( "foo" );
+		    result = duplicate( myOptional );
+		          """,
+		    context );
+		assertThat( variables.get( resultKey ) ).isInstanceOf( String.class );
+		assertThat( variables.getAsString( resultKey ) ).isEqualTo( "foo" );
+
+	}
 }
