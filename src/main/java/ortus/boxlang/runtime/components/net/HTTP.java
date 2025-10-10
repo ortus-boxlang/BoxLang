@@ -470,7 +470,7 @@ public class HTTP extends Component {
 			    Struct.of(
 			        Key.URL, targetURI,
 			        Key.method, method,
-			        Key.timeout, targetHTTPRequest.timeout(),
+			        Key.timeout, targetHTTPRequest.timeout().orElse( null ),
 			        Key.multipart, attributes.getAsBoolean( Key.multipart ),
 			        Key.headers, Struct.fromMap( targetHTTPRequest.headers().map() )
 			    ) );
