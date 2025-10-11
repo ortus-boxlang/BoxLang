@@ -36,6 +36,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.DatasourceService;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.util.BLCollector;
 import ortus.boxlang.runtime.types.util.StructUtil;
 
 /**
@@ -689,24 +690,38 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	 * @return The connection string with custom parameters incorporated
 	 */
 	public String addCustomParams( String target, String URIDelimiter, String delimiter ) {
-		String targetCustom = "";
+		String	targetCustom	= "";
+		IStruct	structCustom;
+		String	finalURL		= target;
+
+		// Convert to struct
 		if ( this.properties.get( Key.custom ) instanceof String castedCustom ) {
-			targetCustom = castedCustom;
+			structCustom = StructUtil.fromQueryString( castedCustom, delimiter );
 		} else {
-			targetCustom = StructUtil.toQueryString( ( IStruct ) this.properties.get( Key.custom ), delimiter );
+			structCustom = this.properties.getAsStruct( Key.custom );
 		}
+
+		// filter out any keys alraedy in the target query string
+		structCustom	= structCustom
+		    .entrySet()
+		    .stream()
+		    .filter( e -> !target.contains( e.getKey().getName() + "=" ) )
+		    .collect( BLCollector.toStruct() );
+
+		// Convert back to query string
+		targetCustom	= StructUtil.toQueryString( structCustom, delimiter );
 
 		// Append the custom parameters
 		if ( targetCustom.length() > 0 ) {
 			// Incorporate URI Delimiter if it doesn't exist
-			if ( !target.contains( URIDelimiter ) ) {
-				target += URIDelimiter;
+			if ( !finalURL.endsWith( URIDelimiter ) ) {
+				finalURL += URIDelimiter;
 			}
 			// Now add the custom parameters
-			target += targetCustom;
+			finalURL += targetCustom;
 		}
 
-		return target;
+		return finalURL;
 	}
 
 	/**

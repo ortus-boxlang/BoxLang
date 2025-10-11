@@ -209,6 +209,15 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 * @param resultSet JDBC result set.
 	 */
 	public static Query fromResultSet( ResultSet resultSet ) {
+		return fromResultSet( resultSet, -1 );
+	}
+
+	/**
+	 * Create a new query and populate it from the given JDBC ResultSet.
+	 *
+	 * @param resultSet JDBC result set.
+	 */
+	public static Query fromResultSet( ResultSet resultSet, int maxRows ) {
 		Query query = new Query();
 
 		if ( resultSet == null ) {
@@ -244,7 +253,9 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 			int[] columnMap = columnMapList.stream().mapToInt( i -> i ).toArray();
 			// Update, may be smaller now if there were duplicate column names
 			columnCount = columnMap.length;
-			while ( resultSet.next() ) {
+			int rowCount = 0;
+			while ( resultSet.next() && ( maxRows == -1 || rowCount < maxRows ) ) {
+				rowCount++;
 				Object[] row = new Object[ columnCount ];
 				for ( int i = 0; i < columnCount; i++ ) {
 					// Get the data in the JDBC column based on our column map

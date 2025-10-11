@@ -5,11 +5,11 @@ import static org.junit.Assert.assertNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -20,6 +20,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.jdbc.DataSource;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
@@ -38,16 +39,12 @@ public class StoredProcTest extends BaseJDBCTest {
 		// return 42;
 	}
 
-	public static Integer withOutParam() {
-		return 42;
+	public static void withOutParam( int[] outs ) {
+		outs[ 0 ] = 42;
 	}
 
-	public static void withResultSet( ResultSet[] rs ) {
-		try {
-			rs[ 0 ] = getDatasource().getConnection().createStatement().executeQuery( "SELECT * FROM developers" );
-		} catch ( SQLException e ) {
-			// Handle the exception
-		}
+	public static void withResultSet( ResultSet[] rs ) throws SQLException {
+		rs[ 0 ] = DriverManager.getConnection( "jdbc:default:connection" ).createStatement().executeQuery( "SELECT * FROM developers" );
 	}
 
 	@BeforeAll
@@ -79,19 +76,21 @@ public class StoredProcTest extends BaseJDBCTest {
 		    """
 		    CREATE PROCEDURE withResultSet()
 		    PARAMETER STYLE JAVA
+		    DYNAMIC RESULT SETS 1
 		    READS SQL DATA
 		    LANGUAGE JAVA
 		    EXTERNAL NAME 'ortus.boxlang.runtime.components.jdbc.StoredProcTest.withResultSet'
-		    DYNAMIC RESULT SETS 1
 		    """,
 		    setUpContext
 		);
 		ds.execute(
 		    """
 		    CREATE PROCEDURE doNothing()
-		    PARAMETER STYLE JAVA READS SQL DATA LANGUAGE JAVA EXTERNAL NAME
-		    'ortus.boxlang.runtime.components.jdbc.StoredProcTest.doNothing'
-		    """,
+		    PARAMETER STYLE JAVA
+		    READS SQL DATA
+		    LANGUAGE JAVA
+		    EXTERNAL NAME 'ortus.boxlang.runtime.components.jdbc.StoredProcTest.doNothing'
+		         """,
 		    setUpContext
 		);
 	}
@@ -127,12 +126,11 @@ public class StoredProcTest extends BaseJDBCTest {
 		getInstance().executeSource(
 		    """
 		    cfstoredproc( procedure="doNothing" ){
-		        cfprocresult( name="result" );
 		    }
 		    """,
 		    getContext(), BoxSourceType.CFSCRIPT );
 
-		assertThat( getVariables().get( result ) ).isInstanceOf( Query.class );
+		assertThat( getVariables().get( Key.of( "bxstoredproc" ) ) ).isInstanceOf( IStruct.class );
 	}
 
 	@DisplayName( "It tests CFML tag compat syntax" )
@@ -140,13 +138,13 @@ public class StoredProcTest extends BaseJDBCTest {
 	public void testCompatTagSyntax() {
 		getInstance().executeSource(
 		    """
-		    <cfstoredproc procedure="doNothing">
-		        <cfprocresult name="result">
-		    </cfstoredproc>
-		    """,
+		       <cfstoredproc procedure="doNothing">
+		       </cfstoredproc>
+		    <cfset result = cfstoredproc />
+		       """,
 		    getContext(), BoxSourceType.CFTEMPLATE );
 
-		assertThat( getVariables().get( result ) ).isInstanceOf( Query.class );
+		assertThat( getVariables().get( result ) ).isInstanceOf( IStruct.class );
 	}
 
 	@DisplayName( "It properly handles IN params" )
@@ -161,10 +159,9 @@ public class StoredProcTest extends BaseJDBCTest {
 		    """,
 		    getContext(), BoxSourceType.BOXTEMPLATE );
 
-		assertThat( getVariables().get( result ) ).isInstanceOf( Query.class );
+		assertThat( getVariables().get( Key.of( "bxstoredproc" ) ) ).isInstanceOf( IStruct.class );
 	}
 
-	@Disabled( "Currently failing. Must fix." )
 	@DisplayName( "It properly handles OUT params" )
 	@Test
 	public void testOutParams() {
@@ -179,7 +176,6 @@ public class StoredProcTest extends BaseJDBCTest {
 		assertEquals( 42, getVariables().getAsInteger( Key.of( "foo" ) ) );
 	}
 
-	@Disabled( "Currently failing. Must fix." )
 	@DisplayName( "It properly returns ResultSet objects" )
 	@Test
 	public void testResultSet() {
@@ -193,7 +189,23 @@ public class StoredProcTest extends BaseJDBCTest {
 
 		assertThat( getVariables().get( result ) ).isInstanceOf( Query.class );
 		Query query = getVariables().getAsQuery( result );
-		assertEquals( 3, query.size() );
+		assertEquals( 4, query.size() );
+	}
+
+	@DisplayName( "It enforces procresult max rows limit" )
+	@Test
+	public void testResultSetMaxRows() {
+		getInstance().executeSource(
+		    """
+		    <bx:storedproc procedure="withResultSet">
+		        <bx:procresult name="result" maxrows="2">
+		    </bx:storedproc>
+		    """,
+		    getContext(), BoxSourceType.BOXTEMPLATE );
+
+		assertThat( getVariables().get( result ) ).isInstanceOf( Query.class );
+		Query query = getVariables().getAsQuery( result );
+		assertEquals( 2, query.size() );
 	}
 
 	@DisplayName( "It closes connection on completion" )
