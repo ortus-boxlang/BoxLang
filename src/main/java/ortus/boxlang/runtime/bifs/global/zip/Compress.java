@@ -44,7 +44,7 @@ public class Compress extends BIF {
 		    new Argument( false, Argument.STRING, Key.prefix, Set.of( Validator.NON_EMPTY ) ),
 		    new Argument( false, Argument.ANY, Key.filter ),
 		    new Argument( false, Argument.BOOLEAN, Key.recurse, true ),
-		    new Argument( false, Argument.INTEGER, Key.compressionLevel, Set.of( Validator.min( 0 ), Validator.max( 9 ), ZipUtil.DEFAULT_COMPRESSION_LEVEL ) )
+		    new Argument( false, Argument.INTEGER, Key.compressionLevel, ZipUtil.DEFAULT_COMPRESSION_LEVEL, Set.of( Validator.min( 0 ), Validator.max( 9 ) ) )
 		};
 	}
 
