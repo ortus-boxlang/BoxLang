@@ -36,7 +36,7 @@ public class Compress extends BIF {
 	public Compress() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, Argument.STRING, Key.format, Set.of( Validator.valueOneOf( "zip", "gzip" ) ) ),
+		    new Argument( true, Argument.STRING, Key.format, "zip", Set.of( Validator.valueOneOf( "zip", "gzip" ) ) ),
 		    new Argument( true, Argument.STRING, Key.source ),
 		    new Argument( true, Argument.STRING, Key.destination ),
 		    new Argument( false, Argument.BOOLEAN, Key.includeBaseFolder, true ),
@@ -69,7 +69,7 @@ public class Compress extends BIF {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.format The format to use for the compression: zip or gzip.
+	 * @argument.format The format to use for the compression: zip or gzip. Default is zip.
 	 *
 	 * @argument.source The absolute path to the source file or folder to compress.
 	 *
