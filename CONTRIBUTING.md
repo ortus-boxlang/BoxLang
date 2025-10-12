@@ -2,16 +2,18 @@
 
 Hola amigo! I'm really excited that you are interested in contributing to BoxLang. Before submitting your contribution, please make sure to take a moment and read through the following guidelines:
 
-- [Code Of Conduct](#code-of-conduct)
-- [Bug Reporting](#bug-reporting)
-- [Support Questions](#support-questions)
-- [Pull Request Guidelines](#pull-request-guidelines)
-- [Security Vulnerabilities](#security-vulnerabilities)
-- [Development Setup](#development-setup)
-- [Language Compatiblity](#language-compatiblity)
-- [Coding Styles \& Formatting](#coding-styles--formatting)
-- [Financial Contributions](#financial-contributions)
-- [Contributors](#contributors)
+- [BoxLang Contributing Guide](#boxlang-contributing-guide)
+  - [Code Of Conduct](#code-of-conduct)
+  - [Bug Reporting](#bug-reporting)
+  - [Support Questions](#support-questions)
+  - [Pull Request Guidelines](#pull-request-guidelines)
+  - [Security Vulnerabilities](#security-vulnerabilities)
+  - [Development Setup](#development-setup)
+  - [Language Compatibility](#language-compatibility)
+  - [Coding Styles \& Formatting](#coding-styles--formatting)
+  - [Financial Contributions](#financial-contributions)
+  - [Technical Documentation](#technical-documentation)
+  - [Contributors](#contributors)
 
 ## Code Of Conduct
 

@@ -2,6 +2,8 @@ package ortus.boxlang.runtime.bifs.global.jdbc;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.UUID;
 
@@ -13,6 +15,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.jdbc.DataSource;
+import ortus.boxlang.runtime.modules.ModuleRecord;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
@@ -26,11 +29,15 @@ public class BaseJDBCTest {
 	public IScope						variables;
 	public static DataSource			datasource;
 	public static DatasourceService		datasourceService;
+	public static String				moduleDependenciesPath	= Paths.get( "./src/test/resources/modules" ).toAbsolutePath().toString();
 
 	@BeforeAll
 	public static void setUp() {
 		instance = BoxRuntime.getInstance( true );
 		IBoxContext setUpContext = new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+
+		loadModule( Key.of( "derby" ), moduleDependenciesPath + "/bx-derby", setUpContext );
+
 		datasourceService = instance.getDataSourceService();
 		String uniqueName = UUID.randomUUID().toString();
 		datasource = JDBCTestUtils.constructTestDataSource( uniqueName, setUpContext );
@@ -77,5 +84,25 @@ public class BaseJDBCTest {
 
 	public static DatasourceService getDatasourceService() {
 		return datasourceService;
+	}
+
+	protected static void loadModule( Key moduleName, String modulePath, IBoxContext context ) {
+		if ( !instance.getModuleService().hasModule( moduleName ) ) {
+			System.out.println( String.format( "Loading %s module...", moduleName ) );
+			if ( !Files.exists( Paths.get( modulePath ) ) ) {
+				System.out.println( String.format( "%s module not found at %s", moduleName, modulePath ) );
+				System.out.println( "Please run 'gradle installModuleDependencies' to install the required modules." );
+				System.exit( 1 );
+			}
+
+			ModuleRecord moduleRecord = new ModuleRecord( modulePath );
+			instance.getModuleService().getRegistry().put( moduleName, moduleRecord );
+			moduleRecord
+			    .loadDescriptor( context )
+			    .register( context )
+			    .activate( context );
+		} else {
+			System.out.println( String.format( "%s module already loaded, skipping...", moduleName ) );
+		}
 	}
 }

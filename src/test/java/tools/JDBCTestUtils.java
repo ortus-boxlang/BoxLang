@@ -139,6 +139,21 @@ public class JDBCTestUtils {
 	}
 
 	/**
+	 * Boolean test for the presence of the BoxLang Derby module.
+	 * <p>
+	 * Useful in `@EnabledIf` annotations for conditional test execution based on the loaded JDBC drivers:
+	 * <p>
+	 * <code>
+	 * &#64;EnabledIf( "tools.JDBCTestUtils#hasDerbyModule" )
+	 * </code>
+	 *
+	 * @return
+	 */
+	public static boolean hasDerbyModule() {
+		return hasModuleByName( Key.of( "derby" ) );
+	}
+
+	/**
 	 * Build out a structure of datasource configuration for testing. This is to inflate the state of a DatasourceConfig object
 	 *
 	 * @param databaseName String database name; must be unique for each test. In the future, we can change this to use either reflection or a stack trace

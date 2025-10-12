@@ -44,7 +44,9 @@ derby.log
 # Test Resources
 src/test/java/ortus/boxlang/compiler/Precompiled.bx
 src/test/java/ortus/boxlang/compiler/Precompiled.bxs
-/src/test/resources/testbox
+src/test/resources/testbox
+src/test/resources/modules/bx-derby/
+src/test/resources/libs/bx-derby-*.zip
 test.txt
 
 # Secrets
