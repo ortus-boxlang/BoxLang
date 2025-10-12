@@ -91,8 +91,8 @@ public class BaseJDBCTest {
 			System.out.println( String.format( "Loading %s module...", moduleName ) );
 			if ( !Files.exists( Paths.get( modulePath ) ) ) {
 				System.out.println( String.format( "%s module not found at %s", moduleName, modulePath ) );
-				System.out.println( "Please run 'gradle installModuleDependencies' to install the required modules." );
-				System.exit( 1 );
+				System.out.println( "Please run 'gradle installDerbyModule' to install the required modules." );
+				throw new RuntimeException( String.format( "%s module not found at %s", moduleName, modulePath ) );
 			}
 
 			ModuleRecord moduleRecord = new ModuleRecord( modulePath );
