@@ -422,6 +422,7 @@ public class ModuleRecord {
 		// Register the module mapping in the this.runtime
 		// Called first in case this is used in the `configure` method
 		this.runtime.getConfiguration().registerMapping( this.mapping );
+		this.runtime.getConfiguration().registerMapping( this.publicMapping );
 
 		// Create the module class loader and seed it with the physical path to the
 		// module
@@ -676,6 +677,7 @@ public class ModuleRecord {
 
 		// unregister the module mapping from the runtime
 		this.runtime.getConfiguration().unregisterMapping( this.mapping );
+		this.runtime.getConfiguration().unregisterMapping( this.publicMapping );
 
 		// Unregister all interceptors from all states
 		if ( !this.interceptors.isEmpty() ) {
