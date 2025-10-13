@@ -58,7 +58,7 @@ public class StoredProc extends Component {
 		    new Attribute( Key.procedure, "string", Set.of( Validator.REQUIRED, Validator.NON_EMPTY ) ),
 		    new Attribute( Key.datasource, "string" ),
 		    new Attribute( Key.blockfactor, "integer", Set.of( Validator.NOT_IMPLEMENTED ) ),
-		    new Attribute( Key.debug, "boolean", false, Set.of( Validator.NOT_IMPLEMENTED ) ),
+		    new Attribute( Key.debug, "boolean", false ),
 		    new Attribute( Key.returnCode, "boolean", false ),
 		    new Attribute( Key.result, "string", "bxstoredproc" ),
 		};
@@ -97,6 +97,8 @@ public class StoredProc extends Component {
 		int					returnCode			= 0;
 		int					executionTimeMS		= 0;
 		String				resultVarName		= attributes.getAsString( Key.result );
+		boolean				debug				= attributes.getAsBoolean( Key.debug );
+		String				procedureName		= attributes.getAsString( Key.procedure );
 
 		// these are placed in the execution state to allow the ProcParam and ProcResult components to register themselves with this component
 		executionState.put( Key.queryParams, params );
@@ -109,7 +111,7 @@ public class StoredProc extends Component {
 			return bodyResult;
 		}
 
-		String callString = buildCallString( attributes.getAsString( Key.procedure ), params, hasReturnCode );
+		String callString = buildCallString( procedureName, params, hasReturnCode, debug );
 		try (
 		    Connection conn = connectionManager.getConnection( options );
 		    CallableStatement procedure = conn.prepareCall( callString ); ) {
@@ -121,7 +123,7 @@ public class StoredProc extends Component {
 				paramOffset = 1;
 			}
 
-			registerProcedureParams( procedure, params, paramOffset );
+			registerProcedureParams( procedure, params, paramOffset, debug, procedureName );
 
 			if ( options.maxRows > 0 ) {
 				procedure.setLargeMaxRows( options.maxRows );
@@ -166,8 +168,9 @@ public class StoredProc extends Component {
 	 * @param procedureName The name of the stored procedure.
 	 * @param params        The parameters to the stored procedure.
 	 * @param hasReturnCode Whether to include return code parameter
+	 * @param debug         Whether to output debug info
 	 */
-	private String buildCallString( String procedureName, Array params, boolean hasReturnCode ) {
+	private String buildCallString( String procedureName, Array params, boolean hasReturnCode, boolean debug ) {
 		boolean			hasPositional	= false;
 		boolean			hasNamed		= false;
 		boolean			first			= true;
@@ -200,11 +203,16 @@ public class StoredProc extends Component {
 		}
 
 		if ( hasReturnCode ) {
-			System.out.println( "{? = call " + procedureName + "(" + paramString.toString() + ")}" );
+			if ( debug ) {
+				System.out.println( "{? = call " + procedureName + "(" + paramString.toString() + ")}" );
+			}
 			// Use {? = call ...} syntax for procedures that return a value
 			return "{? = call " + procedureName + "(" + paramString.toString() + ")}";
 		} else {
 			// Use standard {call ...} syntax
+			if ( debug ) {
+				System.out.println( "{call " + procedureName + "(" + paramString.toString() + ")}" );
+			}
 			return "{call " + procedureName + "(" + paramString.toString() + ")}";
 		}
 	}
@@ -212,11 +220,14 @@ public class StoredProc extends Component {
 	/**
 	 * Attach the IN and OUT parameters to the callable statement.
 	 *
-	 * @param procedure   The callable statement.
-	 * @param params      The parameters to the stored procedure.
-	 * @param paramOffset Offset for parameter positions (1 if return code is present, 0 otherwise)
+	 * @param procedure     The callable statement.
+	 * @param params        The parameters to the stored procedure.
+	 * @param paramOffset   Offset for parameter positions (1 if return code is present, 0 otherwise)
+	 * @param debug         Whether to output debug info
+	 * @param procedureName The name of the stored procedure, for debug output
 	 */
-	private void registerProcedureParams( CallableStatement procedure, Array params, int paramOffset ) throws SQLException {
+	private void registerProcedureParams( CallableStatement procedure, Array params, int paramOffset, boolean debug, String procedureName )
+	    throws SQLException {
 		for ( int i = 0; i < params.size(); i++ ) {
 			IStruct	attr	= ( IStruct ) params.get( i );
 			String	varType	= "";
@@ -226,11 +237,29 @@ public class StoredProc extends Component {
 			int		sqlType	= QueryColumnType.fromString( attr.getAsString( Key.sqltype ) ).sqlType;
 			Object	value	= attr.get( Key.value );
 			if ( varType.contains( "in" ) ) {
-				System.out.println( "Setting IN param [" + attr.getAsString( Key._NAME ) + "] in position " + ( i + 1 + paramOffset ) );
+				if ( debug ) {
+					String paramName = attr.getAsString( Key.DBVarName );
+					if ( paramName != null ) {
+						paramName = "[" + paramName + "] ";
+					} else {
+						paramName = "";
+					}
+					System.out.println( "Procedure [" + procedureName + "] Setting IN param " + paramName + "in position "
+					    + ( i + 1 + paramOffset ) );
+				}
 				procedure.setObject( i + 1 + paramOffset, value, sqlType );
 			}
 			if ( varType.contains( "out" ) ) {
-				System.out.println( "Setting OUT param [" + attr.getAsString( Key._NAME ) + "] in position " + ( i + 1 + paramOffset ) );
+				if ( debug ) {
+					String paramName = attr.getAsString( Key.DBVarName );
+					if ( paramName != null ) {
+						paramName = "[" + paramName + "] ";
+					} else {
+						paramName = "";
+					}
+					System.out.println( "Procedure [" + procedureName + "] Setting OUT param " + paramName + "in position "
+					    + ( i + 1 + paramOffset ) );
+				}
 				procedure.registerOutParameter( i + 1 + paramOffset, sqlType );
 			}
 		}

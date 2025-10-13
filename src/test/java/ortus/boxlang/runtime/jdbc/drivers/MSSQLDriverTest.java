@@ -691,4 +691,55 @@ public class MSSQLDriverTest extends AbstractDriverTest {
 
 	}
 
+	@Test
+	public void testStoredProcOutParamMixup() {
+		instance.executeSource(
+		    """
+		        <bx:query datasource="MSSQLdatasource">
+		     	create or ALTER PROCEDURE [dbo].[_testQtestStoredProcOutParamMixup]
+		    (
+		    	@prm_drug_exclusion_quote_id smallint = NULL,
+		    	@prm_return_success_flag bit OUTPUT,
+		    	@prm_return_status_code int OUTPUT,
+		    	@prm_return_status_message varchar(max) OUTPUT,
+		    	@prm_last_updated_user_id varchar(50) = NULL,
+		    	@prm_ip_address varchar(45) = NULL
+		    ) AS
+		     	begin
+		     		SET NOCOUNT ON;
+		     		SET @prm_return_success_flag = 1;
+		     		SET @prm_return_status_code = 200;
+		     		SET @prm_return_status_message = 'OK';
+
+		    SELECT 1 as test;
+		     	end
+		     </bx:query>
+		        """,
+		    context, BoxSourceType.BOXTEMPLATE );
+
+		instance.executeSource(
+		    """
+		       <bx:storedproc procedure="_testQtestStoredProcOutParamMixup" datasource="MSSQLdatasource" debug=false >
+		       	<!---pagination/sort params--->
+		       	<bx:procparam cfsqltype="integer" dbVarName="@prm_drug_exclusion_quote_id"        value="123" null="false">,
+		       	<!--- audit --->
+		       	<bx:procparam cfsqltype="varchar" dbVarName="@prm_ip_address"            value="127.0.0.1"           maxlength="45" type="in">
+		       	<bx:procparam cfsqltype="varchar" dbVarName="@prm_last_updated_user_id"  value="abcd" maxlength="50" type="in">
+		       	<!--- output --->
+		       	<bx:procparam cfsqltype="bit"    dbVarName="@prm_return_success_flag"    variable="bSqlFlag"     type="out">
+		       	<bx:procparam cfsqltype="integer" dbVarName="@prm_return_status_code"        variable="iSqlCode"     type="out">
+		       	<bx:procparam cfsqltype="varchar" dbVarName="@prm_return_status_message"     variable="sSqlMessage"  type="out">
+		       	<!--- output --->
+		       	<bx:procresult name="qryReturn">
+		       </bx:storedproc>
+		    <bx:script>
+		    	println( bSqlFlag );
+		    	println( iSqlCode );
+		    	println( sSqlMessage );
+		    	println( qryReturn );
+		    </bx:script>
+		               """,
+		    context, BoxSourceType.BOXTEMPLATE );
+	}
+
 }
