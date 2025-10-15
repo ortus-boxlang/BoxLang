@@ -124,10 +124,9 @@ public class DumpUtil {
 				output = "buffer";
 			}
 		} else {
-			output = output.toLowerCase();
 
 			// Backwards compat here, could put this in the transpiler if we want
-			if ( output.equals( "browser" ) ) {
+			if ( output.equalsIgnoreCase( "browser" ) ) {
 				output = "buffer";
 			}
 		}
@@ -149,6 +148,8 @@ public class DumpUtil {
 			}
 		}
 
+		// Don't lowercase this until we've checked if it's a file path
+		output = output.toLowerCase();
 		// Determine the output format if not passed from the output parameter.
 		if ( format == null ) {
 			// If the output is console or the parent context is a scripting context, then use text.
