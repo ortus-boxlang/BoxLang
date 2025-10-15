@@ -162,6 +162,7 @@ public class DumpUtil {
 			format = format.toLowerCase();
 		}
 
+		System.out.println( "DUMP: output=" + output + ", format=" + format + ", file=" + dumpFilePath );
 		// Announce it
 		final var	outputFinal			= output;
 		final var	formatFinal			= format;
@@ -219,6 +220,7 @@ public class DumpUtil {
 				// SEND TO FILE
 				case "___file___" :
 					if ( dumpFilePath != null ) {
+						System.out.println( "Dumping output with length of " + dumpOutput.length() + " to file: " + dumpFilePath );
 						FileSystemUtil.write( dumpFilePath.toString(), dumpOutput, FileSystemUtil.DEFAULT_CHARSET.name(), true );
 						break;
 					}
