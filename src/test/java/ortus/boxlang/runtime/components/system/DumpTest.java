@@ -559,7 +559,7 @@ public class DumpTest {
 			instance.executeSource(
 				"""
 					val = "Hello, BoxLang";
-					filePath = expandPath( "src/test/resources/tmp/dump_test.txt" );
+					filePath = expandPath( "/src/test/resources/tmp/dump_test.txt" );
 					dump( var = val, format = "text", output = filePath );
 				""",
 				context );
@@ -580,7 +580,7 @@ public class DumpTest {
 			instance.executeSource(
 				"""
 					val = "Hello, BoxLang";
-					filePath = expandPath( "src/test/resources/tmp/dump_test.html" );
+					filePath = expandPath( "/src/test/resources/tmp/dump_test.html" );
 					dump( var = val, format = "html", output = filePath );
 				""",
 				context );
