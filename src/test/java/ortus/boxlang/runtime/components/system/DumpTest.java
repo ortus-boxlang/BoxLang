@@ -566,6 +566,7 @@ public class DumpTest {
 			// @formatter:on
 
 		Path filePath = Paths.get( variables.getAsString( Key.of( "filePath" ) ) );
+		System.out.println( filePath.toString() );
 		assertThat( filePath.toFile().exists() ).isTrue();
 		String fileContents = ( String ) FileSystemUtil.read( filePath.toString(), FileSystemUtil.DEFAULT_CHARSET.name(), null, true );
 		assertThat( fileContents ).contains( "Hello, BoxLang" );
@@ -587,6 +588,7 @@ public class DumpTest {
 			// @formatter:on
 
 		Path filePath = Paths.get( variables.getAsString( Key.of( "filePath" ) ) );
+		System.out.println( filePath.toString() );
 		assertThat( filePath.toFile().exists() ).isTrue();
 		String fileContents = ( String ) FileSystemUtil.read( filePath.toString(), FileSystemUtil.DEFAULT_CHARSET.name(), null, true );
 		assertThat( fileContents ).contains( "Hello, BoxLang" );
