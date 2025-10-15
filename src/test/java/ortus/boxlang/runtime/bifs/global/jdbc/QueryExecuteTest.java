@@ -45,6 +45,7 @@ import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 import ortus.boxlang.runtime.util.conversion.ObjectMarshaller;
 import tools.JDBCTestUtils;
 
+@EnabledIf( "tools.JDBCTestUtils#hasDerbyModule" )
 public class QueryExecuteTest extends BaseJDBCTest {
 
 	static Key result = new Key( "result" );
