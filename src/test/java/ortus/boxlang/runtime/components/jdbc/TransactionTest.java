@@ -25,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 
 import ortus.boxlang.runtime.bifs.global.jdbc.BaseJDBCTest;
 import ortus.boxlang.runtime.context.IJDBCCapableContext;
@@ -40,6 +41,7 @@ import ortus.boxlang.runtime.types.exceptions.DatabaseException;
  * More advanced transactional logic tests should be implemented in
  * <code>ortus.boxlang.runtime.jdbc.TransactionTest</code> class.
  */
+@EnabledIf( "tools.JDBCTestUtils#hasDerbyModule" )
 public class TransactionTest extends BaseJDBCTest {
 
 	static Key result = new Key( "result" );
