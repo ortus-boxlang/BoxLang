@@ -19,6 +19,7 @@
 package ortus.boxlang.runtime.components.system;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth.assertWithMessage;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
@@ -566,8 +567,7 @@ public class DumpTest {
 			// @formatter:on
 
 		Path filePath = Paths.get( variables.getAsString( Key.of( "filePath" ) ) );
-		System.out.println( filePath.toString() );
-		assertThat( filePath.toFile().exists() ).isTrue();
+		assertWithMessage( "File [" + filePath + "] should exist" ).that( filePath.toFile().exists() ).isTrue();
 		String fileContents = ( String ) FileSystemUtil.read( filePath.toString(), FileSystemUtil.DEFAULT_CHARSET.name(), null, true );
 		assertThat( fileContents ).contains( "Hello, BoxLang" );
 		// Cleanup
@@ -588,8 +588,7 @@ public class DumpTest {
 			// @formatter:on
 
 		Path filePath = Paths.get( variables.getAsString( Key.of( "filePath" ) ) );
-		System.out.println( filePath.toString() );
-		assertThat( filePath.toFile().exists() ).isTrue();
+		assertWithMessage( "File [" + filePath + "] should exist" ).that( filePath.toFile().exists() ).isTrue();
 		String fileContents = ( String ) FileSystemUtil.read( filePath.toString(), FileSystemUtil.DEFAULT_CHARSET.name(), null, true );
 		assertThat( fileContents ).contains( "Hello, BoxLang" );
 		assertThat( fileContents ).contains( "<style>" );
@@ -612,7 +611,7 @@ public class DumpTest {
 			// @formatter:on
 
 		Path filePath = Paths.get( variables.getAsString( Key.of( "filePath" ) ) );
-		assertThat( filePath.toFile().exists() ).isTrue();
+		assertWithMessage( "File [" + filePath + "] should exist" ).that( filePath.toFile().exists() ).isTrue();
 		String fileContents = ( String ) FileSystemUtil.read( filePath.toString(), FileSystemUtil.DEFAULT_CHARSET.name(), null, true );
 		assertThat( fileContents ).contains( "Hello, BoxLang" );
 		// Cleanup

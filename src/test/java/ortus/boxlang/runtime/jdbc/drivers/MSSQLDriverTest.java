@@ -69,20 +69,22 @@ public class MSSQLDriverTest extends AbstractDriverTest {
 	public static void createStoredProcedure( DataSource dataSource, IBoxContext context ) {
 		dataSource.execute(
 		    """
-		      CREATE OR ALTER PROCEDURE testProcedure
-		      	@in1 INT = 45,
-		      	@in2 NVARCHAR(50),
-		      	@inout1 INT OUTPUT,
-		      	@out1 NVARCHAR(50) OUTPUT
-		      AS
-		      BEGIN
-		      	SET @out1 = CONCAT('foo-', @in1, '-', @in2);
-		      	SET @inout1 = @in1 + 100;
-		      	SELECT 'foo' as col UNION SELECT 'bar';
+		     CREATE OR ALTER PROCEDURE testProcedure
+		    @in1 INT = 45,
+		    @in2 NVARCHAR(50),
+		    @inout1 INT OUTPUT,
+		    @out1 NVARCHAR(50) OUTPUT
+		     AS
+		     BEGIN
+		    -- Sleep for 10 ms to ensure measurable execution time
+		    WAITFOR DELAY '00:00:00.010';
+		    SET @out1 = CONCAT('foo-', @in1, '-', @in2);
+		    SET @inout1 = @in1 + 100;
+		    SELECT 'foo' as col UNION SELECT 'bar';
 		    SELECT 'second' as myColumn;
-		      	RETURN 42;
-		      END
-		      """,
+		    RETURN 42;
+		     END
+		     """,
 		    context
 		);
 	}
