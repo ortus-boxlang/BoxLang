@@ -22,17 +22,17 @@ import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.text.ParsePosition;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.ZoneId;
-import java.time.Instant;
-import java.time.temporal.TemporalAccessor;
-import java.time.ZonedDateTime;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.FormatStyle;
+import java.time.temporal.TemporalAccessor;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Locale;
@@ -670,26 +670,37 @@ public final class LocalizationUtil {
 	 * {@link LocalTime}, or {@link Instant}. If successful, it wraps the parsed result in a {@link DateTime}.
 	 *
 	 * @param dateTime the date-time string to parse
+	 * @param timezone the timezone to apply to parsed dates without timezone information (optional, ignored if null)
 	 * 
 	 * @return a {@link DateTime} object representing the parsed date-time
 	 * 
 	 * @throws BoxRuntimeException if the input string cannot be parsed into a supported {@link TemporalAccessor}
 	 */
-	public static DateTime parseFromCommonPatterns( String dateTime ) {
+	public static DateTime parseFromCommonPatterns( String dateTime, ZoneId timezone ) {
 		TemporalAccessor date = getCommonPatternDateTimeParsers().parseBest( dateTime, OffsetDateTime::from, ZonedDateTime::from, LocalDateTime::from,
 		    LocalDate::from, LocalTime::from );
+
 		if ( date instanceof ZonedDateTime castZonedDateTime ) {
 			return new DateTime( castZonedDateTime );
-		} else if ( date instanceof LocalDateTime castLocalDateTime ) {
-			return new DateTime( castLocalDateTime );
-		} else if ( date instanceof LocalDate castLocalDate ) {
-			return new DateTime( castLocalDate );
-		} else if ( date instanceof LocalTime castLocalTime ) {
-			return new DateTime( castLocalTime );
-		} else if ( date instanceof Instant castInstant ) {
-			return new DateTime( castInstant );
 		} else if ( date instanceof OffsetDateTime castOffsetDateTime ) {
 			return new DateTime( castOffsetDateTime );
+		} else if ( date instanceof LocalDateTime castLocalDateTime ) {
+			// Apply timezone if provided, otherwise use the existing DateTime constructor behavior
+			return timezone != null
+			    ? new DateTime( castLocalDateTime.atZone( timezone ) )
+			    : new DateTime( castLocalDateTime );
+		} else if ( date instanceof LocalDate castLocalDate ) {
+			// Apply timezone if provided, otherwise use the existing DateTime constructor behavior
+			return timezone != null
+			    ? new DateTime( castLocalDate.atStartOfDay( timezone ) )
+			    : new DateTime( castLocalDate );
+		} else if ( date instanceof LocalTime castLocalTime ) {
+			// Apply timezone if provided, otherwise use the existing DateTime constructor behavior
+			return timezone != null
+			    ? new DateTime( castLocalTime.atDate( LocalDate.now() ).atZone( timezone ) )
+			    : new DateTime( castLocalTime );
+		} else if ( date instanceof Instant castInstant ) {
+			return new DateTime( castInstant );
 		} else {
 			throw new BoxRuntimeException(
 			    String.format(
@@ -698,6 +709,20 @@ public final class LocalizationUtil {
 			    )
 			);
 		}
+	}
+
+	/**
+	 * Parses a date-time string using common patterns and returns a {@link DateTime} object.
+	 * Uses the existing DateTime constructor behavior for dates without timezone information.
+	 *
+	 * @param dateTime the date-time string to parse
+	 * 
+	 * @return a {@link DateTime} object representing the parsed date-time
+	 * 
+	 * @throws BoxRuntimeException if the input string cannot be parsed into a supported {@link TemporalAccessor}
+	 */
+	public static DateTime parseFromCommonPatterns( String dateTime ) {
+		return parseFromCommonPatterns( dateTime, null );
 	}
 
 	/**

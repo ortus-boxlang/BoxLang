@@ -68,13 +68,7 @@ public class DateConvert extends BIF {
 		ZoneId		localZone	= LocalizationUtil.parseZoneId( null, context );
 		ZoneId		refZone		= conversion.equals( utc2Local ) ? utcZone : localZone;
 		Locale		locale		= LocalizationUtil.parseLocaleFromContext( context, arguments );
-		Object		dateObject	= arguments.get( Key.date );
-		DateTime	dateRef		= null;
-		if ( dateObject instanceof String stringDate ) {
-			dateRef = new DateTime( stringDate, locale, refZone );
-		} else {
-			dateRef = DateTimeCaster.cast( dateObject, context );
-		}
+		DateTime	dateRef		= DateTimeCaster.cast( arguments.get( Key.date ), true, refZone, false, context, locale );
 
 		return dateRef.convertToZone( conversion.equals( utc2Local ) ? localZone : utcZone, true );
 

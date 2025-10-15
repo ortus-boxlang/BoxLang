@@ -21,6 +21,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -56,12 +57,28 @@ public class DateTimeCaster implements IBoxCaster {
 	 * Returns a {@code CastAttempt<T>} which will contain the result if casting was
 	 * was successfull, or can be interogated to proceed otherwise.
 	 *
-	 * @param object The value to cast
+	 * @param object  The value to cast
+	 * @param context The context in which the casting is being performed.
 	 *
 	 * @return The value
 	 */
 	public static CastAttempt<DateTime> attempt( Object object, IBoxContext context ) {
 		return CastAttempt.ofNullable( cast( object, false, context ) );
+	}
+
+	/**
+	 * Tests to see if the value can be cast.
+	 * Returns a {@code CastAttempt<T>} which will contain the result if casting was
+	 * was successfull, or can be interogated to proceed otherwise.
+	 *
+	 * @param object   The value to cast
+	 * @param context  The context in which the casting is being performed.
+	 * @param timezone The ZoneId to ensure a timezone is applied
+	 *
+	 * @return The value
+	 */
+	public static CastAttempt<DateTime> attempt( Object object, IBoxContext context, ZoneId timezone, Locale locale ) {
+		return CastAttempt.ofNullable( cast( object, false, timezone, false, context, locale ) );
 	}
 
 	/**
@@ -129,10 +146,29 @@ public class DateTimeCaster implements IBoxCaster {
 	 * @param fail     True to throw exception when failing.
 	 * @param timezone The ZoneId to ensure a timezone is applied
 	 * @param clone    If true, will return a clone of the object if it was originally a DateTime.
+	 * @param context  The context in which the casting is being performed.
 	 *
 	 * @return The value, or null when cannot be cast
 	 */
 	public static DateTime cast( Object object, Boolean fail, ZoneId timezone, Boolean clone, IBoxContext context ) {
+		return cast( object, fail, timezone, clone, context, null );
+	}
+
+	/**
+	 * Used to cast anything to a DateTime object. We start off by testing the object
+	 * against commonly known Java date objects, and then try to parse the object as a
+	 * string. If we fail, we return null.
+	 *
+	 * @param object   The value to cast
+	 * @param fail     True to throw exception when failing.
+	 * @param timezone The ZoneId to ensure a timezone is applied
+	 * @param clone    If true, will return a clone of the object if it was originally a DateTime.
+	 * @param context  The context in which the casting is being performed.
+	 * @param locale   The locale to use when parsing date strings.
+	 *
+	 * @return The value, or null when cannot be cast
+	 */
+	public static DateTime cast( Object object, Boolean fail, ZoneId timezone, Boolean clone, IBoxContext context, Locale locale ) {
 		if ( timezone == null ) {
 			if ( context == null ) {
 				context = RequestBoxContext.getCurrent();
@@ -230,10 +266,14 @@ public class DateTimeCaster implements IBoxCaster {
 
 		// Now let's go to Apache commons lang for its date parsing
 		try {
-			return LocalizationUtil.parseFromCommonPatterns( targetString );
+			return LocalizationUtil.parseFromCommonPatterns( targetString, timezone );
 		} catch ( java.time.format.DateTimeParseException e ) {
 			try {
-				return new DateTime( targetString, timezone );
+				if ( locale != null ) {
+					return new DateTime( targetString, locale, timezone );
+				} else {
+					return new DateTime( targetString, timezone );
+				}
 			} catch ( Throwable e2 ) {
 				if ( fail ) {
 					throw new BoxCastException( "Can't cast [" + targetString + "] to a DateTime." );
