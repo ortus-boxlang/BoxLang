@@ -22,6 +22,8 @@ import static com.google.common.truth.Truth.assertThat;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -35,6 +37,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.util.FileSystemUtil;
 
 public class DumpTest {
 
@@ -264,12 +267,14 @@ public class DumpTest {
 		// @formatter:off
 		instance.executeSource(
 		    """
-				val = {"a":1, "b":2, "c":3, "d":4, "e":5};
+				val = {"a":1, "b":2, "c":3, "d":4, "brad":"wood"};
 				dump( var = val, format = "html" );
 		    """,
 		    context );
 			System.out.println( baos.toString() );
- 		assertThat( baos.toString().replaceAll( "[ \\t\\r\\n]", "" ) ).contains( "12345" );
+			String results = baos.toString().replaceAll( "[ \\t\\r\\n]", "" );
+ 		assertThat( results ).contains( "brad" );
+ 		assertThat( results ).contains( "wood" );
 		// @formatter:on
 	}
 
@@ -545,6 +550,71 @@ public class DumpTest {
 				context );
 			// @formatter:on
 		assertThat( baos.toString() ).contains( "Numeric to string" );
+	}
+
+	@DisplayName( "It can dump text to a file" )
+	@Test
+	public void testCanDumpTextToFile() {
+		// @formatter:off
+			instance.executeSource(
+				"""
+					val = "Hello, BoxLang";
+					filePath = expandPath( "src/test/resources/tmp/dump_test.txt" );
+					dump( var = val, format = "text", output = filePath );
+				""",
+				context );
+			// @formatter:on
+
+		Path filePath = Paths.get( variables.getAsString( Key.of( "filePath" ) ) );
+		assertThat( filePath.toFile().exists() ).isTrue();
+		String fileContents = ( String ) FileSystemUtil.read( filePath.toString(), FileSystemUtil.DEFAULT_CHARSET.name(), null, true );
+		assertThat( fileContents ).contains( "Hello, BoxLang" );
+		// Cleanup
+		filePath.toFile().delete();
+	}
+
+	@DisplayName( "It can dump HTML to a file" )
+	@Test
+	public void testCanDumpHTMLToFile() {
+		// @formatter:off
+			instance.executeSource(
+				"""
+					val = "Hello, BoxLang";
+					filePath = expandPath( "src/test/resources/tmp/dump_test.html" );
+					dump( var = val, format = "html", output = filePath );
+				""",
+				context );
+			// @formatter:on
+
+		Path filePath = Paths.get( variables.getAsString( Key.of( "filePath" ) ) );
+		assertThat( filePath.toFile().exists() ).isTrue();
+		String fileContents = ( String ) FileSystemUtil.read( filePath.toString(), FileSystemUtil.DEFAULT_CHARSET.name(), null, true );
+		assertThat( fileContents ).contains( "Hello, BoxLang" );
+		assertThat( fileContents ).contains( "<style>" );
+		// Cleanup
+		filePath.toFile().delete();
+	}
+
+	@DisplayName( "It can dump to a file in temp dir" )
+	@Test
+	public void testCanDumpToFileInTempDir() {
+		// @formatter:off
+			instance.executeSource(
+				"""
+					val = "Hello, BoxLang";
+					fileName = "dump_test.txt";
+					filePath = getTempDirectory() & "/" & fileName;
+					dump( var = val, format = "text", output = fileName );
+				""",
+				context );
+			// @formatter:on
+
+		Path filePath = Paths.get( variables.getAsString( Key.of( "filePath" ) ) );
+		assertThat( filePath.toFile().exists() ).isTrue();
+		String fileContents = ( String ) FileSystemUtil.read( filePath.toString(), FileSystemUtil.DEFAULT_CHARSET.name(), null, true );
+		assertThat( fileContents ).contains( "Hello, BoxLang" );
+		// Cleanup
+		filePath.toFile().delete();
 	}
 
 }

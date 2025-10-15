@@ -293,6 +293,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		dspLocale							= Key.of( "dspLocale" );
 	public static final Key		dump								= Key.of( "dump" );
 	public static final Key		dumpLevel							= Key.of( "dumpLevel" );
+	public static final Key		dumpFilePath						= Key.of( "dumpFilePath" );
+	public static final Key		dumpOutput							= Key.of( "dumpOutput" );
 	public static final Key		duration							= Key.of( "duration" );
 	public static final Key		elapsedTime							= Key.of( "elapsedTime" );
 	public static final Key		elem								= Key.of( "elem" );
