@@ -561,6 +561,7 @@ public class DumpTest {
 				"""
 					val = "Hello, BoxLang";
 					filePath = expandPath( "/src/test/resources/tmp/dump_test.txt" );
+					if( fileExists( filePath ) ) fileDelete( filePath );
 					dump( var = val, format = "text", output = filePath );
 				""",
 				context );
@@ -582,6 +583,7 @@ public class DumpTest {
 				"""
 					val = "Hello, BoxLang";
 					filePath = expandPath( "/src/test/resources/tmp/dump_test.html" );
+					if( fileExists( filePath ) ) fileDelete( filePath );
 					dump( var = val, format = "html", output = filePath );
 				""",
 				context );
@@ -605,6 +607,7 @@ public class DumpTest {
 					val = "Hello, BoxLang";
 					fileName = "dump_test.txt";
 					filePath = getTempDirectory() & "/" & fileName;
+					if( fileExists( filePath ) ) fileDelete( filePath );
 					dump( var = val, format = "text", output = fileName );
 				""",
 				context );
@@ -616,6 +619,34 @@ public class DumpTest {
 		assertThat( fileContents ).contains( "Hello, BoxLang" );
 		// Cleanup
 		filePath.toFile().delete();
+	}
+
+	@DisplayName( "It can append text to a file" )
+	@Test
+	public void testCanAppendTextToFile() {
+		// @formatter:off
+			instance.executeSource(
+				"""
+					filePath = expandPath( "/src/test/resources/tmp/extra/deep/dump_test.txt" );
+					parent = expandPath( "/src/test/resources/tmp/extra" );
+					if( directoryExists( parent ) ) directoryDelete( parent, true );
+					dump( var = "dump one", format = "text", output = filePath );
+					dump( var = "dump two", format = "text", output = filePath );
+					dump( var = "dump three", format = "text", output = filePath );
+				""",
+				context );
+			// @formatter:on
+
+		Path filePath = Paths.get( variables.getAsString( Key.of( "filePath" ) ) );
+		assertWithMessage( "File [" + filePath + "] should exist" ).that( filePath.toFile().exists() ).isTrue();
+		String fileContents = ( String ) FileSystemUtil.read( filePath.toString(), FileSystemUtil.DEFAULT_CHARSET.name(), null, true );
+		assertThat( fileContents ).contains( "dump one" );
+		assertThat( fileContents ).contains( "dump two" );
+		assertThat( fileContents ).contains( "dump three" );
+		// Cleanup
+		filePath.toFile().delete();
+		filePath.getParent().toFile().delete();
+		filePath.getParent().getParent().toFile().delete();
 	}
 
 }

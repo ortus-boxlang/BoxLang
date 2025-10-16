@@ -220,7 +220,7 @@ public class DumpUtil {
 				// SEND TO FILE
 				case "___file___" :
 					if ( dumpFilePath != null ) {
-						FileSystemUtil.write( dumpFilePath.toString(), dumpOutput, FileSystemUtil.DEFAULT_CHARSET.name(), true );
+						appendDumpToFile( dumpFilePath, dumpOutput );
 						break;
 					}
 
@@ -255,6 +255,32 @@ public class DumpUtil {
 					break;
 			}
 
+		}
+	}
+
+	/**
+	 * Appends the given content to the specified file, creating all parent directories and the file if they do not exist.
+	 *
+	 * @param filePath The path to the file
+	 * @param content  The content to append
+	 * 
+	 * @throws IOException If an I/O error occurs
+	 */
+	private static void appendDumpToFile( Path filePath, String content ) {
+		try {
+			// Create parent directories if they do not exist
+			Path parent = filePath.getParent();
+			if ( parent != null && !Files.exists( parent ) ) {
+				Files.createDirectories( parent );
+			}
+			// Create the file if it does not exist
+			if ( !Files.exists( filePath ) ) {
+				Files.createFile( filePath );
+			}
+			// Append content to the file
+			Files.writeString( filePath, content + "\n", java.nio.file.StandardOpenOption.APPEND );
+		} catch ( IOException e ) {
+			throw new BoxRuntimeException( "Error appending dump output to file: " + filePath.toString(), e );
 		}
 	}
 
