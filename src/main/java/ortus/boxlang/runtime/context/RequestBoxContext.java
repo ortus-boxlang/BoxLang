@@ -601,6 +601,7 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 
 	@Override
 	public void shutdown() {
+		super.shutdown();
 		shutdownConnections();
 	}
 

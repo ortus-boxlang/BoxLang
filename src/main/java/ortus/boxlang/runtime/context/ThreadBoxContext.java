@@ -254,6 +254,7 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 
 	@Override
 	public void shutdown() {
+		super.shutdown();
 		shutdownConnections();
 	}
 

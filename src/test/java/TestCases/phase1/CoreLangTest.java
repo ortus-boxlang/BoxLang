@@ -5757,4 +5757,23 @@ public class CoreLangTest {
 		assertThat( t.getMessage() ).contains( "Unclosed bracket" );
 	}
 
+	@Test
+	public void testContextShutdownListener() {
+
+		// Not passing the context from the request so the runtime will create its own and automatically shut it down
+		instance.executeSource(
+		    """
+		    server[ "myRequest" ] = "running";
+		       	getBoxContext().getRequestContext().registerShutdownListener( (ctx) => {
+		       		server[ "myRequest" ] = "done";
+		       	} );
+
+		       """
+		);
+
+		String result = ( String ) instance.executeStatement( "server[ 'myRequest' ]", context );
+		assertThat( result ).isEqualTo( "done" );
+
+	}
+
 }

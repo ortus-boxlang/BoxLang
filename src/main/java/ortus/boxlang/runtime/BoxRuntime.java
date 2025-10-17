@@ -1545,6 +1545,7 @@ public class BoxRuntime implements java.io.Closeable {
 		// Debugging Timers
 		/* timerUtil.start( "execute-" + source.hashCode() ); */
 		IBoxContext	scriptingContext	= ensureRequestTypeContext( context );
+		boolean		shutdownContext		= context != scriptingContext;
 		BoxScript	scriptRunnable		= RunnableLoader.getInstance().loadSource( scriptingContext, source, type );
 		Object		results				= null;
 
@@ -1563,6 +1564,9 @@ public class BoxRuntime implements java.io.Closeable {
 			scriptingContext.flushBuffer( false );
 			RequestBoxContext.removeCurrent();
 			Thread.currentThread().setContextClassLoader( oldClassLoader );
+			if ( shutdownContext ) {
+				scriptingContext.getRequestContext().shutdown();
+			}
 		}
 
 		return results;
