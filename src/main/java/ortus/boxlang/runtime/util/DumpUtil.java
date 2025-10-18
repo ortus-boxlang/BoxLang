@@ -200,7 +200,8 @@ public class DumpUtil {
 
 				// SEND TO BUFFER (HTML or TEXT)
 				case "buffer" :
-					context.writeToBuffer( dumpOutput );
+					// force=true ensures it shows up even bx:setting enableOutputOnly is true
+					context.writeToBuffer( dumpOutput, true );
 					context.flushBuffer( false );
 
 					// If we are aborting, then throw an abort exception.
