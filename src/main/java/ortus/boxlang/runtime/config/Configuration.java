@@ -44,7 +44,6 @@ import ortus.boxlang.runtime.config.segments.LoggingConfig;
 import ortus.boxlang.runtime.config.segments.ModuleConfig;
 import ortus.boxlang.runtime.config.segments.SchedulerConfig;
 import ortus.boxlang.runtime.config.segments.SecurityConfig;
-import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.KeyCaster;
@@ -366,25 +365,25 @@ public class Configuration implements IConfigSegment {
 
 		// Debug Mode || Debbuging Enabled (cfconfig)
 		if ( config.containsKey( Key.debugMode ) ) {
-			this.debugMode = BooleanCaster.cast( PlaceholderHelper.resolve( config.get( Key.debugMode ) ) );
+			this.debugMode = BooleanCaster.cast( config.get( Key.debugMode ) );
 		}
 		if ( config.containsKey( Key.debuggingEnabled ) ) {
-			this.debugMode = BooleanCaster.cast( PlaceholderHelper.resolve( config.get( Key.debuggingEnabled ) ) );
+			this.debugMode = BooleanCaster.cast( config.get( Key.debuggingEnabled ) );
 		}
 
 		// Class Resolver Cache
 		if ( config.containsKey( Key.classResolverCache ) ) {
-			this.classResolverCache = BooleanCaster.cast( PlaceholderHelper.resolve( config.get( Key.classResolverCache ) ) );
+			this.classResolverCache = BooleanCaster.cast( config.get( Key.classResolverCache ) );
 		}
 
 		// Trusted Cache
 		if ( config.containsKey( Key.trustedCache ) ) {
-			this.trustedCache = BooleanCaster.cast( PlaceholderHelper.resolve( config.get( Key.trustedCache ) ) );
+			this.trustedCache = BooleanCaster.cast( config.get( Key.trustedCache ) );
 		}
 
 		// Compiler
 		if ( config.containsKey( Key.classGenerationDirectory ) ) {
-			this.classGenerationDirectory = PlaceholderHelper.resolve( config.get( Key.classGenerationDirectory ) );
+			this.classGenerationDirectory = config.getAsString( Key.classGenerationDirectory );
 		}
 
 		// Version
@@ -394,44 +393,44 @@ public class Configuration implements IConfigSegment {
 
 		// Clear Class Files on Startup
 		if ( config.containsKey( Key.clearClassFilesOnStartup ) ) {
-			this.clearClassFilesOnStartup = BooleanCaster.cast( PlaceholderHelper.resolve( config.get( Key.clearClassFilesOnStartup ) ) );
+			this.clearClassFilesOnStartup = BooleanCaster.cast( config.get( Key.clearClassFilesOnStartup ) );
 		}
 
 		// Timezone
 		if ( config.containsKey( Key.timezone )
 		    &&
 		    config.getAsString( Key.timezone ).length() > 0 ) {
-			this.timezone = ZoneId.of( PlaceholderHelper.resolve( config.get( Key.timezone ) ) );
+			this.timezone = ZoneId.of( config.getAsString( Key.timezone ) );
 		}
 
 		// Locale
 		if ( config.containsKey( Key.locale )
 		    &&
 		    config.getAsString( Key.locale ).length() > 0 ) {
-			this.locale = LocalizationUtil.parseLocale( PlaceholderHelper.resolve( config.getAsString( Key.locale ) ) );
+			this.locale = LocalizationUtil.parseLocale( config.getAsString( Key.locale ) );
 		}
 
 		// invokeImplicitAccessor
 		if ( config.containsKey( Key.invokeImplicitAccessor ) ) {
-			BooleanCaster.attempt( PlaceholderHelper.resolve( config.get( Key.invokeImplicitAccessor ) ) )
+			BooleanCaster.attempt( config.get( Key.invokeImplicitAccessor ) )
 			    .ifSuccessful( value -> this.invokeImplicitAccessor = value );
 		}
 
 		// whitespaceCompressionEnabled
 		if ( config.containsKey( Key.whitespaceCompressionEnabled ) ) {
-			BooleanCaster.attempt( PlaceholderHelper.resolve( config.get( Key.whitespaceCompressionEnabled ) ) )
+			BooleanCaster.attempt( config.get( Key.whitespaceCompressionEnabled ) )
 			    .ifSuccessful( value -> this.whitespaceCompressionEnabled = value );
 		}
 
 		// Use High Precision Math
 		if ( config.containsKey( Key.useHighPrecisionMath ) ) {
-			BooleanCaster.attempt( PlaceholderHelper.resolve( config.get( Key.useHighPrecisionMath ) ) )
+			BooleanCaster.attempt( config.get( Key.useHighPrecisionMath ) )
 			    .ifSuccessful( value -> this.useHighPrecisionMath = value );
 		}
 
 		// maxTrackedCompletedThreads
 		if ( config.containsKey( Key.maxTrackedCompletedThreads ) ) {
-			IntegerCaster.attempt( PlaceholderHelper.resolve( config.get( Key.maxTrackedCompletedThreads ) ) )
+			IntegerCaster.attempt( config.get( Key.maxTrackedCompletedThreads ) )
 			    .ifSuccessful( value -> this.maxTrackedCompletedThreads = value );
 		}
 
@@ -439,41 +438,41 @@ public class Configuration implements IConfigSegment {
 		if ( config.containsKey( Key.applicationTimeout )
 		    && StringCaster.cast( config.get( "applicationTimeout" ) ).length() > 0 ) {
 			this.applicationTimeout = DateTimeHelper
-			    .timespanToDuration( PlaceholderHelper.resolve( config.get( "applicationTimeout" ) ) );
+			    .timespanToDuration( StringCaster.cast( config.get( "applicationTimeout" ) ) );
 		}
 
 		// Request Timeout
 		if ( config.containsKey( Key.requestTimeout ) && StringCaster.cast( config.get( "requestTimeout" ) ).length() > 0 ) {
 			this.requestTimeout = DateTimeHelper
-			    .timespanToDuration( PlaceholderHelper.resolve( config.get( "requestTimeout" ) ) );
+			    .timespanToDuration( StringCaster.cast( config.get( "requestTimeout" ) ) );
 		}
 
 		// Session Timeout
 		if ( config.containsKey( Key.sessionTimeout ) && StringCaster.cast( config.get( "sessionTimeout" ) ).length() > 0 ) {
 			this.sessionTimeout = DateTimeHelper
-			    .timespanToDuration( PlaceholderHelper.resolve( config.get( "sessionTimeout" ) ) );
+			    .timespanToDuration( StringCaster.cast( config.get( "sessionTimeout" ) ) );
 		}
 
 		// Session Management
 		if ( config.containsKey( Key.sessionManagement ) ) {
-			BooleanCaster.attempt( PlaceholderHelper.resolve( config.get( Key.sessionManagement ) ) )
+			BooleanCaster.attempt( config.get( Key.sessionManagement ) )
 			    .ifSuccessful( value -> this.sessionManagement = value );
 		}
 
 		// Session Storage
-		if ( config.containsKey( Key.sessionStorage ) && StringCaster.cast( config.get( "sessionStorage" ) ).length() > 0 ) {
-			this.sessionStorage = PlaceholderHelper.resolve( config.get( "sessionStorage" ) );
+		if ( config.containsKey( Key.sessionStorage ) && StringCaster.cast( config.get( Key.sessionStorage ) ).length() > 0 ) {
+			this.sessionStorage = config.getAsString( Key.sessionStorage );
 		}
 
 		// Client Cookies
 		if ( config.containsKey( Key.setClientCookies ) ) {
-			BooleanCaster.attempt( PlaceholderHelper.resolve( config.get( Key.setClientCookies ) ) )
+			BooleanCaster.attempt( config.get( Key.setClientCookies ) )
 			    .ifSuccessful( value -> this.setClientCookies = value );
 		}
 
 		// Domain Cookies
 		if ( config.containsKey( Key.setDomainCookies ) ) {
-			BooleanCaster.attempt( PlaceholderHelper.resolve( config.get( Key.setDomainCookies ) ) )
+			BooleanCaster.attempt( config.get( Key.setDomainCookies ) )
 			    .ifSuccessful( value -> this.setDomainCookies = value );
 		}
 
@@ -488,7 +487,7 @@ public class Configuration implements IConfigSegment {
 					// Where "path" is mandatory and "external" is optional (defaults to true)
 					registerMapping(
 					    entry.getKey(),
-					    PlaceholderHelper.resolveAll( entry.getValue() ),
+					    entry.getValue(),
 					    true
 					);
 				} );
@@ -502,7 +501,7 @@ public class Configuration implements IConfigSegment {
 			if ( config.get( Key.modulesDirectory ) instanceof List<?> castedList ) {
 				// iterate and add to the original list if it doesn't exist
 				castedList.forEach( item -> {
-					var resolvedItem = PlaceholderHelper.resolve( item );
+					var resolvedItem = StringCaster.cast( item );
 					if ( !this.modulesDirectory.contains( resolvedItem ) ) {
 						this.modulesDirectory.add( resolvedItem );
 					}
@@ -517,7 +516,7 @@ public class Configuration implements IConfigSegment {
 			if ( config.get( Key.customComponentsDirectory ) instanceof List<?> castedList ) {
 				// iterate and add to the original list if it doesn't exist
 				castedList.forEach( item -> {
-					var resolvedItem = PlaceholderHelper.resolve( item );
+					var resolvedItem = StringCaster.cast( item );
 					if ( !this.customComponentsDirectory.contains( resolvedItem ) ) {
 						this.customComponentsDirectory.add( resolvedItem );
 					}
@@ -532,7 +531,7 @@ public class Configuration implements IConfigSegment {
 			if ( config.get( Key.classPaths ) instanceof List<?> castedList ) {
 				// iterate and add to the original list if it doesn't exist
 				castedList.forEach( item -> {
-					var resolvedItem = PlaceholderHelper.resolve( item );
+					var resolvedItem = StringCaster.cast( item );
 					// Verify or add the path
 					if ( !this.classPaths.contains( resolvedItem ) ) {
 						this.classPaths.add( resolvedItem );
@@ -548,7 +547,7 @@ public class Configuration implements IConfigSegment {
 			if ( config.get( Key.javaLibraryPaths ) instanceof List<?> castedList ) {
 				// iterate and add to the original list if it doesn't exist
 				castedList.forEach( item -> {
-					var resolvedItem = PlaceholderHelper.resolve( item );
+					var resolvedItem = StringCaster.cast( item );
 					// Verify or add the path
 					if ( !this.javaLibraryPaths.contains( resolvedItem ) ) {
 						this.javaLibraryPaths.add( resolvedItem );
@@ -561,8 +560,7 @@ public class Configuration implements IConfigSegment {
 
 		// Process the default method return format
 		if ( config.containsKey( Key.defaultRemoteMethodReturnFormat ) ) {
-			this.defaultRemoteMethodReturnFormat = PlaceholderHelper
-			    .resolve( config.get( Key.defaultRemoteMethodReturnFormat ) ).toLowerCase();
+			this.defaultRemoteMethodReturnFormat = config.getAsString( Key.defaultRemoteMethodReturnFormat ).toLowerCase();
 		}
 
 		// Setup a 'default' cache, using the default cache configuration as it always needs to be present
@@ -571,6 +569,7 @@ public class Configuration implements IConfigSegment {
 		// Process declared cache configurations in the configuration
 		if ( config.containsKey( Key.caches ) ) {
 			if ( config.get( Key.caches ) instanceof IStruct castedCaches ) {
+				// Process each cache configuration
 				castedCaches
 				    .entrySet()
 				    .forEach( entry -> {
@@ -598,16 +597,16 @@ public class Configuration implements IConfigSegment {
 			}
 		}
 
-		// Process executors
+		// Process executor configurations
 		if ( config.containsKey( Key.executors ) ) {
 			if ( config.get( Key.executors ) instanceof IStruct castedExecutors ) {
 				// Process each executor configuration
 				castedExecutors
 				    .entrySet()
 				    .forEach( entry -> {
-					    if ( entry.getValue() instanceof IStruct castedMap ) {
+					    if ( entry.getValue() instanceof IStruct castedStruct ) {
 						    ExecutorConfig executorConfig = new ExecutorConfig( entry.getKey() )
-						        .process( StructCaster.cast( castedMap ) );
+						        .process( castedStruct );
 						    this.executors.put( executorConfig.name, executorConfig );
 					    } else {
 						    logger.warn( "The [executors.{}] configuration is not a JSON Object, ignoring it.",
@@ -624,7 +623,7 @@ public class Configuration implements IConfigSegment {
 			if ( config.get( Key.validClassExtensions ) instanceof List<?> castedList ) {
 				// iterate and add to the original list if it doesn't exist
 				castedList
-				    .forEach( item -> this.validClassExtensions.add( PlaceholderHelper.resolve( item ).toLowerCase() ) );
+				    .forEach( item -> this.validClassExtensions.add( StringCaster.cast( item ).toLowerCase() ) );
 			} else {
 				logger.warn( "The [validClassExtensions] configuration is not a JSON Array, ignoring it." );
 			}
@@ -635,7 +634,7 @@ public class Configuration implements IConfigSegment {
 			if ( config.get( Key.validTemplateExtensions ) instanceof List<?> castedList ) {
 				// iterate and add to the original list if it doesn't exist
 				castedList.forEach(
-				    item -> this.validTemplateExtensions.add( PlaceholderHelper.resolve( item ).toLowerCase() ) );
+				    item -> this.validTemplateExtensions.add( StringCaster.cast( item ).toLowerCase() ) );
 			} else {
 				logger.warn( "The [validTemplateExtensions] configuration is not a JSON Array, ignoring it." );
 			}
@@ -644,7 +643,7 @@ public class Configuration implements IConfigSegment {
 		// Process experimentals map
 		if ( config.containsKey( Key.experimental ) ) {
 			if ( config.get( Key.experimental ) instanceof IStruct castedStruct ) {
-				castedStruct.entrySet().forEach( entry -> this.experimental.put( entry.getKey(), PlaceholderHelper.resolve( entry.getValue() ) ) );
+				castedStruct.entrySet().forEach( entry -> this.experimental.put( entry.getKey(), entry.getValue() ) );
 			} else {
 				logger.warn( "The [experimental] configuration is not a JSON Object, ignoring it." );
 			}
@@ -652,7 +651,7 @@ public class Configuration implements IConfigSegment {
 
 		// Process default datasource configuration
 		if ( config.containsKey( Key.defaultDatasource ) ) {
-			this.defaultDatasource = PlaceholderHelper.resolve( config.get( Key.defaultDatasource ) );
+			this.defaultDatasource = StringCaster.cast( config.get( Key.defaultDatasource ) );
 		}
 
 		// Process Datasource Configurations
@@ -664,7 +663,7 @@ public class Configuration implements IConfigSegment {
 				    .forEach( entry -> {
 					    if ( entry.getValue() instanceof IStruct castedStruct ) {
 						    IStruct eventData = Struct.ofNonConcurrent(
-						        Key._name, Key.of( PlaceholderHelper.resolve( entry.getKey().getName() ) ),
+						        Key._name, Key.of( entry.getKey().getName() ),
 						        Key.properties, castedStruct
 						    );
 						    BoxRuntime.getInstance().announce( BoxEvent.ON_DATASOURCE_CONFIG_LOAD, eventData );

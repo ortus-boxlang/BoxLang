@@ -22,7 +22,6 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
@@ -204,8 +203,7 @@ public class CacheConfig {
 			Key		key					= entry.getKey();
 			Object	incomingValue		= entry.getValue();
 
-			// Resolve placeholders for the incoming value.
-			String	resolvedStringValue	= PlaceholderHelper.resolve( incomingValue.toString() );
+			String	resolvedStringValue	= incomingValue.toString();
 
 			// Get the default value for this key to determine the expected type
 			Object	defaultValue		= DEFAULTS.get( key );

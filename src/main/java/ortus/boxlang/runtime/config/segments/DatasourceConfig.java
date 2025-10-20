@@ -27,7 +27,6 @@ import org.slf4j.LoggerFactory;
 import com.zaxxer.hikari.HikariConfig;
 
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.LongCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
@@ -410,11 +409,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 
 		// Process the properties into the state, merge them in one by one
 		properties.entrySet().stream().forEach( entry -> {
-			if ( entry.getValue() instanceof String castedValue ) {
-				this.properties.put( entry.getKey(), PlaceholderHelper.resolve( castedValue ) );
-			} else {
-				this.properties.put( entry.getKey(), entry.getValue() );
-			}
+			this.properties.put( entry.getKey(), entry.getValue() );
 		} );
 
 		// Merge defaults into the properties
