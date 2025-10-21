@@ -27,9 +27,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -649,6 +651,54 @@ public class BoxClassTransformer {
 
 			AsmHelper.generateMapOfAbstractMethodNames( transpiler, boxClass ).forEach( node -> node.accept( methodVisitor ) );
 			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC, type.getInternalName(), "abstractMethods", Type.getDescriptor( Map.class ) );
+
+			// start invoke static initializer
+			methodVisitor.visitInvokeDynamicInsn(
+			    "accept",
+			    "()Ljava/util/function/Consumer;",
+			    new Handle(
+			        Opcodes.H_INVOKESTATIC,
+			        "java/lang/invoke/LambdaMetafactory",
+			        "metafactory",
+			        "(Ljava/lang/invoke/MethodHandles$Lookup;"
+			            + "Ljava/lang/String;"
+			            + "Ljava/lang/invoke/MethodType;"
+			            + "Ljava/lang/invoke/MethodType;"
+			            + "Ljava/lang/invoke/MethodHandle;"
+			            + "Ljava/lang/invoke/MethodType;)"
+			            + "Ljava/lang/invoke/CallSite;",
+			        false
+			    ),
+			    Type.getMethodType( "(Ljava/lang/Object;)V" ), // SAM type
+			    new Handle(
+			        Opcodes.H_INVOKESTATIC,
+			        type.getInternalName(),
+			        "staticInitializer",
+			        "(Lortus/boxlang/runtime/context/IBoxContext;)V",
+			        false
+			    ),
+			    Type.getMethodType( "(Lortus/boxlang/runtime/context/IBoxContext;)V" )
+			);
+
+			methodVisitor.visitLdcInsn( type );
+			methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "staticScope", Type.getDescriptor( StaticScope.class ) );
+			methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "path", Type.getDescriptor( ResolvedFilePath.class ) );
+
+			methodVisitor.visitMethodInsn(
+			    Opcodes.INVOKESTATIC,
+			    Type.getInternalName( BoxClassSupport.class ),
+			    "runStaticInitializer",
+			    Type.getMethodDescriptor(
+			        Type.VOID_TYPE,
+			        Type.getType( Consumer.class ),
+			        Type.getType( Class.class ),
+			        Type.getType( StaticScope.class ),
+			        Type.getType( ResolvedFilePath.class )
+			    ),
+			    false
+			);
+			// end invoke static initializer
+
 		} );
 
 		return classNode;
