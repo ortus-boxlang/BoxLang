@@ -107,7 +107,6 @@ dependencies {
 	testImplementation "com.google.truth:truth:1.+"
 	testImplementation "commons-cli:commons-cli:1.10.0"
 	testImplementation "org.wiremock:wiremock:3.13.1"
-	testImplementation 'org.apache.derby:derby:10.17.1.0'
 	testImplementation 'io.undertow:undertow-core:2.3.20.Final'
 	testImplementation 'org.bouncycastle:bcpkix-jdk18on:1.83'
 	// Explicitly declare the JUnit platform launcher (to avoid deprecation)
@@ -242,10 +241,6 @@ processResources {
 			versionFile.text = content
 		}
 	}
-}
-
-tasks.named( "processTestResources" ) {
-	dependsOn tasks.named( "installDerbyModule" )
 }
 
 /**
@@ -1034,31 +1029,6 @@ sourcesJar{
 	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 	dependsOn generateTestGrammarSource, generateGrammarSource
 }
-/**
- * Download the Derby module for testing
- */
-task downloadDerbyModule( type: Download ) {
-	// Create the destination directory
-	doFirst {
-		file( "src/test/resources/libs" ).mkdirs()
-	}
-    // Configure the URL of the file to download
-	src([
-		"https://downloads.ortussolutions.com/ortussolutions/boxlang-modules/bx-derby/${derbyModuleVersion}/bx-derby-${derbyModuleVersion}.zip"
-	])
-    // Specify the destination directory for the downloaded files
-    dest "src/test/resources/libs/"
-    overwrite true
-    onlyIfModified false
-}
-
-/**
- * Install derby module for testing.
- */
-task installDerbyModule( dependsOn: downloadDerbyModule,  type: Copy ) {
-	from zipTree( file( "${testResourceDirectory}/libs/bx-derby-${derbyModuleVersion}.zip" ) )
-	into "${testResourceDirectory}/modules/bx-derby"
-}
 
 /**
  * Compile Java Customizations
@@ -1081,7 +1051,7 @@ compileJava {
  */
 compileTestJava {
 	source sourceSets.test.java
-	dependsOn compileJava, generateTestGrammarSource, serviceLoaderBuild, installDerbyModule, ":src:modules:test:build"
+	dependsOn compileJava, generateTestGrammarSource, serviceLoaderBuild, ":src:modules:test:build"
 	options.encoding = 'UTF-8'
 }
 
