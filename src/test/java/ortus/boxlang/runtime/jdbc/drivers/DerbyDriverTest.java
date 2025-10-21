@@ -3,6 +3,7 @@ package ortus.boxlang.runtime.jdbc.drivers;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+@EnabledIf( "tools.JDBCTestUtils#hasDerbyModule" )
 public class DerbyDriverTest extends AbstractDriverTest {
 
 	/**
