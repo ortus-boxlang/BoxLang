@@ -27,6 +27,7 @@ import com.zaxxer.hikari.HikariConfig;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.Configuration;
+import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -321,7 +322,7 @@ class DatasourceConfigTest {
 	@Test
 	void testItResolvesDatasourceNamePlaceholders() {
 		// Build a config where the datasource key is a placeholder with a default value
-		IStruct			datasources	= Struct.ofNonConcurrent(
+		IStruct datasources = Struct.ofNonConcurrent(
 		    Key.datasources,
 		    Struct.ofNonConcurrent(
 		        Key.of( "${env.MY_DS:MyDSDefault}" ),
@@ -332,11 +333,12 @@ class DatasourceConfigTest {
 		            "database", "foo"
 		        )
 		    ) );
+		datasources = PlaceholderHelper.resolveAll( datasources );
 
-		Configuration	cfg			= new Configuration().process( datasources );
+		Configuration	cfg		= new Configuration().process( datasources );
 
 		// The placeholder should resolve to the default "MyDSDefault"
-		boolean			found		= cfg.datasources.keySet()
+		boolean			found	= cfg.datasources.keySet()
 		    .stream()
 		    .anyMatch( k -> k.getName().equals( "MyDSDefault" ) );
 

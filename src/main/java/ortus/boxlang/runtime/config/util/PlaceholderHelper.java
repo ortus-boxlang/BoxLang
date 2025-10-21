@@ -166,31 +166,53 @@ public class PlaceholderHelper {
 
 	/**
 	 * Recursively replace all placeholders throughout a tree made up of BoxLang Arrays and Structs
+	 * Uses the default placeholder map
 	 *
 	 * @param object Object to populate into tree placeholders.
 	 *
 	 * @return The Resolved tree
 	 *
 	 */
-	@SuppressWarnings( "unchecked" )
 	public static <T> T resolveAll( T object ) {
+		return resolveAll( object, PLACEHOLDER_MAP );
+	}
+
+	/**
+	 * Recursively replace all placeholders throughout a tree made up of BoxLang Arrays and Structs
+	 * You can provide a custom placeholder map
+	 *
+	 * @param object Object to populate into tree placeholders.
+	 * @param map    The placeholder struct to use for resolving the input string
+	 *
+	 * @return The Resolved tree
+	 *
+	 */
+	@SuppressWarnings( "unchecked" )
+	public static <T> T resolveAll( T object, IStruct map ) {
 		if ( object instanceof Struct struct ) {
 			for ( Key key : struct.keySet() ) {
-				struct.put( key, PlaceholderHelper.resolveAll( struct.get( key ) ) );
+				// Allow object keys to be placeholders as well
+				String	newKey	= PlaceholderHelper.resolve( key.getName(), map );
+				Object	value	= struct.get( key );
+				if ( !newKey.equals( key.getName() ) ) {
+					// Remove the old key
+					struct.remove( key );
+					key = Key.of( newKey );
+				}
+				struct.put( key, PlaceholderHelper.resolveAll( value, map ) );
 			}
-
 			return object;
 		} else if ( object instanceof Array array ) {
 			for ( int i = 0; i < array.size(); i++ ) {
-				array.set( i, PlaceholderHelper.resolveAll( array.get( i ) ) );
+				array.set( i, PlaceholderHelper.resolveAll( array.get( i ), map ) );
 			}
-
 			return object;
-		} else if ( ! ( object instanceof String ) ) {
-			return object;
+		} else if ( object instanceof String strObj ) {
+			return ( T ) resolve( strObj, map );
 		}
 
-		return ( T ) resolve( object );
+		// boolean, null, number
+		return ( T ) object;
 	}
 
 	/**

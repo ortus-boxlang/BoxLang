@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.Configuration;
+import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -29,13 +30,14 @@ class MappingsConfigTest {
 	@DisplayName( "Simple mapping registers path and external defaults to true" )
 	@Test
 	void testSimpleMappingRegistersAsExternal() {
-		IStruct			mappings	= Struct.ofNonConcurrent( Key.mappings, Struct.ofNonConcurrent(
+		IStruct mappings = Struct.ofNonConcurrent( Key.mappings, Struct.ofNonConcurrent(
 		    Key.of( "/app" ), "${user-dir}" ) );
+		mappings = PlaceholderHelper.resolveAll( mappings );
 
-		Configuration	cfg			= new Configuration().process( mappings );
+		Configuration	cfg	= new Configuration().process( mappings );
 
 		// Mapping should be present
-		Mapping			map			= cfg.mappings.getAs( Mapping.class, Key.of( "/app/" ) );
+		Mapping			map	= cfg.mappings.getAs( Mapping.class, Key.of( "/app/" ) );
 		assertThat( map ).isNotNull();
 		assertThat( map.path() ).isEqualTo( System.getProperty( "user.dir" ) );
 		assertThat( map.external() ).isTrue();
@@ -44,15 +46,16 @@ class MappingsConfigTest {
 	@DisplayName( "Complex mapping with explicit external and placeholders" )
 	@Test
 	void testComplexMappingWithExternalAndPlaceholders() {
-		IStruct			mappings	= Struct.ofNonConcurrent( Key.mappings, Struct.ofNonConcurrent(
+		IStruct mappings = Struct.ofNonConcurrent( Key.mappings, Struct.ofNonConcurrent(
 		    Key.of( "/site" ), Struct.ofNonConcurrent(
 		        Key.of( "path" ), "${user-dir}/site",
 		        Key.of( "external" ), false
 		    )
 		) );
+		mappings = PlaceholderHelper.resolveAll( mappings );
 
-		Configuration	cfg			= new Configuration().process( mappings );
-		Mapping			map			= cfg.mappings.getAs( Mapping.class, Key.of( "/site/" ) );
+		Configuration	cfg	= new Configuration().process( mappings );
+		Mapping			map	= cfg.mappings.getAs( Mapping.class, Key.of( "/site/" ) );
 		assertThat( map ).isNotNull();
 		assertThat( map.path() ).isEqualTo( System.getProperty( "user.dir" ) + File.separator + "site" );
 		// external value should be false
