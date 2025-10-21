@@ -139,6 +139,7 @@ public class DocParser extends AbstractParser {
 		this.file = file;
 		DocLexer	lexer	= new DocLexer( CharStreams.fromStream( stream, StandardCharsets.UTF_8 ) );
 		DocGrammar	parser	= new DocGrammar( new CommonTokenStream( lexer ) );
+		parser.getInterpreter().setPredictionMode( org.antlr.v4.runtime.atn.PredictionMode.SLL );
 		addErrorListeners( lexer, parser );
 
 		return parser.documentation();

@@ -183,6 +183,9 @@ public abstract class Boxpiler implements IBoxpiler {
 		synchronized ( pools ) {
 			pools.forEach( ( k, v ) -> {
 				synchronized ( v ) {
+					v.forEach( ( k2, v2 ) -> {
+						v2.clearCacheClass();
+					} );
 					v.clear();
 				}
 			} );

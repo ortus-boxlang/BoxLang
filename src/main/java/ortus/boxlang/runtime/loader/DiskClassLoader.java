@@ -38,6 +38,7 @@ import org.objectweb.asm.tree.MethodNode;
 
 import ortus.boxlang.compiler.ClassInfo;
 import ortus.boxlang.compiler.IBoxpiler;
+import ortus.boxlang.runtime.types.util.ObjectRef;
 import ortus.boxlang.runtime.util.RegexBuilder;
 
 /**
@@ -260,13 +261,14 @@ public class DiskClassLoader extends URLClassLoader {
 	 */
 	@Override
 	protected synchronized Class<?> findClass( String name ) throws ClassNotFoundException {
-		Path		diskPath	= generateDiskPath( name );
+		Path			diskPath		= generateDiskPath( name );
 		// JIT compile
-		String		baseName	= IBoxpiler.getBaseFQN( name );
-		ClassInfo	classInfo	= boxPiler.getClassPool( classPoolName ).get( baseName );
+		String			baseName		= IBoxpiler.getBaseFQN( name );
+		ClassInfo		classInfo		= boxPiler.getClassPool( classPoolName ).get( baseName );
+		ObjectRef<Long>	lastModifiedRef	= ObjectRef.of( 0L );
 		// Do we need to compile the class?
 		// Pre-compiled source files will follow this path, but will be discovered as already compiled when we try to parse them
-		if ( needsCompile( classInfo, diskPath, name, baseName ) ) {
+		if ( needsCompile( classInfo, diskPath, name, baseName, lastModifiedRef ) ) {
 			// After this call, the class files will exist on disk, or will have been side-loaded into this classloader via the
 			// defineClass method (for pre-compiled source files)
 			boxPiler.compileClassInfo( classPoolName, baseName );
@@ -274,7 +276,7 @@ public class DiskClassLoader extends URLClassLoader {
 
 		// If there is no class file on disk, then we assume pre-compiled class bytes were already side loaded in, so we just get them
 		// TODO: Change this to use the same flag discussed in the needsCompile method
-		if ( !diskPath.toFile().exists() ) {
+		if ( name.equals( baseName ) && lastModifiedRef.get() == 0L ) {
 			return loadClass( name );
 		}
 
@@ -349,7 +351,7 @@ public class DiskClassLoader extends URLClassLoader {
 	 *
 	 * @see ClassInfo#lastModified()
 	 */
-	private boolean needsCompile( ClassInfo classInfo, Path diskPath, String name, String baseName ) {
+	private boolean needsCompile( ClassInfo classInfo, Path diskPath, String name, String baseName, ObjectRef<Long> lastModifiedRef ) {
 		// TODO: need to add some Modifiable flags to the classInfo object to track if it has been compiled or not
 		// and in what manner. For example, precompiled sources read directly into the class loader won't
 		// have a class file on disk and we should be able to just skip that check entirely if we know that.
@@ -360,16 +362,20 @@ public class DiskClassLoader extends URLClassLoader {
 		if ( !name.equals( baseName ) ) {
 			return false;
 		}
-		// There is a class file cached on disk
-		if ( hasClass( diskPath ) ) {
-			// If the class file is older than the source file
-			if ( classInfo != null && classInfo.lastModified() > 0 && classInfo.lastModified() != diskPath.toFile().lastModified() ) {
+
+		long diskClassLastModified = diskPath.toFile().lastModified();  // returns 0 if file doesn't exist
+		lastModifiedRef.set( diskClassLastModified );
+
+		// File is on disk
+		if ( diskClassLastModified > 0 ) {
+			// Trusted cache is disabled and the class on disk is old
+			if ( classInfo != null && classInfo.lastModified() > 0 && classInfo.lastModified() != diskClassLastModified ) {
 				return true;
 			}
 			return false;
 		}
 
-		// There is no class file cached on disk
+		// no file on disk
 		return true;
 	}
 
@@ -760,6 +766,15 @@ public class DiskClassLoader extends URLClassLoader {
 		ClassNode	classNode	= new ClassNode();
 		classReader.accept( classNode, 0 );
 		return classNode.name.replace( '/', '.' );
+	}
+
+	/**
+	 * Clears the in-memory cache of loaded classes.
+	 */
+	public void clearClassesCache() {
+		synchronized ( loadedClasses ) {
+			loadedClasses.clear();
+		}
 	}
 
 }
