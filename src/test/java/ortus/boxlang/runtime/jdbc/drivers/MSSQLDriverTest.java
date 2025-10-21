@@ -316,6 +316,43 @@ public class MSSQLDriverTest extends AbstractDriverTest {
 		assertThat( resultStruct.getAsNumber( Key.of( "executionTime" ) ).doubleValue() ).isGreaterThan( 0.0 );
 	}
 
+	@DisplayName( "It can call stored proc with cf_sql_ prefix" )
+	@Test
+	public void testCallStoredProcWithCfSqlPrefix() {
+		instance.executeSource(
+		    """
+		    <cfstoredproc procedure="testProcedure" datasource="MSSQLdatasource" result="variables.result" returncode="true">
+		    	<cfprocparam name="in1" value="123" type="in" cfsqltype="cf_sql_integer" />
+		    	<cfprocparam name="in2" value="hello" type="in" cfsqltype="cf_sql_nvarchar" />
+		    	<cfset theType = "cf_sql_integer" />
+		    	<cfprocparam name="inout1" value="10" type="inout" cfsqltype="#theType#" variable="inout1" />
+		    	<cfprocparam name="out1" type="out" cfsqltype="cf_sql_nvarchar" variable="out1" />
+		    	<cfprocresult name="resultSet1" resultSet=1 />
+		    	<cfprocresult name="resultSet2" resultSet=2 />
+		    </cfstoredproc>
+		         """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.get( "inout1" ) ).isEqualTo( 223 );
+		assertThat( variables.get( "out1" ) ).isEqualTo( "foo-123-hello" );
+
+		assertThat( variables.get( "resultSet1" ) ).isInstanceOf( Query.class );
+		Query rs1 = variables.getAsQuery( Key.of( "resultSet1" ) );
+		assertThat( rs1.size() ).isEqualTo( 2 );
+		assertThat( rs1.getRowAsStruct( 0 ).getAsString( Key.of( "col" ) ) ).isEqualTo( "foo" );
+		assertThat( rs1.getRowAsStruct( 1 ).getAsString( Key.of( "col" ) ) ).isEqualTo( "bar" );
+
+		assertThat( variables.get( "resultSet2" ) ).isInstanceOf( Query.class );
+		Query rs2 = variables.getAsQuery( Key.of( "resultSet2" ) );
+		assertThat( rs2.size() ).isEqualTo( 1 );
+		assertThat( rs2.getRowAsStruct( 0 ).getAsString( Key.of( "myColumn" ) ) ).isEqualTo( "second" );
+
+		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
+		IStruct resultStruct = variables.getAsStruct( result );
+
+		assertThat( resultStruct.get( "returnCode" ) ).isEqualTo( 42 );
+		assertThat( resultStruct.getAsNumber( Key.of( "executionTime" ) ).doubleValue() ).isGreaterThan( 0.0 );
+	}
+
 	@DisplayName( "It can call stored proc with max rows" )
 	@Test
 	public void testCallStoredProcWithMaxRows() {

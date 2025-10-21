@@ -244,8 +244,12 @@ public class StoredProc extends Component {
 					} else {
 						paramName = "";
 					}
-					System.out.println( "Procedure [" + procedureName + "] Setting IN param " + paramName + "in position "
-					    + ( i + 1 + paramOffset ) );
+					QueryColumnType typeInfo = QueryColumnType.fromSQLType( sqlType );
+					System.out.println(
+					    "Procedure [" + procedureName + "] Setting IN param " + paramName +
+					        "in position " + ( i + 1 + paramOffset ) +
+					        " (type: " + typeInfo + ")"
+					);
 				}
 				procedure.setObject( i + 1 + paramOffset, value, sqlType );
 			}
@@ -257,8 +261,9 @@ public class StoredProc extends Component {
 					} else {
 						paramName = "";
 					}
+					QueryColumnType typeInfo = QueryColumnType.fromSQLType( sqlType );
 					System.out.println( "Procedure [" + procedureName + "] Setting OUT param " + paramName + "in position "
-					    + ( i + 1 + paramOffset ) );
+					    + ( i + 1 + paramOffset ) + " (type: " + typeInfo + ")" );
 				}
 				procedure.registerOutParameter( i + 1 + paramOffset, sqlType );
 			}
