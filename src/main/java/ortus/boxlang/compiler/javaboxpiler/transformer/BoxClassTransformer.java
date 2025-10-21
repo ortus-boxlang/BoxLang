@@ -157,6 +157,10 @@ public class BoxClassTransformer extends AbstractTransformer {
 			public static boolean staticInitialized = false;
 			public static final Key name = ${boxFQN};
 
+			static {
+				BoxClassSupport.runStaticInitializer( ${className}::staticInitializer, ${className}.class, ${className}.staticScope, ${className}.path );
+			}
+
 			// Private instance fields
 			private VariablesScope variablesScope = new ClassVariablesScope(this);
 			private ThisScope thisScope = new ThisScope();

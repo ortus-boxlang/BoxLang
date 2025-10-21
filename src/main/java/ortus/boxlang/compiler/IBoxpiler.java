@@ -7,8 +7,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.compiler.parser.ParsingResult;
@@ -22,13 +20,11 @@ import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 public interface IBoxpiler {
 
-	static final Set<String>	RESERVED_WORDS	= new HashSet<>(
+	static final Set<String> RESERVED_WORDS = new HashSet<>(
 	    Arrays.asList( "abstract", "assert", "boolean", "break", "byte", "case", "catch", "char",
 	        "class", "const", "continue", "default", "do", "double", "else", "enum", "extends", "final", "finally", "float", "for", "goto", "if", "implements",
 	        "import", "instanceof", "int", "interface", "long", "native", "new", "package", "private", "protected", "public", "return", "short", "static",
 	        "strictfp", "super", "switch", "synchronized", "this", "throw", "throws", "transient", "try", "void", "volatile", "while" ) );
-
-	static final Pattern		FQNBasePattern	= Pattern.compile( "(.*?)(\\$Closure_.*|\\$Func_.*|\\$Lambda_.*)$" );
 
 	/**
 	 * Generate an MD5 hash.
@@ -82,12 +78,31 @@ public interface IBoxpiler {
 
 	SourceMap getSourceMapFromFQN( String FQN );
 
+	/**
+	 * Get the base FQN for an inner class
+	 * 
+	 * @param FQN The full FQN
+	 * 
+	 * @return The base FQN
+	 */
 	static String getBaseFQN( String FQN ) {
-		// If fqn ends with $Cloure_xxx or $Func_xxx, $Lambda_xxx, then we need to strip that off to get the original FQN
-		Matcher m = FQNBasePattern.matcher( FQN );
-		if ( m.find() ) {
-			FQN = m.group( 1 );
+		// If fqn ends with $Func_xxx, $Closure_xxx, or $Lambda_xxx, then we need to strip that off to get the original FQN
+		// Check $Func_ first as it's most common
+		int funcIndex = FQN.indexOf( "$Func_" );
+		if ( funcIndex != -1 ) {
+			return FQN.substring( 0, funcIndex );
 		}
+
+		int closureIndex = FQN.indexOf( "$Closure_" );
+		if ( closureIndex != -1 ) {
+			return FQN.substring( 0, closureIndex );
+		}
+
+		int lambdaIndex = FQN.indexOf( "$Lambda_" );
+		if ( lambdaIndex != -1 ) {
+			return FQN.substring( 0, lambdaIndex );
+		}
+
 		return FQN;
 	}
 

@@ -254,4 +254,13 @@ public record ClassInfo(
 		// This is loaded on demand for classes which require inspection on disk to decide the type (.cfc)
 		return Parser.detectFile( resolvedFilePath.absolutePath().toFile() );
 	}
+
+	/**
+	 * Clears the in-memory cache of loaded classes.
+	 */
+	public void clearCacheClass() {
+		if ( diskClassLoader[ 0 ] != null ) {
+			diskClassLoader[ 0 ].clearClassesCache();
+		}
+	}
 }
