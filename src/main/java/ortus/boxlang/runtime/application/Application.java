@@ -284,12 +284,8 @@ public class Application {
 				return this;
 			}
 
-			// Record startup
-			this.startTime			= Instant.now();
-			this.started			= true;
-
 			// Get the app listener (Application.bx)
-			this.startingListener	= context.getRequestContext().getApplicationListener();
+			this.startingListener = context.getRequestContext().getApplicationListener();
 			// Startup the class loader
 			startupClassLoaderPaths( context.getRequestContext() );
 			// Startup the caches
@@ -316,6 +312,10 @@ public class Application {
 
 			// Startup the schedulers so the application can use them
 			startupAppSchedulers( context.getRequestContext() );
+
+			// Record startup
+			this.startTime	= Instant.now();
+			this.started	= true;
 		}
 
 		logger.debug( "Application.start() - {}", this.name );
