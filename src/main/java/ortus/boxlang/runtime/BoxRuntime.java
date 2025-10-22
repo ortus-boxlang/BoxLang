@@ -317,7 +317,7 @@ public class BoxRuntime implements java.io.Closeable {
 	 * @param configPath The path to the configuration file to load as overrides,
 	 *                   this can be null
 	 */
-	private void loadConfiguration( Boolean debugMode, String configPath ) {
+	private void loadConfiguration( String configPath ) {
 		ConfigLoader loader = ConfigLoader.getInstance();
 		// 1. Load Core Configuration file : resources/config/boxlang.json
 		this.configuration = loader.loadCore();
@@ -348,7 +348,7 @@ public class BoxRuntime implements java.io.Closeable {
 		}
 
 		// Finally verify if we overwrote the debugmode in one of the configs above
-		if ( debugMode == null ) {
+		if ( this.debugMode == null ) {
 			this.debugMode = this.configuration.debugMode;
 			this.loggingService.getRootLogger().debug( "+ DebugMode detected in config, overriding to {}", this.debugMode );
 		} else {
@@ -420,12 +420,12 @@ public class BoxRuntime implements java.io.Closeable {
 	 *
 	 * @param debugMode True if the runtime should be started in debug mode
 	 */
-	private void startup( Boolean debugMode ) {
+	private void startup() {
 		// Internal timer
 		timerUtil.start( "runtime-startup" );
 
 		// Startup the Logging Service: Unique as it's not an IService
-		this.loggingService = LoggingService.getInstance( this ).configureBasic( debugMode );
+		this.loggingService = LoggingService.getInstance( this ).configureBasic( this.debugMode );
 
 		// Startup basic logging
 		// Here is where LogBack looks via ServiceLoader for a `Configurator` class
@@ -449,7 +449,7 @@ public class BoxRuntime implements java.io.Closeable {
 		this.classLocator		= ClassLocator.getInstance( this );
 
 		// Load the configurations and overrides
-		loadConfiguration( debugMode, this.configPath );
+		loadConfiguration( this.configPath );
 		// Anythying below might use configuration items
 
 		// Assign the logger now that we have a configuration and directory paths to create new loggers
@@ -629,7 +629,7 @@ public class BoxRuntime implements java.io.Closeable {
 				}
 			}
 			// We split in order to avoid circular dependencies on the runtime
-			instance.startup( debugMode );
+			instance.startup();
 		}
 		return instance;
 	}
