@@ -222,7 +222,7 @@
 											</td>
 											<td>
 												#writeDump(
-													var : dataProperty ?: null,
+													var : thisData ?: null,
 													top : isNull( top ) ? null : top - 1,
 													expand : variables?.expand,
 													showUDFs : variables?.showUDFs
