@@ -577,7 +577,7 @@ public class Application {
 	}
 
 	/**
-	 * Get the start time of the application
+	 * Get the start time of the application. This will be null if the application hasnt started, or is still in the process of starting.
 	 *
 	 * @return the application start time, or null if not started
 	 */
@@ -613,6 +613,11 @@ public class Application {
 
 		// If the duration is zero, then it never expires
 		if ( appDuration.isZero() ) {
+			return false;
+		}
+
+		// App is still starting up
+		if ( this.startTime == null ) {
 			return false;
 		}
 
