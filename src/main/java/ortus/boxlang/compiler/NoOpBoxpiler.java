@@ -19,6 +19,7 @@ package ortus.boxlang.compiler;
 
 import java.io.File;
 import java.io.PrintStream;
+import java.util.List;
 
 import ortus.boxlang.compiler.parser.ParsingResult;
 import ortus.boxlang.runtime.scopes.Key;
@@ -53,7 +54,7 @@ public class NoOpBoxpiler extends Boxpiler {
 	}
 
 	@Override
-	public void compileClassInfo( String classPoolName, String FQN ) {
+	public List<byte[]> compileClassInfo( String classPoolName, String FQN ) {
 		// logger.debug( "Java BoxPiler Compiling " + FQN );
 		ClassInfo classInfo = getClassPool( classPoolName ).get( FQN );
 		if ( classInfo == null ) {
@@ -63,8 +64,7 @@ public class NoOpBoxpiler extends Boxpiler {
 			File sourceFile = classInfo.resolvedFilePath().absolutePath().toFile();
 			// Check if the source file contains Java bytecode by reading the first few bytes
 			if ( diskClassUtil.isJavaBytecode( sourceFile ) ) {
-				classInfo.getClassLoader().defineClasses( FQN, sourceFile, classInfo );
-				return;
+				return classInfo.getClassLoader().defineClasses( FQN, sourceFile, classInfo );
 			}
 			throw new BoxRuntimeException( "NoOpBoxpiler does not support compiling source files." );
 		} else if ( classInfo.source() != null ) {

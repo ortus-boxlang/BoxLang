@@ -766,6 +766,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		statusText							= Key.of( "statusText" );
 	public static final Key		step								= Key.of( "step" );
 	public static final Key		storedproc							= Key.of( "storedproc" );
+	public static final Key		storeClassFilesOnDisk				= Key.of( "storeClassFilesOnDisk" );
 	public static final Key		stream								= Key.of( "stream" );
 	public static final Key		strict								= Key.of( "strict" );
 	public static final Key		strictMapping						= Key.of( "strictMapping" );

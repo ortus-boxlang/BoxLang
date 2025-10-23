@@ -428,8 +428,7 @@ public abstract class Boxpiler implements IBoxpiler {
 		}
 		var classPool = getClassPool( classInfo.classPoolName() );
 		ensureClassInfo( classPool, classInfo );
-		compileClassInfo( classInfo.classPoolName(), classInfo.fqn().toString() );
-		return diskClassUtil.readClassBytes( classInfo.classPoolName(), classInfo.fqn().toString() );
+		return compileClassInfo( classInfo.classPoolName(), classInfo.fqn().toString() );
 	}
 
 }

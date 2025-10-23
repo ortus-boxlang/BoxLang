@@ -106,7 +106,7 @@ public interface IBoxpiler {
 		return FQN;
 	}
 
-	void compileClassInfo( String classPoolName, String FQN );
+	List<byte[]> compileClassInfo( String classPoolName, String FQN );
 
 	void clearPagePool();
 

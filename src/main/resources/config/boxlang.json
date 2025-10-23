@@ -37,6 +37,9 @@
 	// This means that it will load a Boxlang class and never inspect the file again
 	// Turn this on for production, but off for development so you can see your changes
 	"trustedCache": false,
+	// Store the compiled class files on disk for reuse between restarts
+	// If disabled, the class files will be stored in memory only and lost on restart
+	"storeClassFilesOnDisk": true,
 	// The default timezone for the runtime; defaults to the JVM timezone if empty
 	// Please use the IANA timezone database values
 	"timezone": "",
