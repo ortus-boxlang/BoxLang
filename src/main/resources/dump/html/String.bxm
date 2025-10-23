@@ -1,9 +1,9 @@
 <bx:output>
 	<div class="bx-dump" title="#encodeForHTML( posInCode )#">
 		<span class="bx-dwSv">
-			<span class="bx-dhSv">
+			<span class="bx-dhSv" title="length: #var.len()#">
 				<bx:if label.len() >#label# - </bx:if>
-				String [#var.len()#]:
+				String:
 			</span>
 			<span>#encodeForHTML( var )#</span>
 		</span>

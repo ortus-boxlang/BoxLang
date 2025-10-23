@@ -649,4 +649,23 @@ public class DumpTest {
 		filePath.getParent().getParent().toFile().delete();
 	}
 
+	@DisplayName( "It shows properties from super class" )
+	@Test
+	public void testShowsPropertiesFromSuperClass() {
+		// @formatter:off
+			instance.executeSource(
+				"""
+					dump( var = new src.test.java.ortus.boxlang.runtime.components.system.DumpChild(), format = "html" );
+				""",
+				context );
+			// @formatter:on
+		String output = baos.toString();
+		assertThat( output ).contains( "childProperty" );
+		assertThat( output ).contains( "I am a child property" );
+
+		assertThat( output ).contains( "parentProperty" );
+		assertThat( output ).contains( "I am a parent property" );
+
+	}
+
 }

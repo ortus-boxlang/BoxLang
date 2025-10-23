@@ -4,7 +4,17 @@
 	variablesScope = var.$bx.getVariablesScope()
 	thisScope = var.$bx.getThisScope()
 	staticScope = var.$bx.getStaticScope()
-	sortedProperties = md.properties.toModifiable().sort( ( a, b ) => compare( a.name, b.name ) )
+	sortedProperties = md.properties.toModifiable()
+	thismd = md;
+	while( thismd.keyExists( "extends" ) && !isNull( thismd.extends ) && isStruct( thismd.extends ) && structCount( thismd.extends ) ){
+		thismd = thismd.extends;
+		thismd.properties.each( ( prop ) => {
+			if( sortedProperties.filter( ( p ) => p.name == prop.name ).len() == 0 ){
+				sortedProperties.append( prop );
+			}
+		} );
+	}
+	sortedProperties = sortedProperties.sort( ( a, b ) => compare( a.name, b.name ) )
 	expandRoot = expand ?: true;
 </bx:script>
 <bx:output>
@@ -146,7 +156,7 @@
 					</th>
 					<td>
 						<div class="bx-onoff">
-							<bx:if structIsEmpty(sortedProperties)>
+							<bx:if isEmpty(sortedProperties)>
 								<p><em>None</em></p>
 							<bx:else>
 								<table class="bx-table-default">
@@ -195,7 +205,7 @@
 					</th>
 					<td>
 						<div class="bx-onoff">
-							<bx:if structIsEmpty(thisScope)>
+							<bx:if thisScope.valueArray().filter( ( v ) => !isNull( v ) && !(v instanceOf "ortus.boxlang.runtime.types.Function") ).len() == 0 >
 								<p><em>None</em></p>
 							<bx:else>
 								<table class="bx-table-default">
@@ -303,7 +313,7 @@
 						</th>
 						<td>
 							<div class="bx-onoff">
-								<bx:if structIsEmpty(thisScope)>
+								<bx:if thisScope.valueArray().filter( ( v ) => !isNull( v ) && v instanceOf "ortus.boxlang.runtime.types.Function" ).len() == 0 >
 									<p><em>None</em></p>
 								<bx:else>
 									<table class="bx-table-default">
@@ -358,7 +368,7 @@
 						</th>
 						<td>
 							<div class="bx-onoff">
-								<bx:if structIsEmpty(variablesScope)>
+								<bx:if variablesScope.valueArray().filter( ( v ) => !isNull( v ) && v instanceOf "ortus.boxlang.runtime.types.Function" ).len() == 0 >
 									<p><em>None</em></p>
 								<bx:else>
 									<table class="bx-table-default">

@@ -1,0 +1,3 @@
+class {
+	property name="parentProperty" default="I am a parent property";
+}

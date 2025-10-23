@@ -1,0 +1,3 @@
+class extends="dumpParent" {
+	property name="childProperty" default="I am a child property";
+}
