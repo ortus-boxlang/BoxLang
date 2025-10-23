@@ -425,7 +425,7 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 
 		// Timezone override
 		String appTimezone = appSettings.getAsString( Key.timezone );
-		if ( getTimezone() == null && appTimezone != null && !appTimezone.isEmpty() ) {
+		if ( appTimezone != null && !appTimezone.isEmpty() ) {
 			setTimezone( LocalizationUtil.parseZoneId( appTimezone ) );
 		}
 
