@@ -74,6 +74,18 @@ public class ApplicationLookups {
 	}
 
 	@Test
+	public void testTimezoneInAppClass() {
+		context = getContext( "src/test/java/TestCases/applications/timezoneAppClass", "index.bxm" );
+		instance.executeTemplate(
+		    "index.bxm",
+		    context
+		);
+
+		IScope request = context.getScopeNearby( RequestScope.name );
+		assertThat( request.get( "timezone" ) ).isEqualTo( "UTC" );
+	}
+
+	@Test
 	public void testAppTemplateInEmptySub() {
 		context = getContext( "src/test/java/TestCases/applications/appTemplate/", "sub1/index.bxm" );
 		instance.executeTemplate(

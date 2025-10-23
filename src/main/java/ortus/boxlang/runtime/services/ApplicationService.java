@@ -316,6 +316,7 @@ public class ApplicationService extends BaseService {
 
 		// Now that the settings are in place, actually define the app (and possibly
 		// session) in this request
+		context.setTimezone( null ); // reset any inherited timezone before defining the application
 		listener.defineApplication();
 
 		announce(
