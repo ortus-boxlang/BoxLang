@@ -134,6 +134,11 @@ public class Configuration implements IConfigSegment {
 	public Boolean									trustedCache					= false;
 
 	/**
+	 * Store the compiled class files on disk for reuse between restarts
+	 */
+	public Boolean									storeClassFilesOnDisk			= true;
+
+	/**
 	 * The Timezone to use for the runtime;
 	 * Uses the Java Timezone format: {@code America/New_York}
 	 * Uses the default system timezone if not set
@@ -379,6 +384,11 @@ public class Configuration implements IConfigSegment {
 		// Trusted Cache
 		if ( config.containsKey( Key.trustedCache ) ) {
 			this.trustedCache = BooleanCaster.cast( config.get( Key.trustedCache ) );
+		}
+
+		// Store Class Files on Disk
+		if ( config.containsKey( Key.storeClassFilesOnDisk ) ) {
+			this.storeClassFilesOnDisk = BooleanCaster.cast( config.get( Key.storeClassFilesOnDisk ) );
 		}
 
 		// Compiler
@@ -1056,6 +1066,7 @@ public class Configuration implements IConfigSegment {
 		    Key.scheduler, this.scheduler.asStruct(),
 		    Key.timezone, this.timezone,
 		    Key.trustedCache, this.trustedCache,
+		    Key.storeClassFilesOnDisk, this.storeClassFilesOnDisk,
 		    Key.useHighPrecisionMath, this.useHighPrecisionMath,
 		    Key.maxTrackedCompletedThreads, this.maxTrackedCompletedThreads,
 		    Key.validExtensions, Array.fromSet( getValidExtensions() ),

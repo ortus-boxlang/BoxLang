@@ -22,6 +22,8 @@ import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
@@ -190,6 +192,11 @@ public class DiskClassLoader extends URLClassLoader {
 	 */
 	@Override
 	public Class<?> loadClass( String name ) throws ClassNotFoundException {
+		if ( !name.startsWith( "boxgenerated." ) ) {
+			// Delegate to parent for non-BoxLang classes
+			return super.loadClass( name );
+		}
+
 		// check local cache
 		java.lang.ref.WeakReference<Class<?>> ref = loadedClasses.get( name );
 		if ( ref != null ) {
@@ -214,6 +221,21 @@ public class DiskClassLoader extends URLClassLoader {
 			var clazz = super.loadClass( name );
 			loadedClasses.put( name, new java.lang.ref.WeakReference<>( clazz ) );
 			return clazz;
+		}
+	}
+
+	/**
+	 * Side-load in a class which we have compiled
+	 * 
+	 * @param name  The fully qualified name of the class
+	 * @param bytes The bytecode of the class
+	 */
+	public void defineClass( String name, byte[] bytes ) {
+		// Define it
+		Class<?> clazz = defineClass( name, bytes, 0, bytes.length );
+		// Add it to our cache
+		synchronized ( loadedClasses ) {
+			loadedClasses.put( name, new java.lang.ref.WeakReference<>( clazz ) );
 		}
 	}
 
@@ -272,6 +294,7 @@ public class DiskClassLoader extends URLClassLoader {
 			// After this call, the class files will exist on disk, or will have been side-loaded into this classloader via the
 			// defineClass method (for pre-compiled source files)
 			boxPiler.compileClassInfo( classPoolName, baseName );
+			return loadClass( name );
 		}
 
 		// If there is no class file on disk, then we assume pre-compiled class bytes were already side loaded in, so we just get them
@@ -547,7 +570,9 @@ public class DiskClassLoader extends URLClassLoader {
 	 *
 	 * @see #renameClassAndReferences(byte[], String, String, ClassInfo, boolean)
 	 */
-	public void defineClasses( String fqn, File sourceFile, ClassInfo classInfo ) {
+	public List<byte[]> defineClasses( String fqn, File sourceFile, ClassInfo classInfo ) {
+		List<byte[]> classes = new ArrayList<>();
+		classes.add( fqn.getBytes() );
 		try {
 			byte[]		fileBytes	= Files.readAllBytes( sourceFile.toPath() );
 			ByteBuffer	buffer		= ByteBuffer.wrap( fileBytes );
@@ -572,12 +597,13 @@ public class DiskClassLoader extends URLClassLoader {
 				buffer.get( classBytes );
 
 				// Use ASM to rewrite the class name and references
-				byte[] newClassBytes = renameClassAndReferences( classBytes, oldInternalName, newInternalName, classInfo, first );
-
-				defineClass( null, newClassBytes, 0, newClassBytes.length );
+				ObjectRef<String>	newName			= ObjectRef.of( "" );
+				byte[]				newClassBytes	= renameClassAndReferences( classBytes, oldInternalName, newInternalName, classInfo, first, newName );
+				classes.add( newClassBytes );
+				defineClass( newName.get().replace( '/', '.' ), newClassBytes );
 				first = false;
 			}
-
+			return classes;
 		} catch ( IOException e ) {
 			throw new RuntimeException( "Failed to read file", e );
 		}
@@ -652,7 +678,8 @@ public class DiskClassLoader extends URLClassLoader {
 	 * @see org.objectweb.asm.ClassWriter
 	 * @see org.objectweb.asm.commons.ClassRemapper
 	 */
-	private byte[] renameClassAndReferences( byte[] classBytes, String oldInternalName, String newInternalName, ClassInfo classInfo, boolean outerClass ) {
+	private byte[] renameClassAndReferences( byte[] classBytes, String oldInternalName, String newInternalName, ClassInfo classInfo, boolean outerClass,
+	    ObjectRef<String> newName ) {
 		String		boxFQN			= classInfo.boxFqn().toString();
 		String		mappingName		= classInfo.resolvedFilePath().mappingName();
 		String		mappingPath		= classInfo.resolvedFilePath().mappingPath();
@@ -740,6 +767,7 @@ public class DiskClassLoader extends URLClassLoader {
 
 		ClassWriter cw = new ClassWriter( 0 );
 		remappedNode.accept( cw );
+		newName.set( remappedNode.name );
 		return cw.toByteArray();
 	}
 
