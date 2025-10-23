@@ -24,8 +24,10 @@ import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.Struct;
 
 class BLCollectorTest {
@@ -75,6 +77,32 @@ class BLCollectorTest {
 		assertThat( result.get( "brad" ) ).isEqualTo( "wood" );
 		assertThat( result.get( "luis" ) ).isEqualTo( "majano" );
 		assertThat( result.get( "jon" ) ).isEqualTo( "clausen" );
+
+	}
+
+	@Test
+	void testToQueryType() {
+
+		// Create a template Query with columns defined
+		var				templateQuery	= new ortus.boxlang.runtime.types.Query()
+		    .addColumn( Key.of( "id" ), QueryColumnType.INTEGER )
+		    .addColumn( Key.of( "name" ), QueryColumnType.VARCHAR );
+
+		// Create a stream of Structs
+		Stream<IStruct>	structStream	= Stream.of(
+		    Struct.of( "id", 1, "name", "brad" ),
+		    Struct.of( "id", 2, "name", "luis" ),
+		    Struct.of( "id", 3, "name", "jon" )
+		);
+
+		// Collect to a Query using BLCollector with the template query
+		var				result			= structStream.collect( BLCollector.toQuery( templateQuery ) );
+
+		assertThat( result.size() ).isEqualTo( 3 );
+		assertThat( result.getColumnNames() ).containsExactly( "id", "name" ).inOrder();
+		assertThat( result.getCell( Key._NAME, 0 ) ).isEqualTo( "brad" );
+		assertThat( result.getCell( Key._NAME, 1 ) ).isEqualTo( "luis" );
+		assertThat( result.getCell( Key._NAME, 2 ) ).isEqualTo( "jon" );
 
 	}
 
