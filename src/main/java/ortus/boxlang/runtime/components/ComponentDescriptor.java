@@ -178,8 +178,8 @@ public class ComponentDescriptor {
 					this.componentInstance = ( ( Component ) DynamicObject.of( this.componentClass )
 					    .invokeConstructor( ( IBoxContext ) null, new Object[] {} )
 					    .getTargetInstance() )
-					        .setName( name )
-					        .setIgnoreEnableOutputOnly( ignoreEnableOutputOnly );
+					    .setName( name )
+					    .setIgnoreEnableOutputOnly( ignoreEnableOutputOnly );
 
 					interceptorService.announce(
 					    BoxEvent.ON_COMPONENT_INSTANCE,
