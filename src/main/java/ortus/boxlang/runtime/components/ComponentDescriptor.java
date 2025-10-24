@@ -55,6 +55,11 @@ public class ComponentDescriptor {
 	public Boolean					requiresBody;
 
 	/**
+	 * Ignores setting enableOutputOnly
+	 */
+	public boolean					ignoreEnableOutputOnly;
+
+	/**
 	 * component class
 	 */
 	public Class<?>					componentClass;
@@ -76,12 +81,17 @@ public class ComponentDescriptor {
 
 	/**
 	 * Constructor for a component
+	 * 
+	 * This constructor is deprecated, use the one with ignoreEnableOutputOnly
 	 *
 	 * @param name              The name of the component
 	 * @param componentClass    The class of the component
 	 * @param module            The module name, or null if core
 	 * @param componentInstance The component instance or null by default
+	 * @param allowsBody        Whether the component allows a body
+	 * @param requiresBody      Whether the component requires a body
 	 */
+	@Deprecated
 	public ComponentDescriptor(
 	    Key name,
 	    Class<?> componentClass,
@@ -90,12 +100,36 @@ public class ComponentDescriptor {
 	    Component componentInstance,
 	    Boolean allowsBody,
 	    Boolean requiresBody ) {
-		this.name				= name;
-		this.componentClass		= componentClass;
-		this.module				= module;
-		this.componentInstance	= componentInstance;
-		this.allowsBody			= allowsBody;
-		this.requiresBody		= requiresBody;
+		this( name, componentClass, module, namespace, componentInstance, allowsBody, requiresBody, false );
+	}
+
+	/**
+	 * Constructor for a component
+	 *
+	 * @param name                   The name of the component
+	 * @param componentClass         The class of the component
+	 * @param module                 The module name, or null if core
+	 * @param componentInstance      The component instance or null by default
+	 * @param allowsBody             Whether the component allows a body
+	 * @param requiresBody           Whether the component requires a body
+	 * @param ignoreEnableOutputOnly Whether to ignore setting enableOutputOnly
+	 */
+	public ComponentDescriptor(
+	    Key name,
+	    Class<?> componentClass,
+	    String module,
+	    String namespace,
+	    Component componentInstance,
+	    Boolean allowsBody,
+	    Boolean requiresBody,
+	    boolean ignoreEnableOutputOnly ) {
+		this.name					= name;
+		this.componentClass			= componentClass;
+		this.module					= module;
+		this.componentInstance		= componentInstance;
+		this.allowsBody				= allowsBody;
+		this.requiresBody			= requiresBody;
+		this.ignoreEnableOutputOnly	= ignoreEnableOutputOnly;
 	}
 
 	/**
@@ -122,6 +156,15 @@ public class ComponentDescriptor {
 	}
 
 	/**
+	 * Ignore enable output only setting
+	 * 
+	 * @return True to ignore, false otherwise
+	 */
+	public boolean ignoreEnableOutputOnly() {
+		return ignoreEnableOutputOnly;
+	}
+
+	/**
 	 * Get the component instance for this descriptor and lazily create it if needed
 	 *
 	 * @return The component instance
@@ -135,7 +178,8 @@ public class ComponentDescriptor {
 					this.componentInstance = ( ( Component ) DynamicObject.of( this.componentClass )
 					    .invokeConstructor( ( IBoxContext ) null, new Object[] {} )
 					    .getTargetInstance() )
-					    .setName( name );
+					        .setName( name )
+					        .setIgnoreEnableOutputOnly( ignoreEnableOutputOnly );
 
 					interceptorService.announce(
 					    BoxEvent.ON_COMPONENT_INSTANCE,

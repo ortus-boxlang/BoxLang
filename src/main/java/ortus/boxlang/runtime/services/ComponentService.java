@@ -277,16 +277,18 @@ public class ComponentService extends BaseService {
 		String			alias					= "";
 		boolean			allowsBody				= false;
 		boolean			requiresBody			= false;
+		boolean			ignoreEnableOutputOnly	= false;
 		Key				className				= Key.of( componentClass.getSimpleName() );
 
 		// Parse the annotations
 		BoxComponent[]	commponentAnnotations	= componentClass.getAnnotationsByType( BoxComponent.class );
 
 		for ( BoxComponent annotation : commponentAnnotations ) {
-			customName		= annotation.name().length() > 0 ? Key.of( annotation.name() ) : className;
-			allowsBody		= annotation.allowsBody();
-			requiresBody	= annotation.requiresBody();
-			alias			= annotation.alias();
+			customName				= annotation.name().length() > 0 ? Key.of( annotation.name() ) : className;
+			allowsBody				= annotation.allowsBody();
+			requiresBody			= annotation.requiresBody();
+			alias					= annotation.alias();
+			ignoreEnableOutputOnly	= annotation.ignoreEnableOutputOnly();
 
 			ComponentDescriptor descriptor = new ComponentDescriptor(
 			    // Use the annotation name or the class name
@@ -296,7 +298,8 @@ public class ComponentService extends BaseService {
 			    null,
 			    component,
 			    allowsBody,
-			    requiresBody
+			    requiresBody,
+			    ignoreEnableOutputOnly
 			);
 
 			// Register normal first

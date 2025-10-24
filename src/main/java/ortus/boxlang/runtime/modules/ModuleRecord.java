@@ -979,7 +979,8 @@ public class ModuleRecord {
 		    null,
 		    oComponentProxy,
 		    BooleanCaster.cast( annotations.getOrDefault( "AllowsBody", false ) ),
-		    BooleanCaster.cast( annotations.getOrDefault( "RequiresBody", false ) ) );
+		    BooleanCaster.cast( annotations.getOrDefault( "RequiresBody", false ) ),
+		    BooleanCaster.cast( annotations.getOrDefault( "ignoreEnableOutputOnly", false ) ) );
 		Key[]				componentAliases	= buildAnnotationAliases( oComponent, className, Key.boxComponent );
 
 		// Register all components with their aliases
