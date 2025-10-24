@@ -2140,4 +2140,13 @@ public class ClassTest {
 
 	}
 
+	@Test
+	public void testImportKeyClass() {
+		instance.executeSource(
+		    """
+		    result = new src.test.java.TestCases.phase3.ImportKeyClass().main();
+		       """,
+		    context );
+	}
+
 }

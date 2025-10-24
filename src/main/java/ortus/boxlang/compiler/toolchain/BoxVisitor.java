@@ -308,6 +308,14 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 
 	@Override
 	public BoxNode visitStatement( StatementContext ctx ) {
+
+		if ( tools.isClassOrInterface() && ctx.importStatement() != null ) {
+			var pos = tools.getPosition( ctx );
+			// import statements are not allowed here
+			tools.reportError( "Import statements are not allowed here.  They must be at the top of the class.", pos );
+			new BoxStatementError( pos, tools.getSourceText( ctx ) );
+		}
+
 		List<Function<BoxGrammar.StatementContext, ParserRuleContext>> functions = Arrays.asList( StatementContext::importStatement,
 		    BoxGrammar.StatementContext::do_, StatementContext::for_, StatementContext::if_, BoxGrammar.StatementContext::switch_,
 		    StatementContext::try_, StatementContext::while_, BoxGrammar.StatementContext::expressionStatement, StatementContext::include,

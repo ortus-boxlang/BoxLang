@@ -457,20 +457,6 @@ public class BoxClassTransformer {
 		for ( BoxImport statement : boxClass.getImports() ) {
 			imports.add( transpiler.transform( statement, TransformerContext.NONE, ReturnValueContext.EMPTY ) );
 		}
-		List<AbstractInsnNode> importNodes = AsmHelper.array( Type.getType( ImportDefinition.class ), Stream.concat(
-		    imports.stream(),
-		    transpiler.getImports().stream().map( raw -> {
-			    List<AbstractInsnNode> nodes = new ArrayList<>();
-			    nodes.addAll( raw );
-			    nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
-			        Type.getInternalName( ImportDefinition.class ),
-			        "parse",
-			        Type.getMethodDescriptor( Type.getType( ImportDefinition.class ), Type.getType( String.class ) ),
-			        false ) );
-			    return nodes;
-		    } )
-		).filter( l -> l.size() > 0 ).toList() );
-		// end import node setup
 
 		AsmHelper.methodWithContextAndClassLocator( classNode, "_pseudoConstructor", Type.getType( IBoxContext.class ), Type.VOID_TYPE, false, transpiler,
 		    false,
@@ -502,6 +488,21 @@ public class BoxClassTransformer {
 			    return psuedoBody;
 		    }
 		);
+
+		List<AbstractInsnNode> importNodes = AsmHelper.array( Type.getType( ImportDefinition.class ), Stream.concat(
+		    imports.stream(),
+		    transpiler.getImports().stream().map( raw -> {
+			    List<AbstractInsnNode> nodes = new ArrayList<>();
+			    nodes.addAll( raw );
+			    nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+			        Type.getInternalName( ImportDefinition.class ),
+			        "parse",
+			        Type.getMethodDescriptor( Type.getType( ImportDefinition.class ), Type.getType( String.class ) ),
+			        false ) );
+			    return nodes;
+		    } )
+		).filter( l -> l.size() > 0 ).toList() );
+		// end import node setup
 
 		AsmHelper.methodWithContextAndClassLocator( classNode, "staticInitializer", Type.getType( IBoxContext.class ), Type.VOID_TYPE, true, transpiler, false,
 		    () -> {
