@@ -60,6 +60,11 @@ public class ComponentDescriptor {
 	public boolean					ignoreEnableOutputOnly;
 
 	/**
+	 * Automatically evaluate interpolated expressions in component body
+	 */
+	public boolean					autoEvaluateBodyExpressions;
+
+	/**
 	 * component class
 	 */
 	public Class<?>					componentClass;
@@ -82,7 +87,7 @@ public class ComponentDescriptor {
 	/**
 	 * Constructor for a component
 	 * 
-	 * This constructor is deprecated, use the one with ignoreEnableOutputOnly
+	 * This constructor is deprecated, use the one with ignoreEnableOutputOnly and autoEvaluateBodyExpressions
 	 *
 	 * @param name              The name of the component
 	 * @param componentClass    The class of the component
@@ -100,19 +105,20 @@ public class ComponentDescriptor {
 	    Component componentInstance,
 	    Boolean allowsBody,
 	    Boolean requiresBody ) {
-		this( name, componentClass, module, namespace, componentInstance, allowsBody, requiresBody, false );
+		this( name, componentClass, module, namespace, componentInstance, allowsBody, requiresBody, false, false );
 	}
 
 	/**
 	 * Constructor for a component
 	 *
-	 * @param name                   The name of the component
-	 * @param componentClass         The class of the component
-	 * @param module                 The module name, or null if core
-	 * @param componentInstance      The component instance or null by default
-	 * @param allowsBody             Whether the component allows a body
-	 * @param requiresBody           Whether the component requires a body
-	 * @param ignoreEnableOutputOnly Whether to ignore setting enableOutputOnly
+	 * @param name                        The name of the component
+	 * @param componentClass              The class of the component
+	 * @param module                      The module name, or null if core
+	 * @param componentInstance           The component instance or null by default
+	 * @param allowsBody                  Whether the component allows a body
+	 * @param requiresBody                Whether the component requires a body
+	 * @param ignoreEnableOutputOnly      Whether to ignore setting enableOutputOnly
+	 * @param autoEvaluateBodyExpressions Automatically evaluate interpolated expressions in component body
 	 */
 	public ComponentDescriptor(
 	    Key name,
@@ -122,14 +128,16 @@ public class ComponentDescriptor {
 	    Component componentInstance,
 	    Boolean allowsBody,
 	    Boolean requiresBody,
-	    boolean ignoreEnableOutputOnly ) {
-		this.name					= name;
-		this.componentClass			= componentClass;
-		this.module					= module;
-		this.componentInstance		= componentInstance;
-		this.allowsBody				= allowsBody;
-		this.requiresBody			= requiresBody;
-		this.ignoreEnableOutputOnly	= ignoreEnableOutputOnly;
+	    boolean ignoreEnableOutputOnly,
+	    boolean autoEvaluateBodyExpressions ) {
+		this.name							= name;
+		this.componentClass					= componentClass;
+		this.module							= module;
+		this.componentInstance				= componentInstance;
+		this.allowsBody						= allowsBody;
+		this.requiresBody					= requiresBody;
+		this.ignoreEnableOutputOnly			= ignoreEnableOutputOnly;
+		this.autoEvaluateBodyExpressions	= autoEvaluateBodyExpressions;
 	}
 
 	/**
@@ -162,6 +170,15 @@ public class ComponentDescriptor {
 	 */
 	public boolean ignoreEnableOutputOnly() {
 		return ignoreEnableOutputOnly;
+	}
+
+	/**
+	 * Auto evaluate body expressions
+	 * 
+	 * @return True to auto evaluate, false otherwise
+	 */
+	public boolean autoEvaluateBodyExpressions() {
+		return autoEvaluateBodyExpressions;
 	}
 
 	/**

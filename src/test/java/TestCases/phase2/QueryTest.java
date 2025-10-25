@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -286,6 +287,42 @@ public class QueryTest {
 		assertThat( variables.getAsArray( Key.of( "valList" ) ).size() ).isEqualTo( 2 );
 		assertThat( variables.getAsArray( Key.of( "valList" ) ).get( 0 ) ).isEqualTo( "brad" );
 		assertThat( variables.getAsArray( Key.of( "valList" ) ).get( 1 ) ).isEqualTo( "luis" );
+	}
+
+	@Test
+	public void testEvalExpressionsWithoutOutputCF() {
+
+		instance.executeSource(
+		    """
+		    <cfset myQry = queryNew( "col,col2", "numeric,varchar", [ [ 1, "brad,luis" ], [ 2, "" ], [ 3, "" ] ] )>
+		    <cfset id = "1">
+		    <cfsetting enableoutputonly="true" />
+		    <cfquery name="result"  dbtype="query">
+		    	select *
+		    	from myQry
+		    	where col = #id#
+		    </cfquery>
+		           """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.getAsQuery( result ).size() ).isEqualTo( 1 );
+	}
+
+	@Test
+	public void testEvalExpressionsWithoutOutput() {
+
+		instance.executeSource(
+		    """
+		    <bx:set myQry = queryNew( "col,col2", "numeric,varchar", [ [ 1, "brad,luis" ], [ 2, "" ], [ 3, "" ] ] )>
+		    <bx:set id = "1">
+		    <bx:setting enableoutputonly="true" />
+		    <bx:query name="result"  dbtype="query">
+		    	select *
+		    	from myQry
+		    	where col = #id#
+		    </bx:query>
+		           """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.getAsQuery( result ).size() ).isEqualTo( 1 );
 	}
 
 }

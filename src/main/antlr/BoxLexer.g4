@@ -27,11 +27,12 @@ options {
 	*/
 	protected java.util.ArrayDeque<int[]> expressionCountStack = new java.util.ArrayDeque<int[]>();
 
+	private ortus.boxlang.runtime.services.ComponentService componentService = ortus.boxlang.runtime.BoxRuntime.getInstance().getComponentService();
+
 	/**
-	 * Are we inside of a cfquery body (changes the parsing modes due to the implicit output component)
+	 * Are we inside of an outputting body (changes the parsing modes due to the implicit output component)
 	 */
-	protected boolean					isQuery							= false;
-	
+	protected boolean				thisComponentIsOutputting							= false;
 
 	public void pushMode(int m) {
 		if( m == DEFAULT_SCRIPT_MODE ) {
@@ -144,11 +145,24 @@ options {
 
 	public void reset() {
 		expressionCountStack.clear();
+		thisComponentIsOutputting = false;
 		super.reset();
 	}
 
 	private boolean isExpressionComplete() {
 		return getParenCount() == 0 && getBraceCount() == 0 && getBracketCount() == 0;
+	}
+
+	/**
+	 * Check if the next characters are the start of a component call
+	 * 
+	 * @param text the text to check
+	 * 
+	 * @return true if the next characters are a component call
+	 */
+	protected boolean isOutputtingComponent( String text ) {
+		ortus.boxlang.runtime.components.ComponentDescriptor comp = componentService.getComponent( text );
+		return comp != null && comp.requiresBody() && comp.autoEvaluateBodyExpressions();
 	}
 
 }
@@ -192,8 +206,8 @@ ISTEMPLATE : '__template__' -> pushMode(DEFAULT_TEMPLATE_MODE), channel(HIDDEN);
 mode DEFAULT_SCRIPT_MODE;
 
 COMPONENT_SLASH_CLOSE99:
-    '/>' {isExpressionComplete() && _modeStack.contains(TEMPLATE_EXPRESSION_MODE_COMPONENT)}? -> type(COMPONENT_SLASH_CLOSE), popMode, popMode, popMode
-        , popMode, popMode
+    '/' COMPONENT_WHITESPACE_OUTPUT3* '>' {isExpressionComplete() && _modeStack.contains(TEMPLATE_EXPRESSION_MODE_COMPONENT)}? -> type(
+        COMPONENT_SLASH_CLOSE), popMode, popMode, popMode, popMode, popMode
 ;
 
 COMPONENT_CLOSE99:
@@ -505,10 +519,6 @@ mode TEMPLATE_COMPONENT_NAME_MODE;
 // dedicated AST node for. All other components will be handled generically
 TEMPLATE_FUNCTION : 'function' -> pushMode( TEMPLATE_COMPONENT_MODE );
 TEMPLATE_ARGUMENT : 'argument' -> pushMode( TEMPLATE_COMPONENT_MODE );
-// bx:query doesn't have a dedicated AST node, but we need to pretend we're in a bx:output when we enter a bx:query.
-TEMPLATE_QUERY:
-    'query' {isQuery=true;} -> type(COMPONENT_NAME), pushMode( TEMPLATE_COMPONENT_MODE )
-;
 
 // return may or may not have an expression, so eat any leading whitespace now so it doesn't give us an expression part that's just a space
 TEMPLATE_RETURN:
@@ -542,6 +552,12 @@ TEMPLATE_SWITCH      : 'switch'      -> pushMode( TEMPLATE_COMPONENT_MODE );
 TEMPLATE_CASE        : 'case'        -> pushMode( TEMPLATE_COMPONENT_MODE );
 TEMPLATE_DEFAULTCASE : 'defaultcase' -> pushMode( TEMPLATE_COMPONENT_MODE );
 
+// outputting tags have an implicit output and evaluate expressions
+TEMPLATE_OUTPUTTING_COMPONENT_NAME:
+    COMPONENT_NameStartChar COMPONENT_NameChar* { isOutputtingComponent( getText() ) }? {thisComponentIsOutputting=true; } -> type(COMPONENT_NAME),
+        pushMode( TEMPLATE_COMPONENT_MODE )
+;
+
 COMPONENT_NAME: COMPONENT_NameStartChar COMPONENT_NameChar* -> pushMode( TEMPLATE_COMPONENT_MODE );
 
 fragment TEMPLATE_DIGIT: [0-9];
@@ -558,8 +574,10 @@ COMMENT_START1:
     '<!---' -> pushMode(TEMPLATE_COMMENT_QUIET), channel(HIDDEN), type(COMMENT_START)
 ;
 
+// If we're coming out of the end of an openening component which is outputting, the push extra modes
 COMPONENT_CLOSE4:
-    {isQuery}? '>' -> popMode, popMode, popMode, pushMode(TEMPLATE_OUTPUT_MODE), pushMode(DEFAULT_TEMPLATE_MODE), type(COMPONENT_CLOSE)
+    {thisComponentIsOutputting}? '>' -> popMode, popMode, popMode, pushMode(TEMPLATE_OUTPUT_MODE), pushMode(DEFAULT_TEMPLATE_MODE), type(
+        COMPONENT_CLOSE)
 ;
 
 COMPONENT_CLOSE: '>' -> popMode, popMode, popMode;
@@ -603,8 +621,6 @@ mode TEMPLATE_END_COMPONENT;
 
 TEMPLATE_IF2       : 'if'       -> type(TEMPLATE_IF);
 TEMPLATE_FUNCTION2 : 'function' -> type(TEMPLATE_FUNCTION);
-// If we're ending a bx:query, we need to use the special exit below with the extra pop out of output mode
-TEMPLATE_QUERY2: 'query' {isQuery=true;} -> type(COMPONENT_NAME);
 
 // popping back to: POSSIBLE_COMPONENT -> DEFAULT_MODE -> OUTPUT_MODE -> COMPONENT -> POSSIBLE_COMPONENT -> DEFAULT_MODE
 OUTPUT_END:
@@ -627,9 +643,17 @@ TEMPLATE_DEFAULTCASE2 : 'defaultcase' -> type(TEMPLATE_DEFAULTCASE);
 
 COMPONENT_WHITESPACE_OUTPUT3: [ \t\r\n] -> skip;
 
+// If this is an ending tag for an outputting component, make note of that
+TEMPLATE_OUTPUTTING_COMPONENT_NAME2:
+    COMPONENT_NameStartChar COMPONENT_NameChar* { isOutputtingComponent( getText() )}? {thisComponentIsOutputting=true;} -> type(COMPONENT_NAME)
+;
+
 COMPONENT_NAME2: COMPONENT_NameStartChar COMPONENT_NameChar* -> type(COMPONENT_NAME);
-// If we're coming out of a bx:query, then pop 2 extra times to get out of the output mode and additional default template mode
-COMPONENT_CLOSE2: '>' {isQuery}? -> popMode, popMode, popMode, popMode, type(COMPONENT_CLOSE);
+
+// If we're coming out of an outputting component, then pop 2 extra times to get out of the output mode and additional default template mode.  Also decrement our counter as this is the end tag
+COMPONENT_CLOSE2:
+    '>' {thisComponentIsOutputting}? -> popMode, popMode, popMode, popMode, type(COMPONENT_CLOSE)
+;
 // all other ending tags
 COMPONENT_CLOSE23: '>' -> popMode, popMode, type(COMPONENT_CLOSE);
 
@@ -655,8 +679,10 @@ COMPONENT_SLASH_CLOSE2:
 ;
 
 // There may be no value, so we need to pop out of ATTVALUE if we find the end of the component
+// If this was an outputting component, push extra modes.
 COMPONENT_CLOSE6:
-    '>' {isQuery}? -> popMode, popMode, popMode, popMode, pushMode(TEMPLATE_OUTPUT_MODE), pushMode(DEFAULT_TEMPLATE_MODE), type(COMPONENT_CLOSE)
+    '>' {thisComponentIsOutputting}? -> popMode, popMode, popMode, popMode, pushMode(TEMPLATE_OUTPUT_MODE), pushMode(DEFAULT_TEMPLATE_MODE), type(
+        COMPONENT_CLOSE)
 ;
 
 COMPONENT_CLOSE5: '>' -> popMode, popMode, popMode, popMode, type(COMPONENT_CLOSE);
@@ -674,14 +700,14 @@ mode TEMPLATE_UNQUOTED_VALUE_MODE;
 // first whitespace pops all the way out of ATTVALUE back to component mode
 COMPONENT_WHITESPACE_OUTPUT4: [ \t\r\n] -> popMode, popMode, skip;
 
-// If we're in a bx:output tag, don't pop as far and stay in outut mode
+// If we're in a bx:output tag, don't pop as far and stay in output mode
 COMPONENT_CLOSE_OUTPUT3:
     '>' {lastModeWas(TEMPLATE_OUTPUT_MODE,2)}? -> popMode, popMode, pushMode(DEFAULT_TEMPLATE_MODE), type( COMPONENT_CLOSE)
 ;
 
 COMPONENT_CLOSE7:
-    '>' {isQuery}? -> popMode, popMode, popMode, popMode, popMode, pushMode(TEMPLATE_OUTPUT_MODE), pushMode(DEFAULT_TEMPLATE_MODE), type(
-        COMPONENT_CLOSE)
+    '>' {thisComponentIsOutputting}? -> popMode, popMode, popMode, popMode, popMode, pushMode(TEMPLATE_OUTPUT_MODE), pushMode(DEFAULT_TEMPLATE_MODE),
+        type( COMPONENT_CLOSE)
 ;
 
 // If we find the end of the component, pop all the way out of the component
@@ -713,8 +739,9 @@ DUMMY2: .;
 // *********************************************************************************************************************
 mode TEMPLATE_POSSIBLE_COMPONENT;
 
-PREFIX       : 'bx:'  {isQuery=false;} -> pushMode(TEMPLATE_COMPONENT_NAME_MODE);
-SLASH_PREFIX : '/bx:' {isQuery=false;} -> pushMode(TEMPLATE_END_COMPONENT);
+// If we're just now encountering a new tag, reset our flag to false
+PREFIX       : 'bx:'  {thisComponentIsOutputting=false;} -> pushMode(TEMPLATE_COMPONENT_NAME_MODE);
+SLASH_PREFIX : '/bx:' {thisComponentIsOutputting=false;} -> pushMode(TEMPLATE_END_COMPONENT);
 
 COMPONENT_OPEN2: '<' -> type(COMPONENT_OPEN);
 

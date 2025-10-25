@@ -59,6 +59,7 @@ public class GetComponentList extends BIF {
 			            "allowsBody", descriptor.allowsBody(),
 			            "requiresBody", descriptor.requiresBody(),
 			            "ignoreEnableOutputOnly", descriptor.ignoreEnableOutputOnly(),
+			            "autoEvaluateBodyExpressions", descriptor.autoEvaluateBodyExpressions(),
 			            "attributes", descriptor.getAttributes()
 			        )
 			    );

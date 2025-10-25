@@ -47,4 +47,8 @@ public @interface BoxComponent {
 
 	// Ignores setting enableOutputOnly
 	boolean ignoreEnableOutputOnly() default false;
+
+	// Auto evaluate body expressions
+	boolean autoEvaluateBodyExpressions() default false;
+
 }

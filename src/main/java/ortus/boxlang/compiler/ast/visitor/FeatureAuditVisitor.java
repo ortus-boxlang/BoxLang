@@ -1196,6 +1196,7 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 				        null,
 				        true,
 				        false,
+				        false,
 				        false ),
 				    nameKey,
 				    true );
