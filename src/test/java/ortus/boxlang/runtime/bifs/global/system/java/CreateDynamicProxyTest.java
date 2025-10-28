@@ -143,4 +143,28 @@ public class CreateDynamicProxyTest {
 		assertThat( e.getMessage() ).contains( "could not be coerced" );
 	}
 
+	@DisplayName( "It accepts optional properties parameter" )
+	@Test
+	public void testAcceptsPropertiesParameter() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				import java:java.lang.Thread;
+
+				// Test with null properties (should work the same as before)
+				jRunnable = CreateDynamicProxy(
+					"src.test.java.ortus.boxlang.runtime.dynamic.javaproxy.BoxClassRunnable",
+					"java.lang.Runnable",
+					null
+				);
+
+				jthread = new java:Thread( jRunnable );
+				jthread.start();
+				sleep( 500 );
+		       """,
+		context );
+		// @formatter:on
+		assertThat( context.getScope( ServerScope.name ).get( "runnableProxyFired" ) ).isEqualTo( true );
+	}
+
 }
