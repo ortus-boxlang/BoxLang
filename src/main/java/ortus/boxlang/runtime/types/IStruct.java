@@ -310,6 +310,14 @@ public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 	}
 
 	/**
+	 * Convenience method for getting cast as Char
+	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
+	 */
+	default Character getAsChar( Key key ) {
+		return ( Character ) DynamicObject.unWrap( get( key ) );
+	}
+
+	/**
 	 * Convenience method for getting cast as Double
 	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
 	 */
