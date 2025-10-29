@@ -31,6 +31,7 @@ import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.interop.proxies.BaseProxy;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.EncryptionUtil;
 
 /**
@@ -128,7 +129,11 @@ public class InterfaceProxyService {
 			    if ( iface instanceof Class interfaceClass ) {
 				    return interfaceClass;
 			    } else {
-				    return classLocator.load( context, ( String ) iface, ClassLocator.JAVA_PREFIX, true, context.getCurrentImports() ).getTargetClass();
+				    try {
+					    return classLoader.loadClass( ( String ) iface );
+				    } catch ( ClassNotFoundException e ) {
+					    throw new BoxRuntimeException( "Cannot load interface class [" + iface + "] for proxy.", e );
+				    }
 			    }
 		    } )
 		    .toArray( Class[]::new );

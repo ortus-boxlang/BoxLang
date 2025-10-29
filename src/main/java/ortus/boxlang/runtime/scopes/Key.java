@@ -177,6 +177,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		className							= Key.of( "className" );
 	public static final Key		classPaths							= Key.of( "classPaths" );
 	public static final Key		classResolverCache					= Key.of( "classResolverCache" );
+	public static final Key		classLoader							= Key.of( "classloader" );
 	public static final Key		clazz								= Key.of( "clazz" );
 	public static final Key		clearClassFilesOnStartup			= Key.of( "clearClassFilesOnStartup" );
 	public static final Key		cli									= Key.of( "cli" );

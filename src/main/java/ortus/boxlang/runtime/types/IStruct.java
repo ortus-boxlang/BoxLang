@@ -405,6 +405,24 @@ public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 	}
 
 	/**
+	 * Convenience method for getting cast as BoxLang Attempt with a specific type.
+	 * If the value is not already an Attempt, it will be wrapped in an Attempt.
+	 *
+	 * @param <T>   The type parameter for the Attempt
+	 * @param key   The key to get
+	 * @param clazz The class to cast the Attempt value to
+	 * 
+	 * @return The Attempt containing the value cast to the specified type
+	 */
+	default <T> Attempt<T> getAsAttempt( Key key, Class<T> clazz ) {
+		Object result = DynamicObject.unWrap( get( key ) );
+		if ( result instanceof Attempt<?> ar ) {
+			return ( Attempt<T> ) ar.map( clazz::cast );
+		}
+		return Attempt.of( clazz.cast( result ) );
+	}
+
+	/**
 	 * Convenience method for getting cast as BoxRunnable
 	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
 	 */
