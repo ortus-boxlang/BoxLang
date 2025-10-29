@@ -93,6 +93,21 @@ class DatasourceConfigTest {
 		assertThat( hikariConfig.getJdbcUrl() ).isEqualTo( "jdbc:mysql://localhost:3306/foo?useSSL=false" );
 	}
 
+	@DisplayName( "It can load a config with nonstandard placeholders on a dsn key" )
+	@Test
+	void testItCanConstructConnectionStringWithNonstandardPlaceholdersOnDSN() {
+		DatasourceConfig	datasource		= new DatasourceConfig( Key.of( "Foo" ), Struct.of(
+		    "dsn", "jdbc:mysql://{host}:{port}/{database}?totalRandomValue={totalRandomValue}",
+		    "host", "localhost",
+		    "port", 3306,
+		    "database", "foo",
+		    "totalRandomValue", 12345,
+		    "custom", Struct.of( "useSSL", false )
+		) );
+		HikariConfig		hikariConfig	= datasource.toHikariConfig();
+		assertThat( hikariConfig.getJdbcUrl() ).isEqualTo( "jdbc:mysql://localhost:3306/foo?totalRandomValue=12345&useSSL=false" );
+	}
+
 	@DisplayName( "It can load config" )
 	@Test
 	void testItCanConstructMinimalConnectionString() {
