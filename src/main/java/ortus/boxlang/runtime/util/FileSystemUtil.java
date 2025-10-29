@@ -1550,7 +1550,7 @@ public final class FileSystemUtil {
 	 * @return The resolved path or null if not found
 	 */
 	public static Path pathExistsCaseInsensitive( Path path ) {
-		Boolean defaultCheck = Files.exists( path );
+		Boolean defaultCheck = path.toFile().exists();
 		if ( defaultCheck ) {
 			try {
 				return path.toRealPath();
